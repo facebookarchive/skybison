@@ -29,35 +29,37 @@ TEST_F(StrBuiltinsTest, BuiltinBase) {
 }
 
 TEST_F(StrBuiltinsTest, RichCompareStringEQ) {
-  const char* src = R"(
-a = "__main__"
-if (a == "__main__"):
-  print("foo")
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+a = "magic string"
+if (a == "magic string"):
+  result = "foo"
 else:
-  print("bar")
-)";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "foo\n");
+  result = "bar"
+)")
+                   .isError());
+  EXPECT_TRUE(
+      isStrEqualsCStr(moduleAt(&runtime_, "__main__", "result"), "foo"));
 }
 
 TEST_F(StrBuiltinsTest, RichCompareStringEQWithSubClass) {
-  const char* src = R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class SubStr(str): pass
-a = SubStr("__main__")
-if (a == "__main__"):
-  print("foo")
+a = SubStr("magic string")
+if (a == "magic string"):
+  result = "foo"
 else:
-  print("bar")
-)";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "foo\n");
+  result = "bar"
+)")
+                   .isError());
+  EXPECT_TRUE(
+      isStrEqualsCStr(moduleAt(&runtime_, "__main__", "result"), "foo"));
 }
 
 TEST_F(StrBuiltinsTest, RichCompareStringNE) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = "__main__"
+a = "magic string"
 result = "bar"
-if (a != "__main__"):
+if (a != "magic string"):
   result = "foo"
 )")
                    .isError());
