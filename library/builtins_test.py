@@ -1613,6 +1613,41 @@ class ListTests(unittest.TestCase):
             str(context.exception),
         )
 
+    def test_count_with_non_list_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            list.count(None, 1)
+        self.assertIn(
+            "'count' requires a 'list' object but received a 'NoneType'",
+            str(context.exception),
+        )
+
+    def test_count_with_item_returns_int_count(self):
+        ls = [1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1]
+        self.assertEqual(ls.count(1), 8)
+        self.assertEqual(ls.count(2), 4)
+        self.assertEqual(ls.count(3), 2)
+        self.assertEqual(ls.count(4), 1)
+        self.assertEqual(ls.count(5), 0)
+
+    def test_count_calls_dunder_eq(self):
+        class AlwaysEqual:
+            def __eq__(self, other):
+                return True
+
+        class NeverEqual:
+            def __eq__(self, other):
+                return False
+
+        a = AlwaysEqual()
+        n = NeverEqual()
+        a_list = [a, a, a, a, a]
+        n_list = [n, n, n]
+        self.assertEqual(a_list.count(a), 5)
+        self.assertEqual(a_list.count(n), 5)
+        self.assertEqual(n_list.count(a), 0)
+        self.assertEqual(n_list.count(n), 3)
+        self.assertEqual(n_list.count(NeverEqual()), 0)
+
     def test_extend_list_returns_none(self):
         original = [1, 2, 3]
         copy = []

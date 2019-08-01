@@ -2491,6 +2491,14 @@ class list(bootstrap=True):
         _list_guard(self)
         return list(self)
 
+    def count(self, value):
+        _list_guard(self)
+        result = 0
+        for item in self:
+            if item is value or item == value:
+                result += 1
+        return result
+
     def extend(self, other):
         _list_guard(self)
         if _tuple_checkexact(other) or _list_checkexact(other):
