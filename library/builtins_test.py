@@ -224,6 +224,12 @@ class ByteArrayTest(unittest.TestCase):
 
 
 class BytesTests(unittest.TestCase):
+    def test_decode_finds_ascii(self):
+        self.assertEqual(b"abc".decode("ascii"), "abc")
+
+    def test_decode_finds_latin_1(self):
+        self.assertEqual(b"abc\xE5".decode("latin-1"), "abc\xE5")
+
     def test_dunder_add_with_bytes_like_other_returns_bytes(self):
         self.assertEqual(b"123".__add__(bytearray(b"456")), b"123456")
 

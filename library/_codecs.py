@@ -509,7 +509,14 @@ def utf_32_be_encode(data: str, errors: str = "strict"):
     return utf_32_encode(data, errors, 1)
 
 
-_codec_decode_table = {"ascii": ascii_decode, "us_ascii": ascii_decode}
+_codec_decode_table = {
+    "ascii": ascii_decode,
+    "us_ascii": ascii_decode,
+    "latin1": latin_1_decode,
+    "latin 1": latin_1_decode,
+    "latin-1": latin_1_decode,
+    "latin_1": latin_1_decode,
+}
 
 _codec_encode_table = {
     "ascii": ascii_encode,
