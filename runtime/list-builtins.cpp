@@ -489,9 +489,18 @@ static RawObject setItemSlice(Thread* thread, const List& list,
     result_list.atPut(i, list.at(i));
   }
   if (step == 1) {
-    RawObject result = thread->invokeMethodStatic2(
-        LayoutId::kList, SymbolId::kExtend, result_list, src);
-    if (result.isError()) return result;
+    if (src.isList() || src.isTuple()) {
+      // Fast path for exact lists or tuples
+      Object result(&scope, listExtend(thread, result_list, src));
+      if (result.isError()) return *result;
+    } else {
+      // Subclasses of list or tuple or other iterables fall back to
+      // list.extend
+      Object result(&scope,
+                    thread->invokeMethodStatic2(
+                        LayoutId::kList, SymbolId::kExtend, result_list, src));
+      if (result.isError()) return *result;
+    }
   } else {
     Object iter_method(
         &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), src,
