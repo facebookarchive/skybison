@@ -1375,8 +1375,7 @@ TEST_F(RuntimeTest, NewInstanceEmptyClass) {
 
   ASSERT_FALSE(runFromCStr(&runtime_, "class MyEmptyClass: pass").isError());
 
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Type type(&scope, moduleAt(&runtime_, main, "MyEmptyClass"));
+  Type type(&scope, moduleAt(&runtime_, "__main__", "MyEmptyClass"));
   Layout layout(&scope, type.instanceLayout());
   EXPECT_EQ(layout.instanceSize(), 1 * kPointerSize);
 
@@ -1400,8 +1399,7 @@ class MyTypeWithAttributes():
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
 
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Type type(&scope, moduleAt(&runtime_, main, "MyTypeWithAttributes"));
+  Type type(&scope, moduleAt(&runtime_, "__main__", "MyTypeWithAttributes"));
   Layout layout(&scope, type.instanceLayout());
   ASSERT_EQ(layout.instanceSize(), 4 * kPointerSize);
 
@@ -1453,10 +1451,9 @@ TEST_F(RuntimeTest, CallRunTwice) {
   ASSERT_FALSE(runFromCStr(&runtime_, "y = 1764").isError());
 
   HandleScope scope(thread_);
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object x(&scope, moduleAt(&runtime_, main, "x"));
+  Object x(&scope, moduleAt(&runtime_, "__main__", "x"));
   EXPECT_TRUE(isIntEqualsWord(*x, 42));
-  Object y(&scope, moduleAt(&runtime_, main, "y"));
+  Object y(&scope, moduleAt(&runtime_, "__main__", "y"));
   EXPECT_TRUE(isIntEqualsWord(*y, 1764));
 }
 
@@ -1500,8 +1497,7 @@ c = MyTypeWithNoInitMethod()
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
 
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object instance(&scope, moduleAt(&runtime_, main, "c"));
+  Object instance(&scope, moduleAt(&runtime_, "__main__", "c"));
   ASSERT_TRUE(instance.isInstance());
   LayoutId layout_id = instance.layoutId();
   Layout layout(&scope, runtime_.layoutAt(layout_id));
@@ -1525,8 +1521,7 @@ c = MyTypeWithEmptyInitMethod()
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
 
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object instance(&scope, moduleAt(&runtime_, main, "c"));
+  Object instance(&scope, moduleAt(&runtime_, "__main__", "c"));
   ASSERT_TRUE(instance.isInstance());
   LayoutId layout_id = instance.layoutId();
   Layout layout(&scope, runtime_.layoutAt(layout_id));
@@ -1550,9 +1545,8 @@ c = MyTypeWithAttributes(1)
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
 
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Type type(&scope, moduleAt(&runtime_, main, "MyTypeWithAttributes"));
-  Object instance(&scope, moduleAt(&runtime_, main, "c"));
+  Type type(&scope, moduleAt(&runtime_, "__main__", "MyTypeWithAttributes"));
+  Object instance(&scope, moduleAt(&runtime_, "__main__", "c"));
   ASSERT_TRUE(instance.isInstance());
   LayoutId layout_id = instance.layoutId();
   // Since this class has extra attributes, its layout id should be greater than
@@ -1988,13 +1982,12 @@ def test(x):
 
   // Create the instance
   HandleScope scope(thread_);
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Type type(&scope, moduleAt(&runtime_, main, "Foo"));
+  Type type(&scope, moduleAt(&runtime_, "__main__", "Foo"));
   Layout layout(&scope, type.instanceLayout());
   Object instance(&scope, runtime_.newInstance(layout));
 
   // Run __init__ then RMW the attribute
-  Function test(&scope, moduleAt(&runtime_, main, "test"));
+  Function test(&scope, moduleAt(&runtime_, "__main__", "test"));
   Object result(&scope, Interpreter::callFunction1(
                             thread_, thread_->currentFrame(), test, instance));
   EXPECT_PYLIST_EQ(result, {"testing 123", "321 testing"});
@@ -2026,14 +2019,13 @@ def test(x):
 
   // Create an instance of Foo
   HandleScope scope(thread_);
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Type type(&scope, moduleAt(&runtime_, main, "Foo"));
+  Type type(&scope, moduleAt(&runtime_, "__main__", "Foo"));
   Layout layout(&scope, type.instanceLayout());
   Instance foo1(&scope, runtime_.newInstance(layout));
   LayoutId original_layout_id = layout.id();
 
   // Add overflow attributes that should force layout transitions
-  Function test(&scope, moduleAt(&runtime_, main, "test"));
+  Function test(&scope, moduleAt(&runtime_, "__main__", "test"));
   Object result0(&scope, Interpreter::callFunction1(
                              thread_, thread_->currentFrame(), test, foo1));
   EXPECT_PYLIST_EQ(result0, {100, 200, "hello", "aaa", "bbb", "ccc"});
@@ -2073,13 +2065,12 @@ def test(x):
 
   // Create the instance
   HandleScope scope(thread_);
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Type type(&scope, moduleAt(&runtime_, main, "Foo"));
+  Type type(&scope, moduleAt(&runtime_, "__main__", "Foo"));
   Layout layout(&scope, type.instanceLayout());
   Object instance(&scope, runtime_.newInstance(layout));
 
   // Run the test
-  Function test(&scope, moduleAt(&runtime_, main, "test"));
+  Function test(&scope, moduleAt(&runtime_, "__main__", "test"));
   Object result(&scope, Interpreter::callFunction1(
                             thread_, thread_->currentFrame(), test, instance));
   EXPECT_PYLIST_EQ(result, {"foo", "bar", "baz", "aaa", "bbb", "ccc"});
@@ -2142,8 +2133,7 @@ def test():
 )")
                    .isError());
   HandleScope scope(thread_);
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Function test(&scope, moduleAt(&runtime_, main, "test"));
+  Function test(&scope, moduleAt(&runtime_, "__main__", "test"));
   Tuple args(&scope, runtime_.emptyTuple());
   Object result(&scope, callFunction(test, args));
   EXPECT_EQ(*result, NoneType::object());
@@ -2167,17 +2157,16 @@ del foo.bar
 )")
                    .isError());
   HandleScope scope(thread_);
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object data(&scope, moduleAt(&runtime_, main, "result"));
+  Object data(&scope, moduleAt(&runtime_, "__main__", "result"));
   ASSERT_TRUE(data.isTuple());
 
   Tuple result(&scope, *data);
   ASSERT_EQ(result.length(), 2);
 
-  Object descr(&scope, moduleAt(&runtime_, main, "descr"));
+  Object descr(&scope, moduleAt(&runtime_, "__main__", "descr"));
   EXPECT_EQ(result.at(0), *descr);
 
-  Object foo(&scope, moduleAt(&runtime_, main, "foo"));
+  Object foo(&scope, moduleAt(&runtime_, "__main__", "foo"));
   EXPECT_EQ(result.at(1), *foo);
 }
 
@@ -2207,14 +2196,13 @@ foo = Foo()
 del foo.bar
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object data(&scope, moduleAt(&runtime_, main, "result"));
+  Object data(&scope, moduleAt(&runtime_, "__main__", "result"));
   ASSERT_TRUE(data.isTuple());
 
   Tuple result(&scope, *data);
   ASSERT_EQ(result.length(), 2);
 
-  Object foo(&scope, moduleAt(&runtime_, main, "foo"));
+  Object foo(&scope, moduleAt(&runtime_, "__main__", "foo"));
   EXPECT_EQ(result.at(0), *foo);
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), "bar"));
 }
@@ -2236,14 +2224,13 @@ del bar.baz
 )")
                    .isError());
   HandleScope scope(thread_);
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object data(&scope, moduleAt(&runtime_, main, "result"));
+  Object data(&scope, moduleAt(&runtime_, "__main__", "result"));
   ASSERT_TRUE(data.isTuple());
 
   Tuple result(&scope, *data);
   ASSERT_EQ(result.length(), 2);
 
-  Object bar(&scope, moduleAt(&runtime_, main, "bar"));
+  Object bar(&scope, moduleAt(&runtime_, "__main__", "bar"));
   EXPECT_EQ(result.at(0), *bar);
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), "baz"));
 }
@@ -2259,8 +2246,7 @@ def test():
 )")
                    .isError());
   HandleScope scope(thread_);
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Function test(&scope, moduleAt(&runtime_, main, "test"));
+  Function test(&scope, moduleAt(&runtime_, "__main__", "test"));
   Tuple args(&scope, runtime_.emptyTuple());
   Object result(&scope, callFunction(test, args));
   EXPECT_EQ(*result, NoneType::object());
@@ -2287,17 +2273,16 @@ class Foo(metaclass=FooMeta):
 del Foo.attr
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object data(&scope, moduleAt(&runtime_, main, "args"));
+  Object data(&scope, moduleAt(&runtime_, "__main__", "args"));
   ASSERT_TRUE(data.isTuple());
 
   Tuple args(&scope, *data);
   ASSERT_EQ(args.length(), 2);
 
-  Object descr(&scope, moduleAt(&runtime_, main, "descr"));
+  Object descr(&scope, moduleAt(&runtime_, "__main__", "descr"));
   EXPECT_EQ(args.at(0), *descr);
 
-  Object foo(&scope, moduleAt(&runtime_, main, "Foo"));
+  Object foo(&scope, moduleAt(&runtime_, "__main__", "Foo"));
   EXPECT_EQ(args.at(1), *foo);
 }
 
@@ -2329,14 +2314,13 @@ class Foo(metaclass=FooMeta):
 del Foo.bar
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object data(&scope, moduleAt(&runtime_, main, "args"));
+  Object data(&scope, moduleAt(&runtime_, "__main__", "args"));
   ASSERT_TRUE(data.isTuple());
 
   Tuple args(&scope, *data);
   ASSERT_EQ(args.length(), 2);
 
-  Object foo(&scope, moduleAt(&runtime_, main, "Foo"));
+  Object foo(&scope, moduleAt(&runtime_, "__main__", "Foo"));
   EXPECT_EQ(args.at(0), *foo);
 
   Object attr(&scope, runtime_.internStrFromCStr(thread_, "bar"));
@@ -2383,10 +2367,9 @@ def test(module):
     del module.foo
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Function test(&scope, moduleAt(&runtime_, main, "test"));
+  Function test(&scope, moduleAt(&runtime_, "__main__", "test"));
   Tuple args(&scope, runtime_.newTuple(1));
-  args.atPut(0, *main);
+  args.atPut(0, findModule(&runtime_, "__main__"));
   EXPECT_TRUE(raised(callFunction(test, args), LayoutId::kAttributeError));
 }
 
@@ -2400,14 +2383,13 @@ def test(module):
 )")
                    .isError());
   HandleScope scope(thread_);
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Function test(&scope, moduleAt(&runtime_, main, "test"));
+  Function test(&scope, moduleAt(&runtime_, "__main__", "test"));
   Tuple args(&scope, runtime_.newTuple(1));
-  args.atPut(0, *main);
+  args.atPut(0, findModule(&runtime_, "__main__"));
   EXPECT_EQ(callFunction(test, args), SmallInt::fromWord(123));
 
   Object attr(&scope, runtime_.newStrFromCStr("foo"));
-  Object module(&scope, *main);
+  Object module(&scope, findModule(&runtime_, "__main__"));
   EXPECT_TRUE(runtime_.attributeAt(thread_, module, attr).isError());
 }
 
@@ -2649,8 +2631,7 @@ class Foo:
 )")
                    .isError());
   HandleScope scope(thread_);
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Type type(&scope, moduleAt(&runtime_, main, "Foo"));
+  Type type(&scope, moduleAt(&runtime_, "__main__", "Foo"));
   Layout layout(&scope, type.instanceLayout());
   HeapObject instance(&scope, runtime_.newInstance(layout));
   Object attr(&scope, runtime_.newStrFromCStr("unknown"));
@@ -2671,8 +2652,7 @@ def new_foo():
 
   // Create an instance of Foo
   HandleScope scope(thread_);
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Function new_foo(&scope, moduleAt(&runtime_, main, "new_foo"));
+  Function new_foo(&scope, moduleAt(&runtime_, "__main__", "new_foo"));
   Tuple args(&scope, runtime_.emptyTuple());
   HeapObject instance(&scope, callFunction(new_foo, args));
 
@@ -2705,8 +2685,7 @@ def new_foo():
 
   // Create an instance of Foo
   HandleScope scope(thread_);
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Function new_foo(&scope, moduleAt(&runtime_, main, "new_foo"));
+  Function new_foo(&scope, moduleAt(&runtime_, "__main__", "new_foo"));
   Tuple args(&scope, runtime_.emptyTuple());
   HeapObject instance(&scope, callFunction(new_foo, args));
 
@@ -2759,12 +2738,11 @@ class Bar(Foo):
 )";
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
 
-  Object foo(&scope, moduleAt(&runtime_, main, "Foo"));
+  Object foo(&scope, moduleAt(&runtime_, "__main__", "Foo"));
   EXPECT_TRUE(foo.isType());
 
-  Object bar(&scope, moduleAt(&runtime_, main, "Bar"));
+  Object bar(&scope, moduleAt(&runtime_, "__main__", "Bar"));
   EXPECT_TRUE(bar.isType());
 }
 
@@ -2778,9 +2756,8 @@ class Foo(type, metaclass=MyMeta):
 )";
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
 
-  Object foo(&scope, moduleAt(&runtime_, main, "Foo"));
+  Object foo(&scope, moduleAt(&runtime_, "__main__", "Foo"));
   EXPECT_FALSE(foo.isType());
 }
 
@@ -2794,12 +2771,11 @@ class Bar(Foo):
 )";
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
 
-  Object foo(&scope, moduleAt(&runtime_, main, "Foo"));
+  Object foo(&scope, moduleAt(&runtime_, "__main__", "Foo"));
   EXPECT_TRUE(runtime_.isInstanceOfType(*foo));
 
-  Object bar(&scope, moduleAt(&runtime_, main, "Bar"));
+  Object bar(&scope, moduleAt(&runtime_, "__main__", "Bar"));
   EXPECT_TRUE(runtime_.isInstanceOfType(*bar));
 }
 
@@ -2813,8 +2789,7 @@ class Foo(type, metaclass=MyMeta):
 )";
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object foo(&scope, moduleAt(&runtime_, main, "Foo"));
+  Object foo(&scope, moduleAt(&runtime_, "__main__", "Foo"));
   EXPECT_TRUE(runtime_.isInstanceOfType(*foo));
 }
 
@@ -2831,16 +2806,15 @@ class ChildMeta(type, metaclass=ParentMeta):
 )";
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
   Object type(&scope, runtime_.typeAt(LayoutId::kType));
 
-  Object grand_meta(&scope, moduleAt(&runtime_, main, "GrandMeta"));
+  Object grand_meta(&scope, moduleAt(&runtime_, "__main__", "GrandMeta"));
   EXPECT_EQ(runtime_.typeOf(*grand_meta), *type);
 
-  Object parent_meta(&scope, moduleAt(&runtime_, main, "ParentMeta"));
+  Object parent_meta(&scope, moduleAt(&runtime_, "__main__", "ParentMeta"));
   EXPECT_EQ(runtime_.typeOf(*parent_meta), *grand_meta);
 
-  Object child_meta(&scope, moduleAt(&runtime_, main, "ChildMeta"));
+  Object child_meta(&scope, moduleAt(&runtime_, "__main__", "ChildMeta"));
   EXPECT_EQ(runtime_.typeOf(*child_meta), *parent_meta);
 }
 
@@ -2853,9 +2827,8 @@ Foo = MyMeta('Foo', (), {})
 )";
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object mymeta(&scope, moduleAt(&runtime_, main, "MyMeta"));
-  Object foo(&scope, moduleAt(&runtime_, main, "Foo"));
+  Object mymeta(&scope, moduleAt(&runtime_, "__main__", "MyMeta"));
+  Object foo(&scope, moduleAt(&runtime_, "__main__", "Foo"));
   EXPECT_EQ(runtime_.typeOf(*foo), *mymeta);
   EXPECT_FALSE(foo.isType());
   EXPECT_TRUE(runtime_.isInstanceOfType(*foo));
@@ -2868,8 +2841,7 @@ class Test(Exception):
 )";
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object value(&scope, moduleAt(&runtime_, main, "Test"));
+  Object value(&scope, moduleAt(&runtime_, "__main__", "Test"));
   ASSERT_TRUE(value.isType());
 
   Type type(&scope, *value);
@@ -2938,13 +2910,14 @@ TEST_F(RuntimeModuleTest, NewModuleSetsDictValues) {
   // Create Module
   Object name(&scope, runtime_.newStrFromCStr("mymodule"));
   Module module(&scope, runtime_.newModule(name));
+  runtime_.addModule(module);
 
-  Str mod_name(&scope, moduleAt(&runtime_, module, "__name__"));
+  Str mod_name(&scope, moduleAt(&runtime_, "mymodule", "__name__"));
   EXPECT_TRUE(mod_name.equalsCStr("mymodule"));
-  EXPECT_EQ(moduleAt(&runtime_, module, "__doc__"), NoneType::object());
-  EXPECT_EQ(moduleAt(&runtime_, module, "__package__"), NoneType::object());
-  EXPECT_EQ(moduleAt(&runtime_, module, "__loader__"), NoneType::object());
-  EXPECT_EQ(moduleAt(&runtime_, module, "__spec__"), NoneType::object());
+  EXPECT_EQ(moduleAt(&runtime_, "mymodule", "__doc__"), NoneType::object());
+  EXPECT_EQ(moduleAt(&runtime_, "mymodule", "__package__"), NoneType::object());
+  EXPECT_EQ(moduleAt(&runtime_, "mymodule", "__loader__"), NoneType::object());
+  EXPECT_EQ(moduleAt(&runtime_, "mymodule", "__spec__"), NoneType::object());
 }
 
 TEST_F(RuntimeFunctionAttrTest, SetAttribute) {

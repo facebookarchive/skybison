@@ -25,14 +25,13 @@ def test(callable):
 )")
                    .isError());
 
-  Module module(&scope, findModule(&runtime_, "__main__"));
-  Object function(&scope, moduleAt(&runtime_, module, "func"));
+  Object function(&scope, moduleAt(&runtime_, "__main__", "func"));
   ASSERT_TRUE(function.isFunction());
 
   Object self(&scope, SmallInt::fromWord(1111));
   BoundMethod method(&scope, runtime_.newBoundMethod(function, self));
 
-  Object test(&scope, moduleAt(&runtime_, module, "test"));
+  Object test(&scope, moduleAt(&runtime_, "__main__", "test"));
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
 
@@ -52,14 +51,13 @@ def test(callable):
 )")
                    .isError());
 
-  Module module(&scope, findModule(&runtime_, "__main__"));
-  Object function(&scope, moduleAt(&runtime_, module, "func"));
+  Object function(&scope, moduleAt(&runtime_, "__main__", "func"));
   ASSERT_TRUE(function.isFunction());
 
   Object self(&scope, SmallInt::fromWord(1111));
   BoundMethod method(&scope, runtime_.newBoundMethod(function, self));
 
-  Object test(&scope, moduleAt(&runtime_, module, "test"));
+  Object test(&scope, moduleAt(&runtime_, "__main__", "test"));
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
 
@@ -86,27 +84,26 @@ def test(callable):
 )")
                    .isError());
 
-  Module module(&scope, findModule(&runtime_, "__main__"));
-  Object function(&scope, moduleAt(&runtime_, module, "func"));
+  Object function(&scope, moduleAt(&runtime_, "__main__", "func"));
   ASSERT_TRUE(function.isFunction());
 
   Object self(&scope, SmallInt::fromWord(1111));
   BoundMethod method(&scope, runtime_.newBoundMethod(function, self));
 
-  Object test(&scope, moduleAt(&runtime_, module, "test"));
+  Object test(&scope, moduleAt(&runtime_, "__main__", "test"));
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
   Tuple args(&scope, runtime_.newTuple(1));
   args.atPut(0, *method);
   callFunction(func, args);
 
-  Object result_self(&scope, moduleAt(&runtime_, module, "result_self"));
+  Object result_self(&scope, moduleAt(&runtime_, "__main__", "result_self"));
   EXPECT_TRUE(isIntEqualsWord(*result_self, 1111));
 
-  Object result_a(&scope, moduleAt(&runtime_, module, "result_a"));
+  Object result_a(&scope, moduleAt(&runtime_, "__main__", "result_a"));
   EXPECT_TRUE(isIntEqualsWord(*result_a, 2222));
 
-  Object result_b(&scope, moduleAt(&runtime_, module, "result_b"));
+  Object result_b(&scope, moduleAt(&runtime_, "__main__", "result_b"));
   EXPECT_TRUE(isIntEqualsWord(*result_b, 3333));
 }
 
@@ -129,27 +126,26 @@ def test(callable):
 )")
                    .isError());
 
-  Module module(&scope, findModule(&runtime_, "__main__"));
-  Object function(&scope, moduleAt(&runtime_, module, "func"));
+  Object function(&scope, moduleAt(&runtime_, "__main__", "func"));
   ASSERT_TRUE(function.isFunction());
 
   Object self(&scope, SmallInt::fromWord(1111));
   BoundMethod method(&scope, runtime_.newBoundMethod(function, self));
 
-  Object test(&scope, moduleAt(&runtime_, module, "test"));
+  Object test(&scope, moduleAt(&runtime_, "__main__", "test"));
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
   Tuple args(&scope, runtime_.newTuple(1));
   args.atPut(0, *method);
   callFunction(func, args);
 
-  Object result_self(&scope, moduleAt(&runtime_, module, "result_self"));
+  Object result_self(&scope, moduleAt(&runtime_, "__main__", "result_self"));
   EXPECT_TRUE(isIntEqualsWord(*result_self, 1111));
 
-  Object result_a(&scope, moduleAt(&runtime_, module, "result_a"));
+  Object result_a(&scope, moduleAt(&runtime_, "__main__", "result_a"));
   EXPECT_TRUE(isIntEqualsWord(*result_a, 2222));
 
-  Object result_b(&scope, moduleAt(&runtime_, module, "result_b"));
+  Object result_b(&scope, moduleAt(&runtime_, "__main__", "result_b"));
   EXPECT_TRUE(isIntEqualsWord(*result_b, 3333));
 }
 
@@ -172,27 +168,26 @@ def test(callable):
 )")
                    .isError());
 
-  Module module(&scope, findModule(&runtime_, "__main__"));
-  Object function(&scope, moduleAt(&runtime_, module, "func"));
+  Object function(&scope, moduleAt(&runtime_, "__main__", "func"));
   ASSERT_TRUE(function.isFunction());
 
   Object self(&scope, SmallInt::fromWord(1111));
   BoundMethod method(&scope, runtime_.newBoundMethod(function, self));
 
-  Object test(&scope, moduleAt(&runtime_, module, "test"));
+  Object test(&scope, moduleAt(&runtime_, "__main__", "test"));
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
   Tuple args(&scope, runtime_.newTuple(1));
   args.atPut(0, *method);
   callFunction(func, args);
 
-  Object result_self(&scope, moduleAt(&runtime_, module, "result_self"));
+  Object result_self(&scope, moduleAt(&runtime_, "__main__", "result_self"));
   EXPECT_TRUE(isIntEqualsWord(*result_self, 1111));
 
-  Object result_a(&scope, moduleAt(&runtime_, module, "result_a"));
+  Object result_a(&scope, moduleAt(&runtime_, "__main__", "result_a"));
   EXPECT_TRUE(isIntEqualsWord(*result_a, 2222));
 
-  Object result_b(&scope, moduleAt(&runtime_, module, "result_b"));
+  Object result_b(&scope, moduleAt(&runtime_, "__main__", "result_b"));
   EXPECT_TRUE(isIntEqualsWord(*result_b, 3333));
 }
 
@@ -216,27 +211,26 @@ def test(callable):
 )")
                    .isError());
 
-  Module module(&scope, findModule(&runtime_, "__main__"));
-  Object function(&scope, moduleAt(&runtime_, module, "func"));
+  Object function(&scope, moduleAt(&runtime_, "__main__", "func"));
   ASSERT_TRUE(function.isFunction());
 
   Object self(&scope, SmallInt::fromWord(1111));
   BoundMethod method(&scope, runtime_.newBoundMethod(function, self));
 
-  Object test(&scope, moduleAt(&runtime_, module, "test"));
+  Object test(&scope, moduleAt(&runtime_, "__main__", "test"));
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
   Tuple args(&scope, runtime_.newTuple(1));
   args.atPut(0, *method);
   callFunction(func, args);
 
-  Object result_self(&scope, moduleAt(&runtime_, module, "result_self"));
+  Object result_self(&scope, moduleAt(&runtime_, "__main__", "result_self"));
   EXPECT_TRUE(isIntEqualsWord(*result_self, 1111));
 
-  Object result_a(&scope, moduleAt(&runtime_, module, "result_a"));
+  Object result_a(&scope, moduleAt(&runtime_, "__main__", "result_a"));
   EXPECT_TRUE(isIntEqualsWord(*result_a, 2222));
 
-  Object result_b(&scope, moduleAt(&runtime_, module, "result_b"));
+  Object result_b(&scope, moduleAt(&runtime_, "__main__", "result_b"));
   EXPECT_TRUE(isIntEqualsWord(*result_b, 3333));
 }
 

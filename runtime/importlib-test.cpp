@@ -154,8 +154,7 @@ import sys
 meta_path = sys.meta_path
 )")
                    .isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object meta_path(&scope, moduleAt(&runtime_, main, "meta_path"));
+  Object meta_path(&scope, moduleAt(&runtime_, "__main__", "meta_path"));
   ASSERT_TRUE(meta_path.isList());
 }
 

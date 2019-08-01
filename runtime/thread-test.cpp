@@ -74,8 +74,7 @@ g = c(3)
 
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
 
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object global(&scope, moduleAt(&runtime_, main, "g"));
+  Object global(&scope, moduleAt(&runtime_, "__main__", "g"));
   EXPECT_TRUE(isIntEqualsWord(*global, 36));
 }
 
@@ -99,8 +98,7 @@ c = Stage0()
 c(1111)
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object result(&scope, moduleAt(&runtime_, main, "result"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1111));
 }
 
@@ -119,8 +117,7 @@ result = c(y=3)
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
 
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object result(&scope, moduleAt(&runtime_, main, "result"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 3));
 }
 
@@ -137,8 +134,7 @@ result = c(*args)
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
 
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object result(&scope, moduleAt(&runtime_, main, "result"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 3));
 }
 
@@ -155,8 +151,7 @@ result = c(**kwargs)
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
 
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object result(&scope, moduleAt(&runtime_, main, "result"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 3));
 }
 
@@ -179,10 +174,9 @@ c(*args, **kwargs)
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
 
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object result_x(&scope, moduleAt(&runtime_, main, "result_x"));
+  Object result_x(&scope, moduleAt(&runtime_, "__main__", "result_x"));
   EXPECT_TRUE(isIntEqualsWord(*result_x, 1));
-  Object result_y(&scope, moduleAt(&runtime_, main, "result_y"));
+  Object result_y(&scope, moduleAt(&runtime_, "__main__", "result_y"));
   EXPECT_TRUE(isIntEqualsWord(*result_y, 3));
 }
 
@@ -1220,8 +1214,7 @@ class Foo(object):
   // Look up the class Foo
   Object main_obj(&scope, findModule(&runtime_, "__main__"));
   ASSERT_TRUE(main_obj.isModule());
-  Module main(&scope, *main_obj);
-  Object foo_obj(&scope, moduleAt(&runtime_, main, "Foo"));
+  Object foo_obj(&scope, moduleAt(&runtime_, "__main__", "Foo"));
   ASSERT_TRUE(foo_obj.isType());
   Type foo(&scope, *foo_obj);
 
@@ -1413,9 +1406,8 @@ t = (*[0], *[1, 2], *[], *[3, 4, 5])
 t1 = (*(0,), *(1, 2), *(), *(3, 4, 5))
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
 
-  Object t(&scope, moduleAt(&runtime_, main, "t"));
+  Object t(&scope, moduleAt(&runtime_, "__main__", "t"));
   EXPECT_TRUE(t.isTuple());
   Tuple tuple_t(&scope, *t);
   EXPECT_EQ(tuple_t.length(), 6);
@@ -1423,7 +1415,7 @@ t1 = (*(0,), *(1, 2), *(), *(3, 4, 5))
     EXPECT_TRUE(isIntEqualsWord(tuple_t.at(i), i));
   }
 
-  Object t1(&scope, moduleAt(&runtime_, main, "t1"));
+  Object t1(&scope, moduleAt(&runtime_, "__main__", "t1"));
   EXPECT_TRUE(t1.isTuple());
   Tuple tuple_t1(&scope, *t1);
   EXPECT_EQ(tuple_t1.length(), 6);
@@ -1441,9 +1433,8 @@ TEST_F(ThreadTest, BuildListUnpack) {
 l = [*[0], *[1, 2], *[], *[3, 4, 5]]
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
 
-  Object l(&scope, moduleAt(&runtime_, main, "l"));
+  Object l(&scope, moduleAt(&runtime_, "__main__", "l"));
   EXPECT_TRUE(l.isList());
   List list_l(&scope, *l);
   EXPECT_EQ(list_l.numItems(), 6);
@@ -1461,9 +1452,8 @@ TEST_F(ThreadTest, BuildSetUnpack) {
 s = {*[0, 1], *{2, 3}, *(4, 5), *[]}
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
 
-  Object s(&scope, moduleAt(&runtime_, main, "s"));
+  Object s(&scope, moduleAt(&runtime_, "__main__", "s"));
   EXPECT_TRUE(s.isSet());
   Set set_s(&scope, *s);
   EXPECT_EQ(set_s.numItems(), 6);
@@ -1575,8 +1565,7 @@ a = [1, 2, 3]
 b = {x for x in a}
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object b(&scope, moduleAt(&runtime_, main, "b"));
+  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
   ASSERT_TRUE(b.isSet());
   Set set_b(&scope, *b);
   EXPECT_EQ(set_b.numItems(), 3);
@@ -1589,8 +1578,7 @@ a = ['a', 'b', 'c']
 b = {x:x for x in a}
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object b(&scope, moduleAt(&runtime_, main, "b"));
+  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
   EXPECT_EQ(b.isDict(), true);
   Dict dict_b(&scope, *b);
   EXPECT_EQ(dict_b.numItems(), 3);
@@ -1690,11 +1678,10 @@ for el in l:
     s += el
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object a(&scope, moduleAt(&runtime_, main, "a"));
-  Object b(&scope, moduleAt(&runtime_, main, "b"));
-  Object l(&scope, moduleAt(&runtime_, main, "l"));
-  Object s(&scope, moduleAt(&runtime_, main, "s"));
+  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  Object l(&scope, moduleAt(&runtime_, "__main__", "l"));
+  Object s(&scope, moduleAt(&runtime_, "__main__", "s"));
 
   EXPECT_FALSE(isIntEqualsWord(*a, 2));
   EXPECT_FALSE(isIntEqualsWord(*b, 12));
@@ -1717,8 +1704,7 @@ l.insert(400, 6)
 l.insert(-100, 0)
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object l(&scope, moduleAt(&runtime_, main, "l"));
+  Object l(&scope, moduleAt(&runtime_, "__main__", "l"));
   List list_l(&scope, *l);
   EXPECT_TRUE(isIntEqualsWord(list_l.at(0), 0));
   EXPECT_TRUE(isIntEqualsWord(list_l.at(1), 1));
@@ -1737,8 +1723,7 @@ l.insert(-2, 1)
 l.insert(-1, 3)
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object l(&scope, moduleAt(&runtime_, main, "l"));
+  Object l(&scope, moduleAt(&runtime_, "__main__", "l"));
   List list_l(&scope, *l);
   ASSERT_EQ(list_l.numItems(), 5);
   EXPECT_TRUE(isIntEqualsWord(list_l.at(0), 0));
@@ -1858,8 +1843,7 @@ for x in range(4):
     l.append(x)
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object l(&scope, moduleAt(&runtime_, main, "l"));
+  Object l(&scope, moduleAt(&runtime_, "__main__", "l"));
   EXPECT_TRUE(l.isList());
   List list_l(&scope, *l);
   ASSERT_GE(list_l.numItems(), 3);
@@ -1983,10 +1967,9 @@ class Foo(metaclass=type):
 a = Foo()
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object foo(&scope, moduleAt(&runtime_, main, "Foo"));
+  Object foo(&scope, moduleAt(&runtime_, "__main__", "Foo"));
   EXPECT_TRUE(foo.isType());
-  Object a(&scope, moduleAt(&runtime_, main, "a"));
+  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
   EXPECT_TRUE(runtime_.typeOf(*a) == *foo);
 }
 
@@ -2006,14 +1989,13 @@ a = Bar()
 c = a.hahaha
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object bar(&scope, moduleAt(&runtime_, main, "Bar"));
+  Object bar(&scope, moduleAt(&runtime_, "__main__", "Bar"));
   EXPECT_TRUE(runtime_.isInstanceOfType(*bar));
-  Object a(&scope, moduleAt(&runtime_, main, "a"));
+  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
   EXPECT_TRUE(runtime_.typeOf(*a) == *bar);
-  Object b(&scope, moduleAt(&runtime_, main, "b"));
+  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
   EXPECT_TRUE(isIntEqualsWord(*b, 123));
-  Object c(&scope, moduleAt(&runtime_, main, "c"));
+  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
   EXPECT_TRUE(isIntEqualsWord(*c, 456));
 }
 
@@ -2031,10 +2013,9 @@ class C:
     b = PIPI
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object a(&scope, moduleAt(&runtime_, main, "a"));
+  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
   EXPECT_TRUE(isIntEqualsWord(*a, 3));
-  Object b(&scope, moduleAt(&runtime_, main, "b"));
+  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
   EXPECT_TRUE(isIntEqualsWord(*b, 6));
 }
 
@@ -2050,10 +2031,9 @@ class C:
   two = var
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object one(&scope, moduleAt(&runtime_, main, "one"));
+  Object one(&scope, moduleAt(&runtime_, "__main__", "one"));
   EXPECT_TRUE(isIntEqualsWord(*one, 1));
-  Object two(&scope, moduleAt(&runtime_, main, "two"));
+  Object two(&scope, moduleAt(&runtime_, "__main__", "two"));
   EXPECT_TRUE(isIntEqualsWord(*two, 2));
 }
 
@@ -2064,8 +2044,7 @@ var = 1
 del var
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object var(&scope, moduleAt(&runtime_, main, "var"));
+  Object var(&scope, moduleAt(&runtime_, "__main__", "var"));
   EXPECT_TRUE(var.isError());
 }
 
@@ -2079,8 +2058,7 @@ finally:
   x = 2
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object x(&scope, moduleAt(&runtime_, main, "x"));
+  Object x(&scope, moduleAt(&runtime_, "__main__", "x"));
   EXPECT_EQ(*x, SmallInt::fromWord(2));
 }
 
@@ -2093,13 +2071,14 @@ class Foo:
 class_anno_dict = Foo.__annotations__
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Dict module_anno_dict(&scope, moduleAt(&runtime_, main, "__annotations__"));
+  Dict module_anno_dict(&scope,
+                        moduleAt(&runtime_, "__main__", "__annotations__"));
   Object m_key(&scope, runtime_.newStrFromCStr("x"));
   Object m_value(&scope, runtime_.dictAt(thread_, module_anno_dict, m_key));
   EXPECT_EQ(*m_value, runtime_.typeAt(LayoutId::kInt));
 
-  Dict class_anno_dict(&scope, moduleAt(&runtime_, main, "class_anno_dict"));
+  Dict class_anno_dict(&scope,
+                       moduleAt(&runtime_, "__main__", "class_anno_dict"));
   Object c_key(&scope, runtime_.newStrFromCStr("bar"));
   Object c_value(&scope, runtime_.dictAt(thread_, class_anno_dict, c_key));
   EXPECT_EQ(*c_value, runtime_.typeAt(LayoutId::kInt));
@@ -2126,8 +2105,7 @@ def foo(a, b, c):
 x = foo(1, 2, 3)
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object x(&scope, moduleAt(&runtime_, main, "x"));
+  Object x(&scope, moduleAt(&runtime_, "__main__", "x"));
   EXPECT_EQ(*x, SmallInt::fromWord(2));
 }
 
@@ -2148,15 +2126,14 @@ class Foo:
 foo = Foo(1111, b=2222, c=3333)
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
 
-  Object result_a(&scope, moduleAt(&runtime_, main, "result_a"));
+  Object result_a(&scope, moduleAt(&runtime_, "__main__", "result_a"));
   EXPECT_TRUE(isIntEqualsWord(*result_a, 1111));
 
-  Object result_b(&scope, moduleAt(&runtime_, main, "result_b"));
+  Object result_b(&scope, moduleAt(&runtime_, "__main__", "result_b"));
   EXPECT_TRUE(isIntEqualsWord(*result_b, 2222));
 
-  Object result_c(&scope, moduleAt(&runtime_, main, "result_c"));
+  Object result_c(&scope, moduleAt(&runtime_, "__main__", "result_c"));
   EXPECT_TRUE(isIntEqualsWord(*result_c, 3333));
 }
 
@@ -2171,8 +2148,7 @@ def foo():
 x = foo()
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object x(&scope, moduleAt(&runtime_, main, "x"));
+  Object x(&scope, moduleAt(&runtime_, "__main__", "x"));
   EXPECT_EQ(*x, SmallInt::fromWord(1));
 }
 

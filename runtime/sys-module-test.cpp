@@ -178,8 +178,7 @@ import sys
 sysname = sys.platform
 )")
                    .isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object sysname(&scope, moduleAt(&runtime_, main, "sysname"));
+  Object sysname(&scope, moduleAt(&runtime_, "__main__", "sysname"));
   ASSERT_TRUE(sysname.isStr());
   struct utsname name;
   ASSERT_EQ(uname(&name), 0);
@@ -212,8 +211,7 @@ import sys
 builtin_names = sys.builtin_module_names
 )")
                    .isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object builtins(&scope, moduleAt(&runtime_, main, "builtin_names"));
+  Object builtins(&scope, moduleAt(&runtime_, "__main__", "builtin_names"));
   ASSERT_TRUE(builtins.isTuple());
 
   // Test that builtin list is greater than 0

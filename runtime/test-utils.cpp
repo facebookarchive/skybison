@@ -188,12 +188,6 @@ RawObject findModule(Runtime* runtime, const char* name) {
   return runtime->findModule(key);
 }
 
-RawObject moduleAt(Runtime* runtime, const Module& module, const char* name) {
-  HandleScope scope;
-  Object key(&scope, runtime->newStrFromCStr(name));
-  return runtime->moduleAt(module, key);
-}
-
 RawObject moduleAt(Runtime* runtime, const char* module_name,
                    const char* name) {
   HandleScope scope;
@@ -202,7 +196,8 @@ RawObject moduleAt(Runtime* runtime, const char* module_name,
     return Error::notFound();
   }
   Module module(&scope, *mod_obj);
-  return moduleAt(runtime, module, name);
+  Object key(&scope, runtime->newStrFromCStr(name));
+  return runtime->moduleAt(module, key);
 }
 
 std::string typeName(Runtime* runtime, RawObject obj) {

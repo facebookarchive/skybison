@@ -21,8 +21,7 @@ a = callable(Foo)
   )")
                    .isError());
   HandleScope scope(thread_);
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Bool a(&scope, moduleAt(&runtime_, main, "a"));
+  Bool a(&scope, moduleAt(&runtime_, "__main__", "a"));
   EXPECT_TRUE(a.value());
 }
 
@@ -37,9 +36,8 @@ b = callable(Foo().bar)
   )")
                    .isError());
   HandleScope scope(thread_);
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Bool a(&scope, moduleAt(&runtime_, main, "a"));
-  Bool b(&scope, moduleAt(&runtime_, main, "b"));
+  Bool a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Bool b(&scope, moduleAt(&runtime_, "__main__", "b"));
   EXPECT_TRUE(a.value());
   EXPECT_TRUE(b.value());
 }
@@ -51,9 +49,8 @@ b = callable("hello")
   )")
                    .isError());
   HandleScope scope(thread_);
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Bool a(&scope, moduleAt(&runtime_, main, "a"));
-  Bool b(&scope, moduleAt(&runtime_, main, "b"));
+  Bool a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Bool b(&scope, moduleAt(&runtime_, "__main__", "b"));
   EXPECT_FALSE(a.value());
   EXPECT_FALSE(b.value());
 }
@@ -69,8 +66,7 @@ a = callable(f)
   )")
                    .isError());
   HandleScope scope(thread_);
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Bool a(&scope, moduleAt(&runtime_, main, "a"));
+  Bool a(&scope, moduleAt(&runtime_, "__main__", "a"));
   EXPECT_TRUE(a.value());
 }
 
@@ -89,8 +85,7 @@ a = callable(f)
   )")
                    .isError());
   HandleScope scope(thread_);
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Bool a(&scope, moduleAt(&runtime_, main, "a"));
+  Bool a(&scope, moduleAt(&runtime_, "__main__", "a"));
   EXPECT_FALSE(a.value());
 }
 
@@ -156,12 +151,11 @@ len5 = len({'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5})
                    .isError());
 
   HandleScope scope(thread_);
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object len0(&scope, moduleAt(&runtime_, main, "len0"));
+  Object len0(&scope, moduleAt(&runtime_, "__main__", "len0"));
   EXPECT_EQ(*len0, SmallInt::fromWord(0));
-  Object len1(&scope, moduleAt(&runtime_, main, "len1"));
+  Object len1(&scope, moduleAt(&runtime_, "__main__", "len1"));
   EXPECT_EQ(*len1, SmallInt::fromWord(1));
-  Object len5(&scope, moduleAt(&runtime_, main, "len5"));
+  Object len5(&scope, moduleAt(&runtime_, "__main__", "len5"));
   EXPECT_EQ(*len5, SmallInt::fromWord(5));
 }
 
@@ -174,12 +168,11 @@ len5 = len([1,2,3,4,5])
                    .isError());
 
   HandleScope scope(thread_);
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object len0(&scope, moduleAt(&runtime_, main, "len0"));
+  Object len0(&scope, moduleAt(&runtime_, "__main__", "len0"));
   EXPECT_EQ(*len0, SmallInt::fromWord(0));
-  Object len1(&scope, moduleAt(&runtime_, main, "len1"));
+  Object len1(&scope, moduleAt(&runtime_, "__main__", "len1"));
   EXPECT_EQ(*len1, SmallInt::fromWord(1));
-  Object len5(&scope, moduleAt(&runtime_, main, "len5"));
+  Object len5(&scope, moduleAt(&runtime_, "__main__", "len5"));
   EXPECT_EQ(*len5, SmallInt::fromWord(5));
 }
 
@@ -191,11 +184,10 @@ len5 = len({1,2,3,4,5})
                    .isError());
 
   HandleScope scope(thread_);
-  Module main(&scope, findModule(&runtime_, "__main__"));
   // TODO(cshapiro): test the empty set when we have builtins.set defined.
-  Object len1(&scope, moduleAt(&runtime_, main, "len1"));
+  Object len1(&scope, moduleAt(&runtime_, "__main__", "len1"));
   EXPECT_EQ(*len1, SmallInt::fromWord(1));
-  Object len5(&scope, moduleAt(&runtime_, main, "len5"));
+  Object len5(&scope, moduleAt(&runtime_, "__main__", "len5"));
   EXPECT_EQ(*len5, SmallInt::fromWord(5));
 }
 
@@ -242,8 +234,7 @@ a = repr(Foo())
 )")
                    .isError());
   HandleScope scope(thread_);
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object a(&scope, moduleAt(&runtime_, main, "a"));
+  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, "foo"));
 }
 
@@ -264,8 +255,7 @@ a = ascii(Foo())
 )")
                    .isError());
   HandleScope scope(thread_);
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object a(&scope, moduleAt(&runtime_, main, "a"));
+  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, "foo"));
 }
 
@@ -495,8 +485,7 @@ obj = getattr(Foo, 'bar')
 )";
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object obj(&scope, moduleAt(&runtime_, main, "obj"));
+  Object obj(&scope, moduleAt(&runtime_, "__main__", "obj"));
   EXPECT_EQ(*obj, SmallInt::fromWord(1));
 }
 
@@ -508,8 +497,7 @@ obj = getattr(Foo(), 'bar')
 )";
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object obj(&scope, moduleAt(&runtime_, main, "obj"));
+  Object obj(&scope, moduleAt(&runtime_, "__main__", "obj"));
   EXPECT_EQ(*obj, SmallInt::fromWord(1));
 }
 
@@ -520,8 +508,7 @@ obj = getattr(Foo(), 'bar', 2)
 )";
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object obj(&scope, moduleAt(&runtime_, main, "obj"));
+  Object obj(&scope, moduleAt(&runtime_, "__main__", "obj"));
   EXPECT_EQ(*obj, SmallInt::fromWord(2));
 }
 
@@ -562,8 +549,7 @@ obj = hasattr(Foo, 'bar')
 )";
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object obj(&scope, moduleAt(&runtime_, main, "obj"));
+  Object obj(&scope, moduleAt(&runtime_, "__main__", "obj"));
   EXPECT_EQ(*obj, Bool::falseObj());
 }
 
@@ -575,8 +561,7 @@ obj = hasattr(Foo, 'bar')
 )";
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object obj(&scope, moduleAt(&runtime_, main, "obj"));
+  Object obj(&scope, moduleAt(&runtime_, "__main__", "obj"));
   EXPECT_EQ(*obj, Bool::trueObj());
 }
 
@@ -597,8 +582,7 @@ obj = hasattr(Foo(), 'bar')
 )";
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object obj(&scope, moduleAt(&runtime_, main, "obj"));
+  Object obj(&scope, moduleAt(&runtime_, "__main__", "obj"));
   EXPECT_EQ(*obj, Bool::falseObj());
 }
 
@@ -610,8 +594,7 @@ obj = hasattr(Foo(), 'bar')
 )";
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object obj(&scope, moduleAt(&runtime_, main, "obj"));
+  Object obj(&scope, moduleAt(&runtime_, "__main__", "obj"));
   EXPECT_EQ(*obj, Bool::trueObj());
 }
 
@@ -673,9 +656,8 @@ b = Foo.foo
 )";
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object a(&scope, moduleAt(&runtime_, main, "a"));
-  Object b(&scope, moduleAt(&runtime_, main, "b"));
+  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
   EXPECT_EQ(*a, NoneType::object());
   EXPECT_EQ(*b, SmallInt::fromWord(2));
 }
@@ -840,9 +822,9 @@ a = 1337
 result = exec("a = 1338", gl)
   )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, main, "result"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   ASSERT_TRUE(result.isNoneType());
-  Object a(&scope, moduleAt(&runtime_, main, "a"));
+  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
   EXPECT_TRUE(isIntEqualsWord(*a, 1338));
 }
 
@@ -853,10 +835,9 @@ a = 1337
 result = exec("a = 1338", {})
   )")
                    .isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
-  Object result(&scope, moduleAt(&runtime_, main, "result"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   ASSERT_TRUE(result.isNoneType());
-  Object a(&scope, moduleAt(&runtime_, main, "a"));
+  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
   EXPECT_TRUE(isIntEqualsWord(*a, 1337));
 }
 
