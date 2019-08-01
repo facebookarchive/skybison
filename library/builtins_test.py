@@ -3070,7 +3070,7 @@ class ChrTests(unittest.TestCase):
     def test_returns_string(self):
         self.assertEqual(chr(101), "e")
         self.assertEqual(chr(42), "*")
-        self.assertEqual(chr(0x1F40D), "🐍")
+        self.assertEqual(chr(0x1F40D), "\U0001f40d")
 
     def test_with_int_subclass_returns_string(self):
         class C(int):
