@@ -80,6 +80,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderBytesLen, underBytesLen},
     {SymbolId::kUnderBytesMaketrans, underBytesMaketrans},
     {SymbolId::kUnderBytesRepeat, underBytesRepeat},
+    {SymbolId::kUnderByteslikeEndsWith, underByteslikeEndsWith},
     {SymbolId::kUnderByteslikeFindByteslike, underByteslikeFindByteslike},
     {SymbolId::kUnderByteslikeFindInt, underByteslikeFindInt},
     {SymbolId::kUnderClassMethod, underClassMethod},
@@ -510,6 +511,56 @@ RawObject UnderBuiltinsModule::underBytesRepeat(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(LayoutId::kValueError, "negative count");
   }
   return thread->runtime()->bytesRepeat(thread, self, self.length(), count);
+}
+
+RawObject UnderBuiltinsModule::underByteslikeEndsWith(Thread* thread,
+                                                      Frame* frame,
+                                                      word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  word self_len;
+  if (runtime->isInstanceOfBytes(*self_obj)) {
+    Bytes self(&scope, bytesUnderlying(thread, self_obj));
+    self_obj = *self;
+    self_len = self.length();
+  } else if (runtime->isInstanceOfByteArray(*self_obj)) {
+    ByteArray self(&scope, *self_obj);
+    self_obj = self.bytes();
+    self_len = self.numItems();
+  } else {
+    UNREACHABLE("self has an unexpected type");
+  }
+  DCHECK(self_obj.isBytes(),
+         "bytes-like object not resolved to underlying bytes");
+  Object suffix_obj(&scope, args.get(1));
+  word suffix_len;
+  if (runtime->isInstanceOfBytes(*suffix_obj)) {
+    Bytes suffix(&scope, bytesUnderlying(thread, suffix_obj));
+    suffix_obj = *suffix;
+    suffix_len = suffix.length();
+  } else if (runtime->isInstanceOfByteArray(*suffix_obj)) {
+    ByteArray suffix(&scope, *suffix_obj);
+    suffix_obj = suffix.bytes();
+    suffix_len = suffix.numItems();
+  } else {
+    // TODO(T38246066): support buffer protocol
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "endswith first arg must be bytes or a tuple of bytes, not %T",
+        &suffix_obj);
+  }
+  Bytes self(&scope, *self_obj);
+  Bytes suffix(&scope, *suffix_obj);
+  Object start_obj(&scope, args.get(2));
+  Object end_obj(&scope, args.get(3));
+  Int start(&scope, start_obj.isUnbound() ? SmallInt::fromWord(0)
+                                          : intUnderlying(thread, start_obj));
+  Int end(&scope, end_obj.isUnbound() ? SmallInt::fromWord(self_len)
+                                      : intUnderlying(thread, end_obj));
+  return runtime->bytesEndsWith(self, self_len, suffix, suffix_len,
+                                start.asWordSaturated(), end.asWordSaturated());
 }
 
 RawObject UnderBuiltinsModule::underByteslikeFindByteslike(Thread* thread,

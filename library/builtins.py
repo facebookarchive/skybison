@@ -23,6 +23,7 @@ _bytes_join = _bytes_join  # noqa: F821
 _bytes_len = _bytes_len  # noqa: F821
 _bytes_maketrans = _bytes_maketrans  # noqa: F821
 _bytes_repeat = _bytes_repeat  # noqa: F821
+_byteslike_endswith = _byteslike_endswith  # noqa: F821
 _byteslike_find_byteslike = _byteslike_find_byteslike  # noqa: F821
 _byteslike_find_int = _byteslike_find_int  # noqa: F821
 _classmethod = _classmethod  # noqa: F821
@@ -1080,7 +1081,13 @@ class bytearray(bootstrap=True):
         return _codecs.decode(self, encoding, errors)
 
     def endswith(self, suffix, start=_Unbound, end=_Unbound):
-        _unimplemented()
+        _bytearray_guard(self)
+        if not _tuple_check(suffix):
+            return _byteslike_endswith(self, suffix, start, end)
+        for item in suffix:
+            if _byteslike_endswith(self, item, start, end):
+                return True
+        return False
 
     def expandtabs(self, tabsize=8):
         _unimplemented()
@@ -1362,7 +1369,13 @@ class bytes(bootstrap=True):
         return _codecs.decode(self, encoding, errors)
 
     def endswith(self, suffix, start=_Unbound, end=_Unbound):
-        _unimplemented()
+        _bytes_guard(self)
+        if not _tuple_check(suffix):
+            return _byteslike_endswith(self, suffix, start, end)
+        for item in suffix:
+            if _byteslike_endswith(self, item, start, end):
+                return True
+        return False
 
     def expandtabs(self, tabsize=8):
         _unimplemented()

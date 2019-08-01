@@ -68,6 +68,49 @@ class ByteArrayTest(unittest.TestCase):
             str(context.exception),
         )
 
+    def test_endswith_with_bytes_self_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytearray.endswith(b"", bytearray())
+        self.assertIn(
+            "'endswith' requires a 'bytearray' object but received a 'bytes'",
+            str(context.exception),
+        )
+
+    def test_endswith_with_list_other_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytearray().endswith([])
+        self.assertEqual(
+            str(context.exception),
+            "endswith first arg must be bytes or a tuple of bytes, not list",
+        )
+
+    def test_endswith_with_tuple_other_checks_each(self):
+        haystack = bytearray(b"123")
+        needle1 = (b"12", b"13", b"23", b"d")
+        needle2 = (b"2", b"asd", b"122222")
+        self.assertTrue(haystack.endswith(needle1))
+        self.assertFalse(haystack.endswith(needle2))
+
+    def test_endswith_with_end_searches_from_end(self):
+        haystack = bytearray(b"12345")
+        needle1 = bytearray(b"1")
+        needle4 = b"34"
+        self.assertFalse(haystack.endswith(needle1, 0))
+        self.assertFalse(haystack.endswith(needle4, 1))
+        self.assertTrue(haystack.endswith(needle1, 0, 1))
+        self.assertTrue(haystack.endswith(needle4, 1, 4))
+
+    def test_endswith_with_empty_returns_true_for_valid_bounds(self):
+        haystack = bytearray(b"12345")
+        self.assertTrue(haystack.endswith(bytearray()))
+        self.assertTrue(haystack.endswith(b"", 5))
+        self.assertTrue(haystack.endswith(bytearray(), -9, 1))
+
+    def test_endswith_with_empty_returns_false_for_invalid_bounds(self):
+        haystack = bytearray(b"12345")
+        self.assertFalse(haystack.endswith(b"", 3, 2))
+        self.assertFalse(haystack.endswith(bytearray(), 6))
+
     def test_find_with_bytes_self_raises_type_error(self):
         with self.assertRaises(TypeError):
             bytearray.find(b"", bytearray())
@@ -204,6 +247,49 @@ class BytesTests(unittest.TestCase):
 
     def test_dunder_new_with_ignore_errors_returns_bytes(self):
         self.assertEqual(bytes("fo\x80o", "ascii", "ignore"), b"foo")
+
+    def test_endswith_with_bytearray_self_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytes.endswith(bytearray(), b"")
+        self.assertIn(
+            "'endswith' requires a 'bytes' object but received a 'bytearray'",
+            str(context.exception),
+        )
+
+    def test_endswith_with_list_other_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            b"".endswith([])
+        self.assertEqual(
+            str(context.exception),
+            "endswith first arg must be bytes or a tuple of bytes, not list",
+        )
+
+    def test_endswith_with_tuple_other_checks_each(self):
+        haystack = b"123"
+        needle1 = (b"12", b"13", b"23", b"d")
+        needle2 = (b"2", b"asd", b"122222")
+        self.assertTrue(haystack.endswith(needle1))
+        self.assertFalse(haystack.endswith(needle2))
+
+    def test_endswith_with_end_searches_from_end(self):
+        haystack = b"12345"
+        needle1 = bytearray(b"1")
+        needle4 = b"34"
+        self.assertFalse(haystack.endswith(needle1, 0))
+        self.assertFalse(haystack.endswith(needle4, 1))
+        self.assertTrue(haystack.endswith(needle1, 0, 1))
+        self.assertTrue(haystack.endswith(needle4, 1, 4))
+
+    def test_endswith_with_empty_returns_true_for_valid_bounds(self):
+        haystack = b"12345"
+        self.assertTrue(haystack.endswith(bytearray()))
+        self.assertTrue(haystack.endswith(b"", 5))
+        self.assertTrue(haystack.endswith(bytearray(), -9, 1))
+
+    def test_endswith_with_empty_returns_false_for_invalid_bounds(self):
+        haystack = b"12345"
+        self.assertFalse(haystack.endswith(b"", 3, 2))
+        self.assertFalse(haystack.endswith(bytearray(), 6))
 
     def test_find_with_bytearray_self_raises_type_error(self):
         with self.assertRaises(TypeError):

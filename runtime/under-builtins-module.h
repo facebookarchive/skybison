@@ -36,6 +36,8 @@ class UnderBuiltinsModule {
   static RawObject underBytesMaketrans(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underBytesRepeat(Thread* thread, Frame* frame, word nargs);
+  static RawObject underByteslikeEndsWith(Thread* thread, Frame* frame,
+                                          word nargs);
   static RawObject underByteslikeFindByteslike(Thread* thread, Frame* frame,
                                                word nargs);
   static RawObject underByteslikeFindInt(Thread* thread, Frame* frame,

@@ -439,6 +439,11 @@ class Runtime {
   RawObject bytesCopyWithSize(Thread* thread, const Bytes& original,
                               word new_length);
 
+  // Checks whether the specified range of `self` ends with the given `suffix`.
+  // Returns `Bool::trueObj()` if the suffix matches, else `Bool::falseObj()`.
+  RawObject bytesEndsWith(const Bytes& self, word self_len, const Bytes& suffix,
+                          word suffix_len, word start, word end);
+
   // Returns a new Bytes from the first `length` int-like elements in the tuple.
   RawObject bytesFromTuple(Thread* thread, const Tuple& items, word length);
 

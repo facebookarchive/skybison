@@ -2596,6 +2596,23 @@ RawObject Runtime::bytesCopyWithSize(Thread* thread, const Bytes& original,
   return copy.becomeImmutable();
 }
 
+RawObject Runtime::bytesEndsWith(const Bytes& self, word self_len,
+                                 const Bytes& suffix, word suffix_len,
+                                 word start, word end) {
+  DCHECK_BOUND(self_len, self.length());
+  DCHECK_BOUND(suffix_len, suffix.length());
+  Slice::adjustSearchIndices(&start, &end, self_len);
+  if (end - start < suffix_len || start > self_len) {
+    return Bool::falseObj();
+  }
+  for (word i = end - suffix_len, j = 0; i < end; i++, j++) {
+    if (self.byteAt(i) != suffix.byteAt(j)) {
+      return Bool::falseObj();
+    }
+  }
+  return Bool::trueObj();
+}
+
 RawObject Runtime::bytesFromTuple(Thread* thread, const Tuple& items,
                                   word length) {
   DCHECK_BOUND(length, items.length());
