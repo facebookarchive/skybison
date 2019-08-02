@@ -41,6 +41,7 @@ _dict_lookup_next = _dict_lookup_next  # noqa: F821
 _dict_update_mapping = _dict_update_mapping  # noqa: F821
 _divmod = _divmod  # noqa: F821
 _float_check = _float_check  # noqa: F821
+_float_divmod = _float_divmod  # noqa: F821
 _float_guard = _float_guard  # noqa: F821
 _frozenset_check = _frozenset_check  # noqa: F821
 _get_member_byte = _get_member_byte  # noqa: F821
@@ -1804,8 +1805,24 @@ class float(bootstrap=True):
     def __eq__(self, n: float) -> bool:  # noqa: T484
         pass
 
+    def __divmod__(self, n) -> float:
+        _float_guard(self)
+        if _float_check(n):
+            return _float_divmod(self, n)
+        if _int_check(n):
+            return _float_divmod(self, int.__float__(n))
+        return NotImplemented
+
     def __float__(self) -> float:
         pass
+
+    def __floordiv__(self, n) -> float:
+        _float_guard(self)
+        if _float_check(n):
+            return _float_divmod(self, n)[0]
+        if _int_check(n):
+            return _float_divmod(self, int.__float__(n))[0]
+        return NotImplemented
 
     def __ge__(self, n: float) -> bool:
         pass
@@ -1821,6 +1838,14 @@ class float(bootstrap=True):
 
     def __lt__(self, n: float) -> bool:
         pass
+
+    def __mod__(self, n) -> float:
+        _float_guard(self)
+        if _float_check(n):
+            return _float_divmod(self, n)[1]
+        if _int_check(n):
+            return _float_divmod(self, int.__float__(n))[1]
+        return NotImplemented
 
     def __mul__(self, n: float) -> float:
         pass
@@ -1847,6 +1872,22 @@ class float(bootstrap=True):
         # seems to depend on it due to such variance.
         return float.__add__(self, n)
 
+    def __rdivmod__(self, n) -> float:
+        _float_guard(self)
+        if _float_check(n):
+            return _float_divmod(n, self)
+        if _int_check(n):
+            return _float_divmod(int.__float__(n), self)
+        return NotImplemented
+
+    def __rfloordiv__(self, n) -> float:
+        _float_guard(self)
+        if _float_check(n):
+            return _float_divmod(n, self)[0]
+        if _int_check(n):
+            return _float_divmod(int.__float__(n), self)[0]
+        return NotImplemented
+
     def __repr__(self) -> str:  # noqa: T484
         pass
 
@@ -1854,6 +1895,14 @@ class float(bootstrap=True):
         # The multiplication for floating point numbers is commutative:
         # https://en.wikipedia.org/wiki/Floating-point_arithmetic#Accuracy_problems
         return float.__mul__(self, n)
+
+    def __rmod__(self, n) -> float:
+        _float_guard(self)
+        if _float_check(n):
+            return _float_divmod(n, self)[1]
+        if _int_check(n):
+            return _float_divmod(int.__float__(n), self)[1]
+        return NotImplemented
 
     def __rsub__(self, n: float) -> float:
         # n - self == -self + n.

@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 
+#include <cmath>
+
 #include "builtins-module.h"
 #include "bytearray-builtins.h"
 #include "runtime.h"
@@ -279,6 +281,44 @@ TEST_F(UnderBuiltinsModuleTest, UnderDivmodReturnsQuotientAndDividend) {
   ASSERT_EQ(tuple.length(), 2);
   EXPECT_TRUE(isIntEqualsWord(tuple.at(0), -247));
   EXPECT_TRUE(isIntEqualsWord(tuple.at(1), -1));
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderFloatDivmodReturnsQuotientAndRemainder) {
+  HandleScope scope(thread_);
+  Float number(&scope, runtime_.newFloat(3.25));
+  Float divisor(&scope, runtime_.newFloat(1.0));
+  Tuple result(&scope, runBuiltin(UnderBuiltinsModule::underFloatDivmod, number,
+                                  divisor));
+  ASSERT_EQ(result.length(), 2);
+  Float quotient(&scope, result.at(0));
+  Float remainder(&scope, result.at(1));
+  EXPECT_EQ(quotient.value(), 3.0);
+  EXPECT_EQ(remainder.value(), 0.25);
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderFloatDivmodWithZeroDivisorRaisesZeroDivisionError) {
+  HandleScope scope(thread_);
+  Float number(&scope, runtime_.newFloat(3.25));
+  Float divisor(&scope, runtime_.newFloat(0.0));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(UnderBuiltinsModule::underFloatDivmod, number, divisor),
+      LayoutId::kZeroDivisionError, "float divmod()"));
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderFloatDivmodWithNanReturnsNan) {
+  HandleScope scope(thread_);
+  Float number(&scope, runtime_.newFloat(3.25));
+  double nan = std::numeric_limits<double>::quiet_NaN();
+  ASSERT_TRUE(std::isnan(nan));
+  Float divisor(&scope, runtime_.newFloat(nan));
+  Tuple result(&scope, runBuiltin(UnderBuiltinsModule::underFloatDivmod, number,
+                                  divisor));
+  ASSERT_EQ(result.length(), 2);
+  Float quotient(&scope, result.at(0));
+  Float remainder(&scope, result.at(1));
+  EXPECT_TRUE(std::isnan(quotient.value()));
+  EXPECT_TRUE(std::isnan(remainder.value()));
 }
 
 TEST_F(UnderBuiltinsModuleTest,

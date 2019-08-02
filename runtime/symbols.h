@@ -190,6 +190,7 @@ class Runtime;
   V(UnderEscapeDecodeStateful, "_escape_decode_stateful")                      \
   V(UnderFindAndLoad, "_find_and_load")                                        \
   V(UnderFloatCheck, "_float_check")                                           \
+  V(UnderFloatDivmod, "_float_divmod")                                         \
   V(UnderFloatGuard, "_float_guard")                                           \
   V(UnderFrozenImportlib, "_frozen_importlib")                                 \
   V(UnderFrozenImportlibExternal, "_frozen_importlib_external")                \

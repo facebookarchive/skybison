@@ -702,6 +702,187 @@ class ExceptionTests(unittest.TestCase):
         self.assertIs(exc1.__context__, None)
 
 
+class FloatTests(unittest.TestCase):
+    def test_dunder_divmod_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            float.__divmod__(1, 1.0)
+
+    def test_dunder_divmod_with_non_number_as_other_returns_not_implemented(self):
+        self.assertIs(float.__divmod__(1.0, "1"), NotImplemented)
+
+    def test_dunder_divmod_with_zero_denominator_raises_zero_division_error(self):
+        with self.assertRaises(ZeroDivisionError):
+            float.__divmod__(1.0, 0.0)
+
+    def test_dunder_divmod_with_negative_zero_denominator_raises_zero_division_error(
+        self
+    ):
+        with self.assertRaises(ZeroDivisionError):
+            float.__divmod__(1.0, -0.0)
+
+    def test_dunder_divmod_with_zero_numerator(self):
+        floordiv, remainder = float.__divmod__(0.0, 4.0)
+        self.assertEqual(floordiv, 0.0)
+        self.assertEqual(remainder, 0.0)
+
+    def test_dunder_divmod_with_positive_denominator_positive_numerator(self):
+        floordiv, remainder = float.__divmod__(3.25, 1.0)
+        self.assertEqual(floordiv, 3.0)
+        self.assertEqual(remainder, 0.25)
+
+    def test_dunder_divmod_with_negative_denominator_positive_numerator(self):
+        floordiv, remainder = float.__divmod__(-3.25, 1.0)
+        self.assertEqual(floordiv, -4.0)
+        self.assertEqual(remainder, 0.75)
+
+    def test_dunder_divmod_with_negative_denominator_negative_numerator(self):
+        floordiv, remainder = float.__divmod__(-3.25, -1.0)
+        self.assertEqual(floordiv, 3.0)
+        self.assertEqual(remainder, -0.25)
+
+    def test_dunder_divmod_with_positive_denominator_negative_numerator(self):
+        floordiv, remainder = float.__divmod__(3.25, -1.0)
+        self.assertEqual(floordiv, -4.0)
+        self.assertEqual(remainder, -0.75)
+
+    def test_dunder_divmod_with_nan_denominator(self):
+        import math
+
+        floordiv, remainder = float.__divmod__(3.25, float("nan"))
+        self.assertTrue(math.isnan(floordiv))
+        self.assertTrue(math.isnan(remainder))
+
+    def test_dunder_divmod_with_nan_numerator(self):
+        import math
+
+        floordiv, remainder = float.__divmod__(float("nan"), 1.0)
+        self.assertTrue(math.isnan(floordiv))
+        self.assertTrue(math.isnan(remainder))
+
+    def test_dunder_divmod_with_negative_nan_denominator(self):
+        import math
+
+        floordiv, remainder = float.__divmod__(3.25, float("-nan"))
+        self.assertTrue(math.isnan(floordiv))
+        self.assertTrue(math.isnan(remainder))
+
+    def test_dunder_divmod_with_negative_nan_numerator(self):
+        import math
+
+        floordiv, remainder = float.__divmod__(float("-nan"), 1.0)
+        self.assertTrue(math.isnan(floordiv))
+        self.assertTrue(math.isnan(remainder))
+
+    def test_dunder_divmod_with_inf_denominator(self):
+        floordiv, remainder = float.__divmod__(3.25, float("inf"))
+        self.assertEqual(floordiv, 0.0)
+        self.assertEqual(remainder, 3.25)
+
+    def test_dunder_divmod_with_inf_numerator(self):
+        import math
+
+        floordiv, remainder = float.__divmod__(float("inf"), 1.0)
+        self.assertTrue(math.isnan(floordiv))
+        self.assertTrue(math.isnan(remainder))
+
+    def test_dunder_divmod_with_negative_inf_denominator(self):
+        floordiv, remainder = float.__divmod__(3.25, float("-inf"))
+        self.assertEqual(floordiv, -1.0)
+        self.assertEqual(remainder, -float("inf"))
+
+    def test_dunder_divmod_with_negative_inf_numerator(self):
+        import math
+
+        floordiv, remainder = float.__divmod__(float("-inf"), 1.0)
+        self.assertTrue(math.isnan(floordiv))
+        self.assertTrue(math.isnan(remainder))
+
+    def test_dunder_divmod_with_big_numerator(self):
+        floordiv, remainder = float.__divmod__(1e200, 1.0)
+        self.assertEqual(floordiv, 1e200)
+        self.assertEqual(remainder, 0.0)
+
+    def test_dunder_divmod_with_big_denominator(self):
+        floordiv, remainder = float.__divmod__(1.0, 1e200)
+        self.assertEqual(floordiv, 0.0)
+        self.assertEqual(remainder, 1.0)
+
+    def test_dunder_divmod_with_negative_zero_numerator(self):
+        floordiv, remainder = float.__divmod__(-0.0, 4.0)
+        # TODO(T48177824): Drop the second condition.
+        self.assertTrue(str(floordiv) == "-0.0" or str(floordiv) == "-0")
+        self.assertEqual(remainder, 0.0)
+
+    def test_dunder_floordiv_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            float.__floordiv__(1, 1.0)
+
+    def test_dunder_floordiv_with_non_number_as_other_returns_not_implemented(self):
+        self.assertIs(float.__floordiv__(1.0, "1"), NotImplemented)
+
+    def test_dunder_floordiv_with_zero_denominator_raises_zero_division_error(self):
+        with self.assertRaises(ZeroDivisionError):
+            float.__floordiv__(1.0, 0.0)
+
+    def test_dunder_floordiv_returns_floor_quotient(self):
+        self.assertEqual(float.__floordiv__(3.25, -1.0), -4.0)
+
+    def test_dunder_mod_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            float.__mod__(1, 1.0)
+
+    def test_dunder_mod_with_non_number_as_other_returns_not_implemented(self):
+        self.assertIs(float.__mod__(1.0, "1"), NotImplemented)
+
+    def test_dunder_mod_with_zero_denominator_raises_zero_division_error(self):
+        with self.assertRaises(ZeroDivisionError):
+            float.__mod__(1.0, 0.0)
+
+    def test_dunder_mod_returns_remainder(self):
+        self.assertEqual(float.__mod__(3.25, -1.0), -0.75)
+
+    def test_dunder_rdivmod_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            float.__rdivmod__(1, 1.0)
+
+    def test_dunder_rdivmod_with_non_number_as_other_returns_not_implemented(self):
+        self.assertIs(float.__rdivmod__(1.0, "1"), NotImplemented)
+
+    def test_dunder_rdivmod_with_int_returns_same_result_as_divmod_with_reversed_args(
+        self
+    ):
+        self.assertEqual(float.__rdivmod__(1.0, 3), float.__divmod__(float(3), 1.0))
+
+    def test_dunder_rdivmod_returns_same_result_as_divmod_with_reversed_args(self):
+        self.assertEqual(float.__rdivmod__(1.0, 3.25), float.__divmod__(3.25, 1.0))
+
+    def test_dunder_rfloordiv_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            float.__rfloordiv__(1, 1.0)
+
+    def test_dunder_rfloordiv_with_non_number_as_other_returns_not_implemented(self):
+        self.assertIs(float.__rfloordiv__(1.0, "1"), NotImplemented)
+
+    def test_dunder_rfloordiv_with_int_returns_same_result_as_floordiv(self):
+        self.assertEqual(float.__rfloordiv__(1.0, 3), float.__floordiv__(float(3), 1.0))
+
+    def test_dunder_rfloordiv_returns_same_result_as_floordiv_for_float_other(self):
+        self.assertEqual(float.__rfloordiv__(1.0, 3.25), float.__floordiv__(3.25, 1.0))
+
+    def test_dunder_rmod_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            float.__rmod__(1, 1.0)
+
+    def test_dunder_rmod__with_non_number_as_other_returns_not_implemented(self):
+        self.assertIs(float.__rmod__(1.0, "1"), NotImplemented)
+
+    def test_dunder_rmod_with_int_returns_same_result_as_mod_with_reversed_args(self):
+        self.assertEqual(float.__rmod__(1.0, 3), float.__mod__(float(3), 1.0))
+
+    def test_dunder_rmod_returns_same_result_as_mod_for_float_other(self):
+        self.assertEqual(float.__rmod__(1.0, 3.25), float.__mod__(3.25, 1.0))
+
+
 class GeneratorTests(unittest.TestCase):
     def test_managed_stop_iteration(self):
         warnings.filterwarnings(

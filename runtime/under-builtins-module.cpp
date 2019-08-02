@@ -1,6 +1,7 @@
 #include "under-builtins-module.h"
 
 #include <cerrno>
+#include <cmath>
 
 #include <unistd.h>
 
@@ -8,6 +9,7 @@
 #include "bytes-builtins.h"
 #include "dict-builtins.h"
 #include "exception-builtins.h"
+#include "float-builtins.h"
 #include "frozen-modules.h"
 #include "int-builtins.h"
 #include "list-builtins.h"
@@ -99,6 +101,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderDictUpdateMapping, underDictUpdateMapping},
     {SymbolId::kUnderDivmod, underDivmod},
     {SymbolId::kUnderFloatCheck, underFloatCheck},
+    {SymbolId::kUnderFloatDivmod, underFloatDivmod},
     {SymbolId::kUnderFloatGuard, underFloatGuard},
     {SymbolId::kUnderFrozenSetCheck, underFrozenSetCheck},
     {SymbolId::kUnderGetMemberByte, underGetMemberByte},
@@ -914,6 +917,58 @@ RawObject UnderBuiltinsModule::underFloatCheck(Thread* thread, Frame* frame,
                                                word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfFloat(args.get(0)));
+}
+
+static double floatDivmod(double x, double y, double* remainder) {
+  double mod = std::fmod(x, y);
+  double div = (x - mod) / y;
+
+  if (mod != 0.0) {
+    if ((y < 0.0) != (mod < 0.0)) {
+      mod += y;
+      div -= 1.0;
+    }
+  } else {
+    mod = std::copysign(0.0, y);
+  }
+
+  double floordiv = 0;
+  if (div != 0.0) {
+    floordiv = std::floor(div);
+    if (div - floordiv > 0.5) {
+      floordiv += 1.0;
+    }
+  } else {
+    floordiv = std::copysign(0.0, x / y);
+  }
+
+  *remainder = mod;
+  return floordiv;
+}
+
+RawObject UnderBuiltinsModule::underFloatDivmod(Thread* thread, Frame* frame,
+                                                word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  Float self_float(&scope, floatUnderlying(thread, self_obj));
+  double left = self_float.value();
+
+  Object other_obj(&scope, args.get(1));
+  Float other_float(&scope, floatUnderlying(thread, other_obj));
+  double divisor = other_float.value();
+  if (divisor == 0.0) {
+    return thread->raiseWithFmt(LayoutId::kZeroDivisionError, "float divmod()");
+  }
+
+  double remainder;
+  double quotient = floatDivmod(left, divisor, &remainder);
+  Tuple result(&scope, runtime->newTuple(2));
+  result.atPut(0, runtime->newFloat(quotient));
+  result.atPut(1, runtime->newFloat(remainder));
+  return *result;
 }
 
 RawObject UnderBuiltinsModule::underFloatGuard(Thread* thread, Frame* frame,

@@ -191,6 +191,11 @@ def _float_check(obj):
 
 
 @_patch
+def _float_divmod(number, divisor):
+    pass
+
+
+@_patch
 def _float_guard(obj):
     pass
 
