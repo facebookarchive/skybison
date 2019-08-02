@@ -3,7 +3,7 @@ import unittest
 import warnings
 
 
-class BoundMethodTest(unittest.TestCase):
+class BoundMethodTests(unittest.TestCase):
     def test_bound_method_dunder_func(self):
         class Foo:
             def foo(self):
@@ -45,7 +45,7 @@ class BoundMethodTest(unittest.TestCase):
             f.__doc__ = "hey!"
 
 
-class ByteArrayTest(unittest.TestCase):
+class ByteArrayTests(unittest.TestCase):
     def test_dunder_setitem_with_non_bytearray_raises_type_error(self):
         with self.assertRaises(TypeError):
             bytearray.__setitem__(None, 1, 5)
@@ -457,6 +457,79 @@ class BytesTests(unittest.TestCase):
         )
 
 
+class ChrTests(unittest.TestCase):
+    def test_returns_string(self):
+        self.assertEqual(chr(101), "e")
+        self.assertEqual(chr(42), "*")
+        self.assertEqual(chr(0x1F40D), "\U0001f40d")
+
+    def test_with_int_subclass_returns_string(self):
+        class C(int):
+            pass
+
+        self.assertEqual(chr(C(122)), "z")
+
+    def test_with_unicode_max_returns_string(self):
+        import sys
+
+        self.assertEqual(ord(chr(sys.maxunicode)), sys.maxunicode)
+
+    def test_with_unicode_max_plus_one_raises_value_error(self):
+        import sys
+
+        with self.assertRaises(ValueError) as context:
+            chr(sys.maxunicode + 1)
+        self.assertIn("chr() arg not in range", str(context.exception))
+
+    def test_with_negative_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            chr(-1)
+        self.assertIn("chr() arg not in range", str(context.exception))
+
+    def test_non_int_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            chr(None)
+        self.assertEqual(
+            str(context.exception), "an integer is required (got type NoneType)"
+        )
+
+    def test_with_large_int_raises_overflow_error(self):
+        with self.assertRaises(OverflowError) as context:
+            chr(123456789012345678901234567890)
+        self.assertEqual(
+            str(context.exception), "Python int too large to convert to C long"
+        )
+
+
+class ClassMethodTests(unittest.TestCase):
+    def test_dunder_abstractmethod_with_missing_attr_returns_false(self):
+        def foo():
+            pass
+
+        method = classmethod(foo)
+        self.assertIs(method.__isabstractmethod__, False)
+
+    def test_dunder_abstractmethod_with_false_attr_returns_false(self):
+        def foo():
+            pass
+
+        foo.__isabstractmethod__ = False
+        with self.assertRaises(AttributeError):
+            type(foo).__isabstractmethod__
+        prop = property(foo)
+        self.assertIs(prop.__isabstractmethod__, False)
+
+    def test_dunder_abstractmethod_with_abstract_returns_true(self):
+        def foo():
+            pass
+
+        foo.__isabstractmethod__ = ["random", "values"]
+        with self.assertRaises(AttributeError):
+            type(foo).__isabstractmethod__
+        method = classmethod(foo)
+        self.assertIs(method.__isabstractmethod__, True)
+
+
 class DictTests(unittest.TestCase):
     def test_clear_with_non_dict_raises_type_error(self):
         with self.assertRaises(TypeError):
@@ -552,35 +625,6 @@ class DictTests(unittest.TestCase):
 
         with self.assertRaises(UserWarning):
             dict.update({}, D())
-
-
-class ClassMethodTests(unittest.TestCase):
-    def test_dunder_abstractmethod_with_missing_attr_returns_false(self):
-        def foo():
-            pass
-
-        method = classmethod(foo)
-        self.assertIs(method.__isabstractmethod__, False)
-
-    def test_dunder_abstractmethod_with_false_attr_returns_false(self):
-        def foo():
-            pass
-
-        foo.__isabstractmethod__ = False
-        with self.assertRaises(AttributeError):
-            type(foo).__isabstractmethod__
-        prop = property(foo)
-        self.assertIs(prop.__isabstractmethod__, False)
-
-    def test_dunder_abstractmethod_with_abstract_returns_true(self):
-        def foo():
-            pass
-
-        foo.__isabstractmethod__ = ["random", "values"]
-        with self.assertRaises(AttributeError):
-            type(foo).__isabstractmethod__
-        method = classmethod(foo)
-        self.assertIs(method.__isabstractmethod__, True)
 
 
 class ExceptionTests(unittest.TestCase):
@@ -1349,216 +1393,6 @@ class IterTests(unittest.TestCase):
         self.assertEqual(str(context.exception), "'Foo' object is not iterable")
 
 
-class NextTests(unittest.TestCase):
-    def test_next_with_raising_dunder_next_propagates_error(self):
-        class Desc:
-            def __get__(self, obj, type):
-                raise AttributeError("failed")
-
-        class Foo:
-            __next__ = Desc()
-
-        foo = Foo()
-        with self.assertRaises(AttributeError) as context:
-            next(foo)
-        self.assertEqual(str(context.exception), "failed")
-
-
-class ObjectTests(unittest.TestCase):
-    def test_dunder_subclasshook_returns_not_implemented(self):
-        self.assertIs(object.__subclasshook__(), NotImplemented)
-        self.assertIs(object.__subclasshook__(int), NotImplemented)
-
-    def test_dunder_class_on_instance_returns_type(self):
-        class Foo:
-            pass
-
-        class Bar(Foo):
-            pass
-
-        class Hello(Bar, list):
-            pass
-
-        self.assertIs([].__class__, list)
-        self.assertIs(Foo().__class__, Foo)
-        self.assertIs(Bar().__class__, Bar)
-        self.assertIs(Hello().__class__, Hello)
-        self.assertIs(Foo.__class__, type)
-        self.assertIs(super(Bar, Bar()).__class__, super)
-
-
-class PrintTests(unittest.TestCase):
-    class MyStream:
-        def __init__(self):
-            self.buf = ""
-
-        def write(self, text):
-            self.buf += text
-            return len(text)
-
-        def flush(self):
-            raise UserWarning("foo")
-
-    def test_print_writes_to_stream(self):
-        stream = PrintTests.MyStream()
-        print("hello", file=stream)
-        self.assertEqual(stream.buf, "hello\n")
-
-    def test_print_returns_none(self):
-        stream = PrintTests.MyStream()
-        self.assertIs(print("hello", file=stream), None)
-
-    def test_print_writes_end(self):
-        stream = PrintTests.MyStream()
-        print("hi", end="ho", file=stream)
-        self.assertEqual(stream.buf, "hiho")
-
-    def test_print_with_no_sep_defaults_to_space(self):
-        stream = PrintTests.MyStream()
-        print("hello", "world", file=stream)
-        self.assertEqual(stream.buf, "hello world\n")
-
-    def test_print_writes_none(self):
-        stream = PrintTests.MyStream()
-        print(None, file=stream)
-        self.assertEqual(stream.buf, "None\n")
-
-    def test_print_with_none_file_prints_to_sys_stdout(self):
-        stream = PrintTests.MyStream()
-        import sys
-
-        orig_stdout = sys.stdout
-        sys.stdout = stream
-        print("hello", file=None)
-        self.assertEqual(stream.buf, "hello\n")
-        sys.stdout = orig_stdout
-
-    def test_print_with_none_stdout_does_nothing(self):
-        import sys
-
-        orig_stdout = sys.stdout
-        sys.stdout = None
-        print("hello", file=None)
-        sys.stdout = orig_stdout
-
-    def test_print_with_deleted_stdout_raises_runtime_error(self):
-        import sys
-
-        orig_stdout = sys.stdout
-        del sys.stdout
-        with self.assertRaises(RuntimeError):
-            print("hello", file=None)
-        sys.stdout = orig_stdout
-
-    def test_print_with_flush_calls_file_flush(self):
-        stream = PrintTests.MyStream()
-        with self.assertRaises(UserWarning):
-            print("hello", file=stream, flush=True)
-        self.assertEqual(stream.buf, "hello\n")
-
-    def test_print_calls_dunder_str(self):
-        class C:
-            def __str__(self):
-                raise UserWarning("foo")
-
-        stream = PrintTests.MyStream()
-        c = C()
-        with self.assertRaises(UserWarning):
-            print(c, file=stream)
-
-
-class PropertyTests(unittest.TestCase):
-    def test_dunder_abstractmethod_with_missing_attr_returns_false(self):
-        def foo():
-            pass
-
-        prop = property(foo)
-        self.assertIs(prop.__isabstractmethod__, False)
-
-    def test_dunder_abstractmethod_with_false_attr_returns_false(self):
-        def foo():
-            pass
-
-        foo.__isabstractmethod__ = False
-        with self.assertRaises(AttributeError):
-            type(foo).__isabstractmethod__
-        prop = property(foo)
-        self.assertIs(prop.__isabstractmethod__, False)
-
-    def test_dunder_abstractmethod_with_abstract_getter_returns_true(self):
-        def foo():
-            pass
-
-        foo.__isabstractmethod__ = b"random non-empty value"
-        with self.assertRaises(AttributeError):
-            type(foo).__isabstractmethod__
-        prop = property(foo)
-        self.assertIs(prop.__isabstractmethod__, True)
-
-    def test_dunder_abstractmethod_with_abstract_setter_returns_true(self):
-        def foo():
-            pass
-
-        foo.__isabstractmethod__ = True
-        with self.assertRaises(AttributeError):
-            type(foo).__isabstractmethod__
-        prop = property(fset=foo)
-        self.assertIs(prop.__isabstractmethod__, True)
-
-    def test_dunder_abstractmethod_with_abstract_deleter_returns_true(self):
-        def foo():
-            pass
-
-        foo.__isabstractmethod__ = (42, "non-empty tuple")
-        with self.assertRaises(AttributeError):
-            type(foo).__isabstractmethod__
-        prop = property(fdel=foo)
-        self.assertIs(prop.__isabstractmethod__, True)
-
-
-class ReversedTests(unittest.TestCase):
-    def test_reversed_iterates_backwards_over_iterable(self):
-        it = reversed([1, 2, 3])
-        self.assertEqual(it.__next__(), 3)
-        self.assertEqual(it.__next__(), 2)
-        self.assertEqual(it.__next__(), 1)
-        with self.assertRaises(StopIteration):
-            it.__next__()
-
-    def test_reversed_calls_dunder_reverse(self):
-        class C:
-            def __reversed__(self):
-                return "foo"
-
-        self.assertEqual(reversed(C()), "foo")
-
-    def test_reversed_with_none_dunder_reverse_raises_type_error(self):
-        class C:
-            __reversed__ = None
-
-        with self.assertRaises(TypeError) as context:
-            reversed(C())
-        self.assertEqual(str(context.exception), "'C' object is not reversible")
-
-    def test_reversed_with_non_callable_dunder_reverse_raises_type_error(self):
-        class C:
-            __reversed__ = 1
-
-        with self.assertRaises(TypeError) as context:
-            reversed(C())
-        self.assertEqual(str(context.exception), "'int' object is not callable")
-
-    def test_reversed_length_hint(self):
-        it = reversed([1, 2, 3])
-        self.assertEqual(it.__length_hint__(), 3)
-        it.__next__()
-        self.assertEqual(it.__length_hint__(), 2)
-        it.__next__()
-        self.assertEqual(it.__length_hint__(), 1)
-        it.__next__()
-        self.assertEqual(it.__length_hint__(), 0)
-
-
 class LenTests(unittest.TestCase):
     def test_len_without_class_dunder_len_raises_type_error(self):
         class Foo:
@@ -1925,6 +1759,173 @@ class LongRangeIteratorTests(unittest.TestCase):
             self.assertEqual(it.__next__(), i)
 
 
+class NextTests(unittest.TestCase):
+    def test_next_with_raising_dunder_next_propagates_error(self):
+        class Desc:
+            def __get__(self, obj, type):
+                raise AttributeError("failed")
+
+        class Foo:
+            __next__ = Desc()
+
+        foo = Foo()
+        with self.assertRaises(AttributeError) as context:
+            next(foo)
+        self.assertEqual(str(context.exception), "failed")
+
+
+class ObjectTests(unittest.TestCase):
+    def test_dunder_subclasshook_returns_not_implemented(self):
+        self.assertIs(object.__subclasshook__(), NotImplemented)
+        self.assertIs(object.__subclasshook__(int), NotImplemented)
+
+    def test_dunder_class_on_instance_returns_type(self):
+        class Foo:
+            pass
+
+        class Bar(Foo):
+            pass
+
+        class Hello(Bar, list):
+            pass
+
+        self.assertIs([].__class__, list)
+        self.assertIs(Foo().__class__, Foo)
+        self.assertIs(Bar().__class__, Bar)
+        self.assertIs(Hello().__class__, Hello)
+        self.assertIs(Foo.__class__, type)
+        self.assertIs(super(Bar, Bar()).__class__, super)
+
+
+class PrintTests(unittest.TestCase):
+    class MyStream:
+        def __init__(self):
+            self.buf = ""
+
+        def write(self, text):
+            self.buf += text
+            return len(text)
+
+        def flush(self):
+            raise UserWarning("foo")
+
+    def test_print_writes_to_stream(self):
+        stream = PrintTests.MyStream()
+        print("hello", file=stream)
+        self.assertEqual(stream.buf, "hello\n")
+
+    def test_print_returns_none(self):
+        stream = PrintTests.MyStream()
+        self.assertIs(print("hello", file=stream), None)
+
+    def test_print_writes_end(self):
+        stream = PrintTests.MyStream()
+        print("hi", end="ho", file=stream)
+        self.assertEqual(stream.buf, "hiho")
+
+    def test_print_with_no_sep_defaults_to_space(self):
+        stream = PrintTests.MyStream()
+        print("hello", "world", file=stream)
+        self.assertEqual(stream.buf, "hello world\n")
+
+    def test_print_writes_none(self):
+        stream = PrintTests.MyStream()
+        print(None, file=stream)
+        self.assertEqual(stream.buf, "None\n")
+
+    def test_print_with_none_file_prints_to_sys_stdout(self):
+        stream = PrintTests.MyStream()
+        import sys
+
+        orig_stdout = sys.stdout
+        sys.stdout = stream
+        print("hello", file=None)
+        self.assertEqual(stream.buf, "hello\n")
+        sys.stdout = orig_stdout
+
+    def test_print_with_none_stdout_does_nothing(self):
+        import sys
+
+        orig_stdout = sys.stdout
+        sys.stdout = None
+        print("hello", file=None)
+        sys.stdout = orig_stdout
+
+    def test_print_with_deleted_stdout_raises_runtime_error(self):
+        import sys
+
+        orig_stdout = sys.stdout
+        del sys.stdout
+        with self.assertRaises(RuntimeError):
+            print("hello", file=None)
+        sys.stdout = orig_stdout
+
+    def test_print_with_flush_calls_file_flush(self):
+        stream = PrintTests.MyStream()
+        with self.assertRaises(UserWarning):
+            print("hello", file=stream, flush=True)
+        self.assertEqual(stream.buf, "hello\n")
+
+    def test_print_calls_dunder_str(self):
+        class C:
+            def __str__(self):
+                raise UserWarning("foo")
+
+        stream = PrintTests.MyStream()
+        c = C()
+        with self.assertRaises(UserWarning):
+            print(c, file=stream)
+
+
+class PropertyTests(unittest.TestCase):
+    def test_dunder_abstractmethod_with_missing_attr_returns_false(self):
+        def foo():
+            pass
+
+        prop = property(foo)
+        self.assertIs(prop.__isabstractmethod__, False)
+
+    def test_dunder_abstractmethod_with_false_attr_returns_false(self):
+        def foo():
+            pass
+
+        foo.__isabstractmethod__ = False
+        with self.assertRaises(AttributeError):
+            type(foo).__isabstractmethod__
+        prop = property(foo)
+        self.assertIs(prop.__isabstractmethod__, False)
+
+    def test_dunder_abstractmethod_with_abstract_getter_returns_true(self):
+        def foo():
+            pass
+
+        foo.__isabstractmethod__ = b"random non-empty value"
+        with self.assertRaises(AttributeError):
+            type(foo).__isabstractmethod__
+        prop = property(foo)
+        self.assertIs(prop.__isabstractmethod__, True)
+
+    def test_dunder_abstractmethod_with_abstract_setter_returns_true(self):
+        def foo():
+            pass
+
+        foo.__isabstractmethod__ = True
+        with self.assertRaises(AttributeError):
+            type(foo).__isabstractmethod__
+        prop = property(fset=foo)
+        self.assertIs(prop.__isabstractmethod__, True)
+
+    def test_dunder_abstractmethod_with_abstract_deleter_returns_true(self):
+        def foo():
+            pass
+
+        foo.__isabstractmethod__ = (42, "non-empty tuple")
+        with self.assertRaises(AttributeError):
+            type(foo).__isabstractmethod__
+        prop = property(fdel=foo)
+        self.assertIs(prop.__isabstractmethod__, True)
+
+
 class RangeTests(unittest.TestCase):
     def test_dunder_eq_with_non_range_self_raises_type_error(self):
         with self.assertRaises(TypeError):
@@ -2260,6 +2261,49 @@ class RangeIteratorTests(unittest.TestCase):
         self.assertEqual(it.__next__(), 6)
         with self.assertRaises(StopIteration):
             it.__next__()
+
+
+class ReversedTests(unittest.TestCase):
+    def test_reversed_iterates_backwards_over_iterable(self):
+        it = reversed([1, 2, 3])
+        self.assertEqual(it.__next__(), 3)
+        self.assertEqual(it.__next__(), 2)
+        self.assertEqual(it.__next__(), 1)
+        with self.assertRaises(StopIteration):
+            it.__next__()
+
+    def test_reversed_calls_dunder_reverse(self):
+        class C:
+            def __reversed__(self):
+                return "foo"
+
+        self.assertEqual(reversed(C()), "foo")
+
+    def test_reversed_with_none_dunder_reverse_raises_type_error(self):
+        class C:
+            __reversed__ = None
+
+        with self.assertRaises(TypeError) as context:
+            reversed(C())
+        self.assertEqual(str(context.exception), "'C' object is not reversible")
+
+    def test_reversed_with_non_callable_dunder_reverse_raises_type_error(self):
+        class C:
+            __reversed__ = 1
+
+        with self.assertRaises(TypeError) as context:
+            reversed(C())
+        self.assertEqual(str(context.exception), "'int' object is not callable")
+
+    def test_reversed_length_hint(self):
+        it = reversed([1, 2, 3])
+        self.assertEqual(it.__length_hint__(), 3)
+        it.__next__()
+        self.assertEqual(it.__length_hint__(), 2)
+        it.__next__()
+        self.assertEqual(it.__length_hint__(), 1)
+        it.__next__()
+        self.assertEqual(it.__length_hint__(), 0)
 
 
 class RoundTests(unittest.TestCase):
@@ -3077,50 +3121,6 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(m.attr, "foo")
         m.attr = "bar"
         self.assertEqual(m.attr, "bar")
-
-
-class ChrTests(unittest.TestCase):
-    def test_returns_string(self):
-        self.assertEqual(chr(101), "e")
-        self.assertEqual(chr(42), "*")
-        self.assertEqual(chr(0x1F40D), "\U0001f40d")
-
-    def test_with_int_subclass_returns_string(self):
-        class C(int):
-            pass
-
-        self.assertEqual(chr(C(122)), "z")
-
-    def test_with_unicode_max_returns_string(self):
-        import sys
-
-        self.assertEqual(ord(chr(sys.maxunicode)), sys.maxunicode)
-
-    def test_with_unicode_max_plus_one_raises_value_error(self):
-        import sys
-
-        with self.assertRaises(ValueError) as context:
-            chr(sys.maxunicode + 1)
-        self.assertIn("chr() arg not in range", str(context.exception))
-
-    def test_with_negative_raises_value_error(self):
-        with self.assertRaises(ValueError) as context:
-            chr(-1)
-        self.assertIn("chr() arg not in range", str(context.exception))
-
-    def test_non_int_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            chr(None)
-        self.assertEqual(
-            str(context.exception), "an integer is required (got type NoneType)"
-        )
-
-    def test_with_large_int_raises_overflow_error(self):
-        with self.assertRaises(OverflowError) as context:
-            chr(123456789012345678901234567890)
-        self.assertEqual(
-            str(context.exception), "Python int too large to convert to C long"
-        )
 
 
 if __name__ == "__main__":
