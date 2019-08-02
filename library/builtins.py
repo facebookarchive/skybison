@@ -2493,10 +2493,14 @@ class list(bootstrap=True):
 
     def count(self, value):
         _list_guard(self)
+        i = 0
+        length = _list_len(self)
         result = 0
-        for item in self:
+        while i < length:
+            item = _list_getitem(self, i)
             if item is value or item == value:
                 result += 1
+            i += 1
         return result
 
     def extend(self, other):

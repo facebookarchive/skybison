@@ -1648,6 +1648,19 @@ class ListTests(unittest.TestCase):
         self.assertEqual(n_list.count(n), 3)
         self.assertEqual(n_list.count(NeverEqual()), 0)
 
+    def test_count_does_not_use_dunder_getitem_or_dunder_iter(self):
+        class Foo(list):
+            def __getitem__(self, idx):
+                raise NotImplementedError("__getitem__")
+
+            def __iter__(self):
+                raise NotImplementedError("__iter__")
+
+        a = Foo([1, 2, 1, 2, 1])
+        self.assertEqual(a.count(0), 0)
+        self.assertEqual(a.count(1), 3)
+        self.assertEqual(a.count(2), 2)
+
     def test_extend_list_returns_none(self):
         original = [1, 2, 3]
         copy = []
