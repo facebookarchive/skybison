@@ -285,7 +285,7 @@ static bool underStrLen(Frame* frame) {
   RawObject arg = frame->peek(0);
   if (arg.isStr()) {
     frame->popValue();
-    frame->setTopValue(SmallInt::fromWord(Str::cast(arg).length()));
+    frame->setTopValue(SmallInt::fromWord(Str::cast(arg).codePointLength()));
     return true;
   }
   return false;

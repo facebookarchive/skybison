@@ -2020,7 +2020,7 @@ RawObject UnderBuiltinsModule::underStrLen(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   Str self(&scope, strUnderlying(thread, self_obj));
-  return SmallInt::fromWord(self.length());
+  return SmallInt::fromWord(self.codePointLength());
 }
 
 RawObject UnderBuiltinsModule::underStrReplace(Thread* thread, Frame* frame,
