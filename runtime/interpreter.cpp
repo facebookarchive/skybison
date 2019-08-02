@@ -879,6 +879,9 @@ HANDLER_INLINE USED RawObject Interpreter::isTrue(Thread* thread,
 }
 
 RawObject Interpreter::isTrueSlowPath(Thread* thread, RawObject value_obj) {
+  if (value_obj.isSmallInt()) {
+    return Bool::fromBool(SmallInt::cast(value_obj).value());
+  }
   HandleScope scope(thread);
   Object value(&scope, value_obj);
   Object result(&scope, thread->invokeMethod1(value, SymbolId::kDunderBool));
