@@ -1273,7 +1273,7 @@ Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
     return Continue::UNWIND;
   }
   if (index >= 0 && getitem.isFunction()) {
-    icUpdate(frame->caches(), index, container.layoutId(), *getitem);
+    icUpdateAttr(frame->caches(), index, container.layoutId(), *getitem);
   }
 
   getitem = resolveDescriptorGet(thread, getitem, container, type);
@@ -1291,7 +1291,7 @@ HANDLER_INLINE Continue Interpreter::doBinarySubscrCached(Thread* thread,
                                                           word arg) {
   Frame* frame = thread->currentFrame();
   LayoutId container_layout_id = frame->peek(1).layoutId();
-  RawObject cached = icLookup(frame->caches(), arg, container_layout_id);
+  RawObject cached = icLookupAttr(frame->caches(), arg, container_layout_id);
   if (cached.isErrorNotFound()) {
     return binarySubscrUpdateCache(thread, arg);
   }
@@ -1965,7 +1965,7 @@ bool Interpreter::forIterUpdateCache(Thread* thread, word arg, word index) {
   }
 
   if (index >= 0 && next.isFunction()) {
-    icUpdate(frame->caches(), index, iter.layoutId(), *next);
+    icUpdateAttr(frame->caches(), index, iter.layoutId(), *next);
   }
 
   next = resolveDescriptorGet(thread, next, iter, type);
@@ -1987,7 +1987,7 @@ HANDLER_INLINE Continue Interpreter::doForIterCached(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawObject iter = frame->topValue();
   LayoutId iter_layout_id = iter.layoutId();
-  RawObject cached = icLookup(frame->caches(), arg, iter_layout_id);
+  RawObject cached = icLookupAttr(frame->caches(), arg, iter_layout_id);
   if (cached.isErrorNotFound()) {
     return forIterUpdateCache(thread, icOriginalArg(frame->function(), arg),
                               arg)
@@ -2154,7 +2154,7 @@ Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg) {
   if (result.isError()) return Continue::UNWIND;
   if (!location.isNoneType()) {
     LayoutId layout_id = receiver.layoutId();
-    icUpdate(frame->caches(), arg, layout_id, *location);
+    icUpdateAttr(frame->caches(), arg, layout_id, *location);
     Type receiver_type(&scope, thread->runtime()->typeOf(*receiver));
     Object dependent(&scope, frame->function());
     icInsertDependencyForTypeLookupInMro(thread, receiver_type, name,
@@ -2168,7 +2168,7 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrCached(Thread* thread,
   Frame* frame = thread->currentFrame();
   RawObject receiver_raw = frame->topValue();
   LayoutId layout_id = receiver_raw.layoutId();
-  RawObject cached = icLookup(frame->caches(), arg, layout_id);
+  RawObject cached = icLookupAttr(frame->caches(), arg, layout_id);
   if (cached.isError()) {
     return storeAttrUpdateCache(thread, arg);
   }
@@ -2446,7 +2446,7 @@ Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
   if (result.isError()) return Continue::UNWIND;
   if (!location.isNoneType()) {
     LayoutId layout_id = receiver.layoutId();
-    icUpdate(frame->caches(), arg, layout_id, *location);
+    icUpdateAttr(frame->caches(), arg, layout_id, *location);
     Type receiver_type(&scope, thread->runtime()->typeOf(*receiver));
     Object dependent(&scope, frame->function());
     icInsertDependencyForTypeLookupInMro(thread, receiver_type, name,
@@ -2485,7 +2485,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrCached(Thread* thread,
   Frame* frame = thread->currentFrame();
   RawObject receiver_raw = frame->topValue();
   LayoutId layout_id = receiver_raw.layoutId();
-  RawObject cached = icLookup(frame->caches(), arg, layout_id);
+  RawObject cached = icLookupAttr(frame->caches(), arg, layout_id);
   if (cached.isErrorNotFound()) {
     return loadAttrUpdateCache(thread, arg);
   }
@@ -3445,7 +3445,7 @@ HANDLER_INLINE Continue Interpreter::doLoadMethodCached(Thread* thread,
   Frame* frame = thread->currentFrame();
   RawObject receiver = frame->topValue();
   LayoutId layout_id = receiver.layoutId();
-  RawObject cached = icLookup(frame->caches(), arg, layout_id);
+  RawObject cached = icLookupAttr(frame->caches(), arg, layout_id);
   // A function object is cached only when LOAD_ATTR_CACHED is guaranteed to
   // push a BoundMethod with the function via objectGetAttributeSetLocation().
   // Otherwise, LOAD_ATTR_CACHED caches only attribute's offsets.

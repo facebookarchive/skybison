@@ -507,7 +507,8 @@ TEST_F(IcTest, IcLookupReturnsFirstCachedValue) {
   Tuple caches(&scope, runtime_.newTuple(1 * kIcPointersPerCache));
   caches.atPut(kIcEntryKeyOffset, layoutIdAsSmallInt(LayoutId::kSmallInt));
   caches.atPut(kIcEntryValueOffset, runtime_.newInt(44));
-  EXPECT_TRUE(isIntEqualsWord(icLookup(*caches, 0, LayoutId::kSmallInt), 44));
+  EXPECT_TRUE(
+      isIntEqualsWord(icLookupAttr(*caches, 0, LayoutId::kSmallInt), 44));
 }
 
 TEST_F(IcTest, IcLookupReturnsFourthCachedValue) {
@@ -526,14 +527,15 @@ TEST_F(IcTest, IcLookupReturnsFourthCachedValue) {
                layoutIdAsSmallInt(LayoutId::kSmallInt));
   caches.atPut(cache_offset + 3 * kIcPointersPerEntry + kIcEntryValueOffset,
                runtime_.newInt(7));
-  EXPECT_TRUE(isIntEqualsWord(icLookup(*caches, 1, LayoutId::kSmallInt), 7));
+  EXPECT_TRUE(
+      isIntEqualsWord(icLookupAttr(*caches, 1, LayoutId::kSmallInt), 7));
 }
 
 TEST_F(IcTest, IcLookupWithoutMatchReturnsErrorNotFound) {
   HandleScope scope(thread_);
 
   Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerCache));
-  EXPECT_TRUE(icLookup(*caches, 1, LayoutId::kSmallInt).isErrorNotFound());
+  EXPECT_TRUE(icLookupAttr(*caches, 1, LayoutId::kSmallInt).isErrorNotFound());
 }
 
 static RawObject binopKey(LayoutId left, LayoutId right, IcBinopFlags flags) {
@@ -593,7 +595,7 @@ TEST_F(IcTest, IcUpdateSetsEmptyEntry) {
 
   Tuple caches(&scope, runtime_.newTuple(1 * kIcPointersPerCache));
   Object value(&scope, runtime_.newInt(88));
-  icUpdate(*caches, 0, LayoutId::kSmallStr, *value);
+  icUpdateAttr(*caches, 0, LayoutId::kSmallStr, *value);
   EXPECT_TRUE(isIntEqualsWord(caches.at(kIcEntryKeyOffset),
                               static_cast<word>(LayoutId::kSmallStr)));
   EXPECT_TRUE(isIntEqualsWord(caches.at(kIcEntryValueOffset), 88));
@@ -613,7 +615,7 @@ TEST_F(IcTest, IcUpdateUpdatesExistingEntry) {
   caches.atPut(cache_offset + 3 * kIcPointersPerEntry + kIcEntryKeyOffset,
                layoutIdAsSmallInt(LayoutId::kBytes));
   Object value(&scope, runtime_.newStrFromCStr("test"));
-  icUpdate(*caches, 1, LayoutId::kSmallStr, *value);
+  icUpdateAttr(*caches, 1, LayoutId::kSmallStr, *value);
   EXPECT_TRUE(isIntEqualsWord(
       caches.at(cache_offset + 2 * kIcPointersPerEntry + kIcEntryKeyOffset),
       static_cast<word>(LayoutId::kSmallStr)));
@@ -942,18 +944,18 @@ c = C()
   // Create an attribute cache for an instance of C, under name "foo".
   Object instance(&scope, moduleAt(&runtime_, "__main__", "c"));
   Tuple caches(&scope, dependent.caches());
-  icUpdate(*caches, 1, instance.layoutId(), SmallInt::fromWord(1234));
-  ASSERT_EQ(icLookup(*caches, 1, instance.layoutId()),
+  icUpdateAttr(*caches, 1, instance.layoutId(), SmallInt::fromWord(1234));
+  ASSERT_EQ(icLookupAttr(*caches, 1, instance.layoutId()),
             SmallInt::fromWord(1234));
 
   // Deleting caches for "bar" doesn't affect the cache for "foo".
   icDeleteCacheForTypeAttrInDependent(thread_, type, bar_name, true, dependent);
-  EXPECT_EQ(icLookup(*caches, 1, instance.layoutId()),
+  EXPECT_EQ(icLookupAttr(*caches, 1, instance.layoutId()),
             SmallInt::fromWord(1234));
 
   // Deleting caches for "foo".
   icDeleteCacheForTypeAttrInDependent(thread_, type, foo_name, true, dependent);
-  EXPECT_TRUE(icLookup(*caches, 1, instance.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(icLookupAttr(*caches, 1, instance.layoutId()).isErrorNotFound());
 }
 
 TEST_F(
@@ -981,20 +983,20 @@ c = C()
   // Create an instance offset cache for an instance of C, under name "foo".
   Object instance(&scope, moduleAt(&runtime_, "__main__", "c"));
   Tuple caches(&scope, dependent.caches());
-  icUpdate(*caches, 1, instance.layoutId(), SmallInt::fromWord(1234));
-  ASSERT_EQ(icLookup(*caches, 1, instance.layoutId()),
+  icUpdateAttr(*caches, 1, instance.layoutId(), SmallInt::fromWord(1234));
+  ASSERT_EQ(icLookupAttr(*caches, 1, instance.layoutId()),
             SmallInt::fromWord(1234));
 
   // An attempt to delete caches for "foo" with data_descriptor == false doesn't
   // affect it.
   icDeleteCacheForTypeAttrInDependent(thread_, type, foo_name, false,
                                       dependent);
-  EXPECT_EQ(icLookup(*caches, 1, instance.layoutId()),
+  EXPECT_EQ(icLookupAttr(*caches, 1, instance.layoutId()),
             SmallInt::fromWord(1234));
 
   // Delete caches for "foo" with data_descriptor == true actually deletes it.
   icDeleteCacheForTypeAttrInDependent(thread_, type, foo_name, true, dependent);
-  EXPECT_TRUE(icLookup(*caches, 1, instance.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(icLookupAttr(*caches, 1, instance.layoutId()).isErrorNotFound());
 }
 
 TEST_F(IcTest, IcDeleteCacheForTypeAttrInDependentDeletesOnlyAffectedCaches) {
@@ -1045,33 +1047,33 @@ c = C()
   // Create a cache for a.foo in dependent.
   Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
   Tuple caches(&scope, dependent.caches());
-  icUpdate(*caches, 1, a.layoutId(), SmallInt::fromWord(100));
-  ASSERT_EQ(icLookup(*caches, 1, a.layoutId()), SmallInt::fromWord(100));
+  icUpdateAttr(*caches, 1, a.layoutId(), SmallInt::fromWord(100));
+  ASSERT_EQ(icLookupAttr(*caches, 1, a.layoutId()), SmallInt::fromWord(100));
   // Create a cache for b.foo in dependent.
   Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
-  icUpdate(*caches, 1, b.layoutId(), SmallInt::fromWord(200));
-  ASSERT_EQ(icLookup(*caches, 1, b.layoutId()), SmallInt::fromWord(200));
+  icUpdateAttr(*caches, 1, b.layoutId(), SmallInt::fromWord(200));
+  ASSERT_EQ(icLookupAttr(*caches, 1, b.layoutId()), SmallInt::fromWord(200));
   // Create a cache for c.foo in dependent.
   Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
-  icUpdate(*caches, 1, c.layoutId(), SmallInt::fromWord(300));
-  ASSERT_EQ(icLookup(*caches, 1, c.layoutId()), SmallInt::fromWord(300));
+  icUpdateAttr(*caches, 1, c.layoutId(), SmallInt::fromWord(300));
+  ASSERT_EQ(icLookupAttr(*caches, 1, c.layoutId()), SmallInt::fromWord(300));
 
   // Trigger invalidation by updating B.foo.
   icDeleteCacheForTypeAttrInDependent(thread_, b_type, foo_name, true,
                                       dependent);
   // Note that only caches made for the type attribute are evincted, and
   // dependent is dropped from them.
-  EXPECT_EQ(icLookup(*caches, 1, a.layoutId()), SmallInt::fromWord(100));
+  EXPECT_EQ(icLookupAttr(*caches, 1, a.layoutId()), SmallInt::fromWord(100));
   EXPECT_EQ(WeakLink::cast(a_foo.dependencyLink()).referent(), *dependent);
-  EXPECT_TRUE(icLookup(*caches, 1, b.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(icLookupAttr(*caches, 1, b.layoutId()).isErrorNotFound());
   EXPECT_TRUE(b_foo.dependencyLink().isNoneType());
-  EXPECT_TRUE(icLookup(*caches, 1, c.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
   EXPECT_TRUE(c_foo.dependencyLink().isNoneType());
 
   // Trigger invalidation by updating A.foo.
   icDeleteCacheForTypeAttrInDependent(thread_, a_type, foo_name, true,
                                       dependent);
-  EXPECT_TRUE(icLookup(*caches, 1, a.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(icLookupAttr(*caches, 1, a.layoutId()).isErrorNotFound());
   EXPECT_TRUE(a_foo.dependencyLink().isNoneType());
 }
 
@@ -1111,9 +1113,9 @@ c = C()
   {
     // Create an attribute cache for an instance of C, under name "foo" in
     // dependent0.
-    icUpdate(*dependent0_caches, 1, instance.layoutId(),
-             SmallInt::fromWord(1234));
-    ASSERT_EQ(icLookup(*dependent0_caches, 1, instance.layoutId()),
+    icUpdateAttr(*dependent0_caches, 1, instance.layoutId(),
+                 SmallInt::fromWord(1234));
+    ASSERT_EQ(icLookupAttr(*dependent0_caches, 1, instance.layoutId()),
               SmallInt::fromWord(1234));
   }
 
@@ -1121,23 +1123,23 @@ c = C()
   {
     // Create an attribute cache for an instance of C, under name "bar" in
     // dependent0.
-    icUpdate(*dependent1_caches, 1, instance.layoutId(),
-             SmallInt::fromWord(5678));
-    ASSERT_EQ(icLookup(*dependent1_caches, 1, instance.layoutId()),
+    icUpdateAttr(*dependent1_caches, 1, instance.layoutId(),
+                 SmallInt::fromWord(5678));
+    ASSERT_EQ(icLookupAttr(*dependent1_caches, 1, instance.layoutId()),
               SmallInt::fromWord(5678));
   }
 
   icInvalidateCachesForTypeAttr(thread_, type, foo_name, true);
-  EXPECT_TRUE(
-      icLookup(*dependent0_caches, 1, instance.layoutId()).isErrorNotFound());
-  EXPECT_EQ(icLookup(*dependent1_caches, 1, instance.layoutId()),
+  EXPECT_TRUE(icLookupAttr(*dependent0_caches, 1, instance.layoutId())
+                  .isErrorNotFound());
+  EXPECT_EQ(icLookupAttr(*dependent1_caches, 1, instance.layoutId()),
             SmallInt::fromWord(5678));
 
   icInvalidateCachesForTypeAttr(thread_, type, bar_name, true);
-  EXPECT_TRUE(
-      icLookup(*dependent0_caches, 1, instance.layoutId()).isErrorNotFound());
-  EXPECT_TRUE(
-      icLookup(*dependent1_caches, 1, instance.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(icLookupAttr(*dependent0_caches, 1, instance.layoutId())
+                  .isErrorNotFound());
+  EXPECT_TRUE(icLookupAttr(*dependent1_caches, 1, instance.layoutId())
+                  .isErrorNotFound());
 }
 
 TEST_F(IcTest, IcInvalidateCachesForTypeAttrDoesNothingForNotFoundTypeAttr) {
@@ -1209,7 +1211,7 @@ result = f(container, 0)
   Tuple caches(&scope, f.caches());
   // Expect that BINARY_SUBSCR is the only cached opcode in f().
   ASSERT_EQ(caches.length(), 1 * kIcPointersPerCache);
-  EXPECT_EQ(icLookup(*caches, 0, container.layoutId()), *getitem);
+  EXPECT_EQ(icLookupAttr(*caches, 0, container.layoutId()), *getitem);
 
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 container2 = [4, 5, 6]
@@ -1249,7 +1251,7 @@ result = f(container, "hi")
   Tuple caches(&scope, f.caches());
   // Expect that BINARY_SUBSCR is the only cached opcode in f().
   ASSERT_EQ(caches.length(), 1 * kIcPointersPerCache);
-  EXPECT_TRUE(icLookup(*caches, 0, container.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(icLookupAttr(*caches, 0, container.layoutId()).isErrorNotFound());
 
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 container2 = Container()
@@ -1324,7 +1326,7 @@ result = f(container)
   Tuple caches(&scope, f.caches());
   // Expect that FOR_ITER is the only cached opcode in f().
   ASSERT_EQ(caches.length(), 1 * kIcPointersPerCache);
-  EXPECT_EQ(icLookup(*caches, 0, iterator.layoutId()), *iter_next);
+  EXPECT_EQ(icLookupAttr(*caches, 0, iterator.layoutId()), *iter_next);
 }
 
 TEST(IcTestNoFixture, ForIterUpdateCacheWithNonFunctionDoesntUpdateCache) {
@@ -1360,7 +1362,7 @@ result = f(container)
   Tuple caches(&scope, f.caches());
   // Expect that FOR_ITER is the only cached opcode in f().
   ASSERT_EQ(caches.length(), 1 * kIcPointersPerCache);
-  EXPECT_TRUE(icLookup(*caches, 0, iterator.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(icLookupAttr(*caches, 0, iterator.layoutId()).isErrorNotFound());
 }
 
 static RawObject testingFunction(Thread* thread) {

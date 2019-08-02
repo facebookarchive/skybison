@@ -20,9 +20,9 @@ enum IcBinopFlags : uint8_t {
   IC_INPLACE_BINOP_RETRY = 1 << 2,
 };
 
-// Looks for a cache entry with a `layout_id` key. Returns the cached value.
-// Returns `ErrorNotFound` if none was found.
-RawObject icLookup(RawTuple caches, word index, LayoutId layout_id);
+// Looks for a cache entry for an attribute with a `layout_id` key.
+// Returns the cached value. Returns `ErrorNotFound` if none was found.
+RawObject icLookupAttr(RawTuple caches, word index, LayoutId layout_id);
 
 // Looks for a cache entry with `left_layout_id` and `right_layout_id` as key.
 // Returns the cached value comprising of an object reference and flags. Returns
@@ -46,8 +46,10 @@ word icOriginalArg(RawFunction function, word index);
 // tuple to `function`.
 void icRewriteBytecode(Thread* thread, const Function& function);
 
-// Sets a cache entry to the given `layout_id` as key and `value` as value.
-void icUpdate(RawTuple caches, word index, LayoutId layout_id, RawObject value);
+// Sets a cache entry for an attribute to the given `layout_id` as key and
+// `value` as value.
+void icUpdateAttr(RawTuple caches, word index, LayoutId layout_id,
+                  RawObject value);
 
 // Insert dependent into dependentLink of the given value_cell. Returns true if
 // depdent didn't exist in dependencyLink, and false otherwise.
@@ -159,7 +161,7 @@ const int kIcPointersPerCache = kIcEntriesPerCache * kIcPointersPerEntry;
 const int kIcEntryKeyOffset = 0;
 const int kIcEntryValueOffset = 1;
 
-inline RawObject icLookup(RawTuple caches, word index, LayoutId layout_id) {
+inline RawObject icLookupAttr(RawTuple caches, word index, LayoutId layout_id) {
   RawSmallInt key = SmallInt::fromWord(static_cast<word>(layout_id));
   for (word i = index * kIcPointersPerCache, end = i + kIcPointersPerCache;
        i < end; i += kIcPointersPerEntry) {

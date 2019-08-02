@@ -3868,23 +3868,23 @@ c = C()
   Function invalidate(&scope, moduleAt(&runtime, "__main__", "invalidate"));
   Tuple caches(&scope, get_foo.caches());
   // Load the cache
-  ASSERT_TRUE(icLookup(*caches, 1, c.layoutId()).isErrorNotFound());
+  ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
   ASSERT_TRUE(isIntEqualsWord(
       Interpreter::callFunction1(thread, thread->currentFrame(), get_foo, c),
       400));
-  ASSERT_TRUE(icLookup(*caches, 1, c.layoutId()).isSmallInt());
+  ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isSmallInt());
 
   // Assign a data descriptor to a different attribute name.
   ASSERT_TRUE(Interpreter::callFunction0(thread, thread->currentFrame(),
                                          do_not_invalidate0)
                   .isNoneType());
-  EXPECT_TRUE(icLookup(*caches, 1, c.layoutId()).isSmallInt());
+  EXPECT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isSmallInt());
 
   // Assign a non-data descriptor to the cache's attribute name.
   ASSERT_TRUE(Interpreter::callFunction0(thread, thread->currentFrame(),
                                          do_not_invalidate1)
                   .isNoneType());
-  EXPECT_TRUE(icLookup(*caches, 1, c.layoutId()).isSmallInt());
+  EXPECT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isSmallInt());
 
   // Assign a data descriptor the cache's attribute name that actually causes
   // invalidation.
@@ -3892,7 +3892,7 @@ c = C()
       Interpreter::callFunction0(thread, thread->currentFrame(), invalidate)
           .isNoneType());
   // Verify that the cache is empty and calling get_foo() returns a fresh value.
-  EXPECT_TRUE(icLookup(*caches, 1, c.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
   EXPECT_TRUE(isStrEqualsCStr(
       Interpreter::callFunction1(thread, thread->currentFrame(), get_foo, c),
       "data descriptor"));
@@ -3929,24 +3929,24 @@ c = C()
   Function invalidate(&scope, moduleAt(&runtime, "__main__", "invalidate"));
   Tuple caches(&scope, call_foo.caches());
   // Load the cache
-  ASSERT_TRUE(icLookup(*caches, 1, c.layoutId()).isErrorNotFound());
+  ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
   ASSERT_TRUE(isIntEqualsWord(
       Interpreter::callFunction1(thread, thread->currentFrame(), call_foo, c),
       400));
-  ASSERT_EQ(icLookup(*caches, 1, c.layoutId()), *old_foo);
+  ASSERT_EQ(icLookupAttr(*caches, 1, c.layoutId()), *old_foo);
 
   // Assign a non-data descriptor to different attribute name.
   ASSERT_TRUE(Interpreter::callFunction0(thread, thread->currentFrame(),
                                          do_not_invalidate)
                   .isNoneType());
-  ASSERT_EQ(icLookup(*caches, 1, c.layoutId()), *old_foo);
+  ASSERT_EQ(icLookupAttr(*caches, 1, c.layoutId()), *old_foo);
 
   // Invalidate the cache.
   ASSERT_TRUE(
       Interpreter::callFunction0(thread, thread->currentFrame(), invalidate)
           .isNoneType());
   // Verify that the cache is empty and calling get_foo() returns a fresh value.
-  EXPECT_TRUE(icLookup(*caches, 1, c.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
   EXPECT_TRUE(isStrEqualsCStr(
       Interpreter::callFunction1(thread, thread->currentFrame(), call_foo, c),
       "new type attr"));
@@ -3990,17 +3990,17 @@ c = C()
   Function invalidate(&scope, moduleAt(&runtime, "__main__", "invalidate"));
   Tuple caches(&scope, get_foo.caches());
   // Load the cache.
-  ASSERT_TRUE(icLookup(*caches, 1, c.layoutId()).isErrorNotFound());
+  ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
   ASSERT_TRUE(isIntEqualsWord(
       Interpreter::callFunction1(thread, thread->currentFrame(), get_foo, c),
       400));
-  ASSERT_TRUE(icLookup(*caches, 1, c.layoutId()).isSmallInt());
+  ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isSmallInt());
 
   // Updating a subclass' type attribute doesn't invalidate the cache.
   ASSERT_TRUE(Interpreter::callFunction0(thread, thread->currentFrame(),
                                          do_not_invalidate)
                   .isNoneType());
-  ASSERT_TRUE(icLookup(*caches, 1, c.layoutId()).isSmallInt());
+  ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isSmallInt());
 
   // Verify that all type dictionaries in C's mro have dependentices to get_foo.
   Dict type_b_dict(&scope, type_b.dict());
@@ -4025,7 +4025,7 @@ c = C()
       Interpreter::callFunction0(thread, thread->currentFrame(), invalidate)
           .isNoneType());
   // Verify that the cache is empty and calling get_foo() returns a fresh value.
-  EXPECT_TRUE(icLookup(*caches, 1, c.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
   EXPECT_TRUE(isStrEqualsCStr(
       Interpreter::callFunction1(thread, thread->currentFrame(), get_foo, c),
       "data descriptor"));
@@ -4099,13 +4099,14 @@ def test():
   Tuple caches(&scope, test_function.caches());
   // Cache miss.
   ASSERT_TRUE(
-      icLookup(*caches, bytecode.byteAt(3), layout_id).isErrorNotFound());
+      icLookupAttr(*caches, bytecode.byteAt(3), layout_id).isErrorNotFound());
   EXPECT_TRUE(isIntEqualsWord(
       Interpreter::callFunction0(thread, thread->currentFrame(), test_function),
       30));
 
   // Cache hit.
-  ASSERT_TRUE(icLookup(*caches, bytecode.byteAt(3), layout_id).isSmallInt());
+  ASSERT_TRUE(
+      icLookupAttr(*caches, bytecode.byteAt(3), layout_id).isSmallInt());
   EXPECT_TRUE(isIntEqualsWord(
       Interpreter::callFunction0(thread, thread->currentFrame(), test_function),
       30));
@@ -4142,13 +4143,14 @@ c = C()
   LayoutId layout_id = c.layoutId();
   Tuple caches(&scope, test_function.caches());
   ASSERT_TRUE(
-      icLookup(*caches, bytecode.byteAt(3), layout_id).isErrorNotFound());
+      icLookupAttr(*caches, bytecode.byteAt(3), layout_id).isErrorNotFound());
   EXPECT_TRUE(isIntEqualsWord(
       Interpreter::callFunction0(thread, thread->currentFrame(), test_function),
       70));
 
   // Cache hit.
-  ASSERT_TRUE(icLookup(*caches, bytecode.byteAt(3), layout_id).isFunction());
+  ASSERT_TRUE(
+      icLookupAttr(*caches, bytecode.byteAt(3), layout_id).isFunction());
   EXPECT_TRUE(isIntEqualsWord(
       Interpreter::callFunction0(thread, thread->currentFrame(), test_function),
       70));
@@ -4197,12 +4199,12 @@ c = C()
   ASSERT_EQ(caches.length(), 2 * kIcPointersPerCache);
 
   // Load the cache.
-  ASSERT_TRUE(icLookup(*caches, 1, c.layoutId()).isErrorNotFound());
+  ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
   ASSERT_TRUE(
       isIntEqualsWord(Interpreter::callFunction1(thread, thread->currentFrame(),
                                                  cache_attribute, c),
                       400));
-  ASSERT_TRUE(icLookup(*caches, 1, c.layoutId()).isSmallInt());
+  ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isSmallInt());
 
   // Verify that cache_attribute function is added as a dependent.
   Dict type_c_dict(&scope, type_c.dict());
@@ -4237,11 +4239,11 @@ c = C()
   ASSERT_EQ(caches.length(), 2 * kIcPointersPerCache);
 
   // Load the cache.
-  ASSERT_TRUE(icLookup(*caches, 1, c.layoutId()).isErrorNotFound());
+  ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
   ASSERT_TRUE(Interpreter::callFunction1(thread, thread->currentFrame(),
                                          cache_attribute, c)
                   .isNoneType());
-  ASSERT_TRUE(icLookup(*caches, 1, c.layoutId()).isSmallInt());
+  ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isSmallInt());
 
   // Verify that cache_attribute function is added as a dependent.
   Dict type_c_dict(&scope, type_c.dict());
@@ -4303,9 +4305,9 @@ function_that_caches_attr_lookup(a, b, c)
   Function a_foo(&scope, moduleAt(&runtime, "__main__", "a_foo"));
   Function b_foo(&scope, moduleAt(&runtime, "__main__", "b_foo"));
   ASSERT_EQ(caches.length(), 6 * kIcPointersPerCache);
-  ASSERT_EQ(icLookup(*caches, 1, a.layoutId()), *a_foo);
-  ASSERT_EQ(icLookup(*caches, 2, b.layoutId()), *b_foo);
-  ASSERT_EQ(icLookup(*caches, 4, c.layoutId()), *b_foo);
+  ASSERT_EQ(icLookupAttr(*caches, 1, a.layoutId()), *a_foo);
+  ASSERT_EQ(icLookupAttr(*caches, 2, b.layoutId()), *b_foo);
+  ASSERT_EQ(icLookupAttr(*caches, 4, c.layoutId()), *b_foo);
 
   // Verify that function_that_caches_attr_lookup cached the attribute lookup
   // and appears on the dependency list of A.foo.
@@ -4341,14 +4343,14 @@ function_that_caches_attr_lookup(a, b, c)
                   .isNoneType());
   // Verify that the cache for A.foo is cleared out, and dependent does not
   // depend on A.foo anymore.
-  EXPECT_TRUE(icLookup(*caches, 1, a.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(icLookupAttr(*caches, 1, a.layoutId()).isErrorNotFound());
   EXPECT_TRUE(foo_in_a.dependencyLink().isNoneType());
   // Check that any lookups of B have not been invalidated.
-  EXPECT_EQ(icLookup(*caches, 2, b.layoutId()), *b_foo);
+  EXPECT_EQ(icLookupAttr(*caches, 2, b.layoutId()), *b_foo);
   EXPECT_EQ(WeakLink::cast(foo_in_b.dependencyLink()).referent(),
             *function_that_caches_attr_lookup);
   // Check that any lookups of C have not been invalidated.
-  EXPECT_EQ(icLookup(*caches, 4, c.layoutId()), *b_foo);
+  EXPECT_EQ(icLookupAttr(*caches, 4, c.layoutId()), *b_foo);
   EXPECT_EQ(WeakLink::cast(foo_in_c.dependencyLink()).referent(),
             *function_that_caches_attr_lookup);
 
@@ -4360,13 +4362,13 @@ function_that_caches_attr_lookup(a, b, c)
                                          func_that_causes_shadowing_of_attr_b)
                   .isNoneType());
   // Check that caches for A are still invalidated.
-  EXPECT_TRUE(icLookup(*caches, 1, a.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(icLookupAttr(*caches, 1, a.layoutId()).isErrorNotFound());
   EXPECT_TRUE(foo_in_a.dependencyLink().isNoneType());
   // Check that caches for B and C got just invalidated since they refer to
   // B.foo.
-  EXPECT_TRUE(icLookup(*caches, 2, b.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(icLookupAttr(*caches, 2, b.layoutId()).isErrorNotFound());
   EXPECT_TRUE(foo_in_b.dependencyLink().isNoneType());
-  EXPECT_TRUE(icLookup(*caches, 4, c.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(icLookupAttr(*caches, 4, c.layoutId()).isErrorNotFound());
   EXPECT_TRUE(foo_in_c.dependencyLink().isNoneType());
 }
 

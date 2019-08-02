@@ -215,8 +215,8 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
   function.setOriginalArguments(*original_arguments);
 }
 
-void icUpdate(RawTuple caches, word index, LayoutId layout_id,
-              RawObject value) {
+void icUpdateAttr(RawTuple caches, word index, LayoutId layout_id,
+                  RawObject value) {
   RawSmallInt key = SmallInt::fromWord(static_cast<word>(layout_id));
   RawObject entry_key = NoneType::object();
   for (word i = index * kIcPointersPerCache, end = i + kIcPointersPerCache;
