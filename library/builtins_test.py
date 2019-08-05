@@ -3480,6 +3480,92 @@ class StrModTests(unittest.TestCase):
     def test_percent_format_returns_percent(self):
         self.assertEqual("%%" % (), "%")
 
+    def test_percent_with_flags_percision_and_width_returns_percent(self):
+        self.assertEqual("%0.0%" % (), "%")
+        self.assertEqual("%*.%" % (42,), "%")
+        self.assertEqual("%.*%" % (88,), "%")
+        self.assertEqual("%0#*.42%" % (1234,), "%")
+
+    def test_flags_get_accepted(self):
+        self.assertEqual("%-s" % "", "")
+        self.assertEqual("%+s" % "", "")
+        self.assertEqual("% s" % "", "")
+        self.assertEqual("%#s" % "", "")
+        self.assertEqual("%0s" % "", "")
+        self.assertEqual("%#-#0+ -s" % "", "")
+
+    def test_string_format_with_width_returns_string(self):
+        self.assertEqual("%5s" % "oh", "   oh")
+        self.assertEqual("%-5s" % "ah", "ah   ")
+        self.assertEqual("%05s" % "uh", "   uh")
+        self.assertEqual("%-# 5s" % "eh", "eh   ")
+
+        self.assertEqual("%0s" % "foo", "foo")
+        self.assertEqual("%-0s" % "foo", "foo")
+        self.assertEqual("%10s" % "hello world", "hello world")
+        self.assertEqual("%-10s" % "hello world", "hello world")
+
+    def test_string_format_with_width_star_returns_string(self):
+        self.assertEqual("%*s" % (7, "foo"), "    foo")
+        self.assertEqual("%*s" % (-7, "bar"), "bar    ")
+        self.assertEqual("%-*s" % (7, "baz"), "baz    ")
+        self.assertEqual("%-*s" % (-7, "bam"), "bam    ")
+
+    def test_string_format_with_precision_returns_string(self):
+        self.assertEqual("%.3s" % "python", "pyt")
+        self.assertEqual("%.0s" % "python", "")
+        self.assertEqual("%.10s" % "python", "python")
+
+    def test_string_format_with_precision_star_returns_string(self):
+        self.assertEqual("%.*s" % (3, "monty"), "mon")
+        self.assertEqual("%.*s" % (0, "monty"), "")
+        self.assertEqual("%.*s" % (-4, "monty"), "")
+
+    def test_string_format_with_width_and_precision_returns_string(self):
+        self.assertEqual("%8.3s" % ("foobar",), "     foo")
+        self.assertEqual("%-8.3s" % ("foobar",), "foo     ")
+        self.assertEqual("%*.3s" % (8, "foobar"), "     foo")
+        self.assertEqual("%*.3s" % (-8, "foobar"), "foo     ")
+        self.assertEqual("%8.*s" % (3, "foobar"), "     foo")
+        self.assertEqual("%-8.*s" % (3, "foobar"), "foo     ")
+        self.assertEqual("%*.*s" % (8, 3, "foobar"), "     foo")
+        self.assertEqual("%-*.*s" % (8, 3, "foobar"), "foo     ")
+
+    def test_s_r_a_c_formats_accept_flags_width_precision_return_strings(self):
+        self.assertEqual("%-*.3s" % (8, "foobar"), "foo     ")
+        self.assertEqual("%-*.3r" % (8, "foobar"), "'fo     ")
+        self.assertEqual("%-*.3a" % (8, "foobar"), "'fo     ")
+        self.assertEqual("%-*.3c" % (8, 94), "^       ")
+
+    def test_width_and_precision_star_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            "%*d" % (42,)
+        self.assertEqual(
+            str(context.exception), "not enough arguments for format string"
+        )
+        with self.assertRaises(TypeError) as context:
+            "%.*d" % (42,)
+        self.assertEqual(
+            str(context.exception), "not enough arguments for format string"
+        )
+        with self.assertRaises(TypeError) as context:
+            "%*.*d" % (42,)
+        self.assertEqual(
+            str(context.exception), "not enough arguments for format string"
+        )
+        with self.assertRaises(TypeError) as context:
+            "%*.*d" % (1, 2)
+        self.assertEqual(
+            str(context.exception), "not enough arguments for format string"
+        )
+
+    def test_negative_precision_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            "%.-2s" % "foo"
+        self.assertEqual(
+            str(context.exception), "unsupported format character '-' (0x2d) at index 2"
+        )
+
     def test_two_specifiers_returns_string(self):
         self.assertEqual("%s%s" % ("foo", "bar"), "foobar")
         self.assertEqual(",%s%s" % ("foo", "bar"), ",foobar")
@@ -3505,6 +3591,13 @@ class StrModTests(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             "%(foo)" % {"foo": None}
         self.assertEqual(str(context.exception), "incomplete format")
+
+    def test_unknown_specifier_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            "try %Y" % (42)
+        self.assertEqual(
+            str(context.exception), "unsupported format character 'Y' (0x59) at index 5"
+        )
 
     def test_too_few_args_raises_type_error(self):
         with self.assertRaises(TypeError) as context:

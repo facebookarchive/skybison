@@ -18,6 +18,27 @@ _type = _type  # noqa: F821
 _unimplemented = _unimplemented  # noqa: F821
 
 
+_FLAG_LJUST = 1 << 0
+_FLAG_ZERO = 1 << 1
+
+
+def _format_string(result, flags, width, precision, fragment):
+    if precision >= 0:
+        fragment = fragment[:precision]
+    if width <= 0:
+        _strarray_iadd(result, fragment)
+        return
+
+    padding_len = -1
+    padding_len = width - _str_len(fragment)
+    if padding_len > 0 and not (flags & _FLAG_LJUST):
+        _strarray_iadd(result, " " * padding_len)
+        padding_len = 0
+    _strarray_iadd(result, fragment)
+    if padding_len > 0:
+        _strarray_iadd(result, " " * padding_len)
+
+
 def format(string: str, args) -> str:  # noqa: C901
     args_dict = None
     if _tuple_check(args):
@@ -78,6 +99,77 @@ def format(string: str, args) -> str:  # noqa: C901
                 args_len = 1
                 arg_idx = 0
 
+            # Parse flags.
+            flags = 0
+            positive_sign = ""
+            use_alt_formatting = False
+            while True:
+                if c == "-":
+                    flags |= _FLAG_LJUST
+                elif c == "+":
+                    positive_sign = "+"
+                elif c == " ":
+                    if positive_sign != "+":
+                        positive_sign = " "
+                elif c == "#":
+                    use_alt_formatting = True
+                elif c == "0":
+                    flags |= _FLAG_ZERO
+                else:
+                    break
+                c = it.__next__()
+                idx += 1
+
+            # Parse width.
+            width = -1
+            if c == "*":
+                if arg_idx >= args_len:
+                    raise TypeError("not enough arguments for format string")
+                arg = args_tuple[arg_idx]
+                arg_idx += 1
+                if not _int_check(arg):
+                    raise TypeError("* wants int")
+                width = arg
+                if width < 0:
+                    flags |= _FLAG_LJUST
+                    width = -width
+                c = it.__next__()
+                idx += 1
+            elif "0" <= c <= "9":
+                width = 0
+                while True:
+                    width += ord(c) - ord("0")
+                    c = it.__next__()
+                    idx += 1
+                    if not ("0" <= c <= "9"):
+                        break
+                    width *= 10
+
+            # Parse precision.
+            precision = -1
+            if c == ".":
+                precision = 0
+                c = it.__next__()
+                idx += 1
+                if c == "*":
+                    if arg_idx >= args_len:
+                        raise TypeError("not enough arguments for format string")
+                    arg = args_tuple[arg_idx]
+                    arg_idx += 1
+                    if not _int_check(arg):
+                        raise TypeError("* wants int")
+                    precision = max(0, arg)
+                    c = it.__next__()
+                    idx += 1
+                elif "0" <= c <= "9":
+                    while True:
+                        precision += ord(c) - ord("0")
+                        c = it.__next__()
+                        idx += 1
+                        if not ("0" <= c <= "9"):
+                            break
+                        precision *= 10
+
             # Parse and process format.
             if c != "%":
                 if arg_idx >= args_len:
@@ -88,11 +180,14 @@ def format(string: str, args) -> str:  # noqa: C901
             if c == "%":
                 _strarray_iadd(result, "%")
             elif c == "s":
-                _strarray_iadd(result, str(arg))
+                fragment = str(arg)
+                _format_string(result, flags, width, precision, fragment)
             elif c == "r":
-                _strarray_iadd(result, repr(arg))
+                fragment = repr(arg)
+                _format_string(result, flags, width, precision, fragment)
             elif c == "a":
-                _strarray_iadd(result, ascii(arg))
+                fragment = ascii(arg)
+                _format_string(result, flags, width, precision, fragment)
             elif c == "c":
                 if _str_check(arg):
                     if _str_len(arg) != 1:
@@ -109,7 +204,7 @@ def format(string: str, args) -> str:  # noqa: C901
                         raise OverflowError(f"%c arg not in range(0x{max_hex})")
                     except Exception:
                         raise TypeError("%c requires int or char")
-                _strarray_iadd(result, fragment)
+                _format_string(result, flags, width, precision, fragment)
             elif c == "d" or c == "i" or c == "u":
                 try:
                     if not _number_check(arg):
@@ -118,7 +213,15 @@ def format(string: str, args) -> str:  # noqa: C901
                 except TypeError:
                     tname = _type(arg).__name__
                     raise TypeError(f"%{c} format: a number is required, not {tname}")
+                if value < 0:
+                    value = -value
+                    sign = "-"
+                else:
+                    sign = positive_sign
+                _strarray_iadd(result, sign)
                 _strarray_iadd(result, int.__str__(value))
+                if width >= 0 or precision >= 0 or flags != 0 or use_alt_formatting:
+                    _unimplemented()
             elif c == "x":
                 try:
                     if not _number_check(arg):
@@ -129,8 +232,13 @@ def format(string: str, args) -> str:  # noqa: C901
                     raise TypeError(f"%{c} format: an integer is required, not {tname}")
                 if value < 0:
                     value = -value
-                    _strarray_iadd(result, "-")
+                    sign = "-"
+                else:
+                    sign = positive_sign
+                _strarray_iadd(result, sign)
                 _strarray_iadd(result, _int_format_hexadecimal(value))
+                if width >= 0 or precision >= 0 or flags != 0 or use_alt_formatting:
+                    _unimplemented()
             elif c == "X":
                 try:
                     if not _number_check(arg):
@@ -141,8 +249,13 @@ def format(string: str, args) -> str:  # noqa: C901
                     raise TypeError(f"%{c} format: an integer is required, not {tname}")
                 if value < 0:
                     value = -value
-                    _strarray_iadd(result, "-")
+                    sign = "-"
+                else:
+                    sign = positive_sign
+                _strarray_iadd(result, sign)
                 _strarray_iadd(result, _int_format_hexadecimal_upcase(value))
+                if width >= 0 or precision >= 0 or flags != 0 or use_alt_formatting:
+                    _unimplemented()
             elif c == "o":
                 try:
                     if not _number_check(arg):
@@ -153,16 +266,27 @@ def format(string: str, args) -> str:  # noqa: C901
                     raise TypeError(f"%o format: an integer is required, not {tname}")
                 if value < 0:
                     value = -value
-                    _strarray_iadd(result, "-")
+                    sign = "-"
+                else:
+                    sign = positive_sign
+                _strarray_iadd(result, sign)
                 _strarray_iadd(result, _int_format_octal(value))
+                if width >= 0 or precision >= 0 or flags != 0 or use_alt_formatting:
+                    _unimplemented()
             elif c == "g":
                 if not _float_check(arg):
                     _unimplemented()
                 _strarray_iadd(result, float.__str__(arg))
-            else:
-                # May be a flag, precision or width modifier, an unimplemented
-                # format or the user passing an unknown character.
+                if width >= 0 or precision >= 0 or flags != 0 or use_alt_formatting:
+                    _unimplemented()
+            elif c in "eEfFG":
                 _unimplemented()
+            else:
+                raise ValueError(
+                    f"unsupported format character '{c}' "
+                    f"(0x{_int_format_hexadecimal(ord(c))}) "
+                    f"at index {idx - 1}"
+                )
 
             begin = idx
             in_specifier = False
