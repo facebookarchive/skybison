@@ -3164,14 +3164,212 @@ class StrModTests(unittest.TestCase):
         with self.assertRaises(UserWarning):
             "%a" % (C(),)
 
-    def test_d_format_returns_string(self):
+    def test_diu_format_returns_string(self):
         self.assertEqual("%d" % (0,), "0")
         self.assertEqual("%d" % (-1,), "-1")
         self.assertEqual("%d" % (42,), "42")
+        self.assertEqual("%i" % (0,), "0")
+        self.assertEqual("%i" % (-1,), "-1")
+        self.assertEqual("%i" % (42,), "42")
+        self.assertEqual("%u" % (0,), "0")
+        self.assertEqual("%u" % (-1,), "-1")
+        self.assertEqual("%u" % (42,), "42")
 
-    def test_d_format_with_largeint_returns_string(self):
+    def test_diu_format_with_largeint_returns_string(self):
         self.assertEqual(
             "%d" % (-123456789012345678901234567890), "-123456789012345678901234567890"
+        )
+        self.assertEqual(
+            "%i" % (-123456789012345678901234567890), "-123456789012345678901234567890"
+        )
+        self.assertEqual(
+            "%u" % (-123456789012345678901234567890), "-123456789012345678901234567890"
+        )
+
+    def test_diu_format_with_non_int_returns_string(self):
+        class C:
+            def __int__(self):
+                return 42
+
+            def __index__(self):
+                raise UserWarning()
+
+        self.assertEqual("%d" % (C(),), "42")
+        self.assertEqual("%i" % (C(),), "42")
+        self.assertEqual("%u" % (C(),), "42")
+
+    def test_diu_format_raises_typeerrors(self):
+        with self.assertRaises(TypeError) as context:
+            "%d" % (None,)
+        self.assertEqual(
+            str(context.exception), "%d format: a number is required, not NoneType"
+        )
+        with self.assertRaises(TypeError) as context:
+            "%i" % (None,)
+        self.assertEqual(
+            str(context.exception), "%i format: a number is required, not NoneType"
+        )
+        with self.assertRaises(TypeError) as context:
+            "%u" % (None,)
+        self.assertEqual(
+            str(context.exception), "%u format: a number is required, not NoneType"
+        )
+
+    def test_diu_format_propagates_errors(self):
+        class C:
+            def __int__(self):
+                raise UserWarning()
+
+        with self.assertRaises(UserWarning):
+            "%d" % (C(),)
+        with self.assertRaises(UserWarning):
+            "%i" % (C(),)
+        with self.assertRaises(UserWarning):
+            "%u" % (C(),)
+
+    def test_diu_format_reraises_typerrors(self):
+        class C:
+            def __int__(self):
+                raise TypeError("foobar")
+
+        with self.assertRaises(TypeError) as context:
+            "%d" % (C(),)
+        self.assertEqual(
+            str(context.exception), "%d format: a number is required, not C"
+        )
+        with self.assertRaises(TypeError) as context:
+            "%i" % (C(),)
+        self.assertEqual(
+            str(context.exception), "%i format: a number is required, not C"
+        )
+        with self.assertRaises(TypeError) as context:
+            "%u" % (C(),)
+        self.assertEqual(
+            str(context.exception), "%u format: a number is required, not C"
+        )
+
+    def test_xX_format_returns_string(self):
+        self.assertEqual("%x" % (0,), "0")
+        self.assertEqual("%x" % (-123,), "-7b")
+        self.assertEqual("%x" % (42,), "2a")
+        self.assertEqual("%X" % (0,), "0")
+        self.assertEqual("%X" % (-123,), "-7B")
+        self.assertEqual("%X" % (42,), "2A")
+
+    def test_xX_format_with_largeint_returns_string(self):
+        self.assertEqual(
+            "%x" % (-123456789012345678901234567890), "-18ee90ff6c373e0ee4e3f0ad2"
+        )
+        self.assertEqual(
+            "%X" % (-123456789012345678901234567890), "-18EE90FF6C373E0EE4E3F0AD2"
+        )
+
+    def test_xX_format_with_non_int_returns_string(self):
+        class C:
+            def __float__(self):
+                return 3.3
+
+            def __index__(self):
+                return 77
+
+        self.assertEqual("%x" % (C(),), "4d")
+        self.assertEqual("%X" % (C(),), "4D")
+
+    def test_xX_format_raises_typeerrors(self):
+        with self.assertRaises(TypeError) as context:
+            "%x" % (None,)
+        self.assertEqual(
+            str(context.exception), "%x format: an integer is required, not NoneType"
+        )
+        with self.assertRaises(TypeError) as context:
+            "%X" % (None,)
+        self.assertEqual(
+            str(context.exception), "%X format: an integer is required, not NoneType"
+        )
+
+    def test_xX_format_propagates_errors(self):
+        class C:
+            def __int__(self):
+                return 42
+
+            def __index__(self):
+                raise UserWarning()
+
+        with self.assertRaises(UserWarning):
+            "%x" % (C(),)
+        with self.assertRaises(UserWarning):
+            "%X" % (C(),)
+
+    def test_xX_format_reraises_typerrors(self):
+        class C:
+            def __int__(self):
+                return 42
+
+            def __index__(self):
+                raise TypeError("foobar")
+
+        with self.assertRaises(TypeError) as context:
+            "%x" % (C(),)
+        self.assertEqual(
+            str(context.exception), "%x format: an integer is required, not C"
+        )
+        with self.assertRaises(TypeError) as context:
+            "%X" % (C(),)
+        self.assertEqual(
+            str(context.exception), "%X format: an integer is required, not C"
+        )
+
+    def test_o_format_returns_string(self):
+        self.assertEqual("%o" % (0,), "0")
+        self.assertEqual("%o" % (-123,), "-173")
+        self.assertEqual("%o" % (42,), "52")
+
+    def test_o_format_with_largeint_returns_string(self):
+        self.assertEqual(
+            "%o" % (-123456789012345678901234567890),
+            "-143564417755415637016711617605322",
+        )
+
+    def test_o_format_with_non_int_returns_string(self):
+        class C:
+            def __float__(self):
+                return 3.3
+
+            def __index__(self):
+                return 77
+
+        self.assertEqual("%o" % (C(),), "115")
+
+    def test_o_format_raises_typeerrors(self):
+        with self.assertRaises(TypeError) as context:
+            "%o" % (None,)
+        self.assertEqual(
+            str(context.exception), "%o format: an integer is required, not NoneType"
+        )
+
+    def test_o_format_propagates_errors(self):
+        class C:
+            def __int__(self):
+                return 42
+
+            def __index__(self):
+                raise UserWarning()
+
+        with self.assertRaises(UserWarning):
+            "%o" % (C(),)
+
+    def test_o_format_reraises_typerrors(self):
+        class C:
+            def __int__(self):
+                return 42
+
+            def __index__(self):
+                raise TypeError("foobar")
+
+        with self.assertRaises(TypeError) as context:
+            "%o" % (C(),)
+        self.assertEqual(
+            str(context.exception), "%o format: an integer is required, not C"
         )
 
     def test_g_format_returns_string(self):

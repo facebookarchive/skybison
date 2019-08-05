@@ -603,6 +603,39 @@ def _dunder_bases_tuple_check(obj, msg) -> None:
         raise TypeError(msg)
 
 
+def _int_format_hexadecimal(value):
+    assert value >= 0
+    if value == 0:
+        return "0"
+    result = ""
+    while value > 0:
+        result += "0123456789abcdef"[value & 15]
+        value >>= 4
+    return result[::-1]
+
+
+def _int_format_hexadecimal_upcase(value):
+    assert value >= 0
+    if value == 0:
+        return "0"
+    result = ""
+    while value > 0:
+        result += "0123456789ABCDEF"[value & 15]
+        value >>= 4
+    return result[::-1]
+
+
+def _int_format_octal(value):
+    assert value >= 0
+    if value == 0:
+        return "0"
+    result = ""
+    while value > 0:
+        result += "01234567"[value & 7]
+        value >>= 3
+    return result[::-1]
+
+
 def _index(obj) -> int:
     # equivalent to PyNumber_Index
     if _int_check(obj):
@@ -801,6 +834,13 @@ def _new_member_set_readonly_strings(name):
         raise TypeError("{name} is a readonly attribute")
 
     return setter
+
+
+def _number_check(obj):
+    # equivalent to PyNumber_Check()
+    return _object_type_hasattr(obj, "__int__") or _object_type_hasattr(
+        obj, "__float__"
+    )
 
 
 def _range_getitem(self: range, idx: int) -> int:

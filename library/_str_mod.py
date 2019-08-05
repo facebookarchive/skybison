@@ -2,12 +2,18 @@
 """This is an internal module implementing "str.__mod__" formatting."""
 
 _float_check = _float_check  # noqa: F821
+_int_format_hexadecimal = _int_format_hexadecimal  # noqa: F821
+_int_format_hexadecimal_upcase = _int_format_hexadecimal_upcase  # noqa: F821
+_int_format_octal = _int_format_octal  # noqa: F821
+_index = _index  # noqa: F821
 _int_check = _int_check  # noqa: F821
+_number_check = _number_check  # noqa: F821
 _str_check = _str_check  # noqa: F821
 _str_len = _str_len  # noqa: F821
 _strarray = _strarray  # noqa: F821
 _strarray_iadd = _strarray_iadd  # noqa: F821
 _tuple_check = _tuple_check  # noqa: F821
+_type = _type  # noqa: F821
 _unimplemented = _unimplemented  # noqa: F821
 
 
@@ -53,10 +59,51 @@ def format(string: str, args) -> str:  # noqa: C901
                 _strarray_iadd(result, repr(arg))
             elif c == "a":
                 _strarray_iadd(result, ascii(arg))
-            elif c in "d":
-                if not _int_check(arg):
-                    _unimplemented()
-                _strarray_iadd(result, int.__str__(arg))
+            elif c == "d" or c == "i" or c == "u":
+                try:
+                    if not _number_check(arg):
+                        raise TypeError()
+                    value = int(arg)
+                except TypeError:
+                    tname = _type(arg).__name__
+                    raise TypeError(f"%{c} format: a number is required, not {tname}")
+                _strarray_iadd(result, int.__str__(value))
+            elif c == "x":
+                try:
+                    if not _number_check(arg):
+                        raise TypeError()
+                    value = _index(arg)
+                except TypeError:
+                    tname = _type(arg).__name__
+                    raise TypeError(f"%{c} format: an integer is required, not {tname}")
+                if value < 0:
+                    value = -value
+                    _strarray_iadd(result, "-")
+                _strarray_iadd(result, _int_format_hexadecimal(value))
+            elif c == "X":
+                try:
+                    if not _number_check(arg):
+                        raise TypeError()
+                    value = _index(arg)
+                except TypeError:
+                    tname = _type(arg).__name__
+                    raise TypeError(f"%{c} format: an integer is required, not {tname}")
+                if value < 0:
+                    value = -value
+                    _strarray_iadd(result, "-")
+                _strarray_iadd(result, _int_format_hexadecimal_upcase(value))
+            elif c == "o":
+                try:
+                    if not _number_check(arg):
+                        raise TypeError()
+                    value = _index(arg)
+                except TypeError:
+                    tname = _type(arg).__name__
+                    raise TypeError(f"%o format: an integer is required, not {tname}")
+                if value < 0:
+                    value = -value
+                    _strarray_iadd(result, "-")
+                _strarray_iadd(result, _int_format_octal(value))
             elif c == "g":
                 if not _float_check(arg):
                     _unimplemented()
