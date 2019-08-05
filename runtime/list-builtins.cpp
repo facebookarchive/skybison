@@ -24,9 +24,9 @@ RawObject listExtend(Thread* thread, const List& dst, const Object& iterable) {
       // Save the number of items before adding the two sizes together. This is
       // for the a.extend(a) case (src == dst).
       dst.setNumItems(new_length);
-      for (word i = 0, j = old_length; j < new_length; i++, j++) {
-        dst.atPut(j, src.at(i));
-      }
+      Tuple dst_items(&scope, dst.items());
+      Tuple src_items(&scope, src.items());
+      dst_items.replaceFromWith(old_length, *src_items);
     }
     return NoneType::object();
   }
@@ -39,9 +39,8 @@ RawObject listExtend(Thread* thread, const List& dst, const Object& iterable) {
   if (new_length != old_length) {
     runtime->listEnsureCapacity(thread, dst, new_length);
     dst.setNumItems(new_length);
-    for (word i = 0, j = old_length; j < new_length; i++, j++) {
-      dst.atPut(j, src.at(i));
-    }
+    Tuple dst_items(&scope, dst.items());
+    dst_items.replaceFromWith(old_length, *src);
   }
   return NoneType::object();
 }
