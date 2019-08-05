@@ -3537,6 +3537,57 @@ class StrModTests(unittest.TestCase):
         self.assertEqual("%-*.3a" % (8, "foobar"), "'fo     ")
         self.assertEqual("%-*.3c" % (8, 94), "^       ")
 
+    def test_number_format_with_sign_flag_returns_string(self):
+        self.assertEqual("%+d" % (42,), "+42")
+        self.assertEqual("%+d" % (-42,), "-42")
+        self.assertEqual("% d" % (17,), " 17")
+        self.assertEqual("% d" % (-17,), "-17")
+        self.assertEqual("%+ d" % (42,), "+42")
+        self.assertEqual("%+ d" % (-42,), "-42")
+        self.assertEqual("% +d" % (17,), "+17")
+        self.assertEqual("% +d" % (-17,), "-17")
+
+    def test_number_format_alt_flag_returns_string(self):
+        self.assertEqual("%#d" % (23,), "23")
+        self.assertEqual("%#x" % (23,), "0x17")
+        self.assertEqual("%#X" % (23,), "0X17")
+        self.assertEqual("%#o" % (23,), "0o27")
+
+    def test_number_format_with_width_returns_string(self):
+        self.assertEqual("%5d" % (123,), "  123")
+        self.assertEqual("%5d" % (-8,), "   -8")
+        self.assertEqual("%-5d" % (123,), "123  ")
+        self.assertEqual("%-5d" % (-8,), "-8   ")
+
+        self.assertEqual("%05d" % (123,), "00123")
+        self.assertEqual("%05d" % (-8,), "-0008")
+        self.assertEqual("%-05d" % (123,), "123  ")
+        self.assertEqual("%0-5d" % (-8,), "-8   ")
+
+        self.assertEqual("%#7x" % (42,), "   0x2a")
+        self.assertEqual("%#7x" % (-42,), "  -0x2a")
+
+        self.assertEqual("%5d" % (123456,), "123456")
+        self.assertEqual("%-5d" % (-123456,), "-123456")
+
+    def test_number_format_with_precision_returns_string(self):
+        self.assertEqual("%.5d" % (123,), "00123")
+        self.assertEqual("%.5d" % (-123,), "-00123")
+        self.assertEqual("%.5d" % (1234567,), "1234567")
+        self.assertEqual("%#.5x" % (99,), "0x00063")
+
+    def test_number_format_with_width_precision_flags_returns_string(self):
+        self.assertEqual("%8.3d" % (12,), "     012")
+        self.assertEqual("%8.3d" % (-7,), "    -007")
+        self.assertEqual("%05.3d" % (12,), "00012")
+        self.assertEqual("%+05.3d" % (12,), "+0012")
+        self.assertEqual("% 05.3d" % (12,), " 0012")
+        self.assertEqual("% 05.3x" % (19,), " 0013")
+
+        self.assertEqual("%-8.3d" % (12,), "012     ")
+        self.assertEqual("%-8.3d" % (-7,), "-007    ")
+        self.assertEqual("%- 8.3d" % (66,), " 066    ")
+
     def test_width_and_precision_star_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             "%*d" % (42,)

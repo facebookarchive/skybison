@@ -2,11 +2,11 @@
 """This is an internal module implementing "str.__mod__" formatting."""
 
 _float_check = _float_check  # noqa: F821
+_index = _index  # noqa: F821
+_int_check = _int_check  # noqa: F821
 _int_format_hexadecimal = _int_format_hexadecimal  # noqa: F821
 _int_format_hexadecimal_upcase = _int_format_hexadecimal_upcase  # noqa: F821
 _int_format_octal = _int_format_octal  # noqa: F821
-_index = _index  # noqa: F821
-_int_check = _int_check  # noqa: F821
 _mapping_check = _mapping_check  # noqa: F821
 _number_check = _number_check  # noqa: F821
 _str_check = _str_check  # noqa: F821
@@ -34,6 +34,48 @@ def _format_string(result, flags, width, precision, fragment):
     if padding_len > 0 and not (flags & _FLAG_LJUST):
         _strarray_iadd(result, " " * padding_len)
         padding_len = 0
+    _strarray_iadd(result, fragment)
+    if padding_len > 0:
+        _strarray_iadd(result, " " * padding_len)
+
+
+def _format_number(result, flags, width, precision, sign, prefix, fragment):
+    if width <= 0 and precision < 0:
+        _strarray_iadd(result, sign)
+        _strarray_iadd(result, prefix)
+        _strarray_iadd(result, fragment)
+        return
+
+    # Compute a couple values before assembling the result:
+    # - `padding_len` the number of spaces around the number
+    #    - _FLAG_LJUST determines whether it is before/after
+    #    - We compute it by starting with the full width and subtracting the
+    #      length of everything else we are going to emit.
+    # - `num_leading_zeros` number of extra zeros to print between prefix and
+    #    the number.
+    fragment_len = _str_len(fragment)
+    padding_len = width - fragment_len - _str_len(sign) - _str_len(prefix)
+
+    num_leading_zeros = 0
+    if precision >= 0:
+        num_leading_zeros = precision - fragment_len
+        if num_leading_zeros > 0:
+            padding_len -= num_leading_zeros
+
+    if (flags & _FLAG_ZERO) and not (flags & _FLAG_LJUST):
+        # Perform padding by increasing precision instead.
+        if padding_len > 0:
+            num_leading_zeros += padding_len
+        padding_len = 0
+
+    # Compose the result.
+    if padding_len > 0 and not (flags & _FLAG_LJUST):
+        _strarray_iadd(result, " " * padding_len)
+        padding_len = 0
+    _strarray_iadd(result, sign)
+    _strarray_iadd(result, prefix)
+    if num_leading_zeros > 0:
+        _strarray_iadd(result, "0" * num_leading_zeros)
     _strarray_iadd(result, fragment)
     if padding_len > 0:
         _strarray_iadd(result, " " * padding_len)
@@ -218,10 +260,8 @@ def format(string: str, args) -> str:  # noqa: C901
                     sign = "-"
                 else:
                     sign = positive_sign
-                _strarray_iadd(result, sign)
-                _strarray_iadd(result, int.__str__(value))
-                if width >= 0 or precision >= 0 or flags != 0 or use_alt_formatting:
-                    _unimplemented()
+                fragment = int.__str__(value)
+                _format_number(result, flags, width, precision, sign, "", fragment)
             elif c == "x":
                 try:
                     if not _number_check(arg):
@@ -235,10 +275,9 @@ def format(string: str, args) -> str:  # noqa: C901
                     sign = "-"
                 else:
                     sign = positive_sign
-                _strarray_iadd(result, sign)
-                _strarray_iadd(result, _int_format_hexadecimal(value))
-                if width >= 0 or precision >= 0 or flags != 0 or use_alt_formatting:
-                    _unimplemented()
+                prefix = "0x" if use_alt_formatting else ""
+                fragment = _int_format_hexadecimal(value)
+                _format_number(result, flags, width, precision, sign, prefix, fragment)
             elif c == "X":
                 try:
                     if not _number_check(arg):
@@ -252,10 +291,9 @@ def format(string: str, args) -> str:  # noqa: C901
                     sign = "-"
                 else:
                     sign = positive_sign
-                _strarray_iadd(result, sign)
-                _strarray_iadd(result, _int_format_hexadecimal_upcase(value))
-                if width >= 0 or precision >= 0 or flags != 0 or use_alt_formatting:
-                    _unimplemented()
+                prefix = "0X" if use_alt_formatting else ""
+                fragment = _int_format_hexadecimal_upcase(value)
+                _format_number(result, flags, width, precision, sign, prefix, fragment)
             elif c == "o":
                 try:
                     if not _number_check(arg):
@@ -269,10 +307,9 @@ def format(string: str, args) -> str:  # noqa: C901
                     sign = "-"
                 else:
                     sign = positive_sign
-                _strarray_iadd(result, sign)
-                _strarray_iadd(result, _int_format_octal(value))
-                if width >= 0 or precision >= 0 or flags != 0 or use_alt_formatting:
-                    _unimplemented()
+                prefix = "0o" if use_alt_formatting else ""
+                fragment = _int_format_octal(value)
+                _format_number(result, flags, width, precision, sign, prefix, fragment)
             elif c == "g":
                 if not _float_check(arg):
                     _unimplemented()
