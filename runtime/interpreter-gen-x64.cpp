@@ -239,7 +239,7 @@ void emitGenericHandler(EmitEnv* env, Bytecode bc) {
   static_assert(static_cast<int>(Interpreter::Continue::NEXT) == 0,
                 "NEXT must be 0");
   __ testl(RAX, RAX);
-  __ jcc(NOT_ZERO, &handle_flow, true);
+  __ jcc(NOT_ZERO, &handle_flow, Assembler::kNearJump);
 
   emitRestoreInterpreterState(
       env, mayChangeFramePC(bc) ? kAllState : (kVMStack | kBytecode));
@@ -254,7 +254,7 @@ void emitGenericHandler(EmitEnv* env, Bytecode bc) {
 
 // Jump to the generic handler for the Bytecode being currently emitted.
 void emitJumpToGenericHandler(EmitEnv* env) {
-  __ jmp(&env->call_handlers[env->current_op]);
+  __ jmp(&env->call_handlers[env->current_op], Assembler::kFarJump);
 }
 
 // Fallback handler for all unimplemented opcodes: call out to C++.
@@ -328,7 +328,7 @@ void emitIcLookup(EmitEnv* env, Label* not_found, Register r_dst,
     __ cmpl(Address(r_caches, (i + kIcEntryKeyOffset) * kPointerSize),
             r_layout_id);
     if (is_last) {
-      __ jcc(NOT_EQUAL, not_found);
+      __ jcc(NOT_EQUAL, not_found, Assembler::kFarJump);
       __ movq(r_dst,
               Address(r_caches, (i + kIcEntryValueOffset) * kPointerSize));
     } else {
@@ -358,7 +358,7 @@ void emitPushBoundMethod(EmitEnv* env, Label* slow_path, Register r_self,
   __ addq(r_scratch, Immediate(Space::roundAllocationSize(
                          Instance::allocationSize(num_attrs))));
   __ cmpq(r_scratch, Address(r_space, Space::endOffset()));
-  __ jcc(GREATER, slow_path);
+  __ jcc(GREATER, slow_path, Assembler::kFarJump);
   __ xchgq(r_scratch, Address(r_space, Space::fillOffset()));
   RawHeader header = Header::from(num_attrs, 0, LayoutId::kBoundMethod,
                                   ObjectFormat::kObjects);
@@ -524,7 +524,7 @@ void emitHandler<LOAD_FAST_REVERSE>(EmitEnv* env) {
 
   __ movq(r_scratch, Address(kFrameReg, kOpargReg, TIMES_8, Frame::kSize));
   __ cmpb(r_scratch, Immediate(Error::notFound().raw()));
-  __ jcc(EQUAL, &not_found, true);
+  __ jcc(EQUAL, &not_found, Assembler::kNearJump);
   __ pushq(r_scratch);
   emitNextOpcode(env);
 
@@ -561,9 +561,9 @@ void emitPopJumpIfBool(EmitEnv* env, bool jump_value) {
   // Handle RawBools directly; fall back to C++ for other types.
   __ popq(r_scratch);
   __ cmpb(r_scratch, boolImmediate(!jump_value));
-  __ jcc(EQUAL, &next, true);
+  __ jcc(EQUAL, &next, Assembler::kNearJump);
   __ cmpb(r_scratch, boolImmediate(jump_value));
-  __ jcc(NOT_EQUAL, &slow_path, true);
+  __ jcc(NOT_EQUAL, &slow_path, Assembler::kNearJump);
   __ movq(kPCReg, kOpargReg);
   __ bind(&next);
   emitNextOpcode(env);
@@ -591,9 +591,9 @@ void emitJumpIfBoolOrPop(EmitEnv* env, bool jump_value) {
   // Handle RawBools directly; fall back to C++ for other types.
   __ popq(r_scratch);
   __ cmpb(r_scratch, boolImmediate(!jump_value));
-  __ jcc(EQUAL, &next, true);
+  __ jcc(EQUAL, &next, Assembler::kNearJump);
   __ cmpb(r_scratch, boolImmediate(jump_value));
-  __ jcc(NOT_EQUAL, &slow_path, true);
+  __ jcc(NOT_EQUAL, &slow_path, Assembler::kNearJump);
   __ pushq(r_scratch);
   __ movl(kPCReg, kOpargReg);
   __ bind(&next);
@@ -771,7 +771,7 @@ void emitInterpreter(EmitEnv* env) {
     __ movq(RAX, Immediate(reinterpret_cast<word>(Interpreter::unwind)));
     __ call(RAX);
     __ cmpb(RAX, Immediate(0));
-    __ jcc(NOT_EQUAL, &do_return, false);
+    __ jcc(NOT_EQUAL, &do_return, Assembler::kFarJump);
     emitRestoreInterpreterState(env, kAllState);
     emitNextOpcode(env);
   }
@@ -787,7 +787,7 @@ void emitInterpreter(EmitEnv* env) {
     __ movq(RAX, Immediate(reinterpret_cast<word>(Interpreter::handleReturn)));
     __ call(RAX);
     __ cmpb(RAX, Immediate(0));
-    __ jcc(NOT_EQUAL, &do_return, false);
+    __ jcc(NOT_EQUAL, &do_return, Assembler::kFarJump);
     emitRestoreInterpreterState(env, kAllState);
     emitNextOpcode(env);
   }
@@ -798,7 +798,7 @@ void emitInterpreter(EmitEnv* env) {
   {
     env->current_handler = "YIELD pseudo-handler";
     HandlerSizer sizer(env, kHandlerSize);
-    __ jmp(&do_return, false);
+    __ jmp(&do_return, Assembler::kFarJump);
   }
 
   // Mark the beginning of the opcode handlers and emit them at regular
