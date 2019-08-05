@@ -3099,9 +3099,70 @@ class StrModTests(unittest.TestCase):
     def test_with_non_tuple_args_returns_string(self):
         self.assertEqual("%s" % "foo", "foo")
         self.assertEqual("%d" % 42, "42")
+        self.assertEqual("%s" % {"foo": "bar"}, "{'foo': 'bar'}")
 
     def test_s_format_returns_string(self):
         self.assertEqual("%s" % ("foo",), "foo")
+
+        class C:
+            __repr__ = None
+
+            def __str__(self):
+                return "str called"
+
+        self.assertEqual("%s" % (C(),), "str called")
+
+    def test_s_format_propagates_errors(self):
+        class C:
+            def __str__(self):
+                raise UserWarning()
+
+        with self.assertRaises(UserWarning):
+            "%s" % (C(),)
+
+    def test_r_format_returns_string(self):
+        self.assertEqual("%r" % (42,), "42")
+        self.assertEqual("%r" % ("foo",), "'foo'")
+        self.assertEqual("%r" % ({"foo": "𝓫𝓪𝓻"},), "{'foo': '𝓫𝓪𝓻'}")
+
+        class C:
+            def __repr__(self):
+                return "repr called"
+
+            __str__ = None
+
+        self.assertEqual("%r" % (C(),), "repr called")
+
+    def test_r_format_propagates_errors(self):
+        class C:
+            def __repr__(self):
+                raise UserWarning()
+
+        with self.assertRaises(UserWarning):
+            "%r" % (C(),)
+
+    def test_a_format_returns_string(self):
+        self.assertEqual("%a" % (42,), "42")
+        self.assertEqual("%a" % ("foo",), "'foo'")
+
+        class C:
+            def __repr__(self):
+                return "repr called"
+
+            __str__ = None
+
+        self.assertEqual("%a" % (C(),), "repr called")
+        # TODO(T39861344, T38702699): We should have a test with some non-ascii
+        # characters here proving that they are escaped. Unfortunately
+        # builtins.ascii() does not work in that case yet.
+
+    def test_a_format_propagates_errors(self):
+        class C:
+            def __repr__(self):
+                raise UserWarning()
+
+        with self.assertRaises(UserWarning):
+            "%a" % (C(),)
 
     def test_d_format_returns_string(self):
         self.assertEqual("%d" % (0,), "0")

@@ -48,9 +48,11 @@ def format(string: str, args) -> str:  # noqa: C901
             if c == "%":
                 _strarray_iadd(result, "%")
             elif c == "s":
-                if not _str_check(arg):
-                    _unimplemented()
-                _strarray_iadd(result, arg)
+                _strarray_iadd(result, str(arg))
+            elif c == "r":
+                _strarray_iadd(result, repr(arg))
+            elif c == "a":
+                _strarray_iadd(result, ascii(arg))
             elif c in "d":
                 if not _int_check(arg):
                     _unimplemented()
