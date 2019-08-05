@@ -337,4 +337,18 @@ inline RawObject objectFromOparg(word arg) {
   return RawObject(static_cast<uword>(static_cast<int8_t>(arg)));
 }
 
+// Prepares bytecode for caching: Adds a rewritten variant of the bytecode to
+// `function`. It has the arguments of opcodes that use the cache replaced with
+// a cache index. The previous arguments are moved to a separate tuple and can
+// be retrieved with `icOriginalArg()`. Also adds a correctly sized `caches`
+// tuple to `function`.
+void rewriteBytecode(Thread* thread, const Function& function);
+
+// Returns the original argument of bytecode operations that were rewritten by
+// `rewriteBytecode()`.
+inline word originalArg(RawFunction function, word index) {
+  return SmallInt::cast(RawTuple::cast(function.originalArguments()).at(index))
+      .value();
+}
+
 }  // namespace python

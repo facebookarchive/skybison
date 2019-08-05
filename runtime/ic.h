@@ -35,17 +35,6 @@ RawObject icLookupBinop(RawTuple caches, word index, LayoutId left_layout_id,
 // Returns the NoneType object otherwise.
 RawObject icLookupGlobalVar(RawTuple caches, word index);
 
-// Returns the original argument of bytecode operations that were rewritten by
-// `rewriteBytecode()`.
-word icOriginalArg(RawFunction function, word index);
-
-// Prepares bytecode for caching: Adds a rewritten variant of the bytecode to
-// `function`. It has the arguments of opcodes that use the cache replaced with
-// a cache index. The previous arguments are moved to a separate tuple and can
-// be retrieved with `icOriginalArg()`. Also adds a correctly sized `caches`
-// tuple to `function`.
-void icRewriteBytecode(Thread* thread, const Function& function);
-
 // Sets a cache entry for an attribute to the given `layout_id` as key and
 // `value` as value.
 void icUpdateAttr(RawTuple caches, word index, LayoutId layout_id,
@@ -200,11 +189,6 @@ inline RawObject icLookupBinop(RawTuple caches, word index,
 
 inline RawObject icLookupGlobalVar(RawTuple caches, word index) {
   return caches.at(index);
-}
-
-inline word icOriginalArg(RawFunction function, word index) {
-  return SmallInt::cast(RawTuple::cast(function.originalArguments()).at(index))
-      .value();
 }
 
 }  // namespace python

@@ -1989,8 +1989,7 @@ HANDLER_INLINE Continue Interpreter::doForIterCached(Thread* thread, word arg) {
   LayoutId iter_layout_id = iter.layoutId();
   RawObject cached = icLookupAttr(frame->caches(), arg, iter_layout_id);
   if (cached.isErrorNotFound()) {
-    return forIterUpdateCache(thread, icOriginalArg(frame->function(), arg),
-                              arg)
+    return forIterUpdateCache(thread, originalArg(frame->function(), arg), arg)
                ? Continue::UNWIND
                : Continue::NEXT;
   }
@@ -2002,10 +2001,10 @@ HANDLER_INLINE Continue Interpreter::doForIterCached(Thread* thread, word arg) {
   if (result.isErrorException()) {
     if (thread->clearPendingStopIteration()) {
       frame->popValue();
-      // TODO(bsimmers): icOriginalArg() is only meant for slow paths, but we
+      // TODO(bsimmers): originalArg() is only meant for slow paths, but we
       // currently have no other way of getting this information.
       frame->setVirtualPC(frame->virtualPC() +
-                          icOriginalArg(frame->function(), arg));
+                          originalArg(frame->function(), arg));
       return Continue::NEXT;
     }
     return Continue::UNWIND;
@@ -2141,7 +2140,7 @@ RawObject Interpreter::storeAttrSetLocation(Thread* thread,
 
 Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  word original_arg = icOriginalArg(frame->function(), arg);
+  word original_arg = originalArg(frame->function(), arg);
   HandleScope scope(thread);
   Object receiver(&scope, frame->popValue());
   Object name(&scope,
@@ -2436,7 +2435,7 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread, const Object& object,
 Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  word original_arg = icOriginalArg(frame->function(), arg);
+  word original_arg = originalArg(frame->function(), arg);
   Object receiver(&scope, frame->topValue());
   Object name(&scope,
               Tuple::cast(Code::cast(frame->code()).names()).at(original_arg));
@@ -3514,7 +3513,7 @@ Continue Interpreter::compareOpUpdateCache(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   Object right(&scope, frame->popValue());
   Object left(&scope, frame->popValue());
-  CompareOp op = static_cast<CompareOp>(icOriginalArg(frame->function(), arg));
+  CompareOp op = static_cast<CompareOp>(originalArg(frame->function(), arg));
   Object method(&scope, NoneType::object());
   IcBinopFlags flags;
   RawObject result = compareOperationSetMethod(thread, frame, op, left, right,
@@ -3536,7 +3535,7 @@ Continue Interpreter::compareOpFallback(Thread* thread, word arg,
   // returned `NotImplemented`.
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
-  CompareOp op = static_cast<CompareOp>(icOriginalArg(frame->function(), arg));
+  CompareOp op = static_cast<CompareOp>(originalArg(frame->function(), arg));
   Object right(&scope, frame->popValue());
   Object left(&scope, frame->popValue());
   Object result(&scope,
@@ -3557,7 +3556,7 @@ Continue Interpreter::inplaceOpUpdateCache(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   Object right(&scope, frame->popValue());
   Object left(&scope, frame->popValue());
-  BinaryOp op = static_cast<BinaryOp>(icOriginalArg(frame->function(), arg));
+  BinaryOp op = static_cast<BinaryOp>(originalArg(frame->function(), arg));
   Object method(&scope, NoneType::object());
   IcBinopFlags flags;
   RawObject result = inplaceOperationSetMethod(thread, frame, op, left, right,
@@ -3579,7 +3578,7 @@ Continue Interpreter::inplaceOpFallback(Thread* thread, word arg,
   // call returned `NotImplemented`.
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
-  BinaryOp op = static_cast<BinaryOp>(icOriginalArg(frame->function(), arg));
+  BinaryOp op = static_cast<BinaryOp>(originalArg(frame->function(), arg));
   Object right(&scope, frame->popValue());
   Object left(&scope, frame->popValue());
   Object result(&scope, NoneType::object());
@@ -3608,7 +3607,7 @@ Continue Interpreter::binaryOpUpdateCache(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   Object right(&scope, frame->popValue());
   Object left(&scope, frame->popValue());
-  BinaryOp op = static_cast<BinaryOp>(icOriginalArg(frame->function(), arg));
+  BinaryOp op = static_cast<BinaryOp>(originalArg(frame->function(), arg));
   Object method(&scope, NoneType::object());
   IcBinopFlags flags;
   Object result(&scope, binaryOperationSetMethod(thread, frame, op, left, right,
@@ -3628,7 +3627,7 @@ Continue Interpreter::binaryOpFallback(Thread* thread, word arg,
   // returned `NotImplemented`.
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
-  BinaryOp op = static_cast<BinaryOp>(icOriginalArg(frame->function(), arg));
+  BinaryOp op = static_cast<BinaryOp>(originalArg(frame->function(), arg));
   Object right(&scope, frame->popValue());
   Object left(&scope, frame->popValue());
   Object result(&scope,
