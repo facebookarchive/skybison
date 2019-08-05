@@ -299,6 +299,7 @@ class Runtime;
   V(UnderSliceCheck, "_slice_check")                                           \
   V(UnderSliceGuard, "_slice_guard")                                           \
   V(UnderSliceIndex, "_slice_index")                                           \
+  V(UnderSliceIndexNotNone, "_slice_index_not_none")                           \
   V(UnderSliceStart, "_slice_start")                                           \
   V(UnderSliceStep, "_slice_step")                                             \
   V(UnderSliceStop, "_slice_stop")                                             \

@@ -261,6 +261,16 @@ static bool underSliceIndex(Thread* thread, Frame* frame) {
   return false;
 }
 
+static bool underSliceIndexNotNone(Thread* thread, Frame* frame) {
+  RawObject value = frame->topValue();
+  if (thread->runtime()->isInstanceOfInt(value)) {
+    frame->popValue();
+    frame->setTopValue(value);
+    return true;
+  }
+  return false;
+}
+
 static bool underStrCheck(Thread* thread, Frame* frame) {
   frame->setTopValue(
       Bool::fromBool(thread->runtime()->isInstanceOfStr(frame->popValue())));
@@ -421,6 +431,8 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
       return underSliceGuard(frame);
     case SymbolId::kUnderSliceIndex:
       return underSliceIndex(thread, frame);
+    case SymbolId::kUnderSliceIndexNotNone:
+      return underSliceIndexNotNone(thread, frame);
     case SymbolId::kUnderStrCheck:
       return underStrCheck(thread, frame);
     case SymbolId::kUnderStrCheckExact:

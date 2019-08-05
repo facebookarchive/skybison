@@ -1879,6 +1879,61 @@ class ListTests(unittest.TestCase):
         self.assertEqual(r12, 2)
         self.assertEqual(r13, 3)
 
+    def test_index_with_non_list_self_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            list.index(1, 2)
+        self.assertIn(
+            "'index' requires a 'list' object but received a 'int'",
+            str(context.exception),
+        )
+
+    def test_index_with_none_start_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            [].index(1, None)
+        self.assertEqual(
+            str(context.exception),
+            "slice indices must be integers or have an __index__ method",
+        )
+
+    def test_index_with_none_stop_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            [].index(1, 2, None)
+        self.assertEqual(
+            str(context.exception),
+            "slice indices must be integers or have an __index__ method",
+        )
+
+    def test_index_with_negative_searches_relative_to_end(self):
+        ls = list(range(10))
+        self.assertEqual(ls.index(4, -7, -3), 4)
+
+    def test_index_searches_from_left(self):
+        ls = [1, 2, 1, 2, 1, 2, 1]
+        self.assertEqual(ls.index(1, 1, -1), 2)
+
+    def test_index_outside_of_bounds_raises_value_error(self):
+        ls = list(range(10))
+        with self.assertRaises(ValueError) as context:
+            self.assertEqual(ls.index(4, 5), 4)
+        self.assertEqual(str(context.exception), "4 is not in list")
+
+    def test_index_calls_dunder_eq(self):
+        class AlwaysEqual:
+            def __eq__(self, other):
+                return True
+
+        class NeverEqual:
+            def __eq__(self, other):
+                return False
+
+        a = AlwaysEqual()
+        n = NeverEqual()
+        a_list = [a, a, a, a, a]
+        n_list = [n, n, n]
+        self.assertEqual(a_list.index(a), 0)
+        self.assertEqual(a_list.index(n, 1), 1)
+        self.assertEqual(n_list.index(n, 2, 3), 2)
+
     def test_pop_with_non_list_raises_type_error(self):
         self.assertRaises(TypeError, list.pop, None)
 

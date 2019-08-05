@@ -191,6 +191,7 @@ const char* const BuiltinsModule::kFrozenData = kBuiltinsModuleData;
 
 const SymbolId BuiltinsModule::kIntrinsicIds[] = {
     SymbolId::kUnderSliceIndex,
+    SymbolId::kUnderSliceIndexNotNone,
     SymbolId::kIsInstance,
     SymbolId::kSentinelId,
 };

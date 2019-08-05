@@ -829,6 +829,14 @@ def _slice_index(num) -> int:
     )
 
 
+def _slice_index_not_none(num) -> int:
+    if _int_check(num):
+        return num
+    if _object_type_hasattr(num, "__index__"):
+        return _index(num)
+    raise TypeError("slice indices must be integers or have an __index__ method")
+
+
 def _str_split_whitespace(self, maxsplit):
     length = _str_len(self)
     i = 0
@@ -2559,6 +2567,34 @@ class list(bootstrap=True):
             return _list_extend(self, other)
         for item in other:
             list.append(self, item)
+
+    def index(self, obj, start=0, end=_Unbound):
+        _list_guard(self)
+        length = _list_len(self)
+        # enforce type int to avoid custom comparators
+        i = (
+            start
+            if _int_checkexact(start)
+            else _int_new_from_int(int, _slice_index_not_none(start))
+        )
+        if end is _Unbound:
+            end = length
+        elif not _int_checkexact(end):
+            end = _int_new_from_int(int, _slice_index_not_none(end))
+        if i < 0:
+            i += length
+            if i < 0:
+                i = 0
+        if end < 0:
+            end += length
+            if end < 0:
+                end = 0
+        while i < end:
+            item = _list_getitem(self, i)
+            if item is obj or item == obj:
+                return i
+            i += 1
+        raise ValueError(f"{repr(obj)} is not in list")
 
     def insert(self, index, value):
         pass
