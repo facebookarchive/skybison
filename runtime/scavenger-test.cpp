@@ -346,4 +346,36 @@ def g(ref, c=4):
   EXPECT_EQ(b.value(), 4);
 }
 
+TEST_F(ScavengerTest, CollectGarbagePreservesPendingException) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+did_run = False
+def callback(ref):
+  global did_run
+  did_run = ref
+  raise TabError()
+class C:
+  pass
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  ASSERT_EQ(moduleAt(&runtime_, "__main__", "did_run"), Bool::falseObj());
+  Object callback(&scope, moduleAt(&runtime_, "__main__", "callback"));
+  Type c(&scope, moduleAt(&runtime_, "__main__", "C"));
+
+  // Create an instance C and a weak reference with callback to it.
+  Layout layout(&scope, c.instanceLayout());
+  Object instance(&scope, runtime_.newInstance(layout));
+  WeakRef ref(&scope, runtime_.newWeakRef(thread_, instance, callback));
+  instance = NoneType::object();
+
+  thread_->raise(LayoutId::kUserWarning, runtime_.newInt(99));
+  runtime_.collectGarbage();
+
+  EXPECT_EQ(ref.referent(), NoneType::object());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "did_run"), ref);
+  ASSERT_TRUE(thread_->hasPendingException());
+  EXPECT_TRUE(thread_->pendingExceptionMatches(LayoutId::kUserWarning));
+  EXPECT_TRUE(isIntEqualsWord(thread_->pendingExceptionValue(), 99));
+}
+
 }  // namespace python

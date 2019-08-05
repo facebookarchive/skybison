@@ -1744,6 +1744,11 @@ void Runtime::processCallbacks() {
   Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
+  Object saved_type(&scope, thread->pendingExceptionType());
+  Object saved_value(&scope, thread->pendingExceptionValue());
+  Object saved_traceback(&scope, thread->pendingExceptionTraceback());
+  thread->clearPendingException();
+
   while (callbacks_ != NoneType::object()) {
     Object weak(&scope, WeakRef::dequeueReference(&callbacks_));
     Object callback(&scope, WeakRef::cast(*weak).callback());
@@ -1751,6 +1756,10 @@ void Runtime::processCallbacks() {
     thread->ignorePendingException();
     WeakRef::cast(*weak).setCallback(NoneType::object());
   }
+
+  thread->setPendingExceptionType(*saved_type);
+  thread->setPendingExceptionValue(*saved_value);
+  thread->setPendingExceptionTraceback(*saved_traceback);
 }
 
 RawObject Runtime::findOrCreateImportlibModule(Thread* thread) {
@@ -3670,15 +3679,15 @@ RawObject Runtime::attributeAt(Thread* thread, const Object& object,
   }
 
   // Save the attribute error and clear it then attempt to call `__getattr__`.
-  Object exception_type(&scope, thread->pendingExceptionType());
-  Object exception_value(&scope, thread->pendingExceptionValue());
-  Object exception_traceback(&scope, thread->pendingExceptionTraceback());
+  Object saved_type(&scope, thread->pendingExceptionType());
+  Object saved_value(&scope, thread->pendingExceptionValue());
+  Object saved_traceback(&scope, thread->pendingExceptionTraceback());
   thread->clearPendingException();
   result = thread->invokeMethod2(object, SymbolId::kDunderGetattr, name_str);
   if (result.isErrorNotFound()) {
-    thread->setPendingExceptionType(*exception_type);
-    thread->setPendingExceptionValue(*exception_value);
-    thread->setPendingExceptionTraceback(*exception_traceback);
+    thread->setPendingExceptionType(*saved_type);
+    thread->setPendingExceptionValue(*saved_value);
+    thread->setPendingExceptionTraceback(*saved_traceback);
     return Error::exception();
   }
   return *result;
