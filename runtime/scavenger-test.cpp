@@ -358,9 +358,9 @@ class C:
 )")
                    .isError());
   HandleScope scope(thread_);
-  ASSERT_EQ(moduleAt(&runtime_, "__main__", "did_run"), Bool::falseObj());
-  Object callback(&scope, moduleAt(&runtime_, "__main__", "callback"));
-  Type c(&scope, moduleAt(&runtime_, "__main__", "C"));
+  ASSERT_EQ(mainModuleAt(&runtime_, "did_run"), Bool::falseObj());
+  Object callback(&scope, mainModuleAt(&runtime_, "callback"));
+  Type c(&scope, mainModuleAt(&runtime_, "C"));
 
   // Create an instance C and a weak reference with callback to it.
   Layout layout(&scope, c.instanceLayout());
@@ -372,7 +372,7 @@ class C:
   runtime_.collectGarbage();
 
   EXPECT_EQ(ref.referent(), NoneType::object());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "did_run"), ref);
+  EXPECT_EQ(mainModuleAt(&runtime_, "did_run"), ref);
   ASSERT_TRUE(thread_->hasPendingException());
   EXPECT_TRUE(thread_->pendingExceptionMatches(LayoutId::kUserWarning));
   EXPECT_TRUE(isIntEqualsWord(thread_->pendingExceptionValue(), 99));
