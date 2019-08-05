@@ -1788,7 +1788,7 @@ sys.displayhook = my_displayhook
 
   ASSERT_TRUE(runCode(code).isNoneType());
 
-  Object displayhook(&scope, moduleAt(&runtime_, "sys", "displayhook"));
+  Object displayhook(&scope, moduleAtByCStr(&runtime_, "sys", "displayhook"));
   Object my_displayhook(&scope, mainModuleAt(&runtime_, "my_displayhook"));
   EXPECT_EQ(*displayhook, *my_displayhook);
 

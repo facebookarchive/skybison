@@ -19,7 +19,7 @@ TEST_F(ImportlibTest, SimpleImport) {
   writeFile(tempdir.path + "bar.py", "x = 67");
 
   HandleScope scope(thread_);
-  List sys_path(&scope, moduleAt(&runtime_, "sys", "path"));
+  List sys_path(&scope, moduleAtByCStr(&runtime_, "sys", "path"));
   sys_path.setNumItems(0);
   Str temp_dir_str(&scope, runtime_.newStrFromCStr(tempdir.path.c_str()));
   runtime_.listAdd(thread_, sys_path, temp_dir_str);
@@ -50,7 +50,7 @@ TEST_F(ImportlibTest, ImportsEmptyModule) {
   ASSERT_EQ(mkdir(module_dir.c_str(), S_IRWXU), 0);
 
   HandleScope scope(thread_);
-  List sys_path(&scope, moduleAt(&runtime_, "sys", "path"));
+  List sys_path(&scope, moduleAtByCStr(&runtime_, "sys", "path"));
   sys_path.setNumItems(0);
   Str temp_dir_str(&scope, runtime_.newStrFromCStr(tempdir.path.c_str()));
   runtime_.listAdd(thread_, sys_path, temp_dir_str);
@@ -69,7 +69,7 @@ TEST_F(ImportlibTest, ImportsModuleWithInitPy) {
   writeFile(module_dir + "/__init__.py", "y = 13");
 
   HandleScope scope(thread_);
-  List sys_path(&scope, moduleAt(&runtime_, "sys", "path"));
+  List sys_path(&scope, moduleAtByCStr(&runtime_, "sys", "path"));
   sys_path.setNumItems(0);
   Str temp_dir_str(&scope, runtime_.newStrFromCStr(tempdir.path.c_str()));
   runtime_.listAdd(thread_, sys_path, temp_dir_str);
@@ -92,7 +92,7 @@ TEST_F(ImportlibTest, SubModuleImport) {
   writeFile(module_dir + "/blam.py", "z = 7");
 
   HandleScope scope(thread_);
-  List sys_path(&scope, moduleAt(&runtime_, "sys", "path"));
+  List sys_path(&scope, moduleAtByCStr(&runtime_, "sys", "path"));
   sys_path.setNumItems(0);
   Str temp_dir_str(&scope, runtime_.newStrFromCStr(tempdir.path.c_str()));
   runtime_.listAdd(thread_, sys_path, temp_dir_str);
@@ -122,7 +122,7 @@ TEST_F(ImportlibTest, FromImportsWithRelativeName) {
   writeFile(submodule + "/a.py", "val = 'submodule val'");
 
   HandleScope scope(thread_);
-  List sys_path(&scope, moduleAt(&runtime_, "sys", "path"));
+  List sys_path(&scope, moduleAtByCStr(&runtime_, "sys", "path"));
   sys_path.setNumItems(0);
   Str temp_dir_str(&scope, runtime_.newStrFromCStr(tempdir.path.c_str()));
   runtime_.listAdd(thread_, sys_path, temp_dir_str);
@@ -133,9 +133,9 @@ from submodule.a import val
 )")
                    .isError());
 
-  Object top_val(&scope, moduleAt(&runtime_, "a", "val"));
+  Object top_val(&scope, moduleAtByCStr(&runtime_, "a", "val"));
   EXPECT_TRUE(isStrEqualsCStr(*top_val, "top val"));
-  Object subdir_val(&scope, moduleAt(&runtime_, "submodule", "val"));
+  Object subdir_val(&scope, moduleAtByCStr(&runtime_, "submodule", "val"));
   EXPECT_TRUE(isStrEqualsCStr(*subdir_val, "submodule val"));
   Object main_val_from_submodule(&scope, mainModuleAt(&runtime_, "val"));
   EXPECT_TRUE(isStrEqualsCStr(*main_val_from_submodule, "submodule val"));

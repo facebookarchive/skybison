@@ -124,7 +124,8 @@ RawObject mainModuleAt(Runtime* runtime, const char* name);
 
 // Get the value bound to name in the module under the supplied name.
 // Returns Error::object() if not found.
-RawObject moduleAt(Runtime* runtime, const char* module_name, const char* name);
+RawObject moduleAtByCStr(Runtime* runtime, const char* module_name,
+                         const char* name);
 
 // Get the name of the type of the given object.
 std::string typeName(Runtime* runtime, RawObject obj);

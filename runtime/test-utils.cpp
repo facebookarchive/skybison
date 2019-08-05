@@ -189,11 +189,11 @@ RawObject findModule(Runtime* runtime, const char* name) {
 }
 
 RawObject mainModuleAt(Runtime* runtime, const char* name) {
-  return moduleAt(runtime, "__main__", name);
+  return moduleAtByCStr(runtime, "__main__", name);
 }
 
-RawObject moduleAt(Runtime* runtime, const char* module_name,
-                   const char* name) {
+RawObject moduleAtByCStr(Runtime* runtime, const char* module_name,
+                         const char* name) {
   HandleScope scope;
   Object mod_obj(&scope, findModule(runtime, module_name));
   if (mod_obj.isNoneType()) {

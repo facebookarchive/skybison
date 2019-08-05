@@ -2907,12 +2907,16 @@ TEST_F(RuntimeModuleTest, NewModuleSetsDictValues) {
   Module module(&scope, runtime_.newModule(name));
   runtime_.addModule(module);
 
-  Str mod_name(&scope, moduleAt(&runtime_, "mymodule", "__name__"));
+  Str mod_name(&scope, moduleAtByCStr(&runtime_, "mymodule", "__name__"));
   EXPECT_TRUE(mod_name.equalsCStr("mymodule"));
-  EXPECT_EQ(moduleAt(&runtime_, "mymodule", "__doc__"), NoneType::object());
-  EXPECT_EQ(moduleAt(&runtime_, "mymodule", "__package__"), NoneType::object());
-  EXPECT_EQ(moduleAt(&runtime_, "mymodule", "__loader__"), NoneType::object());
-  EXPECT_EQ(moduleAt(&runtime_, "mymodule", "__spec__"), NoneType::object());
+  EXPECT_EQ(moduleAtByCStr(&runtime_, "mymodule", "__doc__"),
+            NoneType::object());
+  EXPECT_EQ(moduleAtByCStr(&runtime_, "mymodule", "__package__"),
+            NoneType::object());
+  EXPECT_EQ(moduleAtByCStr(&runtime_, "mymodule", "__loader__"),
+            NoneType::object());
+  EXPECT_EQ(moduleAtByCStr(&runtime_, "mymodule", "__spec__"),
+            NoneType::object());
 }
 
 TEST_F(RuntimeFunctionAttrTest, SetAttribute) {
@@ -3269,7 +3273,7 @@ o.__getitem__ = 4
 }
 
 TEST_F(RuntimeTest, ModuleBuiltinsExists) {
-  ASSERT_FALSE(moduleAt(&runtime_, "builtins", "__name__").isError());
+  ASSERT_FALSE(moduleAtByCStr(&runtime_, "builtins", "__name__").isError());
 }
 
 TEST_F(RuntimeStrTest, StrJoinWithNonStrRaisesTypeError) {

@@ -500,7 +500,7 @@ right = X(0b0101)
 TEST_F(IntBuiltinsTest, DunderCeilAliasesDunderInt) {
   Thread* thread = Thread::current();
   HandleScope scope(thread_);
-  Type type(&scope, moduleAt(&runtime_, "builtins", "int"));
+  Type type(&scope, moduleAtByCStr(&runtime_, "builtins", "int"));
   Dict dict(&scope, type.dict());
   Object ceil_name(&scope, runtime_.newStrFromCStr("__ceil__"));
   Object ceil_obj(&scope, runtime_.typeDictAt(thread, dict, ceil_name));
@@ -519,7 +519,7 @@ TEST_F(IntBuiltinsTest, DunderCeilAliasesDunderInt) {
 TEST_F(IntBuiltinsTest, DunderFloorAliasesDunderInt) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Type type(&scope, moduleAt(&runtime_, "builtins", "int"));
+  Type type(&scope, moduleAtByCStr(&runtime_, "builtins", "int"));
   Dict dict(&scope, type.dict());
   Object floor_name(&scope, runtime_.newStrFromCStr("__floor__"));
   Object floor_obj(&scope, runtime_.typeDictAt(thread, dict, floor_name));
@@ -1426,7 +1426,7 @@ TEST_F(IntBuiltinsTest, CompareLargeIntLt) {
 TEST_F(IntBuiltinsTest, DunderIndexAliasesDunderInt) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Type type(&scope, moduleAt(&runtime_, "builtins", "int"));
+  Type type(&scope, moduleAtByCStr(&runtime_, "builtins", "int"));
   Dict dict(&scope, type.dict());
   Object index_name(&scope, runtime_.newStrFromCStr("__index__"));
   Object index_obj(&scope, runtime_.typeDictAt(thread, dict, index_name));
@@ -2085,7 +2085,7 @@ TEST_F(IntBuiltinsTest, DunderNegWithLargeIntNoShrinksReturnsLargeInt) {
 TEST_F(IntBuiltinsTest, DunderPosAliasesDunderInt) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Type type(&scope, moduleAt(&runtime_, "builtins", "int"));
+  Type type(&scope, moduleAtByCStr(&runtime_, "builtins", "int"));
   Dict dict(&scope, type.dict());
   Object pos_name(&scope, runtime_.newStrFromCStr("__pos__"));
   Object pos_obj(&scope, runtime_.typeDictAt(thread, dict, pos_name));
@@ -2178,7 +2178,7 @@ TEST_F(IntBuiltinsTest, DunderLeOnBool) {
 TEST_F(IntBuiltinsTest, DunderRoundAliasesDunderInt) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Type type(&scope, moduleAt(&runtime_, "builtins", "int"));
+  Type type(&scope, moduleAtByCStr(&runtime_, "builtins", "int"));
   Dict dict(&scope, type.dict());
   Object round_name(&scope, runtime_.newStrFromCStr("__round__"));
   Object round_obj(&scope, runtime_.typeDictAt(thread, dict, round_name));
@@ -2197,7 +2197,7 @@ TEST_F(IntBuiltinsTest, DunderRoundAliasesDunderInt) {
 TEST_F(IntBuiltinsTest, DunderTruncAliasesDunderInt) {
   Thread* thread = Thread::current();
   HandleScope scope(thread_);
-  Type type(&scope, moduleAt(&runtime_, "builtins", "int"));
+  Type type(&scope, moduleAtByCStr(&runtime_, "builtins", "int"));
   Dict dict(&scope, type.dict());
   Object trunc_name(&scope, runtime_.newStrFromCStr("__trunc__"));
   Object trunc_obj(&scope, runtime_.typeDictAt(thread, dict, trunc_name));
@@ -2536,7 +2536,7 @@ right = X(3)
 TEST_F(IntBuiltinsTest, DunderStrAliasesDunderRepr) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Type type(&scope, moduleAt(&runtime_, "builtins", "int"));
+  Type type(&scope, moduleAtByCStr(&runtime_, "builtins", "int"));
   Dict dict(&scope, type.dict());
   Object str_name(&scope, runtime_.newStrFromCStr("__str__"));
   Object str_obj(&scope, runtime_.typeDictAt(thread, dict, str_name));
@@ -3157,7 +3157,7 @@ TEST_F(IntBuiltinsTest, DunderTrueDivWithSmallIntsReturnsFloat) {
 TEST_F(IntBuiltinsTest, ConjugateAliasesDunderInt) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Type type(&scope, moduleAt(&runtime_, "builtins", "int"));
+  Type type(&scope, moduleAtByCStr(&runtime_, "builtins", "int"));
   Dict dict(&scope, type.dict());
   Object conjugate_name(&scope, runtime_.newStrFromCStr("conjugate"));
   Object conjugate_obj(&scope,

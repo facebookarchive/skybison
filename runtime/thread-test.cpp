@@ -2218,7 +2218,7 @@ result0 = a()()
                    .isError());
   // Object a(&scope, mainModuleAt(&runtime_, "a"));
   Object result0(&scope, mainModuleAt(&runtime_, "result0"));
-  Object object(&scope, moduleAt(&runtime_, "builtins", "object"));
+  Object object(&scope, moduleAtByCStr(&runtime_, "builtins", "object"));
   EXPECT_EQ(result0, object);
 }
 

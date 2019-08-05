@@ -265,7 +265,7 @@ TEST_F(DebuggingTests, FormatFloat) {
 TEST_F(DebuggingTests, FormatFunction) {
   HandleScope scope(thread_);
   std::stringstream ss;
-  Object function(&scope, moduleAt(&runtime_, "builtins", "callable"));
+  Object function(&scope, moduleAtByCStr(&runtime_, "builtins", "callable"));
   ASSERT_TRUE(function.isFunction());
   ss << function;
   EXPECT_EQ(ss.str(), R"(<function "callable">)");

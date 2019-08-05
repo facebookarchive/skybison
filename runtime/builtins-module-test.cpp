@@ -116,7 +116,8 @@ dir()
 }
 
 TEST_F(BuiltinsModuleTest, EllipsisMatchesEllipsis) {
-  EXPECT_EQ(moduleAt(&runtime_, "builtins", "Ellipsis"), runtime_.ellipsis());
+  EXPECT_EQ(moduleAtByCStr(&runtime_, "builtins", "Ellipsis"),
+            runtime_.ellipsis());
 }
 
 TEST_F(BuiltinsModuleTest, IdReturnsInt) {
@@ -1036,7 +1037,7 @@ l = list(callable_iter)
   Object l(&scope, mainModuleAt(&runtime_, "l"));
   EXPECT_PYLIST_EQ(l, {1, 2});
 
-  Object iter(&scope, moduleAt(&runtime_, "builtins", "iter"));
+  Object iter(&scope, moduleAtByCStr(&runtime_, "builtins", "iter"));
   Object c(&scope, mainModuleAt(&runtime_, "c"));
   Object reduced_obj(&scope, mainModuleAt(&runtime_, "reduced"));
   ASSERT_TRUE(reduced_obj.isTuple());

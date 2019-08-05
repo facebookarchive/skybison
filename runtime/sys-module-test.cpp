@@ -124,7 +124,7 @@ except:
 
 TEST_F(SysModuleTest, ExecutableIsValid) {
   HandleScope scope(thread_);
-  Object executable_obj(&scope, moduleAt(&runtime_, "sys", "executable"));
+  Object executable_obj(&scope, moduleAtByCStr(&runtime_, "sys", "executable"));
   ASSERT_TRUE(executable_obj.isStr());
   Str executable(&scope, *executable_obj);
   ASSERT_TRUE(executable.length() > 0);
@@ -242,13 +242,13 @@ result = sys.flags.verbose
 
 TEST_F(SysModuleTest, MaxsizeIsMaxWord) {
   HandleScope scope(thread_);
-  Object maxsize(&scope, moduleAt(&runtime_, "sys", "maxsize"));
+  Object maxsize(&scope, moduleAtByCStr(&runtime_, "sys", "maxsize"));
   EXPECT_TRUE(isIntEqualsWord(*maxsize, kMaxWord));
 }
 
 TEST_F(SysModuleTest, ByteorderIsCorrectString) {
   HandleScope scope(thread_);
-  Object byteorder(&scope, moduleAt(&runtime_, "sys", "byteorder"));
+  Object byteorder(&scope, moduleAtByCStr(&runtime_, "sys", "byteorder"));
   EXPECT_TRUE(isStrEqualsCStr(
       *byteorder, endian::native == endian::little ? "little" : "big"));
 }
