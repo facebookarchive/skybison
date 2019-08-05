@@ -192,7 +192,9 @@ class Runtime;
   V(UnderFindAndLoad, "_find_and_load")                                        \
   V(UnderFloatCheck, "_float_check")                                           \
   V(UnderFloatDivmod, "_float_divmod")                                         \
+  V(UnderFloatFormat, "_float_format")                                         \
   V(UnderFloatGuard, "_float_guard")                                           \
+  V(UnderFloatSignbit, "_float_signbit")                                       \
   V(UnderFrozenImportlib, "_frozen_importlib")                                 \
   V(UnderFrozenImportlibExternal, "_frozen_importlib_external")                \
   V(UnderFrozenSetCheck, "_frozenset_check")                                   \

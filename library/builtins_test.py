@@ -809,8 +809,7 @@ class FloatTests(unittest.TestCase):
 
     def test_dunder_divmod_with_negative_zero_numerator(self):
         floordiv, remainder = float.__divmod__(-0.0, 4.0)
-        # TODO(T48177824): Drop the second condition.
-        self.assertTrue(str(floordiv) == "-0.0" or str(floordiv) == "-0")
+        self.assertTrue(str(floordiv) == "-0.0")
         self.assertEqual(remainder, 0.0)
 
     def test_dunder_floordiv_raises_type_error(self):
@@ -855,6 +854,37 @@ class FloatTests(unittest.TestCase):
 
     def test_dunder_rdivmod_returns_same_result_as_divmod_with_reversed_args(self):
         self.assertEqual(float.__rdivmod__(1.0, 3.25), float.__divmod__(3.25, 1.0))
+
+    def test_repr_with_infinity_returns_string(self):
+        self.assertEqual(float.__repr__(float("inf")), "inf")
+        self.assertEqual(float.__repr__(-float("inf")), "-inf")
+
+    def test_repr_with_nan_returns_nan(self):
+        self.assertEqual(float.__repr__(float("nan")), "nan")
+        self.assertEqual(float.__repr__(float("-nan")), "nan")
+
+    def test_repr_returns_string_without_exponent(self):
+        self.assertEqual(float.__repr__(0.0), "0.0")
+        self.assertEqual(float.__repr__(-0.0), "-0.0")
+        self.assertEqual(float.__repr__(1.0), "1.0")
+        self.assertEqual(float.__repr__(-1.0), "-1.0")
+        self.assertEqual(float.__repr__(42.5), "42.5")
+        self.assertEqual(float.__repr__(1.234567891234567), "1.234567891234567")
+        self.assertEqual(float.__repr__(-1.234567891234567), "-1.234567891234567")
+        self.assertEqual(float.__repr__(9.99999999999999e15), "9999999999999990.0")
+        self.assertEqual(float.__repr__(0.0001), "0.0001")
+
+    def test_repr_returns_string_with_exponent(self):
+        self.assertEqual(float.__repr__(1e16), "1e+16")
+        self.assertEqual(float.__repr__(0.00001), "1e-05")
+        self.assertEqual(float.__repr__(1e100), "1e+100")
+        self.assertEqual(float.__repr__(1e-88), "1e-88")
+        self.assertEqual(
+            float.__repr__(1.23456789123456789e123), "1.2345678912345679e+123"
+        )
+        self.assertEqual(
+            float.__repr__(-1.23456789123456789e-123), "-1.2345678912345678e-123"
+        )
 
     def test_dunder_rfloordiv_raises_type_error(self):
         with self.assertRaises(TypeError):
@@ -3464,18 +3494,142 @@ class StrModTests(unittest.TestCase):
             str(context.exception), "%o format: an integer is required, not C"
         )
 
+    def test_f_format_returns_string(self):
+        self.assertEqual("%f" % (0.0,), "0.000000")
+        self.assertEqual("%f" % (-0.0,), "-0.000000")
+        self.assertEqual("%f" % (1.0,), "1.000000")
+        self.assertEqual("%f" % (-1.0,), "-1.000000")
+        self.assertEqual("%f" % (42.125), "42.125000")
+
+        self.assertEqual("%f" % (1e3,), "1000.000000")
+        self.assertEqual("%f" % (1e6,), "1000000.000000")
+        self.assertEqual(
+            "%f" % (1e40,), "10000000000000000303786028427003666890752.000000"
+        )
+
+    def test_F_format_returns_string(self):
+        self.assertEqual("%F" % (42.125), "42.125000")
+
+    def test_e_format_returns_string(self):
+        self.assertEqual("%e" % (0.0,), "0.000000e+00")
+        self.assertEqual("%e" % (-0.0,), "-0.000000e+00")
+        self.assertEqual("%e" % (1.0,), "1.000000e+00")
+        self.assertEqual("%e" % (-1.0,), "-1.000000e+00")
+        self.assertEqual("%e" % (42.125), "4.212500e+01")
+
+        self.assertEqual("%e" % (1e3,), "1.000000e+03")
+        self.assertEqual("%e" % (1e6,), "1.000000e+06")
+        self.assertEqual("%e" % (1e40,), "1.000000e+40")
+
+    def test_E_format_returns_string(self):
+        self.assertEqual("%E" % (1.0,), "1.000000E+00")
+
     def test_g_format_returns_string(self):
         self.assertEqual("%g" % (0.0,), "0")
         self.assertEqual("%g" % (-1.0,), "-1")
         self.assertEqual("%g" % (0.125,), "0.125")
         self.assertEqual("%g" % (3.5,), "3.5")
 
-    def test_g_format_with_inf_returns_string(self):
+    def test_eEfFgG_format_with_inf_returns_string(self):
+        self.assertEqual("%e" % (float("inf"),), "inf")
+        self.assertEqual("%E" % (float("inf"),), "INF")
+        self.assertEqual("%f" % (float("inf"),), "inf")
+        self.assertEqual("%F" % (float("inf"),), "INF")
         self.assertEqual("%g" % (float("inf"),), "inf")
-        self.assertEqual("%g" % (-float("inf"),), "-inf")
+        self.assertEqual("%G" % (float("inf"),), "INF")
 
-    def test_g_format_with_nan_returns_string(self):
+        self.assertEqual("%e" % (-float("inf"),), "-inf")
+        self.assertEqual("%E" % (-float("inf"),), "-INF")
+        self.assertEqual("%f" % (-float("inf"),), "-inf")
+        self.assertEqual("%F" % (-float("inf"),), "-INF")
+        self.assertEqual("%g" % (-float("inf"),), "-inf")
+        self.assertEqual("%G" % (-float("inf"),), "-INF")
+
+    def test_eEfFgG_format_with_nan_returns_string(self):
+        self.assertEqual("%e" % (float("nan"),), "nan")
+        self.assertEqual("%E" % (float("nan"),), "NAN")
+        self.assertEqual("%f" % (float("nan"),), "nan")
+        self.assertEqual("%F" % (float("nan"),), "NAN")
         self.assertEqual("%g" % (float("nan"),), "nan")
+        self.assertEqual("%G" % (float("nan"),), "NAN")
+
+        self.assertEqual("%e" % (float("-nan"),), "nan")
+        self.assertEqual("%E" % (float("-nan"),), "NAN")
+        self.assertEqual("%f" % (float("-nan"),), "nan")
+        self.assertEqual("%F" % (float("-nan"),), "NAN")
+        self.assertEqual("%g" % (float("-nan"),), "nan")
+        self.assertEqual("%G" % (float("-nan"),), "NAN")
+
+    def test_f_format_with_precision_returns_string(self):
+        number = 1.23456789123456789
+        self.assertEqual("%.0f" % number, "1")
+        self.assertEqual("%.1f" % number, "1.2")
+        self.assertEqual("%.2f" % number, "1.23")
+        self.assertEqual("%.3f" % number, "1.235")
+        self.assertEqual("%.4f" % number, "1.2346")
+        self.assertEqual("%.5f" % number, "1.23457")
+        self.assertEqual("%.6f" % number, "1.234568")
+        self.assertEqual("%f" % number, "1.234568")
+
+        self.assertEqual("%.17f" % number, "1.23456789123456789")
+        self.assertEqual("%.25f" % number, "1.2345678912345678934769921")
+        self.assertEqual(
+            "%.60f" % number,
+            "1.234567891234567893476992139767389744520187377929687500000000",
+        )
+
+    def test_eEfFgG_format_with_precision_returns_string(self):
+        number = 1.23456789123456789
+        self.assertEqual("%.0e" % number, "1e+00")
+        self.assertEqual("%.0E" % number, "1E+00")
+        self.assertEqual("%.0f" % number, "1")
+        self.assertEqual("%.0F" % number, "1")
+        self.assertEqual("%.0g" % number, "1")
+        self.assertEqual("%.0G" % number, "1")
+        self.assertEqual("%.4e" % number, "1.2346e+00")
+        self.assertEqual("%.4E" % number, "1.2346E+00")
+        self.assertEqual("%.4f" % number, "1.2346")
+        self.assertEqual("%.4F" % number, "1.2346")
+        self.assertEqual("%.4g" % number, "1.235")
+        self.assertEqual("%.4G" % number, "1.235")
+        self.assertEqual("%e" % number, "1.234568e+00")
+        self.assertEqual("%E" % number, "1.234568E+00")
+        self.assertEqual("%f" % number, "1.234568")
+        self.assertEqual("%F" % number, "1.234568")
+        self.assertEqual("%g" % number, "1.23457")
+        self.assertEqual("%G" % number, "1.23457")
+
+    def test_g_format_with_flags_and_width_returns_string(self):
+        self.assertEqual("%5g" % 7.0, "    7")
+        self.assertEqual("%5g" % 7.2, "  7.2")
+        self.assertEqual("% 5g" % 7.2, "  7.2")
+        self.assertEqual("%+5g" % 7.2, " +7.2")
+        self.assertEqual("%5g" % -7.2, " -7.2")
+        self.assertEqual("% 5g" % -7.2, " -7.2")
+        self.assertEqual("%+5g" % -7.2, " -7.2")
+
+        self.assertEqual("%-5g" % 7.0, "7    ")
+        self.assertEqual("%-5g" % 7.2, "7.2  ")
+        self.assertEqual("%- 5g" % 7.2, " 7.2 ")
+        self.assertEqual("%-+5g" % 7.2, "+7.2 ")
+        self.assertEqual("%-5g" % -7.2, "-7.2 ")
+        self.assertEqual("%- 5g" % -7.2, "-7.2 ")
+        self.assertEqual("%-+5g" % -7.2, "-7.2 ")
+
+        self.assertEqual("%#g" % 7.0, "7.00000")
+
+        self.assertEqual("%#- 7.2g" % float("-nan"), " nan   ")
+        self.assertEqual("%#- 7.2g" % float("inf"), " inf   ")
+        self.assertEqual("%#- 7.2g" % float("-inf"), "-inf   ")
+
+    def test_eEfFgG_format_with_flags_and_width_returns_string(self):
+        number = 1.23456789123456789
+        self.assertEqual("% -#12.3e" % number, " 1.235e+00  ")
+        self.assertEqual("% -#12.3E" % number, " 1.235E+00  ")
+        self.assertEqual("% -#12.3f" % number, " 1.235      ")
+        self.assertEqual("% -#12.3F" % number, " 1.235      ")
+        self.assertEqual("% -#12.3g" % number, " 1.23       ")
+        self.assertEqual("% -#12.3G" % number, " 1.23       ")
 
     def test_percent_format_returns_percent(self):
         self.assertEqual("%%" % (), "%")

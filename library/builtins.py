@@ -42,6 +42,7 @@ _dict_update_mapping = _dict_update_mapping  # noqa: F821
 _divmod = _divmod  # noqa: F821
 _float_check = _float_check  # noqa: F821
 _float_divmod = _float_divmod  # noqa: F821
+_float_format = _float_format  # noqa: F821
 _float_guard = _float_guard  # noqa: F821
 _frozenset_check = _frozenset_check  # noqa: F821
 _get_member_byte = _get_member_byte  # noqa: F821
@@ -1942,8 +1943,13 @@ class float(bootstrap=True):
             return _float_divmod(int.__float__(n), self)[0]
         return NotImplemented
 
-    def __repr__(self) -> str:  # noqa: T484
-        pass
+    def __repr__(self) -> str:
+        if not _float_check(self):
+            raise TypeError(
+                f"'__repr__' requires a 'float' object "
+                f"but received a '{_type(self).__name__}'"
+            )
+        return _float_format(self, "r", 0, False, True, False)
 
     def __rmul__(self, n: float) -> float:
         # The multiplication for floating point numbers is commutative:
@@ -1964,6 +1970,14 @@ class float(bootstrap=True):
 
     def __rtruediv__(self, n: float) -> float:
         pass
+
+    def __str__(self) -> str:
+        if not _float_check(self):
+            raise TypeError(
+                f"'__str__' requires a 'float' object "
+                f"but received a '{_type(self).__name__}'"
+            )
+        return _float_format(self, "r", 0, False, True, False)
 
     def __sub__(self, n: float) -> float:
         pass

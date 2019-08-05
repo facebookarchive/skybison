@@ -196,7 +196,19 @@ def _float_divmod(number, divisor):
 
 
 @_patch
+def _float_format(
+    value, format_code, precision, skip_sign, add_dot_0, use_alt_formatting
+):
+    pass
+
+
+@_patch
 def _float_guard(obj):
+    pass
+
+
+@_patch
+def _float_signbit(value):
     pass
 
 

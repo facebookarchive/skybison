@@ -82,7 +82,7 @@ TEST_F(ComplexBuiltinsTest, DunderReprHasRealAndImag) {
       runFromCStr(&runtime_, "result = repr(complex(1, 2))").isError());
   HandleScope scope(thread_);
   Object result(&scope, mainModuleAt(&runtime_, "result"));
-  EXPECT_TRUE(isStrEqualsCStr(*result, "(1+2j)"));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "(1.0+2.0j)"));
 }
 
 TEST_F(ComplexBuiltinsTest, BuiltinBaseIsComplex) {

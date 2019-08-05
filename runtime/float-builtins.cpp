@@ -3,6 +3,7 @@
 #include <cmath>
 #include <limits>
 
+#include "float-conversion.h"
 #include "frame.h"
 #include "globals.h"
 #include "int-builtins.h"
@@ -85,7 +86,6 @@ const BuiltinMethod FloatBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNeg, dunderNeg},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderPow, dunderPow},
-    {SymbolId::kDunderRepr, dunderRepr},
     {SymbolId::kDunderRtruediv, dunderRtrueDiv},
     {SymbolId::kDunderSub, dunderSub},
     {SymbolId::kDunderTruediv, dunderTrueDiv},
@@ -492,22 +492,6 @@ RawObject FloatBuiltins::dunderTrueDiv(Thread* thread, Frame* frame,
                                 "float division by zero");
   }
   return runtime->newFloat(left / right);
-}
-
-RawObject FloatBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object self_obj(&scope, args.get(0));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfFloat(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
-  }
-  double value = Float::cast(floatUnderlying(thread, self_obj)).value();
-  int required_size = std::snprintf(nullptr, 0, "%g", value) + 1;  // NUL
-  std::unique_ptr<char[]> buffer(new char[required_size]);
-  int size = std::snprintf(buffer.get(), required_size, "%g", value);
-  CHECK(size < int{required_size}, "buffer too small");
-  return runtime->newStrFromCStr(buffer.get());
 }
 
 RawObject FloatBuiltins::dunderRtrueDiv(Thread* thread, Frame* frame,

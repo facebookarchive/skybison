@@ -10,6 +10,7 @@
 #include "dict-builtins.h"
 #include "exception-builtins.h"
 #include "float-builtins.h"
+#include "float-conversion.h"
 #include "frozen-modules.h"
 #include "int-builtins.h"
 #include "list-builtins.h"
@@ -103,7 +104,9 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderDivmod, underDivmod},
     {SymbolId::kUnderFloatCheck, underFloatCheck},
     {SymbolId::kUnderFloatDivmod, underFloatDivmod},
+    {SymbolId::kUnderFloatFormat, underFloatFormat},
     {SymbolId::kUnderFloatGuard, underFloatGuard},
+    {SymbolId::kUnderFloatSignbit, underFloatSignbit},
     {SymbolId::kUnderFrozenSetCheck, underFrozenSetCheck},
     {SymbolId::kUnderGetMemberByte, underGetMemberByte},
     {SymbolId::kUnderGetMemberChar, underGetMemberChar},
@@ -974,6 +977,31 @@ RawObject UnderBuiltinsModule::underFloatDivmod(Thread* thread, Frame* frame,
   return *result;
 }
 
+RawObject UnderBuiltinsModule::underFloatFormat(Thread* thread, Frame* frame,
+                                                word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object value_obj(&scope, args.get(0));
+  Float value(&scope, floatUnderlying(thread, value_obj));
+  Str format_code(&scope, args.get(1));
+  DCHECK(format_code.length() == 1, "expected len(format_code) == 1");
+  char format_code_char = format_code.charAt(0);
+  DCHECK(format_code_char == 'e' || format_code_char == 'E' ||
+             format_code_char == 'f' || format_code_char == 'F' ||
+             format_code_char == 'g' || format_code_char == 'G' ||
+             format_code_char == 'r',
+         "expected format_code in 'eEfFgGr'");
+  SmallInt precision(&scope, args.get(2));
+  Bool always_add_sign(&scope, args.get(3));
+  Bool add_dot_0(&scope, args.get(4));
+  Bool use_alt_formatting(&scope, args.get(5));
+  unique_c_ptr<char> c_str(
+      formatFloat(value.value(), format_code_char, precision.value(),
+                  always_add_sign.value(), add_dot_0.value(),
+                  use_alt_formatting.value(), nullptr));
+  return thread->runtime()->newStrFromCStr(c_str.get());
+}
+
 RawObject UnderBuiltinsModule::underFloatGuard(Thread* thread, Frame* frame,
                                                word nargs) {
   Arguments args(frame, nargs);
@@ -981,6 +1009,15 @@ RawObject UnderBuiltinsModule::underFloatGuard(Thread* thread, Frame* frame,
     return NoneType::object();
   }
   return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kFloat);
+}
+
+RawObject UnderBuiltinsModule::underFloatSignbit(Thread* thread, Frame* frame,
+                                                 word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object value_obj(&scope, args.get(0));
+  Float value(&scope, floatUnderlying(thread, value_obj));
+  return Bool::fromBool(std::signbit(value.value()));
 }
 
 RawObject UnderBuiltinsModule::underFrozenSetCheck(Thread* thread, Frame* frame,

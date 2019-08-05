@@ -2,6 +2,8 @@
 """This is an internal module implementing "str.__mod__" formatting."""
 
 _float_check = _float_check  # noqa: F821
+_float_format = _float_format  # noqa: F821
+_float_signbit = _float_signbit  # noqa: F821
 _index = _index  # noqa: F821
 _int_check = _int_check  # noqa: F821
 _int_format_hexadecimal = _int_format_hexadecimal  # noqa: F821
@@ -310,14 +312,21 @@ def format(string: str, args) -> str:  # noqa: C901
                 prefix = "0o" if use_alt_formatting else ""
                 fragment = _int_format_octal(value)
                 _format_number(result, flags, width, precision, sign, prefix, fragment)
-            elif c == "g":
+            elif c in "eEfFgG":
                 if not _float_check(arg):
                     _unimplemented()
-                _strarray_iadd(result, float.__str__(arg))
-                if width >= 0 or precision >= 0 or flags != 0 or use_alt_formatting:
-                    _unimplemented()
-            elif c in "eEfFG":
-                _unimplemented()
+                value = arg
+                if precision < 0:
+                    precision = 6
+                # The `value != value` test avoids emitting "-nan".
+                if _float_signbit(value) and not value != value:
+                    sign = "-"
+                else:
+                    sign = positive_sign
+                fragment = _float_format(
+                    value, c, precision, True, False, use_alt_formatting
+                )
+                _format_number(result, flags, width, 0, sign, "", fragment)
             else:
                 raise ValueError(
                     f"unsupported format character '{c}' "
