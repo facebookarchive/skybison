@@ -161,12 +161,12 @@ def g(ref, c=4):
   Object ref2(&scope, *none);
   {
     Tuple array1(&scope, runtime_.newTuple(10));
-    Function func_f(&scope, moduleAt(&runtime_, "__main__", "f"));
+    Function func_f(&scope, mainModuleAt(&runtime_, "f"));
     WeakRef ref1_inner(&scope, runtime_.newWeakRef(thread_, array1, func_f));
     ref1 = *ref1_inner;
 
     Tuple array2(&scope, runtime_.newTuple(10));
-    Function func_g(&scope, moduleAt(&runtime_, "__main__", "g"));
+    Function func_g(&scope, mainModuleAt(&runtime_, "g"));
     WeakRef ref2_inner(&scope, runtime_.newWeakRef(thread_, array2, func_g));
     ref2 = *ref2_inner;
 
@@ -174,8 +174,8 @@ def g(ref, c=4):
 
     EXPECT_EQ(ref1_inner.referent(), *array1);
     EXPECT_EQ(ref2_inner.referent(), *array2);
-    SmallInt a(&scope, moduleAt(&runtime_, "__main__", "a"));
-    SmallInt b(&scope, moduleAt(&runtime_, "__main__", "b"));
+    SmallInt a(&scope, mainModuleAt(&runtime_, "a"));
+    SmallInt b(&scope, mainModuleAt(&runtime_, "b"));
     EXPECT_EQ(a.value(), 1);
     EXPECT_EQ(b.value(), 2);
   }
@@ -185,8 +185,8 @@ def g(ref, c=4):
   EXPECT_EQ(WeakRef::cast(*ref1).callback(), NoneType::object());
   EXPECT_EQ(WeakRef::cast(*ref2).referent(), NoneType::object());
   EXPECT_EQ(WeakRef::cast(*ref2).callback(), NoneType::object());
-  SmallInt a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  SmallInt b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  SmallInt a(&scope, mainModuleAt(&runtime_, "a"));
+  SmallInt b(&scope, mainModuleAt(&runtime_, "b"));
   EXPECT_EQ(a.value(), 3);
   EXPECT_EQ(b.value(), 4);
 }
@@ -206,12 +206,12 @@ def g(ref, c=4):
                    .isError());
 
   Tuple array1(&scope, runtime_.newTuple(10));
-  Function func_f(&scope, moduleAt(&runtime_, "__main__", "f"));
+  Function func_f(&scope, mainModuleAt(&runtime_, "f"));
   WeakRef ref1(&scope, runtime_.newWeakRef(thread_, array1, func_f));
   Object ref2(&scope, NoneType::object());
   {
     Tuple array2(&scope, runtime_.newTuple(10));
-    Function func_g(&scope, moduleAt(&runtime_, "__main__", "g"));
+    Function func_g(&scope, mainModuleAt(&runtime_, "g"));
     WeakRef ref2_inner(&scope, runtime_.newWeakRef(thread_, array2, func_g));
     ref2 = *ref2_inner;
 
@@ -219,8 +219,8 @@ def g(ref, c=4):
 
     EXPECT_EQ(ref1.referent(), *array1);
     EXPECT_EQ(ref2_inner.referent(), *array2);
-    SmallInt a(&scope, moduleAt(&runtime_, "__main__", "a"));
-    SmallInt b(&scope, moduleAt(&runtime_, "__main__", "b"));
+    SmallInt a(&scope, mainModuleAt(&runtime_, "a"));
+    SmallInt b(&scope, mainModuleAt(&runtime_, "b"));
     EXPECT_EQ(a.value(), 1);
     EXPECT_EQ(b.value(), 2);
   }
@@ -230,8 +230,8 @@ def g(ref, c=4):
   EXPECT_EQ(ref1.callback(), *func_f);
   EXPECT_EQ(WeakRef::cast(*ref2).referent(), NoneType::object());
   EXPECT_EQ(WeakRef::cast(*ref2).callback(), NoneType::object());
-  SmallInt a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  SmallInt b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  SmallInt a(&scope, mainModuleAt(&runtime_, "a"));
+  SmallInt b(&scope, mainModuleAt(&runtime_, "b"));
   EXPECT_EQ(a.value(), 1);
   EXPECT_EQ(b.value(), 4);
 }
@@ -269,7 +269,7 @@ def g(ref, b=2):
     ref1 = *ref1_inner;
 
     Tuple array2(&scope, runtime_.newTuple(10));
-    Function func_g(&scope, moduleAt(&runtime_, "__main__", "g"));
+    Function func_g(&scope, mainModuleAt(&runtime_, "g"));
     WeakRef ref2_inner(&scope, runtime_.newWeakRef(thread_, array2, func_g));
     ref2 = *ref2_inner;
 
@@ -277,7 +277,7 @@ def g(ref, b=2):
 
     EXPECT_EQ(ref1_inner.referent(), *array1);
     EXPECT_EQ(ref2_inner.referent(), *array2);
-    SmallInt a(&scope, moduleAt(&runtime_, "__main__", "a"));
+    SmallInt a(&scope, mainModuleAt(&runtime_, "a"));
     EXPECT_EQ(a.value(), 1);
   }
   runtime_.collectGarbage();
@@ -286,7 +286,7 @@ def g(ref, b=2):
   EXPECT_EQ(WeakRef::cast(*ref1).callback(), NoneType::object());
   EXPECT_EQ(WeakRef::cast(*ref2).referent(), NoneType::object());
   EXPECT_EQ(WeakRef::cast(*ref2).callback(), NoneType::object());
-  SmallInt a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  SmallInt a(&scope, mainModuleAt(&runtime_, "a"));
   EXPECT_EQ(a.value(), 2);
 }
 
@@ -312,12 +312,12 @@ def g(ref, c=4):
   Object ref2(&scope, NoneType::object());
   {
     Tuple array1(&scope, runtime_.newTuple(10));
-    Function func_f(&scope, moduleAt(&runtime_, "__main__", "f"));
+    Function func_f(&scope, mainModuleAt(&runtime_, "f"));
     WeakRef ref1_inner(&scope, runtime_.newWeakRef(thread_, array1, func_f));
     ref1 = *ref1_inner;
 
     Tuple array2(&scope, runtime_.newTuple(10));
-    Function func_g(&scope, moduleAt(&runtime_, "__main__", "g"));
+    Function func_g(&scope, mainModuleAt(&runtime_, "g"));
     WeakRef ref2_inner(&scope, runtime_.newWeakRef(thread_, array2, func_g));
     ref2 = *ref2_inner;
 
@@ -325,24 +325,23 @@ def g(ref, c=4):
 
     EXPECT_EQ(ref1_inner.referent(), *array1);
     EXPECT_EQ(ref2_inner.referent(), *array2);
-    SmallInt a(&scope, moduleAt(&runtime_, "__main__", "a"));
-    SmallInt b(&scope, moduleAt(&runtime_, "__main__", "b"));
+    SmallInt a(&scope, mainModuleAt(&runtime_, "a"));
+    SmallInt b(&scope, mainModuleAt(&runtime_, "b"));
     EXPECT_EQ(a.value(), 1);
     EXPECT_EQ(b.value(), 2);
   }
 
   runtime_.collectGarbage();
   EXPECT_FALSE(Thread::current()->hasPendingException());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "callback_ran"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "callback_returned"),
-            Bool::falseObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "callback_ran"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "callback_returned"), Bool::falseObj());
 
   EXPECT_EQ(WeakRef::cast(*ref1).referent(), NoneType::object());
   EXPECT_EQ(WeakRef::cast(*ref1).callback(), NoneType::object());
   EXPECT_EQ(WeakRef::cast(*ref2).referent(), NoneType::object());
   EXPECT_EQ(WeakRef::cast(*ref2).callback(), NoneType::object());
-  SmallInt a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  SmallInt b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  SmallInt a(&scope, mainModuleAt(&runtime_, "a"));
+  SmallInt b(&scope, mainModuleAt(&runtime_, "b"));
   EXPECT_EQ(a.value(), 1);
   EXPECT_EQ(b.value(), 4);
 }

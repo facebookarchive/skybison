@@ -17,7 +17,7 @@ exc = BaseException()
 )")
                    .isError());
 
-  Object exc(&scope, moduleAt(&runtime_, "__main__", "exc"));
+  Object exc(&scope, mainModuleAt(&runtime_, "exc"));
   ASSERT_TRUE(exc.isBaseException());
   BaseException base_exception(&scope, *exc);
 
@@ -34,7 +34,7 @@ exc = BaseException(1,2,3)
 )")
                    .isError());
 
-  Object exc(&scope, moduleAt(&runtime_, "__main__", "exc"));
+  Object exc(&scope, mainModuleAt(&runtime_, "exc"));
   ASSERT_TRUE(exc.isBaseException());
   BaseException base_exception(&scope, *exc);
 
@@ -54,7 +54,7 @@ a = BaseException().__str__()
 )")
                    .isError());
 
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, ""));
 }
 
@@ -66,7 +66,7 @@ a = BaseException("hello").__str__()
 )")
                    .isError());
 
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, "hello"));
 }
 
@@ -78,7 +78,7 @@ a = BaseException("hello", "world").__str__()
 )")
                    .isError());
 
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, "('hello', 'world')"));
 }
 
@@ -90,7 +90,7 @@ exc = Exception(1,2,3)
 )")
                    .isError());
 
-  Object exc(&scope, moduleAt(&runtime_, "__main__", "exc"));
+  Object exc(&scope, mainModuleAt(&runtime_, "exc"));
   ASSERT_TRUE(exc.isException());
   Exception exception(&scope, *exc);
 
@@ -113,13 +113,10 @@ rt_error = RuntimeError()
 )")
                    .isError());
 
-  BaseException attr_error(&scope,
-                           moduleAt(&runtime_, "__main__", "attr_error"));
-  BaseException name_error(&scope,
-                           moduleAt(&runtime_, "__main__", "name_error"));
-  BaseException value_error(&scope,
-                            moduleAt(&runtime_, "__main__", "value_error"));
-  BaseException rt_error(&scope, moduleAt(&runtime_, "__main__", "rt_error"));
+  BaseException attr_error(&scope, mainModuleAt(&runtime_, "attr_error"));
+  BaseException name_error(&scope, mainModuleAt(&runtime_, "name_error"));
+  BaseException value_error(&scope, mainModuleAt(&runtime_, "value_error"));
+  BaseException rt_error(&scope, mainModuleAt(&runtime_, "rt_error"));
 
   EXPECT_TRUE(runtime_.isInstanceOfBaseException(*attr_error));
   EXPECT_EQ(attr_error.layoutId(), LayoutId::kAttributeError);
@@ -141,10 +138,9 @@ key_is_lookup = issubclass(KeyError, LookupError)
 )")
                    .isError());
 
-  Bool lookup_is_exc(&scope, moduleAt(&runtime_, "__main__", "lookup_is_exc"));
-  Bool index_is_lookup(&scope,
-                       moduleAt(&runtime_, "__main__", "index_is_lookup"));
-  Bool key_is_lookup(&scope, moduleAt(&runtime_, "__main__", "key_is_lookup"));
+  Bool lookup_is_exc(&scope, mainModuleAt(&runtime_, "lookup_is_exc"));
+  Bool index_is_lookup(&scope, mainModuleAt(&runtime_, "index_is_lookup"));
+  Bool key_is_lookup(&scope, mainModuleAt(&runtime_, "key_is_lookup"));
 
   EXPECT_TRUE(lookup_is_exc.value());
   EXPECT_TRUE(index_is_lookup.value());
@@ -161,9 +157,9 @@ k = KeyError()
 )")
                    .isError());
 
-  LookupError l(&scope, moduleAt(&runtime_, "__main__", "l"));
-  IndexError i(&scope, moduleAt(&runtime_, "__main__", "i"));
-  KeyError k(&scope, moduleAt(&runtime_, "__main__", "k"));
+  LookupError l(&scope, mainModuleAt(&runtime_, "l"));
+  IndexError i(&scope, mainModuleAt(&runtime_, "i"));
+  KeyError k(&scope, mainModuleAt(&runtime_, "k"));
 
   EXPECT_TRUE(runtime_.isInstanceOfBaseException(*l));
   EXPECT_TRUE(runtime_.isInstanceOfBaseException(*i));
@@ -178,7 +174,7 @@ s = KeyError("key").__str__()
 )")
                    .isError());
 
-  Object s(&scope, moduleAt(&runtime_, "__main__", "s"));
+  Object s(&scope, mainModuleAt(&runtime_, "s"));
   EXPECT_TRUE(isStrEqualsCStr(*s, "'key'"));
 }
 
@@ -192,8 +188,8 @@ b = BaseException("key", "key2").__str__()
 )")
                    .isError());
 
-  Str s(&scope, moduleAt(&runtime_, "__main__", "s"));
-  Str b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  Str s(&scope, mainModuleAt(&runtime_, "s"));
+  Str b(&scope, mainModuleAt(&runtime_, "b"));
   EXPECT_TRUE(isStrEquals(s, b));
 }
 
@@ -205,7 +201,7 @@ exc = TypeError()
 )")
                    .isError());
 
-  Object exc(&scope, moduleAt(&runtime_, "__main__", "exc"));
+  Object exc(&scope, mainModuleAt(&runtime_, "exc"));
   BaseException exception(&scope, *exc);
 
   // The args attribute contains a tuple of the constructor arguments.
@@ -222,7 +218,7 @@ exc = StopIteration()
 )")
                    .isError());
 
-  Object exc(&scope, moduleAt(&runtime_, "__main__", "exc"));
+  Object exc(&scope, mainModuleAt(&runtime_, "exc"));
   ASSERT_TRUE(exc.isStopIteration());
   StopIteration stop_iteration(&scope, *exc);
 
@@ -243,7 +239,7 @@ exc = StopIteration(1)
 )")
                    .isError());
 
-  Object exc(&scope, moduleAt(&runtime_, "__main__", "exc"));
+  Object exc(&scope, mainModuleAt(&runtime_, "exc"));
   ASSERT_TRUE(exc.isStopIteration());
   StopIteration stop_iteration(&scope, *exc);
 
@@ -265,7 +261,7 @@ exc = StopIteration(4, 5, 6)
 )")
                    .isError());
 
-  Object exc(&scope, moduleAt(&runtime_, "__main__", "exc"));
+  Object exc(&scope, mainModuleAt(&runtime_, "exc"));
   ASSERT_TRUE(exc.isStopIteration());
   StopIteration stop_iteration(&scope, *exc);
 
@@ -290,9 +286,8 @@ exc_is_rt_error = issubclass(NotImplementedError, RuntimeError)
 )")
                    .isError());
 
-  NotImplementedError exc(&scope, moduleAt(&runtime_, "__main__", "exc"));
-  Bool exc_is_rt_error(&scope,
-                       moduleAt(&runtime_, "__main__", "exc_is_rt_error"));
+  NotImplementedError exc(&scope, mainModuleAt(&runtime_, "exc"));
+  Bool exc_is_rt_error(&scope, mainModuleAt(&runtime_, "exc_is_rt_error"));
 
   EXPECT_TRUE(runtime_.isInstanceOfBaseException(*exc));
 
@@ -307,7 +302,7 @@ exc = SystemExit()
 )")
                    .isError());
 
-  Object exc(&scope, moduleAt(&runtime_, "__main__", "exc"));
+  Object exc(&scope, mainModuleAt(&runtime_, "exc"));
   ASSERT_TRUE(exc.isSystemExit());
   SystemExit system_exit(&scope, *exc);
   ASSERT_TRUE(system_exit.args().isTuple());
@@ -328,7 +323,7 @@ exc = SystemExit(1)
 )")
                    .isError());
 
-  Object exc(&scope, moduleAt(&runtime_, "__main__", "exc"));
+  Object exc(&scope, mainModuleAt(&runtime_, "exc"));
   ASSERT_TRUE(exc.isSystemExit());
   SystemExit system_exit(&scope, *exc);
   ASSERT_TRUE(system_exit.args().isTuple());
@@ -350,7 +345,7 @@ exc = SystemExit(4, 5, 6)
 )")
                    .isError());
 
-  Object exc(&scope, moduleAt(&runtime_, "__main__", "exc"));
+  Object exc(&scope, mainModuleAt(&runtime_, "exc"));
   ASSERT_TRUE(exc.isSystemExit());
   SystemExit system_exit(&scope, *exc);
 
@@ -376,14 +371,14 @@ result = exc.value
                    .isError());
 
   // The value attribute should contain the first constructor argument.
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1111));
 }
 
 TEST_F(ExceptionBuiltinsTest, ImportErrorConstructEmpty) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, "x = ImportError()").isError());
-  Object data(&scope, moduleAt(&runtime_, "__main__", "x"));
+  Object data(&scope, mainModuleAt(&runtime_, "x"));
   ASSERT_TRUE(data.isImportError());
 
   ImportError err(&scope, *data);
@@ -404,7 +399,7 @@ TEST_F(ExceptionBuiltinsTest, ImportErrorConstructEmpty) {
 TEST_F(ExceptionBuiltinsTest, ImportErrorConstructWithMsg) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, "x = ImportError(1111)").isError());
-  Object data(&scope, moduleAt(&runtime_, "__main__", "x"));
+  Object data(&scope, mainModuleAt(&runtime_, "x"));
   ASSERT_TRUE(data.isImportError());
 
   ImportError err(&scope, *data);
@@ -418,7 +413,7 @@ TEST_F(ExceptionBuiltinsTest, ImportErrorConstructWithMsgNameAndPath) {
   ASSERT_FALSE(
       runFromCStr(&runtime_, "x = ImportError(1111, name=2222, path=3333)")
           .isError());
-  Object data(&scope, moduleAt(&runtime_, "__main__", "x"));
+  Object data(&scope, mainModuleAt(&runtime_, "x"));
   ASSERT_TRUE(data.isImportError());
 
   ImportError err(&scope, *data);
@@ -441,7 +436,7 @@ exc = ModuleNotFoundError(1111, name=2222, path=3333)
 )")
                    .isError());
 
-  Object data(&scope, moduleAt(&runtime_, "__main__", "exc"));
+  Object data(&scope, mainModuleAt(&runtime_, "exc"));
   ASSERT_TRUE(data.isModuleNotFoundError());
 
   ModuleNotFoundError err(&scope, *data);
@@ -456,8 +451,8 @@ result = NameError().__repr__()
 )")
                    .isError());
 
-  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime_, "__main__", "result"),
-                              "NameError()"));
+  EXPECT_TRUE(
+      isStrEqualsCStr(mainModuleAt(&runtime_, "result"), "NameError()"));
 }
 
 TEST_F(ExceptionBuiltinsTest, DunderReprCallsTupleRepr) {
@@ -467,10 +462,9 @@ result = NameError(1, 2).__repr__()
 )")
                    .isError());
 
+  EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(&runtime_, "n"), "NameError"));
   EXPECT_TRUE(
-      isStrEqualsCStr(moduleAt(&runtime_, "__main__", "n"), "NameError"));
-  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime_, "__main__", "result"),
-                              "NameError(1, 2)"));
+      isStrEqualsCStr(mainModuleAt(&runtime_, "result"), "NameError(1, 2)"));
 }
 
 TEST_F(ExceptionBuiltinsTest, UnicodeErrorsHaveProperBuiltinBases) {
@@ -532,7 +526,7 @@ TEST_F(ExceptionBuiltinsTest, UnicodeDecodeErrorReturnsObjectWithFieldsSet) {
                            "exc = UnicodeDecodeError('en', b'ob', 1, 2, 're')")
                    .isError());
 
-  Object data(&scope, moduleAt(&runtime_, "__main__", "exc"));
+  Object data(&scope, mainModuleAt(&runtime_, "exc"));
   ASSERT_TRUE(data.isUnicodeDecodeError());
 
   UnicodeDecodeError err(&scope, *data);
@@ -556,7 +550,7 @@ exc = UnicodeDecodeError('en', b'ob', i, i, 're')
 )")
                    .isError());
 
-  Object data(&scope, moduleAt(&runtime_, "__main__", "exc"));
+  Object data(&scope, mainModuleAt(&runtime_, "exc"));
   ASSERT_TRUE(data.isUnicodeDecodeError());
 
   UnicodeDecodeError err(&scope, *data);
@@ -610,7 +604,7 @@ TEST_F(ExceptionBuiltinsTest, UnicodeEncodeErrorReturnsObjectWithFieldsSet) {
       runFromCStr(&runtime_, "exc = UnicodeEncodeError('en', 'ob', 1, 2, 're')")
           .isError());
 
-  Object data(&scope, moduleAt(&runtime_, "__main__", "exc"));
+  Object data(&scope, mainModuleAt(&runtime_, "exc"));
   ASSERT_TRUE(data.isUnicodeEncodeError());
 
   UnicodeEncodeError err(&scope, *data);
@@ -633,7 +627,7 @@ exc = UnicodeEncodeError('en', 'ob', i, i, 're')
 )")
                    .isError());
 
-  Object data(&scope, moduleAt(&runtime_, "__main__", "exc"));
+  Object data(&scope, mainModuleAt(&runtime_, "exc"));
   ASSERT_TRUE(data.isUnicodeEncodeError());
 
   UnicodeEncodeError err(&scope, *data);
@@ -679,7 +673,7 @@ TEST_F(ExceptionBuiltinsTest, UnicodeTranslateErrorReturnsObjectWithFieldsSet) {
       runFromCStr(&runtime_, "exc = UnicodeTranslateError('obj', 1, 2, 're')")
           .isError());
 
-  Object data(&scope, moduleAt(&runtime_, "__main__", "exc"));
+  Object data(&scope, mainModuleAt(&runtime_, "exc"));
   ASSERT_TRUE(data.isUnicodeTranslateError());
 
   UnicodeTranslateError err(&scope, *data);
@@ -701,7 +695,7 @@ exc = UnicodeTranslateError('en', i, i, 're')
 )")
                    .isError());
 
-  Object data(&scope, moduleAt(&runtime_, "__main__", "exc"));
+  Object data(&scope, mainModuleAt(&runtime_, "exc"));
   ASSERT_TRUE(data.isUnicodeTranslateError());
 
   UnicodeTranslateError err(&scope, *data);

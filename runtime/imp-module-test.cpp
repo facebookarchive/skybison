@@ -16,7 +16,7 @@ TEST_F(ImpModuleTest, ModuleImporting) {
 import _imp
   )")
                    .isError());
-  RawObject imp = moduleAt(&runtime_, "__main__", "_imp");
+  RawObject imp = mainModuleAt(&runtime_, "_imp");
   EXPECT_TRUE(imp.isModule());
 }
 
@@ -66,7 +66,7 @@ result = _imp.create_builtin(spec)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(result.isNoneType());
 }
 
@@ -82,7 +82,7 @@ result = _imp.create_builtin(spec)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result.isModule());
   EXPECT_TRUE(isStrEqualsCStr(Module::cast(*result).name(), "errno"));
 }
@@ -99,7 +99,7 @@ result = _imp.create_builtin(*spec)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result.isModule());
   EXPECT_TRUE(isStrEqualsCStr(Module::cast(*result).name(), "errno"));
 }
@@ -120,7 +120,7 @@ spec = DummyModuleSpec("errno")
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object spec(&scope, moduleAt(&runtime_, "__main__", "spec"));
+  Object spec(&scope, mainModuleAt(&runtime_, "spec"));
   Object module(&scope, runBuiltin(UnderImpModule::createBuiltin, spec));
   ASSERT_TRUE(module.isModule());
 
@@ -261,10 +261,10 @@ result2 = _imp.create_builtin(*spec)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result1(&scope, moduleAt(&runtime_, "__main__", "result1"));
+  Object result1(&scope, mainModuleAt(&runtime_, "result1"));
   ASSERT_TRUE(result1.isModule());
   EXPECT_TRUE(isStrEqualsCStr(Module::cast(*result1).name(), "errno"));
-  Object result2(&scope, moduleAt(&runtime_, "__main__", "result2"));
+  Object result2(&scope, mainModuleAt(&runtime_, "result2"));
   ASSERT_TRUE(result2.isModule());
   EXPECT_TRUE(isStrEqualsCStr(Module::cast(*result2).name(), "errno"));
   EXPECT_EQ(*result1, *result2);

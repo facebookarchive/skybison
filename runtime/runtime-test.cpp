@@ -64,10 +64,9 @@ class TwoFromLeastUpperBound(UnicodeDecodeError, LookupError):
 )")
                    .isError());
   HandleScope scope;
-  Object lookup_sub(&scope,
-                    moduleAt(&runtime_, "__main__", "OneFromLeastUpperBound"));
-  Object unic_dec_sub(
-      &scope, moduleAt(&runtime_, "__main__", "TwoFromLeastUpperBound"));
+  Object lookup_sub(&scope, mainModuleAt(&runtime_, "OneFromLeastUpperBound"));
+  Object unic_dec_sub(&scope,
+                      mainModuleAt(&runtime_, "TwoFromLeastUpperBound"));
   ASSERT_TRUE(lookup_sub.isType());
   ASSERT_TRUE(unic_dec_sub.isType());
   Type lookup_sub_type(&scope, *lookup_sub);
@@ -117,7 +116,7 @@ class C:
 c = C()
 )")
                    .isError());
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   Object name(&scope, runtime_.newStrFromCStr("foo"));
   Object result_obj(&scope, runtime_.attributeAt(thread_, c, name));
   ASSERT_TRUE(result_obj.isTuple());
@@ -136,7 +135,7 @@ class C:
 c = C()
 )")
                    .isError());
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   Object name(&scope, runtime_.newStrFromCStr("foo"));
   EXPECT_TRUE(
       raised(runtime_.attributeAt(thread_, c, name), LayoutId::kUserWarning));
@@ -152,7 +151,7 @@ class C:
 c = C()
 )")
                    .isError());
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   Object foo(&scope, runtime_.newStrFromCStr("foo"));
   EXPECT_TRUE(isIntEqualsWord(runtime_.attributeAt(thread_, c, foo), 10));
   Object bar(&scope, runtime_.newStrFromCStr("bar"));
@@ -175,7 +174,7 @@ class C:
 c = C()
 )")
                    .isError());
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   Object foo(&scope, runtime_.newStrFromCStr("foo"));
   EXPECT_TRUE(
       raised(runtime_.attributeAt(thread_, c, foo), LayoutId::kUserWarning));
@@ -403,9 +402,9 @@ c = C(99)
                    .isError());
   HandleScope scope(thread_);
   Tuple tuple(&scope, runtime_.newTuple(3));
-  tuple.atPut(0, moduleAt(&runtime_, "__main__", "a"));
-  tuple.atPut(1, moduleAt(&runtime_, "__main__", "b"));
-  tuple.atPut(2, moduleAt(&runtime_, "__main__", "c"));
+  tuple.atPut(0, mainModuleAt(&runtime_, "a"));
+  tuple.atPut(1, mainModuleAt(&runtime_, "b"));
+  tuple.atPut(2, mainModuleAt(&runtime_, "c"));
   Object result(&scope, runtime_.bytesFromTuple(thread_, tuple, 3));
   EXPECT_TRUE(isBytesEqualsCStr(result, "abc"));
 }
@@ -1375,7 +1374,7 @@ TEST_F(RuntimeTest, NewInstanceEmptyClass) {
 
   ASSERT_FALSE(runFromCStr(&runtime_, "class MyEmptyClass: pass").isError());
 
-  Type type(&scope, moduleAt(&runtime_, "__main__", "MyEmptyClass"));
+  Type type(&scope, mainModuleAt(&runtime_, "MyEmptyClass"));
   Layout layout(&scope, type.instanceLayout());
   EXPECT_EQ(layout.instanceSize(), 1 * kPointerSize);
 
@@ -1399,7 +1398,7 @@ class MyTypeWithAttributes():
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
 
-  Type type(&scope, moduleAt(&runtime_, "__main__", "MyTypeWithAttributes"));
+  Type type(&scope, mainModuleAt(&runtime_, "MyTypeWithAttributes"));
   Layout layout(&scope, type.instanceLayout());
   ASSERT_EQ(layout.instanceSize(), 4 * kPointerSize);
 
@@ -1451,9 +1450,9 @@ TEST_F(RuntimeTest, CallRunTwice) {
   ASSERT_FALSE(runFromCStr(&runtime_, "y = 1764").isError());
 
   HandleScope scope(thread_);
-  Object x(&scope, moduleAt(&runtime_, "__main__", "x"));
+  Object x(&scope, mainModuleAt(&runtime_, "x"));
   EXPECT_TRUE(isIntEqualsWord(*x, 42));
-  Object y(&scope, moduleAt(&runtime_, "__main__", "y"));
+  Object y(&scope, mainModuleAt(&runtime_, "y"));
   EXPECT_TRUE(isIntEqualsWord(*y, 1764));
 }
 
@@ -1497,7 +1496,7 @@ c = MyTypeWithNoInitMethod()
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
 
-  Object instance(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object instance(&scope, mainModuleAt(&runtime_, "c"));
   ASSERT_TRUE(instance.isInstance());
   LayoutId layout_id = instance.layoutId();
   Layout layout(&scope, runtime_.layoutAt(layout_id));
@@ -1521,7 +1520,7 @@ c = MyTypeWithEmptyInitMethod()
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
 
-  Object instance(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object instance(&scope, mainModuleAt(&runtime_, "c"));
   ASSERT_TRUE(instance.isInstance());
   LayoutId layout_id = instance.layoutId();
   Layout layout(&scope, runtime_.layoutAt(layout_id));
@@ -1545,8 +1544,8 @@ c = MyTypeWithAttributes(1)
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
 
-  Type type(&scope, moduleAt(&runtime_, "__main__", "MyTypeWithAttributes"));
-  Object instance(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Type type(&scope, mainModuleAt(&runtime_, "MyTypeWithAttributes"));
+  Object instance(&scope, mainModuleAt(&runtime_, "c"));
   ASSERT_TRUE(instance.isInstance());
   LayoutId layout_id = instance.layoutId();
   // Since this class has extra attributes, its layout id should be greater than
@@ -1573,8 +1572,6 @@ def func():
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
   HandleScope scope(thread_);
-  Object dunder_main(&scope, runtime_.symbols()->DunderMain());
-  Module main(&scope, runtime_.findModule(dunder_main));
 
   // The bytecode for func is roughly:
   // LOAD_CONST     # a = 1
@@ -1588,8 +1585,7 @@ def func():
   // LOAD_FAST
   // CALL_FUNCTION
 
-  Object name(&scope, runtime_.newStrFromCStr("func"));
-  Function func(&scope, runtime_.moduleAt(main, name));
+  Function func(&scope, mainModuleAt(&runtime_, "func"));
   Code code(&scope, func.code());
   ASSERT_EQ(code.firstlineno(), 2);
 
@@ -1625,8 +1621,7 @@ class StopIterationSub(StopIteration):
 stop_iteration = StopIterationSub()
   )")
                    .isError());
-  Object stop_iteration(&scope,
-                        moduleAt(&runtime_, "__main__", "stop_iteration"));
+  Object stop_iteration(&scope, mainModuleAt(&runtime_, "stop_iteration"));
   EXPECT_TRUE(runtime_.isInstanceOfStopIteration(*stop_iteration));
   EXPECT_TRUE(runtime_.isInstanceOfBaseException(*stop_iteration));
   EXPECT_FALSE(runtime_.isInstanceOfSystemExit(*stop_iteration));
@@ -1642,7 +1637,7 @@ class IS(int, metaclass=M):
 i = IS()
 )")
                    .isError());
-  Object i(&scope, moduleAt(&runtime_, "__main__", "i"));
+  Object i(&scope, mainModuleAt(&runtime_, "i"));
   EXPECT_TRUE(runtime_.isInstanceOfUserIntBase(*i));
   EXPECT_FALSE(runtime_.isInstanceOfUserStrBase(*i));
 }
@@ -1982,12 +1977,12 @@ def test(x):
 
   // Create the instance
   HandleScope scope(thread_);
-  Type type(&scope, moduleAt(&runtime_, "__main__", "Foo"));
+  Type type(&scope, mainModuleAt(&runtime_, "Foo"));
   Layout layout(&scope, type.instanceLayout());
   Object instance(&scope, runtime_.newInstance(layout));
 
   // Run __init__ then RMW the attribute
-  Function test(&scope, moduleAt(&runtime_, "__main__", "test"));
+  Function test(&scope, mainModuleAt(&runtime_, "test"));
   Object result(&scope, Interpreter::callFunction1(
                             thread_, thread_->currentFrame(), test, instance));
   EXPECT_PYLIST_EQ(result, {"testing 123", "321 testing"});
@@ -2019,13 +2014,13 @@ def test(x):
 
   // Create an instance of Foo
   HandleScope scope(thread_);
-  Type type(&scope, moduleAt(&runtime_, "__main__", "Foo"));
+  Type type(&scope, mainModuleAt(&runtime_, "Foo"));
   Layout layout(&scope, type.instanceLayout());
   Instance foo1(&scope, runtime_.newInstance(layout));
   LayoutId original_layout_id = layout.id();
 
   // Add overflow attributes that should force layout transitions
-  Function test(&scope, moduleAt(&runtime_, "__main__", "test"));
+  Function test(&scope, mainModuleAt(&runtime_, "test"));
   Object result0(&scope, Interpreter::callFunction1(
                              thread_, thread_->currentFrame(), test, foo1));
   EXPECT_PYLIST_EQ(result0, {100, 200, "hello", "aaa", "bbb", "ccc"});
@@ -2065,12 +2060,12 @@ def test(x):
 
   // Create the instance
   HandleScope scope(thread_);
-  Type type(&scope, moduleAt(&runtime_, "__main__", "Foo"));
+  Type type(&scope, mainModuleAt(&runtime_, "Foo"));
   Layout layout(&scope, type.instanceLayout());
   Object instance(&scope, runtime_.newInstance(layout));
 
   // Run the test
-  Function test(&scope, moduleAt(&runtime_, "__main__", "test"));
+  Function test(&scope, mainModuleAt(&runtime_, "test"));
   Object result(&scope, Interpreter::callFunction1(
                             thread_, thread_->currentFrame(), test, instance));
   EXPECT_PYLIST_EQ(result, {"foo", "bar", "baz", "aaa", "bbb", "ccc"});
@@ -2108,7 +2103,7 @@ Foo()
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {"New", "Init"});
 }
 
@@ -2133,7 +2128,7 @@ def test():
 )")
                    .isError());
   HandleScope scope(thread_);
-  Function test(&scope, moduleAt(&runtime_, "__main__", "test"));
+  Function test(&scope, mainModuleAt(&runtime_, "test"));
   Tuple args(&scope, runtime_.emptyTuple());
   Object result(&scope, callFunction(test, args));
   EXPECT_EQ(*result, NoneType::object());
@@ -2157,16 +2152,16 @@ del foo.bar
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object data(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object data(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(data.isTuple());
 
   Tuple result(&scope, *data);
   ASSERT_EQ(result.length(), 2);
 
-  Object descr(&scope, moduleAt(&runtime_, "__main__", "descr"));
+  Object descr(&scope, mainModuleAt(&runtime_, "descr"));
   EXPECT_EQ(result.at(0), *descr);
 
-  Object foo(&scope, moduleAt(&runtime_, "__main__", "foo"));
+  Object foo(&scope, mainModuleAt(&runtime_, "foo"));
   EXPECT_EQ(result.at(1), *foo);
 }
 
@@ -2196,13 +2191,13 @@ foo = Foo()
 del foo.bar
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Object data(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object data(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(data.isTuple());
 
   Tuple result(&scope, *data);
   ASSERT_EQ(result.length(), 2);
 
-  Object foo(&scope, moduleAt(&runtime_, "__main__", "foo"));
+  Object foo(&scope, mainModuleAt(&runtime_, "foo"));
   EXPECT_EQ(result.at(0), *foo);
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), "bar"));
 }
@@ -2224,13 +2219,13 @@ del bar.baz
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object data(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object data(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(data.isTuple());
 
   Tuple result(&scope, *data);
   ASSERT_EQ(result.length(), 2);
 
-  Object bar(&scope, moduleAt(&runtime_, "__main__", "bar"));
+  Object bar(&scope, mainModuleAt(&runtime_, "bar"));
   EXPECT_EQ(result.at(0), *bar);
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), "baz"));
 }
@@ -2246,7 +2241,7 @@ def test():
 )")
                    .isError());
   HandleScope scope(thread_);
-  Function test(&scope, moduleAt(&runtime_, "__main__", "test"));
+  Function test(&scope, mainModuleAt(&runtime_, "test"));
   Tuple args(&scope, runtime_.emptyTuple());
   Object result(&scope, callFunction(test, args));
   EXPECT_EQ(*result, NoneType::object());
@@ -2273,16 +2268,16 @@ class Foo(metaclass=FooMeta):
 del Foo.attr
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Object data(&scope, moduleAt(&runtime_, "__main__", "args"));
+  Object data(&scope, mainModuleAt(&runtime_, "args"));
   ASSERT_TRUE(data.isTuple());
 
   Tuple args(&scope, *data);
   ASSERT_EQ(args.length(), 2);
 
-  Object descr(&scope, moduleAt(&runtime_, "__main__", "descr"));
+  Object descr(&scope, mainModuleAt(&runtime_, "descr"));
   EXPECT_EQ(args.at(0), *descr);
 
-  Object foo(&scope, moduleAt(&runtime_, "__main__", "Foo"));
+  Object foo(&scope, mainModuleAt(&runtime_, "Foo"));
   EXPECT_EQ(args.at(1), *foo);
 }
 
@@ -2314,13 +2309,13 @@ class Foo(metaclass=FooMeta):
 del Foo.bar
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Object data(&scope, moduleAt(&runtime_, "__main__", "args"));
+  Object data(&scope, mainModuleAt(&runtime_, "args"));
   ASSERT_TRUE(data.isTuple());
 
   Tuple args(&scope, *data);
   ASSERT_EQ(args.length(), 2);
 
-  Object foo(&scope, moduleAt(&runtime_, "__main__", "Foo"));
+  Object foo(&scope, mainModuleAt(&runtime_, "Foo"));
   EXPECT_EQ(args.at(0), *foo);
 
   Object attr(&scope, runtime_.internStrFromCStr(thread_, "bar"));
@@ -2367,7 +2362,7 @@ def test(module):
     del module.foo
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Function test(&scope, moduleAt(&runtime_, "__main__", "test"));
+  Function test(&scope, mainModuleAt(&runtime_, "test"));
   Tuple args(&scope, runtime_.newTuple(1));
   args.atPut(0, findModule(&runtime_, "__main__"));
   EXPECT_TRUE(raised(callFunction(test, args), LayoutId::kAttributeError));
@@ -2383,7 +2378,7 @@ def test(module):
 )")
                    .isError());
   HandleScope scope(thread_);
-  Function test(&scope, moduleAt(&runtime_, "__main__", "test"));
+  Function test(&scope, mainModuleAt(&runtime_, "test"));
   Tuple args(&scope, runtime_.newTuple(1));
   args.atPut(0, findModule(&runtime_, "__main__"));
   EXPECT_EQ(callFunction(test, args), SmallInt::fromWord(123));
@@ -2631,7 +2626,7 @@ class Foo:
 )")
                    .isError());
   HandleScope scope(thread_);
-  Type type(&scope, moduleAt(&runtime_, "__main__", "Foo"));
+  Type type(&scope, mainModuleAt(&runtime_, "Foo"));
   Layout layout(&scope, type.instanceLayout());
   HeapObject instance(&scope, runtime_.newInstance(layout));
   Object attr(&scope, runtime_.newStrFromCStr("unknown"));
@@ -2652,7 +2647,7 @@ def new_foo():
 
   // Create an instance of Foo
   HandleScope scope(thread_);
-  Function new_foo(&scope, moduleAt(&runtime_, "__main__", "new_foo"));
+  Function new_foo(&scope, mainModuleAt(&runtime_, "new_foo"));
   Tuple args(&scope, runtime_.emptyTuple());
   HeapObject instance(&scope, callFunction(new_foo, args));
 
@@ -2685,7 +2680,7 @@ def new_foo():
 
   // Create an instance of Foo
   HandleScope scope(thread_);
-  Function new_foo(&scope, moduleAt(&runtime_, "__main__", "new_foo"));
+  Function new_foo(&scope, mainModuleAt(&runtime_, "new_foo"));
   Tuple args(&scope, runtime_.emptyTuple());
   HeapObject instance(&scope, callFunction(new_foo, args));
 
@@ -2739,10 +2734,10 @@ class Bar(Foo):
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
 
-  Object foo(&scope, moduleAt(&runtime_, "__main__", "Foo"));
+  Object foo(&scope, mainModuleAt(&runtime_, "Foo"));
   EXPECT_TRUE(foo.isType());
 
-  Object bar(&scope, moduleAt(&runtime_, "__main__", "Bar"));
+  Object bar(&scope, mainModuleAt(&runtime_, "Bar"));
   EXPECT_TRUE(bar.isType());
 }
 
@@ -2757,7 +2752,7 @@ class Foo(type, metaclass=MyMeta):
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
 
-  Object foo(&scope, moduleAt(&runtime_, "__main__", "Foo"));
+  Object foo(&scope, mainModuleAt(&runtime_, "Foo"));
   EXPECT_FALSE(foo.isType());
 }
 
@@ -2772,10 +2767,10 @@ class Bar(Foo):
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
 
-  Object foo(&scope, moduleAt(&runtime_, "__main__", "Foo"));
+  Object foo(&scope, mainModuleAt(&runtime_, "Foo"));
   EXPECT_TRUE(runtime_.isInstanceOfType(*foo));
 
-  Object bar(&scope, moduleAt(&runtime_, "__main__", "Bar"));
+  Object bar(&scope, mainModuleAt(&runtime_, "Bar"));
   EXPECT_TRUE(runtime_.isInstanceOfType(*bar));
 }
 
@@ -2789,7 +2784,7 @@ class Foo(type, metaclass=MyMeta):
 )";
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Object foo(&scope, moduleAt(&runtime_, "__main__", "Foo"));
+  Object foo(&scope, mainModuleAt(&runtime_, "Foo"));
   EXPECT_TRUE(runtime_.isInstanceOfType(*foo));
 }
 
@@ -2808,13 +2803,13 @@ class ChildMeta(type, metaclass=ParentMeta):
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
   Object type(&scope, runtime_.typeAt(LayoutId::kType));
 
-  Object grand_meta(&scope, moduleAt(&runtime_, "__main__", "GrandMeta"));
+  Object grand_meta(&scope, mainModuleAt(&runtime_, "GrandMeta"));
   EXPECT_EQ(runtime_.typeOf(*grand_meta), *type);
 
-  Object parent_meta(&scope, moduleAt(&runtime_, "__main__", "ParentMeta"));
+  Object parent_meta(&scope, mainModuleAt(&runtime_, "ParentMeta"));
   EXPECT_EQ(runtime_.typeOf(*parent_meta), *grand_meta);
 
-  Object child_meta(&scope, moduleAt(&runtime_, "__main__", "ChildMeta"));
+  Object child_meta(&scope, mainModuleAt(&runtime_, "ChildMeta"));
   EXPECT_EQ(runtime_.typeOf(*child_meta), *parent_meta);
 }
 
@@ -2827,8 +2822,8 @@ Foo = MyMeta('Foo', (), {})
 )";
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Object mymeta(&scope, moduleAt(&runtime_, "__main__", "MyMeta"));
-  Object foo(&scope, moduleAt(&runtime_, "__main__", "Foo"));
+  Object mymeta(&scope, mainModuleAt(&runtime_, "MyMeta"));
+  Object foo(&scope, mainModuleAt(&runtime_, "Foo"));
   EXPECT_EQ(runtime_.typeOf(*foo), *mymeta);
   EXPECT_FALSE(foo.isType());
   EXPECT_TRUE(runtime_.isInstanceOfType(*foo));
@@ -2841,7 +2836,7 @@ class Test(Exception):
 )";
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Object value(&scope, moduleAt(&runtime_, "__main__", "Test"));
+  Object value(&scope, mainModuleAt(&runtime_, "Test"));
   ASSERT_TRUE(value.isType());
 
   Type type(&scope, *value);
@@ -2886,7 +2881,7 @@ def gen():
 
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Object gen_obj(&scope, moduleAt(&runtime_, "__main__", "gen"));
+  Object gen_obj(&scope, mainModuleAt(&runtime_, "gen"));
   ASSERT_TRUE(gen_obj.isFunction());
   Function gen(&scope, *gen_obj);
   Object frame_obj(&scope, runtime_.newHeapFrame(gen));
@@ -2900,7 +2895,7 @@ extern "C" struct _inittab _PyImport_Inittab[];
 TEST_F(RuntimeModuleTest, ImportModuleFromInitTab) {
   ASSERT_FALSE(runFromCStr(&runtime_, "import _empty").isError());
   HandleScope scope(thread_);
-  Object mod(&scope, moduleAt(&runtime_, "__main__", "_empty"));
+  Object mod(&scope, mainModuleAt(&runtime_, "_empty"));
   EXPECT_TRUE(mod.isModule());
 }
 
@@ -2927,7 +2922,7 @@ foo.x = 3
 )")
                    .isError());
   HandleScope scope(thread_);
-  Function function(&scope, moduleAt(&runtime_, "__main__", "foo"));
+  Function function(&scope, mainModuleAt(&runtime_, "foo"));
   Dict function_dict(&scope, function.dict());
   Object key(&scope, runtime_.newStrFromCStr("x"));
   Object value(&scope, runtime_.dictAt(thread_, function_dict, key));
@@ -3197,7 +3192,7 @@ class C(): pass
 a = C()
 )")
                    .isError());
-  HeapObject a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  HeapObject a(&scope, mainModuleAt(&runtime_, "a"));
   Str attr(&scope, runtime_.newStrFromCStr("attr"));
   Str value(&scope, runtime_.newStrFromCStr("value"));
   Object result(&scope, instanceSetAttr(thread_, a, attr, value));
@@ -3232,7 +3227,7 @@ o = C()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object obj(&scope, moduleAt(&runtime_, "__main__", "o"));
+  Object obj(&scope, mainModuleAt(&runtime_, "o"));
   EXPECT_TRUE(runtime_.isMapping(thread_, obj));
 }
 
@@ -3244,7 +3239,7 @@ o = C()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object obj(&scope, moduleAt(&runtime_, "__main__", "o"));
+  Object obj(&scope, mainModuleAt(&runtime_, "o"));
   EXPECT_TRUE(runtime_.isMapping(thread_, obj));
 }
 
@@ -3256,7 +3251,7 @@ o = C()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object obj(&scope, moduleAt(&runtime_, "__main__", "o"));
+  Object obj(&scope, mainModuleAt(&runtime_, "o"));
   EXPECT_FALSE(runtime_.isMapping(thread_, obj));
 }
 
@@ -3269,7 +3264,7 @@ o.__getitem__ = 4
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object obj(&scope, moduleAt(&runtime_, "__main__", "o"));
+  Object obj(&scope, mainModuleAt(&runtime_, "o"));
   EXPECT_FALSE(runtime_.isMapping(thread_, obj));
 }
 
@@ -3298,7 +3293,7 @@ elts = (C("a"), C("b"), C("c"))
                    .isError());
   HandleScope scope(thread_);
   Str sep(&scope, runtime_.newStrFromCStr(","));
-  Tuple elts(&scope, moduleAt(&runtime_, "__main__", "elts"));
+  Tuple elts(&scope, mainModuleAt(&runtime_, "elts"));
   Object result(&scope, runtime_.strJoin(thread_, sep, elts, elts.length()));
   EXPECT_TRUE(isStrEqualsCStr(*result, "a,b,c"));
 }

@@ -26,7 +26,7 @@ result = [i for i in fib(7)]
 
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {0, 1, 1, 2, 3, 5, 8});
 }
 
@@ -44,7 +44,7 @@ g.send(None)
 g.send(7)
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "value"));
+  Object result(&scope, mainModuleAt(&runtime_, "value"));
   EXPECT_TRUE(isIntEqualsWord(*result, 10));
 }
 
@@ -94,7 +94,7 @@ for i in g:
   log(i)
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(
       result,
       {"priming", "ready", "sending", "initial string", "initial string first",
@@ -103,7 +103,7 @@ for i in g:
   // Manually check element 3 for object identity
   ASSERT_TRUE(result.isList());
   List list(&scope, *result);
-  Object initial(&scope, moduleAt(&runtime_, "__main__", "initial_str"));
+  Object initial(&scope, mainModuleAt(&runtime_, "initial_str"));
   EXPECT_GE(list.numItems(), 3);
   EXPECT_EQ(list.at(3), *initial);
 }
@@ -150,7 +150,7 @@ except StopIteration:
 )")
                    .isError());
 
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result.isSmallInt());
   EXPECT_EQ(SmallInt::cast(*result).value(), 1);
 }
@@ -201,7 +201,7 @@ async def coro():
 c = coro()
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object result(&scope, mainModuleAt(&runtime_, "c"));
   EXPECT_TRUE(result.isCoroutine());
 }
 
@@ -224,7 +224,7 @@ async def async_gen():
 ag = async_gen()
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "ag"));
+  Object result(&scope, mainModuleAt(&runtime_, "ag"));
   EXPECT_TRUE(result.isAsyncGenerator());
 }
 

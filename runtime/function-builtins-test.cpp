@@ -18,7 +18,7 @@ code = foo.__code__
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object code(&scope, moduleAt(&runtime_, "__main__", "code"));
+  Object code(&scope, mainModuleAt(&runtime_, "code"));
   ASSERT_TRUE(code.isCode());
 }
 
@@ -89,7 +89,7 @@ def foo(): pass
 foo.bar = -4
 )")
                    .isError());
-  Object foo(&scope, moduleAt(&runtime_, "__main__", "foo"));
+  Object foo(&scope, mainModuleAt(&runtime_, "foo"));
   Object name(&scope, runtime_.newStrFromCStr("bar"));
   EXPECT_TRUE(isIntEqualsWord(
       runBuiltin(FunctionBuiltins::dunderGetattribute, foo, name), -4));
@@ -99,7 +99,7 @@ TEST_F(FunctionBuiltinsTest,
        DunderGetattributeWithNonStringNameRaisesTypeError) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, "def foo(): pass").isError());
-  Object foo(&scope, moduleAt(&runtime_, "__main__", "foo"));
+  Object foo(&scope, mainModuleAt(&runtime_, "foo"));
   Object name(&scope, runtime_.newInt(0));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(FunctionBuiltins::dunderGetattribute, foo, name),
@@ -110,7 +110,7 @@ TEST_F(FunctionBuiltinsTest,
        DunderGetattributeWithMissingAttributeRaisesAttributeError) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, "def foo(): pass").isError());
-  Object foo(&scope, moduleAt(&runtime_, "__main__", "foo"));
+  Object foo(&scope, mainModuleAt(&runtime_, "foo"));
   Object name(&scope, runtime_.newStrFromCStr("xxx"));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(FunctionBuiltins::dunderGetattribute, foo, name),
@@ -121,7 +121,7 @@ TEST_F(FunctionBuiltinsTest, DunderSetattrSetsAttribute) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   ASSERT_FALSE(runFromCStr(&runtime_, "def foo(): pass").isError());
-  Object foo(&scope, moduleAt(&runtime_, "__main__", "foo"));
+  Object foo(&scope, mainModuleAt(&runtime_, "foo"));
   Object name(&scope, runtime_.newStrFromCStr("foobarbaz"));
   Object value(&scope, runtime_.newInt(1337));
   EXPECT_TRUE(runBuiltin(FunctionBuiltins::dunderSetattr, foo, name, value)
@@ -136,7 +136,7 @@ TEST_F(FunctionBuiltinsTest, DunderSetattrSetsAttribute) {
 TEST_F(FunctionBuiltinsTest, DunderSetattrWithNonStringNameRaisesTypeError) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, "def foo(): pass").isError());
-  Object foo(&scope, moduleAt(&runtime_, "__main__", "foo"));
+  Object foo(&scope, mainModuleAt(&runtime_, "foo"));
   Object name(&scope, runtime_.newInt(0));
   Object value(&scope, runtime_.newInt(1));
   EXPECT_TRUE(raisedWithStr(
@@ -151,7 +151,7 @@ result = repr(f)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result.isStr());
   unique_c_ptr<char> result_str(Str::cast(*result).toCStr());
   EXPECT_TRUE(std::strstr(result_str.get(), "<function f at 0x"));
@@ -160,7 +160,7 @@ result = repr(f)
 TEST_F(FunctionBuiltinsTest, ReprHandlesLambda) {
   ASSERT_FALSE(runFromCStr(&runtime_, "result = repr(lambda x: x)").isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result.isStr());
   unique_c_ptr<char> result_str(Str::cast(*result).toCStr());
   EXPECT_TRUE(std::strstr(result_str.get(), "<function <lambda> at 0x"));
@@ -174,7 +174,7 @@ result = f.__call__(3)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 3));
 }
 
@@ -186,7 +186,7 @@ result = f.__globals__
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(result.isDict());
 }
 
@@ -198,9 +198,8 @@ module_dict = sys.__dict__
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object function_globals(&scope,
-                          moduleAt(&runtime_, "__main__", "function_globals"));
-  Object module_dict(&scope, moduleAt(&runtime_, "__main__", "module_dict"));
+  Object function_globals(&scope, mainModuleAt(&runtime_, "function_globals"));
+  Object module_dict(&scope, mainModuleAt(&runtime_, "module_dict"));
   EXPECT_EQ(*function_globals, *module_dict);
 }
 
@@ -208,7 +207,7 @@ TEST_F(FunctionBuiltinsTest, FunctionSetAttrSetsAttribute) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   ASSERT_FALSE(runFromCStr(&runtime_, "def foo(): pass").isError());
-  Object foo_obj(&scope, moduleAt(&runtime_, "__main__", "foo"));
+  Object foo_obj(&scope, mainModuleAt(&runtime_, "foo"));
   ASSERT_TRUE(foo_obj.isFunction());
   Function foo(&scope, *foo_obj);
   Object name(&scope, runtime_.internStrFromCStr(thread, "bar"));

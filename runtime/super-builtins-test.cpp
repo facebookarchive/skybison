@@ -23,7 +23,7 @@ result = B().getsuper().x
 )")
                    .isError());
   HandleScope scope;
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
 
@@ -39,7 +39,7 @@ class B(A):
 s = B().getsuper()
 )")
                    .isError());
-  Object s(&scope, moduleAt(&runtime_, "__main__", "s"));
+  Object s(&scope, mainModuleAt(&runtime_, "s"));
   Object name(&scope, runtime_.newStrFromCStr("foo"));
   EXPECT_TRUE(isIntEqualsWord(
       runBuiltin(SuperBuiltins::dunderGetattribute, s, name), 8));
@@ -55,7 +55,7 @@ class B(A):
 s = B().getsuper()
 )")
                    .isError());
-  Object s(&scope, moduleAt(&runtime_, "__main__", "s"));
+  Object s(&scope, mainModuleAt(&runtime_, "s"));
   Object name(&scope, runtime_.newInt(0));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(SuperBuiltins::dunderGetattribute, s, name),
@@ -73,7 +73,7 @@ class B(A):
 s = B().getsuper()
 )")
                    .isError());
-  Object s(&scope, moduleAt(&runtime_, "__main__", "s"));
+  Object s(&scope, mainModuleAt(&runtime_, "s"));
   Object name(&scope, runtime_.newStrFromCStr("xxx"));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(SuperBuiltins::dunderGetattribute, s, name),
@@ -115,12 +115,12 @@ result4 = F().f()
 result5 = F.f(F())
 )")
                    .isError());
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result0"), 10));
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result1"), 10));
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result2"), 10));
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result3"), 10));
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result4"), 10));
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result5"), 10));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result0"), 10));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result1"), 10));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result2"), 10));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result3"), 10));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result4"), 10));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result5"), 10));
 }
 
 TEST_F(SuperBuiltinsTest, SuperTest2) {
@@ -160,12 +160,12 @@ e = E()
 result5 = e.cm() == (e, (E, (E, (E, 1), 2), 3), 4)
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result0"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result1"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result2"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result3"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result4"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result5"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "result0"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "result1"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "result2"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "result3"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "result4"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "result5"), Bool::trueObj());
 }
 
 TEST_F(SuperBuiltinsTest, SuperTestNoArgument) {
@@ -209,10 +209,10 @@ e = d.cm() == (d, (D, (D, (D, 1), 2), 3), 4)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
-  Bool c(&scope, moduleAt(&runtime_, "__main__", "c"));
-  Bool e(&scope, moduleAt(&runtime_, "__main__", "e"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
+  Bool c(&scope, mainModuleAt(&runtime_, "c"));
+  Bool e(&scope, mainModuleAt(&runtime_, "e"));
   EXPECT_TRUE(isIntEqualsWord(*a, 3));
   EXPECT_TRUE(isIntEqualsWord(*b, 10));
   EXPECT_EQ(*c, Bool::trueObj());
@@ -235,7 +235,7 @@ result = type(C()).x
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 42));
 }
 
@@ -265,7 +265,7 @@ class B(A):
 s = B().getsuper()
 )")
                    .isError());
-  Object s_obj(&scope, moduleAt(&runtime_, "__main__", "s"));
+  Object s_obj(&scope, mainModuleAt(&runtime_, "s"));
   ASSERT_TRUE(s_obj.isSuper());
   Super s(&scope, *s_obj);
   Object name(&scope, runtime_.newStrFromCStr("x"));
@@ -283,7 +283,7 @@ class B(A):
 s = B().getsuper()
 )")
                    .isError());
-  Object s_obj(&scope, moduleAt(&runtime_, "__main__", "s"));
+  Object s_obj(&scope, mainModuleAt(&runtime_, "s"));
   ASSERT_TRUE(s_obj.isSuper());
   Super s(&scope, *s_obj);
   Object name(&scope, runtime_.newStrFromCStr("x"));
@@ -308,10 +308,10 @@ i = B()
 s = i.getsuper()
 )")
                    .isError());
-  Object d(&scope, moduleAt(&runtime_, "__main__", "d"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "B"));
-  Object i(&scope, moduleAt(&runtime_, "__main__", "i"));
-  Object s_obj(&scope, moduleAt(&runtime_, "__main__", "s"));
+  Object d(&scope, mainModuleAt(&runtime_, "d"));
+  Object b(&scope, mainModuleAt(&runtime_, "B"));
+  Object i(&scope, mainModuleAt(&runtime_, "i"));
+  Object s_obj(&scope, mainModuleAt(&runtime_, "s"));
   ASSERT_TRUE(s_obj.isSuper());
   Super s(&scope, *s_obj);
   Object name(&scope, runtime_.newStrFromCStr("x"));
@@ -340,10 +340,10 @@ i = B()
 s = i.getsuper()
 )")
                    .isError());
-  Object d(&scope, moduleAt(&runtime_, "__main__", "d"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "B"));
-  Object i(&scope, moduleAt(&runtime_, "__main__", "i"));
-  Object s_obj(&scope, moduleAt(&runtime_, "__main__", "s"));
+  Object d(&scope, mainModuleAt(&runtime_, "d"));
+  Object b(&scope, mainModuleAt(&runtime_, "B"));
+  Object i(&scope, mainModuleAt(&runtime_, "i"));
+  Object s_obj(&scope, mainModuleAt(&runtime_, "s"));
   ASSERT_TRUE(s_obj.isSuper());
   Super s(&scope, *s_obj);
   Object name(&scope, runtime_.newStrFromCStr("x"));
@@ -365,7 +365,7 @@ class C:
 s = C().foo()
 )")
                    .isError());
-  Object s_obj(&scope, moduleAt(&runtime_, "__main__", "s"));
+  Object s_obj(&scope, mainModuleAt(&runtime_, "s"));
   ASSERT_TRUE(s_obj.isSuper());
   Super s(&scope, *s_obj);
   Object name(&scope, runtime_.newStrFromCStr("__class__"));

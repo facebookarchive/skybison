@@ -57,7 +57,7 @@ class Foo(bytes): pass
 foo = Foo(b"foo")
 )")
                    .isError());
-  Object foo(&scope, moduleAt(&runtime_, "__main__", "foo"));
+  Object foo(&scope, mainModuleAt(&runtime_, "foo"));
   auto const subclass_ok = isBytesEqualsBytes(foo, view);
   EXPECT_TRUE(subclass_ok);
 
@@ -109,8 +109,8 @@ l = [None, False, 100, 200.5, 'hello']
 i = 123456
 )")
                    .isError());
-  Object list(&scope, moduleAt(&runtime_, "__main__", "l"));
-  Object not_list(&scope, moduleAt(&runtime_, "__main__", "i"));
+  Object list(&scope, mainModuleAt(&runtime_, "l"));
+  Object not_list(&scope, mainModuleAt(&runtime_, "i"));
 
   auto const ok = AssertPyListEqual(
       "", "", list, {Value::none(), false, 100, 200.5, "hello"});

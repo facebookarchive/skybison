@@ -44,7 +44,7 @@ array = bytearray(b'foo')
 array.clear()
 )")
                    .isError());
-  ByteArray array(&scope, moduleAt(&runtime_, "__main__", "array"));
+  ByteArray array(&scope, mainModuleAt(&runtime_, "array"));
   EXPECT_EQ(array.numItems(), 0);
 }
 
@@ -90,7 +90,7 @@ other = Foo(b"1234")
                    .isError());
   HandleScope scope;
   ByteArray self(&scope, runtime_.newByteArray());
-  Bytes other(&scope, moduleAt(&runtime_, "__main__", "other"));
+  Bytes other(&scope, mainModuleAt(&runtime_, "other"));
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderAdd, self, other));
   EXPECT_TRUE(isByteArrayEqualsCStr(self, ""));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "1234"));
@@ -299,7 +299,7 @@ index = N(3)
   ByteArray self(&scope, runtime_.newByteArray());
   const byte bytes[] = {'h', 'e', 'l', 'l', 'o'};
   runtime_.byteArrayExtend(thread_, self, bytes);
-  Object index(&scope, moduleAt(&runtime_, "__main__", "index"));
+  Object index(&scope, mainModuleAt(&runtime_, "index"));
   Object item(&scope,
               runBuiltin(ByteArrayBuiltins::dunderGetItem, self, index));
   EXPECT_EQ(*item, SmallInt::fromWord('l'));
@@ -363,7 +363,7 @@ index = N(1)
                    .isError());
   HandleScope scope(thread_);
   ByteArray self(&scope, runtime_.newByteArray());
-  Object start(&scope, moduleAt(&runtime_, "__main__", "index"));
+  Object start(&scope, mainModuleAt(&runtime_, "index"));
   Object stop(&scope, NoneType::object());
   Object step(&scope, NoneType::object());
   Slice slice(&scope, runtime_.newSlice(start, stop, step));
@@ -507,7 +507,7 @@ other = Foo(b"1234")
                    .isError());
   HandleScope scope;
   ByteArray self(&scope, runtime_.newByteArray());
-  Bytes other(&scope, moduleAt(&runtime_, "__main__", "other"));
+  Bytes other(&scope, mainModuleAt(&runtime_, "other"));
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderIadd, self, other));
   const char* expected = "1234";
   EXPECT_TRUE(isByteArrayEqualsCStr(self, expected));
@@ -540,7 +540,7 @@ class C(int): pass
 count = C(5)
 )")
                    .isError());
-  Object count(&scope, moduleAt(&runtime_, "__main__", "count"));
+  Object count(&scope, mainModuleAt(&runtime_, "count"));
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderImul, self, count));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "aaaaa"));
 }
@@ -556,7 +556,7 @@ class C:
 count = C()
 )")
                    .isError());
-  Object count(&scope, moduleAt(&runtime_, "__main__", "count"));
+  Object count(&scope, mainModuleAt(&runtime_, "count"));
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderImul, self, count));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "aa"));
 }
@@ -571,7 +571,7 @@ class C:
 count = C()
 )")
                    .isError());
-  Object count(&scope, moduleAt(&runtime_, "__main__", "count"));
+  Object count(&scope, mainModuleAt(&runtime_, "count"));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(ByteArrayBuiltins::dunderImul, self, count),
       LayoutId::kTypeError, "__index__ returned non-int (type str)"));
@@ -587,7 +587,7 @@ class C:
 count = C()
 )")
                    .isError());
-  Object count(&scope, moduleAt(&runtime_, "__main__", "count"));
+  Object count(&scope, mainModuleAt(&runtime_, "count"));
   EXPECT_TRUE(
       raisedWithStr(runBuiltin(ByteArrayBuiltins::dunderImul, self, count),
                     LayoutId::kArithmeticError, "called __index__"));
@@ -670,8 +670,8 @@ array = bytearray(b'123')
 result = array.__init__()
 )")
                    .isError());
-  Object array(&scope, moduleAt(&runtime_, "__main__", "array"));
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object array(&scope, mainModuleAt(&runtime_, "array"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result.isNoneType());
   EXPECT_TRUE(isByteArrayEqualsCStr(array, ""));
 }
@@ -774,7 +774,7 @@ source = N(3)
                    .isError());
   HandleScope scope(thread_);
   Object self(&scope, runtime_.newByteArray());
-  Object source(&scope, moduleAt(&runtime_, "__main__", "source"));
+  Object source(&scope, mainModuleAt(&runtime_, "source"));
   Object unbound(&scope, Unbound::object());
   Object init(&scope, runBuiltin(ByteArrayBuiltins::dunderInit, self, source,
                                  unbound, unbound));
@@ -1063,7 +1063,7 @@ class C(int): pass
 count = C(3)
 )")
                    .isError());
-  Object count(&scope, moduleAt(&runtime_, "__main__", "count"));
+  Object count(&scope, mainModuleAt(&runtime_, "count"));
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderMul, self, count));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "foofoofoo"));
 }
@@ -1079,7 +1079,7 @@ class C:
 count = C()
 )")
                    .isError());
-  Object count(&scope, moduleAt(&runtime_, "__main__", "count"));
+  Object count(&scope, mainModuleAt(&runtime_, "count"));
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderMul, self, count));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "aa"));
 }
@@ -1094,7 +1094,7 @@ class C:
 count = C()
 )")
                    .isError());
-  Object count(&scope, moduleAt(&runtime_, "__main__", "count"));
+  Object count(&scope, mainModuleAt(&runtime_, "count"));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(ByteArrayBuiltins::dunderMul, self, count),
       LayoutId::kTypeError, "__index__ returned non-int (type str)"));
@@ -1110,7 +1110,7 @@ class C:
 count = C()
 )")
                    .isError());
-  Object count(&scope, moduleAt(&runtime_, "__main__", "count"));
+  Object count(&scope, mainModuleAt(&runtime_, "count"));
   EXPECT_TRUE(
       raisedWithStr(runBuiltin(ByteArrayBuiltins::dunderMul, self, count),
                     LayoutId::kArithmeticError, "called __index__"));
@@ -1273,7 +1273,7 @@ TEST_F(ByteArrayBuiltinsTest, NewByteArray) {
   HandleScope scope(thread_);
   ASSERT_FALSE(
       runFromCStr(&runtime_, "obj = bytearray(b'Hello world!')").isError());
-  ByteArray self(&scope, moduleAt(&runtime_, "__main__", "obj"));
+  ByteArray self(&scope, mainModuleAt(&runtime_, "obj"));
   EXPECT_TRUE(isByteArrayEqualsCStr(self, "Hello world!"));
 }
 
@@ -1351,7 +1351,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderRmulCallsDunderMul) {
   HandleScope scope;
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = 3 * bytearray(b'123')").isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "123123123"));
 }
 
@@ -1398,7 +1398,7 @@ result = bytearray(b' ').join(Foo())
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "ab c def"));
 }
 
@@ -1425,7 +1425,7 @@ TEST_F(ByteArrayBuiltinsTest, MaketransWithEmptyReturnsDefaultBytes) {
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = bytearray.maketrans(bytearray(), b'')")
           .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   byte expected[256];
   for (word i = 0; i < 256; i++) {
     expected[i] = i;
@@ -1439,7 +1439,7 @@ TEST_F(ByteArrayBuiltinsTest, MaketransWithNonEmptyReturnsBytes) {
       runFromCStr(&runtime_,
                   "result = bytearray.maketrans(bytearray(b'abc'), b'123')")
           .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result.isBytes());
   Bytes actual(&scope, *result);
   EXPECT_EQ(actual.byteAt('a'), '1');
@@ -1503,7 +1503,7 @@ TEST_F(ByteArrayBuiltinsTest, TranslateWithTableTranslatesBytes) {
   const byte alabama[] = {'A', 'l', 'a', 'b', 'a', 'm', 'a'};
   ByteArray self(&scope, runtime_.newByteArray());
   runtime_.byteArrayExtend(thread_, self, alabama);
-  Object table(&scope, moduleAt(&runtime_, "__main__", "table"));
+  Object table(&scope, mainModuleAt(&runtime_, "table"));
   Object del(&scope, runtime_.newByteArray());
   Object result(&scope,
                 runBuiltin(ByteArrayBuiltins::translate, self, table, del));
@@ -1519,7 +1519,7 @@ TEST_F(ByteArrayBuiltinsTest,
   const byte abc[] = {'a', 'b', 'c'};
   ByteArray self(&scope, runtime_.newByteArray());
   runtime_.byteArrayExtend(thread_, self, alabama);
-  Object table(&scope, moduleAt(&runtime_, "__main__", "table"));
+  Object table(&scope, mainModuleAt(&runtime_, "table"));
   Object del(&scope, runtime_.newBytesWithAll(abc));
   Object result(&scope,
                 runBuiltin(ByteArrayBuiltins::translate, self, table, del));
@@ -1543,7 +1543,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderIterReturnsByteArrayIterator) {
   ASSERT_FALSE(runFromCStr(&runtime_, "result = type(bytearray().__iter__())")
                    .isError());
   HandleScope scope;
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_EQ(*result, runtime_.typeAt(LayoutId::kByteArrayIterator));
 }
 
@@ -1561,10 +1561,10 @@ except StopIteration:
   r3 = True
 )")
                    .isError());
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "r0"), 'a'));
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "r1"), 'b'));
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "r2"), 'c'));
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "r3"), Bool::trueObj());
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "r0"), 'a'));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "r1"), 'b'));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "r2"), 'c'));
+  EXPECT_EQ(mainModuleAt(&runtime_, "r3"), Bool::trueObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest,
@@ -1575,8 +1575,8 @@ it = iter(ba)
 )")
                    .isError());
   HandleScope scope(thread_);
-  ByteArray ba(&scope, moduleAt(&runtime_, "__main__", "ba"));
-  ByteArrayIterator it(&scope, moduleAt(&runtime_, "__main__", "it"));
+  ByteArray ba(&scope, mainModuleAt(&runtime_, "ba"));
+  ByteArrayIterator it(&scope, mainModuleAt(&runtime_, "it"));
   ba.setNumItems(0);
   EXPECT_TRUE(raised(thread_->invokeMethod1(it, SymbolId::kDunderNext),
                      LayoutId::kStopIteration));

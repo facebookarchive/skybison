@@ -38,7 +38,7 @@ d = {'a': C()}
                    .isError());
 
   HandleScope scope(thread_);
-  Dict dict(&scope, moduleAt(&runtime_, "__main__", "d"));
+  Dict dict(&scope, mainModuleAt(&runtime_, "d"));
   Object ref_obj(&scope, NoneType::object());
   {
     Object none(&scope, NoneType::object());
@@ -60,9 +60,9 @@ result = dict.copy(d)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object dict(&scope, moduleAt(&runtime_, "__main__", "d"));
+  Object dict(&scope, mainModuleAt(&runtime_, "d"));
   EXPECT_TRUE(dict.isDict());
-  Object result_obj(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result_obj(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(result_obj.isDict());
   Dict result(&scope, *result_obj);
   EXPECT_NE(*dict, *result);
@@ -74,7 +74,7 @@ TEST_F(DictBuiltinsTest, DunderContainsWithExistingKeyReturnsTrue) {
   ASSERT_FALSE(runFromCStr(&runtime_, "result = {'foo': 0}.__contains__('foo')")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result.isBool());
   EXPECT_TRUE(Bool::cast(*result).value());
 }
@@ -83,7 +83,7 @@ TEST_F(DictBuiltinsTest, DunderContainsWithNonexistentKeyReturnsFalse) {
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = {}.__contains__('foo')").isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result.isBool());
   EXPECT_FALSE(Bool::cast(*result).value());
 }
@@ -129,7 +129,7 @@ foo_in_d = "foo" in d
 )")
                    .isError());
   HandleScope scope(thread_);
-  Bool foo_in_d(&scope, moduleAt(&runtime_, "__main__", "foo_in_d"));
+  Bool foo_in_d(&scope, mainModuleAt(&runtime_, "foo_in_d"));
 
   EXPECT_TRUE(foo_in_d.value());
 }
@@ -141,7 +141,7 @@ foo_in_d = "foo" in d
 )")
                    .isError());
   HandleScope scope(thread_);
-  Bool foo_in_d(&scope, moduleAt(&runtime_, "__main__", "foo_in_d"));
+  Bool foo_in_d(&scope, mainModuleAt(&runtime_, "foo_in_d"));
 
   EXPECT_FALSE(foo_in_d.value());
 }
@@ -189,7 +189,7 @@ del d["foo"]
 )")
                    .isError());
   HandleScope scope(thread_);
-  Dict d(&scope, moduleAt(&runtime_, "__main__", "d"));
+  Dict d(&scope, mainModuleAt(&runtime_, "d"));
   Object foo(&scope, runtime_.newStrFromCStr("foo"));
 
   EXPECT_FALSE(runtime_.dictIncludes(thread_, d, foo));
@@ -277,7 +277,7 @@ class foo(dict):
 d = foo()
 )")
                    .isError());
-  Dict dict(&scope, moduleAt(&runtime_, "__main__", "d"));
+  Dict dict(&scope, mainModuleAt(&runtime_, "d"));
   Str key(&scope, runtime_.newStrFromCStr("a"));
   Str value(&scope, runtime_.newStrFromCStr("b"));
   Object result1(&scope,
@@ -415,8 +415,8 @@ d3 = {"a": 123}
 )")
                    .isError());
   HandleScope scope(thread_);
-  Dict d1(&scope, moduleAt(&runtime_, "__main__", "d1"));
-  Dict d2(&scope, moduleAt(&runtime_, "__main__", "d2"));
+  Dict d1(&scope, mainModuleAt(&runtime_, "d1"));
+  Dict d2(&scope, mainModuleAt(&runtime_, "d2"));
   ASSERT_EQ(d1.numItems(), 2);
   ASSERT_EQ(d1.numUsableItems(), 5 - 2);
   ASSERT_EQ(d2.numItems(), 2);
@@ -717,7 +717,7 @@ key = Foo()
 )")
                    .isError());
   Dict dict(&scope, runtime_.newDict());
-  Object key(&scope, moduleAt(&runtime_, "__main__", "key"));
+  Object key(&scope, mainModuleAt(&runtime_, "key"));
   Object default_obj(&scope, NoneType::object());
   ASSERT_TRUE(raised(runBuiltin(DictBuiltins::get, dict, key, default_obj),
                      LayoutId::kTypeError));
@@ -735,19 +735,19 @@ key = Foo()
 )")
                    .isError());
   Dict dict(&scope, runtime_.newDict());
-  Object key(&scope, moduleAt(&runtime_, "__main__", "key"));
+  Object key(&scope, mainModuleAt(&runtime_, "key"));
   Object default_obj(&scope, runtime_.newInt(5));
   EXPECT_EQ(runBuiltin(DictBuiltins::get, dict, key, default_obj), default_obj);
 }
 
 TEST_F(DictBuiltinsTest, GetReturnsDefaultValue) {
   ASSERT_FALSE(runFromCStr(&runtime_, "res = {}.get(123, 456)").isError());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "res"), RawSmallInt::fromWord(456));
+  EXPECT_EQ(mainModuleAt(&runtime_, "res"), RawSmallInt::fromWord(456));
 }
 
 TEST_F(DictBuiltinsTest, GetReturnsNone) {
   ASSERT_FALSE(runFromCStr(&runtime_, "result = {}.get(123)").isError());
-  EXPECT_TRUE(moduleAt(&runtime_, "__main__", "result").isNoneType());
+  EXPECT_TRUE(mainModuleAt(&runtime_, "result").isNoneType());
 }
 
 TEST_F(DictBuiltinsTest, GetReturnsValue) {
@@ -789,8 +789,8 @@ d['hello'] = c
 result = d.__repr__()
 )")
                    .isError());
-  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime_, "__main__", "result"),
-                              "{'hello': {...}}"));
+  EXPECT_TRUE(
+      isStrEqualsCStr(mainModuleAt(&runtime_, "result"), "{'hello': {...}}"));
 }
 
 TEST_F(DictBuiltinsTest, PopWithKeyPresentReturnsValue) {
@@ -800,9 +800,8 @@ result = d.pop("hello")
 )")
                    .isError());
   HandleScope scope(thread_);
-  EXPECT_TRUE(
-      isStrEqualsCStr(moduleAt(&runtime_, "__main__", "result"), "world"));
-  Dict dict(&scope, moduleAt(&runtime_, "__main__", "d"));
+  EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(&runtime_, "result"), "world"));
+  Dict dict(&scope, mainModuleAt(&runtime_, "d"));
   EXPECT_EQ(dict.numItems(), 0);
   EXPECT_EQ(dict.numUsableItems(), 5 - 1);
 }
@@ -814,11 +813,10 @@ result = d.pop("hello", "world")
 )")
                    .isError());
   HandleScope scope(thread_);
-  Dict dict(&scope, moduleAt(&runtime_, "__main__", "d"));
+  Dict dict(&scope, mainModuleAt(&runtime_, "d"));
   EXPECT_EQ(dict.numItems(), 0);
   EXPECT_EQ(dict.numUsableItems(), 5);
-  EXPECT_TRUE(
-      isStrEqualsCStr(moduleAt(&runtime_, "__main__", "result"), "world"));
+  EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(&runtime_, "result"), "world"));
 }
 
 TEST_F(DictBuiltinsTest, PopWithMisingKeyRaisesKeyError) {
@@ -837,11 +835,10 @@ result = c.pop('hello')
                    .isError());
   ASSERT_FALSE(thread_->hasPendingException());
   HandleScope scope(thread_);
-  Dict dict(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Dict dict(&scope, mainModuleAt(&runtime_, "c"));
   EXPECT_EQ(dict.numItems(), 0);
   EXPECT_EQ(dict.numUsableItems(), 5 - 1);
-  EXPECT_TRUE(
-      isStrEqualsCStr(moduleAt(&runtime_, "__main__", "result"), "world"));
+  EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(&runtime_, "result"), "world"));
 }
 
 TEST_F(DictBuiltinsTest, DictInitWithSubclassInitializesElements) {
@@ -852,7 +849,7 @@ c = C({'hello': 'world'})
 )")
                    .isError());
   HandleScope scope(thread_);
-  Dict dict(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Dict dict(&scope, mainModuleAt(&runtime_, "c"));
   EXPECT_EQ(dict.numItems(), 1);
 }
 
@@ -863,7 +860,7 @@ d.setdefault("hello")
 result = d["hello"]
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"), NoneType::object());
+  EXPECT_EQ(mainModuleAt(&runtime_, "result"), NoneType::object());
 }
 
 TEST_F(DictBuiltinsTest, SetDefaultWithNotKeyInDictSetsDefault) {
@@ -873,7 +870,7 @@ d.setdefault("hello", 4)
 result = d["hello"]
 )")
                    .isError());
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result"), 4));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result"), 4));
 }
 
 TEST_F(DictBuiltinsTest, SetDefaultWithKeyInDictReturnsValue) {
@@ -883,7 +880,7 @@ d.setdefault("hello", 4)
 result = d["hello"]
 )")
                    .isError());
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result"), 5));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result"), 5));
 }
 
 TEST_F(DictBuiltinsTest, nextBucketProbesAllBuckets) {

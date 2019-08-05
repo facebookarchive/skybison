@@ -101,19 +101,19 @@ TEST_F(FloatBuiltinsTest, DunderMulWithNonFloatOtherReturnsNotImplemented) {
 TEST_F(FloatBuiltinsTest, DunderNeWithInequalFloatsReturnsTrue) {
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = float.__ne__(12.2, 2.12)").isError());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "result"), Bool::trueObj());
 }
 
 TEST_F(FloatBuiltinsTest, DunderNeWithEqualFloatIntReturnsFalse) {
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = float.__ne__(34.0, 34)").isError());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"), Bool::falseObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "result"), Bool::falseObj());
 }
 
 TEST_F(FloatBuiltinsTest, DunderNeWithStringReturnsNotImplemented) {
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = float.__ne__(5.5, '')").isError());
-  EXPECT_TRUE(moduleAt(&runtime_, "__main__", "result").isNotImplementedType());
+  EXPECT_TRUE(mainModuleAt(&runtime_, "result").isNotImplementedType());
 }
 
 TEST_F(FloatBuiltinsTest, DunderAbsZeroReturnsZero) {
@@ -150,7 +150,7 @@ c = a + b
 )")
                    .isError());
 
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   ASSERT_TRUE(c.isFloat());
   EXPECT_EQ(Float::cast(*c).value(), 3.5);
 }
@@ -165,7 +165,7 @@ c = a + b
 )")
                    .isError());
 
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   ASSERT_TRUE(c.isFloat());
   EXPECT_EQ(Float::cast(*c).value(), 3.5);
 }
@@ -197,8 +197,8 @@ left = SubFloat(1.0)
 right = SubFloat(2.0)
 )")
                    .isError());
-  Object left(&scope, moduleAt(&runtime_, "__main__", "left"));
-  Object right(&scope, moduleAt(&runtime_, "__main__", "right"));
+  Object left(&scope, mainModuleAt(&runtime_, "left"));
+  Object right(&scope, mainModuleAt(&runtime_, "right"));
   Object result(&scope, runBuiltin(FloatBuiltins::dunderAdd, left, right));
   ASSERT_TRUE(result.isFloat());
   EXPECT_EQ(Float::cast(*result).value(), 3.0);
@@ -330,7 +330,7 @@ c = a - b
 )")
                    .isError());
 
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   ASSERT_TRUE(c.isFloat());
   EXPECT_EQ(Float::cast(*c).value(), 0.5);
 }
@@ -345,7 +345,7 @@ c = a - b
 )")
                    .isError());
 
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   ASSERT_TRUE(c.isFloat());
   EXPECT_EQ(Float::cast(*c).value(), 1.5);
 }
@@ -358,7 +358,7 @@ a = float.__new__(float)
 )")
                    .isError());
 
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
   ASSERT_TRUE(a.isFloat());
   EXPECT_EQ(Float::cast(*a).value(), 0.0);
 }
@@ -371,7 +371,7 @@ a = float.__new__(float, 1.0)
 )")
                    .isError());
 
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
   ASSERT_TRUE(a.isFloat());
   EXPECT_EQ(Float::cast(*a).value(), 1.0);
 }
@@ -387,7 +387,7 @@ a = float.__new__(float, Foo())
 )")
                    .isError());
 
-  Float a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Float a(&scope, mainModuleAt(&runtime_, "a"));
   EXPECT_EQ(a.value(), 1.0);
 }
 
@@ -412,7 +412,7 @@ a = float.__new__(float, "1.5")
 )")
                    .isError());
 
-  Float a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Float a(&scope, mainModuleAt(&runtime_, "a"));
   EXPECT_EQ(a.value(), 1.5);
 }
 
@@ -430,14 +430,14 @@ subfloat_foo = subfloat.foo
                    .isError());
 
   // Check that it's a subtype of float
-  Object subfloat(&scope, moduleAt(&runtime_, "__main__", "subfloat"));
+  Object subfloat(&scope, mainModuleAt(&runtime_, "subfloat"));
   ASSERT_FALSE(subfloat.isFloat());
   ASSERT_TRUE(runtime_.isInstanceOfFloat(*subfloat));
 
   Float flt(&scope, floatUnderlying(thread_, subfloat));
   EXPECT_EQ(flt.value(), 1.5);
 
-  Object foo_attr(&scope, moduleAt(&runtime_, "__main__", "subfloat_foo"));
+  Object foo_attr(&scope, mainModuleAt(&runtime_, "subfloat_foo"));
   EXPECT_TRUE(isIntEqualsWord(*foo_attr, 3));
 }
 
@@ -448,7 +448,7 @@ class Test(float):
 )";
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Object value(&scope, moduleAt(&runtime_, "__main__", "Test"));
+  Object value(&scope, mainModuleAt(&runtime_, "Test"));
   ASSERT_TRUE(value.isType());
 
   Type type(&scope, *value);
@@ -470,8 +470,8 @@ b = float.__new__(float, "-1.18973e+4932")
 
 )")
                    .isError());
-  Float a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  Float b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  Float a(&scope, mainModuleAt(&runtime_, "a"));
+  Float b(&scope, mainModuleAt(&runtime_, "b"));
   EXPECT_EQ(a.value(), std::numeric_limits<double>::infinity());
   EXPECT_EQ(b.value(), -std::numeric_limits<double>::infinity());
 }
@@ -493,7 +493,7 @@ base = 2.0
 x = base ** 4.0
 )")
                    .isError());
-  Float result(&scope, moduleAt(&runtime_, "__main__", "x"));
+  Float result(&scope, mainModuleAt(&runtime_, "x"));
   EXPECT_EQ(result.value(), 16.0);
 }
 
@@ -505,7 +505,7 @@ base = 2.0
 x = base ** 4
 )")
                    .isError());
-  Float result(&scope, moduleAt(&runtime_, "__main__", "x"));
+  Float result(&scope, mainModuleAt(&runtime_, "x"));
   EXPECT_EQ(result.value(), 16.0);
 }
 
@@ -517,7 +517,7 @@ x = 2.0
 x **= 4.0
 )")
                    .isError());
-  Float result(&scope, moduleAt(&runtime_, "__main__", "x"));
+  Float result(&scope, mainModuleAt(&runtime_, "x"));
   EXPECT_EQ(result.value(), 16.0);
 }
 
@@ -529,7 +529,7 @@ x = 2.0
 x **= 4
 )")
                    .isError());
-  Float result(&scope, moduleAt(&runtime_, "__main__", "x"));
+  Float result(&scope, mainModuleAt(&runtime_, "x"));
   EXPECT_EQ(result.value(), 16.0);
 }
 
@@ -588,9 +588,9 @@ two = C(2)
 )")
                    .isError());
   Object self(&scope, runtime_.newFloat(1.0));
-  Object zero(&scope, moduleAt(&runtime_, "__main__", "zero"));
-  Object one(&scope, moduleAt(&runtime_, "__main__", "one"));
-  Object two(&scope, moduleAt(&runtime_, "__main__", "two"));
+  Object zero(&scope, mainModuleAt(&runtime_, "zero"));
+  Object one(&scope, mainModuleAt(&runtime_, "one"));
+  Object two(&scope, mainModuleAt(&runtime_, "two"));
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, self, zero), Bool::falseObj());
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, self, one), Bool::trueObj());
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, self, two), Bool::falseObj());
@@ -692,7 +692,7 @@ TEST_F(FloatBuiltinsTest, DunderFloatWithFloatLiteralReturnsSameObject) {
   HandleScope scope(thread_);
 
   ASSERT_FALSE(runFromCStr(&runtime_, "a = (7.0).__float__()").isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
   ASSERT_TRUE(a.isFloat());
   EXPECT_EQ(Float::cast(*a).value(), 7.0);
 }
@@ -714,7 +714,7 @@ class FloatSub(float):
   pass
 a = FloatSub(1.0).__float__())")
                    .isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
   ASSERT_TRUE(a.isFloat());
   EXPECT_EQ(Float::cast(*a).value(), 1.0);
 }
@@ -850,9 +850,9 @@ two = C(2)
 )")
                    .isError());
   Object self(&scope, runtime_.newFloat(1.0));
-  Object zero(&scope, moduleAt(&runtime_, "__main__", "zero"));
-  Object one(&scope, moduleAt(&runtime_, "__main__", "one"));
-  Object two(&scope, moduleAt(&runtime_, "__main__", "two"));
+  Object zero(&scope, mainModuleAt(&runtime_, "zero"));
+  Object one(&scope, mainModuleAt(&runtime_, "one"));
+  Object two(&scope, mainModuleAt(&runtime_, "two"));
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderGe, self, zero), Bool::trueObj());
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderGe, self, one), Bool::trueObj());
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderGe, self, two), Bool::falseObj());
@@ -907,9 +907,9 @@ two = C(2)
 )")
                    .isError());
   Object self(&scope, runtime_.newFloat(1.0));
-  Object zero(&scope, moduleAt(&runtime_, "__main__", "zero"));
-  Object one(&scope, moduleAt(&runtime_, "__main__", "one"));
-  Object two(&scope, moduleAt(&runtime_, "__main__", "two"));
+  Object zero(&scope, mainModuleAt(&runtime_, "zero"));
+  Object one(&scope, mainModuleAt(&runtime_, "one"));
+  Object two(&scope, mainModuleAt(&runtime_, "two"));
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderGt, self, zero), Bool::trueObj());
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderGt, self, one), Bool::falseObj());
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderGt, self, two), Bool::falseObj());
@@ -1108,9 +1108,9 @@ two = C(2)
 )")
                    .isError());
   Object self(&scope, runtime_.newFloat(1.0));
-  Object zero(&scope, moduleAt(&runtime_, "__main__", "zero"));
-  Object one(&scope, moduleAt(&runtime_, "__main__", "one"));
-  Object two(&scope, moduleAt(&runtime_, "__main__", "two"));
+  Object zero(&scope, mainModuleAt(&runtime_, "zero"));
+  Object one(&scope, mainModuleAt(&runtime_, "one"));
+  Object two(&scope, mainModuleAt(&runtime_, "two"));
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderLe, self, zero), Bool::falseObj());
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderLe, self, one), Bool::trueObj());
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderLe, self, two), Bool::trueObj());
@@ -1238,9 +1238,9 @@ two = C(2)
 )")
                    .isError());
   Object self(&scope, runtime_.newFloat(1.0));
-  Object zero(&scope, moduleAt(&runtime_, "__main__", "zero"));
-  Object one(&scope, moduleAt(&runtime_, "__main__", "one"));
-  Object two(&scope, moduleAt(&runtime_, "__main__", "two"));
+  Object zero(&scope, mainModuleAt(&runtime_, "zero"));
+  Object one(&scope, mainModuleAt(&runtime_, "one"));
+  Object two(&scope, mainModuleAt(&runtime_, "two"));
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderLt, self, zero), Bool::falseObj());
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderLt, self, one), Bool::falseObj());
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderLt, self, two), Bool::trueObj());

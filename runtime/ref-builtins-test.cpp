@@ -20,8 +20,8 @@ weak = ref(a)
 )";
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  RawObject a = moduleAt(&runtime_, "__main__", "a");
-  RawObject weak = moduleAt(&runtime_, "__main__", "weak");
+  RawObject a = mainModuleAt(&runtime_, "a");
+  RawObject weak = mainModuleAt(&runtime_, "weak");
   EXPECT_EQ(WeakRef::cast(weak).referent(), a);
   EXPECT_EQ(WeakRef::cast(weak).callback(), NoneType::object());
 
@@ -31,7 +31,7 @@ weak = ref(a)
   runtime_.dictRemove(thread_, globals, key);
 
   runtime_.collectGarbage();
-  weak = moduleAt(&runtime_, "__main__", "weak");
+  weak = mainModuleAt(&runtime_, "weak");
   EXPECT_EQ(WeakRef::cast(weak).referent(), NoneType::object());
 }
 
@@ -48,9 +48,9 @@ weak = ref(a, f)
 )";
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  RawObject a = moduleAt(&runtime_, "__main__", "a");
-  RawObject b = moduleAt(&runtime_, "__main__", "b");
-  RawObject weak = moduleAt(&runtime_, "__main__", "weak");
+  RawObject a = mainModuleAt(&runtime_, "a");
+  RawObject b = mainModuleAt(&runtime_, "b");
+  RawObject weak = mainModuleAt(&runtime_, "weak");
   EXPECT_EQ(WeakRef::cast(weak).referent(), a);
   EXPECT_TRUE(isIntEqualsWord(b, 1));
 
@@ -60,8 +60,8 @@ weak = ref(a, f)
   runtime_.dictRemove(thread_, globals, key);
 
   runtime_.collectGarbage();
-  weak = moduleAt(&runtime_, "__main__", "weak");
-  b = moduleAt(&runtime_, "__main__", "b");
+  weak = mainModuleAt(&runtime_, "weak");
+  b = mainModuleAt(&runtime_, "b");
   EXPECT_TRUE(isIntEqualsWord(b, 2));
   EXPECT_EQ(WeakRef::cast(weak).referent(), NoneType::object());
   EXPECT_EQ(WeakRef::cast(weak).callback(), NoneType::object());

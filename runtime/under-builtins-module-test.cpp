@@ -44,7 +44,7 @@ def _int_check(self):
   pass
 )")
                    .isError());
-  Function python_func(&scope, moduleAt(&runtime_, "__main__", "_int_check"));
+  Function python_func(&scope, mainModuleAt(&runtime_, "_int_check"));
   copyFunctionEntries(Thread::current(), function, python_func);
   Code base_code(&scope, function.code());
   Code patch_code(&scope, python_func.code());
@@ -65,7 +65,7 @@ def _int_check(self):
   return True
 )")
                    .isError());
-  Function python_func(&scope, moduleAt(&runtime_, "__main__", "_int_check"));
+  Function python_func(&scope, mainModuleAt(&runtime_, "_int_check"));
   ASSERT_DEATH(
       copyFunctionEntries(Thread::current(), function, python_func),
       "Redefinition of native code method '_int_check' in managed code");
@@ -261,10 +261,10 @@ dc = Foo(b"DC")
 )")
                    .isError());
   HandleScope scope(thread_);
-  Bytes self(&scope, moduleAt(&runtime_, "__main__", "sep"));
+  Bytes self(&scope, mainModuleAt(&runtime_, "sep"));
   Tuple iter(&scope, runtime_.newTuple(2));
-  iter.atPut(0, moduleAt(&runtime_, "__main__", "ac"));
-  iter.atPut(1, moduleAt(&runtime_, "__main__", "dc"));
+  iter.atPut(0, mainModuleAt(&runtime_, "ac"));
+  iter.atPut(1, mainModuleAt(&runtime_, "dc"));
   Object result(&scope,
                 runBuiltin(UnderBuiltinsModule::underBytesJoin, self, iter));
   EXPECT_TRUE(isBytesEqualsCStr(result, "AC-DC"));
@@ -533,7 +533,7 @@ foo = Foo(b"42")
 )")
                    .isError());
   Type type(&scope, runtime_.typeAt(LayoutId::kInt));
-  Bytes bytes(&scope, moduleAt(&runtime_, "__main__", "foo"));
+  Bytes bytes(&scope, mainModuleAt(&runtime_, "foo"));
   Int base(&scope, SmallInt::fromWord(21));
   EXPECT_EQ(
       runBuiltin(UnderBuiltinsModule::underIntNewFromBytes, type, bytes, base),
@@ -566,7 +566,7 @@ result = SubInt(50)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_FALSE(result.isInt());
   EXPECT_TRUE(isIntEqualsWord(*result, 50));
 }
@@ -1095,7 +1095,7 @@ obj = C()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object obj(&scope, moduleAt(&runtime_, "__main__", "obj"));
+  Object obj(&scope, mainModuleAt(&runtime_, "obj"));
   EXPECT_EQ(runBuiltin(UnderBuiltinsModule::underListCheckExact, obj),
             Bool::falseObj());
 }
@@ -1349,7 +1349,7 @@ class C:
 obj = C()
 )")
                    .isError());
-  Object obj(&scope, moduleAt(&runtime_, "__main__", "obj"));
+  Object obj(&scope, mainModuleAt(&runtime_, "obj"));
   Str name(&scope, runtime_.newStrFromCStr("foobarbaz"));
   Object result(&scope, runBuiltin(UnderBuiltinsModule::underObjectTypeHasattr,
                                    obj, name));
@@ -1366,7 +1366,7 @@ class C:
 obj = C()
 )")
                    .isError());
-  Object obj(&scope, moduleAt(&runtime_, "__main__", "obj"));
+  Object obj(&scope, mainModuleAt(&runtime_, "obj"));
   Str name(&scope, runtime_.newStrFromCStr("foobarbaz"));
   Object result(&scope, runBuiltin(UnderBuiltinsModule::underObjectTypeHasattr,
                                    obj, name));
@@ -1386,7 +1386,7 @@ class C:
 obj = C()
 )")
                    .isError());
-  Object obj(&scope, moduleAt(&runtime_, "__main__", "obj"));
+  Object obj(&scope, mainModuleAt(&runtime_, "obj"));
   Str name(&scope, runtime_.newStrFromCStr("foobarbaz"));
   Object result(&scope, runBuiltin(UnderBuiltinsModule::underObjectTypeHasattr,
                                    obj, name));
@@ -1579,7 +1579,7 @@ result = _str_from_str(str, 'value')
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(runtime_.isInstanceOfStr(*result));
   EXPECT_TRUE(result.isStr());
 }
@@ -1592,8 +1592,8 @@ result = _str_from_str(Sub, 'value')
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
-  Object sub(&scope, moduleAt(&runtime_, "__main__", "Sub"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object sub(&scope, mainModuleAt(&runtime_, "Sub"));
   EXPECT_EQ(runtime_.typeOf(*result), sub);
   EXPECT_TRUE(isStrEqualsCStr(*result, "value"));
 }
@@ -1645,7 +1645,7 @@ obj = C()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object obj(&scope, moduleAt(&runtime_, "__main__", "obj"));
+  Object obj(&scope, mainModuleAt(&runtime_, "obj"));
   EXPECT_EQ(runBuiltin(UnderBuiltinsModule::underTupleCheckExact, obj),
             Bool::falseObj());
 }

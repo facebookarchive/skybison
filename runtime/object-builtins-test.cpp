@@ -22,7 +22,7 @@ a = object.__repr__(Foo())
 )")
                    .isError());
   HandleScope scope;
-  Str a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Str a(&scope, mainModuleAt(&runtime_, "a"));
   // Storage for the class name. It must be shorter than the length of the whole
   // string.
   char* c_str = a.toCStr();
@@ -44,7 +44,7 @@ result = object.__eq__(None, None)
 )")
                    .isError());
   HandleScope scope;
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_EQ(*result, Bool::trueObj());
 }
 
@@ -55,7 +55,7 @@ result = object.__eq__(object(), object())
 )")
                    .isError());
   HandleScope scope;
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(result.isNotImplementedType());
 }
 
@@ -67,7 +67,7 @@ i = C()
 i.foo = 79
 )")
                    .isError());
-  Object i(&scope, moduleAt(&runtime_, "__main__", "i"));
+  Object i(&scope, mainModuleAt(&runtime_, "i"));
   Object name(&scope, runtime_.newStrFromCStr("foo"));
   EXPECT_TRUE(isIntEqualsWord(
       runBuiltin(ObjectBuiltins::dunderGetattribute, i, name), 79));
@@ -99,7 +99,7 @@ class C: pass
 i = C()
 )")
                    .isError());
-  Object i(&scope, moduleAt(&runtime_, "__main__", "i"));
+  Object i(&scope, mainModuleAt(&runtime_, "i"));
   Object name(&scope, runtime_.newStrFromCStr("foo"));
   Object value(&scope, runtime_.newInt(42));
   EXPECT_TRUE(
@@ -155,7 +155,7 @@ class Foo():
 result = object.__ne__(Foo(), None)
 )")
                    .isError());
-  EXPECT_TRUE(moduleAt(&runtime_, "__main__", "result").isNotImplementedType());
+  EXPECT_TRUE(mainModuleAt(&runtime_, "result").isNotImplementedType());
 }
 
 TEST_F(ObjectBuiltinsTest,
@@ -168,7 +168,7 @@ result = object.__ne__(Foo(), None)
 )")
                    .isError());
   // 0 is converted to False, and flipped again for __ne__ from __eq__.
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "result"), Bool::trueObj());
 }
 
 TEST_F(ObjectBuiltinsTest,
@@ -181,7 +181,7 @@ result = object.__ne__(Foo(), None)
 )")
                    .isError());
   // 1 is converted to True, and flipped again for __ne__ from __eq__.
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"), Bool::falseObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "result"), Bool::falseObj());
 }
 
 TEST_F(ObjectBuiltinsTest,
@@ -193,7 +193,7 @@ class Foo():
 result = object.__ne__(Foo(), None)
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "result"), Bool::trueObj());
 }
 
 TEST_F(ObjectBuiltinsTest,
@@ -205,7 +205,7 @@ class Foo():
 result = object.__ne__(Foo(), None)
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"), Bool::falseObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "result"), Bool::falseObj());
 }
 
 TEST_F(ObjectBuiltinsTest, DunderStrReturnsDunderRepr) {
@@ -219,8 +219,8 @@ b = object.__repr__(f)
 )")
                    .isError());
   HandleScope scope;
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
   EXPECT_TRUE(isStrEquals(a, b));
 }
 
@@ -235,8 +235,8 @@ b = f.__str__()
 )")
                    .isError());
   HandleScope scope;
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
   EXPECT_TRUE(isStrEquals(a, b));
 }
 
@@ -315,14 +315,14 @@ TEST_F(NoneBuiltinsTest, NewWithExtraArgsRaisesTypeError) {
 TEST_F(NoneBuiltinsTest, DunderReprIsBoundMethod) {
   ASSERT_FALSE(runFromCStr(&runtime_, "a = None.__repr__").isError());
   HandleScope scope;
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
   EXPECT_TRUE(a.isBoundMethod());
 }
 
 TEST_F(NoneBuiltinsTest, DunderReprReturnsNone) {
   ASSERT_FALSE(runFromCStr(&runtime_, "a = None.__repr__()").isError());
   HandleScope scope;
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, "None"));
 }
 
@@ -340,7 +340,7 @@ c = C()
 c.__hash__ = 42
 )")
                    .isError());
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   Object name(&scope, runtime_.newStrFromCStr("__hash__"));
   EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread_, c, name), 42));
 }
@@ -353,7 +353,7 @@ class C:
 c = C()
 )")
                    .isError());
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   Object name(&scope, runtime_.newStrFromCStr("x"));
   EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread_, c, name), -11));
 }
@@ -365,7 +365,7 @@ class C: pass
 c = C()
 )")
                    .isError());
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   Object name(&scope, runtime_.newStrFromCStr("xxx"));
   EXPECT_TRUE(objectGetAttribute(thread_, c, name).isError());
   EXPECT_FALSE(thread_->hasPendingException());
@@ -382,7 +382,7 @@ class A:
 a = A()
 )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
   Object foo(&scope, runtime_.newStrFromCStr("foo"));
   EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread_, a, foo), 42));
 }
@@ -398,7 +398,7 @@ class A:
 a = A()
 )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
   Object foo(&scope, runtime_.newStrFromCStr("foo"));
   EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread_, a, foo), 42));
 }
@@ -417,7 +417,7 @@ a.foo = 12
 A.foo = D()
 )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
   Object foo(&scope, runtime_.newStrFromCStr("foo"));
   EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread_, a, foo), 42));
 }
@@ -434,7 +434,7 @@ a = A()
 a.foo = 12
 )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
   Object foo(&scope, runtime_.newStrFromCStr("foo"));
   EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread_, a, foo), 12));
 }
@@ -450,7 +450,7 @@ class A:
 a = A()
 )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
   Object foo(&scope, runtime_.newStrFromCStr("foo"));
   EXPECT_TRUE(
       raised(objectGetAttribute(thread_, a, foo), LayoutId::kUserWarning));
@@ -475,8 +475,8 @@ foo = C.foo
 i = C()
 )")
                    .isError());
-  Object foo(&scope, moduleAt(&runtime_, "__main__", "foo"));
-  Object i(&scope, moduleAt(&runtime_, "__main__", "i"));
+  Object foo(&scope, mainModuleAt(&runtime_, "foo"));
+  Object i(&scope, mainModuleAt(&runtime_, "i"));
 
   Object name(&scope, runtime_.newStrFromCStr("foo"));
   Object to_cache(&scope, NoneType::object());
@@ -506,7 +506,7 @@ class C:
 i = C()
 )")
                    .isError());
-  Object i(&scope, moduleAt(&runtime_, "__main__", "i"));
+  Object i(&scope, mainModuleAt(&runtime_, "i"));
 
   Layout layout(&scope, runtime_.layoutAt(i.layoutId()));
   Object name(&scope, runtime_.newStrFromCStr("foo"));
@@ -534,7 +534,7 @@ i = C()
 i.foo = 17
 )")
                    .isError());
-  Object i(&scope, moduleAt(&runtime_, "__main__", "i"));
+  Object i(&scope, mainModuleAt(&runtime_, "i"));
 
   Layout layout(&scope, runtime_.layoutAt(i.layoutId()));
   Object name(&scope, runtime_.newStrFromCStr("foo"));
@@ -560,7 +560,7 @@ class C:
 i = C()
 )")
                    .isError());
-  Object i(&scope, moduleAt(&runtime_, "__main__", "i"));
+  Object i(&scope, mainModuleAt(&runtime_, "i"));
 
   Object name(&scope, runtime_.newStrFromCStr("xxx"));
   Object to_cache(&scope, NoneType::object());
@@ -576,7 +576,7 @@ class C: pass
 i = C()
 )")
                    .isError());
-  Object i(&scope, moduleAt(&runtime_, "__main__", "i"));
+  Object i(&scope, mainModuleAt(&runtime_, "i"));
   Object name(&scope, runtime_.internStrFromCStr(thread_, "foo"));
   Object value(&scope, runtime_.newInt(47));
   EXPECT_TRUE(objectSetAttr(thread_, i, name, value).isNoneType());
@@ -598,12 +598,12 @@ class C:
 i = C()
 )")
                    .isError());
-  Object i(&scope, moduleAt(&runtime_, "__main__", "i"));
-  Object foo_descr(&scope, moduleAt(&runtime_, "__main__", "foo_descr"));
+  Object i(&scope, mainModuleAt(&runtime_, "i"));
+  Object foo_descr(&scope, mainModuleAt(&runtime_, "foo_descr"));
   Object name(&scope, runtime_.internStrFromCStr(thread_, "foo"));
   Object value(&scope, runtime_.newInt(47));
   EXPECT_TRUE(objectSetAttr(thread_, i, name, value).isNoneType());
-  Object set_args_obj(&scope, moduleAt(&runtime_, "__main__", "set_args"));
+  Object set_args_obj(&scope, mainModuleAt(&runtime_, "set_args"));
   ASSERT_TRUE(set_args_obj.isTuple());
   Tuple dunder_set_args(&scope, *set_args_obj);
   ASSERT_EQ(dunder_set_args.length(), 3);
@@ -623,7 +623,7 @@ class C:
 i = C()
 )")
                    .isError());
-  Object i(&scope, moduleAt(&runtime_, "__main__", "i"));
+  Object i(&scope, mainModuleAt(&runtime_, "i"));
   Object name(&scope, runtime_.internStrFromCStr(thread_, "foo"));
   Object value(&scope, runtime_.newInt(1));
   EXPECT_TRUE(
@@ -649,7 +649,7 @@ class C:
 i = C()
 )")
                    .isError());
-  Object i(&scope, moduleAt(&runtime_, "__main__", "i"));
+  Object i(&scope, mainModuleAt(&runtime_, "i"));
   Object name(&scope, runtime_.internStrFromCStr(thread_, "foo"));
 
   AttributeInfo info;
@@ -682,7 +682,7 @@ i = C()
 i.foo = 0
 )")
                    .isError());
-  Object i(&scope, moduleAt(&runtime_, "__main__", "i"));
+  Object i(&scope, mainModuleAt(&runtime_, "i"));
   Object name(&scope, runtime_.internStrFromCStr(thread_, "foo"));
 
   AttributeInfo info;

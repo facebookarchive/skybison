@@ -12,7 +12,7 @@ using StrArrayBuiltinsTest = RuntimeFixture;
 TEST_F(StrArrayBuiltinsTest, DunderNewAndDunderInitCreateStrArray) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, "obj = _strarray('hello')").isError());
-  StrArray self(&scope, moduleAt(&runtime_, "__main__", "obj"));
+  StrArray self(&scope, mainModuleAt(&runtime_, "obj"));
   EXPECT_TRUE(isStrEqualsCStr(runtime_.strFromStrArray(self), "hello"));
 }
 
@@ -32,7 +32,7 @@ TEST_F(StrArrayBuiltinsTest, DunderReprWithSimpleStrArrayReturnsStr) {
   HandleScope scope(thread_);
   ASSERT_FALSE(
       runFromCStr(&runtime_, "obj = _strarray('hello').__repr__()").isError());
-  Str self(&scope, moduleAt(&runtime_, "__main__", "obj"));
+  Str self(&scope, mainModuleAt(&runtime_, "obj"));
   EXPECT_TRUE(isStrEqualsCStr(*self, "_strarray('hello')"));
 }
 

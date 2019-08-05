@@ -19,7 +19,7 @@ a = Foo()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
   EXPECT_TRUE(runtime_.isInstanceOfTuple(*a));
 }
 
@@ -30,7 +30,7 @@ a = Foo()
 )")
                    .isError());
   HandleScope scope(thread_);
-  UserTupleBase a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  UserTupleBase a(&scope, mainModuleAt(&runtime_, "a"));
   Object obj(&scope, a.tupleValue());
   EXPECT_TRUE(obj.isTuple());
 }
@@ -42,7 +42,7 @@ b = (a, 2)
 result = b[0]
 )")
                    .isError());
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result"), 1));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result"), 1));
 }
 
 TEST_F(TupleBuiltinsTest, SubscriptTupleSlice) {
@@ -55,7 +55,7 @@ slice = t[1:3]
 )")
                    .isError());
 
-  Object slice(&scope, moduleAt(&runtime_, "__main__", "slice"));
+  Object slice(&scope, mainModuleAt(&runtime_, "slice"));
   ASSERT_TRUE(slice.isTuple());
 
   Tuple tuple(&scope, *slice);
@@ -72,7 +72,7 @@ item = obj[0]
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object item(&scope, moduleAt(&runtime_, "__main__", "item"));
+  Object item(&scope, mainModuleAt(&runtime_, "item"));
   EXPECT_TRUE(isIntEqualsWord(*item, 0));
 }
 
@@ -84,7 +84,7 @@ slice = obj[1:3]
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object slice(&scope, moduleAt(&runtime_, "__main__", "slice"));
+  Object slice(&scope, mainModuleAt(&runtime_, "slice"));
   ASSERT_TRUE(slice.isTuple());
 
   Tuple tuple(&scope, *slice);
@@ -116,12 +116,10 @@ b_len_implicit = b.__len__()
 )")
                    .isError());
 
-  Object a_len(&scope, moduleAt(&runtime_, "__main__", "a_len"));
-  Object a_len_implicit(&scope,
-                        moduleAt(&runtime_, "__main__", "a_len_implicit"));
-  Object b_len(&scope, moduleAt(&runtime_, "__main__", "b_len"));
-  Object b_len_implicit(&scope,
-                        moduleAt(&runtime_, "__main__", "b_len_implicit"));
+  Object a_len(&scope, mainModuleAt(&runtime_, "a_len"));
+  Object a_len_implicit(&scope, mainModuleAt(&runtime_, "a_len_implicit"));
+  Object b_len(&scope, mainModuleAt(&runtime_, "b_len"));
+  Object b_len_implicit(&scope, mainModuleAt(&runtime_, "b_len_implicit"));
 
   EXPECT_TRUE(isIntEqualsWord(*a_len, 3));
   EXPECT_TRUE(isIntEqualsWord(*a_len_implicit, 3));
@@ -142,12 +140,10 @@ b_len_implicit = b.__len__()
                    .isError());
 
   HandleScope scope(thread_);
-  Object a_len(&scope, moduleAt(&runtime_, "__main__", "a_len"));
-  Object a_len_implicit(&scope,
-                        moduleAt(&runtime_, "__main__", "a_len_implicit"));
-  Object b_len(&scope, moduleAt(&runtime_, "__main__", "b_len"));
-  Object b_len_implicit(&scope,
-                        moduleAt(&runtime_, "__main__", "b_len_implicit"));
+  Object a_len(&scope, mainModuleAt(&runtime_, "a_len"));
+  Object a_len_implicit(&scope, mainModuleAt(&runtime_, "a_len_implicit"));
+  Object b_len(&scope, mainModuleAt(&runtime_, "b_len"));
+  Object b_len_implicit(&scope, mainModuleAt(&runtime_, "b_len_implicit"));
 
   EXPECT_TRUE(isIntEqualsWord(*a_len, 3));
   EXPECT_TRUE(isIntEqualsWord(*a_len_implicit, 3));
@@ -320,8 +316,8 @@ b = ("hello", 2, "world", 4).__repr__()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
 
   EXPECT_TRUE(isStrEqualsCStr(*a, "(1, 2, 3)"));
   EXPECT_TRUE(isStrEqualsCStr(*b, "('hello', 2, 'world', 4)"));
@@ -334,8 +330,8 @@ b = ("foo",).__repr__()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
 
   EXPECT_TRUE(isStrEqualsCStr(*a, "(1,)"));
   EXPECT_TRUE(isStrEqualsCStr(*b, "('foo',)"));
@@ -344,7 +340,7 @@ b = ("foo",).__repr__()
 TEST_F(TupleBuiltinsTest, DunderReprWithNoElements) {
   ASSERT_FALSE(runFromCStr(&runtime_, "a = ().__repr__()").isError());
   HandleScope scope(thread_);
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
 
   EXPECT_TRUE(isStrEqualsCStr(*a, "()"));
 }
@@ -356,7 +352,7 @@ repr = Foo((1, 2, 3)).__repr__()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object repr(&scope, moduleAt(&runtime_, "__main__", "repr"));
+  Object repr(&scope, mainModuleAt(&runtime_, "repr"));
   EXPECT_TRUE(isStrEqualsCStr(*repr, "(1, 2, 3)"));
 }
 
@@ -437,7 +433,7 @@ a = Foo((1, 2, 3)) * 2
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
   EXPECT_TRUE(a.isTuple());
 }
 
@@ -506,7 +502,7 @@ a = Foo((1, 2)) + (3, 4)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object a_obj(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a_obj(&scope, mainModuleAt(&runtime_, "a"));
   ASSERT_TRUE(a_obj.isTuple());
   Tuple a(&scope, *a_obj);
   EXPECT_EQ(a.length(), 4);
@@ -548,7 +544,7 @@ class Foo(tuple): pass
 right = Foo((1, 2))
 )")
                    .isError());
-  Object right(&scope, moduleAt(&runtime_, "__main__", "right"));
+  Object right(&scope, mainModuleAt(&runtime_, "right"));
   ASSERT_FALSE(right.isTuple());
   ASSERT_TRUE(runtime_.isInstanceOfTuple(*right));
   Object a(&scope, runBuiltin(TupleBuiltins::dunderEq, left, right));
@@ -589,7 +585,7 @@ a = Foo()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
   Object iter(&scope, runBuiltin(TupleBuiltins::dunderIter, a));
   ASSERT_TRUE(iter.isTupleIterator());
 }
@@ -658,8 +654,7 @@ class C:
 result = C().__repr__()
 )")
                    .isError());
-  EXPECT_TRUE(
-      isStrEqualsCStr(moduleAt(&runtime_, "__main__", "result"), "((...),)"));
+  EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(&runtime_, "result"), "((...),)"));
 }
 
 TEST_F(TupleBuiltinsTest, DunderContainsWithContainedElementReturnsTrue) {
@@ -704,8 +699,8 @@ value = Foo()
 t = (value,)
 )")
                    .isError());
-  Object value(&scope, moduleAt(&runtime_, "__main__", "value"));
-  Tuple tuple(&scope, moduleAt(&runtime_, "__main__", "t"));
+  Object value(&scope, mainModuleAt(&runtime_, "value"));
+  Tuple tuple(&scope, mainModuleAt(&runtime_, "t"));
   EXPECT_EQ(runBuiltin(TupleBuiltins::dunderContains, tuple, value),
             RawBool::trueObj());
 }
@@ -721,8 +716,8 @@ value = Foo()
 t = (None,)
 )")
                    .isError());
-  Object value(&scope, moduleAt(&runtime_, "__main__", "value"));
-  Tuple tuple(&scope, moduleAt(&runtime_, "__main__", "t"));
+  Object value(&scope, mainModuleAt(&runtime_, "value"));
+  Tuple tuple(&scope, mainModuleAt(&runtime_, "t"));
   EXPECT_EQ(runBuiltin(TupleBuiltins::dunderContains, tuple, value),
             RawBool::trueObj());
 }
@@ -742,8 +737,8 @@ value1 = Bar()
 t = (value0,)
 )")
                    .isError());
-  Object value1(&scope, moduleAt(&runtime_, "__main__", "value1"));
-  Tuple tuple(&scope, moduleAt(&runtime_, "__main__", "t"));
+  Object value1(&scope, mainModuleAt(&runtime_, "value1"));
+  Tuple tuple(&scope, mainModuleAt(&runtime_, "t"));
   EXPECT_EQ(runBuiltin(TupleBuiltins::dunderContains, tuple, value1),
             RawBool::falseObj());
 }
@@ -758,8 +753,8 @@ value = Foo()
 t = (None,)
 )")
                    .isError());
-  Object value(&scope, moduleAt(&runtime_, "__main__", "value"));
-  Tuple tuple(&scope, moduleAt(&runtime_, "__main__", "t"));
+  Object value(&scope, mainModuleAt(&runtime_, "value"));
+  Tuple tuple(&scope, mainModuleAt(&runtime_, "t"));
   EXPECT_TRUE(raised(runBuiltin(TupleBuiltins::dunderContains, tuple, value),
                      LayoutId::kUserWarning));
 }
@@ -778,8 +773,8 @@ value = Bar()
 t = (None,)
 )")
                    .isError());
-  Object value(&scope, moduleAt(&runtime_, "__main__", "value"));
-  Tuple tuple(&scope, moduleAt(&runtime_, "__main__", "t"));
+  Object value(&scope, mainModuleAt(&runtime_, "value"));
+  Tuple tuple(&scope, mainModuleAt(&runtime_, "t"));
   EXPECT_TRUE(raised(runBuiltin(TupleBuiltins::dunderContains, tuple, value),
                      LayoutId::kUserWarning));
 }
@@ -806,7 +801,7 @@ TEST_F(TupleBuiltinsTest, DunderHashReturnsSmallInt) {
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = (1, 2, 3).__hash__()").isError());
   EXPECT_FALSE(Thread::current()->hasPendingException());
-  EXPECT_TRUE(moduleAt(&runtime_, "__main__", "result").isSmallInt());
+  EXPECT_TRUE(mainModuleAt(&runtime_, "result").isSmallInt());
 }
 
 TEST_F(TupleBuiltinsTest, DunderHashCallsDunderHashOnElements) {
@@ -820,9 +815,8 @@ class C:
 result = (C(), C(), C()).__hash__()
 )")
                    .isError());
-  EXPECT_TRUE(moduleAt(&runtime_, "__main__", "result").isSmallInt());
-  EXPECT_TRUE(
-      isIntEqualsWord(moduleAt(&runtime_, "__main__", "sideeffect"), 3));
+  EXPECT_TRUE(mainModuleAt(&runtime_, "result").isSmallInt());
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "sideeffect"), 3));
 }
 
 TEST_F(TupleBuiltinsTest, DunderHashWithEquivalentTuplesReturnsSameHash) {
@@ -836,8 +830,8 @@ result2 = t2.__hash__()
   Thread* thread = Thread::current();
   ASSERT_FALSE(thread->hasPendingException());
   HandleScope scope(thread);
-  Object result1(&scope, moduleAt(&runtime_, "__main__", "result1"));
-  Object result2(&scope, moduleAt(&runtime_, "__main__", "result2"));
+  Object result1(&scope, mainModuleAt(&runtime_, "result1"));
+  Object result2(&scope, mainModuleAt(&runtime_, "result2"));
   EXPECT_TRUE(result1.isSmallInt());
   EXPECT_TRUE(result2.isSmallInt());
   EXPECT_EQ(*result1, *result2);
@@ -851,7 +845,7 @@ result = tuple.__lt__(t1, t2)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_EQ(*result, Bool::trueObj());
 }
 
@@ -863,7 +857,7 @@ result = tuple.__lt__(t1, t2)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_EQ(*result, Bool::falseObj());
 }
 
@@ -875,7 +869,7 @@ result = tuple.__lt__(t1, t2)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_EQ(*result, Bool::trueObj());
 }
 
@@ -920,7 +914,7 @@ c = C()
 )")
                    .isError());
 
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   Object result_obj(&scope, sequenceAsTuple(thread, c));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);

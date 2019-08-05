@@ -14,7 +14,7 @@ TEST_F(MroTest, ComputeMroReturnsList) {
 class A: pass
 )")
                    .isError());
-  Object a_obj(&scope, moduleAt(&runtime_, "__main__", "A"));
+  Object a_obj(&scope, mainModuleAt(&runtime_, "A"));
   Type a(&scope, *a_obj);
   Tuple parents(&scope, runtime_.emptyTuple());
   Object result_obj(&scope, computeMro(thread_, a, parents));
@@ -33,8 +33,8 @@ class A(metaclass=Meta): pass
 class B(A): pass
 )")
                    .isError());
-  Object a_obj(&scope, moduleAt(&runtime_, "__main__", "A"));
-  Object b_obj(&scope, moduleAt(&runtime_, "__main__", "B"));
+  Object a_obj(&scope, mainModuleAt(&runtime_, "A"));
+  Object b_obj(&scope, mainModuleAt(&runtime_, "B"));
   Type b(&scope, *b_obj);
   Tuple parents(&scope, runtime_.newTuple(1));
   parents.atPut(0, *a_obj);
@@ -55,9 +55,9 @@ class B(metaclass=Meta): pass
 class C(A, B): pass
 )")
                    .isError());
-  Object a_obj(&scope, moduleAt(&runtime_, "__main__", "A"));
-  Object b_obj(&scope, moduleAt(&runtime_, "__main__", "B"));
-  Object c_obj(&scope, moduleAt(&runtime_, "__main__", "C"));
+  Object a_obj(&scope, mainModuleAt(&runtime_, "A"));
+  Object b_obj(&scope, mainModuleAt(&runtime_, "B"));
+  Object c_obj(&scope, mainModuleAt(&runtime_, "C"));
   Type c(&scope, *c_obj);
   Tuple parents(&scope, runtime_.newTuple(2));
   parents.atPut(0, *a_obj);
@@ -78,8 +78,8 @@ class A: pass
 class B(A): pass
 )")
                    .isError());
-  Object a_obj(&scope, moduleAt(&runtime_, "__main__", "A"));
-  Object b_obj(&scope, moduleAt(&runtime_, "__main__", "B"));
+  Object a_obj(&scope, mainModuleAt(&runtime_, "A"));
+  Object b_obj(&scope, mainModuleAt(&runtime_, "B"));
   Type c(&scope, runtime_.newType());
   Tuple parents(&scope, runtime_.newTuple(2));
   parents.atPut(0, *a_obj);

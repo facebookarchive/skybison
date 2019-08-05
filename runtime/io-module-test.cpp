@@ -42,7 +42,7 @@ filestr = _io._readbytes(file_bytes)
   unique_c_ptr<char> c_pyfile(pyfile.toCStr());
   ASSERT_FALSE(testing::runFromCStr(&runtime_, c_pyfile.get()).isError());
 
-  Str filestr(&scope, testing::moduleAt(&runtime_, "__main__", "filestr"));
+  Str filestr(&scope, testing::mainModuleAt(&runtime_, "filestr"));
   EXPECT_TRUE(filestr.equalsCStr(c_filedata));
 }
 

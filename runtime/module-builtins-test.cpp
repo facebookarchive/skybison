@@ -19,7 +19,7 @@ a = sys.__name__
 )")
                    .isError());
   HandleScope scope(thread_);
-  Str a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Str a(&scope, mainModuleAt(&runtime_, "a"));
   EXPECT_TRUE(a.equalsCStr("sys"));
 }
 
@@ -30,7 +30,7 @@ sys.__name__ = "ysy"
 )")
                    .isError());
   HandleScope scope(thread_);
-  Module sys_module(&scope, moduleAt(&runtime_, "__main__", "sys"));
+  Module sys_module(&scope, mainModuleAt(&runtime_, "sys"));
   EXPECT_TRUE(isStrEqualsCStr(sys_module.name(), "sys"));
 }
 
@@ -149,7 +149,7 @@ result = sys.__dict__
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(result.isDict());
 }
 
@@ -245,7 +245,7 @@ result = sys.__repr__()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "<module 'sys' (built-in)>"));
 }
 

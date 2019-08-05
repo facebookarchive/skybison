@@ -45,11 +45,11 @@ b_eq_b = b == b
 )")
                    .isError());
 
-  Object a_eq_b(&scope, moduleAt(&runtime_, "__main__", "a_eq_b"));
+  Object a_eq_b(&scope, mainModuleAt(&runtime_, "a_eq_b"));
   EXPECT_EQ(*a_eq_b, Bool::falseObj());
-  Object a_eq_a(&scope, moduleAt(&runtime_, "__main__", "a_eq_a"));
+  Object a_eq_a(&scope, mainModuleAt(&runtime_, "a_eq_a"));
   EXPECT_EQ(*a_eq_a, Bool::trueObj());
-  Object b_eq_b(&scope, moduleAt(&runtime_, "__main__", "b_eq_b"));
+  Object b_eq_b(&scope, mainModuleAt(&runtime_, "b_eq_b"));
   EXPECT_EQ(*b_eq_b, Bool::trueObj());
 }
 
@@ -66,13 +66,13 @@ b_ge_b = b >= b
 )")
                    .isError());
 
-  Object a_ge_a(&scope, moduleAt(&runtime_, "__main__", "a_ge_a"));
+  Object a_ge_a(&scope, mainModuleAt(&runtime_, "a_ge_a"));
   EXPECT_EQ(*a_ge_a, Bool::trueObj());
-  Object a_ge_b(&scope, moduleAt(&runtime_, "__main__", "a_ge_b"));
+  Object a_ge_b(&scope, mainModuleAt(&runtime_, "a_ge_b"));
   EXPECT_EQ(*a_ge_b, Bool::falseObj());
-  Object b_ge_a(&scope, moduleAt(&runtime_, "__main__", "b_ge_a"));
+  Object b_ge_a(&scope, mainModuleAt(&runtime_, "b_ge_a"));
   EXPECT_EQ(*b_ge_a, Bool::trueObj());
-  Object b_ge_b(&scope, moduleAt(&runtime_, "__main__", "b_ge_b"));
+  Object b_ge_b(&scope, mainModuleAt(&runtime_, "b_ge_b"));
   EXPECT_EQ(*b_ge_b, Bool::trueObj());
 }
 
@@ -89,13 +89,13 @@ b_gt_b = b > b
 )")
                    .isError());
 
-  Object a_gt_a(&scope, moduleAt(&runtime_, "__main__", "a_gt_a"));
+  Object a_gt_a(&scope, mainModuleAt(&runtime_, "a_gt_a"));
   EXPECT_EQ(*a_gt_a, Bool::falseObj());
-  Object a_gt_b(&scope, moduleAt(&runtime_, "__main__", "a_gt_b"));
+  Object a_gt_b(&scope, mainModuleAt(&runtime_, "a_gt_b"));
   EXPECT_EQ(*a_gt_b, Bool::falseObj());
-  Object b_gt_a(&scope, moduleAt(&runtime_, "__main__", "b_gt_a"));
+  Object b_gt_a(&scope, mainModuleAt(&runtime_, "b_gt_a"));
   EXPECT_EQ(*b_gt_a, Bool::trueObj());
-  Object b_gt_b(&scope, moduleAt(&runtime_, "__main__", "b_gt_b"));
+  Object b_gt_b(&scope, mainModuleAt(&runtime_, "b_gt_b"));
   EXPECT_EQ(*b_gt_b, Bool::falseObj());
 }
 
@@ -112,13 +112,13 @@ b_le_b = b <= b
 )")
                    .isError());
 
-  Object a_le_a(&scope, moduleAt(&runtime_, "__main__", "a_le_a"));
+  Object a_le_a(&scope, mainModuleAt(&runtime_, "a_le_a"));
   EXPECT_EQ(*a_le_a, Bool::trueObj());
-  Object a_le_b(&scope, moduleAt(&runtime_, "__main__", "a_le_b"));
+  Object a_le_b(&scope, mainModuleAt(&runtime_, "a_le_b"));
   EXPECT_EQ(*a_le_b, Bool::trueObj());
-  Object b_le_a(&scope, moduleAt(&runtime_, "__main__", "b_le_a"));
+  Object b_le_a(&scope, mainModuleAt(&runtime_, "b_le_a"));
   EXPECT_EQ(*b_le_a, Bool::falseObj());
-  Object b_le_b(&scope, moduleAt(&runtime_, "__main__", "b_le_b"));
+  Object b_le_b(&scope, mainModuleAt(&runtime_, "b_le_b"));
   EXPECT_EQ(*b_le_b, Bool::trueObj());
 }
 
@@ -135,13 +135,13 @@ b_lt_b = b < b
 )")
                    .isError());
 
-  Object a_lt_a(&scope, moduleAt(&runtime_, "__main__", "a_lt_a"));
+  Object a_lt_a(&scope, mainModuleAt(&runtime_, "a_lt_a"));
   EXPECT_EQ(*a_lt_a, Bool::falseObj());
-  Object a_lt_b(&scope, moduleAt(&runtime_, "__main__", "a_lt_b"));
+  Object a_lt_b(&scope, mainModuleAt(&runtime_, "a_lt_b"));
   EXPECT_EQ(*a_lt_b, Bool::trueObj());
-  Object b_lt_a(&scope, moduleAt(&runtime_, "__main__", "b_lt_a"));
+  Object b_lt_a(&scope, mainModuleAt(&runtime_, "b_lt_a"));
   EXPECT_EQ(*b_lt_a, Bool::falseObj());
-  Object b_lt_b(&scope, moduleAt(&runtime_, "__main__", "b_lt_b"));
+  Object b_lt_b(&scope, mainModuleAt(&runtime_, "b_lt_b"));
   EXPECT_EQ(*b_lt_b, Bool::falseObj());
 }
 
@@ -157,11 +157,11 @@ b_ne_b = b != b
 )")
                    .isError());
 
-  Object a_ne_b(&scope, moduleAt(&runtime_, "__main__", "a_ne_b"));
+  Object a_ne_b(&scope, mainModuleAt(&runtime_, "a_ne_b"));
   EXPECT_EQ(*a_ne_b, Bool::trueObj());
-  Object a_ne_a(&scope, moduleAt(&runtime_, "__main__", "a_ne_a"));
+  Object a_ne_a(&scope, mainModuleAt(&runtime_, "a_ne_a"));
   EXPECT_EQ(*a_ne_a, Bool::falseObj());
-  Object b_ne_b(&scope, moduleAt(&runtime_, "__main__", "b_ne_b"));
+  Object b_ne_b(&scope, mainModuleAt(&runtime_, "b_ne_b"));
   EXPECT_EQ(*b_ne_b, Bool::falseObj());
 }
 
@@ -182,19 +182,19 @@ a_is_not_c = a is not c
 )")
                    .isError());
 
-  Object a_lt_b(&scope, moduleAt(&runtime_, "__main__", "a_lt_b"));
+  Object a_lt_b(&scope, mainModuleAt(&runtime_, "a_lt_b"));
   EXPECT_EQ(*a_lt_b, Bool::trueObj());
-  Object a_le_b(&scope, moduleAt(&runtime_, "__main__", "a_le_b"));
+  Object a_le_b(&scope, mainModuleAt(&runtime_, "a_le_b"));
   EXPECT_EQ(*a_le_b, Bool::trueObj());
-  Object a_eq_b(&scope, moduleAt(&runtime_, "__main__", "a_eq_b"));
+  Object a_eq_b(&scope, mainModuleAt(&runtime_, "a_eq_b"));
   EXPECT_EQ(*a_eq_b, Bool::falseObj());
-  Object a_ge_b(&scope, moduleAt(&runtime_, "__main__", "a_ge_b"));
+  Object a_ge_b(&scope, mainModuleAt(&runtime_, "a_ge_b"));
   EXPECT_EQ(*a_ge_b, Bool::falseObj());
-  Object a_gt_b(&scope, moduleAt(&runtime_, "__main__", "a_gt_b"));
+  Object a_gt_b(&scope, mainModuleAt(&runtime_, "a_gt_b"));
   EXPECT_EQ(*a_gt_b, Bool::falseObj());
-  Object a_is_c(&scope, moduleAt(&runtime_, "__main__", "a_is_c"));
+  Object a_is_c(&scope, mainModuleAt(&runtime_, "a_is_c"));
   EXPECT_EQ(*a_is_c, Bool::trueObj());
-  Object a_is_not_c(&scope, moduleAt(&runtime_, "__main__", "a_is_not_c"));
+  Object a_is_not_c(&scope, mainModuleAt(&runtime_, "a_is_not_c"));
   EXPECT_EQ(*a_is_not_c, Bool::falseObj());
 }
 
@@ -210,10 +210,10 @@ plus_neg = +neg
 
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
 
-  Object plus_pos(&scope, moduleAt(&runtime_, "__main__", "plus_pos"));
+  Object plus_pos(&scope, mainModuleAt(&runtime_, "plus_pos"));
   EXPECT_TRUE(isIntEqualsWord(*plus_pos, 123));
 
-  Object plus_neg(&scope, moduleAt(&runtime_, "__main__", "plus_neg"));
+  Object plus_neg(&scope, mainModuleAt(&runtime_, "plus_neg"));
   EXPECT_TRUE(isIntEqualsWord(*plus_neg, -123));
 }
 
@@ -229,10 +229,10 @@ minus_neg = -neg
 
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
 
-  Object minus_pos(&scope, moduleAt(&runtime_, "__main__", "minus_pos"));
+  Object minus_pos(&scope, mainModuleAt(&runtime_, "minus_pos"));
   EXPECT_TRUE(isIntEqualsWord(*minus_pos, -123));
 
-  Object minus_neg(&scope, moduleAt(&runtime_, "__main__", "minus_neg"));
+  Object minus_neg(&scope, mainModuleAt(&runtime_, "minus_neg"));
   EXPECT_TRUE(isIntEqualsWord(*minus_neg, 123));
 }
 
@@ -258,8 +258,8 @@ b = a
 a += 2
 )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
   EXPECT_TRUE(isIntEqualsWord(*a, 3));
   EXPECT_TRUE(isIntEqualsWord(*b, 1));
 }
@@ -274,8 +274,8 @@ b = a
 a *= 2
 )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
   EXPECT_TRUE(isIntEqualsWord(*a, 10));
   EXPECT_TRUE(isIntEqualsWord(*b, 5));
 }
@@ -290,8 +290,8 @@ b = a
 a //= 2
 )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
   EXPECT_TRUE(isIntEqualsWord(*a, 2));
   EXPECT_TRUE(isIntEqualsWord(*b, 5));
 }
@@ -306,8 +306,8 @@ b = a
 a %= 2
 )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
   EXPECT_TRUE(isIntEqualsWord(*a, 1));
   EXPECT_TRUE(isIntEqualsWord(*b, 3));
 }
@@ -322,8 +322,8 @@ b = a
 a -= 7
 )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
   EXPECT_TRUE(isIntEqualsWord(*a, 3));
   EXPECT_TRUE(isIntEqualsWord(*b, 10));
 }
@@ -338,8 +338,8 @@ b = a
 a ^= 0x03
 )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
   EXPECT_TRUE(isIntEqualsWord(*a, 0xFD));
   EXPECT_TRUE(isIntEqualsWord(*b, 0xFE));
 }
@@ -383,9 +383,9 @@ pos = X(42)
 zero = X()
 )")
                    .isError());
-  Object neg(&scope, moduleAt(&runtime_, "__main__", "neg"));
-  Object pos(&scope, moduleAt(&runtime_, "__main__", "pos"));
-  Object zero(&scope, moduleAt(&runtime_, "__main__", "zero"));
+  Object neg(&scope, mainModuleAt(&runtime_, "neg"));
+  Object pos(&scope, mainModuleAt(&runtime_, "pos"));
+  Object zero(&scope, mainModuleAt(&runtime_, "zero"));
   EXPECT_EQ(runBuiltin(IntBuiltins::dunderAbs, neg), SmallInt::fromWord(42));
   EXPECT_EQ(runBuiltin(IntBuiltins::dunderAbs, pos), SmallInt::fromWord(42));
   EXPECT_EQ(runBuiltin(IntBuiltins::dunderAbs, zero), SmallInt::fromWord(0));
@@ -491,8 +491,8 @@ left = X(0b0011)
 right = X(0b0101)
 )")
                    .isError());
-  Object left(&scope, moduleAt(&runtime_, "__main__", "left"));
-  Object right(&scope, moduleAt(&runtime_, "__main__", "right"));
+  Object left(&scope, mainModuleAt(&runtime_, "left"));
+  Object right(&scope, mainModuleAt(&runtime_, "right"));
   Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, left, right));
   EXPECT_EQ(result, SmallInt::fromWord(1));  // 0b0001
 }
@@ -705,8 +705,8 @@ left = X(0b1101)
 right = X(3)
 )")
                    .isError());
-  Object left(&scope, moduleAt(&runtime_, "__main__", "left"));
-  Object right(&scope, moduleAt(&runtime_, "__main__", "right"));
+  Object left(&scope, mainModuleAt(&runtime_, "left"));
+  Object right(&scope, mainModuleAt(&runtime_, "right"));
   Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
   EXPECT_EQ(result, SmallInt::fromWord(0x68));  // 0b1101000
 }
@@ -915,8 +915,8 @@ left = X(0b0011)
 right = X(0b0101)
 )")
                    .isError());
-  Object left(&scope, moduleAt(&runtime_, "__main__", "left"));
-  Object right(&scope, moduleAt(&runtime_, "__main__", "right"));
+  Object left(&scope, mainModuleAt(&runtime_, "left"));
+  Object right(&scope, mainModuleAt(&runtime_, "right"));
   Object result(&scope, runBuiltin(IntBuiltins::dunderOr, left, right));
   EXPECT_EQ(result, SmallInt::fromWord(7));  // 0b0111
 }
@@ -931,7 +931,7 @@ c = a + b
 )")
                    .isError());
 
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   EXPECT_TRUE(isIntEqualsWord(*c, 3));
 }
 
@@ -1283,7 +1283,7 @@ value = 46116860184273879030000000
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object value(&scope, moduleAt(&runtime_, "__main__", "value"));
+  Object value(&scope, mainModuleAt(&runtime_, "value"));
   EXPECT_EQ(runBuiltin(IntBuiltins::dunderBool, value), Bool::trueObj());
 }
 
@@ -1474,8 +1474,8 @@ a = (7).__int__()
 b = int.__int__(7)
 )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
   EXPECT_TRUE(isIntEqualsWord(*a, 7));
   EXPECT_TRUE(isIntEqualsWord(*b, 7));
 
@@ -2217,7 +2217,7 @@ TEST_F(IntBuiltinsTest, FromBytesWithLittleEndianReturnsLargeInt) {
   HandleScope scope(thread_);
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = int.__radd__(True, 41)").isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 42));
 }
 
@@ -2226,7 +2226,7 @@ TEST_F(IntBuiltinsTest, DunderRandWithSmallIntsReturnsSmallInt) {
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = int.__rand__(0x123456789, 0x987654321)")
           .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 0x103454301));
 }
 
@@ -2346,7 +2346,7 @@ class X(int): pass
 num = X(0xdeadbeef)
 )")
                    .isError());
-  Object num(&scope, moduleAt(&runtime_, "__main__", "num"));
+  Object num(&scope, mainModuleAt(&runtime_, "num"));
   Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
   EXPECT_TRUE(isStrEqualsCStr(*result, "3735928559"));
 }
@@ -2355,7 +2355,7 @@ TEST_F(IntBuiltinsTest, DunderRdivmodWithSmallIntsReturnsTuple) {
   HandleScope scope(thread_);
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = int.__rdivmod__(3, 11)").isError());
-  Object result_obj(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result_obj(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -2367,7 +2367,7 @@ TEST_F(IntBuiltinsTest, DunderRfloordivWithSmallIntsReturnsSmallInt) {
   HandleScope scope(thread_);
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = int.__rfloordiv__(3, 11)").isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 3));
 }
 
@@ -2375,7 +2375,7 @@ TEST_F(IntBuiltinsTest, DunderRlshiftWithSmallIntsReturnsSmallInt) {
   HandleScope scope(thread_);
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = int.__rlshift__(3, -7)").isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, -56));
 }
 
@@ -2383,7 +2383,7 @@ TEST_F(IntBuiltinsTest, DunderRmodWithSmallIntsReturnsSmallInt) {
   HandleScope scope(thread_);
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = int.__rmod__(3, 11)").isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
 
@@ -2391,7 +2391,7 @@ TEST_F(IntBuiltinsTest, DunderRmulWithSmallIntsReturnsSmallInt) {
   HandleScope scope(thread_);
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = int.__rmul__(-321, 123)").isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, -39483));
 }
 
@@ -2400,14 +2400,14 @@ TEST_F(IntBuiltinsTest, DunderRorWithSmallIntsReturnsSmallInt) {
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = int.__ror__(0x123456789, 0x987654321)")
           .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 0x9a76567a9));
 }
 
 TEST_F(IntBuiltinsTest, DunderRpowWithSmallIntsReturnsSmallInt) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, "result = int.__rpow__(8, 2)").isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 256));
 }
 
@@ -2416,7 +2416,7 @@ TEST_F(IntBuiltinsTest, DunderRrshiftWithSmallIntsReturnsSmallInt) {
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = int.__rrshift__(16, 0xf00ddead)")
           .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 0xf00d));
 }
 
@@ -2527,8 +2527,8 @@ left = X(-1234)
 right = X(3)
 )")
                    .isError());
-  Object left(&scope, moduleAt(&runtime_, "__main__", "left"));
-  Object right(&scope, moduleAt(&runtime_, "__main__", "right"));
+  Object left(&scope, mainModuleAt(&runtime_, "left"));
+  Object right(&scope, mainModuleAt(&runtime_, "right"));
   Object result(&scope, runBuiltin(IntBuiltins::dunderRshift, left, right));
   EXPECT_EQ(result, SmallInt::fromWord(-155));
 }
@@ -2672,8 +2672,8 @@ left = X(0b0011)
 right = X(0b0101)
 )")
                    .isError());
-  Object left(&scope, moduleAt(&runtime_, "__main__", "left"));
-  Object right(&scope, moduleAt(&runtime_, "__main__", "right"));
+  Object left(&scope, mainModuleAt(&runtime_, "left"));
+  Object right(&scope, mainModuleAt(&runtime_, "right"));
   Object result(&scope, runBuiltin(IntBuiltins::dunderXor, left, right));
   EXPECT_EQ(result, SmallInt::fromWord(6));  // 0b0110
 }
@@ -2700,8 +2700,8 @@ num = X(42)
 length = X(3)
 )")
                    .isError());
-  Object num(&scope, moduleAt(&runtime_, "__main__", "num"));
-  Object length(&scope, moduleAt(&runtime_, "__main__", "length"));
+  Object num(&scope, mainModuleAt(&runtime_, "num"));
+  Object length(&scope, mainModuleAt(&runtime_, "length"));
   Object byteorder(&scope, runtime_.newStrFromCStr("little"));
   Object signed_obj(&scope, Bool::falseObj());
   Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
@@ -2738,7 +2738,7 @@ x6 = (0x1234).to_bytes(signed=False, byteorder='little', length=2)
                    .isError());
   const byte bytes[] = {0x34, 0x12};
   for (const char* name : {"x0", "x1", "x2", "x3", "x4", "x5", "x6"}) {
-    Object x(&scope, moduleAt(&runtime_, "__main__", name));
+    Object x(&scope, mainModuleAt(&runtime_, name));
     EXPECT_TRUE(isBytesEqualsBytes(x, bytes)) << name;
   }
 }
@@ -2750,7 +2750,7 @@ TEST_F(IntBuiltinsTest, ToBytesKwWithNegativeNumberReturnsBytes) {
 x0 = (-777).to_bytes(4, 'little', signed=True)
 )")
                    .isError());
-  Object x(&scope, moduleAt(&runtime_, "__main__", "x0"));
+  Object x(&scope, mainModuleAt(&runtime_, "x0"));
   const byte bytes[] = {0xf7, 0xfc, 0xff, 0xff};
   EXPECT_TRUE(isBytesEqualsBytes(x, bytes));
 }
@@ -2823,7 +2823,7 @@ TEST_F(IntBuiltinsTest, ToBytesWithSignedTrueReturnsBytes) {
 result = (0x7fffffffffffffff).to_bytes(8, 'little', signed=True)
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   const byte bytes[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
 
@@ -2831,7 +2831,7 @@ result = (0x7fffffffffffffff).to_bytes(8, 'little', signed=True)
 result_n_128 = (-128).to_bytes(1, 'little', signed=True)
 )")
                    .isError());
-  Object result_n_128(&scope, moduleAt(&runtime_, "__main__", "result_n_128"));
+  Object result_n_128(&scope, mainModuleAt(&runtime_, "result_n_128"));
   const byte bytes2[] = {0x80};
   EXPECT_TRUE(isBytesEqualsBytes(result_n_128, bytes2));
 
@@ -2839,8 +2839,7 @@ result_n_128 = (-128).to_bytes(1, 'little', signed=True)
 result_n_32768 = (-32768).to_bytes(2, 'little', signed=True)
 )")
                    .isError());
-  Object result_n_32768(&scope,
-                        moduleAt(&runtime_, "__main__", "result_n_32768"));
+  Object result_n_32768(&scope, mainModuleAt(&runtime_, "result_n_32768"));
   const byte bytes3[] = {0, 0x80};
   EXPECT_TRUE(isBytesEqualsBytes(result_n_32768, bytes3));
 
@@ -2848,8 +2847,8 @@ result_n_32768 = (-32768).to_bytes(2, 'little', signed=True)
 result_n_min_word = (-9223372036854775808).to_bytes(8, 'little', signed=True)
 )")
                    .isError());
-  Object result_n_min_word(
-      &scope, moduleAt(&runtime_, "__main__", "result_n_min_word"));
+  Object result_n_min_word(&scope,
+                           mainModuleAt(&runtime_, "result_n_min_word"));
   const byte bytes4[] = {0, 0, 0, 0, 0, 0, 0, 0x80};
   EXPECT_TRUE(isBytesEqualsBytes(result_n_min_word, bytes4));
 }
@@ -2864,7 +2863,7 @@ TEST_F(IntBuiltinsTest,
 result = (-1024).to_bytes(7, 'big', signed=True)
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   const byte bytes[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xfc, 0};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
 }
@@ -3084,8 +3083,8 @@ bar = Bar()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object foo(&scope, moduleAt(&runtime_, "__main__", "foo"));
-  Object bar(&scope, moduleAt(&runtime_, "__main__", "bar"));
+  Object foo(&scope, mainModuleAt(&runtime_, "foo"));
+  Object bar(&scope, mainModuleAt(&runtime_, "bar"));
 
   {
     Type type(&scope, runtime_.typeAt(LayoutId::kBool));
@@ -3179,28 +3178,28 @@ TEST_F(IntBuiltinsTest, ConjugateAliasesDunderInt) {
 TEST_F(IntBuiltinsTest, DenominatorReturnsOne) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, "result = (44).denominator").isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
 
 TEST_F(IntBuiltinsTest, ImagReturnsZero) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, "result = (44).imag").isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 
 TEST_F(IntBuiltinsTest, NumeratorReturnsInt) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, "result = (44).numerator").isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 44));
 }
 
 TEST_F(IntBuiltinsTest, RealReturnsInt) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, "result = (44).real").isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 44));
 }
 
@@ -3208,7 +3207,7 @@ TEST_F(IntBuiltinsTest, CompareWithBigNegativeNumber) {
   ASSERT_FALSE(
       runFromCStr(&runtime_, "a = -46116860184273879030000").isError());
   HandleScope scope(thread_);
-  Int a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Int a(&scope, mainModuleAt(&runtime_, "a"));
   Int b(&scope, SmallInt::fromWord(SmallInt::kMinValue));
   EXPECT_LT(a.compare(*b), 0);
   EXPECT_GT(b.compare(*a), 0);

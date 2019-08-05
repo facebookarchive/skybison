@@ -58,7 +58,7 @@ class Foo:
 value = Foo()
 )")
                    .isError());
-  Object value(&scope, moduleAt(&runtime_, "__main__", "value"));
+  Object value(&scope, mainModuleAt(&runtime_, "value"));
   Object result(&scope, Interpreter::isTrue(thread_, *value));
   EXPECT_TRUE(raised(*result, LayoutId::kUserWarning));
 }
@@ -72,7 +72,7 @@ class Foo:
 value = Foo()
 )")
                    .isError());
-  Object value(&scope, moduleAt(&runtime_, "__main__", "value"));
+  Object value(&scope, mainModuleAt(&runtime_, "value"));
   Object result(&scope, Interpreter::isTrue(thread_, *value));
   EXPECT_TRUE(raised(*result, LayoutId::kUserWarning));
 }
@@ -90,8 +90,8 @@ true_value = Bar(10)
 false_value = Bar(0)
 )")
                    .isError());
-  Object true_value(&scope, moduleAt(&runtime_, "__main__", "true_value"));
-  Object false_value(&scope, moduleAt(&runtime_, "__main__", "false_value"));
+  Object true_value(&scope, mainModuleAt(&runtime_, "true_value"));
+  Object false_value(&scope, mainModuleAt(&runtime_, "false_value"));
   EXPECT_EQ(Interpreter::isTrue(thread_, *true_value), Bool::trueObj());
   EXPECT_EQ(Interpreter::isTrue(thread_, *false_value), Bool::falseObj());
 }
@@ -140,7 +140,7 @@ class C:
 c = C()
 )")
                    .isError());
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   Object result(
       &scope, Interpreter::unaryOperation(thread_, c, SymbolId::kDunderInvert));
   EXPECT_TRUE(isStrEqualsCStr(*result, "custom invert"));
@@ -155,7 +155,7 @@ class C:
 c = C()
 )")
                    .isError());
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   Object result(&scope,
                 Interpreter::unaryOperation(thread_, c, SymbolId::kDunderNeg));
   EXPECT_TRUE(raised(*result, LayoutId::kUserWarning));
@@ -187,9 +187,9 @@ right = C()
 
   Frame* frame = thread_->currentFrame();
 
-  Object left(&scope, moduleAt(&runtime_, "__main__", "left"));
-  Object right(&scope, moduleAt(&runtime_, "__main__", "right"));
-  Object c_class(&scope, moduleAt(&runtime_, "__main__", "C"));
+  Object left(&scope, mainModuleAt(&runtime_, "left"));
+  Object right(&scope, mainModuleAt(&runtime_, "right"));
+  Object c_class(&scope, mainModuleAt(&runtime_, "C"));
 
   Object result_obj(
       &scope, Interpreter::binaryOperation(
@@ -220,9 +220,9 @@ right = C()
 
   Frame* frame = thread_->currentFrame();
 
-  Object left(&scope, moduleAt(&runtime_, "__main__", "left"));
-  Object right(&scope, moduleAt(&runtime_, "__main__", "right"));
-  Object c_class(&scope, moduleAt(&runtime_, "__main__", "C"));
+  Object left(&scope, mainModuleAt(&runtime_, "left"));
+  Object right(&scope, mainModuleAt(&runtime_, "right"));
+  Object c_class(&scope, mainModuleAt(&runtime_, "C"));
 
   Object result_obj(
       &scope, Interpreter::binaryOperation(
@@ -255,9 +255,9 @@ right = D()
 
   Frame* frame = thread_->currentFrame();
 
-  Object left(&scope, moduleAt(&runtime_, "__main__", "left"));
-  Object right(&scope, moduleAt(&runtime_, "__main__", "right"));
-  Object d_class(&scope, moduleAt(&runtime_, "__main__", "D"));
+  Object left(&scope, mainModuleAt(&runtime_, "left"));
+  Object right(&scope, mainModuleAt(&runtime_, "right"));
+  Object d_class(&scope, mainModuleAt(&runtime_, "D"));
 
   Object result_obj(
       &scope, Interpreter::binaryOperation(
@@ -289,9 +289,9 @@ right = D()
 
   Frame* frame = thread_->currentFrame();
 
-  Object left(&scope, moduleAt(&runtime_, "__main__", "left"));
-  Object right(&scope, moduleAt(&runtime_, "__main__", "right"));
-  Object d_class(&scope, moduleAt(&runtime_, "__main__", "D"));
+  Object left(&scope, mainModuleAt(&runtime_, "left"));
+  Object right(&scope, mainModuleAt(&runtime_, "right"));
+  Object d_class(&scope, mainModuleAt(&runtime_, "D"));
 
   Object result_obj(
       &scope, Interpreter::binaryOperation(
@@ -316,7 +316,7 @@ class A:
 a = A()
 )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
   Frame* frame = thread_->currentFrame();
   Object result(&scope, Interpreter::binaryOperation(
                             thread_, frame, Interpreter::BinaryOp::MUL, a, a));
@@ -339,8 +339,8 @@ a = A()
 b = B()
 )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
   Frame* frame = thread_->currentFrame();
   Object result(&scope, Interpreter::binaryOperation(
                             thread_, frame, Interpreter::BinaryOp::MUL, a, b));
@@ -389,10 +389,10 @@ v2 = A(8)
 v3 = ASub(2)
 )")
                    .isError());
-  Object v0(&scope, moduleAt(&runtime_, "__main__", "v0"));
-  Object v1(&scope, moduleAt(&runtime_, "__main__", "v1"));
-  Object v2(&scope, moduleAt(&runtime_, "__main__", "v2"));
-  Object v3(&scope, moduleAt(&runtime_, "__main__", "v3"));
+  Object v0(&scope, mainModuleAt(&runtime_, "v0"));
+  Object v1(&scope, mainModuleAt(&runtime_, "v1"));
+  Object v2(&scope, mainModuleAt(&runtime_, "v2"));
+  Object v3(&scope, mainModuleAt(&runtime_, "v3"));
 
   Object method(&scope, NoneType::object());
   IcBinopFlags flags;
@@ -436,10 +436,10 @@ v2 = A(33)
 v3 = B(-12)
 )")
                    .isError());
-  Object v0(&scope, moduleAt(&runtime_, "__main__", "v0"));
-  Object v1(&scope, moduleAt(&runtime_, "__main__", "v1"));
-  Object v2(&scope, moduleAt(&runtime_, "__main__", "v2"));
-  Object v3(&scope, moduleAt(&runtime_, "__main__", "v3"));
+  Object v0(&scope, mainModuleAt(&runtime_, "v0"));
+  Object v1(&scope, mainModuleAt(&runtime_, "v1"));
+  Object v2(&scope, mainModuleAt(&runtime_, "v2"));
+  Object v3(&scope, mainModuleAt(&runtime_, "v3"));
 
   Object method(&scope, NoneType::object());
   IcBinopFlags flags;
@@ -478,10 +478,10 @@ v2 = A(9)
 v3 = B(1)
 )")
                    .isError());
-  Object v0(&scope, moduleAt(&runtime_, "__main__", "v0"));
-  Object v1(&scope, moduleAt(&runtime_, "__main__", "v1"));
-  Object v2(&scope, moduleAt(&runtime_, "__main__", "v2"));
-  Object v3(&scope, moduleAt(&runtime_, "__main__", "v3"));
+  Object v0(&scope, mainModuleAt(&runtime_, "v0"));
+  Object v1(&scope, mainModuleAt(&runtime_, "v1"));
+  Object v2(&scope, mainModuleAt(&runtime_, "v2"));
+  Object v3(&scope, mainModuleAt(&runtime_, "v3"));
 
   Object method(&scope, NoneType::object());
   IcBinopFlags flags;
@@ -552,8 +552,8 @@ v0 = MyInt(3)
 v1 = 7
 )")
                    .isError());
-  Object v0(&scope, moduleAt(&runtime, "__main__", "v0"));
-  Object v1(&scope, moduleAt(&runtime, "__main__", "v1"));
+  Object v0(&scope, mainModuleAt(&runtime, "v0"));
+  Object v1(&scope, mainModuleAt(&runtime, "v1"));
 
   Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(2));
@@ -612,9 +612,9 @@ right = C()
 
   Frame* frame = thread_->currentFrame();
 
-  Object left(&scope, moduleAt(&runtime_, "__main__", "left"));
-  Object right(&scope, moduleAt(&runtime_, "__main__", "right"));
-  Object c_class(&scope, moduleAt(&runtime_, "__main__", "C"));
+  Object left(&scope, mainModuleAt(&runtime_, "left"));
+  Object right(&scope, mainModuleAt(&runtime_, "right"));
+  Object c_class(&scope, mainModuleAt(&runtime_, "C"));
 
   Object result_obj(
       &scope, Interpreter::inplaceOperation(
@@ -643,9 +643,9 @@ right = C()
 
   Frame* frame = thread_->currentFrame();
 
-  Object left(&scope, moduleAt(&runtime_, "__main__", "left"));
-  Object right(&scope, moduleAt(&runtime_, "__main__", "right"));
-  Object c_class(&scope, moduleAt(&runtime_, "__main__", "C"));
+  Object left(&scope, mainModuleAt(&runtime_, "left"));
+  Object right(&scope, mainModuleAt(&runtime_, "right"));
+  Object c_class(&scope, mainModuleAt(&runtime_, "C"));
 
   Object result_obj(
       &scope, Interpreter::inplaceOperation(
@@ -676,9 +676,9 @@ right = C()
 
   Frame* frame = thread_->currentFrame();
 
-  Object left(&scope, moduleAt(&runtime_, "__main__", "left"));
-  Object right(&scope, moduleAt(&runtime_, "__main__", "right"));
-  Object c_class(&scope, moduleAt(&runtime_, "__main__", "C"));
+  Object left(&scope, mainModuleAt(&runtime_, "left"));
+  Object right(&scope, mainModuleAt(&runtime_, "right"));
+  Object c_class(&scope, mainModuleAt(&runtime_, "C"));
 
   Object result_obj(
       &scope, Interpreter::inplaceOperation(
@@ -704,10 +704,10 @@ v2 = MyInt(-3)
 v3 = MyInt(7)
 )")
                    .isError());
-  Object v0(&scope, moduleAt(&runtime_, "__main__", "v0"));
-  Object v1(&scope, moduleAt(&runtime_, "__main__", "v1"));
-  Object v2(&scope, moduleAt(&runtime_, "__main__", "v2"));
-  Object v3(&scope, moduleAt(&runtime_, "__main__", "v3"));
+  Object v0(&scope, mainModuleAt(&runtime_, "v0"));
+  Object v1(&scope, mainModuleAt(&runtime_, "v1"));
+  Object v2(&scope, mainModuleAt(&runtime_, "v2"));
+  Object v3(&scope, mainModuleAt(&runtime_, "v3"));
   Object method(&scope, NoneType::object());
   IcBinopFlags flags;
   EXPECT_TRUE(isIntEqualsWord(
@@ -739,10 +739,10 @@ v2 = MyInt(-4)
 v3 = MyIntSub(4)
 )")
                    .isError());
-  Object v0(&scope, moduleAt(&runtime_, "__main__", "v0"));
-  Object v1(&scope, moduleAt(&runtime_, "__main__", "v1"));
-  Object v2(&scope, moduleAt(&runtime_, "__main__", "v2"));
-  Object v3(&scope, moduleAt(&runtime_, "__main__", "v3"));
+  Object v0(&scope, mainModuleAt(&runtime_, "v0"));
+  Object v1(&scope, mainModuleAt(&runtime_, "v1"));
+  Object v2(&scope, mainModuleAt(&runtime_, "v2"));
+  Object v3(&scope, mainModuleAt(&runtime_, "v3"));
   Object method(&scope, NoneType::object());
   IcBinopFlags flags;
   EXPECT_TRUE(isIntEqualsWord(
@@ -793,8 +793,8 @@ c20 = C(20)
 
   ASSERT_TRUE(frame->isSentinel());
 
-  Object left(&scope, moduleAt(&runtime_, "__main__", "c10"));
-  Object right(&scope, moduleAt(&runtime_, "__main__", "c20"));
+  Object left(&scope, mainModuleAt(&runtime_, "c10"));
+  Object right(&scope, mainModuleAt(&runtime_, "c20"));
 
   Object left_lt_right(&scope, Interpreter::compareOperation(
                                    thread_, frame, CompareOp::LT, left, right));
@@ -822,8 +822,8 @@ c20 = C(20)
 
   ASSERT_TRUE(frame->isSentinel());
 
-  Object left(&scope, moduleAt(&runtime_, "__main__", "c10"));
-  Object right(&scope, moduleAt(&runtime_, "__main__", "c20"));
+  Object left(&scope, mainModuleAt(&runtime_, "c10"));
+  Object right(&scope, mainModuleAt(&runtime_, "c20"));
 
   Object left_eq_right(&scope, Interpreter::compareOperation(
                                    thread_, frame, CompareOp::EQ, left, right));
@@ -881,15 +881,15 @@ c = C()
   Frame* frame = thread_->currentFrame();
   ASSERT_TRUE(frame->isSentinel());
 
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
 
   // Comparisons where rhs is not a subtype of lhs try lhs.__eq__(rhs) first.
   Object a_eq_b(&scope, Interpreter::compareOperation(thread_, frame,
                                                       CompareOp::EQ, a, b));
   EXPECT_EQ(a_eq_b, Bool::falseObj());
-  Object called(&scope, moduleAt(&runtime_, "__main__", "called"));
+  Object called(&scope, mainModuleAt(&runtime_, "called"));
   EXPECT_TRUE(isStrEqualsCStr(*called, "A"));
 
   Str called_name(&scope, runtime_.newStrFromCStr("called"));
@@ -899,14 +899,14 @@ c = C()
   Object b_eq_a(&scope, Interpreter::compareOperation(thread_, frame,
                                                       CompareOp::EQ, b, a));
   EXPECT_EQ(b_eq_a, Bool::trueObj());
-  called = moduleAt(&runtime_, "__main__", "called");
+  called = mainModuleAt(&runtime_, "called");
   EXPECT_TRUE(isStrEqualsCStr(*called, "B"));
 
   runtime_.moduleAtPut(main, called_name, none);
   Object c_eq_a(&scope, Interpreter::compareOperation(thread_, frame,
                                                       CompareOp::EQ, c, a));
   EXPECT_EQ(c_eq_a, Bool::trueObj());
-  called = moduleAt(&runtime_, "__main__", "called");
+  called = mainModuleAt(&runtime_, "called");
   EXPECT_TRUE(isStrEqualsCStr(*called, "C"));
 
   // When rhs is a subtype of lhs, only rhs.__eq__(rhs) is tried.
@@ -914,7 +914,7 @@ c = C()
   Object a_eq_c(&scope, Interpreter::compareOperation(thread_, frame,
                                                       CompareOp::EQ, a, c));
   EXPECT_EQ(a_eq_c, Bool::trueObj());
-  called = moduleAt(&runtime_, "__main__", "called");
+  called = mainModuleAt(&runtime_, "called");
   EXPECT_TRUE(isStrEqualsCStr(*called, "C"));
 }
 
@@ -955,10 +955,10 @@ v2 = A(8)
 v3 = ASub(2)
 )")
                    .isError());
-  Object v0(&scope, moduleAt(&runtime_, "__main__", "v0"));
-  Object v1(&scope, moduleAt(&runtime_, "__main__", "v1"));
-  Object v2(&scope, moduleAt(&runtime_, "__main__", "v2"));
-  Object v3(&scope, moduleAt(&runtime_, "__main__", "v3"));
+  Object v0(&scope, mainModuleAt(&runtime_, "v0"));
+  Object v1(&scope, mainModuleAt(&runtime_, "v1"));
+  Object v2(&scope, mainModuleAt(&runtime_, "v2"));
+  Object v3(&scope, mainModuleAt(&runtime_, "v3"));
   Object method(&scope, NoneType::object());
   IcBinopFlags flags;
   Object result_obj(&scope, Interpreter::compareOperationSetMethod(
@@ -1001,10 +1001,10 @@ v2 = A(8)
 v3 = ASub(2)
 )")
                    .isError());
-  Object v0(&scope, moduleAt(&runtime_, "__main__", "v0"));
-  Object v1(&scope, moduleAt(&runtime_, "__main__", "v1"));
-  Object v2(&scope, moduleAt(&runtime_, "__main__", "v2"));
-  Object v3(&scope, moduleAt(&runtime_, "__main__", "v3"));
+  Object v0(&scope, mainModuleAt(&runtime_, "v0"));
+  Object v1(&scope, mainModuleAt(&runtime_, "v1"));
+  Object v2(&scope, mainModuleAt(&runtime_, "v2"));
+  Object v3(&scope, mainModuleAt(&runtime_, "v3"));
   Object method(&scope, NoneType::object());
   IcBinopFlags flags;
   Object result_obj(&scope, Interpreter::compareOperationSetMethod(
@@ -1239,9 +1239,9 @@ c = 3
   Frame* frame = thread_->currentFrame();
 
   ASSERT_TRUE(frame->isSentinel());
-  Object container(&scope, moduleAt(&runtime_, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object container(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   Object contains_true(
       &scope, Interpreter::sequenceContains(thread_, frame, b, container));
   Object contains_false(
@@ -1258,7 +1258,7 @@ container = C()
 )")
                    .isError());
   Frame* frame = thread_->currentFrame();
-  Object container(&scope, moduleAt(&runtime_, "__main__", "container"));
+  Object container(&scope, mainModuleAt(&runtime_, "container"));
   Object val(&scope, NoneType::object());
   Object result(
       &scope, Interpreter::sequenceIterSearch(thread_, frame, val, container));
@@ -1275,7 +1275,7 @@ container = C()
 )")
                    .isError());
   Frame* frame = thread_->currentFrame();
-  Object container(&scope, moduleAt(&runtime_, "__main__", "container"));
+  Object container(&scope, mainModuleAt(&runtime_, "container"));
   Object val(&scope, NoneType::object());
   Object result(
       &scope, Interpreter::sequenceIterSearch(thread_, frame, val, container));
@@ -1293,7 +1293,7 @@ container = C()
 )")
                    .isError());
   Frame* frame = thread_->currentFrame();
-  Object container(&scope, moduleAt(&runtime_, "__main__", "container"));
+  Object container(&scope, mainModuleAt(&runtime_, "container"));
   Object val(&scope, NoneType::object());
   Object result(
       &scope, Interpreter::sequenceIterSearch(thread_, frame, val, container));
@@ -1313,7 +1313,7 @@ container = C()
 )")
                    .isError());
   Frame* frame = thread_->currentFrame();
-  Object container(&scope, moduleAt(&runtime_, "__main__", "container"));
+  Object container(&scope, mainModuleAt(&runtime_, "container"));
   Object val(&scope, NoneType::object());
   Object result(
       &scope, Interpreter::sequenceIterSearch(thread_, frame, val, container));
@@ -1352,7 +1352,7 @@ class C:
 container = C()
 )")
                    .isError());
-  Object container(&scope, moduleAt(&runtime_, "__main__", "container"));
+  Object container(&scope, mainModuleAt(&runtime_, "container"));
   Object val(&scope, SmallInt::fromWord(5));
   Frame* frame = thread_->currentFrame();
   Object result(
@@ -1379,9 +1379,9 @@ with Foo():
 )";
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
   EXPECT_TRUE(isIntEqualsWord(*a, 3));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
   EXPECT_TRUE(isIntEqualsWord(*b, 2));
 }
 
@@ -1561,8 +1561,8 @@ c = C()
                    .isError());
   Frame* frame = thread_->currentFrame();
   ASSERT_TRUE(frame->isSentinel());
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
-  Object f(&scope, moduleAt(&runtime_, "__main__", "f"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
+  Object f(&scope, mainModuleAt(&runtime_, "f"));
   Object method(&scope, Interpreter::lookupMethod(thread_, frame, c,
                                                   SymbolId::kDunderCall));
   EXPECT_EQ(*f, *method);
@@ -1577,7 +1577,7 @@ class C:
 meth = C().foo
 )")
                    .isError());
-  Object meth_obj(&scope, moduleAt(&runtime_, "__main__", "meth"));
+  Object meth_obj(&scope, mainModuleAt(&runtime_, "meth"));
   ASSERT_TRUE(meth_obj.isBoundMethod());
 
   Frame* frame = thread_->currentFrame();
@@ -1669,7 +1669,7 @@ result = c(42)
                    .isError());
   Frame* frame = thread_->currentFrame();
   ASSERT_TRUE(frame->isSentinel());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_EQ(*result, SmallInt::fromWord(42));
 }
 
@@ -1700,9 +1700,9 @@ l = [1, 2, 3]
 a, b, c = l
 )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   EXPECT_TRUE(isIntEqualsWord(*a, 1));
   EXPECT_TRUE(isIntEqualsWord(*b, 2));
   EXPECT_TRUE(isIntEqualsWord(*c, 3));
@@ -1733,9 +1733,9 @@ l = (1, 2, 3)
 a, b, c = l
 )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   EXPECT_TRUE(isIntEqualsWord(*a, 1));
   EXPECT_TRUE(isIntEqualsWord(*b, 2));
   EXPECT_TRUE(isIntEqualsWord(*c, 3));
@@ -1789,11 +1789,10 @@ sys.displayhook = my_displayhook
   ASSERT_TRUE(runCode(code).isNoneType());
 
   Object displayhook(&scope, moduleAt(&runtime_, "sys", "displayhook"));
-  Object my_displayhook(&scope,
-                        moduleAt(&runtime_, "__main__", "my_displayhook"));
+  Object my_displayhook(&scope, mainModuleAt(&runtime_, "my_displayhook"));
   EXPECT_EQ(*displayhook, *my_displayhook);
 
-  Object my_global(&scope, moduleAt(&runtime_, "__main__", "MY_GLOBAL"));
+  Object my_global(&scope, mainModuleAt(&runtime_, "MY_GLOBAL"));
   EXPECT_EQ(*my_global, *unique);
 }
 
@@ -1808,7 +1807,7 @@ a = AsyncIterable()
 )")
                    .isError());
 
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
 
   Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime_.newTuple(1));
@@ -1852,7 +1851,7 @@ class M:
 manager = M()
   )")
                    .isError());
-  Object manager(&scope, moduleAt(&runtime_, "__main__", "manager"));
+  Object manager(&scope, mainModuleAt(&runtime_, "manager"));
   Object main_obj(&scope, findModule(&runtime_, "__main__"));
   ASSERT_TRUE(main_obj.isModule());
   Module main(&scope, *main_obj);
@@ -1874,9 +1873,9 @@ manager = M()
   Dict globals(&scope, main.dict());
   Dict locals(&scope, runtime_.newDict());
   EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, globals, locals), 42));
-  Object enter(&scope, moduleAt(&runtime_, "__main__", "enter"));
+  Object enter(&scope, mainModuleAt(&runtime_, "enter"));
   EXPECT_EQ(*enter, *manager);
-  Object exit(&scope, moduleAt(&runtime_, "__main__", "exit"));
+  Object exit(&scope, mainModuleAt(&runtime_, "exit"));
   EXPECT_EQ(*exit, NoneType::object());
 }
 
@@ -1904,22 +1903,22 @@ l = [1, 2, 3, 4, 5, 6, 7]
 a, b, c, *d, e, f, g  = l
 )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   EXPECT_TRUE(isIntEqualsWord(*a, 1));
   EXPECT_TRUE(isIntEqualsWord(*b, 2));
   EXPECT_TRUE(isIntEqualsWord(*c, 3));
 
-  Object d(&scope, moduleAt(&runtime_, "__main__", "d"));
+  Object d(&scope, mainModuleAt(&runtime_, "d"));
   ASSERT_TRUE(d.isList());
   List list(&scope, *d);
   EXPECT_EQ(list.numItems(), 1);
   EXPECT_TRUE(isIntEqualsWord(list.at(0), 4));
 
-  Object e(&scope, moduleAt(&runtime_, "__main__", "e"));
-  Object f(&scope, moduleAt(&runtime_, "__main__", "f"));
-  Object g(&scope, moduleAt(&runtime_, "__main__", "g"));
+  Object e(&scope, mainModuleAt(&runtime_, "e"));
+  Object f(&scope, mainModuleAt(&runtime_, "f"));
+  Object g(&scope, mainModuleAt(&runtime_, "g"));
   EXPECT_TRUE(isIntEqualsWord(*e, 5));
   EXPECT_TRUE(isIntEqualsWord(*f, 6));
   EXPECT_TRUE(isIntEqualsWord(*g, 7));
@@ -1932,9 +1931,9 @@ l = [1, 2, 3, 4]
 a, b, *c = l
 )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   EXPECT_TRUE(isIntEqualsWord(*a, 1));
   EXPECT_TRUE(isIntEqualsWord(*b, 2));
 
@@ -1952,9 +1951,9 @@ l = [1, 2, 3, 4]
 *a, b, c = l
 )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   ASSERT_TRUE(a.isList());
   List list(&scope, *a);
   ASSERT_EQ(list.numItems(), 2);
@@ -1982,7 +1981,7 @@ d = {**{'a': 1, 'b': 2}, 'c': 3, **{'d': 4}}
 )")
                    .isError());
 
-  Object d(&scope, moduleAt(&runtime_, "__main__", "d"));
+  Object d(&scope, mainModuleAt(&runtime_, "d"));
   ASSERT_TRUE(d.isDict());
 
   Dict dict(&scope, *d);
@@ -2026,7 +2025,7 @@ d = {**Foo(), 'd': 4}
 )")
                    .isError());
 
-  Object d(&scope, moduleAt(&runtime_, "__main__", "d"));
+  Object d(&scope, mainModuleAt(&runtime_, "d"));
   ASSERT_TRUE(d.isDict());
 
   Dict dict(&scope, *d);
@@ -2070,7 +2069,7 @@ d = {**Foo(), 'd': 4}
 )")
                    .isError());
 
-  Object d(&scope, moduleAt(&runtime_, "__main__", "d"));
+  Object d(&scope, mainModuleAt(&runtime_, "d"));
   ASSERT_TRUE(d.isDict());
 
   Dict dict(&scope, *d);
@@ -2129,7 +2128,7 @@ d = {**Foo(), 'd': 4}
 )")
                    .isError());
 
-  Object d(&scope, moduleAt(&runtime_, "__main__", "d"));
+  Object d(&scope, mainModuleAt(&runtime_, "d"));
   ASSERT_TRUE(d.isDict());
 
   Dict dict(&scope, *d);
@@ -2255,7 +2254,7 @@ t = foo(*(1,2), *(3, 4))
 )")
                    .isError());
 
-  Object t(&scope, moduleAt(&runtime_, "__main__", "t"));
+  Object t(&scope, mainModuleAt(&runtime_, "t"));
   ASSERT_TRUE(t.isTuple());
 
   Tuple tuple(&scope, *t);
@@ -2279,7 +2278,7 @@ v = outer()
 	)")
                    .isError());
 
-  Object v(&scope, moduleAt(&runtime_, "__main__", "v"));
+  Object v(&scope, mainModuleAt(&runtime_, "v"));
   EXPECT_TRUE(isIntEqualsWord(*v, 0));
 }
 
@@ -2322,8 +2321,8 @@ b = public_symbol2()
 )")
                    .isError());
 
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
   EXPECT_TRUE(isIntEqualsWord(*a, 1));
   EXPECT_TRUE(isIntEqualsWord(*b, 2));
 }
@@ -2385,7 +2384,7 @@ class AsyncIterator:
 a = AsyncIterator()
 )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
 
   Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime_.newTuple(1));
@@ -2396,9 +2395,9 @@ a = AsyncIterator()
 
   Object result(&scope, runCode(code));
   EXPECT_EQ(*a, *result);
-  Object anext(&scope, moduleAt(&runtime_, "__main__", "anext_called"));
+  Object anext(&scope, mainModuleAt(&runtime_, "anext_called"));
   EXPECT_EQ(*a, *anext);
-  Object await(&scope, moduleAt(&runtime_, "__main__", "await_called"));
+  Object await(&scope, mainModuleAt(&runtime_, "await_called"));
   EXPECT_EQ(*a, *await);
 }
 
@@ -2425,7 +2424,7 @@ class AsyncIterator:
 a = AsyncIterator()
 )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
 
   Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime_.newTuple(1));
@@ -2449,7 +2448,7 @@ a = Awaitable()
 )")
                    .isError());
 
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
 
   Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime_.newTuple(1));
@@ -2485,7 +2484,7 @@ d = foo(**{'a': 1, 'b': 2}, **{'c': 3, 'd': 4})
 )")
                    .isError());
 
-  Object d(&scope, moduleAt(&runtime_, "__main__", "d"));
+  Object d(&scope, mainModuleAt(&runtime_, "d"));
   ASSERT_TRUE(d.isDict());
 
   Dict dict(&scope, *d);
@@ -2528,7 +2527,7 @@ d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
 )")
                    .isError());
 
-  Object d(&scope, moduleAt(&runtime_, "__main__", "d"));
+  Object d(&scope, mainModuleAt(&runtime_, "d"));
   ASSERT_TRUE(d.isDict());
 
   Dict dict(&scope, *d);
@@ -2571,7 +2570,7 @@ d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
 )")
                    .isError());
 
-  Object d(&scope, moduleAt(&runtime_, "__main__", "d"));
+  Object d(&scope, mainModuleAt(&runtime_, "d"));
   ASSERT_TRUE(d.isDict());
 
   Dict dict(&scope, *d);
@@ -2632,7 +2631,7 @@ d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
 )")
                    .isError());
 
-  Object d(&scope, moduleAt(&runtime_, "__main__", "d"));
+  Object d(&scope, mainModuleAt(&runtime_, "d"));
   ASSERT_TRUE(d.isDict());
 
   Dict dict(&scope, *d);
@@ -2898,7 +2897,7 @@ foo = Foo()
 	)")
                    .isError());
 
-  Object foo(&scope, moduleAt(&runtime_, "__main__", "foo"));
+  Object foo(&scope, mainModuleAt(&runtime_, "foo"));
 
   // Create a code object and set the foo instance as a const
   Code code(&scope, newEmptyCode());
@@ -2951,10 +2950,10 @@ a = getattr(foo.bar, '__module__')
 b = getattr(baz, '__module__')
 )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
   ASSERT_TRUE(a.isStr());
   EXPECT_TRUE(Str::cast(*a).equalsCStr("foo"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
   ASSERT_TRUE(b.isStr());
   EXPECT_TRUE(Str::cast(*b).equalsCStr("__main__"));
 }
@@ -2969,10 +2968,10 @@ a = getattr(Foo.bar, '__qualname__')
 b = getattr(baz, '__qualname__')
 )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
   ASSERT_TRUE(a.isStr());
   EXPECT_TRUE(Str::cast(*a).equalsCStr("Foo.bar"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
   ASSERT_TRUE(b.isStr());
   EXPECT_TRUE(Str::cast(*b).equalsCStr("baz"));
 }
@@ -2986,13 +2985,13 @@ def foo():
 def bar(): pass
 )")
                    .isError());
-  Object foo(&scope, testing::moduleAt(&runtime_, "__main__", "foo"));
+  Object foo(&scope, testing::mainModuleAt(&runtime_, "foo"));
   ASSERT_TRUE(foo.isFunction());
   Object foo_docstring(&scope, Function::cast(*foo).doc());
   ASSERT_TRUE(foo_docstring.isStr());
   EXPECT_TRUE(Str::cast(*foo_docstring).equalsCStr("This is a docstring"));
 
-  Object bar(&scope, testing::moduleAt(&runtime_, "__main__", "bar"));
+  Object bar(&scope, testing::mainModuleAt(&runtime_, "bar"));
   ASSERT_TRUE(bar.isFunction());
   Object bar_docstring(&scope, Function::cast(*bar).doc());
   EXPECT_TRUE(bar_docstring.isNoneType());
@@ -3034,8 +3033,7 @@ args = ["hello!"]
 result = C()(*args)
 )")
                    .isError());
-  EXPECT_TRUE(
-      isStrEqualsCStr(moduleAt(&runtime_, "__main__", "result"), "hello!"));
+  EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(&runtime_, "result"), "hello!"));
 }
 
 TEST_F(InterpreterTest, DoDeleteNameOnDictSubclass) {
@@ -3075,7 +3073,7 @@ for i in range(5):
                    .isError());
 
   HandleScope scope;
-  Object l_obj(&scope, testing::moduleAt(&runtime_, "__main__", "l"));
+  Object l_obj(&scope, testing::mainModuleAt(&runtime_, "l"));
   ASSERT_TRUE(l_obj.isList());
   List l(&scope, *l_obj);
   ASSERT_EQ(l.numItems(), 1);
@@ -3098,7 +3096,7 @@ except:
                    .isError());
 
   HandleScope scope;
-  Object n(&scope, testing::moduleAt(&runtime_, "__main__", "n"));
+  Object n(&scope, testing::mainModuleAt(&runtime_, "n"));
   EXPECT_TRUE(isIntEqualsWord(*n, 2));
 }
 
@@ -3121,7 +3119,7 @@ except:
                    .isError());
 
   HandleScope scope;
-  Object n(&scope, testing::moduleAt(&runtime_, "__main__", "n"));
+  Object n(&scope, testing::mainModuleAt(&runtime_, "n"));
   EXPECT_TRUE(isIntEqualsWord(*n, 2));
 }
 
@@ -3138,7 +3136,7 @@ except Exception as e:
                    .isError());
 
   HandleScope scope;
-  Object exc_obj(&scope, testing::moduleAt(&runtime_, "__main__", "exc"));
+  Object exc_obj(&scope, testing::mainModuleAt(&runtime_, "exc"));
   ASSERT_EQ(exc_obj.layoutId(), LayoutId::kTypeError);
   BaseException exc(&scope, *exc_obj);
   EXPECT_EQ(exc.cause().layoutId(), LayoutId::kRuntimeError);
@@ -3157,7 +3155,7 @@ except RuntimeError:
                    .isError());
 
   HandleScope scope;
-  Object n(&scope, testing::moduleAt(&runtime_, "__main__", "n"));
+  Object n(&scope, testing::mainModuleAt(&runtime_, "n"));
   EXPECT_TRUE(isIntEqualsWord(*n, 2));
 }
 
@@ -3174,7 +3172,7 @@ except (StopIteration, RuntimeError, ImportError):
                    .isError());
 
   HandleScope scope;
-  Object n(&scope, testing::moduleAt(&runtime_, "__main__", "n"));
+  Object n(&scope, testing::mainModuleAt(&runtime_, "n"));
   EXPECT_TRUE(isIntEqualsWord(*n, 2));
 }
 
@@ -3222,11 +3220,11 @@ except Exception as exc:
                    .isError());
 
   HandleScope scope;
-  Object my_error(&scope, testing::moduleAt(&runtime_, "__main__", "MyError"));
+  Object my_error(&scope, testing::mainModuleAt(&runtime_, "MyError"));
   EXPECT_EQ(runtime_.typeOf(*my_error), runtime_.typeAt(LayoutId::kType));
-  Object inner(&scope, testing::moduleAt(&runtime_, "__main__", "inner"));
+  Object inner(&scope, testing::mainModuleAt(&runtime_, "inner"));
   EXPECT_EQ(runtime_.typeOf(*inner), *my_error);
-  Object outer(&scope, testing::moduleAt(&runtime_, "__main__", "outer"));
+  Object outer(&scope, testing::mainModuleAt(&runtime_, "outer"));
   EXPECT_EQ(*inner, *outer);
 }
 
@@ -3271,7 +3269,7 @@ class C:
 i = C()
 )")
                    .isError());
-  Object i(&scope, moduleAt(&runtime, "__main__", "i"));
+  Object i(&scope, mainModuleAt(&runtime, "i"));
 
   Object name(&scope, runtime.newStrFromCStr("foo"));
   Object to_cache(&scope, NoneType::object());
@@ -3293,7 +3291,7 @@ class C:
 i = C()
 )")
                    .isError());
-  Object i(&scope, moduleAt(&runtime, "__main__", "i"));
+  Object i(&scope, mainModuleAt(&runtime, "i"));
 
   Object name(&scope, runtime.newStrFromCStr("foo"));
   Object to_cache(&scope, NoneType::object());
@@ -3315,7 +3313,7 @@ class C:
 i = C()
 )")
                    .isError());
-  Object i(&scope, moduleAt(&runtime, "__main__", "i"));
+  Object i(&scope, mainModuleAt(&runtime, "i"));
 
   Object name(&scope, runtime.newStrFromCStr("bar"));
   Object to_cache(&scope, NoneType::object());
@@ -3332,7 +3330,7 @@ obj = object()
 )")
                    .isError());
 
-  Object obj(&scope, moduleAt(&runtime_, "__main__", "obj"));
+  Object obj(&scope, mainModuleAt(&runtime_, "obj"));
   Str name(&scope, runtime_.newStrFromCStr("nonexistent_attr"));
   EXPECT_TRUE(raisedWithStr(
       Interpreter::loadAttrSetLocation(thread_, obj, name, nullptr),
@@ -3370,7 +3368,7 @@ result = f(*args)
 )")
                    .isError());
 
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {"b", "a"});
 }
 
@@ -3386,7 +3384,7 @@ result = f(*gen())
 )")
                    .isError());
 
-  Object result_obj(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result_obj(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   EXPECT_TRUE(isIntEqualsWord(result.at(0), 2));
@@ -3402,7 +3400,7 @@ class C:
 result = f"{C()!s}"
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "foobar"));
 }
 
@@ -3415,7 +3413,7 @@ class C:
 result = f"{C()!s}"
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "foobar"));
 }
 
@@ -3428,7 +3426,7 @@ class C:
 result = f"{C()!r}"
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "foobar"));
 }
 
@@ -3441,7 +3439,7 @@ class C:
 result = f"{C()!a}"
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "foobar"));
 }
 
@@ -3457,7 +3455,7 @@ for i in range(5):
 result = 10
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 10));
 }
 
@@ -3475,7 +3473,7 @@ for i in range(5):
   result -= i
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, -4));
 }
 
@@ -3493,7 +3491,7 @@ except:
   result += 1000
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1003));
 }
 
@@ -3512,10 +3510,10 @@ def f():
 result = f()
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 56789));
 
-  Object ran_finally(&scope, moduleAt(&runtime_, "__main__", "ran_finally"));
+  Object ran_finally(&scope, mainModuleAt(&runtime_, "ran_finally"));
   EXPECT_EQ(*ran_finally, Bool::trueObj());
 }
 
@@ -3531,7 +3529,7 @@ def f():
 result = f()
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 456));
 }
 
@@ -3557,10 +3555,10 @@ def foo():
 result = foo()
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1234));
 
-  Object sequence(&scope, moduleAt(&runtime_, "__main__", "sequence"));
+  Object sequence(&scope, mainModuleAt(&runtime_, "sequence"));
   EXPECT_TRUE(isStrEqualsCStr(*sequence, "enter in foo exit"));
 }
 
@@ -3638,13 +3636,13 @@ with Mgr():
   raises()
 )"),
                      LayoutId::kStopIteration));
-  Object exit_info(&scope, moduleAt(&runtime_, "__main__", "exit_info"));
+  Object exit_info(&scope, mainModuleAt(&runtime_, "exit_info"));
   ASSERT_TRUE(exit_info.isTuple());
   Tuple tuple(&scope, *exit_info);
   ASSERT_EQ(tuple.length(), 3);
   EXPECT_EQ(tuple.at(0), runtime_.typeAt(LayoutId::kStopIteration));
 
-  Object raised_exc(&scope, moduleAt(&runtime_, "__main__", "raised_exc"));
+  Object raised_exc(&scope, mainModuleAt(&runtime_, "raised_exc"));
   EXPECT_EQ(tuple.at(1), *raised_exc);
 
   // TODO(bsimmers): Check traceback once we record them.
@@ -3668,7 +3666,7 @@ result = 1234
 )")
                    .isError());
 
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1234));
 }
 
@@ -3704,8 +3702,8 @@ def foo():
 result = foo()
 )")
                    .isError());
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 800));
-  Function function(&scope, moduleAt(&runtime, "__main__", "foo"));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime, "result"), 800));
+  Function function(&scope, mainModuleAt(&runtime, "foo"));
   ASSERT_TRUE(isStrEqualsCStr(
       Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
   Tuple caches(&scope, function.caches());
@@ -3727,8 +3725,8 @@ def foo():
 result = foo()
 )")
                    .isError());
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 800));
-  Function function(&scope, moduleAt(&runtime, "__main__", "foo"));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime, "result"), 800));
+  Function function(&scope, mainModuleAt(&runtime, "foo"));
   ASSERT_TRUE(isStrEqualsCStr(
       Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
   Tuple caches(&scope, function.caches());
@@ -3762,7 +3760,7 @@ foo()
 bar()
 )")
                    .isError());
-  Function function(&scope, moduleAt(&runtime, "__main__", "foo"));
+  Function function(&scope, mainModuleAt(&runtime, "foo"));
   ASSERT_TRUE(isStrEqualsCStr(
       Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
   Tuple caches(&scope, function.caches());
@@ -3786,7 +3784,7 @@ foo()
 bar()
 )")
                    .isError());
-  Function function(&scope, moduleAt(&runtime, "__main__", "foo"));
+  Function function(&scope, mainModuleAt(&runtime, "foo"));
   ASSERT_TRUE(isStrEqualsCStr(
       Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
   Tuple caches(&scope, function.caches());
@@ -3807,7 +3805,7 @@ foo()
 a = 800
 )")
                    .isError());
-  Function function(&scope, moduleAt(&runtime, "__main__", "foo"));
+  Function function(&scope, mainModuleAt(&runtime, "foo"));
   ASSERT_TRUE(isStrEqualsCStr(
       Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
   Tuple caches(&scope, function.caches());
@@ -3827,7 +3825,7 @@ foo()
 del a
 )")
                    .isError());
-  Function function(&scope, moduleAt(&runtime, "__main__", "foo"));
+  Function function(&scope, mainModuleAt(&runtime, "foo"));
   ASSERT_TRUE(isStrEqualsCStr(
       Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
   Tuple caches(&scope, function.caches());
@@ -3859,13 +3857,13 @@ def invalidate():
 c = C()
 )")
                    .isError());
-  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
-  Function get_foo(&scope, moduleAt(&runtime, "__main__", "get_foo"));
-  Function do_not_invalidate0(
-      &scope, moduleAt(&runtime, "__main__", "do_not_invalidate0"));
-  Function do_not_invalidate1(
-      &scope, moduleAt(&runtime, "__main__", "do_not_invalidate1"));
-  Function invalidate(&scope, moduleAt(&runtime, "__main__", "invalidate"));
+  Object c(&scope, mainModuleAt(&runtime, "c"));
+  Function get_foo(&scope, mainModuleAt(&runtime, "get_foo"));
+  Function do_not_invalidate0(&scope,
+                              mainModuleAt(&runtime, "do_not_invalidate0"));
+  Function do_not_invalidate1(&scope,
+                              mainModuleAt(&runtime, "do_not_invalidate1"));
+  Function invalidate(&scope, mainModuleAt(&runtime, "invalidate"));
   Tuple caches(&scope, get_foo.caches());
   // Load the cache
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
@@ -3921,12 +3919,12 @@ old_foo = C.foo
 c = C()
 )")
                    .isError());
-  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
-  Function old_foo(&scope, moduleAt(&runtime, "__main__", "old_foo"));
-  Function call_foo(&scope, moduleAt(&runtime, "__main__", "call_foo"));
-  Function do_not_invalidate(
-      &scope, moduleAt(&runtime, "__main__", "do_not_invalidate"));
-  Function invalidate(&scope, moduleAt(&runtime, "__main__", "invalidate"));
+  Object c(&scope, mainModuleAt(&runtime, "c"));
+  Function old_foo(&scope, mainModuleAt(&runtime, "old_foo"));
+  Function call_foo(&scope, mainModuleAt(&runtime, "call_foo"));
+  Function do_not_invalidate(&scope,
+                             mainModuleAt(&runtime, "do_not_invalidate"));
+  Function invalidate(&scope, mainModuleAt(&runtime, "invalidate"));
   Tuple caches(&scope, call_foo.caches());
   // Load the cache
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
@@ -3981,13 +3979,13 @@ def invalidate():
 c = C()
 )")
                    .isError());
-  Type type_b(&scope, moduleAt(&runtime, "__main__", "B"));
-  Type type_c(&scope, moduleAt(&runtime, "__main__", "C"));
-  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
-  Function get_foo(&scope, moduleAt(&runtime, "__main__", "get_foo"));
-  Function do_not_invalidate(
-      &scope, moduleAt(&runtime, "__main__", "do_not_invalidate"));
-  Function invalidate(&scope, moduleAt(&runtime, "__main__", "invalidate"));
+  Type type_b(&scope, mainModuleAt(&runtime, "B"));
+  Type type_c(&scope, mainModuleAt(&runtime, "C"));
+  Object c(&scope, mainModuleAt(&runtime, "c"));
+  Function get_foo(&scope, mainModuleAt(&runtime, "get_foo"));
+  Function do_not_invalidate(&scope,
+                             mainModuleAt(&runtime, "do_not_invalidate"));
+  Function invalidate(&scope, mainModuleAt(&runtime, "invalidate"));
   Tuple caches(&scope, get_foo.caches());
   // Load the cache.
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
@@ -4057,7 +4055,7 @@ def test():
 c = C()
 )")
                    .isError());
-  Function test_function(&scope, moduleAt(&runtime_, "__main__", "test"));
+  Function test_function(&scope, mainModuleAt(&runtime_, "test"));
   MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
   ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR);
   ASSERT_EQ(bytecode.byteAt(8), CALL_FUNCTION);
@@ -4087,14 +4085,14 @@ def test():
   return c.compute(10, 20)
 )")
                    .isError());
-  Function test_function(&scope, moduleAt(&runtime, "__main__", "test"));
+  Function test_function(&scope, mainModuleAt(&runtime, "test"));
   MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
   ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_CACHED);
   ASSERT_EQ(bytecode.byteAt(8), CALL_FUNCTION);
   bytecode.byteAtPut(2, LOAD_METHOD_CACHED);
   bytecode.byteAtPut(8, CALL_METHOD);
 
-  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Object c(&scope, mainModuleAt(&runtime, "c"));
   LayoutId layout_id = c.layoutId();
   Tuple caches(&scope, test_function.caches());
   // Cache miss.
@@ -4131,7 +4129,7 @@ def test():
 c = C()
 )")
                    .isError());
-  Function test_function(&scope, moduleAt(&runtime, "__main__", "test"));
+  Function test_function(&scope, mainModuleAt(&runtime, "test"));
   MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
   ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_CACHED);
   ASSERT_EQ(bytecode.byteAt(8), CALL_FUNCTION);
@@ -4139,7 +4137,7 @@ c = C()
   bytecode.byteAtPut(8, CALL_METHOD);
 
   // Cache miss.
-  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Object c(&scope, mainModuleAt(&runtime, "c"));
   LayoutId layout_id = c.layoutId();
   Tuple caches(&scope, test_function.caches());
   ASSERT_TRUE(
@@ -4167,12 +4165,12 @@ def test():
 result = test()
 )")
                    .isError());
-  Function test_function(&scope, moduleAt(&runtime, "__main__", "test"));
+  Function test_function(&scope, mainModuleAt(&runtime, "test"));
   MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
   // Verify that rewriting replaces LOAD_CONST for LOAD_IMMEDIATE.
   EXPECT_EQ(bytecode.byteAt(0), LOAD_IMMEDIATE);
   EXPECT_EQ(bytecode.byteAt(1), static_cast<byte>(NoneType::object().raw()));
-  EXPECT_TRUE(moduleAt(&runtime, "__main__", "result").isNoneType());
+  EXPECT_TRUE(mainModuleAt(&runtime, "result").isNoneType());
 }
 
 TEST(InterpreterTestNoFixture,
@@ -4191,10 +4189,9 @@ c = C()
                    .isError());
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Type type_c(&scope, moduleAt(&runtime, "__main__", "C"));
-  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
-  Function cache_attribute(&scope,
-                           moduleAt(&runtime, "__main__", "cache_attribute"));
+  Type type_c(&scope, mainModuleAt(&runtime, "C"));
+  Object c(&scope, mainModuleAt(&runtime, "c"));
+  Function cache_attribute(&scope, mainModuleAt(&runtime, "cache_attribute"));
   Tuple caches(&scope, cache_attribute.caches());
   ASSERT_EQ(caches.length(), 2 * kIcPointersPerCache);
 
@@ -4231,10 +4228,9 @@ c = C()
                    .isError());
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Type type_c(&scope, moduleAt(&runtime, "__main__", "C"));
-  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
-  Function cache_attribute(&scope,
-                           moduleAt(&runtime, "__main__", "cache_attribute"));
+  Type type_c(&scope, mainModuleAt(&runtime, "C"));
+  Object c(&scope, mainModuleAt(&runtime, "c"));
+  Function cache_attribute(&scope, mainModuleAt(&runtime, "cache_attribute"));
   Tuple caches(&scope, cache_attribute.caches());
   ASSERT_EQ(caches.length(), 2 * kIcPointersPerCache);
 
@@ -4287,14 +4283,13 @@ function_that_caches_attr_lookup(a, b, c)
                    .isError());
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Type type_a(&scope, moduleAt(&runtime, "__main__", "A"));
-  Type type_b(&scope, moduleAt(&runtime, "__main__", "B"));
-  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime, "__main__", "b"));
-  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Type type_a(&scope, mainModuleAt(&runtime, "A"));
+  Type type_b(&scope, mainModuleAt(&runtime, "B"));
+  Object a(&scope, mainModuleAt(&runtime, "a"));
+  Object b(&scope, mainModuleAt(&runtime, "b"));
+  Object c(&scope, mainModuleAt(&runtime, "c"));
   Function function_that_caches_attr_lookup(
-      &scope,
-      moduleAt(&runtime, "__main__", "function_that_caches_attr_lookup"));
+      &scope, mainModuleAt(&runtime, "function_that_caches_attr_lookup"));
   Tuple caches(&scope, function_that_caches_attr_lookup.caches());
   // 0: global variable
   // 1: a.foo
@@ -4302,8 +4297,8 @@ function_that_caches_attr_lookup(a, b, c)
   // 3: binary op cache
   // 4: c.foo
   // 5, binary op cache
-  Function a_foo(&scope, moduleAt(&runtime, "__main__", "a_foo"));
-  Function b_foo(&scope, moduleAt(&runtime, "__main__", "b_foo"));
+  Function a_foo(&scope, mainModuleAt(&runtime, "a_foo"));
+  Function b_foo(&scope, mainModuleAt(&runtime, "b_foo"));
   ASSERT_EQ(caches.length(), 6 * kIcPointersPerCache);
   ASSERT_EQ(icLookupAttr(*caches, 1, a.layoutId()), *a_foo);
   ASSERT_EQ(icLookupAttr(*caches, 2, b.layoutId()), *b_foo);
@@ -4336,8 +4331,7 @@ function_that_caches_attr_lookup(a, b, c)
 
   // Change the class A so that any caches that reference A.foo are invalidated.
   Function func_that_causes_shadowing_of_attr_a(
-      &scope,
-      moduleAt(&runtime, "__main__", "func_that_causes_shadowing_of_attr_a"));
+      &scope, mainModuleAt(&runtime, "func_that_causes_shadowing_of_attr_a"));
   ASSERT_TRUE(Interpreter::callFunction0(thread, thread->currentFrame(),
                                          func_that_causes_shadowing_of_attr_a)
                   .isNoneType());
@@ -4356,8 +4350,7 @@ function_that_caches_attr_lookup(a, b, c)
 
   // Invalidate the cache for B.foo.
   Function func_that_causes_shadowing_of_attr_b(
-      &scope,
-      moduleAt(&runtime, "__main__", "func_that_causes_shadowing_of_attr_b"));
+      &scope, mainModuleAt(&runtime, "func_that_causes_shadowing_of_attr_b"));
   ASSERT_TRUE(Interpreter::callFunction0(thread, thread->currentFrame(),
                                          func_that_causes_shadowing_of_attr_b)
                   .isNoneType());

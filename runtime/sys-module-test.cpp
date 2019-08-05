@@ -25,7 +25,7 @@ result = sys.exc_info()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result_obj(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result_obj(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -48,7 +48,7 @@ result = sys.exc_info()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result_obj(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result_obj(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -69,7 +69,7 @@ except:
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result_obj(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result_obj(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -102,7 +102,7 @@ except:
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result_obj(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result_obj(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -178,7 +178,7 @@ import sys
 sysname = sys.platform
 )")
                    .isError());
-  Object sysname(&scope, moduleAt(&runtime_, "__main__", "sysname"));
+  Object sysname(&scope, mainModuleAt(&runtime_, "sysname"));
   ASSERT_TRUE(sysname.isStr());
   struct utsname name;
   ASSERT_EQ(uname(&name), 0);
@@ -200,7 +200,7 @@ import sys
 result = sys.path_importer_cache
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(result.isDict());
 }
 
@@ -211,7 +211,7 @@ import sys
 builtin_names = sys.builtin_module_names
 )")
                    .isError());
-  Object builtins(&scope, moduleAt(&runtime_, "__main__", "builtin_names"));
+  Object builtins(&scope, mainModuleAt(&runtime_, "builtin_names"));
   ASSERT_TRUE(builtins.isTuple());
 
   // Test that builtin list is greater than 0
@@ -236,7 +236,7 @@ import sys
 result = sys.flags.verbose
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 

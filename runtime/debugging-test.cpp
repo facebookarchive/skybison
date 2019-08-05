@@ -156,7 +156,7 @@ i = C()
 i.baz = ()
 )")
                    .isError());
-  Object i(&scope, moduleAt(&runtime_, "__main__", "i"));
+  Object i(&scope, mainModuleAt(&runtime_, "i"));
   ASSERT_TRUE(i.isHeapObject());
   std::stringstream ss;
   dumpExtended(ss, *i);
@@ -199,7 +199,7 @@ class C:
 bound_method = C().foo
 )")
                    .isError());
-  Object bound_method(&scope, moduleAt(&runtime_, "__main__", "bound_method"));
+  Object bound_method(&scope, mainModuleAt(&runtime_, "bound_method"));
   ASSERT_TRUE(bound_method.isBoundMethod());
   std::stringstream ss;
   ss << bound_method;
@@ -328,7 +328,7 @@ class Foo:
 foo = Foo()
 )")
                    .isError());
-  Object foo(&scope, moduleAt(&runtime_, "__main__", "foo"));
+  Object foo(&scope, mainModuleAt(&runtime_, "foo"));
   std::stringstream ss;
   ss << foo;
   EXPECT_EQ(ss.str(), R"(<"Foo" object>)");
@@ -399,7 +399,7 @@ class MyClass:
   pass
 )")
                    .isError());
-  Object my_class(&scope, moduleAt(&runtime_, "__main__", "MyClass"));
+  Object my_class(&scope, mainModuleAt(&runtime_, "MyClass"));
   std::stringstream ss;
   ss << my_class;
   EXPECT_EQ(ss.str(), "<type \"MyClass\">");
@@ -413,7 +413,7 @@ def func(arg0, arg1):
   return arg0 + arg1
 )")
                    .isError());
-  Function func(&scope, moduleAt(&runtime_, "__main__", "func"));
+  Function func(&scope, mainModuleAt(&runtime_, "func"));
 
   Object empty_tuple(&scope, runtime_.emptyTuple());
   Str name(&scope, runtime_.newStrFromCStr("_bytearray_check"));

@@ -29,8 +29,8 @@ a = s.pop()
 b = len(s)
 )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
   EXPECT_TRUE(isIntEqualsWord(*a, 1));
   EXPECT_TRUE(isIntEqualsWord(*b, 0));
 }
@@ -41,7 +41,7 @@ TEST_F(SetBuiltinsTest, InitializeByTypeCall) {
 s = set()
 )")
                    .isError());
-  Object s(&scope, moduleAt(&runtime_, "__main__", "s"));
+  Object s(&scope, mainModuleAt(&runtime_, "s"));
   EXPECT_TRUE(s.isSet());
   EXPECT_EQ(Set::cast(*s).numItems(), 0);
 }
@@ -55,7 +55,7 @@ s.add(1)
 s.add("Hello, World")
 )")
                    .isError());
-  Set s(&scope, moduleAt(&runtime_, "__main__", "s"));
+  Set s(&scope, mainModuleAt(&runtime_, "s"));
   Object one(&scope, runtime_.newInt(1));
   Object hello_world(&scope, runtime_.newStrFromCStr("Hello, World"));
   EXPECT_EQ(s.numItems(), 2);
@@ -454,11 +454,11 @@ cmp3 = (b == a1)
 cmp4 = (b == b)
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp1"), Bool::falseObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp2"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp3"), Bool::falseObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp4"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp1"), Bool::falseObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp2"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp3"), Bool::falseObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp4"), Bool::trueObj());
 }
 
 TEST_F(SetBuiltinsTest, DunderNeWithSetSubclass) {
@@ -475,11 +475,11 @@ cmp3 = (b != a1)
 cmp4 = (b != b)
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp"), Bool::falseObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp1"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp2"), Bool::falseObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp3"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp4"), Bool::falseObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp"), Bool::falseObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp1"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp2"), Bool::falseObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp3"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp4"), Bool::falseObj());
 }
 
 TEST_F(SetBuiltinsTest, DunderGeWithSetSubclass) {
@@ -496,11 +496,11 @@ cmp3 = (b >= a1)
 cmp4 = (b >= b)
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp1"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp2"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp3"), Bool::falseObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp4"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp1"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp2"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp3"), Bool::falseObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp4"), Bool::trueObj());
 }
 
 TEST_F(SetBuiltinsTest, DunderGtWithSetSubclass) {
@@ -517,11 +517,11 @@ cmp3 = (b > a1)
 cmp4 = (b > b)
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp"), Bool::falseObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp1"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp2"), Bool::falseObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp3"), Bool::falseObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp4"), Bool::falseObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp"), Bool::falseObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp1"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp2"), Bool::falseObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp3"), Bool::falseObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp4"), Bool::falseObj());
 }
 
 TEST_F(SetBuiltinsTest, DunderLeWithSetSubclass) {
@@ -538,11 +538,11 @@ cmp3 = (b <= a1)
 cmp4 = (b <= b)
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp1"), Bool::falseObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp2"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp3"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp4"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp1"), Bool::falseObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp2"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp3"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp4"), Bool::trueObj());
 }
 
 TEST_F(SetBuiltinsTest, DunderLtWithSetSubclass) {
@@ -559,11 +559,11 @@ cmp3 = (b < a1)
 cmp4 = (b < b)
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp"), Bool::falseObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp1"), Bool::falseObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp2"), Bool::falseObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp3"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp4"), Bool::falseObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp"), Bool::falseObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp1"), Bool::falseObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp2"), Bool::falseObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp3"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "cmp4"), Bool::falseObj());
 }
 
 TEST_F(SetBuiltinsTest, DunderEqWithEmptySetsReturnsTrue) {
@@ -909,7 +909,7 @@ class Set(set): pass
 s = Set([0, 1, 2])
 )")
                    .isError());
-  Object s(&scope, moduleAt(&runtime_, "__main__", "s"));
+  Object s(&scope, mainModuleAt(&runtime_, "s"));
   ASSERT_TRUE(runtime_.isInstanceOfSet(*s));
   Object key(&scope, SmallInt::fromWord(0));
   Set set(&scope, *s);
@@ -928,7 +928,7 @@ class Set(set): pass
 s = Set([0, 1, 2])
 )")
                    .isError());
-  Object s(&scope, moduleAt(&runtime_, "__main__", "s"));
+  Object s(&scope, mainModuleAt(&runtime_, "s"));
   ASSERT_TRUE(runtime_.isInstanceOfSet(*s));
 
   Object result(&scope, runBuiltin(SetBuiltins::dunderLen, s));
@@ -939,7 +939,7 @@ TEST_F(SetBuiltinsTest, FrozenSetDunderNewReturnsSingleton) {
   ASSERT_FALSE(runFromCStr(&runtime_, "result = frozenset.__new__(frozenset)")
                    .isError());
   HandleScope scope;
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(result.isFrozenSet());
   EXPECT_EQ(*result, runtime_.emptyFrozenSet());
 }
@@ -952,7 +952,7 @@ o = C()
 )")
                    .isError());
   HandleScope scope;
-  Object o(&scope, moduleAt(&runtime_, "__main__", "o"));
+  Object o(&scope, mainModuleAt(&runtime_, "o"));
   EXPECT_NE(*o, runtime_.emptyFrozenSet());
 }
 
@@ -1146,7 +1146,7 @@ TEST_F(SetBuiltinsTest, ReprReturnsElements) {
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = set([3, 2, 1]).__repr__()").isError());
   HandleScope scope;
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result.isStr());
   unique_c_ptr<char> result_str(Str::cast(*result).toCStr());
   word elts[3];
@@ -1175,8 +1175,7 @@ s.add(c)
 result = s.__repr__()
 )")
                    .isError());
-  EXPECT_TRUE(
-      isStrEqualsCStr(moduleAt(&runtime_, "__main__", "result"), "{set(...)}"));
+  EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(&runtime_, "result"), "{set(...)}"));
 }
 
 TEST_F(SetBuiltinsTest, CopyWithNonSetRaisesTypeError) {
@@ -1259,8 +1258,8 @@ sub = C()
 result = frozenset.copy(sub)
 )")
                    .isError());
-  Object sub(&scope, moduleAt(&runtime_, "__main__", "sub"));
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object sub(&scope, mainModuleAt(&runtime_, "sub"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(runtime_.isInstanceOfFrozenSet(*sub));
   EXPECT_TRUE(runtime_.isInstanceOfFrozenSet(*result));
   EXPECT_FALSE(sub.isFrozenSet());
@@ -1313,7 +1312,7 @@ result.update({5}, {6}, None)
 )"),
                             LayoutId::kTypeError, "object is not iterable"));
   HandleScope scope;
-  Set result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Set result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_EQ(result.numItems(), 2);
 }
 
@@ -1324,7 +1323,7 @@ result.update({5})
 )")
                    .isError());
   HandleScope scope;
-  Set result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Set result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_EQ(result.numItems(), 1);
 }
 
@@ -1335,7 +1334,7 @@ result.update({5}, {6})
 )")
                    .isError());
   HandleScope scope;
-  Set result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Set result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_EQ(result.numItems(), 2);
 }
 
@@ -1346,15 +1345,14 @@ result.update([5, 6])
 )")
                    .isError());
   HandleScope scope;
-  Set result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Set result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_EQ(result.numItems(), 4);
 }
 
 TEST_F(SetBuiltinsTest, DunderOrWithNonSetBaseOtherReturnsNotImplemented) {
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = set.__or__(set(), None)").isError());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"),
-            NotImplementedType::object());
+  EXPECT_EQ(mainModuleAt(&runtime_, "result"), NotImplementedType::object());
 }
 
 TEST_F(SetBuiltinsTest, DunderOrReturnsSetContainingUnionOfElements) {
@@ -1362,7 +1360,7 @@ TEST_F(SetBuiltinsTest, DunderOrReturnsSetContainingUnionOfElements) {
       runFromCStr(&runtime_, "result = set.__or__({1, 2}, {2, 3})").isError());
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object result_obj(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result_obj(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(result_obj.isSet());
   Set result(&scope, *result_obj);
   EXPECT_EQ(result.numItems(), 3);

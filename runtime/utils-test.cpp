@@ -131,7 +131,7 @@ result = foo('a', 99)
   }
   expected << ")>\n";
 
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, expected.str().c_str()));
 }
 

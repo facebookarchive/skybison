@@ -25,13 +25,13 @@ def test(callable):
 )")
                    .isError());
 
-  Object function(&scope, moduleAt(&runtime_, "__main__", "func"));
+  Object function(&scope, mainModuleAt(&runtime_, "func"));
   ASSERT_TRUE(function.isFunction());
 
   Object self(&scope, SmallInt::fromWord(1111));
   BoundMethod method(&scope, runtime_.newBoundMethod(function, self));
 
-  Object test(&scope, moduleAt(&runtime_, "__main__", "test"));
+  Object test(&scope, mainModuleAt(&runtime_, "test"));
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
 
@@ -51,13 +51,13 @@ def test(callable):
 )")
                    .isError());
 
-  Object function(&scope, moduleAt(&runtime_, "__main__", "func"));
+  Object function(&scope, mainModuleAt(&runtime_, "func"));
   ASSERT_TRUE(function.isFunction());
 
   Object self(&scope, SmallInt::fromWord(1111));
   BoundMethod method(&scope, runtime_.newBoundMethod(function, self));
 
-  Object test(&scope, moduleAt(&runtime_, "__main__", "test"));
+  Object test(&scope, mainModuleAt(&runtime_, "test"));
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
 
@@ -84,26 +84,26 @@ def test(callable):
 )")
                    .isError());
 
-  Object function(&scope, moduleAt(&runtime_, "__main__", "func"));
+  Object function(&scope, mainModuleAt(&runtime_, "func"));
   ASSERT_TRUE(function.isFunction());
 
   Object self(&scope, SmallInt::fromWord(1111));
   BoundMethod method(&scope, runtime_.newBoundMethod(function, self));
 
-  Object test(&scope, moduleAt(&runtime_, "__main__", "test"));
+  Object test(&scope, mainModuleAt(&runtime_, "test"));
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
   Tuple args(&scope, runtime_.newTuple(1));
   args.atPut(0, *method);
   callFunction(func, args);
 
-  Object result_self(&scope, moduleAt(&runtime_, "__main__", "result_self"));
+  Object result_self(&scope, mainModuleAt(&runtime_, "result_self"));
   EXPECT_TRUE(isIntEqualsWord(*result_self, 1111));
 
-  Object result_a(&scope, moduleAt(&runtime_, "__main__", "result_a"));
+  Object result_a(&scope, mainModuleAt(&runtime_, "result_a"));
   EXPECT_TRUE(isIntEqualsWord(*result_a, 2222));
 
-  Object result_b(&scope, moduleAt(&runtime_, "__main__", "result_b"));
+  Object result_b(&scope, mainModuleAt(&runtime_, "result_b"));
   EXPECT_TRUE(isIntEqualsWord(*result_b, 3333));
 }
 
@@ -126,26 +126,26 @@ def test(callable):
 )")
                    .isError());
 
-  Object function(&scope, moduleAt(&runtime_, "__main__", "func"));
+  Object function(&scope, mainModuleAt(&runtime_, "func"));
   ASSERT_TRUE(function.isFunction());
 
   Object self(&scope, SmallInt::fromWord(1111));
   BoundMethod method(&scope, runtime_.newBoundMethod(function, self));
 
-  Object test(&scope, moduleAt(&runtime_, "__main__", "test"));
+  Object test(&scope, mainModuleAt(&runtime_, "test"));
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
   Tuple args(&scope, runtime_.newTuple(1));
   args.atPut(0, *method);
   callFunction(func, args);
 
-  Object result_self(&scope, moduleAt(&runtime_, "__main__", "result_self"));
+  Object result_self(&scope, mainModuleAt(&runtime_, "result_self"));
   EXPECT_TRUE(isIntEqualsWord(*result_self, 1111));
 
-  Object result_a(&scope, moduleAt(&runtime_, "__main__", "result_a"));
+  Object result_a(&scope, mainModuleAt(&runtime_, "result_a"));
   EXPECT_TRUE(isIntEqualsWord(*result_a, 2222));
 
-  Object result_b(&scope, moduleAt(&runtime_, "__main__", "result_b"));
+  Object result_b(&scope, mainModuleAt(&runtime_, "result_b"));
   EXPECT_TRUE(isIntEqualsWord(*result_b, 3333));
 }
 
@@ -168,26 +168,26 @@ def test(callable):
 )")
                    .isError());
 
-  Object function(&scope, moduleAt(&runtime_, "__main__", "func"));
+  Object function(&scope, mainModuleAt(&runtime_, "func"));
   ASSERT_TRUE(function.isFunction());
 
   Object self(&scope, SmallInt::fromWord(1111));
   BoundMethod method(&scope, runtime_.newBoundMethod(function, self));
 
-  Object test(&scope, moduleAt(&runtime_, "__main__", "test"));
+  Object test(&scope, mainModuleAt(&runtime_, "test"));
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
   Tuple args(&scope, runtime_.newTuple(1));
   args.atPut(0, *method);
   callFunction(func, args);
 
-  Object result_self(&scope, moduleAt(&runtime_, "__main__", "result_self"));
+  Object result_self(&scope, mainModuleAt(&runtime_, "result_self"));
   EXPECT_TRUE(isIntEqualsWord(*result_self, 1111));
 
-  Object result_a(&scope, moduleAt(&runtime_, "__main__", "result_a"));
+  Object result_a(&scope, mainModuleAt(&runtime_, "result_a"));
   EXPECT_TRUE(isIntEqualsWord(*result_a, 2222));
 
-  Object result_b(&scope, moduleAt(&runtime_, "__main__", "result_b"));
+  Object result_b(&scope, mainModuleAt(&runtime_, "result_b"));
   EXPECT_TRUE(isIntEqualsWord(*result_b, 3333));
 }
 
@@ -211,26 +211,26 @@ def test(callable):
 )")
                    .isError());
 
-  Object function(&scope, moduleAt(&runtime_, "__main__", "func"));
+  Object function(&scope, mainModuleAt(&runtime_, "func"));
   ASSERT_TRUE(function.isFunction());
 
   Object self(&scope, SmallInt::fromWord(1111));
   BoundMethod method(&scope, runtime_.newBoundMethod(function, self));
 
-  Object test(&scope, moduleAt(&runtime_, "__main__", "test"));
+  Object test(&scope, mainModuleAt(&runtime_, "test"));
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
   Tuple args(&scope, runtime_.newTuple(1));
   args.atPut(0, *method);
   callFunction(func, args);
 
-  Object result_self(&scope, moduleAt(&runtime_, "__main__", "result_self"));
+  Object result_self(&scope, mainModuleAt(&runtime_, "result_self"));
   EXPECT_TRUE(isIntEqualsWord(*result_self, 1111));
 
-  Object result_a(&scope, moduleAt(&runtime_, "__main__", "result_a"));
+  Object result_a(&scope, mainModuleAt(&runtime_, "result_a"));
   EXPECT_TRUE(isIntEqualsWord(*result_a, 2222));
 
-  Object result_b(&scope, moduleAt(&runtime_, "__main__", "result_b"));
+  Object result_b(&scope, mainModuleAt(&runtime_, "result_b"));
   EXPECT_TRUE(isIntEqualsWord(*result_b, 3333));
 }
 
@@ -247,15 +247,15 @@ result4 = foo(1001, 1002, 1003)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result0(&scope, moduleAt(&runtime_, "__main__", "result0"));
+  Object result0(&scope, mainModuleAt(&runtime_, "result0"));
   EXPECT_PYLIST_EQ(result0, {33, 22, 11});
-  Object result1(&scope, moduleAt(&runtime_, "__main__", "result1"));
+  Object result1(&scope, mainModuleAt(&runtime_, "result1"));
   EXPECT_PYLIST_EQ(result1, {1, 2, 3});
-  Object result2(&scope, moduleAt(&runtime_, "__main__", "result2"));
+  Object result2(&scope, mainModuleAt(&runtime_, "result2"));
   EXPECT_PYLIST_EQ(result2, {1001, 2, 3});
-  Object result3(&scope, moduleAt(&runtime_, "__main__", "result3"));
+  Object result3(&scope, mainModuleAt(&runtime_, "result3"));
   EXPECT_PYLIST_EQ(result3, {1001, 1002, 3});
-  Object result4(&scope, moduleAt(&runtime_, "__main__", "result4"));
+  Object result4(&scope, mainModuleAt(&runtime_, "result4"));
   EXPECT_PYLIST_EQ(result4, {1001, 1002, 1003});
 }
 
@@ -267,7 +267,7 @@ result = foo(1)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {1, 2});
 }
 
@@ -281,7 +281,7 @@ result = r.m(9)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {9, 2});
 }
 
@@ -292,7 +292,7 @@ def foo(bar):
 result = foo(bar=2)
 )")
                    .isError());
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result"), 2));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result"), 2));
 }
 
 TEST_F(CallTest, MixedKW) {
@@ -303,7 +303,7 @@ result = foo(1, b = 2, c = 3)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
@@ -315,7 +315,7 @@ result = foo(a = 1, b = 2, c = 3)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
@@ -327,7 +327,7 @@ result = foo(c = 3, a = 1, b = 2)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
@@ -339,7 +339,7 @@ result = foo(1, c = 3, b = 2)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
@@ -351,7 +351,7 @@ result = foo(1, 2, c = 3)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
@@ -363,7 +363,7 @@ result = foo(1, b = 2, c = 3)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
@@ -375,7 +375,7 @@ result = foo(11, c = 3)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {11, 22, 3});
 }
 
@@ -387,7 +387,7 @@ result = foo(1,2,3,4,5,6)
 )")
                    .isError());
   HandleScope scope(thread_);
-  List result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  List result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
   Tuple tuple(&scope, result.at(2));
@@ -406,7 +406,7 @@ result = foo(1,2)
 )")
                    .isError());
   HandleScope scope(thread_);
-  List result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  List result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
   Tuple tuple(&scope, result.at(2));
@@ -421,7 +421,7 @@ result = foo(1,2,c=3,g=4,h=5,j="bar")
 )")
                    .isError());
   HandleScope scope(thread_);
-  List result(&scope, testing::moduleAt(&runtime_, "__main__", "result"));
+  List result(&scope, testing::mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
   EXPECT_TRUE(isIntEqualsWord(result.at(2), 3));
@@ -443,7 +443,7 @@ result = bar()
 )")
                    .isError());
   HandleScope scope(thread_);
-  List result(&scope, testing::moduleAt(&runtime_, "__main__", "result"));
+  List result(&scope, testing::mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
   Tuple tuple(&scope, result.at(2));
@@ -460,7 +460,7 @@ result = bar(1,2,3,4,5,6,7)
 )")
                    .isError());
   HandleScope scope(thread_);
-  List result(&scope, testing::moduleAt(&runtime_, "__main__", "result"));
+  List result(&scope, testing::mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
   Tuple tuple(&scope, result.at(2));
@@ -482,7 +482,7 @@ result = bar(a1=11, a2=12, a3=13)
 )")
                    .isError());
   HandleScope scope(thread_);
-  List result(&scope, testing::moduleAt(&runtime_, "__main__", "result"));
+  List result(&scope, testing::mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
 
@@ -508,7 +508,7 @@ result = bar(1,2,3,4,5,6,7,a9=9)
 )")
                    .isError());
   HandleScope scope(thread_);
-  List result(&scope, testing::moduleAt(&runtime_, "__main__", "result"));
+  List result(&scope, testing::mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
 
@@ -532,7 +532,7 @@ result = foobar(c=3,a=1,b=2)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
@@ -544,7 +544,7 @@ result = foobar1(1,2,3,4,5,d=9)
 )")
                    .isError());
   HandleScope scope(thread_);
-  List result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  List result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
   Tuple tuple(&scope, result.at(2));
@@ -563,7 +563,7 @@ result = foobar2(1,e=9,b=2,f1="a",f11=12)
 )")
                    .isError());
   HandleScope scope(thread_);
-  List result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  List result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
   Tuple tuple(&scope, result.at(2));
@@ -585,7 +585,7 @@ result = foo(*a)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {1, 2, 3, 4});
 }
 
@@ -598,7 +598,7 @@ result = foo(1,2,*a)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {1, 2, 3, 4});
 }
 
@@ -611,7 +611,7 @@ result = foo(**a)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {1, 2, 3, 4});
 }
 
@@ -696,7 +696,7 @@ TEST_F(TrampolinesTest, BuiltinTrampolineKwPassesKwargs) {
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = dummy(second=12345, first=None)")
           .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 12345));
 }
 
@@ -785,7 +785,7 @@ TEST_F(TrampolinesTest, InterpreterClosureUsesCellValue) {
 def foo(bar): pass
 )")
                    .isError());
-  Function foo(&scope, moduleAt(&runtime_, "__main__", "foo"));
+  Function foo(&scope, mainModuleAt(&runtime_, "foo"));
   foo.setEntry(interpreterTrampoline);
   foo.setCode(*code);
 
@@ -794,7 +794,7 @@ def foo(bar): pass
 result = foo(1)
 )")
                    .isError());
-  Object result(&scope, testing::moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, testing::mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 10));
 }
 
@@ -950,7 +950,7 @@ result = foo(**{})
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_EQ(result, SmallInt::fromWord(10));
 }
 
@@ -1931,7 +1931,7 @@ TEST_F(TrampolinesTest, BuiltinTrampolineExReceivesExArgs) {
   createAndPatchBuiltinNumArgs(&runtime_);
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, "result = dummy(*(1,2))").isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
 
@@ -1939,7 +1939,7 @@ TEST_F(TrampolinesTest, BuiltinTrampolineExReceivesMixOfPositionalAndExArgs1) {
   createAndPatchBuiltinNumArgs(&runtime_);
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, "result = dummy(1, *(2,))").isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
 
@@ -1962,7 +1962,7 @@ TEST_F(TrampolinesTest,
   createAndPatchBuiltinNumArgsVariadic(&runtime_);
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, "result = dummy(1, *(2, 3))").isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
 
@@ -1988,7 +1988,7 @@ TEST_F(TrampolinesTest,
       runFromCStr(&runtime_,
                   "result = dummy(1, 2, *(3,), **{'foo': 1, 'bar': 2})")
           .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
 
@@ -1997,7 +1997,7 @@ TEST_F(TrampolinesTest, BuiltinTrampolineExReceivesVarArgs) {
   HandleScope scope(thread_);
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = dummy(*(1,), second=5)").isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
 

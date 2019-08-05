@@ -14,7 +14,7 @@ TEST_F(WarningsModuleTest, ModuleImporting) {
 import _warnings
   )")
                    .isError());
-  RawObject warnings = moduleAt(&runtime_, "__main__", "_warnings");
+  RawObject warnings = mainModuleAt(&runtime_, "_warnings");
   EXPECT_TRUE(warnings.isModule());
 }
 
@@ -26,7 +26,7 @@ import _warnings
 result = _warnings.warn("something went wrong")
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(result.isNoneType());
 }
 

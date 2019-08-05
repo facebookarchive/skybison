@@ -74,7 +74,7 @@ result = (inst.a, inst.b)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result_obj(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result_obj(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   EXPECT_EQ(result.length(), 2);
@@ -102,7 +102,7 @@ result = (inst.a, inst.b)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result_obj(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result_obj(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   EXPECT_EQ(result.length(), 2);

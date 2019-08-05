@@ -149,9 +149,9 @@ class C(B):
   bar = "class C"
 )")
                    .isError());
-  Type a(&scope, moduleAt(&runtime_, "__main__", "A"));
-  Type b(&scope, moduleAt(&runtime_, "__main__", "B"));
-  Type c(&scope, moduleAt(&runtime_, "__main__", "C"));
+  Type a(&scope, mainModuleAt(&runtime_, "A"));
+  Type b(&scope, mainModuleAt(&runtime_, "B"));
+  Type c(&scope, mainModuleAt(&runtime_, "C"));
   Object foo(&scope, runtime_.newStrFromCStr("foo"));
   Object dependent(&scope, SmallInt::fromWord(1234));
 
@@ -440,7 +440,7 @@ c = C()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Type type(&scope, moduleAt(&runtime_, "__main__", "C"));
+  Type type(&scope, mainModuleAt(&runtime_, "C"));
   Dict type_dict(&scope, type.dict());
   Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
   Str bar_name(&scope, runtime_.newStrFromCStr("bar"));
@@ -454,7 +454,7 @@ c = C()
   runtime_.dictAtPut(thread_, type_dict, foo_name, foo);
 
   // Create an attribute cache for an instance of C, under name "foo".
-  Object instance(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object instance(&scope, mainModuleAt(&runtime_, "c"));
   Tuple caches(&scope, dependent.caches());
   icUpdateAttr(*caches, 1, instance.layoutId(), SmallInt::fromWord(1234));
   ASSERT_EQ(icLookupAttr(*caches, 1, instance.layoutId()),
@@ -480,7 +480,7 @@ c = C()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Type type(&scope, moduleAt(&runtime_, "__main__", "C"));
+  Type type(&scope, mainModuleAt(&runtime_, "C"));
   Dict type_dict(&scope, type.dict());
   Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
   Function dependent(&scope,
@@ -493,7 +493,7 @@ c = C()
   runtime_.dictAtPut(thread_, type_dict, foo_name, foo);
 
   // Create an instance offset cache for an instance of C, under name "foo".
-  Object instance(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object instance(&scope, mainModuleAt(&runtime_, "c"));
   Tuple caches(&scope, dependent.caches());
   icUpdateAttr(*caches, 1, instance.layoutId(), SmallInt::fromWord(1234));
   ASSERT_EQ(icLookupAttr(*caches, 1, instance.layoutId()),
@@ -527,11 +527,11 @@ c = C()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Type a_type(&scope, moduleAt(&runtime_, "__main__", "A"));
+  Type a_type(&scope, mainModuleAt(&runtime_, "A"));
   Dict a_type_dict(&scope, a_type.dict());
-  Type b_type(&scope, moduleAt(&runtime_, "__main__", "B"));
+  Type b_type(&scope, mainModuleAt(&runtime_, "B"));
   Dict b_type_dict(&scope, b_type.dict());
-  Type c_type(&scope, moduleAt(&runtime_, "__main__", "C"));
+  Type c_type(&scope, mainModuleAt(&runtime_, "C"));
   Dict c_type_dict(&scope, c_type.dict());
   Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
   Function dependent(&scope,
@@ -557,16 +557,16 @@ c = C()
   runtime_.dictAtPut(thread_, c_type_dict, foo_name, c_foo);
 
   // Create a cache for a.foo in dependent.
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
   Tuple caches(&scope, dependent.caches());
   icUpdateAttr(*caches, 1, a.layoutId(), SmallInt::fromWord(100));
   ASSERT_EQ(icLookupAttr(*caches, 1, a.layoutId()), SmallInt::fromWord(100));
   // Create a cache for b.foo in dependent.
-  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
   icUpdateAttr(*caches, 1, b.layoutId(), SmallInt::fromWord(200));
   ASSERT_EQ(icLookupAttr(*caches, 1, b.layoutId()), SmallInt::fromWord(200));
   // Create a cache for c.foo in dependent.
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   icUpdateAttr(*caches, 1, c.layoutId(), SmallInt::fromWord(300));
   ASSERT_EQ(icLookupAttr(*caches, 1, c.layoutId()), SmallInt::fromWord(300));
 
@@ -599,7 +599,7 @@ c = C()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Type type(&scope, moduleAt(&runtime_, "__main__", "C"));
+  Type type(&scope, mainModuleAt(&runtime_, "C"));
   Dict type_dict(&scope, type.dict());
   Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
   Str bar_name(&scope, runtime_.newStrFromCStr("bar"));
@@ -620,7 +620,7 @@ c = C()
       icInsertDependentToValueCellDependencyLink(thread_, dependent1, bar));
   runtime_.dictAtPut(thread_, type_dict, bar_name, bar);
 
-  Object instance(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object instance(&scope, mainModuleAt(&runtime_, "c"));
   Tuple dependent0_caches(&scope, dependent0.caches());
   {
     // Create an attribute cache for an instance of C, under name "foo" in
@@ -660,7 +660,7 @@ class C: pass
 )")
                    .isError());
   HandleScope scope(thread_);
-  Type type(&scope, moduleAt(&runtime_, "__main__", "C"));
+  Type type(&scope, mainModuleAt(&runtime_, "C"));
   Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
   icInvalidateCachesForTypeAttr(thread_, type, foo_name, true);
 }
@@ -714,12 +714,12 @@ result = f(container, 0)
                    .isError());
 
   HandleScope scope;
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 
-  Object container(&scope, moduleAt(&runtime, "__main__", "container"));
-  Object getitem(&scope, moduleAt(&runtime, "__main__", "getitem"));
-  Function f(&scope, moduleAt(&runtime, "__main__", "f"));
+  Object container(&scope, mainModuleAt(&runtime, "container"));
+  Object getitem(&scope, mainModuleAt(&runtime, "getitem"));
+  Function f(&scope, mainModuleAt(&runtime, "f"));
   Tuple caches(&scope, f.caches());
   // Expect that BINARY_SUBSCR is the only cached opcode in f().
   ASSERT_EQ(caches.length(), 1 * kIcPointersPerCache);
@@ -730,8 +730,8 @@ container2 = [4, 5, 6]
 result2 = f(container2, 1)
 )")
                    .isError());
-  Object container2(&scope, moduleAt(&runtime, "__main__", "container2"));
-  Object result2(&scope, moduleAt(&runtime, "__main__", "result2"));
+  Object container2(&scope, mainModuleAt(&runtime, "container2"));
+  Object result2(&scope, mainModuleAt(&runtime, "result2"));
   EXPECT_EQ(container2.layoutId(), container.layoutId());
   EXPECT_TRUE(isIntEqualsWord(*result2, 5));
 }
@@ -755,11 +755,11 @@ result = f(container, "hi")
                    .isError());
 
   HandleScope scope;
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime, "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "hi"));
 
-  Object container(&scope, moduleAt(&runtime, "__main__", "container"));
-  Function f(&scope, moduleAt(&runtime, "__main__", "f"));
+  Object container(&scope, mainModuleAt(&runtime, "container"));
+  Function f(&scope, mainModuleAt(&runtime, "f"));
   Tuple caches(&scope, f.caches());
   // Expect that BINARY_SUBSCR is the only cached opcode in f().
   ASSERT_EQ(caches.length(), 1 * kIcPointersPerCache);
@@ -770,8 +770,8 @@ container2 = Container()
 result2 = f(container, "hello there!")
 )")
                    .isError());
-  Object container2(&scope, moduleAt(&runtime, "__main__", "container2"));
-  Object result2(&scope, moduleAt(&runtime, "__main__", "result2"));
+  Object container2(&scope, mainModuleAt(&runtime, "container2"));
+  Object result2(&scope, mainModuleAt(&runtime, "result2"));
   ASSERT_EQ(container2.layoutId(), container.layoutId());
   EXPECT_TRUE(isStrEqualsCStr(*result2, "hello there!"));
 }
@@ -829,12 +829,12 @@ result = f(container)
                    .isError());
 
   HandleScope scope;
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 
-  Object iterator(&scope, moduleAt(&runtime, "__main__", "iterator"));
-  Object iter_next(&scope, moduleAt(&runtime, "__main__", "iter_next"));
-  Function f(&scope, moduleAt(&runtime, "__main__", "f"));
+  Object iterator(&scope, mainModuleAt(&runtime, "iterator"));
+  Object iter_next(&scope, mainModuleAt(&runtime, "iter_next"));
+  Function f(&scope, mainModuleAt(&runtime, "f"));
   Tuple caches(&scope, f.caches());
   // Expect that FOR_ITER is the only cached opcode in f().
   ASSERT_EQ(caches.length(), 1 * kIcPointersPerCache);
@@ -866,11 +866,11 @@ result = f(container)
                    .isError());
 
   HandleScope scope;
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 123));
 
-  Object iterator(&scope, moduleAt(&runtime, "__main__", "iterator"));
-  Function f(&scope, moduleAt(&runtime, "__main__", "f"));
+  Object iterator(&scope, mainModuleAt(&runtime, "iterator"));
+  Function f(&scope, mainModuleAt(&runtime, "f"));
   Tuple caches(&scope, f.caches());
   // Expect that FOR_ITER is the only cached opcode in f().
   ASSERT_EQ(caches.length(), 1 * kIcPointersPerCache);

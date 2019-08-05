@@ -84,7 +84,7 @@ foo = Foo()
   HandleScope scope(thread_);
   Object start_obj(&scope, NoneType::object());
   Object stop_obj(&scope, NoneType::object());
-  Object step_obj(&scope, moduleAt(&runtime_, "__main__", "foo"));
+  Object step_obj(&scope, mainModuleAt(&runtime_, "foo"));
   Slice slice(&scope, runtime_.newSlice(start_obj, stop_obj, step_obj));
   word start, stop, step;
   Object result(&scope, sliceUnpack(thread_, slice, &start, &stop, &step));
@@ -104,7 +104,7 @@ foo = Foo()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object foo(&scope, moduleAt(&runtime_, "__main__", "foo"));
+  Object foo(&scope, mainModuleAt(&runtime_, "foo"));
   Slice slice(&scope, runtime_.newSlice(foo, foo, foo));
   word start, stop, step;
   Object result(&scope, sliceUnpack(thread_, slice, &start, &stop, &step));
@@ -199,7 +199,7 @@ TEST_F(SliceBuiltinsTest, DunderNewWithNonSliceTypeRaisesTypeError) {
 TEST_F(SliceBuiltinsTest, DunderNewWithOneArgSetsStop) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, "result = slice(0)").isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result.isSlice());
   Slice slice(&scope, *result);
   EXPECT_EQ(slice.start(), NoneType::object());
@@ -210,7 +210,7 @@ TEST_F(SliceBuiltinsTest, DunderNewWithOneArgSetsStop) {
 TEST_F(SliceBuiltinsTest, DunderNewWithTwoArgsSetsStartAndStop) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, "result = slice(0, 1)").isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result.isSlice());
   Slice slice(&scope, *result);
   EXPECT_EQ(slice.start(), SmallInt::fromWord(0));
@@ -221,7 +221,7 @@ TEST_F(SliceBuiltinsTest, DunderNewWithTwoArgsSetsStartAndStop) {
 TEST_F(SliceBuiltinsTest, DunderNewWithThreeArgsSetsAllIndices) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, "result = slice(0, 1, 2)").isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result.isSlice());
   Slice slice(&scope, *result);
   EXPECT_EQ(slice.start(), SmallInt::fromWord(0));
@@ -276,7 +276,7 @@ TEST_F(SliceBuiltinsTest, IndicesWithNoneReturnsDefaults) {
   HandleScope scope(thread_);
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = slice(None).indices(10)").isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result.isTuple());
   Tuple indices(&scope, *result);
   ASSERT_EQ(indices.length(), 3);
@@ -290,7 +290,7 @@ TEST_F(SliceBuiltinsTest, IndicesWithNoneAndNegativeReturnsDefaults) {
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = slice(None, None, -1).indices(10)")
           .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result.isTuple());
   Tuple indices(&scope, *result);
   ASSERT_EQ(indices.length(), 3);
@@ -312,7 +312,7 @@ idx = Idx()
 result = slice(idx, idx, idx).indices(10)
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result.isTuple());
   Tuple indices(&scope, *result);
   ASSERT_EQ(indices.length(), 3);
@@ -325,7 +325,7 @@ TEST_F(SliceBuiltinsTest, IndicesTruncatesToLength) {
   HandleScope scope(thread_);
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = slice(-4, 10, 2).indices(5)").isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result.isTuple());
   Tuple indices(&scope, *result);
   ASSERT_EQ(indices.length(), 3);

@@ -118,6 +118,10 @@ bool listContains(const Object& list_obj, const Object& key);
 // not found.
 RawObject findModule(Runtime* runtime, const char* name);
 
+// Get the value bound to name in the main module.
+// Returns Error::object() if not found.
+RawObject mainModuleAt(Runtime* runtime, const char* name);
+
 // Get the value bound to name in the module under the supplied name.
 // Returns Error::object() if not found.
 RawObject moduleAt(Runtime* runtime, const char* module_name, const char* name);

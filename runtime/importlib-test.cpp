@@ -28,7 +28,7 @@ import foo
 import bar
 )")
                    .isError());
-  Object foo_obj(&scope, moduleAt(&runtime_, "__main__", "foo"));
+  Object foo_obj(&scope, mainModuleAt(&runtime_, "foo"));
   ASSERT_TRUE(foo_obj.isModule());
   Module foo(&scope, *foo_obj);
   EXPECT_TRUE(isStrEqualsCStr(foo.name(), "foo"));
@@ -58,7 +58,7 @@ TEST_F(ImportlibTest, ImportsEmptyModule) {
 import somedir
 )")
                    .isError());
-  Object somedir(&scope, moduleAt(&runtime_, "__main__", "somedir"));
+  Object somedir(&scope, mainModuleAt(&runtime_, "somedir"));
   ASSERT_TRUE(somedir.isModule());
 }
 
@@ -77,7 +77,7 @@ TEST_F(ImportlibTest, ImportsModuleWithInitPy) {
 import bar
 )")
                    .isError());
-  Object bar_obj(&scope, moduleAt(&runtime_, "__main__", "bar"));
+  Object bar_obj(&scope, mainModuleAt(&runtime_, "bar"));
   ASSERT_TRUE(bar_obj.isModule());
   Module bar(&scope, *bar_obj);
   Str str_y(&scope, runtime_.newStrFromCStr("y"));
@@ -100,7 +100,7 @@ TEST_F(ImportlibTest, SubModuleImport) {
 import baz.blam
 )")
                    .isError());
-  Object baz_obj(&scope, moduleAt(&runtime_, "__main__", "baz"));
+  Object baz_obj(&scope, mainModuleAt(&runtime_, "baz"));
   ASSERT_TRUE(baz_obj.isModule());
   Module baz(&scope, *baz_obj);
   Str blam_str(&scope, runtime_.newStrFromCStr("blam"));
@@ -137,8 +137,7 @@ from submodule.a import val
   EXPECT_TRUE(isStrEqualsCStr(*top_val, "top val"));
   Object subdir_val(&scope, moduleAt(&runtime_, "submodule", "val"));
   EXPECT_TRUE(isStrEqualsCStr(*subdir_val, "submodule val"));
-  Object main_val_from_submodule(&scope,
-                                 moduleAt(&runtime_, "__main__", "val"));
+  Object main_val_from_submodule(&scope, mainModuleAt(&runtime_, "val"));
   EXPECT_TRUE(isStrEqualsCStr(*main_val_from_submodule, "submodule val"));
 }
 
@@ -154,7 +153,7 @@ import sys
 meta_path = sys.meta_path
 )")
                    .isError());
-  Object meta_path(&scope, moduleAt(&runtime_, "__main__", "meta_path"));
+  Object meta_path(&scope, mainModuleAt(&runtime_, "meta_path"));
   ASSERT_TRUE(meta_path.isList());
 }
 

@@ -20,9 +20,9 @@ result = list.copy(l)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object list(&scope, moduleAt(&runtime_, "__main__", "l"));
+  Object list(&scope, mainModuleAt(&runtime_, "l"));
   EXPECT_TRUE(list.isList());
-  Object result_obj(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result_obj(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(result_obj.isList());
   List result(&scope, *result_obj);
   EXPECT_NE(*list, *result);
@@ -34,7 +34,7 @@ TEST_F(ListBuiltinsTest, DunderEqReturnsTrue) {
 result = list.__eq__([1, 2, 3], [1, 2, 3])
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"), RawBool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "result"), RawBool::trueObj());
 }
 
 TEST_F(ListBuiltinsTest, DunderEqWithSameListReturnsTrue) {
@@ -46,7 +46,7 @@ a = [1, 2, 3]
 result = list.__eq__(a, a)
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"), RawBool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "result"), RawBool::trueObj());
 }
 
 TEST_F(ListBuiltinsTest, DunderEqWithSameIdentityElementsReturnsTrue) {
@@ -55,7 +55,7 @@ nan = float("nan")
 result = list.__eq__([nan], [nan])
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"), RawBool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "result"), RawBool::trueObj());
 }
 
 TEST_F(ListBuiltinsTest, DunderEqWithEqualElementsReturnsTrue) {
@@ -70,7 +70,7 @@ b = Foo(1)
 result = list.__eq__([a], [b])
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"), RawBool::trueObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "result"), RawBool::trueObj());
 }
 
 TEST_F(ListBuiltinsTest, DunderEqWithDifferentSizeReturnsFalse) {
@@ -78,7 +78,7 @@ TEST_F(ListBuiltinsTest, DunderEqWithDifferentSizeReturnsFalse) {
 result = list.__eq__([1, 2, 3], [1, 2])
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"), RawBool::falseObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "result"), RawBool::falseObj());
 }
 
 TEST_F(ListBuiltinsTest, DunderEqWithDifferentValuesReturnsFalse) {
@@ -86,7 +86,7 @@ TEST_F(ListBuiltinsTest, DunderEqWithDifferentValuesReturnsFalse) {
 result = list.__eq__([1, 2, 3], [1, 2, 4])
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"), RawBool::falseObj());
+  EXPECT_EQ(mainModuleAt(&runtime_, "result"), RawBool::falseObj());
 }
 
 TEST_F(ListBuiltinsTest, DunderEqWithNonListRhsReturnsNotImplemented) {
@@ -94,7 +94,7 @@ TEST_F(ListBuiltinsTest, DunderEqWithNonListRhsReturnsNotImplemented) {
 result = list.__eq__([1, 2, 3], (1, 2, 3));
 )")
                    .isError());
-  EXPECT_TRUE(moduleAt(&runtime_, "__main__", "result").isNotImplementedType());
+  EXPECT_TRUE(mainModuleAt(&runtime_, "result").isNotImplementedType());
 }
 
 TEST_F(ListBuiltinsTest, DunderInitFromList) {
@@ -103,7 +103,7 @@ a = list([1, 2])
 )")
                    .isError());
   HandleScope scope(thread_);
-  List a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  List a(&scope, mainModuleAt(&runtime_, "a"));
   ASSERT_EQ(a.numItems(), 2);
   EXPECT_TRUE(isIntEqualsWord(a.at(0), 1));
   EXPECT_TRUE(isIntEqualsWord(a.at(1), 2));
@@ -116,8 +116,8 @@ b = list([1, 2]) is not list([1, 2])
 )")
                    .isError());
   HandleScope scope(thread_);
-  Bool a(&scope, moduleAt(&runtime_, "__main__", "a"));
-  Bool b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  Bool a(&scope, mainModuleAt(&runtime_, "a"));
+  Bool b(&scope, mainModuleAt(&runtime_, "b"));
   EXPECT_TRUE(a.value());
   EXPECT_TRUE(b.value());
 }
@@ -131,7 +131,7 @@ b = [3, 4, 5]
 c = a + b
 )")
                    .isError());
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   ASSERT_TRUE(c.isList());
   List list(&scope, List::cast(*c));
   EXPECT_TRUE(isIntEqualsWord(list.at(0), 1));
@@ -150,7 +150,7 @@ b = [1, 2, 3]
 c = a + b
 )")
                    .isError());
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   ASSERT_TRUE(c.isList());
   List list(&scope, List::cast(*c));
   EXPECT_TRUE(isIntEqualsWord(list.at(0), 1));
@@ -168,7 +168,7 @@ b = C([1, 2, 3])
 c = a + b
 )")
                    .isError());
-  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   EXPECT_PYLIST_EQ(c, {1, 2, 3});
 }
 
@@ -199,7 +199,7 @@ a.append(b)
 )")
                    .isError());
   HandleScope scope(thread_);
-  List a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  List a(&scope, mainModuleAt(&runtime_, "a"));
   EXPECT_TRUE(isIntEqualsWord(a.at(0), 1));
   EXPECT_TRUE(isStrEqualsCStr(a.at(1), "2"));
   List b(&scope, a.at(2));
@@ -248,8 +248,8 @@ value = Foo()
 list = [value]
 )")
                    .isError());
-  Object value(&scope, moduleAt(&runtime_, "__main__", "value"));
-  List list(&scope, moduleAt(&runtime_, "__main__", "list"));
+  Object value(&scope, mainModuleAt(&runtime_, "value"));
+  List list(&scope, mainModuleAt(&runtime_, "list"));
   EXPECT_EQ(runBuiltin(ListBuiltins::dunderContains, list, value),
             RawBool::trueObj());
 }
@@ -265,8 +265,8 @@ value = Foo()
 list = [None]
 )")
                    .isError());
-  Object value(&scope, moduleAt(&runtime_, "__main__", "value"));
-  List list(&scope, moduleAt(&runtime_, "__main__", "list"));
+  Object value(&scope, mainModuleAt(&runtime_, "value"));
+  List list(&scope, mainModuleAt(&runtime_, "list"));
   EXPECT_EQ(runBuiltin(ListBuiltins::dunderContains, list, value),
             RawBool::trueObj());
 }
@@ -286,8 +286,8 @@ value1 = Bar()
 list = [value0]
 )")
                    .isError());
-  Object value1(&scope, moduleAt(&runtime_, "__main__", "value1"));
-  List list(&scope, moduleAt(&runtime_, "__main__", "list"));
+  Object value1(&scope, mainModuleAt(&runtime_, "value1"));
+  List list(&scope, mainModuleAt(&runtime_, "list"));
   EXPECT_EQ(runBuiltin(ListBuiltins::dunderContains, list, value1),
             RawBool::falseObj());
 }
@@ -302,8 +302,8 @@ value = Foo()
 list = [None]
 )")
                    .isError());
-  Object value(&scope, moduleAt(&runtime_, "__main__", "value"));
-  List list(&scope, moduleAt(&runtime_, "__main__", "list"));
+  Object value(&scope, mainModuleAt(&runtime_, "value"));
+  List list(&scope, mainModuleAt(&runtime_, "list"));
   Object result(&scope, runBuiltin(ListBuiltins::dunderContains, list, value));
   EXPECT_TRUE(raised(*result, LayoutId::kUserWarning));
 }
@@ -322,8 +322,8 @@ value = Bar()
 list = [None]
 )")
                    .isError());
-  Object value(&scope, moduleAt(&runtime_, "__main__", "value"));
-  List list(&scope, moduleAt(&runtime_, "__main__", "list"));
+  Object value(&scope, mainModuleAt(&runtime_, "value"));
+  List list(&scope, mainModuleAt(&runtime_, "list"));
   EXPECT_TRUE(raised(runBuiltin(ListBuiltins::dunderContains, list, value),
                      LayoutId::kUserWarning));
 }
@@ -388,8 +388,8 @@ b = N(3)
 )")
                    .isError());
   HandleScope scope(thread_);
-  List self(&scope, moduleAt(&runtime_, "__main__", "a"));
-  Object index(&scope, moduleAt(&runtime_, "__main__", "b"));
+  List self(&scope, mainModuleAt(&runtime_, "a"));
+  Object index(&scope, mainModuleAt(&runtime_, "b"));
   Object value(&scope, SmallInt::fromWord(1));
   Object result(&scope, runBuiltin(ListBuiltins::insert, self, index, value));
   EXPECT_EQ(result, NoneType::object());
@@ -405,7 +405,7 @@ a.remove(5)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
   EXPECT_PYLIST_EQ(a, {4, 3, 1});
 }
 
@@ -440,8 +440,8 @@ value = C()
 list = [value]
 )")
                    .isError());
-  Object value(&scope, moduleAt(&runtime_, "__main__", "value"));
-  List list(&scope, moduleAt(&runtime_, "__main__", "list"));
+  Object value(&scope, mainModuleAt(&runtime_, "value"));
+  List list(&scope, mainModuleAt(&runtime_, "list"));
   EXPECT_EQ(list.numItems(), 1);
   runBuiltin(ListBuiltins::remove, list, value);
   EXPECT_EQ(list.numItems(), 0);
@@ -458,7 +458,7 @@ list = [C()]
 )")
                    .isError());
   Object value(&scope, NoneType::object());
-  List list(&scope, moduleAt(&runtime_, "__main__", "list"));
+  List list(&scope, mainModuleAt(&runtime_, "list"));
   EXPECT_EQ(list.numItems(), 1);
   runBuiltin(ListBuiltins::remove, list, value);
   EXPECT_EQ(list.numItems(), 0);
@@ -478,8 +478,8 @@ value = C()
 list = [D()]
 )")
                    .isError());
-  Object value(&scope, moduleAt(&runtime_, "__main__", "value"));
-  List list(&scope, moduleAt(&runtime_, "__main__", "list"));
+  Object value(&scope, mainModuleAt(&runtime_, "value"));
+  List list(&scope, mainModuleAt(&runtime_, "list"));
   Object result(&scope, runBuiltin(ListBuiltins::remove, list, value));
   EXPECT_TRUE(raised(*result, LayoutId::kValueError));
 }
@@ -494,8 +494,8 @@ value = Foo()
 list = [None]
 )")
                    .isError());
-  Object value(&scope, moduleAt(&runtime_, "__main__", "value"));
-  List list(&scope, moduleAt(&runtime_, "__main__", "list"));
+  Object value(&scope, mainModuleAt(&runtime_, "value"));
+  List list(&scope, mainModuleAt(&runtime_, "list"));
   Object result(&scope, runBuiltin(ListBuiltins::remove, list, value));
   EXPECT_TRUE(raised(*result, LayoutId::kUserWarning));
 }
@@ -513,8 +513,8 @@ value = D()
 list = [None]
 )")
                    .isError());
-  Object value(&scope, moduleAt(&runtime_, "__main__", "value"));
-  List list(&scope, moduleAt(&runtime_, "__main__", "list"));
+  Object value(&scope, mainModuleAt(&runtime_, "value"));
+  List list(&scope, mainModuleAt(&runtime_, "list"));
   EXPECT_TRUE(raisedWithStr(runBuiltin(ListBuiltins::remove, list, value),
                             LayoutId::kUserWarning, "foo"));
 }
@@ -525,7 +525,7 @@ result = [1, 2, 3] * 3
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {1, 2, 3, 1, 2, 3, 1, 2, 3});
 }
 
@@ -645,7 +645,7 @@ letters[2:5] = ['C', 'D', 'E']
 result = letters
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {"a", "b", "C", "D", "E", "f", "g"});
 }
 
@@ -657,7 +657,7 @@ letters[2:5] = ['C', 'D', 'E','X','Y','Z']
 result = letters
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {"a", "b", "C", "D", "E", "X", "Y", "Z", "f", "g"});
 }
 
@@ -669,7 +669,7 @@ letters[2:6] = ['C', 'D']
 result = letters
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {"a", "b", "C", "D", "g"});
 }
 
@@ -681,7 +681,7 @@ letters[2:6] = ('x', 'y', 12)
 result = letters
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {"a", "b", "x", "y", 12, "g"});
 }
 
@@ -693,7 +693,7 @@ letters[2:5] = letters
 result = letters
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result,
                    {"a", "b", "a", "b", "c", "d", "e", "f", "g", "f", "g"});
 }
@@ -707,7 +707,7 @@ a[5:2] = ['a','b','c','d','e']
 result = a
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {0, 1, 2,  3,  4,  "a", "b", "c", "d", "e", 5,  6, 7,
                             8, 9, 10, 11, 12, 13,  14,  15,  16,  17,  18, 19});
 }
@@ -720,7 +720,7 @@ a[2:10:3] = ['a', 'b', 'c']
 result = a
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {0,  1,  "a", 3,  4,  "b", 6,  7,  "c", 9,
                             10, 11, 12,  13, 14, 15,  16, 17, 18,  19});
 }
@@ -733,7 +733,7 @@ a[10:2:-3] = ['a', 'b', 'c']
 result = a
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {0,   1,  2,  3,  "c", 5,  6,  "b", 8,  9,
                             "a", 11, 12, 13, 14,  15, 16, 17,  18, 19});
 }
@@ -765,7 +765,7 @@ a[2:10:3] = ('a', 'b', 'c')
 result = a
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {0,  1,  "a", 3,  4,  "b", 6,  7,  "c", 9,
                             10, 11, 12,  13, 14, 15,  16, 17, 18,  19});
 }
@@ -789,7 +789,7 @@ a[:1] = b
 result = a
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {0, 0, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10});
 }
 
@@ -802,7 +802,7 @@ a[:1] = b
 result = a
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {0, 0, 0, 0, 0, 1, 1});
 }
 
@@ -815,7 +815,7 @@ a[::1] = b
 result = a
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {0, 0, 0});
 }
 
@@ -904,12 +904,12 @@ a.remove(2)
 test6 = len(a)
 )")
                    .isError());
-  Object test1(&scope, moduleAt(&runtime_, "__main__", "test1"));
-  Object test2(&scope, moduleAt(&runtime_, "__main__", "test2"));
-  Object test3(&scope, moduleAt(&runtime_, "__main__", "test3"));
-  Object test4(&scope, moduleAt(&runtime_, "__main__", "test4"));
-  Object test5(&scope, moduleAt(&runtime_, "__main__", "test5"));
-  Object test6(&scope, moduleAt(&runtime_, "__main__", "test6"));
+  Object test1(&scope, mainModuleAt(&runtime_, "test1"));
+  Object test2(&scope, mainModuleAt(&runtime_, "test2"));
+  Object test3(&scope, mainModuleAt(&runtime_, "test3"));
+  Object test4(&scope, mainModuleAt(&runtime_, "test4"));
+  Object test5(&scope, mainModuleAt(&runtime_, "test5"));
+  Object test6(&scope, mainModuleAt(&runtime_, "test6"));
   EXPECT_EQ(*test1, SmallInt::fromWord(1));
   EXPECT_EQ(*test2, SmallStr::fromCStr("a"));
   EXPECT_EQ(*test3, SmallInt::fromWord(2));
@@ -928,8 +928,8 @@ l = len(a)
 e = a[0]
 )")
                    .isError());
-  Object len(&scope, moduleAt(&runtime_, "__main__", "l"));
-  Object element(&scope, moduleAt(&runtime_, "__main__", "e"));
+  Object len(&scope, mainModuleAt(&runtime_, "l"));
+  Object element(&scope, mainModuleAt(&runtime_, "e"));
   EXPECT_EQ(*len, SmallInt::fromWord(1));
   EXPECT_EQ(*element, SmallStr::fromCStr("foo"));
 }
@@ -947,7 +947,7 @@ TEST_F(ListBuiltinsTest, DunderRepr) {
 result = [1, 2, 'hello'].__repr__()
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "[1, 2, 'hello']"));
 }
 
@@ -1206,7 +1206,7 @@ a.extend(a)
 )")
                    .isError());
   HandleScope scope(thread_);
-  List a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  List a(&scope, mainModuleAt(&runtime_, "a"));
   ASSERT_EQ(a.numItems(), 6);
   EXPECT_PYLIST_EQ(a, {1, 2, 3, 1, 2, 3});
 }
@@ -1221,7 +1221,7 @@ a.extend(C([1,2,3]))
 )")
                    .isError());
   HandleScope scope(thread_);
-  List a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  List a(&scope, mainModuleAt(&runtime_, "a"));
   ASSERT_EQ(a.numItems(), 6);
   EXPECT_PYLIST_EQ(a, {1, 2, 3, 4, 5, 6});
 }
@@ -1233,8 +1233,7 @@ ls.append(ls)
 result = ls.__repr__()
 )")
                    .isError());
-  EXPECT_TRUE(
-      isStrEqualsCStr(moduleAt(&runtime_, "__main__", "result"), "[[...]]"));
+  EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(&runtime_, "result"), "[[...]]"));
 }
 
 TEST_F(ListBuiltinsTest, ReverseEmptyListDoesNothing) {
@@ -1244,7 +1243,7 @@ result.reverse()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result.isList());
   EXPECT_EQ(List::cast(*result).numItems(), 0);
 }
@@ -1256,7 +1255,7 @@ result.reverse()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   ASSERT_TRUE(result.isList());
   EXPECT_EQ(List::cast(*result).numItems(), 1);
   EXPECT_EQ(List::cast(*result).at(0), SmallInt::fromWord(2));
@@ -1269,7 +1268,7 @@ result.reverse()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {3, 2, 1});
 }
 
@@ -1280,7 +1279,7 @@ result.reverse()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {4, 3, 2, 1});
 }
 
@@ -1305,7 +1304,7 @@ ls.sort()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object ls(&scope, moduleAt(&runtime_, "__main__", "ls"));
+  Object ls(&scope, mainModuleAt(&runtime_, "ls"));
   EXPECT_PYLIST_EQ(ls, {1, 2, 3});
 }
 
@@ -1325,7 +1324,7 @@ ls.sort(key=lambda x: -x)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object ls(&scope, moduleAt(&runtime_, "__main__", "ls"));
+  Object ls(&scope, mainModuleAt(&runtime_, "ls"));
   EXPECT_PYLIST_EQ(ls, {3, 2, 1});
 }
 
@@ -1336,7 +1335,7 @@ ls.sort(reverse=True)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object ls(&scope, moduleAt(&runtime_, "__main__", "ls"));
+  Object ls(&scope, mainModuleAt(&runtime_, "ls"));
   EXPECT_PYLIST_EQ(ls, {3, 2, 1});
 }
 
@@ -1353,7 +1352,7 @@ list.clear(ls)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object ls(&scope, moduleAt(&runtime_, "__main__", "ls"));
+  Object ls(&scope, mainModuleAt(&runtime_, "ls"));
   EXPECT_PYLIST_EQ(ls, {});
 }
 
@@ -1366,7 +1365,7 @@ l = [C()]
                    .isError());
 
   HandleScope scope(thread_);
-  List list(&scope, moduleAt(&runtime_, "__main__", "l"));
+  List list(&scope, mainModuleAt(&runtime_, "l"));
   Object ref_obj(&scope, NoneType::object());
   {
     Object none(&scope, NoneType::object());

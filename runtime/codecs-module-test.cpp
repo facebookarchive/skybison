@@ -93,7 +93,7 @@ class Foo(bytes): pass
 encoded = Foo(b"hello")
 )")
                    .isError());
-  Object bytes(&scope, moduleAt(&runtime_, "__main__", "encoded"));
+  Object bytes(&scope, mainModuleAt(&runtime_, "encoded"));
   Object errors(&scope, runtime_.newStrFromCStr("strict"));
   Object index(&scope, runtime_.newInt(0));
   Object strarray(&scope, runtime_.newStrArray());
@@ -303,7 +303,7 @@ class Foo(bytes): pass
 encoded = Foo(b"hello")
 )")
                    .isError());
-  Object bytes(&scope, moduleAt(&runtime_, "__main__", "encoded"));
+  Object bytes(&scope, mainModuleAt(&runtime_, "encoded"));
   Object errors(&scope, runtime_.newStrFromCStr("strict"));
   Object encoding(&scope, runtime_.newStrFromCStr(""));
   Object result_obj(&scope, runBuiltin(UnderCodecsModule::underEscapeDecode,
@@ -603,7 +603,7 @@ class Foo(bytes): pass
 encoded = Foo(b"hello")
 )")
                    .isError());
-  Object bytes(&scope, moduleAt(&runtime_, "__main__", "encoded"));
+  Object bytes(&scope, mainModuleAt(&runtime_, "encoded"));
   Object errors(&scope, runtime_.newStrFromCStr("strict"));
   Object index(&scope, runtime_.newInt(0));
   Object strarray(&scope, runtime_.newStrArray());

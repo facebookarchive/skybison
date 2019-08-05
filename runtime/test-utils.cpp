@@ -188,6 +188,10 @@ RawObject findModule(Runtime* runtime, const char* name) {
   return runtime->findModule(key);
 }
 
+RawObject mainModuleAt(Runtime* runtime, const char* name) {
+  return moduleAt(runtime, "__main__", name);
+}
+
 RawObject moduleAt(Runtime* runtime, const char* module_name,
                    const char* name) {
   HandleScope scope;
