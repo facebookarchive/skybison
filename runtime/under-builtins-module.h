@@ -119,6 +119,7 @@ class UnderBuiltinsModule {
                                           word nargs);
   static RawObject underObjectTypeHasattr(Thread* thread, Frame* frame,
                                           word nargs);
+  static RawObject underOsClose(Thread* thread, Frame* frame, word nargs);
   static RawObject underOsRead(Thread* thread, Frame* frame, word nargs);
   static RawObject underOsWrite(Thread* thread, Frame* frame, word nargs);
   static RawObject underPatch(Thread* thread, Frame* frame, word nargs);

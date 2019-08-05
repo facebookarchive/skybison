@@ -1394,6 +1394,35 @@ obj = C()
   EXPECT_FALSE(thread_->hasPendingException());
 }
 
+TEST_F(UnderBuiltinsModuleTest, UnderOsCloseWithBadFdRaisesOsError) {
+  HandleScope scope(thread_);
+  Int fd(&scope, SmallInt::fromWord(-1));
+  EXPECT_TRUE(raised(runBuiltin(UnderBuiltinsModule::underOsClose, fd),
+                     LayoutId::kOSError));
+}
+
+static void createDummyFdWithContents(const char* c_str, int* fd) {
+  word length = std::strlen(c_str);
+  int fds[2];
+  int result = ::pipe(fds);
+  ASSERT_EQ(result, 0);
+  result = ::write(fds[1], c_str, length);
+  ASSERT_EQ(result, length);
+  result = ::close(fds[1]);
+  ASSERT_NE(result, -1);
+  *fd = fds[0];
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderOsCloseReturnsNone) {
+  HandleScope scope(thread_);
+  int buf_fd;
+  ASSERT_NO_FATAL_FAILURE(createDummyFdWithContents("hello", &buf_fd));
+  Int fd(&scope, SmallInt::fromWord(buf_fd));
+  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underOsClose, fd).isNoneType());
+  EXPECT_TRUE(raised(runBuiltin(UnderBuiltinsModule::underOsClose, fd),
+                     LayoutId::kOSError));
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderOsReadWithBadFdRaisesOSError) {
   HandleScope scope(thread_);
   Int fd(&scope, SmallInt::fromWord(-1));
@@ -1414,18 +1443,6 @@ TEST_F(UnderBuiltinsModuleTest,
                      LayoutId::kOSError));
   ::close(fds[0]);
   ::close(fds[1]);
-}
-
-static void createDummyFdWithContents(const char* c_str, int* fd) {
-  word length = std::strlen(c_str);
-  int fds[2];
-  int result = ::pipe(fds);
-  ASSERT_EQ(result, 0);
-  result = ::write(fds[1], c_str, length);
-  ASSERT_EQ(result, length);
-  result = ::close(fds[1]);
-  ASSERT_NE(result, -1);
-  *fd = fds[0];
 }
 
 TEST_F(UnderBuiltinsModuleTest,

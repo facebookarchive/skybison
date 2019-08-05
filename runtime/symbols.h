@@ -269,6 +269,7 @@ class Runtime;
   V(UnderNewMemberSetReadonlyStrings, "_new_member_set_readonly_strings")      \
   V(UnderObjectTypeGetattr, "_object_type_getattr")                            \
   V(UnderObjectTypeHasattr, "_object_type_hasattr")                            \
+  V(UnderOsClose, "_os_close")                                                 \
   V(UnderOsRead, "_os_read")                                                   \
   V(UnderOsWrite, "_os_write")                                                 \
   V(UnderPatch, "_patch")                                                      \

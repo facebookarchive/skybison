@@ -141,6 +141,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderModuleDir, underModuleDir},
     {SymbolId::kUnderObjectTypeGetattr, underObjectTypeGetAttr},
     {SymbolId::kUnderObjectTypeHasattr, underObjectTypeHasattr},
+    {SymbolId::kUnderOsClose, underOsClose},
     {SymbolId::kUnderOsRead, underOsRead},
     {SymbolId::kUnderOsWrite, underOsWrite},
     {SymbolId::kUnderProperty, underProperty},
@@ -1590,6 +1591,17 @@ RawObject UnderBuiltinsModule::underObjectTypeHasattr(Thread* thread,
   Str name(&scope, args.get(1));
   Object result(&scope, typeLookupNameInMro(thread, type, name));
   return Bool::fromBool(!result.isErrorNotFound());
+}
+
+RawObject UnderBuiltinsModule::underOsClose(Thread* thread, Frame* frame,
+                                            word nargs) {
+  Arguments args(frame, nargs);
+  CHECK(args.get(0).isSmallInt(), "fd must be small int");
+  word fd = SmallInt::cast(args.get(0)).value();
+  if (::close(fd) < 0) {
+    return thread->raiseOSErrorFromErrno(errno);
+  }
+  return NoneType::object();
 }
 
 RawObject UnderBuiltinsModule::underOsRead(Thread* thread, Frame* frame,

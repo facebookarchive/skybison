@@ -388,6 +388,11 @@ def _object_type_hasattr(obj, name):
 
 
 @_patch
+def _os_close(fd):
+    pass
+
+
+@_patch
 def _os_read(fd, size):
     pass
 
