@@ -278,6 +278,8 @@ add_library(
   runtime/exception-builtins.h
   runtime/float-builtins.cpp
   runtime/float-builtins.h
+  runtime/float-conversion.cpp
+  runtime/float-conversion.h
   runtime/frame.cpp
   runtime/frame.h
   runtime/function-builtins.cpp
@@ -462,6 +464,7 @@ add_library(
   runtime/dict-builtins-test.cpp
   runtime/exception-builtins-test.cpp
   runtime/float-builtins-test.cpp
+  runtime/float-conversion-test.cpp
   runtime/function-builtins-test.cpp
   runtime/generator-test.cpp
   runtime/handles-test.cpp
