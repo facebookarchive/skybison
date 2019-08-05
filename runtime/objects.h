@@ -2750,7 +2750,7 @@ class RawExceptionState : public RawHeapObject {
   void setPrevious(RawObject prev) const;
 
   // Layout.
-  static const int kTypeOffset = RawHeapObject::kSize + kPointerSize;
+  static const int kTypeOffset = RawHeapObject::kSize;
   static const int kValueOffset = kTypeOffset + kPointerSize;
   static const int kTracebackOffset = kValueOffset + kPointerSize;
   static const int kPreviousOffset = kTracebackOffset + kPointerSize;
