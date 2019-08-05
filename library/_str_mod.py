@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """This is an internal module implementing "str.__mod__" formatting."""
 
+_float = _float  # noqa: F821
 _float_check = _float_check  # noqa: F821
 _float_format = _float_format  # noqa: F821
 _float_signbit = _float_signbit  # noqa: F821
@@ -17,7 +18,6 @@ _strarray = _strarray  # noqa: F821
 _strarray_iadd = _strarray_iadd  # noqa: F821
 _tuple_check = _tuple_check  # noqa: F821
 _type = _type  # noqa: F821
-_unimplemented = _unimplemented  # noqa: F821
 
 
 _FLAG_LJUST = 1 << 0
@@ -313,9 +313,7 @@ def format(string: str, args) -> str:  # noqa: C901
                 fragment = _int_format_octal(value)
                 _format_number(result, flags, width, precision, sign, prefix, fragment)
             elif c in "eEfFgG":
-                if not _float_check(arg):
-                    _unimplemented()
-                value = arg
+                value = _float(arg)
                 if precision < 0:
                     precision = 6
                 # The `value != value` test avoids emitting "-nan".

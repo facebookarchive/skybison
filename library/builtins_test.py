@@ -3631,6 +3631,53 @@ class StrModTests(unittest.TestCase):
         self.assertEqual("% -#12.3g" % number, " 1.23       ")
         self.assertEqual("% -#12.3G" % number, " 1.23       ")
 
+    def test_ef_format_with_non_float_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            "%e" % (None,)
+        self.assertEqual(str(context.exception), "must be real number, not NoneType")
+
+        class C:
+            def __float__(self):
+                return "not a float"
+
+        with self.assertRaises(TypeError) as context:
+            "%f" % (C(),)
+        self.assertEqual(
+            str(context.exception), "C.__float__ returned non-float (type str)"
+        )
+
+    def test_g_format_propogates_errors(self):
+        class C:
+            def __float__(self):
+                raise UserWarning()
+
+        with self.assertRaises(UserWarning):
+            "%g" % (C(),)
+
+    def test_efg_format_with_non_float_returns_string(self):
+        class A(float):
+            pass
+
+        self.assertEqual("%e" % (A(9.625),), "%e" % (9.625,))
+
+        class C:
+            def __float__(self):
+                return 3.5
+
+        self.assertEqual("%f" % (C(),), "%f" % (3.5,))
+
+        class D:
+            def __float__(self):
+                return A(-12.75)
+
+        warnings.filterwarnings(
+            action="ignore",
+            category=DeprecationWarning,
+            message=".*__float__ returned non-float.*",
+            module=__name__,
+        )
+        self.assertEqual("%g" % (D(),), "%g" % (-12.75,))
+
     def test_percent_format_returns_percent(self):
         self.assertEqual("%%" % (), "%")
 

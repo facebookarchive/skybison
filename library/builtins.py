@@ -604,6 +604,22 @@ def _dunder_bases_tuple_check(obj, msg) -> None:
         raise TypeError(msg)
 
 
+def _float(value) -> float:
+    # Equivalent to PyFloat_AsDouble() (if it would return a float object).
+    if _float_check(value):
+        return value
+    dunder_float = _object_type_getattr(value, "__float__")
+    if dunder_float is _Unbound:
+        raise TypeError(f"must be real number, not {_type(value).__name__}")
+    result = dunder_float()
+    if _float_check(result):
+        return result
+    raise TypeError(
+        f"{_type(value).__name__}.__float__ returned non-float "
+        f"(type {_type(result).__name__})"
+    )
+
+
 def _int_format_hexadecimal(value):
     assert value >= 0
     if value == 0:
