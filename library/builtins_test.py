@@ -3108,6 +3108,11 @@ class StrModTests(unittest.TestCase):
         self.assertEqual("%d" % (-1,), "-1")
         self.assertEqual("%d" % (42,), "42")
 
+    def test_d_format_with_largeint_returns_string(self):
+        self.assertEqual(
+            "%d" % (-123456789012345678901234567890), "-123456789012345678901234567890"
+        )
+
     def test_g_format_returns_string(self):
         self.assertEqual("%g" % (0.0,), "0")
         self.assertEqual("%g" % (-1.0,), "-1")
@@ -3146,6 +3151,27 @@ class StrModTests(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             "%" % ()
         self.assertEqual(str(context.exception), "incomplete format")
+
+    def test_too_few_args_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            "%s%s" % ("foo",)
+        self.assertEqual(
+            str(context.exception), "not enough arguments for format string"
+        )
+
+    def test_too_many_args_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            "hello" % (42)
+        self.assertEqual(
+            str(context.exception),
+            "not all arguments converted during string formatting",
+        )
+        with self.assertRaises(TypeError) as context:
+            "%d%s" % (1, "foo", 3)
+        self.assertEqual(
+            str(context.exception),
+            "not all arguments converted during string formatting",
+        )
 
 
 class SumTests(unittest.TestCase):

@@ -3233,7 +3233,14 @@ class str(bootstrap=True):
         pass
 
     def __mod__(self, other):
-        pass
+        if not _str_check(self):
+            raise TypeError(
+                f"'__mod__' requires a 'str' object "
+                f"but received a '{_type(self).__name__}'"
+            )
+        import _str_mod
+
+        return _str_mod.format(self, other)
 
     def __mul__(self, n: int) -> str:
         pass

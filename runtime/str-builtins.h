@@ -118,7 +118,6 @@ class StrBuiltins
   static RawObject dunderLe(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLt(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderMod(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderMul(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNe(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
@@ -135,9 +134,6 @@ class StrBuiltins
 
  private:
   static RawObject slice(Thread* thread, const Str& str, const Slice& slice);
-  static RawObject strFormatBufferLength(Thread* thread, const Str& fmt,
-                                         const Tuple& args);
-  static RawObject strFormat(Thread* thread, const Str& fmt, const Tuple& args);
   static void byteToHex(byte** buf, byte convert);
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(StrBuiltins);
