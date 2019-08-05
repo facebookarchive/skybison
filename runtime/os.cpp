@@ -117,7 +117,7 @@ void OS::writeFileExcl(const char* filename, const char* contents, word len) {
   ScopedFd fd(::open(filename, O_RDWR | O_CREAT | O_EXCL, 0644));
   CHECK(fd.get() != -1, "get failure");
   if (len < 0) {
-    len = strlen(contents);
+    len = std::strlen(contents);
   }
   word result;
   do {

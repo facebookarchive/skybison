@@ -441,7 +441,7 @@ static const char* writeArg(_PyUnicodeWriter* writer, const char* f,
       if (number[1] == 'X') {
         number[1] = 'x';
       } else if (number[1] != 'x') {
-        std::memmove(number + 2, number, strlen(number) + 1);
+        std::memmove(number + 2, number, std::strlen(number) + 1);
         number[0] = '0';
         number[1] = 'x';
         len += 2;
@@ -540,7 +540,7 @@ static const char* writeArg(_PyUnicodeWriter* writer, const char* f,
       // of the format string to the output string. (we cannot just
       // skip the code, since there's no way to know what's in the
       // argument list)
-      Py_ssize_t len = strlen(p);
+      Py_ssize_t len = std::strlen(p);
       if (_PyUnicodeWriter_WriteLatin1String(writer, p, len) == -1) {
         return nullptr;
       }
@@ -1474,7 +1474,7 @@ PY_EXPORT PyObject* PyUnicode_FromFormatV(const char* format, va_list vargs) {
   _PyUnicodeWriter writer;
 
   _PyUnicodeWriter_Init(&writer);
-  writer.min_length = strlen(format) + 100;
+  writer.min_length = std::strlen(format) + 100;
   writer.overallocate = 1;
 
   // This copy seems unnecessary but it may have been needed by CPython for

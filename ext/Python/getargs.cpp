@@ -322,21 +322,21 @@ static void seterror(Py_ssize_t iarg, const char* msg, int* levels,
   if (message == nullptr) {
     if (fname != nullptr) {
       PyOS_snprintf(p, sizeof(buf), "%.200s() ", fname);
-      p += strlen(p);
+      p += std::strlen(p);
     }
     if (iarg != 0) {
       PyOS_snprintf(p, sizeof(buf) - (p - buf),
                     "argument %" PY_FORMAT_SIZE_T "d", iarg);
       i = 0;
-      p += strlen(p);
+      p += std::strlen(p);
       while (i < 32 && levels[i] > 0 && static_cast<int>(p - buf) < 220) {
         PyOS_snprintf(p, sizeof(buf) - (p - buf), ", item %d", levels[i] - 1);
-        p += strlen(p);
+        p += std::strlen(p);
         i++;
       }
     } else {
       PyOS_snprintf(p, sizeof(buf) - (p - buf), "argument");
-      p += strlen(p);
+      p += std::strlen(p);
     }
     PyOS_snprintf(p, sizeof(buf) - (p - buf), " %.256s", msg);
     message = buf;
@@ -801,7 +801,7 @@ static const char* convertsimple(PyObject* arg, const char** p_format,
         STORE_SIZE(count);
         format++;
       } else {
-        if (strlen(static_cast<char*>(*p)) != static_cast<size_t>(count)) {
+        if (std::strlen(static_cast<char*>(*p)) != static_cast<size_t>(count)) {
           PyErr_SetString(PyExc_ValueError, "embedded null byte");
           RETURN_ERR_OCCURRED;
         }
@@ -872,7 +872,7 @@ static const char* convertsimple(PyObject* arg, const char** p_format,
           if (sarg == nullptr) {
             return converterr(CONV_UNICODE, arg, msgbuf, bufsize);
           }
-          if (strlen(sarg) != static_cast<size_t>(len)) {
+          if (std::strlen(sarg) != static_cast<size_t>(len)) {
             PyErr_SetString(PyExc_ValueError, "embedded null character");
             RETURN_ERR_OCCURRED;
           }
@@ -1040,7 +1040,7 @@ static const char* convertsimple(PyObject* arg, const char** p_format,
         //   *buffer is updated to point to the new
         //   buffer; the caller is responsible for
         //   PyMem_Free()ing it after usage
-        if (static_cast<Py_ssize_t>(strlen(ptr)) != size) {
+        if (static_cast<Py_ssize_t>(std::strlen(ptr)) != size) {
           Py_DECREF(s);
           return converterr("encoded string without null bytes", arg, msgbuf,
                             bufsize);

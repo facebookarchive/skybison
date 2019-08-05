@@ -62,7 +62,7 @@ RawObject RawSmallStr::fromCodePoint(int32_t code_point) {
 }
 
 RawObject RawSmallStr::fromCStr(const char* value) {
-  word len = strlen(value);
+  word len = std::strlen(value);
   return fromBytes(View<byte>(reinterpret_cast<const byte*>(value), len));
 }
 

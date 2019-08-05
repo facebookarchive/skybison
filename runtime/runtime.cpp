@@ -1106,9 +1106,9 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
         const char* value = va_arg(args, char*);
         if (dst == nullptr) {
           len--;
-          len += strlen(value);
+          len += std::strlen(value);
         } else {
-          word length = strlen(value);
+          word length = std::strlen(value);
           std::memcpy(reinterpret_cast<byte*>(&dst[dst_idx]), value, length);
           dst_idx += length;
         }

@@ -369,7 +369,7 @@ static void errInput(perrdetail* err) {
   } else {
     errtext = PyUnicode_DecodeUTF8(err->text, err->offset, "replace");
     if (errtext != nullptr) {
-      Py_ssize_t len = strlen(err->text);
+      Py_ssize_t len = std::strlen(err->text);
       offset = static_cast<int>(PyUnicode_GET_LENGTH(errtext));
       if (len != err->offset) {
         Py_DECREF(errtext);
