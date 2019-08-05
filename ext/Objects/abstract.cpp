@@ -722,7 +722,7 @@ PY_EXPORT PyObject* PyObject_CallMethod(PyObject* pyobj, const char* name,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
-  Object callable(&scope, runtime->attributeAtWithCStr(thread, obj, name));
+  Object callable(&scope, runtime->attributeAtByCStr(thread, obj, name));
   if (callable.isError()) return nullptr;
 
   va_list va;
@@ -763,7 +763,7 @@ PY_EXPORT PyObject* _PyObject_CallMethod_SizeT(PyObject* pyobj,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
-  Object callable(&scope, runtime->attributeAtWithCStr(thread, obj, name));
+  Object callable(&scope, runtime->attributeAtByCStr(thread, obj, name));
   if (callable.isError()) return nullptr;
 
   va_list va;

@@ -3693,15 +3693,15 @@ RawObject Runtime::attributeAt(Thread* thread, const Object& object,
   return *result;
 }
 
-RawObject Runtime::attributeAtId(Thread* thread, const Object& receiver,
-                                 SymbolId id) {
+RawObject Runtime::attributeAtById(Thread* thread, const Object& receiver,
+                                   SymbolId id) {
   HandleScope scope(thread);
   Object name_str(&scope, symbols()->at(id));
   return attributeAt(thread, receiver, name_str);
 }
 
-RawObject Runtime::attributeAtWithCStr(Thread* thread, const Object& receiver,
-                                       const char* name) {
+RawObject Runtime::attributeAtByCStr(Thread* thread, const Object& receiver,
+                                     const char* name) {
   HandleScope scope(thread);
   Object name_str(&scope, internStrFromCStr(thread, name));
   return attributeAt(thread, receiver, name_str);

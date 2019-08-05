@@ -146,7 +146,7 @@ PY_EXPORT PyObject* PyObject_GetAttrString(PyObject* pyobj, const char* name) {
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
   Object result(&scope,
-                thread->runtime()->attributeAtWithCStr(thread, object, name));
+                thread->runtime()->attributeAtByCStr(thread, object, name));
   if (result.isError()) return nullptr;
   return ApiHandle::newReference(thread, *result);
 }

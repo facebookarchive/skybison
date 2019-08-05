@@ -133,7 +133,7 @@ static RawObject genThrowYieldFrom(Thread* thread, const GeneratorBase& gen,
   // _gen_throw() in CPython.
 
   Object throw_obj(&scope,
-                   runtime->attributeAtId(thread, yf, SymbolId::kThrow));
+                   runtime->attributeAtById(thread, yf, SymbolId::kThrow));
   if (throw_obj.isError()) {
     // If the call failed with an AttributeError, ignore it and proceed with
     // the throw. Otherwise, forward the exception.

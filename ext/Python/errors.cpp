@@ -515,7 +515,7 @@ PY_EXPORT void PyErr_WriteUnraisable(PyObject* obj) {
 
   Object module_name_obj(
       &scope,
-      runtime->attributeAtId(thread, exc_type, SymbolId::kDunderModule));
+      runtime->attributeAtById(thread, exc_type, SymbolId::kDunderModule));
   if (!runtime->isInstanceOfStr(*module_name_obj)) {
     thread->clearPendingException();
     if (fileWriteCStrUnraisable(thread, sys_stderr, "<unknown>").isError()) {

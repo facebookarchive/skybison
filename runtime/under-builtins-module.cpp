@@ -659,7 +659,7 @@ static RawObject isAbstract(Thread* thread, const Object& obj) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   // TODO(T47800709): make this lookup more efficient
-  Object abstract(&scope, runtime->attributeAtId(
+  Object abstract(&scope, runtime->attributeAtById(
                               thread, obj, SymbolId::kDunderIsAbstractMethod));
   if (abstract.isError()) {
     Object given(&scope, thread->pendingExceptionType());

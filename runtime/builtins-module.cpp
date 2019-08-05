@@ -305,7 +305,7 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
   Object dict_obj(&scope, NoneType::object());
   Object prepare_method(
       &scope,
-      runtime->attributeAtId(thread, metaclass, SymbolId::kDunderPrepare));
+      runtime->attributeAtById(thread, metaclass, SymbolId::kDunderPrepare));
   if (prepare_method.isError()) {
     Object given(&scope, thread->pendingExceptionType());
     Object exc(&scope, runtime->typeAt(LayoutId::kAttributeError));

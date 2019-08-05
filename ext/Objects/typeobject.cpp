@@ -1072,7 +1072,7 @@ PyObject* slotTpNew(PyObject* type, PyObject* args, PyObject* kwargs) {
 
   // Call type.__new__(type, *args, **kwargs)
   Object dunder_new(
-      &scope, runtime->attributeAtId(thread, type_obj, SymbolId::kDunderNew));
+      &scope, runtime->attributeAtById(thread, type_obj, SymbolId::kDunderNew));
   if (dunder_new.isError()) return nullptr;
   Frame* frame = thread->currentFrame();
   frame->pushValue(*dunder_new);

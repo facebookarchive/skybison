@@ -173,7 +173,8 @@ TEST_F(TypeBuiltinsTest, DunderDocOnEmptyTypeReturnsNone) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, "class C: pass").isError());
   Object c(&scope, mainModuleAt(&runtime_, "C"));
-  Object doc(&scope, runtime_.attributeAtId(thread_, c, SymbolId::kDunderDoc));
+  Object doc(&scope,
+             runtime_.attributeAtById(thread_, c, SymbolId::kDunderDoc));
   EXPECT_EQ(doc, NoneType::object());
 }
 
@@ -186,7 +187,8 @@ class C:
 )")
                    .isError());
   Object c(&scope, mainModuleAt(&runtime_, "C"));
-  Object doc(&scope, runtime_.attributeAtId(thread_, c, SymbolId::kDunderDoc));
+  Object doc(&scope,
+             runtime_.attributeAtById(thread_, c, SymbolId::kDunderDoc));
   EXPECT_TRUE(isStrEqualsCStr(*doc, "hello documentation"));
 }
 

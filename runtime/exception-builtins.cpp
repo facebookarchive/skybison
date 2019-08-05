@@ -200,11 +200,12 @@ static bool parseSyntaxError(Thread* thread, const Object& value,
 
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Object result(&scope, runtime->attributeAtId(thread, value, SymbolId::kMsg));
+  Object result(&scope,
+                runtime->attributeAtById(thread, value, SymbolId::kMsg));
   if (result.isError()) return fail();
   *message = *result;
 
-  result = runtime->attributeAtId(thread, value, SymbolId::kFilename);
+  result = runtime->attributeAtById(thread, value, SymbolId::kFilename);
   if (result.isError()) return fail();
   if (result.isNoneType()) {
     *filename = runtime->newStrFromCStr("<string>");
@@ -214,7 +215,7 @@ static bool parseSyntaxError(Thread* thread, const Object& value,
     return false;
   }
 
-  result = runtime->attributeAtId(thread, value, SymbolId::kLineno);
+  result = runtime->attributeAtById(thread, value, SymbolId::kLineno);
   if (result.isError()) return fail();
   if (runtime->isInstanceOfInt(*result)) {
     Int ival(&scope, intUnderlying(thread, result));
@@ -224,7 +225,7 @@ static bool parseSyntaxError(Thread* thread, const Object& value,
     return false;
   }
 
-  result = runtime->attributeAtId(thread, value, SymbolId::kOffset);
+  result = runtime->attributeAtById(thread, value, SymbolId::kOffset);
   if (result.isError()) return fail();
   if (result.isNoneType()) {
     *offset = -1;
@@ -236,7 +237,7 @@ static bool parseSyntaxError(Thread* thread, const Object& value,
     return false;
   }
 
-  result = runtime->attributeAtId(thread, value, SymbolId::kText);
+  result = runtime->attributeAtById(thread, value, SymbolId::kText);
   if (result.isError()) return fail();
   if (result.isNoneType() || runtime->isInstanceOfStr(*result)) {
     *text = *result;
@@ -345,7 +346,7 @@ static RawObject printSingleException(Thread* thread, const Object& file,
     MAY_RAISE(fileWriteString(thread, file, "<traceback>\n"));
   }
 
-  if (runtime->attributeAtId(thread, value, SymbolId::kPrintFileAndLine)
+  if (runtime->attributeAtById(thread, value, SymbolId::kPrintFileAndLine)
           .isError()) {
     // Ignore the AttributeError or whatever else went wrong during lookup.
     thread->clearPendingException();
@@ -368,8 +369,8 @@ static RawObject printSingleException(Thread* thread, const Object& file,
     }
   }
 
-  Object module(&scope,
-                runtime->attributeAtId(thread, type, SymbolId::kDunderModule));
+  Object module(
+      &scope, runtime->attributeAtById(thread, type, SymbolId::kDunderModule));
   if (module.isError() || !runtime->isInstanceOfStr(*module)) {
     if (module.isError()) thread->clearPendingException();
     MAY_RAISE(fileWriteString(thread, file, "<unknown>"));
