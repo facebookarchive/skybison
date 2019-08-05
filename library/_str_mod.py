@@ -59,6 +59,23 @@ def format(string: str, args) -> str:  # noqa: C901
                 _strarray_iadd(result, repr(arg))
             elif c == "a":
                 _strarray_iadd(result, ascii(arg))
+            elif c == "c":
+                if _str_check(arg):
+                    if _str_len(arg) != 1:
+                        raise TypeError("%c requires int or char")
+                    fragment = arg
+                else:
+                    try:
+                        value = _index(arg)
+                        fragment = chr(value)
+                    except ValueError:
+                        import sys
+
+                        max_hex = _int_format_hexadecimal(sys.maxunicode + 1)
+                        raise OverflowError(f"%c arg not in range(0x{max_hex})")
+                    except Exception:
+                        raise TypeError("%c requires int or char")
+                _strarray_iadd(result, fragment)
             elif c == "d" or c == "i" or c == "u":
                 try:
                     if not _number_check(arg):

@@ -3101,6 +3101,49 @@ class StrModTests(unittest.TestCase):
         self.assertEqual("%d" % 42, "42")
         self.assertEqual("%s" % {"foo": "bar"}, "{'foo': 'bar'}")
 
+    def test_c_format_returns_string(self):
+        self.assertEqual("%c" % ("x",), "x")
+        self.assertEqual("%c" % ("\U0001f44d",), "\U0001f44d")
+        self.assertEqual("%c" % (76,), "L")
+        self.assertEqual("%c" % (0x1F40D,), "\U0001f40d")
+
+    def test_c_format_with_non_int_returns_string(self):
+        class C:
+            def __index__(self):
+                return 42
+
+        self.assertEqual("%c" % (C(),), "*")
+
+    def test_c_format_raises_overflow_error(self):
+        import sys
+
+        maxunicode_range = "range(0x%x)" % (sys.maxunicode + 1)
+        with self.assertRaises(OverflowError) as context:
+            "%c" % (sys.maxunicode + 1,)
+        self.assertEqual(str(context.exception), f"%c arg not in {maxunicode_range}")
+        with self.assertRaises(OverflowError) as context:
+            "%c" % (-1,)
+        self.assertEqual(str(context.exception), f"%c arg not in {maxunicode_range}")
+
+    def test_c_format_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            "%c" % (None,)
+        self.assertEqual(str(context.exception), f"%c requires int or char")
+        with self.assertRaises(TypeError) as context:
+            "%c" % ("ab",)
+        self.assertEqual(str(context.exception), f"%c requires int or char")
+        with self.assertRaises(TypeError) as context:
+            "%c" % (123456789012345678901234567890,)
+        self.assertEqual(str(context.exception), f"%c requires int or char")
+
+        class C:
+            def __index__(self):
+                raise UserWarning()
+
+        with self.assertRaises(TypeError) as context:
+            "%c" % (C(),)
+        self.assertEqual(str(context.exception), f"%c requires int or char")
+
     def test_s_format_returns_string(self):
         self.assertEqual("%s" % ("foo",), "foo")
 
