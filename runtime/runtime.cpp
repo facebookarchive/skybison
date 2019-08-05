@@ -2195,11 +2195,10 @@ void Runtime::moduleImportAllFrom(const Dict& dict, const Module& module) {
   Thread* thread = Thread::current();
   HandleScope scope;
   Dict module_dict(&scope, module.dict());
-  Tuple module_keys(&scope, dictKeys(thread, module_dict));
-  for (word i = 0; i < module_keys.length(); i++) {
-    Object symbol_name(&scope, module_keys.at(i));
+  Tuple buckets(&scope, module_dict.data());
+  for (word i = Dict::Bucket::kFirst; nextModuleDictItem(*buckets, &i);) {
+    Object symbol_name(&scope, Dict::Bucket::key(*buckets, i));
     CHECK(symbol_name.isStr(), "Symbol is not a String");
-
     // Load all the symbols not starting with '_'
     Str symbol_name_str(&scope, *symbol_name);
     if (symbol_name_str.charAt(0) != '_') {

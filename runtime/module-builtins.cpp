@@ -9,6 +9,19 @@
 
 namespace python {
 
+RawObject moduleDictKeys(Thread* thread, const Dict& module_dict) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Tuple buckets(&scope, module_dict.data());
+  List result(&scope, runtime->newList());
+  Object value(&scope, NoneType::object());
+  for (word i = Dict::Bucket::kFirst; nextModuleDictItem(*buckets, &i);) {
+    value = Dict::Bucket::key(*buckets, i);
+    runtime->listAdd(thread, result, value);
+  }
+  return *result;
+}
+
 RawObject moduleGetAttribute(Thread* thread, const Module& module,
                              const Object& name_str) {
   // Note that PEP 562 adds support for data descriptors in module objects.
@@ -30,6 +43,17 @@ RawObject moduleSetAttr(Thread* thread, const Module& module,
   DCHECK(runtime->isInstanceOfStr(*name_str), "name must be a string");
   thread->runtime()->moduleAtPut(module, name_str, value);
   return NoneType::object();
+}
+
+bool nextModuleDictItem(RawTuple data, word* idx) {
+  // Iterate through until we find a non-placeholder item.
+  while (Dict::Bucket::nextItem(data, idx)) {
+    if (!ValueCell::cast(Dict::Bucket::value(data, *idx)).isPlaceholder()) {
+      // At this point, we have found a valid index in the buckets.
+      return true;
+    }
+  }
+  return false;
 }
 
 int execDef(Thread* thread, const Module& module, PyModuleDef* def) {

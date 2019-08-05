@@ -1940,6 +1940,44 @@ class LongRangeIteratorTests(unittest.TestCase):
             self.assertEqual(it.__next__(), i)
 
 
+class ModuleTest(unittest.TestCase):
+    def test_dunder_dir_returns_newly_created_list_object(self):
+        from types import ModuleType
+
+        mymodule = ModuleType("mymodule")
+        self.assertEqual(type(mymodule.__dir__()), list)
+        self.assertIsNot(mymodule.__dir__(), mymodule.__dir__())
+
+    def test_dunder_dir_returns_list_containing_module_attributes(self):
+        from types import ModuleType
+
+        mymodule = ModuleType("mymodule")
+        mymodule.x = 40
+        mymodule.y = 50
+        result = mymodule.__dir__()
+        self.assertIn("x", result)
+        self.assertIn("y", result)
+
+    def test_dunder_dir_returns_list_containing_added_module_attributes(self):
+        from types import ModuleType
+
+        mymodule = ModuleType("mymodule")
+        self.assertNotIn("z", mymodule.__dir__())
+
+        mymodule.z = 60
+        self.assertIn("z", mymodule.__dir__())
+
+    def test_dunder_dir_returns_list_not_containing_deleted_module_attributes(self):
+        from types import ModuleType
+
+        mymodule = ModuleType("mymodule")
+        mymodule.x = 40
+        self.assertIn("x", mymodule.__dir__())
+
+        del mymodule.x
+        self.assertNotIn("x", mymodule.__dir__())
+
+
 class NextTests(unittest.TestCase):
     def test_next_with_raising_dunder_next_propagates_error(self):
         class Desc:

@@ -35,21 +35,6 @@ sys.__name__ = "ysy"
 }
 
 // TODO(T39575976): Add tests verifying internal names's hiding.
-
-TEST_F(ModuleBuiltinsTest, DunderDirReturnsList) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-import builtins
-list = dir(builtins)
-)")
-                   .isError());
-  Object list(&scope, moduleAt(&runtime_, "__main__", "list"));
-  Object ord(&scope, runtime_.newStrFromCStr("ord"));
-  EXPECT_TRUE(listContains(list, ord));
-  Object dunder_name(&scope, runtime_.newStrFromCStr("__name__"));
-  EXPECT_TRUE(listContains(list, dunder_name));
-}
-
 TEST_F(ModuleBuiltinsTest, DunderGetattributeReturnsAttribute) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, "foo = -6").isError());
@@ -168,6 +153,27 @@ result = sys.__dict__
   EXPECT_TRUE(result.isDict());
 }
 
+TEST_F(ModuleBuiltinsTest, ModuleDictKeysFiltersOutPlaceholders) {
+  HandleScope scope(thread_);
+  Dict module_dict(&scope, runtime_.newDict());
+
+  Str foo(&scope, runtime_.newStrFromCStr("foo"));
+  Str bar(&scope, runtime_.newStrFromCStr("bar"));
+  Str baz(&scope, runtime_.newStrFromCStr("baz"));
+  Str value(&scope, runtime_.newStrFromCStr("value"));
+
+  runtime_.moduleDictAtPut(thread_, module_dict, foo, value);
+  runtime_.moduleDictAtPut(thread_, module_dict, bar, value);
+  runtime_.moduleDictAtPut(thread_, module_dict, baz, value);
+
+  ValueCell::cast(runtime_.dictAt(thread_, module_dict, bar)).makePlaceholder();
+
+  List keys(&scope, moduleDictKeys(thread_, module_dict));
+  EXPECT_EQ(keys.numItems(), 2);
+  EXPECT_EQ(keys.at(0), *foo);
+  EXPECT_EQ(keys.at(1), *baz);
+}
+
 TEST_F(ModuleBuiltinsTest, ModuleGetAttributeReturnsInstanceValue) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, "x = 42").isError());
@@ -203,6 +209,33 @@ TEST_F(ModuleBuiltinsTest, NewModuleDunderReprReturnsString) {
   Object result(
       &scope, Thread::current()->invokeMethod1(module, SymbolId::kDunderRepr));
   EXPECT_TRUE(isStrEqualsCStr(*result, "<module 'hello'>"));
+}
+
+TEST_F(ModuleBuiltinsTest, NextModuleDictItemReturnsNextNonPlaceholder) {
+  HandleScope scope(thread_);
+  Dict module_dict(&scope, runtime_.newDict());
+
+  Str foo(&scope, runtime_.newStrFromCStr("foo"));
+  Str bar(&scope, runtime_.newStrFromCStr("bar"));
+  Str baz(&scope, runtime_.newStrFromCStr("baz"));
+  Str qux(&scope, runtime_.newStrFromCStr("qux"));
+  Str value(&scope, runtime_.newStrFromCStr("value"));
+
+  runtime_.moduleDictAtPut(thread_, module_dict, foo, value);
+  runtime_.moduleDictAtPut(thread_, module_dict, bar, value);
+  runtime_.moduleDictAtPut(thread_, module_dict, baz, value);
+  runtime_.moduleDictAtPut(thread_, module_dict, qux, value);
+
+  // Only baz is not Placeholder.
+  ValueCell::cast(runtime_.dictAt(thread_, module_dict, foo)).makePlaceholder();
+  ValueCell::cast(runtime_.dictAt(thread_, module_dict, bar)).makePlaceholder();
+  ValueCell::cast(runtime_.dictAt(thread_, module_dict, qux)).makePlaceholder();
+
+  Tuple buckets(&scope, module_dict.data());
+  word i = Dict::Bucket::kFirst;
+  EXPECT_TRUE(nextModuleDictItem(*buckets, &i));
+  EXPECT_TRUE(isStrEqualsCStr(Dict::Bucket::key(*buckets, i), "baz"));
+  EXPECT_FALSE(nextModuleDictItem(*buckets, &i));
 }
 
 TEST_F(ModuleBuiltinsTest, BuiltinModuleDunderReprReturnsString) {

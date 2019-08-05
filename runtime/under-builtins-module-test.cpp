@@ -1303,6 +1303,31 @@ TEST_F(UnderBuiltinsModuleTest,
       LayoutId::kIndexError, "list index out of range"));
 }
 
+TEST_F(UnderBuiltinsModuleTest, UnderModuleDirListWithFilteredOutPlaceholders) {
+  HandleScope scope(thread_);
+  Dict module_dict(&scope, runtime_.newDict());
+
+  Str foo(&scope, runtime_.newStrFromCStr("foo"));
+  Str bar(&scope, runtime_.newStrFromCStr("bar"));
+  Str baz(&scope, runtime_.newStrFromCStr("baz"));
+  Str value(&scope, runtime_.newStrFromCStr("value"));
+
+  runtime_.moduleDictAtPut(thread_, module_dict, foo, value);
+  runtime_.moduleDictAtPut(thread_, module_dict, bar, value);
+  runtime_.moduleDictAtPut(thread_, module_dict, baz, value);
+
+  ValueCell::cast(runtime_.dictAt(thread_, module_dict, bar)).makePlaceholder();
+
+  Str module_name(&scope, runtime_.newStrFromCStr("module"));
+  Module module(&scope, runtime_.newModule(module_name));
+  module.setDict(*module_dict);
+
+  List keys(&scope, runBuiltin(UnderBuiltinsModule::underModuleDir, module));
+  EXPECT_EQ(keys.numItems(), 2);
+  EXPECT_EQ(keys.at(0), *foo);
+  EXPECT_EQ(keys.at(1), *baz);
+}
+
 TEST_F(UnderBuiltinsModuleTest,
        UnderObjectTypeHasattrWithNonexistentAttrReturnsFalse) {
   HandleScope scope(thread_);

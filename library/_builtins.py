@@ -371,6 +371,11 @@ def _list_sort(list):
 
 
 @_patch
+def _module_dir(module):
+    pass
+
+
+@_patch
 def _object_type_getattr(obj, name):
     """Looks up the named attribute on the object's type, resolving descriptors.
 Behaves like _PyObject_LookupSpecial."""

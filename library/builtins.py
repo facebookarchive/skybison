@@ -77,6 +77,7 @@ _list_getslice = _list_getslice  # noqa: F821
 _list_guard = _list_guard  # noqa: F821
 _list_len = _list_len  # noqa: F821
 _list_sort = _list_sort  # noqa: F821
+_module_dir = _module_dir  # noqa: F821
 _object_type_getattr = _object_type_getattr  # noqa: F821
 _object_type_hasattr = _object_type_hasattr  # noqa: F821
 _patch = _patch  # noqa: F821
@@ -2766,7 +2767,7 @@ class module(bootstrap=True):
                 f"'__dir__' requires a 'module' object "
                 "but received a '{_type(self).__name__}'"
             )
-        return list(self.__dict__.keys())
+        return _module_dir(self)
 
     def __getattribute__(self, name):
         pass

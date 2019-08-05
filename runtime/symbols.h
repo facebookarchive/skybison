@@ -39,6 +39,7 @@ class Runtime;
   V(DunderDelete, "__delete__")                                                \
   V(DunderDelitem, "__delitem__")                                              \
   V(DunderDict, "__dict__")                                                    \
+  V(DunderDir, "__dir__")                                                      \
   V(DunderDivmod, "__divmod__")                                                \
   V(DunderDoc, "__doc__")                                                      \
   V(DunderEnter, "__enter__")                                                  \
@@ -239,6 +240,7 @@ class Runtime;
   V(UnderListLen, "_list_len")                                                 \
   V(UnderListSort, "_list_sort")                                               \
   V(UnderLookupText, "_lookup_text")                                           \
+  V(UnderModuleDir, "_module_dir")                                             \
   V(UnderModuleRepr, "_module_repr")                                           \
   V(UnderMutableBytes, "_mutablebytes")                                        \
   V(UnderNewMemberGetBool, "_new_member_get_bool")                             \

@@ -13,6 +13,7 @@
 #include "frozen-modules.h"
 #include "int-builtins.h"
 #include "list-builtins.h"
+#include "module-builtins.h"
 #include "object-builtins.h"
 #include "range-builtins.h"
 #include "str-builtins.h"
@@ -137,6 +138,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderListGuard, underListGuard},
     {SymbolId::kUnderListLen, underListLen},
     {SymbolId::kUnderListSort, underListSort},
+    {SymbolId::kUnderModuleDir, underModuleDir},
     {SymbolId::kUnderObjectTypeGetattr, underObjectTypeGetAttr},
     {SymbolId::kUnderObjectTypeHasattr, underObjectTypeHasattr},
     {SymbolId::kUnderOsRead, underOsRead},
@@ -1553,6 +1555,15 @@ RawObject UnderBuiltinsModule::underListSort(Thread* thread, Frame* frame,
         "Unsupported argument type for 'ls'");
   List list(&scope, args.get(0));
   return listSort(thread, list);
+}
+
+RawObject UnderBuiltinsModule::underModuleDir(Thread* thread, Frame* frame,
+                                              word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Module self(&scope, args.get(0));
+  Dict module_dict(&scope, self.dict());
+  return moduleDictKeys(thread, module_dict);
 }
 
 RawObject UnderBuiltinsModule::underObjectTypeGetAttr(Thread* thread,
