@@ -3101,6 +3101,55 @@ class StrModTests(unittest.TestCase):
         self.assertEqual("%d" % 42, "42")
         self.assertEqual("%s" % {"foo": "bar"}, "{'foo': 'bar'}")
 
+    def test_with_named_args_returns_string(self):
+        self.assertEqual("%(foo)s %(bar)d" % {"foo": "ho", "bar": 42}, "ho 42")
+        self.assertEqual("%()x" % {"": 123}, "7b")
+        self.assertEqual(")%(((()) ()))s(" % {"((()) ())": 99}, ")99(")
+        self.assertEqual("%(%s)s" % {"%s": -5}, "-5")
+
+    def test_with_custom_mapping_returns_string(self):
+        class C:
+            def __getitem__(self, key):
+                return "getitem called with " + key
+
+        self.assertEqual("%(foo)s" % C(), "getitem called with foo")
+
+    def test_with_custom_mapping_propagates_errors(self):
+        with self.assertRaises(KeyError) as context:
+            "%(foo)s" % {}
+        self.assertEqual(str(context.exception), "'foo'")
+
+        class C:
+            def __getitem__(self, key):
+                raise UserWarning()
+
+        with self.assertRaises(UserWarning):
+            "%(foo)s" % C()
+
+    def test_without_mapping_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            "%(foo)s" % None
+        self.assertEqual(str(context.exception), "format requires a mapping")
+        with self.assertRaises(TypeError) as context:
+            "%(foo)s" % "foobar"
+        self.assertEqual(str(context.exception), "format requires a mapping")
+        with self.assertRaises(TypeError) as context:
+            "%(foo)s" % ("foobar",)
+        self.assertEqual(str(context.exception), "format requires a mapping")
+
+    def test_positional_after_named_arg_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            "%(foo)s %s" % {"foo": "bar"}
+        self.assertEqual(
+            str(context.exception), "not enough arguments for format string"
+        )
+
+    def test_mix_named_and_tuple_args_returns_string(self):
+        self.assertEqual("%s %(a)s" % {"a": 77}, "{'a': 77} 77")
+
+    def test_mapping_in_tuple_returns_string(self):
+        self.assertEqual("%s" % ({"foo": "bar"},), "{'foo': 'bar'}")
+
     def test_c_format_returns_string(self):
         self.assertEqual("%c" % ("x",), "x")
         self.assertEqual("%c" % ("\U0001f44d",), "\U0001f44d")
@@ -3452,6 +3501,9 @@ class StrModTests(unittest.TestCase):
     def test_specifier_missing_format_raises_value_error(self):
         with self.assertRaises(ValueError) as context:
             "%" % ()
+        self.assertEqual(str(context.exception), "incomplete format")
+        with self.assertRaises(ValueError) as context:
+            "%(foo)" % {"foo": None}
         self.assertEqual(str(context.exception), "incomplete format")
 
     def test_too_few_args_raises_type_error(self):

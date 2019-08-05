@@ -7,6 +7,7 @@ _int_format_hexadecimal_upcase = _int_format_hexadecimal_upcase  # noqa: F821
 _int_format_octal = _int_format_octal  # noqa: F821
 _index = _index  # noqa: F821
 _int_check = _int_check  # noqa: F821
+_mapping_check = _mapping_check  # noqa: F821
 _number_check = _number_check  # noqa: F821
 _str_check = _str_check  # noqa: F821
 _str_len = _str_len  # noqa: F821
@@ -18,6 +19,7 @@ _unimplemented = _unimplemented  # noqa: F821
 
 
 def format(string: str, args) -> str:  # noqa: C901
+    args_dict = None
     if _tuple_check(args):
         args_tuple = args
         args_len = len(args_tuple)
@@ -43,6 +45,38 @@ def format(string: str, args) -> str:  # noqa: C901
             in_specifier = True
             c = it.__next__()
             idx += 1
+
+            # Parse named reference.
+            if c == "(":
+                if args_dict is None:
+                    if (
+                        _tuple_check(args)
+                        or _str_check(args)
+                        or not _mapping_check(args)
+                    ):
+                        raise TypeError("format requires a mapping")
+                    args_dict = args
+
+                pcount = 1
+                keystart = idx
+                while pcount > 0:
+                    c = it.__next__()
+                    idx += 1
+                    if c == ")":
+                        pcount -= 1
+                    elif c == "(":
+                        pcount += 1
+                key = string[keystart : idx - 1]
+
+                # skip over closing ")"
+                c = it.__next__()
+                idx += 1
+
+                # lookup parameter in dictionary.
+                value = args_dict[key]
+                args_tuple = (value,)
+                args_len = 1
+                arg_idx = 0
 
             # Parse and process format.
             if c != "%":

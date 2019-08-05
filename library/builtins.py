@@ -703,6 +703,11 @@ def _issubclass_recursive(subclass, superclass) -> bool:
     return False
 
 
+def _mapping_check(obj) -> bool:
+    # equivalent PyMapping_Check()
+    return _object_type_hasattr(obj, "__getitem__")
+
+
 def _new_member_get_bool(offset):
     return lambda instance: bool(_get_member_int(_pyobject_offset(instance, offset)))
 
