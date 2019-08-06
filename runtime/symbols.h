@@ -321,6 +321,7 @@ class Runtime;
   V(UnderStrFind, "_str_find")                                                 \
   V(UnderStrFromStr, "_str_from_str")                                          \
   V(UnderStrLen, "_str_len")                                                   \
+  V(UnderStrMod, "_str_mod")                                                   \
   V(UnderStrReplace, "_str_replace")                                           \
   V(UnderStrRFind, "_str_rfind")                                               \
   V(UnderStrSplitlines, "_str_splitlines")                                     \

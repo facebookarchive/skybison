@@ -58,6 +58,7 @@
 #include "tuple-builtins.h"
 #include "type-builtins.h"
 #include "under-builtins-module.h"
+#include "under-str-mod-module.h"
 #include "utils.h"
 #include "visitor.h"
 #include "warnings-module.h"
@@ -2044,9 +2045,10 @@ void Runtime::moduleAtPut(const Module& module, const Object& key,
 // TODO(emacs): Move these names into the modules themselves, so there is only
 // once source of truth.
 const ModuleInitializer Runtime::kBuiltinModules[] = {
-    {SymbolId::kUnderImp, &UnderImpModule::initialize},
     {SymbolId::kUnderCodecs, &UnderCodecsModule::initialize},
+    {SymbolId::kUnderImp, &UnderImpModule::initialize},
     {SymbolId::kUnderIo, &UnderIoModule::initialize},
+    {SymbolId::kUnderStrMod, &UnderStrModModule::initialize},
     {SymbolId::kMarshal, &MarshalModule::initialize},
     {SymbolId::kUnderWarnings, &UnderWarningsModule::initialize},
     {SymbolId::kUnderWeakRef, &UnderWeakrefModule::initialize},

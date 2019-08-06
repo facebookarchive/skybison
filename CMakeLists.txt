@@ -181,6 +181,7 @@ set(
   library/_imp.py
   library/_io.py
   library/_namedtuple.py
+  library/_str_mod.py
   library/_warnings.py
   library/_weakref.py
   library/builtins.py
@@ -362,6 +363,8 @@ add_library(
   runtime/type-builtins.cpp
   runtime/under-builtins-module.cpp
   runtime/under-builtins-module.h
+  runtime/under-str-mod-module.cpp
+  runtime/under-str-mod-module.h
   runtime/utils.cpp
   runtime/utils.h
   runtime/vector.h
