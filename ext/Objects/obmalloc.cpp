@@ -58,11 +58,6 @@ PY_EXPORT void* PyMem_New_Func(size_t size, size_t n) {
   return PyMem_Malloc(n * size);
 }
 
-PY_EXPORT void* PyMem_Resize_Func(void* p, size_t size, size_t n) {
-  if (n > kMaxWord / size) return nullptr;
-  return PyMem_Realloc(p, n * size);
-}
-
 PY_EXPORT char* _PyMem_RawStrdup(const char* str) {
   size_t size = std::strlen(str) + 1;
   char* result = static_cast<char*>(PyMem_RawMalloc(size));

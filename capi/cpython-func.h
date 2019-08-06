@@ -973,7 +973,6 @@ PyAPI_FUNC(Py_ssize_t) _PyObject_SIZE_Func(PyObject*);
 PyAPI_FUNC(Py_ssize_t) _PyObject_VAR_SIZE_Func(PyObject*, Py_ssize_t);
 
 PyAPI_FUNC(void*) PyMem_New_Func(size_t size, size_t n);
-PyAPI_FUNC(void*) PyMem_Resize_Func(void* p, size_t size, size_t n);
 
 PyAPI_FUNC(int) PyUnicode_KIND_Func(PyObject*);
 PyAPI_FUNC(void*) PyUnicode_DATA_Func(PyObject*);
@@ -1117,7 +1116,10 @@ PyAPI_FUNC(void) Py_LeaveRecursiveCall_Func();
 #define PyMem_New(type, n) ((type*)PyMem_New_Func(sizeof(type), n))
 #define PyMem_NEW(type, n) PyMem_New(type, n)
 #define PyMem_REALLOC(p, n) PyMem_Realloc(p, n)
-#define PyMem_Resize(p, type, n) ((type*)PyMem_Resize_Func(p, sizeof(type), n))
+#define PyMem_Resize(p, type, n)                                               \
+  ((p) = ((size_t)(n) > PY_SSIZE_T_MAX / sizeof(type))                         \
+             ? NULL                                                            \
+             : (type*)PyMem_Realloc((p), (n) * sizeof(type)))
 #define PyMem_RESIZE(p, type, n) PyMem_Resize(p, type, n)
 
 /* Character macros from pyctype.h */
