@@ -2001,6 +2001,9 @@ class float(bootstrap=True):
     def __truediv__(self, n: float) -> float:
         pass
 
+    def __trunc__(self) -> int:
+        pass
+
 
 def format(obj, fmt_spec):
     if not _str_check(fmt_spec):

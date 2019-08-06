@@ -89,6 +89,7 @@ const BuiltinMethod FloatBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderRtruediv, dunderRtrueDiv},
     {SymbolId::kDunderSub, dunderSub},
     {SymbolId::kDunderTruediv, dunderTrueDiv},
+    {SymbolId::kDunderTrunc, dunderTrunc},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -274,8 +275,7 @@ RawObject FloatBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(result);
 }
 
-void FloatBuiltins::decodeDouble(double value, bool* is_neg, int* exp,
-                                 uint64_t* mantissa) {
+void decodeDouble(double value, bool* is_neg, int* exp, uint64_t* mantissa) {
   const uword man_mask = (uword{1} << kDoubleMantissaBits) - 1;
   const uword num_exp_bits = kBitsPerDouble - kDoubleMantissaBits - 1;
   const uword exp_mask = (uword{1} << num_exp_bits) - 1;
@@ -286,21 +286,11 @@ void FloatBuiltins::decodeDouble(double value, bool* is_neg, int* exp,
   *mantissa = value_bits & man_mask;
 }
 
-RawObject FloatBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Object self_obj(&scope, args.get(0));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfFloat(*self_obj)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "'__int__' requires a 'float' object");
-  }
-  double dval = Float::cast(floatUnderlying(thread, self_obj)).value();
-
+static RawObject intFromDouble(Thread* thread, double value) {
   bool is_neg;
   int exp;
   uint64_t man;
-  decodeDouble(dval, &is_neg, &exp, &man);
+  decodeDouble(value, &is_neg, &exp, &man);
   int exp_bits = kBitsPerDouble - kDoubleMantissaBits - 1;
   int max_exp = 1 << (exp_bits - 1);
   if (exp == max_exp) {
@@ -331,6 +321,7 @@ RawObject FloatBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
   DCHECK(
       man_with_implicit_one >= 0,
       "man_with_implicit_one must be positive before the sign bit is applied.");
+  Runtime* runtime = thread->runtime();
   if (result_bits <= kBitsPerWord) {
     const word result =
         (exp > kDoubleMantissaBits
@@ -340,10 +331,23 @@ RawObject FloatBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
   }
   // TODO(djang): Make another interface for intBInaryLshift() to accept
   // words directly.
+  HandleScope scope(thread);
   Int unshifted_result(&scope, runtime->newInt(is_neg ? -man_with_implicit_one
                                                       : man_with_implicit_one));
   Int shifting_bits(&scope, runtime->newInt(exp - kDoubleMantissaBits));
   return runtime->intBinaryLshift(thread, unshifted_result, shifting_bits);
+}
+
+RawObject FloatBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfFloat(*self_obj)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'__int__' requires a 'float' object");
+  }
+  double self = Float::cast(floatUnderlying(thread, self_obj)).value();
+  return intFromDouble(thread, self);
 }
 
 RawObject FloatBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
@@ -537,6 +541,19 @@ RawObject FloatBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
   if (!maybe_error.isNoneType()) return *maybe_error;
 
   return runtime->newFloat(left - right);
+}
+
+RawObject FloatBuiltins::dunderTrunc(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfFloat(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
+  }
+  double self = Float::cast(floatUnderlying(thread, self_obj)).value();
+  double integral_part;
+  static_cast<void>(modf(self, &integral_part));
+  return intFromDouble(thread, integral_part);
 }
 
 RawObject FloatBuiltins::dunderPow(Thread* thread, Frame* frame, word nargs) {

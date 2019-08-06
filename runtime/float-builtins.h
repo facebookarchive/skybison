@@ -22,12 +22,9 @@ RawObject floatUnderlying(Thread* thread, const Object& obj);
 class FloatBuiltins
     : public Builtins<FloatBuiltins, SymbolId::kFloat, LayoutId::kFloat> {
  public:
-  static void decodeDouble(double value, bool* is_neg, int* exp,
-                           uint64_t* mantissa);
   static RawObject dunderAbs(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderBool(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderTrueDiv(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderFloat(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGe(Thread* thread, Frame* frame, word nargs);
@@ -41,6 +38,8 @@ class FloatBuiltins
   static RawObject dunderPow(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderRtrueDiv(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderSub(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderTrueDiv(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderTrunc(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];
   static const BuiltinAttribute kAttributes[];
@@ -51,5 +50,7 @@ class FloatBuiltins
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(FloatBuiltins);
 };
+
+void decodeDouble(double value, bool* is_neg, int* exp, uint64_t* mantissa);
 
 }  // namespace python

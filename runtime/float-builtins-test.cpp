@@ -21,7 +21,7 @@ TEST(FloatBuiltinsTestNoFixture,
   bool is_neg;
   int exp;
   uint64_t mantissa;
-  FloatBuiltins::decodeDouble(input, &is_neg, &exp, &mantissa);
+  decodeDouble(input, &is_neg, &exp, &mantissa);
   EXPECT_EQ(is_neg, false);
 }
 
@@ -31,7 +31,7 @@ TEST(FloatBuiltinsTestNoFixture,
   bool is_neg;
   int exp;
   uint64_t mantissa;
-  FloatBuiltins::decodeDouble(input, &is_neg, &exp, &mantissa);
+  decodeDouble(input, &is_neg, &exp, &mantissa);
   EXPECT_EQ(is_neg, true);
 }
 
@@ -41,7 +41,7 @@ TEST(FloatBuiltinsTestNoFixture,
   bool is_neg;
   int exp;
   uint64_t mantissa;
-  FloatBuiltins::decodeDouble(input, &is_neg, &exp, &mantissa);
+  decodeDouble(input, &is_neg, &exp, &mantissa);
   EXPECT_EQ(exp, 1024);
 }
 
@@ -51,7 +51,7 @@ TEST(FloatBuiltinsTestNoFixture,
   bool is_neg;
   int exp;
   uint64_t mantissa;
-  FloatBuiltins::decodeDouble(input, &is_neg, &exp, &mantissa);
+  decodeDouble(input, &is_neg, &exp, &mantissa);
   EXPECT_EQ(exp, -1023);
 }
 
@@ -60,7 +60,7 @@ TEST(FloatBuiltinsTestNoFixture, DecodeDoubleWithMantissaReturnsCorrectValue) {
   bool is_neg;
   int exp;
   uint64_t mantissa;
-  FloatBuiltins::decodeDouble(input, &is_neg, &exp, &mantissa);
+  decodeDouble(input, &is_neg, &exp, &mantissa);
   EXPECT_EQ(mantissa, 0x29ef685b3f6fb);
 }
 

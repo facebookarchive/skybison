@@ -912,6 +912,34 @@ class FloatTests(unittest.TestCase):
     def test_dunder_rmod_returns_same_result_as_mod_for_float_other(self):
         self.assertEqual(float.__rmod__(1.0, 3.25), float.__mod__(3.25, 1.0))
 
+    def test_dunder_trunc_returns_int(self):
+        self.assertEqual(float.__trunc__(0.0), 0)
+        self.assertEqual(float.__trunc__(-0.0), 0)
+        self.assertEqual(float.__trunc__(1.0), 1)
+        self.assertEqual(float.__trunc__(-1.0), -1)
+        self.assertEqual(float.__trunc__(42.12345), 42)
+        self.assertEqual(float.__trunc__(1.6069380442589903e60), 1 << 200)
+        self.assertEqual(float.__trunc__(1e-20), 0)
+        self.assertEqual(float.__trunc__(-1e-20), 0)
+        self.assertIsInstance(float.__trunc__(0.0), int)
+        self.assertIsInstance(float.__trunc__(1.6069380442589903e60), int)
+        self.assertIsInstance(float.__trunc__(1e-20), int)
+
+    def test_dunder_trunc_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            float.__trunc__(float("nan"))
+        self.assertEqual(str(context.exception), "cannot convert float NaN to integer")
+        with self.assertRaises(OverflowError) as context:
+            float.__trunc__(float("inf"))
+        self.assertEqual(
+            str(context.exception), "cannot convert float infinity to integer"
+        )
+        with self.assertRaises(OverflowError) as context:
+            float.__trunc__(float("-inf"))
+        self.assertEqual(
+            str(context.exception), "cannot convert float infinity to integer"
+        )
+
 
 class GeneratorTests(unittest.TestCase):
     def test_managed_stop_iteration(self):
