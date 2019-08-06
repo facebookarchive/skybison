@@ -941,6 +941,68 @@ class FloatTests(unittest.TestCase):
         )
 
 
+class FrozensetTests(unittest.TestCase):
+    def test_issuperset_with_non_frozenset_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            frozenset.issuperset(None, frozenset())
+
+    def test_issuperset_with_set_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            frozenset.issuperset(set(), frozenset())
+
+    def test_issuperset_with_empty_sets_returns_true(self):
+        self.assertTrue(frozenset.issuperset(frozenset(), frozenset()))
+        self.assertTrue(frozenset.issuperset(frozenset(), set()))
+
+    def test_issuperset_with_anyset_subset_returns_true(self):
+        self.assertTrue(frozenset({1}).issuperset(set()))
+        self.assertTrue(frozenset({1}).issuperset(frozenset()))
+
+        self.assertTrue(frozenset({1}).issuperset({1}))
+        self.assertTrue(frozenset({1}).issuperset(frozenset({1})))
+
+        self.assertTrue(frozenset({1, 2}).issuperset({1}))
+        self.assertTrue(frozenset({1, 2}).issuperset(frozenset({1})))
+
+        self.assertTrue(frozenset({1, 2}).issuperset({1, 2}))
+        self.assertTrue(frozenset({1, 2}).issuperset(frozenset({1, 2})))
+
+        self.assertTrue(frozenset({1, 2, 3}).issuperset({1, 2}))
+        self.assertTrue(frozenset({1, 2, 3}).issuperset(frozenset({1, 2})))
+
+    def test_issuperset_with_iterable_subset_returns_true(self):
+        self.assertTrue(frozenset({1}).issuperset([]))
+        self.assertTrue(frozenset({1}).issuperset(range(1, 1)))
+
+        self.assertTrue(frozenset({1}).issuperset([1]))
+        self.assertTrue(frozenset({1}).issuperset(range(1, 2)))
+
+        self.assertTrue(frozenset({1, 2}).issuperset([1]))
+        self.assertTrue(frozenset({1, 2}).issuperset(range(1, 2)))
+
+        self.assertTrue(frozenset({1, 2}).issuperset([1, 2]))
+        self.assertTrue(frozenset({1, 2}).issuperset(range(1, 3)))
+
+        self.assertTrue(frozenset({1, 2, 3}).issuperset([1, 2]))
+        self.assertTrue(frozenset({1, 2, 3}).issuperset(range(1, 3)))
+
+    def test_issuperset_with_superset_returns_false(self):
+        self.assertFalse(frozenset({}).issuperset({1}))
+        self.assertFalse(frozenset({}).issuperset(frozenset({1})))
+        self.assertFalse(frozenset({}).issuperset([1]))
+        self.assertFalse(frozenset({}).issuperset(range(1, 2)))
+
+        self.assertFalse(frozenset({1}).issuperset({1, 2}))
+        self.assertFalse(frozenset({1}).issuperset(frozenset({1, 2})))
+        self.assertFalse(frozenset({1}).issuperset([1, 2]))
+        self.assertFalse(frozenset({1}).issuperset(range(1, 3)))
+
+        self.assertFalse(frozenset({1, 2}).issuperset({1, 2, 3}))
+        self.assertFalse(frozenset({1, 2}).issuperset(frozenset({1, 2, 3})))
+        self.assertFalse(frozenset({1, 2}).issuperset([1, 2, 3]))
+        self.assertFalse(frozenset({1, 2}).issuperset(range(1, 4)))
+
+
 class GeneratorTests(unittest.TestCase):
     def test_managed_stop_iteration(self):
         warnings.filterwarnings(

@@ -99,6 +99,15 @@ static bool underFrozenSetCheck(Thread* thread, Frame* frame) {
   return true;
 }
 
+static bool underFrozenSetGuard(Thread* thread, Frame* frame) {
+  if (thread->runtime()->isInstanceOfFrozenSet(frame->topValue())) {
+    frame->popValue();
+    frame->setTopValue(NoneType::object());
+    return true;
+  }
+  return false;
+}
+
 static bool underIntCheck(Thread* thread, Frame* frame) {
   frame->setTopValue(
       Bool::fromBool(thread->runtime()->isInstanceOfInt(frame->popValue())));
@@ -391,6 +400,8 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
       return underFloatGuard(thread, frame);
     case SymbolId::kUnderFrozenSetCheck:
       return underFrozenSetCheck(thread, frame);
+    case SymbolId::kUnderFrozenSetGuard:
+      return underFrozenSetGuard(thread, frame);
     case SymbolId::kUnderIntCheck:
       return underIntCheck(thread, frame);
     case SymbolId::kUnderIntCheckExact:

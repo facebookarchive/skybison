@@ -108,6 +108,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderFloatGuard, underFloatGuard},
     {SymbolId::kUnderFloatSignbit, underFloatSignbit},
     {SymbolId::kUnderFrozenSetCheck, underFrozenSetCheck},
+    {SymbolId::kUnderFrozenSetGuard, underFrozenSetGuard},
     {SymbolId::kUnderGetMemberByte, underGetMemberByte},
     {SymbolId::kUnderGetMemberChar, underGetMemberChar},
     {SymbolId::kUnderGetMemberDouble, underGetMemberDouble},
@@ -214,26 +215,27 @@ const BuiltinType UnderBuiltinsModule::kBuiltinTypes[] = {
 const char* const UnderBuiltinsModule::kFrozenData = kUnderBuiltinsModuleData;
 
 const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
-    SymbolId::kUnderByteArrayCheck,  SymbolId::kUnderByteArrayGuard,
-    SymbolId::kUnderByteArrayLen,    SymbolId::kUnderBytesCheck,
-    SymbolId::kUnderBytesGuard,      SymbolId::kUnderBytesLen,
-    SymbolId::kUnderDictCheck,       SymbolId::kUnderDictGuard,
-    SymbolId::kUnderDictLen,         SymbolId::kUnderFloatCheck,
-    SymbolId::kUnderFloatGuard,      SymbolId::kUnderFrozenSetCheck,
-    SymbolId::kUnderIntCheck,        SymbolId::kUnderIntCheckExact,
-    SymbolId::kUnderIntGuard,        SymbolId::kUnderListCheck,
-    SymbolId::kUnderListCheckExact,  SymbolId::kUnderListGetitem,
-    SymbolId::kUnderListGuard,       SymbolId::kUnderListLen,
-    SymbolId::kUnderRangeCheck,      SymbolId::kUnderRangeGuard,
-    SymbolId::kUnderSetCheck,        SymbolId::kUnderSetGuard,
-    SymbolId::kUnderSetLen,          SymbolId::kUnderSliceCheck,
-    SymbolId::kUnderSliceGuard,      SymbolId::kUnderStrCheck,
-    SymbolId::kUnderStrCheckExact,   SymbolId::kUnderStrGuard,
-    SymbolId::kUnderStrLen,          SymbolId::kUnderTupleCheck,
-    SymbolId::kUnderTupleCheckExact, SymbolId::kUnderTupleGuard,
-    SymbolId::kUnderTupleLen,        SymbolId::kUnderType,
-    SymbolId::kUnderTypeCheck,       SymbolId::kUnderTypeCheckExact,
-    SymbolId::kUnderTypeGuard,       SymbolId::kSentinelId,
+    SymbolId::kUnderByteArrayCheck, SymbolId::kUnderByteArrayGuard,
+    SymbolId::kUnderByteArrayLen,   SymbolId::kUnderBytesCheck,
+    SymbolId::kUnderBytesGuard,     SymbolId::kUnderBytesLen,
+    SymbolId::kUnderDictCheck,      SymbolId::kUnderDictGuard,
+    SymbolId::kUnderDictLen,        SymbolId::kUnderFloatCheck,
+    SymbolId::kUnderFloatGuard,     SymbolId::kUnderFrozenSetCheck,
+    SymbolId::kUnderFrozenSetGuard, SymbolId::kUnderIntCheck,
+    SymbolId::kUnderIntCheckExact,  SymbolId::kUnderIntGuard,
+    SymbolId::kUnderListCheck,      SymbolId::kUnderListCheckExact,
+    SymbolId::kUnderListGetitem,    SymbolId::kUnderListGuard,
+    SymbolId::kUnderListLen,        SymbolId::kUnderRangeCheck,
+    SymbolId::kUnderRangeGuard,     SymbolId::kUnderSetCheck,
+    SymbolId::kUnderSetGuard,       SymbolId::kUnderSetLen,
+    SymbolId::kUnderSliceCheck,     SymbolId::kUnderSliceGuard,
+    SymbolId::kUnderStrCheck,       SymbolId::kUnderStrCheckExact,
+    SymbolId::kUnderStrGuard,       SymbolId::kUnderStrLen,
+    SymbolId::kUnderTupleCheck,     SymbolId::kUnderTupleCheckExact,
+    SymbolId::kUnderTupleGuard,     SymbolId::kUnderTupleLen,
+    SymbolId::kUnderType,           SymbolId::kUnderTypeCheck,
+    SymbolId::kUnderTypeCheckExact, SymbolId::kUnderTypeGuard,
+    SymbolId::kSentinelId,
 };
 
 RawObject UnderBuiltinsModule::underAddress(Thread* thread, Frame* frame,
@@ -1024,6 +1026,15 @@ RawObject UnderBuiltinsModule::underFrozenSetCheck(Thread* thread, Frame* frame,
                                                    word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfFrozenSet(args.get(0)));
+}
+
+RawObject UnderBuiltinsModule::underFrozenSetGuard(Thread* thread, Frame* frame,
+                                                   word nargs) {
+  Arguments args(frame, nargs);
+  if (thread->runtime()->isInstanceOfFrozenSet(args.get(0))) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kFrozenSet);
 }
 
 RawObject UnderBuiltinsModule::underGetMemberByte(Thread* thread, Frame* frame,

@@ -218,6 +218,11 @@ def _frozenset_check(obj):
 
 
 @_patch
+def _frozenset_guard(obj):
+    pass
+
+
+@_patch
 def _get_member_byte(addr):
     pass
 

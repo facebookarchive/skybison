@@ -45,6 +45,7 @@ _float_divmod = _float_divmod  # noqa: F821
 _float_format = _float_format  # noqa: F821
 _float_guard = _float_guard  # noqa: F821
 _frozenset_check = _frozenset_check  # noqa: F821
+_frozenset_guard = _frozenset_guard  # noqa: F821
 _get_member_byte = _get_member_byte  # noqa: F821
 _get_member_char = _get_member_char  # noqa: F821
 _get_member_double = _get_member_double  # noqa: F821
@@ -2060,6 +2061,12 @@ class frozenset(bootstrap=True):
 
     def isdisjoint(self, other):
         pass
+
+    def issuperset(self, other):
+        _frozenset_guard(self)
+        if not _set_check(other) or not _frozenset_check(other):
+            other = set(other)
+        return set.__ge__(self, other)
 
 
 class generator(bootstrap=True):

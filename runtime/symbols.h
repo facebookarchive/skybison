@@ -198,6 +198,7 @@ class Runtime;
   V(UnderFrozenImportlib, "_frozen_importlib")                                 \
   V(UnderFrozenImportlibExternal, "_frozen_importlib_external")                \
   V(UnderFrozenSetCheck, "_frozenset_check")                                   \
+  V(UnderFrozenSetGuard, "_frozenset_guard")                                   \
   V(UnderFunctools, "_functools")                                              \
   V(UnderGetframeCode, "_getframe_code")                                       \
   V(UnderGetframeGlobals, "_getframe_globals")                                 \
