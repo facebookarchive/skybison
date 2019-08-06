@@ -9,6 +9,7 @@ import re
 import subprocess
 import tempfile
 from abc import ABC, abstractmethod
+from multiprocessing.pool import ThreadPool
 
 
 log = logging.getLogger(__name__)
@@ -42,13 +43,6 @@ class PerformanceTool(ABC):
     def __init__(self, args):
         pass
 
-    # The main function to execute the specified performance tool.
-    # Input: run.Interpreter, run.Benchmark
-    # Output: A dictionary with the values to be reported
-    @abstractmethod
-    def execute(self, interpreter, benchmark):
-        pass
-
     # Specify the name of the tool along with a description
     @staticmethod
     @abstractmethod
@@ -61,7 +55,27 @@ class PerformanceTool(ABC):
         return parser
 
 
-class TimeTool(PerformanceTool):
+class SequentialPerformanceTool(PerformanceTool):
+    # The main function to execute the specified performance tool.
+    # Input: run.Interpreter, run.Benchmark
+    # Output: A dictionary with the values to be reported
+    @abstractmethod
+    def execute(self, interpreter, benchmark):
+        pass
+
+
+class ParallelPerformanceTool(PerformanceTool):
+    # TODO update
+    # The main function to execute the specified performance tool in parallel.
+    # Input: list<run.Interpreter>, list<run.Benchmark>
+    # Output: A list of dictionaries with the values to be reported. Each
+    #         dictionary must have both 'benchmark' and 'interpreter' reported
+    @abstractmethod
+    def execute_parallel(self, interpreters, benchmarks):
+        pass
+
+
+class TimeTool(SequentialPerformanceTool):
     NAME = "time"
 
     def execute(self, interpreter, benchmark):
@@ -94,7 +108,7 @@ class TimeTool(PerformanceTool):
 """
 
 
-class PerfStat(PerformanceTool):
+class PerfStat(SequentialPerformanceTool):
     NAME = "perfstat"
     DEFAULT_EVENTS = ["task-clock", "instructions"]
 
@@ -169,13 +183,13 @@ Default: {PerfStat.DEFAULT_EVENTS}
         return parser
 
 
-class Callgrind(PerformanceTool):
+class Callgrind(ParallelPerformanceTool):
     NAME = "callgrind"
 
     def __init__(self, args):
         pass
 
-    def execute(self, interpreter, benchmark):
+    def _worker(self, interpreter, benchmark):
         with tempfile.NamedTemporaryFile(prefix="callgrind_") as temp_file:
             command = [
                 "valgrind",
@@ -196,7 +210,24 @@ class Callgrind(PerformanceTool):
                     m = r.match(line)
                     if m:
                         instructions = int(m.group(1))
-            return {"cg_instructions": instructions}
+            return {
+                "benchmark": benchmark.name,
+                "interpreter": interpreter.name,
+                "cg_instructions": instructions,
+            }
+
+    def execute_parallel(self, interpreters, benchmarks):
+        pool = ThreadPool()
+        async_results = []
+        for interpreter in interpreters:
+            for benchmark in benchmarks:
+                r = pool.apply_async(self._worker, (interpreter, benchmark))
+                async_results.append(r)
+
+        results = []
+        for ar in async_results:
+            results.append(ar.get())
+        return results
 
     @classmethod
     def add_tool(cls):
@@ -205,7 +236,7 @@ class Callgrind(PerformanceTool):
 """
 
 
-class Size(PerformanceTool):
+class Size(SequentialPerformanceTool):
     NAME = "size"
 
     def __init__(self, args):
@@ -265,4 +296,6 @@ def add_tools_arguments(parser):
 
 
 # Use this to register any new tools
-TOOLS = [TimeTool, PerfStat, Callgrind, Size]
+SEQUENTIAL_TOOLS = [TimeTool, PerfStat, Size]
+PARALLEL_TOOLS = [Callgrind]
+TOOLS = SEQUENTIAL_TOOLS + PARALLEL_TOOLS
