@@ -87,6 +87,8 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderByteslikeEndsWith, underByteslikeEndsWith},
     {SymbolId::kUnderByteslikeFindByteslike, underByteslikeFindByteslike},
     {SymbolId::kUnderByteslikeFindInt, underByteslikeFindInt},
+    {SymbolId::kUnderByteslikeRfindByteslike, underByteslikeRFindByteslike},
+    {SymbolId::kUnderByteslikeRfindInt, underByteslikeRFindInt},
     {SymbolId::kUnderClassMethod, underClassMethod},
     {SymbolId::kUnderClassMethodIsAbstract, underClassMethodIsAbstract},
     {SymbolId::kUnderComplexImag, underComplexImag},
@@ -644,6 +646,81 @@ RawObject UnderBuiltinsModule::underByteslikeFindInt(Thread* thread,
     Bytes haystack(&scope, self.bytes());
     return bytesFind(haystack, self.numItems(), needle, needle.length(),
                      start.asWordSaturated(), end.asWordSaturated());
+  }
+  UNIMPLEMENTED("bytes-like other than bytes, bytearray");
+}
+
+RawObject UnderBuiltinsModule::underByteslikeRFindByteslike(Thread* thread,
+                                                            Frame* frame,
+                                                            word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  word haystack_len;
+  if (runtime->isInstanceOfBytes(*self_obj)) {
+    Bytes self(&scope, bytesUnderlying(thread, self_obj));
+    self_obj = *self;
+    haystack_len = self.length();
+  } else if (runtime->isInstanceOfByteArray(*self_obj)) {
+    ByteArray self(&scope, *self_obj);
+    self_obj = self.bytes();
+    haystack_len = self.numItems();
+  } else {
+    UNIMPLEMENTED("bytes-like other than bytes, bytearray");
+  }
+  Object sub_obj(&scope, args.get(1));
+  word needle_len;
+  if (runtime->isInstanceOfBytes(*sub_obj)) {
+    Bytes sub(&scope, bytesUnderlying(thread, sub_obj));
+    sub_obj = *sub;
+    needle_len = sub.length();
+  } else if (runtime->isInstanceOfByteArray(*sub_obj)) {
+    ByteArray sub(&scope, *sub_obj);
+    sub_obj = sub.bytes();
+    needle_len = sub.numItems();
+  } else {
+    UNIMPLEMENTED("bytes-like other than bytes, bytearray");
+  }
+  Bytes haystack(&scope, *self_obj);
+  Bytes needle(&scope, *sub_obj);
+  Object start_obj(&scope, args.get(2));
+  Object stop_obj(&scope, args.get(3));
+  Int start(&scope, intUnderlying(thread, start_obj));
+  Int end(&scope, intUnderlying(thread, stop_obj));
+  return bytesRFind(haystack, haystack_len, needle, needle_len,
+                    start.asWordSaturated(), end.asWordSaturated());
+}
+
+RawObject UnderBuiltinsModule::underByteslikeRFindInt(Thread* thread,
+                                                      Frame* frame,
+                                                      word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object sub_obj(&scope, args.get(1));
+  Int sub_int(&scope, intUnderlying(thread, sub_obj));
+  word sub = sub_int.asWordSaturated();
+  if (sub < 0 || sub > kMaxByte) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "byte must be in range(0, 256)");
+  }
+  Bytes needle(&scope, runtime->newBytes(1, sub));
+  Object self_obj(&scope, args.get(0));
+  Object start_obj(&scope, args.get(2));
+  Object stop_obj(&scope, args.get(3));
+  Int start(&scope, intUnderlying(thread, start_obj));
+  Int end(&scope, intUnderlying(thread, stop_obj));
+  if (runtime->isInstanceOfBytes(*self_obj)) {
+    Bytes haystack(&scope, bytesUnderlying(thread, self_obj));
+    return bytesRFind(haystack, haystack.length(), needle, needle.length(),
+                      start.asWordSaturated(), end.asWordSaturated());
+  }
+  if (runtime->isInstanceOfByteArray(*self_obj)) {
+    ByteArray self(&scope, *self_obj);
+    Bytes haystack(&scope, self.bytes());
+    return bytesRFind(haystack, self.numItems(), needle, needle.length(),
+                      start.asWordSaturated(), end.asWordSaturated());
   }
   UNIMPLEMENTED("bytes-like other than bytes, bytearray");
 }

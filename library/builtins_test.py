@@ -258,6 +258,97 @@ class ByteArrayTests(unittest.TestCase):
             str(context.exception),
         )
 
+    def test_rfind_with_bytes_self_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytearray.rfind(b"", bytearray())
+        self.assertIn(
+            "'rfind' requires a 'bytearray' object but received a 'bytes'",
+            str(context.exception),
+        )
+
+    def test_rfind_with_empty_sub_returns_end(self):
+        haystack = bytearray(b"abc")
+        needle = b""
+        self.assertEqual(haystack.rfind(needle, 0, 2), 2)
+
+    def test_rfind_with_missing_returns_negative(self):
+        haystack = bytearray(b"abc")
+        needle = b"d"
+        self.assertEqual(haystack.rfind(needle), -1)
+
+    def test_rfind_with_missing_stays_within_bounds(self):
+        haystack = bytearray(b"abc")
+        needle = bytearray(b"c")
+        self.assertEqual(haystack.rfind(needle, None, 2), -1)
+
+    def test_rfind_with_large_start_returns_negative(self):
+        haystack = bytearray(b"abc")
+        needle = bytearray(b"")
+        self.assertEqual(haystack.rfind(needle, 10), -1)
+
+    def test_rfind_with_negative_bounds_returns_index(self):
+        haystack = bytearray(b"ababa")
+        needle = b"a"
+        self.assertEqual(haystack.rfind(needle, -4, -1), 2)
+
+    def test_rfind_with_multiple_matches_returns_last_index_in_range(self):
+        haystack = bytearray(b"abbabbabba")
+        needle = bytearray(b"abb")
+        self.assertEqual(haystack.rfind(needle, 0, 7), 3)
+
+    def test_rfind_with_nonbyte_int_raises_value_error(self):
+        haystack = bytearray()
+        needle = 266
+        with self.assertRaises(ValueError) as context:
+            haystack.rfind(needle)
+        self.assertEqual(str(context.exception), "byte must be in range(0, 256)")
+
+    def test_rfind_with_string_raises_type_error(self):
+        haystack = bytearray()
+        needle = "133"
+        with self.assertRaises(TypeError) as context:
+            haystack.rfind(needle)
+        self.assertEqual(
+            str(context.exception), "a bytes-like object is required, not 'str'"
+        )
+
+    def test_rfind_with_non_number_index_raises_type_error(self):
+        class Idx:
+            def __index__(self):
+                return ord("a")
+
+        haystack = bytearray(b"abc")
+        needle = Idx()
+        with self.assertRaises(TypeError) as context:
+            haystack.rfind(needle)
+        self.assertEqual(
+            str(context.exception), "a bytes-like object is required, not 'Idx'"
+        )
+
+    def test_rfind_with_dunder_int_calls_dunder_index(self):
+        class Idx:
+            def __int__(self):
+                raise NotImplementedError("called __int__")
+
+            def __index__(self):
+                return ord("a")
+
+        haystack = bytearray(b"abc")
+        needle = Idx()
+        self.assertEqual(haystack.rfind(needle), 0)
+
+    def test_rfind_with_dunder_float_calls_dunder_index(self):
+        class Idx:
+            def __float__(self):
+                raise NotImplementedError("called __float__")
+
+            def __index__(self):
+                return ord("a")
+
+        haystack = bytearray(b"abc")
+        needle = Idx()
+        self.assertEqual(haystack.rfind(needle), 0)
+
 
 class BytesTests(unittest.TestCase):
     def test_decode_finds_ascii(self):
@@ -487,6 +578,97 @@ class BytesTests(unittest.TestCase):
             "'join' requires a 'bytes' object but received a 'int'",
             str(context.exception),
         )
+
+    def test_rfind_with_bytearray_self_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytes.rfind(bytearray(), b"")
+        self.assertIn(
+            "'rfind' requires a 'bytes' object but received a 'bytearray'",
+            str(context.exception),
+        )
+
+    def test_rfind_with_empty_sub_returns_end(self):
+        haystack = b"abc"
+        needle = bytearray()
+        self.assertEqual(haystack.rfind(needle), 3)
+
+    def test_rfind_with_missing_returns_negative(self):
+        haystack = b"abc"
+        needle = b"d"
+        self.assertEqual(haystack.rfind(needle), -1)
+
+    def test_rfind_with_missing_stays_within_bounds(self):
+        haystack = b"abc"
+        needle = bytearray(b"c")
+        self.assertEqual(haystack.rfind(needle, None, 2), -1)
+
+    def test_rfind_with_large_start_returns_negative(self):
+        haystack = b"abc"
+        needle = bytearray(b"c")
+        self.assertEqual(haystack.rfind(needle, 10), -1)
+
+    def test_rfind_with_negative_bounds_returns_index(self):
+        haystack = b"foobar"
+        needle = bytearray(b"o")
+        self.assertEqual(haystack.rfind(needle, -6, -1), 2)
+
+    def test_rfind_with_multiple_matches_returns_last_index_in_range(self):
+        haystack = b"abbabbabba"
+        needle = bytearray(b"abb")
+        self.assertEqual(haystack.rfind(needle), 6)
+
+    def test_rfind_with_nonbyte_int_raises_value_error(self):
+        haystack = b""
+        needle = 266
+        with self.assertRaises(ValueError) as context:
+            haystack.rfind(needle)
+        self.assertEqual(str(context.exception), "byte must be in range(0, 256)")
+
+    def test_rfind_with_string_raises_type_error(self):
+        haystack = b""
+        needle = "133"
+        with self.assertRaises(TypeError) as context:
+            haystack.rfind(needle)
+        self.assertEqual(
+            str(context.exception), "a bytes-like object is required, not 'str'"
+        )
+
+    def test_rfind_with_non_number_index_raises_type_error(self):
+        class Idx:
+            def __index__(self):
+                return ord("a")
+
+        haystack = b"abc"
+        needle = Idx()
+        with self.assertRaises(TypeError) as context:
+            haystack.rfind(needle)
+        self.assertEqual(
+            str(context.exception), "a bytes-like object is required, not 'Idx'"
+        )
+
+    def test_rfind_with_dunder_int_calls_dunder_index(self):
+        class Idx:
+            def __int__(self):
+                raise NotImplementedError("called __int__")
+
+            def __index__(self):
+                return ord("a")
+
+        haystack = b"abc"
+        needle = Idx()
+        self.assertEqual(haystack.rfind(needle), 0)
+
+    def test_rfind_with_dunder_float_calls_dunder_index(self):
+        class Idx:
+            def __float__(self):
+                raise NotImplementedError("called __float__")
+
+            def __index__(self):
+                return ord("a")
+
+        haystack = b"abc"
+        needle = Idx()
+        self.assertEqual(haystack.rfind(needle), 0)
 
 
 class ChrTests(unittest.TestCase):

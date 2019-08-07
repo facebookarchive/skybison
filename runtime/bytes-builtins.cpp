@@ -38,6 +38,24 @@ RawObject bytesHex(Thread* thread, const Bytes& bytes, word length) {
   return runtime->newStrFromByteArray(buffer);
 }
 
+RawObject bytesRFind(const Bytes& haystack, word haystack_len,
+                     const Bytes& needle, word needle_len, word start,
+                     word end) {
+  DCHECK_BOUND(haystack_len, haystack.length());
+  DCHECK_BOUND(needle_len, needle.length());
+  Slice::adjustSearchIndices(&start, &end, haystack_len);
+  for (word i = end - needle_len; i >= start; i--) {
+    bool has_match = true;
+    for (word j = 0; has_match && j < needle_len; j++) {
+      has_match = haystack.byteAt(i + j) == needle.byteAt(j);
+    }
+    if (has_match) {
+      return SmallInt::fromWord(i);
+    }
+  }
+  return SmallInt::fromWord(-1);
+}
+
 static RawObject bytesReprWithDelimiter(Thread* thread, const Bytes& self,
                                         byte delimiter) {
   HandleScope scope(thread);

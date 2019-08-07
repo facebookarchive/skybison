@@ -109,6 +109,16 @@ def _byteslike_find_int(self, sub, start, end):
 
 
 @_patch
+def _byteslike_rfind_byteslike(self, sub, start, end):
+    pass
+
+
+@_patch
+def _byteslike_rfind_int(self, sub, start, end):
+    pass
+
+
+@_patch
 def _classmethod(function):
     pass
 

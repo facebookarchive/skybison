@@ -26,6 +26,8 @@ _bytes_repeat = _bytes_repeat  # noqa: F821
 _byteslike_endswith = _byteslike_endswith  # noqa: F821
 _byteslike_find_byteslike = _byteslike_find_byteslike  # noqa: F821
 _byteslike_find_int = _byteslike_find_int  # noqa: F821
+_byteslike_rfind_byteslike = _byteslike_rfind_byteslike  # noqa: F821
+_byteslike_rfind_int = _byteslike_rfind_int  # noqa: F821
 _classmethod = _classmethod  # noqa: F821
 _classmethod_isabstract = _classmethod_isabstract  # noqa: F821
 _complex_imag = _complex_imag  # noqa: F821
@@ -1265,8 +1267,28 @@ class bytearray(bootstrap=True):
     def reverse(self):
         _unimplemented()
 
-    def rfind(self, sub, start=_Unbound, end=_Unbound):
-        _unimplemented()
+    def rfind(self, sub, start=None, end=None) -> int:
+        _bytearray_guard(self)
+        start = 0 if start is None else _index(start)
+        end = _bytearray_len(self) if end is None else _index(end)
+        # TODO(T38246066) allow any bytes-like object
+        if _bytes_check(sub) or _bytearray_check(sub):
+            return _byteslike_rfind_byteslike(self, sub, start, end)
+        if _int_check(sub):
+            return _byteslike_rfind_int(self, sub, start, end)
+        if not _number_check(sub):
+            raise TypeError(
+                f"a bytes-like object is required, not '{_type(sub).__name__}'"
+            )
+        try:
+            sub = _index(sub)
+        except OverflowError:
+            raise ValueError("byte must be in range(0, 256)")
+        except Exception:
+            raise TypeError(
+                f"a bytes-like object is required, not '{_type(sub).__name__}'"
+            )
+        return _byteslike_rfind_int(self, sub, start, end)
 
     def rindex(self, sub, start=_Unbound, end=_Unbound):
         _unimplemented()
@@ -1553,8 +1575,28 @@ class bytes(bootstrap=True):
     def replace(self, old, new, count=-1):
         _unimplemented()
 
-    def rfind(self, sub, start=_Unbound, end=_Unbound):
-        _unimplemented()
+    def rfind(self, sub, start=None, end=None) -> int:
+        _bytes_guard(self)
+        start = 0 if start is None else _index(start)
+        end = bytes.__len__(self) if end is None else _index(end)
+        # TODO(T38246066) allow any bytes-like object
+        if _bytes_check(sub) or _bytearray_check(sub):
+            return _byteslike_rfind_byteslike(self, sub, start, end)
+        if _int_check(sub):
+            return _byteslike_rfind_int(self, sub, start, end)
+        if not _number_check(sub):
+            raise TypeError(
+                f"a bytes-like object is required, not '{_type(sub).__name__}'"
+            )
+        try:
+            sub = _index(sub)
+        except OverflowError:
+            raise ValueError("byte must be in range(0, 256)")
+        except Exception:
+            raise TypeError(
+                f"a bytes-like object is required, not '{_type(sub).__name__}'"
+            )
+        return _byteslike_rfind_int(self, sub, start, end)
 
     def rindex(self, sub, start=_Unbound, end=_Unbound):
         _unimplemented()

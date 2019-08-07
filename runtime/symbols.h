@@ -167,6 +167,8 @@ class Runtime;
   V(UnderByteslikeEndsWith, "_byteslike_endswith")                             \
   V(UnderByteslikeFindByteslike, "_byteslike_find_byteslike")                  \
   V(UnderByteslikeFindInt, "_byteslike_find_int")                              \
+  V(UnderByteslikeRfindByteslike, "_byteslike_rfind_byteslike")                \
+  V(UnderByteslikeRfindInt, "_byteslike_rfind_int")                            \
   V(UnderClassMethod, "_classmethod")                                          \
   V(UnderClassMethodIsAbstract, "_classmethod_isabstract")                     \
   V(UnderClosed, "_closed")                                                    \
