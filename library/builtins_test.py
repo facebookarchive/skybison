@@ -3595,7 +3595,10 @@ class StrModTests(unittest.TestCase):
     def test_r_format_returns_string(self):
         self.assertEqual("%r" % (42,), "42")
         self.assertEqual("%r" % ("foo",), "'foo'")
-        self.assertEqual("%r" % ({"foo": "𝓫𝓪𝓻"},), "{'foo': '𝓫𝓪𝓻'}")
+        self.assertEqual(
+            "%r" % ({"foo": "\U0001d4eb\U0001d4ea\U0001d4fb"},),
+            "{'foo': '\U0001d4eb\U0001d4ea\U0001d4fb'}",
+        )
 
         class C:
             def __repr__(self):
