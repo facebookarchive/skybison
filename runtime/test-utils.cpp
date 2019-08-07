@@ -182,10 +182,14 @@ bool listContains(const Object& list_obj, const Object& key) {
   return false;
 }
 
-RawObject findModule(Runtime* runtime, const char* name) {
+static RawObject findModuleByCStr(Runtime* runtime, const char* name) {
   HandleScope scope;
   Object key(&scope, runtime->newStrFromCStr(name));
   return runtime->findModule(key);
+}
+
+RawObject findMainModule(Runtime* runtime) {
+  return findModuleByCStr(runtime, "__main__");
 }
 
 RawObject mainModuleAt(Runtime* runtime, const char* name) {
@@ -195,7 +199,7 @@ RawObject mainModuleAt(Runtime* runtime, const char* name) {
 RawObject moduleAtByCStr(Runtime* runtime, const char* module_name,
                          const char* name) {
   HandleScope scope;
-  Object mod_obj(&scope, findModule(runtime, module_name));
+  Object mod_obj(&scope, findModuleByCStr(runtime, module_name));
   if (mod_obj.isNoneType()) {
     return Error::notFound();
   }

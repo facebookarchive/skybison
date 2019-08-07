@@ -25,7 +25,7 @@ weak = ref(a)
   EXPECT_EQ(WeakRef::cast(weak).referent(), a);
   EXPECT_EQ(WeakRef::cast(weak).callback(), NoneType::object());
 
-  Module main(&scope, findModule(&runtime_, "__main__"));
+  Module main(&scope, findMainModule(&runtime_));
   Dict globals(&scope, main.dict());
   Object key(&scope, runtime_.newStrFromCStr("a"));
   runtime_.dictRemove(thread_, globals, key);
@@ -54,7 +54,7 @@ weak = ref(a, f)
   EXPECT_EQ(WeakRef::cast(weak).referent(), a);
   EXPECT_TRUE(isIntEqualsWord(b, 1));
 
-  Module main(&scope, findModule(&runtime_, "__main__"));
+  Module main(&scope, findMainModule(&runtime_));
   Dict globals(&scope, main.dict());
   Object key(&scope, runtime_.newStrFromCStr("a"));
   runtime_.dictRemove(thread_, globals, key);

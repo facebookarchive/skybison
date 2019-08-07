@@ -961,7 +961,7 @@ TEST_F(ThreadTest, UnaryNot) {
 
 static RawDict getMainModuleDict(Runtime* runtime) {
   HandleScope scope;
-  Module mod(&scope, findModule(runtime, "__main__"));
+  Module mod(&scope, findMainModule(runtime));
   EXPECT_TRUE(mod.isModule());
 
   Dict dict(&scope, mod.dict());
@@ -1004,7 +1004,7 @@ class C:
 )")
                    .isError());
 
-  Module mod(&scope, findModule(&runtime_, "__main__"));
+  Module mod(&scope, findMainModule(&runtime_));
   ASSERT_TRUE(mod.isModule());
 
   Dict mod_dict(&scope, mod.dict());
@@ -1212,7 +1212,7 @@ class Foo(object):
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
 
   // Look up the class Foo
-  Object main_obj(&scope, findModule(&runtime_, "__main__"));
+  Object main_obj(&scope, findMainModule(&runtime_));
   ASSERT_TRUE(main_obj.isModule());
   Object foo_obj(&scope, mainModuleAt(&runtime_, "Foo"));
   ASSERT_TRUE(foo_obj.isType());

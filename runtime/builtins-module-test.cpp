@@ -814,7 +814,7 @@ exec("a = 1338")
 TEST_F(BuiltinsModuleTest, BuiltinExecSetsGlobalGivenGlobals) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, "").isError());
-  Module main(&scope, findModule(&runtime_, "__main__"));
+  Module main(&scope, findMainModule(&runtime_));
   Dict globals(&scope, main.dict());
   Str globals_name(&scope, runtime_.newStrFromCStr("gl"));
   runtime_.moduleDictAtPut(thread_, globals, globals_name, globals);

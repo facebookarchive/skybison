@@ -894,7 +894,7 @@ c = C()
 
   Str called_name(&scope, runtime_.newStrFromCStr("called"));
   Object none(&scope, NoneType::object());
-  Module main(&scope, findModule(&runtime_, "__main__"));
+  Module main(&scope, findMainModule(&runtime_));
   runtime_.moduleAtPut(main, called_name, none);
   Object b_eq_a(&scope, Interpreter::compareOperation(thread_, frame,
                                                       CompareOp::EQ, b, a));
@@ -1852,7 +1852,7 @@ manager = M()
   )")
                    .isError());
   Object manager(&scope, mainModuleAt(&runtime_, "manager"));
-  Object main_obj(&scope, findModule(&runtime_, "__main__"));
+  Object main_obj(&scope, findMainModule(&runtime_));
   ASSERT_TRUE(main_obj.isModule());
   Module main(&scope, *main_obj);
 

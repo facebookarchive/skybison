@@ -114,9 +114,9 @@ bool tupleContains(const Tuple& object_array, const Object& key);
 
 bool listContains(const Object& list_obj, const Object& key);
 
-// Get the module bound to name in the given runtime. Returns Error::object() if
-// not found.
-RawObject findModule(Runtime* runtime, const char* name);
+// Get the module instance bount to name "__main__".
+// Return Error::object() if not found.
+RawObject findMainModule(Runtime* runtime);
 
 // Get the value bound to name in the main module.
 // Returns Error::object() if not found.

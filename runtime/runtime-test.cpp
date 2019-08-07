@@ -2364,7 +2364,7 @@ def test(module):
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
   Function test(&scope, mainModuleAt(&runtime_, "test"));
   Tuple args(&scope, runtime_.newTuple(1));
-  args.atPut(0, findModule(&runtime_, "__main__"));
+  args.atPut(0, findMainModule(&runtime_));
   EXPECT_TRUE(raised(callFunction(test, args), LayoutId::kAttributeError));
 }
 
@@ -2380,11 +2380,11 @@ def test(module):
   HandleScope scope(thread_);
   Function test(&scope, mainModuleAt(&runtime_, "test"));
   Tuple args(&scope, runtime_.newTuple(1));
-  args.atPut(0, findModule(&runtime_, "__main__"));
+  args.atPut(0, findMainModule(&runtime_));
   EXPECT_EQ(callFunction(test, args), SmallInt::fromWord(123));
 
   Object attr(&scope, runtime_.newStrFromCStr("foo"));
-  Object module(&scope, findModule(&runtime_, "__main__"));
+  Object module(&scope, findMainModule(&runtime_));
   EXPECT_TRUE(runtime_.attributeAt(thread_, module, attr).isError());
 }
 

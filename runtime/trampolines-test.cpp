@@ -679,7 +679,7 @@ static void createAndPatchBuiltinReturnSecondArg(Runtime* runtime) {
   HandleScope scope(Thread::current());
   // Ensure we have a __main__ module.
   ASSERT_FALSE(runFromCStr(runtime, "").isError());
-  Module main(&scope, findModule(runtime, "__main__"));
+  Module main(&scope, findMainModule(runtime));
   runtime->moduleAddBuiltinFunction(main, SymbolId::kDummy,
                                     builtinReturnSecondArg);
   ASSERT_FALSE(runFromCStr(runtime, R"(
@@ -1917,7 +1917,7 @@ static void createAndPatchBuiltinNumArgs(Runtime* runtime) {
   // Ensure we have a __main__ module.
   ASSERT_FALSE(runFromCStr(runtime, "").isError());
   HandleScope scope;
-  Module main(&scope, findModule(runtime, "__main__"));
+  Module main(&scope, findMainModule(runtime));
   runtime->moduleAddBuiltinFunction(main, SymbolId::kDummy, numArgs);
   ASSERT_FALSE(runFromCStr(runtime, R"(
 @_patch
@@ -1947,7 +1947,7 @@ static void createAndPatchBuiltinNumArgsVariadic(Runtime* runtime) {
   // Ensure we have a __main__ module.
   ASSERT_FALSE(runFromCStr(runtime, "").isError());
   HandleScope scope;
-  Module main(&scope, findModule(runtime, "__main__"));
+  Module main(&scope, findMainModule(runtime));
   runtime->moduleAddBuiltinFunction(main, SymbolId::kDummy, numArgs);
   ASSERT_FALSE(runFromCStr(runtime, R"(
 @_patch
@@ -1970,7 +1970,7 @@ static void createAndPatchBuiltinNumArgsArgsKwargs(Runtime* runtime) {
   // Ensure we have a __main__ module.
   ASSERT_FALSE(runFromCStr(runtime, "").isError());
   HandleScope scope;
-  Module main(&scope, findModule(runtime, "__main__"));
+  Module main(&scope, findMainModule(runtime));
   runtime->moduleAddBuiltinFunction(main, SymbolId::kDummy, numArgs);
   ASSERT_FALSE(runFromCStr(runtime, R"(
 @_patch
