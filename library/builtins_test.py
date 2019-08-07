@@ -2346,6 +2346,20 @@ class ListTests(unittest.TestCase):
         original = [1, 2, 3]
         self.assertRaises(IndexError, list.pop, original, -10)
 
+    def test_setslice_with_empty_slice_grows_list(self):
+        grows = []
+        grows[:] = [1, 2, 3]
+        self.assertEqual(grows, [1, 2, 3])
+
+    def test_setslice_with_list_subclass_calls_dunder_iter(self):
+        class C(list):
+            def __iter__(self):
+                return ["a", "b", "c"].__iter__()
+
+        grows = []
+        grows[:] = C()
+        self.assertEqual(grows, ["a", "b", "c"])
+
     def test_sort_with_non_list_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             list.sort(None)

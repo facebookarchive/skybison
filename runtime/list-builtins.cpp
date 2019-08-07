@@ -558,7 +558,7 @@ static RawObject setItemSlice(Thread* thread, const List& list,
   }
 
   // And now copy suffix:
-  word suffix_length = list.numItems() - suffix_start;
+  word suffix_length = Utils::maximum(word{0}, list.numItems() - suffix_start);
   word result_length = result_list.numItems() + suffix_length;
   runtime->listEnsureCapacity(thread, result_list, result_length);
 
