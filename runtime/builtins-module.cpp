@@ -190,11 +190,9 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
 const char* const BuiltinsModule::kFrozenData = kBuiltinsModuleData;
 
 const SymbolId BuiltinsModule::kIntrinsicIds[] = {
-    SymbolId::kUnderIndex,
-    SymbolId::kUnderSliceIndex,
-    SymbolId::kUnderSliceIndexNotNone,
-    SymbolId::kIsInstance,
-    SymbolId::kSentinelId,
+    SymbolId::kUnderIndex,      SymbolId::kUnderNumberCheck,
+    SymbolId::kUnderSliceIndex, SymbolId::kUnderSliceIndexNotNone,
+    SymbolId::kIsInstance,      SymbolId::kSentinelId,
 };
 
 static void patchTypeDict(Thread* thread, const Dict& base, const Dict& patch) {

@@ -859,7 +859,7 @@ def _new_member_set_readonly_strings(name):
     return setter
 
 
-def _number_check(obj):
+def _number_check(obj) -> bool:
     # equivalent to PyNumber_Check()
     return _object_type_hasattr(obj, "__int__") or _object_type_hasattr(
         obj, "__float__"
@@ -1177,14 +1177,19 @@ class bytearray(bootstrap=True):
             return _byteslike_find_byteslike(self, sub, start, end)
         if _int_check(sub):
             return _byteslike_find_int(self, sub, start, end)
-        if _object_type_hasattr(sub, "__int__") or _object_type_hasattr(
-            sub, "__float__"
-        ):
-            try:
-                return _byteslike_find_int(self, _index(sub), start, end)
-            except TypeError:
-                pass
-        raise TypeError(f"a bytes-like object is required, not '{_type(sub).__name__}'")
+        if not _number_check(sub):
+            raise TypeError(
+                f"a bytes-like object is required, not '{_type(sub).__name__}'"
+            )
+        try:
+            sub = _index(sub)
+        except OverflowError:
+            raise ValueError("byte must be in range(0, 256)")
+        except Exception:
+            raise TypeError(
+                f"a bytes-like object is required, not '{_type(sub).__name__}'"
+            )
+        return _byteslike_find_int(self, sub, start, end)
 
     @classmethod
     def fromhex(cls, string):
@@ -1462,14 +1467,19 @@ class bytes(bootstrap=True):
             return _byteslike_find_byteslike(self, sub, start, end)
         if _int_check(sub):
             return _byteslike_find_int(self, sub, start, end)
-        if _object_type_hasattr(sub, "__int__") or _object_type_hasattr(
-            sub, "__float__"
-        ):
-            try:
-                return _byteslike_find_int(self, _index(sub), start, end)
-            except TypeError:
-                pass
-        raise TypeError(f"a bytes-like object is required, not '{_type(sub).__name__}'")
+        if not _number_check(sub):
+            raise TypeError(
+                f"a bytes-like object is required, not '{_type(sub).__name__}'"
+            )
+        try:
+            sub = _index(sub)
+        except OverflowError:
+            raise ValueError("byte must be in range(0, 256)")
+        except Exception:
+            raise TypeError(
+                f"a bytes-like object is required, not '{_type(sub).__name__}'"
+            )
+        return _byteslike_find_int(self, sub, start, end)
 
     @classmethod
     def fromhex(cls, string):

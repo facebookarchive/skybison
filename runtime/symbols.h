@@ -271,6 +271,7 @@ class Runtime;
   V(UnderNewMemberSetPyObject, "_new_member_set_pyobject")                     \
   V(UnderNewMemberSetReadonly, "_new_member_set_readonly")                     \
   V(UnderNewMemberSetReadonlyStrings, "_new_member_set_readonly_strings")      \
+  V(UnderNumberCheck, "_number_check")                                         \
   V(UnderObjectTypeGetattr, "_object_type_getattr")                            \
   V(UnderObjectTypeHasattr, "_object_type_hasattr")                            \
   V(UnderOsClose, "_os_close")                                                 \

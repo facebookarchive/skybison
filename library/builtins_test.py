@@ -168,21 +168,27 @@ class ByteArrayTests(unittest.TestCase):
             haystack.find(needle)
 
     def test_find_with_dunder_int_calls_dunder_index(self):
-        class Idx:
-            def __int__(self):
-                raise NotImplementedError("called __int__")
+        class Desc:
+            def __get__(self, obj, type):
+                raise NotImplementedError("called descriptor")
 
+        class Idx:
             def __index__(self):
                 return ord("a")
+
+            __int__ = Desc()
 
         haystack = bytearray(b"abc")
         needle = Idx()
         self.assertEqual(haystack.find(needle), 0)
 
     def test_find_with_dunder_float_calls_dunder_index(self):
+        class Desc:
+            def __get__(self, obj, type):
+                raise NotImplementedError("called descriptor")
+
         class Idx:
-            def __float__(self):
-                raise NotImplementedError("called __float__")
+            __float__ = Desc()
 
             def __index__(self):
                 return ord("a")
@@ -190,6 +196,36 @@ class ByteArrayTests(unittest.TestCase):
         haystack = bytearray(b"abc")
         needle = Idx()
         self.assertEqual(haystack.find(needle), 0)
+
+    def test_find_with_index_overflow_raises_value_error(self):
+        class Idx:
+            def __float__(self):
+                return 0.0
+
+            def __index__(self):
+                raise OverflowError("not a byte!")
+
+        haystack = bytearray(b"abc")
+        needle = Idx()
+        with self.assertRaises(ValueError) as context:
+            haystack.find(needle)
+        self.assertEqual(str(context.exception), "byte must be in range(0, 256)")
+
+    def test_find_with_dunder_index_error_raises_type_error(self):
+        class Idx:
+            def __float__(self):
+                return 0.0
+
+            def __index__(self):
+                raise MemoryError("not a byte!")
+
+        haystack = bytearray(b"abc")
+        needle = Idx()
+        with self.assertRaises(TypeError) as context:
+            haystack.find(needle)
+        self.assertEqual(
+            str(context.exception), "a bytes-like object is required, not 'Idx'"
+        )
 
     def test_index_with_bytes_self_raises_type_error(self):
         with self.assertRaises(TypeError):
@@ -353,34 +389,25 @@ class BytesTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             haystack.find(needle)
 
-    def test_find_with_raising_descriptor_dunder_int_does_not_call_dunder_get(self):
-        dunder_get_called = False
-
+    def test_find_with_dunder_int_calls_dunder_index(self):
         class Desc:
             def __get__(self, obj, type):
-                nonlocal dunder_get_called
-                dunder_get_called = True
-                raise UserWarning("foo")
+                raise NotImplementedError("called descriptor")
 
         class Idx:
-            __int__ = Desc()
-
             def __index__(self):
                 return ord("a")
+
+            __int__ = Desc()
 
         haystack = b"abc"
         needle = Idx()
         self.assertEqual(haystack.find(needle), 0)
-        self.assertFalse(dunder_get_called)
 
-    def test_find_with_raising_descriptor_dunder_float_does_not_call_dunder_get(self):
-        dunder_get_called = False
-
+    def test_find_with_dunder_float_calls_dunder_index(self):
         class Desc:
             def __get__(self, obj, type):
-                nonlocal dunder_get_called
-                dunder_get_called = True
-                raise UserWarning("foo")
+                raise NotImplementedError("called descriptor")
 
         class Idx:
             __float__ = Desc()
@@ -391,31 +418,36 @@ class BytesTests(unittest.TestCase):
         haystack = b"abc"
         needle = Idx()
         self.assertEqual(haystack.find(needle), 0)
-        self.assertFalse(dunder_get_called)
 
-    def test_find_with_dunder_int_calls_dunder_index(self):
-        class Idx:
-            def __int__(self):
-                raise NotImplementedError("called __int__")
-
-            def __index__(self):
-                return ord("a")
-
-        haystack = b"abc"
-        needle = Idx()
-        self.assertEqual(haystack.find(needle), 0)
-
-    def test_find_with_dunder_float_calls_dunder_index(self):
+    def test_find_with_index_overflow_raises_value_error(self):
         class Idx:
             def __float__(self):
-                raise NotImplementedError("called __float__")
+                return 0.0
 
             def __index__(self):
-                return ord("a")
+                raise OverflowError("not a byte!")
 
         haystack = b"abc"
         needle = Idx()
-        self.assertEqual(haystack.find(needle), 0)
+        with self.assertRaises(ValueError) as context:
+            haystack.find(needle)
+        self.assertEqual(str(context.exception), "byte must be in range(0, 256)")
+
+    def test_find_with_index_error_raises_type_error(self):
+        class Idx:
+            def __float__(self):
+                return 0.0
+
+            def __index__(self):
+                raise TypeError("not a byte!")
+
+        haystack = b"abc"
+        needle = Idx()
+        with self.assertRaises(TypeError) as context:
+            haystack.find(needle)
+        self.assertEqual(
+            str(context.exception), "a bytes-like object is required, not 'Idx'"
+        )
 
     def test_index_with_bytearray_self_raises_type_error(self):
         with self.assertRaises(TypeError):

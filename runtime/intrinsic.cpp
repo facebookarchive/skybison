@@ -192,6 +192,17 @@ static bool underListLen(Frame* frame) {
   return false;
 }
 
+static bool underNumberCheck(Thread* thread, Frame* frame) {
+  Runtime* runtime = thread->runtime();
+  RawObject arg = frame->topValue();
+  if (runtime->isInstanceOfInt(arg) || runtime->isInstanceOfFloat(arg)) {
+    frame->popValue();
+    frame->setTopValue(Bool::trueObj());
+    return true;
+  }
+  return false;
+}
+
 static bool underRangeCheck(Frame* frame) {
   frame->setTopValue(Bool::fromBool(frame->popValue().isRange()));
   return true;
@@ -430,6 +441,8 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
       return underListGuard(thread, frame);
     case SymbolId::kUnderListLen:
       return underListLen(frame);
+    case SymbolId::kUnderNumberCheck:
+      return underNumberCheck(thread, frame);
     case SymbolId::kUnderRangeCheck:
       return underRangeCheck(frame);
     case SymbolId::kUnderRangeGuard:
