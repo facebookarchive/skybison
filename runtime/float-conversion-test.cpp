@@ -49,7 +49,7 @@ TEST_F(FloatConversionTest, FormatFloatWithInfReturnsString) {
   EXPECT_EQ(std::strcmp(buf.get(), "inf"), 0);
 }
 
-TEST_F(FloatConversionTest, ParseFloatWithZeroReturnsDouble) {
+TEST_F(FloatConversionTest, ParseFloatReturnsDouble) {
   const char* str = "-42.1234567890123456789ABC";
   char* endptr;
   ConversionResult result;
@@ -57,6 +57,16 @@ TEST_F(FloatConversionTest, ParseFloatWithZeroReturnsDouble) {
   EXPECT_EQ(endptr - str, 23);
   EXPECT_EQ(result, ConversionResult::kSuccess);
   EXPECT_EQ(value, std::strtod("-0x1.50fcd6e9ba37bp+5", nullptr));
+}
+
+TEST_F(FloatConversionTest, ParseFloatWithNegativeExponentReturnsDouble) {
+  const char* str = "+041524e-2";
+  char* endptr;
+  ConversionResult result;
+  double value = parseFloat(str, &endptr, &result);
+  EXPECT_EQ(endptr - str, 10);
+  EXPECT_EQ(result, ConversionResult::kSuccess);
+  EXPECT_EQ(value, std::strtod("0x1.9f3d70a3d70a4p+8", nullptr));
 }
 
 TEST_F(FloatConversionTest, ParseFloatWithNanReturnsDouble) {

@@ -126,7 +126,7 @@ static double asciiStrtod(const char* nptr, char** endptr) {
 // string, -1.0 is returned and again ValueError is raised.
 //
 // On overflow (e.g., when trying to convert '1e500' on an IEEE 754 machine),
-// if overflow_exception is nullptr then +-Py_HUGE_VAL is returned, and no
+// if overflow_exception is nullptr then +-HUGE_VAL is returned, and no
 // Python exception is raised.  Otherwise, overflow_exception should point to a
 // Python exception, this exception will be raised, -1.0 will be returned, and
 // *endptr will point just past the end of the converted value.
@@ -510,6 +510,33 @@ char* formatFloat(double value, char format_code, int precision, bool skip_sign,
   return formatFloatShort(value, format_code, mode, precision, skip_sign,
                           /*always_add_sign=*/false, add_dot_0,
                           use_alt_formatting, float_strings, type);
+}
+
+double doubleRoundDecimals(double value, int ndigits) {
+  // Print value to a string with `ndigits` decimal digits.
+  char* buf_end;
+  int decpt;
+  int sign;
+  char* buf = dtoa(value, 3, ndigits, &decpt, &sign, &buf_end);
+  CHECK(buf != nullptr, "out of memory");
+
+  char shortbuf[100];
+  unique_c_ptr<char> longbuf;
+  size_t buflen = buf_end - buf;
+  char* number_buf;
+  size_t number_buf_len = buflen + 8;
+  if (number_buf_len <= sizeof(shortbuf)) {
+    number_buf = shortbuf;
+  } else {
+    longbuf.reset(static_cast<char*>(std::malloc(number_buf_len)));
+    number_buf = longbuf.get();
+  }
+  std::snprintf(number_buf, number_buf_len, "%c0%se%d", (sign ? '-' : '+'), buf,
+                decpt - static_cast<int>(buflen));
+  freedtoa(buf);
+
+  // Convert resulting string back to a double.
+  return strtod(number_buf, nullptr);
 }
 
 /****************************************************************
@@ -2378,10 +2405,7 @@ undfl:
 
 ovfl:
   errno = ERANGE;
-  // Can't trust HUGE_VAL
-  word0(&rv) = kExpMask;
-  word1(&rv) = 0;
-  return sign ? -dval(&rv) : dval(&rv);
+  return sign ? -HUGE_VAL : HUGE_VAL;
 }
 
 static char* rv_alloc(int i) {

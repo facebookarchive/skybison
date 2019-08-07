@@ -1172,6 +1172,91 @@ class FloatTests(unittest.TestCase):
     def test_dunder_rmod_returns_same_result_as_mod_for_float_other(self):
         self.assertEqual(float.__rmod__(1.0, 3.25), float.__mod__(3.25, 1.0))
 
+    def test_dunder_round_with_one_arg_returns_int(self):
+        self.assertEqual(float.__round__(0.0), 0)
+        self.assertIsInstance(float.__round__(0.0), int)
+        self.assertEqual(float.__round__(-0.0), 0)
+        self.assertIsInstance(float.__round__(-0.0), int)
+        self.assertEqual(float.__round__(1.0), 1)
+        self.assertIsInstance(float.__round__(1.0), int)
+        self.assertEqual(float.__round__(-1.0), -1)
+        self.assertIsInstance(float.__round__(-1.0), int)
+        self.assertEqual(float.__round__(42.42), 42)
+        self.assertIsInstance(float.__round__(42.42), int)
+        self.assertEqual(float.__round__(0.4), 0)
+        self.assertEqual(float.__round__(0.5), 0)
+        self.assertEqual(float.__round__(0.5000000000000001), 1)
+        self.assertEqual(float.__round__(1.49), 1)
+        self.assertEqual(float.__round__(1.5), 2)
+        self.assertEqual(float.__round__(1.5000000000000001), 2)
+        self.assertEqual(
+            float.__round__(1.234567e200),
+            123456699999999995062622360556161455756457158443485858665105941107312145749402909576243454437530421952327149599911208391362816498839992520580209467560546813973197632314335145381120371005964774514098176,  # noqa: B950
+        )
+        self.assertEqual(float.__round__(-13.4, None), -13)
+        self.assertIsInstance(float.__round__(-13.4, None), int)
+
+    def test_dunder_round_with_float_subclass_returns_int(self):
+        class C(float):
+            pass
+
+        self.assertEqual(float.__round__(C(-7654321.7654321)), -7654322)
+
+    def test_dunder_round_with_one_arg_raises_error(self):
+        with self.assertRaises(ValueError) as context:
+            float.__round__(float("nan"))
+        self.assertEqual(str(context.exception), "cannot convert float NaN to integer")
+        with self.assertRaises(OverflowError) as context:
+            float.__round__(float("inf"))
+        self.assertEqual(
+            str(context.exception), "cannot convert float infinity to integer"
+        )
+        with self.assertRaises(OverflowError) as context:
+            float.__round__(float("-inf"))
+        self.assertEqual(
+            str(context.exception), "cannot convert float infinity to integer"
+        )
+
+    def test_dunder_round_with_two_args_returns_float(self):
+        self.assertEqual(float.__round__(0.0, 0), 0.0)
+        self.assertIsInstance(float.__round__(0.0, 0), float)
+        self.assertEqual(float.__round__(-0.0, 1), 0.0)
+        self.assertIsInstance(float.__round__(-0.0, 1), float)
+        self.assertEqual(float.__round__(1.0, 0), 1.0)
+        self.assertIsInstance(float.__round__(1.0, 0), float)
+        self.assertEqual(float.__round__(-77441.7, -2), -77400.0)
+        self.assertIsInstance(float.__round__(-77441.7, -2), float)
+
+        self.assertEqual(float.__round__(12.34567, -(1 << 200)), 0.0)
+        self.assertEqual(float.__round__(12.34567, -50), 0.0)
+        self.assertEqual(float.__round__(12.34567, -2), 0.0)
+        self.assertEqual(float.__round__(12.34567, -1), 10.0)
+        self.assertEqual(float.__round__(12.34567, 0), 12.0)
+        self.assertEqual(float.__round__(12.34567, 1), 12.3)
+        self.assertEqual(float.__round__(12.34567, 2), 12.35)
+        self.assertEqual(float.__round__(12.34567, 3), 12.346)
+        self.assertEqual(float.__round__(12.34567, 4), 12.3457)
+        self.assertEqual(float.__round__(12.34567, 50), 12.34567)
+        self.assertEqual(float.__round__(12.34567, 1 << 200), 12.34567)
+
+        self.assertEqual(float("inf"), float("inf"))
+        self.assertEqual(float("-inf"), -float("inf"))
+
+        float_max = 1.7976931348623157e308
+        self.assertEqual(float.__round__(float_max, -309), 0.0)
+        self.assertEqual(float.__round__(float_max, -303), 1.79769e308)
+
+    def test_dunder_round_with_two_args_returns_nan(self):
+        import math
+
+        self.assertTrue(math.isnan(float.__round__(float("nan"), 2)))
+
+    def test_dunder_round_with_two_args_raises_error(self):
+        float_max = 1.7976931348623157e308
+        with self.assertRaises(OverflowError) as context:
+            float.__round__(float_max, -308)
+        self.assertEqual(str(context.exception), "rounded value too large to represent")
+
     def test_dunder_trunc_returns_int(self):
         self.assertEqual(float.__trunc__(0.0), 0)
         self.assertEqual(float.__trunc__(-0.0), 0)

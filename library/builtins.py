@@ -2049,6 +2049,9 @@ class float(bootstrap=True):
             return _float_divmod(int.__float__(n), self)[1]
         return NotImplemented
 
+    def __round__(self, ndigits=None):
+        pass
+
     def __rsub__(self, n: float) -> float:
         # n - self == -self + n.
         return float.__neg__(self).__add__(n)

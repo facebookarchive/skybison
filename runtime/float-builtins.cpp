@@ -1,5 +1,6 @@
 #include "float-builtins.h"
 
+#include <cfloat>
 #include <cmath>
 #include <limits>
 
@@ -86,6 +87,7 @@ const BuiltinMethod FloatBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNeg, dunderNeg},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderPow, dunderPow},
+    {SymbolId::kDunderRound, dunderRound},
     {SymbolId::kDunderRtruediv, dunderRtrueDiv},
     {SymbolId::kDunderSub, dunderSub},
     {SymbolId::kDunderTruediv, dunderTrueDiv},
@@ -498,6 +500,69 @@ RawObject FloatBuiltins::dunderTrueDiv(Thread* thread, Frame* frame,
   return runtime->newFloat(left / right);
 }
 
+RawObject FloatBuiltins::dunderRound(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfFloat(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
+  }
+  Float value_float(&scope, floatUnderlying(thread, self_obj));
+  double value = value_float.value();
+
+  // If ndigits is None round to nearest integer.
+  Object ndigits_obj(&scope, args.get(1));
+  if (ndigits_obj.isNoneType()) {
+    double result = std::round(value);
+    // round to even.
+    if (std::fabs(value - result) == 0.5) {
+      result = 2.0 * std::round(value / 2.0);
+    }
+    return intFromDouble(thread, result);
+  }
+
+  // Round to ndigits decimals.
+  if (!runtime->isInstanceOfInt(*ndigits_obj)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'%T' cannot be interpreted as an integer",
+                                &ndigits_obj);
+  }
+  Int ndigits_int(&scope, intUnderlying(thread, ndigits_obj));
+  if (ndigits_int.isLargeInt()) {
+    return ndigits_int.isNegative() ? runtime->newFloat(0.0) : *value_float;
+  }
+  word ndigits = ndigits_int.asWord();
+
+  // Keep NaNs and infinities unchanged.
+  if (!std::isfinite(value)) {
+    return *value_float;
+  }
+
+  // Set some reasonable bounds on ndigits and clip otherwise.
+  // For `ndigits > ndigits_max`, `value` always rounds to itself.
+  // For `ndigits < ndigits_min`, `value` always rounds to +-0.0.
+  // Here 0.30103 is an upper bound for `log10(2)`.
+  static const word ndigits_max =
+      static_cast<word>((DBL_MANT_DIG - DBL_MIN_EXP) * 0.30103);
+  static const word ndigits_min =
+      -static_cast<word>((DBL_MAX_EXP + 1) * 0.30103);
+  if (ndigits > ndigits_max) {
+    return *value_float;
+  }
+  double result;
+  if (ndigits < ndigits_min) {
+    result = std::copysign(0.0, value);
+  } else {
+    result = doubleRoundDecimals(value, static_cast<int>(ndigits));
+    if (result == HUGE_VAL || result == -HUGE_VAL) {
+      return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                  "rounded value too large to represent");
+    }
+  }
+  return runtime->newFloat(result);
+}
+
 RawObject FloatBuiltins::dunderRtrueDiv(Thread* thread, Frame* frame,
                                         word nargs) {
   HandleScope scope(thread);
@@ -552,7 +617,7 @@ RawObject FloatBuiltins::dunderTrunc(Thread* thread, Frame* frame, word nargs) {
   }
   double self = Float::cast(floatUnderlying(thread, self_obj)).value();
   double integral_part;
-  static_cast<void>(modf(self, &integral_part));
+  static_cast<void>(std::modf(self, &integral_part));
   return intFromDouble(thread, integral_part);
 }
 
