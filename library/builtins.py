@@ -1290,8 +1290,16 @@ class bytearray(bootstrap=True):
             )
         return _byteslike_rfind_int(self, sub, start, end)
 
-    def rindex(self, sub, start=_Unbound, end=_Unbound):
-        _unimplemented()
+    def rindex(self, sub, start=None, end=None) -> int:
+        if not _bytearray_check(self):
+            raise TypeError(
+                "'rindex' requires a 'bytearray' object "
+                f"but received a '{_type(self).__name__}'"
+            )
+        result = bytearray.rfind(self, sub, start, end)
+        if result is -1:
+            raise ValueError("subsection not found")
+        return result
 
     def rjust(self, width, fillchar=_Unbound):
         _unimplemented()
@@ -1598,8 +1606,16 @@ class bytes(bootstrap=True):
             )
         return _byteslike_rfind_int(self, sub, start, end)
 
-    def rindex(self, sub, start=_Unbound, end=_Unbound):
-        _unimplemented()
+    def rindex(self, sub, start=None, end=None) -> int:
+        if not _bytes_check(self):
+            raise TypeError(
+                "'rindex' requires a 'bytes' object "
+                f"but received a '{_type(self).__name__}'"
+            )
+        result = bytes.rfind(self, sub, start, end)
+        if result is -1:
+            raise ValueError("subsection not found")
+        return result
 
     def rjust(self, width, fillchar=_Unbound):
         _unimplemented()
