@@ -574,6 +574,30 @@ void emitPopJumpIfBool(EmitEnv* env, bool jump_value) {
 }
 
 template <>
+void emitHandler<UNARY_NOT>(EmitEnv* env) {
+  Label slow_path;
+  Register r_scratch = RAX;
+
+  // Handle RawBools directly; fall back to C++ for other types
+  __ popq(r_scratch);
+  __ movq(RDX, r_scratch);
+  // We only care about the bottom bits anyway, so andl is equivalent to andq
+  // for our purposes.
+  __ andb(r_scratch, Immediate(RawObject::kImmediateTagMask));
+  // If it's a boolean, negate and push.
+  __ cmpb(r_scratch, Immediate(RawObject::kBoolTag));
+  __ jcc(NOT_EQUAL, &slow_path, Assembler::kNearJump);
+  __ xorb(RDX, Immediate(RawBool::trueObj().raw() - RawBool::falseObj().raw()));
+  __ pushq(RDX);
+  emitNextOpcode(env);
+
+  // Fall back to Interpreter::isTrue
+  __ bind(&slow_path);
+  __ pushq(RDX);
+  emitGenericHandler(env, UNARY_NOT);
+}
+
+template <>
 void emitHandler<POP_JUMP_IF_FALSE>(EmitEnv* env) {
   emitPopJumpIfBool(env, false);
 }
