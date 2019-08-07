@@ -190,6 +190,7 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
 const char* const BuiltinsModule::kFrozenData = kBuiltinsModuleData;
 
 const SymbolId BuiltinsModule::kIntrinsicIds[] = {
+    SymbolId::kUnderIndex,
     SymbolId::kUnderSliceIndex,
     SymbolId::kUnderSliceIndexNotNone,
     SymbolId::kIsInstance,

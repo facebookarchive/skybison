@@ -217,6 +217,7 @@ class Runtime;
   V(UnderGetMemberULong, "_get_member_ulong")                                  \
   V(UnderGetMemberUShort, "_get_member_ushort")                                \
   V(UnderImp, "_imp")                                                          \
+  V(UnderIndex, "_index")                                                      \
   V(UnderInstall, "_install")                                                  \
   V(UnderInstanceGetattr, "_instance_getattr")                                 \
   V(UnderInstanceSetattr, "_instance_setattr")                                 \
