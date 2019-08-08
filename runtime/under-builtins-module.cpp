@@ -1063,7 +1063,7 @@ RawObject UnderBuiltinsModule::underFloatFormat(Thread* thread, Frame* frame,
   Object value_obj(&scope, args.get(0));
   Float value(&scope, floatUnderlying(thread, value_obj));
   Str format_code(&scope, args.get(1));
-  DCHECK(format_code.length() == 1, "expected len(format_code) == 1");
+  DCHECK(format_code.charLength() == 1, "expected len(format_code) == 1");
   char format_code_char = format_code.charAt(0);
   DCHECK(format_code_char == 'e' || format_code_char == 'E' ||
              format_code_char == 'f' || format_code_char == 'F' ||
@@ -1397,7 +1397,7 @@ static word digitValue(byte digit, word base) {
 }
 
 static word inferBase(const Str& str, word start) {
-  if (str.charAt(start) == '0' && start + 1 < str.length()) {
+  if (str.charAt(start) == '0' && start + 1 < str.charLength()) {
     switch (str.charAt(start + 1)) {
       case 'x':
       case 'X':
@@ -1417,7 +1417,7 @@ static RawObject intFromStr(Thread* thread, const Str& str, word base) {
   DCHECK(base == 0 || (base >= 2 && base <= 36), "invalid base");
   // CPython allows leading whitespace in the integer literal
   word start = strFindFirstNonWhitespace(str);
-  if (str.length() - start == 0) {
+  if (str.charLength() - start == 0) {
     return Error::error();
   }
   word sign = 1;
@@ -1427,11 +1427,11 @@ static RawObject intFromStr(Thread* thread, const Str& str, word base) {
   } else if (str.charAt(start) == '+') {
     start += 1;
   }
-  if (str.length() - start == 0) {
+  if (str.charLength() - start == 0) {
     // Just the sign
     return Error::error();
   }
-  if (str.length() - start == 1) {
+  if (str.charLength() - start == 1) {
     // Single digit, potentially with +/-
     word result = digitValue(str.charAt(start), base == 0 ? 10 : base);
     if (result == -1) return Error::error();
@@ -1456,7 +1456,7 @@ static RawObject intFromStr(Thread* thread, const Str& str, word base) {
       // * int("0b1", 16) => 177
       start += 2;
     }
-    if (str.length() - start == 0) {
+    if (str.charLength() - start == 0) {
       // Just the prefix: 0x, 0b, 0o, etc
       return Error::error();
     }
@@ -1466,13 +1466,13 @@ static RawObject intFromStr(Thread* thread, const Str& str, word base) {
   Int result(&scope, SmallInt::fromWord(0));
   Int digit(&scope, SmallInt::fromWord(0));
   Int base_obj(&scope, SmallInt::fromWord(base));
-  for (word i = start; i < str.length(); i++) {
+  for (word i = start; i < str.charLength(); i++) {
     byte digit_char = str.charAt(i);
     if (digit_char == '_') {
       // No leading underscores unless the number has a prefix
       if (i == start && inferred_base == 10) return Error::error();
       // No trailing underscores
-      if (i + 1 == str.length()) return Error::error();
+      if (i + 1 == str.charLength()) return Error::error();
       digit_char = str.charAt(++i);
     }
     word digit_val = digitValue(digit_char, base);

@@ -620,7 +620,7 @@ TEST(SmallStrTest, Tests) {
   RawObject obj0 = SmallStr::fromCStr("AB");
   ASSERT_TRUE(obj0.isSmallStr());
   auto str0 = Str::cast(obj0);
-  EXPECT_EQ(str0.length(), 2);
+  EXPECT_EQ(str0.charLength(), 2);
   EXPECT_EQ(str0.charAt(0), 'A');
   EXPECT_EQ(str0.charAt(1), 'B');
   byte array[3]{0, 0, 0};
@@ -633,88 +633,88 @@ TEST(SmallStrTest, Tests) {
 TEST(SmallStrTest, CodePointLengthWithAsciiReturnsLength) {
   RawObject len0 = SmallStr::fromCStr("");
   ASSERT_TRUE(len0.isSmallStr());
-  EXPECT_EQ(Str::cast(len0).length(), 0);
+  EXPECT_EQ(Str::cast(len0).charLength(), 0);
   EXPECT_EQ(Str::cast(len0).codePointLength(), 0);
 
   RawObject len1 = SmallStr::fromCStr("1");
   ASSERT_TRUE(len1.isSmallStr());
-  EXPECT_EQ(Str::cast(len1).length(), 1);
+  EXPECT_EQ(Str::cast(len1).charLength(), 1);
   EXPECT_EQ(Str::cast(len1).codePointLength(), 1);
 
   RawObject len2 = SmallStr::fromCStr("12");
   ASSERT_TRUE(len2.isSmallStr());
-  EXPECT_EQ(Str::cast(len2).length(), 2);
+  EXPECT_EQ(Str::cast(len2).charLength(), 2);
   EXPECT_EQ(Str::cast(len2).codePointLength(), 2);
 
   RawObject len3 = SmallStr::fromCStr("123");
   ASSERT_TRUE(len3.isSmallStr());
-  EXPECT_EQ(Str::cast(len3).length(), 3);
+  EXPECT_EQ(Str::cast(len3).charLength(), 3);
   EXPECT_EQ(Str::cast(len3).codePointLength(), 3);
 }
 
 TEST(SmallStrTest, CodePointLengthWithOneCodePoint) {
   RawObject len1 = SmallStr::fromCStr("\x24");
   ASSERT_TRUE(len1.isSmallStr());
-  EXPECT_EQ(Str::cast(len1).length(), 1);
+  EXPECT_EQ(Str::cast(len1).charLength(), 1);
   EXPECT_EQ(Str::cast(len1).codePointLength(), 1);
 
   RawObject len2 = SmallStr::fromCStr("\xC2\xA2");
   ASSERT_TRUE(len2.isSmallStr());
-  EXPECT_EQ(Str::cast(len2).length(), 2);
+  EXPECT_EQ(Str::cast(len2).charLength(), 2);
   EXPECT_EQ(Str::cast(len2).codePointLength(), 1);
 
   RawObject len3 = SmallStr::fromCStr("\xE0\xA4\xB9");
   ASSERT_TRUE(len3.isSmallStr());
-  EXPECT_EQ(Str::cast(len3).length(), 3);
+  EXPECT_EQ(Str::cast(len3).charLength(), 3);
   EXPECT_EQ(Str::cast(len3).codePointLength(), 1);
 
   RawObject len4 = SmallStr::fromCStr("\xF0\x90\x8D\x88");
   ASSERT_TRUE(len4.isSmallStr());
-  EXPECT_EQ(Str::cast(len4).length(), 4);
+  EXPECT_EQ(Str::cast(len4).charLength(), 4);
   EXPECT_EQ(Str::cast(len4).codePointLength(), 1);
 }
 
 TEST(SmallStrTest, CodePointLengthWithTwoCodePoints) {
   RawObject len1 = SmallStr::fromCStr("\x24\x65");
   ASSERT_TRUE(len1.isSmallStr());
-  EXPECT_EQ(Str::cast(len1).length(), 2);
+  EXPECT_EQ(Str::cast(len1).charLength(), 2);
   EXPECT_EQ(Str::cast(len1).codePointLength(), 2);
 
   RawObject len2 = SmallStr::fromCStr("\xC2\xA2\xC2\xA3");
   ASSERT_TRUE(len2.isSmallStr());
-  EXPECT_EQ(Str::cast(len2).length(), 4);
+  EXPECT_EQ(Str::cast(len2).charLength(), 4);
   EXPECT_EQ(Str::cast(len2).codePointLength(), 2);
 
   RawObject len3 = SmallStr::fromCStr("\xE0\xA4\xB9\xC2\xA3");
   ASSERT_TRUE(len3.isSmallStr());
-  EXPECT_EQ(Str::cast(len3).length(), 5);
+  EXPECT_EQ(Str::cast(len3).charLength(), 5);
   EXPECT_EQ(Str::cast(len3).codePointLength(), 2);
 
   RawObject len4 = SmallStr::fromCStr("\xF0\x90\x8D\x88\xC2\xA3");
   ASSERT_TRUE(len4.isSmallStr());
-  EXPECT_EQ(Str::cast(len4).length(), 6);
+  EXPECT_EQ(Str::cast(len4).charLength(), 6);
   EXPECT_EQ(Str::cast(len4).codePointLength(), 2);
 }
 
 TEST(SmallStrTest, CodePointLengthWithThreeCodePoints) {
   RawObject len1 = SmallStr::fromCStr("\x24\x65\x66");
   ASSERT_TRUE(len1.isSmallStr());
-  EXPECT_EQ(Str::cast(len1).length(), 3);
+  EXPECT_EQ(Str::cast(len1).charLength(), 3);
   EXPECT_EQ(Str::cast(len1).codePointLength(), 3);
 
   RawObject len2 = SmallStr::fromCStr("\xC2\xA2\xC2\xA3\xC2\xA4");
   ASSERT_TRUE(len2.isSmallStr());
-  EXPECT_EQ(Str::cast(len2).length(), 6);
+  EXPECT_EQ(Str::cast(len2).charLength(), 6);
   EXPECT_EQ(Str::cast(len2).codePointLength(), 3);
 
   RawObject len3 = SmallStr::fromCStr("\xE0\xA4\xB9\xC2\xA3\xC2\xA4");
   ASSERT_TRUE(len3.isSmallStr());
-  EXPECT_EQ(Str::cast(len3).length(), 7);
+  EXPECT_EQ(Str::cast(len3).charLength(), 7);
   EXPECT_EQ(Str::cast(len3).codePointLength(), 3);
 
   RawObject len4 = SmallStr::fromCStr("\xF0\x90\x8D\x88\x65\xC2\xA3");
   ASSERT_TRUE(len4.isSmallStr());
-  EXPECT_EQ(Str::cast(len4).length(), 7);
+  EXPECT_EQ(Str::cast(len4).charLength(), 7);
   EXPECT_EQ(Str::cast(len4).codePointLength(), 3);
 }
 
@@ -722,7 +722,7 @@ TEST(SmallStrTest, FromCodePointOneByte) {
   RawObject obj = SmallStr::fromCodePoint(0x24);
   ASSERT_TRUE(obj.isSmallStr());
   RawStr str = Str::cast(obj);
-  ASSERT_EQ(str.length(), 1);
+  ASSERT_EQ(str.charLength(), 1);
   EXPECT_EQ(str.charAt(0), 0x24);
 }
 
@@ -730,7 +730,7 @@ TEST(SmallStrTest, FromCodePointTwoByte) {
   RawObject obj = SmallStr::fromCodePoint(0xA2);
   ASSERT_TRUE(obj.isSmallStr());
   RawStr str = Str::cast(obj);
-  ASSERT_EQ(str.length(), 2);
+  ASSERT_EQ(str.charLength(), 2);
   EXPECT_EQ(str.charAt(0), 0xC2);
   EXPECT_EQ(str.charAt(1), 0xA2);
 }
@@ -739,7 +739,7 @@ TEST(SmallStrTest, FromCodePointThreeByte) {
   RawObject obj1 = SmallStr::fromCodePoint(0x0939);
   ASSERT_TRUE(obj1.isSmallStr());
   RawStr str1 = Str::cast(obj1);
-  ASSERT_EQ(str1.length(), 3);
+  ASSERT_EQ(str1.charLength(), 3);
   EXPECT_EQ(str1.charAt(0), 0xE0);
   EXPECT_EQ(str1.charAt(1), 0xA4);
   EXPECT_EQ(str1.charAt(2), 0xB9);
@@ -747,7 +747,7 @@ TEST(SmallStrTest, FromCodePointThreeByte) {
   RawObject obj2 = SmallStr::fromCodePoint(0x20AC);
   ASSERT_TRUE(obj2.isSmallStr());
   RawStr str2 = Str::cast(obj2);
-  ASSERT_EQ(str2.length(), 3);
+  ASSERT_EQ(str2.charLength(), 3);
   EXPECT_EQ(str2.charAt(0), 0xE2);
   EXPECT_EQ(str2.charAt(1), 0x82);
   EXPECT_EQ(str2.charAt(2), 0xAC);
@@ -757,7 +757,7 @@ TEST(SmallStrTest, FromCodePointFourByte) {
   RawObject obj = SmallStr::fromCodePoint(0x10348);
   ASSERT_TRUE(obj.isSmallStr());
   RawStr str = Str::cast(obj);
-  ASSERT_EQ(str.length(), 4);
+  ASSERT_EQ(str.charLength(), 4);
   EXPECT_EQ(str.charAt(0), 0xF0);
   EXPECT_EQ(str.charAt(1), 0x90);
   EXPECT_EQ(str.charAt(2), 0x8D);
@@ -768,14 +768,14 @@ TEST_F(StrTest, OffsetByCodePoints) {
   HandleScope scope(thread_);
 
   Str empty(&scope, Str::empty());
-  EXPECT_EQ(empty.length(), 0);
+  EXPECT_EQ(empty.charLength(), 0);
   EXPECT_EQ(empty.codePointLength(), 0);
   EXPECT_EQ(empty.offsetByCodePoints(0, 1), 0);
   EXPECT_EQ(empty.offsetByCodePoints(2, 0), 0);
   EXPECT_EQ(empty.offsetByCodePoints(2, 1), 0);
 
   Str ascii(&scope, runtime_.newStrFromCStr("abcd"));
-  EXPECT_EQ(ascii.length(), 4);
+  EXPECT_EQ(ascii.charLength(), 4);
   EXPECT_EQ(ascii.codePointLength(), 4);
 
   // for ASCII, each code point is one byte wide
@@ -800,7 +800,7 @@ TEST_F(StrTest, OffsetByCodePoints) {
 
   Str unicode(&scope,
               runtime_.newStrFromCStr("\xd7\x90pq\xd7\x91\xd7\x92-\xd7\x93"));
-  EXPECT_EQ(unicode.length(), 11);
+  EXPECT_EQ(unicode.charLength(), 11);
   EXPECT_EQ(unicode.codePointLength(), 7);
 
   // for Unicode, code points may be more than one byte wide
@@ -839,7 +839,7 @@ TEST_F(LargeStrTest, CodePointLengthAscii) {
 
   Str str(&scope, runtime_.newStrFromCStr(code_units));
   EXPECT_TRUE(str.isLargeStr());
-  EXPECT_EQ(str.length(), std::strlen(code_units));
+  EXPECT_EQ(str.charLength(), std::strlen(code_units));
   EXPECT_EQ(str.codePointLength(), 17);
 }
 
@@ -853,7 +853,7 @@ TEST_F(LargeStrTest, CodePointLength) {
 
   Str str(&scope, runtime_.newStrFromCStr(code_units));
   EXPECT_TRUE(str.isLargeStr());
-  EXPECT_EQ(str.length(), std::strlen(code_units));
+  EXPECT_EQ(str.charLength(), std::strlen(code_units));
   EXPECT_EQ(str.codePointLength(), 23);
 }
 

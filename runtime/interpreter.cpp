@@ -216,7 +216,7 @@ RawObject Interpreter::stringJoin(Thread* thread, RawObject* sp, word num) {
     if (!sp[i].isStr()) {
       UNIMPLEMENTED("Conversion of non-string values not supported.");
     }
-    new_len += Str::cast(sp[i]).length();
+    new_len += Str::cast(sp[i]).charLength();
   }
 
   if (new_len <= RawSmallStr::kMaxLength) {
@@ -224,7 +224,7 @@ RawObject Interpreter::stringJoin(Thread* thread, RawObject* sp, word num) {
     byte* ptr = buffer;
     for (word i = num - 1; i >= 0; i--) {
       RawStr str = Str::cast(sp[i]);
-      word len = str.length();
+      word len = str.charLength();
       str.copyTo(ptr, len);
       ptr += len;
     }
@@ -236,7 +236,7 @@ RawObject Interpreter::stringJoin(Thread* thread, RawObject* sp, word num) {
   word offset = RawLargeStr::kDataOffset;
   for (word i = num - 1; i >= 0; i--) {
     RawStr str = Str::cast(sp[i]);
-    word len = str.length();
+    word len = str.charLength();
     str.copyTo(reinterpret_cast<byte*>(result.address() + offset), len);
     offset += len;
   }

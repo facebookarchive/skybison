@@ -25,28 +25,29 @@ RawObject strCount(const Str& haystack, const Str& needle, word start,
   }
 
   word start_index = start == 0 ? 0 : haystack.offsetByCodePoints(0, start);
-  if (start_index == haystack.length() && needle.length() > 0) {
+  if (start_index == haystack.charLength() && needle.charLength() > 0) {
     // Haystack is too small; fast early return
     return SmallInt::fromWord(0);
   }
 
   word end_index = end == kMaxWord
-                       ? haystack.length()
+                       ? haystack.charLength()
                        : haystack.offsetByCodePoints(start_index, end - start);
-  if ((end_index - start_index) < needle.length() || start_index > end_index) {
+  if ((end_index - start_index) < needle.charLength() ||
+      start_index > end_index) {
     // Haystack is too small; fast early return
     return SmallInt::fromWord(0);
   }
 
   // TODO(T41400083): Use a different search algorithm
-  return SmallInt::fromWord(strCountSubStrFromTo(haystack, needle, start_index,
-                                                 end_index, haystack.length()));
+  return SmallInt::fromWord(strCountSubStrFromTo(
+      haystack, needle, start_index, end_index, haystack.charLength()));
 }
 
 word strCountSubStrFromTo(const Str& haystack, const Str& needle, word start,
                           word end, word max_count) {
   DCHECK(max_count > 0, "max_count must be positive");
-  word needle_len = needle.length();
+  word needle_len = needle.charLength();
   word num_match = 0;
   // Loop is in byte space, not code point space
   for (word i = start; i <= end - needle_len && num_match < max_count;) {
@@ -61,7 +62,7 @@ word strCountSubStrFromTo(const Str& haystack, const Str& needle, word start,
 }
 
 word strCountSubStr(const Str& haystack, const Str& needle, word max_count) {
-  return strCountSubStrFromTo(haystack, needle, 0, haystack.length(),
+  return strCountSubStrFromTo(haystack, needle, 0, haystack.charLength(),
                               max_count);
 }
 
@@ -70,7 +71,7 @@ RawObject strEscapeNonASCII(Thread* thread, const Object& str_obj) {
   CHECK(str_obj.isStr(), "strEscapeNonASCII cannot currently handle non-str");
   HandleScope scope(thread);
   Str str(&scope, *str_obj);
-  for (word i = 0; i < str.length(); i++) {
+  for (word i = 0; i < str.charLength(); i++) {
     if (str.charAt(i) > kMaxASCII) {
       UNIMPLEMENTED(
           "Character '%d' at index %ld is not yet escapable in strEscape",
@@ -81,8 +82,8 @@ RawObject strEscapeNonASCII(Thread* thread, const Object& str_obj) {
 }
 
 word strSpan(const Str& src, const Str& str) {
-  word length = src.length();
-  word str_length = str.length();
+  word length = src.charLength();
+  word str_length = str.charLength();
   word first = 0;
   for (; first < length; first++) {
     bool has_match = false;
@@ -102,8 +103,8 @@ word strSpan(const Str& src, const Str& str) {
 
 word strRSpan(const Str& src, const Str& str, word rend) {
   DCHECK(rend >= 0, "string index underflow");
-  word length = src.length();
-  word str_length = str.length();
+  word length = src.charLength();
+  word str_length = str.charLength();
   word result = 0;
   for (word i = length - 1; i >= rend; i--, result++) {
     byte ch = src.charAt(i);
@@ -146,20 +147,21 @@ RawObject strSplitlines(Thread* thread, const Str& str, bool keepends) {
   Runtime* runtime = thread->runtime();
   List result(&scope, runtime->newList());
   // Looping over code points, not bytes, but i is a byte offset
-  for (word i = 0, j = 0; i < str.length(); j = i) {
+  for (word i = 0, j = 0; i < str.charLength(); j = i) {
     // Skip newline chars
     word num_bytes;
-    while (i < str.length() && !isLineBreak(str.codePointAt(i, &num_bytes))) {
+    while (i < str.charLength() &&
+           !isLineBreak(str.codePointAt(i, &num_bytes))) {
       i += num_bytes;
     }
 
     word eol_pos = i;
-    if (i < str.length()) {
+    if (i < str.charLength()) {
       int32_t cp = str.codePointAt(i, &num_bytes);
       word next = i + num_bytes;
       word next_num_bytes;
       // Check for \r\n specifically
-      if (cp == '\r' && next < str.length() &&
+      if (cp == '\r' && next < str.charLength() &&
           str.codePointAt(next, &next_num_bytes) == '\n') {
         i += next_num_bytes;
       }
@@ -170,7 +172,7 @@ RawObject strSplitlines(Thread* thread, const Str& str, bool keepends) {
     }
 
     // If there are no newlines, the str returned should be identity-equal
-    if (j == 0 && eol_pos == str.length() && str.isStr()) {
+    if (j == 0 && eol_pos == str.charLength() && str.isStr()) {
       runtime->listAdd(thread, result, str);
       return *result;
     }
@@ -189,7 +191,7 @@ static bool isAsciiSpace(byte ch) {
 }
 
 RawObject strStripSpace(Thread* thread, const Str& src) {
-  word length = src.length();
+  word length = src.charLength();
   if (length == 0) {
     return *src;
   }
@@ -209,7 +211,7 @@ RawObject strStripSpace(Thread* thread, const Str& src) {
 }
 
 RawObject strStripSpaceLeft(Thread* thread, const Str& src) {
-  word length = src.length();
+  word length = src.charLength();
   if (length == 0) {
     return *src;
   }
@@ -224,7 +226,7 @@ RawObject strStripSpaceLeft(Thread* thread, const Str& src) {
 }
 
 RawObject strStripSpaceRight(Thread* thread, const Str& src) {
-  word length = src.length();
+  word length = src.charLength();
   if (length == 0) {
     return *src;
   }
@@ -239,8 +241,8 @@ RawObject strStripSpaceRight(Thread* thread, const Str& src) {
 }
 
 RawObject strStrip(Thread* thread, const Str& src, const Str& str) {
-  word length = src.length();
-  if (length == 0 || str.length() == 0) {
+  word length = src.charLength();
+  if (length == 0 || str.charLength() == 0) {
     return *src;
   }
   word first = strSpan(src, str);
@@ -250,8 +252,8 @@ RawObject strStrip(Thread* thread, const Str& src, const Str& str) {
 }
 
 RawObject strStripLeft(Thread* thread, const Str& src, const Str& str) {
-  word length = src.length();
-  if (length == 0 || str.length() == 0) {
+  word length = src.charLength();
+  if (length == 0 || str.charLength() == 0) {
     return *src;
   }
   word first = strSpan(src, str);
@@ -259,8 +261,8 @@ RawObject strStripLeft(Thread* thread, const Str& src, const Str& str) {
 }
 
 RawObject strStripRight(Thread* thread, const Str& src, const Str& str) {
-  word length = src.length();
-  if (length == 0 || str.length() == 0) {
+  word length = src.charLength();
+  if (length == 0 || str.charLength() == 0) {
     return *src;
   }
   word first = 0;
@@ -272,7 +274,7 @@ RawObject strIteratorNext(Thread* thread, const StrIterator& iter) {
   HandleScope scope(thread);
   word byte_offset = iter.index();
   Str underlying(&scope, iter.iterable());
-  if (byte_offset >= underlying.length()) {
+  if (byte_offset >= underlying.charLength()) {
     return Error::noMoreItems();
   }
   word num_bytes = 0;
@@ -442,7 +444,7 @@ void strInternInTuple(Thread* thread, const Object& items) {
 }
 
 static bool allNameChars(const Str& str) {
-  for (word i = 0; i < str.length(); i++) {
+  for (word i = 0; i < str.charLength(); i++) {
     if (!isalnum(str.charAt(i))) {
       return false;
     }
@@ -495,7 +497,7 @@ bool strInternConstants(Thread* thread, const Object& items) {
 
 bool strIsASCII(const Str& str) {
   // TODO(T45148575): Check multiple bytes at once
-  for (word i = 0; i < str.length(); i++) {
+  for (word i = 0; i < str.charLength(); i++) {
     if (str.charAt(i) > kMaxASCII) {
       return false;
     }
@@ -510,13 +512,14 @@ RawObject strFind(const Str& haystack, const Str& needle, word start,
   }
 
   word start_index = haystack.offsetByCodePoints(0, start);
-  if (start_index == haystack.length() && needle.length() > 0) {
+  if (start_index == haystack.charLength() && needle.charLength() > 0) {
     // Haystack is too small; fast early return
     return SmallInt::fromWord(-1);
   }
   word end_index = haystack.offsetByCodePoints(start_index, end - start);
 
-  if ((end_index - start_index) < needle.length() || start_index > end_index) {
+  if ((end_index - start_index) < needle.charLength() ||
+      start_index > end_index) {
     // Haystack is too small; fast early return
     return SmallInt::fromWord(-1);
   }
@@ -524,7 +527,7 @@ RawObject strFind(const Str& haystack, const Str& needle, word start,
   // Loop is in byte space, not code point space
   word result = start;
   // TODO(T41400083): Use a different search algorithm
-  for (word i = start_index; i <= end_index - needle.length(); result++) {
+  for (word i = start_index; i <= end_index - needle.charLength(); result++) {
     bool has_match = strHasPrefix(haystack, needle, i);
     word next = haystack.offsetByCodePoints(i, 1);
     if (i == next) {
@@ -547,15 +550,15 @@ RawObject strFind(const Str& haystack, const Str& needle, word start,
 
 word strFindFirstNonWhitespace(const Str& str) {
   word i = 0;
-  while (i < str.length() && isAsciiSpace(str.charAt(i))) {
+  while (i < str.charLength() && isAsciiSpace(str.charAt(i))) {
     i++;
   }
   return i;
 }
 
 bool strHasPrefix(const Str& str, const Str& prefix, word start) {
-  word str_len = str.length();
-  word prefix_len = prefix.length();
+  word str_len = str.charLength();
+  word prefix_len = prefix.charLength();
   if (str_len - start + 1 < prefix_len) {
     return false;
   }
@@ -574,13 +577,14 @@ RawObject strRFind(const Str& haystack, const Str& needle, word start,
   }
 
   word start_index = haystack.offsetByCodePoints(0, start);
-  if (start_index == haystack.length() && needle.length() > 0) {
+  if (start_index == haystack.charLength() && needle.charLength() > 0) {
     // Haystack is too small; fast early return
     return SmallInt::fromWord(-1);
   }
   word end_index = haystack.offsetByCodePoints(start_index, end - start);
 
-  if ((end_index - start_index) < needle.length() || start_index > end_index) {
+  if ((end_index - start_index) < needle.charLength() ||
+      start_index > end_index) {
     // Haystack is too small; fast early return
     return SmallInt::fromWord(-1);
   }
@@ -589,7 +593,7 @@ RawObject strRFind(const Str& haystack, const Str& needle, word start,
   word result = start;
   word last_index = -1;
   // TODO(T41400083): Use a different search algorithm
-  for (word i = start_index; i <= end_index - needle.length(); result++) {
+  for (word i = start_index; i <= end_index - needle.charLength(); result++) {
     if (strHasPrefix(haystack, needle, i)) {
       last_index = result;
     }
@@ -645,9 +649,9 @@ RawObject StrBuiltins::lower(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, SymbolId::kStr);
   }
   Str self(&scope, strUnderlying(thread, self_obj));
-  std::unique_ptr<byte[]> buf(new byte[self.length()]);
+  std::unique_ptr<byte[]> buf(new byte[self.charLength()]);
   byte* bufp = buf.get();
-  for (word i = 0; i < self.length(); i++) {
+  for (word i = 0; i < self.charLength(); i++) {
     byte c = self.charAt(i);
     if (c > kMaxASCII) {
       UNIMPLEMENTED("Lowercase non-ASCII characters");
@@ -658,7 +662,8 @@ RawObject StrBuiltins::lower(Thread* thread, Frame* frame, word nargs) {
       bufp[i] = c;
     }
   }
-  Str result(&scope, runtime->newStrWithAll(View<byte>{bufp, self.length()}));
+  Str result(&scope,
+             runtime->newStrWithAll(View<byte>{bufp, self.charLength()}));
   return *result;
 }
 
@@ -671,9 +676,9 @@ RawObject StrBuiltins::upper(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, SymbolId::kStr);
   }
   Str self(&scope, strUnderlying(thread, self_obj));
-  std::unique_ptr<byte[]> buf(new byte[self.length()]);
+  std::unique_ptr<byte[]> buf(new byte[self.charLength()]);
   byte* bufp = buf.get();
-  for (word i = 0; i < self.length(); i++) {
+  for (word i = 0; i < self.charLength(); i++) {
     byte c = self.charAt(i);
     if (c > kMaxASCII) {
       UNIMPLEMENTED("Uppercase non-ASCII characters");
@@ -684,7 +689,8 @@ RawObject StrBuiltins::upper(Thread* thread, Frame* frame, word nargs) {
       bufp[i] = c;
     }
   }
-  Str result(&scope, runtime->newStrWithAll(View<byte>{bufp, self.length()}));
+  Str result(&scope,
+             runtime->newStrWithAll(View<byte>{bufp, self.charLength()}));
   return *result;
 }
 
@@ -723,7 +729,7 @@ RawObject StrBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
                                 &count_index);
   }
   Str self(&scope, *self_obj);
-  word length = self.length();
+  word length = self.charLength();
   if (count <= 0 || length == 0) {
     return Str::empty();
   }
@@ -758,7 +764,7 @@ RawObject StrBuiltins::slice(Thread* thread, const Str& str,
   word start, stop, step;
   Object err(&scope, sliceUnpack(thread, slice, &start, &stop, &step));
   if (err.isError()) return *err;
-  word length = Slice::adjustIndices(str.length(), &start, &stop, step);
+  word length = Slice::adjustIndices(str.charLength(), &start, &stop, step);
   std::unique_ptr<char[]> buf(new char[length + 1]);
   buf[length] = '\0';
   for (word i = 0, index = start; i < length; i++, index += step) {
@@ -786,9 +792,9 @@ RawObject StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
     }
     word idx = index.asWord();
     if (idx < 0) {
-      idx += string.length();
+      idx += string.charLength();
     }
-    if (idx < 0 || idx >= string.length()) {
+    if (idx < 0 || idx >= string.charLength()) {
       return thread->raiseWithFmt(LayoutId::kIndexError,
                                   "string index out of range");
     }
@@ -836,7 +842,7 @@ RawObject StrBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, SymbolId::kStr);
   }
   Str self(&scope, strUnderlying(thread, self_obj));
-  const word self_len = self.length();
+  const word self_len = self.charLength();
   word output_size = 0;
   word squote = 0;
   word dquote = 0;
@@ -1056,7 +1062,7 @@ RawObject StrIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   }
   StrIterator str_iterator(&scope, *self);
   Str str(&scope, str_iterator.iterable());
-  return SmallInt::fromWord(str.length() - str_iterator.index());
+  return SmallInt::fromWord(str.charLength() - str_iterator.index());
 }
 
 }  // namespace python

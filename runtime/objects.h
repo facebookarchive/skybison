@@ -479,8 +479,8 @@ class RawStr : public RawObject {
 
   // Getters and setters.
   byte charAt(word index) const;
-  word length() const;
-  void copyTo(byte* dst, word length) const;
+  word charLength() const;
+  void copyTo(byte* dst, word char_length) const;
 
   // Equality checks.
   word compare(RawObject string) const;
@@ -489,13 +489,13 @@ class RawStr : public RawObject {
   bool equalsCStr(const char* c_str) const;
 
   // Codepoints
-  int32_t codePointAt(word index, word* length) const;
+  int32_t codePointAt(word char_index, word* char_length) const;
   word codePointLength() const;
 
   // Counts forward through the code points of the string, starting at the
-  // specified code unit index. Returns the code unit index at the offset,
+  // specified char index. Returns the char index at the offset,
   // or length() if the offset reaches the end of the string.
-  word offsetByCodePoints(word index, word count) const;
+  word offsetByCodePoints(word char_index, word count) const;
 
   // Conversion to an unescaped C string.  The underlying memory is allocated
   // with malloc and must be freed by the caller.
@@ -662,9 +662,9 @@ class RawSmallStr : public RawObject {
   // RawStr class, which delegates to RawLargeStr/RawSmallStr appropriately.
 
   // Getters and setters.
-  word length() const;
   byte charAt(word index) const;
-  void copyTo(byte* dst, word length) const;
+  word charLength() const;
+  void copyTo(byte* dst, word char_length) const;
 
   // Codepoints
   word codePointLength() const;
@@ -1174,7 +1174,8 @@ class RawLargeStr : public RawArray {
 
   // Getters and setters.
   byte charAt(word index) const;
-  void copyTo(byte* dst, word length) const;
+  word charLength() const;
+  void copyTo(byte* dst, word char_length) const;
 
   // Equality checks.
   bool equals(RawObject that) const;
@@ -3567,18 +3568,18 @@ inline uint32_t RawSmallBytes::uint32At(word index) const {
 
 // RawSmallStr
 
-inline word RawSmallStr::length() const {
+inline word RawSmallStr::charLength() const {
   return (raw() >> kImmediateTagBits) & kMaxLength;
 }
 
 inline byte RawSmallStr::charAt(word index) const {
-  DCHECK_INDEX(index, length());
+  DCHECK_INDEX(index, charLength());
   return raw() >> (kBitsPerByte * (index + 1));
 }
 
-inline void RawSmallStr::copyTo(byte* dst, word length) const {
-  DCHECK_BOUND(length, this->length());
-  for (word i = 0; i < length; ++i) {
+inline void RawSmallStr::copyTo(byte* dst, word char_length) const {
+  DCHECK_BOUND(char_length, charLength());
+  for (word i = 0; i < char_length; ++i) {
     *dst++ = charAt(i);
   }
 }
@@ -5055,12 +5056,12 @@ inline byte RawStr::charAt(word index) const {
   return RawLargeStr::cast(*this).charAt(index);
 }
 
-inline word RawStr::length() const {
+inline word RawStr::charLength() const {
   if (isSmallStr()) {
-    return RawSmallStr::cast(*this).length();
+    return RawSmallStr::cast(*this).charLength();
   }
   DCHECK(isLargeStr(), "unexpected type");
-  return RawLargeStr::cast(*this).length();
+  return RawLargeStr::cast(*this).charLength();
 }
 
 inline bool RawStr::equals(RawObject that) const {
@@ -5106,6 +5107,8 @@ inline byte RawLargeStr::charAt(word index) const {
   DCHECK_INDEX(index, length());
   return *reinterpret_cast<byte*>(address() + index);
 }
+
+inline word RawLargeStr::charLength() const { return length(); }
 
 // RawValueCell
 

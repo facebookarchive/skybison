@@ -78,7 +78,7 @@ RawObject RawSmallStr::fromBytes(View<byte> data) {
 }
 
 char* RawSmallStr::toCStr() const {
-  word length = this->length();
+  word length = charLength();
   byte* result = static_cast<byte*>(std::malloc(length + 1));
   CHECK(result != nullptr, "out of memory");
   copyTo(result, length);
@@ -93,7 +93,7 @@ word RawSmallStr::codePointLength() const {
   block = ((block & mask_7) >> 7) & ((~block) >> 6);
   // TODO(cshapiro): evaluate using popcount instead of multiplication
   word num_trailing = (block * mask_0) >> ((kWordSize - 1) * kBitsPerByte);
-  return length() - num_trailing;
+  return charLength() - num_trailing;
 }
 
 // RawSmallInt
@@ -459,33 +459,33 @@ void RawSlice::adjustSearchIndices(word* start, word* end, word length) {
 
 word RawStr::compare(RawObject string) const {
   RawStr that = RawStr::cast(string);
-  word length = Utils::minimum(this->length(), that.length());
+  word length = Utils::minimum(charLength(), that.charLength());
   for (word i = 0; i < length; i++) {
     word diff = this->charAt(i) - that.charAt(i);
     if (diff != 0) {
       return (diff > 0) ? 1 : -1;
     }
   }
-  word diff = this->length() - that.length();
+  word diff = this->charLength() - that.charLength();
   return (diff > 0) ? 1 : ((diff < 0) ? -1 : 0);
 }
 
 word RawStr::compareCStr(const char* c_str) const {
   word c_length = std::strlen(c_str);
-  word length = Utils::minimum(this->length(), c_length);
+  word length = Utils::minimum(charLength(), c_length);
   for (word i = 0; i < length; i++) {
     word diff = charAt(i) - static_cast<byte>(c_str[i]);
     if (diff != 0) {
       return (diff > 0) ? 1 : -1;
     }
   }
-  word diff = this->length() - c_length;
+  word diff = charLength() - c_length;
   return (diff > 0) ? 1 : ((diff < 0) ? -1 : 0);
 }
 
 bool RawStr::equalsCStr(const char* c_str) const {
   const char* cp = c_str;
-  const word len = length();
+  const word len = charLength();
   for (word i = 0; i < len; i++, cp++) {
     byte ch = static_cast<byte>(*cp);
     if (ch == '\0' || ch != charAt(i)) {
@@ -497,38 +497,39 @@ bool RawStr::equalsCStr(const char* c_str) const {
 
 template <typename T, typename F>
 static inline int32_t decodeCodePoint(T src, F at, word src_length, word index,
-                                      word* length) {
+                                      word* char_length) {
   DCHECK_INDEX(index, src_length);
   byte ch0 = (src->*at)(index);
   if (ch0 <= kMaxASCII) {
-    *length = 1;
+    *char_length = 1;
     return ch0;
   }
   DCHECK_INDEX(index + 1, src_length);
   byte ch1 = (src->*at)(index + 1) & byte{0x3F};
   if ((ch0 & 0xE0) == 0xC0) {
-    *length = 2;
+    *char_length = 2;
     return ((ch0 & 0x1F) << 6) | ch1;
   }
   DCHECK_INDEX(index + 2, src_length);
   byte ch2 = (src->*at)(index + 2) & byte{0x3F};
   if ((ch0 & 0xF0) == 0xE0) {
-    *length = 3;
+    *char_length = 3;
     return ((ch0 & 0xF) << 12) | (ch1 << 6) | ch2;
   }
   DCHECK((ch0 & 0xF8) == 0xF0, "invalid code unit");
   DCHECK_INDEX(index + 2, src_length);
   byte ch3 = (src->*at)(index + 3) & byte{0x3F};
-  *length = 4;
+  *char_length = 4;
   return ((ch0 & 0x7) << 18) | (ch1 << 12) | (ch2 << 6) | ch3;
 }
 
-int32_t RawStr::codePointAt(word index, word* length) const {
-  return decodeCodePoint(this, &RawStr::charAt, this->length(), index, length);
+int32_t RawStr::codePointAt(word index, word* char_length) const {
+  return decodeCodePoint(this, &RawStr::charAt, charLength(), index,
+                         char_length);
 }
 
 word RawStr::offsetByCodePoints(word index, word count) const {
-  word len = length();
+  word len = charLength();
   while (count-- && index < len) {
     byte ch = charAt(index);
     if (ch <= kMaxASCII) {
@@ -547,10 +548,10 @@ word RawStr::offsetByCodePoints(word index, word count) const {
 
 // RawStrArray
 
-int32_t RawStrArray::codePointAt(word index, word* length) const {
+int32_t RawStrArray::codePointAt(word index, word* char_length) const {
   RawMutableBytes buffer = RawMutableBytes::cast(items());
   return decodeCodePoint(&buffer, &RawMutableBytes::byteAt, numItems(), index,
-                         length);
+                         char_length);
 }
 
 // RawWeakRef

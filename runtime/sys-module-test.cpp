@@ -127,7 +127,7 @@ TEST_F(SysModuleTest, ExecutableIsValid) {
   Object executable_obj(&scope, moduleAtByCStr(&runtime_, "sys", "executable"));
   ASSERT_TRUE(executable_obj.isStr());
   Str executable(&scope, *executable_obj);
-  ASSERT_TRUE(executable.length() > 0);
+  ASSERT_TRUE(executable.charLength() > 0);
   EXPECT_TRUE(executable.charAt(0) == '/');
   Str test_executable_name(&scope, runtime_.newStrFromCStr("python-tests"));
   Int find_result(&scope,

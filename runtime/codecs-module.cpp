@@ -169,7 +169,7 @@ RawObject UnderCodecsModule::underAsciiEncode(Thread* thread, Frame* frame,
   // TODO(T43252439): Optimize this by first checking whether the entire string
   // is ASCII, and just memcpy into a string if so
   for (word byte_offset = data.offsetByCodePoints(0, i);
-       byte_offset < data.length(); i++) {
+       byte_offset < data.charLength(); i++) {
     word num_bytes;
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
     byte_offset += num_bytes;
@@ -193,7 +193,7 @@ RawObject UnderCodecsModule::underAsciiEncode(Thread* thread, Frame* frame,
           break;
       }
       result.atPut(0, runtime->newInt(i));
-      while (byte_offset < data.length() &&
+      while (byte_offset < data.charLength() &&
              data.codePointAt(byte_offset, &num_bytes) > kMaxASCII) {
         byte_offset += num_bytes;
         i++;
@@ -431,7 +431,7 @@ RawObject UnderCodecsModule::underLatin1Encode(Thread* thread, Frame* frame,
   SymbolId error_symbol = lookupSymbolForErrorHandler(errors);
   word i = index_int.asWord();
   for (word byte_offset = data.offsetByCodePoints(0, i);
-       byte_offset < data.length(); i++) {
+       byte_offset < data.charLength(); i++) {
     word num_bytes;
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
     byte_offset += num_bytes;
@@ -455,7 +455,7 @@ RawObject UnderCodecsModule::underLatin1Encode(Thread* thread, Frame* frame,
           break;
       }
       result.atPut(0, runtime->newInt(i));
-      while (byte_offset < data.length() &&
+      while (byte_offset < data.charLength() &&
              data.codePointAt(byte_offset, &num_bytes) > kMaxByte) {
         byte_offset += num_bytes;
         i++;
@@ -723,7 +723,7 @@ RawObject UnderCodecsModule::underUtf8Encode(Thread* thread, Frame* frame,
   SymbolId error_symbol = lookupSymbolForErrorHandler(errors);
   word i = index_int.asWord();
   for (word byte_offset = data.offsetByCodePoints(0, i);
-       byte_offset < data.length(); i++) {
+       byte_offset < data.charLength(); i++) {
     word num_bytes;
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
     byte_offset += num_bytes;
@@ -749,7 +749,7 @@ RawObject UnderCodecsModule::underUtf8Encode(Thread* thread, Frame* frame,
           break;
       }
       result.atPut(0, runtime->newInt(i));
-      while (byte_offset < data.length() &&
+      while (byte_offset < data.charLength() &&
              isSurrogate(data.codePointAt(byte_offset, &num_bytes))) {
         byte_offset += num_bytes;
         i++;
@@ -818,7 +818,7 @@ RawObject UnderCodecsModule::underUtf16Encode(Thread* thread, Frame* frame,
   SymbolId error_id = lookupSymbolForErrorHandler(errors);
   word i = index_int.asWord();
   for (word byte_offset = data.offsetByCodePoints(0, i);
-       byte_offset < data.length(); i++) {
+       byte_offset < data.charLength(); i++) {
     endian endianness = byteorder.value <= 0 ? endian::little : endian::big;
     word num_bytes;
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
@@ -851,7 +851,7 @@ RawObject UnderCodecsModule::underUtf16Encode(Thread* thread, Frame* frame,
           break;
       }
       result.atPut(0, runtime->newInt(i));
-      while (byte_offset < data.length() &&
+      while (byte_offset < data.charLength() &&
              isSurrogate(data.codePointAt(byte_offset, &num_bytes))) {
         byte_offset += num_bytes;
         i++;
@@ -916,7 +916,7 @@ RawObject UnderCodecsModule::underUtf32Encode(Thread* thread, Frame* frame,
   SymbolId error_id = lookupSymbolForErrorHandler(errors);
   word i = index_int.asWord();
   for (word byte_offset = data.offsetByCodePoints(0, i);
-       byte_offset < data.length(); i++) {
+       byte_offset < data.charLength(); i++) {
     endian endianness = byteorder.value <= 0 ? endian::little : endian::big;
     word num_bytes;
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
@@ -942,7 +942,7 @@ RawObject UnderCodecsModule::underUtf32Encode(Thread* thread, Frame* frame,
           break;
       }
       result.atPut(0, runtime->newInt(i));
-      while (byte_offset < data.length() &&
+      while (byte_offset < data.charLength() &&
              isSurrogate(data.codePointAt(byte_offset, &num_bytes))) {
         byte_offset += num_bytes;
         i++;
@@ -965,7 +965,7 @@ RawObject UnderCodecsModule::underByteArrayStringAppend(Thread* thread,
   Arguments args(frame, nargs);
   ByteArray dst(&scope, args.get(0));
   Str data(&scope, args.get(1));
-  for (word i = 0; i < data.length(); ++i) {
+  for (word i = 0; i < data.charLength(); ++i) {
     byteArrayAdd(thread, thread->runtime(), dst, data.charAt(i));
   }
   return NoneType::object();
