@@ -2331,25 +2331,15 @@ RawObject UnderBuiltinsModule::underTupleLen(Thread* thread, Frame* frame,
 
 RawObject UnderBuiltinsModule::underTupleNew(Thread* thread, Frame* frame,
                                              word nargs) {
-  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
-  Object iterable(&scope, args.get(1));
-  Tuple tuple(&scope, runtime->emptyTuple());
-  if (runtime->isInstanceOfTuple(*iterable)) {
-    tuple = tupleUnderlying(thread, iterable);
-  } else {
-    DCHECK(runtime->isInstanceOfList(*iterable),
-           "iterable must be a tuple or a list");
-    List list(&scope, *iterable);
-    Tuple items(&scope, list.items());
-    tuple = runtime->tupleSubseq(thread, items, 0, list.numItems());
-  }
-  if (type.isBuiltin()) return *tuple;
+  Runtime* runtime = thread->runtime();
+  DCHECK(type != runtime->typeAt(LayoutId::kTuple), "cls must not be tuple");
+  DCHECK(args.get(1).isTuple(), "old_tuple must be exact tuple");
   Layout layout(&scope, type.instanceLayout());
   UserTupleBase instance(&scope, thread->runtime()->newInstance(layout));
-  instance.setTupleValue(*tuple);
+  instance.setTupleValue(args.get(1));
   return *instance;
 }
 

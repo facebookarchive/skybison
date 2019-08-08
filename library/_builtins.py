@@ -649,7 +649,7 @@ def _tuple_len(self):
 
 
 @_patch
-def _tuple_new(cls, iterable):
+def _tuple_new(cls, old_tuple):
     pass
 
 

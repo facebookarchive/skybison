@@ -3944,7 +3944,7 @@ class tuple(bootstrap=True):
     def __mul__(self, other):
         pass
 
-    def __new__(cls, iterable=_Unbound):
+    def __new__(cls, iterable=()):
         if not _type_check(cls):
             raise TypeError(
                 f"tuple.__new__(X): X is not a type object ({_type(cls).__name__})"
@@ -3953,15 +3953,11 @@ class tuple(bootstrap=True):
             raise TypeError(
                 f"tuple.__new__(X): {_type(cls).__name__} is not a subtype of tuple"
             )
-        if iterable is _Unbound:
-            return _tuple_new(cls, ())
-        if _tuple_check(iterable) or _list_check(iterable):
-            return _tuple_new(cls, iterable)
-        try:
-            it = iter(iterable)
-        except Exception:
-            raise TypeError(f"'{_type(iterable).__name__}' object is not iterable")
-        return _tuple_new(cls, [*it])
+        if cls is tuple:
+            if _tuple_checkexact(iterable):
+                return iterable
+            return (*iterable,)
+        return _tuple_new(cls, (*iterable,))
 
     def __repr__(self):
         _tuple_guard(self)

@@ -338,7 +338,7 @@ static bool underTupleCheck(Thread* thread, Frame* frame) {
 }
 
 static bool underTupleCheckExact(Frame* frame) {
-  frame->setTopValue(Bool::fromBool(frame->popValue().isList()));
+  frame->setTopValue(Bool::fromBool(frame->popValue().isTuple()));
   return true;
 }
 

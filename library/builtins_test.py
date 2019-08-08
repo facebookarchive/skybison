@@ -4421,9 +4421,41 @@ class TupleTests(unittest.TestCase):
         result = tuple.__new__(tuple)
         self.assertIs(result, ())
 
+    def test_dunder_new_with_tuple_returns_same_object(self):
+        src = (1, 2, 3)
+        result = tuple.__new__(tuple, src)
+        self.assertIs(result, src)
+
+    def test_dunder_new_with_list_returns_tuple(self):
+        self.assertEqual(tuple([1, 2, 3]), (1, 2, 3))
+
+    def test_dunder_new_with_tuple_subclass_and_tuple_returns_new_object(self):
+        class C(tuple):
+            pass
+
+        src = (1, 2, 3)
+        result = tuple.__new__(C, src)
+        self.assertTrue(result is not src)
+
     def test_dunder_new_with_iterable_returns_tuple_with_elements(self):
         result = tuple.__new__(tuple, [1, 2, 3])
         self.assertEqual(result, (1, 2, 3))
+
+    def test_dunder_new_with_tuple_subclass_calls_dunder_iter(self):
+        class C(tuple):
+            def __iter__(self):
+                raise UserWarning("foo")
+
+        c = C()
+        self.assertRaises(UserWarning, tuple, c)
+
+    def test_dunder_new_with_list_subclass_calls_dunder_iter(self):
+        class C(list):
+            def __iter__(self):
+                raise UserWarning("foo")
+
+        c = C()
+        self.assertRaises(UserWarning, tuple, c)
 
     def test_dunder_new_with_raising_dunder_iter_descriptor_raises_type_error(self):
         class Desc:
