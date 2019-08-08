@@ -790,6 +790,69 @@ class ClassMethodTests(unittest.TestCase):
         self.assertIs(method.__isabstractmethod__, True)
 
 
+class DelattrTests(unittest.TestCase):
+    def test_non_str_as_name_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            delattr("str instance", None)
+        self.assertIn(
+            "attribute name must be string, not 'NoneType'", str(context.exception)
+        )
+
+    def test_delete_non_existing_instance_attribute_raises_attribute_error(self):
+        class C:
+            fld = 4
+
+        c = C()
+        with self.assertRaises(AttributeError):
+            delattr(c, "fld")
+
+    def test_calls_dunder_delattr_and_returns_none_if_successful(self):
+        class C:
+            def __init__(self):
+                self.fld = ""
+
+            def __delattr__(self, name):
+                self.fld = name
+                return "unused value"
+
+        c = C()
+        self.assertIs(delattr(c, "passed to __delattr__"), None)
+        self.assertEqual(c.fld, "passed to __delattr__")
+
+    def test_passes_exception_raised_by_dunder_delattr(self):
+        class C:
+            def __delattr__(self, name):
+                raise UserWarning("delattr failed")
+
+        c = C()
+        with self.assertRaises(UserWarning) as context:
+            delattr(c, "foo")
+        self.assertIn("delattr failed", str(context.exception))
+
+    def test_deletes_existing_instance_attribute(self):
+        class C:
+            def __init__(self):
+                self.fld = 0
+
+        c = C()
+        self.assertTrue(hasattr(c, "fld"))
+        delattr(c, "fld")
+        self.assertFalse(hasattr(c, "fld"))
+
+    def test_accepts_str_subclass_as_name(self):
+        class C:
+            def __init__(self):
+                self.fld = 0
+
+        class S(str):
+            pass
+
+        c = C()
+        self.assertTrue(hasattr(c, "fld"))
+        delattr(c, S("fld"))
+        self.assertFalse(hasattr(c, "fld"))
+
+
 class DictTests(unittest.TestCase):
     def test_clear_with_non_dict_raises_type_error(self):
         with self.assertRaises(TypeError):

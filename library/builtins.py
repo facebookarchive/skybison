@@ -32,6 +32,7 @@ _classmethod = _classmethod  # noqa: F821
 _classmethod_isabstract = _classmethod_isabstract  # noqa: F821
 _complex_imag = _complex_imag  # noqa: F821
 _complex_real = _complex_real  # noqa: F821
+_delattr = _delattr  # noqa: F821
 _dict_bucket_insert = _dict_bucket_insert  # noqa: F821
 _dict_bucket_key = _dict_bucket_key  # noqa: F821
 _dict_bucket_update = _dict_bucket_update  # noqa: F821
@@ -1723,7 +1724,9 @@ credits = ""
 
 
 def delattr(obj, name):
-    _unimplemented()
+    if not _str_check(name):
+        raise TypeError(f"attribute name must be string, not '{_type(name).__name__}'")
+    return _delattr(obj, name)
 
 
 class dict(bootstrap=True):

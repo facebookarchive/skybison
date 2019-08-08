@@ -93,6 +93,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderClassMethodIsAbstract, underClassMethodIsAbstract},
     {SymbolId::kUnderComplexImag, underComplexImag},
     {SymbolId::kUnderComplexReal, underComplexReal},
+    {SymbolId::kUnderDelattr, underDelattr},
     {SymbolId::kUnderDictBucketInsert, underDictBucketInsert},
     {SymbolId::kUnderDictBucketKey, underDictBucketKey},
     {SymbolId::kUnderDictBucketUpdate, underDictBucketUpdate},
@@ -787,6 +788,20 @@ RawObject UnderBuiltinsModule::underComplexReal(Thread* thread, Frame* frame,
   }
   Complex self(&scope, *self_obj);
   return runtime->newFloat(self.real());
+}
+
+RawObject UnderBuiltinsModule::underDelattr(Thread* thread, Frame* frame,
+                                            word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object obj(&scope, args.get(0));
+  Object name_obj(&scope, args.get(1));
+  Str name(&scope, strUnderlying(thread, name_obj));
+  Object result(&scope, thread->runtime()->attributeDel(thread, obj, name));
+  if (result.isError()) {
+    return *result;
+  }
+  return NoneType::object();
 }
 
 // TODO(T46009010): Move this method body into the dictionary API

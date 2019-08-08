@@ -175,6 +175,7 @@ class Runtime;
   V(UnderCodecs, "_codecs")                                                    \
   V(UnderComplexImag, "_complex_imag")                                         \
   V(UnderComplexReal, "_complex_real")                                         \
+  V(UnderDelattr, "_delattr")                                                  \
   V(UnderDescrClassMethod, "_descrclassmethod")                                \
   V(UnderDictBucketInsert, "_dict_bucket_insert")                              \
   V(UnderDictBucketKey, "_dict_bucket_key")                                    \
