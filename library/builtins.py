@@ -81,6 +81,7 @@ _list_getslice = _list_getslice  # noqa: F821
 _list_guard = _list_guard  # noqa: F821
 _list_len = _list_len  # noqa: F821
 _list_sort = _list_sort  # noqa: F821
+_list_swap = _list_swap  # noqa: F821
 _module_dir = _module_dir  # noqa: F821
 _object_type_getattr = _object_type_getattr  # noqa: F821
 _object_type_hasattr = _object_type_hasattr  # noqa: F821
@@ -2769,9 +2770,7 @@ class list(bootstrap=True):
         left = 0
         right = length - 1
         while left < right:
-            tmp = _list_getitem(self, left)
-            list.__setitem__(self, left, _list_getitem(self, right))
-            list.__setitem__(self, right, tmp)
+            _list_swap(self, left, right)
             left += 1
             right -= 1
 

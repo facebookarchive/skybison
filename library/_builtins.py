@@ -398,6 +398,11 @@ def _list_sort(list):
 
 
 @_patch
+def _list_swap(list, i, j):
+    pass
+
+
+@_patch
 def _module_dir(module):
     pass
 

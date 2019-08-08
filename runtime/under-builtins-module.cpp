@@ -144,6 +144,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderListGuard, underListGuard},
     {SymbolId::kUnderListLen, underListLen},
     {SymbolId::kUnderListSort, underListSort},
+    {SymbolId::kUnderListSwap, underListSwap},
     {SymbolId::kUnderModuleDir, underModuleDir},
     {SymbolId::kUnderObjectTypeGetattr, underObjectTypeGetAttr},
     {SymbolId::kUnderObjectTypeHasattr, underObjectTypeHasattr},
@@ -1681,6 +1682,19 @@ RawObject UnderBuiltinsModule::underListSort(Thread* thread, Frame* frame,
         "Unsupported argument type for 'ls'");
   List list(&scope, args.get(0));
   return listSort(thread, list);
+}
+
+RawObject UnderBuiltinsModule::underListSwap(Thread* thread, Frame* frame,
+                                             word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  List list(&scope, args.get(0));
+  word i = SmallInt::cast(args.get(1)).value();
+  word j = SmallInt::cast(args.get(2)).value();
+  RawObject tmp = list.at(i);
+  list.atPut(i, list.at(j));
+  list.atPut(j, tmp);
+  return NoneType::object();
 }
 
 RawObject UnderBuiltinsModule::underModuleDir(Thread* thread, Frame* frame,

@@ -1304,6 +1304,16 @@ TEST_F(UnderBuiltinsModuleTest,
       LayoutId::kIndexError, "list index out of range"));
 }
 
+TEST_F(UnderBuiltinsModuleTest, UnderListSwapSwapsItemsAtIndices) {
+  HandleScope scope(thread_);
+  List list(&scope, listFromRange(0, 4));
+  Object i(&scope, SmallInt::fromWord(1));
+  Object j(&scope, SmallInt::fromWord(2));
+  EXPECT_TRUE(
+      runBuiltin(UnderBuiltinsModule::underListSwap, list, i, j).isNoneType());
+  EXPECT_PYLIST_EQ(list, {0, 2, 1, 3});
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderModuleDirListWithFilteredOutPlaceholders) {
   HandleScope scope(thread_);
   Dict module_dict(&scope, runtime_.newDict());
