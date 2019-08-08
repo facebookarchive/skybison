@@ -461,17 +461,28 @@ static RawObject setItemSlice(Thread* thread, const List& list,
   if (err.isError()) return *err;
   word slice_length =
       Slice::adjustIndices(list.numItems(), &start, &stop, step);
-  word suffix_start = Utils::maximum(start + 1, stop);
 
+  // Fast-path for the case when there is no need to allocate because the
+  // destination has space and the (adjusted) slice length is the same as the
+  // size of the right hand side.
+  // NOTE: This only applies for exact list rhs, since we should call __iter__
+  // for subclasses.
+  if (src.isList() && src != list && step == 1 &&
+      slice_length == List::cast(*src).numItems()) {
+    list.replaceFromWith(start, List::cast(*src), stop - start);
+    return NoneType::object();
+  }
+
+  word suffix_start = Utils::maximum(start + 1, stop);
   // degenerate case of a bad slice; behaves like a single index:
-  if ((step >= 0) && (start > stop)) {
+  if ((step > 0) && (start > stop)) {
     stop = start;
     suffix_start = start;  // do not drop any items
   }
 
   // Potential optimization:
   // We could check for __length_hint__ or __len__ and attempt to
-  // do in-place update or at least have a good estimate of
+  // do in-place update in more cases or at least have a good estimate of
   // capacity for result_list
   Runtime* runtime = thread->runtime();
   List result_list(&scope, runtime->newList());
@@ -484,9 +495,7 @@ static RawObject setItemSlice(Thread* thread, const List& list,
   // copy prefix into result array:
   word prefix_length = Utils::minimum(start, stop + 1);
   result_list.setNumItems(prefix_length);
-  for (word i = 0; i < prefix_length; i++) {
-    result_list.atPut(i, list.at(i));
-  }
+  result_list.replaceFromWith(0, *list, prefix_length);
   if (step == 1) {
     if (src.isList() || src.isTuple()) {
       // Fast path for exact lists or tuples

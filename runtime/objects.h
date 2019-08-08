@@ -2363,6 +2363,9 @@ class RawList : public RawHeapObject {
   // list
   word capacity() const;
 
+  // Copy count elements from src to this list, starting at index start
+  void replaceFromWith(word start, RawList src, word count) const;
+
   // Layout.
   static const int kItemsOffset = RawHeapObject::kSize;
   static const int kAllocatedOffset = kItemsOffset + kPointerSize;

@@ -205,6 +205,17 @@ word RawLargeStr::codePointLength() const {
   return result;
 }
 
+// RawList
+
+void RawList::replaceFromWith(word start, RawList src, word count) const {
+  DCHECK_BOUND(start + count, numItems());
+  RawTuple dst_items = Tuple::cast(items());
+  RawTuple src_items = Tuple::cast(src.items());
+  for (word i = start, j = 0; j < count; i++, j++) {
+    dst_items.atPut(i, src_items.at(j));
+  }
+}
+
 // RawInt
 
 word RawInt::compare(RawInt that) const {

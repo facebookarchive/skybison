@@ -15,6 +15,7 @@ using ComplexTest = RuntimeFixture;
 using DoubleTest = RuntimeFixture;
 using IntTest = RuntimeFixture;
 using LargeStrTest = RuntimeFixture;
+using ListTest = RuntimeFixture;
 using ModulesTest = RuntimeFixture;
 using SliceTest = RuntimeFixture;
 using StrTest = RuntimeFixture;
@@ -975,6 +976,51 @@ TEST_F(WeakRefTest, SpliceQueue) {
   EXPECT_TRUE(isIntEqualsWord(weak.referent(), 3));
 
   EXPECT_EQ(list, NoneType::object());
+}
+
+TEST_F(ListTest, ReplaceFromWithReplacesElementsStartingAtZero) {
+  HandleScope scope(thread_);
+  List dst(&scope, runtime_.newList());
+  Tuple dst_tuple(&scope, runtime_.newTuple(5));
+  dst.setItems(*dst_tuple);
+  dst.setNumItems(5);
+  List src(&scope, listFromRange(0, 5));
+  dst.replaceFromWith(0, *src, 2);
+  EXPECT_PYLIST_EQ(dst, {0, 1, Value::none(), Value::none(), Value::none()});
+}
+
+TEST_F(ListTest, ReplaceFromWithReplacesElementsStartingInMiddle) {
+  HandleScope scope(thread_);
+  List dst(&scope, runtime_.newList());
+  Tuple dst_tuple(&scope, runtime_.newTuple(5));
+  dst.setItems(*dst_tuple);
+  dst.setNumItems(5);
+  List src(&scope, listFromRange(0, 5));
+  dst.replaceFromWith(1, *src, 2);
+  EXPECT_PYLIST_EQ(dst, {Value::none(), 0, 1, Value::none(), Value::none()});
+}
+
+TEST_F(ListTest, ReplaceFromWithCopiesZeroElements) {
+  HandleScope scope(thread_);
+  List dst(&scope, runtime_.newList());
+  Tuple dst_tuple(&scope, runtime_.newTuple(5));
+  dst.setItems(*dst_tuple);
+  dst.setNumItems(5);
+  List src(&scope, listFromRange(0, 5));
+  dst.replaceFromWith(0, *src, 0);
+  EXPECT_PYLIST_EQ(dst, {Value::none(), Value::none(), Value::none(),
+                         Value::none(), Value::none()});
+}
+
+TEST_F(ListTest, ReplaceFromWithCopiesEveryElementFromSrc) {
+  HandleScope scope(thread_);
+  List dst(&scope, runtime_.newList());
+  Tuple dst_tuple(&scope, runtime_.newTuple(5));
+  dst.setItems(*dst_tuple);
+  dst.setNumItems(5);
+  List src(&scope, listFromRange(0, 5));
+  dst.replaceFromWith(0, *src, 5);
+  EXPECT_PYLIST_EQ(dst, {0, 1, 2, 3, 4});
 }
 
 TEST_F(TupleTest, NoneFillTupleFillsTupleWithNone) {
