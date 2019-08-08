@@ -82,8 +82,49 @@ class islice:
 
 
 class permutations:
-    def __init__(self, p, r=_Unbound):
-        _unimplemented()
+    def __init__(self, iterable, r=None):
+        iterable = tuple(iterable)
+        n = _tuple_len(iterable)
+        if r is None:
+            r = n
+        elif r > n:
+            self._iterable = self._r = self._indices = self._cycles = None
+            return
+        self._iterable = iterable
+        self._r = r
+        self._indices = list(range(n))
+        self._cycles = list(range(n, n - r, -1))
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        iterable = self._iterable
+        if iterable is None:
+            raise StopIteration
+        r = self._r
+        indices = self._indices
+        indices_len = _list_len(indices)
+        result = (*(iterable[indices[i]] for i in range(r)),)
+        cycles = self._cycles
+        i = r - 1
+        while i >= 0:
+            j = cycles[i] - 1
+            if j > 0:
+                cycles[i] = j
+                indices[i], indices[-j] = indices[-j], indices[i]
+                break
+            cycles[i] = indices_len - i
+            tmp = indices[i]
+            k = i + 1
+            while k < indices_len:
+                indices[k - 1] = indices[k]
+                k += 1
+            indices[k - 1] = tmp
+            i -= 1
+        else:
+            self._iterable = self._r = self._indices = self._cycles = None
+        return result
 
 
 class product:

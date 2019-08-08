@@ -14,6 +14,49 @@ class ItertoolsTests(unittest.TestCase):
             itertools.count(start="a", step=".")
 
 
+class PermutationsTests(unittest.TestCase):
+    def test_too_few_arguments_raises_type_error(self):
+        self.assertRaises(TypeError, itertools.permutations)
+
+    def test_too_many_arguments_raises_type_error(self):
+        self.assertRaises(TypeError, itertools.permutations, "1", "2", "3", "4")
+
+    def test_non_int_r_type_error(self):
+        self.assertRaises(TypeError, itertools.permutations, "1", 1.0)
+
+    def test_empty_returns_empty(self):
+        self.assertTupleEqual(tuple(itertools.permutations(())), ((),))
+
+    def test_r_defaults_to_length(self):
+        len1 = itertools.permutations("1")
+        self.assertTrue(all(map(lambda x: len(x) == 1, len1)))
+
+        len2 = itertools.permutations("12")
+        self.assertTrue(all(map(lambda x: len(x) == 2, len2)))
+
+        len3 = itertools.permutations("123")
+        self.assertTrue(all(map(lambda x: len(x) == 3, len3)))
+
+    def test_r_zero_returns_stopped_iterator(self):
+        self.assertTupleEqual(tuple(itertools.permutations("A", 0)), ((),))
+
+    def test_r_gt_length_returns_empty(self):
+        self.assertTupleEqual(tuple(itertools.permutations("A", 2)), ())
+
+    def test_r_lt_length_returns_items_with_length_r(self):
+        result = tuple(itertools.permutations("ABC", 2))
+        self.assertTupleEqual(
+            result,
+            (("A", "B"), ("A", "C"), ("B", "A"), ("B", "C"), ("C", "A"), ("C", "B")),
+        )
+
+    def test_ordinary_iterable(self):
+        result = tuple(itertools.permutations(range(3)))
+        self.assertTupleEqual(
+            result, ((0, 1, 2), (0, 2, 1), (1, 0, 2), (1, 2, 0), (2, 0, 1), (2, 1, 0))
+        )
+
+
 class ProductTests(unittest.TestCase):
     def test_empty_returns_stopped_iterable(self):
         self.assertTupleEqual(tuple(itertools.product("")), ())
