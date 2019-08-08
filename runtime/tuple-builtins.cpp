@@ -13,19 +13,15 @@
 
 namespace python {
 
+// TODO(T48594086): Remove this function. The only two callers can be
+// re-written.
 RawObject sequenceAsTuple(Thread* thread, const Object& seq) {
-  Runtime* runtime = thread->runtime();
-
   if (seq.isTuple()) return *seq;
-  if (runtime->isInstanceOfList(*seq)) {
+  if (seq.isList()) {
     HandleScope scope(thread);
     List list(&scope, *seq);
-    word len = list.numItems();
-    Tuple ret(&scope, runtime->newTuple(len));
-    for (word i = 0; i < len; i++) {
-      ret.atPut(i, list.at(i));
-    }
-    return *ret;
+    Tuple items(&scope, list.items());
+    return thread->runtime()->tupleSubseq(thread, items, 0, list.numItems());
   }
 
   return thread->invokeFunction1(SymbolId::kBuiltins, SymbolId::kTuple, seq);

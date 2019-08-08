@@ -1596,6 +1596,21 @@ meth = C().foo
   EXPECT_EQ(frame->peek(2), *callable);
 }
 
+TEST_F(InterpreterTest, CallExWithListSubclassCallsDunderIter) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+class C(list):
+  def __iter__(self):
+    raise UserWarning('foo')
+
+def f(a, b, c):
+  return (a, b, c)
+
+c = C([1, 2, 3])
+f(*c)
+)"),
+                            LayoutId::kUserWarning, "foo"));
+}
+
 TEST_F(InterpreterTest, CallingUncallableRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "(1)()"),
                             LayoutId::kTypeError,

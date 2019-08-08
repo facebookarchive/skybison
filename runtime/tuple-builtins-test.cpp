@@ -923,6 +923,24 @@ c = C()
   EXPECT_TRUE(isIntEqualsWord(result.at(2), 2));
 }
 
+TEST_F(TupleBuiltinsTest, SequenceAsTupleWithListSucblassCallsDunderIter) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C(list):
+  def __iter__(self):
+    raise UserWarning('foo')
+
+def f(a, b, c):
+  return (a, b, c)
+
+c = C([1, 2, 3])
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
+  EXPECT_TRUE(raisedWithStr(sequenceAsTuple(thread_, c), LayoutId::kUserWarning,
+                            "foo"));
+}
+
 TEST_F(TupleBuiltinsTest, SequenceAsTupleWithNonIterableRaises) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
