@@ -2,12 +2,129 @@
 
 #include "frame.h"
 #include "globals.h"
+#include "list-builtins.h"
 #include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
 
 namespace python {
+
+RawObject moduleAt(Thread* thread, const Module& module, const Object& key) {
+  HandleScope scope(thread);
+  Dict dict(&scope, module.dict());
+  return moduleDictAt(thread, dict, key);
+}
+
+RawObject moduleAtById(Thread* thread, const Module& module, SymbolId key) {
+  HandleScope scope(thread);
+  Object key_obj(&scope, thread->runtime()->symbols()->at(key));
+  return moduleAt(thread, module, key_obj);
+}
+
+RawObject moduleDictAt(Thread* thread, const Dict& module_dict,
+                       const Object& key) {
+  RawObject result = moduleDictValueCellAt(thread, module_dict, key);
+  if (!result.isErrorNotFound()) {
+    return ValueCell::cast(result).value();
+  }
+  return Error::notFound();
+}
+
+RawObject moduleDictValueCellAt(Thread* thread, const Dict& dict,
+                                const Object& key) {
+  HandleScope scope(thread);
+  Object result(&scope, thread->runtime()->dictAt(thread, dict, key));
+  DCHECK(result.isErrorNotFound() || result.isValueCell(),
+         "global dict lookup result must return either ErrorNotFound or "
+         "ValueCell");
+  if (result.isErrorNotFound() || ValueCell::cast(*result).isPlaceholder()) {
+    return Error::notFound();
+  }
+  return *result;
+}
+
+RawDict moduleDictBuiltins(Thread* thread, const Dict& dict) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object dunder_builtins_name(&scope, runtime->symbols()->DunderBuiltins());
+  Object builtins_module(&scope,
+                         moduleDictAt(thread, dict, dunder_builtins_name));
+  if (!builtins_module.isErrorNotFound()) {
+    CHECK(builtins_module.isModule(), "expected builtins module");
+    return RawDict::cast(Module::cast(*builtins_module).dict());
+  }
+
+  // Create a minimal builtins dictionary with just `{'None': None}`.
+  Dict builtins(&scope, runtime->newDict());
+  Object none_name(&scope, runtime->symbols()->None());
+  Object none(&scope, NoneType::object());
+  moduleDictAtPut(thread, builtins, none_name, none);
+  return *builtins;
+}
+
+RawObject moduleAtPut(Thread* thread, const Module& module, const Object& key,
+                      const Object& value) {
+  HandleScope scope(thread);
+  Dict dict(&scope, module.dict());
+  // TODO(T42983855) Respect data properties here.
+  return moduleDictAtPut(thread, dict, key, value);
+}
+
+RawObject moduleAtPutById(Thread* thread, const Module& module, SymbolId key,
+                          const Object& value) {
+  HandleScope scope(thread);
+  Dict dict(&scope, module.dict());
+  Object key_name(&scope, thread->runtime()->symbols()->at(key));
+  return moduleDictAtPut(thread, dict, key_name, value);
+}
+
+RawObject moduleDictAtPut(Thread* thread, const Dict& module_dict,
+                          const Object& key, const Object& value) {
+  HandleScope scope(thread);
+  Object result(&scope,
+                moduleDictValueCellAtPut(thread, module_dict, key, value));
+  if (result.isError()) {
+    return *result;
+  }
+  return ValueCell::cast(*result).value();
+}
+
+RawObject moduleDictValueCellAtPut(Thread* thread, const Dict& module_dict,
+                                   const Object& key, const Object& value) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object module_result(&scope, runtime->dictAt(thread, module_dict, key));
+  if (module_result.isValueCell() &&
+      ValueCell::cast(*module_result).isPlaceholder()) {
+    // A builtin entry is cached under the same key, so invalidate its caches.
+    Dict builtins(&scope, moduleDictBuiltins(thread, module_dict));
+    Object builtins_result(&scope,
+                           moduleDictValueCellAt(thread, builtins, key));
+    DCHECK(builtins_result.isValueCell(), "a builtin entry must exist");
+    ValueCell builtins_value_cell(&scope, *builtins_result);
+    DCHECK(!builtins_value_cell.dependencyLink().isNoneType(),
+           "the builtin valuecell must have a dependent");
+    icInvalidateGlobalVar(thread, builtins_value_cell);
+  }
+  return thread->runtime()->dictAtPutInValueCell(thread, module_dict, key,
+                                                 value);
+}
+
+RawObject moduleDictRemove(Thread* thread, const Dict& module_dict,
+                           const Object& key) {
+  HandleScope scope(thread);
+  Object result(&scope,
+                thread->runtime()->dictRemove(thread, module_dict, key));
+  DCHECK(result.isErrorNotFound() || result.isValueCell(),
+         "dictRemove must return either ErrorNotFound or ValueCell");
+  if (result.isErrorNotFound()) {
+    return *result;
+  }
+  ValueCell value_cell(&scope, *result);
+  icInvalidateGlobalVar(thread, value_cell);
+  return value_cell.value();
+}
 
 RawObject moduleDictKeys(Thread* thread, const Dict& module_dict) {
   HandleScope scope(thread);
@@ -28,7 +145,7 @@ RawObject moduleGetAttribute(Thread* thread, const Module& module,
   // We are targeting python 3.6 for now, so we won't worry about that.
 
   HandleScope scope(thread);
-  Object result(&scope, thread->runtime()->moduleAt(module, name_str));
+  Object result(&scope, moduleAt(thread, module, name_str));
   if (!result.isError()) return *result;
 
   // TODO(T42983855) dispatching to objectGetAttribute like this does not make
@@ -41,7 +158,7 @@ RawObject moduleSetAttr(Thread* thread, const Module& module,
                         const Object& name_str, const Object& value) {
   Runtime* runtime = thread->runtime();
   DCHECK(runtime->isInstanceOfStr(*name_str), "name must be a string");
-  thread->runtime()->moduleAtPut(module, name_str, value);
+  moduleAtPut(thread, module, name_str, value);
   return NoneType::object();
 }
 
@@ -60,7 +177,7 @@ int execDef(Thread* thread, const Module& module, PyModuleDef* def) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Str key(&scope, runtime->symbols()->DunderName());
-  Object name_obj(&scope, runtime->moduleAt(module, key));
+  Object name_obj(&scope, moduleAt(thread, module, key));
   if (!runtime->isInstanceOfStr(*name_obj)) {
     thread->raiseWithFmt(LayoutId::kSystemError, "nameless module");
     return -1;

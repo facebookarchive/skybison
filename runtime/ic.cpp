@@ -283,8 +283,14 @@ void icUpdateGlobalVar(Thread* thread, const Function& function, word index,
                        const ValueCell& value_cell) {
   HandleScope scope(thread);
   Tuple caches(&scope, function.caches());
-  DCHECK(caches.at(index).isNoneType(),
-         "cache entry must be empty one before update");
+  // TODO(T46426927): Remove this once an invariant of updating cache only once
+  // holds.
+  if (!caches.at(index).isNoneType()) {
+    // An attempt to update the same cache entry with the same value can happen
+    // by LOAD_NAME and STORE_NAME which don't get modified to a cached opcode.
+    DCHECK(caches.at(index) == *value_cell, "caches.at(index) == *value_cell");
+    return;
+  }
   icInsertDependentToValueCellDependencyLink(thread, function, value_cell);
   caches.atPut(index, *value_cell);
 
@@ -327,11 +333,9 @@ void icInvalidateGlobalVar(Thread* thread, const ValueCell& value_cell) {
     word names_length =
         Tuple::cast(Code::cast(Function::cast(*function).code()).names())
             .length();
-    DCHECK(names_length < 256,
-           "more than 256 global names may require bytecode stretching");
-
     // Empty the cache.
     caches = Function::cast(*function).caches();
+    DCHECK_BOUND(names_length, caches.length());
     word name_index_found = -1;
     for (word i = 0; i < names_length; i++) {
       if (caches.at(i) == *value_cell) {

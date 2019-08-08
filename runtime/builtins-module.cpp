@@ -8,6 +8,7 @@
 #include "frozen-modules.h"
 #include "int-builtins.h"
 #include "marshal.h"
+#include "module-builtins.h"
 #include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"
@@ -268,7 +269,7 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
     // A bootstrap class initialization uses the existing class dictionary.
     CHECK(frame->previousFrame() != nullptr, "must have a caller frame");
     Dict globals(&scope, frame->previousFrame()->function().globals());
-    Object type_obj(&scope, runtime->moduleDictAt(thread, globals, name));
+    Object type_obj(&scope, moduleDictAt(thread, globals, name));
     CHECK(type_obj.isType(),
           "Name '%s' is not bound to a type object. "
           "You may need to add it to the builtins module.",
@@ -602,7 +603,7 @@ RawObject BuiltinsModule::dunderImport(Thread* thread, Frame* frame,
 
   Module importlib(&scope, runtime->findOrCreateImportlibModule(thread));
   Object dunder_import(
-      &scope, runtime->moduleAtById(importlib, SymbolId::kDunderImport));
+      &scope, moduleAtById(thread, importlib, SymbolId::kDunderImport));
   if (dunder_import.isError()) return *dunder_import;
 
   return thread->invokeFunction5(SymbolId::kUnderFrozenImportlib,

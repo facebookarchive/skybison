@@ -1,3 +1,4 @@
+#include "module-builtins.h"
 #include "runtime.h"
 
 namespace python {
@@ -56,7 +57,7 @@ PY_EXPORT int PyState_AddModule(PyObject* module, struct PyModuleDef* def) {
   module_obj.setDef(runtime->newIntFromCPtr(def));
   Str doc_key(&scope, runtime->symbols()->DunderDoc());
   Str doc_value(&scope, runtime->newStrFromCStr(def->m_doc));
-  runtime->moduleAtPut(module_obj, doc_key, doc_value);
+  moduleAtPut(thread, module_obj, doc_key, doc_value);
   runtime->addModule(module_obj);
   return 0;
 }

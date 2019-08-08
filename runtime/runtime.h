@@ -302,8 +302,6 @@ class Runtime {
   void visitRoots(PointerVisitor* visitor);
 
   void addModule(const Module& module);
-  RawObject moduleAddGlobal(const Module& module, SymbolId name,
-                            const Object& value);
 
   RawObject moduleAddBuiltinFunction(const Module& module, SymbolId name,
                                      Function::Entry entry);
@@ -312,23 +310,6 @@ class Runtime {
   RawObject findModuleById(SymbolId name);
   RawObject lookupNameInModule(Thread* thread, SymbolId module_name,
                                SymbolId name);
-
-  // Returns ValueCell that key is mapped to if it's found or ErrorNotFound if
-  // no key is present or the key maps to a placeholder.
-  RawObject moduleDictValueCellAt(Thread* thread, const Dict& dict,
-                                  const Object& key);
-  // Returns the value mapped to key if found. Returns ErrorNotFound otherwise.
-  RawObject moduleDictAt(Thread* thread, const Dict& dict, const Object& key);
-  RawObject moduleDictAtPut(Thread* thread, const Dict& dict, const Object& key,
-                            const Object& value);
-  // Returns `__builtins__` of a module dict. Returns a new dict with a single
-  // `{"None": None}` entry if `__builtins__` does not exist.
-  RawDict moduleDictBuiltins(Thread* thread, const Dict& dict);
-
-  RawObject moduleAt(const Module& module, const Object& key);
-  RawObject moduleAtById(const Module& module, SymbolId key);
-  void moduleAtPut(const Module& module, const Object& key,
-                   const Object& value);
 
   // Write the traceback to the given file object. If success, return None.
   // Else, return Error.

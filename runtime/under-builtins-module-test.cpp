@@ -4,6 +4,7 @@
 
 #include "builtins-module.h"
 #include "bytearray-builtins.h"
+#include "module-builtins.h"
 #include "runtime.h"
 #include "test-utils.h"
 #include "trampolines.h"
@@ -1312,9 +1313,9 @@ TEST_F(UnderBuiltinsModuleTest, UnderModuleDirListWithFilteredOutPlaceholders) {
   Str baz(&scope, runtime_.newStrFromCStr("baz"));
   Str value(&scope, runtime_.newStrFromCStr("value"));
 
-  runtime_.moduleDictAtPut(thread_, module_dict, foo, value);
-  runtime_.moduleDictAtPut(thread_, module_dict, bar, value);
-  runtime_.moduleDictAtPut(thread_, module_dict, baz, value);
+  moduleDictAtPut(thread_, module_dict, foo, value);
+  moduleDictAtPut(thread_, module_dict, bar, value);
+  moduleDictAtPut(thread_, module_dict, baz, value);
 
   ValueCell::cast(runtime_.dictAt(thread_, module_dict, bar)).makePlaceholder();
 

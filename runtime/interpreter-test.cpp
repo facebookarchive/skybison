@@ -9,6 +9,7 @@
 #include "ic.h"
 #include "interpreter.h"
 #include "intrinsic.h"
+#include "module-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "trampolines.h"
@@ -895,14 +896,14 @@ c = C()
   Str called_name(&scope, runtime_.newStrFromCStr("called"));
   Object none(&scope, NoneType::object());
   Module main(&scope, findMainModule(&runtime_));
-  runtime_.moduleAtPut(main, called_name, none);
+  moduleAtPut(thread_, main, called_name, none);
   Object b_eq_a(&scope, Interpreter::compareOperation(thread_, frame,
                                                       CompareOp::EQ, b, a));
   EXPECT_EQ(b_eq_a, Bool::trueObj());
   called = mainModuleAt(&runtime_, "called");
   EXPECT_TRUE(isStrEqualsCStr(*called, "B"));
 
-  runtime_.moduleAtPut(main, called_name, none);
+  moduleAtPut(thread_, main, called_name, none);
   Object c_eq_a(&scope, Interpreter::compareOperation(thread_, frame,
                                                       CompareOp::EQ, c, a));
   EXPECT_EQ(c_eq_a, Bool::trueObj());
@@ -910,7 +911,7 @@ c = C()
   EXPECT_TRUE(isStrEqualsCStr(*called, "C"));
 
   // When rhs is a subtype of lhs, only rhs.__eq__(rhs) is tried.
-  runtime_.moduleAtPut(main, called_name, none);
+  moduleAtPut(thread_, main, called_name, none);
   Object a_eq_c(&scope, Interpreter::compareOperation(thread_, frame,
                                                       CompareOp::EQ, a, c));
   EXPECT_EQ(a_eq_c, Bool::trueObj());
@@ -3687,6 +3688,29 @@ with Mgr():
                             LayoutId::kRuntimeError, "from exit"));
 
   // TODO(T40269344): Inspect __context__ from the raised exception.
+}
+
+TEST(InterpreterTestNoFixture,
+     LoadNameReturnsSameResultAsCahedValueFromLoadGlobal) {
+  Runtime runtime(/*cache_enabled=*/true);
+  EXPECT_FALSE(runFromCStr(&runtime, R"(
+t = 400
+
+def update_t():
+  global t
+  t = 500
+
+def get_t():
+  global t
+  return t
+
+update_t()
+load_name_t = t
+load_global_t = get_t()
+)")
+                   .isError());
+  EXPECT_EQ(mainModuleAt(&runtime, "load_name_t"),
+            mainModuleAt(&runtime, "load_global_t"));
 }
 
 TEST(InterpreterTestNoFixture, LoadGlobalCachedReturnsModuleDictValue) {

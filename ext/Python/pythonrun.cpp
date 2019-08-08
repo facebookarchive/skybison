@@ -2,6 +2,7 @@
 #include "cpython-data.h"
 #include "cpython-func.h"
 #include "exception-builtins.h"
+#include "module-builtins.h"
 #include "runtime.h"
 
 typedef struct _mod* mod_ty;
@@ -66,14 +67,14 @@ static void flushIO(void) {
 
   Runtime* runtime = thread->runtime();
   Module sys(&scope, runtime->findModuleById(SymbolId::kSys));
-  Object stderr_obj(&scope, runtime->moduleAtById(sys, SymbolId::kStderr));
+  Object stderr_obj(&scope, moduleAtById(thread, sys, SymbolId::kStderr));
   if (!stderr_obj.isErrorNotFound()) {
     if (thread->invokeMethod1(stderr_obj, SymbolId::kFlush)
             .isErrorException()) {
       thread->clearPendingException();
     }
   }
-  Object stdout_obj(&scope, runtime->moduleAtById(sys, SymbolId::kStdout));
+  Object stdout_obj(&scope, moduleAtById(thread, sys, SymbolId::kStdout));
   if (!stdout_obj.isErrorNotFound()) {
     if (thread->invokeMethod1(stdout_obj, SymbolId::kFlush)
             .isErrorException()) {

@@ -2,6 +2,7 @@
 
 #include "builtins-module.h"
 #include "cpython-func.h"
+#include "module-builtins.h"
 #include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"
@@ -130,13 +131,13 @@ PY_EXPORT PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc* desc) {
   // Add __new__
   Module builtins(&scope, runtime->findModuleById(SymbolId::kBuiltins));
   Function structseq_new(
-      &scope, runtime->moduleAtById(builtins, SymbolId::kUnderStructseqNew));
+      &scope, moduleAtById(thread, builtins, SymbolId::kUnderStructseqNew));
   Str dunder_new_name(&scope, runtime->symbols()->DunderNew());
   runtime->dictAtPut(thread, dict, dunder_new_name, structseq_new);
 
   // Add __repr__
   Function structseq_repr(
-      &scope, runtime->moduleAtById(builtins, SymbolId::kUnderStructseqRepr));
+      &scope, moduleAtById(thread, builtins, SymbolId::kUnderStructseqRepr));
   Str dunder_repr_name(&scope, runtime->symbols()->DunderRepr());
   runtime->dictAtPut(thread, dict, dunder_repr_name, structseq_repr);
 

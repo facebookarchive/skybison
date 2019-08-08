@@ -7,6 +7,7 @@
 #include "debugging.h"
 #include "frame.h"
 #include "int-builtins.h"
+#include "module-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "sys-module.h"
@@ -139,11 +140,11 @@ static void printPendingExceptionImpl(Thread* thread, bool set_sys_last_vars) {
   if (set_sys_last_vars) {
     Module sys(&scope, runtime->findModuleById(SymbolId::kSys));
     Str key(&scope, runtime->symbols()->LastType());
-    runtime->moduleAtPut(sys, key, type);
+    moduleAtPut(thread, sys, key, type);
     key = runtime->symbols()->LastValue();
-    runtime->moduleAtPut(sys, key, value);
+    moduleAtPut(thread, sys, key, value);
     key = runtime->symbols()->LastTraceback();
-    runtime->moduleAtPut(sys, key, tb);
+    moduleAtPut(thread, sys, key, tb);
   }
 
   Object hook(&scope, runtime->lookupNameInModule(thread, SymbolId::kSys,

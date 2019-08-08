@@ -1,6 +1,7 @@
 #include "cpython-func.h"
 #include "imp-module.h"
 #include "int-builtins.h"
+#include "module-builtins.h"
 #include "runtime.h"
 
 namespace python {
@@ -46,7 +47,7 @@ PY_EXPORT PyObject* PyImport_ImportModuleLevelObject(PyObject* name,
 
   Module importlib(&scope, runtime->findOrCreateImportlibModule(thread));
   Object dunder_import(
-      &scope, runtime->moduleAtById(importlib, SymbolId::kDunderImport));
+      &scope, moduleAtById(thread, importlib, SymbolId::kDunderImport));
   if (dunder_import.isError()) return nullptr;
 
   Object level_obj(&scope, SmallInt::fromWord(level));
@@ -154,7 +155,9 @@ PY_EXPORT PyObject* PyImport_Import(PyObject* module_name) {
     for (SymbolId id : {SymbolId::kDunderPackage, SymbolId::kDunderSpec,
                         SymbolId::kDunderName}) {
       key = runtime->symbols()->at(id);
-      value = runtime->moduleDictAt(thread, globals, key);
+      // TODO(T41326706): This loop is a workaround so that cpython users do not
+      // acccidentally see ValueCells in the module dict.
+      value = moduleDictAt(thread, globals, key);
       runtime->dictAtPut(thread, globals_obj, key, value);
     }
   }

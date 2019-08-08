@@ -53,10 +53,6 @@ class Interpreter {
   // batch concat/join <num> string objects on the stack (no conversion)
   static RawObject stringJoin(Thread* thread, RawObject* sp, word num);
 
-  static bool isCacheEnabledForCurrentFunction(Frame* frame) {
-    return frame->caches().length() > 0;
-  }
-
   static RawObject isTrue(Thread* thread, RawObject value_obj);
 
   static RawObject callDescriptorGet(Thread* thread, Frame* caller,
@@ -410,6 +406,21 @@ class Interpreter {
   // when appropriate. May also be used as a non-caching slow path by passing a
   // negative index.
   static bool forIterUpdateCache(Thread* thread, word arg, word index);
+
+  // Look up the value of ValueCell associcate with key first in module_dict and
+  // then in module_dict["__builtins__"] if key is not found in module_dict.
+  // This lookup is done considering placeholders created for caching. If a
+  // lookup succeeds, the found value is cached in function's cache at
+  // cache_index. Returns Error::notFound() if both lookups are failed.
+  static RawObject globalsAt(Thread* thread, const Dict& module_dict,
+                             const Str& key, const Function& function,
+                             word cache_index);
+
+  // Asssocicate key with value in module_dict, and update function's cache at
+  // cache_index.
+  static RawObject globalsAtPut(Thread* thread, const Dict& module_dict,
+                                const Str& key, const Object& value,
+                                const Function& function, word cache_index);
 
   // Slow path for isTrue check. Does a __bool__ method call, etc.
   static RawObject isTrueSlowPath(Thread* thread, RawObject value_obj);

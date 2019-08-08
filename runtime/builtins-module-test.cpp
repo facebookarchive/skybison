@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "builtins-module.h"
+#include "module-builtins.h"
 #include "runtime.h"
 #include "test-utils.h"
 #include "trampolines.h"
@@ -817,7 +818,7 @@ TEST_F(BuiltinsModuleTest, BuiltinExecSetsGlobalGivenGlobals) {
   Module main(&scope, findMainModule(&runtime_));
   Dict globals(&scope, main.dict());
   Str globals_name(&scope, runtime_.newStrFromCStr("gl"));
-  runtime_.moduleDictAtPut(thread_, globals, globals_name, globals);
+  moduleAtPut(thread_, main, globals_name, globals);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 a = 1337
 result = exec("a = 1338", gl)

@@ -1794,7 +1794,7 @@ RawObject UnderBuiltinsModule::underPatch(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   Object module_name(&scope, patch_fn.module());
   Module module(&scope, runtime->findModule(module_name));
-  Object base_fn_obj(&scope, runtime->moduleAt(module, fn_name));
+  Object base_fn_obj(&scope, moduleAt(thread, module, fn_name));
   if (!base_fn_obj.isFunction()) {
     if (base_fn_obj.isErrorNotFound()) {
       return thread->raiseWithFmt(LayoutId::kAttributeError,

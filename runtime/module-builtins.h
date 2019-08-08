@@ -8,6 +8,43 @@
 
 namespace python {
 
+// Look up the value of ValueCell associated with key in module with
+// consideration of placeholders created for caching.
+RawObject moduleAt(Thread* thread, const Module& module, const Object& key);
+// Same as moduleAt but with SymbolId as key.
+RawObject moduleAtById(Thread* thread, const Module& module, SymbolId key);
+// Same as moduleAt but with dict type parameter.
+RawObject moduleDictAt(Thread* thread, const Dict& module_dict,
+                       const Object& key);
+
+// Only callable by Interpreter for manipulating caches. Same as moduleAt but
+// returns the ValueCell if found.
+RawObject moduleDictValueCellAt(Thread* thread, const Dict& dict,
+                                const Object& key);
+
+// Returns `__builtins__` of a module dict. Returns a new dict with a single
+// `{"None": None}` entry if `__builtins__` does not exist.
+RawDict moduleDictBuiltins(Thread* thread, const Dict& dict);
+
+// Associate key with value in module.
+RawObject moduleAtPut(Thread* thread, const Module& module, const Object& key,
+                      const Object& value);
+// Same as moduleAtPut but with SymbolId as key.
+RawObject moduleAtPutById(Thread* thread, const Module& module, SymbolId key,
+                          const Object& value);
+// Same as moduleAtPut with dict type parameter.
+RawObject moduleDictAtPut(Thread* thread, const Dict& module_dict,
+                          const Object& key, const Object& value);
+
+// Only callable by Interpreter for manipulating caches. Same as moduleAtPut but
+// returns the inserted ValueCell.
+RawObject moduleDictValueCellAtPut(Thread* thread, const Dict& module_dict,
+                                   const Object& key, const Object& value);
+
+// Remove the ValueCell associcated with key in module_dict.
+RawObject moduleDictRemove(Thread* thread, const Dict& module_dict,
+                           const Object& key);
+
 // Returns keys associated with non-placeholder ValueCells in module_dict.
 RawObject moduleDictKeys(Thread* thread, const Dict& module_dict);
 

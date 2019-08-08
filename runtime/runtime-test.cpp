@@ -6,6 +6,7 @@
 #include "bytecode.h"
 #include "frame.h"
 #include "layout.h"
+#include "module-builtins.h"
 #include "object-builtins.h"
 #include "runtime.h"
 #include "symbols.h"
@@ -178,77 +179,6 @@ c = C()
   Object foo(&scope, runtime_.newStrFromCStr("foo"));
   EXPECT_TRUE(
       raised(runtime_.attributeAt(thread_, c, foo), LayoutId::kUserWarning));
-}
-
-TEST_F(RuntimeTest, ModuleDictValueCellAtReturnsValueCell) {
-  HandleScope scope(thread_);
-  Dict globals(&scope, runtime_.newDict());
-  Object key(&scope, runtime_.newStrFromCStr("a"));
-  Object value(&scope, runtime_.newStrFromCStr("a's value"));
-  runtime_.moduleDictAtPut(thread_, globals, key, value);
-  Object result(&scope, runtime_.moduleDictValueCellAt(thread_, globals, key));
-  ASSERT_TRUE(result.isValueCell());
-  EXPECT_EQ(ValueCell::cast(*result).value(), value);
-}
-
-TEST_F(RuntimeTest, ModuleDictValueCellAtReturnsErrorNotFoundForPlaceholder) {
-  HandleScope scope(thread_);
-  Dict globals(&scope, runtime_.newDict());
-  Object key(&scope, runtime_.newStrFromCStr("a"));
-  Object value(&scope, runtime_.newStrFromCStr("a's value"));
-  runtime_.moduleDictAtPut(thread_, globals, key, value);
-  Object value_cell_obj(&scope, runtime_.dictAt(thread_, globals, key));
-  ASSERT_TRUE(value_cell_obj.isValueCell());
-  ValueCell value_cell(&scope, *value_cell_obj);
-  value_cell.makePlaceholder();
-  Object result(&scope, runtime_.moduleDictValueCellAt(thread_, globals, key));
-  EXPECT_TRUE(result.isErrorNotFound());
-}
-
-TEST_F(RuntimeTest, ModuleDictAtReturnsValueCellValue) {
-  HandleScope scope(thread_);
-  Dict globals(&scope, runtime_.newDict());
-  Object key(&scope, runtime_.newStrFromCStr("a"));
-  Object value(&scope, runtime_.newStrFromCStr("a's value"));
-  runtime_.moduleDictAtPut(thread_, globals, key, value);
-  Object result(&scope, runtime_.moduleDictAt(thread_, globals, key));
-  EXPECT_EQ(result, value);
-}
-
-TEST_F(RuntimeTest, ModuleDictAtReturnsErrorNotFoundForPlaceholder) {
-  HandleScope scope(thread_);
-  Dict globals(&scope, runtime_.newDict());
-  Object key(&scope, runtime_.newStrFromCStr("a"));
-  Object value(&scope, runtime_.newStrFromCStr("a's value"));
-  runtime_.moduleDictAtPut(thread_, globals, key, value);
-  Object value_cell_obj(&scope, runtime_.dictAt(thread_, globals, key));
-  ASSERT_TRUE(value_cell_obj.isValueCell());
-  ValueCell value_cell(&scope, *value_cell_obj);
-  value_cell.makePlaceholder();
-  Object result(&scope, runtime_.moduleDictAt(thread_, globals, key));
-  EXPECT_TRUE(result.isErrorNotFound());
-}
-
-TEST_F(RuntimeTest, ModuleDictBuiltinsReturnsDunderBuiltins) {
-  HandleScope scope(thread_);
-  Dict globals(&scope, runtime_.newDict());
-  Object name(&scope, runtime_.newStrFromCStr("mybuiltins"));
-  Module module(&scope, runtime_.newModule(name));
-  Object dunder_builtins_name(&scope, runtime_.newStrFromCStr("__builtins__"));
-  runtime_.moduleDictAtPut(thread_, globals, dunder_builtins_name, module);
-
-  Dict result(&scope, runtime_.moduleDictBuiltins(thread_, globals));
-  EXPECT_EQ(result, module.dict());
-}
-
-TEST_F(RuntimeTest, ModuleDictBuiltinsReturnsMinimalDict) {
-  HandleScope scope(thread_);
-  Dict globals(&scope, runtime_.newDict());
-  Dict result(&scope, runtime_.moduleDictBuiltins(thread_, globals));
-  EXPECT_EQ(result.numItems(), 1);
-  Object none_name(&scope, runtime_.newStrFromCStr("None"));
-  EXPECT_EQ(runtime_.moduleDictAt(thread_, result, none_name),
-            NoneType::object());
 }
 
 // Return the raw name of a builtin LayoutId, or "<invalid>" for user-defined or

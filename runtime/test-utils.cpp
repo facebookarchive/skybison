@@ -18,6 +18,7 @@
 #include "frame.h"
 #include "handles.h"
 #include "int-builtins.h"
+#include "module-builtins.h"
 #include "os.h"
 #include "runtime.h"
 #include "str-builtins.h"
@@ -198,14 +199,15 @@ RawObject mainModuleAt(Runtime* runtime, const char* name) {
 
 RawObject moduleAtByCStr(Runtime* runtime, const char* module_name,
                          const char* name) {
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Object mod_obj(&scope, findModuleByCStr(runtime, module_name));
   if (mod_obj.isNoneType()) {
     return Error::notFound();
   }
   Module module(&scope, *mod_obj);
   Object key(&scope, runtime->newStrFromCStr(name));
-  return runtime->moduleAt(module, key);
+  return moduleAt(thread, module, key);
 }
 
 std::string typeName(Runtime* runtime, RawObject obj) {

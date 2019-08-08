@@ -5,6 +5,7 @@
 #include "cpython-types.h"
 #include "handles.h"
 #include "modsupport-internal.h"
+#include "module-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 
@@ -32,7 +33,7 @@ PY_EXPORT int PyModule_AddObject(PyObject* pymodule, const char* name,
   }
   Module module(&scope, *module_obj);
   Object value(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  runtime->moduleAtPut(module, key, value);
+  moduleAtPut(thread, module, key, value);
   return 0;
 }
 

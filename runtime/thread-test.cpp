@@ -8,6 +8,7 @@
 #include "globals.h"
 #include "interpreter.h"
 #include "marshal.h"
+#include "module-builtins.h"
 #include "runtime.h"
 #include "test-utils.h"
 #include "thread.h"
@@ -523,7 +524,7 @@ TEST_F(ThreadTest, LoadGlobal) {
 
   Dict globals(&scope, runtime_.newDict());
   Object value(&scope, runtime_.newInt(1234));
-  runtime_.moduleDictAtPut(thread_, globals, key, value);
+  moduleDictAtPut(thread_, globals, key, value);
 
   EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, globals, globals), 1234));
 }
@@ -549,8 +550,7 @@ TEST_F(ThreadTest, StoreGlobalCreateValueCell) {
 
   Dict globals(&scope, runtime_.newDict());
   EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, globals, globals), 42));
-  EXPECT_TRUE(
-      isIntEqualsWord(runtime_.moduleDictAt(thread_, globals, key), 42));
+  EXPECT_TRUE(isIntEqualsWord(moduleDictAt(thread_, globals, key), 42));
 }
 
 TEST_F(ThreadTest, StoreGlobalReuseValueCell) {
@@ -574,10 +574,9 @@ TEST_F(ThreadTest, StoreGlobalReuseValueCell) {
 
   Dict globals(&scope, runtime_.newDict());
   Object value(&scope, runtime_.newInt(99));
-  runtime_.moduleDictAtPut(thread_, globals, key, value);
+  moduleDictAtPut(thread_, globals, key, value);
   EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, globals, globals), 42));
-  EXPECT_TRUE(
-      isIntEqualsWord(runtime_.moduleDictAt(thread_, globals, key), 42));
+  EXPECT_TRUE(isIntEqualsWord(moduleDictAt(thread_, globals, key), 42));
 }
 
 TEST_F(ThreadTest, StoreNameCreateValueCell) {
@@ -602,7 +601,7 @@ TEST_F(ThreadTest, StoreNameCreateValueCell) {
   Dict globals(&scope, runtime_.newDict());
   Dict locals(&scope, runtime_.newDict());
   EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, globals, locals), 42));
-  EXPECT_TRUE(isIntEqualsWord(runtime_.moduleDictAt(thread_, locals, key), 42));
+  EXPECT_TRUE(isIntEqualsWord(moduleDictAt(thread_, locals, key), 42));
 }
 
 TEST_F(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
@@ -623,9 +622,9 @@ TEST_F(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
   Object module_name(&scope, runtime_.symbols()->Builtins());
   Module builtins(&scope, runtime_.newModule(module_name));
   Object dunder_builtins_name(&scope, runtime_.symbols()->DunderBuiltins());
-  runtime_.moduleDictAtPut(thread_, globals, dunder_builtins_name, builtins);
+  moduleDictAtPut(thread_, globals, dunder_builtins_name, builtins);
   Object value(&scope, runtime_.newInt(123));
-  runtime_.moduleAtPut(builtins, key, value);
+  moduleAtPut(thread_, builtins, key, value);
   Dict locals(&scope, runtime_.newDict());
   EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, globals, locals), 123));
 }
@@ -705,7 +704,7 @@ TEST_F(ThreadTest, MakeFunction) {
   Dict locals(&scope, runtime_.newDict());
   ASSERT_TRUE(thread_->exec(code, globals, locals).isNoneType());
 
-  Object function_obj(&scope, runtime_.moduleDictAt(thread_, locals, name));
+  Object function_obj(&scope, moduleDictAt(thread_, locals, name));
   ASSERT_TRUE(function_obj.isFunction());
   Function function(&scope, *function_obj);
   EXPECT_EQ(function.code(), func_code);
@@ -1806,7 +1805,7 @@ TEST_F(ThreadTest, BreakLoopWhileLoopBytecode) {
   Dict globals(&scope, runtime_.newDict());
   Dict locals(&scope, runtime_.newDict());
   ASSERT_TRUE(thread_->exec(code, globals, locals).isNoneType());
-  EXPECT_TRUE(isIntEqualsWord(runtime_.moduleDictAt(thread_, locals, key), 3));
+  EXPECT_TRUE(isIntEqualsWord(moduleDictAt(thread_, locals, key), 3));
 }
 
 TEST_F(ThreadTest, BreakLoopRangeLoop) {
@@ -2202,7 +2201,7 @@ TEST_F(ThreadTest, ExecSetsMissingDunderBuiltins) {
 
   Object builtins_module(&scope, runtime_.findModuleById(SymbolId::kBuiltins));
   Str dunder_builtins_name(&scope, runtime_.symbols()->DunderBuiltins());
-  EXPECT_EQ(runtime_.moduleDictAt(thread_, globals, dunder_builtins_name),
+  EXPECT_EQ(moduleDictAt(thread_, globals, dunder_builtins_name),
             builtins_module);
 }
 

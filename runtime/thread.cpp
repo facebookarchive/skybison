@@ -11,6 +11,7 @@
 #include "globals.h"
 #include "handles.h"
 #include "interpreter.h"
+#include "module-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "tuple-builtins.h"
@@ -175,13 +176,12 @@ RawObject Thread::exec(const Code& code, const Dict& globals,
 
   Runtime* runtime = this->runtime();
   Object dunder_builtins_name(&scope, runtime->symbols()->DunderBuiltins());
-  Object builtins_module_obj(
-      &scope, runtime->moduleDictAt(this, globals, dunder_builtins_name));
+  Object builtins_module_obj(&scope,
+                             moduleDictAt(this, globals, dunder_builtins_name));
   if (builtins_module_obj.isErrorNotFound()) {
     builtins_module_obj = runtime->findModuleById(SymbolId::kBuiltins);
     DCHECK(builtins_module_obj.isModule(), "invalid builtins module");
-    runtime->moduleDictAtPut(this, globals, dunder_builtins_name,
-                             builtins_module_obj);
+    moduleDictAtPut(this, globals, dunder_builtins_name, builtins_module_obj);
   }
 
   Function function(

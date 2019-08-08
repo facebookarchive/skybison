@@ -842,17 +842,17 @@ RawObject Runtime::newModule(const Object& name) {
   result.setName(*name);
   result.setDef(newIntFromCPtr(nullptr));
   Object key(&scope, symbols()->DunderName());
-  moduleAtPut(result, key, name);
+  moduleAtPut(thread, result, key, name);
 
   Object none(&scope, NoneType::object());
   Object doc_key(&scope, symbols()->DunderDoc());
-  moduleAtPut(result, doc_key, none);
+  moduleAtPut(thread, result, doc_key, none);
   Object package_key(&scope, symbols()->DunderPackage());
-  moduleAtPut(result, package_key, none);
+  moduleAtPut(thread, result, package_key, none);
   Object loader_key(&scope, symbols()->DunderLoader());
-  moduleAtPut(result, loader_key, none);
+  moduleAtPut(thread, result, loader_key, none);
   Object spec_key(&scope, symbols()->DunderSpec());
-  moduleAtPut(result, spec_key, none);
+  moduleAtPut(thread, result, spec_key, none);
 
   return *result;
 }
@@ -1353,7 +1353,7 @@ void Runtime::setArgv(Thread* thread, int argc, const char** argv) {
   Object module_name(&scope, symbols()->Sys());
   Module sys_module(&scope, findModule(module_name));
   Object argv_value(&scope, *list);
-  moduleAddGlobal(sys_module, SymbolId::kArgv, argv_value);
+  moduleAtPutById(thread, sys_module, SymbolId::kArgv, argv_value);
 }
 
 bool Runtime::listEntryInsert(ListEntry* entry, ListEntry** root) {
@@ -1994,55 +1994,7 @@ RawObject Runtime::lookupNameInModule(Thread* thread, SymbolId module_name,
          "The given module '%s' doesn't exist in modules dict",
          symbols()->predefinedSymbolAt(module_name));
   Module module(&scope, *module_obj);
-  return moduleAtById(module, name);
-}
-
-RawObject Runtime::moduleDictValueCellAt(Thread* thread, const Dict& dict,
-                                         const Object& key) {
-  HandleScope scope(thread);
-  Object result(&scope, dictAt(thread, dict, key));
-  DCHECK(result.isErrorNotFound() || result.isValueCell(),
-         "global dict lookup result must return either ErrorNotFound or "
-         "ValueCell");
-  if (result.isErrorNotFound() || ValueCell::cast(*result).isPlaceholder()) {
-    return Error::notFound();
-  }
-  return *result;
-}
-
-RawObject Runtime::moduleDictAt(Thread* thread, const Dict& dict,
-                                const Object& key) {
-  RawObject result = moduleDictValueCellAt(thread, dict, key);
-  if (result.isErrorNotFound()) {
-    return Error::notFound();
-  }
-  return ValueCell::cast(result).value();
-}
-
-RawObject Runtime::moduleAt(const Module& module, const Object& key) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Dict dict(&scope, module.dict());
-  return moduleDictAt(thread, dict, key);
-}
-
-RawObject Runtime::moduleAtById(const Module& module, SymbolId key) {
-  HandleScope scope;
-  Str key_str(&scope, symbols()->at(key));
-  return moduleAt(module, key_str);
-}
-
-RawObject Runtime::moduleDictAtPut(Thread* thread, const Dict& dict,
-                                   const Object& key, const Object& value) {
-  return dictAtPutInValueCell(thread, dict, key, value);
-}
-
-void Runtime::moduleAtPut(const Module& module, const Object& key,
-                          const Object& value) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Dict dict(&scope, module.dict());
-  moduleDictAtPut(thread, dict, key, value);
+  return moduleAtById(thread, module, name);
 }
 
 // TODO(emacs): Move these names into the modules themselves, so there is only
@@ -2171,15 +2123,6 @@ SymbolId Runtime::swappedComparisonSelector(CompareOp op) {
   return comparisonSelector(swapped_op);
 }
 
-RawObject Runtime::moduleAddGlobal(const Module& module, SymbolId name,
-                                   const Object& value) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Dict dict(&scope, module.dict());
-  Object key(&scope, symbols()->at(name));
-  return dictAtPutInValueCell(thread, dict, key, value);
-}
-
 RawObject Runtime::moduleAddBuiltinFunction(const Module& module, SymbolId name,
                                             Function::Entry entry) {
   Thread* thread = Thread::current();
@@ -2193,16 +2136,15 @@ RawObject Runtime::moduleAddBuiltinFunction(const Module& module, SymbolId name,
   Object globals(&scope, NoneType::object());
   Function function(&scope,
                     newFunctionWithCode(thread, name_str, code, globals));
-
-  Dict dict(&scope, module.dict());
-  return moduleDictAtPut(thread, dict, name_str, function);
+  return moduleAtPut(thread, module, name_str, function);
 }
 
 void Runtime::moduleAddBuiltinType(const Module& module, SymbolId name,
                                    LayoutId layout_id) {
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Object value(&scope, typeAt(layout_id));
-  moduleAddGlobal(module, name, value);
+  moduleAtPutById(thread, module, name, value);
 }
 
 void Runtime::moduleImportAllFrom(const Dict& dict, const Module& module) {
@@ -2211,12 +2153,12 @@ void Runtime::moduleImportAllFrom(const Dict& dict, const Module& module) {
   Dict module_dict(&scope, module.dict());
   Tuple buckets(&scope, module_dict.data());
   for (word i = Dict::Bucket::kFirst; nextModuleDictItem(*buckets, &i);) {
-    Object symbol_name(&scope, Dict::Bucket::key(*buckets, i));
-    CHECK(symbol_name.isStr(), "Symbol is not a String");
+    CHECK(Dict::Bucket::key(*buckets, i).isStr(), "Symbol is not a String");
+    Str symbol_name(&scope, Dict::Bucket::key(*buckets, i));
     // Load all the symbols not starting with '_'
-    Str symbol_name_str(&scope, *symbol_name);
-    if (symbol_name_str.charAt(0) != '_') {
-      Object value(&scope, moduleAt(module, symbol_name));
+    if (symbol_name.charAt(0) != '_') {
+      Object value(&scope, moduleAt(thread, module, symbol_name));
+      DCHECK(!value.isErrorNotFound(), "value must not be ErrorNotFound");
       dictAtPutInValueCell(thread, dict, symbol_name, value);
     }
   }
@@ -2237,28 +2179,31 @@ void Runtime::createBuiltinsModule(Thread* thread) {
                          BuiltinsModule::kBuiltinTypes[i].type);
   }
 
-  build_class_ = moduleAddBuiltinFunction(module, SymbolId::kDunderBuildClass,
-                                          BuiltinsModule::dunderBuildClass);
+  moduleAddBuiltinFunction(module, SymbolId::kDunderBuildClass,
+                           BuiltinsModule::dunderBuildClass);
+  Dict module_dict(&scope, module.dict());
+  Object dunder_build_class_name(&scope, symbols()->DunderBuildClass());
+  build_class_ =
+      thread->runtime()->dictAt(thread, module_dict, dunder_build_class_name);
 
   // Add module variables
   {
     Object dunder_debug(&scope, Bool::falseObj());
-    moduleAddGlobal(module, SymbolId::kDunderDebug, dunder_debug);
+    moduleAtPutById(thread, module, SymbolId::kDunderDebug, dunder_debug);
 
     Object false_obj(&scope, Bool::falseObj());
-    moduleAddGlobal(module, SymbolId::kFalse, false_obj);
+    moduleAtPutById(thread, module, SymbolId::kFalse, false_obj);
 
     Object none(&scope, NoneType::object());
-    moduleAddGlobal(module, SymbolId::kNone, none);
+    moduleAtPutById(thread, module, SymbolId::kNone, none);
 
     Object not_implemented(&scope, NotImplementedType::object());
-    moduleAddGlobal(module, SymbolId::kNotImplemented, not_implemented);
+    moduleAtPutById(thread, module, SymbolId::kNotImplemented, not_implemented);
 
     Object true_obj(&scope, Bool::trueObj());
-    moduleAddGlobal(module, SymbolId::kTrue, true_obj);
+    moduleAtPutById(thread, module, SymbolId::kTrue, true_obj);
   }
 
-  Dict module_dict(&scope, module.dict());
   {
     // Manually import all of the functions and types in the _builtins module.
     Module under_builtins(&scope, findModuleById(SymbolId::kUnderBuiltins));
@@ -2268,21 +2213,21 @@ void Runtime::createBuiltinsModule(Thread* thread) {
          UnderBuiltinsModule::kBuiltinMethods[i].name != SymbolId::kSentinelId;
          i++) {
       key = symbols()->at(UnderBuiltinsModule::kBuiltinMethods[i].name);
-      value = moduleAt(under_builtins, key);
+      value = moduleAt(thread, under_builtins, key);
       dictAtPutInValueCell(thread, module_dict, key, value);
     }
     for (word i = 0;
          UnderBuiltinsModule::kBuiltinTypes[i].name != SymbolId::kSentinelId;
          i++) {
       key = symbols()->at(UnderBuiltinsModule::kBuiltinTypes[i].name);
-      value = moduleAt(under_builtins, key);
+      value = moduleAt(thread, under_builtins, key);
       dictAtPutInValueCell(thread, module_dict, key, value);
     }
     key = symbols()->UnderPatch();
-    value = moduleAt(under_builtins, key);
+    value = moduleAt(thread, under_builtins, key);
     dictAtPutInValueCell(thread, module_dict, key, value);
     key = symbols()->UnderUnbound();
-    value = moduleAt(under_builtins, key);
+    value = moduleAt(thread, under_builtins, key);
     dictAtPutInValueCell(thread, module_dict, key, value);
   }
 
@@ -2294,7 +2239,7 @@ void Runtime::createBuiltinsModule(Thread* thread) {
   // such as "module" or "function"
   Object dunder_import_name(&scope, symbols()->DunderImport());
   dunder_import_ =
-      moduleDictValueCellAt(thread, module_dict, dunder_import_name);
+      thread->runtime()->dictAt(thread, module_dict, dunder_import_name);
 
   Type object(&scope, typeAt(LayoutId::kObject));
   Dict object_dict(&scope, object.dict());
@@ -2312,7 +2257,7 @@ void Runtime::createBuiltinsModule(Thread* thread) {
   for (word i = 0; BuiltinsModule::kIntrinsicIds[i] != SymbolId::kSentinelId;
        i++) {
     SymbolId intrinsic_id = BuiltinsModule::kIntrinsicIds[i];
-    Function::cast(moduleAtById(module, intrinsic_id))
+    Function::cast(moduleAtById(thread, module, intrinsic_id))
         .setIntrinsicId(static_cast<word>(intrinsic_id));
   }
 }
@@ -2344,7 +2289,8 @@ void Runtime::createImportlibModule(Thread* thread) {
   Str importlib_external_name(&scope,
                               symbols()->UnderFrozenImportlibExternal());
   Module importlib_external(&scope, newModule(importlib_external_name));
-  moduleAddGlobal(importlib_external, SymbolId::kUnderBootstrap, importlib);
+  moduleAtPutById(thread, importlib_external, SymbolId::kUnderBootstrap,
+                  importlib);
   CHECK(!executeFrozenModule(kUnderBootstrapUnderExternalModuleData,
                              importlib_external)
              .isError(),
@@ -2372,39 +2318,39 @@ void Runtime::createSysModule(Thread* thread) {
   }
 
   Object modules(&scope, modules_);
-  moduleAddGlobal(module, SymbolId::kModules, modules);
+  moduleAtPutById(thread, module, SymbolId::kModules, modules);
 
   // Fill in sys...
   Object platform(&scope, newStrFromCStr(OS::name()));
-  moduleAddGlobal(module, SymbolId::kPlatform, platform);
+  moduleAtPutById(thread, module, SymbolId::kPlatform, platform);
 
   Object stderr_fd_val(&scope, SmallInt::fromWord(kStderrFd));
-  moduleAddGlobal(module, SymbolId::kUnderStderrFd, stderr_fd_val);
+  moduleAtPutById(thread, module, SymbolId::kUnderStderrFd, stderr_fd_val);
   Object stdout_fd_val(&scope, SmallInt::fromWord(kStdoutFd));
-  moduleAddGlobal(module, SymbolId::kUnderStdoutFd, stdout_fd_val);
+  moduleAtPutById(thread, module, SymbolId::kUnderStdoutFd, stdout_fd_val);
 
   // TODO(T42692043): This awkwardness should go away once we freeze the
   // standard library into the binary and/or support PYTHONPATH.
   Object base_dir(&scope, newStrFromCStr(PYRO_BASEDIR));
-  moduleAddGlobal(module, SymbolId::kUnderBaseDir, base_dir);
+  moduleAtPutById(thread, module, SymbolId::kUnderBaseDir, base_dir);
 
   Object byteorder(
       &scope,
       newStrFromCStr(endian::native == endian::little ? "little" : "big"));
-  moduleAddGlobal(module, SymbolId::kByteorder, byteorder);
+  moduleAtPutById(thread, module, SymbolId::kByteorder, byteorder);
 
   unique_c_ptr<char> executable_path(OS::executablePath());
   Object executable(&scope, newStrFromCStr(executable_path.get()));
-  moduleAddGlobal(module, SymbolId::kExecutable, executable);
+  moduleAtPutById(thread, module, SymbolId::kExecutable, executable);
 
   // maxsize is defined as the largest supported length of containers which
   // would be `SmallInt::kMaxValue`. However in practice it is used to
   // determine the size of a machine word which is kMaxWord.
   Object maxsize(&scope, newInt(kMaxWord));
-  moduleAddGlobal(module, SymbolId::kMaxsize, maxsize);
+  moduleAtPutById(thread, module, SymbolId::kMaxsize, maxsize);
 
   Object maxunicode(&scope, newInt(kMaxUnicode));
-  moduleAddGlobal(module, SymbolId::kMaxunicode, maxunicode);
+  moduleAtPutById(thread, module, SymbolId::kMaxunicode, maxunicode);
 
   // Count the number of modules and create a tuple
   uword num_external_modules = 0;
@@ -2435,7 +2381,7 @@ void Runtime::createSysModule(Thread* thread) {
 
   // Create builtin_module_names tuple
   Object builtins(&scope, *builtins_tuple);
-  moduleAddGlobal(module, SymbolId::kBuiltinModuleNames, builtins);
+  moduleAtPutById(thread, module, SymbolId::kBuiltinModuleNames, builtins);
   // Add and execute sys module.
   addModule(module);
   CHECK(!executeFrozenModule(SysModule::kFrozenData, module).isError(),
@@ -2472,7 +2418,6 @@ void Runtime::createUnderBuiltinsModule(Thread* thread) {
   }
 
   // We have to patch _patch manually.
-  Dict module_dict(&scope, module.dict());
   {
     Tuple parameters(&scope, newTuple(1));
     parameters.atPut(0, newStrFromCStr("function"));
@@ -2481,19 +2426,20 @@ void Runtime::createUnderBuiltinsModule(Thread* thread) {
                                      /*kwonlyargcount=*/0, /*flags=*/0,
                                      UnderBuiltinsModule::underPatch,
                                      parameters, name));
+    Dict globals(&scope, module.dict());
     Function under_patch(&scope,
-                         newFunctionWithCode(thread, name, code, module_dict));
-    moduleDictAtPut(thread, module_dict, name, under_patch);
+                         newFunctionWithCode(thread, name, code, globals));
+    moduleAtPut(thread, module, name, under_patch);
   }
 
   Object unbound_value(&scope, Unbound::object());
-  moduleAddGlobal(module, SymbolId::kUnderUnbound, unbound_value);
+  moduleAtPutById(thread, module, SymbolId::kUnderUnbound, unbound_value);
 
   // Mark functions that have an intrinsic implementation.
   for (word i = 0;
        UnderBuiltinsModule::kIntrinsicIds[i] != SymbolId::kSentinelId; i++) {
     SymbolId intrinsic_id = UnderBuiltinsModule::kIntrinsicIds[i];
-    Function::cast(moduleAtById(module, intrinsic_id))
+    Function::cast(moduleAtById(thread, module, intrinsic_id))
         .setIntrinsicId(static_cast<word>(intrinsic_id));
   }
 
@@ -3907,23 +3853,6 @@ void Runtime::strArrayEnsureCapacity(Thread* thread, const StrArray& array,
   array.copyTo(dst, old_length);
   std::memset(dst + old_length, 0, new_capacity - old_length);
   array.setItems(*new_bytes);
-}
-
-RawDict Runtime::moduleDictBuiltins(Thread* thread, const Dict& dict) {
-  HandleScope scope(thread);
-  Object dunder_builtins_name(&scope, symbols()->DunderBuiltins());
-  Object builtins_module(&scope,
-                         moduleDictAt(thread, dict, dunder_builtins_name));
-  if (!builtins_module.isErrorNotFound()) {
-    CHECK(builtins_module.isModule(), "expected builtins module");
-    return RawDict::cast(Module::cast(*builtins_module).dict());
-  }
-  // Create a minimal builtins dictionary with just `{'None': None}`.
-  Dict builtins(&scope, newDict());
-  Object none_name(&scope, symbols()->None());
-  Object none(&scope, NoneType::object());
-  moduleDictAtPut(thread, builtins, none_name, none);
-  return *builtins;
 }
 
 // See https://github.com/python/cpython/blob/master/Objects/lnotab_notes.txt
