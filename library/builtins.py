@@ -1872,7 +1872,7 @@ class dict_values(bootstrap=True):
 
 def dir(obj=_Unbound):
     if obj is _Unbound:
-        names = locals().keys()
+        _unimplemented()
     else:
         names = _type(obj).__dir__(obj)
     return sorted(names)
@@ -2808,8 +2808,9 @@ class list_iterator(bootstrap=True):
         pass
 
 
+@_patch
 def locals():
-    _unimplemented()
+    pass
 
 
 class longrange_iterator(bootstrap=True):

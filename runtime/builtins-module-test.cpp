@@ -112,7 +112,7 @@ TEST_F(BuiltinsModuleDeathTest, DirWithoutObjectCallsLocals) {
   ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime_, R"(
 dir()
 )")),
-               "locals()");
+               "'_unimplemented' called in function 'dir'");
 }
 
 TEST_F(BuiltinsModuleTest, EllipsisMatchesEllipsis) {

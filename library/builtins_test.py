@@ -2454,6 +2454,53 @@ class ListTests(unittest.TestCase):
         )
 
 
+class LocalsTests(unittest.TestCase):
+    def test_returns_local_vars(self):
+        def foo():
+            a = 4
+            b = 5
+            return locals()
+
+        result = foo()
+        self.assertIsInstance(result, dict)
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result["a"], 4)
+        self.assertEqual(result["b"], 5)
+
+    def test_returns_free_vars(self):
+        def foo():
+            a = 4
+
+            def bar():
+                nonlocal a
+                a = 5
+                return locals()
+
+            return bar()
+
+        result = foo()
+        self.assertIsInstance(result, dict)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result["a"], 5)
+
+    def test_returns_cell_vars(self):
+        def foo():
+            a = 4
+
+            def bar(b):
+                return a + b
+
+            return locals()
+
+        result = foo()
+        self.assertIsInstance(result, dict)
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result["a"], 4)
+        from types import FunctionType
+
+        self.assertIsInstance(result["bar"], FunctionType)
+
+
 class LongRangeIteratorTests(unittest.TestCase):
     def test_dunder_iter_returns_self(self):
         large_int = 2 ** 123

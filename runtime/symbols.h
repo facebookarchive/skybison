@@ -559,6 +559,7 @@ class Runtime;
   V(ListIterator, "list_iterator")                                             \
   V(Little, "little")                                                          \
   V(Loads, "loads")                                                            \
+  V(Locals, "locals")                                                          \
   V(LongRangeIterator, "longrange_iterator")                                   \
   V(LookupError, "LookupError")                                                \
   V(Lower, "lower")                                                            \

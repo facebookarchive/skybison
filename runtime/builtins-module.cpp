@@ -70,9 +70,10 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kGetattr, getattr},
     {SymbolId::kHasattr, hasattr},
     {SymbolId::kId, id},
+    {SymbolId::kLocals, locals},
     {SymbolId::kOrd, ord},
     {SymbolId::kSetattr, setattr},
-    {SymbolId::kSentinelId, nullptr},
+    {SymbolId::kSentinelId, nullptr}  // Comment to widen lines for linter.
 };
 
 const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
@@ -509,6 +510,56 @@ RawObject BuiltinsModule::id(Thread* thread, Frame* frame, word nargs) {
   // as its referent is alive.
   return thread->runtime()->newIntFromCPtr(
       ApiHandle::borrowedReference(thread, args.get(0)));
+}
+
+RawObject BuiltinsModule::locals(Thread* thread, Frame* frame, word) {
+  if (frame->previousFrame()->isSentinel()) {
+    UNIMPLEMENTED("Calling builtins.locals() in a module scope");
+  }
+  // Get the frame of the caller of locals().
+  frame = frame->previousFrame();
+  HandleScope scope(thread);
+  Function function(&scope, frame->function());
+  Code code(&scope, function.code());
+  Runtime* runtime = thread->runtime();
+  Tuple empty_tuple(&scope, runtime->emptyTuple());
+  Tuple var_names(&scope,
+                  code.varnames().isTuple() ? code.varnames() : *empty_tuple);
+  Tuple freevar_names(
+      &scope, code.freevars().isTuple() ? code.freevars() : *empty_tuple);
+  Tuple cellvar_names(
+      &scope, code.cellvars().isTuple() ? code.cellvars() : *empty_tuple);
+
+  word var_names_length = var_names.length();
+  word freevar_names_length = freevar_names.length();
+  word cellvar_names_length = cellvar_names.length();
+
+  DCHECK(function.totalLocals() ==
+             var_names_length + freevar_names_length + cellvar_names_length,
+         "numbers of local variables do not match");
+
+  Dict result(&scope, runtime->newDict());
+  Object key(&scope, NoneType::object());
+  Object value(&scope, NoneType::object());
+  for (word i = 0; i < var_names_length; ++i) {
+    key = var_names.at(i);
+    value = frame->local(i);
+    runtime->dictAtPut(thread, result, key, value);
+  }
+  for (word i = 0, j = var_names_length; i < freevar_names_length; ++i, ++j) {
+    key = freevar_names.at(i);
+    DCHECK(frame->local(j).isValueCell(), "freevar must be ValueCell");
+    value = ValueCell::cast(frame->local(j)).value();
+    runtime->dictAtPut(thread, result, key, value);
+  }
+  for (word i = 0, j = var_names_length + freevar_names_length;
+       i < cellvar_names_length; ++i, ++j) {
+    key = cellvar_names.at(i);
+    DCHECK(frame->local(j).isValueCell(), "cellvar must be ValueCell");
+    value = ValueCell::cast(frame->local(j)).value();
+    runtime->dictAtPut(thread, result, key, value);
+  }
+  return *result;
 }
 
 RawObject BuiltinsModule::ord(Thread* thread, Frame* frame, word nargs) {
