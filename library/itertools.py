@@ -2,6 +2,8 @@
 """Functional tools for creating and using iterators."""
 # TODO(T42113424) Replace stubs with an actual implementation
 _Unbound = _Unbound  # noqa: F821
+_list_len = _list_len  # noqa: F821
+_tuple_len = _tuple_len  # noqa: F821
 _unimplemented = _unimplemented  # noqa: F821
 
 
@@ -85,8 +87,50 @@ class permutations:
 
 
 class product:
-    def __init__(self, p, q, *args):
-        _unimplemented()
+    def __init__(self, *iterables, repeat=1):
+        if not isinstance(repeat, int):
+            raise TypeError
+        length = _tuple_len(iterables) if repeat else 0
+        i = 0
+        repeated = [None] * length
+        while i < length:
+            item = tuple(iterables[i])
+            if not item:
+                self._iterables = self._digits = None
+                return
+            repeated[i] = item
+            i += 1
+        repeated *= repeat
+        self._iterables = repeated
+        self._digits = [0] * (length * repeat)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        iterables = self._iterables
+        if iterables is None:
+            raise StopIteration
+        digits = self._digits
+        length = _list_len(iterables)
+        result = [None] * length
+        i = length - 1
+        carry = 1
+        while i >= 0:
+            j = digits[i]
+            result[i] = iterables[i][j]
+            j += carry
+            if j < _tuple_len(iterables[i]):
+                carry = 0
+                digits[i] = j
+            else:
+                carry = 1
+                digits[i] = 0
+            i -= 1
+        if carry:
+            # counter overflowed, stop iteration
+            self._iterables = self._digits = None
+        return tuple(result)
 
 
 class repeat:
