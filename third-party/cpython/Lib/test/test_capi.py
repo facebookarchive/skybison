@@ -356,6 +356,7 @@ class TestPendingCalls(unittest.TestCase):
 
 class SubinterpreterTest(unittest.TestCase):
 
+    @unittest.skip("Requires subinterpreters")
     def test_subinterps(self):
         import builtins
         r, w = os.pipe()
