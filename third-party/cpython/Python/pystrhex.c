@@ -2,6 +2,8 @@
 
 #include "Python.h"
 
+static const char hexdigits[] = "0123456789abcdef";
+
 static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
                                  int return_bytes)
 {
@@ -13,37 +15,26 @@ static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
     if (arglen > PY_SSIZE_T_MAX / 2)
         return PyErr_NoMemory();
 
-    if (return_bytes) {
-        /* If _PyBytes_FromSize() were public we could avoid malloc+copy. */
-        retbuf = (Py_UCS1*) PyMem_Malloc(arglen*2);
-	if (!retbuf)
-	    return PyErr_NoMemory();
-        retval = NULL;  /* silence a compiler warning, assigned later. */
-    } else {
-	retval = PyUnicode_New(arglen*2, 127);
-	if (!retval)
-	    return NULL;
-	retbuf = PyUnicode_1BYTE_DATA(retval);
+    retbuf = (Py_UCS1*) PyMem_Malloc(arglen*2);
+    if (retbuf == NULL) {
+        return PyErr_NoMemory();
     }
 
     /* make hex version of string, taken from shamodule.c */
     for (i=j=0; i < arglen; i++) {
         unsigned char c;
         c = (argbuf[i] >> 4) & 0xf;
-        retbuf[j++] = Py_hexdigits[c];
+        retbuf[j++] = hexdigits[c];
         c = argbuf[i] & 0xf;
-        retbuf[j++] = Py_hexdigits[c];
+        retbuf[j++] = hexdigits[c];
     }
 
     if (return_bytes) {
         retval = PyBytes_FromStringAndSize((const char *)retbuf, arglen*2);
-        PyMem_Free(retbuf);
+    } else {
+	retval = PyUnicode_FromStringAndSize((const char *)retbuf, arglen*2);
     }
-#ifdef Py_DEBUG
-    else {
-        assert(_PyUnicode_CheckConsistency(retval, 1));
-    }
-#endif
+    PyMem_Free(retbuf);
 
     return retval;
 }

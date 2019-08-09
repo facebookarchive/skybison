@@ -26,7 +26,10 @@ from http.client import HTTPException
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
 COMPILED_WITH_PYDEBUG = hasattr(sys, 'gettotalrefcount')
 
-c_hashlib = import_fresh_module('hashlib', fresh=['_hashlib'])
+try:
+    import _hashlib as c_hashlib
+except ModuleNotFoundError:
+    c_hashlib = None
 py_hashlib = import_fresh_module('hashlib', blocked=['_hashlib'])
 
 try:
@@ -116,14 +119,13 @@ class HashLibTestCase(unittest.TestCase):
                 return hashlib.new(_alg, data, **kwargs)
             constructors.add(_test_algorithm_via_hashlib_new)
 
-        _hashlib = self._conditional_import_module('_hashlib')
-        if _hashlib:
+        if c_hashlib:
             # These two algorithms should always be present when this module
             # is compiled.  If not, something was compiled wrong.
-            self.assertTrue(hasattr(_hashlib, 'openssl_md5'))
-            self.assertTrue(hasattr(_hashlib, 'openssl_sha1'))
+            self.assertTrue(hasattr(c_hashlib, 'openssl_md5'))
+            self.assertTrue(hasattr(c_hashlib, 'openssl_sha1'))
             for algorithm, constructors in self.constructors_to_test.items():
-                constructor = getattr(_hashlib, 'openssl_'+algorithm, None)
+                constructor = getattr(c_hashlib, 'openssl_'+algorithm, None)
                 if constructor:
                     constructors.add(constructor)
 
@@ -166,7 +168,9 @@ class HashLibTestCase(unittest.TestCase):
         return itertools.chain.from_iterable(constructors)
 
     @support.refcount_test
-    @unittest.skipIf(c_hashlib is None, 'Require _hashlib module')
+    @unittest.skipIf(c_hashlib is None or
+                     c_hashlib.HASH.__init__ is object.__init__,
+                     'Requires _hashlib module with overridden HASH.__init__')
     def test_refleaks_in_hash___init__(self):
         gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
         sha1_hash = c_hashlib.new('sha1')
@@ -839,6 +843,12 @@ class HashLibTestCase(unittest.TestCase):
             thread.join()
 
         self.assertEqual(expected_hash, hasher.hexdigest())
+
+    @unittest.skipIf(c_hashlib is None, 'Requires _hashlib')
+    def test_instantiate_hash_type(self):
+        # The type provided by _hashlib isn't meant to be instantiated by user
+        # code.
+        self.assertRaises(TypeError, c_hashlib.HASH)
 
 
 class KDFTests(unittest.TestCase):
