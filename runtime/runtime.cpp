@@ -1083,6 +1083,26 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
       return thread->raiseWithFmt(LayoutId::kValueError, "Incomplete format");
     }
     switch (fmt.charAt(fmt_idx)) {
+      case 'c': {
+        int value = va_arg(args, int);  // Note that C promotes char to int.
+        if (value < 0 || value > kMaxASCII) {
+          // Replace non-ASCII characters.
+          RawSmallStr value_str =
+              SmallStr::cast(SmallStr::fromCodePoint(kReplacementCharacter));
+          word length = value_str.charLength();
+          if (dst == nullptr) {
+            len--;
+            len += length;
+          } else {
+            value_str.copyTo(reinterpret_cast<byte*>(&dst[dst_idx]), length);
+            dst_idx += length;
+          }
+          break;
+        }
+        if (dst != nullptr) {
+          dst[dst_idx++] = static_cast<char>(value);
+        }
+      } break;
       case 'd': {
         int value = va_arg(args, int);
         if (dst == nullptr) {
@@ -1122,6 +1142,21 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
         } else {
           dst_idx += std::snprintf(&dst[dst_idx], size - dst_idx + 1,
                                    "%" PRIdPTR, value);
+        }
+      } break;
+      case 'C': {
+        int32_t value = va_arg(args, int32_t);
+        if (value < 0 || value > kMaxUnicode) {
+          value = kReplacementCharacter;
+        }
+        RawSmallStr value_str = SmallStr::cast(SmallStr::fromCodePoint(value));
+        word length = value_str.charLength();
+        if (dst == nullptr) {
+          len--;
+          len += length;
+        } else {
+          value_str.copyTo(reinterpret_cast<byte*>(&dst[dst_idx]), length);
+          dst_idx += length;
         }
       } break;
       case 'S': {

@@ -827,6 +827,26 @@ TEST_F(RuntimeStrTest, NewStrFromFmtFormatsSymbolid) {
   EXPECT_TRUE(isStrEqualsCStr(*str, "hello dict"));
 }
 
+TEST_F(RuntimeStrTest, NewStrFromFmtFormatsASCIIChar) {
+  EXPECT_TRUE(isStrEqualsCStr(runtime_.newStrFromFmt("'%c'", 124), "'|'"));
+}
+
+TEST_F(RuntimeStrTest, NewStrFromFmtFormatsNonASCIIAsReplacementChar) {
+  EXPECT_TRUE(isStrEqualsCStr(runtime_.newStrFromFmt("'%c'", kMaxASCII + 1),
+                              "'\xef\xbf\xbd'"));
+}
+
+TEST_F(RuntimeStrTest, NewStrFromFmtFormatsCodePoint) {
+  EXPECT_TRUE(isStrEqualsCStr(runtime_.newStrFromFmt("'%C'", 124), "'|'"));
+  EXPECT_TRUE(isStrEqualsCStr(runtime_.newStrFromFmt("'%C'", 0x1F40D),
+                              "'\xf0\x9f\x90\x8d'"));
+}
+
+TEST_F(RuntimeStrTest, NewStrFromFmtFormatsReplacesNonUnicodeWithReplacement) {
+  EXPECT_TRUE(
+      isStrEqualsCStr(runtime_.newStrFromFmt("'%C'", -1), "'\xef\xbf\xbd'"));
+}
+
 TEST_F(RuntimeStrTest, NewStrWithAll) {
   HandleScope scope(thread_);
 

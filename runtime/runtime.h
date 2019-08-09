@@ -216,7 +216,9 @@ class Runtime {
                       va_list args);
   // Creates a new string constructed from a format and a list of arguments,
   // similar to sprintf.
+  // %c formats an ASCII character
   // %w formats a word
+  // %C formats a unicode code point
   // %S formats a Str object
   // %T gets the type name of an object and formats that
   // %Y formats a SymbolId

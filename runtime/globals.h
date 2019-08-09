@@ -42,8 +42,9 @@ const word kMinWord = INTPTR_MIN;
 const word kMaxWord = INTPTR_MAX;
 const uword kMaxUword = UINTPTR_MAX;
 
-const int kMaxUnicode = 0x10ffff;
 const int kMaxASCII = 127;
+const int kMaxUnicode = 0x10ffff;
+const int32_t kReplacementCharacter = 0xFFFD;
 
 const int kKiB = 1024;
 const int kMiB = kKiB * kKiB;
