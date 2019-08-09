@@ -1068,7 +1068,7 @@ PyObject* slotTpNew(PyObject* type, PyObject* args, PyObject* kwargs) {
   Tuple args_tuple(&scope, tupleUnderlying(thread, args_obj));
   Tuple new_args(&scope, runtime->newTuple(args_tuple.length() + 1));
   new_args.atPut(0, *type_obj);
-  new_args.replaceFromWith(1, *args_tuple);
+  new_args.replaceFromWith(1, *args_tuple, args_tuple.length());
 
   // Call type.__new__(type, *args, **kwargs)
   Object dunder_new(

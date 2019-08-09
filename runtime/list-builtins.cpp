@@ -14,33 +14,26 @@ namespace python {
 RawObject listExtend(Thread* thread, const List& dst, const Object& iterable) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  if (runtime->isInstanceOfList(*iterable)) {
-    // Special case for lists
-    List src(&scope, *iterable);
-    word old_length = dst.numItems();
-    word new_length = old_length + src.numItems();
-    if (new_length != old_length) {
-      runtime->listEnsureCapacity(thread, dst, new_length);
-      // Save the number of items before adding the two sizes together. This is
-      // for the a.extend(a) case (src == dst).
-      dst.setNumItems(new_length);
-      Tuple dst_items(&scope, dst.items());
-      Tuple src_items(&scope, src.items());
-      dst_items.replaceFromWith(old_length, *src_items);
-    }
-    return NoneType::object();
-  }
-  // Special case for tuples
-  DCHECK(runtime->isInstanceOfTuple(*iterable),
+  Tuple src_tuple(&scope, runtime->emptyTuple());
+  word src_length = 0;
+  DCHECK(runtime->isInstanceOfList(*iterable) ||
+             runtime->isInstanceOfTuple(*iterable),
          "iterable must be list or tuple instance");
-  Tuple src(&scope, tupleUnderlying(thread, iterable));
+  if (runtime->isInstanceOfList(*iterable)) {
+    List src(&scope, *iterable);
+    src_tuple = src.items();
+    src_length = src.numItems();
+  } else {
+    src_tuple = tupleUnderlying(thread, iterable);
+    src_length = src_tuple.length();
+  }
   word old_length = dst.numItems();
-  word new_length = old_length + src.length();
+  word new_length = old_length + src_length;
   if (new_length != old_length) {
     runtime->listEnsureCapacity(thread, dst, new_length);
     dst.setNumItems(new_length);
     Tuple dst_items(&scope, dst.items());
-    dst_items.replaceFromWith(old_length, *src);
+    dst_items.replaceFromWith(old_length, *src_tuple, src_length);
   }
   return NoneType::object();
 }

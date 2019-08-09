@@ -1139,7 +1139,8 @@ class RawTuple : public RawArray {
 
   void fill(RawObject value) const;
 
-  void replaceFromWith(word start, RawObject array) const;
+  // Copy count elements from src to this tuple, starting at index start
+  void replaceFromWith(word start, RawObject array, word count) const;
 
   bool contains(RawObject object) const;
 

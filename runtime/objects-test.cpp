@@ -1035,6 +1035,58 @@ TEST_F(TupleTest, NoneFillTupleFillsTupleWithNone) {
   EXPECT_EQ(tuple.at(2), NoneType::object());
 }
 
+TEST_F(TupleTest, ReplaceFromWithReplacesElementsStartingAtZero) {
+  HandleScope scope(thread_);
+  Tuple dst(&scope, runtime_.newTuple(5));
+  List src(&scope, listFromRange(0, 5));
+  Tuple src_items(&scope, src.items());
+  dst.replaceFromWith(0, *src_items, 2);
+  EXPECT_TRUE(isIntEqualsWord(dst.at(0), 0));
+  EXPECT_TRUE(isIntEqualsWord(dst.at(1), 1));
+  EXPECT_TRUE(dst.at(2).isNoneType());
+  EXPECT_TRUE(dst.at(3).isNoneType());
+  EXPECT_TRUE(dst.at(4).isNoneType());
+}
+
+TEST_F(TupleTest, ReplaceFromWithReplacesElementsStartingInMiddle) {
+  HandleScope scope(thread_);
+  Tuple dst(&scope, runtime_.newTuple(5));
+  List src(&scope, listFromRange(0, 5));
+  Tuple src_items(&scope, src.items());
+  dst.replaceFromWith(1, *src_items, 2);
+  EXPECT_TRUE(dst.at(0).isNoneType());
+  EXPECT_TRUE(isIntEqualsWord(dst.at(1), 0));
+  EXPECT_TRUE(isIntEqualsWord(dst.at(2), 1));
+  EXPECT_TRUE(dst.at(3).isNoneType());
+  EXPECT_TRUE(dst.at(4).isNoneType());
+}
+
+TEST_F(TupleTest, ReplaceFromWithCopiesZeroElements) {
+  HandleScope scope(thread_);
+  Tuple dst(&scope, runtime_.newTuple(5));
+  List src(&scope, listFromRange(0, 5));
+  Tuple src_items(&scope, src.items());
+  dst.replaceFromWith(0, *src_items, 0);
+  EXPECT_TRUE(dst.at(0).isNoneType());
+  EXPECT_TRUE(dst.at(1).isNoneType());
+  EXPECT_TRUE(dst.at(2).isNoneType());
+  EXPECT_TRUE(dst.at(3).isNoneType());
+  EXPECT_TRUE(dst.at(4).isNoneType());
+}
+
+TEST_F(TupleTest, ReplaceFromWithCopiesEveryElementFromSrc) {
+  HandleScope scope(thread_);
+  Tuple dst(&scope, runtime_.newTuple(5));
+  List src(&scope, listFromRange(0, 5));
+  Tuple src_items(&scope, src.items());
+  dst.replaceFromWith(0, *src_items, 5);
+  EXPECT_TRUE(isIntEqualsWord(dst.at(0), 0));
+  EXPECT_TRUE(isIntEqualsWord(dst.at(1), 1));
+  EXPECT_TRUE(isIntEqualsWord(dst.at(2), 2));
+  EXPECT_TRUE(isIntEqualsWord(dst.at(3), 3));
+  EXPECT_TRUE(isIntEqualsWord(dst.at(4), 4));
+}
+
 TEST(ErrorTest, ErrorIsError) {
   EXPECT_TRUE(Error::error().isError());
 

@@ -204,7 +204,7 @@ RawObject Interpreter::prepareCallableEx(Thread* thread, Frame* frame,
       Tuple args(&scope, *args_obj);
       Tuple new_args(&scope, thread->runtime()->newTuple(args.length() + 1));
       new_args.atPut(0, *self);
-      new_args.replaceFromWith(1, *args);
+      new_args.replaceFromWith(1, *args, args.length());
       frame->setValueAt(*new_args, args_idx);
     }
   }
