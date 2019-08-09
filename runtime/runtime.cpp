@@ -1143,6 +1143,15 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
                                    "%" PRIdPTR, value);
         }
       } break;
+      case 'x': {
+        unsigned value = va_arg(args, unsigned);
+        if (dst == nullptr) {
+          len += std::snprintf(nullptr, 0, "%x", value);
+        } else {
+          dst_idx +=
+              std::snprintf(&dst[dst_idx], size - dst_idx + 1, "%x", value);
+        }
+      } break;
       case 'C': {
         int32_t value = va_arg(args, int32_t);
         if (value < 0 || value > kMaxUnicode) {
@@ -1203,6 +1212,11 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
         }
       } break;
       case '%':
+        if (dst == nullptr) {
+          len++;
+        } else {
+          dst[dst_idx++] = '%';
+        }
         break;
       default:
         UNIMPLEMENTED("Unsupported format specifier");

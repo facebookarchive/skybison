@@ -842,6 +842,27 @@ TEST_F(RuntimeStrTest, NewStrFromFmtFormatsCodePoint) {
                               "'\xf0\x9f\x90\x8d'"));
 }
 
+TEST_F(RuntimeStrTest, NewStrFromFormatFormatsString) {
+  EXPECT_TRUE(
+      isStrEqualsCStr(runtime_.newStrFromFmt("'%s'", "hello"), "'hello'"));
+}
+
+TEST_F(RuntimeStrTest, NewStrFromFormatFormatsInt) {
+  EXPECT_TRUE(isStrEqualsCStr(runtime_.newStrFromFmt("'%d'", -321), "'-321'"));
+}
+
+TEST_F(RuntimeStrTest, NewStrFromFormatFormatsFloat) {
+  EXPECT_TRUE(isStrEqualsCStr(runtime_.newStrFromFmt("'%g'", 3.5), "'3.5'"));
+}
+
+TEST_F(RuntimeStrTest, NewStrFromFormatFormatsHexadecimalInt) {
+  EXPECT_TRUE(isStrEqualsCStr(runtime_.newStrFromFmt("'%x'", 0x2AB), "'2ab'"));
+}
+
+TEST_F(RuntimeStrTest, NewStrFromFormatFormatsPercent) {
+  EXPECT_TRUE(isStrEqualsCStr(runtime_.newStrFromFmt("'%%'"), "'%'"));
+}
+
 TEST_F(RuntimeStrTest, NewStrFromFmtFormatsReplacesNonUnicodeWithReplacement) {
   EXPECT_TRUE(
       isStrEqualsCStr(runtime_.newStrFromFmt("'%C'", -1), "'\xef\xbf\xbd'"));
