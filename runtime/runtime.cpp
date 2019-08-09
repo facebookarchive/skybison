@@ -1072,9 +1072,11 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
   word len = 0;
   HandleScope scope(thread);
   DCHECK((dst == nullptr) == (size == 0), "dst must be null when size is 0");
-  for (word fmt_idx = 0; fmt_idx < fmt.charLength(); fmt_idx++, len++) {
+  for (word fmt_idx = 0; fmt_idx < fmt.charLength(); fmt_idx++) {
     if (fmt.charAt(fmt_idx) != '%') {
-      if (dst != nullptr) {
+      if (dst == nullptr) {
+        len++;
+      } else {
         dst[dst_idx++] = fmt.charAt(fmt_idx);
       }
       continue;
@@ -1091,7 +1093,6 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
               SmallStr::cast(SmallStr::fromCodePoint(kReplacementCharacter));
           word length = value_str.charLength();
           if (dst == nullptr) {
-            len--;
             len += length;
           } else {
             value_str.copyTo(reinterpret_cast<byte*>(&dst[dst_idx]), length);
@@ -1099,14 +1100,15 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
           }
           break;
         }
-        if (dst != nullptr) {
+        if (dst == nullptr) {
+          len++;
+        } else {
           dst[dst_idx++] = static_cast<char>(value);
         }
       } break;
       case 'd': {
         int value = va_arg(args, int);
         if (dst == nullptr) {
-          len--;
           len += snprintf(nullptr, 0, "%d", value);
         } else {
           dst_idx +=
@@ -1116,7 +1118,6 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
       case 'g': {
         double value = va_arg(args, double);
         if (dst == nullptr) {
-          len--;
           len += std::snprintf(nullptr, 0, "%g", value);
         } else {
           dst_idx +=
@@ -1126,7 +1127,6 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
       case 's': {
         const char* value = va_arg(args, char*);
         if (dst == nullptr) {
-          len--;
           len += std::strlen(value);
         } else {
           word length = std::strlen(value);
@@ -1137,7 +1137,6 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
       case 'w': {
         word value = va_arg(args, word);
         if (dst == nullptr) {
-          len--;
           len += std::snprintf(nullptr, 0, "%" PRIdPTR, value);
         } else {
           dst_idx += std::snprintf(&dst[dst_idx], size - dst_idx + 1,
@@ -1152,7 +1151,6 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
         RawSmallStr value_str = SmallStr::cast(SmallStr::fromCodePoint(value));
         word length = value_str.charLength();
         if (dst == nullptr) {
-          len--;
           len += length;
         } else {
           value_str.copyTo(reinterpret_cast<byte*>(&dst[dst_idx]), length);
@@ -1163,7 +1161,6 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
         Str value(&scope, **va_arg(args, Object*));
         word length = value.charLength();
         if (dst == nullptr) {
-          len--;
           len += length;
         } else {
           value.copyTo(reinterpret_cast<byte*>(&dst[dst_idx]), length);
@@ -1176,7 +1173,6 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
         Str value(&scope, function.qualname());
         word length = value.charLength();
         if (dst == nullptr) {
-          len--;
           len += length;
         } else {
           value.copyTo(reinterpret_cast<byte*>(&dst[dst_idx]), length);
@@ -1189,7 +1185,6 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
         Str value(&scope, type.name());
         word length = value.charLength();
         if (dst == nullptr) {
-          len--;
           len += length;
         } else {
           value.copyTo(reinterpret_cast<byte*>(&dst[dst_idx]), length);
@@ -1201,7 +1196,6 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
         Str value_str(&scope, symbols()->at(value));
         word length = value_str.charLength();
         if (dst == nullptr) {
-          len--;
           len += length;
         } else {
           value_str.copyTo(reinterpret_cast<byte*>(&dst[dst_idx]), length);
