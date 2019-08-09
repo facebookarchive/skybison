@@ -3991,8 +3991,9 @@ class tuple_iterator(bootstrap=True):
         pass
 
 
-def vars(*args):
-    _unimplemented()
+@_patch
+def vars(obj=_Unbound):
+    pass
 
 
 class zip:

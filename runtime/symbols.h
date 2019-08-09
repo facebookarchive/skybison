@@ -703,6 +703,7 @@ class Runtime;
   V(ValueCell, "valuecell")                                                    \
   V(ValueError, "ValueError")                                                  \
   V(Values, "values")                                                          \
+  V(Vars, "vars")                                                              \
   V(Version, "version")                                                        \
   V(Warn, "warn")                                                              \
   V(WarnExplicit, "warn_explicit")                                             \

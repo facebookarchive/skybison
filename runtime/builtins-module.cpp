@@ -62,6 +62,7 @@ RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
   return NoneType::object();
 }
 
+// clang-format off
 const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kCallable, callable},
     {SymbolId::kChr, chr},
@@ -74,8 +75,10 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kLocals, locals},
     {SymbolId::kOrd, ord},
     {SymbolId::kSetattr, setattr},
-    {SymbolId::kSentinelId, nullptr}  // Comment to widen lines for linter.
+    {SymbolId::kVars, vars},
+    {SymbolId::kSentinelId, nullptr},
 };
+// clang-format on
 
 const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
     {SymbolId::kArithmeticError, LayoutId::kArithmeticError},
@@ -513,12 +516,10 @@ RawObject BuiltinsModule::id(Thread* thread, Frame* frame, word nargs) {
       ApiHandle::borrowedReference(thread, args.get(0)));
 }
 
-RawObject BuiltinsModule::locals(Thread* thread, Frame* frame, word) {
-  if (frame->previousFrame()->isSentinel()) {
-    UNIMPLEMENTED("Calling builtins.locals() in a module scope");
+static RawObject localsFromFrame(Thread* thread, Frame* frame) {
+  if (!(frame->function().hasOptimizedOrNewLocals())) {
+    UNIMPLEMENTED("builtins.locals() in non-function scope");
   }
-  // Get the frame of the caller of locals().
-  frame = frame->previousFrame();
   HandleScope scope(thread);
   Function function(&scope, frame->function());
   Code code(&scope, function.code());
@@ -561,6 +562,14 @@ RawObject BuiltinsModule::locals(Thread* thread, Frame* frame, word) {
     runtime->dictAtPut(thread, result, key, value);
   }
   return *result;
+}
+
+RawObject BuiltinsModule::locals(Thread* thread, Frame* frame, word) {
+  if (frame->previousFrame()->isSentinel()) {
+    UNIMPLEMENTED("Calling builtins.locals() in a module scope");
+  }
+  // Get the frame of the caller of locals().
+  return localsFromFrame(thread, frame->previousFrame());
 }
 
 RawObject BuiltinsModule::ord(Thread* thread, Frame* frame, word nargs) {
@@ -646,6 +655,29 @@ RawObject BuiltinsModule::setattr(Thread* thread, Frame* frame, word nargs) {
   Object name(&scope, args.get(1));
   Object value(&scope, args.get(2));
   return setAttribute(thread, self, name, value);
+}
+
+RawObject BuiltinsModule::vars(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object obj(&scope, args.get(0));
+  if (obj.isUnbound()) {
+    if (frame->previousFrame()->isSentinel()) {
+      UNIMPLEMENTED("Calling builtins.vars() in a module scope");
+    }
+    // Get the frame of the caller of locals().
+    return localsFromFrame(thread, frame->previousFrame());
+  }
+  Runtime* runtime = thread->runtime();
+  // TODO(T41326706): Return a proxy dict object for module.__dict__.
+  Object result(&scope,
+                runtime->attributeAtById(thread, obj, SymbolId::kDunderDict));
+  if (result.isError()) {
+    thread->clearPendingException();
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "vars() argument must have __dict__ attribute");
+  }
+  return *result;
 }
 
 }  // namespace python

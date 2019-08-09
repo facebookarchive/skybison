@@ -4716,5 +4716,50 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(m.attr, "bar")
 
 
+class VarsTests(unittest.TestCase):
+    def test_no_arg_delegates_to_locals(self):
+        def foo():
+            a = 4
+            a = a  # noqa: F841
+            b = 5
+            b = b  # noqa: F841
+            return vars()
+
+        result = foo()
+        self.assertIsInstance(result, dict)
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result["a"], 4)
+        self.assertEqual(result["b"], 5)
+
+    def test_arg_with_no_dunder_dict_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            vars(None)
+        self.assertEqual(
+            str(context.exception), "vars() argument must have __dict__ attribute"
+        )
+
+    def test_arg_with_dunder_dict_raising_exception_raises_type_error(self):
+        class Desc:
+            def __get__(self, obj, type):
+                raise UserWarning("called descriptor")
+
+        class C:
+            __dict__ = Desc()
+
+        c = C()
+        with self.assertRaises(TypeError) as context:
+            vars(c)
+        self.assertEqual(
+            str(context.exception), "vars() argument must have __dict__ attribute"
+        )
+
+    def test_arg_with_dunder_dict_returns_dunder_dict(self):
+        class C:
+            __dict__ = 4
+
+        c = C()
+        self.assertEqual(vars(c), 4)
+
+
 if __name__ == "__main__":
     unittest.main()

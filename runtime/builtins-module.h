@@ -28,6 +28,7 @@ class BuiltinsModule {
   static RawObject print(Thread* thread, Frame* frame, word nargs);
   static RawObject printKw(Thread* thread, Frame* frame, word nargs);
   static RawObject setattr(Thread* thread, Frame* frame, word nargs);
+  static RawObject vars(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];
   static const BuiltinType kBuiltinTypes[];
