@@ -188,6 +188,17 @@ std::ostream& operator<<(std::ostream& os, RawBoundMethod value) {
             << ", " << value.self() << '>';
 }
 
+std::ostream& operator<<(std::ostream& os, RawByteArray value) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ByteArray self(&scope, value);
+  Object repr_obj(&scope, byteArrayReprSmartQuotes(thread, self));
+  if (repr_obj.isError()) return os << "<ERROR: An exception occurred.>";
+  Str repr(&scope, *repr_obj);
+  unique_c_ptr<char[]> data(repr.toCStr());
+  return os.write(data.get(), repr.charLength());
+}
+
 std::ostream& operator<<(std::ostream& os, RawBytes value) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -326,6 +337,8 @@ std::ostream& operator<<(std::ostream& os, RawObject value) {
       return os << Bool::cast(value);
     case LayoutId::kBoundMethod:
       return os << BoundMethod::cast(value);
+    case LayoutId::kByteArray:
+      return os << ByteArray::cast(value);
     case LayoutId::kCode:
       return os << Code::cast(value);
     case LayoutId::kDict:

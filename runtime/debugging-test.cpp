@@ -206,6 +206,17 @@ bound_method = C().foo
   EXPECT_EQ(ss.str(), "<bound_method \"C.foo\", <\"C\" object>>");
 }
 
+TEST_F(DebuggingTests, FormatByteArray) {
+  ASSERT_FALSE(runFromCStr(&runtime_, "ba = bytearray(b\"foo'\")").isError());
+  HandleScope scope(thread_);
+  Object bytearray(&scope, mainModuleAt(&runtime_, "ba"));
+  ASSERT_TRUE(bytearray.isByteArray());
+  std::stringstream ss;
+  ss << bytearray;
+  // TODO(T48660163): Fix test to escape single quote
+  EXPECT_EQ(ss.str(), "bytearray(b\"foo'\")");
+}
+
 TEST_F(DebuggingTests, FormatCode) {
   HandleScope scope(thread_);
   Code code(&scope, newEmptyCode());

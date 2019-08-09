@@ -528,17 +528,8 @@ RawObject ByteArrayBuiltins::dunderNew(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject ByteArrayBuiltins::dunderRepr(Thread* thread, Frame* frame,
-                                        word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object self_obj(&scope, args.get(0));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
-  }
-
-  ByteArray self(&scope, *self_obj);
+// TODO(T48660163): Escape single quotes
+RawObject byteArrayReprSmartQuotes(Thread* thread, const ByteArray& self) {
   word length = self.numItems();
   word affix_length = 14;  // strlen("bytearray(b'')") == 14
   if (length > (kMaxWord - affix_length) / 4) {
@@ -560,8 +551,10 @@ RawObject ByteArrayBuiltins::dunderRepr(Thread* thread, Frame* frame,
   }
   byte quote = (has_single_quote && !has_double_quote) ? '"' : '\'';
 
-  // Each byte will be mapped to one or more ASCII characters.
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
   ByteArray buffer(&scope, runtime->newByteArray());
+  // Each byte will be mapped to one or more ASCII characters.
   runtime->byteArrayEnsureCapacity(thread, buffer, length + affix_length);
   const byte bytearray_str[] = {'b', 'y', 't', 'e', 'a', 'r',
                                 'r', 'a', 'y', '(', 'b', quote};
@@ -592,6 +585,19 @@ RawObject ByteArrayBuiltins::dunderRepr(Thread* thread, Frame* frame,
   const byte quote_with_paren[] = {quote, ')'};
   runtime->byteArrayExtend(thread, buffer, quote_with_paren);
   return runtime->newStrFromByteArray(buffer);
+}
+
+RawObject ByteArrayBuiltins::dunderRepr(Thread* thread, Frame* frame,
+                                        word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+  }
+  ByteArray self(&scope, *self_obj);
+  return byteArrayReprSmartQuotes(thread, self);
 }
 
 RawObject ByteArrayBuiltins::hex(Thread* thread, Frame* frame, word nargs) {
