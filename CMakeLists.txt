@@ -365,6 +365,7 @@ add_library(
   runtime/under-builtins-module.h
   runtime/under-str-mod-module.cpp
   runtime/under-str-mod-module.h
+  runtime/unicode.h
   runtime/utils.cpp
   runtime/utils.h
   runtime/vector.h

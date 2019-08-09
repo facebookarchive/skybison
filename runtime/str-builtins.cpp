@@ -9,6 +9,7 @@
 #include "slice-builtins.h"
 #include "thread.h"
 #include "tuple-builtins.h"
+#include "unicode.h"
 
 namespace python {
 
@@ -185,11 +186,6 @@ RawObject strSplitlines(Thread* thread, const Str& str, bool keepends) {
 }
 
 // TODO(T43723300): Handle unicode
-static bool isAsciiSpace(byte ch) {
-  return ((ch >= 0x09) && (ch <= 0x0D)) || ((ch >= 0x1C) && (ch <= 0x1F)) ||
-         ch == 0x20;
-}
-
 RawObject strStripSpace(Thread* thread, const Str& src) {
   word length = src.charLength();
   if (length == 0) {
