@@ -238,11 +238,7 @@ class type(bootstrap=True):
         pass
 
     def __dir__(self):
-        if not isinstance(self, type):
-            raise TypeError(
-                f"'__dir__' requires a 'type' object "
-                "but received a '{_type(self).__name__}'"
-            )
+        _type_guard(self)
         result = set()
         type._merge_class_dict_keys(self, result)
         return list(result)

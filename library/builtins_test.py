@@ -4632,6 +4632,10 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(C.__bases__, (A,))
         self.assertEqual(D.__bases__, (C, B))
 
+    def test_dunder_dir_with_non_type_object_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type.__dir__(None)
+
     def test_dunder_instancecheck_with_instance_returns_true(self):
         self.assertIs(int.__instancecheck__(3), True)
         self.assertIs(int.__instancecheck__(False), True)
