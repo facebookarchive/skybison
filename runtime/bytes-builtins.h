@@ -7,16 +7,15 @@ namespace python {
 
 // Looks for needle in haystack in the range [start, end). Returns the first
 // starting index found in that range, or -1 if the needle was not found.
-RawObject bytesFind(const Bytes& haystack, word haystack_len,
-                    const Bytes& needle, word needle_len, word start, word end);
+word bytesFind(const Bytes& haystack, word haystack_len, const Bytes& needle,
+               word needle_len, word start, word end);
 
 // Converts the bytes into a string, mapping each byte to two hex characters.
 RawObject bytesHex(Thread* thread, const Bytes& bytes, word length);
 
 // Like `bytesFind`, but returns the last starting index in [start, end) or -1.
-RawObject bytesRFind(const Bytes& haystack, word haystack_len,
-                     const Bytes& needle, word needle_len, word start,
-                     word end);
+word bytesRFind(const Bytes& haystack, word haystack_len, const Bytes& needle,
+                word needle_len, word start, word end);
 
 // Converts self into a string representation with single quote delimiters.
 RawObject bytesReprSingleQuotes(Thread* thread, const Bytes& self);

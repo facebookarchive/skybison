@@ -22,9 +22,9 @@ TEST_F(BytesBuiltinsTest, FindWithSameBytesReturnsZero) {
   Bytes haystack(&scope, runtime_.newBytesWithAll(haystack_bytes));
   word start = 0;
   word end = haystack.length();
-  Object result(&scope, bytesFind(haystack, haystack.length(), haystack,
-                                  haystack.length(), start, end));
-  EXPECT_TRUE(isIntEqualsWord(*result, 0));
+  word result = bytesFind(haystack, haystack.length(), haystack,
+                          haystack.length(), start, end);
+  EXPECT_EQ(result, 0);
 }
 
 TEST_F(BytesBuiltinsTest, FindWithWideBoundsReturnsIndex) {
@@ -35,9 +35,9 @@ TEST_F(BytesBuiltinsTest, FindWithWideBoundsReturnsIndex) {
   Bytes needle(&scope, runtime_.newBytesWithAll(needle_bytes));
   word start = -1000;
   word end = 123;
-  Object result(&scope, bytesFind(haystack, haystack.length(), needle,
-                                  needle.length(), start, end));
-  EXPECT_TRUE(isIntEqualsWord(*result, 2));
+  word result = bytesFind(haystack, haystack.length(), needle, needle.length(),
+                          start, end);
+  EXPECT_EQ(result, 2);
 }
 
 TEST_F(BytesBuiltinsTest, FindWithNegativeBoundsReturnsIndex) {
@@ -48,9 +48,9 @@ TEST_F(BytesBuiltinsTest, FindWithNegativeBoundsReturnsIndex) {
   Bytes needle(&scope, runtime_.newBytesWithAll(needle_bytes));
   word start = -5;
   word end = -2;
-  Object result(&scope, bytesFind(haystack, haystack.length(), needle,
-                                  needle.length(), start, end));
-  EXPECT_TRUE(isIntEqualsWord(*result, 2));
+  word result = bytesFind(haystack, haystack.length(), needle, needle.length(),
+                          start, end);
+  EXPECT_EQ(result, 2);
 }
 
 TEST_F(BytesBuiltinsTest, FindWithEmptyReturnsAdjustedStart) {
@@ -60,9 +60,9 @@ TEST_F(BytesBuiltinsTest, FindWithEmptyReturnsAdjustedStart) {
   Bytes needle(&scope, Bytes::empty());
   word start = -3;
   word end = -1;
-  Object result(&scope, bytesFind(haystack, haystack.length(), needle,
-                                  needle.length(), start, end));
-  EXPECT_TRUE(isIntEqualsWord(*result, 3));
+  word result = bytesFind(haystack, haystack.length(), needle, needle.length(),
+                          start, end);
+  EXPECT_EQ(result, 3);
 }
 
 TEST_F(BytesBuiltinsTest, FindWithEndLessThanStartReturnsNegativeOne) {
@@ -72,9 +72,9 @@ TEST_F(BytesBuiltinsTest, FindWithEndLessThanStartReturnsNegativeOne) {
   Bytes needle(&scope, Bytes::empty());
   word start = 3;
   word end = 2;
-  Object result(&scope, bytesFind(haystack, haystack.length(), needle,
-                                  needle.length(), start, end));
-  EXPECT_TRUE(isIntEqualsWord(*result, -1));
+  word result = bytesFind(haystack, haystack.length(), needle, needle.length(),
+                          start, end);
+  EXPECT_EQ(result, -1);
 }
 
 TEST_F(BytesBuiltinsTest, FindWithSingleCharReturnsFirstIndexInRange) {
@@ -84,9 +84,9 @@ TEST_F(BytesBuiltinsTest, FindWithSingleCharReturnsFirstIndexInRange) {
   Bytes needle(&scope, runtime_.newBytes(1, 100));
   word start = 1;
   word end = haystack.length();
-  Object result(&scope, bytesFind(haystack, haystack.length(), needle,
-                                  needle.length(), start, end));
-  EXPECT_TRUE(isIntEqualsWord(*result, 2));
+  word result = bytesFind(haystack, haystack.length(), needle, needle.length(),
+                          start, end);
+  EXPECT_EQ(result, 2);
 }
 
 TEST_F(BytesBuiltinsTest, RFindWithSameBytesReturnsZero) {
@@ -95,9 +95,9 @@ TEST_F(BytesBuiltinsTest, RFindWithSameBytesReturnsZero) {
   Bytes haystack(&scope, runtime_.newBytesWithAll(haystack_bytes));
   word start = 0;
   word end = haystack.length();
-  Object result(&scope, bytesRFind(haystack, haystack.length(), haystack,
-                                   haystack.length(), start, end));
-  EXPECT_TRUE(isIntEqualsWord(*result, 0));
+  word result = bytesRFind(haystack, haystack.length(), haystack,
+                           haystack.length(), start, end);
+  EXPECT_EQ(result, 0);
 }
 
 TEST_F(BytesBuiltinsTest, RFindWithWideBoundsReturnsIndex) {
@@ -108,9 +108,9 @@ TEST_F(BytesBuiltinsTest, RFindWithWideBoundsReturnsIndex) {
   Bytes needle(&scope, runtime_.newBytesWithAll(needle_bytes));
   word start = -1000;
   word end = 123;
-  Object result(&scope, bytesRFind(haystack, haystack.length(), needle,
-                                   needle.length(), start, end));
-  EXPECT_TRUE(isIntEqualsWord(*result, 2));
+  word result = bytesRFind(haystack, haystack.length(), needle, needle.length(),
+                           start, end);
+  EXPECT_EQ(result, 2);
 }
 
 TEST_F(BytesBuiltinsTest, RFindWithNegativeBoundsReturnsIndex) {
@@ -121,9 +121,9 @@ TEST_F(BytesBuiltinsTest, RFindWithNegativeBoundsReturnsIndex) {
   Bytes needle(&scope, runtime_.newBytesWithAll(needle_bytes));
   word start = -5;
   word end = -2;
-  Object result(&scope, bytesRFind(haystack, haystack.length(), needle,
-                                   needle.length(), start, end));
-  EXPECT_TRUE(isIntEqualsWord(*result, 2));
+  word result = bytesRFind(haystack, haystack.length(), needle, needle.length(),
+                           start, end);
+  EXPECT_EQ(result, 2);
 }
 
 TEST_F(BytesBuiltinsTest, RFindWithEmptyReturnsAdjustedEnd) {
@@ -133,9 +133,9 @@ TEST_F(BytesBuiltinsTest, RFindWithEmptyReturnsAdjustedEnd) {
   Bytes needle(&scope, Bytes::empty());
   word start = -3;
   word end = -1;
-  Object result(&scope, bytesRFind(haystack, haystack.length(), needle,
-                                   needle.length(), start, end));
-  EXPECT_TRUE(isIntEqualsWord(*result, 5));
+  word result = bytesRFind(haystack, haystack.length(), needle, needle.length(),
+                           start, end);
+  EXPECT_EQ(result, 5);
 }
 
 TEST_F(BytesBuiltinsTest, RFindWithEndLessThanStartReturnsNegativeOne) {
@@ -145,9 +145,9 @@ TEST_F(BytesBuiltinsTest, RFindWithEndLessThanStartReturnsNegativeOne) {
   Bytes needle(&scope, Bytes::empty());
   word start = 3;
   word end = 2;
-  Object result(&scope, bytesRFind(haystack, haystack.length(), needle,
-                                   needle.length(), start, end));
-  EXPECT_TRUE(isIntEqualsWord(*result, -1));
+  word result = bytesRFind(haystack, haystack.length(), needle, needle.length(),
+                           start, end);
+  EXPECT_EQ(result, -1);
 }
 
 TEST_F(BytesBuiltinsTest, RFindWithSingleCharReturnsLastIndexInRange) {
@@ -157,9 +157,9 @@ TEST_F(BytesBuiltinsTest, RFindWithSingleCharReturnsLastIndexInRange) {
   Bytes needle(&scope, runtime_.newBytes(1, 100));
   word start = 0;
   word end = 4;
-  Object result(&scope, bytesRFind(haystack, haystack.length(), needle,
-                                   needle.length(), start, end));
-  EXPECT_TRUE(isIntEqualsWord(*result, 2));
+  word result = bytesRFind(haystack, haystack.length(), needle, needle.length(),
+                           start, end);
+  EXPECT_EQ(result, 2);
 }
 
 TEST_F(BytesBuiltinsTest, DunderAddWithTooFewArgsRaisesTypeError) {

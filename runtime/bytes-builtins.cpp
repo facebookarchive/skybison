@@ -9,9 +9,8 @@
 
 namespace python {
 
-RawObject bytesFind(const Bytes& haystack, word haystack_len,
-                    const Bytes& needle, word needle_len, word start,
-                    word end) {
+word bytesFind(const Bytes& haystack, word haystack_len, const Bytes& needle,
+               word needle_len, word start, word end) {
   DCHECK_BOUND(haystack_len, haystack.length());
   DCHECK_BOUND(needle_len, needle.length());
   Slice::adjustSearchIndices(&start, &end, haystack_len);
@@ -21,10 +20,10 @@ RawObject bytesFind(const Bytes& haystack, word haystack_len,
       has_match = haystack.byteAt(i + j) == needle.byteAt(j);
     }
     if (has_match) {
-      return SmallInt::fromWord(i);
+      return i;
     }
   }
-  return SmallInt::fromWord(-1);
+  return -1;
 }
 
 RawObject bytesHex(Thread* thread, const Bytes& bytes, word length) {
@@ -38,9 +37,8 @@ RawObject bytesHex(Thread* thread, const Bytes& bytes, word length) {
   return runtime->newStrFromByteArray(buffer);
 }
 
-RawObject bytesRFind(const Bytes& haystack, word haystack_len,
-                     const Bytes& needle, word needle_len, word start,
-                     word end) {
+word bytesRFind(const Bytes& haystack, word haystack_len, const Bytes& needle,
+                word needle_len, word start, word end) {
   DCHECK_BOUND(haystack_len, haystack.length());
   DCHECK_BOUND(needle_len, needle.length());
   Slice::adjustSearchIndices(&start, &end, haystack_len);
@@ -50,10 +48,10 @@ RawObject bytesRFind(const Bytes& haystack, word haystack_len,
       has_match = haystack.byteAt(i + j) == needle.byteAt(j);
     }
     if (has_match) {
-      return SmallInt::fromWord(i);
+      return i;
     }
   }
-  return SmallInt::fromWord(-1);
+  return -1;
 }
 
 static RawObject bytesReprWithDelimiter(Thread* thread, const Bytes& self,

@@ -616,8 +616,9 @@ RawObject UnderBuiltinsModule::underByteslikeFindByteslike(Thread* thread,
   Object stop_obj(&scope, args.get(3));
   Int start(&scope, intUnderlying(thread, start_obj));
   Int end(&scope, intUnderlying(thread, stop_obj));
-  return bytesFind(haystack, haystack_len, needle, needle_len,
-                   start.asWordSaturated(), end.asWordSaturated());
+  return SmallInt::fromWord(bytesFind(haystack, haystack_len, needle,
+                                      needle_len, start.asWordSaturated(),
+                                      end.asWordSaturated()));
 }
 
 RawObject UnderBuiltinsModule::underByteslikeFindInt(Thread* thread,
@@ -640,14 +641,16 @@ RawObject UnderBuiltinsModule::underByteslikeFindInt(Thread* thread,
   Int end(&scope, intUnderlying(thread, stop_obj));
   if (runtime->isInstanceOfBytes(*self_obj)) {
     Bytes haystack(&scope, bytesUnderlying(thread, self_obj));
-    return bytesFind(haystack, haystack.length(), needle, needle.length(),
-                     start.asWordSaturated(), end.asWordSaturated());
+    return SmallInt::fromWord(
+        bytesFind(haystack, haystack.length(), needle, needle.length(),
+                  start.asWordSaturated(), end.asWordSaturated()));
   }
   if (runtime->isInstanceOfByteArray(*self_obj)) {
     ByteArray self(&scope, *self_obj);
     Bytes haystack(&scope, self.bytes());
-    return bytesFind(haystack, self.numItems(), needle, needle.length(),
-                     start.asWordSaturated(), end.asWordSaturated());
+    return SmallInt::fromWord(
+        bytesFind(haystack, self.numItems(), needle, needle.length(),
+                  start.asWordSaturated(), end.asWordSaturated()));
   }
   UNIMPLEMENTED("bytes-like other than bytes, bytearray");
 }
@@ -690,8 +693,9 @@ RawObject UnderBuiltinsModule::underByteslikeRFindByteslike(Thread* thread,
   Object stop_obj(&scope, args.get(3));
   Int start(&scope, intUnderlying(thread, start_obj));
   Int end(&scope, intUnderlying(thread, stop_obj));
-  return bytesRFind(haystack, haystack_len, needle, needle_len,
-                    start.asWordSaturated(), end.asWordSaturated());
+  return SmallInt::fromWord(bytesRFind(haystack, haystack_len, needle,
+                                       needle_len, start.asWordSaturated(),
+                                       end.asWordSaturated()));
 }
 
 RawObject UnderBuiltinsModule::underByteslikeRFindInt(Thread* thread,
@@ -715,14 +719,16 @@ RawObject UnderBuiltinsModule::underByteslikeRFindInt(Thread* thread,
   Int end(&scope, intUnderlying(thread, stop_obj));
   if (runtime->isInstanceOfBytes(*self_obj)) {
     Bytes haystack(&scope, bytesUnderlying(thread, self_obj));
-    return bytesRFind(haystack, haystack.length(), needle, needle.length(),
-                      start.asWordSaturated(), end.asWordSaturated());
+    return SmallInt::fromWord(
+        bytesRFind(haystack, haystack.length(), needle, needle.length(),
+                   start.asWordSaturated(), end.asWordSaturated()));
   }
   if (runtime->isInstanceOfByteArray(*self_obj)) {
     ByteArray self(&scope, *self_obj);
     Bytes haystack(&scope, self.bytes());
-    return bytesRFind(haystack, self.numItems(), needle, needle.length(),
-                      start.asWordSaturated(), end.asWordSaturated());
+    return SmallInt::fromWord(
+        bytesRFind(haystack, self.numItems(), needle, needle.length(),
+                   start.asWordSaturated(), end.asWordSaturated()));
   }
   UNIMPLEMENTED("bytes-like other than bytes, bytearray");
 }
