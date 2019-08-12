@@ -335,8 +335,8 @@ RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
   }
   Type self(&scope, *self_obj);
 
-  Object dunder_new(
-      &scope, runtime->attributeAtById(thread, self, SymbolId::kDunderNew));
+  Object dunder_new_name(&scope, runtime->symbols()->DunderNew());
+  Object dunder_new(&scope, typeGetAttribute(thread, self, dunder_new_name));
   CHECK(!dunder_new.isError(), "self must have __new__");
   frame->pushValue(*dunder_new);
   Tuple call_args(&scope, runtime->newTuple(pargs.length() + 1));
@@ -354,8 +354,8 @@ RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
     return *instance;
   }
 
-  Object dunder_init(
-      &scope, runtime->attributeAtById(thread, self, SymbolId::kDunderInit));
+  Object dunder_init_name(&scope, runtime->symbols()->DunderInit());
+  Object dunder_init(&scope, typeGetAttribute(thread, self, dunder_init_name));
   CHECK(!dunder_init.isError(), "self must have __init__");
   frame->pushValue(*dunder_init);
   call_args.atPut(0, *instance);
