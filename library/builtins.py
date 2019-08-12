@@ -42,6 +42,7 @@ _dict_check = _dict_check  # noqa: F821
 _dict_guard = _dict_guard  # noqa: F821
 _dict_lookup = _dict_lookup  # noqa: F821
 _dict_lookup_next = _dict_lookup_next  # noqa: F821
+_dict_popitem = _dict_popitem  # noqa: F821
 _dict_update_mapping = _dict_update_mapping  # noqa: F821
 _divmod = _divmod  # noqa: F821
 _float_check = _float_check  # noqa: F821
@@ -1811,6 +1812,13 @@ class dict(bootstrap=True):
         if key in self:
             dict.__delitem__(self, key)
         return value
+
+    def popitem(self):
+        _dict_guard(self)
+        result = _dict_popitem(self)
+        if result is None:
+            raise KeyError("popitem(): dictionary is empty")
+        return result
 
     def setdefault(self, key, default=None):
         _dict_guard(self)

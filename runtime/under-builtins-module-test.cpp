@@ -271,6 +271,36 @@ dc = Foo(b"DC")
   EXPECT_TRUE(isBytesEqualsCStr(result, "AC-DC"));
 }
 
+TEST_F(UnderBuiltinsModuleTest,
+       UnderDictPopitemRemovesAvailableItemAndReturnsTupleOfKeyAndValue) {
+  HandleScope scope(thread_);
+  // Create {"a": 1, "b": 2}.
+  Dict dict(&scope, runtime_.newDict());
+  Str a(&scope, runtime_.newStrFromCStr("a"));
+  Object a_value(&scope, SmallInt::fromWord(1));
+  Str b(&scope, runtime_.newStrFromCStr("b"));
+  Object b_value(&scope, SmallInt::fromWord(2));
+  runtime_.dictAtPut(thread_, dict, a, a_value);
+  runtime_.dictAtPut(thread_, dict, b, b_value);
+
+  Tuple result(&scope, runBuiltin(UnderBuiltinsModule::underDictPopitem, dict));
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "a"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 1));
+  EXPECT_TRUE(runtime_.dictAt(thread_, dict, a).isErrorNotFound());
+  EXPECT_EQ(dict.numItems(), 1);
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderDictPopitemReturnsNoneTypeWhenNoItemIsAvailable) {
+  HandleScope scope(thread_);
+  // Create {}.
+  Dict dict(&scope, runtime_.newDict());
+  ASSERT_EQ(dict.numItems(), 0);
+  EXPECT_TRUE(
+      runBuiltin(UnderBuiltinsModule::underDictPopitem, dict).isNoneType());
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderDivmodReturnsQuotientAndDividend) {
   HandleScope scope(thread_);
   Int number(&scope, SmallInt::fromWord(1234));

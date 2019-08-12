@@ -930,6 +930,28 @@ class DictTests(unittest.TestCase):
         with self.assertRaises(UserWarning):
             dict.__delitem__({}, C())
 
+    def test_popitem_with_non_dict_raise_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            dict.popitem(None)
+        self.assertIn(
+            "'popitem' requires a 'dict' object but received a 'NoneType'",
+            str(context.exception),
+        )
+
+    def test_popitem_with_empty_dict_raises_key_error(self):
+        d = {}
+        with self.assertRaises(KeyError) as context:
+            dict.popitem(d)
+        self.assertIn("popitem(): dictionary is empty", str(context.exception))
+
+    def test_popitem_deletes_random_item_and_returns_it(self):
+        d = {"a": 1, "b": 2}
+        self.assertEqual(len(d), 2)
+        key0, value0 = dict.popitem(d)
+        key1, value1 = dict.popitem(d)
+        self.assertEqual({key0: value0, key1: value1}, {"a": 1, "b": 2})
+        self.assertEqual(len(d), 0)
+
     def test_update_with_tuple_keys_propagates_exceptions_from_dunder_hash(self):
         class C:
             def __hash__(self):
