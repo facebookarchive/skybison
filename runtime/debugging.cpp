@@ -359,6 +359,8 @@ std::ostream& operator<<(std::ostream& os, RawObject value) {
       return os << List::cast(value);
     case LayoutId::kModule:
       return os << Module::cast(value);
+    case LayoutId::kMutableBytes:
+      return os << Bytes::cast(value);
     case LayoutId::kNoneType:
       return os << NoneType::cast(value);
     case LayoutId::kSmallBytes:
