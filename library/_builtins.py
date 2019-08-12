@@ -129,6 +129,11 @@ def _classmethod_isabstract(self):
 
 
 @_patch
+def _code_guard(c):
+    pass
+
+
+@_patch
 def _complex_imag(c):
     pass
 

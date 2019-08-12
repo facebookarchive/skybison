@@ -96,6 +96,7 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
     {SymbolId::kBytesWarning, LayoutId::kBytesWarning},
     {SymbolId::kChildProcessError, LayoutId::kChildProcessError},
     {SymbolId::kClassmethod, LayoutId::kClassMethod},
+    {SymbolId::kCode, LayoutId::kCode},
     {SymbolId::kComplex, LayoutId::kComplex},
     {SymbolId::kConnectionAbortedError, LayoutId::kConnectionAbortedError},
     {SymbolId::kConnectionError, LayoutId::kConnectionError},

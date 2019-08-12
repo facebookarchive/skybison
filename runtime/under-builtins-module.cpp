@@ -91,6 +91,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderByteslikeRfindInt, underByteslikeRFindInt},
     {SymbolId::kUnderClassMethod, underClassMethod},
     {SymbolId::kUnderClassMethodIsAbstract, underClassMethodIsAbstract},
+    {SymbolId::kUnderCodeGuard, underCodeGuard},
     {SymbolId::kUnderComplexImag, underComplexImag},
     {SymbolId::kUnderComplexReal, underComplexReal},
     {SymbolId::kUnderDelattr, underDelattr},
@@ -768,6 +769,15 @@ RawObject UnderBuiltinsModule::underClassMethodIsAbstract(Thread* thread,
   ClassMethod self(&scope, args.get(0));
   Object func(&scope, self.function());
   return isAbstract(thread, func);
+}
+
+RawObject UnderBuiltinsModule::underCodeGuard(Thread* thread, Frame* frame,
+                                              word nargs) {
+  Arguments args(frame, nargs);
+  if (args.get(0).isCode()) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kCode);
 }
 
 RawObject UnderBuiltinsModule::underComplexImag(Thread* thread, Frame* frame,

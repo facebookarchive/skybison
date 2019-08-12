@@ -49,6 +49,7 @@ class UnderBuiltinsModule {
   static RawObject underClassMethod(Thread* thread, Frame* frame, word nargs);
   static RawObject underClassMethodIsAbstract(Thread* thread, Frame* frame,
                                               word nargs);
+  static RawObject underCodeGuard(Thread* thread, Frame* frame, word nargs);
   static RawObject underComplexImag(Thread* thread, Frame* frame, word nargs);
   static RawObject underComplexReal(Thread* thread, Frame* frame, word nargs);
   static RawObject underDelattr(Thread* thread, Frame* frame, word nargs);

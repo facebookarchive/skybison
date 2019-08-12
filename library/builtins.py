@@ -30,6 +30,7 @@ _byteslike_rfind_byteslike = _byteslike_rfind_byteslike  # noqa: F821
 _byteslike_rfind_int = _byteslike_rfind_int  # noqa: F821
 _classmethod = _classmethod  # noqa: F821
 _classmethod_isabstract = _classmethod_isabstract  # noqa: F821
+_code_guard = _code_guard  # noqa: F821
 _complex_imag = _complex_imag  # noqa: F821
 _complex_real = _complex_real  # noqa: F821
 _delattr = _delattr  # noqa: F821
@@ -184,6 +185,25 @@ class classmethod(bootstrap=True):
 
     def __new__(cls, fn):
         pass
+
+
+class code(bootstrap=True):
+    def __hash__(self):
+        _code_guard(self)
+        result = (
+            hash(self.co_name)
+            ^ hash(self.co_code)
+            ^ hash(self.co_consts)
+            ^ hash(self.co_names)
+            ^ hash(self.co_varnames)
+            ^ hash(self.co_freevars)
+            ^ hash(self.co_cellvars)
+            ^ self.co_argcount
+            ^ self.co_kwonlyargcount
+            ^ self.co_nlocals
+            ^ self.co_flags
+        )
+        return result if result != -1 else -2
 
 
 class property(bootstrap=True):

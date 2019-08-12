@@ -173,6 +173,7 @@ class Runtime;
   V(UnderClassMethodIsAbstract, "_classmethod_isabstract")                     \
   V(UnderClosed, "_closed")                                                    \
   V(UnderCodecs, "_codecs")                                                    \
+  V(UnderCodeGuard, "_code_guard")                                             \
   V(UnderComplexImag, "_complex_imag")                                         \
   V(UnderComplexReal, "_complex_real")                                         \
   V(UnderDelattr, "_delattr")                                                  \

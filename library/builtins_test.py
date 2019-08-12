@@ -790,6 +790,32 @@ class ClassMethodTests(unittest.TestCase):
         self.assertIs(method.__isabstractmethod__, True)
 
 
+class CodeTests(unittest.TestCase):
+    def test_dunder_hash_with_non_code_object_raises_type_error(self):
+        from types import CodeType
+
+        with self.assertRaises(TypeError) as context:
+            CodeType.__hash__(None)
+        self.assertIn(
+            "'__hash__' requires a 'code' object but received a 'NoneType'",
+            str(context.exception),
+        )
+
+    def test_dunder_hash_returns_stable_value_on_different_code_objects(self):
+        def foo():
+            return 4
+
+        first_foo_code = foo.__code__
+
+        def foo():
+            return 4
+
+        second_foo_code = foo.__code__
+
+        self.assertIsNot(first_foo_code, second_foo_code)
+        self.assertEqual(hash(first_foo_code), hash(second_foo_code))
+
+
 class DelattrTests(unittest.TestCase):
     def test_non_str_as_name_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
