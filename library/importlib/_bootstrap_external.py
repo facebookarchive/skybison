@@ -24,6 +24,8 @@ work. One should use importlib as the public-facing version of this module.
 
 # Avoid lint warnings. These values are inserted directly into the namespace
 # @lint-ignore-every PYTHON3COMPATIMPORTS
+# flake8: noqa
+# fmt: off
 _io = None
 _os = None
 _relax_case = None
@@ -61,14 +63,21 @@ def _make_relax_case():
     return _relax_case
 
 
-def _w_long(x):
+def _pack_uint32(x):
     """Convert a 32-bit integer to little-endian."""
-    return (int(x) & 0xFFFFFFFF).to_bytes(4, "little")
+    return (int(x) & 0xFFFFFFFF).to_bytes(4, 'little')
 
 
-def _r_long(int_bytes):
+def _unpack_uint32(data):
     """Convert 4 bytes in little-endian to an integer."""
-    return int.from_bytes(int_bytes, "little")
+    assert len(data) == 4
+    return int.from_bytes(data, 'little')
+
+
+def _unpack_uint16(data):
+    """Convert 2 bytes in little-endian to an integer."""
+    assert len(data) == 2
+    return int.from_bytes(data, 'little')
 
 
 def _path_join(*path_parts):
@@ -490,7 +499,7 @@ def _validate_bytecode_header(data, source_stats=None, name=None, path=None):
         except KeyError:
             pass
         else:
-            if _r_long(raw_timestamp) != source_mtime:
+            if _unpack_uint32(raw_timestamp) != source_mtime:
                 message = f"bytecode is stale for {repr(name)}"
                 _bootstrap._verbose_message(message)
                 raise ImportError(message, **exc_details)
@@ -499,7 +508,7 @@ def _validate_bytecode_header(data, source_stats=None, name=None, path=None):
         except KeyError:
             pass
         else:
-            if _r_long(raw_size) != source_size:
+            if _unpack_uint32(raw_size) != source_size:
                 raise ImportError(f"bytecode is stale for {repr(name)}", **exc_details)
     return data[12:]
 
@@ -522,8 +531,8 @@ def _code_to_bytecode(code, mtime=0, source_size=0):
     """Compile a code object into bytecode for writing out to a byte-compiled
     file."""
     data = bytearray(MAGIC_NUMBER)
-    data.extend(_w_long(mtime))
-    data.extend(_w_long(source_size))
+    data.extend(_pack_uint32(mtime))
+    data.extend(_pack_uint32(source_size))
     data.extend(marshal.dumps(code))
     return data
 
