@@ -9,6 +9,12 @@
 
 #include "globals.h"
 
+#if defined(NDEBUG) && !defined(DCHECK_ALWAYS_ON)
+#define DCHECK_IS_ON() 0
+#else
+#define DCHECK_IS_ON() 1
+#endif
+
 #define CHECK(expr, ...)                                                       \
   do {                                                                         \
     if (!(expr)) {                                                             \
@@ -44,7 +50,11 @@
     }                                                                          \
   } while (0)
 
-#ifdef NDEBUG
+#if DCHECK_IS_ON()
+#define DCHECK(...) CHECK(__VA_ARGS__)
+#define DCHECK_BOUND(val, high) CHECK_BOUND(val, high)
+#define DCHECK_INDEX(index, high) CHECK_INDEX(index, high)
+#else
 #define DCHECK(...)                                                            \
   if (false) {                                                                 \
     CHECK(__VA_ARGS__);                                                        \
@@ -57,10 +67,6 @@
   if (false) {                                                                 \
     CHECK_INDEX(index, high);                                                  \
   }
-#else
-#define DCHECK(...) CHECK(__VA_ARGS__)
-#define DCHECK_BOUND(val, high) CHECK_BOUND(val, high)
-#define DCHECK_INDEX(index, high) CHECK_INDEX(index, high)
 #endif
 
 #define UNIMPLEMENTED(...)                                                     \
