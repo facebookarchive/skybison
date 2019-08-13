@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""The sys module"""
 
 
 # These values are all injected by our boot process. flake8 has no knowledge
@@ -11,6 +10,13 @@ _patch = _patch  # noqa: F821
 _stderr_fd = _stderr_fd  # noqa: F821
 _stdout_fd = _stdout_fd  # noqa: F821
 executable = executable  # noqa: F821
+
+
+class _FlagsStructSeq:
+    # TODO(T39224400): Implement flags as a structsequence
+    def __init__(self):
+        self.verbose = 0
+        self.bytes_warning = 0
 
 
 class _IOStream:
@@ -28,59 +34,27 @@ class _IOStream:
         _os_write(self._fd, text_bytes)
 
 
-def exit(code=0):
-    raise SystemExit(code)
-
-
-def getfilesystemencoding():
-    # TODO(T40363016): Allow arbitrary encodings instead of defaulting to utf-8.
-    return "utf-8"
-
-
-def getfilesystemencodeerrors():
-    # TODO(T40363016): Allow arbitrary encodings and error handlings.
-    return "surrogateescape"
-
-
-meta_path = []
-
-
-# TODO(T42692043) Put the standard library into the python binary instead.
-path = ["", _base_dir + "/library", _base_dir + "/third-party/cpython/Lib"]
-
-
-path_hooks = []
-
-
-path_importer_cache = {}
-
-
-stdout = _IOStream(_stdout_fd)
-stderr = _IOStream(_stderr_fd)
-
-
-# TODO(T39224400): Implement flags as a structsequence
-class FlagsStructSeq:
-    def __init__(self):
-        self.verbose = 0
-        self.bytes_warning = 0
-
-
-flags = FlagsStructSeq()
-
-
-# TODO(T40871632): Add sys.implementation as a namespace object
-class ImplementationType:
+class _ImplementationType:
+    # TODO(T40871632): Add sys.implementation as a namespace object
     def __init__(self):
         # TODO(T40871490): Cache compiles *.py files to a __cache__ directory
         # Setting cache_tag to None avoids caching or searching for cached files
         self.cache_tag = None
 
 
-implementation = ImplementationType()
+@_patch
+def _getframe_code(depth=0):
+    pass
 
 
-dont_write_bytecode = False
+@_patch
+def _getframe_globals(depth=0):
+    pass
+
+
+@_patch
+def _getframe_lineno(depth=0) -> int:
+    pass
 
 
 def displayhook(value):
@@ -104,14 +78,34 @@ def displayhook(value):
     builtins._ = value
 
 
-@_patch
-def excepthook(exc, value, tb):
-    pass
+dont_write_bytecode = False
 
 
 @_patch
 def exc_info():
     pass
+
+
+@_patch
+def excepthook(exc, value, tb):
+    pass
+
+
+def exit(code=0):
+    raise SystemExit(code)
+
+
+flags = _FlagsStructSeq()
+
+
+def getfilesystemencodeerrors():
+    # TODO(T40363016): Allow arbitrary encodings and error handlings.
+    return "surrogateescape"
+
+
+def getfilesystemencoding():
+    # TODO(T40363016): Allow arbitrary encodings instead of defaulting to utf-8.
+    return "utf-8"
 
 
 def getsizeof(object, default=_Unbound):
@@ -133,23 +127,32 @@ def getsizeof(object, default=_Unbound):
     return int(result)
 
 
-@_patch
-def _getframe_code(depth=0):
-    pass
+implementation = _ImplementationType()
 
 
-@_patch
-def _getframe_globals(depth=0):
-    pass
+meta_path = []
 
 
-@_patch
-def _getframe_lineno(depth=0) -> int:
-    pass
+# TODO(T42692043) Put the standard library into the python binary instead.
+path = ["", _base_dir + "/library", _base_dir + "/third-party/cpython/Lib"]
 
 
-warnoptions = []
+path_hooks = []
+
+
+path_importer_cache = {}
 
 
 ps1 = ">>> "
+
+
 ps2 = "... "
+
+
+stderr = _IOStream(_stderr_fd)
+
+
+stdout = _IOStream(_stdout_fd)
+
+
+warnoptions = []
