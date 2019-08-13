@@ -20,6 +20,8 @@
 #include "str-builtins.h"
 #include "tuple-builtins.h"
 #include "type-builtins.h"
+#include "unicode.h"
+#include "vector.h"
 
 namespace python {
 
@@ -84,6 +86,8 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderBytesLen, underBytesLen},
     {SymbolId::kUnderBytesMaketrans, underBytesMaketrans},
     {SymbolId::kUnderBytesRepeat, underBytesRepeat},
+    {SymbolId::kUnderBytesSplit, underBytesSplit},
+    {SymbolId::kUnderBytesSplitWhitespace, underBytesSplitWhitespace},
     {SymbolId::kUnderByteslikeEndsWith, underByteslikeEndsWith},
     {SymbolId::kUnderByteslikeFindByteslike, underByteslikeFindByteslike},
     {SymbolId::kUnderByteslikeFindInt, underByteslikeFindInt},
@@ -528,6 +532,139 @@ RawObject UnderBuiltinsModule::underBytesRepeat(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(LayoutId::kValueError, "negative count");
   }
   return thread->runtime()->bytesRepeat(thread, self, self.length(), count);
+}
+
+RawObject UnderBuiltinsModule::underBytesSplit(Thread* thread, Frame* frame,
+                                               word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Object sep_obj(&scope, args.get(1));
+  Object maxsplit_obj(&scope, args.get(2));
+  Bytes self(&scope, bytesUnderlying(thread, self_obj));
+  Int maxsplit_int(&scope, intUnderlying(thread, maxsplit_obj));
+  if (maxsplit_int.numDigits() > 1) {
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "Python int too large to convert to C ssize_t");
+  }
+  word maxsplit = maxsplit_int.asWord();
+  if (maxsplit < 0) {
+    maxsplit = kMaxWord;
+  }
+  word sep_len;
+  Runtime* runtime = thread->runtime();
+  if (runtime->isInstanceOfBytes(*sep_obj)) {
+    Bytes sep(&scope, bytesUnderlying(thread, sep_obj));
+    sep_obj = *sep;
+    sep_len = sep.length();
+  } else if (runtime->isInstanceOfByteArray(*sep_obj)) {
+    ByteArray sep(&scope, *sep_obj);
+    sep_obj = sep.bytes();
+    sep_len = sep.numItems();
+  } else {
+    // TODO(T38246066): support buffer protocol
+    UNIMPLEMENTED("bytes-like other than bytes or bytearray");
+  }
+  if (sep_len == 0) {
+    return thread->raiseWithFmt(LayoutId::kValueError, "empty separator");
+  }
+  Bytes sep(&scope, *sep_obj);
+  word self_len = self.length();
+
+  // First pass: calculate the length of the result list.
+  word splits = 0;
+  word start = 0;
+  while (splits < maxsplit) {
+    word end = bytesFind(self, self_len, sep, sep_len, start, self_len);
+    if (end < 0) {
+      break;
+    }
+    splits++;
+    start = end + sep_len;
+  }
+  word result_len = splits + 1;
+
+  // Second pass: write subsequences into result list.
+  List result(&scope, runtime->newList());
+  Tuple buffer(&scope, runtime->newTuple(result_len));
+  start = 0;
+  for (word i = 0; i < splits; i++) {
+    word end = bytesFind(self, self_len, sep, sep_len, start, self_len);
+    DCHECK(end != -1, "already found in first pass");
+    buffer.atPut(i, runtime->bytesSubseq(thread, self, start, end - start));
+    start = end + sep_len;
+  }
+  buffer.atPut(splits,
+               runtime->bytesSubseq(thread, self, start, self_len - start));
+  result.setItems(*buffer);
+  result.setNumItems(result_len);
+  return *result;
+}
+
+RawObject UnderBuiltinsModule::underBytesSplitWhitespace(Thread* thread,
+                                                         Frame* frame,
+                                                         word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Object maxsplit_obj(&scope, args.get(1));
+  Bytes self(&scope, bytesUnderlying(thread, self_obj));
+  Int maxsplit_int(&scope, intUnderlying(thread, maxsplit_obj));
+  if (maxsplit_int.numDigits() > 1) {
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "Python int too large to convert to C ssize_t");
+  }
+  word self_len = self.length();
+  word maxsplit = maxsplit_int.asWord();
+  if (maxsplit < 0) {
+    maxsplit = kMaxWord;
+  }
+
+  // First pass: calculate the length of the result list.
+  word splits = 0;
+  word index = 0;
+  while (splits < maxsplit) {
+    while (index < self_len && isAsciiSpace(self.byteAt(index))) {
+      index++;
+    }
+    if (index == self_len) break;
+    index++;
+    while (index < self_len && !isAsciiSpace(self.byteAt(index))) {
+      index++;
+    }
+    splits++;
+  }
+  while (index < self_len && isAsciiSpace(self.byteAt(index))) {
+    index++;
+  }
+  bool has_remaining = index < self_len;
+  word result_len = has_remaining ? splits + 1 : splits;
+
+  // Second pass: write subsequences into result list.
+  Runtime* runtime = thread->runtime();
+  List result(&scope, runtime->newList());
+  Tuple buffer(&scope, runtime->newTuple(result_len));
+  index = 0;
+  for (word i = 0; i < splits; i++) {
+    while (isAsciiSpace(self.byteAt(index))) {
+      index++;
+    }
+    word start = index++;
+    while (!isAsciiSpace(self.byteAt(index))) {
+      index++;
+    }
+    buffer.atPut(i, runtime->bytesSubseq(thread, self, start, index - start));
+  }
+  if (has_remaining) {
+    while (isAsciiSpace(self.byteAt(index))) {
+      index++;
+    }
+    buffer.atPut(splits,
+                 runtime->bytesSubseq(thread, self, index, self_len - index));
+  }
+  result.setItems(*buffer);
+  result.setNumItems(result_len);
+  return *result;
 }
 
 RawObject UnderBuiltinsModule::underByteslikeEndsWith(Thread* thread,

@@ -716,6 +716,69 @@ class BytesTests(unittest.TestCase):
             haystack.rindex(needle, 0, 2)
         self.assertEqual(str(context.exception), "subsection not found")
 
+    def test_split_with_non_bytes_self_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytes.split("foo bar")
+        self.assertIn(
+            "'split' requires a 'bytes' object but received a 'str'",
+            str(context.exception),
+        )
+
+    def test_split_with_non_byteslike_sep_raises_type_error(self):
+        b = b"foo bar"
+        sep = ""
+        with self.assertRaises(TypeError) as context:
+            b.split(sep)
+        self.assertEqual(
+            str(context.exception), "a bytes-like object is required, not 'str'"
+        )
+
+    def test_split_with_non_index_maxsplit_raises_type_error(self):
+        b = b"foo bar"
+        with self.assertRaises(TypeError) as context:
+            b.split(maxsplit=None)
+        self.assertEqual(
+            str(context.exception),
+            "'NoneType' object cannot be interpreted as an integer",
+        )
+
+    def test_split_with_large_int_raises_overflow_error(self):
+        b = b"foo bar"
+        with self.assertRaises(OverflowError) as context:
+            b.split(maxsplit=2 ** 64)
+        self.assertEqual(
+            str(context.exception), "Python int too large to convert to C ssize_t"
+        )
+
+    def test_split_with_empty_sep_raises_value_error(self):
+        b = b"foo bar"
+        with self.assertRaises(ValueError) as context:
+            b.split(bytearray())
+        self.assertEqual(str(context.exception), "empty separator")
+
+    def test_split_empty_bytes_without_sep_returns_empty_list(self):
+        b = b""
+        self.assertEqual(b.split(), [])
+
+    def test_split_empty_bytes_with_sep_returns_list_of_empty_bytes(self):
+        b = b""
+        self.assertEqual(b.split(b"a"), [b""])
+
+    def test_split_without_sep_splits_whitespace(self):
+        b = b" foo bar  \t \nbaz\r\n   "
+        self.assertEqual(b.split(), [b"foo", b"bar", b"baz"])
+
+    def test_split_with_none_sep_splits_whitespace_maxsplit_times(self):
+        b = b" foo bar  \t \nbaz\r\n   "
+        self.assertEqual(b.split(None, 2), [b"foo", b"bar", b"baz\r\n   "])
+
+    def test_split_by_byteslike_returns_list(self):
+        b = b"foo bar baz"
+        self.assertEqual(b.split(b" "), [b"foo", b"bar", b"baz"])
+        self.assertEqual(b.split(bytearray(b"o")), [b"f", b"", b" bar baz"])
+        self.assertEqual(b.split(b"ba"), [b"foo ", b"r ", b"z"])
+        self.assertEqual(b.split(b"not found"), [b])
+
 
 class ChrTests(unittest.TestCase):
     def test_returns_string(self):

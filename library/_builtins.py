@@ -94,6 +94,16 @@ def _bytes_repeat(self, count):
 
 
 @_patch
+def _bytes_split(self, sep, maxsplit):
+    pass
+
+
+@_patch
+def _bytes_split_whitespace(self, maxsplit):
+    pass
+
+
+@_patch
 def _byteslike_endswith(self, suffix, start, end):
     pass
 

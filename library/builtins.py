@@ -23,6 +23,8 @@ _bytes_join = _bytes_join  # noqa: F821
 _bytes_len = _bytes_len  # noqa: F821
 _bytes_maketrans = _bytes_maketrans  # noqa: F821
 _bytes_repeat = _bytes_repeat  # noqa: F821
+_bytes_split = _bytes_split  # noqa: F821
+_bytes_split_whitespace = _bytes_split_whitespace  # noqa: F821
 _byteslike_endswith = _byteslike_endswith  # noqa: F821
 _byteslike_find_byteslike = _byteslike_find_byteslike  # noqa: F821
 _byteslike_find_int = _byteslike_find_int  # noqa: F821
@@ -1649,7 +1651,15 @@ class bytes(bootstrap=True):
         _unimplemented()
 
     def split(self, sep=None, maxsplit=-1):
-        _unimplemented()
+        _bytes_guard(self)
+        if not _int_check(maxsplit):
+            maxsplit = _index(maxsplit)
+        if sep is None:
+            return _bytes_split_whitespace(self, maxsplit)
+        # TODO(T38246066): support buffer protocol
+        if _bytes_check(sep) or _bytearray_check(sep):
+            return _bytes_split(self, sep, maxsplit)
+        raise TypeError(f"a bytes-like object is required, not '{_type(sep).__name__}'")
 
     def splitlines(self, keepends=False):
         _unimplemented()
