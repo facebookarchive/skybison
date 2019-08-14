@@ -524,28 +524,32 @@ template <typename T, typename F>
 static inline int32_t decodeCodePoint(T src, F at, word src_length, word index,
                                       word* char_length) {
   DCHECK_INDEX(index, src_length);
-  byte ch0 = (src->*at)(index);
-  if (ch0 <= kMaxASCII) {
+  byte b0 = (src->*at)(index);
+  if (b0 <= kMaxASCII) {
     *char_length = 1;
-    return ch0;
+    return b0;
   }
   DCHECK_INDEX(index + 1, src_length);
-  byte ch1 = (src->*at)(index + 1) & byte{0x3F};
-  if ((ch0 & 0xE0) == 0xC0) {
+  byte b1 = (src->*at)(index + 1) & byte{0x3F};
+  // 0b110xxxxx begins a sequence with one continuation byte.
+  if (b0 < 0xE0) {
+    DCHECK(b0 >= 0xC, "unexpected continuation byte");
     *char_length = 2;
-    return ((ch0 & 0x1F) << 6) | ch1;
+    return ((b0 & 0x1F) << 6) | b1;
   }
   DCHECK_INDEX(index + 2, src_length);
-  byte ch2 = (src->*at)(index + 2) & byte{0x3F};
-  if ((ch0 & 0xF0) == 0xE0) {
+  byte b2 = (src->*at)(index + 2) & byte{0x3F};
+  // 0b1110xxxx starts a sequence with two continuation bytes.
+  if (b0 < 0xF0) {
     *char_length = 3;
-    return ((ch0 & 0xF) << 12) | (ch1 << 6) | ch2;
+    return ((b0 & 0xF) << 12) | (b1 << 6) | b2;
   }
-  DCHECK((ch0 & 0xF8) == 0xF0, "invalid code unit");
+  // 0b11110xxx starts a sequence with three continuation bytes.
+  DCHECK((b0 & 0xF8) == 0xF0, "invalid code unit");
   DCHECK_INDEX(index + 2, src_length);
-  byte ch3 = (src->*at)(index + 3) & byte{0x3F};
+  byte b3 = (src->*at)(index + 3) & byte{0x3F};
   *char_length = 4;
-  return ((ch0 & 0x7) << 18) | (ch1 << 12) | (ch2 << 6) | ch3;
+  return ((b0 & 0x7) << 18) | (b1 << 12) | (b2 << 6) | b3;
 }
 
 int32_t RawStr::codePointAt(word index, word* char_length) const {
