@@ -1119,9 +1119,12 @@ class RawMutableBytes : public RawLargeBytes {
   void byteAtPut(word index, byte value) const;
 
   // Replace the bytes from index with len bytes from src
-  void replaceFromWith(word index, RawBytes src, word len);
+  void replaceFromWith(word index, RawBytes src, word len) const;
+  // Replace the bytes from index with len bytes from string src
+  void replaceFromWithStr(word index, RawStr src, word char_length) const;
 
-  RawObject becomeImmutable();
+  RawObject becomeImmutable() const;
+  RawObject becomeStr() const;
 
   RAW_OBJECT_COMMON(MutableBytes);
 };

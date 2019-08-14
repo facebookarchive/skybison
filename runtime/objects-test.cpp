@@ -17,6 +17,7 @@ using IntTest = RuntimeFixture;
 using LargeStrTest = RuntimeFixture;
 using ListTest = RuntimeFixture;
 using ModulesTest = RuntimeFixture;
+using MutableBytesTest = RuntimeFixture;
 using SliceTest = RuntimeFixture;
 using StrTest = RuntimeFixture;
 using StringTest = RuntimeFixture;
@@ -305,6 +306,47 @@ TEST_F(ModulesTest, TestCreate) {
   Module module(&scope, runtime_.newModule(name));
   EXPECT_EQ(module.name(), *name);
   EXPECT_TRUE(module.dict().isDict());
+}
+
+TEST_F(MutableBytesTest, BecomeStrTurnsObjectIntoSmallStr) {
+  HandleScope scope(thread_);
+  Object test_0(&scope, runtime_.emptyMutableBytes());
+  ASSERT_TRUE(test_0.isMutableBytes());
+  Object as_str_0(&scope, MutableBytes::cast(*test_0).becomeStr());
+  EXPECT_TRUE(test_0.isMutableBytes());
+  EXPECT_TRUE(as_str_0.isSmallStr());
+  EXPECT_TRUE(isStrEqualsCStr(*as_str_0, ""));
+
+  Str str(&scope, runtime_.newStrFromCStr("abcdefghi"));
+
+  Object test_1(&scope, runtime_.newMutableBytesUninitialized(1));
+  ASSERT_TRUE(test_1.isMutableBytes());
+  MutableBytes::cast(*test_1).replaceFromWithStr(0, *str, 1);
+  Object as_str_1(&scope, MutableBytes::cast(*test_1).becomeStr());
+  EXPECT_TRUE(test_1.isMutableBytes());
+  EXPECT_TRUE(as_str_1.isSmallStr());
+  EXPECT_TRUE(isStrEqualsCStr(*as_str_1, "a"));
+
+  Object test_m(&scope,
+                runtime_.newMutableBytesUninitialized(SmallStr::kMaxLength));
+  ASSERT_TRUE(test_m.isMutableBytes());
+  MutableBytes::cast(*test_m).replaceFromWithStr(0, *str, SmallStr::kMaxLength);
+  Object as_str_m(&scope, MutableBytes::cast(*test_m).becomeStr());
+  EXPECT_TRUE(test_m.isMutableBytes());
+  EXPECT_TRUE(as_str_m.isSmallStr());
+  EXPECT_TRUE(isStrEqualsCStr(*as_str_m, "abcdefg"));
+}
+
+TEST_F(MutableBytesTest, BecomeStrTurnsObjectIntoLargeStr) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("hello world!"));
+
+  Object test(&scope, runtime_.newMutableBytesUninitialized(str.charLength()));
+  ASSERT_TRUE(test.isMutableBytes());
+  MutableBytes::cast(*test).replaceFromWithStr(0, *str, str.charLength());
+  MutableBytes::cast(*test).becomeStr();
+  EXPECT_TRUE(test.isLargeStr());
+  EXPECT_TRUE(isStrEqualsCStr(*test, "hello world!"));
 }
 
 TEST_F(SliceTest, adjustIndices) {

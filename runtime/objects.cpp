@@ -1,5 +1,6 @@
 #include "objects.h"
 
+#include "bytes-builtins.h"
 #include "frame.h"
 #include "runtime.h"
 #include "thread.h"
@@ -323,18 +324,36 @@ void RawLargeInt::copyFrom(RawBytes bytes, byte sign_extension) const {
 
 // RawMutableBytes
 
-void RawMutableBytes::replaceFromWith(word index, RawBytes src, word len) {
+void RawMutableBytes::replaceFromWith(word index, RawBytes src,
+                                      word len) const {
   DCHECK_BOUND(index + len, length());
   byte* dst = reinterpret_cast<byte*>(address());
   src.copyTo(dst + index, len);
 }
 
-RawObject RawMutableBytes::becomeImmutable() {
+void RawMutableBytes::replaceFromWithStr(word index, RawStr src,
+                                         word char_length) const {
+  DCHECK_BOUND(index + char_length, length());
+  byte* dst = reinterpret_cast<byte*>(address());
+  src.copyTo(dst + index, char_length);
+}
+
+RawObject RawMutableBytes::becomeImmutable() const {
   word len = length();
   if (len <= SmallBytes::kMaxLength) {
     return SmallBytes::fromBytes({reinterpret_cast<byte*>(address()), len});
   }
   setHeader(header().withLayoutId(LayoutId::kLargeBytes));
+  return *this;
+}
+
+RawObject RawMutableBytes::becomeStr() const {
+  DCHECK(bytesIsValidStr(RawBytes::cast(*this)), "must contain valid utf-8");
+  word len = length();
+  if (len <= SmallStr::kMaxLength) {
+    return SmallStr::fromBytes({reinterpret_cast<byte*>(address()), len});
+  }
+  setHeader(header().withLayoutId(LayoutId::kLargeStr));
   return *this;
 }
 
