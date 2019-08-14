@@ -197,6 +197,7 @@ class Runtime;
   V(UnderDivmod, "_divmod")                                                    \
   V(UnderEscapeDecode, "_escape_decode")                                       \
   V(UnderEscapeDecodeStateful, "_escape_decode_stateful")                      \
+  V(UnderExceptionNew, "_exception_new")                                       \
   V(UnderFindAndLoad, "_find_and_load")                                        \
   V(UnderFloatCheck, "_float_check")                                           \
   V(UnderFloatDivmod, "_float_divmod")                                         \

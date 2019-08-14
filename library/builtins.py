@@ -414,6 +414,17 @@ class BaseException(bootstrap=True):
     del _maybe_unbound_property
 
 
+def _exception_new(mod_name: str, exc_name: str, base, type_dict) -> type:
+    _str_guard(mod_name)
+    _str_guard(exc_name)
+    _dict_guard(type_dict)
+    if "__module__" not in type_dict:
+        type_dict["__module__"] = mod_name
+    if not isinstance(base, tuple):
+        base = (base,)
+    return type(exc_name, base, type_dict)
+
+
 Ellipsis = ...
 
 

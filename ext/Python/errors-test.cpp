@@ -94,6 +94,71 @@ TEST_F(ErrorsExtensionApiTest, BadArgumentRaisesTypeError) {
   Py_DECREF(value);
 }
 
+TEST_F(ErrorsExtensionApiTest, NewExceptionWithBadNameRaisesSystemError) {
+  EXPECT_EQ(PyErr_NewException("NameWithoutADot", nullptr, nullptr), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(ErrorsExtensionApiTest, NewExceptionWithoutDictOrBaseReturnsType) {
+  PyObjectPtr type(PyErr_NewException("Module.Name", nullptr, nullptr));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyType_CheckExact(type));
+  EXPECT_TRUE(
+      PyType_IsSubtype(reinterpret_cast<PyTypeObject*>(type.get()),
+                       reinterpret_cast<PyTypeObject*>(PyExc_Exception)));
+
+  PyObjectPtr name(PyObject_GetAttrString(type, "__name__"));
+  ASSERT_TRUE(PyUnicode_CheckExact(name));
+  EXPECT_TRUE(isUnicodeEqualsCStr(name, "Name"));
+  PyObjectPtr module_name(PyObject_GetAttrString(type, "__module__"));
+  ASSERT_TRUE(PyUnicode_CheckExact(module_name));
+  EXPECT_TRUE(isUnicodeEqualsCStr(module_name, "Module"));
+}
+
+TEST_F(ErrorsExtensionApiTest, NewExceptionWithSingleBaseCreatesBasesTuple) {
+  PyObjectPtr type(
+      PyErr_NewException("Module.Name", PyExc_ValueError, nullptr));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyType_CheckExact(type));
+  EXPECT_TRUE(
+      PyType_IsSubtype(reinterpret_cast<PyTypeObject*>(type.get()),
+                       reinterpret_cast<PyTypeObject*>(PyExc_ValueError)));
+
+  PyObjectPtr bases(PyObject_GetAttrString(type, "__bases__"));
+  ASSERT_TRUE(PyTuple_CheckExact(bases));
+  EXPECT_EQ(PyTuple_GetItem(bases, 0), PyExc_ValueError);
+}
+
+TEST_F(ErrorsExtensionApiTest, NewExceptionWithBaseTupleStoresTuple) {
+  PyObjectPtr bases(PyTuple_New(2));
+  ASSERT_EQ(PyTuple_SetItem(bases, 0, PyExc_SystemError), 0);
+  ASSERT_EQ(PyTuple_SetItem(bases, 1, PyExc_ValueError), 0);
+  PyObjectPtr type(PyErr_NewException("Module.Name", bases, nullptr));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyType_CheckExact(type));
+  EXPECT_TRUE(
+      PyType_IsSubtype(reinterpret_cast<PyTypeObject*>(type.get()),
+                       reinterpret_cast<PyTypeObject*>(PyExc_ValueError)));
+  EXPECT_TRUE(
+      PyType_IsSubtype(reinterpret_cast<PyTypeObject*>(type.get()),
+                       reinterpret_cast<PyTypeObject*>(PyExc_SystemError)));
+
+  PyObjectPtr type_bases(PyObject_GetAttrString(type, "__bases__"));
+  EXPECT_EQ(type_bases, bases);
+}
+
+TEST_F(ErrorsExtensionApiTest, NewExceptionWithEmptyDictAddsModuleName) {
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr type(PyErr_NewException("Module.Name", nullptr, dict));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyType_CheckExact(type));
+
+  PyObjectPtr module_name(PyObject_GetAttrString(type, "__module__"));
+  ASSERT_TRUE(PyUnicode_CheckExact(module_name));
+  EXPECT_TRUE(isUnicodeEqualsCStr(module_name, "Module"));
+}
+
 TEST_F(ErrorsExtensionApiTest, NoMemoryRaisesMemoryError) {
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(PyErr_NoMemory(), nullptr);

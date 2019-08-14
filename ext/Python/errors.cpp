@@ -153,9 +153,37 @@ PY_EXPORT int PyErr_GivenExceptionMatches(PyObject* given, PyObject* exc) {
   return givenExceptionMatches(thread, given_obj, exc_obj) ? 1 : 0;
 }
 
-PY_EXPORT PyObject* PyErr_NewException(const char* /* e */, PyObject* /* e */,
-                                       PyObject* /* t */) {
-  UNIMPLEMENTED("PyErr_NewException");
+PY_EXPORT PyObject* PyErr_NewException(const char* name, PyObject* base_or_null,
+                                       PyObject* dict_or_null) {
+  Thread* thread = Thread::current();
+  const char* dot = std::strrchr(name, '.');
+  if (dot == nullptr) {
+    thread->raiseWithFmt(LayoutId::kSystemError,
+                         "PyErr_NewException: name must be module.class");
+    return nullptr;
+  }
+
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  word mod_name_len = dot - name;
+  Object mod_name(&scope,
+                  runtime->newStrWithAll(
+                      {reinterpret_cast<const byte*>(name), mod_name_len}));
+  Object exc_name(&scope, runtime->newStrFromCStr(dot + 1));
+  Object base(&scope, base_or_null == nullptr
+                          ? runtime->typeAt(LayoutId::kException)
+                          : ApiHandle::fromPyObject(base_or_null)->asObject());
+  Object dict(&scope, dict_or_null == nullptr
+                          ? runtime->newDict()
+                          : ApiHandle::fromPyObject(dict_or_null)->asObject());
+  Object type(&scope, thread->invokeFunction4(SymbolId::kBuiltins,
+                                              SymbolId::kUnderExceptionNew,
+                                              mod_name, exc_name, base, dict));
+  if (type.isError()) {
+    DCHECK(!type.isErrorNotFound(), "missing _exception_new");
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *type);
 }
 
 PY_EXPORT PyObject* PyErr_NewExceptionWithDoc(const char* /* e */,
