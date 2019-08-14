@@ -2,11 +2,13 @@
 import unittest
 
 import _codecs
+from test_support import pyro_only
 
 
-# These values are injected by our boot process. flake8 has no knowledge about
-# their definitions and will complain without this gross circular helper here.
-_strarray = _strarray  # noqa: F821
+try:
+    from builtins import _strarray
+except ImportError:
+    pass
 
 
 class CodecsTests(unittest.TestCase):
@@ -122,7 +124,7 @@ class CodecsTests(unittest.TestCase):
         _codecs.register(lookup_function)
         with self.assertRaises(TypeError) as context:
             _codecs.decode(b"bytes", "decode-with-function-with-int-codec")
-        self.assertEqual(str(context.exception), "'int' object is not callable")
+        self.assertIn("'int' object is not callable", str(context.exception))
 
     def test_decode_with_function_with_non_tuple_return_raises_type_error(self):
         def lookup_function(encoding):
@@ -133,7 +135,7 @@ class CodecsTests(unittest.TestCase):
         with self.assertRaises(TypeError) as context:
             _codecs.decode(b"bytes", "decode-with-function-with-faulty-codec")
         self.assertEqual(
-            str(context.exception), "decoder must return a tuple (object, integer)"
+            str(context.exception), "decoder must return a tuple (object,integer)"
         )
 
     def test_decode_with_function_with_tuple_return_returns_first_element(self):
@@ -178,7 +180,7 @@ class CodecsTests(unittest.TestCase):
         _codecs.register(lookup_function)
         with self.assertRaises(TypeError) as context:
             _codecs.encode("str", "encode-with-function-with-int-codec")
-        self.assertEqual(str(context.exception), "'int' object is not callable")
+        self.assertIn("'int' object is not callable", str(context.exception))
 
     def test_encode_with_function_with_non_tuple_return_raises_type_error(self):
         def lookup_function(encoding):
@@ -260,6 +262,8 @@ class DecodeEscapeTests(unittest.TestCase):
         self.assertEqual(decoded, b"")
         self.assertEqual(consumed, 0)
 
+    # TODO(atalaba): This should not need @pyro_only
+    @pyro_only
     def test_decode_escape_with_well_formed_latin_1_returns_string(self):
         decoded, consumed = _codecs.escape_decode(b"hello\x95")
         self.assertEqual(decoded, b"hello\xC2\x95")
@@ -283,6 +287,7 @@ class DecodeEscapeTests(unittest.TestCase):
             "decoding error; unknown error handling code: unknown",
         )
 
+    @pyro_only
     def test_decode_escape_stateful_returns_first_invalid_escape(self):
         decoded, consumed, first_invalid = _codecs._escape_decode_stateful(b"ab\\yc")
         self.assertEqual(decoded, b"ab\\yc")
@@ -340,6 +345,7 @@ class DecodeUnicodeEscapeTests(unittest.TestCase):
         self.assertEqual(decoded, "ab-testing-gc")
         self.assertEqual(consumed, 8)
 
+    @pyro_only
     def test_decode_unicode_escape_stateful_returns_first_invalid_escape(self):
         decoded, consumed, first_invalid = _codecs._unicode_escape_decode_stateful(
             b"ab\\yc"
@@ -658,6 +664,7 @@ class EncodeUTF8Tests(unittest.TestCase):
         self.assertEqual(exc.end, 3)
 
 
+@pyro_only
 class GeneralizedErrorHandlerTests(unittest.TestCase):
     def test_call_decode_error_with_strict_raises_unicode_decode_error(self):
         with self.assertRaises(UnicodeDecodeError):

@@ -40,6 +40,7 @@ class _ImplementationType:
         # TODO(T40871490): Cache compiles *.py files to a __cache__ directory
         # Setting cache_tag to None avoids caching or searching for cached files
         self.cache_tag = None
+        self.name = "pyro"
 
 
 @_patch

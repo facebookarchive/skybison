@@ -16,5 +16,4 @@ if [[ ! -x "$CPYTHON_BIN" ]]; then
 fi
 
 PYRO_BUILD_DIR="$PYRO_BUILD_DIR" PYTHON_BIN="$CPYTHON_BIN" \
-    FIND_FILTER="[a-zA-Z]*_test.py" \
     "$(dirname "$0")/python_tests_pyro.sh" "$@"

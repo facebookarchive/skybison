@@ -77,7 +77,7 @@ def decode(data, encoding: str = "utf-8", errors: str = _Unbound) -> str:
         if _tuple_check(result) and len(result) == 2:
             return result[0]
         # CPython does not check to make sure that the second element is an int
-        raise TypeError("decoder must return a tuple (object, integer)")
+        raise TypeError("decoder must return a tuple (object,integer)")
 
 
 def encode(data, encoding: str = "utf-8", errors: str = _Unbound) -> bytes:

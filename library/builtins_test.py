@@ -2,6 +2,14 @@
 import unittest
 import warnings
 
+from test_support import pyro_only
+
+
+try:
+    from builtins import _number_check
+except ImportError:
+    pass
+
 
 class BoundMethodTests(unittest.TestCase):
     def test_bound_method_dunder_func(self):
@@ -4874,6 +4882,37 @@ class VarsTests(unittest.TestCase):
 
         c = C()
         self.assertEqual(vars(c), 4)
+
+
+@pyro_only
+class UnderNumberCheckTests(unittest.TestCase):
+    def test_number_check_with_builtin_number_returns_true(self):
+        self.assertTrue(_number_check(2))
+        self.assertTrue(_number_check(False))
+        self.assertTrue(_number_check(5.0))
+
+    def test_number_check_without_class_method_returns_false(self):
+        class Foo:
+            pass
+
+        foo = Foo()
+        foo.__float__ = lambda: 1.0
+        foo.__int__ = lambda: 2
+        self.assertFalse(_number_check(foo))
+
+    def test_number_check_with_dunder_index_descriptor_does_not_call(self):
+        class Raise:
+            def __get__(self, obj, type):
+                raise AttributeError("bad")
+
+        class FloatLike:
+            __float__ = Raise()
+
+        class IntLike:
+            __int__ = Raise()
+
+        self.assertTrue(_number_check(FloatLike()))
+        self.assertTrue(_number_check(IntLike()))
 
 
 if __name__ == "__main__":

@@ -25,9 +25,7 @@ if [[ ! -x $PYTHON_BIN ]]; then
     die "$PYTHON_BIN is not executable. Please build using 'make python'"
 fi
 
-if [[ -z $FIND_FILTER ]]; then
-  FIND_FILTER="*_test.py"
-fi
+FIND_FILTER="*_test.py"
 
 if [[ -n $1 ]]; then
   if [[ ! -f "$SOURCE_DIR/library/$1" ]]; then
@@ -41,6 +39,7 @@ cd "$PYRO_BUILD_DIR" || exit 1
 rm -rf tests
 mkdir tests
 find "$SOURCE_DIR/library/" -name "$FIND_FILTER" -exec cp {} tests/ \;
+cp "$SOURCE_DIR/library/test_support.py" tests/
 
 if command -v parallel >/dev/null; then
     TEST_RUNNER=(parallel -v)
