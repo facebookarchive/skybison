@@ -4256,6 +4256,139 @@ class StrTests(unittest.TestCase):
         self.assertEqual(str(A()), "test")
 
 
+class StrDunderFormatTests(unittest.TestCase):
+    def test_empty_format_returns_string(self):
+        self.assertEqual(str.__format__("hello", ""), "hello")
+        self.assertEqual(str.__format__("", ""), "")
+        self.assertEqual(str.__format__("\U0001f40d", ""), "\U0001f40d")
+
+    def test_format_with_width_returns_string(self):
+        self.assertEqual(str.__format__("hello", "1"), "hello")
+        self.assertEqual(str.__format__("hello", "5"), "hello")
+        self.assertEqual(str.__format__("hello", "8"), "hello   ")
+
+        self.assertEqual(str.__format__("hello", "<"), "hello")
+        self.assertEqual(str.__format__("hello", "<0"), "hello")
+        self.assertEqual(str.__format__("hello", "<5"), "hello")
+        self.assertEqual(str.__format__("hello", "<8"), "hello   ")
+
+        self.assertEqual(str.__format__("hello", ">"), "hello")
+        self.assertEqual(str.__format__("hello", ">0"), "hello")
+        self.assertEqual(str.__format__("hello", ">5"), "hello")
+        self.assertEqual(str.__format__("hello", ">8"), "   hello")
+
+        self.assertEqual(str.__format__("hello", "^"), "hello")
+        self.assertEqual(str.__format__("hello", "^0"), "hello")
+        self.assertEqual(str.__format__("hello", "^5"), "hello")
+        self.assertEqual(str.__format__("hello", "^8"), " hello  ")
+        self.assertEqual(str.__format__("hello", "^9"), "  hello  ")
+
+    def test_format_with_fill_char_returns_string(self):
+        self.assertEqual(str.__format__("hello", ".^9"), "..hello..")
+        self.assertEqual(str.__format__("hello", "*>9"), "****hello")
+        self.assertEqual(str.__format__("hello", "^<9"), "hello^^^^")
+        self.assertEqual(
+            str.__format__("hello", "\U0001f40d>7"), "\U0001f40d\U0001f40dhello"
+        )
+
+    def test_format_with_precision_returns_string(self):
+        self.assertEqual(str.__format__("hello", ".0"), "")
+        self.assertEqual(str.__format__("hello", ".2"), "he")
+        self.assertEqual(str.__format__("hello", ".5"), "hello")
+        self.assertEqual(str.__format__("hello", ".7"), "hello")
+
+    def test_format_with_precision_and_width_returns_string(self):
+        self.assertEqual(str.__format__("hello", "10.8"), "hello     ")
+        self.assertEqual(str.__format__("hello", "^5.2"), " he  ")
+
+    def test_works_with_str_subclass(self):
+        class C(str):
+            pass
+
+        self.assertEqual(str.__format__("hello", C("7")), "hello  ")
+        self.assertEqual(str.__format__(C("hello"), "7"), "hello  ")
+        self.assertIs(type(str.__format__(C("hello"), "7")), str)
+        self.assertEqual(str.__format__(C("hello"), ""), "hello")
+        self.assertIs(type(str.__format__(C("hello"), "")), str)
+
+    def test_format_zero_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            str.__format__("", "0")
+        self.assertEqual(
+            str(context.exception),
+            "'=' alignment not allowed in string format specifier",
+        )
+
+    def test_format_with_equal_alignment_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            str.__format__("", "=")
+        self.assertEqual(
+            str(context.exception),
+            "'=' alignment not allowed in string format specifier",
+        )
+
+    def test_non_s_format_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            str.__format__("", "d")
+        self.assertEqual(
+            str(context.exception), "Unknown format code 'd' for object of type 'str'"
+        )
+
+        class C(str):
+            pass
+
+        with self.assertRaises(ValueError) as context:
+            str.__format__(C(""), "\U0001f40d")
+        self.assertEqual(
+            str(context.exception),
+            "Unknown format code '\\x1f40d' for object of type 'C'",
+        )
+
+    def test_big_width_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            str.__format__("", "999999999999999999999")
+        self.assertEqual(
+            str(context.exception), "Too many decimal digits in format string"
+        )
+
+    def test_missing_precision_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            str.__format__("", ".")
+        self.assertEqual(str(context.exception), "Format specifier missing precision")
+
+    def test_big_precision_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            str.__format__("", ".999999999999999999999")
+        self.assertEqual(
+            str(context.exception), "Too many decimal digits in format string"
+        )
+
+    def test_extra_chars_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            str.__format__("", "sX")
+        self.assertEqual(str(context.exception), "Invalid format specifier")
+
+    def test_comma_underscore_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            str.__format__("", ",_")
+        self.assertEqual(str(context.exception), "Cannot specify both ',' and '_'.")
+
+    def test_comma_comma_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            str.__format__("", ",,")
+        self.assertEqual(str(context.exception), "Cannot specify both ',' and '_'.")
+
+    def test_underscore_underscore_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            str.__format__("", "__")
+        self.assertEqual(str(context.exception), "Cannot specify '_' with '_'.")
+
+    def test_unexpected_thousands_separator_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            str.__format__("", "_")
+        self.assertEqual(str(context.exception), "Cannot specify '_' with 's'.")
+
+
 class StrModTests(unittest.TestCase):
     def test_empty_format_returns_empty_string(self):
         self.assertEqual("" % (), "")

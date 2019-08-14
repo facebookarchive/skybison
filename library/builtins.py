@@ -323,7 +323,7 @@ class object(bootstrap=True):  # noqa: E999
             return True
         return NotImplemented
 
-    def __format__(self, format_spec):
+    def __format__(self, format_spec: str) -> str:
         if format_spec != "":
             raise TypeError("format_spec must be empty string")
         return str(self)
@@ -3440,6 +3440,9 @@ class str(bootstrap=True):
         return _str_find(self, other, None, None) != -1
 
     def __eq__(self, other):
+        pass
+
+    def __format__(self, format_spec: str) -> str:
         pass
 
     def __ge__(self, other):
