@@ -3593,98 +3593,37 @@ class str(bootstrap=True):
         return res
 
     def isalnum(self):
-        _str_guard(self)
-        # TODO(T41626152): Support non-ASCII
-        if self is "":  # noqa: P202
-            return False
-        num = range(ord("0"), ord("9") + 1)
-        lower = range(ord("a"), ord("z") + 1)
-        upper = range(ord("A"), ord("Z") + 1)
-        for c in str.__iter__(self):
-            i = ord(c)
-            if i > 127:
-                _unimplemented()
-            if i not in num and i not in lower and i not in upper:
-                return False
-        return True
+        pass
 
     def isalpha(self):
-        _unimplemented()
+        pass
 
     def isdecimal(self):
-        _unimplemented()
+        pass
 
     def isdigit(self):
-        _unimplemented()
+        pass
 
     def isidentifier(self):
-        _str_guard(self)
-        if not self:
-            return False
-        is_continue = False
-        for ch in str.__iter__(self):
-            if "A" <= ch <= "Z" or "a" <= ch <= "z" or ch == "_":
-                pass
-            elif is_continue and "0" <= ch <= "9":
-                pass
-            elif ch >= "\x80":
-                _unimplemented()
-            else:
-                return False
-            is_continue = True
-        return True
+        pass
 
     def islower(self):
-        _str_guard(self)
-        # TODO(T42050373): Support non-ASCII
-        if self is "":  # noqa: P202
-            return False
-        lower = range(ord("a"), ord("z") + 1)
-        for c in str.__iter__(self):
-            i = ord(c)
-            if i > 127:
-                _unimplemented()
-            if i not in lower:
-                return False
-        return True
+        pass
 
     def isnumeric(self):
-        _unimplemented()
+        pass
 
     def isprintable(self):
-        _unimplemented()
+        pass
 
     def isspace(self):
-        _str_guard(self)
-        if not self:
-            return False
-        for ch in str.__iter__(self):
-            if ch == " " or ch == "\n" or ch == "\t" or ch == "\r":
-                continue
-            if ch == "\x0B" or ch == "\x0C" or ("\x1C" < ch < "\x1F"):
-                continue
-            if ch >= "\x80":
-                # TODO(T41626183): Support non-ASCII
-                _unimplemented()
-            return False
-        return True
+        pass
 
     def istitle(self):
-        _unimplemented()
+        pass
 
     def isupper(self):
-        _str_guard(self)
-        # TODO(T41626183): Support non-ASCII
-        if self is "":  # noqa: P202
-            return False
-        upper = range(ord("A"), ord("Z") + 1)
-        for c in str.__iter__(self):
-            i = ord(c)
-            if i > 127:
-                _unimplemented()
-            if i not in upper:
-                return False
-        return True
+        pass
 
     def join(self, items) -> str:
         _str_guard(self)

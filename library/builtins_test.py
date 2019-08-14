@@ -3649,29 +3649,234 @@ class StrTests(unittest.TestCase):
         result = str.format("1{a}2{b}3{c}4{b}5", a="a", b="b", c="c")
         self.assertEqual(result, "1a2b3c4b5")
 
+    def test_isalnum_with_ascii_char_returns_bool(self):
+        self.assertEqual(
+            "".join(str(int(chr(x).isalnum())) for x in range(128)),
+            "0000000000000000000000000000000000000000000000001111111111000000"
+            "0111111111111111111111111110000001111111111111111111111111100000",
+        )
+
+    def test_isalnum_with_empty_string_returns_false(self):
+        self.assertFalse("".isalnum())
+
+    def test_isalnum_with_multichar_string_returns_bool(self):
+        self.assertTrue("1a5b".isalnum())
+        self.assertFalse("1b)".isalnum())
+
     def test_isalnum_with_non_str_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             str.isalnum(None)
-        self.assertIn(
-            "'isalnum' requires a 'str' object but received a 'NoneType'",
-            str(context.exception),
+        self.assertIn("'isalnum' requires a 'str' object", str(context.exception))
+
+    def test_isalpha_with_ascii_char_returns_bool(self):
+        self.assertEqual(
+            "".join(str(int(chr(x).isalpha())) for x in range(128)),
+            "0000000000000000000000000000000000000000000000000000000000000000"
+            "0111111111111111111111111110000001111111111111111111111111100000",
         )
+
+    def test_isalpha_with_empty_string_returns_false(self):
+        self.assertFalse("".isalpha())
+
+    def test_isalpha_with_multichar_string_returns_bool(self):
+        self.assertTrue("hElLo".isalpha())
+        self.assertFalse("x8".isalpha())
+
+    def test_isalpha_with_non_str_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            str.isalpha(None)
+        self.assertIn("'isalpha' requires a 'str' object", str(context.exception))
+
+    def test_isdecimal_with_ascii_char_returns_bool(self):
+        self.assertEqual(
+            "".join(str(int(chr(x).isdecimal())) for x in range(128)),
+            "0000000000000000000000000000000000000000000000001111111111000000"
+            "0000000000000000000000000000000000000000000000000000000000000000",
+        )
+
+    def test_isdecimal_with_empty_string_returns_false(self):
+        self.assertFalse("".isdecimal())
+
+    def test_isdecimal_with_multichar_string_returns_bool(self):
+        self.assertTrue("8725".isdecimal())
+        self.assertFalse("8-4".isdecimal())
+
+    def test_isdecimal_with_non_str_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            str.isdecimal(None)
+        self.assertIn("'isdecimal' requires a 'str' object", str(context.exception))
+
+    def test_isdigit_with_ascii_char_returns_bool(self):
+        self.assertEqual(
+            "".join(str(int(chr(x).isdigit())) for x in range(128)),
+            "0000000000000000000000000000000000000000000000001111111111000000"
+            "0000000000000000000000000000000000000000000000000000000000000000",
+        )
+
+    def test_isdigit_with_empty_string_returns_false(self):
+        self.assertFalse("".isdigit())
+
+    def test_isdigit_with_multichar_string_returns_bool(self):
+        self.assertTrue("8725".isdigit())
+        self.assertFalse("8-4".isdigit())
+
+    def test_isdigit_with_non_str_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            str.isdigit(None)
+        self.assertIn("'isdigit' requires a 'str' object", str(context.exception))
+
+    def test_isidentifier_with_ascii_char_returns_bool(self):
+        self.assertEqual(
+            "".join(str(int(chr(x).isidentifier())) for x in range(128)),
+            "0000000000000000000000000000000000000000000000000000000000000000"
+            "0111111111111111111111111110000101111111111111111111111111100000",
+        )
+        self.assertEqual(
+            "".join(str(int(("_" + chr(x)).isidentifier())) for x in range(128)),
+            "0000000000000000000000000000000000000000000000001111111111000000"
+            "0111111111111111111111111110000101111111111111111111111111100000",
+        )
+
+    def test_isidentifier_with_empty_string_returns_false(self):
+        self.assertFalse("".isidentifier())
+
+    def test_isidentifier_with_multichar_string_returns_bool(self):
+        self.assertTrue("foo_8".isidentifier())
+        self.assertFalse("foo bar".isidentifier())
+
+    def test_isidentifier_with_non_str_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            str.isidentifier(None)
+        self.assertIn("'isidentifier' requires a 'str' object", str(context.exception))
+
+    def test_islower_with_ascii_char_returns_bool(self):
+        self.assertEqual(
+            "".join(str(int(chr(x).islower())) for x in range(128)),
+            "0000000000000000000000000000000000000000000000000000000000000000"
+            "0000000000000000000000000000000001111111111111111111111111100000",
+        )
+
+    def test_islower_with_empty_string_returns_false(self):
+        self.assertFalse("".islower())
+
+    def test_islower_with_multichar_string_returns_bool(self):
+        self.assertTrue("hello".islower())
+        self.assertTrue("...a...".islower())
+        self.assertFalse("hEllo".islower())
+        self.assertFalse("...A...".islower())
+        self.assertFalse("......".islower())
 
     def test_islower_with_non_str_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             str.islower(None)
-        self.assertIn(
-            "'islower' requires a 'str' object but received a 'NoneType'",
-            str(context.exception),
+        self.assertIn("'islower' requires a 'str' object", str(context.exception))
+
+    def test_isnumeric_with_ascii_char_returns_bool(self):
+        self.assertEqual(
+            "".join(str(int(chr(x).isnumeric())) for x in range(128)),
+            "0000000000000000000000000000000000000000000000001111111111000000"
+            "0000000000000000000000000000000000000000000000000000000000000000",
         )
+
+    def test_isnumeric_with_empty_string_returns_false(self):
+        self.assertFalse("".isnumeric())
+
+    def test_isnumeric_with_multichar_string_returns_bool(self):
+        self.assertTrue("28741".isnumeric())
+        self.assertFalse("5e4".isnumeric())
+
+    def test_isnumeric_with_non_str_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            str.isnumeric(None)
+        self.assertIn("'isnumeric' requires a 'str' object", str(context.exception))
+
+    def test_isprintable_with_ascii_char_returns_bool(self):
+        self.assertEqual(
+            "".join(str(int(chr(x).isprintable())) for x in range(128)),
+            "0000000000000000000000000000000011111111111111111111111111111111"
+            "1111111111111111111111111111111111111111111111111111111111111110",
+        )
+
+    def test_isprintable_with_empty_string_returns_true(self):
+        self.assertTrue("".isprintable())
+
+    def test_isprintable_with_multichar_string_returns_bool(self):
+        self.assertTrue("Hello World!".isprintable())
+        self.assertFalse("Hello\tWorld!".isprintable())
+
+    def test_isprintable_with_non_str_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            str.isprintable(None)
+        self.assertIn("'isprintable' requires a 'str' object", str(context.exception))
+
+    def test_isspace_with_ascii_char_returns_bool(self):
+        self.assertEqual(
+            "".join(str(int(chr(x).isspace())) for x in range(128)),
+            "0000000001111100000000000000111110000000000000000000000000000000"
+            "0000000000000000000000000000000000000000000000000000000000000000",
+        )
+
+    def test_isspace_with_empty_string_returns_false(self):
+        self.assertFalse("".isspace())
+
+    def test_isspace_with_multichar_string_returns_bool(self):
+        self.assertTrue(" \t\r\n".isspace())
+        self.assertFalse(" _".isspace())
+
+    def test_isspace_with_non_str_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            str.isspace(None)
+        self.assertIn("'isspace' requires a 'str' object", str(context.exception))
+
+    def test_istitle_with_ascii_char_returns_bool(self):
+        self.assertEqual(
+            "".join(str(int(chr(x).istitle())) for x in range(128)),
+            "0000000000000000000000000000000000000000000000000000000000000000"
+            "0111111111111111111111111110000000000000000000000000000000000000",
+        )
+        self.assertEqual(
+            "".join(str(int(("A" + chr(x)).istitle())) for x in range(128)),
+            "1111111111111111111111111111111111111111111111111111111111111111"
+            "1000000000000000000000000001111111111111111111111111111111111111",
+        )
+
+    def test_istitle_with_empty_string_returns_false(self):
+        self.assertFalse("".istitle())
+
+    def test_istitle_with_multichar_string_returns_bool(self):
+        self.assertTrue("Hello\t!".istitle())
+        self.assertTrue("...A...".istitle())
+        self.assertTrue("Aa Bbb Cccc".istitle())
+        self.assertFalse("HeLlo".istitle())
+        self.assertFalse("...a...".istitle())
+        self.assertFalse("...".istitle())
+
+    def test_istitle_with_non_str_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            str.istitle(None)
+        self.assertIn("'istitle' requires a 'str' object", str(context.exception))
+
+    def test_isupper_with_ascii_char_returns_bool(self):
+        self.assertEqual(
+            "".join(str(int(chr(x).isupper())) for x in range(128)),
+            "0000000000000000000000000000000000000000000000000000000000000000"
+            "0111111111111111111111111110000000000000000000000000000000000000",
+        )
+
+    def test_isupper_with_empty_string_returns_false(self):
+        self.assertFalse("".isupper())
+
+    def test_isupper_with_multichar_string_returns_bool(self):
+        self.assertTrue("HELLO".isupper())
+        self.assertTrue("...A...".isupper())
+        self.assertFalse("HElLLO".isupper())
+        self.assertFalse("...a...".isupper())
+        self.assertFalse("......".isupper())
 
     def test_isupper_with_non_str_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             str.isupper(None)
-        self.assertIn(
-            "'isupper' requires a 'str' object but received a 'NoneType'",
-            str(context.exception),
-        )
+        self.assertIn("'isupper' requires a 'str' object", str(context.exception))
 
     def test_join_with_raising_descriptor_dunder_iter_raises_type_error(self):
         class Desc:

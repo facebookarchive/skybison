@@ -534,9 +534,19 @@ class Runtime;
   V(IsDisjoint, "isdisjoint")                                                  \
   V(IsFrozen, "is_frozen")                                                     \
   V(IsFrozenPackage, "is_frozen_package")                                      \
-  V(IsIdentifier, "isidentifier")                                              \
   V(IsInstance, "isinstance")                                                  \
   V(IsSubclass, "issubclass")                                                  \
+  V(Isalnum, "isalnum")                                                        \
+  V(Isalpha, "isalpha")                                                        \
+  V(Isdecimal, "isdecimal")                                                    \
+  V(Isdigit, "isdigit")                                                        \
+  V(Isidentifier, "isidentifier")                                              \
+  V(Islower, "islower")                                                        \
+  V(Isnumeric, "isnumeric")                                                    \
+  V(Isprintable, "isprintable")                                                \
+  V(Isspace, "isspace")                                                        \
+  V(Istitle, "istitle")                                                        \
+  V(Isupper, "isupper")                                                        \
   V(Isub, "isub")                                                              \
   V(Items, "items")                                                            \
   V(Itertools, "itertools")                                                    \

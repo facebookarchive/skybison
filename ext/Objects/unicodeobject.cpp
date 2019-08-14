@@ -1625,7 +1625,7 @@ PY_EXPORT int PyUnicode_IsIdentifier(PyObject* str) {
     return false;
   }
   Object result(&scope, thread->invokeMethodStatic1(
-                            LayoutId::kStr, SymbolId::kIsIdentifier, str_obj));
+                            LayoutId::kStr, SymbolId::kIsidentifier, str_obj));
   DCHECK(!result.isErrorNotFound(), "could not call str.isidentifier");
   CHECK(!result.isError(), "this function should not error");
   return Bool::cast(*result).value();

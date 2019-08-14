@@ -191,15 +191,15 @@ RawObject strStripSpace(Thread* thread, const Str& src) {
   if (length == 0) {
     return *src;
   }
-  if (length == 1 && isAsciiSpace(src.charAt(0))) {
+  if (length == 1 && isSpaceASCII(src.charAt(0))) {
     return Str::empty();
   }
   word first = 0;
-  while (first < length && isAsciiSpace(src.charAt(first))) {
+  while (first < length && isSpaceASCII(src.charAt(first))) {
     ++first;
   }
   word last = 0;
-  for (word i = length - 1; i >= first && isAsciiSpace(src.charAt(i)); i--) {
+  for (word i = length - 1; i >= first && isSpaceASCII(src.charAt(i)); i--) {
     last++;
   }
   return thread->runtime()->strSubstr(thread, src, first,
@@ -211,11 +211,11 @@ RawObject strStripSpaceLeft(Thread* thread, const Str& src) {
   if (length == 0) {
     return *src;
   }
-  if (length == 1 && isAsciiSpace(src.charAt(0))) {
+  if (length == 1 && isSpaceASCII(src.charAt(0))) {
     return Str::empty();
   }
   word first = 0;
-  while (first < length && isAsciiSpace(src.charAt(first))) {
+  while (first < length && isSpaceASCII(src.charAt(first))) {
     ++first;
   }
   return thread->runtime()->strSubstr(thread, src, first, length - first);
@@ -226,11 +226,11 @@ RawObject strStripSpaceRight(Thread* thread, const Str& src) {
   if (length == 0) {
     return *src;
   }
-  if (length == 1 && isAsciiSpace(src.charAt(0))) {
+  if (length == 1 && isSpaceASCII(src.charAt(0))) {
     return Str::empty();
   }
   word last = 0;
-  for (word i = length - 1; i >= 0 && isAsciiSpace(src.charAt(i)); i--) {
+  for (word i = length - 1; i >= 0 && isSpaceASCII(src.charAt(i)); i--) {
     last++;
   }
   return thread->runtime()->strSubstr(thread, src, 0, length - last);
@@ -322,8 +322,19 @@ const BuiltinMethod StrBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderMul, dunderMul},
     {SymbolId::kDunderNe, dunderNe},
     {SymbolId::kDunderRepr, dunderRepr},
-    {SymbolId::kLower, lower},
+    {SymbolId::kIsalnum, isalnum},
+    {SymbolId::kIsalpha, isalpha},
+    {SymbolId::kIsdecimal, isdecimal},
+    {SymbolId::kIsdigit, isdigit},
+    {SymbolId::kIsidentifier, isidentifier},
+    {SymbolId::kIslower, islower},
+    {SymbolId::kIsnumeric, isnumeric},
+    {SymbolId::kIsprintable, isprintable},
+    {SymbolId::kIsspace, isspace},
+    {SymbolId::kIstitle, istitle},
+    {SymbolId::kIsupper, isupper},
     {SymbolId::kLStrip, lstrip},
+    {SymbolId::kLower, lower},
     {SymbolId::kRStrip, rstrip},
     {SymbolId::kStrip, strip},
     {SymbolId::kUpper, upper},
@@ -546,7 +557,7 @@ RawObject strFind(const Str& haystack, const Str& needle, word start,
 
 word strFindFirstNonWhitespace(const Str& str) {
   word i = 0;
-  while (i < str.charLength() && isAsciiSpace(str.charAt(i))) {
+  while (i < str.charLength() && isSpaceASCII(str.charAt(i))) {
     i++;
   }
   return i;
@@ -937,6 +948,284 @@ RawObject StrBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
            "Didn't write the correct number of characters out");
   }
   return runtime->newStrWithAll(View<byte>{buf.get(), output_size});
+}
+
+RawObject StrBuiltins::isalnum(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+  }
+  Str self(&scope, strUnderlying(thread, self_obj));
+  word char_length = self.charLength();
+  if (char_length == 0) {
+    return Bool::falseObj();
+  }
+  word i = 0;
+  do {
+    byte b = self.charAt(i++);
+    if (b > kMaxASCII) {
+      UNIMPLEMENTED("non-ASCII character");
+    }
+    if (!isAlnumASCII(b)) {
+      return Bool::falseObj();
+    }
+  } while (i < char_length);
+  return Bool::trueObj();
+}
+
+RawObject StrBuiltins::isalpha(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+  }
+  Str self(&scope, strUnderlying(thread, self_obj));
+  word char_length = self.charLength();
+  if (char_length == 0) {
+    return Bool::falseObj();
+  }
+  word i = 0;
+  do {
+    byte b = self.charAt(i++);
+    if (b > kMaxASCII) {
+      UNIMPLEMENTED("non-ASCII character");
+    }
+    if (!isAlphaASCII(b)) {
+      return Bool::falseObj();
+    }
+  } while (i < char_length);
+  return Bool::trueObj();
+}
+
+RawObject StrBuiltins::isdecimal(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+  }
+  Str self(&scope, strUnderlying(thread, self_obj));
+  word char_length = self.charLength();
+  if (char_length == 0) {
+    return Bool::falseObj();
+  }
+  word i = 0;
+  do {
+    byte b = self.charAt(i++);
+    if (b > kMaxASCII) {
+      UNIMPLEMENTED("non-ASCII character");
+    }
+    if (!isDecimalASCII(b)) {
+      return Bool::falseObj();
+    }
+  } while (i < char_length);
+  return Bool::trueObj();
+}
+
+RawObject StrBuiltins::isdigit(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+  }
+  Str self(&scope, strUnderlying(thread, self_obj));
+  word char_length = self.charLength();
+  if (char_length == 0) {
+    return Bool::falseObj();
+  }
+  word i = 0;
+  do {
+    byte b = self.charAt(i++);
+    if (b > kMaxASCII) {
+      UNIMPLEMENTED("non-ASCII character");
+    }
+    if (!isDigitASCII(b)) {
+      return Bool::falseObj();
+    }
+  } while (i < char_length);
+  return Bool::trueObj();
+}
+
+RawObject StrBuiltins::isidentifier(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+  }
+  Str self(&scope, strUnderlying(thread, self_obj));
+  word char_length = self.charLength();
+  if (char_length == 0) {
+    return Bool::falseObj();
+  }
+  byte b0 = self.charAt(0);
+  if (b0 > kMaxASCII) {
+    UNIMPLEMENTED("non-ASCII character");
+  }
+  if (!isIdStartASCII(b0)) {
+    return Bool::falseObj();
+  }
+  for (word i = 1; i < char_length; i++) {
+    byte b = self.charAt(i);
+    if (b > kMaxASCII) {
+      UNIMPLEMENTED("non-ASCII character");
+    }
+    if (!isIdContinueASCII(b)) {
+      return Bool::falseObj();
+    }
+  }
+  return Bool::trueObj();
+}
+
+RawObject StrBuiltins::islower(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+  }
+  Str self(&scope, strUnderlying(thread, self_obj));
+  word char_length = self.charLength();
+  bool cased = false;
+  for (word i = 0; i < char_length; i++) {
+    byte b = self.charAt(i);
+    if (b > kMaxASCII) {
+      UNIMPLEMENTED("non-ASCII character");
+    }
+    if (isUpperASCII(b)) {
+      return Bool::falseObj();
+    }
+    if (!cased && isLowerASCII(b)) {
+      cased = true;
+    }
+  }
+  return Bool::fromBool(cased);
+}
+
+RawObject StrBuiltins::isnumeric(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+  }
+  Str self(&scope, strUnderlying(thread, self_obj));
+  word char_length = self.charLength();
+  if (char_length == 0) {
+    return Bool::falseObj();
+  }
+  word i = 0;
+  do {
+    byte b = self.charAt(i++);
+    if (b > kMaxASCII) {
+      UNIMPLEMENTED("non-ASCII character");
+    }
+    if (!isNumericASCII(b)) {
+      return Bool::falseObj();
+    }
+  } while (i < char_length);
+  return Bool::trueObj();
+}
+
+RawObject StrBuiltins::isprintable(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+  }
+  Str self(&scope, strUnderlying(thread, self_obj));
+  for (word i = 0, char_length = self.charLength(); i < char_length; i++) {
+    byte b = self.charAt(i);
+    if (b > kMaxASCII) {
+      UNIMPLEMENTED("non-ASCII character");
+    }
+    if (!isPrintableASCII(b)) {
+      return Bool::falseObj();
+    }
+  }
+  return Bool::trueObj();
+}
+
+RawObject StrBuiltins::isspace(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+  }
+  Str self(&scope, strUnderlying(thread, self_obj));
+  word char_length = self.charLength();
+  if (char_length == 0) {
+    return Bool::falseObj();
+  }
+  word i = 0;
+  do {
+    byte b = self.charAt(i++);
+    if (b > kMaxASCII) {
+      UNIMPLEMENTED("non-ASCII character");
+    }
+    if (!isSpaceASCII(b)) {
+      return Bool::falseObj();
+    }
+  } while (i < char_length);
+  return Bool::trueObj();
+}
+
+RawObject StrBuiltins::istitle(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+  }
+  Str self(&scope, strUnderlying(thread, self_obj));
+  bool cased = false;
+  bool previous_is_cased = false;
+  for (word i = 0, char_length = self.charLength(); i < char_length; i++) {
+    byte b = self.charAt(i);
+    if (isUpperASCII(b)) {
+      if (previous_is_cased) return Bool::falseObj();
+      previous_is_cased = true;
+      cased = true;
+    } else if (isLowerASCII(b)) {
+      if (!previous_is_cased) return Bool::falseObj();
+      previous_is_cased = true;
+      cased = true;
+    } else {
+      previous_is_cased = false;
+    }
+  }
+  return Bool::fromBool(cased);
+}
+
+RawObject StrBuiltins::isupper(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+  }
+  Str self(&scope, strUnderlying(thread, self_obj));
+  word char_length = self.charLength();
+  bool cased = false;
+  for (word i = 0; i < char_length; i++) {
+    byte b = self.charAt(i);
+    if (b > kMaxASCII) {
+      UNIMPLEMENTED("non-ASCII character");
+    }
+    if (isLowerASCII(b)) {
+      return Bool::falseObj();
+    }
+    if (!cased && isUpperASCII(b)) {
+      cased = true;
+    }
+  }
+  return Bool::fromBool(cased);
 }
 
 RawObject StrBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {

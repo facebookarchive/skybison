@@ -624,17 +624,17 @@ RawObject UnderBuiltinsModule::underBytesSplitWhitespace(Thread* thread,
   word splits = 0;
   word index = 0;
   while (splits < maxsplit) {
-    while (index < self_len && isAsciiSpace(self.byteAt(index))) {
+    while (index < self_len && isSpaceASCII(self.byteAt(index))) {
       index++;
     }
     if (index == self_len) break;
     index++;
-    while (index < self_len && !isAsciiSpace(self.byteAt(index))) {
+    while (index < self_len && !isSpaceASCII(self.byteAt(index))) {
       index++;
     }
     splits++;
   }
-  while (index < self_len && isAsciiSpace(self.byteAt(index))) {
+  while (index < self_len && isSpaceASCII(self.byteAt(index))) {
     index++;
   }
   bool has_remaining = index < self_len;
@@ -646,17 +646,17 @@ RawObject UnderBuiltinsModule::underBytesSplitWhitespace(Thread* thread,
   Tuple buffer(&scope, runtime->newTuple(result_len));
   index = 0;
   for (word i = 0; i < splits; i++) {
-    while (isAsciiSpace(self.byteAt(index))) {
+    while (isSpaceASCII(self.byteAt(index))) {
       index++;
     }
     word start = index++;
-    while (!isAsciiSpace(self.byteAt(index))) {
+    while (!isSpaceASCII(self.byteAt(index))) {
       index++;
     }
     buffer.atPut(i, runtime->bytesSubseq(thread, self, start, index - start));
   }
   if (has_remaining) {
-    while (isAsciiSpace(self.byteAt(index))) {
+    while (isSpaceASCII(self.byteAt(index))) {
       index++;
     }
     buffer.atPut(splits,
