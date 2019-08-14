@@ -31,6 +31,13 @@ RawObject bytesReprSmartQuotes(Thread* thread, const Bytes& self);
 // Returns the internal bytes value of an instance of bytes.
 RawObject bytesUnderlying(Thread* thread, const Object& obj);
 
+bool bytesIsValidUTF8(RawBytes bytes);
+
+// Test whether bytes are valid UTF-8 except that it also allows codepoints
+// from the surrogate range which is technically not valid UTF-8 but allowed
+// in strings, because python supports things like UTF-8B (aka surrogateescape).
+bool bytesIsValidStr(RawBytes bytes);
+
 class SmallBytesBuiltins
     : public Builtins<SmallBytesBuiltins, SymbolId::kSmallBytes,
                       LayoutId::kSmallBytes, LayoutId::kBytes> {

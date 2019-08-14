@@ -16,6 +16,125 @@ TEST_F(BytesBuiltinsTest, BuiltinBaseIsBytes) {
   EXPECT_EQ(bytes_type.builtinBase(), LayoutId::kBytes);
 }
 
+TEST_F(BytesBuiltinsTest, BytesIsValidUTF8ReturnsTrue) {
+  EXPECT_TRUE(bytesIsValidUTF8(Bytes::empty()));
+
+  HandleScope scope(thread_);
+  const byte zeros_bytes[] = {0, 0, 0};
+  Bytes zeros(&scope, runtime_.newBytesWithAll(zeros_bytes));
+  EXPECT_TRUE(bytesIsValidUTF8(*zeros));
+
+  const byte test0[] = {'S', ':', 'a'};
+  EXPECT_TRUE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test0))));
+  const byte test1[] = {'S', ':', 0xC3, 0xA4};
+  EXPECT_TRUE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test1))));
+  const byte test2[] = {'S', ':', 0xE2, 0x88, 0x91};
+  EXPECT_TRUE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test2))));
+  const byte test3[] = {'S', ':', 0xF0, 0x9F, 0x90, 0x8D};
+  EXPECT_TRUE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test3))));
+
+  const byte test_misc[] = {0xEC, 0x95, 0x88, 0xEB, 0x85, 0x95, ' ',
+                            0xEC, 0x84, 0xB8, 0xEC, 0x83, 0x81, 0};
+  EXPECT_TRUE(
+      bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test_misc))));
+
+  const byte max_unicode[] = {0xF4, 0x8F, 0xBF, 0xBF};
+  EXPECT_TRUE(
+      bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(max_unicode))));
+
+  const byte min_surrogate_minus_one[] = {0xED, 0x9F, 0xBF};
+  EXPECT_TRUE(bytesIsValidUTF8(
+      Bytes::cast(runtime_.newBytesWithAll(min_surrogate_minus_one))));
+  const byte max_surrogate_plus_one[] = {0xEE, 0x80, 0x80};
+  EXPECT_TRUE(bytesIsValidUTF8(
+      Bytes::cast(runtime_.newBytesWithAll(max_surrogate_plus_one))));
+}
+
+TEST_F(BytesBuiltinsTest,
+       BytesIsValidUTF8WithContinuationAfterValidCharReturnsFalse) {
+  const byte test0[] = {0x80};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test0))));
+  const byte test1[] = {'a', 0xB3};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test1))));
+  const byte test2[] = {0xC3, 0xA4, 0xB3};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test2))));
+  const byte test3[] = {0xE2, 0x88, 0x91, 0xB3};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test3))));
+  const byte test4[] = {0xF0, 0x9F, 0x90, 0x8D, 0xB3};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test4))));
+}
+
+TEST_F(BytesBuiltinsTest, BytesIsValidUTF8WithMissingContinuationReturnsFalse) {
+  const byte test0[] = {0xC3};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test0))));
+  const byte test1[] = {0xC3, 0};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test1))));
+
+  const byte test2[] = {0xE2};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test2))));
+  const byte test3[] = {0xE2, 0};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test3))));
+  const byte test5[] = {0xE2, 0x88};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test5))));
+  const byte test4[] = {0xE2, 0, 0};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test4))));
+  const byte test6[] = {0xE2, 0x88, 0};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test6))));
+
+  const byte test7[] = {0xF0};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test7))));
+  const byte test8[] = {0xF0, 0};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test8))));
+  const byte test9[] = {0xF0, 0x9F};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test9))));
+  const byte test10[] = {0xF0, 0, 0};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test10))));
+  const byte test11[] = {0xF0, 0x9F, 0};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test11))));
+  const byte test12[] = {0xF0, 0x9F, 0x90};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test12))));
+  const byte test13[] = {0xF0, 0, 0, 0};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test13))));
+  const byte test14[] = {0xF0, 0x9F, 0x90, 0};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test14))));
+}
+
+TEST_F(BytesBuiltinsTest,
+       BytesIsValidUTF8WithValueTooSmallForEncodingReturnsFalse) {
+  const byte test0[] = {0xC0, 0x84};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test0))));
+  const byte test1[] = {0xE0, 0x80, 0x80};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test1))));
+  const byte test2[] = {0xE0, 0x9F, 0xBF};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test2))));
+  const byte test3[] = {0xF0, 0x80, 0x80, 0x80};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test3))));
+  const byte test4[] = {0xF0, 0x80, 0x9F, 0xBF};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test4))));
+  const byte test5[] = {0xF4, 0x90, 0x80, 0x80};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test5))));
+  const byte test6[] = {0xF7, 0xBF, 0xBF, 0xBF};
+  EXPECT_FALSE(bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(test6))));
+}
+
+TEST_F(BytesBuiltinsTest, BytesIsValidUTF8WithSurrogateReturnsFalse) {
+  const byte min_surrogate[] = {0xED, 0xA0, 0x80};
+  EXPECT_FALSE(
+      bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(min_surrogate))));
+  const byte max_surrogate[] = {0xED, 0xBF, 0xBF};
+  EXPECT_FALSE(
+      bytesIsValidUTF8(Bytes::cast(runtime_.newBytesWithAll(max_surrogate))));
+}
+
+TEST_F(BytesBuiltinsTest, BytesIsValidStrWithSurrogateReturnsTrue) {
+  const byte min_surrogate[] = {0xED, 0xA0, 0x80};
+  EXPECT_TRUE(
+      bytesIsValidStr(Bytes::cast(runtime_.newBytesWithAll(min_surrogate))));
+  const byte max_surrogate[] = {0xED, 0xBF, 0xBF};
+  EXPECT_TRUE(
+      bytesIsValidStr(Bytes::cast(runtime_.newBytesWithAll(max_surrogate))));
+}
+
 TEST_F(BytesBuiltinsTest, FindWithSameBytesReturnsZero) {
   HandleScope scope(thread_);
   const byte haystack_bytes[] = {102, 55, 100, 74, 91, 118};

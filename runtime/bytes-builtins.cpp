@@ -5,6 +5,7 @@
 #include "int-builtins.h"
 #include "runtime.h"
 #include "slice-builtins.h"
+#include "unicode.h"
 #include "utils.h"
 
 namespace python {
@@ -142,6 +143,115 @@ RawObject bytesUnderlying(Thread* thread, const Object& obj) {
   HandleScope scope(thread);
   UserBytesBase user_bytes(&scope, *obj);
   return user_bytes.value();
+}
+
+static bool bytesIsValidUTF8Impl(RawBytes bytes, bool allow_surrogates) {
+  for (word i = 0, length = bytes.length(); i < length;) {
+    byte b0 = bytes.byteAt(i++);
+    // ASCII bytes have the topmost bit zero.
+    static_assert(kMaxASCII == 0x7F, "unexpected kMaxASCII value");
+    if (b0 <= 0x7F) continue;
+    // Bytes past this point have the high bit set (0b1xxxxxxx).
+
+    // 0b110xxxxx begins a sequence with one continuation byte.
+    // `b0 < 0b11100000` overestimates and we filter in a 2nd comparison.
+    if (b0 < 0xE0) {
+      // b0 < 0xC0   catches 0b10xxxxxx bytes (invalid continuation bytes).
+      // 0xC0 + 0xC1 (0b11000000 + 0b110000001) would result in range(0x7F)
+      // which should have been encoded as ASCII.
+      if (b0 < 0xC2) {
+        return false;
+      }
+      if (i >= length) {
+        return false;
+      }
+      byte b1 = bytes.byteAt(i++);
+      if (!isUTF8Continuation(b1)) {
+        return false;
+      }
+      if (DCHECK_IS_ON()) {
+        uword decoded =
+            static_cast<uword>(b0 & 0x1F) << 6 | static_cast<uword>(b1 & 0x3F);
+        DCHECK(0x80 <= decoded && decoded <= 0x7FF, "unexpected value");
+      }
+
+      // 0b1110xxxx starts a sequence with two continuation bytes.
+    } else if (b0 < 0xF0) {
+      if (i + 1 >= length) {
+        return false;
+      }
+      byte b1 = bytes.byteAt(i++);
+      byte b2 = bytes.byteAt(i++);
+      if (!isUTF8Continuation(b1) || !isUTF8Continuation(b2)) {
+        return false;
+      }
+
+      // Catch sequences that should have been encoded in 1-2 bytes instead.
+      if (b0 == 0xE0) {
+        if (b1 < 0xA0) {
+          return false;
+        }
+      } else if (!allow_surrogates && b0 == 0xED && b1 >= 0xA0) {
+        // 0b11011xxxxxxxxxxx  (0xD800 - 0xDFFF) is declared invalid by unicode
+        // as they look like utf-16 surrogates making it easier to detect
+        // mix-ups.
+        return false;
+      }
+
+      if (DCHECK_IS_ON()) {
+        uword decoded = static_cast<uword>(b0 & 0x0F) << 12 |
+                        static_cast<uword>(b1 & 0x3F) << 6 |
+                        static_cast<uword>(b2 & 0x3F);
+        DCHECK(0x0800 <= decoded && decoded <= 0xFFFF, "unexpected value");
+      }
+
+      static_assert(kMaxUnicode == 0x10FFFF, "unexpected maxunicode value");
+      // 0b11110xxx starts a sequence with three continuation bytes.
+      // However values bigger than 0x10FFFF are not valid unicode, so we test
+      // b0 < 0b11110101 to overestimate that.
+    } else if (b0 < 0xF5) {
+      if (i + 2 >= length) {
+        return false;
+      }
+      byte b1 = bytes.byteAt(i++);
+      byte b2 = bytes.byteAt(i++);
+      byte b3 = bytes.byteAt(i++);
+      if (!isUTF8Continuation(b1) || !isUTF8Continuation(b2) ||
+          !isUTF8Continuation(b3)) {
+        return false;
+      }
+      // Catch sequences that should have been encoded with 1-3 bytes instead.
+      if (b0 == 0xF0) {
+        if (b1 < 0x90) {
+          return false;
+        }
+      } else if (b0 == 0xF4 && b1 >= 0x90) {
+        // Bigger than kMaxUnicode.
+        return false;
+      }
+
+      if (DCHECK_IS_ON()) {
+        uword decoded = static_cast<uword>(b0 & 0x07) << 16 |
+                        static_cast<uword>(b1 & 0x3F) << 12 |
+                        static_cast<uword>(b2 & 0x3F) << 6 |
+                        static_cast<uword>(b3 & 0x3F);
+        DCHECK(0x10000 <= decoded && decoded <= kMaxUnicode,
+               "unexpected value");
+      }
+    } else {
+      // Invalid prefix byte.
+      return false;
+    }
+  }
+  return true;
+}
+
+bool bytesIsValidUTF8(RawBytes bytes) {
+  return bytesIsValidUTF8Impl(bytes, /*allow_surrogates=*/false);
+}
+
+bool bytesIsValidStr(RawBytes bytes) {
+  return bytesIsValidUTF8Impl(bytes, /*allow_surrogates=*/true);
 }
 
 void SmallBytesBuiltins::postInitialize(Runtime* runtime,

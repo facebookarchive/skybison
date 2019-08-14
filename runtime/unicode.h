@@ -47,4 +47,8 @@ inline bool isPrintableASCII(byte b) { return ' ' <= b && b < '\x7F'; }
 
 // TODO(T43723300): implement isUnicodeSpace
 
+inline bool isUTF8Continuation(byte b) {
+  return (b & 0xC0) == 0x80;  // Test for 0b10xxxxxx
+}
+
 }  // namespace python
