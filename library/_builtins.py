@@ -104,6 +104,11 @@ def _bytes_split_whitespace(self, maxsplit):
 
 
 @_patch
+def _byteslike_count(self, sub, start, end):
+    pass
+
+
+@_patch
 def _byteslike_endswith(self, suffix, start, end):
     pass
 

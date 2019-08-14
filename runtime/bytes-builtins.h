@@ -5,6 +5,10 @@
 
 namespace python {
 
+// Counts distinct occurrences of needle in haystack in the range [start, end).
+word bytesCount(const Bytes& haystack, word haystack_len, const Bytes& needle,
+                word needle_len, word start, word end);
+
 // Looks for needle in haystack in the range [start, end). Returns the first
 // starting index found in that range, or -1 if the needle was not found.
 word bytesFind(const Bytes& haystack, word haystack_len, const Bytes& needle,

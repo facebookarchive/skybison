@@ -9,6 +9,28 @@
 
 namespace python {
 
+word bytesCount(const Bytes& haystack, word haystack_len, const Bytes& needle,
+                word needle_len, word start, word end) {
+  DCHECK_BOUND(haystack_len, haystack.length());
+  DCHECK_BOUND(needle_len, needle.length());
+  if (start > haystack_len) {
+    return 0;
+  }
+  Slice::adjustSearchIndices(&start, &end, haystack_len);
+  if (needle_len == 0) {
+    return haystack_len - start + 1;
+  }
+  word count = 0;
+  word index =
+      bytesFind(haystack, haystack_len, needle, needle_len, start, end);
+  while (index != -1) {
+    count++;
+    index = bytesFind(haystack, haystack_len, needle, needle_len,
+                      index + needle_len, end);
+  }
+  return count;
+}
+
 word bytesFind(const Bytes& haystack, word haystack_len, const Bytes& needle,
                word needle_len, word start, word end) {
   DCHECK_BOUND(haystack_len, haystack.length());

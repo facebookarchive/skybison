@@ -25,6 +25,7 @@ _bytes_maketrans = _bytes_maketrans  # noqa: F821
 _bytes_repeat = _bytes_repeat  # noqa: F821
 _bytes_split = _bytes_split  # noqa: F821
 _bytes_split_whitespace = _bytes_split_whitespace  # noqa: F821
+_byteslike_count = _byteslike_count  # noqa: F821
 _byteslike_endswith = _byteslike_endswith  # noqa: F821
 _byteslike_find_byteslike = _byteslike_find_byteslike  # noqa: F821
 _byteslike_find_int = _byteslike_find_int  # noqa: F821
@@ -1168,8 +1169,28 @@ class bytearray(bootstrap=True):
     def copy(self):
         _unimplemented()
 
-    def count(self, sub, start=_Unbound, end=_Unbound):
-        _unimplemented()
+    def count(self, sub, start=None, end=None):
+        _bytearray_guard(self)
+        start = 0 if start is None else _index(start)
+        end = _bytearray_len(self) if end is None else _index(end)
+        # TODO(T38246066) allow any bytes-like object
+        if _bytes_check(sub) or _bytearray_check(sub):
+            return _byteslike_count(self, sub, start, end)
+        if _int_check(sub):
+            return _byteslike_count(self, sub, start, end)
+        if not _number_check(sub):
+            raise TypeError(
+                f"a bytes-like object is required, not '{_type(sub).__name__}'"
+            )
+        try:
+            sub = _index(sub)
+        except OverflowError:
+            raise ValueError("byte must be in range(0, 256)")
+        except Exception:
+            raise TypeError(
+                f"a bytes-like object is required, not '{_type(sub).__name__}'"
+            )
+        return _byteslike_count(self, sub, start, end)
 
     def decode(self, encoding="utf-8", errors=_Unbound):
         import _codecs
@@ -1489,8 +1510,28 @@ class bytes(bootstrap=True):
     def center(self):
         _unimplemented()
 
-    def count(self, sub, start=_Unbound, end=_Unbound):
-        _unimplemented()
+    def count(self, sub, start=None, end=None):
+        _bytes_guard(self)
+        start = 0 if start is None else _index(start)
+        end = _bytes_len(self) if end is None else _index(end)
+        # TODO(T38246066) allow any bytes-like object
+        if _bytes_check(sub) or _bytearray_check(sub):
+            return _byteslike_count(self, sub, start, end)
+        if _int_check(sub):
+            return _byteslike_count(self, sub, start, end)
+        if not _number_check(sub):
+            raise TypeError(
+                f"a bytes-like object is required, not '{_type(sub).__name__}'"
+            )
+        try:
+            sub = _index(sub)
+        except OverflowError:
+            raise ValueError("byte must be in range(0, 256)")
+        except Exception:
+            raise TypeError(
+                f"a bytes-like object is required, not '{_type(sub).__name__}'"
+            )
+        return _byteslike_count(self, sub, start, end)
 
     def decode(self, encoding="utf-8", errors="strict") -> str:
         import _codecs

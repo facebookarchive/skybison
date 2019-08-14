@@ -35,10 +35,12 @@ class UnderBuiltinsModule {
   static RawObject underBytesLen(Thread* thread, Frame* frame, word nargs);
   static RawObject underBytesMaketrans(Thread* thread, Frame* frame,
                                        word nargs);
+  static RawObject underBytesRepeat(Thread* thread, Frame* frame, word nargs);
   static RawObject underBytesSplit(Thread* thread, Frame* frame, word nargs);
   static RawObject underBytesSplitWhitespace(Thread* thread, Frame* frame,
                                              word nargs);
-  static RawObject underBytesRepeat(Thread* thread, Frame* frame, word nargs);
+  static RawObject underByteslikeCount(Thread* thread, Frame* frame,
+                                       word nargs);
   static RawObject underByteslikeEndsWith(Thread* thread, Frame* frame,
                                           word nargs);
   static RawObject underByteslikeFindByteslike(Thread* thread, Frame* frame,

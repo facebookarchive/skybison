@@ -76,6 +76,133 @@ class ByteArrayTests(unittest.TestCase):
             str(context.exception),
         )
 
+    def test_count_with_bytes_self_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytearray.count(b"", bytearray())
+        self.assertIn(
+            "'count' requires a 'bytearray' object but received a 'bytes'",
+            str(context.exception),
+        )
+
+    def test_count_with_nonbyte_int_raises_value_error(self):
+        haystack = bytearray()
+        needle = 266
+        with self.assertRaises(ValueError) as context:
+            haystack.count(needle)
+        self.assertEqual(str(context.exception), "byte must be in range(0, 256)")
+
+    def test_count_with_string_raises_type_error(self):
+        haystack = bytearray()
+        needle = "133"
+        with self.assertRaises(TypeError) as context:
+            haystack.count(needle)
+        self.assertEqual(
+            str(context.exception), "a bytes-like object is required, not 'str'"
+        )
+
+    def test_count_with_non_number_index_raises_type_error(self):
+        class Idx:
+            def __index__(self):
+                return ord("a")
+
+        haystack = bytearray(b"abc")
+        needle = Idx()
+        with self.assertRaises(TypeError) as context:
+            haystack.count(needle)
+        self.assertEqual(
+            str(context.exception), "a bytes-like object is required, not 'Idx'"
+        )
+
+    def test_count_with_dunder_int_calls_dunder_index(self):
+        class Desc:
+            def __get__(self, obj, type):
+                raise NotImplementedError("called descriptor")
+
+        class Idx:
+            def __index__(self):
+                return ord("a")
+
+            __int__ = Desc()
+
+        haystack = bytearray(b"abc")
+        needle = Idx()
+        self.assertEqual(haystack.count(needle), 1)
+
+    def test_count_with_dunder_float_calls_dunder_index(self):
+        class Desc:
+            def __get__(self, obj, type):
+                raise NotImplementedError("called descriptor")
+
+        class Idx:
+            __float__ = Desc()
+
+            def __index__(self):
+                return ord("a")
+
+        haystack = bytearray(b"abc")
+        needle = Idx()
+        self.assertEqual(haystack.count(needle), 1)
+
+    def test_count_with_index_overflow_raises_value_error(self):
+        class Idx:
+            def __float__(self):
+                return 0.0
+
+            def __index__(self):
+                raise OverflowError("not a byte!")
+
+        haystack = bytearray(b"abc")
+        needle = Idx()
+        with self.assertRaises(ValueError) as context:
+            haystack.count(needle)
+        self.assertEqual(str(context.exception), "byte must be in range(0, 256)")
+
+    def test_count_with_dunder_index_error_raises_type_error(self):
+        class Idx:
+            def __float__(self):
+                return 0.0
+
+            def __index__(self):
+                raise MemoryError("not a byte!")
+
+        haystack = bytearray(b"abc")
+        needle = Idx()
+        with self.assertRaises(TypeError) as context:
+            haystack.count(needle)
+        self.assertEqual(
+            str(context.exception), "a bytes-like object is required, not 'Idx'"
+        )
+
+    def test_count_with_empty_sub_returns_length_minus_adjusted_start_plus_one(self):
+        haystack = bytearray(b"abcde")
+        needle = b""
+        self.assertEqual(haystack.count(needle, -3), 4)
+
+    def test_count_with_missing_returns_zero(self):
+        haystack = bytearray(b"abc")
+        needle = b"d"
+        self.assertEqual(haystack.count(needle), 0)
+
+    def test_count_with_missing_stays_within_bounds(self):
+        haystack = bytearray(b"abc")
+        needle = bytearray(b"c")
+        self.assertEqual(haystack.count(needle, None, 2), 0)
+
+    def test_count_with_large_start_returns_zero(self):
+        haystack = bytearray(b"abc")
+        needle = bytearray(b"")
+        self.assertEqual(haystack.count(needle, 10), 0)
+
+    def test_count_with_negative_bounds_returns_count(self):
+        haystack = bytearray(b"ababa")
+        needle = b"a"
+        self.assertEqual(haystack.count(needle, -4, -1), 1)
+
+    def test_count_returns_non_overlapping_count(self):
+        haystack = bytearray(b"0000000000")
+        needle = bytearray(b"000")
+        self.assertEqual(haystack.count(needle), 3)
+
     def test_endswith_with_bytes_self_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             bytearray.endswith(b"", bytearray())
@@ -411,6 +538,133 @@ class BytesTests(unittest.TestCase):
 
     def test_dunder_new_with_ignore_errors_returns_bytes(self):
         self.assertEqual(bytes("fo\x80o", "ascii", "ignore"), b"foo")
+
+    def test_count_with_bytearray_self_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytes.count(bytearray(), b"")
+        self.assertIn(
+            "'count' requires a 'bytes' object but received a 'bytearray'",
+            str(context.exception),
+        )
+
+    def test_count_with_nonbyte_int_raises_value_error(self):
+        haystack = b""
+        needle = 266
+        with self.assertRaises(ValueError) as context:
+            haystack.count(needle)
+        self.assertEqual(str(context.exception), "byte must be in range(0, 256)")
+
+    def test_count_with_string_raises_type_error(self):
+        haystack = b""
+        needle = "133"
+        with self.assertRaises(TypeError) as context:
+            haystack.count(needle)
+        self.assertEqual(
+            str(context.exception), "a bytes-like object is required, not 'str'"
+        )
+
+    def test_count_with_non_number_index_raises_type_error(self):
+        class Idx:
+            def __index__(self):
+                return ord("a")
+
+        haystack = b"abc"
+        needle = Idx()
+        with self.assertRaises(TypeError) as context:
+            haystack.count(needle)
+        self.assertEqual(
+            str(context.exception), "a bytes-like object is required, not 'Idx'"
+        )
+
+    def test_count_with_dunder_int_calls_dunder_index(self):
+        class Desc:
+            def __get__(self, obj, type):
+                raise NotImplementedError("called descriptor")
+
+        class Idx:
+            def __index__(self):
+                return ord("a")
+
+            __int__ = Desc()
+
+        haystack = b"abc"
+        needle = Idx()
+        self.assertEqual(haystack.count(needle), 1)
+
+    def test_count_with_dunder_float_calls_dunder_index(self):
+        class Desc:
+            def __get__(self, obj, type):
+                raise NotImplementedError("called descriptor")
+
+        class Idx:
+            __float__ = Desc()
+
+            def __index__(self):
+                return ord("a")
+
+        haystack = b"abc"
+        needle = Idx()
+        self.assertEqual(haystack.count(needle), 1)
+
+    def test_count_with_index_overflow_raises_value_error(self):
+        class Idx:
+            def __float__(self):
+                return 0.0
+
+            def __index__(self):
+                raise OverflowError("not a byte!")
+
+        haystack = b"abc"
+        needle = Idx()
+        with self.assertRaises(ValueError) as context:
+            haystack.count(needle)
+        self.assertEqual(str(context.exception), "byte must be in range(0, 256)")
+
+    def test_count_with_index_error_raises_type_error(self):
+        class Idx:
+            def __float__(self):
+                return 0.0
+
+            def __index__(self):
+                raise TypeError("not a byte!")
+
+        haystack = b"abc"
+        needle = Idx()
+        with self.assertRaises(TypeError) as context:
+            haystack.count(needle)
+        self.assertEqual(
+            str(context.exception), "a bytes-like object is required, not 'Idx'"
+        )
+
+    def test_count_with_empty_sub_returns_length_minus_adjusted_start_plus_one(self):
+        haystack = b"abcde"
+        needle = bytearray()
+        self.assertEqual(haystack.count(needle, -3), 4)
+
+    def test_count_with_missing_returns_zero(self):
+        haystack = b"abc"
+        needle = b"d"
+        self.assertEqual(haystack.count(needle), 0)
+
+    def test_count_with_missing_stays_within_bounds(self):
+        haystack = b"abc"
+        needle = bytearray(b"c")
+        self.assertEqual(haystack.count(needle, None, 2), 0)
+
+    def test_count_with_large_start_returns_zero(self):
+        haystack = b"abc"
+        needle = bytearray(b"")
+        self.assertEqual(haystack.count(needle, 10), 0)
+
+    def test_count_with_negative_bounds_returns_count(self):
+        haystack = b"foobar"
+        needle = bytearray(b"o")
+        self.assertEqual(haystack.count(needle, -6, -1), 2)
+
+    def test_count_returns_non_overlapping_count(self):
+        haystack = b"abababab"
+        needle = bytearray(b"aba")
+        self.assertEqual(haystack.count(needle), 2)
 
     def test_endswith_with_bytearray_self_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
