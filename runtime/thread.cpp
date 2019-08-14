@@ -49,6 +49,7 @@ Thread::~Thread() { delete[] start_; }
 void Thread::visitRoots(PointerVisitor* visitor) {
   visitStackRoots(visitor);
   handles()->visitPointers(visitor);
+  visitor->visitPointer(&api_repr_list_);
   visitor->visitPointer(&pending_exc_type_);
   visitor->visitPointer(&pending_exc_value_);
   visitor->visitPointer(&pending_exc_traceback_);
