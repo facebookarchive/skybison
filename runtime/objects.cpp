@@ -213,6 +213,14 @@ void RawList::replaceFromWith(word start, RawList src, word count) const {
   Tuple::cast(items()).replaceFromWith(start, Tuple::cast(src.items()), count);
 }
 
+void RawList::replaceFromWithStartAt(word start, RawList src, word count,
+                                     word src_start) const {
+  DCHECK_BOUND(start + count, numItems());
+  DCHECK_BOUND(src_start + count, src.numItems());
+  Tuple::cast(items()).replaceFromWithStartAt(start, Tuple::cast(src.items()),
+                                              count, src_start);
+}
+
 // RawInt
 
 word RawInt::compare(RawInt that) const {
@@ -391,11 +399,28 @@ void RawTuple::fill(RawObject value) const {
   }
 }
 
-void RawTuple::replaceFromWith(word start, RawObject array, word count) const {
-  RawTuple src = RawTuple::cast(array);
-  word stop = start + count;
-  for (word i = start, j = 0; i < stop; i++, j++) {
-    atPut(i, src.at(j));
+void RawTuple::replaceFromWith(word dst_start, RawTuple src, word count) const {
+  replaceFromWithStartAt(dst_start, src, count, 0);
+}
+
+void RawTuple::replaceFromWithStartAt(word dst_start, RawTuple src, word count,
+                                      word src_start) const {
+  if (src != *this) {
+    // No overlap
+    for (word i = dst_start, j = src_start; count != 0; i++, j++, count--) {
+      atPut(i, src.at(j));
+    }
+  } else if (src_start < dst_start) {
+    // Overlap; copy backward
+    for (word i = dst_start + count - 1, j = src_start + count - 1; count != 0;
+         i--, j--, count--) {
+      atPut(i, src.at(j));
+    }
+  } else if (src_start > dst_start) {
+    // Overlap; copy forward
+    for (word i = dst_start, j = src_start; count != 0; i++, j++, count--) {
+      atPut(i, src.at(j));
+    }
   }
 }
 

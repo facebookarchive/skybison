@@ -46,9 +46,8 @@ void listInsert(Thread* thread, const List& list, const Object& value,
     index = last_index + index;
   }
   index = Utils::maximum(word{0}, Utils::minimum(last_index, index));
-  for (word i = last_index; i > index; i--) {
-    list.atPut(i, list.at(i - 1));
-  }
+  // Shift elements over to the right
+  list.replaceFromWithStartAt(index + 1, *list, last_index - index, index);
   list.atPut(index, *value);
 }
 
@@ -57,9 +56,7 @@ RawObject listPop(Thread* thread, const List& list, word index) {
   Object popped(&scope, list.at(index));
   list.atPut(index, NoneType::object());
   word last_index = list.numItems() - 1;
-  for (word i = index; i < last_index; i++) {
-    list.atPut(i, list.at(i + 1));
-  }
+  list.replaceFromWithStartAt(index, *list, last_index - index, index + 1);
   list.setNumItems(list.numItems() - 1);
   return *popped;
 }
@@ -561,13 +558,14 @@ static RawObject setItemSlice(Thread* thread, const List& list,
 
   // And now copy suffix:
   word suffix_length = Utils::maximum(word{0}, list.numItems() - suffix_start);
-  word result_length = result_list.numItems() + suffix_length;
-  runtime->listEnsureCapacity(thread, result_list, result_length);
+  if (suffix_length > 0) {
+    word result_length = result_list.numItems() + suffix_length;
+    runtime->listEnsureCapacity(thread, result_list, result_length);
 
-  word index = result_list.numItems();
-  result_list.setNumItems(result_length);
-  for (word i = suffix_start; i < list.numItems(); i++, index++) {
-    result_list.atPut(index, list.at(i));
+    word dst_start = result_list.numItems();
+    result_list.setNumItems(result_length);
+    result_list.replaceFromWithStartAt(dst_start, *list, suffix_length,
+                                       suffix_start);
   }
 
   list.setItems(result_list.items());

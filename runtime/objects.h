@@ -1142,8 +1142,13 @@ class RawTuple : public RawArray {
 
   void fill(RawObject value) const;
 
-  // Copy count elements from src to this tuple, starting at index start
-  void replaceFromWith(word start, RawObject array, word count) const;
+  // Copy count elements from src to this tuple, starting at index dst_start
+  void replaceFromWith(word dst_start, RawTuple src, word count) const;
+
+  // Copy count elements from src to this tuple, starting at index dst_start in
+  // this and src_start in src
+  void replaceFromWithStartAt(word dst_start, RawTuple src, word count,
+                              word src_start) const;
 
   bool contains(RawObject object) const;
 
@@ -2369,6 +2374,11 @@ class RawList : public RawHeapObject {
 
   // Copy count elements from src to this list, starting at index start
   void replaceFromWith(word start, RawList src, word count) const;
+
+  // Copy count elements from src to this list, starting at index start in the
+  // destination and index src_start in the source
+  void replaceFromWithStartAt(word start, RawList src, word count,
+                              word src_start) const;
 
   // Layout.
   static const int kItemsOffset = RawHeapObject::kSize;

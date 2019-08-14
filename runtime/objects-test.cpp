@@ -1065,6 +1065,38 @@ TEST_F(ListTest, ReplaceFromWithCopiesEveryElementFromSrc) {
   EXPECT_PYLIST_EQ(dst, {0, 1, 2, 3, 4});
 }
 
+TEST_F(ListTest, ReplaceFromWithStartAtReplacesElementsStartingAtSrcStart) {
+  HandleScope scope(thread_);
+  List dst(&scope, runtime_.newList());
+  Tuple dst_tuple(&scope, runtime_.newTuple(5));
+  dst.setItems(*dst_tuple);
+  dst.setNumItems(5);
+  List src(&scope, listFromRange(0, 5));
+  dst.replaceFromWithStartAt(0, *src, 2, 2);
+  EXPECT_PYLIST_EQ(dst, {2, 3, Value::none(), Value::none(), Value::none()});
+}
+
+TEST_F(ListTest, ReplaceFromWithStartAtWithSelfNoop) {
+  HandleScope scope(thread_);
+  List dst(&scope, listFromRange(0, 5));
+  dst.replaceFromWithStartAt(0, *dst, 2, 0);
+  EXPECT_PYLIST_EQ(dst, {0, 1, 2, 3, 4});
+}
+
+TEST_F(ListTest, ReplaceFromWithStartAtWithSelfBackward) {
+  HandleScope scope(thread_);
+  List dst(&scope, listFromRange(0, 5));
+  dst.replaceFromWithStartAt(0, *dst, 2, 2);
+  EXPECT_PYLIST_EQ(dst, {2, 3, 2, 3, 4});
+}
+
+TEST_F(ListTest, ReplaceFromWithStartAtWithSelfForward) {
+  HandleScope scope(thread_);
+  List dst(&scope, listFromRange(0, 5));
+  dst.replaceFromWithStartAt(2, *dst, 2, 0);
+  EXPECT_PYLIST_EQ(dst, {0, 1, 0, 1, 4});
+}
+
 TEST_F(TupleTest, NoneFillTupleFillsTupleWithNone) {
   HandleScope scope(thread_);
   Tuple tuple(&scope, runtime_.newTuple(3));
@@ -1127,6 +1159,43 @@ TEST_F(TupleTest, ReplaceFromWithCopiesEveryElementFromSrc) {
   EXPECT_TRUE(isIntEqualsWord(dst.at(2), 2));
   EXPECT_TRUE(isIntEqualsWord(dst.at(3), 3));
   EXPECT_TRUE(isIntEqualsWord(dst.at(4), 4));
+}
+
+TEST_F(TupleTest, ReplaceFromWithStartAtWithSelfNoop) {
+  HandleScope scope(thread_);
+  List dst_list(&scope, listFromRange(0, 5));
+  Tuple dst(&scope, dst_list.items());
+  dst.replaceFromWithStartAt(0, *dst, 2, 0);
+  EXPECT_PYLIST_EQ(dst_list, {0, 1, 2, 3, 4});
+}
+
+TEST_F(TupleTest, ReplaceFromWithStartAtWithSelfBackward) {
+  HandleScope scope(thread_);
+  List dst_list(&scope, listFromRange(0, 5));
+  Tuple dst(&scope, dst_list.items());
+  dst.replaceFromWithStartAt(0, *dst, 2, 2);
+  EXPECT_PYLIST_EQ(dst_list, {2, 3, 2, 3, 4});
+}
+
+TEST_F(TupleTest, ReplaceFromWithStartAtWithSelfForward) {
+  HandleScope scope(thread_);
+  List dst_list(&scope, listFromRange(0, 5));
+  Tuple dst(&scope, dst_list.items());
+  dst.replaceFromWithStartAt(2, *dst, 2, 0);
+  EXPECT_PYLIST_EQ(dst_list, {0, 1, 0, 1, 4});
+}
+
+TEST_F(TupleTest, ReplaceFromWithStartAtReplacesElementsStartingAtSrcStart) {
+  HandleScope scope(thread_);
+  Tuple dst(&scope, runtime_.newTuple(5));
+  List src_list(&scope, listFromRange(0, 5));
+  Tuple src(&scope, src_list.items());
+  dst.replaceFromWithStartAt(0, *src, 2, 2);
+  EXPECT_TRUE(isIntEqualsWord(dst.at(0), 2));
+  EXPECT_TRUE(isIntEqualsWord(dst.at(1), 3));
+  EXPECT_TRUE(dst.at(2).isNoneType());
+  EXPECT_TRUE(dst.at(3).isNoneType());
+  EXPECT_TRUE(dst.at(4).isNoneType());
 }
 
 TEST(ErrorTest, ErrorIsError) {
