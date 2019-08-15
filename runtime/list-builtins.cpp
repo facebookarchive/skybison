@@ -443,133 +443,66 @@ RawObject ListIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   return SmallInt::fromWord(list.numItems() - list_iterator.index());
 }
 
-static RawObject setItemSlice(Thread* thread, const List& list,
-                              const Slice& slice, const Object& src) {
-  HandleScope scope(thread);
+static RawObject listSetSlice(Thread* thread, const List& self,
+                              const Slice& slice, const Tuple& src,
+                              word src_length) {
   word start, stop, step;
-  Object err(&scope, sliceUnpack(thread, slice, &start, &stop, &step));
-  if (err.isError()) return *err;
+  RawObject err = sliceUnpack(thread, slice, &start, &stop, &step);
+  if (err.isError()) return err;
   word slice_length =
-      Slice::adjustIndices(list.numItems(), &start, &stop, step);
+      Slice::adjustIndices(self.numItems(), &start, &stop, step);
+  // Make sure that the degenerate case of a slice assignment where start is
+  // greater than stop inserts before the start and not the stop. For example,
+  // b[5:2] = ... should inserts before 5, not before 2.
+  if ((step < 0 && start < stop) || (step > 0 && start > stop)) {
+    stop = start;
+  }
 
-  // Fast-path for the case when there is no need to allocate because the
-  // destination has space and the (adjusted) slice length is the same as the
-  // size of the right hand side.
-  // NOTE: This only applies for exact list rhs, since we should call __iter__
-  // for subclasses.
-  if (src.isList() && src != list && step == 1 &&
-      slice_length == List::cast(*src).numItems()) {
-    list.replaceFromWith(start, List::cast(*src), stop - start);
+  if (step == 1) {
+    word growth = src_length - (stop - start);
+    word new_length = self.numItems() + growth;
+    if (growth == 0) {
+      // Assignment does not change the length of the list. Do nothing.
+    } else if (growth > 0) {
+      // Assignment grows the length of the list. Ensure there is enough free
+      // space in the underlying tuple for the new items and move stuff out of
+      // the way.
+      thread->runtime()->listEnsureCapacity(thread, self, new_length);
+      // Make the free space part of the list. Must happen before shifting so
+      // we can index into the free space.
+      self.setNumItems(new_length);
+      // Shift some items to the right.
+      self.replaceFromWithStartAt(start + growth, *self,
+                                  new_length - growth - start, start);
+    } else {
+      // Growth is negative so assignment shrinks the length of the list.
+      // Shift some items to the left.
+      self.replaceFromWithStartAt(start, *self, new_length - start,
+                                  start - growth);
+      // Do not retain references in the unused part of the list.
+      self.clearFrom(new_length);
+      // Remove the free space from the length of the list. Must happen after
+      // shifting and clearing so we can index into the free space.
+      self.setNumItems(new_length);
+    }
+    // Copy new elements into the middle
+    Tuple::cast(self.items()).replaceFromWith(start, *src, src_length);
     return NoneType::object();
   }
 
-  word suffix_start = Utils::maximum(start + 1, stop);
-  // degenerate case of a bad slice; behaves like a single index:
-  if ((step > 0) && (start > stop)) {
-    stop = start;
-    suffix_start = start;  // do not drop any items
+  if (slice_length != src_length) {
+    return thread->raiseWithFmt(
+        LayoutId::kValueError,
+        "attempt to assign sequence of size %w to extended slice of size "
+        "%w",
+        src_length, slice_length);
   }
-
-  // Potential optimization:
-  // We could check for __length_hint__ or __len__ and attempt to
-  // do in-place update in more cases or at least have a good estimate of
-  // capacity for result_list
-  Runtime* runtime = thread->runtime();
-  List result_list(&scope, runtime->newList());
-
-  // Note: initial capacity for result array here is an optimistic guess
-  // since we don't yet know length iterator
-  // Potential optimization: use __length_hint__ of src
-  runtime->listEnsureCapacity(thread, result_list, list.numItems());
-
-  // copy prefix into result array:
-  word prefix_length = Utils::minimum(start, stop + 1);
-  result_list.setNumItems(prefix_length);
-  result_list.replaceFromWith(0, *list, prefix_length);
-  if (step == 1) {
-    if (src.isList() || src.isTuple()) {
-      // Fast path for exact lists or tuples
-      Object result(&scope, listExtend(thread, result_list, src));
-      if (result.isError()) return *result;
-    } else {
-      // Subclasses of list or tuple or other iterables fall back to
-      // list.extend
-      Object result(&scope,
-                    thread->invokeMethodStatic2(
-                        LayoutId::kList, SymbolId::kExtend, result_list, src));
-      if (result.isError()) return *result;
-    }
-  } else {
-    Object iter_method(
-        &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), src,
-                                          SymbolId::kDunderIter));
-    if (iter_method.isError()) {
-      return thread->raiseWithFmt(LayoutId::kTypeError,
-                                  "object is not iterable");
-    }
-    Object iterator(&scope,
-                    Interpreter::callMethod1(thread, thread->currentFrame(),
-                                             iter_method, src));
-    if (iterator.isError()) {
-      return thread->raiseWithFmt(LayoutId::kTypeError,
-                                  "object is not iterable");
-    }
-    Object next_method(
-        &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
-                                          iterator, SymbolId::kDunderNext));
-    if (next_method.isError()) {
-      return thread->raiseWithFmt(LayoutId::kTypeError,
-                                  "iter() returned a non-iterator");
-    }
-
-    Object iter_length_val(&scope,
-                           runtime->iteratorLengthHint(thread, iterator));
-    if (iter_length_val.isError()) {
-      return thread->raiseWithFmt(
-          LayoutId::kTypeError,
-          "slice assignment: unable to get length of assigned sequence");
-    }
-    word iter_length = SmallInt::cast(*iter_length_val).value();
-    if (slice_length != iter_length) {
-      return thread->raiseWithFmt(
-          LayoutId::kValueError,
-          "attempt to assign sequence of size %w to extended slice of size "
-          "%w",
-          iter_length, slice_length);
-    }
-
-    Object value(&scope, NoneType::object());
-
-    result_list.setNumItems(result_list.numItems() + std::abs(stop - start));
-    for (word i = start, incr = (step > 0) ? 1 : -1, count = 0; i != stop;
-         i += incr, count++) {
-      if ((count % step) == 0) {
-        value = Interpreter::callMethod1(thread, thread->currentFrame(),
-                                         next_method, iterator);
-        if (value.isError()) {
-          return *value;
-        }
-      } else {
-        value = list.at(i);
-      }
-      result_list.atPut(i, *value);
-    }
+  HandleScope scope(thread);
+  Tuple dst_items(&scope, self.items());
+  for (word dst_idx = start, src_idx = 0; src_idx < src_length;
+       dst_idx += step, src_idx++) {
+    dst_items.atPut(dst_idx, src.at(src_idx));
   }
-
-  // And now copy suffix:
-  word suffix_length = Utils::maximum(word{0}, list.numItems() - suffix_start);
-  if (suffix_length > 0) {
-    word result_length = result_list.numItems() + suffix_length;
-    runtime->listEnsureCapacity(thread, result_list, result_length);
-
-    word dst_start = result_list.numItems();
-    result_list.setNumItems(result_length);
-    result_list.replaceFromWithStartAt(dst_start, *list, suffix_length,
-                                       suffix_start);
-  }
-
-  list.setItems(result_list.items());
-  list.setNumItems(result_list.numItems());
   return NoneType::object();
 }
 
@@ -579,7 +512,8 @@ RawObject ListBuiltins::dunderSetItem(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
 
-  if (!thread->runtime()->isInstanceOfList(*self)) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfList(*self)) {
     return thread->raiseRequiresType(self, SymbolId::kList);
   }
 
@@ -602,7 +536,29 @@ RawObject ListBuiltins::dunderSetItem(Thread* thread, Frame* frame,
   }
   if (index.isSlice()) {
     Slice slice(&scope, *index);
-    return setItemSlice(thread, list, slice, src);
+    Tuple src_tuple(&scope, runtime->emptyTuple());
+    word src_length;
+    if (src.isList()) {
+      RawList src_list = List::cast(*src);
+      src_tuple = src_list.items();
+      src_length = src_list.numItems();
+    } else if (src.isTuple()) {
+      src_tuple = *src;
+      src_length = src_tuple.length();
+    } else {
+      Object result(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
+                                                    SymbolId::kTuple, src));
+      if (result.isError()) return *result;
+      src_tuple = *result;
+      src_length = src_tuple.length();
+    }
+    if (self == src) {
+      // This copy avoids complicated indexing logic in a rare case of
+      // replacing lhs with elements of rhs when lhs == rhs. It can likely be
+      // re-written to avoid allocation if necessary.
+      src_tuple = runtime->tupleSubseq(thread, src_tuple, 0, src_length);
+    }
+    return listSetSlice(thread, list, slice, src_tuple, src_length);
   }
   return thread->raiseWithFmt(LayoutId::kTypeError,
                               "list indices must be integers or slices");
