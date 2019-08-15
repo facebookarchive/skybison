@@ -5,11 +5,10 @@
 # fmt: off
 """Various utility functions."""
 
-from os.path import commonprefix
-
 # TODO(T42627145): Enable collections.namedtuple
 # from collections import OrderedDict, namedtuple
-from _namedtuple import namedtuple
+from collections import namedtuple
+from os.path import commonprefix
 
 
 __unittest = True

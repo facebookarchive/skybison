@@ -36,11 +36,8 @@ __all__ = ['get_close_matches', 'ndiff', 'restore', 'SequenceMatcher',
            'unified_diff', 'diff_bytes', 'HtmlDiff', 'Match']
 
 import re
+from collections import namedtuple as _namedtuple
 from heapq import nlargest as _nlargest
-
-# TODO(T42627145): Enable collections.namedtuple
-# from collections import namedtuple as _namedtuple
-from _namedtuple import namedtuple as _namedtuple
 
 
 Match = _namedtuple('Match', 'a b size')

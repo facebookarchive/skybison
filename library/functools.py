@@ -24,9 +24,7 @@ try:
 except ImportError:
     pass
 from abc import get_cache_token
-# TODO(T42627145): Enable collections.namedtuple
-# from collections import namedtuple
-from _namedtuple import namedtuple
+from collections import namedtuple
 from types import MappingProxyType
 from weakref import WeakKeyDictionary
 from reprlib import recursive_repr
