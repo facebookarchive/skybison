@@ -15,8 +15,10 @@ executable = executable  # noqa: F821
 class _FlagsStructSeq:
     # TODO(T39224400): Implement flags as a structsequence
     def __init__(self):
-        self.verbose = 0
         self.bytes_warning = 0
+        self.no_site = 0
+        self.no_user_site = 0
+        self.verbose = 0
 
 
 class _IOStream:
@@ -43,6 +45,26 @@ class _ImplementationType:
         self.name = "pyro"
 
 
+class _VersionInfo(tuple):
+    # TODO(cshapiro): switch to using builtins._structseq_field
+    # instead of a custom descriptor
+    class _VersionInfoField:
+        def __get__(self, instance, owner):
+            return instance[self._index]
+
+        def __init__(self, index):
+            self._index = index
+
+        def __set__(self, instance, value):
+            raise AttributeError("readonly attribute")
+
+    major = _VersionInfoField(0)
+    minor = _VersionInfoField(1)
+    micro = _VersionInfoField(2)
+    releaselevel = _VersionInfoField(3)
+    serial = _VersionInfoField(4)
+
+
 @_patch
 def _getframe_code(depth=0):
     pass
@@ -56,6 +78,17 @@ def _getframe_globals(depth=0):
 @_patch
 def _getframe_lineno(depth=0) -> int:
     pass
+
+
+abiflags = ""
+
+
+# TODO(cshapiro): assign a meaningful value in the runtime
+base_exec_prefix = ""
+
+
+# TODO(cshapiro): assign a meaningful value in the runtime
+base_prefix = ""
 
 
 def displayhook(value):
@@ -90,6 +123,10 @@ def exc_info():
 @_patch
 def excepthook(exc, value, tb):
     pass
+
+
+# TODO(cshapiro): assign a meaningful value in the runtime
+exec_prefix = ""
 
 
 def exit(code=0):
@@ -144,6 +181,9 @@ path_hooks = []
 path_importer_cache = {}
 
 
+prefix = ""
+
+
 ps1 = ">>> "
 
 
@@ -156,4 +196,10 @@ stderr = _IOStream(_stderr_fd)
 stdout = _IOStream(_stdout_fd)
 
 
+version = "3.6.8+"
+
+
 warnoptions = []
+
+
+version_info = _VersionInfo((3, 6, 8, "final", 0))
