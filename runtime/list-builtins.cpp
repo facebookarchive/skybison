@@ -99,8 +99,9 @@ RawObject listSlice(Thread* thread, const List& list, word start, word stop,
 
   HandleScope scope(thread);
   Tuple items(&scope, runtime->newTuple(length));
+  Tuple src(&scope, list.items());
   for (word i = 0, j = start; i < length; i++, j += step) {
-    items.atPut(i, list.at(j));
+    items.atPut(i, src.at(j));
   }
   List result(&scope, runtime->newList());
   result.setItems(*items);
