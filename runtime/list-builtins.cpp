@@ -65,11 +65,10 @@ RawObject listReplicate(Thread* thread, const List& list, word ntimes) {
   HandleScope scope(thread);
   word len = list.numItems();
   Runtime* runtime = thread->runtime();
+  Tuple list_items(&scope, list.items());
   Tuple items(&scope, runtime->newTuple(ntimes * len));
   for (word i = 0; i < ntimes; i++) {
-    for (word j = 0; j < len; j++) {
-      items.atPut((i * len) + j, list.at(j));
-    }
+    items.replaceFromWith(i * len, *list_items, len);
   }
   List result(&scope, runtime->newList());
   result.setItems(*items);

@@ -90,12 +90,8 @@ RawObject TupleBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   }
 
   Tuple new_tuple(&scope, runtime->newTuple(new_length));
-  for (word i = 0; i < llength; ++i) {
-    new_tuple.atPut(i, left.at(i));
-  }
-  for (word j = 0; j < rlength; ++j) {
-    new_tuple.atPut(llength + j, right.at(j));
-  }
+  new_tuple.replaceFromWith(0, *left, llength);
+  new_tuple.replaceFromWith(llength, *right, rlength);
   return *new_tuple;
 }
 
@@ -308,9 +304,7 @@ RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
     return *new_tuple;
   }
   for (word i = 0; i < times; i++) {
-    for (word j = 0; j < length; j++) {
-      new_tuple.atPut(i * length + j, self.at(j));
-    }
+    new_tuple.replaceFromWith(i * length, *self, length);
   }
   return *new_tuple;
 }

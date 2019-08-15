@@ -341,9 +341,7 @@ RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
   frame->pushValue(*dunder_new);
   Tuple call_args(&scope, runtime->newTuple(pargs.length() + 1));
   call_args.atPut(0, *self);
-  for (word i = 0, length = pargs.length(); i < length; i++) {
-    call_args.atPut(i + 1, pargs.at(i));
-  }
+  call_args.replaceFromWith(1, *pargs, pargs.length());
   frame->pushValue(*call_args);
   frame->pushValue(*kwargs);
   Object instance(&scope, Interpreter::callEx(
