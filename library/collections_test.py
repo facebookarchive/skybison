@@ -23,6 +23,13 @@ class NamedtupleTests(unittest.TestCase):
         Foo = namedtuple("Foo", "a b")
         self.assertEqual(Foo(1, "bar").__repr__(), "Foo(a=1, b='bar')")
 
+    def test_dunder_getattr_with_namedtuple_class_returns_descriptor(self):
+        Foo = namedtuple("Foo", "a b")
+        self.assertTrue(hasattr(Foo, "a"))
+        self.assertTrue(hasattr(Foo.a, "__get__"))
+        self.assertTrue(hasattr(Foo, "b"))
+        self.assertTrue(hasattr(Foo.b, "__get__"))
+
 
 if __name__ == "__main__":
     unittest.main()

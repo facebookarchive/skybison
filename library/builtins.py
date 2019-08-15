@@ -987,6 +987,8 @@ class _strarray(bootstrap=True):  # noqa: F821
 
 class _structseq_field:
     def __get__(self, instance, owner):
+        if instance is None:
+            return self
         if self.index is not None:
             return instance[self.index]
         return _instance_getattr(instance, self.name)
