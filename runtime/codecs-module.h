@@ -21,6 +21,7 @@ class UnderCodecsModule
                                             word nargs);
   static RawObject underUtf16Encode(Thread* thread, Frame* frame, word nargs);
   static RawObject underUtf32Encode(Thread* thread, Frame* frame, word nargs);
+  static RawObject underUtf8Decode(Thread* thread, Frame* frame, word nargs);
   static RawObject underUtf8Encode(Thread* thread, Frame* frame, word nargs);
   static RawObject underByteArrayAsBytes(Thread* thread, Frame* frame,
                                          word nargs);

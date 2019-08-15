@@ -108,6 +108,303 @@ encoded = Foo(b"hello")
   EXPECT_TRUE(str.equalsCStr("hello"));
 }
 
+TEST_F(CodecsModuleTest, DecodeUTF8WithWellFormedUTF8ReturnsString) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 0xC3, 0xA9, 0xF0, 0x9D, 0x87, 0xB0,
+                    'l', 'l',  'o',  0xE2, 0xB3, 0x80};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("strict"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object stateful(&scope, Bool::falseObj());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
+                         index, strarray, stateful));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0),
+                              "h\xC3\xA9\xF0\x9D\x87\xB0llo\xE2\xB3\x80"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 13));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
+}
+
+TEST_F(CodecsModuleTest, DecodeUTF8WithIgnoreErrorHandlerReturnsStr) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', 0x80, 'o'};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("ignore"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object stateful(&scope, Bool::falseObj());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
+                         index, strarray, stateful));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hello"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 6));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
+}
+
+TEST_F(CodecsModuleTest, DecodeUTF8WithReplaceErrorHandlerReturnsStr) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', 0x80, 'o'};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("replace"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object stateful(&scope, Bool::falseObj());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
+                         index, strarray, stateful));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  Str str(&scope, result.at(0));
+  EXPECT_EQ(str.charLength(), 8);
+  word placeholder;
+  EXPECT_EQ(str.codePointAt(4, &placeholder), 0xfffd);
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 6));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
+}
+
+TEST_F(CodecsModuleTest, DecodeUTF8WithSurroogateescapeErrorHandlerReturnsStr) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', 0x80, 'o'};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("surrogateescape"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object stateful(&scope, Bool::falseObj());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
+                         index, strarray, stateful));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  Str str(&scope, result.at(0));
+  EXPECT_EQ(str.charLength(), 8);
+  word placeholder;
+  EXPECT_EQ(str.codePointAt(4, &placeholder), 0xdc80);
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 6));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
+}
+
+TEST_F(CodecsModuleTest, DecodeUTF8WithInvalidStartByteReturnsIndices) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', 0x80, 'o'};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("strict"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object stateful(&scope, Bool::falseObj());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
+                         index, strarray, stateful));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 4));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 5));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "invalid start byte"));
+}
+
+TEST_F(CodecsModuleTest, DecodeUTF8StatefulWithInvalidStartByteReturnsIndices) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', 0x80, 'o'};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("strict"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object stateful(&scope, Bool::trueObj());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
+                         index, strarray, stateful));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 4));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 5));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "invalid start byte"));
+}
+
+TEST_F(CodecsModuleTest, DecodeUTF8WithUnexpectedEndReturnsIndices) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', 0xC3};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("strict"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object stateful(&scope, Bool::falseObj());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
+                         index, strarray, stateful));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 4));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 5));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "unexpected end of data"));
+}
+
+TEST_F(CodecsModuleTest, DecodeUTF8StatefulWithUnexpectedEndReturnsStr) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', 0xC3};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("strict"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object stateful(&scope, Bool::trueObj());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
+                         index, strarray, stateful));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hell"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 4));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
+}
+
+TEST_F(CodecsModuleTest, DecodeUTF8WithInvalidFirstContReturnsIndices) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', 0xE2, 0xC3, 'o'};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("strict"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object stateful(&scope, Bool::falseObj());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
+                         index, strarray, stateful));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 4));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 5));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "invalid continuation byte"));
+}
+
+TEST_F(CodecsModuleTest, DecodeUTF8StatefulWithInvalidFirstContReturnsStr) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', 0xE2, 0xC3, 'o'};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("strict"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object stateful(&scope, Bool::trueObj());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
+                         index, strarray, stateful));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hell"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 4));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
+}
+
+TEST_F(CodecsModuleTest, DecodeUTF8WithInvalidSecondContReturnsIndices) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', 0xF0, 0x9D, 'o', 'o'};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("strict"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object stateful(&scope, Bool::falseObj());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
+                         index, strarray, stateful));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 4));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 6));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "invalid continuation byte"));
+}
+
+TEST_F(CodecsModuleTest, DecodeUTF8StatefulWithInvalidSecondContReturnsStr) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', 0xF0, 0x9D, 'o', 'o'};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("strict"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object stateful(&scope, Bool::trueObj());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
+                         index, strarray, stateful));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hell"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 4));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
+}
+
+TEST_F(CodecsModuleTest, DecodeUTF8WithInvalidThirdContReturnsIndices) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', 0xF0, 0x9D, 0x87, 'o'};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("strict"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object stateful(&scope, Bool::falseObj());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
+                         index, strarray, stateful));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 4));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 7));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "invalid continuation byte"));
+}
+
+TEST_F(CodecsModuleTest, DecodeUTF8StatefulWithInvalidThirdContReturnsStr) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', 0xF0, 0x9D, 0x87, 'o'};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("strict"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object stateful(&scope, Bool::trueObj());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
+                         index, strarray, stateful));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hell"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 4));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
+}
+
+TEST_F(CodecsModuleTest, DecodeUTF8WithBytesSubclassReturnsStr) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class Foo(bytes): pass
+encoded = Foo(b"hello")
+)")
+                   .isError());
+  Object bytes(&scope, mainModuleAt(&runtime_, "encoded"));
+  Object errors(&scope, runtime_.newStrFromCStr("strict"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object stateful(&scope, Bool::falseObj());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
+                         index, strarray, stateful));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hello"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 5));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
+}
+
 TEST_F(CodecsModuleTest, DecodeEscapeWithWellFormedLatin1ReturnsString) {
   HandleScope scope(thread_);
   byte encoded[] = {'h', 'e', 'l', 'l', 0xE9, 'o'};

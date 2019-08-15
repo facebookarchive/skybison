@@ -1097,11 +1097,39 @@ TEST_F(UnicodeExtensionApiTest, DecodeUTF8ReturnsString) {
   EXPECT_TRUE(isUnicodeEqualsCStr(str, "hello world"));
 }
 
+TEST_F(UnicodeExtensionApiTest,
+       DecodeUTF8WithUnfinishedBytesRaisesUnicodeDecodeError) {
+  EXPECT_EQ(PyUnicode_DecodeUTF8("hello world\xC3", 12, nullptr), nullptr);
+  PyObject *exc, *value, *tb;
+  PyErr_Fetch(&exc, &value, &tb);
+  ASSERT_NE(exc, nullptr);
+  ASSERT_TRUE(PyErr_GivenExceptionMatches(exc, PyExc_UnicodeDecodeError));
+  Py_ssize_t temp;
+  PyObjectPtr msg(PyUnicodeDecodeError_GetReason(value));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(msg, "unexpected end of data"));
+  PyUnicodeDecodeError_GetStart(value, &temp);
+  EXPECT_EQ(temp, 11);
+  PyUnicodeDecodeError_GetEnd(value, &temp);
+  EXPECT_EQ(temp, 12);
+}
+
 TEST_F(UnicodeExtensionApiTest, DecodeUTF8StatefulReturnsString) {
+  Py_ssize_t consumed;
   PyObjectPtr str(
-      PyUnicode_DecodeUTF8Stateful("hello world", 11, nullptr, nullptr));
+      PyUnicode_DecodeUTF8Stateful("hello world", 11, nullptr, &consumed));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(isUnicodeEqualsCStr(str, "hello world"));
+  EXPECT_EQ(consumed, 11);
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       DecodeUTF8StatefulWithUnfinishedBytesReturnsString) {
+  Py_ssize_t consumed;
+  PyObjectPtr str(
+      PyUnicode_DecodeUTF8Stateful("hello world\xC3", 12, nullptr, &consumed));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(isUnicodeEqualsCStr(str, "hello world"));
+  EXPECT_EQ(consumed, 11);
 }
 
 TEST_F(UnicodeExtensionApiTest, DecodeUnicodeEscapeReturnsString) {
@@ -1824,9 +1852,8 @@ TEST_F(UnicodeExtensionApiTest,
       PyUnicode_DecodeLocaleAndSize("abc\x80", 4, "surrogateescape"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_TRUE(PyUnicode_CheckExact(str));
-  // Necessary to use DecodeUTF8 because CPython will throw an error if it runs
-  // into a surrogate while decoding without the surrogatepass error handler.
-  PyObjectPtr test(PyUnicode_DecodeUTF8("abc\xed\xb2\x80", 6, "surrogatepass"));
+  Py_UCS4 data[] = {'a', 'b', 'c', 0xDC80};
+  PyObjectPtr test(PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, data, 4));
   EXPECT_TRUE(_PyUnicode_EQ(str, test));
 }
 

@@ -57,6 +57,7 @@ const BuiltinMethod UnderCodecsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderUnicodeEscapeDecode, underUnicodeEscapeDecode},
     {SymbolId::kUnderUtf16Encode, underUtf16Encode},
     {SymbolId::kUnderUtf32Encode, underUtf32Encode},
+    {SymbolId::kUnderUtf8Decode, underUtf8Decode},
     {SymbolId::kUnderUtf8Encode, underUtf8Encode},
     {SymbolId::kSentinelId, nullptr},
 };
@@ -694,6 +695,237 @@ RawObject UnderCodecsModule::underUnicodeEscapeDecode(Thread* thread,
   result.atPut(1, runtime->newInt(length));
   result.atPut(2, runtime->newStrFromCStr(""));
   result.atPut(3, runtime->newInt(first_invalid_escape_index));
+  return *result;
+}
+
+static bool isContinuationByte(byte ch) { return kMaxASCII < ch && ch < 0xC0; }
+
+enum Utf8DecoderResult {
+  k1Byte = 1,
+  k2Byte = 2,
+  k3Byte = 3,
+  k4Byte = 4,
+  kInvalidStart = 0,
+  kInvalidContinuation1 = -1,
+  kInvalidContinuation2 = -2,
+  kInvalidContinuation3 = -3,
+  kUnexpectedEndOfData = -4,
+};
+
+// This functionality is taken mostly from CPython:
+//   Objects/stringlib/codecs.h::utf8_decode
+// This does error checking to ensure well-formedness of the passed in UTF-8
+// bytes, and returns the number of bytes of the codepoint at `index` as a
+// Utf8DecoderResult enum value.
+// Since this is supposed to work as an incremental decoder as well, this
+// function returns specific values for errors to determine whether they could
+// be caused by incremental decoding, or if they would be an error no matter
+// what other bytes might be streamed in later.
+static Utf8DecoderResult isValidUtf8Codepoint(const Bytes& bytes, word index) {
+  word length = bytes.length();
+  byte ch = bytes.byteAt(index);
+  if (ch <= kMaxASCII) {
+    return k1Byte;
+  }
+  if (ch < 0xE0) {
+    // \xC2\x80-\xDF\xBF -- 0080-07FF
+    if (ch < 0xC2) {
+      // invalid sequence
+      // \x80-\xBF -- continuation byte
+      // \xC0-\xC1 -- fake 0000-007F
+      return kInvalidStart;
+    }
+    if (index + 1 >= length) {
+      return kUnexpectedEndOfData;
+    }
+    if (!isContinuationByte(bytes.byteAt(index + 1))) {
+      return kInvalidContinuation1;
+    }
+    return k2Byte;
+  }
+  if (ch < 0xF0) {
+    // \xE0\xA0\x80-\xEF\xBF\xBF -- 0800-FFFF
+    if (index + 2 >= length) {
+      if (index + 1 >= length) {
+        return kUnexpectedEndOfData;
+      }
+      byte ch2 = bytes.byteAt(index + 1);
+      if (!isContinuationByte(ch2) || (ch2 < 0xA0 ? ch == 0xE0 : ch == 0xED)) {
+        return kInvalidContinuation1;
+      }
+      return kUnexpectedEndOfData;
+    }
+    byte ch2 = bytes.byteAt(index + 1);
+    if (!isContinuationByte(ch2)) {
+      return kInvalidContinuation1;
+    }
+    if (ch == 0xE0) {
+      if (ch2 < 0xA0) {
+        // invalid sequence
+        // \xE0\x80\x80-\xE0\x9F\xBF -- fake 0000-0800
+        return kInvalidContinuation1;
+      }
+    } else if (ch == 0xED && ch2 >= 0xA0) {
+      // Decoding UTF-8 sequences in range \xED\xA0\x80-\xED\xBF\xBF
+      // will result in surrogates in range D800-DFFF. Surrogates are
+      // not valid UTF-8 so they are rejected.
+      // See http://www.unicode.org/versions/Unicode5.2.0/ch03.pdf
+      // (table 3-7) and http://www.rfc-editor.org/rfc/rfc3629.txt
+      return kInvalidContinuation1;
+    }
+    if (!isContinuationByte(bytes.byteAt(index + 2))) {
+      return kInvalidContinuation2;
+    }
+    return k3Byte;
+  }
+  if (ch < 0xF5) {
+    // \xF0\x90\x80\x80-\xF4\x8F\xBF\xBF -- 10000-10FFFF
+    if (index + 3 >= length) {
+      if (index + 1 >= length) {
+        return kUnexpectedEndOfData;
+      }
+      byte ch2 = bytes.byteAt(index + 1);
+      if (!isContinuationByte(ch2) || (ch2 < 0x90 ? ch == 0xF0 : ch == 0xF4)) {
+        return kInvalidContinuation1;
+      }
+      if (index + 2 >= length) {
+        return kUnexpectedEndOfData;
+      }
+      if (!isContinuationByte(bytes.byteAt(index + 2))) {
+        return kInvalidContinuation2;
+      }
+      return kUnexpectedEndOfData;
+    }
+    byte ch2 = bytes.byteAt(index + 1);
+    if (!isContinuationByte(ch2)) {
+      return kInvalidContinuation1;
+    }
+    if (ch == 0xF0) {
+      if (ch2 < 0x90) {
+        // invalid sequence
+        // \xF0\x80\x80\x80-\xF0\x8F\xBF\xBF -- fake 0000-FFFF
+        return kInvalidContinuation1;
+      }
+    } else if (ch == 0xF4 && ch2 >= 0x90) {
+      // invalid sequence
+      // \xF4\x90\x80\80- -- 110000- overflow
+      return kInvalidContinuation1;
+    }
+    if (!isContinuationByte(bytes.byteAt(index + 2))) {
+      return kInvalidContinuation2;
+    }
+    if (!isContinuationByte(bytes.byteAt(index + 3))) {
+      return kInvalidContinuation3;
+    }
+    return k4Byte;
+  }
+  return kInvalidStart;
+}
+
+RawObject UnderCodecsModule::underUtf8Decode(Thread* thread, Frame* frame,
+                                             word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object bytes_obj(&scope, args.get(0));
+  Object errors_obj(&scope, args.get(1));
+  Object index_obj(&scope, args.get(2));
+  Object output_obj(&scope, args.get(3));
+  Object stateful_obj(&scope, args.get(4));
+  // TODO(T45849551): Handle any bytes-like object
+  DCHECK(runtime->isInstanceOfBytes(*bytes_obj),
+         "First arg to _utf_8_decode must be bytes");
+  DCHECK(runtime->isInstanceOfStr(*errors_obj),
+         "Second arg to _utf_8_decode must be str");
+  DCHECK(runtime->isInstanceOfInt(*index_obj),
+         "Third arg to _utf_8_decode must be int");
+  DCHECK(output_obj.isStrArray(),
+         "Fourth arg to _utf_8_decode must be _strarray");
+  DCHECK(stateful_obj.isBool(), "Fifth arg to _utf_8_decode must be bool");
+  Bytes bytes(&scope, bytesUnderlying(thread, bytes_obj));
+  Str errors(&scope, strUnderlying(thread, errors_obj));
+  Int index(&scope, intUnderlying(thread, index_obj));
+  StrArray dst(&scope, *output_obj);
+
+  Tuple result(&scope, runtime->newTuple(3));
+  word length = bytes.length();
+  runtime->strArrayEnsureCapacity(thread, dst, length);
+  word i = asciiDecode(thread, dst, bytes, index.asWord());
+  if (i == length) {
+    result.atPut(0, runtime->strFromStrArray(dst));
+    result.atPut(1, runtime->newInt(length));
+    result.atPut(2, runtime->newStrFromCStr(""));
+    return *result;
+  }
+
+  SymbolId error_id = lookupSymbolForErrorHandler(errors);
+  bool is_stateful = Bool::cast(*stateful_obj).value();
+  while (i < length) {
+    // TODO(T41032331): Scan for non-ASCII characters by words instead of chars
+    Utf8DecoderResult validator_result = isValidUtf8Codepoint(bytes, i);
+    if (validator_result >= k1Byte) {
+      byte codepoint[4] = {0};
+      for (int codeunit = 0; codeunit + 1 <= validator_result; codeunit++) {
+        codepoint[codeunit] = bytes.byteAt(i + codeunit);
+      }
+      i += validator_result;
+      Str temp(&scope,
+               runtime->newStrWithAll(View<byte>{codepoint, validator_result}));
+      runtime->strArrayAddStr(thread, dst, temp);
+      continue;
+    }
+    if (validator_result != kInvalidStart && is_stateful) {
+      break;
+    }
+    word error_end = i;
+    const char* error_message = nullptr;
+    switch (validator_result) {
+      case kInvalidStart:
+        error_end += 1;
+        error_message = "invalid start byte";
+        break;
+      case kInvalidContinuation1:
+      case kInvalidContinuation2:
+      case kInvalidContinuation3:
+        error_end -= validator_result;
+        error_message = "invalid continuation byte";
+        break;
+      case kUnexpectedEndOfData:
+        error_end = length;
+        error_message = "unexpected end of data";
+        break;
+      default:
+        UNREACHABLE(
+            "valid utf-8 codepoints should have been decoded by this point");
+    }
+    switch (error_id) {
+      case SymbolId::kReplace: {
+        Str temp(&scope, SmallStr::fromCodePoint(kReplacementCharacter));
+        runtime->strArrayAddStr(thread, dst, temp);
+        i = error_end;
+        break;
+      }
+      case SymbolId::kSurrogateescape: {
+        for (; i < error_end; ++i) {
+          Str temp(&scope, SmallStr::fromCodePoint(kLowSurrogateStart +
+                                                   bytes.byteAt(i)));
+          runtime->strArrayAddStr(thread, dst, temp);
+        }
+        break;
+      }
+      case SymbolId::kIgnore:
+        i = error_end;
+        break;
+      default:
+        result.atPut(0, runtime->newInt(i));
+        result.atPut(1, runtime->newInt(error_end));
+        result.atPut(2, runtime->newStrFromCStr(error_message));
+        return *result;
+    }
+  }
+  result.atPut(0, runtime->strFromStrArray(dst));
+  result.atPut(1, runtime->newInt(i));
+  result.atPut(2, Str::empty());
   return *result;
 }
 

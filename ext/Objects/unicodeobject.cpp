@@ -1199,24 +1199,38 @@ PY_EXPORT PyObject* PyUnicode_DecodeUTF7Stateful(const char* /* s */,
 }
 
 PY_EXPORT PyObject* PyUnicode_DecodeUTF8(const char* c_str, Py_ssize_t size,
-                                         const char* /* errors */) {
-  // TODO(T38200137): Make use of the error_handler argument
-  Thread* thread = Thread::current();
-  return ApiHandle::newReference(
-      thread, thread->runtime()->newStrWithAll(
-                  View<byte>(reinterpret_cast<const byte*>(c_str), size)));
+                                         const char* errors) {
+  return PyUnicode_DecodeUTF8Stateful(c_str, size, errors, nullptr);
 }
 
 PY_EXPORT PyObject* PyUnicode_DecodeUTF8Stateful(const char* c_str,
                                                  Py_ssize_t size,
-                                                 const char* /* errors */,
-                                                 Py_ssize_t* /* consumed */) {
-  // TODO(T38200137): Make use of the errors argument
-  // TODO(T38320199): Make use of the consumed argument
+                                                 const char* errors,
+                                                 Py_ssize_t* consumed) {
+  DCHECK(c_str != nullptr, "c_str cannot be null");
+
   Thread* thread = Thread::current();
-  return ApiHandle::newReference(
-      thread, thread->runtime()->newStrWithAll(
-                  View<byte>(reinterpret_cast<const byte*>(c_str), size)));
+  HandleScope scope(thread);
+  Object bytes(&scope, thread->runtime()->newBytesWithAll(View<byte>(
+                           reinterpret_cast<const byte*>(c_str), size)));
+  Object errors_obj(&scope, symbolFromError(thread, errors));
+  Object is_stateful(&scope, Bool::fromBool(consumed != nullptr));
+  Object result_obj(
+      &scope, thread->invokeFunction3(SymbolId::kUnderCodecs,
+                                      SymbolId::kUnderUtf8DecodeStateful, bytes,
+                                      errors_obj, is_stateful));
+  if (result_obj.isError()) {
+    if (result_obj.isErrorNotFound()) {
+      thread->raiseWithFmt(LayoutId::kSystemError,
+                           "could not call _codecs._utf_8_decode_stateful");
+    }
+    return nullptr;
+  }
+  Tuple result(&scope, *result_obj);
+  if (consumed != nullptr) {
+    *consumed = Int::cast(result.at(1)).asWord();
+  }
+  return ApiHandle::newReference(thread, result.at(0));
 }
 
 PY_EXPORT PyObject* PyUnicode_DecodeUnicodeEscape(const char* c_str,

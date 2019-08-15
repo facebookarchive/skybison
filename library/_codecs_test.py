@@ -355,6 +355,39 @@ class DecodeUnicodeEscapeTests(unittest.TestCase):
         self.assertEqual(first_invalid, 3)
 
 
+class DecodeUTF8Tests(unittest.TestCase):
+    def test_decode_utf_8_with_non_bytes_first_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _codecs.utf_8_decode([])
+
+    def test_decode_utf_8_with_non_string_second_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _codecs.utf_8_decode(b"", [])
+
+    def test_decode_utf_8_with_zero_length_returns_empty_string(self):
+        decoded, consumed = _codecs.utf_8_decode(b"")
+        self.assertEqual(decoded, "")
+        self.assertEqual(consumed, 0)
+
+    def test_decode_utf_8_with_well_formed_utf_8_returns_string(self):
+        decoded, consumed = _codecs.utf_8_decode(
+            b"\xf0\x9f\x86\x92h\xc3\xa4l\xe2\xb3\x80"
+        )
+        self.assertEqual(decoded, "\U0001f192h\xe4l\u2cc0")
+        self.assertEqual(consumed, 11)
+
+    def test_decode_utf_8_with_custom_error_handler_returns_string(self):
+        _codecs.register_error("test", lambda x: ("-testing-", x.end))
+        decoded, consumed = _codecs.utf_8_decode(b"ab\x90c", "test")
+        self.assertEqual(decoded, "ab-testing-c")
+        self.assertEqual(consumed, 4)
+
+    def test_decode_utf_8_with_invalid_start_byte_raises_decode_error(self):
+        with self.assertRaises(UnicodeDecodeError) as context:
+            _codecs.utf_8_decode(b"ab\x90c")
+        self.assertEqual(str(context.exception.reason), "invalid start byte")
+
+
 class EncodeASCIITests(unittest.TestCase):
     def test_encode_ascii_with_non_str_first_argument_raises_type_error(self):
         with self.assertRaises(TypeError):
