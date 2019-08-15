@@ -131,6 +131,8 @@ class UnderBuiltinsModule {
   static RawObject underListLen(Thread* thread, Frame* frame, word nargs);
   static RawObject underListSort(Thread* thread, Frame* frame, word nargs);
   static RawObject underListSwap(Thread* thread, Frame* frame, word nargs);
+  static RawObject underMemoryviewGuard(Thread* thread, Frame* frame,
+                                        word nargs);
   static RawObject underModuleDir(Thread* thread, Frame* frame, word nargs);
   static RawObject underObjectTypeGetAttr(Thread* thread, Frame* frame,
                                           word nargs);

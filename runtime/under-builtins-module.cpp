@@ -153,6 +153,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderListLen, underListLen},
     {SymbolId::kUnderListSort, underListSort},
     {SymbolId::kUnderListSwap, underListSwap},
+    {SymbolId::kUnderMemoryviewGuard, underMemoryviewGuard},
     {SymbolId::kUnderModuleDir, underModuleDir},
     {SymbolId::kUnderObjectTypeGetattr, underObjectTypeGetAttr},
     {SymbolId::kUnderObjectTypeHasattr, underObjectTypeHasattr},
@@ -226,26 +227,47 @@ const BuiltinType UnderBuiltinsModule::kBuiltinTypes[] = {
 const char* const UnderBuiltinsModule::kFrozenData = kUnderBuiltinsModuleData;
 
 const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
-    SymbolId::kUnderByteArrayCheck, SymbolId::kUnderByteArrayGuard,
-    SymbolId::kUnderByteArrayLen,   SymbolId::kUnderBytesCheck,
-    SymbolId::kUnderBytesGuard,     SymbolId::kUnderBytesLen,
-    SymbolId::kUnderDictCheck,      SymbolId::kUnderDictGuard,
-    SymbolId::kUnderDictLen,        SymbolId::kUnderFloatCheck,
-    SymbolId::kUnderFloatGuard,     SymbolId::kUnderFrozenSetCheck,
-    SymbolId::kUnderFrozenSetGuard, SymbolId::kUnderIntCheck,
-    SymbolId::kUnderIntCheckExact,  SymbolId::kUnderIntGuard,
-    SymbolId::kUnderListCheck,      SymbolId::kUnderListCheckExact,
-    SymbolId::kUnderListGetitem,    SymbolId::kUnderListGuard,
-    SymbolId::kUnderListLen,        SymbolId::kUnderRangeCheck,
-    SymbolId::kUnderRangeGuard,     SymbolId::kUnderSetCheck,
-    SymbolId::kUnderSetGuard,       SymbolId::kUnderSetLen,
-    SymbolId::kUnderSliceCheck,     SymbolId::kUnderSliceGuard,
-    SymbolId::kUnderStrCheck,       SymbolId::kUnderStrCheckExact,
-    SymbolId::kUnderStrGuard,       SymbolId::kUnderStrLen,
-    SymbolId::kUnderTupleCheck,     SymbolId::kUnderTupleCheckExact,
-    SymbolId::kUnderTupleGuard,     SymbolId::kUnderTupleLen,
-    SymbolId::kUnderType,           SymbolId::kUnderTypeCheck,
-    SymbolId::kUnderTypeCheckExact, SymbolId::kUnderTypeGuard,
+    SymbolId::kUnderByteArrayCheck,  // Long comment to keep this list in 1 col
+    SymbolId::kUnderByteArrayGuard,
+    SymbolId::kUnderByteArrayLen,
+    SymbolId::kUnderBytesCheck,
+    SymbolId::kUnderBytesGuard,
+    SymbolId::kUnderBytesLen,
+    SymbolId::kUnderDictCheck,
+    SymbolId::kUnderDictGuard,
+    SymbolId::kUnderDictLen,
+    SymbolId::kUnderFloatCheck,
+    SymbolId::kUnderFloatGuard,
+    SymbolId::kUnderFrozenSetCheck,
+    SymbolId::kUnderFrozenSetGuard,
+    SymbolId::kUnderIntCheck,
+    SymbolId::kUnderIntCheckExact,
+    SymbolId::kUnderIntGuard,
+    SymbolId::kUnderListCheck,
+    SymbolId::kUnderListCheckExact,
+    SymbolId::kUnderListGetitem,
+    SymbolId::kUnderListGuard,
+    SymbolId::kUnderListLen,
+    SymbolId::kUnderMemoryviewGuard,
+    SymbolId::kUnderRangeCheck,
+    SymbolId::kUnderRangeGuard,
+    SymbolId::kUnderSetCheck,
+    SymbolId::kUnderSetGuard,
+    SymbolId::kUnderSetLen,
+    SymbolId::kUnderSliceCheck,
+    SymbolId::kUnderSliceGuard,
+    SymbolId::kUnderStrCheck,
+    SymbolId::kUnderStrCheckExact,
+    SymbolId::kUnderStrGuard,
+    SymbolId::kUnderStrLen,
+    SymbolId::kUnderTupleCheck,
+    SymbolId::kUnderTupleCheckExact,
+    SymbolId::kUnderTupleGuard,
+    SymbolId::kUnderTupleLen,
+    SymbolId::kUnderType,
+    SymbolId::kUnderTypeCheck,
+    SymbolId::kUnderTypeCheckExact,
+    SymbolId::kUnderTypeGuard,
     SymbolId::kSentinelId,
 };
 
@@ -1938,6 +1960,15 @@ RawObject UnderBuiltinsModule::underListSwap(Thread* thread, Frame* frame,
   list.atPut(i, list.at(j));
   list.atPut(j, tmp);
   return NoneType::object();
+}
+
+RawObject UnderBuiltinsModule::underMemoryviewGuard(Thread* thread,
+                                                    Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  if (args.get(0).isMemoryView()) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kMemoryView);
 }
 
 RawObject UnderBuiltinsModule::underModuleDir(Thread* thread, Frame* frame,

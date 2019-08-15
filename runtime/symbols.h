@@ -254,6 +254,7 @@ class Runtime;
   V(UnderListSort, "_list_sort")                                               \
   V(UnderListSwap, "_list_swap")                                               \
   V(UnderLookupText, "_lookup_text")                                           \
+  V(UnderMemoryviewGuard, "_memoryview_guard")                                 \
   V(UnderModuleDir, "_module_dir")                                             \
   V(UnderModuleRepr, "_module_repr")                                           \
   V(UnderMutableBytes, "_mutablebytes")                                        \

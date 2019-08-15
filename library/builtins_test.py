@@ -2957,6 +2957,31 @@ class LongRangeIteratorTests(unittest.TestCase):
             self.assertEqual(it.__next__(), i)
 
 
+class MemoryviewTests(unittest.TestCase):
+    def test_tolist_with_non_memoryview_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            memoryview.tolist(None)
+        self.assertIn(
+            "'tolist' requires a 'memoryview' object but received a 'NoneType'",
+            str(context.exception),
+        )
+
+    def test_tolist_returns_list_of_elements(self):
+        src = b"hello"
+        view = memoryview(src)
+        self.assertEqual(view.tolist(), [104, 101, 108, 108, 111])
+
+    def test_tolist_withitemsize_greater_than_one(self):
+        src = b"abcd"
+        view = memoryview(src).cast("i")
+        self.assertEqual(view.tolist(), [1684234849])
+
+    def test_tolist_with_empty_memoryview_returns_empty_list(self):
+        src = b""
+        view = memoryview(src)
+        self.assertEqual(view.tolist(), [])
+
+
 class ModuleTest(unittest.TestCase):
     def test_dunder_dir_returns_newly_created_list_object(self):
         from types import ModuleType

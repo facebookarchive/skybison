@@ -192,6 +192,15 @@ static bool underListLen(Frame* frame) {
   return false;
 }
 
+static bool underMemoryviewGuard(Frame* frame) {
+  if (frame->topValue().isMemoryView()) {
+    frame->popValue();
+    frame->setTopValue(NoneType::object());
+    return true;
+  }
+  return false;
+}
+
 static bool underNumberCheck(Thread* thread, Frame* frame) {
   Runtime* runtime = thread->runtime();
   RawObject arg = frame->topValue();
@@ -441,6 +450,8 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
       return underListGuard(thread, frame);
     case SymbolId::kUnderListLen:
       return underListLen(frame);
+    case SymbolId::kUnderMemoryviewGuard:
+      return underMemoryviewGuard(frame);
     case SymbolId::kUnderNumberCheck:
       return underNumberCheck(thread, frame);
     case SymbolId::kUnderRangeCheck:
