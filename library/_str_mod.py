@@ -94,7 +94,7 @@ def format(string: str, args) -> str:  # noqa: C901
     arg_idx = 0
 
     result = _strarray()
-    idx = 0
+    idx = -1
     begin = 0
     in_specifier = False
     it = str.__iter__(string)
@@ -105,7 +105,7 @@ def format(string: str, args) -> str:  # noqa: C901
             if c != "%":
                 continue
 
-            _strarray_iadd(result, string[begin : idx - 1])
+            _strarray_iadd(result, string[begin:idx])
 
             in_specifier = True
             c = it.__next__()
@@ -123,7 +123,7 @@ def format(string: str, args) -> str:  # noqa: C901
                     args_dict = args
 
                 pcount = 1
-                keystart = idx
+                keystart = idx + 1
                 while pcount > 0:
                     c = it.__next__()
                     idx += 1
@@ -131,7 +131,7 @@ def format(string: str, args) -> str:  # noqa: C901
                         pcount -= 1
                     elif c == "(":
                         pcount += 1
-                key = string[keystart : idx - 1]
+                key = string[keystart:idx]
 
                 # skip over closing ")"
                 c = it.__next__()
@@ -329,14 +329,14 @@ def format(string: str, args) -> str:  # noqa: C901
                 raise ValueError(
                     f"unsupported format character '{c}' "
                     f"(0x{_int_format_hexadecimal(ord(c))}) "
-                    f"at index {idx - 1}"
+                    f"at index {idx}"
                 )
 
-            begin = idx
+            begin = idx + 1
             in_specifier = False
     except StopIteration:
         # Make sure everyone called `idx += 1` after `it.__next__()`.
-        assert idx == _str_len(string)
+        assert idx + 1 == _str_len(string)
 
     if in_specifier:
         raise ValueError("incomplete format")
