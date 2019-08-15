@@ -1,17 +1,8 @@
 #!/usr/bin/env python3
 import unittest
-
-from test_support import pyro_only
-
-
-try:
-    # TODO(T42627145): Enable collections.namedtuple
-    from _namedtuple import namedtuple
-except ImportError:
-    pass
+from collections import namedtuple
 
 
-@pyro_only
 class NamedtupleTests(unittest.TestCase):
     def test_create_with_space_separated_field_names_splits_string(self):
         self.assertEqual(namedtuple("Foo", "a b")._fields, ("a", "b"))
