@@ -318,6 +318,12 @@ PyAPI_FUNC(PyObject*) PyFloat_FromString(PyObject*);
 PyAPI_FUNC(PyObject*) PyFloat_GetInfo();
 PyAPI_FUNC(double) PyFloat_GetMax();
 PyAPI_FUNC(double) PyFloat_GetMin();
+PyAPI_FUNC(int) _PyFloat_Pack2(double x, unsigned char* p, int le);
+PyAPI_FUNC(int) _PyFloat_Pack4(double x, unsigned char* p, int le);
+PyAPI_FUNC(int) _PyFloat_Pack8(double x, unsigned char* p, int le);
+PyAPI_FUNC(double) _PyFloat_Unpack2(const unsigned char* p, int le);
+PyAPI_FUNC(double) _PyFloat_Unpack4(const unsigned char* p, int le);
+PyAPI_FUNC(double) _PyFloat_Unpack8(const unsigned char* p, int le);
 PyAPI_FUNC(int) PyFrame_ClearFreeList();
 PyAPI_FUNC(void) PyFrame_FastToLocals(PyFrameObject*);
 PyAPI_FUNC(int) PyFrame_GetLineNumber(PyFrameObject*);
@@ -925,6 +931,8 @@ PyAPI_FUNC(PyCodeObject*)
 PyAPI_FUNC(PyCodeObject*) PyAST_CompileObject(struct _mod*, PyObject*,
                                               PyCompilerFlags*, int, PyArena*);
 PyAPI_FUNC(PyObject*) _PyNamespace_New(PyObject* kwds);
+PyAPI_FUNC(double) _Py_dg_stdnan(int sign);
+PyAPI_FUNC(double) _Py_dg_infinity(int sign);
 
 /* Non C-API functions */
 PyAPI_FUNC(int) PyBool_Check_Func(PyObject*);

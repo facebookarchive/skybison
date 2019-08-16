@@ -103,4 +103,42 @@ TEST_F(FloatExtensionApiTest, GetMinReturnsDblMin) {
   EXPECT_EQ(PyFloat_GetMin(), DBL_MIN);
 }
 
+TEST_F(FloatExtensionApiTest, Pack2) {
+  double expected = 1.5;
+  unsigned char ptr[2] = {};
+  ASSERT_EQ(_PyFloat_Pack2(expected, ptr, /* le */ true), 0);
+  // 00000000 00111110
+  ASSERT_EQ(ptr[0], 0);
+  ASSERT_EQ(ptr[1], 62);
+  EXPECT_EQ(_PyFloat_Unpack2(ptr, /* le */ true), 1.5);
+}
+
+TEST_F(FloatExtensionApiTest, Pack4) {
+  double expected = 1.5;
+  unsigned char ptr[4] = {};
+  ASSERT_EQ(_PyFloat_Pack4(expected, ptr, /* le */ true), 0);
+  // 0000000 0000000 11000000 00111111
+  ASSERT_EQ(ptr[0], 0);
+  ASSERT_EQ(ptr[1], 0);
+  ASSERT_EQ(ptr[2], 192);
+  ASSERT_EQ(ptr[3], 63);
+  EXPECT_EQ(_PyFloat_Unpack4(ptr, /* le */ true), 1.5);
+}
+
+TEST_F(FloatExtensionApiTest, Pack8) {
+  double expected = 1.5;
+  unsigned char ptr[8] = {};
+  ASSERT_EQ(_PyFloat_Pack8(expected, ptr, /* le */ true), 0);
+  // 0000000 0000000 0000000 0000000 0000000 0000000 11111000 00111111
+  ASSERT_EQ(ptr[0], 0);
+  ASSERT_EQ(ptr[1], 0);
+  ASSERT_EQ(ptr[2], 0);
+  ASSERT_EQ(ptr[3], 0);
+  ASSERT_EQ(ptr[4], 0);
+  ASSERT_EQ(ptr[5], 0);
+  ASSERT_EQ(ptr[6], 248);
+  ASSERT_EQ(ptr[7], 63);
+  EXPECT_EQ(_PyFloat_Unpack8(ptr, /* le */ true), 1.5);
+}
+
 }  // namespace python
