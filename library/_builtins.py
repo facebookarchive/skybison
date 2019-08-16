@@ -49,6 +49,11 @@ def _bytearray_setitem(self, key, value):
 
 
 @_patch
+def _bytearray_setslice(self, start, stop, step, value):
+    pass
+
+
+@_patch
 def _bytes_check(obj):
     pass
 

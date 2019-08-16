@@ -213,6 +213,49 @@ TEST_F(UnderBuiltinsModuleTest,
 }
 
 TEST_F(UnderBuiltinsModuleTest,
+       UnderByteArraySetsliceWithStepEqualsOneAndNoGrowthSetsSlice) {
+  HandleScope scope(thread_);
+  ByteArray self(&scope, runtime_.newByteArray());
+  byteArrayAdd(thread_, &runtime_, self, 'a');
+  byteArrayAdd(thread_, &runtime_, self, 'b');
+  byteArrayAdd(thread_, &runtime_, self, 'c');
+  byteArrayAdd(thread_, &runtime_, self, 'd');
+  byteArrayAdd(thread_, &runtime_, self, 'e');
+  Int start(&scope, SmallInt::fromWord(0));
+  Int stop(&scope, SmallInt::fromWord(3));
+  Int step(&scope, SmallInt::fromWord(1));
+  ByteArray value(&scope, runtime_.newByteArray());
+  byteArrayAdd(thread_, &runtime_, value, 'A');
+  byteArrayAdd(thread_, &runtime_, value, 'B');
+  byteArrayAdd(thread_, &runtime_, value, 'C');
+  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underByteArraySetSlice, self,
+                         start, stop, step, value)
+                  .isNoneType());
+  EXPECT_TRUE(isByteArrayEqualsCStr(self, "ABCde"));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderByteArraySetsliceWithStepEqualsTwoAndNoGrowthSetsSlice) {
+  HandleScope scope(thread_);
+  ByteArray self(&scope, runtime_.newByteArray());
+  byteArrayAdd(thread_, &runtime_, self, 'a');
+  byteArrayAdd(thread_, &runtime_, self, 'b');
+  byteArrayAdd(thread_, &runtime_, self, 'c');
+  byteArrayAdd(thread_, &runtime_, self, 'd');
+  byteArrayAdd(thread_, &runtime_, self, 'e');
+  Int start(&scope, SmallInt::fromWord(0));
+  Int stop(&scope, SmallInt::fromWord(3));
+  Int step(&scope, SmallInt::fromWord(2));
+  ByteArray value(&scope, runtime_.newByteArray());
+  byteArrayAdd(thread_, &runtime_, value, 'A');
+  byteArrayAdd(thread_, &runtime_, value, 'B');
+  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underByteArraySetSlice, self,
+                         start, stop, step, value)
+                  .isNoneType());
+  EXPECT_TRUE(isByteArrayEqualsCStr(self, "AbBde"));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
        UnderBytesJoinWithEmptyIterableReturnsEmptyByteArray) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);

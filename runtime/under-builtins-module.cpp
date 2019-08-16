@@ -77,6 +77,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderByteArrayJoin, underByteArrayJoin},
     {SymbolId::kUnderByteArrayLen, underByteArrayLen},
     {SymbolId::kUnderByteArraySetitem, underByteArraySetItem},
+    {SymbolId::kUnderByteArraySetslice, underByteArraySetSlice},
     {SymbolId::kUnderBytesCheck, underBytesCheck},
     {SymbolId::kUnderBytesFromInts, underBytesFromInts},
     {SymbolId::kUnderBytesGetitem, underBytesGetItem},
@@ -338,6 +339,82 @@ RawObject UnderBuiltinsModule::underByteArraySetItem(Thread* thread,
                                 "byte must be in range(0, 256)");
   }
   self.byteAtPut(index, val);
+  return NoneType::object();
+}
+
+RawObject UnderBuiltinsModule::underByteArraySetSlice(Thread* thread,
+                                                      Frame* frame,
+                                                      word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  ByteArray self(&scope, args.get(0));
+  Object start_obj(&scope, args.get(1));
+  word start = Int::cast(intUnderlying(thread, start_obj)).asWord();
+  Object stop_obj(&scope, args.get(2));
+  word stop = Int::cast(intUnderlying(thread, stop_obj)).asWord();
+  Object step_obj(&scope, args.get(3));
+  word step = Int::cast(intUnderlying(thread, step_obj)).asWord();
+  ByteArray src(&scope, args.get(4));
+  Bytes src_bytes(&scope, src.bytes());
+  word src_length = src.numItems();
+  // Make sure that the degenerate case of a slice assignment where start is
+  // greater than stop inserts before the start and not the stop. For example,
+  // b[5:2] = ... should inserts before 5, not before 2.
+  if ((step < 0 && start < stop) || (step > 0 && start > stop)) {
+    stop = start;
+  }
+
+  if (step == 1) {
+    if (self == src) {
+      // This copy avoids complicated indexing logic in a rare case of
+      // replacing lhs with elements of rhs when lhs == rhs. It can likely be
+      // re-written to avoid allocation if necessary.
+      src_bytes =
+          thread->runtime()->bytesSubseq(thread, src_bytes, 0, src_length);
+    }
+    word growth = src_length - (stop - start);
+    word new_length = self.numItems() + growth;
+    if (growth == 0) {
+      // Assignment does not change the length of the bytearray. Do nothing.
+    } else if (growth > 0) {
+      // Assignment grows the length of the bytearray. Ensure there is enough
+      // free space in the underlying tuple for the new bytes and move stuff
+      // out of the way.
+      thread->runtime()->byteArrayEnsureCapacity(thread, self, new_length);
+      // Make the free space part of the bytearray. Must happen before shifting
+      // so we can index into the free space.
+      self.setNumItems(new_length);
+      // Shift some bytes to the right.
+      self.replaceFromWithStartAt(start + growth, *self,
+                                  new_length - growth - start, start);
+    } else {
+      // Growth is negative so assignment shrinks the length of the bytearray.
+      // Shift some bytes to the left.
+      self.replaceFromWithStartAt(start, *self, new_length - start,
+                                  start - growth);
+      // Remove the free space from the length of the bytearray. Must happen
+      // after shifting and clearing so we can index into the free space.
+      self.setNumItems(new_length);
+    }
+    // Copy new elements into the middle
+    MutableBytes::cast(self.bytes())
+        .replaceFromWith(start, *src_bytes, src_length);
+    return NoneType::object();
+  }
+
+  word slice_length = Slice::length(start, stop, step);
+  if (slice_length != src_length) {
+    return thread->raiseWithFmt(
+        LayoutId::kValueError,
+        "attempt to assign bytes of size %w to extended slice of size %w",
+        src_length, slice_length);
+  }
+
+  MutableBytes dst_bytes(&scope, self.bytes());
+  for (word dst_idx = start, src_idx = 0; src_idx < src_length;
+       dst_idx += step, src_idx++) {
+    dst_bytes.byteAtPut(dst_idx, src.byteAt(src_idx));
+  }
   return NoneType::object();
 }
 

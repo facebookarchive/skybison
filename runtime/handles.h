@@ -89,7 +89,6 @@ class WARN_UNUSED Handle : public T {
   V(Object)                                                                    \
   V(Bool)                                                                      \
   V(BoundMethod)                                                               \
-  V(ByteArray)                                                                 \
   V(ByteArrayIterator)                                                         \
   V(Bytes)                                                                     \
   V(BytesIO)                                                                   \
@@ -161,6 +160,7 @@ class WARN_UNUSED Handle : public T {
 // The handles for certain types allow user-defined subtypes.
 #define SUBTYPE_HANDLE_TYPES(V)                                                \
   V(BaseException)                                                             \
+  V(ByteArray)                                                                 \
   V(Dict)                                                                      \
   V(FrozenSet)                                                                 \
   V(ImportError)                                                               \

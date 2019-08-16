@@ -14,6 +14,7 @@ _bytearray_guard = _bytearray_guard  # noqa: F821
 _bytearray_join = _bytearray_join  # noqa: F821
 _bytearray_len = _bytearray_len  # noqa: F821
 _bytearray_setitem = _bytearray_setitem  # noqa: F821
+_bytearray_setslice = _bytearray_setslice  # noqa: F821
 _bytes_check = _bytes_check  # noqa: F821
 _bytes_from_ints = _bytes_from_ints  # noqa: F821
 _bytes_getitem = _bytes_getitem  # noqa: F821
@@ -1163,9 +1164,25 @@ class bytearray(bootstrap=True):
         if _int_check(key):
             _int_guard(value)
             return _bytearray_setitem(self, key, value)
-        # TODO(T46473889): Implement bytearray.__setitem__ with slice key
-        # TODO(T46473949): Implement bytearray.__setitem__ with index key
-        _unimplemented()
+        if _slice_check(key):
+            step = _slice_step(_slice_index(key.step))
+            length = _bytearray_len(self)
+            start = _slice_start(_slice_index(key.start), step, length)
+            stop = _slice_stop(_slice_index(key.stop), step, length)
+            if not _bytearray_check(value):
+                try:
+                    it = (*value,)
+                except TypeError:
+                    raise TypeError(
+                        "can assign only bytes, buffers, or iterables of ints "
+                        "in range(0, 256)"
+                    )
+                value = bytearray(it)
+            return _bytearray_setslice(self, start, stop, step, value)
+        if _object_type_hasattr(key, "__index__"):
+            _int_guard(value)
+            return _bytearray_setitem(self, _index(key), value)
+        raise TypeError("bytearray indices must be integers or slices")
 
     def append(self, item):
         _unimplemented()

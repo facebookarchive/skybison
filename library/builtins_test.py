@@ -68,6 +68,138 @@ class ByteArrayTests(unittest.TestCase):
         bytearray.__setitem__(ba, 1, 1)
         self.assertEqual(ba, bytearray(b"f\01o"))
 
+    def test_dunder_setitem_calls_dunder_index(self):
+        class C:
+            def __index__(self):
+                raise UserWarning("foo")
+
+        ba = bytearray(b"foo")
+        with self.assertRaises(UserWarning):
+            bytearray.__setitem__(ba, C(), 1)
+
+    def test_dunder_setitem_slice_with_subclass_does_not_call_dunder_iter(self):
+        class C(bytearray):
+            def __iter__(self):
+                raise UserWarning("foo")
+
+            def __buffer__(self):
+                raise UserWarning("bar")
+
+        result = bytearray(b"foo")
+        other = C(b"abc")
+        result[1:] = other
+        self.assertEqual(result, bytearray(b"fabc"))
+
+    def test_dunder_setitem_slice_with_iterable_calls_dunder_iter(self):
+        class C:
+            def __iter__(self):
+                raise UserWarning("foo")
+
+        ba = bytearray(b"foo")
+        it = C()
+        with self.assertRaises(UserWarning):
+            ba[1:] = it
+
+    def test_dunder_setitem_slice_basic(self):
+        result = bytearray(b"abcdefg")
+        result[2:5] = b"CDE"
+        self.assertEqual(result, bytearray(b"abCDEfg"))
+
+    def test_dunder_setitem_slice_grow(self):
+        result = bytearray(b"abcdefg")
+        result[2:5] = b"CDEXYZ"
+        self.assertEqual(result, bytearray(b"abCDEXYZfg"))
+
+    def test_dunder_setitem_slice_shrink(self):
+        result = bytearray(b"abcdefg")
+        result[2:6] = b"CD"
+        self.assertEqual(result, bytearray(b"abCDg"))
+
+    def test_dunder_setitem_slice_iterable(self):
+        result = bytearray(b"abcdefg")
+        result[2:6] = (ord("x"), ord("y"), ord("z")).__iter__()
+        self.assertEqual(result, bytearray(b"abxyzg"))
+
+    def test_dunder_setitem_slice_self(self):
+        result = bytearray(b"abcdefg")
+        result[2:5] = result
+        self.assertEqual(result, bytearray(b"ababcdefgfg"))
+
+    def test_dunder_setitem_slice_rev_bounds(self):
+        # Reverse ordered bounds, but step still +1
+        result = bytearray(b"1234567890")
+        result[5:2] = b"abcde"
+        self.assertEqual(result, bytearray(b"12345abcde67890"))
+
+    def test_dunder_setitem_slice_step(self):
+        result = bytearray(b"0123456789xxxx")
+        result[2:10:3] = b"abc"
+        self.assertEqual(result, bytearray(b"01a34b67c9xxxx"))
+
+    def test_dunder_setitem_slice_step_neg(self):
+        result = bytearray(b"0123456789xxxxx")
+        result[10:2:-3] = b"abc"
+        self.assertEqual(result, bytearray(b"0123c56b89axxxx"))
+
+    def test_dunder_setitem_slice_tuple(self):
+        result = bytearray(b"0123456789xxxx")
+        result[2:10:3] = (ord("a"), ord("b"), ord("c"))
+        self.assertEqual(result, bytearray(b"01a34b67c9xxxx"))
+
+    def test_dunder_setitem_slice_short_stop(self):
+        result = bytearray(b"1234567890")
+        result[:1] = b"000"
+        self.assertEqual(result, bytearray(b"000234567890"))
+
+    def test_dunder_setitem_slice_long_stop(self):
+        result = bytearray(b"111")
+        result[:1] = b"00000"
+        self.assertEqual(result, bytearray(b"0000011"))
+
+    def test_dunder_setitem_slice_short_step(self):
+        result = bytearray(b"1234567890")
+        result[::1] = b"000"
+        self.assertEqual(result, bytearray(b"000"))
+
+    def test_dunder_setitem_slice_appends_to_end(self):
+        result = bytearray(b"abc")
+        result[3:] = b"000"
+        self.assertEqual(result, bytearray(b"abc000"))
+
+    def test_dunder_setitem_slice_with_rhs_bigger_than_slice_length_raises_value_error(
+        self
+    ):
+        result = bytearray(b"0123456789xxxx")
+        with self.assertRaises(ValueError) as context:
+            result[2:10:3] = b"abcd"
+
+        self.assertEqual(
+            str(context.exception),
+            "attempt to assign bytes of size 4 to extended slice of size 3",
+        )
+
+    def test_dunder_setitem_slice_with_rhs_shorter_than_slice_length_raises_value_error(
+        self
+    ):
+        result = bytearray(b"0123456789")
+        with self.assertRaises(ValueError) as context:
+            result[:8:2] = b"000"
+
+        self.assertEqual(
+            str(context.exception),
+            "attempt to assign bytes of size 3 to extended slice of size 4",
+        )
+
+    def test_dunder_setitem_slice_with_non_iterable_rhs_raises_type_error(self):
+        result = bytearray(b"abcdefg")
+        with self.assertRaises(TypeError) as context:
+            result[2:6] = 5
+
+        self.assertEqual(
+            str(context.exception),
+            "can assign only bytes, buffers, or iterables of ints in range(0, 256)",
+        )
+
     def test_clear_with_non_bytearray_self_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             bytearray.clear(b"")

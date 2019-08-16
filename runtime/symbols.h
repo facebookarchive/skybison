@@ -153,6 +153,7 @@ class Runtime;
   V(UnderByteArrayJoin, "_bytearray_join")                                     \
   V(UnderByteArrayLen, "_bytearray_len")                                       \
   V(UnderByteArraySetitem, "_bytearray_setitem")                               \
+  V(UnderByteArraySetslice, "_bytearray_setslice")                             \
   V(UnderByteArrayStringAppend, "_bytearray_string_append")                    \
   V(UnderBytesCheck, "_bytes_check")                                           \
   V(UnderBytesFromInts, "_bytes_from_ints")                                    \
