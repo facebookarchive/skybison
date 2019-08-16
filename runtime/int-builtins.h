@@ -45,6 +45,7 @@ class IntBuiltins
   static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderFloat(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderFloordiv(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderFormat(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGe(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGt(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderMod(Thread* thread, Frame* frame, word nargs);

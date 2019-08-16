@@ -2354,6 +2354,9 @@ class int(bootstrap=True):
     def __floordiv__(self, n: int) -> int:
         pass
 
+    def __format__(self, format_spec: str) -> str:
+        pass
+
     def __ge__(self, n: int) -> bool:
         pass
 

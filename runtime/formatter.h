@@ -17,6 +17,8 @@ struct FormatSpec {
   word precision;
 };
 
+RawObject formatIntDecimalSimple(Thread* thread, const Int& value);
+
 RawObject formatStr(Thread* thread, const Str& str, FormatSpec* format);
 
 RawObject parseFormatSpec(Thread* thread, const Str& spec, int32_t default_type,
