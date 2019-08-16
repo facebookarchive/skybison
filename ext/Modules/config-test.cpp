@@ -65,4 +65,11 @@ b = time.perf_counter()
   EXPECT_EQ(PyFloat_Check(b), 1);
 }
 
+TEST_F(ConfigExtensionApiTest, ImportZlibReturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("zlib"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
 }  // namespace python

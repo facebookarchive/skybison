@@ -23,6 +23,10 @@ set(CPYTHON_DIR ${CMAKE_SOURCE_DIR}/third-party/cpython)
 # DIR to the generated CPython headers
 set(CPYTHON_GEN_DIR ${CMAKE_BINARY_DIR}/cpython)
 
+include_directories(
+  "${CPYTHON_DIR}/Modules/zlib/"
+)
+
 # Modules sources that need to be processed with the argument clinic
 set(
   CPYTHON_SOURCES_WITH_CLINIC_ANNOTATIONS
@@ -55,7 +59,8 @@ set(
   "${CPYTHON_DIR}/Modules/sha1module.c"
   "${CPYTHON_DIR}/Modules/sha256module.c"
   "${CPYTHON_DIR}/Modules/sha512module.c"
-  "${CPYTHON_DIR}/Modules/unicodedata.c")
+  "${CPYTHON_DIR}/Modules/unicodedata.c"
+  "${CPYTHON_DIR}/Modules/zlibmodule.c")
 
 # Add some Python files all the core Modules sources
 set(
@@ -242,6 +247,16 @@ set(
   "${CPYTHON_DIR}/Modules/xxlimited.c"
   "${CPYTHON_DIR}/Modules/xxmodule.c"
   "${CPYTHON_DIR}/Modules/xxsubtype.c"
+  "${CPYTHON_DIR}/Modules/zlib/adler32.c"
+  "${CPYTHON_DIR}/Modules/zlib/crc32.c"
+  "${CPYTHON_DIR}/Modules/zlib/deflate.c"
+  "${CPYTHON_DIR}/Modules/zlib/inffast.c"
+  "${CPYTHON_DIR}/Modules/zlib/inflate.c"
+  "${CPYTHON_DIR}/Modules/zlib/inftrees.c"
+  "${CPYTHON_DIR}/Modules/zlib/trees.c"
+  "${CPYTHON_DIR}/Modules/zlib/zconf.h"
+  "${CPYTHON_DIR}/Modules/zlib/zlib.h"
+  "${CPYTHON_DIR}/Modules/zlib/zutil.c"
   "${CPYTHON_DIR}/Objects/accu.c"
   "${CPYTHON_DIR}/Objects/capsule.c"
   "${CPYTHON_DIR}/Objects/unicodectype.c"

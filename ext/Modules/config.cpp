@@ -12,6 +12,7 @@ extern "C" PyObject* PyInit_fcntl();
 extern "C" PyObject* PyInit_math();
 extern "C" PyObject* PyInit_posix();
 extern "C" PyObject* PyInit_time();
+extern "C" PyObject* PyInit_zlib();
 
 // _empty module to test loading from init tab
 PyObject* PyInit__empty() {
@@ -35,6 +36,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"math", PyInit_math},
     {"posix", PyInit_posix},
     {"time", PyInit_time},
+    {"zlib", PyInit_zlib},
     {nullptr, nullptr},
 };
 // clang-format on
