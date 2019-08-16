@@ -1,7 +1,31 @@
 #!/usr/bin/env python3
 import unittest
 
-from _string import formatter_parser
+from _string import formatter_field_name_split, formatter_parser
+
+
+class FormatterFieldNameSplitTests(unittest.TestCase):
+    def test_simple_string_returns_string_iter_tuple(self):
+        res, it = formatter_field_name_split("foo")
+        self.assertEqual(res, "foo")
+        with self.assertRaises(StopIteration):
+            it.__next__()
+
+    def test_empty_string_returns_string_iter_tuple(self):
+        res, it = formatter_field_name_split("")
+        self.assertEqual(res, "")
+        with self.assertRaises(StopIteration):
+            it.__next__()
+
+    def test_simple_string_returns_int_iter_tuple(self):
+        res, it = formatter_field_name_split("42")
+        self.assertEqual(res, 42)
+        with self.assertRaises(StopIteration):
+            it.__next__()
+
+    def test_non_string_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            formatter_field_name_split(42)
 
 
 class FormatterParserTests(unittest.TestCase):

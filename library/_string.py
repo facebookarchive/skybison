@@ -1,8 +1,28 @@
 #!/usr/bin/env python3
 
 
-_str_len = _str_len  # noqa: F821
+# These values are injected by our boot process. flake8 has no knowledge about
+# their definitions and will complain without this circular helper here.
+_str_from_str = _str_from_str  # noqa: F821
 _str_guard = _str_guard  # noqa: F821
+_str_len = _str_len  # noqa: F821
+_unimplemented = _unimplemented  # noqa: F821
+
+
+_empty_iterator = iter(())
+
+
+def formatter_field_name_split(field_name):
+    _str_guard(field_name)
+
+    if "." in field_name or "[" in field_name:
+        _unimplemented()
+
+    if field_name.isdigit():
+        field_name = int(field_name)
+    else:
+        field_name = _str_from_str(str, field_name)
+    return (field_name, _empty_iterator)
 
 
 def formatter_parser(string):  # noqa: C901
