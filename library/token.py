@@ -78,17 +78,9 @@ N_TOKENS = 57
 NT_OFFSET = 256
 #--end constants--
 
-# TODO(T41326706)
-#tok_name = {value: name
-#            for name, value in globals().items()
-#            if isinstance(value, int) and not name.startswith('_')}
-import sys
-_current_module = sys.modules[__name__]
-tok_name = {}
-for name in dir(_current_module):
-    value = getattr(_current_module, name)
-    if isinstance(value, int) and not name.startswith('_'):
-        tok_name[value] = name
+tok_name = {value: name
+            for name, value in globals().items()
+            if isinstance(value, int) and not name.startswith('_')}
 __all__.extend(tok_name.values())
 
 def ISTERMINAL(x):
