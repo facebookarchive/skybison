@@ -4282,7 +4282,7 @@ class StrTests(unittest.TestCase):
     def test_format_index_out_of_args_raises_index_error(self):
         with self.assertRaises(IndexError) as context:
             str.format("{1}", 4)
-        self.assertEqual(str(context.exception), "tuple index out of range")
+        self.assertIn("index out of range", str(context.exception))
 
     def test_format_not_existing_key_in_kwargs_raises_key_error(self):
         with self.assertRaises(KeyError) as context:
@@ -4313,11 +4313,9 @@ class StrTests(unittest.TestCase):
     def test_format_auto_index_field_with_explicit_index_raises_value_error(self):
         with self.assertRaises(ValueError) as context:
             str.format("a{}b{0}c", 0)
-        self.assertEqual(
-            str(context.exception),
-            "cannot switch from automatic field numbering to manual "
-            "field specification",
-        )
+        self.assertIn("cannot switch", str(context.exception))
+        self.assertIn("automatic field numbering", str(context.exception))
+        self.assertIn("manual field specification", str(context.exception))
 
     def test_format_auto_index_field_with_keyword_returns_formatted_str(self):
         result = str.format("a{}b{keyword}c{}d", 0, 1, keyword=888)

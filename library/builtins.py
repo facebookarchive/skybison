@@ -667,6 +667,9 @@ def _float(value) -> float:
     )
 
 
+_formatter = None
+
+
 def _int_format_hexadecimal(value):
     assert value >= 0
     if value == 0:
@@ -3768,9 +3771,14 @@ class str(bootstrap=True):
         return _str_find(self, sub, start, end)
 
     def format(self, *args, **kwargs):
-        import _str_format
+        _str_guard(self)
 
-        return _str_format.str_format(self, args, kwargs)
+        global _formatter
+        if not _formatter:
+            import string
+
+            _formatter = string.Formatter()
+        return _formatter.format(self, *args, **kwargs)
 
     def format_map(self, mapping):
         _unimplemented()
