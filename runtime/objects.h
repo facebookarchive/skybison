@@ -2463,19 +2463,19 @@ class RawWeakRef : public RawHeapObject {
  public:
   // Getters and setters
 
-  // The object weakly referred to by this instance.
+  // The object weakly-referenced by this instance.  Set to None by the garbage
+  // collector when the referent is being collected.
   RawObject referent() const;
   void setReferent(RawObject referent) const;
 
-  // A callable object invoked with the referent as an argument when the
-  // referent is deemed to be "near death" and only reachable through this weak
+  // A callable object invoked with the weakref object as an argument when the
+  // referent is deemed to be "near death" and only reachable through a weak
   // reference.
   RawObject callback() const;
   void setCallback(RawObject callable) const;
 
-  // Singly linked list of weak reference objects.  This field is used during
-  // garbage collection to represent the set of weak references that had been
-  // discovered by the initial trace with an otherwise unreachable referent.
+  // A link to another object used by the garbage collector to create sets of
+  // weak references for delayed processing.
   RawObject link() const;
   void setLink(RawObject reference) const;
 

@@ -85,6 +85,13 @@ void Scavenger::processGrayObjects() {
   }
 }
 
+// Process the list of weakrefs that had otherwise-unreachable referents during
+// processGrayObjects().
+//
+// If the referent had one or more strong references after all, the weakref is
+// updated to point to the relocated object. Otherwise, the weakref's referent
+// field is set to None and its callback (if present) is enqueued for running
+// later.
 void Scavenger::processDelayedReferences() {
   while (delayed_references_ != NoneType::object()) {
     RawWeakRef weak =
