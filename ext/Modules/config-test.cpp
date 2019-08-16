@@ -72,4 +72,11 @@ TEST_F(ConfigExtensionApiTest, ImportZlibReturnsModule) {
   EXPECT_TRUE(PyModule_Check(module));
 }
 
+TEST_F(ConfigExtensionApiTest, ImportUnderStructReturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("_struct"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
 }  // namespace python

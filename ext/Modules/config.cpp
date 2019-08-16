@@ -6,6 +6,7 @@ extern "C" PyObject* PyInit__myreadline();
 extern "C" PyObject* PyInit__sre();
 extern "C" PyObject* PyInit__stat();
 extern "C" PyObject* PyInit__stentry();
+extern "C" PyObject* PyInit__struct();
 extern "C" PyObject* PyInit_atexit();
 extern "C" PyObject* PyInit_errno();
 extern "C" PyObject* PyInit_fcntl();
@@ -30,6 +31,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_sre", PyInit__sre},
     {"_stat", PyInit__stat},
     {"_stentry", PyInit__stentry},
+    {"_struct", PyInit__struct},
     {"atexit", PyInit_atexit},
     {"errno", PyInit_errno},
     {"fcntl", PyInit_fcntl},
