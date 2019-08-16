@@ -2599,19 +2599,6 @@ class int(bootstrap=True):
         _type_guard(cls)
         if not _type_issubclass(cls, int):
             raise TypeError(f"'from_bytes' {cls.__name__} is not a subtype of int")
-        if not _bytes_check(bytes):
-            dunder_bytes = _object_type_getattr(bytes, "__bytes__")
-            if dunder_bytes is _Unbound:
-                raise TypeError(
-                    f"'from_bytes' bytes argument requires a "
-                    f"'bytes' object but received a "
-                    f"'{type(bytes).__name__}'"
-                )
-            bytes = dunder_bytes()
-            if not _bytes_check(bytes):
-                raise TypeError(
-                    f"__bytes__ returned non-bytes (type {type(bytes).__name__})"
-                )
         if not _str_check(byteorder):
             raise TypeError(
                 f"from_bytes() argument 2 must be str, not "
@@ -2624,6 +2611,19 @@ class int(bootstrap=True):
         else:
             raise ValueError("byteorder must be either 'little' or 'big'")
         signed_bool = True if signed else False
+        if _bytes_check(bytes):
+            return _int_from_bytes(cls, bytes, byteorder_big, signed_bool)
+
+        dunder_bytes = _object_type_getattr(bytes, "__bytes__")
+        if dunder_bytes is _Unbound:
+            bytes = _bytes_new(bytes)
+            return _int_from_bytes(cls, bytes, byteorder_big, signed_bool)
+
+        bytes = dunder_bytes()
+        if not _bytes_check(bytes):
+            raise TypeError(
+                f"__bytes__ returned non-bytes (type {type(bytes).__name__})"
+            )
         return _int_from_bytes(cls, bytes, byteorder_big, signed_bool)
 
     @_property

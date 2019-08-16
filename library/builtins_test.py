@@ -2399,6 +2399,12 @@ class IntTests(unittest.TestCase):
         i = C()
         self.assertEqual(int.from_bytes(i, "big"), 42)
 
+    def test_from_bytes_with_invalid_byteorder_raises_before_invalid_type(self):
+        with self.assertRaisesRegex(
+            ValueError, "byteorder must be either 'little' or 'big'"
+        ):
+            int.from_bytes("not a bytes object", byteorder="medium")
+
     def test_from_bytes_with_invalid_bytes_raises_type_error(self):
         with self.assertRaisesRegex(TypeError, "cannot convert 'str' object to bytes"):
             int.from_bytes("not a bytes object", "big")
