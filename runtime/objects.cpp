@@ -124,6 +124,21 @@ void RawByteArray::downsize(word new_length) const {
   setNumItems(new_length);
 }
 
+void RawByteArray::replaceFromWith(word dst_start, RawByteArray src,
+                                   word count) const {
+  DCHECK_BOUND(dst_start + count, numItems());
+  MutableBytes::cast(bytes()).replaceFromWith(dst_start,
+                                              Bytes::cast(src.bytes()), count);
+}
+
+void RawByteArray::replaceFromWithStartAt(word dst_start, RawByteArray src,
+                                          word count, word src_start) const {
+  DCHECK_BOUND(dst_start + count, numItems());
+  DCHECK_BOUND(src_start + count, src.numItems());
+  MutableBytes::cast(bytes()).replaceFromWithStartAt(
+      dst_start, Bytes::cast(src.bytes()), count, src_start);
+}
+
 // RawBytes
 
 word RawBytes::compare(RawBytes that) const {
@@ -332,11 +347,19 @@ void RawLargeInt::copyFrom(RawBytes bytes, byte sign_extension) const {
 
 // RawMutableBytes
 
-void RawMutableBytes::replaceFromWith(word index, RawBytes src,
-                                      word len) const {
-  DCHECK_BOUND(index + len, length());
+void RawMutableBytes::replaceFromWith(word dst_start, RawBytes src,
+                                      word count) const {
+  DCHECK_BOUND(dst_start + count, length());
   byte* dst = reinterpret_cast<byte*>(address());
-  src.copyTo(dst + index, len);
+  src.copyTo(dst + dst_start, count);
+}
+
+void RawMutableBytes::replaceFromWithStartAt(word dst_start, RawBytes src,
+                                             word count, word src_start) const {
+  DCHECK_BOUND(dst_start + count, length());
+  DCHECK_BOUND(src_start + count, src.length());
+  src.copyToStartAt(reinterpret_cast<byte*>(address() + dst_start), count,
+                    src_start);
 }
 
 void RawMutableBytes::replaceFromWithStr(word index, RawStr src,

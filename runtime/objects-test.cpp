@@ -11,6 +11,9 @@ namespace python {
 using namespace testing;
 
 using ByteArrayTest = RuntimeFixture;
+using LargeBytesTest = RuntimeFixture;
+using MutableBytesTest = RuntimeFixture;
+using SmallBytesTest = RuntimeFixture;
 using ComplexTest = RuntimeFixture;
 using DoubleTest = RuntimeFixture;
 using IntTest = RuntimeFixture;
@@ -35,6 +38,72 @@ TEST_F(ByteArrayTest, DownsizeMaintainsCapacity) {
   array.downsize(5);
   EXPECT_EQ(array.numItems(), 5);
   EXPECT_EQ(array.capacity(), capacity);
+}
+
+TEST_F(SmallBytesTest, CopyToStartAtCopiesToDestinationStartingAtIndex) {
+  byte src_bytes[] = "hello";
+  HandleScope scope(thread_);
+  Bytes src(&scope, runtime_.newBytesWithAll(src_bytes));
+  byte result[5] = {0};
+  src.copyToStartAt(result, 4, 1);
+  EXPECT_STREQ(reinterpret_cast<char*>(result), "ello");
+}
+
+TEST_F(LargeBytesTest, CopyToStartAtCopiesToDestinationStartingAtIndex) {
+  byte src_bytes[] = "hello world this is patrick";
+  HandleScope scope(thread_);
+  Bytes src(&scope, runtime_.newBytesWithAll(src_bytes));
+  byte result[8] = {0};
+  src.copyToStartAt(result, 7, 20);
+  EXPECT_STREQ(reinterpret_cast<char*>(result), "patrick");
+}
+
+TEST_F(MutableBytesTest, ReplaceFromWithStartAtSelfNoop) {
+  HandleScope scope(thread_);
+  const byte src_bytes[] = "patrick";
+  MutableBytes src(&scope, runtime_.newMutableBytesUninitialized(8));
+  for (word i = 0; i < 8; i++) {
+    src.byteAtPut(i, src_bytes[i]);
+  }
+  ASSERT_TRUE(isMutableBytesEqualsBytes(src, src_bytes));
+  src.replaceFromWithStartAt(0, Bytes::cast(*src), 3, 0);
+  EXPECT_TRUE(isMutableBytesEqualsBytes(src, src_bytes));
+}
+
+TEST_F(MutableBytesTest, ReplaceFromWithStartAtSelfBackward) {
+  HandleScope scope(thread_);
+  const byte src_bytes[] = "patrick";
+  MutableBytes src(&scope, runtime_.newMutableBytesUninitialized(8));
+  for (word i = 0; i < 8; i++) {
+    src.byteAtPut(i, src_bytes[i]);
+  }
+  ASSERT_TRUE(isMutableBytesEqualsBytes(src, src_bytes));
+  src.replaceFromWithStartAt(0, Bytes::cast(*src), 3, 4);
+  const byte expected[] = "ickrick";
+  EXPECT_TRUE(isMutableBytesEqualsBytes(src, expected));
+}
+
+TEST_F(MutableBytesTest, ReplaceFromWithStartAtSelfForward) {
+  HandleScope scope(thread_);
+  const byte src_bytes[] = "patrick";
+  MutableBytes src(&scope, runtime_.newMutableBytesUninitialized(8));
+  for (word i = 0; i < 8; i++) {
+    src.byteAtPut(i, src_bytes[i]);
+  }
+  ASSERT_TRUE(isMutableBytesEqualsBytes(src, src_bytes));
+  src.replaceFromWithStartAt(4, Bytes::cast(*src), 3, 0);
+  const byte expected[] = "patrpat";
+  EXPECT_TRUE(isMutableBytesEqualsBytes(src, expected));
+}
+
+TEST_F(MutableBytesTest, ReplaceFromWithStartAtReplacesStartingAtSrcIndex) {
+  byte src_bytes[] = "hello world this is patrick";
+  HandleScope scope(thread_);
+  Bytes src(&scope, runtime_.newBytesWithAll(src_bytes));
+  MutableBytes dst(&scope, runtime_.newMutableBytesUninitialized(8));
+  dst.replaceFromWithStartAt(0, *src, 7, 20);
+  const byte expected[] = "patrick";
+  EXPECT_TRUE(isMutableBytesEqualsBytes(dst, expected));
 }
 
 TEST_F(DoubleTest, DoubleTest) {

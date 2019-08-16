@@ -418,6 +418,8 @@ class RawBytes : public RawObject {
   word length() const;
   byte byteAt(word index) const;
   void copyTo(byte* dst, word length) const;
+  // Copy length bytes from this to dst, starting at the given index
+  void copyToStartAt(byte* dst, word length, word index) const;
   // Read adjacent bytes as `uint16_t` integer.
   uint16_t uint16At(word index) const;
   // Read adjacent bytes as `uint32_t` integer.
@@ -637,6 +639,8 @@ class RawSmallBytes : public RawObject {
   word length() const;
   byte byteAt(word index) const;
   void copyTo(byte* dst, word length) const;
+  // Copy length bytes from this to dst, starting at the given index
+  void copyToStartAt(byte* dst, word length, word index) const;
   // Read adjacent bytes as `uint16_t` integer.
   uint16_t uint16At(word index) const;
   // Read adjacent bytes as `uint32_t` integer.
@@ -1100,6 +1104,9 @@ class RawLargeBytes : public RawArray {
   byte byteAt(word index) const;
   void copyTo(byte* dst, word length) const;
 
+  // Copy length bytes from this to dst, starting at the given index
+  void copyToStartAt(byte* dst, word length, word index) const;
+
   // Read adjacent bytes as `uint16_t` integer.
   uint16_t uint16At(word index) const;
   // Read adjacent bytes as `uint32_t` integer.
@@ -1118,8 +1125,14 @@ class RawMutableBytes : public RawLargeBytes {
  public:
   void byteAtPut(word index, byte value) const;
 
-  // Replace the bytes from index with len bytes from src
-  void replaceFromWith(word index, RawBytes src, word len) const;
+  // Replace the bytes from dst_start with count bytes from src
+  void replaceFromWith(word dst_start, RawBytes src, word count) const;
+
+  // Replace the bytes from dst_start with count bytes from src, starting at
+  // src_start in src
+  void replaceFromWithStartAt(word dst_start, RawBytes src, word count,
+                              word src_start) const;
+
   // Replace the bytes from index with len bytes from string src
   void replaceFromWithStr(word index, RawStr src, word char_length) const;
 
@@ -2015,6 +2028,14 @@ class RawByteArray : public RawHeapObject {
   // if this is less than that, positive if this is greater than that, and zero
   // if they have the same bytes. Does not guarantee to return -1, 0, or 1.
   word compare(RawBytes that, word that_len);
+
+  // Replace the bytes from dst_start with count bytes from src
+  void replaceFromWith(word dst_start, RawByteArray src, word count) const;
+
+  // Replace the bytes from dst_start with count bytes from src, starting at
+  // src_start in src
+  void replaceFromWithStartAt(word dst_start, RawByteArray src, word count,
+                              word src_start) const;
 
   // Layout
   static const int kBytesOffset = RawHeapObject::kSize;
@@ -3328,6 +3349,14 @@ inline void RawBytes::copyTo(byte* dst, word length) const {
   RawLargeBytes::cast(*this).copyTo(dst, length);
 }
 
+inline void RawBytes::copyToStartAt(byte* dst, word length, word index) const {
+  if (isSmallBytes()) {
+    RawSmallBytes::cast(*this).copyToStartAt(dst, length, index);
+    return;
+  }
+  RawLargeBytes::cast(*this).copyToStartAt(dst, length, index);
+}
+
 inline uint16_t RawBytes::uint16At(word index) const {
   if (isSmallBytes()) {
     return RawSmallBytes::cast(*this).uint16At(index);
@@ -3561,6 +3590,14 @@ inline byte RawSmallBytes::byteAt(word index) const {
 inline void RawSmallBytes::copyTo(byte* dst, word length) const {
   DCHECK_BOUND(length, this->length());
   for (word i = 0; i < length; i++) {
+    *dst++ = byteAt(i);
+  }
+}
+
+inline void RawSmallBytes::copyToStartAt(byte* dst, word length,
+                                         word index) const {
+  DCHECK_BOUND(index + length, this->length());
+  for (word i = index; i < length + index; i++) {
     *dst++ = byteAt(i);
   }
 }
@@ -4019,7 +4056,13 @@ inline byte RawLargeBytes::byteAt(word index) const {
 
 inline void RawLargeBytes::copyTo(byte* dst, word length) const {
   DCHECK_BOUND(length, this->length());
-  std::memcpy(dst, reinterpret_cast<const byte*>(address()), length);
+  copyToStartAt(dst, length, 0);
+}
+
+inline void RawLargeBytes::copyToStartAt(byte* dst, word length,
+                                         word index) const {
+  DCHECK_BOUND(index + length, this->length());
+  std::memmove(dst, reinterpret_cast<const byte*>(address() + index), length);
 }
 
 inline uint16_t RawLargeBytes::uint16At(word index) const {
