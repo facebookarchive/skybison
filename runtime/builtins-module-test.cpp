@@ -852,6 +852,53 @@ result = exec("a = 1338", 7)
                             "Expected 'globals' to be dict in 'exec'"));
 }
 
+TEST_F(BuiltinsModuleTest,
+       BuiltinExecWithModuleProxyForGlobalsUsesContainedModuleDict) {
+  HandleScope scope(thread_);
+  Str name(&scope, runtime_.newStrFromCStr("testing_module"));
+  Module module(&scope, runtime_.newModule(name));
+  ModuleProxy module_proxy(&scope, module.moduleProxy());
+
+  Str key(&scope, runtime_.newStrFromCStr("module_var_key"));
+  SmallInt value(&scope, SmallInt::fromWord(5));
+  moduleAtPut(thread_, module, key, value);
+
+  Str code(&scope, runtime_.newStrFromCStr(R"(
+global module_var_key
+module_var_key += 1
+  )"));
+
+  Object locals(&scope, NoneType::object());
+  EXPECT_TRUE(runBuiltin(BuiltinsModule::exec, code, module_proxy, locals)
+                  .isNoneType());
+
+  Object updated_value(&scope, moduleAt(thread_, module, key));
+  EXPECT_TRUE(isIntEqualsWord(*updated_value, 5 + 1));
+}
+
+TEST_F(BuiltinsModuleTest,
+       BuiltinExecWithModuleProxyForLocalsUsesContainedModuleDict) {
+  HandleScope scope(thread_);
+  Str name(&scope, runtime_.newStrFromCStr("testing_module"));
+  Module module(&scope, runtime_.newModule(name));
+  ModuleProxy module_proxy(&scope, module.moduleProxy());
+
+  Str key(&scope, runtime_.newStrFromCStr("module_var_key"));
+  SmallInt value(&scope, SmallInt::fromWord(5));
+  moduleAtPut(thread_, module, key, value);
+
+  Str code(&scope, runtime_.newStrFromCStr(R"(
+module_var_key += 1
+  )"));
+
+  Object locals(&scope, NoneType::object());
+  EXPECT_TRUE(runBuiltin(BuiltinsModule::exec, code, module_proxy, locals)
+                  .isNoneType());
+
+  Object updated_value(&scope, moduleAt(thread_, module, key));
+  EXPECT_TRUE(isIntEqualsWord(*updated_value, 5 + 1));
+}
+
 TEST_F(BuiltinsModuleTest, BuiltinExecExWithTupleCallsExec) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(

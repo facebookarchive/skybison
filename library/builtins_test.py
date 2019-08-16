@@ -2088,6 +2088,13 @@ class GeneratorTests(unittest.TestCase):
         )
 
 
+class GlobalsTests(unittest.TestCase):
+    def test_returns_module_dunder_dict(self):
+        import sys
+
+        self.assertIs(globals(), sys.modules[__name__].__dict__)
+
+
 class HashTests(unittest.TestCase):
     def test_hash_with_raising_dunder_hash_raises_type_error(self):
         class Desc:
@@ -3118,7 +3125,7 @@ class MemoryviewTests(unittest.TestCase):
         self.assertEqual(view.tolist(), [])
 
 
-class ModuleTest(unittest.TestCase):
+class ModuleTests(unittest.TestCase):
     def test_dunder_dir_returns_newly_created_list_object(self):
         from types import ModuleType
 
@@ -3154,6 +3161,266 @@ class ModuleTest(unittest.TestCase):
 
         del mymodule.x
         self.assertNotIn("x", mymodule.__dir__())
+
+
+class ModuleProxyTests(unittest.TestCase):
+    def setUp(self):
+        from types import ModuleType
+
+        self.module = ModuleType("test_module")
+        self.module_proxy = self.module.__dict__
+
+        # Create a placeholder in the module dict for a builtin.
+        module_code = """
+def make_placeholder():
+    return placeholder
+        """
+        exec(module_code, self.module_proxy)
+
+        builtins = ModuleType("builtins")
+        builtins.placeholder = "builtin_value"
+        self.module.__builtins__ = builtins
+        self.assertEqual(self.module.make_placeholder(), "builtin_value")
+
+    def test_dunder_contains_with_non_module_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type(self.module_proxy).__contains__(None, None)
+
+    def test_dunder_contains_returns_true_for_existing_item(self):
+        self.module.x = 40
+        self.assertTrue(self.module_proxy.__contains__("x"))
+
+    def test_dunder_contains_returns_false_for_not_existing_item(self):
+        self.assertFalse(self.module_proxy.__contains__("x"))
+
+    def test_dunder_contains_returns_false_for_placeholder(self):
+        self.assertFalse(self.module_proxy.__contains__("placeholder"))
+
+    def test_dunder_delitem_with_non_module_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            self.module_proxy.__delitem__(None, None)
+
+    def test_dunder_delitem_deletes_module_variable_and_raises_name_error(self):
+        module_code = """
+x = 40
+def foo():
+    return x
+foo()
+        """
+        exec(module_code, self.module_proxy)
+        self.assertEqual(self.module.foo(), 40)
+
+        self.module_proxy.__delitem__("x")
+
+        with self.assertRaises(NameError) as context:
+            self.module.foo()
+        self.assertIn("name 'x' is not defined", str(context.exception))
+
+    def test_dunder_delitem_for_non_existing_key_raises_key_error(self):
+        with self.assertRaises(KeyError) as context:
+            self.module_proxy.__delitem__("x")
+        self.assertIn("'x'", str(context.exception))
+
+    def test_dunder_getitem_with_non_module_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type(self.module_proxy).__getitem__(None, None)
+
+    def test_dunder_getitem_for_existing_key_returns_that_item(self):
+        self.module.x = 40
+        self.assertEqual(self.module_proxy.__getitem__("x"), 40)
+
+    def test_dunder_getitem_for_not_existing_key_raises_key_error(self):
+        with self.assertRaises(KeyError) as context:
+            self.module_proxy.__getitem__("x")
+        self.assertIn("'x'", str(context.exception))
+
+    def test_dunder_getitem_for_placeholder_raises_key_error(self):
+        with self.assertRaises(KeyError) as context:
+            self.module_proxy.__getitem__("placeholder")
+        self.assertIn("'placeholder'", str(context.exception))
+
+    def test_dunder_iter_with_non_module_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type(self.module_proxy).__iter__(None)
+
+    def test_dunder_iter_returns_key_iterator(self):
+        self.module.x = 40
+        self.module.y = 50
+        result = self.module_proxy.__iter__()
+        self.assertTrue(hasattr(result, "__next__"))
+        result_list = list(result)
+        self.assertIn("x", result_list)
+        self.assertIn("y", result_list)
+
+    def test_dunder_len_with_non_module_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type(self.module_proxy).__len__(None)
+
+    def test_dunder_len_returns_num_items(self):
+        length = self.module_proxy.__len__()
+        self.module.x = 40
+        self.assertEqual(self.module_proxy.__len__(), length + 1)
+
+    def test_dunder_len_returns_num_items_excluding_placeholder(self):
+        length = self.module_proxy.__len__()
+        # Overwrite the existing placeholder by creating a real one under the same name.
+        self.module.placeholder = 1
+        self.assertEqual(self.module_proxy.__len__(), length + 1)
+
+    def test_dunder_repr_with_non_module_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type(self.module_proxy).__repr__(None)
+
+    def test_dunder_repr_returns_str_containing_existing_items(self):
+        self.module.x = 40
+        self.module.y = 50
+        result = self.module_proxy.__repr__()
+        self.assertIsInstance(result, str)
+        self.assertIn("'x': 40", result)
+        self.assertIn("'y': 50", result)
+
+    def test_dunder_repr_returns_str_not_containing_placeholder(self):
+        result = self.module_proxy.__repr__()
+        self.assertNotIn("'placeholder'", result)
+
+    def test_dunder_setitem_with_non_module_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type(self.module_proxy).__setitem__(None, None, None)
+
+    def test_dunder_setitem_sets_item_showing_up_in_module(self):
+        self.module_proxy.__setitem__("a", 1)
+        self.assertEqual(self.module.a, 1)
+
+    def test_dunder_setitem_with_existing_item_updates_module_variable(self):
+        module_code = """
+x = 40
+def foo():
+    return x
+foo()
+        """
+        exec(module_code, self.module_proxy)
+        self.assertEqual(self.module.foo(), 40)
+
+        self.module_proxy.__setitem__("x", 50)
+        self.assertEqual(self.module.foo(), 50)
+
+    def test_dunder_setitem_with_placeholder_updates_module_variable(self):
+        module_code = """
+def foo():
+    return x
+        """
+        exec(module_code, self.module_proxy)
+
+        from types import ModuleType
+
+        builtins = ModuleType("builtins")
+        builtins.x = 40
+        self.module.__builtins__ = builtins
+        self.assertEqual(self.module.foo(), 40)
+
+        self.module_proxy.__setitem__("x", 50)
+        self.assertEqual(self.module.foo(), 50)
+
+    def test_get_with_non_module_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type(self.module_proxy).get(None, None)
+
+    def test_get_returns_existing_item_value(self):
+        self.module.x = 40
+        self.assertEqual(self.module_proxy.get("x"), 40)
+
+    def test_get_with_default_for_non_existing_item_value_returns_that_default(self):
+        self.assertEqual(self.module_proxy.get("x", -1), -1)
+
+    def test_get_for_non_existing_item_returns_none(self):
+        self.assertIs(self.module_proxy.get("x"), None)
+
+    def test_get_for_placeholder_returns_none(self):
+        self.assertIs(self.module_proxy.get("placeholder"), None)
+
+    def test_items_with_non_module_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type(self.module_proxy).items(None)
+
+    def test_items_returns_container_for_key_value_pairs(self):
+        self.module.x = 40
+        self.module.y = 50
+        result = self.module_proxy.items()
+        self.assertTrue(hasattr(result, "__iter__"))
+        result_list = list(iter(result))
+        self.assertIn(("x", 40), result_list)
+        self.assertIn(("y", 50), result_list)
+
+    def test_keys_with_non_module_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type(self.module_proxy).keys(None)
+
+    def test_keys_returns_container_for_keys(self):
+        self.module.x = 40
+        self.module.y = 50
+        result = self.module_proxy.keys()
+        self.assertTrue(hasattr(result, "__iter__"))
+        result_list = list(iter(result))
+        self.assertIn("x", result_list)
+        self.assertIn("y", result_list)
+
+    def test_keys_returns_key_iterator_excluding_placeholder(self):
+        result = self.module_proxy.keys()
+        self.assertNotIn("placeholder", result)
+
+    def test_pop_with_non_module_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type(self.module_proxy).pop(None)
+
+    def test_pop_for_existing_item_deletes_and_returns_that_item_value(self):
+        self.module.x = 40
+        value = self.module_proxy.pop("x")
+        self.assertEqual(value, 40)
+        self.assertFalse(self.module_proxy.__contains__("x"))
+
+    def test_pop_for_not_existing_item_raises_key_error(self):
+        with self.assertRaises(KeyError) as context:
+            self.module_proxy.pop("x")
+        self.assertIn("'x'", str(context.exception))
+
+    def test_pop_with_default_for_not_existing_item_returns_default(self):
+        value = self.module_proxy.pop("x", -1)
+        self.assertEqual(value, -1)
+
+    def test_pop_for_placeholder_raises_key_error(self):
+        with self.assertRaises(KeyError) as context:
+            self.module_proxy.pop("placeholder")
+        self.assertIn("'placeholder'", str(context.exception))
+
+    def test_setdefault_with_non_module_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type(self.module_proxy).setdefault(None, None)
+
+    def test_setdefault_for_existing_item_does_nothing(self):
+        self.module.x = 40
+        self.module_proxy.setdefault("x", -1)
+        self.assertEqual(self.module_proxy.get("x"), 40)
+
+    def test_setdefault_for_not_existing_item_sets_default_value(self):
+        self.module_proxy.setdefault("x", -1)
+        self.assertEqual(self.module_proxy.get("x"), -1)
+
+    def test_values_with_non_module_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type(self.module_proxy).values(None)
+
+    def test_values_returns_container_for_values(self):
+        self.module.x = 1243314135
+        self.module.y = -1243314135
+        result = self.module_proxy.values()
+        self.assertTrue(hasattr(result, "__iter__"))
+        result_list = list(iter(result))
+        self.assertIn(1243314135, result_list)
+        self.assertIn(-1243314135, result_list)
+
+    def test_values_returns_iterator_excluding_placeholder_value(self):
+        result = self.module_proxy.values()
+        self.assertNotIn("builtin_value", result)
 
 
 class NextTests(unittest.TestCase):

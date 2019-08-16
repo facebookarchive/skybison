@@ -92,6 +92,14 @@ _list_swap = _list_swap  # noqa: F821
 _memoryview_guard = _memoryview_guard  # noqa: F821
 _memoryview_nbytes = _memoryview_nbytes  # noqa: F821
 _module_dir = _module_dir  # noqa: F821
+_module_proxy = _module_proxy  # noqa: F821
+_module_proxy_delitem = _module_proxy_delitem  # noqa: F821
+_module_proxy_get = _module_proxy_get  # noqa: F821
+_module_proxy_guard = _module_proxy_guard  # noqa: F821
+_module_proxy_keys = _module_proxy_keys  # noqa: F821
+_module_proxy_len = _module_proxy_len  # noqa: F821
+_module_proxy_setitem = _module_proxy_setitem  # noqa: F821
+_module_proxy_values = _module_proxy_values  # noqa: F821
 _object_type_getattr = _object_type_getattr  # noqa: F821
 _object_type_hasattr = _object_type_hasattr  # noqa: F821
 _patch = _patch  # noqa: F821
@@ -2273,8 +2281,9 @@ def getattr(obj, key, default=_Unbound):
     pass
 
 
+@_patch
 def globals():
-    _unimplemented()
+    pass
 
 
 @_patch
@@ -3069,6 +3078,10 @@ def min(arg1, arg2=_Unbound, *args, key=_Unbound, default=_Unbound):  # noqa: C9
 
 
 class module(bootstrap=True):
+    @_property
+    def __dict__(self):
+        return _module_proxy(self)
+
     def __dir__(self):
         if not isinstance(self, module):
             raise TypeError(
@@ -3090,6 +3103,100 @@ class module(bootstrap=True):
 
     def __setattr__(self, name, value):
         pass
+
+
+class module_proxy(bootstrap=True):
+    def __contains__(self, key) -> bool:
+        _module_proxy_guard(self)
+        return _module_proxy_get(self, key, _Unbound) is not _Unbound  # noqa: T484
+
+    def __delitem__(self, key):
+        _module_proxy_guard(self)
+        _module_proxy_delitem(self, key)
+
+    def __eq__(self, other):
+        _unimplemented()
+
+    def __getitem__(self, key):
+        _module_proxy_guard(self)
+        result = _module_proxy_get(self, key, _Unbound)
+        if result is _Unbound:
+            raise KeyError(key)
+        return result
+
+    # module_proxy is not designed to be instantiated by the managed code.
+    __init__ = None
+
+    def __iter__(self):
+        _module_proxy_guard(self)
+        # TODO(T50379702): Return an iterable to avoid materializing a list of keys.
+        return iter(_module_proxy_keys(self))
+
+    def __len__(self):
+        _module_proxy_guard(self)
+        return _module_proxy_len(self)
+
+    # module_proxy is not designed to be subclassed.
+    __new__ = None
+
+    def __repr__(self):
+        _module_proxy_guard(self)
+        if _repr_enter(self):
+            return "{...}"
+        kwpairs = [f"{key!r}: {self[key]!r}" for key in _module_proxy_keys(self)]
+        _repr_leave(self)
+        return "{" + ", ".join(kwpairs) + "}"
+
+    def __setitem__(self, key, value):
+        _module_proxy_guard(self)
+        _module_proxy_setitem(self, key, value)
+
+    def clear(self):
+        _unimplemented()
+
+    def copy(self):
+        _unimplemented()
+
+    def get(self, key, default=None):
+        _module_proxy_guard(self)
+        return _module_proxy_get(self, key, default)
+
+    def items(self):
+        _module_proxy_guard(self)
+        # TODO(T50379702): Return an iterable to avoid materializing the list of items.
+        keys = _module_proxy_keys(self)
+        values = _module_proxy_values(self)
+        return [(keys[i], values[i]) for i in range(len(keys))]
+
+    def keys(self):
+        _module_proxy_guard(self)
+        # TODO(T50379702): Return an iterable to avoid materializing the list of keys.
+        return _module_proxy_keys(self)
+
+    def pop(self, key, default=_Unbound):
+        _module_proxy_guard(self)
+        value = _module_proxy_get(self, key, default)
+        if value is _Unbound:
+            raise KeyError(key)
+        if key in self:
+            _module_proxy_delitem(self, key)
+        return value
+
+    def setdefault(self, key, default=None):
+        _module_proxy_guard(self)
+        value = _module_proxy_get(self, key, _Unbound)
+        if value is _Unbound:
+            _module_proxy_setitem(self, key, default)
+            return default
+        return value
+
+    def update(self, other=_Unbound):
+        _unimplemented()
+
+    def values(self):
+        _module_proxy_guard(self)
+        # TODO(T50379702): Return an iterable to avoid materializing the list of values.
+        return _module_proxy_values(self)
 
 
 def next(iterator, default=_Unbound):

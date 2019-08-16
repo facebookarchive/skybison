@@ -150,7 +150,7 @@ result = sys.__dict__
                    .isError());
   HandleScope scope(thread_);
   Object result(&scope, mainModuleAt(&runtime_, "result"));
-  EXPECT_TRUE(result.isDict());
+  EXPECT_TRUE(result.isModuleProxy());
 }
 
 static RawModule createTestingModule(Thread* thread,
@@ -414,6 +414,54 @@ TEST_F(ModuleBuiltinsTest, ModuleDictKeysFiltersOutPlaceholders) {
   EXPECT_EQ(keys.numItems(), 2);
   EXPECT_EQ(keys.at(0), *foo);
   EXPECT_EQ(keys.at(1), *baz);
+}
+
+TEST_F(ModuleBuiltinsTest, ModuleLenReturnsItemCountExcludingPlaceholders) {
+  HandleScope scope(thread_);
+  Str module_name(&scope, runtime_.newStrFromCStr("mymodule"));
+  Module module(&scope, runtime_.newModule(module_name));
+
+  Str foo(&scope, runtime_.newStrFromCStr("foo"));
+  Str bar(&scope, runtime_.newStrFromCStr("bar"));
+  Str baz(&scope, runtime_.newStrFromCStr("baz"));
+  Str value(&scope, runtime_.newStrFromCStr("value"));
+
+  moduleAtPut(thread_, module, foo, value);
+  moduleAtPut(thread_, module, bar, value);
+  moduleAtPut(thread_, module, baz, value);
+
+  SmallInt previous_len(&scope, moduleLen(thread_, module));
+
+  Dict module_dict(&scope, module.dict());
+  ValueCell::cast(runtime_.dictAt(thread_, module_dict, bar)).makePlaceholder();
+
+  SmallInt after_len(&scope, moduleLen(thread_, module));
+  EXPECT_EQ(previous_len.value(), after_len.value() + 1);
+}
+
+TEST_F(ModuleBuiltinsTest, ModuleValuesFiltersOutPlaceholders) {
+  HandleScope scope(thread_);
+  Str module_name(&scope, runtime_.newStrFromCStr("mymodule"));
+  Module module(&scope, runtime_.newModule(module_name));
+
+  Str foo(&scope, runtime_.newStrFromCStr("foo"));
+  Str foo_value(&scope, runtime_.newStrFromCStr("foo_value"));
+  Str bar(&scope, runtime_.newStrFromCStr("bar"));
+  Str bar_value(&scope, runtime_.newStrFromCStr("bar_value"));
+  Str baz(&scope, runtime_.newStrFromCStr("baz"));
+  Str baz_value(&scope, runtime_.newStrFromCStr("baz_value"));
+
+  moduleAtPut(thread_, module, foo, foo_value);
+  moduleAtPut(thread_, module, bar, bar_value);
+  moduleAtPut(thread_, module, baz, baz_value);
+
+  Dict module_dict(&scope, module.dict());
+  ValueCell::cast(runtime_.dictAt(thread_, module_dict, bar)).makePlaceholder();
+
+  List values(&scope, moduleValues(thread_, module));
+  EXPECT_TRUE(listContains(values, foo_value));
+  EXPECT_FALSE(listContains(values, bar_value));
+  EXPECT_TRUE(listContains(values, baz_value));
 }
 
 TEST_F(ModuleBuiltinsTest, ModuleGetAttributeReturnsInstanceValue) {

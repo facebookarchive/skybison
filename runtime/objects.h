@@ -61,6 +61,7 @@ class Handle;
   V(LongRangeIterator)                                                         \
   V(MemoryView)                                                                \
   V(Module)                                                                    \
+  V(ModuleProxy)                                                               \
   V(MutableBytes)                                                              \
   V(Property)                                                                  \
   V(Range)                                                                     \
@@ -304,6 +305,7 @@ class RawObject {
   bool isMemoryView() const;
   bool isModule() const;
   bool isModuleNotFoundError() const;
+  bool isModuleProxy() const;
   bool isMutableBytes() const;
   bool isNotImplementedError() const;
   bool isProperty() const;
@@ -1989,13 +1991,32 @@ class RawModule : public RawHeapObject {
   RawObject def() const;
   void setDef(RawObject def) const;
 
+  // Lazily allocated ModuleProxy instance that behaves like dict.
+  RawObject moduleProxy() const;
+  void setModuleProxy(RawObject module_proxy) const;
+
   // Layout.
   static const int kNameOffset = RawHeapObject::kSize;
   static const int kDictOffset = kNameOffset + kPointerSize;
   static const int kDefOffset = kDictOffset + kPointerSize;
-  static const int kSize = kDefOffset + kPointerSize;
+  static const int kModuleProxyOffset = kDefOffset + kPointerSize;
+  static const int kSize = kModuleProxyOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Module);
+};
+
+class RawModuleProxy : public RawHeapObject {
+ public:
+  // Module that this ModuleProxy is created for.
+  // moduleproxy.module().moduleproxy() == moduleproxy holds.
+  RawObject module() const;
+  void setModule(RawObject module) const;
+
+  // Layout.
+  static const int kModuleOffset = RawHeapObject::kSize;
+  static const int kSize = kModuleOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(ModuleProxy);
 };
 
 /**
@@ -3162,6 +3183,10 @@ inline bool RawObject::isMemoryView() const {
 
 inline bool RawObject::isModule() const {
   return isHeapObjectWithLayout(LayoutId::kModule);
+}
+
+inline bool RawObject::isModuleProxy() const {
+  return isHeapObjectWithLayout(LayoutId::kModuleProxy);
 }
 
 inline bool RawObject::isModuleNotFoundError() const {
@@ -5100,6 +5125,24 @@ inline RawObject RawModule::def() const {
 
 inline void RawModule::setDef(RawObject def) const {
   instanceVariableAtPut(kDefOffset, def);
+}
+
+inline RawObject RawModule::moduleProxy() const {
+  return instanceVariableAt(kModuleProxyOffset);
+}
+
+inline void RawModule::setModuleProxy(RawObject module_proxy) const {
+  instanceVariableAtPut(kModuleProxyOffset, module_proxy);
+}
+
+// RawModuleProxy
+
+inline RawObject RawModuleProxy::module() const {
+  return instanceVariableAt(kModuleOffset);
+}
+
+inline void RawModuleProxy::setModule(RawObject module) const {
+  instanceVariableAtPut(kModuleOffset, module);
 }
 
 // RawStr

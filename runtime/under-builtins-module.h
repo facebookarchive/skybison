@@ -138,6 +138,21 @@ class UnderBuiltinsModule {
   static RawObject underMemoryviewNbytes(Thread* thread, Frame* frame,
                                          word nargs);
   static RawObject underModuleDir(Thread* thread, Frame* frame, word nargs);
+  static RawObject underModuleProxy(Thread* thread, Frame* frame, word nargs);
+  static RawObject underModuleProxyGet(Thread* thread, Frame* frame,
+                                       word nargs);
+  static RawObject underModuleProxyGuard(Thread* thread, Frame* frame,
+                                         word nargs);
+  static RawObject underModuleProxyKeys(Thread* thread, Frame* frame,
+                                        word nargs);
+  static RawObject underModuleProxyLen(Thread* thread, Frame* frame,
+                                       word nargs);
+  static RawObject underModuleProxyDelitem(Thread* thread, Frame* frame,
+                                           word nargs);
+  static RawObject underModuleProxySetitem(Thread* thread, Frame* frame,
+                                           word nargs);
+  static RawObject underModuleProxyValues(Thread* thread, Frame* frame,
+                                          word nargs);
   static RawObject underObjectTypeGetAttr(Thread* thread, Frame* frame,
                                           word nargs);
   static RawObject underObjectTypeHasattr(Thread* thread, Frame* frame,

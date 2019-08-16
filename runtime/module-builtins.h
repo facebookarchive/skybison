@@ -48,6 +48,12 @@ RawObject moduleDictRemove(Thread* thread, const Dict& module_dict,
 // Returns keys associated with non-placeholder ValueCells in module_dict.
 RawObject moduleDictKeys(Thread* thread, const Dict& module_dict);
 
+// Returns the number of keys associated with non-placeholder ValueCells.
+RawObject moduleLen(Thread* thread, const Module& module);
+
+// Returns the list of values contained in non-placeholder ValueCells.
+RawObject moduleValues(Thread* thread, const Module& module);
+
 RawObject moduleGetAttribute(Thread* thread, const Module& module,
                              const Object& name_str);
 
@@ -73,6 +79,13 @@ class ModuleBuiltins
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ModuleBuiltins);
+};
+
+class ModuleProxyBuiltins
+    : public Builtins<ModuleProxyBuiltins, SymbolId::kModuleProxy,
+                      LayoutId::kModuleProxy> {
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(ModuleProxyBuiltins);
 };
 
 }  // namespace python

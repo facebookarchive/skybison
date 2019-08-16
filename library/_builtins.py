@@ -453,6 +453,46 @@ def _module_dir(module):
 
 
 @_patch
+def _module_proxy(module):
+    pass
+
+
+@_patch
+def _module_proxy_delitem(self, key):
+    pass
+
+
+@_patch
+def _module_proxy_get(self, key, default):
+    pass
+
+
+@_patch
+def _module_proxy_guard(module):
+    pass
+
+
+@_patch
+def _module_proxy_keys(self):
+    pass
+
+
+@_patch
+def _module_proxy_len(self):
+    pass
+
+
+@_patch
+def _module_proxy_setitem(self, key, value):
+    pass
+
+
+@_patch
+def _module_proxy_values(self):
+    pass
+
+
+@_patch
 def _object_type_getattr(obj, name):
     """Looks up the named attribute on the object's type, resolving descriptors.
 Behaves like _PyObject_LookupSpecial."""

@@ -139,6 +139,30 @@ RawObject moduleDictKeys(Thread* thread, const Dict& module_dict) {
   return *result;
 }
 
+RawObject moduleLen(Thread* thread, const Module& module) {
+  HandleScope scope(thread);
+  Dict module_dict(&scope, module.dict());
+  Tuple buckets(&scope, module_dict.data());
+  word count = 0;
+  for (word i = Dict::Bucket::kFirst; nextModuleDictItem(*buckets, &i);) {
+    ++count;
+  }
+  return SmallInt::fromWord(count);
+}
+
+RawObject moduleValues(Thread* thread, const Module& module) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Tuple buckets(&scope, Dict::cast(module.dict()).data());
+  List result(&scope, runtime->newList());
+  Object value(&scope, NoneType::object());
+  for (word i = Dict::Bucket::kFirst; nextModuleDictItem(*buckets, &i);) {
+    value = ValueCell::cast(Dict::Bucket::value(*buckets, i)).value();
+    runtime->listAdd(thread, result, value);
+  }
+  return *result;
+}
+
 RawObject moduleGetAttribute(Thread* thread, const Module& module,
                              const Object& name_str) {
   // Note that PEP 562 adds support for data descriptors in module objects.
@@ -238,7 +262,8 @@ int execDef(Thread* thread, const Module& module, PyModuleDef* def) {
 }
 
 const BuiltinAttribute ModuleBuiltins::kAttributes[] = {
-    {SymbolId::kDunderDict, RawModule::kDictOffset, AttributeFlags::kReadOnly},
+    {SymbolId::kInvalid, RawModule::kDictOffset},
+    {SymbolId::kInvalid, RawModule::kModuleProxyOffset},
     {SymbolId::kInvalid, RawModule::kNameOffset},
     {SymbolId::kSentinelId, -1},
 };

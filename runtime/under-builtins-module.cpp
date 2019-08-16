@@ -157,6 +157,14 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderMemoryviewGuard, underMemoryviewGuard},
     {SymbolId::kUnderMemoryviewNbytes, underMemoryviewNbytes},
     {SymbolId::kUnderModuleDir, underModuleDir},
+    {SymbolId::kUnderModuleProxy, underModuleProxy},
+    {SymbolId::kUnderModuleProxyDelitem, underModuleProxyDelitem},
+    {SymbolId::kUnderModuleProxyGet, underModuleProxyGet},
+    {SymbolId::kUnderModuleProxyGuard, underModuleProxyGuard},
+    {SymbolId::kUnderModuleProxyKeys, underModuleProxyKeys},
+    {SymbolId::kUnderModuleProxyLen, underModuleProxyLen},
+    {SymbolId::kUnderModuleProxySetitem, underModuleProxySetitem},
+    {SymbolId::kUnderModuleProxyValues, underModuleProxyValues},
     {SymbolId::kUnderObjectTypeGetattr, underObjectTypeGetAttr},
     {SymbolId::kUnderObjectTypeHasattr, underObjectTypeHasattr},
     {SymbolId::kUnderOsClose, underOsClose},
@@ -2068,6 +2076,103 @@ RawObject UnderBuiltinsModule::underModuleDir(Thread* thread, Frame* frame,
   Module self(&scope, args.get(0));
   Dict module_dict(&scope, self.dict());
   return moduleDictKeys(thread, module_dict);
+}
+
+static RawObject moduleProxyFromModule(RawModuleProxy module_proxy) {
+  RawModule module = Module::cast(module_proxy.module());
+  DCHECK(module.moduleProxy() == module_proxy, "module.proxy != proxy.module");
+  return module;
+}
+
+RawObject UnderBuiltinsModule::underModuleProxy(Thread* thread, Frame* frame,
+                                                word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Module module(&scope, args.get(0));
+  return module.moduleProxy();
+}
+
+RawObject UnderBuiltinsModule::underModuleProxyDelitem(Thread* thread,
+                                                       Frame* frame,
+                                                       word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  ModuleProxy self(&scope, args.get(0));
+  Object key(&scope, args.get(1));
+  Module module(&scope, moduleProxyFromModule(*self));
+  // TODO(T45091174): Pass Module instead.
+  Dict module_dict(&scope, module.dict());
+  Object result(&scope, moduleDictRemove(thread, module_dict, key));
+  if (result.isErrorNotFound()) {
+    return thread->raiseWithFmt(LayoutId::kKeyError, "'%S'", &key);
+  }
+  return *result;
+}
+
+RawObject UnderBuiltinsModule::underModuleProxyGet(Thread* thread, Frame* frame,
+                                                   word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  ModuleProxy self(&scope, args.get(0));
+  Object key(&scope, args.get(1));
+  Object default_obj(&scope, args.get(2));
+  Module module(&scope, moduleProxyFromModule(*self));
+  Object result(&scope, moduleAt(thread, module, key));
+  if (result.isError()) {
+    return *default_obj;
+  }
+  return *result;
+}
+
+RawObject UnderBuiltinsModule::underModuleProxyGuard(Thread* thread,
+                                                     Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  if (args.get(0).isModuleProxy()) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kModuleProxy);
+}
+
+RawObject UnderBuiltinsModule::underModuleProxyKeys(Thread* thread,
+                                                    Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  ModuleProxy self(&scope, args.get(0));
+  Module module(&scope, moduleProxyFromModule(*self));
+  // TODO(T45091174): Pass Module instead.
+  Dict module_dict(&scope, module.dict());
+  return moduleDictKeys(thread, module_dict);
+}
+
+RawObject UnderBuiltinsModule::underModuleProxyLen(Thread* thread, Frame* frame,
+                                                   word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  ModuleProxy self(&scope, args.get(0));
+  Module module(&scope, moduleProxyFromModule(*self));
+  return moduleLen(thread, module);
+}
+
+RawObject UnderBuiltinsModule::underModuleProxySetitem(Thread* thread,
+                                                       Frame* frame,
+                                                       word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  ModuleProxy self(&scope, args.get(0));
+  Object key(&scope, args.get(1));
+  Object value(&scope, args.get(2));
+  Module module(&scope, moduleProxyFromModule(*self));
+  return moduleAtPut(thread, module, key, value);
+}
+
+RawObject UnderBuiltinsModule::underModuleProxyValues(Thread* thread,
+                                                      Frame* frame,
+                                                      word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  ModuleProxy self(&scope, args.get(0));
+  Module module(&scope, moduleProxyFromModule(*self));
+  return moduleValues(thread, module);
 }
 
 RawObject UnderBuiltinsModule::underObjectTypeGetAttr(Thread* thread,

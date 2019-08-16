@@ -70,6 +70,7 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kDunderImport, dunderImport},
     {SymbolId::kExec, exec},
     {SymbolId::kGetattr, getattr},
+    {SymbolId::kGlobals, globals},
     {SymbolId::kHasattr, hasattr},
     {SymbolId::kId, id},
     {SymbolId::kLocals, locals},
@@ -139,6 +140,7 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
     {SymbolId::kMemoryView, LayoutId::kMemoryView},
     {SymbolId::kMethod, LayoutId::kBoundMethod},
     {SymbolId::kModule, LayoutId::kModule},
+    {SymbolId::kModuleProxy, LayoutId::kModuleProxy},
     {SymbolId::kModuleNotFoundError, LayoutId::kModuleNotFoundError},
     {SymbolId::kNameError, LayoutId::kNameError},
     {SymbolId::kNoneType, LayoutId::kNoneType},
@@ -484,8 +486,16 @@ RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
     locals = *globals_obj;
   }
   if (!runtime->isInstanceOfDict(*globals_obj)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "Expected 'globals' to be dict in 'exec'");
+    if (globals_obj.isModuleProxy()) {
+      globals_obj =
+          Module::cast(ModuleProxy::cast(*globals_obj).module()).dict();
+    } else {
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "Expected 'globals' to be dict in 'exec'");
+    }
+  }
+  if (locals.isModuleProxy()) {
+    locals = Module::cast(ModuleProxy::cast(*locals).module()).dict();
   }
   if (!runtime->isMapping(thread, locals)) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
@@ -639,6 +649,15 @@ RawObject BuiltinsModule::getattr(Thread* thread, Frame* frame, word nargs) {
     }
   }
   return *result;
+}
+
+RawObject BuiltinsModule::globals(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object module_name(&scope, frame->previousFrame()->function().module());
+  Object module(&scope, thread->runtime()->findModule(module_name));
+  CHECK(module.isModule(), "globals() couldn't find a module");
+  return Module::cast(*module).moduleProxy();
 }
 
 RawObject BuiltinsModule::hasattr(Thread* thread, Frame* frame, word nargs) {

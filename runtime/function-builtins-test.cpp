@@ -190,16 +190,19 @@ result = f.__globals__
   EXPECT_TRUE(result.isDict());
 }
 
-TEST_F(FunctionBuiltinsTest, FunctionGlobalsIsEqualToModuleDict) {
+// TODO(T48823386): Update this test once we pass ModuleProxy in
+// function.__globals__.
+TEST_F(FunctionBuiltinsTest, FunctionGlobalsIsEqualToModuleProxyContainedDict) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 import sys
 function_globals = sys.exit.__globals__
-module_dict = sys.__dict__
+module_proxy = sys.__dict__
 )")
                    .isError());
   HandleScope scope(thread_);
   Object function_globals(&scope, mainModuleAt(&runtime_, "function_globals"));
-  Object module_dict(&scope, mainModuleAt(&runtime_, "module_dict"));
+  ModuleProxy module_proxy(&scope, mainModuleAt(&runtime_, "module_proxy"));
+  Object module_dict(&scope, Module::cast(module_proxy.module()).dict());
   EXPECT_EQ(*function_globals, *module_dict);
 }
 

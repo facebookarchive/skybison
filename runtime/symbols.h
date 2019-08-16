@@ -259,6 +259,14 @@ class Runtime;
   V(UnderMemoryviewNbytes, "_memoryview_nbytes")                               \
   V(UnderModuleDir, "_module_dir")                                             \
   V(UnderModuleRepr, "_module_repr")                                           \
+  V(UnderModuleProxy, "_module_proxy")                                         \
+  V(UnderModuleProxyDelitem, "_module_proxy_delitem")                          \
+  V(UnderModuleProxyGet, "_module_proxy_get")                                  \
+  V(UnderModuleProxyGuard, "_module_proxy_guard")                              \
+  V(UnderModuleProxyKeys, "_module_proxy_keys")                                \
+  V(UnderModuleProxyLen, "_module_proxy_len")                                  \
+  V(UnderModuleProxySetitem, "_module_proxy_setitem")                          \
+  V(UnderModuleProxyValues, "_module_proxy_values")                            \
   V(UnderMutableBytes, "_mutablebytes")                                        \
   V(UnderNewMemberGetBool, "_new_member_get_bool")                             \
   V(UnderNewMemberGetByte, "_new_member_get_byte")                             \
@@ -509,6 +517,7 @@ class Runtime;
   V(Getattr, "getattr")                                                        \
   V(Getter, "getter")                                                          \
   V(GiRunning, "gi_running")                                                   \
+  V(Globals, "globals")                                                        \
   V(Hasattr, "hasattr")                                                        \
   V(Hex, "hex")                                                                \
   V(Iadd, "iadd")                                                              \
@@ -599,6 +608,7 @@ class Runtime;
   V(Method, "method")                                                          \
   V(Mod, "mod")                                                                \
   V(Module, "module")                                                          \
+  V(ModuleProxy, "module_proxy")                                               \
   V(ModuleNotFoundError, "ModuleNotFoundError")                                \
   V(Modules, "modules")                                                        \
   V(Mro, "mro")                                                                \

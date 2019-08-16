@@ -2870,7 +2870,7 @@ TEST_F(RuntimeModuleTest, ImportModuleFromInitTab) {
   EXPECT_TRUE(mod.isModule());
 }
 
-TEST_F(RuntimeModuleTest, NewModuleSetsDictValues) {
+TEST_F(RuntimeModuleTest, NewModuleSetsDictValuesAndModuleProxy) {
   HandleScope scope(thread_);
 
   // Create Module
@@ -2888,6 +2888,9 @@ TEST_F(RuntimeModuleTest, NewModuleSetsDictValues) {
             NoneType::object());
   EXPECT_EQ(moduleAtByCStr(&runtime_, "mymodule", "__spec__"),
             NoneType::object());
+
+  ModuleProxy module_proxy(&scope, module.moduleProxy());
+  EXPECT_EQ(module_proxy.module(), *module);
 }
 
 TEST_F(RuntimeFunctionAttrTest, SetAttribute) {

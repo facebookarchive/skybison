@@ -838,7 +838,10 @@ RawObject Runtime::newModule(const Object& name) {
   HandleScope scope(thread);
   Module result(&scope, heap()->create<RawModule>());
   Dict dict(&scope, newDict());
+  ModuleProxy module_proxy(&scope, heap()->create<RawModuleProxy>());
+  module_proxy.setModule(*result);
   result.setDict(*dict);
+  result.setModuleProxy(*module_proxy);
   result.setName(*name);
   result.setDef(newIntFromCPtr(nullptr));
   Object key(&scope, symbols()->DunderName());
@@ -1585,6 +1588,7 @@ void Runtime::initializeHeapTypes() {
   BoundMethodBuiltins::initialize(this);
   MemoryViewBuiltins::initialize(this);
   ModuleBuiltins::initialize(this);
+  ModuleProxyBuiltins::initialize(this);
   addEmptyBuiltinType(SymbolId::kNotImplementedType,
                       LayoutId::kNotImplementedType, LayoutId::kObject);
   TupleBuiltins::initialize(this);

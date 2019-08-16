@@ -21,6 +21,7 @@ class BuiltinsModule {
   static RawObject dunderImport(Thread* thread, Frame* frame, word nargs);
   static RawObject exec(Thread* thread, Frame* frame, word nargs);
   static RawObject getattr(Thread* thread, Frame* frame, word nargs);
+  static RawObject globals(Thread* thread, Frame* frame, word nargs);
   static RawObject hasattr(Thread* thread, Frame* frame, word nargs);
   static RawObject id(Thread* thread, Frame* frame, word nargs);
   static RawObject locals(Thread* thread, Frame* frame, word nargs);

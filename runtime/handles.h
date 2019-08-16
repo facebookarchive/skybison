@@ -127,6 +127,7 @@ class WARN_UNUSED Handle : public T {
   V(LookupError)                                                               \
   V(MemoryView)                                                                \
   V(Module)                                                                    \
+  V(ModuleProxy)                                                               \
   V(ModuleNotFoundError)                                                       \
   V(MutableBytes)                                                              \
   V(NoneType)                                                                  \
