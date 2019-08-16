@@ -1387,6 +1387,26 @@ TEST_F(UnderBuiltinsModuleTest, UnderListSwapSwapsItemsAtIndices) {
   EXPECT_PYLIST_EQ(list, {0, 2, 1, 3});
 }
 
+TEST_F(UnderBuiltinsModuleTest,
+       UnderMemoryViewNbytesWithNonMemoryViewRaisesTypeError) {
+  HandleScope scope(thread_);
+  Object not_memoryview(&scope, runtime_.newInt(12));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(UnderBuiltinsModule::underMemoryviewNbytes, not_memoryview),
+      LayoutId::kTypeError,
+      "'<anonymous>' requires a 'memoryview' object but got 'int'"));
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderMemoryViewNbytesReturnsSizeOfMemoryView) {
+  HandleScope scope(thread_);
+  Bytes bytes(&scope, runtime_.newBytes(5, 'x'));
+  MemoryView view(
+      &scope, runtime_.newMemoryView(thread_, bytes, 5, ReadOnly::ReadOnly));
+  Object result(&scope,
+                runBuiltin(UnderBuiltinsModule::underMemoryviewNbytes, view));
+  EXPECT_TRUE(isIntEqualsWord(*result, 5));
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderModuleDirListWithFilteredOutPlaceholders) {
   HandleScope scope(thread_);
   Dict module_dict(&scope, runtime_.newDict());

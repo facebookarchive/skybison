@@ -443,6 +443,11 @@ def _memoryview_guard(obj):
 
 
 @_patch
+def _memoryview_nbytes(self):
+    pass
+
+
+@_patch
 def _module_dir(module):
     pass
 

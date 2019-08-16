@@ -155,6 +155,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderListSort, underListSort},
     {SymbolId::kUnderListSwap, underListSwap},
     {SymbolId::kUnderMemoryviewGuard, underMemoryviewGuard},
+    {SymbolId::kUnderMemoryviewNbytes, underMemoryviewNbytes},
     {SymbolId::kUnderModuleDir, underModuleDir},
     {SymbolId::kUnderObjectTypeGetattr, underObjectTypeGetAttr},
     {SymbolId::kUnderObjectTypeHasattr, underObjectTypeHasattr},
@@ -2046,6 +2047,18 @@ RawObject UnderBuiltinsModule::underMemoryviewGuard(Thread* thread,
     return NoneType::object();
   }
   return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kMemoryView);
+}
+
+RawObject UnderBuiltinsModule::underMemoryviewNbytes(Thread* thread,
+                                                     Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isMemoryView()) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kMemoryView);
+  }
+  MemoryView self(&scope, *self_obj);
+  return SmallInt::fromWord(self.length());
 }
 
 RawObject UnderBuiltinsModule::underModuleDir(Thread* thread, Frame* frame,

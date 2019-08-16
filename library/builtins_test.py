@@ -3090,6 +3090,10 @@ class LongRangeIteratorTests(unittest.TestCase):
 
 
 class MemoryviewTests(unittest.TestCase):
+    def test_nbytes_returns_size_of_memoryview(self):
+        view = memoryview(b"foobar")
+        self.assertEqual(view.nbytes, 6)
+
     def test_tolist_with_non_memoryview_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             memoryview.tolist(None)

@@ -90,6 +90,7 @@ _list_len = _list_len  # noqa: F821
 _list_sort = _list_sort  # noqa: F821
 _list_swap = _list_swap  # noqa: F821
 _memoryview_guard = _memoryview_guard  # noqa: F821
+_memoryview_nbytes = _memoryview_nbytes  # noqa: F821
 _module_dir = _module_dir  # noqa: F821
 _object_type_getattr = _object_type_getattr  # noqa: F821
 _object_type_hasattr = _object_type_hasattr  # noqa: F821
@@ -3013,6 +3014,8 @@ class memoryview(bootstrap=True):
 
     def cast(self, format: str) -> memoryview:
         pass
+
+    nbytes = _property(_memoryview_nbytes)
 
     def tolist(self):
         _memoryview_guard(self)
