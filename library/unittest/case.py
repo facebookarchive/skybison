@@ -153,13 +153,9 @@ class _AssertRaisesBaseContext(_BaseTestCaseContext):
         _BaseTestCaseContext.__init__(self, test_case)
         self.expected = expected
         self.test_case = test_case
-
-        # TODO(T38780562): Apparently requires re._patern_type which is disbaled
-        # in re.py with the same task number.
-        #if expected_regex is not None:
-        #    expected_regex = re.compile(expected_regex)
-        #self.expected_regex = expected_regex
-        self.expected_regex = None
+        if expected_regex is not None:
+            expected_regex = re.compile(expected_regex)
+        self.expected_regex = expected_regex
         self.obj_name = None
         self.msg = None
 
@@ -214,15 +210,10 @@ class _AssertRaisesContext(_AssertRaisesBaseContext):
             except AttributeError:
                 exc_name = str(self.expected)
             if self.obj_name:
-                # TODO(T32655200): Implement str.format
-                # self._raiseFailure("{} not raised by {}".format(exc_name,
-                #                                                 self.obj_name))
-                self._raiseFailure("%s not raised by %s" % (exc_name,
-                                                            self.obj_name))
+                self._raiseFailure("{} not raised by {}".format(exc_name,
+                                                                self.obj_name))
             else:
-                # TODO(T32655200): Implement str.format
-                # self._raiseFailure("{} not raised".format(exc_name))
-                self._raiseFailure("%s not raised" % exc_name)
+                self._raiseFailure("{} not raised".format(exc_name))
         # TODO(T42595911): traceback module
         # else:
         #     traceback.clear_frames(tb)

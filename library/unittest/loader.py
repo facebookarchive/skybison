@@ -13,13 +13,9 @@ import sys
 # import traceback
 import types
 import warnings
+from fnmatch import fnmatch
 
 from . import case, suite, util
-
-
-# TODO(T42597944): fnmatch module
-# from fnmatch import fnmatch
-
 
 
 __unittest = True
@@ -241,9 +237,8 @@ class TestLoader(object):
             return attrname.startswith(prefix) and \
                 callable(getattr(testCaseClass, attrname))
         testFnNames = list(filter(isTestMethod, dir(testCaseClass)))
-        # TODO(T42595832): Enable functools.cmp_to_key
-        # if self.sortTestMethodsUsing:
-        #     testFnNames.sort(key=functools.cmp_to_key(self.sortTestMethodsUsing))
+        if self.sortTestMethodsUsing:
+            testFnNames.sort(key=functools.cmp_to_key(self.sortTestMethodsUsing))
         return testFnNames
 
     def discover(self, start_dir, pattern='test*.py', top_level_dir=None):
@@ -385,10 +380,7 @@ class TestLoader(object):
         return sys.modules[name]
 
     def _match_path(self, path, full_path, pattern):
-        # override this method to use alternative matching strategy
-        # TODO(T42597944): fnmatch module
-        # return fnmatch(path, pattern)
-        pass
+        return fnmatch(path, pattern)
 
     def _find_tests(self, start_dir, pattern, namespace=False):
         """Used by discovery. Yields test suites it loads."""
