@@ -1091,8 +1091,9 @@ def ascii(obj):
     return _str_escape_non_ascii(repr(obj))
 
 
-def bin(x):
-    _unimplemented()
+@_patch
+def bin(number) -> str:
+    pass
 
 
 class bool(bootstrap=True):

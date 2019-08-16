@@ -406,6 +406,7 @@ class Runtime;
     "bad argument type for built-in operation")                                \
   V(BaseException, "BaseException")                                            \
   V(Big, "big")                                                                \
+  V(Bin, "bin")                                                                \
   V(BitLength, "bit_length")                                                   \
   V(BlockingIOError, "BlockingIOError")                                        \
   V(Bool, "bool")                                                              \

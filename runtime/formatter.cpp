@@ -432,8 +432,58 @@ RawObject formatIntDecimalSimple(Thread* thread, const Int& value_int) {
   return thread->runtime()->newStrWithAll(View<byte>(start, end - start));
 }
 
+static word numBinaryDigits(const Int& value) {
+  return value.isZero() ? 1 : value.bitLength();
+}
+
 static word numHexadecimalDigits(const Int& value) {
   return value.isZero() ? 1 : (value.bitLength() + 3) >> 2;
+}
+
+static void putBinaryDigits(Thread* thread, const MutableBytes& dest, word at,
+                            const Int& value, word num_digits) {
+  static const char* const quads[16] = {
+      "0000", "0001", "0010", "0011", "0100", "0101", "0110", "0111",
+      "1000", "1001", "1010", "1011", "1100", "1101", "1110", "1111",
+  };
+
+  word idx = at + num_digits;
+  uword last_digit;
+  if (value.isLargeInt()) {
+    HandleScope scope(thread);
+    LargeInt value_large(&scope, *value);
+    word d_last = (num_digits - 1) / kBitsPerWord;
+    bool is_negative = value_large.isNegative();
+    uword carry = 1;
+    for (word d = 0; d < d_last; d++) {
+      uword digit = value_large.digitAt(d);
+      if (is_negative) {
+        digit = ~digit + carry;
+        carry = carry & (digit == 0);
+      }
+      static_assert(kBitsPerWord % 4 == 0, "bits per word divisible by 4");
+      for (word i = 0; i < kBitsPerWord / 4; i++) {
+        const char* quad = quads[digit & 0xf];
+        dest.byteAtPut(--idx, quad[3]);
+        dest.byteAtPut(--idx, quad[2]);
+        dest.byteAtPut(--idx, quad[1]);
+        dest.byteAtPut(--idx, quad[0]);
+        digit >>= 4;
+      }
+    }
+    last_digit = value_large.digitAt(d_last);
+    if (is_negative) {
+      last_digit = ~last_digit + carry;
+    }
+  } else {
+    last_digit = static_cast<uword>(std::abs(value.asWord()));
+  }
+
+  do {
+    dest.byteAtPut(--idx, '0' + (last_digit & 1));
+    last_digit >>= 1;
+  } while (last_digit != 0);
+  DCHECK(idx == at, "unexpected number of digits");
 }
 
 static void putHexadecimalDigits(Thread* thread, const MutableBytes& dest,
@@ -471,6 +521,24 @@ static void putHexadecimalDigits(Thread* thread, const MutableBytes& dest,
     last_digit >>= kBitsPerHexDigit;
   } while (last_digit != 0);
   DCHECK(idx == at, "unexpected number of digits");
+}
+
+RawObject formatIntSimpleBinary(Thread* thread, const Int& value) {
+  word result_n_digits = numBinaryDigits(value);
+  word result_size = 2 + (value.isNegative() ? 1 : 0) + result_n_digits;
+
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  MutableBytes result(&scope,
+                      runtime->newMutableBytesUninitialized(result_size));
+  word index = 0;
+  if (value.isNegative()) {
+    result.byteAtPut(index++, '-');
+  }
+  result.byteAtPut(index++, '0');
+  result.byteAtPut(index++, 'b');
+  putBinaryDigits(thread, result, index, value, result_n_digits);
+  return result.becomeStr();
 }
 
 RawObject formatIntSimpleHexadecimal(Thread* thread, const Int& value) {

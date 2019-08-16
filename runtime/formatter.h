@@ -19,6 +19,8 @@ struct FormatSpec {
 
 RawObject formatIntDecimalSimple(Thread* thread, const Int& value);
 
+RawObject formatIntSimpleBinary(Thread* thread, const Int& value);
+
 RawObject formatIntSimpleHexadecimal(Thread* thread, const Int& value);
 
 RawObject formatStr(Thread* thread, const Str& str, FormatSpec* format);

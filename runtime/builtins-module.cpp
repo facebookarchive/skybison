@@ -65,6 +65,7 @@ RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
 
 // clang-format off
 const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
+    {SymbolId::kBin, bin},
     {SymbolId::kCallable, callable},
     {SymbolId::kChr, chr},
     {SymbolId::kCompile, compile},
@@ -249,6 +250,18 @@ static RawObject calculateMetaclass(Thread* thread, const Type& metaclass_type,
     }
   }
   return *result;
+}
+
+RawObject BuiltinsModule::bin(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object number(&scope, args.get(0));
+  number = intFromIndex(thread, number);
+  if (number.isError()) {
+    return *number;
+  }
+  Int number_int(&scope, intUnderlying(thread, number));
+  return formatIntSimpleBinary(thread, number_int);
 }
 
 RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,

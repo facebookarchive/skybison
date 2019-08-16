@@ -11,6 +11,61 @@ except ImportError:
     pass
 
 
+class BinTests(unittest.TestCase):
+    def test_returns_string(self):
+        self.assertEqual(bin(0), "0b0")
+        self.assertEqual(bin(-1), "-0b1")
+        self.assertEqual(bin(1), "0b1")
+        self.assertEqual(bin(54321), "0b1101010000110001")
+        self.assertEqual(bin(494991), "0b1111000110110001111")
+
+    def test_with_large_int_returns_string(self):
+        self.assertEqual(
+            bin(1 << 63),
+            "0b1000000000000000000000000000000000000000000000000000000000000000",
+        )
+        self.assertEqual(
+            bin(1 << 64),
+            "0b10000000000000000000000000000000000000000000000000000000000000000",
+        )
+        self.assertEqual(
+            bin(0xDEE182DE2EC55F61B22A509ED1DC3EB),
+            "0b1101111011100001100000101101111000101110110001010101111101"
+            "1000011011001000101010010100001001111011010001110111000011111"
+            "01011",
+        )
+        self.assertEqual(
+            bin(-0x53ADC651E593B1323158BFA776E8173F60C76519277B2BD6),
+            "-0b1010011101011011100011001010001111001011001001110110001001"
+            "1001000110001010110001011111110100111011101101110100000010111"
+            "0011111101100000110001110110010100011001001001110111101100101"
+            "01111010110",
+        )
+
+    def test_calls_dunder_index(self):
+        class C:
+            def __int__(self):
+                return 42
+
+            def __index__(self):
+                return -9
+
+        self.assertEqual(bin(C()), "-0b1001")
+
+    def test_with_int_subclass(self):
+        class C(int):
+            pass
+
+        self.assertEqual(bin(C(51)), "0b110011")
+
+    def test_with_non_int_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bin("not an int")
+        self.assertEqual(
+            str(context.exception), "'str' object cannot be interpreted as an integer"
+        )
+
+
 class BoundMethodTests(unittest.TestCase):
     def test_bound_method_dunder_func(self):
         class Foo:

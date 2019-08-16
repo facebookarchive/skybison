@@ -14,6 +14,7 @@ RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
 
 class BuiltinsModule {
  public:
+  static RawObject bin(Thread* thread, Frame* frame, word nargs);
   static RawObject callable(Thread* thread, Frame* frame, word nargs);
   static RawObject chr(Thread* thread, Frame* frame, word nargs);
   static RawObject compile(Thread* thread, Frame* frame, word nargs);
