@@ -432,4 +432,63 @@ RawObject formatIntDecimalSimple(Thread* thread, const Int& value_int) {
   return thread->runtime()->newStrWithAll(View<byte>(start, end - start));
 }
 
+static word numHexadecimalDigits(const Int& value) {
+  return value.isZero() ? 1 : (value.bitLength() + 3) >> 2;
+}
+
+static void putHexadecimalDigits(Thread* thread, const MutableBytes& dest,
+                                 word at, const Int& value, word num_digits) {
+  word idx = at + num_digits;
+  uword last_digit;
+  if (value.isLargeInt()) {
+    HandleScope scope(thread);
+    LargeInt value_large(&scope, *value);
+    const word hexdigits_per_word = kBitsPerWord / kBitsPerHexDigit;
+    word d_last = (num_digits - 1) / hexdigits_per_word;
+    bool is_negative = value_large.isNegative();
+    uword carry = 1;
+    for (word d = 0; d < d_last; d++) {
+      uword digit = value_large.digitAt(d);
+      if (is_negative) {
+        digit = ~digit + carry;
+        carry = carry & (digit == 0);
+      }
+      for (word i = 0; i < hexdigits_per_word; i++) {
+        dest.byteAtPut(--idx, "0123456789abcdef"[digit & 0xf]);
+        digit >>= kBitsPerHexDigit;
+      }
+    }
+    last_digit = value_large.digitAt(d_last);
+    if (is_negative) {
+      last_digit = ~last_digit + carry;
+    }
+  } else {
+    last_digit = static_cast<uword>(std::abs(value.asWord()));
+  }
+
+  do {
+    dest.byteAtPut(--idx, "0123456789abcdef"[last_digit & 0xf]);
+    last_digit >>= kBitsPerHexDigit;
+  } while (last_digit != 0);
+  DCHECK(idx == at, "unexpected number of digits");
+}
+
+RawObject formatIntSimpleHexadecimal(Thread* thread, const Int& value) {
+  word result_n_digits = numHexadecimalDigits(value);
+  word result_size = 2 + (value.isNegative() ? 1 : 0) + result_n_digits;
+
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  MutableBytes result(&scope,
+                      runtime->newMutableBytesUninitialized(result_size));
+  word index = 0;
+  if (value.isNegative()) {
+    result.byteAtPut(index++, '-');
+  }
+  result.byteAtPut(index++, '0');
+  result.byteAtPut(index++, 'x');
+  putHexadecimalDigits(thread, result, index, value, result_n_digits);
+  return result.becomeStr();
+}
+
 }  // namespace python

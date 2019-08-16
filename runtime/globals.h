@@ -20,6 +20,7 @@ const int kWordSizeLog2 = 3;
 
 const int kUwordDigits10 = 19;
 const uword kUwordDigits10Pow = 10000000000000000000ul;
+const int kBitsPerHexDigit = 4;
 
 const int kBitsPerByte = 8;
 const int kBitsPerPointer = kBitsPerByte * kWordSize;

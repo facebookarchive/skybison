@@ -23,6 +23,7 @@ class BuiltinsModule {
   static RawObject getattr(Thread* thread, Frame* frame, word nargs);
   static RawObject globals(Thread* thread, Frame* frame, word nargs);
   static RawObject hasattr(Thread* thread, Frame* frame, word nargs);
+  static RawObject hex(Thread* thread, Frame* frame, word nargs);
   static RawObject id(Thread* thread, Frame* frame, word nargs);
   static RawObject locals(Thread* thread, Frame* frame, word nargs);
   static RawObject ord(Thread* thread, Frame* frame, word nargs);

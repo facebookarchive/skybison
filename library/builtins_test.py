@@ -2144,6 +2144,50 @@ class HashTests(unittest.TestCase):
         self.assertEqual(type(42), int)
 
 
+class HexTests(unittest.TestCase):
+    def test_returns_string(self):
+        self.assertEqual(hex(0), "0x0")
+        self.assertEqual(hex(-1), "-0x1")
+        self.assertEqual(hex(1), "0x1")
+        self.assertEqual(hex(54321), "0xd431")
+        self.assertEqual(hex(81985529216486895), "0x123456789abcdef")
+        self.assertEqual(hex(18364758544493064720), "0xfedcba9876543210")
+
+    def test_with_large_int_returns_string(self):
+        self.assertEqual(hex(1 << 63), "0x8000000000000000")
+        self.assertEqual(hex(1 << 64), "0x10000000000000000")
+        self.assertEqual(
+            hex(0xDEE182DE2EC55F61B22A509ED1DC3EB), "0xdee182de2ec55f61b22a509ed1dc3eb"
+        )
+        self.assertEqual(
+            hex(-0x53ADC651E593B1323158BFA776E8173F60C76519277B2BD6),
+            "-0x53adc651e593b1323158bfa776e8173f60c76519277b2bd6",
+        )
+
+    def test_calls_dunder_index(self):
+        class C:
+            def __int__(self):
+                return 42
+
+            def __index__(self):
+                return -99
+
+        self.assertEqual(hex(C()), "-0x63")
+
+    def test_with_int_subclass(self):
+        class C(int):
+            pass
+
+        self.assertEqual(hex(C(51)), "0x33")
+
+    def test_with_non_int_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            hex("not an int")
+        self.assertEqual(
+            str(context.exception), "'str' object cannot be interpreted as an integer"
+        )
+
+
 class IntTests(unittest.TestCase):
     def test_dunder_new_with_bool_class_raises_type_error(self):
         with self.assertRaises(TypeError) as context:

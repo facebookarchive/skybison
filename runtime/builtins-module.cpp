@@ -5,6 +5,7 @@
 #include "bytes-builtins.h"
 #include "compile.h"
 #include "exception-builtins.h"
+#include "formatter.h"
 #include "frozen-modules.h"
 #include "int-builtins.h"
 #include "marshal.h"
@@ -72,6 +73,7 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kGetattr, getattr},
     {SymbolId::kGlobals, globals},
     {SymbolId::kHasattr, hasattr},
+    {SymbolId::kHex, hex},
     {SymbolId::kId, id},
     {SymbolId::kLocals, locals},
     {SymbolId::kOrd, ord},
@@ -666,6 +668,18 @@ RawObject BuiltinsModule::hasattr(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Object name(&scope, args.get(1));
   return hasAttribute(thread, self, name);
+}
+
+RawObject BuiltinsModule::hex(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object number(&scope, args.get(0));
+  number = intFromIndex(thread, number);
+  if (number.isError()) {
+    return *number;
+  }
+  Int number_int(&scope, intUnderlying(thread, number));
+  return formatIntSimpleHexadecimal(thread, number_int);
 }
 
 RawObject BuiltinsModule::setattr(Thread* thread, Frame* frame, word nargs) {

@@ -2310,8 +2310,9 @@ def help(obj=_Unbound):
     _unimplemented()
 
 
-def hex(number):
-    _unimplemented()
+@_patch
+def hex(number) -> str:
+    pass
 
 
 @_patch
