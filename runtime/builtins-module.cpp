@@ -618,29 +618,18 @@ RawObject BuiltinsModule::ord(Thread* thread, Frame* frame, word nargs) {
 RawObject BuiltinsModule::dunderImport(Thread* thread, Frame* frame,
                                        word nargs) {
   HandleScope scope(thread);
+  Module importlib(&scope,
+                   thread->runtime()->findOrCreateImportlibModule(thread));
+  Object dunder_import(
+      &scope, moduleAtById(thread, importlib, SymbolId::kDunderImport));
+  if (dunder_import.isError()) return *dunder_import;
+
   Arguments args(frame, nargs);
   Object name(&scope, args.get(0));
   Object globals(&scope, args.get(1));
   Object locals(&scope, args.get(2));
   Object fromlist(&scope, args.get(3));
   Object level(&scope, args.get(4));
-
-  Runtime* runtime = thread->runtime();
-  if (runtime->isInstanceOfInt(*level)) {
-    Int level_int(&scope, intUnderlying(thread, level));
-    if (level_int.isZero()) {
-      Object cached_module(&scope, runtime->findModule(name));
-      if (!cached_module.isNoneType()) {
-        return *cached_module;
-      }
-    }
-  }
-
-  Module importlib(&scope, runtime->findOrCreateImportlibModule(thread));
-  Object dunder_import(
-      &scope, moduleAtById(thread, importlib, SymbolId::kDunderImport));
-  if (dunder_import.isError()) return *dunder_import;
-
   return thread->invokeFunction5(SymbolId::kUnderFrozenImportlib,
                                  SymbolId::kDunderImport, name, globals, locals,
                                  fromlist, level);

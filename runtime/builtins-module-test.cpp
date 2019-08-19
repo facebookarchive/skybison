@@ -116,6 +116,48 @@ dir()
                "'_unimplemented' called in function 'dir'");
 }
 
+TEST_F(BuiltinsModuleTest, DunderImportWithSubmoduleReturnsToplevelModule) {
+  TemporaryDirectory tempdir;
+  std::string topmodule_dir = tempdir.path + "top";
+  ASSERT_EQ(mkdir(topmodule_dir.c_str(), S_IRWXU), 0);
+  std::string submodule_dir = tempdir.path + "top/sub";
+  ASSERT_EQ(mkdir(submodule_dir.c_str(), S_IRWXU), 0);
+  writeFile(submodule_dir + "/__init__.py", "initialized = True");
+
+  HandleScope scope(thread_);
+  List sys_path(&scope, moduleAtByCStr(&runtime_, "sys", "path"));
+  sys_path.setNumItems(0);
+  Str temp_dir_str(&scope, runtime_.newStrFromCStr(tempdir.path.c_str()));
+  runtime_.listAdd(thread_, sys_path, temp_dir_str);
+
+  Object subname(&scope, runtime_.newStrFromCStr("top.sub"));
+  Object globals(&scope, NoneType::object());
+  Object locals(&scope, NoneType::object());
+  Object fromlist(&scope, runtime_.emptyTuple());
+  Object level(&scope, runtime_.newInt(0));
+  Object m0(&scope, runBuiltin(BuiltinsModule::dunderImport, subname, globals,
+                               locals, fromlist, level));
+  ASSERT_TRUE(m0.isModule());
+  EXPECT_TRUE(isStrEqualsCStr(Module::cast(*m0).name(), "top"));
+
+  Object initialized(&scope,
+                     moduleAtByCStr(&runtime_, "top.sub", "initialized"));
+  EXPECT_EQ(initialized, Bool::trueObj());
+
+  Object topname(&scope, runtime_.newStrFromCStr("top"));
+  Object m1(&scope, runBuiltin(BuiltinsModule::dunderImport, topname, globals,
+                               locals, fromlist, level));
+  EXPECT_EQ(m0, m1);
+
+  // Import a 2nd time so we hit the cache.
+  Object m2(&scope, runBuiltin(BuiltinsModule::dunderImport, subname, globals,
+                               locals, fromlist, level));
+  EXPECT_EQ(m0, m2);
+  Object m3(&scope, runBuiltin(BuiltinsModule::dunderImport, topname, globals,
+                               locals, fromlist, level));
+  EXPECT_EQ(m0, m3);
+}
+
 TEST_F(BuiltinsModuleTest, EllipsisMatchesEllipsis) {
   EXPECT_EQ(moduleAtByCStr(&runtime_, "builtins", "Ellipsis"),
             runtime_.ellipsis());

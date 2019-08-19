@@ -12,6 +12,12 @@ This is the pure Python implementation of the module.
 The Pyro runtime and C-API can delegate to this module to do some heavy lifting.
 """
 
+
+# These values are injected by our boot process. flake8 has no knowledge about
+# their definitions.
+_divmod = _divmod  # noqa: F821
+
+
 __all__ = [
     "abs",
     "add",
@@ -68,9 +74,6 @@ __all__ = [
     "truth",
     "xor",
 ]
-
-
-from _builtins import _divmod
 
 
 # Comparison Operations *******************************************************#

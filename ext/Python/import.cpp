@@ -28,13 +28,6 @@ PY_EXPORT PyObject* PyImport_ImportModuleLevelObject(PyObject* name,
     thread->raiseWithFmt(LayoutId::kValueError, "level must be >= 0");
     return nullptr;
   }
-  Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
-  if (level == 0) {
-    Object cached_module(&scope, runtime->findModule(name_obj));
-    if (!cached_module.isNoneType()) {
-      return ApiHandle::newReference(thread, *cached_module);
-    }
-  }
   if (globals == nullptr) {
     thread->raiseWithFmt(LayoutId::kKeyError, "'__name__' not in globals");
     return nullptr;
@@ -56,6 +49,7 @@ PY_EXPORT PyObject* PyImport_ImportModuleLevelObject(PyObject* name,
                           ? runtime->emptyTuple()
                           : ApiHandle::fromPyObject(fromlist)->asObject());
 
+  Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
   Object locals_obj(&scope, locals == nullptr
                                 ? NoneType::object()
                                 : ApiHandle::fromPyObject(locals)->asObject());
