@@ -440,6 +440,10 @@ static word numHexadecimalDigits(const Int& value) {
   return value.isZero() ? 1 : (value.bitLength() + 3) >> 2;
 }
 
+static word numOctalDigits(const Int& value) {
+  return value.isZero() ? 1 : (value.bitLength() + 2) / 3;
+}
+
 static void putBinaryDigits(Thread* thread, const MutableBytes& dest, word at,
                             const Int& value, word num_digits) {
   static const char* const quads[16] = {
@@ -523,6 +527,76 @@ static void putHexadecimalDigits(Thread* thread, const MutableBytes& dest,
   DCHECK(idx == at, "unexpected number of digits");
 }
 
+static void putOctalDigits(Thread* thread, const MutableBytes& dest, word at,
+                           const Int& value, word num_result_digits) {
+  word idx = at + num_result_digits;
+  if (value.isLargeInt()) {
+    HandleScope scope(thread);
+    LargeInt value_large(&scope, *value);
+    bool is_negative = value_large.isNegative();
+
+    // We have to negate negative numbers which produces carry between
+    // digits.
+    uword negate_carry = 1;
+    // We have carry over when the three bits for an octal digits are between
+    // large-int digits (this has nothing to do with `negate_carry`).
+    uword prev_digit_carry = 0;
+    word prev_digit_carry_num_bits = 0;
+    for (word d = 0, num_digits = value_large.numDigits(); d < num_digits;
+         d++) {
+      uword digit = value_large.digitAt(d);
+      if (is_negative) {
+        digit = ~digit + negate_carry;
+        negate_carry &= (digit == 0);
+      }
+
+      word num_oct_digits = kBitsPerWord / kBitsPerOctDigit;
+      word next_carry_num_bits = kBitsPerWord % kBitsPerOctDigit;
+      if (prev_digit_carry_num_bits != 0) {
+        word combined = digit << prev_digit_carry_num_bits | prev_digit_carry;
+        dest.byteAtPut(--idx, '0' + (combined & 7));
+        digit >>= (kBitsPerOctDigit - prev_digit_carry_num_bits);
+        if (idx == at) {
+          DCHECK(d == num_digits - 1 && digit == 0, "rest must be zero");
+          break;
+        }
+        num_oct_digits--;
+
+        next_carry_num_bits += prev_digit_carry_num_bits;
+        if (next_carry_num_bits == kBitsPerOctDigit) {
+          num_oct_digits++;
+          next_carry_num_bits = 0;
+        }
+      }
+      for (word i = 0; i < num_oct_digits; i++) {
+        dest.byteAtPut(--idx, '0' + (digit & 7));
+        digit >>= kBitsPerOctDigit;
+        // Stop before we start outputting leading zeros.
+        if (idx == at) {
+          DCHECK(d == num_digits - 1 && digit == 0, "rest must be zero");
+          break;
+        }
+      }
+      DCHECK(digit < static_cast<uword>(1 << next_carry_num_bits),
+             "too many bits left");
+      prev_digit_carry_num_bits = next_carry_num_bits;
+      prev_digit_carry = digit;
+    }
+    // Output leftover carry bits.
+    if (idx > at) {
+      DCHECK(prev_digit_carry_num_bits > 0, "should have carry bits");
+      dest.byteAtPut(--idx, '0' + prev_digit_carry);
+    }
+  } else {
+    uword value_uword = static_cast<uword>(std::abs(value.asWord()));
+    do {
+      dest.byteAtPut(--idx, '0' + (value_uword & 7));
+      value_uword >>= kBitsPerOctDigit;
+    } while (value_uword != 0);
+  }
+  DCHECK(idx == at, "unexpected number of digits");
+}
+
 RawObject formatIntSimpleBinary(Thread* thread, const Int& value) {
   word result_n_digits = numBinaryDigits(value);
   word result_size = 2 + (value.isNegative() ? 1 : 0) + result_n_digits;
@@ -556,6 +630,24 @@ RawObject formatIntSimpleHexadecimal(Thread* thread, const Int& value) {
   result.byteAtPut(index++, '0');
   result.byteAtPut(index++, 'x');
   putHexadecimalDigits(thread, result, index, value, result_n_digits);
+  return result.becomeStr();
+}
+
+RawObject formatIntSimpleOctal(Thread* thread, const Int& value) {
+  word result_n_digits = numOctalDigits(value);
+  word result_size = 2 + (value.isNegative() ? 1 : 0) + result_n_digits;
+
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  MutableBytes result(&scope,
+                      runtime->newMutableBytesUninitialized(result_size));
+  word index = 0;
+  if (value.isNegative()) {
+    result.byteAtPut(index++, '-');
+  }
+  result.byteAtPut(index++, '0');
+  result.byteAtPut(index++, 'o');
+  putOctalDigits(thread, result, index, value, result_n_digits);
   return result.becomeStr();
 }
 

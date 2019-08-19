@@ -3566,6 +3566,73 @@ class ObjectTests(unittest.TestCase):
         self.assertIs(super(Bar, Bar()).__class__, super)
 
 
+class OctTests(unittest.TestCase):
+    def test_returns_string(self):
+        self.assertEqual(oct(0), "0o0")
+        self.assertEqual(oct(-1), "-0o1")
+        self.assertEqual(oct(1), "0o1")
+        self.assertEqual(oct(54321), "0o152061")
+        self.assertEqual(oct(34466324363639), "0o765432101234567")
+
+    def test_with_large_int_returns_string(self):
+        # Test carry-over behavior at the border between digit 0 and 1:
+        self.assertEqual(oct(1 << 60), "0o100000000000000000000")
+        self.assertEqual(oct(1 << 61), "0o200000000000000000000")
+        self.assertEqual(oct(1 << 62), "0o400000000000000000000")
+        self.assertEqual(oct(1 << 63), "0o1000000000000000000000")
+        self.assertEqual(oct(1 << 64), "0o2000000000000000000000")
+        self.assertEqual(oct(1 << 65), "0o4000000000000000000000")
+        # Test carry over behavior between later digits (there's 3 different
+        # carry sizes, between 0-1, 1-2, 2-3).
+        self.assertEqual(
+            oct(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF),
+            "0o77777777777777777777777777777777777777777777777777777777777777"
+            "7777777777",
+        )
+        self.assertEqual(
+            oct(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF),
+            "0o17777777777777777777777777777777777777777777777777777777777777"
+            "777777777777",
+        )
+        self.assertEqual(
+            oct(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF),
+            "0o37777777777777777777777777777777777777777777777777777777777777"
+            "7777777777777",
+        )
+        # Some random numbers:
+        self.assertEqual(
+            oct(0xDEE182DE2EC55F61B22A509ED1DC3EB),
+            "0o157341405570566125754154425120475507341753",
+        )
+        self.assertEqual(
+            oct(-0x53ADC651E593B1323158BFA776E8173F60C76519277B2BD6),
+            "-0o2472670624362623542310612613764735564027176603073121444736625726",
+        )
+
+    def test_calls_dunder_index(self):
+        class C:
+            def __int__(self):
+                return 42
+
+            def __index__(self):
+                return -9
+
+        self.assertEqual(oct(C()), "-0o11")
+
+    def test_with_int_subclass(self):
+        class C(int):
+            pass
+
+        self.assertEqual(oct(C(51)), "0o63")
+
+    def test_with_non_int_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            oct("not an int")
+        self.assertEqual(
+            str(context.exception), "'str' object cannot be interpreted as an integer"
+        )
+
+
 class PrintTests(unittest.TestCase):
     class MyStream:
         def __init__(self):

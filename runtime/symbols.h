@@ -632,6 +632,7 @@ class Runtime;
   V(NullArgumentToInternalRoutine, "null argument to internal routine")        \
   V(OSError, "OSError")                                                        \
   V(ObjectTypename, "object")                                                  \
+  V(Oct, "oct")                                                                \
   V(Offset, "offset")                                                          \
   V(Operator, "operator")                                                      \
   V(OrUnder, "or_")                                                            \

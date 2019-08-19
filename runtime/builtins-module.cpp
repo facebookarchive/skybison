@@ -77,6 +77,7 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kHex, hex},
     {SymbolId::kId, id},
     {SymbolId::kLocals, locals},
+    {SymbolId::kOct, oct},
     {SymbolId::kOrd, ord},
     {SymbolId::kSetattr, setattr},
     {SymbolId::kVars, vars},
@@ -596,6 +597,18 @@ RawObject BuiltinsModule::locals(Thread* thread, Frame* frame, word) {
   }
   // Get the frame of the caller of locals().
   return localsFromFrame(thread, frame->previousFrame());
+}
+
+RawObject BuiltinsModule::oct(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object number(&scope, args.get(0));
+  number = intFromIndex(thread, number);
+  if (number.isError()) {
+    return *number;
+  }
+  Int number_int(&scope, intUnderlying(thread, number));
+  return formatIntSimpleOctal(thread, number_int);
 }
 
 RawObject BuiltinsModule::ord(Thread* thread, Frame* frame, word nargs) {

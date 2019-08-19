@@ -3219,8 +3219,9 @@ def next(iterator, default=_Unbound):
         return default
 
 
-def oct(number):
-    _unimplemented()
+@_patch
+def oct(number) -> str:
+    pass
 
 
 def open(
