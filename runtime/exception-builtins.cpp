@@ -584,6 +584,16 @@ const BuiltinMethod SystemExitBuiltins::kBuiltinMethods[] = {
     {SymbolId::kSentinelId, nullptr},
 };
 
+const BuiltinAttribute SyntaxErrorBuiltins::kAttributes[] = {
+    {SymbolId::kFilename, RawSyntaxError::kFilenameOffset},
+    {SymbolId::kLineno, RawSyntaxError::kLinenoOffset},
+    {SymbolId::kMsg, RawSyntaxError::kMsgOffset},
+    {SymbolId::kOffset, RawSyntaxError::kOffsetOffset},
+    {SymbolId::kPrintFileAndLine, RawSyntaxError::kPrintFileAndLineOffset},
+    {SymbolId::kText, RawSyntaxError::kTextOffset},
+    {SymbolId::kSentinelId, -1},
+};
+
 RawObject SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
                                          word nargs) {
   HandleScope scope(thread);

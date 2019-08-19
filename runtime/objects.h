@@ -321,6 +321,7 @@ class RawObject {
   bool isStrArray() const;
   bool isStrIterator() const;
   bool isSuper() const;
+  bool isSyntaxError() const;
   bool isSystemExit() const;
   bool isTraceback() const;
   bool isTuple() const;
@@ -884,6 +885,19 @@ class RawBaseException : public RawHeapObject {
 class RawException : public RawBaseException {
  public:
   RAW_OBJECT_COMMON(Exception);
+};
+
+class RawSyntaxError : public RawException {
+ public:
+  static const int kFilenameOffset = RawException::kSize;
+  static const int kLinenoOffset = kFilenameOffset + kPointerSize;
+  static const int kMsgOffset = kLinenoOffset + kPointerSize;
+  static const int kOffsetOffset = kMsgOffset + kPointerSize;
+  static const int kPrintFileAndLineOffset = kOffsetOffset + kPointerSize;
+  static const int kTextOffset = kPrintFileAndLineOffset + kPointerSize;
+  static const int kSize = kTextOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(SyntaxError);
 };
 
 class RawStopIteration : public RawBaseException {
@@ -3255,6 +3269,10 @@ inline bool RawObject::isStrIterator() const {
 
 inline bool RawObject::isSuper() const {
   return isHeapObjectWithLayout(LayoutId::kSuper);
+}
+
+inline bool RawObject::isSyntaxError() const {
+  return isHeapObjectWithLayout(LayoutId::kSyntaxError);
 }
 
 inline bool RawObject::isSystemExit() const {

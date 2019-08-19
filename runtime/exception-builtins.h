@@ -72,6 +72,16 @@ class StopIterationBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(StopIterationBuiltins);
 };
 
+class SyntaxErrorBuiltins
+    : public Builtins<SyntaxErrorBuiltins, SymbolId::kSyntaxError,
+                      LayoutId::kSyntaxError, LayoutId::kException> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(SyntaxErrorBuiltins);
+};
+
 class SystemExitBuiltins
     : public Builtins<SystemExitBuiltins, SymbolId::kSystemExit,
                       LayoutId::kSystemExit, LayoutId::kBaseException> {

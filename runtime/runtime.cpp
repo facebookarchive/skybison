@@ -1658,8 +1658,7 @@ void Runtime::initializeExceptionTypes() {
   StopIterationBuiltins::initialize(this);
   addEmptyBuiltinType(SymbolId::kStopAsyncIteration,
                       LayoutId::kStopAsyncIteration, LayoutId::kException);
-  addEmptyBuiltinType(SymbolId::kSyntaxError, LayoutId::kSyntaxError,
-                      LayoutId::kException);
+  SyntaxErrorBuiltins::initialize(this);
   addEmptyBuiltinType(SymbolId::kSystemError, LayoutId::kSystemError,
                       LayoutId::kException);
   addEmptyBuiltinType(SymbolId::kTypeError, LayoutId::kTypeError,

@@ -5781,6 +5781,62 @@ class SumTests(unittest.TestCase):
         self.assertEqual(result, 0)
 
 
+class SyntaxErrorTests(unittest.TestCase):
+    def test_dunder_init_with_no_args_sets_msg_to_none(self):
+        obj = SyntaxError()
+        self.assertIsNone(obj.msg)
+
+    def test_dunder_init_with_arg_sets_msg_to_first_arg(self):
+        obj = SyntaxError("hello")
+        self.assertEqual(obj.msg, "hello")
+
+    def test_dunder_init_with_tuple_of_wrong_length_raises_index_error(self):
+        with self.assertRaises(IndexError) as context:
+            SyntaxError("hello", ())
+        self.assertEqual(str(context.exception), "tuple index out of range")
+
+    def test_dunder_init_sets_attributes(self):
+        obj = SyntaxError("msg", ("filename", "lineno", "offset", "text"))
+        self.assertEqual(obj.msg, "msg")
+        self.assertEqual(obj.filename, "filename")
+        self.assertEqual(obj.lineno, "lineno")
+        self.assertEqual(obj.offset, "offset")
+        self.assertEqual(obj.text, "text")
+
+    def test_dunder_str_with_no_filename_and_no_lineno_returns_msg(self):
+        obj = SyntaxError("hello")
+        self.assertEqual(obj.__str__(), "hello")
+
+    def test_dunder_str_calls_dunder_str_on_message(self):
+        class C:
+            def __str__(self):
+                return "foo"
+
+        obj = SyntaxError(C())
+        result = obj.__str__()
+        self.assertEqual(result, "foo")
+
+    def test_dunder_str_with_no_message_returns_none_string(self):
+        obj = SyntaxError()
+        result = obj.__str__()
+        self.assertEqual(result, "None")
+
+    def test_dunder_str_with_filename_and_lineno(self):
+        obj = SyntaxError("msg", ("filename", 5, "offset", "text"))
+        result = obj.__str__()
+        self.assertEqual(result, "msg (filename, line 5)")
+
+    def test_dunder_str_with_non_str_filename_and_lineno(self):
+        obj = SyntaxError("msg", (10, 5, "offset", "text"))
+        result = obj.__str__()
+        self.assertEqual(result, "msg (line 5)")
+
+    def test_dunder_str_with_non_int_lineno_and_filename(self):
+        obj = SyntaxError("msg", ("filename", "lineno", "offset", "text"))
+        result = obj.__str__()
+        self.assertEqual(result, "msg (filename)")
+
+
 class TupleTests(unittest.TestCase):
     def test_dunder_lt_with_non_tuple_self_raises_type_error(self):
         with self.assertRaises(TypeError):

@@ -475,6 +475,39 @@ class StopIteration(bootstrap=True):
         pass
 
 
+class SyntaxError(bootstrap=True):
+    def __init__(self, *args, **kwargs):
+        # TODO(T52743795): Replace with super() when that is fixed
+        super(SyntaxError, self).__init__(*args, **kwargs)
+        # msg, filename, lineno, offset, text all default to None because of
+        # Pyro's automatic None-initialization during allocation.
+        args_len = _tuple_len(args)
+        if args_len > 0:
+            self.msg = args[0]
+        if args_len == 2:
+            info = tuple(args[1])
+            if _tuple_len(info) != 4:
+                raise IndexError("tuple index out of range")
+            self.filename = info[0]
+            self.lineno = info[1]
+            self.offset = info[2]
+            self.text = info[3]
+
+    def __str__(self):
+        have_filename = _str_check(self.filename)
+        have_lineno = _int_checkexact(self.lineno)
+        # TODO(T52652299): Take basename of filename. See implementation of
+        # function my_basename in exceptions.c
+        if not have_filename and not have_lineno:
+            return str(self.msg)
+        if have_filename and have_lineno:
+            return f"{self.msg!s} ({self.filename}, line {self.lineno})"
+        elif have_filename:
+            return f"{self.msg!s} ({self.filename})"
+        else:  # have_lineno
+            return f"{self.msg!s} (line {self.lineno})"
+
+
 class SystemExit(bootstrap=True):
     def __init__(self, *args, **kwargs):
         pass
