@@ -18,6 +18,8 @@ PY_EXPORT PyObject* PyImport_ImportModuleLevelObject(PyObject* name,
                                                      int level) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
+  CHECK(runtime->findOrCreateImportlibModule(thread).isModule(),
+        "failed to initialize importlib");
   HandleScope scope(thread);
 
   if (name == nullptr) {
@@ -37,11 +39,6 @@ PY_EXPORT PyObject* PyImport_ImportModuleLevelObject(PyObject* name,
     thread->raiseWithFmt(LayoutId::kTypeError, "globals must be a dict");
     return nullptr;
   }
-
-  Module importlib(&scope, runtime->findOrCreateImportlibModule(thread));
-  Object dunder_import(
-      &scope, moduleAtById(thread, importlib, SymbolId::kDunderImport));
-  if (dunder_import.isError()) return nullptr;
 
   Object level_obj(&scope, SmallInt::fromWord(level));
   Object fromlist_obj(&scope,

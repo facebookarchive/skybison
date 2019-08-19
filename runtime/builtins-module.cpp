@@ -630,14 +630,10 @@ RawObject BuiltinsModule::ord(Thread* thread, Frame* frame, word nargs) {
 
 RawObject BuiltinsModule::dunderImport(Thread* thread, Frame* frame,
                                        word nargs) {
-  HandleScope scope(thread);
-  Module importlib(&scope,
-                   thread->runtime()->findOrCreateImportlibModule(thread));
-  Object dunder_import(
-      &scope, moduleAtById(thread, importlib, SymbolId::kDunderImport));
-  if (dunder_import.isError()) return *dunder_import;
-
+  CHECK(thread->runtime()->findOrCreateImportlibModule(thread).isModule(),
+        "failed to initialize importlib");
   Arguments args(frame, nargs);
+  HandleScope scope(thread);
   Object name(&scope, args.get(0));
   Object globals(&scope, args.get(1));
   Object locals(&scope, args.get(2));
