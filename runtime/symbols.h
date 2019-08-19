@@ -149,6 +149,8 @@ class Runtime;
   V(UnderBuiltins, "_builtins")                                                \
   V(UnderByteArrayCheck, "_bytearray_check")                                   \
   V(UnderByteArrayClear, "_bytearray_clear")                                   \
+  V(UnderByteArrayDelitem, "_bytearray_delitem")                               \
+  V(UnderByteArrayDelslice, "_bytearray_delslice")                             \
   V(UnderByteArrayGuard, "_bytearray_guard")                                   \
   V(UnderByteArrayJoin, "_bytearray_join")                                     \
   V(UnderByteArrayLen, "_bytearray_len")                                       \

@@ -29,6 +29,16 @@ def _bytearray_clear(obj):
 
 
 @_patch
+def _bytearray_delitem(self, key):
+    pass
+
+
+@_patch
+def _bytearray_delslice(self, start, stop, step):
+    pass
+
+
+@_patch
 def _bytearray_guard(obj):
     pass
 

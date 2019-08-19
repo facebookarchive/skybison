@@ -109,6 +109,55 @@ class BoundMethodTests(unittest.TestCase):
 
 
 class ByteArrayTests(unittest.TestCase):
+    def test_delitem_with_out_of_bounds_index_raises_index_error(self):
+        result = bytearray(b"")
+        with self.assertRaises(IndexError) as context:
+            del result[0]
+        self.assertEqual(str(context.exception), "bytearray index out of range")
+
+    def test_delitem_with_int_subclass_does_not_call_dunder_index(self):
+        class C(int):
+            def __index__(self):
+                raise ValueError("foo")
+
+        result = bytearray(b"01234")
+        del result[C(0)]
+        self.assertEqual(result, bytearray(b"1234"))
+
+    def test_delitem_with_dunder_index_calls_dunder_index(self):
+        class C:
+            def __index__(self):
+                return 2
+
+        result = bytearray(b"01234")
+        del result[C()]
+        self.assertEqual(result, bytearray(b"0134"))
+
+    def test_delslice_negative_indexes_removes_first_element(self):
+        result = bytearray(b"01")
+        del result[-2:-1]
+        self.assertEqual(result, bytearray(b"1"))
+
+    def test_delslice_negative_start_no_stop_removes_trailing_elements(self):
+        result = bytearray(b"01")
+        del result[-1:]
+        self.assertEqual(result, bytearray(b"0"))
+
+    def test_delslice_with_negative_step_deletes_every_other_element(self):
+        result = bytearray(b"01234")
+        del result[::-2]
+        self.assertEqual(result, bytearray(b"13"))
+
+    def test_delslice_with_start_and_negative_step_deletes_every_other_element(self):
+        result = bytearray(b"01234")
+        del result[1::-2]
+        self.assertEqual(result, bytearray(b"0234"))
+
+    def test_delslice_with_large_step_deletes_last_element(self):
+        result = bytearray(b"01234")
+        del result[4 :: 1 << 333]
+        self.assertEqual(result, bytearray(b"0123"))
+
     def test_dunder_setitem_with_non_bytearray_raises_type_error(self):
         with self.assertRaises(TypeError):
             bytearray.__setitem__(None, 1, 5)

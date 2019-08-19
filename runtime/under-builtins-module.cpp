@@ -73,6 +73,8 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderBoundMethod, underBoundMethod},
     {SymbolId::kUnderByteArrayCheck, underByteArrayCheck},
     {SymbolId::kUnderByteArrayClear, underByteArrayClear},
+    {SymbolId::kUnderByteArrayDelitem, underByteArrayDelItem},
+    {SymbolId::kUnderByteArrayDelslice, underByteArrayDelSlice},
     {SymbolId::kUnderByteArrayGuard, underByteArrayGuard},
     {SymbolId::kUnderByteArrayJoin, underByteArrayJoin},
     {SymbolId::kUnderByteArrayLen, underByteArrayLen},
@@ -318,6 +320,97 @@ RawObject UnderBuiltinsModule::underByteArrayGuard(Thread* thread, Frame* frame,
     return NoneType::object();
   }
   return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kByteArray);
+}
+
+RawObject UnderBuiltinsModule::underByteArrayDelItem(Thread* thread,
+                                                     Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  ByteArray self(&scope, args.get(0));
+  word length = self.numItems();
+  Object index_obj(&scope, args.get(1));
+  word idx = Int::cast(intUnderlying(thread, index_obj)).asWordSaturated();
+  if (idx < 0) {
+    idx += length;
+  }
+  if (idx < 0 || idx >= length) {
+    return thread->raiseWithFmt(LayoutId::kIndexError,
+                                "bytearray index out of range");
+  }
+  word last_idx = length - 1;
+  MutableBytes self_bytes(&scope, self.bytes());
+  self_bytes.replaceFromWithStartAt(idx, Bytes::cast(self.bytes()),
+                                    last_idx - idx, idx + 1);
+  self.setNumItems(last_idx);
+  return NoneType::object();
+}
+
+RawObject UnderBuiltinsModule::underByteArrayDelSlice(Thread* thread,
+                                                      Frame* frame,
+                                                      word nargs) {
+  // This function deletes elements that are specified by a slice by copying.
+  // It compacts to the left elements in the slice range and then copies
+  // elements after the slice into the free area.  The self element count is
+  // decremented and elements in the unused part of the self are overwritten
+  // with None.
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  ByteArray self(&scope, args.get(0));
+
+  Object start_obj(&scope, args.get(1));
+  Int start_int(&scope, intUnderlying(thread, start_obj));
+  word start = start_int.asWord();
+
+  Object stop_obj(&scope, args.get(2));
+  Int stop_int(&scope, intUnderlying(thread, stop_obj));
+  word stop = stop_int.asWord();
+
+  Object step_obj(&scope, args.get(3));
+  Int step_int(&scope, intUnderlying(thread, step_obj));
+  // Lossy truncation of step to a word is expected.
+  word step = step_int.asWordSaturated();
+
+  word slice_length = Slice::length(start, stop, step);
+  DCHECK_BOUND(slice_length, self.numItems());
+  if (slice_length == 0) {
+    // Nothing to delete
+    return NoneType::object();
+  }
+  if (slice_length == self.numItems()) {
+    // Delete all the items
+    self.setNumItems(0);
+    return NoneType::object();
+  }
+  if (step < 0) {
+    // Adjust step to make iterating easier
+    start = start + step * (slice_length - 1);
+    step = -step;
+  }
+  DCHECK_INDEX(start, self.numItems());
+  DCHECK(step <= self.numItems() || slice_length == 1,
+         "Step should be in bounds or only one element should be sliced");
+  // Sliding compaction of elements out of the slice to the left
+  // Invariant: At each iteration of the loop, `fast` is the index of an
+  // element addressed by the slice.
+  // Invariant: At each iteration of the inner loop, `slow` is the index of a
+  // location to where we are relocating a slice addressed element. It is *not*
+  // addressed by the slice.
+  word fast = start;
+  MutableBytes self_bytes(&scope, self.bytes());
+  for (word i = 1; i < slice_length; i++) {
+    DCHECK_INDEX(fast, self.numItems());
+    word slow = fast + 1;
+    fast += step;
+    for (; slow < fast; slow++) {
+      self_bytes.byteAtPut(slow - i, self_bytes.byteAt(slow));
+    }
+  }
+  // Copy elements into the space where the deleted elements were
+  for (word i = fast + 1; i < self.numItems(); i++) {
+    self_bytes.byteAtPut(i - slice_length, self_bytes.byteAt(i));
+  }
+  self.setNumItems(self.numItems() - slice_length);
+  return NoneType::object();
 }
 
 RawObject UnderBuiltinsModule::underByteArraySetItem(Thread* thread,

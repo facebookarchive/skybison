@@ -10,6 +10,8 @@ _address = _address  # noqa: F821
 _bound_method = _bound_method  # noqa: F821
 _bytearray_check = _bytearray_check  # noqa: F821
 _bytearray_clear = _bytearray_clear  # noqa: F821
+_bytearray_delitem = _bytearray_delitem  # noqa: F821
+_bytearray_delslice = _bytearray_delslice  # noqa: F821
 _bytearray_guard = _bytearray_guard  # noqa: F821
 _bytearray_join = _bytearray_join  # noqa: F821
 _bytearray_len = _bytearray_len  # noqa: F821
@@ -1148,7 +1150,18 @@ class bytearray(bootstrap=True):
         _unimplemented()
 
     def __delitem__(self, key):
-        _unimplemented()
+        _bytearray_guard(self)
+        if _int_check(key):
+            return _bytearray_delitem(self, key)
+        if _slice_check(key):
+            step = _slice_step(_slice_index(key.step))
+            length = _bytearray_len(self)
+            start = _slice_start(_slice_index(key.start), step, length)
+            stop = _slice_stop(_slice_index(key.stop), step, length)
+            return _bytearray_delslice(self, start, stop, step)
+        if _object_type_hasattr(key, "__index__"):
+            return _bytearray_delitem(self, _index(key))
+        raise TypeError("bytearray indices must be integers or slices")
 
     def __eq__(self, value):
         pass

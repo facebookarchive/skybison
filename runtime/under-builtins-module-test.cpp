@@ -83,6 +83,56 @@ TEST_F(UnderBuiltinsModuleTest, UnderByteArrayClearSetsLengthToZero) {
   EXPECT_EQ(array.numItems(), 0);
 }
 
+TEST_F(UnderBuiltinsModuleTest, UnderByteArrayDelItemDeletesItemAtIndex) {
+  HandleScope scope(thread_);
+  ByteArray self(&scope, runtime_.newByteArray());
+  byteArrayAdd(thread_, &runtime_, self, 'a');
+  byteArrayAdd(thread_, &runtime_, self, 'b');
+  byteArrayAdd(thread_, &runtime_, self, 'c');
+  byteArrayAdd(thread_, &runtime_, self, 'd');
+  byteArrayAdd(thread_, &runtime_, self, 'e');
+  Int idx(&scope, SmallInt::fromWord(2));
+  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underByteArrayDelItem, self, idx)
+                  .isNoneType());
+  EXPECT_TRUE(isByteArrayEqualsCStr(self, "abde"));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderByteArrayDelsliceWithStepEqualsOneAndNoGrowthDeletesSlice) {
+  HandleScope scope(thread_);
+  ByteArray self(&scope, runtime_.newByteArray());
+  byteArrayAdd(thread_, &runtime_, self, 'a');
+  byteArrayAdd(thread_, &runtime_, self, 'b');
+  byteArrayAdd(thread_, &runtime_, self, 'c');
+  byteArrayAdd(thread_, &runtime_, self, 'd');
+  byteArrayAdd(thread_, &runtime_, self, 'e');
+  Int start(&scope, SmallInt::fromWord(0));
+  Int stop(&scope, SmallInt::fromWord(3));
+  Int step(&scope, SmallInt::fromWord(1));
+  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underByteArrayDelSlice, self,
+                         start, stop, step)
+                  .isNoneType());
+  EXPECT_TRUE(isByteArrayEqualsCStr(self, "de"));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderByteArrayDelsliceWithStepEqualsTwoAndNoGrowthDeletesSlice) {
+  HandleScope scope(thread_);
+  ByteArray self(&scope, runtime_.newByteArray());
+  byteArrayAdd(thread_, &runtime_, self, 'a');
+  byteArrayAdd(thread_, &runtime_, self, 'b');
+  byteArrayAdd(thread_, &runtime_, self, 'c');
+  byteArrayAdd(thread_, &runtime_, self, 'd');
+  byteArrayAdd(thread_, &runtime_, self, 'e');
+  Int start(&scope, SmallInt::fromWord(0));
+  Int stop(&scope, SmallInt::fromWord(3));
+  Int step(&scope, SmallInt::fromWord(2));
+  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underByteArrayDelSlice, self,
+                         start, stop, step)
+                  .isNoneType());
+  EXPECT_TRUE(isByteArrayEqualsCStr(self, "bde"));
+}
+
 TEST_F(UnderBuiltinsModuleTest,
        UnderByteArrayJoinWithEmptyIterableReturnsEmptyByteArray) {
   HandleScope scope(thread_);
