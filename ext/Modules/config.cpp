@@ -12,6 +12,7 @@ extern "C" PyObject* PyInit_errno();
 extern "C" PyObject* PyInit_fcntl();
 extern "C" PyObject* PyInit_math();
 extern "C" PyObject* PyInit_posix();
+extern "C" PyObject* PyInit_pwd();
 extern "C" PyObject* PyInit_time();
 extern "C" PyObject* PyInit_zlib();
 
@@ -37,6 +38,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"fcntl", PyInit_fcntl},
     {"math", PyInit_math},
     {"posix", PyInit_posix},
+    {"pwd", PyInit_pwd},
     {"time", PyInit_time},
     {"zlib", PyInit_zlib},
     {nullptr, nullptr},
