@@ -39,7 +39,8 @@ RawObject compileFromCStr(const char* buffer, const char* file_name) {
 int runInteractive(FILE* fp) {
   PyCompilerFlags flags;
   flags.cf_flags = 0;
-  return PyRun_AnyFileExFlags(fp, /*filename=*/nullptr, /*closeit=*/0, &flags);
+  return PyRun_AnyFileExFlags(fp, fp == stdin ? "<stdin>" : "???",
+                              /*closeit=*/0, &flags);
 }
 
 }  // namespace python
