@@ -168,12 +168,8 @@ class RegexFlag(enum.IntFlag):
     TEMPLATE = sre_compile.SRE_FLAG_TEMPLATE # disable backtracking
     T = TEMPLATE
     DEBUG = sre_compile.SRE_FLAG_DEBUG # dump pattern after compilation
-# TODO(T41326706): Implement builtins.globals
-# globals().update(RegexFlag.__members__)
-import sys
-_this_module = sys.modules[__name__]
-for name, value in RegexFlag.__members__.items():
-    setattr(_this_module, name, value)
+
+globals().update(RegexFlag.__members__)
 
 # sre exception
 error = sre_compile.error
