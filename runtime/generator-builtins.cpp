@@ -173,7 +173,7 @@ static RawObject genThrowYieldFrom(Thread* thread, const GeneratorBase& gen,
     HeapFrame hf(&scope, gen.heapFrame());
     Object subiter(&scope, hf.popValue());
     DCHECK(*subiter == *yf, "Unexpected subiter on generator stack");
-    hf.setVirtualPC(hf.virtualPC() + Frame::kCodeUnitSize);
+    hf.setVirtualPC(hf.virtualPC() + kCodeUnitSize);
 
     Object subiter_value(&scope, NoneType::object());
     if (thread->hasPendingStopIteration()) {

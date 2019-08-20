@@ -1155,7 +1155,7 @@ bool Interpreter::unwind(Thread* thread, Frame* entry_frame) {
 
 static Bytecode currentBytecode(Thread* thread) {
   Frame* frame = thread->currentFrame();
-  word pc = frame->virtualPC() - Frame::kCodeUnitSize;
+  word pc = frame->virtualPC() - kCodeUnitSize;
   return static_cast<Bytecode>(frame->bytecode().byteAt(pc));
 }
 
@@ -1579,7 +1579,7 @@ HANDLER_INLINE Continue Interpreter::doYieldFrom(Thread* thread, word) {
   GeneratorBase gen(&scope, generatorFromStackFrame(frame));
   thread->runtime()->genSave(thread, gen);
   HeapFrame heap_frame(&scope, gen.heapFrame());
-  heap_frame.setVirtualPC(heap_frame.virtualPC() - Frame::kCodeUnitSize);
+  heap_frame.setVirtualPC(heap_frame.virtualPC() - kCodeUnitSize);
   frame->pushValue(*result);
   return Continue::YIELD;
 }
@@ -3678,9 +3678,9 @@ void Interpreter::executeImpl(Thread* thread, Frame* entry_frame) {
     Frame* current_frame = thread->currentFrame();
     word pc = current_frame->virtualPC();
     static_assert(endian::native == endian::little, "big endian unsupported");
-    static_assert(Frame::kCodeUnitSize == sizeof(uint16_t), "matching type");
+    static_assert(kCodeUnitSize == sizeof(uint16_t), "matching type");
     arg = current_frame->bytecode().uint16At(pc);
-    current_frame->setVirtualPC(pc + Frame::kCodeUnitSize);
+    current_frame->setVirtualPC(pc + kCodeUnitSize);
     bc = static_cast<Bytecode>(arg & 0xFF);
     arg >>= 8;
     return dispatch_table[bc];
@@ -3693,9 +3693,9 @@ extendedArg:
     Frame* current_frame = thread->currentFrame();
     word pc = current_frame->virtualPC();
     static_assert(endian::native == endian::little, "big endian unsupported");
-    static_assert(Frame::kCodeUnitSize == sizeof(uint16_t), "matching type");
+    static_assert(kCodeUnitSize == sizeof(uint16_t), "matching type");
     uint16_t bytes_at = current_frame->bytecode().uint16At(pc);
-    current_frame->setVirtualPC(pc + Frame::kCodeUnitSize);
+    current_frame->setVirtualPC(pc + kCodeUnitSize);
     bc = static_cast<Bytecode>(bytes_at & 0xFF);
     arg = (arg << 8) | (bytes_at >> 8);
   } while (bc == EXTENDED_ARG);

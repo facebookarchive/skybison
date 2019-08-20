@@ -317,6 +317,9 @@ enum CallFunctionExFlag {
   VAR_KEYWORDS = 0x01,
 };
 
+// Size of opcode + argument in bytecode (called `_Py_CODEUNIT` in cpython).
+const word kCodeUnitSize = 2;
+
 extern const char* const kBytecodeNames[];
 
 extern const CompareOp kSwappedCompareOp[];

@@ -263,7 +263,6 @@ class Frame {
   // A large PC value represents finished generators. It must be an even number
   // to fit the constraints of `setVirtualPC()`/`virtualPD()`.
   static const word kFinishedGeneratorPC = RawSmallInt::kMaxValue - 1;
-  static const word kCodeUnitSize = 2;
 
  private:
   uword address();

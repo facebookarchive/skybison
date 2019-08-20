@@ -39,16 +39,16 @@ struct RewrittenOp {
 static void rewriteZeroArgMethodCallsUsingLoadMethodCached(
     const MutableBytes& bytecode) {
   word bytecode_length = bytecode.length();
-  Bytecode prev = LOAD_METHOD;
+  Bytecode prev = UNUSED_BYTECODE_0;
   word prev_index = 0;
   for (word i = 0; i < bytecode_length;) {
     BytecodeOp op = nextBytecodeOp(bytecode, &i);
     if (prev == LOAD_ATTR_CACHED && op.bc == CALL_FUNCTION && op.arg == 0) {
       bytecode.byteAtPut(prev_index, LOAD_METHOD_CACHED);
-      bytecode.byteAtPut(i - 2, CALL_METHOD);
+      bytecode.byteAtPut(i - kCodeUnitSize, CALL_METHOD);
     }
     prev = op.bc;
-    prev_index = i - 2;
+    prev_index = i - kCodeUnitSize;
   }
 }
 
@@ -210,12 +210,12 @@ void rewriteBytecode(Thread* thread, const Function& function) {
     if (rewritten.needs_inline_cache) {
       // Replace opcode arg with a cache index and zero EXTENDED_ARG args.
       CHECK(cache < 256, "more than 256 entries may require bytecode resizing");
-      for (word j = begin; j < i - 2; j += 2) {
+      for (word j = begin; j < i - kCodeUnitSize; j += kCodeUnitSize) {
         bytecode.byteAtPut(j, static_cast<byte>(Bytecode::EXTENDED_ARG));
         bytecode.byteAtPut(j + 1, 0);
       }
-      bytecode.byteAtPut(i - 2, static_cast<byte>(rewritten.bc));
-      bytecode.byteAtPut(i - 1, static_cast<byte>(cache));
+      bytecode.byteAtPut(i - kCodeUnitSize, static_cast<byte>(rewritten.bc));
+      bytecode.byteAtPut(i - kCodeUnitSize + 1, static_cast<byte>(cache));
 
       // Remember original arg.
       original_arguments.atPut(cache, SmallInt::fromWord(rewritten.arg));
@@ -223,12 +223,13 @@ void rewriteBytecode(Thread* thread, const Function& function) {
     } else if (rewritten.arg != op.arg || rewritten.bc != op.bc) {
       CHECK(rewritten.arg < 256,
             "more than 256 entries may require bytecode resizing");
-      for (word j = begin; j < i - 2; j += 2) {
+      for (word j = begin; j < i - kCodeUnitSize; j += kCodeUnitSize) {
         bytecode.byteAtPut(j, static_cast<byte>(Bytecode::EXTENDED_ARG));
         bytecode.byteAtPut(j + 1, 0);
       }
-      bytecode.byteAtPut(i - 2, static_cast<byte>(rewritten.bc));
-      bytecode.byteAtPut(i - 1, static_cast<byte>(rewritten.arg));
+      bytecode.byteAtPut(i - kCodeUnitSize, static_cast<byte>(rewritten.bc));
+      bytecode.byteAtPut(i - kCodeUnitSize + 1,
+                         static_cast<byte>(rewritten.arg));
     }
   }
 
