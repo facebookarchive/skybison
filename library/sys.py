@@ -16,6 +16,7 @@ class _FlagsStructSeq:
     # TODO(T39224400): Implement flags as a structsequence
     def __init__(self):
         self.bytes_warning = 0
+        self.isolated = 0
         self.no_site = 0
         self.no_user_site = 0
         self.verbose = 0
@@ -89,6 +90,9 @@ base_exec_prefix = ""
 
 # TODO(cshapiro): assign a meaningful value in the runtime
 base_prefix = ""
+
+
+copyright = ""
 
 
 def displayhook(value):
