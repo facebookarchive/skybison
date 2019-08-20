@@ -1476,6 +1476,16 @@ class DictTests(unittest.TestCase):
         self.assertEqual(d["a"], "b")
         self.assertEqual(d["c"], "d")
 
+    def test_update_with_mapping_of_non_pair_tuple_raises_value_error(self):
+        mapping = [("a", "b"), ("c", "d", "e")]
+        d = {}
+        with self.assertRaises(ValueError) as context:
+            d.update(mapping)
+        self.assertIn(
+            "dictionary update sequence element #1 has length 3; 2 is required",
+            str(context.exception),
+        )
+
     def test_dunder_delitem_with_none_dunder_hash(self):
         class C:
             __hash__ = None
@@ -3558,6 +3568,43 @@ def foo():
     def test_setdefault_for_not_existing_item_sets_default_value(self):
         self.module_proxy.setdefault("x", -1)
         self.assertEqual(self.module_proxy.get("x"), -1)
+
+    def test_update_with_non_module_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type(self.module_proxy).update(None)
+
+    def test_update_with_dict_updates_module_proxy_and_module(self):
+        d = {"x": 40, "y": 50}
+        self.assertIsNone(self.module_proxy.update(d))
+        self.assertEqual(self.module_proxy.get("x"), 40)
+        self.assertEqual(self.module_proxy.get("y"), 50)
+        self.assertEqual(self.module.x, 40)
+        self.assertEqual(self.module.y, 50)
+
+    def test_update_with_iterable_updates_module_proxy_and_module(self):
+        class Iterable:
+            def __iter__(self):
+                return iter([("x", 40), ("y", 50)])
+
+        iterable = Iterable()
+        self.assertIsNone(self.module_proxy.update(iterable))
+        self.assertEqual(self.module_proxy.get("x"), 40)
+        self.assertEqual(self.module_proxy.get("y"), 50)
+        self.assertEqual(self.module.x, 40)
+        self.assertEqual(self.module.y, 50)
+
+    def test_update_with_iterable_of_non_pair_tuple_raises_value_error(self):
+        class Iterable:
+            def __iter__(self):
+                return iter([("x", 40), ("y", 50, 60)])
+
+        iterable = Iterable()
+        with self.assertRaises(ValueError) as context:
+            self.assertIsNone(self.module_proxy.update(iterable))
+        self.assertIn(
+            "dictionary update sequence element #1 has length 3; 2 is required",
+            str(context.exception),
+        )
 
     def test_values_with_non_module_proxy_raises_type_error(self):
         with self.assertRaises(TypeError):
