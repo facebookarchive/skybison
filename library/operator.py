@@ -13,6 +13,9 @@ The Pyro runtime and C-API can delegate to this module to do some heavy lifting.
 """
 
 
+from _builtins import _eq as eq, _lt as lt
+
+
 # These values are injected by our boot process. flake8 has no knowledge about
 # their definitions.
 _divmod = _divmod  # noqa: F821
@@ -79,19 +82,9 @@ __all__ = [
 # Comparison Operations *******************************************************#
 
 
-def lt(a, b):
-    "Same as a < b."
-    return a < b
-
-
 def le(a, b):
     "Same as a <= b."
     return a <= b
-
-
-def eq(a, b):
-    "Same as a == b."
-    return a == b
 
 
 def ne(a, b):

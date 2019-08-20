@@ -198,6 +198,7 @@ class Runtime;
   V(UnderDictSetItem, "_dict_setitem")                                         \
   V(UnderDictUpdateMapping, "_dict_update_mapping")                            \
   V(UnderDivmod, "_divmod")                                                    \
+  V(UnderEq, "_eq")                                                            \
   V(UnderEscapeDecode, "_escape_decode")                                       \
   V(UnderEscapeDecodeStateful, "_escape_decode_stateful")                      \
   V(UnderExceptionNew, "_exception_new")                                       \
@@ -257,6 +258,7 @@ class Runtime;
   V(UnderListSort, "_list_sort")                                               \
   V(UnderListSwap, "_list_swap")                                               \
   V(UnderLookupText, "_lookup_text")                                           \
+  V(UnderLt, "_lt")                                                            \
   V(UnderMemoryviewGuard, "_memoryview_guard")                                 \
   V(UnderMemoryviewNbytes, "_memoryview_nbytes")                               \
   V(UnderModuleDir, "_module_dir")                                             \

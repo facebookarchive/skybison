@@ -114,8 +114,8 @@ RawObject TupleBuiltins::dunderContains(Thread* thread, Frame* frame,
     if (*value == *item) {
       return Bool::trueObj();
     }
-    comp_result = thread->invokeFunction2(SymbolId::kOperator, SymbolId::kEq,
-                                          value, item);
+    comp_result = thread->invokeFunction2(SymbolId::kUnderBuiltins,
+                                          SymbolId::kUnderEq, value, item);
     if (comp_result.isError()) return *comp_result;
     found = Interpreter::isTrue(thread, *comp_result);
     if (found.isError()) return *found;

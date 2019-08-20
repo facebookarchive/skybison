@@ -240,6 +240,11 @@ def _divmod(number, divisor):
     pass
 
 
+def _eq(obj, other):
+    "Same as obj == other."
+    return obj == other
+
+
 @_patch
 def _float_check(obj):
     pass
@@ -445,6 +450,11 @@ def _list_sort(list):
 @_patch
 def _list_swap(list, i, j):
     pass
+
+
+def _lt(obj, other):
+    "Same as obj < other."
+    return obj < other
 
 
 @_patch

@@ -122,8 +122,8 @@ RawObject listSort(Thread* thread, const List& list) {
     word j = i - 1;
     for (; j >= 0; j--) {
       list_j = list.at(j);
-      compare_result = thread->invokeFunction2(SymbolId::kOperator,
-                                               SymbolId::kLt, list_i, list_j);
+      compare_result = thread->invokeFunction2(
+          SymbolId::kUnderBuiltins, SymbolId::kUnderLt, list_i, list_j);
       if (compare_result.isError()) {
         return *compare_result;
       }
@@ -236,8 +236,8 @@ RawObject ListBuiltins::dunderContains(Thread* thread, Frame* frame,
     if (*value == *item) {
       return Bool::trueObj();
     }
-    comp_result = thread->invokeFunction2(SymbolId::kOperator, SymbolId::kEq,
-                                          value, item);
+    comp_result = thread->invokeFunction2(SymbolId::kUnderBuiltins,
+                                          SymbolId::kUnderEq, value, item);
     if (comp_result.isError()) return *comp_result;
     found = Interpreter::isTrue(thread, *comp_result);
     if (found.isError()) return *found;
