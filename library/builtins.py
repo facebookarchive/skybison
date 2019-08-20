@@ -4220,4 +4220,21 @@ def vars(obj=_Unbound):
 
 class zip:
     def __init__(self, *iterables):
-        _unimplemented()
+        if not iterables:
+            iterators = [iter(())]
+        else:
+            iterators = [iter(it) for it in iterables]
+        self._iterators = iterators
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        iterators = self._iterators
+        length = _list_len(iterators)
+        result = [None] * length
+        i = 0
+        while i < length:
+            result[i] = next(iterators[i])
+            i += 1
+        return (*result,)

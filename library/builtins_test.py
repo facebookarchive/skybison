@@ -6210,5 +6210,48 @@ class UnderNumberCheckTests(unittest.TestCase):
         self.assertTrue(_number_check(IntLike()))
 
 
+class ZipTests(unittest.TestCase):
+    def test_no_iterables_returns_stopped_iterator(self):
+        self.assertTupleEqual(tuple(zip()), ())
+
+    def test_one_iterable_returns_1_tuples(self):
+        self.assertTupleEqual(tuple(zip(range(3))), ((0,), (1,), (2,)))
+
+    def test_two_iterables_returns_2_tuples(self):
+        self.assertTupleEqual(
+            tuple(zip(range(0, 6, 2), range(1, 6, 2))), ((0, 1), (2, 3), (4, 5))
+        )
+
+    def test_two_iterables_returns_shortest(self):
+        self.assertTupleEqual(tuple(zip(range(10), range(3))), ((0, 0), (1, 1), (2, 2)))
+        self.assertTupleEqual(tuple(zip(range(3), range(10))), ((0, 0), (1, 1), (2, 2)))
+
+    def test_three_iterables_returns_3_tuples(self):
+        self.assertTupleEqual(
+            tuple(zip(range(0, 10, 3), range(1, 10, 3), range(2, 10, 3))),
+            ((0, 1, 2), (3, 4, 5), (6, 7, 8)),
+        )
+
+    def test_three_iterables_returns_shortest(self):
+        self.assertTupleEqual(
+            tuple(zip(range(3), range(10), range(4))), ((0, 0, 0), (1, 1, 1), (2, 2, 2))
+        )
+        self.assertTupleEqual(
+            tuple(zip(range(3), range(4), range(10))), ((0, 0, 0), (1, 1, 1), (2, 2, 2))
+        )
+        self.assertTupleEqual(
+            tuple(zip(range(10), range(3), range(4))), ((0, 0, 0), (1, 1, 1), (2, 2, 2))
+        )
+        self.assertTupleEqual(
+            tuple(zip(range(10), range(4), range(3))), ((0, 0, 0), (1, 1, 1), (2, 2, 2))
+        )
+        self.assertTupleEqual(
+            tuple(zip(range(4), range(3), range(10))), ((0, 0, 0), (1, 1, 1), (2, 2, 2))
+        )
+        self.assertTupleEqual(
+            tuple(zip(range(4), range(10), range(3))), ((0, 0, 0), (1, 1, 1), (2, 2, 2))
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
