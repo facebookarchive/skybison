@@ -85,7 +85,7 @@ typedef struct
     PyObject *zdict;
 #ifdef WITH_THREAD
     PyThread_type_lock lock;
-#endif 
+#endif
 } compobject;
 
 static void
@@ -329,12 +329,9 @@ class ssize_t_converter(CConverter):
 static int
 ssize_t_converter(PyObject *obj, void *ptr)
 {
-    PyObject *long_obj;
     Py_ssize_t val;
 
-    // Removing _PyLong_FromNbInt as it is to be deprecated in 3.8
-    val = PyNumber_AsSsize_t(long_obj, PyExc_OverflowError);
-    Py_DECREF(long_obj);
+    val = PyNumber_AsSsize_t(obj, PyExc_OverflowError);
     if (val == -1 && PyErr_Occurred()) {
         return 0;
     }
