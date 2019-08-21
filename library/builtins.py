@@ -1100,7 +1100,7 @@ def _structseq_repr(self):
     if not hasattr(self, "n_sequence_fields"):
         raise TypeError("__repr__(): self is not a self")
     # TODO(T40273054): Iterate attributes and return field names
-    tuple_values = ", ".join([i.__repr__() for i in self])
+    tuple_values = ", ".join([repr(i) for i in self])
     return f"{_type(self).__name__}({tuple_values})"
 
 
@@ -2863,7 +2863,7 @@ class list(bootstrap=True):
     def __repr__(self):
         if _repr_enter(self):
             return "[...]"
-        result = "[" + ", ".join([i.__repr__() for i in self]) + "]"
+        result = "[" + ", ".join([repr(i) for i in self]) + "]"
         _repr_leave(self)
         return result
 
@@ -3544,7 +3544,7 @@ class set(bootstrap=True):
         if _set_len(self) == 0:
             _repr_leave(self)
             return f"{_type(self).__name__}()"
-        result = f"{{{', '.join([item.__repr__() for item in self])}}}"
+        result = f"{{{', '.join([repr(item) for item in self])}}}"
         _repr_leave(self)
         return result
 

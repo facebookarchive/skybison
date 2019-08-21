@@ -3170,6 +3170,26 @@ class ListTests(unittest.TestCase):
         original = [1, 2, 3]
         self.assertRaises(IndexError, list.pop, original, -10)
 
+    def test_repr_returns_string(self):
+        self.assertEqual(list.__repr__([]), "[]")
+        self.assertEqual(list.__repr__([42]), "[42]")
+        self.assertEqual(list.__repr__([1, 2, "hello"]), "[1, 2, 'hello']")
+
+        class M(type):
+            def __repr__(cls):
+                return "<M instance>"
+
+        class C(metaclass=M):
+            def __repr__(self):
+                return "<C instance>"
+
+        self.assertEqual(list.__repr__([C, C()]), "[<M instance>, <C instance>]")
+
+    def test_repr_with_recursive_list_prints_ellipsis(self):
+        ls = []
+        ls.append(ls)
+        self.assertEqual(list.__repr__(ls), "[[...]]")
+
     def test_setslice_with_empty_slice_grows_list(self):
         grows = []
         grows[:] = [1, 2, 3]
@@ -4365,6 +4385,29 @@ class SetTests(unittest.TestCase):
         self.assertIn(1, s)
         self.assertIs(set.discard(s, 1), None)
         self.assertNotIn(1, s)
+
+    def test_repr_returns_str(self):
+        self.assertEqual(set.__repr__(set()), "set()")
+        self.assertEqual(set.__repr__({1}), "{1}")
+        result = set.__repr__({1, "foo"})
+        self.assertTrue(result == "{1, 'foo'}" or result == "{'foo', 1}")
+
+        class M(type):
+            def __repr__(cls):
+                return "<M instance>"
+
+        class C(metaclass=M):
+            def __repr__(self):
+                return "<C instance>"
+
+        self.assertEqual(set.__repr__({C}), "{<M instance>}")
+        self.assertEqual(set.__repr__({C()}), "{<C instance>}")
+
+    def test_repr_with_subclass_returns_str(self):
+        class C(set):
+            pass
+
+        self.assertEqual(set.__repr__(C()), "C()")
 
     def test_remove_with_non_set_raises_type_error(self):
         with self.assertRaises(TypeError):

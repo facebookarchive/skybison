@@ -941,16 +941,6 @@ TEST_F(ListBuiltinsTest, DunderIterReturnsListIter) {
   ASSERT_TRUE(iter.isListIterator());
 }
 
-TEST_F(ListBuiltinsTest, DunderRepr) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-result = [1, 2, 'hello'].__repr__()
-)")
-                   .isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
-  EXPECT_TRUE(isStrEqualsCStr(*result, "[1, 2, 'hello']"));
-}
-
 TEST_F(ListIteratorBuiltinsTest, CallDunderNext) {
   HandleScope scope(thread_);
   List empty_list(&scope, listFromRange(0, 2));
@@ -1224,16 +1214,6 @@ a.extend(C([1,2,3]))
   List a(&scope, mainModuleAt(&runtime_, "a"));
   ASSERT_EQ(a.numItems(), 6);
   EXPECT_PYLIST_EQ(a, {1, 2, 3, 4, 5, 6});
-}
-
-TEST_F(ListBuiltinsTest, RecursiveListPrintsEllipsis) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-ls = []
-ls.append(ls)
-result = ls.__repr__()
-)")
-                   .isError());
-  EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(&runtime_, "result"), "[[...]]"));
 }
 
 TEST_F(ListBuiltinsTest, ReverseEmptyListDoesNothing) {

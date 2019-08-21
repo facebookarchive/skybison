@@ -1142,23 +1142,6 @@ TEST_F(SetBuiltinsTest, SetIsProperSubsetWithSubsetReturnsFalse) {
   ASSERT_FALSE(setIsProperSubset(thread, set, set1));
 }
 
-TEST_F(SetBuiltinsTest, ReprReturnsElements) {
-  ASSERT_FALSE(
-      runFromCStr(&runtime_, "result = set([3, 2, 1]).__repr__()").isError());
-  HandleScope scope;
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
-  ASSERT_TRUE(result.isStr());
-  unique_c_ptr<char> result_str(Str::cast(*result).toCStr());
-  word elts[3];
-  ASSERT_EQ(
-      sscanf(result_str.get(), "{%ld, %ld, %ld}", &elts[0], &elts[1], &elts[2]),
-      3);
-  std::sort(std::begin(elts), std::end(elts));
-  EXPECT_EQ(elts[0], 1);
-  EXPECT_EQ(elts[1], 2);
-  EXPECT_EQ(elts[2], 3);
-}
-
 TEST_F(SetBuiltinsTest, RecursiveSetPrintsEllipsis) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
