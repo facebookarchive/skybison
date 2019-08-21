@@ -4148,7 +4148,40 @@ class tuple(bootstrap=True):
         pass
 
     def __eq__(self, other):
-        pass
+        _tuple_guard(self)
+        if not _tuple_check(other):
+            return NotImplemented
+        len_self = _tuple_len(self)
+        len_other = _tuple_len(other)
+        min_len = len_self if len_self < len_other else len_other
+        # Find the first non-equal item in the tuples
+        i = 0
+        while i < min_len:
+            self_item = _tuple_getitem(self, i)
+            other_item = _tuple_getitem(other, i)
+            if self_item is not other_item and not self_item == other_item:
+                return False
+            i += 1
+        # If the items are all up equal up to min_len, compare lengths
+        return len_self == len_other
+
+    def __ge__(self, other):
+        _tuple_guard(self)
+        if not _tuple_check(other):
+            return NotImplemented
+        len_self = _tuple_len(self)
+        len_other = _tuple_len(other)
+        min_len = len_self if len_self < len_other else len_other
+        # Find the first non-equal item in the tuples
+        i = 0
+        while i < min_len:
+            self_item = _tuple_getitem(self, i)
+            other_item = _tuple_getitem(other, i)
+            if self_item is not other_item and not self_item == other_item:
+                return self_item >= other_item
+            i += 1
+        # If the items are all up equal up to min_len, compare lengths
+        return len_self >= len_other
 
     def __getitem__(self, index):
         _tuple_guard(self)
@@ -4166,11 +4199,47 @@ class tuple(bootstrap=True):
             f"tuple indices must be integers or slices, not {_type(index).__name__}"
         )
 
+    def __gt__(self, other):
+        _tuple_guard(self)
+        if not _tuple_check(other):
+            return NotImplemented
+        len_self = _tuple_len(self)
+        len_other = _tuple_len(other)
+        min_len = len_self if len_self < len_other else len_other
+        # Find the first non-equal item in the tuples
+        i = 0
+        while i < min_len:
+            self_item = _tuple_getitem(self, i)
+            other_item = _tuple_getitem(other, i)
+            if self_item is not other_item and not self_item == other_item:
+                return self_item > other_item
+            i += 1
+        # If the items are all up equal up to min_len, compare lengths
+        return len_self > len_other
+
     def __hash__(self):
         pass
 
     def __iter__(self):
         pass
+
+    def __le__(self, other):
+        _tuple_guard(self)
+        if not _tuple_check(other):
+            return NotImplemented
+        len_self = _tuple_len(self)
+        len_other = _tuple_len(other)
+        min_len = len_self if len_self < len_other else len_other
+        # Find the first non-equal item in the tuples
+        i = 0
+        while i < min_len:
+            self_item = _tuple_getitem(self, i)
+            other_item = _tuple_getitem(other, i)
+            if self_item is not other_item and not self_item == other_item:
+                return self_item <= other_item
+            i += 1
+        # If the items are all up equal up to min_len, compare lengths
+        return len_self <= len_other
 
     def __len__(self):
         pass
@@ -4181,23 +4250,38 @@ class tuple(bootstrap=True):
             return NotImplemented
         len_self = _tuple_len(self)
         len_other = _tuple_len(other)
-        # TODO(T42050051): Use builtin.min when it's developed
         min_len = len_self if len_self < len_other else len_other
         # Find the first non-equal item in the tuples
         i = 0
         while i < min_len:
-            self_i = _tuple_getitem(self, i)
-            other_i = _tuple_getitem(other, i)
-            if self_i is not other_i and self_i != other_i:
-                break
+            self_item = _tuple_getitem(self, i)
+            other_item = _tuple_getitem(other, i)
+            if self_item is not other_item and not self_item == other_item:
+                return self_item < other_item
             i += 1
-        if i >= min_len:
-            # If the items are all up equal up to min_len, compare lengths
-            return len_self < len_other
-        return self_i < other_i
+        # If the items are all up equal up to min_len, compare lengths
+        return len_self < len_other
 
     def __mul__(self, other):
         pass
+
+    def __ne__(self, other):
+        _tuple_guard(self)
+        if not _tuple_check(other):
+            return NotImplemented
+        len_self = _tuple_len(self)
+        len_other = _tuple_len(other)
+        min_len = len_self if len_self < len_other else len_other
+        # Find the first non-equal item in the tuples
+        i = 0
+        while i < min_len:
+            self_item = _tuple_getitem(self, i)
+            other_item = _tuple_getitem(other, i)
+            if self_item is not other_item and not self_item == other_item:
+                return True
+            i += 1
+        # If the items are all up equal up to min_len, compare lengths
+        return len_self != len_other
 
     def __new__(cls, iterable=()):
         if not _type_check(cls):

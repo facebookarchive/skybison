@@ -297,65 +297,6 @@ a = Foo((1, 2)) + (3, 4)
   EXPECT_TRUE(isIntEqualsWord(a.at(3), 4));
 }
 
-TEST_F(TupleBuiltinsTest, DunderEqWithDifferentSizeTuplesReturnsFalse) {
-  HandleScope scope(thread_);
-  Object left(&scope, runtime_.emptyTuple());
-  Object right(&scope, runtime_.newTuple(3));
-  Object a(&scope, runBuiltin(TupleBuiltins::dunderEq, left, right));
-  ASSERT_TRUE(a.isBool());
-  EXPECT_FALSE(Bool::cast(*a).value());
-}
-
-TEST_F(TupleBuiltinsTest, DunderEqWithDifferentValueTuplesReturnsFalse) {
-  HandleScope scope(thread_);
-  Tuple left(&scope, runtime_.newTuple(2));
-  left.atPut(0, runtime_.newInt(1));
-  left.atPut(1, runtime_.newInt(2));
-  Tuple right(&scope, runtime_.newTuple(2));
-  right.atPut(0, runtime_.newInt(1));
-  right.atPut(1, runtime_.newInt(3));
-  Object a(&scope, runBuiltin(TupleBuiltins::dunderEq, left, right));
-  ASSERT_TRUE(a.isBool());
-  EXPECT_FALSE(Bool::cast(*a).value());
-}
-
-TEST_F(TupleBuiltinsTest, DunderEqWithTupleSubclassReturnsTrue) {
-  HandleScope scope(thread_);
-  Tuple left(&scope, runtime_.newTuple(2));
-  left.atPut(0, runtime_.newInt(1));
-  left.atPut(1, runtime_.newInt(2));
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-class Foo(tuple): pass
-right = Foo((1, 2))
-)")
-                   .isError());
-  Object right(&scope, mainModuleAt(&runtime_, "right"));
-  ASSERT_FALSE(right.isTuple());
-  ASSERT_TRUE(runtime_.isInstanceOfTuple(*right));
-  Object a(&scope, runBuiltin(TupleBuiltins::dunderEq, left, right));
-  ASSERT_TRUE(a.isBool());
-  EXPECT_TRUE(Bool::cast(*a).value());
-}
-
-TEST_F(TupleBuiltinsTest, DunderEqWithNonTupleSecondArgReturnsNotImplemented) {
-  HandleScope scope(thread_);
-  Object left(&scope, runtime_.emptyTuple());
-  Object right(&scope, runtime_.newInt(1));
-  Object a(&scope, runBuiltin(TupleBuiltins::dunderEq, left, right));
-  EXPECT_TRUE(a.isNotImplementedType());
-}
-
-TEST_F(TupleBuiltinsTest, DunderEqWithNonTupleFirstArgRaisesTypeError) {
-  HandleScope scope(thread_);
-  Object left(&scope, runtime_.newInt(1));
-  Object right(&scope, runtime_.emptyTuple());
-  Object a(&scope, runBuiltin(TupleBuiltins::dunderEq, left, right));
-  ASSERT_TRUE(a.isError());
-  Thread* thread = Thread::current();
-  EXPECT_EQ(thread->pendingExceptionType(),
-            runtime_.typeAt(LayoutId::kTypeError));
-}
-
 TEST_F(TupleBuiltinsTest, DunderIterReturnsTupleIter) {
   HandleScope scope(thread_);
   Tuple empty_tuple(&scope, tupleFromRange(0, 0));

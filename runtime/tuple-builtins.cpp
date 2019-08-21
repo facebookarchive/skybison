@@ -70,7 +70,6 @@ const BuiltinAttribute TupleBuiltins::kAttributes[] = {
 const BuiltinMethod TupleBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderAdd, dunderAdd},
     {SymbolId::kDunderContains, dunderContains},
-    {SymbolId::kDunderEq, dunderEq},
     {SymbolId::kDunderHash, dunderHash},
     {SymbolId::kDunderIter, dunderIter},
     {SymbolId::kDunderLen, dunderLen},
@@ -138,39 +137,6 @@ RawObject TupleBuiltins::dunderContains(Thread* thread, Frame* frame,
     }
   }
   return Bool::falseObj();
-}
-
-RawObject TupleBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object self_obj(&scope, args.get(0));
-  Object other_obj(&scope, args.get(1));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfTuple(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kTuple);
-  }
-  if (!runtime->isInstanceOfTuple(*other_obj)) {
-    return NotImplementedType::object();
-  }
-
-  Tuple self(&scope, tupleUnderlying(thread, self_obj));
-  Tuple other(&scope, tupleUnderlying(thread, other_obj));
-  if (self.length() != other.length()) {
-    return Bool::falseObj();
-  }
-  Object left(&scope, NoneType::object());
-  Object right(&scope, NoneType::object());
-  word length = self.length();
-  for (word i = 0; i < length; i++) {
-    left = self.at(i);
-    right = other.at(i);
-    RawObject result =
-        Interpreter::compareOperation(thread, frame, EQ, left, right);
-    if (result == Bool::falseObj()) {
-      return result;
-    }
-  }
-  return Bool::trueObj();
 }
 
 RawObject TupleBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {

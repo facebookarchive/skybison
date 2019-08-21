@@ -5934,6 +5934,78 @@ class SyntaxErrorTests(unittest.TestCase):
 
 
 class TupleTests(unittest.TestCase):
+    def test_dunder_eq_with_non_tuple_self_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            tuple.__eq__(None, ())
+        self.assertIn(
+            "'__eq__' requires a 'tuple' object but received a 'NoneType'",
+            str(context.exception),
+        )
+
+    def test_dunder_eq_with_non_tuple_other_return_not_implemented(self):
+        self.assertIs(tuple.__eq__((), None), NotImplemented)
+
+    def test_dunder_eq_with_equal_tuples_returns_true(self):
+        lhs = (1, 2, 3, 4)
+        rhs = (1, 2, 3, 4)
+        self.assertTrue(tuple.__eq__(lhs, rhs))
+
+    def test_dunder_eq_with_longer_rhs_returns_false(self):
+        lhs = (1, 2, 3, 4)
+        rhs = (1, 2, 3, 4, 5)
+        self.assertFalse(tuple.__eq__(lhs, rhs))
+
+    def test_dunder_eq_with_shorter_rhs_returns_false(self):
+        lhs = (1, 2, 3, 4)
+        rhs = (1, 2, 3)
+        self.assertFalse(tuple.__eq__(lhs, rhs))
+
+    def test_dunder_eq_with_smaller_element_returns_false(self):
+        lhs = (1, 2, 3)
+        rhs = (1, 2, 2, 4)
+        self.assertFalse(tuple.__eq__(lhs, rhs))
+
+    def test_dunder_eq_with_larger_element_returns_false(self):
+        lhs = (1, 2, 3, 4)
+        rhs = (1, 4)
+        self.assertFalse(tuple.__eq__(lhs, rhs))
+
+    def test_dunder_ge_with_non_tuple_self_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            tuple.__ge__(None, ())
+        self.assertIn(
+            "'__ge__' requires a 'tuple' object but received a 'NoneType'",
+            str(context.exception),
+        )
+
+    def test_dunder_ge_with_non_tuple_other_return_not_implemented(self):
+        self.assertIs(tuple.__ge__((), None), NotImplemented)
+
+    def test_dunder_ge_with_equal_tuples_returns_true(self):
+        lhs = (1, 2, 3, 4)
+        rhs = (1, 2, 3, 4)
+        self.assertTrue(tuple.__ge__(lhs, rhs))
+
+    def test_dunder_ge_with_longer_rhs_returns_false(self):
+        lhs = (1, 2, 3, 4)
+        rhs = (1, 2, 3, 4, 5)
+        self.assertFalse(tuple.__ge__(lhs, rhs))
+
+    def test_dunder_ge_with_shorter_rhs_returns_true(self):
+        lhs = (1, 2, 3, 4)
+        rhs = (1, 2, 3)
+        self.assertTrue(tuple.__ge__(lhs, rhs))
+
+    def test_dunder_ge_with_smaller_element_returns_true(self):
+        lhs = (1, 2, 3)
+        rhs = (1, 2, 2, 4)
+        self.assertTrue(tuple.__ge__(lhs, rhs))
+
+    def test_dunder_ge_with_larger_element_returns_false(self):
+        lhs = (1, 2, 3, 4)
+        rhs = (1, 4)
+        self.assertFalse(tuple.__ge__(lhs, rhs))
+
     def test_dunder_getitem_with_non_tuple_self_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             tuple.__getitem__(None, 1)
@@ -6049,12 +6121,154 @@ class TupleTests(unittest.TestCase):
         t = (1, 2, 3)
         self.assertIs(tuple.__getitem__(t, slice(10)), t)
 
+    def test_dunder_gt_with_non_tuple_self_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            tuple.__gt__(None, ())
+        self.assertIn(
+            "'__gt__' requires a 'tuple' object but received a 'NoneType'",
+            str(context.exception),
+        )
+
+    def test_dunder_gt_with_non_tuple_other_return_not_implemented(self):
+        self.assertIs(tuple.__gt__((), None), NotImplemented)
+
+    def test_dunder_gt_with_equal_tuples_returns_false(self):
+        lhs = (1, 2, 3, 4)
+        rhs = (1, 2, 3, 4)
+        self.assertFalse(tuple.__gt__(lhs, rhs))
+
+    def test_dunder_gt_with_longer_rhs_returns_false(self):
+        lhs = (1, 2, 3, 4)
+        rhs = (1, 2, 3, 4, 5)
+        self.assertFalse(tuple.__gt__(lhs, rhs))
+
+    def test_dunder_gt_with_shorter_rhs_returns_true(self):
+        lhs = (1, 2, 3, 4)
+        rhs = (1, 2, 3)
+        self.assertTrue(tuple.__gt__(lhs, rhs))
+
+    def test_dunder_gt_with_smaller_element_returns_true(self):
+        lhs = (1, 2, 3)
+        rhs = (1, 2, 2, 4)
+        self.assertTrue(tuple.__gt__(lhs, rhs))
+
+    def test_dunder_gt_with_larger_element_returns_false(self):
+        lhs = (1, 2, 3, 4)
+        rhs = (1, 4)
+        self.assertFalse(tuple.__gt__(lhs, rhs))
+
+    def test_dunder_le_with_non_tuple_self_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            tuple.__le__(None, ())
+        self.assertIn(
+            "'__le__' requires a 'tuple' object but received a 'NoneType'",
+            str(context.exception),
+        )
+
+    def test_dunder_le_with_non_tuple_other_return_not_implemented(self):
+        self.assertIs(tuple.__le__((), None), NotImplemented)
+
+    def test_dunder_le_with_equal_tuples_returns_true(self):
+        lhs = (1, 2, 3, 4)
+        rhs = (1, 2, 3, 4)
+        self.assertTrue(tuple.__le__(lhs, rhs))
+
+    def test_dunder_le_with_longer_rhs_returns_true(self):
+        lhs = (1, 2, 3, 4)
+        rhs = (1, 2, 3, 4, 5)
+        self.assertTrue(tuple.__le__(lhs, rhs))
+
+    def test_dunder_le_with_shorter_rhs_returns_false(self):
+        lhs = (1, 2, 3, 4)
+        rhs = (1, 2, 3)
+        self.assertFalse(tuple.__le__(lhs, rhs))
+
+    def test_dunder_le_with_smaller_element_returns_false(self):
+        lhs = (1, 2, 3)
+        rhs = (1, 2, 2, 4)
+        self.assertFalse(tuple.__le__(lhs, rhs))
+
+    def test_dunder_le_with_larger_element_returns_true(self):
+        lhs = (1, 2, 3, 4)
+        rhs = (1, 4)
+        self.assertTrue(tuple.__le__(lhs, rhs))
+
     def test_dunder_lt_with_non_tuple_self_raises_type_error(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaises(TypeError) as context:
             tuple.__lt__(None, ())
+        self.assertIn(
+            "'__lt__' requires a 'tuple' object but received a 'NoneType'",
+            str(context.exception),
+        )
 
     def test_dunder_lt_with_non_tuple_other_returns_not_implemented(self):
         self.assertIs(tuple.__lt__((), None), NotImplemented)
+
+    def test_dunder_lt_with_equal_tuples_returns_false(self):
+        lhs = (1, 2, 3, 4)
+        rhs = (1, 2, 3, 4)
+        self.assertFalse(tuple.__lt__(lhs, rhs))
+
+    def test_dunder_lt_with_longer_rhs_returns_true(self):
+        lhs = (1, 2, 3, 4)
+        rhs = (1, 2, 3, 4, 5)
+        self.assertTrue(tuple.__lt__(lhs, rhs))
+
+    def test_dunder_lt_with_shorter_rhs_returns_false(self):
+        lhs = (1, 2, 3, 4)
+        rhs = (1, 2, 3)
+        self.assertFalse(tuple.__lt__(lhs, rhs))
+
+    def test_dunder_lt_with_smaller_element_returns_false(self):
+        lhs = (1, 2, 3)
+        rhs = (1, 2, 2, 4)
+        self.assertFalse(tuple.__lt__(lhs, rhs))
+
+    def test_dunder_lt_with_larger_element_returns_true(self):
+        lhs = (1, 2, 3, 4)
+        rhs = (1, 4)
+        self.assertTrue(tuple.__lt__(lhs, rhs))
+
+    def test_dunder_ne_with_non_tuple_self_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            tuple.__ne__(None, ())
+        self.assertIn(
+            "'__ne__' requires a 'tuple' object but received a 'NoneType'",
+            str(context.exception),
+        )
+
+    def test_dunder_ne_with_non_tuple_other_returns_not_implemented(self):
+        self.assertIs(tuple.__lt__((), None), NotImplemented)
+
+    def test_dunder_ne_with_equal_tuples_returns_false(self):
+        lhs = (1, 2, 3, 4)
+        rhs = (1, 2, 3, 4)
+        self.assertFalse(tuple.__ne__(lhs, rhs))
+
+    def test_dunder_ne_with_different_element_returns_true(self):
+        lhs = (1, 2, 3, 4)
+        rhs = (1, 2, 3, 5)
+        self.assertTrue(tuple.__ne__(lhs, rhs))
+
+    def test_dunder_ne_with_longer_rhs_returns_true(self):
+        lhs = (1, 2, 3, 4)
+        rhs = (1, 2, 3, 4, 5)
+        self.assertTrue(tuple.__ne__(lhs, rhs))
+
+    def test_dunder_ne_with_shorter_rhs_returns_true(self):
+        lhs = (1, 2, 3, 4)
+        rhs = (1, 2, 3)
+        self.assertTrue(tuple.__ne__(lhs, rhs))
+
+    def test_dunder_ne_with_smaller_element_returns_true(self):
+        lhs = (1, 2, 3)
+        rhs = (1, 2, 2, 4)
+        self.assertTrue(tuple.__ne__(lhs, rhs))
+
+    def test_dunder_ne_with_larger_element_returns_true(self):
+        lhs = (1, 2, 3, 4)
+        rhs = (1, 4)
+        self.assertTrue(tuple.__ne__(lhs, rhs))
 
     def test_dunder_new_with_no_iterable_arg_returns_empty_tuple(self):
         result = tuple.__new__(tuple)
