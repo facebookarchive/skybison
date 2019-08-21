@@ -174,7 +174,7 @@ class Frame {
 
   BlockStack* blockStack();
 
-  // Index in the bytecode array of the last instruction that was executed
+  // Index in the bytecode array of the next instruction to be executed.
   word virtualPC();
   void setVirtualPC(word pc);
 
