@@ -39,6 +39,21 @@ RawObject tupleIteratorNext(Thread* thread, const TupleIterator& iter) {
   return item;
 }
 
+RawObject tupleSlice(Thread* thread, const Tuple& tuple, word start, word stop,
+                     word step) {
+  if (start == 0 && stop >= tuple.length() && step == 1) {
+    return *tuple;
+  }
+
+  HandleScope scope(thread);
+  word length = Slice::length(start, stop, step);
+  Tuple items(&scope, thread->runtime()->newTuple(length));
+  for (word i = 0, index = start; i < length; i++, index += step) {
+    items.atPut(i, tuple.at(index));
+  }
+  return *items;
+}
+
 RawObject tupleUnderlying(Thread* thread, const Object& obj) {
   if (obj.isTuple()) return *obj;
   DCHECK(thread->runtime()->isInstanceOfTuple(*obj), "Non-tuple value");
@@ -56,7 +71,6 @@ const BuiltinMethod TupleBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderAdd, dunderAdd},
     {SymbolId::kDunderContains, dunderContains},
     {SymbolId::kDunderEq, dunderEq},
-    {SymbolId::kDunderGetitem, dunderGetItem},
     {SymbolId::kDunderHash, dunderHash},
     {SymbolId::kDunderIter, dunderIter},
     {SymbolId::kDunderLen, dunderLen},
@@ -157,61 +171,6 @@ RawObject TupleBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
     }
   }
   return Bool::trueObj();
-}
-
-RawObject TupleBuiltins::slice(Thread* thread, const Tuple& tuple,
-                               const Slice& slice) {
-  HandleScope scope(thread);
-  word start, stop, step;
-  Object err(&scope, sliceUnpack(thread, slice, &start, &stop, &step));
-  if (err.isError()) return *err;
-  return sliceWithWords(thread, tuple, start, stop, step);
-}
-
-RawObject TupleBuiltins::sliceWithWords(Thread* thread, const Tuple& tuple,
-                                        word start, word stop, word step) {
-  word length = Slice::adjustIndices(tuple.length(), &start, &stop, step);
-  if (start == 0 && stop >= tuple.length() && step == 1) {
-    return *tuple;
-  }
-
-  HandleScope scope(thread);
-  Tuple items(&scope, thread->runtime()->newTuple(length));
-  for (word i = 0, index = start; i < length; i++, index += step) {
-    items.atPut(i, tuple.at(index));
-  }
-  return *items;
-}
-
-RawObject TupleBuiltins::dunderGetItem(Thread* thread, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfTuple(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kTuple);
-  }
-
-  Tuple tuple(&scope, tupleUnderlying(thread, self));
-  Object index(&scope, args.get(1));
-  if (index.isSmallInt()) {
-    word idx = SmallInt::cast(*index).value();
-    if (idx < 0) {
-      idx += tuple.length();
-    }
-    if (idx < 0 || idx >= tuple.length()) {
-      return thread->raiseWithFmt(LayoutId::kIndexError,
-                                  "tuple index out of range");
-    }
-    return tuple.at(idx);
-  }
-  if (index.isSlice()) {
-    Slice tuple_slice(&scope, *index);
-    return slice(thread, tuple, tuple_slice);
-  }
-  return thread->raiseWithFmt(LayoutId::kTypeError,
-                              "tuple indices must be integers or slices");
 }
 
 RawObject TupleBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {

@@ -5934,6 +5934,121 @@ class SyntaxErrorTests(unittest.TestCase):
 
 
 class TupleTests(unittest.TestCase):
+    def test_dunder_getitem_with_non_tuple_self_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            tuple.__getitem__(None, 1)
+        self.assertIn(
+            "'__getitem__' requires a 'tuple' object but received a 'NoneType'",
+            str(context.exception),
+        )
+
+    def test_dunder_getitem_with_int_subclass_does_not_call_dunder_index(self):
+        class C(int):
+            def __index__(self):
+                raise ValueError("foo")
+
+        t = (1, 2, 3)
+        self.assertEqual(tuple.__getitem__(t, C(0)), 1)
+
+    def test_dunder_getitem_with_raising_descriptor_propagates_exception(self):
+        class Desc:
+            def __get__(self, obj, type):
+                raise AttributeError("foo")
+
+        class C:
+            __index__ = Desc()
+
+        t = (1, 2, 3)
+        with self.assertRaises(AttributeError) as context:
+            tuple.__getitem__(t, C())
+        self.assertEqual(str(context.exception), "foo")
+
+    def test_dunder_getitem_with_non_int_raises_type_error(self):
+        t = (1, 2, 3)
+        with self.assertRaises(TypeError) as context:
+            tuple.__getitem__(t, "3")
+        self.assertEqual(
+            str(context.exception), "tuple indices must be integers or slices, not str"
+        )
+
+    def test_dunder_getitem_with_tuple_subclass_returns_value(self):
+        class Foo(tuple):
+            pass
+
+        t = Foo((0, 1))
+        self.assertEqual(tuple.__getitem__(t, 0), 0)
+
+    def test_dunder_getitem_slice_with_tuple_subclass_returns_tuple(self):
+        class Foo(tuple):
+            pass
+
+        t = Foo((0, 1))
+        self.assertEqual(tuple.__getitem__(t, slice(2)), (0, 1))
+
+    def test_dunder_getitem_with_dunder_index_calls_dunder_index(self):
+        class C:
+            def __index__(self):
+                return 2
+
+        t = (1, 2, 3)
+        self.assertEqual(tuple.__getitem__(t, C()), 3)
+
+    def test_dunder_getitem_index_too_small_raises_index_error(self):
+        t = ()
+        with self.assertRaises(IndexError) as context:
+            tuple.__getitem__(t, -1)
+        self.assertEqual(str(context.exception), "tuple index out of range")
+
+    def test_dunder_getitem_index_too_large_raises_index_error(self):
+        t = (1, 2, 3)
+        with self.assertRaises(IndexError) as context:
+            tuple.__getitem__(t, 3)
+        self.assertEqual(str(context.exception), "tuple index out of range")
+
+    def test_dunder_getitem_negative_index_relative_to_end_value_error(self):
+        t = (1, 2, 3)
+        self.assertEqual(tuple.__getitem__(t, -3), 1)
+
+    def test_dunder_getitem_with_valid_indices_returns_subtuple(self):
+        t = (1, 2, 3, 4, 5)
+        self.assertEqual(tuple.__getitem__(t, slice(2, -1)), (3, 4))
+
+    def test_dunder_getitem_with_negative_start_returns_trailing(self):
+        t = (1, 2, 3)
+        self.assertEqual(tuple.__getitem__(t, slice(-2, 5)), (2, 3))
+
+    def test_dunder_getitem_with_positive_stop_returns_leading(self):
+        t = (1, 2, 3)
+        self.assertEqual(tuple.__getitem__(t, slice(2)), (1, 2))
+
+    def test_dunder_getitem_with_negative_stop_returns_all_but_trailing(self):
+        t = (1, 2, 3)
+        self.assertEqual(tuple.__getitem__(t, slice(-2)), (1,))
+
+    def test_dunder_getitem_with_positive_step_returns_forwards_list(self):
+        t = (1, 2, 3)
+        self.assertEqual(tuple.__getitem__(t, slice(0, 10, 2)), (1, 3))
+
+    def test_dunder_getitem_with_negative_step_returns_backwards_list(self):
+        t = (1, 2, 3)
+        self.assertEqual(tuple.__getitem__(t, slice(2, -10, -2)), (3, 1))
+
+    def test_dunder_getitem_with_large_negative_start_returns_copy(self):
+        t = (1, 2, 3)
+        self.assertIs(tuple.__getitem__(t, slice(-10, 10)), t)
+
+    def test_dunder_getitem_with_large_positive_start_returns_empty(self):
+        t = (1, 2, 3)
+        self.assertEqual(tuple.__getitem__(t, slice(10, 10)), ())
+
+    def test_dunder_getitem_with_large_negative_stop_returns_empty(self):
+        t = (1, 2, 3)
+        self.assertEqual(tuple.__getitem__(t, slice(-10)), ())
+
+    def test_dunder_getitem_with_large_positive_stop_returns_same_object(self):
+        t = (1, 2, 3)
+        self.assertIs(tuple.__getitem__(t, slice(10)), t)
+
     def test_dunder_lt_with_non_tuple_self_raises_type_error(self):
         with self.assertRaises(TypeError):
             tuple.__lt__(None, ())

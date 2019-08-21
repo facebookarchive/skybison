@@ -212,6 +212,8 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrSplitlines, underStrSplitlines},
     {SymbolId::kUnderTupleCheck, underTupleCheck},
     {SymbolId::kUnderTupleCheckExact, underTupleCheckExact},
+    {SymbolId::kUnderTupleGetitem, underTupleGetItem},
+    {SymbolId::kUnderTupleGetslice, underTupleGetSlice},
     {SymbolId::kUnderTupleGuard, underTupleGuard},
     {SymbolId::kUnderTupleLen, underTupleLen},
     {SymbolId::kUnderTupleNew, underTupleNew},
@@ -239,7 +241,7 @@ const BuiltinType UnderBuiltinsModule::kBuiltinTypes[] = {
 const char* const UnderBuiltinsModule::kFrozenData = kUnderBuiltinsModuleData;
 
 const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
-    SymbolId::kUnderByteArrayCheck,  // Long comment to keep this list in 1 col
+    SymbolId::kUnderByteArrayCheck,
     SymbolId::kUnderByteArrayGuard,
     SymbolId::kUnderByteArrayLen,
     SymbolId::kUnderBytesCheck,
@@ -274,6 +276,7 @@ const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
     SymbolId::kUnderStrLen,
     SymbolId::kUnderTupleCheck,
     SymbolId::kUnderTupleCheckExact,
+    SymbolId::kUnderTupleGetitem,
     SymbolId::kUnderTupleGuard,
     SymbolId::kUnderTupleLen,
     SymbolId::kUnderType,
@@ -2871,6 +2874,44 @@ RawObject UnderBuiltinsModule::underTupleCheckExact(Thread*, Frame* frame,
                                                     word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(args.get(0).isTuple());
+}
+
+RawObject UnderBuiltinsModule::underTupleGetItem(Thread* thread, Frame* frame,
+                                                 word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Tuple self(&scope, tupleUnderlying(thread, self_obj));
+  Object key_obj(&scope, args.get(1));
+  Int key(&scope, intUnderlying(thread, key_obj));
+  word index = key.asWordSaturated();
+  if (!SmallInt::isValid(index)) {
+    return thread->raiseWithFmt(LayoutId::kIndexError,
+                                "cannot fit '%T' into an index-sized integer",
+                                &key_obj);
+  }
+  word length = self.length();
+  if (index < 0) {
+    index += length;
+  }
+  if (index < 0 || index >= length) {
+    return thread->raiseWithFmt(LayoutId::kIndexError,
+                                "tuple index out of range");
+  }
+  return self.at(index);
+}
+
+RawObject UnderBuiltinsModule::underTupleGetSlice(Thread* thread, Frame* frame,
+                                                  word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Tuple self(&scope, tupleUnderlying(thread, self_obj));
+  Int start(&scope, args.get(1));
+  Int stop(&scope, args.get(2));
+  Int step(&scope, args.get(3));
+  return tupleSlice(thread, self, start.asWordSaturated(),
+                    stop.asWordSaturated(), step.asWordSaturated());
 }
 
 RawObject UnderBuiltinsModule::underTupleGuard(Thread* thread, Frame* frame,

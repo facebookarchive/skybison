@@ -145,6 +145,8 @@ _str_splitlines = _str_splitlines  # noqa: F821
 _traceback = _traceback  # noqa: F821
 _tuple_check = _tuple_check  # noqa: F821
 _tuple_checkexact = _tuple_checkexact  # noqa: F821
+_tuple_getitem = _tuple_getitem  # noqa: F821
+_tuple_getslice = _tuple_getslice  # noqa: F821
 _tuple_guard = _tuple_guard  # noqa: F821
 _tuple_len = _tuple_len  # noqa: F821
 _tuple_new = _tuple_new  # noqa: F821
@@ -4149,7 +4151,20 @@ class tuple(bootstrap=True):
         pass
 
     def __getitem__(self, index):
-        pass
+        _tuple_guard(self)
+        if _int_check(index):
+            return _tuple_getitem(self, index)
+        if _slice_check(index):
+            step = _slice_step(_slice_index(index.step))
+            length = _tuple_len(self)
+            start = _slice_start(_slice_index(index.start), step, length)
+            stop = _slice_stop(_slice_index(index.stop), step, length)
+            return _tuple_getslice(self, start, stop, step)
+        if _object_type_hasattr(index, "__index__"):
+            return _tuple_getitem(self, _index(index))
+        raise TypeError(
+            f"tuple indices must be integers or slices, not {_type(index).__name__}"
+        )
 
     def __hash__(self):
         pass
@@ -4171,8 +4186,8 @@ class tuple(bootstrap=True):
         # Find the first non-equal item in the tuples
         i = 0
         while i < min_len:
-            self_i = tuple.__getitem__(self, i)
-            other_i = tuple.__getitem__(other, i)
+            self_i = _tuple_getitem(self, i)
+            other_i = _tuple_getitem(other, i)
             if self_i is not other_i and self_i != other_i:
                 break
             i += 1

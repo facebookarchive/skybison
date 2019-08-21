@@ -16,6 +16,10 @@ RawObject sequenceAsTuple(Thread* thread, const Object& seq);
 // Return the next item from the iterator, or Error if there are no items left.
 RawObject tupleIteratorNext(Thread* thread, const TupleIterator& iter);
 
+// Return a slice of the given tuple.
+RawObject tupleSlice(Thread* thread, const Tuple& tuple, word start, word stop,
+                     word step);
+
 // If obj is exactly a Tuple, return it. Otherwise, assume it's a UserTupleBase
 // and return its underlying Tuple.
 RawObject tupleUnderlying(Thread* thread, const Object& obj);
@@ -26,16 +30,10 @@ class TupleBuiltins
   static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderContains(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderGetItem(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderHash(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderMul(Thread* thread, Frame* frame, word nargs);
-
-  static RawObject slice(Thread* thread, const Tuple& tuple,
-                         const Slice& slice);
-  static RawObject sliceWithWords(Thread* thread, const Tuple& tuple,
-                                  word start, word stop, word step);
 
   static const BuiltinAttribute kAttributes[];
   static const BuiltinMethod kBuiltinMethods[];

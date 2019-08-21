@@ -361,6 +361,8 @@ class Runtime;
   V(UnderThread, "_thread")                                                    \
   V(UnderTupleCheck, "_tuple_check")                                           \
   V(UnderTupleCheckExact, "_tuple_checkexact")                                 \
+  V(UnderTupleGetitem, "_tuple_getitem")                                       \
+  V(UnderTupleGetslice, "_tuple_getslice")                                     \
   V(UnderTupleGuard, "_tuple_guard")                                           \
   V(UnderTupleLen, "_tuple_len")                                               \
   V(UnderTupleNew, "_tuple_new")                                               \

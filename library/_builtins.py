@@ -744,6 +744,16 @@ def _tuple_checkexact(obj):
 
 
 @_patch
+def _tuple_getitem(self, index):
+    pass
+
+
+@_patch
+def _tuple_getslice(self, start, stop, step):
+    pass
+
+
+@_patch
 def _tuple_guard(obj):
     pass
 

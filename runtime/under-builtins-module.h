@@ -215,6 +215,8 @@ class UnderBuiltinsModule {
   static RawObject underTupleCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underTupleCheckExact(Thread* thread, Frame* frame,
                                         word nargs);
+  static RawObject underTupleGetItem(Thread* thread, Frame* frame, word nargs);
+  static RawObject underTupleGetSlice(Thread* thread, Frame* frame, word nargs);
   static RawObject underTupleGuard(Thread* thread, Frame* frame, word nargs);
   static RawObject underTupleLen(Thread* thread, Frame* frame, word nargs);
   static RawObject underTupleNew(Thread* thread, Frame* frame, word nargs);

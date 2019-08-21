@@ -351,6 +351,29 @@ static bool underTupleCheckExact(Frame* frame) {
   return true;
 }
 
+static bool underTupleGetItem(Frame* frame) {
+  RawObject arg0 = frame->peek(1);
+  if (!arg0.isTuple()) {
+    return false;
+  }
+  RawObject arg1 = frame->peek(0);
+  word idx;
+  if (arg1.isSmallInt()) {
+    idx = SmallInt::cast(arg1).value();
+  } else if (arg1.isBool()) {
+    idx = Bool::cast(arg1).value();
+  } else {
+    return false;
+  }
+  RawTuple self = Tuple::cast(arg0);
+  if (0 <= idx && idx < self.length()) {
+    frame->dropValues(2);
+    frame->setTopValue(self.at(idx));
+    return true;
+  }
+  return false;
+}
+
 static bool underTupleGuard(Thread* thread, Frame* frame) {
   if (thread->runtime()->isInstanceOfTuple(frame->topValue())) {
     frame->popValue();
@@ -492,6 +515,8 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
       return underTupleCheck(thread, frame);
     case SymbolId::kUnderTupleCheckExact:
       return underTupleCheckExact(frame);
+    case SymbolId::kUnderTupleGetitem:
+      return underTupleGetItem(frame);
     case SymbolId::kUnderTupleGuard:
       return underTupleGuard(thread, frame);
     case SymbolId::kUnderTupleLen:

@@ -117,21 +117,22 @@ PY_EXPORT PyObject* PyTuple_GetSlice(PyObject* pytuple, Py_ssize_t low,
     return nullptr;
   }
   Tuple tuple(&scope, tupleUnderlying(thread, tuple_obj));
+  word len = tuple.length();
   if (low < 0) {
     low = 0;
-  } else if (low > tuple.length()) {
-    low = tuple.length();
+  } else if (low > len) {
+    low = len;
   }
   if (high < low) {
     high = low;
-  } else if (high > tuple.length()) {
-    high = tuple.length();
+  } else if (high > len) {
+    high = len;
   }
-  if (low == 0 && high == tuple.length() && tuple.isTuple()) {
+  if (low == 0 && high == len && tuple_obj.isTuple()) {
     return ApiHandle::newReference(thread, *tuple);
   }
   return ApiHandle::newReference(
-      thread, TupleBuiltins::sliceWithWords(thread, tuple, low, high, 1));
+      thread, runtime->tupleSubseq(thread, tuple, low, high - low));
 }
 
 }  // namespace python
