@@ -3666,12 +3666,8 @@ RawObject Runtime::attributeAt(Thread* thread, const Object& object,
   HandleScope scope(thread);
   Object result(&scope, thread->invokeMethod2(
                             object, SymbolId::kDunderGetattribute, name_str));
-  if (!result.isError()) {
-    return *result;
-  }
-  Type pending_exception_type(&scope, thread->pendingExceptionType());
-  Type attribute_error(&scope, typeAt(LayoutId::kAttributeError));
-  if (!givenExceptionMatches(thread, pending_exception_type, attribute_error)) {
+  if (!result.isErrorException() ||
+      !thread->pendingExceptionMatches(LayoutId::kAttributeError)) {
     return *result;
   }
 
