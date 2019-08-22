@@ -3469,7 +3469,7 @@ HANDLER_INLINE Continue Interpreter::cachedBinaryOpImpl(
   RawObject right_raw = frame->peek(0);
   LayoutId left_layout_id = left_raw.layoutId();
   LayoutId right_layout_id = right_raw.layoutId();
-  IcBinopFlags flags;
+  IcBinopFlags flags = IC_BINOP_NONE;
   RawObject method = icLookupBinop(frame->caches(), arg, left_layout_id,
                                    right_layout_id, &flags);
   if (method.isErrorNotFound()) {
