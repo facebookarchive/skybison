@@ -526,7 +526,7 @@ class RawSmallInt : public RawObject {
   template <typename T>
   if_unsigned_t<T, OptInt<T>> asInt() const;
 
-  // Conversion.
+  // Construction.
   static RawSmallInt fromWord(word value);
   static RawSmallInt fromWordTruncated(word value);
 
@@ -629,7 +629,7 @@ class RawHeader : public RawObject {
 
 class RawSmallBytes : public RawObject {
  public:
-  // Conversion.
+  // Construction.
   static RawObject fromBytes(View<byte> data);
 
   // Constants.
@@ -654,7 +654,7 @@ class RawSmallBytes : public RawObject {
 
 class RawSmallStr : public RawObject {
  public:
-  // Conversion.
+  // Construction.
   static RawObject fromCodePoint(int32_t code_point);
   static RawObject fromCStr(const char* value);
   static RawObject fromBytes(View<byte> data);
@@ -763,8 +763,9 @@ class RawBool : public RawObject {
   static RawBool trueObj();
   static RawBool falseObj();
 
-  // Conversion.
+  // Construction.
   static RawBool fromBool(bool value);
+
   static RawBool negate(RawObject value);
 
   RAW_OBJECT_COMMON(Bool);
@@ -809,7 +810,7 @@ class RawHeapObject : public RawObject {
   word headerCountOrOverflow() const;
   word size() const;
 
-  // Conversion.
+  // Construction.
   static RawHeapObject fromAddress(uword address);
 
   // Sizing
