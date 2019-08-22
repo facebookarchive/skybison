@@ -120,6 +120,7 @@ set(
   ${CMAKE_SOURCE_DIR}/ext/Objects/floatobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/frameobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/funcobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/function-utils.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/function-utils.h
   ${CMAKE_SOURCE_DIR}/ext/Objects/genobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/iterobject.cpp

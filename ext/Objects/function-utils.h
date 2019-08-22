@@ -5,7 +5,7 @@
 
 namespace python {
 
-static inline ExtensionMethodType methodTypeFromMethodFlags(int flag) {
+inline ExtensionMethodType methodTypeFromMethodFlags(int flag) {
   DCHECK(flag == METH_NOARGS || flag == METH_O || flag == METH_VARARGS ||
              flag == (METH_VARARGS | METH_KEYWORDS),
          "unexpected flags");
