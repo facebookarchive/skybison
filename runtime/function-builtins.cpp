@@ -16,7 +16,7 @@ RawObject functionFromMethodDef(Thread* thread, const char* c_name, void* meth,
   Function::Entry entry;
   Function::Entry entry_kw;
   Function::Entry entry_ex;
-  switch (type) {
+  switch (callType(type)) {
     case ExtensionMethodType::kMethNoArgs:
       entry = methodTrampolineNoArgs;
       entry_kw = methodTrampolineNoArgsKw;
@@ -47,18 +47,33 @@ RawObject functionFromMethodDef(Thread* thread, const char* c_name, void* meth,
   if (c_doc != nullptr) {
     function.setDoc(runtime->newStrFromCStr(c_doc));
   }
+  if (isClassmethod(type)) {
+    if (isStaticmethod(type)) {
+      return thread->raiseWithFmt(LayoutId::kValueError,
+                                  "method cannot be both class and static");
+    }
+    ClassMethod result(&scope, runtime->newClassMethod());
+    result.setFunction(*function);
+    return *result;
+  }
+  if (isStaticmethod(type)) {
+    // TODO(T52962591): implement METH_STATIC
+    UNIMPLEMENTED("C extension staticmethods");
+  }
   return *function;
 }
 
 RawObject functionFromModuleMethodDef(Thread* thread, const char* c_name,
                                       void* meth, const char* c_doc,
                                       ExtensionMethodType type) {
+  DCHECK(!isClassmethod(type), "module functions cannot set METH_CLASS");
+  DCHECK(!isStaticmethod(type), "module functions cannot set METH_STATIC");
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Function::Entry entry;
   Function::Entry entry_kw;
   Function::Entry entry_ex;
-  switch (type) {
+  switch (callType(type)) {
     case ExtensionMethodType::kMethNoArgs:
       entry = moduleTrampolineNoArgs;
       entry_kw = moduleTrampolineNoArgsKw;

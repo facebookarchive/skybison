@@ -1592,6 +1592,7 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
                       thread, methods[i].ml_name,
                       bit_cast<void*>(methods[i].ml_meth), methods[i].ml_doc,
                       methodTypeFromMethodFlags(methods[i].ml_flags)));
+      if (function.isError()) return nullptr;
       runtime->dictAtPutInValueCell(thread, dict, name, function);
     }
   }

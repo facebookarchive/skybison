@@ -13,10 +13,12 @@ PY_EXPORT PyObject* PyDescr_NewClassMethod(PyTypeObject* type,
   Object type_obj(
       &scope,
       ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type))->asObject());
-  Object function(
-      &scope, functionFromMethodDef(thread, def->ml_name,
-                                    bit_cast<void*>(def->ml_meth), def->ml_doc,
-                                    methodTypeFromMethodFlags(def->ml_flags)));
+  Object function(&scope, functionFromMethodDef(
+                              thread, def->ml_name,
+                              bit_cast<void*>(def->ml_meth), def->ml_doc,
+                              methodTypeFromMethodFlags(
+                                  def->ml_flags & ~METH_CLASS & ~METH_STATIC)));
+  DCHECK(!function.isError(), "should have ignored METH_CLASS and METH_STATIC");
   Object result(&scope,
                 thread->invokeFunction2(SymbolId::kBuiltins,
                                         SymbolId::kUnderDescrClassMethod,
