@@ -144,6 +144,24 @@ class IntepreterTest(unittest.TestCase):
         self.assertEqual(d.result[0], locals)
         self.assertEqual(d.result[1], C)
 
+    def test_import_performs_secondary_lookup(self):
+        import sys
+
+        class FakeModule:
+            def __getattribute__(self, name):
+                if name == "__name__":
+                    return "test_import_performs_secondary_lookup_fake_too"
+                raise AttributeError(name)
+
+        sys.modules["test_import_performs_secondary_lookup_fake"] = FakeModule()
+        sys.modules["test_import_performs_secondary_lookup_fake_too.foo"] = 42
+        try:
+            from test_import_performs_secondary_lookup_fake import foo
+        finally:
+            del sys.modules["test_import_performs_secondary_lookup_fake"]
+            del sys.modules["test_import_performs_secondary_lookup_fake_too.foo"]
+        self.assertEqual(foo, 42)
+
 
 if __name__ == "__main__":
     unittest.main()

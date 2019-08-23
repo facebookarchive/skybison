@@ -598,6 +598,70 @@ TEST_F(InterpreterTest, ImportFromWithMissingAttributeRaisesImportError) {
                             "cannot import name 'bar' from 'foo'"));
 }
 
+TEST_F(InterpreterTest, ImportFromCallsDunderGetattribute) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C:
+  def __getattribute__(self, name):
+    return f"getattribute '{name}'"
+i = C()
+)")
+                   .isError());
+  Object i(&scope, mainModuleAt(&runtime_, "i"));
+
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime_.newTuple(1));
+  consts.atPut(0, *i);
+  code.setConsts(*consts);
+  Tuple names(&scope, runtime_.newTuple(1));
+  names.atPut(0, runtime_.internStrFromCStr(thread_, "foo"));
+  code.setNames(*names);
+  const byte bytecode[] = {LOAD_CONST, 0, IMPORT_FROM, 0, RETURN_VALUE, 0};
+  code.setCode(runtime_.newBytesWithAll(bytecode));
+
+  EXPECT_TRUE(isStrEqualsCStr(runCode(code), "getattribute 'foo'"));
+}
+
+TEST_F(InterpreterTest, ImportFromWithNonModuleRaisesImportError) {
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime_.newTuple(1));
+  consts.atPut(0, NoneType::object());
+  code.setConsts(*consts);
+  Tuple names(&scope, runtime_.newTuple(1));
+  names.atPut(0, runtime_.internStrFromCStr(thread_, "foo"));
+  code.setNames(*names);
+  const byte bytecode[] = {LOAD_CONST, 0, IMPORT_FROM, 0, RETURN_VALUE, 0};
+  code.setCode(runtime_.newBytesWithAll(bytecode));
+
+  EXPECT_TRUE(raisedWithStr(runCode(code), LayoutId::kImportError,
+                            "cannot import name 'foo'"));
+}
+
+TEST_F(InterpreterTest, ImportFromWithNonModulePropagatesException) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C:
+  def __getattribute__(self, name):
+    raise UserWarning()
+i = C()
+)")
+                   .isError());
+  Object i(&scope, mainModuleAt(&runtime_, "i"));
+
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime_.newTuple(1));
+  consts.atPut(0, *i);
+  code.setConsts(*consts);
+  Tuple names(&scope, runtime_.newTuple(1));
+  names.atPut(0, runtime_.internStrFromCStr(thread_, "foo"));
+  code.setNames(*names);
+  const byte bytecode[] = {LOAD_CONST, 0, IMPORT_FROM, 0, RETURN_VALUE, 0};
+  code.setCode(runtime_.newBytesWithAll(bytecode));
+
+  EXPECT_TRUE(raised(runCode(code), LayoutId::kUserWarning));
+}
+
 TEST_F(InterpreterTest, InplaceOperationCallsInplaceMethod) {
   HandleScope scope(thread_);
 

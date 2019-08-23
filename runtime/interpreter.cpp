@@ -2604,22 +2604,73 @@ HANDLER_INLINE Continue Interpreter::doImportName(Thread* thread, word arg) {
   return doCallFunction(thread, 5);
 }
 
+static RawObject tryImportFromSysModules(Thread* thread, const Object& from,
+                                         const Str& name) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object fully_qualified_name(
+      &scope, runtime->attributeAtById(thread, from, SymbolId::kDunderName));
+  if (fully_qualified_name.isError() ||
+      !runtime->isInstanceOfStr(*fully_qualified_name)) {
+    thread->clearPendingException();
+    return Error::notFound();
+  }
+  Object module_name(
+      &scope, runtime->newStrFromFmt("%S.%S", &fully_qualified_name, &name));
+  Object result(&scope, runtime->findModule(module_name));
+  if (result.isNoneType()) {
+    return Error::notFound();
+  }
+  return *result;
+}
+
 HANDLER_INLINE Continue Interpreter::doImportFrom(Thread* thread, word arg) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Code code(&scope, frame->code());
-  Object name(&scope, Tuple::cast(code.names()).at(arg));
-  CHECK(name.isStr(), "name not found");
-  Module module(&scope, frame->topValue());
-  RawObject value = moduleAt(thread, module, name);
-  if (value.isError()) {
-    Str module_name(&scope, module.name());
-    thread->raiseWithFmt(LayoutId::kImportError,
-                         "cannot import name '%S' from '%S'", &name,
-                         &module_name);
-    return Continue::UNWIND;
+  Str name(&scope, Tuple::cast(code.names()).at(arg));
+  Object from(&scope, frame->topValue());
+
+  Object value(&scope, NoneType::object());
+  if (from.isModule()) {
+    // Common case of a lookup done on the built-in module type.
+    Module from_module(&scope, *from);
+    value = moduleGetAttribute(thread, from_module, name);
+  } else {
+    // Do a generic attribute lookup.
+    value = thread->runtime()->attributeAt(thread, from, name);
+    if (value.isErrorException()) {
+      if (!thread->pendingExceptionMatches(LayoutId::kAttributeError)) {
+        return Continue::UNWIND;
+      }
+      thread->clearPendingException();
+      value = Error::notFound();
+    }
   }
-  frame->pushValue(value);
+
+  if (value.isErrorNotFound()) {
+    // in case this failed because of a circular relative import, try to
+    // fallback on reading the module directly from sys.modules.
+    // See cpython bpo-17636.
+    value = tryImportFromSysModules(thread, from, name);
+    if (value.isErrorNotFound()) {
+      Runtime* runtime = thread->runtime();
+      if (runtime->isInstanceOfModule(*from)) {
+        Module from_module(&scope, *from);
+        Object module_name(&scope, from_module.name());
+        if (runtime->isInstanceOfStr(*module_name)) {
+          thread->raiseWithFmt(LayoutId::kImportError,
+                               "cannot import name '%S' from '%S'", &name,
+                               &module_name);
+          return Continue::UNWIND;
+        }
+      }
+      thread->raiseWithFmt(LayoutId::kImportError, "cannot import name '%S'",
+                           &name);
+      return Continue::UNWIND;
+    }
+  }
+  frame->pushValue(*value);
   return Continue::NEXT;
 }
 
