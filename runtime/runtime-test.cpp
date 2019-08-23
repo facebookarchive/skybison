@@ -3399,6 +3399,17 @@ TEST_F(RuntimeTest, BuiltinBaseOfEmptyTypeIsSuperclass) {
   EXPECT_EQ(type.builtinBase(), LayoutId::kObject);
 }
 
+TEST_F(RuntimeTest, NonModuleInModulesDoesNotCrash) {
+  HandleScope scope(thread_);
+  Object not_a_module(&scope, runtime_.newInt(42));
+  Object name(&scope, runtime_.newStrFromCStr("a_valid_module_name"));
+  Dict modules(&scope, runtime_.modules());
+  runtime_.dictAtPut(thread_, modules, name, not_a_module);
+
+  Object result(&scope, runtime_.findModule(name));
+  EXPECT_EQ(result, not_a_module);
+}
+
 TEST_F(RuntimeStrArrayTest, NewStrArrayReturnsEmptyStrArray) {
   HandleScope scope(thread_);
   Object obj(&scope, runtime_.newStrArray());

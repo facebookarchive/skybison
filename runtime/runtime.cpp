@@ -4221,7 +4221,9 @@ void Runtime::freeApiHandles() {
   Tuple modules_buckets(&scope, modules.data());
   for (word i = Dict::Bucket::kFirst;
        Dict::Bucket::nextItem(*modules_buckets, &i);) {
-    Module module(&scope, Dict::Bucket::value(*modules_buckets, i));
+    Object module_obj(&scope, Dict::Bucket::value(*modules_buckets, i));
+    if (!isInstanceOfModule(*module_obj)) continue;
+    Module module(&scope, *module_obj);
     Object module_def(&scope, module.def());
     if (module_def.isInt() && Int::cast(*module_def).asCPtr() != nullptr) {
       auto def =
