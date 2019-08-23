@@ -423,16 +423,7 @@ RawObject StrBuiltins::dunderFormat(Thread* thread, Frame* frame, word nargs) {
     return *possible_error;
   }
   if (format.type != 's') {
-    if (32 < format.type && format.type < kMaxASCII) {
-      return thread->raiseWithFmt(
-          LayoutId::kValueError,
-          "Unknown format code '%c' for object of type '%T'",
-          static_cast<char>(format.type), &self_obj);
-    }
-    return thread->raiseWithFmt(
-        LayoutId::kValueError,
-        "Unknown format code '\\x%x' for object of type '%T'",
-        static_cast<unsigned>(format.type), &self_obj);
+    return raiseUnknownFormatError(thread, format.type, self_obj);
   }
 
   return formatStr(thread, self, &format);

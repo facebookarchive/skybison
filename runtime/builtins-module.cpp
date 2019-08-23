@@ -260,7 +260,7 @@ RawObject BuiltinsModule::bin(Thread* thread, Frame* frame, word nargs) {
     return *number;
   }
   Int number_int(&scope, intUnderlying(thread, number));
-  return formatIntSimpleBinary(thread, number_int);
+  return formatIntBinarySimple(thread, number_int);
 }
 
 RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
@@ -550,7 +550,7 @@ RawObject BuiltinsModule::oct(Thread* thread, Frame* frame, word nargs) {
     return *number;
   }
   Int number_int(&scope, intUnderlying(thread, number));
-  return formatIntSimpleOctal(thread, number_int);
+  return formatIntOctalSimple(thread, number_int);
 }
 
 RawObject BuiltinsModule::ord(Thread* thread, Frame* frame, word nargs) {
@@ -632,7 +632,7 @@ RawObject BuiltinsModule::hex(Thread* thread, Frame* frame, word nargs) {
     return *number;
   }
   Int number_int(&scope, intUnderlying(thread, number));
-  return formatIntSimpleHexadecimal(thread, number_int);
+  return formatIntHexadecimalSimple(thread, number_int);
 }
 
 RawObject BuiltinsModule::setattr(Thread* thread, Frame* frame, word nargs) {

@@ -179,6 +179,20 @@ RawObject parseFormatSpec(Thread* thread, const Str& spec, int32_t default_type,
   return NoneType::object();
 }
 
+RawObject raiseUnknownFormatError(Thread* thread, int32_t format_code,
+                                  const Object& object) {
+  if (32 < format_code && format_code < kMaxASCII) {
+    return thread->raiseWithFmt(
+        LayoutId::kValueError,
+        "Unknown format code '%c' for object of type '%T'",
+        static_cast<char>(format_code), &object);
+  }
+  return thread->raiseWithFmt(
+      LayoutId::kValueError,
+      "Unknown format code '\\x%x' for object of type '%T'",
+      static_cast<unsigned>(format_code), &object);
+}
+
 RawObject formatStr(Thread* thread, const Str& str, FormatSpec* format) {
   if (format->positive_sign != '\0') {
     return thread->raiseWithFmt(LayoutId::kValueError,
@@ -339,10 +353,10 @@ static uword divIntSingleDigit(uword* digits_out, const uword* digits_in,
 
 // Converts an uword to ascii decimal digits. The digits can only be efficiently
 // produced from least to most significant without knowing the exact number of
-// digits upfront. Because of this the function takes a `buf_end` argument and
-// writes the digit before it. Returns a pointer to the last byte written.
-static byte* uwordToDecimal(uword num, byte* buf_end) {
-  byte* start = buf_end;
+// digits upfront. Because of this the function takes a `buffer_end` argument
+// and writes the digit before it. Returns a pointer to the last byte written.
+static byte* uwordToDecimal(uword num, byte* buffer_end) {
+  byte* start = buffer_end;
   do {
     *--start = '0' + num % 10;
     num /= 10;
@@ -350,41 +364,8 @@ static byte* uwordToDecimal(uword num, byte* buf_end) {
   return start;
 }
 
-RawObject formatIntDecimalSimple(Thread* thread, const Int& value_int) {
-  if (value_int.numDigits() == 1) {
-    word value = value_int.asWord();
-    uword magnitude = value >= 0 ? value : -static_cast<uword>(value);
-    byte buffer[kUwordDigits10 + 1];
-    byte* end = buffer + sizeof(buffer);
-    byte* start = uwordToDecimal(magnitude, end);
-    if (value < 0) *--start = '-';
-    DCHECK(start >= buffer, "buffer underflow");
-    return thread->runtime()->newStrWithAll(View<byte>(start, end - start));
-  }
-  HandleScope scope(thread);
-  LargeInt large_int(&scope, *value_int);
-
-  // Allocate space for intermediate results. We also convert a negative number
-  // to a positive number of the same magnitude here.
-  word num_digits = large_int.numDigits();
-  std::unique_ptr<uword[]> temp_digits(new uword[num_digits]);
-  bool negative = large_int.isNegative();
-  if (!negative) {
-    for (word i = 0; i < num_digits; ++i) {
-      temp_digits[i] = large_int.digitAt(i);
-    }
-  } else {
-    uword carry = 1;
-    for (word i = 0; i < num_digits; ++i) {
-      uword digit = large_int.digitAt(i);
-      carry = __builtin_uaddl_overflow(~digit, carry, &temp_digits[i]);
-    }
-    // The complement of the highest bit in a negative number must be 0 so we
-    // cannot overflow.
-    DCHECK(carry == 0, "overflow");
-  }
-  word num_temp_digits = num_digits;
-
+// Return upper bound on number of decimal digits to format large int `value`.
+static word estimateNumDecimalDigits(RawLargeInt value) {
   // Compute an upper bound on the number of decimal digits required for a
   // number with n bits:
   //   ceil(log10(2**n - 1))
@@ -396,9 +377,31 @@ RawObject formatIntDecimalSimple(Thread* thread, const Int& value_int) {
   //   <= 1 + n * 309 / 1024
   // This isn't off by more than 1 digit for all one binary numbers up to
   // 1425 bits.
-  word bit_length = large_int.bitLength();
-  word max_chars = 1 + negative + bit_length * 309 / 1024;
-  std::unique_ptr<byte[]> buffer(new byte[max_chars]);
+  word bit_length = value.bitLength();
+  return 1 + bit_length * 309 / 1024;
+}
+
+static byte* writeLargeIntDecimalDigits(byte* buffer_end, RawLargeInt value) {
+  // Allocate space for intermediate results. We also convert a negative number
+  // to a positive number of the same magnitude here.
+  word num_digits = value.numDigits();
+  std::unique_ptr<uword[]> temp_digits(new uword[num_digits]);
+  bool negative = value.isNegative();
+  if (!negative) {
+    for (word i = 0; i < num_digits; ++i) {
+      temp_digits[i] = value.digitAt(i);
+    }
+  } else {
+    uword carry = 1;
+    for (word i = 0; i < num_digits; ++i) {
+      uword digit = value.digitAt(i);
+      carry = __builtin_uaddl_overflow(~digit, carry, &temp_digits[i]);
+    }
+    // The complement of the highest bit in a negative number must be 0 so we
+    // cannot overflow.
+    DCHECK(carry == 0, "overflow");
+  }
+  word num_temp_digits = num_digits;
 
   // The strategy here is to divide the large integer by continually dividing it
   // by `kUwordDigits10Pow`. `uwordToDecimal` can convert those remainders to
@@ -407,8 +410,7 @@ RawObject formatIntDecimalSimple(Thread* thread, const Int& value_int) {
   // TODO(matthiasb): Future optimization ideas:
   // It seems cpythons algorithm is faster (for big numbers) in practive.
   // Their source claims it is (Knuth TAOCP, vol 2, section 4.4, method 1b).
-  byte* end = buffer.get() + max_chars;
-  byte* start = end;
+  byte* start = buffer_end;
   do {
     uword remainder = divIntSingleDigit(temp_digits.get(), temp_digits.get(),
                                         num_temp_digits, kUwordDigits10Pow);
@@ -425,9 +427,32 @@ RawObject formatIntDecimalSimple(Thread* thread, const Int& value_int) {
     }
     start = new_start;
   } while (num_temp_digits > 0);
+  return start;
+}
 
-  if (negative) *--start = '-';
+RawObject formatIntDecimalSimple(Thread* thread, const Int& value) {
+  if (!value.isLargeInt()) {
+    word value_word = value.asWord();
+    uword magnitude =
+        value_word >= 0 ? value_word : -static_cast<uword>(value_word);
+    byte buffer[kUwordDigits10 + 1];
+    byte* end = buffer + sizeof(buffer);
+    byte* start = uwordToDecimal(magnitude, end);
+    if (value_word < 0) *--start = '-';
+    DCHECK(start >= buffer, "buffer underflow");
+    return thread->runtime()->newStrWithAll(View<byte>(start, end - start));
+  }
 
+  RawLargeInt value_large = LargeInt::cast(*value);
+  bool is_negative = value_large.isNegative();
+  word max_chars =
+      estimateNumDecimalDigits(value_large) + (is_negative ? 1 : 0);
+  std::unique_ptr<byte[]> buffer(new byte[max_chars]);
+  byte* end = buffer.get() + max_chars;
+  byte* start = writeLargeIntDecimalDigits(end, value_large);
+  if (is_negative) {
+    *--start = '-';
+  }
   DCHECK(start >= buffer.get(), "buffer underflow");
   return thread->runtime()->newStrWithAll(View<byte>(start, end - start));
 }
@@ -490,8 +515,9 @@ static void putBinaryDigits(Thread* thread, const MutableBytes& dest, word at,
   DCHECK(idx == at, "unexpected number of digits");
 }
 
-static void putHexadecimalDigits(Thread* thread, const MutableBytes& dest,
-                                 word at, const Int& value, word num_digits) {
+static void putHexadecimalDigitsImpl(Thread* thread, const MutableBytes& dest,
+                                     word at, const Int& value, word num_digits,
+                                     const char* hex_digits) {
   word idx = at + num_digits;
   uword last_digit;
   if (value.isLargeInt()) {
@@ -508,7 +534,7 @@ static void putHexadecimalDigits(Thread* thread, const MutableBytes& dest,
         carry = carry & (digit == 0);
       }
       for (word i = 0; i < hexdigits_per_word; i++) {
-        dest.byteAtPut(--idx, "0123456789abcdef"[digit & 0xf]);
+        dest.byteAtPut(--idx, hex_digits[digit & 0xf]);
         digit >>= kBitsPerHexDigit;
       }
     }
@@ -521,10 +547,17 @@ static void putHexadecimalDigits(Thread* thread, const MutableBytes& dest,
   }
 
   do {
-    dest.byteAtPut(--idx, "0123456789abcdef"[last_digit & 0xf]);
+    dest.byteAtPut(--idx, hex_digits[last_digit & 0xf]);
     last_digit >>= kBitsPerHexDigit;
   } while (last_digit != 0);
   DCHECK(idx == at, "unexpected number of digits");
+}
+
+static void putHexadecimalLowerCaseDigits(Thread* thread,
+                                          const MutableBytes& dest, word at,
+                                          const Int& value, word num_digits) {
+  putHexadecimalDigitsImpl(thread, dest, at, value, num_digits,
+                           "0123456789abcdef");
 }
 
 static void putOctalDigits(Thread* thread, const MutableBytes& dest, word at,
@@ -597,8 +630,15 @@ static void putOctalDigits(Thread* thread, const MutableBytes& dest, word at,
   DCHECK(idx == at, "unexpected number of digits");
 }
 
-RawObject formatIntSimpleBinary(Thread* thread, const Int& value) {
-  word result_n_digits = numBinaryDigits(value);
+using numDigitsFunc = word (*)(const Int&);
+using putDigitsFunc = void (*)(Thread*, const MutableBytes&, word, const Int&,
+                               word);
+
+static inline RawObject formatIntSimpleImpl(Thread* thread, const Int& value,
+                                            char format_prefix,
+                                            numDigitsFunc num_digits,
+                                            putDigitsFunc put_digits) {
+  word result_n_digits = num_digits(value);
   word result_size = 2 + (value.isNegative() ? 1 : 0) + result_n_digits;
 
   HandleScope scope(thread);
@@ -610,45 +650,24 @@ RawObject formatIntSimpleBinary(Thread* thread, const Int& value) {
     result.byteAtPut(index++, '-');
   }
   result.byteAtPut(index++, '0');
-  result.byteAtPut(index++, 'b');
-  putBinaryDigits(thread, result, index, value, result_n_digits);
+  result.byteAtPut(index++, format_prefix);
+  put_digits(thread, result, index, value, result_n_digits);
   return result.becomeStr();
 }
 
-RawObject formatIntSimpleHexadecimal(Thread* thread, const Int& value) {
-  word result_n_digits = numHexadecimalDigits(value);
-  word result_size = 2 + (value.isNegative() ? 1 : 0) + result_n_digits;
-
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  MutableBytes result(&scope,
-                      runtime->newMutableBytesUninitialized(result_size));
-  word index = 0;
-  if (value.isNegative()) {
-    result.byteAtPut(index++, '-');
-  }
-  result.byteAtPut(index++, '0');
-  result.byteAtPut(index++, 'x');
-  putHexadecimalDigits(thread, result, index, value, result_n_digits);
-  return result.becomeStr();
+RawObject formatIntBinarySimple(Thread* thread, const Int& value) {
+  return formatIntSimpleImpl(thread, value, 'b', numBinaryDigits,
+                             putBinaryDigits);
 }
 
-RawObject formatIntSimpleOctal(Thread* thread, const Int& value) {
-  word result_n_digits = numOctalDigits(value);
-  word result_size = 2 + (value.isNegative() ? 1 : 0) + result_n_digits;
+RawObject formatIntHexadecimalSimple(Thread* thread, const Int& value) {
+  return formatIntSimpleImpl(thread, value, 'x', numHexadecimalDigits,
+                             putHexadecimalLowerCaseDigits);
+}
 
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  MutableBytes result(&scope,
-                      runtime->newMutableBytesUninitialized(result_size));
-  word index = 0;
-  if (value.isNegative()) {
-    result.byteAtPut(index++, '-');
-  }
-  result.byteAtPut(index++, '0');
-  result.byteAtPut(index++, 'o');
-  putOctalDigits(thread, result, index, value, result_n_digits);
-  return result.becomeStr();
+RawObject formatIntOctalSimple(Thread* thread, const Int& value) {
+  return formatIntSimpleImpl(thread, value, 'o', numOctalDigits,
+                             putOctalDigits);
 }
 
 }  // namespace python
