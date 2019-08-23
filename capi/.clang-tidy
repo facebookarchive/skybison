@@ -1,0 +1,4 @@
+Checks: >
+  -*,
+  google-readability-todo,
+FormatStyle: file
