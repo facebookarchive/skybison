@@ -41,6 +41,7 @@ python_library(
     srcs = [
         "benchmarks/deltablue.py",
         "benchmarks/fannkuch.py",
+        "benchmarks/nbody.py",
         "benchmarks/nqueens.py",
         "benchmarks/pystone.py",
         "benchmarks/richards.py",
