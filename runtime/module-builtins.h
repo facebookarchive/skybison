@@ -48,6 +48,8 @@ RawObject moduleDictRemove(Thread* thread, const Dict& module_dict,
 // Returns keys associated with non-placeholder ValueCells in module_dict.
 RawObject moduleDictKeys(Thread* thread, const Dict& module_dict);
 
+RawObject moduleInit(Thread* thread, const Module& module, const Object& name);
+
 // Returns the number of keys associated with non-placeholder ValueCells.
 RawObject moduleLen(Thread* thread, const Module& module);
 
@@ -71,6 +73,7 @@ class ModuleBuiltins
     : public Builtins<ModuleBuiltins, SymbolId::kModule, LayoutId::kModule> {
  public:
   static RawObject dunderGetattribute(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderSetattr(Thread* thread, Frame* frame, word nargs);
 

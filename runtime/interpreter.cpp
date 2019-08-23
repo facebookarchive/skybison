@@ -1743,8 +1743,6 @@ HANDLER_INLINE Continue Interpreter::doImportStar(Thread* thread, word) {
   // body anymore.
 
   Module module(&scope, frame->popValue());
-  CHECK(module.isModule(), "Unexpected type to import from");
-
   Dict implicit_globals(&scope, frame->implicitGlobals());
   thread->runtime()->moduleImportAllFrom(implicit_globals, module);
   return Continue::NEXT;
@@ -2613,7 +2611,6 @@ HANDLER_INLINE Continue Interpreter::doImportFrom(Thread* thread, word arg) {
   Object name(&scope, Tuple::cast(code.names()).at(arg));
   CHECK(name.isStr(), "name not found");
   Module module(&scope, frame->topValue());
-  CHECK(module.isModule(), "Unexpected type to import from");
   RawObject value = moduleAt(thread, module, name);
   if (value.isError()) {
     Str module_name(&scope, module.name());

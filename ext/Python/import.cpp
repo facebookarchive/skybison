@@ -18,7 +18,7 @@ PY_EXPORT PyObject* PyImport_ImportModuleLevelObject(PyObject* name,
                                                      int level) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
-  CHECK(runtime->findOrCreateImportlibModule(thread).isModule(),
+  CHECK(!runtime->findOrCreateImportlibModule(thread).isNoneType(),
         "failed to initialize importlib");
   HandleScope scope(thread);
 
@@ -74,7 +74,7 @@ PY_EXPORT PyObject* PyImport_AddModuleObject(PyObject* name) {
   Dict modules_dict(&scope, runtime->modules());
   Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
   Object module(&scope, runtime->dictAt(thread, modules_dict, name_obj));
-  if (module.isModule()) {
+  if (!module.isErrorNotFound()) {
     return ApiHandle::borrowedReference(thread, *module);
   }
 

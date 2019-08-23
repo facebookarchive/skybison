@@ -837,26 +837,18 @@ RawObject Runtime::newModule(const Object& name) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Module result(&scope, heap()->create<RawModule>());
-  Dict dict(&scope, newDict());
-  ModuleProxy module_proxy(&scope, heap()->create<RawModuleProxy>());
-  module_proxy.setModule(*result);
-  result.setDict(*dict);
-  result.setModuleProxy(*module_proxy);
-  result.setName(*name);
+  result.setDict(newDict());
   result.setDef(newIntFromCPtr(nullptr));
-  Object key(&scope, symbols()->DunderName());
-  moduleAtPut(thread, result, key, name);
+  Object init_result(&scope, moduleInit(thread, result, name));
+  if (init_result.isErrorException()) return *init_result;
+  return *result;
+}
 
-  Object none(&scope, NoneType::object());
-  Object doc_key(&scope, symbols()->DunderDoc());
-  moduleAtPut(thread, result, doc_key, none);
-  Object package_key(&scope, symbols()->DunderPackage());
-  moduleAtPut(thread, result, package_key, none);
-  Object loader_key(&scope, symbols()->DunderLoader());
-  moduleAtPut(thread, result, loader_key, none);
-  Object spec_key(&scope, symbols()->DunderSpec());
-  moduleAtPut(thread, result, spec_key, none);
-
+RawObject Runtime::newModuleProxy(const Module& module) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ModuleProxy result(&scope, heap()->create<RawModuleProxy>());
+  result.setModule(*module);
   return *result;
 }
 
@@ -2036,7 +2028,7 @@ RawObject Runtime::lookupNameInModule(Thread* thread, SymbolId module_name,
                                       SymbolId name) {
   HandleScope scope(thread);
   Object module_obj(&scope, findModuleById(module_name));
-  DCHECK(module_obj.isModule(),
+  DCHECK(!module_obj.isNoneType(),
          "The given module '%s' doesn't exist in modules dict",
          symbols()->predefinedSymbolAt(module_name));
   Module module(&scope, *module_obj);
@@ -3713,7 +3705,7 @@ RawObject Runtime::attributeDel(Thread* thread, const Object& receiver,
                                       dunder_delattr, receiver, name);
   } else if (isInstanceOfType(*receiver)) {
     result = classDelAttr(thread, receiver, name);
-  } else if (receiver.isModule()) {
+  } else if (isInstanceOfModule(*receiver)) {
     result = moduleDelAttr(thread, receiver, name);
   } else {
     result = instanceDelAttr(thread, receiver, name);

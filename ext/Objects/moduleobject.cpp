@@ -80,14 +80,11 @@ PY_EXPORT PyModuleDef* PyModule_GetDef(PyObject* pymodule) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object module_obj(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
-  if (!module_obj.isModule()) {
-    // TODO(cshapiro): throw a TypeError
+  if (!thread->runtime()->isInstanceOfModule(*module_obj)) {
+    thread->raiseBadArgument();
     return nullptr;
   }
   Module module(&scope, *module_obj);
-  if (!module.def().isInt()) {
-    return nullptr;
-  }
   Int def(&scope, module.def());
   return static_cast<PyModuleDef*>(def.asCPtr());
 }
@@ -106,8 +103,7 @@ PY_EXPORT PyObject* PyModule_GetNameObject(PyObject* mod) {
   HandleScope scope(thread);
 
   Object module_obj(&scope, ApiHandle::fromPyObject(mod)->asObject());
-  if (!module_obj.isModule()) {
-    // TODO(atalaba): Allow for module subclassing
+  if (!runtime->isInstanceOfModule(*module_obj)) {
     thread->raiseBadArgument();
     return nullptr;
   }
@@ -127,8 +123,7 @@ PY_EXPORT void* PyModule_GetState(PyObject* mod) {
 
   ApiHandle* handle = ApiHandle::fromPyObject(mod);
   Object module_obj(&scope, handle->asObject());
-  if (!module_obj.isModule()) {
-    // TODO(atalaba): Support module subclassing
+  if (!thread->runtime()->isInstanceOfModule(*module_obj)) {
     thread->raiseBadArgument();
     return nullptr;
   }
@@ -169,8 +164,7 @@ PY_EXPORT PyObject* PyModule_GetFilenameObject(PyObject* pymodule) {
   HandleScope scope(thread);
 
   Object module_obj(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
-  if (!module_obj.isModule()) {
-    // TODO(atalaba): Allow for module subclassing
+  if (!runtime->isInstanceOfModule(*module_obj)) {
     thread->raiseBadArgument();
     return nullptr;
   }
@@ -213,14 +207,16 @@ PY_EXPORT int PyModule_SetDocString(PyObject* m, const char* doc) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Object module_obj(&scope, ApiHandle::fromPyObject(m)->asObject());
+  Object module(&scope, ApiHandle::fromPyObject(m)->asObject());
   Object uni(&scope, runtime->newStrFromCStr(doc));
-  if (!uni.isStr() || !module_obj.isModule()) {
+  if (!uni.isStr()) {
     return -1;
   }
-  Module module(&scope, *module_obj);
-  Object key(&scope, runtime->symbols()->DunderDoc());
-  moduleAtPut(thread, module, key, uni);
+  Object name(&scope, runtime->symbols()->DunderDoc());
+  if (thread->invokeMethod3(module, SymbolId::kDunderSetattr, name, uni)
+          .isErrorException()) {
+    return -1;
+  }
   return 0;
 }
 

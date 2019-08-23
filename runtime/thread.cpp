@@ -181,7 +181,7 @@ RawObject Thread::exec(const Code& code, const Dict& globals,
                              moduleDictAt(this, globals, dunder_builtins_name));
   if (builtins_module_obj.isErrorNotFound()) {
     builtins_module_obj = runtime->findModuleById(SymbolId::kBuiltins);
-    DCHECK(builtins_module_obj.isModule(), "invalid builtins module");
+    DCHECK(!builtins_module_obj.isNoneType(), "invalid builtins module");
     moduleDictAtPut(this, globals, dunder_builtins_name, builtins_module_obj);
   }
 

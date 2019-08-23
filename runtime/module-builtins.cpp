@@ -51,7 +51,8 @@ RawDict moduleDictBuiltins(Thread* thread, const Dict& dict) {
   Object builtins_module(&scope,
                          moduleDictAt(thread, dict, dunder_builtins_name));
   if (!builtins_module.isErrorNotFound()) {
-    CHECK(builtins_module.isModule(), "expected builtins module");
+    CHECK(runtime->isInstanceOfModule(*builtins_module),
+          "expected builtins module");
     return RawDict::cast(Module::cast(*builtins_module).dict());
   }
 
@@ -261,7 +262,31 @@ int execDef(Thread* thread, const Module& module, PyModuleDef* def) {
   return 0;
 }
 
+RawObject moduleInit(Thread* thread, const Module& module, const Object& name) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  module.setModuleProxy(runtime->newModuleProxy(module));
+  if (name.isStr()) {
+    module.setName(*name);
+  }
+  module.setDef(runtime->newIntFromCPtr(nullptr));
+  Object key(&scope, runtime->symbols()->DunderName());
+  moduleAtPut(thread, module, key, name);
+
+  Object none(&scope, NoneType::object());
+  Object doc_key(&scope, runtime->symbols()->DunderDoc());
+  moduleAtPut(thread, module, doc_key, none);
+  Object package_key(&scope, runtime->symbols()->DunderPackage());
+  moduleAtPut(thread, module, package_key, none);
+  Object loader_key(&scope, runtime->symbols()->DunderLoader());
+  moduleAtPut(thread, module, loader_key, none);
+  Object spec_key(&scope, runtime->symbols()->DunderSpec());
+  moduleAtPut(thread, module, spec_key, none);
+  return NoneType::object();
+}
+
 const BuiltinAttribute ModuleBuiltins::kAttributes[] = {
+    {SymbolId::kInvalid, RawModule::kDefOffset},
     {SymbolId::kInvalid, RawModule::kDictOffset},
     {SymbolId::kInvalid, RawModule::kModuleProxyOffset},
     {SymbolId::kInvalid, RawModule::kNameOffset},
@@ -270,6 +295,7 @@ const BuiltinAttribute ModuleBuiltins::kAttributes[] = {
 
 const BuiltinMethod ModuleBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderGetattribute, dunderGetattribute},
+    {SymbolId::kDunderInit, dunderInit},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderSetattr, dunderSetattr},
     {SymbolId::kSentinelId, nullptr},
@@ -293,6 +319,10 @@ RawObject ModuleBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
   Object result(&scope, moduleGetAttribute(thread, self, name));
   if (result.isErrorNotFound()) {
     Object module_name(&scope, self.name());
+    if (!runtime->isInstanceOfStr(*module_name)) {
+      return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                  "module has no attribute '%S'", &name);
+    }
     return thread->raiseWithFmt(LayoutId::kAttributeError,
                                 "module '%S' has no attribute '%S'",
                                 &module_name, &name);
@@ -302,21 +332,49 @@ RawObject ModuleBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
 
 RawObject ModuleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
-  if (!args.get(0).isType()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError, "not a type object");
-  }
-  if (Type::cast(args.get(0)).builtinBase() != LayoutId::kModule) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "not a subtype of module");
-  }
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfStr(args.get(1))) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "argument must be a str instance");
-  }
   HandleScope scope(thread);
-  Str name(&scope, args.get(1));
-  return runtime->newModule(name);
+  Object cls_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfType(*cls_obj)) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError, "module.__new__(X): X is not a type object (%T)",
+        &cls_obj);
+  }
+  Type cls(&scope, *cls_obj);
+  if (cls.builtinBase() != LayoutId::kModule) {
+    Object cls_name(&scope, cls.name());
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "module.__new__(%S): %S is not a subtype of module", &cls_name,
+        &cls_name);
+  }
+  Layout layout(&scope, cls.instanceLayout());
+  Module result(&scope, runtime->newInstance(layout));
+  // Note that this is different from cpython, which initializes `__dict__` to
+  // `None` and only sets it in `module.__init__()`. Setting a dictionary right
+  // has the having a dictionary there becomes an invariant, because the field
+  // is read-only otherwise, so we can generally skip type tests for it.
+  result.setDict(runtime->newDict());
+  result.setDef(runtime->newIntFromCPtr(nullptr));
+  return *result;
+}
+
+RawObject ModuleBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfModule(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kModule);
+  }
+  Module self(&scope, *self_obj);
+  Object name(&scope, args.get(1));
+  if (!runtime->isInstanceOfStr(*name)) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "module.__init__() argument 1 must be str, not %T", &name);
+  }
+  return moduleInit(thread, self, name);
 }
 
 RawObject ModuleBuiltins::dunderSetattr(Thread* thread, Frame* frame,

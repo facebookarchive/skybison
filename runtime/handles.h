@@ -126,7 +126,6 @@ class WARN_UNUSED Handle : public T {
   V(LongRangeIterator)                                                         \
   V(LookupError)                                                               \
   V(MemoryView)                                                                \
-  V(Module)                                                                    \
   V(ModuleProxy)                                                               \
   V(ModuleNotFoundError)                                                       \
   V(MutableBytes)                                                              \
@@ -166,6 +165,7 @@ class WARN_UNUSED Handle : public T {
   V(FrozenSet)                                                                 \
   V(ImportError)                                                               \
   V(List)                                                                      \
+  V(Module)                                                                    \
   V(Set)                                                                       \
   V(SetBase)                                                                   \
   V(StopIteration)                                                             \

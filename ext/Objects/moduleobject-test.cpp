@@ -184,6 +184,14 @@ TEST_F(ModuleExtensionApiTest, GetDefWithNonModuleRetunsNull) {
   EXPECT_EQ(result, nullptr);
 }
 
+TEST_F(ModuleExtensionApiTest, GetDefWithNonExtensionModuleReturnsNull) {
+  PyRun_SimpleString("");
+  PyObjectPtr module_name(PyUnicode_FromString("__main__"));
+  PyObjectPtr main_module(testing::importGetModule(module_name));
+  PyModuleDef* result = PyModule_GetDef(main_module);
+  EXPECT_EQ(result, nullptr);
+}
+
 TEST_F(ModuleExtensionApiTest, CheckTypeOnNonModuleReturnsZero) {
   PyObject* pylong = PyLong_FromLong(10);
   EXPECT_FALSE(PyModule_Check(pylong));
@@ -246,6 +254,17 @@ TEST_F(ModuleExtensionApiTest, SetDocStringCreatesDoc) {
   PyObject* doc = PyObject_GetAttrString(module, "__doc__");
   EXPECT_TRUE(isUnicodeEqualsCStr(doc, edit_mod_doc));
   EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ModuleExtensionApiTest, SetDocStringSetsObjectAttribute) {
+  PyRun_SimpleString(R"(
+class C: pass
+not_a_module = C()
+)");
+  PyObjectPtr not_a_module(moduleGet("__main__", "not_a_module"));
+  EXPECT_EQ(PyModule_SetDocString(not_a_module, "baz"), 0);
+  PyObjectPtr value(PyObject_GetAttrString(not_a_module, "__doc__"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(value, "baz"));
 }
 
 TEST_F(ModuleExtensionApiTest, ModuleCreateDoesNotAddToModuleDict) {
@@ -315,6 +334,19 @@ TEST_F(ModuleExtensionApiTest, GetNameObjectFailsIfNotString) {
   Py_DECREF(not_a_module);
 }
 
+TEST_F(ModuleExtensionApiTest, GetNameObjectWithModuleSubclassReturnsString) {
+  PyRun_SimpleString(R"(
+import builtins
+ModuleType = type(builtins)
+class C(ModuleType):
+  pass
+module = C("foo")
+)");
+  PyObjectPtr module(moduleGet("__main__", "module"));
+  PyObjectPtr result(PyModule_GetNameObject(module));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "foo"));
+}
+
 TEST_F(ModuleExtensionApiTest, GetFilenameObjectReturnsFilename) {
   static PyModuleDef def;
   def = {
@@ -331,6 +363,20 @@ TEST_F(ModuleExtensionApiTest, GetFilenameObjectReturnsFilename) {
   testing::PyObjectPtr result(PyModule_GetFilenameObject(module));
   EXPECT_TRUE(isUnicodeEqualsCStr(result, filename));
   EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ModuleExtensionApiTest, GetFilenameObjectWithSubclassReturnsFilename) {
+  PyRun_SimpleString(R"(
+import builtins
+ModuleType = type(builtins)
+class C(ModuleType):
+  __file__ = "bar"
+module = C("foo")
+module.__file__ = "baz"
+)");
+  PyObjectPtr module(moduleGet("__main__", "module"));
+  PyObjectPtr result(PyModule_GetFilenameObject(module));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "baz"));
 }
 
 TEST_F(ModuleExtensionApiTest, GetFilenameObjectFailsIfNotModule) {

@@ -171,6 +171,8 @@ class Runtime {
 
   RawObject newModule(const Object& name);
 
+  RawObject newModuleProxy(const Module& module);
+
   RawObject newMutableBytesUninitialized(word size);
 
   // Returns an Int that stores the numerical address of the pointer.

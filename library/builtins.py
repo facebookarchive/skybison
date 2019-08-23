@@ -3151,7 +3151,10 @@ class module(bootstrap=True):
     def __getattribute__(self, name):
         pass
 
-    def __new__(cls, name):
+    def __init__(self, name):
+        pass
+
+    def __new__(cls, *args, **kwargs):
         pass
 
     def __repr__(self):

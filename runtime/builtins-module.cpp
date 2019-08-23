@@ -576,7 +576,7 @@ RawObject BuiltinsModule::ord(Thread* thread, Frame* frame, word nargs) {
 
 RawObject BuiltinsModule::dunderImport(Thread* thread, Frame* frame,
                                        word nargs) {
-  CHECK(thread->runtime()->findOrCreateImportlibModule(thread).isModule(),
+  CHECK(!thread->runtime()->findOrCreateImportlibModule(thread).isNoneType(),
         "failed to initialize importlib");
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -615,7 +615,8 @@ RawObject BuiltinsModule::globals(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object module_name(&scope, frame->previousFrame()->function().module());
   Object module(&scope, thread->runtime()->findModule(module_name));
-  CHECK(module.isModule(), "globals() couldn't find a module");
+  CHECK(thread->runtime()->isInstanceOfModule(*module),
+        "globals() couldn't find a module");
   return Module::cast(*module).moduleProxy();
 }
 

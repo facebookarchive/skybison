@@ -94,7 +94,7 @@ RawObject UnderImpModule::createBuiltin(Thread* thread, Frame* frame,
                                     "NULL return without exception set");
       };
       Object module_obj(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
-      if (!module_obj.isModule()) {
+      if (!runtime->isInstanceOfModule(*module_obj)) {
         // TODO(T39542987): Enable multi-phase module initialization
         UNIMPLEMENTED("Multi-phase module initialization");
       }

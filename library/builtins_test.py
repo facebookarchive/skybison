@@ -3370,6 +3370,63 @@ class ModuleTests(unittest.TestCase):
         del mymodule.x
         self.assertNotIn("x", mymodule.__dir__())
 
+    def test_dunder_new_with_subclass_returns_object(self):
+        from types import ModuleType
+
+        class C(ModuleType):
+            pass
+
+        m = ModuleType.__new__(C)
+        self.assertEqual(type(m), C)
+        self.assertIsInstance(m, ModuleType)
+        # Do some sanity checking that half-initialized modules do not crash.
+        self.assertEqual(repr(m), "<module '?'>")
+        with self.assertRaises(AttributeError) as context:
+            ModuleType.__getattribute__(m, "foo")
+        self.assertEqual(str(context.exception), "module has no attribute 'foo'")
+
+    def test_dunder_new_accepts_extra_arguments(self):
+        from types import ModuleType
+
+        m = ModuleType.__new__(ModuleType, 42, "foo", bar=None)
+        self.assertIsInstance(m, ModuleType)
+        self.assertEqual(repr(m), "<module '?'>")
+
+    def test_dunder_init_sets_fields(self):
+        from types import ModuleType
+
+        m = ModuleType.__new__(ModuleType)
+        ModuleType.__init__(m, "foo")
+        self.assertEqual(
+            dir(m), ["__doc__", "__loader__", "__name__", "__package__", "__spec__"]
+        )
+        self.assertIs(m.__doc__, None)
+        self.assertIs(m.__loader__, None)
+        self.assertEqual(m.__name__, "foo")
+        self.assertIs(m.__package__, None)
+        self.assertIs(m.__spec__, None)
+
+    def test_dunder_new_with_non_type_raises_type_error(self):
+        from types import ModuleType
+
+        with self.assertRaises(TypeError) as context:
+            ModuleType.__new__(42, "")
+        self.assertEqual(
+            str(context.exception), "module.__new__(X): X is not a type object (int)"
+        )
+
+    def test_dunder_new_with_non_module_subtype_raise_type_error(self):
+        from types import ModuleType
+
+        class C:
+            pass
+
+        with self.assertRaises(TypeError) as context:
+            ModuleType.__new__(C, "")
+        self.assertEqual(
+            str(context.exception), "module.__new__(C): C is not a subtype of module"
+        )
+
 
 class ModuleProxyTests(unittest.TestCase):
     def setUp(self):

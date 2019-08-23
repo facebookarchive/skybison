@@ -65,61 +65,6 @@ TEST_F(ModuleBuiltinsTest,
       LayoutId::kAttributeError, "module '__main__' has no attribute 'xxx'"));
 }
 
-TEST_F(ModuleBuiltinsDeathTest, DunderNewNotEnoughArgumentsRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, "import sys; type(sys).__new__()"),
-      LayoutId::kTypeError,
-      "TypeError: 'module.__new__' takes 2 positional arguments but 0 given"));
-}
-
-TEST_F(ModuleBuiltinsDeathTest, DunderNewTooManyArgumentsRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, "import sys; type(sys).__new__(123, 456, 789)"),
-      LayoutId::kTypeError,
-      "TypeError: 'module.__new__' takes max 2 positional arguments but 3 "
-      "given"));
-}
-
-TEST_F(ModuleBuiltinsTest, DunderNewWithNonTypeRaisesTypeError) {
-  HandleScope scope(thread_);
-  Int nontype(&scope, SmallInt::fromWord(123));
-  Str module_name(&scope, runtime_.newStrFromCStr("foo"));
-  Object module(&scope,
-                runBuiltin(ModuleBuiltins::dunderNew, nontype, module_name));
-  EXPECT_TRUE(
-      raisedWithStr(*module, LayoutId::kTypeError, "not a type object"));
-}
-
-TEST_F(ModuleBuiltinsTest, DunderNewWithNonModuleRaisesTypeError) {
-  HandleScope scope(thread_);
-  Type nonmodule(&scope, runtime_.typeAt(LayoutId::kSmallStr));
-  Str module_name(&scope, runtime_.newStrFromCStr("foo"));
-  Object module(&scope,
-                runBuiltin(ModuleBuiltins::dunderNew, nonmodule, module_name));
-  EXPECT_TRUE(
-      raisedWithStr(*module, LayoutId::kTypeError, "not a subtype of module"));
-}
-
-TEST_F(ModuleBuiltinsTest, DunderNewReturnsModule) {
-  HandleScope scope(thread_);
-  Type moduletype(&scope, runtime_.typeAt(LayoutId::kModule));
-  Str module_name(&scope, runtime_.newStrFromCStr("foo"));
-  Object module(&scope,
-                runBuiltin(ModuleBuiltins::dunderNew, moduletype, module_name));
-  ASSERT_TRUE(module.isModule());
-  Object result_module_name(&scope, Module::cast(*module).name());
-  EXPECT_TRUE(isStrEquals(result_module_name, module_name));
-}
-
-TEST_F(ModuleBuiltinsTest, DunderNewWithNonStrNameRaisesTypeError) {
-  HandleScope scope(thread_);
-  Type moduletype(&scope, runtime_.typeAt(LayoutId::kModule));
-  Int non_str_name(&scope, SmallInt::fromWord(123));
-  Object module(
-      &scope, runBuiltin(ModuleBuiltins::dunderNew, moduletype, non_str_name));
-  EXPECT_TRUE(raised(*module, LayoutId::kTypeError));
-}
-
 TEST_F(ModuleBuiltinsTest, DunderSetattrSetsAttribute) {
   HandleScope scope(thread_);
   Object module_name(&scope, runtime_.newStrFromCStr("foo"));
