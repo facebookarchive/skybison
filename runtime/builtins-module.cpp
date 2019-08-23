@@ -13,6 +13,7 @@
 #include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "under-builtins-module.h"
 
 namespace python {
@@ -555,19 +556,22 @@ RawObject BuiltinsModule::oct(Thread* thread, Frame* frame, word nargs) {
 
 RawObject BuiltinsModule::ord(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
-  RawObject arg = args.get(0);
-  if (!arg.isStr()) {
+  HandleScope scope(thread);
+  Object str_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStr(*str_obj)) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "Unsupported type in builtin 'ord'");
   }
-  auto str = Str::cast(arg);
-  word num_bytes;
-  int32_t codepoint = str.codePointAt(0, &num_bytes);
-  if (num_bytes != str.charLength()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "Builtin 'ord' expects string of length 1");
+  Str str(&scope, strUnderlying(thread, str_obj));
+  if (str.isSmallStr() && *str != Str::empty()) {
+    word num_bytes;
+    int32_t code_point = str.codePointAt(0, &num_bytes);
+    if (num_bytes == str.charLength()) {
+      return SmallInt::fromWord(code_point);
+    }
   }
-  return SmallInt::fromWord(codepoint);
+  return thread->raiseWithFmt(LayoutId::kTypeError,
+                              "Builtin 'ord' expects string of length 1");
 }
 
 RawObject BuiltinsModule::dunderImport(Thread* thread, Frame* frame,

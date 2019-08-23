@@ -237,6 +237,17 @@ TEST_F(BuiltinsModuleTest, BuiltinOrd) {
                             "Unsupported type in builtin 'ord'"));
 }
 
+TEST_F(BuiltinsModuleTest, BuiltinOrdWithStrSubclass) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class MyStr(str): pass
+a_str = MyStr("A")
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object a_str(&scope, mainModuleAt(&runtime_, "a_str"));
+  EXPECT_TRUE(isIntEqualsWord(runBuiltin(BuiltinsModule::ord, a_str), 65));
+}
+
 TEST_F(BuiltinsModuleTest, BuiltinOrdSupportNonASCII) {
   HandleScope scope(thread_);
   Str two_bytes(&scope, runtime_.newStrFromCStr("\xC3\xA9"));
@@ -252,10 +263,45 @@ TEST_F(BuiltinsModuleTest, BuiltinOrdSupportNonASCII) {
   EXPECT_TRUE(isIntEqualsWord(*four_ord, 0x1F192));
 }
 
-TEST_F(BuiltinsModuleTest, BuiltinOrdWithMultiCodepointStringRaisesError) {
+TEST_F(BuiltinsModuleTest, BuiltinOrdWithEmptyStrRaisesTypeError) {
   HandleScope scope(thread_);
-  Str two_chars(&scope, runtime_.newStrFromCStr("ab"));
+  Object empty(&scope, Str::empty());
+  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::ord, empty),
+                            LayoutId::kTypeError,
+                            "Builtin 'ord' expects string of length 1"));
+}
+
+TEST_F(BuiltinsModuleTest, BuiltinOrdWithEmptyStrSubclassRaisesTypeError) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class MyStr(str): pass
+empty = MyStr("")
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object empty(&scope, mainModuleAt(&runtime_, "empty"));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::ord, empty),
+                            LayoutId::kTypeError,
+                            "Builtin 'ord' expects string of length 1"));
+}
+
+TEST_F(BuiltinsModuleTest, BuiltinOrdStrWithManyCodePointsRaisesTypeError) {
+  HandleScope scope(thread_);
+  Object two_chars(&scope, runtime_.newStrFromCStr("ab"));
   EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::ord, two_chars),
+                            LayoutId::kTypeError,
+                            "Builtin 'ord' expects string of length 1"));
+}
+
+TEST_F(BuiltinsModuleTest,
+       BuiltinOrdStrSubclassWithManyCodePointsRaiseTypeError) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class MyStr(str): pass
+two_code_points = MyStr("ab")
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object two_code_points(&scope, mainModuleAt(&runtime_, "two_code_points"));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::ord, two_code_points),
                             LayoutId::kTypeError,
                             "Builtin 'ord' expects string of length 1"));
 }
