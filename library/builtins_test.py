@@ -1569,6 +1569,30 @@ class DictTests(unittest.TestCase):
             dict.update({}, D())
 
 
+class DirTests(unittest.TestCase):
+    def test_without_args_returns_locals_keys(self):
+        def foo():
+            a = 4
+            a = a  # noqa: F841
+            b = 5
+            b = b  # noqa: F841
+            return dir()
+
+        result = foo()
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0], "a")
+        self.assertEqual(result[1], "b")
+
+    def test_with_arg_returns_dunder_dir_result(self):
+        class C:
+            def __dir__(self):
+                return ["1", "2"]
+
+        c = C()
+        self.assertEqual(dir(c), ["1", "2"])
+
+
 class ExceptionTests(unittest.TestCase):
     def test_maybe_unbound_attributes(self):
         exc = BaseException()

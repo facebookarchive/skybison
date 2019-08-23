@@ -81,6 +81,11 @@ def _getframe_lineno(depth=0) -> int:
     pass
 
 
+@_patch
+def _getframe_locals(depth: int = 0):
+    pass
+
+
 abiflags = ""
 
 

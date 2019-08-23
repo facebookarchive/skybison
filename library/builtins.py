@@ -2042,7 +2042,9 @@ class dict_values(bootstrap=True):
 
 def dir(obj=_Unbound):
     if obj is _Unbound:
-        _unimplemented()
+        import sys
+
+        names = sys._getframe_locals(1).keys()
     else:
         names = _type(obj).__dir__(obj)
     return sorted(names)
@@ -2981,9 +2983,10 @@ class list_iterator(bootstrap=True):
         pass
 
 
-@_patch
 def locals():
-    pass
+    import sys
+
+    return sys._getframe_locals(1)
 
 
 class longrange_iterator(bootstrap=True):
@@ -4327,9 +4330,15 @@ class tuple_iterator(bootstrap=True):
         pass
 
 
-@_patch
 def vars(obj=_Unbound):
-    pass
+    if obj is _Unbound:
+        import sys
+
+        return sys._getframe_locals(1)
+    try:
+        return obj.__dict__
+    except Exception:
+        raise TypeError("vars() argument must have __dict__ attribute")
 
 
 class zip:

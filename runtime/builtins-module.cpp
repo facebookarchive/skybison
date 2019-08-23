@@ -76,11 +76,9 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kHasattr, hasattr},
     {SymbolId::kHex, hex},
     {SymbolId::kId, id},
-    {SymbolId::kLocals, locals},
     {SymbolId::kOct, oct},
     {SymbolId::kOrd, ord},
     {SymbolId::kSetattr, setattr},
-    {SymbolId::kVars, vars},
     {SymbolId::kSentinelId, nullptr},
 };
 // clang-format on
@@ -543,62 +541,6 @@ RawObject BuiltinsModule::id(Thread* thread, Frame* frame, word nargs) {
       ApiHandle::borrowedReference(thread, args.get(0)));
 }
 
-static RawObject localsFromFrame(Thread* thread, Frame* frame) {
-  if (!(frame->function().hasOptimizedOrNewLocals())) {
-    UNIMPLEMENTED("builtins.locals() in non-function scope");
-  }
-  HandleScope scope(thread);
-  Function function(&scope, frame->function());
-  Code code(&scope, function.code());
-  Runtime* runtime = thread->runtime();
-  Tuple empty_tuple(&scope, runtime->emptyTuple());
-  Tuple var_names(&scope,
-                  code.varnames().isTuple() ? code.varnames() : *empty_tuple);
-  Tuple freevar_names(
-      &scope, code.freevars().isTuple() ? code.freevars() : *empty_tuple);
-  Tuple cellvar_names(
-      &scope, code.cellvars().isTuple() ? code.cellvars() : *empty_tuple);
-
-  word var_names_length = var_names.length();
-  word freevar_names_length = freevar_names.length();
-  word cellvar_names_length = cellvar_names.length();
-
-  DCHECK(function.totalLocals() ==
-             var_names_length + freevar_names_length + cellvar_names_length,
-         "numbers of local variables do not match");
-
-  Dict result(&scope, runtime->newDict());
-  Object key(&scope, NoneType::object());
-  Object value(&scope, NoneType::object());
-  for (word i = 0; i < var_names_length; ++i) {
-    key = var_names.at(i);
-    value = frame->local(i);
-    runtime->dictAtPut(thread, result, key, value);
-  }
-  for (word i = 0, j = var_names_length; i < freevar_names_length; ++i, ++j) {
-    key = freevar_names.at(i);
-    DCHECK(frame->local(j).isValueCell(), "freevar must be ValueCell");
-    value = ValueCell::cast(frame->local(j)).value();
-    runtime->dictAtPut(thread, result, key, value);
-  }
-  for (word i = 0, j = var_names_length + freevar_names_length;
-       i < cellvar_names_length; ++i, ++j) {
-    key = cellvar_names.at(i);
-    DCHECK(frame->local(j).isValueCell(), "cellvar must be ValueCell");
-    value = ValueCell::cast(frame->local(j)).value();
-    runtime->dictAtPut(thread, result, key, value);
-  }
-  return *result;
-}
-
-RawObject BuiltinsModule::locals(Thread* thread, Frame* frame, word) {
-  if (frame->previousFrame()->isSentinel()) {
-    UNIMPLEMENTED("Calling builtins.locals() in a module scope");
-  }
-  // Get the frame of the caller of locals().
-  return localsFromFrame(thread, frame->previousFrame());
-}
-
 RawObject BuiltinsModule::oct(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -700,29 +642,6 @@ RawObject BuiltinsModule::setattr(Thread* thread, Frame* frame, word nargs) {
   Object name(&scope, args.get(1));
   Object value(&scope, args.get(2));
   return setAttribute(thread, self, name, value);
-}
-
-RawObject BuiltinsModule::vars(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object obj(&scope, args.get(0));
-  if (obj.isUnbound()) {
-    if (frame->previousFrame()->isSentinel()) {
-      UNIMPLEMENTED("Calling builtins.vars() in a module scope");
-    }
-    // Get the frame of the caller of locals().
-    return localsFromFrame(thread, frame->previousFrame());
-  }
-  Runtime* runtime = thread->runtime();
-  // TODO(T41326706): Return a proxy dict object for module.__dict__.
-  Object result(&scope,
-                runtime->attributeAtById(thread, obj, SymbolId::kDunderDict));
-  if (result.isError()) {
-    thread->clearPendingException();
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "vars() argument must have __dict__ attribute");
-  }
-  return *result;
 }
 
 }  // namespace python

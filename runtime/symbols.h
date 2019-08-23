@@ -216,6 +216,7 @@ class Runtime;
   V(UnderGetframeCode, "_getframe_code")                                       \
   V(UnderGetframeGlobals, "_getframe_globals")                                 \
   V(UnderGetframeLineno, "_getframe_lineno")                                   \
+  V(UnderGetframeLocals, "_getframe_locals")                                   \
   V(UnderGetMemberByte, "_get_member_byte")                                    \
   V(UnderGetMemberChar, "_get_member_char")                                    \
   V(UnderGetMemberDouble, "_get_member_double")                                \
@@ -598,7 +599,6 @@ class Runtime;
   V(ListIterator, "list_iterator")                                             \
   V(Little, "little")                                                          \
   V(Loads, "loads")                                                            \
-  V(Locals, "locals")                                                          \
   V(LongRangeIterator, "longrange_iterator")                                   \
   V(LookupError, "LookupError")                                                \
   V(Lower, "lower")                                                            \
@@ -742,7 +742,6 @@ class Runtime;
   V(ValueCell, "valuecell")                                                    \
   V(ValueError, "ValueError")                                                  \
   V(Values, "values")                                                          \
-  V(Vars, "vars")                                                              \
   V(Version, "version")                                                        \
   V(Warn, "warn")                                                              \
   V(WarnExplicit, "warn_explicit")                                             \

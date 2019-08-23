@@ -108,14 +108,6 @@ d = dir(c)
   EXPECT_TRUE(isStrEqualsCStr(d.at(1), "B"));
 }
 
-TEST_F(BuiltinsModuleDeathTest, DirWithoutObjectCallsLocals) {
-  // locals() is not implemented yet, so we will die here.
-  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime_, R"(
-dir()
-)")),
-               "'_unimplemented' called in function 'dir'");
-}
-
 TEST_F(BuiltinsModuleTest, DunderImportWithSubmoduleReturnsToplevelModule) {
   TemporaryDirectory tempdir;
   std::string topmodule_dir = tempdir.path + "top";

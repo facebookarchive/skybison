@@ -37,6 +37,8 @@ class SysModule {
                                         word nargs);
   static RawObject underGetframeLineno(Thread* thread, Frame* frame,
                                        word nargs);
+  static RawObject underGetframeLocals(Thread* thread, Frame* frame,
+                                       word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];
   static const char* const kFrozenData;

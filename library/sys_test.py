@@ -160,6 +160,62 @@ class SysTests(unittest.TestCase):
     def test_getframe_lineno_returns_int(self):
         self.assertIsInstance(sys._getframe_lineno(0), int)
 
+    @pyro_only
+    def test_getframe_locals_returns_local_vars(self):
+        def foo():
+            a = 4
+            a = a  # noqa: F841
+            b = 5
+            b = b  # noqa: F841
+            return sys._getframe_locals()
+
+        result = foo()
+        self.assertIsInstance(result, dict)
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result["a"], 4)
+        self.assertEqual(result["b"], 5)
+
+    @pyro_only
+    def test_getframe_locals_returns_free_vars(self):
+        def foo():
+            a = 4
+
+            def bar():
+                nonlocal a
+                a = 5
+                return sys._getframe_locals()
+
+            return bar()
+
+        result = foo()
+        self.assertIsInstance(result, dict)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result["a"], 5)
+
+    @pyro_only
+    def test_getframe_locals_returns_cell_vars(self):
+        def foo():
+            a = 4
+
+            def bar(b):
+                return a + b
+
+            return sys._getframe_locals()
+
+        result = foo()
+        self.assertIsInstance(result, dict)
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result["a"], 4)
+        from types import FunctionType
+
+        self.assertIsInstance(result["bar"], FunctionType)
+
+    @pyro_only
+    def test_getframe_locals_with_too_large_depth_raise_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            sys._getframe_locals(100)
+        self.assertIn("call stack is not deep enough", str(context.exception))
+
 
 if __name__ == "__main__":
     unittest.main()
