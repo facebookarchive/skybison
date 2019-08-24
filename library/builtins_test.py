@@ -2514,6 +2514,197 @@ class IntTests(unittest.TestCase):
         self.assertEqual(int.from_bytes(foo, "big"), 42)
 
 
+class IntDunderFormatTests(unittest.TestCase):
+    def test_empty_format_returns_str(self):
+        self.assertEqual(int.__format__(0, ""), "0")
+        self.assertEqual(int.__format__(1, ""), "1")
+        self.assertEqual(int.__format__(-1, ""), "-1")
+        self.assertEqual(
+            int.__format__(0xFF1FD0035E55A752381015D7, ""),
+            "78957136519217238320723531223",
+        )
+
+    def test_d_format_returns_str(self):
+        self.assertEqual(int.__format__(0, "d"), "0")
+        self.assertEqual(int.__format__(-1, "d"), "-1")
+        self.assertEqual(int.__format__(1, "d"), "1")
+        self.assertEqual(int.__format__(42, "d"), "42")
+        self.assertEqual(
+            int.__format__(0x2B3EFBA733D579B55A9074934, "d"),
+            "214143955543398893443684452660",
+        )
+        self.assertEqual(
+            int.__format__(-0xF52A2EC166BD52D048CD1EA6C6E478B3, "d"),
+            "-325879883749036333909592275151101393075",
+        )
+
+    def test_x_format_returns_str(self):
+        self.assertEqual(int.__format__(0, "x"), "0")
+        self.assertEqual(int.__format__(-1, "x"), "-1")
+        self.assertEqual(int.__format__(1, "x"), "1")
+        self.assertEqual(int.__format__(42, "x"), "2a")
+        self.assertEqual(
+            int.__format__(214143955543398893443684452660, "x"),
+            "2b3efba733d579b55a9074934",
+        )
+        self.assertEqual(
+            int.__format__(-32587988374903633390959227539375, "x"),
+            "-19b51782f9224e54288bc2f8faf",
+        )
+
+    def test_big_x_format_returns_str(self):
+        self.assertEqual(int.__format__(0, "X"), "0")
+        self.assertEqual(int.__format__(-1, "X"), "-1")
+        self.assertEqual(int.__format__(1, "X"), "1")
+        self.assertEqual(int.__format__(42, "X"), "2A")
+        self.assertEqual(
+            int.__format__(214143955543398893443684452660, "X"),
+            "2B3EFBA733D579B55A9074934",
+        )
+
+    def test_o_format_returns_str(self):
+        self.assertEqual(int.__format__(0, "o"), "0")
+        self.assertEqual(int.__format__(1, "o"), "1")
+        self.assertEqual(int.__format__(-1, "o"), "-1")
+        self.assertEqual(int.__format__(42, "o"), "52")
+        self.assertEqual(
+            int.__format__(0xFF1FD0035E55A752381015D7, "o"),
+            "77617720006571255165107004012727",
+        )
+        self.assertEqual(
+            int.__format__(-0x6D68DA9740D4105E240D77C587602, "o"),
+            "-155321552272015202027422015357426073002",
+        )
+
+    def test_b_format_returns_str(self):
+        self.assertEqual(int.__format__(0, "b"), "0")
+        self.assertEqual(int.__format__(1, "b"), "1")
+        self.assertEqual(int.__format__(-1, "b"), "-1")
+        self.assertEqual(int.__format__(42, "b"), "101010")
+        self.assertEqual(
+            int.__format__(0x2D393E39DFD869D3DD18D24D6FE8C, "b"),
+            "101101001110010011111000111001110111111101100001101001110100"
+            "111101110100011000110100100100110101101111111010001100",
+        )
+        self.assertEqual(
+            int.__format__(-0x52471A39A4C1BCB4D711249, "b"),
+            "-10100100100011100011010001110011010010011000001101111001011"
+            "01001101011100010001001001001001",
+        )
+
+    def test_alternate_returns_str(self):
+        self.assertEqual(int.__format__(0, "#"), "0")
+        self.assertEqual(int.__format__(-123, "#"), "-123")
+        self.assertEqual(int.__format__(42, "#d"), "42")
+        self.assertEqual(int.__format__(-99, "#d"), "-99")
+        self.assertEqual(int.__format__(77, "#b"), "0b1001101")
+        self.assertEqual(int.__format__(-11, "#b"), "-0b1011")
+        self.assertEqual(int.__format__(22, "#o"), "0o26")
+        self.assertEqual(int.__format__(-33, "#o"), "-0o41")
+        self.assertEqual(int.__format__(123, "#x"), "0x7b")
+        self.assertEqual(int.__format__(-44, "#x"), "-0x2c")
+        self.assertEqual(int.__format__(123, "#X"), "0X7B")
+        self.assertEqual(int.__format__(-44, "#X"), "-0X2C")
+
+    def test_with_sign_returns_str(self):
+        self.assertEqual(int.__format__(7, " "), " 7")
+        self.assertEqual(int.__format__(7, "+"), "+7")
+        self.assertEqual(int.__format__(7, "-"), "7")
+        self.assertEqual(int.__format__(-4, " "), "-4")
+        self.assertEqual(int.__format__(-4, "+"), "-4")
+        self.assertEqual(int.__format__(-4, "-"), "-4")
+
+    def test_with_alignment_returns_str(self):
+        self.assertEqual(int.__format__(-42, "0"), "-42")
+        self.assertEqual(int.__format__(-42, "1"), "-42")
+        self.assertEqual(int.__format__(-42, "5"), "  -42")
+        self.assertEqual(int.__format__(-42, "05"), "-0042")
+        self.assertEqual(int.__format__(-42, "0005"), "-0042")
+        self.assertEqual(int.__format__(-42, "<5"), "-42  ")
+        self.assertEqual(int.__format__(-42, ">5"), "  -42")
+        self.assertEqual(int.__format__(-42, "=5"), "-  42")
+        self.assertEqual(int.__format__(-42, "^6"), " -42  ")
+        self.assertEqual(int.__format__(-42, "^^7"), "^^-42^^")
+        self.assertEqual(int.__format__(-123, "#=#20x"), "-0x###############7b")
+        self.assertEqual(
+            int.__format__(-42, "\U0001f40d^6o"), "\U0001f40d-52\U0001f40d\U0001f40d"
+        )
+
+    def test_all_codes_with_alignment_returns_str(self):
+        self.assertEqual(int.__format__(-123, "^12"), "    -123    ")
+        self.assertEqual(int.__format__(-123, "^12d"), "    -123    ")
+        self.assertEqual(int.__format__(-123, ".^#12b"), ".-0b1111011.")
+        self.assertEqual(int.__format__(-123, ".^#12o"), "...-0o173...")
+        self.assertEqual(int.__format__(-123, ".^#12x"), "...-0x7b....")
+        self.assertEqual(int.__format__(-123, ".^#12X"), "...-0X7B....")
+
+    def test_with_alignment_and_sign_returns_str(self):
+        self.assertEqual(int.__format__(9, " 5"), "    9")
+        self.assertEqual(int.__format__(9, "+5"), "   +9")
+        self.assertEqual(int.__format__(9, "\t< 5"), " 9\t\t\t")
+        self.assertEqual(int.__format__(9, "<+5"), "+9   ")
+        self.assertEqual(int.__format__(9, ";= 5"), " ;;;9")
+        self.assertEqual(int.__format__(9, "=+5"), "+   9")
+
+    def test_works_with_subclass(self):
+        class C(int):
+            pass
+
+        self.assertEqual(int.__format__(C(42), ""), "42")
+        self.assertEqual(int.__format__(C(8), "*^#8b"), "*0b1000*")
+
+        class D(str):
+            pass
+
+        self.assertEqual(int.__format__(42, D("")), "42")
+        self.assertEqual(int.__format__(C(6), D("*^#8b")), "*0b110**")
+
+    def test_precision_raises_error(self):
+        with self.assertRaises(ValueError) as context:
+            int.__format__(0, ".10")
+        self.assertEqual(
+            str(context.exception), "Precision not allowed in integer format specifier"
+        )
+        with self.assertRaises(ValueError) as context:
+            int.__format__(0, ".10d")
+        self.assertEqual(
+            str(context.exception), "Precision not allowed in integer format specifier"
+        )
+        with self.assertRaises(ValueError) as context:
+            int.__format__(0, ".10o")
+        self.assertEqual(
+            str(context.exception), "Precision not allowed in integer format specifier"
+        )
+        with self.assertRaises(ValueError) as context:
+            int.__format__(0, ".1b")
+        self.assertEqual(
+            str(context.exception), "Precision not allowed in integer format specifier"
+        )
+        with self.assertRaises(ValueError) as context:
+            int.__format__(0, ".10x")
+        self.assertEqual(
+            str(context.exception), "Precision not allowed in integer format specifier"
+        )
+        with self.assertRaises(ValueError) as context:
+            int.__format__(0, ".10X")
+        self.assertEqual(
+            str(context.exception), "Precision not allowed in integer format specifier"
+        )
+
+    def test_unknown_format_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            int.__format__(42, "z")
+        self.assertEqual(
+            str(context.exception), "Unknown format code 'z' for object of type 'int'"
+        )
+
+    def test_with_non_int_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            int.__format__("not an int", "")
+        self.assertIn("'__format__' requires a 'int' object", str(context.exception))
+        self.assertIn("'str'", str(context.exception))
+
+
 class IsInstanceTests(unittest.TestCase):
     def test_isinstance_with_same_types_returns_true(self):
         self.assertIs(isinstance(1, int), True)

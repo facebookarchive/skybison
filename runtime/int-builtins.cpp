@@ -252,7 +252,7 @@ RawObject IntBuiltins::dunderFormat(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfInt(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, SymbolId::kInt);
   }
   Int self(&scope, intUnderlying(thread, self_obj));
 
@@ -268,7 +268,44 @@ RawObject IntBuiltins::dunderFormat(Thread* thread, Frame* frame, word nargs) {
     return formatIntDecimalSimple(thread, self);
   }
 
-  UNIMPLEMENTED("non-empty format spec for int");
+  FormatSpec format;
+  Object possible_error(&scope,
+                        parseFormatSpec(thread, spec,
+                                        /*default_type=*/'d',
+                                        /*default_align=*/'>', &format));
+  if (!possible_error.isNoneType()) {
+    DCHECK(possible_error.isErrorException(), "expected exception");
+    return *possible_error;
+  }
+
+  switch (format.type) {
+    case 'b':
+      return formatIntBinary(thread, self, &format);
+    case 'c':
+      // TODO(matthiasb): convert to cod epoint and call formatStr().
+      UNIMPLEMENTED("print int as code point");
+    case 'd':
+      return formatIntDecimal(thread, self, &format);
+    case 'n':
+      UNIMPLEMENTED("print with locale thousands separator");
+    case 'o':
+      return formatIntOctal(thread, self, &format);
+    case 'x':
+      return formatIntHexadecimalLowerCase(thread, self, &format);
+    case 'X':
+      return formatIntHexadecimalUpperCase(thread, self, &format);
+    case '%':
+    case 'e':
+    case 'E':
+    case 'f':
+    case 'F':
+    case 'g':
+    case 'G':
+      // TODO(matthiasb): convert to float and call formatFloat().
+      UNIMPLEMENTED("print int as float");
+    default:
+      return raiseUnknownFormatError(thread, format.type, self_obj);
+  }
 }
 
 RawObject IntBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {

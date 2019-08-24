@@ -560,6 +560,13 @@ static void putHexadecimalLowerCaseDigits(Thread* thread,
                            "0123456789abcdef");
 }
 
+static void putHexadecimalUpperCaseDigits(Thread* thread,
+                                          const MutableBytes& dest, word at,
+                                          const Int& value, word num_digits) {
+  putHexadecimalDigitsImpl(thread, dest, at, value, num_digits,
+                           "0123456789ABCDEF");
+}
+
 static void putOctalDigits(Thread* thread, const MutableBytes& dest, word at,
                            const Int& value, word num_result_digits) {
   word idx = at + num_result_digits;
@@ -668,6 +675,202 @@ RawObject formatIntHexadecimalSimple(Thread* thread, const Int& value) {
 RawObject formatIntOctalSimple(Thread* thread, const Int& value) {
   return formatIntSimpleImpl(thread, value, 'o', numOctalDigits,
                              putOctalDigits);
+}
+
+RawObject formatIntDecimal(Thread* thread, const Int& value,
+                           FormatSpec* format) {
+  if (format->precision >= 0) {
+    return thread->raiseWithFmt(
+        LayoutId::kValueError,
+        "Precision not allowed in integer format specifier");
+  }
+  if (format->thousands_separator != 0) {
+    UNIMPLEMENTED("thousands separator");
+  }
+
+  // We cannot easily predict how many digits are necessary. So we overestimate
+  // and printing into a temporary buffer.
+  byte fixed_buffer[kUwordDigits10];
+  byte* buffer;
+  byte* digits;
+  word result_n_digits;
+  if (value.isLargeInt()) {
+    word max_chars = estimateNumDecimalDigits(LargeInt::cast(*value));
+    buffer = new byte[max_chars];
+    byte* end = buffer + max_chars;
+    digits = writeLargeIntDecimalDigits(end, LargeInt::cast(*value));
+    result_n_digits = end - digits;
+  } else {
+    buffer = fixed_buffer;
+    word value_word = value.asWord();
+    uword magnitude =
+        value_word >= 0 ? value_word : -static_cast<uword>(value_word);
+    byte* end = buffer + ARRAYSIZE(fixed_buffer);
+    digits = uwordToDecimal(magnitude, end);
+    result_n_digits = end - digits;
+  }
+
+  bool is_negative = value.isNegative();
+  word number_chars =
+      (is_negative || format->positive_sign != '\0') + result_n_digits;
+  word width = format->width;
+  word padding = Utils::maximum(width - number_chars, word{0});
+
+  HandleScope scope(thread);
+  Str fill_cp(&scope, SmallStr::fromCodePoint(format->fill_char));
+  word fill_cp_chars = fill_cp.charLength();
+  word padding_chars = padding * fill_cp_chars;
+  word result_chars = padding_chars + number_chars;
+  MutableBytes result(
+      &scope, thread->runtime()->newMutableBytesUninitialized(result_chars));
+  word index = 0;
+  word padding_before;
+  word padding_after;
+  char alignment = format->alignment;
+  if (alignment == '>') {
+    padding_before = padding;
+    padding_after = 0;
+  } else if (alignment == '^') {
+    word half = padding / 2;
+    padding_before = half;
+    padding_after = half + (padding % 2);
+  } else if (alignment == '<') {
+    padding_before = 0;
+    padding_after = padding;
+  } else {
+    DCHECK(alignment == '=', "alignment must be one of '<^=>'");
+    padding_before = 0;
+    padding_after = 0;
+  }
+  for (word i = 0; i < padding_before; i++) {
+    result.replaceFromWithStr(index, *fill_cp, fill_cp_chars);
+    index += fill_cp_chars;
+  }
+  if (is_negative) {
+    result.byteAtPut(index++, '-');
+  } else if (format->positive_sign != '\0') {
+    result.byteAtPut(index++, format->positive_sign);
+  }
+  if (format->alignment == '=') {
+    for (word i = 0; i < padding; i++) {
+      result.replaceFromWithStr(index, *fill_cp, fill_cp_chars);
+      index += fill_cp_chars;
+    }
+  }
+
+  for (byte *b = digits, *b_end = b + result_n_digits; b < b_end; b++) {
+    result.byteAtPut(index++, *b);
+  }
+
+  for (word i = 0; i < padding_after; i++) {
+    result.replaceFromWithStr(index, *fill_cp, fill_cp_chars);
+    index += fill_cp_chars;
+  }
+  DCHECK(index == result.length(), "wrong number of bytes written");
+
+  if (value.isLargeInt()) {
+    delete[] buffer;
+  }
+  return result.becomeStr();
+}
+
+static inline RawObject formatIntImpl(Thread* thread, const Int& value,
+                                      FormatSpec* format, char format_prefix,
+                                      numDigitsFunc num_digits,
+                                      putDigitsFunc put_digits) {
+  if (format->precision >= 0) {
+    return thread->raiseWithFmt(
+        LayoutId::kValueError,
+        "Precision not allowed in integer format specifier");
+  }
+  if (format->thousands_separator != 0) {
+    UNIMPLEMENTED("thousands separator");
+  }
+
+  bool is_negative = value.isNegative();
+  word result_n_digits = num_digits(value);
+  word number_chars = (is_negative || format->positive_sign != '\0') +
+                      (format->alternate ? 2 : 0) + result_n_digits;
+  word width = format->width;
+  word padding = Utils::maximum(width - number_chars, word{0});
+
+  HandleScope scope(thread);
+  Str fill_cp(&scope, SmallStr::fromCodePoint(format->fill_char));
+  word fill_cp_chars = fill_cp.charLength();
+  word padding_chars = padding * fill_cp_chars;
+  word result_chars = padding_chars + number_chars;
+  MutableBytes result(
+      &scope, thread->runtime()->newMutableBytesUninitialized(result_chars));
+  word index = 0;
+  word padding_before;
+  word padding_after;
+  char alignment = format->alignment;
+  if (alignment == '>') {
+    padding_before = padding;
+    padding_after = 0;
+  } else if (alignment == '^') {
+    word half = padding / 2;
+    padding_before = half;
+    padding_after = half + (padding % 2);
+  } else if (alignment == '<') {
+    padding_before = 0;
+    padding_after = padding;
+  } else {
+    DCHECK(alignment == '=', "alignment must be one of '<^=>'");
+    padding_before = 0;
+    padding_after = 0;
+  }
+  for (word i = 0; i < padding_before; i++) {
+    result.replaceFromWithStr(index, *fill_cp, fill_cp_chars);
+    index += fill_cp_chars;
+  }
+  if (is_negative) {
+    result.byteAtPut(index++, '-');
+  } else if (format->positive_sign != '\0') {
+    result.byteAtPut(index++, format->positive_sign);
+  }
+  if (format->alternate) {
+    result.byteAtPut(index++, '0');
+    result.byteAtPut(index++, format_prefix);
+  }
+  if (format->alignment == '=') {
+    for (word i = 0; i < padding; i++) {
+      result.replaceFromWithStr(index, *fill_cp, fill_cp_chars);
+      index += fill_cp_chars;
+    }
+  }
+  put_digits(thread, result, index, value, result_n_digits);
+  index += result_n_digits;
+
+  for (word i = 0; i < padding_after; i++) {
+    result.replaceFromWithStr(index, *fill_cp, fill_cp_chars);
+    index += fill_cp_chars;
+  }
+  DCHECK(index == result.length(), "wrong number of bytes written");
+  return result.becomeStr();
+}
+
+RawObject formatIntBinary(Thread* thread, const Int& value,
+                          FormatSpec* format) {
+  return formatIntImpl(thread, value, format, 'b', numBinaryDigits,
+                       putBinaryDigits);
+}
+
+RawObject formatIntHexadecimalLowerCase(Thread* thread, const Int& value,
+                                        FormatSpec* format) {
+  return formatIntImpl(thread, value, format, 'x', numHexadecimalDigits,
+                       putHexadecimalLowerCaseDigits);
+}
+
+RawObject formatIntHexadecimalUpperCase(Thread* thread, const Int& value,
+                                        FormatSpec* format) {
+  return formatIntImpl(thread, value, format, 'X', numHexadecimalDigits,
+                       putHexadecimalUpperCaseDigits);
+}
+
+RawObject formatIntOctal(Thread* thread, const Int& value, FormatSpec* format) {
+  return formatIntImpl(thread, value, format, 'o', numOctalDigits,
+                       putOctalDigits);
 }
 
 }  // namespace python
