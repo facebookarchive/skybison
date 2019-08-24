@@ -246,6 +246,39 @@ RawObject IntBuiltins::dunderFloordiv(Thread* thread, Frame* frame,
       });
 }
 
+static RawObject formatIntCodePoint(Thread* thread, const Int& value,
+                                    FormatSpec* format) {
+  if (value.isLargeInt()) {
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "Python int too large to convert to C long");
+  }
+  word value_word = value.asWord();
+  if (value_word < 0 || value_word > kMaxUnicode) {
+    static_assert(kMaxUnicode == 0x10ffff, "unexpected max unicode value");
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "%%c arg not in range(0x110000)");
+  }
+  HandleScope scope(thread);
+  Str code_point(&scope,
+                 SmallStr::fromCodePoint(static_cast<int32_t>(value_word)));
+  if (format->precision >= 0) {
+    return thread->raiseWithFmt(
+        LayoutId::kValueError,
+        "Precision not allowed in integer format specifier");
+  }
+  if (format->positive_sign != '\0') {
+    return thread->raiseWithFmt(
+        LayoutId::kValueError,
+        "Sign not allowed with integer format specifier 'c'");
+  }
+  if (format->alternate) {
+    return thread->raiseWithFmt(
+        LayoutId::kValueError,
+        "Alternate form (#) not allowed with integer format specifier 'c'");
+  }
+  return formatStr(thread, code_point, format);
+}
+
 RawObject IntBuiltins::dunderFormat(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -282,8 +315,7 @@ RawObject IntBuiltins::dunderFormat(Thread* thread, Frame* frame, word nargs) {
     case 'b':
       return formatIntBinary(thread, self, &format);
     case 'c':
-      // TODO(matthiasb): convert to cod epoint and call formatStr().
-      UNIMPLEMENTED("print int as code point");
+      return formatIntCodePoint(thread, self, &format);
     case 'd':
       return formatIntDecimal(thread, self, &format);
     case 'n':

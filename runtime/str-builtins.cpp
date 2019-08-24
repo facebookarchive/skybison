@@ -425,6 +425,20 @@ RawObject StrBuiltins::dunderFormat(Thread* thread, Frame* frame, word nargs) {
   if (format.type != 's') {
     return raiseUnknownFormatError(thread, format.type, self_obj);
   }
+  if (format.positive_sign != '\0') {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "Sign not allowed in string format specifier");
+  }
+  if (format.alternate) {
+    return thread->raiseWithFmt(
+        LayoutId::kValueError,
+        "Alternate form (#) not allowed in string format specifier");
+  }
+  if (format.alignment == '=') {
+    return thread->raiseWithFmt(
+        LayoutId::kValueError,
+        "'=' alignment not allowed in string format specifier");
+  }
 
   return formatStr(thread, self, &format);
 }

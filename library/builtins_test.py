@@ -2524,6 +2524,14 @@ class IntDunderFormatTests(unittest.TestCase):
             "78957136519217238320723531223",
         )
 
+    def test_c_format_returns_str(self):
+        self.assertEqual(int.__format__(0, "c"), "\0")
+        self.assertEqual(int.__format__(80, "c"), "P")
+        self.assertEqual(int.__format__(128013, "c"), "\U0001f40d")
+        import sys
+
+        self.assertEqual(int.__format__(sys.maxunicode, "c"), chr(sys.maxunicode))
+
     def test_d_format_returns_str(self):
         self.assertEqual(int.__format__(0, "d"), "0")
         self.assertEqual(int.__format__(-1, "d"), "-1")
@@ -2630,6 +2638,19 @@ class IntDunderFormatTests(unittest.TestCase):
             int.__format__(-42, "\U0001f40d^6o"), "\U0001f40d-52\U0001f40d\U0001f40d"
         )
 
+    def test_c_format_with_alignment_returns_str(self):
+        self.assertEqual(int.__format__(65, ".^12c"), ".....A......")
+        self.assertEqual(int.__format__(128013, ".^12c"), ".....\U0001f40d......")
+        self.assertEqual(
+            int.__format__(90, "\U0001f40d<4c"), "Z\U0001f40d\U0001f40d\U0001f40d"
+        )
+        self.assertEqual(
+            int.__format__(90, "\U0001f40d>4c"), "\U0001f40d\U0001f40d\U0001f40dZ"
+        )
+        self.assertEqual(
+            int.__format__(90, "\U0001f40d=4c"), "\U0001f40d\U0001f40d\U0001f40dZ"
+        )
+
     def test_all_codes_with_alignment_returns_str(self):
         self.assertEqual(int.__format__(-123, "^12"), "    -123    ")
         self.assertEqual(int.__format__(-123, "^12d"), "    -123    ")
@@ -2666,6 +2687,11 @@ class IntDunderFormatTests(unittest.TestCase):
             str(context.exception), "Precision not allowed in integer format specifier"
         )
         with self.assertRaises(ValueError) as context:
+            int.__format__(0, ".10c")
+        self.assertEqual(
+            str(context.exception), "Precision not allowed in integer format specifier"
+        )
+        with self.assertRaises(ValueError) as context:
             int.__format__(0, ".10d")
         self.assertEqual(
             str(context.exception), "Precision not allowed in integer format specifier"
@@ -2689,6 +2715,32 @@ class IntDunderFormatTests(unittest.TestCase):
             int.__format__(0, ".10X")
         self.assertEqual(
             str(context.exception), "Precision not allowed in integer format specifier"
+        )
+
+    def test_c_format_raises_overflow_error(self):
+        with self.assertRaises(OverflowError) as context:
+            int.__format__(-1, "c")
+        self.assertEqual(str(context.exception), "%c arg not in range(0x110000)")
+
+        import sys
+
+        with self.assertRaises(OverflowError) as context:
+            int.__format__(sys.maxunicode + 1, "c")
+        self.assertEqual(str(context.exception), "%c arg not in range(0x110000)")
+
+    def test_c_format_with_sign_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            int.__format__(64, "+c")
+        self.assertEqual(
+            str(context.exception), "Sign not allowed with integer format specifier 'c'"
+        )
+
+    def test_c_format_alternate_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            int.__format__(64, "#c")
+        self.assertEqual(
+            str(context.exception),
+            "Alternate form (#) not allowed with integer format specifier 'c'",
         )
 
     def test_unknown_format_raises_value_error(self):

@@ -194,20 +194,8 @@ RawObject raiseUnknownFormatError(Thread* thread, int32_t format_code,
 }
 
 RawObject formatStr(Thread* thread, const Str& str, FormatSpec* format) {
-  if (format->positive_sign != '\0') {
-    return thread->raiseWithFmt(LayoutId::kValueError,
-                                "Sign not allowed in string format specifier");
-  }
-  if (format->alternate) {
-    return thread->raiseWithFmt(
-        LayoutId::kValueError,
-        "Alternate form (#) not allowed in string format specifier");
-  }
-  if (format->alignment == '=') {
-    return thread->raiseWithFmt(
-        LayoutId::kValueError,
-        "'=' alignment not allowed in string format specifier");
-  }
+  DCHECK(format->positive_sign == '\0', "must no have sign specified");
+  DCHECK(!format->alternate, "must not have alternative format");
   word width = format->width;
   word precision = format->precision;
   if (width == -1 && precision == -1) {
@@ -245,16 +233,17 @@ RawObject formatStr(Thread* thread, const Str& str, FormatSpec* format) {
       &scope, runtime->newMutableBytesUninitialized(result_char_length));
   word index = 0;
   word early_padding;
-  if (format->alignment == '>') {
-    early_padding = padding;
-    padding = 0;
+  if (format->alignment == '<') {
+    early_padding = 0;
   } else if (format->alignment == '^') {
     word half = padding / 2;
     early_padding = half;
     padding = half + (padding % 2);
   } else {
-    early_padding = 0;
-    DCHECK(format->alignment == '<', "remaining assignment must be '<'");
+    DCHECK(format->alignment == '>' || format->alignment == '=',
+           "remaining cases must be '>' or '='");
+    early_padding = padding;
+    padding = 0;
   }
   for (word i = 0; i < early_padding; i++) {
     result.replaceFromWithStr(index, *fill_char, fill_char_length);
