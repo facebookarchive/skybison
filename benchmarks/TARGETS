@@ -75,6 +75,7 @@ python_binary(
         ":run",
         ":server_handler",
         "//common/services/py3:tls",
+        "//common/services/py3/servers:servers",
     ],
 )
 
