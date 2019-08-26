@@ -11040,20 +11040,24 @@ os_urandom_impl(PyObject *module, Py_ssize_t size)
 /*[clinic end generated code: output=42c5cca9d18068e9 input=4067cdb1b6776c29]*/
 {
     PyObject *bytes;
+    void *buf;
     int result;
 
     if (size < 0)
         return PyErr_Format(PyExc_ValueError,
                             "negative argument not allowed");
-    bytes = PyBytes_FromStringAndSize(NULL, size);
-    if (bytes == NULL)
+    /* TODO(T53065985): Revert to original usage of PyBytes_FromStringAndSize */
+    buf = PyMem_Malloc(size);
+    if (buf == NULL)
         return NULL;
 
-    result = _PyOS_URandom(PyBytes_AS_STRING(bytes), PyBytes_GET_SIZE(bytes));
+    result = _PyOS_URandom(buf, size);
     if (result == -1) {
-        Py_DECREF(bytes);
+        PyMem_Free(buf);
         return NULL;
     }
+    bytes = PyBytes_FromStringAndSize(buf, size);
+    PyMem_Free(buf);
     return bytes;
 }
 
