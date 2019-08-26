@@ -632,12 +632,6 @@ class RawSmallBytes : public RawObject {
   // Construction.
   static RawObject fromBytes(View<byte> data);
 
-  // Constants.
-  static const word kMaxLength = kWordSize - 1;
-
-  RAW_OBJECT_COMMON(SmallBytes);
-
- private:
   // Getters and setters.
   word length() const;
   byte byteAt(word index) const;
@@ -649,7 +643,10 @@ class RawSmallBytes : public RawObject {
   // Read adjacent bytes as `uint32_t` integer.
   uint32_t uint32At(word index) const;
 
-  friend class RawBytes;
+  // Constants.
+  static const word kMaxLength = kWordSize - 1;
+
+  RAW_OBJECT_COMMON(SmallBytes);
 };
 
 class RawSmallStr : public RawObject {
@@ -658,15 +655,6 @@ class RawSmallStr : public RawObject {
   static RawObject fromCodePoint(int32_t code_point);
   static RawObject fromCStr(const char* value);
   static RawObject fromBytes(View<byte> data);
-
-  // Constants.
-  static const word kMaxLength = kWordSize - 1;
-
-  RAW_OBJECT_COMMON(SmallStr);
-
- private:
-  // Interface methods are private: strings should be manipulated via the
-  // RawStr class, which delegates to RawLargeStr/RawSmallStr appropriately.
 
   // Getters and setters.
   byte charAt(word index) const;
@@ -680,10 +668,10 @@ class RawSmallStr : public RawObject {
   // with malloc and must be freed by the caller.
   char* toCStr() const;
 
-  friend class Heap;
-  friend class RawObject;
-  friend class RawStr;
-  friend class Runtime;
+  // Constants.
+  static const word kMaxLength = kWordSize - 1;
+
+  RAW_OBJECT_COMMON(SmallStr);
 };
 
 // An ErrorKind is in every RawError to give some high-level detail about what
@@ -843,7 +831,6 @@ class RawHeapObject : public RawObject {
   void initialize(word size, RawObject value) const;
 
   friend class Heap;
-  friend class Runtime;
 };
 
 class RawBaseException : public RawHeapObject {
@@ -1115,9 +1102,6 @@ class RawArray : public RawHeapObject {
 
 class RawLargeBytes : public RawArray {
  public:
-  // Sizing.
-  static word allocationSize(word length);
-
   byte byteAt(word index) const;
   void copyTo(byte* dst, word length) const;
 
@@ -1134,8 +1118,10 @@ class RawLargeBytes : public RawArray {
   RAW_OBJECT_COMMON(LargeBytes);
 
  private:
-  friend class RawBytes;
-  friend class Runtime;
+  // Sizing.
+  static word allocationSize(word length);
+
+  friend class Heap;
 };
 
 class RawMutableBytes : public RawLargeBytes {
@@ -1165,9 +1151,6 @@ class RawTuple : public RawArray {
   RawObject at(word index) const;
   void atPut(word index, RawObject value) const;
 
-  // Sizing.
-  static word allocationSize(word length);
-
   void copyTo(RawObject dst) const;
 
   void fill(RawObject value) const;
@@ -1183,6 +1166,12 @@ class RawTuple : public RawArray {
   bool contains(RawObject object) const;
 
   RAW_OBJECT_COMMON(Tuple);
+
+ private:
+  // Sizing.
+  static word allocationSize(word length);
+
+  friend class Heap;
 };
 
 class RawUserTupleBase : public RawHeapObject {
@@ -1200,17 +1189,6 @@ class RawUserTupleBase : public RawHeapObject {
 
 class RawLargeStr : public RawArray {
  public:
-  // Sizing.
-  static word allocationSize(word length);
-
-  static const int kDataOffset = RawHeapObject::kSize;
-
-  RAW_OBJECT_COMMON(LargeStr);
-
- private:
-  // Interface methods are private: strings should be manipulated via the
-  // RawStr class, which delegates to RawLargeStr/RawSmallStr appropriately.
-
   // Getters and setters.
   byte charAt(word index) const;
   word charLength() const;
@@ -1226,10 +1204,16 @@ class RawLargeStr : public RawArray {
   // with malloc and must be freed by the caller.
   char* toCStr() const;
 
+  // Layout
+  static const int kDataOffset = RawHeapObject::kSize;
+
+  RAW_OBJECT_COMMON(LargeStr);
+
+ private:
+  // Sizing.
+  static word allocationSize(word length);
+
   friend class Heap;
-  friend class RawObject;
-  friend class RawStr;
-  friend class Runtime;
 };
 
 // Arbitrary precision signed integer, with 64 bit digits in two's complement
@@ -1254,9 +1238,6 @@ class RawLargeInt : public RawHeapObject {
   if_signed_t<T, OptInt<T>> asInt() const;
   template <typename T>
   if_unsigned_t<T, OptInt<T>> asInt() const;
-
-  // Sizing.
-  static word allocationSize(word num_digits);
 
   // Indexing into digits
   uword digitAt(word index) const;
@@ -1284,8 +1265,10 @@ class RawLargeInt : public RawHeapObject {
   RAW_OBJECT_COMMON(LargeInt);
 
  private:
-  friend class RawInt;
-  friend class Runtime;
+  // Sizing.
+  static word allocationSize(word num_digits);
+
+  friend class Heap;
 };
 
 class RawFloat : public RawHeapObject {

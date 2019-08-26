@@ -97,7 +97,8 @@ class FailingMultiClass(UnicodeDecodeError, UnicodeEncodeError):
 TEST(RuntimeTestNoFixture, AllocateAndCollectGarbage) {
   const word heap_size = 32 * kMiB;
   const word array_length = 1024;
-  const word allocation_size = LargeBytes::allocationSize(array_length);
+  const word allocation_size = Utils::roundUp(
+      array_length + HeapObject::headerSize(array_length), kPointerSize);
   const word total_allocation_size = heap_size * 10;
   Runtime runtime(heap_size, /*cache_enabled=*/false);
   ASSERT_TRUE(runtime.heap()->verify());
