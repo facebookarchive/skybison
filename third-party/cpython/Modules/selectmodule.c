@@ -58,6 +58,27 @@ extern void bzero(void *, int);
 #  define SOCKET int
 #endif
 
+typedef struct {
+    PyObject *close;
+    PyTypeObject *poll_Type;
+#ifdef HAVE_SYS_DEVPOLL_H
+    PyTypeObject *devpoll_Type;
+#endif
+#ifdef HAVE_EPOLL
+    PyTypeObject *pyEpoll_Type;
+#endif
+#ifdef HAVE_KQUEUE
+    PyTypeObject *kqueue_event_Type;
+    PyTypeObject *kqueue_queue_Type;
+#endif
+} _selectstate;
+
+static struct PyModuleDef selectmodule;
+
+#define _selectstate(o) ((_selectstate *)PyModule_GetState(o))
+#define _selectstate_global _selectstate(PyState_FindModule(&selectmodule))
+
+
 /* list of Python objects and their file descriptor */
 typedef struct {
     PyObject *obj;                           /* owned reference */
@@ -343,8 +364,6 @@ typedef struct {
     struct pollfd *ufds;
     int poll_running;
 } pollObject;
-
-static PyTypeObject poll_Type;
 
 /* Update the malloc'ed array of pollfds to match the dictionary
    contained within a pollObject.  Return 1 on success, 0 on an error.
@@ -681,7 +700,7 @@ static pollObject *
 newPollObject(void)
 {
     pollObject *self;
-    self = PyObject_New(pollObject, &poll_Type);
+    self = PyObject_New(pollObject, _selectstate_global->poll_Type);
     if (self == NULL)
         return NULL;
     /* ufd_uptodate is a Boolean, denoting whether the
@@ -697,47 +716,37 @@ newPollObject(void)
     return self;
 }
 
+static PyObject *
+poll_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyErr_Format(PyExc_TypeError, "Cannot create '%.200s' instances", _PyType_Name(type));
+    return NULL;
+}
+
 static void
 poll_dealloc(pollObject *self)
 {
+    PyObject* type = (PyObject *)Py_TYPE(self);
     if (self->ufds != NULL)
         PyMem_DEL(self->ufds);
     Py_XDECREF(self->dict);
     PyObject_Del(self);
+    Py_DECREF(type);
 }
 
-static PyTypeObject poll_Type = {
-    /* The ob_type field must be initialized in the module init function
-     * to be portable to Windows without using C++. */
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "select.poll",              /*tp_name*/
-    sizeof(pollObject),         /*tp_basicsize*/
-    0,                          /*tp_itemsize*/
-    /* methods */
-    (destructor)poll_dealloc, /*tp_dealloc*/
-    0,                          /*tp_print*/
-    0,                          /*tp_getattr*/
-    0,                      /*tp_setattr*/
-    0,                          /*tp_reserved*/
-    0,                          /*tp_repr*/
-    0,                          /*tp_as_number*/
-    0,                          /*tp_as_sequence*/
-    0,                          /*tp_as_mapping*/
-    0,                          /*tp_hash*/
-    0,                          /*tp_call*/
-    0,                          /*tp_str*/
-    0,                          /*tp_getattro*/
-    0,                          /*tp_setattro*/
-    0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT,         /*tp_flags*/
-    0,                          /*tp_doc*/
-    0,                          /*tp_traverse*/
-    0,                          /*tp_clear*/
-    0,                          /*tp_richcompare*/
-    0,                          /*tp_weaklistoffset*/
-    0,                          /*tp_iter*/
-    0,                          /*tp_iternext*/
-    poll_methods,               /*tp_methods*/
+static PyType_Slot poll_Type_slots[] = {
+    {Py_tp_dealloc, poll_dealloc},
+    {Py_tp_methods, poll_methods},
+    {Py_tp_new, poll_new},
+    {0, 0},
+};
+
+static PyType_Spec poll_Type_spec = {
+    "select.poll",
+    sizeof(pollObject),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    poll_Type_slots
 };
 
 #ifdef HAVE_SYS_DEVPOLL_H
@@ -748,8 +757,6 @@ typedef struct {
     int n_fds;
     struct pollfd *fds;
 } devpollObject;
-
-static PyTypeObject devpoll_Type;
 
 static PyObject *
 devpoll_err_closed(void)
@@ -1098,7 +1105,7 @@ newDevPollObject(void)
         return NULL;
     }
 
-    self = PyObject_New(devpollObject, &devpoll_Type);
+    self = PyObject_New(devpollObject, _selectstate_global->devpoll_Type);
     if (self == NULL) {
         close(fd_devpoll);
         PyMem_DEL(fds);
@@ -1112,48 +1119,37 @@ newDevPollObject(void)
     return self;
 }
 
+static PyObject *
+devpoll_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyErr_Format(PyExc_TypeError, "Cannot create '%.200s' instances", _PyType_Name(type));
+    return NULL;
+}
+
 static void
 devpoll_dealloc(devpollObject *self)
 {
+    PyObject *type = (PyObject *)Py_TYPE(self);
     (void)devpoll_internal_close(self);
     PyMem_DEL(self->fds);
     PyObject_Del(self);
+    Py_DECREF(type);
 }
 
-static PyTypeObject devpoll_Type = {
-    /* The ob_type field must be initialized in the module init function
-     * to be portable to Windows without using C++. */
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "select.devpoll",           /*tp_name*/
-    sizeof(devpollObject),      /*tp_basicsize*/
-    0,                          /*tp_itemsize*/
-    /* methods */
-    (destructor)devpoll_dealloc, /*tp_dealloc*/
-    0,                          /*tp_print*/
-    0,                          /*tp_getattr*/
-    0,                          /*tp_setattr*/
-    0,                          /*tp_reserved*/
-    0,                          /*tp_repr*/
-    0,                          /*tp_as_number*/
-    0,                          /*tp_as_sequence*/
-    0,                          /*tp_as_mapping*/
-    0,                          /*tp_hash*/
-    0,                          /*tp_call*/
-    0,                          /*tp_str*/
-    0,                          /*tp_getattro*/
-    0,                          /*tp_setattro*/
-    0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT,         /*tp_flags*/
-    0,                          /*tp_doc*/
-    0,                          /*tp_traverse*/
-    0,                          /*tp_clear*/
-    0,                          /*tp_richcompare*/
-    0,                          /*tp_weaklistoffset*/
-    0,                          /*tp_iter*/
-    0,                          /*tp_iternext*/
-    devpoll_methods,            /*tp_methods*/
-    0,                          /* tp_members */
-    devpoll_getsetlist,         /* tp_getset */
+static PyType_Slot devpoll_Type_slots[] = {
+    {Py_tp_dealloc, devpoll_dealloc},
+    {Py_tp_getset, devpoll_getsetlist},
+    {Py_tp_methods, devpoll_methods},
+    {Py_tp_new, devpoll_new},
+    {0, 0},
+};
+
+static PyType_Spec devpoll_Type_spec = {
+    "select.devpoll",
+    sizeof(devpollObject),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    devpoll_Type_slots
 };
 #endif  /* HAVE_SYS_DEVPOLL_H */
 
@@ -1231,8 +1227,7 @@ typedef struct {
     SOCKET epfd;                        /* epoll control file descriptor */
 } pyEpoll_Object;
 
-static PyTypeObject pyEpoll_Type;
-#define pyepoll_CHECK(op) (PyObject_TypeCheck((op), &pyEpoll_Type))
+#define pyepoll_CHECK(op) (PyObject_TypeCheck((op), _selectstate_global->pyEpoll_Type))
 
 static PyObject *
 pyepoll_err_closed(void)
@@ -1260,9 +1255,10 @@ static PyObject *
 newPyEpoll_Object(PyTypeObject *type, int sizehint, int flags, SOCKET fd)
 {
     pyEpoll_Object *self;
-
-    assert(type != NULL && type->tp_alloc != NULL);
-    self = (pyEpoll_Object *) type->tp_alloc(type, 0);
+    assert(type != NULL);
+    allocfunc epoll_alloc = PyType_GetSlot(type, Py_tp_alloc);
+    assert(epoll_alloc != NULL);
+    self = (pyEpoll_Object *) epoll_alloc(type, 0);
     if (self == NULL)
         return NULL;
 
@@ -1321,8 +1317,11 @@ pyepoll_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 pyepoll_dealloc(pyEpoll_Object *self)
 {
+    PyTypeObject* type = Py_TYPE(self);
     (void)pyepoll_internal_close(self);
-    Py_TYPE(self)->tp_free(self);
+    freefunc epoll_free = PyType_GetSlot(type, Py_tp_free);
+    epoll_free((PyObject *)self);
+    Py_DECREF((PyObject *)type);
 }
 
 static PyObject*
@@ -1623,9 +1622,7 @@ pyepoll_enter(pyEpoll_Object *self, PyObject *args)
 static PyObject *
 pyepoll_exit(PyObject *self, PyObject *args)
 {
-    _Py_IDENTIFIER(close);
-
-    return _PyObject_CallMethodId(self, &PyId_close, NULL);
+    return PyObject_CallMethodObjArgs(self, _selectstate_global->close, NULL);
 }
 
 static PyMethodDef pyepoll_methods[] = {
@@ -1665,46 +1662,22 @@ sizehint must be a positive integer or -1 for the default size. The\n\
 sizehint is used to optimize internal data structures. It doesn't limit\n\
 the maximum number of monitored events.");
 
-static PyTypeObject pyEpoll_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "select.epoll",                                     /* tp_name */
-    sizeof(pyEpoll_Object),                             /* tp_basicsize */
-    0,                                                  /* tp_itemsize */
-    (destructor)pyepoll_dealloc,                        /* tp_dealloc */
-    0,                                                  /* tp_print */
-    0,                                                  /* tp_getattr */
-    0,                                                  /* tp_setattr */
-    0,                                                  /* tp_reserved */
-    0,                                                  /* tp_repr */
-    0,                                                  /* tp_as_number */
-    0,                                                  /* tp_as_sequence */
-    0,                                                  /* tp_as_mapping */
-    0,                                                  /* tp_hash */
-    0,                                                  /* tp_call */
-    0,                                                  /* tp_str */
-    PyObject_GenericGetAttr,                            /* tp_getattro */
-    0,                                                  /* tp_setattro */
-    0,                                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                                 /* tp_flags */
-    pyepoll_doc,                                        /* tp_doc */
-    0,                                                  /* tp_traverse */
-    0,                                                  /* tp_clear */
-    0,                                                  /* tp_richcompare */
-    0,                                                  /* tp_weaklistoffset */
-    0,                                                  /* tp_iter */
-    0,                                                  /* tp_iternext */
-    pyepoll_methods,                                    /* tp_methods */
-    0,                                                  /* tp_members */
-    pyepoll_getsetlist,                                 /* tp_getset */
-    0,                                                  /* tp_base */
-    0,                                                  /* tp_dict */
-    0,                                                  /* tp_descr_get */
-    0,                                                  /* tp_descr_set */
-    0,                                                  /* tp_dictoffset */
-    0,                                                  /* tp_init */
-    0,                                                  /* tp_alloc */
-    pyepoll_new,                                        /* tp_new */
-    0,                                                  /* tp_free */
+static PyType_Slot pyEpoll_Type_slots[] = {
+    {Py_tp_dealloc, pyepoll_dealloc},
+    {Py_tp_doc, pyepoll_doc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_getset, pyepoll_getsetlist},
+    {Py_tp_methods, pyepoll_methods},
+    {Py_tp_new, pyepoll_new},
+    {0, 0},
+};
+
+static PyType_Spec pyEpoll_Type_spec = {
+    "select.epoll",
+    sizeof(pyEpoll_Object),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    pyEpoll_Type_slots
 };
 
 #endif /* HAVE_EPOLL */
@@ -1763,18 +1736,14 @@ typedef struct {
     struct kevent e;
 } kqueue_event_Object;
 
-static PyTypeObject kqueue_event_Type;
-
-#define kqueue_event_Check(op) (PyObject_TypeCheck((op), &kqueue_event_Type))
+#define kqueue_event_Check(op) (PyObject_TypeCheck((op), _selectstate_global->kqueue_event_Type))
 
 typedef struct {
     PyObject_HEAD
     SOCKET kqfd;                /* kqueue control fd */
 } kqueue_queue_Object;
 
-static PyTypeObject kqueue_queue_Type;
-
-#define kqueue_queue_Check(op) (PyObject_TypeCheck((op), &kqueue_queue_Type))
+#define kqueue_queue_Check(op) (PyObject_TypeCheck((op), _selectstate_global->kqueue_queue_Type))
 
 #if (SIZEOF_UINTPTR_T != SIZEOF_VOID_P)
 #   error uintptr_t does not match void *!
@@ -1954,46 +1923,22 @@ kqueue_event_richcompare(kqueue_event_Object *s, kqueue_event_Object *o,
     return PyBool_FromLong((long)result);
 }
 
-static PyTypeObject kqueue_event_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "select.kevent",                                    /* tp_name */
-    sizeof(kqueue_event_Object),                        /* tp_basicsize */
-    0,                                                  /* tp_itemsize */
-    0,                                                  /* tp_dealloc */
-    0,                                                  /* tp_print */
-    0,                                                  /* tp_getattr */
-    0,                                                  /* tp_setattr */
-    0,                                                  /* tp_reserved */
-    (reprfunc)kqueue_event_repr,                        /* tp_repr */
-    0,                                                  /* tp_as_number */
-    0,                                                  /* tp_as_sequence */
-    0,                                                  /* tp_as_mapping */
-    0,                                                  /* tp_hash */
-    0,                                                  /* tp_call */
-    0,                                                  /* tp_str */
-    0,                                                  /* tp_getattro */
-    0,                                                  /* tp_setattro */
-    0,                                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                                 /* tp_flags */
-    kqueue_event_doc,                                   /* tp_doc */
-    0,                                                  /* tp_traverse */
-    0,                                                  /* tp_clear */
-    (richcmpfunc)kqueue_event_richcompare,              /* tp_richcompare */
-    0,                                                  /* tp_weaklistoffset */
-    0,                                                  /* tp_iter */
-    0,                                                  /* tp_iternext */
-    0,                                                  /* tp_methods */
-    kqueue_event_members,                               /* tp_members */
-    0,                                                  /* tp_getset */
-    0,                                                  /* tp_base */
-    0,                                                  /* tp_dict */
-    0,                                                  /* tp_descr_get */
-    0,                                                  /* tp_descr_set */
-    0,                                                  /* tp_dictoffset */
-    (initproc)kqueue_event_init,                        /* tp_init */
-    0,                                                  /* tp_alloc */
-    0,                                                  /* tp_new */
-    0,                                                  /* tp_free */
+static PyType_Slot kqueue_event_Type_slots[] = {
+    {Py_tp_doc, kqueue_event_doc},
+    {Py_tp_init, kqueue_event_init},
+    {Py_tp_members, kqueue_event_members},
+    {Py_tp_new, PyType_GenericNew},
+    {Py_tp_repr, kqueue_event_repr},
+    {Py_tp_richcompare, kqueue_event_richcompare},
+    {0, 0},
+};
+
+static PyType_Spec kqueue_event_Type_spec = {
+    "select.kevent",
+    sizeof(kqueue_event_Object),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    kqueue_event_Type_slots
 };
 
 static PyObject *
@@ -2022,8 +1967,10 @@ static PyObject *
 newKqueue_Object(PyTypeObject *type, SOCKET fd)
 {
     kqueue_queue_Object *self;
-    assert(type != NULL && type->tp_alloc != NULL);
-    self = (kqueue_queue_Object *) type->tp_alloc(type, 0);
+    assert(type != NULL);
+    allocfunc queue_alloc = PyType_GetSlot(type, Py_tp_alloc);
+    assert(queue_alloc != NULL);
+    self = (kqueue_queue_Object *) queue_alloc(type, 0);
     if (self == NULL) {
         return NULL;
     }
@@ -2067,8 +2014,11 @@ kqueue_queue_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 kqueue_queue_dealloc(kqueue_queue_Object *self)
 {
+    PyTypeObject* type = Py_TYPE(self);
     kqueue_queue_internal_close(self);
-    Py_TYPE(self)->tp_free(self);
+    freefunc kqueue_free = PyType_GetSlot(type, Py_tp_free);
+    kqueue_free((PyObject *)self);
+    Py_DECREF((PyObject *)type);
 }
 
 static PyObject*
@@ -2165,7 +2115,7 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
             PyErr_Format(PyExc_TypeError,
                 "timeout argument must be a number "
                 "or None, got %.200s",
-                Py_TYPE(otimeout)->tp_name);
+                _PyType_Name(Py_TYPE(otimeout)));
             return NULL;
         }
 
@@ -2261,7 +2211,7 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
     for (i = 0; i < gotevents; i++) {
         kqueue_event_Object *ch;
 
-        ch = PyObject_New(kqueue_event_Object, &kqueue_event_Type);
+        ch = PyObject_New(kqueue_event_Object, _selectstate_global->kqueue_event_Type);
         if (ch == NULL) {
             goto error;
         }
@@ -2325,46 +2275,21 @@ To wait one second for it to become writeable:\n\
 To stop listening:\n\
 >>> kq.control([kevent(sock, KQ_FILTER_WRITE, KQ_EV_DELETE)], 0)");
 
-static PyTypeObject kqueue_queue_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "select.kqueue",                                    /* tp_name */
-    sizeof(kqueue_queue_Object),                        /* tp_basicsize */
-    0,                                                  /* tp_itemsize */
-    (destructor)kqueue_queue_dealloc,                   /* tp_dealloc */
-    0,                                                  /* tp_print */
-    0,                                                  /* tp_getattr */
-    0,                                                  /* tp_setattr */
-    0,                                                  /* tp_reserved */
-    0,                                                  /* tp_repr */
-    0,                                                  /* tp_as_number */
-    0,                                                  /* tp_as_sequence */
-    0,                                                  /* tp_as_mapping */
-    0,                                                  /* tp_hash */
-    0,                                                  /* tp_call */
-    0,                                                  /* tp_str */
-    0,                                                  /* tp_getattro */
-    0,                                                  /* tp_setattro */
-    0,                                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                                 /* tp_flags */
-    kqueue_queue_doc,                                   /* tp_doc */
-    0,                                                  /* tp_traverse */
-    0,                                                  /* tp_clear */
-    0,                                                  /* tp_richcompare */
-    0,                                                  /* tp_weaklistoffset */
-    0,                                                  /* tp_iter */
-    0,                                                  /* tp_iternext */
-    kqueue_queue_methods,                               /* tp_methods */
-    0,                                                  /* tp_members */
-    kqueue_queue_getsetlist,                            /* tp_getset */
-    0,                                                  /* tp_base */
-    0,                                                  /* tp_dict */
-    0,                                                  /* tp_descr_get */
-    0,                                                  /* tp_descr_set */
-    0,                                                  /* tp_dictoffset */
-    0,                                                  /* tp_init */
-    0,                                                  /* tp_alloc */
-    kqueue_queue_new,                                   /* tp_new */
-    0,                                                  /* tp_free */
+static PyType_Slot kqueue_queue_Type_slots[] = {
+    {Py_tp_dealloc, kqueue_queue_dealloc},
+    {Py_tp_doc, kqueue_queue_doc},
+    {Py_tp_getset, kqueue_queue_getsetlist},
+    {Py_tp_methods, kqueue_queue_methods},
+    {Py_tp_new, kqueue_queue_new},
+    {0, 0},
+};
+
+static PyType_Spec kqueue_queue_Type_spec = {
+    "select.kqueue",
+    sizeof(kqueue_queue_Object),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    kqueue_queue_Type_slots
 };
 
 #endif /* HAVE_KQUEUE */
@@ -2417,20 +2342,60 @@ PyDoc_STRVAR(module_doc,
 On Windows, only sockets are supported; on Unix, all file descriptors.");
 
 
+
+static int
+_select_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    Py_VISIT(_selectstate(module)->close);
+    Py_VISIT(_selectstate(module)->poll_Type);
+#ifdef HAVE_SYS_DEVPOLL_H
+    Py_VISIT(_selectstate(module)->devpoll_Type);
+#endif
+#ifdef HAVE_EPOLL
+    Py_VISIT(_selectstate(module)->pyEpoll_Type);
+#endif
+#ifdef HAVE_KQUEUE
+    Py_VISIT(_selectstate(module)->kqueue_event_Type);
+    Py_VISIT(_selectstate(module)->kqueue_queue_Type);
+#endif
+    return 0;
+}
+
+static int
+_select_clear(PyObject *module)
+{
+    Py_CLEAR(_selectstate(module)->close);
+    Py_CLEAR(_selectstate(module)->poll_Type);
+#ifdef HAVE_SYS_DEVPOLL_H
+    Py_CLEAR(_selectstate(module)->devpoll_Type);
+#endif
+#ifdef HAVE_EPOLL
+    Py_CLEAR(_selectstate(module)->pyEpoll_Type);
+#endif
+#ifdef HAVE_KQUEUE
+    Py_CLEAR(_selectstate(module)->kqueue_event_Type);
+    Py_CLEAR(_selectstate(module)->kqueue_queue_Type);
+#endif
+    return 0;
+}
+
+static void
+_select_free(void *module)
+{
+    _select_clear((PyObject *)module);
+}
+
 static struct PyModuleDef selectmodule = {
     PyModuleDef_HEAD_INIT,
     "select",
     module_doc,
-    -1,
+    sizeof(_selectstate),
     select_methods,
     NULL,
-    NULL,
-    NULL,
-    NULL
+    _select_traverse,
+    _select_clear,
+    _select_free,
 };
-
-
-
 
 PyMODINIT_FUNC
 PyInit_select(void)
@@ -2439,6 +2404,8 @@ PyInit_select(void)
     m = PyModule_Create(&selectmodule);
     if (m == NULL)
         return NULL;
+
+    _selectstate(m)->close = PyUnicode_InternFromString("close");
 
     Py_INCREF(PyExc_OSError);
     PyModule_AddObject(m, "error", PyExc_OSError);
@@ -2461,8 +2428,12 @@ PyInit_select(void)
 #else
     {
 #endif
-        if (PyType_Ready(&poll_Type) < 0)
+        PyObject *poll_Type = PyType_FromSpec(&poll_Type_spec);
+        if (poll_Type == NULL)
             return NULL;
+        _selectstate(m)->poll_Type = (PyTypeObject *)poll_Type;
+        Py_INCREF(poll_Type);
+
         PyModule_AddIntMacro(m, POLLIN);
         PyModule_AddIntMacro(m, POLLPRI);
         PyModule_AddIntMacro(m, POLLOUT);
@@ -2493,17 +2464,20 @@ PyInit_select(void)
 #endif /* HAVE_POLL */
 
 #ifdef HAVE_SYS_DEVPOLL_H
-    if (PyType_Ready(&devpoll_Type) < 0)
+    PyObject *devpoll_Type = PyType_FromSpec(&devpoll_Type_spec);
+    if (devpoll_Type == NULL)
         return NULL;
+    _selectstate(m)->devpoll_Type = (PyTypeObject *)devpoll_Type;
+    Py_INCREF(devpoll_Type);
 #endif
 
 #ifdef HAVE_EPOLL
-    Py_TYPE(&pyEpoll_Type) = &PyType_Type;
-    if (PyType_Ready(&pyEpoll_Type) < 0)
+    PyObject *pyEpoll_Type = PyType_FromSpec(&pyEpoll_Type_spec);
+    if (pyEpoll_Type == NULL)
         return NULL;
-
-    Py_INCREF(&pyEpoll_Type);
-    PyModule_AddObject(m, "epoll", (PyObject *) &pyEpoll_Type);
+    _selectstate(m)->pyEpoll_Type = (PyTypeObject *)pyEpoll_Type;
+    Py_INCREF(pyEpoll_Type);
+    PyModule_AddObject(m, "epoll", pyEpoll_Type);
 
     PyModule_AddIntMacro(m, EPOLLIN);
     PyModule_AddIntMacro(m, EPOLLOUT);
@@ -2545,19 +2519,19 @@ PyInit_select(void)
 #endif /* HAVE_EPOLL */
 
 #ifdef HAVE_KQUEUE
-    kqueue_event_Type.tp_new = PyType_GenericNew;
-    Py_TYPE(&kqueue_event_Type) = &PyType_Type;
-    if(PyType_Ready(&kqueue_event_Type) < 0)
+    PyObject *kqueue_event_Type = PyType_FromSpec(&kqueue_event_Type_spec);
+    if (kqueue_event_Type == NULL)
         return NULL;
+    _selectstate(m)->kqueue_event_Type = (PyTypeObject *)kqueue_event_Type;
+    Py_INCREF(_selectstate(m)->kqueue_event_Type);
+    PyModule_AddObject(m, "kevent", kqueue_event_Type);
 
-    Py_INCREF(&kqueue_event_Type);
-    PyModule_AddObject(m, "kevent", (PyObject *)&kqueue_event_Type);
-
-    Py_TYPE(&kqueue_queue_Type) = &PyType_Type;
-    if(PyType_Ready(&kqueue_queue_Type) < 0)
+    PyObject *kqueue_queue_Type = PyType_FromSpec(&kqueue_queue_Type_spec);
+    if (kqueue_queue_Type == NULL)
         return NULL;
-    Py_INCREF(&kqueue_queue_Type);
-    PyModule_AddObject(m, "kqueue", (PyObject *)&kqueue_queue_Type);
+    _selectstate(m)->kqueue_queue_Type = (PyTypeObject *)kqueue_queue_Type;
+    Py_INCREF(_selectstate(m)->kqueue_queue_Type);
+    PyModule_AddObject(m, "kqueue", kqueue_queue_Type);
 
     /* event filters */
     PyModule_AddIntConstant(m, "KQ_FILTER_READ", EVFILT_READ);

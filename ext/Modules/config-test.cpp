@@ -52,6 +52,13 @@ TEST_F(ConfigExtensionApiTest, ImportMathReturnsModule) {
   EXPECT_TRUE(PyModule_Check(module));
 }
 
+TEST_F(ConfigExtensionApiTest, ImportSelectReturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("select"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
 TEST_F(ConfigExtensionApiTest, ImportTimeReturnsModule) {
   PyObjectPtr module(PyImport_ImportModule("time"));
   ASSERT_NE(module, nullptr);
