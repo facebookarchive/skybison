@@ -1,6 +1,8 @@
 #include "cpython-func.h"
 #include "runtime.h"
 
+const char* Py_hexdigits = "0123456789abcdef";
+
 namespace python {
 
 PY_EXPORT PyObject* PyCodec_BackslashReplaceErrors(PyObject* /* c */) {

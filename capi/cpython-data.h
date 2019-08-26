@@ -248,6 +248,7 @@ extern const unsigned char _Py_ctype_toupper[256];
 extern char* PyStructSequence_UnnamedField;
 
 extern const char* Py_FileSystemDefaultEncodeErrors;
+extern const char* Py_hexdigits;
 
 /* C struct member types */
 #define T_SHORT 0

@@ -38,6 +38,13 @@ TEST_F(ConfigExtensionApiTest, ImportUnderStentryReturnsModule) {
   EXPECT_TRUE(PyModule_Check(module));
 }
 
+TEST_F(ConfigExtensionApiTest, ImportBinasciiReturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("binascii"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
 TEST_F(ConfigExtensionApiTest, ImportMathReturnsModule) {
   PyObjectPtr module(PyImport_ImportModule("math"));
   ASSERT_NE(module, nullptr);
