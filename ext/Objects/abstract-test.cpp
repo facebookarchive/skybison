@@ -2254,6 +2254,49 @@ TEST_F(AbstractExtensionApiTest, PyObjectTypeReturnsSameTypeForSmallAndLarge) {
 
 // Sequence Protocol
 
+TEST_F(AbstractExtensionApiTest,
+       PySequenceBytesToCharpArrayWithNonSequenceRaisesTypeError) {
+  PyObjectPtr obj(PyLong_FromLong(1));
+  EXPECT_EQ(_PySequence_BytesToCharpArray(obj), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PySequenceBytesToCharpArrayWithEmptyListReturnsArray) {
+  PyObjectPtr obj(PyList_New(0));
+  char* const* array = _PySequence_BytesToCharpArray(obj);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(array, nullptr);
+  EXPECT_EQ(array[0], nullptr);
+  _Py_FreeCharPArray(array);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PySequenceBytesToCharpArrayWithNonBytesItemRaisesTypeError) {
+  PyObjectPtr obj(PyTuple_New(1));
+  PyTuple_SetItem(obj, 0, PyByteArray_FromStringAndSize("foo", 3));
+  EXPECT_EQ(_PySequence_BytesToCharpArray(obj), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PySequenceBytesToCharpArrayWithBytesSequenceReturnsArray) {
+  PyObjectPtr obj(PyTuple_New(3));
+  PyTuple_SetItem(obj, 0, PyBytes_FromString("foo"));
+  PyTuple_SetItem(obj, 1, PyBytes_FromString("bar"));
+  PyTuple_SetItem(obj, 2, PyBytes_FromString("baz"));
+  char* const* array = _PySequence_BytesToCharpArray(obj);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(array, nullptr);
+  EXPECT_STREQ(array[0], "foo");
+  EXPECT_STREQ(array[1], "bar");
+  EXPECT_STREQ(array[2], "baz");
+  EXPECT_EQ(array[3], nullptr);
+  _Py_FreeCharPArray(array);
+}
+
 TEST_F(AbstractExtensionApiTest, PySequenceCheckWithoutGetItemReturnsFalse) {
   PyRun_SimpleString(R"(
 class ClassWithoutDunderGetItem: pass

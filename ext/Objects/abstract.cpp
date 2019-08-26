@@ -1026,6 +1026,63 @@ PY_EXPORT const char* PyObject_TypeName(PyObject* /* obj */) {
 
 // Sequence Protocol
 
+PY_EXPORT void _Py_FreeCharPArray(char* const array[]) {
+  for (Py_ssize_t i = 0; array[i] != nullptr; ++i) {
+    PyMem_Free(array[i]);
+  }
+  PyMem_Free(const_cast<char**>(array));
+}
+
+PY_EXPORT char* const* _PySequence_BytesToCharpArray(PyObject* self) {
+  Py_ssize_t argc = PySequence_Size(self);
+  if (argc < 0) {
+    DCHECK(argc == -1, "size cannot be negative (-1 denotes an error)");
+    return nullptr;
+  }
+
+  if (argc > (kMaxWord / kPointerSize) - 1) {
+    PyErr_NoMemory();
+    return nullptr;
+  }
+
+  char** result = static_cast<char**>(PyMem_Malloc((argc + 1) * kPointerSize));
+  if (result == nullptr) {
+    PyErr_NoMemory();
+    return nullptr;
+  }
+
+  for (Py_ssize_t i = 0; i < argc; ++i) {
+    PyObject* item = PySequence_GetItem(self, i);
+    if (item == nullptr) {
+      // NULL terminate before freeing.
+      result[i] = nullptr;
+      _Py_FreeCharPArray(result);
+      return nullptr;
+    }
+    char* data;
+    if (PyBytes_AsStringAndSize(item, &data, nullptr) < 0) {
+      // NULL terminate before freeing.
+      result[i] = nullptr;
+      Py_DECREF(item);
+      _Py_FreeCharPArray(result);
+      return nullptr;
+    }
+    Py_ssize_t size = PyBytes_GET_SIZE(item) + 1;
+    result[i] = static_cast<char*>(PyMem_Malloc(size));
+    if (result[i] == nullptr) {
+      PyErr_NoMemory();
+      Py_DECREF(item);
+      _Py_FreeCharPArray(result);
+      return nullptr;
+    }
+    std::memcpy(result[i], data, size);
+    Py_DECREF(item);
+  }
+
+  result[argc] = nullptr;
+  return result;
+}
+
 PY_EXPORT int PySequence_Check(PyObject* py_obj) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);

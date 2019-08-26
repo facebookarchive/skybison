@@ -588,6 +588,7 @@ PyAPI_FUNC(int) PyRun_SimpleStringFlags(const char*, PyCompilerFlags*);
 PyAPI_FUNC(PyObject*)
     PyRun_StringFlags(const char*, int, PyObject*, PyObject*, PyCompilerFlags*);
 PyAPI_FUNC(PyObject*) PySeqIter_New(PyObject*);
+PyAPI_FUNC(char* const*) _PySequence_BytesToCharpArray(PyObject*);
 PyAPI_FUNC(int) PySequence_Check(PyObject*);
 PyAPI_FUNC(PyObject*) PySequence_Concat(PyObject*, PyObject*);
 PyAPI_FUNC(int) PySequence_Contains(PyObject*, PyObject*);
@@ -933,6 +934,7 @@ PyAPI_FUNC(PyCodeObject*) PyAST_CompileObject(struct _mod*, PyObject*,
 PyAPI_FUNC(PyObject*) _PyNamespace_New(PyObject* kwds);
 PyAPI_FUNC(double) _Py_dg_stdnan(int sign);
 PyAPI_FUNC(double) _Py_dg_infinity(int sign);
+PyAPI_FUNC(void) _Py_FreeCharPArray(char* const array[]);
 
 /* Non C-API functions */
 PyAPI_FUNC(int) PyBool_Check_Func(PyObject*);
