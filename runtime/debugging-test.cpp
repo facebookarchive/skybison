@@ -106,8 +106,7 @@ TEST_F(DebuggingTests, DumpExtendedCode) {
 )");
 }
 
-TEST(DebuggingTestsNoFixture, DumpExtendedFunction) {
-  Runtime runtime(/*cache_enabled=*/true);
+TEST_F(DebuggingTests, DumpExtendedFunction) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object func(&scope, makeTestFunction(thread));

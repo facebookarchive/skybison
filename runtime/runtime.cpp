@@ -116,7 +116,7 @@ Runtime::Runtime(word heap_size, bool cache_enabled)
   initializeModules();
 }
 
-Runtime::Runtime() : Runtime(64 * kMiB, false) {}
+Runtime::Runtime() : Runtime(64 * kMiB, true) {}
 Runtime::Runtime(bool cache_enabled) : Runtime(64 * kMiB, cache_enabled) {}
 
 Runtime::~Runtime() {

@@ -748,53 +748,55 @@ TEST_F(TrampolinesTest, InterpreterClosureUsesArgOverCellValue) {
                       3));
 }
 
-TEST_F(TrampolinesTest, InterpreterClosureUsesCellValue) {
-  HandleScope scope(thread_);
+TEST(TrampolinesTestNoFixture, InterpreterClosureUsesCellValue) {
+  Runtime runtime(/*cache_enabled=*/false);
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   // Create code object
   word nlocals = 2;
-  Tuple consts(&scope, runtime_.newTuple(1));
-  consts.atPut(0, runtime_.newInt(10));
-  Tuple varnames(&scope, runtime_.newTuple(nlocals));
-  Tuple cellvars(&scope, runtime_.newTuple(2));
-  Str bar(&scope, runtime_.internStrFromCStr(thread_, "bar"));
-  Str baz(&scope, runtime_.internStrFromCStr(thread_, "baz"));
-  Str foobar(&scope, runtime_.internStrFromCStr(thread_, "foobar"));
+  Tuple consts(&scope, runtime.newTuple(1));
+  consts.atPut(0, runtime.newInt(10));
+  Tuple varnames(&scope, runtime.newTuple(nlocals));
+  Tuple cellvars(&scope, runtime.newTuple(2));
+  Str bar(&scope, runtime.internStrFromCStr(thread, "bar"));
+  Str baz(&scope, runtime.internStrFromCStr(thread, "baz"));
+  Str foobar(&scope, runtime.internStrFromCStr(thread, "foobar"));
   varnames.atPut(0, *bar);
   varnames.atPut(1, *baz);
   cellvars.atPut(0, *foobar);
   cellvars.atPut(1, *bar);
   const byte bytecode[] = {LOAD_CONST, 0, STORE_DEREF,  0,
                            LOAD_DEREF, 0, RETURN_VALUE, 0};
-  Bytes bc(&scope, runtime_.newBytesWithAll(bytecode));
+  Bytes bc(&scope, runtime.newBytesWithAll(bytecode));
   Object empty_str(&scope, Str::empty());
   Object empty_bytes(&scope, Bytes::empty());
-  Tuple empty_tuple(&scope, runtime_.emptyTuple());
+  Tuple empty_tuple(&scope, runtime.emptyTuple());
   Code code(&scope,
-            runtime_.newCode(/*argcount=*/1, /*posonlyargcount=*/0,
-                             /*kwonlyargcount=*/0, nlocals, /*stacksize=*/0,
-                             /*flags=*/0, /*code=*/bc, consts,
-                             /*names=*/empty_tuple, varnames,
-                             /*freevars=*/empty_tuple, cellvars,
-                             /*filename=*/empty_str, /*name=*/empty_str,
-                             /*firstlineno=*/0, /*lnotab=*/empty_bytes));
+            runtime.newCode(/*argcount=*/1, /*posonlyargcount=*/0,
+                            /*kwonlyargcount=*/0, nlocals, /*stacksize=*/0,
+                            /*flags=*/0, /*code=*/bc, consts,
+                            /*names=*/empty_tuple, varnames,
+                            /*freevars=*/empty_tuple, cellvars,
+                            /*filename=*/empty_str, /*name=*/empty_str,
+                            /*firstlineno=*/0, /*lnotab=*/empty_bytes));
   ASSERT_TRUE(!code.cell2arg().isNoneType());
 
   // Create a function
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def foo(bar): pass
 )")
                    .isError());
-  Function foo(&scope, mainModuleAt(&runtime_, "foo"));
+  Function foo(&scope, mainModuleAt(&runtime, "foo"));
   foo.setEntry(interpreterTrampoline);
   foo.setCode(*code);
 
   // Run function
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = foo(1)
 )")
                    .isError());
-  Object result(&scope, testing::mainModuleAt(&runtime_, "result"));
+  Object result(&scope, testing::mainModuleAt(&runtime, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 10));
 }
 

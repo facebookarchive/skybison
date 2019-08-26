@@ -502,29 +502,27 @@ v3 = B(1)
       -8));
 }
 
-TEST(InterpreterTestNoFixture, DoBinaryOpWithCacheHitCallsCachedMethod) {
-  Runtime runtime(/*cache_enabled=*/true);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(InterpreterTest, DoBinaryOpWithCacheHitCallsCachedMethod) {
+  HandleScope scope(thread_);
 
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime.newTuple(2));
-  consts.atPut(0, runtime.newInt(7));
-  consts.atPut(1, runtime.newInt(-13));
+  Tuple consts(&scope, runtime_.newTuple(2));
+  consts.atPut(0, runtime_.newInt(7));
+  consts.atPut(1, runtime_.newInt(-13));
   code.setConsts(*consts);
   const byte bytecode[] = {
       LOAD_CONST, 0, LOAD_CONST, 1, BINARY_SUBTRACT, 0, RETURN_VALUE, 0,
   };
-  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime_.newBytesWithAll(bytecode));
 
   Object qualname(&scope, Str::empty());
-  Dict globals(&scope, runtime.newDict());
+  Dict globals(&scope, runtime_.newDict());
   Function function(
-      &scope, runtime.newFunctionWithCode(thread, qualname, code, globals));
+      &scope, runtime_.newFunctionWithCode(thread_, qualname, code, globals));
 
   // Update inline cache.
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::callFunction0(thread, thread->currentFrame(), function),
+      Interpreter::callFunction0(thread_, thread_->currentFrame(), function),
       20));
 
   ASSERT_TRUE(function.caches().isTuple());
@@ -535,15 +533,13 @@ TEST(InterpreterTestNoFixture, DoBinaryOpWithCacheHitCallsCachedMethod) {
                    .isErrorNotFound());
   // Call from inline cache.
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::callFunction0(thread, thread->currentFrame(), function),
+      Interpreter::callFunction0(thread_, thread_->currentFrame(), function),
       20));
 }
 
-TEST(InterpreterTestNoFixture, DoBinaryOpWithCacheHitCallsRetry) {
-  Runtime runtime(/*cache_enabled=*/true);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(InterpreterTest, DoBinaryOpWithCacheHitCallsRetry) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class MyInt(int):
   def __sub__(self, other):
     return NotImplemented
@@ -553,27 +549,27 @@ v0 = MyInt(3)
 v1 = 7
 )")
                    .isError());
-  Object v0(&scope, mainModuleAt(&runtime, "v0"));
-  Object v1(&scope, mainModuleAt(&runtime, "v1"));
+  Object v0(&scope, mainModuleAt(&runtime_, "v0"));
+  Object v1(&scope, mainModuleAt(&runtime_, "v1"));
 
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime.newTuple(2));
+  Tuple consts(&scope, runtime_.newTuple(2));
   consts.atPut(0, *v0);
   consts.atPut(1, *v1);
   code.setConsts(*consts);
   const byte bytecode[] = {
       LOAD_CONST, 0, LOAD_CONST, 1, BINARY_SUBTRACT, 0, RETURN_VALUE, 0,
   };
-  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime_.newBytesWithAll(bytecode));
 
   Object qualname(&scope, Str::empty());
-  Dict globals(&scope, runtime.newDict());
+  Dict globals(&scope, runtime_.newDict());
   Function function(
-      &scope, runtime.newFunctionWithCode(thread, qualname, code, globals));
+      &scope, runtime_.newFunctionWithCode(thread_, qualname, code, globals));
 
   // Update inline cache.
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::callFunction0(thread, thread->currentFrame(), function),
+      Interpreter::callFunction0(thread_, thread_->currentFrame(), function),
       -4));
 
   ASSERT_TRUE(function.caches().isTuple());
@@ -584,7 +580,7 @@ v1 = 7
 
   // Should hit the cache for __sub__ and then call binaryOperationRetry().
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::callFunction0(thread, thread->currentFrame(), function),
+      Interpreter::callFunction0(thread_, thread_->currentFrame(), function),
       -4));
 }
 
@@ -1094,26 +1090,30 @@ v3 = ASub(2)
   EXPECT_EQ(result.at(1), v2);
 }
 
-TEST_F(InterpreterTest, DoStoreFastStoresValue) {
-  HandleScope scope(thread_);
+TEST(InterpreterTestNoFixture, DoStoreFastStoresValue) {
+  Runtime runtime(/*cache_enabled=*/false);
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, SmallInt::fromWord(1111));
   code.setConsts(*consts);
   code.setNlocals(2);
   const byte bytecode[] = {LOAD_CONST, 0, STORE_FAST,   1,
                            LOAD_FAST,  1, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   EXPECT_TRUE(isIntEqualsWord(runCode(code), 1111));
 }
 
-TEST_F(InterpreterTest, DoLoadFastReverseLoadsValue) {
-  HandleScope scope(thread_);
+TEST(InterpreterTestFixture, DoLoadFastReverseLoadsValue) {
+  Runtime runtime(/*cache_enabled=*/false);
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(4));
+  Tuple consts(&scope, runtime.newTuple(4));
   consts.atPut(0, SmallInt::fromWord(1));
   consts.atPut(1, SmallInt::fromWord(22));
   consts.atPut(2, SmallInt::fromWord(333));
@@ -1129,7 +1129,7 @@ TEST_F(InterpreterTest, DoLoadFastReverseLoadsValue) {
       LOAD_FAST_REVERSE, 1,                                         // 333
       BUILD_TUPLE,       4, RETURN_VALUE, 0,
   };
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   Object result_obj(&scope, runCode(code));
   ASSERT_TRUE(result_obj.isTuple());
@@ -1141,36 +1141,40 @@ TEST_F(InterpreterTest, DoLoadFastReverseLoadsValue) {
   EXPECT_TRUE(isIntEqualsWord(result.at(3), 333));
 }
 
-TEST_F(InterpreterTest,
-       DoLoadFastReverseFromUninitializedLocalRaisesUnboundLocalError) {
-  HandleScope scope(thread_);
+TEST(InterpreterTestNoFixture,
+     DoLoadFastReverseFromUninitializedLocalRaisesUnboundLocalError) {
+  Runtime runtime(/*cache_enabled=*/false);
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(1));
+  Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, SmallInt::fromWord(42));
   code.setConsts(*consts);
-  Tuple varnames(&scope, runtime_.newTuple(3));
-  varnames.atPut(0, runtime_.internStrFromCStr(thread_, "foo"));
-  varnames.atPut(1, runtime_.internStrFromCStr(thread_, "bar"));
-  varnames.atPut(2, runtime_.internStrFromCStr(thread_, "baz"));
+  Tuple varnames(&scope, runtime.newTuple(3));
+  varnames.atPut(0, runtime.internStrFromCStr(thread, "foo"));
+  varnames.atPut(1, runtime.internStrFromCStr(thread, "bar"));
+  varnames.atPut(2, runtime.internStrFromCStr(thread, "baz"));
   code.setVarnames(*varnames);
   code.setNlocals(3);
   const byte bytecode[] = {
       LOAD_CONST,  0, STORE_FAST,        0, LOAD_CONST,   0, STORE_FAST, 2,
       DELETE_FAST, 2, LOAD_FAST_REVERSE, 0, RETURN_VALUE, 0,
   };
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   EXPECT_TRUE(
       raisedWithStr(runCode(code), LayoutId::kUnboundLocalError,
                     "local variable 'baz' referenced before assignment"));
 }
 
-TEST_F(InterpreterTest, DoStoreFastReverseStoresValue) {
-  HandleScope scope(thread_);
+TEST(InterpreterTestNoFixture, DoStoreFastReverseStoresValue) {
+  Runtime runtime(/*cache_enabled=*/false);
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(4));
+  Tuple consts(&scope, runtime.newTuple(4));
   consts.atPut(0, SmallInt::fromWord(1));
   consts.atPut(1, SmallInt::fromWord(22));
   consts.atPut(2, SmallInt::fromWord(333));
@@ -1188,7 +1192,7 @@ TEST_F(InterpreterTest, DoStoreFastReverseStoresValue) {
       LOAD_FAST,   3,  // 1
       BUILD_TUPLE, 4, RETURN_VALUE,       0,
   };
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   Object result_obj(&scope, runCode(code));
   ASSERT_TRUE(result_obj.isTuple());
@@ -3338,53 +3342,47 @@ TEST_F(InterpreterTest, RaiseWithNoActiveExceptionRaisesRuntimeError) {
                             "No active exception to reraise"));
 }
 
-TEST(InterpreterTestNoFixture, LoadAttrSetLocationSetsLocation) {
-  Runtime runtime(/*cache_enabled=*/true);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(InterpreterTest, LoadAttrSetLocationSetsLocation) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __init__(self):
     self.foo = 42
 i = C()
 )")
                    .isError());
-  Object i(&scope, mainModuleAt(&runtime, "i"));
+  Object i(&scope, mainModuleAt(&runtime_, "i"));
 
-  Object name(&scope, runtime.newStrFromCStr("foo"));
+  Object name(&scope, runtime_.newStrFromCStr("foo"));
   Object to_cache(&scope, NoneType::object());
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::loadAttrSetLocation(thread, i, name, &to_cache), 42));
+      Interpreter::loadAttrSetLocation(thread_, i, name, &to_cache), 42));
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::loadAttrWithLocation(thread, *i, *to_cache), 42));
+      Interpreter::loadAttrWithLocation(thread_, *i, *to_cache), 42));
 }
 
-TEST(InterpreterTestNoFixture,
-     LoadAttrSetLocationWithCustomGetAttributeSetsNoLocation) {
-  Runtime runtime(/*cache_enabled=*/true);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(InterpreterTest,
+       LoadAttrSetLocationWithCustomGetAttributeSetsNoLocation) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __getattribute__(self, name):
     return 11
 i = C()
 )")
                    .isError());
-  Object i(&scope, mainModuleAt(&runtime, "i"));
+  Object i(&scope, mainModuleAt(&runtime_, "i"));
 
-  Object name(&scope, runtime.newStrFromCStr("foo"));
+  Object name(&scope, runtime_.newStrFromCStr("foo"));
   Object to_cache(&scope, NoneType::object());
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::loadAttrSetLocation(thread, i, name, &to_cache), 11));
+      Interpreter::loadAttrSetLocation(thread_, i, name, &to_cache), 11));
   EXPECT_TRUE(to_cache.isNoneType());
 }
 
-TEST(InterpreterTestNoFixture, LoadAttrSetLocationCallsDunderGetattr) {
-  Runtime runtime(/*cache_enabled=*/true);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(InterpreterTest, LoadAttrSetLocationCallsDunderGetattr) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __init__(self):
     self.foo = 42
@@ -3393,12 +3391,12 @@ class C:
 i = C()
 )")
                    .isError());
-  Object i(&scope, mainModuleAt(&runtime, "i"));
+  Object i(&scope, mainModuleAt(&runtime_, "i"));
 
-  Object name(&scope, runtime.newStrFromCStr("bar"));
+  Object name(&scope, runtime_.newStrFromCStr("bar"));
   Object to_cache(&scope, NoneType::object());
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::loadAttrSetLocation(thread, i, name, &to_cache), 5));
+      Interpreter::loadAttrSetLocation(thread_, i, name, &to_cache), 5));
   EXPECT_TRUE(to_cache.isNoneType());
 }
 
@@ -3769,10 +3767,8 @@ with Mgr():
   // TODO(T40269344): Inspect __context__ from the raised exception.
 }
 
-TEST(InterpreterTestNoFixture,
-     LoadNameReturnsSameResultAsCahedValueFromLoadGlobal) {
-  Runtime runtime(/*cache_enabled=*/true);
-  EXPECT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(InterpreterTest, LoadNameReturnsSameResultAsCahedValueFromLoadGlobal) {
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
 t = 400
 
 def update_t():
@@ -3788,15 +3784,13 @@ load_name_t = t
 load_global_t = get_t()
 )")
                    .isError());
-  EXPECT_EQ(mainModuleAt(&runtime, "load_name_t"),
-            mainModuleAt(&runtime, "load_global_t"));
+  EXPECT_EQ(mainModuleAt(&runtime_, "load_name_t"),
+            mainModuleAt(&runtime_, "load_global_t"));
 }
 
-TEST(InterpreterTestNoFixture, LoadGlobalCachedReturnsModuleDictValue) {
-  Runtime runtime(/*cache_enabled=*/true);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  EXPECT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(InterpreterTest, LoadGlobalCachedReturnsModuleDictValue) {
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
 a = 400
 
 def foo():
@@ -3805,8 +3799,8 @@ def foo():
 result = foo()
 )")
                    .isError());
-  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime, "result"), 800));
-  Function function(&scope, mainModuleAt(&runtime, "foo"));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result"), 800));
+  Function function(&scope, mainModuleAt(&runtime_, "foo"));
   ASSERT_TRUE(isStrEqualsCStr(
       Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
   Tuple caches(&scope, function.caches());
@@ -3814,12 +3808,10 @@ result = foo()
       isIntEqualsWord(valueCellValue(icLookupGlobalVar(*caches, 0)), 400));
 }
 
-TEST(InterpreterTestNoFixture,
-     LoadGlobalCachedReturnsBuiltinDictValueAndSetsPlaceholder) {
-  Runtime runtime(/*cache_enabled=*/true);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  EXPECT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(InterpreterTest,
+       LoadGlobalCachedReturnsBuiltinDictValueAndSetsPlaceholder) {
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
 __builtins__.a = 400
 
 def foo():
@@ -3828,8 +3820,8 @@ def foo():
 result = foo()
 )")
                    .isError());
-  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime, "result"), 800));
-  Function function(&scope, mainModuleAt(&runtime, "foo"));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result"), 800));
+  Function function(&scope, mainModuleAt(&runtime_, "foo"));
   ASSERT_TRUE(isStrEqualsCStr(
       Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
   Tuple caches(&scope, function.caches());
@@ -3838,17 +3830,14 @@ result = foo()
 
   Dict globals(&scope, function.globals());
   Str key(&scope, SmallStr::fromCStr("a"));
-  Object module_dict_entry(&scope, runtime.dictAt(thread, globals, key));
+  Object module_dict_entry(&scope, runtime_.dictAt(thread_, globals, key));
   ASSERT_TRUE(module_dict_entry.isValueCell());
   EXPECT_TRUE(ValueCell::cast(*module_dict_entry).isPlaceholder());
 }
 
-TEST(InterpreterTestNoFixture,
-     StoreGlobalCachedInvalidatesCachedBuiltinToBeShadowed) {
-  Runtime runtime(/*cache_enabled=*/true);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  EXPECT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(InterpreterTest, StoreGlobalCachedInvalidatesCachedBuiltinToBeShadowed) {
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
 __builtins__.a = 400
 
 def foo():
@@ -3863,18 +3852,16 @@ foo()
 bar()
 )")
                    .isError());
-  Function function(&scope, mainModuleAt(&runtime, "foo"));
+  Function function(&scope, mainModuleAt(&runtime_, "foo"));
   ASSERT_TRUE(isStrEqualsCStr(
       Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
   Tuple caches(&scope, function.caches());
   EXPECT_TRUE(icLookupGlobalVar(*caches, 0).isNoneType());
 }
 
-TEST(InterpreterTestNoFixture, DeleteGlobalInvalidatesCachedValue) {
-  Runtime runtime(/*cache_enabled=*/true);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  EXPECT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(InterpreterTest, DeleteGlobalInvalidatesCachedValue) {
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
 a = 400
 def foo():
   return a + a
@@ -3887,18 +3874,16 @@ foo()
 bar()
 )")
                    .isError());
-  Function function(&scope, mainModuleAt(&runtime, "foo"));
+  Function function(&scope, mainModuleAt(&runtime_, "foo"));
   ASSERT_TRUE(isStrEqualsCStr(
       Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
   Tuple caches(&scope, function.caches());
   EXPECT_TRUE(icLookupGlobalVar(*caches, 0).isNoneType());
 }
 
-TEST(InterpreterTestNoFixture, StoreNameInvalidatesCachedBuiltinToBeShadowed) {
-  Runtime runtime(/*cache_enabled=*/true);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  EXPECT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(InterpreterTest, StoreNameInvalidatesCachedBuiltinToBeShadowed) {
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
 __builtins__.a = 400
 
 def foo():
@@ -3908,18 +3893,16 @@ foo()
 a = 800
 )")
                    .isError());
-  Function function(&scope, mainModuleAt(&runtime, "foo"));
+  Function function(&scope, mainModuleAt(&runtime_, "foo"));
   ASSERT_TRUE(isStrEqualsCStr(
       Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
   Tuple caches(&scope, function.caches());
   EXPECT_TRUE(icLookupGlobalVar(*caches, 0).isNoneType());
 }
 
-TEST(InterpreterTestNoFixture, DeleteNameInvalidatesCachedGlobalVar) {
-  Runtime runtime(/*cache_enabled=*/true);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  EXPECT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(InterpreterTest, DeleteNameInvalidatesCachedGlobalVar) {
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
 a = 400
 def foo():
   return a + a
@@ -3928,19 +3911,18 @@ foo()
 del a
 )")
                    .isError());
-  Function function(&scope, mainModuleAt(&runtime, "foo"));
+  Function function(&scope, mainModuleAt(&runtime_, "foo"));
   ASSERT_TRUE(isStrEqualsCStr(
       Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
   Tuple caches(&scope, function.caches());
   EXPECT_TRUE(icLookupGlobalVar(*caches, 0).isNoneType());
 }
 
-TEST(InterpreterTestNoFixture,
-     StoreAttrCachedInvalidatesInstanceOffsetCachesByAssigningTypeDescriptor) {
-  Runtime runtime(/*cache_enabled=*/true);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  EXPECT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(
+    InterpreterTest,
+    StoreAttrCachedInvalidatesInstanceOffsetCachesByAssigningTypeDescriptor) {
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __init__(self):
     self.foo = 400
@@ -3960,29 +3942,29 @@ def invalidate():
 c = C()
 )")
                    .isError());
-  Object c(&scope, mainModuleAt(&runtime, "c"));
-  Function get_foo(&scope, mainModuleAt(&runtime, "get_foo"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
+  Function get_foo(&scope, mainModuleAt(&runtime_, "get_foo"));
   Function do_not_invalidate0(&scope,
-                              mainModuleAt(&runtime, "do_not_invalidate0"));
+                              mainModuleAt(&runtime_, "do_not_invalidate0"));
   Function do_not_invalidate1(&scope,
-                              mainModuleAt(&runtime, "do_not_invalidate1"));
-  Function invalidate(&scope, mainModuleAt(&runtime, "invalidate"));
+                              mainModuleAt(&runtime_, "do_not_invalidate1"));
+  Function invalidate(&scope, mainModuleAt(&runtime_, "invalidate"));
   Tuple caches(&scope, get_foo.caches());
   // Load the cache
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
   ASSERT_TRUE(isIntEqualsWord(
-      Interpreter::callFunction1(thread, thread->currentFrame(), get_foo, c),
+      Interpreter::callFunction1(thread_, thread_->currentFrame(), get_foo, c),
       400));
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isSmallInt());
 
   // Assign a data descriptor to a different attribute name.
-  ASSERT_TRUE(Interpreter::callFunction0(thread, thread->currentFrame(),
+  ASSERT_TRUE(Interpreter::callFunction0(thread_, thread_->currentFrame(),
                                          do_not_invalidate0)
                   .isNoneType());
   EXPECT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isSmallInt());
 
   // Assign a non-data descriptor to the cache's attribute name.
-  ASSERT_TRUE(Interpreter::callFunction0(thread, thread->currentFrame(),
+  ASSERT_TRUE(Interpreter::callFunction0(thread_, thread_->currentFrame(),
                                          do_not_invalidate1)
                   .isNoneType());
   EXPECT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isSmallInt());
@@ -3990,21 +3972,19 @@ c = C()
   // Assign a data descriptor the cache's attribute name that actually causes
   // invalidation.
   ASSERT_TRUE(
-      Interpreter::callFunction0(thread, thread->currentFrame(), invalidate)
+      Interpreter::callFunction0(thread_, thread_->currentFrame(), invalidate)
           .isNoneType());
   // Verify that the cache is empty and calling get_foo() returns a fresh value.
   EXPECT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
   EXPECT_TRUE(isStrEqualsCStr(
-      Interpreter::callFunction1(thread, thread->currentFrame(), get_foo, c),
+      Interpreter::callFunction1(thread_, thread_->currentFrame(), get_foo, c),
       "data descriptor"));
 }
 
-TEST(InterpreterTestNoFixture,
-     StoreAttrCachedInvalidatesTypeAttrCachesByUpdatingTypeAttribute) {
-  Runtime runtime(/*cache_enabled=*/true);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  EXPECT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(InterpreterTest,
+       StoreAttrCachedInvalidatesTypeAttrCachesByUpdatingTypeAttribute) {
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def foo(self):
     return 400;
@@ -4022,44 +4002,42 @@ old_foo = C.foo
 c = C()
 )")
                    .isError());
-  Object c(&scope, mainModuleAt(&runtime, "c"));
-  Function old_foo(&scope, mainModuleAt(&runtime, "old_foo"));
-  Function call_foo(&scope, mainModuleAt(&runtime, "call_foo"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
+  Function old_foo(&scope, mainModuleAt(&runtime_, "old_foo"));
+  Function call_foo(&scope, mainModuleAt(&runtime_, "call_foo"));
   Function do_not_invalidate(&scope,
-                             mainModuleAt(&runtime, "do_not_invalidate"));
-  Function invalidate(&scope, mainModuleAt(&runtime, "invalidate"));
+                             mainModuleAt(&runtime_, "do_not_invalidate"));
+  Function invalidate(&scope, mainModuleAt(&runtime_, "invalidate"));
   Tuple caches(&scope, call_foo.caches());
   // Load the cache
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
   ASSERT_TRUE(isIntEqualsWord(
-      Interpreter::callFunction1(thread, thread->currentFrame(), call_foo, c),
+      Interpreter::callFunction1(thread_, thread_->currentFrame(), call_foo, c),
       400));
   ASSERT_EQ(icLookupAttr(*caches, 1, c.layoutId()), *old_foo);
 
   // Assign a non-data descriptor to different attribute name.
-  ASSERT_TRUE(Interpreter::callFunction0(thread, thread->currentFrame(),
+  ASSERT_TRUE(Interpreter::callFunction0(thread_, thread_->currentFrame(),
                                          do_not_invalidate)
                   .isNoneType());
   ASSERT_EQ(icLookupAttr(*caches, 1, c.layoutId()), *old_foo);
 
   // Invalidate the cache.
   ASSERT_TRUE(
-      Interpreter::callFunction0(thread, thread->currentFrame(), invalidate)
+      Interpreter::callFunction0(thread_, thread_->currentFrame(), invalidate)
           .isNoneType());
   // Verify that the cache is empty and calling get_foo() returns a fresh value.
   EXPECT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
   EXPECT_TRUE(isStrEqualsCStr(
-      Interpreter::callFunction1(thread, thread->currentFrame(), call_foo, c),
+      Interpreter::callFunction1(thread_, thread_->currentFrame(), call_foo, c),
       "new type attr"));
 }
 
-TEST(
-    InterpreterTestNoFixture,
+TEST_F(
+    InterpreterTest,
     StoreAttrCachedInvalidatesAttributeCachesByUpdatingMatchingTypeAttributesOfSuperclass) {
-  Runtime runtime(/*cache_enabled=*/true);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  EXPECT_FALSE(runFromCStr(&runtime, R"(
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
 class B:
   pass
 
@@ -4082,23 +4060,23 @@ def invalidate():
 c = C()
 )")
                    .isError());
-  Type type_b(&scope, mainModuleAt(&runtime, "B"));
-  Type type_c(&scope, mainModuleAt(&runtime, "C"));
-  Object c(&scope, mainModuleAt(&runtime, "c"));
-  Function get_foo(&scope, mainModuleAt(&runtime, "get_foo"));
+  Type type_b(&scope, mainModuleAt(&runtime_, "B"));
+  Type type_c(&scope, mainModuleAt(&runtime_, "C"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
+  Function get_foo(&scope, mainModuleAt(&runtime_, "get_foo"));
   Function do_not_invalidate(&scope,
-                             mainModuleAt(&runtime, "do_not_invalidate"));
-  Function invalidate(&scope, mainModuleAt(&runtime, "invalidate"));
+                             mainModuleAt(&runtime_, "do_not_invalidate"));
+  Function invalidate(&scope, mainModuleAt(&runtime_, "invalidate"));
   Tuple caches(&scope, get_foo.caches());
   // Load the cache.
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
   ASSERT_TRUE(isIntEqualsWord(
-      Interpreter::callFunction1(thread, thread->currentFrame(), get_foo, c),
+      Interpreter::callFunction1(thread_, thread_->currentFrame(), get_foo, c),
       400));
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isSmallInt());
 
   // Updating a subclass' type attribute doesn't invalidate the cache.
-  ASSERT_TRUE(Interpreter::callFunction0(thread, thread->currentFrame(),
+  ASSERT_TRUE(Interpreter::callFunction0(thread_, thread_->currentFrame(),
                                          do_not_invalidate)
                   .isNoneType());
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isSmallInt());
@@ -4106,15 +4084,15 @@ c = C()
   // Verify that all type dictionaries in C's mro have dependentices to get_foo.
   Dict type_b_dict(&scope, type_b.dict());
   Dict type_c_dict(&scope, type_c.dict());
-  Str foo_name(&scope, runtime.newStrFromCStr("foo"));
-  Object result(&scope, runtime.dictAt(thread, type_b_dict, foo_name));
+  Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
+  Object result(&scope, runtime_.dictAt(thread_, type_b_dict, foo_name));
   ASSERT_TRUE(result.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*result).dependencyLink().isWeakLink());
   EXPECT_EQ(
       WeakLink::cast(ValueCell::cast(*result).dependencyLink()).referent(),
       *get_foo);
 
-  result = runtime.dictAt(thread, type_c_dict, foo_name);
+  result = runtime_.dictAt(thread_, type_c_dict, foo_name);
   ASSERT_TRUE(result.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*result).dependencyLink().isWeakLink());
   EXPECT_EQ(
@@ -4123,26 +4101,98 @@ c = C()
 
   // Invalidate the cache.
   ASSERT_TRUE(
-      Interpreter::callFunction0(thread, thread->currentFrame(), invalidate)
+      Interpreter::callFunction0(thread_, thread_->currentFrame(), invalidate)
           .isNoneType());
   // Verify that the cache is empty and calling get_foo() returns a fresh value.
   EXPECT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
   EXPECT_TRUE(isStrEqualsCStr(
-      Interpreter::callFunction1(thread, thread->currentFrame(), get_foo, c),
+      Interpreter::callFunction1(thread_, thread_->currentFrame(), get_foo, c),
       "data descriptor"));
 
   // Verify that all type dictionaries in C's mro dropped dependencies to
   // get_foo.
-  result = runtime.dictAt(thread, type_b_dict, foo_name);
+  result = runtime_.dictAt(thread_, type_b_dict, foo_name);
   ASSERT_TRUE(result.isValueCell());
   EXPECT_TRUE(ValueCell::cast(*result).dependencyLink().isNoneType());
 
-  result = runtime.dictAt(thread, type_c_dict, foo_name);
+  result = runtime_.dictAt(thread_, type_c_dict, foo_name);
   ASSERT_TRUE(result.isValueCell());
   EXPECT_TRUE(ValueCell::cast(*result).dependencyLink().isNoneType());
 }
 
-TEST_F(InterpreterTest, LoadMethodLoadingMethodFollowedByCallMethod) {
+TEST(InterpreterTestNoFixture, LoadMethodLoadingMethodFollowedByCallMethod) {
+  Runtime runtime(/*cache_enabled=*/false);
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  EXPECT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def __init__(self):
+    self.val = 40
+
+  def compute(self, arg0, arg1):
+    return self.val + arg0 + arg1
+
+def test():
+  return c.compute(10, 20)
+
+c = C()
+)")
+                   .isError());
+  Function test_function(&scope, mainModuleAt(&runtime, "test"));
+  MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
+  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR);
+  ASSERT_EQ(bytecode.byteAt(8), CALL_FUNCTION);
+  bytecode.byteAtPut(2, LOAD_METHOD);
+  bytecode.byteAtPut(8, CALL_METHOD);
+
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction0(thread, thread->currentFrame(), test_function),
+      70));
+}
+
+TEST_F(InterpreterTest,
+       LoadMethodCachedCachingNonFunctionFollowedByCallMethod) {
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
+class C:
+  def __init__(self):
+    self.val = 40
+
+def foo(a, b): return a + b
+c = C()
+c.compute = foo
+def test():
+  return c.compute(10, 20)
+)")
+                   .isError());
+  Function test_function(&scope, mainModuleAt(&runtime_, "test"));
+  MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
+  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_CACHED);
+  ASSERT_EQ(bytecode.byteAt(8), CALL_FUNCTION);
+  bytecode.byteAtPut(2, LOAD_METHOD_CACHED);
+  bytecode.byteAtPut(8, CALL_METHOD);
+
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
+  LayoutId layout_id = c.layoutId();
+  Tuple caches(&scope, test_function.caches());
+  // Cache miss.
+  ASSERT_TRUE(
+      icLookupAttr(*caches, bytecode.byteAt(3), layout_id).isErrorNotFound());
+  EXPECT_TRUE(
+      isIntEqualsWord(Interpreter::callFunction0(
+                          thread_, thread_->currentFrame(), test_function),
+                      30));
+
+  // Cache hit.
+  ASSERT_TRUE(
+      icLookupAttr(*caches, bytecode.byteAt(3), layout_id).isSmallInt());
+  EXPECT_TRUE(
+      isIntEqualsWord(Interpreter::callFunction0(
+                          thread_, thread_->currentFrame(), test_function),
+                      30));
+}
+
+TEST_F(InterpreterTest, LoadMethodCachedCachingFunctionFollowedByCallMethod) {
   HandleScope scope(thread_);
   EXPECT_FALSE(runFromCStr(&runtime_, R"(
 class C:
@@ -4160,126 +4210,50 @@ c = C()
                    .isError());
   Function test_function(&scope, mainModuleAt(&runtime_, "test"));
   MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
-  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR);
+  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_CACHED);
   ASSERT_EQ(bytecode.byteAt(8), CALL_FUNCTION);
-  bytecode.byteAtPut(2, LOAD_METHOD);
+  bytecode.byteAtPut(2, LOAD_METHOD_CACHED);
   bytecode.byteAtPut(8, CALL_METHOD);
 
+  // Cache miss.
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
+  LayoutId layout_id = c.layoutId();
+  Tuple caches(&scope, test_function.caches());
+  ASSERT_TRUE(
+      icLookupAttr(*caches, bytecode.byteAt(3), layout_id).isErrorNotFound());
+  EXPECT_TRUE(
+      isIntEqualsWord(Interpreter::callFunction0(
+                          thread_, thread_->currentFrame(), test_function),
+                      70));
+
+  // Cache hit.
+  ASSERT_TRUE(
+      icLookupAttr(*caches, bytecode.byteAt(3), layout_id).isFunction());
   EXPECT_TRUE(
       isIntEqualsWord(Interpreter::callFunction0(
                           thread_, thread_->currentFrame(), test_function),
                       70));
 }
 
-TEST(InterpreterTestNoFixture,
-     LoadMethodCachedCachingNonFunctionFollowedByCallMethod) {
-  Runtime runtime(/*cache_enabled=*/true);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  EXPECT_FALSE(runFromCStr(&runtime, R"(
-class C:
-  def __init__(self):
-    self.val = 40
-
-def foo(a, b): return a + b
-c = C()
-c.compute = foo
-def test():
-  return c.compute(10, 20)
-)")
-                   .isError());
-  Function test_function(&scope, mainModuleAt(&runtime, "test"));
-  MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
-  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_CACHED);
-  ASSERT_EQ(bytecode.byteAt(8), CALL_FUNCTION);
-  bytecode.byteAtPut(2, LOAD_METHOD_CACHED);
-  bytecode.byteAtPut(8, CALL_METHOD);
-
-  Object c(&scope, mainModuleAt(&runtime, "c"));
-  LayoutId layout_id = c.layoutId();
-  Tuple caches(&scope, test_function.caches());
-  // Cache miss.
-  ASSERT_TRUE(
-      icLookupAttr(*caches, bytecode.byteAt(3), layout_id).isErrorNotFound());
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::callFunction0(thread, thread->currentFrame(), test_function),
-      30));
-
-  // Cache hit.
-  ASSERT_TRUE(
-      icLookupAttr(*caches, bytecode.byteAt(3), layout_id).isSmallInt());
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::callFunction0(thread, thread->currentFrame(), test_function),
-      30));
-}
-
-TEST(InterpreterTestNoFixture,
-     LoadMethodCachedCachingFunctionFollowedByCallMethod) {
-  Runtime runtime(/*cache_enabled=*/true);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  EXPECT_FALSE(runFromCStr(&runtime, R"(
-class C:
-  def __init__(self):
-    self.val = 40
-
-  def compute(self, arg0, arg1):
-    return self.val + arg0 + arg1
-
-def test():
-  return c.compute(10, 20)
-
-c = C()
-)")
-                   .isError());
-  Function test_function(&scope, mainModuleAt(&runtime, "test"));
-  MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
-  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_CACHED);
-  ASSERT_EQ(bytecode.byteAt(8), CALL_FUNCTION);
-  bytecode.byteAtPut(2, LOAD_METHOD_CACHED);
-  bytecode.byteAtPut(8, CALL_METHOD);
-
-  // Cache miss.
-  Object c(&scope, mainModuleAt(&runtime, "c"));
-  LayoutId layout_id = c.layoutId();
-  Tuple caches(&scope, test_function.caches());
-  ASSERT_TRUE(
-      icLookupAttr(*caches, bytecode.byteAt(3), layout_id).isErrorNotFound());
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::callFunction0(thread, thread->currentFrame(), test_function),
-      70));
-
-  // Cache hit.
-  ASSERT_TRUE(
-      icLookupAttr(*caches, bytecode.byteAt(3), layout_id).isFunction());
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::callFunction0(thread, thread->currentFrame(), test_function),
-      70));
-}
-
-TEST(InterpreterTestNoFixture, DoLoadImmediate) {
-  Runtime runtime(/*cache_enabled=*/true);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  EXPECT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(InterpreterTest, DoLoadImmediate) {
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
 def test():
   return None
 
 result = test()
 )")
                    .isError());
-  Function test_function(&scope, mainModuleAt(&runtime, "test"));
+  Function test_function(&scope, mainModuleAt(&runtime_, "test"));
   MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
   // Verify that rewriting replaces LOAD_CONST for LOAD_IMMEDIATE.
   EXPECT_EQ(bytecode.byteAt(0), LOAD_IMMEDIATE);
   EXPECT_EQ(bytecode.byteAt(1), static_cast<byte>(NoneType::object().raw()));
-  EXPECT_TRUE(mainModuleAt(&runtime, "result").isNoneType());
+  EXPECT_TRUE(mainModuleAt(&runtime_, "result").isNoneType());
 }
 
-TEST(InterpreterTestNoFixture,
-     LoadAttrCachedInsertsExecutingFunctionAsDependent) {
-  Runtime runtime(/*cache_enabled=*/true);
-  EXPECT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(InterpreterTest, LoadAttrCachedInsertsExecutingFunctionAsDependent) {
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __init__(self):
     self.foo = 400
@@ -4290,35 +4264,32 @@ def cache_attribute(c):
 c = C()
 )")
                    .isError());
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Type type_c(&scope, mainModuleAt(&runtime, "C"));
-  Object c(&scope, mainModuleAt(&runtime, "c"));
-  Function cache_attribute(&scope, mainModuleAt(&runtime, "cache_attribute"));
+  HandleScope scope(thread_);
+  Type type_c(&scope, mainModuleAt(&runtime_, "C"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
+  Function cache_attribute(&scope, mainModuleAt(&runtime_, "cache_attribute"));
   Tuple caches(&scope, cache_attribute.caches());
   ASSERT_EQ(caches.length(), 2 * kIcPointersPerCache);
 
   // Load the cache.
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
   ASSERT_TRUE(
-      isIntEqualsWord(Interpreter::callFunction1(thread, thread->currentFrame(),
-                                                 cache_attribute, c),
+      isIntEqualsWord(Interpreter::callFunction1(
+                          thread_, thread_->currentFrame(), cache_attribute, c),
                       400));
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isSmallInt());
 
   // Verify that cache_attribute function is added as a dependent.
   Dict type_c_dict(&scope, type_c.dict());
-  Str foo_name(&scope, runtime.newStrFromCStr("foo"));
-  ValueCell value_cell(&scope, runtime.dictAt(thread, type_c_dict, foo_name));
+  Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
+  ValueCell value_cell(&scope, runtime_.dictAt(thread_, type_c_dict, foo_name));
   ASSERT_TRUE(value_cell.dependencyLink().isWeakLink());
   EXPECT_EQ(WeakLink::cast(value_cell.dependencyLink()).referent(),
             *cache_attribute);
 }
 
-TEST(InterpreterTestNoFixture,
-     StoreAttrCachedInsertsExecutingFunctionAsDependent) {
-  Runtime runtime(/*cache_enabled=*/true);
-  EXPECT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(InterpreterTest, StoreAttrCachedInsertsExecutingFunctionAsDependent) {
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __init__(self):
     self.foo = 400
@@ -4329,33 +4300,31 @@ def cache_attribute(c):
 c = C()
 )")
                    .isError());
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Type type_c(&scope, mainModuleAt(&runtime, "C"));
-  Object c(&scope, mainModuleAt(&runtime, "c"));
-  Function cache_attribute(&scope, mainModuleAt(&runtime, "cache_attribute"));
+  HandleScope scope(thread_);
+  Type type_c(&scope, mainModuleAt(&runtime_, "C"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
+  Function cache_attribute(&scope, mainModuleAt(&runtime_, "cache_attribute"));
   Tuple caches(&scope, cache_attribute.caches());
   ASSERT_EQ(caches.length(), 2 * kIcPointersPerCache);
 
   // Load the cache.
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
-  ASSERT_TRUE(Interpreter::callFunction1(thread, thread->currentFrame(),
+  ASSERT_TRUE(Interpreter::callFunction1(thread_, thread_->currentFrame(),
                                          cache_attribute, c)
                   .isNoneType());
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isSmallInt());
 
   // Verify that cache_attribute function is added as a dependent.
   Dict type_c_dict(&scope, type_c.dict());
-  Str foo_name(&scope, runtime.newStrFromCStr("foo"));
-  ValueCell value_cell(&scope, runtime.dictAt(thread, type_c_dict, foo_name));
+  Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
+  ValueCell value_cell(&scope, runtime_.dictAt(thread_, type_c_dict, foo_name));
   ASSERT_TRUE(value_cell.dependencyLink().isWeakLink());
   EXPECT_EQ(WeakLink::cast(value_cell.dependencyLink()).referent(),
             *cache_attribute);
 }
 
-TEST(InterpreterTestNoFixture, StoreAttrsCausingShadowingInvalidatesCache) {
-  Runtime runtime(/*cache_enabled=*/true);
-  EXPECT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(InterpreterTest, StoreAttrsCausingShadowingInvalidatesCache) {
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
 class A:
   def foo(self): return 40
 
@@ -4384,15 +4353,14 @@ b_foo = B.foo
 function_that_caches_attr_lookup(a, b, c)
 )")
                    .isError());
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Type type_a(&scope, mainModuleAt(&runtime, "A"));
-  Type type_b(&scope, mainModuleAt(&runtime, "B"));
-  Object a(&scope, mainModuleAt(&runtime, "a"));
-  Object b(&scope, mainModuleAt(&runtime, "b"));
-  Object c(&scope, mainModuleAt(&runtime, "c"));
+  HandleScope scope(thread_);
+  Type type_a(&scope, mainModuleAt(&runtime_, "A"));
+  Type type_b(&scope, mainModuleAt(&runtime_, "B"));
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
   Function function_that_caches_attr_lookup(
-      &scope, mainModuleAt(&runtime, "function_that_caches_attr_lookup"));
+      &scope, mainModuleAt(&runtime_, "function_that_caches_attr_lookup"));
   Tuple caches(&scope, function_that_caches_attr_lookup.caches());
   // 0: global variable
   // 1: a.foo
@@ -4400,8 +4368,8 @@ function_that_caches_attr_lookup(a, b, c)
   // 3: binary op cache
   // 4: c.foo
   // 5, binary op cache
-  Function a_foo(&scope, mainModuleAt(&runtime, "a_foo"));
-  Function b_foo(&scope, mainModuleAt(&runtime, "b_foo"));
+  Function a_foo(&scope, mainModuleAt(&runtime_, "a_foo"));
+  Function b_foo(&scope, mainModuleAt(&runtime_, "b_foo"));
   ASSERT_EQ(caches.length(), 6 * kIcPointersPerCache);
   ASSERT_EQ(icLookupAttr(*caches, 1, a.layoutId()), *a_foo);
   ASSERT_EQ(icLookupAttr(*caches, 2, b.layoutId()), *b_foo);
@@ -4410,8 +4378,8 @@ function_that_caches_attr_lookup(a, b, c)
   // Verify that function_that_caches_attr_lookup cached the attribute lookup
   // and appears on the dependency list of A.foo.
   Dict type_a_dict(&scope, type_a.dict());
-  Str foo_name(&scope, runtime.newStrFromCStr("foo"));
-  ValueCell foo_in_a(&scope, runtime.dictAt(thread, type_a_dict, foo_name));
+  Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
+  ValueCell foo_in_a(&scope, runtime_.dictAt(thread_, type_a_dict, foo_name));
   ASSERT_TRUE(foo_in_a.dependencyLink().isWeakLink());
   ASSERT_EQ(WeakLink::cast(foo_in_a.dependencyLink()).referent(),
             *function_that_caches_attr_lookup);
@@ -4419,7 +4387,7 @@ function_that_caches_attr_lookup(a, b, c)
   // Verify that function_that_caches_attr_lookup cached the attribute lookup
   // and appears on the dependency list of B.foo.
   Dict type_b_dict(&scope, type_b.dict());
-  ValueCell foo_in_b(&scope, runtime.dictAt(thread, type_b_dict, foo_name));
+  ValueCell foo_in_b(&scope, runtime_.dictAt(thread_, type_b_dict, foo_name));
   ASSERT_TRUE(foo_in_b.dependencyLink().isWeakLink());
   ASSERT_EQ(WeakLink::cast(foo_in_b.dependencyLink()).referent(),
             *function_that_caches_attr_lookup);
@@ -4427,15 +4395,15 @@ function_that_caches_attr_lookup(a, b, c)
   // Verify that function_that_caches_attr_lookup cached the attribute lookup
   // and appears on the dependency list of C.foo.
   Dict type_c_dict(&scope, type_b.dict());
-  ValueCell foo_in_c(&scope, runtime.dictAt(thread, type_c_dict, foo_name));
+  ValueCell foo_in_c(&scope, runtime_.dictAt(thread_, type_c_dict, foo_name));
   ASSERT_TRUE(foo_in_c.dependencyLink().isWeakLink());
   ASSERT_EQ(WeakLink::cast(foo_in_c.dependencyLink()).referent(),
             *function_that_caches_attr_lookup);
 
   // Change the class A so that any caches that reference A.foo are invalidated.
   Function func_that_causes_shadowing_of_attr_a(
-      &scope, mainModuleAt(&runtime, "func_that_causes_shadowing_of_attr_a"));
-  ASSERT_TRUE(Interpreter::callFunction0(thread, thread->currentFrame(),
+      &scope, mainModuleAt(&runtime_, "func_that_causes_shadowing_of_attr_a"));
+  ASSERT_TRUE(Interpreter::callFunction0(thread_, thread_->currentFrame(),
                                          func_that_causes_shadowing_of_attr_a)
                   .isNoneType());
   // Verify that the cache for A.foo is cleared out, and dependent does not
@@ -4453,8 +4421,8 @@ function_that_caches_attr_lookup(a, b, c)
 
   // Invalidate the cache for B.foo.
   Function func_that_causes_shadowing_of_attr_b(
-      &scope, mainModuleAt(&runtime, "func_that_causes_shadowing_of_attr_b"));
-  ASSERT_TRUE(Interpreter::callFunction0(thread, thread->currentFrame(),
+      &scope, mainModuleAt(&runtime_, "func_that_causes_shadowing_of_attr_b"));
+  ASSERT_TRUE(Interpreter::callFunction0(thread_, thread_->currentFrame(),
                                          func_that_causes_shadowing_of_attr_b)
                   .isNoneType());
   // Check that caches for A are still invalidated.

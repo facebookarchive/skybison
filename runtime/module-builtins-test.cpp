@@ -168,10 +168,8 @@ TEST_F(ModuleBuiltinsTest, ModuleAtByIdReturnsValuePutByModuleAtPutById) {
 
 TEST_F(ModuleBuiltinsTest,
        ModuleAtPutDoesNotInvalidateCachedModuleDictValueCell) {
-  Runtime runtime(/*cache_enabled=*/true);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  EXPECT_FALSE(runFromCStr(&runtime, R"(
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
 a = 4
 
 def foo():
@@ -180,13 +178,14 @@ def foo():
 foo()
 )")
                    .isError());
-  Module module(&scope, findMainModule(&runtime));
+  Module module(&scope, findMainModule(&runtime_));
   Dict module_dict(&scope, module.dict());
-  Str a(&scope, runtime.newStrFromCStr("a"));
-  ValueCell value_cell_a(&scope, moduleDictValueCellAt(thread, module_dict, a));
+  Str a(&scope, runtime_.newStrFromCStr("a"));
+  ValueCell value_cell_a(&scope,
+                         moduleDictValueCellAt(thread_, module_dict, a));
 
   // The looked up module entry got cached in function foo().
-  Function function_foo(&scope, mainModuleAt(&runtime, "foo"));
+  Function function_foo(&scope, mainModuleAt(&runtime_, "foo"));
   Tuple caches(&scope, function_foo.caches());
   ASSERT_EQ(icLookupGlobalVar(*caches, 0), *value_cell_a);
 
@@ -198,10 +197,8 @@ foo()
 }
 
 TEST_F(ModuleBuiltinsTest, ModuleAtPutInvalidatesCachedBuiltinsValueCell) {
-  Runtime runtime(/*cache_enabled=*/true);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  EXPECT_FALSE(runFromCStr(&runtime, R"(
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
 __builtins__.a = 4
 
 def foo():
@@ -210,24 +207,24 @@ def foo():
 foo()
 )")
                    .isError());
-  Module module(&scope, findMainModule(&runtime));
+  Module module(&scope, findMainModule(&runtime_));
   Dict module_dict(&scope, module.dict());
-  Dict builtins_dict(&scope, moduleDictBuiltins(thread, module_dict));
-  Str a(&scope, runtime.newStrFromCStr("a"));
+  Dict builtins_dict(&scope, moduleDictBuiltins(thread_, module_dict));
+  Str a(&scope, runtime_.newStrFromCStr("a"));
   Str new_value(&scope, runtime_.newStrFromCStr("value"));
   ValueCell value_cell_a(&scope,
-                         moduleDictValueCellAt(thread, builtins_dict, a));
+                         moduleDictValueCellAt(thread_, builtins_dict, a));
 
   // The looked up module entry got cached in function foo().
-  Function function_foo(&scope, mainModuleAt(&runtime, "foo"));
+  Function function_foo(&scope, mainModuleAt(&runtime_, "foo"));
   Tuple caches(&scope, function_foo.caches());
   ASSERT_EQ(icLookupGlobalVar(*caches, 0), *value_cell_a);
 
-  ASSERT_FALSE(mainModuleAt(&runtime, "__builtins__").isErrorNotFound());
+  ASSERT_FALSE(mainModuleAt(&runtime_, "__builtins__").isErrorNotFound());
 
   // Updating global variable a does invalidate the cache since it shadows
   // __builtins__.a.
-  moduleAtPut(thread, module, a, new_value);
+  moduleAtPut(thread_, module, a, new_value);
   EXPECT_TRUE(icLookupGlobalVar(*caches, 0).isNoneType());
 }
 
@@ -313,10 +310,8 @@ TEST_F(ModuleBuiltinsTest, ModuleDictBuiltinsReturnsMinimalDict) {
 
 TEST_F(ModuleBuiltinsTest,
        ModuleDictRemoveInvalidateCachedModuleDictValueCell) {
-  Runtime runtime(/*cache_enabled=*/true);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  EXPECT_FALSE(runFromCStr(&runtime, R"(
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
 a = 4
 
 def foo():
@@ -325,13 +320,14 @@ def foo():
 foo()
 )")
                    .isError());
-  Module module(&scope, findMainModule(&runtime));
+  Module module(&scope, findMainModule(&runtime_));
   Dict module_dict(&scope, module.dict());
-  Str a(&scope, runtime.newStrFromCStr("a"));
-  ValueCell value_cell_a(&scope, moduleDictValueCellAt(thread, module_dict, a));
+  Str a(&scope, runtime_.newStrFromCStr("a"));
+  ValueCell value_cell_a(&scope,
+                         moduleDictValueCellAt(thread_, module_dict, a));
 
   // The looked up module entry got cached in function foo().
-  Function function_foo(&scope, mainModuleAt(&runtime, "foo"));
+  Function function_foo(&scope, mainModuleAt(&runtime_, "foo"));
   Tuple caches(&scope, function_foo.caches());
   ASSERT_EQ(icLookupGlobalVar(*caches, 0), *value_cell_a);
 
@@ -418,13 +414,12 @@ TEST_F(ModuleBuiltinsTest, ModuleGetAttributeReturnsInstanceValue) {
 }
 
 TEST_F(ModuleBuiltinsTest, ModuleGetAttributeWithNonExistentNameReturnsError) {
-  Thread* thread = Thread::current();
   HandleScope scope(thread_);
   Object module_name(&scope, runtime_.newStrFromCStr(""));
   Module module(&scope, runtime_.newModule(module_name));
   Object name(&scope, runtime_.newStrFromCStr("xxx"));
   EXPECT_TRUE(moduleGetAttribute(thread_, module, name).isError());
-  EXPECT_FALSE(thread->hasPendingException());
+  EXPECT_FALSE(thread_->hasPendingException());
 }
 
 TEST_F(ModuleBuiltinsTest, ModuleSetAttrSetsAttribute) {

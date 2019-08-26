@@ -847,8 +847,7 @@ TEST_F(TypeBuiltinsDeathTest,
 TEST_F(
     TypeBuiltinsDeathTest,
     DunderSetAttrWithUnimplementedCacheInvalidationTerminatesPyroWhenCacheIsEnabled) {
-  Runtime runtime(/*cache_enabled=*/true);
-  EXPECT_FALSE(runFromCStr(&runtime, R"(
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
 class C: pass
 
 C.__len__ = lambda self: 4
@@ -856,21 +855,21 @@ C.__len__ = lambda self: 4
                    .isError());
 
   ASSERT_DEATH(
-      static_cast<void>(runFromCStr(&runtime, R"(
+      static_cast<void>(runFromCStr(&runtime_, R"(
 class C: pass
 
 C.__getattribute__ = lambda self, key: 5
 )")),
       "unimplemented cache invalidation for type.__getattribute__ update");
 
-  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime, R"(
+  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime_, R"(
 class C: pass
 
 C.__setattr__ = lambda self, key: 5
 )")),
                "unimplemented cache invalidation for type.__setattr__ update");
 
-  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime, R"(
+  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime_, R"(
 class C: pass
 
 C.__add__ = lambda self, other: 5
@@ -882,7 +881,7 @@ TEST_F(
     TypeBuiltinsDeathTest,
     DunderSetAttrWithUnimplementedCacheInvalidationDoesNotTerminatePyroWhenCacheIsDisabled) {
   Runtime runtime(/*cache_enabled=*/false);
-  EXPECT_FALSE(runFromCStr(&runtime, R"(
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
 class C: pass
 
 C.__getattribute__ = lambda self, key: 5

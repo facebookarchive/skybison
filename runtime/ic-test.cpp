@@ -665,10 +665,9 @@ class C: pass
   icInvalidateCachesForTypeAttr(thread_, type, foo_name, true);
 }
 
-TEST(IcTestNoFixture,
-     BinarySubscrUpdateCacheWithRaisingDescriptorPropagatesException) {
-  Runtime runtime(/*cache_enabled=*/true);
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+TEST_F(IcTest,
+       BinarySubscrUpdateCacheWithRaisingDescriptorPropagatesException) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 class Desc:
   def __get__(self, instance, type):
     raise UserWarning("foo")
@@ -682,10 +681,9 @@ result = container[0]
                             LayoutId::kUserWarning, "foo"));
 }
 
-TEST(IcTestNoFixture,
-     ForIterUpdateCacheWithRaisingDescriptorDunderNextPropagatesException) {
-  Runtime runtime(/*cache_enabled=*/true);
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+TEST_F(IcTest,
+       ForIterUpdateCacheWithRaisingDescriptorDunderNextPropagatesException) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 class Desc:
   def __get__(self, instance, type):
     raise UserWarning("foo")
@@ -701,9 +699,8 @@ result = [x for x in container]
                             LayoutId::kUserWarning, "foo"));
 }
 
-TEST(IcTestNoFixture, BinarySubscrUpdateCacheWithFunctionUpdatesCache) {
-  Runtime runtime(/*cache_enabled=*/true);
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(IcTest, BinarySubscrUpdateCacheWithFunctionUpdatesCache) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def f(c, k):
   return c[k]
 
@@ -714,31 +711,30 @@ result = f(container, 0)
                    .isError());
 
   HandleScope scope;
-  Object result(&scope, mainModuleAt(&runtime, "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 
-  Object container(&scope, mainModuleAt(&runtime, "container"));
-  Object getitem(&scope, mainModuleAt(&runtime, "getitem"));
-  Function f(&scope, mainModuleAt(&runtime, "f"));
+  Object container(&scope, mainModuleAt(&runtime_, "container"));
+  Object getitem(&scope, mainModuleAt(&runtime_, "getitem"));
+  Function f(&scope, mainModuleAt(&runtime_, "f"));
   Tuple caches(&scope, f.caches());
   // Expect that BINARY_SUBSCR is the only cached opcode in f().
   ASSERT_EQ(caches.length(), 1 * kIcPointersPerCache);
   EXPECT_EQ(icLookupAttr(*caches, 0, container.layoutId()), *getitem);
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 container2 = [4, 5, 6]
 result2 = f(container2, 1)
 )")
                    .isError());
-  Object container2(&scope, mainModuleAt(&runtime, "container2"));
-  Object result2(&scope, mainModuleAt(&runtime, "result2"));
+  Object container2(&scope, mainModuleAt(&runtime_, "container2"));
+  Object result2(&scope, mainModuleAt(&runtime_, "result2"));
   EXPECT_EQ(container2.layoutId(), container.layoutId());
   EXPECT_TRUE(isIntEqualsWord(*result2, 5));
 }
 
-TEST(IcTestNoFixture, BinarySubscrUpdateCacheWithNonFunctionDoesntUpdateCache) {
-  Runtime runtime(/*cache_enabled=*/true);
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(IcTest, BinarySubscrUpdateCacheWithNonFunctionDoesntUpdateCache) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def f(c, k):
   return c[k]
 class Container:
@@ -755,23 +751,23 @@ result = f(container, "hi")
                    .isError());
 
   HandleScope scope;
-  Object result(&scope, mainModuleAt(&runtime, "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "hi"));
 
-  Object container(&scope, mainModuleAt(&runtime, "container"));
-  Function f(&scope, mainModuleAt(&runtime, "f"));
+  Object container(&scope, mainModuleAt(&runtime_, "container"));
+  Function f(&scope, mainModuleAt(&runtime_, "f"));
   Tuple caches(&scope, f.caches());
   // Expect that BINARY_SUBSCR is the only cached opcode in f().
   ASSERT_EQ(caches.length(), 1 * kIcPointersPerCache);
   EXPECT_TRUE(icLookupAttr(*caches, 0, container.layoutId()).isErrorNotFound());
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 container2 = Container()
 result2 = f(container, "hello there!")
 )")
                    .isError());
-  Object container2(&scope, mainModuleAt(&runtime, "container2"));
-  Object result2(&scope, mainModuleAt(&runtime, "result2"));
+  Object container2(&scope, mainModuleAt(&runtime_, "container2"));
+  Object result2(&scope, mainModuleAt(&runtime_, "result2"));
   ASSERT_EQ(container2.layoutId(), container.layoutId());
   EXPECT_TRUE(isStrEqualsCStr(*result2, "hello there!"));
 }
@@ -814,9 +810,8 @@ TEST_F(IcTest, IcUpdateBinopSetsExistingEntry) {
       "yyy"));
 }
 
-TEST(IcTestNoFixture, ForIterUpdateCacheWithFunctionUpdatesCache) {
-  Runtime runtime(/*cache_enabled=*/true);
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(IcTest, ForIterUpdateCacheWithFunctionUpdatesCache) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def f(container):
   for i in container:
     return i
@@ -829,21 +824,20 @@ result = f(container)
                    .isError());
 
   HandleScope scope;
-  Object result(&scope, mainModuleAt(&runtime, "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 
-  Object iterator(&scope, mainModuleAt(&runtime, "iterator"));
-  Object iter_next(&scope, mainModuleAt(&runtime, "iter_next"));
-  Function f(&scope, mainModuleAt(&runtime, "f"));
+  Object iterator(&scope, mainModuleAt(&runtime_, "iterator"));
+  Object iter_next(&scope, mainModuleAt(&runtime_, "iter_next"));
+  Function f(&scope, mainModuleAt(&runtime_, "f"));
   Tuple caches(&scope, f.caches());
   // Expect that FOR_ITER is the only cached opcode in f().
   ASSERT_EQ(caches.length(), 1 * kIcPointersPerCache);
   EXPECT_EQ(icLookupAttr(*caches, 0, iterator.layoutId()), *iter_next);
 }
 
-TEST(IcTestNoFixture, ForIterUpdateCacheWithNonFunctionDoesntUpdateCache) {
-  Runtime runtime(/*cache_enabled=*/true);
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(IcTest, ForIterUpdateCacheWithNonFunctionDoesntUpdateCache) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def f(container):
   for i in container:
     return i
@@ -866,11 +860,11 @@ result = f(container)
                    .isError());
 
   HandleScope scope;
-  Object result(&scope, mainModuleAt(&runtime, "result"));
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 123));
 
-  Object iterator(&scope, mainModuleAt(&runtime, "iterator"));
-  Function f(&scope, mainModuleAt(&runtime, "f"));
+  Object iterator(&scope, mainModuleAt(&runtime_, "iterator"));
+  Function f(&scope, mainModuleAt(&runtime_, "f"));
   Tuple caches(&scope, f.caches());
   // Expect that FOR_ITER is the only cached opcode in f().
   ASSERT_EQ(caches.length(), 1 * kIcPointersPerCache);

@@ -2294,18 +2294,17 @@ del Foo.bar
   EXPECT_EQ(args.at(1), *attr);
 }
 
-TEST(
-    RuntimeTestNoFixture,
+TEST_F(
+    RuntimeTest,
     DeleteClassAttributeWithUnimplementedCacheInvalidationTerminatesPyroWhenCacheIsEnabled) {
-  Runtime runtime(/*cache_enabled=*/true);
-  EXPECT_FALSE(runFromCStr(&runtime, R"(
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __len__(self): return 4
 
 del C.__len__
 )")
                    .isError());
-  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime, R"(
+  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime_, R"(
 class C:
   def __add__(self, other): return 4
 
