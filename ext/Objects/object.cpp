@@ -4,6 +4,7 @@
 #include "bytes-builtins.h"
 #include "cpython-data.h"
 #include "cpython-func.h"
+#include "dict-builtins.h"
 #include "runtime.h"
 #include "str-builtins.h"
 
@@ -178,16 +179,9 @@ PY_EXPORT Py_hash_t PyObject_Hash(PyObject* obj) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  Object result(&scope, thread->invokeMethod1(object, SymbolId::kDunderHash));
-  if (result.isError()) {
-    if (result.isErrorNotFound()) {
-      thread->raiseWithFmt(LayoutId::kTypeError, "unhashable type");
-    }
-    return -1;
-  }
-  DCHECK(result.isSmallInt(), "__hash__ should return small int");
-  SmallInt hash(&scope, *result);
-  return hash.value();
+  Object result(&scope, Interpreter::hash(thread, object));
+  if (result.isErrorException()) return -1;
+  return SmallInt::cast(*result).value();
 }
 
 PY_EXPORT Py_hash_t PyObject_HashNotImplemented(PyObject* /* v */) {

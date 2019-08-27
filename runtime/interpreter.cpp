@@ -211,6 +211,34 @@ RawObject Interpreter::prepareCallableEx(Thread* thread, Frame* frame,
   return *callable;
 }
 
+RawObject Interpreter::hash(Thread* thread, const Object& value) {
+  HandleScope scope(thread);
+  Frame* frame = thread->currentFrame();
+  // TODO(T52406106): This lookup is unfortunately not inline-cached but should
+  // eventually be called less and less as code moves to managed.
+  Object dunder_hash(&scope, Interpreter::lookupMethod(thread, frame, value,
+                                                       SymbolId::kDunderHash));
+  if (!dunder_hash.isFunction()) {
+    if (dunder_hash.isNoneType() || dunder_hash.isErrorNotFound()) {
+      return thread->raiseWithFmt(LayoutId::kTypeError, "unhashable type: '%T'",
+                                  &value);
+    }
+    if (dunder_hash.isErrorException()) return *dunder_hash;
+  }
+  Object result(&scope,
+                Interpreter::callMethod1(thread, frame, dunder_hash, value));
+  if (result.isErrorException()) return *result;
+  if (!thread->runtime()->isInstanceOfInt(*result)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__hash__ method should return an integer");
+  }
+  Int hash_int(&scope, intUnderlying(thread, result));
+  if (hash_int.isSmallInt()) {
+    return *hash_int;
+  }
+  return SmallInt::fromWordTruncated(hash_int.digitAt(0));
+}
+
 RawObject Interpreter::stringJoin(Thread* thread, RawObject* sp, word num) {
   word new_len = 0;
   for (word i = num - 1; i >= 0; i--) {
@@ -2375,8 +2403,8 @@ HANDLER_INLINE Continue Interpreter::doBuildSet(Thread* thread, word arg) {
   Set set(&scope, runtime->newSet());
   for (word i = arg - 1; i >= 0; i--) {
     Object key(&scope, frame->popValue());
-    Object key_hash(&scope, thread->invokeMethod1(key, SymbolId::kDunderHash));
-    if (key_hash.isError()) return Continue::UNWIND;
+    Object key_hash(&scope, hash(thread, key));
+    if (key_hash.isErrorException()) return Continue::UNWIND;
     runtime->setAddWithHash(thread, set, key, key_hash);
   }
   frame->pushValue(*set);
@@ -2391,8 +2419,8 @@ HANDLER_INLINE Continue Interpreter::doBuildMap(Thread* thread, word arg) {
   for (word i = 0; i < arg; i++) {
     Object value(&scope, frame->popValue());
     Object key(&scope, frame->popValue());
-    Object key_hash(&scope, thread->invokeMethod1(key, SymbolId::kDunderHash));
-    if (key_hash.isError()) return Continue::UNWIND;
+    Object key_hash(&scope, hash(thread, key));
+    if (key_hash.isErrorException()) return Continue::UNWIND;
     runtime->dictAtPutWithHash(thread, dict, key, value, key_hash);
   }
   frame->pushValue(*dict);

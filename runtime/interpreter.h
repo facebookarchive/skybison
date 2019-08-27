@@ -50,6 +50,10 @@ class Interpreter {
   static RawObject callKw(Thread* thread, Frame* frame, word nargs);
   static RawObject callEx(Thread* thread, Frame* frame, word flags);
 
+  // Calls __hash__ on `value`, checks result and postprocesses.  Returns a
+  // SmallInt or Error::exception().
+  static RawObject hash(Thread* thread, const Object& value);
+
   // batch concat/join <num> string objects on the stack (no conversion)
   static RawObject stringJoin(Thread* thread, RawObject* sp, word num);
 

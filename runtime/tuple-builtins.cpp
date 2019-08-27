@@ -1,5 +1,6 @@
 #include "tuple-builtins.h"
 
+#include "dict-builtins.h"
 #include "frame.h"
 #include "globals.h"
 #include "int-builtins.h"
@@ -155,16 +156,8 @@ RawObject TupleBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
   word len = self.length();
   for (word i = len - 1; i >= 0; i--) {
     elt = self.at(i);
-    hash_result_obj = thread->invokeMethod1(elt, SymbolId::kDunderHash);
-    if (hash_result_obj.isError()) {
-      return *hash_result_obj;
-    }
-    if (!runtime->isInstanceOfInt(*hash_result_obj)) {
-      return thread->raiseWithFmt(LayoutId::kTypeError,
-                                  "__hash__ method should return an integer");
-    }
-    // TODO(T44339224): Remove this.
-    DCHECK(hash_result_obj.isSmallInt(), "hash result must be smallint");
+    hash_result_obj = Interpreter::hash(thread, elt);
+    if (hash_result_obj.isErrorException()) return *hash_result_obj;
     word hash_result = SmallInt::cast(*hash_result_obj).value();
     result = (result ^ hash_result) * mult;
     mult += word{82520} + len + len;

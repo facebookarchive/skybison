@@ -89,14 +89,8 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
     List keys_list(&scope, *keys);
     for (word i = 0; i < keys_list.numItems(); ++i) {
       key = keys_list.at(i);
-      key_hash = thread->invokeMethod1(key, SymbolId::kDunderHash);
-      if (key_hash.isError()) {
-        return *key_hash;
-      }
-      if (!runtime->isInstanceOfInt(*key_hash)) {
-        return thread->raiseWithFmt(LayoutId::kTypeError,
-                                    "__hash__ method should return an integer");
-      }
+      key_hash = Interpreter::hash(thread, key);
+      if (key_hash.isErrorException()) return *key_hash;
       if (do_override == Override::kOverride ||
           !runtime->dictIncludesWithHash(thread, dict, key, key_hash)) {
         value = Interpreter::callMethod2(thread, frame, subscr_method, mapping,
@@ -114,14 +108,8 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
     Tuple keys_tuple(&scope, *keys);
     for (word i = 0; i < keys_tuple.length(); ++i) {
       key = keys_tuple.at(i);
-      key_hash = thread->invokeMethod1(key, SymbolId::kDunderHash);
-      if (key_hash.isError()) {
-        return *key_hash;
-      }
-      if (!runtime->isInstanceOfInt(*key_hash)) {
-        return thread->raiseWithFmt(LayoutId::kTypeError,
-                                    "__hash__ method should return an integer");
-      }
+      key_hash = Interpreter::hash(thread, key);
+      if (key_hash.isErrorException()) return *key_hash;
       if (do_override == Override::kOverride ||
           !runtime->dictIncludesWithHash(thread, dict, key, key_hash)) {
         value = Interpreter::callMethod2(thread, frame, subscr_method, mapping,
@@ -162,14 +150,8 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
       if (thread->clearPendingStopIteration()) break;
       return *key;
     }
-    key_hash = thread->invokeMethod1(key, SymbolId::kDunderHash);
-    if (key_hash.isError()) {
-      return *key_hash;
-    }
-    if (!runtime->isInstanceOfInt(*key_hash)) {
-      return thread->raiseWithFmt(LayoutId::kTypeError,
-                                  "__hash__ method should return an integer");
-    }
+    key_hash = Interpreter::hash(thread, key);
+    if (key_hash.isErrorException()) return *key_hash;
     if (do_override == Override::kOverride ||
         !runtime->dictIncludesWithHash(thread, dict, key, key_hash)) {
       value =
@@ -306,14 +288,8 @@ RawObject DictBuiltins::dunderDelItem(Thread* thread, Frame* frame,
     return thread->raiseRequiresType(self, SymbolId::kDict);
   }
   Dict dict(&scope, *self);
-  Object key_hash(&scope, thread->invokeMethod1(key, SymbolId::kDunderHash));
-  if (key_hash.isError()) {
-    return *key_hash;
-  }
-  if (!runtime->isInstanceOfInt(*key_hash)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "__hash__ method should return an integer");
-  }
+  Object key_hash(&scope, Interpreter::hash(thread, key));
+  if (key_hash.isErrorException()) return *key_hash;
   // Remove the key. If it doesn't exist, throw a KeyError.
   if (runtime->dictRemoveWithHash(thread, dict, key, key_hash).isError()) {
     return thread->raise(LayoutId::kKeyError, *key);
@@ -381,17 +357,8 @@ RawObject DictBuiltins::dunderSetItem(Thread* thread, Frame* frame,
     return thread->raiseRequiresType(self, SymbolId::kDict);
   }
   Dict dict(&scope, *self);
-  Object dunder_hash(&scope, Interpreter::lookupMethod(thread, frame, key,
-                                                       SymbolId::kDunderHash));
-  Object key_hash(&scope,
-                  Interpreter::callMethod1(thread, frame, dunder_hash, key));
-  if (key_hash.isError()) {
-    return *key_hash;
-  }
-  if (!runtime->isInstanceOfInt(*key_hash)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "__hash__ method should return an integer");
-  }
+  Object key_hash(&scope, Interpreter::hash(thread, key));
+  if (key_hash.isErrorException()) return *key_hash;
   runtime->dictAtPutWithHash(thread, dict, key, value, key_hash);
   return NoneType::object();
 }
@@ -458,21 +425,9 @@ RawObject DictBuiltins::get(Thread* thread, Frame* frame, word nargs) {
   Dict dict(&scope, *self);
 
   // Check key hash
-  Object key_hash(&scope, thread->invokeMethod1(key, SymbolId::kDunderHash));
-  if (key_hash.isError()) {
-    if (key_hash.isErrorNotFound()) {
-      return thread->raiseWithFmt(LayoutId::kTypeError, "unhashable type");
-    }
-    return *key_hash;
-  }
-  if (!runtime->isInstanceOfInt(*key_hash)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "__hash__ method should return an integer");
-  }
-  Int hash_int(&scope, intUnderlying(thread, key_hash));
-  SmallInt small_hash(&scope, SmallInt::fromWordTruncated(hash_int.digitAt(0)));
-  // Return results
-  Object result(&scope, runtime->dictAtWithHash(thread, dict, key, small_hash));
+  Object key_hash(&scope, Interpreter::hash(thread, key));
+  if (key_hash.isErrorException()) return *key_hash;
+  Object result(&scope, runtime->dictAtWithHash(thread, dict, key, key_hash));
   if (!result.isError()) return *result;
   return *default_obj;
 }
