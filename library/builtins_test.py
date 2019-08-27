@@ -1593,6 +1593,11 @@ class DirTests(unittest.TestCase):
         self.assertEqual(dir(c), ["1", "2"])
 
 
+class EllipsisTypeTests(unittest.TestCase):
+    def test_repr_returns_not_implemented(self):
+        self.assertEqual(Ellipsis.__repr__(), "Ellipsis")
+
+
 class ExceptionTests(unittest.TestCase):
     def test_maybe_unbound_attributes(self):
         exc = BaseException()

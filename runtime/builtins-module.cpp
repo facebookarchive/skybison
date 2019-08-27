@@ -116,6 +116,7 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
     {SymbolId::kDictValueIterator, LayoutId::kDictValueIterator},
     {SymbolId::kDictValues, LayoutId::kDictValues},
     {SymbolId::kEOFError, LayoutId::kEOFError},
+    {SymbolId::kEllipsis, LayoutId::kEllipsis},
     {SymbolId::kException, LayoutId::kException},
     {SymbolId::kFileExistsError, LayoutId::kFileExistsError},
     {SymbolId::kFileNotFoundError, LayoutId::kFileNotFoundError},

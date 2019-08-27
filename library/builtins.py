@@ -443,6 +443,11 @@ def _exception_new(mod_name: str, exc_name: str, base, type_dict) -> type:
 Ellipsis = ...
 
 
+class ellipsis(bootstrap=True):
+    def __repr__(self):
+        return "Ellipsis"
+
+
 EnvironmentError = OSError
 
 
