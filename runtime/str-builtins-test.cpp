@@ -502,6 +502,37 @@ TEST_F(StrBuiltinsTest, DunderRmulCallsDunderMul) {
   EXPECT_TRUE(isStrEqualsCStr(*result, "foofoofoo"));
 }
 
+TEST_F(StrBuiltinsTest, DunderGetItemWithIntReturnsCodePointAtIndex) {
+  HandleScope scope(thread_);
+
+  Str unicode(&scope, runtime_.newStrFromCStr(u8"a\u05D0b\u05D1c\u05D2"));
+  ASSERT_EQ(unicode.codePointLength(), 6);
+
+  Int i(&scope, runtime_.newInt(0));
+  Object result(&scope, runBuiltin(StrBuiltins::dunderGetItem, unicode, i));
+  ASSERT_EQ(*result, SmallStr::fromCodePoint('a'));
+
+  i = runtime_.newInt(1);
+  result = runBuiltin(StrBuiltins::dunderGetItem, unicode, i);
+  ASSERT_EQ(*result, SmallStr::fromCodePoint(0x05D0));
+
+  i = runtime_.newInt(2);
+  result = runBuiltin(StrBuiltins::dunderGetItem, unicode, i);
+  ASSERT_EQ(result, SmallStr::fromCodePoint('b'));
+
+  i = runtime_.newInt(3);
+  result = runBuiltin(StrBuiltins::dunderGetItem, unicode, i);
+  ASSERT_EQ(result, SmallStr::fromCodePoint(0x05D1));
+
+  i = runtime_.newInt(4);
+  result = runBuiltin(StrBuiltins::dunderGetItem, unicode, i);
+  ASSERT_EQ(result, SmallStr::fromCodePoint('c'));
+
+  i = runtime_.newInt(5);
+  result = runBuiltin(StrBuiltins::dunderGetItem, unicode, i);
+  ASSERT_EQ(result, SmallStr::fromCodePoint(0x05D2));
+}
+
 TEST_F(StrBuiltinsTest, IndexWithLargeIntRaisesIndexError) {
   HandleScope scope(thread_);
   Str hello(&scope, runtime_.newStrFromCStr("hello"));

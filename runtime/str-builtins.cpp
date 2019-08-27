@@ -842,7 +842,7 @@ RawObject StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfStr(*self)) {
     return thread->raiseRequiresType(self, SymbolId::kStr);
   }
-  Str string(&scope, strUnderlying(thread, self));
+  Str str(&scope, strUnderlying(thread, self));
   Object index_obj(&scope, args.get(1));
   if (runtime->isInstanceOfInt(*index_obj)) {
     Int index(&scope, intUnderlying(thread, index_obj));
@@ -851,20 +851,23 @@ RawObject StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
           LayoutId::kIndexError,
           "cannot fit index into an index-sized integer");
     }
-    word idx = index.asWord();
-    if (idx < 0) {
-      idx += string.charLength();
+    word i = index.asWord();
+    if (i < 0) {
+      i += str.codePointLength();
     }
-    if (idx < 0 || idx >= string.charLength()) {
-      return thread->raiseWithFmt(LayoutId::kIndexError,
-                                  "string index out of range");
+    if (i >= 0) {
+      word offset = str.offsetByCodePoints(0, i);
+      if (offset < str.charLength()) {
+        word num_bytes;
+        return SmallStr::fromCodePoint(str.codePointAt(offset, &num_bytes));
+      }
     }
-    byte c = string.charAt(idx);
-    return SmallStr::fromBytes(View<byte>(&c, 1));
+    return thread->raiseWithFmt(LayoutId::kIndexError,
+                                "string index out of range");
   }
   if (index_obj.isSlice()) {
     Slice str_slice(&scope, *index_obj);
-    return slice(thread, string, str_slice);
+    return slice(thread, str, str_slice);
   }
   // TODO(T27897506): use __index__ to get index
   return thread->raiseWithFmt(LayoutId::kTypeError,
