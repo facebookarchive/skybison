@@ -191,7 +191,6 @@ set(
   library/marshal.py
   library/operator.py
   library/sys.py
-  library/time.py
   library/warnings.py)
 set(
   FROZEN_MODULE_OUTPUT_DIR
