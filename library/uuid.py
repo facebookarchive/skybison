@@ -188,7 +188,9 @@ class UUID(object):
             # Set the version number.
             int &= ~(0xf000 << 64)
             int |= version << 76
-        self.__dict__['int'] = int
+        # TODO(T52905957) Need support for __dict__ on instances.
+        #self.__dict__['int'] = int
+        object.__setattr__(self, "int", int)
 
     def __eq__(self, other):
         if isinstance(other, UUID):
