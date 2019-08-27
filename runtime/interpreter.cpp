@@ -3455,10 +3455,9 @@ HANDLER_INLINE Continue Interpreter::doBuildConstKeyMap(Thread* thread,
 
 HANDLER_INLINE Continue Interpreter::doBuildString(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  Runtime* runtime = thread->runtime();
   switch (arg) {
     case 0:  // empty
-      frame->pushValue(runtime->newStrWithAll(View<byte>(nullptr, 0)));
+      frame->pushValue(Str::empty());
       break;
     case 1:  // no-op
       break;
