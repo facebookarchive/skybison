@@ -3983,6 +3983,11 @@ class NextTests(unittest.TestCase):
         self.assertEqual(str(context.exception), "failed")
 
 
+class NotImplementedTypeTests(unittest.TestCase):
+    def test_repr_returns_not_implemented(self):
+        self.assertEqual(NotImplemented.__repr__(), "NotImplemented")
+
+
 class ObjectTests(unittest.TestCase):
     def test_dunder_subclasshook_returns_not_implemented(self):
         self.assertIs(object.__subclasshook__(), NotImplemented)

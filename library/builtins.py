@@ -474,6 +474,11 @@ class NoneType(bootstrap=True):
         pass
 
 
+class NotImplementedType(bootstrap=True):
+    def __repr__(self):
+        return "NotImplemented"
+
+
 class StopIteration(bootstrap=True):
     def __init__(self, *args, **kwargs):
         pass

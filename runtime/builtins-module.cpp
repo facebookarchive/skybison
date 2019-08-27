@@ -149,6 +149,7 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
     {SymbolId::kNoneType, LayoutId::kNoneType},
     {SymbolId::kNotADirectoryError, LayoutId::kNotADirectoryError},
     {SymbolId::kNotImplementedError, LayoutId::kNotImplementedError},
+    {SymbolId::kNotImplementedType, LayoutId::kNotImplementedType},
     {SymbolId::kOSError, LayoutId::kOSError},
     {SymbolId::kObjectTypename, LayoutId::kObject},
     {SymbolId::kOverflowError, LayoutId::kOverflowError},
