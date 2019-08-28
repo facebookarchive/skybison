@@ -1811,6 +1811,11 @@ class FloatTests(unittest.TestCase):
     def test_dunder_mod_returns_remainder(self):
         self.assertEqual(float.__mod__(3.25, -1.0), -0.75)
 
+    def test_dunder_pow_with_int_returns_float(self):
+        result = float.__pow__(2.0, 4)
+        self.assertIs(type(result), float)
+        self.assertEqual(result, 16.0)
+
     def test_dunder_rdivmod_raises_type_error(self):
         with self.assertRaises(TypeError):
             float.__rdivmod__(1, 1.0)
@@ -4080,6 +4085,96 @@ class OctTests(unittest.TestCase):
             oct("not an int")
         self.assertEqual(
             str(context.exception), "'str' object cannot be interpreted as an integer"
+        )
+
+
+class PowTests(unittest.TestCase):
+    def test_binary_first_arg_pow_returns_result(self):
+        dunder_pow_args = None
+
+        class A:
+            def __pow__(self, other, mod=None):
+                nonlocal dunder_pow_args
+                dunder_pow_args = (self, other, mod)
+                return -123
+
+        a = A()
+        self.assertEqual(pow(a, "str0"), -123)
+        self.assertEqual(dunder_pow_args, (a, "str0", None))
+
+    def test_binary_second_arg_rpow_returns_result(self):
+        dunder_pow_args = None
+
+        class A:
+            def __rpow__(self, other, mod=None):
+                nonlocal dunder_pow_args
+                dunder_pow_args = (self, other, mod)
+                return -123
+
+        a = A()
+        self.assertEqual(pow("str0", a), -123)
+        self.assertEqual(dunder_pow_args, (a, "str0", None))
+
+    def test_binary_unsupported_dunder_functions_raises_type_error(self):
+        # TODO(T53066604): Check error message.
+        with self.assertRaises(TypeError):
+            pow("", "")
+
+    def test_ternary_first_arg_pow_returns_result(self):
+        dunder_pow_args = None
+
+        class A:
+            def __pow__(self, other, mod=None):
+                nonlocal dunder_pow_args
+                dunder_pow_args = (self, other, mod)
+                return -123
+
+        a = A()
+        self.assertEqual(pow(a, "str0", "str1"), -123)
+        self.assertEqual(dunder_pow_args, (a, "str0", "str1"))
+
+    def test_ternary_first_arg_pow_from_descriptor_returns_result(self):
+        class Desc:
+            def __get__(self, obj, type):
+                return lambda a, b, c=None: -5678
+
+        class A:
+            __pow__ = Desc()
+
+        a = A()
+        self.assertEqual(pow(a, "str0", "str1"), -5678)
+
+    def test_ternary_ignore_non_first_args_dunder_functions(self):
+        class A:
+            def __pow__(self, other, mod=None):
+                raise UserWarning("unreachable")
+
+            def __rpow__(self, other):
+                # __rpow__ doesn't accept the third arg.
+                raise UserWarning("unreachable")
+
+        with self.assertRaises(TypeError) as context:
+            pow("", A(), A())
+        self.assertIn(
+            "unsupported operand type(s) for pow(): 'str', 'A', 'A'",
+            str(context.exception),
+        )
+
+    def test_ternary_unsupported_dunder_functions_raises_type_error(self):
+        class A:
+            pass
+
+        class B:
+            pass
+
+        class C:
+            pass
+
+        with self.assertRaises(TypeError) as context:
+            pow(A(), B(), C())
+        self.assertIn(
+            "unsupported operand type(s) for pow(): 'A', 'B', 'C'",
+            str(context.exception),
         )
 
 

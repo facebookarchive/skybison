@@ -3322,7 +3322,17 @@ def ord(c):
 
 
 def pow(x, y, z=None):
-    _unimplemented()
+    if z is None:
+        return x ** y
+    dunder_pow = _object_type_getattr(x, "__pow__")
+    if dunder_pow is not _Unbound:
+        result = dunder_pow(y, z)
+        if result is not NotImplemented:
+            return result
+    raise TypeError(
+        f"unsupported operand type(s) for pow(): '{_type(x).__name__}', "
+        f"'{_type(y).__name__}', '{_type(z).__name__}'"
+    )
 
 
 def print(*args, sep=" ", end="\n", file=None, flush=False):
