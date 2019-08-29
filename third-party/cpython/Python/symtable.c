@@ -218,6 +218,7 @@ PyMODINIT_FUNC PyInit__stentry(void) {
 
     mod = PyState_FindModule(&stentrymodule);
     if (mod != NULL) {
+        Py_INCREF(mod);
         return mod;
     }
     mod = PyModule_Create(&stentrymodule);
@@ -230,6 +231,8 @@ PyMODINIT_FUNC PyInit__stentry(void) {
     }
     Py_INCREF(PySTEntry_Type);
     stentrystate(mod)->PySTEntry_Type = (PyObject*)PySTEntry_Type;
+
+    PyState_AddModule(mod, &stentrymodule);
     return mod;
 }
 

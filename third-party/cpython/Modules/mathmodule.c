@@ -2138,9 +2138,15 @@ PyInit_math(void)
 {
     PyObject *m;
 
+    m = PyState_FindModule(&mathmodule);
+    if (m != NULL) {
+        Py_INCREF(m);
+        return m;
+    }
+
     m = PyModule_Create(&mathmodule);
     if (m == NULL)
-        goto finally;
+        return NULL;
 
     PyModule_AddObject(m, "pi", PyFloat_FromDouble(Py_MATH_PI));
     PyModule_AddObject(m, "e", PyFloat_FromDouble(Py_MATH_E));
@@ -2150,6 +2156,6 @@ PyInit_math(void)
     PyModule_AddObject(m, "nan", PyFloat_FromDouble(m_nan()));
 #endif
 
-  finally:
+    PyState_AddModule(m, &mathmodule);
     return m;
 }

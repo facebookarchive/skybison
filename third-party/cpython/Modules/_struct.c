@@ -2318,6 +2318,12 @@ PyInit__struct(void)
 {
     PyObject *m;
 
+    m = PyState_FindModule(&_structmodule);
+    if (m != NULL) {
+        Py_INCREF(m);
+        return m;
+    }
+
     m = PyModule_Create(&_structmodule);
     if (m == NULL)
         return NULL;
@@ -2383,5 +2389,6 @@ PyInit__struct(void)
     PyModule_AddObject(m, "error", StructError);
     _structmodulestate(m)->StructError = StructError;
 
+    PyState_AddModule(m, &_structmodule);
     return m;
 }

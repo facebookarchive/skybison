@@ -2919,6 +2919,12 @@ PyMODINIT_FUNC PyInit__sre(void)
     PyObject* m;
     PyObject* x;
 
+    m = PyState_FindModule(&sremodule);
+    if (m != NULL) {
+        Py_INCREF(m);
+        return m;
+    }
+
     /* Patch object types */
     PyTypeObject *Pattern_Type = (PyTypeObject *)PyType_FromSpec(&Pattern_Type_spec);
     if (Pattern_Type == NULL) {
@@ -2968,6 +2974,8 @@ PyMODINIT_FUNC PyInit__sre(void)
     if (x) {
         PyModule_AddObject(m, "copyright", x);
     }
+
+    PyState_AddModule(m, &sremodule);
     return m;
 }
 

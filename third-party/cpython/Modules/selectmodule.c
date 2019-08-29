@@ -2401,6 +2401,13 @@ PyMODINIT_FUNC
 PyInit_select(void)
 {
     PyObject *m;
+
+    m = PyState_FindModule(&selectmodule);
+    if (m != NULL) {
+        Py_INCREF(m);
+        return m;
+    }
+
     m = PyModule_Create(&selectmodule);
     if (m == NULL)
         return NULL;
@@ -2608,5 +2615,7 @@ PyInit_select(void)
 #endif
 
 #endif /* HAVE_KQUEUE */
+
+    PyState_AddModule(m, &selectmodule);
     return m;
 }

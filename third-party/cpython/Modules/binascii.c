@@ -1567,6 +1567,12 @@ PyInit_binascii(void)
 {
     PyObject *m, *d;
 
+    m = PyState_FindModule(&binasciimodule);
+    if (m != NULL) {
+        Py_INCREF(m);
+        return m;
+    }
+
     /* Create the module and add the functions */
     m = PyModule_Create(&binasciimodule);
     if (m == NULL)
@@ -1582,5 +1588,7 @@ PyInit_binascii(void)
         Py_DECREF(m);
         m = NULL;
     }
+
+    PyState_AddModule(m, &binasciimodule);
     return m;
 }

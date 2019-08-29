@@ -55,9 +55,10 @@ PY_EXPORT int PyState_AddModule(PyObject* module, struct PyModuleDef* def) {
   // use of the PyModuleDef.m_base.m_index value, just insert to the module dict
   Module module_obj(&scope, ApiHandle::fromPyObject(module)->asObject());
   module_obj.setDef(runtime->newIntFromCPtr(def));
-  Str doc_key(&scope, runtime->symbols()->DunderDoc());
-  Str doc_value(&scope, runtime->newStrFromCStr(def->m_doc));
-  moduleAtPut(thread, module_obj, doc_key, doc_value);
+  Object doc_value(&scope, def->m_doc == nullptr
+                               ? NoneType::object()
+                               : runtime->newStrFromCStr(def->m_doc));
+  moduleAtPutById(thread, module_obj, SymbolId::kDunderDoc, doc_value);
   runtime->addModule(module_obj);
   return 0;
 }

@@ -97,6 +97,13 @@ PyMODINIT_FUNC
 PyInit_errno(void)
 {
     PyObject *m, *de;
+
+    m = PyState_FindModule(&errnomodule);
+    if (m != NULL) {
+        Py_INCREF(m);
+        return m;
+    }
+
     m = PyModule_Create(&errnomodule);
     if (m == NULL)
         return NULL;
@@ -934,5 +941,6 @@ PyInit_errno(void)
 #endif
 
     Py_DECREF(de);
+    PyState_AddModule(m, &errnomodule);
     return m;
 }

@@ -349,6 +349,7 @@ PyMODINIT_FUNC PyInit__capsule(void) {
 
     mod = PyState_FindModule(&capsulemodule);
     if (mod != NULL) {
+        Py_INCREF(mod);
         return mod;
     }
     mod = PyModule_Create(&capsulemodule);
@@ -361,5 +362,7 @@ PyMODINIT_FUNC PyInit__capsule(void) {
     }
     Py_INCREF(PyCapsule_Type);
     capsulestate(mod)->PyCapsule_Type = (PyObject*)PyCapsule_Type;
+
+    PyState_AddModule(mod, &capsulemodule);
     return mod;
 }

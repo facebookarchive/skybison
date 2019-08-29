@@ -54,6 +54,23 @@ TEST_F(PystateExtensionApiTest, AddModuleWithSlotsRaisesSystemError) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
+TEST_F(PystateExtensionApiTest, AddModuleWithNullDocUsesNone) {
+  static struct PyModuleDef def = {
+      PyModuleDef_HEAD_INIT,
+      "foo",
+      nullptr,
+      0,
+      nullptr,
+      nullptr,
+      nullptr,
+      nullptr,
+  };
+  PyObjectPtr module(PyModule_Create(&def));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr docstring(PyObject_GetAttrString(module, "__doc__"));
+  EXPECT_EQ(docstring, Py_None);
+}
+
 TEST_F(PystateExtensionApiTest, AddModuleAddsModule) {
   static struct PyModuleDef def = {
       PyModuleDef_HEAD_INIT,

@@ -54,6 +54,7 @@ PyMODINIT_FUNC PyInit__myreadline(void) {
     PyObject *mod;
     mod = PyState_FindModule(&myreadlinemodule);
     if (mod != NULL) {
+        Py_INCREF(mod);
         return mod;
     }
     mod = PyModule_Create(&myreadlinemodule);
@@ -62,6 +63,8 @@ PyMODINIT_FUNC PyInit__myreadline(void) {
     }
     myreadlinestate(mod)->_PyOS_ReadlineTState = NULL;
     myreadlinestate(mod)->_PyOS_ReadlineLock = NULL;
+
+    PyState_AddModule(mod, &myreadlinemodule);
     return mod;
 }
 

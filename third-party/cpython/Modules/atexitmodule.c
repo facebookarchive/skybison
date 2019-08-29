@@ -329,6 +329,12 @@ PyInit_atexit(void)
     PyObject *m;
     atexitmodule_state *modstate;
 
+    m = PyState_FindModule(&atexitmodule);
+    if (m != NULL) {
+        Py_INCREF(m);
+        return m;
+    }
+
     m = PyModule_Create(&atexitmodule);
     if (m == NULL)
         return NULL;
@@ -342,5 +348,6 @@ PyInit_atexit(void)
         return NULL;
 
     _Py_PyAtExit(atexit_callfuncs);
+    PyState_AddModule(m, &atexitmodule);
     return m;
 }
