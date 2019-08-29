@@ -100,4 +100,6 @@ PY_EXPORT void _Py_PyAtExit(void (*func)(void)) {
   Thread::current()->runtime()->setAtExit(func);
 }
 
+PY_EXPORT void _Py_RestoreSignals() { UNIMPLEMENTED("_Py_RestoreSignals"); }
+
 }  // namespace python

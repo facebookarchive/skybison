@@ -893,6 +893,7 @@ PyAPI_FUNC(int) Py_MakePendingCalls();
 PyAPI_FUNC(PyThreadState*) Py_NewInterpreter();
 PyAPI_FUNC(int) Py_ReprEnter(PyObject*);
 PyAPI_FUNC(void) Py_ReprLeave(PyObject*);
+PyAPI_FUNC(void) _Py_RestoreSignals();
 PyAPI_FUNC(void) Py_SetPath(const wchar_t*);
 PyAPI_FUNC(void) Py_SetProgramName(wchar_t*);
 PyAPI_FUNC(void) Py_SetPythonHome(wchar_t*);
