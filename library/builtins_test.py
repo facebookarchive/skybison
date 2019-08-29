@@ -1797,6 +1797,16 @@ class FloatTests(unittest.TestCase):
     def test_dunder_floordiv_returns_floor_quotient(self):
         self.assertEqual(float.__floordiv__(3.25, -1.0), -4.0)
 
+    def test_dunder_getformat_with_float_or_double_returns_format(self):
+        import sys
+
+        self.assertEqual(float.__getformat__("double"), f"IEEE, {sys.byteorder}-endian")
+        self.assertEqual(float.__getformat__("float"), f"IEEE, {sys.byteorder}-endian")
+
+    def test_dunder_getformat_with_non_float_or_double_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            float.__getformat__("unknown")
+
     def test_dunder_mod_raises_type_error(self):
         with self.assertRaises(TypeError):
             float.__mod__(1, 1.0)

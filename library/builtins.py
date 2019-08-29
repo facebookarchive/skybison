@@ -2149,6 +2149,19 @@ class float(bootstrap=True):
     def __ge__(self, n: float) -> bool:
         pass
 
+    @classmethod
+    def __getformat__(cls: type, typearg: str) -> str:
+        _type_guard(cls)
+        if not _type_issubclass(cls, float):
+            raise TypeError(f"'__getformat__' {cls.__name__} is not a subtype of float")
+        _str_guard(typearg)
+        typearg = str(typearg)
+        if typearg != "double" and typearg != "float":
+            raise ValueError("__getformat__() argument 1 must be 'double' or 'float'")
+        import sys
+
+        return f"IEEE, {sys.byteorder}-endian"
+
     def __gt__(self, n: float) -> bool:
         pass
 
