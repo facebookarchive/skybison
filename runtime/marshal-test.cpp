@@ -502,11 +502,11 @@ TEST_F(MarshalReaderTest, ReadObjectSetOnNonEmptySetReturnsCorrectNonEmptySet) {
   Set set(&scope, *obj);
   EXPECT_EQ(set.numItems(), 3);
   Int one(&scope, SmallInt::fromWord(1));
-  EXPECT_TRUE(runtime_.setIncludes(thread, set, one));
+  EXPECT_TRUE(setIncludes(thread, set, one));
   Int two(&scope, SmallInt::fromWord(2));
-  EXPECT_TRUE(runtime_.setIncludes(thread, set, two));
+  EXPECT_TRUE(setIncludes(thread, set, two));
   Int three(&scope, SmallInt::fromWord(3));
-  EXPECT_TRUE(runtime_.setIncludes(thread, set, three));
+  EXPECT_TRUE(setIncludes(thread, set, three));
 }
 
 TEST_F(MarshalReaderTest, ReadObjectFrozenSetOnEmptySetReturnsEmptyFrozenSet) {
@@ -541,11 +541,11 @@ TEST_F(MarshalReaderTest,
   FrozenSet set(&scope, *obj);
   EXPECT_EQ(set.numItems(), 3);
   Int one(&scope, SmallInt::fromWord(1));
-  EXPECT_TRUE(runtime_.setIncludes(thread, set, one));
+  EXPECT_TRUE(setIncludes(thread, set, one));
   Int two(&scope, SmallInt::fromWord(2));
-  EXPECT_TRUE(runtime_.setIncludes(thread, set, two));
+  EXPECT_TRUE(setIncludes(thread, set, two));
   Int three(&scope, SmallInt::fromWord(3));
-  EXPECT_TRUE(runtime_.setIncludes(thread, set, three));
+  EXPECT_TRUE(setIncludes(thread, set, three));
 }
 
 TEST_F(MarshalReaderTest,

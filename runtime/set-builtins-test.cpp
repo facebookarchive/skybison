@@ -59,8 +59,8 @@ s.add("Hello, World")
   Object one(&scope, runtime_.newInt(1));
   Object hello_world(&scope, runtime_.newStrFromCStr("Hello, World"));
   EXPECT_EQ(s.numItems(), 2);
-  EXPECT_TRUE(runtime_.setIncludes(thread, s, one));
-  EXPECT_TRUE(runtime_.setIncludes(thread, s, hello_world));
+  EXPECT_TRUE(setIncludes(thread, s, one));
+  EXPECT_TRUE(setIncludes(thread, s, hello_world));
 }
 
 TEST_F(SetBuiltinsTest, DunderIterReturnsSetIterator) {
@@ -95,7 +95,7 @@ TEST_F(SetBuiltinsTest, DunderAnd) {
   ASSERT_TRUE(result2.isSet());
   Set set(&scope, *result2);
   EXPECT_EQ(set.numItems(), 1);
-  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
+  EXPECT_TRUE(setIncludes(thread, set, key));
 }
 
 TEST_F(SetBuiltinsTest, DunderAndWithNonSet) {
@@ -140,7 +140,7 @@ TEST_F(SetBuiltinsTest, DunderIand) {
   EXPECT_EQ(*result2, *set1);
   Set set(&scope, *result2);
   EXPECT_EQ(set.numItems(), 1);
-  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
+  EXPECT_TRUE(setIncludes(thread, set, key));
 }
 
 TEST_F(SetBuiltinsTest, DunderIandWithNonSet) {
@@ -165,11 +165,11 @@ TEST_F(SetBuiltinsTest, SetIntersectionWithNoArgsReturnsCopy) {
   EXPECT_EQ(set.numItems(), 3);
 
   Object key(&scope, SmallInt::fromWord(0));
-  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
+  EXPECT_TRUE(setIncludes(thread, set, key));
   key = SmallInt::fromWord(1);
-  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
+  EXPECT_TRUE(setIncludes(thread, set, key));
   key = SmallInt::fromWord(2);
-  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
+  EXPECT_TRUE(setIncludes(thread, set, key));
 }
 
 TEST_F(SetBuiltinsTest, SetIntersectionWithOneArgumentReturnsIntersection) {
@@ -186,9 +186,9 @@ TEST_F(SetBuiltinsTest, SetIntersectionWithOneArgumentReturnsIntersection) {
   EXPECT_EQ(set.numItems(), 2);
   Object key(&scope, SmallInt::fromWord(0));
   key = SmallInt::fromWord(0);
-  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
+  EXPECT_TRUE(setIncludes(thread, set, key));
   key = SmallInt::fromWord(1);
-  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
+  EXPECT_TRUE(setIncludes(thread, set, key));
 }
 
 TEST_F(SetBuiltinsTest, SetIntersectionWithTwoArgumentsReturnsIntersection) {
@@ -206,7 +206,7 @@ TEST_F(SetBuiltinsTest, SetIntersectionWithTwoArgumentsReturnsIntersection) {
   EXPECT_EQ(set.numItems(), 1);
   Object key(&scope, SmallInt::fromWord(0));
   key = SmallInt::fromWord(0);
-  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
+  EXPECT_TRUE(setIncludes(thread, set, key));
 }
 
 TEST_F(SetBuiltinsTest, SetIntersectionWithEmptySetReturnsEmptySet) {
@@ -245,7 +245,7 @@ TEST_F(SetBuiltinsTest, SetIntersectionWithIterableReturnsIntersection) {
   ASSERT_TRUE(result.isSet());
   EXPECT_EQ(Set::cast(*result).numItems(), 1);
   set = *result;
-  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
+  EXPECT_TRUE(setIncludes(thread, set, key));
 }
 
 TEST_F(SetBuiltinsTest, SetIntersectionWithFrozenSetReturnsSet) {
@@ -893,11 +893,11 @@ TEST_F(SetBuiltinsTest, DunderInitWithIteratorUpdatesSet) {
   ASSERT_TRUE(result.isNoneType());
   EXPECT_EQ(set.numItems(), set1.numItems());
   Object key(&scope, SmallInt::fromWord(0));
-  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
+  EXPECT_TRUE(setIncludes(thread, set, key));
   key = SmallInt::fromWord(1);
-  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
+  EXPECT_TRUE(setIncludes(thread, set, key));
   key = SmallInt::fromWord(2);
-  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
+  EXPECT_TRUE(setIncludes(thread, set, key));
 }
 
 TEST_F(SetBuiltinsTest, DunderInitWithSetSubclassUpdatesSet) {
@@ -913,11 +913,11 @@ s = Set([0, 1, 2])
   ASSERT_TRUE(runtime_.isInstanceOfSet(*s));
   Object key(&scope, SmallInt::fromWord(0));
   Set set(&scope, *s);
-  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
+  EXPECT_TRUE(setIncludes(thread, set, key));
   key = SmallInt::fromWord(1);
-  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
+  EXPECT_TRUE(setIncludes(thread, set, key));
   key = SmallInt::fromWord(2);
-  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
+  EXPECT_TRUE(setIncludes(thread, set, key));
 }
 
 TEST_F(SetBuiltinsTest, DunderLenWithSetSubclassReturnsLen) {
@@ -989,13 +989,13 @@ TEST_F(SetBuiltinsTest,
   FrozenSet result(&scope, *result_obj);
   EXPECT_EQ(result.numItems(), 4);
   Int one(&scope, SmallInt::fromWord(1));
-  EXPECT_TRUE(runtime_.setIncludes(thread, result, one));
+  EXPECT_TRUE(setIncludes(thread, result, one));
   Int two(&scope, SmallInt::fromWord(2));
-  EXPECT_TRUE(runtime_.setIncludes(thread, result, two));
+  EXPECT_TRUE(setIncludes(thread, result, two));
   Int three(&scope, SmallInt::fromWord(3));
-  EXPECT_TRUE(runtime_.setIncludes(thread, result, three));
+  EXPECT_TRUE(setIncludes(thread, result, three));
   Int four(&scope, SmallInt::fromWord(4));
-  EXPECT_TRUE(runtime_.setIncludes(thread, result, four));
+  EXPECT_TRUE(setIncludes(thread, result, four));
 }
 
 TEST_F(SetBuiltinsTest, FrozenSetFromIterableIsNotSingleton) {
@@ -1039,11 +1039,11 @@ TEST_F(SetBuiltinsTest, SetCopy) {
   EXPECT_EQ(Set::cast(*set_copy1).numItems(), 3);
   set = *set_copy1;
   key = SmallInt::fromWord(0);
-  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
+  EXPECT_TRUE(setIncludes(thread, set, key));
   key = SmallInt::fromWord(1);
-  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
+  EXPECT_TRUE(setIncludes(thread, set, key));
   key = SmallInt::fromWord(2);
-  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
+  EXPECT_TRUE(setIncludes(thread, set, key));
 }
 
 TEST_F(SetBuiltinsTest, SetEqualsWithSameSetReturnsTrue) {
@@ -1348,11 +1348,11 @@ TEST_F(SetBuiltinsTest, DunderOrReturnsSetContainingUnionOfElements) {
   Set result(&scope, *result_obj);
   EXPECT_EQ(result.numItems(), 3);
   Object one(&scope, SmallInt::fromWord(1));
-  EXPECT_TRUE(runtime_.setIncludes(thread, result, one));
+  EXPECT_TRUE(setIncludes(thread, result, one));
   Object two(&scope, SmallInt::fromWord(2));
-  EXPECT_TRUE(runtime_.setIncludes(thread, result, two));
+  EXPECT_TRUE(setIncludes(thread, result, two));
   Object three(&scope, SmallInt::fromWord(3));
-  EXPECT_TRUE(runtime_.setIncludes(thread, result, three));
+  EXPECT_TRUE(setIncludes(thread, result, three));
 }
 
 }  // namespace python

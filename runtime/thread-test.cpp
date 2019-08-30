@@ -743,7 +743,7 @@ TEST_F(ThreadTest, BuildSetWithOneItem) {
   Set result(&scope, *result_obj);
   EXPECT_EQ(result.numItems(), 1);
   Object int_val(&scope, SmallInt::fromWord(111));
-  EXPECT_TRUE(runtime_.setIncludes(thread_, result, int_val));
+  EXPECT_TRUE(setIncludes(thread_, result, int_val));
 }
 
 TEST_F(ThreadTest, BuildSet) {
@@ -768,11 +768,11 @@ TEST_F(ThreadTest, BuildSet) {
   Set result(&scope, *result_obj);
   EXPECT_EQ(result.numItems(), 3);
   Object int_val(&scope, runtime_.newInt(111));
-  EXPECT_TRUE(runtime_.setIncludes(thread_, result, int_val));
+  EXPECT_TRUE(setIncludes(thread_, result, int_val));
   Object str(&scope, runtime_.newStrFromCStr("qqq"));
-  EXPECT_TRUE(runtime_.setIncludes(thread_, result, str));
+  EXPECT_TRUE(setIncludes(thread_, result, str));
   Object none(&scope, NoneType::object());
-  EXPECT_TRUE(runtime_.setIncludes(thread_, result, none));
+  EXPECT_TRUE(setIncludes(thread_, result, none));
 }
 
 static RawObject inspect_block(Thread*, Frame* frame, word) ALIGN_16;
@@ -1429,17 +1429,17 @@ s = {*[0, 1], *{2, 3}, *(4, 5), *[]}
   Set set_s(&scope, *s);
   EXPECT_EQ(set_s.numItems(), 6);
   Object small_int(&scope, SmallInt::fromWord(0));
-  EXPECT_TRUE(runtime_.setIncludes(thread_, set_s, small_int));
+  EXPECT_TRUE(setIncludes(thread_, set_s, small_int));
   small_int = SmallInt::fromWord(1);
-  EXPECT_TRUE(runtime_.setIncludes(thread_, set_s, small_int));
+  EXPECT_TRUE(setIncludes(thread_, set_s, small_int));
   small_int = SmallInt::fromWord(2);
-  EXPECT_TRUE(runtime_.setIncludes(thread_, set_s, small_int));
+  EXPECT_TRUE(setIncludes(thread_, set_s, small_int));
   small_int = SmallInt::fromWord(3);
-  EXPECT_TRUE(runtime_.setIncludes(thread_, set_s, small_int));
+  EXPECT_TRUE(setIncludes(thread_, set_s, small_int));
   small_int = SmallInt::fromWord(4);
-  EXPECT_TRUE(runtime_.setIncludes(thread_, set_s, small_int));
+  EXPECT_TRUE(setIncludes(thread_, set_s, small_int));
   small_int = SmallInt::fromWord(5);
-  EXPECT_TRUE(runtime_.setIncludes(thread_, set_s, small_int));
+  EXPECT_TRUE(setIncludes(thread_, set_s, small_int));
 }
 
 TEST_F(BuildString, buildStringEmpty) {

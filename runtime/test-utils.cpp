@@ -183,6 +183,13 @@ bool listContains(const Object& list_obj, const Object& key) {
   return false;
 }
 
+bool setIncludes(Thread* thread, const SetBase& set, const Object& key) {
+  HandleScope scope(thread);
+  Object key_hash(&scope, Interpreter::hash(thread, key));
+  CHECK(key_hash.isSmallInt(), "key must be hashable");
+  return thread->runtime()->setIncludes(thread, set, key, key_hash);
+}
+
 static RawObject findModuleByCStr(Runtime* runtime, const char* name) {
   HandleScope scope;
   Object key(&scope, runtime->newStrFromCStr(name));

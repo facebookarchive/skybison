@@ -3294,11 +3294,10 @@ RawObject Runtime::setAdd(Thread* thread, const SetBase& set,
   return setAddWithHash(thread, set, value, value_hash);
 }
 
-bool Runtime::setIncludes(Thread* thread, const SetBase& set,
-                          const Object& key) {
+bool Runtime::setIncludes(Thread* thread, const SetBase& set, const Object& key,
+                          const Object& key_hash) {
   HandleScope scope(thread);
   Tuple data(&scope, set.data());
-  Object key_hash(&scope, hash(*key));
   return setLookup<SetLookupType::Lookup>(data, key, key_hash) != -1;
 }
 
@@ -3373,11 +3372,10 @@ RawObject Runtime::setIntersection(Thread* thread, const SetBase& set,
   return *dst;
 }
 
-bool Runtime::setRemove(Thread* thread, const Set& set, const Object& key) {
+bool Runtime::setRemove(Thread* thread, const Set& set, const Object& key,
+                        const Object& key_hash) {
   HandleScope scope(thread);
   Tuple data(&scope, set.data());
-  Object key_hash(&scope, hash(*key));
-  // TODO(T36757907): Raise TypeError if key is unhashable
   word index = setLookup<SetLookupType::Lookup>(data, key, key_hash);
   if (index != -1) {
     SetBase::Bucket::setTombstone(*data, index);

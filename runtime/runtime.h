@@ -532,8 +532,8 @@ class Runtime {
   RawObject setAddWithHash(Thread* thread, const SetBase& set,
                            const Object& value, const Object& value_hash);
 
-  // Returns true if the set contains a value that is equivalent to `key`.
-  bool setIncludes(Thread* thread, const SetBase& set, const Object& key);
+  bool setIncludes(Thread* thread, const SetBase& set, const Object& key,
+                   const Object& key_hash);
 
   // Compute the set intersection between a set and an iterator
   // Returns either a new set with the intersection or an Error object.
@@ -542,7 +542,8 @@ class Runtime {
 
   // Delete the value equivalent to `key` from the set.
   // Returns true if a value was removed, false if no equivalent value existed.
-  bool setRemove(Thread* thread, const Set& set, const Object& key);
+  bool setRemove(Thread* thread, const Set& set, const Object& key,
+                 const Object& key_hash);
 
   // Update a set from an iterator
   // Returns either the updated set or an Error object.

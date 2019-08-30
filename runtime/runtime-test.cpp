@@ -1132,14 +1132,14 @@ TEST_F(RuntimeTest, InternLargeStr) {
   Object str1(&scope, runtime_.newStrFromCStr("hello, world"));
   ASSERT_TRUE(str1.isLargeStr());
   EXPECT_EQ(num_interned, interned.numItems());
-  EXPECT_FALSE(runtime_.setIncludes(thread_, interned, str1));
+  EXPECT_FALSE(setIncludes(thread_, interned, str1));
   EXPECT_FALSE(runtime_.isInternedStr(thread_, str1));
 
   // Interning the string should add it to the intern table and increase the
   // size of the intern table by one.
   num_interned = interned.numItems();
   Object sym1(&scope, runtime_.internStr(thread_, str1));
-  EXPECT_TRUE(runtime_.setIncludes(thread_, interned, str1));
+  EXPECT_TRUE(setIncludes(thread_, interned, str1));
   EXPECT_EQ(*sym1, *str1);
   EXPECT_EQ(num_interned + 1, interned.numItems());
   EXPECT_TRUE(runtime_.isInternedStr(thread_, str1));
@@ -1153,7 +1153,7 @@ TEST_F(RuntimeTest, InternLargeStr) {
   num_interned = interned.numItems();
   Object sym2(&scope, runtime_.internStr(thread_, str2));
   EXPECT_EQ(num_interned + 1, interned.numItems());
-  EXPECT_TRUE(runtime_.setIncludes(thread_, interned, str2));
+  EXPECT_TRUE(setIncludes(thread_, interned, str2));
   EXPECT_EQ(*sym2, *str2);
   EXPECT_NE(*sym1, *sym2);
 
@@ -1161,7 +1161,7 @@ TEST_F(RuntimeTest, InternLargeStr) {
   Object str3(&scope, runtime_.newStrFromCStr("hello, world"));
   ASSERT_TRUE(str3.isLargeStr());
   EXPECT_NE(*str1, *str3);
-  EXPECT_TRUE(runtime_.setIncludes(thread_, interned, str3));
+  EXPECT_TRUE(setIncludes(thread_, interned, str3));
   EXPECT_FALSE(runtime_.isInternedStr(thread_, str3));
 
   // Interning a duplicate string should not affecct the intern table.
@@ -1181,13 +1181,13 @@ TEST_F(RuntimeTest, InternSmallStr) {
   word num_interned = interned.numItems();
   Object str(&scope, runtime_.newStrFromCStr("a"));
   ASSERT_TRUE(str.isSmallStr());
-  EXPECT_FALSE(runtime_.setIncludes(thread_, interned, str));
+  EXPECT_FALSE(setIncludes(thread_, interned, str));
   EXPECT_EQ(num_interned, interned.numItems());
 
   // Interning a small string should have no affect on the intern table.
   Object sym(&scope, runtime_.internStr(thread_, str));
   EXPECT_TRUE(sym.isSmallStr());
-  EXPECT_FALSE(runtime_.setIncludes(thread_, interned, str));
+  EXPECT_FALSE(setIncludes(thread_, interned, str));
   EXPECT_EQ(num_interned, interned.numItems());
   EXPECT_EQ(*sym, *str);
   EXPECT_TRUE(runtime_.isInternedStr(thread_, str));
@@ -1201,7 +1201,7 @@ TEST_F(RuntimeTest, InternCStr) {
   word num_interned = interned.numItems();
   Object sym(&scope, runtime_.internStrFromCStr(thread_, "hello, world"));
   EXPECT_TRUE(sym.isStr());
-  EXPECT_TRUE(runtime_.setIncludes(thread_, interned, sym));
+  EXPECT_TRUE(setIncludes(thread_, interned, sym));
   EXPECT_EQ(num_interned + 1, interned.numItems());
   EXPECT_TRUE(runtime_.isInternedStr(thread_, sym));
 }
@@ -1656,7 +1656,7 @@ TEST_F(RuntimeSetTest, Add) {
   EXPECT_EQ(set.numItems(), 1);
 
   // Retrieve the stored value
-  ASSERT_TRUE(runtime_.setIncludes(thread_, set, value));
+  ASSERT_TRUE(setIncludes(thread_, set, value));
 
   // Add a new value
   Object new_value(&scope, SmallInt::fromWord(5555));
@@ -1664,7 +1664,7 @@ TEST_F(RuntimeSetTest, Add) {
   EXPECT_EQ(set.numItems(), 2);
 
   // Get the new value
-  ASSERT_TRUE(runtime_.setIncludes(thread_, set, new_value));
+  ASSERT_TRUE(setIncludes(thread_, set, new_value));
 
   // Add a existing value
   Object same_value(&scope, SmallInt::fromWord(12345));
@@ -1677,18 +1677,19 @@ TEST_F(RuntimeSetTest, Remove) {
   HandleScope scope(thread_);
   Set set(&scope, runtime_.newSet());
   Object value(&scope, SmallInt::fromWord(12345));
+  Object value_hash(&scope, Interpreter::hash(thread_, value));
 
   // Removing a key that doesn't exist should fail
-  EXPECT_FALSE(runtime_.setRemove(thread_, set, value));
+  EXPECT_FALSE(runtime_.setRemove(thread_, set, value, value_hash));
 
   runtime_.setAdd(thread_, set, value);
   EXPECT_EQ(set.numItems(), 1);
 
-  ASSERT_TRUE(runtime_.setRemove(thread_, set, value));
+  ASSERT_TRUE(runtime_.setRemove(thread_, set, value, value_hash));
   EXPECT_EQ(set.numItems(), 0);
 
   // Looking up a key that was deleted should fail
-  ASSERT_FALSE(runtime_.setIncludes(thread_, set, value));
+  ASSERT_FALSE(setIncludes(thread_, set, value));
 }
 
 static RawObject makeKey(Runtime* runtime, int i) {
@@ -1725,7 +1726,7 @@ TEST_F(RuntimeSetTest, Grow) {
   // Make sure we can still read all the stored keys
   for (int i = 1; i <= num_keys; i++) {
     Object key(&scope, makeKey(&runtime_, i));
-    bool found = runtime_.setIncludes(thread_, set, key);
+    bool found = setIncludes(thread_, set, key);
     ASSERT_TRUE(found);
   }
 }
@@ -1878,25 +1879,25 @@ TEST_F(RuntimeSetTest, IntersectionReturnsSetWithCommonElements) {
   Set result(&scope, runtime_.setIntersection(thread_, set, set1));
   EXPECT_EQ(Set::cast(*result).numItems(), 4);
   key = SmallInt::fromWord(0);
-  EXPECT_TRUE(runtime_.setIncludes(thread_, result, key));
+  EXPECT_TRUE(setIncludes(thread_, result, key));
   key = SmallInt::fromWord(1);
-  EXPECT_TRUE(runtime_.setIncludes(thread_, result, key));
+  EXPECT_TRUE(setIncludes(thread_, result, key));
   key = SmallInt::fromWord(2);
-  EXPECT_TRUE(runtime_.setIncludes(thread_, result, key));
+  EXPECT_TRUE(setIncludes(thread_, result, key));
   key = SmallInt::fromWord(3);
-  EXPECT_TRUE(runtime_.setIncludes(thread_, result, key));
+  EXPECT_TRUE(setIncludes(thread_, result, key));
 
   // {0, 1, 2, 3, 4, 5, 6, 7} & {0, 1, 2, 3}
   Set result1(&scope, runtime_.setIntersection(thread_, set, set1));
   EXPECT_EQ(Set::cast(*result1).numItems(), 4);
   key = SmallInt::fromWord(0);
-  EXPECT_TRUE(runtime_.setIncludes(thread_, result1, key));
+  EXPECT_TRUE(setIncludes(thread_, result1, key));
   key = SmallInt::fromWord(1);
-  EXPECT_TRUE(runtime_.setIncludes(thread_, result1, key));
+  EXPECT_TRUE(setIncludes(thread_, result1, key));
   key = SmallInt::fromWord(2);
-  EXPECT_TRUE(runtime_.setIncludes(thread_, result1, key));
+  EXPECT_TRUE(setIncludes(thread_, result1, key));
   key = SmallInt::fromWord(3);
-  EXPECT_TRUE(runtime_.setIncludes(thread_, result1, key));
+  EXPECT_TRUE(setIncludes(thread_, result1, key));
 }
 
 TEST_F(RuntimeSetTest, IntersectIterator) {
@@ -1914,9 +1915,9 @@ TEST_F(RuntimeSetTest, IntersectIterator) {
   runtime_.setAdd(thread_, set, key);
   Set result1(&scope, runtime_.setIntersection(thread_, set, iterable));
   EXPECT_EQ(result1.numItems(), 2);
-  EXPECT_TRUE(runtime_.setIncludes(thread_, result1, key));
+  EXPECT_TRUE(setIncludes(thread_, result1, key));
   key = SmallInt::fromWord(1);
-  EXPECT_TRUE(runtime_.setIncludes(thread_, result1, key));
+  EXPECT_TRUE(setIncludes(thread_, result1, key));
 }
 
 TEST_F(RuntimeSetTest, IntersectWithNonIterable) {

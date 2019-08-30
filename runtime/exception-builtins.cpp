@@ -411,7 +411,9 @@ static RawObject printExceptionChain(Thread* thread, const Object& file,
     Object cause(&scope, exc.cause());
     Object context(&scope, exc.context());
     if (!cause.isNoneType()) {
-      if (!runtime->setIncludes(thread, seen, cause)) {
+      Object cause_hash(&scope, Interpreter::hash(thread, cause));
+      if (cause_hash.isErrorException()) return *cause_hash;
+      if (!runtime->setIncludes(thread, seen, cause, cause_hash)) {
         MAY_RAISE(printExceptionChain(thread, file, cause, seen));
         MAY_RAISE(
             fileWriteString(thread, file,
@@ -420,7 +422,9 @@ static RawObject printExceptionChain(Thread* thread, const Object& file,
       }
     } else if (!context.isNoneType() &&
                exc.suppressContext() != RawBool::trueObj()) {
-      if (!runtime->setIncludes(thread, seen, context)) {
+      Object context_hash(&scope, Interpreter::hash(thread, context));
+      if (context_hash.isErrorException()) return *context_hash;
+      if (!runtime->setIncludes(thread, seen, context, context_hash)) {
         MAY_RAISE(printExceptionChain(thread, file, context, seen));
         MAY_RAISE(
             fileWriteString(thread, file,

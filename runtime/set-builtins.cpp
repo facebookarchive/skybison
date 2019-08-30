@@ -27,14 +27,17 @@ RawObject SetBaseBuiltins::dunderContains(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
-  Object value(&scope, args.get(1));
   if (!thread->runtime()->isInstanceOfSetBase(*self)) {
     return thread->raiseWithFmt(
         LayoutId::kTypeError,
         "__contains__() requires a 'set' or 'frozenset' object");
   }
   SetBase set(&scope, *self);
-  return Bool::fromBool(thread->runtime()->setIncludes(thread, set, value));
+  Object key(&scope, args.get(1));
+  Object key_hash(&scope, Interpreter::hash(thread, key));
+  if (key_hash.isErrorException()) return *key_hash;
+  return Bool::fromBool(
+      thread->runtime()->setIncludes(thread, set, key, key_hash));
 }
 
 RawObject SetBaseBuiltins::dunderIter(Thread* thread, Frame* frame,
@@ -59,6 +62,7 @@ RawObject SetBaseBuiltins::isDisjoint(Thread* thread, Frame* frame,
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   Object value(&scope, NoneType::object());
+  Object value_hash(&scope, NoneType::object());
   if (!thread->runtime()->isInstanceOfSetBase(*self)) {
     return thread->raiseWithFmt(
         LayoutId::kTypeError,
@@ -78,13 +82,12 @@ RawObject SetBaseBuiltins::isDisjoint(Thread* thread, Frame* frame,
       a = *other;
       b = *self;
     }
-    SetIterator set_iter(&scope, runtime->newSetIterator(a));
-    for (;;) {
-      value = setIteratorNext(thread, set_iter);
-      if (value.isError()) {
-        break;
-      }
-      if (runtime->setIncludes(thread, b, value)) {
+    Tuple data(&scope, a.data());
+    for (word i = SetBase::Bucket::kFirst;
+         SetBase::Bucket::nextItem(*data, &i);) {
+      value = SetBase::Bucket::value(*data, i);
+      value_hash = SetBase::Bucket::hash(*data, i);
+      if (runtime->setIncludes(thread, b, value, value_hash)) {
         return Bool::falseObj();
       }
     }
@@ -117,7 +120,9 @@ RawObject SetBaseBuiltins::isDisjoint(Thread* thread, Frame* frame,
       if (thread->clearPendingStopIteration()) break;
       return *value;
     }
-    if (runtime->setIncludes(thread, a, value)) {
+    value_hash = Interpreter::hash(thread, value);
+    if (value_hash.isErrorException()) return *value_hash;
+    if (runtime->setIncludes(thread, a, value, value_hash)) {
       return Bool::falseObj();
     }
   }
@@ -451,10 +456,12 @@ bool setIsSubset(Thread* thread, const SetBase& set, const SetBase& other) {
   HandleScope scope(thread);
   Tuple data(&scope, set.data());
   Object value(&scope, NoneType::object());
+  Object value_hash(&scope, NoneType::object());
   for (word i = SetBase::Bucket::kFirst;
        SetBase::Bucket::nextItem(*data, &i);) {
     value = RawSetBase::Bucket::value(*data, i);
-    if (!thread->runtime()->setIncludes(thread, other, value)) {
+    value_hash = RawSetBase::Bucket::hash(*data, i);
+    if (!thread->runtime()->setIncludes(thread, other, value, value_hash)) {
       return false;
     }
   }
@@ -541,13 +548,15 @@ RawObject SetBuiltins::discard(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
-  Object value(&scope, args.get(1));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfSet(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kSet);
   }
   Set self(&scope, *self_obj);
-  runtime->setRemove(thread, self, value);
+  Object key(&scope, args.get(1));
+  Object key_hash(&scope, Interpreter::hash(thread, key));
+  if (key_hash.isErrorException()) return *key_hash;
+  runtime->setRemove(thread, self, key, key_hash);
   return NoneType::object();
 }
 
@@ -607,14 +616,16 @@ RawObject SetBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
-  Object value(&scope, args.get(1));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfSet(*self)) {
     return thread->raiseRequiresType(self, SymbolId::kSet);
   }
   Set set(&scope, *self);
-  if (!runtime->setRemove(thread, set, value)) {
-    return thread->raise(LayoutId::kKeyError, *value);
+  Object key(&scope, args.get(1));
+  Object key_hash(&scope, Interpreter::hash(thread, key));
+  if (key_hash.isErrorException()) return *key_hash;
+  if (!runtime->setRemove(thread, set, key, key_hash)) {
+    return thread->raise(LayoutId::kKeyError, *key);
   }
   return NoneType::object();
 }

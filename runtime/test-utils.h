@@ -152,6 +152,8 @@ RawObject newMemoryView(View<byte> bytes, const char* format,
 // Equivalent to evaluating "set(range(start, stop))" in Python.
 RawObject setFromRange(word start, word stop);
 
+bool setIncludes(Thread* thread, const SetBase& set, const Object& key);
+
 RawObject runBuiltinImpl(NativeMethodType method,
                          View<std::reference_wrapper<const Object>> args);
 

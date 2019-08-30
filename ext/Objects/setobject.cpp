@@ -107,8 +107,11 @@ PY_EXPORT int PySet_Contains(PyObject* anyset, PyObject* key) {
 
   SetBase set(&scope, *set_obj);
   Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
-
-  return runtime->setIncludes(thread, set, key_obj);
+  Object key_hash(&scope, Interpreter::hash(thread, key_obj));
+  if (key_hash.isErrorException()) {
+    return -1;
+  }
+  return runtime->setIncludes(thread, set, key_obj, key_hash);
 }
 
 PY_EXPORT int PySet_Discard(PyObject* pyset, PyObject* pykey) {
@@ -122,8 +125,11 @@ PY_EXPORT int PySet_Discard(PyObject* pyset, PyObject* pykey) {
   }
   Set set(&scope, *set_obj);
   Object key(&scope, ApiHandle::fromPyObject(pykey)->asObject());
-  // TODO(T36757907): Create and use setRemoveWithHash
-  return runtime->setRemove(thread, set, key);
+  Object key_hash(&scope, Interpreter::hash(thread, key));
+  if (key_hash.isErrorException()) {
+    return -1;
+  }
+  return runtime->setRemove(thread, set, key, key_hash);
 }
 
 PY_EXPORT PyObject* PySet_New(PyObject* iterable) {
