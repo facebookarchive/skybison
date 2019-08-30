@@ -414,10 +414,10 @@ const BuiltinMethod SetBuiltins::kBuiltinMethods[] = {
 };
 
 // TODO(T36810889): implement high-level setAdd function with error handling
-RawObject setAdd(Thread* thread, const Set& set, const Object& key) {
+RawObject setAdd(Thread* thread, const Set& set, const Object& value) {
   // TODO(T36756972): raise MemoryError when heap is full
-  // TODO(T36757907): raise TypeError if key is unhashable
-  return thread->runtime()->setAdd(thread, set, key);
+  // TODO(T36757907): raise TypeError if value is unhashable
+  return thread->runtime()->setAdd(thread, set, value);
 }
 
 RawObject setCopy(Thread* thread, const SetBase& set) {
@@ -434,13 +434,13 @@ RawObject setCopy(Thread* thread, const SetBase& set) {
                               : runtime->newFrozenSet());
   Tuple data(&scope, set.data());
   Tuple new_data(&scope, runtime->newTuple(data.length()));
-  Object key(&scope, NoneType::object());
-  Object key_hash(&scope, NoneType::object());
+  Object value(&scope, NoneType::object());
+  Object value_hash(&scope, NoneType::object());
   for (word i = SetBase::Bucket::kFirst;
        SetBase::Bucket::nextItem(*data, &i);) {
-    key = SetBase::Bucket::key(*data, i);
-    key_hash = SetBase::Bucket::hash(*data, i);
-    SetBase::Bucket::set(*new_data, i, *key_hash, *key);
+    value = SetBase::Bucket::value(*data, i);
+    value_hash = SetBase::Bucket::hash(*data, i);
+    SetBase::Bucket::set(*new_data, i, *value_hash, *value);
   }
   new_set.setData(*new_data);
   new_set.setNumItems(set.numItems());
@@ -450,11 +450,11 @@ RawObject setCopy(Thread* thread, const SetBase& set) {
 bool setIsSubset(Thread* thread, const SetBase& set, const SetBase& other) {
   HandleScope scope(thread);
   Tuple data(&scope, set.data());
-  Object key(&scope, NoneType::object());
+  Object value(&scope, NoneType::object());
   for (word i = SetBase::Bucket::kFirst;
        SetBase::Bucket::nextItem(*data, &i);) {
-    key = RawSetBase::Bucket::key(*data, i);
-    if (!thread->runtime()->setIncludes(thread, other, key)) {
+    value = RawSetBase::Bucket::value(*data, i);
+    if (!thread->runtime()->setIncludes(thread, other, value)) {
       return false;
     }
   }
@@ -486,7 +486,7 @@ RawObject setPop(Thread* thread, const Set& set) {
   if (num_items != 0) {
     for (word i = SetBase::Bucket::kFirst;
          SetBase::Bucket::nextItem(*data, &i);) {
-      Object value(&scope, Set::Bucket::key(*data, i));
+      Object value(&scope, Set::Bucket::value(*data, i));
       Set::Bucket::setTombstone(*data, i);
       set.setNumItems(num_items - 1);
       return *value;
@@ -507,21 +507,21 @@ RawObject setIteratorNext(Thread* thread, const SetIterator& iter) {
   }
   iter.setConsumedCount(iter.consumedCount() + 1);
   iter.setIndex(idx);
-  return RawSet::Bucket::key(*data, idx);
+  return RawSet::Bucket::value(*data, idx);
 }
 
 RawObject SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
-  Object key(&scope, args.get(1));
+  Object value(&scope, args.get(1));
   if (!thread->runtime()->isInstanceOfSet(*self)) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "'add' requires a 'set' object");
   }
   Set set(&scope, *self);
 
-  Object result(&scope, setAdd(thread, set, key));
+  Object result(&scope, setAdd(thread, set, value));
   if (result.isError()) return *result;
   return NoneType::object();
 }

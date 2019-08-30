@@ -2418,10 +2418,10 @@ HANDLER_INLINE Continue Interpreter::doBuildSet(Thread* thread, word arg) {
   Runtime* runtime = thread->runtime();
   Set set(&scope, runtime->newSet());
   for (word i = arg - 1; i >= 0; i--) {
-    Object key(&scope, frame->popValue());
-    Object key_hash(&scope, hash(thread, key));
-    if (key_hash.isErrorException()) return Continue::UNWIND;
-    runtime->setAddWithHash(thread, set, key, key_hash);
+    Object value(&scope, frame->popValue());
+    Object value_hash(&scope, hash(thread, value));
+    if (value_hash.isErrorException()) return Continue::UNWIND;
+    runtime->setAddWithHash(thread, set, value, value_hash);
   }
   frame->pushValue(*set);
   return Continue::NEXT;

@@ -189,7 +189,7 @@ static RawObject constantKey(Thread* thread, const Object& obj) {
     Object item_key(&scope, NoneType::object());
     for (word j = 0, idx = Set::Bucket::kFirst;
          Set::Bucket::nextItem(*data, &idx); j++) {
-      item = Set::Bucket::key(*data, idx);
+      item = Set::Bucket::value(*data, idx);
       item_key = constantKey(thread, item);
       if (item_key.isError()) return *item_key;
       seq.atPut(j, *item_key);

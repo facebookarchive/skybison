@@ -1342,7 +1342,7 @@ bool Runtime::isInternedStr(Thread* thread, const Object& str) {
   if (index < 0) {
     return false;
   }
-  return SetBase::Bucket::key(*data, index) == str;
+  return SetBase::Bucket::value(*data, index) == str;
 }
 
 RawObject Runtime::hash(RawObject object) {
@@ -3223,7 +3223,7 @@ word Runtime::setLookup(const Tuple& data, const Object& key,
   }
 
   do {
-    if (SetBase::Bucket::hasKey(*data, current, *key)) {
+    if (SetBase::Bucket::valueEquals(*data, current, *key)) {
       return current;
     }
     if (next_free_index == -1 && SetBase::Bucket::isTombstone(*data, current)) {
@@ -3256,31 +3256,33 @@ RawTuple Runtime::setGrow(Thread* thread, const Tuple& data) {
   // Re-insert items
   for (word i = SetBase::Bucket::kFirst;
        SetBase::Bucket::nextItem(*data, &i);) {
-    Object key(&scope, SetBase::Bucket::key(*data, i));
-    Object hash(&scope, SetBase::Bucket::hash(*data, i));
-    word index = setLookup<SetLookupType::Insertion>(new_data, key, hash);
+    Object value(&scope, SetBase::Bucket::value(*data, i));
+    Object value_hash(&scope, SetBase::Bucket::hash(*data, i));
+    word index =
+        setLookup<SetLookupType::Insertion>(new_data, value, value_hash);
     DCHECK(index != -1, "unexpected index %ld", index);
-    SetBase::Bucket::set(*new_data, index, *hash, *key);
+    SetBase::Bucket::set(*new_data, index, *value_hash, *value);
   }
   return *new_data;
 }
 
 RawObject Runtime::setAddWithHash(Thread* thread, const SetBase& set,
-                                  const Object& value, const Object& key_hash) {
+                                  const Object& value,
+                                  const Object& value_hash) {
   HandleScope scope(thread);
   Tuple data(&scope, set.data());
-  word index = setLookup<SetLookupType::Lookup>(data, value, key_hash);
+  word index = setLookup<SetLookupType::Lookup>(data, value, value_hash);
   if (index != -1) {
-    return SetBase::Bucket::key(*data, index);
+    return SetBase::Bucket::value(*data, index);
   }
   Tuple new_data(&scope, *data);
   if (data.length() == 0 || set.numItems() >= data.length() / 2) {
     new_data = setGrow(thread, data);
   }
-  index = setLookup<SetLookupType::Insertion>(new_data, value, key_hash);
+  index = setLookup<SetLookupType::Insertion>(new_data, value, value_hash);
   DCHECK(index != -1, "unexpected index %ld", index);
   set.setData(*new_data);
-  SetBase::Bucket::set(*new_data, index, *key_hash, *value);
+  SetBase::Bucket::set(*new_data, index, *value_hash, *value);
   set.setNumItems(set.numItems() + 1);
   return *value;
 }
@@ -3288,16 +3290,16 @@ RawObject Runtime::setAddWithHash(Thread* thread, const SetBase& set,
 RawObject Runtime::setAdd(Thread* thread, const SetBase& set,
                           const Object& value) {
   HandleScope scope(thread);
-  Object key_hash(&scope, hash(*value));
-  return setAddWithHash(thread, set, value, key_hash);
+  Object value_hash(&scope, hash(*value));
+  return setAddWithHash(thread, set, value, value_hash);
 }
 
 bool Runtime::setIncludes(Thread* thread, const SetBase& set,
-                          const Object& value) {
+                          const Object& key) {
   HandleScope scope(thread);
   Tuple data(&scope, set.data());
-  Object key_hash(&scope, hash(*value));
-  return setLookup<SetLookupType::Lookup>(data, value, key_hash) != -1;
+  Object key_hash(&scope, hash(*key));
+  return setLookup<SetLookupType::Lookup>(data, key, key_hash) != -1;
 }
 
 RawObject Runtime::setIntersection(Thread* thread, const SetBase& set,
@@ -3305,8 +3307,8 @@ RawObject Runtime::setIntersection(Thread* thread, const SetBase& set,
   HandleScope scope(thread);
   SetBase dst(&scope, isInstanceOfSet(*set) ? Runtime::newSet()
                                             : Runtime::newFrozenSet());
-  Object key(&scope, NoneType::object());
-  Object key_hash(&scope, NoneType::object());
+  Object value(&scope, NoneType::object());
+  Object value_hash(&scope, NoneType::object());
   // Special case for sets
   if (isInstanceOfSetBase(*iterable)) {
     SetBase self(&scope, *set);
@@ -3323,10 +3325,11 @@ RawObject Runtime::setIntersection(Thread* thread, const SetBase& set,
     Tuple other_data(&scope, other.data());
     for (word i = SetBase::Bucket::kFirst;
          SetBase::Bucket::nextItem(*data, &i);) {
-      key = SetBase::Bucket::key(*data, i);
-      key_hash = SetBase::Bucket::hash(*data, i);
-      if (setLookup<SetLookupType::Lookup>(other_data, key, key_hash) != -1) {
-        setAddWithHash(thread, dst, key, key_hash);
+      value = SetBase::Bucket::value(*data, i);
+      value_hash = SetBase::Bucket::hash(*data, i);
+      if (setLookup<SetLookupType::Lookup>(other_data, value, value_hash) !=
+          -1) {
+        setAddWithHash(thread, dst, value, value_hash);
       }
     }
     return *dst;
@@ -3356,26 +3359,26 @@ RawObject Runtime::setIntersection(Thread* thread, const SetBase& set,
   }
   Tuple data(&scope, set.data());
   for (;;) {
-    key = Interpreter::callMethod1(thread, thread->currentFrame(), next_method,
-                                   iterator);
-    if (key.isError()) {
+    value = Interpreter::callMethod1(thread, thread->currentFrame(),
+                                     next_method, iterator);
+    if (value.isError()) {
       if (thread->clearPendingStopIteration()) break;
-      return *key;
+      return *value;
     }
-    key_hash = hash(*key);
-    if (setLookup<SetLookupType::Lookup>(data, key, key_hash) != -1) {
-      setAddWithHash(thread, dst, key, key_hash);
+    value_hash = hash(*value);
+    if (setLookup<SetLookupType::Lookup>(data, value, value_hash) != -1) {
+      setAddWithHash(thread, dst, value, value_hash);
     }
   }
   return *dst;
 }
 
-bool Runtime::setRemove(Thread* thread, const Set& set, const Object& value) {
+bool Runtime::setRemove(Thread* thread, const Set& set, const Object& key) {
   HandleScope scope(thread);
   Tuple data(&scope, set.data());
-  Object key_hash(&scope, hash(*value));
+  Object key_hash(&scope, hash(*key));
   // TODO(T36757907): Raise TypeError if key is unhashable
-  word index = setLookup<SetLookupType::Lookup>(data, value, key_hash);
+  word index = setLookup<SetLookupType::Lookup>(data, key, key_hash);
   if (index != -1) {
     SetBase::Bucket::setTombstone(*data, index);
     set.setNumItems(set.numItems() - 1);
@@ -3425,7 +3428,7 @@ RawObject Runtime::setUpdate(Thread* thread, const SetBase& dst,
       Object hash(&scope, NoneType::object());
       for (word i = SetBase::Bucket::kFirst;
            SetBase::Bucket::nextItem(*data, &i);) {
-        elt = SetBase::Bucket::key(*data, i);
+        elt = SetBase::Bucket::value(*data, i);
         // take hash from data to avoid recomputing it.
         hash = SetBase::Bucket::hash(*data, i);
         setAddWithHash(thread, dst, elt, hash);

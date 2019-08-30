@@ -525,22 +525,24 @@ class Runtime {
   RawObject mutableBytesWith(word length, byte value);
 
   // Set related function, based on dict.
-  // Add a value to set and return the object in set.
+  // Add `value` to set if there is no equivalent value present yet. Returns
+  // `value` if it was added or the existing equivalent value.
   RawObject setAdd(Thread* thread, const SetBase& set, const Object& value);
 
   RawObject setAddWithHash(Thread* thread, const SetBase& set,
-                           const Object& value, const Object& key_hash);
+                           const Object& value, const Object& value_hash);
 
-  // Returns true if the set contains the specified value.
-  bool setIncludes(Thread* thread, const SetBase& set, const Object& value);
+  // Returns true if the set contains a value that is equivalent to `key`.
+  bool setIncludes(Thread* thread, const SetBase& set, const Object& key);
 
   // Compute the set intersection between a set and an iterator
   // Returns either a new set with the intersection or an Error object.
   RawObject setIntersection(Thread* thread, const SetBase& set,
                             const Object& iterable);
 
-  // Delete a key from the set, returns true if the key existed.
-  bool setRemove(Thread* thread, const Set& set, const Object& value);
+  // Delete the value equivalent to `key` from the set.
+  // Returns true if a value was removed, false if no equivalent value existed.
+  bool setRemove(Thread* thread, const Set& set, const Object& key);
 
   // Update a set from an iterator
   // Returns either the updated set or an Error object.

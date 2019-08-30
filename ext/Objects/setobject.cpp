@@ -70,8 +70,8 @@ PY_EXPORT int _PySet_NextEntry(PyObject* pyset, Py_ssize_t* ppos,
   }
   DCHECK(pkey != nullptr, "pkey must not be null");
   DCHECK(phash != nullptr, "phash must not be null");
-  *pkey = ApiHandle::borrowedReference(thread,
-                                       SetBase::Bucket::key(*set_data, *ppos));
+  *pkey = ApiHandle::borrowedReference(
+      thread, SetBase::Bucket::value(*set_data, *ppos));
   *phash = SmallInt::cast(SetBase::Bucket::hash(*set_data, *ppos)).value();
   return true;
 }

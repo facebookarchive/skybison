@@ -1198,7 +1198,7 @@ TEST_F(SetBuiltinsTest, CopyReturnsShallowCopy) {
   bool has_object = false;
   for (word i = SetBase::Bucket::kFirst;
        SetBase::Bucket::nextItem(*data, &i);) {
-    if (SetBase::Bucket::key(*data, i) == *obj) {
+    if (SetBase::Bucket::value(*data, i) == *obj) {
       has_object = true;
       break;
     }
@@ -1261,7 +1261,7 @@ TEST_F(FrozenSetBuiltinsTest, CopyMakesShallowCopy) {
   bool has_object = false;
   for (word i = SetBase::Bucket::kFirst;
        SetBase::Bucket::nextItem(*data, &i);) {
-    if (SetBase::Bucket::key(*data, i) == *obj) {
+    if (SetBase::Bucket::value(*data, i) == *obj) {
       has_object = true;
       break;
     }

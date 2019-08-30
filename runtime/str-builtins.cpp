@@ -543,7 +543,7 @@ bool strInternConstants(Thread* thread, const Object& items) {
       Tuple seq(&scope, runtime->newTuple(set.numItems()));
       for (word j = 0, idx = Set::Bucket::kFirst;
            Set::Bucket::nextItem(*data, &idx); j++) {
-        seq.atPut(j, Set::Bucket::key(*data, idx));
+        seq.atPut(j, Set::Bucket::value(*data, idx));
       }
       if (strInternConstants(thread, seq)) {
         obj = runtime->setUpdate(thread, set, seq);

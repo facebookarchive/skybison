@@ -8,7 +8,7 @@
 
 namespace python {
 
-RawObject setAdd(Thread* thread, const Set& set, const Object& key);
+RawObject setAdd(Thread* thread, const Set& set, const Object& value);
 
 // Returns a shallow copy of a set
 RawObject setCopy(Thread* thread, const SetBase& set);

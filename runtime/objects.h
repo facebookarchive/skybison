@@ -2337,26 +2337,26 @@ class RawSetBase::Bucket {
     return data.at(index + kHashOffset);
   }
 
-  static bool hasKey(RawTuple data, word index, RawObject that_key) {
+  static bool valueEquals(RawTuple data, word index, RawObject key) {
     return !hash(data, index).isNoneType() &&
-           RawObject::equals(key(data, index), that_key);
+           RawObject::equals(value(data, index), key);
   }
 
   static bool isEmpty(RawTuple data, word index) {
-    return hash(data, index).isNoneType() && key(data, index).isNoneType();
+    return hash(data, index).isNoneType() && value(data, index).isNoneType();
   }
 
   static bool isTombstone(RawTuple data, word index) {
-    return hash(data, index).isNoneType() && !key(data, index).isNoneType();
+    return hash(data, index).isNoneType() && !value(data, index).isNoneType();
   }
 
-  static RawObject key(RawTuple data, word index) {
+  static RawObject value(RawTuple data, word index) {
     return data.at(index + kKeyOffset);
   }
 
-  static void set(RawTuple data, word index, RawObject hash, RawObject key) {
+  static void set(RawTuple data, word index, RawObject hash, RawObject value) {
     data.atPut(index + kHashOffset, hash);
-    data.atPut(index + kKeyOffset, key);
+    data.atPut(index + kKeyOffset, value);
   }
 
   static void setTombstone(RawTuple data, word index) {
