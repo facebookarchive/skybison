@@ -38,7 +38,7 @@ static bool isPass(const Code& code) {
 void copyFunctionEntries(Thread* thread, const Function& base,
                          const Function& patch) {
   HandleScope scope(thread);
-  Str method_name(&scope, base.name());
+  Str method_name(&scope, base.qualname());
   Code patch_code(&scope, patch.code());
   Code base_code(&scope, base.code());
   CHECK(isPass(patch_code),
