@@ -57,10 +57,10 @@ class ref(bootstrap=True):
         return None
 
     def __hash__(self):
-        obj = self.__call__()
+        obj = ref.__call__(self)
         if obj is None:
             raise TypeError("weak object has gone away")
-        return obj.__hash__()
+        return hash(obj)
 
 
 class weakcallableproxy:

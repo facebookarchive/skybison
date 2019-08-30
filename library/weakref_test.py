@@ -100,6 +100,23 @@ class WeakRefTests(unittest.TestCase):
         proxy = weakref.proxy(callable_obj)
         self.assertEqual(proxy(), "CallableObject")
 
+    def test_hash_returns_referent_hash(self):
+        class C:
+            def __hash__(self):
+                return 123456
+
+        i = C()
+        r = weakref.ref(i)
+        self.assertEqual(hash(r), hash(i))
+
+    def test_hash_picks_correct_dunder_hash(self):
+        class C:
+            def __hash__(self):
+                raise Exception("Should not pick this")
+
+        r = weakref.ref(C)
+        self.assertEqual(hash(r), hash(C))
+
     # TODO(T43270097): Add a test for callback.
 
 
