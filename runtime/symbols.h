@@ -300,8 +300,7 @@ class Runtime;
   V(UnderNumberCheck, "_number_check")                                         \
   V(UnderObjectTypeGetattr, "_object_type_getattr")                            \
   V(UnderObjectTypeHasattr, "_object_type_hasattr")                            \
-  V(UnderOsClose, "_os_close")                                                 \
-  V(UnderOsRead, "_os_read")                                                   \
+  V(UnderOs, "_os")                                                            \
   V(UnderOsWrite, "_os_write")                                                 \
   V(UnderPatch, "_patch")                                                      \
   V(UnderPos, "_pos")                                                          \
@@ -436,6 +435,7 @@ class Runtime;
   V(Chr, "chr")                                                                \
   V(Classmethod, "classmethod")                                                \
   V(Clear, "clear")                                                            \
+  V(Close, "close")                                                            \
   V(CoArgcount, "co_argcount")                                                 \
   V(CoCellvars, "co_cellvars")                                                 \
   V(CoCode, "co_code")                                                         \
@@ -515,6 +515,8 @@ class Runtime;
   V(Frame, "frame")                                                            \
   V(FromBytes, "from_bytes")                                                   \
   V(FrozenSet, "frozenset")                                                    \
+  V(FstatSize, "fstat_size")                                                   \
+  V(Ftruncate, "ftruncate")                                                    \
   V(Function, "function")                                                      \
   V(FutureWarning, "FutureWarning")                                            \
   V(Generator, "generator")                                                    \
@@ -555,6 +557,7 @@ class Runtime;
   V(Irshift, "irshift")                                                        \
   V(IsADirectoryError, "IsADirectoryError")                                    \
   V(IsBuiltin, "is_builtin")                                                   \
+  V(Isdir, "isdir")                                                            \
   V(IsDisjoint, "isdisjoint")                                                  \
   V(IsFrozen, "is_frozen")                                                     \
   V(IsFrozenPackage, "is_frozen_package")                                      \
@@ -562,6 +565,7 @@ class Runtime;
   V(IsSubclass, "issubclass")                                                  \
   V(Isalnum, "isalnum")                                                        \
   V(Isalpha, "isalpha")                                                        \
+  V(Isatty, "isatty")                                                          \
   V(Isdecimal, "isdecimal")                                                    \
   V(Isdigit, "isdigit")                                                        \
   V(Isidentifier, "isidentifier")                                              \
@@ -602,6 +606,7 @@ class Runtime;
   V(LongRangeIterator, "longrange_iterator")                                   \
   V(LookupError, "LookupError")                                                \
   V(Lower, "lower")                                                            \
+  V(Lseek, "lseek")                                                            \
   V(Lshift, "lshift")                                                          \
   V(Lt, "lt")                                                                  \
   V(Marshal, "marshal")                                                        \
@@ -640,11 +645,13 @@ class Runtime;
   V(ObjectTypename, "object")                                                  \
   V(Oct, "oct")                                                                \
   V(Offset, "offset")                                                          \
+  V(Open, "open")                                                              \
   V(Operator, "operator")                                                      \
   V(OrUnder, "or_")                                                            \
   V(Ord, "ord")                                                                \
   V(OverflowError, "OverflowError")                                            \
   V(Owner, "owner")                                                            \
+  V(ParseMode, "parse_mode")                                                   \
   V(Partition, "partition")                                                    \
   V(Path, "path")                                                              \
   V(PendingDeprecationWarning, "PendingDeprecationWarning")                    \
@@ -662,6 +669,7 @@ class Runtime;
   V(RStrip, "rstrip")                                                          \
   V(Range, "range")                                                            \
   V(RangeIterator, "range_iterator")                                           \
+  V(Read, "read")                                                              \
   V(Reason, "reason")                                                          \
   V(RecursionError, "RecursionError")                                          \
   V(Ref, "ref")                                                                \
@@ -680,6 +688,7 @@ class Runtime;
   V(SeqIterator, "iterator")                                                   \
   V(Set, "set")                                                                \
   V(SetIterator, "set_iterator")                                               \
+  V(SetNoinheritable, "set_noinheritable")                                     \
   V(Setattr, "setattr")                                                        \
   V(Setter, "setter")                                                          \
   V(Signed, "signed")                                                          \

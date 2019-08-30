@@ -10,8 +10,6 @@ namespace python {
 class UnderCodecsModule
     : public ModuleBase<UnderCodecsModule, SymbolId::kUnderCodecs> {
  public:
-  static void postInitialize(Thread* thread, Runtime* runtime,
-                             const Module& module);
   static RawObject underAsciiDecode(Thread* thread, Frame* frame, word nargs);
   static RawObject underAsciiEncode(Thread* thread, Frame* frame, word nargs);
   static RawObject underEscapeDecode(Thread* thread, Frame* frame, word nargs);

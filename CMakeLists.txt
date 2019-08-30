@@ -182,6 +182,7 @@ set(
   library/_imp.py
   library/_io.py
   library/_namedtuple.py
+  library/_os.py
   library/_str_mod.py
   library/_warnings.py
   library/_weakref.py
@@ -225,11 +226,13 @@ target_include_directories(
 if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
   set(
     RUNTIME_OS_SOURCES
+    runtime/file-darwin.cpp
     runtime/os-darwin.cpp
     runtime/mutex-darwin.cpp)
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   set(
     RUNTIME_OS_SOURCES
+    runtime/file-linux.cpp
     runtime/os-linux.cpp
     runtime/mutex-linux.cpp)
 endif()
@@ -277,6 +280,7 @@ add_library(
   runtime/dict-builtins.h
   runtime/exception-builtins.cpp
   runtime/exception-builtins.h
+  runtime/file.h
   runtime/float-builtins.cpp
   runtime/float-builtins.h
   runtime/float-conversion.cpp
@@ -365,6 +369,8 @@ add_library(
   runtime/type-builtins.cpp
   runtime/under-builtins-module.cpp
   runtime/under-builtins-module.h
+  runtime/under-os-module.cpp
+  runtime/under-os-module.h
   runtime/under-str-mod-module.cpp
   runtime/under-str-mod-module.h
   runtime/unicode.h
@@ -513,6 +519,7 @@ add_library(
   runtime/tuple-builtins-test.cpp
   runtime/type-builtins-test.cpp
   runtime/under-builtins-module-test.cpp
+  runtime/under-os-module-test.cpp
   runtime/utils-test.cpp
   runtime/vector-test.cpp
   runtime/warnings-module-test.cpp)

@@ -58,6 +58,7 @@
 #include "tuple-builtins.h"
 #include "type-builtins.h"
 #include "under-builtins-module.h"
+#include "under-os-module.h"
 #include "under-str-mod-module.h"
 #include "utils.h"
 #include "visitor.h"
@@ -2040,6 +2041,7 @@ RawObject Runtime::lookupNameInModule(Thread* thread, SymbolId module_name,
 const ModuleInitializer Runtime::kBuiltinModules[] = {
     {SymbolId::kUnderCodecs, &UnderCodecsModule::initialize},
     {SymbolId::kUnderImp, &UnderImpModule::initialize},
+    {SymbolId::kUnderOs, &UnderOsModule::initialize},
     {SymbolId::kUnderIo, &UnderIoModule::initialize},
     {SymbolId::kUnderStrMod, &UnderStrModModule::initialize},
     {SymbolId::kMarshal, &MarshalModule::initialize},
