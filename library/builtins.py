@@ -2369,9 +2369,12 @@ def hasattr(obj, name):
 
 def hash(obj):
     try:
-        result = _object_type_getattr(obj, "__hash__")()
+        dunder_hash = _object_type_getattr(obj, "__hash__")
     except Exception:
         raise TypeError(f"unhashable type: '{_type(obj).__name__}'")
+    if dunder_hash is None or dunder_hash is _Unbound:
+        raise TypeError(f"unhashable type: '{_type(obj).__name__}'")
+    result = dunder_hash()
     if _int_checkexact(result):
         return result
     if _int_check(result):

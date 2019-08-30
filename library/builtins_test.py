@@ -2254,7 +2254,7 @@ class GlobalsTests(unittest.TestCase):
 
 
 class HashTests(unittest.TestCase):
-    def test_hash_with_raising_dunder_hash_raises_type_error(self):
+    def test_hash_with_raising_dunder_hash_descriptor_raises_type_error(self):
         class Desc:
             def __get__(self, obj, type):
                 raise AttributeError("failed")
@@ -2266,6 +2266,15 @@ class HashTests(unittest.TestCase):
         with self.assertRaises(TypeError) as context:
             hash(foo)
         self.assertEqual(str(context.exception), "unhashable type: 'Foo'")
+
+    def test_hash_with_raising_dunder_hash_propagates_exceptions(self):
+        class C:
+            def __hash__(self):
+                raise UserWarning()
+
+        i = C()
+        with self.assertRaises(UserWarning):
+            hash(i)
 
     def test_hash_with_none_dunder_hash_raises_type_error(self):
         class Foo:
