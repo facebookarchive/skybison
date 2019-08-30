@@ -161,21 +161,19 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
     Object key(&scope, NoneType::object());
     for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
       value = Dict::Bucket::value(*data, i);
-      // TODO(T47581831) Implicit globals from type initialization should
-      // not contain ValueCells.
-      if (value.isValueCell()) {
-        if (ValueCell::cast(*value).isPlaceholder()) continue;
-        value = ValueCell::cast(*value).value();
-      }
+      DCHECK(!(value.isValueCell() && ValueCell::cast(*value).isPlaceholder()),
+             "value should not be a placeholder value cell");
       key = Dict::Bucket::key(*data, i);
       runtime->typeDictAtPut(thread, type_dict, key, value);
     }
   }
 
   Object class_cell_key(&scope, runtime->symbols()->DunderClassCell());
-  Object class_cell(&scope, runtime->dictAt(thread, type_dict, class_cell_key));
-  if (!class_cell.isError()) {
-    ValueCell::cast(ValueCell::cast(*class_cell).value()).setValue(*type);
+  Object class_cell(&scope,
+                    runtime->typeDictAt(thread, type_dict, class_cell_key));
+  if (!class_cell.isErrorNotFound()) {
+    DCHECK(class_cell.isValueCell(), "class cell must be a value cell");
+    ValueCell::cast(*class_cell).setValue(*type);
     runtime->dictRemove(thread, type_dict, class_cell_key);
   }
   type.setDict(*type_dict);

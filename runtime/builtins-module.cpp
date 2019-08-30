@@ -208,20 +208,19 @@ const SymbolId BuiltinsModule::kIntrinsicIds[] = {
     SymbolId::kIsInstance,      SymbolId::kSentinelId,
 };
 
-static void patchTypeDict(Thread* thread, const Dict& base, const Dict& patch) {
+static void patchTypeDict(Thread* thread, const Type& base_type,
+                          const Dict& patch) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Tuple patch_data(&scope, patch.data());
+  Dict type_dict(&scope, base_type.dict());
   for (word i = Dict::Bucket::kFirst;
        Dict::Bucket::nextItem(*patch_data, &i);) {
     Str key(&scope, Dict::Bucket::key(*patch_data, i));
-    Object patch_value_cell(&scope, Dict::Bucket::value(*patch_data, i));
-    DCHECK(patch_value_cell.isValueCell(),
-           "Values in type dict should be ValueCell");
-    Object patch_obj(&scope, ValueCell::cast(*patch_value_cell).value());
+    Object patch_obj(&scope, Dict::Bucket::value(*patch_data, i));
 
     // Copy function entries if the method already exists as a native builtin.
-    Object base_obj(&scope, runtime->typeDictAt(thread, base, key));
+    Object base_obj(&scope, runtime->typeDictAt(thread, type_dict, key));
     if (!base_obj.isError()) {
       CHECK(patch_obj.isFunction(), "Python should only annotate functions");
       Function patch_fn(&scope, *patch_obj);
@@ -231,7 +230,7 @@ static void patchTypeDict(Thread* thread, const Dict& base, const Dict& patch) {
 
       copyFunctionEntries(thread, base_fn, patch_fn);
     }
-    runtime->typeDictAtPut(thread, base, key, patch_obj);
+    runtime->typeDictAtPut(thread, type_dict, key, patch_obj);
   }
 }
 
@@ -298,12 +297,11 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
           "You may need to add it to the builtins module.",
           Str::cast(*name).toCStr());
     Type type(&scope, *type_obj);
-    Dict type_dict(&scope, type.dict());
 
     Dict patch_type(&scope, runtime->newDict());
     Object result(&scope, thread->runClassFunction(body, patch_type));
     if (result.isError()) return *result;
-    patchTypeDict(thread, type_dict, patch_type);
+    patchTypeDict(thread, type, patch_type);
     // A bootstrap type initialization is complete at this point.
     return *type;
   }

@@ -1738,15 +1738,42 @@ HANDLER_INLINE Continue Interpreter::doSetupAnnotations(Thread* thread, word) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Frame* frame = thread->currentFrame();
-  Dict implicit_globals(&scope, frame->implicitGlobals());
-  Object annotations(&scope,
-                     runtime->symbols()->at(SymbolId::kDunderAnnotations));
-  Object anno_dict(&scope,
-                   runtime->dictAt(thread, implicit_globals, annotations));
-  if (anno_dict.isError()) {
-    Object new_dict(&scope, runtime->newDict());
-    runtime->dictAtPutInValueCell(thread, implicit_globals, annotations,
-                                  new_dict);
+  Object dunder_annotations(
+      &scope, runtime->symbols()->at(SymbolId::kDunderAnnotations));
+  if (frame->function().globals() == frame->implicitGlobals()) {
+    // Module body
+    Dict globals_dict(&scope, frame->function().globals());
+    if (moduleDictAt(thread, globals_dict, dunder_annotations)
+            .isErrorNotFound()) {
+      Object annotations(&scope, runtime->newDict());
+      moduleDictAtPut(thread, globals_dict, dunder_annotations, annotations);
+    }
+  } else {
+    // Class body
+    Object implicit_globals(&scope, frame->implicitGlobals());
+    if (implicit_globals.isDict()) {
+      Dict implicit_globals_dict(&scope, frame->implicitGlobals());
+      if (!runtime->dictIncludes(thread, implicit_globals_dict,
+                                 dunder_annotations)) {
+        Object annotations(&scope, runtime->newDict());
+        runtime->dictAtPut(thread, implicit_globals_dict, dunder_annotations,
+                           annotations);
+      }
+    } else {
+      if (objectGetItem(thread, implicit_globals, dunder_annotations)
+              .isErrorException()) {
+        if (!thread->pendingExceptionMatches(LayoutId::kKeyError)) {
+          return Continue::UNWIND;
+        }
+        thread->clearPendingException();
+        Object annotations(&scope, runtime->newDict());
+        if (objectSetItem(thread, implicit_globals, dunder_annotations,
+                          annotations)
+                .isErrorException()) {
+          return Continue::UNWIND;
+        }
+      }
+    }
   }
   return Continue::NEXT;
 }
@@ -1854,8 +1881,7 @@ HANDLER_INLINE Continue Interpreter::doStoreName(Thread* thread, word arg) {
   Object value(&scope, frame->popValue());
   if (implicit_globals_obj.isDict()) {
     Dict implicit_globals(&scope, *implicit_globals_obj);
-    thread->runtime()->dictAtPutInValueCell(thread, implicit_globals, key,
-                                            value);
+    thread->runtime()->dictAtPut(thread, implicit_globals, key, value);
   } else {
     if (objectSetItem(thread, implicit_globals_obj, key, value)
             .isErrorException()) {
@@ -2341,16 +2367,6 @@ HANDLER_INLINE Continue Interpreter::doLoadName(Thread* thread, word arg) {
       Object result(&scope, runtime->dictAt(thread, implicit_globals, key));
       DCHECK(!result.isError() || result.isErrorNotFound(),
              "expected value or not found");
-      // TODO(T47581831) Once we have tagged dictionaries we should no longer
-      // need to manually check for valuecell results here.
-      if (result.isValueCell()) {
-        ValueCell value_cell(&scope, *result);
-        if (value_cell.isPlaceholder()) {
-          result = Error::notFound();
-        } else {
-          result = value_cell.value();
-        }
-      }
       if (!result.isErrorNotFound()) {
         frame->pushValue(*result);
         return Continue::NEXT;
@@ -2905,14 +2921,35 @@ HANDLER_INLINE Continue Interpreter::doStoreAnnotation(Thread* thread,
   Object names(&scope, Code::cast(frame->code()).names());
   Object value(&scope, frame->popValue());
   Object key(&scope, Tuple::cast(*names).at(arg));
-
-  Dict implicit_globals(&scope, frame->implicitGlobals());
-  Object annotations(&scope,
-                     runtime->symbols()->at(SymbolId::kDunderAnnotations));
-  Object value_cell(&scope,
-                    runtime->dictAt(thread, implicit_globals, annotations));
-  Dict anno_dict(&scope, ValueCell::cast(*value_cell).value());
-  runtime->dictAtPut(thread, anno_dict, key, value);
+  Object annotations(&scope, NoneType::object());
+  Object dunder_annotations(
+      &scope, runtime->symbols()->at(SymbolId::kDunderAnnotations));
+  if (frame->function().globals() == frame->implicitGlobals()) {
+    // Module body
+    Dict globals_dict(&scope, frame->function().globals());
+    annotations = moduleDictAt(thread, globals_dict, dunder_annotations);
+  } else {
+    // Class body
+    Object implicit_globals(&scope, frame->implicitGlobals());
+    if (implicit_globals.isDict()) {
+      Dict implicit_globals_dict(&scope, frame->implicitGlobals());
+      annotations =
+          runtime->dictAt(thread, implicit_globals_dict, dunder_annotations);
+    } else {
+      annotations = objectGetItem(thread, implicit_globals, dunder_annotations);
+      if (annotations.isErrorException()) {
+        return Continue::UNWIND;
+      }
+    }
+  }
+  if (annotations.isDict()) {
+    Dict annotations_dict(&scope, *annotations);
+    runtime->dictAtPut(thread, annotations_dict, key, value);
+  } else {
+    if (objectSetItem(thread, annotations, key, value).isErrorException()) {
+      return Continue::UNWIND;
+    }
+  }
   return Continue::NEXT;
 }
 
@@ -3214,9 +3251,29 @@ HANDLER_INLINE Continue Interpreter::doLoadClassDeref(Thread* thread,
   Code code(&scope, frame->code());
   word idx = arg - code.numCellvars();
   Object name(&scope, Tuple::cast(code.freevars()).at(idx));
-  Dict implicit_global(&scope, frame->implicitGlobals());
-  Object result(&scope,
-                thread->runtime()->dictAt(thread, implicit_global, name));
+  Object result(&scope, NoneType::object());
+
+  if (frame->function().globals() == frame->implicitGlobals()) {
+    // Module body
+    Dict globals_dict(&scope, frame->function().globals());
+    result = moduleDictAt(thread, globals_dict, name);
+  } else {
+    // Class body
+    Object implicit_globals(&scope, frame->implicitGlobals());
+    if (implicit_globals.isDict()) {
+      Dict implicit_globals_dict(&scope, frame->implicitGlobals());
+      result = thread->runtime()->dictAt(thread, implicit_globals_dict, name);
+    } else {
+      result = objectGetItem(thread, implicit_globals, name);
+      if (result.isErrorException()) {
+        if (!thread->pendingExceptionMatches(LayoutId::kKeyError)) {
+          return Continue::UNWIND;
+        }
+        thread->clearPendingException();
+      }
+    }
+  }
+
   if (result.isError()) {
     ValueCell value_cell(&scope, frame->local(code.nlocals() + arg));
     if (value_cell.isUnbound()) {
@@ -3224,8 +3281,9 @@ HANDLER_INLINE Continue Interpreter::doLoadClassDeref(Thread* thread,
     }
     frame->pushValue(value_cell.value());
   } else {
-    frame->pushValue(ValueCell::cast(*result).value());
+    frame->pushValue(*result);
   }
+
   return Continue::NEXT;
 }
 

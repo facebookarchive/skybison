@@ -579,31 +579,6 @@ TEST_F(ThreadTest, StoreGlobalReuseValueCell) {
   EXPECT_TRUE(isIntEqualsWord(moduleDictAt(thread_, globals, key), 42));
 }
 
-TEST_F(ThreadTest, StoreNameCreateValueCell) {
-  HandleScope scope(thread_);
-
-  Code code(&scope, newEmptyCode());
-
-  Tuple consts(&scope, runtime_.newTuple(1));
-  consts.atPut(0, SmallInt::fromWord(42));
-  code.setConsts(*consts);
-
-  Tuple names(&scope, runtime_.newTuple(1));
-  Object key(&scope, runtime_.newStrFromCStr("foo"));
-  names.atPut(0, *key);
-  code.setNames(*names);
-
-  const byte bytecode[] = {LOAD_CONST, 0, STORE_NAME,   0,
-                           LOAD_CONST, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
-  code.setFlags(Code::Flags::NOFREE);
-
-  Dict globals(&scope, runtime_.newDict());
-  Dict locals(&scope, runtime_.newDict());
-  EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, globals, locals), 42));
-  EXPECT_TRUE(isIntEqualsWord(moduleDictAt(thread_, locals, key), 42));
-}
-
 TEST_F(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
   HandleScope scope(thread_);
 
@@ -704,7 +679,7 @@ TEST_F(ThreadTest, MakeFunction) {
   Dict locals(&scope, runtime_.newDict());
   ASSERT_TRUE(thread_->exec(code, globals, locals).isNoneType());
 
-  Object function_obj(&scope, moduleDictAt(thread_, locals, name));
+  Object function_obj(&scope, runtime_.dictAt(thread_, locals, name));
   ASSERT_TRUE(function_obj.isFunction());
   Function function(&scope, *function_obj);
   EXPECT_EQ(function.code(), func_code);
@@ -1805,7 +1780,7 @@ TEST_F(ThreadTest, BreakLoopWhileLoopBytecode) {
   Dict globals(&scope, runtime_.newDict());
   Dict locals(&scope, runtime_.newDict());
   ASSERT_TRUE(thread_->exec(code, globals, locals).isNoneType());
-  EXPECT_TRUE(isIntEqualsWord(moduleDictAt(thread_, locals, key), 3));
+  EXPECT_TRUE(isIntEqualsWord(runtime_.dictAt(thread_, locals, key), 3));
 }
 
 TEST_F(ThreadTest, BreakLoopRangeLoop) {
@@ -2061,19 +2036,19 @@ finally:
 TEST_F(ThreadTest, SetupAnnotationsAndStoreAnnotations) {
   HandleScope scope(thread_);
   const char* src = R"(
-x: int = 1
-class Foo:
-  bar: int = 2
-class_anno_dict = Foo.__annotations__
+global_with_annotation: int = 1
+class ClassWithAnnotation:
+  attribute_with_annotation: int = 2
+class_anno_dict = ClassWithAnnotation.__annotations__
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
   Dict module_anno_dict(&scope, mainModuleAt(&runtime_, "__annotations__"));
-  Object m_key(&scope, runtime_.newStrFromCStr("x"));
+  Object m_key(&scope, runtime_.newStrFromCStr("global_with_annotation"));
   Object m_value(&scope, runtime_.dictAt(thread_, module_anno_dict, m_key));
   EXPECT_EQ(*m_value, runtime_.typeAt(LayoutId::kInt));
 
   Dict class_anno_dict(&scope, mainModuleAt(&runtime_, "class_anno_dict"));
-  Object c_key(&scope, runtime_.newStrFromCStr("bar"));
+  Object c_key(&scope, runtime_.newStrFromCStr("attribute_with_annotation"));
   Object c_value(&scope, runtime_.dictAt(thread_, class_anno_dict, c_key));
   EXPECT_EQ(*c_value, runtime_.typeAt(LayoutId::kInt));
 }
