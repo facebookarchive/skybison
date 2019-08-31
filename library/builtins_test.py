@@ -1350,6 +1350,14 @@ class ClassMethodTests(unittest.TestCase):
         method = classmethod(foo)
         self.assertIs(method.__isabstractmethod__, True)
 
+    def test_has_dunder_call(self):
+        class C:
+            @classmethod
+            def bar(cls):
+                pass
+
+        C.bar.__getattribute__("__call__")
+
 
 class CodeTests(unittest.TestCase):
     def test_dunder_hash_with_non_code_object_raises_type_error(self):
@@ -3605,6 +3613,15 @@ class MemoryviewTests(unittest.TestCase):
         self.assertEqual(view.tolist(), [])
 
 
+class MethodTests(unittest.TestCase):
+    def test_has_dunder_call(self):
+        class C:
+            def bar(self):
+                pass
+
+        C().bar.__getattribute__("__call__")
+
+
 class ModuleTests(unittest.TestCase):
     def test_dunder_dir_returns_newly_created_list_object(self):
         from types import ModuleType
@@ -4971,6 +4988,14 @@ class StaticMethodTests(unittest.TestCase):
             type(foo).__isabstractmethod__
         method = staticmethod(foo)
         self.assertIs(method.__isabstractmethod__, True)
+
+    def test_has_dunder_call(self):
+        class C:
+            @staticmethod
+            def bar(self):
+                pass
+
+        C.bar.__getattribute__("__call__")
 
 
 class StrTests(unittest.TestCase):

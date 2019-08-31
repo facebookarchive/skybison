@@ -3094,6 +3094,9 @@ class method(bootstrap=True):
     def __doc__(self):
         return self.__func__.__doc__
 
+    def __call__(self, *args, **kwargs):
+        return self.__func__(self.__self__, *args, **kwargs)
+
 
 class memoryview(bootstrap=True):
     def __getitem__(self, index):
