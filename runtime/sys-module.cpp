@@ -13,6 +13,7 @@
 #include "globals.h"
 #include "handles.h"
 #include "int-builtins.h"
+#include "module-builtins.h"
 #include "objects.h"
 #include "os.h"
 #include "runtime.h"
@@ -207,7 +208,7 @@ RawObject SysModule::underGetframeLineno(Thread* thread, Frame* frame,
   return SmallInt::fromWord(lineno);
 }
 
-static RawObject localsFromFrame(Thread* thread, Frame* frame) {
+static RawObject dictOfLocalsFromFunctionFrame(Thread* thread, Frame* frame) {
   HandleScope scope(thread);
   Function function(&scope, frame->function());
   Code code(&scope, function.code());
@@ -268,9 +269,21 @@ RawObject SysModule::underGetframeLocals(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "call stack is not deep enough");
   }
-  CHECK(frame->function().hasOptimizedOrNewLocals(),
-        "builtins.locals() in non-function scope");
-  return localsFromFrame(thread, frame);
+  Function function(&scope, frame->function());
+  if (function.hasOptimizedOrNewLocals()) {
+    return dictOfLocalsFromFunctionFrame(thread, frame);
+  }
+  Object implicit_globals_obj(&scope, frame->implicitGlobals());
+  if (implicit_globals_obj == function.globals()) {
+    // Module scope
+    Object module_name(&scope, function.module());
+    Object module_obj(&scope, runtime->findModule(module_name));
+    CHECK(module_obj.isModule(), "module is not found");
+    Module module(&scope, *module_obj);
+    return module.moduleProxy();
+  }
+  // Other non-function scope (e.g., class scope)
+  return *implicit_globals_obj;
 }
 
 }  // namespace python

@@ -253,4 +253,15 @@ TEST_F(SysModuleTest, ByteorderIsCorrectString) {
       *byteorder, endian::native == endian::little ? "little" : "big"));
 }
 
+TEST_F(SysModuleTest, UnderGetFrameLocalsInModuleScopeReturnsModuleProxy) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+import sys
+result = sys._getframe_locals(0)
+)")
+                   .isError());
+  ModuleProxy result(&scope, mainModuleAt(&runtime_, "result"));
+  EXPECT_EQ(result.module(), findMainModule(&runtime_));
+}
+
 }  // namespace python

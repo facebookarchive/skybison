@@ -211,6 +211,40 @@ class SysTests(unittest.TestCase):
         self.assertIsInstance(result["bar"], FunctionType)
 
     @pyro_only
+    def test_getframe_locals_in_class_body_returns_dict_with_class_variables(self):
+        class C:
+            foo = 4
+            bar = 5
+            baz = sys._getframe_locals()
+
+        result = C.baz
+        self.assertIsInstance(result, dict)
+        self.assertEqual(result["foo"], 4)
+        self.assertEqual(result["bar"], 5)
+
+    @pyro_only
+    def test_getframe_locals_in_exec_scope_returns_given_locals_instance(self):
+        result_key = None
+        result_value = None
+
+        class C:
+            def __getitem__(self, key):
+                if key == "_getframe_locals":
+                    return sys._getframe_locals
+                raise Exception
+
+            def __setitem__(self, key, value):
+                nonlocal result_key
+                nonlocal result_value
+                result_key = key
+                result_value = value
+
+        c = C()
+        exec("result = _getframe_locals()", {}, c)
+        self.assertEqual(result_key, "result")
+        self.assertIs(result_value, c)
+
+    @pyro_only
     def test_getframe_locals_with_too_large_depth_raise_value_error(self):
         with self.assertRaises(ValueError) as context:
             sys._getframe_locals(100)
