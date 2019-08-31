@@ -33,7 +33,7 @@ foo.__code__ = bar.__code__
 a = foo(5)
 )"),
                             LayoutId::kAttributeError,
-                            "'__code__' attribute is read-only"));
+                            "'function.__code__' attribute is read-only"));
 }
 
 TEST_F(FunctionBuiltinsTest, DunderGetWithNonFunctionSelfRaisesTypeError) {

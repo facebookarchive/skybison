@@ -3130,7 +3130,7 @@ TEST_F(RuntimeTest, SettingNewAttributeOnSealedClassRaisesAttributeError) {
   EXPECT_TRUE(raised(*result, LayoutId::kAttributeError));
 }
 
-TEST_F(RuntimeTest, InstanceAtPutWithread_OnlyAttributeRaisesAttributeError) {
+TEST_F(RuntimeTest, InstanceAtPutWithReadOnlyAttributeRaisesAttributeError) {
   HandleScope scope(thread_);
 
   BuiltinAttribute attrs[] = {
@@ -3149,9 +3149,10 @@ TEST_F(RuntimeTest, InstanceAtPutWithread_OnlyAttributeRaisesAttributeError) {
   HeapObject instance(&scope, runtime_.newInstance(layout));
   Object attribute_name(&scope, runtime_.newStrFromCStr("__globals__"));
   Object value(&scope, NoneType::object());
-  EXPECT_TRUE(raisedWithStr(
-      instanceSetAttr(thread_, instance, attribute_name, value),
-      LayoutId::kAttributeError, "'__globals__' attribute is read-only"));
+  EXPECT_TRUE(
+      raisedWithStr(instanceSetAttr(thread_, instance, attribute_name, value),
+                    LayoutId::kAttributeError,
+                    "'version.__globals__' attribute is read-only"));
 }
 
 // Exception attributes can be set on the fly.

@@ -71,8 +71,10 @@ static RawObject instanceSetAttrSetLocation(Thread* thread,
   AttributeInfo info;
   if (!runtime->layoutFindAttribute(thread, layout, name_interned, &info)) {
     if (layout.isSealed()) {
-      return thread->raiseWithFmt(LayoutId::kAttributeError,
-                                  "Cannot set attribute on sealed class");
+      return thread->raiseWithFmt(
+          LayoutId::kAttributeError,
+          "Cannot set attribute '%S' on sealed class '%T'", &name_interned,
+          &instance);
     }
     // Transition the layout
     layout = runtime->layoutAddAttribute(thread, layout, name_interned, 0);
@@ -85,7 +87,8 @@ static RawObject instanceSetAttrSetLocation(Thread* thread,
 
   if (info.isReadOnly()) {
     return thread->raiseWithFmt(LayoutId::kAttributeError,
-                                "'%S' attribute is read-only", &name_interned);
+                                "'%T.%S' attribute is read-only", &instance,
+                                &name_interned);
   }
 
   DCHECK(!instance.isType(), "must not cache type attributes");
