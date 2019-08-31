@@ -43,10 +43,37 @@ except ImportError:
 else:
     MutableSequence.register(deque)
 
-try:
-    from _collections import defaultdict
-except ImportError:
-    pass
+
+################################################################################
+### defaultdict
+################################################################################
+
+class defaultdict(dict):
+    def __copy__(self):
+        _unimplemented()
+
+    def __init__(self, default_factory=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if default_factory is not None and not callable(default_factory):
+            raise TypeError("default_factory must be callable or None")
+        self.default_factory = default_factory
+
+    def __missing__(self, key):
+        default_factory = self.default_factory
+        if default_factory is None:
+            raise KeyError(key)
+        value = default_factory()
+        dict.__setitem__(self, key, value)
+        return value
+
+    def __reduce__(self):
+        _unimplemented()
+
+    def __repr__(self):
+        return f"defaultdict({self.default_factory!r}, {dict.__repr__(self)})"
+
+    def copy(self):
+        _unimplemented()
 
 
 ################################################################################

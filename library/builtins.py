@@ -1901,7 +1901,8 @@ def delattr(obj, name):
 
 class dict(bootstrap=True):
     def __contains__(self, key) -> bool:
-        return self.get(key, _Unbound) is not _Unbound  # noqa: T484
+        _dict_guard(self)
+        return dict.get(self, key, _Unbound) is not _Unbound  # noqa: T484
 
     def __delitem__(self, key):
         pass
@@ -1910,9 +1911,10 @@ class dict(bootstrap=True):
         pass
 
     def __getitem__(self, key):
-        result = self.get(key, _Unbound)
+        _dict_guard(self)
+        result = dict.get(self, key, _Unbound)
         if result is _Unbound:
-            raise KeyError(key)
+            return _object_type_getattr(self, "__missing__")(key)
         return result
 
     def __init__(self, *args, **kwargs):
@@ -1927,6 +1929,10 @@ class dict(bootstrap=True):
 
     def __len__(self):
         pass
+
+    def __missing__(self, key):
+        _dict_guard(self)
+        raise KeyError(key)
 
     def __new__(cls, *args, **kwargs):
         pass

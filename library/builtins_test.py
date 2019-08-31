@@ -1509,6 +1509,14 @@ class DictTests(unittest.TestCase):
         with self.assertRaises(UserWarning):
             dict.__delitem__({}, C())
 
+    def test_dunder_getitem_calls_dunder_missing(self):
+        class C(dict):
+            def __missing__(self, key):
+                raise UserWarning("foo")
+
+        result = C()
+        self.assertRaises(UserWarning, result.__getitem__, "hello")
+
     def test_popitem_with_non_dict_raise_type_error(self):
         with self.assertRaises(TypeError) as context:
             dict.popitem(None)

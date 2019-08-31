@@ -1,6 +1,108 @@
 #!/usr/bin/env python3
 import unittest
-from collections import namedtuple
+from collections import defaultdict, namedtuple
+
+
+class DefaultdictTests(unittest.TestCase):
+    def test_dunder_init_returns_dict_subclass(self):
+        result = defaultdict()
+        self.assertIsInstance(result, dict)
+        self.assertIsInstance(result, defaultdict)
+        self.assertIsNone(result.default_factory)
+
+    def test_dunder_init_with_non_callable_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            defaultdict(5)
+
+        self.assertIn("must be callable or None", str(context.exception))
+
+    def test_dunder_init_sets_default_factory(self):
+        def foo():
+            pass
+
+        result = defaultdict(foo)
+        self.assertIs(result.default_factory, foo)
+
+    def test_dunder_getitem_calls_dunder_missing(self):
+        def foo():
+            return "value"
+
+        result = defaultdict(foo)
+        self.assertEqual(len(result), 0)
+        self.assertEqual(result["hello"], "value")
+        self.assertEqual(result[5], "value")
+        self.assertEqual(len(result), 2)
+
+    def test_dunder_missing_with_none_default_factory_raises_key_error(self):
+        result = defaultdict()
+        with self.assertRaises(KeyError) as context:
+            result.__missing__("hello")
+
+        self.assertEqual(context.exception.args, ("hello",))
+
+    def test_dunder_missing_calls_default_factory_function(self):
+        def foo():
+            raise UserWarning("foo")
+
+        result = defaultdict(foo)
+        with self.assertRaises(UserWarning) as context:
+            result.__missing__("hello")
+
+        self.assertEqual(context.exception.args, ("foo",))
+
+    def test_dunder_missing_calls_default_factory_callable(self):
+        class A:
+            def __call__(self):
+                raise UserWarning("foo")
+
+        result = defaultdict(A())
+        with self.assertRaises(UserWarning) as context:
+            result.__missing__("hello")
+
+        self.assertEqual(context.exception.args, ("foo",))
+
+    def test_dunder_missing_sets_value_returned_from_default_factory(self):
+        def foo():
+            return 5
+
+        result = defaultdict(foo)
+        self.assertEqual(result, {})
+        self.assertEqual(result.__missing__("hello"), 5)
+        self.assertEqual(result, {"hello": 5})
+
+    def test_dunder_repr_with_no_default_factory(self):
+        empty = defaultdict()
+        self.assertEqual(empty.__repr__(), "defaultdict(None, {})")
+
+    def test_dunder_repr_with_default_factory_calls_factory_repr(self):
+        class A:
+            def __call__(self):
+                pass
+
+            def __repr__(self):
+                return "foo"
+
+            def __str__(self):
+                return "bar"
+
+        empty = defaultdict(A())
+        self.assertEqual(empty.__repr__(), "defaultdict(foo, {})")
+
+    def test_dunder_repr_stringifies_elements(self):
+        result = defaultdict()
+        result["a"] = "b"
+        self.assertEqual(result.__repr__(), "defaultdict(None, {'a': 'b'})")
+
+    def test_clear_removes_elements(self):
+        def foo():
+            pass
+
+        result = defaultdict(foo)
+        result["a"] = "b"
+        self.assertEqual(len(result), 1)
+        self.assertIsNone(result.clear())
+        self.assertIs(result.default_factory, foo)
+        self.assertEqual(len(result), 0)
 
 
 class NamedtupleTests(unittest.TestCase):
