@@ -987,18 +987,20 @@ TEST_F(TypeExtensionApiTest, GenericNewReturnsExtensionInstance) {
 // Given one slot id and a function pointer to go with it, create a Bar type
 // containing that slot.
 template <typename T>
-static void createBarTypeWithSlot(int slot, T pfunc) {
+static void createTypeWithSlot(const char* type_name, int slot, T pfunc) {
   static PyType_Slot slots[2];
   slots[0] = {slot, reinterpret_cast<void*>(pfunc)};
   slots[1] = {0, nullptr};
   static PyType_Spec spec;
+  static char qualname[100];
+  std::sprintf(qualname, "__main__.%s", type_name);
   spec = {
-      "__main__.Bar", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+      qualname, 0, 0, Py_TPFLAGS_DEFAULT, slots,
   };
   PyObjectPtr type(PyType_FromSpec(&spec));
   ASSERT_NE(type, nullptr);
   ASSERT_EQ(PyType_CheckExact(type), 1);
-  ASSERT_EQ(moduleSet("__main__", "Bar", type), 0);
+  ASSERT_EQ(moduleSet("__main__", type_name, type), 0);
 }
 
 TEST_F(TypeExtensionApiTest, CallBinarySlotFromManagedCode) {
@@ -1006,7 +1008,7 @@ TEST_F(TypeExtensionApiTest, CallBinarySlotFromManagedCode) {
     PyObjectPtr num(PyLong_FromLong(24));
     return PyLong_Check(a) ? PyNumber_Add(a, num) : PyNumber_Add(num, b);
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_nb_add, add_func));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_nb_add, add_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1045,7 +1047,7 @@ TEST_F(TypeExtensionApiTest, CallBinarySlotWithKwargsRaisesTypeError) {
     EXPECT_TRUE(false) << "Shouldn't be called";
     Py_RETURN_NONE;
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_nb_add, dummy_add));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_nb_add, dummy_add));
 
   // TODO(T40700664): Use PyRun_String() so we can directly inspect the thrown
   // exception(s).
@@ -1069,7 +1071,7 @@ except TypeError:
 
 TEST_F(TypeExtensionApiTest, CallHashSlotFromManagedCode) {
   hashfunc hash_func = [](PyObject*) -> Py_hash_t { return 0xba5eba11; };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_tp_hash, hash_func));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_tp_hash, hash_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1089,7 +1091,7 @@ TEST_F(TypeExtensionApiTest, CallCallSlotFromManagedCode) {
   ternaryfunc call_func = [](PyObject* self, PyObject* args, PyObject* kwargs) {
     return PyTuple_Pack(3, self, args, kwargs ? kwargs : Py_None);
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_tp_call, call_func));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_tp_call, call_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1150,7 +1152,8 @@ TEST_F(TypeExtensionApiTest, CallGetattroSlotFromManagedCode) {
   getattrofunc getattr_func = [](PyObject* self, PyObject* name) {
     return PyTuple_Pack(2, name, self);
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_tp_getattro, getattr_func));
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlot("Bar", Py_tp_getattro, getattr_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1178,7 +1181,8 @@ TEST_F(TypeExtensionApiTest, CallSetattroSlotFromManagedCodePyro) {
     moduleSet("__main__", var, tuple);
     return 0;
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_tp_setattro, setattr_func));
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlot("Bar", Py_tp_setattro, setattr_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1211,7 +1215,7 @@ TEST_F(TypeExtensionApiTest, SetattrSlotIsIgnored) {
     EXPECT_TRUE(false) << "Shouldn't be called";
     return 0;
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_tp_setattr, func));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_tp_setattr, func));
 
   // TODO(T40700664): Use PyRun_String() to inspect the exception more directly.
   ASSERT_EQ(PyRun_SimpleString(R"(
@@ -1231,7 +1235,8 @@ TEST_F(TypeExtensionApiTest, CallRichcompareSlotFromManagedCode) {
     PyObjectPtr op_obj(PyLong_FromLong(op));
     return PyTuple_Pack(3, self, other, op_obj.get());
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_tp_richcompare, cmp_func));
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlot("Bar", Py_tp_richcompare, cmp_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1261,7 +1266,7 @@ TEST_F(TypeExtensionApiTest, CallNextSlotFromManagedCode) {
     Py_INCREF(self);
     return self;
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_tp_iternext, next_func));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_tp_iternext, next_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1276,7 +1281,7 @@ r = b.__next__()
 
 TEST_F(TypeExtensionApiTest, NextSlotReturningNullRaisesStopIteration) {
   unaryfunc next_func = [](PyObject*) -> PyObject* { return nullptr; };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_tp_iternext, next_func));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_tp_iternext, next_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
 caught = False
@@ -1296,7 +1301,7 @@ TEST_F(TypeExtensionApiTest, CallDescrGetSlotFromManagedCode) {
                              PyObject* owner) {
     return PyTuple_Pack(3, self, instance, owner);
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_tp_descr_get, get_func));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_tp_descr_get, get_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1321,7 +1326,7 @@ TEST_F(TypeExtensionApiTest, DescrGetSlotWithNonesRaisesTypeError) {
     EXPECT_TRUE(false) << "Shouldn't be called";
     return nullptr;
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_tp_descr_get, get_func));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_tp_descr_get, get_func));
 
   // TODO(T40700664): Use PyRun_String() so we can inspect the exception more
   // directly.
@@ -1345,7 +1350,7 @@ TEST_F(TypeExtensionApiTest, CallDescrSetSlotFromManagedCode) {
     EXPECT_TRUE(isLongEqualsLong(value, 456));
     return 0;
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_tp_descr_set, set_func));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_tp_descr_set, set_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1361,7 +1366,7 @@ TEST_F(TypeExtensionApiTest, CallDescrDeleteSlotFromManagedCode) {
     EXPECT_EQ(value, nullptr);
     return 0;
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_tp_descr_set, set_func));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_tp_descr_set, set_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1377,7 +1382,7 @@ TEST_F(TypeExtensionApiTest, CallInitSlotFromManagedCode) {
     moduleSet("__main__", "kwargs", kwargs);
     return 0;
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_tp_init, init_func));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_tp_init, init_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar.__new__(Bar)
@@ -1402,7 +1407,7 @@ TEST_F(TypeExtensionApiTest, CallDelSlotFromManagedCode) {
   destructor del_func = [](PyObject* /* self */) {
     moduleSet("__main__", "called", Py_True);
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_tp_finalize, del_func));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_tp_finalize, del_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1417,7 +1422,7 @@ TEST_F(TypeExtensionApiTest, CallTernarySlotFromManagedCode) {
   ternaryfunc pow_func = [](PyObject* self, PyObject* value, PyObject* mod) {
     return PyTuple_Pack(3, self, value, mod);
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_nb_power, pow_func));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_nb_power, pow_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1447,7 +1452,7 @@ TEST_F(TypeExtensionApiTest, CallInquirySlotFromManagedCode) {
     EXPECT_EQ(self, b);
     return 1;
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_nb_bool, bool_func));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_nb_bool, bool_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1466,7 +1471,8 @@ TEST_F(TypeExtensionApiTest, CallObjobjargSlotFromManagedCode) {
     moduleSet("__main__", "value", value);
     return 0;
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_mp_ass_subscript, set_func));
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlot("Bar", Py_mp_ass_subscript, set_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1490,7 +1496,8 @@ TEST_F(TypeExtensionApiTest, CallObjobjSlotFromManagedCode) {
     moduleSet("__main__", "value", value);
     return 123456;
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_sq_contains, contains_func));
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlot("Bar", Py_sq_contains, contains_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1512,7 +1519,8 @@ TEST_F(TypeExtensionApiTest, CallDelitemSlotFromManagedCode) {
     moduleSet("__main__", "key", key);
     return 0;
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_mp_ass_subscript, del_func));
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlot("Bar", Py_mp_ass_subscript, del_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1532,7 +1540,7 @@ TEST_F(TypeExtensionApiTest, CallLenSlotFromManagedCode) {
     EXPECT_EQ(self, b);
     return 0xdeadbeef;
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_sq_length, len_func));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_sq_length, len_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1549,7 +1557,7 @@ TEST_F(TypeExtensionApiTest, CallIndexargSlotFromManagedCode) {
     EXPECT_EQ(self, b);
     return PyLong_FromLong(i * 456);
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_sq_repeat, mul_func));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_sq_repeat, mul_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1566,7 +1574,7 @@ TEST_F(TypeExtensionApiTest, CallSqItemSlotFromManagedCode) {
     EXPECT_EQ(self, b);
     return PyLong_FromLong(i + 100);
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_sq_item, item_func));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_sq_item, item_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1586,7 +1594,7 @@ TEST_F(TypeExtensionApiTest, CallSqSetitemSlotFromManagedCode) {
     moduleSet("__main__", "value", value);
     return 0;
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_sq_ass_item, set_func));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_sq_ass_item, set_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1612,7 +1620,7 @@ TEST_F(TypeExtensionApiTest, CallSqDelitemSlotFromManagedCode) {
     EXPECT_EQ(value, nullptr);
     return 0;
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_sq_ass_item, del_func));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_sq_ass_item, del_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1628,7 +1636,7 @@ r = b.__delitem__(7890)
 
 TEST_F(TypeExtensionApiTest, HashNotImplementedSlotSetsNoneDunderHash) {
   ASSERT_NO_FATAL_FAILURE(
-      createBarTypeWithSlot(Py_tp_hash, PyObject_HashNotImplemented));
+      createTypeWithSlot("Bar", Py_tp_hash, PyObject_HashNotImplemented));
   PyObjectPtr bar(moduleGet("__main__", "Bar"));
   PyObjectPtr hash(PyObject_GetAttrString(bar, "__hash__"));
   EXPECT_EQ(hash, Py_None);
@@ -1643,7 +1651,7 @@ TEST_F(TypeExtensionApiTest, CallNewSlotFromManagedCode) {
     Py_INCREF(args);
     return args;
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_tp_new, new_func));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_tp_new, new_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
 r = Bar.__new__(Bar, 1, 2, 3)
@@ -1694,7 +1702,7 @@ TEST_F(TypeExtensionApiTest, TypeSlotPropagatesException) {
     PyErr_SetString(PyExc_RuntimeError, "hello, there!");
     return nullptr;
   };
-  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_nb_add, add_func));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_nb_add, add_func));
 
   // TODO(T40700664): Use PyRun_String() so we can inspect the exception more
   // directly.
