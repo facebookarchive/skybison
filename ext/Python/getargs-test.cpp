@@ -9,6 +9,129 @@ using namespace testing;
 
 using GetArgsExtensionApiTest = ExtensionApi;
 
+std::unique_ptr<_PyArg_Parser> newParser(const char* format,
+                                         const char* const* keywords) {
+  std::unique_ptr<_PyArg_Parser> parser(new _PyArg_Parser());
+  parser->format = format;
+  parser->keywords = keywords;
+  return parser;
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseStackOneObject) {
+  PyObjectPtr long10(PyLong_FromLong(10));
+  PyObject* args[] = {long10};
+  int nargs = Py_ARRAY_LENGTH(args);
+
+  const char* const keywords[] = {"first", nullptr};
+  std::unique_ptr<_PyArg_Parser> parser =
+      newParser("O:ParseStackOneObject", keywords);
+
+  PyObject* kwnames = nullptr;
+  PyObject* out = nullptr;
+
+  EXPECT_EQ(_PyArg_ParseStack(args, nargs, kwnames, parser.get(), &out), 1);
+  EXPECT_EQ(PyLong_AsLong(out), 10);
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseStackWithLongKWNamesRaisesTypeError) {
+  PyObjectPtr long10(PyLong_FromLong(10));
+  PyObject* args[] = {long10};
+  int nargs = Py_ARRAY_LENGTH(args);
+
+  PyObject* kwnames = PyTuple_New(1);
+  PyObject* in1 = PyLong_FromLong(37);
+  ASSERT_NE(-1, PyTuple_SetItem(kwnames, 0, in1));
+
+  const char* const keywords[] = {"first", "second", nullptr};
+  std::unique_ptr<_PyArg_Parser> parser =
+      newParser("OO:ParseStackWithLongKWNamesRaisesTypeError", keywords);
+  PyObject* out1 = nullptr;
+
+  EXPECT_EQ(_PyArg_ParseStack(args, nargs, kwnames, parser.get(), &out1), 0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+  EXPECT_EQ(PyLong_AsLong(out1), 10);
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseStackMultipleObjects) {
+  PyObjectPtr long10(PyLong_FromLong(10));
+  PyObjectPtr long33(PyLong_FromLong(33));
+  PyObjectPtr test_str(PyUnicode_FromString("test_str"));
+  PyObject* args[] = {long10, long33, test_str};
+  int nargs = Py_ARRAY_LENGTH(args);
+
+  const char* const keywords[] = {"first", "second", "third", nullptr};
+  std::unique_ptr<_PyArg_Parser> parser =
+      newParser("OOU:ParseStackMultipleObjects", keywords);
+
+  PyObject* kwnames = nullptr;
+  PyObject* out1 = nullptr;
+  PyObject* out2 = nullptr;
+  PyObject* out3 = nullptr;
+
+  EXPECT_EQ(_PyArg_ParseStack(args, nargs, kwnames, parser.get(), &out1, &out2,
+                              &out3),
+            1);
+  EXPECT_EQ(PyLong_AsLong(out1), 10);
+  EXPECT_EQ(PyLong_AsLong(out2), 33);
+  EXPECT_EQ(out3, test_str);
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseStackUnicode) {
+  PyObjectPtr hello(PyUnicode_FromString("hello"));
+  PyObjectPtr world(PyUnicode_FromString("world"));
+  PyObject* args[] = {hello, world};
+  int nargs = Py_ARRAY_LENGTH(args);
+
+  const char* const keywords[] = {"first", "second", nullptr};
+  std::unique_ptr<_PyArg_Parser> parser =
+      newParser("UU:ParseStackUnicode", keywords);
+
+  PyObject* kwnames = nullptr;
+  PyObject* out1 = nullptr;
+  PyObject* out2 = nullptr;
+  EXPECT_EQ(_PyArg_ParseStack(args, nargs, kwnames, parser.get(), &out1, &out2),
+            1);
+  EXPECT_EQ(hello, out1);
+  EXPECT_EQ(world, out2);
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseStackWithWrongTypeRaisesTypeError) {
+  PyObjectPtr long100(PyLong_FromLong(100));
+  PyObject* args[] = {long100};
+  int nargs = Py_ARRAY_LENGTH(args);
+
+  const char* const keywords[] = {"first", nullptr};
+  std::unique_ptr<_PyArg_Parser> parser =
+      newParser("U:ParseStackWithWrongTypeRaisesTypeError", keywords);
+
+  PyObject* kwnames = nullptr;
+  PyObject* out1 = nullptr;
+  EXPECT_EQ(_PyArg_ParseStack(args, nargs, kwnames, parser.get(), &out1), 0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+  EXPECT_EQ(out1, nullptr);
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseStackString) {
+  PyObjectPtr hello(PyUnicode_FromString("hello"));
+  PyObjectPtr world(PyUnicode_FromString("world"));
+  PyObject* args[] = {hello, world};
+  int nargs = Py_ARRAY_LENGTH(args);
+
+  const char* const keywords[] = {"first", "second", nullptr};
+  std::unique_ptr<_PyArg_Parser> parser =
+      newParser("sz:ParseStackString", keywords);
+
+  PyObject* kwnames = nullptr;
+  char* out1 = nullptr;
+  char* out2 = nullptr;
+  EXPECT_EQ(_PyArg_ParseStack(args, nargs, kwnames, parser.get(), &out1, &out2),
+            1);
+  EXPECT_STREQ("hello", out1);
+  EXPECT_STREQ("world", out2);
+}
+
 TEST_F(GetArgsExtensionApiTest, ParseTupleOneObject) {
   PyObjectPtr pytuple(PyTuple_New(1));
   PyObject* in = PyLong_FromLong(42);
