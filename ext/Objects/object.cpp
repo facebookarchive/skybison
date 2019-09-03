@@ -5,6 +5,7 @@
 #include "cpython-data.h"
 #include "cpython-func.h"
 #include "dict-builtins.h"
+#include "object-builtins.h"
 #include "runtime.h"
 #include "str-builtins.h"
 
@@ -111,10 +112,20 @@ PY_EXPORT PyObject* PyObject_GenericGetAttr(PyObject* obj, PyObject* name) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  if (!object.isHeapObject()) return nullptr;
   Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
-  Object result(&scope, getAttribute(thread, object, name_obj));
-  return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
+  if (!thread->runtime()->isInstanceOfStr(*name_obj)) {
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "attribute name must be string, not '%s'", &name_obj);
+    return nullptr;
+  }
+  Object result(&scope, objectGetAttribute(thread, object, name_obj));
+  if (result.isError()) {
+    if (!result.isErrorException()) {
+      thread->raiseWithFmt(LayoutId::kAttributeError, "%s", &name_obj);
+    }
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT int PyObject_GenericSetAttr(PyObject* obj, PyObject* name,
@@ -122,11 +133,24 @@ PY_EXPORT int PyObject_GenericSetAttr(PyObject* obj, PyObject* name,
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  if (!object.isHeapObject()) return -1;
   Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
+  Runtime* runtime = thread->runtime();
+  if (!thread->runtime()->isInstanceOfStr(*name_obj)) {
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "attribute name must be string, not '%s'", &name_obj);
+    return -1;
+  }
+  Object qualname(&scope, runtime->internStr(thread, name_obj));
+
   Object value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
-  Object result(&scope, setAttribute(thread, object, name_obj, value_obj));
-  return result.isError() ? -1 : 0;
+  Object result(&scope, objectSetAttr(thread, object, qualname, value_obj));
+  if (result.isError()) {
+    if (!result.isErrorException()) {
+      thread->raiseWithFmt(LayoutId::kAttributeError, "%s", &name_obj);
+    }
+    return -1;
+  }
+  return 0;
 }
 
 PY_EXPORT int PyObject_GenericSetDict(PyObject* /* j */, PyObject* /* e */,
@@ -134,10 +158,13 @@ PY_EXPORT int PyObject_GenericSetDict(PyObject* /* j */, PyObject* /* e */,
   UNIMPLEMENTED("PyObject_GenericSetDict");
 }
 
-PY_EXPORT PyObject* PyObject_GetAttr(PyObject* v, PyObject* name) {
-  // TODO(miro): This does not support custom attribute getter set by
-  // __getattr__ or tp_getattro slot
-  return PyObject_GenericGetAttr(v, name);
+PY_EXPORT PyObject* PyObject_GetAttr(PyObject* obj, PyObject* name) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
+  Object result(&scope, getAttribute(thread, object, name_obj));
+  return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT PyObject* PyObject_GetAttrString(PyObject* pyobj, const char* name) {
@@ -307,10 +334,14 @@ PY_EXPORT PyObject* PyObject_SelfIter(PyObject* obj) {
   return obj;
 }
 
-PY_EXPORT int PyObject_SetAttr(PyObject* v, PyObject* name, PyObject* w) {
-  // TODO(miro): This does not support custom attribute setter set by
-  // __setattr__ or tp_setattro slot
-  return PyObject_GenericSetAttr(v, name, w);
+PY_EXPORT int PyObject_SetAttr(PyObject* obj, PyObject* name, PyObject* value) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
+  Object value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
+  Object result(&scope, setAttribute(thread, object, name_obj, value_obj));
+  return result.isError() ? -1 : 0;
 }
 
 PY_EXPORT int PyObject_SetAttrString(PyObject* v, const char* name,
