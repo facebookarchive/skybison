@@ -1867,18 +1867,15 @@ HANDLER_INLINE Continue Interpreter::doPopExcept(Thread* thread, word) {
 HANDLER_INLINE Continue Interpreter::doStoreName(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
-  Object implicit_globals_obj(&scope, frame->implicitGlobals());
-  // Forward to doStoreGlobal() when implicit globals and globals are the same.
-  // This avoids duplicating all the cache invalidation logic here.
-  // TODO(T47581831) This should be removed and invalidation should happen when
-  // changing the globals dictionary.
-  if (implicit_globals_obj == frame->function().globals()) {
-    // TODO(T46426927): Look up cache before calling doStoreGlobal.
-    return doStoreGlobal(thread, arg);
-  }
   RawObject names = Code::cast(frame->code()).names();
   Object key(&scope, Tuple::cast(names).at(arg));
   Object value(&scope, frame->popValue());
+  Object implicit_globals_obj(&scope, frame->implicitGlobals());
+  if (implicit_globals_obj == frame->function().globals()) {
+    Dict module_dict(&scope, *implicit_globals_obj);
+    moduleDictAtPut(thread, module_dict, key, value);
+    return Continue::NEXT;
+  }
   if (implicit_globals_obj.isDict()) {
     Dict implicit_globals(&scope, *implicit_globals_obj);
     thread->runtime()->dictAtPut(thread, implicit_globals, key, value);
@@ -2383,8 +2380,19 @@ HANDLER_INLINE Continue Interpreter::doLoadName(Thread* thread, word arg) {
       thread->clearPendingException();
     }
   }
-  // TODO(T46426927): Look up cache before calling doLoadGlobal.
-  return doLoadGlobal(thread, arg);
+  Dict module_dict(&scope, frame->function().globals());
+  Object module_dict_result(&scope, moduleDictAt(thread, module_dict, key));
+  if (!module_dict_result.isErrorNotFound()) {
+    frame->pushValue(*module_dict_result);
+    return Continue::NEXT;
+  }
+  Dict builtins(&scope, moduleDictBuiltins(thread, module_dict));
+  Object builtins_result(&scope, moduleDictAt(thread, builtins, key));
+  if (!builtins_result.isErrorNotFound()) {
+    frame->pushValue(*builtins_result);
+    return Continue::NEXT;
+  }
+  return raiseUndefinedName(thread, key);
 }
 
 HANDLER_INLINE Continue Interpreter::doBuildTuple(Thread* thread, word arg) {
