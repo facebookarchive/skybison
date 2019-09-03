@@ -2535,30 +2535,39 @@ class int(bootstrap=True):
     def __pos__(self) -> int:
         pass
 
-    def __pow__(self, power, mod=None) -> int:
+    def __pow__(self, other, modulo=None) -> int:
         # TODO(T42359066): Re-write this in C++ if we need a speed boost.
         _int_guard(self)
-        if not _int_check(power):
+        if not _int_check(other):
             return NotImplemented
-        if mod is not None and not _int_check(mod):
+        if modulo is not None and not _int_check(modulo):
             return NotImplemented
-        if power < 0:
-            if mod is not None:
+        if other < 0:
+            if modulo is not None:
                 raise ValueError(
                     "pow() 2nd argument cannot be negative when 3rd argument specified"
                 )
             else:
-                return float.__pow__(float(self), power)
-        if 0 == power:
+                return float.__pow__(float(self), other)
+        if other == 0:
             return 1
-        if 1 == mod:
+        if modulo == 1:
             return 0
-        result = self
-        while int.__gt__(power, 1):
-            result = int.__mul__(result, self)
-            power = int.__sub__(power, 1)
-        if mod is not None:
-            result = int.__mod__(result, mod)
+        if modulo is None:
+            result = self
+            while int.__gt__(other, 1):
+                result = int.__mul__(result, self)
+                other = int.__sub__(other, 1)
+        else:
+            result = 1
+            self = int.__mod__(self, modulo)
+            while int.__gt__(other, 0):
+                if int.__mod__(other, 2) == 1:
+                    result = int.__mul__(result, self)
+                    result = int.__mod__(result, modulo)
+                other = int.__rshift__(other, 1)
+                self = int.__mul__(self, self)
+                self = int.__mod__(self, modulo)
         return result
 
     def __radd__(self, n: int) -> int:
@@ -2619,7 +2628,7 @@ class int(bootstrap=True):
         _int_guard(self)
         if not _int_check(n):
             return NotImplemented
-        return int.__pow__(n, self, mod=mod)  # noqa: T484
+        return int.__pow__(n, self, modulo=mod)  # noqa: T484
 
     def __rrshift__(self, n: int) -> int:
         _int_guard(self)

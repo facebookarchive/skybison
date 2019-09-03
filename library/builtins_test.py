@@ -2501,6 +2501,9 @@ class IntTests(unittest.TestCase):
     def test_dunder_pow_with_mod(self):
         self.assertEqual(int.__pow__(4, 8, 10), 6)
 
+    def test_dunder_pow_with_large_mod(self):
+        self.assertEqual(int.__pow__(10, 10 ** 1000, 3), 1)
+
     def test_dunder_pow_with_negative_base_calls_float_dunder_pow(self):
         self.assertLess((int.__pow__(2, -1) - 0.5).__abs__(), 0.00001)
 
