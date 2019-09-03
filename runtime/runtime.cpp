@@ -117,8 +117,8 @@ Runtime::Runtime(word heap_size, bool cache_enabled)
   initializeModules();
 }
 
-Runtime::Runtime() : Runtime(64 * kMiB, true) {}
-Runtime::Runtime(bool cache_enabled) : Runtime(64 * kMiB, cache_enabled) {}
+Runtime::Runtime() : Runtime(128 * kMiB, true) {}
+Runtime::Runtime(bool cache_enabled) : Runtime(128 * kMiB, cache_enabled) {}
 
 Runtime::~Runtime() {
   // TODO(T30392425): This is an ugly and fragile workaround for having multiple
