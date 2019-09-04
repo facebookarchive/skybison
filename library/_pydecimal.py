@@ -6445,14 +6445,10 @@ _SignedInfinity = (_Infinity, _NegativeInfinity)
 
 # Constants related to the hash implementation;  hash(x) is based
 # on the reduction of x modulo _PyHASH_MODULUS
-# TODO(T52787981): Need sys.hash_info
-# _PyHASH_MODULUS = sys.hash_info.modulus
-# # hash values to use for positive and negative infinities, and nans
-# _PyHASH_INF = sys.hash_info.inf
-# _PyHASH_NAN = sys.hash_info.nan
-_PyHASH_MODULUS = 2305843009213693951
-_PyHASH_INF = 314159
-_PyHASH_NAN = 0
+_PyHASH_MODULUS = sys.hash_info.modulus
+# hash values to use for positive and negative infinities, and nans
+_PyHASH_INF = sys.hash_info.inf
+_PyHASH_NAN = sys.hash_info.nan
 
 # TODO(T52787666, T52787907): Need builtins.pow and better int.__pow__ function.
 # _PyHASH_10INV is the inverse of 10 modulo the prime _PyHASH_MODULUS

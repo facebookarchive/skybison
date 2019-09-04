@@ -9,6 +9,7 @@ _os_write = _os_write  # noqa: F821
 _patch = _patch  # noqa: F821
 _stderr_fd = _stderr_fd  # noqa: F821
 _stdout_fd = _stdout_fd  # noqa: F821
+_structseq_field = _structseq_field  # noqa: F821
 executable = executable  # noqa: F821
 
 
@@ -20,6 +21,18 @@ class _FlagsStructSeq:
         self.no_site = 0
         self.no_user_site = 0
         self.verbose = 0
+
+
+class _HashInfo(tuple):
+    width = _structseq_field("width", 0)
+    modulus = _structseq_field("modulus", 1)
+    inf = _structseq_field("inf", 2)
+    nan = _structseq_field("nan", 3)
+    imag = _structseq_field("imag", 4)
+    algorithm = _structseq_field("algorithm", 5)
+    hash_bits = _structseq_field("hash_bits", 6)
+    seed_bits = _structseq_field("seed_bits", 7)
+    cutoff = _structseq_field("cutoff", 8)
 
 
 class _IOStream:
@@ -172,6 +185,11 @@ def getsizeof(object, default=_Unbound):
     if result < 0:
         raise ValueError("__sizeof__() should return >= 0")
     return int(result)
+
+
+hash_info = _HashInfo(
+    (64, 2305843009213693951, 314159, 0, 1000003, "siphash24", 64, 128, 0)
+)
 
 
 implementation = _ImplementationType()
