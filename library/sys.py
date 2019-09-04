@@ -13,14 +13,22 @@ _structseq_field = _structseq_field  # noqa: F821
 executable = executable  # noqa: F821
 
 
-class _FlagsStructSeq:
-    # TODO(T39224400): Implement flags as a structsequence
-    def __init__(self):
-        self.bytes_warning = 0
-        self.isolated = 0
-        self.no_site = 0
-        self.no_user_site = 0
-        self.verbose = 0
+class _Flags(tuple):
+    debug = _structseq_field("debug", 0)
+    inspect = _structseq_field("inspect", 1)
+    interactive = _structseq_field("interactive", 2)
+    optimize = _structseq_field("optimize", 3)
+    dont_write_bytecode = _structseq_field("dont_write_bytecode", 4)
+    no_user_site = _structseq_field("no_user_site", 5)
+    no_site = _structseq_field("no_site", 6)
+    ignore_environment = _structseq_field("ignore_environment", 7)
+    verbose = _structseq_field("verbose", 8)
+    bytes_warning = _structseq_field("bytes_warning", 9)
+    quiet = _structseq_field("quiet", 10)
+    hash_randomization = _structseq_field("hash_randomization", 11)
+    isolated = _structseq_field("isolated", 12)
+    dev_mode = _structseq_field("dev_mode", 13)
+    utf8_mode = _structseq_field("utf8_mode", 14)
 
 
 class _HashInfo(tuple):
@@ -60,23 +68,11 @@ class _ImplementationType:
 
 
 class _VersionInfo(tuple):
-    # TODO(cshapiro): switch to using builtins._structseq_field
-    # instead of a custom descriptor
-    class _VersionInfoField:
-        def __get__(self, instance, owner):
-            return instance[self._index]
-
-        def __init__(self, index):
-            self._index = index
-
-        def __set__(self, instance, value):
-            raise AttributeError("readonly attribute")
-
-    major = _VersionInfoField(0)
-    minor = _VersionInfoField(1)
-    micro = _VersionInfoField(2)
-    releaselevel = _VersionInfoField(3)
-    serial = _VersionInfoField(4)
+    major = _structseq_field("major", 0)
+    minor = _structseq_field("minor", 1)
+    micro = _structseq_field("micro", 2)
+    releaselevel = _structseq_field("releaselevel", 3)
+    serial = _structseq_field("serial", 4)
 
 
 @_patch
@@ -155,7 +151,7 @@ def exit(code=0):
     raise SystemExit(code)
 
 
-flags = _FlagsStructSeq()
+flags = _Flags((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, False, 0))
 
 
 def getfilesystemencodeerrors():
