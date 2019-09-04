@@ -2172,12 +2172,6 @@ RawObject UnderBuiltinsModule::underModuleDir(Thread* thread, Frame* frame,
   return moduleDictKeys(thread, module_dict);
 }
 
-static RawObject moduleProxyFromModule(RawModuleProxy module_proxy) {
-  RawModule module = Module::cast(module_proxy.module());
-  DCHECK(module.moduleProxy() == module_proxy, "module.proxy != proxy.module");
-  return module;
-}
-
 RawObject UnderBuiltinsModule::underModuleProxy(Thread* thread, Frame* frame,
                                                 word nargs) {
   Arguments args(frame, nargs);
@@ -2193,7 +2187,8 @@ RawObject UnderBuiltinsModule::underModuleProxyDelitem(Thread* thread,
   HandleScope scope(thread);
   ModuleProxy self(&scope, args.get(0));
   Object key(&scope, args.get(1));
-  Module module(&scope, moduleProxyFromModule(*self));
+  Module module(&scope, self.module());
+  DCHECK(module.moduleProxy() == self, "module.proxy != proxy.module");
   // TODO(T45091174): Pass Module instead.
   Dict module_dict(&scope, module.dict());
   Object result(&scope, moduleDictRemove(thread, module_dict, key));
@@ -2210,7 +2205,8 @@ RawObject UnderBuiltinsModule::underModuleProxyGet(Thread* thread, Frame* frame,
   ModuleProxy self(&scope, args.get(0));
   Object key(&scope, args.get(1));
   Object default_obj(&scope, args.get(2));
-  Module module(&scope, moduleProxyFromModule(*self));
+  Module module(&scope, self.module());
+  DCHECK(module.moduleProxy() == self, "module.proxy != proxy.module");
   Object result(&scope, moduleAt(thread, module, key));
   if (result.isError()) {
     return *default_obj;
@@ -2232,7 +2228,8 @@ RawObject UnderBuiltinsModule::underModuleProxyKeys(Thread* thread,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   ModuleProxy self(&scope, args.get(0));
-  Module module(&scope, moduleProxyFromModule(*self));
+  Module module(&scope, self.module());
+  DCHECK(module.moduleProxy() == self, "module.proxy != proxy.module");
   // TODO(T45091174): Pass Module instead.
   Dict module_dict(&scope, module.dict());
   return moduleDictKeys(thread, module_dict);
@@ -2243,7 +2240,8 @@ RawObject UnderBuiltinsModule::underModuleProxyLen(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   ModuleProxy self(&scope, args.get(0));
-  Module module(&scope, moduleProxyFromModule(*self));
+  Module module(&scope, self.module());
+  DCHECK(module.moduleProxy() == self, "module.proxy != proxy.module");
   return moduleLen(thread, module);
 }
 
@@ -2255,7 +2253,8 @@ RawObject UnderBuiltinsModule::underModuleProxySetitem(Thread* thread,
   ModuleProxy self(&scope, args.get(0));
   Object key(&scope, args.get(1));
   Object value(&scope, args.get(2));
-  Module module(&scope, moduleProxyFromModule(*self));
+  Module module(&scope, self.module());
+  DCHECK(module.moduleProxy() == self, "module.proxy != proxy.module");
   return moduleAtPut(thread, module, key, value);
 }
 
@@ -2265,7 +2264,8 @@ RawObject UnderBuiltinsModule::underModuleProxyValues(Thread* thread,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   ModuleProxy self(&scope, args.get(0));
-  Module module(&scope, moduleProxyFromModule(*self));
+  Module module(&scope, self.module());
+  DCHECK(module.moduleProxy() == self, "module.proxy != proxy.module");
   return moduleValues(thread, module);
 }
 

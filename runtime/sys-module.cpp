@@ -276,11 +276,7 @@ RawObject SysModule::underGetframeLocals(Thread* thread, Frame* frame,
   Object implicit_globals_obj(&scope, frame->implicitGlobals());
   if (implicit_globals_obj == function.globals()) {
     // Module scope
-    Object module_name(&scope, function.module());
-    Object module_obj(&scope, runtime->findModule(module_name));
-    CHECK(module_obj.isModule(), "module is not found");
-    Module module(&scope, *module_obj);
-    return module.moduleProxy();
+    return frameGlobals(thread, frame);
   }
   // Other non-function scope (e.g., class scope)
   return *implicit_globals_obj;

@@ -2268,6 +2268,25 @@ class GlobalsTests(unittest.TestCase):
 
         self.assertIs(globals(), sys.modules[__name__].__dict__)
 
+    def test_with_module_subclass_returns_module_proxy(self):
+        from types import ModuleType
+
+        class C(ModuleType):
+            pass
+
+        m_name = "testing.test_with_module_subclass_returns_module_proxy"
+        m = C(m_name)
+        import sys
+
+        try:
+            # We currently only support `globals()` for modules registered in
+            # `sys.modules`.
+            sys.modules[m_name] = m
+            exec("def foo(): return globals()", m.__dict__, m.__dict__)
+            self.assertIs(m.foo(), m.__dict__)
+        finally:
+            del sys.modules[m_name]
+
 
 class HashTests(unittest.TestCase):
     def test_hash_with_raising_dunder_hash_descriptor_raises_type_error(self):

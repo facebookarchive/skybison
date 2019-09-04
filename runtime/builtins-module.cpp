@@ -500,17 +500,21 @@ RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
   } else if (locals.isNoneType()) {
     locals = *globals_obj;
   }
+  if (locals.isModuleProxy() && globals_obj == locals) {
+    // Unwrap module proxy. We use locals == globals as a signal to enable some
+    // shortcuts for execution in module scope. They ensure correct behavior
+    // even without the module proxy wrapper.
+    Module module(&scope, ModuleProxy::cast(*locals).module());
+    locals = module.dict();
+  }
   if (!runtime->isInstanceOfDict(*globals_obj)) {
     if (globals_obj.isModuleProxy()) {
-      globals_obj =
-          Module::cast(ModuleProxy::cast(*globals_obj).module()).dict();
+      Module module(&scope, ModuleProxy::cast(*globals_obj).module());
+      globals_obj = module.dict();
     } else {
       return thread->raiseWithFmt(LayoutId::kTypeError,
                                   "Expected 'globals' to be dict in 'exec'");
     }
-  }
-  if (locals.isModuleProxy()) {
-    locals = Module::cast(ModuleProxy::cast(*locals).module()).dict();
   }
   if (!runtime->isMapping(thread, locals)) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
@@ -610,14 +614,8 @@ RawObject BuiltinsModule::getattr(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject BuiltinsModule::globals(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object module_name(&scope, frame->previousFrame()->function().module());
-  Object module(&scope, thread->runtime()->findModule(module_name));
-  CHECK(thread->runtime()->isInstanceOfModule(*module),
-        "globals() couldn't find a module");
-  return Module::cast(*module).moduleProxy();
+RawObject BuiltinsModule::globals(Thread* thread, Frame* frame, word) {
+  return frameGlobals(thread, frame->previousFrame());
 }
 
 RawObject BuiltinsModule::hasattr(Thread* thread, Frame* frame, word nargs) {
