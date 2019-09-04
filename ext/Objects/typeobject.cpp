@@ -1138,7 +1138,11 @@ PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot) {
   }
 
   DCHECK(!type.extensionSlots().isNoneType(), "Type is not extension type");
-  Int address(&scope, extensionSlot(type, field_id));
+  Object slot_obj(&scope, extensionSlot(type, field_id));
+  if (slot_obj.isNoneType()) {
+    return nullptr;
+  }
+  Int address(&scope, *slot_obj);
   return address.asCPtr();
 }
 
@@ -1517,8 +1521,235 @@ RawObject addGetSet(Thread* thread, const Type& type) {
   return NoneType::object();
 }
 
+static bool hasSlot(const Type& type, ExtensionSlot slot) {
+  return !extensionSlot(type, slot).isNoneType();
+}
+
+static void* baseBaseSlot(const Type& base, ExtensionSlot slot) {
+  if (!hasSlot(base, ExtensionSlot::kBase)) return nullptr;
+  HandleScope scope(Thread::current());
+  Int basebase_handle(&scope, extensionSlot(base, ExtensionSlot::kBase));
+  Type basebase(
+      &scope,
+      reinterpret_cast<ApiHandle*>(basebase_handle.asCPtr())->asObject());
+  if (basebase.extensionSlots().isNoneType() || !hasSlot(basebase, slot)) {
+    return nullptr;
+  }
+  Int basebase_slot(&scope, extensionSlot(basebase, slot));
+  return basebase_slot.asCPtr();
+}
+
+// Copy the slot from the base type if defined and it is the first type that
+// defines it. If base's base type defines the same slot, then base inherited
+// it. Thus, it is not the first type to define it.
+static void copySlotIfImplementedInBase(const Type& type, const Type& base,
+                                        int slot) {
+  ExtensionSlot field_id = slotToTypeSlot(slot);
+  if (!hasSlot(type, field_id) && hasSlot(base, field_id)) {
+    RawObject base_slot = extensionSlot(base, field_id);
+    void* basebase_slot = baseBaseSlot(base, field_id);
+    if (basebase_slot == nullptr ||
+        Int::cast(base_slot).asCPtr() != basebase_slot) {
+      setExtensionSlot(type, field_id, base_slot);
+    }
+  }
+}
+
+// Copy the slot from the base type if it defined.
+static void copySlot(const Type& type, const Type& base, int slot) {
+  ExtensionSlot field_id = slotToTypeSlot(slot);
+  if (!hasSlot(type, field_id) && hasSlot(base, field_id)) {
+    setExtensionSlot(type, field_id, extensionSlot(base, field_id));
+  }
+}
+
+static void inheritGCFlagsAndSlots(Thread* thread, const Type& type,
+                                   const Type& base) {
+  unsigned long type_flags =
+      Int::cast(extensionSlot(type, ExtensionSlot::kFlags)).asWord();
+  unsigned long base_flags =
+      Int::cast(extensionSlot(base, ExtensionSlot::kFlags)).asWord();
+  if (!(type_flags & Py_TPFLAGS_HAVE_GC) && (base_flags & Py_TPFLAGS_HAVE_GC) &&
+      !hasSlot(type, ExtensionSlot::kTraverse) &&
+      !hasSlot(type, ExtensionSlot::kClear)) {
+    setExtensionSlot(
+        type, ExtensionSlot::kFlags,
+        thread->runtime()->newInt(type_flags | Py_TPFLAGS_HAVE_GC));
+    if (!hasSlot(type, ExtensionSlot::kTraverse)) {
+      copySlot(type, base, Py_tp_traverse);
+    }
+    if (!hasSlot(type, ExtensionSlot::kClear)) {
+      copySlot(type, base, Py_tp_clear);
+    }
+  }
+}
+
+static void inheritNonFunctionSlots(const Type& type, const Type& base) {
+  if (Int::cast(extensionSlot(base, ExtensionSlot::kBasicSize)).asWord() == 0) {
+    setExtensionSlot(type, ExtensionSlot::kBasicSize,
+                     extensionSlot(base, ExtensionSlot::kBasicSize));
+  }
+  setExtensionSlot(type, ExtensionSlot::kItemSize,
+                   extensionSlot(base, ExtensionSlot::kItemSize));
+}
+
+// clang-format off
+static const int kInheritableSlots[] = {
+  // Number slots
+  Py_nb_add,
+  Py_nb_subtract,
+  Py_nb_multiply,
+  Py_nb_remainder,
+  Py_nb_divmod,
+  Py_nb_power,
+  Py_nb_negative,
+  Py_nb_positive,
+  Py_nb_absolute,
+  Py_nb_bool,
+  Py_nb_invert,
+  Py_nb_lshift,
+  Py_nb_rshift,
+  Py_nb_and,
+  Py_nb_xor,
+  Py_nb_or,
+  Py_nb_int,
+  Py_nb_float,
+  Py_nb_inplace_add,
+  Py_nb_inplace_subtract,
+  Py_nb_inplace_multiply,
+  Py_nb_inplace_remainder,
+  Py_nb_inplace_power,
+  Py_nb_inplace_lshift,
+  Py_nb_inplace_rshift,
+  Py_nb_inplace_and,
+  Py_nb_inplace_xor,
+  Py_nb_inplace_or,
+  Py_nb_true_divide,
+  Py_nb_floor_divide,
+  Py_nb_inplace_true_divide,
+  Py_nb_inplace_floor_divide,
+  Py_nb_index,
+  Py_nb_matrix_multiply,
+  Py_nb_inplace_matrix_multiply,
+
+  // Await slots
+  Py_am_await,
+  Py_am_aiter,
+  Py_am_anext,
+
+  // Sequence slots
+  Py_sq_length,
+  Py_sq_concat,
+  Py_sq_repeat,
+  Py_sq_item,
+  Py_sq_ass_item,
+  Py_sq_contains,
+  Py_sq_inplace_concat,
+  Py_sq_inplace_repeat,
+
+  // Mapping slots
+  Py_mp_length,
+  Py_mp_subscript,
+  Py_mp_ass_subscript,
+
+  // Buffer protocol is not part of PEP-384
+
+  // Type slots
+  Py_tp_dealloc,
+  Py_tp_repr,
+  Py_tp_call,
+  Py_tp_str,
+  Py_tp_iter,
+  Py_tp_iternext,
+  Py_tp_descr_get,
+  Py_tp_descr_set,
+  Py_tp_init,
+  Py_tp_alloc,
+  Py_tp_is_gc,
+
+  // Instance dictionary is not part of PEP-384
+
+  // Weak reference support is not part of PEP-384
+};
+// clang-format on
+
+static void inheritFinalize(const Type& type, unsigned long type_flags,
+                            const Type& base, unsigned long base_flags) {
+  if ((type_flags & Py_TPFLAGS_HAVE_FINALIZE) &&
+      (base_flags & Py_TPFLAGS_HAVE_FINALIZE)) {
+    copySlotIfImplementedInBase(type, base, Py_tp_finalize);
+  }
+  if ((type_flags & Py_TPFLAGS_HAVE_FINALIZE) &&
+      (base_flags & Py_TPFLAGS_HAVE_FINALIZE)) {
+    copySlotIfImplementedInBase(type, base, Py_tp_finalize);
+  }
+}
+
+static void inheritFree(const Type& type, unsigned long type_flags,
+                        const Type& base, unsigned long base_flags) {
+  // Both child and base are GC or non GC
+  if ((type_flags & Py_TPFLAGS_HAVE_GC) == (base_flags & Py_TPFLAGS_HAVE_GC)) {
+    copySlotIfImplementedInBase(type, base, Py_tp_free);
+    return;
+  }
+
+  DCHECK(!(base_flags & Py_TPFLAGS_HAVE_GC), "The child should not remove GC");
+
+  // Only the child is GC
+  // Set the free function if the base has a default free
+  if ((type_flags & Py_TPFLAGS_HAVE_GC) &&
+      !hasSlot(type, ExtensionSlot::kFree) &&
+      hasSlot(base, ExtensionSlot::kFree)) {
+    void* free_slot = reinterpret_cast<void*>(
+        Int::cast(extensionSlot(base, ExtensionSlot::kFree)).asWord());
+    if (free_slot == reinterpret_cast<void*>(PyObject_Free)) {
+      setExtensionSlot(type, ExtensionSlot::kFree,
+                       Thread::current()->runtime()->newIntFromCPtr(
+                           reinterpret_cast<void*>(PyObject_GC_Del)));
+    }
+  }
+}
+
+static void inheritSlots(const Type& type, const Type& base) {
+  // Heap allocated types are guaranteed to have slot space, no check is needed
+  // i.e. CPython does: `if (type->tp_as_number != NULL)`
+  // Only static types need to do this type of check.
+  for (const int slot : kInheritableSlots) {
+    copySlotIfImplementedInBase(type, base, slot);
+  }
+
+  // Inherit conditional type slots
+  if (!hasSlot(type, ExtensionSlot::kGetattr) &&
+      !hasSlot(type, ExtensionSlot::kGetattro)) {
+    copySlot(type, base, Py_tp_getattr);
+    copySlot(type, base, Py_tp_getattro);
+  }
+  if (!hasSlot(type, ExtensionSlot::kSetattr) &&
+      !hasSlot(type, ExtensionSlot::kSetattro)) {
+    copySlot(type, base, Py_tp_setattr);
+    copySlot(type, base, Py_tp_setattro);
+  }
+  if (!hasSlot(type, ExtensionSlot::kRichcompare) &&
+      !hasSlot(type, ExtensionSlot::kHash)) {
+    copySlot(type, base, Py_tp_richcompare);
+    copySlot(type, base, Py_tp_hash);
+  }
+
+  unsigned long type_flags =
+      Int::cast(extensionSlot(type, ExtensionSlot::kFlags)).asWord();
+  unsigned long base_flags =
+      Int::cast(extensionSlot(base, ExtensionSlot::kFlags)).asWord();
+  inheritFinalize(type, type_flags, base, base_flags);
+  inheritFree(type, type_flags, base, base_flags);
+}
+
+static void subtypeDealloc(PyObject* /* self */) {
+  // TODO(T53196439): Implement subtypeDealloc
+  UNIMPLEMENTED("subtypeDealloc");
+}
+
 PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
-                                             PyObject* /* bases */) {
+                                             PyObject* bases) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
@@ -1540,21 +1771,33 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   Object dict_key(&scope, runtime->symbols()->DunderName());
   runtime->dictAtPutInValueCell(thread, dict, dict_key, name_obj);
 
-  // Compute Mro
+  // Initialize the extension slots tuple
+  Object extension_slots(
+      &scope, runtime->newTuple(static_cast<int>(ExtensionSlot::kEnd)));
+  type.setExtensionSlots(*extension_slots);
+
+  // Set bases
   Tuple parents(&scope, runtime->emptyTuple());
-  Object mro(&scope, computeMro(thread, type, parents));
+  if (bases != nullptr) {
+    parents = ApiHandle::fromPyObject(bases)->asObject();
+  }
+  PyObject* parents_handle = ApiHandle::borrowedReference(thread, *parents);
+  setExtensionSlot(type, ExtensionSlot::kBases,
+                   runtime->newIntFromCPtr(parents_handle));
+
+  // Compute MRO
+  Tuple mro(&scope, computeMro(thread, type, parents));
   type.setMro(*mro);
+  Type base_type(&scope, mro.at(1));
+  PyObject* base_handle = ApiHandle::borrowedReference(thread, *base_type);
+  setExtensionSlot(type, ExtensionSlot::kBase,
+                   runtime->newIntFromCPtr(base_handle));
 
   // Initialize instance Layout
   Layout layout(&scope,
                 runtime->computeInitialLayout(thread, type, LayoutId::kObject));
   layout.setDescribedType(*type);
   type.setInstanceLayout(*layout);
-
-  // Initialize the extension slots tuple
-  Object extension_slots(
-      &scope, runtime->newTuple(static_cast<int>(ExtensionSlot::kEnd)));
-  type.setExtensionSlots(*extension_slots);
 
   // Set the type slots
   for (PyType_Slot* slot = spec->slots; slot->slot; slot++) {
@@ -1600,6 +1843,38 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   if (addMembers(thread, type).isError()) return nullptr;
 
   if (addGetSet(thread, type).isError()) return nullptr;
+
+  // Inherit tp_dealloc
+  if (!hasSlot(type, ExtensionSlot::kDealloc)) {
+    Object default_dealloc(
+        &scope, runtime->newIntFromCPtr(bit_cast<void*>(&subtypeDealloc)));
+    setExtensionSlot(type, ExtensionSlot::kDealloc, *default_dealloc);
+  }
+
+  // Inherit special slots from dominant base
+  if (!base_type.extensionSlots().isNoneType()) {
+    inheritGCFlagsAndSlots(thread, type, base_type);
+    // !PyBaseObject_Type and Py_TPFLAGS_HEAPTYPE are guaranteed so skip check
+    if (!hasSlot(type, ExtensionSlot::kNew)) {
+      copySlot(type, base_type, Py_tp_new);
+    }
+    inheritNonFunctionSlots(type, base_type);
+  }
+
+  for (word i = 1; i < mro.length(); i++) {
+    Type base(&scope, mro.at(i));
+    // Skip inheritance if base does not define extensionSlots
+    if (base.extensionSlots().isNoneType()) continue;
+    // Bases must define Py_TPFLAGS_BASETYPE
+    word base_flags =
+        Int::cast(extensionSlot(base, ExtensionSlot::kFlags)).asWord();
+    if ((base_flags & Py_TPFLAGS_BASETYPE) == 0) {
+      thread->raiseWithFmt(LayoutId::kTypeError,
+                           "type is not an acceptable base type");
+      return nullptr;
+    }
+    inheritSlots(type, base);
+  }
 
   // Add the default tp_dealloc slot if none exists
   if (extensionSlot(type, ExtensionSlot::kDealloc).isNoneType()) {

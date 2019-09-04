@@ -276,7 +276,9 @@ extern const char* Py_hexdigits;
 #define READONLY 1
 
 /* Type flags (tp_flags) */
+#define Py_TPFLAGS_HAVE_FINALIZE (1UL << 0)
 #define Py_TPFLAGS_HEAPTYPE (1UL << 9)
+#define Py_TPFLAGS_BASETYPE (1UL << 10)
 #define Py_TPFLAGS_READY (1UL << 12)
 #define Py_TPFLAGS_READYING (1UL << 13)
 #define Py_TPFLAGS_HAVE_GC (1UL << 14)

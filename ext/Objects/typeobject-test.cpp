@@ -987,20 +987,34 @@ TEST_F(TypeExtensionApiTest, GenericNewReturnsExtensionInstance) {
 // Given one slot id and a function pointer to go with it, create a Bar type
 // containing that slot.
 template <typename T>
-static void createTypeWithSlot(const char* type_name, int slot, T pfunc) {
+static void createTypeWithSlotAndBase(const char* type_name, int slot, T pfunc,
+                                      PyObject* base) {
   static PyType_Slot slots[2];
   slots[0] = {slot, reinterpret_cast<void*>(pfunc)};
   slots[1] = {0, nullptr};
   static PyType_Spec spec;
   static char qualname[100];
   std::sprintf(qualname, "__main__.%s", type_name);
+  unsigned int flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
   spec = {
-      qualname, 0, 0, Py_TPFLAGS_DEFAULT, slots,
+      qualname, 0, 0, flags, slots,
   };
-  PyObjectPtr type(PyType_FromSpec(&spec));
+  PyObject* tp;
+  if (base == nullptr) {
+    tp = PyType_FromSpec(&spec);
+  } else {
+    PyObjectPtr bases(PyTuple_Pack(1, base));
+    tp = PyType_FromSpecWithBases(&spec, bases);
+  }
+  PyObjectPtr type(tp);
   ASSERT_NE(type, nullptr);
   ASSERT_EQ(PyType_CheckExact(type), 1);
   ASSERT_EQ(moduleSet("__main__", type_name, type), 0);
+}
+
+template <typename T>
+static void createTypeWithSlot(const char* type_name, int slot, T pfunc) {
+  createTypeWithSlotAndBase(type_name, slot, pfunc, nullptr);
 }
 
 TEST_F(TypeExtensionApiTest, CallBinarySlotFromManagedCode) {
@@ -2428,6 +2442,512 @@ class FooBarTheBaz:
   PyObjectPtr c(moduleGet("__main__", "FooBarTheBaz"));
   const char* name = _PyType_Name(reinterpret_cast<PyTypeObject*>(c.get()));
   EXPECT_STREQ(name, "FooBarTheBaz");
+}
+
+static PyObject* emptyBinaryFunc(PyObject*, PyObject*) { return Py_None; }
+
+static void emptyDestructorFunc(PyObject*) { return; }
+
+static Py_ssize_t emptyLenFunc(PyObject*) { return Py_ssize_t{0}; }
+
+static PyObject* emptyCompareFunc(PyObject*, PyObject*, int) { return Py_None; }
+
+static int emptySetattroFunc(PyObject*, PyObject*, PyObject*) { return 0; }
+
+static PyObject* emptyTernaryFunc(PyObject*, PyObject*, PyObject*) {
+  return Py_None;
+}
+
+static PyObject* emptyUnaryFunc(PyObject*) { return Py_None; }
+
+TEST_F(TypeExtensionApiTest, FromSpecWithBasesSetsBaseSlots) {
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlot("BaseType", Py_nb_add, &emptyBinaryFunc));
+  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
+      "SubclassedType", Py_nb_add, &emptyBinaryFunc, base_type));
+  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
+  PyObject* bases = static_cast<PyObject*>(PyType_GetSlot(tp, Py_tp_bases));
+  ASSERT_NE(bases, nullptr);
+  EXPECT_EQ(PyTuple_Check(bases), 1);
+  EXPECT_EQ(PyTuple_Size(bases), 1);
+  EXPECT_EQ(static_cast<PyObject*>(PyType_GetSlot(tp, Py_tp_base)),
+            base_type.get());
+}
+
+TEST_F(TypeExtensionApiTest,
+       FromSpecWithBasesWithoutBaseTypeFlagsRaisesTypeError) {
+  static PyType_Slot base_slots[1];
+  base_slots[0] = {0, nullptr};
+  static PyType_Spec base_spec;
+  base_spec = {
+      "__main__.BaseType", 0, 0, Py_TPFLAGS_DEFAULT, base_slots,
+  };
+  PyObjectPtr base_type(PyType_FromSpec(&base_spec));
+  ASSERT_NE(base_type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(base_type), 1);
+
+  static PyType_Slot slots[1];
+  slots[0] = {0, nullptr};
+  static PyType_Spec spec;
+  spec = {
+      "__main__.SubclassedType", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr bases(PyTuple_Pack(1, base_type.get()));
+  ASSERT_EQ(PyType_FromSpecWithBases(&spec, bases), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsNumberSlots) {
+  binaryfunc empty_binary_func2 = [](PyObject*, PyObject*) { return Py_None; };
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlot("BaseType", Py_nb_add, &emptyBinaryFunc));
+  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
+      "SubclassedType", Py_nb_subtract, empty_binary_func2, base_type));
+  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
+  EXPECT_EQ(PyType_GetSlot(tp, Py_nb_add), &emptyBinaryFunc);
+  EXPECT_EQ(PyType_GetSlot(tp, Py_nb_subtract), empty_binary_func2);
+}
+
+TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsAsyncSlots) {
+  unaryfunc empty_unary_func2 = [](PyObject*) { return Py_None; };
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlot("BaseType", Py_am_await, &emptyUnaryFunc));
+  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
+      "SubclassedType", Py_am_aiter, empty_unary_func2, base_type));
+  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
+  EXPECT_EQ(PyType_GetSlot(tp, Py_am_await), &emptyUnaryFunc);
+  EXPECT_EQ(PyType_GetSlot(tp, Py_am_aiter), empty_unary_func2);
+}
+
+TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsSequenceSlots) {
+  ssizeargfunc empty_sizearg_func = [](PyObject*, Py_ssize_t) {
+    return Py_None;
+  };
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlot("BaseType", Py_sq_concat, &emptyBinaryFunc));
+  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
+      "SubclassedType", Py_sq_repeat, empty_sizearg_func, base_type));
+  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
+  EXPECT_EQ(PyType_GetSlot(tp, Py_sq_concat), &emptyBinaryFunc);
+  EXPECT_EQ(PyType_GetSlot(tp, Py_sq_repeat), empty_sizearg_func);
+}
+
+TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsMappingSlots) {
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlot("BaseType", Py_mp_subscript, &emptyBinaryFunc));
+  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
+      "SubclassedType", Py_mp_length, &emptyLenFunc, base_type));
+  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
+  EXPECT_EQ(PyType_GetSlot(tp, Py_mp_subscript), &emptyBinaryFunc);
+  EXPECT_EQ(PyType_GetSlot(tp, Py_mp_length), &emptyLenFunc);
+}
+
+TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsTypeSlots) {
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlot("BaseType", Py_tp_call, &emptyTernaryFunc));
+  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
+      "SubclassedType", Py_nb_add, &emptyBinaryFunc, base_type));
+  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
+  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_call), &emptyTernaryFunc);
+}
+
+TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsMixedSlots) {
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlot("BaseType", Py_nb_add, &emptyBinaryFunc));
+  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
+      "SubclassedType", Py_mp_length, &emptyLenFunc, base_type));
+  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
+  EXPECT_EQ(PyType_GetSlot(tp, Py_nb_add), &emptyBinaryFunc);
+  EXPECT_EQ(PyType_GetSlot(tp, Py_mp_length), &emptyLenFunc);
+}
+
+TEST_F(TypeExtensionApiTest, FromSpecWithBasesDoesNotInheritGetAttrIfDefined) {
+  getattrfunc empty_getattr_func = [](PyObject*, char*) { return Py_None; };
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlot("BaseType", Py_tp_getattro, &emptyBinaryFunc));
+  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
+      "SubclassedType", Py_tp_getattr, empty_getattr_func, base_type));
+  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
+  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_getattro), nullptr);
+  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_getattr), empty_getattr_func);
+}
+
+TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsGetAttrIfNotDefined) {
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlot("BaseType", Py_tp_getattro, &emptyBinaryFunc));
+  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
+      "SubclassedType", Py_nb_add, &emptyBinaryFunc, base_type));
+  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
+  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_getattro), &emptyBinaryFunc);
+  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_getattr), nullptr);
+}
+
+TEST_F(TypeExtensionApiTest, FromSpecWithBasesDoesNotInheritSetAttrIfDefined) {
+  setattrfunc empty_setattr_func = [](PyObject*, char*, PyObject*) {
+    return 0;
+  };
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlot("BaseType", Py_tp_setattr, empty_setattr_func));
+  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
+      "SubclassedType", Py_tp_setattro, &emptySetattroFunc, base_type));
+  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
+  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_setattro), &emptySetattroFunc);
+  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_setattr), nullptr);
+}
+
+TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsSetAttrIfNotDefined) {
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlot("BaseType", Py_tp_setattro, &emptySetattroFunc));
+  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
+      "SubclassedType", Py_nb_add, &emptyBinaryFunc, base_type));
+  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
+  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_setattro), &emptySetattroFunc);
+  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_setattr), nullptr);
+}
+
+TEST_F(TypeExtensionApiTest,
+       FromSpecWithBasesDoesNotInheritCompareAndHashIfDefined) {
+  hashfunc empty_hash_func = [](PyObject*) { return Py_hash_t{0}; };
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlot("BaseType", Py_tp_richcompare, &emptyCompareFunc));
+  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
+      "SubclassedType", Py_tp_hash, empty_hash_func, base_type));
+  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
+  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_richcompare), nullptr);
+  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_hash), empty_hash_func);
+}
+
+TEST_F(TypeExtensionApiTest,
+       FromSpecWithBasesInheritsCompareAndHashIfNotDefined) {
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlot("BaseType", Py_tp_richcompare, &emptyCompareFunc));
+  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
+      "SubclassedType", Py_nb_add, &emptyBinaryFunc, base_type));
+  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
+  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_richcompare), &emptyCompareFunc);
+}
+
+TEST_F(TypeExtensionApiTest,
+       FromSpecWithBasesDoesNotInheritFinalizeWhenHaveFinalizeFlagUnset) {
+  static PyType_Slot base_slots[2];
+  base_slots[0] = {Py_tp_finalize,
+                   reinterpret_cast<void*>(&emptyDestructorFunc)};
+  base_slots[1] = {0, nullptr};
+  static PyType_Spec base_spec;
+  base_spec = {
+      "__main__.BaseType",
+      0,
+      0,
+      Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_FINALIZE,
+      base_slots,
+  };
+  PyObjectPtr base_type(PyType_FromSpec(&base_spec));
+  ASSERT_NE(base_type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(base_type), 1);
+
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
+      "SubclassedType", Py_nb_add, &emptyBinaryFunc, base_type));
+  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
+  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_finalize), nullptr);
+}
+
+TEST_F(TypeExtensionApiTest,
+       FromSpecWithBasesInheritsFinalizeWhenWhateverFlagSet) {
+  static PyType_Slot base_slots[2];
+  base_slots[0] = {Py_tp_finalize,
+                   reinterpret_cast<void*>(&emptyDestructorFunc)};
+  base_slots[1] = {0, nullptr};
+  static PyType_Spec base_spec;
+  base_spec = {
+      "__main__.BaseType",
+      0,
+      0,
+      Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_FINALIZE,
+      base_slots,
+  };
+  PyObjectPtr base_type(PyType_FromSpec(&base_spec));
+  ASSERT_NE(base_type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(base_type), 1);
+
+  static PyType_Slot slots[1];
+  slots[0] = {0, nullptr};
+  static PyType_Spec spec;
+  spec = {
+      "__main__.SubclassedType",
+      0,
+      0,
+      Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_FINALIZE,
+      slots,
+  };
+  PyObjectPtr bases(PyTuple_Pack(1, base_type.get()));
+  PyObjectPtr type(PyType_FromSpecWithBases(&spec, bases));
+  ASSERT_NE(type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(type), 1);
+
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(type.get());
+  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_finalize), &emptyDestructorFunc);
+}
+
+TEST_F(TypeExtensionApiTest,
+       FromSpecWithBasesDoesNotInheritFreeIfHaveGCUnsetInBase) {
+  freefunc empty_free_func = [](void*) { return; };
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlot("BaseType", Py_tp_free, empty_free_func));
+  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+
+  static PyType_Slot slots[1];
+  slots[0] = {0, nullptr};
+  static PyType_Spec spec;
+  spec = {
+      "__main__.SubclassedType",
+      0,
+      0,
+      Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+      slots,
+  };
+  PyObjectPtr bases(PyTuple_Pack(1, base_type.get()));
+  PyObjectPtr type(PyType_FromSpecWithBases(&spec, bases));
+  ASSERT_NE(type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(type), 1);
+
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(type.get());
+  EXPECT_NE(PyType_GetSlot(tp, Py_tp_free), empty_free_func);
+}
+
+TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsFreeIfBothHaveGCFlagSet) {
+  freefunc empty_free_func = PyObject_Free;
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlot("BaseType", Py_tp_free, empty_free_func));
+  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+
+  static PyType_Slot slots[1];
+  slots[0] = {0, nullptr};
+  static PyType_Spec spec;
+  spec = {
+      "__main__.SubclassedType",
+      0,
+      0,
+      Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+      slots,
+  };
+  PyObjectPtr bases(PyTuple_Pack(1, base_type.get()));
+  PyObjectPtr type(PyType_FromSpecWithBases(&spec, bases));
+  ASSERT_NE(type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(type), 1);
+
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(type.get());
+  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_free),
+            reinterpret_cast<void*>(PyObject_GC_Del));
+}
+
+TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsIfGcFlagIsPresentOnBoth) {
+  freefunc empty_free_func = [](void*) { return; };
+  static PyType_Slot base_slots[2];
+  base_slots[0] = {Py_tp_free, reinterpret_cast<void*>(empty_free_func)};
+  base_slots[1] = {0, nullptr};
+  static PyType_Spec base_spec;
+  base_spec = {
+      "__main__.BaseType",
+      0,
+      0,
+      Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+      base_slots,
+  };
+  PyObjectPtr base_type(PyType_FromSpec(&base_spec));
+  ASSERT_NE(base_type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(base_type), 1);
+
+  static PyType_Slot slots[1];
+  slots[0] = {0, nullptr};
+  static PyType_Spec spec;
+  spec = {
+      "__main__.SubclassedType",
+      0,
+      0,
+      Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+      slots,
+  };
+  PyObjectPtr bases(PyTuple_Pack(1, base_type.get()));
+  PyObjectPtr type(PyType_FromSpecWithBases(&spec, bases));
+  ASSERT_NE(type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(type), 1);
+
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(type.get());
+  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_free), empty_free_func);
+}
+
+TEST_F(TypeExtensionApiTest, MethodIsInheirtedFromClassFromWinningParent) {
+  // class C:
+  //  def __int__(self):
+  //    return 11
+  unaryfunc c_int_func = [](PyObject*) { return PyLong_FromLong(11); };
+  static PyType_Slot c_slots[2];
+  c_slots[0] = {Py_nb_int, reinterpret_cast<void*>(c_int_func)};
+  c_slots[1] = {0, nullptr};
+  static PyType_Spec c_spec;
+  c_spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, c_slots,
+  };
+  PyObjectPtr c_type(PyType_FromSpec(&c_spec));
+  ASSERT_NE(c_type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(c_type), 1);
+
+  // class D(C):
+  //  def __int__(self):
+  //    return 22
+  unaryfunc d_int_func = [](PyObject*) { return PyLong_FromLong(22); };
+  static PyType_Slot d_slots[2];
+  d_slots[0] = {Py_nb_int, reinterpret_cast<void*>(d_int_func)};
+  d_slots[1] = {0, nullptr};
+  static PyType_Spec d_spec;
+  d_spec = {
+      "__main__.D", 0, 0, Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, d_slots,
+  };
+  PyObjectPtr d_bases(PyTuple_Pack(1, c_type.get()));
+  PyObjectPtr d_type(PyType_FromSpecWithBases(&d_spec, d_bases));
+  ASSERT_NE(d_type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(d_type), 1);
+
+  // class B(C): pass
+  static PyType_Slot b_slots[1];
+  b_slots[0] = {0, nullptr};
+  static PyType_Spec b_spec;
+  b_spec = {
+      "__main__.B", 0, 0, Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, d_slots,
+  };
+  PyObjectPtr b_bases(PyTuple_Pack(1, c_type.get()));
+  PyObjectPtr b_type(PyType_FromSpecWithBases(&b_spec, b_bases));
+  ASSERT_NE(b_type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(b_type), 1);
+
+  // class A(B, C): pass
+  static PyType_Slot a_slots[1];
+  a_slots[0] = {0, nullptr};
+  static PyType_Spec a_spec;
+  a_spec = {
+      "__main__.A", 0, 0, Py_TPFLAGS_DEFAULT, a_slots,
+  };
+  PyObjectPtr a_bases(PyTuple_Pack(2, b_type.get(), d_type.get()));
+  PyObjectPtr a_type(PyType_FromSpecWithBases(&a_spec, a_bases));
+  ASSERT_NE(a_type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(a_type), 1);
+
+  // MRO is (A, B, D, C, object)
+  ASSERT_EQ(moduleSet("__main__", "A", a_type), 0);
+  PyRun_SimpleString(R"(
+a_mro = A.__mro__
+)");
+  PyObjectPtr a_mro(moduleGet("__main__", "a_mro"));
+  ASSERT_EQ(PyTuple_Check(a_mro), 1);
+  ASSERT_EQ(PyTuple_GetItem(a_mro, 0), a_type);
+  ASSERT_EQ(PyTuple_GetItem(a_mro, 1), b_type);
+  ASSERT_EQ(PyTuple_GetItem(a_mro, 2), d_type);
+  ASSERT_EQ(PyTuple_GetItem(a_mro, 3), c_type);
+
+  // Even though B inherited Py_tp_int from C, A should inherit it until
+  // the first concrete definition, which is in D.
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(a_type.get());
+  void* int_slot = PyType_GetSlot(tp, Py_nb_int);
+  ASSERT_NE(int_slot, nullptr);
+  EXPECT_NE(int_slot, c_int_func);
+  EXPECT_EQ(int_slot, d_int_func);
+}
+
+TEST_F(TypeExtensionApiTest,
+       FromSpecWithBasesInheritsGcFlagAndTraverseClearSlots) {
+  traverseproc empty_traverse_func = [](PyObject*, visitproc, void*) {
+    return 0;
+  };
+  inquiry empty_clear_func = [](PyObject*) { return 0; };
+  static PyType_Slot base_slots[3];
+  base_slots[0] = {Py_tp_traverse,
+                   reinterpret_cast<void*>(empty_traverse_func)};
+  base_slots[1] = {Py_tp_clear, reinterpret_cast<void*>(empty_clear_func)};
+  base_slots[2] = {0, nullptr};
+  static PyType_Spec base_spec;
+  base_spec = {
+      "__main__.BaseType",
+      0,
+      0,
+      Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+      base_slots,
+  };
+  PyObjectPtr base_type(PyType_FromSpec(&base_spec));
+  ASSERT_NE(base_type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(base_type), 1);
+
+  static PyType_Slot slots[1];
+  slots[0] = {0, nullptr};
+  static PyType_Spec spec;
+  spec = {
+      "__main__.SubclassedType", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr bases(PyTuple_Pack(1, base_type.get()));
+  PyObjectPtr type(PyType_FromSpecWithBases(&spec, bases));
+  ASSERT_NE(type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(type), 1);
+
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(base_type.get());
+  EXPECT_NE(PyType_GetFlags(tp) & Py_TPFLAGS_HAVE_GC, 0);
+  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_traverse), empty_traverse_func);
+  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_clear), empty_clear_func);
+}
+
+TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsNew) {
+  newfunc empty_new_func = [](PyTypeObject*, PyObject*, PyObject*) {
+    return Py_None;
+  };
+  ASSERT_NO_FATAL_FAILURE(
+      createTypeWithSlot("BaseType", Py_tp_new, empty_new_func));
+  PyObjectPtr base_type(moduleGet("__main__", "BaseType"));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
+      "SubclassedType", Py_nb_add, &emptyBinaryFunc, base_type));
+  PyObjectPtr subclassed_type(moduleGet("__main__", "SubclassedType"));
+
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
+  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_new), empty_new_func);
 }
 
 }  // namespace python
