@@ -273,6 +273,7 @@ class Runtime;
   V(UnderModuleProxySetitem, "_module_proxy_setitem")                          \
   V(UnderModuleProxyValues, "_module_proxy_values")                            \
   V(UnderMutableBytes, "_mutablebytes")                                        \
+  V(UnderMutableTuple, "_mutabletuple")                                        \
   V(UnderNewMemberGetBool, "_new_member_get_bool")                             \
   V(UnderNewMemberGetByte, "_new_member_get_byte")                             \
   V(UnderNewMemberGetChar, "_new_member_get_char")                             \

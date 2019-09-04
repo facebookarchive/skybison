@@ -129,6 +129,7 @@ class WARN_UNUSED Handle : public T {
   V(ModuleProxy)                                                               \
   V(ModuleNotFoundError)                                                       \
   V(MutableBytes)                                                              \
+  V(MutableTuple)                                                              \
   V(NoneType)                                                                  \
   V(NotImplementedError)                                                       \
   V(NotImplementedType)                                                        \

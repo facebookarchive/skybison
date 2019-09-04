@@ -63,6 +63,7 @@ class Handle;
   V(Module)                                                                    \
   V(ModuleProxy)                                                               \
   V(MutableBytes)                                                              \
+  V(MutableTuple)                                                              \
   V(Property)                                                                  \
   V(Range)                                                                     \
   V(RangeIterator)                                                             \
@@ -307,6 +308,7 @@ class RawObject {
   bool isModuleNotFoundError() const;
   bool isModuleProxy() const;
   bool isMutableBytes() const;
+  bool isMutableTuple() const;
   bool isNotImplementedError() const;
   bool isProperty() const;
   bool isRange() const;
@@ -1172,6 +1174,14 @@ class RawTuple : public RawArray {
   static word allocationSize(word length);
 
   friend class Heap;
+};
+
+class RawMutableTuple : public RawTuple {
+ public:
+  // Finalizes this object and turns it into an immutable Tuple.
+  RawObject becomeImmutable() const;
+
+  RAW_OBJECT_COMMON(MutableTuple);
 };
 
 class RawUserTupleBase : public RawHeapObject {
@@ -3195,6 +3205,10 @@ inline bool RawObject::isMutableBytes() const {
   return isHeapObjectWithLayout(LayoutId::kMutableBytes);
 }
 
+inline bool RawObject::isMutableTuple() const {
+  return isHeapObjectWithLayout(LayoutId::kMutableTuple);
+}
+
 inline bool RawObject::isNotImplementedError() const {
   return isHeapObjectWithLayout(LayoutId::kNotImplementedError);
 }
@@ -4121,6 +4135,13 @@ inline uint64_t RawLargeBytes::uint64At(word index) const {
 inline void RawMutableBytes::byteAtPut(word index, byte value) const {
   DCHECK_INDEX(index, length());
   *reinterpret_cast<byte*>(address() + index) = value;
+}
+
+// RawMutableTuple
+
+inline RawObject RawMutableTuple::becomeImmutable() const {
+  setHeader(header().withLayoutId(LayoutId::kTuple));
+  return *this;
 }
 
 // RawTuple

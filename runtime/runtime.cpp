@@ -905,6 +905,11 @@ RawObject Runtime::emptySlice() { return empty_slice_; }
 
 RawObject Runtime::emptyTuple() { return empty_tuple_; }
 
+RawObject Runtime::newMutableTuple(word length) {
+  DCHECK(length > 0, "use emptyTuple() for MutableTuple with length 0");
+  return heap()->createMutableTuple(length);
+}
+
 RawObject Runtime::newTuple(word length) {
   if (length == 0) {
     return emptyTuple();
@@ -1533,6 +1538,8 @@ void Runtime::initializeHeapTypes() {
   addEmptyBuiltinType(SymbolId::kExceptionState, LayoutId::kExceptionState,
                       LayoutId::kObject);
   addEmptyBuiltinType(SymbolId::kUnderMutableBytes, LayoutId::kMutableBytes,
+                      LayoutId::kObject);
+  addEmptyBuiltinType(SymbolId::kUnderMutableTuple, LayoutId::kMutableTuple,
                       LayoutId::kObject);
   addEmptyBuiltinType(SymbolId::kUnderWeakLink, LayoutId::kWeakLink,
                       LayoutId::kObject);

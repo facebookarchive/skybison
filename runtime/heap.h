@@ -43,6 +43,8 @@ class Heap {
 
   RawObject createMutableBytes(word length);
 
+  RawObject createMutableTuple(word length);
+
   RawObject createTuple(word length);
 
   RawObject createRange();
