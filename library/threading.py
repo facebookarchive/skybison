@@ -55,6 +55,14 @@ class _PseudoThread:
     def getName(self):
         return "MainThread"
 
+    @property
+    def ident(self):
+        return 1
+
+    @property
+    def name(self):
+        return "MainThread"
+
 
 class _RLock:
     """Recursive (pseudo) Lock assuming single-threaded execution."""
@@ -104,6 +112,10 @@ def enumerate():
 
 def local():
     return _thread_local
+
+
+def get_ident():
+    return _main_thread.ident
 
 
 def main_thread():

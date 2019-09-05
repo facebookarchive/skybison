@@ -159,15 +159,19 @@ def addLevelName(level, levelName):
     finally:
         _releaseLock()
 
-if hasattr(sys, '_getframe'):
-    currentframe = lambda: sys._getframe(3)
-else: #pragma: no cover
-    def currentframe():
-        """Return the frame object for the caller's stack frame."""
-        try:
-            raise Exception
-        except Exception:
-            return sys.exc_info()[2].tb_frame.f_back
+# TODO(T43303879, T42624200): Remove. Necessary because sys._getframe() and
+# tracebacks on exc_info is not supported yet.
+#if hasattr(sys, '_getframe'):
+#    currentframe = lambda: sys._getframe(3)
+#else: #pragma: no cover
+#    def currentframe():
+#        """Return the frame object for the caller's stack frame."""
+#        try:
+#            raise Exception
+#        except Exception:
+#            return sys.exc_info()[2].tb_frame.f_back
+def currentframe():
+    return None
 
 #
 # _srcfile is used when walking the stack to check when we've got the first
@@ -237,6 +241,17 @@ def _releaseLock():
     """
     if _lock:
         _lock.release()
+
+
+# TODO(T52905957): Remove. This is part of a work-around for missing __dict__ on
+# instances.
+class _PseudoInstanceDict:
+    def __init__(self, obj):
+        self.obj = obj
+
+    def __getitem__(self, name):
+        return getattr(self.obj, name)
+
 
 #---------------------------------------------------------------------------
 #   The logging record
@@ -325,6 +340,10 @@ class LogRecord(object):
             self.process = os.getpid()
         else:
             self.process = None
+
+        # TODO(T52905957): Remove. This works around missing support for
+        # __dict__ on instances.
+        self.__dict__ = _PseudoInstanceDict(self)
 
     def __str__(self):
         return '<LogRecord: %s, %s, %s, %s, "%s">'%(self.name, self.levelno,
@@ -533,16 +552,19 @@ class Formatter(object):
         This default implementation just uses
         traceback.print_exception()
         """
-        sio = io.StringIO()
-        tb = ei[2]
-        # See issues #9427, #1553375. Commented out for now.
-        #if getattr(self, 'fullstack', False):
-        #    traceback.print_stack(tb.tb_frame.f_back, file=sio)
-        traceback.print_exception(ei[0], ei[1], tb, None, sio)
-        s = sio.getvalue()
-        sio.close()
-        if s[-1:] == "\n":
-            s = s[:-1]
+        # TODO(T53182344) Revert. Necessary because there is no StringIO and
+        # working traceback.print_exception() yet.
+        # sio = io.StringIO()
+        # tb = ei[2]
+        # # See issues #9427, #1553375. Commented out for now.
+        # #if getattr(self, 'fullstack', False):
+        # #    traceback.print_stack(tb.tb_frame.f_back, file=sio)
+        # traceback.print_exception(ei[0], ei[1], tb, None, sio)
+        # s = sio.getvalue()
+        # sio.close()
+        # if s[-1:] == "\n":
+        #     s = s[:-1]
+        s = f"{ei[0]} {ei[1]}\n{ei[2]}"
         return s
 
     def usesTime(self):
