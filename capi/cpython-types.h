@@ -62,18 +62,6 @@ typedef struct bufferinfo {
   void* internal;
 } Py_buffer;
 
-typedef struct _PyArg_Parser {
-  const char* format;
-  const char* const* keywords;
-  const char* fname;
-  const char* custom_msg;
-  int pos;            // number of positional-only arguments
-  int min;            // minimal number of arguments
-  int max;            // maximal number of positional arguments
-  PyObject* kwtuple;  // tuple of keyword parameter names
-  struct _PyArg_Parser* next;
-} _PyArg_Parser;
-
 typedef void (*freefunc)(void*);
 typedef void (*destructor)(PyObject*);
 typedef int (*printfunc)(PyObject*, FILE*, int);
