@@ -2895,16 +2895,6 @@ RawObject Runtime::newDictWithSize(word initial_size) {
   return *result;
 }
 
-bool Runtime::dictHasEmptyItem(const Tuple& data) {
-  for (word index = 0; index < data.length();
-       index += Dict::Bucket::kNumPointers) {
-    if (Dict::Bucket::isEmpty(*data, index)) {
-      return true;
-    }
-  }
-  return false;
-}
-
 void Runtime::dictAtPutWithHash(Thread* thread, const Dict& dict,
                                 const Object& key, const Object& value,
                                 const Object& key_hash) {
@@ -2930,7 +2920,7 @@ void Runtime::dictAtPutWithHash(Thread* thread, const Dict& dict,
     dict.decrementNumUsableItems();
     dictEnsureCapacity(thread, dict);
   }
-  DCHECK(dictHasEmptyItem(data), "dict must have at least an empty item");
+  DCHECK(dict.hasUsableItems(), "dict must have an empty bucket left");
 }
 
 void Runtime::dictAtPut(Thread* thread, const Dict& dict, const Object& key,
@@ -3012,7 +3002,7 @@ RawObject Runtime::dictAtIfAbsentPut(Thread* thread, const Dict& dict,
     dict.decrementNumUsableItems();
     dictEnsureCapacity(thread, dict);
   }
-  DCHECK(dictHasEmptyItem(data), "dict must have at least an empty item");
+  DCHECK(dict.hasUsableItems(), "dict must have an empty bucket left");
   return *value;
 }
 
@@ -3070,9 +3060,6 @@ bool Runtime::dictLookup(const Tuple& data, const Object& key,
     *index = -1;
     return false;
   }
-  DCHECK(dictHasEmptyItem(data),
-         "dict must be non-empty and have at least an empty item to guarantee "
-         "termination of lookup");
   word bucket_mask;
   // hash value left shifted per probing to use different bits
   // for probing.
