@@ -115,6 +115,11 @@ RawObject ApiHandle::dictRemoveIdentityEquals(Thread* thread, const Dict& dict,
   return *result;
 }
 
+ApiHandle* ApiHandle::atIndex(Runtime* runtime, word index) {
+  return castFromObject(Dict::Bucket::value(
+      Tuple::cast(Dict::cast(runtime->apiHandles()).data()), index));
+}
+
 ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);

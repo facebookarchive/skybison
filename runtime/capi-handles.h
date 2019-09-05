@@ -18,6 +18,10 @@ class ApiHandle : public PyObject {
   // of the handle.
   static ApiHandle* borrowedReference(Thread* thread, RawObject obj);
 
+  // Returns the handle in Runtime::apiHandles() at index `index`. This is
+  // useful when iterating over all of `apiHandles()`.
+  static ApiHandle* atIndex(Runtime* runtime, word index);
+
   // If py_obj == nullptr, return Error. Otherwise, convert py_obj to a managed
   // object, decref it, and return the managed object. This effectively converts
   // one reference to py_obj into a managed reference.

@@ -4238,16 +4238,15 @@ void Runtime::freeApiHandles() {
   Dict dict(&scope, apiHandles());
   Tuple buckets(&scope, dict.data());
   for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*buckets, &i);) {
-    Object key(&scope, Dict::Bucket::key(*buckets, i));
-    ApiHandle* handle = ApiHandle::borrowedReference(thread, *key);
+    ApiHandle* handle = ApiHandle::atIndex(this, i);
     if (ApiHandle::nativeRefcnt(handle) == 0) handle->dispose();
   }
 
   // Finally, skip trying to cleanly deallocate the object. Just free
   // the memory without calling the deallocation functions.
   for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*buckets, &i);) {
-    Object key(&scope, Dict::Bucket::key(*buckets, i));
-    ApiHandle::borrowedReference(thread, *key)->dispose();
+    ApiHandle* handle = ApiHandle::atIndex(this, i);
+    handle->dispose();
   }
   while (tracked_native_objects_ != nullptr) {
     NativeObjectNode* entry =
