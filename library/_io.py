@@ -28,21 +28,40 @@ of open() are intended to be used as keyword arguments."""
 # This is the patch decorator, injected by our boot process. flake8 has no
 # knowledge about its definition and will complain without this gross circular
 # helper here.
+_bytes_check = _bytes_check  # noqa: F821
+_float_check = _float_check  # noqa: F821
 _index = _index  # noqa: F821
 _int_check = _int_check  # noqa: F821
+_object_type_hasattr = _object_type_hasattr  # noqa: F821
+_os_write = _os_write  # noqa: F821
 _patch = _patch  # noqa: F821
-_unimplemented = _unimplemented  # noqa: F821
+_str_check = _str_check  # noqa: F821
 _type = _type  # noqa: F821
+_type_name = _type_name  # noqa: F821
+_unimplemented = _unimplemented  # noqa: F821
 
 
 DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
+SEEK_SET = 0
+SEEK_CUR = 1
+SEEK_END = 2
 
 
-class BlockingIOError:
-    """unimplemented"""
+from builtins import BlockingIOError
+from errno import EISDIR as errno_EISDIR
 
-    def __init__(self, *args, **kwargs):
-        _unimplemented()
+from _os import (
+    close as _os_close,
+    fstat_size as _os_fstat_size,
+    ftruncate as _os_ftruncate,
+    isatty as _os_isatty,
+    isdir as _os_isdir,
+    lseek as _os_lseek,
+    open as _os_open,
+    parse_mode as _os_parse_mode,
+    read as _os_read,
+    set_noinheritable as _os_set_noinheritable,
+)
 
 
 class BufferedRWPair:
@@ -67,13 +86,6 @@ class BufferedReader:
 
 
 class BufferedWriter:
-    """unimplemented"""
-
-    def __init__(self, *args, **kwargs):
-        _unimplemented()
-
-
-class FileIO:
     """unimplemented"""
 
     def __init__(self, *args, **kwargs):
@@ -572,8 +584,6 @@ class BytesIO(bootstrap=True):
 
     def close(self):
         self._buffer.clear()
-        # TODO(emacs): Call super().close() instead. There's some
-        # unidentifiable bug with it right now.
         _BufferedIOBase.close(self)
 
     def read(self, size=None):
@@ -680,6 +690,284 @@ class BytesIO(bootstrap=True):
         if self.closed:
             raise ValueError("I/O operation on closed file.")
         return True
+
+
+class FileIO(_RawIOBase, bootstrap=True):
+    def __init__(self, file, mode="r", closefd=True, opener=None):  # noqa: C901
+        if _float_check(file):
+            raise TypeError("integer argument expected, got float")
+        fd = -1
+        if _int_check(file):
+            if file < 0:
+                raise ValueError("negative file descriptor")
+            fd = file
+
+        if not _str_check(mode):
+            raise TypeError(f"invalid mode for FileIO: {mode!s}")
+        mode_set = frozenset(mode)
+        if not mode_set <= frozenset("xrwab+"):
+            raise ValueError(f"invalid mode: {mode!s}")
+        # Is mode non empty, with exactly one of r, w, a, or x, and maybe a +
+        # i.e. it should match [rwax]\+?
+        if sum(c in "rwax" for c in mode) != 1 or mode.count("+") > 1:
+            raise ValueError(
+                "Must have exactly one of create/read/write/append "
+                "mode and at most one plus"
+            )
+
+        appending = False
+        created = False
+        readable = False
+        seekable = None
+        writable = False
+
+        if "x" in mode:
+            created = True
+            writable = True
+        elif "r" in mode:
+            readable = True
+        elif "w" in mode:
+            writable = True
+        elif "a" in mode:
+            writable = True
+            appending = True
+
+        if "+" in mode:
+            readable = True
+            writable = True
+
+        flags = _os_parse_mode(mode)
+        self.name = file
+        if fd < 0:
+            # file was not an int, so we have to open it
+            if not closefd:
+                raise ValueError("Cannot use closefd=False with file name")
+            if opener is None:
+                fd = _os_open(file, flags, 0o666)
+            else:
+                fd = opener(file, flags)
+                if not _int_check(fd):
+                    raise TypeError("expected integer from opener")
+                if fd < 0:
+                    raise ValueError(f"opener returned {fd}")
+
+        try:
+            if opener:
+                _os_set_noinheritable(fd)
+
+            if _os_isdir(fd):
+                raise IsADirectoryError(errno_EISDIR, "Is a directory")
+
+            # TODO(T52792779): Don't translate newlines if _setmode is non-None
+            # by setting O_BINARY
+
+            if appending:
+                # For consistent behavior, we explicitly seek to the end of
+                # file (otherwise, it might be done only on the first write()).
+                _os_lseek(fd, 0, SEEK_END)
+        except Exception:
+            _os_close(fd)
+            raise
+
+        self._fd = fd
+        self._closefd = closefd
+        self._appending = appending
+        self._created = created
+        self._readable = readable
+        self._seekable = seekable
+        self._writable = writable
+
+    def __del__(self):
+        if not self.closed and self._closefd:
+            import warnings
+
+            warnings.warn(
+                f"unclosed file {self!r}", ResourceWarning, stacklevel=2, source=self
+            )
+            self.close()
+
+    def __getstate__(self):
+        raise TypeError(f"cannot serialize '{_type_name(self.__class__)}' object")
+
+    def __repr__(self):
+        class_name = f"_io.{self.__class__.__qualname__}"
+        if self.closed:
+            return f"<{class_name} [closed]>"
+        try:
+            name = self.name
+        except AttributeError:
+            return (
+                f"<{class_name} name={self._fd} "
+                f"mode={self.mode!r} closefd={self._closefd!r}>"
+            )
+        else:
+            return (
+                f"<{class_name} name={name!r} "
+                f"mode={self.mode!r} closefd={self._closefd!r}>"
+            )
+
+    def _checkReadable(self):
+        if not self._readable:
+            raise UnsupportedOperation("File not open for reading")
+
+    def _checkWritable(self, msg=None):
+        if not self._writable:
+            raise UnsupportedOperation("File not open for writing")
+
+    def read(self, size=None):
+        self._checkClosed()
+        self._checkReadable()
+        if size is None or size < 0:
+            return FileIO.readall(self)
+        try:
+            return _os_read(self._fd, size)
+        except BlockingIOError:
+            return None
+
+    def readall(self):
+        self._checkClosed()
+        if not self._readable:
+            return b""
+        bufsize = DEFAULT_BUFFER_SIZE
+        try:
+            pos = _os_lseek(self._fd, 0, SEEK_CUR)
+            end = _os_fstat_size(self._fd)
+            if end >= pos:
+                bufsize = end - pos + 1
+        except OSError:
+            pass
+
+        result = bytearray()
+        result_len = 0
+        while True:
+            if result_len >= bufsize:
+                bufsize = result_len
+                bufsize += max(bufsize, DEFAULT_BUFFER_SIZE)
+            num_bytes = bufsize - result_len
+            try:
+                chunk = _os_read(self._fd, num_bytes)
+            except BlockingIOError:
+                if result:
+                    break
+                return None
+            if not chunk:  # reached the end of the file
+                break
+            result += chunk
+            result_len = len(result)
+
+        return bytes(result)
+
+    def readinto(self, byteslike):
+        # TODO(T47880928): Support memoryview.__setitem__
+        view = memoryview(byteslike).cast("B")
+        data = self.read(len(view))
+        num_bytes = len(data)
+        view[:num_bytes] = data
+        return num_bytes
+
+    def write(self, byteslike):
+        self._checkClosed()
+        self._checkWritable()
+        buf = byteslike
+        if not _bytes_check(byteslike):
+            if not _object_type_hasattr(byteslike, "__buffer__"):
+                raise TypeError(
+                    "a bytes-like object is required, not "
+                    f"'{_type(byteslike).__name__}'"
+                )
+            try:
+                buf = byteslike.__buffer__()
+            except Exception:
+                raise TypeError(
+                    "a bytes-like object is required, not "
+                    f"'{_type(byteslike).__name__}'"
+                )
+            if not _bytes_check(buf):
+                raise TypeError(
+                    "a bytes-like object is required, not "
+                    f"'{_type(byteslike).__name__}'"
+                )
+        try:
+            return _os_write(self._fd, buf)
+        except BlockingIOError:
+            return None
+
+    def seek(self, pos, whence=SEEK_SET):
+        if _float_check(pos):
+            raise TypeError("an integer is required")
+        self._checkClosed()
+        return _os_lseek(self._fd, pos, whence)
+
+    def tell(self):
+        self._checkClosed()
+        return _os_lseek(self._fd, 0, SEEK_CUR)
+
+    def truncate(self, size=None):
+        self._checkClosed()
+        self._checkWritable()
+        if size is None:
+            size = self.tell()
+        _os_ftruncate(self._fd, size)
+        return size
+
+    def close(self):
+        if not self.closed:
+            try:
+                if self._closefd:
+                    _os_close(self._fd)
+            finally:
+                _RawIOBase.close(self)
+                self._fd = -1
+
+    def seekable(self):
+        self._checkClosed()
+        if self._seekable is None:
+            try:
+                FileIO.tell(self)
+                self._seekable = True
+            except OSError:
+                self._seekable = False
+        return self._seekable
+
+    def readable(self):
+        self._checkClosed()
+        return self._readable
+
+    def writable(self):
+        self._checkClosed()
+        return self._writable
+
+    def fileno(self):
+        self._checkClosed()
+        return self._fd
+
+    def isatty(self):
+        self._checkClosed()
+        return _os_isatty(self._fd)
+
+    @property
+    def closefd(self):
+        return self._closefd
+
+    @property
+    def mode(self):
+        if self._created:
+            if self._readable:
+                return "xb+"
+            else:
+                return "xb"
+        elif self._appending:
+            if self._readable:
+                return "ab+"
+            else:
+                return "ab"
+        elif self._readable:
+            if self._writable:
+                return "rb+"
+            else:
+                return "rb"
+        else:
+            return "wb"
 
 
 def open(

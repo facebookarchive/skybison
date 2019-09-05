@@ -107,6 +107,7 @@ class WARN_UNUSED Handle : public T {
   V(Error)                                                                     \
   V(Exception)                                                                 \
   V(ExceptionState)                                                            \
+  V(FileIO)                                                                    \
   V(Float)                                                                     \
   V(Function)                                                                  \
   V(Generator)                                                                 \

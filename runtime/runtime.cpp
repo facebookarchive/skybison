@@ -1610,9 +1610,14 @@ void Runtime::initializeHeapTypes() {
 
   // IO types
   UnderIOBaseBuiltins::initialize(this);
+  // _RawIOBase is a subclass of _IOBase
   UnderRawIOBaseBuiltins::initialize(this);
+  // _BufferedIOBase is a subclass of _RawIOBase
   UnderBufferedIOBaseBuiltins::initialize(this);
+  // BytesIO is a subclass of _BufferedIOBase
   BytesIOBuiltins::initialize(this);
+  // FileIO is a subclass of _RawIOBase
+  FileIOBuiltins::initialize(this);
 }
 
 void Runtime::initializeExceptionTypes() {
@@ -2045,11 +2050,11 @@ const ModuleInitializer Runtime::kBuiltinModules[] = {
     {SymbolId::kUnderCodecs, &UnderCodecsModule::initialize},
     {SymbolId::kUnderImp, &UnderImpModule::initialize},
     {SymbolId::kUnderOs, &UnderOsModule::initialize},
+    {SymbolId::kUnderWeakRef, &UnderWeakrefModule::initialize},
     {SymbolId::kUnderIo, &UnderIoModule::initialize},
     {SymbolId::kUnderStrMod, &UnderStrModModule::initialize},
     {SymbolId::kMarshal, &MarshalModule::initialize},
     {SymbolId::kUnderWarnings, &UnderWarningsModule::initialize},
-    {SymbolId::kUnderWeakRef, &UnderWeakrefModule::initialize},
     {SymbolId::kOperator, &OperatorModule::initialize},
     {SymbolId::kWarnings, &WarningsModule::initialize},
     {SymbolId::kSentinelId, nullptr},

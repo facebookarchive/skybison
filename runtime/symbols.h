@@ -138,6 +138,7 @@ class Runtime;
   V(DunderValues, "__values__")                                                \
   V(DunderXor, "__xor__")                                                      \
   V(UnderAddress, "_address")                                                  \
+  V(UnderAppending, "_appending")                                              \
   V(UnderAsciiDecode, "_ascii_decode")                                         \
   V(UnderAsciiEncode, "_ascii_encode")                                         \
   V(UnderBaseDir, "_base_dir")                                                 \
@@ -178,10 +179,12 @@ class Runtime;
   V(UnderClassMethod, "_classmethod")                                          \
   V(UnderClassMethodIsAbstract, "_classmethod_isabstract")                     \
   V(UnderClosed, "_closed")                                                    \
+  V(UnderCloseFd, "_closefd")                                                  \
   V(UnderCodecs, "_codecs")                                                    \
   V(UnderCodeGuard, "_code_guard")                                             \
   V(UnderComplexImag, "_complex_imag")                                         \
   V(UnderComplexReal, "_complex_real")                                         \
+  V(UnderCreated, "_created")                                                  \
   V(UnderDelattr, "_delattr")                                                  \
   V(UnderDescrClassMethod, "_descrclassmethod")                                \
   V(UnderDictBucketInsert, "_dict_bucket_insert")                              \
@@ -203,6 +206,7 @@ class Runtime;
   V(UnderEscapeDecode, "_escape_decode")                                       \
   V(UnderEscapeDecodeStateful, "_escape_decode_stateful")                      \
   V(UnderExceptionNew, "_exception_new")                                       \
+  V(UnderFd, "_fd")                                                            \
   V(UnderFindAndLoad, "_find_and_load")                                        \
   V(UnderFloatCheck, "_float_check")                                           \
   V(UnderFloatDivmod, "_float_divmod")                                         \
@@ -315,9 +319,11 @@ class Runtime;
   V(UnderRawIOBase, "_RawIOBase")                                              \
   V(UnderReadBytes, "_readbytes")                                              \
   V(UnderReadFile, "_readfile")                                                \
+  V(UnderReadable, "_readable")                                                \
   V(UnderReferent, "_referent")                                                \
   V(UnderReprEnter, "_repr_enter")                                             \
   V(UnderReprLeave, "_repr_leave")                                             \
+  V(UnderSeekable, "_seekable")                                                \
   V(UnderSeqIndex, "_seq_index")                                               \
   V(UnderSeqIterable, "_seq_iterable")                                         \
   V(UnderSeqSetIndex, "_seq_set_index")                                        \
@@ -398,6 +404,7 @@ class Runtime;
   V(UnderWarnings, "_warnings")                                                \
   V(UnderWeakLink, "_weaklink")                                                \
   V(UnderWeakRef, "_weakref")                                                  \
+  V(UnderWritable, "_writable")                                                \
   V(Abs, "abs")                                                                \
   V(AcquireLock, "acquire_lock")                                               \
   V(Add, "add")                                                                \
@@ -508,6 +515,7 @@ class Runtime;
   V(ExtensionSuffixes, "extension_suffixes")                                   \
   V(False, "False")                                                            \
   V(File, "file")                                                              \
+  V(FileIO, "FileIO")                                                          \
   V(FileExistsError, "FileExistsError")                                        \
   V(FileNotFoundError, "FileNotFoundError")                                    \
   V(Filename, "filename")                                                      \

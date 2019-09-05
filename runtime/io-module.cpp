@@ -19,6 +19,7 @@ const BuiltinMethod UnderIoModule::kBuiltinMethods[] = {
 
 const BuiltinType UnderIoModule::kBuiltinTypes[] = {
     {SymbolId::kBytesIO, LayoutId::kBytesIO},
+    {SymbolId::kFileIO, LayoutId::kFileIO},
     {SymbolId::kUnderBufferedIOBase, LayoutId::kUnderBufferedIOBase},
     {SymbolId::kUnderIOBase, LayoutId::kUnderIOBase},
     {SymbolId::kUnderRawIOBase, LayoutId::kUnderRawIOBase},
@@ -78,5 +79,17 @@ const BuiltinAttribute BytesIOBuiltins::kAttributes[] = {
 void BytesIOBuiltins::postInitialize(Runtime*, const Type& new_type) {
   new_type.setBuiltinBase(kSuperType);
 }
+
+const BuiltinAttribute FileIOBuiltins::kAttributes[] = {
+    {SymbolId::kUnderFd, FileIO::kFdOffset},
+    {SymbolId::kName, FileIO::kNameOffset},
+    {SymbolId::kUnderCreated, FileIO::kCreatedOffset},
+    {SymbolId::kUnderReadable, FileIO::kReadableOffset},
+    {SymbolId::kUnderWritable, FileIO::kWritableOffset},
+    {SymbolId::kUnderAppending, FileIO::kAppendingOffset},
+    {SymbolId::kUnderSeekable, FileIO::kSeekableOffset},
+    {SymbolId::kUnderCloseFd, FileIO::kCloseFdOffset},
+    {SymbolId::kSentinelId, 0},
+};
 
 }  // namespace python

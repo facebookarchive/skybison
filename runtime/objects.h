@@ -46,6 +46,7 @@ class Handle;
   V(DictValues)                                                                \
   V(Ellipsis)                                                                  \
   V(ExceptionState)                                                            \
+  V(FileIO)                                                                    \
   V(Float)                                                                     \
   V(FrozenSet)                                                                 \
   V(Function)                                                                  \
@@ -288,6 +289,7 @@ class RawObject {
   bool isEllipsis() const;
   bool isException() const;
   bool isExceptionState() const;
+  bool isFileIO() const;
   bool isFloat() const;
   bool isFrozenSet() const;
   bool isFunction() const;
@@ -2965,6 +2967,47 @@ class RawBytesIO : public RawUnderBufferedIOBase {
   RAW_OBJECT_COMMON_NO_CAST(BytesIO);
 };
 
+class RawFileIO : public RawUnderRawIOBase {
+ public:
+  // Getters and setters
+  RawObject fd() const;
+  void setFd(RawObject fd) const;
+
+  RawObject name() const;
+  void setName(RawObject value) const;
+
+  RawObject isCreated() const;
+  void setCreated(RawObject value) const;
+
+  RawObject isReadable() const;
+  void setReadable(RawObject value) const;
+
+  RawObject isWritable() const;
+  void setWritable(RawObject value) const;
+
+  RawObject isAppending() const;
+  void setAppending(RawObject value) const;
+
+  RawObject seekable() const;
+  void setSeekable(RawObject value) const;
+
+  RawObject shouldCloseFd() const;
+  void setShouldCloseFd(RawObject value) const;
+
+  // Layout
+  static const int kFdOffset = RawUnderRawIOBase::kSize;
+  static const int kNameOffset = kFdOffset + kPointerSize;
+  static const int kCreatedOffset = kNameOffset + kPointerSize;
+  static const int kReadableOffset = kCreatedOffset + kPointerSize;
+  static const int kWritableOffset = kReadableOffset + kPointerSize;
+  static const int kAppendingOffset = kWritableOffset + kPointerSize;
+  static const int kSeekableOffset = kAppendingOffset + kPointerSize;
+  static const int kCloseFdOffset = kSeekableOffset + kPointerSize;
+  static const int kSize = kCloseFdOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON_NO_CAST(FileIO);
+};
+
 // RawObject
 
 inline RawObject::RawObject(uword raw) : raw_{raw} {}
@@ -3139,6 +3182,10 @@ inline bool RawObject::isException() const {
 
 inline bool RawObject::isExceptionState() const {
   return isHeapObjectWithLayout(LayoutId::kExceptionState);
+}
+
+inline bool RawObject::isFileIO() const {
+  return isHeapObjectWithLayout(LayoutId::kFileIO);
 }
 
 inline bool RawObject::isFloat() const {
@@ -5726,6 +5773,62 @@ inline RawObject RawBytesIO::pos() const {
 
 inline void RawBytesIO::setPos(RawObject pos) const {
   instanceVariableAtPut(kPosOffset, pos);
+}
+
+// RawFileIO
+
+inline RawObject RawFileIO::fd() const { return instanceVariableAt(kFdOffset); }
+
+inline void RawFileIO::setFd(RawObject fd) const {
+  instanceVariableAtPut(kFdOffset, fd);
+}
+
+inline RawObject RawFileIO::isCreated() const {
+  return instanceVariableAt(kCreatedOffset);
+}
+
+inline void RawFileIO::setCreated(RawObject value) const {
+  instanceVariableAtPut(kCreatedOffset, value);
+}
+
+inline RawObject RawFileIO::isReadable() const {
+  return instanceVariableAt(kReadableOffset);
+}
+
+inline void RawFileIO::setReadable(RawObject value) const {
+  instanceVariableAtPut(kReadableOffset, value);
+}
+
+inline RawObject RawFileIO::isWritable() const {
+  return instanceVariableAt(kWritableOffset);
+}
+
+inline void RawFileIO::setWritable(RawObject value) const {
+  instanceVariableAtPut(kWritableOffset, value);
+}
+
+inline RawObject RawFileIO::isAppending() const {
+  return instanceVariableAt(kAppendingOffset);
+}
+
+inline void RawFileIO::setAppending(RawObject value) const {
+  instanceVariableAtPut(kAppendingOffset, value);
+}
+
+inline RawObject RawFileIO::seekable() const {
+  return instanceVariableAt(kSeekableOffset);
+}
+
+inline void RawFileIO::setSeekable(RawObject value) const {
+  instanceVariableAtPut(kSeekableOffset, value);
+}
+
+inline RawObject RawFileIO::shouldCloseFd() const {
+  return instanceVariableAt(kCloseFdOffset);
+}
+
+inline void RawFileIO::setShouldCloseFd(RawObject value) const {
+  instanceVariableAtPut(kCloseFdOffset, value);
 }
 
 }  // namespace python

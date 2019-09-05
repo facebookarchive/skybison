@@ -48,4 +48,11 @@ class BytesIOBuiltins
   static const BuiltinAttribute kAttributes[];
 };
 
+class FileIOBuiltins
+    : public Builtins<FileIOBuiltins, SymbolId::kFileIO, LayoutId::kFileIO,
+                      LayoutId::kUnderRawIOBase> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+};
+
 }  // namespace python
