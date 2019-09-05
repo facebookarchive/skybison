@@ -4246,6 +4246,13 @@ class OctTests(unittest.TestCase):
         )
 
 
+class OpenTests(unittest.TestCase):
+    def test_function_exists(self):
+        import builtins
+
+        self.assertTrue(hasattr(builtins, "open"))
+
+
 class PowTests(unittest.TestCase):
     def test_binary_first_arg_pow_returns_result(self):
         dunder_pow_args = None

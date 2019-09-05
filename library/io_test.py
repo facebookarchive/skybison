@@ -809,5 +809,180 @@ class FspathTests(unittest.TestCase):
         self.assertRaises(TypeError, _io._fspath, result)
 
 
+class OpenTests(unittest.TestCase):
+    def test_open_with_bad_mode_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            _io.open(0, mode=5)
+
+        self.assertEqual(
+            str(context.exception), "open() argument 2 must be str, not int"
+        )
+
+    def test_open_with_bad_buffering_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            _io.open(0, buffering=None)
+
+        self.assertEqual(
+            str(context.exception), "an integer is required (got type NoneType)"
+        )
+
+    def test_open_with_bad_encoding_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            _io.open(0, encoding=5)
+
+        self.assertEqual(
+            str(context.exception), "open() argument 4 must be str or None, not int"
+        )
+
+    def test_open_with_bad_errors_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            _io.open(0, errors=5)
+
+        self.assertEqual(
+            str(context.exception), "open() argument 5 must be str or None, not int"
+        )
+
+    def test_open_with_duplicate_mode_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            _io.open(0, mode="rr")
+
+        self.assertEqual(str(context.exception), "invalid mode: 'rr'")
+
+    def test_open_with_bad_mode_character_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            _io.open(0, mode="q")
+
+        self.assertEqual(str(context.exception), "invalid mode: 'q'")
+
+    def test_open_with_U_and_writing_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            # TODO(emacs): Remove b once TextIOWrapper is available
+            _io.open(0, mode="Ubw")
+
+        self.assertRegex(str(context.exception), "mode U cannot be combined with")
+
+    def test_open_with_U_and_appending_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            # TODO(emacs): Remove b once TextIOWrapper is available
+            _io.open(0, mode="Uba")
+
+        self.assertRegex(str(context.exception), "mode U cannot be combined with")
+
+    def test_open_with_U_and_updating_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            # TODO(emacs): Remove b once TextIOWrapper is available
+            _io.open(0, mode="Ub+")
+
+        self.assertRegex(str(context.exception), "mode U cannot be combined with")
+
+    def test_open_with_text_and_binary_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            _io.open(0, mode="tb")
+
+        self.assertEqual(
+            str(context.exception), "can't have text and binary mode at once"
+        )
+
+    def test_open_with_creating_and_reading_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            # TODO(emacs): Remove b once TextIOWrapper is available
+            _io.open(0, mode="rxb")
+
+        self.assertEqual(
+            str(context.exception),
+            "must have exactly one of create/read/write/append mode",
+        )
+
+    def test_open_with_creating_and_writing_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            # TODO(emacs): Remove b once TextIOWrapper is available
+            _io.open(0, mode="wxb")
+
+        self.assertEqual(
+            str(context.exception),
+            "must have exactly one of create/read/write/append mode",
+        )
+
+    def test_open_with_creating_and_appending_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            # TODO(emacs): Remove b once TextIOWrapper is available
+            _io.open(0, mode="axb")
+
+        self.assertEqual(
+            str(context.exception),
+            "must have exactly one of create/read/write/append mode",
+        )
+
+    def test_open_with_reading_and_writing_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            # TODO(emacs): Remove b once TextIOWrapper is available
+            _io.open(0, mode="rwb")
+
+        self.assertEqual(
+            str(context.exception),
+            "must have exactly one of create/read/write/append mode",
+        )
+
+    def test_open_with_reading_and_appending_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            # TODO(emacs): Remove b once TextIOWrapper is available
+            _io.open(0, mode="rab")
+
+        self.assertEqual(
+            str(context.exception),
+            "must have exactly one of create/read/write/append mode",
+        )
+
+    def test_open_with_writing_and_appending_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            # TODO(emacs): Remove b once TextIOWrapper is available
+            _io.open(0, mode="wab")
+
+        self.assertEqual(
+            str(context.exception),
+            "must have exactly one of create/read/write/append mode",
+        )
+
+    def test_open_with_no_reading_creating_writing_appending_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            # TODO(emacs): Remove b once TextIOWrapper is available
+            _io.open(0, mode="b")
+
+        self.assertEqual(
+            str(context.exception),
+            "Must have exactly one of create/read/write/append mode and at "
+            "most one plus",
+        )
+
+    def test_open_with_binary_and_encoding_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            _io.open(0, mode="rb", encoding="utf-8")
+
+        self.assertEqual(
+            str(context.exception), "binary mode doesn't take an encoding argument"
+        )
+
+    def test_open_with_binary_and_errors_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            _io.open(0, mode="rb", errors="error")
+
+        self.assertEqual(
+            str(context.exception), "binary mode doesn't take an errors argument"
+        )
+
+    def test_open_with_binary_and_newline_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            _io.open(0, mode="rb", newline="nl")
+
+        self.assertEqual(
+            str(context.exception), "binary mode doesn't take a newline argument"
+        )
+
+    def test_open_with_no_buffering_and_binary_returns_file_io(self):
+        fd = _getfd()
+        with _io.open(fd, buffering=False, mode="rb") as result:
+            self.assertIsInstance(result, _io.FileIO)
+
+
 if __name__ == "__main__":
     unittest.main()

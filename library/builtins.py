@@ -3416,19 +3416,6 @@ def oct(number) -> str:
     pass
 
 
-def open(
-    file,
-    mode="r",
-    buffering=-1,
-    encoding=None,
-    errors=None,
-    newline=None,
-    closefd=True,
-    opener=None,
-):
-    _unimplemented()
-
-
 @_patch
 def ord(c):
     pass

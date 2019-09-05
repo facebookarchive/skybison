@@ -49,7 +49,7 @@ SEEK_CUR = 1
 SEEK_END = 2
 
 
-from builtins import BlockingIOError
+import builtins
 from errno import EISDIR as errno_EISDIR
 
 from _os import (
@@ -64,6 +64,9 @@ from _os import (
     read as _os_read,
     set_noinheritable as _os_set_noinheritable,
 )
+
+
+BlockingIOError = builtins.BlockingIOError
 
 
 class BufferedRWPair:
@@ -984,7 +987,7 @@ def _fspath(obj):
     raise TypeError("expected __fspath__ to return str or bytes")
 
 
-def open(
+def open(  # noqa: C901
     file,
     mode="r",
     buffering=-1,
@@ -994,7 +997,107 @@ def open(
     closefd=True,
     opener=None,
 ):
-    _unimplemented()
+    if not _int_check(file):
+        file = _fspath(file)
+    if not isinstance(file, (str, bytes, int)):
+        # TODO(emacs): Is this check necessary? os.fspath guarantees str/bytes,
+        # above check guarantees int or str or bytes
+        raise TypeError("invalid file: %r" % file)
+    if not isinstance(mode, str):
+        raise TypeError(f"open() argument 2 must be str, not {_type(mode).__name__}")
+    if not isinstance(buffering, int):
+        raise TypeError(
+            f"an integer is required (got type {_type(buffering).__name__})"
+        )
+    if encoding is not None and not isinstance(encoding, str):
+        raise TypeError(
+            f"open() argument 4 must be str or None, not {_type(encoding).__name__}"
+        )
+    if errors is not None and not isinstance(errors, str):
+        raise TypeError(
+            f"open() argument 5 must be str or None, not {_type(errors).__name__}"
+        )
+    modes = set(mode)
+    if modes - set("axrwb+tU") or len(mode) > len(modes):
+        raise ValueError("invalid mode: %r" % mode)
+    creating = "x" in modes
+    reading = "r" in modes
+    writing = "w" in modes
+    appending = "a" in modes
+    updating = "+" in modes
+    text = "t" in modes
+    binary = "b" in modes
+    if not binary:
+        print("Non-binary file IO is unimplemented")
+        _unimplemented()
+    if "U" in modes:
+        if creating or writing or appending or updating:
+            raise ValueError("mode U cannot be combined with 'x', 'w', 'a', or '+'")
+        import warnings
+
+        warnings.warn("'U' mode is deprecated", DeprecationWarning, 2)
+        reading = True
+    if text and binary:
+        raise ValueError("can't have text and binary mode at once")
+    if creating + reading + writing + appending > 1:
+        raise ValueError("must have exactly one of create/read/write/append mode")
+    if not (creating or reading or writing or appending):
+        raise ValueError(
+            "Must have exactly one of create/read/write/append mode and at "
+            "most one plus"
+        )
+    if binary and encoding is not None:
+        raise ValueError("binary mode doesn't take an encoding argument")
+    if binary and errors is not None:
+        raise ValueError("binary mode doesn't take an errors argument")
+    if binary and newline is not None:
+        raise ValueError("binary mode doesn't take a newline argument")
+    raw = FileIO(
+        file,
+        (creating and "x" or "")
+        + (reading and "r" or "")
+        + (writing and "w" or "")
+        + (appending and "a" or "")
+        + (updating and "+" or ""),
+        closefd,
+        opener=opener,
+    )
+    result = raw
+    try:
+        if buffering:
+            print("Buffered IO is unimplemented")
+            _unimplemented()
+        line_buffering = False
+        if buffering == 1 or buffering < 0 and raw.isatty():
+            buffering = -1
+            line_buffering = True
+        if buffering < 0:
+            buffering = DEFAULT_BUFFER_SIZE
+        if buffering == 0:
+            if binary:
+                return result
+            raise ValueError("can't have unbuffered text I/O")
+        if updating:
+            buffer = BufferedRandom(raw, buffering)
+        elif creating or writing or appending:
+            buffer = BufferedWriter(raw, buffering)
+        elif reading:
+            buffer = BufferedReader(raw, buffering)
+        else:
+            raise ValueError("unknown mode: %r" % mode)
+        result = buffer
+        if binary:
+            return result
+        text = TextIOWrapper(buffer, encoding, errors, newline, line_buffering)
+        result = text
+        text.mode = mode
+        return result
+    except Exception:
+        result.close()
+        raise
+
+
+builtins.open = open
 
 
 # TODO(T47813322): Kill this function once IncrementalNewlineDecoder is written.
