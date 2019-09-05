@@ -37,7 +37,7 @@ static RawObject initializeExtensionType(PyObject* extension_type) {
   layout.setDescribedType(*type);
   type.setInstanceLayout(*layout);
 
-  pyobj->reference_ = reinterpret_cast<void*>(type.raw());
+  pyobj->reference_ = type.raw();
   return *type;
 }
 
@@ -122,7 +122,7 @@ TEST_F(CApiHandlesTest, ExtensionInstanceObjectReturnsPyObject) {
   HeapObject instance(&scope, runtime_.newInstance(layout));
 
   PyObject* type_handle = ApiHandle::newReference(thread_, *type);
-  PyObject pyobj = {nullptr, 1, reinterpret_cast<PyTypeObject*>(type_handle)};
+  PyObject pyobj = {0, 1, reinterpret_cast<PyTypeObject*>(type_handle)};
   Object object_ptr(&scope,
                     runtime_.newIntFromCPtr(static_cast<void*>(&pyobj)));
   instanceSetAttr(thread_, instance, attr_name, object_ptr);
@@ -162,7 +162,7 @@ TEST_F(CApiHandlesTest, PyObjectReturnsExtensionInstance) {
   PyObject* extension_type_ref = ApiHandle::newReference(thread_, *type);
 
   PyObject* pyobj = static_cast<PyObject*>(std::malloc(sizeof(PyObject)));
-  pyobj->reference_ = nullptr;
+  pyobj->reference_ = 0;
   pyobj->ob_refcnt = 1;
   pyobj->ob_type = reinterpret_cast<PyTypeObject*>(extension_type_ref);
   Object handle_obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());

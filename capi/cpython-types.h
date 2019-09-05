@@ -1,7 +1,8 @@
 #ifndef CPYTHON_TYPES_H
 #define CPYTHON_TYPES_H
 
-#include <stdio.h> /* For FILE */
+#include <stdint.h> /* For uintptr_t */
+#include <stdio.h>  /* For FILE */
 
 #ifdef __cplusplus
 extern "C" {
@@ -11,7 +12,7 @@ typedef ssize_t Py_ssize_t;
 
 typedef Py_ssize_t Py_hash_t;
 
-#define _PyObject_HEAD_EXTRA void* reference_;
+#define _PyObject_HEAD_EXTRA uintptr_t reference_;
 
 #define _PyObject_EXTRA_INIT 0,
 

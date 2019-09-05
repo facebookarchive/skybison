@@ -32,7 +32,7 @@ PY_EXPORT void _Py_Dealloc_Func(PyObject* obj) {
   }
   PyTypeObject* type = reinterpret_cast<PyTypeObject*>(PyObject_Type(obj));
   auto dealloc = bit_cast<destructor>(PyType_GetSlot(type, Py_tp_dealloc));
-  if (obj->reference_ != nullptr) {
+  if (obj->reference_ != 0) {
     Thread::current()->runtime()->untrackNativeObject(obj);
   }
   dealloc(obj);
@@ -219,7 +219,7 @@ PY_EXPORT Py_hash_t PyObject_HashNotImplemented(PyObject* /* v */) {
 
 PY_EXPORT PyObject* PyObject_Init(PyObject* obj, PyTypeObject* typeobj) {
   if (obj == nullptr) return PyErr_NoMemory();
-  obj->reference_ = nullptr;
+  obj->reference_ = 0;
   obj->ob_type = typeobj;
   if (PyType_GetFlags(typeobj) & Py_TPFLAGS_HEAPTYPE) {
     Py_INCREF(typeobj);

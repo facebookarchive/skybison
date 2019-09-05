@@ -11,7 +11,7 @@ namespace python {
 
 ApiHandle* ApiHandle::alloc(Thread* thread, RawObject reference) {
   ApiHandle* result = static_cast<ApiHandle*>(std::malloc(sizeof(ApiHandle)));
-  result->reference_ = reinterpret_cast<void*>(reference.raw());
+  result->reference_ = reference.raw();
   result->ob_refcnt = 0;
   RawObject type = thread->runtime()->typeOf(reference);
   if (reference == type) {

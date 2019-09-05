@@ -1443,7 +1443,7 @@ bool Runtime::untrackObject(ListEntry* entry) {
 
 bool Runtime::trackNativeObject(void* native) {
   // This is an already untracked object.
-  if (reinterpret_cast<PyObject*>(native)->reference_ != nullptr) {
+  if (reinterpret_cast<PyObject*>(native)->reference_ != 0) {
     return false;
   }
   NativeObjectNode* entry = reinterpret_cast<NativeObjectNode*>(
@@ -1451,7 +1451,8 @@ bool Runtime::trackNativeObject(void* native) {
   entry->prev = nullptr;
   entry->next = nullptr;
   entry->native_ptr = native;
-  reinterpret_cast<PyObject*>(native)->reference_ = entry;
+  reinterpret_cast<PyObject*>(native)->reference_ =
+      reinterpret_cast<uword>(entry);
   return listEntryInsert(entry, &tracked_native_objects_);
 }
 

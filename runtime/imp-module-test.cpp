@@ -141,7 +141,7 @@ TEST_F(ImportBuiltinsTest, ExecBuiltinWithSingleSlotExecutesCorrectly) {
   };
   static PyModuleDef def = {
       // Empty header to mimic a PyModuleDef_HEAD_INIT
-      {{nullptr, 0, nullptr}, nullptr, 0, nullptr},
+      {{0, 0, nullptr}, nullptr, 0, nullptr},
       "mymodule",
       nullptr,
       0,
