@@ -83,6 +83,7 @@ class Handle;
   V(Type)                                                                      \
   V(TypeProxy)                                                                 \
   V(UnderBufferedIOBase)                                                       \
+  V(UnderBufferedIOMixin)                                                      \
   V(UnderIOBase)                                                               \
   V(UnderRawIOBase)                                                            \
   V(ValueCell)                                                                 \
@@ -334,6 +335,7 @@ class RawObject {
   bool isType() const;
   bool isTypeProxy() const;
   bool isUnderBufferedIOBase() const;
+  bool isUnderBufferedIOMixin() const;
   bool isUnderIOBase() const;
   bool isUnderRawIOBase() const;
   bool isUnicodeDecodeError() const;
@@ -2948,6 +2950,19 @@ class RawUnderBufferedIOBase : public RawUnderRawIOBase {
   RAW_OBJECT_COMMON_NO_CAST(UnderBufferedIOBase);
 };
 
+class RawUnderBufferedIOMixin : public RawUnderBufferedIOBase {
+ public:
+  // Getters and setters
+  RawObject underlying() const;
+  void setUnderlying(RawObject value) const;
+
+  // Layout
+  static const int kUnderlyingOffset = RawUnderBufferedIOBase::kSize;
+  static const int kSize = kUnderlyingOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON_NO_CAST(UnderBufferedIOMixin);
+};
+
 class RawBytesIO : public RawUnderBufferedIOBase {
  public:
   // Getters and setters
@@ -3110,6 +3125,10 @@ inline bool RawObject::isBoundMethod() const {
 
 inline bool RawObject::isUnderBufferedIOBase() const {
   return isHeapObjectWithLayout(LayoutId::kUnderBufferedIOBase);
+}
+
+inline bool RawObject::isUnderBufferedIOMixin() const {
+  return isHeapObjectWithLayout(LayoutId::kUnderBufferedIOMixin);
 }
 
 inline bool RawObject::isByteArray() const {
@@ -5755,6 +5774,16 @@ inline bool RawUnderIOBase::closed() const {
 
 inline void RawUnderIOBase::setClosed(bool closed) const {
   instanceVariableAtPut(kClosedOffset, RawBool::fromBool(closed));
+}
+
+// RawUnderBufferedIOMixin
+
+inline RawObject RawUnderBufferedIOMixin::underlying() const {
+  return instanceVariableAt(kUnderlyingOffset);
+}
+
+inline void RawUnderBufferedIOMixin::setUnderlying(RawObject value) const {
+  instanceVariableAtPut(kUnderlyingOffset, value);
 }
 
 // RawBytesIO

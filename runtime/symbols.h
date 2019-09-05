@@ -146,6 +146,7 @@ class Runtime;
   V(UnderBoundMethod, "_bound_method")                                         \
   V(UnderBuffer, "_buffer")                                                    \
   V(UnderBufferedIOBase, "_BufferedIOBase")                                    \
+  V(UnderBufferedIOMixin, "_BufferedIOMixin")                                  \
   V(UnderBuiltins, "_builtins")                                                \
   V(UnderByteArrayCheck, "_bytearray_check")                                   \
   V(UnderByteArrayClear, "_bytearray_clear")                                   \
@@ -316,6 +317,7 @@ class Runtime;
   V(UnderRangeCheck, "_range_check")                                           \
   V(UnderRangeGuard, "_range_guard")                                           \
   V(UnderRangeLen, "_range_len")                                               \
+  V(UnderRaw, "_raw")                                                          \
   V(UnderRawIOBase, "_RawIOBase")                                              \
   V(UnderReadBytes, "_readbytes")                                              \
   V(UnderReadFile, "_readfile")                                                \

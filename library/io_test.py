@@ -6,6 +6,12 @@ import _io
 from test_support import pyro_only
 
 
+try:
+    from _io import _BufferedIOMixin
+except ImportError:
+    pass
+
+
 def _getfd():
     r, w = os.pipe()
     os.close(w)  # So that read() is harmless
@@ -982,6 +988,283 @@ class OpenTests(unittest.TestCase):
         fd = _getfd()
         with _io.open(fd, buffering=False, mode="rb") as result:
             self.assertIsInstance(result, _io.FileIO)
+
+
+@pyro_only
+class UnderBufferedIOMixinTests(unittest.TestCase):
+    def test_dunder_init_sets_raw(self):
+        with _io.FileIO(_getfd(), closefd=True) as f:
+            result = _BufferedIOMixin(f)
+            self.assertIs(result.raw, f)
+
+    def test_dunder_getstate_always_raises_type_error(self):
+        result = _BufferedIOMixin(None)
+        self.assertRaises(TypeError, result.__getstate__)
+
+    def test_dunder_repr_returns_str(self):
+        result = _BufferedIOMixin(None)
+        self.assertEqual(result.__repr__(), "<_io._BufferedIOMixin>")
+
+    def test_dunder_repr_gets_raw_name(self):
+        class C:
+            name = "foo"
+
+        result = _BufferedIOMixin(C())
+        self.assertEqual(result.__repr__(), "<_io._BufferedIOMixin name='foo'>")
+
+    def test_close_with_none_raw_does_nothing(self):
+        result = _BufferedIOMixin(None)
+        self.assertIsNone(result.close())
+
+    def test_close_with_closed_raw_does_nothing(self):
+        class C:
+            closed = True
+
+            def close(self):
+                pass
+
+        result = _BufferedIOMixin(C())
+        self.assertIsNone(result.close())
+
+    def test_close_calls_raw_flush(self):
+        # TODO(T53510135): Use unittest.mock
+        class C:
+            closed = False
+
+            def flush(self):
+                raise UserWarning("foo")
+
+            def close(self):
+                pass
+
+        result = _BufferedIOMixin(C())
+        self.assertRaises(UserWarning, result.close)
+
+    def test_close_calls_raw_close(self):
+        # TODO(T53510135): Use unittest.mock
+        class C:
+            closed = False
+
+            def close(self):
+                raise UserWarning("foo")
+
+        result = _BufferedIOMixin(C())
+        self.assertRaises(UserWarning, result.close)
+
+    def test_closed_calls_raw_closed(self):
+        # TODO(T53510135): Use unittest.mock
+        class C:
+            @property
+            def closed(self):
+                raise UserWarning("foo")
+
+        result = _BufferedIOMixin(C())
+        with self.assertRaises(UserWarning):
+            result.closed
+
+    def test_detach_with_none_raw_raises_value_error(self):
+        result = _BufferedIOMixin(None)
+        self.assertRaises(ValueError, result.detach)
+
+    def test_detach_calls_raw_flush(self):
+        # TODO(T53510135): Use unittest.mock
+        class C:
+            closed = False
+
+            def flush(self):
+                raise UserWarning("foo")
+
+        result = _BufferedIOMixin(C())
+        self.assertRaises(UserWarning, result.detach)
+
+    def test_fileno_calls_raw_fileno(self):
+        # TODO(T53510135): Use unittest.mock
+        class C:
+            closed = False
+
+            def fileno(self):
+                raise UserWarning("foo")
+
+        result = _BufferedIOMixin(C())
+        self.assertRaises(UserWarning, result.fileno)
+
+    def test_flush_with_closed_raw_raises_value_error(self):
+        class C:
+            closed = True
+
+            def close(self):
+                pass
+
+        result = _BufferedIOMixin(C())
+        self.assertRaises(ValueError, result.flush)
+
+    def test_flush_calls_raw_flush(self):
+        # TODO(T53510135): Use unittest.mock
+        class C:
+            closed = False
+
+            def flush(self):
+                raise UserWarning("foo")
+
+        result = _BufferedIOMixin(C())
+        self.assertRaises(UserWarning, result.flush)
+
+    def test_isatty_calls_raw_isatty(self):
+        # TODO(T53510135): Use unittest.mock
+        class C:
+            closed = False
+
+            def isatty(self):
+                raise UserWarning("foo")
+
+        result = _BufferedIOMixin(C())
+        self.assertRaises(UserWarning, result.isatty)
+
+    def test_mode_calls_raw_mode(self):
+        # TODO(T53510135): Use unittest.mock
+        class C:
+            @property
+            def mode(self):
+                raise UserWarning("foo")
+
+        result = _BufferedIOMixin(C())
+        with self.assertRaises(UserWarning):
+            result.mode
+
+    def test_name_calls_raw_name(self):
+        # TODO(T53510135): Use unittest.mock
+        class C:
+            @property
+            def name(self):
+                raise UserWarning("foo")
+
+        result = _BufferedIOMixin(C())
+        with self.assertRaises(UserWarning):
+            result.name
+
+    def test_tell_calls_raw_tell(self):
+        # TODO(T53510135): Use unittest.mock
+        class C:
+            def tell(self):
+                raise UserWarning("foo")
+
+        result = _BufferedIOMixin(C())
+        self.assertRaises(UserWarning, result.tell)
+
+    def test_tell_with_raw_tell_returning_negative_raises_os_error(self):
+        class C:
+            def tell(self):
+                return -1
+
+        result = _BufferedIOMixin(C())
+        self.assertRaises(OSError, result.tell)
+
+    def test_tell_returns_result_of_raw_tell(self):
+        class C:
+            def tell(self):
+                return 5
+
+        result = _BufferedIOMixin(C())
+        self.assertEqual(result.tell(), 5)
+
+    def test_truncate_calls_raw_flush(self):
+        # TODO(T53510135): Use unittest.mock
+        class C:
+            closed = False
+
+            def flush(self):
+                raise UserWarning("foo")
+
+        result = _BufferedIOMixin(C())
+        self.assertRaises(UserWarning, result.truncate)
+
+    def test_truncate_with_none_pos_calls_tell(self):
+        # TODO(T53510135): Use unittest.mock
+        class C:
+            closed = False
+
+            def flush(self):
+                pass
+
+            def tell(self):
+                raise UserWarning("foo")
+
+        result = _BufferedIOMixin(C())
+        self.assertRaises(UserWarning, result.truncate)
+
+    def test_truncate_with_none_pos_calls_raw_truncate_with_pos(self):
+        # TODO(T53510135): Use unittest.mock
+        class C:
+            closed = False
+
+            def flush(self):
+                pass
+
+            def tell(self):
+                return 5
+
+            def truncate(self, pos):
+                raise UserWarning(pos)
+
+        result = _BufferedIOMixin(C())
+        with self.assertRaises(UserWarning) as context:
+            result.truncate()
+        self.assertEqual(context.exception.args, (5,))
+
+    def test_truncate_calls_raw_truncate(self):
+        # TODO(T53510135): Use unittest.mock
+        class C:
+            closed = False
+
+            def flush(self):
+                pass
+
+            def tell(self):
+                raise MemoryError("foo")
+
+            def truncate(self, pos):
+                raise UserWarning(pos)
+
+        result = _BufferedIOMixin(C())
+        with self.assertRaises(UserWarning) as context:
+            result.truncate(10)
+        self.assertEqual(context.exception.args, (10,))
+
+    def test_seek_calls_raw_seek(self):
+        # TODO(T53510135): Use unittest.mock
+        class C:
+            def seek(self, pos, whence):
+                raise UserWarning(pos, whence)
+
+        result = _BufferedIOMixin(C())
+        self.assertRaises(UserWarning, result.seek, 5, 10)
+
+    def tes_seek_returning_negative_pos_raises_os_error(self):
+        class C:
+            def seek(self, pos, whence):
+                return -1
+
+        result = _BufferedIOMixin(C())
+        self.assertRaises(OSError, result.seek, 5, 10)
+
+    def test_seek_returns_result_of_raw_seek(self):
+        class C:
+            def seek(self, pos, whence):
+                return 100
+
+        result = _BufferedIOMixin(C())
+        self.assertEqual(result.seek(5, 10), 100)
+
+    def test_seekable_calls_raw_seekable(self):
+        # TODO(T53510135): Use unittest.mock
+        class C:
+            closed = False
+
+            def seekable(self):
+                raise UserWarning("foo")
+
+        result = _BufferedIOMixin(C())
+        self.assertRaises(UserWarning, result.seekable)
 
 
 if __name__ == "__main__":

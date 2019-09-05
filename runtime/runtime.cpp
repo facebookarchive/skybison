@@ -1616,6 +1616,8 @@ void Runtime::initializeHeapTypes() {
   UnderBufferedIOBaseBuiltins::initialize(this);
   // BytesIO is a subclass of _BufferedIOBase
   BytesIOBuiltins::initialize(this);
+  // _BufferedIOMixin is a subclass of _BufferedIOBase
+  UnderBufferedIOMixinBuiltins::initialize(this);
   // FileIO is a subclass of _RawIOBase
   FileIOBuiltins::initialize(this);
 }

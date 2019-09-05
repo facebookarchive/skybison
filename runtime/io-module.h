@@ -39,6 +39,14 @@ class UnderBufferedIOBaseBuiltins
   static void postInitialize(Runtime* runtime, const Type& new_type);
 };
 
+class UnderBufferedIOMixinBuiltins
+    : public Builtins<
+          UnderBufferedIOMixinBuiltins, SymbolId::kUnderBufferedIOMixin,
+          LayoutId::kUnderBufferedIOMixin, LayoutId::kUnderBufferedIOBase> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+};
+
 class BytesIOBuiltins
     : public Builtins<BytesIOBuiltins, SymbolId::kBytesIO, LayoutId::kBytesIO,
                       LayoutId::kUnderBufferedIOBase> {

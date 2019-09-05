@@ -154,6 +154,7 @@ class WARN_UNUSED Handle : public T {
   V(TypeProxy)                                                                 \
   V(Unbound)                                                                   \
   V(UnderBufferedIOBase)                                                       \
+  V(UnderBufferedIOMixin)                                                      \
   V(UnderIOBase)                                                               \
   V(UnderRawIOBase)                                                            \
   V(ValueCell)                                                                 \

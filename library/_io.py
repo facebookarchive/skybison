@@ -556,6 +556,98 @@ class _BufferedIOBase(bootstrap=True):
         self._unsupported("detach")
 
 
+class _BufferedIOMixin(_BufferedIOBase, bootstrap=True):
+    def __getstate__(self):
+        raise TypeError(f"can not serialize a '{self.__class__.__name__}' object")
+
+    def __init__(self, raw):
+        self._raw = raw
+
+    def __repr__(self):
+        try:
+            name = self.name
+        except Exception:
+            return f"<{_type_name(self.__class__)}>"
+        else:
+            return f"<{_type_name(self.__class__)} name={name!r}>"
+
+    ### Positioning ###
+
+    def seek(self, pos, whence=0):
+        new_position = self.raw.seek(pos, whence)
+        if new_position < 0:
+            raise OSError("seek() returned an invalid position")
+        return new_position
+
+    def tell(self):
+        pos = self.raw.tell()
+        if pos < 0:
+            raise OSError("tell() returned an invalid position")
+        return pos
+
+    def truncate(self, pos=None):
+        # Flush the stream.  We're mixing buffered I/O with lower-level I/O,
+        # and a flush may be necessary to synch both views of the current
+        # file state.
+        self.flush()
+
+        if pos is None:
+            pos = self.tell()
+        return self.raw.truncate(pos)
+
+    ### Flush and close ###
+
+    def flush(self):
+        if self.closed:
+            raise ValueError("flush of closed file")
+        self.raw.flush()
+
+    def close(self):
+        if self.raw is not None and not self.closed:
+            try:
+                # may raise BlockingIOError or BrokenPipeError etc
+                self.flush()
+            finally:
+                self.raw.close()
+
+    def detach(self):
+        if self.raw is None:
+            raise ValueError("raw stream already detached")
+        self.flush()
+        raw = self._raw
+        self._raw = None
+        return raw
+
+    ### Inquiries ###
+
+    def seekable(self):
+        return self.raw.seekable()
+
+    @property
+    def raw(self):
+        return self._raw
+
+    @property
+    def closed(self):
+        return self.raw.closed
+
+    @property
+    def name(self):
+        return self.raw.name
+
+    @property
+    def mode(self):
+        return self.raw.mode
+
+    ### Lower-level APIs ###
+
+    def fileno(self):
+        return self.raw.fileno()
+
+    def isatty(self):
+        return self.raw.isatty()
+
+
 class BytesIO(bootstrap=True):
     """Buffered I/O implementation using an in-memory bytes buffer."""
 

@@ -21,6 +21,7 @@ const BuiltinType UnderIoModule::kBuiltinTypes[] = {
     {SymbolId::kBytesIO, LayoutId::kBytesIO},
     {SymbolId::kFileIO, LayoutId::kFileIO},
     {SymbolId::kUnderBufferedIOBase, LayoutId::kUnderBufferedIOBase},
+    {SymbolId::kUnderBufferedIOMixin, LayoutId::kUnderBufferedIOMixin},
     {SymbolId::kUnderIOBase, LayoutId::kUnderIOBase},
     {SymbolId::kUnderRawIOBase, LayoutId::kUnderRawIOBase},
     {SymbolId::kSentinelId, LayoutId::kSentinelId},
@@ -68,6 +69,11 @@ void UnderBufferedIOBaseBuiltins::postInitialize(Runtime*,
                                                  const Type& new_type) {
   new_type.setBuiltinBase(kSuperType);
 }
+
+const BuiltinAttribute UnderBufferedIOMixinBuiltins::kAttributes[] = {
+    {SymbolId::kUnderRaw, UnderBufferedIOMixin::kUnderlyingOffset},
+    {SymbolId::kSentinelId, 0},
+};
 
 const BuiltinAttribute BytesIOBuiltins::kAttributes[] = {
     {SymbolId::kDunderDict, BytesIO::kDictOffset},
