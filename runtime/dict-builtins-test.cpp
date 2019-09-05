@@ -316,14 +316,6 @@ TEST_F(DictBuiltinsTest, ValuesReturnsDictValues) {
   ASSERT_TRUE(values.isDictValues());
 }
 
-TEST_F(DictBuiltinsTest, DunderEqWithNonDict) {
-  HandleScope scope(thread_);
-  Dict dict(&scope, runtime_.newDict());
-  Object not_a_dict(&scope, SmallInt::fromWord(5));
-  EXPECT_EQ(runBuiltin(DictBuiltins::dunderEq, dict, not_a_dict),
-            NotImplementedType::object());
-}
-
 TEST_F(DictBuiltinsTest, UpdateWithNoArgumentsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime_, "dict.update()"), LayoutId::kTypeError,

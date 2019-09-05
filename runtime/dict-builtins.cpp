@@ -305,33 +305,46 @@ RawObject DictBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfDict(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kDict);
   }
-  if (runtime->isInstanceOfDict(args.get(1))) {
-    Dict self(&scope, *self_obj);
-    Dict other(&scope, args.get(1));
-    if (self.numItems() != other.numItems()) {
+  Object other_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfDict(*other_obj)) {
+    return NotImplementedType::object();
+  }
+  Dict self(&scope, *self_obj);
+  Dict other(&scope, *other_obj);
+  if (self.numItems() != other.numItems()) {
+    return Bool::falseObj();
+  }
+  Tuple self_data(&scope, self.data());
+  Object key(&scope, NoneType::object());
+  Object key_hash(&scope, NoneType::object());
+  Object left_value(&scope, NoneType::object());
+  Object right_value(&scope, NoneType::object());
+  Object cmp_result(&scope, NoneType::object());
+  Object cmp_result_bool(&scope, NoneType::object());
+  for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*self_data, &i);) {
+    key = Dict::Bucket::key(*self_data, i);
+    key_hash = Dict::Bucket::hash(*self_data, i);
+    right_value = runtime->dictAtWithHash(thread, other, key, key_hash);
+    if (right_value.isErrorNotFound()) {
       return Bool::falseObj();
     }
-    Tuple keys(&scope, runtime->dictKeys(thread, self));
-    Object left_key(&scope, NoneType::object());
-    Object left(&scope, NoneType::object());
-    Object right(&scope, NoneType::object());
-    word length = keys.length();
-    for (word i = 0; i < length; i++) {
-      left_key = keys.at(i);
-      left = runtime->dictAt(thread, self, left_key);
-      right = runtime->dictAt(thread, other, left_key);
-      if (right.isError()) {
-        return Bool::falseObj();
-      }
-      RawObject result =
-          Interpreter::compareOperation(thread, frame, EQ, left, right);
-      if (result == Bool::falseObj()) {
-        return result;
-      }
+
+    left_value = Dict::Bucket::value(*self_data, i);
+    if (left_value == right_value) {
+      continue;
     }
-    return Bool::trueObj();
+    cmp_result = Interpreter::compareOperation(thread, frame, EQ, left_value,
+                                               right_value);
+    if (cmp_result.isErrorException()) {
+      return *cmp_result;
+    }
+    cmp_result_bool = Interpreter::isTrue(thread, *cmp_result);
+    if (cmp_result_bool.isErrorException()) return *cmp_result_bool;
+    if (cmp_result_bool == Bool::falseObj()) {
+      return Bool::falseObj();
+    }
   }
-  return NotImplementedType::object();
+  return Bool::trueObj();
 }
 
 RawObject DictBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {

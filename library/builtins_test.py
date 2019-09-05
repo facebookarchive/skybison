@@ -1521,6 +1521,62 @@ class DictTests(unittest.TestCase):
         result = C()
         self.assertRaises(UserWarning, result.__getitem__, "hello")
 
+    def test_dunder_eq_with_different_item_count_returns_false(self):
+        d0 = {4: 0}
+        d1 = {4: 0, 8: 0}
+        self.assertFalse(dict.__eq__(d0, d1))
+        self.assertFalse(dict.__eq__(d1, d0))
+        self.assertFalse(dict.__eq__({}, d0))
+        self.assertFalse(dict.__eq__(d1, {}))
+
+    def test_dunder_eq_with_different_keys_returns_false(self):
+        d0 = {4: 0, "b": 17}
+        d1 = {4: 0, "c": 17}
+        self.assertFalse(dict.__eq__(d0, d1))
+
+    def test_dunder_eq_with_different_values_returns_false(self):
+        d0 = {4: 0, "b": 17}
+        d1 = {4: 0, "b": 15}
+        self.assertFalse(dict.__eq__(d0, d1))
+
+    def test_dunder_eq_returns_true(self):
+        self.assertTrue(dict.__eq__({}, {}))
+        nan = float("nan")
+        d0 = {4: "b", "a": 88, 42: nan, None: (42.42, b"x")}
+        d1 = {4: "b", "a": 88, 42: nan, None: (42.42, b"x")}
+        self.assertFalse(d0 is d1)
+        self.assertTrue(dict.__eq__(d0, d1))
+
+    def test_dunder_eq_checks_identity_before_calling_dunder_eq(self):
+        class C:
+            def __eq__(self, other):
+                return False
+
+        i = C()
+        d0 = {"a": i}
+        d1 = {"a": i}
+        self.assertTrue(dict.__eq__(d0, d1))
+
+    def test_dunder_eq_with_non_dict_returns_not_implemented(self):
+        self.assertIs(dict.__eq__({}, "not a dict"), NotImplemented)
+
+    def test_dunder_eq_calls_dunder_bool(self):
+        class B:
+            def __bool__(self):
+                raise UserWarning()
+
+        class C:
+            def __eq__(self, other):
+                return B()
+
+            def __hash__(self):
+                return 0
+
+        d0 = {0: C()}
+        d1 = {0: C()}
+        with self.assertRaises(UserWarning):
+            dict.__eq__(d0, d1)
+
     def test_popitem_with_non_dict_raise_type_error(self):
         with self.assertRaises(TypeError) as context:
             dict.popitem(None)
