@@ -225,9 +225,14 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderTypeBasesSet, underTypeBasesSet},
     {SymbolId::kUnderTypeCheck, underTypeCheck},
     {SymbolId::kUnderTypeCheckExact, underTypeCheckExact},
-    {SymbolId::kUnderTypeDictKeys, underTypeDictKeys},
     {SymbolId::kUnderTypeGuard, underTypeGuard},
     {SymbolId::kUnderTypeIsSubclass, underTypeIsSubclass},
+    {SymbolId::kUnderTypeProxy, underTypeProxy},
+    {SymbolId::kUnderTypeProxyGet, underTypeProxyGet},
+    {SymbolId::kUnderTypeProxyGuard, underTypeProxyGuard},
+    {SymbolId::kUnderTypeProxyKeys, underTypeProxyKeys},
+    {SymbolId::kUnderTypeProxyLen, underTypeProxyLen},
+    {SymbolId::kUnderTypeProxyValues, underTypeProxyValues},
     {SymbolId::kUnderUnimplemented, underUnimplemented},
     {SymbolId::kSentinelId, nullptr},
 };
@@ -3004,25 +3009,6 @@ RawObject UnderBuiltinsModule::underTypeCheckExact(Thread*, Frame* frame,
   return Bool::fromBool(args.get(0).isType());
 }
 
-RawObject UnderBuiltinsModule::underTypeDictKeys(Thread* thread, Frame* frame,
-                                                 word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Dict dict(&scope, args.get(0));
-  Tuple data(&scope, dict.data());
-  Runtime* runtime = thread->runtime();
-  List keys(&scope, runtime->newList());
-  Object key(&scope, NoneType::object());
-  for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
-    RawObject value = Dict::Bucket::value(*data, i);
-    DCHECK(value.isValueCell(), "values in type dict should be ValueCells");
-    if (ValueCell::cast(value).isPlaceholder()) continue;
-    key = Dict::Bucket::key(*data, i);
-    runtime->listAdd(thread, keys, key);
-  }
-  return *keys;
-}
-
 RawObject UnderBuiltinsModule::underTypeGuard(Thread* thread, Frame* frame,
                                               word nargs) {
   Arguments args(frame, nargs);
@@ -3039,6 +3025,68 @@ RawObject UnderBuiltinsModule::underTypeIsSubclass(Thread* thread, Frame* frame,
   Type subclass(&scope, args.get(0));
   Type superclass(&scope, args.get(1));
   return Bool::fromBool(thread->runtime()->isSubclass(subclass, superclass));
+}
+
+RawObject UnderBuiltinsModule::underTypeProxy(Thread* thread, Frame* frame,
+                                              word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Type type(&scope, args.get(0));
+  if (type.proxy().isNoneType()) {
+    type.setProxy(thread->runtime()->newTypeProxy(type));
+  }
+  return type.proxy();
+}
+
+RawObject UnderBuiltinsModule::underTypeProxyGet(Thread* thread, Frame* frame,
+                                                 word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  TypeProxy self(&scope, args.get(0));
+  Object key(&scope, args.get(1));
+  Object default_obj(&scope, args.get(2));
+  Type type(&scope, self.type());
+  Object result(&scope, typeAt(thread, type, key));
+  if (result.isError()) {
+    return *default_obj;
+  }
+  return *result;
+}
+
+RawObject UnderBuiltinsModule::underTypeProxyGuard(Thread* thread, Frame* frame,
+                                                   word nargs) {
+  Arguments args(frame, nargs);
+  if (args.get(0).isTypeProxy()) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kTypeProxy);
+}
+
+RawObject UnderBuiltinsModule::underTypeProxyKeys(Thread* thread, Frame* frame,
+                                                  word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  TypeProxy self(&scope, args.get(0));
+  Type type(&scope, self.type());
+  return typeKeys(thread, type);
+}
+
+RawObject UnderBuiltinsModule::underTypeProxyLen(Thread* thread, Frame* frame,
+                                                 word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  TypeProxy self(&scope, args.get(0));
+  Type type(&scope, self.type());
+  return typeLen(thread, type);
+}
+
+RawObject UnderBuiltinsModule::underTypeProxyValues(Thread* thread,
+                                                    Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  TypeProxy self(&scope, args.get(0));
+  Type type(&scope, self.type());
+  return typeValues(thread, type);
 }
 
 RawObject UnderBuiltinsModule::underUnimplemented(Thread* thread, Frame* frame,

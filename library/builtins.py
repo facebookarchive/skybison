@@ -160,9 +160,14 @@ _type_bases_get = _type_bases_get  # noqa: F821
 _type_bases_set = _type_bases_set  # noqa: F821
 _type_check = _type_check  # noqa: F821
 _type_check_exact = _type_check_exact  # noqa: F821
-_type_dict_keys = _type_dict_keys  # noqa: F821
 _type_guard = _type_guard  # noqa: F821
 _type_issubclass = _type_issubclass  # noqa: F821
+_type_proxy = _type_proxy  # noqa: F821
+_type_proxy_get = _type_proxy_get  # noqa: F821
+_type_proxy_guard = _type_proxy_guard  # noqa: F821
+_type_proxy_keys = _type_proxy_keys  # noqa: F821
+_type_proxy_len = _type_proxy_len  # noqa: F821
+_type_proxy_values = _type_proxy_values  # noqa: F821
 _Unbound = _Unbound  # noqa: F821
 _unimplemented = _unimplemented  # noqa: F821
 
@@ -274,6 +279,10 @@ class type(bootstrap=True):
 
     __bases__ = _property(_type_bases_get, _type_bases_set, _type_bases_del)
 
+    @_property
+    def __dict__(self):
+        return _type_proxy(self)
+
     def __call__(self, *args, **kwargs):
         pass
 
@@ -313,13 +322,81 @@ class type(bootstrap=True):
         pass
 
     def _merge_class_dict_keys(self, result):
-        # TODO(T46144425): Remove _type_dict_keys in favor of .keys()
-        result.update(_type_dict_keys(self.__dict__))
+        result.update(self.__dict__.keys())
         for base in self.__bases__:
             type._merge_class_dict_keys(base, result)
 
     def mro(self):
         pass
+
+
+class type_proxy(bootstrap=True):
+    def __contains__(self, key) -> bool:
+        _type_proxy_guard(self)
+        return _type_proxy_get(self, key, _Unbound) is not _Unbound  # noqa: T484
+
+    def __eq__(self, other):
+        _unimplemented()
+
+    def __getitem__(self, key):
+        _type_proxy_guard(self)
+        result = _type_proxy_get(self, key, _Unbound)
+        if result is _Unbound:
+            raise KeyError(key)
+        return result
+
+    # type_proxy is not designed to be instantiated.
+    def __init__(self, *args, **kwargs):
+        _unimplemented()
+
+    def __iter__(self):
+        _type_proxy_guard(self)
+        # TODO(T53302128): Return an iterable to avoid materializing a list of keys.
+        return iter(_type_proxy_keys(self))
+
+    def __len__(self):
+        _type_proxy_guard(self)
+        return _type_proxy_len(self)
+
+    # type_proxy is not designed to be subclassed.
+    def __new__(cls, *args, **kwargs):
+        _unimplemented()
+
+    def __repr__(self):
+        _type_proxy_guard(self)
+        if _repr_enter(self):
+            return "{...}"
+        kwpairs = [f"{key!r}: {self[key]!r}" for key in _type_proxy_keys(self)]
+        _repr_leave(self)
+        return "{" + ", ".join(kwpairs) + "}"
+
+    def copy(self):
+        _type_proxy_guard(self)
+        # TODO(T53302128): Return an iterable to avoid materializing the list of items.
+        keys = _type_proxy_keys(self)
+        values = _type_proxy_values(self)
+        return {keys[i]: values[i] for i in range(len(keys))}
+
+    def get(self, key, default=None):
+        _type_proxy_guard(self)
+        return _type_proxy_get(self, key, default)
+
+    def items(self):
+        _type_proxy_guard(self)
+        # TODO(T53302128): Return an iterable to avoid materializing the list of items.
+        keys = _type_proxy_keys(self)
+        values = _type_proxy_values(self)
+        return [(keys[i], values[i]) for i in range(len(keys))]
+
+    def keys(self):
+        _type_proxy_guard(self)
+        # TODO(T53302128): Return an iterable to avoid materializing the list of keys.
+        return _type_proxy_keys(self)
+
+    def values(self):
+        _type_proxy_guard(self)
+        # TODO(T53302128): Return an iterable to avoid materializing the list of values.
+        return _type_proxy_values(self)
 
 
 class object(bootstrap=True):  # noqa: E999

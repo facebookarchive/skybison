@@ -347,6 +347,14 @@ RawObject Runtime::newTypeWithMetaclass(LayoutId metaclass_id) {
   return *result;
 }
 
+RawObject Runtime::newTypeProxy(const Type& type) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  TypeProxy result(&scope, heap()->create<RawTypeProxy>());
+  result.setType(*type);
+  return *result;
+}
+
 RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
                                 const Object& name) {
   if (!name.isStr()) {
@@ -1610,6 +1618,7 @@ void Runtime::initializeHeapTypes() {
   addEmptyBuiltinType(SymbolId::kTraceback, LayoutId::kTraceback,
                       LayoutId::kObject);
   TypeBuiltins::initialize(this);
+  TypeProxyBuiltins::initialize(this);
   addEmptyBuiltinType(SymbolId::kValueCell, LayoutId::kValueCell,
                       LayoutId::kObject);
 

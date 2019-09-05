@@ -7092,6 +7092,175 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(m.attr, "bar")
 
 
+class TypeProxyTests(unittest.TestCase):
+    def setUp(self):
+        class A:
+            placeholder = "placeholder_value"
+
+        class B(A):
+            pass
+
+        def make_placeholder():
+            b = B()
+            return b.placeholder
+
+        self.tested_type = B
+        self.type_proxy = B.__dict__
+        self.assertEqual(make_placeholder(), "placeholder_value")
+
+    def test_dunder_contains_with_non_type_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type(self.type_proxy).__contains__(None, None)
+
+    def test_dunder_contains_returns_true_for_existing_item(self):
+        self.tested_type.x = 40
+        self.assertTrue(self.type_proxy.__contains__("x"))
+
+    def test_dunder_contains_returns_false_for_not_existing_item(self):
+        self.assertFalse(self.type_proxy.__contains__("x"))
+
+    def test_dunder_contains_returns_false_for_placeholder(self):
+        self.assertFalse(self.type_proxy.__contains__("placeholder"))
+
+    def test_copy_with_non_type_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type(self.type_proxy).copy(None)
+
+    def test_copy_returns_dict_copy(self):
+        self.tested_type.x = 40
+        result = self.type_proxy.copy()
+        self.assertEqual(type(result), dict)
+        self.assertEqual(result["x"], 40)
+        self.tested_type.y = 50
+        self.assertNotIn("y", result)
+
+    def test_dunder_getitem_with_non_type_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type(self.type_proxy).__getitem__(None, None)
+
+    def test_dunder_getitem_for_existing_key_returns_that_item(self):
+        self.tested_type.x = 40
+        self.assertEqual(self.type_proxy.__getitem__("x"), 40)
+
+    def test_dunder_getitem_for_not_existing_key_raises_key_error(self):
+        with self.assertRaises(KeyError) as context:
+            self.type_proxy.__getitem__("x")
+        self.assertIn("'x'", str(context.exception))
+
+    def test_dunder_getitem_for_placeholder_raises_key_error(self):
+        with self.assertRaises(KeyError) as context:
+            self.type_proxy.__getitem__("placeholder")
+        self.assertIn("'placeholder'", str(context.exception))
+
+    def test_dunder_iter_with_non_type_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type(self.type_proxy).__iter__(None)
+
+    def test_dunder_iter_returns_key_iterator(self):
+        self.tested_type.x = 40
+        self.tested_type.y = 50
+        result = self.type_proxy.__iter__()
+        self.assertTrue(hasattr(result, "__next__"))
+        result_list = list(result)
+        self.assertIn("x", result_list)
+        self.assertIn("y", result_list)
+
+    def test_dunder_len_with_non_type_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type(self.type_proxy).__len__(None)
+
+    def test_dunder_len_returns_num_items(self):
+        length = self.type_proxy.__len__()
+        self.tested_type.x = 40
+        self.assertEqual(self.type_proxy.__len__(), length + 1)
+
+    def test_dunder_len_returns_num_items_excluding_placeholder(self):
+        length = self.type_proxy.__len__()
+        # Overwrite the existing placeholder by creating a real one under the same name.
+        self.tested_type.placeholder = 1
+        self.assertEqual(self.type_proxy.__len__(), length + 1)
+
+    def test_dunder_repr_with_non_type_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type(self.type_proxy).__repr__(None)
+
+    def test_dunder_repr_returns_str_containing_existing_items(self):
+        self.tested_type.x = 40
+        self.tested_type.y = 50
+        result = self.type_proxy.__repr__()
+        self.assertIsInstance(result, str)
+        self.assertIn("'x': 40", result)
+        self.assertIn("'y': 50", result)
+
+    def test_dunder_repr_returns_str_not_containing_placeholder(self):
+        result = self.type_proxy.__repr__()
+        self.assertNotIn("'placeholder'", result)
+
+    def test_get_with_non_type_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type(self.type_proxy).get(None, None)
+
+    def test_get_returns_existing_item_value(self):
+        self.tested_type.x = 40
+        self.assertEqual(self.type_proxy.get("x"), 40)
+
+    def test_get_with_default_for_non_existing_item_value_returns_that_default(self):
+        self.assertEqual(self.type_proxy.get("x", -1), -1)
+
+    def test_get_for_non_existing_item_returns_none(self):
+        self.assertIs(self.type_proxy.get("x"), None)
+
+    def test_get_for_placeholder_returns_none(self):
+        self.assertIs(self.type_proxy.get("placeholder"), None)
+
+    def test_items_with_non_type_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type(self.type_proxy).items(None)
+
+    def test_items_returns_container_for_key_value_pairs(self):
+        self.tested_type.x = 40
+        self.tested_type.y = 50
+        result = self.type_proxy.items()
+        self.assertTrue(hasattr(result, "__iter__"))
+        result_list = list(iter(result))
+        self.assertIn(("x", 40), result_list)
+        self.assertIn(("y", 50), result_list)
+
+    def test_keys_with_non_type_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type(self.type_proxy).keys(None)
+
+    def test_keys_returns_container_for_keys(self):
+        self.tested_type.x = 40
+        self.tested_type.y = 50
+        result = self.type_proxy.keys()
+        self.assertTrue(hasattr(result, "__iter__"))
+        result_list = list(iter(result))
+        self.assertIn("x", result_list)
+        self.assertIn("y", result_list)
+
+    def test_keys_returns_key_iterator_excluding_placeholder(self):
+        result = self.type_proxy.keys()
+        self.assertNotIn("placeholder", result)
+
+    def test_values_with_non_type_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type(self.type_proxy).values(None)
+
+    def test_values_returns_container_for_values(self):
+        self.tested_type.x = 1243314135
+        self.tested_type.y = -1243314135
+        result = self.type_proxy.values()
+        self.assertTrue(hasattr(result, "__iter__"))
+        result_list = list(iter(result))
+        self.assertIn(1243314135, result_list)
+        self.assertIn(-1243314135, result_list)
+
+    def test_values_returns_iterator_excluding_placeholder_value(self):
+        result = self.type_proxy.values()
+        self.assertNotIn("placeholder_value", result)
+
+
 class VarsTests(unittest.TestCase):
     def test_no_arg_delegates_to_locals(self):
         def foo():

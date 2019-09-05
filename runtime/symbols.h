@@ -378,9 +378,14 @@ class Runtime;
   V(UnderTypeBasesSet, "_type_bases_set")                                      \
   V(UnderTypeCheck, "_type_check")                                             \
   V(UnderTypeCheckExact, "_type_check_exact")                                  \
-  V(UnderTypeDictKeys, "_type_dict_keys")                                      \
   V(UnderTypeGuard, "_type_guard")                                             \
   V(UnderTypeIsSubclass, "_type_issubclass")                                   \
+  V(UnderTypeProxy, "_type_proxy")                                             \
+  V(UnderTypeProxyGet, "_type_proxy_get")                                      \
+  V(UnderTypeProxyGuard, "_type_proxy_guard")                                  \
+  V(UnderTypeProxyKeys, "_type_proxy_keys")                                    \
+  V(UnderTypeProxyLen, "_type_proxy_len")                                      \
+  V(UnderTypeProxyValues, "_type_proxy_values")                                \
   V(UnderUnbound, "_Unbound")                                                  \
   V(UnderUnicodeEscapeDecode, "_unicode_escape_decode")                        \
   V(UnderUnicodeEscapeDecodeStateful, "_unicode_escape_decode_stateful")       \
@@ -737,6 +742,7 @@ class Runtime;
   V(TupleIterator, "tuple_iterator")                                           \
   V(Type, "type")                                                              \
   V(TypeError, "TypeError")                                                    \
+  V(TypeProxy, "type_proxy")                                                   \
   V(UnboundLocalError, "UnboundLocalError")                                    \
   V(UnicodeDecodeError, "UnicodeDecodeError")                                  \
   V(UnicodeEncodeError, "UnicodeEncodeError")                                  \

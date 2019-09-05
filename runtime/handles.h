@@ -150,6 +150,7 @@ class WARN_UNUSED Handle : public T {
   V(Super)                                                                     \
   V(Tuple)                                                                     \
   V(TupleIterator)                                                             \
+  V(TypeProxy)                                                                 \
   V(Unbound)                                                                   \
   V(UnderBufferedIOBase)                                                       \
   V(UnderIOBase)                                                               \

@@ -13,6 +13,17 @@
 
 namespace python {
 
+bool nextTypeDictItem(RawTuple data, word* idx) {
+  // Iterate through until we find a non-placeholder item.
+  while (Dict::Bucket::nextItem(data, idx)) {
+    if (!ValueCell::cast(Dict::Bucket::value(data, *idx)).isPlaceholder()) {
+      // At this point, we have found a valid index in the buckets.
+      return true;
+    }
+  }
+  return false;
+}
+
 RawObject typeLookupNameInMro(Thread* thread, const Type& type,
                               const Object& name_str) {
   HandleScope scope(thread);
@@ -58,6 +69,51 @@ RawObject resolveDescriptorGet(Thread* thread, const Object& descr,
   if (!typeIsNonDataDescriptor(thread, type)) return *descr;
   return Interpreter::callDescriptorGet(thread, thread->currentFrame(), descr,
                                         instance, instance_type);
+}
+
+RawObject typeAt(Thread* thread, const Type& type, const Object& key) {
+  HandleScope scope(thread);
+  Dict dict(&scope, type.dict());
+  return thread->runtime()->typeDictAt(thread, dict, key);
+}
+
+RawObject typeKeys(Thread* thread, const Type& type) {
+  HandleScope scope(thread);
+  Dict dict(&scope, type.dict());
+  Tuple data(&scope, dict.data());
+  Runtime* runtime = thread->runtime();
+  List keys(&scope, runtime->newList());
+  Object key(&scope, NoneType::object());
+  for (word i = Dict::Bucket::kFirst; nextTypeDictItem(*data, &i);) {
+    key = Dict::Bucket::key(*data, i);
+    runtime->listAdd(thread, keys, key);
+  }
+  return *keys;
+}
+
+RawObject typeLen(Thread* thread, const Type& type) {
+  HandleScope scope(thread);
+  Dict dict(&scope, type.dict());
+  Tuple data(&scope, dict.data());
+  word count = 0;
+  for (word i = Dict::Bucket::kFirst; nextTypeDictItem(*data, &i);) {
+    ++count;
+  }
+  return SmallInt::fromWord(count);
+}
+
+RawObject typeValues(Thread* thread, const Type& type) {
+  HandleScope scope(thread);
+  Dict dict(&scope, type.dict());
+  Tuple data(&scope, dict.data());
+  Runtime* runtime = thread->runtime();
+  List values(&scope, runtime->newList());
+  Object value(&scope, NoneType::object());
+  for (word i = Dict::Bucket::kFirst; nextTypeDictItem(*data, &i);) {
+    value = ValueCell::cast(Dict::Bucket::value(*data, i)).value();
+    runtime->listAdd(thread, values, value);
+  }
+  return *values;
 }
 
 RawObject typeGetAttribute(Thread* thread, const Type& type,
@@ -289,11 +345,12 @@ RawObject typeSetAttr(Thread* thread, const Type& type,
 }
 
 const BuiltinAttribute TypeBuiltins::kAttributes[] = {
-    {SymbolId::kDunderDict, RawType::kDictOffset, AttributeFlags::kReadOnly},
     {SymbolId::kDunderDoc, RawType::kDocOffset},
     {SymbolId::kDunderFlags, RawType::kFlagsOffset, AttributeFlags::kReadOnly},
     {SymbolId::kDunderMro, RawType::kMroOffset, AttributeFlags::kReadOnly},
     {SymbolId::kDunderName, RawType::kNameOffset},
+    {SymbolId::kInvalid, RawType::kDictOffset},
+    {SymbolId::kInvalid, RawType::kProxyOffset},
     {SymbolId::kSentinelId, -1},
 };
 

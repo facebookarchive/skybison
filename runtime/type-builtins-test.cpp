@@ -13,6 +13,123 @@ using namespace testing;
 using TypeBuiltinsDeathTest = RuntimeFixture;
 using TypeBuiltinsTest = RuntimeFixture;
 
+TEST_F(TypeBuiltinsTest, NextTypeDictItemReturnsNextNonPlaceholder) {
+  HandleScope scope(thread_);
+  Dict module_dict(&scope, runtime_.newDict());
+
+  Str foo(&scope, runtime_.newStrFromCStr("foo"));
+  Str bar(&scope, runtime_.newStrFromCStr("bar"));
+  Str baz(&scope, runtime_.newStrFromCStr("baz"));
+  Str qux(&scope, runtime_.newStrFromCStr("qux"));
+  Str value(&scope, runtime_.newStrFromCStr("value"));
+
+  runtime_.typeDictAtPut(thread_, module_dict, foo, value);
+  runtime_.typeDictAtPut(thread_, module_dict, bar, value);
+  runtime_.typeDictAtPut(thread_, module_dict, baz, value);
+  runtime_.typeDictAtPut(thread_, module_dict, qux, value);
+
+  // Only baz is not Placeholder.
+  ValueCell::cast(runtime_.dictAt(thread_, module_dict, foo)).makePlaceholder();
+  ValueCell::cast(runtime_.dictAt(thread_, module_dict, bar)).makePlaceholder();
+  ValueCell::cast(runtime_.dictAt(thread_, module_dict, qux)).makePlaceholder();
+
+  Tuple buckets(&scope, module_dict.data());
+  word i = Dict::Bucket::kFirst;
+  EXPECT_TRUE(nextTypeDictItem(*buckets, &i));
+  EXPECT_TRUE(isStrEqualsCStr(Dict::Bucket::key(*buckets, i), "baz"));
+  EXPECT_FALSE(nextTypeDictItem(*buckets, &i));
+}
+
+TEST_F(TypeBuiltinsTest, TypeAtReturnsNoPlaceholderValue) {
+  HandleScope scope(thread_);
+  Type type(&scope, runtime_.newType());
+  Dict dict(&scope, type.dict());
+  Object key(&scope, runtime_.newStrFromCStr("a"));
+  Object value(&scope, runtime_.newStrFromCStr("a's value"));
+  runtime_.typeDictAtPut(thread_, dict, key, value);
+  EXPECT_EQ(typeAt(thread_, type, key), *value);
+}
+
+TEST_F(TypeBuiltinsTest, TypeAtReturnsErrorNotFoundForPlaceholder) {
+  HandleScope scope(thread_);
+  Type type(&scope, runtime_.newType());
+  Dict dict(&scope, type.dict());
+  Object key(&scope, runtime_.newStrFromCStr("a"));
+  Object value(&scope, runtime_.newStrFromCStr("a's value"));
+  ValueCell value_cell(&scope,
+                       runtime_.typeDictAtPut(thread_, dict, key, value));
+  value_cell.makePlaceholder();
+  EXPECT_TRUE(typeAt(thread_, type, key).isErrorNotFound());
+}
+
+TEST_F(TypeBuiltinsTest, TypeDictKeysFiltersOutPlaceholders) {
+  HandleScope scope(thread_);
+  Type type(&scope, runtime_.newType());
+  Dict dict(&scope, type.dict());
+
+  Str foo(&scope, runtime_.newStrFromCStr("foo"));
+  Str bar(&scope, runtime_.newStrFromCStr("bar"));
+  Str baz(&scope, runtime_.newStrFromCStr("baz"));
+  Str value(&scope, runtime_.newStrFromCStr("value"));
+
+  runtime_.typeDictAtPut(thread_, dict, foo, value);
+  runtime_.typeDictAtPut(thread_, dict, bar, value);
+  runtime_.typeDictAtPut(thread_, dict, baz, value);
+
+  ValueCell::cast(runtime_.dictAt(thread_, dict, bar)).makePlaceholder();
+
+  List keys(&scope, typeKeys(thread_, type));
+  EXPECT_EQ(keys.numItems(), 2);
+  EXPECT_EQ(keys.at(0), *foo);
+  EXPECT_EQ(keys.at(1), *baz);
+}
+
+TEST_F(TypeBuiltinsTest, TypeLenReturnsItemCountExcludingPlaceholders) {
+  HandleScope scope(thread_);
+  Type type(&scope, runtime_.newType());
+  Dict dict(&scope, type.dict());
+
+  Str foo(&scope, runtime_.newStrFromCStr("foo"));
+  Str bar(&scope, runtime_.newStrFromCStr("bar"));
+  Str baz(&scope, runtime_.newStrFromCStr("baz"));
+  Str value(&scope, runtime_.newStrFromCStr("value"));
+
+  runtime_.typeDictAtPut(thread_, dict, foo, value);
+  runtime_.typeDictAtPut(thread_, dict, bar, value);
+  runtime_.typeDictAtPut(thread_, dict, baz, value);
+
+  SmallInt previous_len(&scope, typeLen(thread_, type));
+
+  ValueCell::cast(runtime_.dictAt(thread_, dict, bar)).makePlaceholder();
+
+  SmallInt after_len(&scope, typeLen(thread_, type));
+  EXPECT_EQ(previous_len.value(), after_len.value() + 1);
+}
+
+TEST_F(TypeBuiltinsTest, TypeValuesFiltersOutPlaceholders) {
+  HandleScope scope(thread_);
+  Type type(&scope, runtime_.newType());
+  Dict dict(&scope, type.dict());
+
+  Str foo(&scope, runtime_.newStrFromCStr("foo"));
+  Str foo_value(&scope, runtime_.newStrFromCStr("foo_value"));
+  Str bar(&scope, runtime_.newStrFromCStr("bar"));
+  Str bar_value(&scope, runtime_.newStrFromCStr("bar_value"));
+  Str baz(&scope, runtime_.newStrFromCStr("baz"));
+  Str baz_value(&scope, runtime_.newStrFromCStr("baz_value"));
+
+  runtime_.typeDictAtPut(thread_, dict, foo, foo_value);
+  runtime_.typeDictAtPut(thread_, dict, bar, bar_value);
+  runtime_.typeDictAtPut(thread_, dict, baz, baz_value);
+
+  ValueCell::cast(runtime_.dictAt(thread_, dict, bar)).makePlaceholder();
+
+  List values(&scope, typeValues(thread_, type));
+  EXPECT_TRUE(listContains(values, foo_value));
+  EXPECT_FALSE(listContains(values, bar_value));
+  EXPECT_TRUE(listContains(values, baz_value));
+}
+
 TEST_F(TypeBuiltinsTest, DunderBasesReturnsTuple) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
@@ -338,7 +455,7 @@ TEST_F(TypeBuiltinsTest, TypeHasDunderDictAttribute) {
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = str.__class__.__dict__").isError());
   Object result(&scope, mainModuleAt(&runtime_, "result"));
-  ASSERT_TRUE(result.isDict());
+  EXPECT_TRUE(result.isTypeProxy());
 }
 
 TEST_F(TypeBuiltinsTest, TypeLookupNameInMroReturnsValue) {

@@ -1706,26 +1706,6 @@ TEST_F(UnderBuiltinsModuleTest, UnderStrArrayIaddWithStrReturnsStrArray) {
   EXPECT_EQ(self, result);
 }
 
-TEST_F(UnderBuiltinsModuleTest,
-       UnderTypeDictKeysWithPlaceholdersSkipsPlaceholders) {
-  HandleScope scope(thread_);
-  Dict dict(&scope, runtime_.newDict());
-  // We expect to get this key back
-  Str key(&scope, runtime_.newStrFromCStr("foo"));
-  Object value(&scope, NoneType::object());
-  runtime_.typeDictAtPut(thread_, dict, key, value);
-
-  // But not this one
-  Str ignore_key(&scope, runtime_.newStrFromCStr("bar"));
-  Object ignore_value(&scope, NoneType::object());
-  runtime_.typeDictAtPut(thread_, dict, ignore_key, ignore_value);
-  ValueCell cell(&scope, runtime_.dictAt(thread_, dict, ignore_key));
-  cell.makePlaceholder();
-
-  List result(&scope, runBuiltin(UnderBuiltinsModule::underTypeDictKeys, dict));
-  EXPECT_PYLIST_EQ(result, {"foo"});
-}
-
 TEST_F(UnderBuiltinsModuleTest, UnderTupleCheckExactWithExactTupleReturnsTrue) {
   HandleScope scope(thread_);
   Object obj(&scope, runtime_.newTuple(0));

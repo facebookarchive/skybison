@@ -809,17 +809,42 @@ def _type_check_exact(obj):
 
 
 @_patch
-def _type_dict_keys(obj):
-    pass
-
-
-@_patch
 def _type_guard(obj):
     pass
 
 
 @_patch
 def _type_issubclass(subclass, superclass):
+    pass
+
+
+@_patch
+def _type_proxy(type_obj):
+    pass
+
+
+@_patch
+def _type_proxy_get(self, key, default):
+    pass
+
+
+@_patch
+def _type_proxy_guard(module):
+    pass
+
+
+@_patch
+def _type_proxy_keys(self):
+    pass
+
+
+@_patch
+def _type_proxy_len(self):
+    pass
+
+
+@_patch
+def _type_proxy_values(self):
     pass
 
 

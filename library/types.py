@@ -18,7 +18,9 @@ def _f(): pass
 FunctionType = type(_f)
 LambdaType = type(lambda: None)         # Same as FunctionType
 CodeType = type(_f.__code__)
-MappingProxyType = type(type.__dict__)
+# TODO(T53314835): Implement MappingProxyType.
+#MappingProxyType = type(type.__dict__)
+MappingProxyType = dict
 SimpleNamespace = type(sys.implementation)
 
 def _g():

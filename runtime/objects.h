@@ -80,6 +80,7 @@ class Handle;
   V(Tuple)                                                                     \
   V(TupleIterator)                                                             \
   V(Type)                                                                      \
+  V(TypeProxy)                                                                 \
   V(UnderBufferedIOBase)                                                       \
   V(UnderIOBase)                                                               \
   V(UnderRawIOBase)                                                            \
@@ -329,6 +330,7 @@ class RawObject {
   bool isTuple() const;
   bool isTupleIterator() const;
   bool isType() const;
+  bool isTypeProxy() const;
   bool isUnderBufferedIOBase() const;
   bool isUnderIOBase() const;
   bool isUnderRawIOBase() const;
@@ -1068,6 +1070,10 @@ class RawType : public RawHeapObject {
   RawObject subclasses() const;
   void setSubclasses(RawObject subclasses) const;
 
+  // Lazily allocated read-only proxy to the type dict.
+  RawObject proxy() const;
+  void setProxy(RawObject proxy) const;
+
   bool isBaseExceptionSubclass() const;
 
   // Seal the attributes of the type. Sets the layout's overflowAttributes to
@@ -1085,7 +1091,8 @@ class RawType : public RawHeapObject {
   static const int kExtensionSlotsOffset = kDictOffset + kPointerSize;
   static const int kAbstractMethods = kExtensionSlotsOffset + kPointerSize;
   static const int kSubclassesOffset = kAbstractMethods + kPointerSize;
-  static const int kSize = kSubclassesOffset + kPointerSize;
+  static const int kProxyOffset = kSubclassesOffset + kPointerSize;
+  static const int kSize = kProxyOffset + kPointerSize;
 
   static const int kBuiltinBaseMask = 0xff;
 
@@ -1093,6 +1100,19 @@ class RawType : public RawHeapObject {
 
  private:
   void setFlags(Flag value) const;
+};
+
+class RawTypeProxy : public RawHeapObject {
+ public:
+  // The type is instance is a proxy to.
+  RawObject type() const;
+  void setType(RawObject type) const;
+
+  // Layout.
+  static const int kTypeOffset = RawHeapObject::kSize;
+  static const int kSize = kTypeOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(TypeProxy);
 };
 
 class RawArray : public RawHeapObject {
@@ -3293,6 +3313,10 @@ inline bool RawObject::isType() const {
   return isHeapObjectWithLayout(LayoutId::kType);
 }
 
+inline bool RawObject::isTypeProxy() const {
+  return isHeapObjectWithLayout(LayoutId::kTypeProxy);
+}
+
 inline bool RawObject::isUnicodeDecodeError() const {
   return isHeapObjectWithLayout(LayoutId::kUnicodeDecodeError);
 }
@@ -4055,6 +4079,14 @@ inline void RawType::setSubclasses(RawObject subclasses) const {
   instanceVariableAtPut(kSubclassesOffset, subclasses);
 }
 
+inline RawObject RawType::proxy() const {
+  return instanceVariableAt(kProxyOffset);
+}
+
+inline void RawType::setProxy(RawObject proxy) const {
+  instanceVariableAtPut(kProxyOffset, proxy);
+}
+
 inline bool RawType::isBuiltin() const {
   return RawLayout::cast(instanceLayout()).id() <= LayoutId::kLastBuiltinId;
 }
@@ -4076,6 +4108,16 @@ inline void RawType::sealAttributes() const {
   DCHECK(RawTuple::cast(layout.overflowAttributes()).length() == 0,
          "Cannot seal a layout with outgoing edges");
   layout.seal();
+}
+
+// RawTypeProxy
+
+inline RawObject RawTypeProxy::type() const {
+  return instanceVariableAt(kTypeOffset);
+}
+
+inline void RawTypeProxy::setType(RawObject type) const {
+  instanceVariableAtPut(kTypeOffset, type);
 }
 
 // RawArray

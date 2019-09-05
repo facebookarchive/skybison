@@ -8,6 +8,18 @@
 
 namespace python {
 
+// A version of Dict::Bucket::nextItem for type dict to filter out
+// placeholders.
+bool nextTypeDictItem(RawTuple data, word* idx);
+
+RawObject typeAt(Thread* thread, const Type& type, const Object& key);
+
+RawObject typeKeys(Thread* thread, const Type& type);
+
+RawObject typeLen(Thread* thread, const Type& type);
+
+RawObject typeValues(Thread* thread, const Type& type);
+
 RawObject typeGetAttribute(Thread* thread, const Type& type,
                            const Object& name_str);
 
@@ -61,6 +73,13 @@ class TypeBuiltins
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(TypeBuiltins);
+};
+
+class TypeProxyBuiltins
+    : public Builtins<TypeProxyBuiltins, SymbolId::kTypeProxy,
+                      LayoutId::kTypeProxy> {
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(TypeProxyBuiltins);
 };
 
 }  // namespace python

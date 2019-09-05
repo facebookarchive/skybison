@@ -186,6 +186,7 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
     {SymbolId::kTupleIterator, LayoutId::kTupleIterator},
     {SymbolId::kType, LayoutId::kType},
     {SymbolId::kTypeError, LayoutId::kTypeError},
+    {SymbolId::kTypeProxy, LayoutId::kTypeProxy},
     {SymbolId::kUnboundLocalError, LayoutId::kUnboundLocalError},
     {SymbolId::kUnderStrArray, LayoutId::kStrArray},
     {SymbolId::kUnicodeDecodeError, LayoutId::kUnicodeDecodeError},

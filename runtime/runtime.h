@@ -89,6 +89,8 @@ class Runtime {
   RawObject newType();
   RawObject newTypeWithMetaclass(LayoutId metaclass_id);
 
+  RawObject newTypeProxy(const Type& type);
+
   RawObject newClassMethod();
 
   RawObject newCode(word argcount, word posonlyargcount, word kwonlyargcount,
