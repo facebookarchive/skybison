@@ -72,6 +72,17 @@ TEST_F(CodeExtensionApiTest, ConstantKeyWithBytesReturnsTwoTuple) {
   EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
 }
 
+TEST_F(CodeExtensionApiTest, ConstantKeyWithStrReturnsTwoTuple) {
+  PyObjectPtr obj(PyUnicode_FromString("hello"));
+  PyObjectPtr result(_PyCode_ConstantKey(obj));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyTuple_Check(result));
+  ASSERT_EQ(PyTuple_Size(result), 2);
+  EXPECT_EQ(PyTuple_GetItem(result, 0),
+            reinterpret_cast<PyObject*>(Py_TYPE(obj)));
+  EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
+}
+
 TEST_F(CodeExtensionApiTest, ConstantKeyWithCodeReturnsTwoTuple) {
   PyObjectPtr empty_tuple(PyTuple_New(0));
   PyObjectPtr empty_bytes(PyBytes_FromString(""));

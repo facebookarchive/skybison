@@ -106,7 +106,7 @@ static RawObject constantKey(Thread* thread, const Object& obj) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   if (obj.isNoneType() || obj.isEllipsis() || obj.isInt() || obj.isBool() ||
-      obj.isBytes() || obj.isCode()) {
+      obj.isBytes() || obj.isStr() || obj.isCode()) {
     Tuple key(&scope, runtime->newTuple(2));
     key.atPut(0, runtime->typeOf(*obj));
     key.atPut(1, *obj);
