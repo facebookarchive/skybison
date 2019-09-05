@@ -60,6 +60,7 @@
 #include "under-builtins-module.h"
 #include "under-os-module.h"
 #include "under-str-mod-module.h"
+#include "under-thread-module.h"
 #include "utils.h"
 #include "visitor.h"
 #include "warnings-module.h"
@@ -2053,6 +2054,7 @@ const ModuleInitializer Runtime::kBuiltinModules[] = {
     {SymbolId::kUnderImp, &UnderImpModule::initialize},
     {SymbolId::kUnderOs, &UnderOsModule::initialize},
     {SymbolId::kUnderWeakRef, &UnderWeakrefModule::initialize},
+    {SymbolId::kUnderThread, &UnderThreadModule::initialize},
     {SymbolId::kUnderIo, &UnderIoModule::initialize},
     {SymbolId::kUnderStrMod, &UnderStrModModule::initialize},
     {SymbolId::kMarshal, &MarshalModule::initialize},

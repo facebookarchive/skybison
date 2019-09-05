@@ -184,6 +184,7 @@ set(
   library/_namedtuple.py
   library/_os.py
   library/_str_mod.py
+  library/_thread.py
   library/_warnings.py
   library/_weakref.py
   library/builtins.py
@@ -373,6 +374,8 @@ add_library(
   runtime/under-os-module.h
   runtime/under-str-mod-module.cpp
   runtime/under-str-mod-module.h
+  runtime/under-thread-module.cpp
+  runtime/under-thread-module.h
   runtime/unicode.h
   runtime/utils.cpp
   runtime/utils.h

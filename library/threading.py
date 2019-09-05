@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+
+from _thread import Lock  # noqa: F401
+
+
 _Unbound = _Unbound  # noqa: F821
 _unimplemented = _unimplemented  # noqa: F821
 
@@ -26,31 +30,6 @@ class Condition:
 class Event:
     def __init__(self, *args, **kwargs):
         _unimplemented()
-
-
-class Lock:
-    def __init__(self):
-        self._locked = False
-
-    def acquire(self, blocking=True, timeout=-1):
-        if self._locked:
-            # This would block indefinitely, let's abort instead...
-            _unimplemented()
-        self._locked = True
-
-    acquire_lock = acquire
-
-    __enter__ = acquire
-
-    def release(self):
-        if not self._locked:
-            raise RuntimeError("release unlocked lock")
-        self._locked = False
-
-    release_lock = release
-
-    def __exit__(self, t, v, tb):
-        self.release()
 
 
 def RLock(*args, **kwargs):
