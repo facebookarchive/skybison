@@ -19,6 +19,7 @@ from _builtins import _eq as eq, _lt as lt
 # These values are injected by our boot process. flake8 has no knowledge about
 # their definitions.
 _divmod = _divmod  # noqa: F821
+_type_name = _type_name  # noqa: F821
 
 
 __all__ = [
@@ -358,11 +359,9 @@ class attrgetter:
         return self._call(obj)
 
     def __repr__(self):
-        return "%s.%s(%s)" % (
-            self.__class__.__module__,
-            self.__class__.__qualname__,
-            ", ".join(map(repr, self._attrs)),
-        )
+        # TODO(T53507197): Use _sequence_repr
+        attrs = ", ".join(map(repr, self._attrs))
+        return f"{_type_name(self.__class__)}({attrs})"
 
     def __reduce__(self):
         return self.__class__, self._attrs
@@ -397,11 +396,9 @@ class itemgetter:
         return self._call(obj)
 
     def __repr__(self):
-        return "%s.%s(%s)" % (
-            self.__class__.__module__,
-            self.__class__.__name__,
-            ", ".join(map(repr, self._items)),
-        )
+        # TODO(T53507197): Use _sequence_repr
+        items = ", ".join(map(repr, self._items))
+        return f"{_type_name(self.__class__)}({items})"
 
     def __reduce__(self):
         return self.__class__, self._items
@@ -435,11 +432,7 @@ class methodcaller:
         args = [repr(self._name)]
         args.extend(map(repr, self._args))
         args.extend("%s=%r" % (k, v) for k, v in self._kwargs.items())
-        return "%s.%s(%s)" % (
-            self.__class__.__module__,
-            self.__class__.__name__,
-            ", ".join(args),
-        )
+        return f"{_type_name(self.__class__)}({','.join(args)})"
 
     def __reduce__(self):
         if not self._kwargs:

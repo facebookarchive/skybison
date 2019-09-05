@@ -4438,6 +4438,7 @@ class tuple(bootstrap=True):
         return _tuple_new(cls, (*iterable,))
 
     def __repr__(self):
+        # TODO(T53507197): Use _sequence_repr
         _tuple_guard(self)
         if _repr_enter(self):
             return "(...)"
@@ -4464,6 +4465,10 @@ class tuple_iterator(bootstrap=True):
 
     def __next__(self):
         pass
+
+
+def _type_name(cls):
+    return f"{cls.__module__}.{cls.__qualname__}"
 
 
 def vars(obj=_Unbound):
