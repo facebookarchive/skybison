@@ -5,17 +5,47 @@
 
 namespace python {
 
-PY_EXPORT void* PyObject_Malloc(size_t size) { return PyMem_RawMalloc(size); }
+PY_EXPORT void* PyObject_Malloc(size_t size) {
+  ListEntry* entry =
+      static_cast<ListEntry*>(PyMem_RawMalloc(sizeof(ListEntry) + size));
+  entry->prev = nullptr;
+  entry->next = nullptr;
+  if (!Thread::current()->runtime()->trackNativeObject(entry)) {
+    Py_FatalError("GC object already tracked");
+  }
+  return reinterpret_cast<void*>(entry + 1);
+}
 
 PY_EXPORT void* PyObject_Calloc(size_t nelem, size_t size) {
-  return PyMem_RawCalloc(nelem, size);
+  if (size == 0 || nelem == 0) {
+    nelem = 1;
+    size = 1;
+  }
+  void* buffer = PyObject_Malloc(nelem * size);
+  std::memset(buffer, 0, nelem * size);
+  return buffer;
 }
 
 PY_EXPORT void* PyObject_Realloc(void* ptr, size_t size) {
-  return PyMem_RawRealloc(ptr, size);
+  if (ptr == nullptr) return PyObject_Malloc(size);
+  ListEntry* entry = static_cast<ListEntry*>(ptr) - 1;
+  Thread::current()->runtime()->untrackNativeObject(entry);
+  entry = static_cast<ListEntry*>(
+      PyMem_RawRealloc(entry, sizeof(ListEntry) + size));
+  entry->prev = nullptr;
+  entry->next = nullptr;
+  if (!Thread::current()->runtime()->trackNativeObject(entry)) {
+    Py_FatalError("GC object already tracked");
+  }
+  return reinterpret_cast<void*>(entry + 1);
 }
 
-PY_EXPORT void PyObject_Free(void* ptr) { return PyMem_RawFree(ptr); }
+PY_EXPORT void PyObject_Free(void* ptr) {
+  if (ptr == nullptr) return;
+  ListEntry* entry = static_cast<ListEntry*>(ptr) - 1;
+  Thread::current()->runtime()->untrackNativeObject(entry);
+  return PyMem_RawFree(reinterpret_cast<void*>(entry));
+}
 
 PY_EXPORT void* PyMem_Malloc(size_t size) { return PyMem_RawMalloc(size); }
 

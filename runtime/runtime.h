@@ -30,10 +30,6 @@ struct ListEntry {
   ListEntry* next;
 };
 
-struct NativeObjectNode : ListEntry {
-  void* native_ptr;
-};
-
 using AtExitFn = void (*)();
 
 using NativeMethodType = RawObject (*)(Thread* thread, Frame* frame,
@@ -296,23 +292,15 @@ class Runtime {
 
   Heap* heap() { return &heap_; }
 
-  // Tracks extension's native objects for gcmodule.
+  // Tracks extension native non-GC and GC objects.
   // Returns true if an untracked entry becomes tracked, false, otherwise.
-  bool trackObject(ListEntry* entry);
+  bool trackNativeObject(ListEntry* entry);
+  bool trackNativeGcObject(ListEntry* entry);
 
-  // Untracks extension's native objects for gcmodule.
+  // Untracks extension native non-GC and GC objects.
   // Returns true if a tracked entry becomes untracked, false, otherwise.
-  bool untrackObject(ListEntry* entry);
-
-  // TODO(T46009495): Remove once native objects are handled at a lower level
-  // Tracks extension's native objects in managed code
-  // Returns true if an untracked entry becomes tracked, false, otherwise.
-  bool trackNativeObject(void* native);
-
-  // TODO(T46009495): Remove once native objects are handled at a lower level
-  // Tracks extension's native objects in managed code
-  // Returns true if a tracked entry becomes untracked, false, otherwise.
-  bool untrackNativeObject(void* native);
+  bool untrackNativeObject(ListEntry* entry);
+  bool untrackNativeGcObject(ListEntry* entry);
 
   void visitRoots(PointerVisitor* visitor);
 
@@ -990,13 +978,12 @@ class Runtime {
 
   Heap heap_;
 
-  // Linked list of tracked extension objects.
-  ListEntry* tracked_objects_ = nullptr;
-
   // TODO(T46009495): This is a temporary list tracking native objects to
   // correctly free their memory at runtime destruction. However, this should
-  // be moved to a lower level abstraction in the C-API such as PyObject_Malloc.
+  // be moved to a lower level abstraction in the C-API such as PyObject_Malloc
+  // Linked list of tracked extension objects.
   ListEntry* tracked_native_objects_ = nullptr;
+  ListEntry* tracked_native_gc_objects_ = nullptr;
 
   // A List of Layout objects, indexed by layout id.
   RawObject layouts_ = NoneType::object();

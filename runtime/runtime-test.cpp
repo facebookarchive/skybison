@@ -1037,46 +1037,28 @@ TEST_F(RuntimeTest, Random) {
   EXPECT_NE(r3, r4);
 }
 
-TEST_F(RuntimeTest, TrackObjectAndUnTrackObject) {
+TEST_F(RuntimeTest, trackNativeGcObjectAndUntrackNativeGcObject) {
   ListEntry entry0{nullptr, nullptr};
   ListEntry entry1{nullptr, nullptr};
 
-  EXPECT_TRUE(runtime_.trackObject(&entry0));
-  EXPECT_TRUE(runtime_.trackObject(&entry1));
+  EXPECT_TRUE(runtime_.trackNativeGcObject(&entry0));
+  EXPECT_TRUE(runtime_.trackNativeGcObject(&entry1));
   // Trying to track an already tracked object returns false.
-  EXPECT_FALSE(runtime_.trackObject(&entry0));
-  EXPECT_FALSE(runtime_.trackObject(&entry1));
+  EXPECT_FALSE(runtime_.trackNativeGcObject(&entry0));
+  EXPECT_FALSE(runtime_.trackNativeGcObject(&entry1));
 
-  EXPECT_TRUE(runtime_.untrackObject(&entry0));
-  EXPECT_TRUE(runtime_.untrackObject(&entry1));
+  EXPECT_TRUE(runtime_.untrackNativeGcObject(&entry0));
+  EXPECT_TRUE(runtime_.untrackNativeGcObject(&entry1));
 
   // Trying to untrack an already untracked object returns false.
-  EXPECT_FALSE(runtime_.untrackObject(&entry0));
-  EXPECT_FALSE(runtime_.untrackObject(&entry1));
+  EXPECT_FALSE(runtime_.untrackNativeGcObject(&entry0));
+  EXPECT_FALSE(runtime_.untrackNativeGcObject(&entry1));
 
   // Verify untracked entires are reset to nullptr.
   EXPECT_EQ(entry0.prev, nullptr);
   EXPECT_EQ(entry0.next, nullptr);
   EXPECT_EQ(entry1.prev, nullptr);
   EXPECT_EQ(entry1.next, nullptr);
-}
-
-TEST_F(RuntimeTest, TrackObjectAndUnTrackNativeObject) {
-  void* native0 = std::calloc(sizeof(PyObject), 1);
-  void* native1 = std::calloc(sizeof(PyObject), 1);
-
-  EXPECT_TRUE(runtime_.trackNativeObject(native0));
-  EXPECT_TRUE(runtime_.trackNativeObject(native1));
-
-  // Objects are only tracked once
-  EXPECT_FALSE(runtime_.trackNativeObject(native0));
-  EXPECT_FALSE(runtime_.trackNativeObject(native1));
-
-  EXPECT_TRUE(runtime_.untrackNativeObject(native0));
-  EXPECT_TRUE(runtime_.untrackNativeObject(native1));
-
-  std::free(native0);
-  std::free(native1);
 }
 
 TEST_F(RuntimeTest, HashCodeSizeCheck) {

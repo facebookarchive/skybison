@@ -32,9 +32,8 @@ PY_EXPORT void _Py_Dealloc_Func(PyObject* obj) {
   }
   PyTypeObject* type = reinterpret_cast<PyTypeObject*>(PyObject_Type(obj));
   auto dealloc = bit_cast<destructor>(PyType_GetSlot(type, Py_tp_dealloc));
-  if (obj->reference_ != 0) {
-    Thread::current()->runtime()->untrackNativeObject(obj);
-  }
+  ListEntry* entry = reinterpret_cast<ListEntry*>(obj) - 1;
+  Thread::current()->runtime()->untrackNativeObject(entry);
   dealloc(obj);
   Py_DECREF(type);
 }
@@ -219,12 +218,33 @@ PY_EXPORT Py_hash_t PyObject_HashNotImplemented(PyObject* /* v */) {
 
 PY_EXPORT PyObject* PyObject_Init(PyObject* obj, PyTypeObject* typeobj) {
   if (obj == nullptr) return PyErr_NoMemory();
-  obj->reference_ = 0;
+
+  // Create a managed proxy for the native instance
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Type type_obj(&scope,
+                ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(typeobj))
+                    ->asObject());
+  Layout layout(&scope, type_obj.instanceLayout());
+  HeapObject instance(&scope, runtime->newInstance(layout));
+
+  // Initialize the instance
+  obj->reference_ = instance.raw();
   obj->ob_type = typeobj;
   if (PyType_GetFlags(typeobj) & Py_TPFLAGS_HEAPTYPE) {
     Py_INCREF(typeobj);
   }
-  obj->ob_refcnt = 1;
+
+  // Set the proxy object attribute to the native object
+  Object native_ptr(&scope, runtime->newIntFromCPtr(obj));
+  Object attr_name(&scope, runtime->symbols()->ExtensionPtr());
+  instanceSetAttr(thread, instance, attr_name, native_ptr);
+
+  // TODO(T53456038): Make the reference count be one
+  // Set a reference count of two. One for the original PyObject_Init call
+  // and the second for the managed instance proxy that points back to it.
+  obj->ob_refcnt = 2;
   return obj;
 }
 

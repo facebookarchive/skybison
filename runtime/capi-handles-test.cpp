@@ -153,22 +153,6 @@ TEST_F(CApiHandlesTest, Runtime_InstanceObjectReturnsPyObject) {
   EXPECT_EQ(*obj, *instance);
 }
 
-TEST_F(CApiHandlesTest, PyObjectReturnsExtensionInstance) {
-  HandleScope scope(thread_);
-
-  // Create type
-  PyObject extension_type;
-  Type type(&scope, initializeExtensionType(&extension_type));
-  PyObject* extension_type_ref = ApiHandle::newReference(thread_, *type);
-
-  PyObject* pyobj = static_cast<PyObject*>(std::malloc(sizeof(PyObject)));
-  pyobj->reference_ = 0;
-  pyobj->ob_refcnt = 1;
-  pyobj->ob_type = reinterpret_cast<PyTypeObject*>(extension_type_ref);
-  Object handle_obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
-  EXPECT_TRUE(handle_obj.isInstance());
-}
-
 TEST_F(CApiHandlesTest, Cache) {
   HandleScope scope(thread_);
 

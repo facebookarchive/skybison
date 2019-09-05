@@ -207,29 +207,10 @@ RawObject ApiHandle::getExtensionPtrAttr(Thread* thread, const Object& obj) {
   return instanceGetAttribute(thread, instance, attr_name);
 }
 
-RawObject ApiHandle::asInstance(RawObject type) {
-  Thread* thread = Thread::current();
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-
-  DCHECK(type.isType(), "not a RawType object");
-  Type type_obj(&scope, type);
-  Layout layout(&scope, type_obj.instanceLayout());
-  HeapObject instance(&scope, runtime->newInstance(layout));
-  Object object_ptr(&scope, runtime->newIntFromCPtr(static_cast<void*>(this)));
-  Object attr_name(&scope, runtime->symbols()->ExtensionPtr());
-  instanceSetAttr(thread, instance, attr_name, object_ptr);
-  if (runtime->trackNativeObject(reinterpret_cast<void*>(this))) incref();
-  return *instance;
-}
-
 RawObject ApiHandle::asObject() {
-  // Fast path: All builtin objects except Types
-  if (isManaged(this)) return RawObject{reinterpret_cast<uword>(reference_)};
-
-  // Create a runtime instance to hold the PyObject pointer
-  DCHECK(type(), "ApiHandles must have a type to create an instance");
-  return asInstance(type()->asObject());
+  DCHECK(reference_ != 0 || isManaged(this),
+         "A handle or native instance must point back to a heap instance");
+  return RawObject{reference_};
 }
 
 bool ApiHandle::isType() {

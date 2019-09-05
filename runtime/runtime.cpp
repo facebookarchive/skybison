@@ -1444,37 +1444,20 @@ bool Runtime::listEntryRemove(ListEntry* entry, ListEntry** root) {
   return true;
 }
 
-bool Runtime::trackObject(ListEntry* entry) {
-  return listEntryInsert(entry, &tracked_objects_);
+bool Runtime::trackNativeGcObject(ListEntry* entry) {
+  return listEntryInsert(entry, &tracked_native_gc_objects_);
 }
 
-bool Runtime::untrackObject(ListEntry* entry) {
-  return listEntryRemove(entry, &tracked_objects_);
+bool Runtime::untrackNativeGcObject(ListEntry* entry) {
+  return listEntryRemove(entry, &tracked_native_gc_objects_);
 }
 
-bool Runtime::trackNativeObject(void* native) {
-  // This is an already untracked object.
-  if (reinterpret_cast<PyObject*>(native)->reference_ != 0) {
-    return false;
-  }
-  NativeObjectNode* entry = reinterpret_cast<NativeObjectNode*>(
-      std::malloc(sizeof(NativeObjectNode)));
-  entry->prev = nullptr;
-  entry->next = nullptr;
-  entry->native_ptr = native;
-  reinterpret_cast<PyObject*>(native)->reference_ =
-      reinterpret_cast<uword>(entry);
+bool Runtime::trackNativeObject(ListEntry* entry) {
   return listEntryInsert(entry, &tracked_native_objects_);
 }
 
-bool Runtime::untrackNativeObject(void* native) {
-  ListEntry* entry = reinterpret_cast<ListEntry*>(
-      reinterpret_cast<PyObject*>(native)->reference_);
-  if (!listEntryRemove(entry, &tracked_native_objects_)) {
-    return false;
-  }
-  std::free(entry);
-  return true;
+bool Runtime::untrackNativeObject(ListEntry* entry) {
+  return listEntryRemove(entry, &tracked_native_objects_);
 }
 
 RawObject Runtime::identityHash(RawObject object) {
@@ -4261,11 +4244,9 @@ void Runtime::freeApiHandles() {
     handle->dispose();
   }
   while (tracked_native_objects_ != nullptr) {
-    NativeObjectNode* entry =
-        static_cast<NativeObjectNode*>(tracked_native_objects_);
-    void* native = entry->native_ptr;
-    untrackNativeObject(native);
-    std::free(native);
+    auto entry = static_cast<ListEntry*>(tracked_native_objects_);
+    untrackNativeObject(entry);
+    std::free(entry);
   }
 }
 
