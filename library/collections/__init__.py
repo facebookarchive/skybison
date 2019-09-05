@@ -58,6 +58,13 @@ class defaultdict(dict):
             raise TypeError("default_factory must be callable or None")
         self.default_factory = default_factory
 
+    def __getitem__(self, key):
+        _dict_guard(self)
+        result = dict.get(self, key, _Unbound)
+        if result is _Unbound:
+            return _type(self).__missing__(self, key)
+        return result
+
     def __missing__(self, key):
         default_factory = self.default_factory
         if default_factory is None:

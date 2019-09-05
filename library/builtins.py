@@ -45,6 +45,7 @@ _dict_bucket_key = _dict_bucket_key  # noqa: F821
 _dict_bucket_update = _dict_bucket_update  # noqa: F821
 _dict_bucket_value = _dict_bucket_value  # noqa: F821
 _dict_check = _dict_check  # noqa: F821
+_dict_checkexact = _dict_checkexact  # noqa: F821
 _dict_guard = _dict_guard  # noqa: F821
 _dict_lookup = _dict_lookup  # noqa: F821
 _dict_lookup_next = _dict_lookup_next  # noqa: F821
@@ -1914,7 +1915,12 @@ class dict(bootstrap=True):
         _dict_guard(self)
         result = dict.get(self, key, _Unbound)
         if result is _Unbound:
-            return _object_type_getattr(self, "__missing__")(key)
+            if not _dict_checkexact(self):
+                dunder_missing = _object_type_getattr(self, "__missing__")
+                if dunder_missing is not _Unbound:
+                    # Subclass defined __missing__
+                    return dunder_missing(key)
+            raise KeyError(key)
         return result
 
     def __init__(self, *args, **kwargs):
@@ -1929,10 +1935,6 @@ class dict(bootstrap=True):
 
     def __len__(self):
         pass
-
-    def __missing__(self, key):
-        _dict_guard(self)
-        raise KeyError(key)
 
     def __new__(cls, *args, **kwargs):
         pass

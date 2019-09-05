@@ -1509,6 +1509,10 @@ class DictTests(unittest.TestCase):
         with self.assertRaises(UserWarning):
             dict.__delitem__({}, C())
 
+    def test_concrete_dict_has_no_dunder_missing(self):
+        with self.assertRaises(AttributeError):
+            dict.__missing__
+
     def test_dunder_getitem_calls_dunder_missing(self):
         class C(dict):
             def __missing__(self, key):

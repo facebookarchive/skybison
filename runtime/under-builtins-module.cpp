@@ -108,6 +108,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderDictBucketUpdate, underDictBucketUpdate},
     {SymbolId::kUnderDictBucketValue, underDictBucketValue},
     {SymbolId::kUnderDictCheck, underDictCheck},
+    {SymbolId::kUnderDictCheckExact, underDictCheckExact},
     {SymbolId::kUnderDictGuard, underDictGuard},
     {SymbolId::kUnderDictLen, underDictLen},
     {SymbolId::kUnderDictLookup, underDictLookup},
@@ -238,6 +239,7 @@ const BuiltinType UnderBuiltinsModule::kBuiltinTypes[] = {
 
 const char* const UnderBuiltinsModule::kFrozenData = kUnderBuiltinsModuleData;
 
+// clang-format off
 const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
     SymbolId::kUnderByteArrayCheck,
     SymbolId::kUnderByteArrayGuard,
@@ -246,6 +248,7 @@ const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
     SymbolId::kUnderBytesGuard,
     SymbolId::kUnderBytesLen,
     SymbolId::kUnderDictCheck,
+    SymbolId::kUnderDictCheckExact,
     SymbolId::kUnderDictGuard,
     SymbolId::kUnderDictLen,
     SymbolId::kUnderFloatCheck,
@@ -283,6 +286,7 @@ const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
     SymbolId::kUnderTypeGuard,
     SymbolId::kSentinelId,
 };
+// clang-format on
 
 RawObject UnderBuiltinsModule::underAddress(Thread* thread, Frame* frame,
                                             word nargs) {
@@ -1275,6 +1279,12 @@ RawObject UnderBuiltinsModule::underDictCheck(Thread* thread, Frame* frame,
                                               word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfDict(args.get(0)));
+}
+
+RawObject UnderBuiltinsModule::underDictCheckExact(Thread*, Frame* frame,
+                                                   word nargs) {
+  Arguments args(frame, nargs);
+  return Bool::fromBool(args.get(0).isDict());
 }
 
 RawObject UnderBuiltinsModule::underDictGuard(Thread* thread, Frame* frame,

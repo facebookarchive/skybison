@@ -72,6 +72,8 @@ class UnderBuiltinsModule {
   static RawObject underDictBucketValue(Thread* thread, Frame* frame,
                                         word nargs);
   static RawObject underDictCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underDictCheckExact(Thread* thread, Frame* frame,
+                                       word nargs);
   static RawObject underDictGuard(Thread* thread, Frame* frame, word nargs);
   static RawObject underDictLen(Thread* thread, Frame* frame, word nargs);
   static RawObject underDictLookup(Thread* thread, Frame* frame, word nargs);

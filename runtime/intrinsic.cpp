@@ -59,6 +59,11 @@ static bool underDictCheck(Thread* thread, Frame* frame) {
   return true;
 }
 
+static bool underDictCheckExact(Frame* frame) {
+  frame->setTopValue(Bool::fromBool(frame->popValue().isDict()));
+  return true;
+}
+
 static bool underDictGuard(Thread* thread, Frame* frame) {
   if (thread->runtime()->isInstanceOfDict(frame->topValue())) {
     frame->popValue();
@@ -443,6 +448,8 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
       return underBytesLen(frame);
     case SymbolId::kUnderDictCheck:
       return underDictCheck(thread, frame);
+    case SymbolId::kUnderDictCheckExact:
+      return underDictCheckExact(frame);
     case SymbolId::kUnderDictGuard:
       return underDictGuard(thread, frame);
     case SymbolId::kUnderDictLen:

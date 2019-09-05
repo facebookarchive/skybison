@@ -204,6 +204,11 @@ def _dict_check(obj):
 
 
 @_patch
+def _dict_checkexact(obj):
+    pass
+
+
+@_patch
 def _dict_guard(obj):
     pass
 

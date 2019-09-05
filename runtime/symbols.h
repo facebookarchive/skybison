@@ -189,6 +189,7 @@ class Runtime;
   V(UnderDictBucketUpdate, "_dict_bucket_update")                              \
   V(UnderDictBucketValue, "_dict_bucket_value")                                \
   V(UnderDictCheck, "_dict_check")                                             \
+  V(UnderDictCheckExact, "_dict_checkexact")                                   \
   V(UnderDictGetItem, "_dict_getitem")                                         \
   V(UnderDictGuard, "_dict_guard")                                             \
   V(UnderDictLen, "_dict_len")                                                 \
