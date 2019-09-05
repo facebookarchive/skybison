@@ -360,6 +360,33 @@ TEST_F(RuntimeDictTest, EmptyDictInvariants) {
   EXPECT_EQ(Tuple::cast(dict.data()).length(), 0);
 }
 
+TEST_F(RuntimeDictTest, AtPutWithHashRetainsExistingKeyObject) {
+  HandleScope scope(thread_);
+  Dict dict(&scope, runtime_.newDict());
+  Str key0(&scope, runtime_.newStrFromCStr("foobarbazbam"));
+  Object key0_hash(&scope, runtime_.hash(*key0));
+  Object value0(&scope, SmallInt::fromWord(123));
+  Str key1(&scope, runtime_.newStrFromCStr("foobarbazbam"));
+  Object key1_hash(&scope, runtime_.hash(*key1));
+  Object value1(&scope, SmallInt::fromWord(456));
+  ASSERT_NE(key0, key1);
+  ASSERT_EQ(key0_hash, key1_hash);
+
+  runtime_.dictAtPut(thread_, dict, key0, value0);
+  ASSERT_EQ(dict.numItems(), 1);
+  ASSERT_EQ(runtime_.dictAt(thread_, dict, key0), *value0);
+
+  // Overwrite the stored value
+  runtime_.dictAtPut(thread_, dict, key1, value1);
+  ASSERT_EQ(dict.numItems(), 1);
+  ASSERT_EQ(runtime_.dictAt(thread_, dict, key1), *value1);
+
+  Tuple data(&scope, dict.data());
+  word i = Dict::Bucket::kFirst;
+  Dict::Bucket::nextItem(*data, &i);
+  EXPECT_EQ(Dict::Bucket::key(*data, i), key0);
+}
+
 TEST_F(RuntimeDictTest, GetSet) {
   HandleScope scope(thread_);
   Dict dict(&scope, runtime_.newDict());

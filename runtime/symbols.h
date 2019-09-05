@@ -189,7 +189,7 @@ class Runtime;
   V(UnderDescrClassMethod, "_descrclassmethod")                                \
   V(UnderDictBucketInsert, "_dict_bucket_insert")                              \
   V(UnderDictBucketKey, "_dict_bucket_key")                                    \
-  V(UnderDictBucketUpdate, "_dict_bucket_update")                              \
+  V(UnderDictBucketSetValue, "_dict_bucket_set_value")                         \
   V(UnderDictBucketValue, "_dict_bucket_value")                                \
   V(UnderDictCheck, "_dict_check")                                             \
   V(UnderDictCheckExact, "_dict_checkexact")                                   \

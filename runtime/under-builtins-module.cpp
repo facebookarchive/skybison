@@ -105,7 +105,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderDelattr, underDelattr},
     {SymbolId::kUnderDictBucketInsert, underDictBucketInsert},
     {SymbolId::kUnderDictBucketKey, underDictBucketKey},
-    {SymbolId::kUnderDictBucketUpdate, underDictBucketUpdate},
+    {SymbolId::kUnderDictBucketSetValue, underDictBucketSetValue},
     {SymbolId::kUnderDictBucketValue, underDictBucketValue},
     {SymbolId::kUnderDictCheck, underDictCheck},
     {SymbolId::kUnderDictCheckExact, underDictCheckExact},
@@ -1264,19 +1264,16 @@ RawObject UnderBuiltinsModule::underDictBucketValue(Thread* thread,
   return Dict::Bucket::value(*data, index);
 }
 
-RawObject UnderBuiltinsModule::underDictBucketUpdate(Thread* thread,
-                                                     Frame* frame, word nargs) {
+RawObject UnderBuiltinsModule::underDictBucketSetValue(Thread* thread,
+                                                       Frame* frame,
+                                                       word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Dict dict(&scope, args.get(0));
   Tuple data(&scope, dict.data());
   word index = Int::cast(args.get(1)).asWord();
-  Object key(&scope, args.get(2));
-  Object key_hash(&scope, args.get(3));
-  key_hash = SmallInt::fromWordTruncated(
-      Int::cast(intUnderlying(thread, key_hash)).digitAt(0));
-  Object value(&scope, args.get(4));
-  Dict::Bucket::set(*data, index, *key_hash, *key, *value);
+  Object value(&scope, args.get(2));
+  Dict::Bucket::setValue(*data, index, *value);
   return NoneType::object();
 }
 

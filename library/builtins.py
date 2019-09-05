@@ -42,7 +42,7 @@ _complex_real = _complex_real  # noqa: F821
 _delattr = _delattr  # noqa: F821
 _dict_bucket_insert = _dict_bucket_insert  # noqa: F821
 _dict_bucket_key = _dict_bucket_key  # noqa: F821
-_dict_bucket_update = _dict_bucket_update  # noqa: F821
+_dict_bucket_set_value = _dict_bucket_set_value  # noqa: F821
 _dict_bucket_value = _dict_bucket_value  # noqa: F821
 _dict_check = _dict_check  # noqa: F821
 _dict_checkexact = _dict_checkexact  # noqa: F821
@@ -701,17 +701,12 @@ def _dict_getitem(self, key):
     # Fast path. From the probing strategy, most dictionary lookups will
     # successfully match the first non-empty bucket it finds or completely
     # fail to find a single match.
-    key_type = _type(key)
-    key_hash = key_type.__hash__(key)
+    key_hash = hash(key)
     index = _dict_lookup(self, key, key_hash)
     if index < 0:  # No match in the entire dict
         return _Unbound
     other_key = _dict_bucket_key(self, index)
-    if key is other_key:  # Identity has higher precedence than __eq__
-        return _dict_bucket_value(self, index)
-    key_eq = key_type.__eq__
-    res = key_eq(key, other_key)
-    if res and res is not NotImplemented:
+    if other_key is key or other_key == key:
         return _dict_bucket_value(self, index)
 
     # Slow path. The first non-empty bucket did not contain a match. Restart
@@ -720,13 +715,9 @@ def _dict_getitem(self, key):
     index, perturb = _dict_lookup_next(self, index, key, key_hash, _Unbound)
     while index >= 0:
         other_key = _dict_bucket_key(self, index)
-        if key is other_key:  # Identity has higher precedence than __eq__
-            return _dict_bucket_value(self, index)
-        res = key_eq(key, other_key)
-        if res and res is not NotImplemented:
+        if other_key is key or other_key == key:
             return _dict_bucket_value(self, index)
         index, perturb = _dict_lookup_next(self, index, key, key_hash, perturb)
-
     return _Unbound
 
 
@@ -734,20 +725,14 @@ def _dict_setitem(self, key, value):
     # Fast path. From the probing strategy, most dictionary lookups will
     # successfully match the first non-empty bucket it finds or completely
     # fail to find a single match.
-    key_type = _type(key)
-    key_hash = key_type.__hash__(key)
+    key_hash = hash(key)
     index = _dict_lookup(self, key, key_hash)
     if index < 0:  # No match in the entire dict
         _dict_bucket_insert(self, index, key, key_hash, value)
         return
     other_key = _dict_bucket_key(self, index)
-    if key is other_key:  # Identity has higher precedence than __eq__
-        _dict_bucket_update(self, index, key, key_hash, value)
-        return
-    key_eq = key_type.__eq__
-    res = key_eq(key, other_key)
-    if res and res is not NotImplemented:
-        _dict_bucket_update(self, index, key, key_hash, value)
+    if other_key is key or other_key == key:
+        _dict_bucket_set_value(self, index, value)
         return
 
     # Slow path. The first non-empty bucket did not contain a match. Restart
@@ -756,15 +741,10 @@ def _dict_setitem(self, key, value):
     index, perturb = _dict_lookup_next(self, index, key, key_hash, _Unbound)
     while index >= 0:
         other_key = _dict_bucket_key(self, index)
-        if key is other_key:  # Identity has higher precedence than __eq__
-            _dict_bucket_update(self, index, key, key_hash, value)
-            return
-        res = key_eq(key, other_key)
-        if res and res is not NotImplemented:
-            _dict_bucket_update(self, index, key, key_hash, value)
+        if other_key is key or other_key == key:
+            _dict_bucket_set_value(self, index, value)
             return
         index, perturb = _dict_lookup_next(self, index, key, key_hash, perturb)
-
     _dict_bucket_insert(self, index, key, key_hash, value)
 
 

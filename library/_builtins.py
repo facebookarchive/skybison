@@ -189,7 +189,7 @@ def _dict_bucket_key(self, index):
 
 
 @_patch
-def _dict_bucket_update(self, index, key, key_hash, value):
+def _dict_bucket_set_value(self, index, value):
     pass
 
 

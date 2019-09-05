@@ -2259,6 +2259,10 @@ class RawDict::Bucket {
         RawNoneType::object());
   }
 
+  static void setValue(RawTuple data, word index, RawObject value) {
+    data.atPut(index + kValueOffset, value);
+  }
+
   static RawObject value(RawTuple data, word index) {
     return data.at(index + kValueOffset);
   }

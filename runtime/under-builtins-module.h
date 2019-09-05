@@ -67,8 +67,8 @@ class UnderBuiltinsModule {
   static RawObject underDictBucketInsert(Thread* thread, Frame* frame,
                                          word nargs);
   static RawObject underDictBucketKey(Thread* thread, Frame* frame, word nargs);
-  static RawObject underDictBucketUpdate(Thread* thread, Frame* frame,
-                                         word nargs);
+  static RawObject underDictBucketSetValue(Thread* thread, Frame* frame,
+                                           word nargs);
   static RawObject underDictBucketValue(Thread* thread, Frame* frame,
                                         word nargs);
   static RawObject underDictCheck(Thread* thread, Frame* frame, word nargs);

@@ -278,6 +278,98 @@ d[C()] = 4
   EXPECT_EQ(result, nullptr);
 }
 
+TEST_F(DictExtensionApiTest,
+       GetItemCallsExistingKeyDunderEqAndThenLookedKeyDunderEq) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+seq_num = 0
+
+def new_seq_num():
+  global seq_num
+  seq_num += 1
+  return seq_num
+
+c_eq = 0
+c_hash = 0
+
+class C:
+  def __eq__(self, other):
+    global c_eq
+    c_eq = new_seq_num()
+    return NotImplemented
+
+  def __hash__(self):
+    global c_hash
+    c_hash = new_seq_num()
+    return 5
+
+c = C()
+
+d_eq = 0
+d_hash = 0
+
+class D:
+  def __eq__(self, other):
+    global d_eq
+    d_eq = new_seq_num()
+    return True
+
+  def __hash__(self):
+    global d_hash
+    d_hash = new_seq_num()
+    return 5
+
+d = D()
+)"),
+            0);
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr value(PyLong_FromLong(500));
+
+  ASSERT_EQ(PyDict_SetItem(dict, c, value), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_EQ(PyDict_Size(dict), 1);
+  ASSERT_EQ(PyLong_AsLong(moduleGet("__main__", "c_eq")), 0);
+  ASSERT_EQ(PyLong_AsLong(moduleGet("__main__", "c_hash")), 1);
+
+  PyObjectPtr d(moduleGet("__main__", "d"));
+  PyObject* result = PyDict_GetItem(dict, d);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_EQ(PyLong_AsLong(result), 500);
+  EXPECT_EQ(PyLong_AsLong(moduleGet("__main__", "c_hash")), 1);
+  EXPECT_EQ(PyLong_AsLong(moduleGet("__main__", "d_hash")), 2);
+  EXPECT_EQ(PyLong_AsLong(moduleGet("__main__", "c_eq")), 3);
+  EXPECT_EQ(PyLong_AsLong(moduleGet("__main__", "d_eq")), 4);
+}
+
+TEST_F(DictExtensionApiTest, GetItemComparesHashValueFirst) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+class C:
+  def __init__(self, hash_code):
+    self.hash_code = hash_code
+
+  def __eq__(self, other):
+    raise UserWarning("unexpected")
+
+  def __hash__(self):
+    return self.hash_code
+
+c = C(4)
+d = C(5)
+)"),
+            0);
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr value(PyLong_FromLong(500));
+
+  ASSERT_EQ(PyDict_SetItem(dict, c, value), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_EQ(PyDict_Size(dict), 1);
+
+  PyObjectPtr d(moduleGet("__main__", "d"));
+  ASSERT_EQ(PyDict_GetItem(dict, d), nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(DictExtensionApiTest, GetItemKnownHashFromNonDictRaisesSystemError) {
   // Pass a non dictionary
   PyObject* result = _PyDict_GetItem_KnownHash(Py_None, Py_None, 0);
@@ -567,6 +659,139 @@ d[C()] = 0
   PyObjectPtr called_dunder_eq(moduleGet("__main__", "called_dunder_eq"));
   ASSERT_EQ(called_dunder_eq, Py_True);
   EXPECT_EQ(PyDict_Size(dict), 2);
+}
+
+TEST_F(DictExtensionApiTest,
+       SetItemCallsExistingKeyDunderEqAndThenLookedKeyDunderEq) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+seq_num = 0
+
+def new_seq_num():
+  global seq_num
+  seq_num += 1
+  return seq_num
+
+c_eq = 0
+c_hash = 0
+
+class C:
+  def __eq__(self, other):
+    global c_eq
+    c_eq = new_seq_num()
+    return NotImplemented
+
+  def __hash__(self):
+    global c_hash
+    c_hash = new_seq_num()
+    return 5
+
+c = C()
+
+d_eq = 0
+d_hash = 0
+
+class D:
+  def __eq__(self, other):
+    global d_eq
+    d_eq = new_seq_num()
+    return True
+
+  def __hash__(self):
+    global d_hash
+    d_hash = new_seq_num()
+    return 5
+
+d = D()
+)"),
+            0);
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr value(PyLong_FromLong(1));
+
+  ASSERT_EQ(PyDict_SetItem(dict, c, value), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_EQ(PyDict_Size(dict), 1);
+  ASSERT_EQ(PyLong_AsLong(moduleGet("__main__", "c_eq")), 0);
+  ASSERT_EQ(PyLong_AsLong(moduleGet("__main__", "c_hash")), 1);
+
+  PyObjectPtr d(moduleGet("__main__", "d"));
+  ASSERT_EQ(PyDict_SetItem(dict, d, value), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_EQ(PyDict_Size(dict), 1);
+  EXPECT_EQ(PyLong_AsLong(moduleGet("__main__", "c_hash")), 1);
+  EXPECT_EQ(PyLong_AsLong(moduleGet("__main__", "d_hash")), 2);
+  EXPECT_EQ(PyLong_AsLong(moduleGet("__main__", "c_eq")), 3);
+  EXPECT_EQ(PyLong_AsLong(moduleGet("__main__", "d_eq")), 4);
+}
+
+TEST_F(DictExtensionApiTest, SetItemRetainsExistingKeyObject) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+class C:
+  def __eq__(self, other):
+    return True
+
+  def __hash__(self):
+    return 5
+
+c = C()
+d = C()
+)"),
+            0);
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr d(moduleGet("__main__", "d"));
+  PyObjectPtr c_value(PyLong_FromLong(1));
+  PyObjectPtr d_value(PyLong_FromLong(2));
+
+  ASSERT_EQ(PyDict_SetItem(dict, c, c_value), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_EQ(PyDict_Size(dict), 1);
+
+  ASSERT_EQ(PyDict_SetItem(dict, d, d_value), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_EQ(PyDict_Size(dict), 1);
+
+  PyObjectPtr result(PyDict_Items(dict));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyList_CheckExact(result));
+  EXPECT_EQ(PyList_Size(result), 1);
+
+  PyObject* kv = PyList_GetItem(result, 0);
+  ASSERT_TRUE(PyTuple_CheckExact(kv));
+  ASSERT_EQ(PyTuple_Size(kv), 2);
+  EXPECT_EQ(PyTuple_GetItem(kv, 0), c);
+  EXPECT_EQ(PyTuple_GetItem(kv, 1), d_value);
+}
+
+TEST_F(DictExtensionApiTest, SetItemComparesHashValueFirst) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+class C:
+  def __init__(self, hash_code):
+    self.hash_code = hash_code
+
+  def __eq__(self, other):
+    raise UserWarning("unexpected")
+
+  def __hash__(self):
+    return self.hash_code
+
+c = C(4)
+d = C(5)
+)"),
+            0);
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr value(PyLong_FromLong(500));
+
+  ASSERT_EQ(PyDict_SetItem(dict, c, value), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_EQ(PyDict_Size(dict), 1);
+
+  PyObjectPtr d(moduleGet("__main__", "d"));
+  ASSERT_EQ(PyDict_SetItem(dict, d, value), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_EQ(PyDict_Size(dict), 2);
 }
 
 TEST_F(DictExtensionApiTest, SizeWithNonDictReturnsNegative) {

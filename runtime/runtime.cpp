@@ -2914,11 +2914,12 @@ void Runtime::dictAtPutWithHash(Thread* thread, const Dict& dict,
   word index = -1;
   bool found = dictLookup(data, key, key_hash, &index, RawObject::equals);
   DCHECK(index != -1, "invalid index %ld", index);
-  bool empty_slot = Dict::Bucket::isEmpty(*data, index);
-  Dict::Bucket::set(*data, index, *key_hash, *key, *value);
   if (found) {
+    Dict::Bucket::setValue(*data, index, *value);
     return;
   }
+  bool empty_slot = Dict::Bucket::isEmpty(*data, index);
+  Dict::Bucket::set(*data, index, *key_hash, *key, *value);
   dict.setNumItems(dict.numItems() + 1);
   if (empty_slot) {
     dict.decrementNumUsableItems();
