@@ -13,26 +13,14 @@ PY_EXPORT PyObject* PyOS_FSPath(PyObject* path) {
     handle->incref();
     return handle;
   }
-  Frame* frame = thread->currentFrame();
-  Object fspath_method(&scope,
-                       Interpreter::lookupMethod(thread, frame, path_obj,
-                                                 SymbolId::kDunderFspath));
-  if (fspath_method.isError()) {
-    thread->raiseWithFmt(LayoutId::kTypeError,
-                         "expected str, bytes or os.PathLike object.");
+  Object result(&scope,
+                thread->invokeFunction1(SymbolId::kUnderIo,
+                                        SymbolId::kUnderFspath, path_obj));
+  if (result.isError()) {
+    CHECK(result.isErrorException(), "there was a problem calling _io._fspath");
     return nullptr;
   }
-  Object fspath(
-      &scope, Interpreter::callMethod1(thread, frame, fspath_method, path_obj));
-  if (fspath.isError()) return nullptr;
-
-  if (!runtime->isInstanceOfStr(*fspath) &&
-      !runtime->isInstanceOfBytes(*fspath)) {
-    thread->raiseWithFmt(LayoutId::kTypeError,
-                         "expected __fspath__ to return str or bytes");
-    return nullptr;
-  }
-  return ApiHandle::newReference(thread, *fspath);
+  return ApiHandle::newReference(thread, *result);
 }
 
 }  // namespace python

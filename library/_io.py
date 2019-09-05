@@ -28,11 +28,13 @@ of open() are intended to be used as keyword arguments."""
 # This is the patch decorator, injected by our boot process. flake8 has no
 # knowledge about its definition and will complain without this gross circular
 # helper here.
+_Unbound = _Unbound  # noqa: F821
 _bytes_check = _bytes_check  # noqa: F821
 _float_check = _float_check  # noqa: F821
 _index = _index  # noqa: F821
 _int_check = _int_check  # noqa: F821
 _object_type_hasattr = _object_type_hasattr  # noqa: F821
+_object_type_getattr = _object_type_getattr  # noqa: F821
 _os_write = _os_write  # noqa: F821
 _patch = _patch  # noqa: F821
 _str_check = _str_check  # noqa: F821
@@ -968,6 +970,18 @@ class FileIO(_RawIOBase, bootstrap=True):
                 return "rb"
         else:
             return "wb"
+
+
+def _fspath(obj):
+    if _str_check(obj) or _bytes_check(obj):
+        return obj
+    dunder_fspath = _object_type_getattr(obj, "__fspath__")
+    if dunder_fspath is _Unbound:
+        raise TypeError("expected str, bytes, or os.PathLike object")
+    result = dunder_fspath()
+    if _str_check(result) or _bytes_check(result):
+        return result
+    raise TypeError("expected __fspath__ to return str or bytes")
 
 
 def open(

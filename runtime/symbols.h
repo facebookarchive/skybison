@@ -51,7 +51,6 @@ class Runtime;
   V(DunderFloor, "__floor__")                                                  \
   V(DunderFloordiv, "__floordiv__")                                            \
   V(DunderFormat, "__format__")                                                \
-  V(DunderFspath, "__fspath__")                                                \
   V(DunderFunc, "__func__")                                                    \
   V(DunderGe, "__ge__")                                                        \
   V(DunderGet, "__get__")                                                      \
@@ -217,6 +216,7 @@ class Runtime;
   V(UnderFrozenImportlibExternal, "_frozen_importlib_external")                \
   V(UnderFrozenSetCheck, "_frozenset_check")                                   \
   V(UnderFrozenSetGuard, "_frozenset_guard")                                   \
+  V(UnderFspath, "_fspath")                                                    \
   V(UnderFunctools, "_functools")                                              \
   V(UnderGetframeCode, "_getframe_code")                                       \
   V(UnderGetframeGlobals, "_getframe_globals")                                 \
@@ -530,6 +530,7 @@ class Runtime;
   V(Frame, "frame")                                                            \
   V(FromBytes, "from_bytes")                                                   \
   V(FrozenSet, "frozenset")                                                    \
+  V(Fspath, "fspath")                                                          \
   V(FstatSize, "fstat_size")                                                   \
   V(Ftruncate, "ftruncate")                                                    \
   V(Function, "function")                                                      \

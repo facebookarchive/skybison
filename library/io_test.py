@@ -739,5 +739,75 @@ class FileIOTests(unittest.TestCase):
         f.close()
 
 
+@pyro_only
+class FspathTests(unittest.TestCase):
+    def test_fspath_with_str_returns_str(self):
+        result = "hello"
+        self.assertIs(_io._fspath(result), result)
+
+    def test_fspath_with_str_subclass_returns_str(self):
+        class C(str):
+            pass
+
+        result = C("hello")
+        self.assertIs(_io._fspath(result), result)
+
+    def test_fspath_with_str_subclass_does_not_call_dunder_fspath(self):
+        class C(str):
+            def __fspath__(self):
+                raise UserWarning("foo")
+
+        result = C("hello")
+        self.assertIs(_io._fspath(result), result)
+
+    def test_fspath_with_bytes_returns_bytes(self):
+        result = b"hello"
+        self.assertIs(_io._fspath(result), result)
+
+    def test_fspath_with_bytes_subclass_returns_bytes(self):
+        class C(bytes):
+            pass
+
+        result = C(b"hello")
+        self.assertIs(_io._fspath(result), result)
+
+    def test_fspath_with_bytes_subclass_does_not_call_dunder_fspath(self):
+        class C(bytes):
+            def __fspath__(self):
+                raise UserWarning("foo")
+
+        result = C(b"hello")
+        self.assertIs(_io._fspath(result), result)
+
+    def test_fspath_with_no_dunder_fspath_raises_type_error(self):
+        class C:
+            pass
+
+        result = C()
+        self.assertRaises(TypeError, _io._fspath, result)
+
+    def test_fspath_calls_dunder_fspath_returns_str(self):
+        class C:
+            def __fspath__(self):
+                return "foo"
+
+        self.assertEqual(_io._fspath(C()), "foo")
+
+    def test_fspath_calls_dunder_fspath_returns_bytes(self):
+        class C:
+            def __fspath__(self):
+                return b"foo"
+
+        self.assertEqual(_io._fspath(C()), b"foo")
+
+    def test_fspath_with_dunder_fspath_returning_non_str_raises_type_error(self):
+        class C:
+            def __fspath__(self):
+                return 5
+
+        result = C()
+        self.assertRaises(TypeError, _io._fspath, result)
+
+
 if __name__ == "__main__":
     unittest.main()

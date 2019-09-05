@@ -6,7 +6,11 @@ up the usual CPython os module."""
 # This is the patch decorator, injected by our boot process. flake8 has no
 # knowledge about its definition and will complain without this gross circular
 # helper here.
+_Unbound = _Unbound  # noqa: F821
+_bytes_check = _bytes_check  # noqa: F821
+_object_type_getattr = _object_type_getattr  # noqa: F821
 _patch = _patch  # noqa: F821
+_str_check = _str_check  # noqa: F821
 
 
 @_patch
