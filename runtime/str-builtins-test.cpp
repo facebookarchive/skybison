@@ -2615,6 +2615,23 @@ TEST_F(StrBuiltinsTest, DunderHashWithEquivalentStringsReturnsSameHash) {
   EXPECT_EQ(*result1, *result2);
 }
 
+TEST_F(StrBuiltinsTest, DunderHashWithSubclassReturnsSameHash) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C(str): pass
+i0 = C("abc")
+i1 = "abc"
+)")
+                   .isError());
+  Object i0(&scope, mainModuleAt(&runtime_, "i0"));
+  Object i1(&scope, mainModuleAt(&runtime_, "i1"));
+  Object result0(&scope, runBuiltin(StrBuiltins::dunderHash, i0));
+  Object result1(&scope, runBuiltin(StrBuiltins::dunderHash, i1));
+  EXPECT_TRUE(result0.isSmallInt());
+  EXPECT_TRUE(result1.isSmallInt());
+  EXPECT_EQ(result0, result1);
+}
+
 TEST_F(StringIterTest, SimpleIter) {
   HandleScope scope(thread_);
 

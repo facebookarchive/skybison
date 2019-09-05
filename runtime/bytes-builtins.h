@@ -14,6 +14,8 @@ word bytesCount(const Bytes& haystack, word haystack_len, const Bytes& needle,
 word bytesFind(const Bytes& haystack, word haystack_len, const Bytes& needle,
                word needle_len, word start, word end);
 
+RawSmallInt bytesHash(Thread* thread, RawObject object);
+
 // Converts the bytes into a string, mapping each byte to two hex characters.
 RawObject bytesHex(Thread* thread, const Bytes& bytes, word length);
 
@@ -101,5 +103,13 @@ class BytesIteratorBuiltins
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(BytesIteratorBuiltins);
 };
+
+inline RawSmallInt bytesHash(Thread* thread, RawObject object) {
+  if (object.isSmallBytes()) {
+    return SmallBytes::cast(object).hash();
+  }
+  DCHECK(object.isLargeBytes(), "expected bytes object");
+  return SmallInt::cast(thread->runtime()->valueHash(object));
+}
 
 }  // namespace python

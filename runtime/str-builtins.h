@@ -37,6 +37,8 @@ word strFindFirstNonWhitespace(const Str& str);
 // not a code point offset.
 bool strHasPrefix(const Str& str, const Str& prefix, word start);
 
+RawSmallInt strHash(Thread* thread, RawObject object);
+
 // Intern strings in place in a tuple of strings
 void strInternInTuple(Thread* thread, const Object& items);
 // Intern strings in place in a tuple of nested constant structures (str,
@@ -164,5 +166,13 @@ class StrIteratorBuiltins
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(StrIteratorBuiltins);
 };
+
+inline RawSmallInt strHash(Thread* thread, RawObject object) {
+  if (object.isSmallStr()) {
+    return SmallStr::cast(object).hash();
+  }
+  DCHECK(object.isLargeStr(), "expected str object");
+  return SmallInt::cast(thread->runtime()->valueHash(object));
+}
 
 }  // namespace python

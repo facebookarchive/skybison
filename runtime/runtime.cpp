@@ -1338,7 +1338,7 @@ RawObject Runtime::internStr(Thread* thread, const Object& str) {
   if (str.isSmallStr()) {
     return *str;
   }
-  Object key_hash(&scope, hash(*str));
+  Object key_hash(&scope, strHash(thread, *str));
   return setAddWithHash(thread, set, str, key_hash);
 }
 
@@ -1350,7 +1350,7 @@ bool Runtime::isInternedStr(Thread* thread, const Object& str) {
   HandleScope scope(thread);
   Set set(&scope, interned());
   Tuple data(&scope, set.data());
-  Object str_hash(&scope, hash(*str));
+  Object str_hash(&scope, strHash(thread, *str));
   word index = setLookup<SetLookupType::Lookup>(data, str, str_hash);
   if (index < 0) {
     return false;
@@ -1369,14 +1369,17 @@ RawObject Runtime::hash(RawObject object) {
 }
 
 RawObject Runtime::immediateHash(RawObject object) {
+  if (object.isSmallStr()) {
+    return SmallStr::cast(object).hash();
+  }
   if (object.isSmallInt()) {
     return object;
   }
   if (object.isBool()) {
     return convertBoolToInt(object);
   }
-  if (object.isSmallBytes() || object.isSmallStr()) {
-    return SmallInt::fromWord(object.raw() >> Object::kImmediateTagBits);
+  if (object.isSmallBytes()) {
+    return SmallBytes::cast(object).hash();
   }
   return SmallInt::fromWord(object.raw());
 }

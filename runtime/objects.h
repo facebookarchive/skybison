@@ -647,6 +647,8 @@ class RawSmallBytes : public RawObject {
   // Read adjacent bytes as `uint32_t` integer.
   uint32_t uint32At(word index) const;
 
+  RawSmallInt hash() const;
+
   // Constants.
   static const word kMaxLength = kWordSize - 1;
 
@@ -671,6 +673,8 @@ class RawSmallStr : public RawObject {
   // Conversion to an unescaped C string.  The underlying memory is allocated
   // with malloc and must be freed by the caller.
   char* toCStr() const;
+
+  RawSmallInt hash() const;
 
   // Constants.
   static const word kMaxLength = kWordSize - 1;
@@ -3685,6 +3689,10 @@ inline uint32_t RawSmallBytes::uint32At(word index) const {
   return result;
 }
 
+inline RawSmallInt RawSmallBytes::hash() const {
+  return RawSmallInt::fromWord(raw() >> RawObject::kImmediateTagBits);
+}
+
 // RawSmallStr
 
 inline word RawSmallStr::charLength() const {
@@ -3701,6 +3709,10 @@ inline void RawSmallStr::copyTo(byte* dst, word char_length) const {
   for (word i = 0; i < char_length; ++i) {
     *dst++ = charAt(i);
   }
+}
+
+inline RawSmallInt RawSmallStr::hash() const {
+  return RawSmallInt::fromWord(raw() >> RawObject::kImmediateTagBits);
 }
 
 // RawError

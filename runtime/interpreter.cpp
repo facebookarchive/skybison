@@ -5,6 +5,7 @@
 #include <sstream>
 
 #include "builtins-module.h"
+#include "bytes-builtins.h"
 #include "dict-builtins.h"
 #include "exception-builtins.h"
 #include "frame.h"

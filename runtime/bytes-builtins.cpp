@@ -378,12 +378,12 @@ RawObject BytesBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
 RawObject BytesBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfBytes(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kBytes);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfBytes(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
   }
-  return runtime->hash(*self);
+  Bytes self(&scope, bytesUnderlying(thread, self_obj));
+  return bytesHash(thread, *self);
 }
 
 RawObject BytesBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {

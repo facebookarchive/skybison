@@ -699,6 +699,24 @@ TEST_F(BytesBuiltinsTest, DunderHashWithEquivalentBytesReturnsSameHash) {
   EXPECT_EQ(*result1, *result2);
 }
 
+TEST_F(BytesBuiltinsTest, DunderHashWithBytesSubclassReturnsSameHash) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C(bytes): pass
+i0 = C(b"abc")
+i1 = b"abc"
+)")
+                   .isError());
+  Object i0(&scope, mainModuleAt(&runtime_, "i0"));
+  Object i1(&scope, mainModuleAt(&runtime_, "i1"));
+
+  Object result0(&scope, runBuiltin(BytesBuiltins::dunderHash, i0));
+  Object result1(&scope, runBuiltin(BytesBuiltins::dunderHash, i1));
+  EXPECT_TRUE(result0.isSmallInt());
+  EXPECT_TRUE(result1.isSmallInt());
+  EXPECT_EQ(result0, result1);
+}
+
 TEST_F(BytesBuiltinsTest, DunderIterReturnsBytesIterator) {
   HandleScope scope(thread_);
   Object self(&scope, Bytes::empty());

@@ -281,7 +281,13 @@ class Runtime {
 
   void collectGarbage();
 
+  // Compute hash value suitable for `RawObject::operator==` (aka `a is b`)
+  // equality tests.
   RawObject hash(RawObject object);
+  // Compute hash value for objects with byte payload. This is a helper to
+  // implement `xxxHash()` functions.
+  RawObject valueHash(RawObject object);
+
   word siphash24(View<byte> array);
 
   uword random();
@@ -878,7 +884,6 @@ class Runtime {
 
   RawObject identityHash(RawObject object);
   RawObject immediateHash(RawObject object);
-  RawObject valueHash(RawObject object);
 
   RawObject createMro(const Layout& subclass_layout, LayoutId superclass_id);
 

@@ -483,7 +483,8 @@ RawObject StrBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfStr(*self)) {
     return thread->raiseRequiresType(self, SymbolId::kStr);
   }
-  return runtime->hash(*self);
+  Str self_str(&scope, strUnderlying(thread, self));
+  return strHash(thread, *self_str);
 }
 
 void strInternInTuple(Thread* thread, const Object& items) {
