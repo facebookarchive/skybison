@@ -3872,6 +3872,18 @@ def make_placeholder():
     def test_dunder_contains_returns_false_for_placeholder(self):
         self.assertFalse(self.module_proxy.__contains__("placeholder"))
 
+    def test_copy_with_non_module_proxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type(self.module_proxy).copy(None)
+
+    def test_copy_returns_dict_copy(self):
+        self.module.x = 40
+        result = self.module_proxy.copy()
+        self.assertEqual(type(result), dict)
+        self.assertEqual(result["x"], 40)
+        self.module.y = 50
+        self.assertNotIn("y", result)
+
     def test_dunder_delitem_with_non_module_proxy_raises_type_error(self):
         with self.assertRaises(TypeError):
             self.module_proxy.__delitem__(None, None)

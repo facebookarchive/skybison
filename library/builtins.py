@@ -3339,7 +3339,11 @@ class module_proxy(bootstrap=True):
         _unimplemented()
 
     def copy(self):
-        _unimplemented()
+        _module_proxy_guard(self)
+        # TODO(T50379702): Return an iterable to avoid materializing the list of items.
+        keys = _module_proxy_keys(self)
+        values = _module_proxy_values(self)
+        return {keys[i]: values[i] for i in range(len(keys))}
 
     def get(self, key, default=None):
         _module_proxy_guard(self)
