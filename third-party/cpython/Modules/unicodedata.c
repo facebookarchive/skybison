@@ -601,7 +601,7 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
 {
     PyObject *result;
     Py_UCS4 *output;
-    Py_ssize_t i, o, osize, final_length;
+    Py_ssize_t i, o, osize, result_length;
     int kind;
     void *data;
     /* Longest decomposition in Unicode 3.2: U+FDFA */
@@ -692,11 +692,12 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
         }
     }
 
-    final_length = o;
+    result_length = o;
 
+    /* Sort canonically. */
     i = 0;
     prev = _getrecord_ex(output[i])->combining;
-    for (i++; i < final_length; i++) {
+    for (i++; i < result_length; i++) {
         cur = _getrecord_ex(output[i])->combining;
         if (prev == 0 || cur == 0 || prev <= cur) {
             prev = cur;
@@ -718,7 +719,7 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
         prev = _getrecord_ex(output[i])->combining;
     }
     result = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
-                                       output, final_length);
+                                       output, result_length);
     PyMem_Free(output);
     return result;
 }
