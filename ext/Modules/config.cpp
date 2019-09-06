@@ -19,6 +19,7 @@ extern "C" PyObject* PyInit_pwd();
 extern "C" PyObject* PyInit_select();
 extern "C" PyObject* PyInit_termios();
 extern "C" PyObject* PyInit_time();
+extern "C" PyObject* PyInit_unicodedata();
 extern "C" PyObject* PyInit_zlib();
 
 // _empty module to test loading from init tab
@@ -50,6 +51,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"select", PyInit_select},
     {"termios", PyInit_termios},
     {"time", PyInit_time},
+    {"unicodedata", PyInit_unicodedata},
     {"zlib", PyInit_zlib},
     {nullptr, nullptr},
 };

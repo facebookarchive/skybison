@@ -73,6 +73,13 @@ TEST_F(ConfigExtensionApiTest, ImportTimeReturnsModule) {
   EXPECT_TRUE(PyModule_Check(module));
 }
 
+TEST_F(ConfigExtensionApiTest, ImportUnicodedataReturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("unicodedata"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
 TEST_F(ConfigExtensionApiTest, TimeModuleMethods) {
   PyRun_SimpleString(R"(
 import time
