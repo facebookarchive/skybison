@@ -132,7 +132,7 @@ TEST_F(CApiHandlesTest, ExtensionInstanceObjectReturnsPyObject) {
   EXPECT_EQ(result, &pyobj);
 }
 
-TEST_F(CApiHandlesTest, Runtime_InstanceObjectReturnsPyObject) {
+TEST_F(CApiHandlesTest, RuntimeInstanceObjectReturnsPyObject) {
   HandleScope scope(thread_);
 
   // Create type
