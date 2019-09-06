@@ -107,6 +107,17 @@ class BoundMethodTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             f.__doc__ = "hey!"
 
+    def test_bound_method_getattribute(self):
+        class C:
+            def meth(self):
+                pass
+
+            meth.attr = 42
+
+        c = C()
+        bound = c.meth
+        self.assertEqual(bound.attr, 42)
+
 
 class ByteArrayTests(unittest.TestCase):
     def test_delitem_with_out_of_bounds_index_raises_index_error(self):

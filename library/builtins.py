@@ -3171,6 +3171,9 @@ class method(bootstrap=True):
     def __call__(self, *args, **kwargs):
         return self.__func__(self.__self__, *args, **kwargs)
 
+    def __getattr__(self, name):
+        return getattr(self.__func__, name)
+
 
 class memoryview(bootstrap=True):
     def __getitem__(self, index):
