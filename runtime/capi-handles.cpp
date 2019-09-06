@@ -65,36 +65,8 @@ void ApiHandle::dictAtPutIdentityEquals(Thread* thread, const Dict& dict,
   if (empty_slot) {
     DCHECK(dict.numUsableItems() > 0, "dict.numIsableItems() must be positive");
     dict.decrementNumUsableItems();
-    dictEnsureCapacity(thread, dict);
+    runtime->dictEnsureCapacity(thread, dict);
   }
-}
-
-void ApiHandle::dictEnsureCapacity(Thread* thread, const Dict& dict) {
-  // TODO(T44245141): Move initialization of an empty dict here.
-  DCHECK(dict.capacity() > 0 && Utils::isPowerOfTwo(dict.capacity()),
-         "dict capacity must be power of two, greater than zero");
-  if (dict.numUsableItems() > 0) {
-    return;
-  }
-  // TODO(T44247845): Handle overflow here.
-  word new_capacity = dict.capacity() * Runtime::kDictGrowthFactor;
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Tuple data(&scope, dict.data());
-  MutableTuple new_data(&scope, runtime->newMutableTuple(
-                                    new_capacity * Dict::Bucket::kNumPointers));
-  // Re-insert items
-  for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
-    Object key(&scope, Dict::Bucket::key(*data, i));
-    Object hash(&scope, Dict::Bucket::hash(*data, i));
-    word index = -1;
-    runtime->dictLookup(new_data, key, hash, &index, identityEqual);
-    DCHECK(index != -1, "invalid index %ld", index);
-    Dict::Bucket::set(*new_data, index, *hash, *key,
-                      Dict::Bucket::value(*data, i));
-  }
-  dict.setData(*new_data);
-  dict.resetNumUsableItems();
 }
 
 RawObject ApiHandle::dictRemoveIdentityEquals(Thread* thread, const Dict& dict,

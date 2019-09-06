@@ -2937,33 +2937,6 @@ void Runtime::dictAtPut(Thread* thread, const Dict& dict, const Object& key,
   dictAtPutWithHash(thread, dict, key, value, key_hash);
 }
 
-void Runtime::dictEnsureCapacity(Thread* thread, const Dict& dict) {
-  // TODO(T44245141): Move initialization of an empty dict here.
-  DCHECK(dict.capacity() > 0 && Utils::isPowerOfTwo(dict.capacity()),
-         "dict capacity must be power of two, greater than zero");
-  if (dict.hasUsableItems()) {
-    return;
-  }
-  // TODO(T44247845): Handle overflow here.
-  word new_capacity = dict.capacity() * kDictGrowthFactor;
-  HandleScope scope(thread);
-  Tuple data(&scope, dict.data());
-  MutableTuple new_data(
-      &scope, newMutableTuple(new_capacity * Dict::Bucket::kNumPointers));
-  // Re-insert items
-  for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
-    Object key(&scope, Dict::Bucket::key(*data, i));
-    Object hash(&scope, Dict::Bucket::hash(*data, i));
-    word index = -1;
-    dictLookup(new_data, key, hash, &index, RawObject::equals);
-    DCHECK(index != -1, "invalid index %ld", index);
-    Dict::Bucket::set(*new_data, index, *hash, *key,
-                      Dict::Bucket::value(*data, i));
-  }
-  dict.setData(*new_data);
-  dict.resetNumUsableItems();
-}
-
 RawObject Runtime::dictAtWithHash(Thread* thread, const Dict& dict,
                                   const Object& key, const Object& key_hash) {
   HandleScope scope(thread);
@@ -3068,14 +3041,13 @@ bool Runtime::dictLookup(const Tuple& data, const Object& key,
     *index = -1;
     return false;
   }
-  word bucket_mask;
-  // hash value left shifted per probing to use different bits
-  // for probing.
-  uword perturb;
-  word current = Dict::Bucket::bucket(*data, *key_hash, &bucket_mask, &perturb);
-  word current_index = current * Dict::Bucket::kNumPointers;
   word next_free_index = -1;
-  for (;;) {
+  uword perturb;
+  word bucket_mask;
+  for (word current =
+           Dict::Bucket::bucket(*data, *key_hash, &bucket_mask, &perturb);
+       ; current = Dict::Bucket::nextBucket(current, bucket_mask, &perturb)) {
+    word current_index = current * Dict::Bucket::kNumPointers;
     if (Dict::Bucket::isEmpty(*data, current_index)) {
       if (next_free_index == -1) {
         next_free_index = current_index;
@@ -3091,9 +3063,52 @@ bool Runtime::dictLookup(const Tuple& data, const Object& key,
       *index = current_index;
       return true;
     }
-    current = Dict::Bucket::nextBucket(current, bucket_mask, &perturb);
-    current_index = current * Dict::Bucket::kNumPointers;
   }
+}
+
+// Insert `key`/`value` into dictionary assuming no bucket with an equivalent
+// key and no tombstones exist.
+static void dictInsertNoUpdate(const Tuple& data, const Object& key,
+                               const Object& key_hash, const Object& value) {
+  DCHECK(data.length() > 0, "dict must not be empty");
+  uword perturb;
+  word bucket_mask;
+  for (word current =
+           Dict::Bucket::bucket(*data, *key_hash, &bucket_mask, &perturb);
+       ; current = Dict::Bucket::nextBucket(current, bucket_mask, &perturb)) {
+    word current_index = current * Dict::Bucket::kNumPointers;
+    if (Dict::Bucket::isEmpty(*data, current_index)) {
+      Dict::Bucket::set(*data, current_index, *key_hash, *key, *value);
+      return;
+    }
+  }
+}
+
+void Runtime::dictEnsureCapacity(Thread* thread, const Dict& dict) {
+  // TODO(T44245141): Move initialization of an empty dict here.
+  DCHECK(dict.capacity() > 0 && Utils::isPowerOfTwo(dict.capacity()),
+         "dict capacity must be power of two, greater than zero");
+  if (dict.hasUsableItems()) {
+    return;
+  }
+  // TODO(T44247845): Handle overflow here.
+  word new_capacity = dict.capacity() * kDictGrowthFactor;
+  HandleScope scope(thread);
+  Tuple data(&scope, dict.data());
+  MutableTuple new_data(
+      &scope, newMutableTuple(new_capacity * Dict::Bucket::kNumPointers));
+  // Re-insert items
+  Object key(&scope, NoneType::object());
+  Object hash(&scope, NoneType::object());
+  Object value(&scope, NoneType::object());
+  for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
+    key = Dict::Bucket::key(*data, i);
+    hash = Dict::Bucket::hash(*data, i);
+    value = Dict::Bucket::value(*data, i);
+    dictInsertNoUpdate(new_data, key, hash, value);
+  }
+  dict.setData(*new_data);
+  dict.resetNumUsableItems();
 }
 
 RawObject Runtime::dictItems(Thread* thread, const Dict& dict) {

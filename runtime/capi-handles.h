@@ -121,11 +121,6 @@ class ApiHandle : public PyObject {
 
   // TODO(T44244793): Remove these functions when handles have their own
   // specialized hash table.
-  // The given dict gets grown if dict reaches its load factor.
-  static void dictEnsureCapacity(Thread* thread, const Dict& dict);
-
-  // TODO(T44244793): Remove these functions when handles have their own
-  // specialized hash table.
   static RawObject dictRemoveIdentityEquals(Thread* thread, const Dict& dict,
                                             const Object& key,
                                             const Object& key_hash);
