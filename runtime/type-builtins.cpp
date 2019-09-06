@@ -478,6 +478,12 @@ RawObject TypeBuiltins::dunderSetattr(Thread* thread, Frame* frame,
     return thread->raiseRequiresType(self_obj, SymbolId::kType);
   }
   Type self(&scope, *self_obj);
+  if (self.isSealed()) {
+    Str type_name(&scope, self.name());
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "can't set attributes of built-in/extension type '%S'", &type_name);
+  }
   Object name(&scope, args.get(1));
   if (!runtime->isInstanceOfStr(*name)) {
     return thread->raiseWithFmt(

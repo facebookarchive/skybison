@@ -59,6 +59,7 @@ void icInsertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
   NoneType none(&scope, NoneType::object());
   for (word i = 0; i < mro.length(); i++) {
     Type mro_type(&scope, mro.at(i));
+    if (mro_type.isSealed()) break;
     Dict dict(&scope, mro_type.dict());
     // TODO(T46428372): Consider using a specialized dict lookup to avoid 2
     // probings.

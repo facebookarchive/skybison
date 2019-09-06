@@ -2288,9 +2288,13 @@ Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg) {
     LayoutId layout_id = receiver.layoutId();
     icUpdateAttr(frame->caches(), arg, layout_id, *location);
     Type receiver_type(&scope, thread->runtime()->typeOf(*receiver));
-    Object dependent(&scope, frame->function());
-    icInsertDependencyForTypeLookupInMro(thread, receiver_type, name,
-                                         dependent);
+    if (!receiver_type.isSealed()) {
+      // We do not need to tell an unmodifable type about this cache entry
+      // since it will never be invalidated.
+      Object dependent(&scope, frame->function());
+      icInsertDependencyForTypeLookupInMro(thread, receiver_type, name,
+                                           dependent);
+    }
   }
   return Continue::NEXT;
 }
@@ -2536,9 +2540,13 @@ Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
     LayoutId layout_id = receiver.layoutId();
     icUpdateAttr(frame->caches(), arg, layout_id, *location);
     Type receiver_type(&scope, thread->runtime()->typeOf(*receiver));
-    Object dependent(&scope, frame->function());
-    icInsertDependencyForTypeLookupInMro(thread, receiver_type, name,
-                                         dependent);
+    if (!receiver_type.isSealed()) {
+      // We do not need to tell an unmodifable type about this cache entry
+      // since it will never be invalidated.
+      Object dependent(&scope, frame->function());
+      icInsertDependencyForTypeLookupInMro(thread, receiver_type, name,
+                                           dependent);
+    }
   }
   frame->setTopValue(*result);
   return Continue::NEXT;

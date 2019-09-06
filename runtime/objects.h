@@ -1086,6 +1086,9 @@ class RawType : public RawHeapObject {
 
   bool isBaseExceptionSubclass() const;
 
+  // Check if the attributes on the type are sealed.
+  bool isSealed() const;
+
   // Seal the attributes of the type. Sets the layout's overflowAttributes to
   // RawNoneType::object().
   void sealAttributes() const;
@@ -4207,6 +4210,10 @@ inline bool RawType::isBuiltin() const {
 inline bool RawType::isBaseExceptionSubclass() const {
   LayoutId base = builtinBase();
   return base >= LayoutId::kFirstException && base <= LayoutId::kLastException;
+}
+
+inline bool RawType::isSealed() const {
+  return RawLayout::cast(instanceLayout()).isSealed();
 }
 
 inline void RawType::sealAttributes() const {
