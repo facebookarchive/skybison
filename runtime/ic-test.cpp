@@ -1157,4 +1157,119 @@ TEST_F(IcTest, IcInvalidateGlobalVarRevertsOpCodeToOriginalOnes) {
   EXPECT_TRUE(isMutableBytesEqualsBytes(bytecode, invalidated_expected));
 }
 
+static RawObject layoutIdAsSmallInt(RawObject object) {
+  return SmallInt::fromWord(static_cast<word>(object.layoutId()));
+}
+
+TEST_F(IcTest, IcIterator) {
+  HandleScope scope(thread_);
+  MutableBytes bytecode(&scope, runtime_.newMutableBytesUninitialized(16));
+  bytecode.byteAtPut(0, LOAD_GLOBAL);
+  bytecode.byteAtPut(1, 100);
+  bytecode.byteAtPut(2, LOAD_ATTR_CACHED);
+  bytecode.byteAtPut(3, 0);
+  bytecode.byteAtPut(4, LOAD_GLOBAL);
+  bytecode.byteAtPut(5, 100);
+  bytecode.byteAtPut(6, LOAD_METHOD_CACHED);
+  bytecode.byteAtPut(7, 1);
+  bytecode.byteAtPut(8, LOAD_GLOBAL);
+  bytecode.byteAtPut(9, 100);
+  bytecode.byteAtPut(10, LOAD_ATTR_CACHED);
+  bytecode.byteAtPut(11, 2);
+  bytecode.byteAtPut(12, STORE_ATTR_CACHED);
+  bytecode.byteAtPut(13, 3);
+  bytecode.byteAtPut(14, LOAD_GLOBAL);
+  bytecode.byteAtPut(15, 100);
+
+  Tuple original_args(&scope, runtime_.newTuple(4));
+  original_args.atPut(0, SmallInt::fromWord(0));
+  original_args.atPut(1, SmallInt::fromWord(1));
+  original_args.atPut(2, SmallInt::fromWord(2));
+  original_args.atPut(3, SmallInt::fromWord(3));
+
+  Tuple names(&scope, runtime_.newTuple(4));
+  names.atPut(0, runtime_.newStrFromCStr("load_attr_cached_attr_name"));
+  names.atPut(1, runtime_.newStrFromCStr("load_method_cached_attr_name"));
+  names.atPut(2, runtime_.newStrFromCStr("load_attr_cached_attr_name2"));
+  names.atPut(3, runtime_.newStrFromCStr("store_attr_cached_attr_name"));
+
+  Tuple caches(&scope, runtime_.newTuple(4 * kIcPointersPerCache));
+  // Caches for LOAD_ATTR_CACHED at 2.
+  word load_attr_cached_cache_index0 =
+      0 * kIcPointersPerCache + 1 * kIcPointersPerEntry;
+  word load_attr_cached_cache_index1 =
+      0 * kIcPointersPerCache + 3 * kIcPointersPerEntry;
+  caches.atPut(load_attr_cached_cache_index0 + kIcEntryKeyOffset,
+               layoutIdAsSmallInt(Bool::trueObj()));
+  caches.atPut(load_attr_cached_cache_index0 + kIcEntryValueOffset,
+               SmallInt::fromWord(10));
+  caches.atPut(load_attr_cached_cache_index1 + kIcEntryKeyOffset,
+               layoutIdAsSmallInt(Bool::falseObj()));
+  caches.atPut(load_attr_cached_cache_index1 + kIcEntryValueOffset,
+               SmallInt::fromWord(20));
+
+  // Caches for LOAD_METHOD_CACHED at 6.
+  word load_method_cached_index =
+      1 * kIcPointersPerCache + 0 * kIcPointersPerEntry;
+  caches.atPut(load_method_cached_index + kIcEntryKeyOffset,
+               layoutIdAsSmallInt(SmallInt::fromWord(0)));
+  caches.atPut(load_method_cached_index + kIcEntryValueOffset,
+               SmallInt::fromWord(30));
+
+  // Caches are empty for LOAD_ATTR_CACHED at 10.
+
+  // Caches for STORE_ATTR_CACHED at 12.
+  word store_attr_cached_index =
+      3 * kIcPointersPerCache + 3 * kIcPointersPerEntry;
+  caches.atPut(store_attr_cached_index + kIcEntryKeyOffset,
+               layoutIdAsSmallInt(NoneType::object()));
+  caches.atPut(store_attr_cached_index + kIcEntryValueOffset,
+               SmallInt::fromWord(40));
+
+  Function function(&scope, newEmptyFunction());
+  function.setRewrittenBytecode(*bytecode);
+  function.setCaches(*caches);
+  Code::cast(function.code()).setNames(*names);
+  function.setOriginalArguments(*original_args);
+
+  IcIterator it(&scope, *function);
+  ASSERT_TRUE(it.hasNext());
+  Str load_attr_cached_attr_name(
+      &scope, runtime_.newStrFromCStr("load_attr_cached_attr_name"));
+  EXPECT_TRUE(it.isAttrNameEqualTo(load_attr_cached_attr_name));
+  EXPECT_EQ(it.key(), Bool::trueObj().layoutId());
+  EXPECT_TRUE(it.isInstanceAttr());
+
+  it.next();
+  ASSERT_TRUE(it.hasNext());
+  EXPECT_TRUE(it.isAttrNameEqualTo(load_attr_cached_attr_name));
+  EXPECT_EQ(it.key(), Bool::falseObj().layoutId());
+  EXPECT_TRUE(it.isInstanceAttr());
+
+  it.next();
+  ASSERT_TRUE(it.hasNext());
+  Str load_method_cached_attr_name(
+      &scope, runtime_.newStrFromCStr("load_method_cached_attr_name"));
+  EXPECT_TRUE(it.isAttrNameEqualTo(load_method_cached_attr_name));
+  EXPECT_EQ(it.key(), SmallInt::fromWord(100).layoutId());
+  EXPECT_TRUE(it.isInstanceAttr());
+
+  it.next();
+  Str store_attr_cached_attr_name(
+      &scope, runtime_.newStrFromCStr("store_attr_cached_attr_name"));
+  ASSERT_TRUE(it.hasNext());
+  EXPECT_TRUE(it.isAttrNameEqualTo(store_attr_cached_attr_name));
+  EXPECT_EQ(it.key(), NoneType::object().layoutId());
+  EXPECT_TRUE(it.isInstanceAttr());
+
+  it.evict();
+  EXPECT_TRUE(
+      caches.at(store_attr_cached_index + kIcEntryKeyOffset).isNoneType());
+  EXPECT_TRUE(
+      caches.at(store_attr_cached_index + kIcEntryValueOffset).isNoneType());
+
+  it.next();
+  EXPECT_FALSE(it.hasNext());
+}
+
 }  // namespace python

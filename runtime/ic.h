@@ -1,6 +1,7 @@
 // Inline caches.
 #pragma once
 
+#include "bytecode.h"
 #include "handles.h"
 #include "objects.h"
 
@@ -91,8 +92,8 @@ bool icIsCachedAttributeAffectedByUpdatedType(Thread* thread,
 // dependencies between dependent and other type attributes in caches' mro.
 void icDeleteCacheForTypeAttrInDependent(Thread* thread,
                                          const Type& updated_type,
-                                         const Str& attribute_name,
-                                         bool data_descriptor,
+                                         const Str& updated_attr,
+                                         bool is_data_descriptor,
                                          const Function& dependent);
 
 // Invalidate caches to be shadowed by a type attribute update made to
@@ -149,6 +150,89 @@ const int kIcPointersPerCache = kIcEntriesPerCache * kIcPointersPerEntry;
 
 const int kIcEntryKeyOffset = 0;
 const int kIcEntryValueOffset = 1;
+
+class IcIterator {
+ public:
+  IcIterator(HandleScope* scope, RawFunction function)
+      : bytecode_(scope, function.rewrittenBytecode()),
+        caches_(scope, function.caches()),
+        function_(scope, function),
+        names_(scope, Code::cast(function.code()).names()),
+        bytecode_index_(0),
+        cache_index_(0),
+        end_cache_index_(0) {
+    next();
+  }
+
+  bool hasNext() { return cache_index_ >= 0; }
+
+  void next() {
+    cache_index_ = findNextFilledCacheIndex(
+        caches_, cache_index_ + kIcPointersPerEntry, end_cache_index_);
+    if (cache_index_ >= 0) {
+      return;
+    }
+
+    // Find the next caching opcode.
+    word bytecode_length = bytecode_.length();
+    while (bytecode_index_ < bytecode_length) {
+      BytecodeOp op = nextBytecodeOp(bytecode_, &bytecode_index_);
+      if (!isByteCodeWithCache(op.bc)) continue;
+      bytecode_op_ = op;
+      cache_index_ = bytecode_op_.arg * kIcPointersPerCache;
+      end_cache_index_ = cache_index_ + kIcPointersPerCache;
+      cache_index_ =
+          findNextFilledCacheIndex(caches_, cache_index_, end_cache_index_);
+      if (cache_index_ >= 0) {
+        return;
+      }
+    }
+  }
+
+  bool isAttrNameEqualTo(const Str& attr_name) {
+    return attr_name.equals(
+        names_.at(originalArg(*function_, bytecode_op_.arg)));
+  }
+
+  bool isInstanceAttr() {
+    RawObject value = caches_.at(cache_index_ + kIcEntryValueOffset);
+    return value.isSmallInt();
+  }
+
+  LayoutId key() {
+    RawObject key = caches_.at(cache_index_ + kIcEntryKeyOffset);
+    return static_cast<LayoutId>(SmallInt::cast(key).value());
+  }
+
+  void evict() {
+    caches_.atPut(cache_index_ + kIcEntryKeyOffset, NoneType::object());
+    caches_.atPut(cache_index_ + kIcEntryValueOffset, NoneType::object());
+  }
+
+ private:
+  static word findNextFilledCacheIndex(const Tuple& caches, word cache_index,
+                                       word end_cache_index) {
+    for (; cache_index < end_cache_index; cache_index += kIcPointersPerEntry) {
+      if (!caches.at(cache_index + kIcEntryKeyOffset).isNoneType()) {
+        return cache_index;
+      }
+    }
+    return -1;
+  }
+
+  MutableBytes bytecode_;
+  Tuple caches_;
+  Function function_;
+  Tuple names_;
+
+  word bytecode_index_;
+  BytecodeOp bytecode_op_;
+  word cache_index_;
+  word end_cache_index_;
+
+  DISALLOW_IMPLICIT_CONSTRUCTORS(IcIterator);
+  DISALLOW_HEAP_ALLOCATION();
+};
 
 inline RawObject icLookupAttr(RawTuple caches, word index, LayoutId layout_id) {
   RawSmallInt key = SmallInt::fromWord(static_cast<word>(layout_id));

@@ -176,57 +176,39 @@ bool icIsCachedAttributeAffectedByUpdatedType(Thread* thread,
 
 void icDeleteCacheForTypeAttrInDependent(Thread* thread,
                                          const Type& updated_type,
-                                         const Str& attribute_name,
-                                         bool data_descriptor,
+                                         const Str& updated_attr,
+                                         bool is_data_descriptor,
                                          const Function& dependent) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Tuple names(&scope, Code::cast(dependent.code()).names());
-  Tuple caches(&scope, dependent.caches());
-  // Scan through all attribute caches and delete caches whose mro matches the
-  // given type & attribute_name.
-  MutableBytes bytecode(&scope, dependent.rewrittenBytecode());
-  word bytecode_length = bytecode.length();
-  for (word i = 0; i < bytecode_length;) {
-    BytecodeOp op = nextBytecodeOp(bytecode, &i);
-    if (op.bc != LOAD_ATTR_CACHED && op.bc != LOAD_METHOD_CACHED &&
-        op.bc != STORE_ATTR_CACHED) {
+  // Scan through all attribute caches and delete caches shadowed by
+  // updated_type.updated_attr.
+  for (IcIterator it(&scope, *dependent); it.hasNext(); it.next()) {
+    if (!it.isAttrNameEqualTo(updated_attr)) {
       continue;
     }
-    for (word j = op.arg * kIcPointersPerCache, end = j + kIcPointersPerCache;
-         j < end; j += kIcPointersPerEntry) {
-      Object cache_key(&scope, caches.at(j + kIcEntryKeyOffset));
-      // Unfilled cache.
-      if (cache_key.isNoneType()) {
-        continue;
-      }
-      // Attribute name doesn't match.
-      if (!attribute_name.equals(names.at(originalArg(*dependent, op.arg)))) {
-        continue;
-      }
-      // A cache offset has a higher precedence than a non-data descriptor.
-      if (caches.at(j + kIcEntryValueOffset).isSmallInt() && !data_descriptor) {
-        continue;
-      }
-      Type cached_type(&scope, runtime->typeAt(static_cast<LayoutId>(
-                                   SmallInt::cast(*cache_key).value())));
-      // Adding an attribute to the updated type will not affect a lookup of the
-      // name name through the cached type.
-      if (!icIsCachedAttributeAffectedByUpdatedType(
-              thread, cached_type, attribute_name, updated_type)) {
-        continue;
-      }
-
-      caches.atPut(j + kIcEntryKeyOffset, NoneType::object());
-      caches.atPut(j + kIcEntryValueOffset, NoneType::object());
-
-      // Delete all direct/indirect dependencies from the deleted cache to
-      // dependent since such dependencies are gone now.
-      // TODO(T47281253): Call this per (cached_type, attribute_name) after
-      // cache invalidation.
-      icDoesCacheNeedInvalidationAfterUpdate(
-          thread, cached_type, attribute_name, updated_type, dependent);
+    // We don't invalidate instance offset caches when non-data descriptor is
+    // assigned to the cached type.
+    if (it.isInstanceAttr() && !is_data_descriptor) {
+      continue;
     }
+    Type cached_type(&scope, runtime->typeAt(it.key()));
+    // The updated type doesn't shadow the cached type.
+    if (!icIsCachedAttributeAffectedByUpdatedType(thread, cached_type,
+                                                  updated_attr, updated_type)) {
+      continue;
+    }
+
+    // Now that we know that the updated type attribute shadows the cached type
+    // attribute, clear the cache.
+    it.evict();
+
+    // Delete all direct/indirect dependencies from the deleted cache to
+    // dependent since such dependencies are gone now.
+    // TODO(T47281253): Call this per (cached_type, attribute_name) after
+    // cache invalidation.
+    icDoesCacheNeedInvalidationAfterUpdate(thread, cached_type, updated_attr,
+                                           updated_type, dependent);
   }
 }
 
