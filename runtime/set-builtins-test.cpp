@@ -82,15 +82,15 @@ TEST_F(SetBuiltinsTest, DunderAnd) {
   EXPECT_EQ(Set::cast(*result).numItems(), 0);
 
   Object key(&scope, SmallInt::fromWord(1));
-  runtime_.setAdd(thread, set1, key);
+  setHashAndAdd(thread, set1, key);
   key = SmallInt::fromWord(2);
-  runtime_.setAdd(thread, set1, key);
+  setHashAndAdd(thread, set1, key);
   Object result1(&scope, runBuiltin(SetBuiltins::dunderAnd, set1, set2));
   ASSERT_TRUE(result1.isSet());
   EXPECT_EQ(Set::cast(*result1).numItems(), 0);
 
   key = SmallInt::fromWord(1);
-  runtime_.setAdd(thread, set2, key);
+  setHashAndAdd(thread, set2, key);
   Object result2(&scope, runBuiltin(SetBuiltins::dunderAnd, set1, set2));
   ASSERT_TRUE(result2.isSet());
   Set set(&scope, *result2);
@@ -121,9 +121,9 @@ TEST_F(SetBuiltinsTest, DunderIand) {
   EXPECT_EQ(Set::cast(*result).numItems(), 0);
 
   key = SmallInt::fromWord(1);
-  runtime_.setAdd(thread, set1, key);
+  setHashAndAdd(thread, set1, key);
   key = SmallInt::fromWord(2);
-  runtime_.setAdd(thread, set1, key);
+  setHashAndAdd(thread, set1, key);
   Object result1(&scope, runBuiltin(SetBuiltins::dunderIand, set1, set2));
   ASSERT_TRUE(result1.isSet());
   EXPECT_EQ(*result1, *set1);
@@ -131,10 +131,10 @@ TEST_F(SetBuiltinsTest, DunderIand) {
 
   set1 = runtime_.newSet();
   key = SmallInt::fromWord(1);
-  runtime_.setAdd(thread, set1, key);
+  setHashAndAdd(thread, set1, key);
   key = SmallInt::fromWord(2);
-  runtime_.setAdd(thread, set1, key);
-  runtime_.setAdd(thread, set2, key);
+  setHashAndAdd(thread, set1, key);
+  setHashAndAdd(thread, set2, key);
   Object result2(&scope, runBuiltin(SetBuiltins::dunderIand, set1, set2));
   ASSERT_TRUE(result2.isSet());
   EXPECT_EQ(*result2, *set1);
@@ -289,9 +289,9 @@ TEST_F(SetIteratorBuiltinsTest, CallDunderNext) {
   HandleScope scope(thread);
   Set set(&scope, runtime_.newSet());
   Object value(&scope, SmallInt::fromWord(0));
-  runtime_.setAdd(thread, set, value);
+  setHashAndAdd(thread, set, value);
   value = SmallInt::fromWord(1);
-  runtime_.setAdd(thread, set, value);
+  setHashAndAdd(thread, set, value);
 
   Object iter(&scope, runBuiltin(SetBuiltins::dunderIter, set));
   ASSERT_TRUE(iter.isSetIterator());
@@ -346,7 +346,7 @@ TEST_F(SetIteratorBuiltinsTest, DunderLengthHintOnConsumedSetReturnsZero) {
   HandleScope scope(thread);
   Set one_element_set(&scope, runtime_.newSet());
   Object zero(&scope, SmallInt::fromWord(0));
-  runtime_.setAdd(thread, one_element_set, zero);
+  setHashAndAdd(thread, one_element_set, zero);
 
   Object iter(&scope, runBuiltin(SetBuiltins::dunderIter, one_element_set));
   ASSERT_TRUE(iter.isSetIterator());
@@ -386,13 +386,13 @@ TEST_F(SetBuiltinsTest, SetIsDisjointWithSetArg) {
   EXPECT_EQ(*result, Bool::trueObj());
 
   // set().isdisjoint({None})
-  runtime_.setAdd(thread, other, value);
+  setHashAndAdd(thread, other, value);
   Object result1(&scope, runBuiltin(SetBuiltins::isDisjoint, set, other));
   ASSERT_TRUE(result1.isBool());
   EXPECT_EQ(*result1, Bool::trueObj());
 
   // {None}.isdisjoint({None})
-  runtime_.setAdd(thread, set, value);
+  setHashAndAdd(thread, set, value);
   Object result2(&scope, runBuiltin(SetBuiltins::isDisjoint, set, other));
   ASSERT_TRUE(result2.isBool());
   EXPECT_EQ(*result2, Bool::falseObj());
@@ -400,7 +400,7 @@ TEST_F(SetBuiltinsTest, SetIsDisjointWithSetArg) {
   // {None}.isdisjoint({1})
   other = runtime_.newSet();
   value = SmallInt::fromWord(1);
-  runtime_.setAdd(thread, other, value);
+  setHashAndAdd(thread, other, value);
   Object result3(&scope, runBuiltin(SetBuiltins::isDisjoint, set, other));
   ASSERT_TRUE(result3.isBool());
   EXPECT_EQ(*result3, Bool::trueObj());
@@ -426,7 +426,7 @@ TEST_F(SetBuiltinsTest, SetIsDisjointWithIterableArg) {
   EXPECT_EQ(*result1, Bool::trueObj());
 
   // {None}.isdisjoint([None])
-  runtime_.setAdd(thread, set, value);
+  setHashAndAdd(thread, set, value);
   Object result2(&scope, runBuiltin(SetBuiltins::isDisjoint, set, other));
   ASSERT_TRUE(result2.isBool());
   EXPECT_EQ(*result2, Bool::falseObj());
@@ -1028,11 +1028,11 @@ TEST_F(SetBuiltinsTest, SetCopy) {
   EXPECT_EQ(Set::cast(*set_copy).numItems(), 0);
 
   Object key(&scope, SmallInt::fromWord(0));
-  runtime_.setAdd(thread, set, key);
+  setHashAndAdd(thread, set, key);
   key = SmallInt::fromWord(1);
-  runtime_.setAdd(thread, set, key);
+  setHashAndAdd(thread, set, key);
   key = SmallInt::fromWord(2);
-  runtime_.setAdd(thread, set, key);
+  setHashAndAdd(thread, set, key);
 
   Object set_copy1(&scope, setCopy(thread, set));
   ASSERT_TRUE(set_copy1.isSet());
@@ -1192,7 +1192,7 @@ TEST_F(SetBuiltinsTest, CopyReturnsShallowCopy) {
   HandleScope scope(thread);
   Set set(&scope, runtime_.newSet());
   Object obj(&scope, runtime_.newTuple(5));
-  EXPECT_FALSE(runtime_.setAdd(thread, set, obj).isError());
+  setHashAndAdd(thread, set, obj);
   Set set2(&scope, runBuiltin(SetBuiltins::copy, set));
   Tuple data(&scope, set2.data());
   bool has_object = false;
@@ -1255,7 +1255,7 @@ TEST_F(FrozenSetBuiltinsTest, CopyMakesShallowCopy) {
   HandleScope scope(thread);
   FrozenSet set(&scope, runtime_.newFrozenSet());
   Object obj(&scope, runtime_.newTuple(5));
-  EXPECT_FALSE(runtime_.setAdd(thread, set, obj).isError());
+  setHashAndAdd(thread, set, obj);
   FrozenSet set2(&scope, runBuiltin(FrozenSetBuiltins::copy, set));
   Tuple data(&scope, set2.data());
   bool has_object = false;

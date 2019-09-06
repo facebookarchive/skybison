@@ -418,13 +418,6 @@ const BuiltinMethod SetBuiltins::kBuiltinMethods[] = {
     {SymbolId::kSentinelId, nullptr},
 };
 
-// TODO(T36810889): implement high-level setAdd function with error handling
-RawObject setAdd(Thread* thread, const Set& set, const Object& value) {
-  // TODO(T36756972): raise MemoryError when heap is full
-  // TODO(T36757907): raise TypeError if value is unhashable
-  return thread->runtime()->setAdd(thread, set, value);
-}
-
 RawObject setCopy(Thread* thread, const SetBase& set) {
   word num_items = set.numItems();
   Runtime* runtime = thread->runtime();
@@ -521,14 +514,17 @@ RawObject SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
-  Object value(&scope, args.get(1));
-  if (!thread->runtime()->isInstanceOfSet(*self)) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfSet(*self)) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "'add' requires a 'set' object");
   }
   Set set(&scope, *self);
+  Object value(&scope, args.get(1));
+  Object value_hash(&scope, Interpreter::hash(thread, value));
+  if (value_hash.isErrorException()) return *value_hash;
 
-  Object result(&scope, setAdd(thread, set, value));
+  Object result(&scope, runtime->setAdd(thread, set, value, value_hash));
   if (result.isError()) return *result;
   return NoneType::object();
 }

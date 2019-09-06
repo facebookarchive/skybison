@@ -526,10 +526,8 @@ class Runtime {
   // Set related function, based on dict.
   // Add `value` to set if there is no equivalent value present yet. Returns
   // `value` if it was added or the existing equivalent value.
-  RawObject setAdd(Thread* thread, const SetBase& set, const Object& value);
-
-  RawObject setAddWithHash(Thread* thread, const SetBase& set,
-                           const Object& value, const Object& value_hash);
+  RawObject setAdd(Thread* thread, const SetBase& set, const Object& value,
+                   const Object& value_hash);
 
   bool setIncludes(Thread* thread, const SetBase& set, const Object& key,
                    const Object& key_hash);

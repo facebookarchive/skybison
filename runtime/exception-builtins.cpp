@@ -403,10 +403,12 @@ static RawObject printSingleException(Thread* thread, const Object& file,
 static RawObject printExceptionChain(Thread* thread, const Object& file,
                                      const Object& value, const Set& seen) {
   Runtime* runtime = thread->runtime();
-  runtime->setAdd(thread, seen, value);
+  HandleScope scope(thread);
+  Object value_hash(&scope, Interpreter::hash(thread, value));
+  if (value_hash.isErrorException()) return *value_hash;
+  runtime->setAdd(thread, seen, value, value_hash);
 
   if (runtime->isInstanceOfBaseException(*value)) {
-    HandleScope scope(thread);
     BaseException exc(&scope, *value);
     Object cause(&scope, exc.cause());
     Object context(&scope, exc.context());

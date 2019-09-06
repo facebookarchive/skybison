@@ -741,9 +741,9 @@ TEST_F(StrBuiltinsTest,
   EXPECT_FALSE(runtime_.isInternedStr(thread_, str0));
   EXPECT_FALSE(runtime_.isInternedStr(thread_, str1));
   EXPECT_FALSE(runtime_.isInternedStr(thread_, str2));
-  runtime_.setAdd(thread_, inner, str0);
-  runtime_.setAdd(thread_, inner, str1);
-  runtime_.setAdd(thread_, inner, str2);
+  setHashAndAdd(thread_, inner, str0);
+  setHashAndAdd(thread_, inner, str1);
+  setHashAndAdd(thread_, inner, str2);
   strInternConstants(thread_, outer);
   inner = outer.at(2);
   Tuple data(&scope, inner.data());

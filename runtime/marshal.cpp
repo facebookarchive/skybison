@@ -6,6 +6,7 @@
 
 #include "heap.h"
 #include "runtime.h"
+#include "tuple-builtins.h"
 #include "utils.h"
 #include "view.h"
 
@@ -348,7 +349,9 @@ RawObject Marshal::Reader::doSetElements(int32_t length, RawObject set_obj) {
   SetBase set(&scope, set_obj);
   for (int32_t i = 0; i < length; i++) {
     Object value(&scope, readObject());
-    RawObject result = runtime_->setAdd(thread, set, value);
+    Object value_hash(&scope, Interpreter::hash(thread, value));
+    DCHECK(!value_hash.isErrorException(), "must be hashable");
+    RawObject result = runtime_->setAdd(thread, set, value, value_hash);
     if (result.isError()) {
       return result;
     }

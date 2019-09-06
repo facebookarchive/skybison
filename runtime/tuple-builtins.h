@@ -24,6 +24,8 @@ RawObject tupleSlice(Thread* thread, const Tuple& tuple, word start, word stop,
 // and return its underlying Tuple.
 RawObject tupleUnderlying(Thread* thread, const Object& obj);
 
+RawObject tupleHash(Thread* thread, const Tuple& tuple);
+
 class TupleBuiltins
     : public Builtins<TupleBuiltins, SymbolId::kTuple, LayoutId::kTuple> {
  public:

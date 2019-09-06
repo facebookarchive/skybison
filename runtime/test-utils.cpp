@@ -190,6 +190,13 @@ bool setIncludes(Thread* thread, const SetBase& set, const Object& key) {
   return thread->runtime()->setIncludes(thread, set, key, key_hash);
 }
 
+void setHashAndAdd(Thread* thread, const SetBase& set, const Object& value) {
+  HandleScope scope(thread);
+  Object value_hash(&scope, Interpreter::hash(thread, value));
+  CHECK(value_hash.isSmallInt(), "value must be hashable");
+  thread->runtime()->setAdd(thread, set, value, value_hash);
+}
+
 static RawObject findModuleByCStr(Runtime* runtime, const char* name) {
   HandleScope scope;
   Object key(&scope, runtime->newStrFromCStr(name));
@@ -294,9 +301,12 @@ RawObject setFromRange(word start, word stop) {
   HandleScope scope(thread);
   Set result(&scope, thread->runtime()->newSet());
   Object value(&scope, NoneType::object());
+  Object value_hash(&scope, NoneType::object());
   for (word i = start; i < stop; i++) {
     value = SmallInt::fromWord(i);
-    thread->runtime()->setAdd(thread, result, value);
+    value_hash = Interpreter::hash(thread, value);
+    if (value_hash.isErrorException()) return *value_hash;
+    thread->runtime()->setAdd(thread, result, value, value_hash);
   }
   return *result;
 }

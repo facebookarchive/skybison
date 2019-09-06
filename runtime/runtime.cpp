@@ -1340,7 +1340,7 @@ RawObject Runtime::internStr(Thread* thread, const Object& str) {
     return *str;
   }
   Object key_hash(&scope, strHash(thread, *str));
-  return setAddWithHash(thread, set, str, key_hash);
+  return setAdd(thread, set, str, key_hash);
 }
 
 bool Runtime::isInternedStr(Thread* thread, const Object& str) {
@@ -3284,9 +3284,8 @@ RawTuple Runtime::setGrow(Thread* thread, const Tuple& data) {
   return *new_data;
 }
 
-RawObject Runtime::setAddWithHash(Thread* thread, const SetBase& set,
-                                  const Object& value,
-                                  const Object& value_hash) {
+RawObject Runtime::setAdd(Thread* thread, const SetBase& set,
+                          const Object& value, const Object& value_hash) {
   HandleScope scope(thread);
   Tuple data(&scope, set.data());
   word index = setLookup<SetLookupType::Lookup>(data, value, value_hash);
@@ -3303,13 +3302,6 @@ RawObject Runtime::setAddWithHash(Thread* thread, const SetBase& set,
   SetBase::Bucket::set(*new_data, index, *value_hash, *value);
   set.setNumItems(set.numItems() + 1);
   return *value;
-}
-
-RawObject Runtime::setAdd(Thread* thread, const SetBase& set,
-                          const Object& value) {
-  HandleScope scope(thread);
-  Object value_hash(&scope, hash(*value));
-  return setAddWithHash(thread, set, value, value_hash);
 }
 
 bool Runtime::setIncludes(Thread* thread, const SetBase& set, const Object& key,
@@ -3346,7 +3338,7 @@ RawObject Runtime::setIntersection(Thread* thread, const SetBase& set,
       value_hash = SetBase::Bucket::hash(*data, i);
       if (setLookup<SetLookupType::Lookup>(other_data, value, value_hash) !=
           -1) {
-        setAddWithHash(thread, dst, value, value_hash);
+        setAdd(thread, dst, value, value_hash);
       }
     }
     return *dst;
@@ -3384,7 +3376,7 @@ RawObject Runtime::setIntersection(Thread* thread, const SetBase& set,
     }
     value_hash = hash(*value);
     if (setLookup<SetLookupType::Lookup>(data, value, value_hash) != -1) {
-      setAddWithHash(thread, dst, value, value_hash);
+      setAdd(thread, dst, value, value_hash);
     }
   }
   return *dst;
@@ -3407,12 +3399,15 @@ RawObject Runtime::setUpdate(Thread* thread, const SetBase& dst,
                              const Object& iterable) {
   HandleScope scope(thread);
   Object elt(&scope, NoneType::object());
+  Object elt_hash(&scope, NoneType::object());
   // Special case for lists
   if (iterable.isList()) {
     List src(&scope, *iterable);
     for (word i = 0; i < src.numItems(); i++) {
       elt = src.at(i);
-      setAdd(thread, dst, elt);
+      elt_hash = Interpreter::hash(thread, elt);
+      if (elt_hash.isErrorException()) return *elt_hash;
+      setAdd(thread, dst, elt, elt_hash);
     }
     return *dst;
   }
@@ -3422,7 +3417,9 @@ RawObject Runtime::setUpdate(Thread* thread, const SetBase& dst,
     List src(&scope, list_iter.iterable());
     for (word i = 0; i < src.numItems(); i++) {
       elt = src.at(i);
-      setAdd(thread, dst, elt);
+      elt_hash = Interpreter::hash(thread, elt);
+      if (elt_hash.isErrorException()) return *elt_hash;
+      setAdd(thread, dst, elt, elt_hash);
     }
   }
   // Special case for tuples
@@ -3431,7 +3428,9 @@ RawObject Runtime::setUpdate(Thread* thread, const SetBase& dst,
     if (tuple.length() > 0) {
       for (word i = 0; i < tuple.length(); i++) {
         elt = tuple.at(i);
-        setAdd(thread, dst, elt);
+        elt_hash = Interpreter::hash(thread, elt);
+        if (elt_hash.isErrorException()) return *elt_hash;
+        setAdd(thread, dst, elt, elt_hash);
       }
     }
     return *dst;
@@ -3441,13 +3440,12 @@ RawObject Runtime::setUpdate(Thread* thread, const SetBase& dst,
     SetBase src(&scope, *iterable);
     Tuple data(&scope, src.data());
     if (src.numItems() > 0) {
-      Object hash(&scope, NoneType::object());
       for (word i = SetBase::Bucket::kFirst;
            SetBase::Bucket::nextItem(*data, &i);) {
         elt = SetBase::Bucket::value(*data, i);
         // take hash from data to avoid recomputing it.
-        hash = SetBase::Bucket::hash(*data, i);
-        setAddWithHash(thread, dst, elt, hash);
+        elt_hash = SetBase::Bucket::hash(*data, i);
+        setAdd(thread, dst, elt, elt_hash);
       }
     }
     return *dst;
@@ -3457,10 +3455,11 @@ RawObject Runtime::setUpdate(Thread* thread, const SetBase& dst,
     Dict dict(&scope, *iterable);
     if (dict.numItems() > 0) {
       Tuple keys(&scope, dictKeys(thread, dict));
-      Object value(&scope, NoneType::object());
       for (word i = 0; i < keys.length(); i++) {
-        value = keys.at(i);
-        setAdd(thread, dst, value);
+        elt = keys.at(i);
+        elt_hash = Interpreter::hash(thread, elt);
+        if (elt_hash.isErrorException()) return *elt_hash;
+        setAdd(thread, dst, elt, elt_hash);
       }
     }
     return *dst;
@@ -3485,15 +3484,16 @@ RawObject Runtime::setUpdate(Thread* thread, const SetBase& dst,
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "iter() returned a non-iterator");
   }
-  Object value(&scope, NoneType::object());
   for (;;) {
-    value = Interpreter::callMethod1(thread, thread->currentFrame(),
-                                     next_method, iterator);
-    if (value.isError()) {
+    elt = Interpreter::callMethod1(thread, thread->currentFrame(), next_method,
+                                   iterator);
+    if (elt.isError()) {
       if (thread->clearPendingStopIteration()) break;
-      return *value;
+      return *elt;
     }
-    setAdd(thread, dst, value);
+    elt_hash = Interpreter::hash(thread, elt);
+    if (elt_hash.isErrorException()) return *elt_hash;
+    setAdd(thread, dst, elt, elt_hash);
   }
   return *dst;
 }

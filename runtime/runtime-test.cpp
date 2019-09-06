@@ -1659,9 +1659,11 @@ TEST_F(RuntimeSetTest, Add) {
   HandleScope scope(thread_);
   Set set(&scope, runtime_.newSet());
   Object value(&scope, SmallInt::fromWord(12345));
+  Object value_hash(&scope, Interpreter::hash(thread_, value));
+  ASSERT_FALSE(value_hash.isErrorException());
 
   // Store a value
-  runtime_.setAdd(thread_, set, value);
+  runtime_.setAdd(thread_, set, value, value_hash);
   EXPECT_EQ(set.numItems(), 1);
 
   // Retrieve the stored value
@@ -1669,7 +1671,9 @@ TEST_F(RuntimeSetTest, Add) {
 
   // Add a new value
   Object new_value(&scope, SmallInt::fromWord(5555));
-  runtime_.setAdd(thread_, set, new_value);
+  Object new_value_hash(&scope, Interpreter::hash(thread_, new_value));
+  ASSERT_FALSE(new_value_hash.isErrorException());
+  runtime_.setAdd(thread_, set, new_value, new_value_hash);
   EXPECT_EQ(set.numItems(), 2);
 
   // Get the new value
@@ -1677,7 +1681,10 @@ TEST_F(RuntimeSetTest, Add) {
 
   // Add a existing value
   Object same_value(&scope, SmallInt::fromWord(12345));
-  RawObject old_value = runtime_.setAdd(thread_, set, same_value);
+  Object same_value_hash(&scope, Interpreter::hash(thread_, same_value));
+  ASSERT_FALSE(same_value_hash.isErrorException());
+  RawObject old_value =
+      runtime_.setAdd(thread_, set, same_value, same_value_hash);
   EXPECT_EQ(set.numItems(), 2);
   EXPECT_EQ(old_value, *value);
 }
@@ -1691,7 +1698,7 @@ TEST_F(RuntimeSetTest, Remove) {
   // Removing a key that doesn't exist should fail
   EXPECT_FALSE(runtime_.setRemove(thread_, set, value, value_hash));
 
-  runtime_.setAdd(thread_, set, value);
+  setHashAndAdd(thread_, set, value);
   EXPECT_EQ(set.numItems(), 1);
 
   ASSERT_TRUE(runtime_.setRemove(thread_, set, value, value_hash));
@@ -1713,7 +1720,7 @@ TEST_F(RuntimeSetTest, Grow) {
   // Fill up the dict - we insert an initial key to force the allocation of the
   // backing Tuple.
   Object init_key(&scope, SmallInt::fromWord(0));
-  runtime_.setAdd(thread_, set, init_key);
+  setHashAndAdd(thread_, set, init_key);
   ASSERT_TRUE(set.data().isTuple());
   word init_data_size = Tuple::cast(set.data()).length();
 
@@ -1722,12 +1729,12 @@ TEST_F(RuntimeSetTest, Grow) {
   word num_keys = Runtime::kInitialSetCapacity;
   for (int i = 1; i < num_keys; i++) {
     Object key(&scope, makeKey(&runtime_, i));
-    runtime_.setAdd(thread_, set, key);
+    setHashAndAdd(thread_, set, key);
   }
 
   // Add another key which should force us to double the capacity
   Object straw(&scope, makeKey(&runtime_, num_keys));
-  runtime_.setAdd(thread_, set, straw);
+  setHashAndAdd(thread_, set, straw);
   ASSERT_TRUE(set.data().isTuple());
   word new_data_size = Tuple::cast(set.data()).length();
   EXPECT_EQ(new_data_size, Runtime::kSetGrowthFactor * init_data_size);
@@ -1747,13 +1754,13 @@ TEST_F(RuntimeSetTest, UpdateSet) {
   Object set1_handle(&scope, *set1);
   for (word i = 0; i < 8; i++) {
     Object value(&scope, SmallInt::fromWord(i));
-    runtime_.setAdd(thread_, set, value);
+    setHashAndAdd(thread_, set, value);
   }
   runtime_.setUpdate(thread_, set, set1_handle);
   ASSERT_EQ(set.numItems(), 8);
   for (word i = 4; i < 12; i++) {
     Object value(&scope, SmallInt::fromWord(i));
-    runtime_.setAdd(thread_, set1, value);
+    setHashAndAdd(thread_, set1, value);
   }
   runtime_.setUpdate(thread_, set, set1_handle);
   ASSERT_EQ(set.numItems(), 12);
@@ -1771,7 +1778,7 @@ TEST_F(RuntimeSetTest, UpdateList) {
   }
   for (word i = 4; i < 12; i++) {
     Object value(&scope, SmallInt::fromWord(i));
-    runtime_.setAdd(thread_, set, value);
+    setHashAndAdd(thread_, set, value);
   }
   ASSERT_EQ(set.numItems(), 8);
   Object list_handle(&scope, *list);
@@ -1791,7 +1798,7 @@ TEST_F(RuntimeSetTest, UpdateListIterator) {
   }
   for (word i = 4; i < 12; i++) {
     Object value(&scope, SmallInt::fromWord(i));
-    runtime_.setAdd(thread_, set, value);
+    setHashAndAdd(thread_, set, value);
   }
   ASSERT_EQ(set.numItems(), 8);
   Object list_handle(&scope, *list);
@@ -1809,7 +1816,7 @@ TEST_F(RuntimeSetTest, UpdateTuple) {
   }
   for (word i = 4; i < 12; i++) {
     Object value(&scope, SmallInt::fromWord(i));
-    runtime_.setAdd(thread_, set, value);
+    setHashAndAdd(thread_, set, value);
   }
   ASSERT_EQ(set.numItems(), 8);
   Object object_array_handle(&scope, *object_array);
@@ -1854,7 +1861,7 @@ TEST_F(RuntimeSetTest, ItersectionWithEmptySetReturnsEmptySet) {
 
   for (word i = 0; i < 8; i++) {
     Object value(&scope, SmallInt::fromWord(i));
-    runtime_.setAdd(thread_, set1, value);
+    setHashAndAdd(thread_, set1, value);
   }
 
   // set() & {0, 1, 2, 3, 4, 5, 6, 7}
@@ -1876,12 +1883,12 @@ TEST_F(RuntimeSetTest, IntersectionReturnsSetWithCommonElements) {
 
   for (word i = 0; i < 8; i++) {
     Object value(&scope, SmallInt::fromWord(i));
-    runtime_.setAdd(thread_, set1, value);
+    setHashAndAdd(thread_, set1, value);
   }
 
   for (word i = 0; i < 4; i++) {
     Object value(&scope, SmallInt::fromWord(i));
-    runtime_.setAdd(thread_, set, value);
+    setHashAndAdd(thread_, set, value);
   }
 
   // {0, 1, 2, 3} & {0, 1, 2, 3, 4, 5, 6, 7}
@@ -1919,9 +1926,9 @@ TEST_F(RuntimeSetTest, IntersectIterator) {
   EXPECT_EQ(result.numItems(), 0);
 
   Object key(&scope, SmallInt::fromWord(1));
-  runtime_.setAdd(thread_, set, key);
+  setHashAndAdd(thread_, set, key);
   key = SmallInt::fromWord(2);
-  runtime_.setAdd(thread_, set, key);
+  setHashAndAdd(thread_, set, key);
   Set result1(&scope, runtime_.setIntersection(thread_, set, iterable));
   EXPECT_EQ(result1.numItems(), 2);
   EXPECT_TRUE(setIncludes(thread_, result1, key));

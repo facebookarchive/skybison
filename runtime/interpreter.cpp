@@ -213,6 +213,38 @@ RawObject Interpreter::prepareCallableEx(Thread* thread, Frame* frame,
 }
 
 RawObject Interpreter::hash(Thread* thread, const Object& value) {
+  // Directly call into hash functions for all types supported by the marshal
+  // code to avoid bootstrapping problems. It also helps performance.
+  LayoutId layout_id = value.layoutId();
+  switch (layout_id) {
+    case LayoutId::kLargeBytes:
+    case LayoutId::kSmallBytes:
+      return bytesHash(thread, *value);
+    case LayoutId::kLargeStr:
+    case LayoutId::kSmallStr:
+      return strHash(thread, *value);
+    case LayoutId::kTuple: {
+      HandleScope scope(thread);
+      Tuple value_tuple(&scope, *value);
+      return tupleHash(thread, value_tuple);
+    }
+    case LayoutId::kBool:
+    case LayoutId::kComplex:
+    case LayoutId::kFloat:
+    case LayoutId::kFrozenSet:
+    case LayoutId::kLargeInt:
+    case LayoutId::kSmallInt:
+      // TODO(T53077062): The specialized hash functions for these layouts
+      // have not been written yet and should be called here later.
+      // For now: FALLTHROUGH
+    case LayoutId::kNoneType:
+    case LayoutId::kEllipsis:
+    case LayoutId::kStopIteration:
+      return thread->runtime()->hash(*value);
+    default:
+      break;
+  }
+
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   // TODO(T52406106): This lookup is unfortunately not inline-cached but should
@@ -2430,7 +2462,7 @@ HANDLER_INLINE Continue Interpreter::doBuildSet(Thread* thread, word arg) {
     Object value(&scope, frame->popValue());
     Object value_hash(&scope, hash(thread, value));
     if (value_hash.isErrorException()) return Continue::UNWIND;
-    runtime->setAddWithHash(thread, set, value, value_hash);
+    runtime->setAdd(thread, set, value, value_hash);
   }
   frame->pushValue(*set);
   return Continue::NEXT;
@@ -3238,8 +3270,12 @@ HANDLER_INLINE Continue Interpreter::doSetAdd(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
   Object value(&scope, frame->popValue());
+  Object value_hash(&scope, hash(thread, value));
+  if (value_hash.isErrorException()) {
+    return Continue::UNWIND;
+  }
   Set set(&scope, Set::cast(frame->peek(arg - 1)));
-  thread->runtime()->setAdd(thread, set, value);
+  thread->runtime()->setAdd(thread, set, value, value_hash);
   return Continue::NEXT;
 }
 

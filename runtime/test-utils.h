@@ -154,6 +154,8 @@ RawObject setFromRange(word start, word stop);
 
 bool setIncludes(Thread* thread, const SetBase& set, const Object& key);
 
+void setHashAndAdd(Thread* thread, const SetBase& set, const Object& value);
+
 RawObject runBuiltinImpl(NativeMethodType method,
                          View<std::reference_wrapper<const Object>> args);
 

@@ -63,6 +63,28 @@ RawObject tupleUnderlying(Thread* thread, const Object& obj) {
   return base.tupleValue();
 }
 
+RawObject tupleHash(Thread* thread, const Tuple& tuple) {
+  HandleScope scope(thread);
+  Object elt(&scope, NoneType::object());
+  Object elt_hash(&scope, NoneType::object());
+  uword result = 0x345678UL;
+  uword mult = 1000003UL /* 0xf4243 */;
+  word len = tuple.length();
+  for (word i = len - 1; i >= 0; i--) {
+    elt = tuple.at(i);
+    elt_hash = Interpreter::hash(thread, elt);
+    if (elt_hash.isErrorException()) return *elt_hash;
+    word hash_result = SmallInt::cast(*elt_hash).value();
+    result = (result ^ hash_result) * mult;
+    mult += word{82520} + len + len;
+  }
+  result += 97531UL;
+  if (result == kMaxUword) {
+    return SmallInt::fromWord(-2);
+  }
+  return SmallInt::fromWordTruncated(result);
+}
+
 const BuiltinAttribute TupleBuiltins::kAttributes[] = {
     {SymbolId::kInvalid, UserTupleBase::kTupleOffset},
     {SymbolId::kSentinelId, -1},
@@ -149,24 +171,7 @@ RawObject TupleBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, SymbolId::kTuple);
   }
   Tuple self(&scope, tupleUnderlying(thread, self_obj));
-  Object elt(&scope, NoneType::object());
-  Object hash_result_obj(&scope, NoneType::object());
-  uword result = 0x345678UL;
-  uword mult = 1000003UL /* 0xf4243 */;
-  word len = self.length();
-  for (word i = len - 1; i >= 0; i--) {
-    elt = self.at(i);
-    hash_result_obj = Interpreter::hash(thread, elt);
-    if (hash_result_obj.isErrorException()) return *hash_result_obj;
-    word hash_result = SmallInt::cast(*hash_result_obj).value();
-    result = (result ^ hash_result) * mult;
-    mult += word{82520} + len + len;
-  }
-  result += 97531UL;
-  if (result == kMaxUword) {
-    return SmallInt::fromWord(-2);
-  }
-  return SmallInt::fromWordTruncated(result);
+  return tupleHash(thread, self);
 }
 
 RawObject TupleBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
