@@ -47,8 +47,8 @@ void ApiHandle::dictAtPutIdentityEquals(Thread* thread, const Dict& dict,
                                         const Object& key_hash) {
   Runtime* runtime = thread->runtime();
   if (dict.capacity() == 0) {
-    dict.setData(runtime->newTuple(Runtime::kInitialDictCapacity *
-                                   Dict::Bucket::kNumPointers));
+    dict.setData(runtime->newMutableTuple(Runtime::kInitialDictCapacity *
+                                          Dict::Bucket::kNumPointers));
     dict.resetNumUsableItems();
   }
   HandleScope scope(thread);
@@ -81,8 +81,8 @@ void ApiHandle::dictEnsureCapacity(Thread* thread, const Dict& dict) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Tuple data(&scope, dict.data());
-  Tuple new_data(&scope,
-                 runtime->newTuple(new_capacity * Dict::Bucket::kNumPointers));
+  MutableTuple new_data(&scope, runtime->newMutableTuple(
+                                    new_capacity * Dict::Bucket::kNumPointers));
   // Re-insert items
   for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
     Object key(&scope, Dict::Bucket::key(*data, i));

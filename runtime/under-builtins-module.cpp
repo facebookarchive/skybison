@@ -1326,8 +1326,8 @@ RawObject UnderBuiltinsModule::underDictLookup(Thread* thread, Frame* frame,
   key_hash = intUnderlying(thread, key_hash);
   key_hash = SmallInt::fromWordTruncated(Int::cast(*key_hash).digitAt(0));
   if (dict.capacity() == 0) {
-    dict.setData(runtime->newTuple(Runtime::kInitialDictCapacity *
-                                   Dict::Bucket::kNumPointers));
+    dict.setData(runtime->newMutableTuple(Runtime::kInitialDictCapacity *
+                                          Dict::Bucket::kNumPointers));
     dict.resetNumUsableItems();
   }
   Tuple data(&scope, dict.data());

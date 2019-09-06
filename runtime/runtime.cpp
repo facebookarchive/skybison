@@ -2891,7 +2891,8 @@ RawObject Runtime::newDictWithSize(word initial_size) {
   word initial_capacity = Utils::maximum(
       static_cast<word>(kInitialDictCapacity),
       Utils::nextPowerOfTwo(initial_size) * Runtime::kDictGrowthFactor);
-  Tuple array(&scope, newTuple(initial_capacity * Dict::Bucket::kNumPointers));
+  Tuple array(&scope,
+              newMutableTuple(initial_capacity * Dict::Bucket::kNumPointers));
   Dict result(&scope, newDict());
   result.setNumItems(0);
   result.setData(*array);
@@ -2905,8 +2906,8 @@ void Runtime::dictAtPutWithHash(Thread* thread, const Dict& dict,
   // TODO(T44245141): Move initialization of an empty dict to
   // dictEnsureCapacity.
   if (dict.capacity() == 0) {
-    dict.setData(
-        newTuple(Runtime::kInitialDictCapacity * Dict::Bucket::kNumPointers));
+    dict.setData(newMutableTuple(Runtime::kInitialDictCapacity *
+                                 Dict::Bucket::kNumPointers));
     dict.resetNumUsableItems();
   }
   HandleScope scope(thread);
@@ -2946,7 +2947,8 @@ void Runtime::dictEnsureCapacity(Thread* thread, const Dict& dict) {
   word new_capacity = dict.capacity() * kDictGrowthFactor;
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
-  Tuple new_data(&scope, newTuple(new_capacity * Dict::Bucket::kNumPointers));
+  MutableTuple new_data(
+      &scope, newMutableTuple(new_capacity * Dict::Bucket::kNumPointers));
   // Re-insert items
   for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
     Object key(&scope, Dict::Bucket::key(*data, i));
@@ -2985,8 +2987,8 @@ RawObject Runtime::dictAtIfAbsentPut(Thread* thread, const Dict& dict,
   // TODO(T44245141): Move initialization of an empty dict to
   // dictEnsureCapacity.
   if (dict.capacity() == 0) {
-    dict.setData(
-        newTuple(Runtime::kInitialDictCapacity * Dict::Bucket::kNumPointers));
+    dict.setData(newMutableTuple(Runtime::kInitialDictCapacity *
+                                 Dict::Bucket::kNumPointers));
     dict.resetNumUsableItems();
   }
   HandleScope scope(thread);
