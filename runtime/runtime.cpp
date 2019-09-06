@@ -3252,7 +3252,7 @@ RawTuple Runtime::setGrow(Thread* thread, const Tuple& data) {
   if (new_length == 0) {
     new_length = kInitialSetCapacity * SetBase::Bucket::kNumPointers;
   }
-  Tuple new_data(&scope, newTuple(new_length));
+  MutableTuple new_data(&scope, newMutableTuple(new_length));
   // Re-insert items
   for (word i = SetBase::Bucket::kFirst;
        SetBase::Bucket::nextItem(*data, &i);) {

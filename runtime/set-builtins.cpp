@@ -438,7 +438,7 @@ RawObject setCopy(Thread* thread, const SetBase& set) {
                               ? runtime->newSet()
                               : runtime->newFrozenSet());
   Tuple data(&scope, set.data());
-  Tuple new_data(&scope, runtime->newTuple(data.length()));
+  MutableTuple new_data(&scope, runtime->newMutableTuple(data.length()));
   Object value(&scope, NoneType::object());
   Object value_hash(&scope, NoneType::object());
   for (word i = SetBase::Bucket::kFirst;

@@ -3376,7 +3376,7 @@ inline bool RawObject::isTraceback() const {
 }
 
 inline bool RawObject::isTuple() const {
-  return isHeapObjectWithLayout(LayoutId::kTuple);
+  return isHeapObjectWithLayout(LayoutId::kTuple) || isMutableTuple();
 }
 
 inline bool RawObject::isTupleIterator() const {
