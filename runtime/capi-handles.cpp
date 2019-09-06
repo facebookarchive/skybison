@@ -159,14 +159,30 @@ ApiHandle* ApiHandle::borrowedReference(Thread* thread, RawObject obj) {
 }
 
 RawObject ApiHandle::stealReference(Thread* thread, PyObject* py_obj) {
-  if (py_obj == nullptr) return Error::exception();
-
   HandleScope scope(thread);
   // Using ApiHandle::fromPyObject() here is sketchy since the provenance of
   // py_obj is unknown, but it's the best we can do for now.
   Object obj(&scope, ApiHandle::fromPyObject(py_obj)->asObject());
   // TODO(T42827325): We should decref py_obj before returning.
   return *obj;
+}
+
+RawObject ApiHandle::checkFunctionResult(Thread* thread, PyObject* result) {
+  bool has_pending_exception = thread->hasPendingException();
+  if (result == nullptr) {
+    if (has_pending_exception) return Error::exception();
+    return thread->raiseWithFmt(LayoutId::kSystemError,
+                                "NULL return without exception set");
+  }
+  RawObject result_obj = ApiHandle::stealReference(thread, result);
+  if (has_pending_exception) {
+    // TODO(T53569173): set the currently pending exception as the cause of the
+    // newly raised SystemError
+    thread->clearPendingException();
+    return thread->raiseWithFmt(LayoutId::kSystemError,
+                                "non-NULL return with exception set");
+  }
+  return result_obj;
 }
 
 void ApiHandle::visitReferences(RawObject handles, PointerVisitor* visitor) {

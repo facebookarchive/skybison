@@ -153,6 +153,43 @@ TEST_F(CApiHandlesTest, RuntimeInstanceObjectReturnsPyObject) {
   EXPECT_EQ(*obj, *instance);
 }
 
+TEST_F(CApiHandlesTest,
+       CheckFunctionResultNonNullptrWithoutPendingExceptionReturnsResult) {
+  RawObject value = SmallInt::fromWord(1234);
+  ApiHandle* handle = ApiHandle::newReference(thread_, value);
+  RawObject result = ApiHandle::checkFunctionResult(thread_, handle);
+  EXPECT_EQ(result, value);
+}
+
+TEST_F(CApiHandlesTest,
+       CheckFunctionResultNullptrWithPendingExceptionReturnsError) {
+  thread_->raiseBadArgument();  // TypeError
+  RawObject result = ApiHandle::checkFunctionResult(thread_, nullptr);
+  EXPECT_TRUE(result.isErrorException());
+  EXPECT_TRUE(thread_->hasPendingException());
+  EXPECT_TRUE(thread_->pendingExceptionMatches(LayoutId::kTypeError));
+}
+
+TEST_F(CApiHandlesTest,
+       CheckFunctionResultNullptrWithoutPendingExceptionRaisesSystemError) {
+  EXPECT_FALSE(thread_->hasPendingException());
+  RawObject result = ApiHandle::checkFunctionResult(thread_, nullptr);
+  EXPECT_TRUE(result.isErrorException());
+  EXPECT_TRUE(thread_->hasPendingException());
+  EXPECT_TRUE(thread_->pendingExceptionMatches(LayoutId::kSystemError));
+}
+
+TEST_F(CApiHandlesTest,
+       CheckFunctionResultNonNullptrWithPendingExceptionRaisesSystemError) {
+  thread_->raiseBadArgument();  // TypeError
+  ApiHandle* handle =
+      ApiHandle::newReference(thread_, SmallInt::fromWord(1234));
+  RawObject result = ApiHandle::checkFunctionResult(thread_, handle);
+  EXPECT_TRUE(result.isErrorException());
+  EXPECT_TRUE(thread_->hasPendingException());
+  EXPECT_TRUE(thread_->pendingExceptionMatches(LayoutId::kSystemError));
+}
+
 TEST_F(CApiHandlesTest, Cache) {
   HandleScope scope(thread_);
 

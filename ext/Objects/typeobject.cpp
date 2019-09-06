@@ -344,8 +344,8 @@ RawObject wrapUnaryfunc(Thread* thread, Frame* frame, word argc) {
 
   Arguments args(frame, argc);
   PyObject* o = ApiHandle::borrowedReference(thread, args.get(0));
-  PyObject* result = func(o);
-  return ApiHandle::stealReference(thread, result);
+  PyObject* result = (*func)(o);
+  return ApiHandle::checkFunctionResult(thread, result);
 }
 
 // Common work for hashfunc, lenfunc, and inquiry, all of which take a single
@@ -386,7 +386,8 @@ RawObject wrapBinaryfuncImpl(Thread* thread, Frame* frame, word argc,
   Arguments args(frame, argc);
   PyObject* o1 = ApiHandle::borrowedReference(thread, args.get(swap ? 1 : 0));
   PyObject* o2 = ApiHandle::borrowedReference(thread, args.get(swap ? 0 : 1));
-  return ApiHandle::stealReference(thread, func(o1, o2));
+  PyObject* result = (*func)(o1, o2);
+  return ApiHandle::checkFunctionResult(thread, result);
 }
 
 RawObject wrapBinaryfunc(Thread* thread, Frame* frame, word argc) {
@@ -406,7 +407,8 @@ RawObject wrapTernaryfuncImpl(Thread* thread, Frame* frame, word argc,
   PyObject* value =
       ApiHandle::borrowedReference(thread, args.get(swap ? 0 : 1));
   PyObject* mod = ApiHandle::borrowedReference(thread, args.get(2));
-  return ApiHandle::stealReference(thread, func(self, value, mod));
+  PyObject* result = (*func)(self, value, mod);
+  return ApiHandle::checkFunctionResult(thread, result);
 }
 
 // wrapTernaryfunc() vs. wrapVarkwTernaryfunc():
@@ -432,7 +434,8 @@ RawObject wrapVarkwTernaryfunc(Thread* thread, Frame* frame, word argc) {
   PyObject* kwargs = Dict::cast(args.get(2)).numItems() == 0
                          ? nullptr
                          : ApiHandle::borrowedReference(thread, args.get(2));
-  return ApiHandle::stealReference(thread, func(self, varargs, kwargs));
+  PyObject* result = (*func)(self, varargs, kwargs);
+  return ApiHandle::checkFunctionResult(thread, result);
 }
 
 RawObject wrapSetattr(Thread* thread, Frame* frame, word argc) {
@@ -463,7 +466,8 @@ RawObject wrapRichcompare(Thread* thread, Frame* frame, word argc) {
   Arguments args(frame, argc);
   PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
   PyObject* other = ApiHandle::borrowedReference(thread, args.get(1));
-  return ApiHandle::stealReference(thread, func(self, other, op));
+  PyObject* result = (*func)(self, other, op);
+  return ApiHandle::checkFunctionResult(thread, result);
 }
 
 RawObject wrapNext(Thread* thread, Frame* frame, word argc) {
@@ -471,11 +475,11 @@ RawObject wrapNext(Thread* thread, Frame* frame, word argc) {
 
   Arguments args(frame, argc);
   PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
-  PyObject* result = func(self);
+  PyObject* result = (*func)(self);
   if (result == nullptr && !thread->hasPendingException()) {
     return thread->raise(LayoutId::kStopIteration, NoneType::object());
   }
-  return ApiHandle::stealReference(thread, result);
+  return ApiHandle::checkFunctionResult(thread, result);
 }
 
 RawObject wrapDescrGet(Thread* thread, Frame* frame, word argc) {
@@ -495,7 +499,8 @@ RawObject wrapDescrGet(Thread* thread, Frame* frame, word argc) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "__get__(None, None), is invalid");
   }
-  return ApiHandle::stealReference(thread, func(self, obj, type));
+  PyObject* result = (*func)(self, obj, type);
+  return ApiHandle::checkFunctionResult(thread, result);
 }
 
 RawObject wrapDescrSet(Thread* thread, Frame* frame, word argc) {
@@ -600,8 +605,8 @@ RawObject wrapIndexargfunc(Thread* thread, Frame* frame, word argc) {
   Object arg(&scope, args.get(1));
   arg = makeIndex(thread, arg);
   if (arg.isError()) return *arg;
-  return ApiHandle::stealReference(thread,
-                                   func(self, Int::cast(*arg).asWord()));
+  PyObject* result = (*func)(self, Int::cast(*arg).asWord());
+  return ApiHandle::checkFunctionResult(thread, result);
 }
 
 // First, convert arg to a word-sized int using makeIndex(). Then, if the result
@@ -634,8 +639,8 @@ RawObject wrapSqItem(Thread* thread, Frame* frame, word argc) {
   arg = normalizeIndex(thread, self, arg);
   if (arg.isError()) return *arg;
   PyObject* py_self = ApiHandle::borrowedReference(thread, *self);
-  return ApiHandle::stealReference(thread,
-                                   func(py_self, Int::cast(*arg).asWord()));
+  PyObject* result = (*func)(py_self, Int::cast(*arg).asWord());
+  return ApiHandle::checkFunctionResult(thread, result);
 }
 
 RawObject wrapSqSetitem(Thread* thread, Frame* frame, word argc) {
@@ -1429,7 +1434,8 @@ static RawObject getterWrapper(Thread* thread, Frame* frame, word argc) {
   auto func = getNativeFunc<getter>(thread, frame);
   Arguments args(frame, argc);
   PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
-  return ApiHandle::stealReference(thread, func(self, nullptr));
+  PyObject* result = (*func)(self, nullptr);
+  return ApiHandle::checkFunctionResult(thread, result);
 }
 
 static RawObject setterWrapper(Thread* thread, Frame* frame, word argc) {

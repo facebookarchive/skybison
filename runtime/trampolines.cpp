@@ -659,10 +659,7 @@ static RawObject callMethNoArgs(Thread* thread, const Function& function,
   binaryfunc method = bit_cast<binaryfunc>(address.asCPtr());
   PyObject* self_obj = ApiHandle::borrowedReference(thread, *self);
   PyObject* result = (*method)(self_obj, nullptr);
-  if (result != nullptr) return ApiHandle::fromPyObject(result)->asObject();
-  if (thread->hasPendingException()) return Error::exception();
-  return thread->raiseWithFmt(LayoutId::kSystemError,
-                              "NULL return without exception set");
+  return ApiHandle::checkFunctionResult(thread, result);
 }
 
 RawObject methodTrampolineNoArgs(Thread* thread, Frame* caller, word argc) {
@@ -718,10 +715,7 @@ static RawObject callMethOneArg(Thread* thread, const Function& function,
   PyObject* self_obj = ApiHandle::borrowedReference(thread, *self);
   PyObject* arg_obj = ApiHandle::borrowedReference(thread, *arg);
   PyObject* result = (*method)(self_obj, arg_obj);
-  if (result != nullptr) return ApiHandle::fromPyObject(result)->asObject();
-  if (thread->hasPendingException()) return Error::exception();
-  return thread->raiseWithFmt(LayoutId::kSystemError,
-                              "NULL return without exception set");
+  return ApiHandle::checkFunctionResult(thread, result);
 }
 
 RawObject methodTrampolineOneArg(Thread* thread, Frame* caller, word argc) {
@@ -785,10 +779,7 @@ static RawObject callMethVarArgs(Thread* thread, const Function& function,
   PyObject* self_obj = ApiHandle::borrowedReference(thread, *self);
   PyObject* varargs_obj = ApiHandle::borrowedReference(thread, *varargs);
   PyObject* result = (*method)(self_obj, varargs_obj);
-  if (result != nullptr) return ApiHandle::fromPyObject(result)->asObject();
-  if (thread->hasPendingException()) return Error::exception();
-  return thread->raiseWithFmt(LayoutId::kSystemError,
-                              "NULL return without exception set");
+  return ApiHandle::checkFunctionResult(thread, result);
 }
 
 RawObject methodTrampolineVarArgs(Thread* thread, Frame* caller, word argc) {
@@ -856,10 +847,7 @@ static RawObject callMethKeywords(Thread* thread, const Function& function,
     kwargs_obj = ApiHandle::borrowedReference(thread, *kwargs);
   }
   PyObject* result = (*method)(self_obj, args_obj, kwargs_obj);
-  if (result != nullptr) return ApiHandle::fromPyObject(result)->asObject();
-  if (thread->hasPendingException()) return Error::exception();
-  return thread->raiseWithFmt(LayoutId::kSystemError,
-                              "NULL return without exception set");
+  return ApiHandle::checkFunctionResult(thread, result);
 }
 
 RawObject methodTrampolineKeywords(Thread* thread, Frame* caller, word argc) {
