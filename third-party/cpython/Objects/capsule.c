@@ -82,6 +82,11 @@ PyCapsule_New(void *pointer, const char *name, PyCapsule_Destructor destructor)
         return NULL;
     }
 
+    if (PyState_FindModule(&capsulemodule) == NULL) {
+        if (PyImport_ImportModule("_capsule") == NULL) {
+            return NULL;
+        }
+    }
     capsule = PyObject_NEW(PyCapsule, (PyTypeObject *)capsulestate_global->PyCapsule_Type);
     if (capsule == NULL) {
         return NULL;
