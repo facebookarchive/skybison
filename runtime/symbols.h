@@ -185,7 +185,9 @@ class Runtime;
   V(UnderComplexImag, "_complex_imag")                                         \
   V(UnderComplexReal, "_complex_real")                                         \
   V(UnderCreated, "_created")                                                  \
+  V(UnderDecoder, "_decoder")                                                  \
   V(UnderDelattr, "_delattr")                                                  \
+  V(UnderDeleter, "_deleter")                                                  \
   V(UnderDescrClassMethod, "_descrclassmethod")                                \
   V(UnderDictBucketInsert, "_dict_bucket_insert")                              \
   V(UnderDictBucketKey, "_dict_bucket_key")                                    \
@@ -203,6 +205,7 @@ class Runtime;
   V(UnderDictUpdateMapping, "_dict_update_mapping")                            \
   V(UnderDivmod, "_divmod")                                                    \
   V(UnderEq, "_eq")                                                            \
+  V(UnderErrors, "_errors")                                                    \
   V(UnderEscapeDecode, "_escape_decode")                                       \
   V(UnderEscapeDecodeStateful, "_escape_decode_stateful")                      \
   V(UnderExceptionNew, "_exception_new")                                       \
@@ -310,6 +313,7 @@ class Runtime;
   V(UnderOs, "_os")                                                            \
   V(UnderOsWrite, "_os_write")                                                 \
   V(UnderPatch, "_patch")                                                      \
+  V(UnderPendingcr, "_pendingcr")                                              \
   V(UnderPos, "_pos")                                                          \
   V(UnderProperty, "_property")                                                \
   V(UnderPropertyIsAbstract, "_property_isabstract")                           \
@@ -326,6 +330,7 @@ class Runtime;
   V(UnderReprEnter, "_repr_enter")                                             \
   V(UnderReprLeave, "_repr_leave")                                             \
   V(UnderSeekable, "_seekable")                                                \
+  V(UnderSeennl, "_seennl")                                                    \
   V(UnderSeqIndex, "_seq_index")                                               \
   V(UnderSeqIterable, "_seq_iterable")                                         \
   V(UnderSeqSetIndex, "_seq_set_index")                                        \
@@ -377,6 +382,7 @@ class Runtime;
   V(UnderTupleLen, "_tuple_len")                                               \
   V(UnderTupleNew, "_tuple_new")                                               \
   V(UnderTraceback, "_traceback")                                              \
+  V(UnderTranslate, "_translate")                                              \
   V(UnderType, "_type")                                                        \
   V(UnderTypeAbstractMethodsDel, "_type_abstractmethods_del")                  \
   V(UnderTypeAbstractMethodsGet, "_type_abstractmethods_get")                  \
@@ -560,6 +566,7 @@ class Runtime;
   V(ImportError, "ImportError")                                                \
   V(ImportWarning, "ImportWarning")                                            \
   V(Imul, "imul")                                                              \
+  V(IncrementalNewlineDecoder, "IncrementalNewlineDecoder")                    \
   V(IndentationError, "IndentationError")                                      \
   V(IndexError, "IndexError")                                                  \
   V(IndexOf, "indexOf")                                                        \

@@ -20,6 +20,8 @@ const BuiltinMethod UnderIoModule::kBuiltinMethods[] = {
 const BuiltinType UnderIoModule::kBuiltinTypes[] = {
     {SymbolId::kBytesIO, LayoutId::kBytesIO},
     {SymbolId::kFileIO, LayoutId::kFileIO},
+    {SymbolId::kIncrementalNewlineDecoder,
+     LayoutId::kIncrementalNewlineDecoder},
     {SymbolId::kUnderBufferedIOBase, LayoutId::kUnderBufferedIOBase},
     {SymbolId::kUnderBufferedIOMixin, LayoutId::kUnderBufferedIOMixin},
     {SymbolId::kUnderIOBase, LayoutId::kUnderIOBase},
@@ -58,6 +60,15 @@ RawObject UnderIoModule::underReadBytes(Thread* thread, Frame* frame,
 
 const BuiltinAttribute UnderIOBaseBuiltins::kAttributes[] = {
     {SymbolId::kUnderClosed, UnderIOBase::kClosedOffset},
+    {SymbolId::kSentinelId, 0},
+};
+
+const BuiltinAttribute IncrementalNewlineDecoderBuiltins::kAttributes[] = {
+    {SymbolId::kUnderErrors, IncrementalNewlineDecoder::kErrorsOffset},
+    {SymbolId::kUnderTranslate, IncrementalNewlineDecoder::kTranslateOffset},
+    {SymbolId::kUnderDecoder, IncrementalNewlineDecoder::kDecoderOffset},
+    {SymbolId::kUnderSeennl, IncrementalNewlineDecoder::kSeennlOffset},
+    {SymbolId::kUnderPendingcr, IncrementalNewlineDecoder::kPendingcrOffset},
     {SymbolId::kSentinelId, 0},
 };
 

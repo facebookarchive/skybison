@@ -1611,6 +1611,7 @@ void Runtime::initializeHeapTypes() {
 
   // IO types
   UnderIOBaseBuiltins::initialize(this);
+  IncrementalNewlineDecoderBuiltins::initialize(this);
   // _RawIOBase is a subclass of _IOBase
   UnderRawIOBaseBuiltins::initialize(this);
   // _BufferedIOBase is a subclass of _RawIOBase

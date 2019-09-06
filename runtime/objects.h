@@ -53,6 +53,7 @@ class Handle;
   V(Generator)                                                                 \
   V(HeapFrame)                                                                 \
   V(Int)                                                                       \
+  V(IncrementalNewlineDecoder)                                                 \
   V(LargeBytes)                                                                \
   V(LargeInt)                                                                  \
   V(LargeStr)                                                                  \
@@ -297,6 +298,7 @@ class RawObject {
   bool isGenerator() const;
   bool isHeapFrame() const;
   bool isImportError() const;
+  bool isIncrementalNewlineDecoder() const;
   bool isIndexError() const;
   bool isKeyError() const;
   bool isLargeBytes() const;
@@ -3027,6 +3029,31 @@ class RawFileIO : public RawUnderRawIOBase {
   RAW_OBJECT_COMMON_NO_CAST(FileIO);
 };
 
+class RawIncrementalNewlineDecoder : public RawHeapObject {
+ public:
+  // Getters and setters
+  RawObject errors() const;
+  void setErrors(RawObject errors) const;
+  RawObject translate() const;
+  void setTranslate(RawObject translate) const;
+  RawObject decoder() const;
+  void setDecoder(RawObject decoder) const;
+  RawObject seennl() const;
+  void setSeennl(RawObject seennl) const;
+  RawObject pendingcr() const;
+  void setPendingcr(RawObject pendingcr) const;
+
+  // Layout
+  static const int kErrorsOffset = RawHeapObject::kSize;
+  static const int kTranslateOffset = kErrorsOffset + kPointerSize;
+  static const int kDecoderOffset = kTranslateOffset + kPointerSize;
+  static const int kSeennlOffset = kDecoderOffset + kPointerSize;
+  static const int kPendingcrOffset = kSeennlOffset + kPointerSize;
+  static const int kSize = kPendingcrOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON_NO_CAST(IncrementalNewlineDecoder);
+};
+
 // RawObject
 
 inline RawObject::RawObject(uword raw) : raw_{raw} {}
@@ -3229,6 +3256,10 @@ inline bool RawObject::isGenerator() const {
 
 inline bool RawObject::isHeapFrame() const {
   return isHeapObjectWithLayout(LayoutId::kHeapFrame);
+}
+
+inline bool RawObject::isIncrementalNewlineDecoder() const {
+  return isHeapObjectWithLayout(LayoutId::kIncrementalNewlineDecoder);
 }
 
 inline bool RawObject::isImportError() const {
@@ -5862,6 +5893,50 @@ inline RawObject RawFileIO::shouldCloseFd() const {
 
 inline void RawFileIO::setShouldCloseFd(RawObject value) const {
   instanceVariableAtPut(kCloseFdOffset, value);
+}
+
+// RawIncrementalNewlineDecoder
+
+inline RawObject RawIncrementalNewlineDecoder::errors() const {
+  return instanceVariableAt(kErrorsOffset);
+}
+
+inline void RawIncrementalNewlineDecoder::setErrors(RawObject errors) const {
+  instanceVariableAtPut(kErrorsOffset, errors);
+}
+
+inline RawObject RawIncrementalNewlineDecoder::translate() const {
+  return instanceVariableAt(kTranslateOffset);
+}
+
+inline void RawIncrementalNewlineDecoder::setTranslate(
+    RawObject translate) const {
+  instanceVariableAtPut(kTranslateOffset, translate);
+}
+
+inline RawObject RawIncrementalNewlineDecoder::decoder() const {
+  return instanceVariableAt(kDecoderOffset);
+}
+
+inline void RawIncrementalNewlineDecoder::setDecoder(RawObject decoder) const {
+  instanceVariableAtPut(kDecoderOffset, decoder);
+}
+
+inline RawObject RawIncrementalNewlineDecoder::seennl() const {
+  return instanceVariableAt(kSeennlOffset);
+}
+
+inline void RawIncrementalNewlineDecoder::setSeennl(RawObject seennl) const {
+  instanceVariableAtPut(kSeennlOffset, seennl);
+}
+
+inline RawObject RawIncrementalNewlineDecoder::pendingcr() const {
+  return instanceVariableAt(kPendingcrOffset);
+}
+
+inline void RawIncrementalNewlineDecoder::setPendingcr(
+    RawObject pendingcr) const {
+  instanceVariableAtPut(kPendingcrOffset, pendingcr);
 }
 
 }  // namespace python

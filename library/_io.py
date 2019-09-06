@@ -97,11 +97,91 @@ class BufferedWriter:
         _unimplemented()
 
 
-class IncrementalNewlineDecoder:
-    """unimplemented"""
+class IncrementalNewlineDecoder(bootstrap=True):
+    def __init__(self, decoder, translate, errors="strict"):
+        if not _int_check(translate):
+            raise TypeError(
+                f"an integer is required (got type {_type(translate).__name__})"
+            )
+        self._errors = errors
+        self._translate = translate
+        self._decoder = decoder
+        self._seennl = 0
+        self._pendingcr = False
 
-    def __init__(self, *args, **kwargs):
-        _unimplemented()
+    def decode(self, input, final=False):
+        if not _int_check(final):
+            raise TypeError(
+                f"an integer is required (got type {_type(final).__name__})"
+            )
+        # decode input (with the eventual \r from a previous pass)
+        if self._decoder is None:
+            output = input
+        else:
+            output = self._decoder.decode(input, final=bool(final))
+        if self._pendingcr and (output or final):
+            output = "\r" + output
+            self._pendingcr = False
+
+        # retain last \r even when not translating data:
+        # then readline() is sure to get \r\n in one pass
+        if output.endswith("\r") and not final:
+            output = output[:-1]
+            self._pendingcr = True
+
+        # Record which newlines are read
+        crlf = output.count("\r\n")
+        cr = output.count("\r") - crlf
+        lf = output.count("\n") - crlf
+        self._seennl |= (lf and self._LF) | (cr and self._CR) | (crlf and self._CRLF)
+
+        if self._translate:
+            if crlf:
+                output = output.replace("\r\n", "\n")
+            if cr:
+                output = output.replace("\r", "\n")
+
+        return output
+
+    def getstate(self):
+        if self._decoder is None:
+            buf = b""
+            flag = 0
+        else:
+            buf, flag = self._decoder.getstate()
+        flag <<= 1
+        if self._pendingcr:
+            flag |= 1
+        return buf, flag
+
+    def setstate(self, state):
+        buf, flag = state
+        self._pendingcr = bool(flag & 1)
+        if self._decoder is not None:
+            self._decoder.setstate((buf, flag >> 1))
+
+    def reset(self):
+        self._seennl = 0
+        self._pendingcr = False
+        if self._decoder is not None:
+            self._decoder.reset()
+
+    _LF = 1
+    _CR = 2
+    _CRLF = 4
+
+    @property
+    def newlines(self):
+        return (
+            None,
+            "\n",
+            "\r",
+            ("\r", "\n"),
+            "\r\n",
+            ("\n", "\r\n"),
+            ("\r", "\r\n"),
+            ("\r", "\n", "\r\n"),
+        )[self._seennl]
 
 
 class StringIO:

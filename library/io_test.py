@@ -1267,5 +1267,157 @@ class UnderBufferedIOMixinTests(unittest.TestCase):
         self.assertRaises(UserWarning, result.seekable)
 
 
+class IncrementalNewlineDecoderTests(unittest.TestCase):
+    def test_dunder_init_with_non_int_translate_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            _io.IncrementalNewlineDecoder(None, translate="foo")
+        self.assertEqual(
+            str(context.exception), "an integer is required (got type str)"
+        )
+
+    def test_decode_with_none_decoder_uses_input(self):
+        decoder = _io.IncrementalNewlineDecoder(decoder=None, translate=1)
+        self.assertEqual(decoder.decode("bar"), "bar")
+
+    def test_decode_with_non_int_final_raises_type_error(self):
+        decoder = _io.IncrementalNewlineDecoder(decoder=None, translate=1)
+        with self.assertRaises(TypeError) as context:
+            decoder.decode("bar", final="foo")
+        self.assertEqual(
+            str(context.exception), "an integer is required (got type str)"
+        )
+
+    def test_decode_with_decoder_calls_decoder_on_input(self):
+        class C:
+            def decode(self, input, final):
+                raise UserWarning(input, final)
+
+        decoder = _io.IncrementalNewlineDecoder(decoder=C(), translate=1)
+        with self.assertRaises(UserWarning) as context:
+            decoder.decode("foo", 5)
+        self.assertEqual(context.exception.args, ("foo", True))
+
+    def test_decode_with_no_newlines_returns_input(self):
+        decoder = _io.IncrementalNewlineDecoder(decoder=None, translate=1)
+        self.assertEqual(decoder.decode("bar"), "bar")
+        self.assertEqual(decoder.newlines, None)
+        self.assertEqual(decoder.getstate(), (b"", 0))
+
+    def test_decode_with_carriage_return_does_not_translate_to_newline(self):
+        decoder = _io.IncrementalNewlineDecoder(decoder=None, translate=0)
+        self.assertEqual(decoder.decode("bar\r\n"), "bar\r\n")
+        self.assertEqual(decoder.newlines, "\r\n")
+        self.assertEqual(decoder.getstate(), (b"", 0))
+
+    def test_decode_with_trailing_carriage_removes_carriage(self):
+        decoder = _io.IncrementalNewlineDecoder(decoder=None, translate=0)
+        self.assertEqual(decoder.decode("bar\r"), "bar")
+        self.assertEqual(decoder.newlines, None)
+        self.assertEqual(decoder.getstate(), (b"", 1))
+
+    def test_decode_with_carriage_does_not_translate_to_newline(self):
+        decoder = _io.IncrementalNewlineDecoder(decoder=None, translate=0)
+        self.assertEqual(decoder.decode("bar\rbaz"), "bar\rbaz")
+        self.assertEqual(decoder.newlines, "\r")
+        self.assertEqual(decoder.getstate(), (b"", 0))
+
+    def test_decode_translate_with_carriage_return_translates_to_newline(self):
+        decoder = _io.IncrementalNewlineDecoder(decoder=None, translate=1)
+        self.assertEqual(decoder.decode("bar\r\n"), "bar\n")
+        self.assertEqual(decoder.newlines, "\r\n")
+        self.assertEqual(decoder.getstate(), (b"", 0))
+
+    def test_decode_translate_with_carriage_translates_to_newline(self):
+        decoder = _io.IncrementalNewlineDecoder(decoder=None, translate=1)
+        self.assertEqual(decoder.decode("bar\rbaz"), "bar\nbaz")
+        self.assertEqual(decoder.newlines, "\r")
+        self.assertEqual(decoder.getstate(), (b"", 0))
+
+    def test_getstate_with_decoder_calls_decoder_getstate(self):
+        class C:
+            def decode(self, input, final):
+                return input
+
+            def getstate(self):
+                return (b"foo", 5)
+
+        decoder = _io.IncrementalNewlineDecoder(decoder=C(), translate=1)
+        self.assertEqual(decoder.getstate(), (b"foo", 10))
+
+    def test_getstate_with_decoder_calls_decoder_getstate_carriage(self):
+        class C:
+            def decode(self, input, final):
+                return input
+
+            def getstate(self):
+                return (b"foo", 5)
+
+        decoder = _io.IncrementalNewlineDecoder(decoder=C(), translate=1)
+        decoder.decode("bar\r")
+        self.assertEqual(decoder.getstate(), (b"foo", 11))
+
+    def test_setstate_with_decoder_calls_decoder_setstate(self):
+        set_state = None
+
+        class C:
+            def decode(self, input, final):
+                return input
+
+            def getstate(self):
+                return b"bar", 1
+
+            def setstate(self, state):
+                nonlocal set_state
+                set_state = state
+
+        decoder = _io.IncrementalNewlineDecoder(decoder=C(), translate=1)
+        self.assertIsNone(decoder.setstate((b"foo", 4)))
+        decoder.decode("bar\r")
+        self.assertEqual(set_state, (b"foo", 2))
+        self.assertEqual(decoder.getstate(), (b"bar", 3))
+
+    def test_setstate_with_decoder_calls_decoder_setstate_carriage(self):
+        set_state = None
+
+        class C:
+            def decode(self, input, final):
+                return input
+
+            def getstate(self):
+                return b"bar", 1
+
+            def setstate(self, state):
+                nonlocal set_state
+                set_state = state
+
+        decoder = _io.IncrementalNewlineDecoder(decoder=C(), translate=1)
+        self.assertIsNone(decoder.setstate((b"foo", 4)))
+        decoder.decode("bar\r")
+        self.assertEqual(set_state, (b"foo", 2))
+        self.assertEqual(decoder.getstate(), (b"bar", 3))
+
+    def test_reset_changes_newlines(self):
+        decoder = _io.IncrementalNewlineDecoder(decoder=None, translate=1)
+        decoder.decode("bar\rbaz")
+        self.assertEqual(decoder.newlines, "\r")
+        self.assertIsNone(decoder.reset())
+        self.assertEqual(decoder.newlines, None)
+
+    def test_reset_changes_pendingcr(self):
+        decoder = _io.IncrementalNewlineDecoder(decoder=None, translate=1)
+        decoder.decode("bar\r")
+        self.assertEqual(decoder.getstate(), (b"", 1))
+        self.assertIsNone(decoder.reset())
+        self.assertEqual(decoder.getstate(), (b"", 0))
+
+    def test_reset_calls_decoder_reset(self):
+        class C:
+            def reset(self):
+                raise UserWarning("foo")
+
+        decoder = _io.IncrementalNewlineDecoder(decoder=C(), translate=1)
+        self.assertRaises(UserWarning, decoder.reset)
+
+
 if __name__ == "__main__":
     unittest.main()

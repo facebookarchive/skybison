@@ -115,6 +115,7 @@ class WARN_UNUSED Handle : public T {
   V(Header)                                                                    \
   V(HeapFrame)                                                                 \
   V(HeapObject)                                                                \
+  V(IncrementalNewlineDecoder)                                                 \
   V(IndexError)                                                                \
   V(Instance)                                                                  \
   V(Int)                                                                       \

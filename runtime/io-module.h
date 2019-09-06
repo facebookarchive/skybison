@@ -24,6 +24,14 @@ class UnderIOBaseBuiltins
   static const BuiltinAttribute kAttributes[];
 };
 
+class IncrementalNewlineDecoderBuiltins
+    : public Builtins<IncrementalNewlineDecoderBuiltins,
+                      SymbolId::kIncrementalNewlineDecoder,
+                      LayoutId::kIncrementalNewlineDecoder> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+};
+
 class UnderRawIOBaseBuiltins
     : public Builtins<UnderRawIOBaseBuiltins, SymbolId::kUnderRawIOBase,
                       LayoutId::kUnderRawIOBase, LayoutId::kUnderIOBase> {
