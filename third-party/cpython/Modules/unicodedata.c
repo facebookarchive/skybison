@@ -601,7 +601,7 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
 {
     PyObject *result;
     Py_UCS4 *output;
-    Py_ssize_t i, o, osize;
+    Py_ssize_t i, o, osize, final_length;
     int kind;
     void *data;
     /* Longest decomposition in Unicode 3.2: U+FDFA */
@@ -692,20 +692,12 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
         }
     }
 
-    result = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
-                                       output, o);
-    PyMem_Free(output);
-    if (!result)
-        return NULL;
-    /* result is guaranteed to be ready, as it is compact. */
-    kind = PyUnicode_KIND(result);
-    data = PyUnicode_DATA(result);
+    final_length = o;
 
-    /* Sort canonically. */
     i = 0;
-    prev = _getrecord_ex(PyUnicode_READ(kind, data, i))->combining;
-    for (i++; i < PyUnicode_GET_LENGTH(result); i++) {
-        cur = _getrecord_ex(PyUnicode_READ(kind, data, i))->combining;
+    prev = _getrecord_ex(output[i])->combining;
+    for (i++; i < final_length; i++) {
+        cur = _getrecord_ex(output[i])->combining;
         if (prev == 0 || cur == 0 || prev <= cur) {
             prev = cur;
             continue;
@@ -713,19 +705,21 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
         /* Non-canonical order. Need to switch *i with previous. */
         o = i - 1;
         while (1) {
-            Py_UCS4 tmp = PyUnicode_READ(kind, data, o+1);
-            PyUnicode_WRITE(kind, data, o+1,
-                            PyUnicode_READ(kind, data, o));
-            PyUnicode_WRITE(kind, data, o, tmp);
+            Py_UCS4 tmp = output[o+1];
+            output[o+1] = output[o];
+            output[o] = tmp;
             o--;
             if (o < 0)
                 break;
-            prev = _getrecord_ex(PyUnicode_READ(kind, data, o))->combining;
+            prev = _getrecord_ex(output[o])->combining;
             if (prev == 0 || prev <= cur)
                 break;
         }
-        prev = _getrecord_ex(PyUnicode_READ(kind, data, i))->combining;
+        prev = _getrecord_ex(output[i])->combining;
     }
+    result = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
+                                       output, final_length);
+    PyMem_Free(output);
     return result;
 }
 
@@ -926,7 +920,7 @@ unicodedata.UCD.normalize
 
     self: self
     form: str
-    unistr as input: object(subclass_of='&PyUnicode_Type')
+    unistr as input: object
     /
 
 Return the normal form 'form' for the Unicode string unistr.
@@ -939,6 +933,12 @@ unicodedata_UCD_normalize_impl(PyObject *self, const char *form,
                                PyObject *input)
 /*[clinic end generated code: output=62d1f8870027efdc input=cd092e631cf11883]*/
 {
+    if (!PyUnicode_Check(input)) {
+        PyErr_Format(PyExc_TypeError,
+                     "UCD.normalize() argument 2 must be str, not %.50s",
+                     _PyType_Name(Py_TYPE(input)));
+        return NULL;
+    }
     if (PyUnicode_READY(input) == -1)
         return NULL;
 
@@ -1378,6 +1378,11 @@ PyInit_unicodedata(void)
 {
     PyObject *m, *v;
 
+    m = PyState_FindModule(&unicodedatamodule);
+    if (m != NULL) {
+        Py_INCREF(m);
+        return m;
+    }
     m = PyModule_Create(&unicodedatamodule);
     if (!m)
         return NULL;
@@ -1405,6 +1410,7 @@ PyInit_unicodedata(void)
     v = PyCapsule_New((void *)&hashAPI, PyUnicodeData_CAPSULE_NAME, NULL);
     if (v != NULL)
         PyModule_AddObject(m, "ucnhash_CAPI", v);
+    PyState_AddModule(m, &unicodedatamodule);
     return m;
 }
 
