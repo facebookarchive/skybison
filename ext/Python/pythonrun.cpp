@@ -6,10 +6,10 @@
 #include "runtime.h"
 
 typedef struct _mod* mod_ty;
-struct grammar;
 
 // Prevent clang-format from reordering these order-sensitive includes.
 // clang-format off
+#include "grammar.h"
 #include "node.h"
 #include "parsetok.h"
 #include "ast.h"
@@ -397,8 +397,15 @@ static void errInput(perrdetail* err) {
 PY_EXPORT struct _node* PyParser_SimpleParseStringFlagsFilename(
     const char* str, const char* filename, int start, int flags) {
   perrdetail err;
-  node* mod = PyParser_ParseStringFlagsFilename(
-      str, filename, &_PyParser_Grammar, start, &err, flags);
+  node* mod;
+  {
+    // TODO(T53544009): Cache accelerators on runtime instead of having a
+    // use-once shallow copy of the global grammar.
+    grammar g = _PyParser_Grammar;
+    mod = PyParser_ParseStringFlagsFilename(str, filename, &g, start, &err,
+                                            flags);
+    PyGrammar_RemoveAccelerators(&g);
+  }
   if (mod == nullptr) errInput(&err);
   Py_CLEAR(err.filename);
   return mod;
@@ -445,8 +452,15 @@ PY_EXPORT mod_ty PyParser_ASTFromFileObject(FILE* fp, PyObject* filename,
                                             int* errcode, PyArena* arena) {
   perrdetail err;
   int iflags = parserFlags(flags);
-  node* parse_tree = PyParser_ParseFileObject(
-      fp, filename, enc, &_PyParser_Grammar, start, ps1, ps2, &err, &iflags);
+  node* parse_tree;
+  {
+    // TODO(T53544009): Cache accelerators on runtime instead of having a
+    // use-once shallow copy of the global grammar.
+    grammar g = _PyParser_Grammar;
+    parse_tree = PyParser_ParseFileObject(fp, filename, enc, &g, start, ps1,
+                                          ps2, &err, &iflags);
+    PyGrammar_RemoveAccelerators(&g);
+  }
   PyCompilerFlags localflags;
   if (flags == nullptr) {
     localflags.cf_flags = 0;
@@ -484,8 +498,14 @@ PY_EXPORT mod_ty PyParser_ASTFromStringObject(const char* s, PyObject* filename,
                                               PyArena* arena) {
   perrdetail err;
   int iflags = parserFlags(flags);
-  node* n = PyParser_ParseStringObject(s, filename, &_PyParser_Grammar, start,
-                                       &err, &iflags);
+  node* n;
+  {
+    // TODO(T53544009): Cache accelerators on runtime instead of having a
+    // use-once shallow copy of the global grammar.
+    grammar g = _PyParser_Grammar;
+    n = PyParser_ParseStringObject(s, filename, &g, start, &err, &iflags);
+    PyGrammar_RemoveAccelerators(&g);
+  }
   PyCompilerFlags localflags;
   if (flags == nullptr) {
     localflags.cf_flags = 0;
