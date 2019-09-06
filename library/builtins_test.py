@@ -4201,6 +4201,11 @@ class ObjectTests(unittest.TestCase):
         self.assertIs(Foo.__class__, type)
         self.assertIs(super(Bar, Bar()).__class__, super)
 
+    def test_dunder_setattr_raises_attribute_error(self):
+        result = object()
+        with self.assertRaisesRegex(AttributeError, ".*attribute 'foo'"):
+            result.foo = "bar"
+
 
 class OctTests(unittest.TestCase):
     def test_returns_string(self):
