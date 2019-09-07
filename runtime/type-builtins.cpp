@@ -255,6 +255,11 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
     base_type = bases.at(i);
     addSubclass(thread, base_type, type);
   }
+  if (bases.length() == 1) {
+    // TODO(T40540469): Slot inheritance is much more complicated than this, but
+    // this is good enough for our current needs.
+    type.setExtensionSlots(base_type.extensionSlots());
+  }
 
   // Copy down class flags from bases
   Tuple mro(&scope, *maybe_mro);
