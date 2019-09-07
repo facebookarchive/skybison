@@ -39,13 +39,19 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
   set(OS_DEFINE "-DOS_OSX")
   set(WHOLE_ARCHIVE -Wl,-force_load)
   set(NO_WHOLE_ARCHIVE)
+  set(OPENSSL_ROOT_DIR /opt/homebrew)
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   set(OS_DEFINE "-DOS_LINUX")
   set(WHOLE_ARCHIVE -Wl,--whole-archive)
   set(NO_WHOLE_ARCHIVE -Wl,--no-whole-archive)
+  # This is the path to OpenSSL on machines with gvfs. On other Linux systems,
+  # CMake should automatically fall back to the system OpenSSL.
+  set(OPENSSL_ROOT_DIR /mnt/gvfs/third-party2/openssl/08b454ad6354c8144da2168f7a333624e85bb30b/1.1.0/platform007/ca4da3d)
 else()
   message("Unknown CMAKE_SYSTEM_NAME " ${CMAKE_SYSTEM_NAME})
 endif()
+
+find_package(OpenSSL REQUIRED)
 
 set(CMAKE_C_STANDARD 99)
 

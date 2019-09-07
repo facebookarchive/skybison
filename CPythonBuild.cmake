@@ -36,6 +36,7 @@ set(
   "${CPYTHON_DIR}/Modules/_codecsmodule.c"
   "${CPYTHON_DIR}/Modules/_cryptmodule.c"
   "${CPYTHON_DIR}/Modules/_datetimemodule.c"
+  "${CPYTHON_DIR}/Modules/_hashopenssl.c"
   "${CPYTHON_DIR}/Modules/_io/_iomodule.c"
   "${CPYTHON_DIR}/Modules/_io/bufferedio.c"
   "${CPYTHON_DIR}/Modules/_io/bytesio.c"
@@ -367,18 +368,22 @@ target_include_directories(
   cpython
   PUBLIC
   ${CPYTHON_GEN_DIR}/Include
-  ext/config)
+  ext/config
+  ${OPENSSL_INCLUDE_DIR})
 target_compile_options(
   cpython
   PUBLIC
   ${OS_DEFINE}
   PRIVATE
   "-Werror"
-  "-DPy_BUILD_CORE")
+  "-DPy_BUILD_CORE"
+  # TODO(T48643833): Remove this define to get _hashlib.scrypt.
+  "-DOPENSSL_NO_SCRYPT")
 target_link_libraries(
   cpython
   PUBLIC
   util
   extension
   capi-headers
-  Threads::Threads)
+  Threads::Threads
+  OpenSSL::Crypto)

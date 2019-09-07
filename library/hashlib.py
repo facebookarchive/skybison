@@ -59,12 +59,15 @@ More condensed:
 
 """
 
+# TODO(T48178853, T48178752): Support blake2 and sha3 hashes.
+# __always_supported = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512',
+#                       'blake2b', 'blake2s',
+#                       'sha3_224', 'sha3_256', 'sha3_384', 'sha3_512',
+#                        'shake_128', 'shake_256')
+
 # This tuple and __get_builtin_constructor() must be modified if a new
 # always available algorithm is added.
-__always_supported = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512',
-                      'blake2b', 'blake2s',
-                      'sha3_224', 'sha3_256', 'sha3_384', 'sha3_512',
-                      'shake_128', 'shake_256')
+__always_supported = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')
 
 
 algorithms_guaranteed = set(__always_supported)
@@ -249,8 +252,10 @@ for __func_name in __always_supported:
     try:
         globals()[__func_name] = __get_hash(__func_name)
     except ValueError:
-        import logging
-        logging.exception('code for hash %s was not found.', __func_name)
+        # TODO(T42595887): Use logging module rather than printing
+        # import logging
+        # logging.exception('code for hash %s was not found.', __func_name)
+        print(f"code for hash {__func_name} was not found.", file=sys.stderr)
 
 
 # Cleanup locals()

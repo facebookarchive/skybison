@@ -2,6 +2,7 @@
 #include "cpython-types.h"
 
 extern "C" PyObject* PyInit__capsule();
+extern "C" PyObject* PyInit__hashlib();
 extern "C" PyObject* PyInit__myreadline();
 extern "C" PyObject* PyInit__posixsubprocess();
 extern "C" PyObject* PyInit__sre();
@@ -34,6 +35,7 @@ PyObject* PyInit__empty() {
 struct _inittab _PyImport_Inittab[] = {
     {"_capsule", PyInit__capsule},
     {"_empty", PyInit__empty},
+    {"_hashlib", PyInit__hashlib},
     {"_myreadline", PyInit__myreadline},
     {"_posixsubprocess", PyInit__posixsubprocess},
     {"_sre", PyInit__sre},
