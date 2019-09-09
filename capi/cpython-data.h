@@ -282,6 +282,7 @@ extern const char* Py_hexdigits;
 #define Py_TPFLAGS_READY (1UL << 12)
 #define Py_TPFLAGS_READYING (1UL << 13)
 #define Py_TPFLAGS_HAVE_GC (1UL << 14)
+#define Py_TPFLAGS_DEFAULT (1UL << 18)
 
 /* Compiler Flags */
 #define Py_file_input 257

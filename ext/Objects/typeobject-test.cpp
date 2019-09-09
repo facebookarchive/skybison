@@ -32,15 +32,6 @@ TEST_F(TypeExtensionApiTest, PyTypeCheckOnType) {
   EXPECT_TRUE(PyType_CheckExact(pylong_type));
 }
 
-TEST_F(TypeExtensionApiDeathTest, GetFlagsFromBuiltInTypePyro) {
-  PyObjectPtr pylong(PyLong_FromLong(5));
-  PyObjectPtr pylong_type(PyObject_Type(pylong));
-  ASSERT_TRUE(PyType_CheckExact(pylong_type));
-  EXPECT_DEATH(
-      PyType_GetFlags(reinterpret_cast<PyTypeObject*>(pylong_type.get())),
-      "unimplemented: GetFlags from built-in types");
-}
-
 TEST_F(TypeExtensionApiDeathTest, GetFlagsFromManagedTypePyro) {
   PyRun_SimpleString(R"(class Foo: pass)");
   PyObjectPtr foo_type(testing::moduleGet("__main__", "Foo"));
@@ -2949,6 +2940,198 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsNew) {
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
   EXPECT_EQ(PyType_GetSlot(tp, Py_tp_new), empty_new_func);
+}
+
+TEST_F(TypeExtensionApiTest, FromSpecWithoutDeallocInheritsDefaultDealloc) {
+  // clang-format off
+  struct FooObject {
+    PyObject_HEAD
+  };
+  // clang-format on
+  static PyType_Slot slots[1];
+  slots[0] = {0, nullptr};
+  static PyType_Spec spec;
+  spec = {
+      "__main__.Foo", sizeof(FooObject), 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(type), 1);
+
+  // type inherited subclassDealloc
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(type.get());
+  ASSERT_NE(PyType_GetSlot(tp, Py_tp_dealloc), nullptr);
+  Py_ssize_t type_refcnt = Py_REFCNT(tp);
+
+  // Create an instance
+  FooObject* instance = PyObject_New(FooObject, tp);
+  // TODO(T53456038): Switch back to EXPECT_EQ, once initial refcount is fixed
+  ASSERT_GE(Py_REFCNT(instance), 1);
+  ASSERT_LE(Py_REFCNT(instance), 2);
+  ASSERT_EQ(Py_REFCNT(tp), type_refcnt + 1);
+
+  // Trigger a tp_dealloc
+  Py_DECREF(instance);
+  Py_XDECREF(instance);
+  ASSERT_EQ(Py_REFCNT(tp), type_refcnt);
+}
+
+TEST_F(TypeExtensionApiTest, DefaultDeallocCallsDelAndFinalize) {
+  // clang-format off
+  struct FooObject {
+    PyObject_HEAD
+  };
+  // clang-format on
+  destructor del_func = [](PyObject*) {
+    moduleSet("__main__", "called_del", Py_True);
+  };
+  static PyType_Slot slots[2];
+  slots[0] = {Py_tp_del, reinterpret_cast<void*>(del_func)};
+  slots[1] = {0, nullptr};
+  static PyType_Spec spec;
+  spec = {
+      "__main__.Foo", sizeof(FooObject), 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(type), 1);
+
+  // type inherited subclassDealloc
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(type.get());
+  ASSERT_NE(PyType_GetSlot(tp, Py_tp_dealloc), nullptr);
+  Py_ssize_t type_refcnt = Py_REFCNT(tp);
+
+  // Create an instance
+  FooObject* instance = PyObject_New(FooObject, tp);
+  // TODO(T53456038): Switch back to EXPECT_EQ, once initial refcount is fixed
+  ASSERT_GE(Py_REFCNT(instance), 1);
+  ASSERT_LE(Py_REFCNT(instance), 2);
+  ASSERT_EQ(Py_REFCNT(tp), type_refcnt + 1);
+
+  // Trigger a tp_dealloc
+  Py_DECREF(instance);
+  Py_XDECREF(instance);
+  ASSERT_EQ(Py_REFCNT(tp), type_refcnt);
+  PyObjectPtr called_del(testing::moduleGet("__main__", "called_del"));
+  EXPECT_EQ(called_del, Py_True);
+}
+
+TEST_F(TypeExtensionApiTest, FromSpecWithBasesSubclassInheritsParentDealloc) {
+  // clang-format off
+  struct FooObject {
+    PyObject_HEAD
+  };
+  struct FooSubclassObject {
+    FooObject base;
+  };
+  // clang-format on
+  destructor dealloc_func = [](PyObject* self) {
+    PyTypeObject* tp = Py_TYPE(self);
+    PyObject_Del(self);
+    Py_DECREF(tp);
+  };
+  static PyType_Slot base_slots[2];
+  base_slots[0] = {Py_tp_dealloc, reinterpret_cast<void*>(dealloc_func)};
+  base_slots[1] = {0, nullptr};
+  static PyType_Spec base_spec;
+  base_spec = {
+      "__main__.BaseType",
+      sizeof(FooObject),
+      0,
+      Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+      base_slots,
+  };
+  PyObjectPtr base_type(PyType_FromSpec(&base_spec));
+  ASSERT_NE(base_type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(base_type), 1);
+
+  static PyType_Slot slots[1];
+  slots[0] = {0, nullptr};
+  static PyType_Spec spec;
+  spec = {
+      "__main__.SubclassedType",
+      sizeof(FooSubclassObject),
+      0,
+      Py_TPFLAGS_DEFAULT,
+      slots,
+  };
+  PyObjectPtr bases(PyTuple_Pack(1, base_type.get()));
+  PyObjectPtr type(PyType_FromSpecWithBases(&spec, bases));
+  ASSERT_NE(type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(type), 1);
+
+  // type inherited subclassDealloc
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(type.get());
+  ASSERT_NE(PyType_GetSlot(tp, Py_tp_dealloc), nullptr);
+  Py_ssize_t type_refcnt = Py_REFCNT(tp);
+
+  // Create an instance
+  FooObject* instance = PyObject_New(FooObject, tp);
+  // TODO(T53456038): Switch back to EXPECT_EQ, once initial refcount is fixed
+  ASSERT_GE(Py_REFCNT(instance), 1);
+  ASSERT_LE(Py_REFCNT(instance), 2);
+  ASSERT_EQ(Py_REFCNT(tp), type_refcnt + 1);
+
+  // Trigger a tp_dealloc
+  Py_DECREF(instance);
+  Py_XDECREF(instance);
+  ASSERT_EQ(Py_REFCNT(tp), type_refcnt);
+}
+
+TEST_F(TypeExtensionApiTest, FromSpecWithBasesSubclassInheritsDefaultDealloc) {
+  // clang-format off
+  struct FooObject {
+    PyObject_HEAD
+  };
+  struct FooSubclassObject {
+    FooObject base;
+  };
+  // clang-format on
+  static PyType_Slot base_slots[1];
+  base_slots[0] = {0, nullptr};
+  static PyType_Spec base_spec;
+  base_spec = {
+      "__main__.BaseType",
+      sizeof(FooObject),
+      0,
+      Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+      base_slots,
+  };
+  PyObjectPtr base_type(PyType_FromSpec(&base_spec));
+  ASSERT_NE(base_type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(base_type), 1);
+
+  static PyType_Slot slots[1];
+  slots[0] = {0, nullptr};
+  static PyType_Spec spec;
+  spec = {
+      "__main__.SubclassedType",
+      sizeof(FooSubclassObject),
+      0,
+      Py_TPFLAGS_DEFAULT,
+      slots,
+  };
+  PyObjectPtr bases(PyTuple_Pack(1, base_type.get()));
+  PyObjectPtr type(PyType_FromSpecWithBases(&spec, bases));
+  ASSERT_NE(type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(type), 1);
+
+  // type inherited subclassDealloc
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(type.get());
+  ASSERT_NE(PyType_GetSlot(tp, Py_tp_dealloc), nullptr);
+  Py_ssize_t type_refcnt = Py_REFCNT(tp);
+
+  // Create an instance
+  FooObject* instance = PyObject_New(FooObject, tp);
+  // TODO(T53456038): Switch back to EXPECT_EQ, once initial refcount is fixed
+  ASSERT_GE(Py_REFCNT(instance), 1);
+  ASSERT_LE(Py_REFCNT(instance), 2);
+  ASSERT_EQ(Py_REFCNT(tp), type_refcnt + 1);
+
+  // Trigger a tp_dealloc
+  Py_DECREF(instance);
+  Py_XDECREF(instance);
+  ASSERT_EQ(Py_REFCNT(tp), type_refcnt);
 }
 
 }  // namespace python
