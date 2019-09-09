@@ -416,14 +416,18 @@ static RawObject processExplodeArguments(Thread* thread, Frame* caller,
   Runtime* runtime = thread->runtime();
   if (flags & CallFunctionExFlag::VAR_KEYWORDS) {
     Dict dict(&scope, *kw_dict);
+    Tuple data(&scope, dict.data());
     Tuple keys(&scope, runtime->dictKeys(thread, dict));
-    for (word i = 0; i < keys.length(); i++) {
-      Object key(&scope, keys.at(i));
+    Object key(&scope, NoneType::object());
+    Object value(&scope, NoneType::object());
+    for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
+      key = Dict::Bucket::key(*data, i);
       if (!thread->runtime()->isInstanceOfStr(*key)) {
         return thread->raiseWithFmt(LayoutId::kTypeError,
                                     "keywords must be strings");
       }
-      caller->pushValue(runtime->dictAt(thread, dict, key));
+      value = Dict::Bucket::value(*data, i);
+      caller->pushValue(*value);
     }
     argc += keys.length();
     caller->pushValue(*keys);
