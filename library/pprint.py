@@ -421,8 +421,7 @@ class PrettyPrinter:
         self._pprint_dict(object, stream, indent, allowance + 1, context, level)
         stream.write(')')
 
-    # TODO(T42829314): Enable _collections.defaultdict
-    # _dispatch[_collections.defaultdict.__repr__] = _pprint_default_dict
+    _dispatch[_collections.defaultdict.__repr__] = _pprint_default_dict
 
     def _pprint_counter(self, object, stream, indent, allowance, context, level):
         if not len(object):
