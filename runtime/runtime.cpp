@@ -709,10 +709,9 @@ RawObject Runtime::newFunctionWithCode(Thread* thread, const Object& qualname,
   if (!globals_dict.isNoneType()) {
     Dict globals(&scope, *globals_dict);
     Object dunder_name(&scope, symbols()->at(SymbolId::kDunderName));
-    Object value_cell(&scope, dictAt(thread, globals, dunder_name));
-    if (value_cell.isValueCell()) {
-      DCHECK(!ValueCell::cast(*value_cell).isUnbound(), "unbound globals");
-      function.setModule(ValueCell::cast(*value_cell).value());
+    Object module_name(&scope, moduleDictAt(thread, globals, dunder_name));
+    if (!module_name.isErrorNotFound()) {
+      function.setModule(*module_name);
     }
     function.setGlobals(*globals);
   } else {
@@ -2234,10 +2233,9 @@ void Runtime::createBuiltinsModule(Thread* thread) {
 
   moduleAddBuiltinFunction(module, SymbolId::kDunderBuildClass,
                            BuiltinsModule::dunderBuildClass);
-  Dict module_dict(&scope, module.dict());
-  Object dunder_build_class_name(&scope, symbols()->DunderBuildClass());
   build_class_ =
-      thread->runtime()->dictAt(thread, module_dict, dunder_build_class_name);
+      moduleValueCellAtById(thread, module, SymbolId::kDunderBuildClass);
+  CHECK(!build_class_.isErrorNotFound(), "__build_class__ not found");
 
   // Add module variables
   {
@@ -2260,28 +2258,25 @@ void Runtime::createBuiltinsModule(Thread* thread) {
   {
     // Manually import all of the functions and types in the _builtins module.
     Module under_builtins(&scope, findModuleById(SymbolId::kUnderBuiltins));
-    Object key(&scope, Unbound::object());
     Object value(&scope, Unbound::object());
     for (word i = 0;
          UnderBuiltinsModule::kBuiltinMethods[i].name != SymbolId::kSentinelId;
          i++) {
-      key = symbols()->at(UnderBuiltinsModule::kBuiltinMethods[i].name);
-      value = moduleAt(thread, under_builtins, key);
-      dictAtPutInValueCell(thread, module_dict, key, value);
+      SymbolId id = UnderBuiltinsModule::kBuiltinMethods[i].name;
+      value = moduleAtById(thread, under_builtins, id);
+      moduleAtPutById(thread, module, id, value);
     }
     for (word i = 0;
          UnderBuiltinsModule::kBuiltinTypes[i].name != SymbolId::kSentinelId;
          i++) {
-      key = symbols()->at(UnderBuiltinsModule::kBuiltinTypes[i].name);
-      value = moduleAt(thread, under_builtins, key);
-      dictAtPutInValueCell(thread, module_dict, key, value);
+      SymbolId id = UnderBuiltinsModule::kBuiltinTypes[i].name;
+      value = moduleAtById(thread, under_builtins, id);
+      moduleAtPutById(thread, module, id, value);
     }
-    key = symbols()->UnderPatch();
-    value = moduleAt(thread, under_builtins, key);
-    dictAtPutInValueCell(thread, module_dict, key, value);
-    key = symbols()->UnderUnbound();
-    value = moduleAt(thread, under_builtins, key);
-    dictAtPutInValueCell(thread, module_dict, key, value);
+    value = moduleAtById(thread, under_builtins, SymbolId::kUnderPatch);
+    moduleAtPutById(thread, module, SymbolId::kUnderPatch, value);
+    value = moduleAtById(thread, under_builtins, SymbolId::kUnderUnbound);
+    moduleAtPutById(thread, module, SymbolId::kUnderUnbound, value);
   }
 
   // Add and execute builtins module.
@@ -2290,9 +2285,9 @@ void Runtime::createBuiltinsModule(Thread* thread) {
 
   // TODO(T39575976): Create a consistent way to hide internal names
   // such as "module" or "function"
-  Object dunder_import_name(&scope, symbols()->DunderImport());
   dunder_import_ =
-      thread->runtime()->dictAt(thread, module_dict, dunder_import_name);
+      moduleValueCellAtById(thread, module, SymbolId::kDunderImport);
+  CHECK(!dunder_import_.isErrorNotFound(), "__import__ not found");
 
   Type object(&scope, typeAt(LayoutId::kObject));
   Dict object_dict(&scope, object.dict());
@@ -2440,16 +2435,12 @@ void Runtime::createSysModule(Thread* thread) {
   CHECK(!executeFrozenModule(SysModule::kFrozenData, module).isError(),
         "Failed to initialize sys module");
 
-  Dict module_dict(&scope, module.dict());
-  Object stderr_name(&scope, symbols()->Stderr());
-  sys_stderr_ = dictAt(thread, module_dict, stderr_name);
-  CHECK(!sys_stderr_.isError(), "sys.stderr not found");
-  Object stdout_name(&scope, symbols()->Stdout());
-  sys_stdout_ = dictAt(thread, module_dict, stdout_name);
-  CHECK(!sys_stdout_.isError(), "sys.stdout not found");
-  Object display_hook_name(&scope, symbols()->Displayhook());
-  display_hook_ = dictAt(thread, module_dict, display_hook_name);
-  CHECK(!display_hook_.isError(), "sys.displayhook not found");
+  sys_stderr_ = moduleValueCellAtById(thread, module, SymbolId::kStderr);
+  CHECK(!sys_stderr_.isErrorNotFound(), "sys.stderr not found");
+  sys_stdout_ = moduleValueCellAtById(thread, module, SymbolId::kStdout);
+  CHECK(!sys_stdout_.isErrorNotFound(), "sys.stdout not found");
+  display_hook_ = moduleValueCellAtById(thread, module, SymbolId::kDisplayhook);
+  CHECK(!display_hook_.isErrorNotFound(), "sys.displayhook not found");
 }
 
 void Runtime::createUnderBuiltinsModule(Thread* thread) {

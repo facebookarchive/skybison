@@ -22,6 +22,14 @@ RawObject moduleAtById(Thread* thread, const Module& module, SymbolId key) {
   return moduleAt(thread, module, key_obj);
 }
 
+RawObject moduleValueCellAtById(Thread* thread, const Module& module,
+                                SymbolId key) {
+  HandleScope scope(thread);
+  Dict dict(&scope, module.dict());
+  Object key_obj(&scope, thread->runtime()->symbols()->at(key));
+  return moduleDictValueCellAt(thread, dict, key_obj);
+}
+
 RawObject moduleDictAt(Thread* thread, const Dict& module_dict,
                        const Object& key) {
   RawObject result = moduleDictValueCellAt(thread, module_dict, key);

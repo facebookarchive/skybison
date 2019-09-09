@@ -13,6 +13,9 @@ namespace python {
 RawObject moduleAt(Thread* thread, const Module& module, const Object& key);
 // Same as moduleAt but with SymbolId as key.
 RawObject moduleAtById(Thread* thread, const Module& module, SymbolId key);
+// Same as moduleAtById but returns the underlying ValueCell.
+RawObject moduleValueCellAtById(Thread* thread, const Module& module,
+                                SymbolId key);
 // Same as moduleAt but with dict type parameter.
 RawObject moduleDictAt(Thread* thread, const Dict& module_dict,
                        const Object& key);
