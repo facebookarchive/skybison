@@ -1089,22 +1089,21 @@ class Differ:
 # was inserted after "private".  I can live with that <wink>.
 
 
-# TODO(T42236521): Enable _sre.compile
-# def IS_LINE_JUNK(line, pat=re.compile(r"\s*(?:#\s*)?$").match):
-#     r"""
-#     Return 1 for ignorable line: iff `line` is blank or contains a single '#'.
-# 
-#     Examples:
-# 
-#     >>> IS_LINE_JUNK('\n')
-#     True
-#     >>> IS_LINE_JUNK('  #   \n')
-#     True
-#     >>> IS_LINE_JUNK('hello\n')
-#     False
-#     """
-# 
-#     return pat(line) is not None
+def IS_LINE_JUNK(line, pat=re.compile(r"\s*(?:#\s*)?$").match):
+    r"""
+    Return 1 for ignorable line: iff `line` is blank or contains a single '#'.
+
+    Examples:
+
+    >>> IS_LINE_JUNK('\n')
+    True
+    >>> IS_LINE_JUNK('  #   \n')
+    True
+    >>> IS_LINE_JUNK('hello\n')
+    False
+    """
+
+    return pat(line) is not None
 
 def IS_CHARACTER_JUNK(ch, ws=" \t"):
     r"""

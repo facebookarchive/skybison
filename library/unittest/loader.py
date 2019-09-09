@@ -23,8 +23,7 @@ __unittest = True
 # what about .pyc (etc)
 # we would need to avoid loading the same tests multiple times
 # from '.py', *and* '.pyc'
-# TODO(T42236521): Enable _sre.compile
-# VALID_MODULE_NAME = re.compile(r'[_a-z]\w*\.py$', re.IGNORECASE)
+VALID_MODULE_NAME = re.compile(r'[_a-z]\w*\.py$', re.IGNORECASE)
 
 
 class _FailedTest(case.TestCase):
