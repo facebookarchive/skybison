@@ -3718,6 +3718,16 @@ class LongRangeIteratorTests(unittest.TestCase):
 
 
 class MemoryviewTests(unittest.TestCase):
+    def test_itemsize_returns_size_of_item_chars(self):
+        src = b"abcd"
+        view = memoryview(src)
+        self.assertEqual(view.itemsize, 1)
+
+    def test_itemsize_returns_size_of_item_ints(self):
+        src = b"abcdefgh"
+        view = memoryview(src).cast("i")
+        self.assertEqual(view.itemsize, 4)
+
     def test_nbytes_returns_size_of_memoryview(self):
         view = memoryview(b"foobar")
         self.assertEqual(view.nbytes, 6)

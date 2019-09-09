@@ -270,6 +270,7 @@ class Runtime;
   V(UnderLookupText, "_lookup_text")                                           \
   V(UnderLt, "_lt")                                                            \
   V(UnderMemoryviewGuard, "_memoryview_guard")                                 \
+  V(UnderMemoryviewItemsize, "_memoryview_itemsize")                           \
   V(UnderMemoryviewNbytes, "_memoryview_nbytes")                               \
   V(UnderModuleDir, "_module_dir")                                             \
   V(UnderModuleRepr, "_module_repr")                                           \

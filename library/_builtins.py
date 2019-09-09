@@ -468,6 +468,11 @@ def _memoryview_guard(obj):
 
 
 @_patch
+def _memoryview_itemsize(obj):
+    pass
+
+
+@_patch
 def _memoryview_nbytes(self):
     pass
 

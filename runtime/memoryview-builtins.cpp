@@ -55,6 +55,16 @@ static word itemSize(char format) {
   }
 }
 
+RawObject memoryviewItemsize(Thread* thread, const MemoryView& view) {
+  HandleScope scope(thread);
+  Str format(&scope, view.format());
+  char format_c = formatChar(format);
+  DCHECK(format_c > 0, "invalid memoryview");
+  word item_size = itemSize(format_c);
+  DCHECK(item_size > 0, "invalid memoryview");
+  return SmallInt::fromWord(item_size);
+}
+
 static RawObject unpackObject(Thread* thread, uword address, word length,
                               char format, word index) {
   Runtime* runtime = thread->runtime();

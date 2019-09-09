@@ -141,6 +141,8 @@ class UnderBuiltinsModule {
   static RawObject underListSwap(Thread* thread, Frame* frame, word nargs);
   static RawObject underMemoryviewGuard(Thread* thread, Frame* frame,
                                         word nargs);
+  static RawObject underMemoryviewItemsize(Thread* thread, Frame* frame,
+                                           word nargs);
   static RawObject underMemoryviewNbytes(Thread* thread, Frame* frame,
                                          word nargs);
   static RawObject underModuleDir(Thread* thread, Frame* frame, word nargs);

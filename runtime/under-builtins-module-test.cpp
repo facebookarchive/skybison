@@ -1438,6 +1438,27 @@ TEST_F(UnderBuiltinsModuleTest, UnderListSwapSwapsItemsAtIndices) {
 }
 
 TEST_F(UnderBuiltinsModuleTest,
+       UnderMemoryViewItemsizeWithNonMemoryViewRaisesTypeError) {
+  HandleScope scope(thread_);
+  Object not_memoryview(&scope, runtime_.newInt(12));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(UnderBuiltinsModule::underMemoryviewItemsize, not_memoryview),
+      LayoutId::kTypeError,
+      "'<anonymous>' requires a 'memoryview' object but got 'int'"));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderMemoryViewItemsizeReturnsSizeOfMemoryItems) {
+  HandleScope scope(thread_);
+  Bytes bytes(&scope, runtime_.newBytes(5, 'x'));
+  MemoryView view(
+      &scope, runtime_.newMemoryView(thread_, bytes, 5, ReadOnly::ReadOnly));
+  Object result(&scope,
+                runBuiltin(UnderBuiltinsModule::underMemoryviewItemsize, view));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
        UnderMemoryViewNbytesWithNonMemoryViewRaisesTypeError) {
   HandleScope scope(thread_);
   Object not_memoryview(&scope, runtime_.newInt(12));

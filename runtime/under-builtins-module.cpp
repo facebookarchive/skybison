@@ -14,6 +14,7 @@
 #include "frozen-modules.h"
 #include "int-builtins.h"
 #include "list-builtins.h"
+#include "memoryview-builtins.h"
 #include "module-builtins.h"
 #include "object-builtins.h"
 #include "range-builtins.h"
@@ -158,6 +159,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderListSort, underListSort},
     {SymbolId::kUnderListSwap, underListSwap},
     {SymbolId::kUnderMemoryviewGuard, underMemoryviewGuard},
+    {SymbolId::kUnderMemoryviewItemsize, underMemoryviewItemsize},
     {SymbolId::kUnderMemoryviewNbytes, underMemoryviewNbytes},
     {SymbolId::kUnderModuleDir, underModuleDir},
     {SymbolId::kUnderModuleProxy, underModuleProxy},
@@ -2161,6 +2163,19 @@ RawObject UnderBuiltinsModule::underMemoryviewGuard(Thread* thread,
     return NoneType::object();
   }
   return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kMemoryView);
+}
+
+RawObject UnderBuiltinsModule::underMemoryviewItemsize(Thread* thread,
+                                                       Frame* frame,
+                                                       word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isMemoryView()) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kMemoryView);
+  }
+  MemoryView self(&scope, *self_obj);
+  return memoryviewItemsize(thread, self);
 }
 
 RawObject UnderBuiltinsModule::underMemoryviewNbytes(Thread* thread,

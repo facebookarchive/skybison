@@ -5,6 +5,8 @@
 
 namespace python {
 
+RawObject memoryviewItemsize(Thread* thread, const MemoryView& view);
+
 class MemoryViewBuiltins
     : public Builtins<MemoryViewBuiltins, SymbolId::kMemoryView,
                       LayoutId::kMemoryView> {
