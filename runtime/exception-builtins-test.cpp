@@ -423,9 +423,9 @@ TEST_F(ExceptionBuiltinsTest, ImportErrorConstructWithMsgNameAndPath) {
 }
 
 TEST_F(ExceptionBuiltinsTest, ImportErrorConstructWithInvalidKwargs) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "x = ImportError(foo=123)"),
-                            LayoutId::kTypeError,
-                            "TypeError: invalid keyword argument supplied"));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime_, "x = ImportError(foo=123)"), LayoutId::kTypeError,
+      "ImportError.__init__() got an unexpected keyword argument 'foo'"));
 }
 
 TEST_F(ExceptionBuiltinsTest, ModuleNotFoundErrorManyArguments) {

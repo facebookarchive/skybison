@@ -59,12 +59,13 @@ _warnings.warn("hello", stacklevel=1180591620717411303424)  # 2 ** 70
 }
 
 TEST_F(WarningsModuleTest, WarnWithInvalidKwRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime_, R"(
 import _warnings
 _warnings.warn("hello", stack_level=3)
   )"),
-                            LayoutId::kTypeError,
-                            "TypeError: invalid keyword argument supplied"));
+                    LayoutId::kTypeError,
+                    "warn() got an unexpected keyword argument 'stack_level'"));
 }
 
 }  // namespace python

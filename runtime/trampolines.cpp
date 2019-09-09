@@ -6,6 +6,7 @@
 #include "interpreter.h"
 #include "objects.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "thread.h"
 #include "tuple-builtins.h"
 
@@ -148,6 +149,23 @@ RawObject processDefaultArguments(Thread* thread, RawFunction function_raw,
   return *function;
 }
 
+static RawObject isParamEqual(Thread* thread, RawObject actual,
+                              RawObject formal) {
+  if (actual == formal) return Bool::trueObj();
+  if (actual.isStr() && formal.isStr()) {
+    return Bool::fromBool(Str::cast(actual).equals(formal));
+  }
+  if (actual.isError()) return Bool::falseObj();
+  HandleScope scope(thread);
+  Object actual_obj(&scope, actual);
+  Object formal_obj(&scope, formal);
+  Object result(
+      &scope, Interpreter::compareOperation(thread, thread->currentFrame(), EQ,
+                                            actual_obj, formal_obj));
+  if (result.isErrorException() || result.isBool()) return *result;
+  return Interpreter::isTrue(thread, *result);
+}
+
 // Verify correct number and order of arguments.  If order is wrong, try to
 // fix it.  If argument is missing (denoted by Error::object()), try to supply
 // it with a default.  This routine expects the number of args on the stack
@@ -178,7 +196,10 @@ static RawObject checkArgs(Thread* thread, const Function& function,
   for (word arg_pos = 0; arg_pos < num_actuals; arg_pos++) {
     word formal_pos = arg_pos + start;
     formal_name = formal_names.at(formal_pos);
-    if (actual_names.at(arg_pos) == formal_name) {
+    RawObject result =
+        isParamEqual(thread, actual_names.at(arg_pos), *formal_name);
+    if (result.isErrorException()) return result;
+    if (result == Bool::trueObj()) {
       if (formal_pos >= posonlyargcount) {
         // We're good here: actual & formal arg names match.  Check the next
         // one.
@@ -195,7 +216,9 @@ static RawObject checkArgs(Thread* thread, const Function& function,
     bool swapped = false;
     // Look for expected Formal name in Actuals tuple.
     for (word i = arg_pos + 1; i < num_actuals; i++) {
-      if (actual_names.at(i) == formal_name) {
+      result = isParamEqual(thread, actual_names.at(i), *formal_name);
+      if (result.isErrorException()) return result;
+      if (result == Bool::trueObj()) {
         // Found it.  Swap both the stack and the actual_names tuple.
         swap(arg_pos, i);
         swapped = true;
@@ -218,10 +241,13 @@ static RawObject checkArgs(Thread* thread, const Function& function,
       }
       // If we were unable to find a slot to swap into, TypeError
       if (!arg_at(arg_pos).isError()) {
-        // TODO(T40470525): Print out qualname and formal name in error message
+        Object param_obj(&scope, swapped ? formal_names.at(arg_pos)
+                                         : actual_names.at(arg_pos));
+        Object param_name(&scope, strUnderlying(thread, param_obj));
         return thread->raiseWithFmt(
             LayoutId::kTypeError,
-            "TypeError: invalid keyword argument supplied");
+            "%F() got an unexpected keyword argument '%S'", &function,
+            &param_name);
       }
     }
     // Now, can we fill that slot with a default argument?
@@ -255,10 +281,13 @@ static RawObject checkArgs(Thread* thread, const Function& function,
   return NoneType::object();
 }
 
-static word findName(word posonlyargcount, RawObject name, RawTuple name_list) {
-  word len = name_list.length();
+static word findName(Thread* thread, word posonlyargcount, const Object& name,
+                     const Tuple& names) {
+  word len = names.length();
   for (word i = posonlyargcount; i < len; i++) {
-    if (name == name_list.at(i)) {
+    RawObject result = isParamEqual(thread, *name, names.at(i));
+    if (result.isErrorException()) return -1;
+    if (result == Bool::trueObj()) {
       return i;
     }
   }
@@ -332,8 +361,9 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
       for (word i = 0; i < num_keyword_args; i++) {
         Object key(&scope, keywords.at(i));
         Object value(&scope, *(p - i));
-        if (findName(posonlyargcount, *key, *formal_parm_names) <
-            formal_parm_size) {
+        word result = findName(thread, posonlyargcount, key, formal_parm_names);
+        if (result < 0) return Error::exception();
+        if (result < formal_parm_size) {
           // Got a match, stash pair for future restoration on the stack
           runtime->listAdd(thread, saved_keyword_list, key);
           runtime->listAdd(thread, saved_values, value);

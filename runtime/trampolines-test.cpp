@@ -702,9 +702,9 @@ TEST_F(TrampolinesTest, BuiltinTrampolineKwPassesKwargs) {
 
 TEST_F(TrampolinesTest, BuiltinTrampolineKwWithInvalidArgRaisesTypeError) {
   createAndPatchBuiltinReturnSecondArg(&runtime_);
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "dummy(third=3, first=1)"),
-                            LayoutId::kTypeError,
-                            "TypeError: invalid keyword argument supplied"));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime_, "dummy(third=3, first=1)"), LayoutId::kTypeError,
+      "dummy() got an unexpected keyword argument 'third'"));
 }
 
 TEST_F(TrampolinesTest, InterpreterClosureUsesArgOverCellValue) {
@@ -2016,6 +2016,106 @@ TEST_F(TrampolinesDeathTest,
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime_, "dummy(*(1,2,3,4,5))"), LayoutId::kTypeError,
       "TypeError: 'dummy' takes max 2 positional arguments but 5 given"));
+}
+
+TEST_F(TrampolinesTest, CallFunctionExWithNamedArgAndExplodeKwargs) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+def f(description, conflict_handler):
+    return [description, conflict_handler]
+
+result = f(description="foo", **{"conflict_handler": "conflict_handler value"})
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  EXPECT_PYLIST_EQ(result, {"foo", "conflict_handler value"});
+}
+
+TEST_F(TrampolinesTest, CallFunctionExWithExplodeKwargsStrSubclassAlwaysEq) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C(str):
+    def __eq__(self, other):
+        return True
+    __hash__ = str.__hash__
+
+def f(param):
+    return param
+
+actual = C("foo")
+result = f(**{actual: 5})
+)")
+                   .isError());
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result"), 5));
+}
+
+TEST_F(TrampolinesTest,
+       CallFunctionExWithExplodeKwargsStrSubclassReturnNonBool) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+class D:
+    def __bool__(self):
+        raise UserWarning('foo')
+
+class C(str):
+    def __eq__(self, other):
+        return D()
+    __hash__ = str.__hash__
+
+def f(param):
+    return param
+
+actual = C("foo")
+result = f(**{actual: 5})
+)"),
+                            LayoutId::kUserWarning, "foo"));
+}
+
+TEST_F(TrampolinesTest,
+       CallFunctionExWithExplodeKwargsStrSubclassRaiseException) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+class C(str):
+    def __eq__(self, other):
+        raise UserWarning('foo')
+    __hash__ = str.__hash__
+
+def f(param):
+    return param
+
+actual = C("foo")
+result = f(**{actual: 5})
+)"),
+                            LayoutId::kUserWarning, "foo"));
+}
+
+TEST_F(TrampolinesTest, CallFunctionExWithExplodeKwargsStrSubclassNotEq) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+class C(str):
+    __hash__ = str.__hash__
+
+def f(param):
+    return param
+
+actual = C("foo")
+result = f(**{actual: 5})
+)"),
+                            LayoutId::kTypeError,
+                            "f() got an unexpected keyword argument 'foo'"));
+}
+
+TEST_F(TrampolinesTest, CallFunctionExWithExplodeKwargsStrSubclassNeverEq) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+class C(str):
+    def __eq__(self, other):
+        return False
+    __hash__ = str.__hash__
+
+def f(param):
+    return param
+
+actual = C("param")
+result = f(**{actual: 5})
+)"),
+                            LayoutId::kTypeError,
+                            "f() got an unexpected keyword argument 'param'"));
 }
 
 }  // namespace python
