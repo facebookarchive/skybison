@@ -800,7 +800,7 @@ RawObject UnderBuiltinsModule::underBytesSplit(Thread* thread, Frame* frame,
 
   // Second pass: write subsequences into result list.
   List result(&scope, runtime->newList());
-  Tuple buffer(&scope, runtime->newTuple(result_len));
+  MutableTuple buffer(&scope, runtime->newMutableTuple(result_len));
   start = 0;
   for (word i = 0; i < splits; i++) {
     word end = bytesFind(self, self_len, sep, sep_len, start, self_len);
@@ -857,7 +857,8 @@ RawObject UnderBuiltinsModule::underBytesSplitWhitespace(Thread* thread,
   // Second pass: write subsequences into result list.
   Runtime* runtime = thread->runtime();
   List result(&scope, runtime->newList());
-  Tuple buffer(&scope, runtime->newTuple(result_len));
+  if (result_len == 0) return *result;
+  MutableTuple buffer(&scope, runtime->newMutableTuple(result_len));
   index = 0;
   for (word i = 0; i < splits; i++) {
     while (isSpaceASCII(self.byteAt(index))) {

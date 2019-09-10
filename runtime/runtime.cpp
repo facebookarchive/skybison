@@ -1503,7 +1503,7 @@ void Runtime::initializeTypes() {
 
 void Runtime::initializeLayouts() {
   HandleScope scope;
-  Tuple array(&scope, newTuple(256));
+  Tuple array(&scope, newMutableTuple(256));
   List list(&scope, newList());
   list.setItems(*array);
   const word allocated = static_cast<word>(LayoutId::kLastBuiltinId) + 1;
@@ -2855,7 +2855,7 @@ void Runtime::listEnsureCapacity(Thread* thread, const List& list,
   word new_capacity = newCapacity(curr_capacity, min_capacity);
   HandleScope scope(thread);
   Tuple old_array(&scope, list.items());
-  Tuple new_array(&scope, newTuple(new_capacity));
+  MutableTuple new_array(&scope, newMutableTuple(new_capacity));
   old_array.copyTo(*new_array);
   list.setItems(*new_array);
 }
@@ -3104,9 +3104,13 @@ void Runtime::dictEnsureCapacity(Thread* thread, const Dict& dict) {
 }
 
 RawObject Runtime::dictItems(Thread* thread, const Dict& dict) {
+  word len = dict.numItems();
+  if (len == 0) {
+    return newList();
+  }
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
-  Tuple items(&scope, newTuple(dict.numItems()));
+  MutableTuple items(&scope, newMutableTuple(len));
   word num_items = 0;
   for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
     Tuple kvpair(&scope, newTuple(2));
@@ -3114,31 +3118,48 @@ RawObject Runtime::dictItems(Thread* thread, const Dict& dict) {
     kvpair.atPut(1, Dict::Bucket::value(*data, i));
     items.atPut(num_items++, *kvpair);
   }
-  return *items;
+  List result(&scope, newList());
+  result.setItems(*items);
+  result.setNumItems(len);
+  return *result;
 }
 
 RawObject Runtime::dictKeys(Thread* thread, const Dict& dict) {
+  word len = dict.numItems();
+  if (len == 0) {
+    return newList();
+  }
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
-  Tuple keys(&scope, newTuple(dict.numItems()));
+  Tuple keys(&scope, newMutableTuple(len));
   word num_keys = 0;
   for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
     DCHECK(num_keys < keys.length(), "%ld ! < %ld", num_keys, keys.length());
     keys.atPut(num_keys, Dict::Bucket::key(*data, i));
     num_keys++;
   }
-  return *keys;
+  List result(&scope, newList());
+  result.setItems(*keys);
+  result.setNumItems(len);
+  return *result;
 }
 
 RawObject Runtime::dictValues(Thread* thread, const Dict& dict) {
+  word len = dict.numItems();
+  if (len == 0) {
+    return newList();
+  }
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
-  Tuple values(&scope, newTuple(dict.numItems()));
+  MutableTuple values(&scope, newMutableTuple(len));
   word num_values = 0;
   for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
     values.atPut(num_values++, Dict::Bucket::value(*data, i));
   }
-  return *values;
+  List result(&scope, newList());
+  result.setItems(*values);
+  result.setNumItems(len);
+  return *result;
 }
 
 // DictItemIterator
@@ -3445,14 +3466,11 @@ RawObject Runtime::setUpdate(Thread* thread, const SetBase& dst,
   // Special case for dicts
   if (iterable.isDict()) {
     Dict dict(&scope, *iterable);
-    if (dict.numItems() > 0) {
-      Tuple keys(&scope, dictKeys(thread, dict));
-      for (word i = 0; i < keys.length(); i++) {
-        elt = keys.at(i);
-        elt_hash = Interpreter::hash(thread, elt);
-        if (elt_hash.isErrorException()) return *elt_hash;
-        setAdd(thread, dst, elt, elt_hash);
-      }
+    Tuple data(&scope, dict.data());
+    for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
+      elt = Dict::Bucket::key(*data, i);
+      elt_hash = Dict::Bucket::hash(*data, i);
+      setAdd(thread, dst, elt, elt_hash);
     }
     return *dst;
   }

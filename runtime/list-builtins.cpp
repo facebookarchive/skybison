@@ -62,17 +62,21 @@ RawObject listPop(Thread* thread, const List& list, word index) {
 }
 
 RawObject listReplicate(Thread* thread, const List& list, word ntimes) {
-  HandleScope scope(thread);
-  word len = list.numItems();
   Runtime* runtime = thread->runtime();
+  word len = list.numItems();
+  word result_len = ntimes * len;
+  if (result_len == 0) {
+    return runtime->newList();
+  }
+  HandleScope scope(thread);
   Tuple list_items(&scope, list.items());
-  Tuple items(&scope, runtime->newTuple(ntimes * len));
-  for (word i = 0; i < ntimes; i++) {
-    items.replaceFromWith(i * len, *list_items, len);
+  MutableTuple items(&scope, runtime->newMutableTuple(result_len));
+  for (word i = 0; i < result_len; i += len) {
+    items.replaceFromWith(i, *list_items, len);
   }
   List result(&scope, runtime->newList());
   result.setItems(*items);
-  result.setNumItems(items.length());
+  result.setNumItems(result_len);
   return *result;
 }
 
@@ -98,7 +102,7 @@ RawObject listSlice(Thread* thread, const List& list, word start, word stop,
   }
 
   HandleScope scope(thread);
-  Tuple items(&scope, runtime->newTuple(length));
+  MutableTuple items(&scope, runtime->newMutableTuple(length));
   Tuple src(&scope, list.items());
   for (word i = 0, j = start; i < length; i++, j += step) {
     items.atPut(i, src.at(j));

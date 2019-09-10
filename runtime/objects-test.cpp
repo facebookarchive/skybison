@@ -1092,7 +1092,7 @@ TEST_F(WeakRefTest, SpliceQueue) {
 TEST_F(ListTest, ReplaceFromWithReplacesElementsStartingAtZero) {
   HandleScope scope(thread_);
   List dst(&scope, runtime_.newList());
-  Tuple dst_tuple(&scope, runtime_.newTuple(5));
+  Tuple dst_tuple(&scope, runtime_.newMutableTuple(5));
   dst.setItems(*dst_tuple);
   dst.setNumItems(5);
   List src(&scope, listFromRange(0, 5));
@@ -1103,7 +1103,7 @@ TEST_F(ListTest, ReplaceFromWithReplacesElementsStartingAtZero) {
 TEST_F(ListTest, ReplaceFromWithReplacesElementsStartingInMiddle) {
   HandleScope scope(thread_);
   List dst(&scope, runtime_.newList());
-  Tuple dst_tuple(&scope, runtime_.newTuple(5));
+  Tuple dst_tuple(&scope, runtime_.newMutableTuple(5));
   dst.setItems(*dst_tuple);
   dst.setNumItems(5);
   List src(&scope, listFromRange(0, 5));
@@ -1114,7 +1114,7 @@ TEST_F(ListTest, ReplaceFromWithReplacesElementsStartingInMiddle) {
 TEST_F(ListTest, ReplaceFromWithCopiesZeroElements) {
   HandleScope scope(thread_);
   List dst(&scope, runtime_.newList());
-  Tuple dst_tuple(&scope, runtime_.newTuple(5));
+  Tuple dst_tuple(&scope, runtime_.newMutableTuple(5));
   dst.setItems(*dst_tuple);
   dst.setNumItems(5);
   List src(&scope, listFromRange(0, 5));
@@ -1126,7 +1126,7 @@ TEST_F(ListTest, ReplaceFromWithCopiesZeroElements) {
 TEST_F(ListTest, ReplaceFromWithCopiesEveryElementFromSrc) {
   HandleScope scope(thread_);
   List dst(&scope, runtime_.newList());
-  Tuple dst_tuple(&scope, runtime_.newTuple(5));
+  Tuple dst_tuple(&scope, runtime_.newMutableTuple(5));
   dst.setItems(*dst_tuple);
   dst.setNumItems(5);
   List src(&scope, listFromRange(0, 5));
@@ -1137,7 +1137,7 @@ TEST_F(ListTest, ReplaceFromWithCopiesEveryElementFromSrc) {
 TEST_F(ListTest, ReplaceFromWithStartAtReplacesElementsStartingAtSrcStart) {
   HandleScope scope(thread_);
   List dst(&scope, runtime_.newList());
-  Tuple dst_tuple(&scope, runtime_.newTuple(5));
+  Tuple dst_tuple(&scope, runtime_.newMutableTuple(5));
   dst.setItems(*dst_tuple);
   dst.setNumItems(5);
   List src(&scope, listFromRange(0, 5));

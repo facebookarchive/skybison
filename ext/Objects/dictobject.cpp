@@ -227,10 +227,7 @@ PY_EXPORT PyObject* PyDict_Items(PyObject* pydict) {
     return nullptr;
   }
   Dict dict(&scope, *dict_obj);
-  List items(&scope, runtime->newList());
-  items.setNumItems(dict.numItems());
-  items.setItems(runtime->dictItems(thread, dict));
-  return ApiHandle::newReference(thread, *items);
+  return ApiHandle::newReference(thread, runtime->dictItems(thread, dict));
 }
 
 PY_EXPORT PyObject* PyDict_Keys(PyObject* pydict) {
@@ -243,11 +240,7 @@ PY_EXPORT PyObject* PyDict_Keys(PyObject* pydict) {
     return nullptr;
   }
   Dict dict(&scope, *dict_obj);
-  Tuple keys_tuple(&scope, runtime->dictKeys(thread, dict));
-  List keys(&scope, runtime->newList());
-  keys.setItems(*keys_tuple);
-  keys.setNumItems(keys_tuple.length());
-  return ApiHandle::newReference(thread, *keys);
+  return ApiHandle::newReference(thread, runtime->dictKeys(thread, dict));
 }
 
 PY_EXPORT int PyDict_Merge(PyObject* left, PyObject* right,
@@ -339,10 +332,7 @@ PY_EXPORT PyObject* PyDict_Values(PyObject* pydict) {
     return nullptr;
   }
   Dict dict(&scope, *dict_obj);
-  List values(&scope, runtime->newList());
-  values.setNumItems(dict.numItems());
-  values.setItems(runtime->dictValues(thread, dict));
-  return ApiHandle::newReference(thread, *values);
+  return ApiHandle::newReference(thread, runtime->dictValues(thread, dict));
 }
 
 PY_EXPORT PyObject* PyObject_GenericGetDict(PyObject* /* j */, void* /* t */) {

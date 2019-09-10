@@ -600,11 +600,11 @@ TEST_F(RuntimeDictTest, GetKeys) {
   }
 
   // Grab the keys and verify everything is there
-  Tuple retrieved(&scope, runtime_.dictKeys(thread_, dict));
-  ASSERT_EQ(retrieved.length(), keys.length());
+  List retrieved(&scope, runtime_.dictKeys(thread_, dict));
+  ASSERT_EQ(retrieved.numItems(), keys.length());
   for (word i = 0; i < keys.length(); i++) {
     Object key(&scope, keys.at(i));
-    EXPECT_TRUE(tupleContains(retrieved, key)) << " missing key " << i;
+    EXPECT_TRUE(listContains(retrieved, key)) << " missing key " << i;
   }
 }
 
@@ -618,7 +618,7 @@ TEST_F(RuntimeDictTest, CanCreateDictItems) {
 TEST_F(RuntimeListTest, ListGrowth) {
   HandleScope scope(thread_);
   List list(&scope, runtime_.newList());
-  Tuple array1(&scope, runtime_.newTuple(1));
+  Tuple array1(&scope, runtime_.newMutableTuple(1));
   list.setItems(*array1);
   EXPECT_EQ(array1.length(), 1);
   runtime_.listEnsureCapacity(thread_, list, 2);
@@ -626,7 +626,7 @@ TEST_F(RuntimeListTest, ListGrowth) {
   EXPECT_NE(*array1, *array2);
   EXPECT_GE(array2.length(), 2);
 
-  Tuple array4(&scope, runtime_.newTuple(4));
+  Tuple array4(&scope, runtime_.newMutableTuple(4));
   list.setItems(*array4);
   runtime_.listEnsureCapacity(thread_, list, 5);
   Tuple array16(&scope, list.items());

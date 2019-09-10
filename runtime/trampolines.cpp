@@ -445,21 +445,28 @@ static RawObject processExplodeArguments(Thread* thread, Frame* caller,
   Runtime* runtime = thread->runtime();
   if (flags & CallFunctionExFlag::VAR_KEYWORDS) {
     Dict dict(&scope, *kw_dict);
+    word len = dict.numItems();
+    if (len == 0) {
+      caller->pushValue(runtime->emptyTuple());
+      return SmallInt::fromWord(argc);
+    }
     Tuple data(&scope, dict.data());
-    Tuple keys(&scope, runtime->dictKeys(thread, dict));
+    MutableTuple keys(&scope, runtime->newMutableTuple(len));
     Object key(&scope, NoneType::object());
     Object value(&scope, NoneType::object());
-    for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
+    for (word i = Dict::Bucket::kFirst, j = 0;
+         Dict::Bucket::nextItem(*data, &i); j++) {
       key = Dict::Bucket::key(*data, i);
       if (!thread->runtime()->isInstanceOfStr(*key)) {
         return thread->raiseWithFmt(LayoutId::kTypeError,
                                     "keywords must be strings");
       }
+      keys.atPut(j, *key);
       value = Dict::Bucket::value(*data, i);
       caller->pushValue(*value);
     }
-    argc += keys.length();
-    caller->pushValue(*keys);
+    argc += len;
+    caller->pushValue(keys.becomeImmutable());
   }
   return SmallInt::fromWord(argc);
 }

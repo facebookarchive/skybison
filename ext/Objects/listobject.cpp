@@ -18,10 +18,10 @@ PY_EXPORT PyObject* PyList_New(Py_ssize_t size) {
   HandleScope scope(thread);
 
   List list(&scope, runtime->newList());
-  Tuple items(&scope, runtime->newTuple(size));
-  list.setNumItems(size);
-  list.setItems(*items);
-
+  if (size > 0) {
+    list.setItems(runtime->newMutableTuple(size));
+    list.setNumItems(size);
+  }
   return ApiHandle::newReference(thread, *list);
 }
 

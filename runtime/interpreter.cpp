@@ -2444,13 +2444,18 @@ HANDLER_INLINE Continue Interpreter::doBuildTuple(Thread* thread, word arg) {
 }
 
 HANDLER_INLINE Continue Interpreter::doBuildList(Thread* thread, word arg) {
-  HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  Tuple array(&scope, thread->runtime()->newTuple(arg));
+  Runtime* runtime = thread->runtime();
+  if (arg == 0) {
+    frame->pushValue(runtime->newList());
+    return Continue::NEXT;
+  }
+  HandleScope scope(thread);
+  MutableTuple array(&scope, runtime->newMutableTuple(arg));
   for (word i = arg - 1; i >= 0; i--) {
     array.atPut(i, frame->popValue());
   }
-  RawList list = List::cast(thread->runtime()->newList());
+  RawList list = List::cast(runtime->newList());
   list.setItems(*array);
   list.setNumItems(array.length());
   frame->pushValue(list);

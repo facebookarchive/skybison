@@ -4,6 +4,7 @@
 #include "dict-builtins.h"
 #include "frame.h"
 #include "globals.h"
+#include "list-builtins.h"
 #include "mro.h"
 #include "object-builtins.h"
 #include "objects.h"
@@ -551,8 +552,7 @@ RawObject TypeBuiltins::mro(Thread* thread, Frame* frame, word nargs) {
     return *mro;
   }
   List result(&scope, runtime->newList());
-  result.setItems(*mro);
-  result.setNumItems(Tuple::cast(*mro).length());
+  listExtend(thread, result, mro);
   return *result;
 }
 
