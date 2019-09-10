@@ -315,11 +315,13 @@ RawObject ListBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   RawObject other = args.get(1);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-  if (!thread->runtime()->isInstanceOfList(*self)) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfList(*self)) {
     return thread->raiseRequiresType(self, SymbolId::kList);
   }
   if (other.isSmallInt()) {
     word ntimes = SmallInt::cast(other).value();
+    if (ntimes <= 0) return runtime->newList();
     List list(&scope, *self);
     return listReplicate(thread, list, ntimes);
   }

@@ -529,6 +529,16 @@ result = [1, 2, 3] * 3
   EXPECT_PYLIST_EQ(result, {1, 2, 3, 1, 2, 3, 1, 2, 3});
 }
 
+TEST_F(ListBuiltinsTest, ReplicateListWithNegativeRhsReturnsEmptyList) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+result = [1, 2, 3] * -3
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  EXPECT_PYLIST_EQ(result, {});
+}
+
 TEST_F(ListBuiltinsTest, SliceWithPositiveStepReturnsForwardsList) {
   HandleScope scope(thread_);
   List list1(&scope, listFromRange(1, 6));
