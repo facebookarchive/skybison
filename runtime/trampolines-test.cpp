@@ -956,15 +956,16 @@ result = foo(**{})
   EXPECT_EQ(result, SmallInt::fromWord(10));
 }
 
-TEST_F(TrampolinesTest, ExtensionModuleNoArgReceivesNoArgsReturns) {
-  binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
-  };
+static PyObject* binaryReturnInt123(PyObject*, PyObject*) {
+  return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
+}
 
+TEST_F(TrampolinesTest, ExtensionModuleNoArgReceivesNoArgsReturns) {
   HandleScope scope(thread_);
-  Function callee(&scope, functionFromModuleMethodDef(
-                              thread_, "foo", bit_cast<void*>(func), "",
-                              ExtensionMethodType::kMethNoArgs));
+  Function callee(
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(binaryReturnInt123),
+                  "", ExtensionMethodType::kMethNoArgs));
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, newEmptyCode());
@@ -981,14 +982,11 @@ TEST_F(TrampolinesTest, ExtensionModuleNoArgReceivesNoArgsReturns) {
 }
 
 TEST_F(TrampolinesTest, ExtensionModuleNoArgReceivesArgsRaisesTypeError) {
-  binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
-  };
-
   HandleScope scope(thread_);
-  Function callee(&scope, functionFromModuleMethodDef(
-                              thread_, "foo", bit_cast<void*>(func), "",
-                              ExtensionMethodType::kMethNoArgs));
+  Function callee(
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(binaryReturnInt123),
+                  "", ExtensionMethodType::kMethNoArgs));
 
   // Set up a code object that calls the function with a single argument.
   Code code(&scope, newEmptyCode());
@@ -1006,13 +1004,17 @@ TEST_F(TrampolinesTest, ExtensionModuleNoArgReceivesArgsRaisesTypeError) {
                             "function takes no arguments"));
 }
 
-TEST_F(TrampolinesTest, ExtensionModuleNoArgReturnsNullRaisesSystemError) {
-  binaryfunc func = [](PyObject*, PyObject*) -> PyObject* { return nullptr; };
+static PyObject* binaryReturnNullptrNoException(PyObject*, PyObject*) {
+  return nullptr;
+}
 
+TEST_F(TrampolinesTest, ExtensionModuleNoArgReturnsNullRaisesSystemError) {
   HandleScope scope(thread_);
-  Function callee(&scope, functionFromModuleMethodDef(
-                              thread_, "foo", bit_cast<void*>(func), "",
-                              ExtensionMethodType::kMethNoArgs));
+  Function callee(
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo",
+                  reinterpret_cast<void*>(binaryReturnNullptrNoException), "",
+                  ExtensionMethodType::kMethNoArgs));
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, newEmptyCode());
@@ -1029,14 +1031,11 @@ TEST_F(TrampolinesTest, ExtensionModuleNoArgReturnsNullRaisesSystemError) {
 }
 
 TEST_F(TrampolinesTest, ExtensionModuleNoArgReceivesKwArgsRaisesTypeError) {
-  binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
-  };
-
   HandleScope scope(thread_);
-  Function callee(&scope, functionFromModuleMethodDef(
-                              thread_, "foo", bit_cast<void*>(func), "",
-                              ExtensionMethodType::kMethNoArgs));
+  Function callee(
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(binaryReturnInt123),
+                  "", ExtensionMethodType::kMethNoArgs));
 
   // Set up a code object that calls the builtin with (foo='bar')
   Code code(&scope, newEmptyCode());
@@ -1059,14 +1058,11 @@ TEST_F(TrampolinesTest, ExtensionModuleNoArgReceivesKwArgsRaisesTypeError) {
 }
 
 TEST_F(TrampolinesTest, ExtensionModuleNoArgReceivesZeroKwArgsReturns) {
-  binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
-  };
-
   HandleScope scope(thread_);
-  Function callee(&scope, functionFromModuleMethodDef(
-                              thread_, "foo", bit_cast<void*>(func), "",
-                              ExtensionMethodType::kMethNoArgs));
+  Function callee(
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(binaryReturnInt123),
+                  "", ExtensionMethodType::kMethNoArgs));
 
   // Set up a code object that calls the builtin with (foo='bar')
   Code code(&scope, newEmptyCode());
@@ -1089,14 +1085,11 @@ TEST_F(TrampolinesTest, ExtensionModuleNoArgReceivesZeroKwArgsReturns) {
 
 TEST_F(TrampolinesTest,
        ExtensionModuleNoArgReceivesVariableArgsRaisesTypeError) {
-  binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
-  };
-
   HandleScope scope(thread_);
-  Function callee(&scope, functionFromModuleMethodDef(
-                              thread_, "foo", bit_cast<void*>(func), "",
-                              ExtensionMethodType::kMethNoArgs));
+  Function callee(
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(binaryReturnInt123),
+                  "", ExtensionMethodType::kMethNoArgs));
 
   // Set up a code object that calls with (*(10))
   Code code(&scope, newEmptyCode());
@@ -1118,14 +1111,11 @@ TEST_F(TrampolinesTest,
 }
 
 TEST_F(TrampolinesTest, ExtensionModuleNoArgReceivesVariableArgsReturns) {
-  binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
-  };
-
   HandleScope scope(thread_);
-  Function callee(&scope, functionFromModuleMethodDef(
-                              thread_, "foo", bit_cast<void*>(func), "",
-                              ExtensionMethodType::kMethNoArgs));
+  Function callee(
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(binaryReturnInt123),
+                  "", ExtensionMethodType::kMethNoArgs));
 
   // Set up a code object that calls with (*())
   Code code(&scope, newEmptyCode());
@@ -1147,14 +1137,11 @@ TEST_F(TrampolinesTest, ExtensionModuleNoArgReceivesVariableArgsReturns) {
 }
 
 TEST_F(TrampolinesTest, ExtensionModuleOneArgReceivesNoArgsRaisesTypeError) {
-  binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
-  };
-
   HandleScope scope(thread_);
   Function callee(
-      &scope, functionFromModuleMethodDef(thread_, "foo", bit_cast<void*>(func),
-                                          "", ExtensionMethodType::kMethO));
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(binaryReturnInt123),
+                  "", ExtensionMethodType::kMethO));
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, newEmptyCode());
@@ -1170,13 +1157,17 @@ TEST_F(TrampolinesTest, ExtensionModuleOneArgReceivesNoArgsRaisesTypeError) {
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
-TEST_F(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgReturns) {
-  binaryfunc func = [](PyObject*, PyObject* arg) -> PyObject* { return arg; };
+PyObject* returnSecondArgument(PyObject* /*lhs*/, PyObject* rhs) {
+  return ApiHandle::newReference(Thread::current(),
+                                 ApiHandle::fromPyObject(rhs)->asObject());
+}
 
+TEST_F(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgReturns) {
   HandleScope scope(thread_);
   Function callee(
-      &scope, functionFromModuleMethodDef(thread_, "foo", bit_cast<void*>(func),
-                                          "", ExtensionMethodType::kMethO));
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(returnSecondArgument),
+                  "", ExtensionMethodType::kMethO));
 
   // Set up a code object that calls the function with a single argument.
   Code code(&scope, newEmptyCode());
@@ -1196,12 +1187,11 @@ TEST_F(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgReturns) {
 
 TEST_F(TrampolinesTest,
        ExtensionModuleOneArgReceivesMultipleArgsRaisesTypeError) {
-  binaryfunc func = [](PyObject*, PyObject* arg) -> PyObject* { return arg; };
-
   HandleScope scope(thread_);
   Function callee(
-      &scope, functionFromModuleMethodDef(thread_, "foo", bit_cast<void*>(func),
-                                          "", ExtensionMethodType::kMethO));
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(returnSecondArgument),
+                  "", ExtensionMethodType::kMethO));
 
   // Set up a code object that calls the function with (123, 456)
   Code code(&scope, newEmptyCode());
@@ -1221,12 +1211,12 @@ TEST_F(TrampolinesTest,
 }
 
 TEST_F(TrampolinesTest, ExtensionModuleOneArgReturnsNullRaisesSystemError) {
-  binaryfunc func = [](PyObject*, PyObject*) -> PyObject* { return nullptr; };
-
   HandleScope scope(thread_);
   Function callee(
-      &scope, functionFromModuleMethodDef(thread_, "foo", bit_cast<void*>(func),
-                                          "", ExtensionMethodType::kMethO));
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo",
+                  reinterpret_cast<void*>(binaryReturnNullptrNoException), "",
+                  ExtensionMethodType::kMethO));
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, newEmptyCode());
@@ -1246,12 +1236,11 @@ TEST_F(TrampolinesTest, ExtensionModuleOneArgReturnsNullRaisesSystemError) {
 
 TEST_F(TrampolinesTest,
        ExtensionModuleOneArgReceivesOneArgAndZeroKwArgsReturns) {
-  binaryfunc func = [](PyObject*, PyObject* arg) -> PyObject* { return arg; };
-
   HandleScope scope(thread_);
   Function callee(
-      &scope, functionFromModuleMethodDef(thread_, "foo", bit_cast<void*>(func),
-                                          "", ExtensionMethodType::kMethO));
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(returnSecondArgument),
+                  "", ExtensionMethodType::kMethO));
 
   // Set up a code object that calls the builtin with (1111, {})
   Code code(&scope, newEmptyCode());
@@ -1274,14 +1263,11 @@ TEST_F(TrampolinesTest,
 }
 
 TEST_F(TrampolinesTest, ExtensionModuleOneArgReceivesKwArgsRaisesTypeError) {
-  binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
-  };
-
   HandleScope scope(thread_);
   Function callee(
-      &scope, functionFromModuleMethodDef(thread_, "foo", bit_cast<void*>(func),
-                                          "", ExtensionMethodType::kMethO));
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(binaryReturnInt123),
+                  "", ExtensionMethodType::kMethO));
 
   // Set up a code object that calls the builtin with (1111, foo='bar')
   Code code(&scope, newEmptyCode());
@@ -1306,12 +1292,11 @@ TEST_F(TrampolinesTest, ExtensionModuleOneArgReceivesKwArgsRaisesTypeError) {
 }
 
 TEST_F(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgExReturns) {
-  binaryfunc func = [](PyObject*, PyObject* arg) -> PyObject* { return arg; };
-
   HandleScope scope(thread_);
   Function callee(
-      &scope, functionFromModuleMethodDef(thread_, "foo", bit_cast<void*>(func),
-                                          "", ExtensionMethodType::kMethO));
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(returnSecondArgument),
+                  "", ExtensionMethodType::kMethO));
 
   // Set up a code object that calls with (*(10))
   Code code(&scope, newEmptyCode());
@@ -1334,12 +1319,11 @@ TEST_F(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgExReturns) {
 }
 
 TEST_F(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndEmptyKwReturns) {
-  binaryfunc func = [](PyObject*, PyObject* arg) -> PyObject* { return arg; };
-
   HandleScope scope(thread_);
   Function callee(
-      &scope, functionFromModuleMethodDef(thread_, "foo", bit_cast<void*>(func),
-                                          "", ExtensionMethodType::kMethO));
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(returnSecondArgument),
+                  "", ExtensionMethodType::kMethO));
 
   // Set up a code object that calls with (*(10), {})
   Code code(&scope, newEmptyCode());
@@ -1365,14 +1349,11 @@ TEST_F(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndEmptyKwReturns) {
 
 TEST_F(TrampolinesTest,
        ExtensionModuleOneArgReceivesOneArgAndKwRaisesTypeError) {
-  binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
-  };
-
   HandleScope scope(thread_);
   Function callee(
-      &scope, functionFromModuleMethodDef(thread_, "foo", bit_cast<void*>(func),
-                                          "", ExtensionMethodType::kMethO));
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(binaryReturnInt123),
+                  "", ExtensionMethodType::kMethO));
 
   // Set up a code object that calls with (*(10), {2:3})
   Code code(&scope, newEmptyCode());
@@ -1400,14 +1381,11 @@ TEST_F(TrampolinesTest,
 }
 
 TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesNoArgsReturns) {
-  binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
-  };
-
   HandleScope scope(thread_);
-  Function callee(&scope, functionFromModuleMethodDef(
-                              thread_, "foo", bit_cast<void*>(func), "",
-                              ExtensionMethodType::kMethVarArgs));
+  Function callee(
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(binaryReturnInt123),
+                  "", ExtensionMethodType::kMethVarArgs));
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, newEmptyCode());
@@ -1423,18 +1401,19 @@ TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesNoArgsReturns) {
   EXPECT_TRUE(isIntEqualsWord(result, 123));
 }
 
-TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesArgsReturns) {
-  binaryfunc func = [](PyObject*, PyObject* args) -> PyObject* {
-    Thread* thread = Thread::current();
-    HandleScope scope(thread);
-    Tuple arg_tuple(&scope, ApiHandle::fromPyObject(args)->asObject());
-    return ApiHandle::newReference(thread, arg_tuple.at(0));
-  };
+static PyObject* returnFirstTupleArg(PyObject*, PyObject* args) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Tuple arg_tuple(&scope, ApiHandle::fromPyObject(args)->asObject());
+  return ApiHandle::newReference(thread, arg_tuple.at(0));
+}
 
+TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesArgsReturns) {
   HandleScope scope(thread_);
-  Function callee(&scope, functionFromModuleMethodDef(
-                              thread_, "foo", bit_cast<void*>(func), "",
-                              ExtensionMethodType::kMethVarArgs));
+  Function callee(
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(returnFirstTupleArg),
+                  "", ExtensionMethodType::kMethVarArgs));
 
   // Set up a code object that calls the function with a single argument.
   Code code(&scope, newEmptyCode());
@@ -1453,12 +1432,12 @@ TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesArgsReturns) {
 }
 
 TEST_F(TrampolinesTest, ExtensionModuleVarArgReturnsNullRaisesSystemError) {
-  binaryfunc func = [](PyObject*, PyObject*) -> PyObject* { return nullptr; };
-
   HandleScope scope(thread_);
-  Function callee(&scope, functionFromModuleMethodDef(
-                              thread_, "foo", bit_cast<void*>(func), "",
-                              ExtensionMethodType::kMethVarArgs));
+  Function callee(
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo",
+                  reinterpret_cast<void*>(binaryReturnNullptrNoException), "",
+                  ExtensionMethodType::kMethVarArgs));
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, newEmptyCode());
@@ -1475,17 +1454,11 @@ TEST_F(TrampolinesTest, ExtensionModuleVarArgReturnsNullRaisesSystemError) {
 }
 
 TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesZeroKwArgsReturns) {
-  binaryfunc func = [](PyObject*, PyObject* args) -> PyObject* {
-    Thread* thread = Thread::current();
-    HandleScope scope(thread);
-    Tuple arg_tuple(&scope, ApiHandle::fromPyObject(args)->asObject());
-    return ApiHandle::newReference(thread, arg_tuple.at(0));
-  };
-
   HandleScope scope(thread_);
-  Function callee(&scope, functionFromModuleMethodDef(
-                              thread_, "foo", bit_cast<void*>(func), "",
-                              ExtensionMethodType::kMethVarArgs));
+  Function callee(
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(returnFirstTupleArg),
+                  "", ExtensionMethodType::kMethVarArgs));
 
   // Set up a code object that calls the builtin with (1111, {})
   Code code(&scope, newEmptyCode());
@@ -1508,14 +1481,11 @@ TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesZeroKwArgsReturns) {
 }
 
 TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesKwArgsRaisesTypeError) {
-  binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
-  };
-
   HandleScope scope(thread_);
-  Function callee(&scope, functionFromModuleMethodDef(
-                              thread_, "foo", bit_cast<void*>(func), "",
-                              ExtensionMethodType::kMethVarArgs));
+  Function callee(
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(binaryReturnInt123),
+                  "", ExtensionMethodType::kMethVarArgs));
 
   // Set up a code object that calls the builtin with (1111, foo='bar')
   Code code(&scope, newEmptyCode());
@@ -1540,17 +1510,11 @@ TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesKwArgsRaisesTypeError) {
 }
 
 TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsReturns) {
-  binaryfunc func = [](PyObject*, PyObject* args) -> PyObject* {
-    Thread* thread = Thread::current();
-    HandleScope scope(thread);
-    Tuple arg_tuple(&scope, ApiHandle::fromPyObject(args)->asObject());
-    return ApiHandle::newReference(thread, arg_tuple.at(0));
-  };
-
   HandleScope scope(thread_);
-  Function callee(&scope, functionFromModuleMethodDef(
-                              thread_, "foo", bit_cast<void*>(func), "",
-                              ExtensionMethodType::kMethVarArgs));
+  Function callee(
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(returnFirstTupleArg),
+                  "", ExtensionMethodType::kMethVarArgs));
 
   // Set up a code object that calls with (*(10))
   Code code(&scope, newEmptyCode());
@@ -1573,17 +1537,11 @@ TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsReturns) {
 }
 
 TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsAndEmptyKwReturns) {
-  binaryfunc func = [](PyObject*, PyObject* args) -> PyObject* {
-    Thread* thread = Thread::current();
-    HandleScope scope(thread);
-    Tuple arg_tuple(&scope, ApiHandle::fromPyObject(args)->asObject());
-    return ApiHandle::newReference(thread, arg_tuple.at(0));
-  };
-
   HandleScope scope(thread_);
-  Function callee(&scope, functionFromModuleMethodDef(
-                              thread_, "foo", bit_cast<void*>(func), "",
-                              ExtensionMethodType::kMethVarArgs));
+  Function callee(
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(returnFirstTupleArg),
+                  "", ExtensionMethodType::kMethVarArgs));
 
   // Set up a code object that calls with (*(10), {})
   Code code(&scope, newEmptyCode());
@@ -1609,14 +1567,11 @@ TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsAndEmptyKwReturns) {
 
 TEST_F(TrampolinesTest,
        ExtensionModuleVarArgReceivesVarArgsAndKwRaisesTypeError) {
-  binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
-  };
-
   HandleScope scope(thread_);
-  Function callee(&scope, functionFromModuleMethodDef(
-                              thread_, "foo", bit_cast<void*>(func), "",
-                              ExtensionMethodType::kMethVarArgs));
+  Function callee(
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(binaryReturnInt123),
+                  "", ExtensionMethodType::kMethVarArgs));
 
   // Set up a code object that calls with (*(10), {})
   Code code(&scope, newEmptyCode());
@@ -1643,15 +1598,16 @@ TEST_F(TrampolinesTest,
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
-TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesNoArgsReturns) {
-  ternaryfunc func = [](PyObject*, PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
-  };
+static PyObject* ternaryReturnInt123(PyObject*, PyObject*, PyObject*) {
+  return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
+}
 
+TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesNoArgsReturns) {
   HandleScope scope(thread_);
-  Function callee(&scope, functionFromModuleMethodDef(
-                              thread_, "foo", bit_cast<void*>(func), "",
-                              ExtensionMethodType::kMethVarArgsAndKeywords));
+  Function callee(
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(ternaryReturnInt123),
+                  "", ExtensionMethodType::kMethVarArgsAndKeywords));
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, newEmptyCode());
@@ -1667,18 +1623,21 @@ TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesNoArgsReturns) {
   EXPECT_TRUE(isIntEqualsWord(result, 123));
 }
 
-TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesArgsReturns) {
-  ternaryfunc func = [](PyObject*, PyObject* args, PyObject*) -> PyObject* {
-    Thread* thread = Thread::current();
-    HandleScope scope(thread);
-    Tuple arg_tuple(&scope, ApiHandle::fromPyObject(args)->asObject());
-    return ApiHandle::newReference(thread, arg_tuple.at(0));
-  };
+static PyObject* ternaryReturnFirstTupleArg(PyObject*, PyObject* args,
+                                            PyObject*) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Tuple arg_tuple(&scope, ApiHandle::fromPyObject(args)->asObject());
+  return ApiHandle::newReference(thread, arg_tuple.at(0));
+}
 
+TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesArgsReturns) {
   HandleScope scope(thread_);
-  Function callee(&scope, functionFromModuleMethodDef(
-                              thread_, "foo", bit_cast<void*>(func), "",
-                              ExtensionMethodType::kMethVarArgsAndKeywords));
+  Function callee(
+      &scope,
+      functionFromModuleMethodDef(
+          thread_, "foo", reinterpret_cast<void*>(ternaryReturnFirstTupleArg),
+          "", ExtensionMethodType::kMethVarArgsAndKeywords));
 
   // Set up a code object that calls the function with a single argument.
   Code code(&scope, newEmptyCode());
@@ -1696,15 +1655,18 @@ TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesArgsReturns) {
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
-TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReturnsNullRaisesSystemError) {
-  ternaryfunc func = [](PyObject*, PyObject*, PyObject*) -> PyObject* {
-    return nullptr;
-  };
+static PyObject* ternaryReturnNullptrNoException(PyObject*, PyObject*,
+                                                 PyObject*) {
+  return nullptr;
+}
 
+TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReturnsNullRaisesSystemError) {
   HandleScope scope(thread_);
-  Function callee(&scope, functionFromModuleMethodDef(
-                              thread_, "foo", bit_cast<void*>(func), "",
-                              ExtensionMethodType::kMethVarArgsAndKeywords));
+  Function callee(
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo",
+                  reinterpret_cast<void*>(ternaryReturnNullptrNoException), "",
+                  ExtensionMethodType::kMethVarArgsAndKeywords));
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, newEmptyCode());
@@ -1721,21 +1683,23 @@ TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReturnsNullRaisesSystemError) {
                             "NULL return without exception set"));
 }
 
-TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesKwArgsReturns) {
-  ternaryfunc func = [](PyObject*, PyObject*, PyObject* kwargs) -> PyObject* {
-    Thread* thread = Thread::current();
-    HandleScope scope(thread);
-    Runtime* runtime = thread->runtime();
-    Str foo_str(&scope, runtime->newStrFromCStr("foo"));
-    Dict keyword_dict(&scope, ApiHandle::fromPyObject(kwargs)->asObject());
-    return ApiHandle::newReference(
-        thread, runtime->dictAt(thread, keyword_dict, foo_str));
-  };
+static PyObject* returnsKwargCalledFoo(PyObject*, PyObject*, PyObject* kwargs) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Str foo_str(&scope, runtime->newStrFromCStr("foo"));
+  Dict keyword_dict(&scope, ApiHandle::fromPyObject(kwargs)->asObject());
+  return ApiHandle::newReference(
+      thread, runtime->dictAt(thread, keyword_dict, foo_str));
+}
 
+TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesKwArgsReturns) {
   HandleScope scope(thread_);
-  Function callee(&scope, functionFromModuleMethodDef(
-                              thread_, "foo", bit_cast<void*>(func), "",
-                              ExtensionMethodType::kMethVarArgsAndKeywords));
+  Function callee(
+      &scope,
+      functionFromModuleMethodDef(
+          thread_, "foo", reinterpret_cast<void*>(returnsKwargCalledFoo), "",
+          ExtensionMethodType::kMethVarArgsAndKeywords));
 
   // Set up a code object that calls the builtin with ("bar", foo=1111)
   Code code(&scope, newEmptyCode());
@@ -1760,24 +1724,19 @@ TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesKwArgsReturns) {
 }
 
 TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesMultipleArgsReturns) {
-  ternaryfunc func = [](PyObject*, PyObject* args, PyObject*) -> PyObject* {
-    Thread* thread = Thread::current();
-    HandleScope scope(thread);
-    Tuple args_tuple(&scope, ApiHandle::fromPyObject(args)->asObject());
-    return ApiHandle::newReference(thread, args_tuple.at(1));
-  };
-
   HandleScope scope(thread_);
-  Function callee(&scope, functionFromModuleMethodDef(
-                              thread_, "foo", bit_cast<void*>(func), "",
-                              ExtensionMethodType::kMethVarArgsAndKeywords));
+  Function callee(
+      &scope,
+      functionFromModuleMethodDef(
+          thread_, "foo", reinterpret_cast<void*>(ternaryReturnFirstTupleArg),
+          "", ExtensionMethodType::kMethVarArgsAndKeywords));
 
   // Set up a code object that calls the builtin with (123, 456, foo=789)
   Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime_.newTuple(5));
   consts.atPut(0, *callee);
-  consts.atPut(1, SmallInt::fromWord(123));
-  consts.atPut(2, SmallInt::fromWord(456));
+  consts.atPut(1, SmallInt::fromWord(456));
+  consts.atPut(2, SmallInt::fromWord(123));
   consts.atPut(3, SmallInt::fromWord(789));
   Tuple kw_tuple(&scope, runtime_.newTuple(1));
   kw_tuple.atPut(0, runtime_.newStrFromCStr("foo"));
@@ -1798,20 +1757,12 @@ TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesMultipleArgsReturns) {
 
 TEST_F(TrampolinesTest,
        ExtensionModuleKeywordArgReceivesMultipleKwArgsReturns) {
-  ternaryfunc func = [](PyObject*, PyObject*, PyObject* kwargs) -> PyObject* {
-    Thread* thread = Thread::current();
-    HandleScope scope(thread);
-    Runtime* runtime = thread->runtime();
-    Str foo_str(&scope, runtime->newStrFromCStr("bar"));
-    Dict keyword_dict(&scope, ApiHandle::fromPyObject(kwargs)->asObject());
-    return ApiHandle::newReference(
-        thread, runtime->dictAt(thread, keyword_dict, foo_str));
-  };
-
   HandleScope scope(thread_);
-  Function callee(&scope, functionFromModuleMethodDef(
-                              thread_, "foo", bit_cast<void*>(func), "",
-                              ExtensionMethodType::kMethVarArgsAndKeywords));
+  Function callee(
+      &scope,
+      functionFromModuleMethodDef(
+          thread_, "foo", reinterpret_cast<void*>(returnsKwargCalledFoo), "",
+          ExtensionMethodType::kMethVarArgsAndKeywords));
 
   // Set up a code object that calls the builtin with ("foo"=1234, "bar"=5678)
   Code code(&scope, newEmptyCode());
@@ -1833,21 +1784,16 @@ TEST_F(TrampolinesTest,
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = runCode(code);
-  EXPECT_TRUE(isIntEqualsWord(result, 5678));
+  EXPECT_TRUE(isIntEqualsWord(result, 1234));
 }
 
 TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesVariableArgsReturns) {
-  ternaryfunc func = [](PyObject*, PyObject* args, PyObject*) -> PyObject* {
-    Thread* thread = Thread::current();
-    HandleScope scope(thread);
-    Tuple arg_tuple(&scope, ApiHandle::fromPyObject(args)->asObject());
-    return ApiHandle::newReference(thread, arg_tuple.at(0));
-  };
-
   HandleScope scope(thread_);
-  Function callee(&scope, functionFromModuleMethodDef(
-                              thread_, "foo", bit_cast<void*>(func), "",
-                              ExtensionMethodType::kMethVarArgsAndKeywords));
+  Function callee(
+      &scope,
+      functionFromModuleMethodDef(
+          thread_, "foo", reinterpret_cast<void*>(ternaryReturnFirstTupleArg),
+          "", ExtensionMethodType::kMethVarArgsAndKeywords));
 
   // Set up a code object that calls with (*(10))
   Code code(&scope, newEmptyCode());
@@ -1871,20 +1817,12 @@ TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesVariableArgsReturns) {
 
 TEST_F(TrampolinesTest,
        ExtensionModuleKeywordArgReceivesVariableKwArgsReturns) {
-  ternaryfunc func = [](PyObject*, PyObject*, PyObject* kwargs) -> PyObject* {
-    Thread* thread = Thread::current();
-    HandleScope scope(thread);
-    Runtime* runtime = thread->runtime();
-    Str foo_str(&scope, runtime->newStrFromCStr("foo"));
-    Dict keyword_dict(&scope, ApiHandle::fromPyObject(kwargs)->asObject());
-    return ApiHandle::newReference(
-        thread, runtime->dictAt(thread, keyword_dict, foo_str));
-  };
-
   HandleScope scope(thread_);
-  Function callee(&scope, functionFromModuleMethodDef(
-                              thread_, "foo", bit_cast<void*>(func), "",
-                              ExtensionMethodType::kMethVarArgsAndKeywords));
+  Function callee(
+      &scope,
+      functionFromModuleMethodDef(
+          thread_, "foo", reinterpret_cast<void*>(returnsKwargCalledFoo), "",
+          ExtensionMethodType::kMethVarArgsAndKeywords));
 
   // Set up a code object that calls with (*(10), **{"foo":1111})
   Code code(&scope, newEmptyCode());
