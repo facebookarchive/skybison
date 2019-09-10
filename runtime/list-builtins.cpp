@@ -32,7 +32,7 @@ RawObject listExtend(Thread* thread, const List& dst, const Object& iterable) {
   if (new_length != old_length) {
     runtime->listEnsureCapacity(thread, dst, new_length);
     dst.setNumItems(new_length);
-    Tuple dst_items(&scope, dst.items());
+    MutableTuple dst_items(&scope, dst.items());
     dst_items.replaceFromWith(old_length, *src_tuple, src_length);
   }
   return NoneType::object();
@@ -490,7 +490,7 @@ static RawObject listSetSlice(Thread* thread, const List& self,
       self.setNumItems(new_length);
     }
     // Copy new elements into the middle
-    Tuple::cast(self.items()).replaceFromWith(start, *src, src_length);
+    MutableTuple::cast(self.items()).replaceFromWith(start, *src, src_length);
     return NoneType::object();
   }
 

@@ -1069,7 +1069,8 @@ PyObject* slotTpNew(PyObject* type, PyObject* args, PyObject* kwargs) {
 
   // Construct a new args tuple with type at the front.
   Tuple args_tuple(&scope, tupleUnderlying(thread, args_obj));
-  Tuple new_args(&scope, runtime->newTuple(args_tuple.length() + 1));
+  MutableTuple new_args(&scope,
+                        runtime->newMutableTuple(args_tuple.length() + 1));
   new_args.atPut(0, *type_obj);
   new_args.replaceFromWith(1, *args_tuple, args_tuple.length());
 
@@ -1079,7 +1080,7 @@ PyObject* slotTpNew(PyObject* type, PyObject* args, PyObject* kwargs) {
   if (dunder_new.isError()) return nullptr;
   Frame* frame = thread->currentFrame();
   frame->pushValue(*dunder_new);
-  frame->pushValue(*new_args);
+  frame->pushValue(new_args.becomeImmutable());
   word flags = 0;
   if (kwargs != nullptr) {
     frame->pushValue(*kwargs_obj);

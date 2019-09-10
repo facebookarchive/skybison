@@ -125,10 +125,10 @@ RawObject TupleBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
                                 "cannot fit 'int' into an index-sized integer");
   }
 
-  Tuple new_tuple(&scope, runtime->newTuple(new_length));
+  MutableTuple new_tuple(&scope, runtime->newMutableTuple(new_length));
   new_tuple.replaceFromWith(0, *left, llength);
   new_tuple.replaceFromWith(llength, *right, rlength);
-  return *new_tuple;
+  return new_tuple.becomeImmutable();
 }
 
 RawObject TupleBuiltins::dunderContains(Thread* thread, Frame* frame,
@@ -220,16 +220,16 @@ RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
                                 "cannot fit 'int' into an index-sized integer");
   }
 
-  Tuple new_tuple(&scope, runtime->newTuple(new_length));
+  MutableTuple new_tuple(&scope, runtime->newMutableTuple(new_length));
   if (length == 1) {
     // Fast path for single-element tuples
     new_tuple.fill(self.at(0));
-    return *new_tuple;
+    return new_tuple.becomeImmutable();
   }
   for (word i = 0; i < times; i++) {
     new_tuple.replaceFromWith(i * length, *self, length);
   }
-  return *new_tuple;
+  return new_tuple.becomeImmutable();
 }
 
 RawObject TupleBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {

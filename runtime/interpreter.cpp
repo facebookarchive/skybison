@@ -203,10 +203,11 @@ RawObject Interpreter::prepareCallableEx(Thread* thread, Frame* frame,
     if (result == Bool::trueObj()) {
       // Create a new argument tuple with self as the first argument
       Tuple args(&scope, *args_obj);
-      Tuple new_args(&scope, thread->runtime()->newTuple(args.length() + 1));
+      MutableTuple new_args(
+          &scope, thread->runtime()->newMutableTuple(args.length() + 1));
       new_args.atPut(0, *self);
       new_args.replaceFromWith(1, *args, args.length());
-      frame->setValueAt(*new_args, args_idx);
+      frame->setValueAt(new_args.becomeImmutable(), args_idx);
     }
   }
   return *callable;

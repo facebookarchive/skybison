@@ -225,15 +225,16 @@ word RawLargeStr::codePointLength() const {
 
 void RawList::replaceFromWith(word start, RawList src, word count) const {
   DCHECK_BOUND(start + count, numItems());
-  Tuple::cast(items()).replaceFromWith(start, Tuple::cast(src.items()), count);
+  MutableTuple::cast(items()).replaceFromWith(start, Tuple::cast(src.items()),
+                                              count);
 }
 
 void RawList::replaceFromWithStartAt(word start, RawList src, word count,
                                      word src_start) const {
   DCHECK_BOUND(start + count, numItems());
   DCHECK_BOUND(src_start + count, src.numItems());
-  Tuple::cast(items()).replaceFromWithStartAt(start, Tuple::cast(src.items()),
-                                              count, src_start);
+  MutableTuple::cast(items()).replaceFromWithStartAt(
+      start, Tuple::cast(src.items()), count, src_start);
 }
 
 // RawInt
@@ -388,6 +389,45 @@ RawObject RawMutableBytes::becomeStr() const {
   return *this;
 }
 
+// RawMutableTuple
+
+void RawMutableTuple::fill(RawObject value) const {
+  word len = length();
+  if (value.isNoneType()) {
+    std::memset(reinterpret_cast<byte*>(address()), -1, len * kWordSize);
+    return;
+  }
+  for (word i = 0; i < len; i++) {
+    atPut(i, value);
+  }
+}
+
+void RawMutableTuple::replaceFromWith(word dst_start, RawTuple src,
+                                      word count) const {
+  replaceFromWithStartAt(dst_start, src, count, 0);
+}
+
+void RawMutableTuple::replaceFromWithStartAt(word dst_start, RawTuple src,
+                                             word count, word src_start) const {
+  if (src != *this) {
+    // No overlap
+    for (word i = dst_start, j = src_start; count != 0; i++, j++, count--) {
+      atPut(i, src.at(j));
+    }
+  } else if (src_start < dst_start) {
+    // Overlap; copy backward
+    for (word i = dst_start + count - 1, j = src_start + count - 1; count != 0;
+         i--, j--, count--) {
+      atPut(i, src.at(j));
+    }
+  } else if (src_start > dst_start) {
+    // Overlap; copy forward
+    for (word i = dst_start, j = src_start; count != 0; i++, j++, count--) {
+      atPut(i, src.at(j));
+    }
+  }
+}
+
 // RawTuple
 
 bool RawTuple::contains(RawObject object) const {
@@ -407,43 +447,6 @@ void RawTuple::copyTo(RawObject dst) const {
   for (word i = 0; i < len; i++) {
     RawObject elem = at(i);
     dst_tuple.atPut(i, elem);
-  }
-}
-
-void RawTuple::fill(RawObject value) const {
-  DCHECK(header().hashCode() == RawHeader::kUninitializedHash,
-         "tuple has been hashed and cannot be modified");
-  if (value.isNoneType()) {
-    std::memset(reinterpret_cast<byte*>(address()), -1, length() * kWordSize);
-    return;
-  }
-  for (word i = 0; i < length(); i++) {
-    atPut(i, value);
-  }
-}
-
-void RawTuple::replaceFromWith(word dst_start, RawTuple src, word count) const {
-  replaceFromWithStartAt(dst_start, src, count, 0);
-}
-
-void RawTuple::replaceFromWithStartAt(word dst_start, RawTuple src, word count,
-                                      word src_start) const {
-  if (src != *this) {
-    // No overlap
-    for (word i = dst_start, j = src_start; count != 0; i++, j++, count--) {
-      atPut(i, src.at(j));
-    }
-  } else if (src_start < dst_start) {
-    // Overlap; copy backward
-    for (word i = dst_start + count - 1, j = src_start + count - 1; count != 0;
-         i--, j--, count--) {
-      atPut(i, src.at(j));
-    }
-  } else if (src_start > dst_start) {
-    // Overlap; copy forward
-    for (word i = dst_start, j = src_start; count != 0; i++, j++, count--) {
-      atPut(i, src.at(j));
-    }
   }
 }
 

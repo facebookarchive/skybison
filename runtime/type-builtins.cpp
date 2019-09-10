@@ -400,10 +400,10 @@ RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
   Object dunder_new(&scope, typeGetAttribute(thread, self, dunder_new_name));
   CHECK(!dunder_new.isError(), "self must have __new__");
   frame->pushValue(*dunder_new);
-  Tuple call_args(&scope, runtime->newTuple(pargs.length() + 1));
+  MutableTuple call_args(&scope, runtime->newMutableTuple(pargs.length() + 1));
   call_args.atPut(0, *self);
   call_args.replaceFromWith(1, *pargs, pargs.length());
-  frame->pushValue(*call_args);
+  frame->pushValue(call_args.becomeImmutable());
   frame->pushValue(*kwargs);
   Object instance(&scope, Interpreter::callEx(
                               thread, frame, CallFunctionExFlag::VAR_KEYWORDS));

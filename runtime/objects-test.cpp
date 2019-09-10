@@ -21,10 +21,10 @@ using LargeStrTest = RuntimeFixture;
 using ListTest = RuntimeFixture;
 using ModulesTest = RuntimeFixture;
 using MutableBytesTest = RuntimeFixture;
+using MutableTupleTest = RuntimeFixture;
 using SliceTest = RuntimeFixture;
 using StrTest = RuntimeFixture;
 using StringTest = RuntimeFixture;
-using TupleTest = RuntimeFixture;
 using ValueCellTest = RuntimeFixture;
 using WeakRefTest = RuntimeFixture;
 
@@ -1166,9 +1166,9 @@ TEST_F(ListTest, ReplaceFromWithStartAtWithSelfForward) {
   EXPECT_PYLIST_EQ(dst, {0, 1, 0, 1, 4});
 }
 
-TEST_F(TupleTest, NoneFillTupleFillsTupleWithNone) {
+TEST_F(MutableTupleTest, NoneFillTupleFillsTupleWithNone) {
   HandleScope scope(thread_);
-  Tuple tuple(&scope, runtime_.newTuple(3));
+  MutableTuple tuple(&scope, runtime_.newMutableTuple(3));
   tuple.atPut(0, SmallInt::fromWord(0));
   tuple.atPut(1, SmallInt::fromWord(1));
   tuple.atPut(2, SmallInt::fromWord(2));
@@ -1178,9 +1178,9 @@ TEST_F(TupleTest, NoneFillTupleFillsTupleWithNone) {
   EXPECT_EQ(tuple.at(2), NoneType::object());
 }
 
-TEST_F(TupleTest, ReplaceFromWithReplacesElementsStartingAtZero) {
+TEST_F(MutableTupleTest, ReplaceFromWithReplacesElementsStartingAtZero) {
   HandleScope scope(thread_);
-  Tuple dst(&scope, runtime_.newTuple(5));
+  MutableTuple dst(&scope, runtime_.newMutableTuple(5));
   List src(&scope, listFromRange(0, 5));
   Tuple src_items(&scope, src.items());
   dst.replaceFromWith(0, *src_items, 2);
@@ -1191,9 +1191,9 @@ TEST_F(TupleTest, ReplaceFromWithReplacesElementsStartingAtZero) {
   EXPECT_TRUE(dst.at(4).isNoneType());
 }
 
-TEST_F(TupleTest, ReplaceFromWithReplacesElementsStartingInMiddle) {
+TEST_F(MutableTupleTest, ReplaceFromWithReplacesElementsStartingInMiddle) {
   HandleScope scope(thread_);
-  Tuple dst(&scope, runtime_.newTuple(5));
+  MutableTuple dst(&scope, runtime_.newMutableTuple(5));
   List src(&scope, listFromRange(0, 5));
   Tuple src_items(&scope, src.items());
   dst.replaceFromWith(1, *src_items, 2);
@@ -1204,9 +1204,9 @@ TEST_F(TupleTest, ReplaceFromWithReplacesElementsStartingInMiddle) {
   EXPECT_TRUE(dst.at(4).isNoneType());
 }
 
-TEST_F(TupleTest, ReplaceFromWithCopiesZeroElements) {
+TEST_F(MutableTupleTest, ReplaceFromWithCopiesZeroElements) {
   HandleScope scope(thread_);
-  Tuple dst(&scope, runtime_.newTuple(5));
+  MutableTuple dst(&scope, runtime_.newMutableTuple(5));
   List src(&scope, listFromRange(0, 5));
   Tuple src_items(&scope, src.items());
   dst.replaceFromWith(0, *src_items, 0);
@@ -1217,9 +1217,9 @@ TEST_F(TupleTest, ReplaceFromWithCopiesZeroElements) {
   EXPECT_TRUE(dst.at(4).isNoneType());
 }
 
-TEST_F(TupleTest, ReplaceFromWithCopiesEveryElementFromSrc) {
+TEST_F(MutableTupleTest, ReplaceFromWithCopiesEveryElementFromSrc) {
   HandleScope scope(thread_);
-  Tuple dst(&scope, runtime_.newTuple(5));
+  MutableTuple dst(&scope, runtime_.newMutableTuple(5));
   List src(&scope, listFromRange(0, 5));
   Tuple src_items(&scope, src.items());
   dst.replaceFromWith(0, *src_items, 5);
@@ -1230,33 +1230,34 @@ TEST_F(TupleTest, ReplaceFromWithCopiesEveryElementFromSrc) {
   EXPECT_TRUE(isIntEqualsWord(dst.at(4), 4));
 }
 
-TEST_F(TupleTest, ReplaceFromWithStartAtWithSelfNoop) {
+TEST_F(MutableTupleTest, ReplaceFromWithStartAtWithSelfNoop) {
   HandleScope scope(thread_);
   List dst_list(&scope, listFromRange(0, 5));
-  Tuple dst(&scope, dst_list.items());
+  MutableTuple dst(&scope, dst_list.items());
   dst.replaceFromWithStartAt(0, *dst, 2, 0);
   EXPECT_PYLIST_EQ(dst_list, {0, 1, 2, 3, 4});
 }
 
-TEST_F(TupleTest, ReplaceFromWithStartAtWithSelfBackward) {
+TEST_F(MutableTupleTest, ReplaceFromWithStartAtWithSelfBackward) {
   HandleScope scope(thread_);
   List dst_list(&scope, listFromRange(0, 5));
-  Tuple dst(&scope, dst_list.items());
+  MutableTuple dst(&scope, dst_list.items());
   dst.replaceFromWithStartAt(0, *dst, 2, 2);
   EXPECT_PYLIST_EQ(dst_list, {2, 3, 2, 3, 4});
 }
 
-TEST_F(TupleTest, ReplaceFromWithStartAtWithSelfForward) {
+TEST_F(MutableTupleTest, ReplaceFromWithStartAtWithSelfForward) {
   HandleScope scope(thread_);
   List dst_list(&scope, listFromRange(0, 5));
-  Tuple dst(&scope, dst_list.items());
+  MutableTuple dst(&scope, dst_list.items());
   dst.replaceFromWithStartAt(2, *dst, 2, 0);
   EXPECT_PYLIST_EQ(dst_list, {0, 1, 0, 1, 4});
 }
 
-TEST_F(TupleTest, ReplaceFromWithStartAtReplacesElementsStartingAtSrcStart) {
+TEST_F(MutableTupleTest,
+       ReplaceFromWithStartAtReplacesElementsStartingAtSrcStart) {
   HandleScope scope(thread_);
-  Tuple dst(&scope, runtime_.newTuple(5));
+  MutableTuple dst(&scope, runtime_.newMutableTuple(5));
   List src_list(&scope, listFromRange(0, 5));
   Tuple src(&scope, src_list.items());
   dst.replaceFromWithStartAt(0, *src, 2, 2);

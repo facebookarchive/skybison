@@ -271,7 +271,7 @@ RawObject DictBuiltins::clear(Thread* thread, Frame* frame, word nargs) {
   }
   Dict dict(&scope, *self);
   dict.setNumItems(0);
-  Tuple data(&scope, dict.data());
+  MutableTuple data(&scope, dict.data());
   data.fill(NoneType::object());
   dict.resetNumUsableItems();
   return NoneType::object();
