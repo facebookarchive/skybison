@@ -241,9 +241,8 @@ static RawObject checkArgs(Thread* thread, const Function& function,
       }
       // If we were unable to find a slot to swap into, TypeError
       if (!arg_at(arg_pos).isError()) {
-        Object param_obj(&scope, swapped ? formal_names.at(arg_pos)
-                                         : actual_names.at(arg_pos));
-        Object param_name(&scope, strUnderlying(thread, param_obj));
+        Object param_name(&scope, swapped ? formal_names.at(arg_pos)
+                                          : actual_names.at(arg_pos));
         return thread->raiseWithFmt(
             LayoutId::kTypeError,
             "%F() got an unexpected keyword argument '%S'", &function,

@@ -1176,7 +1176,8 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
         }
       } break;
       case 'S': {
-        Str value(&scope, **va_arg(args, Object*));
+        Object value_obj(&scope, **va_arg(args, Object*));
+        Str value(&scope, strUnderlying(thread, value_obj));
         word length = value.charLength();
         if (dst == nullptr) {
           len += length;

@@ -834,6 +834,19 @@ TEST_F(RuntimeTest, NewStrFromFmtWithStrArg) {
   EXPECT_EQ(*result, str);
 }
 
+TEST_F(RuntimeTest, NewStrFromFmtWithStrSubclassArg) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C(str):
+  pass
+value = C("foo")
+)")
+                   .isError());
+  Object value(&scope, mainModuleAt(&runtime_, "value"));
+  Object result(&scope, runtime_.newStrFromFmt("hello %S", &value));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "hello foo"));
+}
+
 TEST_F(RuntimeStrTest, NewStrFromFmtFormatsFunctionName) {
   HandleScope scope(thread_);
   Function function(&scope, newEmptyFunction());
