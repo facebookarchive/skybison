@@ -36,18 +36,14 @@ RawObject hasAttribute(Thread* thread, const Object& self, const Object& name) {
 
   HandleScope scope(thread);
   Object result(&scope, runtime->attributeAt(thread, self, name));
-  if (!result.isError()) {
+  if (!result.isErrorException()) {
     return Bool::trueObj();
   }
-
-  Type given(&scope, thread->pendingExceptionType());
-  Type exc(&scope, runtime->typeAt(LayoutId::kAttributeError));
-  if (givenExceptionMatches(thread, given, exc)) {
-    thread->clearPendingException();
-    return Bool::falseObj();
+  if (!thread->pendingExceptionMatches(LayoutId::kAttributeError)) {
+    return *result;
   }
-
-  return Error::notFound();
+  thread->clearPendingException();
+  return Bool::falseObj();
 }
 
 RawObject setAttribute(Thread* thread, const Object& self, const Object& name,

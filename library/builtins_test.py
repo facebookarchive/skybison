@@ -2359,6 +2359,68 @@ class GlobalsTests(unittest.TestCase):
             del sys.modules[m_name]
 
 
+class HasattrTests(unittest.TestCase):
+    def test_hasattr_calls_dunder_getattribute(self):
+        class C:
+            def __getattribute__(self, name):
+                if name == "foo":
+                    return 42
+                raise AttributeError(name)
+
+        i = C()
+        self.assertTrue(hasattr(i, "foo"))
+        self.assertFalse(hasattr(i, "bar"))
+
+    def test_hasattr_propagates_error_from_dunder_getattribute(self):
+        class C:
+            def __getattribute__(self, name):
+                raise UserWarning()
+
+        i = C()
+        with self.assertRaises(UserWarning):
+            hasattr(i, "foo")
+
+    def test_hasattr_calls_dunder_getattr(self):
+        class C:
+            def __getattribute__(self, name):
+                nonlocal getattribute_called
+                getattribute_called = True
+                raise AttributeError(name)
+
+            def __getattr__(self, name):
+                if name == "foo":
+                    return 42
+                raise AttributeError(name)
+
+        i = C()
+        getattribute_called = False
+        self.assertTrue(hasattr(i, "foo"))
+        self.assertTrue(getattribute_called)
+
+        getattribute_called = False
+        self.assertFalse(hasattr(i, "bar"))
+        self.assertTrue(getattribute_called)
+
+    def test_hasattr_propagates_error_from_dunder_getattr(self):
+        class C:
+            def __getattribute__(self, name):
+                raise AttributeError(name)
+
+            def __getattr__(self, name):
+                raise UserWarning()
+
+        i = C()
+        with self.assertRaises(UserWarning):
+            hasattr(i, "foo")
+
+    def test_hasattr_with_non_string_attr_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            hasattr(None, 42)
+        self.assertEqual(
+            str(context.exception), "hasattr(): attribute name must be string"
+        )
+
+
 class HashTests(unittest.TestCase):
     def test_hash_with_raising_dunder_hash_descriptor_raises_type_error(self):
         class Desc:

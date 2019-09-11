@@ -624,62 +624,6 @@ getattr(Foo, 'foo')
                             "type object 'Foo' has no attribute 'foo'"));
 }
 
-TEST_F(BuiltinsModuleTest, HasAttrFromClassMissingAttrReturnsFalse) {
-  const char* src = R"(
-class Foo: pass
-obj = hasattr(Foo, 'bar')
-)";
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Object obj(&scope, mainModuleAt(&runtime_, "obj"));
-  EXPECT_EQ(*obj, Bool::falseObj());
-}
-
-TEST_F(BuiltinsModuleTest, HasAttrFromClassWithAttrReturnsTrue) {
-  const char* src = R"(
-class Foo:
-  bar = 1
-obj = hasattr(Foo, 'bar')
-)";
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Object obj(&scope, mainModuleAt(&runtime_, "obj"));
-  EXPECT_EQ(*obj, Bool::trueObj());
-}
-
-TEST_F(BuiltinsModuleTest, HasAttrWithNonStringAttrRaisesTypeError) {
-  const char* src = R"(
-class Foo:
-  bar = 1
-hasattr(Foo, 1)
-)";
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, src), LayoutId::kTypeError,
-                            "hasattr(): attribute name must be string"));
-}
-
-TEST_F(BuiltinsModuleTest, HasAttrFromInstanceMissingAttrReturnsFalse) {
-  const char* src = R"(
-class Foo: pass
-obj = hasattr(Foo(), 'bar')
-)";
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Object obj(&scope, mainModuleAt(&runtime_, "obj"));
-  EXPECT_EQ(*obj, Bool::falseObj());
-}
-
-TEST_F(BuiltinsModuleTest, HasAttrFromInstanceWithAttrReturnsTrue) {
-  const char* src = R"(
-class Foo:
-  bar = 1
-obj = hasattr(Foo(), 'bar')
-)";
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  Object obj(&scope, mainModuleAt(&runtime_, "obj"));
-  EXPECT_EQ(*obj, Bool::trueObj());
-}
-
 TEST_F(BuiltinsModuleTest,
        HashWithObjectWithNotCallableDunderHashRaisesTypeError) {
   const char* src = R"(
