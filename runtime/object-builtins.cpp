@@ -5,6 +5,7 @@
 #include "frame.h"
 #include "globals.h"
 #include "ic.h"
+#include "module-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"

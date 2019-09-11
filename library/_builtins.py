@@ -358,6 +358,11 @@ def _instance_getattr(obj, name):
 
 
 @_patch
+def _instance_keys(obj):
+    pass
+
+
+@_patch
 def _instance_setattr(obj, name, value):
     pass
 

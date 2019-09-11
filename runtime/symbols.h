@@ -242,7 +242,9 @@ class Runtime;
   V(UnderImp, "_imp")                                                          \
   V(UnderIndex, "_index")                                                      \
   V(UnderInstall, "_install")                                                  \
+  V(UnderInstance, "_instance")                                                \
   V(UnderInstanceGetattr, "_instance_getattr")                                 \
+  V(UnderInstanceKeys, "_instance_keys")                                       \
   V(UnderInstanceSetattr, "_instance_setattr")                                 \
   V(UnderIntCheck, "_int_check")                                               \
   V(UnderIntCheckExact, "_int_checkexact")                                     \
@@ -575,6 +577,7 @@ class Runtime;
   V(IndexOf, "indexOf")                                                        \
   V(Insert, "insert")                                                          \
   V(Instance, "instance")                                                      \
+  V(InstanceProxy, "instance_proxy")                                           \
   V(Int, "int")                                                                \
   V(InterruptedError, "InterruptedError")                                      \
   V(Intersection, "intersection")                                              \

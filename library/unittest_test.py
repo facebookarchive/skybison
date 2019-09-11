@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import unittest
+from unittest.mock import Mock
 
 
 class BasicTests(unittest.TestCase):
@@ -66,6 +67,16 @@ class ContainerTests(unittest.TestCase):
             """ This is a big multiline
                                   to test if it works""",
         )
+
+
+class MockTests(unittest.TestCase):
+    def test_method_mock(self):
+        class C:
+            foo = Mock(name="foo")
+
+        c = C()
+        c.foo(10)
+        c.foo.assert_called_once_with(10)
 
 
 if __name__ == "__main__":

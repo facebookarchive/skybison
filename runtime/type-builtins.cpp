@@ -5,6 +5,7 @@
 #include "frame.h"
 #include "globals.h"
 #include "list-builtins.h"
+#include "module-builtins.h"
 #include "mro.h"
 #include "object-builtins.h"
 #include "objects.h"
@@ -248,6 +249,22 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   for (word i = 1; i < mro.length(); i++) {
     Type cur(&scope, mro.at(i));
     flags |= cur.flags();
+  }
+  if (!type.isBuiltin()) {
+    // TODO(T53800222): We may need a better signal than is/is not a builtin
+    // class.
+    flags |= Type::Flag::kHasDunderDict;
+  }
+  if (flags & Type::Flag::kHasDunderDict &&
+      typeLookupSymbolInMro(thread, type, SymbolId::kDunderDict)
+          .isErrorNotFound()) {
+    Module builtins(&scope, runtime->findModuleById(SymbolId::kBuiltins));
+    Object instance_proxy(
+        &scope, moduleAtById(thread, builtins, SymbolId::kInstanceProxy));
+    Object none(&scope, NoneType::object());
+    Object property(&scope, runtime->newProperty(instance_proxy, none, none));
+    Str dunder_dict(&scope, runtime->symbols()->DunderDict());
+    runtime->typeDictAtPut(thread, type_dict, dunder_dict, property);
   }
   type.setFlagsAndBuiltinBase(
       static_cast<Type::Flag>(flags & ~Type::Flag::kIsAbstract),

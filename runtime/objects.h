@@ -1034,6 +1034,9 @@ class RawType : public RawHeapObject {
 
     // Has non-empty __abstractmethods__
     kIsAbstract = 1 << 8,
+
+    // Has an instance __dict__
+    kHasDunderDict = 1 << 9,
   };
 
   // Getters and setters.
@@ -2679,7 +2682,7 @@ class RawLayout : public RawHeapObject {
   // Each item in the object array is a two element tuple. Each tuple is
   // composed of the following elements, in order:
   //
-  //   1. The attribute name (RawStr)
+  //   1. The attribute name (RawStr, or NoneType if unnamed (name is kInvalid))
   //   2. The attribute info (AttributeInfo)
   RawObject inObjectAttributes() const;
   void setInObjectAttributes(RawObject attributes) const;

@@ -139,6 +139,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderGetMemberULong, underGetMemberULong},
     {SymbolId::kUnderGetMemberUShort, underGetMemberUShort},
     {SymbolId::kUnderInstanceGetattr, underInstanceGetattr},
+    {SymbolId::kUnderInstanceKeys, underInstanceKeys},
     {SymbolId::kUnderInstanceSetattr, underInstanceSetattr},
     {SymbolId::kUnderIntCheck, underIntCheck},
     {SymbolId::kUnderIntCheckExact, underIntCheckExact},
@@ -1704,7 +1705,47 @@ RawObject UnderBuiltinsModule::underInstanceGetattr(Thread* thread,
   Arguments args(frame, nargs);
   HeapObject instance(&scope, args.get(0));
   Object name(&scope, args.get(1));
-  return instanceGetAttribute(thread, instance, name);
+  if (!name.isStr()) {
+    // TODO(T53626118): Support str subclasses
+    UNIMPLEMENTED("non-str attribute name");
+  }
+  Object result(&scope, instanceGetAttribute(thread, instance, name));
+  return result.isErrorNotFound() ? Unbound::object() : *result;
+}
+
+RawObject UnderBuiltinsModule::underInstanceKeys(Thread* thread, Frame* frame,
+                                                 word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object object(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  Layout layout(&scope, runtime->layoutAt(object.layoutId()));
+  List result(&scope, runtime->newList());
+  // Add in-object attributes
+  Tuple in_object(&scope, layout.inObjectAttributes());
+  for (word i = 0; i < layout.numInObjectAttributes(); i++) {
+    Tuple pair(&scope, in_object.at(i));
+    Object name(&scope, pair.at(0));
+    if (name.isNoneType() || name == runtime->symbols()->DunderDict()) continue;
+    runtime->listAdd(thread, result, name);
+  }
+  // Add overflow attributes
+  if (layout.hasTupleOverflow()) {
+    Tuple overflow(&scope, layout.overflowAttributes());
+    for (word i = 0; i < overflow.length(); i++) {
+      Tuple pair(&scope, overflow.at(i));
+      Object name(&scope, pair.at(0));
+      if (name.isNoneType() || name == runtime->symbols()->DunderDict()) {
+        continue;
+      }
+      runtime->listAdd(thread, result, name);
+    }
+  } else {
+    // Dict overflow should be handled by a __dict__ descriptor on the type,
+    // like `type` or `function`
+    CHECK(layout.overflowAttributes().isNoneType(), "no overflow");
+  }
+  return *result;
 }
 
 RawObject UnderBuiltinsModule::underInstanceSetattr(Thread* thread,
@@ -1713,8 +1754,13 @@ RawObject UnderBuiltinsModule::underInstanceSetattr(Thread* thread,
   Arguments args(frame, nargs);
   HeapObject instance(&scope, args.get(0));
   Object name(&scope, args.get(1));
+  if (!name.isStr()) {
+    // TODO(T53626118): Support str subclasses
+    UNIMPLEMENTED("non-str attribute name");
+  }
   Object value(&scope, args.get(2));
-  return instanceSetAttr(thread, instance, name, value);
+  Object name_interned(&scope, thread->runtime()->internStr(thread, name));
+  return instanceSetAttr(thread, instance, name_interned, value);
 }
 
 RawObject UnderBuiltinsModule::underIntCheck(Thread* thread, Frame* frame,

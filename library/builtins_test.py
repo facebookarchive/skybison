@@ -4372,6 +4372,100 @@ class ObjectTests(unittest.TestCase):
         with self.assertRaisesRegex(AttributeError, ".*attribute 'foo'"):
             result.foo = "bar"
 
+    def test_dunder_setattr_on_exception_does_not_raise(self):
+        result = Exception()
+        result.foo = "bar"
+        self.assertEqual(result.foo, "bar")
+
+    def test_dunder_dict_dunder_getitem_with_non_existent_key_raises_key_error(self):
+        class C:
+            pass
+
+        instance = C()
+        with self.assertRaises(KeyError):
+            instance.__dict__["non_key"]
+
+    def test_subclass_does_not_override_user_dunder_dict(self):
+        class C(object):
+            __dict__ = 5
+
+        class D(C):
+            pass
+
+        self.assertEqual(C.__dict__["__dict__"], 5)
+        self.assertNotIn("__dict__", D.__dict__)
+
+    def test_dunder_dict_dunder_setitem_sets_attribute(self):
+        class C:
+            pass
+
+        instance = C()
+        with self.assertRaises(AttributeError):
+            instance.foo
+        instance.__dict__["foo"] = "bar"
+        self.assertEqual(instance.foo, "bar")
+
+    def test_dunder_dict_items_returns_items_iterable(self):
+        class C:
+            pass
+
+        instance = C()
+        d = instance.__dict__
+        d["foo"] = "bar"
+        self.assertEqual(list(d.items()), [("foo", "bar")])
+
+    def test_dunder_dict_keys_returns_keys_iterable(self):
+        class C:
+            pass
+
+        instance = C()
+        d = instance.__dict__
+        d["foo"] = "bar"
+        d["baz"] = "quux"
+        keys = d.keys()
+        self.assertEqual(len(keys), 2)
+        self.assertIn("foo", keys)
+        self.assertIn("baz", keys)
+
+    def test_dunder_dict_update_sets_attributes(self):
+        class C:
+            pass
+
+        instance = C()
+        d = instance.__dict__
+        self.assertEqual(len(d), 0)
+        d.update({"hello": "world", "foo": "bar"})
+        self.assertEqual(len(d), 2)
+        self.assertEqual(d["hello"], "world")
+        self.assertEqual(d["foo"], "bar")
+
+    def test_int_subclass_has_dunder_dict(self):
+        class C(int):
+            pass
+
+        sub = C(5)
+        self.assertTrue(hasattr(sub, "__dict__"))
+
+    def test_str_subclass_has_dunder_dict(self):
+        class C(str):
+            pass
+
+        sub = C("foo")
+        self.assertTrue(hasattr(sub, "__dict__"))
+
+    def test_instance_dict_stays_synced_with_attribute_values(self):
+        class C:
+            pass
+
+        instance = C()
+        d = instance.__dict__
+        self.assertEqual(len(d), 0)
+        instance.foo = 42
+        self.assertEqual(len(d), 1)
+        self.assertEqual(d["foo"], 42)
+        d["bar"] = 7
+        self.assertEqual(instance.bar, 7)
+
 
 class OctTests(unittest.TestCase):
     def test_returns_string(self):

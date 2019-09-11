@@ -72,6 +72,7 @@ _get_member_uint = _get_member_uint  # noqa: F821
 _get_member_ulong = _get_member_ulong  # noqa: F821
 _get_member_ushort = _get_member_ushort  # noqa: F821
 _instance_getattr = _instance_getattr  # noqa: F821
+_instance_keys = _instance_keys  # noqa: F821
 _instance_setattr = _instance_setattr  # noqa: F821
 _int_check = _int_check  # noqa: F821
 _int_checkexact = _int_checkexact  # noqa: F821
@@ -410,6 +411,48 @@ class type_proxy(bootstrap=True):
         _type_proxy_guard(self)
         # TODO(T53302128): Return an iterable to avoid materializing the list of values.
         return _type_proxy_values(self)
+
+
+class instance_proxy:
+    def __getitem__(self, key):
+        result = _instance_getattr(self._instance, key)
+        if result is _Unbound:
+            raise KeyError(key)
+        return result
+
+    def __init__(self, instance):
+        self._instance = instance
+
+    def __len__(self):
+        return len(self.keys())
+
+    def __repr__(self):
+        # TODO(T53507197): Use _sequence_repr
+        if _repr_enter(self):
+            return "{...}"
+        kwpairs = [f"{key!r}: {value!r}" for key, value in self.items()]
+        _repr_leave(self)
+        return "instance_proxy({" + ", ".join(kwpairs) + "})"
+
+    def __setitem__(self, key, value):
+        _instance_setattr(self._instance, key, value)
+
+    def update(self, d):
+        instance = self._instance
+        for key, value in d.items():
+            _instance_setattr(instance, key, value)
+
+    def items(self):
+        result = []
+        instance = self._instance
+        for key in self.keys():
+            value = _instance_getattr(instance, key)
+            assert value is not _Unbound
+            result.append((key, value))
+        return result
+
+    def keys(self):
+        return _instance_keys(self._instance)
 
 
 class object(bootstrap=True):  # noqa: E999
