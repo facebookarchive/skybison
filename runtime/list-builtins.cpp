@@ -427,6 +427,9 @@ RawObject ListBuiltins::dunderImul(Thread* thread, Frame* frame, word nargs) {
       !SmallInt::isValid(new_length)) {
     return thread->raiseMemoryError();
   }
+  if (new_length == len) {
+    return *list;
+  }
   runtime->listEnsureCapacity(thread, list, new_length);
   list.setNumItems(new_length);
   for (word i = 0; i < ntimes; i++) {
