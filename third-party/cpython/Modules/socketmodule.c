@@ -2699,8 +2699,9 @@ sock_getsockopt(PySocketSockObject *s, PyObject *args)
     int level;
     int optname;
     int res;
-    PyObject *buf;
+    void *buf;
     socklen_t buflen = 0;
+    PyObject *ret;
 
     if (!PyArg_ParseTuple(args, "ii|i:getsockopt",
                           &level, &optname, &buflen))
@@ -2720,17 +2721,17 @@ sock_getsockopt(PySocketSockObject *s, PyObject *args)
                         "getsockopt buflen out of range");
         return NULL;
     }
-    buf = PyBytes_FromStringAndSize((char *)NULL, buflen);
+    buf = PyMem_Malloc(buflen);
     if (buf == NULL)
         return NULL;
-    res = getsockopt(s->sock_fd, level, optname,
-                     (void *)PyBytes_AS_STRING(buf), &buflen);
+    res = getsockopt(s->sock_fd, level, optname, buf, &buflen);
     if (res < 0) {
-        Py_DECREF(buf);
+        PyMem_Free(buf);
         return s->errorhandler();
     }
-    _PyBytes_Resize(&buf, buflen);
-    return buf;
+    ret = PyBytes_FromStringAndSize((char *)buf, buflen);
+    PyMem_Free(buf);
+    return ret;
 }
 
 PyDoc_STRVAR(getsockopt_doc,
@@ -3129,7 +3130,8 @@ sock_recv(PySocketSockObject *s, PyObject *args)
 {
     Py_ssize_t recvlen, outlen;
     int flags = 0;
-    PyObject *buf;
+    void *buf;
+    PyObject *ret;
 
     if (!PyArg_ParseTuple(args, "n|i:recv", &recvlen, &flags))
         return NULL;
@@ -3140,26 +3142,21 @@ sock_recv(PySocketSockObject *s, PyObject *args)
         return NULL;
     }
 
-    /* Allocate a new string. */
-    buf = PyBytes_FromStringAndSize((char *) 0, recvlen);
+    /* Allocate a new buffer. */
+    buf = PyMem_Malloc(recvlen);
     if (buf == NULL)
         return NULL;
 
     /* Call the guts */
-    outlen = sock_recv_guts(s, PyBytes_AS_STRING(buf), recvlen, flags);
+    outlen = sock_recv_guts(s, buf, recvlen, flags);
     if (outlen < 0) {
-        /* An error occurred, release the string and return an
-           error. */
-        Py_DECREF(buf);
+        /* An error occurred, release the buffer and return an error. */
+        PyMem_Free(buf);
         return NULL;
     }
-    if (outlen != recvlen) {
-        /* We did not read as many bytes as we anticipated, resize the
-           string if possible and be successful. */
-        _PyBytes_Resize(&buf, outlen);
-    }
-
-    return buf;
+    ret = PyBytes_FromStringAndSize((char *)buf, outlen);
+    PyMem_Free(buf);
+    return ret;
 }
 
 PyDoc_STRVAR(recv_doc,
@@ -3311,7 +3308,8 @@ sock_recvfrom_guts(PySocketSockObject *s, char* cbuf, Py_ssize_t len, int flags,
 static PyObject *
 sock_recvfrom(PySocketSockObject *s, PyObject *args)
 {
-    PyObject *buf = NULL;
+    void *buf;
+    PyObject *bytes;
     PyObject *addr = NULL;
     PyObject *ret = NULL;
     int flags = 0;
@@ -3326,28 +3324,24 @@ sock_recvfrom(PySocketSockObject *s, PyObject *args)
         return NULL;
     }
 
-    buf = PyBytes_FromStringAndSize((char *) 0, recvlen);
+    buf = PyMem_Malloc(recvlen);
     if (buf == NULL)
         return NULL;
 
-    outlen = sock_recvfrom_guts(s, PyBytes_AS_STRING(buf),
-                                recvlen, flags, &addr);
+    outlen = sock_recvfrom_guts(s, buf, recvlen, flags, &addr);
     if (outlen < 0) {
         goto finally;
     }
 
-    if (outlen != recvlen) {
-        /* We did not read as many bytes as we anticipated, resize the
-           string if possible and be successful. */
-        if (_PyBytes_Resize(&buf, outlen) < 0)
-            /* Oopsy, not so successful after all. */
-            goto finally;
+    bytes = PyBytes_FromStringAndSize(buf, outlen);
+    if (bytes == NULL) {
+        goto finally;
     }
 
-    ret = PyTuple_Pack(2, buf, addr);
+    ret = PyTuple_Pack(2, bytes, addr);
 
 finally:
-    Py_XDECREF(buf);
+    PyMem_Free(buf);
     Py_XDECREF(addr);
     return ret;
 }
@@ -3578,12 +3572,7 @@ err_closefds:
 static PyObject *
 makeval_recvmsg(ssize_t received, void *data)
 {
-    PyObject **buf = data;
-
-    if (received < PyBytes_GET_SIZE(*buf))
-        _PyBytes_Resize(buf, received);
-    Py_XINCREF(*buf);
-    return *buf;
+    return PyBytes_FromStringAndSize(data, received);
 }
 
 /* s.recvmsg(bufsize[, ancbufsize[, flags]]) method */
@@ -3594,7 +3583,8 @@ sock_recvmsg(PySocketSockObject *s, PyObject *args)
     Py_ssize_t bufsize, ancbufsize = 0;
     int flags = 0;
     struct iovec iov;
-    PyObject *buf = NULL, *retval = NULL;
+    void *buf;
+    PyObject *retval = NULL;
 
     if (!PyArg_ParseTuple(args, "n|ni:recvmsg", &bufsize, &ancbufsize, &flags))
         return NULL;
@@ -3603,17 +3593,15 @@ sock_recvmsg(PySocketSockObject *s, PyObject *args)
         PyErr_SetString(PyExc_ValueError, "negative buffer size in recvmsg()");
         return NULL;
     }
-    if ((buf = PyBytes_FromStringAndSize(NULL, bufsize)) == NULL)
+    buf = PyMem_Malloc(bufsize);
+    if (buf == NULL)
         return NULL;
-    iov.iov_base = PyBytes_AS_STRING(buf);
+    iov.iov_base = buf;
     iov.iov_len = bufsize;
 
-    /* Note that we're passing a pointer to *our pointer* to the bytes
-       object here (&buf); makeval_recvmsg() may incref the object, or
-       deallocate it and set our pointer to NULL. */
     retval = sock_recvmsg_guts(s, &iov, 1, flags, ancbufsize,
-                               &makeval_recvmsg, &buf);
-    Py_XDECREF(buf);
+                               &makeval_recvmsg, buf);
+    PyMem_Free(buf);
     return retval;
 }
 
@@ -4272,11 +4260,23 @@ sock_sendmsg_afalg(PySocketSockObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "|O$O!y*O!i:sendmsg_afalg", keywords,
-                                     &data_arg,
-                                     &PyLong_Type, &opobj, &iv,
-                                     &PyLong_Type, &assoclenobj, &flags)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O$O!y*O!i:sendmsg_afalg",
+                                     keywords, &data_arg, &opobj, &iv,
+                                     &assoclenobj, &flags)) {
+        return NULL;
+    }
+
+    // TODO(T53172188): investigate whether to implement &PyLong_Type
+    if (!PyLong_Check(opobj)) {
+      PyErr_Format(PyExc_TypeError,
+                   "sendmsg_afalg() argument 2 must be int, not %.50s",
+                   _PyType_Name(Py_TYPE(opobj)));
+      return NULL;
+    }
+    if (!PyLong_Check(assoclenobj)) {
+      PyErr_Format(PyExc_TypeError,
+                   "sendmsg_afalg() argument 4 must be int, not %.50s",
+                   _PyType_Name(Py_TYPE(assoclenobj)));
         return NULL;
     }
 
