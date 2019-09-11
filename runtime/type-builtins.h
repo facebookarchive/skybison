@@ -35,6 +35,9 @@ RawObject resolveDescriptorGet(Thread* thread, const Object& descr,
                                const Object& instance,
                                const Object& instance_type);
 
+RawObject typeInit(Thread* thread, const Type& type, const Str& name,
+                   const Tuple& bases, const Dict& dict, const Tuple& mro);
+
 // Looks up `name` in the dict of each entry in type's MRO. Returns an `Error`
 // object if the name wasn't found.
 RawObject typeLookupNameInMro(Thread* thread, const Type& type,
@@ -63,7 +66,6 @@ class TypeBuiltins
 
   static RawObject dunderCall(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGetattribute(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderSetattr(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderSubclasses(Thread* thread, Frame* frame, word nargs);
   static RawObject mro(Thread* thread, Frame* frame, word nargs);

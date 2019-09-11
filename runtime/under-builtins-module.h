@@ -236,8 +236,10 @@ class UnderBuiltinsModule {
   static RawObject underTypeCheckExact(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underTypeGuard(Thread* thread, Frame* frame, word nargs);
+  static RawObject underTypeInit(Thread* thread, Frame* frame, word nargs);
   static RawObject underTypeIsSubclass(Thread* thread, Frame* frame,
                                        word nargs);
+  static RawObject underTypeNew(Thread* thread, Frame* frame, word nargs);
   static RawObject underTypeProxy(Thread* thread, Frame* frame, word nargs);
   static RawObject underTypeProxyGet(Thread* thread, Frame* frame, word nargs);
   static RawObject underTypeProxyGuard(Thread* thread, Frame* frame,

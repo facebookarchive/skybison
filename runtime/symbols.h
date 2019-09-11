@@ -394,7 +394,9 @@ class Runtime;
   V(UnderTypeCheck, "_type_check")                                             \
   V(UnderTypeCheckExact, "_type_check_exact")                                  \
   V(UnderTypeGuard, "_type_guard")                                             \
+  V(UnderTypeInit, "_type_init")                                               \
   V(UnderTypeIsSubclass, "_type_issubclass")                                   \
+  V(UnderTypeNew, "_type_new")                                                 \
   V(UnderTypeProxy, "_type_proxy")                                             \
   V(UnderTypeProxyGet, "_type_proxy_get")                                      \
   V(UnderTypeProxyGuard, "_type_proxy_guard")                                  \

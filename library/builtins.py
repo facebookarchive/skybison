@@ -162,7 +162,9 @@ _type_bases_set = _type_bases_set  # noqa: F821
 _type_check = _type_check  # noqa: F821
 _type_check_exact = _type_check_exact  # noqa: F821
 _type_guard = _type_guard  # noqa: F821
+_type_init = _type_init  # noqa: F821
 _type_issubclass = _type_issubclass  # noqa: F821
+_type_new = _type_new  # noqa: F821
 _type_proxy = _type_proxy  # noqa: F821
 _type_proxy_get = _type_proxy_get  # noqa: F821
 _type_proxy_guard = _type_proxy_guard  # noqa: F821
@@ -303,8 +305,18 @@ class type(bootstrap=True):
     def __instancecheck__(self, obj) -> bool:
         return _isinstance_type(obj, _type(obj), self)
 
-    def __new__(cls, name_or_object, bases=_Unbound, dict=_Unbound):
-        pass
+    def __new__(cls, name_or_object, bases=_Unbound, type_dict=_Unbound):
+        if cls is type and bases is _Unbound and type_dict is _Unbound:
+            # If the first argument is exactly type, and there are no other
+            # arguments, then this call returns the type of the argument.
+            return _type(name_or_object)
+        _type_guard(cls)
+        _str_guard(name_or_object)
+        _tuple_guard(bases)
+        _dict_guard(type_dict)
+        instance = _type_new(cls, bases)
+        mro = _Unbound if cls is type else tuple(cls.mro(instance))
+        return _type_init(instance, name_or_object, bases, type_dict, mro)
 
     @_classmethod
     def __prepare__(self, *args, **kwargs):

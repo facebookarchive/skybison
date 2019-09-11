@@ -829,6 +829,16 @@ def _type_proxy(type_obj):
 
 
 @_patch
+def _type_init(metaclass_instance, name, bases, dict, mro):
+    pass
+
+
+@_patch
+def _type_new(cls, bases):
+    pass
+
+
+@_patch
 def _type_proxy_get(self, key, default):
     pass
 

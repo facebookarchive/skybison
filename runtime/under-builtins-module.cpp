@@ -16,6 +16,7 @@
 #include "list-builtins.h"
 #include "memoryview-builtins.h"
 #include "module-builtins.h"
+#include "mro.h"
 #include "object-builtins.h"
 #include "range-builtins.h"
 #include "str-builtins.h"
@@ -228,7 +229,9 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderTypeCheck, underTypeCheck},
     {SymbolId::kUnderTypeCheckExact, underTypeCheckExact},
     {SymbolId::kUnderTypeGuard, underTypeGuard},
+    {SymbolId::kUnderTypeInit, underTypeInit},
     {SymbolId::kUnderTypeIsSubclass, underTypeIsSubclass},
+    {SymbolId::kUnderTypeNew, underTypeNew},
     {SymbolId::kUnderTypeProxy, underTypeProxy},
     {SymbolId::kUnderTypeProxyGet, underTypeProxyGet},
     {SymbolId::kUnderTypeProxyGuard, underTypeProxyGuard},
@@ -3040,6 +3043,19 @@ RawObject UnderBuiltinsModule::underTypeIsSubclass(Thread* thread, Frame* frame,
   return Bool::fromBool(thread->runtime()->isSubclass(subclass, superclass));
 }
 
+RawObject UnderBuiltinsModule::underTypeNew(Thread* thread, Frame* frame,
+                                            word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Type metaclass(&scope, args.get(0));
+  Tuple bases(&scope, args.get(1));
+  LayoutId metaclass_id = Layout::cast(metaclass.instanceLayout()).id();
+  Runtime* runtime = thread->runtime();
+  Type type(&scope, runtime->newTypeWithMetaclass(metaclass_id));
+  type.setBases(bases.length() > 0 ? *bases : runtime->implicitBases());
+  return *type;
+}
+
 RawObject UnderBuiltinsModule::underTypeProxy(Thread* thread, Frame* frame,
                                               word nargs) {
   Arguments args(frame, nargs);
@@ -3100,6 +3116,25 @@ RawObject UnderBuiltinsModule::underTypeProxyValues(Thread* thread,
   TypeProxy self(&scope, args.get(0));
   Type type(&scope, self.type());
   return typeValues(thread, type);
+}
+
+RawObject UnderBuiltinsModule::underTypeInit(Thread* thread, Frame* frame,
+                                             word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Type type(&scope, args.get(0));
+  Str name(&scope, args.get(1));
+  Tuple bases(&scope, args.get(2));
+  Dict dict(&scope, args.get(3));
+  Tuple mro(&scope, thread->runtime()->emptyTuple());
+  if (args.get(4).isUnbound()) {
+    Object mro_obj(&scope, computeMro(thread, type, bases));
+    if (mro_obj.isError()) return *mro_obj;
+    mro = *mro_obj;
+  } else {
+    mro = args.get(4);
+  }
+  return typeInit(thread, type, name, bases, dict, mro);
 }
 
 RawObject UnderBuiltinsModule::underUnimplemented(Thread* thread, Frame* frame,

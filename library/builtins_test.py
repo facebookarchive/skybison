@@ -7140,6 +7140,34 @@ class TypeTests(unittest.TestCase):
         self.assertIs(str.__subclasscheck__(object), False)
         self.assertIs(type.__subclasscheck__(type, object), False)
 
+    def test_dunder_new_with_one_arg_returns_type_of_arg(self):
+        class C:
+            pass
+
+        self.assertIs(type.__new__(type, 1), int)
+        self.assertIs(type.__new__(type, "hello"), str)
+        self.assertIs(type.__new__(type, C()), C)
+
+    def test_dunder_new_with_non_type_cls_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type.__new__(1, "X", (object,), {})
+
+    def test_dunder_new_with_non_str_name_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type.__new__(type, 1, (object,), {})
+
+    def test_dunder_new_with_non_tuple_bases_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type.__new__(type, "X", [object], {})
+
+    def test_dunder_new_with_non_dict_type_dict_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            type.__new__(type, "X", (object,), 1)
+
+    def test_dunder_new_returns_type_instance(self):
+        X = type.__new__(type, "X", (object,), {})
+        self.assertIsInstance(X, type)
+
     def test_dunder_subclasses_with_leaf_type_returns_empty_list(self):
         class C:
             pass

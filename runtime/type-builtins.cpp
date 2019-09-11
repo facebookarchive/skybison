@@ -184,32 +184,13 @@ static void addSubclass(Thread* thread, const Type& base, const Type& type) {
   runtime->dictAtPut(thread, subclasses, key, value);
 }
 
-RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
-                  const Tuple& bases, const Dict& dict) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Type type(&scope, runtime->newTypeWithMetaclass(metaclass_id));
+RawObject typeInit(Thread* thread, const Type& type, const Str& name,
+                   const Tuple& bases, const Dict& dict, const Tuple& mro) {
   type.setName(*name);
-  type.setBases(bases.length() > 0 ? *bases : runtime->implicitBases());
+  Runtime* runtime = thread->runtime();
+  type.setMro(*mro);
 
-  // Compute MRO
-  Object maybe_mro(&scope, Error::error());
-  if (metaclass_id == LayoutId::kType) {
-    // Fast path: call computeMro directly when metaclass is type
-    maybe_mro = computeMro(thread, type, bases);
-  } else {
-    maybe_mro = thread->invokeMethodStatic1(metaclass_id, SymbolId::kMro, type);
-    if (maybe_mro.isError()) {
-      DCHECK(!maybe_mro.isErrorNotFound(), "all metaclasses must define mro()");
-      return *maybe_mro;
-    }
-    maybe_mro = sequenceAsTuple(thread, maybe_mro);
-  }
-  if (maybe_mro.isError()) {
-    return *maybe_mro;
-  }
-  type.setMro(*maybe_mro);
-
+  HandleScope scope(thread);
   // Copy dict to new type_dict and wrap values in ValueCells.
   Dict type_dict(&scope, runtime->newDictWithSize(dict.numItems()));
   {
@@ -263,7 +244,6 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
   }
 
   // Copy down class flags from bases
-  Tuple mro(&scope, *maybe_mro);
   word flags = 0;
   for (word i = 1; i < mro.length(); i++) {
     Type cur(&scope, mro.at(i));
@@ -273,6 +253,19 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
       static_cast<Type::Flag>(flags & ~Type::Flag::kIsAbstract),
       base_layout_id);
   return *type;
+}
+
+RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
+                  const Tuple& bases, const Dict& dict) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Type type(&scope, runtime->newTypeWithMetaclass(metaclass_id));
+  type.setName(*name);
+  Object mro_obj(&scope, computeMro(thread, type, bases));
+  if (mro_obj.isError()) return *mro_obj;
+  Tuple mro(&scope, *mro_obj);
+  type.setBases(bases.length() > 0 ? *bases : runtime->implicitBases());
+  return typeInit(thread, type, name, bases, dict, mro);
 }
 
 // NOTE: Keep the order of these type attributes same as the one from
@@ -363,7 +356,6 @@ const BuiltinAttribute TypeBuiltins::kAttributes[] = {
 const BuiltinMethod TypeBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderCall, dunderCall},
     {SymbolId::kDunderGetattribute, dunderGetattribute},
-    {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderSetattr, dunderSetattr},
     {SymbolId::kDunderSubclasses, dunderSubclasses},
     {SymbolId::kMro, mro},
@@ -454,24 +446,6 @@ RawObject TypeBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
                                 &type_name, &name);
   }
   return *result;
-}
-
-RawObject TypeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Type metaclass(&scope, args.get(0));
-  LayoutId metaclass_id = Layout::cast(metaclass.instanceLayout()).id();
-  // If the first argument is exactly type, and there are no other arguments,
-  // then this call acts like a "typeof" operator, and returns the type of the
-  // argument.
-  if (args.get(2).isUnbound() && args.get(3).isUnbound() &&
-      metaclass_id == LayoutId::kType) {
-    return thread->runtime()->typeOf(args.get(1));
-  }
-  Str name(&scope, args.get(1));
-  Tuple bases(&scope, args.get(2));
-  Dict dict(&scope, args.get(3));
-  return typeNew(thread, metaclass_id, name, bases, dict);
 }
 
 RawObject TypeBuiltins::dunderSetattr(Thread* thread, Frame* frame,
