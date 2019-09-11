@@ -8,11 +8,6 @@
 
 namespace python {
 
-// If seq is a tuple (not a tuple subtype), return it. Otherwise, attempt to
-// treat it as an iterable object and return a tuple with its elements. May
-// return Error if an exception is raised at any point.
-RawObject sequenceAsTuple(Thread* thread, const Object& seq);
-
 // Return the next item from the iterator, or Error if there are no items left.
 RawObject tupleIteratorNext(Thread* thread, const TupleIterator& iter);
 

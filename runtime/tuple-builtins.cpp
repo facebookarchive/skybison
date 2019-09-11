@@ -14,20 +14,6 @@
 
 namespace python {
 
-// TODO(T48594086): Remove this function. The only two callers can be
-// re-written.
-RawObject sequenceAsTuple(Thread* thread, const Object& seq) {
-  if (seq.isTuple()) return *seq;
-  if (seq.isList()) {
-    HandleScope scope(thread);
-    List list(&scope, *seq);
-    Tuple items(&scope, list.items());
-    return thread->runtime()->tupleSubseq(thread, items, 0, list.numItems());
-  }
-
-  return thread->invokeFunction1(SymbolId::kBuiltins, SymbolId::kTuple, seq);
-}
-
 RawObject tupleIteratorNext(Thread* thread, const TupleIterator& iter) {
   word idx = iter.index();
   if (idx == iter.tupleLength()) {

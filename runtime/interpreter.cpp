@@ -190,7 +190,14 @@ RawObject Interpreter::prepareCallableEx(Thread* thread, Frame* frame,
   Object args_obj(&scope, frame->peek(args_idx));
   if (!args_obj.isTuple()) {
     // Make sure the argument sequence is a tuple.
-    args_obj = sequenceAsTuple(thread, args_obj);
+    if (args_obj.isList()) {
+      List list(&scope, *args_obj);
+      Tuple list_items(&scope, list.items());
+      args_obj = thread->runtime()->tupleSubseq(thread, list_items, 0,
+                                                list.numItems());
+    }
+    args_obj = thread->invokeFunction1(SymbolId::kBuiltins, SymbolId::kTuple,
+                                       args_obj);
     if (args_obj.isError()) return *args_obj;
     frame->setValueAt(*args_obj, args_idx);
   }
