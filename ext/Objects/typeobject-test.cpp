@@ -1216,26 +1216,6 @@ r1 = b.__setattr__("attr", 1234)
   EXPECT_TRUE(isUnicodeEqualsCStr(PyTuple_GetItem(del_attr, 1), "other attr"));
 }
 
-TEST_F(TypeExtensionApiTest, SetattrSlotIsIgnored) {
-  setattrfunc func = [](PyObject*, char*, PyObject*) {
-    EXPECT_TRUE(false) << "Shouldn't be called";
-    return 0;
-  };
-  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_tp_setattr, func));
-
-  // TODO(T40700664): Use PyRun_String() to inspect the exception more directly.
-  ASSERT_EQ(PyRun_SimpleString(R"(
-b = Bar()
-try:
-  # This should complain that there's no such attribute instead of calling
-  # our slot.
-  b.__setattr__("attr", 123)
-except AttributeError:
-  pass
-  )"),
-            0);
-}
-
 TEST_F(TypeExtensionApiTest, CallRichcompareSlotFromManagedCode) {
   richcmpfunc cmp_func = [](PyObject* self, PyObject* other, int op) {
     PyObjectPtr op_obj(PyLong_FromLong(op));
