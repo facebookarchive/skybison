@@ -57,13 +57,14 @@ void icInsertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
 void icDeleteDependentInValueCell(Thread* thread, const ValueCell& value_cell,
                                   const Object& dependent);
 
-// Deletes a function dependency on an attribute affected by a change to some
-// type.
-void icDoesCacheNeedInvalidationAfterUpdate(Thread* thread,
-                                            const Type& cached_type,
-                                            const Str& attribute_name,
-                                            const Type& updated_type,
-                                            const Object& dependent);
+// Delete dependencies from attributes shadowed by a type attribute update made
+// to updated_type.attribute_name among dependencies created for
+// cached_type.attribute_name.
+void icDeleteDependentFromShadowedAttributes(Thread* thread,
+                                             const Type& cached_type,
+                                             const Str& attribute_name,
+                                             const Type& updated_type,
+                                             const Object& dependent);
 
 // Returns true if a cached attribute from type cached_type is affected by
 // an update to type[attribute_name] during MRO lookups.

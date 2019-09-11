@@ -256,24 +256,24 @@ TEST_F(
   type_a.setMro(*mro);
 
   // Try to delete dependent_y under name "foo". Nothing happens.
-  icDoesCacheNeedInvalidationAfterUpdate(thread_, type_a, foo_name, type_a,
-                                         dependent_y);
+  icDeleteDependentFromShadowedAttributes(thread_, type_a, foo_name, type_a,
+                                          dependent_y);
   EXPECT_EQ(WeakLink::cast(foo_in_a.dependencyLink()).referent(), *dependent_x);
   EXPECT_EQ(WeakLink::cast(bar_in_a.dependencyLink()).referent(), *dependent_y);
 
   // Try to delete dependent_x under name "bar". Nothing happens.
-  icDoesCacheNeedInvalidationAfterUpdate(thread_, type_a, bar_name, type_a,
-                                         dependent_x);
+  icDeleteDependentFromShadowedAttributes(thread_, type_a, bar_name, type_a,
+                                          dependent_x);
   EXPECT_EQ(WeakLink::cast(foo_in_a.dependencyLink()).referent(), *dependent_x);
   EXPECT_EQ(WeakLink::cast(bar_in_a.dependencyLink()).referent(), *dependent_y);
 
-  icDoesCacheNeedInvalidationAfterUpdate(thread_, type_a, foo_name, type_a,
-                                         dependent_x);
+  icDeleteDependentFromShadowedAttributes(thread_, type_a, foo_name, type_a,
+                                          dependent_x);
   EXPECT_TRUE(foo_in_a.dependencyLink().isNoneType());
   EXPECT_EQ(WeakLink::cast(bar_in_a.dependencyLink()).referent(), *dependent_y);
 
-  icDoesCacheNeedInvalidationAfterUpdate(thread_, type_a, bar_name, type_a,
-                                         dependent_y);
+  icDeleteDependentFromShadowedAttributes(thread_, type_a, bar_name, type_a,
+                                          dependent_y);
   EXPECT_TRUE(foo_in_a.dependencyLink().isNoneType());
   EXPECT_TRUE(bar_in_a.dependencyLink().isNoneType());
 }
@@ -334,8 +334,8 @@ TEST_F(IcTest,
   type_c.setMro(*mro);
 
   // Delete dependent_x for an update to B.foo.
-  icDoesCacheNeedInvalidationAfterUpdate(thread_, type_c, foo_name, type_b,
-                                         dependent_x);
+  icDeleteDependentFromShadowedAttributes(thread_, type_c, foo_name, type_b,
+                                          dependent_x);
 
   // B.foo's update doesn't affect the cache for A.foo since the update does not
   // shadow a.foo where type(a) == A.

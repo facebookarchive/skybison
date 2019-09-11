@@ -103,11 +103,11 @@ void icDeleteDependentInValueCell(Thread* thread, const ValueCell& value_cell,
   }
 }
 
-void icDoesCacheNeedInvalidationAfterUpdate(Thread* thread,
-                                            const Type& cached_type,
-                                            const Str& attribute_name,
-                                            const Type& updated_type,
-                                            const Object& dependent) {
+void icDeleteDependentFromShadowedAttributes(Thread* thread,
+                                             const Type& cached_type,
+                                             const Str& attribute_name,
+                                             const Type& updated_type,
+                                             const Object& dependent) {
   DCHECK(icIsCachedAttributeAffectedByUpdatedType(thread, cached_type,
                                                   attribute_name, updated_type),
          "icIsTypeAttrFromMro must return true");
@@ -207,8 +207,8 @@ void icDeleteCacheForTypeAttrInDependent(Thread* thread,
     // dependent since such dependencies are gone now.
     // TODO(T47281253): Call this per (cached_type, attribute_name) after
     // cache invalidation.
-    icDoesCacheNeedInvalidationAfterUpdate(thread, cached_type, updated_attr,
-                                           updated_type, dependent);
+    icDeleteDependentFromShadowedAttributes(thread, cached_type, updated_attr,
+                                            updated_type, dependent);
   }
 }
 
