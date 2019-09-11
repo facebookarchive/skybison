@@ -243,16 +243,6 @@ def _releaseLock():
         _lock.release()
 
 
-# TODO(T52905957): Remove. This is part of a work-around for missing __dict__ on
-# instances.
-class _PseudoInstanceDict:
-    def __init__(self, obj):
-        self.obj = obj
-
-    def __getitem__(self, name):
-        return getattr(self.obj, name)
-
-
 #---------------------------------------------------------------------------
 #   The logging record
 #---------------------------------------------------------------------------
@@ -340,10 +330,6 @@ class LogRecord(object):
             self.process = os.getpid()
         else:
             self.process = None
-
-        # TODO(T52905957): Remove. This works around missing support for
-        # __dict__ on instances.
-        self.__dict__ = _PseudoInstanceDict(self)
 
     def __str__(self):
         return '<LogRecord: %s, %s, %s, %s, "%s">'%(self.name, self.levelno,
