@@ -2064,7 +2064,7 @@ TEST_F(TypeExtensionApiTest, MemberCharPyro) {
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
 r1 = b.t_char
-b.t_cahr = 'b'
+b.t_char = 'b'
 r2 = b.t_char
 )"),
             0);
@@ -2073,7 +2073,7 @@ r2 = b.t_char
   EXPECT_TRUE(isUnicodeEqualsCStr(r1, "a"));
   PyObjectPtr r2(moduleGet("__main__", "r2"));
   ASSERT_EQ(PyUnicode_Check(r2), 1);
-  EXPECT_TRUE(isUnicodeEqualsCStr(r1, "a"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(r2, "b"));
 }
 
 TEST_F(TypeExtensionApiTest, MemberStringPyro) {

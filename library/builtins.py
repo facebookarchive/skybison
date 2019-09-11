@@ -958,7 +958,7 @@ def _new_member_set_char(offset):
             raise TypeError("attribute value type must be str")
         if len(value) != 1:
             raise TypeError("attribute str length must be 1")
-        _set_member_integral(_pyobject_offset(instance, offset), value, 1)
+        _set_member_integral(_pyobject_offset(instance, offset), ord(value), 1)
 
     return setter
 
