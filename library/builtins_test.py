@@ -3229,6 +3229,11 @@ class ListTests(unittest.TestCase):
             str(context.exception),
         )
 
+    def test_clear_with_empty_list_does_nothing(self):
+        ls = []
+        self.assertIsNone(ls.clear())
+        self.assertEqual(len(ls), 0)
+
     def test_copy_with_non_list_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             list.copy(None)

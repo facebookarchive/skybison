@@ -5234,6 +5234,7 @@ inline void RawList::setNumItems(word num_items) const {
 }
 
 inline void RawList::clearFrom(word idx) const {
+  if (numItems() == 0) return;
   DCHECK_INDEX(idx, numItems());
   std::memset(reinterpret_cast<byte*>(RawTuple::cast(items()).address()) +
                   idx * kPointerSize,
