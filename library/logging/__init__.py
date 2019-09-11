@@ -757,7 +757,10 @@ class Filterer(object):
 #   Handler classes and functions
 #---------------------------------------------------------------------------
 
-_handlers = weakref.WeakValueDictionary()  #map of handler names to handlers
+# TODO(T53772056): WeakValueDictionary() does not work properly until we support
+# ref subclassing.
+# _handlers = weakref.WeakValueDictionary()  #map of handler names to handlers
+_handlers = dict()
 _handlerList = [] # added to allow handlers to be removed in reverse of order initialized
 
 def _removeHandlerRef(wr):
