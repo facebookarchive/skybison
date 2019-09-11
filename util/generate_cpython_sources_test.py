@@ -5,6 +5,15 @@ import generate_cpython_sources as gcs
 
 
 class TestSymbolRegex(unittest.TestCase):
+    def test_typdef_regex_PyCFunctionFast_returns_symbol(self):
+        lines = """
+typedef PyObject* (*_PyCFunctionFast)(PyObject* self, PyObject** args,
+Py_ssize_t nargs, PyObject* kwnames);
+"""
+        symbols_dict = gcs.find_symbols_in_file(lines, gcs.HEADER_SYMBOL_REGEX)
+        res = symbols_dict["typedef"]
+        self.assertListEqual(res, ["_PyCFunctionFast"])
+
     def test_typedef_regex_returns_multiple_symbols(self):
         lines = """
 typedef type1 Foo; // Comment
@@ -155,6 +164,20 @@ PY_EXPORT PyObject *baz_function_with_many_args(PyObject *, PyObject *,
 
 
 class TestDefinitionRegex(unittest.TestCase):
+    def test_PyCFunctionFast_definition_is_replaced(self):
+        original_lines = """
+typedef PyObject *(*_PyCFunctionFast)(PyObject *self, PyObject **args,
+                                            Py_ssize_t nargs, PyObject *kwnames);
+"""
+        expected_lines = """
+
+"""
+        symbols_to_replace = {"typedef": ["_PyCFunctionFast"]}
+        res = gcs.modify_file(
+            original_lines, symbols_to_replace, gcs.HEADER_DEFINITIONS_REGEX
+        )
+        self.assertEqual(res, expected_lines)
+
     def test_pytypeobject_typedef_is_modified_to_struct_definition(self):
         original_lines = """
 typedef struct _typeobject {

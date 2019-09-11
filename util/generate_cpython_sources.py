@@ -15,6 +15,12 @@ HEADER_SYMBOL_REGEX = {
     "typedef": [
         SymbolRegex(regex=re.compile("^typedef struct.*;", re.MULTILINE), pos=3),
         SymbolRegex(regex=re.compile("^typedef(?! struct).*;", re.MULTILINE), pos=2),
+        SymbolRegex(
+            regex=re.compile(
+                "^typedef PyObject\* \(\*_PyCFunctionFast.*\n.*;", re.MULTILINE
+            ),
+            pos=2,
+        ),
         SymbolRegex(regex=re.compile("^} .*;", re.MULTILINE), pos=-1),
     ],
     "struct": [SymbolRegex(regex=re.compile("^struct.*{", re.MULTILINE), pos=1)],
@@ -48,6 +54,12 @@ HEADER_DEFINITIONS_REGEX = {
         SymbolRegex(regex=re.compile("^\s*typedef struct.*;", re.MULTILINE), pos=3),
         SymbolRegex(
             regex=re.compile("^\s*typedef(?! struct).*;.*\n", re.MULTILINE), pos=2
+        ),
+        SymbolRegex(
+            regex=re.compile(
+                "^typedef PyObject \*\(\*_PyCFunctionFast.*\n.*;", re.MULTILINE
+            ),
+            pos=2,
         ),
         SymbolRegex(
             regex=re.compile("^typedef.*{(.|\n)*?}.*;.*\n", re.MULTILINE), pos=-1
