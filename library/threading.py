@@ -28,8 +28,25 @@ class Condition:
 
 
 class Event:
-    def __init__(self, *args, **kwargs):
-        _unimplemented()
+    def __init__(self):
+        self._flag = False
+
+    def clear(self):
+        self._flag = False
+
+    def is_set(self):
+        return self._flag
+
+    isSet = is_set
+
+    def set(self):
+        self._flag = True
+
+    def wait(self, timeout):
+        if not self._flag:
+            # Not much of a point waiting for someone to set the flag in a
+            # single-threaded setting, let's abort...
+            _unimplemented()
 
 
 def RLock(*args, **kwargs):
