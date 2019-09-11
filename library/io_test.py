@@ -1419,5 +1419,28 @@ class IncrementalNewlineDecoderTests(unittest.TestCase):
         self.assertRaises(UserWarning, decoder.reset)
 
 
+class UnderTextIOBaseTests(unittest.TestCase):
+    def test_read_in_dict(self):
+        self.assertIn("read", _io._TextIOBase.__dict__)
+
+    def test_write_in_dict(self):
+        self.assertIn("write", _io._TextIOBase.__dict__)
+
+    def test_readline_in_dict(self):
+        self.assertIn("readline", _io._TextIOBase.__dict__)
+
+    def test_detach_in_dict(self):
+        self.assertIn("detach", _io._TextIOBase.__dict__)
+
+    def test_encoding_in_dict(self):
+        self.assertIn("encoding", _io._TextIOBase.__dict__)
+
+    def test_newlines_in_dict(self):
+        self.assertIn("newlines", _io._TextIOBase.__dict__)
+
+    def test_errors_in_dict(self):
+        self.assertIn("errors", _io._TextIOBase.__dict__)
+
+
 if __name__ == "__main__":
     unittest.main()

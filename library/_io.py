@@ -461,10 +461,29 @@ class _IOBase(bootstrap=True):
 
 
 class _TextIOBase(_IOBase):
-    """unimplemented"""
+    def read(self, size=-1):
+        self._unsupported("read")
 
-    def __init__(self, *args, **kwargs):
-        _unimplemented()
+    def write(self, s):
+        self._unsupported("write")
+
+    def readline(self):
+        self._unsupported("readline")
+
+    def detach(self):
+        self._unsupported("detach")
+
+    @property
+    def encoding(self):
+        return None
+
+    @property
+    def newlines(self):
+        return None
+
+    @property
+    def errors(self):
+        return None
 
 
 class _RawIOBase(bootstrap=True):
