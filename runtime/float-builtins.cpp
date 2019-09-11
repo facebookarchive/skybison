@@ -629,7 +629,7 @@ RawObject FloatBuiltins::dunderPow(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfFloat(*self)) {
     return thread->raiseRequiresType(self, SymbolId::kFloat);
   }
-  if (!args.get(2).isUnbound()) {
+  if (!args.get(2).isNoneType()) {
     return thread->raiseWithFmt(
         LayoutId::kTypeError,
         "pow() 3rd argument not allowed unless all arguments are integers");

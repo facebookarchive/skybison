@@ -2275,7 +2275,7 @@ class float(bootstrap=True):
     def __new__(cls, arg=0.0) -> float:
         pass
 
-    def __pow__(self, y, z=_Unbound) -> float:
+    def __pow__(self, other, mod=None) -> float:
         pass
 
     def __radd__(self, n: float) -> float:
@@ -2324,6 +2324,14 @@ class float(bootstrap=True):
 
     def __round__(self, ndigits=None):
         pass
+
+    def __rpow__(self, other, mod=None):
+        _float_guard(self)
+        if _float_check(other):
+            return float.__pow__(other, self, mod)
+        if _int_check(other):
+            return float.__pow__(int.__float__(other), self, mod)
+        return NotImplemented
 
     def __rsub__(self, n: float) -> float:
         # n - self == -self + n.

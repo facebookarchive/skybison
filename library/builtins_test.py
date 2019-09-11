@@ -1913,6 +1913,17 @@ class FloatTests(unittest.TestCase):
         self.assertIs(type(result), float)
         self.assertEqual(result, 16.0)
 
+    def test_dunder_pow_with_third_arg_int_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            float.__pow__(2.0, 4.0, 4.0)
+        self.assertIn(
+            "pow() 3rd argument not allowed unless all arguments are integers",
+            str(context.exception),
+        )
+
+    def test_dunder_pow_with_third_arg_none_returns_power_of_first_two_args(self):
+        self.assertEqual(float.__pow__(2.0, 4.0, None), 16.0)
+
     def test_dunder_rdivmod_raises_type_error(self):
         with self.assertRaises(TypeError):
             float.__rdivmod__(1, 1.0)
@@ -2069,6 +2080,28 @@ class FloatTests(unittest.TestCase):
         with self.assertRaises(OverflowError) as context:
             float.__round__(float_max, -308)
         self.assertEqual(str(context.exception), "rounded value too large to represent")
+
+    def test_dunder_rpow_with_non_float_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            float.__rpow__(None, 2.0)
+
+    def test_dunder_rpow_with_float_float_returns_result_from_pow_with_swapped_args(
+        self
+    ):
+        self.assertEqual(float.__rpow__(2.0, 5.0), float.__pow__(5.0, 2.0))
+
+    def test_dunder_rpow_with_float_int_returns_result_from_pow_with_swapped_args(self):
+        result = float.__rpow__(2.0, 5)
+        self.assertIsInstance(result, float)
+        self.assertEqual(result, float.__pow__(5.0, 2.0))
+
+    def test_dunder_rpow_with_third_arg_int_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            float.__rpow__(2.0, 4.0, 4.0)
+        self.assertIn(
+            "pow() 3rd argument not allowed unless all arguments are integers",
+            str(context.exception),
+        )
 
     def test_dunder_trunc_returns_int(self):
         self.assertEqual(float.__trunc__(0.0), 0)
