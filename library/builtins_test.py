@@ -3229,6 +3229,62 @@ class ListTests(unittest.TestCase):
             str(context.exception),
         )
 
+    def test_dunder_imul_with_non_list_raises_type_error(self):
+        with self.assertRaisesRegex(TypeError, "'__imul__' requires a 'list' object"):
+            list.__imul__(False, 3)
+
+    def test_dunder_imul_with_non_int_raises_type_error(self):
+        result = []
+        with self.assertRaises(TypeError):
+            list.__imul__(result, "x")
+
+    def test_dunder_imul_with_empty_returns_self(self):
+        orig = []
+        result = orig.__imul__(3)
+        self.assertIs(result, orig)
+
+    def test_dunder_imul_with_empty_self_and_zero_repeat_does_nothing(self):
+        orig = []
+        result = orig.__imul__(0)
+        self.assertIs(result, orig)
+        self.assertEqual(len(result), 0)
+
+    def test_dunder_imul_with_zero_repeat_clears_list(self):
+        orig = [1, 2, 3]
+        result = orig.__imul__(0)
+        self.assertIs(result, orig)
+        self.assertEqual(len(result), 0)
+
+    def test_dunder_imul_with_negative_repeat_clears_list(self):
+        orig = [1, 2, 3]
+        result = orig.__imul__(-3)
+        self.assertIs(result, orig)
+        self.assertEqual(len(result), 0)
+
+    def test_dunder_imul_with_repeat_equals_one_returns_self(self):
+        orig = [1, 2, 3]
+        result = orig.__imul__(1)
+        self.assertIs(result, orig)
+
+    def test_dunder_imul_with_too_big_repeat_raises_overflow_error(self):
+        orig = [1, 2, 3]
+        self.assertRaisesRegex(
+            OverflowError,
+            "cannot fit 'int' into an index-sized integer",
+            orig.__imul__,
+            100 ** 100,
+        )
+
+    def test_dunder_imul_with_too_big_repeat_raises_memory_error(self):
+        orig = [1, 2, 3] * 10000
+        self.assertRaises(MemoryError, orig.__imul__, 0x7FFFFFFFFFFFFFF)
+
+    def test_dunder_imul_with_repeat_repeats_contents(self):
+        orig = [1, 2, 3]
+        result = orig.__imul__(2)
+        self.assertIs(result, orig)
+        self.assertEqual(result, [1, 2, 3, 1, 2, 3])
+
     def test_clear_with_empty_list_does_nothing(self):
         ls = []
         self.assertIsNone(ls.clear())

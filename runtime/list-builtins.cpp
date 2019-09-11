@@ -167,6 +167,7 @@ const BuiltinMethod ListBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderAdd, dunderAdd},
     {SymbolId::kDunderContains, dunderContains},
+    {SymbolId::kDunderImul, dunderImul},
     {SymbolId::kDunderIter, dunderIter},
     {SymbolId::kDunderLen, dunderLen},
     {SymbolId::kDunderMul, dunderMul},
@@ -390,6 +391,48 @@ RawObject ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
   }
   return thread->raiseWithFmt(LayoutId::kValueError,
                               "list.remove(x) x not in list");
+}
+
+RawObject ListBuiltins::dunderImul(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  RawObject other = args.get(1);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfList(*self)) {
+    return thread->raiseRequiresType(self, SymbolId::kList);
+  }
+  Object count_index(&scope, args.get(1));
+  Object count_obj(&scope, intFromIndex(thread, count_index));
+  if (count_obj.isError()) return *count_obj;
+  Int count_int(&scope, intUnderlying(thread, count_obj));
+  word count = count_int.asWordSaturated();
+  if (!SmallInt::isValid(count)) {
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "cannot fit '%T' into an index-sized integer",
+                                &count_index);
+  }
+  word ntimes = SmallInt::cast(other).value();
+  if (ntimes == 1) {
+    return *self;
+  }
+  List list(&scope, *self);
+  if (ntimes <= 0) {
+    list.clearFrom(0);
+    return *list;
+  }
+  word new_length;
+  word len = list.numItems();
+  if (__builtin_mul_overflow(len, ntimes, &new_length) ||
+      !SmallInt::isValid(new_length)) {
+    return thread->raiseMemoryError();
+  }
+  runtime->listEnsureCapacity(thread, list, new_length);
+  list.setNumItems(new_length);
+  for (word i = 0; i < ntimes; i++) {
+    list.replaceFromWith(i * len, *list, len);
+  }
+  return *list;
 }
 
 RawObject ListBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {

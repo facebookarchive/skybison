@@ -2972,6 +2972,9 @@ class list(bootstrap=True):
     def __mul__(self, other):
         pass
 
+    def __imul__(self, other):
+        pass
+
     def __new__(cls, iterable=()):
         pass
 
