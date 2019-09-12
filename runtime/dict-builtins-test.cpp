@@ -29,7 +29,13 @@ TEST_F(DictBuiltinsTest, DictAtGrowsToInitialCapacity) {
   EXPECT_EQ(dict.capacity(), expected);
 }
 
-TEST_F(DictBuiltinsTest, ClearRemovesAllElements) {
+TEST_F(DictBuiltinsTest, ClearWithEmptyDictIsNoop) {
+  HandleScope scope(thread_);
+  Dict dict(&scope, runtime_.newDict());
+  EXPECT_EQ(runBuiltin(DictBuiltins::clear, dict), NoneType::object());
+}
+
+TEST_F(DictBuiltinsTest, ClearWithNonEmptyDictRemovesAllElements) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   pass

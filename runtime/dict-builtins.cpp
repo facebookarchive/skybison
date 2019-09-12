@@ -270,6 +270,9 @@ RawObject DictBuiltins::clear(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self, SymbolId::kDict);
   }
   Dict dict(&scope, *self);
+  if (dict.capacity() == 0) {
+    return NoneType::object();
+  }
   dict.setNumItems(0);
   MutableTuple data(&scope, dict.data());
   data.fill(NoneType::object());
