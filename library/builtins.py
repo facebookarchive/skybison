@@ -474,6 +474,14 @@ class instance_proxy:
         _instance_delattr(instance, key)
         return value
 
+    def setdefault(self, key, default=None):
+        instance = self._instance
+        value = _instance_getattr(instance, key)
+        if value is not _Unbound:
+            return value
+        _instance_setattr(instance, key, default)
+        return default
+
 
 class object(bootstrap=True):  # noqa: E999
     @_property

@@ -4550,6 +4550,39 @@ class ObjectTests(unittest.TestCase):
         with self.assertRaisesRegex(AttributeError, "bar"):
             instance.bar
 
+    def test_dunder_dict_setdefault_with_nonexistent_attr_sets_none(self):
+        class C:
+            pass
+
+        instance = C()
+        d = instance.__dict__
+        self.assertIsNone(d.setdefault("foo"))
+        self.assertIsNone(d["foo"])
+        self.assertIsNone(instance.foo)
+
+    def test_dunder_dict_setdefault_with_nonexistent_attr_sets_default(self):
+        class C:
+            pass
+
+        instance = C()
+        d = instance.__dict__
+        value = "bar"
+        self.assertIs(d.setdefault("foo", value), value)
+        self.assertIs(d["foo"], value)
+        self.assertIs(instance.foo, value)
+
+    def test_dunder_dict_setdefault_with_extant_attr_returns_value(self):
+        class C:
+            pass
+
+        instance = C()
+        value = "bar"
+        instance.foo = value
+        d = instance.__dict__
+        self.assertIs(d.setdefault("foo"), value)
+        self.assertIs(d["foo"], value)
+        self.assertIs(instance.foo, value)
+
 
 class OctTests(unittest.TestCase):
     def test_returns_string(self):
