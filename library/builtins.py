@@ -195,9 +195,7 @@ class function(bootstrap=True):
         pass
 
     def __repr__(self):
-        # TODO(T32655200): Replace 0x with #x when formatting language is
-        # implemented
-        return f"<function {self.__name__} at 0x{_address(self)}>"
+        return f"<function {self.__name__} at {_address(self):#x}>"
 
     def __setattr__(self, name, value):
         pass
@@ -495,9 +493,7 @@ class object(bootstrap=True):  # noqa: E999
         pass
 
     def __repr__(self):
-        # TODO(T32655200): Replace with #x when formatting language is
-        # implemented
-        return f"<{_type(self).__name__} object at {_address(self)}>"
+        return f"<{_type(self).__name__} object at {_address(self):#x}>"
 
     def __setattr__(self, name, value):
         pass
@@ -2001,7 +1997,7 @@ class coroutine(bootstrap=True):
         pass
 
     def __repr__(self):
-        return f"<coroutine object {self.__qualname__} at {_address(self)}>"
+        return f"<coroutine object {self.__qualname__} at {_address(self):#x}>"
 
 
 credits = ""
@@ -2478,7 +2474,7 @@ class generator(bootstrap=True):
         pass
 
     def __repr__(self):
-        return f"<generator object {self.__qualname__} at {_address(self)}>"
+        return f"<generator object {self.__qualname__} at {_address(self):#x}>"
 
 
 @_patch
