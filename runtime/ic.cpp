@@ -258,6 +258,7 @@ void icUpdateBinop(RawTuple caches, word index, LayoutId left_layout_id,
                    SmallInt::fromWord(key_high_bits << kBitsPerByte |
                                       static_cast<word>(flags)));
       caches.atPut(i + kIcEntryValueOffset, value);
+      return;
     }
   }
 }

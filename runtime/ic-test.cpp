@@ -776,6 +776,11 @@ TEST_F(IcTest, IcUpdateBinopSetsEmptyEntry) {
   HandleScope scope(thread_);
 
   Tuple caches(&scope, runtime_.newTuple(kIcPointersPerCache));
+  caches.atPut(1 * kIcPointersPerEntry + kIcEntryKeyOffset,
+               SmallInt::fromWord(10));
+  caches.atPut(1 * kIcPointersPerEntry + kIcEntryValueOffset,
+               SmallInt::fromWord(-10));
+
   Object value(&scope, runtime_.newInt(-44));
   icUpdateBinop(*caches, 0, LayoutId::kSmallStr, LayoutId::kLargeBytes, *value,
                 IC_BINOP_REFLECTED);
@@ -783,6 +788,12 @@ TEST_F(IcTest, IcUpdateBinopSetsEmptyEntry) {
       caches.at(kIcEntryKeyOffset),
       binopKey(LayoutId::kSmallStr, LayoutId::kLargeBytes, IC_BINOP_REFLECTED));
   EXPECT_TRUE(isIntEqualsWord(caches.at(kIcEntryValueOffset), -44));
+
+  // Filling an empty entry doesn't overwrite others.
+  EXPECT_TRUE(isIntEqualsWord(
+      caches.at(1 * kIcPointersPerEntry + kIcEntryKeyOffset), 10));
+  EXPECT_TRUE(isIntEqualsWord(
+      caches.at(1 * kIcPointersPerEntry + kIcEntryValueOffset), -10));
 }
 
 TEST_F(IcTest, IcUpdateBinopSetsExistingEntry) {
