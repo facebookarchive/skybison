@@ -464,6 +464,16 @@ class instance_proxy:
     def keys(self):
         return _instance_keys(self._instance)
 
+    def pop(self, key, default=_Unbound):
+        instance = self._instance
+        value = _instance_getattr(instance, key)
+        if value is _Unbound:
+            if default is _Unbound:
+                raise KeyError(key)
+            return default
+        _instance_delattr(instance, key)
+        return value
+
 
 class object(bootstrap=True):  # noqa: E999
     @_property

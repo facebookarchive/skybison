@@ -4494,6 +4494,41 @@ class ObjectTests(unittest.TestCase):
         with self.assertRaisesRegex(AttributeError, "foo"):
             instance.foo
 
+    def test_dunder_dict_pop_removes_and_returns_attribute(self):
+        class C:
+            pass
+
+        instance = C()
+        d = instance.__dict__
+        instance.foo = "bar"
+        self.assertEqual(d.pop("foo"), "bar")
+        self.assertNotIn("foo", d)
+        with self.assertRaisesRegex(AttributeError, "foo"):
+            instance.foo
+
+    def test_dunder_dict_pop_with_nonexistent_attr_returns_default(self):
+        class C:
+            pass
+
+        instance = C()
+        d = instance.__dict__
+        value = "bar"
+        self.assertIs(d.pop("foo", value), value)
+        self.assertNotIn("foo", d)
+        with self.assertRaisesRegex(AttributeError, "foo"):
+            instance.foo
+
+    def test_dunder_dict_pop_with_nonexistent_attr_raises_key_error(self):
+        class C:
+            pass
+
+        instance = C()
+        d = instance.__dict__
+        self.assertRaisesRegex(KeyError, "foo", d.pop, "foo")
+        self.assertNotIn("foo", d)
+        with self.assertRaisesRegex(AttributeError, "foo"):
+            instance.foo
+
     def test_dunder_dict_clear_removes_attributes(self):
         class C:
             pass
