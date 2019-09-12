@@ -428,6 +428,9 @@ class instance_proxy:
     def __init__(self, instance):
         self._instance = instance
 
+    def __iter__(self):
+        return self.keys().__iter__()
+
     def __len__(self):
         return len(self.keys())
 
@@ -453,6 +456,7 @@ class instance_proxy:
             _instance_setattr(instance, key, value)
 
     def items(self):
+        # TODO(emacs): Return an iterator.
         result = []
         instance = self._instance
         for key in self.keys():
@@ -462,6 +466,7 @@ class instance_proxy:
         return result
 
     def keys(self):
+        # TODO(emacs): Return an iterator.
         return _instance_keys(self._instance)
 
     def pop(self, key, default=_Unbound):

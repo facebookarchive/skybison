@@ -4494,6 +4494,19 @@ class ObjectTests(unittest.TestCase):
         with self.assertRaisesRegex(AttributeError, "foo"):
             instance.foo
 
+    def test_dunder_dict_dunder_iter_iterates_over_keys(self):
+        class C:
+            pass
+
+        instance = C()
+        d = instance.__dict__
+        instance.foo = "bar"
+        instance.bar = "baz"
+        keys = (*d.__iter__(),)
+        self.assertEqual(len(keys), 2)
+        self.assertIn("foo", keys)
+        self.assertIn("bar", keys)
+
     def test_dunder_dict_pop_removes_and_returns_attribute(self):
         class C:
             pass
