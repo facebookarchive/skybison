@@ -387,12 +387,12 @@ class RawObject {
   static const uword kPrimaryTagMask = (1 << kPrimaryTagBits) - 1;
   static const uword kImmediateTagMask = (1 << kImmediateTagBits) - 1;
 
-  RAW_OBJECT_COMMON(Object);
-
   // Cast this RawObject to another Raw* type with no runtime checks. Only used
   // in a few limited situations; most code should use Raw*::cast() instead.
   template <typename T>
   T rawCast() const;
+
+  RAW_OBJECT_COMMON(Object);
 
  private:
   // Zero-initializing raw_ gives RawSmallInt::fromWord(0).
@@ -474,8 +474,6 @@ class RawInt : public RawObject {
   bool isPositive() const;
   bool isZero() const;
 
-  RAW_OBJECT_COMMON(Int);
-
   // Indexing into digits
   uword digitAt(word index) const;
 
@@ -484,6 +482,8 @@ class RawInt : public RawObject {
 
   // Copies digits bytewise to `dst`. Returns number of bytes copied.
   word copyTo(byte* dst, word max_length) const;
+
+  RAW_OBJECT_COMMON(Int);
 };
 
 // Common `str` wrapper around RawSmallStr/RawLargeStr
