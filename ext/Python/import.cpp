@@ -1,3 +1,4 @@
+#include "capi-handles.h"
 #include "cpython-func.h"
 #include "imp-module.h"
 #include "int-builtins.h"

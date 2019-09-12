@@ -7,6 +7,7 @@
 
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
+#include "capi-handles.h"
 #include "dict-builtins.h"
 #include "exception-builtins.h"
 #include "float-builtins.h"

@@ -1,3 +1,4 @@
+#include "capi-handles.h"
 #include "cpython-func.h"
 #include "runtime.h"
 #include "slice-builtins.h"

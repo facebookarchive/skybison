@@ -15,6 +15,7 @@
 #include "bytecode.h"
 #include "bytes-builtins.h"
 #include "callback.h"
+#include "capi-handles.h"
 #include "code-builtins.h"
 #include "codecs-module.h"
 #include "complex-builtins.h"

@@ -2,6 +2,7 @@
 
 #include "builtins-module.h"
 #include "bytes-builtins.h"
+#include "capi-handles.h"
 #include "cpython-data.h"
 #include "cpython-func.h"
 #include "dict-builtins.h"

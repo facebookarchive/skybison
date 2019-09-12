@@ -2,6 +2,7 @@
 
 #include <cstdarg>
 
+#include "capi-handles.h"
 #include "cpython-data.h"
 #include "cpython-types.h"
 #include "runtime.h"

@@ -1,4 +1,5 @@
 #include "bytearray-builtins.h"
+#include "capi-handles.h"
 #include "runtime.h"
 
 namespace python {

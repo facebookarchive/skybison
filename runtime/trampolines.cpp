@@ -1,5 +1,6 @@
 #include "trampolines.h"
 
+#include "capi-handles.h"
 #include "frame.h"
 #include "globals.h"
 #include "handles.h"

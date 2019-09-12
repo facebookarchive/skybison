@@ -1,3 +1,4 @@
+#include "capi-handles.h"
 #include "module-builtins.h"
 #include "runtime.h"
 

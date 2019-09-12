@@ -1,3 +1,4 @@
+#include "capi-handles.h"
 #include "compile.h"
 #include "cpython-data.h"
 #include "cpython-func.h"

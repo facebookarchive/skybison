@@ -1,6 +1,7 @@
 #include <cstdarg>
 
 #include "../Python/modsupport-internal.h"
+#include "capi-handles.h"
 #include "cpython-data.h"
 #include "cpython-func.h"
 #include "exception-builtins.h"

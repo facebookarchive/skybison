@@ -1,4 +1,6 @@
 #include <cerrno>
+
+#include "capi-handles.h"
 #include "cpython-data.h"
 #include "cpython-func.h"
 #include "int-builtins.h"

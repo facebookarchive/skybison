@@ -1,6 +1,7 @@
 #include "imp-module.h"
 
 #include "builtins-module.h"
+#include "capi-handles.h"
 #include "frame.h"
 #include "frozen-modules.h"
 #include "globals.h"

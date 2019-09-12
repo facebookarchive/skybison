@@ -1,5 +1,6 @@
 #include "cpython-data.h"
 
+#include "capi-handles.h"
 #include "runtime.h"
 
 namespace python {

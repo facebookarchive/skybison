@@ -2,6 +2,7 @@
 
 #include <cstdarg>
 
+#include "capi-handles.h"
 #include "objects.h"
 #include "runtime.h"
 #include "tuple-builtins.h"

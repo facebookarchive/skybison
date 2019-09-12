@@ -1,5 +1,6 @@
 #include "module-builtins.h"
 
+#include "capi-handles.h"
 #include "frame.h"
 #include "globals.h"
 #include "list-builtins.h"

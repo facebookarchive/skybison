@@ -3,6 +3,7 @@
 #include <cerrno>
 
 #include "bytes-builtins.h"
+#include "capi-handles.h"
 #include "compile.h"
 #include "exception-builtins.h"
 #include "formatter.h"

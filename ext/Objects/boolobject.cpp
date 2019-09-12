@@ -1,5 +1,6 @@
 // boolobject.c implementation
 
+#include "capi-handles.h"
 #include "cpython-data.h"
 #include "objects.h"
 #include "runtime.h"

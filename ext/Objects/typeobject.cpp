@@ -7,6 +7,7 @@
 #include <cinttypes>
 
 #include "builtins-module.h"
+#include "capi-handles.h"
 #include "function-builtins.h"
 #include "function-utils.h"
 #include "handles.h"

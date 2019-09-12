@@ -1,6 +1,7 @@
 // moduleobject.c implementation
 
 #include "builtins-module.h"
+#include "capi-handles.h"
 #include "cpython-data.h"
 #include "cpython-func.h"
 #include "function-builtins.h"

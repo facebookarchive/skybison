@@ -1,6 +1,7 @@
 #include <cstdarg>
 #include <cwchar>
 
+#include "capi-handles.h"
 #include "cpython-data.h"
 #include "cpython-types.h"
 #include "handles.h"

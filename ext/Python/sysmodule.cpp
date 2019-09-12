@@ -1,9 +1,9 @@
-#include "runtime.h"
-
 #include <cstdarg>
 
+#include "capi-handles.h"
 #include "int-builtins.h"
 #include "module-builtins.h"
+#include "runtime.h"
 #include "sys-module.h"
 
 namespace python {

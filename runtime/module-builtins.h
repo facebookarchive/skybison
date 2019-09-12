@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cpython-types.h"
 #include "frame.h"
 #include "globals.h"
 #include "objects.h"

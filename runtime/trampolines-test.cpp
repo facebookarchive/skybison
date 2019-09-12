@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "capi-handles.h"
 #include "frame.h"
 #include "function-builtins.h"
 #include "runtime.h"

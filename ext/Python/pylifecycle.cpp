@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include <cstdio>
 
+#include "capi-handles.h"
 #include "runtime.h"
 
 int Py_BytesWarningFlag = 0;

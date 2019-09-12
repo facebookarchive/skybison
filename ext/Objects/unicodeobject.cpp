@@ -5,6 +5,7 @@
 #include <cwchar>
 
 #include "bytearray-builtins.h"
+#include "capi-handles.h"
 #include "codecs-module.h"
 #include "cpython-data.h"
 #include "cpython-func.h"
