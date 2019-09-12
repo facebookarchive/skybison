@@ -4478,6 +4478,22 @@ class ObjectTests(unittest.TestCase):
         del instance.foo
         self.assertFalse(d.__contains__("foo"))
 
+    def test_dunder_dict_dunder_delitem_deletes_attribute(self):
+        class C:
+            pass
+
+        instance = C()
+        d = instance.__dict__
+        self.assertNotIn("foo", d)
+        with self.assertRaisesRegex(AttributeError, "foo"):
+            instance.foo
+        instance.foo = "bar"
+        self.assertIn("foo", d)
+        d.__delitem__("foo")
+        self.assertNotIn("foo", d)
+        with self.assertRaisesRegex(AttributeError, "foo"):
+            instance.foo
+
     def test_dunder_dict_clear_removes_attributes(self):
         class C:
             pass

@@ -416,6 +416,9 @@ class instance_proxy:
     def __contains__(self, key):
         return _instance_getattr(self._instance, key) is not _Unbound
 
+    def __delitem__(self, key):
+        _instance_delattr(self._instance, key)
+
     def __getitem__(self, key):
         result = _instance_getattr(self._instance, key)
         if result is _Unbound:
