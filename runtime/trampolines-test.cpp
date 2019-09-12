@@ -2056,4 +2056,18 @@ result = f(**{actual: 5})
                             "f() got an unexpected keyword argument 'param'"));
 }
 
+TEST_F(TrampolinesTest, CallFunctionWithParameterInVarnames) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+def add_argument(*args, **kwargs):
+    action = action_class(**kwargs)
+
+def init():
+    add_argument(action='help')
+
+init()
+)"),
+                            LayoutId::kNameError,
+                            "name 'action_class' is not defined"));
+}
+
 }  // namespace python

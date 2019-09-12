@@ -307,7 +307,7 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
   word expected_args = function.argcount() + code.kwonlyargcount();
   word num_keyword_args = keywords.length();
   word num_positional_args = argc - num_keyword_args;
-  Tuple formal_parm_names(&scope, code.varnames());
+  Tuple varnames(&scope, code.varnames());
   Object tmp_varargs(&scope, NoneType::object());
   Object tmp_dict(&scope, NoneType::object());
 
@@ -354,13 +354,15 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
       Dict dict(&scope, runtime->newDict());
       List saved_keyword_list(&scope, runtime->newList());
       List saved_values(&scope, runtime->newList());
-      word formal_parm_size = formal_parm_names.length();
+      word formal_parm_size = code.totalArgs();
+      DCHECK(varnames.length() >= formal_parm_size,
+             "varnames must be greater than or equal to positional args");
       RawObject* p = caller->valueStackTop() + (num_keyword_args - 1);
       word posonlyargcount = code.posonlyargcount();
       for (word i = 0; i < num_keyword_args; i++) {
         Object key(&scope, keywords.at(i));
         Object value(&scope, *(p - i));
-        word result = findName(thread, posonlyargcount, key, formal_parm_names);
+        word result = findName(thread, posonlyargcount, key, varnames);
         if (result < 0) return Error::exception();
         if (result < formal_parm_size) {
           // Got a match, stash pair for future restoration on the stack
@@ -409,8 +411,8 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
     keywords = *padded_keywords;
   }
   // Now we've got the right number.  Do they match up?
-  RawObject res = checkArgs(thread, function, kw_arg_base, keywords,
-                            formal_parm_names, num_positional_args);
+  RawObject res = checkArgs(thread, function, kw_arg_base, keywords, varnames,
+                            num_positional_args);
   if (res.isError()) {
     return res;  // TypeError created by checkArgs.
   }
