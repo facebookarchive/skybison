@@ -4542,6 +4542,40 @@ class ObjectTests(unittest.TestCase):
         with self.assertRaisesRegex(AttributeError, "foo"):
             instance.foo
 
+    def test_dunder_dict_popitem_with_empty_dict_raises_key_error(self):
+        class C:
+            pass
+
+        instance = C()
+        self.assertRaisesRegex(KeyError, "empty", instance.__dict__.popitem)
+
+    def test_dunder_dict_popitem_removes_attribute(self):
+        class C:
+            pass
+
+        instance = C()
+        orig_value = "bar"
+        instance.foo = orig_value
+        d = instance.__dict__
+        (key, value) = d.popitem()
+        self.assertEqual(key, "foo")
+        self.assertIs(value, orig_value)
+        self.assertNotIn("foo", d)
+
+    def test_dunder_dict_removes_only_one_attribute(self):
+        class C:
+            pass
+
+        instance = C()
+        instance.foo = "bar"
+        instance.bar = "baz"
+        d = instance.__dict__
+        self.assertEqual(len(d), 2)
+        (key, value) = d.popitem()
+        self.assertEqual(len(d), 1)
+        self.assertNotIn(key, d)
+        self.assertIn((key, value), (("foo", "bar"), ("bar", "baz")))
+
     def test_dunder_dict_clear_removes_attributes(self):
         class C:
             pass

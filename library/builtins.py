@@ -479,6 +479,16 @@ class instance_proxy:
         _instance_delattr(instance, key)
         return value
 
+    def popitem(self):
+        keys = self.keys()
+        if not keys:
+            raise KeyError("dictionary is empty")
+        key = keys[-1]
+        instance = self._instance
+        value = _instance_getattr(instance, key)
+        _instance_delattr(instance, key)
+        return key, value
+
     def setdefault(self, key, default=None):
         instance = self._instance
         value = _instance_getattr(instance, key)
