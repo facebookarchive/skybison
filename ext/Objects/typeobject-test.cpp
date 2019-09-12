@@ -137,7 +137,7 @@ bar = Bar()
 TEST_F(TypeExtensionApiTest, GenericAllocationReturnsMallocMemory) {
   // These numbers determine the allocated size of the PyObject
   // The values in this test are abitrary and are usally set with `sizeof(Foo)`
-  int basic_size = 10;
+  int basic_size = sizeof(PyObject) + 10;
   int item_size = 5;
   PyType_Slot slots[] = {
       {Py_tp_dealloc, reinterpret_cast<void*>(deallocLeafObject)},
@@ -2920,6 +2920,53 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsNew) {
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
   EXPECT_EQ(PyType_GetSlot(tp, Py_tp_new), empty_new_func);
+}
+
+TEST_F(TypeExtensionApiTest, FromSpecWithoutBasicSizeInheritsDefaultBasicSize) {
+  static PyType_Slot slots[1];
+  slots[0] = {0, nullptr};
+  static PyType_Spec spec;
+  spec = {
+      "__main__.Foo", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(type), 1);
+
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(type.get());
+  EXPECT_EQ(_PyObject_SIZE(tp), sizeof(PyObject));
+}
+
+TEST_F(TypeExtensionApiTest, FromSpecWithoutAllocInheritsDefaultAlloc) {
+  static PyType_Slot slots[1];
+  slots[0] = {0, nullptr};
+  static PyType_Spec spec;
+  spec = {
+      "__main__.Foo", sizeof(PyObject), 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(type), 1);
+
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(type.get());
+  ASSERT_EQ(PyType_GetSlot(tp, Py_tp_alloc), &PyType_GenericAlloc);
+}
+
+TEST_F(TypeExtensionApiTest, FromSpecWithoutNewInheritsDefaultNew) {
+  static PyType_Slot slots[1];
+  slots[0] = {0, nullptr};
+  static PyType_Spec spec;
+  spec = {
+      "__main__.Foo", sizeof(PyObject), 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(type), 1);
+  ASSERT_EQ(moduleSet("__main__", "Foo", type), 0);
+
+  // In Pyro tp_new = PyType_GenericNew, in CPython tp_new = object_new
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(type.get());
+  ASSERT_NE(PyType_GetSlot(tp, Py_tp_new), nullptr);
 }
 
 TEST_F(TypeExtensionApiTest, FromSpecWithoutDeallocInheritsDefaultDealloc) {

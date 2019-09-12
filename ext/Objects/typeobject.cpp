@@ -1807,6 +1807,64 @@ static void subtypeDealloc(PyObject* self) {
   }
 }
 
+static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Dict dict(&scope, type.dict());
+  Str type_name(&scope, type.name());
+
+  // tp_basicsize -> sizeof(PyObject)
+  DCHECK(hasSlot(type, ExtensionSlot::kBasicSize),
+         "Basic size must always be present");
+  Int basic_size(&scope, extensionSlot(type, ExtensionSlot::kBasicSize));
+  if (basic_size.asWord() == 0) {
+    basic_size = runtime->newInt(sizeof(PyObject));
+    setExtensionSlot(type, ExtensionSlot::kBasicSize, *basic_size);
+  }
+  DCHECK(basic_size.asWord() >= static_cast<word>(sizeof(PyObject)),
+         "sizeof(PyObject) is the minimum size required for an extension "
+         "instance");
+
+  // tp_new -> PyType_GenericNew
+  if (!hasSlot(type, ExtensionSlot::kNew)) {
+    Object default_new(
+        &scope, runtime->newIntFromCPtr(bit_cast<void*>(&PyType_GenericNew)));
+    setExtensionSlot(type, ExtensionSlot::kNew, *default_new);
+    Str dunder_new_name(&scope, runtime->symbols()->at(SymbolId::kDunderNew));
+    Str qualname(&scope,
+                 runtime->newStrFromFmt("%S.%S", &type_name, &dunder_new_name));
+    Code code(&scope,
+              newExtCode(thread, dunder_new_name, kParamsTypeArgsKwargs,
+                         ARRAYSIZE(kParamsTypeArgsKwargs),
+                         Code::Flags::VARARGS | Code::Flags::VARKEYARGS,
+                         bit_cast<void*>(&wrapVarkwTernaryfunc), default_new));
+    Object globals(&scope, NoneType::object());
+    Function func(
+        &scope, runtime->newFunctionWithCode(thread, qualname, code, globals));
+    Object func_obj(&scope,
+                    thread->invokeFunction1(SymbolId::kBuiltins,
+                                            SymbolId::kStaticMethod, func));
+    if (func_obj.isError()) return *func;
+    runtime->typeDictAtPut(thread, dict, dunder_new_name, func_obj);
+  }
+
+  // tp_alloc -> PyType_GenericAlloc
+  if (!hasSlot(type, ExtensionSlot::kAlloc)) {
+    Object default_alloc(
+        &scope, runtime->newIntFromCPtr(bit_cast<void*>(&PyType_GenericAlloc)));
+    setExtensionSlot(type, ExtensionSlot::kAlloc, *default_alloc);
+  }
+
+  // tp_dealloc -> subtypeDealloc
+  if (!hasSlot(type, ExtensionSlot::kDealloc)) {
+    Object default_dealloc(
+        &scope, runtime->newIntFromCPtr(bit_cast<void*>(&subtypeDealloc)));
+    setExtensionSlot(type, ExtensionSlot::kDealloc, *default_dealloc);
+  }
+
+  return NoneType::object();
+}
+
 PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
                                              PyObject* bases) {
   Thread* thread = Thread::current();
@@ -1903,13 +1961,6 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
 
   if (addGetSet(thread, type).isError()) return nullptr;
 
-  // Inherit tp_dealloc
-  if (!hasSlot(type, ExtensionSlot::kDealloc)) {
-    Object default_dealloc(
-        &scope, runtime->newIntFromCPtr(bit_cast<void*>(&subtypeDealloc)));
-    setExtensionSlot(type, ExtensionSlot::kDealloc, *default_dealloc);
-  }
-
   // Inherit special slots from dominant base
   if (!base_type.extensionSlots().isNoneType()) {
     inheritGCFlagsAndSlots(thread, type, base_type);
@@ -1934,6 +1985,10 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
     }
     inheritSlots(type, base);
   }
+
+  // Finally, inherit all the default slots that would have been inherited
+  // through PyBaseObject_Type in CPython
+  if (addDefaultsForRequiredSlots(thread, type).isError()) return nullptr;
 
   return ApiHandle::newReference(thread, *type);
 }
