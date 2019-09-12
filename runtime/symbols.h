@@ -243,6 +243,7 @@ class Runtime;
   V(UnderIndex, "_index")                                                      \
   V(UnderInstall, "_install")                                                  \
   V(UnderInstance, "_instance")                                                \
+  V(UnderInstanceDelattr, "_instance_delattr")                                 \
   V(UnderInstanceGetattr, "_instance_getattr")                                 \
   V(UnderInstanceKeys, "_instance_keys")                                       \
   V(UnderInstanceSetattr, "_instance_setattr")                                 \

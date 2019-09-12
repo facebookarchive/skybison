@@ -113,6 +113,8 @@ class UnderBuiltinsModule {
                                        word nargs);
   static RawObject underGetMemberUShort(Thread* thread, Frame* frame,
                                         word nargs);
+  static RawObject underInstanceDelattr(Thread* thread, Frame* frame,
+                                        word nargs);
   static RawObject underInstanceGetattr(Thread* thread, Frame* frame,
                                         word nargs);
   static RawObject underInstanceKeys(Thread* thread, Frame* frame, word nargs);

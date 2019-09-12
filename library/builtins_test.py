@@ -4466,6 +4466,39 @@ class ObjectTests(unittest.TestCase):
         d["bar"] = 7
         self.assertEqual(instance.bar, 7)
 
+    def test_dunder_dict_dunder_contains_returns_true_if_attr_exists(self):
+        class C:
+            pass
+
+        instance = C()
+        d = instance.__dict__
+        self.assertFalse(d.__contains__("foo"))
+        instance.foo = "bar"
+        self.assertTrue(d.__contains__("foo"))
+        del instance.foo
+        self.assertFalse(d.__contains__("foo"))
+
+    def test_dunder_dict_clear_removes_attributes(self):
+        class C:
+            pass
+
+        instance = C()
+        d = instance.__dict__
+        self.assertEqual(len(d), 0)
+        instance.foo = "bar"
+        self.assertIn("foo", d)
+        instance.bar = "foo"
+        self.assertIn("bar", d)
+        self.assertEqual(len(d), 2)
+        d.clear()
+        self.assertEqual(len(d), 0)
+        self.assertNotIn("foo", d)
+        with self.assertRaisesRegex(AttributeError, "foo"):
+            instance.foo
+        self.assertNotIn("bar", d)
+        with self.assertRaisesRegex(AttributeError, "bar"):
+            instance.bar
+
 
 class OctTests(unittest.TestCase):
     def test_returns_string(self):

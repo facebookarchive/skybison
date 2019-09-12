@@ -138,6 +138,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderGetMemberUInt, underGetMemberUInt},
     {SymbolId::kUnderGetMemberULong, underGetMemberULong},
     {SymbolId::kUnderGetMemberUShort, underGetMemberUShort},
+    {SymbolId::kUnderInstanceDelattr, underInstanceDelattr},
     {SymbolId::kUnderInstanceGetattr, underInstanceGetattr},
     {SymbolId::kUnderInstanceKeys, underInstanceKeys},
     {SymbolId::kUnderInstanceSetattr, underInstanceSetattr},
@@ -1697,6 +1698,21 @@ RawObject UnderBuiltinsModule::underGetMemberUShort(Thread* thread,
   unsigned short value = 0;
   std::memcpy(&value, reinterpret_cast<void*>(addr), sizeof(value));
   return thread->runtime()->newIntFromUnsigned(value);
+}
+
+RawObject UnderBuiltinsModule::underInstanceDelattr(Thread* thread,
+                                                    Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  HeapObject instance(&scope, args.get(0));
+  Object name(&scope, args.get(1));
+  if (!name.isStr()) {
+    // TODO(T53626118): Support str subclasses
+    UNIMPLEMENTED("non-str attribute name");
+  }
+  Runtime* runtime = thread->runtime();
+  Object name_interned(&scope, runtime->internStr(thread, name));
+  return runtime->instanceDel(thread, instance, name_interned);
 }
 
 RawObject UnderBuiltinsModule::underInstanceGetattr(Thread* thread,

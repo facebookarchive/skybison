@@ -353,6 +353,11 @@ def _get_member_ushort(addr):
 
 
 @_patch
+def _instance_delattr(obj, name):
+    pass
+
+
+@_patch
 def _instance_getattr(obj, name):
     pass
 
