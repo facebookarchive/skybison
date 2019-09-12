@@ -395,7 +395,7 @@ RawObject UnderCodecsModule::underLatin1Decode(Thread* thread, Frame* frame,
       if (code_point <= kMaxASCII) {
         runtime->strArrayAddASCII(thread, array, code_point);
       } else {
-        str = SmallStr::fromCodePoint(code_point);
+        str = Str::cast(SmallStr::fromCodePoint(code_point));
         runtime->strArrayAddStr(thread, array, str);
       }
     }

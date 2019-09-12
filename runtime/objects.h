@@ -640,7 +640,8 @@ class RawHeader : public RawObject {
 class RawSmallBytes : public RawObject {
  public:
   // Construction.
-  static RawObject fromBytes(View<byte> data);
+  static RawSmallBytes fromBytes(View<byte> data);
+  static RawSmallBytes empty();
 
   // Getters and setters.
   word length() const;
@@ -659,14 +660,18 @@ class RawSmallBytes : public RawObject {
   static const word kMaxLength = kWordSize - 1;
 
   RAW_OBJECT_COMMON(SmallBytes);
+
+ private:
+  explicit RawSmallBytes(uword raw);
 };
 
 class RawSmallStr : public RawObject {
  public:
   // Construction.
-  static RawObject fromCodePoint(int32_t code_point);
-  static RawObject fromCStr(const char* value);
-  static RawObject fromBytes(View<byte> data);
+  static RawSmallStr fromCodePoint(int32_t code_point);
+  static RawSmallStr fromCStr(const char* value);
+  static RawSmallStr fromBytes(View<byte> data);
+  static RawSmallStr empty();
 
   // Getters and setters.
   byte charAt(word index) const;
@@ -686,6 +691,9 @@ class RawSmallStr : public RawObject {
   static const word kMaxLength = kWordSize - 1;
 
   RAW_OBJECT_COMMON(SmallStr);
+
+ private:
+  explicit RawSmallStr(uword raw);
 };
 
 // An ErrorKind is in every RawError to give some high-level detail about what
@@ -3500,7 +3508,7 @@ T RawObject::rawCast() const {
 // RawBytes
 
 inline RawBytes RawBytes::empty() {
-  return RawObject{kSmallBytesTag}.rawCast<RawBytes>();
+  return RawSmallBytes::empty().rawCast<RawBytes>();
 }
 
 inline word RawBytes::length() const {
@@ -3754,6 +3762,12 @@ inline RawHeader RawHeader::from(word count, word hash, LayoutId id,
 
 // RawSmallBytes
 
+inline RawSmallBytes::RawSmallBytes(uword raw) : RawObject(raw) {}
+
+inline RawSmallBytes RawSmallBytes::empty() {
+  return RawSmallBytes(kSmallBytesTag);
+}
+
 inline word RawSmallBytes::length() const {
   return (raw() >> kImmediateTagBits) & kMaxLength;
 }
@@ -3801,6 +3815,10 @@ inline RawSmallInt RawSmallBytes::hash() const {
 }
 
 // RawSmallStr
+
+inline RawSmallStr::RawSmallStr(uword raw) : RawObject(raw) {}
+
+inline RawSmallStr RawSmallStr::empty() { return RawSmallStr(kSmallStrTag); }
 
 inline word RawSmallStr::charLength() const {
   return (raw() >> kImmediateTagBits) & kMaxLength;
@@ -5336,9 +5354,7 @@ inline void RawModuleProxy::setModule(RawObject module) const {
 
 // RawStr
 
-inline RawStr RawStr::empty() {
-  return RawObject{kSmallStrTag}.rawCast<RawStr>();
-}
+inline RawStr RawStr::empty() { return RawSmallStr::empty().rawCast<RawStr>(); }
 
 inline byte RawStr::charAt(word index) const {
   if (isSmallStr()) {

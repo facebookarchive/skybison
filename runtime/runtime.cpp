@@ -1099,7 +1099,7 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
         if (value < 0 || value > kMaxASCII) {
           // Replace non-ASCII characters.
           RawSmallStr value_str =
-              SmallStr::cast(SmallStr::fromCodePoint(kReplacementCharacter));
+              SmallStr::fromCodePoint(kReplacementCharacter);
           word length = value_str.charLength();
           if (dst == nullptr) {
             len += length;
@@ -1166,7 +1166,7 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
         if (value < 0 || value > kMaxUnicode) {
           value = kReplacementCharacter;
         }
-        RawSmallStr value_str = SmallStr::cast(SmallStr::fromCodePoint(value));
+        RawSmallStr value_str = SmallStr::fromCodePoint(value);
         word length = value_str.charLength();
         if (dst == nullptr) {
           len += length;

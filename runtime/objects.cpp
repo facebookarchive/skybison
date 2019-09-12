@@ -11,25 +11,25 @@ namespace python {
 
 // RawSmallBytes
 
-RawObject RawSmallBytes::fromBytes(View<byte> data) {
+RawSmallBytes RawSmallBytes::fromBytes(View<byte> data) {
   word length = data.length();
   DCHECK_BOUND(length, kMaxLength);
   uword result = 0;
   for (word i = length - 1; i >= 0; i--) {
     result = (result << kBitsPerByte) | data.get(i);
   }
-  return RawObject{result << kBitsPerByte | length << kImmediateTagBits |
-                   kSmallBytesTag};
+  return RawSmallBytes(result << kBitsPerByte | length << kImmediateTagBits |
+                       kSmallBytesTag);
 }
 
 // RawSmallStr
 
-RawObject RawSmallStr::fromCodePoint(int32_t code_point) {
+RawSmallStr RawSmallStr::fromCodePoint(int32_t code_point) {
   DCHECK_BOUND(code_point, kMaxUnicode);
   uword cp = static_cast<uword>(code_point);
   // 0xxxxxxx
   if (cp <= kMaxASCII) {  // 01111111
-    return RawObject{cp << 8 | (1 << kImmediateTagBits) | kSmallStrTag};
+    return RawSmallStr(cp << 8 | (1 << kImmediateTagBits) | kSmallStrTag);
   }
   uword result = cp & 0x3F;  // 00111111
   cp >>= 6;
@@ -39,7 +39,7 @@ RawObject RawSmallStr::fromCodePoint(int32_t code_point) {
     result |= cp;
     result |= 0x80C0;  // 10xxxxxx 110xxxxx
     result <<= kBitsPerByte;
-    return RawObject{result | (2 << kImmediateTagBits) | kSmallStrTag};
+    return RawSmallStr(result | (2 << kImmediateTagBits) | kSmallStrTag);
   }
 
   result |= cp & 0x3F;  // 00111111
@@ -50,7 +50,7 @@ RawObject RawSmallStr::fromCodePoint(int32_t code_point) {
     result |= cp;
     result |= 0x8080E0;  // 10xxxxxx 10xxxxxx 1110xxxx
     result <<= kBitsPerByte;
-    return RawObject{result | (3 << kImmediateTagBits) | kSmallStrTag};
+    return RawSmallStr(result | (3 << kImmediateTagBits) | kSmallStrTag);
   }
   result |= cp & 0x3F;  // 00111111
   cp >>= 6;
@@ -59,23 +59,23 @@ RawObject RawSmallStr::fromCodePoint(int32_t code_point) {
   result |= cp;
   result |= 0x808080F0;  // 10xxxxxx 10xxxxxx 10xxxxxx 11110xxx
   result <<= kBitsPerByte;
-  return RawObject{result | (4 << kImmediateTagBits) | kSmallStrTag};
+  return RawSmallStr(result | (4 << kImmediateTagBits) | kSmallStrTag);
 }
 
-RawObject RawSmallStr::fromCStr(const char* value) {
+RawSmallStr RawSmallStr::fromCStr(const char* value) {
   word len = std::strlen(value);
   return fromBytes(View<byte>(reinterpret_cast<const byte*>(value), len));
 }
 
-RawObject RawSmallStr::fromBytes(View<byte> data) {
+RawSmallStr RawSmallStr::fromBytes(View<byte> data) {
   word length = data.length();
   DCHECK_BOUND(length, kMaxLength);
   uword result = 0;
   for (word i = length - 1; i >= 0; i--) {
     result = (result << kBitsPerByte) | data.get(i);
   }
-  return RawObject{result << kBitsPerByte | length << kImmediateTagBits |
-                   kSmallStrTag};
+  return RawSmallStr(result << kBitsPerByte | length << kImmediateTagBits |
+                     kSmallStrTag);
 }
 
 char* RawSmallStr::toCStr() const {
