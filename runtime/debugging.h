@@ -27,6 +27,7 @@ std::ostream& operator<<(std::ostream& os, RawFunction value);
 std::ostream& operator<<(std::ostream& os, RawInt value);
 std::ostream& operator<<(std::ostream& os, RawLargeInt value);
 std::ostream& operator<<(std::ostream& os, RawLargeStr value);
+std::ostream& operator<<(std::ostream& os, RawLayout value);
 std::ostream& operator<<(std::ostream& os, RawList value);
 std::ostream& operator<<(std::ostream& os, RawModule value);
 std::ostream& operator<<(std::ostream& os, RawNoneType value);

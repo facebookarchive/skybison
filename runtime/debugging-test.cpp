@@ -297,6 +297,107 @@ TEST_F(DebuggingTests, FormatLargeStr) {
   EXPECT_EQ(ss.str(), "\"hello world\"");
 }
 
+TEST_F(DebuggingTests, FormatLayout) {
+  HandleScope scope(thread_);
+  // Create a new layout with several overflow attributes
+  Object attr(&scope, runtime_.newStrFromCStr("myattr"));
+  Object attr2(&scope, runtime_.newStrFromCStr("myattr2"));
+  Object attr3(&scope, runtime_.newStrFromCStr("myattr3"));
+  Tuple overflow(&scope, runtime_.newTuple(3));
+  Object* overflow_names[] = {&attr, &attr2, &attr3};
+  for (word i = 0; i < overflow.length(); i++) {
+    Tuple entry(&scope, runtime_.newTuple(2));
+    entry.atPut(0, **overflow_names[i]);
+    entry.atPut(1, AttributeInfo(i, 0).asSmallInt());
+    overflow.atPut(i, *entry);
+  }
+  Layout layout(&scope, runtime_.layoutCreateEmpty(thread_));
+  layout.setOverflowAttributes(*overflow);
+
+  // Set some in-object attributes
+  Object inobj1(&scope, runtime_.newStrFromCStr("foo"));
+  Object inobj2(&scope, runtime_.newStrFromCStr("bar"));
+  Tuple inobj(&scope, runtime_.newTuple(2));
+  Object* inobj_names[] = {&inobj1, &inobj2};
+  for (word i = 0; i < inobj.length(); i++) {
+    Tuple entry(&scope, runtime_.newTuple(2));
+    entry.atPut(0, **inobj_names[i]);
+    entry.atPut(1, AttributeInfo(i, 0).asSmallInt());
+    inobj.atPut(i, *entry);
+  }
+  layout.setInObjectAttributes(*inobj);
+  layout.setId(static_cast<LayoutId>(100));
+
+  std::stringstream ss;
+  ss << layout;
+  EXPECT_EQ(ss.str(), R"(id: 0x64
+described type: None
+  (in-object) "foo" @ 0
+  (in-object) "bar" @ 1
+(with tuple overflow)
+  (overflow)  "myattr" @ 0
+  (overflow)  "myattr2" @ 1
+  (overflow)  "myattr3" @ 2
+)");
+}
+
+TEST_F(DebuggingTests, FormatSealedLayout) {
+  HandleScope scope(thread_);
+  Layout layout(&scope, runtime_.layoutCreateEmpty(thread_));
+  layout.setOverflowAttributes(NoneType::object());
+  // Set some in-object attributes
+  Object inobj1(&scope, runtime_.newStrFromCStr("foo"));
+  Object inobj2(&scope, runtime_.newStrFromCStr("bar"));
+  Tuple inobj(&scope, runtime_.newTuple(2));
+  Object* inobj_names[] = {&inobj1, &inobj2};
+  for (word i = 0; i < inobj.length(); i++) {
+    Tuple entry(&scope, runtime_.newTuple(2));
+    entry.atPut(0, **inobj_names[i]);
+    entry.atPut(1, AttributeInfo(i, 0).asSmallInt());
+    inobj.atPut(i, *entry);
+  }
+  layout.setInObjectAttributes(*inobj);
+  layout.setId(static_cast<LayoutId>(100));
+
+  std::stringstream ss;
+  ss << layout;
+  EXPECT_EQ(ss.str(), R"(id: 0x64
+described type: None
+  (in-object) "foo" @ 0
+  (in-object) "bar" @ 1
+(sealed)
+)");
+}
+
+TEST_F(DebuggingTests, FormatDictOverflowLayout) {
+  HandleScope scope(thread_);
+  Layout layout(&scope, runtime_.layoutCreateEmpty(thread_));
+  layout.setOverflowAttributes(SmallInt::fromWord(0xdeadbeef));
+  // Set some in-object attributes
+  Object inobj1(&scope, runtime_.newStrFromCStr("foo"));
+  Object inobj2(&scope, runtime_.newStrFromCStr("bar"));
+  Tuple inobj(&scope, runtime_.newTuple(2));
+  Object* inobj_names[] = {&inobj1, &inobj2};
+  for (word i = 0; i < inobj.length(); i++) {
+    Tuple entry(&scope, runtime_.newTuple(2));
+    entry.atPut(0, **inobj_names[i]);
+    entry.atPut(1, AttributeInfo(i, 0).asSmallInt());
+    inobj.atPut(i, *entry);
+  }
+  layout.setInObjectAttributes(*inobj);
+  layout.setId(static_cast<LayoutId>(100));
+
+  std::stringstream ss;
+  ss << layout;
+  EXPECT_EQ(ss.str(), R"(id: 0x64
+described type: None
+  (in-object) "foo" @ 0
+  (in-object) "bar" @ 1
+(with dict overflow)
+  overflow dict @ 0xdeadbeef
+)");
+}
+
 TEST_F(DebuggingTests, FormatList) {
   HandleScope scope(thread_);
   List list(&scope, runtime_.newList());
