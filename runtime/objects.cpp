@@ -440,16 +440,6 @@ bool RawTuple::contains(RawObject object) const {
   return false;
 }
 
-void RawTuple::copyTo(RawObject dst) const {
-  RawTuple dst_tuple = RawTuple::cast(dst);
-  word len = length();
-  DCHECK_BOUND(len, dst_tuple.length());
-  for (word i = 0; i < len; i++) {
-    RawObject elem = at(i);
-    dst_tuple.atPut(i, elem);
-  }
-}
-
 // RawSlice
 
 void RawSlice::unpack(word* start, word* stop, word* step) const {

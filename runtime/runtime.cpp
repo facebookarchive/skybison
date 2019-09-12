@@ -188,14 +188,20 @@ RawObject Runtime::layoutCreateSubclassWithBuiltins(
   result.setId(subclass_id);
 
   // Copy down all of the superclass attributes into the subclass layout
-  Tuple in_object(&scope,
-                  newTuple(super_attributes.length() + attributes.length()));
-  super_attributes.copyTo(*in_object);
-  appendBuiltinAttributes(attributes, in_object, super_attributes.length());
+  word super_attributes_len = super_attributes.length();
+  word in_object_len = super_attributes_len + attributes.length();
+  if (in_object_len == 0) {
+    result.setInObjectAttributes(emptyTuple());
+    result.setNumInObjectAttributes(0);
+  } else {
+    MutableTuple in_object(&scope, newMutableTuple(in_object_len));
+    in_object.replaceFromWith(0, *super_attributes, super_attributes_len);
+    appendBuiltinAttributes(attributes, in_object, super_attributes_len);
 
-  // Install the in-object attributes
-  result.setInObjectAttributes(*in_object);
-  result.setNumInObjectAttributes(in_object.length());
+    // Install the in-object attributes
+    result.setInObjectAttributes(in_object.becomeImmutable());
+    result.setNumInObjectAttributes(in_object_len);
+  }
 
   return *result;
 }
@@ -2856,7 +2862,7 @@ void Runtime::listEnsureCapacity(Thread* thread, const List& list,
   HandleScope scope(thread);
   Tuple old_array(&scope, list.items());
   MutableTuple new_array(&scope, newMutableTuple(new_capacity));
-  old_array.copyTo(*new_array);
+  new_array.replaceFromWith(0, *old_array, list.numItems());
   list.setItems(*new_array);
 }
 
@@ -4133,15 +4139,16 @@ RawObject Runtime::layoutAddAttributeEntry(Thread* thread, const Tuple& entries,
                                            const Object& name,
                                            AttributeInfo info) {
   HandleScope scope(thread);
-  Tuple new_entries(&scope, newTuple(entries.length() + 1));
-  entries.copyTo(*new_entries);
+  word entries_len = entries.length();
+  MutableTuple new_entries(&scope, newMutableTuple(entries_len + 1));
+  new_entries.replaceFromWith(0, *entries, entries_len);
 
   Tuple entry(&scope, newTuple(2));
   entry.atPut(0, *name);
   entry.atPut(1, info.asSmallInt());
-  new_entries.atPut(entries.length(), *entry);
+  new_entries.atPut(entries_len, *entry);
 
-  return *new_entries;
+  return new_entries.becomeImmutable();
 }
 
 RawObject Runtime::layoutAddAttribute(Thread* thread, const Layout& layout,

@@ -1197,8 +1197,6 @@ class RawTuple : public RawArray {
   RawObject at(word index) const;
   void atPut(word index, RawObject value) const;
 
-  void copyTo(RawObject dst) const;
-
   bool contains(RawObject object) const;
 
   RAW_OBJECT_COMMON(Tuple);
