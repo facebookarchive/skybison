@@ -41,15 +41,25 @@ PY_EXPORT PyObject* PyEval_EvalCode(PyObject* code, PyObject* globals,
   Code code_code(&scope, *code_obj);
   Object globals_obj(&scope, ApiHandle::fromPyObject(globals)->asObject());
   Runtime* runtime = thread->runtime();
+  locals = locals != nullptr ? locals : globals;
+  Object locals_obj(&scope, ApiHandle::fromPyObject(locals)->asObject());
+  if (locals_obj.isModuleProxy() && globals_obj == locals_obj) {
+    // Unwrap module proxy. We use locals == globals as a signal to enable some
+    // shortcuts for execution in module scope (e.g., import.c).
+    // They ensure correct behavior even without the module proxy wrapper.
+    Module module(&scope, ModuleProxy::cast(*locals_obj).module());
+    locals_obj = module.dict();
+  }
   if (!runtime->isInstanceOfDict(*globals_obj)) {
-    thread->raiseBadInternalCall();
-    return nullptr;
+    if (globals_obj.isModuleProxy()) {
+      Module module(&scope, ModuleProxy::cast(*globals_obj).module());
+      globals_obj = module.dict();
+    } else {
+      thread->raiseBadInternalCall();
+      return nullptr;
+    }
   }
   Dict globals_dict(&scope, *globals_obj);
-  CHECK(!code_code.hasOptimizedOrNewLocals(),
-        "Thread::exec can't run CO_OPTIMIZED or CO_NEWLOCALS");
-  locals = locals ? locals : globals;
-  Object locals_obj(&scope, ApiHandle::fromPyObject(locals)->asObject());
   if (!runtime->isMapping(thread, locals_obj)) {
     thread->raiseBadInternalCall();
     return nullptr;

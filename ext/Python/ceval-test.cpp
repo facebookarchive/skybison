@@ -48,4 +48,62 @@ TEST_F(CevalExtensionApiTest, EvalCodeReturnsNonNull) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(CevalExtensionApiTest, EvalCodeWithModuleDictAsGlobalsReturnsNonNull) {
+  PyCompilerFlags flags;
+  flags.cf_flags = 0;
+  PyArena* arena = PyArena_New();
+  const char* filename = "<string>";
+  struct _mod* node =
+      PyParser_ASTFromString(R"(
+global a
+a = 1 + 2
+)",
+                             filename, Py_file_input, &flags, arena);
+  ASSERT_NE(node, nullptr);
+  PyObjectPtr code(reinterpret_cast<PyObject*>(
+      PyAST_CompileEx(node, filename, &flags, 0, arena)));
+  ASSERT_NE(code, nullptr);
+  PyArena_Free(arena);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  PyRun_SimpleString(R"(
+module_dict = locals()
+)");
+  PyObjectPtr module_dict(moduleGet("__main__", "module_dict"));
+  PyObjectPtr locals(PyDict_New());
+  EXPECT_NE(PyEval_EvalCode(code, /*globals=*/module_dict, locals), nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+
+  PyObjectPtr result(moduleGet("__main__", "a"));
+  EXPECT_TRUE(PyLong_CheckExact(result));
+  EXPECT_EQ(PyLong_AsDouble(result), 3.0);
+}
+
+TEST_F(CevalExtensionApiTest,
+       EvalCodeWithModuleDictAsGlobalsAndLocalsReturnsNonNull) {
+  PyCompilerFlags flags;
+  flags.cf_flags = 0;
+  PyArena* arena = PyArena_New();
+  const char* filename = "<string>";
+  struct _mod* node = PyParser_ASTFromString("a = 1 + 2", filename,
+                                             Py_file_input, &flags, arena);
+  ASSERT_NE(node, nullptr);
+  PyObjectPtr code(reinterpret_cast<PyObject*>(
+      PyAST_CompileEx(node, filename, &flags, 0, arena)));
+  ASSERT_NE(code, nullptr);
+  PyArena_Free(arena);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  PyRun_SimpleString(R"(
+module_dict = locals()
+)");
+  PyObjectPtr module_dict(moduleGet("__main__", "module_dict"));
+  EXPECT_NE(
+      PyEval_EvalCode(code, /*globals=*/module_dict, /*locals=*/module_dict),
+      nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+
+  PyObjectPtr result(moduleGet("__main__", "a"));
+  EXPECT_TRUE(PyLong_CheckExact(result));
+  EXPECT_EQ(PyLong_AsDouble(result), 3.0);
+}
+
 }  // namespace python
