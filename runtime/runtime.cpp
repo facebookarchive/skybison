@@ -712,8 +712,8 @@ RawObject Runtime::newFunctionWithCode(Thread* thread, const Object& qualname,
 
   if (!globals_dict.isNoneType()) {
     Dict globals(&scope, *globals_dict);
-    Object dunder_name(&scope, symbols()->at(SymbolId::kDunderName));
-    Object module_name(&scope, moduleDictAt(thread, globals, dunder_name));
+    Object module_name(
+        &scope, moduleDictAtById(thread, globals, SymbolId::kDunderName));
     if (!module_name.isErrorNotFound()) {
       function.setModule(*module_name);
     }
@@ -2196,7 +2196,7 @@ RawObject Runtime::moduleAddBuiltinFunction(const Module& module, SymbolId name,
   Object globals(&scope, NoneType::object());
   Function function(&scope,
                     newFunctionWithCode(thread, name_str, code, globals));
-  return moduleAtPut(thread, module, name_str, function);
+  return moduleAtPutByStr(thread, module, name_str, function);
 }
 
 void Runtime::moduleAddBuiltinType(const Module& module, SymbolId name,
@@ -2217,7 +2217,7 @@ void Runtime::moduleImportAllFrom(const Dict& dict, const Module& module) {
     Str symbol_name(&scope, Dict::Bucket::key(*buckets, i));
     // Load all the symbols not starting with '_'
     if (symbol_name.charAt(0) != '_') {
-      Object value(&scope, moduleAt(thread, module, symbol_name));
+      Object value(&scope, moduleAtByStr(thread, module, symbol_name));
       DCHECK(!value.isErrorNotFound(), "value must not be ErrorNotFound");
       dictAtPutInValueCellByStr(thread, dict, symbol_name, value);
     }
@@ -2473,7 +2473,7 @@ void Runtime::createUnderBuiltinsModule(Thread* thread) {
   {
     Tuple parameters(&scope, newTuple(1));
     parameters.atPut(0, newStrFromCStr("function"));
-    Object name(&scope, symbols()->UnderPatch());
+    Str name(&scope, symbols()->UnderPatch());
     Code code(&scope, newBuiltinCode(/*argcount=*/1, /*posonlyargcount=*/0,
                                      /*kwonlyargcount=*/0, /*flags=*/0,
                                      UnderBuiltinsModule::underPatch,
@@ -2481,7 +2481,7 @@ void Runtime::createUnderBuiltinsModule(Thread* thread) {
     Dict globals(&scope, module.dict());
     Function under_patch(&scope,
                          newFunctionWithCode(thread, name, code, globals));
-    moduleAtPut(thread, module, name, under_patch);
+    moduleAtPutByStr(thread, module, name, under_patch);
   }
 
   Object unbound_value(&scope, Unbound::object());
@@ -2973,6 +2973,12 @@ RawObject Runtime::dictAtByStr(Thread* thread, const Dict& dict,
   HandleScope scope(thread);
   Object name_hash(&scope, strHash(thread, *name));
   return dictAtWithHash(thread, dict, name, name_hash);
+}
+
+RawObject Runtime::dictAtById(Thread* thread, const Dict& dict, SymbolId id) {
+  HandleScope scope(thread);
+  Str name(&scope, symbols()->at(id));
+  return dictAtByStr(thread, dict, name);
 }
 
 RawObject Runtime::dictAtIfAbsentPut(Thread* thread, const Dict& dict,

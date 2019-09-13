@@ -286,14 +286,17 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
   Dict kwargs(&scope, args.get(5));
 
   if (bootstrap == Bool::trueObj()) {
+    CHECK(name.isStr(), "bootstrap class names must not be str subclass");
+    Str name_str(&scope, *name);
+
     // A bootstrap class initialization uses the existing class dictionary.
     CHECK(frame->previousFrame() != nullptr, "must have a caller frame");
     Dict globals(&scope, frame->previousFrame()->function().globals());
-    Object type_obj(&scope, moduleDictAt(thread, globals, name));
+    Object type_obj(&scope, moduleDictAtByStr(thread, globals, name_str));
     CHECK(type_obj.isType(),
           "Name '%s' is not bound to a type object. "
           "You may need to add it to the builtins module.",
-          Str::cast(*name).toCStr());
+          name_str.toCStr());
     Type type(&scope, *type_obj);
 
     Dict patch_type(&scope, runtime->newDict());

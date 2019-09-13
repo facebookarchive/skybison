@@ -514,8 +514,8 @@ TEST_F(ThreadTest, LoadGlobal) {
 
   Code code(&scope, newEmptyCode());
   Tuple names(&scope, runtime_.newTuple(1));
-  Object key(&scope, runtime_.newStrFromCStr("foo"));
-  names.atPut(0, *key);
+  Str name(&scope, runtime_.newStrFromCStr("foo"));
+  names.atPut(0, *name);
   code.setNames(*names);
 
   const byte bytecode[] = {LOAD_GLOBAL, 0, RETURN_VALUE, 0};
@@ -524,7 +524,7 @@ TEST_F(ThreadTest, LoadGlobal) {
 
   Dict globals(&scope, runtime_.newDict());
   Object value(&scope, runtime_.newInt(1234));
-  moduleDictAtPut(thread_, globals, key, value);
+  moduleDictAtPutByStr(thread_, globals, name, value);
 
   EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, globals, globals), 1234));
 }
@@ -539,8 +539,8 @@ TEST_F(ThreadTest, StoreGlobalCreateValueCell) {
   code.setConsts(*consts);
 
   Tuple names(&scope, runtime_.newTuple(1));
-  Object key(&scope, runtime_.newStrFromCStr("foo"));
-  names.atPut(0, *key);
+  Str name(&scope, runtime_.newStrFromCStr("foo"));
+  names.atPut(0, *name);
   code.setNames(*names);
 
   const byte bytecode[] = {LOAD_CONST, 0, STORE_GLOBAL, 0,
@@ -550,7 +550,7 @@ TEST_F(ThreadTest, StoreGlobalCreateValueCell) {
 
   Dict globals(&scope, runtime_.newDict());
   EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, globals, globals), 42));
-  EXPECT_TRUE(isIntEqualsWord(moduleDictAt(thread_, globals, key), 42));
+  EXPECT_TRUE(isIntEqualsWord(moduleDictAtByStr(thread_, globals, name), 42));
 }
 
 TEST_F(ThreadTest, StoreGlobalReuseValueCell) {
@@ -563,8 +563,8 @@ TEST_F(ThreadTest, StoreGlobalReuseValueCell) {
   code.setConsts(*consts);
 
   Tuple names(&scope, runtime_.newTuple(1));
-  Object key(&scope, runtime_.newStrFromCStr("foo"));
-  names.atPut(0, *key);
+  Str name(&scope, runtime_.newStrFromCStr("foo"));
+  names.atPut(0, *name);
   code.setNames(*names);
 
   const byte bytecode[] = {LOAD_CONST, 0, STORE_GLOBAL, 0,
@@ -574,9 +574,9 @@ TEST_F(ThreadTest, StoreGlobalReuseValueCell) {
 
   Dict globals(&scope, runtime_.newDict());
   Object value(&scope, runtime_.newInt(99));
-  moduleDictAtPut(thread_, globals, key, value);
+  moduleDictAtPutByStr(thread_, globals, name, value);
   EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, globals, globals), 42));
-  EXPECT_TRUE(isIntEqualsWord(moduleDictAt(thread_, globals, key), 42));
+  EXPECT_TRUE(isIntEqualsWord(moduleDictAtByStr(thread_, globals, name), 42));
 }
 
 TEST_F(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
@@ -585,8 +585,8 @@ TEST_F(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
   Code code(&scope, newEmptyCode());
 
   Tuple names(&scope, runtime_.newTuple(1));
-  Object key(&scope, runtime_.newStrFromCStr("foo"));
-  names.atPut(0, *key);
+  Str name(&scope, runtime_.newStrFromCStr("foo"));
+  names.atPut(0, *name);
   code.setNames(*names);
 
   const byte bytecode[] = {LOAD_NAME, 0, RETURN_VALUE, 0};
@@ -596,10 +596,9 @@ TEST_F(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
   Dict globals(&scope, runtime_.newDict());
   Object module_name(&scope, runtime_.symbols()->Builtins());
   Module builtins(&scope, runtime_.newModule(module_name));
-  Object dunder_builtins_name(&scope, runtime_.symbols()->DunderBuiltins());
-  moduleDictAtPut(thread_, globals, dunder_builtins_name, builtins);
+  moduleDictAtPutById(thread_, globals, SymbolId::kDunderBuiltins, builtins);
   Object value(&scope, runtime_.newInt(123));
-  moduleAtPut(thread_, builtins, key, value);
+  moduleAtPutByStr(thread_, builtins, name, value);
   Dict locals(&scope, runtime_.newDict());
   EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, globals, locals), 123));
 }
@@ -2176,8 +2175,7 @@ TEST_F(ThreadTest, ExecSetsMissingDunderBuiltins) {
   thread_->exec(code, globals, globals);
 
   Object builtins_module(&scope, runtime_.findModuleById(SymbolId::kBuiltins));
-  Str dunder_builtins_name(&scope, runtime_.symbols()->DunderBuiltins());
-  EXPECT_EQ(moduleDictAt(thread_, globals, dunder_builtins_name),
+  EXPECT_EQ(moduleDictAtById(thread_, globals, SymbolId::kDunderBuiltins),
             builtins_module);
 }
 

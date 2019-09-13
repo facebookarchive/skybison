@@ -1782,10 +1782,11 @@ HANDLER_INLINE Continue Interpreter::doSetupAnnotations(Thread* thread, word) {
   if (frame->function().globals() == frame->implicitGlobals()) {
     // Module body
     Dict globals_dict(&scope, frame->function().globals());
-    if (moduleDictAt(thread, globals_dict, dunder_annotations)
+    if (moduleDictAtByStr(thread, globals_dict, dunder_annotations)
             .isErrorNotFound()) {
       Object annotations(&scope, runtime->newDict());
-      moduleDictAtPut(thread, globals_dict, dunder_annotations, annotations);
+      moduleDictAtPutByStr(thread, globals_dict, dunder_annotations,
+                           annotations);
     }
   } else {
     // Class body
@@ -1912,7 +1913,7 @@ HANDLER_INLINE Continue Interpreter::doStoreName(Thread* thread, word arg) {
   Object implicit_globals_obj(&scope, frame->implicitGlobals());
   if (implicit_globals_obj == frame->function().globals()) {
     Dict module_dict(&scope, *implicit_globals_obj);
-    moduleDictAtPut(thread, module_dict, name, value);
+    moduleDictAtPutByStr(thread, module_dict, name, value);
     return Continue::NEXT;
   }
   if (implicit_globals_obj.isDict()) {
@@ -2080,8 +2081,8 @@ RawObject Interpreter::globalsAt(Thread* thread, const Dict& module_dict,
                                  const Str& name, const Function& function,
                                  word cache_index) {
   HandleScope scope(thread);
-  Object module_dict_result(&scope,
-                            moduleDictValueCellAt(thread, module_dict, name));
+  Object module_dict_result(
+      &scope, moduleDictValueCellAtByStr(thread, module_dict, name));
   if (module_dict_result.isValueCell()) {
     ValueCell value_cell(&scope, *module_dict_result);
     if (isCacheEnabledForFunction(function)) {
@@ -2090,7 +2091,8 @@ RawObject Interpreter::globalsAt(Thread* thread, const Dict& module_dict,
     return value_cell.value();
   }
   Dict builtins(&scope, moduleDictBuiltins(thread, module_dict));
-  Object builtins_result(&scope, moduleDictValueCellAt(thread, builtins, name));
+  Object builtins_result(&scope,
+                         moduleDictValueCellAtByStr(thread, builtins, name));
   if (builtins_result.isValueCell()) {
     ValueCell value_cell(&scope, *builtins_result);
     if (isCacheEnabledForFunction(function)) {
@@ -2114,7 +2116,7 @@ RawObject Interpreter::globalsAtPut(Thread* thread, const Dict& module_dict,
                                     word cache_index) {
   HandleScope scope(thread);
   ValueCell module_dict_result(
-      &scope, moduleDictValueCellAtPut(thread, module_dict, name, value));
+      &scope, moduleDictValueCellAtPutByStr(thread, module_dict, name, value));
   if (isCacheEnabledForFunction(function)) {
     icUpdateGlobalVar(thread, function, cache_index, module_dict_result);
   }
@@ -2424,13 +2426,14 @@ HANDLER_INLINE Continue Interpreter::doLoadName(Thread* thread, word arg) {
     }
   }
   Dict module_dict(&scope, frame->function().globals());
-  Object module_dict_result(&scope, moduleDictAt(thread, module_dict, name));
+  Object module_dict_result(&scope,
+                            moduleDictAtByStr(thread, module_dict, name));
   if (!module_dict_result.isErrorNotFound()) {
     frame->pushValue(*module_dict_result);
     return Continue::NEXT;
   }
   Dict builtins(&scope, moduleDictBuiltins(thread, module_dict));
-  Object builtins_result(&scope, moduleDictAt(thread, builtins, name));
+  Object builtins_result(&scope, moduleDictAtByStr(thread, builtins, name));
   if (!builtins_result.isErrorNotFound()) {
     frame->pushValue(*builtins_result);
     return Continue::NEXT;
@@ -2679,13 +2682,11 @@ HANDLER_INLINE Continue Interpreter::doImportName(Thread* thread, word arg) {
   // TODO(T41326706) Pass in a real globals dict here. For now create a small
   // dict with just the things needed by importlib.
   Dict globals(&scope, frame->function().globals());
-  Str global_name(&scope, Str::empty());
   Object value(&scope, NoneType::object());
   for (SymbolId id : {SymbolId::kDunderPackage, SymbolId::kDunderSpec,
                       SymbolId::kDunderName}) {
-    global_name = runtime->symbols()->at(id);
-    value = moduleDictAt(thread, globals, global_name);
-    runtime->dictAtPutByStr(thread, dict_no_value_cells, global_name, value);
+    value = moduleDictAtById(thread, globals, id);
+    runtime->dictAtPutById(thread, dict_no_value_cells, id, value);
   }
   // TODO(T41634372) Pass in a dict that is similar to what `builtins.locals`
   // returns. Use `None` for now since the default importlib behavior is to
@@ -2985,7 +2986,7 @@ HANDLER_INLINE Continue Interpreter::doStoreAnnotation(Thread* thread,
   if (frame->function().globals() == frame->implicitGlobals()) {
     // Module body
     Dict globals_dict(&scope, frame->function().globals());
-    annotations = moduleDictAt(thread, globals_dict, dunder_annotations);
+    annotations = moduleDictAtByStr(thread, globals_dict, dunder_annotations);
   } else {
     // Class body
     Object implicit_globals(&scope, frame->implicitGlobals());
@@ -3318,7 +3319,7 @@ HANDLER_INLINE Continue Interpreter::doLoadClassDeref(Thread* thread,
   if (frame->function().globals() == frame->implicitGlobals()) {
     // Module body
     Dict globals_dict(&scope, frame->function().globals());
-    result = moduleDictAt(thread, globals_dict, name);
+    result = moduleDictAtByStr(thread, globals_dict, name);
   } else {
     // Class body
     Object implicit_globals(&scope, frame->implicitGlobals());

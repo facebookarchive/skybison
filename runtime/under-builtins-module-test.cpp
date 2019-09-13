@@ -1487,9 +1487,9 @@ TEST_F(UnderBuiltinsModuleTest, UnderModuleDirListWithFilteredOutPlaceholders) {
   Str baz(&scope, runtime_.newStrFromCStr("baz"));
   Str value(&scope, runtime_.newStrFromCStr("value"));
 
-  moduleDictAtPut(thread_, module_dict, foo, value);
-  moduleDictAtPut(thread_, module_dict, bar, value);
-  moduleDictAtPut(thread_, module_dict, baz, value);
+  moduleDictAtPutByStr(thread_, module_dict, foo, value);
+  moduleDictAtPutByStr(thread_, module_dict, bar, value);
+  moduleDictAtPutByStr(thread_, module_dict, baz, value);
 
   ValueCell::cast(runtime_.dictAtByStr(thread_, module_dict, bar))
       .makePlaceholder();

@@ -139,12 +139,9 @@ static void printPendingExceptionImpl(Thread* thread, bool set_sys_last_vars) {
 
   if (set_sys_last_vars) {
     Module sys(&scope, runtime->findModuleById(SymbolId::kSys));
-    Str key(&scope, runtime->symbols()->LastType());
-    moduleAtPut(thread, sys, key, type);
-    key = runtime->symbols()->LastValue();
-    moduleAtPut(thread, sys, key, value);
-    key = runtime->symbols()->LastTraceback();
-    moduleAtPut(thread, sys, key, tb);
+    moduleAtPutById(thread, sys, SymbolId::kLastType, type);
+    moduleAtPutById(thread, sys, SymbolId::kLastValue, value);
+    moduleAtPutById(thread, sys, SymbolId::kLastTraceback, tb);
   }
 
   Object hook(&scope, runtime->lookupNameInModule(thread, SymbolId::kSys,

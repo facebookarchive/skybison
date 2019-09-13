@@ -17,23 +17,46 @@ RawObject moduleAt(Thread* thread, const Module& module, const Object& key) {
   return moduleDictAt(thread, dict, key);
 }
 
-RawObject moduleAtById(Thread* thread, const Module& module, SymbolId key) {
+RawObject moduleAtByStr(Thread* thread, const Module& module, const Str& name) {
   HandleScope scope(thread);
-  Object key_obj(&scope, thread->runtime()->symbols()->at(key));
-  return moduleAt(thread, module, key_obj);
+  Dict dict(&scope, module.dict());
+  return moduleDictAtByStr(thread, dict, name);
+}
+
+RawObject moduleAtById(Thread* thread, const Module& module, SymbolId id) {
+  HandleScope scope(thread);
+  Dict dict(&scope, module.dict());
+  return moduleDictAtById(thread, dict, id);
 }
 
 RawObject moduleValueCellAtById(Thread* thread, const Module& module,
-                                SymbolId key) {
+                                SymbolId id) {
   HandleScope scope(thread);
   Dict dict(&scope, module.dict());
-  Object key_obj(&scope, thread->runtime()->symbols()->at(key));
-  return moduleDictValueCellAt(thread, dict, key_obj);
+  return moduleDictValueCellAtById(thread, dict, id);
 }
 
 RawObject moduleDictAt(Thread* thread, const Dict& module_dict,
                        const Object& key) {
   RawObject result = moduleDictValueCellAt(thread, module_dict, key);
+  if (!result.isErrorNotFound()) {
+    return ValueCell::cast(result).value();
+  }
+  return Error::notFound();
+}
+
+RawObject moduleDictAtByStr(Thread* thread, const Dict& module_dict,
+                            const Str& name) {
+  RawObject result = moduleDictValueCellAtByStr(thread, module_dict, name);
+  if (!result.isErrorNotFound()) {
+    return ValueCell::cast(result).value();
+  }
+  return Error::notFound();
+}
+
+RawObject moduleDictAtById(Thread* thread, const Dict& module_dict,
+                           SymbolId id) {
+  RawObject result = moduleDictValueCellAtById(thread, module_dict, id);
   if (!result.isErrorNotFound()) {
     return ValueCell::cast(result).value();
   }
@@ -53,12 +76,37 @@ RawObject moduleDictValueCellAt(Thread* thread, const Dict& dict,
   return *result;
 }
 
+RawObject moduleDictValueCellAtByStr(Thread* thread, const Dict& dict,
+                                     const Str& name) {
+  HandleScope scope(thread);
+  Object result(&scope, thread->runtime()->dictAtByStr(thread, dict, name));
+  DCHECK(result.isErrorNotFound() || result.isValueCell(),
+         "global dict lookup result must return either ErrorNotFound or "
+         "ValueCell");
+  if (result.isErrorNotFound() || ValueCell::cast(*result).isPlaceholder()) {
+    return Error::notFound();
+  }
+  return *result;
+}
+
+RawObject moduleDictValueCellAtById(Thread* thread, const Dict& dict,
+                                    SymbolId id) {
+  HandleScope scope(thread);
+  Object result(&scope, thread->runtime()->dictAtById(thread, dict, id));
+  DCHECK(result.isErrorNotFound() || result.isValueCell(),
+         "global dict lookup result must return either ErrorNotFound or "
+         "ValueCell");
+  if (result.isErrorNotFound() || ValueCell::cast(*result).isPlaceholder()) {
+    return Error::notFound();
+  }
+  return *result;
+}
+
 RawDict moduleDictBuiltins(Thread* thread, const Dict& dict) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Object dunder_builtins_name(&scope, runtime->symbols()->DunderBuiltins());
-  Object builtins_module(&scope,
-                         moduleDictAt(thread, dict, dunder_builtins_name));
+  Object builtins_module(
+      &scope, moduleDictAtById(thread, dict, SymbolId::kDunderBuiltins));
   if (!builtins_module.isErrorNotFound()) {
     CHECK(runtime->isInstanceOfModule(*builtins_module),
           "expected builtins module");
@@ -67,9 +115,8 @@ RawDict moduleDictBuiltins(Thread* thread, const Dict& dict) {
 
   // Create a minimal builtins dictionary with just `{'None': None}`.
   Dict builtins(&scope, runtime->newDict());
-  Object none_name(&scope, runtime->symbols()->None());
   Object none(&scope, NoneType::object());
-  moduleDictAtPut(thread, builtins, none_name, none);
+  moduleDictAtPutById(thread, builtins, SymbolId::kNone, none);
   return *builtins;
 }
 
@@ -77,16 +124,21 @@ RawObject moduleAtPut(Thread* thread, const Module& module, const Object& key,
                       const Object& value) {
   HandleScope scope(thread);
   Dict dict(&scope, module.dict());
-  // TODO(T42983855) Respect data properties here.
   return moduleDictAtPut(thread, dict, key, value);
 }
 
-RawObject moduleAtPutById(Thread* thread, const Module& module, SymbolId key,
+RawObject moduleAtPutByStr(Thread* thread, const Module& module,
+                           const Str& name, const Object& value) {
+  HandleScope scope(thread);
+  Dict dict(&scope, module.dict());
+  return moduleDictAtPutByStr(thread, dict, name, value);
+}
+
+RawObject moduleAtPutById(Thread* thread, const Module& module, SymbolId id,
                           const Object& value) {
   HandleScope scope(thread);
   Dict dict(&scope, module.dict());
-  Object key_name(&scope, thread->runtime()->symbols()->at(key));
-  return moduleDictAtPut(thread, dict, key_name, value);
+  return moduleDictAtPutById(thread, dict, id, value);
 }
 
 RawObject moduleDictAtPut(Thread* thread, const Dict& module_dict,
@@ -98,6 +150,24 @@ RawObject moduleDictAtPut(Thread* thread, const Dict& module_dict,
     return *result;
   }
   return ValueCell::cast(*result).value();
+}
+
+RawObject moduleDictAtPutByStr(Thread* thread, const Dict& module_dict,
+                               const Str& name, const Object& value) {
+  HandleScope scope(thread);
+  Object result(
+      &scope, moduleDictValueCellAtPutByStr(thread, module_dict, name, value));
+  if (result.isError()) {
+    return *result;
+  }
+  return ValueCell::cast(*result).value();
+}
+
+RawObject moduleDictAtPutById(Thread* thread, const Dict& module_dict,
+                              SymbolId id, const Object& value) {
+  HandleScope scope(thread);
+  Str name(&scope, thread->runtime()->symbols()->at(id));
+  return moduleDictAtPutByStr(thread, module_dict, name, value);
 }
 
 RawObject moduleDictValueCellAtPut(Thread* thread, const Dict& module_dict,
@@ -119,6 +189,27 @@ RawObject moduleDictValueCellAtPut(Thread* thread, const Dict& module_dict,
   }
   return thread->runtime()->dictAtPutInValueCell(thread, module_dict, key,
                                                  value);
+}
+
+RawObject moduleDictValueCellAtPutByStr(Thread* thread, const Dict& module_dict,
+                                        const Str& name, const Object& value) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object module_result(&scope, runtime->dictAtByStr(thread, module_dict, name));
+  if (module_result.isValueCell() &&
+      ValueCell::cast(*module_result).isPlaceholder()) {
+    // A builtin entry is cached under the same name, so invalidate its caches.
+    Dict builtins(&scope, moduleDictBuiltins(thread, module_dict));
+    Object builtins_result(&scope,
+                           moduleDictValueCellAtByStr(thread, builtins, name));
+    DCHECK(builtins_result.isValueCell(), "a builtin entry must exist");
+    ValueCell builtins_value_cell(&scope, *builtins_result);
+    DCHECK(!builtins_value_cell.dependencyLink().isNoneType(),
+           "the builtin valuecell must have a dependent");
+    icInvalidateGlobalVar(thread, builtins_value_cell);
+  }
+  return thread->runtime()->dictAtPutInValueCellByStr(thread, module_dict, name,
+                                                      value);
 }
 
 RawObject moduleDictRemove(Thread* thread, const Dict& module_dict,
@@ -210,8 +301,7 @@ bool nextModuleDictItem(RawTuple data, word* idx) {
 int execDef(Thread* thread, const Module& module, PyModuleDef* def) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Str key(&scope, runtime->symbols()->DunderName());
-  Object name_obj(&scope, moduleAt(thread, module, key));
+  Object name_obj(&scope, moduleAtById(thread, module, SymbolId::kDunderName));
   if (!runtime->isInstanceOfStr(*name_obj)) {
     thread->raiseWithFmt(LayoutId::kSystemError, "nameless module");
     return -1;
@@ -279,18 +369,13 @@ RawObject moduleInit(Thread* thread, const Module& module, const Object& name) {
     module.setName(*name);
   }
   module.setDef(runtime->newIntFromCPtr(nullptr));
-  Object key(&scope, runtime->symbols()->DunderName());
-  moduleAtPut(thread, module, key, name);
+  moduleAtPutById(thread, module, SymbolId::kDunderName, name);
 
   Object none(&scope, NoneType::object());
-  Object doc_key(&scope, runtime->symbols()->DunderDoc());
-  moduleAtPut(thread, module, doc_key, none);
-  Object package_key(&scope, runtime->symbols()->DunderPackage());
-  moduleAtPut(thread, module, package_key, none);
-  Object loader_key(&scope, runtime->symbols()->DunderLoader());
-  moduleAtPut(thread, module, loader_key, none);
-  Object spec_key(&scope, runtime->symbols()->DunderSpec());
-  moduleAtPut(thread, module, spec_key, none);
+  moduleAtPutById(thread, module, SymbolId::kDunderDoc, none);
+  moduleAtPutById(thread, module, SymbolId::kDunderPackage, none);
+  moduleAtPutById(thread, module, SymbolId::kDunderLoader, none);
+  moduleAtPutById(thread, module, SymbolId::kDunderSpec, none);
   return NoneType::object();
 }
 

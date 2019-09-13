@@ -69,11 +69,11 @@ TEST_F(ModuleBuiltinsTest, DunderSetattrSetsAttribute) {
   HandleScope scope(thread_);
   Object module_name(&scope, runtime_.newStrFromCStr("foo"));
   Module module(&scope, runtime_.newModule(module_name));
-  Object name(&scope, runtime_.newStrFromCStr("foobarbaz"));
+  Str name(&scope, runtime_.newStrFromCStr("foobarbaz"));
   Object value(&scope, runtime_.newInt(0xf00d));
   EXPECT_TRUE(runBuiltin(ModuleBuiltins::dunderSetattr, module, name, value)
                   .isNoneType());
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(thread_, module, name), 0xf00d));
+  EXPECT_TRUE(isIntEqualsWord(moduleAtByStr(thread_, module, name), 0xf00d));
 }
 
 TEST_F(ModuleBuiltinsTest, DunderSetattrWithNonStrNameRaisesTypeError) {
@@ -132,30 +132,31 @@ TEST_F(ModuleBuiltinsTest, ModuleAtIgnoresBuiltinsEntry) {
 
   Str foo(&scope, runtime_.newStrFromCStr("foo"));
   Str foo_in_builtins(&scope, runtime_.newStrFromCStr("foo_in_builtins"));
-  moduleDictAtPut(thread_, builtins_dict, foo, foo_in_builtins);
-  EXPECT_TRUE(moduleAt(thread_, module, foo).isErrorNotFound());
+  moduleDictAtPutByStr(thread_, builtins_dict, foo, foo_in_builtins);
+  EXPECT_TRUE(moduleAtByStr(thread_, module, foo).isErrorNotFound());
 }
 
 TEST_F(ModuleBuiltinsTest, ModuleAtReturnsValuePutByModuleAtPut) {
   HandleScope scope(thread_);
   Module module(&scope, createTestingModule(thread_, nullptr));
-  Object key(&scope, runtime_.newStrFromCStr("a"));
+  Str name(&scope, runtime_.newStrFromCStr("a"));
   Object value(&scope, runtime_.newStrFromCStr("a's value"));
-  moduleAtPut(thread_, module, key, value);
-  EXPECT_EQ(moduleAt(thread_, module, key), *value);
+  moduleAtPutByStr(thread_, module, name, value);
+  EXPECT_EQ(moduleAtByStr(thread_, module, name), *value);
 }
 
 TEST_F(ModuleBuiltinsTest, ModuleAtReturnsErrorNotFoundForPlaceholder) {
   HandleScope scope(thread_);
   Module module(&scope, createTestingModule(thread_, nullptr));
-  Object key(&scope, runtime_.newStrFromCStr("a"));
+  Str name(&scope, runtime_.newStrFromCStr("a"));
   Object value(&scope, runtime_.newStrFromCStr("a's value"));
-  moduleAtPut(thread_, module, key, value);
+  moduleAtPutByStr(thread_, module, name, value);
 
   Dict module_dict(&scope, module.dict());
-  ValueCell value_cell(&scope, runtime_.dictAt(thread_, module_dict, key));
+  ValueCell value_cell(&scope,
+                       runtime_.dictAtByStr(thread_, module_dict, name));
   value_cell.makePlaceholder();
-  EXPECT_TRUE(moduleAt(thread_, module, key).isErrorNotFound());
+  EXPECT_TRUE(moduleAtByStr(thread_, module, name).isErrorNotFound());
 }
 
 TEST_F(ModuleBuiltinsTest, ModuleAtByIdReturnsValuePutByModuleAtPutById) {
@@ -182,7 +183,7 @@ foo()
   Dict module_dict(&scope, module.dict());
   Str a(&scope, runtime_.newStrFromCStr("a"));
   ValueCell value_cell_a(&scope,
-                         moduleDictValueCellAt(thread_, module_dict, a));
+                         moduleDictValueCellAtByStr(thread_, module_dict, a));
 
   // The looked up module entry got cached in function foo().
   Function function_foo(&scope, mainModuleAt(&runtime_, "foo"));
@@ -191,7 +192,7 @@ foo()
 
   // Updating global variable a does not invalidate the cache.
   Str new_value(&scope, runtime_.newStrFromCStr("value"));
-  moduleAtPut(thread_, module, a, new_value);
+  moduleAtPutByStr(thread_, module, a, new_value);
   EXPECT_EQ(icLookupGlobalVar(*caches, 0), *value_cell_a);
   EXPECT_EQ(value_cell_a.value(), *new_value);
 }
@@ -213,7 +214,7 @@ foo()
   Str a(&scope, runtime_.newStrFromCStr("a"));
   Str new_value(&scope, runtime_.newStrFromCStr("value"));
   ValueCell value_cell_a(&scope,
-                         moduleDictValueCellAt(thread_, builtins_dict, a));
+                         moduleDictValueCellAtByStr(thread_, builtins_dict, a));
 
   // The looked up module entry got cached in function foo().
   Function function_foo(&scope, mainModuleAt(&runtime_, "foo"));
@@ -224,50 +225,50 @@ foo()
 
   // Updating global variable a does invalidate the cache since it shadows
   // __builtins__.a.
-  moduleAtPut(thread_, module, a, new_value);
+  moduleAtPutByStr(thread_, module, a, new_value);
   EXPECT_TRUE(icLookupGlobalVar(*caches, 0).isNoneType());
 }
 
 TEST_F(ModuleBuiltinsTest, ModuleDictAtReturnsValueCellValue) {
   HandleScope scope(thread_);
   Dict globals(&scope, runtime_.newDict());
-  Object key(&scope, runtime_.newStrFromCStr("a"));
+  Str name(&scope, runtime_.newStrFromCStr("a"));
   Object value(&scope, runtime_.newStrFromCStr("a's value"));
-  moduleDictAtPut(thread_, globals, key, value);
-  Object result(&scope, moduleDictAt(thread_, globals, key));
+  moduleDictAtPutByStr(thread_, globals, name, value);
+  Object result(&scope, moduleDictAtByStr(thread_, globals, name));
   EXPECT_EQ(result, value);
 }
 
 TEST_F(ModuleBuiltinsTest, ModuleDictAtPutReturnsStoredValue) {
   HandleScope scope(thread_);
   Dict globals(&scope, runtime_.newDict());
-  Object key(&scope, runtime_.newStrFromCStr("a"));
+  Str name(&scope, runtime_.newStrFromCStr("a"));
   Object value(&scope, runtime_.newStrFromCStr("a's value"));
-  Object result(&scope, moduleDictAtPut(thread_, globals, key, value));
+  Object result(&scope, moduleDictAtPutByStr(thread_, globals, name, value));
   EXPECT_EQ(*result, value);
 }
 
 TEST_F(ModuleBuiltinsTest, ModuleDictAtReturnsErrorNotFoundForPlaceholder) {
   HandleScope scope(thread_);
   Dict globals(&scope, runtime_.newDict());
-  Object key(&scope, runtime_.newStrFromCStr("a"));
+  Str name(&scope, runtime_.newStrFromCStr("a"));
   Object value(&scope, runtime_.newStrFromCStr("a's value"));
-  moduleDictAtPut(thread_, globals, key, value);
-  Object value_cell_obj(&scope, runtime_.dictAt(thread_, globals, key));
+  moduleDictAtPutByStr(thread_, globals, name, value);
+  Object value_cell_obj(&scope, runtime_.dictAtByStr(thread_, globals, name));
   ASSERT_TRUE(value_cell_obj.isValueCell());
   ValueCell value_cell(&scope, *value_cell_obj);
   value_cell.makePlaceholder();
-  Object result(&scope, moduleDictAt(thread_, globals, key));
+  Object result(&scope, moduleDictAtByStr(thread_, globals, name));
   EXPECT_TRUE(result.isErrorNotFound());
 }
 
 TEST_F(ModuleBuiltinsTest, ModuleDictValueCellAtReturnsValueCell) {
   HandleScope scope(thread_);
   Dict globals(&scope, runtime_.newDict());
-  Object key(&scope, runtime_.newStrFromCStr("a"));
+  Str name(&scope, runtime_.newStrFromCStr("a"));
   Object value(&scope, runtime_.newStrFromCStr("a's value"));
-  moduleDictAtPut(thread_, globals, key, value);
-  Object result(&scope, moduleDictValueCellAt(thread_, globals, key));
+  moduleDictAtPutByStr(thread_, globals, name, value);
+  Object result(&scope, moduleDictValueCellAtByStr(thread_, globals, name));
   ASSERT_TRUE(result.isValueCell());
   EXPECT_EQ(ValueCell::cast(*result).value(), value);
 }
@@ -276,24 +277,23 @@ TEST_F(ModuleBuiltinsTest,
        ModuleDictValueCellAtReturnsErrorNotFoundForPlaceholder) {
   HandleScope scope(thread_);
   Dict globals(&scope, runtime_.newDict());
-  Object key(&scope, runtime_.newStrFromCStr("a"));
+  Str name(&scope, runtime_.newStrFromCStr("a"));
   Object value(&scope, runtime_.newStrFromCStr("a's value"));
-  moduleDictAtPut(thread_, globals, key, value);
-  Object value_cell_obj(&scope, runtime_.dictAt(thread_, globals, key));
+  moduleDictAtPutByStr(thread_, globals, name, value);
+  Object value_cell_obj(&scope, runtime_.dictAtByStr(thread_, globals, name));
   ASSERT_TRUE(value_cell_obj.isValueCell());
   ValueCell value_cell(&scope, *value_cell_obj);
   value_cell.makePlaceholder();
-  Object result(&scope, moduleDictValueCellAt(thread_, globals, key));
+  Object result(&scope, moduleDictValueCellAtByStr(thread_, globals, name));
   EXPECT_TRUE(result.isErrorNotFound());
 }
 
 TEST_F(ModuleBuiltinsTest, ModuleDictBuiltinsReturnsDunderBuiltins) {
   HandleScope scope(thread_);
   Dict globals(&scope, runtime_.newDict());
-  Object name(&scope, runtime_.newStrFromCStr("mybuiltins"));
+  Str name(&scope, runtime_.newStrFromCStr("mybuiltins"));
   Module module(&scope, runtime_.newModule(name));
-  Object dunder_builtins_name(&scope, runtime_.newStrFromCStr("__builtins__"));
-  moduleDictAtPut(thread_, globals, dunder_builtins_name, module);
+  moduleDictAtPutById(thread_, globals, SymbolId::kDunderBuiltins, module);
 
   Dict result(&scope, moduleDictBuiltins(thread_, globals));
   EXPECT_EQ(result, module.dict());
@@ -304,8 +304,8 @@ TEST_F(ModuleBuiltinsTest, ModuleDictBuiltinsReturnsMinimalDict) {
   Dict globals(&scope, runtime_.newDict());
   Dict result(&scope, moduleDictBuiltins(thread_, globals));
   EXPECT_EQ(result.numItems(), 1);
-  Object none_name(&scope, runtime_.newStrFromCStr("None"));
-  EXPECT_EQ(moduleDictAt(thread_, result, none_name), NoneType::object());
+  Str none_name(&scope, runtime_.newStrFromCStr("None"));
+  EXPECT_EQ(moduleDictAtByStr(thread_, result, none_name), NoneType::object());
 }
 
 TEST_F(ModuleBuiltinsTest,
@@ -324,7 +324,7 @@ foo()
   Dict module_dict(&scope, module.dict());
   Str a(&scope, runtime_.newStrFromCStr("a"));
   ValueCell value_cell_a(&scope,
-                         moduleDictValueCellAt(thread_, module_dict, a));
+                         moduleDictValueCellAtByStr(thread_, module_dict, a));
 
   // The looked up module entry got cached in function foo().
   Function function_foo(&scope, mainModuleAt(&runtime_, "foo"));
@@ -345,9 +345,9 @@ TEST_F(ModuleBuiltinsTest, ModuleDictKeysFiltersOutPlaceholders) {
   Str baz(&scope, runtime_.newStrFromCStr("baz"));
   Str value(&scope, runtime_.newStrFromCStr("value"));
 
-  moduleDictAtPut(thread_, module_dict, foo, value);
-  moduleDictAtPut(thread_, module_dict, bar, value);
-  moduleDictAtPut(thread_, module_dict, baz, value);
+  moduleDictAtPutByStr(thread_, module_dict, foo, value);
+  moduleDictAtPutByStr(thread_, module_dict, bar, value);
+  moduleDictAtPutByStr(thread_, module_dict, baz, value);
 
   ValueCell::cast(runtime_.dictAt(thread_, module_dict, bar)).makePlaceholder();
 
@@ -367,9 +367,9 @@ TEST_F(ModuleBuiltinsTest, ModuleLenReturnsItemCountExcludingPlaceholders) {
   Str baz(&scope, runtime_.newStrFromCStr("baz"));
   Str value(&scope, runtime_.newStrFromCStr("value"));
 
-  moduleAtPut(thread_, module, foo, value);
-  moduleAtPut(thread_, module, bar, value);
-  moduleAtPut(thread_, module, baz, value);
+  moduleAtPutByStr(thread_, module, foo, value);
+  moduleAtPutByStr(thread_, module, bar, value);
+  moduleAtPutByStr(thread_, module, baz, value);
 
   SmallInt previous_len(&scope, moduleLen(thread_, module));
 
@@ -392,9 +392,9 @@ TEST_F(ModuleBuiltinsTest, ModuleValuesFiltersOutPlaceholders) {
   Str baz(&scope, runtime_.newStrFromCStr("baz"));
   Str baz_value(&scope, runtime_.newStrFromCStr("baz_value"));
 
-  moduleAtPut(thread_, module, foo, foo_value);
-  moduleAtPut(thread_, module, bar, bar_value);
-  moduleAtPut(thread_, module, baz, baz_value);
+  moduleAtPutByStr(thread_, module, foo, foo_value);
+  moduleAtPutByStr(thread_, module, bar, bar_value);
+  moduleAtPutByStr(thread_, module, baz, baz_value);
 
   Dict module_dict(&scope, module.dict());
   ValueCell::cast(runtime_.dictAtByStr(thread_, module_dict, bar))
@@ -427,10 +427,10 @@ TEST_F(ModuleBuiltinsTest, ModuleSetAttrSetsAttribute) {
   HandleScope scope(thread_);
   Object module_name(&scope, runtime_.newStrFromCStr("foo"));
   Module module(&scope, runtime_.newModule(module_name));
-  Object name(&scope, runtime_.internStrFromCStr(thread_, "bar"));
+  Str name(&scope, runtime_.internStrFromCStr(thread_, "bar"));
   Object value(&scope, runtime_.newInt(-543));
   EXPECT_TRUE(moduleSetAttr(thread_, module, name, value).isNoneType());
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(thread_, module, name), -543));
+  EXPECT_TRUE(isIntEqualsWord(moduleAtByStr(thread_, module, name), -543));
 }
 
 TEST_F(ModuleBuiltinsTest, NewModuleDunderReprReturnsString) {
@@ -452,10 +452,10 @@ TEST_F(ModuleBuiltinsTest, NextModuleDictItemReturnsNextNonPlaceholder) {
   Str qux(&scope, runtime_.newStrFromCStr("qux"));
   Str value(&scope, runtime_.newStrFromCStr("value"));
 
-  moduleDictAtPut(thread_, module_dict, foo, value);
-  moduleDictAtPut(thread_, module_dict, bar, value);
-  moduleDictAtPut(thread_, module_dict, baz, value);
-  moduleDictAtPut(thread_, module_dict, qux, value);
+  moduleDictAtPutByStr(thread_, module_dict, foo, value);
+  moduleDictAtPutByStr(thread_, module_dict, bar, value);
+  moduleDictAtPutByStr(thread_, module_dict, baz, value);
+  moduleDictAtPutByStr(thread_, module_dict, qux, value);
 
   // Only baz is not Placeholder.
   ValueCell::cast(runtime_.dictAtByStr(thread_, module_dict, foo))

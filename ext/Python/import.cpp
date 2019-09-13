@@ -142,15 +142,13 @@ PY_EXPORT PyObject* PyImport_Import(PyObject* module_name) {
   if (!current_frame->isSentinel() &&
       current_frame->function().globals().isDict()) {
     Dict globals(&scope, current_frame->function().globals());
-    Object key(&scope, NoneType::object());
     Object value(&scope, NoneType::object());
     for (SymbolId id : {SymbolId::kDunderPackage, SymbolId::kDunderSpec,
                         SymbolId::kDunderName}) {
-      key = runtime->symbols()->at(id);
       // TODO(T41326706): This loop is a workaround so that cpython users do not
       // acccidentally see ValueCells in the module dict.
-      value = moduleDictAt(thread, globals, key);
-      runtime->dictAtPut(thread, globals_obj, key, value);
+      value = moduleDictAtById(thread, globals, id);
+      runtime->dictAtPutById(thread, globals_obj, id, value);
     }
   }
   Object fromlist_obj(&scope, runtime->emptyTuple());

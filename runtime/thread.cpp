@@ -176,13 +176,13 @@ RawObject Thread::exec(const Code& code, const Dict& globals,
         "exec() code must not have CO_OPTIMIZED or CO_NEWLOCALS");
 
   Runtime* runtime = this->runtime();
-  Object dunder_builtins_name(&scope, runtime->symbols()->DunderBuiltins());
-  Object builtins_module_obj(&scope,
-                             moduleDictAt(this, globals, dunder_builtins_name));
+  Object builtins_module_obj(
+      &scope, moduleDictAtById(this, globals, SymbolId::kDunderBuiltins));
   if (builtins_module_obj.isErrorNotFound()) {
     builtins_module_obj = runtime->findModuleById(SymbolId::kBuiltins);
     DCHECK(!builtins_module_obj.isNoneType(), "invalid builtins module");
-    moduleDictAtPut(this, globals, dunder_builtins_name, builtins_module_obj);
+    moduleDictAtPutById(this, globals, SymbolId::kDunderBuiltins,
+                        builtins_module_obj);
   }
 
   Function function(

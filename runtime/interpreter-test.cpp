@@ -956,14 +956,14 @@ c = C()
   Str called_name(&scope, runtime_.newStrFromCStr("called"));
   Object none(&scope, NoneType::object());
   Module main(&scope, findMainModule(&runtime_));
-  moduleAtPut(thread_, main, called_name, none);
+  moduleAtPutByStr(thread_, main, called_name, none);
   Object b_eq_a(&scope, Interpreter::compareOperation(thread_, frame,
                                                       CompareOp::EQ, b, a));
   EXPECT_EQ(b_eq_a, Bool::trueObj());
   called = mainModuleAt(&runtime_, "called");
   EXPECT_TRUE(isStrEqualsCStr(*called, "B"));
 
-  moduleAtPut(thread_, main, called_name, none);
+  moduleAtPutByStr(thread_, main, called_name, none);
   Object c_eq_a(&scope, Interpreter::compareOperation(thread_, frame,
                                                       CompareOp::EQ, c, a));
   EXPECT_EQ(c_eq_a, Bool::trueObj());
@@ -971,7 +971,7 @@ c = C()
   EXPECT_TRUE(isStrEqualsCStr(*called, "C"));
 
   // When rhs is a subtype of lhs, only rhs.__eq__(rhs) is tried.
-  moduleAtPut(thread_, main, called_name, none);
+  moduleAtPutByStr(thread_, main, called_name, none);
   Object a_eq_c(&scope, Interpreter::compareOperation(thread_, frame,
                                                       CompareOp::EQ, a, c));
   EXPECT_EQ(a_eq_c, Bool::trueObj());

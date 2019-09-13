@@ -842,7 +842,7 @@ TEST_F(BuiltinsModuleTest, BuiltinExecSetsGlobalGivenGlobals) {
   Module main(&scope, findMainModule(&runtime_));
   Dict globals(&scope, main.dict());
   Str globals_name(&scope, runtime_.newStrFromCStr("gl"));
-  moduleAtPut(thread_, main, globals_name, globals);
+  moduleAtPutByStr(thread_, main, globals_name, globals);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 a = 1337
 result = exec("a = 1338", gl)
@@ -879,13 +879,13 @@ result = exec("a = 1338", 7)
 TEST_F(BuiltinsModuleTest,
        BuiltinExecWithModuleProxyForGlobalsUsesContainedModuleDict) {
   HandleScope scope(thread_);
-  Str name(&scope, runtime_.newStrFromCStr("testing_module"));
-  Module module(&scope, runtime_.newModule(name));
+  Str module_name(&scope, runtime_.newStrFromCStr("testing_module"));
+  Module module(&scope, runtime_.newModule(module_name));
   ModuleProxy module_proxy(&scope, module.moduleProxy());
 
-  Str key(&scope, runtime_.newStrFromCStr("module_var_key"));
+  Str name(&scope, runtime_.newStrFromCStr("module_var_key"));
   SmallInt value(&scope, SmallInt::fromWord(5));
-  moduleAtPut(thread_, module, key, value);
+  moduleAtPutByStr(thread_, module, name, value);
 
   Str code(&scope, runtime_.newStrFromCStr(R"(
 global module_var_key
@@ -896,20 +896,20 @@ module_var_key += 1
   EXPECT_TRUE(runBuiltin(BuiltinsModule::exec, code, module_proxy, locals)
                   .isNoneType());
 
-  Object updated_value(&scope, moduleAt(thread_, module, key));
+  Object updated_value(&scope, moduleAtByStr(thread_, module, name));
   EXPECT_TRUE(isIntEqualsWord(*updated_value, 5 + 1));
 }
 
 TEST_F(BuiltinsModuleTest,
        BuiltinExecWithModuleProxyForLocalsUsesContainedModuleDict) {
   HandleScope scope(thread_);
-  Str name(&scope, runtime_.newStrFromCStr("testing_module"));
-  Module module(&scope, runtime_.newModule(name));
+  Str module_name(&scope, runtime_.newStrFromCStr("testing_module"));
+  Module module(&scope, runtime_.newModule(module_name));
   ModuleProxy module_proxy(&scope, module.moduleProxy());
 
-  Str key(&scope, runtime_.newStrFromCStr("module_var_key"));
+  Str name(&scope, runtime_.newStrFromCStr("module_var_key"));
   SmallInt value(&scope, SmallInt::fromWord(5));
-  moduleAtPut(thread_, module, key, value);
+  moduleAtPutByStr(thread_, module, name, value);
 
   Str code(&scope, runtime_.newStrFromCStr(R"(
 module_var_key += 1
@@ -919,7 +919,7 @@ module_var_key += 1
   EXPECT_TRUE(runBuiltin(BuiltinsModule::exec, code, module_proxy, locals)
                   .isNoneType());
 
-  Object updated_value(&scope, moduleAt(thread_, module, key));
+  Object updated_value(&scope, moduleAtByStr(thread_, module, name));
   EXPECT_TRUE(isIntEqualsWord(*updated_value, 5 + 1));
 }
 

@@ -12,19 +12,35 @@ namespace python {
 // Look up the value of ValueCell associated with key in module with
 // consideration of placeholders created for caching.
 RawObject moduleAt(Thread* thread, const Module& module, const Object& key);
+// Same as moduleAt but with the Str `name` as key.
+RawObject moduleAtByStr(Thread* thread, const Module& module, const Str& name);
 // Same as moduleAt but with SymbolId as key.
-RawObject moduleAtById(Thread* thread, const Module& module, SymbolId key);
+RawObject moduleAtById(Thread* thread, const Module& module, SymbolId id);
 // Same as moduleAtById but returns the underlying ValueCell.
 RawObject moduleValueCellAtById(Thread* thread, const Module& module,
-                                SymbolId key);
+                                SymbolId id);
 // Same as moduleAt but with dict type parameter.
 RawObject moduleDictAt(Thread* thread, const Dict& module_dict,
                        const Object& key);
+// Same as moduleAt but with dict type parameter.
+RawObject moduleDictAtByStr(Thread* thread, const Dict& module_dict,
+                            const Str& name);
+// Same as moduleAt but with dict type parameter.
+RawObject moduleDictAtById(Thread* thread, const Dict& module_dict,
+                           SymbolId id);
 
 // Only callable by Interpreter for manipulating caches. Same as moduleAt but
 // returns the ValueCell if found.
 RawObject moduleDictValueCellAt(Thread* thread, const Dict& dict,
                                 const Object& key);
+// Only callable by Interpreter for manipulating caches. Same as moduleAt but
+// returns the ValueCell if found.
+RawObject moduleDictValueCellAtByStr(Thread* thread, const Dict& dict,
+                                     const Str& name);
+// Only callable by Interpreter for manipulating caches. Same as moduleAt but
+// returns the ValueCell if found.
+RawObject moduleDictValueCellAtById(Thread* thread, const Dict& dict,
+                                    SymbolId id);
 
 // Returns `__builtins__` of a module dict. Returns a new dict with a single
 // `{"None": None}` entry if `__builtins__` does not exist.
@@ -33,17 +49,31 @@ RawDict moduleDictBuiltins(Thread* thread, const Dict& dict);
 // Associate key with value in module.
 RawObject moduleAtPut(Thread* thread, const Module& module, const Object& key,
                       const Object& value);
-// Same as moduleAtPut but with SymbolId as key.
-RawObject moduleAtPutById(Thread* thread, const Module& module, SymbolId key,
+// Associate name with value in module.
+RawObject moduleAtPutByStr(Thread* thread, const Module& module,
+                           const Str& name, const Object& value);
+// Associate id with value in module.
+RawObject moduleAtPutById(Thread* thread, const Module& module, SymbolId id,
                           const Object& value);
 // Same as moduleAtPut with dict type parameter.
 RawObject moduleDictAtPut(Thread* thread, const Dict& module_dict,
                           const Object& key, const Object& value);
+// Same as moduleAtPutByStr with dict type parameter.
+RawObject moduleDictAtPutByStr(Thread* thread, const Dict& module_dict,
+                               const Str& name, const Object& value);
+// Same as moduleAtPutById with dict type parameter.
+RawObject moduleDictAtPutById(Thread* thread, const Dict& module_dict,
+                              SymbolId id, const Object& value);
 
 // Only callable by Interpreter for manipulating caches. Same as moduleAtPut but
 // returns the inserted ValueCell.
 RawObject moduleDictValueCellAtPut(Thread* thread, const Dict& module_dict,
                                    const Object& key, const Object& value);
+
+// Only callable by Interpreter for manipulating caches. Same as
+// moduleAtPutByStr but returns the inserted ValueCell.
+RawObject moduleDictValueCellAtPutByStr(Thread* thread, const Dict& module_dict,
+                                        const Str& name, const Object& value);
 
 // Remove the ValueCell associcated with key in module_dict.
 RawObject moduleDictRemove(Thread* thread, const Dict& module_dict,
