@@ -1366,8 +1366,10 @@ TEST_F(TrampolinesTest,
   consts.atPut(1, *arg_tuple);
   Dict kw_dict(&scope, runtime_.newDict());
   Object key(&scope, SmallInt::fromWord(2));
+  Object key_hash(&scope, Interpreter::hash(thread_, key));
+  ASSERT_FALSE(key_hash.isErrorException());
   Object value(&scope, SmallInt::fromWord(3));
-  runtime_.dictAtPut(thread_, kw_dict, key, value);
+  runtime_.dictAtPut(thread_, kw_dict, key, key_hash, value);
   consts.atPut(2, *kw_dict);
   code.setConsts(*consts);
 
@@ -1584,8 +1586,10 @@ TEST_F(TrampolinesTest,
   consts.atPut(1, *arg_tuple);
   Dict kw_dict(&scope, runtime_.newDict());
   Object key(&scope, SmallInt::fromWord(2));
+  Object key_hash(&scope, Interpreter::hash(thread_, key));
+  ASSERT_FALSE(key_hash.isErrorException());
   Object value(&scope, SmallInt::fromWord(3));
-  runtime_.dictAtPut(thread_, kw_dict, key, value);
+  runtime_.dictAtPut(thread_, kw_dict, key, key_hash, value);
   consts.atPut(2, *kw_dict);
   code.setConsts(*consts);
 

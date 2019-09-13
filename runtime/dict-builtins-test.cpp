@@ -24,8 +24,10 @@ TEST_F(DictBuiltinsTest, DictAtGrowsToInitialCapacity) {
   EXPECT_EQ(dict.capacity(), 0);
 
   Object key(&scope, runtime_.newInt(123));
+  Object hash(&scope, Interpreter::hash(thread_, key));
+  ASSERT_FALSE(hash.isErrorException());
   Object value(&scope, runtime_.newInt(456));
-  runtime_.dictAtPut(thread_, dict, key, value);
+  runtime_.dictAtPut(thread_, dict, key, hash, value);
   int expected = Runtime::kInitialDictCapacity;
   EXPECT_EQ(dict.capacity(), expected);
 }
@@ -753,8 +755,10 @@ TEST_F(DictBuiltinsTest, GetReturnsValue) {
   HandleScope scope(thread_);
   Dict dict(&scope, runtime_.newDict());
   Object key(&scope, runtime_.newInt(123));
+  Object hash(&scope, Interpreter::hash(thread_, key));
+  ASSERT_FALSE(hash.isErrorException());
   Object value(&scope, runtime_.newInt(456));
-  runtime_.dictAtPut(thread_, dict, key, value);
+  runtime_.dictAtPut(thread_, dict, key, hash, value);
   Object dflt(&scope, runtime_.newInt(789));
   Object result(&scope, runBuiltin(DictBuiltins::get, dict, key, dflt));
   EXPECT_TRUE(isIntEqualsWord(*result, 456));
@@ -889,7 +893,7 @@ TEST_F(DictBuiltinsTest, nextBucketProbesAllBuckets) {
   Object key_hash(&scope, Interpreter::hash(thread_, key));
   ASSERT_FALSE(key_hash.isErrorException());
   Object value(&scope, runtime_.newInt(456));
-  runtime_.dictAtPut(thread_, dict, key, value);
+  runtime_.dictAtPut(thread_, dict, key, key_hash, value);
 
   Tuple data(&scope, dict.data());
   ASSERT_EQ(data.length(),

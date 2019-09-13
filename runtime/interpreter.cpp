@@ -2498,7 +2498,7 @@ HANDLER_INLINE Continue Interpreter::doBuildMap(Thread* thread, word arg) {
     Object key(&scope, frame->popValue());
     Object key_hash(&scope, hash(thread, key));
     if (key_hash.isErrorException()) return Continue::UNWIND;
-    runtime->dictAtPutWithHash(thread, dict, key, value, key_hash);
+    runtime->dictAtPut(thread, dict, key, key_hash, value);
   }
   frame->pushValue(*dict);
   return Continue::NEXT;
@@ -3306,7 +3306,9 @@ HANDLER_INLINE Continue Interpreter::doMapAdd(Thread* thread, word arg) {
   Object key(&scope, frame->popValue());
   Object value(&scope, frame->popValue());
   Dict dict(&scope, Dict::cast(frame->peek(arg - 1)));
-  thread->runtime()->dictAtPut(thread, dict, key, value);
+  Object key_hash(&scope, Interpreter::hash(thread, key));
+  if (key_hash.isErrorException()) return Continue::UNWIND;
+  thread->runtime()->dictAtPut(thread, dict, key, key_hash, value);
   return Continue::NEXT;
 }
 
@@ -3571,8 +3573,10 @@ HANDLER_INLINE Continue Interpreter::doBuildConstKeyMap(Thread* thread,
   Dict dict(&scope, thread->runtime()->newDictWithSize(keys.length()));
   for (word i = arg - 1; i >= 0; i--) {
     Object key(&scope, keys.at(i));
+    Object key_hash(&scope, Interpreter::hash(thread, key));
+    if (key_hash.isErrorException()) return Continue::UNWIND;
     Object value(&scope, frame->popValue());
-    thread->runtime()->dictAtPut(thread, dict, key, value);
+    thread->runtime()->dictAtPut(thread, dict, key, key_hash, value);
   }
   frame->pushValue(*dict);
   return Continue::NEXT;

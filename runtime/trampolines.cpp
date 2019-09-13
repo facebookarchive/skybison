@@ -371,7 +371,9 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
           runtime->listAdd(thread, saved_values, value);
         } else {
           // New, add it and associated value to the varkeyargs dict
-          runtime->dictAtPut(thread, dict, key, value);
+          Object key_hash(&scope, Interpreter::hash(thread, key));
+          if (key_hash.isErrorException()) return *key_hash;
+          runtime->dictAtPut(thread, dict, key, key_hash, value);
           argc--;
         }
       }

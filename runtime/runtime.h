@@ -476,7 +476,7 @@ class Runtime {
   //
   // This handles growing the backing Tuple if needed.
   void dictAtPut(Thread* thread, const Dict& dict, const Object& key,
-                 const Object& value);
+                 const Object& key_hash, const Object& value);
 
   // Does the same as `dictAtPut` but only works for `key` being a `str`
   // instance. It must not be used with instances of a `str` subclass.
@@ -487,10 +487,6 @@ class Runtime {
   // as key.
   void dictAtPutById(Thread* thread, const Dict& dict, SymbolId id,
                      const Object& value);
-
-  // Support explicit hash value of key to do dictAtPut.
-  void dictAtPutWithHash(Thread* thread, const Dict& dict, const Object& key,
-                         const Object& value, const Object& key_hash);
 
   // Look up the value associated with `key`. Returns the associated value or
   // `Error::notFound()`.

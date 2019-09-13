@@ -137,7 +137,7 @@ RawObject functionSetAttr(Thread* thread, const Function& function,
     return objectSetAttr(thread, function, name_str, name_hash, value);
   }
   Dict function_dict(&scope, function.dict());
-  runtime->dictAtPutWithHash(thread, function_dict, name_str, value, name_hash);
+  runtime->dictAtPut(thread, function_dict, name_str, name_hash, value);
   return NoneType::object();
 }
 

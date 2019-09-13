@@ -360,24 +360,26 @@ TEST_F(RuntimeDictTest, EmptyDictInvariants) {
   EXPECT_EQ(Tuple::cast(dict.data()).length(), 0);
 }
 
-TEST_F(RuntimeDictTest, AtPutWithHashRetainsExistingKeyObject) {
+TEST_F(RuntimeDictTest, DictAtPutRetainsExistingKeyObject) {
   HandleScope scope(thread_);
   Dict dict(&scope, runtime_.newDict());
   Str key0(&scope, runtime_.newStrFromCStr("foobarbazbam"));
-  Object key0_hash(&scope, runtime_.hash(*key0));
+  Object key0_hash(&scope, Interpreter::hash(thread_, key0));
+  ASSERT_FALSE(key0_hash.isErrorException());
   Object value0(&scope, SmallInt::fromWord(123));
   Str key1(&scope, runtime_.newStrFromCStr("foobarbazbam"));
-  Object key1_hash(&scope, runtime_.hash(*key1));
+  Object key1_hash(&scope, Interpreter::hash(thread_, key1));
+  ASSERT_FALSE(key1_hash.isErrorException());
   Object value1(&scope, SmallInt::fromWord(456));
   ASSERT_NE(key0, key1);
   ASSERT_EQ(key0_hash, key1_hash);
 
-  runtime_.dictAtPut(thread_, dict, key0, value0);
+  runtime_.dictAtPut(thread_, dict, key0, key0_hash, value0);
   ASSERT_EQ(dict.numItems(), 1);
   ASSERT_EQ(runtime_.dictAt(thread_, dict, key0), *value0);
 
   // Overwrite the stored value
-  runtime_.dictAtPut(thread_, dict, key1, value1);
+  runtime_.dictAtPut(thread_, dict, key1, key1_hash, value1);
   ASSERT_EQ(dict.numItems(), 1);
   ASSERT_EQ(runtime_.dictAt(thread_, dict, key1), *value1);
 
@@ -391,13 +393,15 @@ TEST_F(RuntimeDictTest, GetSet) {
   HandleScope scope(thread_);
   Dict dict(&scope, runtime_.newDict());
   Object key(&scope, SmallInt::fromWord(12345));
+  Object key_hash(&scope, Interpreter::hash(thread_, key));
+  ASSERT_FALSE(key_hash.isErrorException());
 
   // Looking up a key that doesn't exist should fail
   EXPECT_TRUE(runtime_.dictAt(thread_, dict, key).isError());
 
   // Store a value
   Object stored(&scope, SmallInt::fromWord(67890));
-  runtime_.dictAtPut(thread_, dict, key, stored);
+  runtime_.dictAtPut(thread_, dict, key, key_hash, stored);
   EXPECT_EQ(dict.numItems(), 1);
 
   // Retrieve the stored value
@@ -406,7 +410,7 @@ TEST_F(RuntimeDictTest, GetSet) {
 
   // Overwrite the stored value
   Object new_value(&scope, SmallInt::fromWord(5555));
-  runtime_.dictAtPut(thread_, dict, key, new_value);
+  runtime_.dictAtPut(thread_, dict, key, key_hash, new_value);
   EXPECT_EQ(dict.numItems(), 1);
 
   // Get the new value
@@ -418,6 +422,8 @@ TEST_F(RuntimeDictTest, Remove) {
   HandleScope scope(thread_);
   Dict dict(&scope, runtime_.newDict());
   Object key(&scope, SmallInt::fromWord(12345));
+  Object key_hash(&scope, Interpreter::hash(thread_, key));
+  ASSERT_FALSE(key_hash.isErrorException());
 
   // Removing a key that doesn't exist should fail
   bool is_missing = runtime_.dictRemove(thread_, dict, key).isError();
@@ -427,7 +433,7 @@ TEST_F(RuntimeDictTest, Remove) {
   // stored.
   Object stored(&scope, SmallInt::fromWord(54321));
 
-  runtime_.dictAtPut(thread_, dict, key, stored);
+  runtime_.dictAtPut(thread_, dict, key, key_hash, stored);
   EXPECT_EQ(dict.numItems(), 1);
 
   RawObject retrieved = runtime_.dictRemove(thread_, dict, key);
@@ -446,7 +452,9 @@ TEST_F(RuntimeDictTest, Length) {
   // Add 10 items and make sure length reflects it
   for (int i = 0; i < 10; i++) {
     Object key(&scope, SmallInt::fromWord(i));
-    runtime_.dictAtPut(thread_, dict, key, key);
+    Object key_hash(&scope, Interpreter::hash(thread_, key));
+    ASSERT_FALSE(key_hash.isErrorException());
+    runtime_.dictAtPut(thread_, dict, key, key_hash, key);
   }
   EXPECT_EQ(dict.numItems(), 10);
 
@@ -463,8 +471,10 @@ TEST_F(RuntimeDictTest, AtIfAbsentPutLength) {
   Dict dict(&scope, runtime_.newDict());
 
   Object k1(&scope, SmallInt::fromWord(1));
+  Object k1_hash(&scope, Interpreter::hash(thread_, k1));
+  ASSERT_FALSE(k1_hash.isErrorException());
   Object v1(&scope, SmallInt::fromWord(111));
-  runtime_.dictAtPut(thread_, dict, k1, v1);
+  runtime_.dictAtPut(thread_, dict, k1, k1_hash, v1);
   EXPECT_EQ(dict.numItems(), 1);
 
   class SmallIntCallback : public Callback<RawObject> {
@@ -503,8 +513,10 @@ TEST_F(RuntimeDictTest, DictAtPutGrowsDictWhenDictIsEmpty) {
   EXPECT_EQ(dict.capacity(), 0);
 
   Object first_key(&scope, SmallInt::fromWord(0));
+  Object first_key_hash(&scope, Interpreter::hash(thread_, first_key));
+  ASSERT_FALSE(first_key_hash.isErrorException());
   Object first_value(&scope, SmallInt::fromWord(1));
-  runtime_.dictAtPut(thread_, dict, first_key, first_value);
+  runtime_.dictAtPut(thread_, dict, first_key, first_key_hash, first_value);
 
   word initial_capacity = Runtime::kInitialDictCapacity;
   EXPECT_EQ(dict.numItems(), 1);
@@ -520,8 +532,10 @@ TEST_F(RuntimeDictTest, DictAtPutGrowsDictWhenTwoThirdsUsed) {
   word threshold = ((Runtime::kInitialDictCapacity * 2) / 3) - 1;
   for (word i = 0; i < threshold; i++) {
     Object key(&scope, SmallInt::fromWord(i));
+    Object key_hash(&scope, Interpreter::hash(thread_, key));
+    ASSERT_FALSE(key_hash.isErrorException());
     Object value(&scope, SmallInt::fromWord(-i));
-    runtime_.dictAtPut(thread_, dict, key, value);
+    runtime_.dictAtPut(thread_, dict, key, key_hash, value);
   }
   EXPECT_EQ(dict.numItems(), threshold);
   EXPECT_EQ(dict.numUsableItems(), 1);
@@ -530,8 +544,10 @@ TEST_F(RuntimeDictTest, DictAtPutGrowsDictWhenTwoThirdsUsed) {
 
   // Add another key which should force us to double the capacity
   Object last_key(&scope, SmallInt::fromWord(threshold));
+  Object last_key_hash(&scope, Interpreter::hash(thread_, last_key));
+  ASSERT_FALSE(last_key_hash.isErrorException());
   Object last_value(&scope, SmallInt::fromWord(-threshold));
-  runtime_.dictAtPut(thread_, dict, last_key, last_value);
+  runtime_.dictAtPut(thread_, dict, last_key, last_key_hash, last_value);
   EXPECT_EQ(dict.numItems(), threshold + 1);
   EXPECT_EQ(dict.capacity(), initial_capacity * Runtime::kDictGrowthFactor);
   EXPECT_EQ(dict.numUsableItems(),
@@ -552,10 +568,14 @@ TEST_F(RuntimeDictTest, CollidingKeys) {
 
   // Add two different keys with different values using the same hash
   Object key1(&scope, SmallInt::fromWord(1));
-  runtime_.dictAtPut(thread_, dict, key1, key1);
+  Object key1_hash(&scope, Interpreter::hash(thread_, key1));
+  ASSERT_FALSE(key1_hash.isErrorException());
+  runtime_.dictAtPut(thread_, dict, key1, key1_hash, key1);
 
   Object key2(&scope, Bool::trueObj());
-  runtime_.dictAtPut(thread_, dict, key2, key2);
+  Object key2_hash(&scope, Interpreter::hash(thread_, key2));
+  ASSERT_FALSE(key2_hash.isErrorException());
+  runtime_.dictAtPut(thread_, dict, key2, key2_hash, key2);
 
   // Make sure we get both back
   RawObject retrieved = runtime_.dictAt(thread_, dict, key1);
@@ -572,10 +592,14 @@ TEST_F(RuntimeDictTest, MixedKeys) {
 
   // Add keys of different type
   Object int_key(&scope, SmallInt::fromWord(100));
-  runtime_.dictAtPut(thread_, dict, int_key, int_key);
+  Object int_key_hash(&scope, Interpreter::hash(thread_, int_key));
+  ASSERT_FALSE(int_key_hash.isErrorException());
+  runtime_.dictAtPut(thread_, dict, int_key, int_key_hash, int_key);
 
   Object str_key(&scope, runtime_.newStrFromCStr("testing 123"));
-  runtime_.dictAtPut(thread_, dict, str_key, str_key);
+  Object str_key_hash(&scope, Interpreter::hash(thread_, str_key));
+  ASSERT_FALSE(str_key_hash.isErrorException());
+  runtime_.dictAtPut(thread_, dict, str_key, str_key_hash, str_key);
 
   // Make sure we get the appropriate values back out
   RawObject retrieved = runtime_.dictAt(thread_, dict, int_key);
@@ -600,7 +624,9 @@ TEST_F(RuntimeDictTest, GetKeys) {
   Dict dict(&scope, runtime_.newDict());
   for (word i = 0; i < keys.length(); i++) {
     Object key(&scope, keys.at(i));
-    runtime_.dictAtPut(thread_, dict, key, key);
+    Object key_hash(&scope, Interpreter::hash(thread_, key));
+    ASSERT_FALSE(key_hash.isErrorException());
+    runtime_.dictAtPut(thread_, dict, key, key_hash, key);
   }
 
   // Grab the keys and verify everything is there

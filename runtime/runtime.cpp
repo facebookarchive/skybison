@@ -2938,9 +2938,8 @@ RawObject Runtime::newDictWithSize(word initial_size) {
   return *result;
 }
 
-void Runtime::dictAtPutWithHash(Thread* thread, const Dict& dict,
-                                const Object& key, const Object& value,
-                                const Object& key_hash) {
+void Runtime::dictAtPut(Thread* thread, const Dict& dict, const Object& key,
+                        const Object& key_hash, const Object& value) {
   // TODO(T44245141): Move initialization of an empty dict to
   // dictEnsureCapacity.
   if (dict.capacity() == 0) {
@@ -2967,18 +2966,11 @@ void Runtime::dictAtPutWithHash(Thread* thread, const Dict& dict,
   DCHECK(dict.hasUsableItems(), "dict must have an empty bucket left");
 }
 
-void Runtime::dictAtPut(Thread* thread, const Dict& dict, const Object& key,
-                        const Object& value) {
-  HandleScope scope(thread);
-  Object key_hash(&scope, hash(*key));
-  dictAtPutWithHash(thread, dict, key, value, key_hash);
-}
-
 void Runtime::dictAtPutByStr(Thread* thread, const Dict& dict, const Str& name,
                              const Object& value) {
   HandleScope scope(thread);
   Object name_hash(&scope, strHash(thread, *name));
-  dictAtPutWithHash(thread, dict, name, value, name_hash);
+  dictAtPut(thread, dict, name, name_hash, value);
 }
 
 void Runtime::dictAtPutById(Thread* thread, const Dict& dict, SymbolId id,

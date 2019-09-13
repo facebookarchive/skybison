@@ -33,7 +33,7 @@ PY_EXPORT int _PyDict_SetItem_KnownHash(PyObject* pydict, PyObject* key,
   Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
   Object value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
   SmallInt hash_obj(&scope, SmallInt::fromWordTruncated(hash));
-  runtime->dictAtPutWithHash(thread, dict, key_obj, value_obj, hash_obj);
+  runtime->dictAtPut(thread, dict, key_obj, hash_obj, value_obj);
   return 0;
 }
 

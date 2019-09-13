@@ -194,9 +194,11 @@ static void addSubclass(Thread* thread, const Type& base, const Type& type) {
   Dict subclasses(&scope, base.subclasses());
   LayoutId type_id = Layout::cast(type.instanceLayout()).id();
   Object key(&scope, SmallInt::fromWord(static_cast<word>(type_id)));
+  Object hash(&scope, Interpreter::hash(thread, key));
+  DCHECK(!hash.isErrorException(), "SmallInt must be hashable");
   Object none(&scope, NoneType::object());
   Object value(&scope, runtime->newWeakRef(thread, type, none));
-  runtime->dictAtPut(thread, subclasses, key, value);
+  runtime->dictAtPut(thread, subclasses, key, hash, value);
 }
 
 RawObject typeInit(Thread* thread, const Type& type, const Str& name,
