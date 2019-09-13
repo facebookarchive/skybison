@@ -67,8 +67,7 @@ RawObject moduleDictAtById(Thread* thread, const Dict& module_dict,
 RawObject moduleDictValueCellAt(Thread* thread, const Dict& dict,
                                 const Object& key, const Object& key_hash) {
   HandleScope scope(thread);
-  Object result(&scope,
-                thread->runtime()->dictAtWithHash(thread, dict, key, key_hash));
+  Object result(&scope, thread->runtime()->dictAt(thread, dict, key, key_hash));
   DCHECK(result.isErrorNotFound() || result.isValueCell(),
          "global dict lookup result must return either ErrorNotFound or "
          "ValueCell");
@@ -178,8 +177,8 @@ RawObject moduleDictValueCellAtPut(Thread* thread, const Dict& module_dict,
                                    const Object& value) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Object module_result(
-      &scope, runtime->dictAtWithHash(thread, module_dict, key, key_hash));
+  Object module_result(&scope,
+                       runtime->dictAt(thread, module_dict, key, key_hash));
   if (module_result.isValueCell() &&
       ValueCell::cast(*module_result).isPlaceholder()) {
     // A builtin entry is cached under the same key, so invalidate its caches.

@@ -47,8 +47,8 @@ static RawObject instanceGetAttributeSetLocation(Thread* thread,
                   runtime->layoutGetOverflowDict(thread, object, layout));
     Object name_str_hash(&scope, Interpreter::hash(thread, name_str));
     if (name_str.isErrorException()) return *name_str_hash;
-    Object obj(&scope, runtime->dictAtWithHash(thread, overflow, name_str,
-                                               name_str_hash));
+    Object obj(&scope,
+               runtime->dictAt(thread, overflow, name_str, name_str_hash));
     if (obj.isValueCell()) {
       obj = ValueCell::cast(*obj).value();
     }

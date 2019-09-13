@@ -462,7 +462,7 @@ static RawObject processExplodeArguments(Thread* thread, Frame* caller,
     for (word i = Dict::Bucket::kFirst, j = 0;
          Dict::Bucket::nextItem(*data, &i); j++) {
       key = Dict::Bucket::key(*data, i);
-      if (!thread->runtime()->isInstanceOfStr(*key)) {
+      if (!runtime->isInstanceOfStr(*key)) {
         return thread->raiseWithFmt(LayoutId::kTypeError,
                                     "keywords must be strings");
       }

@@ -28,8 +28,7 @@ RawObject frameGlobals(Thread* thread, Frame* frame) {
 
   Runtime* runtime = thread->runtime();
   Dict modules(&scope, runtime->modules());
-  Object module_obj(&scope,
-                    runtime->dictAtWithHash(thread, modules, name, hash));
+  Object module_obj(&scope, runtime->dictAt(thread, modules, name, hash));
   if (module_obj.isErrorNotFound() ||
       !runtime->isInstanceOfModule(*module_obj)) {
     UNIMPLEMENTED("modules not registered in sys.modules");

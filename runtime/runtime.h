@@ -490,7 +490,8 @@ class Runtime {
 
   // Look up the value associated with `key`. Returns the associated value or
   // `Error::notFound()`.
-  RawObject dictAt(Thread* thread, const Dict& dict, const Object& key);
+  RawObject dictAt(Thread* thread, const Dict& dict, const Object& key,
+                   const Object& key_hash);
 
   // Look up the value associated with `name`. `name` must be an instance of
   // `str` but not of a subclass. Returns the associated value or
@@ -500,10 +501,6 @@ class Runtime {
   // Look up the value associated with `id`. Returns the associated value or
   // `Error::notFound()`.
   RawObject dictAtById(Thread* thread, const Dict& dict, SymbolId id);
-
-  // Support explicit hash value of key to do dictAt.
-  RawObject dictAtWithHash(Thread* thread, const Dict& dict, const Object& key,
-                           const Object& key_hash);
 
   // Looks up and returns the value associated with the key.  If the key is
   // absent, calls thunk and inserts its result as the value.

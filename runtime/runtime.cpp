@@ -2133,7 +2133,7 @@ RawObject Runtime::typeAt(LayoutId layout_id) {
 RawObject Runtime::typeDictAt(Thread* thread, const Dict& dict,
                               const Object& key, const Object& key_hash) {
   HandleScope scope(thread);
-  Object value(&scope, dictAtWithHash(thread, dict, key, key_hash));
+  Object value(&scope, dictAt(thread, dict, key, key_hash));
   DCHECK(value.isErrorNotFound() || value.isValueCell(),
          "type dictionaries must return either ErrorNotFound or ValueCell");
   if (value.isErrorNotFound() || ValueCell::cast(*value).isPlaceholder()) {
@@ -2980,8 +2980,8 @@ void Runtime::dictAtPutById(Thread* thread, const Dict& dict, SymbolId id,
   dictAtPutByStr(thread, dict, name, value);
 }
 
-RawObject Runtime::dictAtWithHash(Thread* thread, const Dict& dict,
-                                  const Object& key, const Object& key_hash) {
+RawObject Runtime::dictAt(Thread* thread, const Dict& dict, const Object& key,
+                          const Object& key_hash) {
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word index = -1;
@@ -2992,17 +2992,11 @@ RawObject Runtime::dictAtWithHash(Thread* thread, const Dict& dict,
   return Error::notFound();
 }
 
-RawObject Runtime::dictAt(Thread* thread, const Dict& dict, const Object& key) {
-  HandleScope scope(thread);
-  Object key_hash(&scope, hash(*key));
-  return dictAtWithHash(thread, dict, key, key_hash);
-}
-
 RawObject Runtime::dictAtByStr(Thread* thread, const Dict& dict,
                                const Str& name) {
   HandleScope scope(thread);
   Object name_hash(&scope, strHash(thread, *name));
-  return dictAtWithHash(thread, dict, name, name_hash);
+  return dictAt(thread, dict, name, name_hash);
 }
 
 RawObject Runtime::dictAtById(Thread* thread, const Dict& dict, SymbolId id) {

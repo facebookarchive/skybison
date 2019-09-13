@@ -351,7 +351,9 @@ TEST_F(ModuleBuiltinsTest, ModuleDictKeysFiltersOutPlaceholders) {
   moduleDictAtPutByStr(thread_, module_dict, bar, value);
   moduleDictAtPutByStr(thread_, module_dict, baz, value);
 
-  ValueCell::cast(runtime_.dictAt(thread_, module_dict, bar)).makePlaceholder();
+  Object bar_hash(&scope, strHash(thread_, *bar));
+  ValueCell::cast(runtime_.dictAt(thread_, module_dict, bar, bar_hash))
+      .makePlaceholder();
 
   List keys(&scope, moduleDictKeys(thread_, module_dict));
   EXPECT_EQ(keys.numItems(), 2);
@@ -376,7 +378,9 @@ TEST_F(ModuleBuiltinsTest, ModuleLenReturnsItemCountExcludingPlaceholders) {
   SmallInt previous_len(&scope, moduleLen(thread_, module));
 
   Dict module_dict(&scope, module.dict());
-  ValueCell::cast(runtime_.dictAt(thread_, module_dict, bar)).makePlaceholder();
+  Object bar_hash(&scope, strHash(thread_, *bar));
+  ValueCell::cast(runtime_.dictAt(thread_, module_dict, bar, bar_hash))
+      .makePlaceholder();
 
   SmallInt after_len(&scope, moduleLen(thread_, module));
   EXPECT_EQ(previous_len.value(), after_len.value() + 1);

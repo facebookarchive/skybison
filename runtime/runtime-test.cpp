@@ -376,12 +376,12 @@ TEST_F(RuntimeDictTest, DictAtPutRetainsExistingKeyObject) {
 
   runtime_.dictAtPut(thread_, dict, key0, key0_hash, value0);
   ASSERT_EQ(dict.numItems(), 1);
-  ASSERT_EQ(runtime_.dictAt(thread_, dict, key0), *value0);
+  ASSERT_EQ(runtime_.dictAt(thread_, dict, key0, key0_hash), *value0);
 
   // Overwrite the stored value
   runtime_.dictAtPut(thread_, dict, key1, key1_hash, value1);
   ASSERT_EQ(dict.numItems(), 1);
-  ASSERT_EQ(runtime_.dictAt(thread_, dict, key1), *value1);
+  ASSERT_EQ(runtime_.dictAt(thread_, dict, key1, key1_hash), *value1);
 
   Tuple data(&scope, dict.data());
   word i = Dict::Bucket::kFirst;
@@ -397,7 +397,7 @@ TEST_F(RuntimeDictTest, GetSet) {
   ASSERT_FALSE(key_hash.isErrorException());
 
   // Looking up a key that doesn't exist should fail
-  EXPECT_TRUE(runtime_.dictAt(thread_, dict, key).isError());
+  EXPECT_TRUE(runtime_.dictAt(thread_, dict, key, key_hash).isError());
 
   // Store a value
   Object stored(&scope, SmallInt::fromWord(67890));
@@ -405,7 +405,7 @@ TEST_F(RuntimeDictTest, GetSet) {
   EXPECT_EQ(dict.numItems(), 1);
 
   // Retrieve the stored value
-  RawObject retrieved = runtime_.dictAt(thread_, dict, key);
+  RawObject retrieved = runtime_.dictAt(thread_, dict, key, key_hash);
   EXPECT_EQ(retrieved, *stored);
 
   // Overwrite the stored value
@@ -414,7 +414,7 @@ TEST_F(RuntimeDictTest, GetSet) {
   EXPECT_EQ(dict.numItems(), 1);
 
   // Get the new value
-  retrieved = runtime_.dictAt(thread_, dict, key);
+  retrieved = runtime_.dictAt(thread_, dict, key, key_hash);
   EXPECT_EQ(retrieved, *new_value);
 }
 
@@ -441,7 +441,7 @@ TEST_F(RuntimeDictTest, Remove) {
   ASSERT_EQ(SmallInt::cast(retrieved).value(), SmallInt::cast(*stored).value());
 
   // Looking up a key that was deleted should fail
-  EXPECT_TRUE(runtime_.dictAt(thread_, dict, key).isError());
+  EXPECT_TRUE(runtime_.dictAt(thread_, dict, key, key_hash).isError());
   EXPECT_EQ(dict.numItems(), 0);
 }
 
@@ -495,7 +495,7 @@ TEST_F(RuntimeDictTest, AtIfAbsentPutLength) {
   SmallIntCallback cb(222);
   runtime_.dictAtIfAbsentPut(thread_, dict, k2, k2_hash, &cb);
   EXPECT_EQ(dict.numItems(), 2);
-  RawObject retrieved = runtime_.dictAtWithHash(thread_, dict, k2, k2_hash);
+  RawObject retrieved = runtime_.dictAt(thread_, dict, k2, k2_hash);
   EXPECT_TRUE(isIntEqualsWord(retrieved, 222));
 
   // Don't overrwite existing item 1 -> v1
@@ -505,7 +505,7 @@ TEST_F(RuntimeDictTest, AtIfAbsentPutLength) {
   SmallIntCallback cb3(333);
   runtime_.dictAtIfAbsentPut(thread_, dict, k3, k3_hash, &cb3);
   EXPECT_EQ(dict.numItems(), 2);
-  retrieved = runtime_.dictAtWithHash(thread_, dict, k3, k3_hash);
+  retrieved = runtime_.dictAt(thread_, dict, k3, k3_hash);
   EXPECT_EQ(retrieved, *v1);
 }
 
@@ -558,7 +558,9 @@ TEST_F(RuntimeDictTest, DictAtPutGrowsDictWhenTwoThirdsUsed) {
   // Make sure we can still read all the stored keys/values.
   for (word i = 0; i <= threshold; i++) {
     Object key(&scope, SmallInt::fromWord(i));
-    RawObject value = runtime_.dictAt(thread_, dict, key);
+    Object key_hash(&scope, Interpreter::hash(thread_, key));
+    ASSERT_FALSE(key_hash.isErrorException());
+    RawObject value = runtime_.dictAt(thread_, dict, key, key_hash);
     ASSERT_FALSE(value.isError());
     EXPECT_TRUE(Object::equals(value, SmallInt::fromWord(-i)));
   }
@@ -580,10 +582,10 @@ TEST_F(RuntimeDictTest, CollidingKeys) {
   runtime_.dictAtPut(thread_, dict, key2, key2_hash, key2);
 
   // Make sure we get both back
-  RawObject retrieved = runtime_.dictAt(thread_, dict, key1);
+  RawObject retrieved = runtime_.dictAt(thread_, dict, key1, key1_hash);
   EXPECT_EQ(retrieved, *key1);
 
-  retrieved = runtime_.dictAt(thread_, dict, key2);
+  retrieved = runtime_.dictAt(thread_, dict, key2, key2_hash);
   ASSERT_TRUE(retrieved.isBool());
   EXPECT_EQ(Bool::cast(retrieved).value(), Bool::cast(*key2).value());
 }
@@ -604,10 +606,10 @@ TEST_F(RuntimeDictTest, MixedKeys) {
   runtime_.dictAtPut(thread_, dict, str_key, str_key_hash, str_key);
 
   // Make sure we get the appropriate values back out
-  RawObject retrieved = runtime_.dictAt(thread_, dict, int_key);
+  RawObject retrieved = runtime_.dictAt(thread_, dict, int_key, int_key_hash);
   EXPECT_EQ(retrieved, *int_key);
 
-  retrieved = runtime_.dictAt(thread_, dict, str_key);
+  retrieved = runtime_.dictAt(thread_, dict, str_key, str_key_hash);
   ASSERT_TRUE(retrieved.isStr());
   EXPECT_TRUE(Object::equals(*str_key, retrieved));
 }

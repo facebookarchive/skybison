@@ -105,8 +105,7 @@ PY_EXPORT PyObject* _PyDict_GetItem_KnownHash(PyObject* pydict, PyObject* key,
   Dict dict(&scope, *dictobj);
   Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
   SmallInt hash_obj(&scope, SmallInt::fromWordTruncated(hash));
-  Object value(&scope,
-               runtime->dictAtWithHash(thread, dict, key_obj, hash_obj));
+  Object value(&scope, runtime->dictAt(thread, dict, key_obj, hash_obj));
   if (value.isError()) return nullptr;
   return ApiHandle::borrowedReference(thread, *value);
 }
@@ -211,8 +210,7 @@ PY_EXPORT PyObject* PyDict_GetItemWithError(PyObject* pydict, PyObject* key) {
   Object key_hash(&scope, Interpreter::hash(thread, key_obj));
   if (key_hash.isErrorException()) return nullptr;
   Dict dict(&scope, *dict_obj);
-  Object value(&scope,
-               runtime->dictAtWithHash(thread, dict, key_obj, key_hash));
+  Object value(&scope, runtime->dictAt(thread, dict, key_obj, key_hash));
   if (value.isError()) {
     return nullptr;
   }

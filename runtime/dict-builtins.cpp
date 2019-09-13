@@ -327,7 +327,7 @@ RawObject DictBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*self_data, &i);) {
     key = Dict::Bucket::key(*self_data, i);
     key_hash = Dict::Bucket::hash(*self_data, i);
-    right_value = runtime->dictAtWithHash(thread, other, key, key_hash);
+    right_value = runtime->dictAt(thread, other, key, key_hash);
     if (right_value.isErrorNotFound()) {
       return Bool::falseObj();
     }
@@ -443,7 +443,7 @@ RawObject DictBuiltins::get(Thread* thread, Frame* frame, word nargs) {
   // Check key hash
   Object key_hash(&scope, Interpreter::hash(thread, key));
   if (key_hash.isErrorException()) return *key_hash;
-  Object result(&scope, runtime->dictAtWithHash(thread, dict, key, key_hash));
+  Object result(&scope, runtime->dictAt(thread, dict, key, key_hash));
   if (!result.isError()) return *result;
   return *default_obj;
 }
