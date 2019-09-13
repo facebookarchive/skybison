@@ -45,7 +45,7 @@ RawObject dictMergeDict(Thread* thread, const Dict& dict, const Object& mapping,
     value = Dict::Bucket::value(*other_data, i);
     hash = Dict::Bucket::hash(*other_data, i);
     if (do_override == Override::kOverride ||
-        !runtime->dictIncludesWithHash(thread, dict, key, hash)) {
+        !runtime->dictIncludes(thread, dict, key, hash)) {
       runtime->dictAtPut(thread, dict, key, hash, value);
     } else if (do_override == Override::kError) {
       return thread->raise(LayoutId::kKeyError, *key);
@@ -92,7 +92,7 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
       key_hash = Interpreter::hash(thread, key);
       if (key_hash.isErrorException()) return *key_hash;
       if (do_override == Override::kOverride ||
-          !runtime->dictIncludesWithHash(thread, dict, key, key_hash)) {
+          !runtime->dictIncludes(thread, dict, key, key_hash)) {
         value = Interpreter::callMethod2(thread, frame, subscr_method, mapping,
                                          key);
         if (value.isError()) return *value;
@@ -111,7 +111,7 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
       key_hash = Interpreter::hash(thread, key);
       if (key_hash.isErrorException()) return *key_hash;
       if (do_override == Override::kOverride ||
-          !runtime->dictIncludesWithHash(thread, dict, key, key_hash)) {
+          !runtime->dictIncludes(thread, dict, key, key_hash)) {
         value = Interpreter::callMethod2(thread, frame, subscr_method, mapping,
                                          key);
         if (value.isError()) return *value;
@@ -153,7 +153,7 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
     key_hash = Interpreter::hash(thread, key);
     if (key_hash.isErrorException()) return *key_hash;
     if (do_override == Override::kOverride ||
-        !runtime->dictIncludesWithHash(thread, dict, key, key_hash)) {
+        !runtime->dictIncludes(thread, dict, key, key_hash)) {
       value =
           Interpreter::callMethod2(thread, frame, subscr_method, mapping, key);
       if (value.isError()) return *value;

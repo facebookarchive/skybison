@@ -3064,23 +3064,15 @@ RawObject Runtime::dictAtPutInValueCell(Thread* thread, const Dict& dict,
   return *result;
 }
 
-bool Runtime::dictIncludes(Thread* thread, const Dict& dict,
-                           const Object& key) {
-  HandleScope scope;
-  // TODO(T36757907): Check if key is hashable
-  Object key_hash(&scope, hash(*key));
-  return dictIncludesWithHash(thread, dict, key, key_hash);
-}
-
 bool Runtime::dictIncludesByStr(Thread* thread, const Dict& dict,
                                 const Str& name) {
   HandleScope scope;
   Object name_hash(&scope, strHash(thread, *name));
-  return dictIncludesWithHash(thread, dict, name, name_hash);
+  return dictIncludes(thread, dict, name, name_hash);
 }
 
-bool Runtime::dictIncludesWithHash(Thread* thread, const Dict& dict,
-                                   const Object& key, const Object& key_hash) {
+bool Runtime::dictIncludes(Thread* thread, const Dict& dict, const Object& key,
+                           const Object& key_hash) {
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word ignore;

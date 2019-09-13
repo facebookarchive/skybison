@@ -148,8 +148,9 @@ PY_EXPORT int PyDict_Contains(PyObject* pydict, PyObject* key) {
   Runtime* runtime = thread->runtime();
   Dict dict(&scope, ApiHandle::fromPyObject(pydict)->asObject());
   Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
-  // TODO(T36757907): Return -1 when dictIncludes fails to hash the key
-  return runtime->dictIncludes(thread, dict, key_obj);
+  Object key_hash(&scope, Interpreter::hash(thread, key_obj));
+  if (key_hash.isErrorException()) return -1;
+  return runtime->dictIncludes(thread, dict, key_obj, key_hash);
 }
 
 PY_EXPORT PyObject* PyDict_Copy(PyObject* pydict) {

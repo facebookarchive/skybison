@@ -66,9 +66,11 @@ TEST_F(CApiHandlesTest, BuiltinIntObjectReturnsApiHandle) {
   HandleScope scope(thread_);
   Dict dict(&scope, runtime_.apiHandles());
   Object obj(&scope, runtime_.newInt(1));
+  Object obj_hash(&scope, Interpreter::hash(thread_, obj));
+  ASSERT_FALSE(obj_hash.isErrorException());
   ApiHandle* handle = ApiHandle::newReference(thread_, *obj);
   EXPECT_NE(handle, nullptr);
-  EXPECT_TRUE(runtime_.dictIncludes(thread_, dict, obj));
+  EXPECT_TRUE(runtime_.dictIncludes(thread_, dict, obj, obj_hash));
 }
 
 TEST_F(CApiHandlesTest, ApiHandleReturnsBuiltinIntObject) {
@@ -85,12 +87,13 @@ TEST_F(CApiHandlesTest, BuiltinObjectReturnsApiHandle) {
 
   Dict dict(&scope, runtime_.apiHandles());
   Object obj(&scope, runtime_.newList());
-  ASSERT_FALSE(runtime_.dictIncludes(thread_, dict, obj));
+  Object obj_hash(&scope, runtime_.hash(*obj));
+  ASSERT_FALSE(runtime_.dictIncludes(thread_, dict, obj, obj_hash));
 
   ApiHandle* handle = ApiHandle::newReference(thread_, *obj);
   EXPECT_NE(handle, nullptr);
 
-  EXPECT_TRUE(runtime_.dictIncludes(thread_, dict, obj));
+  EXPECT_TRUE(runtime_.dictIncludes(thread_, dict, obj, obj_hash));
 }
 
 TEST_F(CApiHandlesTest, BuiltinObjectReturnsSameApiHandle) {
