@@ -647,6 +647,17 @@ l[5] = 4
                             "list assignment index out of range"));
 }
 
+TEST_F(ListBuiltinsTest, SliceAssignmentToEmptyList) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+x = []
+x[:] = ()
+)")
+                   .isError());
+  Object result(&scope, mainModuleAt(&runtime_, "x"));
+  EXPECT_PYLIST_EQ(result, {});
+}
+
 TEST_F(ListBuiltinsTest, SetItemSliceBasic) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(

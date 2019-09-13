@@ -537,8 +537,11 @@ static RawObject listSetSlice(Thread* thread, const List& self,
       // shifting and clearing so we can index into the free space.
       self.setNumItems(new_length);
     }
+
     // Copy new elements into the middle
-    MutableTuple::cast(self.items()).replaceFromWith(start, *src, src_length);
+    if (new_length > 0) {
+      MutableTuple::cast(self.items()).replaceFromWith(start, *src, src_length);
+    }
     return NoneType::object();
   }
 
