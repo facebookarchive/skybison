@@ -651,7 +651,7 @@ TEST_F(ThreadTest, LoadNameFromLocals) {
 TEST_F(ThreadTest, MakeFunction) {
   HandleScope scope(thread_);
 
-  Object name(&scope, runtime_.newStrFromCStr("hello"));
+  Str name(&scope, runtime_.newStrFromCStr("hello"));
   Code func_code(&scope, newEmptyCode());
   func_code.setName(*name);
   func_code.setCode(runtime_.newBytes(0, 0));
@@ -679,7 +679,7 @@ TEST_F(ThreadTest, MakeFunction) {
   Dict locals(&scope, runtime_.newDict());
   ASSERT_TRUE(thread_->exec(code, globals, locals).isNoneType());
 
-  Object function_obj(&scope, runtime_.dictAt(thread_, locals, name));
+  Object function_obj(&scope, runtime_.dictAtByStr(thread_, locals, name));
   ASSERT_TRUE(function_obj.isFunction());
   Function function(&scope, *function_obj);
   EXPECT_EQ(function.code(), func_code);
@@ -954,8 +954,8 @@ class C:
 
   Dict dict(&scope, getMainModuleDict(&runtime_));
 
-  Object key(&scope, runtime_.newStrFromCStr("C"));
-  Object value(&scope, runtime_.dictAt(thread_, dict, key));
+  Str name(&scope, runtime_.newStrFromCStr("C"));
+  Object value(&scope, runtime_.dictAtByStr(thread_, dict, name));
   ASSERT_TRUE(value.isValueCell());
 
   Type cls(&scope, ValueCell::cast(*value).value());
@@ -985,8 +985,8 @@ class C:
   ASSERT_TRUE(mod_dict.isDict());
 
   // Check for the class name in the module dict
-  Object cls_name(&scope, runtime_.newStrFromCStr("C"));
-  Object value(&scope, runtime_.dictAt(thread_, mod_dict, cls_name));
+  Str cls_name(&scope, runtime_.newStrFromCStr("C"));
+  Object value(&scope, runtime_.dictAtByStr(thread_, mod_dict, cls_name));
   ASSERT_TRUE(value.isValueCell());
   Type cls(&scope, ValueCell::cast(*value).value());
 
@@ -1004,9 +1004,9 @@ class C:
   ASSERT_TRUE(cls_dict.isDict());
 
   // Check for the __init__ method name in the dict
-  Object meth_name(&scope, runtime_.symbols()->DunderInit());
-  ASSERT_TRUE(runtime_.dictIncludes(thread_, cls_dict, meth_name));
-  value = runtime_.dictAt(thread_, cls_dict, meth_name);
+  Str meth_name(&scope, runtime_.symbols()->DunderInit());
+  ASSERT_TRUE(runtime_.dictIncludesByStr(thread_, cls_dict, meth_name));
+  value = runtime_.dictAtByStr(thread_, cls_dict, meth_name);
   ASSERT_TRUE(value.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*value).value().isFunction());
 }
@@ -1077,9 +1077,9 @@ static RawObject getMro(Runtime* runtime, const char* src,
   static_cast<void>(runFromCStr(runtime, src).isError());
 
   Dict mod_dict(&scope, getMainModuleDict(runtime));
-  Object class_name(&scope, runtime->newStrFromCStr(desired_class));
+  Str class_name(&scope, runtime->newStrFromCStr(desired_class));
 
-  Object value(&scope, runtime->dictAt(thread, mod_dict, class_name));
+  Object value(&scope, runtime->dictAtByStr(thread, mod_dict, class_name));
   Type cls(&scope, ValueCell::cast(*value).value());
 
   return cls.mro();
@@ -1757,8 +1757,8 @@ TEST_F(ThreadTest, BreakLoopWhileLoopBytecode) {
   code.setConsts(*consts);
 
   Tuple names(&scope, runtime_.newTuple(1));
-  Object key(&scope, runtime_.newStrFromCStr("a"));
-  names.atPut(0, *key);
+  Str name(&scope, runtime_.newStrFromCStr("a"));
+  names.atPut(0, *name);
   code.setNames(*names);
 
   // see python code in BreakLoop.whileLoop (sans print)
@@ -1780,7 +1780,7 @@ TEST_F(ThreadTest, BreakLoopWhileLoopBytecode) {
   Dict globals(&scope, runtime_.newDict());
   Dict locals(&scope, runtime_.newDict());
   ASSERT_TRUE(thread_->exec(code, globals, locals).isNoneType());
-  EXPECT_TRUE(isIntEqualsWord(runtime_.dictAt(thread_, locals, key), 3));
+  EXPECT_TRUE(isIntEqualsWord(runtime_.dictAtByStr(thread_, locals, name), 3));
 }
 
 TEST_F(ThreadTest, BreakLoopRangeLoop) {
@@ -2043,13 +2043,14 @@ class_anno_dict = ClassWithAnnotation.__annotations__
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
   Dict module_anno_dict(&scope, mainModuleAt(&runtime_, "__annotations__"));
-  Object m_key(&scope, runtime_.newStrFromCStr("global_with_annotation"));
-  Object m_value(&scope, runtime_.dictAt(thread_, module_anno_dict, m_key));
+  Str m_key(&scope, runtime_.newStrFromCStr("global_with_annotation"));
+  Object m_value(&scope,
+                 runtime_.dictAtByStr(thread_, module_anno_dict, m_key));
   EXPECT_EQ(*m_value, runtime_.typeAt(LayoutId::kInt));
 
   Dict class_anno_dict(&scope, mainModuleAt(&runtime_, "class_anno_dict"));
-  Object c_key(&scope, runtime_.newStrFromCStr("attribute_with_annotation"));
-  Object c_value(&scope, runtime_.dictAt(thread_, class_anno_dict, c_key));
+  Str c_key(&scope, runtime_.newStrFromCStr("attribute_with_annotation"));
+  Object c_value(&scope, runtime_.dictAtByStr(thread_, class_anno_dict, c_key));
   EXPECT_EQ(*c_value, runtime_.typeAt(LayoutId::kInt));
 }
 

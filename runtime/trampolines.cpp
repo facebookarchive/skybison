@@ -109,8 +109,8 @@ RawObject processDefaultArguments(Thread* thread, RawFunction function_raw,
       Tuple formal_names(&scope, code.varnames());
       word first_kw = function.argcount();
       for (word i = 0; i < code.kwonlyargcount(); i++) {
-        Object name(&scope, formal_names.at(first_kw + i));
-        RawObject val = runtime->dictAt(thread, kw_defaults, name);
+        Str name(&scope, formal_names.at(first_kw + i));
+        RawObject val = runtime->dictAtByStr(thread, kw_defaults, name);
         if (!val.isError()) {
           caller->pushValue(val);
           new_argc++;
@@ -268,8 +268,8 @@ static RawObject checkArgs(Thread* thread, const Function& function,
     } else if (!function.kwDefaults().isNoneType()) {
       // How about a kwonly default?
       Dict kw_defaults(&scope, function.kwDefaults());
-      Object name(&scope, formal_names.at(arg_pos + start));
-      RawObject val = thread->runtime()->dictAt(thread, kw_defaults, name);
+      Str name(&scope, formal_names.at(arg_pos + start));
+      RawObject val = thread->runtime()->dictAtByStr(thread, kw_defaults, name);
       if (!val.isError()) {
         *(kw_arg_base - arg_pos) = val;
         continue;  // Got it, move on to the next
@@ -915,9 +915,9 @@ RawObject methodTrampolineKeywordsKw(Thread* thread, Frame* caller, word argc) {
   if (num_keywords != 0) {
     Dict dict(&scope, runtime->newDict());
     for (word i = 0; i < num_keywords; i++) {
-      Object key(&scope, kw_names.at(i));
+      Str name(&scope, kw_names.at(i));
       Object value(&scope, caller->peek(num_keywords - i));
-      runtime->dictAtPut(thread, dict, key, value);
+      runtime->dictAtPutByStr(thread, dict, name, value);
     }
     kwargs = *dict;
   }
@@ -1108,9 +1108,9 @@ RawObject moduleTrampolineKeywordsKw(Thread* thread, Frame* caller, word argc) {
   if (num_keywords != 0) {
     Dict dict(&scope, runtime->newDict());
     for (word i = 0; i < num_keywords; i++) {
-      Object key(&scope, kw_names.at(i));
+      Str name(&scope, kw_names.at(i));
       Object value(&scope, caller->peek(num_keywords - i));
-      runtime->dictAtPut(thread, dict, key, value);
+      runtime->dictAtPutByStr(thread, dict, name, value);
     }
     kwargs = *dict;
   }

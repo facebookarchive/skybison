@@ -2020,18 +2020,21 @@ void Runtime::addModule(const Module& module) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Dict dict(&scope, modules());
-  Object key(&scope, module.name());
+  // TODO(T53728922) module.name() may be `None`.
+  Str name(&scope, module.name());
   Object value(&scope, *module);
-  dictAtPut(thread, dict, key, value);
+  dictAtPutByStr(thread, dict, name, value);
 }
 
 RawObject Runtime::findModule(const Object& name) {
+  // TODO(T53728922) it is possible to create modules with non-str names.
   DCHECK(name.isStr(), "name not a string");
 
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Dict dict(&scope, modules());
-  RawObject value = dictAt(thread, dict, name);
+  Str name_str(&scope, *name);
+  RawObject value = dictAtByStr(thread, dict, name_str);
   if (value.isError()) {
     return NoneType::object();
   }
@@ -2219,7 +2222,7 @@ void Runtime::moduleImportAllFrom(const Dict& dict, const Module& module) {
     if (symbol_name.charAt(0) != '_') {
       Object value(&scope, moduleAt(thread, module, symbol_name));
       DCHECK(!value.isErrorNotFound(), "value must not be ErrorNotFound");
-      dictAtPutInValueCell(thread, dict, symbol_name, value);
+      dictAtPutInValueCellByStr(thread, dict, symbol_name, value);
     }
   }
 }
@@ -2936,6 +2939,20 @@ void Runtime::dictAtPut(Thread* thread, const Dict& dict, const Object& key,
   dictAtPutWithHash(thread, dict, key, value, key_hash);
 }
 
+void Runtime::dictAtPutByStr(Thread* thread, const Dict& dict, const Str& name,
+                             const Object& value) {
+  HandleScope scope(thread);
+  Object name_hash(&scope, strHash(thread, *name));
+  dictAtPutWithHash(thread, dict, name, value, name_hash);
+}
+
+void Runtime::dictAtPutById(Thread* thread, const Dict& dict, SymbolId id,
+                            const Object& value) {
+  HandleScope scope(thread);
+  Str name(&scope, symbols()->at(id));
+  dictAtPutByStr(thread, dict, name, value);
+}
+
 RawObject Runtime::dictAtWithHash(Thread* thread, const Dict& dict,
                                   const Object& key, const Object& key_hash) {
   HandleScope scope(thread);
@@ -2954,8 +2971,15 @@ RawObject Runtime::dictAt(Thread* thread, const Dict& dict, const Object& key) {
   return dictAtWithHash(thread, dict, key, key_hash);
 }
 
+RawObject Runtime::dictAtByStr(Thread* thread, const Dict& dict,
+                               const Str& name) {
+  HandleScope scope(thread);
+  Object name_hash(&scope, strHash(thread, *name));
+  return dictAtWithHash(thread, dict, name, name_hash);
+}
+
 RawObject Runtime::dictAtIfAbsentPut(Thread* thread, const Dict& dict,
-                                     const Object& key,
+                                     const Object& key, const Object& key_hash,
                                      Callback<RawObject>* thunk) {
   // TODO(T44245141): Move initialization of an empty dict to
   // dictEnsureCapacity.
@@ -2967,7 +2991,6 @@ RawObject Runtime::dictAtIfAbsentPut(Thread* thread, const Dict& dict,
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word index = -1;
-  Object key_hash(&scope, hash(*key));
   bool found = dictLookup(data, key, key_hash, &index, RawObject::equals);
   DCHECK(index != -1, "invalid index %ld", index);
   if (found) {
@@ -2989,10 +3012,23 @@ RawObject Runtime::dictAtIfAbsentPut(Thread* thread, const Dict& dict,
 RawObject Runtime::dictAtPutInValueCell(Thread* thread, const Dict& dict,
                                         const Object& key,
                                         const Object& value) {
-  RawObject result =
-      dictAtIfAbsentPut(thread, dict, key, newValueCellCallback());
-  ValueCell::cast(result).setValue(*value);
-  return result;
+  HandleScope scope(thread);
+  Object key_hash(&scope, hash(*key));
+  Object result(&scope, dictAtIfAbsentPut(thread, dict, key, key_hash,
+                                          newValueCellCallback()));
+  ValueCell::cast(*result).setValue(*value);
+  return *result;
+}
+
+RawObject Runtime::dictAtPutInValueCellByStr(Thread* thread, const Dict& dict,
+                                             const Str& name,
+                                             const Object& value) {
+  HandleScope scope(thread);
+  Object name_hash(&scope, strHash(thread, *name));
+  Object result(&scope, dictAtIfAbsentPut(thread, dict, name, name_hash,
+                                          newValueCellCallback()));
+  ValueCell::cast(*result).setValue(*value);
+  return *result;
 }
 
 bool Runtime::dictIncludes(Thread* thread, const Dict& dict,
@@ -3001,6 +3037,13 @@ bool Runtime::dictIncludes(Thread* thread, const Dict& dict,
   // TODO(T36757907): Check if key is hashable
   Object key_hash(&scope, hash(*key));
   return dictIncludesWithHash(thread, dict, key, key_hash);
+}
+
+bool Runtime::dictIncludesByStr(Thread* thread, const Dict& dict,
+                                const Str& name) {
+  HandleScope scope;
+  Object name_hash(&scope, strHash(thread, *name));
+  return dictIncludesWithHash(thread, dict, name, name_hash);
 }
 
 bool Runtime::dictIncludesWithHash(Thread* thread, const Dict& dict,
@@ -3016,6 +3059,13 @@ RawObject Runtime::dictRemove(Thread* thread, const Dict& dict,
   HandleScope scope(thread);
   Object key_hash(&scope, hash(*key));
   return dictRemoveWithHash(thread, dict, key, key_hash);
+}
+
+RawObject Runtime::dictRemoveByStr(Thread* thread, const Dict& dict,
+                                   const Str& name) {
+  HandleScope scope(thread);
+  Object name_hash(&scope, strHash(thread, *name));
+  return dictRemoveWithHash(thread, dict, name, name_hash);
 }
 
 RawObject Runtime::dictRemoveWithHash(Thread* thread, const Dict& dict,
@@ -3634,8 +3684,8 @@ void Runtime::collectAttributes(const Code& code, const Dict& attributes) {
       continue;
     }
     word name_index = bc.byteAt(i + 3);
-    Object name(&scope, names.at(name_index));
-    dictAtPut(thread, attributes, name, name);
+    Str name(&scope, names.at(name_index));
+    dictAtPutByStr(thread, attributes, name, name);
   }
 }
 

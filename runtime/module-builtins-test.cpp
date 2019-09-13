@@ -111,9 +111,9 @@ static RawModule createTestingModule(Thread* thread,
 
   // Create a module dict with builtins in it.
   Dict module_dict(&scope, runtime->newDict());
-  Object dunder_builtins_name(&scope, runtime->symbols()->DunderBuiltins());
-  runtime->dictAtPutInValueCell(thread, module_dict, dunder_builtins_name,
-                                builtins_module);
+  Str dunder_builtins_name(&scope, runtime->symbols()->DunderBuiltins());
+  runtime->dictAtPutInValueCellByStr(thread, module_dict, dunder_builtins_name,
+                                     builtins_module);
 
   if (builtins_dict_out != nullptr) {
     *builtins_dict_out = *builtins_dict;
@@ -397,7 +397,8 @@ TEST_F(ModuleBuiltinsTest, ModuleValuesFiltersOutPlaceholders) {
   moduleAtPut(thread_, module, baz, baz_value);
 
   Dict module_dict(&scope, module.dict());
-  ValueCell::cast(runtime_.dictAt(thread_, module_dict, bar)).makePlaceholder();
+  ValueCell::cast(runtime_.dictAtByStr(thread_, module_dict, bar))
+      .makePlaceholder();
 
   List values(&scope, moduleValues(thread_, module));
   EXPECT_TRUE(listContains(values, foo_value));
@@ -457,9 +458,12 @@ TEST_F(ModuleBuiltinsTest, NextModuleDictItemReturnsNextNonPlaceholder) {
   moduleDictAtPut(thread_, module_dict, qux, value);
 
   // Only baz is not Placeholder.
-  ValueCell::cast(runtime_.dictAt(thread_, module_dict, foo)).makePlaceholder();
-  ValueCell::cast(runtime_.dictAt(thread_, module_dict, bar)).makePlaceholder();
-  ValueCell::cast(runtime_.dictAt(thread_, module_dict, qux)).makePlaceholder();
+  ValueCell::cast(runtime_.dictAtByStr(thread_, module_dict, foo))
+      .makePlaceholder();
+  ValueCell::cast(runtime_.dictAtByStr(thread_, module_dict, bar))
+      .makePlaceholder();
+  ValueCell::cast(runtime_.dictAtByStr(thread_, module_dict, qux))
+      .makePlaceholder();
 
   Tuple buckets(&scope, module_dict.data());
   word i = Dict::Bucket::kFirst;

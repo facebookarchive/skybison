@@ -1779,8 +1779,8 @@ HANDLER_INLINE Continue Interpreter::doSetupAnnotations(Thread* thread, word) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Frame* frame = thread->currentFrame();
-  Object dunder_annotations(
-      &scope, runtime->symbols()->at(SymbolId::kDunderAnnotations));
+  Str dunder_annotations(&scope,
+                         runtime->symbols()->at(SymbolId::kDunderAnnotations));
   if (frame->function().globals() == frame->implicitGlobals()) {
     // Module body
     Dict globals_dict(&scope, frame->function().globals());
@@ -1794,11 +1794,11 @@ HANDLER_INLINE Continue Interpreter::doSetupAnnotations(Thread* thread, word) {
     Object implicit_globals(&scope, frame->implicitGlobals());
     if (implicit_globals.isDict()) {
       Dict implicit_globals_dict(&scope, frame->implicitGlobals());
-      if (!runtime->dictIncludes(thread, implicit_globals_dict,
-                                 dunder_annotations)) {
+      if (!runtime->dictIncludesByStr(thread, implicit_globals_dict,
+                                      dunder_annotations)) {
         Object annotations(&scope, runtime->newDict());
-        runtime->dictAtPut(thread, implicit_globals_dict, dunder_annotations,
-                           annotations);
+        runtime->dictAtPutByStr(thread, implicit_globals_dict,
+                                dunder_annotations, annotations);
       }
     } else {
       if (objectGetItem(thread, implicit_globals, dunder_annotations)
@@ -1909,19 +1909,19 @@ HANDLER_INLINE Continue Interpreter::doStoreName(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
   RawObject names = Code::cast(frame->code()).names();
-  Object key(&scope, Tuple::cast(names).at(arg));
+  Str name(&scope, Tuple::cast(names).at(arg));
   Object value(&scope, frame->popValue());
   Object implicit_globals_obj(&scope, frame->implicitGlobals());
   if (implicit_globals_obj == frame->function().globals()) {
     Dict module_dict(&scope, *implicit_globals_obj);
-    moduleDictAtPut(thread, module_dict, key, value);
+    moduleDictAtPut(thread, module_dict, name, value);
     return Continue::NEXT;
   }
   if (implicit_globals_obj.isDict()) {
     Dict implicit_globals(&scope, *implicit_globals_obj);
-    thread->runtime()->dictAtPut(thread, implicit_globals, key, value);
+    thread->runtime()->dictAtPutByStr(thread, implicit_globals, name, value);
   } else {
-    if (objectSetItem(thread, implicit_globals_obj, key, value)
+    if (objectSetItem(thread, implicit_globals_obj, name, value)
             .isErrorException()) {
       return Continue::UNWIND;
     }
@@ -1946,18 +1946,18 @@ HANDLER_INLINE Continue Interpreter::doDeleteName(Thread* thread, word arg) {
     return doDeleteGlobal(thread, arg);
   }
   RawObject names = Code::cast(frame->code()).names();
-  Str key(&scope, Tuple::cast(names).at(arg));
+  Str name(&scope, Tuple::cast(names).at(arg));
   if (implicit_globals_obj.isDict()) {
     Dict implicit_globals(&scope, *implicit_globals_obj);
     if (thread->runtime()
-            ->dictRemove(thread, implicit_globals, key)
+            ->dictRemoveByStr(thread, implicit_globals, name)
             .isErrorNotFound()) {
-      return raiseUndefinedName(thread, key);
+      return raiseUndefinedName(thread, name);
     }
   } else {
-    if (objectDelItem(thread, implicit_globals_obj, key).isErrorException()) {
+    if (objectDelItem(thread, implicit_globals_obj, name).isErrorException()) {
       thread->clearPendingException();
-      return raiseUndefinedName(thread, key);
+      return raiseUndefinedName(thread, name);
     }
   }
   return Continue::NEXT;
@@ -2080,11 +2080,11 @@ static bool isCacheEnabledForFunction(const Function& function) {
 }
 
 RawObject Interpreter::globalsAt(Thread* thread, const Dict& module_dict,
-                                 const Str& key, const Function& function,
+                                 const Str& name, const Function& function,
                                  word cache_index) {
   HandleScope scope(thread);
   Object module_dict_result(&scope,
-                            moduleDictValueCellAt(thread, module_dict, key));
+                            moduleDictValueCellAt(thread, module_dict, name));
   if (module_dict_result.isValueCell()) {
     ValueCell value_cell(&scope, *module_dict_result);
     if (isCacheEnabledForFunction(function)) {
@@ -2093,17 +2093,17 @@ RawObject Interpreter::globalsAt(Thread* thread, const Dict& module_dict,
     return value_cell.value();
   }
   Dict builtins(&scope, moduleDictBuiltins(thread, module_dict));
-  Object builtins_result(&scope, moduleDictValueCellAt(thread, builtins, key));
+  Object builtins_result(&scope, moduleDictValueCellAt(thread, builtins, name));
   if (builtins_result.isValueCell()) {
     ValueCell value_cell(&scope, *builtins_result);
     if (isCacheEnabledForFunction(function)) {
       icUpdateGlobalVar(thread, function, cache_index, value_cell);
       // Insert a placeholder to the module dict to show that a builtins entry
-      // got cached under the same key.
+      // got cached under the same name.
       NoneType none(&scope, NoneType::object());
-      ValueCell global_value_cell(
-          &scope, thread->runtime()->dictAtPutInValueCell(thread, module_dict,
-                                                          key, none));
+      ValueCell global_value_cell(&scope,
+                                  thread->runtime()->dictAtPutInValueCellByStr(
+                                      thread, module_dict, name, none));
       global_value_cell.makePlaceholder();
     }
     return value_cell.value();
@@ -2112,12 +2112,12 @@ RawObject Interpreter::globalsAt(Thread* thread, const Dict& module_dict,
 }
 
 RawObject Interpreter::globalsAtPut(Thread* thread, const Dict& module_dict,
-                                    const Str& key, const Object& value,
+                                    const Str& name, const Object& value,
                                     const Function& function,
                                     word cache_index) {
   HandleScope scope(thread);
   ValueCell module_dict_result(
-      &scope, moduleDictValueCellAtPut(thread, module_dict, key, value));
+      &scope, moduleDictValueCellAtPut(thread, module_dict, name, value));
   if (isCacheEnabledForFunction(function)) {
     icUpdateGlobalVar(thread, function, cache_index, module_dict_result);
   }
@@ -2284,8 +2284,8 @@ Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg) {
   word original_arg = originalArg(frame->function(), arg);
   HandleScope scope(thread);
   Object receiver(&scope, frame->popValue());
-  Object name(&scope,
-              Tuple::cast(Code::cast(frame->code()).names()).at(original_arg));
+  Str name(&scope,
+           Tuple::cast(Code::cast(frame->code()).names()).at(original_arg));
   Object value(&scope, frame->popValue());
 
   Object location(&scope, NoneType::object());
@@ -2399,14 +2399,15 @@ HANDLER_INLINE Continue Interpreter::doLoadName(Thread* thread, word arg) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object names(&scope, Code::cast(frame->code()).names());
-  Str key(&scope, Tuple::cast(*names).at(arg));
+  Str name(&scope, Tuple::cast(*names).at(arg));
   Object implicit_globals_obj(&scope, frame->implicitGlobals());
   if (implicit_globals_obj != frame->function().globals()) {
     // Give implicit_globals_obj a higher priority than globals.
     if (implicit_globals_obj.isDict()) {
       // Shortcut for the common case of implicit_globals being a dict.
       Dict implicit_globals(&scope, *implicit_globals_obj);
-      Object result(&scope, runtime->dictAt(thread, implicit_globals, key));
+      Object result(&scope,
+                    runtime->dictAtByStr(thread, implicit_globals, name));
       DCHECK(!result.isError() || result.isErrorNotFound(),
              "expected value or not found");
       if (!result.isErrorNotFound()) {
@@ -2414,7 +2415,7 @@ HANDLER_INLINE Continue Interpreter::doLoadName(Thread* thread, word arg) {
         return Continue::NEXT;
       }
     } else {
-      Object result(&scope, objectGetItem(thread, implicit_globals_obj, key));
+      Object result(&scope, objectGetItem(thread, implicit_globals_obj, name));
       if (!result.isErrorException()) {
         frame->pushValue(*result);
         return Continue::NEXT;
@@ -2426,18 +2427,18 @@ HANDLER_INLINE Continue Interpreter::doLoadName(Thread* thread, word arg) {
     }
   }
   Dict module_dict(&scope, frame->function().globals());
-  Object module_dict_result(&scope, moduleDictAt(thread, module_dict, key));
+  Object module_dict_result(&scope, moduleDictAt(thread, module_dict, name));
   if (!module_dict_result.isErrorNotFound()) {
     frame->pushValue(*module_dict_result);
     return Continue::NEXT;
   }
   Dict builtins(&scope, moduleDictBuiltins(thread, module_dict));
-  Object builtins_result(&scope, moduleDictAt(thread, builtins, key));
+  Object builtins_result(&scope, moduleDictAt(thread, builtins, name));
   if (!builtins_result.isErrorNotFound()) {
     frame->pushValue(*builtins_result);
     return Continue::NEXT;
   }
-  return raiseUndefinedName(thread, key);
+  return raiseUndefinedName(thread, name);
 }
 
 HANDLER_INLINE Continue Interpreter::doBuildTuple(Thread* thread, word arg) {
@@ -2543,8 +2544,8 @@ Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   word original_arg = originalArg(frame->function(), arg);
   Object receiver(&scope, frame->topValue());
-  Object name(&scope,
-              Tuple::cast(Code::cast(frame->code()).names()).at(original_arg));
+  Str name(&scope,
+           Tuple::cast(Code::cast(frame->code()).names()).at(original_arg));
 
   Object location(&scope, NoneType::object());
   Object result(&scope, loadAttrSetLocation(thread, receiver, name, &location));
@@ -2682,13 +2683,13 @@ HANDLER_INLINE Continue Interpreter::doImportName(Thread* thread, word arg) {
   // TODO(T41326706) Pass in a real globals dict here. For now create a small
   // dict with just the things needed by importlib.
   Dict globals(&scope, frame->function().globals());
-  Object key(&scope, NoneType::object());
+  Str global_name(&scope, Str::empty());
   Object value(&scope, NoneType::object());
   for (SymbolId id : {SymbolId::kDunderPackage, SymbolId::kDunderSpec,
                       SymbolId::kDunderName}) {
-    key = runtime->symbols()->at(id);
-    value = moduleDictAt(thread, globals, key);
-    runtime->dictAtPut(thread, dict_no_value_cells, key, value);
+    global_name = runtime->symbols()->at(id);
+    value = moduleDictAt(thread, globals, global_name);
+    runtime->dictAtPutByStr(thread, dict_no_value_cells, global_name, value);
   }
   // TODO(T41634372) Pass in a dict that is similar to what `builtins.locals`
   // returns. Use `None` for now since the default importlib behavior is to
@@ -2982,10 +2983,9 @@ HANDLER_INLINE Continue Interpreter::doStoreAnnotation(Thread* thread,
   Runtime* runtime = thread->runtime();
   Object names(&scope, Code::cast(frame->code()).names());
   Object value(&scope, frame->popValue());
-  Object key(&scope, Tuple::cast(*names).at(arg));
+  Str name(&scope, Tuple::cast(*names).at(arg));
   Object annotations(&scope, NoneType::object());
-  Object dunder_annotations(
-      &scope, runtime->symbols()->at(SymbolId::kDunderAnnotations));
+  Str dunder_annotations(&scope, runtime->symbols()->DunderAnnotations());
   if (frame->function().globals() == frame->implicitGlobals()) {
     // Module body
     Dict globals_dict(&scope, frame->function().globals());
@@ -2995,8 +2995,8 @@ HANDLER_INLINE Continue Interpreter::doStoreAnnotation(Thread* thread,
     Object implicit_globals(&scope, frame->implicitGlobals());
     if (implicit_globals.isDict()) {
       Dict implicit_globals_dict(&scope, frame->implicitGlobals());
-      annotations =
-          runtime->dictAt(thread, implicit_globals_dict, dunder_annotations);
+      annotations = runtime->dictAtByStr(thread, implicit_globals_dict,
+                                         dunder_annotations);
     } else {
       annotations = objectGetItem(thread, implicit_globals, dunder_annotations);
       if (annotations.isErrorException()) {
@@ -3006,9 +3006,9 @@ HANDLER_INLINE Continue Interpreter::doStoreAnnotation(Thread* thread,
   }
   if (annotations.isDict()) {
     Dict annotations_dict(&scope, *annotations);
-    runtime->dictAtPut(thread, annotations_dict, key, value);
+    runtime->dictAtPutByStr(thread, annotations_dict, name, value);
   } else {
-    if (objectSetItem(thread, annotations, key, value).isErrorException()) {
+    if (objectSetItem(thread, annotations, name, value).isErrorException()) {
       return Continue::UNWIND;
     }
   }
@@ -3316,7 +3316,7 @@ HANDLER_INLINE Continue Interpreter::doLoadClassDeref(Thread* thread,
   HandleScope scope(thread);
   Code code(&scope, frame->code());
   word idx = arg - code.numCellvars();
-  Object name(&scope, Tuple::cast(code.freevars()).at(idx));
+  Str name(&scope, Tuple::cast(code.freevars()).at(idx));
   Object result(&scope, NoneType::object());
 
   if (frame->function().globals() == frame->implicitGlobals()) {
@@ -3328,7 +3328,8 @@ HANDLER_INLINE Continue Interpreter::doLoadClassDeref(Thread* thread,
     Object implicit_globals(&scope, frame->implicitGlobals());
     if (implicit_globals.isDict()) {
       Dict implicit_globals_dict(&scope, frame->implicitGlobals());
-      result = thread->runtime()->dictAt(thread, implicit_globals_dict, name);
+      result =
+          thread->runtime()->dictAtByStr(thread, implicit_globals_dict, name);
     } else {
       result = objectGetItem(thread, implicit_globals, name);
       if (result.isErrorException()) {

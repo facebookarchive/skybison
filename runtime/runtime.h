@@ -471,48 +471,80 @@ class Runtime {
   void dictAtPut(Thread* thread, const Dict& dict, const Object& key,
                  const Object& value);
 
-  // Look up the value associated with key. Returns Error::object() if the
-  // key was not found.
+  // Does the same as `dictAtPut` but only works for `key` being a `str`
+  // instance. It must not be used with instances of a `str` subclass.
+  void dictAtPutByStr(Thread* thread, const Dict& dict, const Str& name,
+                      const Object& value);
+
+  // Does the same as `dictAtPut` but uses symbol `id` (converted to a string)
+  // as key.
+  void dictAtPutById(Thread* thread, const Dict& dict, SymbolId id,
+                     const Object& value);
+
+  // Support explicit hash value of key to do dictAtPut.
+  void dictAtPutWithHash(Thread* thread, const Dict& dict, const Object& key,
+                         const Object& value, const Object& key_hash);
+
+  // Look up the value associated with `key`. Returns the associated value or
+  // `Error::notFound()`.
   RawObject dictAt(Thread* thread, const Dict& dict, const Object& key);
+
+  // Look up the value associated with `name`. `name` must be an instance of
+  // `str` but not of a subclass. Returns the associated value or
+  // `Error::notFound()`.
+  RawObject dictAtByStr(Thread* thread, const Dict& dict, const Str& name);
+
+  // Look up the value associated with `id`. Returns the associated value or
+  // `Error::notFound()`.
+  RawObject dictAtById(Thread* thread, const Dict& dict, SymbolId id);
+
+  // Support explicit hash value of key to do dictAt.
+  RawObject dictAtWithHash(Thread* thread, const Dict& dict, const Object& key,
+                           const Object& key_hash);
 
   // Looks up and returns the value associated with the key.  If the key is
   // absent, calls thunk and inserts its result as the value.
   RawObject dictAtIfAbsentPut(Thread* thread, const Dict& dict,
-                              const Object& key, Callback<RawObject>* thunk);
+                              const Object& key, const Object& key_hash,
+                              Callback<RawObject>* thunk);
 
-  // Stores value in a ValueCell stored at key in dict. Careful to
-  // reuse an existing value cell if one exists since it may be shared.
+  // Stores value in a ValueCell associated with `key`. Reuses an existing
+  // value cell when possible.
   RawObject dictAtPutInValueCell(Thread* thread, const Dict& dict,
                                  const Object& key, const Object& value);
 
+  // Stores value in a ValueCell associated with `name`. Reuses an existing
+  // value cell when possible.
+  RawObject dictAtPutInValueCellByStr(Thread* thread, const Dict& dict,
+                                      const Str& name, const Object& value);
+
   // Returns true if the dict contains the specified key.
   bool dictIncludes(Thread* thread, const Dict& dict, const Object& key);
+
+  // Returns true if the dict contains an entry associated with `name`.
+  // `name` must by a `str` instance (but no subclass).
+  bool dictIncludesByStr(Thread* thread, const Dict& dict, const Str& name);
 
   // Returns true if the dict contains the specified key with the specified
   // hash.
   bool dictIncludesWithHash(Thread* thread, const Dict& dict, const Object& key,
                             const Object& key_hash);
 
-  // Delete a key from the dict.
-  //
-  // Returns true if the key existed and sets the previous value in value.
-  // Returns false otherwise.
+  // Try to remove entry associated with `key` from `dict`.
+  // Returns the value that was associated before deletion or
+  // `Error:notFound()`.
   RawObject dictRemove(Thread* thread, const Dict& dict, const Object& key);
 
-  // Delete a key from the dict.
-  //
-  // Returns true if the key existed and sets the previous value in value.
-  // Returns false otherwise.
+  // Try to remove entry associated with `name` from `dict`.
+  // Returns the value that was associated before deletion or
+  // `Error:notFound()`.
+  RawObject dictRemoveByStr(Thread* thread, const Dict& dict, const Str& name);
+
+  // Try to remove entry associated with `key` from `dict`.
+  // Returns the value that was associated before deletion or
+  // `Error:notFound()`.
   RawObject dictRemoveWithHash(Thread* thread, const Dict& dict,
                                const Object& key, const Object& key_hash);
-
-  // Support explicit hash value of key to do dictAtPut.
-  void dictAtPutWithHash(Thread* thread, const Dict& dict, const Object& key,
-                         const Object& value, const Object& key_hash);
-
-  // Support explicit hash value of key to do dictAt.
-  RawObject dictAtWithHash(Thread* thread, const Dict& dict, const Object& key,
-                           const Object& key_hash);
 
   RawObject dictItems(Thread* thread, const Dict& dict);
   RawObject dictKeys(Thread* thread, const Dict& dict);

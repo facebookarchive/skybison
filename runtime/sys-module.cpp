@@ -230,25 +230,25 @@ static RawObject dictOfLocalsFromFunctionFrame(Thread* thread, Frame* frame) {
          "numbers of local variables do not match");
 
   Dict result(&scope, runtime->newDict());
-  Object key(&scope, NoneType::object());
+  Str name(&scope, Str::empty());
   Object value(&scope, NoneType::object());
   for (word i = 0; i < var_names_length; ++i) {
-    key = var_names.at(i);
+    name = var_names.at(i);
     value = frame->local(i);
-    runtime->dictAtPut(thread, result, key, value);
+    runtime->dictAtPutByStr(thread, result, name, value);
   }
   for (word i = 0, j = var_names_length; i < freevar_names_length; ++i, ++j) {
-    key = freevar_names.at(i);
+    name = freevar_names.at(i);
     DCHECK(frame->local(j).isValueCell(), "freevar must be ValueCell");
     value = ValueCell::cast(frame->local(j)).value();
-    runtime->dictAtPut(thread, result, key, value);
+    runtime->dictAtPutByStr(thread, result, name, value);
   }
   for (word i = 0, j = var_names_length + freevar_names_length;
        i < cellvar_names_length; ++i, ++j) {
-    key = cellvar_names.at(i);
+    name = cellvar_names.at(i);
     DCHECK(frame->local(j).isValueCell(), "cellvar must be ValueCell");
     value = ValueCell::cast(frame->local(j)).value();
-    runtime->dictAtPut(thread, result, key, value);
+    runtime->dictAtPutByStr(thread, result, name, value);
   }
   return *result;
 }

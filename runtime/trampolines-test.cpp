@@ -428,12 +428,13 @@ result = foo(1,2,c=3,g=4,h=5,j="bar")
   EXPECT_TRUE(isIntEqualsWord(result.at(2), 3));
 
   Dict dict(&scope, result.at(3));
-  Object key_g(&scope, runtime_.newStrFromCStr("g"));
-  EXPECT_TRUE(isIntEqualsWord(runtime_.dictAt(thread_, dict, key_g), 4));
-  Object key_h(&scope, runtime_.newStrFromCStr("h"));
-  EXPECT_TRUE(isIntEqualsWord(runtime_.dictAt(thread_, dict, key_h), 5));
-  Object key_j(&scope, runtime_.newStrFromCStr("j"));
-  EXPECT_TRUE(isStrEqualsCStr(runtime_.dictAt(thread_, dict, key_j), "bar"));
+  Str name_g(&scope, runtime_.newStrFromCStr("g"));
+  EXPECT_TRUE(isIntEqualsWord(runtime_.dictAtByStr(thread_, dict, name_g), 4));
+  Str name_h(&scope, runtime_.newStrFromCStr("h"));
+  EXPECT_TRUE(isIntEqualsWord(runtime_.dictAtByStr(thread_, dict, name_h), 5));
+  Str name_j(&scope, runtime_.newStrFromCStr("j"));
+  EXPECT_TRUE(
+      isStrEqualsCStr(runtime_.dictAtByStr(thread_, dict, name_j), "bar"));
 }
 
 TEST_F(CallTest, CallWithNoArgsCalleeDefaultArgsVarargsVarkeyargs) {
@@ -493,12 +494,12 @@ result = bar(a1=11, a2=12, a3=13)
   EXPECT_EQ(tuple.length(), 0);
 
   Dict dict(&scope, result.at(3));
-  Object key0(&scope, runtime_.newStrFromCStr("a3"));
-  EXPECT_TRUE(isIntEqualsWord(runtime_.dictAt(thread_, dict, key0), 13));
-  Object key1(&scope, runtime_.newStrFromCStr("a1"));
-  EXPECT_TRUE(isIntEqualsWord(runtime_.dictAt(thread_, dict, key1), 11));
-  Object key2(&scope, runtime_.newStrFromCStr("a2"));
-  EXPECT_TRUE(isIntEqualsWord(runtime_.dictAt(thread_, dict, key2), 12));
+  Str name0(&scope, runtime_.newStrFromCStr("a3"));
+  EXPECT_TRUE(isIntEqualsWord(runtime_.dictAtByStr(thread_, dict, name0), 13));
+  Str name1(&scope, runtime_.newStrFromCStr("a1"));
+  EXPECT_TRUE(isIntEqualsWord(runtime_.dictAtByStr(thread_, dict, name1), 11));
+  Str name2(&scope, runtime_.newStrFromCStr("a2"));
+  EXPECT_TRUE(isIntEqualsWord(runtime_.dictAtByStr(thread_, dict, name2), 12));
 }
 
 TEST_F(CallTest, CallWithKeywordsCalleeFullVarargsFullVarkeyargs) {
@@ -521,8 +522,8 @@ result = bar(1,2,3,4,5,6,7,a9=9)
   EXPECT_TRUE(isIntEqualsWord(tuple.at(4), 7));
 
   Dict dict(&scope, result.at(3));
-  Object key_g(&scope, runtime_.newStrFromCStr("a9"));
-  EXPECT_TRUE(isIntEqualsWord(runtime_.dictAt(thread_, dict, key_g), 9));
+  Str name_g(&scope, runtime_.newStrFromCStr("a9"));
+  EXPECT_TRUE(isIntEqualsWord(runtime_.dictAtByStr(thread_, dict, name_g), 9));
 }
 
 TEST_F(CallTest, CallWithOutOfOrderKeywords) {
@@ -570,10 +571,10 @@ result = foobar2(1,e=9,b=2,f1="a",f11=12)
   Tuple tuple(&scope, result.at(2));
   ASSERT_EQ(tuple.length(), 0);
   Dict dict(&scope, result.at(3));
-  Object f1(&scope, runtime_.newStrFromCStr("f1"));
-  EXPECT_TRUE(isStrEqualsCStr(runtime_.dictAt(thread_, dict, f1), "a"));
-  Object f11(&scope, runtime_.newStrFromCStr("f11"));
-  EXPECT_TRUE(isIntEqualsWord(runtime_.dictAt(thread_, dict, f11), 12));
+  Str f1(&scope, runtime_.newStrFromCStr("f1"));
+  EXPECT_TRUE(isStrEqualsCStr(runtime_.dictAtByStr(thread_, dict, f1), "a"));
+  Str f11(&scope, runtime_.newStrFromCStr("f11"));
+  EXPECT_TRUE(isIntEqualsWord(runtime_.dictAtByStr(thread_, dict, f11), 12));
   EXPECT_TRUE(isIntEqualsWord(result.at(4), 9));
 }
 
@@ -933,7 +934,7 @@ TEST_F(TrampolinesTest, KeywordCallWithPositionalOnlyArgumentsAndVarKeyArgs) {
   EXPECT_EQ(result_dict.numItems(), 1);
   Str b_name(&scope, runtime_.internStrFromCStr(thread_, "b"));
   EXPECT_TRUE(
-      isIntEqualsWord(runtime_.dictAt(thread_, result_dict, b_name), 5));
+      isIntEqualsWord(runtime_.dictAtByStr(thread_, result_dict, b_name), 5));
 }
 
 TEST_F(TrampolinesTest, ExplodeCallWithBadKeywordFails) {
@@ -1691,7 +1692,7 @@ static PyObject* returnsKwargCalledFoo(PyObject*, PyObject*, PyObject* kwargs) {
   Str foo_str(&scope, runtime->newStrFromCStr("foo"));
   Dict keyword_dict(&scope, ApiHandle::fromPyObject(kwargs)->asObject());
   return ApiHandle::newReference(
-      thread, runtime->dictAt(thread, keyword_dict, foo_str));
+      thread, runtime->dictAtByStr(thread, keyword_dict, foo_str));
 }
 
 TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesKwArgsReturns) {
@@ -1833,9 +1834,9 @@ TEST_F(TrampolinesTest,
   arg_tuple.atPut(0, SmallInt::fromWord(10));
   consts.atPut(1, *arg_tuple);
   Dict kw_dict(&scope, runtime_.newDict());
-  Object key(&scope, runtime_.newStrFromCStr("foo"));
+  Str name(&scope, runtime_.newStrFromCStr("foo"));
   Object value(&scope, SmallInt::fromWord(1111));
-  runtime_.dictAtPut(thread_, kw_dict, key, value);
+  runtime_.dictAtPutByStr(thread_, kw_dict, name, value);
   consts.atPut(2, *kw_dict);
   code.setConsts(*consts);
 

@@ -2071,20 +2071,20 @@ d = {**{'a': 1, 'b': 2}, 'c': 3, **{'d': 4}}
   Dict dict(&scope, *d);
   EXPECT_EQ(dict.numItems(), 4);
 
-  Object key(&scope, SmallStr::fromCStr("a"));
-  Object el0(&scope, runtime_.dictAt(thread_, dict, key));
+  Str name(&scope, runtime_.newStrFromCStr("a"));
+  Object el0(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
-  key = SmallStr::fromCStr("b");
-  Object el1(&scope, runtime_.dictAt(thread_, dict, key));
+  name = runtime_.newStrFromCStr("b");
+  Object el1(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
-  key = SmallStr::fromCStr("c");
-  Object el2(&scope, runtime_.dictAt(thread_, dict, key));
+  name = runtime_.newStrFromCStr("c");
+  Object el2(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
-  key = SmallStr::fromCStr("d");
-  Object el3(&scope, runtime_.dictAt(thread_, dict, key));
+  name = runtime_.newStrFromCStr("d");
+  Object el3(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
@@ -2115,20 +2115,20 @@ d = {**Foo(), 'd': 4}
   Dict dict(&scope, *d);
   EXPECT_EQ(dict.numItems(), 4);
 
-  Object key(&scope, SmallStr::fromCStr("a"));
-  Object el0(&scope, runtime_.dictAt(thread_, dict, key));
+  Str name(&scope, runtime_.newStrFromCStr("a"));
+  Object el0(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
-  key = SmallStr::fromCStr("b");
-  Object el1(&scope, runtime_.dictAt(thread_, dict, key));
+  name = runtime_.newStrFromCStr("b");
+  Object el1(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
-  key = SmallStr::fromCStr("c");
-  Object el2(&scope, runtime_.dictAt(thread_, dict, key));
+  name = runtime_.newStrFromCStr("c");
+  Object el2(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
-  key = SmallStr::fromCStr("d");
-  Object el3(&scope, runtime_.dictAt(thread_, dict, key));
+  name = runtime_.newStrFromCStr("d");
+  Object el3(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
@@ -2159,20 +2159,20 @@ d = {**Foo(), 'd': 4}
   Dict dict(&scope, *d);
   EXPECT_EQ(dict.numItems(), 4);
 
-  Object key(&scope, SmallStr::fromCStr("a"));
-  Object el0(&scope, runtime_.dictAt(thread_, dict, key));
+  Str name(&scope, runtime_.newStrFromCStr("a"));
+  Object el0(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
-  key = SmallStr::fromCStr("b");
-  Object el1(&scope, runtime_.dictAt(thread_, dict, key));
+  name = runtime_.newStrFromCStr("b");
+  Object el1(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
-  key = SmallStr::fromCStr("c");
-  Object el2(&scope, runtime_.dictAt(thread_, dict, key));
+  name = runtime_.newStrFromCStr("c");
+  Object el2(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
-  key = SmallStr::fromCStr("d");
-  Object el3(&scope, runtime_.dictAt(thread_, dict, key));
+  name = runtime_.newStrFromCStr("d");
+  Object el3(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
@@ -2218,20 +2218,20 @@ d = {**Foo(), 'd': 4}
   Dict dict(&scope, *d);
   EXPECT_EQ(dict.numItems(), 4);
 
-  Object key(&scope, SmallStr::fromCStr("a"));
-  Object el0(&scope, runtime_.dictAt(thread_, dict, key));
+  Str name(&scope, runtime_.newStrFromCStr("a"));
+  Object el0(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
-  key = SmallStr::fromCStr("b");
-  Object el1(&scope, runtime_.dictAt(thread_, dict, key));
+  name = runtime_.newStrFromCStr("b");
+  Object el1(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
-  key = SmallStr::fromCStr("c");
-  Object el2(&scope, runtime_.dictAt(thread_, dict, key));
+  name = runtime_.newStrFromCStr("c");
+  Object el2(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
-  key = SmallStr::fromCStr("d");
-  Object el3(&scope, runtime_.dictAt(thread_, dict, key));
+  name = runtime_.newStrFromCStr("d");
+  Object el3(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
@@ -2574,20 +2574,20 @@ d = foo(**{'a': 1, 'b': 2}, **{'c': 3, 'd': 4})
   Dict dict(&scope, *d);
   EXPECT_EQ(dict.numItems(), 4);
 
-  Object key(&scope, SmallStr::fromCStr("a"));
-  Object el0(&scope, runtime_.dictAt(thread_, dict, key));
+  Str name(&scope, runtime_.newStrFromCStr("a"));
+  Object el0(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
-  key = SmallStr::fromCStr("b");
-  Object el1(&scope, runtime_.dictAt(thread_, dict, key));
+  name = runtime_.newStrFromCStr("b");
+  Object el1(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
-  key = SmallStr::fromCStr("c");
-  Object el2(&scope, runtime_.dictAt(thread_, dict, key));
+  name = runtime_.newStrFromCStr("c");
+  Object el2(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
-  key = SmallStr::fromCStr("d");
-  Object el3(&scope, runtime_.dictAt(thread_, dict, key));
+  name = runtime_.newStrFromCStr("d");
+  Object el3(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
@@ -2617,20 +2617,20 @@ d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
   Dict dict(&scope, *d);
   EXPECT_EQ(dict.numItems(), 4);
 
-  Object key(&scope, SmallStr::fromCStr("a"));
-  Object el0(&scope, runtime_.dictAt(thread_, dict, key));
+  Str name(&scope, runtime_.newStrFromCStr("a"));
+  Object el0(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
-  key = SmallStr::fromCStr("b");
-  Object el1(&scope, runtime_.dictAt(thread_, dict, key));
+  name = runtime_.newStrFromCStr("b");
+  Object el1(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
-  key = SmallStr::fromCStr("c");
-  Object el2(&scope, runtime_.dictAt(thread_, dict, key));
+  name = runtime_.newStrFromCStr("c");
+  Object el2(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
-  key = SmallStr::fromCStr("d");
-  Object el3(&scope, runtime_.dictAt(thread_, dict, key));
+  name = runtime_.newStrFromCStr("d");
+  Object el3(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
@@ -2660,20 +2660,20 @@ d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
   Dict dict(&scope, *d);
   EXPECT_EQ(dict.numItems(), 4);
 
-  Object key(&scope, SmallStr::fromCStr("a"));
-  Object el0(&scope, runtime_.dictAt(thread_, dict, key));
+  Str name(&scope, runtime_.newStrFromCStr("a"));
+  Object el0(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
-  key = SmallStr::fromCStr("b");
-  Object el1(&scope, runtime_.dictAt(thread_, dict, key));
+  name = runtime_.newStrFromCStr("b");
+  Object el1(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
-  key = SmallStr::fromCStr("c");
-  Object el2(&scope, runtime_.dictAt(thread_, dict, key));
+  name = runtime_.newStrFromCStr("c");
+  Object el2(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
-  key = SmallStr::fromCStr("d");
-  Object el3(&scope, runtime_.dictAt(thread_, dict, key));
+  name = runtime_.newStrFromCStr("d");
+  Object el3(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
@@ -2721,20 +2721,20 @@ d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
   Dict dict(&scope, *d);
   EXPECT_EQ(dict.numItems(), 4);
 
-  Object key(&scope, SmallStr::fromCStr("a"));
-  Object el0(&scope, runtime_.dictAt(thread_, dict, key));
+  Str name(&scope, runtime_.newStrFromCStr("a"));
+  Object el0(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
-  key = SmallStr::fromCStr("b");
-  Object el1(&scope, runtime_.dictAt(thread_, dict, key));
+  name = runtime_.newStrFromCStr("b");
+  Object el1(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
-  key = SmallStr::fromCStr("c");
-  Object el2(&scope, runtime_.dictAt(thread_, dict, key));
+  name = runtime_.newStrFromCStr("c");
+  Object el2(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
-  key = SmallStr::fromCStr("d");
-  Object el3(&scope, runtime_.dictAt(thread_, dict, key));
+  name = runtime_.newStrFromCStr("d");
+  Object el3(&scope, runtime_.dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
@@ -3829,8 +3829,9 @@ result = foo()
       isIntEqualsWord(valueCellValue(icLookupGlobalVar(*caches, 0)), 400));
 
   Dict globals(&scope, function.globals());
-  Str key(&scope, SmallStr::fromCStr("a"));
-  Object module_dict_entry(&scope, runtime_.dictAt(thread_, globals, key));
+  Str name(&scope, runtime_.newStrFromCStr("a"));
+  Object module_dict_entry(&scope,
+                           runtime_.dictAtByStr(thread_, globals, name));
   ASSERT_TRUE(module_dict_entry.isValueCell());
   EXPECT_TRUE(ValueCell::cast(*module_dict_entry).isPlaceholder());
 }
@@ -4085,14 +4086,14 @@ c = C()
   Dict type_b_dict(&scope, type_b.dict());
   Dict type_c_dict(&scope, type_c.dict());
   Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
-  Object result(&scope, runtime_.dictAt(thread_, type_b_dict, foo_name));
+  Object result(&scope, runtime_.dictAtByStr(thread_, type_b_dict, foo_name));
   ASSERT_TRUE(result.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*result).dependencyLink().isWeakLink());
   EXPECT_EQ(
       WeakLink::cast(ValueCell::cast(*result).dependencyLink()).referent(),
       *get_foo);
 
-  result = runtime_.dictAt(thread_, type_c_dict, foo_name);
+  result = runtime_.dictAtByStr(thread_, type_c_dict, foo_name);
   ASSERT_TRUE(result.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*result).dependencyLink().isWeakLink());
   EXPECT_EQ(
@@ -4111,11 +4112,11 @@ c = C()
 
   // Verify that all type dictionaries in C's mro dropped dependencies to
   // get_foo.
-  result = runtime_.dictAt(thread_, type_b_dict, foo_name);
+  result = runtime_.dictAtByStr(thread_, type_b_dict, foo_name);
   ASSERT_TRUE(result.isValueCell());
   EXPECT_TRUE(ValueCell::cast(*result).dependencyLink().isNoneType());
 
-  result = runtime_.dictAt(thread_, type_c_dict, foo_name);
+  result = runtime_.dictAtByStr(thread_, type_c_dict, foo_name);
   ASSERT_TRUE(result.isValueCell());
   EXPECT_TRUE(ValueCell::cast(*result).dependencyLink().isNoneType());
 }
@@ -4282,7 +4283,8 @@ c = C()
   // Verify that cache_attribute function is added as a dependent.
   Dict type_c_dict(&scope, type_c.dict());
   Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
-  ValueCell value_cell(&scope, runtime_.dictAt(thread_, type_c_dict, foo_name));
+  ValueCell value_cell(&scope,
+                       runtime_.dictAtByStr(thread_, type_c_dict, foo_name));
   ASSERT_TRUE(value_cell.dependencyLink().isWeakLink());
   EXPECT_EQ(WeakLink::cast(value_cell.dependencyLink()).referent(),
             *cache_attribute);
@@ -4317,7 +4319,8 @@ c = C()
   // Verify that cache_attribute function is added as a dependent.
   Dict type_c_dict(&scope, type_c.dict());
   Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
-  ValueCell value_cell(&scope, runtime_.dictAt(thread_, type_c_dict, foo_name));
+  ValueCell value_cell(&scope,
+                       runtime_.dictAtByStr(thread_, type_c_dict, foo_name));
   ASSERT_TRUE(value_cell.dependencyLink().isWeakLink());
   EXPECT_EQ(WeakLink::cast(value_cell.dependencyLink()).referent(),
             *cache_attribute);
@@ -4379,7 +4382,8 @@ function_that_caches_attr_lookup(a, b, c)
   // and appears on the dependency list of A.foo.
   Dict type_a_dict(&scope, type_a.dict());
   Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
-  ValueCell foo_in_a(&scope, runtime_.dictAt(thread_, type_a_dict, foo_name));
+  ValueCell foo_in_a(&scope,
+                     runtime_.dictAtByStr(thread_, type_a_dict, foo_name));
   ASSERT_TRUE(foo_in_a.dependencyLink().isWeakLink());
   ASSERT_EQ(WeakLink::cast(foo_in_a.dependencyLink()).referent(),
             *function_that_caches_attr_lookup);
@@ -4387,7 +4391,8 @@ function_that_caches_attr_lookup(a, b, c)
   // Verify that function_that_caches_attr_lookup cached the attribute lookup
   // and appears on the dependency list of B.foo.
   Dict type_b_dict(&scope, type_b.dict());
-  ValueCell foo_in_b(&scope, runtime_.dictAt(thread_, type_b_dict, foo_name));
+  ValueCell foo_in_b(&scope,
+                     runtime_.dictAtByStr(thread_, type_b_dict, foo_name));
   ASSERT_TRUE(foo_in_b.dependencyLink().isWeakLink());
   ASSERT_EQ(WeakLink::cast(foo_in_b.dependencyLink()).referent(),
             *function_that_caches_attr_lookup);
@@ -4395,7 +4400,8 @@ function_that_caches_attr_lookup(a, b, c)
   // Verify that function_that_caches_attr_lookup cached the attribute lookup
   // and appears on the dependency list of C.foo.
   Dict type_c_dict(&scope, type_b.dict());
-  ValueCell foo_in_c(&scope, runtime_.dictAt(thread_, type_c_dict, foo_name));
+  ValueCell foo_in_c(&scope,
+                     runtime_.dictAtByStr(thread_, type_c_dict, foo_name));
   ASSERT_TRUE(foo_in_c.dependencyLink().isWeakLink());
   ASSERT_EQ(WeakLink::cast(foo_in_c.dependencyLink()).referent(),
             *function_that_caches_attr_lookup);

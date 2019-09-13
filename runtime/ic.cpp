@@ -51,7 +51,7 @@ bool icInsertDependentToValueCellDependencyLink(Thread* thread,
 }
 
 void icInsertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
-                                          const Object& name_str,
+                                          const Str& name,
                                           const Object& dependent) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -63,11 +63,11 @@ void icInsertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
     Dict dict(&scope, mro_type.dict());
     // TODO(T46428372): Consider using a specialized dict lookup to avoid 2
     // probings.
-    Object result(&scope, runtime->dictAt(thread, dict, name_str));
+    Object result(&scope, runtime->dictAtByStr(thread, dict, name));
     DCHECK(result.isErrorNotFound() || result.isValueCell(),
            "value must be ValueCell if found");
     if (result.isErrorNotFound()) {
-      result = runtime->dictAtPutInValueCell(thread, dict, name_str, none);
+      result = runtime->dictAtPutInValueCellByStr(thread, dict, name, none);
       ValueCell::cast(*result).makePlaceholder();
     }
     ValueCell value_cell(&scope, *result);
@@ -117,7 +117,8 @@ void icDeleteDependentFromShadowedAttributes(Thread* thread,
   for (word i = 0; i < mro.length(); ++i) {
     Type type(&scope, mro.at(i));
     Dict dict(&scope, type.dict());
-    ValueCell value_cell(&scope, runtime->dictAt(thread, dict, attribute_name));
+    ValueCell value_cell(&scope,
+                         runtime->dictAtByStr(thread, dict, attribute_name));
     icDeleteDependentInValueCell(thread, value_cell, dependent);
     if (type == updated_type) {
       DCHECK(!value_cell.isPlaceholder(),
@@ -151,7 +152,7 @@ bool icIsCachedAttributeAffectedByUpdatedType(Thread* thread,
   for (word i = 0; i < mro.length(); ++i) {
     Type type(&scope, mro.at(i));
     Dict dict(&scope, type.dict());
-    Object result(&scope, runtime->dictAt(thread, dict, attribute_name));
+    Object result(&scope, runtime->dictAtByStr(thread, dict, attribute_name));
     if (type == updated_type) {
       // The current type in MRO is the searched type, and the searched
       // attribute is unfound in MRO so far, so type[attribute_name] is the one
@@ -218,7 +219,7 @@ void icInvalidateCachesForTypeAttr(Thread* thread, const Type& type,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Dict dict(&scope, type.dict());
-  Object value(&scope, runtime->dictAt(thread, dict, attribute_name));
+  Object value(&scope, runtime->dictAtByStr(thread, dict, attribute_name));
   if (value.isErrorNotFound()) {
     return;
   }

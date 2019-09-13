@@ -152,7 +152,7 @@ class C(B):
   Type a(&scope, mainModuleAt(&runtime_, "A"));
   Type b(&scope, mainModuleAt(&runtime_, "B"));
   Type c(&scope, mainModuleAt(&runtime_, "C"));
-  Object foo(&scope, runtime_.newStrFromCStr("foo"));
+  Str foo(&scope, runtime_.newStrFromCStr("foo"));
   Object dependent(&scope, SmallInt::fromWord(1234));
 
   // Inserting dependent adds dependent to a new Placeholder in C for 'foo', and
@@ -167,17 +167,17 @@ class C(B):
   ASSERT_EQ(mro.at(2), a);
 
   Dict a_dict(&scope, a.dict());
-  EXPECT_TRUE(runtime_.dictAt(thread_, a_dict, foo).isErrorNotFound());
+  EXPECT_TRUE(runtime_.dictAtByStr(thread_, a_dict, foo).isErrorNotFound());
 
   Dict b_dict(&scope, b.dict());
-  ValueCell b_entry(&scope, runtime_.dictAt(thread_, b_dict, foo));
+  ValueCell b_entry(&scope, runtime_.dictAtByStr(thread_, b_dict, foo));
   EXPECT_FALSE(b_entry.isPlaceholder());
   WeakLink b_link(&scope, b_entry.dependencyLink());
   EXPECT_EQ(b_link.referent(), dependent);
   EXPECT_TRUE(b_link.next().isNoneType());
 
   Dict c_dict(&scope, c.dict());
-  ValueCell c_entry(&scope, runtime_.dictAt(thread_, c_dict, foo));
+  ValueCell c_entry(&scope, runtime_.dictAtByStr(thread_, c_dict, foo));
   EXPECT_TRUE(c_entry.isPlaceholder());
   WeakLink c_link(&scope, c_entry.dependencyLink());
   EXPECT_EQ(c_link.referent(), dependent);
@@ -240,14 +240,14 @@ TEST_F(
   ASSERT_TRUE(icInsertDependentToValueCellDependencyLink(thread_, dependent_x,
                                                          foo_in_a));
   ASSERT_EQ(WeakLink::cast(foo_in_a.dependencyLink()).referent(), *dependent_x);
-  runtime_.dictAtPut(thread_, type_dict_a, foo_name, foo_in_a);
+  runtime_.dictAtPutByStr(thread_, type_dict_a, foo_name, foo_in_a);
 
   // A.bar -> y
   ValueCell bar_in_a(&scope, runtime_.newValueCell());
   ASSERT_TRUE(icInsertDependentToValueCellDependencyLink(thread_, dependent_y,
                                                          bar_in_a));
   ASSERT_EQ(WeakLink::cast(bar_in_a.dependencyLink()).referent(), *dependent_y);
-  runtime_.dictAtPut(thread_, type_dict_a, bar_name, bar_in_a);
+  runtime_.dictAtPutByStr(thread_, type_dict_a, bar_name, bar_in_a);
 
   Type type_a(&scope, runtime_.newType());
   type_a.setDict(*type_dict_a);
@@ -302,14 +302,14 @@ TEST_F(IcTest,
   ASSERT_TRUE(!foo_in_a.isPlaceholder());
   ASSERT_TRUE(icInsertDependentToValueCellDependencyLink(thread_, dependent_x,
                                                          foo_in_a));
-  runtime_.dictAtPut(thread_, type_dict_a, foo_name, foo_in_a);
+  runtime_.dictAtPutByStr(thread_, type_dict_a, foo_name, foo_in_a);
 
   // B.foo -> x
   ValueCell foo_in_b(&scope, runtime_.newValueCell());
   ASSERT_TRUE(!foo_in_b.isPlaceholder());
   ASSERT_TRUE(icInsertDependentToValueCellDependencyLink(thread_, dependent_x,
                                                          foo_in_b));
-  runtime_.dictAtPut(thread_, type_dict_b, foo_name, foo_in_b);
+  runtime_.dictAtPutByStr(thread_, type_dict_b, foo_name, foo_in_b);
 
   // C.foo -> x
   // Note that this dependency is a placeholder.
@@ -318,7 +318,7 @@ TEST_F(IcTest,
   ASSERT_TRUE(foo_in_c.isPlaceholder());
   ASSERT_TRUE(icInsertDependentToValueCellDependencyLink(thread_, dependent_x,
                                                          foo_in_c));
-  runtime_.dictAtPut(thread_, type_dict_c, foo_name, foo_in_c);
+  runtime_.dictAtPutByStr(thread_, type_dict_c, foo_name, foo_in_c);
 
   // C -> B -> A.
   Type type_a(&scope, runtime_.newType());
@@ -360,14 +360,14 @@ TEST_F(IcTest, IcIsCachedAttributeAffectedByUpdatedType) {
   Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
   Dict type_dict_a(&scope, runtime_.newDict());
   ValueCell foo_in_a(&scope, runtime_.newValueCell());
-  runtime_.dictAtPut(thread_, type_dict_a, foo_name, foo_in_a);
+  runtime_.dictAtPutByStr(thread_, type_dict_a, foo_name, foo_in_a);
   Dict type_dict_b(&scope, runtime_.newDict());
   ValueCell foo_in_b(&scope, runtime_.newValueCell());
-  runtime_.dictAtPut(thread_, type_dict_b, foo_name, foo_in_b);
+  runtime_.dictAtPutByStr(thread_, type_dict_b, foo_name, foo_in_b);
   Dict type_dict_c(&scope, runtime_.newDict());
   ValueCell foo_in_c(&scope, runtime_.newValueCell());
   foo_in_c.makePlaceholder();
-  runtime_.dictAtPut(thread_, type_dict_c, foo_name, foo_in_c);
+  runtime_.dictAtPutByStr(thread_, type_dict_c, foo_name, foo_in_c);
 
   // Create an mro with C -> B -> A.
   Type type_a(&scope, runtime_.newType());
@@ -451,7 +451,7 @@ c = C()
   ValueCell foo(&scope, runtime_.newValueCell());
   ASSERT_TRUE(
       icInsertDependentToValueCellDependencyLink(thread_, dependent, foo));
-  runtime_.dictAtPut(thread_, type_dict, foo_name, foo);
+  runtime_.dictAtPutByStr(thread_, type_dict, foo_name, foo);
 
   // Create an attribute cache for an instance of C, under name "foo".
   Object instance(&scope, mainModuleAt(&runtime_, "c"));
@@ -490,7 +490,7 @@ c = C()
   ValueCell foo(&scope, runtime_.newValueCell());
   ASSERT_TRUE(
       icInsertDependentToValueCellDependencyLink(thread_, dependent, foo));
-  runtime_.dictAtPut(thread_, type_dict, foo_name, foo);
+  runtime_.dictAtPutByStr(thread_, type_dict, foo_name, foo);
 
   // Create an instance offset cache for an instance of C, under name "foo".
   Object instance(&scope, mainModuleAt(&runtime_, "c"));
@@ -539,22 +539,22 @@ c = C()
 
   // The following lines simulate that dependent caches a.foo, b.foo, c.foo, and
   // x.foo. A.foo -> dependent.
-  ValueCell a_foo(&scope, runtime_.dictAt(thread_, a_type_dict, foo_name));
+  ValueCell a_foo(&scope, runtime_.dictAtByStr(thread_, a_type_dict, foo_name));
   ASSERT_TRUE(
       icInsertDependentToValueCellDependencyLink(thread_, dependent, a_foo));
-  runtime_.dictAtPut(thread_, a_type_dict, foo_name, a_foo);
+  runtime_.dictAtPutByStr(thread_, a_type_dict, foo_name, a_foo);
   // B.foo -> dependent.
-  ValueCell b_foo(&scope, runtime_.dictAt(thread_, b_type_dict, foo_name));
+  ValueCell b_foo(&scope, runtime_.dictAtByStr(thread_, b_type_dict, foo_name));
   ASSERT_TRUE(
       icInsertDependentToValueCellDependencyLink(thread_, dependent, b_foo));
-  runtime_.dictAtPut(thread_, b_type_dict, foo_name, b_foo);
+  runtime_.dictAtPutByStr(thread_, b_type_dict, foo_name, b_foo);
   // C.foo -> dependent.
   ValueCell c_foo(&scope, runtime_.newValueCell());
   // This is a placeholder since C.foo is resolved to B.foo.
   c_foo.makePlaceholder();
   ASSERT_TRUE(
       icInsertDependentToValueCellDependencyLink(thread_, dependent, c_foo));
-  runtime_.dictAtPut(thread_, c_type_dict, foo_name, c_foo);
+  runtime_.dictAtPutByStr(thread_, c_type_dict, foo_name, c_foo);
 
   // Create a cache for a.foo in dependent.
   Object a(&scope, mainModuleAt(&runtime_, "a"));
@@ -612,13 +612,13 @@ c = C()
   ValueCell foo(&scope, runtime_.newValueCell());
   ASSERT_TRUE(
       icInsertDependentToValueCellDependencyLink(thread_, dependent0, foo));
-  runtime_.dictAtPut(thread_, type_dict, foo_name, foo);
+  runtime_.dictAtPutByStr(thread_, type_dict, foo_name, foo);
 
   // bar -> dependent1.
   ValueCell bar(&scope, runtime_.newValueCell());
   ASSERT_TRUE(
       icInsertDependentToValueCellDependencyLink(thread_, dependent1, bar));
-  runtime_.dictAtPut(thread_, type_dict, bar_name, bar);
+  runtime_.dictAtPutByStr(thread_, type_dict, bar_name, bar);
 
   Object instance(&scope, mainModuleAt(&runtime_, "c"));
   Tuple dependent0_caches(&scope, dependent0.caches());

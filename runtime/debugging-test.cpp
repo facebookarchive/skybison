@@ -56,15 +56,15 @@ static RawObject makeTestFunction(Thread* thread) {
   Function func(&scope,
                 runtime->newFunctionWithCode(thread, qualname, code, globals));
   Dict annotations(&scope, runtime->newDict());
-  Object return_name(&scope, runtime->newStrFromCStr("return"));
+  Str return_name(&scope, runtime->newStrFromCStr("return"));
   Object int_type(&scope, runtime->typeAt(LayoutId::kInt));
-  runtime->dictAtPut(thread, annotations, return_name, int_type);
+  runtime->dictAtPutByStr(thread, annotations, return_name, int_type);
   func.setAnnotations(*annotations);
   func.setClosure(runtime->emptyTuple());
   Dict kw_defaults(&scope, runtime->newDict());
-  Object name0(&scope, runtime->newStrFromCStr("name0"));
+  Str name0(&scope, runtime->newStrFromCStr("name0"));
   Object none(&scope, NoneType::object());
-  runtime->dictAtPut(thread, kw_defaults, name0, none);
+  runtime->dictAtPutByStr(thread, kw_defaults, name0, none);
   func.setKwDefaults(*kw_defaults);
   Tuple defaults(&scope, runtime->newTuple(1));
   defaults.atPut(0, runtime->newInt(-9));
@@ -73,9 +73,9 @@ static RawObject makeTestFunction(Thread* thread) {
   func.setModule(runtime->newStrFromCStr("barmodule"));
   func.setName(runtime->newStrFromCStr("baz"));
   Dict attrs(&scope, runtime->newDict());
-  Object attr_name(&scope, runtime->newStrFromCStr("funcattr0"));
+  Str attr_name(&scope, runtime->newStrFromCStr("funcattr0"));
   Object attr_value(&scope, runtime->newInt(4));
-  runtime->dictAtPut(thread, attrs, attr_name, attr_value);
+  runtime->dictAtPutByStr(thread, attrs, attr_name, attr_value);
   func.setDict(*attrs);
   return *func;
 }
@@ -228,11 +228,11 @@ TEST_F(DebuggingTests, FormatCode) {
 TEST_F(DebuggingTests, FormatDict) {
   HandleScope scope(thread_);
   Dict dict(&scope, runtime_.newDict());
-  Object key0(&scope, runtime_.newStrFromCStr("hello"));
+  Str key0(&scope, runtime_.newStrFromCStr("hello"));
   Object key1(&scope, NoneType::object());
   Object value0(&scope, runtime_.newInt(88));
   Object value1(&scope, runtime_.emptyTuple());
-  runtime_.dictAtPut(thread_, dict, key0, value0);
+  runtime_.dictAtPutByStr(thread_, dict, key0, value0);
   runtime_.dictAtPut(thread_, dict, key1, value1);
   std::stringstream ss;
   ss << dict;

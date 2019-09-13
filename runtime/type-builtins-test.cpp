@@ -29,9 +29,12 @@ TEST_F(TypeBuiltinsTest, NextTypeDictItemReturnsNextNonPlaceholder) {
   runtime_.typeDictAtPut(thread_, module_dict, qux, value);
 
   // Only baz is not Placeholder.
-  ValueCell::cast(runtime_.dictAt(thread_, module_dict, foo)).makePlaceholder();
-  ValueCell::cast(runtime_.dictAt(thread_, module_dict, bar)).makePlaceholder();
-  ValueCell::cast(runtime_.dictAt(thread_, module_dict, qux)).makePlaceholder();
+  ValueCell::cast(runtime_.dictAtByStr(thread_, module_dict, foo))
+      .makePlaceholder();
+  ValueCell::cast(runtime_.dictAtByStr(thread_, module_dict, bar))
+      .makePlaceholder();
+  ValueCell::cast(runtime_.dictAtByStr(thread_, module_dict, qux))
+      .makePlaceholder();
 
   Tuple buckets(&scope, module_dict.data());
   word i = Dict::Bucket::kFirst;
@@ -76,7 +79,7 @@ TEST_F(TypeBuiltinsTest, TypeDictKeysFiltersOutPlaceholders) {
   runtime_.typeDictAtPut(thread_, dict, bar, value);
   runtime_.typeDictAtPut(thread_, dict, baz, value);
 
-  ValueCell::cast(runtime_.dictAt(thread_, dict, bar)).makePlaceholder();
+  ValueCell::cast(runtime_.dictAtByStr(thread_, dict, bar)).makePlaceholder();
 
   List keys(&scope, typeKeys(thread_, type));
   EXPECT_EQ(keys.numItems(), 2);
@@ -100,7 +103,7 @@ TEST_F(TypeBuiltinsTest, TypeLenReturnsItemCountExcludingPlaceholders) {
 
   SmallInt previous_len(&scope, typeLen(thread_, type));
 
-  ValueCell::cast(runtime_.dictAt(thread_, dict, bar)).makePlaceholder();
+  ValueCell::cast(runtime_.dictAtByStr(thread_, dict, bar)).makePlaceholder();
 
   SmallInt after_len(&scope, typeLen(thread_, type));
   EXPECT_EQ(previous_len.value(), after_len.value() + 1);
@@ -122,7 +125,7 @@ TEST_F(TypeBuiltinsTest, TypeValuesFiltersOutPlaceholders) {
   runtime_.typeDictAtPut(thread_, dict, bar, bar_value);
   runtime_.typeDictAtPut(thread_, dict, baz, baz_value);
 
-  ValueCell::cast(runtime_.dictAt(thread_, dict, bar)).makePlaceholder();
+  ValueCell::cast(runtime_.dictAtByStr(thread_, dict, bar)).makePlaceholder();
 
   List values(&scope, typeValues(thread_, type));
   EXPECT_TRUE(listContains(values, foo_value));

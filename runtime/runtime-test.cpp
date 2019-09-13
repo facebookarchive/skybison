@@ -478,18 +478,22 @@ TEST_F(RuntimeDictTest, AtIfAbsentPutLength) {
 
   // Add new item
   Object k2(&scope, SmallInt::fromWord(2));
+  Object k2_hash(&scope, Interpreter::hash(thread_, k2));
+  ASSERT_FALSE(k2_hash.isErrorException());
   SmallIntCallback cb(222);
-  runtime_.dictAtIfAbsentPut(thread_, dict, k2, &cb);
+  runtime_.dictAtIfAbsentPut(thread_, dict, k2, k2_hash, &cb);
   EXPECT_EQ(dict.numItems(), 2);
-  RawObject retrieved = runtime_.dictAt(thread_, dict, k2);
+  RawObject retrieved = runtime_.dictAtWithHash(thread_, dict, k2, k2_hash);
   EXPECT_TRUE(isIntEqualsWord(retrieved, 222));
 
   // Don't overrwite existing item 1 -> v1
   Object k3(&scope, SmallInt::fromWord(1));
+  Object k3_hash(&scope, Interpreter::hash(thread_, k3));
+  ASSERT_FALSE(k3_hash.isErrorException());
   SmallIntCallback cb3(333);
-  runtime_.dictAtIfAbsentPut(thread_, dict, k3, &cb3);
+  runtime_.dictAtIfAbsentPut(thread_, dict, k3, k3_hash, &cb3);
   EXPECT_EQ(dict.numItems(), 2);
-  retrieved = runtime_.dictAt(thread_, dict, k3);
+  retrieved = runtime_.dictAtWithHash(thread_, dict, k3, k3_hash);
   EXPECT_EQ(retrieved, *v1);
 }
 
@@ -1243,9 +1247,9 @@ TEST_F(RuntimeTest, IsInternWithStrReturnsFalse) {
 TEST_F(RuntimeTest, CollectAttributes) {
   HandleScope scope(thread_);
 
-  Object foo(&scope, runtime_.newStrFromCStr("foo"));
-  Object bar(&scope, runtime_.newStrFromCStr("bar"));
-  Object baz(&scope, runtime_.newStrFromCStr("baz"));
+  Str foo(&scope, runtime_.newStrFromCStr("foo"));
+  Str bar(&scope, runtime_.newStrFromCStr("bar"));
+  Str baz(&scope, runtime_.newStrFromCStr("baz"));
 
   Tuple names(&scope, runtime_.newTuple(3));
   names.atPut(0, *foo);
@@ -1280,7 +1284,7 @@ TEST_F(RuntimeTest, CollectAttributes) {
   EXPECT_EQ(attributes.numItems(), 1);
 
   // Check that we collected 'foo'
-  Object result(&scope, runtime_.dictAt(thread_, attributes, foo));
+  Object result(&scope, runtime_.dictAtByStr(thread_, attributes, foo));
   ASSERT_TRUE(result.isStr());
   EXPECT_TRUE(Str::cast(*result).equals(*foo));
 
@@ -1299,12 +1303,12 @@ TEST_F(RuntimeTest, CollectAttributes) {
   EXPECT_EQ(attributes.numItems(), 3);
 
   // Check that we collected 'bar'
-  result = runtime_.dictAt(thread_, attributes, bar);
+  result = runtime_.dictAtByStr(thread_, attributes, bar);
   ASSERT_TRUE(result.isStr());
   EXPECT_TRUE(Str::cast(*result).equals(*bar));
 
   // Check that we collected 'baz'
-  result = runtime_.dictAt(thread_, attributes, baz);
+  result = runtime_.dictAtByStr(thread_, attributes, baz);
   ASSERT_TRUE(result.isStr());
   EXPECT_TRUE(Str::cast(*result).equals(*baz));
 }
@@ -1312,8 +1316,8 @@ TEST_F(RuntimeTest, CollectAttributes) {
 TEST_F(RuntimeTest, CollectAttributesWithExtendedArg) {
   HandleScope scope(thread_);
 
-  Object foo(&scope, runtime_.newStrFromCStr("foo"));
-  Object bar(&scope, runtime_.newStrFromCStr("bar"));
+  Str foo(&scope, runtime_.newStrFromCStr("foo"));
+  Str bar(&scope, runtime_.newStrFromCStr("bar"));
 
   Tuple names(&scope, runtime_.newTuple(2));
   names.atPut(0, *foo);
@@ -1343,7 +1347,7 @@ TEST_F(RuntimeTest, CollectAttributesWithExtendedArg) {
   EXPECT_EQ(attributes.numItems(), 1);
 
   // Check that we collected 'foo'
-  Object result(&scope, runtime_.dictAt(thread_, attributes, foo));
+  Object result(&scope, runtime_.dictAtByStr(thread_, attributes, foo));
   ASSERT_TRUE(result.isStr());
   EXPECT_TRUE(Str::cast(*result).equals(*foo));
 }
@@ -1356,9 +1360,9 @@ TEST_F(RuntimeTest, GetTypeConstructor) {
 
   EXPECT_TRUE(runtime_.classConstructor(type).isErrorNotFound());
 
-  Object init(&scope, runtime_.symbols()->DunderInit());
+  Str init(&scope, runtime_.symbols()->DunderInit());
   Object func(&scope, makeTestFunction());
-  runtime_.dictAtPutInValueCell(thread_, type_dict, init, func);
+  runtime_.dictAtPutInValueCellByStr(thread_, type_dict, init, func);
 
   EXPECT_EQ(runtime_.classConstructor(type), *func);
 }
@@ -2860,17 +2864,20 @@ TEST_F(RuntimeModuleTest, ModuleImportsAllPublicSymbols) {
 
   // Add symbols
   Dict module_dict(&scope, module.dict());
-  Object symbol_str1(&scope, runtime_.newStrFromCStr("public_symbol"));
-  Object symbol_str2(&scope, runtime_.newStrFromCStr("_private_symbol"));
-  runtime_.dictAtPutInValueCell(thread_, module_dict, symbol_str1, symbol_str1);
-  runtime_.dictAtPutInValueCell(thread_, module_dict, symbol_str2, symbol_str2);
+  Str symbol_str1(&scope, runtime_.newStrFromCStr("public_symbol"));
+  Str symbol_str2(&scope, runtime_.newStrFromCStr("_private_symbol"));
+  runtime_.dictAtPutInValueCellByStr(thread_, module_dict, symbol_str1,
+                                     symbol_str1);
+  runtime_.dictAtPutInValueCellByStr(thread_, module_dict, symbol_str2,
+                                     symbol_str2);
 
   // Import public symbols to dictionary
   Dict symbols_dict(&scope, runtime_.newDict());
   runtime_.moduleImportAllFrom(symbols_dict, module);
   EXPECT_EQ(symbols_dict.numItems(), 1);
 
-  ValueCell result(&scope, runtime_.dictAt(thread_, symbols_dict, symbol_str1));
+  ValueCell result(&scope,
+                   runtime_.dictAtByStr(thread_, symbols_dict, symbol_str1));
   EXPECT_TRUE(isStrEqualsCStr(result.value(), "public_symbol"));
 }
 
@@ -2932,8 +2939,8 @@ foo.x = 3
   HandleScope scope(thread_);
   Function function(&scope, mainModuleAt(&runtime_, "foo"));
   Dict function_dict(&scope, function.dict());
-  Object key(&scope, runtime_.newStrFromCStr("x"));
-  Object value(&scope, runtime_.dictAt(thread_, function_dict, key));
+  Str name(&scope, runtime_.newStrFromCStr("x"));
+  Object value(&scope, runtime_.dictAtByStr(thread_, function_dict, name));
   EXPECT_TRUE(isIntEqualsWord(*value, 3));
 }
 
@@ -3433,9 +3440,9 @@ TEST_F(RuntimeTest, BuiltinBaseOfEmptyTypeIsSuperclass) {
 TEST_F(RuntimeTest, NonModuleInModulesDoesNotCrash) {
   HandleScope scope(thread_);
   Object not_a_module(&scope, runtime_.newInt(42));
-  Object name(&scope, runtime_.newStrFromCStr("a_valid_module_name"));
+  Str name(&scope, runtime_.newStrFromCStr("a_valid_module_name"));
   Dict modules(&scope, runtime_.modules());
-  runtime_.dictAtPut(thread_, modules, name, not_a_module);
+  runtime_.dictAtPutByStr(thread_, modules, name, not_a_module);
 
   Object result(&scope, runtime_.findModule(name));
   EXPECT_EQ(result, not_a_module);

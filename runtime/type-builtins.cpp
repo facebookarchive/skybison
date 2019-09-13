@@ -207,13 +207,13 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     }
   }
 
-  Object class_cell_key(&scope, runtime->symbols()->DunderClassCell());
+  Str class_cell_name(&scope, runtime->symbols()->DunderClassCell());
   Object class_cell(&scope,
-                    runtime->typeDictAt(thread, type_dict, class_cell_key));
+                    runtime->typeDictAt(thread, type_dict, class_cell_name));
   if (!class_cell.isErrorNotFound()) {
     DCHECK(class_cell.isValueCell(), "class cell must be a value cell");
     ValueCell::cast(*class_cell).setValue(*type);
-    runtime->dictRemove(thread, type_dict, class_cell_key);
+    runtime->dictRemoveByStr(thread, type_dict, class_cell_name);
   }
   type.setDict(*type_dict);
 

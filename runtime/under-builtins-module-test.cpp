@@ -373,14 +373,14 @@ TEST_F(UnderBuiltinsModuleTest,
   Object a_value(&scope, SmallInt::fromWord(1));
   Str b(&scope, runtime_.newStrFromCStr("b"));
   Object b_value(&scope, SmallInt::fromWord(2));
-  runtime_.dictAtPut(thread_, dict, a, a_value);
-  runtime_.dictAtPut(thread_, dict, b, b_value);
+  runtime_.dictAtPutByStr(thread_, dict, a, a_value);
+  runtime_.dictAtPutByStr(thread_, dict, b, b_value);
 
   Tuple result(&scope, runBuiltin(UnderBuiltinsModule::underDictPopitem, dict));
   ASSERT_EQ(result.length(), 2);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), "a"));
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 1));
-  EXPECT_TRUE(runtime_.dictAt(thread_, dict, a).isErrorNotFound());
+  EXPECT_TRUE(runtime_.dictAtByStr(thread_, dict, a).isErrorNotFound());
   EXPECT_EQ(dict.numItems(), 1);
 }
 
@@ -1491,7 +1491,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderModuleDirListWithFilteredOutPlaceholders) {
   moduleDictAtPut(thread_, module_dict, bar, value);
   moduleDictAtPut(thread_, module_dict, baz, value);
 
-  ValueCell::cast(runtime_.dictAt(thread_, module_dict, bar)).makePlaceholder();
+  ValueCell::cast(runtime_.dictAtByStr(thread_, module_dict, bar))
+      .makePlaceholder();
 
   Str module_name(&scope, runtime_.newStrFromCStr("module"));
   Module module(&scope, runtime_.newModule(module_name));

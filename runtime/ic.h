@@ -50,7 +50,7 @@ bool icInsertDependentToValueCellDependencyLink(Thread* thread,
 // Perform the same lookup operation as typeLookupNameInMro as we're inserting
 // dependent into the ValueCell in each visited type dictionary.
 void icInsertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
-                                          const Object& name_str,
+                                          const Str& name,
                                           const Object& dependent);
 
 // Delete dependent in ValueCell's dependencyLink.

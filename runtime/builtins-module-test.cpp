@@ -396,16 +396,16 @@ class C(int, float, metaclass=Meta, hello="world"):
 
   ASSERT_TRUE(c.at(3).isDict());
   Dict c_namespace(&scope, c.at(3));
-  Object x(&scope, runtime_.newStrFromCStr("x"));
-  EXPECT_TRUE(runtime_.dictIncludes(thread_, c_namespace, x));
+  Str x(&scope, runtime_.newStrFromCStr("x"));
+  EXPECT_TRUE(runtime_.dictIncludesByStr(thread_, c_namespace, x));
   ASSERT_TRUE(c.at(4).isTuple());
   EXPECT_EQ(Tuple::cast(c.at(4)).length(), 0);
-  Object hello(&scope, runtime_.newStrFromCStr("hello"));
+  Str hello(&scope, runtime_.newStrFromCStr("hello"));
   ASSERT_TRUE(c.at(5).isDict());
   Dict c_kwargs(&scope, c.at(5));
   EXPECT_EQ(c_kwargs.numItems(), 1);
   EXPECT_TRUE(
-      isStrEqualsCStr(runtime_.dictAt(thread_, c_kwargs, hello), "world"));
+      isStrEqualsCStr(runtime_.dictAtByStr(thread_, c_kwargs, hello), "world"));
 }
 
 TEST_F(BuiltinsModuleTest, DunderBuildClassCalculatesMostSpecificMetaclass) {
