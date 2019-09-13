@@ -1449,7 +1449,7 @@ RawObject UnderBuiltinsModule::underDictUpdateMapping(Thread* thread,
   Runtime* runtime = thread->runtime();
   DCHECK(runtime->isInstanceOfDict(*self_obj), "self must be instance of dict");
   Type other_type(&scope, runtime->typeOf(*other));
-  DCHECK(!typeLookupSymbolInMro(thread, other_type, SymbolId::kKeys).isError(),
+  DCHECK(!typeLookupInMroById(thread, other_type, SymbolId::kKeys).isError(),
          "other must have 'keys' method");
   Dict self(&scope, *self_obj);
   return dictMergeOverride(thread, self, other);
@@ -2371,7 +2371,7 @@ RawObject UnderBuiltinsModule::underObjectTypeGetAttr(Thread* thread,
   Object instance(&scope, args.get(0));
   Type type(&scope, thread->runtime()->typeOf(*instance));
   Str name(&scope, args.get(1));
-  Object attr(&scope, typeLookupNameInMro(thread, type, name));
+  Object attr(&scope, typeLookupInMro(thread, type, name));
   if (attr.isErrorNotFound()) {
     return Unbound::object();
   }
@@ -2385,7 +2385,7 @@ RawObject UnderBuiltinsModule::underObjectTypeHasattr(Thread* thread,
   HandleScope scope(thread);
   Type type(&scope, thread->runtime()->typeOf(args.get(0)));
   Str name(&scope, args.get(1));
-  Object result(&scope, typeLookupNameInMro(thread, type, name));
+  Object result(&scope, typeLookupInMro(thread, type, name));
   return Bool::fromBool(!result.isErrorNotFound());
 }
 

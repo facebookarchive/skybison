@@ -56,7 +56,7 @@ RawObject Interpreter::prepareCallable(Thread* thread, Frame* frame,
     // TODO(T44238481): Look into using lookupMethod() once it's fixed.
     Type type(&scope, runtime->typeOf(**callable));
     Object dunder_call(
-        &scope, typeLookupSymbolInMro(thread, type, SymbolId::kDunderCall));
+        &scope, typeLookupInMroById(thread, type, SymbolId::kDunderCall));
     if (!dunder_call.isError()) {
       if (dunder_call.isFunction()) {
         // Avoid calling function.__get__ and creating a short-lived BoundMethod
@@ -320,8 +320,8 @@ RawObject Interpreter::callDescriptorGet(Thread* thread, Frame* caller,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type descriptor_type(&scope, runtime->typeOf(*descriptor));
-  Object method(&scope, typeLookupSymbolInMro(thread, descriptor_type,
-                                              SymbolId::kDunderGet));
+  Object method(&scope, typeLookupInMroById(thread, descriptor_type,
+                                            SymbolId::kDunderGet));
   DCHECK(!method.isError(), "no __get__ method found");
   return callMethod3(thread, caller, method, descriptor, receiver,
                      receiver_type);
@@ -334,8 +334,8 @@ RawObject Interpreter::callDescriptorSet(Thread* thread, Frame* caller,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type descriptor_type(&scope, runtime->typeOf(*descriptor));
-  Object method(&scope, typeLookupSymbolInMro(thread, descriptor_type,
-                                              SymbolId::kDunderSet));
+  Object method(&scope, typeLookupInMroById(thread, descriptor_type,
+                                            SymbolId::kDunderSet));
   DCHECK(!method.isError(), "no __set__ method found");
   return callMethod3(thread, caller, method, descriptor, receiver, value);
 }
@@ -346,8 +346,8 @@ RawObject Interpreter::callDescriptorDelete(Thread* thread, Frame* caller,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type descriptor_type(&scope, runtime->typeOf(*descriptor));
-  Object method(&scope, typeLookupSymbolInMro(thread, descriptor_type,
-                                              SymbolId::kDunderDelete));
+  Object method(&scope, typeLookupInMroById(thread, descriptor_type,
+                                            SymbolId::kDunderDelete));
   DCHECK(!method.isError(), "no __delete__ method found");
   return callMethod2(thread, caller, method, descriptor, receiver);
 }
@@ -357,7 +357,7 @@ RawObject Interpreter::lookupMethod(Thread* thread, Frame* /* caller */,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->typeOf(*receiver));
-  Object method(&scope, typeLookupSymbolInMro(thread, type, selector));
+  Object method(&scope, typeLookupInMroById(thread, type, selector));
   if (method.isFunction() || method.isError()) {
     // Do not create a short-lived bound method object, and propagate
     // exceptions.
@@ -569,7 +569,7 @@ static RawObject binaryOperationLookupReflected(Thread* thread,
   SymbolId swapped_selector = runtime->swappedBinaryOperationSelector(op);
   Type right_type(&scope, runtime->typeOf(*right));
   Object right_reversed_method(
-      &scope, typeLookupSymbolInMro(thread, right_type, swapped_selector));
+      &scope, typeLookupInMroById(thread, right_type, swapped_selector));
   if (right_reversed_method.isErrorNotFound()) return *right_reversed_method;
 
   // Python doesn't bother calling the reverse method when the slot on left and
@@ -577,7 +577,7 @@ static RawObject binaryOperationLookupReflected(Thread* thread,
   // close to this behavior.
   Type left_type(&scope, runtime->typeOf(*left));
   Object left_reversed_method(
-      &scope, typeLookupSymbolInMro(thread, left_type, swapped_selector));
+      &scope, typeLookupInMroById(thread, left_type, swapped_selector));
   if (left_reversed_method == right_reversed_method) {
     return Error::notFound();
   }
@@ -617,8 +617,7 @@ RawObject Interpreter::binaryOperationSetMethod(Thread* thread, Frame* caller,
   SymbolId selector = runtime->binaryOperationSelector(op);
   Type left_type(&scope, runtime->typeOf(*left));
   Type right_type(&scope, runtime->typeOf(*right));
-  Object left_method(&scope,
-                     typeLookupSymbolInMro(thread, left_type, selector));
+  Object left_method(&scope, typeLookupInMroById(thread, left_type, selector));
 
   // Figure out whether we want to run the normal or the reverse operation
   // first and set `flags` accordingly.
@@ -686,7 +685,7 @@ RawObject Interpreter::inplaceOperationSetMethod(
   Runtime* runtime = thread->runtime();
   SymbolId selector = runtime->inplaceOperationSelector(op);
   Type left_type(&scope, runtime->typeOf(*left));
-  Object method(&scope, typeLookupSymbolInMro(thread, left_type, selector));
+  Object method(&scope, typeLookupInMroById(thread, left_type, selector));
   if (!method.isError()) {
     if (method.isFunction()) {
       if (method_out != nullptr) {
@@ -737,8 +736,7 @@ RawObject Interpreter::compareOperationSetMethod(
   SymbolId selector = runtime->comparisonSelector(op);
   Type left_type(&scope, runtime->typeOf(*left));
   Type right_type(&scope, runtime->typeOf(*right));
-  Object left_method(&scope,
-                     typeLookupSymbolInMro(thread, left_type, selector));
+  Object left_method(&scope, typeLookupInMroById(thread, left_type, selector));
 
   // Figure out whether we want to run the normal or the reverse operation
   // first and set `flags` accordingly.
@@ -747,7 +745,7 @@ RawObject Interpreter::compareOperationSetMethod(
   if (left_type != right_type && (left_method.isErrorNotFound() ||
                                   runtime->isSubclass(right_type, left_type))) {
     SymbolId reverse_selector = runtime->swappedComparisonSelector(op);
-    method = typeLookupSymbolInMro(thread, right_type, reverse_selector);
+    method = typeLookupInMroById(thread, right_type, reverse_selector);
     if (!method.isError()) {
       flags = IC_BINOP_REFLECTED;
       if (!left_method.isErrorNotFound()) {
@@ -1336,7 +1334,7 @@ Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
   Object container(&scope, frame->peek(1));
   Type type(&scope, thread->runtime()->typeOf(*container));
   Object getitem(&scope,
-                 typeLookupSymbolInMro(thread, type, SymbolId::kDunderGetitem));
+                 typeLookupInMroById(thread, type, SymbolId::kDunderGetitem));
   if (getitem.isErrorNotFound()) {
     thread->raiseWithFmt(LayoutId::kTypeError,
                          "object does not support indexing");
@@ -2049,8 +2047,7 @@ bool Interpreter::forIterUpdateCache(Thread* thread, word arg, word index) {
   HandleScope scope(thread);
   Object iter(&scope, frame->topValue());
   Type type(&scope, thread->runtime()->typeOf(*iter));
-  Object next(&scope,
-              typeLookupSymbolInMro(thread, type, SymbolId::kDunderNext));
+  Object next(&scope, typeLookupInMroById(thread, type, SymbolId::kDunderNext));
   if (next.isErrorNotFound()) {
     thread->raiseWithFmt(LayoutId::kTypeError, "iter() returned non-iterator");
     return true;
@@ -2257,7 +2254,7 @@ RawObject Interpreter::storeAttrSetLocation(Thread* thread,
   HandleScope scope(thread);
   Type type(&scope, runtime->typeOf(*object));
   Object dunder_setattr(
-      &scope, typeLookupSymbolInMro(thread, type, SymbolId::kDunderSetattr));
+      &scope, typeLookupInMroById(thread, type, SymbolId::kDunderSetattr));
   if (dunder_setattr == runtime->objectDunderSetattr()) {
     return objectSetAttrSetLocation(thread, object, name_str, value,
                                     location_out);
@@ -2521,8 +2518,7 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread, const Object& object,
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->typeOf(*object));
   Object dunder_getattribute(
-      &scope,
-      typeLookupSymbolInMro(thread, type, SymbolId::kDunderGetattribute));
+      &scope, typeLookupInMroById(thread, type, SymbolId::kDunderGetattribute));
   if (dunder_getattribute == runtime->objectDunderGetattribute()) {
     Object result(&scope, objectGetAttributeSetLocation(
                               thread, object, name_str, location_out));

@@ -472,7 +472,7 @@ class A:
   ASSERT_TRUE(runtime_.isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
   Object foo(&scope, runtime_.newStrFromCStr("foo"));
-  EXPECT_TRUE(isIntEqualsWord(typeLookupNameInMro(thread_, a, foo), 2));
+  EXPECT_TRUE(isIntEqualsWord(typeLookupInMro(thread_, a, foo), 2));
 }
 
 TEST_F(TypeBuiltinsTest, TypeLookupNameInMroReturnsParentValue) {
@@ -488,7 +488,7 @@ class B(A):
   ASSERT_TRUE(b_obj.isType());
   Type b(&scope, *b_obj);
   Object foo(&scope, runtime_.newStrFromCStr("foo"));
-  EXPECT_TRUE(isIntEqualsWord(typeLookupNameInMro(thread_, b, foo), 2));
+  EXPECT_TRUE(isIntEqualsWord(typeLookupInMro(thread_, b, foo), 2));
 }
 
 TEST_F(TypeBuiltinsTest, TypeLookupNameInMroReturnsOverriddenValue) {
@@ -504,7 +504,7 @@ class B(A):
   ASSERT_TRUE(b_obj.isType());
   Type b(&scope, *b_obj);
   Object foo(&scope, runtime_.newStrFromCStr("foo"));
-  EXPECT_TRUE(isIntEqualsWord(typeLookupNameInMro(thread_, b, foo), 4));
+  EXPECT_TRUE(isIntEqualsWord(typeLookupInMro(thread_, b, foo), 4));
 }
 
 TEST_F(TypeBuiltinsTest, TypeLookupNameInMroWithNonExistentNameReturnsError) {
@@ -518,7 +518,7 @@ class A:
   ASSERT_TRUE(runtime_.isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
   Object foo(&scope, runtime_.newStrFromCStr("foo"));
-  EXPECT_TRUE(typeLookupNameInMro(thread_, a, foo).isError());
+  EXPECT_TRUE(typeLookupInMro(thread_, a, foo).isError());
   EXPECT_FALSE(thread_->hasPendingException());
 }
 
@@ -533,7 +533,7 @@ class A:
   ASSERT_TRUE(runtime_.isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
   EXPECT_TRUE(isIntEqualsWord(
-      typeLookupSymbolInMro(thread_, a, SymbolId::kDunderAdd), 3));
+      typeLookupInMroById(thread_, a, SymbolId::kDunderAdd), 3));
 }
 
 TEST_F(TypeBuiltinsTest, DunderCallReceivesExArgs) {
@@ -941,7 +941,7 @@ TEST_F(TypeBuiltinsTest, ResolveDescriptorGetCallsDescriptorDunderGet) {
   Object instance(&scope, runtime_.newInt(123));
   Type owner(&scope, runtime_.typeOf(*instance));
   Object descr(&scope,
-               typeLookupSymbolInMro(thread_, owner, SymbolId::kDunderAdd));
+               typeLookupInMroById(thread_, owner, SymbolId::kDunderAdd));
   ASSERT_TRUE(descr.isFunction());
   EXPECT_TRUE(
       resolveDescriptorGet(thread_, descr, instance, owner).isBoundMethod());

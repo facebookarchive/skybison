@@ -147,7 +147,7 @@ PY_EXPORT int PyIndex_Check_Func(PyObject* obj) {
   HandleScope scope(thread);
   Object num(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Type type(&scope, thread->runtime()->typeOf(*num));
-  return !typeLookupSymbolInMro(thread, type, SymbolId::kDunderIndex)
+  return !typeLookupInMroById(thread, type, SymbolId::kDunderIndex)
               .isErrorNotFound();
 }
 
@@ -232,7 +232,7 @@ static RawObject getIter(Thread* thread, const Object& obj) {
   }
   // If the object has __iter__, ensure that the resulting object has __next__.
   Type type(&scope, runtime->typeOf(*iter));
-  if (typeLookupSymbolInMro(thread, type, SymbolId::kDunderNext).isError()) {
+  if (typeLookupInMroById(thread, type, SymbolId::kDunderNext).isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "iter() returned non-iterator");
   }
@@ -391,11 +391,11 @@ PY_EXPORT int PyNumber_Check(PyObject* obj) {
   HandleScope scope(thread);
   Object num(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Type type(&scope, thread->runtime()->typeOf(*num));
-  if (!typeLookupSymbolInMro(thread, type, SymbolId::kDunderInt)
+  if (!typeLookupInMroById(thread, type, SymbolId::kDunderInt)
            .isErrorNotFound()) {
     return true;
   }
-  if (!typeLookupSymbolInMro(thread, type, SymbolId::kDunderFloat)
+  if (!typeLookupInMroById(thread, type, SymbolId::kDunderFloat)
            .isErrorNotFound()) {
     return true;
   }

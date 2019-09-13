@@ -134,7 +134,7 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->typeOf(*object));
-  Object type_attr(&scope, typeLookupNameInMro(thread, type, name_str));
+  Object type_attr(&scope, typeLookupInMro(thread, type, name_str));
   if (!type_attr.isError()) {
     Type type_attr_type(&scope, runtime->typeOf(*type_attr));
     if (typeIsDataDescriptor(thread, type_attr_type)) {
@@ -181,8 +181,7 @@ RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
   // Check for a data descriptor
   HandleScope scope(thread);
   Type type(&scope, runtime->typeOf(*object));
-  Object type_attr(&scope,
-                   typeLookupNameInMro(thread, type, name_interned_str));
+  Object type_attr(&scope, typeLookupInMro(thread, type, name_interned_str));
   if (!type_attr.isError()) {
     Type type_attr_type(&scope, runtime->typeOf(*type_attr));
     if (typeIsDataDescriptor(thread, type_attr_type)) {
@@ -349,9 +348,9 @@ RawObject ObjectBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
     return NoneType::object();
   }
   Type type(&scope, runtime->typeOf(*self));
-  if ((typeLookupSymbolInMro(thread, type, SymbolId::kDunderNew) ==
+  if ((typeLookupInMroById(thread, type, SymbolId::kDunderNew) ==
        runtime->objectDunderNew()) ||
-      (typeLookupSymbolInMro(thread, type, SymbolId::kDunderInit) !=
+      (typeLookupInMroById(thread, type, SymbolId::kDunderInit) !=
        runtime->objectDunderInit())) {
     // Throw a TypeError if extra arguments were passed, and __new__ was not
     // overwritten by self, or __init__ was overloaded by self.

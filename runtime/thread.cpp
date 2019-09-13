@@ -248,7 +248,7 @@ RawObject Thread::invokeMethodStatic1(LayoutId type, SymbolId method_name,
   Object type_obj(&scope, runtime()->typeAt(type));
   if (type_obj.isError()) return *type_obj;
   Type type_handle(&scope, *type_obj);
-  Object method(&scope, typeLookupSymbolInMro(this, type_handle, method_name));
+  Object method(&scope, typeLookupInMroById(this, type_handle, method_name));
   if (method.isError()) return *method;
   return Interpreter::callMethod1(this, currentFrame_, method, receiver);
 }
@@ -260,7 +260,7 @@ RawObject Thread::invokeMethodStatic2(LayoutId type, SymbolId method_name,
   Object type_obj(&scope, runtime()->typeAt(type));
   if (type_obj.isError()) return *type_obj;
   Type type_handle(&scope, *type_obj);
-  Object method(&scope, typeLookupSymbolInMro(this, type_handle, method_name));
+  Object method(&scope, typeLookupInMroById(this, type_handle, method_name));
   if (method.isError()) return *method;
   return Interpreter::callMethod2(this, currentFrame_, method, receiver, arg1);
 }
@@ -272,7 +272,7 @@ RawObject Thread::invokeMethodStatic3(LayoutId type, SymbolId method_name,
   Object type_obj(&scope, runtime()->typeAt(type));
   if (type_obj.isError()) return *type_obj;
   Type type_handle(&scope, *type_obj);
-  Object method(&scope, typeLookupSymbolInMro(this, type_handle, method_name));
+  Object method(&scope, typeLookupInMroById(this, type_handle, method_name));
   if (method.isError()) return *method;
   return Interpreter::callMethod3(this, currentFrame_, method, receiver, arg1,
                                   arg2);
@@ -286,7 +286,7 @@ RawObject Thread::invokeMethodStatic4(LayoutId type, SymbolId method_name,
   Object type_obj(&scope, runtime()->typeAt(type));
   if (type_obj.isError()) return *type_obj;
   Type type_handle(&scope, *type_obj);
-  Object method(&scope, typeLookupSymbolInMro(this, type_handle, method_name));
+  Object method(&scope, typeLookupInMroById(this, type_handle, method_name));
   if (method.isError()) return *method;
   return Interpreter::callMethod4(this, currentFrame_, method, receiver, arg1,
                                   arg2, arg3);

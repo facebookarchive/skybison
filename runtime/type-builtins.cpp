@@ -26,8 +26,8 @@ bool nextTypeDictItem(RawTuple data, word* idx) {
   return false;
 }
 
-RawObject typeLookupNameInMro(Thread* thread, const Type& type,
-                              const Object& name_str) {
+RawObject typeLookupInMro(Thread* thread, const Type& type,
+                          const Object& name_str) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Tuple mro(&scope, type.mro());
@@ -42,25 +42,20 @@ RawObject typeLookupNameInMro(Thread* thread, const Type& type,
   return Error::notFound();
 }
 
-RawObject typeLookupSymbolInMro(Thread* thread, const Type& type,
-                                SymbolId symbol) {
+RawObject typeLookupInMroById(Thread* thread, const Type& type, SymbolId id) {
   HandleScope scope(thread);
-  Object symbol_str(&scope, thread->runtime()->symbols()->at(symbol));
-  return typeLookupNameInMro(thread, type, symbol_str);
+  Object name(&scope, thread->runtime()->symbols()->at(id));
+  return typeLookupInMro(thread, type, name);
 }
 
 bool typeIsDataDescriptor(Thread* thread, const Type& type) {
   // TODO(T25692962): Track "descriptorness" through a bit on the class
-  HandleScope scope(thread);
-  Object dunder_set_name(&scope, thread->runtime()->symbols()->DunderSet());
-  return !typeLookupNameInMro(thread, type, dunder_set_name).isError();
+  return !typeLookupInMroById(thread, type, SymbolId::kDunderSet).isError();
 }
 
 bool typeIsNonDataDescriptor(Thread* thread, const Type& type) {
   // TODO(T25692962): Track "descriptorness" through a bit on the class
-  HandleScope scope(thread);
-  Object dunder_get_name(&scope, thread->runtime()->symbols()->DunderGet());
-  return !typeLookupNameInMro(thread, type, dunder_get_name).isError();
+  return !typeLookupInMroById(thread, type, SymbolId::kDunderGet).isError();
 }
 
 RawObject resolveDescriptorGet(Thread* thread, const Object& descr,
@@ -124,7 +119,7 @@ RawObject typeGetAttribute(Thread* thread, const Type& type,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type meta_type(&scope, runtime->typeOf(*type));
-  Object meta_attr(&scope, typeLookupNameInMro(thread, meta_type, name_str));
+  Object meta_attr(&scope, typeLookupInMro(thread, meta_type, name_str));
   if (!meta_attr.isError()) {
     Type meta_attr_type(&scope, runtime->typeOf(*meta_attr));
     if (typeIsDataDescriptor(thread, meta_attr_type)) {
@@ -134,7 +129,7 @@ RawObject typeGetAttribute(Thread* thread, const Type& type,
   }
 
   // No data descriptor found on the meta class, look in the mro of the type
-  Object attr(&scope, typeLookupNameInMro(thread, type, name_str));
+  Object attr(&scope, typeLookupInMro(thread, type, name_str));
   if (!attr.isError()) {
     Type attr_type(&scope, runtime->typeOf(*attr));
     if (typeIsNonDataDescriptor(thread, attr_type)) {
@@ -256,7 +251,7 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     flags |= Type::Flag::kHasDunderDict;
   }
   if (flags & Type::Flag::kHasDunderDict &&
-      typeLookupSymbolInMro(thread, type, SymbolId::kDunderDict)
+      typeLookupInMroById(thread, type, SymbolId::kDunderDict)
           .isErrorNotFound()) {
     Module builtins(&scope, runtime->findModuleById(SymbolId::kBuiltins));
     Object instance_proxy(
@@ -342,7 +337,7 @@ RawObject typeSetAttr(Thread* thread, const Type& type,
   // Check for a data descriptor
   Type metatype(&scope, runtime->typeOf(*type));
   Object meta_attr(&scope,
-                   typeLookupNameInMro(thread, metatype, name_interned_str));
+                   typeLookupInMro(thread, metatype, name_interned_str));
   if (!meta_attr.isError()) {
     Type meta_attr_type(&scope, runtime->typeOf(*meta_attr));
     if (typeIsDataDescriptor(thread, meta_attr_type)) {
