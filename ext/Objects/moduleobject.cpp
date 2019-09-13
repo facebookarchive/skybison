@@ -89,12 +89,8 @@ PY_EXPORT PyModuleDef* PyModule_GetDef(PyObject* pymodule) {
   return static_cast<PyModuleDef*>(def.asCPtr());
 }
 
-PY_EXPORT PyObject* PyModule_GetDict(PyObject* pymodule) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-
-  Module module(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
-  return ApiHandle::newReference(thread, module.dict());
+PY_EXPORT PyObject* PyModule_GetDict(PyObject*) {
+  UNIMPLEMENTED("PyModule_GetDict unsupported");
 }
 
 PY_EXPORT PyObject* PyModule_GetNameObject(PyObject* mod) {

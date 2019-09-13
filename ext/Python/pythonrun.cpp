@@ -89,6 +89,13 @@ static void flushIO(void) {
   thread->setPendingExceptionTraceback(*tb);
 }
 
+static PyObject* moduleProxy(PyObject* module_obj) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Module module(&scope, ApiHandle::fromPyObject(module_obj)->asObject());
+  return ApiHandle::borrowedReference(thread, module.moduleProxy());
+}
+
 // A PyRun_InteractiveOneObject() auxiliary function that does not print the
 // error on failure.
 static int PyRun_InteractiveOneObjectEx(FILE* fp, PyObject* filename,
@@ -145,11 +152,9 @@ static int PyRun_InteractiveOneObjectEx(FILE* fp, PyObject* filename,
     PyArena_Free(arena);
     return -1;
   }
-  // NOTE: This must be a Pyro module dictionary (ie one with ValueCells), not
-  // any old user-facing dictionary.
-  PyObject* module_dict = PyModule_GetDict(module);
-  PyObject* result = runMod(mod, filename, /*globals=*/module_dict,
-                            /*locals=*/module_dict, flags, arena);
+  PyObject* module_proxy = moduleProxy(module);
+  PyObject* result = runMod(mod, filename, /*globals=*/module_proxy,
+                            /*locals=*/module_proxy, flags, arena);
   PyArena_Free(arena);
   if (result == nullptr) {
     return -1;
