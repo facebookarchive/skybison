@@ -2249,7 +2249,7 @@ void Interpreter::storeAttrWithLocation(Thread* thread, RawObject receiver,
 
 RawObject Interpreter::storeAttrSetLocation(Thread* thread,
                                             const Object& object,
-                                            const Object& name_str,
+                                            const Str& name,
                                             const Object& value,
                                             Object* location_out) {
   Runtime* runtime = thread->runtime();
@@ -2258,19 +2258,20 @@ RawObject Interpreter::storeAttrSetLocation(Thread* thread,
   Object dunder_setattr(
       &scope, typeLookupInMroById(thread, type, SymbolId::kDunderSetattr));
   if (dunder_setattr == runtime->objectDunderSetattr()) {
-    return objectSetAttrSetLocation(thread, object, name_str, value,
+    Object name_hash(&scope, strHash(thread, *name));
+    return objectSetAttrSetLocation(thread, object, name, name_hash, value,
                                     location_out);
   }
   Object result(&scope, thread->invokeMethod3(object, SymbolId::kDunderSetattr,
-                                              name_str, value));
+                                              name, value));
   // Invalidate attribute caches for type attribute changes.
   if (!result.isError() && object.isType()) {
     // TODO(T46243890): Disable attribute caching when fundamental objects are
     // modified (e.g., object.__getattribute__).
     // TODO(T46362789): Move cache invalidation logic into dict API.
     Type type_object(&scope, *object);
-    DCHECK(name_str.isStr(), "attribute name must be Str");
-    Str attr_name(&scope, *name_str);
+    DCHECK(name.isStr(), "attribute name must be Str");
+    Str attr_name(&scope, *name);
     Type value_type(&scope, thread->runtime()->typeOf(*value));
     icInvalidateCachesForTypeAttr(thread, type_object, attr_name,
                                   typeIsDataDescriptor(thread, value_type));
@@ -2372,10 +2373,11 @@ HANDLER_INLINE Continue Interpreter::doDeleteGlobal(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
   Tuple names(&scope, Code::cast(frame->code()).names());
-  Str key(&scope, names.at(arg));
+  Str name(&scope, names.at(arg));
+  Object name_hash(&scope, strHash(thread, *name));
   Dict globals(&scope, frame->function().globals());
-  if (moduleDictRemove(thread, globals, key).isErrorNotFound()) {
-    return raiseUndefinedName(thread, key);
+  if (moduleDictRemove(thread, globals, name, name_hash).isErrorNotFound()) {
+    return raiseUndefinedName(thread, name);
   }
   return Continue::NEXT;
 }
@@ -2515,7 +2517,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttr(Thread* thread, word arg) {
 }
 
 RawObject Interpreter::loadAttrSetLocation(Thread* thread, const Object& object,
-                                           const Object& name_str,
+                                           const Str& name,
                                            Object* location_out) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -2523,19 +2525,19 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread, const Object& object,
   Object dunder_getattribute(
       &scope, typeLookupInMroById(thread, type, SymbolId::kDunderGetattribute));
   if (dunder_getattribute == runtime->objectDunderGetattribute()) {
+    Object name_hash(&scope, strHash(thread, *name));
     Object result(&scope, objectGetAttributeSetLocation(
-                              thread, object, name_str, location_out));
+                              thread, object, name, name_hash, location_out));
     if (result.isErrorNotFound()) {
-      result =
-          thread->invokeMethod2(object, SymbolId::kDunderGetattr, name_str);
+      result = thread->invokeMethod2(object, SymbolId::kDunderGetattr, name);
       if (result.isErrorNotFound()) {
-        return objectRaiseAttributeError(thread, object, name_str);
+        return objectRaiseAttributeError(thread, object, name);
       }
     }
     return *result;
   }
 
-  return thread->runtime()->attributeAt(thread, object, name_str);
+  return thread->runtime()->attributeAt(thread, object, name);
 }
 
 Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
@@ -2739,7 +2741,8 @@ HANDLER_INLINE Continue Interpreter::doImportFrom(Thread* thread, word arg) {
   if (from.isModule()) {
     // Common case of a lookup done on the built-in module type.
     Module from_module(&scope, *from);
-    value = moduleGetAttribute(thread, from_module, name);
+    Object name_hash(&scope, strHash(thread, *name));
+    value = moduleGetAttribute(thread, from_module, name, name_hash);
   } else {
     // Do a generic attribute lookup.
     value = thread->runtime()->attributeAt(thread, from, name);

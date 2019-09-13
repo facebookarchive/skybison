@@ -10,6 +10,7 @@
 #include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "thread.h"
 #include "tuple-builtins.h"
 
@@ -26,14 +27,15 @@ bool nextTypeDictItem(RawTuple data, word* idx) {
   return false;
 }
 
-RawObject typeLookupInMro(Thread* thread, const Type& type, const Object& key) {
+RawObject typeLookupInMro(Thread* thread, const Type& type, const Object& key,
+                          const Object& key_hash) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Tuple mro(&scope, type.mro());
   for (word i = 0; i < mro.length(); i++) {
     Type mro_type(&scope, mro.at(i));
     Dict dict(&scope, mro_type.dict());
-    Object value(&scope, runtime->typeDictAt(thread, dict, key));
+    Object value(&scope, runtime->typeDictAt(thread, dict, key, key_hash));
     if (!value.isError()) {
       return *value;
     }
@@ -83,10 +85,11 @@ RawObject resolveDescriptorGet(Thread* thread, const Object& descr,
                                         instance, instance_type);
 }
 
-RawObject typeAt(Thread* thread, const Type& type, const Object& key) {
+RawObject typeAt(Thread* thread, const Type& type, const Object& key,
+                 const Object& key_hash) {
   HandleScope scope(thread);
   Dict dict(&scope, type.dict());
-  return thread->runtime()->typeDictAt(thread, dict, key);
+  return thread->runtime()->typeDictAt(thread, dict, key, key_hash);
 }
 
 RawObject typeKeys(Thread* thread, const Type& type) {
@@ -129,12 +132,13 @@ RawObject typeValues(Thread* thread, const Type& type) {
 }
 
 RawObject typeGetAttribute(Thread* thread, const Type& type,
-                           const Object& name_str) {
+                           const Object& name_str, const Object& name_hash) {
   // Look for the attribute in the meta class
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type meta_type(&scope, runtime->typeOf(*type));
-  Object meta_attr(&scope, typeLookupInMro(thread, meta_type, name_str));
+  Object meta_attr(&scope,
+                   typeLookupInMro(thread, meta_type, name_str, name_hash));
   if (!meta_attr.isError()) {
     Type meta_attr_type(&scope, runtime->typeOf(*meta_attr));
     if (typeIsDataDescriptor(thread, meta_attr_type)) {
@@ -144,7 +148,7 @@ RawObject typeGetAttribute(Thread* thread, const Type& type,
   }
 
   // No data descriptor found on the meta class, look in the mro of the type
-  Object attr(&scope, typeLookupInMro(thread, type, name_str));
+  Object attr(&scope, typeLookupInMro(thread, type, name_str, name_hash));
   if (!attr.isError()) {
     Type attr_type(&scope, runtime->typeOf(*attr));
     if (typeIsNonDataDescriptor(thread, attr_type)) {
@@ -208,12 +212,14 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     Tuple data(&scope, dict.data());
     Object value(&scope, NoneType::object());
     Object key(&scope, NoneType::object());
+    Object key_hash(&scope, NoneType::object());
     for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
       value = Dict::Bucket::value(*data, i);
       DCHECK(!(value.isValueCell() && ValueCell::cast(*value).isPlaceholder()),
              "value should not be a placeholder value cell");
       key = Dict::Bucket::key(*data, i);
-      runtime->typeDictAtPut(thread, type_dict, key, value);
+      key_hash = Dict::Bucket::hash(*data, i);
+      runtime->typeDictAtPut(thread, type_dict, key, key_hash, value);
     }
   }
 
@@ -337,9 +343,9 @@ void terminateIfUnimplementedTypeAttrCacheInvalidation(Thread* thread,
 }
 
 RawObject typeSetAttr(Thread* thread, const Type& type,
-                      const Object& name_interned_str, const Object& value) {
+                      const Str& name_interned, const Object& value) {
   Runtime* runtime = thread->runtime();
-  DCHECK(runtime->isInternedStr(thread, name_interned_str),
+  DCHECK(runtime->isInternedStr(thread, name_interned),
          "name must be an interned string");
   HandleScope scope(thread);
   if (type.isBuiltin()) {
@@ -352,7 +358,7 @@ RawObject typeSetAttr(Thread* thread, const Type& type,
   // Check for a data descriptor
   Type metatype(&scope, runtime->typeOf(*type));
   Object meta_attr(&scope,
-                   typeLookupInMro(thread, metatype, name_interned_str));
+                   typeLookupInMroByStr(thread, metatype, name_interned));
   if (!meta_attr.isError()) {
     Type meta_attr_type(&scope, runtime->typeOf(*meta_attr));
     if (typeIsDataDescriptor(thread, meta_attr_type)) {
@@ -366,7 +372,7 @@ RawObject typeSetAttr(Thread* thread, const Type& type,
 
   // No data descriptor found, store the attribute in the type dict
   Dict type_dict(&scope, type.dict());
-  runtime->typeDictAtPut(thread, type_dict, name_interned_str, value);
+  runtime->typeDictAtPutByStr(thread, type_dict, name_interned, value);
   return NoneType::object();
 }
 
@@ -416,7 +422,9 @@ RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
   Type self(&scope, *self_obj);
 
   Object dunder_new_name(&scope, runtime->symbols()->DunderNew());
-  Object dunder_new(&scope, typeGetAttribute(thread, self, dunder_new_name));
+  Object dunder_new_name_hash(&scope, strHash(thread, *dunder_new_name));
+  Object dunder_new(&scope, typeGetAttribute(thread, self, dunder_new_name,
+                                             dunder_new_name_hash));
   CHECK(!dunder_new.isError(), "self must have __new__");
   frame->pushValue(*dunder_new);
   MutableTuple call_args(&scope, runtime->newMutableTuple(pargs.length() + 1));
@@ -433,7 +441,9 @@ RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
   }
 
   Object dunder_init_name(&scope, runtime->symbols()->DunderInit());
-  Object dunder_init(&scope, typeGetAttribute(thread, self, dunder_init_name));
+  Object dunder_init_name_hash(&scope, strHash(thread, *dunder_init_name));
+  Object dunder_init(&scope, typeGetAttribute(thread, self, dunder_init_name,
+                                              dunder_init_name_hash));
   CHECK(!dunder_init.isError(), "self must have __init__");
   frame->pushValue(*dunder_init);
   call_args.atPut(0, *instance);
@@ -465,7 +475,9 @@ RawObject TypeBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(
         LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
   }
-  Object result(&scope, typeGetAttribute(thread, self, name));
+  Object name_hash(&scope, Interpreter::hash(thread, name));
+  if (name_hash.isErrorException()) return *name_hash;
+  Object result(&scope, typeGetAttribute(thread, self, name, name_hash));
   if (result.isErrorNotFound()) {
     Object type_name(&scope, self.name());
     return thread->raiseWithFmt(LayoutId::kAttributeError,
@@ -496,10 +508,9 @@ RawObject TypeBuiltins::dunderSetattr(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(
         LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
   }
-  if (!name.isStr()) {
-    UNIMPLEMENTED("Strict subclass of string");
-  }
-  Str interned_name(&scope, runtime->internStr(thread, name));
+  // dict.__setattr__ is special in that it must copy and intern the name.
+  Str name_str(&scope, strUnderlying(thread, name));
+  Str interned_name(&scope, runtime->internStr(thread, name_str));
   // Make sure cache invalidation is correctly done for this.
   if (runtime->isCacheEnabled()) {
     terminateIfUnimplementedTypeAttrCacheInvalidation(thread, interned_name);

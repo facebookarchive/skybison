@@ -364,17 +364,17 @@ RawObject Runtime::newTypeProxy(const Type& type) {
 }
 
 RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
-                                const Object& name) {
-  if (!name.isStr()) {
-    // TODO(T25140871): Refactor into something like:
-    //     thread->throwUnexpectedTypeError(expected, actual)
+                                const Object& name_obj) {
+  if (!isInstanceOfStr(*name_obj)) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "attribute name must be a string");
+                                "attribute name must be string, not '%T'",
+                                &name_obj);
   }
   HandleScope scope(thread);
+  Str name_str(&scope, strUnderlying(thread, name_obj));
+  Str name_interned(&scope, internStr(thread, name_str));
   if (thread->runtime()->isCacheEnabled()) {
-    Str name_str(&scope, *name);
-    terminateIfUnimplementedTypeAttrCacheInvalidation(thread, name_str);
+    terminateIfUnimplementedTypeAttrCacheInvalidation(thread, name_interned);
   }
 
   Type type(&scope, *receiver);
@@ -388,7 +388,8 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
 
   // Check for a delete descriptor
   Type metatype(&scope, typeOf(*receiver));
-  Object meta_attr(&scope, typeLookupInMro(thread, metatype, name));
+  Object meta_attr(&scope,
+                   typeLookupInMroByStr(thread, metatype, name_interned));
   if (!meta_attr.isError()) {
     if (isDeleteDescriptor(thread, meta_attr)) {
       return Interpreter::callDescriptorDelete(thread, thread->currentFrame(),
@@ -398,11 +399,11 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
 
   // No delete descriptor found, attempt to delete from the type dict
   Dict type_dict(&scope, type.dict());
-  if (dictRemove(thread, type_dict, name).isError()) {
+  if (dictRemoveByStr(thread, type_dict, name_interned).isError()) {
     Str type_name(&scope, type.name());
     return thread->raiseWithFmt(LayoutId::kAttributeError,
                                 "type object '%S' has no attribute '%S'",
-                                &type_name, &name);
+                                &type_name, &name_obj);
   }
 
   return NoneType::object();
@@ -410,17 +411,17 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
 
 RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
                                    const Object& name) {
-  if (!name.isStr()) {
-    // TODO(T25140871): Refactor into something like:
-    //     thread->throwUnexpectedTypeError(expected, actual)
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "attribute name must be a string");
+  if (!isInstanceOfStr(*name)) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
   }
+  HandleScope scope(thread);
+  Object name_hash(&scope, Interpreter::hash(thread, name));
+  if (name_hash.isErrorException()) return *name_hash;
 
   // Check for a descriptor with __delete__
-  HandleScope scope(thread);
   Type type(&scope, typeOf(*receiver));
-  Object type_attr(&scope, typeLookupInMro(thread, type, name));
+  Object type_attr(&scope, typeLookupInMro(thread, type, name, name_hash));
   if (!type_attr.isError()) {
     if (isDeleteDescriptor(thread, type_attr)) {
       return Interpreter::callDescriptorDelete(thread, thread->currentFrame(),
@@ -430,7 +431,8 @@ RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
 
   // No delete descriptor found, delete from the instance
   HeapObject instance(&scope, *receiver);
-  Object result(&scope, instanceDel(thread, instance, name));
+  Str name_str(&scope, strUnderlying(thread, name));
+  Object result(&scope, instanceDel(thread, instance, name_str));
   if (result.isError()) {
     Str type_name(&scope, type.name());
     return thread->raiseWithFmt(LayoutId::kAttributeError,
@@ -443,17 +445,17 @@ RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
 
 RawObject Runtime::moduleDelAttr(Thread* thread, const Object& receiver,
                                  const Object& name) {
-  if (!name.isStr()) {
-    // TODO(T25140871): Refactor into something like:
-    //     thread->throwUnexpectedTypeError(expected, actual)
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "attribute name must be a string");
+  if (!isInstanceOfStr(*name)) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
   }
+  HandleScope scope(thread);
+  Object name_hash(&scope, Interpreter::hash(thread, name));
+  if (name_hash.isErrorException()) return *name_hash;
 
   // Check for a descriptor with __delete__
-  HandleScope scope(thread);
   Type type(&scope, typeOf(*receiver));
-  Object type_attr(&scope, typeLookupInMro(thread, type, name));
+  Object type_attr(&scope, typeLookupInMro(thread, type, name, name_hash));
   if (!type_attr.isError()) {
     if (isDeleteDescriptor(thread, type_attr)) {
       return Interpreter::callDescriptorDelete(thread, thread->currentFrame(),
@@ -464,7 +466,7 @@ RawObject Runtime::moduleDelAttr(Thread* thread, const Object& receiver,
   // No delete descriptor found, attempt to delete from the module dict
   Module module(&scope, *receiver);
   Dict module_dict(&scope, module.dict());
-  if (dictRemove(thread, module_dict, name).isError()) {
+  if (dictRemoveWithHash(thread, module_dict, name, name_hash).isError()) {
     Str module_name(&scope, module.name());
     return thread->raiseWithFmt(LayoutId::kAttributeError,
                                 "module '%S' has no attribute '%S'",
@@ -2129,9 +2131,9 @@ RawObject Runtime::typeAt(LayoutId layout_id) {
 }
 
 RawObject Runtime::typeDictAt(Thread* thread, const Dict& dict,
-                              const Object& key) {
+                              const Object& key, const Object& key_hash) {
   HandleScope scope(thread);
-  Object value(&scope, dictAt(thread, dict, key));
+  Object value(&scope, dictAtWithHash(thread, dict, key, key_hash));
   DCHECK(value.isErrorNotFound() || value.isValueCell(),
          "type dictionaries must return either ErrorNotFound or ValueCell");
   if (value.isErrorNotFound() || ValueCell::cast(*value).isPlaceholder()) {
@@ -2165,8 +2167,9 @@ RawObject Runtime::typeDictAtById(Thread* thread, const Dict& dict,
 }
 
 RawObject Runtime::typeDictAtPut(Thread* thread, const Dict& dict,
-                                 const Object& key, const Object& value) {
-  return dictAtPutInValueCell(thread, dict, key, value);
+                                 const Object& key, const Object& key_hash,
+                                 const Object& value) {
+  return dictAtPutInValueCellWithHash(thread, dict, key, key_hash, value);
 }
 
 RawObject Runtime::typeDictAtPutByStr(Thread* thread, const Dict& dict,
@@ -3064,6 +3067,18 @@ RawObject Runtime::dictAtPutInValueCellByStr(Thread* thread, const Dict& dict,
   HandleScope scope(thread);
   Object name_hash(&scope, strHash(thread, *name));
   Object result(&scope, dictAtIfAbsentPut(thread, dict, name, name_hash,
+                                          newValueCellCallback()));
+  ValueCell::cast(*result).setValue(*value);
+  return *result;
+}
+
+RawObject Runtime::dictAtPutInValueCellWithHash(Thread* thread,
+                                                const Dict& dict,
+                                                const Object& key,
+                                                const Object& key_hash,
+                                                const Object& value) {
+  HandleScope scope(thread);
+  Object result(&scope, dictAtIfAbsentPut(thread, dict, key, key_hash,
                                           newValueCellCallback()));
   ValueCell::cast(*result).setValue(*value);
   return *result;

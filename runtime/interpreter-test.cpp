@@ -3353,7 +3353,7 @@ i = C()
                    .isError());
   Object i(&scope, mainModuleAt(&runtime_, "i"));
 
-  Object name(&scope, runtime_.newStrFromCStr("foo"));
+  Str name(&scope, runtime_.newStrFromCStr("foo"));
   Object to_cache(&scope, NoneType::object());
   EXPECT_TRUE(isIntEqualsWord(
       Interpreter::loadAttrSetLocation(thread_, i, name, &to_cache), 42));
@@ -3373,7 +3373,7 @@ i = C()
                    .isError());
   Object i(&scope, mainModuleAt(&runtime_, "i"));
 
-  Object name(&scope, runtime_.newStrFromCStr("foo"));
+  Str name(&scope, runtime_.newStrFromCStr("foo"));
   Object to_cache(&scope, NoneType::object());
   EXPECT_TRUE(isIntEqualsWord(
       Interpreter::loadAttrSetLocation(thread_, i, name, &to_cache), 11));
@@ -3393,7 +3393,7 @@ i = C()
                    .isError());
   Object i(&scope, mainModuleAt(&runtime_, "i"));
 
-  Object name(&scope, runtime_.newStrFromCStr("bar"));
+  Str name(&scope, runtime_.newStrFromCStr("bar"));
   Object to_cache(&scope, NoneType::object());
   EXPECT_TRUE(isIntEqualsWord(
       Interpreter::loadAttrSetLocation(thread_, i, name, &to_cache), 5));

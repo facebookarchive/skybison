@@ -5,6 +5,7 @@
 #include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "thread.h"
 
 namespace python {
@@ -108,22 +109,21 @@ RawObject functionFromModuleMethodDef(Thread* thread, const char* c_name,
 }
 
 RawObject functionGetAttribute(Thread* thread, const Function& function,
-                               const Object& name_str) {
+                               const Object& name_str,
+                               const Object& name_hash) {
   // TODO(T39611261): Figure out a way to skip dict init.
   // Initialize Dict if non-existent
   if (function.dict().isNoneType()) {
     function.setDict(thread->runtime()->newDict());
   }
 
-  return objectGetAttribute(thread, function, name_str);
+  return objectGetAttribute(thread, function, name_str, name_hash);
 }
 
 RawObject functionSetAttr(Thread* thread, const Function& function,
-                          const Object& name_interned_str,
+                          const Object& name_str, const Object& name_hash,
                           const Object& value) {
   Runtime* runtime = thread->runtime();
-  DCHECK(runtime->isInternedStr(thread, name_interned_str),
-         "name must be an interned string");
   // Initialize Dict if non-existent
   HandleScope scope(thread);
   if (function.dict().isNoneType()) {
@@ -132,12 +132,12 @@ RawObject functionSetAttr(Thread* thread, const Function& function,
 
   AttributeInfo info;
   Layout layout(&scope, runtime->layoutAt(function.layoutId()));
-  if (runtime->layoutFindAttribute(thread, layout, name_interned_str, &info)) {
+  if (runtime->layoutFindAttribute(thread, layout, name_str, &info)) {
     // TODO(eelizondo): Handle __dict__ with descriptor
-    return objectSetAttr(thread, function, name_interned_str, value);
+    return objectSetAttr(thread, function, name_str, name_hash, value);
   }
   Dict function_dict(&scope, function.dict());
-  runtime->dictAtPut(thread, function_dict, name_interned_str, value);
+  runtime->dictAtPutWithHash(thread, function_dict, name_str, value, name_hash);
   return NoneType::object();
 }
 
@@ -207,7 +207,9 @@ RawObject FunctionBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(
         LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
   }
-  Object result(&scope, functionGetAttribute(thread, self, name));
+  Object name_hash(&scope, Interpreter::hash(thread, name));
+  if (name_hash.isErrorException()) return *name_hash;
+  Object result(&scope, functionGetAttribute(thread, self, name, name_hash));
   if (result.isErrorNotFound()) {
     Object function_name(&scope, self.name());
     return thread->raiseWithFmt(LayoutId::kAttributeError,
@@ -232,12 +234,10 @@ RawObject FunctionBuiltins::dunderSetattr(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(
         LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
   }
-  if (!name.isStr()) {
-    UNIMPLEMENTED("Strict subclass of string");
-  }
-  name = runtime->internStr(thread, name);
+  Object name_hash(&scope, Interpreter::hash(thread, name));
+  if (name_hash.isErrorException()) return *name_hash;
   Object value(&scope, args.get(2));
-  return functionSetAttr(thread, self, name, value);
+  return functionSetAttr(thread, self, name, name_hash, value);
 }
 
 const BuiltinAttribute BoundMethodBuiltins::kAttributes[] = {

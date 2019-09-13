@@ -3,6 +3,7 @@
 #include "module-builtins.h"
 #include "objects.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "test-utils.h"
 
 namespace python {
@@ -332,7 +333,8 @@ foo()
   ASSERT_EQ(icLookupGlobalVar(*caches, 0), *value_cell_a);
 
   // Updating global variable a does not invalidate the cache.
-  moduleDictRemove(thread_, module_dict, a);
+  Object a_hash(&scope, strHash(thread_, *a));
+  moduleDictRemove(thread_, module_dict, a, a_hash);
   EXPECT_TRUE(icLookupGlobalVar(*caches, 0).isNoneType());
 }
 
@@ -411,7 +413,9 @@ TEST_F(ModuleBuiltinsTest, ModuleGetAttributeReturnsInstanceValue) {
   ASSERT_FALSE(runFromCStr(&runtime_, "x = 42").isError());
   Module module(&scope, runtime_.findModuleById(SymbolId::kDunderMain));
   Object name(&scope, runtime_.newStrFromCStr("x"));
-  EXPECT_TRUE(isIntEqualsWord(moduleGetAttribute(thread_, module, name), 42));
+  Object name_hash(&scope, strHash(thread_, *name));
+  EXPECT_TRUE(isIntEqualsWord(
+      moduleGetAttribute(thread_, module, name, name_hash), 42));
 }
 
 TEST_F(ModuleBuiltinsTest, ModuleGetAttributeWithNonExistentNameReturnsError) {
@@ -419,7 +423,8 @@ TEST_F(ModuleBuiltinsTest, ModuleGetAttributeWithNonExistentNameReturnsError) {
   Object module_name(&scope, runtime_.newStrFromCStr(""));
   Module module(&scope, runtime_.newModule(module_name));
   Object name(&scope, runtime_.newStrFromCStr("xxx"));
-  EXPECT_TRUE(moduleGetAttribute(thread_, module, name).isError());
+  Object name_hash(&scope, strHash(thread_, *name));
+  EXPECT_TRUE(moduleGetAttribute(thread_, module, name, name_hash).isError());
   EXPECT_FALSE(thread_->hasPendingException());
 }
 
@@ -427,10 +432,13 @@ TEST_F(ModuleBuiltinsTest, ModuleSetAttrSetsAttribute) {
   HandleScope scope(thread_);
   Object module_name(&scope, runtime_.newStrFromCStr("foo"));
   Module module(&scope, runtime_.newModule(module_name));
-  Str name(&scope, runtime_.internStrFromCStr(thread_, "bar"));
+  Object name(&scope, runtime_.internStrFromCStr(thread_, "bar"));
+  Object name_hash(&scope, strHash(thread_, *name));
   Object value(&scope, runtime_.newInt(-543));
-  EXPECT_TRUE(moduleSetAttr(thread_, module, name, value).isNoneType());
-  EXPECT_TRUE(isIntEqualsWord(moduleAtByStr(thread_, module, name), -543));
+  EXPECT_TRUE(
+      moduleSetAttr(thread_, module, name, name_hash, value).isNoneType());
+  EXPECT_TRUE(
+      isIntEqualsWord(moduleAt(thread_, module, name, name_hash), -543));
 }
 
 TEST_F(ModuleBuiltinsTest, NewModuleDunderReprReturnsString) {

@@ -1846,7 +1846,7 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
                     thread->invokeFunction1(SymbolId::kBuiltins,
                                             SymbolId::kStaticMethod, func));
     if (func_obj.isError()) return *func;
-    runtime->typeDictAtPut(thread, dict, dunder_new_name, func_obj);
+    runtime->typeDictAtPutByStr(thread, dict, dunder_new_name, func_obj);
   }
 
   // tp_alloc -> PyType_GenericAlloc

@@ -2285,7 +2285,9 @@ RawObject UnderBuiltinsModule::underModuleProxyDelitem(Thread* thread,
   DCHECK(module.moduleProxy() == self, "module.proxy != proxy.module");
   // TODO(T45091174): Pass Module instead.
   Dict module_dict(&scope, module.dict());
-  Object result(&scope, moduleDictRemove(thread, module_dict, key));
+  Object key_hash(&scope, Interpreter::hash(thread, key));
+  if (key_hash.isErrorException()) return *key_hash;
+  Object result(&scope, moduleDictRemove(thread, module_dict, key, key_hash));
   if (result.isErrorNotFound()) {
     return thread->raiseWithFmt(LayoutId::kKeyError, "'%S'", &key);
   }
@@ -2301,7 +2303,9 @@ RawObject UnderBuiltinsModule::underModuleProxyGet(Thread* thread, Frame* frame,
   Object default_obj(&scope, args.get(2));
   Module module(&scope, self.module());
   DCHECK(module.moduleProxy() == self, "module.proxy != proxy.module");
-  Object result(&scope, moduleAt(thread, module, key));
+  Object key_hash(&scope, Interpreter::hash(thread, key));
+  if (key_hash.isErrorException()) return *key_hash;
+  Object result(&scope, moduleAt(thread, module, key, key_hash));
   if (result.isError()) {
     return *default_obj;
   }
@@ -2349,7 +2353,9 @@ RawObject UnderBuiltinsModule::underModuleProxySetitem(Thread* thread,
   Object value(&scope, args.get(2));
   Module module(&scope, self.module());
   DCHECK(module.moduleProxy() == self, "module.proxy != proxy.module");
-  return moduleAtPut(thread, module, key, value);
+  Object key_hash(&scope, Interpreter::hash(thread, key));
+  if (key_hash.isErrorException()) return *key_hash;
+  return moduleAtPut(thread, module, key, key_hash, value);
 }
 
 RawObject UnderBuiltinsModule::underModuleProxyValues(Thread* thread,
@@ -3135,7 +3141,9 @@ RawObject UnderBuiltinsModule::underTypeProxyGet(Thread* thread, Frame* frame,
   Object key(&scope, args.get(1));
   Object default_obj(&scope, args.get(2));
   Type type(&scope, self.type());
-  Object result(&scope, typeAt(thread, type, key));
+  Object key_hash(&scope, Interpreter::hash(thread, key));
+  if (key_hash.isErrorException()) return *key_hash;
+  Object result(&scope, typeAt(thread, type, key, key_hash));
   if (result.isError()) {
     return *default_obj;
   }

@@ -3,6 +3,7 @@
 #include "function-builtins.h"
 #include "objects.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "test-utils.h"
 
 namespace python {
@@ -122,7 +123,7 @@ TEST_F(FunctionBuiltinsTest, DunderSetattrSetsAttribute) {
   HandleScope scope(thread);
   ASSERT_FALSE(runFromCStr(&runtime_, "def foo(): pass").isError());
   Object foo(&scope, mainModuleAt(&runtime_, "foo"));
-  Object name(&scope, runtime_.newStrFromCStr("foobarbaz"));
+  Str name(&scope, runtime_.newStrFromCStr("foobarbaz"));
   Object value(&scope, runtime_.newInt(1337));
   EXPECT_TRUE(runBuiltin(FunctionBuiltins::dunderSetattr, foo, name, value)
                   .isNoneType());
@@ -130,7 +131,7 @@ TEST_F(FunctionBuiltinsTest, DunderSetattrSetsAttribute) {
   ASSERT_TRUE(Function::cast(*foo).dict().isDict());
   Dict function_dict(&scope, Function::cast(*foo).dict());
   EXPECT_TRUE(
-      isIntEqualsWord(runtime_.dictAt(thread, function_dict, name), 1337));
+      isIntEqualsWord(runtime_.dictAtByStr(thread, function_dict, name), 1337));
 }
 
 TEST_F(FunctionBuiltinsTest, DunderSetattrWithNonStringNameRaisesTypeError) {
@@ -213,13 +214,15 @@ TEST_F(FunctionBuiltinsTest, FunctionSetAttrSetsAttribute) {
   Object foo_obj(&scope, mainModuleAt(&runtime_, "foo"));
   ASSERT_TRUE(foo_obj.isFunction());
   Function foo(&scope, *foo_obj);
-  Object name(&scope, runtime_.internStrFromCStr(thread, "bar"));
+  Str name(&scope, runtime_.internStrFromCStr(thread, "bar"));
+  Object name_hash(&scope, strHash(thread_, *name));
   Object value(&scope, runtime_.newInt(6789));
-  EXPECT_TRUE(functionSetAttr(thread, foo, name, value).isNoneType());
+  EXPECT_TRUE(
+      functionSetAttr(thread, foo, name, name_hash, value).isNoneType());
   ASSERT_TRUE(foo.dict().isDict());
   Dict function_dict(&scope, foo.dict());
   EXPECT_TRUE(
-      isIntEqualsWord(runtime_.dictAt(thread, function_dict, name), 6789));
+      isIntEqualsWord(runtime_.dictAtByStr(thread, function_dict, name), 6789));
 }
 
 }  // namespace testing

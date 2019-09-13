@@ -11,10 +11,11 @@
 
 namespace python {
 
-RawObject moduleAt(Thread* thread, const Module& module, const Object& key) {
+RawObject moduleAt(Thread* thread, const Module& module, const Object& key,
+                   const Object& key_hash) {
   HandleScope scope(thread);
   Dict dict(&scope, module.dict());
-  return moduleDictAt(thread, dict, key);
+  return moduleDictAt(thread, dict, key, key_hash);
 }
 
 RawObject moduleAtByStr(Thread* thread, const Module& module, const Str& name) {
@@ -37,8 +38,8 @@ RawObject moduleValueCellAtById(Thread* thread, const Module& module,
 }
 
 RawObject moduleDictAt(Thread* thread, const Dict& module_dict,
-                       const Object& key) {
-  RawObject result = moduleDictValueCellAt(thread, module_dict, key);
+                       const Object& key, const Object& key_hash) {
+  RawObject result = moduleDictValueCellAt(thread, module_dict, key, key_hash);
   if (!result.isErrorNotFound()) {
     return ValueCell::cast(result).value();
   }
@@ -64,9 +65,10 @@ RawObject moduleDictAtById(Thread* thread, const Dict& module_dict,
 }
 
 RawObject moduleDictValueCellAt(Thread* thread, const Dict& dict,
-                                const Object& key) {
+                                const Object& key, const Object& key_hash) {
   HandleScope scope(thread);
-  Object result(&scope, thread->runtime()->dictAt(thread, dict, key));
+  Object result(&scope,
+                thread->runtime()->dictAtWithHash(thread, dict, key, key_hash));
   DCHECK(result.isErrorNotFound() || result.isValueCell(),
          "global dict lookup result must return either ErrorNotFound or "
          "ValueCell");
@@ -121,10 +123,10 @@ RawDict moduleDictBuiltins(Thread* thread, const Dict& dict) {
 }
 
 RawObject moduleAtPut(Thread* thread, const Module& module, const Object& key,
-                      const Object& value) {
+                      const Object& key_hash, const Object& value) {
   HandleScope scope(thread);
   Dict dict(&scope, module.dict());
-  return moduleDictAtPut(thread, dict, key, value);
+  return moduleDictAtPut(thread, dict, key, key_hash, value);
 }
 
 RawObject moduleAtPutByStr(Thread* thread, const Module& module,
@@ -142,10 +144,11 @@ RawObject moduleAtPutById(Thread* thread, const Module& module, SymbolId id,
 }
 
 RawObject moduleDictAtPut(Thread* thread, const Dict& module_dict,
-                          const Object& key, const Object& value) {
+                          const Object& key, const Object& key_hash,
+                          const Object& value) {
   HandleScope scope(thread);
-  Object result(&scope,
-                moduleDictValueCellAtPut(thread, module_dict, key, value));
+  Object result(&scope, moduleDictValueCellAtPut(thread, module_dict, key,
+                                                 key_hash, value));
   if (result.isError()) {
     return *result;
   }
@@ -171,16 +174,18 @@ RawObject moduleDictAtPutById(Thread* thread, const Dict& module_dict,
 }
 
 RawObject moduleDictValueCellAtPut(Thread* thread, const Dict& module_dict,
-                                   const Object& key, const Object& value) {
+                                   const Object& key, const Object& key_hash,
+                                   const Object& value) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Object module_result(&scope, runtime->dictAt(thread, module_dict, key));
+  Object module_result(
+      &scope, runtime->dictAtWithHash(thread, module_dict, key, key_hash));
   if (module_result.isValueCell() &&
       ValueCell::cast(*module_result).isPlaceholder()) {
     // A builtin entry is cached under the same key, so invalidate its caches.
     Dict builtins(&scope, moduleDictBuiltins(thread, module_dict));
-    Object builtins_result(&scope,
-                           moduleDictValueCellAt(thread, builtins, key));
+    Object builtins_result(
+        &scope, moduleDictValueCellAt(thread, builtins, key, key_hash));
     DCHECK(builtins_result.isValueCell(), "a builtin entry must exist");
     ValueCell builtins_value_cell(&scope, *builtins_result);
     DCHECK(!builtins_value_cell.dependencyLink().isNoneType(),
@@ -213,10 +218,10 @@ RawObject moduleDictValueCellAtPutByStr(Thread* thread, const Dict& module_dict,
 }
 
 RawObject moduleDictRemove(Thread* thread, const Dict& module_dict,
-                           const Object& key) {
+                           const Object& key, const Object& key_hash) {
   HandleScope scope(thread);
-  Object result(&scope,
-                thread->runtime()->dictRemove(thread, module_dict, key));
+  Object result(&scope, thread->runtime()->dictRemoveWithHash(
+                            thread, module_dict, key, key_hash));
   DCHECK(result.isErrorNotFound() || result.isValueCell(),
          "dictRemove must return either ErrorNotFound or ValueCell");
   if (result.isErrorNotFound()) {
@@ -265,25 +270,26 @@ RawObject moduleValues(Thread* thread, const Module& module) {
 }
 
 RawObject moduleGetAttribute(Thread* thread, const Module& module,
-                             const Object& name_str) {
+                             const Object& name_str, const Object& name_hash) {
   // Note that PEP 562 adds support for data descriptors in module objects.
   // We are targeting python 3.6 for now, so we won't worry about that.
 
   HandleScope scope(thread);
-  Object result(&scope, moduleAt(thread, module, name_str));
+  Object result(&scope, moduleAt(thread, module, name_str, name_hash));
   if (!result.isError()) return *result;
 
   // TODO(T42983855) dispatching to objectGetAttribute like this does not make
   // data properties on the type override module members.
 
-  return objectGetAttribute(thread, module, name_str);
+  return objectGetAttribute(thread, module, name_str, name_hash);
 }
 
 RawObject moduleSetAttr(Thread* thread, const Module& module,
-                        const Object& name_str, const Object& value) {
+                        const Object& name_str, const Object& name_hash,
+                        const Object& value) {
   Runtime* runtime = thread->runtime();
   DCHECK(runtime->isInstanceOfStr(*name_str), "name must be a string");
-  moduleAtPut(thread, module, name_str, value);
+  moduleAtPut(thread, module, name_str, name_hash, value);
   return NoneType::object();
 }
 
@@ -410,7 +416,9 @@ RawObject ModuleBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(
         LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
   }
-  Object result(&scope, moduleGetAttribute(thread, self, name));
+  Object name_hash(&scope, Interpreter::hash(thread, name));
+  if (name_hash.isErrorException()) return *name_hash;
+  Object result(&scope, moduleGetAttribute(thread, self, name, name_hash));
   if (result.isErrorNotFound()) {
     Object module_name(&scope, self.name());
     if (!runtime->isInstanceOfStr(*module_name)) {
@@ -486,11 +494,10 @@ RawObject ModuleBuiltins::dunderSetattr(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(
         LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
   }
-  if (!name.isStr()) {
-    UNIMPLEMENTED("Strict subclass of string");
-  }
+  Object name_hash(&scope, Interpreter::hash(thread, name));
+  if (name_hash.isErrorException()) return *name_hash;
   Object value(&scope, args.get(2));
-  return moduleSetAttr(thread, self, name, value);
+  return moduleSetAttr(thread, self, name, name_hash, value);
 }
 
 }  // namespace python

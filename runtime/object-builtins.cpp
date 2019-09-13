@@ -8,6 +8,7 @@
 #include "module-builtins.h"
 #include "objects.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "thread.h"
 #include "type-builtins.h"
 
@@ -44,7 +45,10 @@ static RawObject instanceGetAttributeSetLocation(Thread* thread,
   if (runtime->layoutHasDictOverflow(layout)) {
     Dict overflow(&scope,
                   runtime->layoutGetOverflowDict(thread, object, layout));
-    Object obj(&scope, runtime->dictAt(thread, overflow, name_str));
+    Object name_str_hash(&scope, Interpreter::hash(thread, name_str));
+    if (name_str.isErrorException()) return *name_str_hash;
+    Object obj(&scope, runtime->dictAtWithHash(thread, overflow, name_str,
+                                               name_str_hash));
     if (obj.isValueCell()) {
       obj = ValueCell::cast(*obj).value();
     }
@@ -129,12 +133,13 @@ RawObject instanceSetAttr(Thread* thread, const HeapObject& instance,
 
 RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
                                         const Object& name_str,
+                                        const Object& name_hash,
                                         Object* location_out) {
   // Look for the attribute in the class
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->typeOf(*object));
-  Object type_attr(&scope, typeLookupInMro(thread, type, name_str));
+  Object type_attr(&scope, typeLookupInMro(thread, type, name_str, name_hash));
   if (!type_attr.isError()) {
     Type type_attr_type(&scope, runtime->typeOf(*type_attr));
     if (typeIsDataDescriptor(thread, type_attr_type)) {
@@ -146,6 +151,8 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
   // No data descriptor found on the class, look at the instance.
   if (object.isHeapObject()) {
     HeapObject instance(&scope, *object);
+    // TODO(T53626118) instanceGetAttribute() should accept name+hash here so it
+    // works correctly for str subclasses.
     Object result(&scope, instanceGetAttributeSetLocation(
                               thread, instance, name_str, location_out));
     if (!result.isError()) {
@@ -168,20 +175,20 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
 }
 
 RawObject objectGetAttribute(Thread* thread, const Object& object,
-                             const Object& name_str) {
-  return objectGetAttributeSetLocation(thread, object, name_str, nullptr);
+                             const Object& name_str, const Object& name_hash) {
+  return objectGetAttributeSetLocation(thread, object, name_str, name_hash,
+                                       nullptr);
 }
 
 RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
-                                   const Object& name_interned_str,
-                                   const Object& value, Object* location_out) {
+                                   const Object& name_str,
+                                   const Object& name_hash, const Object& value,
+                                   Object* location_out) {
   Runtime* runtime = thread->runtime();
-  DCHECK(runtime->isInternedStr(thread, name_interned_str),
-         "name must be interned");
   // Check for a data descriptor
   HandleScope scope(thread);
   Type type(&scope, runtime->typeOf(*object));
-  Object type_attr(&scope, typeLookupInMro(thread, type, name_interned_str));
+  Object type_attr(&scope, typeLookupInMro(thread, type, name_str, name_hash));
   if (!type_attr.isError()) {
     Type type_attr_type(&scope, runtime->typeOf(*type_attr));
     if (typeIsDataDescriptor(thread, type_attr_type)) {
@@ -197,15 +204,20 @@ RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
   // No data descriptor found, store on the instance.
   if (object.isHeapObject()) {
     HeapObject instance(&scope, *object);
-    return instanceSetAttrSetLocation(thread, instance, name_interned_str,
-                                      value, location_out);
+    // TODO(T53626118) instanceSetAttr() only accepts interned strings,
+    // but in cpython accepts any non-interned subclass here.
+    Str name_underlying(&scope, strUnderlying(thread, name_str));
+    Str name_interned(&scope, runtime->internStr(thread, name_underlying));
+    return instanceSetAttrSetLocation(thread, instance, name_interned, value,
+                                      location_out);
   }
-  return objectRaiseAttributeError(thread, object, name_interned_str);
+  return objectRaiseAttributeError(thread, object, name_str);
 }
 
 RawObject objectSetAttr(Thread* thread, const Object& object,
-                        const Object& name_interned_str, const Object& value) {
-  return objectSetAttrSetLocation(thread, object, name_interned_str, value,
+                        const Object& name_str, const Object& name_hash,
+                        const Object& value) {
+  return objectSetAttrSetLocation(thread, object, name_str, name_hash, value,
                                   nullptr);
 }
 
@@ -319,7 +331,10 @@ RawObject ObjectBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(
         LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
   }
-  Object result(&scope, objectGetAttribute(thread, self, name));
+  Object name_hash(&scope, Interpreter::hash(thread, name));
+  if (name_hash.isErrorException()) return *name_hash;
+
+  Object result(&scope, objectGetAttribute(thread, self, name, name_hash));
   if (result.isErrorNotFound()) {
     return objectRaiseAttributeError(thread, self, name);
   }
@@ -398,9 +413,9 @@ RawObject ObjectBuiltins::dunderSetattr(Thread* thread, Frame* frame,
   if (!name.isStr()) {
     UNIMPLEMENTED("Strict subclass of string");
   }
-  name = runtime->internStr(thread, name);
+  Object name_hash(&scope, Interpreter::hash(thread, name));
   Object value(&scope, args.get(2));
-  return objectSetAttr(thread, self, name, value);
+  return objectSetAttr(thread, self, name, name_hash, value);
 }
 
 RawObject ObjectBuiltins::dunderSizeof(Thread* thread, Frame* frame,

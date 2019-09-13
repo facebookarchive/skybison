@@ -198,16 +198,14 @@ class Interpreter {
   static RawObject loadAttrWithLocation(Thread* thread, RawObject receiver,
                                         RawObject location);
   static RawObject loadAttrSetLocation(Thread* thread, const Object& object,
-                                       const Object& name_str,
-                                       Object* location_out);
+                                       const Str& name, Object* location_out);
 
   // Process the operands to the RAISE_VARARGS bytecode into a pending exception
   // on ctx->thread.
   static void raise(Thread* thread, RawObject exc_obj, RawObject cause_obj);
 
   static RawObject storeAttrSetLocation(Thread* thread, const Object& object,
-                                        const Object& name_str,
-                                        const Object& value,
+                                        const Str& name, const Object& value,
                                         Object* location_out);
   static void storeAttrWithLocation(Thread* thread, RawObject receiver,
                                     RawObject location, RawObject value);

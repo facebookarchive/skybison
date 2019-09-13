@@ -150,7 +150,7 @@ PY_EXPORT PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc* desc) {
   Type type(&scope, typeNew(thread, LayoutId::kType, name, bases, dict));
 
   // Add struct sequence fields
-  Object field_name(&scope, NoneType::object());
+  Str field_name(&scope, Str::empty());
   Object index(&scope, NoneType::object());
   Object field(&scope, NoneType::object());
   for (word i = 0; i < num_fields; i++) {

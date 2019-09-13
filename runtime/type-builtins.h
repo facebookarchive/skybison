@@ -12,7 +12,8 @@ namespace python {
 // placeholders.
 bool nextTypeDictItem(RawTuple data, word* idx);
 
-RawObject typeAt(Thread* thread, const Type& type, const Object& key);
+RawObject typeAt(Thread* thread, const Type& type, const Object& key,
+                 const Object& key_hash);
 
 RawObject typeKeys(Thread* thread, const Type& type);
 
@@ -21,7 +22,7 @@ RawObject typeLen(Thread* thread, const Type& type);
 RawObject typeValues(Thread* thread, const Type& type);
 
 RawObject typeGetAttribute(Thread* thread, const Type& type,
-                           const Object& name_str);
+                           const Object& name_str, const Object& name_hash);
 
 // Returns true if the type defines a __set__ method.
 bool typeIsDataDescriptor(Thread* thread, const Type& type);
@@ -40,7 +41,8 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
 
 // Looks up `key` in the dict of each entry in type's MRO. Returns
 // `Error::notFound()` if the name was not found.
-RawObject typeLookupInMro(Thread* thread, const Type& type, const Object& key);
+RawObject typeLookupInMro(Thread* thread, const Type& type, const Object& key,
+                          const Object& key_hash);
 
 // Looks up `name` in the dict of each entry in type's MRO. Returns
 // `Error::notFound()` if the name was not found.
@@ -55,7 +57,7 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
                   const Tuple& bases, const Dict& dict);
 
 RawObject typeSetAttr(Thread* thread, const Type& type,
-                      const Object& name_interned_str, const Object& value);
+                      const Str& name_interned, const Object& value);
 
 // Terminate the process if cache invalidation for updating attr_name in type
 // objects is unimplemented.

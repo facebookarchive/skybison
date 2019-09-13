@@ -344,11 +344,12 @@ class Runtime {
     return Layout::cast(layoutAt(object.layoutId())).describedType();
   }
 
-  RawObject typeDictAt(Thread* thread, const Dict& dict, const Object& key);
+  RawObject typeDictAt(Thread* thread, const Dict& dict, const Object& key,
+                       const Object& key_hash);
   RawObject typeDictAtByStr(Thread* thread, const Dict& dict, const Str& name);
   RawObject typeDictAtById(Thread* thread, const Dict& dict, SymbolId id);
   RawObject typeDictAtPut(Thread* thread, const Dict& dict, const Object& key,
-                          const Object& value);
+                          const Object& key_hash, const Object& value);
   RawObject typeDictAtPutByStr(Thread* thread, const Dict& dict,
                                const Str& name, const Object& value);
   RawObject typeDictAtPutById(Thread* thread, const Dict& dict, SymbolId id,
@@ -523,6 +524,13 @@ class Runtime {
   // value cell when possible.
   RawObject dictAtPutInValueCellByStr(Thread* thread, const Dict& dict,
                                       const Str& name, const Object& value);
+
+  // Stores value in a ValueCell associated with `key`. Reuses an existing
+  // value cell when possible.
+  RawObject dictAtPutInValueCellWithHash(Thread* thread, const Dict& dict,
+                                         const Object& key,
+                                         const Object& key_hash,
+                                         const Object& value);
 
   // Returns true if the dict contains the specified key.
   bool dictIncludes(Thread* thread, const Dict& dict, const Object& key);

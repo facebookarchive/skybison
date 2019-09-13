@@ -11,7 +11,8 @@ namespace python {
 
 // Look up the value of ValueCell associated with key in module with
 // consideration of placeholders created for caching.
-RawObject moduleAt(Thread* thread, const Module& module, const Object& key);
+RawObject moduleAt(Thread* thread, const Module& module, const Object& key,
+                   const Object& key_hash);
 // Same as moduleAt but with the Str `name` as key.
 RawObject moduleAtByStr(Thread* thread, const Module& module, const Str& name);
 // Same as moduleAt but with SymbolId as key.
@@ -21,7 +22,7 @@ RawObject moduleValueCellAtById(Thread* thread, const Module& module,
                                 SymbolId id);
 // Same as moduleAt but with dict type parameter.
 RawObject moduleDictAt(Thread* thread, const Dict& module_dict,
-                       const Object& key);
+                       const Object& key, const Object& key_hash);
 // Same as moduleAt but with dict type parameter.
 RawObject moduleDictAtByStr(Thread* thread, const Dict& module_dict,
                             const Str& name);
@@ -32,7 +33,7 @@ RawObject moduleDictAtById(Thread* thread, const Dict& module_dict,
 // Only callable by Interpreter for manipulating caches. Same as moduleAt but
 // returns the ValueCell if found.
 RawObject moduleDictValueCellAt(Thread* thread, const Dict& dict,
-                                const Object& key);
+                                const Object& key, const Object& key_hash);
 // Only callable by Interpreter for manipulating caches. Same as moduleAt but
 // returns the ValueCell if found.
 RawObject moduleDictValueCellAtByStr(Thread* thread, const Dict& dict,
@@ -48,7 +49,7 @@ RawDict moduleDictBuiltins(Thread* thread, const Dict& dict);
 
 // Associate key with value in module.
 RawObject moduleAtPut(Thread* thread, const Module& module, const Object& key,
-                      const Object& value);
+                      const Object& key_hash, const Object& value);
 // Associate name with value in module.
 RawObject moduleAtPutByStr(Thread* thread, const Module& module,
                            const Str& name, const Object& value);
@@ -57,7 +58,8 @@ RawObject moduleAtPutById(Thread* thread, const Module& module, SymbolId id,
                           const Object& value);
 // Same as moduleAtPut with dict type parameter.
 RawObject moduleDictAtPut(Thread* thread, const Dict& module_dict,
-                          const Object& key, const Object& value);
+                          const Object& key, const Object& key_hash,
+                          const Object& value);
 // Same as moduleAtPutByStr with dict type parameter.
 RawObject moduleDictAtPutByStr(Thread* thread, const Dict& module_dict,
                                const Str& name, const Object& value);
@@ -68,7 +70,8 @@ RawObject moduleDictAtPutById(Thread* thread, const Dict& module_dict,
 // Only callable by Interpreter for manipulating caches. Same as moduleAtPut but
 // returns the inserted ValueCell.
 RawObject moduleDictValueCellAtPut(Thread* thread, const Dict& module_dict,
-                                   const Object& key, const Object& value);
+                                   const Object& key, const Object& key_hash,
+                                   const Object& value);
 
 // Only callable by Interpreter for manipulating caches. Same as
 // moduleAtPutByStr but returns the inserted ValueCell.
@@ -77,7 +80,7 @@ RawObject moduleDictValueCellAtPutByStr(Thread* thread, const Dict& module_dict,
 
 // Remove the ValueCell associcated with key in module_dict.
 RawObject moduleDictRemove(Thread* thread, const Dict& module_dict,
-                           const Object& key);
+                           const Object& key, const Object& key_hash);
 
 // Returns keys associated with non-placeholder ValueCells in module_dict.
 RawObject moduleDictKeys(Thread* thread, const Dict& module_dict);
@@ -91,10 +94,11 @@ RawObject moduleLen(Thread* thread, const Module& module);
 RawObject moduleValues(Thread* thread, const Module& module);
 
 RawObject moduleGetAttribute(Thread* thread, const Module& module,
-                             const Object& name_str);
+                             const Object& name_str, const Object& name_hash);
 
 RawObject moduleSetAttr(Thread* thread, const Module& module,
-                        const Object& name_str, const Object& value);
+                        const Object& name_str, const Object& name_hash,
+                        const Object& value);
 
 // A version of Dict::Bucket::nextItem for module dict to filter out
 // placeholders.

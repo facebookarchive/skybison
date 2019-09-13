@@ -3,6 +3,7 @@
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "test-utils.h"
 #include "type-builtins.h"
 
@@ -48,9 +49,10 @@ TEST_F(TypeBuiltinsTest, TypeAtReturnsNoPlaceholderValue) {
   Type type(&scope, runtime_.newType());
   Dict dict(&scope, type.dict());
   Str name(&scope, runtime_.newStrFromCStr("a"));
+  Object name_hash(&scope, strHash(thread_, *name));
   Object value(&scope, runtime_.newStrFromCStr("a's value"));
   runtime_.typeDictAtPutByStr(thread_, dict, name, value);
-  EXPECT_EQ(typeAt(thread_, type, name), *value);
+  EXPECT_EQ(typeAt(thread_, type, name, name_hash), *value);
 }
 
 TEST_F(TypeBuiltinsTest, TypeAtReturnsErrorNotFoundForPlaceholder) {
@@ -58,11 +60,12 @@ TEST_F(TypeBuiltinsTest, TypeAtReturnsErrorNotFoundForPlaceholder) {
   Type type(&scope, runtime_.newType());
   Dict dict(&scope, type.dict());
   Str name(&scope, runtime_.newStrFromCStr("a"));
+  Object name_hash(&scope, strHash(thread_, *name));
   Object value(&scope, runtime_.newStrFromCStr("a's value"));
   ValueCell value_cell(&scope,
                        runtime_.typeDictAtPutByStr(thread_, dict, name, value));
   value_cell.makePlaceholder();
-  EXPECT_TRUE(typeAt(thread_, type, name).isErrorNotFound());
+  EXPECT_TRUE(typeAt(thread_, type, name, name_hash).isErrorNotFound());
 }
 
 TEST_F(TypeBuiltinsTest, TypeDictKeysFiltersOutPlaceholders) {
@@ -679,7 +682,9 @@ class C:
   ASSERT_TRUE(runtime_.isInstanceOfType(*c_obj));
   Type c(&scope, *c_obj);
   Object name(&scope, runtime_.newStrFromCStr("x"));
-  EXPECT_TRUE(isIntEqualsWord(typeGetAttribute(thread_, c, name), 42));
+  Object name_hash(&scope, strHash(thread_, *name));
+  EXPECT_TRUE(
+      isIntEqualsWord(typeGetAttribute(thread_, c, name, name_hash), 42));
 }
 
 TEST_F(TypeBuiltinsTest, TypeGetAttributeReturnsMetaclassAttributeValue) {
@@ -694,7 +699,9 @@ class C(metaclass=M): pass
   ASSERT_TRUE(runtime_.isInstanceOfType(*c_obj));
   Type c(&scope, *c_obj);
   Object name(&scope, runtime_.newStrFromCStr("x"));
-  EXPECT_TRUE(isIntEqualsWord(typeGetAttribute(thread_, c, name), 77));
+  Object name_hash(&scope, strHash(thread_, *name));
+  EXPECT_TRUE(
+      isIntEqualsWord(typeGetAttribute(thread_, c, name, name_hash), 77));
 }
 
 TEST_F(TypeBuiltinsTest, TypeGetAttributeWithMissingAttributeReturnsError) {
@@ -704,7 +711,8 @@ TEST_F(TypeBuiltinsTest, TypeGetAttributeWithMissingAttributeReturnsError) {
   ASSERT_TRUE(runtime_.isInstanceOfType(*c_obj));
   Type c(&scope, *c_obj);
   Object name(&scope, runtime_.newStrFromCStr("xxx"));
-  EXPECT_TRUE(typeGetAttribute(thread_, c, name).isError());
+  Object name_hash(&scope, strHash(thread_, *name));
+  EXPECT_TRUE(typeGetAttribute(thread_, c, name, name_hash).isError());
   EXPECT_FALSE(thread_->hasPendingException());
 }
 
@@ -726,8 +734,9 @@ class A(metaclass=M): pass
   Object a_obj(&scope, mainModuleAt(&runtime_, "A"));
   ASSERT_TRUE(runtime_.isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
-  Object foo(&scope, runtime_.newStrFromCStr("foo"));
-  Object result_obj(&scope, typeGetAttribute(thread_, a, foo));
+  Object name(&scope, runtime_.newStrFromCStr("foo"));
+  Object name_hash(&scope, strHash(thread_, *name));
+  Object result_obj(&scope, typeGetAttribute(thread_, a, name, name_hash));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 3);
@@ -750,8 +759,10 @@ class A(metaclass=M): pass
   Object a_obj(&scope, mainModuleAt(&runtime_, "A"));
   ASSERT_TRUE(runtime_.isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
-  Object foo(&scope, runtime_.newStrFromCStr("foo"));
-  EXPECT_TRUE(isIntEqualsWord(typeGetAttribute(thread_, a, foo), 42));
+  Object name(&scope, runtime_.newStrFromCStr("foo"));
+  Object name_hash(&scope, strHash(thread_, *name));
+  EXPECT_TRUE(
+      isIntEqualsWord(typeGetAttribute(thread_, a, name, name_hash), 42));
 }
 
 TEST_F(TypeBuiltinsTest, TypeGetAttributePrefersDataDescriptorOverTypeAttr) {
@@ -769,8 +780,10 @@ class A(metaclass=M):
   Object a_obj(&scope, mainModuleAt(&runtime_, "A"));
   ASSERT_TRUE(runtime_.isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
-  Object foo(&scope, runtime_.newStrFromCStr("foo"));
-  EXPECT_TRUE(isIntEqualsWord(typeGetAttribute(thread_, a, foo), 42));
+  Object name(&scope, runtime_.newStrFromCStr("foo"));
+  Object name_hash(&scope, strHash(thread_, *name));
+  EXPECT_TRUE(
+      isIntEqualsWord(typeGetAttribute(thread_, a, name, name_hash), 42));
 }
 
 TEST_F(TypeBuiltinsTest, TypeGetAttributePrefersFieldOverNonDataDescriptor) {
@@ -787,8 +800,10 @@ class A(metaclass=M):
   Object a_obj(&scope, mainModuleAt(&runtime_, "A"));
   ASSERT_TRUE(runtime_.isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
-  Object foo(&scope, runtime_.newStrFromCStr("foo"));
-  EXPECT_TRUE(isIntEqualsWord(typeGetAttribute(thread_, a, foo), 12));
+  Object name(&scope, runtime_.newStrFromCStr("foo"));
+  Object name_hash(&scope, strHash(thread_, *name));
+  EXPECT_TRUE(
+      isIntEqualsWord(typeGetAttribute(thread_, a, name, name_hash), 12));
 }
 
 TEST_F(TypeBuiltinsTest, TypeGetAttributePropagatesDunderGetException) {
@@ -805,16 +820,19 @@ class A(metaclass=M): pass
   Object a_obj(&scope, mainModuleAt(&runtime_, "A"));
   ASSERT_TRUE(runtime_.isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
-  Object foo(&scope, runtime_.newStrFromCStr("foo"));
-  EXPECT_TRUE(
-      raised(typeGetAttribute(thread_, a, foo), LayoutId::kUserWarning));
+  Object name(&scope, runtime_.newStrFromCStr("foo"));
+  Object name_hash(&scope, strHash(thread_, *name));
+  EXPECT_TRUE(raised(typeGetAttribute(thread_, a, name, name_hash),
+                     LayoutId::kUserWarning));
 }
 
 TEST_F(TypeBuiltinsTest, TypeGetAttributeOnNoneTypeReturnsFunction) {
   HandleScope scope(thread_);
   Type none_type(&scope, runtime_.typeAt(LayoutId::kNoneType));
   Object name(&scope, runtime_.newStrFromCStr("__repr__"));
-  EXPECT_TRUE(typeGetAttribute(thread_, none_type, name).isFunction());
+  Object name_hash(&scope, strHash(thread_, *name));
+  EXPECT_TRUE(
+      typeGetAttribute(thread_, none_type, name, name_hash).isFunction());
 }
 
 TEST_F(TypeBuiltinsTest, TypeSetAttrSetsAttribute) {
@@ -851,7 +869,7 @@ class A(metaclass=M):
   Object a_obj(&scope, mainModuleAt(&runtime_, "A"));
   ASSERT_TRUE(runtime_.isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
-  Object name(&scope, runtime_.internStrFromCStr(thread_, "foo"));
+  Str name(&scope, runtime_.internStrFromCStr(thread_, "foo"));
   Object value(&scope, runtime_.newInt(77));
   EXPECT_TRUE(typeSetAttr(thread_, a, name, value).isNoneType());
   Object set_args_obj(&scope, mainModuleAt(&runtime_, "set_args"));
@@ -878,7 +896,7 @@ class A(metaclass=M):
   Object a_obj(&scope, mainModuleAt(&runtime_, "A"));
   ASSERT_TRUE(runtime_.isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
-  Object name(&scope, runtime_.internStrFromCStr(thread_, "foo"));
+  Str name(&scope, runtime_.internStrFromCStr(thread_, "foo"));
   Object value(&scope, runtime_.newInt(1));
   EXPECT_TRUE(
       raised(typeSetAttr(thread_, a, name, value), LayoutId::kUserWarning));
@@ -887,7 +905,7 @@ class A(metaclass=M):
 TEST_F(TypeBuiltinsTest, TypeSetAttrOnBuiltinTypeRaisesTypeError) {
   HandleScope scope(thread_);
   Type type(&scope, runtime_.typeAt(LayoutId::kInt));
-  Object name(&scope, runtime_.internStrFromCStr(thread_, "foo"));
+  Str name(&scope, runtime_.internStrFromCStr(thread_, "foo"));
   Object value(&scope, NoneType::object());
   EXPECT_TRUE(raisedWithStr(
       typeSetAttr(thread_, type, name, value), LayoutId::kTypeError,

@@ -118,7 +118,10 @@ PY_EXPORT PyObject* PyObject_GenericGetAttr(PyObject* obj, PyObject* name) {
                          "attribute name must be string, not '%s'", &name_obj);
     return nullptr;
   }
-  Object result(&scope, objectGetAttribute(thread, object, name_obj));
+  Object name_hash(&scope, Interpreter::hash(thread, name_obj));
+  if (name_hash.isErrorException()) return nullptr;
+  Object result(&scope,
+                objectGetAttribute(thread, object, name_obj, name_hash));
   if (result.isError()) {
     if (!result.isErrorException()) {
       thread->raiseWithFmt(LayoutId::kAttributeError, "%s", &name_obj);
@@ -134,16 +137,17 @@ PY_EXPORT int PyObject_GenericSetAttr(PyObject* obj, PyObject* name,
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
-  Runtime* runtime = thread->runtime();
   if (!thread->runtime()->isInstanceOfStr(*name_obj)) {
     thread->raiseWithFmt(LayoutId::kTypeError,
                          "attribute name must be string, not '%s'", &name_obj);
     return -1;
   }
-  Object qualname(&scope, runtime->internStr(thread, name_obj));
+  Object name_hash(&scope, Interpreter::hash(thread, name_obj));
+  if (name_hash.isErrorException()) return -1;
 
   Object value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
-  Object result(&scope, objectSetAttr(thread, object, qualname, value_obj));
+  Object result(&scope,
+                objectSetAttr(thread, object, name_obj, name_hash, value_obj));
   if (result.isError()) {
     if (!result.isErrorException()) {
       thread->raiseWithFmt(LayoutId::kAttributeError, "%s", &name_obj);
