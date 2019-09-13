@@ -30,12 +30,12 @@ static RawObject initializeExtensionType(PyObject* extension_type) {
   type.setMro(*mro);
 
   // Initialize instance Layout
-  Layout layout_init(&scope, runtime->layoutCreateEmpty(thread));
-  Object attr_name(&scope, runtime->symbols()->ExtensionPtr());
   Layout layout(&scope,
-                runtime->layoutAddAttribute(thread, layout_init, attr_name, 0));
+                runtime->computeInitialLayout(thread, type, LayoutId::kObject));
+  layout.setNumInObjectAttributes(3);
   layout.setDescribedType(*type);
   type.setInstanceLayout(*layout);
+  type.setFlagsAndBuiltinBase(RawType::Flag::kIsNativeProxy, LayoutId::kObject);
 
   pyobj->reference_ = type.raw();
   return *type;
@@ -115,19 +115,15 @@ TEST_F(CApiHandlesTest, ExtensionInstanceObjectReturnsPyObject) {
   // Create type
   PyObject extension_type;
   Type type(&scope, initializeExtensionType(&extension_type));
+  Layout layout(&scope, type.instanceLayout());
 
   // Create instance
-  Layout layout(&scope, type.instanceLayout());
-  Object attr_name(&scope, runtime_.symbols()->ExtensionPtr());
-  HeapObject instance(&scope, runtime_.newInstance(layout));
-
+  Object native_proxy(&scope, runtime_.newInstance(layout));
   PyObject* type_handle = ApiHandle::newReference(thread_, *type);
   PyObject pyobj = {0, 1, reinterpret_cast<PyTypeObject*>(type_handle)};
-  Object object_ptr(&scope,
-                    runtime_.newIntFromCPtr(static_cast<void*>(&pyobj)));
-  instanceSetAttr(thread_, instance, attr_name, object_ptr);
+  runtime_.setNativeProxyPtr(*native_proxy, static_cast<void*>(&pyobj));
 
-  PyObject* result = ApiHandle::newReference(thread_, *instance);
+  PyObject* result = ApiHandle::newReference(thread_, *native_proxy);
   EXPECT_TRUE(result);
   EXPECT_EQ(result, &pyobj);
 }
@@ -135,17 +131,9 @@ TEST_F(CApiHandlesTest, ExtensionInstanceObjectReturnsPyObject) {
 TEST_F(CApiHandlesTest, RuntimeInstanceObjectReturnsPyObject) {
   HandleScope scope(thread_);
 
-  // Create type
-  PyObject extension_type;
-  Type type(&scope, initializeExtensionType(&extension_type));
-
-  // Initialize instance Layout
-  Layout layout(&scope, runtime_.layoutCreateEmpty(thread_));
-  layout.setDescribedType(*type);
-  type.setInstanceLayout(*layout);
-
   // Create instance
-  HeapObject instance(&scope, runtime_.newInstance(layout));
+  Layout layout(&scope, runtime_.layoutAt(LayoutId::kObject));
+  Object instance(&scope, runtime_.newInstance(layout));
   PyObject* result = ApiHandle::newReference(thread_, *instance);
   ASSERT_NE(result, nullptr);
 

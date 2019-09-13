@@ -228,20 +228,15 @@ PY_EXPORT PyObject* PyObject_Init(PyObject* obj, PyTypeObject* typeobj) {
                 ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(typeobj))
                     ->asObject());
   Layout layout(&scope, type_obj.instanceLayout());
-  HeapObject instance(&scope, runtime->newInstance(layout));
+  Object native_proxy(&scope, runtime->newInstance(layout));
+  runtime->setNativeProxyPtr(*native_proxy, obj);
 
-  // Initialize the instance
-  obj->reference_ = instance.raw();
+  // Initialize the native object
+  obj->reference_ = native_proxy.raw();
   obj->ob_type = typeobj;
   if (PyType_GetFlags(typeobj) & Py_TPFLAGS_HEAPTYPE) {
     Py_INCREF(typeobj);
   }
-
-  // Set the proxy object attribute to the native object
-  Object native_ptr(&scope, runtime->newIntFromCPtr(obj));
-  Object attr_name(&scope, runtime->symbols()->ExtensionPtr());
-  instanceSetAttr(thread, instance, attr_name, native_ptr);
-
   // TODO(T53456038): Make the reference count be one
   // Set a reference count of two. One for the original PyObject_Init call
   // and the second for the managed instance proxy that points back to it.

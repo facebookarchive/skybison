@@ -1912,8 +1912,11 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
                    runtime->newIntFromCPtr(base_handle));
 
   // Initialize instance Layout
+  // TODO(T53922464): Set the layout to the dict overflow state
   Layout layout(&scope,
                 runtime->computeInitialLayout(thread, type, LayoutId::kObject));
+  // Set a size of 3 in object attributes to match the layout of RawNativeProxy
+  layout.setNumInObjectAttributes(3);
   layout.setDescribedType(*type);
   type.setInstanceLayout(*layout);
 
@@ -1936,9 +1939,9 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   setExtensionSlot(type, ExtensionSlot::kItemSize, *item_size);
 
   // Set the class flags
-  Object flags(&scope, runtime->newInt(spec->flags | Py_TPFLAGS_READY |
-                                       Py_TPFLAGS_HEAPTYPE));
-  setExtensionSlot(type, ExtensionSlot::kFlags, *flags);
+  Object tp_flags(&scope, runtime->newInt(spec->flags | Py_TPFLAGS_READY |
+                                          Py_TPFLAGS_HEAPTYPE));
+  setExtensionSlot(type, ExtensionSlot::kFlags, *tp_flags);
 
   if (addOperators(thread, type).isError()) return nullptr;
 
@@ -1972,8 +1975,10 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
     inheritNonFunctionSlots(type, base_type);
   }
 
+  word flags = RawType::Flag::kIsNativeProxy;
   for (word i = 1; i < mro.length(); i++) {
     Type base(&scope, mro.at(i));
+    flags |= base.flags();
     // Skip inheritance if base does not define extensionSlots
     if (base.extensionSlots().isNoneType()) continue;
     // Bases must define Py_TPFLAGS_BASETYPE
@@ -1986,6 +1991,9 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
     }
     inheritSlots(type, base);
   }
+  type.setFlagsAndBuiltinBase(
+      static_cast<Type::Flag>(flags & ~Type::Flag::kIsAbstract),
+      LayoutId::kObject);
 
   // Finally, inherit all the default slots that would have been inherited
   // through PyBaseObject_Type in CPython

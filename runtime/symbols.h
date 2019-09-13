@@ -525,7 +525,6 @@ class Runtime;
   V(Executable, "executable")                                                  \
   V(Exit, "exit")                                                              \
   V(Extend, "extend")                                                          \
-  V(ExtensionPtr, "___extension___")                                           \
   V(ExtensionSuffixes, "extension_suffixes")                                   \
   V(False, "False")                                                            \
   V(File, "file")                                                              \
@@ -658,6 +657,7 @@ class Runtime;
   V(Mro, "mro")                                                                \
   V(Msg, "msg")                                                                \
   V(Mul, "mul")                                                                \
+  V(NativeProxy, "native_proxy")                                               \
   V(NFields, "n_fields")                                                       \
   V(NSequenceFields, "n_sequence_fields")                                      \
   V(NUnnamedFields, "n_unnamed_fields")                                        \

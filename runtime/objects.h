@@ -1045,6 +1045,9 @@ class RawType : public RawHeapObject {
 
     // Has an instance __dict__
     kHasDunderDict = 1 << 9,
+
+    // Instances have a native proxy layout
+    kIsNativeProxy = 1 << 10,
   };
 
   // Getters and setters.
@@ -1411,6 +1414,28 @@ class RawComplex : public RawHeapObject {
   void initialize(double real, double imag) const;
 
   friend class Heap;
+};
+
+class RawNativeProxy : public RawHeapObject {
+ public:
+  RawObject native() const;
+  void setNative(RawObject native_ptr) const;
+
+  RawObject dict() const;
+  void setDict(RawObject dict) const;
+
+  // A link to another object used by the garbage collector to create sets of
+  // weak references for delayed processing.
+  RawObject link() const;
+  void setLink(RawObject reference) const;
+
+  // Layout.
+  static const int kNativeOffset = RawHeapObject::kSize;
+  static const int kDictOffset = kNativeOffset + kPointerSize;
+  static const int kLinkOffset = kDictOffset + kPointerSize;
+  static const int kSize = kLinkOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON_NO_CAST(NativeProxy);
 };
 
 class RawProperty : public RawHeapObject {
@@ -4755,6 +4780,32 @@ inline RawObject RawRange::step() const {
 
 inline void RawRange::setStep(RawObject value) const {
   instanceVariableAtPut(kStepOffset, value);
+}
+
+// RawNativeProxy
+
+inline RawObject RawNativeProxy::native() const {
+  return instanceVariableAt(kNativeOffset);
+}
+
+inline void RawNativeProxy::setNative(RawObject native_ptr) const {
+  instanceVariableAtPut(kNativeOffset, native_ptr);
+}
+
+inline RawObject RawNativeProxy::dict() const {
+  return instanceVariableAt(kDictOffset);
+}
+
+inline void RawNativeProxy::setDict(RawObject dict) const {
+  instanceVariableAtPut(kDictOffset, dict);
+}
+
+inline RawObject RawNativeProxy::link() const {
+  return instanceVariableAt(kLinkOffset);
+}
+
+inline void RawNativeProxy::setLink(RawObject reference) const {
+  instanceVariableAtPut(kLinkOffset, reference);
 }
 
 // RawProperty

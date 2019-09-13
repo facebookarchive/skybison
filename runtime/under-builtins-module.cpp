@@ -2475,12 +2475,9 @@ RawObject UnderBuiltinsModule::underPropertyIsAbstract(Thread* thread,
 
 RawObject UnderBuiltinsModule::underPyObjectOffset(Thread* thread, Frame* frame,
                                                    word nargs) {
-  // TODO(eelizondo): Remove the HandleScope
-  HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object instance_obj(&scope, args.get(0));
-  Int instance(&scope, ApiHandle::getExtensionPtrAttr(thread, instance_obj));
-  auto addr = reinterpret_cast<uword>(instance.asCPtr());
+  auto addr =
+      reinterpret_cast<uword>(thread->runtime()->nativeProxyPtr(args.get(0)));
   addr += RawInt::cast(args.get(1)).asWord();
   return thread->runtime()->newIntFromCPtr(bit_cast<void*>(addr));
 }

@@ -630,6 +630,10 @@ class Runtime {
   // Return true if subclass is a subclass of superclass
   bool isSubclass(const Type& subclass, const Type& superclass);
 
+  void* nativeProxyPtr(RawObject object);
+
+  void setNativeProxyPtr(RawObject object, void* c_ptr);
+
   // For commonly-subclassed builtin types, define isInstanceOfFoo(RawObject)
   // that does a check including subclasses (unlike RawObject::isFoo(), which
   // only gets exact types).
@@ -675,6 +679,11 @@ class Runtime {
   DEFINE_IS_USER_INSTANCE(Str)
   DEFINE_IS_USER_INSTANCE(Tuple)
 #undef DEFINE_IS_USER_INSTANCE
+
+  bool isInstanceOfNativeProxy(RawObject obj) {
+    return typeOf(obj).rawCast<RawType>().hasFlag(
+        RawType::Flag::kIsNativeProxy);
+  }
 
   // BaseException must be handled specially because it has builtin subclasses
   // that are visible to managed code.

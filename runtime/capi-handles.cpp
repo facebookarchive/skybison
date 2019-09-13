@@ -94,22 +94,21 @@ ApiHandle* ApiHandle::atIndex(Runtime* runtime, word index) {
 
 ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
   Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
 
+  // Get the PyObject pointer from extension instances
+  if (runtime->isInstanceOfNativeProxy(obj)) {
+    return static_cast<ApiHandle*>(runtime->nativeProxyPtr(obj));
+  }
+
+  HandleScope scope(thread);
   Dict dict(&scope, runtime->apiHandles());
   Object key(&scope, obj);
   Object key_hash(&scope, runtime->hash(*key));
   Object value(&scope, dictAtIdentityEquals(thread, dict, key, key_hash));
 
-  // Fast path: All initialized builtin objects
+  // Get the handle of a builtin instance
   if (!value.isError()) {
     return castFromObject(*value);
-  }
-
-  // Get the PyObject pointer from extension instances
-  RawObject extension_ptr = getExtensionPtrAttr(thread, key);
-  if (!extension_ptr.isError()) {
-    return castFromObject(extension_ptr);
   }
 
   // Initialize an ApiHandle for a builtin object or runtime instance
@@ -183,16 +182,6 @@ void ApiHandle::visitReferences(RawObject handles, PointerVisitor* visitor) {
 
 ApiHandle* ApiHandle::castFromObject(RawObject value) {
   return static_cast<ApiHandle*>(Int::cast(value).asCPtr());
-}
-
-RawObject ApiHandle::getExtensionPtrAttr(Thread* thread, const Object& obj) {
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-  if (!obj.isInstance()) return Error::notFound();
-
-  HeapObject instance(&scope, *obj);
-  Object attr_name(&scope, runtime->symbols()->ExtensionPtr());
-  return instanceGetAttribute(thread, instance, attr_name);
 }
 
 RawObject ApiHandle::asObject() {
