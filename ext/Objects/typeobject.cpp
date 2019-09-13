@@ -1887,7 +1887,7 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   Object name_obj(&scope, runtime->newStrFromCStr(class_name));
   type.setName(*name_obj);
   Object dict_key(&scope, runtime->symbols()->DunderName());
-  runtime->dictAtPutInValueCell(thread, dict, dict_key, name_obj);
+  runtime->typeDictAtPut(thread, dict, dict_key, name_obj);
 
   // Initialize the extension slots tuple
   Object extension_slots(
@@ -1950,14 +1950,15 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
     PyMethodDef* methods =
         reinterpret_cast<PyMethodDef*>(Int::cast(*methods_ptr).asCPtr());
     for (word i = 0; methods[i].ml_name != nullptr; i++) {
-      Object name(&scope, runtime->newStrFromCStr(methods[i].ml_name));
+      Object name(&scope,
+                  runtime->internStrFromCStr(thread, methods[i].ml_name));
       Object function(
           &scope, functionFromMethodDef(
                       thread, methods[i].ml_name,
                       bit_cast<void*>(methods[i].ml_meth), methods[i].ml_doc,
                       methodTypeFromMethodFlags(methods[i].ml_flags)));
       if (function.isError()) return nullptr;
-      runtime->dictAtPutInValueCell(thread, dict, name, function);
+      runtime->typeDictAtPut(thread, dict, name, function);
     }
   }
 

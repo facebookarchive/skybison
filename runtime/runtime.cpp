@@ -3644,11 +3644,7 @@ RawObject Runtime::classConstructor(const Type& type) {
   HandleScope scope(thread);
   Dict type_dict(&scope, type.dict());
   Object init(&scope, symbols()->DunderInit());
-  RawObject value = dictAt(thread, type_dict, init);
-  if (value.isError()) {
-    return NoneType::object();
-  }
-  return ValueCell::cast(value).value();
+  return typeDictAt(thread, type_dict, init);
 }
 
 RawObject Runtime::computeInitialLayout(Thread* thread, const Type& type,

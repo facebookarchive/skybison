@@ -1354,7 +1354,7 @@ TEST_F(RuntimeTest, GetTypeConstructor) {
   Dict type_dict(&scope, runtime_.newDict());
   type.setDict(*type_dict);
 
-  EXPECT_EQ(runtime_.classConstructor(type), NoneType::object());
+  EXPECT_TRUE(runtime_.classConstructor(type).isErrorNotFound());
 
   Object init(&scope, runtime_.symbols()->DunderInit());
   Object func(&scope, makeTestFunction());
