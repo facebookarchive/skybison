@@ -294,7 +294,7 @@ RawObject DictBuiltins::dunderDelItem(Thread* thread, Frame* frame,
   Object key_hash(&scope, Interpreter::hash(thread, key));
   if (key_hash.isErrorException()) return *key_hash;
   // Remove the key. If it doesn't exist, throw a KeyError.
-  if (runtime->dictRemoveWithHash(thread, dict, key, key_hash).isError()) {
+  if (runtime->dictRemove(thread, dict, key, key_hash).isError()) {
     return thread->raise(LayoutId::kKeyError, *key);
   }
   return NoneType::object();

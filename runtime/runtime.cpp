@@ -466,7 +466,7 @@ RawObject Runtime::moduleDelAttr(Thread* thread, const Object& receiver,
   // No delete descriptor found, attempt to delete from the module dict
   Module module(&scope, *receiver);
   Dict module_dict(&scope, module.dict());
-  if (dictRemoveWithHash(thread, module_dict, name, name_hash).isError()) {
+  if (dictRemove(thread, module_dict, name, name_hash).isError()) {
     Str module_name(&scope, module.name());
     return thread->raiseWithFmt(LayoutId::kAttributeError,
                                 "module '%S' has no attribute '%S'",
@@ -3079,23 +3079,15 @@ bool Runtime::dictIncludes(Thread* thread, const Dict& dict, const Object& key,
   return dictLookup(data, key, key_hash, &ignore, RawObject::equals);
 }
 
-RawObject Runtime::dictRemove(Thread* thread, const Dict& dict,
-                              const Object& key) {
-  HandleScope scope(thread);
-  Object key_hash(&scope, hash(*key));
-  return dictRemoveWithHash(thread, dict, key, key_hash);
-}
-
 RawObject Runtime::dictRemoveByStr(Thread* thread, const Dict& dict,
                                    const Str& name) {
   HandleScope scope(thread);
   Object name_hash(&scope, strHash(thread, *name));
-  return dictRemoveWithHash(thread, dict, name, name_hash);
+  return dictRemove(thread, dict, name, name_hash);
 }
 
-RawObject Runtime::dictRemoveWithHash(Thread* thread, const Dict& dict,
-                                      const Object& key,
-                                      const Object& key_hash) {
+RawObject Runtime::dictRemove(Thread* thread, const Dict& dict,
+                              const Object& key, const Object& key_hash) {
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word index = -1;

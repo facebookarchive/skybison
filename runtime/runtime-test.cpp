@@ -426,7 +426,7 @@ TEST_F(RuntimeDictTest, Remove) {
   ASSERT_FALSE(key_hash.isErrorException());
 
   // Removing a key that doesn't exist should fail
-  bool is_missing = runtime_.dictRemove(thread_, dict, key).isError();
+  bool is_missing = runtime_.dictRemove(thread_, dict, key, key_hash).isError();
   EXPECT_TRUE(is_missing);
 
   // Removing a key that exists should succeed and return the value that was
@@ -436,7 +436,7 @@ TEST_F(RuntimeDictTest, Remove) {
   runtime_.dictAtPut(thread_, dict, key, key_hash, stored);
   EXPECT_EQ(dict.numItems(), 1);
 
-  RawObject retrieved = runtime_.dictRemove(thread_, dict, key);
+  RawObject retrieved = runtime_.dictRemove(thread_, dict, key, key_hash);
   ASSERT_FALSE(retrieved.isError());
   ASSERT_EQ(SmallInt::cast(retrieved).value(), SmallInt::cast(*stored).value());
 
@@ -461,7 +461,9 @@ TEST_F(RuntimeDictTest, Length) {
   // Remove half the items
   for (int i = 0; i < 5; i++) {
     Object key(&scope, SmallInt::fromWord(i));
-    ASSERT_FALSE(runtime_.dictRemove(thread_, dict, key).isError());
+    Object key_hash(&scope, Interpreter::hash(thread_, key));
+    ASSERT_FALSE(key_hash.isErrorException());
+    ASSERT_FALSE(runtime_.dictRemove(thread_, dict, key, key_hash).isError());
   }
   EXPECT_EQ(dict.numItems(), 5);
 }

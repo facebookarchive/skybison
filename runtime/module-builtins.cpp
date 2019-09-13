@@ -220,8 +220,8 @@ RawObject moduleDictValueCellAtPutByStr(Thread* thread, const Dict& module_dict,
 RawObject moduleDictRemove(Thread* thread, const Dict& module_dict,
                            const Object& key, const Object& key_hash) {
   HandleScope scope(thread);
-  Object result(&scope, thread->runtime()->dictRemoveWithHash(
-                            thread, module_dict, key, key_hash));
+  Object result(&scope, thread->runtime()->dictRemove(thread, module_dict, key,
+                                                      key_hash));
   DCHECK(result.isErrorNotFound() || result.isValueCell(),
          "dictRemove must return either ErrorNotFound or ValueCell");
   if (result.isErrorNotFound()) {

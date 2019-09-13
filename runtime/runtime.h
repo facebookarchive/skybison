@@ -533,18 +533,13 @@ class Runtime {
   // Try to remove entry associated with `key` from `dict`.
   // Returns the value that was associated before deletion or
   // `Error:notFound()`.
-  RawObject dictRemove(Thread* thread, const Dict& dict, const Object& key);
+  RawObject dictRemove(Thread* thread, const Dict& dict, const Object& key,
+                       const Object& key_hash);
 
   // Try to remove entry associated with `name` from `dict`.
   // Returns the value that was associated before deletion or
   // `Error:notFound()`.
   RawObject dictRemoveByStr(Thread* thread, const Dict& dict, const Str& name);
-
-  // Try to remove entry associated with `key` from `dict`.
-  // Returns the value that was associated before deletion or
-  // `Error:notFound()`.
-  RawObject dictRemoveWithHash(Thread* thread, const Dict& dict,
-                               const Object& key, const Object& key_hash);
 
   RawObject dictItems(Thread* thread, const Dict& dict);
   RawObject dictKeys(Thread* thread, const Dict& dict);

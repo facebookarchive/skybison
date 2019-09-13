@@ -182,7 +182,7 @@ PY_EXPORT int PyDict_DelItem(PyObject* pydict, PyObject* key) {
   Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
   Object key_hash(&scope, Interpreter::hash(thread, key_obj));
   if (key_hash.isErrorException()) return -1;
-  if (runtime->dictRemoveWithHash(thread, dict, key_obj, key_hash).isError()) {
+  if (runtime->dictRemove(thread, dict, key_obj, key_hash).isError()) {
     thread->raise(LayoutId::kKeyError, *key_obj);
     return -1;
   }
