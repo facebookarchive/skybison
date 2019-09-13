@@ -609,8 +609,8 @@ TEST_F(ThreadTest, LoadNameFromGlobals) {
   Code code(&scope, newEmptyCode());
 
   Tuple names(&scope, runtime_.newTuple(1));
-  Object key(&scope, runtime_.newStrFromCStr("foo"));
-  names.atPut(0, *key);
+  Str name(&scope, runtime_.newStrFromCStr("foo"));
+  names.atPut(0, *name);
   code.setNames(*names);
 
   const byte bytecode[] = {LOAD_NAME, 0, RETURN_VALUE, 0};
@@ -619,7 +619,7 @@ TEST_F(ThreadTest, LoadNameFromGlobals) {
 
   Dict globals(&scope, runtime_.newDict());
   Object value(&scope, runtime_.newInt(321));
-  runtime_.typeDictAtPut(thread_, globals, key, value);
+  runtime_.typeDictAtPutByStr(thread_, globals, name, value);
   Dict locals(&scope, runtime_.newDict());
   EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, globals, locals), 321));
 }
@@ -630,8 +630,8 @@ TEST_F(ThreadTest, LoadNameFromLocals) {
   Code code(&scope, newEmptyCode());
 
   Tuple names(&scope, runtime_.newTuple(1));
-  Object key(&scope, runtime_.newStrFromCStr("foo"));
-  names.atPut(0, *key);
+  Str name(&scope, runtime_.newStrFromCStr("foo"));
+  names.atPut(0, *name);
   code.setNames(*names);
 
   const byte bytecode[] = {LOAD_NAME, 0, RETURN_VALUE, 0};
@@ -640,10 +640,10 @@ TEST_F(ThreadTest, LoadNameFromLocals) {
 
   Dict globals(&scope, runtime_.newDict());
   Object globals_value(&scope, runtime_.newInt(456));
-  runtime_.typeDictAtPut(thread_, globals, key, globals_value);
+  runtime_.typeDictAtPutByStr(thread_, globals, name, globals_value);
   Dict locals(&scope, runtime_.newDict());
   Object locals_value(&scope, runtime_.newInt(654));
-  runtime_.typeDictAtPut(thread_, globals, key, locals_value);
+  runtime_.typeDictAtPutByStr(thread_, globals, name, locals_value);
   EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, globals, locals), 654));
 }
 

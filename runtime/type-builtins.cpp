@@ -26,15 +26,30 @@ bool nextTypeDictItem(RawTuple data, word* idx) {
   return false;
 }
 
-RawObject typeLookupInMro(Thread* thread, const Type& type,
-                          const Object& name_str) {
+RawObject typeLookupInMro(Thread* thread, const Type& type, const Object& key) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Tuple mro(&scope, type.mro());
   for (word i = 0; i < mro.length(); i++) {
     Type mro_type(&scope, mro.at(i));
     Dict dict(&scope, mro_type.dict());
-    Object value(&scope, runtime->typeDictAt(thread, dict, name_str));
+    Object value(&scope, runtime->typeDictAt(thread, dict, key));
+    if (!value.isError()) {
+      return *value;
+    }
+  }
+  return Error::notFound();
+}
+
+RawObject typeLookupInMroByStr(Thread* thread, const Type& type,
+                               const Str& name) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Tuple mro(&scope, type.mro());
+  for (word i = 0; i < mro.length(); i++) {
+    Type mro_type(&scope, mro.at(i));
+    Dict dict(&scope, mro_type.dict());
+    Object value(&scope, runtime->typeDictAtByStr(thread, dict, name));
     if (!value.isError()) {
       return *value;
     }
@@ -44,8 +59,8 @@ RawObject typeLookupInMro(Thread* thread, const Type& type,
 
 RawObject typeLookupInMroById(Thread* thread, const Type& type, SymbolId id) {
   HandleScope scope(thread);
-  Object name(&scope, thread->runtime()->symbols()->at(id));
-  return typeLookupInMro(thread, type, name);
+  Str name(&scope, thread->runtime()->symbols()->at(id));
+  return typeLookupInMroByStr(thread, type, name);
 }
 
 bool typeIsDataDescriptor(Thread* thread, const Type& type) {
@@ -202,12 +217,12 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     }
   }
 
-  Str class_cell_name(&scope, runtime->symbols()->DunderClassCell());
-  Object class_cell(&scope,
-                    runtime->typeDictAt(thread, type_dict, class_cell_name));
+  Object class_cell(&scope, runtime->typeDictAtById(
+                                thread, type_dict, SymbolId::kDunderClassCell));
   if (!class_cell.isErrorNotFound()) {
     DCHECK(class_cell.isValueCell(), "class cell must be a value cell");
     ValueCell::cast(*class_cell).setValue(*type);
+    Str class_cell_name(&scope, runtime->symbols()->DunderClassCell());
     runtime->dictRemoveByStr(thread, type_dict, class_cell_name);
   }
   type.setDict(*type_dict);
@@ -258,8 +273,8 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
         &scope, moduleAtById(thread, builtins, SymbolId::kInstanceProxy));
     Object none(&scope, NoneType::object());
     Object property(&scope, runtime->newProperty(instance_proxy, none, none));
-    Str dunder_dict(&scope, runtime->symbols()->DunderDict());
-    runtime->typeDictAtPut(thread, type_dict, dunder_dict, property);
+    runtime->typeDictAtPutById(thread, type_dict, SymbolId::kDunderDict,
+                               property);
   }
   type.setFlagsAndBuiltinBase(
       static_cast<Type::Flag>(flags & ~Type::Flag::kIsAbstract),

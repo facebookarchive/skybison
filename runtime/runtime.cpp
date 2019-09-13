@@ -819,7 +819,7 @@ void Runtime::typeAddBuiltinFunction(const Type& type, SymbolId name,
                     newFunctionWithCode(thread, qualname, code, globals));
 
   Dict dict(&scope, type.dict());
-  typeDictAtPut(thread, dict, name_str, function);
+  typeDictAtPutByStr(thread, dict, name_str, function);
 }
 
 RawObject Runtime::newList() {
@@ -2140,9 +2140,45 @@ RawObject Runtime::typeDictAt(Thread* thread, const Dict& dict,
   return ValueCell::cast(*value).value();
 }
 
+RawObject Runtime::typeDictAtByStr(Thread* thread, const Dict& dict,
+                                   const Str& name) {
+  HandleScope scope(thread);
+  Object value(&scope, dictAtByStr(thread, dict, name));
+  DCHECK(value.isErrorNotFound() || value.isValueCell(),
+         "type dictionaries must return either ErrorNotFound or ValueCell");
+  if (value.isErrorNotFound() || ValueCell::cast(*value).isPlaceholder()) {
+    return Error::notFound();
+  }
+  return ValueCell::cast(*value).value();
+}
+
+RawObject Runtime::typeDictAtById(Thread* thread, const Dict& dict,
+                                  SymbolId id) {
+  HandleScope scope(thread);
+  Object value(&scope, dictAtById(thread, dict, id));
+  DCHECK(value.isErrorNotFound() || value.isValueCell(),
+         "type dictionaries must return either ErrorNotFound or ValueCell");
+  if (value.isErrorNotFound() || ValueCell::cast(*value).isPlaceholder()) {
+    return Error::notFound();
+  }
+  return ValueCell::cast(*value).value();
+}
+
 RawObject Runtime::typeDictAtPut(Thread* thread, const Dict& dict,
                                  const Object& key, const Object& value) {
   return dictAtPutInValueCell(thread, dict, key, value);
+}
+
+RawObject Runtime::typeDictAtPutByStr(Thread* thread, const Dict& dict,
+                                      const Str& name, const Object& value) {
+  return dictAtPutInValueCellByStr(thread, dict, name, value);
+}
+
+RawObject Runtime::typeDictAtPutById(Thread* thread, const Dict& dict,
+                                     SymbolId id, const Object& value) {
+  HandleScope scope(thread);
+  Str name(&scope, symbols()->at(id));
+  return dictAtPutInValueCellByStr(thread, dict, name, value);
 }
 
 LayoutId Runtime::reserveLayoutId(Thread* thread) {
@@ -2299,15 +2335,14 @@ void Runtime::createBuiltinsModule(Thread* thread) {
 
   Type object(&scope, typeAt(LayoutId::kObject));
   Dict object_dict(&scope, object.dict());
-  Object dunder_getattribute_name(&scope, symbols()->DunderGetattribute());
   object_dunder_getattribute_ =
-      typeDictAt(thread, object_dict, dunder_getattribute_name);
-  Object dunder_init_name(&scope, symbols()->DunderInit());
-  object_dunder_init_ = typeDictAt(thread, object_dict, dunder_init_name);
-  Object dunder_new_name(&scope, symbols()->DunderNew());
-  object_dunder_new_ = typeDictAt(thread, object_dict, dunder_new_name);
-  Object dunder_setattr_name(&scope, symbols()->DunderSetattr());
-  object_dunder_setattr_ = typeDictAt(thread, object_dict, dunder_setattr_name);
+      typeDictAtById(thread, object_dict, SymbolId::kDunderGetattribute);
+  object_dunder_init_ =
+      typeDictAtById(thread, object_dict, SymbolId::kDunderInit);
+  object_dunder_new_ =
+      typeDictAtById(thread, object_dict, SymbolId::kDunderNew);
+  object_dunder_setattr_ =
+      typeDictAtById(thread, object_dict, SymbolId::kDunderSetattr);
 
   // Mark functions that have an intrinsic implementation.
   for (word i = 0; BuiltinsModule::kIntrinsicIds[i] != SymbolId::kSentinelId;
@@ -3696,8 +3731,7 @@ RawObject Runtime::classConstructor(const Type& type) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Dict type_dict(&scope, type.dict());
-  Object init(&scope, symbols()->DunderInit());
-  return typeDictAt(thread, type_dict, init);
+  return typeDictAtById(thread, type_dict, SymbolId::kDunderInit);
 }
 
 RawObject Runtime::computeInitialLayout(Thread* thread, const Type& type,

@@ -2371,7 +2371,7 @@ RawObject UnderBuiltinsModule::underObjectTypeGetAttr(Thread* thread,
   Object instance(&scope, args.get(0));
   Type type(&scope, thread->runtime()->typeOf(*instance));
   Str name(&scope, args.get(1));
-  Object attr(&scope, typeLookupInMro(thread, type, name));
+  Object attr(&scope, typeLookupInMroByStr(thread, type, name));
   if (attr.isErrorNotFound()) {
     return Unbound::object();
   }
@@ -2385,7 +2385,7 @@ RawObject UnderBuiltinsModule::underObjectTypeHasattr(Thread* thread,
   HandleScope scope(thread);
   Type type(&scope, thread->runtime()->typeOf(args.get(0)));
   Str name(&scope, args.get(1));
-  Object result(&scope, typeLookupInMro(thread, type, name));
+  Object result(&scope, typeLookupInMroByStr(thread, type, name));
   return Bool::fromBool(!result.isErrorNotFound());
 }
 

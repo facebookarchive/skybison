@@ -294,7 +294,7 @@ void ObjectBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
   Tuple parameter_names(&scope, runtime->newTuple(2));
   parameter_names.atPut(0, runtime->symbols()->Self());
   parameter_names.atPut(1, runtime->symbols()->Name());
-  Object name(&scope, runtime->symbols()->DunderGetattribute());
+  Str name(&scope, runtime->symbols()->DunderGetattribute());
   Code code(&scope,
             runtime->newBuiltinCode(
                 /*argcount=*/2, /*posonlyargcount=*/2, /*kwonlyargcount=*/0,
@@ -305,7 +305,7 @@ void ObjectBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
   Function dunder_getattribute(
       &scope, runtime->newFunctionWithCode(thread, qualname, code, globals));
 
-  runtime->typeDictAtPut(thread, type_dict, name, dunder_getattribute);
+  runtime->typeDictAtPutByStr(thread, type_dict, name, dunder_getattribute);
 }
 
 RawObject ObjectBuiltins::dunderGetattribute(Thread* thread, Frame* frame,

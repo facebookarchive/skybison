@@ -1012,7 +1012,7 @@ RawObject addOperators(Thread* thread, const Type& type) {
     DCHECK(slot_value.isInt(), "unexpected slot type");
 
     Str slot_name(&scope, runtime->symbols()->at(slot.name));
-    if (!runtime->typeDictAt(thread, dict, slot_name).isError()) continue;
+    if (!runtime->typeDictAtByStr(thread, dict, slot_name).isError()) continue;
 
     // When given PyObject_HashNotImplemented, put None in the type dict
     // rather than a wrapper. CPython does this regardless of which slot it
@@ -1020,7 +1020,7 @@ RawObject addOperators(Thread* thread, const Type& type) {
     if (Int::cast(*slot_value).asCPtr() ==
         bit_cast<void*>(&PyObject_HashNotImplemented)) {
       Object none(&scope, NoneType::object());
-      runtime->typeDictAtPut(thread, dict, slot_name, none);
+      runtime->typeDictAtPutByStr(thread, dict, slot_name, none);
       return NoneType::object();
     }
 
@@ -1047,7 +1047,7 @@ RawObject addOperators(Thread* thread, const Type& type) {
     }
 
     // Finally, put the wrapper in the type dict.
-    runtime->typeDictAtPut(thread, dict, slot_name, func_obj);
+    runtime->typeDictAtPutByStr(thread, dict, slot_name, func_obj);
   }
 
   return NoneType::object();
@@ -1495,13 +1495,13 @@ RawObject addMembers(Thread* thread, const Type& type) {
   Object none(&scope, NoneType::object());
   Runtime* runtime = thread->runtime();
   for (word i = 0; members[i].name != nullptr; i++) {
-    Object name(&scope, runtime->newStrFromCStr(members[i].name));
+    Str name(&scope, runtime->newStrFromCStr(members[i].name));
     Object getter(&scope, memberGetter(thread, members[i]));
     if (getter.isError()) return *getter;
     Object setter(&scope, memberSetter(thread, members[i]));
     if (setter.isError()) return *setter;
     Object property(&scope, runtime->newProperty(getter, setter, none));
-    runtime->typeDictAtPut(thread, dict, name, property);
+    runtime->typeDictAtPutByStr(thread, dict, name, property);
   }
   return NoneType::object();
 }
@@ -1516,13 +1516,13 @@ RawObject addGetSet(Thread* thread, const Type& type) {
   Object none(&scope, NoneType::object());
   Runtime* runtime = thread->runtime();
   for (word i = 0; getsets[i].name != nullptr; i++) {
-    Object name(&scope, runtime->newStrFromCStr(getsets[i].name));
+    Str name(&scope, runtime->newStrFromCStr(getsets[i].name));
     Object getter(&scope, getSetGetter(thread, name, getsets[i]));
     if (getter.isError()) return *getter;
     Object setter(&scope, getSetSetter(thread, name, getsets[i]));
     if (setter.isError()) return *setter;
     Object property(&scope, runtime->newProperty(getter, setter, none));
-    runtime->typeDictAtPut(thread, dict, name, property);
+    runtime->typeDictAtPutByStr(thread, dict, name, property);
   }
   return NoneType::object();
 }
@@ -1886,8 +1886,7 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   }
   Object name_obj(&scope, runtime->newStrFromCStr(class_name));
   type.setName(*name_obj);
-  Object dict_key(&scope, runtime->symbols()->DunderName());
-  runtime->typeDictAtPut(thread, dict, dict_key, name_obj);
+  runtime->typeDictAtPutById(thread, dict, SymbolId::kDunderName, name_obj);
 
   // Initialize the extension slots tuple
   Object extension_slots(
@@ -1950,15 +1949,14 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
     PyMethodDef* methods =
         reinterpret_cast<PyMethodDef*>(Int::cast(*methods_ptr).asCPtr());
     for (word i = 0; methods[i].ml_name != nullptr; i++) {
-      Object name(&scope,
-                  runtime->internStrFromCStr(thread, methods[i].ml_name));
+      Str name(&scope, runtime->internStrFromCStr(thread, methods[i].ml_name));
       Object function(
           &scope, functionFromMethodDef(
                       thread, methods[i].ml_name,
                       bit_cast<void*>(methods[i].ml_meth), methods[i].ml_doc,
                       methodTypeFromMethodFlags(methods[i].ml_flags)));
       if (function.isError()) return nullptr;
-      runtime->typeDictAtPut(thread, dict, name, function);
+      runtime->typeDictAtPutByStr(thread, dict, name, function);
     }
   }
 

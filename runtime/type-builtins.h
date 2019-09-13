@@ -38,10 +38,14 @@ RawObject resolveDescriptorGet(Thread* thread, const Object& descr,
 RawObject typeInit(Thread* thread, const Type& type, const Str& name,
                    const Tuple& bases, const Dict& dict, const Tuple& mro);
 
-// Looks up `name_str` in the dict of each entry in type's MRO. Returns
+// Looks up `key` in the dict of each entry in type's MRO. Returns
 // `Error::notFound()` if the name was not found.
-RawObject typeLookupInMro(Thread* thread, const Type& type,
-                          const Object& name_str);
+RawObject typeLookupInMro(Thread* thread, const Type& type, const Object& key);
+
+// Looks up `name` in the dict of each entry in type's MRO. Returns
+// `Error::notFound()` if the name was not found.
+RawObject typeLookupInMroByStr(Thread* thread, const Type& type,
+                               const Str& name);
 
 // Looks up `id` in the dict of each entry in type's MRO. Returns
 // `Error::notFound()` if the name was not found.

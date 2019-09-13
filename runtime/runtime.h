@@ -345,8 +345,14 @@ class Runtime {
   }
 
   RawObject typeDictAt(Thread* thread, const Dict& dict, const Object& key);
+  RawObject typeDictAtByStr(Thread* thread, const Dict& dict, const Str& name);
+  RawObject typeDictAtById(Thread* thread, const Dict& dict, SymbolId id);
   RawObject typeDictAtPut(Thread* thread, const Dict& dict, const Object& key,
                           const Object& value);
+  RawObject typeDictAtPutByStr(Thread* thread, const Dict& dict,
+                               const Str& name, const Object& value);
+  RawObject typeDictAtPutById(Thread* thread, const Dict& dict, SymbolId id,
+                              const Object& value);
   RawObject typeAt(LayoutId layout_id);
   RawObject layoutAt(LayoutId layout_id) {
     DCHECK(layout_id != LayoutId::kError, "Error has no Layout");
