@@ -193,7 +193,7 @@ RawObject moduleDictValueCellAtPut(Thread* thread, const Dict& module_dict,
     icInvalidateGlobalVar(thread, builtins_value_cell);
   }
   return thread->runtime()->dictAtPutInValueCell(thread, module_dict, key,
-                                                 value);
+                                                 key_hash, value);
 }
 
 RawObject moduleDictValueCellAtPutByStr(Thread* thread, const Dict& module_dict,

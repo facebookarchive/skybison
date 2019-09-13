@@ -2169,7 +2169,7 @@ RawObject Runtime::typeDictAtById(Thread* thread, const Dict& dict,
 RawObject Runtime::typeDictAtPut(Thread* thread, const Dict& dict,
                                  const Object& key, const Object& key_hash,
                                  const Object& value) {
-  return dictAtPutInValueCellWithHash(thread, dict, key, key_hash, value);
+  return dictAtPutInValueCell(thread, dict, key, key_hash, value);
 }
 
 RawObject Runtime::typeDictAtPutByStr(Thread* thread, const Dict& dict,
@@ -3042,17 +3042,6 @@ RawObject Runtime::dictAtIfAbsentPut(Thread* thread, const Dict& dict,
   return *value;
 }
 
-RawObject Runtime::dictAtPutInValueCell(Thread* thread, const Dict& dict,
-                                        const Object& key,
-                                        const Object& value) {
-  HandleScope scope(thread);
-  Object key_hash(&scope, hash(*key));
-  Object result(&scope, dictAtIfAbsentPut(thread, dict, key, key_hash,
-                                          newValueCellCallback()));
-  ValueCell::cast(*result).setValue(*value);
-  return *result;
-}
-
 RawObject Runtime::dictAtPutInValueCellByStr(Thread* thread, const Dict& dict,
                                              const Str& name,
                                              const Object& value) {
@@ -3064,11 +3053,10 @@ RawObject Runtime::dictAtPutInValueCellByStr(Thread* thread, const Dict& dict,
   return *result;
 }
 
-RawObject Runtime::dictAtPutInValueCellWithHash(Thread* thread,
-                                                const Dict& dict,
-                                                const Object& key,
-                                                const Object& key_hash,
-                                                const Object& value) {
+RawObject Runtime::dictAtPutInValueCell(Thread* thread, const Dict& dict,
+                                        const Object& key,
+                                        const Object& key_hash,
+                                        const Object& value) {
   HandleScope scope(thread);
   Object result(&scope, dictAtIfAbsentPut(thread, dict, key, key_hash,
                                           newValueCellCallback()));

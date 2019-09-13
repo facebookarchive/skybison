@@ -514,19 +514,13 @@ class Runtime {
   // Stores value in a ValueCell associated with `key`. Reuses an existing
   // value cell when possible.
   RawObject dictAtPutInValueCell(Thread* thread, const Dict& dict,
-                                 const Object& key, const Object& value);
+                                 const Object& key, const Object& key_hash,
+                                 const Object& value);
 
   // Stores value in a ValueCell associated with `name`. Reuses an existing
   // value cell when possible.
   RawObject dictAtPutInValueCellByStr(Thread* thread, const Dict& dict,
                                       const Str& name, const Object& value);
-
-  // Stores value in a ValueCell associated with `key`. Reuses an existing
-  // value cell when possible.
-  RawObject dictAtPutInValueCellWithHash(Thread* thread, const Dict& dict,
-                                         const Object& key,
-                                         const Object& key_hash,
-                                         const Object& value);
 
   // Returns true if the dict contains the specified key.
   bool dictIncludes(Thread* thread, const Dict& dict, const Object& key);
