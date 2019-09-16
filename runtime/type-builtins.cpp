@@ -201,6 +201,19 @@ static void addSubclass(Thread* thread, const Type& base, const Type& type) {
   runtime->dictAtPut(thread, subclasses, key, hash, value);
 }
 
+void typeAddDocstring(Thread* thread, const Type& type) {
+  // If the type dictionary doesn't contain a __doc__, set it from the doc
+  // slot
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Dict type_dict(&scope, type.dict());
+  if (runtime->typeDictAtById(thread, type_dict, SymbolId::kDunderDoc)
+          .isErrorNotFound()) {
+    Object doc(&scope, type.doc());
+    runtime->typeDictAtPutById(thread, type_dict, SymbolId::kDunderDoc, doc);
+  }
+}
+
 RawObject typeInit(Thread* thread, const Type& type, const Str& name,
                    const Tuple& bases, const Dict& dict, const Tuple& mro) {
   type.setName(*name);
@@ -234,6 +247,8 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     runtime->dictRemoveByStr(thread, type_dict, class_cell_name);
   }
   type.setDict(*type_dict);
+  // TODO(T53997177): Centralize type initialization
+  typeAddDocstring(thread, type);
 
   // Compute builtin base class
   Object builtin_base(&scope, runtime->computeBuiltinBase(thread, type));

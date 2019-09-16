@@ -12,6 +12,8 @@ namespace python {
 // placeholders.
 bool nextTypeDictItem(RawTuple data, word* idx);
 
+void typeAddDocstring(Thread* thread, const Type& type);
+
 RawObject typeAt(Thread* thread, const Type& type, const Object& key,
                  const Object& key_hash);
 

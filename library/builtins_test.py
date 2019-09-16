@@ -7523,6 +7523,36 @@ class TypeTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             type.__dir__(None)
 
+    def test_dunder_doc_on_empty_class_is_none(self):
+        class C:
+            pass
+
+        self.assertIsNone(C.__doc__)
+        instance = C()
+        self.assertIsNone(instance.__doc__)
+
+    def test_dunder_doc_accessible_via_instance(self):
+        class C:
+            """docstring"""
+
+            pass
+
+        self.assertEqual(C.__doc__, "docstring")
+        instance = C()
+        self.assertEqual(instance.__doc__, "docstring")
+
+    def test_type_dunder_doc_is_not_inheritable(self):
+        class C:
+            """docstring"""
+
+            pass
+
+        class D(C):
+            pass
+
+        self.assertEqual(C.__doc__, "docstring")
+        self.assertIsNone(D.__doc__)
+
     def test_dunder_instancecheck_with_instance_returns_true(self):
         self.assertIs(int.__instancecheck__(3), True)
         self.assertIs(int.__instancecheck__(False), True)

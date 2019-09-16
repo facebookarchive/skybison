@@ -15,6 +15,7 @@
 #include "objects.h"
 #include "runtime.h"
 #include "str-builtins.h"
+#include "type-builtins.h"
 #include "under-builtins-module.h"
 
 namespace python {
@@ -303,6 +304,8 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
     Object result(&scope, thread->runClassFunction(body, patch_type));
     if (result.isError()) return *result;
     patchTypeDict(thread, type, patch_type);
+    // TODO(T53997177): Centralize type initialization
+    typeAddDocstring(thread, type);
     // A bootstrap type initialization is complete at this point.
     return *type;
   }
