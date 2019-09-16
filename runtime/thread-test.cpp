@@ -1326,6 +1326,17 @@ f()
   EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
+TEST_F(ThreadTest, StackOverflowRaisesRecursionError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+def foo(x):
+  return foo(x + 1)
+
+foo(1)
+)"),
+                            LayoutId::kRecursionError,
+                            "maximum recursion depth exceeded"));
+}
+
 TEST_F(FormatTest, NoConvEmpty) {
   const char* src = R"(
 result = f''

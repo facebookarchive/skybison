@@ -3094,6 +3094,9 @@ Interpreter::handleCall(Thread* thread, word argc, word callable_idx,
   function = RawFunction::cast(result);
 
   Frame* callee_frame = pushFrame(thread, function, post_call_sp);
+  if (UNLIKELY(callee_frame == nullptr)) {
+    return Continue::UNWIND;
+  }
   if (function.hasFreevarsOrCellvars()) {
     HandleScope scope(thread);
     Function function_handle(&scope, function);
@@ -3237,6 +3240,9 @@ HANDLER_INLINE Continue Interpreter::doCallFunctionEx(Thread* thread,
   }
 
   Frame* callee_frame = pushFrame(thread, *function, post_call_sp);
+  if (UNLIKELY(callee_frame == nullptr)) {
+    return Continue::UNWIND;
+  }
   if (function.hasFreevarsOrCellvars()) {
     processFreevarsAndCellvars(thread, function, callee_frame);
   }

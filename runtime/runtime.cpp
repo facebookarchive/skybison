@@ -3610,7 +3610,10 @@ RawObject Runtime::genSend(Thread* thread, const GeneratorBase& gen,
                            const Object& value) {
   HandleScope scope(thread);
   HeapFrame heap_frame(&scope, gen.heapFrame());
-  thread->checkStackOverflow(heap_frame.numFrameWords() * kPointerSize);
+  if (UNLIKELY(thread->wouldStackOverflow(heap_frame.numFrameWords() *
+                                          kPointerSize))) {
+    return Error::exception();
+  }
   Frame* live_frame =
       copyHeapFrameToStackFrame(heap_frame, thread->currentFrame());
   if (live_frame->virtualPC() != 0) {

@@ -81,7 +81,10 @@ inline Frame* Thread::openAndLinkFrame(word num_args, word num_vars,
   DCHECK(num_vars >= 0, "must have 0 or more locals");
   DCHECK(stack_depth >= 0, "stack depth cannot be negative");
 
-  checkStackOverflow(Frame::kSize + (num_vars + stack_depth) * kPointerSize);
+  if (UNLIKELY(wouldStackOverflow(Frame::kSize +
+                                  (num_vars + stack_depth) * kPointerSize))) {
+    return nullptr;
+  }
 
   // Initialize the frame.
   byte* new_sp = stackPtr() - num_vars * kPointerSize - Frame::kSize;
@@ -101,11 +104,15 @@ void Thread::linkFrame(Frame* frame) {
   currentFrame_ = frame;
 }
 
-void Thread::checkStackOverflow(word max_size) {
+bool Thread::wouldStackOverflow(word max_size) {
   // Check that there is sufficient space on the stack
   // TODO(T36407214): Grow stack
   byte* sp = stackPtr();
-  CHECK(sp - max_size >= start_, "stack overflow");
+  if (LIKELY(sp - max_size >= start_)) {
+    return false;
+  }
+  raiseWithFmt(LayoutId::kRecursionError, "maximum recursion depth exceeded");
+  return true;
 }
 
 Frame* Thread::pushNativeFrame(word nargs) {
@@ -121,6 +128,9 @@ Frame* Thread::pushNativeFrame(word nargs) {
 Frame* Thread::pushCallFrame(RawFunction function) {
   Frame* result = openAndLinkFrame(function.totalArgs(), function.totalVars(),
                                    function.stacksize());
+  if (UNLIKELY(result == nullptr)) {
+    return nullptr;
+  }
   result->setBytecode(MutableBytes::cast(function.rewrittenBytecode()));
   result->setCaches(Tuple::cast(function.caches()));
   result->setVirtualPC(0);
@@ -130,6 +140,9 @@ Frame* Thread::pushCallFrame(RawFunction function) {
 Frame* Thread::pushClassFunctionFrame(const Function& function) {
   HandleScope scope(this);
   Frame* result = pushCallFrame(*function);
+  if (UNLIKELY(result == nullptr)) {
+    return nullptr;
+  }
   Code code(&scope, function.code());
 
   word num_locals = code.nlocals();
@@ -191,7 +204,9 @@ RawObject Thread::exec(const Code& code, const Dict& globals,
   currentFrame()->pushValue(*locals);
   // Push function to be available from frame.function().
   currentFrame()->pushValue(*function);
-  pushCallFrame(*function);
+  if (UNLIKELY(pushCallFrame(*function) == nullptr)) {
+    return Error::exception();
+  }
   Object result(&scope, Interpreter::execute(this));
   DCHECK(currentFrame()->topValue() == function, "stack mismatch");
   DCHECK(currentFrame()->peek(1) == *locals, "stack mismatch");
@@ -207,7 +222,9 @@ RawObject Thread::runClassFunction(const Function& function, const Dict& dict) {
   // Push implicit globals and function.
   currentFrame()->pushValue(*dict);
   currentFrame()->pushValue(*function);
-  pushClassFunctionFrame(function);
+  if (UNLIKELY(pushClassFunctionFrame(function) == nullptr)) {
+    return Error::exception();
+  }
   Object result(&scope, Interpreter::execute(this));
   DCHECK(currentFrame()->topValue() == function, "stack mismatch");
   DCHECK(currentFrame()->peek(1) == *dict, "stack mismatch");

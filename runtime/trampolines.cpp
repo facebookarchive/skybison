@@ -533,7 +533,9 @@ RawObject generatorTrampoline(Thread* thread, Frame* caller, word argc) {
   if (error.isError()) {
     return error;
   }
-  thread->pushCallFrame(*function);
+  if (UNLIKELY(thread->pushCallFrame(*function) == nullptr)) {
+    return Error::exception();
+  }
   Str qualname(&scope, function.qualname());
   return createGenerator(thread, function, qualname);
 }
@@ -547,7 +549,9 @@ RawObject generatorTrampolineKw(Thread* thread, Frame* caller, word argc) {
   if (error.isError()) {
     return error;
   }
-  thread->pushCallFrame(*function);
+  if (UNLIKELY(thread->pushCallFrame(*function) == nullptr)) {
+    return Error::exception();
+  }
   Str qualname(&scope, function.qualname());
   return createGenerator(thread, function, qualname);
 }
@@ -562,7 +566,9 @@ RawObject generatorTrampolineEx(Thread* thread, Frame* caller, word flags) {
   if (error.isError()) {
     return error;
   }
-  thread->pushCallFrame(*function);
+  if (UNLIKELY(thread->pushCallFrame(*function) == nullptr)) {
+    return Error::exception();
+  }
   Str qualname(&scope, function.qualname());
   return createGenerator(thread, function, qualname);
 }
@@ -575,6 +581,9 @@ RawObject generatorClosureTrampoline(Thread* thread, Frame* caller, word argc) {
     return error;
   }
   Frame* callee_frame = thread->pushCallFrame(*function);
+  if (UNLIKELY(callee_frame == nullptr)) {
+    return Error::exception();
+  }
   processFreevarsAndCellvars(thread, function, callee_frame);
   Str qualname(&scope, function.qualname());
   return createGenerator(thread, function, qualname);
@@ -591,6 +600,9 @@ RawObject generatorClosureTrampolineKw(Thread* thread, Frame* caller,
     return error;
   }
   Frame* callee_frame = thread->pushCallFrame(*function);
+  if (UNLIKELY(callee_frame == nullptr)) {
+    return Error::exception();
+  }
   processFreevarsAndCellvars(thread, function, callee_frame);
   Str qualname(&scope, function.qualname());
   return createGenerator(thread, function, qualname);
@@ -608,6 +620,9 @@ RawObject generatorClosureTrampolineEx(Thread* thread, Frame* caller,
     return error;
   }
   Frame* callee_frame = thread->pushCallFrame(*function);
+  if (UNLIKELY(callee_frame == nullptr)) {
+    return Error::exception();
+  }
   processFreevarsAndCellvars(thread, function, callee_frame);
   Str qualname(&scope, function.qualname());
   return createGenerator(thread, function, qualname);
@@ -620,7 +635,9 @@ RawObject interpreterTrampoline(Thread* thread, Frame* caller, word argc) {
   if (error.isError()) {
     return error;
   }
-  thread->pushCallFrame(*function);
+  if (UNLIKELY(thread->pushCallFrame(*function) == nullptr)) {
+    return Error::exception();
+  }
   return Interpreter::execute(thread);
 }
 
@@ -633,7 +650,9 @@ RawObject interpreterTrampolineKw(Thread* thread, Frame* caller, word argc) {
   if (error.isError()) {
     return error;
   }
-  thread->pushCallFrame(*function);
+  if (UNLIKELY(thread->pushCallFrame(*function) == nullptr)) {
+    return Error::exception();
+  }
   return Interpreter::execute(thread);
 }
 
@@ -647,7 +666,9 @@ RawObject interpreterTrampolineEx(Thread* thread, Frame* caller, word flags) {
   if (error.isError()) {
     return error;
   }
-  thread->pushCallFrame(*function);
+  if (UNLIKELY(thread->pushCallFrame(*function) == nullptr)) {
+    return Error::exception();
+  }
   return Interpreter::execute(thread);
 }
 
@@ -660,6 +681,9 @@ RawObject interpreterClosureTrampoline(Thread* thread, Frame* caller,
     return error;
   }
   Frame* callee_frame = thread->pushCallFrame(*function);
+  if (UNLIKELY(callee_frame == nullptr)) {
+    return Error::exception();
+  }
   processFreevarsAndCellvars(thread, function, callee_frame);
   return Interpreter::execute(thread);
 }
@@ -675,6 +699,9 @@ RawObject interpreterClosureTrampolineKw(Thread* thread, Frame* caller,
     return error;
   }
   Frame* callee_frame = thread->pushCallFrame(*function);
+  if (UNLIKELY(callee_frame == nullptr)) {
+    return Error::exception();
+  }
   processFreevarsAndCellvars(thread, function, callee_frame);
   return Interpreter::execute(thread);
 }
@@ -691,6 +718,9 @@ RawObject interpreterClosureTrampolineEx(Thread* thread, Frame* caller,
     return error;
   }
   Frame* callee_frame = thread->pushCallFrame(*function);
+  if (UNLIKELY(callee_frame == nullptr)) {
+    return Error::exception();
+  }
   processFreevarsAndCellvars(thread, function, callee_frame);
   return Interpreter::execute(thread);
 }
@@ -1171,6 +1201,9 @@ static inline RawObject builtinTrampolineImpl(Thread* thread, Frame* caller,
 
     word argc = function.totalArgs();
     Frame* frame = thread->pushNativeFrame(argc);
+    if (UNLIKELY(frame == nullptr)) {
+      return Error::exception();
+    }
     result = bit_cast<Function::Entry>(entry)(thread, frame, argc);
     // End scope so people do not accidentally use raw variables after the call
     // which could have triggered a GC.

@@ -52,7 +52,9 @@ class Thread {
   Frame* pushCallFrame(RawFunction function);
   Frame* pushNativeFrame(word nargs);
   Frame* pushClassFunctionFrame(const Handle<RawFunction>& function);
-  void checkStackOverflow(word max_size);
+
+  // Returns true if growing by `max_size` bytes would cause a stack overflow.
+  bool wouldStackOverflow(word max_size);
 
   Frame* popFrame();
 
