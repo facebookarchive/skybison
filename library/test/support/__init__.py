@@ -21,12 +21,12 @@ import importlib
 import importlib.util
 import io
 import logging.handlers
-import nntplib
+# TODO(T53553323): Import nntplib
+#import nntplib
 import os
 import platform
 import re
 import shutil
-import socket
 import stat
 import struct
 import subprocess
@@ -40,6 +40,15 @@ import urllib.error
 import warnings
 
 from .testresult import get_test_runner
+
+
+# TODO(T47796072): Import socket
+#import socket
+class socket:
+   AF_INET = 2
+   SOCK_STREAM = 1
+   has_ipv6 = False
+
 
 
 try:
@@ -163,13 +172,14 @@ def import_module(name, deprecated=False, *, required_on=()):
     others, set required_on to an iterable of platform prefixes which will be
     compared against sys.platform.
     """
-    with _ignore_deprecated_imports(deprecated):
-        try:
-            return importlib.import_module(name)
-        except ImportError as msg:
-            if sys.platform.startswith(tuple(required_on)):
-                raise
-            raise unittest.SkipTest(str(msg))
+    # TODO(T53690874): Fix __exit__ bug
+    # with _ignore_deprecated_imports(deprecated):
+    try:
+        return importlib.import_module(name)
+    except ImportError as msg:
+        if sys.platform.startswith(tuple(required_on)):
+            raise
+        raise unittest.SkipTest(str(msg))
 
 
 def _save_and_remove_module(name, orig_modules):
@@ -808,7 +818,9 @@ requires_lzma = unittest.skipUnless(lzma, 'requires lzma')
 
 is_jython = sys.platform.startswith('java')
 
-_ANDROID_API_LEVEL = sysconfig.get_config_var('ANDROID_API_LEVEL')
+# TODO(T53108940): Implement open
+#_ANDROID_API_LEVEL = sysconfig.get_config_var('ANDROID_API_LEVEL')
+_ANDROID_API_LEVEL = 0
 is_android = (_ANDROID_API_LEVEL is not None and _ANDROID_API_LEVEL > 0)
 
 if sys.platform != 'win32':
@@ -877,12 +889,13 @@ for character in (
 
 # TESTFN_UNICODE is a non-ascii filename
 TESTFN_UNICODE = TESTFN + "-\xe0\xf2\u0258\u0141\u011f"
-if sys.platform == 'darwin':
-    # In Mac OS X's VFS API file names are, by definition, canonically
-    # decomposed Unicode, encoded using UTF-8. See QA1173:
-    # http://developer.apple.com/mac/library/qa/qa2001/qa1173.html
-    import unicodedata
-    TESTFN_UNICODE = unicodedata.normalize('NFD', TESTFN_UNICODE)
+# TODO(T47682853): Introduce new PyUnicode_VARBYTE_KIND
+#if sys.platform == 'darwin':
+#    # In Mac OS X's VFS API file names are, by definition, canonically
+#    # decomposed Unicode, encoded using UTF-8. See QA1173:
+#    # http://developer.apple.com/mac/library/qa/qa2001/qa1173.html
+#    import unicodedata
+#    TESTFN_UNICODE = unicodedata.normalize('NFD', TESTFN_UNICODE)
 TESTFN_ENCODING = sys.getfilesystemencoding()
 
 # TESTFN_UNENCODABLE is a filename (str type) that should *not* be able to be
@@ -1195,10 +1208,12 @@ def _filterwarnings(filters, quiet=False):
     """
     # Clear the warning registry of the calling module
     # in order to re-raise the warnings.
-    frame = sys._getframe(2)
-    registry = frame.f_globals.get('__warningregistry__')
+    # TODO(T43303879): Implement sys._getframe
+    # frame = sys._getframe(2)
+    # registry = frame.f_globals.get('__warningregistry__')
+    registry = sys._getframe_globals(2).get('__warningregistry__')
     if registry:
-        registry.clear()
+       registry.clear()
     with warnings.catch_warnings(record=True) as w:
         # Set filter "always" to record all warnings.  Because
         # test_warnings swap the module, we need to look up in
@@ -1467,10 +1482,11 @@ def transient_internet(resource_name, *, timeout=30.0, errnos=()):
         if timeout is not None:
             socket.setdefaulttimeout(timeout)
         yield
-    except nntplib.NNTPTemporaryError as err:
-        if verbose:
-            sys.stderr.write(denied.args[0] + "\n")
-        raise denied from err
+    # TODO(T53553323): Import nntplib
+    #except nntplib.NNTPTemporaryError as err:
+    #    if verbose:
+    #        sys.stderr.write(denied.args[0] + "\n")
+    #    raise denied from err
     except OSError as err:
         # urllib can wrap original socket errors multiple times (!), we must
         # unwrap to get at the original error.
@@ -2032,9 +2048,11 @@ def run_unittest(*classes):
 def _check_docstrings():
     """Just used to check if docstrings are enabled"""
 
-MISSING_C_DOCSTRINGS = (check_impl_detail() and
-                        sys.platform != 'win32' and
-                        not sysconfig.get_config_var('WITH_DOC_STRINGS'))
+# TODO(T53108940): Implement open
+#MISSING_C_DOCSTRINGS = (check_impl_detail() and
+#                        sys.platform != 'win32' and
+#                        not sysconfig.get_config_var('WITH_DOC_STRINGS'))
+MISSING_C_DOCSTRINGS = False
 
 HAVE_DOCSTRINGS = (_check_docstrings.__doc__ is not None and
                    not MISSING_C_DOCSTRINGS)

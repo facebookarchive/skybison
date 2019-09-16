@@ -219,7 +219,8 @@ stderr = _IOStream(_stderr_fd)
 stdout = _IOStream(_stdout_fd)
 
 
-version = "3.6.8+"
+# TODO(T53705923): Automatically populate version string with meaningful values
+version = "3.6.8+ (master, January 1 1970, 00:00:00) [clang]"
 
 
 warnoptions = []

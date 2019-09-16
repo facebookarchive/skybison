@@ -62,7 +62,9 @@ class RegressionTestResult(unittest.TextTestResult):
         e.set('status', args.pop('status', 'run'))
         e.set('result', args.pop('result', 'completed'))
         if self.__start_time:
-            e.set('time', f'{time.perf_counter() - self.__start_time:0.6f}')
+            # TODO(T41034832): Implement float.__format__
+            #e.set('time', f'{time.perf_counter() - self.__start_time:0.6f}')
+            e.set('time', '%0.6f' % (time.perf_counter() - self.__start_time))
 
         if capture:
             if self._stdout_buffer is not None:
