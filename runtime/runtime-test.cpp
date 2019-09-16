@@ -1111,7 +1111,7 @@ TEST_F(RuntimeTest, Random) {
   EXPECT_NE(r3, r4);
 }
 
-TEST_F(RuntimeTest, trackNativeGcObjectAndUntrackNativeGcObject) {
+TEST_F(RuntimeTest, TrackNativeGcObjectAndUntrackNativeGcObject) {
   ListEntry entry0{nullptr, nullptr};
   ListEntry entry1{nullptr, nullptr};
 

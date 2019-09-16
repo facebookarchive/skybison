@@ -886,7 +886,7 @@ result = d["hello"]
   EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result"), 5));
 }
 
-TEST_F(DictBuiltinsTest, nextBucketProbesAllBuckets) {
+TEST_F(DictBuiltinsTest, NextBucketProbesAllBuckets) {
   HandleScope scope(thread_);
   Dict dict(&scope, runtime_.newDict());
   Object key(&scope, runtime_.newInt(123));

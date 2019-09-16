@@ -1441,7 +1441,7 @@ s = {*[0, 1], *{2, 3}, *(4, 5), *[]}
   EXPECT_TRUE(setIncludes(thread_, set_s, small_int));
 }
 
-TEST_F(BuildString, buildStringEmpty) {
+TEST_F(BuildString, BuildStringEmpty) {
   HandleScope scope(thread_);
   Code code(&scope, newEmptyCode());
 
@@ -1451,7 +1451,7 @@ TEST_F(BuildString, buildStringEmpty) {
   EXPECT_TRUE(isStrEqualsCStr(runCode(code), ""));
 }
 
-TEST_F(BuildString, buildStringSingle) {
+TEST_F(BuildString, BuildStringSingle) {
   HandleScope scope(thread_);
   Code code(&scope, newEmptyCode());
 
@@ -1466,7 +1466,7 @@ TEST_F(BuildString, buildStringSingle) {
   EXPECT_TRUE(isStrEqualsCStr(runCode(code), "foo"));
 }
 
-TEST_F(BuildString, buildStringMultiSmall) {
+TEST_F(BuildString, BuildStringMultiSmall) {
   HandleScope scope(thread_);
   Code code(&scope, newEmptyCode());
 
@@ -1484,7 +1484,7 @@ TEST_F(BuildString, buildStringMultiSmall) {
   EXPECT_TRUE(isStrEqualsCStr(runCode(code), "foobar"));
 }
 
-TEST_F(BuildString, buildStringMultiLarge) {
+TEST_F(BuildString, BuildStringMultiLarge) {
   HandleScope scope(thread_);
   Code code(&scope, newEmptyCode());
 
@@ -1504,7 +1504,7 @@ TEST_F(BuildString, buildStringMultiLarge) {
   EXPECT_TRUE(isStrEqualsCStr(runCode(code), "helloworldpython"));
 }
 
-TEST_F(UnpackSeq, unpackRange) {
+TEST_F(UnpackSeq, UnpackRange) {
   const char* src = R"(
 [a ,b, c] = range(2, 5)
 )";
@@ -1516,7 +1516,7 @@ TEST_F(UnpackSeq, unpackRange) {
 
 // LIST_APPEND(listAdd) in list_comp, followed by unpack
 // TODO(rkng): list support in BINARY_ADD
-TEST_F(UnpackList, unpackListCompAppend) {
+TEST_F(UnpackList, UnpackListCompAppend) {
   const char* src = R"(
 a = [1, 2, 3]
 b = [x for x in a]
@@ -1554,7 +1554,7 @@ b = {x:x for x in a}
   EXPECT_EQ(dict_b.numItems(), 3);
 }
 
-TEST_F(UnpackList, unpackNestedLists) {
+TEST_F(UnpackList, UnpackNestedLists) {
   const char* src = R"(
 b = [[1,2], [3,4,5]]
 b1, b2 = b
@@ -1576,7 +1576,7 @@ b21, b22, b23 = b2
   EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "b23"), 5));
 }
 
-TEST_F(UnpackSeq, unpackRangeStep) {
+TEST_F(UnpackSeq, UnpackRangeStep) {
   const char* src = R"(
 [a ,b, c, d] = range(2, 10, 2)
 )";
@@ -1587,7 +1587,7 @@ TEST_F(UnpackSeq, unpackRangeStep) {
   EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "d"), 8));
 }
 
-TEST_F(UnpackSeq, unpackRangeNeg) {
+TEST_F(UnpackSeq, UnpackRangeNeg) {
   const char* src = R"(
 [a ,b, c, d, e] = range(-10, 0, 2)
 )";
@@ -1599,7 +1599,7 @@ TEST_F(UnpackSeq, unpackRangeNeg) {
   EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "e"), -2));
 }
 
-TEST_F(ListIterTest, build) {
+TEST_F(ListIterTest, Build) {
   const char* src = R"(
 a = [1, 2, 3]
 result = []
@@ -1612,7 +1612,7 @@ for x in a:
   EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
-TEST_F(ListAppendTest, buildAndUnpack) {
+TEST_F(ListAppendTest, BuildAndUnpack) {
   const char* src = R"(
 a = [1, 2]
 b = [x for x in [a] * 3]

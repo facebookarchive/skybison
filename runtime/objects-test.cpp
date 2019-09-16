@@ -418,7 +418,7 @@ TEST_F(MutableBytesTest, BecomeStrTurnsObjectIntoLargeStr) {
   EXPECT_TRUE(isStrEqualsCStr(*test, "hello world!"));
 }
 
-TEST_F(SliceTest, adjustIndices) {
+TEST_F(SliceTest, AdjustIndices) {
   // Test: 0:10:1 on len: 10
   word length = 10;
   word start = 0;
@@ -478,7 +478,7 @@ TEST_F(SliceTest, adjustIndices) {
   ASSERT_EQ(stop, 9);
 }
 
-TEST_F(SliceTest, adjustIndicesOutOfBounds) {
+TEST_F(SliceTest, AdjustIndicesOutOfBounds) {
   // Test: 10:5:1 on len: 5
   word length = 5;
   word start = 10;
