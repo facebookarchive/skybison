@@ -28,10 +28,12 @@ _bytes_maketrans = _bytes_maketrans  # noqa: F821
 _bytes_repeat = _bytes_repeat  # noqa: F821
 _bytes_split = _bytes_split  # noqa: F821
 _bytes_split_whitespace = _bytes_split_whitespace  # noqa: F821
+_byteslike_check = _byteslike_check  # noqa: F821
 _byteslike_count = _byteslike_count  # noqa: F821
 _byteslike_endswith = _byteslike_endswith  # noqa: F821
 _byteslike_find_byteslike = _byteslike_find_byteslike  # noqa: F821
 _byteslike_find_int = _byteslike_find_int  # noqa: F821
+_byteslike_guard = _byteslike_guard  # noqa: F821
 _byteslike_rfind_byteslike = _byteslike_rfind_byteslike  # noqa: F821
 _byteslike_rfind_int = _byteslike_rfind_int  # noqa: F821
 _classmethod = _classmethod  # noqa: F821
@@ -713,11 +715,7 @@ class UnicodeDecodeError(UnicodeError, bootstrap=True):
         if not _str_check(reason):
             raise TypeError(f"argument 5 must be str, not {_type(reason).__name__}")
         self.reason = reason
-        # TODO(T38246066): Replace with a check for the buffer protocol
-        if not isinstance(obj, (bytes, bytearray)):
-            raise TypeError(
-                f"a bytes-like object is required, not '{_type(obj).__name__}'"
-            )
+        _byteslike_guard(obj)
         self.object = obj
 
 
@@ -1430,8 +1428,7 @@ class bytearray(bootstrap=True):
         _bytearray_guard(self)
         start = 0 if start is None else _index(start)
         end = _bytearray_len(self) if end is None else _index(end)
-        # TODO(T38246066) allow any bytes-like object
-        if _bytes_check(sub) or _bytearray_check(sub):
+        if _byteslike_check(sub):
             return _byteslike_count(self, sub, start, end)
         if _int_check(sub):
             return _byteslike_count(self, sub, start, end)
@@ -1473,8 +1470,7 @@ class bytearray(bootstrap=True):
         _bytearray_guard(self)
         start = 0 if start is None else _index(start)
         end = _bytearray_len(self) if end is None else _index(end)
-        # TODO(T38246066) allow any bytes-like object
-        if _bytes_check(sub) or _bytearray_check(sub):
+        if _byteslike_check(sub):
             return _byteslike_find_byteslike(self, sub, start, end)
         if _int_check(sub):
             return _byteslike_find_int(self, sub, start, end)
@@ -1570,8 +1566,7 @@ class bytearray(bootstrap=True):
         _bytearray_guard(self)
         start = 0 if start is None else _index(start)
         end = _bytearray_len(self) if end is None else _index(end)
-        # TODO(T38246066) allow any bytes-like object
-        if _bytes_check(sub) or _bytearray_check(sub):
+        if _byteslike_check(sub):
             return _byteslike_rfind_byteslike(self, sub, start, end)
         if _int_check(sub):
             return _byteslike_rfind_int(self, sub, start, end)
@@ -1590,11 +1585,7 @@ class bytearray(bootstrap=True):
         return _byteslike_rfind_int(self, sub, start, end)
 
     def rindex(self, sub, start=None, end=None) -> int:
-        if not _bytearray_check(self):
-            raise TypeError(
-                "'rindex' requires a 'bytearray' object "
-                f"but received a '{_type(self).__name__}'"
-            )
+        _bytearray_guard(self)
         result = bytearray.rfind(self, sub, start, end)
         if result is -1:
             raise ValueError("subsection not found")
@@ -1771,8 +1762,7 @@ class bytes(bootstrap=True):
         _bytes_guard(self)
         start = 0 if start is None else _index(start)
         end = _bytes_len(self) if end is None else _index(end)
-        # TODO(T38246066) allow any bytes-like object
-        if _bytes_check(sub) or _bytearray_check(sub):
+        if _byteslike_check(sub):
             return _byteslike_count(self, sub, start, end)
         if _int_check(sub):
             return _byteslike_count(self, sub, start, end)
@@ -1811,8 +1801,7 @@ class bytes(bootstrap=True):
         _bytes_guard(self)
         start = 0 if start is None else _index(start)
         end = _bytes_len(self) if end is None else _index(end)
-        # TODO(T38246066) allow any bytes-like object
-        if _bytes_check(sub) or _bytearray_check(sub):
+        if _byteslike_check(sub):
             return _byteslike_find_byteslike(self, sub, start, end)
         if _int_check(sub):
             return _byteslike_find_int(self, sub, start, end)
@@ -1884,14 +1873,8 @@ class bytes(bootstrap=True):
 
     @staticmethod
     def maketrans(frm, to) -> bytes:
-        if not _bytes_check(frm) and not _bytearray_check(frm):
-            raise TypeError(
-                f"a bytes-like object is required, not '{_type(frm).__name__}'"
-            )
-        if not _bytes_check(to) and not _bytearray_check(to):
-            raise TypeError(
-                f"a bytes-like object is required, not '{_type(to).__name__}'"
-            )
+        _byteslike_guard(frm)
+        _byteslike_guard(to)
         if len(frm) != len(to):
             raise ValueError("maketrans arguments must have same length")
         return _bytes_maketrans(frm, to)
@@ -1906,8 +1889,7 @@ class bytes(bootstrap=True):
         _bytes_guard(self)
         start = 0 if start is None else _index(start)
         end = bytes.__len__(self) if end is None else _index(end)
-        # TODO(T38246066) allow any bytes-like object
-        if _bytes_check(sub) or _bytearray_check(sub):
+        if _byteslike_check(sub):
             return _byteslike_rfind_byteslike(self, sub, start, end)
         if _int_check(sub):
             return _byteslike_rfind_int(self, sub, start, end)
@@ -1926,11 +1908,7 @@ class bytes(bootstrap=True):
         return _byteslike_rfind_int(self, sub, start, end)
 
     def rindex(self, sub, start=None, end=None) -> int:
-        if not _bytes_check(self):
-            raise TypeError(
-                "'rindex' requires a 'bytes' object "
-                f"but received a '{_type(self).__name__}'"
-            )
+        _bytes_guard(self)
         result = bytes.rfind(self, sub, start, end)
         if result is -1:
             raise ValueError("subsection not found")
@@ -1954,10 +1932,8 @@ class bytes(bootstrap=True):
             maxsplit = _index(maxsplit)
         if sep is None:
             return _bytes_split_whitespace(self, maxsplit)
-        # TODO(T38246066): support buffer protocol
-        if _bytes_check(sep) or _bytearray_check(sep):
-            return _bytes_split(self, sep, maxsplit)
-        raise TypeError(f"a bytes-like object is required, not '{_type(sep).__name__}'")
+        _byteslike_guard(sep)
+        return _bytes_split(self, sep, maxsplit)
 
     def splitlines(self, keepends=False):
         _unimplemented()
@@ -3944,8 +3920,7 @@ class str(bootstrap=True):
             return _str_from_str(cls, result)
         if _str_check(obj):
             raise TypeError("decoding str is not supported")
-        # TODO(T38246066): Replace with a check for the buffer protocol
-        if not isinstance(obj, (bytes, bytearray)):
+        if not _byteslike_check(obj):
             raise TypeError(
                 "decoding to str: need a bytes-like object, "
                 f"'{_type(obj).__name__}' found"

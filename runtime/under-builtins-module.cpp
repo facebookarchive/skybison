@@ -94,10 +94,12 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderBytesRepeat, underBytesRepeat},
     {SymbolId::kUnderBytesSplit, underBytesSplit},
     {SymbolId::kUnderBytesSplitWhitespace, underBytesSplitWhitespace},
+    {SymbolId::kUnderByteslikeCheck, underByteslikeCheck},
     {SymbolId::kUnderByteslikeCount, underByteslikeCount},
     {SymbolId::kUnderByteslikeEndsWith, underByteslikeEndsWith},
     {SymbolId::kUnderByteslikeFindByteslike, underByteslikeFindByteslike},
     {SymbolId::kUnderByteslikeFindInt, underByteslikeFindInt},
+    {SymbolId::kUnderByteslikeGuard, underByteslikeGuard},
     {SymbolId::kUnderByteslikeRfindByteslike, underByteslikeRFindByteslike},
     {SymbolId::kUnderByteslikeRfindInt, underByteslikeRFindInt},
     {SymbolId::kUnderClassMethod, underClassMethod},
@@ -260,6 +262,8 @@ const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
     SymbolId::kUnderBytesCheck,
     SymbolId::kUnderBytesGuard,
     SymbolId::kUnderBytesLen,
+    SymbolId::kUnderByteslikeCheck,
+    SymbolId::kUnderByteslikeGuard,
     SymbolId::kUnderDictCheck,
     SymbolId::kUnderDictCheckExact,
     SymbolId::kUnderDictGuard,
@@ -888,6 +892,12 @@ RawObject UnderBuiltinsModule::underBytesSplitWhitespace(Thread* thread,
   return *result;
 }
 
+RawObject UnderBuiltinsModule::underByteslikeCheck(Thread* thread, Frame* frame,
+                                                   word nargs) {
+  Arguments args(frame, nargs);
+  return Bool::fromBool(thread->runtime()->isByteslike(args.get(0)));
+}
+
 RawObject UnderBuiltinsModule::underByteslikeCount(Thread* thread, Frame* frame,
                                                    word nargs) {
   HandleScope scope(thread);
@@ -1064,6 +1074,18 @@ RawObject UnderBuiltinsModule::underByteslikeFindInt(Thread* thread,
                   start.asWordSaturated(), end.asWordSaturated()));
   }
   UNIMPLEMENTED("bytes-like other than bytes, bytearray");
+}
+
+RawObject UnderBuiltinsModule::underByteslikeGuard(Thread* thread, Frame* frame,
+                                                   word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object obj(&scope, args.get(0));
+  if (thread->runtime()->isByteslike(*obj)) {
+    return NoneType::object();
+  }
+  return thread->raiseWithFmt(
+      LayoutId::kTypeError, "a bytes-like object is required, not '%T'", &obj);
 }
 
 RawObject UnderBuiltinsModule::underByteslikeRFindByteslike(Thread* thread,

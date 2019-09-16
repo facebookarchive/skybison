@@ -53,6 +53,21 @@ static bool underBytesLen(Frame* frame) {
   return false;
 }
 
+static bool underByteslikeCheck(Thread* thread, Frame* frame) {
+  frame->setTopValue(
+      Bool::fromBool(thread->runtime()->isByteslike(frame->popValue())));
+  return true;
+}
+
+static bool underByteslikeGuard(Thread* thread, Frame* frame) {
+  if (thread->runtime()->isByteslike(frame->topValue())) {
+    frame->popValue();
+    frame->setTopValue(NoneType::object());
+    return true;
+  }
+  return false;
+}
+
 static bool underDictCheck(Thread* thread, Frame* frame) {
   frame->setTopValue(
       Bool::fromBool(thread->runtime()->isInstanceOfDict(frame->popValue())));
@@ -446,6 +461,10 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
       return underBytesGuard(thread, frame);
     case SymbolId::kUnderBytesLen:
       return underBytesLen(frame);
+    case SymbolId::kUnderByteslikeCheck:
+      return underByteslikeCheck(thread, frame);
+    case SymbolId::kUnderByteslikeGuard:
+      return underByteslikeGuard(thread, frame);
     case SymbolId::kUnderDictCheck:
       return underDictCheck(thread, frame);
     case SymbolId::kUnderDictCheckExact:

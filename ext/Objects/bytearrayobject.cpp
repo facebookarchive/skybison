@@ -40,13 +40,9 @@ PY_EXPORT PyObject* PyByteArray_Concat(PyObject* a, PyObject* b) {
   Object left(&scope, ApiHandle::fromPyObject(a)->asObject());
   Object right(&scope, ApiHandle::fromPyObject(b)->asObject());
   Runtime* runtime = thread->runtime();
-  bool valid_left = runtime->isInstanceOfByteArray(*left) ||
-                    runtime->isInstanceOfBytes(*left);
-  bool valid_right = runtime->isInstanceOfByteArray(*right) ||
-                     runtime->isInstanceOfBytes(*right);
-  if (!valid_left || !valid_right) {
-    thread->raiseWithFmt(LayoutId::kTypeError,
-                         "can only concatenate bytearray or bytes");
+  if (!runtime->isByteslike(*left) || !runtime->isByteslike(*right)) {
+    thread->raiseWithFmt(LayoutId::kTypeError, "can't concat %T to %T", &left,
+                         &right);
     return nullptr;
   }
   Object result(&scope, runtime->newByteArray());

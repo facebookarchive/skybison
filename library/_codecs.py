@@ -4,6 +4,7 @@
 # their definitions and will complain without this gross circular helper here.
 _bytearray_check = _bytearray_check  # noqa: F821
 _bytes_check = _bytes_check  # noqa: F821
+_byteslike_guard = _byteslike_guard  # noqa: F821
 _index = _index  # noqa: F821
 _int_check = _int_check  # noqa: F821
 _patch = _patch  # noqa: F821
@@ -106,10 +107,7 @@ def _ascii_decode(data: str, errors: str, index: int, out: _strarray):
 
 
 def ascii_decode(data: bytes, errors: str = "strict"):
-    if not _bytes_check(data):
-        raise TypeError(
-            f"a bytes-like object is required, not '{_type(data).__name__}'"
-        )
+    _byteslike_guard(data)
     if not _str_check(errors):
         raise TypeError(
             "ascii_decode() argument 2 must be str or None, not "
@@ -196,8 +194,8 @@ def _escape_decode(data: bytes, errors: str, recode_encoding: str):
 def _escape_decode_stateful(
     data: bytes, errors: str = "strict", recode_encoding: str = ""
 ):
-    if not (_bytes_check(data) or _str_check(data)):
-        raise TypeError(f"a bytes-like object is required, not '{type(data).__name__}'")
+    if not _str_check(data):
+        _byteslike_guard(data)
     if not _str_check(errors):
         raise TypeError(
             "escape_decode() argument 2 must be str or None, not "
@@ -219,10 +217,7 @@ def _latin_1_decode(data: bytes):
 
 
 def latin_1_decode(data: bytes, errors: str = "strict"):
-    if not _bytes_check(data):
-        raise TypeError(
-            f"a bytes-like object is required, not '{_type(data).__name__}'"
-        )
+    _byteslike_guard(data)
     if not _str_check(errors):
         raise TypeError(
             "latin_1_decode() argument 2 must be str or None, not "
@@ -294,8 +289,8 @@ def _unicode_escape_decode(data: bytes, errors: str, index: int, out: _strarray)
 
 
 def _unicode_escape_decode_stateful(data: bytes, errors: str = "strict"):
-    if not _bytes_check(data) and not _bytearray_check(data):
-        raise TypeError(f"a bytes-like object is required, not '{type(data).__name__}'")
+    if not _str_check(data):
+        _byteslike_guard(data)
     if not _str_check(errors):
         raise TypeError(
             "unicode_escape_decode() argument 2 must be str or None, not "
@@ -339,11 +334,7 @@ def _utf_8_decode(
 def _utf_8_decode_stateful(
     data: bytes, errors: str = "strict", is_stateful: bool = False
 ):
-    # TODO(T45849551): Make decoders accept byte-like objects as input
-    if not _bytes_check(data):
-        raise TypeError(
-            f"a bytes-like object is required, not '{_type(data).__name__}'"
-        )
+    _byteslike_guard(data)
     if not _str_check(errors) and not None:
         raise TypeError(
             "utf_8_decode() argument 2 must be str or None, not "

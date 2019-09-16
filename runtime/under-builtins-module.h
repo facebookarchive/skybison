@@ -45,6 +45,8 @@ class UnderBuiltinsModule {
   static RawObject underBytesSplit(Thread* thread, Frame* frame, word nargs);
   static RawObject underBytesSplitWhitespace(Thread* thread, Frame* frame,
                                              word nargs);
+  static RawObject underByteslikeCheck(Thread* thread, Frame* frame,
+                                       word nargs);
   static RawObject underByteslikeCount(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underByteslikeEndsWith(Thread* thread, Frame* frame,
@@ -53,6 +55,8 @@ class UnderBuiltinsModule {
                                                word nargs);
   static RawObject underByteslikeFindInt(Thread* thread, Frame* frame,
                                          word nargs);
+  static RawObject underByteslikeGuard(Thread* thread, Frame* frame,
+                                       word nargs);
   static RawObject underByteslikeRFindByteslike(Thread* thread, Frame* frame,
                                                 word nargs);
   static RawObject underByteslikeRFindInt(Thread* thread, Frame* frame,

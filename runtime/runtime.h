@@ -732,6 +732,11 @@ class Runtime {
            isInstanceOfUnicodeTranslateError(instance);
   }
 
+  inline bool isByteslike(RawObject obj) {
+    // TODO(T38246066): support bytes-like objects other than bytes, bytearray
+    return isInstanceOfBytes(obj) || isInstanceOfByteArray(obj);
+  }
+
   // Clear the allocated memory from all extension related objects
   void deallocExtensions();
 

@@ -170,10 +170,12 @@ class Runtime;
   V(UnderBytesRepeat, "_bytes_repeat")                                         \
   V(UnderBytesSplit, "_bytes_split")                                           \
   V(UnderBytesSplitWhitespace, "_bytes_split_whitespace")                      \
+  V(UnderByteslikeCheck, "_byteslike_check")                                   \
   V(UnderByteslikeCount, "_byteslike_count")                                   \
   V(UnderByteslikeEndsWith, "_byteslike_endswith")                             \
   V(UnderByteslikeFindByteslike, "_byteslike_find_byteslike")                  \
   V(UnderByteslikeFindInt, "_byteslike_find_int")                              \
+  V(UnderByteslikeGuard, "_byteslike_guard")                                   \
   V(UnderByteslikeRfindByteslike, "_byteslike_rfind_byteslike")                \
   V(UnderByteslikeRfindInt, "_byteslike_rfind_int")                            \
   V(UnderClassMethod, "_classmethod")                                          \

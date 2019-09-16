@@ -119,6 +119,11 @@ def _bytes_split_whitespace(self, maxsplit):
 
 
 @_patch
+def _byteslike_check(obj):
+    pass
+
+
+@_patch
 def _byteslike_count(self, sub, start, end):
     pass
 
@@ -135,6 +140,11 @@ def _byteslike_find_byteslike(self, sub, start, end):
 
 @_patch
 def _byteslike_find_int(self, sub, start, end):
+    pass
+
+
+@_patch
+def _byteslike_guard(obj):
     pass
 
 
