@@ -941,11 +941,42 @@ FUNC2(atan2, m_atan2,
 FUNC1(atanh, m_atanh, 0,
       "atanh(x)\n\nReturn the inverse hyperbolic tangent of x.")
 
+
+typedef struct {
+    PyObject *dunder_get;
+    PyObject *dunder_ceil;
+    PyObject *dunder_floor;
+    PyObject *dunder_trunc;
+} mathstate;
+
+static struct PyModuleDef mathmodule;
+
+#define mathstate(o) ((mathstate *)PyModule_GetState(o))
+#define mathstate_global ((mathstate *)PyModule_GetState(PyState_FindModule(&mathmodule)))
+
+/* Like _PyObject_LookupSpecial but takes an object for the attribute name
+   instead of a _Py_Identifier */
+static PyObject*
+lookup_special(PyObject *self, PyObject *func_name) {
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject *func = _PyType_Lookup(tp, func_name);
+    if (func != NULL) {
+        PyObject *getter = _PyType_Lookup(Py_TYPE(func), mathstate_global->dunder_get);
+        if (getter == NULL) {
+            Py_INCREF(func);
+        } else {
+            func = PyObject_CallFunctionObjArgs(
+                getter, func, self, (PyObject *)tp, NULL);
+        }
+    }
+    return func;
+}
+
+
 static PyObject * math_ceil(PyObject *self, PyObject *number) {
-    _Py_IDENTIFIER(__ceil__);
     PyObject *method, *result;
 
-    method = _PyObject_LookupSpecial(number, &PyId___ceil__);
+    method = lookup_special(number, mathstate_global->dunder_ceil);
     if (method == NULL) {
         if (PyErr_Occurred())
             return NULL;
@@ -982,10 +1013,9 @@ FUNC1(fabs, fabs, 0,
       "fabs(x)\n\nReturn the absolute value of the float x.")
 
 static PyObject * math_floor(PyObject *self, PyObject *number) {
-    _Py_IDENTIFIER(__floor__);
     PyObject *method, *result;
 
-    method = _PyObject_LookupSpecial(number, &PyId___floor__);
+    method = lookup_special(number, mathstate_global->dunder_floor);
     if (method == NULL) {
         if (PyErr_Occurred())
             return NULL;
@@ -1526,20 +1556,14 @@ PyDoc_STRVAR(math_factorial_doc,
 static PyObject *
 math_trunc(PyObject *self, PyObject *number)
 {
-    _Py_IDENTIFIER(__trunc__);
     PyObject *trunc, *result;
 
-    if (Py_TYPE(number)->tp_dict == NULL) {
-        if (PyType_Ready(Py_TYPE(number)) < 0)
-            return NULL;
-    }
-
-    trunc = _PyObject_LookupSpecial(number, &PyId___trunc__);
+    trunc = lookup_special(number, mathstate_global->dunder_trunc);
     if (trunc == NULL) {
         if (!PyErr_Occurred())
             PyErr_Format(PyExc_TypeError,
                          "type %.100s doesn't define __trunc__ method",
-                         Py_TYPE(number)->tp_name);
+                         _PyType_Name(Py_TYPE(number)));
         return NULL;
     }
     result = PyObject_CallFunctionObjArgs(trunc, NULL);
@@ -2120,17 +2144,42 @@ PyDoc_STRVAR(module_doc,
 "This module is always available.  It provides access to the\n"
 "mathematical functions defined by the C standard.");
 
+static int
+math_clear(PyObject *module)
+{
+    Py_CLEAR(mathstate(module)->dunder_get);
+    Py_CLEAR(mathstate(module)->dunder_ceil);
+    Py_CLEAR(mathstate(module)->dunder_floor);
+    Py_CLEAR(mathstate(module)->dunder_trunc);
+    return 0;
+}
+
+static int
+math_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    Py_VISIT(mathstate(module)->dunder_get);
+    Py_VISIT(mathstate(module)->dunder_ceil);
+    Py_VISIT(mathstate(module)->dunder_floor);
+    Py_VISIT(mathstate(module)->dunder_trunc);
+    return 0;
+}
+
+static void
+math_free(void *module)
+{
+   math_clear((PyObject *)module);
+}
 
 static struct PyModuleDef mathmodule = {
     PyModuleDef_HEAD_INIT,
     "math",
     module_doc,
-    -1,
+    sizeof(mathstate),
     math_methods,
     NULL,
-    NULL,
-    NULL,
-    NULL
+    math_traverse,
+    math_clear,
+    math_free,
 };
 
 PyMODINIT_FUNC
@@ -2155,6 +2204,15 @@ PyInit_math(void)
 #if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
     PyModule_AddObject(m, "nan", PyFloat_FromDouble(m_nan()));
 #endif
+
+    if ((mathstate(m)->dunder_get = PyUnicode_InternFromString("__get__")) == NULL)
+        return NULL;
+    if ((mathstate(m)->dunder_ceil = PyUnicode_InternFromString("__ceil__")) == NULL)
+        return NULL;
+    if ((mathstate(m)->dunder_floor = PyUnicode_InternFromString("__floor__")) == NULL)
+        return NULL;
+    if ((mathstate(m)->dunder_trunc = PyUnicode_InternFromString("__trunc__")) == NULL)
+        return NULL;
 
     PyState_AddModule(m, &mathmodule);
     return m;

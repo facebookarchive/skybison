@@ -66,6 +66,19 @@ TEST_F(ConfigExtensionApiTest, ImportMathReturnsModule) {
   EXPECT_TRUE(PyModule_Check(module));
 }
 
+TEST_F(ConfigExtensionApiTest, ImportMathModuleMethods) {
+  PyRun_SimpleString(R"(
+import math
+a = math.sin(1)
+b = math.floor(12.34)
+)");
+  PyObjectPtr a(moduleGet("__main__", "a"));
+  PyObjectPtr b(moduleGet("__main__", "b"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyFloat_Check(a), 1);
+  EXPECT_EQ(PyLong_Check(b), 1);
+}
+
 TEST_F(ConfigExtensionApiTest, ImportSelectReturnsModule) {
   PyObjectPtr module(PyImport_ImportModule("select"));
   ASSERT_NE(module, nullptr);
