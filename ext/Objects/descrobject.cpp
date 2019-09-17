@@ -11,9 +11,7 @@ PY_EXPORT PyObject* PyDescr_NewClassMethod(PyTypeObject* type,
                                            PyMethodDef* def) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object type_obj(
-      &scope,
-      ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type))->asObject());
+  Object type_obj(&scope, ApiHandle::fromPyTypeObject(type)->asObject());
   Object function(&scope, functionFromMethodDef(
                               thread, def->ml_name,
                               bit_cast<void*>(def->ml_meth), def->ml_doc,

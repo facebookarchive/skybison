@@ -33,6 +33,10 @@ class ApiHandle : public PyObject {
     return static_cast<ApiHandle*>(py_obj);
   }
 
+  static ApiHandle* fromPyTypeObject(PyTypeObject* type) {
+    return fromPyObject(reinterpret_cast<PyObject*>(type));
+  }
+
   // Visit all reference_ members of live ApiHandles.
   static void visitReferences(RawObject handles, PointerVisitor* visitor);
 

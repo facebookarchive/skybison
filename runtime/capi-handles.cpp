@@ -195,9 +195,7 @@ bool ApiHandle::isType() {
   return this->type() == ApiHandle::fromPyObject(type())->type();
 }
 
-ApiHandle* ApiHandle::type() {
-  return ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(ob_type));
-}
+ApiHandle* ApiHandle::type() { return ApiHandle::fromPyTypeObject(ob_type); }
 
 void* ApiHandle::cache() {
   // Only managed objects can have a cached value

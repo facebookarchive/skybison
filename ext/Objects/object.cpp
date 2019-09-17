@@ -228,9 +228,7 @@ PY_EXPORT PyObject* PyObject_Init(PyObject* obj, PyTypeObject* typeobj) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Type type_obj(&scope,
-                ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(typeobj))
-                    ->asObject());
+  Type type_obj(&scope, ApiHandle::fromPyTypeObject(typeobj)->asObject());
   Layout layout(&scope, type_obj.instanceLayout());
   Object native_proxy(&scope, runtime->newInstance(layout));
   runtime->setNativeProxyPtr(*native_proxy, obj);

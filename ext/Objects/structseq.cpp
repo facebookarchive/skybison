@@ -76,9 +76,7 @@ PY_EXPORT PyObject* PyStructSequence_New(PyTypeObject* pytype) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Type type(
-      &scope,
-      ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(pytype))->asObject());
+  Type type(&scope, ApiHandle::fromPyTypeObject(pytype)->asObject());
   Str n_fields_key(&scope, runtime->symbols()->NFields());
   Int n_fields(&scope, runtime->attributeAt(thread, type, n_fields_key));
   Tuple tuple(&scope, runtime->newTuple(n_fields.asWord()));

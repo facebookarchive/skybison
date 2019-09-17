@@ -132,9 +132,7 @@ PY_EXPORT unsigned long PyType_GetFlags(PyTypeObject* type_obj) {
         "Type is unmanaged. Please initialize using PyType_FromSpec");
 
   HandleScope scope;
-  Type type(&scope,
-            ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type_obj))
-                ->asObject());
+  Type type(&scope, ApiHandle::fromPyTypeObject(type_obj)->asObject());
   if (type.isBuiltin()) return Py_TPFLAGS_DEFAULT;
 
   if (type.extensionSlots().isNoneType()) {
@@ -1122,9 +1120,7 @@ PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot) {
   }
 
   HandleScope scope(thread);
-  Type type(&scope,
-            ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type_obj))
-                ->asObject());
+  Type type(&scope, ApiHandle::fromPyTypeObject(type_obj)->asObject());
   if (type.isBuiltin()) {
     thread->raiseBadInternalCall();
     return nullptr;
@@ -1752,9 +1748,7 @@ static void inheritSlots(const Type& type, const Type& base) {
 static int isBuiltinType(PyTypeObject* type) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Type managed_type(
-      &scope,
-      ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type))->asObject());
+  Type managed_type(&scope, ApiHandle::fromPyTypeObject(type)->asObject());
   return managed_type.isBuiltin();
 }
 
@@ -2008,9 +2002,7 @@ PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type_obj,
 
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Type type(&scope,
-            ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type_obj))
-                ->asObject());
+  Type type(&scope, ApiHandle::fromPyTypeObject(type_obj)->asObject());
   DCHECK(!type.isBuiltin(),
          "Type is unmanaged. Please initialize using PyType_FromSpec");
   DCHECK(!type.extensionSlots().isNoneType(),
@@ -2067,12 +2059,8 @@ PY_EXPORT int PyType_IsSubtype(PyTypeObject* a, PyTypeObject* b) {
   if (a == b) return 1;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Type a_obj(
-      &scope,
-      ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(a))->asObject());
-  Type b_obj(
-      &scope,
-      ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(b))->asObject());
+  Type a_obj(&scope, ApiHandle::fromPyTypeObject(a)->asObject());
+  Type b_obj(&scope, ApiHandle::fromPyTypeObject(b)->asObject());
   return thread->runtime()->isSubclass(a_obj, b_obj) ? 1 : 0;
 }
 
@@ -2092,9 +2080,7 @@ PY_EXPORT const char* _PyType_Name(PyTypeObject* type) {
     return nullptr;
   }
   HandleScope scope(thread);
-  Object obj(
-      &scope,
-      ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type))->asObject());
+  Object obj(&scope, ApiHandle::fromPyTypeObject(type)->asObject());
   if (!thread->runtime()->isInstanceOfType(*obj)) {
     thread->raiseBadInternalCall();
     return nullptr;
