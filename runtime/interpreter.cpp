@@ -2264,18 +2264,6 @@ RawObject Interpreter::storeAttrSetLocation(Thread* thread,
   }
   Object result(&scope, thread->invokeMethod3(object, SymbolId::kDunderSetattr,
                                               name, value));
-  // Invalidate attribute caches for type attribute changes.
-  if (!result.isError() && object.isType()) {
-    // TODO(T46243890): Disable attribute caching when fundamental objects are
-    // modified (e.g., object.__getattribute__).
-    // TODO(T46362789): Move cache invalidation logic into dict API.
-    Type type_object(&scope, *object);
-    DCHECK(name.isStr(), "attribute name must be Str");
-    Str attr_name(&scope, *name);
-    Type value_type(&scope, thread->runtime()->typeOf(*value));
-    icInvalidateCachesForTypeAttr(thread, type_object, attr_name,
-                                  typeIsDataDescriptor(thread, value_type));
-  }
   return *result;
 }
 

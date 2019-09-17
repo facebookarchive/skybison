@@ -364,6 +364,10 @@ RawObject typeSetAttr(Thread* thread, const Type& type,
   Runtime* runtime = thread->runtime();
   DCHECK(runtime->isInternedStr(thread, name_interned),
          "name must be an interned string");
+  // Make sure cache invalidation is correctly done for this.
+  if (runtime->isCacheEnabled()) {
+    terminateIfUnimplementedTypeAttrCacheInvalidation(thread, name_interned);
+  }
   HandleScope scope(thread);
   if (type.isBuiltin()) {
     Object type_name(&scope, type.name());
@@ -389,7 +393,14 @@ RawObject typeSetAttr(Thread* thread, const Type& type,
 
   // No data descriptor found, store the attribute in the type dict
   Dict type_dict(&scope, type.dict());
-  runtime->typeDictAtPutByStr(thread, type_dict, name_interned, value);
+  ValueCell value_cell(&scope, runtime->typeDictAtPutByStr(
+                                   thread, type_dict, name_interned, value));
+  if (!value_cell.dependencyLink().isNoneType()) {
+    // TODO(T46362789): Move cache invalidation logic into dict API.
+    Type value_type(&scope, thread->runtime()->typeOf(*value));
+    icInvalidateCachesForTypeAttr(thread, type, name_interned,
+                                  typeIsDataDescriptor(thread, value_type));
+  }
   return NoneType::object();
 }
 
@@ -528,10 +539,6 @@ RawObject TypeBuiltins::dunderSetattr(Thread* thread, Frame* frame,
   // dict.__setattr__ is special in that it must copy and intern the name.
   Str name_str(&scope, strUnderlying(thread, name));
   Str interned_name(&scope, runtime->internStr(thread, name_str));
-  // Make sure cache invalidation is correctly done for this.
-  if (runtime->isCacheEnabled()) {
-    terminateIfUnimplementedTypeAttrCacheInvalidation(thread, interned_name);
-  }
   Object value(&scope, args.get(2));
   return typeSetAttr(thread, self, interned_name, value);
 }
