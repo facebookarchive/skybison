@@ -30,6 +30,7 @@ of open() are intended to be used as keyword arguments."""
 # helper here.
 _Unbound = _Unbound  # noqa: F821
 _bytes_check = _bytes_check  # noqa: F821
+_byteslike_guard = _byteslike_guard  # noqa: F821
 _float_check = _float_check  # noqa: F821
 _index = _index  # noqa: F821
 _int_check = _int_check  # noqa: F821
@@ -751,11 +752,12 @@ class BytesIO(bootstrap=True):
     """Buffered I/O implementation using an in-memory bytes buffer."""
 
     def __init__(self, initial_bytes=None):
+        if initial_bytes is None:
+            self._buffer = bytearray()
+        else:
+            _byteslike_guard(initial_bytes)
+            self._buffer = bytearray(initial_bytes)
         self._closed = False
-        buf = bytearray()
-        if initial_bytes is not None:
-            buf += initial_bytes
-        self._buffer = buf
         self._pos = 0
         self.__dict__ = {}
 

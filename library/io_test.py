@@ -223,6 +223,18 @@ class _BufferedIOBaseTests(unittest.TestCase):
 
 
 class BytesIOTests(unittest.TestCase):
+    def test_dunder_init_with_none_initial_value_sets_empty_string(self):
+        with _io.BytesIO() as f:
+            self.assertEqual(f.getvalue(), b"")
+
+    def test_dunder_init_with_non_bytes_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "a bytes-like object is required, not 'str'",
+            _io.BytesIO,
+            "not_bytes",
+        )
+
     def test_init_returns_bytesio_instance(self):
         f = _io.BytesIO(b"foo")
         self.assertIsInstance(f, _io.BytesIO)
