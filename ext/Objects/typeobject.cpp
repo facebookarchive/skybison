@@ -17,6 +17,7 @@
 #include "runtime.h"
 #include "trampolines.h"
 #include "tuple-builtins.h"
+#include "type-builtins.h"
 #include "utils.h"
 
 namespace python {
@@ -2070,7 +2071,7 @@ PY_EXPORT void PyType_Modified(PyTypeObject* /* e */) {
 
 PY_EXPORT PyObject* _PyObject_LookupSpecial(PyObject* /* f */,
                                             _Py_Identifier* /* d */) {
-  UNIMPLEMENTED("_PyObject_LookupSpecial");
+  UNIMPLEMENTED("_Py_Identifiers are not supported");
 }
 
 PY_EXPORT const char* _PyType_Name(PyTypeObject* type) {
@@ -2090,9 +2091,26 @@ PY_EXPORT const char* _PyType_Name(PyTypeObject* type) {
       ApiHandle::borrowedReference(thread, type_obj.name()));
 }
 
-PY_EXPORT PyObject* _PyType_Lookup(PyTypeObject* /* type */,
-                                   PyObject* /* name */) {
-  UNIMPLEMENTED("_PyType_Lookup");
+PY_EXPORT PyObject* _PyType_Lookup(PyTypeObject* type, PyObject* name) {
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Type type_obj(
+      &scope,
+      ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type))->asObject());
+  Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
+  if (!runtime->isInstanceOfStr(*name_obj)) {
+    return nullptr;
+  }
+  Object name_hash(&scope, Interpreter::hash(thread, name_obj));
+  if (name_hash.isErrorException()) {
+    return nullptr;
+  }
+  Object res(&scope, typeLookupInMro(thread, type_obj, name_obj, name_hash));
+  if (res.isErrorNotFound()) {
+    return nullptr;
+  }
+  return ApiHandle::borrowedReference(thread, *res);
 }
 
 }  // namespace python

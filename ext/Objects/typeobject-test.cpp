@@ -3161,4 +3161,45 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesSubclassInheritsDefaultDealloc) {
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt);
 }
 
+TEST_F(TypeExtensionApiTest, TypeLookupSkipsInstanceDictionary) {
+  PyRun_SimpleString(R"(
+class Foo:
+    bar = 2
+
+foo = Foo()
+foo.bar = 1
+)");
+  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr foo_type(PyObject_Type(foo));
+  PyObjectPtr bar_str(PyUnicode_FromString("bar"));
+  PyObjectPtr res(
+      _PyType_Lookup(reinterpret_cast<PyTypeObject*>(foo_type.get()), bar_str));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(res, nullptr);
+  EXPECT_TRUE(isLongEqualsLong(res, 2));
+}
+
+TEST_F(TypeExtensionApiTest, TypeLookupWithoutMatchDoesNotRaise) {
+  PyRun_SimpleString(R"(
+class Foo: pass
+)");
+  PyObjectPtr foo_type(moduleGet("__main__", "Foo"));
+  PyObjectPtr bar_str(PyUnicode_FromString("bar"));
+  PyObjectPtr res(
+      _PyType_Lookup(reinterpret_cast<PyTypeObject*>(foo_type.get()), bar_str));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(res, nullptr);
+}
+
+TEST_F(TypeExtensionApiTest, TypeLookupWithNonStrDoesNotRaise) {
+  PyRun_SimpleString(R"(
+class Foo: pass
+)");
+  PyObjectPtr foo_type(moduleGet("__main__", "Foo"));
+  PyObjectPtr res(
+      _PyType_Lookup(reinterpret_cast<PyTypeObject*>(foo_type.get()), Py_None));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(res, nullptr);
+}
+
 }  // namespace python
