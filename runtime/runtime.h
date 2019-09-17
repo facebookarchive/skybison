@@ -244,6 +244,9 @@ class Runtime {
   // Creates a new Str containing `str` repeated `count` times.
   RawObject strRepeat(Thread* thread, const Str& str, word count);
 
+  RawObject strSlice(Thread* thread, const Str& str, word start, word stop,
+                     word step);
+
   RawObject strSubstr(Thread* thread, const Str& str, word start, word length);
 
   RawObject newValueCell();

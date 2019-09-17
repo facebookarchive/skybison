@@ -3434,6 +3434,23 @@ TEST_F(RuntimeStrTest, StrReplaceWithPostfixReplacesEnd) {
   EXPECT_TRUE(isStrEqualsCStr(*result, "11*"));
 }
 
+TEST_F(RuntimeStrTest, StrSliceASCII) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("hello world goodbye world"));
+  Object slice(&scope, runtime_.strSlice(thread_, str, 2, 10, 2));
+  EXPECT_TRUE(isStrEqualsCStr(*slice, "lowr"));
+}
+
+TEST_F(RuntimeStrTest, StrSliceUnicode) {
+  HandleScope scope(thread_);
+  Str str(&scope,
+          runtime_.newStrFromCStr(
+              u8"\u05d0\u05e0\u05d9 \u05dc\u05d0 \u05d0\u05d5\u05d4\u05d1 "
+              u8"\u05e0\u05d7\u05e9\u05d9\u05dd"));
+  Str slice(&scope, runtime_.strSlice(thread_, str, 2, 10, 2));
+  EXPECT_TRUE(isStrEqualsCStr(*slice, u8"\u05d9\u05dc \u05d5"));
+}
+
 TEST_F(RuntimeTest, BuiltinBaseOfNonEmptyTypeIsTypeItself) {
   HandleScope scope(thread_);
 

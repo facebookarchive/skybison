@@ -147,7 +147,6 @@ class StrBuiltins
   static const BuiltinMethod kBuiltinMethods[];
 
  private:
-  static RawObject slice(Thread* thread, const Str& str, const Slice& slice);
   static void byteToHex(byte** buf, byte convert);
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(StrBuiltins);

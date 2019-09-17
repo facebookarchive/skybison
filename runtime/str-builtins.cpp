@@ -4,7 +4,6 @@
 #include "frame.h"
 #include "globals.h"
 #include "int-builtins.h"
-#include "list-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "slice-builtins.h"
@@ -820,21 +819,6 @@ RawObject StrBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(self.compare(*other) != 0);
 }
 
-RawObject StrBuiltins::slice(Thread* thread, const Str& str,
-                             const Slice& slice) {
-  HandleScope scope(thread);
-  word start, stop, step;
-  Object err(&scope, sliceUnpack(thread, slice, &start, &stop, &step));
-  if (err.isError()) return *err;
-  word length = Slice::adjustIndices(str.charLength(), &start, &stop, step);
-  std::unique_ptr<char[]> buf(new char[length + 1]);
-  buf[length] = '\0';
-  for (word i = 0, index = start; i < length; i++, index += step) {
-    buf[i] = str.charAt(index);
-  }
-  return thread->runtime()->newStrFromCStr(buf.get());
-}
-
 RawObject StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -867,8 +851,11 @@ RawObject StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
                                 "string index out of range");
   }
   if (index_obj.isSlice()) {
-    Slice str_slice(&scope, *index_obj);
-    return slice(thread, str, str_slice);
+    word start, stop, step;
+    Slice slice(&scope, *index_obj);
+    Object error(&scope, sliceUnpack(thread, slice, &start, &stop, &step));
+    if (error.isError()) return *error;
+    return runtime->strSlice(thread, str, start, stop, step);
   }
   // TODO(T27897506): use __index__ to get index
   return thread->raiseWithFmt(LayoutId::kTypeError,
