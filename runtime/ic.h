@@ -117,7 +117,7 @@ void icUpdateBinop(RawTuple caches, word index, LayoutId left_layout_id,
 void icUpdateGlobalVar(Thread* thread, const Function& function, word index,
                        const ValueCell& value_cell);
 
-// Invalide global variable cache entries referring to value_cell.
+// Invalidate all of the caches entries with this global variable.
 void icInvalidateGlobalVar(Thread* thread, const ValueCell& value_cell);
 
 // Cache layout:
