@@ -45,9 +45,6 @@ _unimplemented = _unimplemented  # noqa: F821
 
 
 DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
-SEEK_SET = 0
-SEEK_CUR = 1
-SEEK_END = 2
 
 
 import builtins
@@ -65,6 +62,12 @@ from _os import (
     read as _os_read,
     set_noinheritable as _os_set_noinheritable,
 )
+
+
+def _whence_guard(whence):
+    if whence == 0 or whence == 1 or whence == 2:
+        return
+    raise ValueError("invalid whence value")
 
 
 BlockingIOError = builtins.BlockingIOError
@@ -674,6 +677,7 @@ class _BufferedIOMixin(_BufferedIOBase, bootstrap=True):
     ### Positioning ###
 
     def seek(self, pos, whence=0):
+        _whence_guard(whence)
         new_position = self.raw.seek(pos, whence)
         if new_position < 0:
             raise OSError("seek() returned an invalid position")
@@ -962,7 +966,7 @@ class FileIO(_RawIOBase, bootstrap=True):
             if appending:
                 # For consistent behavior, we explicitly seek to the end of
                 # file (otherwise, it might be done only on the first write()).
-                _os_lseek(fd, 0, SEEK_END)
+                _os_lseek(fd, 0, 2)
         except Exception:
             _os_close(fd)
             raise
@@ -1028,7 +1032,7 @@ class FileIO(_RawIOBase, bootstrap=True):
             return b""
         bufsize = DEFAULT_BUFFER_SIZE
         try:
-            pos = _os_lseek(self._fd, 0, SEEK_CUR)
+            pos = _os_lseek(self._fd, 0, 1)
             end = _os_fstat_size(self._fd)
             if end >= pos:
                 bufsize = end - pos + 1
@@ -1090,7 +1094,8 @@ class FileIO(_RawIOBase, bootstrap=True):
         except BlockingIOError:
             return None
 
-    def seek(self, pos, whence=SEEK_SET):
+    def seek(self, pos, whence=0):
+        _whence_guard(whence)
         if _float_check(pos):
             raise TypeError("an integer is required")
         self._checkClosed()
@@ -1098,7 +1103,7 @@ class FileIO(_RawIOBase, bootstrap=True):
 
     def tell(self):
         self._checkClosed()
-        return _os_lseek(self._fd, 0, SEEK_CUR)
+        return _os_lseek(self._fd, 0, 1)
 
     def truncate(self, size=None):
         self._checkClosed()

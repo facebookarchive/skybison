@@ -1249,7 +1249,7 @@ class UnderBufferedIOMixinTests(unittest.TestCase):
                 raise UserWarning(pos, whence)
 
         result = _BufferedIOMixin(C())
-        self.assertRaises(UserWarning, result.seek, 5, 10)
+        self.assertRaises(UserWarning, result.seek, 5, 0)
 
     def tes_seek_returning_negative_pos_raises_os_error(self):
         class C:
@@ -1257,7 +1257,7 @@ class UnderBufferedIOMixinTests(unittest.TestCase):
                 return -1
 
         result = _BufferedIOMixin(C())
-        self.assertRaises(OSError, result.seek, 5, 10)
+        self.assertRaises(OSError, result.seek, 5, 0)
 
     def test_seek_returns_result_of_raw_seek(self):
         class C:
@@ -1265,7 +1265,7 @@ class UnderBufferedIOMixinTests(unittest.TestCase):
                 return 100
 
         result = _BufferedIOMixin(C())
-        self.assertEqual(result.seek(5, 10), 100)
+        self.assertEqual(result.seek(5, 0), 100)
 
     def test_seekable_calls_raw_seekable(self):
         # TODO(T53510135): Use unittest.mock
