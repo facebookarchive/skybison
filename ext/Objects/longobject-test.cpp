@@ -710,4 +710,18 @@ TEST_F(LongExtensionApiTest, FromVoidPtrReturnsLong) {
   EXPECT_EQ(PyLong_AsUnsignedLongLong(pylong), num_as_int);
 }
 
+TEST_F(LongExtensionApiTest, FromDoubleReturnsLong) {
+  PyObjectPtr pylong(PyLong_FromDouble(12.34));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_EQ(PyLong_Check(pylong), 1);
+  EXPECT_EQ(PyLong_AsLong(pylong), 12);
+}
+
+TEST_F(LongExtensionApiTest, FromDoubleRaisesAndReturnsNull) {
+  PyObjectPtr pylong(
+      PyLong_FromDouble(std::numeric_limits<double>::infinity()));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(pylong, nullptr);
+}
+
 }  // namespace python

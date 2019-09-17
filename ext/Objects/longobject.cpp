@@ -226,8 +226,17 @@ PY_EXPORT long long PyLong_AsLongLongAndOverflow(PyObject* pylong,
   return asInt<long long>(pylong, "", overflow);
 }
 
-PY_EXPORT PyObject* PyLong_FromDouble(double /* l */) {
-  UNIMPLEMENTED("PyLong_FromDouble");
+PY_EXPORT PyObject* PyLong_FromDouble(double value) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object float_obj(&scope, runtime->newFloat(value));
+  Object result(&scope, thread->invokeMethod1(float_obj, SymbolId::kDunderInt));
+  if (result.isError()) {
+    DCHECK(!result.isErrorNotFound(), "could not call float.__int__");
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT PyObject* PyLong_FromString(const char* str, char** pend, int base) {
