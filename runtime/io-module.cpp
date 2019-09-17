@@ -18,6 +18,7 @@ const BuiltinMethod UnderIoModule::kBuiltinMethods[] = {
 };
 
 const BuiltinType UnderIoModule::kBuiltinTypes[] = {
+    {SymbolId::kBufferedReader, LayoutId::kBufferedReader},
     {SymbolId::kBytesIO, LayoutId::kBytesIO},
     {SymbolId::kFileIO, LayoutId::kFileIO},
     {SymbolId::kIncrementalNewlineDecoder,
@@ -83,6 +84,15 @@ void UnderBufferedIOBaseBuiltins::postInitialize(Runtime*,
 
 const BuiltinAttribute UnderBufferedIOMixinBuiltins::kAttributes[] = {
     {SymbolId::kUnderRaw, UnderBufferedIOMixin::kUnderlyingOffset},
+    {SymbolId::kSentinelId, 0},
+};
+
+const BuiltinAttribute BufferedReaderBuiltins::kAttributes[] = {
+    {SymbolId::kUnderRaw, BufferedReader::kUnderlyingOffset},
+    {SymbolId::kBufferSize, BufferedReader::kBufferSizeOffset},
+    {SymbolId::kUnderReadLock, BufferedReader::kReadLockOffset},
+    {SymbolId::kUnderReadBuf, BufferedReader::kReadBufOffset},
+    {SymbolId::kUnderReadPos, BufferedReader::kReadPosOffset},
     {SymbolId::kSentinelId, 0},
 };
 

@@ -62,6 +62,7 @@ from _os import (
     read as _os_read,
     set_noinheritable as _os_set_noinheritable,
 )
+from _thread import Lock as _thread_Lock
 
 
 def _whence_guard(whence):
@@ -81,13 +82,6 @@ class BufferedRWPair:
 
 
 class BufferedRandom:
-    """unimplemented"""
-
-    def __init__(self, *args, **kwargs):
-        _unimplemented()
-
-
-class BufferedReader:
     """unimplemented"""
 
     def __init__(self, *args, **kwargs):
@@ -752,6 +746,173 @@ class _BufferedIOMixin(_BufferedIOBase, bootstrap=True):
         return self.raw.isatty()
 
 
+class BufferedReader(_BufferedIOMixin, bootstrap=True):
+    def __init__(self, raw, buffer_size=DEFAULT_BUFFER_SIZE):
+        if not raw.readable():
+            raise OSError("File or stream is not readable.")
+
+        _BufferedIOMixin.__init__(self, raw)
+        if buffer_size <= 0:
+            raise ValueError("invalid buffer size")
+        self.buffer_size = buffer_size
+        self._reset_read_buf()
+        self._read_lock = _thread_Lock()
+
+    def readable(self):
+        return self.raw.readable()
+
+    def _reset_read_buf(self):
+        self._read_buf = b""
+        self._read_pos = 0
+
+    def read(self, size=None):
+        if size is not None and size < -1:
+            raise ValueError("read length must be positive or -1")
+        with self._read_lock:
+            return self._read_unlocked(size)
+
+    def _read_unlocked(self, n=None):
+        if self.raw is None:
+            raise ValueError("raw stream has been detached")
+
+        if self.closed:
+            raise ValueError("read of closed file")
+
+        nodata_val = b""
+        empty_values = (b"", None)
+        buf = self._read_buf
+        pos = self._read_pos
+
+        # Special case for when the number of bytes to read is unspecified.
+        if n is None or n == -1:
+            self._reset_read_buf()
+            if hasattr(self.raw, "readall"):
+                chunk = self.raw.readall()
+                if chunk is None:
+                    return buf[pos:] or None
+                else:
+                    return buf[pos:] + chunk
+            chunks = [buf[pos:]]  # Strip the consumed bytes.
+            current_size = 0
+            while True:
+                # Read until EOF or until read() would block.
+                chunk = self.raw.read()
+                if chunk in empty_values:
+                    nodata_val = chunk
+                    break
+                current_size += len(chunk)
+                chunks.append(chunk)
+            return b"".join(chunks) or nodata_val
+
+        # The number of bytes to read is specified, return at most n bytes.
+        avail = len(buf) - pos  # Length of the available buffered data.
+        if n <= avail:
+            # Fast path: the data to read is fully buffered.
+            self._read_pos += n
+            return buf[pos : pos + n]
+        # Slow path: read from the stream until enough bytes are read, or until
+        # an EOF occurs or until read() would block.
+        chunks = [buf[pos:]]
+        wanted = max(self.buffer_size, n)
+        while avail < n:
+            chunk = self.raw.read(wanted)
+            if chunk in empty_values:
+                nodata_val = chunk
+                break
+            avail += len(chunk)
+            chunks.append(chunk)
+        # n is more than avail only when an EOF occurred or when
+        # read() would have blocked.
+        n = min(n, avail)
+        out = b"".join(chunks)
+        self._read_buf = out[n:]  # Save the extra data in the buffer.
+        self._read_pos = 0
+        return out[:n] if out else nodata_val
+
+    def peek(self, size=0):
+        with self._read_lock:
+            return self._peek_unlocked(size)
+
+    def _peek_unlocked(self, n=0):
+        want = min(n, self.buffer_size)
+        have = len(self._read_buf) - self._read_pos
+        if have < want or have <= 0:
+            to_read = self.buffer_size - have
+            current = self.raw.read(to_read)
+            if current:
+                self._read_buf = self._read_buf[self._read_pos :] + current
+                self._read_pos = 0
+        return self._read_buf[self._read_pos :]
+
+    def read1(self, size):
+        # Returns up to size bytes. If at least one byte is buffered, we only
+        # return buffered bytes. Otherwise, we do one raw read.
+        if size < 0:
+            raise ValueError("number of bytes to read must be positive")
+        if size == 0:
+            return b""
+        with self._read_lock:
+            self._peek_unlocked(1)
+            return self._read_unlocked(size)
+
+    def _readinto(self, buf, read1):
+        # Need to create a memoryview object of type 'b', otherwise we may not
+        # be able to assign bytes to it, and slicing it would create a new
+        # object.
+        if not isinstance(buf, memoryview):
+            buf = memoryview(buf)
+        if buf.nbytes == 0:
+            return 0
+        buf = buf.cast("B")
+
+        written = 0
+        with self._read_lock:
+            while written < len(buf):
+
+                # First try to read from internal buffer
+                avail = min(len(self._read_buf) - self._read_pos, len(buf))
+                if avail:
+                    buf[written : written + avail] = self._read_buf[
+                        self._read_pos : self._read_pos + avail
+                    ]
+                    self._read_pos += avail
+                    written += avail
+                    if written == len(buf):
+                        break
+
+                # If remaining space in callers buffer is larger than internal
+                # buffer, read directly into callers buffer
+                if len(buf) - written > self.buffer_size:
+                    n = self.raw.readinto(buf[written:])
+                    if not n:
+                        break  # EOF
+                    written += n
+
+                # Otherwise refill internal buffer - unless we're in read1 mode
+                # and already got some data
+                elif not (read1 and written):
+                    if not self._peek_unlocked(1):
+                        break  # EOF
+
+                # In readinto1 mode, return as soon as we have some data
+                if read1 and written:
+                    break
+
+        return written
+
+    def tell(self):
+        return _BufferedIOMixin.tell(self) - len(self._read_buf) + self._read_pos
+
+    def seek(self, pos, whence=0):
+        _whence_guard(whence)
+        with self._read_lock:
+            if whence == 1:
+                pos -= len(self._read_buf) - self._read_pos
+            pos = _BufferedIOMixin.seek(self, pos, whence)
+            self._reset_read_buf()
+            return pos
+
+
 class BytesIO(bootstrap=True):
     """Buffered I/O implementation using an in-memory bytes buffer."""
 
@@ -824,8 +985,8 @@ class BytesIO(bootstrap=True):
             return 0
         pos = self._pos
         if pos > len(self._buffer):
-            # Inserts null bytes between the current end of the file
-            # and the new write position.
+            # Inserts null bytes between the current end of the file and the
+            # new write position.
             # TODO(T47866758): Use less generic code to pad a bytearray buffer
             # with NUL bytes.
             padding = b"\x00" * (pos - len(self._buffer))
@@ -844,7 +1005,6 @@ class BytesIO(bootstrap=True):
             pos = _index(pos)
         except AttributeError as err:
             raise TypeError("an integer is required") from err
-        # TODO(emacs): Replace 0 with a SEEK_* constant.
         if whence == 0:
             if pos < 0:
                 raise ValueError(f"negative seek position {pos!r}")

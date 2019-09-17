@@ -28,6 +28,7 @@ class Handle;
   V(Object)                                                                    \
   V(AsyncGenerator)                                                            \
   V(BoundMethod)                                                               \
+  V(BufferedReader)                                                            \
   V(ByteArray)                                                                 \
   V(ByteArrayIterator)                                                         \
   V(Bytes)                                                                     \
@@ -273,6 +274,7 @@ class RawObject {
   bool isAsyncGenerator() const;
   bool isBaseException() const;
   bool isBoundMethod() const;
+  bool isBufferedReader() const;
   bool isByteArray() const;
   bool isByteArrayIterator() const;
   bool isBytesIO() const;
@@ -3006,6 +3008,28 @@ class RawUnderBufferedIOMixin : public RawUnderBufferedIOBase {
   RAW_OBJECT_COMMON_NO_CAST(UnderBufferedIOMixin);
 };
 
+class RawBufferedReader : public RawUnderBufferedIOMixin {
+ public:
+  // Getters and setters
+  word bufferSize() const;
+  void setBufferSize(word buffer_size) const;
+  RawObject readLock() const;
+  void setReadLock(RawObject read_lock) const;
+  RawObject readBuf() const;
+  void setReadBuf(RawObject read_buf) const;
+  word readPos() const;
+  void setReadPos(word read_pos) const;
+
+  // Layout
+  static const int kBufferSizeOffset = RawUnderBufferedIOMixin::kSize;
+  static const int kReadLockOffset = kBufferSizeOffset + kPointerSize;
+  static const int kReadBufOffset = kReadLockOffset + kPointerSize;
+  static const int kReadPosOffset = kReadBufOffset + kPointerSize;
+  static const int kSize = kReadPosOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON_NO_CAST(BufferedReader);
+};
+
 class RawBytesIO : public RawUnderBufferedIOBase {
  public:
   // Getters and setters
@@ -3189,6 +3213,10 @@ inline bool RawObject::isBaseException() const {
 
 inline bool RawObject::isBoundMethod() const {
   return isHeapObjectWithLayout(LayoutId::kBoundMethod);
+}
+
+inline bool RawObject::isBufferedReader() const {
+  return isHeapObjectWithLayout(LayoutId::kBufferedReader);
 }
 
 inline bool RawObject::isUnderBufferedIOBase() const {
@@ -5895,6 +5923,40 @@ inline RawObject RawUnderBufferedIOMixin::underlying() const {
 
 inline void RawUnderBufferedIOMixin::setUnderlying(RawObject value) const {
   instanceVariableAtPut(kUnderlyingOffset, value);
+}
+
+// RawBufferedReader
+
+inline word RawBufferedReader::bufferSize() const {
+  return RawSmallInt::cast(instanceVariableAt(kBufferSizeOffset)).value();
+}
+
+inline void RawBufferedReader::setBufferSize(word buffer_size) const {
+  instanceVariableAtPut(kBufferSizeOffset, RawSmallInt::fromWord(buffer_size));
+}
+
+inline RawObject RawBufferedReader::readLock() const {
+  return instanceVariableAt(kReadLockOffset);
+}
+
+inline void RawBufferedReader::setReadLock(RawObject read_lock) const {
+  instanceVariableAtPut(kReadLockOffset, read_lock);
+}
+
+inline RawObject RawBufferedReader::readBuf() const {
+  return instanceVariableAt(kReadBufOffset);
+}
+
+inline void RawBufferedReader::setReadBuf(RawObject read_buf) const {
+  instanceVariableAtPut(kReadBufOffset, read_buf);
+}
+
+inline word RawBufferedReader::readPos() const {
+  return RawSmallInt::cast(instanceVariableAt(kReadPosOffset)).value();
+}
+
+inline void RawBufferedReader::setReadPos(word read_pos) const {
+  instanceVariableAtPut(kReadPosOffset, RawSmallInt::fromWord(read_pos));
 }
 
 // RawBytesIO

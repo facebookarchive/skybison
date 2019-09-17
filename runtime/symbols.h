@@ -329,8 +329,11 @@ class Runtime;
   V(UnderRangeLen, "_range_len")                                               \
   V(UnderRaw, "_raw")                                                          \
   V(UnderRawIOBase, "_RawIOBase")                                              \
+  V(UnderReadBuf, "_read_buf")                                                 \
   V(UnderReadBytes, "_readbytes")                                              \
   V(UnderReadFile, "_readfile")                                                \
+  V(UnderReadLock, "_read_lock")                                               \
+  V(UnderReadPos, "_read_pos")                                                 \
   V(UnderReadable, "_readable")                                                \
   V(UnderReferent, "_referent")                                                \
   V(UnderReprEnter, "_repr_enter")                                             \
@@ -449,6 +452,8 @@ class Runtime;
   V(Bootstrap, "bootstrap")                                                    \
   V(BrokenPipeError, "BrokenPipeError")                                        \
   V(BufferError, "BufferError")                                                \
+  V(BufferSize, "buffer_size")                                                 \
+  V(BufferedReader, "BufferedReader")                                          \
   V(BuiltinModuleNames, "builtin_module_names")                                \
   V(Builtins, "builtins")                                                      \
   V(ByteArray, "bytearray")                                                    \

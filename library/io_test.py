@@ -1454,5 +1454,119 @@ class UnderTextIOBaseTests(unittest.TestCase):
         self.assertIn("errors", _io._TextIOBase.__dict__)
 
 
+class BufferedReaderTests(unittest.TestCase):
+    def test_dunder_init_with_non_readable_stream_raises_os_error(self):
+        with _io.FileIO(_getfd(), mode="w") as file_reader:
+            with self.assertRaises(OSError) as context:
+                _io.BufferedReader(file_reader)
+        self.assertEqual(str(context.exception), "File or stream is not readable.")
+
+    def test_peek_returns_buffered_data(self):
+        with _io.BufferedReader(_io.BytesIO(b"hello"), buffer_size=3) as buffered_io:
+            self.assertEqual(buffered_io.peek(-10), b"hel")
+            self.assertEqual(buffered_io.peek(1), b"hel")
+            self.assertEqual(buffered_io.peek(2), b"hel")
+
+    def test_raw_returns_raw(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            with _io.BufferedReader(bytes_io) as buffered_io:
+                self.assertIs(buffered_io.raw, bytes_io)
+
+    def test_read_with_detached_stream_raises_value_error(self):
+        with _io.FileIO(_getfd(), mode="r") as file_reader:
+            buffered = _io.BufferedReader(file_reader)
+            buffered.detach()
+            with self.assertRaises(ValueError) as context:
+                buffered.read()
+        self.assertEqual(str(context.exception), "raw stream has been detached")
+
+    def test_read_with_closed_stream_raises_value_error(self):
+        file_reader = _io.FileIO(_getfd(), mode="r")
+        buffered = _io.BufferedReader(file_reader)
+        file_reader.close()
+        with self.assertRaises(ValueError) as context:
+            buffered.read()
+        self.assertEqual(str(context.exception), "read of closed file")
+
+    def test_read_with_negative_size_raises_value_error(self):
+        with _io.FileIO(_getfd(), mode="r") as file_reader:
+            buffered = _io.BufferedReader(file_reader)
+            with self.assertRaises(ValueError) as context:
+                buffered.read(-2)
+        self.assertEqual(str(context.exception), "read length must be positive or -1")
+
+    def test_read_with_none_size_calls_raw_readall(self):
+        class C(_io.FileIO):
+            def readall(self):
+                raise UserWarning("foo")
+
+        with C(_getfd(), mode="r") as file_reader:
+            buffered = _io.BufferedReader(file_reader)
+            with self.assertRaises(UserWarning) as context:
+                buffered.read(None)
+        self.assertEqual(context.exception.args, ("foo",))
+
+    def test_read_reads_bytes(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            buffered = _io.BufferedReader(bytes_io, buffer_size=1)
+            result = buffered.read()
+            self.assertEqual(result, b"hello")
+
+    def test_read_reads_count_bytes(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            buffered = _io.BufferedReader(bytes_io, buffer_size=1)
+            result = buffered.read(3)
+            self.assertEqual(result, b"hel")
+
+    def test_read1_calls_read(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            buffered = _io.BufferedReader(bytes_io, buffer_size=1)
+            result = buffered.read1(3)
+            self.assertEqual(result, b"hel")
+
+    def test_read1_reads_from_buffer(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            buffered = _io.BufferedReader(bytes_io, buffer_size=10)
+            result = buffered.read1(1)
+            self.assertEqual(result, b"h")
+
+    def test_readable_calls_raw_readable(self):
+        readable_calls = 0
+
+        class C:
+            closed = False
+
+            def readable(self):
+                nonlocal readable_calls
+                readable_calls += 1
+                return True
+
+        result = _io.BufferedReader(C())
+        self.assertEqual(readable_calls, 1)
+        self.assertTrue(result.readable())
+        self.assertEqual(readable_calls, 2)
+
+    def test_tell_returns_current_position(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            buffered = _io.BufferedReader(bytes_io)
+            self.assertEqual(buffered.tell(), 0)
+            buffered.read(2)
+            self.assertEqual(buffered.tell(), 2)
+
+    def test_seek_with_invalid_whence(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            buffered = _io.BufferedReader(bytes_io)
+            self.assertRaises(ValueError, buffered.seek, 0, 4)
+            self.assertRaises(ValueError, buffered.seek, 0, -1)
+
+    def test_seek_resets_position(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            buffered = _io.BufferedReader(bytes_io)
+            buffered.read(2)
+            self.assertEqual(buffered.tell(), 2)
+            buffered.seek(0)
+            self.assertEqual(buffered.tell(), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

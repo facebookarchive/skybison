@@ -55,6 +55,14 @@ class UnderBufferedIOMixinBuiltins
   static const BuiltinAttribute kAttributes[];
 };
 
+class BufferedReaderBuiltins
+    : public Builtins<BufferedReaderBuiltins, SymbolId::kBufferedReader,
+                      LayoutId::kBufferedReader,
+                      LayoutId::kUnderBufferedIOMixin> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+};
+
 class BytesIOBuiltins
     : public Builtins<BytesIOBuiltins, SymbolId::kBytesIO, LayoutId::kBytesIO,
                       LayoutId::kUnderBufferedIOBase> {
