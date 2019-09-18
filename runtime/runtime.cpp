@@ -2483,6 +2483,22 @@ void Runtime::createSysModule(Thread* thread) {
   CHECK(!executeFrozenModule(SysModule::kFrozenData, module).isError(),
         "Failed to initialize sys module");
 
+  // Fill in hash_info.
+  Tuple hash_info_data(&scope, newMutableTuple(9));
+  hash_info_data.atPut(0, newInt(SmallInt::kBits));
+  hash_info_data.atPut(1, newInt(kArithmeticHashModulus));
+  hash_info_data.atPut(2, newInt(kHashInf));
+  hash_info_data.atPut(3, newInt(kHashNan));
+  hash_info_data.atPut(4, newInt(kHashImag));
+  hash_info_data.atPut(5, symbols()->Siphash24());
+  hash_info_data.atPut(6, newInt(64));
+  hash_info_data.atPut(7, newInt(128));
+  hash_info_data.atPut(8, newInt(SmallStr::kMaxLength));
+  Object hash_info(
+      &scope, thread->invokeFunction1(SymbolId::kSys, SymbolId::kUnderHashInfo,
+                                      hash_info_data));
+  moduleAtPutById(thread, module, SymbolId::kHashInfo, hash_info);
+
   sys_stderr_ = moduleValueCellAtById(thread, module, SymbolId::kStderr);
   CHECK(!sys_stderr_.isErrorNotFound(), "sys.stderr not found");
   sys_stdout_ = moduleValueCellAtById(thread, module, SymbolId::kStdout);

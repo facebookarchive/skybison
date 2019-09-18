@@ -242,6 +242,7 @@ class Runtime;
   V(UnderGetMemberUInt, "_get_member_uint")                                    \
   V(UnderGetMemberULong, "_get_member_ulong")                                  \
   V(UnderGetMemberUShort, "_get_member_ushort")                                \
+  V(UnderHashInfo, "_HashInfo")                                                \
   V(UnderImp, "_imp")                                                          \
   V(UnderIndex, "_index")                                                      \
   V(UnderInstall, "_install")                                                  \
@@ -565,6 +566,7 @@ class Runtime;
   V(Getter, "getter")                                                          \
   V(GiRunning, "gi_running")                                                   \
   V(Globals, "globals")                                                        \
+  V(HashInfo, "hash_info")                                                     \
   V(Hasattr, "hasattr")                                                        \
   V(Hex, "hex")                                                                \
   V(Iadd, "iadd")                                                              \
@@ -732,6 +734,7 @@ class Runtime;
   V(Setattr, "setattr")                                                        \
   V(Setter, "setter")                                                          \
   V(Signed, "signed")                                                          \
+  V(Siphash24, "siphash24")                                                    \
   V(Size, "size")                                                              \
   V(Slice, "slice")                                                            \
   V(SmallBytes, "smallbytes")                                                  \

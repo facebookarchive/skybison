@@ -60,6 +60,16 @@ const int kNanosecondsPerMicrosecond = 1000;
 const int kNanosecondsPerSecond =
     kMicrosecondsPerSecond * kNanosecondsPerMicrosecond;
 
+// Equivalent to _PyHash_BITS. This is NOT the maximum size of a hash value,
+// that would is either RawHeader::kHashCodeBits or SmallInt::kMaxValue
+// depending on whether the hash value is cached in the object header.
+const word kArithmeticHashBits = 61;
+// Equivalent to _PyHASH_MODULUS. Should be a mersenne prime.
+const word kArithmeticHashModulus = ((word{1} << kArithmeticHashBits) - 1);
+const word kHashInf = 314159;
+const word kHashNan = 0;
+const word kHashImag = 1000003;
+
 #ifndef __has_builtin
 #define __has_builtin(x) 0
 #endif

@@ -183,11 +183,6 @@ def getsizeof(object, default=_Unbound):
     return int(result)
 
 
-hash_info = _HashInfo(
-    (64, 2305843009213693951, 314159, 0, 1000003, "siphash24", 64, 128, 0)
-)
-
-
 implementation = _ImplementationType()
 
 

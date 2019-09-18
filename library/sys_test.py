@@ -250,6 +250,41 @@ class SysTests(unittest.TestCase):
             sys._getframe_locals(100)
         self.assertIn("call stack is not deep enough", str(context.exception))
 
+    def test_hash_info_is_plausible(self):
+        def is_power_of_two(x):
+            return x & (x - 1) == 0
+
+        hash_info = sys.hash_info
+        max_value = (1 << (hash_info.width - 1)) - 1
+        self.assertTrue(hash_info.modulus <= max_value)
+        self.assertTrue(is_power_of_two(hash_info.modulus + 1))
+        self.assertTrue(hash_info.inf <= max_value)
+        self.assertTrue(hash_info.nan <= max_value)
+        self.assertTrue(hash_info.imag <= max_value)
+        self.assertIsInstance(hash_info.algorithm, str)
+        self.assertTrue(hash_info.hash_bits >= hash_info.width)
+        self.assertTrue(hash_info.seed_bits >= hash_info.hash_bits)
+        self.assertIs(hash_info.width, hash_info[0])
+        self.assertIs(hash_info.modulus, hash_info[1])
+        self.assertIs(hash_info.inf, hash_info[2])
+        self.assertIs(hash_info.nan, hash_info[3])
+        self.assertIs(hash_info.imag, hash_info[4])
+        self.assertIs(hash_info.algorithm, hash_info[5])
+        self.assertIs(hash_info.hash_bits, hash_info[6])
+        self.assertIs(hash_info.seed_bits, hash_info[7])
+        self.assertIs(hash_info.cutoff, hash_info[8])
+
+    def test_hash_info_matches_cpython(self):
+        # We should not deviate from cpython without a good reason.
+        hash_info = sys.hash_info
+        self.assertEqual(hash_info.modulus, (1 << 61) - 1)
+        self.assertEqual(hash_info.inf, 314159)
+        self.assertEqual(hash_info.nan, 0)
+        self.assertEqual(hash_info.imag, 1000003)
+        self.assertEqual(hash_info.algorithm, "siphash24")
+        self.assertEqual(hash_info.hash_bits, 64)
+        self.assertEqual(hash_info.seed_bits, 128)
+
 
 if __name__ == "__main__":
     unittest.main()
