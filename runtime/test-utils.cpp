@@ -161,7 +161,7 @@ RawObject callFunction(const Function& func, const Tuple& args) {
 
 bool tupleContains(const Tuple& object_array, const Object& key) {
   for (word i = 0; i < object_array.length(); i++) {
-    if (Object::equals(object_array.at(i), *key)) {
+    if (object_array.at(i) == *key) {
       return true;
     }
   }
@@ -176,7 +176,7 @@ bool listContains(const Object& list_obj, const Object& key) {
   }
   List list(&scope, *list_obj);
   for (word i = 0, num_items = list.numItems(); i < num_items; i++) {
-    if (Object::equals(list.at(i), *key)) {
+    if (list.at(i) == *key) {
       return true;
     }
   }

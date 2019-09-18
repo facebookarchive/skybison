@@ -1358,7 +1358,7 @@ bool Runtime::isInternedStr(Thread* thread, const Object& str) {
   Set set(&scope, interned());
   Tuple data(&scope, set.data());
   Object str_hash(&scope, strHash(thread, *str));
-  word index = setLookup<SetLookupType::Lookup>(data, str, str_hash);
+  word index = setLookup<SetLookupType::Lookup>(thread, data, str, str_hash);
   if (index < 0) {
     return false;
   }
@@ -2973,6 +2973,46 @@ RawObject Runtime::newDictWithSize(word initial_size) {
   return *result;
 }
 
+static bool NEVER_INLINE callDunderEq(Thread* thread, RawObject o0_raw,
+                                      RawObject o1_raw) {
+  HandleScope scope(thread);
+  Object o0(&scope, o0_raw);
+  Object o1(&scope, o1_raw);
+  Object compare_result(
+      &scope, Interpreter::compareOperation(thread, thread->currentFrame(),
+                                            CompareOp::EQ, o0, o1));
+  if (compare_result.isErrorException()) {
+    UNIMPLEMENTED("exception from __eq__");
+  }
+  Object result(&scope, Interpreter::isTrue(thread, *compare_result));
+  if (result.isErrorException()) {
+    UNIMPLEMENTED("exception from truth check");
+  }
+  return Bool::cast(*result).value();
+}
+
+static bool objectEquals(Thread* thread, RawObject o0, RawObject o1) {
+  if (o0 == o1) {
+    return true;
+  }
+  if (!o0.isHeapObject()) {
+    if (o0.isSmallStr()) {
+      return false;
+    }
+    if (o0.isBool() && o1.isSmallInt()) {
+      return Bool::cast(o0).value() ? 1 : 0 == SmallInt::cast(o1).value();
+    }
+    if (o0.isSmallInt() && o1.isBool()) {
+      return SmallInt::cast(o0).value() == Bool::cast(o1).value() ? 1 : 0;
+    }
+    return false;
+  }
+  if (o0.isLargeStr()) {
+    return LargeStr::cast(o0).equals(o1);
+  }
+  return callDunderEq(thread, o0, o1);
+}
+
 void Runtime::dictAtPut(Thread* thread, const Dict& dict, const Object& key,
                         const Object& key_hash, const Object& value) {
   // TODO(T44245141): Move initialization of an empty dict to
@@ -2985,7 +3025,7 @@ void Runtime::dictAtPut(Thread* thread, const Dict& dict, const Object& key,
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word index = -1;
-  bool found = dictLookup(data, key, key_hash, &index, RawObject::equals);
+  bool found = dictLookup(thread, data, key, key_hash, &index, objectEquals);
   DCHECK(index != -1, "invalid index %ld", index);
   if (found) {
     Dict::Bucket::setValue(*data, index, *value);
@@ -3020,7 +3060,7 @@ RawObject Runtime::dictAt(Thread* thread, const Dict& dict, const Object& key,
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word index = -1;
-  bool found = dictLookup(data, key, key_hash, &index, RawObject::equals);
+  bool found = dictLookup(thread, data, key, key_hash, &index, objectEquals);
   if (found) {
     return Dict::Bucket::value(*data, index);
   }
@@ -3053,7 +3093,7 @@ RawObject Runtime::dictAtIfAbsentPut(Thread* thread, const Dict& dict,
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word index = -1;
-  bool found = dictLookup(data, key, key_hash, &index, RawObject::equals);
+  bool found = dictLookup(thread, data, key, key_hash, &index, objectEquals);
   DCHECK(index != -1, "invalid index %ld", index);
   if (found) {
     return Dict::Bucket::value(*data, index);
@@ -3105,7 +3145,7 @@ bool Runtime::dictIncludes(Thread* thread, const Dict& dict, const Object& key,
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word ignore;
-  return dictLookup(data, key, key_hash, &ignore, RawObject::equals);
+  return dictLookup(thread, data, key, key_hash, &ignore, objectEquals);
 }
 
 RawObject Runtime::dictRemoveByStr(Thread* thread, const Dict& dict,
@@ -3121,7 +3161,7 @@ RawObject Runtime::dictRemove(Thread* thread, const Dict& dict,
   Tuple data(&scope, dict.data());
   word index = -1;
   Object result(&scope, Error::notFound());
-  bool found = dictLookup(data, key, key_hash, &index, RawObject::equals);
+  bool found = dictLookup(thread, data, key, key_hash, &index, objectEquals);
   if (found) {
     result = Dict::Bucket::value(*data, index);
     Dict::Bucket::setTombstone(*data, index);
@@ -3130,8 +3170,8 @@ RawObject Runtime::dictRemove(Thread* thread, const Dict& dict,
   return *result;
 }
 
-bool Runtime::dictLookup(const Tuple& data, const Object& key,
-                         const Object& key_hash, word* index, DictEq pred) {
+bool Runtime::dictLookup(Thread* thread, const Tuple& data, const Object& key,
+                         const Object& key_hash, word* index, DictEq equals) {
   if (data.length() == 0) {
     *index = -1;
     return false;
@@ -3154,7 +3194,8 @@ bool Runtime::dictLookup(const Tuple& data, const Object& key,
       if (next_free_index == -1) {
         next_free_index = current_index;
       }
-    } else if (Dict::Bucket::hasKey(*data, current_index, *key, pred)) {
+    } else if (!Dict::Bucket::hash(*data, current_index).isNoneType() &&
+               equals(thread, Dict::Bucket::key(*data, current_index), *key)) {
       *index = current_index;
       return true;
     }
@@ -3344,7 +3385,7 @@ RawObject Runtime::newFrozenSet() {
 }
 
 template <SetLookupType type>
-word Runtime::setLookup(const Tuple& data, const Object& key,
+word Runtime::setLookup(Thread* thread, const Tuple& data, const Object& key,
                         const Object& key_hash) {
   word start = SetBase::Bucket::getIndex(*data, *key_hash);
   word current = start;
@@ -3357,7 +3398,8 @@ word Runtime::setLookup(const Tuple& data, const Object& key,
   }
 
   do {
-    if (SetBase::Bucket::valueEquals(*data, current, *key)) {
+    if (!SetBase::Bucket::hash(*data, current).isNoneType() &&
+        objectEquals(thread, SetBase::Bucket::value(*data, current), *key)) {
       return current;
     }
     if (next_free_index == -1 && SetBase::Bucket::isTombstone(*data, current)) {
@@ -3392,8 +3434,8 @@ RawTuple Runtime::setGrow(Thread* thread, const Tuple& data) {
        SetBase::Bucket::nextItem(*data, &i);) {
     Object value(&scope, SetBase::Bucket::value(*data, i));
     Object value_hash(&scope, SetBase::Bucket::hash(*data, i));
-    word index =
-        setLookup<SetLookupType::Insertion>(new_data, value, value_hash);
+    word index = setLookup<SetLookupType::Insertion>(thread, new_data, value,
+                                                     value_hash);
     DCHECK(index != -1, "unexpected index %ld", index);
     SetBase::Bucket::set(*new_data, index, *value_hash, *value);
   }
@@ -3404,7 +3446,8 @@ RawObject Runtime::setAdd(Thread* thread, const SetBase& set,
                           const Object& value, const Object& value_hash) {
   HandleScope scope(thread);
   Tuple data(&scope, set.data());
-  word index = setLookup<SetLookupType::Lookup>(data, value, value_hash);
+  word index =
+      setLookup<SetLookupType::Lookup>(thread, data, value, value_hash);
   if (index != -1) {
     return SetBase::Bucket::value(*data, index);
   }
@@ -3412,7 +3455,8 @@ RawObject Runtime::setAdd(Thread* thread, const SetBase& set,
   if (data.length() == 0 || set.numItems() >= data.length() / 2) {
     new_data = setGrow(thread, data);
   }
-  index = setLookup<SetLookupType::Insertion>(new_data, value, value_hash);
+  index =
+      setLookup<SetLookupType::Insertion>(thread, new_data, value, value_hash);
   DCHECK(index != -1, "unexpected index %ld", index);
   set.setData(*new_data);
   SetBase::Bucket::set(*new_data, index, *value_hash, *value);
@@ -3424,7 +3468,7 @@ bool Runtime::setIncludes(Thread* thread, const SetBase& set, const Object& key,
                           const Object& key_hash) {
   HandleScope scope(thread);
   Tuple data(&scope, set.data());
-  return setLookup<SetLookupType::Lookup>(data, key, key_hash) != -1;
+  return setLookup<SetLookupType::Lookup>(thread, data, key, key_hash) != -1;
 }
 
 RawObject Runtime::setIntersection(Thread* thread, const SetBase& set,
@@ -3452,8 +3496,8 @@ RawObject Runtime::setIntersection(Thread* thread, const SetBase& set,
          SetBase::Bucket::nextItem(*data, &i);) {
       value = SetBase::Bucket::value(*data, i);
       value_hash = SetBase::Bucket::hash(*data, i);
-      if (setLookup<SetLookupType::Lookup>(other_data, value, value_hash) !=
-          -1) {
+      if (setLookup<SetLookupType::Lookup>(thread, other_data, value,
+                                           value_hash) != -1) {
         setAdd(thread, dst, value, value_hash);
       }
     }
@@ -3491,7 +3535,8 @@ RawObject Runtime::setIntersection(Thread* thread, const SetBase& set,
       return *value;
     }
     value_hash = hash(*value);
-    if (setLookup<SetLookupType::Lookup>(data, value, value_hash) != -1) {
+    if (setLookup<SetLookupType::Lookup>(thread, data, value, value_hash) !=
+        -1) {
       setAdd(thread, dst, value, value_hash);
     }
   }
@@ -3502,7 +3547,7 @@ bool Runtime::setRemove(Thread* thread, const Set& set, const Object& key,
                         const Object& key_hash) {
   HandleScope scope(thread);
   Tuple data(&scope, set.data());
-  word index = setLookup<SetLookupType::Lookup>(data, key, key_hash);
+  word index = setLookup<SetLookupType::Lookup>(thread, data, key, key_hash);
   if (index != -1) {
     SetBase::Bucket::setTombstone(*data, index);
     set.setNumItems(set.numItems() - 1);

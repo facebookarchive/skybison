@@ -358,8 +358,6 @@ class RawObject {
   bool isSetBase() const;
   bool isStr() const;
 
-  static bool equals(RawObject lhs, RawObject rhs);
-
   bool operator==(const RawObject& other) const;
   bool operator!=(const RawObject& other) const;
 
@@ -2233,8 +2231,6 @@ class RawDict : public RawHeapObject {
   RAW_OBJECT_COMMON(Dict);
 };
 
-typedef bool (*DictEq)(RawObject a, RawObject b);
-
 // Helper class for manipulating buckets in the RawTuple that backs the
 // dict. None of operations here do bounds checking on the backing array.
 class RawDict::Bucket {
@@ -2269,11 +2265,6 @@ class RawDict::Bucket {
     // https://en.wikipedia.org/wiki/Linear_congruential_generator#c_%E2%89%A0_0.
     *perturb >>= 5;
     return (current * 5 + 1 + *perturb) & bucket_mask;
-  }
-
-  static bool hasKey(RawTuple data, word index, RawObject that_key,
-                     DictEq pred) {
-    return !hash(data, index).isNoneType() && pred(key(data, index), that_key);
   }
 
   static RawObject hash(RawTuple data, word index) {
@@ -2422,11 +2413,6 @@ class RawSetBase::Bucket {
 
   static RawObject hash(RawTuple data, word index) {
     return data.at(index + kHashOffset);
-  }
-
-  static bool valueEquals(RawTuple data, word index, RawObject key) {
-    return !hash(data, index).isNoneType() &&
-           RawObject::equals(value(data, index), key);
   }
 
   static bool isEmpty(RawTuple data, word index) {
@@ -3541,11 +3527,6 @@ inline bool RawObject::isInt() const {
 inline bool RawObject::isSetBase() const { return isSet() || isFrozenSet(); }
 
 inline bool RawObject::isStr() const { return isSmallStr() || isLargeStr(); }
-
-inline bool RawObject::equals(RawObject lhs, RawObject rhs) {
-  return (lhs == rhs) ||
-         (lhs.isLargeStr() && RawLargeStr::cast(lhs).equals(rhs));
-}
 
 inline bool RawObject::operator==(const RawObject& other) const {
   return raw() == other.raw();

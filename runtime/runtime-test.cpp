@@ -562,32 +562,42 @@ TEST_F(RuntimeDictTest, DictAtPutGrowsDictWhenTwoThirdsUsed) {
     ASSERT_FALSE(key_hash.isErrorException());
     RawObject value = runtime_.dictAt(thread_, dict, key, key_hash);
     ASSERT_FALSE(value.isError());
-    EXPECT_TRUE(Object::equals(value, SmallInt::fromWord(-i)));
+    EXPECT_TRUE(isIntEqualsWord(value, -i));
   }
 }
 
 TEST_F(RuntimeDictTest, CollidingKeys) {
   HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C:
+  def __eq__(self, other):
+    return self is other
+  def __hash__(self):
+    return 0
+i0 = C()
+i1 = C()
+)")
+                   .isError());
+  Object i0(&scope, mainModuleAt(&runtime_, "i0"));
+  Object i0_hash(&scope, Interpreter::hash(thread_, i0));
+  ASSERT_FALSE(i0_hash.isErrorException());
+  Object i1(&scope, mainModuleAt(&runtime_, "i1"));
+  Object i1_hash(&scope, Interpreter::hash(thread_, i1));
+  ASSERT_FALSE(i1_hash.isErrorException());
+  ASSERT_EQ(i0_hash, i1_hash);
+
   Dict dict(&scope, runtime_.newDict());
 
   // Add two different keys with different values using the same hash
-  Object key1(&scope, SmallInt::fromWord(1));
-  Object key1_hash(&scope, Interpreter::hash(thread_, key1));
-  ASSERT_FALSE(key1_hash.isErrorException());
-  runtime_.dictAtPut(thread_, dict, key1, key1_hash, key1);
-
-  Object key2(&scope, Bool::trueObj());
-  Object key2_hash(&scope, Interpreter::hash(thread_, key2));
-  ASSERT_FALSE(key2_hash.isErrorException());
-  runtime_.dictAtPut(thread_, dict, key2, key2_hash, key2);
+  runtime_.dictAtPut(thread_, dict, i0, i0_hash, i0);
+  runtime_.dictAtPut(thread_, dict, i1, i1_hash, i1);
 
   // Make sure we get both back
-  RawObject retrieved = runtime_.dictAt(thread_, dict, key1, key1_hash);
-  EXPECT_EQ(retrieved, *key1);
+  Object retrieved(&scope, runtime_.dictAt(thread_, dict, i0, i0_hash));
+  EXPECT_EQ(retrieved, i0);
 
-  retrieved = runtime_.dictAt(thread_, dict, key2, key2_hash);
-  ASSERT_TRUE(retrieved.isBool());
-  EXPECT_EQ(Bool::cast(retrieved).value(), Bool::cast(*key2).value());
+  retrieved = runtime_.dictAt(thread_, dict, i1, i1_hash);
+  EXPECT_EQ(retrieved, i1);
 }
 
 TEST_F(RuntimeDictTest, MixedKeys) {
@@ -611,7 +621,7 @@ TEST_F(RuntimeDictTest, MixedKeys) {
 
   retrieved = runtime_.dictAt(thread_, dict, str_key, str_key_hash);
   ASSERT_TRUE(retrieved.isStr());
-  EXPECT_TRUE(Object::equals(*str_key, retrieved));
+  EXPECT_EQ(*str_key, retrieved);
 }
 
 TEST_F(RuntimeDictTest, GetKeys) {

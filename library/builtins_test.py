@@ -1684,6 +1684,25 @@ class DictTests(unittest.TestCase):
         with self.assertRaises(UserWarning):
             dict.__eq__(d0, d1)
 
+    def test_mix_bool_and_int_keys(self):
+        d = {}
+        d[True] = 42
+        self.assertIn(1, d)
+        self.assertEqual(d[True], 42)
+        self.assertEqual(d[1], 42)
+        self.assertNotIn(False, d)
+        d[1] = "foo"
+        self.assertEqual(len(d), 1)
+        self.assertEqual(d[True], "foo")
+        self.assertEqual(d[1], "foo")
+        self.assertNotIn(False, d)
+
+        d[0] = "bar"
+        self.assertEqual(d[False], "bar")
+        self.assertEqual(d[0], "bar")
+        d[False] = "bar"
+        self.assertEqual(len(d), 2)
+
     def test_popitem_with_non_dict_raise_type_error(self):
         with self.assertRaises(TypeError) as context:
             dict.popitem(None)
@@ -5641,6 +5660,24 @@ class SetTests(unittest.TestCase):
         self.assertIn(1, s)
         self.assertIs(set.discard(s, 1), None)
         self.assertNotIn(1, s)
+
+    def test_mix_bool_and_int(self):
+        s = set()
+        s.add(1)
+        self.assertIn(1, s)
+        self.assertNotIn(0, s)
+        self.assertIn(True, s)
+        self.assertNotIn(False, s)
+        self.assertEqual(len(s), 1)
+        s.add(True)
+        self.assertEqual(len(s), 1)
+
+        s = set()
+        s.add(False)
+        self.assertIn(0, s)
+        self.assertEqual(len(s), 1)
+        s.add(0)
+        self.assertEqual(len(s), 1)
 
     def test_repr_returns_str(self):
         self.assertEqual(set.__repr__(set()), "set()")

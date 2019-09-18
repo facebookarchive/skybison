@@ -31,6 +31,8 @@ struct ListEntry {
 
 using AtExitFn = void (*)();
 
+using DictEq = bool (*)(Thread*, RawObject, RawObject);
+
 using NativeMethodType = RawObject (*)(Thread* thread, Frame* frame,
                                        word nargs);
 
@@ -936,11 +938,12 @@ class Runtime {
   // index of the bucket that contains the value. If the key is not found, this
   // function returns false and sets index to the location where the key would
   // be inserted. If the dict is full, it sets index to -1.
-  bool dictLookup(const Tuple& data, const Object& key, const Object& key_hash,
-                  word* index, DictEq pred);
+  bool dictLookup(Thread* thread, const Tuple& data, const Object& key,
+                  const Object& key_hash, word* index, DictEq equals);
 
   template <SetLookupType type>
-  word setLookup(const Tuple& data, const Object& key, const Object& key_hash);
+  word setLookup(Thread* thread, const Tuple& data, const Object& key,
+                 const Object& key_hash);
 
   RawTuple setGrow(Thread* thread, const Tuple& data);
 
