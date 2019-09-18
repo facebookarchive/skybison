@@ -159,6 +159,50 @@ TEST_F(ErrorsExtensionApiTest, NewExceptionWithEmptyDictAddsModuleName) {
   EXPECT_TRUE(isUnicodeEqualsCStr(module_name, "Module"));
 }
 
+TEST_F(ErrorsExtensionApiTest,
+       NewExceptionWithDocWithNullDocReturnsTypeWithNoneDoc) {
+  PyObjectPtr type(
+      PyErr_NewExceptionWithDoc("Module.Name", nullptr, nullptr, nullptr));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyType_CheckExact(type));
+  EXPECT_TRUE(
+      PyType_IsSubtype(reinterpret_cast<PyTypeObject*>(type.get()),
+                       reinterpret_cast<PyTypeObject*>(PyExc_Exception)));
+
+  PyObjectPtr name(PyObject_GetAttrString(type, "__name__"));
+  PyObjectPtr module_name(PyObject_GetAttrString(type, "__module__"));
+  PyObjectPtr doc_string(PyObject_GetAttrString(type, "__doc__"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(name, "Name"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(module_name, "Module"));
+  EXPECT_EQ(doc_string, Py_None);
+}
+
+TEST_F(ErrorsExtensionApiTest,
+       NewExceptionWithDocWithNonDictRaisesSystemError) {
+  PyObjectPtr not_dict(PyList_New(0));
+  EXPECT_EQ(PyErr_NewExceptionWithDoc("Module.Name", "DOC", nullptr, not_dict),
+            nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(ErrorsExtensionApiTest, NewExceptionWithDocWithStrReturnsType) {
+  PyObjectPtr type(
+      PyErr_NewExceptionWithDoc("Module.Name", "DOC", nullptr, nullptr));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyType_CheckExact(type));
+  EXPECT_TRUE(
+      PyType_IsSubtype(reinterpret_cast<PyTypeObject*>(type.get()),
+                       reinterpret_cast<PyTypeObject*>(PyExc_Exception)));
+
+  PyObjectPtr name(PyObject_GetAttrString(type, "__name__"));
+  PyObjectPtr module_name(PyObject_GetAttrString(type, "__module__"));
+  PyObjectPtr doc_string(PyObject_GetAttrString(type, "__doc__"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(name, "Name"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(module_name, "Module"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(doc_string, "DOC"));
+}
+
 TEST_F(ErrorsExtensionApiTest, NoMemoryRaisesMemoryError) {
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(PyErr_NoMemory(), nullptr);
