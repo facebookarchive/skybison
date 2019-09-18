@@ -456,6 +456,12 @@ class Runtime {
   RawObject bytesSlice(Thread* thread, const Bytes& self, word start, word stop,
                        word step);
 
+  // Checks whether the specified range of self starts with the given prefix.
+  // Returns Bool::trueObj() if the suffix matches, else Bool::falseObj().
+  RawObject bytesStartsWith(const Bytes& self, word self_len,
+                            const Bytes& prefix, word prefix_len, word start,
+                            word end);
+
   // Returns a new Bytes containing the Bytes or MutableBytes subsequence of
   // self with the given start index and length.
   RawObject bytesSubseq(Thread* thread, const Bytes& self, word start,

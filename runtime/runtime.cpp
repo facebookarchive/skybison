@@ -2814,6 +2814,23 @@ RawObject Runtime::bytesSlice(Thread* thread, const Bytes& self, word start,
   return result.becomeImmutable();
 }
 
+RawObject Runtime::bytesStartsWith(const Bytes& self, word self_len,
+                                   const Bytes& prefix, word prefix_len,
+                                   word start, word end) {
+  DCHECK_BOUND(self_len, self.length());
+  DCHECK_BOUND(prefix_len, prefix.length());
+  Slice::adjustSearchIndices(&start, &end, self_len);
+  if (start + prefix_len > end) {
+    return Bool::falseObj();
+  }
+  for (word i = start, j = 0; j < prefix_len; i++, j++) {
+    if (self.byteAt(i) != prefix.byteAt(j)) {
+      return Bool::falseObj();
+    }
+  }
+  return Bool::trueObj();
+}
+
 RawObject Runtime::bytesSubseq(Thread* thread, const Bytes& self, word start,
                                word length) {
   DCHECK_BOUND(start, self.length());

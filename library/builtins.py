@@ -36,6 +36,7 @@ _byteslike_find_int = _byteslike_find_int  # noqa: F821
 _byteslike_guard = _byteslike_guard  # noqa: F821
 _byteslike_rfind_byteslike = _byteslike_rfind_byteslike  # noqa: F821
 _byteslike_rfind_int = _byteslike_rfind_int  # noqa: F821
+_byteslike_startswith = _byteslike_startswith  # noqa: F821
 _classmethod = _classmethod  # noqa: F821
 _classmethod_isabstract = _classmethod_isabstract  # noqa: F821
 _code_guard = _code_guard  # noqa: F821
@@ -1609,8 +1610,16 @@ class bytearray(bootstrap=True):
     def splitlines(self, keepends=False):
         _unimplemented()
 
-    def startswith(self, prefix, start=_Unbound, end=_Unbound):
-        _unimplemented()
+    def startswith(self, prefix, start=None, end=None):
+        _bytearray_guard(self)
+        start = 0 if start is None else _slice_index(start)
+        end = _bytearray_len(self) if end is None else _slice_index(end)
+        if not _tuple_check(prefix):
+            return _byteslike_startswith(self, prefix, start, end)
+        for item in prefix:
+            if _byteslike_startswith(self, item, start, end):
+                return True
+        return False
 
     def strip(self, bytes=None):
         _unimplemented()
@@ -1938,8 +1947,16 @@ class bytes(bootstrap=True):
     def splitlines(self, keepends=False):
         _unimplemented()
 
-    def startswith(self, prefix, start=_Unbound, end=_Unbound):
-        _unimplemented()
+    def startswith(self, prefix, start=None, end=None):
+        _bytes_guard(self)
+        start = 0 if start is None else _slice_index(start)
+        end = _bytes_len(self) if end is None else _slice_index(end)
+        if not _tuple_check(prefix):
+            return _byteslike_startswith(self, prefix, start, end)
+        for item in prefix:
+            if _byteslike_startswith(self, item, start, end):
+                return True
+        return False
 
     def strip(self, bytes=None):
         _unimplemented()

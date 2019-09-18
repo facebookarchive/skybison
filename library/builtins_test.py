@@ -754,6 +754,49 @@ class ByteArrayTests(unittest.TestCase):
             haystack.rindex(needle, 0, 2)
         self.assertEqual(str(context.exception), "subsection not found")
 
+    def test_startswith_with_bytes_self_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytearray.startswith(b"", bytearray())
+        self.assertIn(
+            "'startswith' requires a 'bytearray' object but received a 'bytes'",
+            str(context.exception),
+        )
+
+    def test_startswith_with_list_other_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytearray().startswith([])
+        self.assertEqual(
+            str(context.exception),
+            "startswith first arg must be bytes or a tuple of bytes, not list",
+        )
+
+    def test_startswith_with_tuple_other_checks_each(self):
+        haystack = bytearray(b"123")
+        needle1 = (b"12", b"13", b"23", b"d")
+        needle2 = (b"2", b"asd", b"122222")
+        self.assertTrue(haystack.startswith(needle1))
+        self.assertFalse(haystack.startswith(needle2))
+
+    def test_startswith_with_start_searches_from_start(self):
+        haystack = bytearray(b"12345")
+        needle1 = bytearray(b"1")
+        needle4 = b"34"
+        self.assertFalse(haystack.startswith(needle1, 1))
+        self.assertFalse(haystack.startswith(needle4, 0))
+        self.assertTrue(haystack.startswith(needle1, 0, 1))
+        self.assertTrue(haystack.startswith(needle4, 2))
+
+    def test_startswith_with_empty_returns_true_for_valid_bounds(self):
+        haystack = bytearray(b"12345")
+        self.assertTrue(haystack.startswith(bytearray()))
+        self.assertTrue(haystack.startswith(b"", 5))
+        self.assertTrue(haystack.startswith(bytearray(), -9, 1))
+
+    def test_startswith_with_empty_returns_false_for_invalid_bounds(self):
+        haystack = bytearray(b"12345")
+        self.assertFalse(haystack.startswith(b"", 3, 2))
+        self.assertFalse(haystack.startswith(bytearray(), 6))
+
 
 class BytesTests(unittest.TestCase):
     def test_decode_finds_ascii(self):
@@ -1287,6 +1330,49 @@ class BytesTests(unittest.TestCase):
         self.assertEqual(b.split(bytearray(b"o")), [b"f", b"", b" bar baz"])
         self.assertEqual(b.split(b"ba"), [b"foo ", b"r ", b"z"])
         self.assertEqual(b.split(b"not found"), [b])
+
+    def test_startswith_with_bytearray_self_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytes.startswith(bytearray(), b"")
+        self.assertIn(
+            "'startswith' requires a 'bytes' object but received a 'bytearray'",
+            str(context.exception),
+        )
+
+    def test_startswith_with_list_other_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            b"".startswith([])
+        self.assertEqual(
+            str(context.exception),
+            "startswith first arg must be bytes or a tuple of bytes, not list",
+        )
+
+    def test_startswith_with_tuple_other_checks_each(self):
+        haystack = b"123"
+        needle1 = (b"13", b"23", b"12", b"d")
+        needle2 = (b"2", b"asd", b"122222")
+        self.assertTrue(haystack.startswith(needle1))
+        self.assertFalse(haystack.startswith(needle2))
+
+    def test_startswith_with_start_searches_from_start(self):
+        haystack = b"12345"
+        needle1 = bytearray(b"1")
+        needle4 = b"34"
+        self.assertFalse(haystack.startswith(needle1, 1))
+        self.assertFalse(haystack.startswith(needle4, 0))
+        self.assertTrue(haystack.startswith(needle1, 0))
+        self.assertTrue(haystack.startswith(needle4, 2))
+
+    def test_startswith_with_empty_returns_true_for_valid_bounds(self):
+        haystack = b"12345"
+        self.assertTrue(haystack.startswith(bytearray()))
+        self.assertTrue(haystack.startswith(b"", 5))
+        self.assertTrue(haystack.startswith(bytearray(), -9, 1))
+
+    def test_startswith_with_empty_returns_false_for_invalid_bounds(self):
+        haystack = b"12345"
+        self.assertFalse(haystack.startswith(b"", 3, 2))
+        self.assertFalse(haystack.startswith(bytearray(), 6))
 
 
 class ChrTests(unittest.TestCase):

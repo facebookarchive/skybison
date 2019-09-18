@@ -61,6 +61,8 @@ class UnderBuiltinsModule {
                                                 word nargs);
   static RawObject underByteslikeRFindInt(Thread* thread, Frame* frame,
                                           word nargs);
+  static RawObject underByteslikeStartsWith(Thread* thread, Frame* frame,
+                                            word nargs);
   static RawObject underClassMethod(Thread* thread, Frame* frame, word nargs);
   static RawObject underClassMethodIsAbstract(Thread* thread, Frame* frame,
                                               word nargs);
