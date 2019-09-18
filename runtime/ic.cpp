@@ -1,8 +1,8 @@
 #include "ic.h"
 
-#include "bytearray-builtins.h"
 #include "bytecode.h"
 #include "runtime.h"
+#include "type-builtins.h"
 #include "utils.h"
 
 namespace python {
@@ -213,34 +213,26 @@ void icDeleteCacheForTypeAttrInDependent(Thread* thread,
   }
 }
 
-void icInvalidateCachesForTypeAttr(Thread* thread, const Type& type,
-                                   const Str& attribute_name,
-                                   bool data_descriptor) {
+void icInvalidateAttr(Thread* thread, const Type& type, const Str& attr_name,
+                      const ValueCell& value) {
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Dict dict(&scope, type.dict());
-  Object value(&scope, runtime->dictAtByStr(thread, dict, attribute_name));
-  if (value.isErrorNotFound()) {
-    return;
-  }
-  DCHECK(value.isValueCell(), "value must be ValueCell");
-  ValueCell type_attr_cell(&scope, *value);
-  // Delete caches for attribute_name to be shadowed by the type[attribute_name]
+  // Delete caches for attr_name to be shadowed by the type[attr_name]
   // change in all dependents that depend on the attribute being updated.
-  Object link(&scope, type_attr_cell.dependencyLink());
+  Type value_type(&scope, thread->runtime()->typeOf(value.value()));
+  bool is_data_descriptor = typeIsDataDescriptor(thread, value_type);
+  Object link(&scope, value.dependencyLink());
   while (!link.isNoneType()) {
     Function dependent(&scope, WeakLink::cast(*link).referent());
     // Capturing the next node in case the current node is deleted by
     // icDeleteCacheForTypeAttrInDependent
     link = WeakLink::cast(*link).next();
-    icDeleteCacheForTypeAttrInDependent(thread, type, attribute_name,
-                                        data_descriptor, dependent);
+    icDeleteCacheForTypeAttrInDependent(thread, type, attr_name,
+                                        is_data_descriptor, dependent);
   }
-
-  // In case data_descriptor is true, we shouldn't see any dependents after
+  // In case is_data_descriptor is true, we shouldn't see any dependents after
   // caching invalidation.
-  DCHECK(!data_descriptor || type_attr_cell.dependencyLink().isNoneType(),
-         "dependencyLink must be None if data_descriptor is true");
+  DCHECK(!is_data_descriptor || value.dependencyLink().isNoneType(),
+         "dependencyLink must be None if is_data_descriptor is true");
 }
 
 void icUpdateBinop(RawTuple caches, word index, LayoutId left_layout_id,

@@ -397,9 +397,7 @@ RawObject typeSetAttr(Thread* thread, const Type& type,
                                    thread, type_dict, name_interned, value));
   if (!value_cell.dependencyLink().isNoneType()) {
     // TODO(T46362789): Move cache invalidation logic into dict API.
-    Type value_type(&scope, thread->runtime()->typeOf(*value));
-    icInvalidateCachesForTypeAttr(thread, type, name_interned,
-                                  typeIsDataDescriptor(thread, value_type));
+    icInvalidateAttr(thread, type, name_interned, value_cell);
   }
   return NoneType::object();
 }

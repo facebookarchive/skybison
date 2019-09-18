@@ -103,9 +103,8 @@ void icDeleteCacheForTypeAttrInDependent(Thread* thread,
 // called after the type attribute update is already made.
 //
 // Refer to https://fb.quip.com/q568ASVbNIad for the details of this process.
-void icInvalidateCachesForTypeAttr(Thread* thread, const Type& type,
-                                   const Str& attribute_name,
-                                   bool data_descriptor);
+void icInvalidateAttr(Thread* thread, const Type& type, const Str& attr_name,
+                      const ValueCell& value);
 
 // Sets a cache entry to a `left_layout_id` and `right_layout_id` key with
 // the given `value` and `flags` as value.

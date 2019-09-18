@@ -608,14 +608,21 @@ c = C()
   Function dependent1(&scope,
                       testingFunctionCachingAttributes(thread_, bar_name));
 
+  // Create a property so these value cells look like data descriptor attributes
+  Object none(&scope, NoneType::object());
+  Object data_descriptor(&scope, runtime_.newProperty(none, none, none));
+
   // foo -> dependent0.
   ValueCell foo(&scope, runtime_.newValueCell());
+  foo.setValue(*data_descriptor);
   ASSERT_TRUE(
       icInsertDependentToValueCellDependencyLink(thread_, dependent0, foo));
   runtime_.dictAtPutByStr(thread_, type_dict, foo_name, foo);
 
   // bar -> dependent1.
   ValueCell bar(&scope, runtime_.newValueCell());
+  bar.setValue(*data_descriptor);
+
   ASSERT_TRUE(
       icInsertDependentToValueCellDependencyLink(thread_, dependent1, bar));
   runtime_.dictAtPutByStr(thread_, type_dict, bar_name, bar);
@@ -641,28 +648,17 @@ c = C()
               SmallInt::fromWord(5678));
   }
 
-  icInvalidateCachesForTypeAttr(thread_, type, foo_name, true);
+  icInvalidateAttr(thread_, type, foo_name, foo);
   EXPECT_TRUE(icLookupAttr(*dependent0_caches, 1, instance.layoutId())
                   .isErrorNotFound());
   EXPECT_EQ(icLookupAttr(*dependent1_caches, 1, instance.layoutId()),
             SmallInt::fromWord(5678));
 
-  icInvalidateCachesForTypeAttr(thread_, type, bar_name, true);
+  icInvalidateAttr(thread_, type, bar_name, bar);
   EXPECT_TRUE(icLookupAttr(*dependent0_caches, 1, instance.layoutId())
                   .isErrorNotFound());
   EXPECT_TRUE(icLookupAttr(*dependent1_caches, 1, instance.layoutId())
                   .isErrorNotFound());
-}
-
-TEST_F(IcTest, IcInvalidateCachesForTypeAttrDoesNothingForNotFoundTypeAttr) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-class C: pass
-)")
-                   .isError());
-  HandleScope scope(thread_);
-  Type type(&scope, mainModuleAt(&runtime_, "C"));
-  Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
-  icInvalidateCachesForTypeAttr(thread_, type, foo_name, true);
 }
 
 TEST_F(IcTest,
