@@ -73,6 +73,7 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kGetattr, getattr},
     {SymbolId::kGlobals, globals},
     {SymbolId::kHasattr, hasattr},
+    {SymbolId::kHash, hash},
     {SymbolId::kHex, hex},
     {SymbolId::kId, id},
     {SymbolId::kOct, oct},
@@ -628,6 +629,13 @@ RawObject BuiltinsModule::hasattr(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Object name(&scope, args.get(1));
   return hasAttribute(thread, self, name);
+}
+
+RawObject BuiltinsModule::hash(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object object(&scope, args.get(0));
+  return Interpreter::hash(thread, object);
 }
 
 RawObject BuiltinsModule::hex(Thread* thread, Frame* frame, word nargs) {

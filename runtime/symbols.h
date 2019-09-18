@@ -566,8 +566,9 @@ class Runtime;
   V(Getter, "getter")                                                          \
   V(GiRunning, "gi_running")                                                   \
   V(Globals, "globals")                                                        \
-  V(HashInfo, "hash_info")                                                     \
   V(Hasattr, "hasattr")                                                        \
+  V(Hash, "hash")                                                              \
+  V(HashInfo, "hash_info")                                                     \
   V(Hex, "hex")                                                                \
   V(Iadd, "iadd")                                                              \
   V(Iand, "iand")                                                              \

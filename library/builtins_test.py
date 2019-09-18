@@ -2702,6 +2702,58 @@ class HashTests(unittest.TestCase):
         self.assertEqual(42, result)
         self.assertEqual(type(42), int)
 
+    def test_hash_with_false_returns_zero(self):
+        class C:
+            def __hash__(self):
+                return False
+
+        self.assertIs(type(hash(C())), int)
+        self.assertEqual(hash(C()), 0)
+
+    def test_hash_with_true_returns_one(self):
+        class C:
+            def __hash__(self):
+                return True
+
+        self.assertIs(type(hash(C())), int)
+        self.assertEqual(hash(C()), 1)
+
+    def test_hash_replaces_minus_one_with_minus_two(self):
+        class C:
+            def __hash__(self):
+                return -1
+
+        self.assertEqual(hash(C()), -2)
+
+    def test_hash_with_large_int_value_hashes_result(self):
+        class C:
+            def __hash__(self):
+                return 0xB228AA4BB7326F5D697F47B0CC9230D4
+
+        self.assertEqual(hash(C()), int.__hash__(0xB228AA4BB7326F5D697F47B0CC9230D4))
+
+    def test_hash_returns_hash_value(self):
+        class C(int):
+            def __hash__(self):
+                return self
+
+        self.assertEqual(hash(C(0)), 0)
+        self.assertEqual(hash(C(1)), 1)
+        self.assertEqual(hash(C(42)), 42)
+        self.assertEqual(hash(C(-5)), -5)
+
+    def test_hash_with_max_hash_returns_max_hash(self):
+        import sys
+
+        max_hash = (1 << (sys.hash_info.width - 1)) - 1
+
+        class C:
+            def __hash__(self):
+                nonlocal max_hash
+                return max_hash
+
+        self.assertEqual(hash(C()), max_hash)
+
 
 class HexTests(unittest.TestCase):
     def test_returns_string(self):

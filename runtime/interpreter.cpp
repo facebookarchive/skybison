@@ -264,12 +264,12 @@ RawObject Interpreter::hash(Thread* thread, const Object& value) {
   // eventually be called less and less as code moves to managed.
   Object dunder_hash(&scope, Interpreter::lookupMethod(thread, frame, value,
                                                        SymbolId::kDunderHash));
-  if (!dunder_hash.isFunction()) {
-    if (dunder_hash.isNoneType() || dunder_hash.isErrorNotFound()) {
-      return thread->raiseWithFmt(LayoutId::kTypeError, "unhashable type: '%T'",
-                                  &value);
+  if (dunder_hash.isNoneType() || dunder_hash.isError()) {
+    if (dunder_hash.isErrorException()) {
+      thread->clearPendingException();
     }
-    if (dunder_hash.isErrorException()) return *dunder_hash;
+    return thread->raiseWithFmt(LayoutId::kTypeError, "unhashable type: '%T'",
+                                &value);
   }
   Object result(&scope,
                 Interpreter::callMethod1(thread, frame, dunder_hash, value));
@@ -280,9 +280,20 @@ RawObject Interpreter::hash(Thread* thread, const Object& value) {
   }
   Int hash_int(&scope, intUnderlying(thread, result));
   if (hash_int.isSmallInt()) {
+    // cpython always replaces -1 hash values with -2.
+    if (hash_int == SmallInt::fromWord(-1)) {
+      return SmallInt::fromWord(-2);
+    }
     return *hash_int;
   }
-  return SmallInt::fromWordTruncated(hash_int.digitAt(0));
+  if (hash_int.isBool()) {
+    return SmallInt::fromWord(Bool::cast(*hash_int).value() ? 1 : 0);
+  }
+  // Note that cpython keeps the hash values unaltered as long as they fit into
+  // `Py_hash_t` (aka `Py_ssize_t`) while we must return a `SmallInt` here so
+  // we have to invoke the large int hashing for 1 bit smaller numbers than
+  // cpython.
+  return largeIntHash(LargeInt::cast(*hash_int));
 }
 
 RawObject Interpreter::stringJoin(Thread* thread, RawObject* sp, word num) {

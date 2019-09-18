@@ -2533,19 +2533,9 @@ def hasattr(obj, name):
     pass
 
 
-def hash(obj):
-    try:
-        dunder_hash = _object_type_getattr(obj, "__hash__")
-    except Exception:
-        raise TypeError(f"unhashable type: '{_type(obj).__name__}'")
-    if dunder_hash is None or dunder_hash is _Unbound:
-        raise TypeError(f"unhashable type: '{_type(obj).__name__}'")
-    result = dunder_hash()
-    if _int_checkexact(result):
-        return result
-    if _int_check(result):
-        return _int_new_from_int(int, result)
-    raise TypeError("__hash__ method should return an integer")
+@_patch
+def hash(obj) -> int:
+    pass
 
 
 def help(obj=_Unbound):
