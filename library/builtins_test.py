@@ -66,6 +66,16 @@ class BinTests(unittest.TestCase):
         )
 
 
+class BoolTests(unittest.TestCase):
+    def test_dunder_hash(self):
+        self.assertEqual(bool.__hash__(False), 0)
+        self.assertEqual(bool.__hash__(True), 1)
+
+    def test_dunder_hash_matches_int_dunder_hash(self):
+        self.assertEqual(bool.__hash__(False), int.__hash__(0))
+        self.assertEqual(bool.__hash__(True), int.__hash__(1))
+
+
 class BoundMethodTests(unittest.TestCase):
     def test_bound_method_dunder_func(self):
         class Foo:
@@ -2648,6 +2658,44 @@ class HexTests(unittest.TestCase):
 
 
 class IntTests(unittest.TestCase):
+    def test_dunder_hash_with_small_number_returns_self(self):
+        self.assertEqual(int.__hash__(0), 0)
+        self.assertEqual(int.__hash__(1), 1)
+        self.assertEqual(int.__hash__(-5), -5)
+        self.assertEqual(int.__hash__(10000), 10000)
+        self.assertEqual(int.__hash__(-10000), -10000)
+
+    def test_dunder_hash_minus_one_returns_minus_two(self):
+        self.assertEqual(int.__hash__(-1), -2)
+
+        import sys
+
+        factor = sys.hash_info.modulus + 1
+        self.assertEqual(int.__hash__(-1 * factor), -2)
+        self.assertEqual(int.__hash__(-1 * factor * factor * factor), -2)
+
+    def test_dunder_hash_applies_modulus(self):
+        import sys
+
+        modulus = sys.hash_info.modulus
+
+        self.assertEqual(int.__hash__(modulus - 1), modulus - 1)
+        self.assertEqual(int.__hash__(modulus), 0)
+        self.assertEqual(int.__hash__(modulus + 1), 1)
+        self.assertEqual(int.__hash__(modulus + modulus + 13), 13)
+        self.assertEqual(int.__hash__(-modulus + 1), -modulus + 1)
+        self.assertEqual(int.__hash__(-modulus), 0)
+        self.assertEqual(int.__hash__(-modulus - 2), -2)
+        self.assertEqual(int.__hash__(-modulus - modulus - 13), -13)
+
+    def test_dunder_hash_with_largeint_returns_int(self):
+        self.assertEqual(int.__hash__(1 << 234), 1 << 51)
+        self.assertEqual(int.__hash__(-1 << 234), -1 << 51)
+
+        value = 0xB9F041FF6B5D18158ABA6BDAE4B582C01F55A792
+        self.assertEqual(int.__hash__(value), 2278332794247153219)
+        self.assertEqual(int.__hash__(-value), -2278332794247153219)
+
     def test_dunder_new_with_bool_class_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             int.__new__(bool, 0)

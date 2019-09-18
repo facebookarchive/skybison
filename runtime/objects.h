@@ -538,6 +538,8 @@ class RawSmallInt : public RawObject {
   template <typename T>
   if_unsigned_t<T, OptInt<T>> asInt() const;
 
+  RawSmallInt hash() const;
+
   // Construction.
   static RawSmallInt fromWord(word value);
   static RawSmallInt fromWordTruncated(word value);
@@ -770,6 +772,8 @@ class RawBool : public RawObject {
  public:
   // Getters and setters.
   bool value() const;
+
+  RawSmallInt hash() const;
 
   // Singletons
   static RawBool trueObj();
@@ -3761,6 +3765,43 @@ inline RawSmallInt RawSmallInt::fromAlignedCPtr(void* ptr) {
   return fromReinterpretedWord(reinterpret_cast<word>(ptr));
 }
 
+inline RawSmallInt RawSmallInt::hash() const {
+  word val = value();
+  uword abs = static_cast<uword>(val);
+  // Shortcut for positive values smaller than `kArithmeticHashModulus`.
+  if (abs < kArithmeticHashModulus) {
+    return *this;
+  }
+  // Compute `value % kArithmeticHashModulus` (with C/C++ style modulo).  This
+  // uses the algorithm from `longIntHash()` simplified for a single word.
+  const word bits_per_half = kBitsPerWord / 2;
+  if (val < 0) {
+    abs = -abs;
+  }
+  // The `longIntHash()` formula is simplified using the following equivalences:
+  // (1)     ((abs >> bits_per_half) & p) << bits_per_half
+  //    <=>  abs & ((p >> bits_per_half) << bits_per_half)
+  // (2)     (abs >> bits_per_half) >> (kArithmeticHashBits - bits_per_half)
+  //    <=>  abs >> kArithmeticHashBits
+  uword result =
+      (abs & ((kArithmeticHashModulus >> bits_per_half) << bits_per_half)) |
+      abs >> kArithmeticHashBits;
+  result += abs & ((uword{1} << bits_per_half) - 1);
+  if (result >= kArithmeticHashModulus) {
+    result -= kArithmeticHashModulus;
+  }
+  if (val < 0) {
+    result = -result;
+    // cpython replaces `-1` results with -2, because -1 is used as an
+    // "uninitialized hash" marker in some situations. We do not use the same
+    // marker, but do the same to match behavior.
+    if (result == static_cast<uword>(word{-1})) {
+      result -= 1;
+    }
+  }
+  return fromWord(static_cast<word>(result));
+}
+
 // RawHeader
 
 inline word RawHeader::count() const {
@@ -3925,6 +3966,10 @@ inline ErrorKind RawError::kind() const {
 inline RawBool RawBool::trueObj() { return fromBool(true); }
 
 inline RawBool RawBool::falseObj() { return fromBool(false); }
+
+inline RawSmallInt RawBool::hash() const {
+  return RawSmallInt::fromWord(value() ? 1 : 0);
+}
 
 inline RawBool RawBool::negate(RawObject value) {
   DCHECK(value.isBool(), "not a boolean instance");

@@ -225,9 +225,15 @@ RawObject Interpreter::hash(Thread* thread, const Object& value) {
   // code to avoid bootstrapping problems. It also helps performance.
   LayoutId layout_id = value.layoutId();
   switch (layout_id) {
+    case LayoutId::kBool:
+      return Bool::cast(*value).hash();
+    case LayoutId::kSmallInt:
+      return SmallInt::cast(*value).hash();
     case LayoutId::kLargeBytes:
     case LayoutId::kSmallBytes:
       return bytesHash(thread, *value);
+    case LayoutId::kLargeInt:
+      return largeIntHash(LargeInt::cast(*value));
     case LayoutId::kLargeStr:
     case LayoutId::kSmallStr:
       return strHash(thread, *value);
@@ -236,12 +242,9 @@ RawObject Interpreter::hash(Thread* thread, const Object& value) {
       Tuple value_tuple(&scope, *value);
       return tupleHash(thread, value_tuple);
     }
-    case LayoutId::kBool:
     case LayoutId::kComplex:
     case LayoutId::kFloat:
     case LayoutId::kFrozenSet:
-    case LayoutId::kLargeInt:
-    case LayoutId::kSmallInt:
       // TODO(T53077062): The specialized hash functions for these layouts
       // have not been written yet and should be called here later.
       // For now: FALLTHROUGH

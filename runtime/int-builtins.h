@@ -28,6 +28,10 @@ bool compareDoubleWithInt(Thread* thread, double left, const Int& right,
 // does not have __index__ or if __index__ returns non-int.
 RawObject intFromIndex(Thread* thread, const Object& obj);
 
+RawSmallInt largeIntHash(RawLargeInt value);
+
+RawSmallInt intHash(RawObject value);
+
 // Grabs the base int value from an instance of int.
 RawObject intUnderlying(Thread* thread, const Object& obj);
 
@@ -48,6 +52,7 @@ class IntBuiltins
   static RawObject dunderFormat(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGe(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGt(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderHash(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderMod(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderMul(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNe(Thread* thread, Frame* frame, word nargs);
@@ -105,5 +110,15 @@ class BoolBuiltins : public Builtins<BoolBuiltins, SymbolId::kBool,
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(BoolBuiltins);
 };
+
+inline RawSmallInt intHash(RawObject value) {
+  if (value.isSmallInt()) {
+    return SmallInt::cast(value).hash();
+  }
+  if (value.isBool()) {
+    return Bool::cast(value).hash();
+  }
+  return largeIntHash(LargeInt::cast(value));
+}
 
 }  // namespace python

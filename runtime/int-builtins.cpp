@@ -40,6 +40,113 @@ void LargeIntBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
       .setDescribedType(runtime->typeAt(kSuperType));
 }
 
+RawSmallInt largeIntHash(RawLargeInt value) {
+  const word bits_per_half = kBitsPerWord / 2;
+
+  // The following computes `value % modulus` with
+  // `modulus := kArithmeticHashModulus` with
+  // a C/C++ style modulo (so -17 % m == -17). This matches cpythons hash
+  // function (see `cpython/Objects/longobject.c` for details).
+
+  // The following describes how we can compute without actually performing
+  // any division/modulo operations just by bit-shifting. We want to compute
+  // the modulo by a prime number for good hashing behavior and we pick a
+  // Mersenne prime, because that allows us to perform some masking tricks
+  // below. We use the constants as follows:
+  //    hash_bits := kArithmeticHashBits := 61
+  //    modulus := kArithmeticHashModulus := (1 << hash_bits) - 1
+  //
+  // To compute the modulo of a large int, we split it into higher bits and
+  // lower bits:
+  //    large_int % modulus = ((high << s) + remaining_bits) % modulus
+  //     = (((high << s) % modulus) + remaining_bits % modulus) % modulus
+  //
+  // It turns out the upper part part of this equation
+  // `((high << s) % modulus)` is just a bit rotation of `high_bits`.
+  // To understand this consider splitting up a value into `high_bits` and
+  // `low_bits`:
+  //    low_bits := val & modulus
+  //    high_bits := ((val >> hash_bits) << hash_bits)
+  //    val = high_bits + low_bits
+  //
+  // <=> val << s = (((val << s) >> hash_bits) << hash_bits)
+  //                + (val << s) & modulus
+  //              = ((val >> (hash_bits - s)) << hash_bits)
+  //                + (val << s) & modulus
+  // <=> (val << s) % modulus
+  //              = (((val >> (hash_bits - s)) << hash_bits) % modulus +
+  //                 ((val << s) & modulus) % modulus) % modulus
+  //              = (((val >> (hash_bits - s)) * 2**hash_bits) % modulus +
+  //                 ((val << s) & modulus) % modulus
+  //              = (((val << (hash_bits - s)) % modulus * 1) % modulus +
+  //                 ((val << s) & modulus) % modulus
+  //              = (((val << (hash_bits - s)) % modulus +
+  //                 ((val << s) & modulus) % modulus
+  //              = ((val << (hash_bits - s)) + ((val << s) & modulus))
+  //                 % modulus
+  // Which is a rotation of `s` bits in the lowest `hash_bits` in `val`.
+  //
+  // Note that we can choose any size `s` that is smaller than `hash_bits`,
+  // meaning we can design our algorithm to compute `s` bits at a time.
+  //
+  // We only add a small amount of bits in each step, so the remaining modulo
+  // operation can be expressed as `if (result >= modulus) result -= modulus;`.
+  bool is_negative = value.isNegative();
+  word num_digits = value.numDigits();
+
+  uword result = 0;
+  for (word i = num_digits - 1; i >= 0; i--) {
+    uword digit = value.digitAt(i);
+    // The computation is designed for positive numbers. We compute negative
+    // numbers via `-(-value % p)`. We use the following equivalence so we do
+    // not need to negate the large integer:
+    //      -(-value % p)
+    //  <=> -((~value + 1) % p)
+    //  <=> -(((~value % p) + (1 % p)) % p)
+    //  <=> -(((~value % p) + 1) % p)
+    if (is_negative) {
+      digit = ~digit;
+    }
+
+    // Rotate result, add upper half of the digit, perform modulo.
+    result = ((result << bits_per_half) & kArithmeticHashModulus) |
+             result >> (kArithmeticHashBits - bits_per_half);
+    result += digit >> bits_per_half;
+    if (result >= kArithmeticHashModulus) {
+      result -= kArithmeticHashModulus;
+    }
+
+    // Rotate result, add lower half of digit, perform modulo.
+    result = ((result << bits_per_half) & kArithmeticHashModulus) |
+             result >> (kArithmeticHashBits - bits_per_half);
+    uword low_bits = digit & ((uword{1} << bits_per_half) - 1);
+    result += low_bits;
+    if (result >= kArithmeticHashModulus) {
+      result -= kArithmeticHashModulus;
+    }
+  }
+
+  if (is_negative) {
+    // We computed `result := ~value % p` so far, as described above compute
+    // `-((result + 1) % p)` now.
+    result++;
+    if (result >= kArithmeticHashModulus) {
+      result -= kArithmeticHashModulus;
+    }
+    result = -result;
+    // cpython replaces `-1` results with -2, because -1 is used as an
+    // "uninitialized hash" marker in some situations. We do not use the same
+    // marker, but do the same to match behavior.
+    if (result == static_cast<uword>(word{-1})) {
+      result--;
+    }
+  } else {
+    DCHECK(result != static_cast<uword>(word{-1}),
+           "should only have -1 for negative numbers");
+  }
+  return RawSmallInt::fromWord(static_cast<word>(result));
+}
+
 // Used only for UserIntBase as a heap-allocated object.
 const BuiltinAttribute IntBuiltins::kAttributes[] = {
     {SymbolId::kInvalid, UserIntBase::kValueOffset},
@@ -62,6 +169,7 @@ const BuiltinMethod IntBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderFormat, dunderFormat},
     {SymbolId::kDunderGe, dunderGe},
     {SymbolId::kDunderGt, dunderGt},
+    {SymbolId::kDunderHash, dunderHash},
     {SymbolId::kDunderIndex, dunderInt},
     {SymbolId::kDunderInt, dunderInt},
     {SymbolId::kDunderInvert, dunderInvert},
@@ -338,6 +446,12 @@ RawObject IntBuiltins::dunderFormat(Thread* thread, Frame* frame, word nargs) {
     default:
       return raiseUnknownFormatError(thread, format.type, self_obj);
   }
+}
+
+RawObject IntBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
+  return intUnaryOp(
+      thread, frame, nargs,
+      [](Thread*, const Int& self) -> RawObject { return intHash(*self); });
 }
 
 RawObject IntBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {

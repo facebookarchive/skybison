@@ -2603,6 +2603,9 @@ class int(bootstrap=True):
     def __gt__(self, n: int) -> bool:
         pass
 
+    def __hash__(self) -> int:
+        pass
+
     def __index__(self) -> int:
         pass
 
