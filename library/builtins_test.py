@@ -1495,6 +1495,33 @@ class CodeTests(unittest.TestCase):
         self.assertEqual(hash(first_foo_code), hash(second_foo_code))
 
 
+class ComplexTests(unittest.TestCase):
+    def test_dunder_hash_with_0_image_returns_float_hash(self):
+        self.assertEqual(complex.__hash__(complex(0.0)), float.__hash__(0.0))
+        self.assertEqual(complex.__hash__(complex(-0.0)), float.__hash__(-0.0))
+        self.assertEqual(complex.__hash__(complex(1.0)), float.__hash__(1.0))
+        self.assertEqual(complex.__hash__(complex(-1.0)), float.__hash__(-1.0))
+        self.assertEqual(complex.__hash__(complex(42.0)), float.__hash__(42.0))
+        self.assertEqual(complex.__hash__(complex(1e23)), float.__hash__(1e23))
+        inf = float("inf")
+        self.assertEqual(complex.__hash__(complex(inf)), float.__hash__(inf))
+        nan = float("nan")
+        self.assertEqual(complex.__hash__(complex(nan)), float.__hash__(nan))
+
+    def test_dunder_hash_with_1_imag_returns_hash_info_imag(self):
+        import sys
+
+        imag_hash = sys.hash_info.imag
+        self.assertEqual(complex.__hash__(1j), imag_hash)
+        self.assertEqual(
+            complex.__hash__(1.000000001j), float.__hash__(1.000000001) * imag_hash
+        )
+        self.assertEqual(
+            complex.__hash__(complex(2.0, -3.0)),
+            float.__hash__(2.0) + float.__hash__(-3.0) * imag_hash,
+        )
+
+
 class DelattrTests(unittest.TestCase):
     def test_non_str_as_name_raises_type_error(self):
         with self.assertRaises(TypeError) as context:

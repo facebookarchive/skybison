@@ -1,5 +1,6 @@
 #include "complex-builtins.h"
 
+#include "float-builtins.h"
 #include "frame.h"
 #include "int-builtins.h"
 #include "objects.h"
@@ -7,14 +8,44 @@
 
 namespace python {
 
+RawSmallInt complexHash(RawObject value) {
+  RawComplex value_complex = RawComplex::cast(value);
+  uword hash_real =
+      static_cast<uword>(doubleHash(value_complex.real()).value());
+  uword hash_imag =
+      static_cast<uword>(doubleHash(value_complex.imag()).value());
+
+  uword result = hash_real + kHashImag * hash_imag;
+  if (result == static_cast<uword>(word{-1})) {
+    result--;
+  }
+  return RawSmallInt::fromWordTruncated(static_cast<word>(result));
+}
+
 const BuiltinMethod ComplexBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderAdd, dunderAdd},
+    {SymbolId::kDunderHash, dunderHash},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kSentinelId, nullptr},
 };
 
 void ComplexBuiltins::postInitialize(Runtime*, const Type& new_type) {
   new_type.setBuiltinBase(LayoutId::kComplex);
+}
+
+RawObject ComplexBuiltins::dunderHash(Thread* thread, Frame* frame,
+                                      word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfComplex(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kComplex);
+  }
+  if (!self_obj.isComplex()) {
+    UNIMPLEMENTED("Subclasses of complex");
+  }
+  return complexHash(*self_obj);
 }
 
 RawObject ComplexBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {

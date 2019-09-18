@@ -2015,6 +2015,9 @@ class complex(bootstrap=True):
     def __add__(self, other):
         pass
 
+    def __hash__(self) -> int:
+        pass
+
     def __new__(cls, real=0.0, imag=0.0):
         pass
 
