@@ -361,6 +361,8 @@ class type_proxy(bootstrap=True):
             raise KeyError(key)
         return result
 
+    __hash__ = None
+
     # type_proxy is not designed to be instantiated.
     def __init__(self, *args, **kwargs):
         _unimplemented()
@@ -427,6 +429,8 @@ class instance_proxy:
         if result is _Unbound:
             raise KeyError(key)
         return result
+
+    __hash__ = None
 
     def __init__(self, instance):
         self._instance = instance
@@ -1188,6 +1192,8 @@ class _strarray(bootstrap=True):  # noqa: F821
     def __init__(self, source=_Unbound) -> None:
         pass
 
+    __hash__ = None
+
     def __new__(cls, source=_Unbound) -> _strarray:  # noqa: F821
         pass
 
@@ -1340,6 +1346,8 @@ class bytearray(bootstrap=True):
 
     def __gt__(self, value):
         pass
+
+    __hash__ = None
 
     def __iadd__(self, other) -> bytearray:
         pass
@@ -2069,6 +2077,8 @@ class dict(bootstrap=True):
                     return dunder_missing(key)
             raise KeyError(key)
         return result
+
+    __hash__ = None
 
     def __init__(self, *args, **kwargs):
         if len(args) > 1:
@@ -3041,6 +3051,8 @@ class list(bootstrap=True):
             f"list indices must be integers or slices, not {_type(key).__name__}"
         )
 
+    __hash__ = None
+
     def __init__(self, iterable=()):
         self.extend(iterable)
 
@@ -3390,6 +3402,8 @@ class module_proxy(bootstrap=True):
             raise KeyError(key)
         return result
 
+    __hash__ = None
+
     # module_proxy is not designed to be instantiated by the managed code.
     __init__ = None
 
@@ -3706,6 +3720,8 @@ class set(bootstrap=True):
     def __gt__(self, other):
         pass
 
+    __hash__ = None
+
     def __iand__(self, other):
         pass
 
@@ -3832,6 +3848,8 @@ def setattr(obj, name, value):
 
 
 class slice(bootstrap=True):
+    __hash__ = None
+
     def __new__(cls, start_or_stop, stop=_Unbound, step=None):
         pass
 

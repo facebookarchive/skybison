@@ -179,6 +179,9 @@ class ByteArrayTests(unittest.TestCase):
         del result[4 :: 1 << 333]
         self.assertEqual(result, bytearray(b"0123"))
 
+    def test_dunder_hash_is_none(self):
+        self.assertIs(bytearray.__hash__, None)
+
     def test_dunder_setitem_with_non_bytearray_raises_type_error(self):
         with self.assertRaises(TypeError):
             bytearray.__setitem__(None, 1, 5)
@@ -1573,6 +1576,9 @@ class DictTests(unittest.TestCase):
             "'copy' requires a 'dict' object but received a 'NoneType'",
             str(context.exception),
         )
+
+    def test_dunder_hash_is_none(self):
+        self.assertIs(dict.__hash__, None)
 
     def test_update_with_malformed_sequence_elt_raises_type_error(self):
         with self.assertRaises(ValueError):
@@ -3721,6 +3727,9 @@ class ListTests(unittest.TestCase):
         self.assertEqual(a.count(0), 0)
         self.assertEqual(a.count(1), 3)
         self.assertEqual(a.count(2), 2)
+
+    def test_dunder_hash_is_none(self):
+        self.assertIs(list.__hash__, None)
 
     def test_extend_list_returns_none(self):
         original = [1, 2, 3]
