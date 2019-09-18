@@ -8,6 +8,7 @@
 #include "bytes-builtins.h"
 #include "dict-builtins.h"
 #include "exception-builtins.h"
+#include "float-builtins.h"
 #include "frame.h"
 #include "generator-builtins.h"
 #include "ic.h"
@@ -227,6 +228,8 @@ RawObject Interpreter::hash(Thread* thread, const Object& value) {
   switch (layout_id) {
     case LayoutId::kBool:
       return Bool::cast(*value).hash();
+    case LayoutId::kFloat:
+      return floatHash(*value);
     case LayoutId::kSmallInt:
       return SmallInt::cast(*value).hash();
     case LayoutId::kLargeBytes:
@@ -243,7 +246,6 @@ RawObject Interpreter::hash(Thread* thread, const Object& value) {
       return tupleHash(thread, value_tuple);
     }
     case LayoutId::kComplex:
-    case LayoutId::kFloat:
     case LayoutId::kFrozenSet:
       // TODO(T53077062): The specialized hash functions for these layouts
       // have not been written yet and should be called here later.

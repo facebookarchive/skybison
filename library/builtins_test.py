@@ -1995,6 +1995,77 @@ class FloatTests(unittest.TestCase):
             float.__int__("not a float")
         self.assertIn("'__int__' requires a 'float' object", str(context.exception))
 
+    def test_dunder_hash_from_non_finites_returns_well_known_values(self):
+        import sys
+
+        self.assertEqual(float.__hash__(float("inf")), sys.hash_info.inf)
+        self.assertEqual(float.__hash__(float("-inf")), -sys.hash_info.inf)
+        self.assertEqual(float.__hash__(float("nan")), sys.hash_info.nan)
+
+    def test_dunder_hash_returns_int(self):
+        self.assertIsInstance(float.__hash__(0.0), int)
+        self.assertIsInstance(float.__hash__(-1.0), int)
+        self.assertIsInstance(float.__hash__(42.34532), int)
+        self.assertIsInstance(float.__hash__(1.79769e308), int)
+
+    def test_dunder_hash_matches_int_dunder_hash(self):
+        self.assertEqual(float.__hash__(0.0), int.__hash__(0))
+        self.assertEqual(float.__hash__(-0.0), int.__hash__(0))
+        self.assertEqual(float.__hash__(1.0), int.__hash__(1))
+        self.assertEqual(float.__hash__(-1.0), int.__hash__(-1))
+        self.assertEqual(float.__hash__(42.0), int.__hash__(42))
+        self.assertEqual(float.__hash__(-99.0), int.__hash__(-99))
+        self.assertEqual(
+            float.__hash__(9.313203665422767e55), int.__hash__(0x3CC58055CE060C << 132)
+        )
+        self.assertEqual(
+            float.__hash__(-7.26682022207011e41), int.__hash__(-0x85786CAA960EE << 88)
+        )
+
+    def test_dunder_hash_with_negative_exponent_returns_int(self):
+        self.assertEqual(float.__hash__(0.5), 1 << 60)
+
+        import sys
+
+        # the following only works for the given modulus.
+        self.assertEqual(sys.hash_info.modulus, (1 << 61) - 1)
+        self.assertEqual(float.__hash__(6.716542360700249e-22), 0xCAFEBABE00000)
+
+    def test_dunder_hash_with_subnormals_returns_int(self):
+        import sys
+
+        # The following tests assume a specific modulus and need to be adapted
+        # if that changes.
+        self.assertEqual(sys.hash_info.modulus, (1 << 61) - 1)
+        # This is the smallest number that is not a subnormal yet.
+        self.assertEqual(float.__hash__(2.2250738585072014e-308), 1 << 15)
+        # The following are subnormal numbers:
+        self.assertEqual(float.__hash__(1.1125369292536007e-308), 1 << 14)
+        self.assertEqual(float.__hash__(2.225073858507201e-308), 0x1FFFFFFFFF007FFF)
+        self.assertEqual(float.__hash__(5e-324), 1 << 24)
+        # This is the smallest number that is not a subnormal yet.
+        self.assertEqual(float.__hash__(-2.2250738585072014e-308), -1 << 15)
+        # The following are subnormal numbers:
+        self.assertEqual(float.__hash__(-1.1125369292536007e-308), -1 << 14)
+        self.assertEqual(float.__hash__(-2.225073858507201e-308), -0x1FFFFFFFFF007FFF)
+        self.assertEqual(float.__hash__(-5e-324), -1 << 24)
+
+    def test_dunder_hash_matches_bool_dunder_hash(self):
+        self.assertEqual(float.__hash__(float(True)), bool.__hash__(True))
+        self.assertEqual(float.__hash__(float(False)), bool.__hash__(False))
+
+    def test_dunder_hash_with_float_subclass_returns_int(self):
+        class C(float):
+            pass
+
+        self.assertEqual(float.__hash__(C(-77.0)), -77)
+
+    def test_dunder_hash_with_non_float_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            self.assertEqual(float.__hash__("not a float"))
+        self.assertIn("'__hash__' requires a 'float' object", str(context.exception))
+        self.assertIn("'str'", str(context.exception))
+
     def test_dunder_mod_raises_type_error(self):
         with self.assertRaises(TypeError):
             float.__mod__(1, 1.0)

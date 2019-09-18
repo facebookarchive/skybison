@@ -80,6 +80,7 @@ const BuiltinMethod FloatBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderFloat, dunderFloat},
     {SymbolId::kDunderGe, dunderGe},
     {SymbolId::kDunderGt, dunderGt},
+    {SymbolId::kDunderHash, dunderHash},
     {SymbolId::kDunderInt, dunderInt},
     {SymbolId::kDunderLe, dunderLe},
     {SymbolId::kDunderLt, dunderLt},
@@ -337,6 +338,87 @@ static RawObject intFromDouble(Thread* thread, double value) {
                                                       : man_with_implicit_one));
   Int shifting_bits(&scope, runtime->newInt(exp - kDoubleMantissaBits));
   return runtime->intBinaryLshift(thread, unshifted_result, shifting_bits);
+}
+
+RawSmallInt doubleHash(double value) {
+  bool is_neg;
+  int exp;
+  uint64_t mantissa;
+  decodeDouble(value, &is_neg, &exp, &mantissa);
+  const int exp_bits = kBitsPerDouble - kDoubleMantissaBits - 1;
+  const int max_exp = 1 << (exp_bits - 1);
+  const int min_exp = -(1 << (exp_bits - 1)) + 1;
+
+  if (exp == max_exp) {
+    word result;
+    if (mantissa == 0) {
+      result = is_neg ? -kHashInf : kHashInf;
+    } else {
+      result = kHashNan;
+    }
+    return SmallInt::fromWord(result);
+  }
+
+  // The problem in the following is that for float numbers that compare equal
+  // to an int number, the hash values have to equal the hash values produced
+  // when hashing the integer. To achieve this we base the hashing on the same
+  // ideas as `longIntHash()`. Here we want to compute
+  // `(mantissa << (exp - mantissa_bits)) % kArithmeticHashModulus`.
+  // `mantissa` is guaranteed to be smaller than `kArithmeticHashModulus` so as
+  // explained in `longIntHash()` this just means we have to rotate it's bits by
+  // `exp` for the result.
+
+  // Add implicit one to mantissa if the number is not a subnormal.
+  if (exp > min_exp) {
+    mantissa |= uint64_t{1} << kDoubleMantissaBits;
+  } else if (mantissa == 0) {
+    // Shortcut for 0.0 / -0.0.
+    return SmallInt::fromWord(0);
+  } else {
+    // sub-normal number, adjust exponent.
+    exp += 1;
+  }
+
+  // Compute `mantissa % kArithmeticHashModulus` which is just `mantissa`.
+  static_assert(uword{1} << (kDoubleMantissaBits + 1) < kArithmeticHashModulus,
+                "assumption `mantissa < modulus` does not hold");
+  uword result = mantissa;
+
+  // `mantissa` represented `kDoubleMantissaBits` bits shifted by `exp`. We want
+  // to align the first integral bit to bit 0 in the result, so we have to
+  // rotate by `exp - kDoubleMantissaBits`.
+  exp -= kDoubleMantissaBits;
+  exp = exp >= 0 ? exp % kArithmeticHashBits
+                 : kArithmeticHashBits - 1 - ((-1 - exp) % kArithmeticHashBits);
+  result = ((result << exp) & kArithmeticHashModulus) |
+           result >> (kArithmeticHashBits - exp);
+
+  if (is_neg) {
+    result = -result;
+  }
+
+  // cpython replaces `-1` results with -2, because -1 is used as an
+  // "uninitialized hash" marker in some situations. We do not use the same
+  // marker, but do the same to match behavior.
+  if (result == static_cast<uword>(word{-1})) {
+    result--;
+  }
+
+  // Note: We cannot cache the hash value in the object header, because the
+  // result must correspond to the hash values of SmallInt/LargeInt. The object
+  // header however has fewer bits and can only store non-negative hash codes.
+  return SmallInt::fromWord(static_cast<word>(result));
+}
+
+RawObject FloatBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfFloat(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
+  }
+  Object self_float(&scope, floatUnderlying(thread, self_obj));
+  return floatHash(*self_float);
 }
 
 RawObject FloatBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {

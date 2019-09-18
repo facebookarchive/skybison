@@ -2320,6 +2320,9 @@ class float(bootstrap=True):
     def __gt__(self, n: float) -> bool:
         pass
 
+    def __hash__(self) -> int:
+        pass
+
     def __int__(self) -> int:
         pass
 

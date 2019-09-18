@@ -19,6 +19,10 @@ RawObject asFloatObject(Thread* thread, const Object& obj);
 // Grabs the base float value from an instance of float.
 RawObject floatUnderlying(Thread* thread, const Object& obj);
 
+RawSmallInt doubleHash(double value);
+
+RawSmallInt floatHash(RawObject value);
+
 class FloatBuiltins
     : public Builtins<FloatBuiltins, SymbolId::kFloat, LayoutId::kFloat> {
  public:
@@ -29,6 +33,7 @@ class FloatBuiltins
   static RawObject dunderFloat(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGe(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGt(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderHash(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderInt(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLe(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLt(Thread* thread, Frame* frame, word nargs);
@@ -53,5 +58,9 @@ class FloatBuiltins
 };
 
 void decodeDouble(double value, bool* is_neg, int* exp, uint64_t* mantissa);
+
+inline RawSmallInt floatHash(RawObject value) {
+  return doubleHash(Float::cast(value).value());
+}
 
 }  // namespace python
