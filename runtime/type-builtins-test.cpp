@@ -234,9 +234,9 @@ C(9)
 }
 
 TEST_F(TypeBuiltinsTest, DunderCallWithNonTypeRaisesTypeError) {
-  ASSERT_TRUE(raisedWithStr(runFromCStr(&runtime_, "type.__call__(5)"),
-                            LayoutId::kTypeError,
-                            "self must be a type instance"));
+  ASSERT_TRUE(raisedWithStr(
+      runFromCStr(&runtime_, "type.__call__(5)"), LayoutId::kTypeError,
+      "'__call__' requires a 'type' object but got 'int'"));
 }
 
 TEST_F(TypeBuiltinsTest, DunderCallCallsDunderInit) {

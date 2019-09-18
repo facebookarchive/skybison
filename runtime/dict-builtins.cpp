@@ -482,10 +482,7 @@ RawObject DictItemIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictItemIterator()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__iter__() must be called with a dict_itemiterator iterator instance "
-        "as the first argument");
+    return thread->raiseRequiresType(self, SymbolId::kDictItemIterator);
   }
   return *self;
 }
@@ -496,10 +493,7 @@ RawObject DictItemIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictItemIterator()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__next__() must be called with a dict_itemiterator instance as the "
-        "first argument");
+    return thread->raiseRequiresType(self, SymbolId::kDictItemIterator);
   }
   DictItemIterator iter(&scope, *self);
   Object value(&scope, dictItemIteratorNext(thread, iter));
@@ -515,10 +509,7 @@ RawObject DictItemIteratorBuiltins::dunderLengthHint(Thread* thread,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictItemIterator()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__length_hint__() must be called with a dict_itemiterator instance as "
-        "the first argument");
+    return thread->raiseRequiresType(self, SymbolId::kDictItemIterator);
   }
   DictItemIterator iter(&scope, *self);
   Dict dict(&scope, iter.iterable());
@@ -536,10 +527,7 @@ RawObject DictItemsBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictItems()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__iter__() must be called with a dict_items instance as the first "
-        "argument");
+    return thread->raiseRequiresType(self, SymbolId::kDictItems);
   }
 
   Dict dict(&scope, DictItems::cast(*self).dict());
@@ -559,10 +547,7 @@ RawObject DictKeyIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictKeyIterator()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__iter__() must be called with a dict_keyiterator iterator instance "
-        "as the first argument");
+    return thread->raiseRequiresType(self, SymbolId::kDictKeyIterator);
   }
   return *self;
 }
@@ -573,10 +558,7 @@ RawObject DictKeyIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictKeyIterator()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__next__() must be called with a dict_keyiterator instance as the "
-        "first argument");
+    return thread->raiseRequiresType(self, SymbolId::kDictKeyIterator);
   }
   DictKeyIterator iter(&scope, *self);
   Object value(&scope, dictKeyIteratorNext(thread, iter));
@@ -592,10 +574,7 @@ RawObject DictKeyIteratorBuiltins::dunderLengthHint(Thread* thread,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictKeyIterator()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__length_hint__() must be called with a dict_keyiterator instance as "
-        "the first argument");
+    return thread->raiseRequiresType(self, SymbolId::kDictKeyIterator);
   }
   DictKeyIterator iter(&scope, *self);
   Dict dict(&scope, iter.iterable());
@@ -613,10 +592,7 @@ RawObject DictKeysBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictKeys()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__iter__() must be called with a dict_keys instance as the first "
-        "argument");
+    return thread->raiseRequiresType(self, SymbolId::kDictKeys);
   }
 
   Dict dict(&scope, DictKeys::cast(*self).dict());
@@ -636,10 +612,7 @@ RawObject DictValueIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictValueIterator()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__iter__() must be called with a dict_valueiterator iterator instance "
-        "as the first argument");
+    return thread->raiseRequiresType(self, SymbolId::kDictValueIterator);
   }
   return *self;
 }
@@ -650,10 +623,7 @@ RawObject DictValueIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictValueIterator()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__next__() must be called with a dict_valueiterator instance as the "
-        "first argument");
+    return thread->raiseRequiresType(self, SymbolId::kDictValueIterator);
   }
   DictValueIterator iter(&scope, *self);
   Object value(&scope, dictValueIteratorNext(thread, iter));
@@ -670,10 +640,7 @@ RawObject DictValueIteratorBuiltins::dunderLengthHint(Thread* thread,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictValueIterator()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__length_hint__() must be called with a dict_valueiterator instance "
-        "as the first argument");
+    return thread->raiseRequiresType(self, SymbolId::kDictValueIterator);
   }
   DictValueIterator iter(&scope, *self);
   Dict dict(&scope, iter.iterable());
@@ -691,10 +658,7 @@ RawObject DictValuesBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictValues()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__iter__() must be called with a dict_values instance as the first "
-        "argument");
+    return thread->raiseRequiresType(self, SymbolId::kDictValues);
   }
 
   Dict dict(&scope, DictValues::cast(*self).dict());

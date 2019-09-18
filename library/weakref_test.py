@@ -4,6 +4,15 @@ import weakref
 
 
 class WeakRefTests(unittest.TestCase):
+    def test_ref_dunder_call_with_non_ref_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            weakref.ref.__call__("not a weakref")
+        self.assertTrue(
+            str(context.exception) == "'__call__' requires a 'ref' object but got 'str'"
+            or str(context.exception)
+            == "descriptor '__call__' requires a 'weakref' object but received a 'str'"
+        )
+
     def test_hash_on_proxy_not_callable_object_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
 

@@ -915,14 +915,6 @@ two = C(2)
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderGt, self, two), Bool::falseObj());
 }
 
-TEST_F(FloatBuiltinsTest, DunderIntWithNonFloatSelfRaisesTypeError) {
-  HandleScope scope(thread_);
-  Object non_float(&scope, NoneType::object());
-  Object result_obj(&scope, runBuiltin(FloatBuiltins::dunderInt, non_float));
-  EXPECT_TRUE(raisedWithStr(*result_obj, LayoutId::kTypeError,
-                            "'__int__' requires a 'float' object"));
-}
-
 TEST_F(FloatBuiltinsTest, DunderIntWithInfinityRaisesOverflowError) {
   HandleScope scope(thread_);
   Object input_obj(&scope,

@@ -76,14 +76,6 @@ TEST_F(RefBuiltinsTest, DunderCallReturnsObject) {
   EXPECT_EQ(result, obj);
 }
 
-TEST_F(RefBuiltinsTest, DunderCallWithNonRefRaisesTypeError) {
-  HandleScope scope;
-  Object obj(&scope, NoneType::object());
-  Object result(&scope, runBuiltin(RefBuiltins::dunderCall, obj));
-  EXPECT_TRUE(raisedWithStr(*result, LayoutId::kTypeError,
-                            "'__call__' requires a 'ref' object"));
-}
-
 TEST_F(RefBuiltinsTest, DunderHashWithDeadRefRaisesTypeError) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 import _weakref

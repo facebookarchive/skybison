@@ -96,11 +96,11 @@ RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   // super(type, type2) -> bound super object; requires issubclass(type2, type)
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  if (!args.get(0).isSuper()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "requires a super object");
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isSuper()) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kSuper);
   }
-  Super super(&scope, args.get(0));
+  Super super(&scope, *self_obj);
   Object type_obj(&scope, NoneType::object());
   Object obj(&scope, NoneType::object());
   Runtime* runtime = thread->runtime();

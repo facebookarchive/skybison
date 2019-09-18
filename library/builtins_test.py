@@ -1980,6 +1980,11 @@ class FloatTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             float.__getformat__("unknown")
 
+    def test_dunder_int_with_non_float_raise_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            float.__int__("not a float")
+        self.assertIn("'__int__' requires a 'float' object", str(context.exception))
+
     def test_dunder_mod_raises_type_error(self):
         with self.assertRaises(TypeError):
             float.__mod__(1, 1.0)

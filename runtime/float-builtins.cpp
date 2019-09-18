@@ -259,8 +259,7 @@ RawObject FloatBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "'__gt__' requires a 'float' object");
+    return thread->raiseRequiresType(self, SymbolId::kFloat);
   }
   double left = Float::cast(floatUnderlying(thread, self)).value();
 
@@ -345,8 +344,7 @@ RawObject FloatBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfFloat(*self_obj)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "'__int__' requires a 'float' object");
+    return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
   }
   double self = Float::cast(floatUnderlying(thread, self_obj)).value();
   return intFromDouble(thread, self);

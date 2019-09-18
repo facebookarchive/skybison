@@ -19,8 +19,7 @@ RawObject RefBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfWeakRef(*self)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "'__call__' requires a 'ref' object");
+    return thread->raiseRequiresType(self, SymbolId::kRef);
   }
   return WeakRef::cast(*self).referent();
 }

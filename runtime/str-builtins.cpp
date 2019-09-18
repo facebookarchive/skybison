@@ -1349,10 +1349,7 @@ RawObject StrIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isStrIterator()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__iter__() must be called with a str iterator instance as the first "
-        "argument");
+    return thread->raiseRequiresType(self, SymbolId::kStrIterator);
   }
   return *self;
 }
@@ -1366,10 +1363,7 @@ RawObject StrIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isStrIterator()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__next__() must be called with a str iterator instance as the first "
-        "argument");
+    return thread->raiseRequiresType(self, SymbolId::kStrIterator);
   }
   StrIterator iter(&scope, *self);
   Object value(&scope, strIteratorNext(thread, iter));
@@ -1385,10 +1379,7 @@ RawObject StrIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isStrIterator()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__length_hint__() must be called with a str iterator instance as the "
-        "first argument");
+    return thread->raiseRequiresType(self, SymbolId::kStrIterator);
   }
   StrIterator str_iterator(&scope, *self);
   Str str(&scope, str_iterator.iterable());

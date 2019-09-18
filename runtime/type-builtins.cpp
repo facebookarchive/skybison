@@ -442,8 +442,7 @@ RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
   }
 
   if (!runtime->isInstanceOfType(*self_obj)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "self must be a type instance");
+    return thread->raiseRequiresType(self_obj, SymbolId::kType);
   }
   Type self(&scope, *self_obj);
 

@@ -534,11 +534,11 @@ RawObject BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
                                             word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  if (!thread->runtime()->isInstanceOfBaseException(args.get(0))) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "'__init__' requires a 'BaseException' object");
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfBaseException(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kBaseException);
   }
-  BaseException self(&scope, args.get(0));
+  BaseException self(&scope, *self_obj);
   self.setArgs(args.get(1));
   self.setCause(Unbound::object());
   self.setContext(Unbound::object());
@@ -561,11 +561,11 @@ RawObject StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
                                             word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  if (!thread->runtime()->isInstanceOfStopIteration(args.get(0))) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "'__init__' requires a 'StopIteration' object");
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStopIteration(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStopIteration);
   }
-  StopIteration self(&scope, args.get(0));
+  StopIteration self(&scope, *self_obj);
   RawObject result = BaseExceptionBuiltins::dunderInit(thread, frame, nargs);
   if (result.isError()) {
     return result;
@@ -601,11 +601,11 @@ RawObject SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
                                          word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  if (!thread->runtime()->isInstanceOfSystemExit(args.get(0))) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "'__init__' requires a 'SystemExit' object");
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfSystemExit(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kSystemExit);
   }
-  SystemExit self(&scope, args.get(0));
+  SystemExit self(&scope, *self_obj);
   RawObject result = BaseExceptionBuiltins::dunderInit(thread, frame, nargs);
   if (result.isError()) {
     return result;
