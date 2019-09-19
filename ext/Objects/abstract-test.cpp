@@ -79,6 +79,77 @@ TEST_F(AbstractExtensionApiTest,
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_BufferError));
 }
 
+TEST_F(AbstractExtensionApiTest,
+       PyBufferIsContiguousWithInvalidOrderReturnsFalse) {
+  Py_buffer buffer;
+  char data[1];
+  ASSERT_EQ(PyBuffer_FillInfo(&buffer, Py_None, data, /*len=*/1,
+                              /*readonly=*/1, PyBUF_SIMPLE),
+            0);
+  EXPECT_FALSE(PyBuffer_IsContiguous(&buffer, '%'));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyBufferIsContiguousWithSubOffsetsReturnsFalse) {
+  Py_buffer buffer;
+  char data[1];
+  ASSERT_EQ(PyBuffer_FillInfo(&buffer, Py_None, data, /*len=*/1,
+                              /*readonly=*/1, PyBUF_SIMPLE),
+            0);
+  static Py_ssize_t suboffsets[] = {13};
+  buffer.suboffsets = suboffsets;
+  EXPECT_FALSE(PyBuffer_IsContiguous(&buffer, 'C'));
+  EXPECT_FALSE(PyBuffer_IsContiguous(&buffer, 'F'));
+  EXPECT_FALSE(PyBuffer_IsContiguous(&buffer, 'A'));
+}
+
+TEST_F(AbstractExtensionApiTest, PyBufferIsContiguousReturnsTrue) {
+  Py_buffer buffer;
+  char data[1];
+  ASSERT_EQ(PyBuffer_FillInfo(&buffer, Py_None, data, /*len=*/1,
+                              /*readonly=*/1, PyBUF_SIMPLE),
+            0);
+  EXPECT_TRUE(PyBuffer_IsContiguous(&buffer, 'C'));
+  EXPECT_TRUE(PyBuffer_IsContiguous(&buffer, 'F'));
+  EXPECT_TRUE(PyBuffer_IsContiguous(&buffer, 'A'));
+}
+
+TEST_F(AbstractExtensionApiTest, PyBufferIsContiguousWithRowMajorBuffer) {
+  Py_buffer buffer;
+  char data[300];
+  ASSERT_EQ(PyBuffer_FillInfo(&buffer, Py_None, data, /*len=*/100,
+                              /*readonly=*/1, PyBUF_STRIDES),
+            0);
+  buffer.itemsize = 2;
+  buffer.format = const_cast<char*>("h");
+  buffer.ndim = 3;
+  Py_ssize_t shape[3] = {10, 3, 5};
+  buffer.shape = shape;
+  Py_ssize_t strides[3] = {30, 10, 2};
+  buffer.strides = strides;
+  EXPECT_TRUE(PyBuffer_IsContiguous(&buffer, 'C'));
+  EXPECT_FALSE(PyBuffer_IsContiguous(&buffer, 'F'));
+  EXPECT_TRUE(PyBuffer_IsContiguous(&buffer, 'A'));
+}
+
+TEST_F(AbstractExtensionApiTest, PyBufferIsContiguousWithColumnMajorBuffer) {
+  Py_buffer buffer;
+  char data[420];
+  ASSERT_EQ(PyBuffer_FillInfo(&buffer, Py_None, data, /*len=*/100,
+                              /*readonly=*/1, PyBUF_STRIDES),
+            0);
+  buffer.itemsize = 4;
+  buffer.format = const_cast<char*>("L");
+  buffer.ndim = 3;
+  Py_ssize_t shape[3] = {7, 3, 5};
+  buffer.shape = shape;
+  Py_ssize_t strides[3] = {4, 28, 84};
+  buffer.strides = strides;
+  EXPECT_FALSE(PyBuffer_IsContiguous(&buffer, 'C'));
+  EXPECT_TRUE(PyBuffer_IsContiguous(&buffer, 'F'));
+  EXPECT_TRUE(PyBuffer_IsContiguous(&buffer, 'A'));
+}
+
 // PyIndex_Check
 
 TEST_F(AbstractExtensionApiTest, PyIndexCheckWithIntReturnsTrue) {

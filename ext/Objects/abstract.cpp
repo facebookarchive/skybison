@@ -123,8 +123,61 @@ PY_EXPORT int PyBuffer_FillInfo(Py_buffer* view, PyObject* exporter, void* buf,
   return 0;
 }
 
-PY_EXPORT int PyBuffer_IsContiguous(const Py_buffer* /* w */, char /* r */) {
-  UNIMPLEMENTED("PyBuffer_IsContiguous");
+static bool isContiguousWithRowMajorOrder(const Py_buffer* view) {
+  if (view->suboffsets != nullptr) return false;
+  if (view->strides == nullptr) return true;
+  if (view->len == 0) return true;
+
+  Py_ssize_t dim_stride = view->itemsize;
+  for (int d = view->ndim - 1; d >= 0; d--) {
+    Py_ssize_t dim_size = view->shape[d];
+    if (dim_size > 1 && view->strides[d] != dim_stride) {
+      return false;
+    }
+    dim_stride *= dim_size;
+  }
+  return true;
+}
+
+static bool isContiguousWithColumnMajorOrder(const Py_buffer* view) {
+  if (view->suboffsets != nullptr) return false;
+  if (view->len == 0) return true;
+  if (view->strides == nullptr) {
+    if (view->ndim <= 1) return true;
+    // Non-contiguous if there is more than 1 dimension with size > 0.
+    bool had_nonempty_dim = false;
+    for (int d = 0; d < view->ndim; d++) {
+      if (view->shape[d] > 1) {
+        if (had_nonempty_dim) return false;
+        had_nonempty_dim = true;
+      }
+    }
+    return true;
+  }
+
+  Py_ssize_t dim_stride = view->itemsize;
+  for (int d = 0; d < view->ndim; d++) {
+    Py_ssize_t dim_size = view->shape[d];
+    if (dim_size > 1 && view->strides[d] != dim_stride) {
+      return false;
+    }
+    dim_stride *= dim_size;
+  }
+  return true;
+}
+
+PY_EXPORT int PyBuffer_IsContiguous(const Py_buffer* view, char order) {
+  if (order == 'C') {
+    return isContiguousWithRowMajorOrder(view);
+  }
+  if (order == 'F') {
+    return isContiguousWithColumnMajorOrder(view);
+  }
+  if (order == 'A') {
+    return isContiguousWithRowMajorOrder(view) ||
+           isContiguousWithColumnMajorOrder(view);
+  }
+  return false;
 }
 
 PY_EXPORT void PyBuffer_Release(Py_buffer* view) {
