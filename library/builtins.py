@@ -654,6 +654,8 @@ class KeyError(bootstrap=True):
 
 
 class NoneType(bootstrap=True):
+    __class__ = NoneType  # noqa: F821
+
     def __new__(cls):
         pass
 

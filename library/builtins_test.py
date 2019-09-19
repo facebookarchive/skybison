@@ -4657,6 +4657,18 @@ class NextTests(unittest.TestCase):
         self.assertEqual(str(context.exception), "failed")
 
 
+class NoneTests(unittest.TestCase):
+    def test_dunder_class_returns_type_of_none(self):
+        self.assertEqual(None.__class__, type(None))
+
+    def test_dunder_class_assignment_raises_type_error(self):
+        class C:
+            pass
+
+        with self.assertRaises(TypeError):
+            type(None).__class__ = C
+
+
 class NotImplementedTypeTests(unittest.TestCase):
     def test_repr_returns_not_implemented(self):
         self.assertEqual(NotImplemented.__repr__(), "NotImplemented")
