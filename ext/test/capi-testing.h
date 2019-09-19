@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Python.h"
+#include "gtest/gtest.h"
 
 namespace python {
 namespace testing {
@@ -57,9 +58,12 @@ int moduleSet(const char* module, const char* name, PyObject*);
 // If no module is found, return a nullptr
 PyObject* importGetModule(PyObject* name);
 
+::testing::AssertionResult isBytesEqualsCStr(PyObject* obj, const char* c_str);
+
 ::testing::AssertionResult isLongEqualsLong(PyObject* obj, long value);
 
-::testing::AssertionResult isUnicodeEqualsCStr(PyObject* obj, const char* str);
+::testing::AssertionResult isUnicodeEqualsCStr(PyObject* obj,
+                                               const char* c_str);
 
 // Capture stdout and stderr of the current process. The contents of either one
 // may be fetched with the corresponding functions, which should be called at

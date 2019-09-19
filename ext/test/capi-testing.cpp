@@ -74,6 +74,15 @@ static ::testing::AssertionResult failBadValue(PyObject* obj, const T& expected,
          << repr_cstr << " is not equal to " << delim << expected << delim;
 }
 
+::testing::AssertionResult isBytesEqualsCStr(PyObject* obj, const char* c_str) {
+  if (obj == nullptr) return failNullObj(c_str, "'");
+
+  if (!PyBytes_Check(obj) || std::strcmp(PyBytes_AsString(obj), c_str) != 0) {
+    return failBadValue(obj, c_str, "'");
+  }
+  return ::testing::AssertionSuccess();
+}
+
 ::testing::AssertionResult isLongEqualsLong(PyObject* obj, long value) {
   if (obj == nullptr) return failNullObj(value, "");
 

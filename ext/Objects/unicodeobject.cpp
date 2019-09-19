@@ -753,10 +753,56 @@ PY_EXPORT PyObject* PyUnicode_AsEncodedObject(PyObject* /* e */,
   UNIMPLEMENTED("PyUnicode_AsEncodedObject");
 }
 
-PY_EXPORT PyObject* PyUnicode_AsEncodedString(PyObject* /* e */,
-                                              const char* /* g */,
-                                              const char* /* s */) {
-  UNIMPLEMENTED("PyUnicode_AsEncodedString");
+PY_EXPORT PyObject* PyUnicode_AsEncodedString(PyObject* unicode,
+                                              const char* encoding,
+                                              const char* errors) {
+  DCHECK(unicode != nullptr, "unicode cannot be null");
+  if (encoding == nullptr) {
+    return _PyUnicode_AsUTF8String(unicode, errors);
+  }
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object str(&scope, ApiHandle::fromPyObject(unicode)->asObject());
+  if (!runtime->isInstanceOfStr(*str)) {
+    thread->raiseBadArgument();
+    return nullptr;
+  }
+  Object encoding_obj(&scope, runtime->newStrFromCStr(encoding));
+  Object errors_obj(&scope, errors == nullptr
+                                ? Unbound::object()
+                                : symbolFromError(thread, errors));
+  Object result(
+      &scope, thread->invokeFunction3(SymbolId::kUnderCodecs, SymbolId::kEncode,
+                                      str, encoding_obj, errors_obj));
+  if (result.isError()) {
+    return nullptr;
+  }
+  if (runtime->isInstanceOfBytes(*result)) {
+    return ApiHandle::newReference(thread, *result);
+  }
+  if (runtime->isInstanceOfByteArray(*result)) {
+    // Equivalent to calling PyErr_WarnFormat
+    Object category(&scope, runtime->typeAt(LayoutId::kRuntimeWarning));
+    Object message(&scope,
+                   runtime->newStrFromFmt(
+                       "encoder %s returned bytearray instead of bytes; "
+                       "use codecs.encode() to encode to arbitrary types",
+                       encoding));
+    Object stack_level(&scope, runtime->newInt(1));
+    Object source(&scope, NoneType::object());
+    thread->invokeFunction4(SymbolId::kWarnings, SymbolId::kWarn, message,
+                            category, stack_level, source);
+    thread->clearPendingException();
+    ByteArray result_bytearray(&scope, *result);
+    return ApiHandle::newReference(
+        thread, byteArrayAsBytes(thread, runtime, result_bytearray));
+  }
+  thread->raiseWithFmt(LayoutId::kTypeError,
+                       "'%s' encoder returned '%T' instead of 'bytes'; "
+                       "use codecs.encode() to encode to arbitrary types",
+                       encoding, *result);
+  return nullptr;
 }
 
 PY_EXPORT PyObject* PyUnicode_AsEncodedUnicode(PyObject* /* e */,

@@ -14,6 +14,96 @@ using namespace testing;
 
 using UnicodeExtensionApiTest = ExtensionApi;
 
+TEST_F(UnicodeExtensionApiTest, AsEncodedStringFromNonStringReturnsNull) {
+  EXPECT_EQ(PyUnicode_AsEncodedString(Py_None, nullptr, nullptr), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest, AsEncodedStringWithNullSizeReturnsUTF8) {
+  const char* str = "utf-8 \xc3\xa8";
+  PyObject* pyunicode = PyUnicode_FromString(str);
+
+  PyObject* bytes = PyUnicode_AsEncodedString(pyunicode, nullptr, nullptr);
+  EXPECT_TRUE(isBytesEqualsCStr(bytes, str));
+}
+
+TEST_F(UnicodeExtensionApiTest, AsEncodedStringASCIIUsesErrorHandler) {
+  PyObject* pyunicode = PyUnicode_FromString("non\xc3\xa8-ascii");
+
+  PyObject* bytes = PyUnicode_AsEncodedString(pyunicode, "ascii", "ignore");
+  EXPECT_TRUE(isBytesEqualsCStr(bytes, "non-ascii"));
+}
+
+TEST_F(UnicodeExtensionApiTest, AsEncodedStringLatin1ReturnsLatin1) {
+  PyObject* pyunicode = PyUnicode_FromString("latin-1 \xc3\xa8");
+
+  PyObject* bytes = PyUnicode_AsEncodedString(pyunicode, "latin-1", nullptr);
+  EXPECT_TRUE(isBytesEqualsCStr(bytes, "latin-1 \xe8"));
+}
+
+TEST_F(UnicodeExtensionApiTest, AsEncodedStringASCIIWithSubClassReturnsASCII) {
+  PyRun_SimpleString(R"(
+class SubStr(str): pass
+
+substr = SubStr("some string")
+)");
+  PyObjectPtr substr(moduleGet("__main__", "substr"));
+  const char* expected = "some string";
+
+  PyObject* bytes = PyUnicode_AsEncodedString(substr, "ascii", nullptr);
+  EXPECT_TRUE(isBytesEqualsCStr(bytes, expected));
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       AsEncodedStringWithBytearrayReturnRaisesWarning) {
+  CaptureStdStreams streams;
+  PyRun_SimpleString(R"(
+import _codecs
+
+def encoder(s):
+    return bytearray(b"expected"), "two"
+
+def lookup_function(encoding):
+    if encoding == "encode-with-bytearray-return":
+        return encoder, 0, 0, 0
+
+_codecs.register(lookup_function)
+substr = "some test"
+)");
+  PyObjectPtr substr(moduleGet("__main__", "substr"));
+  PyObject* bytes = PyUnicode_AsEncodedString(
+      substr, "encode-with-bytearray-return", nullptr);
+  EXPECT_TRUE(isBytesEqualsCStr(bytes, "expected"));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_NE(streams.err().find(
+                "RuntimeWarning: encoder encode-with-bytearray-return "
+                "returned bytearray instead of bytes; use codecs.encode() to "
+                "encode to arbitrary types\n"),
+            std::string::npos);
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       AsEncodedStringWithNonBytelikeReturnRaisesError) {
+  PyRun_SimpleString(R"(
+import _codecs
+
+def encoder(s):
+    return "not-byteslike", "two"
+
+def lookup_function(encoding):
+    if encoding == "encode-with-non-bytelike-return":
+        return encoder, 0, 0, 0
+
+_codecs.register(lookup_function)
+substr = "some test"
+)");
+  PyObjectPtr substr(moduleGet("__main__", "substr"));
+  EXPECT_EQ(PyUnicode_AsEncodedString(substr, "encode-with-non-bytelike-return",
+                                      nullptr),
+            nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
 TEST_F(UnicodeExtensionApiTest, AsUTF8FromNonStringReturnsNull) {
   // Pass a non string object
   char* cstring = PyUnicode_AsUTF8AndSize(Py_None, nullptr);
