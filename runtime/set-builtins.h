@@ -31,6 +31,8 @@ RawObject setPop(Thread* thread, const Set& set);
 // Return the next item from the iterator, or Error if there are no items left.
 RawObject setIteratorNext(Thread* thread, const SetIterator& iter);
 
+RawSmallInt frozensetHash(Thread* thread, const Object& frozenset);
+
 class SetBaseBuiltins {
  public:
   static RawObject dunderAnd(Thread* thread, Frame* frame, word nargs);
@@ -74,6 +76,7 @@ class FrozenSetBuiltins
                       LayoutId::kFrozenSet> {
  public:
   static RawObject copy(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderHash(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinAttribute kAttributes[];

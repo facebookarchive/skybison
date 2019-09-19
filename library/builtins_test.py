@@ -2357,6 +2357,10 @@ class FloatTests(unittest.TestCase):
 
 
 class FrozensetTests(unittest.TestCase):
+    def test_dunder_hash_returns_int(self):
+        self.assertEqual(frozenset.__hash__(frozenset()), 133146708735736)
+        self.assertEqual(frozenset.__hash__(frozenset((1, 2, 3))), -272375401224217160)
+
     def test_issuperset_with_non_frozenset_raises_type_error(self):
         with self.assertRaises(TypeError):
             frozenset.issuperset(None, frozenset())

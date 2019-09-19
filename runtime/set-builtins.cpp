@@ -9,6 +9,32 @@
 
 namespace python {
 
+RawSmallInt frozensetHash(Thread* thread, const Object& frozenset) {
+  HandleScope scope(thread);
+  FrozenSet set(&scope, *frozenset);
+  Tuple data(&scope, set.data());
+
+  uword result = 0;
+  for (word i = SetBase::Bucket::kFirst;
+       SetBase::Bucket::nextItem(*data, &i);) {
+    word value_hash = SmallInt::cast(SetBase::Bucket::hash(*data, i)).value();
+    uword h = static_cast<uword>(value_hash);
+    result ^= ((h ^ uword{89869747}) ^ (h << 16)) * uword{3644798167};
+  }
+  result ^= static_cast<uword>(set.numItems() + 1) * uword{1927868237};
+
+  result ^= (result >> 11) ^ (result >> 25);
+  result = result * uword{69069} + uword{907133923};
+
+  // cpython replaces `-1` results with -2, because -1 is used as an
+  // "uninitialized hash" marker in some situations. We do not use the same
+  // marker, but do the same to match behavior.
+  if (result == static_cast<uword>(word{-1})) {
+    result--;
+  }
+  return SmallInt::fromWordTruncated(result);
+}
+
 RawObject SetBaseBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -313,6 +339,7 @@ const BuiltinMethod FrozenSetBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderEq, dunderEq},
     {SymbolId::kDunderGe, dunderGe},
     {SymbolId::kDunderGt, dunderGt},
+    {SymbolId::kDunderHash, dunderHash},
     {SymbolId::kDunderIter, dunderIter},
     {SymbolId::kDunderLe, dunderLe},
     {SymbolId::kDunderLen, dunderLen},
@@ -336,6 +363,18 @@ RawObject FrozenSetBuiltins::copy(Thread* thread, Frame* frame, word nargs) {
     return *set;
   }
   return setCopy(thread, set);
+}
+
+RawObject FrozenSetBuiltins::dunderHash(Thread* thread, Frame* frame,
+                                        word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfFrozenSet(*self)) {
+    return thread->raiseRequiresType(self, SymbolId::kFrozenSet);
+  }
+  FrozenSet set(&scope, *self);
+  return frozensetHash(thread, set);
 }
 
 RawObject FrozenSetBuiltins::dunderNew(Thread* thread, Frame* frame,

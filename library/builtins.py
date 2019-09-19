@@ -2482,6 +2482,9 @@ class frozenset(bootstrap=True):
     def __gt__(self, other):
         pass
 
+    def __hash__(self) -> int:
+        pass
+
     def __iter__(self):
         pass
 

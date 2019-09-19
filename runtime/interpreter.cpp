@@ -21,6 +21,7 @@
 #include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"
+#include "set-builtins.h"
 #include "str-builtins.h"
 #include "thread.h"
 #include "trampolines.h"
@@ -233,6 +234,8 @@ RawObject Interpreter::hash(Thread* thread, const Object& value) {
       return complexHash(*value);
     case LayoutId::kFloat:
       return floatHash(*value);
+    case LayoutId::kFrozenSet:
+      return frozensetHash(thread, value);
     case LayoutId::kSmallInt:
       return SmallInt::cast(*value).hash();
     case LayoutId::kLargeBytes:
@@ -248,10 +251,6 @@ RawObject Interpreter::hash(Thread* thread, const Object& value) {
       Tuple value_tuple(&scope, *value);
       return tupleHash(thread, value_tuple);
     }
-    case LayoutId::kFrozenSet:
-      // TODO(T53077062): The specialized hash functions for these layouts
-      // have not been written yet and should be called here later.
-      // For now: FALLTHROUGH
     case LayoutId::kNoneType:
     case LayoutId::kEllipsis:
     case LayoutId::kStopIteration:
