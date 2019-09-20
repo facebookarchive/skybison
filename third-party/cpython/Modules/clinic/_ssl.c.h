@@ -356,7 +356,7 @@ _ssl__SSLContext(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     int proto_version;
 
-    if ((type == &PySSLContext_Type) &&
+    if ((type == _sslmodulestate_global->PySSLContext_Type) &&
         !_PyArg_NoKeywords("_SSLContext", kwargs)) {
         goto exit;
     }
@@ -578,7 +578,7 @@ _ssl__SSLContext__wrap_socket(PySSLContext *self, PyObject **args, Py_ssize_t na
     PyObject *hostname_obj = Py_None;
 
     if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
-        PySocketModule.Sock_Type, &sock, &server_side, &hostname_obj)) {
+        _sslmodulestate_global->sock_type, &sock, &server_side, &hostname_obj)) {
         goto exit;
     }
     return_value = _ssl__SSLContext__wrap_socket_impl(self, sock, server_side, hostname_obj);
@@ -613,7 +613,7 @@ _ssl__SSLContext__wrap_bio(PySSLContext *self, PyObject **args, Py_ssize_t nargs
     PyObject *hostname_obj = Py_None;
 
     if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
-        &PySSLMemoryBIO_Type, &incoming, &PySSLMemoryBIO_Type, &outgoing, &server_side, &hostname_obj)) {
+        _sslmodulestate_global->PySSLMemoryBIO_Type, &incoming, _sslmodulestate_global->PySSLMemoryBIO_Type, &outgoing, &server_side, &hostname_obj)) {
         goto exit;
     }
     return_value = _ssl__SSLContext__wrap_bio_impl(self, incoming, outgoing, server_side, hostname_obj);
@@ -749,11 +749,11 @@ _ssl_MemoryBIO(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
 
-    if ((type == &PySSLMemoryBIO_Type) &&
+    if ((type == _sslmodulestate_global->PySSLMemoryBIO_Type) &&
         !_PyArg_NoPositional("MemoryBIO", args)) {
         goto exit;
     }
-    if ((type == &PySSLMemoryBIO_Type) &&
+    if ((type == _sslmodulestate_global->PySSLMemoryBIO_Type) &&
         !_PyArg_NoKeywords("MemoryBIO", kwargs)) {
         goto exit;
     }
@@ -1186,4 +1186,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=a832758678f4d934 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=519cce7879611a88 input=a9049054013a1b77]*/

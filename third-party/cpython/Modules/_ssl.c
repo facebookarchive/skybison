@@ -47,8 +47,6 @@
 /* Include symbols from _socket module */
 #include "socketmodule.h"
 
-static PySocketModule_APIObject PySocketModule;
-
 #if defined(HAVE_POLL_H)
 #include <poll.h>
 #elif defined(HAVE_SYS_POLL_H)
@@ -86,19 +84,6 @@ static PySocketModule_APIObject PySocketModule;
 #    define HAVE_X509_VERIFY_PARAM_SET1_HOST
 #  endif
 #endif
-
-/* SSL error object */
-static PyObject *PySSLErrorObject;
-static PyObject *PySSLZeroReturnErrorObject;
-static PyObject *PySSLWantReadErrorObject;
-static PyObject *PySSLWantWriteErrorObject;
-static PyObject *PySSLSyscallErrorObject;
-static PyObject *PySSLEOFErrorObject;
-
-/* Error mappings */
-static PyObject *err_codes_to_names;
-static PyObject *err_names_to_codes;
-static PyObject *lib_codes_to_names;
 
 struct py_ssl_error_code {
     const char *mnemonic;
@@ -367,10 +352,40 @@ typedef struct {
     PySSLContext *ctx;
 } PySSLSession;
 
-static PyTypeObject PySSLContext_Type;
-static PyTypeObject PySSLSocket_Type;
-static PyTypeObject PySSLMemoryBIO_Type;
-static PyTypeObject PySSLSession_Type;
+
+typedef struct {
+    /* Types */
+    PyTypeObject *PySSLContext_Type;
+    PyTypeObject *PySSLSocket_Type;
+    PyTypeObject *PySSLMemoryBIO_Type;
+    PyTypeObject *PySSLSession_Type;
+
+    /* SSL error object */
+    PyObject *PySSLErrorObject;
+    PyObject *PySSLZeroReturnErrorObject;
+    PyObject *PySSLWantReadErrorObject;
+    PyObject *PySSLWantWriteErrorObject;
+    PyObject *PySSLSyscallErrorObject;
+    PyObject *PySSLEOFErrorObject;
+
+    /* Error mappings */
+    PyObject *err_codes_to_names;
+    PyObject *lib_codes_to_names;
+
+    /* Strings */
+    PyObject *reason;
+    PyObject *library;
+
+    /* Objects imported from _socket */
+    PyTypeObject *sock_type;
+    PyObject *timeout_error;
+} _sslmodulestate;
+
+#define _sslmodulestate(o) ((_sslmodulestate *)PyModule_GetState(o))
+
+static struct PyModuleDef _sslmodule;
+
+#define _sslmodulestate_global _sslmodulestate(PyState_FindModule(&_sslmodule))
 
 static inline _PySSLError _PySSL_errno(int failed, const SSL *ssl, int retcode)
 {
@@ -387,22 +402,22 @@ static inline _PySSLError _PySSL_errno(int failed, const SSL *ssl, int retcode)
 
 /*[clinic input]
 module _ssl
-class _ssl._SSLContext "PySSLContext *" "&PySSLContext_Type"
-class _ssl._SSLSocket "PySSLSocket *" "&PySSLSocket_Type"
-class _ssl.MemoryBIO "PySSLMemoryBIO *" "&PySSLMemoryBIO_Type"
-class _ssl.SSLSession "PySSLSession *" "&PySSLSession_Type"
+class _ssl._SSLContext "PySSLContext *" "_sslmodulestate_global->PySSLContext_Type"
+class _ssl._SSLSocket "PySSLSocket *" "_sslmodulestate_global->PySSLSocket_Type"
+class _ssl.MemoryBIO "PySSLMemoryBIO *" "_sslmodulestate_global->PySSLMemoryBIO_Type"
+class _ssl.SSLSession "PySSLSession *" "_sslmodulestate_global->PySSLSession_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=bdc67fafeeaa8109]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=989300539fa04835]*/
 
 #include "clinic/_ssl.c.h"
 
 static int PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout);
 
 
-#define PySSLContext_Check(v)   (Py_TYPE(v) == &PySSLContext_Type)
-#define PySSLSocket_Check(v)    (Py_TYPE(v) == &PySSLSocket_Type)
-#define PySSLMemoryBIO_Check(v)    (Py_TYPE(v) == &PySSLMemoryBIO_Type)
-#define PySSLSession_Check(v)   (Py_TYPE(v) == &PySSLSession_Type)
+#define PySSLContext_Check(v)   (Py_TYPE(v) == _sslmodulestate_global->PySSLContext_Type)
+#define PySSLSocket_Check(v)    (Py_TYPE(v) == _sslmodulestate_global->PySSLSocket_Type)
+#define PySSLMemoryBIO_Check(v)    (Py_TYPE(v) == _sslmodulestate_global->PySSLMemoryBIO_Type)
+#define PySSLSession_Check(v)   (Py_TYPE(v) == _sslmodulestate_global->PySSLSession_Type)
 
 typedef enum {
     SOCKET_IS_NONBLOCKING,
@@ -461,7 +476,6 @@ SSLError_str(PyOSErrorObject *self)
 }
 
 static PyType_Slot sslerror_type_slots[] = {
-    {Py_tp_base, NULL},  /* Filled out in module init as it's not a constant */
     {Py_tp_doc, SSLError_doc},
     {Py_tp_str, SSLError_str},
     {0, 0},
@@ -481,8 +495,6 @@ fill_and_set_sslerror(PyObject *type, int ssl_errno, const char *errstr,
 {
     PyObject *err_value = NULL, *reason_obj = NULL, *lib_obj = NULL;
     PyObject *init_value, *msg, *key;
-    _Py_IDENTIFIER(reason);
-    _Py_IDENTIFIER(library);
 
     if (errcode != 0) {
         int lib, reason;
@@ -492,7 +504,7 @@ fill_and_set_sslerror(PyObject *type, int ssl_errno, const char *errstr,
         key = Py_BuildValue("ii", lib, reason);
         if (key == NULL)
             goto fail;
-        reason_obj = PyDict_GetItem(err_codes_to_names, key);
+        reason_obj = PyDict_GetItem(_sslmodulestate_global->err_codes_to_names, key);
         Py_DECREF(key);
         if (reason_obj == NULL) {
             /* XXX if reason < 100, it might reflect a library number (!!) */
@@ -501,7 +513,7 @@ fill_and_set_sslerror(PyObject *type, int ssl_errno, const char *errstr,
         key = PyLong_FromLong(lib);
         if (key == NULL)
             goto fail;
-        lib_obj = PyDict_GetItem(lib_codes_to_names, key);
+        lib_obj = PyDict_GetItem(_sslmodulestate_global->lib_codes_to_names, key);
         Py_DECREF(key);
         if (lib_obj == NULL) {
             PyErr_Clear();
@@ -534,11 +546,11 @@ fill_and_set_sslerror(PyObject *type, int ssl_errno, const char *errstr,
 
     if (reason_obj == NULL)
         reason_obj = Py_None;
-    if (_PyObject_SetAttrId(err_value, &PyId_reason, reason_obj))
+    if (PyObject_SetAttr(err_value, _sslmodulestate_global->reason, reason_obj))
         goto fail;
     if (lib_obj == NULL)
         lib_obj = Py_None;
-    if (_PyObject_SetAttrId(err_value, &PyId_library, lib_obj))
+    if (PyObject_SetAttr(err_value, _sslmodulestate_global->library, lib_obj))
         goto fail;
     PyErr_SetObject(type, err_value);
 fail:
@@ -548,7 +560,7 @@ fail:
 static PyObject *
 PySSL_SetError(PySSLSocket *obj, int ret, const char *filename, int lineno)
 {
-    PyObject *type = PySSLErrorObject;
+    PyObject *type = _sslmodulestate_global->PySSLErrorObject;
     char *errstr = NULL;
     _PySSLError err;
     enum py_ssl_error p = PY_SSL_ERROR_NONE;
@@ -563,17 +575,17 @@ PySSL_SetError(PySSLSocket *obj, int ret, const char *filename, int lineno)
         switch (err.ssl) {
         case SSL_ERROR_ZERO_RETURN:
             errstr = "TLS/SSL connection has been closed (EOF)";
-            type = PySSLZeroReturnErrorObject;
+            type = _sslmodulestate_global->PySSLZeroReturnErrorObject;
             p = PY_SSL_ERROR_ZERO_RETURN;
             break;
         case SSL_ERROR_WANT_READ:
             errstr = "The operation did not complete (read)";
-            type = PySSLWantReadErrorObject;
+            type = _sslmodulestate_global->PySSLWantReadErrorObject;
             p = PY_SSL_ERROR_WANT_READ;
             break;
         case SSL_ERROR_WANT_WRITE:
             p = PY_SSL_ERROR_WANT_WRITE;
-            type = PySSLWantWriteErrorObject;
+            type = _sslmodulestate_global->PySSLWantWriteErrorObject;
             errstr = "The operation did not complete (write)";
             break;
         case SSL_ERROR_WANT_X509_LOOKUP:
@@ -590,7 +602,7 @@ PySSL_SetError(PySSLSocket *obj, int ret, const char *filename, int lineno)
                 PySocketSockObject *s = GET_SOCKET(obj);
                 if (ret == 0 || (((PyObject *)s) == Py_None)) {
                     p = PY_SSL_ERROR_EOF;
-                    type = PySSLEOFErrorObject;
+                    type = _sslmodulestate_global->PySSLEOFErrorObject;
                     errstr = "EOF occurred in violation of protocol";
                 } else if (s && ret == -1) {
                     /* underlying BIO reported an I/O error */
@@ -610,7 +622,7 @@ PySSL_SetError(PySSLSocket *obj, int ret, const char *filename, int lineno)
                     return NULL;
                 } else { /* possible? */
                     p = PY_SSL_ERROR_SYSCALL;
-                    type = PySSLSyscallErrorObject;
+                    type = _sslmodulestate_global->PySSLSyscallErrorObject;
                     errstr = "Some I/O error occurred";
                 }
             } else {
@@ -643,7 +655,7 @@ _setSSLError (const char *errstr, int errcode, const char *filename, int lineno)
         errcode = ERR_peek_last_error();
     else
         errcode = 0;
-    fill_and_set_sslerror(PySSLErrorObject, errcode, errstr, lineno, errcode);
+    fill_and_set_sslerror(_sslmodulestate_global->PySSLErrorObject, errcode, errstr, lineno, errcode);
     ERR_clear_error();
     return NULL;
 }
@@ -663,7 +675,7 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     long mode;
     _PySSLError err = { 0 };
 
-    self = PyObject_New(PySSLSocket, &PySSLSocket_Type);
+    self = PyObject_New(PySSLSocket, _sslmodulestate_global->PySSLSocket_Type);
     if (self == NULL)
         return NULL;
 
@@ -838,15 +850,15 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
         }
 
         if (sockstate == SOCKET_HAS_TIMED_OUT) {
-            PyErr_SetString(PySocketModule.timeout_error,
+            PyErr_SetString(_sslmodulestate_global->timeout_error,
                             ERRSTR("The handshake operation timed out"));
             goto error;
         } else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
-            PyErr_SetString(PySSLErrorObject,
+            PyErr_SetString(_sslmodulestate_global->PySSLErrorObject,
                             ERRSTR("Underlying socket has been closed."));
             goto error;
         } else if (sockstate == SOCKET_TOO_LARGE_FOR_SELECT) {
-            PyErr_SetString(PySSLErrorObject,
+            PyErr_SetString(_sslmodulestate_global->PySSLErrorObject,
                             ERRSTR("Underlying socket too large for select()."));
             goto error;
         } else if (sockstate == SOCKET_IS_NONBLOCKING) {
@@ -1053,7 +1065,7 @@ _get_peer_alt_names (X509 *certificate) {
     /* get a memory buffer */
     biobuf = BIO_new(BIO_s_mem());
     if (biobuf == NULL) {
-        PyErr_SetString(PySSLErrorObject, "failed to allocate BIO");
+        PyErr_SetString(_sslmodulestate_global->PySSLErrorObject, "failed to allocate BIO");
         return NULL;
     }
 
@@ -1071,7 +1083,7 @@ _get_peer_alt_names (X509 *certificate) {
         ext = X509_get_ext(certificate, i);
         if(!(method = X509V3_EXT_get(ext))) {
             PyErr_SetString
-              (PySSLErrorObject,
+              (_sslmodulestate_global->PySSLErrorObject,
                ERRSTR("No method for internalizing subjectAltName!"));
             goto fail;
         }
@@ -1436,7 +1448,7 @@ _decode_certificate(X509 *certificate) {
     /* get a memory buffer */
     biobuf = BIO_new(BIO_s_mem());
     if (biobuf == NULL) {
-        PyErr_SetString(PySSLErrorObject, "failed to allocate BIO");
+        PyErr_SetString(_sslmodulestate_global->PySSLErrorObject, "failed to allocate BIO");
         goto fail0;
     }
 
@@ -1587,20 +1599,20 @@ _ssl__test_decode_cert_impl(PyObject *module, PyObject *path)
     BIO *cert;
 
     if ((cert=BIO_new(BIO_s_file())) == NULL) {
-        PyErr_SetString(PySSLErrorObject,
+        PyErr_SetString(_sslmodulestate_global->PySSLErrorObject,
                         "Can't malloc memory to read file");
         goto fail0;
     }
 
     if (BIO_read_filename(cert, PyBytes_AsString(path)) <= 0) {
-        PyErr_SetString(PySSLErrorObject,
+        PyErr_SetString(_sslmodulestate_global->PySSLErrorObject,
                         "Can't open file");
         goto fail0;
     }
 
     x = PEM_read_bio_X509_AUX(cert,NULL, NULL, NULL);
     if (x == NULL) {
-        PyErr_SetString(PySSLErrorObject,
+        PyErr_SetString(_sslmodulestate_global->PySSLErrorObject,
                         "Error decoding PEM-encoded file");
         goto fail0;
     }
@@ -1907,7 +1919,7 @@ static PySSLContext *PySSL_get_context(PySSLSocket *self, void *closure) {
 static int PySSL_set_context(PySSLSocket *self, PyObject *value,
                                    void *closure) {
 
-    if (PyObject_TypeCheck(value, &PySSLContext_Type)) {
+    if (PyObject_TypeCheck(value, _sslmodulestate_global->PySSLContext_Type)) {
 #if !HAVE_SNI
         PyErr_SetString(PyExc_NotImplementedError, "setting a socket's "
                         "context is not supported by your OpenSSL library");
@@ -1984,6 +1996,7 @@ Passed as \"self\" in servername callback.");
 
 static void PySSL_dealloc(PySSLSocket *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     if (self->ssl)
         SSL_free(self->ssl);
     Py_XDECREF(self->Socket);
@@ -1991,6 +2004,7 @@ static void PySSL_dealloc(PySSLSocket *self)
     Py_XDECREF(self->server_hostname);
     Py_XDECREF(self->owner);
     PyObject_Del(self);
+    Py_DECREF(tp);
 }
 
 /* If the socket has a timeout, do a select()/poll() on the socket.
@@ -2114,15 +2128,15 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
 
     sockstate = PySSL_select(sock, 1, timeout);
     if (sockstate == SOCKET_HAS_TIMED_OUT) {
-        PyErr_SetString(PySocketModule.timeout_error,
+        PyErr_SetString(_sslmodulestate_global->timeout_error,
                         "The write operation timed out");
         goto error;
     } else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
-        PyErr_SetString(PySSLErrorObject,
+        PyErr_SetString(_sslmodulestate_global->PySSLErrorObject,
                         "Underlying socket has been closed.");
         goto error;
     } else if (sockstate == SOCKET_TOO_LARGE_FOR_SELECT) {
-        PyErr_SetString(PySSLErrorObject,
+        PyErr_SetString(_sslmodulestate_global->PySSLErrorObject,
                         "Underlying socket too large for select().");
         goto error;
     }
@@ -2149,11 +2163,11 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
         }
 
         if (sockstate == SOCKET_HAS_TIMED_OUT) {
-            PyErr_SetString(PySocketModule.timeout_error,
+            PyErr_SetString(_sslmodulestate_global->timeout_error,
                             "The write operation timed out");
             goto error;
         } else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
-            PyErr_SetString(PySSLErrorObject,
+            PyErr_SetString(_sslmodulestate_global->PySSLErrorObject,
                             "Underlying socket has been closed.");
             goto error;
         } else if (sockstate == SOCKET_IS_NONBLOCKING) {
@@ -2303,7 +2317,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
             sockstate = SOCKET_OPERATION_OK;
 
         if (sockstate == SOCKET_HAS_TIMED_OUT) {
-            PyErr_SetString(PySocketModule.timeout_error,
+            PyErr_SetString(_sslmodulestate_global->timeout_error,
                             "The read operation timed out");
             goto error;
         } else if (sockstate == SOCKET_IS_NONBLOCKING) {
@@ -2417,15 +2431,15 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
 
         if (sockstate == SOCKET_HAS_TIMED_OUT) {
             if (err.ssl == SSL_ERROR_WANT_READ)
-                PyErr_SetString(PySocketModule.timeout_error,
+                PyErr_SetString(_sslmodulestate_global->timeout_error,
                                 "The read operation timed out");
             else
-                PyErr_SetString(PySocketModule.timeout_error,
+                PyErr_SetString(_sslmodulestate_global->timeout_error,
                                 "The write operation timed out");
             goto error;
         }
         else if (sockstate == SOCKET_TOO_LARGE_FOR_SELECT) {
-            PyErr_SetString(PySSLErrorObject,
+            PyErr_SetString(_sslmodulestate_global->PySSLErrorObject,
                             "Underlying socket too large for select().");
             goto error;
         }
@@ -2574,7 +2588,7 @@ PySSL_get_session(PySSLSocket *self, void *closure) {
         Py_RETURN_NONE;
     }
 #endif
-    pysess = PyObject_GC_New(PySSLSession, &PySSLSession_Type);
+    pysess = PyObject_GC_New(PySSLSession, _sslmodulestate_global->PySSLSession_Type);
     if (pysess == NULL) {
         SSL_SESSION_free(session);
         return NULL;
@@ -2687,38 +2701,19 @@ static PyMethodDef PySSLMethods[] = {
     {NULL, NULL}
 };
 
-static PyTypeObject PySSLSocket_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ssl._SSLSocket",                  /*tp_name*/
-    sizeof(PySSLSocket),                /*tp_basicsize*/
-    0,                                  /*tp_itemsize*/
-    /* methods */
-    (destructor)PySSL_dealloc,          /*tp_dealloc*/
-    0,                                  /*tp_print*/
-    0,                                  /*tp_getattr*/
-    0,                                  /*tp_setattr*/
-    0,                                  /*tp_reserved*/
-    0,                                  /*tp_repr*/
-    0,                                  /*tp_as_number*/
-    0,                                  /*tp_as_sequence*/
-    0,                                  /*tp_as_mapping*/
-    0,                                  /*tp_hash*/
-    0,                                  /*tp_call*/
-    0,                                  /*tp_str*/
-    0,                                  /*tp_getattro*/
-    0,                                  /*tp_setattro*/
-    0,                                  /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT,                 /*tp_flags*/
-    0,                                  /*tp_doc*/
-    0,                                  /*tp_traverse*/
-    0,                                  /*tp_clear*/
-    0,                                  /*tp_richcompare*/
-    0,                                  /*tp_weaklistoffset*/
-    0,                                  /*tp_iter*/
-    0,                                  /*tp_iternext*/
-    PySSLMethods,                       /*tp_methods*/
-    0,                                  /*tp_members*/
-    ssl_getsetlist,                     /*tp_getset*/
+static PyType_Slot PySSLSocket_Type_slots[] = {
+    {Py_tp_dealloc, PySSL_dealloc},
+    {Py_tp_methods, PySSLMethods},
+    {Py_tp_getset, ssl_getsetlist},
+    {0, 0},
+};
+
+static PyType_Spec PySSLSocket_Type_spec = {
+    "_ssl._SSLSocket",
+    sizeof(PySSLSocket),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    PySSLSocket_Type_slots
 };
 
 
@@ -2876,7 +2871,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     if (result == 0) {
         Py_DECREF(self);
         ERR_clear_error();
-        PyErr_SetString(PySSLErrorObject,
+        PyErr_SetString(_sslmodulestate_global->PySSLErrorObject,
                         "No cipher can be selected.");
         return NULL;
     }
@@ -2957,6 +2952,7 @@ static void
 context_dealloc(PySSLContext *self)
 {
     /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     context_clear(self);
     SSL_CTX_free(self->ctx);
@@ -2966,7 +2962,9 @@ context_dealloc(PySSLContext *self)
 #if HAVE_ALPN
     PyMem_FREE(self->alpn_protocols);
 #endif
-    Py_TYPE(self)->tp_free(self);
+    freefunc context_free = PyType_GetSlot(tp, Py_tp_free);
+    context_free(self);
+    Py_DECREF(tp);
 }
 
 /*[clinic input]
@@ -2985,7 +2983,7 @@ _ssl__SSLContext_set_ciphers_impl(PySSLContext *self, const char *cipherlist)
            otherwise the error will be reported again when another SSL call
            is done. */
         ERR_clear_error();
-        PyErr_SetString(PySSLErrorObject,
+        PyErr_SetString(_sslmodulestate_global->PySSLErrorObject,
                         "No cipher can be selected.");
         return NULL;
     }
@@ -3197,7 +3195,7 @@ get_verify_mode(PySSLContext *self, void *c)
     case SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT:
         return PyLong_FromLong(PY_SSL_CERT_REQUIRED);
     }
-    PyErr_SetString(PySSLErrorObject,
+    PyErr_SetString(_sslmodulestate_global->PySSLErrorObject,
                     "invalid return value from SSL_CTX_get_verify_mode");
     return NULL;
 }
@@ -3796,7 +3794,7 @@ _ssl__SSLContext_load_dh_params(PySSLContext *self, PyObject *filepath)
 
 /*[clinic input]
 _ssl._SSLContext._wrap_socket
-    sock: object(subclass_of="PySocketModule.Sock_Type")
+    sock: object(subclass_of="_sslmodulestate_global->sock_type")
     server_side: int
     server_hostname as hostname_obj: object = None
 
@@ -3805,7 +3803,7 @@ _ssl._SSLContext._wrap_socket
 static PyObject *
 _ssl__SSLContext__wrap_socket_impl(PySSLContext *self, PyObject *sock,
                                    int server_side, PyObject *hostname_obj)
-/*[clinic end generated code: output=6973e4b60995e933 input=83859b9156ddfc63]*/
+/*[clinic end generated code: output=6973e4b60995e933 input=076e506aa544dcd6]*/
 {
     char *hostname = NULL;
     PyObject *res;
@@ -3827,8 +3825,8 @@ _ssl__SSLContext__wrap_socket_impl(PySSLContext *self, PyObject *sock,
 
 /*[clinic input]
 _ssl._SSLContext._wrap_bio
-    incoming: object(subclass_of="&PySSLMemoryBIO_Type", type="PySSLMemoryBIO *")
-    outgoing: object(subclass_of="&PySSLMemoryBIO_Type", type="PySSLMemoryBIO *")
+    incoming: object(subclass_of="_sslmodulestate_global->PySSLMemoryBIO_Type", type="PySSLMemoryBIO *")
+    outgoing: object(subclass_of="_sslmodulestate_global->PySSLMemoryBIO_Type", type="PySSLMemoryBIO *")
     server_side: int
     server_hostname as hostname_obj: object = None
 
@@ -3838,7 +3836,7 @@ static PyObject *
 _ssl__SSLContext__wrap_bio_impl(PySSLContext *self, PySSLMemoryBIO *incoming,
                                 PySSLMemoryBIO *outgoing, int server_side,
                                 PyObject *hostname_obj)
-/*[clinic end generated code: output=4fe4ba75ad95940d input=17725ecdac0bf220]*/
+/*[clinic end generated code: output=4fe4ba75ad95940d input=aebb5d9c8933e132]*/
 {
     char *hostname = NULL;
     PyObject *res;
@@ -4251,45 +4249,22 @@ static struct PyMethodDef context_methods[] = {
     {NULL, NULL}        /* sentinel */
 };
 
-static PyTypeObject PySSLContext_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ssl._SSLContext",                        /*tp_name*/
-    sizeof(PySSLContext),                      /*tp_basicsize*/
-    0,                                         /*tp_itemsize*/
-    (destructor)context_dealloc,               /*tp_dealloc*/
-    0,                                         /*tp_print*/
-    0,                                         /*tp_getattr*/
-    0,                                         /*tp_setattr*/
-    0,                                         /*tp_reserved*/
-    0,                                         /*tp_repr*/
-    0,                                         /*tp_as_number*/
-    0,                                         /*tp_as_sequence*/
-    0,                                         /*tp_as_mapping*/
-    0,                                         /*tp_hash*/
-    0,                                         /*tp_call*/
-    0,                                         /*tp_str*/
-    0,                                         /*tp_getattro*/
-    0,                                         /*tp_setattro*/
-    0,                                         /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, /*tp_flags*/
-    0,                                         /*tp_doc*/
-    (traverseproc) context_traverse,           /*tp_traverse*/
-    (inquiry) context_clear,                   /*tp_clear*/
-    0,                                         /*tp_richcompare*/
-    0,                                         /*tp_weaklistoffset*/
-    0,                                         /*tp_iter*/
-    0,                                         /*tp_iternext*/
-    context_methods,                           /*tp_methods*/
-    0,                                         /*tp_members*/
-    context_getsetlist,                        /*tp_getset*/
-    0,                                         /*tp_base*/
-    0,                                         /*tp_dict*/
-    0,                                         /*tp_descr_get*/
-    0,                                         /*tp_descr_set*/
-    0,                                         /*tp_dictoffset*/
-    0,                                         /*tp_init*/
-    0,                                         /*tp_alloc*/
-    _ssl__SSLContext,                          /*tp_new*/
+static PyType_Slot PySSLContext_Type_slots[] = {
+    {Py_tp_dealloc, context_dealloc},
+    {Py_tp_traverse,  context_traverse},
+    {Py_tp_clear,  context_clear},
+    {Py_tp_methods, context_methods},
+    {Py_tp_getset, context_getsetlist},
+    {Py_tp_new, _ssl__SSLContext},
+    {0, 0},
+};
+
+static PyType_Spec PySSLContext_Type_spec = {
+    "_ssl._SSLContext",
+    sizeof(PySSLContext),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    PySSLContext_Type_slots
 };
 
 
@@ -4312,7 +4287,7 @@ _ssl_MemoryBIO_impl(PyTypeObject *type)
 
     bio = BIO_new(BIO_s_mem());
     if (bio == NULL) {
-        PyErr_SetString(PySSLErrorObject,
+        PyErr_SetString(_sslmodulestate_global->PySSLErrorObject,
                         "failed to allocate BIO");
         return NULL;
     }
@@ -4337,8 +4312,11 @@ _ssl_MemoryBIO_impl(PyTypeObject *type)
 static void
 memory_bio_dealloc(PySSLMemoryBIO *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     BIO_free(self->bio);
-    Py_TYPE(self)->tp_free(self);
+    freefunc memory_bio_free = PyType_GetSlot(tp, Py_tp_free);
+    memory_bio_free(self);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -4426,7 +4404,7 @@ _ssl_MemoryBIO_write_impl(PySSLMemoryBIO *self, Py_buffer *b)
     }
 
     if (self->eof_written) {
-        PyErr_SetString(PySSLErrorObject,
+        PyErr_SetString(_sslmodulestate_global->PySSLErrorObject,
                         "cannot write() after write_eof()");
         return NULL;
     }
@@ -4476,45 +4454,20 @@ static struct PyMethodDef memory_bio_methods[] = {
     {NULL, NULL}        /* sentinel */
 };
 
-static PyTypeObject PySSLMemoryBIO_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ssl.MemoryBIO",                         /*tp_name*/
-    sizeof(PySSLMemoryBIO),                    /*tp_basicsize*/
-    0,                                         /*tp_itemsize*/
-    (destructor)memory_bio_dealloc,            /*tp_dealloc*/
-    0,                                         /*tp_print*/
-    0,                                         /*tp_getattr*/
-    0,                                         /*tp_setattr*/
-    0,                                         /*tp_reserved*/
-    0,                                         /*tp_repr*/
-    0,                                         /*tp_as_number*/
-    0,                                         /*tp_as_sequence*/
-    0,                                         /*tp_as_mapping*/
-    0,                                         /*tp_hash*/
-    0,                                         /*tp_call*/
-    0,                                         /*tp_str*/
-    0,                                         /*tp_getattro*/
-    0,                                         /*tp_setattro*/
-    0,                                         /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT,                        /*tp_flags*/
-    0,                                         /*tp_doc*/
-    0,                                         /*tp_traverse*/
-    0,                                         /*tp_clear*/
-    0,                                         /*tp_richcompare*/
-    0,                                         /*tp_weaklistoffset*/
-    0,                                         /*tp_iter*/
-    0,                                         /*tp_iternext*/
-    memory_bio_methods,                        /*tp_methods*/
-    0,                                         /*tp_members*/
-    memory_bio_getsetlist,                     /*tp_getset*/
-    0,                                         /*tp_base*/
-    0,                                         /*tp_dict*/
-    0,                                         /*tp_descr_get*/
-    0,                                         /*tp_descr_set*/
-    0,                                         /*tp_dictoffset*/
-    0,                                         /*tp_init*/
-    0,                                         /*tp_alloc*/
-    _ssl_MemoryBIO,                            /*tp_new*/
+static PyType_Slot PySSLMemoryBIO_Type_slots[] = {
+    {Py_tp_dealloc, memory_bio_dealloc},
+    {Py_tp_methods, memory_bio_methods},
+    {Py_tp_getset, memory_bio_getsetlist},
+    {Py_tp_new, _ssl_MemoryBIO},
+    {0, 0},
+};
+
+static PyType_Spec PySSLMemoryBIO_Type_spec = {
+    "_ssl.MemoryBIO",
+    sizeof(PySSLMemoryBIO),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    PySSLMemoryBIO_Type_slots
 };
 
 
@@ -4526,12 +4479,14 @@ static void
 PySSLSession_dealloc(PySSLSession *self)
 {
     /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     Py_XDECREF(self->ctx);
     if (self->session != NULL) {
         SSL_SESSION_free(self->session);
     }
     PyObject_GC_Del(self);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -4673,37 +4628,29 @@ static PyGetSetDef PySSLSession_getsetlist[] = {
     {NULL},            /* sentinel */
 };
 
-static PyTypeObject PySSLSession_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ssl.Session",                            /*tp_name*/
-    sizeof(PySSLSession),                      /*tp_basicsize*/
-    0,                                         /*tp_itemsize*/
-    (destructor)PySSLSession_dealloc,          /*tp_dealloc*/
-    0,                                         /*tp_print*/
-    0,                                         /*tp_getattr*/
-    0,                                         /*tp_setattr*/
-    0,                                         /*tp_reserved*/
-    0,                                         /*tp_repr*/
-    0,                                         /*tp_as_number*/
-    0,                                         /*tp_as_sequence*/
-    0,                                         /*tp_as_mapping*/
-    0,                                         /*tp_hash*/
-    0,                                         /*tp_call*/
-    0,                                         /*tp_str*/
-    0,                                         /*tp_getattro*/
-    0,                                         /*tp_setattro*/
-    0,                                         /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,   /*tp_flags*/
-    0,                                         /*tp_doc*/
-    (traverseproc)PySSLSession_traverse,       /*tp_traverse*/
-    (inquiry)PySSLSession_clear,               /*tp_clear*/
-    PySSLSession_richcompare,                  /*tp_richcompare*/
-    0,                                         /*tp_weaklistoffset*/
-    0,                                         /*tp_iter*/
-    0,                                         /*tp_iternext*/
-    0,                                         /*tp_methods*/
-    0,                                         /*tp_members*/
-    PySSLSession_getsetlist,                   /*tp_getset*/
+PyObject *PySSLSession_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
+    PyErr_Format(PyExc_TypeError,
+                 "Cannot create '%.200s objects",
+                 _PyType_Name(type));
+    return NULL;
+}
+
+static PyType_Slot PySSLSession_Type_slots[] = {
+    {Py_tp_dealloc, PySSLSession_dealloc},
+    {Py_tp_traverse, PySSLSession_traverse},
+    {Py_tp_clear, PySSLSession_clear},
+    {Py_tp_richcompare, PySSLSession_richcompare},
+    {Py_tp_getset, PySSLSession_getsetlist},
+    {Py_tp_new, PySSLSession_new},
+    {0, 0},
+};
+
+static PyType_Spec PySSLSession_Type_spec = {
+    "_ssl.Session",
+    sizeof(PySSLSession),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    PySSLSession_Type_slots
 };
 
 
@@ -4772,7 +4719,7 @@ PySSL_RAND(int len, int pseudo)
     errstr = ERR_reason_error_string(err);
     v = Py_BuildValue("(ks)", err, errstr);
     if (v != NULL) {
-        PyErr_SetObject(PySSLErrorObject, v);
+        PyErr_SetObject(_sslmodulestate_global->PySSLErrorObject, v);
         Py_DECREF(v);
     }
     return NULL;
@@ -4847,7 +4794,7 @@ _ssl_RAND_egd_impl(PyObject *module, PyObject *path)
     int bytes = RAND_egd(PyBytes_AsString(path));
     Py_DECREF(path);
     if (bytes == -1) {
-        PyErr_SetString(PySSLErrorObject,
+        PyErr_SetString(_sslmodulestate_global->PySSLErrorObject,
                         "EGD connection failed or EGD did not return "
                         "enough data to seed the PRNG");
         return NULL;
@@ -5335,17 +5282,57 @@ PyDoc_STRVAR(module_doc,
 "Implementation module for SSL socket operations.  See the socket module\n\
 for documentation.");
 
+static int
+_sslmodule_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    Py_VISIT(_sslmodulestate(module)->PySSLContext_Type);
+    Py_VISIT(_sslmodulestate(module)->PySSLSocket_Type);
+    Py_VISIT(_sslmodulestate(module)->PySSLMemoryBIO_Type);
+    Py_VISIT(_sslmodulestate(module)->PySSLSession_Type);
+    Py_VISIT(_sslmodulestate(module)->PySSLZeroReturnErrorObject);
+    Py_VISIT(_sslmodulestate(module)->PySSLWantReadErrorObject);
+    Py_VISIT(_sslmodulestate(module)->PySSLWantWriteErrorObject);
+    Py_VISIT(_sslmodulestate(module)->PySSLSyscallErrorObject);
+    Py_VISIT(_sslmodulestate(module)->PySSLEOFErrorObject);
+    Py_VISIT(_sslmodulestate(module)->err_codes_to_names);
+    Py_VISIT(_sslmodulestate(module)->lib_codes_to_names);
+    return 0;
+}
+
+static int
+_sslmodule_clear(PyObject *module)
+{
+    Py_CLEAR(_sslmodulestate(module)->PySSLContext_Type);
+    Py_CLEAR(_sslmodulestate(module)->PySSLSocket_Type);
+    Py_CLEAR(_sslmodulestate(module)->PySSLMemoryBIO_Type);
+    Py_CLEAR(_sslmodulestate(module)->PySSLSession_Type);
+    Py_CLEAR(_sslmodulestate(module)->PySSLErrorObject);
+    Py_CLEAR(_sslmodulestate(module)->PySSLZeroReturnErrorObject);
+    Py_CLEAR(_sslmodulestate(module)->PySSLWantReadErrorObject);
+    Py_CLEAR(_sslmodulestate(module)->PySSLWantWriteErrorObject);
+    Py_CLEAR(_sslmodulestate(module)->PySSLSyscallErrorObject);
+    Py_CLEAR(_sslmodulestate(module)->PySSLEOFErrorObject);
+    Py_CLEAR(_sslmodulestate(module)->err_codes_to_names);
+    Py_CLEAR(_sslmodulestate(module)->lib_codes_to_names);
+    return 0;
+}
+
+static void
+_sslmodule_free(void *module)
+{
+    _sslmodule_clear((PyObject *)module);
+}
 
 static struct PyModuleDef _sslmodule = {
     PyModuleDef_HEAD_INIT,
     "_ssl",
     module_doc,
-    -1,
+    sizeof(_sslmodulestate),
     PySSL_methods,
     NULL,
-    NULL,
-    NULL,
-    NULL
+    _sslmodule_traverse,
+    _sslmodule_clear,
+    _sslmodule_free,
 };
 
 
@@ -5369,33 +5356,59 @@ parse_openssl_version(unsigned long libver,
 PyMODINIT_FUNC
 PyInit__ssl(void)
 {
-    PyObject *m, *d, *r;
+    PyObject *m, *r;
     unsigned long libver;
     unsigned int major, minor, fix, patch, status;
     PySocketModule_APIObject *socket_api;
     struct py_ssl_error_code *errcode;
     struct py_ssl_library_code *libcode;
 
-    if (PyType_Ready(&PySSLContext_Type) < 0)
-        return NULL;
-    if (PyType_Ready(&PySSLSocket_Type) < 0)
-        return NULL;
-    if (PyType_Ready(&PySSLMemoryBIO_Type) < 0)
-        return NULL;
-    if (PyType_Ready(&PySSLSession_Type) < 0)
-        return NULL;
-
-
     m = PyModule_Create(&_sslmodule);
     if (m == NULL)
         return NULL;
-    d = PyModule_GetDict(m);
+
+    PyObject *PySSLContext_Type = PyType_FromSpec(&PySSLContext_Type_spec);
+    if (PySSLContext_Type == NULL) {
+        return NULL;
+    }
+    _sslmodulestate(m)->PySSLContext_Type = (PyTypeObject *)PySSLContext_Type;
+
+    Py_INCREF(PySSLContext_Type);
+    PyModule_AddObject(m, "_SSLContext", PySSLContext_Type);
+
+    PyObject *PySSLSocket_Type = PyType_FromSpec(&PySSLSocket_Type_spec);
+    if (PySSLSocket_Type == NULL) {
+        return NULL;
+    }
+    _sslmodulestate(m)->PySSLSocket_Type = (PyTypeObject *)PySSLSocket_Type;
+
+    Py_INCREF(PySSLSocket_Type);
+    PyModule_AddObject(m, "_SSLSocket", PySSLSocket_Type);
+
+    PyObject *PySSLMemoryBIO_Type = PyType_FromSpec(&PySSLMemoryBIO_Type_spec);
+    if (PySSLMemoryBIO_Type == NULL) {
+        return NULL;
+    }
+    _sslmodulestate(m)->PySSLMemoryBIO_Type = (PyTypeObject *)PySSLMemoryBIO_Type;
+
+    Py_INCREF(PySSLMemoryBIO_Type);
+    PyModule_AddObject(m, "MemoryBIO", PySSLMemoryBIO_Type);
+
+    PyObject *PySSLSession_Type = PyType_FromSpec(&PySSLSession_Type_spec);
+    if (PySSLSession_Type == NULL) {
+        return NULL;
+    }
+    _sslmodulestate(m)->PySSLSession_Type = (PyTypeObject *)PySSLSession_Type;
+
+    Py_INCREF(PySSLSession_Type);
+    PyModule_AddObject(m, "SSLSession", PySSLSession_Type);
 
     /* Load _socket module and its C API */
     socket_api = PySocketModule_ImportModuleAndAPI();
     if (!socket_api)
         return NULL;
-    PySocketModule = *socket_api;
+    _sslmodulestate(m)->sock_type = socket_api->Sock_Type;
+    _sslmodulestate(m)->timeout_error = socket_api->timeout_error;
 
 #ifndef OPENSSL_VERSION_1_1
     /* Load all algorithms and initialize cpuid */
@@ -5418,51 +5431,59 @@ PyInit__ssl(void)
 #endif  /* WITH_THREAD */
 
     /* Add symbols to module dict */
-    sslerror_type_slots[0].pfunc = PyExc_OSError;
-    PySSLErrorObject = PyType_FromSpec(&sslerror_type_spec);
+    PyObject* bases = PyTuple_Pack(1, PyExc_OSError);
+    PyObject* PySSLErrorObject = PyType_FromSpecWithBases(&sslerror_type_spec, bases);
     if (PySSLErrorObject == NULL)
         return NULL;
+    _sslmodulestate(m)->PySSLErrorObject = PySSLErrorObject;
 
-    PySSLZeroReturnErrorObject = PyErr_NewExceptionWithDoc(
-        "ssl.SSLZeroReturnError", SSLZeroReturnError_doc,
-        PySSLErrorObject, NULL);
-    PySSLWantReadErrorObject = PyErr_NewExceptionWithDoc(
-        "ssl.SSLWantReadError", SSLWantReadError_doc,
-        PySSLErrorObject, NULL);
-    PySSLWantWriteErrorObject = PyErr_NewExceptionWithDoc(
-        "ssl.SSLWantWriteError", SSLWantWriteError_doc,
-        PySSLErrorObject, NULL);
-    PySSLSyscallErrorObject = PyErr_NewExceptionWithDoc(
-        "ssl.SSLSyscallError", SSLSyscallError_doc,
-        PySSLErrorObject, NULL);
-    PySSLEOFErrorObject = PyErr_NewExceptionWithDoc(
-        "ssl.SSLEOFError", SSLEOFError_doc,
-        PySSLErrorObject, NULL);
-    if (PySSLZeroReturnErrorObject == NULL
-        || PySSLWantReadErrorObject == NULL
-        || PySSLWantWriteErrorObject == NULL
-        || PySSLSyscallErrorObject == NULL
-        || PySSLEOFErrorObject == NULL)
+    Py_INCREF(PySSLErrorObject);
+    PyModule_AddObject(m, "SSLError", PySSLErrorObject);
+
+    PyObject *PySSLZeroReturnErrorObject = PyErr_NewExceptionWithDoc(
+        "ssl.SSLZeroReturnError", SSLZeroReturnError_doc, PySSLErrorObject, NULL);
+    if (PySSLZeroReturnErrorObject == NULL)
         return NULL;
-    if (PyDict_SetItemString(d, "SSLError", PySSLErrorObject) != 0
-        || PyDict_SetItemString(d, "SSLZeroReturnError", PySSLZeroReturnErrorObject) != 0
-        || PyDict_SetItemString(d, "SSLWantReadError", PySSLWantReadErrorObject) != 0
-        || PyDict_SetItemString(d, "SSLWantWriteError", PySSLWantWriteErrorObject) != 0
-        || PyDict_SetItemString(d, "SSLSyscallError", PySSLSyscallErrorObject) != 0
-        || PyDict_SetItemString(d, "SSLEOFError", PySSLEOFErrorObject) != 0)
+    _sslmodulestate(m)->PySSLZeroReturnErrorObject = PySSLZeroReturnErrorObject;
+
+    Py_INCREF(PySSLZeroReturnErrorObject);
+    PyModule_AddObject(m, "SSLZeroReturnError", PySSLZeroReturnErrorObject);
+
+    PyObject *PySSLWantReadErrorObject = PyErr_NewExceptionWithDoc(
+        "ssl.SSLWantReadError", SSLWantReadError_doc, PySSLErrorObject, NULL);
+    if (PySSLWantReadErrorObject == NULL)
         return NULL;
-    if (PyDict_SetItemString(d, "_SSLContext",
-                             (PyObject *)&PySSLContext_Type) != 0)
+    _sslmodulestate(m)->PySSLWantReadErrorObject = PySSLWantReadErrorObject;
+
+    Py_INCREF(PySSLWantReadErrorObject);
+    PyModule_AddObject(m, "SSLWantReadError", PySSLWantReadErrorObject);
+
+    PyObject *PySSLWantWriteErrorObject = PyErr_NewExceptionWithDoc(
+        "ssl.SSLWantWriteError", SSLWantWriteError_doc, PySSLErrorObject, NULL);
+    if (PySSLWantWriteErrorObject == NULL)
         return NULL;
-    if (PyDict_SetItemString(d, "_SSLSocket",
-                             (PyObject *)&PySSLSocket_Type) != 0)
+    _sslmodulestate(m)->PySSLWantWriteErrorObject = PySSLWantWriteErrorObject;
+
+    Py_INCREF(PySSLWantWriteErrorObject);
+    PyModule_AddObject(m, "SSLWantWriteError", PySSLWantWriteErrorObject);
+
+    PyObject *PySSLSyscallErrorObject = PyErr_NewExceptionWithDoc(
+        "ssl.SSLSyscallError", SSLSyscallError_doc, PySSLErrorObject, NULL);
+    if (PySSLSyscallErrorObject == NULL)
         return NULL;
-    if (PyDict_SetItemString(d, "MemoryBIO",
-                             (PyObject *)&PySSLMemoryBIO_Type) != 0)
+    _sslmodulestate(m)->PySSLSyscallErrorObject = PySSLSyscallErrorObject;
+
+    Py_INCREF(PySSLSyscallErrorObject);
+    PyModule_AddObject(m, "SSLSyscallError", PySSLSyscallErrorObject);
+
+    PyObject *PySSLEOFErrorObject = PyErr_NewExceptionWithDoc(
+        "ssl.SSLEOFError", SSLEOFError_doc, PySSLErrorObject, NULL);
+    if (PySSLEOFErrorObject == NULL)
         return NULL;
-    if (PyDict_SetItemString(d, "SSLSession",
-                             (PyObject *)&PySSLSession_Type) != 0)
-        return NULL;
+    _sslmodulestate(m)->PySSLEOFErrorObject = PySSLEOFErrorObject;
+
+    Py_INCREF(PySSLEOFErrorObject);
+    PyModule_AddObject(m, "SSLEOFError", PySSLEOFErrorObject);
 
     PyModule_AddIntConstant(m, "SSL_ERROR_ZERO_RETURN",
                             PY_SSL_ERROR_ZERO_RETURN);
@@ -5657,9 +5678,16 @@ PyInit__ssl(void)
     PyModule_AddObject(m, "HAS_TLSv1_3", r);
 
     /* Mappings for error codes */
-    err_codes_to_names = PyDict_New();
-    err_names_to_codes = PyDict_New();
-    if (err_codes_to_names == NULL || err_names_to_codes == NULL)
+    PyObject *err_codes_to_names = PyDict_New();
+    if (err_codes_to_names == NULL)
+        return NULL;
+    _sslmodulestate(m)->err_codes_to_names = err_codes_to_names;
+
+    Py_INCREF(err_codes_to_names);
+    PyModule_AddObject(m, "err_codes_to_names", err_codes_to_names);
+
+    PyObject *err_names_to_codes = PyDict_New();
+    if (err_names_to_codes == NULL)
         return NULL;
     errcode = error_codes;
     while (errcode->mnemonic != NULL) {
@@ -5676,14 +5704,17 @@ PyInit__ssl(void)
         Py_DECREF(mnemo);
         errcode++;
     }
-    if (PyModule_AddObject(m, "err_codes_to_names", err_codes_to_names))
-        return NULL;
     if (PyModule_AddObject(m, "err_names_to_codes", err_names_to_codes))
         return NULL;
 
-    lib_codes_to_names = PyDict_New();
+    PyObject *lib_codes_to_names = PyDict_New();
     if (lib_codes_to_names == NULL)
         return NULL;
+    _sslmodulestate(m)->lib_codes_to_names = lib_codes_to_names;
+
+    Py_INCREF(lib_codes_to_names);
+    PyModule_AddObject(m, "lib_codes_to_names", lib_codes_to_names);
+
     libcode = library_codes;
     while (libcode->library != NULL) {
         PyObject *mnemo, *key;
@@ -5697,8 +5728,6 @@ PyInit__ssl(void)
         Py_DECREF(mnemo);
         libcode++;
     }
-    if (PyModule_AddObject(m, "lib_codes_to_names", lib_codes_to_names))
-        return NULL;
 
     /* OpenSSL version */
     /* SSLeay() gives us the version of the library linked against,
@@ -5722,6 +5751,13 @@ PyInit__ssl(void)
     parse_openssl_version(libver, &major, &minor, &fix, &patch, &status);
     r = Py_BuildValue("IIIII", major, minor, fix, patch, status);
     if (r == NULL || PyModule_AddObject(m, "_OPENSSL_API_VERSION", r))
+        return NULL;
+
+    _sslmodulestate(m)->reason = PyUnicode_InternFromString("reason");
+    if (_sslmodulestate(m)->reason == NULL)
+        return NULL;
+    _sslmodulestate(m)->library = PyUnicode_InternFromString("library");
+    if (_sslmodulestate(m)->library == NULL)
         return NULL;
 
     return m;

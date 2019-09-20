@@ -639,10 +639,15 @@ target_link_libraries(
   modules)
 
 # Extension tests with CPython
-set(CPYTHON_CONFIGURE_FLAGS "")
+set(CPYTHON_ASSERTIONS_FLAG "")
 set(CPYTHON_CFLAGS "")
+set(CPYTHON_LDFLAGS "")
+set(CPYTHON_OPENSSL_FLAG "--with-openssl=${OPENSSL_ROOT_DIR}")
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+  set(CPYTHON_LDFLAGS "LDFLAGS='-Wl,-rpath=${OPENSSL_ROOT_DIR}/lib'")
+endif()
 if (${CMAKE_BUILD_TYPE} MATCHES "^Debug")
-  set(CPYTHON_CONFIGURE_FLAGS "--with-assertions")
+  set(CPYTHON_ASSERTIONS_FLAG "--with-assertions")
   set(CPYTHON_CFLAGS "CFLAGS=-O0")
 endif()
 set(LIBPYTHON_BIN "libpython3.6m.a")
@@ -650,7 +655,8 @@ set(CPYTHON_BUILD_DIR ${CMAKE_BINARY_DIR}/third-party/cpython)
 file(MAKE_DIRECTORY ${CPYTHON_BUILD_DIR})
 add_custom_command(
   OUTPUT ${CPYTHON_BUILD_DIR}/${LIBPYTHON_BIN}
-  COMMAND ${CPYTHON_CFLAGS} ${CPYTHON_DIR}/configure ${CPYTHON_CONFIGURE_FLAGS}
+  COMMAND ${CPYTHON_CFLAGS} ${CPYTHON_DIR}/configure ${CPYTHON_OPENSSL_FLAG}
+    ${CPYTHON_LDFLAGS} ${CPYTHON_ASSERTIONS_FLAG}
   COMMAND make -j
   WORKING_DIRECTORY ${CPYTHON_BUILD_DIR})
 add_custom_target(

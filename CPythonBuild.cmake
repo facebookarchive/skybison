@@ -46,6 +46,7 @@ set(
   "${CPYTHON_DIR}/Modules/_io/textio.c"
   "${CPYTHON_DIR}/Modules/_opcode.c"
   "${CPYTHON_DIR}/Modules/_sre.c"
+  "${CPYTHON_DIR}/Modules/_ssl.c"
   "${CPYTHON_DIR}/Modules/_weakref.c"
   "${CPYTHON_DIR}/Modules/arraymodule.c"
   "${CPYTHON_DIR}/Modules/audioop.c"
@@ -194,6 +195,7 @@ set(
   "${CPYTHON_DIR}/Modules/_operator.c"
   "${CPYTHON_DIR}/Modules/_posixsubprocess.c"
   "${CPYTHON_DIR}/Modules/_randommodule.c"
+  "${CPYTHON_DIR}/Modules/_ssl_data.h"
   "${CPYTHON_DIR}/Modules/_stat.c"
   "${CPYTHON_DIR}/Modules/_struct.c"
   "${CPYTHON_DIR}/Modules/_testbuffer.c"
@@ -386,4 +388,5 @@ target_link_libraries(
   extension
   capi-headers
   Threads::Threads
-  OpenSSL::Crypto)
+  OpenSSL::Crypto
+  OpenSSL::SSL)
