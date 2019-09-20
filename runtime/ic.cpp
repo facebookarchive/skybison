@@ -105,30 +105,54 @@ void icDeleteDependentInValueCell(Thread* thread, const ValueCell& value_cell,
 
 void icDeleteDependentFromInheritingTypes(Thread* thread,
                                           LayoutId cached_layout_id,
-                                          const Str& attribute_name,
-                                          const Type& updated_type,
+                                          const Str& attr_name,
+                                          const Type& new_defining_type,
                                           const Object& dependent) {
   DCHECK(icIsCachedAttributeAffectedByUpdatedType(thread, cached_layout_id,
-                                                  attribute_name, updated_type),
+                                                  attr_name, new_defining_type),
          "icIsCachedAttributeAffectedByUpdatedType must return true");
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Type cached_type(&scope, runtime->typeAt(cached_layout_id));
-  Tuple mro(&scope, cached_type.mro());
+  Tuple mro(&scope, Type::cast(runtime->typeAt(cached_layout_id)).mro());
   for (word i = 0; i < mro.length(); ++i) {
     Type type(&scope, mro.at(i));
     Dict dict(&scope, type.dict());
-    ValueCell value_cell(&scope,
-                         runtime->dictAtByStr(thread, dict, attribute_name));
+    ValueCell value_cell(&scope, runtime->dictAtByStr(thread, dict, attr_name));
     icDeleteDependentInValueCell(thread, value_cell, dependent);
-    if (type == updated_type) {
-      DCHECK(!value_cell.isPlaceholder(),
-             "value_cell for updated_type must not be Placeholder");
+    if (type == new_defining_type) {
+      // This can be a placeholder for some caching opcodes that depend on not
+      // found attributes. For example, a >= b depends on type(b).__le__  even
+      // when it is not found in case it's defined afterwards.
       return;
     }
     DCHECK(value_cell.isPlaceholder(),
            "value_cell below updated_type must be Placeholder");
   }
+}
+
+RawObject icHighestSuperTypeNotInMroOfOtherCachedTypes(
+    Thread* thread, LayoutId cached_layout_id, const Str& attr_name,
+    const Function& dependent) {
+  HandleScope scope(thread);
+  Object supertype_obj(&scope, NoneType::object());
+  Runtime* runtime = thread->runtime();
+  Tuple mro(&scope, Type::cast(runtime->typeAt(cached_layout_id)).mro());
+  for (word i = 0; i < mro.length(); ++i) {
+    Type type(&scope, mro.at(i));
+    if (type.isSealed()) {
+      break;
+    }
+    Dict type_dict(&scope, type.dict());
+    if (!runtime->dictIncludesByStr(thread, type_dict, attr_name) ||
+        icIsAttrCachedInDependent(thread, type, attr_name, dependent)) {
+      break;
+    }
+    supertype_obj = *type;
+  }
+  if (supertype_obj.isNoneType()) {
+    return Error::notFound();
+  }
+  return *supertype_obj;
 }
 
 bool icIsCachedAttributeAffectedByUpdatedType(Thread* thread,
@@ -168,39 +192,153 @@ bool icIsCachedAttributeAffectedByUpdatedType(Thread* thread,
   return false;
 }
 
-void icEvictCache(Thread* thread, const Function& dependent,
-                  const Type& updated_type, const Str& updated_attr,
-                  AttributeKind attribute_kind) {
+bool icIsAttrCachedInDependent(Thread* thread, const Type& type,
+                               const Str& attr_name,
+                               const Function& dependent) {
   HandleScope scope(thread);
-  // Scan through all attribute caches and delete caches shadowed by
-  // updated_type.updated_attr.
-  for (IcIterator it(&scope, *dependent); it.hasNext(); it.next()) {
-    if (!it.isAttrNameEqualTo(updated_attr)) {
-      continue;
+  Runtime* runtime = thread->runtime();
+  for (IcIterator it(&scope, runtime, *dependent); it.hasNext(); it.next()) {
+    if (it.isAttrCache()) {
+      if (!it.isAttrNameEqualTo(attr_name)) {
+        continue;
+      }
+      if (icIsCachedAttributeAffectedByUpdatedType(thread, it.layoutId(),
+                                                   attr_name, type)) {
+        return true;
+      }
+    } else {
+      DCHECK(it.isBinopCache(),
+             "a cache must be either for attributes or binops");
+      if (attr_name.equals(it.leftMethodName()) &&
+          icIsCachedAttributeAffectedByUpdatedType(thread, it.leftLayoutId(),
+                                                   attr_name, type)) {
+        return true;
+      }
+      if (attr_name.equals(it.rightMethodName()) &&
+          icIsCachedAttributeAffectedByUpdatedType(thread, it.rightLayoutId(),
+                                                   attr_name, type)) {
+        return true;
+      }
     }
-    // We don't invalidate instance offset caches when non-data descriptor is
-    // assigned to the cached type.
-    if (it.isInstanceAttr() &&
-        attribute_kind == AttributeKind::kNotADataDescriptor) {
-      continue;
-    }
-    // The updated type doesn't shadow the cached type.
-    if (!icIsCachedAttributeAffectedByUpdatedType(thread, it.key(),
-                                                  updated_attr, updated_type)) {
-      continue;
-    }
+  }
+  return false;
+}
 
-    LayoutId key_layout = it.key();
-    // Now that we know that the updated type attribute shadows the cached type
-    // attribute, clear the cache.
-    it.evict();
+void icEvictAttrCache(Thread* thread, const IcIterator& it,
+                      const Type& updated_type, const Str& updated_attr,
+                      AttributeKind attribute_kind, const Function& dependent) {
+  DCHECK(it.isAttrCache(), "ic should point to an attribute cache");
+  if (!it.isAttrNameEqualTo(updated_attr)) {
+    return;
+  }
+  // We don't invalidate instance offset caches when non-data descriptor is
+  // assigned to the cached type.
+  if (it.isInstanceAttr() &&
+      attribute_kind == AttributeKind::kNotADataDescriptor) {
+    return;
+  }
+  // The updated type doesn't shadow the cached type.
+  if (!icIsCachedAttributeAffectedByUpdatedType(thread, it.layoutId(),
+                                                updated_attr, updated_type)) {
+    return;
+  }
 
-    // Delete all direct/indirect dependencies from the deleted cache to
-    // dependent since such dependencies are gone now.
-    // TODO(T47281253): Call this per (cached_type, attribute_name) after
-    // cache invalidation.
-    icDeleteDependentFromInheritingTypes(thread, key_layout, updated_attr,
-                                         updated_type, dependent);
+  // Now that we know that the updated type attribute shadows the cached type
+  // attribute, clear the cache.
+  LayoutId cached_layout_id = it.layoutId();
+  it.evict();
+
+  // Delete all direct/indirect dependencies from the deleted cache to
+  // dependent since such dependencies are gone now.
+  // TODO(T54202245): Remove dependency links in parent classes of updated_type.
+  icDeleteDependentFromInheritingTypes(thread, cached_layout_id, updated_attr,
+                                       updated_type, dependent);
+}
+
+// TODO(T54277418): Pass SymbolId for updated_attr.
+void icEvictBinopCache(Thread* thread, const IcIterator& it,
+                       const Type& updated_type, const Str& updated_attr,
+                       const Function& dependent) {
+  if (it.leftMethodName() != updated_attr &&
+      it.rightMethodName() != updated_attr) {
+    // This cache cannot be affected since it references a different attribute
+    // than the one we are looking for.
+    return;
+  }
+  bool evict_lhs = false;
+  if (it.leftMethodName() == updated_attr) {
+    evict_lhs = icIsCachedAttributeAffectedByUpdatedType(
+        thread, it.leftLayoutId(), updated_attr, updated_type);
+  }
+  bool evict_rhs = false;
+  if (!evict_lhs && it.rightMethodName() == updated_attr) {
+    evict_rhs = icIsCachedAttributeAffectedByUpdatedType(
+        thread, it.rightLayoutId(), updated_attr, updated_type);
+  }
+
+  if (!evict_lhs && !evict_rhs) {
+    // This cache does not reference attributes that are implemented by the
+    // affected type.
+    return;
+  }
+
+  LayoutId cached_layout_id = it.leftLayoutId();
+  LayoutId other_cached_layout_id = it.rightLayoutId();
+  HandleScope scope(thread);
+  Str other_method_name(&scope, it.rightMethodName());
+  if (evict_rhs) {
+    // The RHS type is the one that is being affected.  This is either because
+    // the RHS type is a supertype of the LHS type or because the LHS type did
+    // not implement the binary operation.
+    cached_layout_id = it.rightLayoutId();
+    other_cached_layout_id = it.leftLayoutId();
+    other_method_name = it.leftMethodName();
+  }
+  it.evict();
+
+  // Remove this function from the dependency links in the dictionaries of
+  // subtypes, starting at cached type, of the updated type that looked up the
+  // attribute through the updated type.
+  icDeleteDependentFromInheritingTypes(thread, cached_layout_id, updated_attr,
+                                       updated_type, dependent);
+
+  // TODO(T54202245): Remove dependency links in parent classes of update_type.
+
+  // Walk up the MRO from the updated class looking for a super type that is not
+  // referenced by another cache in this same function.
+  Object supertype_obj(&scope, icHighestSuperTypeNotInMroOfOtherCachedTypes(
+                                   thread, other_cached_layout_id,
+                                   other_method_name, dependent));
+  if (supertype_obj.isErrorNotFound()) {
+    // typeAt(other_cached_layout_id).other_method_name_id is still cached so no
+    // more dependencies need to be deleted.
+    return;
+  }
+  Type supertype(&scope, *supertype_obj);
+  // Remove this function from all of the dependency links in the dictionaries
+  // of supertypes from the updated type up to the last supertype that is
+  // exclusively referenced by the type in this cache (and no other caches in
+  // this function.)
+  icDeleteDependentFromInheritingTypes(thread, other_cached_layout_id,
+                                       other_method_name, supertype, dependent);
+
+  // TODO(T54202245): Remove depdency links in the parent classes of
+  // other_cached_layout_id.
+}
+
+void icEvictCache(Thread* thread, const Function& dependent, const Type& type,
+                  const Str& attr, AttributeKind attribute_kind) {
+  HandleScope scope(thread);
+  // Scan through all caches and delete caches shadowed by type.attr.
+  for (IcIterator it(&scope, thread->runtime(), *dependent); it.hasNext();
+       it.next()) {
+    if (it.isAttrCache()) {
+      icEvictAttrCache(thread, it, type, attr, attribute_kind, dependent);
+    } else {
+      DCHECK(it.isBinopCache(),
+             "a cache must be either for attributes or binops");
+      icEvictBinopCache(thread, it, type, attr, dependent);
+    }
   }
 }
 
@@ -217,7 +355,7 @@ void icInvalidateAttr(Thread* thread, const Type& type, const Str& attr_name,
   while (!link.isNoneType()) {
     Function dependent(&scope, WeakLink::cast(*link).referent());
     // Capturing the next node in case the current node is deleted by
-    // icDeleteCacheForTypeAttrInDependent
+    // icEvictCacheForTypeAttrInDependent
     link = WeakLink::cast(*link).next();
     icEvictCache(thread, dependent, type, attr_name, attribute_kind);
   }
@@ -339,6 +477,21 @@ void icInvalidateGlobalVar(Thread* thread, const ValueCell& value_cell) {
     link = WeakLink::cast(*link).next();
   }
   value_cell.setDependencyLink(NoneType::object());
+}
+
+RawObject IcIterator::leftMethodName() const {
+  DCHECK(isBinopCache(), "should be only called for attribute caches");
+  CompareOp compare_op =
+      static_cast<CompareOp>(originalArg(*function_, bytecode_op_.arg));
+  return runtime_->symbols()->at(runtime_->comparisonSelector(compare_op));
+}
+
+RawObject IcIterator::rightMethodName() const {
+  DCHECK(isBinopCache(), "should be only called for attribute caches");
+  CompareOp compare_op =
+      static_cast<CompareOp>(originalArg(*function_, bytecode_op_.arg));
+  return runtime_->symbols()->at(
+      runtime_->swappedComparisonSelector(compare_op));
 }
 
 }  // namespace python

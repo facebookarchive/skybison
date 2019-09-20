@@ -184,6 +184,237 @@ class C(B):
   EXPECT_TRUE(c_link.next().isNoneType());
 }
 
+static RawObject dependencyLinkOfTypeAttr(Thread* thread, const Type& type,
+                                          const char* attribute_name) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Dict type_dict(&scope, type.dict());
+  Str attribute_name_str(&scope, runtime->newStrFromCStr(attribute_name));
+  ValueCell value_cell(
+      &scope, runtime->dictAtByStr(thread, type_dict, attribute_name_str));
+  return value_cell.dependencyLink();
+}
+
+TEST_F(IcTest, IcEvictAttrCache) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class A:
+  def __init__(self):
+    self.foo = 4
+
+def cache_a_foo(a):
+  return a.foo
+
+a = A()
+cache_a_foo(a)
+
+class B:
+  pass
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Type type_a(&scope, mainModuleAt(&runtime_, "A"));
+  Function cache_a_foo(&scope, mainModuleAt(&runtime_, "cache_a_foo"));
+  Tuple caches(&scope, cache_a_foo.caches());
+  Object cached_object(&scope, mainModuleAt(&runtime_, "a"));
+  // Precondition check that the A.foo attribute lookup has been cached.
+  ASSERT_FALSE(
+      icLookupAttr(*caches, 1, cached_object.layoutId()).isErrorNotFound());
+  ASSERT_EQ(WeakLink::cast(dependencyLinkOfTypeAttr(thread_, type_a, "foo"))
+                .referent(),
+            *cache_a_foo);
+
+  // Try evicting caches with an attribute name that is not in the cache.  This
+  // should have no effect.
+  Type cached_type(&scope, mainModuleAt(&runtime_, "A"));
+  IcIterator it(&scope, &runtime_, *cache_a_foo);
+  Str not_cached_attr_name(&scope, runtime_.newStrFromCStr("random"));
+  icEvictAttrCache(thread_, it, cached_type, not_cached_attr_name,
+                   AttributeKind::kNotADataDescriptor, cache_a_foo);
+  EXPECT_FALSE(
+      icLookupAttr(*caches, 1, cached_object.layoutId()).isErrorNotFound());
+  EXPECT_EQ(WeakLink::cast(dependencyLinkOfTypeAttr(thread_, type_a, "foo"))
+                .referent(),
+            *cache_a_foo);
+
+  // Try evicting instance attribute caches for a non-data descriptor
+  // assignment.  Because instance attributes have a higher priority than
+  // non-data descriptors, nothing should be evicted.
+  Str foo(&scope, runtime_.newStrFromCStr("foo"));
+  icEvictAttrCache(thread_, it, cached_type, foo,
+                   AttributeKind::kNotADataDescriptor, cache_a_foo);
+  EXPECT_FALSE(
+      icLookupAttr(*caches, 1, cached_object.layoutId()).isErrorNotFound());
+  EXPECT_EQ(WeakLink::cast(dependencyLinkOfTypeAttr(thread_, type_a, "foo"))
+                .referent(),
+            *cache_a_foo);
+
+  // Try evicting caches with a type that is not being cached.  This should have
+  // no effect.
+  Type not_cached_type(&scope, mainModuleAt(&runtime_, "B"));
+  icEvictAttrCache(thread_, it, not_cached_type, foo,
+                   AttributeKind::kDataDescriptor, cache_a_foo);
+  EXPECT_FALSE(
+      icLookupAttr(*caches, 1, cached_object.layoutId()).isErrorNotFound());
+  EXPECT_EQ(WeakLink::cast(dependencyLinkOfTypeAttr(thread_, type_a, "foo"))
+                .referent(),
+            *cache_a_foo);
+
+  // An update to a type attribute whose type, Attribute name with a data
+  // desciptor value invalidates an instance attribute cache.
+  icEvictAttrCache(thread_, it, cached_type, foo,
+                   AttributeKind::kDataDescriptor, cache_a_foo);
+  EXPECT_TRUE(
+      icLookupAttr(*caches, 1, cached_object.layoutId()).isErrorNotFound());
+  // The dependency for cache_a_foo gets deleted.
+  EXPECT_NE(WeakLink::cast(dependencyLinkOfTypeAttr(thread_, type_a, "foo"))
+                .referent(),
+            *cache_a_foo);
+}
+
+TEST_F(IcTest, IcEvictBinopCacheEvictsCacheForUpdateToLeftOperandType) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class A:
+  def __ge__(self, other):
+    return True
+
+class B:
+  def __le__(self, other):
+    return True
+
+def cache_binop(a, b):
+  return a >= b
+
+a = A()
+b = B()
+
+cache_binop(a, b)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function cache_binop(&scope, mainModuleAt(&runtime_, "cache_binop"));
+  Tuple caches(&scope, cache_binop.caches());
+  Object left_operand(&scope, mainModuleAt(&runtime_, "a"));
+  Object right_operand(&scope, mainModuleAt(&runtime_, "b"));
+  Type left_operand_type(&scope, mainModuleAt(&runtime_, "A"));
+  IcBinopFlags flags_out;
+  // Precondition check that the A.__ge__ attribute lookup has been cached.
+  ASSERT_FALSE(icLookupBinop(*caches, 0, left_operand.layoutId(),
+                             right_operand.layoutId(), &flags_out)
+                   .isErrorNotFound());
+
+  IcIterator it(&scope, &runtime_, *cache_binop);
+
+  // An update to A.__ge__ invalidates the binop cache for a >= b.
+  Str dunder_ge(&scope, runtime_.newStrFromCStr("__ge__"));
+  icEvictBinopCache(thread_, it, left_operand_type, dunder_ge, cache_binop);
+  EXPECT_TRUE(icLookupBinop(*caches, 0, left_operand.layoutId(),
+                            right_operand.layoutId(), &flags_out)
+                  .isErrorNotFound());
+}
+
+TEST_F(IcTest, IcEvictBinopCacheEvictsCacheForUpdateToRightOperand) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class A:
+  def __ge__(self, other):
+    return True
+
+class B:
+  def __le__(self, other):
+    return True
+
+def cache_binop(a, b):
+  return a >= b
+
+a = A()
+b = B()
+
+cache_binop(a, b)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function cache_binop(&scope, mainModuleAt(&runtime_, "cache_binop"));
+  Tuple caches(&scope, cache_binop.caches());
+  Object left_operand(&scope, mainModuleAt(&runtime_, "a"));
+  Object right_operand(&scope, mainModuleAt(&runtime_, "b"));
+  Type right_operand_type(&scope, mainModuleAt(&runtime_, "B"));
+  IcBinopFlags flags_out;
+  // Precondition check that the A.__ge__ attribute lookup has been cached.
+  ASSERT_FALSE(icLookupBinop(*caches, 0, left_operand.layoutId(),
+                             right_operand.layoutId(), &flags_out)
+                   .isErrorNotFound());
+
+  IcIterator it(&scope, &runtime_, *cache_binop);
+  Str dunder_le(&scope, runtime_.newStrFromCStr("__le__"));
+  // An update to B.__le__ invalidates the binop cache for a >= b.
+  icEvictBinopCache(thread_, it, right_operand_type, dunder_le, cache_binop);
+  EXPECT_TRUE(icLookupBinop(*caches, 0, left_operand.layoutId(),
+                            right_operand.layoutId(), &flags_out)
+                  .isErrorNotFound());
+}
+
+TEST_F(IcTest, IcEvictBinopCacheDoesnNotDeleteDependenciesFromCachedTypes) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class A:
+  def __ge__(self, other): return True
+
+class B:
+  def __le__(self, other): return True
+
+def cache_compare_op(a, b):
+  t0 = a >= b
+  t1 = b <= 5
+
+a = A()
+b = B()
+
+cache_compare_op(a, b)
+
+A__ge__ = A.__ge__
+B__le__ = B.__le__
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
+
+  Object type_a_dunder_ge(&scope, mainModuleAt(&runtime_, "A__ge__"));
+  Object type_b_dunder_le(&scope, mainModuleAt(&runtime_, "B__le__"));
+  Function cache_compare_op(&scope,
+                            mainModuleAt(&runtime_, "cache_compare_op"));
+  Tuple caches(&scope, cache_compare_op.caches());
+  IcBinopFlags flags_out;
+  // Ensure that A.__ge__ is cached for t0 = a >= b.
+  ASSERT_EQ(icLookupBinop(*caches, 0, a.layoutId(), b.layoutId(), &flags_out),
+            *type_a_dunder_ge);
+  // Ensure that B.__le__ is cached for t1 = b >= 5.
+  ASSERT_EQ(icLookupBinop(*caches, 1, b.layoutId(),
+                          SmallInt::fromWord(0).layoutId(), &flags_out),
+            *type_b_dunder_le);
+
+  Type type_a(&scope, mainModuleAt(&runtime_, "A"));
+  // Ensure cache_compare_op is a dependent of A.__ge__.
+  ASSERT_EQ(WeakLink::cast(dependencyLinkOfTypeAttr(thread_, type_a, "__ge__"))
+                .referent(),
+            *cache_compare_op);
+  Type type_b(&scope, mainModuleAt(&runtime_, "B"));
+  // Ensure cache_compare_op is a dependent of B.__le__.
+  ASSERT_EQ(WeakLink::cast(dependencyLinkOfTypeAttr(thread_, type_b, "__le__"))
+                .referent(),
+            *cache_compare_op);
+
+  // Update A.__ge__ to invalidate cache for t0 = a >= b.
+  Str dunder_ge_name(&scope, runtime_.newStrFromCStr("__ge__"));
+  icEvictCache(thread_, cache_compare_op, type_a, dunder_ge_name,
+               AttributeKind::kNotADataDescriptor);
+  // The invalidation removes dependency from cache_compare_op to A.__ge__.
+  EXPECT_TRUE(dependencyLinkOfTypeAttr(thread_, type_a, "__ge__").isNoneType());
+  // However, cache_compare_op still depends on B.__le__ since b >= 5 is cached.
+  EXPECT_EQ(WeakLink::cast(dependencyLinkOfTypeAttr(thread_, type_b, "__le__"))
+                .referent(),
+            *cache_compare_op);
+}
+
 TEST_F(IcTest, IcDeleteDependentInValueCellDependencyLinkDeletesDependent) {
   HandleScope scope(thread_);
   ValueCell value_cell(&scope, runtime_.newValueCell());
@@ -356,6 +587,46 @@ x(a)
   EXPECT_EQ(WeakLink::cast(foo_in_a.dependencyLink()).referent(), *dependent_x);
 }
 
+TEST_F(
+    IcTest,
+    IcHighestSuperTypeNotInMroOfOtherCachedTypesReturnsHighestNotCachedSuperType) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class A:
+  def foo(self):
+    return 4
+
+class B(A):
+  pass
+
+def cache_foo(x):
+  return x.foo
+
+a_foo = A.foo
+b = B()
+cache_foo(b)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function cache_foo(&scope, mainModuleAt(&runtime_, "cache_foo"));
+  Object a_foo(&scope, mainModuleAt(&runtime_, "a_foo"));
+  Object b_obj(&scope, mainModuleAt(&runtime_, "b"));
+  Type a_type(&scope, mainModuleAt(&runtime_, "A"));
+  Tuple caches(&scope, cache_foo.caches());
+  ASSERT_EQ(icLookupAttr(*caches, 1, b_obj.layoutId()), *a_foo);
+  // Manually delete the cache for B.foo in cache_foo.
+  caches.atPut(1 * kIcPointersPerCache + kIcEntryKeyOffset, NoneType::object());
+  caches.atPut(1 * kIcPointersPerCache + kIcEntryValueOffset,
+               NoneType::object());
+  ASSERT_TRUE(icLookupAttr(*caches, 1, b_obj.layoutId()).isErrorNotFound());
+
+  // Now cache_foo doesn't depend on neither A.foo nor B.foo, so this should
+  // return A.
+  Str foo(&scope, runtime_.newStrFromCStr("foo"));
+  Object result(&scope, icHighestSuperTypeNotInMroOfOtherCachedTypes(
+                            thread_, b_obj.layoutId(), foo, cache_foo));
+  EXPECT_EQ(result, *a_type);
+}
+
 TEST_F(IcTest, IcIsCachedAttributeAffectedByUpdatedType) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class A:
@@ -434,7 +705,7 @@ static RawObject testingFunctionCachingAttributes(Thread* thread,
   return *function;
 }
 
-TEST_F(IcTest, IcEvictCacheDeletesCachesForMatchingAttributeName) {
+TEST_F(IcTest, IcEvictCacheEvictsCachesForMatchingAttributeName) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C: pass
 
@@ -475,7 +746,7 @@ c = C()
 }
 
 TEST_F(IcTest,
-       IcEvictCacheDeletesCachesForInstanceOffsetOnlyWhenDataDesciptorIsTrue) {
+       IcEvictCacheEvictsCachesForInstanceOffsetOnlyWhenDataDesciptorIsTrue) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C: pass
 
@@ -515,13 +786,13 @@ c = C()
   EXPECT_TRUE(icLookupAttr(*caches, 1, instance.layoutId()).isErrorNotFound());
 }
 
-TEST_F(IcTest, IcEvictCacheDeletesOnlyAffectedCaches) {
+TEST_F(IcTest, IcEvictCacheEvictsOnlyAffectedCaches) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class A:
-  foo = 1
+  def foo(self): return  1
 
 class B(A):
-  foo = 2
+  def foo(self): return  2
 
 class C(B): pass
 
@@ -679,6 +950,143 @@ container = C()
 result = container[0]
 )"),
                             LayoutId::kUserWarning, "foo"));
+}
+
+TEST_F(IcTest, IcIsAttrCachedInDependentReturnsTrueForAttrCaches) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class X:
+  def foo(self): return 4
+
+class Y(X):
+  pass
+
+class A:
+  def foo(self): return 4
+
+class B(A):
+  pass
+
+def cache_Y_foo():
+  return Y().foo()
+
+cache_Y_foo()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Type type_a(&scope, mainModuleAt(&runtime_, "A"));
+  Type type_b(&scope, mainModuleAt(&runtime_, "B"));
+  Type type_x(&scope, mainModuleAt(&runtime_, "X"));
+  Type type_y(&scope, mainModuleAt(&runtime_, "Y"));
+  Str foo(&scope, runtime_.newStrFromCStr("foo"));
+  Str bar(&scope, runtime_.newStrFromCStr("bar"));
+  Function cache_y_foo(&scope, mainModuleAt(&runtime_, "cache_Y_foo"));
+
+  // Note that cache_y_foo depends both on X.foo and Y.foo since an
+  // update to either one of them flows to Y().foo().
+  EXPECT_TRUE(icIsAttrCachedInDependent(thread_, type_x, foo, cache_y_foo));
+  EXPECT_TRUE(icIsAttrCachedInDependent(thread_, type_y, foo, cache_y_foo));
+  EXPECT_FALSE(icIsAttrCachedInDependent(thread_, type_x, bar, cache_y_foo));
+  EXPECT_FALSE(icIsAttrCachedInDependent(thread_, type_a, foo, cache_y_foo));
+  EXPECT_FALSE(icIsAttrCachedInDependent(thread_, type_b, foo, cache_y_foo));
+}
+
+TEST_F(IcTest, IcIsAttrCachedInDependentReturnsTrueForBinopCaches) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class X:
+  def __ge__(self, other): return 5
+
+class Y(X):
+  pass
+
+class A:
+  def foo(self): return 4
+
+class B(A):
+  pass
+
+def cache_Y_ge():
+  return Y() >= B()
+
+cache_Y_ge()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Type type_x(&scope, mainModuleAt(&runtime_, "X"));
+  Type type_y(&scope, mainModuleAt(&runtime_, "Y"));
+  Type type_a(&scope, mainModuleAt(&runtime_, "A"));
+  Type type_b(&scope, mainModuleAt(&runtime_, "B"));
+  Str dunder_ge(&scope, runtime_.newStrFromCStr("__ge__"));
+  Str dunder_le(&scope, runtime_.newStrFromCStr("__le__"));
+  Function cache_ge(&scope, mainModuleAt(&runtime_, "cache_Y_ge"));
+
+  // Note that cache_ge indirectly depends on X, but directly on Y since both
+  // X.__ge__ and Y.__ge__ affect Y() >= sth.
+  EXPECT_TRUE(icIsAttrCachedInDependent(thread_, type_x, dunder_ge, cache_ge));
+  EXPECT_TRUE(icIsAttrCachedInDependent(thread_, type_y, dunder_ge, cache_ge));
+  // Note that cache_ge indirectly depends on A, but directly on B since both
+  // B.__le__ and C.__le__ affect sth >= B().
+  EXPECT_TRUE(icIsAttrCachedInDependent(thread_, type_a, dunder_le, cache_ge));
+  EXPECT_TRUE(icIsAttrCachedInDependent(thread_, type_b, dunder_le, cache_ge));
+
+  EXPECT_FALSE(icIsAttrCachedInDependent(thread_, type_x, dunder_le, cache_ge));
+  EXPECT_FALSE(icIsAttrCachedInDependent(thread_, type_y, dunder_le, cache_ge));
+  EXPECT_FALSE(icIsAttrCachedInDependent(thread_, type_a, dunder_ge, cache_ge));
+  EXPECT_FALSE(icIsAttrCachedInDependent(thread_, type_b, dunder_ge, cache_ge));
+}
+
+TEST_F(IcTest, IcEvictCacheEvictsCompareOpCaches) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class A:
+  def __ge__(self, other): return True
+
+class B: pass
+
+def cache_compare_op(a, b):
+  return a >= b
+
+a = A()
+b = B()
+A__ge__ = A.__ge__
+
+cache_compare_op(a, b)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
+  Object type_a_dunder_ge(&scope, mainModuleAt(&runtime_, "A__ge__"));
+  Function cache_compare_op(&scope,
+                            mainModuleAt(&runtime_, "cache_compare_op"));
+  Tuple caches(&scope, cache_compare_op.caches());
+  IcBinopFlags flags_out;
+  Object cached(&scope, icLookupBinop(*caches, 0, a.layoutId(), b.layoutId(),
+                                      &flags_out));
+  // Precondition check that the A.__ge__ lookup has been cached.
+  ASSERT_EQ(*cached, *type_a_dunder_ge);
+  Type type_a(&scope, mainModuleAt(&runtime_, "A"));
+  Dict type_a_dict(&scope, type_a.dict());
+  Str dunder_ge_name(&scope, runtime_.newStrFromCStr("__ge__"));
+  ValueCell dunder_ge(
+      &scope, runtime_.dictAtByStr(thread_, type_a_dict, dunder_ge_name));
+  WeakLink dunder_ge_link(&scope, dunder_ge.dependencyLink());
+  // Precondition check that cache_compare_op is a dependent of A.__ge__.
+  ASSERT_EQ(dunder_ge_link.referent(), *cache_compare_op);
+  Type type_b(&scope, mainModuleAt(&runtime_, "B"));
+  Dict type_b_dict(&scope, type_b.dict());
+  Str dunder_le_name(&scope, runtime_.newStrFromCStr("__le__"));
+  ValueCell dunder_le(
+      &scope, runtime_.dictAtByStr(thread_, type_b_dict, dunder_le_name));
+  WeakLink dunder_le_link(&scope, dunder_le.dependencyLink());
+  // Precondition check that cache_compare_op is a dependent of B.__le__.
+  ASSERT_EQ(dunder_le_link.referent(), *cache_compare_op);
+
+  // Updating A.__ge__ triggers cache invalidation.
+  icEvictCache(thread_, cache_compare_op, type_a, dunder_ge_name,
+               AttributeKind::kNotADataDescriptor);
+  EXPECT_TRUE(icLookupBinop(*caches, 0, a.layoutId(), b.layoutId(), &flags_out)
+                  .isErrorNotFound());
+  EXPECT_TRUE(dunder_ge.dependencyLink().isNoneType());
+  EXPECT_TRUE(dunder_le.dependencyLink().isNoneType());
 }
 
 TEST_F(IcTest,
@@ -1168,13 +1576,13 @@ TEST_F(IcTest, IcInvalidateGlobalVarRevertsOpCodeToOriginalOnes) {
   EXPECT_TRUE(isMutableBytesEqualsBytes(bytecode, invalidated_expected));
 }
 
-static RawObject layoutIdAsSmallInt(RawObject object) {
-  return SmallInt::fromWord(static_cast<word>(object.layoutId()));
+static RawObject layoutIdOfObjectAsSmallInt(RawObject object) {
+  return layoutIdAsSmallInt(object.layoutId());
 }
 
 TEST_F(IcTest, IcIterator) {
   HandleScope scope(thread_);
-  MutableBytes bytecode(&scope, runtime_.newMutableBytesUninitialized(16));
+  MutableBytes bytecode(&scope, runtime_.newMutableBytesUninitialized(18));
   bytecode.byteAtPut(0, LOAD_GLOBAL);
   bytecode.byteAtPut(1, 100);
   bytecode.byteAtPut(2, LOAD_ATTR_CACHED);
@@ -1189,14 +1597,17 @@ TEST_F(IcTest, IcIterator) {
   bytecode.byteAtPut(11, 2);
   bytecode.byteAtPut(12, STORE_ATTR_CACHED);
   bytecode.byteAtPut(13, 3);
-  bytecode.byteAtPut(14, LOAD_GLOBAL);
-  bytecode.byteAtPut(15, 100);
+  bytecode.byteAtPut(14, COMPARE_OP_CACHED);
+  bytecode.byteAtPut(15, 4);
+  bytecode.byteAtPut(16, LOAD_GLOBAL);
+  bytecode.byteAtPut(17, 100);
 
-  Tuple original_args(&scope, runtime_.newTuple(4));
+  Tuple original_args(&scope, runtime_.newTuple(5));
   original_args.atPut(0, SmallInt::fromWord(0));
   original_args.atPut(1, SmallInt::fromWord(1));
   original_args.atPut(2, SmallInt::fromWord(2));
   original_args.atPut(3, SmallInt::fromWord(3));
+  original_args.atPut(4, SmallInt::fromWord(CompareOp::GE));
 
   Tuple names(&scope, runtime_.newTuple(4));
   names.atPut(0, runtime_.newStrFromCStr("load_attr_cached_attr_name"));
@@ -1204,18 +1615,18 @@ TEST_F(IcTest, IcIterator) {
   names.atPut(2, runtime_.newStrFromCStr("load_attr_cached_attr_name2"));
   names.atPut(3, runtime_.newStrFromCStr("store_attr_cached_attr_name"));
 
-  Tuple caches(&scope, runtime_.newTuple(4 * kIcPointersPerCache));
+  Tuple caches(&scope, runtime_.newTuple(5 * kIcPointersPerCache));
   // Caches for LOAD_ATTR_CACHED at 2.
   word load_attr_cached_cache_index0 =
       0 * kIcPointersPerCache + 1 * kIcPointersPerEntry;
   word load_attr_cached_cache_index1 =
       0 * kIcPointersPerCache + 3 * kIcPointersPerEntry;
   caches.atPut(load_attr_cached_cache_index0 + kIcEntryKeyOffset,
-               layoutIdAsSmallInt(Bool::trueObj()));
+               layoutIdOfObjectAsSmallInt(Bool::trueObj()));
   caches.atPut(load_attr_cached_cache_index0 + kIcEntryValueOffset,
                SmallInt::fromWord(10));
   caches.atPut(load_attr_cached_cache_index1 + kIcEntryKeyOffset,
-               layoutIdAsSmallInt(Bool::falseObj()));
+               layoutIdOfObjectAsSmallInt(Bool::falseObj()));
   caches.atPut(load_attr_cached_cache_index1 + kIcEntryValueOffset,
                SmallInt::fromWord(20));
 
@@ -1223,7 +1634,7 @@ TEST_F(IcTest, IcIterator) {
   word load_method_cached_index =
       1 * kIcPointersPerCache + 0 * kIcPointersPerEntry;
   caches.atPut(load_method_cached_index + kIcEntryKeyOffset,
-               layoutIdAsSmallInt(SmallInt::fromWord(0)));
+               layoutIdOfObjectAsSmallInt(SmallInt::fromWord(0)));
   caches.atPut(load_method_cached_index + kIcEntryValueOffset,
                SmallInt::fromWord(30));
 
@@ -1233,9 +1644,21 @@ TEST_F(IcTest, IcIterator) {
   word store_attr_cached_index =
       3 * kIcPointersPerCache + 3 * kIcPointersPerEntry;
   caches.atPut(store_attr_cached_index + kIcEntryKeyOffset,
-               layoutIdAsSmallInt(NoneType::object()));
+               layoutIdOfObjectAsSmallInt(NoneType::object()));
   caches.atPut(store_attr_cached_index + kIcEntryValueOffset,
                SmallInt::fromWord(40));
+
+  // Caches for COMPARE_OP_CACHED at 14.
+  word compare_op_cached_index =
+      4 * kIcPointersPerCache + 0 * kIcPointersPerEntry;
+  word key_high_bits = static_cast<word>(SmallInt::fromWord(0).layoutId())
+                           << Header::kLayoutIdBits |
+                       static_cast<word>(SmallStr::fromCStr("test").layoutId());
+  caches.atPut(compare_op_cached_index + kIcEntryKeyOffset,
+               SmallInt::fromWord(key_high_bits << kBitsPerByte |
+                                  static_cast<word>(IC_BINOP_REFLECTED)));
+  caches.atPut(compare_op_cached_index + kIcEntryValueOffset,
+               SmallInt::fromWord(50));
 
   Function function(&scope, newEmptyFunction());
   function.setRewrittenBytecode(*bytecode);
@@ -1243,34 +1666,42 @@ TEST_F(IcTest, IcIterator) {
   Code::cast(function.code()).setNames(*names);
   function.setOriginalArguments(*original_args);
 
-  IcIterator it(&scope, *function);
+  IcIterator it(&scope, &runtime_, *function);
   ASSERT_TRUE(it.hasNext());
+  ASSERT_TRUE(it.isAttrCache());
+  EXPECT_FALSE(it.isBinopCache());
   Str load_attr_cached_attr_name(
       &scope, runtime_.newStrFromCStr("load_attr_cached_attr_name"));
   EXPECT_TRUE(it.isAttrNameEqualTo(load_attr_cached_attr_name));
-  EXPECT_EQ(it.key(), Bool::trueObj().layoutId());
+  EXPECT_EQ(it.layoutId(), Bool::trueObj().layoutId());
   EXPECT_TRUE(it.isInstanceAttr());
 
   it.next();
   ASSERT_TRUE(it.hasNext());
+  ASSERT_TRUE(it.isAttrCache());
+  EXPECT_FALSE(it.isBinopCache());
   EXPECT_TRUE(it.isAttrNameEqualTo(load_attr_cached_attr_name));
-  EXPECT_EQ(it.key(), Bool::falseObj().layoutId());
+  EXPECT_EQ(it.layoutId(), Bool::falseObj().layoutId());
   EXPECT_TRUE(it.isInstanceAttr());
 
   it.next();
   ASSERT_TRUE(it.hasNext());
+  ASSERT_TRUE(it.isAttrCache());
+  EXPECT_FALSE(it.isBinopCache());
   Str load_method_cached_attr_name(
       &scope, runtime_.newStrFromCStr("load_method_cached_attr_name"));
   EXPECT_TRUE(it.isAttrNameEqualTo(load_method_cached_attr_name));
-  EXPECT_EQ(it.key(), SmallInt::fromWord(100).layoutId());
+  EXPECT_EQ(it.layoutId(), SmallInt::fromWord(100).layoutId());
   EXPECT_TRUE(it.isInstanceAttr());
 
   it.next();
+  ASSERT_TRUE(it.hasNext());
+  ASSERT_TRUE(it.isAttrCache());
+  EXPECT_FALSE(it.isBinopCache());
   Str store_attr_cached_attr_name(
       &scope, runtime_.newStrFromCStr("store_attr_cached_attr_name"));
-  ASSERT_TRUE(it.hasNext());
   EXPECT_TRUE(it.isAttrNameEqualTo(store_attr_cached_attr_name));
-  EXPECT_EQ(it.key(), NoneType::object().layoutId());
+  EXPECT_EQ(it.layoutId(), NoneType::object().layoutId());
   EXPECT_TRUE(it.isInstanceAttr());
 
   it.evict();
@@ -1278,6 +1709,17 @@ TEST_F(IcTest, IcIterator) {
       caches.at(store_attr_cached_index + kIcEntryKeyOffset).isNoneType());
   EXPECT_TRUE(
       caches.at(store_attr_cached_index + kIcEntryValueOffset).isNoneType());
+
+  it.next();
+  ASSERT_TRUE(it.hasNext());
+  ASSERT_TRUE(it.isBinopCache());
+  EXPECT_FALSE(it.isAttrCache());
+  EXPECT_EQ(it.leftLayoutId(), SmallInt::fromWord(-1).layoutId());
+  EXPECT_EQ(it.rightLayoutId(), SmallStr::fromCStr("").layoutId());
+  Str left_operator_name(&scope, runtime_.newStrFromCStr("__ge__"));
+  EXPECT_TRUE(left_operator_name.equals(it.leftMethodName()));
+  Str right_operator_name(&scope, runtime_.newStrFromCStr("__le__"));
+  EXPECT_TRUE(right_operator_name.equals(it.rightMethodName()));
 
   it.next();
   EXPECT_FALSE(it.hasNext());

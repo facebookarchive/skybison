@@ -334,9 +334,6 @@ static const SymbolId kUnimplementedTypeAttrUpdates[] = {
     SymbolId::kDunderRshift, SymbolId::kDunderGetitem, SymbolId::kDunderSub,
     SymbolId::kDunderRsub, SymbolId::kDunderTruediv, SymbolId::kDunderRtruediv,
     SymbolId::kDunderXor, SymbolId::kDunderRxor,
-    // COMPARE_OP
-    SymbolId::kDunderLt, SymbolId::kDunderLe, SymbolId::kDunderEq,
-    SymbolId::kDunderNe, SymbolId::kDunderGt, SymbolId::kDunderGe,
     // FOR_ITER
     SymbolId::kDunderNext,
     // INPLACE_*

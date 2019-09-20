@@ -335,7 +335,7 @@ inline bool isByteCodeWithCache(const Bytecode bc) {
   // TODO(T45720638): Add all caching opcodes here once they are supported for
   // cache invalidation.
   return bc == LOAD_ATTR_CACHED || bc == LOAD_METHOD_CACHED ||
-         bc == STORE_ATTR_CACHED;
+         bc == STORE_ATTR_CACHED || bc == COMPARE_OP_CACHED;
 }
 
 // Convert an immediate RawObject into a byte, and back to the original

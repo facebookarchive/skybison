@@ -53,18 +53,80 @@ void icInsertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
                                           const Str& name,
                                           const Object& dependent);
 
+class IcIterator;
+
+enum class AttributeKind { kDataDescriptor, kNotADataDescriptor };
+
+// Try evicting the attribute cache entry pointed-to by `it` and its
+// dependencies to dependent.
+void icEvictAttrCache(Thread* thread, const IcIterator& it,
+                      const Type& updated_type, const Str& updated_attr,
+                      AttributeKind attribute_kind, const Function& dependent);
+
+// icEvictBinopCache tries evicting the binop cache pointed-to by `it and
+// deletes the evicted cache' dependencies.
+//
+// - Invalidation condition
+// A binop cache for a op b gets invalidated when either type(A).op gets updated
+// or type(B).rop gets updated. For example,  an update to A.__ge__ invalidates
+// all caches created for a >= other or other <= a where type(a) = A.
+//
+// - Deleting dependencies
+// After a binop cache is evicted in function f, we need to delete f's
+// dependencies on type attributes referenced by that cache.
+//
+// When a binop cache gets invalidated due to either one of the operand's type
+// update, the dependencies between f and the directly updated operand't type
+// are deleted first.
+//
+// We also delete dependencies for f created from another operand's type if that
+// operand type is not used in f.
+//
+// The following code snippet shows a concrete example of such dependency
+// deletion.
+//
+// 1 def cache_binop(a, b):
+// 2   if b <= 5:
+// 3     pass
+// 4   return a >= b
+// 5
+// 6 cache_binop(A(), B())
+//
+// After executing the code above, A.__ge__'s dependency list will contain
+// cache_binop and B.__le__ will do so too.
+//
+// When A.__ge__ = something, that created cache is evicted, and we delete the
+// dependency from A.__ge__ to cache_binop directly. Since the cache is evicted,
+// cache_binop may not depend on B.__le__ anymore. To confirm if we can delete
+// the dependency from B.__le__ to cache_binop, we scan all caches of
+// cache_binop to make sure if any of caches in cache_binop references B.__le__,
+// and only if not, we delete the dependency.
+//
+// In the example, since cache_binop still caches B.__le__ at line 2 we cannot
+// delete this dependency. If line 2 didn't exist, we could delete it.
+void icEvictBinopCache(Thread* thread, const IcIterator& it,
+                       const Type& updated_type, const Str& updated_attr,
+                       const Function& dependent);
+
 // Delete dependent in ValueCell's dependencyLink.
 void icDeleteDependentInValueCell(Thread* thread, const ValueCell& value_cell,
                                   const Object& dependent);
 
-// Delete dependencies from attributes shadowed by a type attribute update made
-// to updated_type.attribute_name among dependencies created for
-// cached_type.attribute_name.
+// Delete dependencies from cached_type to new_defining_type to dependent.
 void icDeleteDependentFromInheritingTypes(Thread* thread,
                                           LayoutId cached_layout_id,
-                                          const Str& attribute_name,
-                                          const Type& updated_type,
+                                          const Str& attr_name,
+                                          const Type& new_defining_type,
                                           const Object& dependent);
+
+// Returns the highest supertype of `cached_type` where all types between
+// `cached_type` and that supertype in `cached_type`'s MRO are not cached in
+// dependent. In case such a supertype is not found, returns ErrorNotFound. If a
+// type is returned, it's safe to delete `dependent` from all types between
+// `cached_type` and the returned type.
+RawObject icHighestSuperTypeNotInMroOfOtherCachedTypes(
+    Thread* thread, LayoutId cached_layout_id, const Str& attr_name,
+    const Function& dependent);
 
 // Returns true if a cached attribute from type cached_type is affected by
 // an update to type[attribute_name] during MRO lookups.
@@ -88,14 +150,17 @@ bool icIsCachedAttributeAffectedByUpdatedType(Thread* thread,
                                               const Str& attribute_name,
                                               const Type& updated_type);
 
-enum class AttributeKind { kDataDescriptor, kNotADataDescriptor };
+// Returns true if updating type.attribute_name will affect any caches in
+// function in any form. For example, updating A.foo will affect any opcode
+// that caches A's subclasses' foo attributes.
+bool icIsAttrCachedInDependent(Thread* thread, const Type& type,
+                               const Str& attr_name, const Function& dependent);
 
 // Evict caches for attribute_name to be shadowed by an update to
 // type[attribute_name] in dependent's cache entries, and delete obsolete
-// dependencies between dependent and other type attributes in caches' mro.
-void icEvictCache(Thread* thread, const Function& dependent,
-                  const Type& updated_type, const Str& updated_attr,
-                  AttributeKind attribute_kind);
+// dependencies between dependent and other type attributes in caches' MRO.
+void icEvictCache(Thread* thread, const Function& dependent, const Type& type,
+                  const Str& attr, AttributeKind attribute_kind);
 
 // Invalidate caches to be shadowed by a type attribute update made to
 // type[attribute_name]. data_descriptor is set to true when the newly assigned
@@ -151,10 +216,12 @@ const int kIcPointersPerCache = kIcEntriesPerCache * kIcPointersPerEntry;
 const int kIcEntryKeyOffset = 0;
 const int kIcEntryValueOffset = 1;
 
+// TODO(T54277418): Use SymbolId for binop method names.
 class IcIterator {
  public:
-  IcIterator(HandleScope* scope, RawFunction function)
-      : bytecode_(scope, function.rewrittenBytecode()),
+  IcIterator(HandleScope* scope, Runtime* runtime, RawFunction function)
+      : runtime_(runtime),
+        bytecode_(scope, function.rewrittenBytecode()),
         caches_(scope, function.caches()),
         function_(scope, function),
         names_(scope, Code::cast(function.code()).names()),
@@ -189,22 +256,61 @@ class IcIterator {
     }
   }
 
-  bool isAttrNameEqualTo(const Str& attr_name) {
+  bool isAttrCache() const {
+    switch (bytecode_op_.bc) {
+      case LOAD_ATTR_CACHED:
+      case LOAD_METHOD_CACHED:
+      case STORE_ATTR_CACHED:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  bool isBinopCache() const {
+    switch (bytecode_op_.bc) {
+      case COMPARE_OP_CACHED:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  LayoutId layoutId() const {
+    DCHECK(isAttrCache(), "should be only called for attribute caches");
+    return static_cast<LayoutId>(SmallInt::cast(key()).value());
+  }
+
+  bool isAttrNameEqualTo(const Str& attr_name) const {
+    DCHECK(isAttrCache(), "should be only called for attribute caches");
     return attr_name.equals(
         names_.at(originalArg(*function_, bytecode_op_.arg)));
   }
 
-  bool isInstanceAttr() {
+  bool isInstanceAttr() const {
+    DCHECK(isAttrCache(), "should be only called for attribute caches");
     RawObject value = caches_.at(cache_index_ + kIcEntryValueOffset);
     return value.isSmallInt();
   }
 
-  LayoutId key() {
-    RawObject key = caches_.at(cache_index_ + kIcEntryKeyOffset);
-    return static_cast<LayoutId>(SmallInt::cast(key).value());
+  LayoutId leftLayoutId() const {
+    DCHECK(isBinopCache(), "should be only called for attribute caches");
+    word cache_key_value = SmallInt::cast(key()).value() >> 8;
+    return static_cast<LayoutId>(cache_key_value >> Header::kLayoutIdBits);
   }
 
-  void evict() {
+  LayoutId rightLayoutId() const {
+    DCHECK(isBinopCache(), "should be only called for attribute caches");
+    word cache_key_value = SmallInt::cast(key()).value() >> 8;
+    return static_cast<LayoutId>(cache_key_value &
+                                 ((1 << Header::kLayoutIdBits) - 1));
+  }
+
+  RawObject leftMethodName() const;
+
+  RawObject rightMethodName() const;
+
+  void evict() const {
     caches_.atPut(cache_index_ + kIcEntryKeyOffset, NoneType::object());
     caches_.atPut(cache_index_ + kIcEntryValueOffset, NoneType::object());
   }
@@ -220,6 +326,9 @@ class IcIterator {
     return -1;
   }
 
+  RawObject key() const { return caches_.at(cache_index_ + kIcEntryKeyOffset); }
+
+  Runtime* runtime_;
   MutableBytes bytecode_;
   Tuple caches_;
   Function function_;

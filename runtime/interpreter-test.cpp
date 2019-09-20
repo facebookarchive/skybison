@@ -4180,6 +4180,67 @@ c = C()
   EXPECT_TRUE(ValueCell::cast(*result).dependencyLink().isNoneType());
 }
 
+TEST_F(InterpreterTest, StoreAttrCachedInvalidatesCompareOpTypeAttrCaches) {
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
+def cache_compare_op(a, b):
+  return a >= b
+
+class A:
+  def __le__(self, other): return True
+
+  def __ge__(self, other): return True
+
+class B:
+  def __le__(self, other): return True
+
+  def __ge__(self, other): return True
+
+def do_not_invalidate():
+  A.__le__ = lambda self, other: False
+  B.__ge__ = lambda self, other: False
+
+def invalidate():
+  A.__ge__ = lambda self, other: False
+
+a = A()
+b = B()
+A__ge__ = A.__ge__
+c = cache_compare_op(a, b)
+)")
+                   .isError());
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
+  Object type_a__dunder_ge(&scope, mainModuleAt(&runtime_, "A__ge__"));
+
+  // Ensure that A.__ge__ is cached.
+  Function cache_compare_op(&scope,
+                            mainModuleAt(&runtime_, "cache_compare_op"));
+  Tuple caches(&scope, cache_compare_op.caches());
+  IcBinopFlags flags_out;
+  Object cached(&scope, icLookupBinop(*caches, 0, a.layoutId(), b.layoutId(),
+                                      &flags_out));
+  ASSERT_EQ(*cached, *type_a__dunder_ge);
+
+  // Updating irrelevant compare op dunder functions doesn't trigger
+  // invalidation.
+  Function do_not_invalidate(&scope,
+                             mainModuleAt(&runtime_, "do_not_invalidate"));
+  ASSERT_TRUE(Interpreter::callFunction0(thread_, thread_->currentFrame(),
+                                         do_not_invalidate)
+                  .isNoneType());
+  cached = icLookupBinop(*caches, 0, a.layoutId(), b.layoutId(), &flags_out);
+  EXPECT_EQ(*cached, *type_a__dunder_ge);
+
+  // Updating relevant compare op dunder functions triggers invalidation.
+  Function invalidate(&scope, mainModuleAt(&runtime_, "invalidate"));
+  ASSERT_TRUE(
+      Interpreter::callFunction0(thread_, thread_->currentFrame(), invalidate)
+          .isNoneType());
+  ASSERT_TRUE(icLookupBinop(*caches, 0, a.layoutId(), b.layoutId(), &flags_out)
+                  .isErrorNotFound());
+}
+
 TEST(InterpreterTestNoFixture, LoadMethodLoadingMethodFollowedByCallMethod) {
   Runtime runtime(/*cache_enabled=*/false);
   Thread* thread = Thread::current();
