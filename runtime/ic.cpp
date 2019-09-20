@@ -103,17 +103,18 @@ void icDeleteDependentInValueCell(Thread* thread, const ValueCell& value_cell,
   }
 }
 
-void icDeleteDependentFromShadowedAttributes(Thread* thread,
-                                             const Type& cached_type,
-                                             const Str& attribute_name,
-                                             const Type& updated_type,
-                                             const Object& dependent) {
-  DCHECK(icIsCachedAttributeAffectedByUpdatedType(thread, cached_type,
+void icDeleteDependentFromInheritingTypes(Thread* thread,
+                                          LayoutId cached_layout_id,
+                                          const Str& attribute_name,
+                                          const Type& updated_type,
+                                          const Object& dependent) {
+  DCHECK(icIsCachedAttributeAffectedByUpdatedType(thread, cached_layout_id,
                                                   attribute_name, updated_type),
-         "icIsTypeAttrFromMro must return true");
+         "icIsCachedAttributeAffectedByUpdatedType must return true");
   HandleScope scope(thread);
-  Tuple mro(&scope, cached_type.mro());
   Runtime* runtime = thread->runtime();
+  Type cached_type(&scope, runtime->typeAt(cached_layout_id));
+  Tuple mro(&scope, cached_type.mro());
   for (word i = 0; i < mro.length(); ++i) {
     Type type(&scope, mro.at(i));
     Dict dict(&scope, type.dict());
@@ -130,25 +131,17 @@ void icDeleteDependentFromShadowedAttributes(Thread* thread,
   }
 }
 
-static bool isTypeInMro(RawType type, RawTuple mro) {
-  for (word i = 0; i < mro.length(); ++i) {
-    if (type == mro.at(i)) {
-      return true;
-    }
-  }
-  return false;
-}
-
 bool icIsCachedAttributeAffectedByUpdatedType(Thread* thread,
-                                              const Type& cached_type,
+                                              LayoutId cached_layout_id,
                                               const Str& attribute_name,
                                               const Type& updated_type) {
   HandleScope scope(thread);
-  Tuple mro(&scope, cached_type.mro());
   Runtime* runtime = thread->runtime();
-  if (!isTypeInMro(*cached_type, *mro)) {
+  Type cached_type(&scope, runtime->typeAt(cached_layout_id));
+  if (!runtime->isSubclass(cached_type, updated_type)) {
     return false;
   }
+  Tuple mro(&scope, cached_type.mro());
   for (word i = 0; i < mro.length(); ++i) {
     Type type(&scope, mro.at(i));
     Dict dict(&scope, type.dict());
@@ -175,13 +168,10 @@ bool icIsCachedAttributeAffectedByUpdatedType(Thread* thread,
   return false;
 }
 
-void icDeleteCacheForTypeAttrInDependent(Thread* thread,
-                                         const Type& updated_type,
-                                         const Str& updated_attr,
-                                         bool is_data_descriptor,
-                                         const Function& dependent) {
+void icEvictCache(Thread* thread, const Function& dependent,
+                  const Type& updated_type, const Str& updated_attr,
+                  AttributeKind attribute_kind) {
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
   // Scan through all attribute caches and delete caches shadowed by
   // updated_type.updated_attr.
   for (IcIterator it(&scope, *dependent); it.hasNext(); it.next()) {
@@ -190,16 +180,17 @@ void icDeleteCacheForTypeAttrInDependent(Thread* thread,
     }
     // We don't invalidate instance offset caches when non-data descriptor is
     // assigned to the cached type.
-    if (it.isInstanceAttr() && !is_data_descriptor) {
+    if (it.isInstanceAttr() &&
+        attribute_kind == AttributeKind::kNotADataDescriptor) {
       continue;
     }
-    Type cached_type(&scope, runtime->typeAt(it.key()));
     // The updated type doesn't shadow the cached type.
-    if (!icIsCachedAttributeAffectedByUpdatedType(thread, cached_type,
+    if (!icIsCachedAttributeAffectedByUpdatedType(thread, it.key(),
                                                   updated_attr, updated_type)) {
       continue;
     }
 
+    LayoutId key_layout = it.key();
     // Now that we know that the updated type attribute shadows the cached type
     // attribute, clear the cache.
     it.evict();
@@ -208,8 +199,8 @@ void icDeleteCacheForTypeAttrInDependent(Thread* thread,
     // dependent since such dependencies are gone now.
     // TODO(T47281253): Call this per (cached_type, attribute_name) after
     // cache invalidation.
-    icDeleteDependentFromShadowedAttributes(thread, cached_type, updated_attr,
-                                            updated_type, dependent);
+    icDeleteDependentFromInheritingTypes(thread, key_layout, updated_attr,
+                                         updated_type, dependent);
   }
 }
 
@@ -219,19 +210,21 @@ void icInvalidateAttr(Thread* thread, const Type& type, const Str& attr_name,
   // Delete caches for attr_name to be shadowed by the type[attr_name]
   // change in all dependents that depend on the attribute being updated.
   Type value_type(&scope, thread->runtime()->typeOf(value.value()));
-  bool is_data_descriptor = typeIsDataDescriptor(thread, value_type);
+  AttributeKind attribute_kind = typeIsDataDescriptor(thread, value_type)
+                                     ? AttributeKind::kDataDescriptor
+                                     : AttributeKind::kNotADataDescriptor;
   Object link(&scope, value.dependencyLink());
   while (!link.isNoneType()) {
     Function dependent(&scope, WeakLink::cast(*link).referent());
     // Capturing the next node in case the current node is deleted by
     // icDeleteCacheForTypeAttrInDependent
     link = WeakLink::cast(*link).next();
-    icDeleteCacheForTypeAttrInDependent(thread, type, attr_name,
-                                        is_data_descriptor, dependent);
+    icEvictCache(thread, dependent, type, attr_name, attribute_kind);
   }
   // In case is_data_descriptor is true, we shouldn't see any dependents after
   // caching invalidation.
-  DCHECK(!is_data_descriptor || value.dependencyLink().isNoneType(),
+  DCHECK(attribute_kind == AttributeKind::kNotADataDescriptor ||
+             value.dependencyLink().isNoneType(),
          "dependencyLink must be None if is_data_descriptor is true");
 }
 

@@ -228,114 +228,124 @@ TEST_F(IcTest, IcDeleteDependentInValueCellDependencyLinkDeletesDependent) {
 TEST_F(
     IcTest,
     IcDeleteDependentFromCachedAttributeDeletesDependentUnderAttributeNameInMro) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class A:
+  def foo(self): return 1
+  def bar(self): return 1
+
+def x(a):
+  return a.foo()
+
+def y(a):
+  return a.bar()
+
+a = A()
+
+x(a)
+y(a)
+)")
+                   .isError());
+
   HandleScope scope(thread_);
-  Dict type_dict_a(&scope, runtime_.newDict());
+  Type type_a(&scope, mainModuleAt(&runtime_, "A"));
+  Dict type_dict_a(&scope, type_a.dict());
   Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
   Str bar_name(&scope, runtime_.newStrFromCStr("bar"));
-  Object dependent_x(&scope, runtime_.newTuple(1));
-  Object dependent_y(&scope, runtime_.newTuple(1));
+  Function dependent_x(&scope, mainModuleAt(&runtime_, "x"));
+  Function dependent_y(&scope, mainModuleAt(&runtime_, "y"));
 
   // A.foo -> x
-  ValueCell foo_in_a(&scope, runtime_.newValueCell());
-  ASSERT_TRUE(icInsertDependentToValueCellDependencyLink(thread_, dependent_x,
-                                                         foo_in_a));
+  ValueCell foo_in_a(&scope,
+                     runtime_.dictAtByStr(thread_, type_dict_a, foo_name));
   ASSERT_EQ(WeakLink::cast(foo_in_a.dependencyLink()).referent(), *dependent_x);
-  runtime_.dictAtPutByStr(thread_, type_dict_a, foo_name, foo_in_a);
 
   // A.bar -> y
-  ValueCell bar_in_a(&scope, runtime_.newValueCell());
-  ASSERT_TRUE(icInsertDependentToValueCellDependencyLink(thread_, dependent_y,
-                                                         bar_in_a));
+  ValueCell bar_in_a(&scope,
+                     runtime_.dictAtByStr(thread_, type_dict_a, bar_name));
   ASSERT_EQ(WeakLink::cast(bar_in_a.dependencyLink()).referent(), *dependent_y);
-  runtime_.dictAtPutByStr(thread_, type_dict_a, bar_name, bar_in_a);
 
-  Type type_a(&scope, runtime_.newType());
-  type_a.setDict(*type_dict_a);
-  Tuple mro(&scope, runtime_.newTuple(1));
-  mro.atPut(0, *type_a);
-  type_a.setMro(*mro);
-
+  LayoutId type_a_instance_layout_id =
+      Layout::cast(type_a.instanceLayout()).id();
   // Try to delete dependent_y under name "foo". Nothing happens.
-  icDeleteDependentFromShadowedAttributes(thread_, type_a, foo_name, type_a,
-                                          dependent_y);
+  icDeleteDependentFromInheritingTypes(thread_, type_a_instance_layout_id,
+                                       foo_name, type_a, dependent_y);
   EXPECT_EQ(WeakLink::cast(foo_in_a.dependencyLink()).referent(), *dependent_x);
   EXPECT_EQ(WeakLink::cast(bar_in_a.dependencyLink()).referent(), *dependent_y);
 
   // Try to delete dependent_x under name "bar". Nothing happens.
-  icDeleteDependentFromShadowedAttributes(thread_, type_a, bar_name, type_a,
-                                          dependent_x);
+  icDeleteDependentFromInheritingTypes(thread_, type_a_instance_layout_id,
+                                       bar_name, type_a, dependent_x);
   EXPECT_EQ(WeakLink::cast(foo_in_a.dependencyLink()).referent(), *dependent_x);
   EXPECT_EQ(WeakLink::cast(bar_in_a.dependencyLink()).referent(), *dependent_y);
 
-  icDeleteDependentFromShadowedAttributes(thread_, type_a, foo_name, type_a,
-                                          dependent_x);
+  icDeleteDependentFromInheritingTypes(thread_, type_a_instance_layout_id,
+                                       foo_name, type_a, dependent_x);
   EXPECT_TRUE(foo_in_a.dependencyLink().isNoneType());
   EXPECT_EQ(WeakLink::cast(bar_in_a.dependencyLink()).referent(), *dependent_y);
 
-  icDeleteDependentFromShadowedAttributes(thread_, type_a, bar_name, type_a,
-                                          dependent_y);
+  icDeleteDependentFromInheritingTypes(thread_, type_a_instance_layout_id,
+                                       bar_name, type_a, dependent_y);
   EXPECT_TRUE(foo_in_a.dependencyLink().isNoneType());
   EXPECT_TRUE(bar_in_a.dependencyLink().isNoneType());
 }
 
 TEST_F(IcTest,
        IcDeleteDependentFromCachedAttributeDeletesDependentUpToUpdatedType) {
-  HandleScope scope(thread_);
-  Dict type_dict_a(&scope, runtime_.newDict());
-  Dict type_dict_b(&scope, runtime_.newDict());
-  Dict type_dict_c(&scope, runtime_.newDict());
-  Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
-  Object dependent_x(&scope, runtime_.newTuple(1));
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class A:
+  def foo(self): return 1
 
-  // Create a type hierarchy C -> B -> A depicted by the following Python code:
-  // class A:
-  //   foo = 1
-  //
-  // class B(A):
-  //   foo = 2
-  //
-  // class C(B):
-  //   pass
+class B(A):
+  def foo(self): return 2
+
+class C(B):
+  pass
+
+def x(c):
+  return c.foo()
+
+c = C()
+x(c)
+
+a = A()
+x(a)
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Type a(&scope, mainModuleAt(&runtime_, "A"));
+  Type b(&scope, mainModuleAt(&runtime_, "B"));
+  Type c(&scope, mainModuleAt(&runtime_, "C"));
+  Object dependent_x(&scope, mainModuleAt(&runtime_, "x"));
+
+  Dict type_dict_a(&scope, a.dict());
+  Dict type_dict_b(&scope, b.dict());
+  Dict type_dict_c(&scope, c.dict());
+  Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
 
   // A.foo -> x
-  ValueCell foo_in_a(&scope, runtime_.newValueCell());
-  ASSERT_TRUE(!foo_in_a.isPlaceholder());
-  ASSERT_TRUE(icInsertDependentToValueCellDependencyLink(thread_, dependent_x,
-                                                         foo_in_a));
-  runtime_.dictAtPutByStr(thread_, type_dict_a, foo_name, foo_in_a);
+  ValueCell foo_in_a(&scope,
+                     runtime_.dictAtByStr(thread_, type_dict_a, foo_name));
+  ASSERT_FALSE(foo_in_a.isPlaceholder());
+  ASSERT_EQ(WeakLink::cast(foo_in_a.dependencyLink()).referent(), *dependent_x);
 
   // B.foo -> x
-  ValueCell foo_in_b(&scope, runtime_.newValueCell());
-  ASSERT_TRUE(!foo_in_b.isPlaceholder());
-  ASSERT_TRUE(icInsertDependentToValueCellDependencyLink(thread_, dependent_x,
-                                                         foo_in_b));
-  runtime_.dictAtPutByStr(thread_, type_dict_b, foo_name, foo_in_b);
+  ValueCell foo_in_b(&scope,
+                     runtime_.dictAtByStr(thread_, type_dict_b, foo_name));
+  ASSERT_FALSE(foo_in_b.isPlaceholder());
+  ASSERT_EQ(WeakLink::cast(foo_in_b.dependencyLink()).referent(), *dependent_x);
 
   // C.foo -> x
   // Note that this dependency is a placeholder.
-  ValueCell foo_in_c(&scope, runtime_.newValueCell());
-  foo_in_c.makePlaceholder();
+  ValueCell foo_in_c(&scope,
+                     runtime_.dictAtByStr(thread_, type_dict_c, foo_name));
   ASSERT_TRUE(foo_in_c.isPlaceholder());
-  ASSERT_TRUE(icInsertDependentToValueCellDependencyLink(thread_, dependent_x,
-                                                         foo_in_c));
-  runtime_.dictAtPutByStr(thread_, type_dict_c, foo_name, foo_in_c);
+  ASSERT_EQ(WeakLink::cast(foo_in_c.dependencyLink()).referent(), *dependent_x);
 
-  // C -> B -> A.
-  Type type_a(&scope, runtime_.newType());
-  type_a.setDict(*type_dict_a);
-  Type type_b(&scope, runtime_.newType());
-  type_b.setDict(*type_dict_b);
-  Type type_c(&scope, runtime_.newType());
-  type_c.setDict(*type_dict_c);
-  Tuple mro(&scope, runtime_.newTuple(3));
-  mro.atPut(0, *type_c);
-  mro.atPut(1, *type_b);
-  mro.atPut(2, *type_a);
-  type_c.setMro(*mro);
-
+  Object c_obj(&scope, mainModuleAt(&runtime_, "c"));
   // Delete dependent_x for an update to B.foo.
-  icDeleteDependentFromShadowedAttributes(thread_, type_c, foo_name, type_b,
-                                          dependent_x);
+  icDeleteDependentFromInheritingTypes(thread_, c_obj.layoutId(), foo_name, b,
+                                       dependent_x);
 
   // B.foo's update doesn't affect the cache for A.foo since the update does not
   // shadow a.foo where type(a) == A.
@@ -347,56 +357,50 @@ TEST_F(IcTest,
 }
 
 TEST_F(IcTest, IcIsCachedAttributeAffectedByUpdatedType) {
-  // Create a type hierarchy C -> B -> A depicted by the following Python code:
-  // class A:
-  //   foo = 1
-  //
-  // class B(A):
-  //   foo = 2
-  //
-  // class C(B):
-  //   pass
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class A:
+  def foo(self): return 1
+
+class B(A):
+  def foo(self): return 2
+
+class C(B):
+  pass
+
+
+def x(c):
+  return c.foo()
+
+c = C()
+x(c)
+)")
+                   .isError());
   HandleScope scope(thread_);
+  Type type_a(&scope, mainModuleAt(&runtime_, "A"));
+  Type type_b(&scope, mainModuleAt(&runtime_, "B"));
+  Type type_c(&scope, mainModuleAt(&runtime_, "C"));
   Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
-  Dict type_dict_a(&scope, runtime_.newDict());
-  ValueCell foo_in_a(&scope, runtime_.newValueCell());
-  runtime_.dictAtPutByStr(thread_, type_dict_a, foo_name, foo_in_a);
-  Dict type_dict_b(&scope, runtime_.newDict());
-  ValueCell foo_in_b(&scope, runtime_.newValueCell());
-  runtime_.dictAtPutByStr(thread_, type_dict_b, foo_name, foo_in_b);
-  Dict type_dict_c(&scope, runtime_.newDict());
-  ValueCell foo_in_c(&scope, runtime_.newValueCell());
-  foo_in_c.makePlaceholder();
-  runtime_.dictAtPutByStr(thread_, type_dict_c, foo_name, foo_in_c);
 
-  // Create an mro with C -> B -> A.
-  Type type_a(&scope, runtime_.newType());
-  type_a.setDict(*type_dict_a);
-  Type type_b(&scope, runtime_.newType());
-  type_b.setDict(*type_dict_b);
-  Type type_c(&scope, runtime_.newType());
-  type_c.setDict(*type_dict_c);
-  Tuple mro(&scope, runtime_.newTuple(3));
-  mro.atPut(0, *type_c);
-  mro.atPut(1, *type_b);
-  mro.atPut(2, *type_a);
-  type_c.setMro(*mro);
-
+  LayoutId type_c_instance_layout_id =
+      Layout::cast(type_c.instanceLayout()).id();
   // Check if A.foo is not retrived from C.foo.
-  EXPECT_FALSE(icIsCachedAttributeAffectedByUpdatedType(thread_, type_c,
-                                                        foo_name, type_a));
+  EXPECT_FALSE(icIsCachedAttributeAffectedByUpdatedType(
+      thread_, type_c_instance_layout_id, foo_name, type_a));
   // Check if B.foo is retrieved from C.foo.
-  EXPECT_TRUE(icIsCachedAttributeAffectedByUpdatedType(thread_, type_c,
-                                                       foo_name, type_b));
+  EXPECT_TRUE(icIsCachedAttributeAffectedByUpdatedType(
+      thread_, type_c_instance_layout_id, foo_name, type_b));
 
   // Assign C.foo to a real value.
+  Dict type_c_dict(&scope, type_c.dict());
+  ValueCell foo_in_c(&scope,
+                     runtime_.dictAtByStr(thread_, type_c_dict, foo_name));
   foo_in_c.setValue(NoneType::object());
   // Check if B.foo is not retrived from C.foo from now on.
-  EXPECT_FALSE(icIsCachedAttributeAffectedByUpdatedType(thread_, type_c,
-                                                        foo_name, type_b));
+  EXPECT_FALSE(icIsCachedAttributeAffectedByUpdatedType(
+      thread_, type_c_instance_layout_id, foo_name, type_b));
   // Instead, C.foo is retrieved.
-  EXPECT_TRUE(icIsCachedAttributeAffectedByUpdatedType(thread_, type_c,
-                                                       foo_name, type_c));
+  EXPECT_TRUE(icIsCachedAttributeAffectedByUpdatedType(
+      thread_, type_c_instance_layout_id, foo_name, type_c));
 }
 
 // Create a function that maps cache index 1 to the given attribute name.
@@ -430,9 +434,7 @@ static RawObject testingFunctionCachingAttributes(Thread* thread,
   return *function;
 }
 
-TEST_F(
-    IcTest,
-    IcDeleteCacheForTypeAttrInDependentDeletesCachesForMatchingAttributeName) {
+TEST_F(IcTest, IcEvictCacheDeletesCachesForMatchingAttributeName) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C: pass
 
@@ -461,18 +463,19 @@ c = C()
             SmallInt::fromWord(1234));
 
   // Deleting caches for "bar" doesn't affect the cache for "foo".
-  icDeleteCacheForTypeAttrInDependent(thread_, type, bar_name, true, dependent);
+  icEvictCache(thread_, dependent, type, bar_name,
+               AttributeKind::kDataDescriptor);
   EXPECT_EQ(icLookupAttr(*caches, 1, instance.layoutId()),
             SmallInt::fromWord(1234));
 
   // Deleting caches for "foo".
-  icDeleteCacheForTypeAttrInDependent(thread_, type, foo_name, true, dependent);
+  icEvictCache(thread_, dependent, type, foo_name,
+               AttributeKind::kDataDescriptor);
   EXPECT_TRUE(icLookupAttr(*caches, 1, instance.layoutId()).isErrorNotFound());
 }
 
-TEST_F(
-    IcTest,
-    IcDeleteCacheForTypeAttrInDependentDeletesCachesForInstanceOffsetOnlyWhenDataDesciptorIsTrue) {
+TEST_F(IcTest,
+       IcEvictCacheDeletesCachesForInstanceOffsetOnlyWhenDataDesciptorIsTrue) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C: pass
 
@@ -501,17 +504,18 @@ c = C()
 
   // An attempt to delete caches for "foo" with data_descriptor == false doesn't
   // affect it.
-  icDeleteCacheForTypeAttrInDependent(thread_, type, foo_name, false,
-                                      dependent);
+  icEvictCache(thread_, dependent, type, foo_name,
+               AttributeKind::kNotADataDescriptor);
   EXPECT_EQ(icLookupAttr(*caches, 1, instance.layoutId()),
             SmallInt::fromWord(1234));
 
   // Delete caches for "foo" with data_descriptor == true actually deletes it.
-  icDeleteCacheForTypeAttrInDependent(thread_, type, foo_name, true, dependent);
+  icEvictCache(thread_, dependent, type, foo_name,
+               AttributeKind::kDataDescriptor);
   EXPECT_TRUE(icLookupAttr(*caches, 1, instance.layoutId()).isErrorNotFound());
 }
 
-TEST_F(IcTest, IcDeleteCacheForTypeAttrInDependentDeletesOnlyAffectedCaches) {
+TEST_F(IcTest, IcEvictCacheDeletesOnlyAffectedCaches) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class A:
   foo = 1
@@ -571,8 +575,8 @@ c = C()
   ASSERT_EQ(icLookupAttr(*caches, 1, c.layoutId()), SmallInt::fromWord(300));
 
   // Trigger invalidation by updating B.foo.
-  icDeleteCacheForTypeAttrInDependent(thread_, b_type, foo_name, true,
-                                      dependent);
+  icEvictCache(thread_, dependent, b_type, foo_name,
+               AttributeKind::kDataDescriptor);
   // Note that only caches made for the type attribute are evincted, and
   // dependent is dropped from them.
   EXPECT_EQ(icLookupAttr(*caches, 1, a.layoutId()), SmallInt::fromWord(100));
@@ -583,8 +587,8 @@ c = C()
   EXPECT_TRUE(c_foo.dependencyLink().isNoneType());
 
   // Trigger invalidation by updating A.foo.
-  icDeleteCacheForTypeAttrInDependent(thread_, a_type, foo_name, true,
-                                      dependent);
+  icEvictCache(thread_, dependent, a_type, foo_name,
+               AttributeKind::kDataDescriptor);
   EXPECT_TRUE(icLookupAttr(*caches, 1, a.layoutId()).isErrorNotFound());
   EXPECT_TRUE(a_foo.dependencyLink().isNoneType());
 }

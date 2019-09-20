@@ -60,11 +60,11 @@ void icDeleteDependentInValueCell(Thread* thread, const ValueCell& value_cell,
 // Delete dependencies from attributes shadowed by a type attribute update made
 // to updated_type.attribute_name among dependencies created for
 // cached_type.attribute_name.
-void icDeleteDependentFromShadowedAttributes(Thread* thread,
-                                             const Type& cached_type,
-                                             const Str& attribute_name,
-                                             const Type& updated_type,
-                                             const Object& dependent);
+void icDeleteDependentFromInheritingTypes(Thread* thread,
+                                          LayoutId cached_layout_id,
+                                          const Str& attribute_name,
+                                          const Type& updated_type,
+                                          const Object& dependent);
 
 // Returns true if a cached attribute from type cached_type is affected by
 // an update to type[attribute_name] during MRO lookups.
@@ -84,18 +84,18 @@ void icDeleteDependentFromShadowedAttributes(Thread* thread,
 // When B.foo is cached, an update to A.foo affects the cache, but not the one
 // to C.foo.
 bool icIsCachedAttributeAffectedByUpdatedType(Thread* thread,
-                                              const Type& cached_type,
+                                              LayoutId cached_layout_id,
                                               const Str& attribute_name,
                                               const Type& updated_type);
 
-// Delete caches for attribute_name to be shadowed by an update to
+enum class AttributeKind { kDataDescriptor, kNotADataDescriptor };
+
+// Evict caches for attribute_name to be shadowed by an update to
 // type[attribute_name] in dependent's cache entries, and delete obsolete
 // dependencies between dependent and other type attributes in caches' mro.
-void icDeleteCacheForTypeAttrInDependent(Thread* thread,
-                                         const Type& updated_type,
-                                         const Str& updated_attr,
-                                         bool is_data_descriptor,
-                                         const Function& dependent);
+void icEvictCache(Thread* thread, const Function& dependent,
+                  const Type& updated_type, const Str& updated_attr,
+                  AttributeKind attribute_kind);
 
 // Invalidate caches to be shadowed by a type attribute update made to
 // type[attribute_name]. data_descriptor is set to true when the newly assigned
