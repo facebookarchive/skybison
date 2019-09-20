@@ -1090,6 +1090,65 @@ v3 = ASub(2)
   EXPECT_EQ(result.at(1), v2);
 }
 
+TEST_F(
+    InterpreterTest,
+    CompareOpCachedInsertsDependencyForBothOperandsTypesAppropriateAttributes) {
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
+class A:
+  def __ge__(self, other):
+    return "from class A"
+
+class B:
+  pass
+
+def cache_compare_op(a, b):
+  return a >= b
+
+a = A()
+b = B()
+A__ge__ = A.__ge__
+result = cache_compare_op(a, b)
+)")
+                   .isError());
+  ASSERT_TRUE(
+      isStrEqualsCStr(mainModuleAt(&runtime_, "result"), "from class A"));
+
+  Function cache_compare_op(&scope,
+                            mainModuleAt(&runtime_, "cache_compare_op"));
+  Tuple caches(&scope, cache_compare_op.caches());
+  Object a_obj(&scope, mainModuleAt(&runtime_, "a"));
+  Object b_obj(&scope, mainModuleAt(&runtime_, "b"));
+  IcBinopFlags flag;
+  EXPECT_EQ(
+      icLookupBinop(*caches, 0, a_obj.layoutId(), b_obj.layoutId(), &flag),
+      mainModuleAt(&runtime_, "A__ge__"));
+
+  // Verify that A.__ge__ has the dependent.
+  Type a_type(&scope, mainModuleAt(&runtime_, "A"));
+  Dict a_type_dict(&scope, a_type.dict());
+  Str left_op_name(&scope, runtime_.symbols()->at(SymbolId::kDunderGe));
+  Object a_type_attr(&scope,
+                     runtime_.dictAtByStr(thread_, a_type_dict, left_op_name));
+  ASSERT_TRUE(a_type_attr.isValueCell());
+  ASSERT_TRUE(ValueCell::cast(*a_type_attr).dependencyLink().isWeakLink());
+  EXPECT_EQ(
+      WeakLink::cast(ValueCell::cast(*a_type_attr).dependencyLink()).referent(),
+      *cache_compare_op);
+
+  // Verify that B.__le__ has the dependent.
+  Type b_type(&scope, mainModuleAt(&runtime_, "B"));
+  Dict b_type_dict(&scope, b_type.dict());
+  Str right_op_name(&scope, runtime_.symbols()->at(SymbolId::kDunderLe));
+  Object b_type_attr(&scope,
+                     runtime_.dictAtByStr(thread_, b_type_dict, right_op_name));
+  ASSERT_TRUE(b_type_attr.isValueCell());
+  ASSERT_TRUE(ValueCell::cast(*b_type_attr).dependencyLink().isWeakLink());
+  EXPECT_EQ(
+      WeakLink::cast(ValueCell::cast(*b_type_attr).dependencyLink()).referent(),
+      *cache_compare_op);
+}
+
 TEST(InterpreterTestNoFixture, DoStoreFastStoresValue) {
   Runtime runtime(/*cache_enabled=*/false);
   Thread* thread = Thread::current();

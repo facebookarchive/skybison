@@ -3709,7 +3709,8 @@ Continue Interpreter::compareOpUpdateCache(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   Object right(&scope, frame->popValue());
   Object left(&scope, frame->popValue());
-  CompareOp op = static_cast<CompareOp>(originalArg(frame->function(), arg));
+  Function function(&scope, frame->function());
+  CompareOp op = static_cast<CompareOp>(originalArg(*function, arg));
   Object method(&scope, NoneType::object());
   IcBinopFlags flags;
   RawObject result = compareOperationSetMethod(thread, frame, op, left, right,
@@ -3720,6 +3721,17 @@ Continue Interpreter::compareOpUpdateCache(Thread* thread, word arg) {
     LayoutId right_layout_id = right.layoutId();
     icUpdateBinop(frame->caches(), arg, left_layout_id, right_layout_id,
                   *method, flags);
+    Runtime* runtime = thread->runtime();
+    Type left_type(&scope, runtime->typeAt(left_layout_id));
+    Str left_op_name(&scope,
+                     runtime->symbols()->at(runtime->comparisonSelector(op)));
+    icInsertDependencyForTypeLookupInMro(thread, left_type, left_op_name,
+                                         function);
+    Type right_type(&scope, runtime->typeAt(right_layout_id));
+    Str right_op_name(
+        &scope, runtime->symbols()->at(runtime->swappedComparisonSelector(op)));
+    icInsertDependencyForTypeLookupInMro(thread, right_type, right_op_name,
+                                         function);
   }
   frame->pushValue(result);
   return Continue::NEXT;
