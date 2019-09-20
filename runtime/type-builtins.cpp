@@ -278,17 +278,21 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   }
 
   // Copy down class flags from bases
-  word flags = 0;
+  word flags = static_cast<word>(type.flags());
   for (word i = 1; i < mro.length(); i++) {
     Type cur(&scope, mro.at(i));
     flags |= cur.flags();
   }
-  if (!type.isBuiltin()) {
+  if (!type.isBuiltin() && flags ^ Type::Flag::kIsNativeProxy) {
     // TODO(T53800222): We may need a better signal than is/is not a builtin
     // class.
     flags |= Type::Flag::kHasDunderDict;
   }
-  if (flags & Type::Flag::kHasDunderDict &&
+  type.setFlagsAndBuiltinBase(
+      static_cast<Type::Flag>(flags & ~Type::Flag::kIsAbstract),
+      base_layout_id);
+
+  if (type.hasFlag(Type::Flag::kHasDunderDict) &&
       typeLookupInMroById(thread, type, SymbolId::kDunderDict)
           .isErrorNotFound()) {
     Module builtins(&scope, runtime->findModuleById(SymbolId::kBuiltins));
@@ -299,14 +303,12 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     runtime->typeDictAtPutById(thread, type_dict, SymbolId::kDunderDict,
                                property);
   }
-  type.setFlagsAndBuiltinBase(
-      static_cast<Type::Flag>(flags & ~Type::Flag::kIsAbstract),
-      base_layout_id);
+
   return *type;
 }
 
 RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
-                  const Tuple& bases, const Dict& dict) {
+                  const Tuple& bases, const Dict& dict, Type::Flag flags) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->newTypeWithMetaclass(metaclass_id));
@@ -315,6 +317,7 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
   if (mro_obj.isError()) return *mro_obj;
   Tuple mro(&scope, *mro_obj);
   type.setBases(bases.length() > 0 ? *bases : runtime->implicitBases());
+  type.setFlags(flags);
   return typeInit(thread, type, name, bases, dict, mro);
 }
 

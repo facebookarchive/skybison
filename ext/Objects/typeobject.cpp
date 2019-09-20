@@ -1482,6 +1482,27 @@ static RawObject getSetSetter(Thread* thread, const Object& name,
   return *function;
 }
 
+RawObject addMethods(Thread* thread, const Type& type) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object slot_value(&scope, extensionSlot(type, ExtensionSlot::kMethods));
+  if (slot_value.isNoneType()) return NoneType::object();
+  DCHECK(slot_value.isInt(), "unexpected slot type");
+  auto methods = bit_cast<PyMethodDef*>(Int::cast(*slot_value).asCPtr());
+  Dict dict(&scope, type.dict());
+  for (word i = 0; methods[i].ml_name != nullptr; i++) {
+    Str name(&scope, runtime->internStrFromCStr(thread, methods[i].ml_name));
+    Object function(
+        &scope,
+        functionFromMethodDef(
+            thread, methods[i].ml_name, bit_cast<void*>(methods[i].ml_meth),
+            methods[i].ml_doc, methodTypeFromMethodFlags(methods[i].ml_flags)));
+    if (function.isError()) return *function;
+    runtime->typeDictAtPutByStr(thread, dict, name, function);
+  }
+  return NoneType::object();
+}
+
 RawObject addMembers(Thread* thread, const Type& type) {
   HandleScope scope(thread);
   Object slot_value(&scope, extensionSlot(type, ExtensionSlot::kMembers));
@@ -1867,52 +1888,55 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  // Create a new type for the PyTypeObject
-  Type type(&scope, runtime->newType());
-  Dict dict(&scope, runtime->newDict());
-  type.setDict(*dict);
-
-  // Set the class name
+  // Define the type name
   const char* class_name = strrchr(spec->name, '.');
   if (class_name == nullptr) {
     class_name = spec->name;
   } else {
     class_name++;
   }
-  Object name_obj(&scope, runtime->newStrFromCStr(class_name));
-  type.setName(*name_obj);
-  runtime->typeDictAtPutById(thread, dict, SymbolId::kDunderName, name_obj);
+  Str type_name(&scope, runtime->internStrFromCStr(thread, class_name));
+
+  // Create a new type for the PyTypeObject with an instance layout
+  // matching the layout of RawNativeProxy
+  // TODO(T53922464): Set the layout to the dict overflow state
+  // TODO(T54277314): Fill the dictionary before creating the type
+  Tuple bases_obj(&scope, runtime->emptyTuple());
+  if (bases != nullptr) bases_obj = ApiHandle::fromPyObject(bases)->asObject();
+  Dict dict(&scope, runtime->newDict());
+  Object type_obj(&scope, typeNew(thread, LayoutId::kType, type_name, bases_obj,
+                                  dict, Type::Flag::kIsNativeProxy));
+  if (type_obj.isError()) return nullptr;
+  Type type(&scope, *type_obj);
+  Layout type_layout(&scope, type.instanceLayout());
+  type_layout.setNumInObjectAttributes(3);
 
   // Initialize the extension slots tuple
   Object extension_slots(
       &scope, runtime->newTuple(static_cast<int>(ExtensionSlot::kEnd)));
   type.setExtensionSlots(*extension_slots);
 
-  // Set bases
-  Tuple parents(&scope, runtime->emptyTuple());
-  if (bases != nullptr) {
-    parents = ApiHandle::fromPyObject(bases)->asObject();
-  }
-  PyObject* parents_handle = ApiHandle::borrowedReference(thread, *parents);
+  // Set Py_tp_bases
+  PyObject* bases_handle = ApiHandle::borrowedReference(thread, *bases_obj);
   setExtensionSlot(type, ExtensionSlot::kBases,
-                   runtime->newIntFromCPtr(parents_handle));
+                   runtime->newIntFromCPtr(bases_handle));
 
-  // Compute MRO
-  Tuple mro(&scope, computeMro(thread, type, parents));
-  type.setMro(*mro);
-  Type base_type(&scope, mro.at(1));
+  // Set Py_tp_base
+  Type base_type(&scope, Tuple::cast(type.mro()).at(1));
   PyObject* base_handle = ApiHandle::borrowedReference(thread, *base_type);
   setExtensionSlot(type, ExtensionSlot::kBase,
                    runtime->newIntFromCPtr(base_handle));
 
-  // Initialize instance Layout
-  // TODO(T53922464): Set the layout to the dict overflow state
-  Layout layout(&scope,
-                runtime->computeInitialLayout(thread, type, LayoutId::kObject));
-  // Set a size of 3 in object attributes to match the layout of RawNativeProxy
-  layout.setNumInObjectAttributes(3);
-  layout.setDescribedType(*type);
-  type.setInstanceLayout(*layout);
+  // Set tp_flags
+  Object tp_flags(&scope, runtime->newInt(spec->flags | Py_TPFLAGS_READY |
+                                          Py_TPFLAGS_HEAPTYPE));
+  setExtensionSlot(type, ExtensionSlot::kFlags, *tp_flags);
+
+  // Set the native instance size
+  Object basic_size(&scope, runtime->newInt(spec->basicsize));
+  Object item_size(&scope, runtime->newInt(spec->itemsize));
+  setExtensionSlot(type, ExtensionSlot::kBasicSize, *basic_size);
+  setExtensionSlot(type, ExtensionSlot::kItemSize, *item_size);
 
   // Set the type slots
   for (PyType_Slot* slot = spec->slots; slot->slot; slot++) {
@@ -1926,34 +1950,9 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
     setExtensionSlot(type, field_id, *field);
   }
 
-  // Set size
-  Object basic_size(&scope, runtime->newInt(spec->basicsize));
-  Object item_size(&scope, runtime->newInt(spec->itemsize));
-  setExtensionSlot(type, ExtensionSlot::kBasicSize, *basic_size);
-  setExtensionSlot(type, ExtensionSlot::kItemSize, *item_size);
-
-  // Set the class flags
-  Object tp_flags(&scope, runtime->newInt(spec->flags | Py_TPFLAGS_READY |
-                                          Py_TPFLAGS_HEAPTYPE));
-  setExtensionSlot(type, ExtensionSlot::kFlags, *tp_flags);
-
   if (addOperators(thread, type).isError()) return nullptr;
 
-  Object methods_ptr(&scope, extensionSlot(type, ExtensionSlot::kMethods));
-  if (!methods_ptr.isNoneType()) {
-    PyMethodDef* methods =
-        reinterpret_cast<PyMethodDef*>(Int::cast(*methods_ptr).asCPtr());
-    for (word i = 0; methods[i].ml_name != nullptr; i++) {
-      Str name(&scope, runtime->internStrFromCStr(thread, methods[i].ml_name));
-      Object function(
-          &scope, functionFromMethodDef(
-                      thread, methods[i].ml_name,
-                      bit_cast<void*>(methods[i].ml_meth), methods[i].ml_doc,
-                      methodTypeFromMethodFlags(methods[i].ml_flags)));
-      if (function.isError()) return nullptr;
-      runtime->typeDictAtPutByStr(thread, dict, name, function);
-    }
-  }
+  if (addMethods(thread, type).isError()) return nullptr;
 
   if (addMembers(thread, type).isError()) return nullptr;
 
@@ -1969,10 +1968,10 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
     inheritNonFunctionSlots(type, base_type);
   }
 
-  word flags = RawType::Flag::kIsNativeProxy;
+  // Inherit slots from the mro
+  Tuple mro(&scope, type.mro());
   for (word i = 1; i < mro.length(); i++) {
     Type base(&scope, mro.at(i));
-    flags |= base.flags();
     // Skip inheritance if base does not define extensionSlots
     if (base.extensionSlots().isNoneType()) continue;
     // Bases must define Py_TPFLAGS_BASETYPE
@@ -1985,9 +1984,6 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
     }
     inheritSlots(type, base);
   }
-  type.setFlagsAndBuiltinBase(
-      static_cast<Type::Flag>(flags & ~Type::Flag::kIsAbstract),
-      LayoutId::kObject);
 
   // Finally, inherit all the default slots that would have been inherited
   // through PyBaseObject_Type in CPython

@@ -1081,6 +1081,7 @@ class RawType : public RawHeapObject {
   Flag flags() const;
   bool hasFlag(Flag bit) const;
   LayoutId builtinBase() const;
+  void setFlags(Flag value) const;
   void setFlagsAndBuiltinBase(Flag value, LayoutId base) const;
   void setBuiltinBase(LayoutId base) const;
 
@@ -1128,9 +1129,6 @@ class RawType : public RawHeapObject {
   static const int kBuiltinBaseMask = 0xff;
 
   RAW_OBJECT_COMMON(Type);
-
- private:
-  void setFlags(Flag value) const;
 };
 
 class RawTypeProxy : public RawHeapObject {

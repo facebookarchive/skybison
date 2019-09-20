@@ -145,7 +145,8 @@ PY_EXPORT PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc* desc) {
   // Create type
   Tuple bases(&scope, runtime->newTuple(1));
   bases.atPut(0, runtime->typeAt(LayoutId::kTuple));
-  Type type(&scope, typeNew(thread, LayoutId::kType, name, bases, dict));
+  Type type(&scope, typeNew(thread, LayoutId::kType, name, bases, dict,
+                            static_cast<Type::Flag>(0)));
 
   // Add struct sequence fields
   Str field_name(&scope, Str::empty());

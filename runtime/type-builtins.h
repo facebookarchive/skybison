@@ -56,7 +56,7 @@ RawObject typeLookupInMroByStr(Thread* thread, const Type& type,
 RawObject typeLookupInMroById(Thread* thread, const Type& type, SymbolId id);
 
 RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
-                  const Tuple& bases, const Dict& dict);
+                  const Tuple& bases, const Dict& dict, Type::Flag flags);
 
 RawObject typeSetAttr(Thread* thread, const Type& type,
                       const Str& name_interned, const Object& value);
