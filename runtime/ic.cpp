@@ -116,6 +116,9 @@ void icDeleteDependentFromInheritingTypes(Thread* thread,
   Tuple mro(&scope, Type::cast(runtime->typeAt(cached_layout_id)).mro());
   for (word i = 0; i < mro.length(); ++i) {
     Type type(&scope, mro.at(i));
+    // If a type is sealed, its parents must be sealed.  We can stop the MRO
+    // search here.
+    if (type.isSealed()) break;
     Dict dict(&scope, type.dict());
     ValueCell value_cell(&scope, runtime->dictAtByStr(thread, dict, attr_name));
     icDeleteDependentInValueCell(thread, value_cell, dependent);
@@ -168,6 +171,9 @@ bool icIsCachedAttributeAffectedByUpdatedType(Thread* thread,
   Tuple mro(&scope, cached_type.mro());
   for (word i = 0; i < mro.length(); ++i) {
     Type type(&scope, mro.at(i));
+    // If a type is sealed, its parents must be sealed.  We can stop the MRO
+    // search here.
+    if (type.isSealed()) break;
     Dict dict(&scope, type.dict());
     Object result(&scope, runtime->dictAtByStr(thread, dict, attribute_name));
     if (type == updated_type) {
