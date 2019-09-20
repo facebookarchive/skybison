@@ -5981,6 +5981,9 @@ class StrTests(unittest.TestCase):
     def test_count_returns_number_of_occurrences(self):
         self.assertEqual("foo".count("o"), 2)
 
+    def test_encode_idna_returns_ascii_encoded_str(self):
+        self.assertEqual("foo".encode("idna"), b"foo")
+
     def test_format_single_open_curly_brace_raises_value_error(self):
         with self.assertRaises(ValueError) as context:
             str.format("{")

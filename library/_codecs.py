@@ -14,6 +14,7 @@ _strarray_iadd = _strarray_iadd  # noqa: F821
 _tuple_check = _tuple_check  # noqa: F821
 _type = _type  # noqa: F821
 _Unbound = _Unbound  # noqa: F821
+_unimplemented = _unimplemented  # noqa: F821
 
 
 codec_search_path = []
@@ -209,6 +210,22 @@ def _escape_decode_stateful(
 
 def escape_decode(data: bytes, errors: str = "strict") -> str:
     return _escape_decode_stateful(data, errors)[:2]
+
+
+# TODO(T53437294): Import encodings.idna
+def idna_decode(data: str, errors: str):
+    for char in data:
+        if char > "\x7F":
+            _unimplemented()
+    return ascii_decode(data, errors)
+
+
+# TODO(T53437294): Import encodings.idna
+def idna_encode(data: str, errors: str):
+    for char in data:
+        if char > "\x7F":
+            _unimplemented()
+    return ascii_encode(data, errors)
 
 
 @_patch
@@ -554,6 +571,8 @@ def utf_32_be_encode(data: str, errors: str = "strict"):
 _codec_decode_table = {
     "ascii": ascii_decode,
     "us_ascii": ascii_decode,
+    # TODO(T53437294): Import encodings.idna
+    "idna": idna_decode,
     "latin1": latin_1_decode,
     "latin 1": latin_1_decode,
     "latin-1": latin_1_decode,
@@ -566,6 +585,8 @@ _codec_decode_table = {
 _codec_encode_table = {
     "ascii": ascii_encode,
     "us_ascii": ascii_encode,
+    # TODO(T53437294): Import encodings.idna
+    "idna": idna_encode,
     "latin_1": latin_1_encode,
     "latin-1": latin_1_encode,
     "iso-8859-1": latin_1_encode,
