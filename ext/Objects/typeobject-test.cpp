@@ -1393,13 +1393,17 @@ TEST_F(TypeExtensionApiTest, CallDelSlotFromManagedCode) {
   destructor del_func = [](PyObject* /* self */) {
     moduleSet("__main__", "called", Py_True);
   };
-  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_tp_finalize, del_func));
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_tp_del, del_func));
 
   ASSERT_EQ(PyRun_SimpleString(R"(
-b = Bar()
-b.__del__()
+bar = Bar()
 )"),
             0);
+  PyObjectPtr bar_type(moduleGet("__main__", "Bar"));
+  PyObject* bar = moduleGet("__main__", "bar");
+  auto func = reinterpret_cast<destructor>(PyType_GetSlot(
+      reinterpret_cast<PyTypeObject*>(bar_type.get()), Py_tp_dealloc));
+  (*func)(bar);
   PyObjectPtr called(moduleGet("__main__", "called"));
   EXPECT_EQ(called, Py_True);
 }
@@ -2992,14 +2996,11 @@ TEST_F(TypeExtensionApiTest, FromSpecWithoutDeallocInheritsDefaultDealloc) {
 
   // Create an instance
   FooObject* instance = PyObject_New(FooObject, tp);
-  // TODO(T53456038): Switch back to EXPECT_EQ, once initial refcount is fixed
-  ASSERT_GE(Py_REFCNT(instance), 1);
-  ASSERT_LE(Py_REFCNT(instance), 2);
+  ASSERT_EQ(Py_REFCNT(instance), 1);
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt + 1);
 
   // Trigger a tp_dealloc
   Py_DECREF(instance);
-  Py_XDECREF(instance);
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt);
 }
 
@@ -3030,14 +3031,11 @@ TEST_F(TypeExtensionApiTest, DefaultDeallocCallsDelAndFinalize) {
 
   // Create an instance
   FooObject* instance = PyObject_New(FooObject, tp);
-  // TODO(T53456038): Switch back to EXPECT_EQ, once initial refcount is fixed
-  ASSERT_GE(Py_REFCNT(instance), 1);
-  ASSERT_LE(Py_REFCNT(instance), 2);
+  ASSERT_EQ(Py_REFCNT(instance), 1);
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt + 1);
 
   // Trigger a tp_dealloc
   Py_DECREF(instance);
-  Py_XDECREF(instance);
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt);
   PyObjectPtr called_del(testing::moduleGet("__main__", "called_del"));
   EXPECT_EQ(called_del, Py_True);
@@ -3094,14 +3092,11 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesSubclassInheritsParentDealloc) {
 
   // Create an instance
   FooObject* instance = PyObject_New(FooObject, tp);
-  // TODO(T53456038): Switch back to EXPECT_EQ, once initial refcount is fixed
-  ASSERT_GE(Py_REFCNT(instance), 1);
-  ASSERT_LE(Py_REFCNT(instance), 2);
+  ASSERT_EQ(Py_REFCNT(instance), 1);
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt + 1);
 
   // Trigger a tp_dealloc
   Py_DECREF(instance);
-  Py_XDECREF(instance);
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt);
 }
 
@@ -3150,14 +3145,11 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesSubclassInheritsDefaultDealloc) {
 
   // Create an instance
   FooObject* instance = PyObject_New(FooObject, tp);
-  // TODO(T53456038): Switch back to EXPECT_EQ, once initial refcount is fixed
-  ASSERT_GE(Py_REFCNT(instance), 1);
-  ASSERT_LE(Py_REFCNT(instance), 2);
+  ASSERT_EQ(Py_REFCNT(instance), 1);
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt + 1);
 
   // Trigger a tp_dealloc
   Py_DECREF(instance);
-  Py_XDECREF(instance);
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt);
 }
 

@@ -2,6 +2,7 @@
 
 #include <cstring>
 
+#include "capi-handles.h"
 #include "frame.h"
 #include "interpreter.h"
 #include "runtime.h"
@@ -27,6 +28,7 @@ RawObject Scavenger::scavenge() {
   to_ = new Space(from_->size());
   processRoots();
   processGrayObjects();
+  processFinalizableReferences();
   processDelayedReferences();
   runtime_->heap()->setSpace(to_);
   delete from_;
@@ -108,6 +110,28 @@ void Scavenger::processDelayedReferences() {
         WeakRef::enqueueReference(weak, &delayed_callbacks_);
       }
     }
+  }
+}
+
+void Scavenger::processFinalizableReferences() {
+  for (ListEntry *entry = runtime_->trackedNativeObjects(), *next;
+       entry != nullptr; entry = next) {
+    next = entry->next;
+    ApiHandle* handle = reinterpret_cast<ApiHandle*>(entry + 1);
+
+    // Something is still pointing to this native instance
+    if (HeapObject::cast(handle->asObject()).isForwarding() ||
+        handle->refcnt() > 1) {
+      scavengePointer(reinterpret_cast<RawObject*>(&handle->reference_));
+      continue;
+    }
+
+    // The native object is only reachable through the managed native proxy
+    RawObject type = runtime_->typeOf(handle->asObject());
+    auto func = reinterpret_cast<destructor>(
+        Int::cast(Tuple::cast(Type::cast(type).extensionSlots()).at(52))
+            .asWord());
+    (*func)(handle);
   }
 }
 

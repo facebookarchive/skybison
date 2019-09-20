@@ -236,14 +236,9 @@ PY_EXPORT PyObject* PyObject_Init(PyObject* obj, PyTypeObject* typeobj) {
   // Initialize the native object
   obj->reference_ = native_proxy.raw();
   obj->ob_type = typeobj;
-  if (PyType_GetFlags(typeobj) & Py_TPFLAGS_HEAPTYPE) {
     Py_INCREF(typeobj);
-  }
-  // TODO(T53456038): Make the reference count be one
-  // Set a reference count of two. One for the original PyObject_Init call
-  // and the second for the managed instance proxy that points back to it.
-  obj->ob_refcnt = 2;
-  return obj;
+    obj->ob_refcnt = 1;
+    return obj;
 }
 
 PY_EXPORT PyVarObject* PyObject_InitVar(PyVarObject* obj, PyTypeObject* type,

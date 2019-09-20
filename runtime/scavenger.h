@@ -39,6 +39,8 @@ class Scavenger {
 
   void processDelayedReferences();
 
+  void processFinalizableReferences();
+
   void processGrayObjects();
 
   void processRoots();

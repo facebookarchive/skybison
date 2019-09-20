@@ -306,6 +306,9 @@ class Runtime {
   bool untrackNativeObject(ListEntry* entry);
   bool untrackNativeGcObject(ListEntry* entry);
 
+  // Return the head of the tracked native objects list.
+  ListEntry* trackedNativeObjects();
+
   void visitRoots(PointerVisitor* visitor);
 
   void addModule(const Module& module);

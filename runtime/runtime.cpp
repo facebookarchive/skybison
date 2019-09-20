@@ -1467,6 +1467,8 @@ bool Runtime::untrackNativeObject(ListEntry* entry) {
   return listEntryRemove(entry, &tracked_native_objects_);
 }
 
+ListEntry* Runtime::trackedNativeObjects() { return tracked_native_objects_; }
+
 RawObject Runtime::identityHash(RawObject object) {
   RawHeapObject src = HeapObject::cast(object);
   word code = src.header().hashCode();
@@ -4466,18 +4468,13 @@ void Runtime::freeApiHandles() {
     }
   }
 
-  // Cleanly free all the handles that have a reference count of zero.
-  // These can be safely deallocated as they are not referenced by any other
-  // native object or handle.
-  Dict dict(&scope, apiHandles());
-  Tuple buckets(&scope, dict.data());
-  for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*buckets, &i);) {
-    ApiHandle* handle = ApiHandle::atIndex(this, i);
-    if (ApiHandle::nativeRefcnt(handle) == 0) handle->dispose();
-  }
+  // Process any native instance that is only referenced through the NativeProxy
+  collectGarbage();
 
   // Finally, skip trying to cleanly deallocate the object. Just free
   // the memory without calling the deallocation functions.
+  Dict dict(&scope, apiHandles());
+  Tuple buckets(&scope, dict.data());
   for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*buckets, &i);) {
     ApiHandle* handle = ApiHandle::atIndex(this, i);
     handle->dispose();
