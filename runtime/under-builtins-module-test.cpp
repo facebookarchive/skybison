@@ -446,6 +446,23 @@ TEST_F(UnderBuiltinsModuleTest, UnderFloatDivmodWithNanReturnsNan) {
 }
 
 TEST_F(UnderBuiltinsModuleTest,
+       UnderInstanceKeysWithUnassignedNumInObjectAttributes) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C:
+  def __init__(self, p):
+    if p:
+      self.a = 42
+i = C(False)
+)")
+                   .isError());
+  Object i(&scope, mainModuleAt(&runtime_, "i"));
+  Object result(&scope, runBuiltin(UnderBuiltinsModule::underInstanceKeys, i));
+  ASSERT_TRUE(result.isList());
+  EXPECT_EQ(List::cast(*result).numItems(), 0);
+}
+
+TEST_F(UnderBuiltinsModuleTest,
        UnderIntFromBytesWithLittleEndianReturnsSmallInt) {
   HandleScope scope(thread_);
 

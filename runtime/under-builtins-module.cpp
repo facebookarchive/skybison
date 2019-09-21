@@ -1811,7 +1811,7 @@ RawObject UnderBuiltinsModule::underInstanceKeys(Thread* thread, Frame* frame,
   List result(&scope, runtime->newList());
   // Add in-object attributes
   Tuple in_object(&scope, layout.inObjectAttributes());
-  for (word i = 0; i < layout.numInObjectAttributes(); i++) {
+  for (word i = 0, length = in_object.length(); i < length; i++) {
     Tuple pair(&scope, in_object.at(i));
     Object name(&scope, pair.at(0));
     if (name.isNoneType() || name == runtime->symbols()->DunderDict()) continue;
