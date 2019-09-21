@@ -4381,6 +4381,28 @@ RawObject Runtime::layoutAddAttribute(Thread* thread, const Layout& layout,
   return *new_layout;
 }
 
+static RawObject markEntryDeleted(Thread* thread, RawObject entries,
+                                  const Str& name_interned) {
+  HandleScope scope(thread);
+  Tuple entries_old(&scope, entries);
+  word length = entries_old.length();
+  Runtime* runtime = thread->runtime();
+  MutableTuple entries_new(&scope, runtime->newMutableTuple(length));
+  Tuple entry(&scope, runtime->emptyTuple());
+  for (word i = 0; i < length; i++) {
+    entry = entries_old.at(i);
+    if (entry.at(0) == name_interned) {
+      AttributeInfo old_info(entry.at(1));
+      entry = runtime->newTuple(2);
+      entry.atPut(0, NoneType::object());
+      entry.atPut(1, AttributeInfo(old_info.offset(), AttributeFlags::kDeleted)
+                         .asSmallInt());
+    }
+    entries_new.atPut(i, *entry);
+  }
+  return entries_new.becomeImmutable();
+}
+
 RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
                                          const Object& name) {
   HandleScope scope(thread);
@@ -4392,7 +4414,7 @@ RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
   }
 
   // Check if an edge exists for removing the attribute
-  Object iname(&scope, internStr(thread, name));
+  Str iname(&scope, internStr(thread, name));
   List edges(&scope, layout.deletions());
   RawObject next_layout = layoutFollowEdge(edges, iname);
   if (!next_layout.isError()) {
@@ -4402,42 +4424,11 @@ RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
   // No edge was found, create a new layout and add an edge
   Layout new_layout(&scope, layoutCreateChild(thread, layout));
   if (info.isInObject()) {
-    // The attribute to be deleted was an in-object attribute, mark it as
-    // deleted
-    Tuple old_inobject(&scope, layout.inObjectAttributes());
-    Tuple new_inobject(&scope, newTuple(old_inobject.length()));
-    for (word i = 0; i < old_inobject.length(); i++) {
-      Tuple entry(&scope, old_inobject.at(i));
-      if (entry.at(0) == *iname) {
-        entry = newTuple(2);
-        entry.atPut(0, NoneType::object());
-        entry.atPut(1, AttributeInfo(0, AttributeFlags::kDeleted).asSmallInt());
-      }
-      new_inobject.atPut(i, *entry);
-    }
-    new_layout.setInObjectAttributes(*new_inobject);
+    new_layout.setInObjectAttributes(
+        markEntryDeleted(thread, layout.inObjectAttributes(), iname));
   } else {
-    // The attribute to be deleted was an overflow attribute, omit it from the
-    // new overflow array
-    Tuple old_overflow(&scope, layout.overflowAttributes());
-    Tuple new_overflow(&scope, newTuple(old_overflow.length() - 1));
-    bool is_deleted = false;
-    for (word i = 0, j = 0; i < old_overflow.length(); i++) {
-      Tuple entry(&scope, old_overflow.at(i));
-      if (entry.at(0) == *iname) {
-        is_deleted = true;
-        continue;
-      }
-      if (is_deleted) {
-        // Need to shift everything down by 1 once we've deleted the attribute
-        entry = newTuple(2);
-        entry.atPut(0, Tuple::cast(old_overflow.at(i)).at(0));
-        entry.atPut(1, AttributeInfo(j, info.flags()).asSmallInt());
-      }
-      new_overflow.atPut(j, *entry);
-      j++;
-    }
-    new_layout.setOverflowAttributes(*new_overflow);
+    new_layout.setOverflowAttributes(
+        markEntryDeleted(thread, layout.overflowAttributes(), iname));
   }
 
   // Add the edge to the existing layout

@@ -739,4 +739,23 @@ i.foo = 0
       isIntEqualsWord(instanceGetAttribute(thread_, heap_object, name), 11));
 }
 
+TEST_F(ObjectBuiltinsTest,
+       InstanceDelWithOverflowAttributeKeepsOtherAttributes) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C: pass
+instance = C()
+instance.y = 2
+instance.z = 3
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  HeapObject instance(&scope, mainModuleAt(&runtime_, "instance"));
+  Object y(&scope, runtime_.internStrFromCStr(thread_, "y"));
+  Object result(&scope, runtime_.instanceDel(thread_, instance, y));
+  EXPECT_TRUE(instanceGetAttribute(thread_, instance, y).isErrorNotFound());
+  EXPECT_TRUE(result.isNoneType());
+  Object z(&scope, runtime_.internStrFromCStr(thread_, "z"));
+  EXPECT_TRUE(isIntEqualsWord(instanceGetAttribute(thread_, instance, z), 3));
+}
+
 }  // namespace python

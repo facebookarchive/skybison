@@ -172,15 +172,14 @@ TEST_F(LayoutTest, DeleteOverflowAttribute) {
   ASSERT_TRUE(result.isLayout());
   Layout layout2(&scope, result);
   EXPECT_NE(layout2.id(), layout.id());
-  // The first attribute should have the same offset
+  // The first and third attribute should have the same offset
   AttributeInfo info;
   ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout2, attr, &info));
   EXPECT_EQ(info.offset(), 0);
-  // The second attribute should not exist
-  ASSERT_FALSE(runtime_.layoutFindAttribute(thread_, layout2, attr2, &info));
-  // The third attribute should have been shifted down by 1
   ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout2, attr3, &info));
-  EXPECT_EQ(info.offset(), 1);
+  EXPECT_EQ(info.offset(), 2);
+  // The second attribute should not exist in the new layout.
+  ASSERT_FALSE(runtime_.layoutFindAttribute(thread_, layout2, attr2, &info));
 
   // Delete the first attribute. A new layout should be created and the last
   // entry is shifted into the first position.
@@ -189,14 +188,12 @@ TEST_F(LayoutTest, DeleteOverflowAttribute) {
   Layout layout3(&scope, result);
   EXPECT_NE(layout3.id(), layout.id());
   EXPECT_NE(layout3.id(), layout2.id());
-  // The first attribute should not exist
+  // The first and second attribute should not exist
   EXPECT_FALSE(runtime_.layoutFindAttribute(thread_, layout3, attr, &info));
-  // The second attribute should not exist
   EXPECT_FALSE(runtime_.layoutFindAttribute(thread_, layout3, attr2, &info));
-
-  // The third attribute should now occupy the first position
+  // The third attribute should still exist.
   EXPECT_TRUE(runtime_.layoutFindAttribute(thread_, layout3, attr3, &info));
-  EXPECT_EQ(info.offset(), 0);
+  EXPECT_EQ(info.offset(), 2);
 
   // Delete the remaining attribute. A new layout should be created and the
   // overflow array should be empty.
@@ -210,6 +207,17 @@ TEST_F(LayoutTest, DeleteOverflowAttribute) {
   EXPECT_FALSE(runtime_.layoutFindAttribute(thread_, layout4, attr, &info));
   EXPECT_FALSE(runtime_.layoutFindAttribute(thread_, layout4, attr2, &info));
   EXPECT_FALSE(runtime_.layoutFindAttribute(thread_, layout4, attr3, &info));
+
+  // Appending to layout2 should not use the offset of any of the remaining
+  // attributes there.
+  result = runtime_.layoutAddAttribute(thread_, layout2, attr2, 0);
+  ASSERT_TRUE(result.isLayout());
+  Layout layout2_added(&scope, result);
+  EXPECT_NE(layout2_added.id(), layout2.id());
+  ASSERT_TRUE(
+      runtime_.layoutFindAttribute(thread_, layout2_added, attr2, &info));
+  EXPECT_NE(info.offset(), 0);
+  EXPECT_NE(info.offset(), 2);
 }
 
 static RawObject createLayoutAttribute(Runtime* runtime, const Object& name,
