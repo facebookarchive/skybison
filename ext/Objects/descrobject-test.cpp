@@ -130,4 +130,38 @@ TEST_F(DescrExtensionApiTest, ClassMethodCallWithNonBoundClassRaisesTypeError) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
+TEST_F(DescrExtensionApiTest, MethodAsDescriptorReturnsFunction) {
+  ASSERT_NO_FATAL_FAILURE(createEmptyBarType());
+  binaryfunc meth = [](PyObject* self, PyObject* args) {
+    return PyTuple_Pack(2, self, args);
+  };
+  static PyMethodDef method_def;
+  method_def = {"foo", meth, METH_VARARGS};
+  PyObjectPtr type(moduleGet("__main__", "Bar"));
+  PyObjectPtr descriptor(PyDescr_NewMethod(
+      reinterpret_cast<PyTypeObject*>(type.get()), &method_def));
+  ASSERT_NE(descriptor, nullptr);
+  PyObject_SetAttrString(type, "foo", descriptor);
+
+  PyRun_SimpleString(R"(
+bar = Bar()
+r1 = bar.foo()
+)");
+  PyObjectPtr bar(moduleGet("__main__", "bar"));
+  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  ASSERT_EQ(PyTuple_Check(r1), 1);
+  ASSERT_EQ(PyTuple_Size(r1), 2);
+
+  // self
+  PyObject* arg0 = PyTuple_GetItem(r1, 0);
+  ASSERT_NE(arg0, nullptr);
+  EXPECT_EQ(arg0, bar);
+
+  // args
+  PyObject* arg1 = PyTuple_GetItem(r1, 1);
+  ASSERT_NE(arg1, nullptr);
+  ASSERT_EQ(PyTuple_Check(arg1), 1);
+  EXPECT_EQ(PyTuple_Size(arg1), 0);
+}
+
 }  // namespace python
