@@ -252,14 +252,6 @@ class BytesIOTests(unittest.TestCase):
         f.close()
         f.close()
 
-    def test_dunder_getstate_returns_tuple(self):
-        f = _io.BytesIO(b"foo")
-        result = f.__getstate__()
-        self.assertIsInstance(result, tuple)
-        self.assertEqual(result[0], b"foo")
-        self.assertEqual(result[1], 0)
-        self.assertIsInstance(result[2], dict)
-
     def test_getvalue_returns_bytes_of_buffer(self):
         f = _io.BytesIO(b"foo")
         result = f.getvalue()

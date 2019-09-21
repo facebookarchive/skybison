@@ -924,12 +924,12 @@ class BytesIO(bootstrap=True):
             self._buffer = bytearray(initial_bytes)
         self._closed = False
         self._pos = 0
-        self.__dict__ = {}
 
     def __getstate__(self):
-        if self.closed:
-            raise ValueError("__getstate__ on closed file")
-        return (self.getvalue(), self._pos, self.__dict__.copy())
+        _unimplemented("BytesIO.__getstate__")
+        # if self.closed:
+        #     raise ValueError("__getstate__ on closed file")
+        # return (self.getvalue(), self._pos, self.__dict__.copy())
 
     def getvalue(self):
         """Return the bytes value (contents) of the buffer
