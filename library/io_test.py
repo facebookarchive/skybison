@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import os
 import unittest
+import unittest.mock
+from unittest.mock import Mock
 
 import _io
 from test_support import pyro_only
@@ -866,22 +868,19 @@ class OpenTests(unittest.TestCase):
 
     def test_open_with_U_and_writing_raises_value_error(self):
         with self.assertRaises(ValueError) as context:
-            # TODO(emacs): Remove b once TextIOWrapper is available
-            _io.open(0, mode="Ubw")
+            _io.open(0, mode="Uw")
 
         self.assertRegex(str(context.exception), "mode U cannot be combined with")
 
     def test_open_with_U_and_appending_raises_value_error(self):
         with self.assertRaises(ValueError) as context:
-            # TODO(emacs): Remove b once TextIOWrapper is available
-            _io.open(0, mode="Uba")
+            _io.open(0, mode="Ua")
 
         self.assertRegex(str(context.exception), "mode U cannot be combined with")
 
     def test_open_with_U_and_updating_raises_value_error(self):
         with self.assertRaises(ValueError) as context:
-            # TODO(emacs): Remove b once TextIOWrapper is available
-            _io.open(0, mode="Ub+")
+            _io.open(0, mode="U+")
 
         self.assertRegex(str(context.exception), "mode U cannot be combined with")
 
@@ -895,8 +894,7 @@ class OpenTests(unittest.TestCase):
 
     def test_open_with_creating_and_reading_raises_value_error(self):
         with self.assertRaises(ValueError) as context:
-            # TODO(emacs): Remove b once TextIOWrapper is available
-            _io.open(0, mode="rxb")
+            _io.open(0, mode="rx")
 
         self.assertEqual(
             str(context.exception),
@@ -905,8 +903,7 @@ class OpenTests(unittest.TestCase):
 
     def test_open_with_creating_and_writing_raises_value_error(self):
         with self.assertRaises(ValueError) as context:
-            # TODO(emacs): Remove b once TextIOWrapper is available
-            _io.open(0, mode="wxb")
+            _io.open(0, mode="wx")
 
         self.assertEqual(
             str(context.exception),
@@ -915,8 +912,7 @@ class OpenTests(unittest.TestCase):
 
     def test_open_with_creating_and_appending_raises_value_error(self):
         with self.assertRaises(ValueError) as context:
-            # TODO(emacs): Remove b once TextIOWrapper is available
-            _io.open(0, mode="axb")
+            _io.open(0, mode="ax")
 
         self.assertEqual(
             str(context.exception),
@@ -925,8 +921,7 @@ class OpenTests(unittest.TestCase):
 
     def test_open_with_reading_and_writing_raises_value_error(self):
         with self.assertRaises(ValueError) as context:
-            # TODO(emacs): Remove b once TextIOWrapper is available
-            _io.open(0, mode="rwb")
+            _io.open(0, mode="rw")
 
         self.assertEqual(
             str(context.exception),
@@ -935,8 +930,7 @@ class OpenTests(unittest.TestCase):
 
     def test_open_with_reading_and_appending_raises_value_error(self):
         with self.assertRaises(ValueError) as context:
-            # TODO(emacs): Remove b once TextIOWrapper is available
-            _io.open(0, mode="rab")
+            _io.open(0, mode="ra")
 
         self.assertEqual(
             str(context.exception),
@@ -945,8 +939,7 @@ class OpenTests(unittest.TestCase):
 
     def test_open_with_writing_and_appending_raises_value_error(self):
         with self.assertRaises(ValueError) as context:
-            # TODO(emacs): Remove b once TextIOWrapper is available
-            _io.open(0, mode="wab")
+            _io.open(0, mode="wa")
 
         self.assertEqual(
             str(context.exception),
@@ -955,8 +948,7 @@ class OpenTests(unittest.TestCase):
 
     def test_open_with_no_reading_creating_writing_appending_raises_value_error(self):
         with self.assertRaises(ValueError) as context:
-            # TODO(emacs): Remove b once TextIOWrapper is available
-            _io.open(0, mode="b")
+            _io.open(0, mode="")
 
         self.assertEqual(
             str(context.exception),
@@ -1558,6 +1550,274 @@ class BufferedReaderTests(unittest.TestCase):
             self.assertEqual(buffered.tell(), 2)
             buffered.seek(0)
             self.assertEqual(buffered.tell(), 0)
+
+
+class TextIOWrapperTests(unittest.TestCase):
+    def _sample(self):
+        return _io.TextIOWrapper(_io.BytesIO(b"hello"), encoding="ascii")
+
+    def test_dunder_init_with_none_buffer_raises_attribute_error(self):
+        with self.assertRaises(AttributeError) as context:
+            _io.TextIOWrapper(None)
+        self.assertEqual(
+            str(context.exception), "'NoneType' object has no attribute 'readable'"
+        )
+
+    def test_dunder_init_with_non_str_encoding_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            _io.TextIOWrapper("hello", encoding=5)
+        self.assertEqual(
+            str(context.exception),
+            "TextIOWrapper() argument 2 must be str or None, not int",
+        )
+
+    def test_dunder_init_with_non_str_errors_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            _io.TextIOWrapper("hello", errors=5)
+        self.assertEqual(
+            str(context.exception),
+            "TextIOWrapper() argument 3 must be str or None, not int",
+        )
+
+    def test_dunder_init_with_non_str_newline_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            _io.TextIOWrapper("hello", newline=5)
+        self.assertEqual(
+            str(context.exception),
+            "TextIOWrapper() argument 4 must be str or None, not int",
+        )
+
+    def test_dunder_init_with_non_int_line_buffering_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            _io.TextIOWrapper("hello", line_buffering="buf")
+        self.assertEqual(
+            str(context.exception), "an integer is required (got type str)"
+        )
+
+    def test_dunder_init_with_non_int_write_through_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            _io.TextIOWrapper("hello", write_through="True")
+        self.assertEqual(
+            str(context.exception), "an integer is required (got type str)"
+        )
+
+    def test_dunder_init_with_bad_str_newline_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            _io.TextIOWrapper("hello", newline="foo")
+        self.assertEqual(str(context.exception), "illegal newline value: foo")
+
+    def test_dunder_init_returns_text_io_wrapper(self):
+        with self._sample() as text_io:
+            self.assertIsInstance(text_io, _io.TextIOWrapper)
+
+    def test_dunder_repr(self):
+        with self._sample() as text_io:
+            self.assertEqual(text_io.__repr__(), "<_io.TextIOWrapper encoding='ascii'>")
+
+    def test_dunder_repr_with_name(self):
+        class C(_io.TextIOWrapper):
+            name = "foo"
+
+        with C(_io.BytesIO(b"hello"), encoding="ascii") as text_io:
+            self.assertEqual(
+                text_io.__repr__(), "<_io.TextIOWrapper name='foo' encoding='ascii'>"
+            )
+
+    def test_dunder_repr_with_mode(self):
+        class C(_io.TextIOWrapper):
+            mode = "rwx"
+
+        with C(_io.BytesIO(b"hello"), encoding="ascii") as text_io:
+            self.assertIn(
+                text_io.__repr__(), "<_io.TextIOWrapper mode='rwx' encoding='ascii'>"
+            )
+
+    def test_buffer_returns_buffer(self):
+        with _io.BytesIO() as bytes_io:
+            with _io.TextIOWrapper(bytes_io) as text_io:
+                self.assertIs(text_io.buffer, bytes_io)
+
+    def test_encoding_returns_encoding(self):
+        with self._sample() as text_io:
+            self.assertEqual(text_io.encoding, "ascii")
+
+    def test_errors_returns_default_errors(self):
+        with self._sample() as text_io:
+            self.assertEqual(text_io.errors, "strict")
+
+    def test_errors_returns_errors(self):
+        with _io.TextIOWrapper(_io.BytesIO(b"hello"), errors="foobar") as text_io:
+            self.assertEqual(text_io.errors, "foobar")
+
+    def test_line_buffering_returns_line_buffering(self):
+        with _io.TextIOWrapper(_io.BytesIO(b"hello"), line_buffering=5) as text_io:
+            self.assertEqual(text_io.line_buffering, True)
+
+    def test_name_with_bytes_io_raises_attribute_error(self):
+        with self._sample() as text_io:
+            with self.assertRaisesRegex(AttributeError, "name"):
+                text_io.name
+
+    def test_name_returns_buffer_name(self):
+        class C(_io.BytesIO):
+            name = "foobar"
+
+        with _io.TextIOWrapper(C(b"hello")) as text_io:
+            self.assertEqual(text_io.name, "foobar")
+
+    def test_fileno_with_bytes_io_raises_unsupported_operation(self):
+        with self._sample() as text_io:
+            with self.assertRaisesRegex(_io.UnsupportedOperation, "fileno"):
+                text_io.fileno()
+
+    def test_fileno_returns_buffer_fileno(self):
+        class C(_io.BytesIO):
+            def fileno(self):
+                return 5
+
+        with _io.TextIOWrapper(C(b"hello")) as text_io:
+            self.assertEqual(text_io.fileno(), 5)
+
+    def test_isatty_with_bytes_io_returns_false(self):
+        with self._sample() as text_io:
+            self.assertFalse(text_io.isatty())
+
+    def test_isatty_returns_buffer_isatty(self):
+        class C(_io.BytesIO):
+            def isatty(self):
+                return True
+
+        with _io.TextIOWrapper(C(b"hello")) as text_io:
+            self.assertTrue(text_io.isatty())
+
+    def test_newlines_returns_newlines(self):
+        with _io.TextIOWrapper(_io.BytesIO(b"\rhello\n")) as text_io:
+            text_io.read()
+            self.assertEqual(text_io.newlines, ("\r", "\n"))
+
+    def test_seekable_with_closed_io_raises_value_error(self):
+        text_io = self._sample()
+        text_io.close()
+        self.assertRaises(ValueError, text_io.seekable)
+
+    def test_readable_calls_buffer_readable(self):
+        class C(_io.BytesIO):
+            readable = Mock(name="readable")
+
+        with C(b"hello") as bytes_io:
+            with _io.TextIOWrapper(bytes_io) as text_io:
+                bytes_io.readable.assert_called_once()
+                text_io.readable()
+                self.assertEqual(bytes_io.readable.call_count, 2)
+
+    def test_writable_calls_buffer_writable(self):
+        class C(_io.BytesIO):
+            writable = Mock(name="writable")
+
+        with C(b"hello") as bytes_io:
+            with _io.TextIOWrapper(bytes_io) as text_io:
+                bytes_io.writable.assert_called_once()
+                text_io.writable()
+                self.assertEqual(bytes_io.writable.call_count, 2)
+
+    def test_flush_with_closed_buffer_raises_value_error(self):
+        text_io = self._sample()
+        text_io.close()
+        self.assertRaisesRegex(ValueError, "closed", text_io.flush)
+
+    def test_flush_with_detached_buffer_raises_value_error(self):
+        text_io = self._sample()
+        text_io.detach()
+        self.assertRaisesRegex(ValueError, "detached", text_io.flush)
+
+    def test_flush_calls_buffer_flush(self):
+        class C(_io.BytesIO):
+            flush = Mock(name="flush", return_value=None)
+
+        with C(b"hello") as bytes_io:
+            with _io.TextIOWrapper(bytes_io) as text_io:
+                bytes_io.flush.assert_not_called()
+                self.assertIsNone(text_io.flush())
+                bytes_io.flush.assert_called_once()
+
+    def test_read_reads_chars(self):
+        with _io.TextIOWrapper(_io.BytesIO(b"foo bar")) as text_io:
+            result = text_io.read(3)
+            self.assertEqual(result, "foo")
+            self.assertEqual(text_io.read(), " bar")
+
+    def test_readline_with_closed_file_raises_value_error(self):
+        text_io = self._sample()
+        text_io.close()
+        self.assertRaisesRegex(ValueError, "closed file", text_io.readline)
+
+    def test_readline_with_non_int_size_raises_type_error(self):
+        with self._sample() as text_io:
+            self.assertRaisesRegex(
+                TypeError,
+                "cannot be interpreted as an integer",
+                text_io.readline,
+                "not_int",
+            )
+
+    def test_readline_reads_line_terminated_by_newline(self):
+        with _io.TextIOWrapper(_io.BytesIO(b"foo\nbar")) as text_io:
+            self.assertEqual(text_io.readline(), "foo\n")
+            self.assertEqual(text_io.readline(), "bar")
+            self.assertEqual(text_io.readline(), "")
+
+    def test_readline_reads_line_terminated_by_cr(self):
+        with _io.TextIOWrapper(_io.BytesIO(b"foo\rbar")) as text_io:
+            self.assertEqual(text_io.readline(), "foo\n")
+            self.assertEqual(text_io.readline(), "bar")
+            self.assertEqual(text_io.readline(), "")
+
+    def test_readline_reads_line_terminated_by_crlf(self):
+        with _io.TextIOWrapper(_io.BytesIO(b"foo\r\nbar")) as text_io:
+            self.assertEqual(text_io.readline(), "foo\n")
+            self.assertEqual(text_io.readline(), "bar")
+            self.assertEqual(text_io.readline(), "")
+
+    def test_readline_reads_line_with_only_cr(self):
+        with _io.TextIOWrapper(_io.BytesIO(b"\r")) as text_io:
+            self.assertEqual(text_io.readline(), "\n")
+            self.assertEqual(text_io.readline(), "")
+
+    def test_truncate_with_closed_buffer_raises_value_error(self):
+        text_io = self._sample()
+        text_io.close()
+        self.assertRaisesRegex(ValueError, "closed", text_io.truncate)
+
+    def test_truncate_with_detached_buffer_raises_value_error(self):
+        text_io = self._sample()
+        text_io.detach()
+        self.assertRaisesRegex(ValueError, "detached", text_io.truncate)
+
+    def test_truncate_calls_buffer_flush(self):
+        class C(_io.BytesIO):
+            flush = Mock(name="flush")
+
+        with C(b"hello") as bytes_io:
+            with _io.TextIOWrapper(C()) as text_io:
+                bytes_io.flush.assert_not_called()
+                text_io.truncate()
+                bytes_io.flush.assert_called_once()
+
+    def test_truncate_calls_buffer_truncate(self):
+        class C(_io.BytesIO):
+            truncate = Mock(name="truncate")
+
+        with C(b"hello") as bytes_io:
+            with _io.TextIOWrapper(C()) as text_io:
+                bytes_io.truncate.assert_not_called()
+                text_io.truncate()
+                bytes_io.truncate.assert_called_once()
+
+    def test_write_writes_chars(self):
+        with _io.TextIOWrapper(_io.BytesIO()) as text_io:
+            self.assertEqual(text_io.write("foo"), 3)
+            text_io.seek(0)
+            self.assertEqual(text_io.read(), "foo")
 
 
 if __name__ == "__main__":

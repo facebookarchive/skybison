@@ -151,6 +151,7 @@ class WARN_UNUSED Handle : public T {
   V(StrArray)                                                                  \
   V(StrIterator)                                                               \
   V(Super)                                                                     \
+  V(TextIOWrapper)                                                             \
   V(Tuple)                                                                     \
   V(TupleIterator)                                                             \
   V(TypeProxy)                                                                 \

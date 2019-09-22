@@ -23,10 +23,12 @@ const BuiltinType UnderIoModule::kBuiltinTypes[] = {
     {SymbolId::kFileIO, LayoutId::kFileIO},
     {SymbolId::kIncrementalNewlineDecoder,
      LayoutId::kIncrementalNewlineDecoder},
+    {SymbolId::kTextIOWrapper, LayoutId::kTextIOWrapper},
     {SymbolId::kUnderBufferedIOBase, LayoutId::kUnderBufferedIOBase},
     {SymbolId::kUnderBufferedIOMixin, LayoutId::kUnderBufferedIOMixin},
     {SymbolId::kUnderIOBase, LayoutId::kUnderIOBase},
     {SymbolId::kUnderRawIOBase, LayoutId::kUnderRawIOBase},
+    {SymbolId::kUnderTextIOBase, LayoutId::kUnderTextIOBase},
     {SymbolId::kSentinelId, LayoutId::kSentinelId},
 };
 
@@ -116,6 +118,28 @@ const BuiltinAttribute FileIOBuiltins::kAttributes[] = {
     {SymbolId::kUnderAppending, FileIO::kAppendingOffset},
     {SymbolId::kUnderSeekable, FileIO::kSeekableOffset},
     {SymbolId::kUnderCloseFd, FileIO::kCloseFdOffset},
+    {SymbolId::kSentinelId, 0},
+};
+
+const BuiltinAttribute TextIOWrapperBuiltins::kAttributes[] = {
+    {SymbolId::kUnderB2cratio, TextIOWrapper::kB2cratioOffset},
+    {SymbolId::kUnderBuffer, TextIOWrapper::kBufferOffset},
+    {SymbolId::kUnderDecodedChars, TextIOWrapper::kDecodedCharsOffset},
+    {SymbolId::kUnderDecodedCharsUsed, TextIOWrapper::kDecodedCharsUsedOffset},
+    {SymbolId::kUnderDecoder, TextIOWrapper::kDecoderOffset},
+    {SymbolId::kUnderEncoder, TextIOWrapper::kEncoderOffset},
+    {SymbolId::kUnderEncoding, TextIOWrapper::kEncodingOffset},
+    {SymbolId::kUnderErrors, TextIOWrapper::kErrorsOffset},
+    {SymbolId::kUnderHasRead1, TextIOWrapper::kHasRead1Offset},
+    {SymbolId::kUnderLineBuffering, TextIOWrapper::kLineBufferingOffset},
+    {SymbolId::kUnderReadnl, TextIOWrapper::kReadnlOffset},
+    {SymbolId::kUnderReadtranslate, TextIOWrapper::kReadtranslateOffset},
+    {SymbolId::kUnderReaduniversal, TextIOWrapper::kReaduniversalOffset},
+    {SymbolId::kUnderSeekable, TextIOWrapper::kSeekableOffset},
+    {SymbolId::kUnderSnapshot, TextIOWrapper::kSnapshotOffset},
+    {SymbolId::kUnderTelling, TextIOWrapper::kTellingOffset},
+    {SymbolId::kUnderWritenl, TextIOWrapper::kWritenlOffset},
+    {SymbolId::kUnderWritetranslate, TextIOWrapper::kWritetranslateOffset},
     {SymbolId::kSentinelId, 0},
 };
 

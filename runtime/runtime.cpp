@@ -1632,6 +1632,10 @@ void Runtime::initializeHeapTypes() {
   BufferedReaderBuiltins::initialize(this);
   // FileIO is a subclass of _RawIOBase
   FileIOBuiltins::initialize(this);
+  // _TextIOBase is a subclass of _IOBase
+  UnderTextIOBaseBuiltins::initialize(this);
+  // TextIOWrapper is a subclass of _TextIOBase
+  TextIOWrapperBuiltins::initialize(this);
 }
 
 void Runtime::initializeExceptionTypes() {

@@ -12,6 +12,11 @@ _object_type_getattr = _object_type_getattr  # noqa: F821
 _patch = _patch  # noqa: F821
 _str_check = _str_check  # noqa: F821
 
+# TODO(emacs): Detect if "posix" or "nt" is in sys.builtin_module_names and set
+# linesep accordingly
+name = "posix"
+linesep = "\n"
+
 
 @_patch
 def close(fd):

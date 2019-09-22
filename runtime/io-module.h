@@ -79,4 +79,15 @@ class FileIOBuiltins
   static const BuiltinAttribute kAttributes[];
 };
 
+class UnderTextIOBaseBuiltins
+    : public Builtins<UnderTextIOBaseBuiltins, SymbolId::kUnderTextIOBase,
+                      LayoutId::kUnderTextIOBase, LayoutId::kUnderIOBase> {};
+
+class TextIOWrapperBuiltins
+    : public Builtins<TextIOWrapperBuiltins, SymbolId::kTextIOWrapper,
+                      LayoutId::kTextIOWrapper, LayoutId::kUnderTextIOBase> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+};
+
 }  // namespace python

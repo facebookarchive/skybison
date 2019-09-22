@@ -140,6 +140,7 @@ class Runtime;
   V(UnderAppending, "_appending")                                              \
   V(UnderAsciiDecode, "_ascii_decode")                                         \
   V(UnderAsciiEncode, "_ascii_encode")                                         \
+  V(UnderB2cratio, "_b2cratio")                                                \
   V(UnderBaseDir, "_base_dir")                                                 \
   V(UnderBases, "_bases")                                                      \
   V(UnderBootstrap, "_bootstrap")                                              \
@@ -188,6 +189,8 @@ class Runtime;
   V(UnderComplexImag, "_complex_imag")                                         \
   V(UnderComplexReal, "_complex_real")                                         \
   V(UnderCreated, "_created")                                                  \
+  V(UnderDecodedChars, "_decoded_chars")                                       \
+  V(UnderDecodedCharsUsed, "_decoded_chars_used")                              \
   V(UnderDecoder, "_decoder")                                                  \
   V(UnderDelattr, "_delattr")                                                  \
   V(UnderDeleter, "_deleter")                                                  \
@@ -207,6 +210,8 @@ class Runtime;
   V(UnderDictSetItem, "_dict_setitem")                                         \
   V(UnderDictUpdateMapping, "_dict_update_mapping")                            \
   V(UnderDivmod, "_divmod")                                                    \
+  V(UnderEncoder, "_encoder")                                                  \
+  V(UnderEncoding, "_encoding")                                                \
   V(UnderEq, "_eq")                                                            \
   V(UnderErrors, "_errors")                                                    \
   V(UnderEscapeDecode, "_escape_decode")                                       \
@@ -242,6 +247,7 @@ class Runtime;
   V(UnderGetMemberUInt, "_get_member_uint")                                    \
   V(UnderGetMemberULong, "_get_member_ulong")                                  \
   V(UnderGetMemberUShort, "_get_member_ushort")                                \
+  V(UnderHasRead1, "_has_read1")                                               \
   V(UnderHashInfo, "_HashInfo")                                                \
   V(UnderImp, "_imp")                                                          \
   V(UnderIndex, "_index")                                                      \
@@ -263,6 +269,7 @@ class Runtime;
   V(UnderIo, "_io")                                                            \
   V(UnderLatin1Decode, "_latin_1_decode")                                      \
   V(UnderLatin1Encode, "_latin_1_encode")                                      \
+  V(UnderLineBuffering, "_line_buffering")                                     \
   V(UnderListCheck, "_list_check")                                             \
   V(UnderListCheckExact, "_list_checkexact")                                   \
   V(UnderListDelitem, "_list_delitem")                                         \
@@ -337,6 +344,9 @@ class Runtime;
   V(UnderReadLock, "_read_lock")                                               \
   V(UnderReadPos, "_read_pos")                                                 \
   V(UnderReadable, "_readable")                                                \
+  V(UnderReadnl, "_readnl")                                                    \
+  V(UnderReadtranslate, "_readtranslate")                                      \
+  V(UnderReaduniversal, "_readuniversal")                                      \
   V(UnderReferent, "_referent")                                                \
   V(UnderReprEnter, "_repr_enter")                                             \
   V(UnderReprLeave, "_repr_leave")                                             \
@@ -360,6 +370,7 @@ class Runtime;
   V(UnderSliceStart, "_slice_start")                                           \
   V(UnderSliceStep, "_slice_step")                                             \
   V(UnderSliceStop, "_slice_stop")                                             \
+  V(UnderSnapshot, "_snapshot")                                                \
   V(UnderStaticMethodIsAbstract, "_staticmethod_isabstract")                   \
   V(UnderStderrFd, "_stderr_fd")                                               \
   V(UnderStdout, "_stdout")                                                    \
@@ -384,6 +395,8 @@ class Runtime;
   V(UnderStructseqGetItem, "_structseq_getitem")                               \
   V(UnderStructseqNew, "_structseq_new")                                       \
   V(UnderStructseqRepr, "_structseq_repr")                                     \
+  V(UnderTelling, "_telling")                                                  \
+  V(UnderTextIOBase, "_TextIOBase")                                            \
   V(UnderThread, "_thread")                                                    \
   V(UnderTupleCheck, "_tuple_check")                                           \
   V(UnderTupleCheckExact, "_tuple_checkexact")                                 \
@@ -426,6 +439,8 @@ class Runtime;
   V(UnderWeakLink, "_weaklink")                                                \
   V(UnderWeakRef, "_weakref")                                                  \
   V(UnderWritable, "_writable")                                                \
+  V(UnderWritenl, "_writenl")                                                  \
+  V(UnderWritetranslate, "_writetranslate")                                    \
   V(Abs, "abs")                                                                \
   V(AcquireLock, "acquire_lock")                                               \
   V(Add, "add")                                                                \
@@ -767,6 +782,7 @@ class Runtime;
   V(SystemExit, "SystemExit")                                                  \
   V(TabError, "TabError")                                                      \
   V(Text, "text")                                                              \
+  V(TextIOWrapper, "TextIOWrapper")                                            \
   V(Throw, "throw")                                                            \
   V(Time, "time")                                                              \
   V(TimeoutError, "TimeoutError")                                              \
