@@ -13,12 +13,35 @@ class accumulate:
 
 
 class chain:
-    def __init__(self, p, q, *args):
-        _unimplemented()
+    def __iter__(self):
+        return self
 
-    @staticmethod
-    def from_iterable(*args):
-        _unimplemented()
+    def __new__(cls, *iterables):
+        result = super(chain, cls).__new__(cls)
+        result._it = None
+        result._iterables = iter(iterables)
+        return result
+
+    def __next__(self):
+        while True:
+            if self._it is None:
+                try:
+                    self._it = iter(next(self._iterables))
+                except StopIteration:
+                    raise
+            try:
+                result = next(self._it)
+            except StopIteration:
+                self._it = None
+                continue
+            return result
+
+    @classmethod
+    def from_iterable(cls, iterable):
+        result = super(chain, cls).__new__(cls)
+        result._it = None
+        result._iterables = iter(iterable)
+        return result
 
 
 class combinations:

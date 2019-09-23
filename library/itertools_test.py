@@ -3,6 +3,59 @@ import itertools
 import unittest
 
 
+class ChainTest(unittest.TestCase):
+    def test_chain_with_no_iterables_returns_stoped_iterator(self):
+        self.assertTupleEqual(tuple(itertools.chain()), ())
+
+    def test_chain_with_empty_iterables_returns_stoped_iterator(self):
+        self.assertTupleEqual(tuple(itertools.chain([])), ())
+        self.assertTupleEqual(tuple(itertools.chain([], [])), ())
+        self.assertTupleEqual(tuple(itertools.chain([], [], [])), ())
+
+    def test_chain_with_one_iterable(self):
+        self.assertTupleEqual(tuple(itertools.chain("1")), ("1",))
+        self.assertTupleEqual(tuple(itertools.chain("12")), ("1", "2"))
+        self.assertTupleEqual(tuple(itertools.chain("123")), ("1", "2", "3"))
+
+    def test_chain_with_many_iterables(self):
+        self.assertTupleEqual(tuple(itertools.chain("1", "")), ("1",))
+        self.assertTupleEqual(tuple(itertools.chain("1", "2")), ("1", "2"))
+        self.assertTupleEqual(tuple(itertools.chain("12", "")), ("1", "2"))
+        self.assertTupleEqual(tuple(itertools.chain("12", "3")), ("1", "2", "3"))
+        self.assertTupleEqual(tuple(itertools.chain("12", "34")), ("1", "2", "3", "4"))
+        self.assertTupleEqual(tuple(itertools.chain("", "1")), ("1",))
+        self.assertTupleEqual(tuple(itertools.chain("", "1", "")), ("1",))
+        self.assertTupleEqual(tuple(itertools.chain("1", "23")), ("1", "2", "3"))
+        self.assertTupleEqual(tuple(itertools.chain("1", "23", "")), ("1", "2", "3"))
+        self.assertTupleEqual(tuple(itertools.chain("1", "2", "3")), ("1", "2", "3"))
+
+    def test_from_iterable(self):
+        self.assertTupleEqual(tuple(itertools.chain.from_iterable([])), ())
+        self.assertTupleEqual(tuple(itertools.chain.from_iterable([""])), ())
+        self.assertTupleEqual(tuple(itertools.chain.from_iterable(["1"])), ("1",))
+        self.assertTupleEqual(tuple(itertools.chain.from_iterable(["12"])), ("1", "2"))
+        self.assertTupleEqual(
+            tuple(itertools.chain.from_iterable(["12", ""])), ("1", "2")
+        )
+        self.assertTupleEqual(
+            tuple(itertools.chain.from_iterable(["12", "3"])), ("1", "2", "3")
+        )
+        self.assertTupleEqual(
+            tuple(itertools.chain.from_iterable(["12", "34"])), ("1", "2", "3", "4")
+        )
+        self.assertTupleEqual(
+            tuple(itertools.chain.from_iterable(["12", "34", ""])), ("1", "2", "3", "4")
+        )
+        self.assertTupleEqual(
+            tuple(itertools.chain.from_iterable(["12", "34", "5"])),
+            ("1", "2", "3", "4", "5"),
+        )
+        self.assertTupleEqual(
+            tuple(itertools.chain.from_iterable(["12", "34", "56"])),
+            ("1", "2", "3", "4", "5", "6"),
+        )
+
+
 class ItertoolsTests(unittest.TestCase):
     def test_count_with_int_returns_iterator(self):
         iterator = itertools.count(start=7, step=-2)
