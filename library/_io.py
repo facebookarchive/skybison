@@ -479,7 +479,7 @@ class _TextIOBase(_IOBase):
         return None
 
 
-class _RawIOBase(bootstrap=True):
+class _RawIOBase(_IOBase, bootstrap=True):
     """Base class for raw binary I/O."""
 
     def read(self, size=-1):
@@ -542,7 +542,7 @@ class _RawIOBase(bootstrap=True):
         raise NotImplementedError("write")
 
 
-class _BufferedIOBase(bootstrap=True):
+class _BufferedIOBase(_IOBase, bootstrap=True):
     """Base class for buffered IO objects.
 
     The main difference with RawIOBase is that the read() method
