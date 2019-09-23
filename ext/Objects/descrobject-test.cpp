@@ -130,6 +130,44 @@ TEST_F(DescrExtensionApiTest, ClassMethodCallWithNonBoundClassRaisesTypeError) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
+TEST_F(DescrExtensionApiTest, DictProxyNewWithMappingReturnsMappingProxy) {
+  PyObjectPtr dict(PyDict_New());
+  PyObject* key = PyLong_FromLong(10);
+  PyObject* value = PyLong_FromLong(54321);
+  // Insert the value into the dictionary
+  ASSERT_EQ(PyDict_SetItem(dict, key, value), 0);
+
+  PyObjectPtr result(PyDictProxy_New(dict));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  // Verify that __getitem__ returns the result from the embedded mapping.
+  moduleSet("__main__", "foo", result);
+  PyRun_SimpleString("value_from_proxy = foo[10]");
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr value_from_proxy(moduleGet("__main__", "value_from_proxy"));
+  EXPECT_TRUE(PyLong_CheckExact(value_from_proxy));
+  EXPECT_EQ(PyLong_AsDouble(value_from_proxy), 54321.0);
+
+  // Verify that __setitem__ fails by raising TypeError.
+  PyRun_SimpleString(R"(
+type_error_caught = False
+try:
+  foo["random"] = 124134
+except TypeError:
+  type_error_caught = True
+)");
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  PyObjectPtr type_error_caught(moduleGet("__main__", "type_error_caught"));
+  EXPECT_EQ(type_error_caught, Py_True);
+}
+
+TEST_F(DescrExtensionApiTest, DictProxyNewWithNonMappingReturnsMappingProxy) {
+  PyObjectPtr non_mapping(PyTuple_New(1));
+  EXPECT_EQ(PyDictProxy_New(non_mapping), nullptr);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(DescrExtensionApiTest, MethodAsDescriptorReturnsFunction) {
   ASSERT_NO_FATAL_FAILURE(createEmptyBarType());
   binaryfunc meth = [](PyObject* self, PyObject* args) {

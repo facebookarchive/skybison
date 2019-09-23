@@ -25,8 +25,15 @@ PY_EXPORT PyObject* PyDescr_NewClassMethod(PyTypeObject* type,
   return ApiHandle::newReference(thread, *result);
 }
 
-PY_EXPORT PyObject* PyDictProxy_New(PyObject* /* g */) {
-  UNIMPLEMENTED("PyDictProxy_New");
+PY_EXPORT PyObject* PyDictProxy_New(PyObject* mapping) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object mapping_obj(&scope, ApiHandle::fromPyObject(mapping)->asObject());
+  Object result(&scope,
+                thread->invokeFunction1(SymbolId::kBuiltins,
+                                        SymbolId::kMappingProxy, mapping_obj));
+  if (result.isError()) return nullptr;
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT PyObject* PyDescr_NewGetSet(PyTypeObject* /* e */,
