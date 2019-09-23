@@ -62,6 +62,7 @@ class Handle;
   V(List)                                                                      \
   V(ListIterator)                                                              \
   V(LongRangeIterator)                                                         \
+  V(MappingProxy)                                                              \
   V(MemoryView)                                                                \
   V(Module)                                                                    \
   V(ModuleProxy)                                                               \
@@ -313,6 +314,7 @@ class RawObject {
   bool isListIterator() const;
   bool isLongRangeIterator() const;
   bool isLookupError() const;
+  bool isMappingProxy() const;
   bool isMemoryView() const;
   bool isModule() const;
   bool isModuleNotFoundError() const;
@@ -2028,6 +2030,19 @@ class RawInstance : public RawHeapObject {
   RAW_OBJECT_COMMON(Instance);
 };
 
+class RawMappingProxy : public RawHeapObject {
+ public:
+  // Setters and getters.
+  RawObject mapping() const;
+  void setMapping(RawObject mapping) const;
+
+  // Layout.
+  static const int kMappingOffset = RawHeapObject::kSize;
+  static const int kSize = kMappingOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(MappingProxy);
+};
+
 // Descriptor for a block of memory.
 // Contrary to cpython, this is a reference to a `bytes` object which may be
 // moved around by the garbage collector.
@@ -3437,6 +3452,10 @@ inline bool RawObject::isLongRangeIterator() const {
 
 inline bool RawObject::isLookupError() const {
   return isHeapObjectWithLayout(LayoutId::kLookupError);
+}
+
+inline bool RawObject::isMappingProxy() const {
+  return isHeapObjectWithLayout(LayoutId::kMappingProxy);
 }
 
 inline bool RawObject::isMemoryView() const {
@@ -5453,6 +5472,16 @@ inline void RawList::atPut(word index, RawObject value) const {
 inline RawObject RawList::at(word index) const {
   DCHECK_INDEX(index, numItems());
   return RawTuple::cast(items()).at(index);
+}
+
+// RawMappingProxy
+
+inline RawObject RawMappingProxy::mapping() const {
+  return RawMappingProxy::instanceVariableAt(kMappingOffset);
+}
+
+inline void RawMappingProxy::setMapping(RawObject mapping) const {
+  instanceVariableAtPut(kMappingOffset, mapping);
 }
 
 // RawMemoryView

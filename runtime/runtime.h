@@ -84,6 +84,7 @@ class Runtime {
   RawObject newBytesIterator(Thread* thread, const Bytes& bytes);
 
   RawObject newType();
+
   RawObject newTypeWithMetaclass(LayoutId metaclass_id);
 
   RawObject newTypeProxy(const Type& type);

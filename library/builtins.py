@@ -97,6 +97,9 @@ _list_guard = _list_guard  # noqa: F821
 _list_len = _list_len  # noqa: F821
 _list_sort = _list_sort  # noqa: F821
 _list_swap = _list_swap  # noqa: F821
+_mappingproxy_guard = _mappingproxy_guard  # noqa: F821
+_mappingproxy_mapping = _mappingproxy_mapping  # noqa: F821
+_mappingproxy_set_mapping = _mappingproxy_set_mapping  # noqa: F821
 _memoryview_guard = _memoryview_guard  # noqa: F821
 _memoryview_itemsize = _memoryview_itemsize  # noqa: F821
 _memoryview_nbytes = _memoryview_nbytes  # noqa: F821
@@ -171,6 +174,7 @@ _type_init = _type_init  # noqa: F821
 _type_issubclass = _type_issubclass  # noqa: F821
 _type_new = _type_new  # noqa: F821
 _type_proxy = _type_proxy  # noqa: F821
+_type_proxy_check = _type_proxy_check  # noqa: F821
 _type_proxy_get = _type_proxy_get  # noqa: F821
 _type_proxy_guard = _type_proxy_guard  # noqa: F821
 _type_proxy_keys = _type_proxy_keys  # noqa: F821
@@ -287,7 +291,7 @@ class type(bootstrap=True):
 
     @_property
     def __dict__(self):
-        return _type_proxy(self)
+        return mappingproxy(_type_proxy(self))
 
     def __call__(self, *args, **kwargs):
         pass
@@ -3233,6 +3237,68 @@ class map:
         if self.len_iters == 1:
             return func(next(self.iters[0]))
         return func(*[next(iter) for iter in self.iters])
+
+
+class mappingproxy(bootstrap=True):
+    def __contains__(self, key):
+        _mappingproxy_guard(self)
+        return key in _mappingproxy_mapping(self)
+
+    def __eq__(self, other):
+        _mappingproxy_guard(self)
+        return _mappingproxy_mapping(self) == other
+
+    def __getitem__(self, key):
+        _mappingproxy_guard(self)
+        return _mappingproxy_mapping(self)[key]
+
+    def __init__(self, mapping):
+        _mappingproxy_guard(self)
+        if _dict_check(mapping) or _type_proxy_check(mapping):
+            _mappingproxy_set_mapping(self, mapping)
+            return
+
+        from collections.abc import Mapping
+
+        if not isinstance(mapping, Mapping):
+            raise TypeError(
+                f"mappingproxy() argument must be a mapping, "
+                f"not {_type(mapping).__name__}"
+            )
+        _mappingproxy_set_mapping(self, mapping)
+
+    def __iter__(self):
+        _mappingproxy_guard(self)
+        return iter(_mappingproxy_mapping(self))
+
+    def __len__(self):
+        _mappingproxy_guard(self)
+        return len(_mappingproxy_mapping(self))
+
+    def __repr__(self):
+        _mappingproxy_guard(self)
+        enclosed_result = repr(_mappingproxy_mapping(self))  # noqa: F841
+        return f"mappingproxy({enclosed_result})"
+
+    def copy(self):
+        _mappingproxy_guard(self)
+        return _mappingproxy_mapping(self).copy()
+
+    def get(self, key, default=None):
+        _mappingproxy_guard(self)
+        return _mappingproxy_mapping(self).get(key, default)
+
+    def items(self):
+        _mappingproxy_guard(self)
+        return _mappingproxy_mapping(self).items()
+
+    def keys(self):
+        _mappingproxy_guard(self)
+        return _mappingproxy_mapping(self).keys()
+
+    def values(self):
+        _mappingproxy_guard(self)
+        return _mappingproxy_mapping(self).values()
 
 
 def max(arg1, arg2=_Unbound, *args, key=_Unbound, default=_Unbound):  # noqa: C901

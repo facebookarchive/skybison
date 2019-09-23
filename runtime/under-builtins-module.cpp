@@ -165,6 +165,9 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderListLen, underListLen},
     {SymbolId::kUnderListSort, underListSort},
     {SymbolId::kUnderListSwap, underListSwap},
+    {SymbolId::kUnderMappingProxyGuard, underMappingProxyGuard},
+    {SymbolId::kUnderMappingProxyMapping, underMappingProxyMapping},
+    {SymbolId::kUnderMappingProxySetMapping, underMappingProxySetMapping},
     {SymbolId::kUnderMemoryviewGuard, underMemoryviewGuard},
     {SymbolId::kUnderMemoryviewItemsize, underMemoryviewItemsize},
     {SymbolId::kUnderMemoryviewNbytes, underMemoryviewNbytes},
@@ -239,6 +242,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderTypeIsSubclass, underTypeIsSubclass},
     {SymbolId::kUnderTypeNew, underTypeNew},
     {SymbolId::kUnderTypeProxy, underTypeProxy},
+    {SymbolId::kUnderTypeProxyCheck, underTypeProxyCheck},
     {SymbolId::kUnderTypeProxyGet, underTypeProxyGet},
     {SymbolId::kUnderTypeProxyGuard, underTypeProxyGuard},
     {SymbolId::kUnderTypeProxyKeys, underTypeProxyKeys},
@@ -2294,6 +2298,35 @@ RawObject UnderBuiltinsModule::underListSwap(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
+RawObject UnderBuiltinsModule::underMappingProxyGuard(Thread* thread,
+                                                      Frame* frame,
+                                                      word nargs) {
+  Arguments args(frame, nargs);
+  if (args.get(0).isMappingProxy()) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kMappingProxy);
+}
+
+RawObject UnderBuiltinsModule::underMappingProxyMapping(Thread* thread,
+                                                        Frame* frame,
+                                                        word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  MappingProxy mappingproxy(&scope, args.get(0));
+  return mappingproxy.mapping();
+}
+
+RawObject UnderBuiltinsModule::underMappingProxySetMapping(Thread* thread,
+                                                           Frame* frame,
+                                                           word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  MappingProxy mappingproxy(&scope, args.get(0));
+  mappingproxy.setMapping(args.get(1));
+  return *mappingproxy;
+}
+
 RawObject UnderBuiltinsModule::underMemoryviewGuard(Thread* thread,
                                                     Frame* frame, word nargs) {
   Arguments args(frame, nargs);
@@ -3202,6 +3235,12 @@ RawObject UnderBuiltinsModule::underTypeProxy(Thread* thread, Frame* frame,
     type.setProxy(thread->runtime()->newTypeProxy(type));
   }
   return type.proxy();
+}
+
+RawObject UnderBuiltinsModule::underTypeProxyCheck(Thread*, Frame* frame,
+                                                   word nargs) {
+  Arguments args(frame, nargs);
+  return Bool::fromBool(args.get(0).isTypeProxy());
 }
 
 RawObject UnderBuiltinsModule::underTypeProxyGet(Thread* thread, Frame* frame,

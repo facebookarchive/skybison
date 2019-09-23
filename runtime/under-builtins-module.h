@@ -148,6 +148,12 @@ class UnderBuiltinsModule {
   static RawObject underListLen(Thread* thread, Frame* frame, word nargs);
   static RawObject underListSort(Thread* thread, Frame* frame, word nargs);
   static RawObject underListSwap(Thread* thread, Frame* frame, word nargs);
+  static RawObject underMappingProxyGuard(Thread* thread, Frame* frame,
+                                          word nargs);
+  static RawObject underMappingProxyMapping(Thread* thread, Frame* frame,
+                                            word nargs);
+  static RawObject underMappingProxySetMapping(Thread* thread, Frame* frame,
+                                               word nargs);
   static RawObject underMemoryviewGuard(Thread* thread, Frame* frame,
                                         word nargs);
   static RawObject underMemoryviewItemsize(Thread* thread, Frame* frame,
@@ -250,6 +256,8 @@ class UnderBuiltinsModule {
                                        word nargs);
   static RawObject underTypeNew(Thread* thread, Frame* frame, word nargs);
   static RawObject underTypeProxy(Thread* thread, Frame* frame, word nargs);
+  static RawObject underTypeProxyCheck(Thread* thread, Frame* frame,
+                                       word nargs);
   static RawObject underTypeProxyGet(Thread* thread, Frame* frame, word nargs);
   static RawObject underTypeProxyGuard(Thread* thread, Frame* frame,
                                        word nargs);

@@ -488,6 +488,21 @@ def _lt(obj, other):
 
 
 @_patch
+def _mappingproxy_guard(obj):
+    pass
+
+
+@_patch
+def _mappingproxy_mapping(obj):
+    pass
+
+
+@_patch
+def _mappingproxy_set_mapping(obj, mapping):
+    pass
+
+
+@_patch
 def _memoryview_guard(obj):
     pass
 
@@ -864,12 +879,17 @@ def _type_new(cls, bases):
 
 
 @_patch
+def _type_proxy_check(obj):
+    pass
+
+
+@_patch
 def _type_proxy_get(self, key, default):
     pass
 
 
 @_patch
-def _type_proxy_guard(module):
+def _type_proxy_guard(obj):
     pass
 
 

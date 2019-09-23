@@ -4194,6 +4194,113 @@ class LongRangeIteratorTests(unittest.TestCase):
             self.assertEqual(it.__next__(), i)
 
 
+class MappingProxyTests(unittest.TestCase):
+    def setUp(self):
+        self.mappingproxy_type = type(type.__dict__)
+        self.proxy = self.mappingproxy_type({"a": 4})
+
+    def test_dunder_contains_with_non_mappingproxy_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            self.mappingproxy_type.__contains__(None, None)
+
+    def test_dunder_contains_returns_result_from_mapping(self):
+        self.assertTrue("a" in self.proxy)
+        self.assertFalse("b" in self.proxy)
+
+    def test_dunder_delitem_doesn_not_exist(self):
+        self.assertFalse(hasattr(self.mappingproxy_type, "__delitem__"))
+
+    def test_dunder_getitem_with_non_mappingproxy_type_error(self):
+        with self.assertRaises(TypeError):
+            self.mappingproxy_type.__getitem__(None, None)
+
+    def test_dunder_getitem_from_mapping(self):
+        self.assertEqual(self.proxy["a"], 4)
+
+    def test_dunder_init_with_non_mapping_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            self.mappingproxy_type(1)
+        self.assertIn(
+            "mappingproxy() argument must be a mapping, not int", str(context.exception)
+        )
+
+    def test_dunder_init_with_mapping_returns_mappingproxy(self):
+        m = self.mappingproxy_type({"age": 999, "dexterity": -34})
+        self.assertIsInstance(m, self.mappingproxy_type)
+
+    def test_dunder_iter_with_non_mappingproxy_type_error(self):
+        with self.assertRaises(TypeError):
+            self.mappingproxy_type.__iter__(None)
+
+    def test_dunder_iter_returns_result_from_mapping(self):
+        it = iter(self.proxy)
+        self.assertEqual(next(it), "a")
+        with self.assertRaises(StopIteration):
+            next(it)
+
+    def test_dunder_len_with_non_mappingproxy_type_error(self):
+        with self.assertRaises(TypeError):
+            self.mappingproxy_type.__len__(None)
+
+    def test_dunder_len_returns_result_from_mapping(self):
+        self.assertEqual(len(self.proxy), 1)
+
+    def test_dunder_repr_with_non_mappingproxy_type_error(self):
+        with self.assertRaises(TypeError):
+            self.mappingproxy_type.__repr__(None)
+
+    def test_dunder_repr_returns_result_from_mapping_with_mappingproxy_prefix(self):
+        self.assertEqual(repr(self.proxy), "mappingproxy({'a': 4})")
+
+    def test_dunder_setitem_doesn_not_exist(self):
+        self.assertFalse(hasattr(self.mappingproxy_type, "__setitem__"))
+
+    def test_clear_doesn_not_exist(self):
+        self.assertFalse(hasattr(self.mappingproxy_type, "clear"))
+
+    def test_copy_with_non_mappingproxy_type_error(self):
+        with self.assertRaises(TypeError):
+            self.mappingproxy_type.copy(None)
+
+    def test_items_returns_result_from_mapping(self):
+        it = iter(self.proxy.items())
+        self.assertEqual(next(it), ("a", 4))
+        with self.assertRaises(StopIteration):
+            next(it)
+
+    def test_keys_with_non_mappingproxy_type_error(self):
+        with self.assertRaises(TypeError):
+            self.mappingproxy_type.keys(None)
+
+    def test_keys_returns_result_from_mapping(self):
+        it = iter(self.proxy.keys())
+        self.assertEqual(next(it), "a")
+        with self.assertRaises(StopIteration):
+            next(it)
+
+    def test_pop_doesn_not_exist(self):
+        self.assertFalse(hasattr(self.mappingproxy_type, "pop"))
+
+    def test_popitem_doesn_not_exist(self):
+        self.assertFalse(hasattr(self.mappingproxy_type, "popitem"))
+
+    def test_setdefault_doesn_not_exist(self):
+        self.assertFalse(hasattr(self.mappingproxy_type, "setdefault"))
+
+    def test_update_doesn_not_exist(self):
+        self.assertFalse(hasattr(self.mappingproxy_type, "update"))
+
+    def test_values_with_non_mappingproxy_type_error(self):
+        with self.assertRaises(TypeError):
+            self.mappingproxy_type.values(None)
+
+    def test_values_with_non_mappingproxy_type_error(self):
+        it = iter(self.proxy.values())
+        self.assertEqual(next(it), 4)
+        with self.assertRaises(StopIteration):
+            next(it)
+
+
 class MemoryviewTests(unittest.TestCase):
     def test_itemsize_returns_size_of_item_chars(self):
         src = b"abcd"

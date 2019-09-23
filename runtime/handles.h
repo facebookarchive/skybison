@@ -128,6 +128,7 @@ class WARN_UNUSED Handle : public T {
   V(ListIterator)                                                              \
   V(LongRangeIterator)                                                         \
   V(LookupError)                                                               \
+  V(MappingProxy)                                                              \
   V(MemoryView)                                                                \
   V(ModuleProxy)                                                               \
   V(ModuleNotFoundError)                                                       \

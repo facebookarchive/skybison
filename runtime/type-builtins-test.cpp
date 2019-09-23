@@ -461,7 +461,7 @@ TEST_F(TypeBuiltinsTest, TypeHasDunderDictAttribute) {
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = str.__class__.__dict__").isError());
   Object result(&scope, mainModuleAt(&runtime_, "result"));
-  EXPECT_TRUE(result.isTypeProxy());
+  EXPECT_TRUE(result.isMappingProxy());
 }
 
 TEST_F(TypeBuiltinsTest, TypeLookupNameInMroReturnsValue) {

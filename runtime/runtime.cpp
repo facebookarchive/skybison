@@ -1590,6 +1590,8 @@ void Runtime::initializeHeapTypes() {
   ListIteratorBuiltins::initialize(this);
   LongRangeIteratorBuiltins::initialize(this);
   BoundMethodBuiltins::initialize(this);
+  addEmptyBuiltinType(SymbolId::kMappingProxy, LayoutId::kMappingProxy,
+                      LayoutId::kObject);
   MemoryViewBuiltins::initialize(this);
   ModuleBuiltins::initialize(this);
   ModuleProxyBuiltins::initialize(this);

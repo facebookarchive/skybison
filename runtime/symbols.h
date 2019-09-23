@@ -283,6 +283,9 @@ class Runtime;
   V(UnderListSwap, "_list_swap")                                               \
   V(UnderLookupText, "_lookup_text")                                           \
   V(UnderLt, "_lt")                                                            \
+  V(UnderMappingProxyGuard, "_mappingproxy_guard")                             \
+  V(UnderMappingProxyMapping, "_mappingproxy_mapping")                         \
+  V(UnderMappingProxySetMapping, "_mappingproxy_set_mapping")                  \
   V(UnderMemoryviewGuard, "_memoryview_guard")                                 \
   V(UnderMemoryviewItemsize, "_memoryview_itemsize")                           \
   V(UnderMemoryviewNbytes, "_memoryview_nbytes")                               \
@@ -421,6 +424,7 @@ class Runtime;
   V(UnderTypeIsSubclass, "_type_issubclass")                                   \
   V(UnderTypeNew, "_type_new")                                                 \
   V(UnderTypeProxy, "_type_proxy")                                             \
+  V(UnderTypeProxyCheck, "_type_proxy_check")                                  \
   V(UnderTypeProxyGet, "_type_proxy_get")                                      \
   V(UnderTypeProxyGuard, "_type_proxy_guard")                                  \
   V(UnderTypeProxyKeys, "_type_proxy_keys")                                    \
@@ -671,6 +675,7 @@ class Runtime;
   V(Maxsize, "maxsize")                                                        \
   V(Maxunicode, "maxunicode")                                                  \
   V(MemoryError, "MemoryError")                                                \
+  V(MappingProxy, "mappingproxy")                                              \
   V(MemoryView, "memoryview")                                                  \
   V(MetaPath, "meta_path")                                                     \
   V(Metaclass, "metaclass")                                                    \
