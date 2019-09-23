@@ -59,9 +59,7 @@ dict_keys = type({}.keys())
 dict_values = type({}.values())
 dict_items = type({}.items())
 ## misc ##
-#mappingproxy = type(type.__dict__)
-# TODO(T53314835): Use MappingProxyType.
-mappingproxy = dict
+mappingproxy = type(type.__dict__)
 generator = type((lambda: (yield))())
 # TODO(T42623564)
 ## coroutine ##
