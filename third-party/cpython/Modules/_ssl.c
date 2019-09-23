@@ -475,18 +475,8 @@ SSLError_str(PyOSErrorObject *self)
         return PyObject_Str(self->args);
 }
 
-static PyType_Slot sslerror_type_slots[] = {
-    {Py_tp_doc, SSLError_doc},
-    {Py_tp_str, SSLError_str},
-    {0, 0},
-};
-
-static PyType_Spec sslerror_type_spec = {
-    "ssl.SSLError",
-    sizeof(PyOSErrorObject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    sslerror_type_slots
+static PyMethodDef SSLError_dunder_str = {
+    "__str__", (PyCFunction)SSLError_str, METH_NOARGS
 };
 
 static void
@@ -5356,7 +5346,7 @@ parse_openssl_version(unsigned long libver,
 PyMODINIT_FUNC
 PyInit__ssl(void)
 {
-    PyObject *m, *r;
+    PyObject *m, *r, *dunder_str;
     unsigned long libver;
     unsigned int major, minor, fix, patch, status;
     PySocketModule_APIObject *socket_api;
@@ -5431,11 +5421,16 @@ PyInit__ssl(void)
 #endif  /* WITH_THREAD */
 
     /* Add symbols to module dict */
-    PyObject* bases = PyTuple_Pack(1, PyExc_OSError);
-    PyObject* PySSLErrorObject = PyType_FromSpecWithBases(&sslerror_type_spec, bases);
+    PyObject* PySSLErrorObject = PyErr_NewExceptionWithDoc(
+        "ssl.SSLError", SSLError_doc, PyExc_OSError, NULL);
     if (PySSLErrorObject == NULL)
         return NULL;
     _sslmodulestate(m)->PySSLErrorObject = PySSLErrorObject;
+
+    /* Add a custom __str__ to SSLErrorObject */
+    dunder_str = PyDescr_NewMethod((PyTypeObject *)PySSLErrorObject, &SSLError_dunder_str);
+    PyObject_SetAttrString(PySSLErrorObject, "__str__", dunder_str);
+    Py_DECREF(dunder_str);
 
     Py_INCREF(PySSLErrorObject);
     PyModule_AddObject(m, "SSLError", PySSLErrorObject);
