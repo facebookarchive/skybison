@@ -152,6 +152,42 @@ std::ostream& dumpExtendedHeapObject(std::ostream& os, RawHeapObject value) {
   return os;
 }
 
+std::ostream& dumpExtendedLayout(std::ostream& os, RawLayout value) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Layout layout(&scope, value);
+  os << "layout " << static_cast<word>(layout.id()) << ":\n";
+  Object type(&scope, layout.describedType());
+  os << "  described type: " << type << '\n';
+  os << "  num in-object attributes: " << layout.numInObjectAttributes()
+     << '\n';
+  Tuple in_object(&scope, layout.inObjectAttributes());
+  Runtime* runtime = thread->runtime();
+  Tuple entry(&scope, runtime->emptyTuple());
+  for (word i = 0, length = in_object.length(); i < length; i++) {
+    entry = in_object.at(i);
+    AttributeInfo info(entry.at(1));
+    os << "    " << entry.at(0) << " @ " << info.offset() << '\n';
+  }
+  Object overflow_attributes_obj(&scope, layout.overflowAttributes());
+  if (overflow_attributes_obj.isTuple()) {
+    os << "  overflow tuple:\n";
+    Tuple overflow_attributes(&scope, *overflow_attributes_obj);
+    for (word i = 0, length = overflow_attributes.length(); i < length; i++) {
+      entry = overflow_attributes.at(i);
+      AttributeInfo info(entry.at(1));
+      os << "    " << entry.at(0) << " @ " << info.offset() << '\n';
+    }
+  } else if (overflow_attributes_obj.isSmallInt()) {
+    word offset = RawSmallInt::cast(*overflow_attributes_obj).value();
+    os << "  overflow dict @ " << offset << '\n';
+  } else {
+    DCHECK(value.isSealed(), "remaining case should be sealed");
+    os << "  sealed\n";
+  }
+  return os;
+}
+
 std::ostream& dumpExtended(std::ostream& os, RawObject value) {
   LayoutId layout = value.layoutId();
   switch (layout) {
@@ -159,6 +195,8 @@ std::ostream& dumpExtended(std::ostream& os, RawObject value) {
       return dumpExtendedCode(os, Code::cast(value), "");
     case LayoutId::kFunction:
       return dumpExtendedFunction(os, Function::cast(value));
+    case LayoutId::kLayout:
+      return dumpExtendedLayout(os, Layout::cast(value));
     default:
       if (value.isInstance()) {
         return dumpExtendedHeapObject(os, RawHeapObject::cast(value));
@@ -298,36 +336,13 @@ std::ostream& operator<<(std::ostream& os, RawLargeStr value) {
 
 std::ostream& operator<<(std::ostream& os, RawLayout value) {
   Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Layout layout(&scope, value);
-  os << "id: 0x" << std::hex << static_cast<word>(layout.id()) << "\n";
-  Object type(&scope, layout.describedType());
-  os << "described type: " << type << "\n";
-  Tuple in_object(&scope, layout.inObjectAttributes());
-  Runtime* runtime = thread->runtime();
-  Tuple entry(&scope, runtime->emptyTuple());
-  for (word i = 0, length = in_object.length(); i < length; i++) {
-    entry = in_object.at(i);
-    AttributeInfo info(entry.at(1));
-    os << "  (in-object) " << entry.at(0) << " @ " << info.offset() << '\n';
+  os << "<layout " << static_cast<word>(value.id());
+  if (thread->runtime()->isInstanceOfType(value.describedType())) {
+    HandleScope scope;
+    Type type(&scope, value.describedType());
+    os << " (" << type.name() << ')';
   }
-  Object overflow_attributes_obj(&scope, layout.overflowAttributes());
-  if (overflow_attributes_obj.isTuple()) {
-    os << "(with tuple overflow)\n";
-    Tuple overflow_attributes(&scope, *overflow_attributes_obj);
-    for (word i = 0, length = overflow_attributes.length(); i < length; i++) {
-      entry = overflow_attributes.at(i);
-      AttributeInfo info(entry.at(1));
-      os << "  (overflow)  " << entry.at(0) << " @ " << info.offset() << '\n';
-    }
-  } else if (overflow_attributes_obj.isSmallInt()) {
-    os << "(with dict overflow)\n";
-    word offset = RawSmallInt::cast(*overflow_attributes_obj).value();
-    os << "  overflow dict @ 0x" << offset << '\n';
-  } else {
-    os << "(sealed)\n";
-  }
-  return os;
+  return os << '>';
 }
 
 std::ostream& operator<<(std::ostream& os, RawList value) {
