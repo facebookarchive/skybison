@@ -3328,6 +3328,148 @@ TEST_F(RuntimeTest, ModuleBuiltinsExists) {
   ASSERT_FALSE(moduleAtByCStr(&runtime_, "builtins", "__name__").isError());
 }
 
+TEST_F(RuntimeTest, ObjectEqualsWithSameObjectReturnsTrue) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C():
+  def __eq__(self, other):
+    return False
+i = C()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object i(&scope, mainModuleAt(&runtime_, "i"));
+  EXPECT_EQ(Runtime::objectEquals(thread_, *i, *i), Bool::trueObj());
+}
+
+TEST_F(RuntimeTest, ObjectEqualsCallsDunderEq) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C:
+  def __eq__(self, other):
+    return True
+i = C()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object i(&scope, mainModuleAt(&runtime_, "i"));
+  EXPECT_EQ(Runtime::objectEquals(thread_, *i, NoneType::object()),
+            Bool::trueObj());
+  EXPECT_EQ(Runtime::objectEquals(thread_, *i, SmallStr::fromCStr("foo")),
+            Bool::trueObj());
+  EXPECT_EQ(Runtime::objectEquals(thread_, *i, Bool::falseObj()),
+            Bool::trueObj());
+}
+
+TEST_F(RuntimeTest, ObjectEqualsCallsStrSubclassDunderEq) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class StrSub(str):
+  def __eq__(self, other):
+    return True
+i = StrSub("foo")
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Object i(&scope, mainModuleAt(&runtime_, "i"));
+  EXPECT_EQ(Runtime::objectEquals(thread_, Str::empty(), *i), Bool::trueObj());
+  EXPECT_EQ(Runtime::objectEquals(thread_, *i, Str::empty()), Bool::trueObj());
+  LargeStr large_str(&scope, runtime_.newStrFromCStr("foobarbazbumbam"));
+  EXPECT_EQ(Runtime::objectEquals(thread_, *large_str, *i), Bool::trueObj());
+  EXPECT_EQ(Runtime::objectEquals(thread_, *i, *large_str), Bool::trueObj());
+  EXPECT_EQ(Runtime::objectEquals(thread_, SmallInt::fromWord(0), *i),
+            Bool::trueObj());
+  EXPECT_EQ(Runtime::objectEquals(thread_, *i, SmallInt::fromWord(0)),
+            Bool::trueObj());
+}
+
+TEST_F(RuntimeTest, ObjectEqualsCallsIntSubclassDunderEq) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class IntSub(int):
+  def __eq__(self, other):
+    return True
+i = IntSub(7)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object i(&scope, mainModuleAt(&runtime_, "i"));
+  EXPECT_EQ(Runtime::objectEquals(thread_, SmallInt::fromWord(1), *i),
+            Bool::trueObj());
+  EXPECT_EQ(Runtime::objectEquals(thread_, *i, SmallInt::fromWord(1)),
+            Bool::trueObj());
+  const uword digits[] = {1, 2};
+  LargeInt large_int(&scope, runtime_.newIntWithDigits(digits));
+  EXPECT_EQ(Runtime::objectEquals(thread_, *i, *large_int), Bool::trueObj());
+  EXPECT_EQ(Runtime::objectEquals(thread_, *large_int, *i), Bool::trueObj());
+  EXPECT_EQ(Runtime::objectEquals(thread_, *i, Bool::trueObj()),
+            Bool::trueObj());
+  EXPECT_EQ(Runtime::objectEquals(thread_, NoneType::object(), *i),
+            Bool::trueObj());
+  EXPECT_EQ(Runtime::objectEquals(thread_, *i, NoneType::object()),
+            Bool::trueObj());
+  EXPECT_EQ(Runtime::objectEquals(thread_, Bool::trueObj(), *i),
+            Bool::falseObj());
+}
+
+TEST_F(RuntimeTest, ObjectEqualsWithSmallStrReturnsBool) {
+  RawSmallStr s0 = SmallStr::empty();
+  RawSmallStr s1 = SmallStr::fromCStr("foo");
+  EXPECT_EQ(Runtime::objectEquals(thread_, s0, s0), Bool::trueObj());
+  EXPECT_EQ(Runtime::objectEquals(thread_, s0, s1), Bool::falseObj());
+  EXPECT_EQ(Runtime::objectEquals(thread_, s1, s0), Bool::falseObj());
+  EXPECT_EQ(Runtime::objectEquals(thread_, s1, s1), Bool::trueObj());
+  EXPECT_EQ(Runtime::objectEquals(thread_, NoneType::object(), s0),
+            Bool::falseObj());
+  EXPECT_EQ(Runtime::objectEquals(thread_, s0, NoneType::object()),
+            Bool::falseObj());
+}
+
+TEST_F(RuntimeTest, ObjectEqualsWithLargeStrReturnsBool) {
+  HandleScope scope(thread_);
+  LargeStr large_str0(&scope, runtime_.newStrFromCStr("foobarbazbumbam"));
+  LargeStr large_str1(&scope, runtime_.newStrFromCStr("foobarbazbumbam"));
+  ASSERT_NE(large_str0, large_str1);
+  EXPECT_EQ(Runtime::objectEquals(thread_, *large_str0, *large_str1),
+            Bool::trueObj());
+  EXPECT_EQ(Runtime::objectEquals(thread_, *large_str0,
+                                  runtime_.newStrFromCStr("hello world!")),
+            Bool::falseObj());
+}
+
+TEST_F(RuntimeTest, ObjectEqualsWithImmediatesReturnsBool) {
+  EXPECT_EQ(
+      Runtime::objectEquals(thread_, NoneType::object(), NoneType::object()),
+      Bool::trueObj());
+  EXPECT_EQ(Runtime::objectEquals(thread_, SmallInt::fromWord(-88),
+                                  SmallInt::fromWord(-88)),
+            Bool::trueObj());
+  EXPECT_EQ(Runtime::objectEquals(thread_, NoneType::object(),
+                                  NotImplementedType::object()),
+            Bool::falseObj());
+  EXPECT_EQ(Runtime::objectEquals(thread_, SmallInt::fromWord(11),
+                                  SmallInt::fromWord(-11)),
+            Bool::falseObj());
+}
+
+TEST_F(RuntimeTest, ObjectEqualsWithIntAndBoolReturnsBool) {
+  EXPECT_EQ(
+      Runtime::objectEquals(thread_, SmallInt::fromWord(0), Bool::falseObj()),
+      Bool::trueObj());
+  EXPECT_EQ(
+      Runtime::objectEquals(thread_, SmallInt::fromWord(1), Bool::trueObj()),
+      Bool::trueObj());
+  EXPECT_EQ(
+      Runtime::objectEquals(thread_, Bool::falseObj(), SmallInt::fromWord(0)),
+      Bool::trueObj());
+  EXPECT_EQ(
+      Runtime::objectEquals(thread_, Bool::trueObj(), SmallInt::fromWord(1)),
+      Bool::trueObj());
+  EXPECT_EQ(
+      Runtime::objectEquals(thread_, Bool::falseObj(), SmallInt::fromWord(1)),
+      Bool::falseObj());
+  EXPECT_EQ(
+      Runtime::objectEquals(thread_, SmallInt::fromWord(0), Bool::trueObj()),
+      Bool::falseObj());
+}
+
 TEST_F(RuntimeStrTest, StrJoinWithNonStrRaisesTypeError) {
   HandleScope scope(thread_);
   Str sep(&scope, runtime_.newStrFromCStr(","));

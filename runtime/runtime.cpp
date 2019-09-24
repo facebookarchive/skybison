@@ -2981,42 +2981,52 @@ RawObject Runtime::newDictWithSize(word initial_size) {
   return *result;
 }
 
-static bool NEVER_INLINE callDunderEq(Thread* thread, RawObject o0_raw,
-                                      RawObject o1_raw) {
+static RawObject NEVER_INLINE callDunderEq(Thread* thread, RawObject o0_raw,
+                                           RawObject o1_raw) {
   HandleScope scope(thread);
   Object o0(&scope, o0_raw);
   Object o1(&scope, o1_raw);
   Object compare_result(
       &scope, Interpreter::compareOperation(thread, thread->currentFrame(),
                                             CompareOp::EQ, o0, o1));
-  if (compare_result.isErrorException()) {
-    UNIMPLEMENTED("exception from __eq__");
-  }
+  if (compare_result.isErrorException()) return *compare_result;
   Object result(&scope, Interpreter::isTrue(thread, *compare_result));
-  if (result.isErrorException()) {
-    UNIMPLEMENTED("exception from truth check");
-  }
-  return Bool::cast(*result).value();
+  if (result.isErrorException()) return *result;
+  return *result;
 }
 
-static bool objectEquals(Thread* thread, RawObject o0, RawObject o1) {
+RawObject Runtime::objectEquals(Thread* thread, RawObject o0, RawObject o1) {
   if (o0 == o1) {
-    return true;
+    return Bool::trueObj();
   }
+  // Shortcuts to catch the common SmallStr, LargeStr and SmallInt cases.
+  // Remember that we always have to check the layout/type of `o0` and `o1`
+  // to ensure `o1` is not a subclass of `o0` which would result in a
+  // `o1.__eq__(o0)` call.
   if (!o0.isHeapObject()) {
-    if (o0.isSmallStr()) {
-      return false;
+    if (o1.isLargeStr()) {
+      return Bool::falseObj();
     }
-    if (o0.isBool() && o1.isSmallInt()) {
-      return Bool::cast(o0).value() ? 1 : 0 == SmallInt::cast(o1).value();
+    if (!o1.isHeapObject()) {
+      if (o0.layoutId() != o1.layoutId()) {
+        if (o0.isBool() && o1.isSmallInt()) {
+          return Bool::fromBool(
+              Bool::cast(o0).value() ? 1 : 0 == SmallInt::cast(o1).value());
+        }
+        if (o0.isSmallInt() && o1.isBool()) {
+          return Bool::fromBool(
+              SmallInt::cast(o0).value() == Bool::cast(o1).value() ? 1 : 0);
+        }
+      }
+      return Bool::falseObj();
     }
-    if (o0.isSmallInt() && o1.isBool()) {
-      return SmallInt::cast(o0).value() == Bool::cast(o1).value() ? 1 : 0;
+  } else if (o0.isLargeStr()) {
+    if (o1.isLargeStr()) {
+      return Bool::fromBool(LargeStr::cast(o0).equals(o1));
     }
-    return false;
-  }
-  if (o0.isLargeStr()) {
-    return LargeStr::cast(o0).equals(o1);
+    if (!o1.isHeapObject()) {
+      return Bool::falseObj();
+    }
   }
   return callDunderEq(thread, o0, o1);
 }
@@ -3202,10 +3212,16 @@ bool Runtime::dictLookup(Thread* thread, const Tuple& data, const Object& key,
       if (next_free_index == -1) {
         next_free_index = current_index;
       }
-    } else if (!Dict::Bucket::hash(*data, current_index).isNoneType() &&
-               equals(thread, Dict::Bucket::key(*data, current_index), *key)) {
-      *index = current_index;
-      return true;
+    } else if (!Dict::Bucket::hash(*data, current_index).isNoneType()) {
+      RawObject eq =
+          equals(thread, Dict::Bucket::key(*data, current_index), *key);
+      if (eq == Bool::trueObj()) {
+        *index = current_index;
+        return true;
+      }
+      if (eq.isErrorException()) {
+        UNIMPLEMENTED("exception in key comparison");
+      }
     }
   }
 }
@@ -3406,9 +3422,15 @@ word Runtime::setLookup(Thread* thread, const Tuple& data, const Object& key,
   }
 
   do {
-    if (!SetBase::Bucket::hash(*data, current).isNoneType() &&
-        objectEquals(thread, SetBase::Bucket::value(*data, current), *key)) {
-      return current;
+    if (!SetBase::Bucket::hash(*data, current).isNoneType()) {
+      RawObject eq =
+          objectEquals(thread, SetBase::Bucket::value(*data, current), *key);
+      if (eq == Bool::trueObj()) {
+        return current;
+      }
+      if (eq.isErrorException()) {
+        UNIMPLEMENTED("exception in value comparison");
+      }
     }
     if (next_free_index == -1 && SetBase::Bucket::isTombstone(*data, current)) {
       if (type == SetLookupType::Insertion) {

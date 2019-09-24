@@ -31,7 +31,7 @@ struct ListEntry {
 
 using AtExitFn = void (*)();
 
-using DictEq = bool (*)(Thread*, RawObject, RawObject);
+using DictEq = RawObject (*)(Thread*, RawObject, RawObject);
 
 using NativeMethodType = RawObject (*)(Thread* thread, Frame* frame,
                                        word nargs);
@@ -899,6 +899,10 @@ class Runtime {
   static int heapOffset() { return OFFSETOF(Runtime, heap_); }
 
   static int layoutsOffset() { return OFFSETOF(Runtime, layouts_); }
+
+  // Equivalent to `o0 is o1 or o0 == o1` optimized for LargeStr, SmallStr and
+  // SmallInt objects.
+  static RawObject objectEquals(Thread* thread, RawObject o0, RawObject o1);
 
  private:
   void initializeApiData();

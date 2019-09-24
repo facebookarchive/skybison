@@ -23,7 +23,9 @@ ApiHandle* ApiHandle::alloc(Thread* thread, RawObject reference) {
   return result;
 }
 
-static bool identityEqual(Thread*, RawObject a, RawObject b) { return a == b; }
+static RawObject identityEqual(Thread*, RawObject a, RawObject b) {
+  return Bool::fromBool(a == b);
+}
 
 // Look up the value associated with key. Checks for identity equality, not
 // structural equality. Returns Error::object() if the key was not found.
