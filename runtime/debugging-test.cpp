@@ -279,6 +279,43 @@ TEST_F(DebuggingTests, DumpExtendedLayoutWithDictOverflow) {
 )");
 }
 
+TEST_F(DebuggingTests, DumpExtendedType) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class A:
+  pass
+class B(bytes):
+  pass
+class C(A, B):
+  def __init__(self):
+    self.x = 0
+    self.y = 1
+)")
+                   .isError());
+  Object c(&scope, mainModuleAt(&runtime_, "C"));
+  ASSERT_TRUE(c.isType());
+
+  std::stringstream ss;
+  dumpExtended(ss, *c);
+  std::stringstream expected;
+  expected << R"(type "C":
+  bases: (<type "A">, <type "B">)
+  mro: (<type "C">, <type "A">, <type "B">, <type "bytes">, <type "object">)
+  flags: has_dunder_dict
+  builtin base: <layout )"
+           << static_cast<word>(LayoutId::kBytes) << R"( ("bytes")>
+  layout )"
+           << static_cast<word>(
+                  Layout::cast(Type::cast(*c).instanceLayout()).id())
+           << R"(:
+    described type: <type "C">
+    num in-object attributes: 3
+      None @ 0
+    overflow tuple:
+)";
+  EXPECT_EQ(ss.str(), expected.str());
+}
+
 TEST_F(DebuggingTests, FormatBool) {
   std::stringstream ss;
   ss << Bool::trueObj() << ';' << Bool::falseObj();

@@ -152,14 +152,16 @@ std::ostream& dumpExtendedHeapObject(std::ostream& os, RawHeapObject value) {
   return os;
 }
 
-std::ostream& dumpExtendedLayout(std::ostream& os, RawLayout value) {
+std::ostream& dumpExtendedLayout(std::ostream& os, RawLayout value,
+                                 const char* indent) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Layout layout(&scope, value);
-  os << "layout " << static_cast<word>(layout.id()) << ":\n";
+  os << indent << "layout " << static_cast<word>(layout.id()) << ":\n";
   Object type(&scope, layout.describedType());
-  os << "  described type: " << type << '\n';
-  os << "  num in-object attributes: " << layout.numInObjectAttributes()
+  os << indent << "  described type: " << type << '\n';
+  os << indent
+     << "  num in-object attributes: " << layout.numInObjectAttributes()
      << '\n';
   Tuple in_object(&scope, layout.inObjectAttributes());
   Runtime* runtime = thread->runtime();
@@ -167,23 +169,49 @@ std::ostream& dumpExtendedLayout(std::ostream& os, RawLayout value) {
   for (word i = 0, length = in_object.length(); i < length; i++) {
     entry = in_object.at(i);
     AttributeInfo info(entry.at(1));
-    os << "    " << entry.at(0) << " @ " << info.offset() << '\n';
+    os << indent << "    " << entry.at(0) << " @ " << info.offset() << '\n';
   }
   Object overflow_attributes_obj(&scope, layout.overflowAttributes());
   if (overflow_attributes_obj.isTuple()) {
-    os << "  overflow tuple:\n";
+    os << indent << "  overflow tuple:\n";
     Tuple overflow_attributes(&scope, *overflow_attributes_obj);
     for (word i = 0, length = overflow_attributes.length(); i < length; i++) {
       entry = overflow_attributes.at(i);
       AttributeInfo info(entry.at(1));
-      os << "    " << entry.at(0) << " @ " << info.offset() << '\n';
+      os << indent << "    " << entry.at(0) << " @ " << info.offset() << '\n';
     }
   } else if (overflow_attributes_obj.isSmallInt()) {
     word offset = RawSmallInt::cast(*overflow_attributes_obj).value();
-    os << "  overflow dict @ " << offset << '\n';
+    os << indent << "  overflow dict @ " << offset << '\n';
   } else {
     DCHECK(value.isSealed(), "remaining case should be sealed");
-    os << "  sealed\n";
+    os << indent << "  sealed\n";
+  }
+  return os;
+}
+
+std::ostream& dumpExtendedType(std::ostream& os, RawType value) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Type type(&scope, value);
+
+  os << "type " << type.name() << ":\n";
+  os << "  bases: " << type.bases() << '\n';
+  os << "  mro: " << type.mro() << '\n';
+  os << "  flags:";
+  if (type.hasFlag(Type::kIsAbstract)) os << " abstract";
+  if (type.hasFlag(Type::kHasDunderDict)) os << " has_dunder_dict";
+  if (type.hasFlag(Type::kIsNativeProxy)) os << " is_native_proxy";
+  os << '\n';
+  Layout builtin_base_layout(&scope,
+                             thread->runtime()->layoutAt(type.builtinBase()));
+  os << "  builtin base: " << builtin_base_layout << '\n';
+  if (type.instanceLayout().isLayout()) {
+    dumpExtendedLayout(os, Layout::cast(type.instanceLayout()), "  ");
+  } else {
+    // I don't think this case should occur during normal operation, but maybe
+    // we dump a type that isn't completely initialized yet.
+    os << "  layout: " << type.instanceLayout() << '\n';
   }
   return os;
 }
@@ -196,7 +224,9 @@ std::ostream& dumpExtended(std::ostream& os, RawObject value) {
     case LayoutId::kFunction:
       return dumpExtendedFunction(os, Function::cast(value));
     case LayoutId::kLayout:
-      return dumpExtendedLayout(os, Layout::cast(value));
+      return dumpExtendedLayout(os, Layout::cast(value), "");
+    case LayoutId::kType:
+      return dumpExtendedType(os, Type::cast(value));
     default:
       if (value.isInstance()) {
         return dumpExtendedHeapObject(os, RawHeapObject::cast(value));

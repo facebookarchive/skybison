@@ -11,7 +11,9 @@ std::ostream& dumpExtendedCode(std::ostream& os, RawCode value,
                                const char* indent);
 std::ostream& dumpExtendedFunction(std::ostream& os, RawFunction value);
 std::ostream& dumpExtendedHeapObject(std::ostream& os, RawHeapObject value);
-std::ostream& dumpExtendedLayout(std::ostream& os, RawLayout value);
+std::ostream& dumpExtendedLayout(std::ostream& os, RawLayout value,
+                                 const char* indent);
+std::ostream& dumpExtendedType(std::ostream& os, RawType value);
 std::ostream& dumpExtended(std::ostream& os, RawObject value);
 
 std::ostream& operator<<(std::ostream& os, CastError value);
