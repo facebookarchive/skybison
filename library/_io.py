@@ -29,6 +29,7 @@ of open() are intended to be used as keyword arguments."""
 # knowledge about its definition and will complain without this gross circular
 # helper here.
 _Unbound = _Unbound  # noqa: F821
+_address = _address  # noqa: F821
 _bytes_check = _bytes_check  # noqa: F821
 _byteslike_guard = _byteslike_guard  # noqa: F821
 _float_check = _float_check  # noqa: F821
@@ -182,13 +183,6 @@ class IncrementalNewlineDecoder(bootstrap=True):
             ("\r", "\r\n"),
             ("\r", "\n", "\r\n"),
         )[self._seennl]
-
-
-class StringIO:
-    """unimplemented"""
-
-    def __init__(self, *args, **kwargs):
-        _unimplemented()
 
 
 class UnsupportedOperation(OSError, ValueError):
@@ -1943,6 +1937,60 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
         if self._decoder:
             self._decoder.reset()
         return length
+
+
+class StringIO(TextIOWrapper):
+    def __init__(self, initial_value="", newline="\n"):
+        # TODO(T53865493): Set encoding to UTF-8 instead of ASCII
+        super(StringIO, self).__init__(
+            BytesIO(), encoding="ascii", errors="surrogatepass", newline=newline
+        )
+        if newline is None:
+            self._writetranslate = False
+        if initial_value is not None:
+            if not _str_check(initial_value):
+                raise TypeError(
+                    "initial_value must be str or None, not "
+                    f"{_type(initial_value).__name__}"
+                )
+            self.write(initial_value)
+            self.seek(0)
+
+    def __repr__(self):
+        return f"<_io.StringIO object at {_address(self):#x}>"
+
+    def detach(self):
+        self._unsupported("detach")
+
+    @property
+    def encoding(self):
+        return None
+
+    @property
+    def errors(self):
+        return None
+
+    def getvalue(self):
+        self.flush()
+        decoder = self._decoder or self._get_decoder()
+        old_state = decoder.getstate()
+        decoder.reset()
+        try:
+            return decoder.decode(self.buffer.getvalue(), final=True)
+        finally:
+            decoder.setstate(old_state)
+
+    def readable(self):
+        self._checkClosed()
+        return True
+
+    def seekable(self):
+        self._checkClosed()
+        return True
+
+    def writable(self):
+        self._checkClosed()
+        return True
 
 
 def _fspath(obj):

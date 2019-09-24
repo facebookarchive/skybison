@@ -1820,5 +1820,50 @@ class TextIOWrapperTests(unittest.TestCase):
             self.assertEqual(text_io.read(), "foo")
 
 
+class StringIOTests(unittest.TestCase):
+    def test_dunder_init_with_non_str_initial_value_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "initial_value must be str or None",
+            _io.StringIO,
+            initial_value=b"foo",
+        )
+
+    def test_dunder_init_sets_initial_value(self):
+        with _io.StringIO(initial_value="foo") as string_io:
+            self.assertEqual(string_io.getvalue(), "foo")
+
+    def test_dunder_init_with_illegal_newline_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            _io.StringIO(newline="n")
+        self.assertRegex(str(context.exception), "illegal newline value")
+
+    def test_dunder_repr(self):
+        with _io.StringIO(initial_value="foo") as string_io:
+            self.assertRegex(string_io.__repr__(), r"<_io.StringIO object at 0x\w+>")
+
+    def test_detach_raises_unsupported_operation(self):
+        with _io.StringIO() as string_io:
+            self.assertRaisesRegex(_io.UnsupportedOperation, "detach", string_io.detach)
+
+    def test_encoding_always_returns_none(self):
+        with _io.StringIO() as string_io:
+            self.assertIsNone(string_io.encoding)
+
+    def test_errors_always_returns_none(self):
+        with _io.StringIO() as string_io:
+            self.assertIsNone(string_io.errors)
+
+    def test_getvalue_returns_value(self):
+        with _io.StringIO(initial_value="foobaz") as string_io:
+            string_io.write("bar")
+            self.assertEqual(string_io.getvalue(), "barbaz")
+
+    def test_write_with_newline_uses_stored_newline(self):
+        with _io.StringIO(initial_value="foobar", newline="\r\n") as string_io:
+            string_io.write("hi\n")
+            self.assertEqual(string_io.getvalue(), "hi\r\nar")
+
+
 if __name__ == "__main__":
     unittest.main()

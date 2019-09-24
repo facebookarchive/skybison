@@ -2,18 +2,8 @@
 import sys
 import unittest
 
+from _io import StringIO
 from test_support import pyro_only
-
-
-class QuickStringIO:
-    def __init__(self):
-        self.val = ""
-
-    def write(self, text):
-        self.val += text
-
-    def getvalue(self):
-        return self.val
 
 
 class DisplayhookTest(unittest.TestCase):
@@ -24,8 +14,7 @@ class DisplayhookTest(unittest.TestCase):
             del builtins._
 
         orig_out = sys.stdout
-        # TODO(T46541598): Test output with real StringIO
-        out = QuickStringIO()
+        out = StringIO()
         sys.stdout = out
         sys.displayhook(None)
         self.assertEqual(out.getvalue(), "")
@@ -36,8 +25,7 @@ class DisplayhookTest(unittest.TestCase):
         import builtins
 
         orig_out = sys.stdout
-        # TODO(T46541598): Test output with real StringIO
-        out = QuickStringIO()
+        out = StringIO()
         sys.stdout = out
         sys.displayhook(42)
         self.assertEqual(out.getvalue(), "42\n")
