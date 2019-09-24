@@ -2079,9 +2079,6 @@ def open(  # noqa: C901
     )
     result = raw
     try:
-        if buffering:
-            print("Buffered IO is unimplemented")
-            _unimplemented()
         line_buffering = False
         if buffering == 1 or buffering < 0 and raw.isatty():
             buffering = -1
