@@ -1408,7 +1408,7 @@ class bytearray(bootstrap=True):
             length = _bytearray_len(self)
             start = _slice_start(_slice_index(key.start), step, length)
             stop = _slice_stop(_slice_index(key.stop), step, length)
-            if not _bytearray_check(value):
+            if not _byteslike_check(value):
                 try:
                     it = (*value,)
                 except TypeError:
@@ -1416,7 +1416,7 @@ class bytearray(bootstrap=True):
                         "can assign only bytes, buffers, or iterables of ints "
                         "in range(0, 256)"
                     )
-                value = bytearray(it)
+                value = _bytes_new(it)
             return _bytearray_setslice(self, start, stop, step, value)
         if _object_type_hasattr(key, "__index__"):
             _int_guard(value)
@@ -1478,8 +1478,19 @@ class bytearray(bootstrap=True):
     def expandtabs(self, tabsize=8):
         _unimplemented()
 
-    def extend(self, iterable_of_ints):
-        _unimplemented()
+    def extend(self, iterable_of_ints) -> None:
+        _bytearray_guard(self)
+        length = _bytearray_len(self)
+        if _byteslike_check(iterable_of_ints):
+            value = iterable_of_ints
+        elif _str_check(iterable_of_ints):
+            # CPython iterates, so it does not fail for the empty string
+            if iterable_of_ints:
+                raise TypeError("cannot extend bytearray with str")
+            value = b""
+        else:
+            value = _bytes_new(iterable_of_ints)
+        _bytearray_setslice(self, length, length, 1, value)
 
     def find(self, sub, start=None, end=None) -> int:
         _bytearray_guard(self)

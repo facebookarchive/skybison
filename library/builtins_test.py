@@ -506,6 +506,43 @@ class ByteArrayTests(unittest.TestCase):
         self.assertFalse(haystack.endswith(b"", 3, 2))
         self.assertFalse(haystack.endswith(bytearray(), 6))
 
+    def test_extend_with_self_copies_data(self):
+        array = bytearray(b"hello")
+        self.assertIs(array.extend(array), None)
+        self.assertEqual(array, b"hellohello")
+
+    def test_extend_empty_with_bytes(self):
+        array = bytearray(b"")
+        self.assertIs(array.extend(b"hello"), None)
+        self.assertEqual(array, b"hello")
+
+    def test_extend_with_tuple_appends_to_end(self):
+        array = bytearray(b"foo")
+        self.assertIs(array.extend((42, 42, 42)), None)
+        self.assertEqual(array, b"foo***")
+
+    def test_extend_with_empty_string_is_noop(self):
+        array = bytearray(b"foo")
+        self.assertIs(array.extend(""), None)
+        self.assertEqual(array, b"foo")
+
+    def test_extend_with_nonempty_string_raises_type_error(self):
+        array = bytearray(b"foo")
+        self.assertRaises(TypeError, array.extend, "bar")
+
+    def test_extend_with_non_int_raises_value_error(self):
+        array = bytearray(b"foo")
+        self.assertRaises(ValueError, array.extend, [256])
+        self.assertRaises(ValueError, array.extend, (-1,))
+
+    def test_extend_with_iterable_appends_to_end(self):
+        duck = b"duck "
+        goose = b"goose"
+        array = bytearray()
+        array.extend(map(int, duck * 2))
+        array.extend(map(int, goose))
+        self.assertEqual(array, b"duck duck goose")
+
     def test_find_with_bytes_self_raises_type_error(self):
         with self.assertRaises(TypeError):
             bytearray.find(b"", bytearray())

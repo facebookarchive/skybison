@@ -483,9 +483,23 @@ RawObject UnderBuiltinsModule::underByteArraySetSlice(Thread* thread,
   word stop = Int::cast(intUnderlying(thread, stop_obj)).asWord();
   Object step_obj(&scope, args.get(3));
   word step = Int::cast(intUnderlying(thread, step_obj)).asWord();
-  ByteArray src(&scope, args.get(4));
-  Bytes src_bytes(&scope, src.bytes());
-  word src_length = src.numItems();
+  Object src_obj(&scope, args.get(4));
+  Bytes src_bytes(&scope, Bytes::empty());
+  word src_length;
+
+  Runtime* runtime = thread->runtime();
+  if (runtime->isInstanceOfBytes(*src_obj)) {
+    Bytes src(&scope, bytesUnderlying(thread, src_obj));
+    src_bytes = *src;
+    src_length = src.length();
+  } else if (runtime->isInstanceOfByteArray(*src_obj)) {
+    ByteArray src(&scope, *src_obj);
+    src_bytes = src.bytes();
+    src_length = src.numItems();
+  } else {
+    // TODO(T38246066): support buffer protocol
+    UNIMPLEMENTED("bytes-like other than bytes or bytearray");
+  }
   // Make sure that the degenerate case of a slice assignment where start is
   // greater than stop inserts before the start and not the stop. For example,
   // b[5:2] = ... should inserts before 5, not before 2.
@@ -494,7 +508,7 @@ RawObject UnderBuiltinsModule::underByteArraySetSlice(Thread* thread,
   }
 
   if (step == 1) {
-    if (self == src) {
+    if (self == src_obj) {
       // This copy avoids complicated indexing logic in a rare case of
       // replacing lhs with elements of rhs when lhs == rhs. It can likely be
       // re-written to avoid allocation if necessary.
@@ -542,7 +556,7 @@ RawObject UnderBuiltinsModule::underByteArraySetSlice(Thread* thread,
   MutableBytes dst_bytes(&scope, self.bytes());
   for (word dst_idx = start, src_idx = 0; src_idx < src_length;
        dst_idx += step, src_idx++) {
-    dst_bytes.byteAtPut(dst_idx, src.byteAt(src_idx));
+    dst_bytes.byteAtPut(dst_idx, src_bytes.byteAt(src_idx));
   }
   return NoneType::object();
 }
