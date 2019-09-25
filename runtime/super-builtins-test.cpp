@@ -10,6 +10,26 @@ using namespace testing;
 
 using SuperBuiltinsTest = RuntimeFixture;
 
+TEST_F(SuperBuiltinsTest, DunderInitWithMetaclassInstanceReturnsSuper) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class M(type):
+  def get_super(self):
+    return super()
+class C(metaclass=M): pass
+s = C.get_super()
+)")
+                   .isError());
+  HandleScope scope;
+  Object s_obj(&scope, mainModuleAt(&runtime_, "s"));
+  Object m(&scope, mainModuleAt(&runtime_, "M"));
+  Object c(&scope, mainModuleAt(&runtime_, "C"));
+  ASSERT_TRUE(s_obj.isSuper());
+  Super s(&scope, *s_obj);
+  EXPECT_EQ(s.type(), m);
+  EXPECT_EQ(s.object(), c);
+  EXPECT_EQ(s.objectType(), m);
+}
+
 TEST_F(SuperBuiltinsTest, DunderCallWorksInTypesWithNonDefaultMetaclass) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class M(type): pass
