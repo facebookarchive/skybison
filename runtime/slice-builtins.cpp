@@ -99,11 +99,13 @@ RawObject SliceBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object type_obj(&scope, args.get(0));
-  if (!type_obj.isType()) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfType(*type_obj)) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "'__new__' requires a type object");
   }
-  Layout layout(&scope, Type::cast(*type_obj).instanceLayout());
+  Type type(&scope, *type_obj);
+  Layout layout(&scope, type.instanceLayout());
   if (layout.id() != LayoutId::kSlice) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "slice.__new__ requires the slice type");
@@ -113,12 +115,12 @@ RawObject SliceBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Object step(&scope, NoneType::object());
   if (args.get(2).isUnbound()) {
     stop = args.get(1);
-    return thread->runtime()->newSlice(start, stop, step);
+    return runtime->newSlice(start, stop, step);
   }
   start = args.get(1);
   stop = args.get(2);
   step = args.get(3);  // defaults to None
-  return thread->runtime()->newSlice(start, stop, step);
+  return runtime->newSlice(start, stop, step);
 }
 
 }  // namespace python

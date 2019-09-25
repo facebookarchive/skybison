@@ -2321,7 +2321,6 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrCached(Thread* thread,
   if (cached.isError()) {
     return storeAttrUpdateCache(thread, arg);
   }
-  DCHECK(!receiver_raw.isType(), "type attributes must not be cached");
   RawObject value_raw = frame->peek(1);
   frame->dropValues(2);
   storeAttrWithLocation(thread, receiver_raw, cached, value_raw);

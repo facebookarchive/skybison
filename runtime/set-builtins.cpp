@@ -380,11 +380,13 @@ RawObject FrozenSetBuiltins::dunderHash(Thread* thread, Frame* frame,
 RawObject FrozenSetBuiltins::dunderNew(Thread* thread, Frame* frame,
                                        word nargs) {
   Arguments args(frame, nargs);
-  if (!args.get(0).isType()) {
+  HandleScope scope(thread);
+  Object type_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfType(*type_obj)) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "not a type object");
   }
-  HandleScope scope(thread);
-  Type type(&scope, args.get(0));
+  Type type(&scope, *type_obj);
   if (type.builtinBase() != LayoutId::kFrozenSet) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "not a subtype of frozenset");
@@ -393,14 +395,14 @@ RawObject FrozenSetBuiltins::dunderNew(Thread* thread, Frame* frame,
     // Iterable not provided
     if (type.isBuiltin() && type.builtinBase() == LayoutId::kFrozenSet) {
       // Called with exact frozenset type, should return singleton
-      return thread->runtime()->emptyFrozenSet();
+      return runtime->emptyFrozenSet();
     }
     // Not called with exact frozenset type, should return new distinct
     // frozenset
     Layout layout(&scope, type.instanceLayout());
-    FrozenSet result(&scope, thread->runtime()->newInstance(layout));
+    FrozenSet result(&scope, runtime->newInstance(layout));
     result.setNumItems(0);
-    result.setData(thread->runtime()->emptyTuple());
+    result.setData(runtime->emptyTuple());
     return *result;
   }
   // Called with iterable, so iterate
@@ -417,10 +419,10 @@ RawObject FrozenSetBuiltins::dunderNew(Thread* thread, Frame* frame,
         LayoutId::kTypeError,
         "frozenset.__new__ must be called with an iterable");
   }
-  FrozenSet result(&scope, thread->runtime()->newFrozenSet());
-  result = thread->runtime()->setUpdate(thread, result, iterable);
+  FrozenSet result(&scope, runtime->newFrozenSet());
+  result = runtime->setUpdate(thread, result, iterable);
   if (result.numItems() == 0) {
-    return thread->runtime()->emptyFrozenSet();
+    return runtime->emptyFrozenSet();
   }
   return *result;
 }
@@ -692,18 +694,20 @@ RawObject SetBuiltins::update(Thread* thread, Frame* frame, word nargs) {
 
 RawObject SetBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
-  if (!args.get(0).isType()) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object type_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfType(*type_obj)) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "not a type object");
   }
-  HandleScope scope(thread);
-  Type type(&scope, args.get(0));
+  Type type(&scope, *type_obj);
   if (type.builtinBase() != LayoutId::kSet) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "not a subtype of set");
   }
   Layout layout(&scope, type.instanceLayout());
-  Set result(&scope, thread->runtime()->newInstance(layout));
+  Set result(&scope, runtime->newInstance(layout));
   result.setNumItems(0);
-  result.setData(thread->runtime()->emptyTuple());
+  result.setData(runtime->emptyTuple());
   return *result;
 }
 

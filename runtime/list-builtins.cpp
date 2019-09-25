@@ -182,18 +182,20 @@ const BuiltinMethod ListBuiltins::kBuiltinMethods[] = {
 
 RawObject ListBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
-  if (!args.get(0).isType()) {
+  HandleScope scope(thread);
+  Object type_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfType(*type_obj)) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "not a type object");
   }
-  HandleScope scope(thread);
-  Type type(&scope, args.get(0));
+  Type type(&scope, *type_obj);
   if (type.builtinBase() != LayoutId::kList) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "not a subtype of list");
   }
   Layout layout(&scope, type.instanceLayout());
-  List result(&scope, thread->runtime()->newInstance(layout));
+  List result(&scope, runtime->newInstance(layout));
   result.setNumItems(0);
-  result.setItems(thread->runtime()->emptyTuple());
+  result.setItems(runtime->emptyTuple());
   return *result;
 }
 

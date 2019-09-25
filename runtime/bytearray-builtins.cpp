@@ -511,17 +511,18 @@ RawObject ByteArrayBuiltins::dunderNe(Thread* thread, Frame* frame,
 RawObject ByteArrayBuiltins::dunderNew(Thread* thread, Frame* frame,
                                        word nargs) {
   Arguments args(frame, nargs);
-  if (!args.get(0).isType()) {
+  HandleScope scope(thread);
+  Object type_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfType(*type_obj)) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "not a type object");
   }
-  HandleScope scope(thread);
-  Type type(&scope, args.get(0));
+  Type type(&scope, *type_obj);
   if (type.builtinBase() != LayoutId::kByteArray) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "not a subtype of bytearray");
   }
   Layout layout(&scope, type.instanceLayout());
-  Runtime* runtime = thread->runtime();
   ByteArray result(&scope, runtime->newInstance(layout));
   result.setBytes(runtime->emptyMutableBytes());
   result.setNumItems(0);

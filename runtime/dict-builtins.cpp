@@ -450,18 +450,20 @@ RawObject DictBuiltins::get(Thread* thread, Frame* frame, word nargs) {
 
 RawObject DictBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
-  if (!args.get(0).isType()) {
+  HandleScope scope(thread);
+  Object type_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfType(*type_obj)) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "not a type object");
   }
-  HandleScope scope(thread);
-  Type type(&scope, args.get(0));
+  Type type(&scope, *type_obj);
   if (type.builtinBase() != LayoutId::kDict) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "not a subtype of dict");
   }
   Layout layout(&scope, type.instanceLayout());
-  Dict result(&scope, thread->runtime()->newInstance(layout));
+  Dict result(&scope, runtime->newInstance(layout));
   result.setNumItems(0);
-  result.setData(thread->runtime()->emptyTuple());
+  result.setData(runtime->emptyTuple());
   result.resetNumUsableItems();
   return *result;
 }

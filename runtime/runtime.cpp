@@ -1523,7 +1523,7 @@ void Runtime::initializeLayouts() {
 RawObject Runtime::createMro(const Layout& subclass_layout,
                              LayoutId superclass_id) {
   HandleScope scope;
-  CHECK(subclass_layout.describedType().isType(),
+  CHECK(isInstanceOfType(subclass_layout.describedType()),
         "subclass layout must have a described class");
   Type superclass(&scope, typeAt(superclass_id));
   Tuple src(&scope, superclass.mro());

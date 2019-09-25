@@ -472,9 +472,16 @@ RawObject Thread::raiseRequiresType(const Object& obj, SymbolId expected_type) {
 bool Thread::hasPendingException() { return !pending_exc_type_.isNoneType(); }
 
 bool Thread::hasPendingStopIteration() {
-  return pending_exc_type_.isType() &&
-         Type::cast(pending_exc_type_).builtinBase() ==
-             LayoutId::kStopIteration;
+  if (pending_exc_type_.isType()) {
+    return Type::cast(pending_exc_type_).builtinBase() ==
+           LayoutId::kStopIteration;
+  }
+  if (runtime()->isInstanceOfType(pending_exc_type_)) {
+    HandleScope scope(this);
+    Type type(&scope, pending_exc_type_);
+    return type.builtinBase() == LayoutId::kStopIteration;
+  }
+  return false;
 }
 
 bool Thread::clearPendingStopIteration() {

@@ -96,7 +96,8 @@ static RawObject instanceSetAttrSetLocation(Thread* thread,
                                 &name_interned);
   }
 
-  DCHECK(!instance.isType(), "must not cache type attributes");
+  DCHECK(!thread->runtime()->isInstanceOfType(*instance),
+         "must not cache type attributes");
   // Store the attribute
   if (info.isInObject()) {
     instance.instanceVariableAtPut(info.offset(), *value);
