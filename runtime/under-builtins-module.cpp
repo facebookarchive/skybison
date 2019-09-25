@@ -1796,12 +1796,11 @@ RawObject UnderBuiltinsModule::underInstanceDelattr(Thread* thread,
   Arguments args(frame, nargs);
   HeapObject instance(&scope, args.get(0));
   Object name(&scope, args.get(1));
-  if (!name.isStr()) {
-    // TODO(T53626118): Support str subclasses
-    UNIMPLEMENTED("non-str attribute name");
-  }
+  // TODO(T53626118) Raise an exception when `name_str` is a string subclass
+  // that overrides `__eq__` or `__hash__`.
+  Str name_str(&scope, strUnderlying(thread, name));
   Runtime* runtime = thread->runtime();
-  Object name_interned(&scope, runtime->internStr(thread, name));
+  Str name_interned(&scope, runtime->internStr(thread, name_str));
   return runtime->instanceDel(thread, instance, name_interned);
 }
 
@@ -1811,11 +1810,11 @@ RawObject UnderBuiltinsModule::underInstanceGetattr(Thread* thread,
   Arguments args(frame, nargs);
   HeapObject instance(&scope, args.get(0));
   Object name(&scope, args.get(1));
-  if (!name.isStr()) {
-    // TODO(T53626118): Support str subclasses
-    UNIMPLEMENTED("non-str attribute name");
-  }
-  Object result(&scope, instanceGetAttribute(thread, instance, name));
+  // TODO(T53626118) Raise an exception when `name_str` is a string subclass
+  // that overrides `__eq__` or `__hash__`.
+  Str name_str(&scope, strUnderlying(thread, name));
+  Str name_interned(&scope, thread->runtime()->internStr(thread, name_str));
+  Object result(&scope, instanceGetAttribute(thread, instance, name_interned));
   return result.isErrorNotFound() ? Unbound::object() : *result;
 }
 
@@ -1860,12 +1859,11 @@ RawObject UnderBuiltinsModule::underInstanceSetattr(Thread* thread,
   Arguments args(frame, nargs);
   HeapObject instance(&scope, args.get(0));
   Object name(&scope, args.get(1));
-  if (!name.isStr()) {
-    // TODO(T53626118): Support str subclasses
-    UNIMPLEMENTED("non-str attribute name");
-  }
+  // TODO(T53626118) Raise an exception when `name_str` is a string subclass
+  // that overrides `__eq__` or `__hash__`.
+  Str name_str(&scope, strUnderlying(thread, name));
+  Str name_interned(&scope, thread->runtime()->internStr(thread, name_str));
   Object value(&scope, args.get(2));
-  Object name_interned(&scope, thread->runtime()->internStr(thread, name));
   return instanceSetAttr(thread, instance, name_interned, value);
 }
 

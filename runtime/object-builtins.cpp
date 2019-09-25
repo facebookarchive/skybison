@@ -23,13 +23,13 @@ RawObject objectRaiseAttributeError(Thread* thread, const Object& object,
 
 static RawObject instanceGetAttributeSetLocation(Thread* thread,
                                                  const HeapObject& object,
-                                                 const Object& name_str,
+                                                 const Str& name_interned,
                                                  Object* location_out) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Layout layout(&scope, runtime->layoutAt(object.layoutId()));
   AttributeInfo info;
-  if (runtime->layoutFindAttribute(thread, layout, name_str, &info)) {
+  if (runtime->layoutFindAttribute(thread, layout, name_interned, &info)) {
     if (info.isInObject()) {
       if (location_out != nullptr) {
         *location_out = RawSmallInt::fromWord(info.offset());
@@ -45,10 +45,10 @@ static RawObject instanceGetAttributeSetLocation(Thread* thread,
   if (runtime->layoutHasDictOverflow(layout)) {
     Dict overflow(&scope,
                   runtime->layoutGetOverflowDict(thread, object, layout));
-    Object name_str_hash(&scope, Interpreter::hash(thread, name_str));
-    if (name_str.isErrorException()) return *name_str_hash;
+    Object name_str_hash(&scope, Interpreter::hash(thread, name_interned));
+    if (name_interned.isErrorException()) return *name_str_hash;
     Object obj(&scope,
-               runtime->dictAt(thread, overflow, name_str, name_str_hash));
+               runtime->dictAt(thread, overflow, name_interned, name_str_hash));
     if (obj.isValueCell()) {
       obj = ValueCell::cast(*obj).value();
     }
@@ -58,13 +58,14 @@ static RawObject instanceGetAttributeSetLocation(Thread* thread,
 }
 
 RawObject instanceGetAttribute(Thread* thread, const HeapObject& object,
-                               const Object& name_str) {
-  return instanceGetAttributeSetLocation(thread, object, name_str, nullptr);
+                               const Str& name_interned) {
+  return instanceGetAttributeSetLocation(thread, object, name_interned,
+                                         nullptr);
 }
 
 static RawObject instanceSetAttrSetLocation(Thread* thread,
                                             const HeapObject& instance,
-                                            const Object& name_interned,
+                                            const Str& name_interned,
                                             const Object& value,
                                             Object* location_out) {
   HandleScope scope(thread);
@@ -127,7 +128,7 @@ static RawObject instanceSetAttrSetLocation(Thread* thread,
 }
 
 RawObject instanceSetAttr(Thread* thread, const HeapObject& instance,
-                          const Object& name_interned, const Object& value) {
+                          const Str& name_interned, const Object& value) {
   return instanceSetAttrSetLocation(thread, instance, name_interned, value,
                                     nullptr);
 }
@@ -152,10 +153,12 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
   // No data descriptor found on the class, look at the instance.
   if (object.isHeapObject()) {
     HeapObject instance(&scope, *object);
-    // TODO(T53626118) instanceGetAttribute() should accept name+hash here so it
-    // works correctly for str subclasses.
+    // TODO(T53626118) Raise an exception when `name_str` is a string subclass
+    // that overrides `__eq__` or `__hash__`.
+    Str name_underlying(&scope, strUnderlying(thread, name_str));
+    Str name_interned(&scope, runtime->internStr(thread, name_underlying));
     Object result(&scope, instanceGetAttributeSetLocation(
-                              thread, instance, name_str, location_out));
+                              thread, instance, name_interned, location_out));
     if (!result.isError()) {
       return *result;
     }
@@ -205,8 +208,8 @@ RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
   // No data descriptor found, store on the instance.
   if (object.isHeapObject()) {
     HeapObject instance(&scope, *object);
-    // TODO(T53626118) instanceSetAttr() only accepts interned strings,
-    // but in cpython accepts any non-interned subclass here.
+    // TODO(T53626118) Raise an exception when `name_str` is a string subclass
+    // that overrides `__eq__` or `__hash__`.
     Str name_underlying(&scope, strUnderlying(thread, name_str));
     Str name_interned(&scope, runtime->internStr(thread, name_underlying));
     return instanceSetAttrSetLocation(thread, instance, name_interned, value,

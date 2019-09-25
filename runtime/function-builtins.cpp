@@ -130,11 +130,14 @@ RawObject functionSetAttr(Thread* thread, const Function& function,
     function.setDict(runtime->newDict());
   }
 
+  // TODO(T53626118) Raise an exception when `name_str` is a string subclass
+  // that overrides `__eq__` or `__hash__`.
+  Str name_underlying(&scope, strUnderlying(thread, name_str));
+  Str name_interned(&scope, runtime->internStr(thread, name_underlying));
   AttributeInfo info;
   Layout layout(&scope, runtime->layoutAt(function.layoutId()));
-  if (runtime->layoutFindAttribute(thread, layout, name_str, &info)) {
-    // TODO(eelizondo): Handle __dict__ with descriptor
-    return objectSetAttr(thread, function, name_str, name_hash, value);
+  if (runtime->layoutFindAttribute(thread, layout, name_interned, &info)) {
+    return instanceSetAttr(thread, function, name_interned, value);
   }
   Dict function_dict(&scope, function.dict());
   runtime->dictAtPut(thread, function_dict, name_str, name_hash, value);

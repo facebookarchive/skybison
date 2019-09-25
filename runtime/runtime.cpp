@@ -432,7 +432,8 @@ RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
   // No delete descriptor found, delete from the instance
   HeapObject instance(&scope, *receiver);
   Str name_str(&scope, strUnderlying(thread, name));
-  Object result(&scope, instanceDel(thread, instance, name_str));
+  Str name_interned(&scope, internStr(thread, name_str));
+  Object result(&scope, instanceDel(thread, instance, name_interned));
   if (result.isError()) {
     Str type_name(&scope, type.name());
     return thread->raiseWithFmt(LayoutId::kAttributeError,
@@ -4254,24 +4255,25 @@ RawObject Runtime::layoutGetOverflowDict(Thread* thread,
 }
 
 RawObject Runtime::instanceDel(Thread* thread, const HeapObject& instance,
-                               const Object& name) {
+                               const Str& name_interned) {
   HandleScope scope(thread);
 
   // Make the attribute invisible
   Layout old_layout(&scope, layoutAt(instance.layoutId()));
-  Object result(&scope, layoutDeleteAttribute(thread, old_layout, name));
+  Object result(&scope,
+                layoutDeleteAttribute(thread, old_layout, name_interned));
   if (result.isError()) return *result;
   LayoutId new_layout_id = Layout::cast(*result).id();
   instance.setHeader(instance.header().withLayoutId(new_layout_id));
 
   // Remove the reference to the attribute value from the instance
   AttributeInfo info;
-  bool found = layoutFindAttribute(thread, old_layout, name, &info);
+  bool found = layoutFindAttribute(thread, old_layout, name_interned, &info);
   CHECK(found, "couldn't find attribute");
 
   if (info.isReadOnly()) {
     return thread->raiseWithFmt(LayoutId::kAttributeError,
-                                "'%S' attribute is read-only", &name);
+                                "'%S' attribute is read-only", &name_interned);
   }
 
   if (info.isInObject()) {
@@ -4305,15 +4307,15 @@ void Runtime::layoutAddEdge(Thread* thread, const List& edges,
 }
 
 bool Runtime::layoutFindAttribute(Thread* thread, const Layout& layout,
-                                  const Object& name, AttributeInfo* info) {
+                                  const Str& name_interned,
+                                  AttributeInfo* info) {
   HandleScope scope(thread);
-  Object iname(&scope, internStr(thread, name));
 
   // Check in-object attributes
   Tuple in_object(&scope, layout.inObjectAttributes());
   for (word i = 0; i < in_object.length(); i++) {
     Tuple entry(&scope, in_object.at(i));
-    if (entry.at(0) == *iname) {
+    if (entry.at(0) == *name_interned) {
       *info = AttributeInfo(entry.at(1));
       return true;
     }
@@ -4330,7 +4332,7 @@ bool Runtime::layoutFindAttribute(Thread* thread, const Layout& layout,
   Tuple overflow(&scope, layout.overflowAttributes());
   for (word i = 0; i < overflow.length(); i++) {
     Tuple entry(&scope, overflow.at(i));
-    if (entry.at(0) == *iname) {
+    if (entry.at(0) == *name_interned) {
       *info = AttributeInfo(entry.at(1));
       return true;
     }
@@ -4376,13 +4378,12 @@ RawObject Runtime::layoutAddAttributeEntry(Thread* thread, const Tuple& entries,
 }
 
 RawObject Runtime::layoutAddAttribute(Thread* thread, const Layout& layout,
-                                      const Object& name, word flags) {
+                                      const Str& name_interned, word flags) {
   HandleScope scope(thread);
-  Object iname(&scope, internStr(thread, name));
 
   // Check if a edge for the attribute addition already exists
   List edges(&scope, layout.additions());
-  RawObject result = layoutFollowEdge(edges, iname);
+  RawObject result = layoutFollowEdge(edges, name_interned);
   if (!result.isError()) {
     return result;
   }
@@ -4394,17 +4395,17 @@ RawObject Runtime::layoutAddAttribute(Thread* thread, const Layout& layout,
     AttributeInfo info(inobject.length() * kPointerSize,
                        flags | AttributeFlags::kInObject);
     new_layout.setInObjectAttributes(
-        layoutAddAttributeEntry(thread, inobject, name, info));
+        layoutAddAttributeEntry(thread, inobject, name_interned, info));
   } else {
     Tuple overflow(&scope, layout.overflowAttributes());
     AttributeInfo info(overflow.length(), flags);
     new_layout.setOverflowAttributes(
-        layoutAddAttributeEntry(thread, overflow, name, info));
+        layoutAddAttributeEntry(thread, overflow, name_interned, info));
   }
 
   // Add the edge to the existing layout
   Object value(&scope, *new_layout);
-  layoutAddEdge(thread, edges, iname, value);
+  layoutAddEdge(thread, edges, name_interned, value);
 
   return *new_layout;
 }
@@ -4432,19 +4433,18 @@ static RawObject markEntryDeleted(Thread* thread, RawObject entries,
 }
 
 RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
-                                         const Object& name) {
+                                         const Str& name_interned) {
   HandleScope scope(thread);
 
   // See if the attribute exists
   AttributeInfo info;
-  if (!layoutFindAttribute(thread, layout, name, &info)) {
+  if (!layoutFindAttribute(thread, layout, name_interned, &info)) {
     return Error::notFound();
   }
 
   // Check if an edge exists for removing the attribute
-  Str iname(&scope, internStr(thread, name));
   List edges(&scope, layout.deletions());
-  RawObject next_layout = layoutFollowEdge(edges, iname);
+  RawObject next_layout = layoutFollowEdge(edges, name_interned);
   if (!next_layout.isError()) {
     return next_layout;
   }
@@ -4453,15 +4453,15 @@ RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
   Layout new_layout(&scope, layoutCreateChild(thread, layout));
   if (info.isInObject()) {
     new_layout.setInObjectAttributes(
-        markEntryDeleted(thread, layout.inObjectAttributes(), iname));
+        markEntryDeleted(thread, layout.inObjectAttributes(), name_interned));
   } else {
     new_layout.setOverflowAttributes(
-        markEntryDeleted(thread, layout.overflowAttributes(), iname));
+        markEntryDeleted(thread, layout.overflowAttributes(), name_interned));
   }
 
   // Add the edge to the existing layout
   Object value(&scope, *new_layout);
-  layoutAddEdge(thread, edges, iname, value);
+  layoutAddEdge(thread, edges, name_interned, value);
 
   return *new_layout;
 }

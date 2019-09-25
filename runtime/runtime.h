@@ -632,21 +632,21 @@ class Runtime {
   // semantics for attribute deletion. This handles mutating the layout if the
   // attribute exists. Returns Error::object() if the attribute is not found.
   RawObject instanceDel(Thread* thread, const HeapObject& instance,
-                        const Object& name);
+                        const Str& name_interned);
 
   // Looks up the named attribute in the layout.
   //
   // If the attribute is found this returns true and sets info.
   // Returns false otherwise.
   bool layoutFindAttribute(Thread* thread, const Layout& layout,
-                           const Object& name, AttributeInfo* info);
+                           const Str& name_interned, AttributeInfo* info);
 
   // Add the attribute to the overflow array.
   //
   // This returns a new layout by either following a pre-existing edge or
   // adding one.
   RawObject layoutAddAttribute(Thread* thread, const Layout& layout,
-                               const Object& name, word flags);
+                               const Str& name_interned, word flags);
 
   // Delete the named attribute from the layout.
   //
@@ -655,7 +655,7 @@ class Runtime {
   //
   // If the attribute doesn't exist, Error::object() is returned.
   RawObject layoutDeleteAttribute(Thread* thread, const Layout& layout,
-                                  const Object& name);
+                                  const Str& name_interned);
 
   RawObject computeBuiltinBase(Thread* thread, const Type& type);
 

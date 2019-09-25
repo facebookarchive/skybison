@@ -6,10 +6,10 @@
 namespace python {
 
 RawObject instanceGetAttribute(Thread* thread, const HeapObject& object,
-                               const Object& name_str);
+                               const Str& name_interned);
 
 RawObject instanceSetAttr(Thread* thread, const HeapObject& instance,
-                          const Object& name_interned, const Object& value);
+                          const Str& name_interned, const Object& value);
 
 RawObject objectGetAttribute(Thread* thread, const Object& object,
                              const Object& name_str, const Object& name_hash);

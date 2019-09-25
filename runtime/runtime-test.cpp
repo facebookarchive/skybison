@@ -2674,7 +2674,7 @@ class Foo:
   Type type(&scope, mainModuleAt(&runtime_, "Foo"));
   Layout layout(&scope, type.instanceLayout());
   HeapObject instance(&scope, runtime_.newInstance(layout));
-  Object attr(&scope, runtime_.newStrFromCStr("unknown"));
+  Str attr(&scope, runtime_.internStrFromCStr(thread_, "unknown"));
   EXPECT_TRUE(runtime_.instanceDel(thread_, instance, attr).isError());
 }
 
@@ -2698,7 +2698,7 @@ def new_foo():
 
   // Verify that 'bar' is an in-object property
   Layout layout(&scope, runtime_.layoutAt(instance.header().layoutId()));
-  Object attr(&scope, runtime_.internStrFromCStr(thread_, "bar"));
+  Str attr(&scope, runtime_.internStrFromCStr(thread_, "bar"));
   AttributeInfo info;
   ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, attr, &info));
   ASSERT_TRUE(info.isInObject());
@@ -2731,7 +2731,7 @@ def new_foo():
 
   // Verify that 'bar' is an overflow property
   Layout layout(&scope, runtime_.layoutAt(instance.header().layoutId()));
-  Object attr(&scope, runtime_.internStrFromCStr(thread_, "bar"));
+  Str attr(&scope, runtime_.internStrFromCStr(thread_, "bar"));
   AttributeInfo info;
   ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, attr, &info));
   ASSERT_TRUE(info.isOverflow());
@@ -2761,7 +2761,8 @@ TEST_F(RuntimeTest, InstanceDelWithread_OnlyAttributeRaisesAttributeError) {
   Layout layout(&scope, type.instanceLayout());
   runtime_.layoutAtPut(layout_id, *layout);
   HeapObject instance(&scope, runtime_.newInstance(layout));
-  Object attribute_name(&scope, runtime_.newStrFromCStr("__globals__"));
+  Str attribute_name(&scope,
+                     runtime_.internStrFromCStr(thread_, "__globals__"));
   EXPECT_TRUE(raisedWithStr(
       runtime_.instanceDel(thread_, instance, attribute_name),
       LayoutId::kAttributeError, "'__globals__' attribute is read-only"));
@@ -3223,7 +3224,8 @@ TEST_F(RuntimeTest, InstanceAtPutWithReadOnlyAttributeRaisesAttributeError) {
   Layout layout(&scope, type.instanceLayout());
   runtime_.layoutAtPut(layout_id, *layout);
   HeapObject instance(&scope, runtime_.newInstance(layout));
-  Object attribute_name(&scope, runtime_.newStrFromCStr("__globals__"));
+  Str attribute_name(&scope,
+                     runtime_.internStrFromCStr(thread_, "__globals__"));
   Object value(&scope, NoneType::object());
   EXPECT_TRUE(
       raisedWithStr(instanceSetAttr(thread_, instance, attribute_name, value),

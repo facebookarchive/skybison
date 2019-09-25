@@ -170,7 +170,11 @@ RawObject typeGetAttribute(Thread* thread, const Type& type,
   }
 
   // No data descriptor found on the meta class, look on the type
-  Object result(&scope, instanceGetAttribute(thread, type, name_str));
+  // TODO(T53626118) Raise an exception when `name_str` is a string subclass
+  // that overrides `__eq__` or `__hash__`.
+  Str name_underlying(&scope, strUnderlying(thread, name_str));
+  Str name_interned(&scope, runtime->internStr(thread, name_underlying));
+  Object result(&scope, instanceGetAttribute(thread, type, name_interned));
   if (!result.isError()) {
     return *result;
   }

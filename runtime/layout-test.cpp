@@ -26,7 +26,7 @@ TEST_F(LayoutTest, FindAttribute) {
   Layout layout(&scope, runtime_.layoutCreateEmpty(thread_));
 
   // Should fail to find an attribute that isn't present
-  Object attr(&scope, runtime_.newStrFromCStr("myattr"));
+  Str attr(&scope, runtime_.internStrFromCStr(thread_, "myattr"));
   AttributeInfo info;
   EXPECT_FALSE(runtime_.layoutFindAttribute(thread_, layout, attr, &info));
 
@@ -49,7 +49,7 @@ TEST_F(LayoutTest, AddNewAttributes) {
   Layout layout(&scope, runtime_.layoutCreateEmpty(thread_));
 
   // Should fail to find an attribute that isn't present
-  Object attr(&scope, runtime_.newStrFromCStr("myattr"));
+  Str attr(&scope, runtime_.internStrFromCStr(thread_, "myattr"));
   AttributeInfo info;
   ASSERT_FALSE(runtime_.layoutFindAttribute(thread_, layout, attr, &info));
 
@@ -64,7 +64,7 @@ TEST_F(LayoutTest, AddNewAttributes) {
   EXPECT_EQ(info.offset(), 0);
 
   // Adding another attribute should transition the layout again
-  Object attr2(&scope, runtime_.newStrFromCStr("another_attr"));
+  Str attr2(&scope, runtime_.internStrFromCStr(thread_, "another_attr"));
   ASSERT_FALSE(runtime_.layoutFindAttribute(thread_, layout2, attr2, &info));
   Layout layout3(&scope,
                  runtime_.layoutAddAttribute(thread_, layout2, attr2, 0));
@@ -84,7 +84,7 @@ TEST_F(LayoutTest, AddDuplicateAttributes) {
   Layout layout(&scope, runtime_.layoutCreateEmpty(thread_));
 
   // Add an attribute
-  Object attr(&scope, runtime_.newStrFromCStr("myattr"));
+  Str attr(&scope, runtime_.internStrFromCStr(thread_, "myattr"));
   AttributeInfo info;
   ASSERT_FALSE(runtime_.layoutFindAttribute(thread_, layout, attr, &info));
 
@@ -106,7 +106,7 @@ TEST_F(LayoutTest, AddDuplicateAttributes) {
 TEST_F(LayoutTest, DeleteNonExistentAttribute) {
   HandleScope scope(thread_);
   Layout layout(&scope, runtime_.layoutCreateEmpty(thread_));
-  Object attr(&scope, runtime_.newStrFromCStr("myattr"));
+  Str attr(&scope, runtime_.internStrFromCStr(thread_, "myattr"));
   RawObject result = runtime_.layoutDeleteAttribute(thread_, layout, attr);
   EXPECT_TRUE(result.isError());
 }
@@ -115,7 +115,7 @@ TEST_F(LayoutTest, DeleteInObjectAttribute) {
   HandleScope scope(thread_);
 
   // Create a new layout with a single in-object attribute
-  Object attr(&scope, runtime_.newStrFromCStr("myattr"));
+  Str attr(&scope, runtime_.internStrFromCStr(thread_, "myattr"));
   Tuple entry(&scope, runtime_.newTuple(2));
   entry.atPut(0, *attr);
   entry.atPut(1, AttributeInfo(2222, AttributeFlags::kInObject).asSmallInt());
@@ -152,11 +152,11 @@ TEST_F(LayoutTest, DeleteOverflowAttribute) {
   HandleScope scope(thread_);
 
   // Create a new layout with several overflow attributes
-  Object attr(&scope, runtime_.newStrFromCStr("myattr"));
-  Object attr2(&scope, runtime_.newStrFromCStr("myattr2"));
-  Object attr3(&scope, runtime_.newStrFromCStr("myattr3"));
+  Str attr(&scope, runtime_.internStrFromCStr(thread_, "myattr"));
+  Str attr2(&scope, runtime_.internStrFromCStr(thread_, "myattr2"));
+  Str attr3(&scope, runtime_.internStrFromCStr(thread_, "myattr3"));
   Tuple attrs(&scope, runtime_.newTuple(3));
-  Object* names[] = {&attr, &attr2, &attr3};
+  Str* names[] = {&attr, &attr2, &attr3};
   for (word i = 0; i < attrs.length(); i++) {
     Tuple entry(&scope, runtime_.newTuple(2));
     entry.atPut(0, **names[i]);
@@ -237,7 +237,7 @@ TEST_F(LayoutTest, DeleteAndAddInObjectAttribute) {
   // Create a new layout with one overflow attribute and one in-object
   // attribute
   Layout layout(&scope, runtime_.layoutCreateEmpty(thread_));
-  Object inobject(&scope, runtime_.newStrFromCStr("inobject"));
+  Str inobject(&scope, runtime_.internStrFromCStr(thread_, "inobject"));
   layout.setInObjectAttributes(
       createLayoutAttribute(&runtime_, inobject, AttributeFlags::kInObject));
   Object overflow(&scope, runtime_.newStrFromCStr("overflow"));
@@ -260,7 +260,7 @@ TEST_F(LayoutTest, DeleteAndAddInObjectAttribute) {
 TEST_F(LayoutTest, VerifyChildLayout) {
   HandleScope scope(thread_);
   Layout parent(&scope, runtime_.newLayout());
-  Object attr(&scope, runtime_.newStrFromCStr("foo"));
+  Str attr(&scope, runtime_.internStrFromCStr(thread_, "foo"));
   Layout child(&scope,
                runtime_.layoutAddAttribute(Thread::current(), parent, attr,
                                            AttributeFlags::kNone));
