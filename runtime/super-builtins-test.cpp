@@ -30,6 +30,27 @@ s = C.get_super()
   EXPECT_EQ(s.objectType(), m);
 }
 
+TEST_F(SuperBuiltinsTest, DunderInitWithNonDefaultMetaclassReturnsSuper) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class M(type): pass
+class C(metaclass=M):
+  def __new__(cls):
+    return super()
+class D(C): pass
+s = D()
+)")
+                   .isError());
+  Object c(&scope, mainModuleAt(&runtime_, "C"));
+  Object d(&scope, mainModuleAt(&runtime_, "D"));
+  Object s_obj(&scope, mainModuleAt(&runtime_, "s"));
+  ASSERT_TRUE(s_obj.isSuper());
+  Super s(&scope, *s_obj);
+  EXPECT_EQ(s.type(), c);
+  EXPECT_EQ(s.object(), d);
+  EXPECT_EQ(s.objectType(), d);
+}
+
 TEST_F(SuperBuiltinsTest, DunderCallWorksInTypesWithNonDefaultMetaclass) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class M(type): pass

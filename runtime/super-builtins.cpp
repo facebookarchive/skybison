@@ -166,7 +166,7 @@ RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   super.setObject(*obj);
   Object obj_type_obj(&scope, NoneType::object());
   Type type(&scope, *type_obj);
-  if (obj.isType()) {
+  if (runtime->isInstanceOfType(*obj)) {
     Type obj_type(&scope, *obj);
     if (runtime->isSubclass(obj_type, type)) {
       obj_type_obj = *obj;
