@@ -128,14 +128,13 @@ RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
     }
     Tuple free_vars(&scope, code.freevars());
     RawObject cell = Error::notFound();
-    for (word i = 0; i < free_vars.length(); i++) {
-      if (Str::cast(free_vars.at(i))
-              .equals(runtime->symbols()->DunderClass())) {
+    for (word i = 0, length = free_vars.length(); i < length; i++) {
+      if (free_vars.at(i) == runtime->symbols()->DunderClass()) {
         cell = caller_frame->local(code.nlocals() + code.numCellvars() + i);
         break;
       }
     }
-    if (cell.isError() || !cell.isValueCell()) {
+    if (cell.isErrorNotFound() || !cell.isValueCell()) {
       return thread->raiseWithFmt(LayoutId::kRuntimeError,
                                   "super(): __class__ cell not found");
     }
