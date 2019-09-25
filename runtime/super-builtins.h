@@ -19,6 +19,7 @@ class SuperBuiltins
   static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];
+  static const BuiltinAttribute kAttributes[];
 };
 
 }  // namespace python

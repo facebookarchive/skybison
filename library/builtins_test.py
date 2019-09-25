@@ -7472,6 +7472,39 @@ class SumTests(unittest.TestCase):
         self.assertEqual(result, 0)
 
 
+class SuperTests(unittest.TestCase):
+    def test_dunder_thisclass_returns_this_class(self):
+        class C:
+            def get_super(self):
+                return super()
+
+        class D(C):
+            pass
+
+        self.assertIs(D().get_super().__thisclass__, C)
+
+    def test_dunder_self_returns_self(self):
+        class C:
+            def get_super(self):
+                return super()
+
+        class D(C):
+            pass
+
+        i = D()
+        self.assertIs(i.get_super().__self__, i)
+
+    def test_dunder_self_class_returns_self_class(self):
+        class C:
+            def get_super(self):
+                return super()
+
+        class D(C):
+            pass
+
+        self.assertIs(D().get_super().__self_class__, D)
+
+
 class SyntaxErrorTests(unittest.TestCase):
     def test_dunder_init_with_no_args_sets_msg_to_none(self):
         obj = SyntaxError()

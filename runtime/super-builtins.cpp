@@ -60,6 +60,15 @@ const BuiltinMethod SuperBuiltins::kBuiltinMethods[] = {
     {SymbolId::kSentinelId, nullptr},
 };
 
+const BuiltinAttribute SuperBuiltins::kAttributes[] = {
+    {SymbolId::kDunderThisclass, RawSuper::kTypeOffset,
+     AttributeFlags::kReadOnly},
+    {SymbolId::kDunderSelf, RawSuper::kObjectOffset, AttributeFlags::kReadOnly},
+    {SymbolId::kDunderSelfClass, RawSuper::kObjectTypeOffset,
+     AttributeFlags::kReadOnly},
+    {SymbolId::kSentinelId, -1},
+};
+
 RawObject SuperBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
                                             word nargs) {
   Arguments args(frame, nargs);

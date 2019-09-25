@@ -122,6 +122,7 @@ class Runtime;
   V(DunderRtruediv, "__rtruediv__")                                            \
   V(DunderRxor, "__rxor__")                                                    \
   V(DunderSelf, "__self__")                                                    \
+  V(DunderSelfClass, "__self_class__")                                         \
   V(DunderSet, "__set__")                                                      \
   V(DunderSetattr, "__setattr__")                                              \
   V(DunderSetitem, "__setitem__")                                              \
@@ -131,6 +132,7 @@ class Runtime;
   V(DunderSub, "__sub__")                                                      \
   V(DunderSubclasses, "__subclasses__")                                        \
   V(DunderSuppressContext, "__suppress_context__")                             \
+  V(DunderThisclass, "__thisclass__")                                          \
   V(DunderTraceback, "__traceback__")                                          \
   V(DunderTruediv, "__truediv__")                                              \
   V(DunderTrunc, "__trunc__")                                                  \
