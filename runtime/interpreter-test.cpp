@@ -353,14 +353,14 @@ TEST_F(InterpreterTest, BinaryOperationSetMethodSetsMethod) {
   Object v0(&scope, runtime_.newInt(13));
   Object v1(&scope, runtime_.newInt(42));
   Object method(&scope, NoneType::object());
-  IcBinopFlags flags;
+  IcBinaryOpFlags flags;
   EXPECT_TRUE(isIntEqualsWord(
       Interpreter::binaryOperationSetMethod(thread_, thread_->currentFrame(),
                                             Interpreter::BinaryOp::SUB, v0, v1,
                                             &method, &flags),
       -29));
   EXPECT_TRUE(method.isFunction());
-  EXPECT_EQ(flags, IC_BINOP_NOTIMPLEMENTED_RETRY);
+  EXPECT_EQ(flags, IC_BINARYOP_NOTIMPLEMENTED_RETRY);
 
   Object v2(&scope, runtime_.newInt(3));
   Object v3(&scope, runtime_.newInt(8));
@@ -396,7 +396,7 @@ v3 = ASub(2)
   Object v3(&scope, mainModuleAt(&runtime_, "v3"));
 
   Object method(&scope, NoneType::object());
-  IcBinopFlags flags;
+  IcBinaryOpFlags flags;
   Object result_obj(
       &scope, Interpreter::binaryOperationSetMethod(
                   thread_, thread_->currentFrame(), Interpreter::BinaryOp::SUB,
@@ -407,7 +407,7 @@ v3 = ASub(2)
   EXPECT_EQ(result.at(0), v1);
   EXPECT_EQ(result.at(1), v0);
   EXPECT_TRUE(method.isFunction());
-  EXPECT_EQ(flags, IC_BINOP_REFLECTED | IC_BINOP_NOTIMPLEMENTED_RETRY);
+  EXPECT_EQ(flags, IC_BINARYOP_REFLECTED | IC_BINARYOP_NOTIMPLEMENTED_RETRY);
 
   ASSERT_EQ(v0.layoutId(), v2.layoutId());
   ASSERT_EQ(v1.layoutId(), v3.layoutId());
@@ -443,14 +443,14 @@ v3 = B(-12)
   Object v3(&scope, mainModuleAt(&runtime_, "v3"));
 
   Object method(&scope, NoneType::object());
-  IcBinopFlags flags;
+  IcBinaryOpFlags flags;
   EXPECT_TRUE(isIntEqualsWord(
       Interpreter::binaryOperationSetMethod(thread_, thread_->currentFrame(),
                                             Interpreter::BinaryOp::SUB, v0, v1,
                                             &method, &flags),
       -12));
   EXPECT_TRUE(method.isFunction());
-  EXPECT_EQ(flags, IC_BINOP_REFLECTED);
+  EXPECT_EQ(flags, IC_BINARYOP_REFLECTED);
 
   ASSERT_EQ(v0.layoutId(), v2.layoutId());
   ASSERT_EQ(v1.layoutId(), v3.layoutId());
@@ -485,14 +485,14 @@ v3 = B(1)
   Object v3(&scope, mainModuleAt(&runtime_, "v3"));
 
   Object method(&scope, NoneType::object());
-  IcBinopFlags flags;
+  IcBinaryOpFlags flags;
   EXPECT_TRUE(isIntEqualsWord(
       Interpreter::binaryOperationSetMethod(thread_, thread_->currentFrame(),
                                             Interpreter::BinaryOp::SUB, v0, v1,
                                             &method, &flags),
       2));
   EXPECT_TRUE(method.isFunction());
-  EXPECT_EQ(flags, IC_BINOP_NOTIMPLEMENTED_RETRY);
+  EXPECT_EQ(flags, IC_BINARYOP_NOTIMPLEMENTED_RETRY);
 
   ASSERT_EQ(v0.layoutId(), v2.layoutId());
   ASSERT_EQ(v1.layoutId(), v3.layoutId());
@@ -527,9 +527,9 @@ TEST_F(InterpreterTest, DoBinaryOpWithCacheHitCallsCachedMethod) {
 
   ASSERT_TRUE(function.caches().isTuple());
   Tuple caches(&scope, function.caches());
-  IcBinopFlags dummy;
-  ASSERT_FALSE(icLookupBinop(*caches, 0, LayoutId::kSmallInt,
-                             LayoutId::kSmallInt, &dummy)
+  IcBinaryOpFlags dummy;
+  ASSERT_FALSE(icLookupBinaryOp(*caches, 0, LayoutId::kSmallInt,
+                                LayoutId::kSmallInt, &dummy)
                    .isErrorNotFound());
   // Call from inline cache.
   EXPECT_TRUE(isIntEqualsWord(
@@ -574,9 +574,10 @@ v1 = 7
 
   ASSERT_TRUE(function.caches().isTuple());
   Tuple caches(&scope, function.caches());
-  IcBinopFlags dummy;
-  ASSERT_FALSE(icLookupBinop(*caches, 0, v0.layoutId(), v1.layoutId(), &dummy)
-                   .isErrorNotFound());
+  IcBinaryOpFlags dummy;
+  ASSERT_FALSE(
+      icLookupBinaryOp(*caches, 0, v0.layoutId(), v1.layoutId(), &dummy)
+          .isErrorNotFound());
 
   // Should hit the cache for __sub__ and then call binaryOperationRetry().
   EXPECT_TRUE(isIntEqualsWord(
@@ -770,13 +771,13 @@ v3 = MyInt(7)
   Object v2(&scope, mainModuleAt(&runtime_, "v2"));
   Object v3(&scope, mainModuleAt(&runtime_, "v3"));
   Object method(&scope, NoneType::object());
-  IcBinopFlags flags;
+  IcBinaryOpFlags flags;
   EXPECT_TRUE(isIntEqualsWord(
       Interpreter::inplaceOperationSetMethod(thread_, thread_->currentFrame(),
                                              Interpreter::BinaryOp::SUB, v0, v1,
                                              &method, &flags),
       18));
-  EXPECT_EQ(flags, IC_INPLACE_BINOP_RETRY);
+  EXPECT_EQ(flags, IC_INPLACE_BINARYOP_RETRY);
 
   ASSERT_EQ(v0.layoutId(), v2.layoutId());
   ASSERT_EQ(v1.layoutId(), v3.layoutId());
@@ -805,13 +806,13 @@ v3 = MyIntSub(4)
   Object v2(&scope, mainModuleAt(&runtime_, "v2"));
   Object v3(&scope, mainModuleAt(&runtime_, "v3"));
   Object method(&scope, NoneType::object());
-  IcBinopFlags flags;
+  IcBinaryOpFlags flags;
   EXPECT_TRUE(isIntEqualsWord(
       Interpreter::inplaceOperationSetMethod(thread_, thread_->currentFrame(),
                                              Interpreter::BinaryOp::POW, v0, v1,
                                              &method, &flags),
       20));
-  EXPECT_EQ(flags, IC_BINOP_REFLECTED | IC_BINOP_NOTIMPLEMENTED_RETRY);
+  EXPECT_EQ(flags, IC_BINARYOP_REFLECTED | IC_BINARYOP_NOTIMPLEMENTED_RETRY);
 
   ASSERT_EQ(v0.layoutId(), v2.layoutId());
   ASSERT_EQ(v1.layoutId(), v3.layoutId());
@@ -984,13 +985,13 @@ TEST_F(InterpreterTest, CompareOpSetMethodSetsMethod) {
   Object v0(&scope, runtime_.newInt(39));
   Object v1(&scope, runtime_.newInt(11));
   Object method(&scope, NoneType::object());
-  IcBinopFlags flags;
+  IcBinaryOpFlags flags;
   EXPECT_EQ(Interpreter::compareOperationSetMethod(
                 thread_, thread_->currentFrame(), CompareOp::LT, v0, v1,
                 &method, &flags),
             Bool::falseObj());
   EXPECT_TRUE(method.isFunction());
-  EXPECT_EQ(flags, IC_BINOP_NOTIMPLEMENTED_RETRY);
+  EXPECT_EQ(flags, IC_BINARYOP_NOTIMPLEMENTED_RETRY);
 
   Object v2(&scope, runtime_.newInt(3));
   Object v3(&scope, runtime_.newInt(8));
@@ -1021,12 +1022,12 @@ v3 = ASub(2)
   Object v2(&scope, mainModuleAt(&runtime_, "v2"));
   Object v3(&scope, mainModuleAt(&runtime_, "v3"));
   Object method(&scope, NoneType::object());
-  IcBinopFlags flags;
+  IcBinaryOpFlags flags;
   Object result_obj(&scope, Interpreter::compareOperationSetMethod(
                                 thread_, thread_->currentFrame(), CompareOp::LE,
                                 v0, v1, &method, &flags));
   EXPECT_TRUE(method.isFunction());
-  EXPECT_EQ(flags, IC_BINOP_REFLECTED);
+  EXPECT_EQ(flags, IC_BINARYOP_REFLECTED);
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1067,12 +1068,12 @@ v3 = ASub(2)
   Object v2(&scope, mainModuleAt(&runtime_, "v2"));
   Object v3(&scope, mainModuleAt(&runtime_, "v3"));
   Object method(&scope, NoneType::object());
-  IcBinopFlags flags;
+  IcBinaryOpFlags flags;
   Object result_obj(&scope, Interpreter::compareOperationSetMethod(
                                 thread_, thread_->currentFrame(), CompareOp::LE,
                                 v0, v1, &method, &flags));
   EXPECT_TRUE(method.isFunction());
-  EXPECT_EQ(flags, IC_BINOP_REFLECTED | IC_BINOP_NOTIMPLEMENTED_RETRY);
+  EXPECT_EQ(flags, IC_BINARYOP_REFLECTED | IC_BINARYOP_NOTIMPLEMENTED_RETRY);
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1119,9 +1120,9 @@ result = cache_compare_op(a, b)
   Tuple caches(&scope, cache_compare_op.caches());
   Object a_obj(&scope, mainModuleAt(&runtime_, "a"));
   Object b_obj(&scope, mainModuleAt(&runtime_, "b"));
-  IcBinopFlags flag;
+  IcBinaryOpFlags flag;
   EXPECT_EQ(
-      icLookupBinop(*caches, 0, a_obj.layoutId(), b_obj.layoutId(), &flag),
+      icLookupBinaryOp(*caches, 0, a_obj.layoutId(), b_obj.layoutId(), &flag),
       mainModuleAt(&runtime_, "A__ge__"));
 
   // Verify that A.__ge__ has the dependent.
@@ -4217,9 +4218,9 @@ c = cache_compare_op(a, b)
   Function cache_compare_op(&scope,
                             mainModuleAt(&runtime_, "cache_compare_op"));
   Tuple caches(&scope, cache_compare_op.caches());
-  IcBinopFlags flags_out;
-  Object cached(&scope, icLookupBinop(*caches, 0, a.layoutId(), b.layoutId(),
-                                      &flags_out));
+  IcBinaryOpFlags flags_out;
+  Object cached(&scope, icLookupBinaryOp(*caches, 0, a.layoutId(), b.layoutId(),
+                                         &flags_out));
   ASSERT_EQ(*cached, *type_a__dunder_ge);
 
   // Updating irrelevant compare op dunder functions doesn't trigger
@@ -4229,7 +4230,7 @@ c = cache_compare_op(a, b)
   ASSERT_TRUE(Interpreter::callFunction0(thread_, thread_->currentFrame(),
                                          do_not_invalidate)
                   .isNoneType());
-  cached = icLookupBinop(*caches, 0, a.layoutId(), b.layoutId(), &flags_out);
+  cached = icLookupBinaryOp(*caches, 0, a.layoutId(), b.layoutId(), &flags_out);
   EXPECT_EQ(*cached, *type_a__dunder_ge);
 
   // Updating relevant compare op dunder functions triggers invalidation.
@@ -4237,8 +4238,9 @@ c = cache_compare_op(a, b)
   ASSERT_TRUE(
       Interpreter::callFunction0(thread_, thread_->currentFrame(), invalidate)
           .isNoneType());
-  ASSERT_TRUE(icLookupBinop(*caches, 0, a.layoutId(), b.layoutId(), &flags_out)
-                  .isErrorNotFound());
+  ASSERT_TRUE(
+      icLookupBinaryOp(*caches, 0, a.layoutId(), b.layoutId(), &flags_out)
+          .isErrorNotFound());
 }
 
 TEST(InterpreterTestNoFixture, LoadMethodLoadingMethodFollowedByCallMethod) {

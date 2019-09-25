@@ -141,26 +141,27 @@ class Interpreter {
                                             BinaryOp op, const Object& left,
                                             const Object& right,
                                             Object* method_out,
-                                            IcBinopFlags* flags_out);
+                                            IcBinaryOpFlags* flags_out);
 
   // Calls a previously cached binary operation. Note that the caller still
   // needs to check for a `NotImplemented` result and call
   // `binaryOperationRetry()` if necessary.
   static RawObject binaryOperationWithMethod(Thread* thread, Frame* caller,
                                              RawObject method,
-                                             IcBinopFlags flags, RawObject left,
-                                             RawObject right);
+                                             IcBinaryOpFlags flags,
+                                             RawObject left, RawObject right);
 
-  // Calls the normal binary operation if `flags` has the `IC_BINOP_REFLECTED`
-  // and the `IC_BINOP_NOTIMPLEMENTED_RETRY` bits are set; calls the reflected
-  // operation if just `IC_BINOP_NOTIMPLEMENTED_RETRY` is set. Raises an error
-  // if any of the two operations raised `NotImplemented` or none was called.
+  // Calls the normal binary operation if `flags` has the
+  // `IC_BINARYOP_REFLECTED` and the `IC_BINARYOP_NOTIMPLEMENTED_RETRY` bits are
+  // set; calls the reflected operation if just
+  // `IC_BINARYOP_NOTIMPLEMENTED_RETRY` is set. Raises an error if any of the
+  // two operations raised `NotImplemented` or none was called.
   //
   // This represents the second half of the binary operation calling mechanism
   // after we attempted a first lookup and call. It is a separate function so we
   // can use it independently of the first lookup using inline caching.
   static RawObject binaryOperationRetry(Thread* thread, Frame* caller,
-                                        BinaryOp op, IcBinopFlags flags,
+                                        BinaryOp op, IcBinaryOpFlags flags,
                                         const Object& left,
                                         const Object& right);
 
@@ -171,10 +172,10 @@ class Interpreter {
                                              BinaryOp op, const Object& left,
                                              const Object& right,
                                              Object* method_out,
-                                             IcBinopFlags* flags_out);
+                                             IcBinaryOpFlags* flags_out);
 
   static RawObject compareOperationRetry(Thread* thread, Frame* caller,
-                                         CompareOp op, IcBinopFlags flags,
+                                         CompareOp op, IcBinaryOpFlags flags,
                                          const Object& left,
                                          const Object& right);
 
@@ -182,7 +183,7 @@ class Interpreter {
                                              CompareOp op, const Object& left,
                                              const Object& right,
                                              Object* method_out,
-                                             IcBinopFlags* flags_out);
+                                             IcBinaryOpFlags* flags_out);
 
   static RawObject compareOperation(Thread* thread, Frame* caller, CompareOp op,
                                     const Object& left, const Object& right);
@@ -487,20 +488,20 @@ class Interpreter {
   static Continue storeAttrUpdateCache(Thread* thread, word arg);
 
   using BinopFallbackHandler = Continue (*)(Thread* thread, word arg,
-                                            IcBinopFlags flags);
+                                            IcBinaryOpFlags flags);
   static Continue cachedBinaryOpImpl(Thread* thread, word arg,
                                      OpcodeHandler update_cache,
                                      BinopFallbackHandler fallback);
 
   static Continue binaryOpUpdateCache(Thread* thread, word arg);
   static Continue binaryOpFallback(Thread* thread, word arg,
-                                   IcBinopFlags flags);
+                                   IcBinaryOpFlags flags);
   static Continue compareOpUpdateCache(Thread* thread, word arg);
   static Continue compareOpFallback(Thread* thread, word arg,
-                                    IcBinopFlags flags);
+                                    IcBinaryOpFlags flags);
   static Continue inplaceOpUpdateCache(Thread* thread, word arg);
   static Continue inplaceOpFallback(Thread* thread, word arg,
-                                    IcBinopFlags flags);
+                                    IcBinaryOpFlags flags);
 
   static void executeImpl(Thread* thread, Frame* entry_frame);
 

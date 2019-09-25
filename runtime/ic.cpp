@@ -213,7 +213,7 @@ bool icIsAttrCachedInDependent(Thread* thread, const Type& type,
         return true;
       }
     } else {
-      DCHECK(it.isBinopCache(),
+      DCHECK(it.isBinaryOpCache(),
              "a cache must be either for attributes or binops");
       if (attr_name.equals(it.leftMethodName()) &&
           icIsCachedAttributeAffectedByUpdatedType(thread, it.leftLayoutId(),
@@ -230,9 +230,9 @@ bool icIsAttrCachedInDependent(Thread* thread, const Type& type,
   return false;
 }
 
-void icEvictAttrCache(Thread* thread, const IcIterator& it,
-                      const Type& updated_type, const Str& updated_attr,
-                      AttributeKind attribute_kind, const Function& dependent) {
+void icEvictAttr(Thread* thread, const IcIterator& it, const Type& updated_type,
+                 const Str& updated_attr, AttributeKind attribute_kind,
+                 const Function& dependent) {
   DCHECK(it.isAttrCache(), "ic should point to an attribute cache");
   if (!it.isAttrNameEqualTo(updated_attr)) {
     return;
@@ -262,9 +262,9 @@ void icEvictAttrCache(Thread* thread, const IcIterator& it,
 }
 
 // TODO(T54277418): Pass SymbolId for updated_attr.
-void icEvictBinopCache(Thread* thread, const IcIterator& it,
-                       const Type& updated_type, const Str& updated_attr,
-                       const Function& dependent) {
+void icEvictBinaryOp(Thread* thread, const IcIterator& it,
+                     const Type& updated_type, const Str& updated_attr,
+                     const Function& dependent) {
   if (it.leftMethodName() != updated_attr &&
       it.rightMethodName() != updated_attr) {
     // This cache cannot be affected since it references a different attribute
@@ -339,11 +339,11 @@ void icEvictCache(Thread* thread, const Function& dependent, const Type& type,
   for (IcIterator it(&scope, thread->runtime(), *dependent); it.hasNext();
        it.next()) {
     if (it.isAttrCache()) {
-      icEvictAttrCache(thread, it, type, attr, attribute_kind, dependent);
+      icEvictAttr(thread, it, type, attr, attribute_kind, dependent);
     } else {
-      DCHECK(it.isBinopCache(),
+      DCHECK(it.isBinaryOpCache(),
              "a cache must be either for attributes or binops");
-      icEvictBinopCache(thread, it, type, attr, dependent);
+      icEvictBinaryOp(thread, it, type, attr, dependent);
     }
   }
 }
@@ -372,9 +372,9 @@ void icInvalidateAttr(Thread* thread, const Type& type, const Str& attr_name,
          "dependencyLink must be None if is_data_descriptor is true");
 }
 
-void icUpdateBinop(RawTuple caches, word index, LayoutId left_layout_id,
-                   LayoutId right_layout_id, RawObject value,
-                   IcBinopFlags flags) {
+void icUpdateBinaryOp(RawTuple caches, word index, LayoutId left_layout_id,
+                      LayoutId right_layout_id, RawObject value,
+                      IcBinaryOpFlags flags) {
   word key_high_bits = static_cast<word>(left_layout_id)
                            << Header::kLayoutIdBits |
                        static_cast<word>(right_layout_id);
@@ -486,14 +486,14 @@ void icInvalidateGlobalVar(Thread* thread, const ValueCell& value_cell) {
 }
 
 RawObject IcIterator::leftMethodName() const {
-  DCHECK(isBinopCache(), "should be only called for attribute caches");
+  DCHECK(isBinaryOpCache(), "should be only called for attribute caches");
   CompareOp compare_op =
       static_cast<CompareOp>(originalArg(*function_, bytecode_op_.arg));
   return runtime_->symbols()->at(runtime_->comparisonSelector(compare_op));
 }
 
 RawObject IcIterator::rightMethodName() const {
-  DCHECK(isBinopCache(), "should be only called for attribute caches");
+  DCHECK(isBinaryOpCache(), "should be only called for attribute caches");
   CompareOp compare_op =
       static_cast<CompareOp>(originalArg(*function_, bytecode_op_.arg));
   return runtime_->symbols()->at(

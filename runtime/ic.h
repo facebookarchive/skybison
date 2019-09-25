@@ -8,17 +8,17 @@
 namespace python {
 
 // Bitset indicating how a cached binary operation needs to be called.
-enum IcBinopFlags : uint8_t {
-  IC_BINOP_NONE = 0,
+enum IcBinaryOpFlags : uint8_t {
+  IC_BINARYOP_NONE = 0,
   // Swap arguments when calling the method.
-  IC_BINOP_REFLECTED = 1 << 0,
+  IC_BINARYOP_REFLECTED = 1 << 0,
   // Retry alternative method when method returns `NotImplemented`.  Should try
-  // the non-reflected op if the `IC_BINOP_REFLECTED` flag is set and vice
+  // the non-reflected op if the `IC_BINARYOP_REFLECTED` flag is set and vice
   // versa.
-  IC_BINOP_NOTIMPLEMENTED_RETRY = 1 << 1,
+  IC_BINARYOP_NOTIMPLEMENTED_RETRY = 1 << 1,
   // This flag is set when the cached method is an in-place operation (such as
   // __iadd__).
-  IC_INPLACE_BINOP_RETRY = 1 << 2,
+  IC_INPLACE_BINARYOP_RETRY = 1 << 2,
 };
 
 // Looks for a cache entry for an attribute with a `layout_id` key.
@@ -28,8 +28,9 @@ RawObject icLookupAttr(RawTuple caches, word index, LayoutId layout_id);
 // Looks for a cache entry with `left_layout_id` and `right_layout_id` as key.
 // Returns the cached value comprising of an object reference and flags. Returns
 // `ErrorNotFound` if none was found.
-RawObject icLookupBinop(RawTuple caches, word index, LayoutId left_layout_id,
-                        LayoutId right_layout_id, IcBinopFlags* flags_out);
+RawObject icLookupBinaryOp(RawTuple caches, word index, LayoutId left_layout_id,
+                           LayoutId right_layout_id,
+                           IcBinaryOpFlags* flags_out);
 
 // Looks for a cache entry for a global variable.
 // Returns a ValueCell in case of cache hit.
@@ -59,11 +60,11 @@ enum class AttributeKind { kDataDescriptor, kNotADataDescriptor };
 
 // Try evicting the attribute cache entry pointed-to by `it` and its
 // dependencies to dependent.
-void icEvictAttrCache(Thread* thread, const IcIterator& it,
-                      const Type& updated_type, const Str& updated_attr,
-                      AttributeKind attribute_kind, const Function& dependent);
+void icEvictAttr(Thread* thread, const IcIterator& it, const Type& updated_type,
+                 const Str& updated_attr, AttributeKind attribute_kind,
+                 const Function& dependent);
 
-// icEvictBinopCache tries evicting the binop cache pointed-to by `it and
+// icEvictBinaryOp tries evicting the binary op cache pointed-to by `it and
 // deletes the evicted cache' dependencies.
 //
 // - Invalidation condition
@@ -104,9 +105,9 @@ void icEvictAttrCache(Thread* thread, const IcIterator& it,
 //
 // In the example, since cache_binop still caches B.__le__ at line 2 we cannot
 // delete this dependency. If line 2 didn't exist, we could delete it.
-void icEvictBinopCache(Thread* thread, const IcIterator& it,
-                       const Type& updated_type, const Str& updated_attr,
-                       const Function& dependent);
+void icEvictBinaryOp(Thread* thread, const IcIterator& it,
+                     const Type& updated_type, const Str& updated_attr,
+                     const Function& dependent);
 
 // Delete dependent in ValueCell's dependencyLink.
 void icDeleteDependentInValueCell(Thread* thread, const ValueCell& value_cell,
@@ -173,9 +174,9 @@ void icInvalidateAttr(Thread* thread, const Type& type, const Str& attr_name,
 
 // Sets a cache entry to a `left_layout_id` and `right_layout_id` key with
 // the given `value` and `flags` as value.
-void icUpdateBinop(RawTuple caches, word index, LayoutId left_layout_id,
-                   LayoutId right_layout_id, RawObject value,
-                   IcBinopFlags flags);
+void icUpdateBinaryOp(RawTuple caches, word index, LayoutId left_layout_id,
+                      LayoutId right_layout_id, RawObject value,
+                      IcBinaryOpFlags flags);
 
 // Sets a cache entry for a global variable.
 void icUpdateGlobalVar(Thread* thread, const Function& function, word index,
@@ -267,7 +268,7 @@ class IcIterator {
     }
   }
 
-  bool isBinopCache() const {
+  bool isBinaryOpCache() const {
     switch (bytecode_op_.bc) {
       case COMPARE_OP_CACHED:
         return true;
@@ -294,13 +295,13 @@ class IcIterator {
   }
 
   LayoutId leftLayoutId() const {
-    DCHECK(isBinopCache(), "should be only called for attribute caches");
+    DCHECK(isBinaryOpCache(), "should be only called for attribute caches");
     word cache_key_value = SmallInt::cast(key()).value() >> 8;
     return static_cast<LayoutId>(cache_key_value >> Header::kLayoutIdBits);
   }
 
   LayoutId rightLayoutId() const {
-    DCHECK(isBinopCache(), "should be only called for attribute caches");
+    DCHECK(isBinaryOpCache(), "should be only called for attribute caches");
     word cache_key_value = SmallInt::cast(key()).value() >> 8;
     return static_cast<LayoutId>(cache_key_value &
                                  ((1 << Header::kLayoutIdBits) - 1));
@@ -355,10 +356,10 @@ inline RawObject icLookupAttr(RawTuple caches, word index, LayoutId layout_id) {
   return Error::notFound();
 }
 
-inline RawObject icLookupBinop(RawTuple caches, word index,
-                               LayoutId left_layout_id,
-                               LayoutId right_layout_id,
-                               IcBinopFlags* flags_out) {
+inline RawObject icLookupBinaryOp(RawTuple caches, word index,
+                                  LayoutId left_layout_id,
+                                  LayoutId right_layout_id,
+                                  IcBinaryOpFlags* flags_out) {
   static_assert(Header::kLayoutIdBits * 2 + kBitsPerByte <= SmallInt::kBits,
                 "Two layout ids and flags overflow a SmallInt");
   word key_high_bits = static_cast<word>(left_layout_id)
@@ -373,7 +374,7 @@ inline RawObject icLookupBinop(RawTuple caches, word index,
     }
     word entry_key_value = SmallInt::cast(entry_key).value();
     if (entry_key_value >> 8 == key_high_bits) {
-      *flags_out = static_cast<IcBinopFlags>(entry_key_value & 0xff);
+      *flags_out = static_cast<IcBinaryOpFlags>(entry_key_value & 0xff);
       return caches.at(i + kIcEntryValueOffset);
     }
   }
