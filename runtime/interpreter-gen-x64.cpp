@@ -7,6 +7,7 @@
 #include "assembler-x64.h"
 #include "bytecode.h"
 #include "frame.h"
+#include "ic.h"
 #include "interpreter.h"
 #include "memory-region.h"
 #include "os.h"

@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include "ic.h"
 #include "module-builtins.h"
 #include "objects.h"
 #include "runtime.h"

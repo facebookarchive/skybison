@@ -3,7 +3,7 @@
 #include "capi-handles.h"
 #include "frame.h"
 #include "globals.h"
-#include "list-builtins.h"
+#include "ic.h"
 #include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"

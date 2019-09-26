@@ -1,5 +1,6 @@
 #include "bytecode.h"
 
+#include "ic.h"
 #include "runtime.h"
 
 namespace python {

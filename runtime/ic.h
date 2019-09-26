@@ -3,23 +3,10 @@
 
 #include "bytecode.h"
 #include "handles.h"
+#include "interpreter.h"
 #include "objects.h"
 
 namespace python {
-
-// Bitset indicating how a cached binary operation needs to be called.
-enum IcBinaryOpFlags : uint8_t {
-  IC_BINARYOP_NONE = 0,
-  // Swap arguments when calling the method.
-  IC_BINARYOP_REFLECTED = 1 << 0,
-  // Retry alternative method when method returns `NotImplemented`.  Should try
-  // the non-reflected op if the `IC_BINARYOP_REFLECTED` flag is set and vice
-  // versa.
-  IC_BINARYOP_NOTIMPLEMENTED_RETRY = 1 << 1,
-  // This flag is set when the cached method is an in-place operation (such as
-  // __iadd__).
-  IC_INPLACE_BINARYOP_RETRY = 1 << 2,
-};
 
 // Looks for a cache entry for an attribute with a `layout_id` key.
 // Returns the cached value. Returns `ErrorNotFound` if none was found.
@@ -29,8 +16,7 @@ RawObject icLookupAttr(RawTuple caches, word index, LayoutId layout_id);
 // Returns the cached value comprising of an object reference and flags. Returns
 // `ErrorNotFound` if none was found.
 RawObject icLookupBinaryOp(RawTuple caches, word index, LayoutId left_layout_id,
-                           LayoutId right_layout_id,
-                           IcBinaryOpFlags* flags_out);
+                           LayoutId right_layout_id, BinaryOpFlags* flags_out);
 
 // Looks for a cache entry for a global variable.
 // Returns a ValueCell in case of cache hit.
@@ -64,7 +50,7 @@ void icEvictAttr(Thread* thread, const IcIterator& it, const Type& updated_type,
                  const Str& updated_attr, AttributeKind attribute_kind,
                  const Function& dependent);
 
-// icEvictBinaryOp tries evicting the binary op cache pointed-to by `it and
+// icEvictBinaryOp tries evicting the binop cache pointed-to by `it and
 // deletes the evicted cache' dependencies.
 //
 // - Invalidation condition
@@ -176,7 +162,7 @@ void icInvalidateAttr(Thread* thread, const Type& type, const Str& attr_name,
 // the given `value` and `flags` as value.
 void icUpdateBinaryOp(RawTuple caches, word index, LayoutId left_layout_id,
                       LayoutId right_layout_id, RawObject value,
-                      IcBinaryOpFlags flags);
+                      BinaryOpFlags flags);
 
 // Sets a cache entry for a global variable.
 void icUpdateGlobalVar(Thread* thread, const Function& function, word index,
@@ -359,7 +345,7 @@ inline RawObject icLookupAttr(RawTuple caches, word index, LayoutId layout_id) {
 inline RawObject icLookupBinaryOp(RawTuple caches, word index,
                                   LayoutId left_layout_id,
                                   LayoutId right_layout_id,
-                                  IcBinaryOpFlags* flags_out) {
+                                  BinaryOpFlags* flags_out) {
   static_assert(Header::kLayoutIdBits * 2 + kBitsPerByte <= SmallInt::kBits,
                 "Two layout ids and flags overflow a SmallInt");
   word key_high_bits = static_cast<word>(left_layout_id)
@@ -374,7 +360,7 @@ inline RawObject icLookupBinaryOp(RawTuple caches, word index,
     }
     word entry_key_value = SmallInt::cast(entry_key).value();
     if (entry_key_value >> 8 == key_high_bits) {
-      *flags_out = static_cast<IcBinaryOpFlags>(entry_key_value & 0xff);
+      *flags_out = static_cast<BinaryOpFlags>(entry_key_value & 0xff);
       return caches.at(i + kIcEntryValueOffset);
     }
   }

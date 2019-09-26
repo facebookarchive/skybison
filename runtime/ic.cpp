@@ -374,7 +374,7 @@ void icInvalidateAttr(Thread* thread, const Type& type, const Str& attr_name,
 
 void icUpdateBinaryOp(RawTuple caches, word index, LayoutId left_layout_id,
                       LayoutId right_layout_id, RawObject value,
-                      IcBinaryOpFlags flags) {
+                      BinaryOpFlags flags) {
   word key_high_bits = static_cast<word>(left_layout_id)
                            << Header::kLayoutIdBits |
                        static_cast<word>(right_layout_id);

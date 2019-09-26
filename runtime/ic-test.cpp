@@ -51,7 +51,7 @@ TEST_F(IcTest, IcLookupWithoutMatchReturnsErrorNotFound) {
 }
 
 static RawObject binaryOpKey(LayoutId left, LayoutId right,
-                             IcBinaryOpFlags flags) {
+                             BinaryOpFlags flags) {
   return SmallInt::fromWord((static_cast<word>(left) << Header::kLayoutIdBits |
                              static_cast<word>(right))
                                 << kBitsPerByte |
@@ -65,28 +65,28 @@ TEST_F(IcTest, IcLookupBinaryOpReturnsCachedValue) {
   word cache_offset = kIcPointersPerCache;
   caches.atPut(
       cache_offset + 0 * kIcPointersPerEntry + kIcEntryKeyOffset,
-      binaryOpKey(LayoutId::kSmallInt, LayoutId::kNoneType, IC_BINARYOP_NONE));
-  caches.atPut(cache_offset + 1 * kIcPointersPerEntry + kIcEntryKeyOffset,
-               binaryOpKey(LayoutId::kNoneType, LayoutId::kBytes,
-                           IC_BINARYOP_REFLECTED));
-  caches.atPut(cache_offset + 2 * kIcPointersPerEntry + kIcEntryKeyOffset,
-               binaryOpKey(LayoutId::kSmallInt, LayoutId::kBytes,
-                           IC_BINARYOP_REFLECTED));
+      binaryOpKey(LayoutId::kSmallInt, LayoutId::kNoneType, kBinaryOpNone));
+  caches.atPut(
+      cache_offset + 1 * kIcPointersPerEntry + kIcEntryKeyOffset,
+      binaryOpKey(LayoutId::kNoneType, LayoutId::kBytes, kBinaryOpReflected));
+  caches.atPut(
+      cache_offset + 2 * kIcPointersPerEntry + kIcEntryKeyOffset,
+      binaryOpKey(LayoutId::kSmallInt, LayoutId::kBytes, kBinaryOpReflected));
   caches.atPut(cache_offset + 2 * kIcPointersPerEntry + kIcEntryValueOffset,
                runtime_.newStrFromCStr("xy"));
 
-  IcBinaryOpFlags flags;
+  BinaryOpFlags flags;
   EXPECT_TRUE(isStrEqualsCStr(icLookupBinaryOp(*caches, 1, LayoutId::kSmallInt,
                                                LayoutId::kBytes, &flags),
                               "xy"));
-  EXPECT_EQ(flags, IC_BINARYOP_REFLECTED);
+  EXPECT_EQ(flags, kBinaryOpReflected);
 }
 
 TEST_F(IcTest, IcLookupBinaryOpReturnsErrorNotFound) {
   HandleScope scope(thread_);
 
   Tuple caches(&scope, runtime_.newTuple(kIcPointersPerCache));
-  IcBinaryOpFlags flags;
+  BinaryOpFlags flags;
   EXPECT_TRUE(icLookupBinaryOp(*caches, 0, LayoutId::kSmallInt,
                                LayoutId::kSmallInt, &flags)
                   .isErrorNotFound());
@@ -196,7 +196,7 @@ static RawObject dependencyLinkOfTypeAttr(Thread* thread, const Type& type,
   return value_cell.dependencyLink();
 }
 
-TEST_F(IcTest, IcEvictAttrCache) {
+TEST_F(IcTest, IcEvictAttr) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class A:
   def __init__(self):
@@ -273,7 +273,7 @@ class B:
             *cache_a_foo);
 }
 
-TEST_F(IcTest, IcEvictBinaryOpCacheEvictsCacheForUpdateToLeftOperandType) {
+TEST_F(IcTest, IcEvictBinaryOpEvictsCacheForUpdateToLeftOperandType) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class A:
   def __ge__(self, other):
@@ -298,7 +298,7 @@ cache_binop(a, b)
   Object left_operand(&scope, mainModuleAt(&runtime_, "a"));
   Object right_operand(&scope, mainModuleAt(&runtime_, "b"));
   Type left_operand_type(&scope, mainModuleAt(&runtime_, "A"));
-  IcBinaryOpFlags flags_out;
+  BinaryOpFlags flags_out;
   // Precondition check that the A.__ge__ attribute lookup has been cached.
   ASSERT_FALSE(icLookupBinaryOp(*caches, 0, left_operand.layoutId(),
                                 right_operand.layoutId(), &flags_out)
@@ -314,7 +314,7 @@ cache_binop(a, b)
                   .isErrorNotFound());
 }
 
-TEST_F(IcTest, IcEvictBinaryOpCacheEvictsCacheForUpdateToRightOperand) {
+TEST_F(IcTest, IcEvictBinaryOpEvictsCacheForUpdateToRightOperand) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class A:
   def __ge__(self, other):
@@ -339,7 +339,7 @@ cache_binop(a, b)
   Object left_operand(&scope, mainModuleAt(&runtime_, "a"));
   Object right_operand(&scope, mainModuleAt(&runtime_, "b"));
   Type right_operand_type(&scope, mainModuleAt(&runtime_, "B"));
-  IcBinaryOpFlags flags_out;
+  BinaryOpFlags flags_out;
   // Precondition check that the A.__ge__ attribute lookup has been cached.
   ASSERT_FALSE(icLookupBinaryOp(*caches, 0, left_operand.layoutId(),
                                 right_operand.layoutId(), &flags_out)
@@ -354,7 +354,7 @@ cache_binop(a, b)
                   .isErrorNotFound());
 }
 
-TEST_F(IcTest, IcEvictBinaryOpCacheDoesnNotDeleteDependenciesFromCachedTypes) {
+TEST_F(IcTest, IcEvictBinaryOpDoesnNotDeleteDependenciesFromCachedTypes) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class A:
   def __ge__(self, other): return True
@@ -384,7 +384,7 @@ B__le__ = B.__le__
   Function cache_compare_op(&scope,
                             mainModuleAt(&runtime_, "cache_compare_op"));
   Tuple caches(&scope, cache_compare_op.caches());
-  IcBinaryOpFlags flags_out;
+  BinaryOpFlags flags_out;
   // Ensure that A.__ge__ is cached for t0 = a >= b.
   ASSERT_EQ(
       icLookupBinaryOp(*caches, 0, a.layoutId(), b.layoutId(), &flags_out),
@@ -1060,7 +1060,7 @@ cache_compare_op(a, b)
   Function cache_compare_op(&scope,
                             mainModuleAt(&runtime_, "cache_compare_op"));
   Tuple caches(&scope, cache_compare_op.caches());
-  IcBinaryOpFlags flags_out;
+  BinaryOpFlags flags_out;
   Object cached(&scope, icLookupBinaryOp(*caches, 0, a.layoutId(), b.layoutId(),
                                          &flags_out));
   // Precondition check that the A.__ge__ lookup has been cached.
@@ -1194,10 +1194,10 @@ TEST_F(IcTest, IcUpdateBinaryOpSetsEmptyEntry) {
 
   Object value(&scope, runtime_.newInt(-44));
   icUpdateBinaryOp(*caches, 0, LayoutId::kSmallStr, LayoutId::kLargeBytes,
-                   *value, IC_BINARYOP_REFLECTED);
+                   *value, kBinaryOpReflected);
   EXPECT_EQ(caches.at(kIcEntryKeyOffset),
             binaryOpKey(LayoutId::kSmallStr, LayoutId::kLargeBytes,
-                        IC_BINARYOP_REFLECTED));
+                        kBinaryOpReflected));
   EXPECT_TRUE(isIntEqualsWord(caches.at(kIcEntryValueOffset), -44));
 
   // Filling an empty entry doesn't overwrite others.
@@ -1214,19 +1214,19 @@ TEST_F(IcTest, IcUpdateBinaryOpSetsExistingEntry) {
   word cache_offset = kIcPointersPerCache;
   caches.atPut(
       cache_offset + 0 * kIcPointersPerEntry + kIcEntryKeyOffset,
-      binaryOpKey(LayoutId::kSmallInt, LayoutId::kLargeInt, IC_BINARYOP_NONE));
+      binaryOpKey(LayoutId::kSmallInt, LayoutId::kLargeInt, kBinaryOpNone));
   caches.atPut(cache_offset + 1 * kIcPointersPerEntry + kIcEntryKeyOffset,
                binaryOpKey(LayoutId::kLargeInt, LayoutId::kSmallInt,
-                           IC_BINARYOP_REFLECTED));
+                           kBinaryOpReflected));
   Object value(&scope, runtime_.newStrFromCStr("yyy"));
   icUpdateBinaryOp(*caches, 1, LayoutId::kLargeInt, LayoutId::kSmallInt, *value,
-                   IC_BINARYOP_NONE);
+                   kBinaryOpNone);
   EXPECT_TRUE(
       caches.at(cache_offset + 0 * kIcPointersPerEntry + kIcEntryValueOffset)
           .isNoneType());
   EXPECT_EQ(
       caches.at(cache_offset + 1 * kIcPointersPerEntry + kIcEntryKeyOffset),
-      binaryOpKey(LayoutId::kLargeInt, LayoutId::kSmallInt, IC_BINARYOP_NONE));
+      binaryOpKey(LayoutId::kLargeInt, LayoutId::kSmallInt, kBinaryOpNone));
   EXPECT_TRUE(isStrEqualsCStr(
       caches.at(cache_offset + 1 * kIcPointersPerEntry + kIcEntryValueOffset),
       "yyy"));
@@ -1659,7 +1659,7 @@ TEST_F(IcTest, IcIterator) {
                        static_cast<word>(SmallStr::fromCStr("test").layoutId());
   caches.atPut(compare_op_cached_index + kIcEntryKeyOffset,
                SmallInt::fromWord(key_high_bits << kBitsPerByte |
-                                  static_cast<word>(IC_BINARYOP_REFLECTED)));
+                                  static_cast<word>(kBinaryOpReflected)));
   caches.atPut(compare_op_cached_index + kIcEntryValueOffset,
                SmallInt::fromWord(50));
 

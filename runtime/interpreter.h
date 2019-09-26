@@ -4,7 +4,6 @@
 #include "frame.h"
 #include "globals.h"
 #include "handles.h"
-#include "ic.h"
 #include "symbols.h"
 #include "trampolines.h"
 
@@ -13,6 +12,20 @@ namespace python {
 class RawObject;
 class Frame;
 class Thread;
+
+// Bitset indicating how a cached binary operation needs to be called.
+enum BinaryOpFlags : uint8_t {
+  kBinaryOpNone = 0,
+  // Swap arguments when calling the method.
+  kBinaryOpReflected = 1 << 0,
+  // Retry alternative method when method returns `NotImplemented`.  Should try
+  // the non-reflected op if the `kBinaryOpReflected` flag is set and vice
+  // versa.
+  kBinaryOpNotImplementedRetry = 1 << 1,
+  // This flag is set when the cached method is an in-place operation (such as
+  // __iadd__).
+  kInplaceBinaryOpRetry = 1 << 2,
+};
 
 class Interpreter {
  public:
@@ -141,27 +154,26 @@ class Interpreter {
                                             BinaryOp op, const Object& left,
                                             const Object& right,
                                             Object* method_out,
-                                            IcBinaryOpFlags* flags_out);
+                                            BinaryOpFlags* flags_out);
 
   // Calls a previously cached binary operation. Note that the caller still
   // needs to check for a `NotImplemented` result and call
   // `binaryOperationRetry()` if necessary.
   static RawObject binaryOperationWithMethod(Thread* thread, Frame* caller,
                                              RawObject method,
-                                             IcBinaryOpFlags flags,
+                                             BinaryOpFlags flags,
                                              RawObject left, RawObject right);
 
-  // Calls the normal binary operation if `flags` has the
-  // `IC_BINARYOP_REFLECTED` and the `IC_BINARYOP_NOTIMPLEMENTED_RETRY` bits are
-  // set; calls the reflected operation if just
-  // `IC_BINARYOP_NOTIMPLEMENTED_RETRY` is set. Raises an error if any of the
-  // two operations raised `NotImplemented` or none was called.
+  // Calls the normal binary operation if `flags` has the `kBinaryOpReflected`
+  // and the `kBinaryOpNotImplementedRetry` bits are set; calls the reflected
+  // operation if just `kBinaryOpNotImplementedRetry` is set. Raises an error
+  // if any of the two operations raised `NotImplemented` or none was called.
   //
   // This represents the second half of the binary operation calling mechanism
   // after we attempted a first lookup and call. It is a separate function so we
   // can use it independently of the first lookup using inline caching.
   static RawObject binaryOperationRetry(Thread* thread, Frame* caller,
-                                        BinaryOp op, IcBinaryOpFlags flags,
+                                        BinaryOp op, BinaryOpFlags flags,
                                         const Object& left,
                                         const Object& right);
 
@@ -172,10 +184,10 @@ class Interpreter {
                                              BinaryOp op, const Object& left,
                                              const Object& right,
                                              Object* method_out,
-                                             IcBinaryOpFlags* flags_out);
+                                             BinaryOpFlags* flags_out);
 
   static RawObject compareOperationRetry(Thread* thread, Frame* caller,
-                                         CompareOp op, IcBinaryOpFlags flags,
+                                         CompareOp op, BinaryOpFlags flags,
                                          const Object& left,
                                          const Object& right);
 
@@ -183,7 +195,7 @@ class Interpreter {
                                              CompareOp op, const Object& left,
                                              const Object& right,
                                              Object* method_out,
-                                             IcBinaryOpFlags* flags_out);
+                                             BinaryOpFlags* flags_out);
 
   static RawObject compareOperation(Thread* thread, Frame* caller, CompareOp op,
                                     const Object& left, const Object& right);
@@ -487,21 +499,21 @@ class Interpreter {
   static Continue loadAttrUpdateCache(Thread* thread, word arg);
   static Continue storeAttrUpdateCache(Thread* thread, word arg);
 
-  using BinopFallbackHandler = Continue (*)(Thread* thread, word arg,
-                                            IcBinaryOpFlags flags);
+  using BinaryOpFallbackHandler = Continue (*)(Thread* thread, word arg,
+                                               BinaryOpFlags flags);
   static Continue cachedBinaryOpImpl(Thread* thread, word arg,
                                      OpcodeHandler update_cache,
-                                     BinopFallbackHandler fallback);
+                                     BinaryOpFallbackHandler fallback);
 
   static Continue binaryOpUpdateCache(Thread* thread, word arg);
   static Continue binaryOpFallback(Thread* thread, word arg,
-                                   IcBinaryOpFlags flags);
+                                   BinaryOpFlags flags);
   static Continue compareOpUpdateCache(Thread* thread, word arg);
   static Continue compareOpFallback(Thread* thread, word arg,
-                                    IcBinaryOpFlags flags);
+                                    BinaryOpFlags flags);
   static Continue inplaceOpUpdateCache(Thread* thread, word arg);
   static Continue inplaceOpFallback(Thread* thread, word arg,
-                                    IcBinaryOpFlags flags);
+                                    BinaryOpFlags flags);
 
   static void executeImpl(Thread* thread, Frame* entry_frame);
 

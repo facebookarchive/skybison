@@ -6,6 +6,7 @@
 #include "dict-builtins.h"
 #include "frame.h"
 #include "globals.h"
+#include "ic.h"
 #include "list-builtins.h"
 #include "module-builtins.h"
 #include "mro.h"
@@ -14,7 +15,6 @@
 #include "runtime.h"
 #include "str-builtins.h"
 #include "thread.h"
-#include "tuple-builtins.h"
 
 namespace python {
 
