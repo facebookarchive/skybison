@@ -1500,10 +1500,6 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
         if newline not in (None, "", "\n", "\r", "\r\n"):
             raise ValueError(f"illegal newline value: {newline}")
 
-        if encoding != "ascii":
-            # TODO(T53865493): Support non-ascii encodings
-            _unimplemented()
-
         self._buffer = buffer
         self._line_buffering = bool(line_buffering)
         self._encoding = encoding
