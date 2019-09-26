@@ -801,22 +801,30 @@ RawObject Interpreter::compareOperationRetry(Thread* thread, Frame* caller,
   Runtime* runtime = thread->runtime();
 
   if (flags & kBinaryOpNotImplementedRetry) {
-    // If we tried reverse first, try normal now and vice versa.
-    SymbolId selector = flags & kBinaryOpReflected
-                            ? runtime->comparisonSelector(op)
-                            : runtime->swappedComparisonSelector(op);
-    Object method(&scope, lookupMethod(thread, caller, right, selector));
-    if (method.isError()) {
-      if (method.isErrorException()) return *method;
-      DCHECK(method.isErrorNotFound(), "expected not found");
-    } else {
-      Object result(&scope, NoneType::object());
-      if (flags & kBinaryOpReflected) {
-        result = callMethod2(thread, caller, method, left, right);
+    // If we tried reflected first, try normal now.
+    if (flags & kBinaryOpReflected) {
+      SymbolId selector = runtime->comparisonSelector(op);
+      Object method(&scope, lookupMethod(thread, caller, left, selector));
+      if (method.isError()) {
+        if (method.isErrorException()) return *method;
+        DCHECK(method.isErrorNotFound(), "expected not found");
       } else {
-        result = callMethod2(thread, caller, method, right, left);
+        Object result(&scope, callMethod2(thread, caller, method, left, right));
+        if (!result.isNotImplementedType()) return *result;
       }
-      if (!result.isNotImplementedType()) return *result;
+    } else {
+      // If we tried normal first, try to find a reflected method and call it.
+      SymbolId selector = runtime->swappedComparisonSelector(op);
+      Object method(&scope, lookupMethod(thread, caller, right, selector));
+      if (!method.isErrorNotFound()) {
+        if (!method.isFunction()) {
+          Type right_type(&scope, runtime->typeOf(*right));
+          method = resolveDescriptorGet(thread, method, right, right_type);
+          if (method.isError()) return *method;
+        }
+        Object result(&scope, callMethod2(thread, caller, method, right, left));
+        if (!result.isNotImplementedType()) return *result;
+      }
     }
   }
 
@@ -856,7 +864,7 @@ RawObject Interpreter::binaryOperationRetry(Thread* thread, Frame* caller,
     // If we tried reflected first, try normal now.
     if (flags & kBinaryOpReflected) {
       SymbolId selector = runtime->binaryOperationSelector(op);
-      Object method(&scope, lookupMethod(thread, caller, right, selector));
+      Object method(&scope, lookupMethod(thread, caller, left, selector));
       if (method.isError()) {
         if (method.isErrorException()) return *method;
         DCHECK(method.isErrorNotFound(), "expected not found");

@@ -361,6 +361,39 @@ right = D()
   EXPECT_EQ(result.at(3), *left);
 }
 
+TEST_F(
+    InterpreterTest,
+    BinaryOperationInvokesLeftMethodWhenReflectedMethodReturnsNotImplemented) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+trace = ""
+class C:
+    def __add__(self, other):
+        global trace
+        trace += "C.__add__,"
+        return "C.__add__"
+
+    def __radd__(self, other):
+        raise Exception("should not be called")
+
+
+class D(C):
+    def __add__(self, other):
+        raise Exception("should not be called")
+
+    def __radd__(self, other):
+        global trace
+        trace += "D.__radd__,"
+        return NotImplemented
+
+result = C() + D()
+)")
+                   .isError());
+
+  EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(&runtime_, "result"), "C.__add__"));
+  EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(&runtime_, "trace"),
+                              "D.__radd__,C.__add__,"));
+}
+
 TEST_F(InterpreterTest, BinaryOperationLookupPropagatesException) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
@@ -1207,6 +1240,37 @@ v3 = ASub(2)
   ASSERT_EQ(result.length(), 2);
   EXPECT_EQ(result.at(0), v3);
   EXPECT_EQ(result.at(1), v2);
+}
+
+TEST_F(InterpreterTest,
+       CompareOpInvokesLeftMethodWhenReflectedMethodReturnsNotImplemented) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+trace = ""
+class C:
+    def __ge__(self, other):
+        global trace
+        trace += "C.__ge__,"
+        return "C.__ge__"
+
+    def __le__(self, other):
+        raise Exception("should not be called")
+
+class D(C):
+    def __ge__(self, other):
+        raise Exception("should not be called")
+
+    def __le__(self, other):
+        global trace
+        trace += "D.__le__,"
+        return NotImplemented
+
+result = C() >= D()
+)")
+                   .isError());
+
+  EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(&runtime_, "result"), "C.__ge__"));
+  EXPECT_TRUE(
+      isStrEqualsCStr(mainModuleAt(&runtime_, "trace"), "D.__le__,C.__ge__,"));
 }
 
 TEST_F(
