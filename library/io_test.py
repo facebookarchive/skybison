@@ -1719,12 +1719,11 @@ class TextIOWrapperTests(unittest.TestCase):
             )
 
     def test_dunder_repr_with_mode(self):
-        class C(_io.TextIOWrapper):
-            mode = "rwx"
-
-        with C(_io.BytesIO(b"hello"), encoding="ascii") as text_io:
-            self.assertIn(
-                text_io.__repr__(), "<_io.TextIOWrapper mode='rwx' encoding='ascii'>"
+        # TODO(T54575279): remove workaround and use subclass again
+        with _io.TextIOWrapper(_io.BytesIO(b"hello"), encoding="ascii") as text_io:
+            text_io.mode = "rwx"
+            self.assertEqual(
+                repr(text_io), "<_io.TextIOWrapper mode='rwx' encoding='ascii'>"
             )
 
     def test_buffer_returns_buffer(self):

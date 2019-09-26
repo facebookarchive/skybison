@@ -3303,7 +3303,9 @@ class RawTextIOWrapper : public RawUnderTextIOBase {
   static const int kHasRead1Offset = kSeekableOffset + kPointerSize;
   static const int kB2cratioOffset = kHasRead1Offset + kPointerSize;
   static const int kTellingOffset = kB2cratioOffset + kPointerSize;
-  static const int kSize = kTellingOffset + kPointerSize;
+  // TODO(T54575279): make mode an overflow attribute
+  static const int kModeOffset = kTellingOffset + kPointerSize;
+  static const int kSize = kModeOffset + kPointerSize;
 
   RAW_OBJECT_COMMON_NO_CAST(TextIOWrapper);
 };

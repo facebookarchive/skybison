@@ -149,6 +149,7 @@ const BuiltinAttribute TextIOWrapperBuiltins::kAttributes[] = {
     {SymbolId::kUnderTelling, TextIOWrapper::kTellingOffset},
     {SymbolId::kUnderWritenl, TextIOWrapper::kWritenlOffset},
     {SymbolId::kUnderWritetranslate, TextIOWrapper::kWritetranslateOffset},
+    {SymbolId::kMode, TextIOWrapper::kModeOffset},  // TODO(T54575279): remove
     {SymbolId::kSentinelId, 0},
 };
 

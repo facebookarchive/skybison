@@ -1510,7 +1510,7 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
         except Exception:
             name_component = ""
         try:
-            mode_component = f" mode={self.mode!r}"
+            mode_component = "" if self.mode is None else f" mode={self.mode!r}"
         except Exception:
             mode_component = ""
         return (

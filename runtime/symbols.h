@@ -686,6 +686,7 @@ class Runtime;
   V(Metaclass, "metaclass")                                                    \
   V(Method, "method")                                                          \
   V(Mod, "mod")                                                                \
+  V(Mode, "mode")                                                              \
   V(Module, "module")                                                          \
   V(ModuleProxy, "module_proxy")                                               \
   V(ModuleNotFoundError, "ModuleNotFoundError")                                \
