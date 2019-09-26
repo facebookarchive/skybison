@@ -8,6 +8,12 @@
 
 namespace python {
 
+// Convert an CPython's extension slot ints into a RawType::Slot
+Type::Slot slotToTypeSlot(int slot);
+
+// Inherit slots defined by a C Extension
+RawObject addInheritedSlots(const Type& type);
+
 // A version of Dict::Bucket::nextItem for type dict to filter out
 // placeholders.
 bool nextTypeDictItem(RawTuple data, word* idx);

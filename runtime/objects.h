@@ -1180,6 +1180,7 @@ class RawType : public RawHeapObject {
 
   bool isBuiltin() const;
 
+  bool isExtensionType() const;
   bool hasSlots() const;
   RawObject slots() const;
   void setSlots(RawObject slots) const;
@@ -4453,6 +4454,10 @@ inline RawObject RawType::dict() const {
 
 inline void RawType::setDict(RawObject dict) const {
   instanceVariableAtPut(kDictOffset, dict);
+}
+
+inline bool RawType::isExtensionType() const {
+  return hasFlag(RawType::Flag::kIsNativeProxy);
 }
 
 inline bool RawType::hasSlots() const { return !slots().isNoneType(); }

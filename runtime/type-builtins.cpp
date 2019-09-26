@@ -1,6 +1,8 @@
 #include "type-builtins.h"
 
 #include "bytecode.h"
+#include "capi-handles.h"
+#include "cpython-data.h"
 #include "dict-builtins.h"
 #include "frame.h"
 #include "globals.h"
@@ -15,6 +17,411 @@
 #include "tuple-builtins.h"
 
 namespace python {
+
+Type::Slot slotToTypeSlot(int slot) {
+  switch (slot) {
+    case Py_mp_ass_subscript:
+      return Type::Slot::kMapAssSubscript;
+    case Py_mp_length:
+      return Type::Slot::kMapLength;
+    case Py_mp_subscript:
+      return Type::Slot::kMapSubscript;
+    case Py_nb_absolute:
+      return Type::Slot::kNumberAbsolute;
+    case Py_nb_add:
+      return Type::Slot::kNumberAdd;
+    case Py_nb_and:
+      return Type::Slot::kNumberAnd;
+    case Py_nb_bool:
+      return Type::Slot::kNumberBool;
+    case Py_nb_divmod:
+      return Type::Slot::kNumberDivmod;
+    case Py_nb_float:
+      return Type::Slot::kNumberFloat;
+    case Py_nb_floor_divide:
+      return Type::Slot::kNumberFloorDivide;
+    case Py_nb_index:
+      return Type::Slot::kNumberIndex;
+    case Py_nb_inplace_add:
+      return Type::Slot::kNumberInplaceAdd;
+    case Py_nb_inplace_and:
+      return Type::Slot::kNumberInplaceAnd;
+    case Py_nb_inplace_floor_divide:
+      return Type::Slot::kNumberInplaceFloorDivide;
+    case Py_nb_inplace_lshift:
+      return Type::Slot::kNumberInplaceLshift;
+    case Py_nb_inplace_multiply:
+      return Type::Slot::kNumberInplaceMultiply;
+    case Py_nb_inplace_or:
+      return Type::Slot::kNumberInplaceOr;
+    case Py_nb_inplace_power:
+      return Type::Slot::kNumberInplacePower;
+    case Py_nb_inplace_remainder:
+      return Type::Slot::kNumberInplaceRemainder;
+    case Py_nb_inplace_rshift:
+      return Type::Slot::kNumberInplaceRshift;
+    case Py_nb_inplace_subtract:
+      return Type::Slot::kNumberInplaceSubtract;
+    case Py_nb_inplace_true_divide:
+      return Type::Slot::kNumberInplaceTrueDivide;
+    case Py_nb_inplace_xor:
+      return Type::Slot::kNumberInplaceXor;
+    case Py_nb_int:
+      return Type::Slot::kNumberInt;
+    case Py_nb_invert:
+      return Type::Slot::kNumberInvert;
+    case Py_nb_lshift:
+      return Type::Slot::kNumberLshift;
+    case Py_nb_multiply:
+      return Type::Slot::kNumberMultiply;
+    case Py_nb_negative:
+      return Type::Slot::kNumberNegative;
+    case Py_nb_or:
+      return Type::Slot::kNumberOr;
+    case Py_nb_positive:
+      return Type::Slot::kNumberPositive;
+    case Py_nb_power:
+      return Type::Slot::kNumberPower;
+    case Py_nb_remainder:
+      return Type::Slot::kNumberRemainder;
+    case Py_nb_rshift:
+      return Type::Slot::kNumberRshift;
+    case Py_nb_subtract:
+      return Type::Slot::kNumberSubtract;
+    case Py_nb_true_divide:
+      return Type::Slot::kNumberTrueDivide;
+    case Py_nb_xor:
+      return Type::Slot::kNumberXor;
+    case Py_sq_ass_item:
+      return Type::Slot::kSequenceAssItem;
+    case Py_sq_concat:
+      return Type::Slot::kSequenceConcat;
+    case Py_sq_contains:
+      return Type::Slot::kSequenceContains;
+    case Py_sq_inplace_concat:
+      return Type::Slot::kSequenceInplaceConcat;
+    case Py_sq_inplace_repeat:
+      return Type::Slot::kSequenceInplaceRepeat;
+    case Py_sq_item:
+      return Type::Slot::kSequenceItem;
+    case Py_sq_length:
+      return Type::Slot::kSequenceLength;
+    case Py_sq_repeat:
+      return Type::Slot::kSequenceRepeat;
+    case Py_tp_alloc:
+      return Type::Slot::kAlloc;
+    case Py_tp_base:
+      return Type::Slot::kBase;
+    case Py_tp_bases:
+      return Type::Slot::kBases;
+    case Py_tp_call:
+      return Type::Slot::kCall;
+    case Py_tp_clear:
+      return Type::Slot::kClear;
+    case Py_tp_dealloc:
+      return Type::Slot::kDealloc;
+    case Py_tp_del:
+      return Type::Slot::kDel;
+    case Py_tp_descr_get:
+      return Type::Slot::kDescrGet;
+    case Py_tp_descr_set:
+      return Type::Slot::kDescrSet;
+    case Py_tp_doc:
+      return Type::Slot::kDoc;
+    case Py_tp_getattr:
+      return Type::Slot::kGetattr;
+    case Py_tp_getattro:
+      return Type::Slot::kGetattro;
+    case Py_tp_hash:
+      return Type::Slot::kHash;
+    case Py_tp_init:
+      return Type::Slot::kInit;
+    case Py_tp_is_gc:
+      return Type::Slot::kIsGc;
+    case Py_tp_iter:
+      return Type::Slot::kIter;
+    case Py_tp_iternext:
+      return Type::Slot::kIternext;
+    case Py_tp_methods:
+      return Type::Slot::kMethods;
+    case Py_tp_new:
+      return Type::Slot::kNew;
+    case Py_tp_repr:
+      return Type::Slot::kRepr;
+    case Py_tp_richcompare:
+      return Type::Slot::kRichcompare;
+    case Py_tp_setattr:
+      return Type::Slot::kSetattr;
+    case Py_tp_setattro:
+      return Type::Slot::kSetattro;
+    case Py_tp_str:
+      return Type::Slot::kStr;
+    case Py_tp_traverse:
+      return Type::Slot::kTraverse;
+    case Py_tp_members:
+      return Type::Slot::kMembers;
+    case Py_tp_getset:
+      return Type::Slot::kGetset;
+    case Py_tp_free:
+      return Type::Slot::kFree;
+    case Py_nb_matrix_multiply:
+      return Type::Slot::kNumberMatrixMultiply;
+    case Py_nb_inplace_matrix_multiply:
+      return Type::Slot::kNumberInplaceMatrixMultiply;
+    case Py_am_await:
+      return Type::Slot::kAsyncAwait;
+    case Py_am_aiter:
+      return Type::Slot::kAsyncAiter;
+    case Py_am_anext:
+      return Type::Slot::kAsyncAnext;
+    case Py_tp_finalize:
+      return Type::Slot::kFinalize;
+    default:
+      return Type::Slot::kEnd;
+  }
+}
+
+// clang-format off
+static const Type::Slot kInheritableSlots[] = {
+  // Number slots
+  Type::Slot::kNumberAdd,
+  Type::Slot::kNumberSubtract,
+  Type::Slot::kNumberMultiply,
+  Type::Slot::kNumberRemainder,
+  Type::Slot::kNumberDivmod,
+  Type::Slot::kNumberPower,
+  Type::Slot::kNumberNegative,
+  Type::Slot::kNumberPositive,
+  Type::Slot::kNumberAbsolute,
+  Type::Slot::kNumberBool,
+  Type::Slot::kNumberInvert,
+  Type::Slot::kNumberLshift,
+  Type::Slot::kNumberRshift,
+  Type::Slot::kNumberAnd,
+  Type::Slot::kNumberXor,
+  Type::Slot::kNumberOr,
+  Type::Slot::kNumberInt,
+  Type::Slot::kNumberFloat,
+  Type::Slot::kNumberInplaceAdd,
+  Type::Slot::kNumberInplaceSubtract,
+  Type::Slot::kNumberInplaceMultiply,
+  Type::Slot::kNumberInplaceRemainder,
+  Type::Slot::kNumberInplacePower,
+  Type::Slot::kNumberInplaceLshift,
+  Type::Slot::kNumberInplaceRshift,
+  Type::Slot::kNumberInplaceAnd,
+  Type::Slot::kNumberInplaceXor,
+  Type::Slot::kNumberInplaceOr,
+  Type::Slot::kNumberTrueDivide,
+  Type::Slot::kNumberFloorDivide,
+  Type::Slot::kNumberInplaceTrueDivide,
+  Type::Slot::kNumberInplaceFloorDivide,
+  Type::Slot::kNumberIndex,
+  Type::Slot::kNumberMatrixMultiply,
+  Type::Slot::kNumberInplaceMatrixMultiply,
+
+  // Await slots
+  Type::Slot::kAsyncAwait,
+  Type::Slot::kAsyncAiter,
+  Type::Slot::kAsyncAnext,
+
+  // Sequence slots
+  Type::Slot::kSequenceLength,
+  Type::Slot::kSequenceConcat,
+  Type::Slot::kSequenceRepeat,
+  Type::Slot::kSequenceItem,
+  Type::Slot::kSequenceAssItem,
+  Type::Slot::kSequenceContains,
+  Type::Slot::kSequenceInplaceConcat,
+  Type::Slot::kSequenceInplaceRepeat,
+
+  // Mapping slots
+  Type::Slot::kMapLength,
+  Type::Slot::kMapSubscript,
+  Type::Slot::kMapAssSubscript,
+
+  // Buffer protocol is not part of PEP-384
+
+  // Type slots
+  Type::Slot::kDealloc,
+  Type::Slot::kRepr,
+  Type::Slot::kCall,
+  Type::Slot::kStr,
+  Type::Slot::kIter,
+  Type::Slot::kIternext,
+  Type::Slot::kDescrGet,
+  Type::Slot::kDescrSet,
+  Type::Slot::kInit,
+  Type::Slot::kAlloc,
+  Type::Slot::kIsGc,
+
+  // Instance dictionary is not part of PEP-384
+
+  // Weak reference support is not part of PEP-384
+};
+// clang-format on
+
+static void* baseBaseSlot(const Type& base, Type::Slot slot) {
+  if (!base.hasSlot(Type::Slot::kBase)) return nullptr;
+  HandleScope scope(Thread::current());
+  Int basebase_handle(&scope, base.slot(Type::Slot::kBase));
+  Type basebase(
+      &scope,
+      reinterpret_cast<ApiHandle*>(basebase_handle.asCPtr())->asObject());
+  if (!basebase.hasSlots() || !basebase.hasSlot(slot)) {
+    return nullptr;
+  }
+  Int basebase_slot(&scope, basebase.slot(slot));
+  return basebase_slot.asCPtr();
+}
+
+// Copy the slot from the base type if defined and it is the first type that
+// defines it. If base's base type defines the same slot, then base inherited
+// it. Thus, it is not the first type to define it.
+static void copySlotIfImplementedInBase(const Type& type, const Type& base,
+                                        Type::Slot slot_id) {
+  if (!type.hasSlot(slot_id) && base.hasSlot(slot_id)) {
+    RawObject base_slot = base.slot(slot_id);
+    void* basebase_slot = baseBaseSlot(base, slot_id);
+    if (basebase_slot == nullptr ||
+        Int::cast(base_slot).asCPtr() != basebase_slot) {
+      type.setSlot(slot_id, base_slot);
+    }
+  }
+}
+
+// Copy the slot from the base type if it defined.
+static void copySlot(const Type& type, const Type& base, Type::Slot slot_id) {
+  if (!type.hasSlot(slot_id) && base.hasSlot(slot_id)) {
+    type.setSlot(slot_id, base.slot(slot_id));
+  }
+}
+
+static void inheritGCFlagsAndSlots(Thread* thread, const Type& type,
+                                   const Type& base) {
+  unsigned long type_flags = Int::cast(type.slot(Type::Slot::kFlags)).asWord();
+  unsigned long base_flags = Int::cast(base.slot(Type::Slot::kFlags)).asWord();
+  if (!(type_flags & Py_TPFLAGS_HAVE_GC) && (base_flags & Py_TPFLAGS_HAVE_GC) &&
+      !type.hasSlot(Type::Slot::kTraverse) &&
+      !type.hasSlot(Type::Slot::kClear)) {
+    type.setSlot(Type::Slot::kFlags,
+                 thread->runtime()->newInt(type_flags | Py_TPFLAGS_HAVE_GC));
+    if (!type.hasSlot(Type::Slot::kTraverse)) {
+      copySlot(type, base, Type::Slot::kTraverse);
+    }
+    if (!type.hasSlot(Type::Slot::kClear)) {
+      copySlot(type, base, Type::Slot::kClear);
+    }
+  }
+}
+
+static void inheritNonFunctionSlots(const Type& type, const Type& base) {
+  if (Int::cast(type.slot(Type::Slot::kBasicSize)).asWord() == 0) {
+    type.setSlot(Type::Slot::kBasicSize, base.slot(Type::Slot::kBasicSize));
+  }
+  type.setSlot(Type::Slot::kItemSize, base.slot(Type::Slot::kItemSize));
+}
+
+static void inheritFinalize(const Type& type, unsigned long type_flags,
+                            const Type& base, unsigned long base_flags) {
+  if ((type_flags & Py_TPFLAGS_HAVE_FINALIZE) &&
+      (base_flags & Py_TPFLAGS_HAVE_FINALIZE)) {
+    copySlotIfImplementedInBase(type, base, Type::Slot::kFinalize);
+  }
+  if ((type_flags & Py_TPFLAGS_HAVE_FINALIZE) &&
+      (base_flags & Py_TPFLAGS_HAVE_FINALIZE)) {
+    copySlotIfImplementedInBase(type, base, Type::Slot::kFinalize);
+  }
+}
+
+static void inheritFree(const Type& type, unsigned long type_flags,
+                        const Type& base, unsigned long base_flags) {
+  // Both child and base are GC or non GC
+  if ((type_flags & Py_TPFLAGS_HAVE_GC) == (base_flags & Py_TPFLAGS_HAVE_GC)) {
+    copySlotIfImplementedInBase(type, base, Type::Slot::kFree);
+    return;
+  }
+
+  DCHECK(!(base_flags & Py_TPFLAGS_HAVE_GC), "The child should not remove GC");
+
+  // Only the child is GC
+  // Set the free function if the base has a default free
+  if ((type_flags & Py_TPFLAGS_HAVE_GC) && !type.hasSlot(Type::Slot::kFree) &&
+      base.hasSlot(Type::Slot::kFree)) {
+    void* free_slot = reinterpret_cast<void*>(
+        Int::cast(base.slot(Type::Slot::kFree)).asWord());
+    if (free_slot == reinterpret_cast<void*>(PyObject_Free)) {
+      type.setSlot(Type::Slot::kFree,
+                   Thread::current()->runtime()->newIntFromCPtr(
+                       reinterpret_cast<void*>(PyObject_GC_Del)));
+    }
+  }
+}
+
+static void inheritSlots(const Type& type, const Type& base) {
+  // Heap allocated types are guaranteed to have slot space, no check is needed
+  // i.e. CPython does: `if (type->tp_as_number != NULL)`
+  // Only static types need to do this type of check.
+  for (const Type::Slot slot : kInheritableSlots) {
+    copySlotIfImplementedInBase(type, base, slot);
+  }
+
+  // Inherit conditional type slots
+  if (!type.hasSlot(Type::Slot::kGetattr) &&
+      !type.hasSlot(Type::Slot::kGetattro)) {
+    copySlot(type, base, Type::Slot::kGetattr);
+    copySlot(type, base, Type::Slot::kGetattro);
+  }
+  if (!type.hasSlot(Type::Slot::kSetattr) &&
+      !type.hasSlot(Type::Slot::kSetattro)) {
+    copySlot(type, base, Type::Slot::kSetattr);
+    copySlot(type, base, Type::Slot::kSetattro);
+  }
+  if (!type.hasSlot(Type::Slot::kRichcompare) &&
+      !type.hasSlot(Type::Slot::kHash)) {
+    copySlot(type, base, Type::Slot::kRichcompare);
+    copySlot(type, base, Type::Slot::kHash);
+  }
+
+  unsigned long type_flags = Int::cast(type.slot(Type::Slot::kFlags)).asWord();
+  unsigned long base_flags = Int::cast(base.slot(Type::Slot::kFlags)).asWord();
+  inheritFinalize(type, type_flags, base, base_flags);
+  inheritFree(type, type_flags, base, base_flags);
+}
+
+RawObject addInheritedSlots(const Type& type) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Type base_type(&scope, Tuple::cast(type.mro()).at(1));
+
+  // Inherit special slots from dominant base
+  if (base_type.hasSlots()) {
+    inheritGCFlagsAndSlots(thread, type, base_type);
+    // !PyBaseObject_Type and Py_TPFLAGS_HEAPTYPE are guaranteed so skip check
+    if (!type.hasSlot(Type::Slot::kNew)) {
+      copySlot(type, base_type, Type::Slot::kNew);
+    }
+    inheritNonFunctionSlots(type, base_type);
+  }
+
+  // Inherit slots from the MRO
+  Tuple mro(&scope, type.mro());
+  for (word i = 1; i < mro.length(); i++) {
+    Type base(&scope, mro.at(i));
+    // Skip inheritance if base does not define slots
+    if (!base.hasSlots()) continue;
+    // Bases must define Py_TPFLAGS_BASETYPE
+    word base_flags = Int::cast(base.slot(Type::Slot::kFlags)).asWord();
+    if ((base_flags & Py_TPFLAGS_BASETYPE) == 0) {
+      thread->raiseWithFmt(LayoutId::kTypeError,
+                           "type is not an acceptable base type");
+      return Error::exception();
+    }
+    inheritSlots(type, base);
+  }
+
+  return NoneType::object();
+}
 
 bool nextTypeDictItem(RawTuple data, word* idx) {
   // Iterate through until we find a non-placeholder item.
