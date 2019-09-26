@@ -590,7 +590,12 @@ class SocketIO(io.RawIOBase):
             raise OSError("cannot read from timed out object")
         while True:
             try:
-                return self._sock.recv_into(b)
+                # TODO(T54579743): _socket.recv_into fails because we do not
+                # support writable buffers yet.
+                #return self._sock.recv_into(b)
+                data = self._sock.recv(len(b))
+                b[0:len(data)] = data
+                return len(data)
             except timeout:
                 self._timeout_occurred = True
                 raise
