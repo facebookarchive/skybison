@@ -224,6 +224,176 @@ class _BufferedIOBaseTests(unittest.TestCase):
         self.assertRaises(_io.UnsupportedOperation, f.write, b"")
 
 
+class BufferedRWPairTests(unittest.TestCase):
+    def test_dunder_init_with_non_readable_reader_raises_unsupported_operation(self):
+        class C:
+            def readable(self):
+                return False
+
+            def writable(self):
+                return False
+
+        with self.assertRaisesRegex(_io.UnsupportedOperation, "readable"):
+            _io.BufferedRWPair(C(), C())
+
+    def test_dunder_init_with_non_writable_writer_raises_unsupported_operation(self):
+        class C:
+            def readable(self):
+                return True
+
+            def writable(self):
+                return False
+
+        with self.assertRaisesRegex(_io.UnsupportedOperation, "writable"):
+            _io.BufferedRWPair(C(), C())
+
+    def test_close_calls_reader_close_and_writer_close(self):
+        class Reader(_io.BytesIO):
+            close = Mock(name="close")
+
+        class Writer(_io.BytesIO):
+            close = Mock(name="close")
+
+        with Reader() as reader, Writer() as writer:
+            with _io.BufferedRWPair(reader, writer) as buffer:
+                buffer.close()
+                reader.close.assert_called_once()
+                writer.close.assert_called_once()
+
+    def test_closed_returns_writer_closed(self):
+        with _io.BytesIO() as reader, _io.BytesIO() as writer:
+            with _io.BufferedRWPair(reader, writer) as buffer:
+                self.assertFalse(buffer.closed)
+                writer.close()
+                self.assertTrue(buffer.closed)
+
+    def test_flush_calls_writer_write(self):
+        write_calls = 0
+
+        class Reader(_io.BytesIO):
+            pass
+
+        class Writer(_io.BytesIO):
+            def write(self, b):
+                nonlocal write_calls
+                write_calls += 1
+                return super().write(b)
+
+        with Reader() as reader, Writer() as writer:
+            with _io.BufferedRWPair(reader, writer) as buffer:
+                buffer.write(b"123")
+                self.assertEqual(write_calls, 0)
+                buffer.flush()
+                self.assertEqual(write_calls, 1)
+
+    def test_isatty_with_tty_reader_returns_true(self):
+        class Reader(_io.BytesIO):
+            isatty = Mock(name="isatty", return_value=True)
+
+        class Writer(_io.BytesIO):
+            isatty = Mock(name="isatty", return_value=False)
+
+        with Reader() as reader, Writer() as writer:
+            with _io.BufferedRWPair(reader, writer) as buffer:
+                self.assertTrue(buffer.isatty())
+                reader.isatty.assert_called_once()
+                writer.isatty.assert_called_once()
+
+    def test_isatty_with_tty_writer_returns_true(self):
+        class Reader(_io.BytesIO):
+            isatty = Mock(name="isatty", return_value=False)
+
+        class Writer(_io.BytesIO):
+            isatty = Mock(name="isatty", return_value=True)
+
+        with Reader() as reader, Writer() as writer:
+            with _io.BufferedRWPair(reader, writer) as buffer:
+                self.assertTrue(buffer.isatty())
+                reader.isatty.assert_not_called()
+                writer.isatty.assert_called_once()
+
+    def test_isatty_with_neither_tty_returns_false(self):
+        class Reader(_io.BytesIO):
+            isatty = Mock(name="isatty", return_value=False)
+
+        class Writer(_io.BytesIO):
+            isatty = Mock(name="isatty", return_value=False)
+
+        with Reader() as reader, Writer() as writer:
+            with _io.BufferedRWPair(reader, writer) as buffer:
+                self.assertFalse(buffer.isatty())
+                reader.isatty.assert_called_once()
+                writer.isatty.assert_called_once()
+
+    def test_peek_does_not_call_reader_or_writer_peek(self):
+        class Reader(_io.BytesIO):
+            peek = Mock(name="peek")
+
+        class Writer(_io.BytesIO):
+            peek = Mock(name="peek")
+
+        with Reader() as reader, Writer() as writer:
+            with _io.BufferedRWPair(reader, writer) as buffer:
+                buffer.peek()
+                reader.peek.assert_not_called()
+                writer.peek.assert_not_called()
+
+    def test_read_calls_reader_readall(self):
+        class Reader(_io.BytesIO):
+            read = Mock(name="read")
+            readall = Mock(name="readall", return_value=None)
+
+        with Reader() as reader, _io.BytesIO() as writer:
+            with _io.BufferedRWPair(reader, writer) as buffer:
+                buffer.read()
+                reader.read.assert_not_called()
+                reader.readall.assert_called_once()
+
+    def test_readable_on_closed_raises_value_error(self):
+        with _io.BytesIO() as reader, _io.BytesIO() as writer:
+            with _io.BufferedRWPair(reader, writer) as buffer:
+                pass
+        with self.assertRaises(ValueError) as context:
+            buffer.readable()
+        self.assertEqual(str(context.exception), "I/O operation on closed file.")
+
+    def test_readable_calls_reader_readable(self):
+        class Reader(_io.BytesIO):
+            readable = Mock(name="readable", return_value=True)
+
+        class Writer(_io.BytesIO):
+            readable = Mock(name="readable")
+
+        with Reader() as reader, Writer() as writer:
+            with _io.BufferedRWPair(reader, writer) as buffer:
+                self.assertEqual(reader.readable.call_count, 2)
+                self.assertTrue(buffer.readable())
+                self.assertEqual(reader.readable.call_count, 3)
+                writer.readable.assert_not_called()
+
+    def test_writable_on_closed_raises_value_error(self):
+        with _io.BytesIO() as reader, _io.BytesIO() as writer:
+            with _io.BufferedRWPair(reader, writer) as buffer:
+                pass
+        with self.assertRaises(ValueError) as context:
+            buffer.writable()
+        self.assertEqual(str(context.exception), "I/O operation on closed file.")
+
+    def test_writable_calls_reader_writable(self):
+        class Reader(_io.BytesIO):
+            writable = Mock(name="writable")
+
+        class Writer(_io.BytesIO):
+            writable = Mock(name="writable", return_value=True)
+
+        with Reader() as reader, Writer() as writer:
+            with _io.BufferedRWPair(reader, writer) as buffer:
+                self.assertEqual(writer.writable.call_count, 2)
+                self.assertTrue(buffer.writable())
+                reader.writable.assert_not_called()
+                self.assertEqual(writer.writable.call_count, 3)
+
+
 class BufferedWriterTests(unittest.TestCase):
     def test_dunder_init_with_non_writable_stream_raises_os_error(self):
         with _io.FileIO(_getfd(), mode="r") as file_reader:

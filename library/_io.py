@@ -78,13 +78,6 @@ def _whence_guard(whence):
 BlockingIOError = builtins.BlockingIOError
 
 
-class BufferedRWPair:
-    """unimplemented"""
-
-    def __init__(self, *args, **kwargs):
-        _unimplemented()
-
-
 class BufferedRandom:
     """unimplemented"""
 
@@ -727,6 +720,60 @@ class _BufferedIOMixin(_BufferedIOBase, bootstrap=True):
 
     def isatty(self):
         return self.raw.isatty()
+
+
+class BufferedRWPair(_BufferedIOBase):
+    def __init__(self, reader, writer, buffer_size=DEFAULT_BUFFER_SIZE):
+        if not reader.readable():
+            raise UnsupportedOperation('"reader" argument must be readable.')
+
+        if not writer.writable():
+            raise UnsupportedOperation('"writer" argument must be writable.')
+
+        self.reader = BufferedReader(reader, buffer_size)
+        self.writer = BufferedWriter(writer, buffer_size)
+
+    def close(self):
+        try:
+            self.writer.close()
+        finally:
+            self.reader.close()
+
+    @property
+    def closed(self):
+        return self.writer.closed
+
+    def flush(self):
+        return self.writer.flush()
+
+    def isatty(self):
+        return self.writer.isatty() or self.reader.isatty()
+
+    def peek(self, size=0):
+        return self.reader.peek(size)
+
+    def read(self, size=None):
+        if size is None:
+            size = -1
+        return self.reader.read(size)
+
+    def read1(self, size):
+        return self.reader.read1(size)
+
+    def readable(self):
+        return self.reader.readable()
+
+    def readinto(self, b):
+        return self.reader.readinto(b)
+
+    def readinto1(self, b):
+        return self.reader.readinto1(b)
+
+    def writable(self):
+        return self.writer.writable()
+
+    def write(self, b):
+        return self.writer.write(b)
 
 
 class BufferedReader(_BufferedIOMixin, bootstrap=True):
