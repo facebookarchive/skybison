@@ -173,6 +173,61 @@ not C()
                             LayoutId::kRuntimeError, "too cool for bool"));
 }
 
+TEST_F(InterpreterTest, BinaryOpCachedInsertsDependencyForBothOperandsTypes) {
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
+class A:
+  def __add__(self, other):
+    return "from class A"
+
+class B:
+  pass
+
+def cache_binary_op(a, b):
+  return a + b
+
+a = A()
+b = B()
+A__add__ = A.__add__
+result = cache_binary_op(a, b)
+)")
+                   .isError());
+  ASSERT_TRUE(
+      isStrEqualsCStr(mainModuleAt(&runtime_, "result"), "from class A"));
+
+  Function cache_binary_op(&scope, mainModuleAt(&runtime_, "cache_binary_op"));
+  Tuple caches(&scope, cache_binary_op.caches());
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
+  Type type_a(&scope, mainModuleAt(&runtime_, "A"));
+  Type type_b(&scope, mainModuleAt(&runtime_, "B"));
+  BinaryOpFlags flag;
+  ASSERT_EQ(icLookupBinaryOp(*caches, 0, a.layoutId(), b.layoutId(), &flag),
+            mainModuleAt(&runtime_, "A__add__"));
+
+  // Verify that A.__add__ has the dependent.
+  Dict type_a_dict(&scope, type_a.dict());
+  Str left_op_name(&scope, runtime_.symbols()->at(SymbolId::kDunderAdd));
+  Object type_a_attr(&scope,
+                     runtime_.dictAtByStr(thread_, type_a_dict, left_op_name));
+  ASSERT_TRUE(type_a_attr.isValueCell());
+  ASSERT_TRUE(ValueCell::cast(*type_a_attr).dependencyLink().isWeakLink());
+  EXPECT_EQ(
+      WeakLink::cast(ValueCell::cast(*type_a_attr).dependencyLink()).referent(),
+      *cache_binary_op);
+
+  // Verify that B.__radd__ has the dependent.
+  Dict type_b_dict(&scope, type_b.dict());
+  Str right_op_name(&scope, runtime_.symbols()->at(SymbolId::kDunderRadd));
+  Object type_b_attr(&scope,
+                     runtime_.dictAtByStr(thread_, type_b_dict, right_op_name));
+  ASSERT_TRUE(type_b_attr.isValueCell());
+  ASSERT_TRUE(ValueCell::cast(*type_b_attr).dependencyLink().isWeakLink());
+  EXPECT_EQ(
+      WeakLink::cast(ValueCell::cast(*type_b_attr).dependencyLink()).referent(),
+      *cache_binary_op);
+}
+
 TEST_F(InterpreterTest, BinaryOpInvokesSelfMethod) {
   HandleScope scope(thread_);
 
@@ -4179,6 +4234,71 @@ c = C()
   result = runtime_.dictAtByStr(thread_, type_c_dict, foo_name);
   ASSERT_TRUE(result.isValueCell());
   EXPECT_TRUE(ValueCell::cast(*result).dependencyLink().isNoneType());
+}
+
+TEST_F(InterpreterTest, StoreAttrCachedInvalidatesBinaryOpCaches) {
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
+def cache_A_add(a, b):
+  return a + b
+
+class A:
+  def __add__(self, other): return "A.__add__"
+
+class B:
+  pass
+
+def update_A_add():
+  A.__add__ = lambda self, other: "new A.__add__"
+
+a = A()
+b = B()
+
+A_add = A.__add__
+
+cache_A_add(a, b)
+)")
+                   .isError());
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
+  Object a_add(&scope, mainModuleAt(&runtime_, "A_add"));
+
+  Function cache_a_add(&scope, mainModuleAt(&runtime_, "cache_A_add"));
+  BinaryOpFlags flags_out;
+  // Ensure that A.__add__ is cached in cache_A_add.
+  Object cached_in_cache_a_add(
+      &scope, icLookupBinaryOp(Tuple::cast(cache_a_add.caches()), 0,
+                               a.layoutId(), b.layoutId(), &flags_out));
+  ASSERT_EQ(cached_in_cache_a_add, *a_add);
+
+  // Ensure that cache_a_add is being tracked as a dependent from A.__add__.
+  Dict type_a_dict(&scope, Type::cast(mainModuleAt(&runtime_, "A")).dict());
+  ValueCell a_add_value_cell(
+      &scope, runtime_.dictAtById(thread_, type_a_dict, SymbolId::kDunderAdd));
+  ASSERT_FALSE(a_add_value_cell.isPlaceholder());
+  EXPECT_EQ(WeakLink::cast(a_add_value_cell.dependencyLink()).referent(),
+            *cache_a_add);
+
+  // Ensure that cache_a_add is being tracked as a dependent from B.__radd__.
+  Dict type_b_dict(&scope, Type::cast(mainModuleAt(&runtime_, "B")).dict());
+  ValueCell b_radd_value_cell(
+      &scope, runtime_.dictAtById(thread_, type_b_dict, SymbolId::kDunderRadd));
+  ASSERT_TRUE(b_radd_value_cell.isPlaceholder());
+  EXPECT_EQ(WeakLink::cast(b_radd_value_cell.dependencyLink()).referent(),
+            *cache_a_add);
+
+  // Updating A.__add__ invalidates the cache.
+  Function invalidate(&scope, mainModuleAt(&runtime_, "update_A_add"));
+  ASSERT_TRUE(
+      Interpreter::callFunction0(thread_, thread_->currentFrame(), invalidate)
+          .isNoneType());
+  // Verify that the cache is evicted.
+  EXPECT_TRUE(icLookupBinaryOp(Tuple::cast(cache_a_add.caches()), 0,
+                               a.layoutId(), b.layoutId(), &flags_out)
+                  .isErrorNotFound());
+  // Verify that the dependencies are deleted.
+  EXPECT_TRUE(a_add_value_cell.dependencyLink().isNoneType());
+  EXPECT_TRUE(b_radd_value_cell.dependencyLink().isNoneType());
 }
 
 TEST_F(InterpreterTest, StoreAttrCachedInvalidatesCompareOpTypeAttrCaches) {

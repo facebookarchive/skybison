@@ -970,16 +970,16 @@ TEST_F(TypeBuiltinsDeathTest,
   HandleScope scope(thread_);
 
   // Not cached dunder function.
-  Str dunder_len(&scope, runtime_.newStrFromCStr("__len__"));
-  ASSERT_TRUE(runtime_.isInternedStr(thread_, dunder_len));
+  Str dunder_len(&scope, runtime_.internStrFromCStr(thread_, "__len__"));
   terminateIfUnimplementedTypeAttrCacheInvalidation(thread_, dunder_len);
 
-  // Cached, and unimplemented cache invalidation for __add__ terminates Pyro.
-  Str dunder_add(&scope, runtime_.newStrFromCStr("__add__"));
-  ASSERT_TRUE(runtime_.isInternedStr(thread_, dunder_add));
-  ASSERT_DEATH(
-      terminateIfUnimplementedTypeAttrCacheInvalidation(thread_, dunder_add),
-      "unimplemented cache invalidation for type.__add__ update");
+  // Cached, and unimplemented cache invalidation for __setattr__ terminates
+  // Pyro.
+  Str dunder_setattr(&scope,
+                     runtime_.internStrFromCStr(thread_, "__setattr__"));
+  ASSERT_DEATH(terminateIfUnimplementedTypeAttrCacheInvalidation(
+                   thread_, dunder_setattr),
+               "unimplemented cache invalidation for type.__setattr__ update");
 }
 
 TEST_F(
@@ -1006,13 +1006,6 @@ class C: pass
 C.__setattr__ = lambda self, key: 5
 )")),
                "unimplemented cache invalidation for type.__setattr__ update");
-
-  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime_, R"(
-class C: pass
-
-C.__add__ = lambda self, other: 5
-)")),
-               "unimplemented cache invalidation for type.__add__ update");
 }
 
 TEST_F(

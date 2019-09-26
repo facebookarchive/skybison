@@ -1,6 +1,7 @@
 #include "ic.h"
 
 #include "bytecode.h"
+#include "interpreter.h"
 #include "runtime.h"
 #include "type-builtins.h"
 #include "utils.h"
@@ -48,6 +49,47 @@ bool icInsertDependentToValueCellDependencyLink(Thread* thread,
   }
   value_cell.setDependencyLink(*new_link);
   return true;
+}
+
+static void insertBinaryOpDependencies(Thread* thread,
+                                       const Function& dependent,
+                                       LayoutId left_layout_id,
+                                       const SymbolId left_operator_id,
+                                       LayoutId right_layout_id,
+                                       const SymbolId right_operator_id) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Type left_type(&scope, runtime->typeAt(left_layout_id));
+  Str left_op_name(&scope, runtime->symbols()->at(left_operator_id));
+  icInsertDependencyForTypeLookupInMro(thread, left_type, left_op_name,
+                                       dependent);
+  Type right_type(&scope, runtime->typeAt(right_layout_id));
+  Str right_op_name(&scope, runtime->symbols()->at(right_operator_id));
+  icInsertDependencyForTypeLookupInMro(thread, right_type, right_op_name,
+                                       dependent);
+}
+
+void icInsertBinaryOpDependencies(Thread* thread, const Function& dependent,
+                                  LayoutId left_layout_id,
+                                  LayoutId right_layout_id,
+                                  Interpreter::BinaryOp op) {
+  Runtime* runtime = thread->runtime();
+  SymbolId left_operator_id = runtime->binaryOperationSelector(op);
+  SymbolId right_operator_id = runtime->swappedBinaryOperationSelector(op);
+  insertBinaryOpDependencies(thread, dependent, left_layout_id,
+                             left_operator_id, right_layout_id,
+                             right_operator_id);
+}
+
+void icInsertCompareOpDependencies(Thread* thread, const Function& dependent,
+                                   LayoutId left_layout_id,
+                                   LayoutId right_layout_id, CompareOp op) {
+  Runtime* runtime = thread->runtime();
+  SymbolId left_operator_id = runtime->comparisonSelector(op);
+  SymbolId right_operator_id = runtime->swappedComparisonSelector(op);
+  insertBinaryOpDependencies(thread, dependent, left_layout_id,
+                             left_operator_id, right_layout_id,
+                             right_operator_id);
 }
 
 void icInsertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
@@ -487,17 +529,36 @@ void icInvalidateGlobalVar(Thread* thread, const ValueCell& value_cell) {
 
 RawObject IcIterator::leftMethodName() const {
   DCHECK(isBinaryOpCache(), "should be only called for attribute caches");
-  CompareOp compare_op =
-      static_cast<CompareOp>(originalArg(*function_, bytecode_op_.arg));
-  return runtime_->symbols()->at(runtime_->comparisonSelector(compare_op));
+  int32_t arg = originalArg(*function_, bytecode_op_.arg);
+  SymbolId method;
+  if (bytecode_op_.bc == BINARY_OP_CACHED) {
+    Interpreter::BinaryOp binary_op = static_cast<Interpreter::BinaryOp>(arg);
+    method = runtime_->binaryOperationSelector(binary_op);
+  } else {
+    DCHECK(
+        bytecode_op_.bc == COMPARE_OP_CACHED,
+        "binop cache must be either for BINARY_OP_CACHED or COMPARE_OP_CACHED");
+    CompareOp compare_op = static_cast<CompareOp>(arg);
+    method = runtime_->comparisonSelector(compare_op);
+  }
+  return runtime_->symbols()->at(method);
 }
 
 RawObject IcIterator::rightMethodName() const {
   DCHECK(isBinaryOpCache(), "should be only called for attribute caches");
-  CompareOp compare_op =
-      static_cast<CompareOp>(originalArg(*function_, bytecode_op_.arg));
-  return runtime_->symbols()->at(
-      runtime_->swappedComparisonSelector(compare_op));
+  int32_t arg = originalArg(*function_, bytecode_op_.arg);
+  SymbolId method;
+  if (bytecode_op_.bc == BINARY_OP_CACHED) {
+    Interpreter::BinaryOp binary_op = static_cast<Interpreter::BinaryOp>(arg);
+    method = runtime_->swappedBinaryOperationSelector(binary_op);
+  } else {
+    DCHECK(
+        bytecode_op_.bc == COMPARE_OP_CACHED,
+        "binop cache must be either for BINARY_OP_CACHED or COMPARE_OP_CACHED");
+    CompareOp compare_op = static_cast<CompareOp>(arg);
+    method = runtime_->swappedComparisonSelector(compare_op);
+  }
+  return runtime_->symbols()->at(method);
 }
 
 }  // namespace python

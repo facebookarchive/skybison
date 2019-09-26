@@ -735,16 +735,6 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
 // NOTE: Keep the order of these type attributes same as the one from
 // rewriteOperation.
 static const SymbolId kUnimplementedTypeAttrUpdates[] = {
-    // BINARY_*
-    SymbolId::kDunderAdd, SymbolId::kDunderRadd, SymbolId::kDunderAnd,
-    SymbolId::kDunderRand, SymbolId::kDunderFloordiv,
-    SymbolId::kDunderRfloordiv, SymbolId::kDunderLshift,
-    SymbolId::kDunderRlshift, SymbolId::kDunderMatmul, SymbolId::kDunderRmatmul,
-    SymbolId::kDunderMod, SymbolId::kDunderRmod, SymbolId::kDunderOr,
-    SymbolId::kDunderRor, SymbolId::kDunderPow, SymbolId::kDunderRpow,
-    SymbolId::kDunderRshift, SymbolId::kDunderGetitem, SymbolId::kDunderSub,
-    SymbolId::kDunderRsub, SymbolId::kDunderTruediv, SymbolId::kDunderRtruediv,
-    SymbolId::kDunderXor, SymbolId::kDunderRxor,
     // FOR_ITER
     SymbolId::kDunderNext,
     // INPLACE_*

@@ -1583,9 +1583,24 @@ static RawObject layoutIdOfObjectAsSmallInt(RawObject object) {
   return layoutIdAsSmallInt(object.layoutId());
 }
 
-TEST_F(IcTest, IcIterator) {
+TEST_F(IcTest, IcIteratorSkipsNotCachingOpcodes) {
   HandleScope scope(thread_);
-  MutableBytes bytecode(&scope, runtime_.newMutableBytesUninitialized(18));
+  MutableBytes bytecode(&scope, runtime_.newMutableBytesUninitialized(4));
+  bytecode.byteAtPut(0, LOAD_GLOBAL);
+  bytecode.byteAtPut(1, 100);
+  bytecode.byteAtPut(2, LOAD_ATTR);
+  bytecode.byteAtPut(3, 0);
+
+  Function function(&scope, newEmptyFunction());
+  function.setRewrittenBytecode(*bytecode);
+
+  IcIterator it(&scope, &runtime_, *function);
+  ASSERT_FALSE(it.hasNext());
+}
+
+TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
+  HandleScope scope(thread_);
+  MutableBytes bytecode(&scope, runtime_.newMutableBytesUninitialized(20));
   bytecode.byteAtPut(0, LOAD_GLOBAL);
   bytecode.byteAtPut(1, 100);
   bytecode.byteAtPut(2, LOAD_ATTR_CACHED);
@@ -1600,17 +1615,15 @@ TEST_F(IcTest, IcIterator) {
   bytecode.byteAtPut(11, 2);
   bytecode.byteAtPut(12, STORE_ATTR_CACHED);
   bytecode.byteAtPut(13, 3);
-  bytecode.byteAtPut(14, COMPARE_OP_CACHED);
-  bytecode.byteAtPut(15, 4);
-  bytecode.byteAtPut(16, LOAD_GLOBAL);
-  bytecode.byteAtPut(17, 100);
+  bytecode.byteAtPut(18, LOAD_GLOBAL);
+  bytecode.byteAtPut(19, 100);
 
-  Tuple original_args(&scope, runtime_.newTuple(5));
+  word num_caches = 4;
+  Tuple original_args(&scope, runtime_.newTuple(num_caches));
   original_args.atPut(0, SmallInt::fromWord(0));
   original_args.atPut(1, SmallInt::fromWord(1));
   original_args.atPut(2, SmallInt::fromWord(2));
   original_args.atPut(3, SmallInt::fromWord(3));
-  original_args.atPut(4, SmallInt::fromWord(CompareOp::GE));
 
   Tuple names(&scope, runtime_.newTuple(4));
   names.atPut(0, runtime_.newStrFromCStr("load_attr_cached_attr_name"));
@@ -1618,7 +1631,7 @@ TEST_F(IcTest, IcIterator) {
   names.atPut(2, runtime_.newStrFromCStr("load_attr_cached_attr_name2"));
   names.atPut(3, runtime_.newStrFromCStr("store_attr_cached_attr_name"));
 
-  Tuple caches(&scope, runtime_.newTuple(5 * kIcPointersPerCache));
+  Tuple caches(&scope, runtime_.newTuple(num_caches * kIcPointersPerCache));
   // Caches for LOAD_ATTR_CACHED at 2.
   word load_attr_cached_cache_index0 =
       0 * kIcPointersPerCache + 1 * kIcPointersPerEntry;
@@ -1650,18 +1663,6 @@ TEST_F(IcTest, IcIterator) {
                layoutIdOfObjectAsSmallInt(NoneType::object()));
   caches.atPut(store_attr_cached_index + kIcEntryValueOffset,
                SmallInt::fromWord(40));
-
-  // Caches for COMPARE_OP_CACHED at 14.
-  word compare_op_cached_index =
-      4 * kIcPointersPerCache + 0 * kIcPointersPerEntry;
-  word key_high_bits = static_cast<word>(SmallInt::fromWord(0).layoutId())
-                           << Header::kLayoutIdBits |
-                       static_cast<word>(SmallStr::fromCStr("test").layoutId());
-  caches.atPut(compare_op_cached_index + kIcEntryKeyOffset,
-               SmallInt::fromWord(key_high_bits << kBitsPerByte |
-                                  static_cast<word>(kBinaryOpReflected)));
-  caches.atPut(compare_op_cached_index + kIcEntryValueOffset,
-               SmallInt::fromWord(50));
 
   Function function(&scope, newEmptyFunction());
   function.setRewrittenBytecode(*bytecode);
@@ -1714,15 +1715,85 @@ TEST_F(IcTest, IcIterator) {
       caches.at(store_attr_cached_index + kIcEntryValueOffset).isNoneType());
 
   it.next();
+  EXPECT_FALSE(it.hasNext());
+}
+
+TEST_F(IcTest, IcIteratorIteratesOverBinaryOpCaches) {
+  HandleScope scope(thread_);
+  MutableBytes bytecode(&scope, runtime_.newMutableBytesUninitialized(8));
+  bytecode.byteAtPut(0, LOAD_GLOBAL);
+  bytecode.byteAtPut(1, 100);
+  bytecode.byteAtPut(2, COMPARE_OP_CACHED);
+  bytecode.byteAtPut(3, 0);
+  bytecode.byteAtPut(4, BINARY_OP_CACHED);
+  bytecode.byteAtPut(5, 1);
+  bytecode.byteAtPut(6, LOAD_GLOBAL);
+  bytecode.byteAtPut(7, 100);
+
+  word num_caches = 2;
+  Tuple original_args(&scope, runtime_.newTuple(num_caches));
+  original_args.atPut(0, SmallInt::fromWord(CompareOp::GE));
+  original_args.atPut(
+      1, SmallInt::fromWord(static_cast<word>(Interpreter::BinaryOp::ADD)));
+
+  Tuple caches(&scope, runtime_.newTuple(num_caches * kIcPointersPerCache));
+
+  // Caches for COMPARE_OP_CACHED at 2.
+  word compare_op_cached_index =
+      0 * kIcPointersPerCache + 0 * kIcPointersPerEntry;
+  word compare_op_key_high_bits =
+      static_cast<word>(SmallInt::fromWord(0).layoutId())
+          << Header::kLayoutIdBits |
+      static_cast<word>(SmallStr::fromCStr("test").layoutId());
+  caches.atPut(compare_op_cached_index + kIcEntryKeyOffset,
+               SmallInt::fromWord(compare_op_key_high_bits << kBitsPerByte |
+                                  static_cast<word>(kBinaryOpReflected)));
+  caches.atPut(compare_op_cached_index + kIcEntryValueOffset,
+               SmallInt::fromWord(50));
+
+  // Caches for BINARY_OP_CACHED at 4.
+  word binary_op_cached_index =
+      1 * kIcPointersPerCache + 0 * kIcPointersPerEntry;
+  word binary_op_key_high_bits =
+      static_cast<word>(SmallStr::fromCStr("").layoutId())
+          << Header::kLayoutIdBits |
+      static_cast<word>(SmallInt::fromWord(0).layoutId());
+  caches.atPut(binary_op_cached_index + kIcEntryKeyOffset,
+               SmallInt::fromWord(binary_op_key_high_bits << kBitsPerByte |
+                                  static_cast<word>(kBinaryOpReflected)));
+  caches.atPut(binary_op_cached_index + kIcEntryValueOffset,
+               SmallInt::fromWord(60));
+
+  Function function(&scope, newEmptyFunction());
+  function.setRewrittenBytecode(*bytecode);
+  function.setCaches(*caches);
+  function.setOriginalArguments(*original_args);
+
+  IcIterator it(&scope, &runtime_, *function);
   ASSERT_TRUE(it.hasNext());
   ASSERT_TRUE(it.isBinaryOpCache());
   EXPECT_FALSE(it.isAttrCache());
   EXPECT_EQ(it.leftLayoutId(), SmallInt::fromWord(-1).layoutId());
   EXPECT_EQ(it.rightLayoutId(), SmallStr::fromCStr("").layoutId());
-  Str left_operator_name(&scope, runtime_.newStrFromCStr("__ge__"));
-  EXPECT_TRUE(left_operator_name.equals(it.leftMethodName()));
-  Str right_operator_name(&scope, runtime_.newStrFromCStr("__le__"));
-  EXPECT_TRUE(right_operator_name.equals(it.rightMethodName()));
+  {
+    Str left_operator_name(&scope, runtime_.newStrFromCStr("__ge__"));
+    EXPECT_TRUE(left_operator_name.equals(it.leftMethodName()));
+    Str right_operator_name(&scope, runtime_.newStrFromCStr("__le__"));
+    EXPECT_TRUE(right_operator_name.equals(it.rightMethodName()));
+  }
+
+  it.next();
+  ASSERT_TRUE(it.hasNext());
+  ASSERT_TRUE(it.isBinaryOpCache());
+  EXPECT_FALSE(it.isAttrCache());
+  EXPECT_EQ(it.leftLayoutId(), SmallStr::fromCStr("").layoutId());
+  EXPECT_EQ(it.rightLayoutId(), SmallInt::fromWord(-1).layoutId());
+  {
+    Str left_operator_name(&scope, runtime_.newStrFromCStr("__add__"));
+    EXPECT_TRUE(left_operator_name.equals(it.leftMethodName()));
+    Str right_operator_name(&scope, runtime_.newStrFromCStr("__radd__"));
+    EXPECT_TRUE(right_operator_name.equals(it.rightMethodName()));
+  }
 
   it.next();
   EXPECT_FALSE(it.hasNext());

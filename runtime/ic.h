@@ -34,6 +34,19 @@ bool icInsertDependentToValueCellDependencyLink(Thread* thread,
                                                 const Object& dependent,
                                                 const ValueCell& value_cell);
 
+// Insert dependencies for `a binary_op b` where layout_id(a) == left_layout_id,
+// layout_id(b) == right_layout_id.
+void icInsertBinaryOpDependencies(Thread* thread, const Function& dependent,
+                                  LayoutId left_layout_id,
+                                  LayoutId right_layout_id,
+                                  Interpreter::BinaryOp op);
+
+// Insert dependencies for `a compare_op b` where layout_id(a) == left_layout_id
+// ,layout_id(b) == right_layout_id.
+void icInsertCompareOpDependencies(Thread* thread, const Function& dependent,
+                                   LayoutId left_layout_id,
+                                   LayoutId right_layout_id, CompareOp op);
+
 // Perform the same lookup operation as typeLookupNameInMro as we're inserting
 // dependent into the ValueCell in each visited type dictionary.
 void icInsertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
@@ -256,6 +269,7 @@ class IcIterator {
 
   bool isBinaryOpCache() const {
     switch (bytecode_op_.bc) {
+      case BINARY_OP_CACHED:
       case COMPARE_OP_CACHED:
         return true;
       default:

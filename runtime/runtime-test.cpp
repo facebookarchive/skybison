@@ -2380,11 +2380,11 @@ del C.__len__
                    .isError());
   ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime_, R"(
 class C:
-  def __add__(self, other): return 4
+  def __setattr__(self, other): return 4
 
-del C.__add__
+del C.__setattr__
 )")),
-               "unimplemented cache invalidation for type.__add__ update");
+               "unimplemented cache invalidation for type.__setattr__ update");
 }
 
 TEST(
