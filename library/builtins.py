@@ -3370,6 +3370,12 @@ class method(bootstrap=True):
 
 
 class memoryview(bootstrap=True):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        memoryview.release(self)
+
     def __getitem__(self, index):
         pass
 
@@ -3385,6 +3391,10 @@ class memoryview(bootstrap=True):
     itemsize = _property(_memoryview_itemsize)
 
     nbytes = _property(_memoryview_nbytes)
+
+    def release(self):
+        # Do nothing.
+        pass
 
     def tolist(self):
         _memoryview_guard(self)

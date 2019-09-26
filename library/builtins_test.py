@@ -4339,6 +4339,11 @@ class MappingProxyTests(unittest.TestCase):
 
 
 class MemoryviewTests(unittest.TestCase):
+    def test_dunder_enter_and_dunder_exit(self):
+        view = memoryview(b"foobar")
+        with view as ctx:
+            self.assertIs(view, ctx)
+
     def test_itemsize_returns_size_of_item_chars(self):
         src = b"abcd"
         view = memoryview(src)
@@ -4352,6 +4357,10 @@ class MemoryviewTests(unittest.TestCase):
     def test_nbytes_returns_size_of_memoryview(self):
         view = memoryview(b"foobar")
         self.assertEqual(view.nbytes, 6)
+
+    def test_release_does_nothing(self):
+        view = memoryview(b"foobar")
+        view.release()
 
     def test_tolist_with_non_memoryview_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
