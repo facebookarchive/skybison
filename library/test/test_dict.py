@@ -32,6 +32,8 @@ class DictTest(unittest.TestCase):
         self.assertEqual(dict(), {})
         self.assertIsNot(dict(), {})
 
+    # TODO(T54193215): Implement eval
+    @unittest.skip("Implement eval")
     def test_literal_constructor(self):
         # check literal constructor for different sized dicts
         # (to exercise the BUILD_MAP oparg).
@@ -49,6 +51,8 @@ class DictTest(unittest.TestCase):
         self.assertIs(bool({}), False)
         self.assertIs(bool({1: 2}), True)
 
+    # TODO(T54219523): Implement __repr__ for dict_* types
+    @unittest.skip("Implement __repr__ for dict_* types")
     def test_keys(self):
         d = {}
         self.assertEqual(set(d.keys()), set())
@@ -62,6 +66,8 @@ class DictTest(unittest.TestCase):
         self.assertRaises(TypeError, d.keys, None)
         self.assertEqual(repr(dict(a=1).keys()), "dict_keys(['a'])")
 
+    # TODO(T54219523): Implement __repr__ for dict_* types
+    @unittest.skip("Implement __repr__ for dict_* types")
     def test_values(self):
         d = {}
         self.assertEqual(set(d.values()), set())
@@ -70,6 +76,8 @@ class DictTest(unittest.TestCase):
         self.assertRaises(TypeError, d.values, None)
         self.assertEqual(repr(dict(a=1).values()), "dict_values([1])")
 
+    # TODO(T54219523): Implement __repr__ for dict_* types
+    @unittest.skip("Implement __repr__ for dict_* types")
     def test_items(self):
         d = {}
         self.assertEqual(set(d.items()), set())
@@ -171,7 +179,8 @@ class DictTest(unittest.TestCase):
         class FailingUserDict:
             def keys(self):
                 raise Exc
-        self.assertRaises(Exc, d.update, FailingUserDict())
+        # TODO(T54069383): Throw RuntimeError on mutation
+        # self.assertRaises(Exc, d.update, FailingUserDict())
 
         class FailingUserDict:
             def keys(self):
@@ -218,6 +227,8 @@ class DictTest(unittest.TestCase):
 
         self.assertRaises(ValueError, {}.update, [(1, 2, 3)])
 
+    # TODO(T54070474): Implement dict.fromkeys
+    @unittest.skip("Implement dict.fromkeys")
     def test_fromkeys(self):
         self.assertEqual(dict.fromkeys('abc'), {'a':None, 'b':None, 'c':None})
         d = {}
@@ -321,6 +332,8 @@ class DictTest(unittest.TestCase):
         x.fail = True
         self.assertRaises(Exc, d.setdefault, x, [])
 
+    # TODO(T54254277): Fix runtime::objectEquals comparison
+    @unittest.skip("Fix runtime::objectEquals comparison")
     def test_setdefault_atomic(self):
         # Issue #13521: setdefault() calls __hash__ and __eq__ only once.
         class Hashed(object):
@@ -422,6 +435,8 @@ class DictTest(unittest.TestCase):
         x.fail = True
         self.assertRaises(Exc, d.pop, x)
 
+    # TODO(T54069383): Throw RuntimeError on mutation
+    @unittest.skip("Throw RuntimeError on mutation")
     def test_mutating_iteration(self):
         # changing dict size during iteration
         d = {}
@@ -474,12 +489,16 @@ class DictTest(unittest.TestCase):
         d = {1: BadRepr()}
         self.assertRaises(Exc, repr, d)
 
+    # TODO(T54069730): Implement sys.getrecursionlimit
+    @unittest.skip("Implement sys.getrecursionlimit")
     def test_repr_deep(self):
         d = {}
         for i in range(sys.getrecursionlimit() + 100):
             d = {1: d}
         self.assertRaises(RecursionError, repr, d)
 
+    # TODO(T54254277): Fix runtime::objectEquals comparison
+    @unittest.skip("Fix runtime::objectEquals comparison")
     def test_eq(self):
         self.assertEqual({}, {})
         self.assertEqual({1: 2}, {1: 2})
@@ -502,6 +521,8 @@ class DictTest(unittest.TestCase):
         self.helper_keys_contained(lambda x: x.keys())
         self.helper_keys_contained(lambda x: x.items())
 
+    # TODO(T54070626): Implment dict_keys.__lt__
+    @unittest.skip("Implment dict_keys.__lt__")
     def helper_keys_contained(self, fn):
         # Test rich comparisons against dict key views, which should behave the
         # same as sets.
@@ -546,6 +567,8 @@ class DictTest(unittest.TestCase):
         self.assertTrue(larger != larger3)
         self.assertFalse(larger == larger3)
 
+    # TODO(T54069383): Throw RuntimeError on mutation
+    @unittest.skip("Throw RuntimeError on mutation")
     def test_errors_in_view_containment_check(self):
         class C:
             def __eq__(self, other):
@@ -568,6 +591,8 @@ class DictTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             d3.items() > d2.items()
 
+    # TODO(T54219523): Implement builtin methods for dict_* types
+    @unittest.skip("Implement builtin methods for dict_* types")
     def test_dictview_set_operations_on_keys(self):
         k1 = {1:1, 2:2}.keys()
         k2 = {1:1, 2:2, 3:3}.keys()
@@ -583,6 +608,8 @@ class DictTest(unittest.TestCase):
         self.assertEqual(k1 ^ k2, {3})
         self.assertEqual(k1 ^ k3, {1,2,4})
 
+    # TODO(T54219523): Implement builtin methods for dict_* types
+    @unittest.skip("Implement builtin methods for dict_* types")
     def test_dictview_set_operations_on_items(self):
         k1 = {1:1, 2:2}.items()
         k2 = {1:1, 2:2, 3:3}.items()
@@ -598,6 +625,8 @@ class DictTest(unittest.TestCase):
         self.assertEqual(k1 ^ k2, {(3,3)})
         self.assertEqual(k1 ^ k3, {(1,1), (2,2), (4,4)})
 
+    # TODO(T54219523): Implement builtin methods for dict_* types
+    @unittest.skip("Implement builtin methods for dict_* types")
     def test_dictview_mixed_set_operations(self):
         # Just a few for .keys()
         self.assertTrue({1:1}.keys() == {1})
@@ -660,6 +689,8 @@ class DictTest(unittest.TestCase):
             d[(1,)]
         self.assertEqual(c.exception.args, ((1,),))
 
+    # TODO(T36407403): Functions should point to a module object
+    @unittest.skip("Fix exec with locals in class")
     def test_bad_key(self):
         # Dictionary lookups should fail if __eq__() raises an exception.
         class CustomException(Exception):
@@ -734,6 +765,8 @@ class DictTest(unittest.TestCase):
                  'f': None, 'g': None, 'h': None}
         d = {}
 
+    # TODO(T54070356): Implement gc.collect
+    @unittest.skip("Implement gc.collect")
     def test_container_iterator(self):
         # Bug #3680: tp_traverse was not implemented for dictiter and
         # dictview objects.
@@ -762,7 +795,8 @@ class DictTest(unittest.TestCase):
         gc.collect()
         self.assertTrue(gc.is_tracked(t), t)
 
-    @support.cpython_only
+    # TODO(T54070356): Implement gc.collect
+    @unittest.skip("Implement gc.collect")
     def test_track_literals(self):
         # Test GC-optimization of dict literals
         x, y, z, w = 1.5, "a", (1, None), []
@@ -780,7 +814,8 @@ class DictTest(unittest.TestCase):
         self._tracked({1: {}})
         self._tracked({1: set()})
 
-    @support.cpython_only
+    # TODO(T54070356): Implement gc.collect
+    @unittest.skip("Implement gc.collect")
     def test_track_dynamic(self):
         # Test GC-optimization of dynamically-created dicts
         class MyObject(object):
@@ -844,7 +879,8 @@ class DictTest(unittest.TestCase):
         d.update([(x, y), (z, w)])
         self._tracked(d)
 
-    @support.cpython_only
+    # TODO(T54070356): Implement gc.collect
+    @unittest.skip("Implement gc.collect")
     def test_track_subtypes(self):
         # Dict subtypes are always tracked
         class MyDict(dict):
@@ -863,7 +899,10 @@ class DictTest(unittest.TestCase):
 
         return dicts
 
+    # TODO(T54087589): Patch platform.python_implementation to return Pyro
+    # We will never support this; we should rely on the cpython_only decorator
     @support.cpython_only
+    @unittest.skip("Patch platform.python_implementation to return Pyro")
     def test_splittable_setdefault(self):
         """split table must be combined when setdefault()
         breaks insertion order"""
@@ -880,7 +919,8 @@ class DictTest(unittest.TestCase):
         self.assertEqual(list(a), ['x', 'y', 'z', 'a', 'b'])
         self.assertEqual(list(b), ['x', 'y', 'z', 'b', 'a'])
 
-    @support.cpython_only
+    # TODO(T54077463): Fix attribute deletion of instance_proxys
+    @unittest.skip("Fix attribute deletion of instance_proxys")
     def test_splittable_del(self):
         """split table must be combined when del d[k]"""
         a, b = self.make_shared_key_dict(2)
@@ -900,7 +940,6 @@ class DictTest(unittest.TestCase):
         self.assertEqual(list(a), ['x', 'z', 'y'])
         self.assertEqual(list(b), ['x', 'y', 'z'])
 
-    @support.cpython_only
     def test_splittable_pop(self):
         """split table must be combined when d.pop(k)"""
         a, b = self.make_shared_key_dict(2)
@@ -911,7 +950,6 @@ class DictTest(unittest.TestCase):
         with self.assertRaises(KeyError):
             a.pop('y')
 
-        self.assertGreater(sys.getsizeof(a), orig_size)
         self.assertEqual(list(a), ['x', 'z'])
         self.assertEqual(list(b), ['x', 'y', 'z'])
 
@@ -920,7 +958,6 @@ class DictTest(unittest.TestCase):
         self.assertEqual(list(a), ['x', 'z', 'y'])
         self.assertEqual(list(b), ['x', 'y', 'z'])
 
-    @support.cpython_only
     def test_splittable_pop_pending(self):
         """pop a pending key in a splitted table should not crash"""
         a, b = self.make_shared_key_dict(2)
@@ -929,7 +966,8 @@ class DictTest(unittest.TestCase):
         with self.assertRaises(KeyError):
             b.pop('a')
 
-    @support.cpython_only
+    # TODO(T54077463): Fix attribute deletion of instance_proxys
+    @unittest.skip("Fix attribute deletion of instance_proxys")
     def test_splittable_popitem(self):
         """split table must be combined when d.popitem()"""
         a, b = self.make_shared_key_dict(2)
@@ -945,7 +983,8 @@ class DictTest(unittest.TestCase):
         self.assertEqual(list(a), ['x', 'y'])
         self.assertEqual(list(b), ['x', 'y', 'z'])
 
-    @support.cpython_only
+    # TODO(T54087819): Import _testcapi
+    @unittest.skip("Import _testcapi")
     def test_splittable_setattr_after_pop(self):
         """setattr() must not convert combined table into split table."""
         # Issue 28147
@@ -975,6 +1014,8 @@ class DictTest(unittest.TestCase):
         a.a = 3
         self.assertFalse(_testcapi.dict_hassplittable(a.__dict__))
 
+    # TODD(T54077858): Implement dict_keyiterator.__reduce__
+    @unittest.skip("Implement dict_keyiterator.__reduce__")
     def test_iterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             data = {1:"a", 2:"b", 3:"c"}
@@ -993,6 +1034,8 @@ class DictTest(unittest.TestCase):
             del data[drop]
             self.assertEqual(sorted(it), sorted(data))
 
+    # TODD(T54077858): Implement dict_itemiterator.__reduce__
+    @unittest.skip("Implement dict_itemiterator.__reduce__")
     def test_itemiterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             data = {1:"a", 2:"b", 3:"c"}
@@ -1015,6 +1058,8 @@ class DictTest(unittest.TestCase):
             del data[drop[0]]
             self.assertEqual(dict(it), data)
 
+    # TODD(T54077858): Implement dict_valueiterator.__reduce__
+    @unittest.skip("Implement dict_valueiterator.__reduce__")
     def test_valuesiterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             data = {1:"a", 2:"b", 3:"c"}
@@ -1031,6 +1076,8 @@ class DictTest(unittest.TestCase):
             values = list(it) + [drop]
             self.assertEqual(sorted(values), sorted(list(data.values())))
 
+    # TODO(T54088094): Support str subclass in getattr
+    @unittest.skip("Support str subclass in getattr")
     def test_instance_dict_getattr_str_subclass(self):
         class Foo:
             def __init__(self, msg):
@@ -1041,6 +1088,9 @@ class DictTest(unittest.TestCase):
         self.assertEqual(f.msg, getattr(f, _str('msg')))
         self.assertEqual(f.msg, f.__dict__[_str('msg')])
 
+
+    # TODO(T53626118): Support str subclasses in _instance_setattr
+    @unittest.skip("Support str subclasses in _instance_setattr")
     def test_object_set_item_single_instance_non_str_key(self):
         class Foo: pass
         f = Foo()
@@ -1076,6 +1126,8 @@ class DictTest(unittest.TestCase):
                 d.popitem()
         self.check_reentrant_insertion(mutate)
 
+    # TODO(T54069383): Throw RuntimeError on mutation
+    @unittest.skip("Throw RuntimeError on mutation")
     def test_merge_and_mutate(self):
         class X:
             def __hash__(self):
@@ -1091,6 +1143,8 @@ class DictTest(unittest.TestCase):
         d = {X(): 0, 1: 1}
         self.assertRaises(RuntimeError, d.update, other)
 
+    # TODO(T54070356): Implement gc.collect
+    @unittest.skip("Implement gc.collect")
     def test_free_after_iterating(self):
         support.check_free_after_iterating(self, iter, dict)
         support.check_free_after_iterating(self, lambda d: iter(d.keys()), dict)
@@ -1114,6 +1168,8 @@ class DictTest(unittest.TestCase):
         dict_b = {X(): X()}
         self.assertTrue(dict_a == dict_b)
 
+    # TODO(T54070474): Implement dict.fromkeys
+    @unittest.skip("Implement dict.fromkeys")
     def test_fromkeys_operator_modifying_dict_operand(self):
         # test fix for seg fault reported in issue 27945 part 4a.
         class X(int):
@@ -1132,6 +1188,8 @@ class DictTest(unittest.TestCase):
         except RuntimeError:  # implementation defined
             pass
 
+    # TODO(T54070474): Implement dict.fromkeys
+    @unittest.skip("Implement dict.fromkeys")
     def test_fromkeys_operator_modifying_set_operand(self):
         # test fix for seg fault reported in issue 27945 part 4b.
         class X(int):
@@ -1168,6 +1226,8 @@ class DictTest(unittest.TestCase):
         pair = [X(), 123]
         dict([pair])
 
+    # TODO(T54069383): Throw RuntimeError on mutation
+    @unittest.skip("Throw RuntimeError on mutation")
     def test_oob_indexing_dictiter_iternextitem(self):
         class X(int):
             def __del__(self):
@@ -1182,7 +1242,8 @@ class DictTest(unittest.TestCase):
 
         self.assertRaises(RuntimeError, iter_and_mutate)
 
-    @support.cpython_only
+    # TODO(T54255120): Calling dict on OrderedDict should preserve order
+    @unittest.skip("Calling dict on OrderedDict should preserve order")
     def test_dict_copy_order(self):
         # bpo-34320
         od = collections.OrderedDict([('a', 1), ('b', 2)])
@@ -1217,7 +1278,8 @@ class DictTest(unittest.TestCase):
 class CAPITest(unittest.TestCase):
 
     # Test _PyDict_GetItem_KnownHash()
-    @support.cpython_only
+    # TODO(T54087819): Import _testcapi
+    @unittest.skip("Import _testcapi")
     def test_getitem_knownhash(self):
         from _testcapi import dict_getitem_knownhash
 

@@ -53,6 +53,8 @@ rm -rf tests
 mkdir tests
 # Add Pyro tests
 find "$SOURCE_DIR/library/" -name "$PYRO_TEST_FILTER" -exec cp {} tests/ \;
+# Add stubbed out CPython tests in Pyro
+find "$SOURCE_DIR/library/test/" -name "test_*.py" -exec cp {} tests/ \;
 # Add CPython tests
 for i in "${CPYTHON_TESTS[@]}"; do
     if [[ -d "$SOURCE_DIR/third-party/cpython/Lib/test/$i" ]]; then
