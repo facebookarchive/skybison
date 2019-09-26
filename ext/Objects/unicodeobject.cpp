@@ -1261,11 +1261,10 @@ PY_EXPORT PyObject* PyUnicode_DecodeUTF8Stateful(const char* c_str,
   Object bytes(&scope, thread->runtime()->newBytesWithAll(View<byte>(
                            reinterpret_cast<const byte*>(c_str), size)));
   Object errors_obj(&scope, symbolFromError(thread, errors));
-  Object is_stateful(&scope, Bool::fromBool(consumed != nullptr));
-  Object result_obj(
-      &scope, thread->invokeFunction3(SymbolId::kUnderCodecs,
-                                      SymbolId::kUnderUtf8DecodeStateful, bytes,
-                                      errors_obj, is_stateful));
+  Object is_final(&scope, Bool::fromBool(consumed == nullptr));
+  Object result_obj(&scope, thread->invokeFunction3(
+                                SymbolId::kUnderCodecs, SymbolId::kUtf8Decode,
+                                bytes, errors_obj, is_final));
   if (result_obj.isError()) {
     if (result_obj.isErrorNotFound()) {
       thread->raiseWithFmt(LayoutId::kSystemError,

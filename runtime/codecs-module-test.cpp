@@ -116,10 +116,10 @@ TEST_F(CodecsModuleTest, DecodeUTF8WithWellFormedUTF8ReturnsString) {
   Object errors(&scope, runtime_.newStrFromCStr("strict"));
   Object index(&scope, runtime_.newInt(0));
   Object strarray(&scope, runtime_.newStrArray());
-  Object stateful(&scope, Bool::falseObj());
+  Object is_final(&scope, Bool::trueObj());
   Object result_obj(
       &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, stateful));
+                         index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -136,10 +136,10 @@ TEST_F(CodecsModuleTest, DecodeUTF8WithIgnoreErrorHandlerReturnsStr) {
   Object errors(&scope, runtime_.newStrFromCStr("ignore"));
   Object index(&scope, runtime_.newInt(0));
   Object strarray(&scope, runtime_.newStrArray());
-  Object stateful(&scope, Bool::falseObj());
+  Object is_final(&scope, Bool::trueObj());
   Object result_obj(
       &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, stateful));
+                         index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -155,10 +155,10 @@ TEST_F(CodecsModuleTest, DecodeUTF8WithReplaceErrorHandlerReturnsStr) {
   Object errors(&scope, runtime_.newStrFromCStr("replace"));
   Object index(&scope, runtime_.newInt(0));
   Object strarray(&scope, runtime_.newStrArray());
-  Object stateful(&scope, Bool::falseObj());
+  Object is_final(&scope, Bool::trueObj());
   Object result_obj(
       &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, stateful));
+                         index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -177,10 +177,10 @@ TEST_F(CodecsModuleTest, DecodeUTF8WithSurroogateescapeErrorHandlerReturnsStr) {
   Object errors(&scope, runtime_.newStrFromCStr("surrogateescape"));
   Object index(&scope, runtime_.newInt(0));
   Object strarray(&scope, runtime_.newStrArray());
-  Object stateful(&scope, Bool::falseObj());
+  Object is_final(&scope, Bool::trueObj());
   Object result_obj(
       &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, stateful));
+                         index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -199,10 +199,10 @@ TEST_F(CodecsModuleTest, DecodeUTF8WithInvalidStartByteReturnsIndices) {
   Object errors(&scope, runtime_.newStrFromCStr("strict"));
   Object index(&scope, runtime_.newInt(0));
   Object strarray(&scope, runtime_.newStrArray());
-  Object stateful(&scope, Bool::falseObj());
+  Object is_final(&scope, Bool::trueObj());
   Object result_obj(
       &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, stateful));
+                         index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -218,10 +218,10 @@ TEST_F(CodecsModuleTest, DecodeUTF8StatefulWithInvalidStartByteReturnsIndices) {
   Object errors(&scope, runtime_.newStrFromCStr("strict"));
   Object index(&scope, runtime_.newInt(0));
   Object strarray(&scope, runtime_.newStrArray());
-  Object stateful(&scope, Bool::trueObj());
+  Object is_final(&scope, Bool::falseObj());
   Object result_obj(
       &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, stateful));
+                         index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -237,10 +237,10 @@ TEST_F(CodecsModuleTest, DecodeUTF8WithUnexpectedEndReturnsIndices) {
   Object errors(&scope, runtime_.newStrFromCStr("strict"));
   Object index(&scope, runtime_.newInt(0));
   Object strarray(&scope, runtime_.newStrArray());
-  Object stateful(&scope, Bool::falseObj());
+  Object is_final(&scope, Bool::trueObj());
   Object result_obj(
       &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, stateful));
+                         index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -256,10 +256,10 @@ TEST_F(CodecsModuleTest, DecodeUTF8StatefulWithUnexpectedEndReturnsStr) {
   Object errors(&scope, runtime_.newStrFromCStr("strict"));
   Object index(&scope, runtime_.newInt(0));
   Object strarray(&scope, runtime_.newStrArray());
-  Object stateful(&scope, Bool::trueObj());
+  Object is_final(&scope, Bool::falseObj());
   Object result_obj(
       &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, stateful));
+                         index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -275,10 +275,10 @@ TEST_F(CodecsModuleTest, DecodeUTF8WithInvalidFirstContReturnsIndices) {
   Object errors(&scope, runtime_.newStrFromCStr("strict"));
   Object index(&scope, runtime_.newInt(0));
   Object strarray(&scope, runtime_.newStrArray());
-  Object stateful(&scope, Bool::falseObj());
+  Object is_final(&scope, Bool::trueObj());
   Object result_obj(
       &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, stateful));
+                         index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -294,10 +294,10 @@ TEST_F(CodecsModuleTest, DecodeUTF8StatefulWithInvalidFirstContReturnsStr) {
   Object errors(&scope, runtime_.newStrFromCStr("strict"));
   Object index(&scope, runtime_.newInt(0));
   Object strarray(&scope, runtime_.newStrArray());
-  Object stateful(&scope, Bool::trueObj());
+  Object is_final(&scope, Bool::falseObj());
   Object result_obj(
       &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, stateful));
+                         index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -313,10 +313,10 @@ TEST_F(CodecsModuleTest, DecodeUTF8WithInvalidSecondContReturnsIndices) {
   Object errors(&scope, runtime_.newStrFromCStr("strict"));
   Object index(&scope, runtime_.newInt(0));
   Object strarray(&scope, runtime_.newStrArray());
-  Object stateful(&scope, Bool::falseObj());
+  Object is_final(&scope, Bool::trueObj());
   Object result_obj(
       &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, stateful));
+                         index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -332,10 +332,10 @@ TEST_F(CodecsModuleTest, DecodeUTF8StatefulWithInvalidSecondContReturnsStr) {
   Object errors(&scope, runtime_.newStrFromCStr("strict"));
   Object index(&scope, runtime_.newInt(0));
   Object strarray(&scope, runtime_.newStrArray());
-  Object stateful(&scope, Bool::trueObj());
+  Object is_final(&scope, Bool::falseObj());
   Object result_obj(
       &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, stateful));
+                         index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -351,10 +351,10 @@ TEST_F(CodecsModuleTest, DecodeUTF8WithInvalidThirdContReturnsIndices) {
   Object errors(&scope, runtime_.newStrFromCStr("strict"));
   Object index(&scope, runtime_.newInt(0));
   Object strarray(&scope, runtime_.newStrArray());
-  Object stateful(&scope, Bool::falseObj());
+  Object is_final(&scope, Bool::trueObj());
   Object result_obj(
       &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, stateful));
+                         index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -370,10 +370,10 @@ TEST_F(CodecsModuleTest, DecodeUTF8StatefulWithInvalidThirdContReturnsStr) {
   Object errors(&scope, runtime_.newStrFromCStr("strict"));
   Object index(&scope, runtime_.newInt(0));
   Object strarray(&scope, runtime_.newStrArray());
-  Object stateful(&scope, Bool::trueObj());
+  Object is_final(&scope, Bool::falseObj());
   Object result_obj(
       &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, stateful));
+                         index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -393,10 +393,10 @@ encoded = Foo(b"hello")
   Object errors(&scope, runtime_.newStrFromCStr("strict"));
   Object index(&scope, runtime_.newInt(0));
   Object strarray(&scope, runtime_.newStrArray());
-  Object stateful(&scope, Bool::falseObj());
+  Object is_final(&scope, Bool::trueObj());
   Object result_obj(
       &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, stateful));
+                         index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);

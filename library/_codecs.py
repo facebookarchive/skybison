@@ -336,9 +336,7 @@ def unicode_escape_decode(data: bytes, errors: str = "strict") -> str:
 
 
 @_patch
-def _utf_8_decode(
-    data: bytes, errors: str, index: int, out: _strarray, is_stateful: bool
-):
+def _utf_8_decode(data: bytes, errors: str, index: int, out: _strarray, is_final: bool):
     """Tries to decode `data`, starting from `index`, into the `out` _strarray.
     If it runs into any errors, it returns a tuple of
     (error_start, error_end, error_message),
@@ -348,9 +346,7 @@ def _utf_8_decode(
     pass
 
 
-def _utf_8_decode_stateful(
-    data: bytes, errors: str = "strict", is_stateful: bool = False
-):
+def utf_8_decode(data: bytes, errors: str = "strict", is_final: bool = False):
     _byteslike_guard(data)
     if not _str_check(errors) and not None:
         raise TypeError(
@@ -362,24 +358,20 @@ def _utf_8_decode_stateful(
     encoded = ""
     length = len(data)
     while i < length:
-        encoded, i, errmsg = _utf_8_decode(data, errors, i, result, is_stateful)
+        encoded, i, errmsg = _utf_8_decode(data, errors, i, result, is_final)
         if _int_check(encoded):
             data, i = _call_decode_errorhandler(
                 errors, data, result, errmsg, "utf-8", encoded, i
             )
             continue
-        # If encoded isn't an int, _utf_8_decode returned because it ran into
-        # an error it could potentially recover from and is_stateful is true.
+        # If encoded isn't an int, utf_8_decode returned because it ran into
+        # an error it could potentially recover from and is_final is true.
         # We should stop decoding in this case.
         break
     if _str_check(encoded):
         return encoded, i
     # The error handler was the last to write to the result
     return str(result), i
-
-
-def utf_8_decode(data: bytes, errors: str = "strict"):
-    return _utf_8_decode_stateful(data, errors, True)
 
 
 @_patch

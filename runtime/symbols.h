@@ -439,7 +439,6 @@ class Runtime;
   V(UnderUtf16Encode, "_utf_16_encode")                                        \
   V(UnderUtf32Encode, "_utf_32_encode")                                        \
   V(UnderUtf8Decode, "_utf_8_decode")                                          \
-  V(UnderUtf8DecodeStateful, "_utf_8_decode_stateful")                         \
   V(UnderUtf8Encode, "_utf_8_encode")                                          \
   V(UnderWarnings, "_warnings")                                                \
   V(UnderWeakLink, "_weaklink")                                                \
@@ -818,6 +817,7 @@ class Runtime;
   V(UserWarning, "UserWarning")                                                \
   V(Utf16Encode, "utf_16_encode")                                              \
   V(Utf32Encode, "utf_32_encode")                                              \
+  V(Utf8Decode, "utf_8_decode")                                                \
   V(Utf8Encode, "utf_8_encode")                                                \
   V(Value, "value")                                                            \
   V(ValueCell, "valuecell")                                                    \

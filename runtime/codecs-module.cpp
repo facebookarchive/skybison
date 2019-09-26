@@ -831,7 +831,7 @@ RawObject UnderCodecsModule::underUtf8Decode(Thread* thread, Frame* frame,
   Object errors_obj(&scope, args.get(1));
   Object index_obj(&scope, args.get(2));
   Object output_obj(&scope, args.get(3));
-  Object stateful_obj(&scope, args.get(4));
+  Object final_obj(&scope, args.get(4));
   // TODO(T45849551): Handle any bytes-like object
   DCHECK(runtime->isInstanceOfBytes(*bytes_obj),
          "First arg to _utf_8_decode must be bytes");
@@ -841,7 +841,7 @@ RawObject UnderCodecsModule::underUtf8Decode(Thread* thread, Frame* frame,
          "Third arg to _utf_8_decode must be int");
   DCHECK(output_obj.isStrArray(),
          "Fourth arg to _utf_8_decode must be _strarray");
-  DCHECK(stateful_obj.isBool(), "Fifth arg to _utf_8_decode must be bool");
+  DCHECK(final_obj.isBool(), "Fifth arg to _utf_8_decode must be bool");
   Bytes bytes(&scope, bytesUnderlying(thread, bytes_obj));
   Str errors(&scope, strUnderlying(thread, errors_obj));
   Int index(&scope, intUnderlying(thread, index_obj));
@@ -859,7 +859,7 @@ RawObject UnderCodecsModule::underUtf8Decode(Thread* thread, Frame* frame,
   }
 
   SymbolId error_id = lookupSymbolForErrorHandler(errors);
-  bool is_stateful = Bool::cast(*stateful_obj).value();
+  bool is_final = Bool::cast(*final_obj).value();
   while (i < length) {
     // TODO(T41032331): Scan for non-ASCII characters by words instead of chars
     Utf8DecoderResult validator_result = isValidUtf8Codepoint(bytes, i);
@@ -874,7 +874,7 @@ RawObject UnderCodecsModule::underUtf8Decode(Thread* thread, Frame* frame,
       runtime->strArrayAddStr(thread, dst, temp);
       continue;
     }
-    if (validator_result != kInvalidStart && is_stateful) {
+    if (validator_result != kInvalidStart && !is_final) {
       break;
     }
     word error_end = i;
