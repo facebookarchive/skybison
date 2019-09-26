@@ -1799,4 +1799,59 @@ TEST_F(IcTest, IcIteratorIteratesOverBinaryOpCaches) {
   EXPECT_FALSE(it.hasNext());
 }
 
+TEST_F(IcTest, IcIteratorIteratesOverInplaceOpCaches) {
+  HandleScope scope(thread_);
+  MutableBytes bytecode(&scope, runtime_.newMutableBytesUninitialized(8));
+  bytecode.byteAtPut(0, LOAD_GLOBAL);
+  bytecode.byteAtPut(1, 100);
+  bytecode.byteAtPut(2, INPLACE_OP_CACHED);
+  bytecode.byteAtPut(3, 0);
+  bytecode.byteAtPut(4, LOAD_GLOBAL);
+  bytecode.byteAtPut(5, 100);
+
+  word num_caches = 1;
+  Tuple original_args(&scope, runtime_.newTuple(num_caches));
+  original_args.atPut(
+      0, SmallInt::fromWord(static_cast<word>(Interpreter::BinaryOp::MUL)));
+
+  Tuple caches(&scope, runtime_.newTuple(num_caches * kIcPointersPerCache));
+
+  // Caches for BINARY_OP_CACHED at 2.
+  word inplace_op_cached_index =
+      0 * kIcPointersPerCache + 0 * kIcPointersPerEntry;
+  word inplace_op_key_high_bits =
+      static_cast<word>(SmallStr::fromCStr("a").layoutId())
+          << Header::kLayoutIdBits |
+      static_cast<word>(SmallInt::fromWord(3).layoutId());
+  caches.atPut(inplace_op_cached_index + kIcEntryKeyOffset,
+               SmallInt::fromWord(inplace_op_key_high_bits << kBitsPerByte |
+                                  static_cast<word>(kBinaryOpReflected)));
+  caches.atPut(inplace_op_cached_index + kIcEntryValueOffset,
+               SmallInt::fromWord(70));
+
+  Function function(&scope, newEmptyFunction());
+  function.setRewrittenBytecode(*bytecode);
+  function.setCaches(*caches);
+  function.setOriginalArguments(*original_args);
+
+  IcIterator it(&scope, &runtime_, *function);
+  ASSERT_TRUE(it.hasNext());
+  ASSERT_TRUE(it.isInplaceOpCache());
+  EXPECT_FALSE(it.isBinaryOpCache());
+  EXPECT_FALSE(it.isAttrCache());
+  EXPECT_EQ(it.leftLayoutId(), SmallStr::fromCStr("").layoutId());
+  EXPECT_EQ(it.rightLayoutId(), SmallInt::fromWord(-1).layoutId());
+  {
+    Str inplace_operator_name(&scope, runtime_.newStrFromCStr("__imul__"));
+    EXPECT_TRUE(inplace_operator_name.equals(it.inplaceMethodName()));
+    Str left_operator_name(&scope, runtime_.newStrFromCStr("__mul__"));
+    EXPECT_TRUE(left_operator_name.equals(it.leftMethodName()));
+    Str right_operator_name(&scope, runtime_.newStrFromCStr("__rmul__"));
+    EXPECT_TRUE(right_operator_name.equals(it.rightMethodName()));
+  }
+
+  it.next();
+  EXPECT_FALSE(it.hasNext());
+}
+
 }  // namespace python

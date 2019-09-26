@@ -47,6 +47,13 @@ void icInsertCompareOpDependencies(Thread* thread, const Function& dependent,
                                    LayoutId left_layout_id,
                                    LayoutId right_layout_id, CompareOp op);
 
+// Insert dependencies for `a inplace_op b` where layout_id(a) == left_layout_id
+// ,layout_id(b) == right_layout_id, and op is an inplace operation (e.g., +=).
+void icInsertInplaceOpDependencies(Thread* thread, const Function& dependent,
+                                   LayoutId left_layout_id,
+                                   LayoutId right_layout_id,
+                                   Interpreter::BinaryOp op);
+
 // Perform the same lookup operation as typeLookupNameInMro as we're inserting
 // dependent into the ValueCell in each visited type dictionary.
 void icInsertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
@@ -63,7 +70,13 @@ void icEvictAttr(Thread* thread, const IcIterator& it, const Type& updated_type,
                  const Str& updated_attr, AttributeKind attribute_kind,
                  const Function& dependent);
 
-// icEvictBinaryOp tries evicting the binop cache pointed-to by `it and
+// Delete dependent from the MRO of cached_layout_id up to the type defining
+// `attr`.
+void icDeleteDependentToDefiningType(Thread* thread, const Function& dependent,
+                                     LayoutId cached_layout_id,
+                                     const Str& attr);
+
+// icEvictBinaryOp tries evicting the binary op cache pointed-to by `it` and
 // deletes the evicted cache' dependencies.
 //
 // - Invalidation condition
@@ -107,6 +120,13 @@ void icEvictAttr(Thread* thread, const IcIterator& it, const Type& updated_type,
 void icEvictBinaryOp(Thread* thread, const IcIterator& it,
                      const Type& updated_type, const Str& updated_attr,
                      const Function& dependent);
+
+// Similar to icEvictBinopCache, but handle updates to dunder functions for
+// inplace operations (e.g., iadd, imul, and etc.).
+// TODO(T54575269): Pass SymbolId for updated_attr.
+void icEvictInplaceOp(Thread* thread, const IcIterator& it,
+                      const Type& updated_type, const Str& updated_attr,
+                      const Function& dependent);
 
 // Delete dependent in ValueCell's dependencyLink.
 void icDeleteDependentInValueCell(Thread* thread, const ValueCell& value_cell,
@@ -277,6 +297,8 @@ class IcIterator {
     }
   }
 
+  bool isInplaceOpCache() const { return bytecode_op_.bc == INPLACE_OP_CACHED; }
+
   LayoutId layoutId() const {
     DCHECK(isAttrCache(), "should be only called for attribute caches");
     return static_cast<LayoutId>(SmallInt::cast(key()).value());
@@ -295,13 +317,15 @@ class IcIterator {
   }
 
   LayoutId leftLayoutId() const {
-    DCHECK(isBinaryOpCache(), "should be only called for attribute caches");
+    DCHECK(isBinaryOpCache() || isInplaceOpCache(),
+           "should be only called for binop or inplace-binop caches");
     word cache_key_value = SmallInt::cast(key()).value() >> 8;
     return static_cast<LayoutId>(cache_key_value >> Header::kLayoutIdBits);
   }
 
   LayoutId rightLayoutId() const {
-    DCHECK(isBinaryOpCache(), "should be only called for attribute caches");
+    DCHECK(isBinaryOpCache() || isInplaceOpCache(),
+           "should be only called for binop or inplace-binop caches");
     word cache_key_value = SmallInt::cast(key()).value() >> 8;
     return static_cast<LayoutId>(cache_key_value &
                                  ((1 << Header::kLayoutIdBits) - 1));
@@ -310,6 +334,8 @@ class IcIterator {
   RawObject leftMethodName() const;
 
   RawObject rightMethodName() const;
+
+  RawObject inplaceMethodName() const;
 
   void evict() const {
     caches_.atPut(cache_index_ + kIcEntryKeyOffset, NoneType::object());

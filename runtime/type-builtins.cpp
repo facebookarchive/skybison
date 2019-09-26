@@ -737,12 +737,6 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
 static const SymbolId kUnimplementedTypeAttrUpdates[] = {
     // FOR_ITER
     SymbolId::kDunderNext,
-    // INPLACE_*
-    SymbolId::kDunderIadd, SymbolId::kDunderIand, SymbolId::kDunderIfloordiv,
-    SymbolId::kDunderIlshift, SymbolId::kDunderImatmul, SymbolId::kDunderImod,
-    SymbolId::kDunderImul, SymbolId::kDunderIor, SymbolId::kDunderIpow,
-    SymbolId::kDunderIrshift, SymbolId::kDunderIsub, SymbolId::kDunderItruediv,
-    SymbolId::kDunderIxor,
     // LOAD_ATTR, LOAD_METHOD
     SymbolId::kDunderGetattribute,
     // STORE_ATTR

@@ -3753,7 +3753,8 @@ Continue Interpreter::inplaceOpUpdateCache(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   Object right(&scope, frame->popValue());
   Object left(&scope, frame->popValue());
-  BinaryOp op = static_cast<BinaryOp>(originalArg(frame->function(), arg));
+  Function function(&scope, frame->function());
+  BinaryOp op = static_cast<BinaryOp>(originalArg(*function, arg));
   Object method(&scope, NoneType::object());
   BinaryOpFlags flags;
   RawObject result = inplaceOperationSetMethod(thread, frame, op, left, right,
@@ -3763,6 +3764,8 @@ Continue Interpreter::inplaceOpUpdateCache(Thread* thread, word arg) {
     LayoutId right_layout_id = right.layoutId();
     icUpdateBinaryOp(frame->caches(), arg, left_layout_id, right_layout_id,
                      *method, flags);
+    icInsertInplaceOpDependencies(thread, function, left_layout_id,
+                                  right_layout_id, op);
   }
   if (result.isError()) return Continue::UNWIND;
   frame->pushValue(result);
