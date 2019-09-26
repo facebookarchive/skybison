@@ -4236,11 +4236,6 @@ RawObject Runtime::computeBuiltinBase(Thread* thread, const Type& type) {
   return *candidate;
 }
 
-bool Runtime::layoutHasDictOverflow(const Layout& layout) {
-  // SmallInt -> offset of the dict attribute on the object
-  return layout.overflowAttributes().isSmallInt();
-}
-
 RawObject Runtime::layoutGetOverflowDict(Thread* thread,
                                          const HeapObject& instance,
                                          const Layout& layout) {

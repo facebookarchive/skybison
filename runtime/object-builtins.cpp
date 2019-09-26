@@ -42,7 +42,7 @@ static RawObject instanceGetAttributeSetLocation(Thread* thread,
     }
     return overflow.at(info.offset());
   }
-  if (runtime->layoutHasDictOverflow(layout)) {
+  if (layout.hasDictOverflow()) {
     Dict overflow(&scope,
                   runtime->layoutGetOverflowDict(thread, object, layout));
     Object name_str_hash(&scope, Interpreter::hash(thread, name_interned));

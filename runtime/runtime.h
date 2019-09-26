@@ -881,13 +881,6 @@ class Runtime {
   // (eg the result of compiling some_file.py). Return the result.
   NODISCARD RawObject executeModule(const Code& code, const Module& module);
 
-  // Check if the layout's overflow attributes point to a dict offset
-  //
-  // This is a useful common case for types like function, type, etc, that all
-  // overflow their custom attributes to a __dict__ on the instance. The
-  // layout's OverflowAttrbutesOffset is expected to be a SmallInt.
-  bool layoutHasDictOverflow(const Layout& layout);
-
   // Get the overflow dict from the overflow attribute pointer
   RawObject layoutGetOverflowDict(Thread* thread, const HeapObject& instance,
                                   const Layout& layout);
