@@ -278,7 +278,7 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   if (bases.length() == 1) {
     // TODO(T40540469): Slot inheritance is much more complicated than this, but
     // this is good enough for our current needs.
-    type.setExtensionSlots(base_type.extensionSlots());
+    type.setSlots(base_type.slots());
   }
 
   // Copy down class flags from bases

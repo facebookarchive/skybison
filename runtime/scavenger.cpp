@@ -129,8 +129,7 @@ void Scavenger::processFinalizableReferences() {
     // The native object is only reachable through the managed native proxy
     RawObject type = runtime_->typeOf(handle->asObject());
     auto func = reinterpret_cast<destructor>(
-        Int::cast(Tuple::cast(Type::cast(type).extensionSlots()).at(52))
-            .asWord());
+        Int::cast(Tuple::cast(Type::cast(type).slots()).at(52)).asWord());
     (*func)(handle);
   }
 }

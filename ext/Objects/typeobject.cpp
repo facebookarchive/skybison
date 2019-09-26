@@ -22,91 +22,6 @@
 
 namespace python {
 
-enum class ExtensionSlot {
-  kFlags,
-  kBasicSize,
-  kItemSize,
-  kMapAssSubscript,
-  kMapLength,
-  kMapSubscript,
-  kNumberAbsolute,
-  kNumberAdd,
-  kNumberAnd,
-  kNumberBool,
-  kNumberDivmod,
-  kNumberFloat,
-  kNumberFloorDivide,
-  kNumberIndex,
-  kNumberInplaceAdd,
-  kNumberInplaceAnd,
-  kNumberInplaceFloorDivide,
-  kNumberInplaceLshift,
-  kNumberInplaceMultiply,
-  kNumberInplaceOr,
-  kNumberInplacePower,
-  kNumberInplaceRemainder,
-  kNumberInplaceRshift,
-  kNumberInplaceSubtract,
-  kNumberInplaceTrueDivide,
-  kNumberInplaceXor,
-  kNumberInt,
-  kNumberInvert,
-  kNumberLshift,
-  kNumberMultiply,
-  kNumberNegative,
-  kNumberOr,
-  kNumberPositive,
-  kNumberPower,
-  kNumberRemainder,
-  kNumberRshift,
-  kNumberSubtract,
-  kNumberTrueDivide,
-  kNumberXor,
-  kSequenceAssItem,
-  kSequenceConcat,
-  kSequenceContains,
-  kSequenceInplaceConcat,
-  kSequenceInplaceRepeat,
-  kSequenceItem,
-  kSequenceLength,
-  kSequenceRepeat,
-  kAlloc,
-  kBase,
-  kBases,
-  kCall,
-  kClear,
-  kDealloc,
-  kDel,
-  kDescrGet,
-  kDescrSet,
-  kDoc,
-  kGetattr,
-  kGetattro,
-  kHash,
-  kInit,
-  kIsGc,
-  kIter,
-  kIternext,
-  kMethods,
-  kNew,
-  kRepr,
-  kRichcompare,
-  kSetattr,
-  kSetattro,
-  kStr,
-  kTraverse,
-  kMembers,
-  kGetset,
-  kFree,
-  kNumberMatrixMultiply,
-  kNumberInplaceMatrixMultiply,
-  kAsyncAwait,
-  kAsyncAiter,
-  kAsyncAnext,
-  kFinalize,
-  kEnd,
-};
-
 PY_EXPORT int PyType_CheckExact_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject().isType();
 }
@@ -114,18 +29,6 @@ PY_EXPORT int PyType_CheckExact_Func(PyObject* obj) {
 PY_EXPORT int PyType_Check_Func(PyObject* obj) {
   return Thread::current()->runtime()->isInstanceOfType(
       ApiHandle::fromPyObject(obj)->asObject());
-}
-
-static RawObject extensionSlot(const Type& type, ExtensionSlot slot_id) {
-  DCHECK(!type.extensionSlots().isNoneType(), "Type is not an extension");
-  return Tuple::cast(type.extensionSlots()).at(static_cast<word>(slot_id));
-}
-
-static void setExtensionSlot(const Type& type, ExtensionSlot slot_id,
-                             RawObject slot) {
-  DCHECK(!type.extensionSlots().isNoneType(), "Type is not an extension");
-  return Tuple::cast(type.extensionSlots())
-      .atPut(static_cast<word>(slot_id), slot);
 }
 
 PY_EXPORT unsigned long PyType_GetFlags(PyTypeObject* type_obj) {
@@ -136,174 +39,174 @@ PY_EXPORT unsigned long PyType_GetFlags(PyTypeObject* type_obj) {
   Type type(&scope, ApiHandle::fromPyTypeObject(type_obj)->asObject());
   if (type.isBuiltin()) return Py_TPFLAGS_DEFAULT;
 
-  if (type.extensionSlots().isNoneType()) {
+  if (type.slots().isNoneType()) {
     UNIMPLEMENTED("GetFlags from types initialized through Python code");
   }
 
-  Int flags(&scope, extensionSlot(type, ExtensionSlot::kFlags));
+  Int flags(&scope, type.slot(Type::Slot::kFlags));
   return flags.asWord();
 }
 
-static ExtensionSlot slotToTypeSlot(int slot) {
+static Type::Slot slotToTypeSlot(int slot) {
   switch (slot) {
     case Py_mp_ass_subscript:
-      return ExtensionSlot::kMapAssSubscript;
+      return Type::Slot::kMapAssSubscript;
     case Py_mp_length:
-      return ExtensionSlot::kMapLength;
+      return Type::Slot::kMapLength;
     case Py_mp_subscript:
-      return ExtensionSlot::kMapSubscript;
+      return Type::Slot::kMapSubscript;
     case Py_nb_absolute:
-      return ExtensionSlot::kNumberAbsolute;
+      return Type::Slot::kNumberAbsolute;
     case Py_nb_add:
-      return ExtensionSlot::kNumberAdd;
+      return Type::Slot::kNumberAdd;
     case Py_nb_and:
-      return ExtensionSlot::kNumberAnd;
+      return Type::Slot::kNumberAnd;
     case Py_nb_bool:
-      return ExtensionSlot::kNumberBool;
+      return Type::Slot::kNumberBool;
     case Py_nb_divmod:
-      return ExtensionSlot::kNumberDivmod;
+      return Type::Slot::kNumberDivmod;
     case Py_nb_float:
-      return ExtensionSlot::kNumberFloat;
+      return Type::Slot::kNumberFloat;
     case Py_nb_floor_divide:
-      return ExtensionSlot::kNumberFloorDivide;
+      return Type::Slot::kNumberFloorDivide;
     case Py_nb_index:
-      return ExtensionSlot::kNumberIndex;
+      return Type::Slot::kNumberIndex;
     case Py_nb_inplace_add:
-      return ExtensionSlot::kNumberInplaceAdd;
+      return Type::Slot::kNumberInplaceAdd;
     case Py_nb_inplace_and:
-      return ExtensionSlot::kNumberInplaceAnd;
+      return Type::Slot::kNumberInplaceAnd;
     case Py_nb_inplace_floor_divide:
-      return ExtensionSlot::kNumberInplaceFloorDivide;
+      return Type::Slot::kNumberInplaceFloorDivide;
     case Py_nb_inplace_lshift:
-      return ExtensionSlot::kNumberInplaceLshift;
+      return Type::Slot::kNumberInplaceLshift;
     case Py_nb_inplace_multiply:
-      return ExtensionSlot::kNumberInplaceMultiply;
+      return Type::Slot::kNumberInplaceMultiply;
     case Py_nb_inplace_or:
-      return ExtensionSlot::kNumberInplaceOr;
+      return Type::Slot::kNumberInplaceOr;
     case Py_nb_inplace_power:
-      return ExtensionSlot::kNumberInplacePower;
+      return Type::Slot::kNumberInplacePower;
     case Py_nb_inplace_remainder:
-      return ExtensionSlot::kNumberInplaceRemainder;
+      return Type::Slot::kNumberInplaceRemainder;
     case Py_nb_inplace_rshift:
-      return ExtensionSlot::kNumberInplaceRshift;
+      return Type::Slot::kNumberInplaceRshift;
     case Py_nb_inplace_subtract:
-      return ExtensionSlot::kNumberInplaceSubtract;
+      return Type::Slot::kNumberInplaceSubtract;
     case Py_nb_inplace_true_divide:
-      return ExtensionSlot::kNumberInplaceTrueDivide;
+      return Type::Slot::kNumberInplaceTrueDivide;
     case Py_nb_inplace_xor:
-      return ExtensionSlot::kNumberInplaceXor;
+      return Type::Slot::kNumberInplaceXor;
     case Py_nb_int:
-      return ExtensionSlot::kNumberInt;
+      return Type::Slot::kNumberInt;
     case Py_nb_invert:
-      return ExtensionSlot::kNumberInvert;
+      return Type::Slot::kNumberInvert;
     case Py_nb_lshift:
-      return ExtensionSlot::kNumberLshift;
+      return Type::Slot::kNumberLshift;
     case Py_nb_multiply:
-      return ExtensionSlot::kNumberMultiply;
+      return Type::Slot::kNumberMultiply;
     case Py_nb_negative:
-      return ExtensionSlot::kNumberNegative;
+      return Type::Slot::kNumberNegative;
     case Py_nb_or:
-      return ExtensionSlot::kNumberOr;
+      return Type::Slot::kNumberOr;
     case Py_nb_positive:
-      return ExtensionSlot::kNumberPositive;
+      return Type::Slot::kNumberPositive;
     case Py_nb_power:
-      return ExtensionSlot::kNumberPower;
+      return Type::Slot::kNumberPower;
     case Py_nb_remainder:
-      return ExtensionSlot::kNumberRemainder;
+      return Type::Slot::kNumberRemainder;
     case Py_nb_rshift:
-      return ExtensionSlot::kNumberRshift;
+      return Type::Slot::kNumberRshift;
     case Py_nb_subtract:
-      return ExtensionSlot::kNumberSubtract;
+      return Type::Slot::kNumberSubtract;
     case Py_nb_true_divide:
-      return ExtensionSlot::kNumberTrueDivide;
+      return Type::Slot::kNumberTrueDivide;
     case Py_nb_xor:
-      return ExtensionSlot::kNumberXor;
+      return Type::Slot::kNumberXor;
     case Py_sq_ass_item:
-      return ExtensionSlot::kSequenceAssItem;
+      return Type::Slot::kSequenceAssItem;
     case Py_sq_concat:
-      return ExtensionSlot::kSequenceConcat;
+      return Type::Slot::kSequenceConcat;
     case Py_sq_contains:
-      return ExtensionSlot::kSequenceContains;
+      return Type::Slot::kSequenceContains;
     case Py_sq_inplace_concat:
-      return ExtensionSlot::kSequenceInplaceConcat;
+      return Type::Slot::kSequenceInplaceConcat;
     case Py_sq_inplace_repeat:
-      return ExtensionSlot::kSequenceInplaceRepeat;
+      return Type::Slot::kSequenceInplaceRepeat;
     case Py_sq_item:
-      return ExtensionSlot::kSequenceItem;
+      return Type::Slot::kSequenceItem;
     case Py_sq_length:
-      return ExtensionSlot::kSequenceLength;
+      return Type::Slot::kSequenceLength;
     case Py_sq_repeat:
-      return ExtensionSlot::kSequenceRepeat;
+      return Type::Slot::kSequenceRepeat;
     case Py_tp_alloc:
-      return ExtensionSlot::kAlloc;
+      return Type::Slot::kAlloc;
     case Py_tp_base:
-      return ExtensionSlot::kBase;
+      return Type::Slot::kBase;
     case Py_tp_bases:
-      return ExtensionSlot::kBases;
+      return Type::Slot::kBases;
     case Py_tp_call:
-      return ExtensionSlot::kCall;
+      return Type::Slot::kCall;
     case Py_tp_clear:
-      return ExtensionSlot::kClear;
+      return Type::Slot::kClear;
     case Py_tp_dealloc:
-      return ExtensionSlot::kDealloc;
+      return Type::Slot::kDealloc;
     case Py_tp_del:
-      return ExtensionSlot::kDel;
+      return Type::Slot::kDel;
     case Py_tp_descr_get:
-      return ExtensionSlot::kDescrGet;
+      return Type::Slot::kDescrGet;
     case Py_tp_descr_set:
-      return ExtensionSlot::kDescrSet;
+      return Type::Slot::kDescrSet;
     case Py_tp_doc:
-      return ExtensionSlot::kDoc;
+      return Type::Slot::kDoc;
     case Py_tp_getattr:
-      return ExtensionSlot::kGetattr;
+      return Type::Slot::kGetattr;
     case Py_tp_getattro:
-      return ExtensionSlot::kGetattro;
+      return Type::Slot::kGetattro;
     case Py_tp_hash:
-      return ExtensionSlot::kHash;
+      return Type::Slot::kHash;
     case Py_tp_init:
-      return ExtensionSlot::kInit;
+      return Type::Slot::kInit;
     case Py_tp_is_gc:
-      return ExtensionSlot::kIsGc;
+      return Type::Slot::kIsGc;
     case Py_tp_iter:
-      return ExtensionSlot::kIter;
+      return Type::Slot::kIter;
     case Py_tp_iternext:
-      return ExtensionSlot::kIternext;
+      return Type::Slot::kIternext;
     case Py_tp_methods:
-      return ExtensionSlot::kMethods;
+      return Type::Slot::kMethods;
     case Py_tp_new:
-      return ExtensionSlot::kNew;
+      return Type::Slot::kNew;
     case Py_tp_repr:
-      return ExtensionSlot::kRepr;
+      return Type::Slot::kRepr;
     case Py_tp_richcompare:
-      return ExtensionSlot::kRichcompare;
+      return Type::Slot::kRichcompare;
     case Py_tp_setattr:
-      return ExtensionSlot::kSetattr;
+      return Type::Slot::kSetattr;
     case Py_tp_setattro:
-      return ExtensionSlot::kSetattro;
+      return Type::Slot::kSetattro;
     case Py_tp_str:
-      return ExtensionSlot::kStr;
+      return Type::Slot::kStr;
     case Py_tp_traverse:
-      return ExtensionSlot::kTraverse;
+      return Type::Slot::kTraverse;
     case Py_tp_members:
-      return ExtensionSlot::kMembers;
+      return Type::Slot::kMembers;
     case Py_tp_getset:
-      return ExtensionSlot::kGetset;
+      return Type::Slot::kGetset;
     case Py_tp_free:
-      return ExtensionSlot::kFree;
+      return Type::Slot::kFree;
     case Py_nb_matrix_multiply:
-      return ExtensionSlot::kNumberMatrixMultiply;
+      return Type::Slot::kNumberMatrixMultiply;
     case Py_nb_inplace_matrix_multiply:
-      return ExtensionSlot::kNumberInplaceMatrixMultiply;
+      return Type::Slot::kNumberInplaceMatrixMultiply;
     case Py_am_await:
-      return ExtensionSlot::kAsyncAwait;
+      return Type::Slot::kAsyncAwait;
     case Py_am_aiter:
-      return ExtensionSlot::kAsyncAiter;
+      return Type::Slot::kAsyncAiter;
     case Py_am_anext:
-      return ExtensionSlot::kAsyncAnext;
+      return Type::Slot::kAsyncAnext;
     case Py_tp_finalize:
-      return ExtensionSlot::kFinalize;
+      return Type::Slot::kFinalize;
     default:
-      return ExtensionSlot::kEnd;
+      return Type::Slot::kEnd;
   }
 }
 
@@ -678,7 +581,7 @@ struct SlotDef {
   SymbolId name;
 
   // Our equivalent of the slot id from PyType_Slot.
-  ExtensionSlot id;
+  Type::Slot id;
 
   // List of parameter names/symbols.
   const SymbolId* parameters;
@@ -722,12 +625,12 @@ static const SymbolId kParamsTypeArgsKwargs[] = {
 // type dict.
 #define TPSLOT(NAME, SLOT, PARAMETERS, FUNCTION, WRAPPER, DOC)                 \
   {                                                                            \
-    SymbolId::NAME, ExtensionSlot::SLOT, PARAMETERS, ARRAYSIZE(PARAMETERS),    \
+    SymbolId::NAME, Type::Slot::SLOT, PARAMETERS, ARRAYSIZE(PARAMETERS),       \
         WRAPPER, 0, DOC                                                        \
   }
 #define KWSLOT(NAME, SLOT, PARAMETERS, FUNCTION, WRAPPER, DOC)                 \
   {                                                                            \
-    SymbolId::NAME, ExtensionSlot::SLOT, PARAMETERS, ARRAYSIZE(PARAMETERS),    \
+    SymbolId::NAME, Type::Slot::SLOT, PARAMETERS, ARRAYSIZE(PARAMETERS),       \
         WRAPPER, Code::Flags::VARARGS | Code::Flags::VARKEYARGS, DOC           \
   }
 #define UNSLOT(NAME, C_NAME, SLOT, FUNCTION, WRAPPER, DOC)                     \
@@ -1006,7 +909,7 @@ RawObject addOperators(Thread* thread, const Type& type) {
 
   for (const SlotDef& slot : kSlotdefs) {
     if (slot.wrapper == nullptr) continue;
-    Object slot_value(&scope, extensionSlot(type, slot.id));
+    Object slot_value(&scope, type.slot(slot.id));
     if (slot_value.isNoneType()) continue;
     DCHECK(slot_value.isInt(), "unexpected slot type");
 
@@ -1032,14 +935,14 @@ RawObject addOperators(Thread* thread, const Type& type) {
     Object globals(&scope, NoneType::object());
     Function func(
         &scope, runtime->newFunctionWithCode(thread, qualname, code, globals));
-    if (slot.id == ExtensionSlot::kNumberPower) {
+    if (slot.id == Type::Slot::kNumberPower) {
       func.setDefaults(runtime->newTuple(1));
     }
 
     // __new__ is the one special-case static method, so wrap it
     // appropriately.
     Object func_obj(&scope, *func);
-    if (slot.id == ExtensionSlot::kNew) {
+    if (slot.id == Type::Slot::kNew) {
       func_obj = thread->invokeFunction1(SymbolId::kBuiltins,
                                          SymbolId::kStaticMethod, func);
       if (func_obj.isError()) return *func_obj;
@@ -1097,9 +1000,9 @@ PyObject* slotTpNew(PyObject* type, PyObject* args, PyObject* kwargs) {
 // This performs similar duties to update_one_slot() in CPython, but it's
 // drastically simpler. This is intentional, and will only change if a real C
 // extension exercises slots in a way that exposes the differences.
-void* defaultSlot(ExtensionSlot slot) {
+void* defaultSlot(Type::Slot slot) {
   switch (slot) {
-    case ExtensionSlot::kNew:
+    case Type::Slot::kNew:
       return bit_cast<void*>(&slotTpNew);
     default:
       UNIMPLEMENTED("Unsupported default slot %d", static_cast<int>(slot));
@@ -1128,19 +1031,19 @@ PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot) {
   }
 
   // Extension module requesting slot from a future version
-  ExtensionSlot field_id = slotToTypeSlot(slot);
-  if (field_id >= ExtensionSlot::kEnd) {
+  Type::Slot field_id = slotToTypeSlot(slot);
+  if (field_id >= Type::Slot::kEnd) {
     return nullptr;
   }
 
-  if (type.extensionSlots().isNoneType()) {
+  if (!type.hasSlots()) {
     // The Type was not created by PyType_FromSpec(), so return a default slot
     // implementation that delegates to managed methods.
     return defaultSlot(field_id);
   }
 
-  DCHECK(!type.extensionSlots().isNoneType(), "Type is not extension type");
-  Object slot_obj(&scope, extensionSlot(type, field_id));
+  DCHECK(type.hasSlots(), "Type is not extension type");
+  Object slot_obj(&scope, type.slot(field_id));
   if (slot_obj.isNoneType()) {
     return nullptr;
   }
@@ -1485,7 +1388,7 @@ static RawObject getSetSetter(Thread* thread, const Object& name,
 RawObject addMethods(Thread* thread, const Type& type) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Object slot_value(&scope, extensionSlot(type, ExtensionSlot::kMethods));
+  Object slot_value(&scope, type.slot(Type::Slot::kMethods));
   if (slot_value.isNoneType()) return NoneType::object();
   DCHECK(slot_value.isInt(), "unexpected slot type");
   auto methods = bit_cast<PyMethodDef*>(Int::cast(*slot_value).asCPtr());
@@ -1505,7 +1408,7 @@ RawObject addMethods(Thread* thread, const Type& type) {
 
 RawObject addMembers(Thread* thread, const Type& type) {
   HandleScope scope(thread);
-  Object slot_value(&scope, extensionSlot(type, ExtensionSlot::kMembers));
+  Object slot_value(&scope, type.slot(Type::Slot::kMembers));
   if (slot_value.isNoneType()) return NoneType::object();
   DCHECK(slot_value.isInt(), "unexpected slot type");
   auto members = bit_cast<PyMemberDef*>(Int::cast(*slot_value).asCPtr());
@@ -1526,7 +1429,7 @@ RawObject addMembers(Thread* thread, const Type& type) {
 
 RawObject addGetSet(Thread* thread, const Type& type) {
   HandleScope scope(thread);
-  Object slot_value(&scope, extensionSlot(type, ExtensionSlot::kGetset));
+  Object slot_value(&scope, type.slot(Type::Slot::kGetset));
   if (slot_value.isNoneType()) return NoneType::object();
   DCHECK(slot_value.isInt(), "unexpected slot type");
   auto getsets = bit_cast<PyGetSetDef*>(Int::cast(*slot_value).asCPtr());
@@ -1545,21 +1448,17 @@ RawObject addGetSet(Thread* thread, const Type& type) {
   return NoneType::object();
 }
 
-static bool hasSlot(const Type& type, ExtensionSlot slot) {
-  return !extensionSlot(type, slot).isNoneType();
-}
-
-static void* baseBaseSlot(const Type& base, ExtensionSlot slot) {
-  if (!hasSlot(base, ExtensionSlot::kBase)) return nullptr;
+static void* baseBaseSlot(const Type& base, Type::Slot slot) {
+  if (!base.hasSlot(Type::Slot::kBase)) return nullptr;
   HandleScope scope(Thread::current());
-  Int basebase_handle(&scope, extensionSlot(base, ExtensionSlot::kBase));
+  Int basebase_handle(&scope, base.slot(Type::Slot::kBase));
   Type basebase(
       &scope,
       reinterpret_cast<ApiHandle*>(basebase_handle.asCPtr())->asObject());
-  if (basebase.extensionSlots().isNoneType() || !hasSlot(basebase, slot)) {
+  if (!basebase.hasSlots() || !basebase.hasSlot(slot)) {
     return nullptr;
   }
-  Int basebase_slot(&scope, extensionSlot(basebase, slot));
+  Int basebase_slot(&scope, basebase.slot(slot));
   return basebase_slot.asCPtr();
 }
 
@@ -1568,53 +1467,48 @@ static void* baseBaseSlot(const Type& base, ExtensionSlot slot) {
 // it. Thus, it is not the first type to define it.
 static void copySlotIfImplementedInBase(const Type& type, const Type& base,
                                         int slot) {
-  ExtensionSlot field_id = slotToTypeSlot(slot);
-  if (!hasSlot(type, field_id) && hasSlot(base, field_id)) {
-    RawObject base_slot = extensionSlot(base, field_id);
+  Type::Slot field_id = slotToTypeSlot(slot);
+  if (!type.hasSlot(field_id) && base.hasSlot(field_id)) {
+    RawObject base_slot = base.slot(field_id);
     void* basebase_slot = baseBaseSlot(base, field_id);
     if (basebase_slot == nullptr ||
         Int::cast(base_slot).asCPtr() != basebase_slot) {
-      setExtensionSlot(type, field_id, base_slot);
+      type.setSlot(field_id, base_slot);
     }
   }
 }
 
 // Copy the slot from the base type if it defined.
 static void copySlot(const Type& type, const Type& base, int slot) {
-  ExtensionSlot field_id = slotToTypeSlot(slot);
-  if (!hasSlot(type, field_id) && hasSlot(base, field_id)) {
-    setExtensionSlot(type, field_id, extensionSlot(base, field_id));
+  Type::Slot field_id = slotToTypeSlot(slot);
+  if (!type.hasSlot(field_id) && base.hasSlot(field_id)) {
+    type.setSlot(field_id, base.slot(field_id));
   }
 }
 
 static void inheritGCFlagsAndSlots(Thread* thread, const Type& type,
                                    const Type& base) {
-  unsigned long type_flags =
-      Int::cast(extensionSlot(type, ExtensionSlot::kFlags)).asWord();
-  unsigned long base_flags =
-      Int::cast(extensionSlot(base, ExtensionSlot::kFlags)).asWord();
+  unsigned long type_flags = Int::cast(type.slot(Type::Slot::kFlags)).asWord();
+  unsigned long base_flags = Int::cast(base.slot(Type::Slot::kFlags)).asWord();
   if (!(type_flags & Py_TPFLAGS_HAVE_GC) && (base_flags & Py_TPFLAGS_HAVE_GC) &&
-      !hasSlot(type, ExtensionSlot::kTraverse) &&
-      !hasSlot(type, ExtensionSlot::kClear)) {
-    setExtensionSlot(
-        type, ExtensionSlot::kFlags,
-        thread->runtime()->newInt(type_flags | Py_TPFLAGS_HAVE_GC));
-    if (!hasSlot(type, ExtensionSlot::kTraverse)) {
+      !type.hasSlot(Type::Slot::kTraverse) &&
+      !type.hasSlot(Type::Slot::kClear)) {
+    type.setSlot(Type::Slot::kFlags,
+                 thread->runtime()->newInt(type_flags | Py_TPFLAGS_HAVE_GC));
+    if (!type.hasSlot(Type::Slot::kTraverse)) {
       copySlot(type, base, Py_tp_traverse);
     }
-    if (!hasSlot(type, ExtensionSlot::kClear)) {
+    if (!type.hasSlot(Type::Slot::kClear)) {
       copySlot(type, base, Py_tp_clear);
     }
   }
 }
 
 static void inheritNonFunctionSlots(const Type& type, const Type& base) {
-  if (Int::cast(extensionSlot(base, ExtensionSlot::kBasicSize)).asWord() == 0) {
-    setExtensionSlot(type, ExtensionSlot::kBasicSize,
-                     extensionSlot(base, ExtensionSlot::kBasicSize));
+  if (Int::cast(type.slot(Type::Slot::kBasicSize)).asWord() == 0) {
+    type.setSlot(Type::Slot::kBasicSize, base.slot(Type::Slot::kBasicSize));
   }
-  setExtensionSlot(type, ExtensionSlot::kItemSize,
-                   extensionSlot(base, ExtensionSlot::kItemSize));
+  type.setSlot(Type::Slot::kItemSize, base.slot(Type::Slot::kItemSize));
 }
 
 // clang-format off
@@ -1721,15 +1615,14 @@ static void inheritFree(const Type& type, unsigned long type_flags,
 
   // Only the child is GC
   // Set the free function if the base has a default free
-  if ((type_flags & Py_TPFLAGS_HAVE_GC) &&
-      !hasSlot(type, ExtensionSlot::kFree) &&
-      hasSlot(base, ExtensionSlot::kFree)) {
+  if ((type_flags & Py_TPFLAGS_HAVE_GC) && !type.hasSlot(Type::Slot::kFree) &&
+      base.hasSlot(Type::Slot::kFree)) {
     void* free_slot = reinterpret_cast<void*>(
-        Int::cast(extensionSlot(base, ExtensionSlot::kFree)).asWord());
+        Int::cast(base.slot(Type::Slot::kFree)).asWord());
     if (free_slot == reinterpret_cast<void*>(PyObject_Free)) {
-      setExtensionSlot(type, ExtensionSlot::kFree,
-                       Thread::current()->runtime()->newIntFromCPtr(
-                           reinterpret_cast<void*>(PyObject_GC_Del)));
+      type.setSlot(Type::Slot::kFree,
+                   Thread::current()->runtime()->newIntFromCPtr(
+                       reinterpret_cast<void*>(PyObject_GC_Del)));
     }
   }
 }
@@ -1743,26 +1636,24 @@ static void inheritSlots(const Type& type, const Type& base) {
   }
 
   // Inherit conditional type slots
-  if (!hasSlot(type, ExtensionSlot::kGetattr) &&
-      !hasSlot(type, ExtensionSlot::kGetattro)) {
+  if (!type.hasSlot(Type::Slot::kGetattr) &&
+      !type.hasSlot(Type::Slot::kGetattro)) {
     copySlot(type, base, Py_tp_getattr);
     copySlot(type, base, Py_tp_getattro);
   }
-  if (!hasSlot(type, ExtensionSlot::kSetattr) &&
-      !hasSlot(type, ExtensionSlot::kSetattro)) {
+  if (!type.hasSlot(Type::Slot::kSetattr) &&
+      !type.hasSlot(Type::Slot::kSetattro)) {
     copySlot(type, base, Py_tp_setattr);
     copySlot(type, base, Py_tp_setattro);
   }
-  if (!hasSlot(type, ExtensionSlot::kRichcompare) &&
-      !hasSlot(type, ExtensionSlot::kHash)) {
+  if (!type.hasSlot(Type::Slot::kRichcompare) &&
+      !type.hasSlot(Type::Slot::kHash)) {
     copySlot(type, base, Py_tp_richcompare);
     copySlot(type, base, Py_tp_hash);
   }
 
-  unsigned long type_flags =
-      Int::cast(extensionSlot(type, ExtensionSlot::kFlags)).asWord();
-  unsigned long base_flags =
-      Int::cast(extensionSlot(base, ExtensionSlot::kFlags)).asWord();
+  unsigned long type_flags = Int::cast(type.slot(Type::Slot::kFlags)).asWord();
+  unsigned long base_flags = Int::cast(base.slot(Type::Slot::kFlags)).asWord();
   inheritFinalize(type, type_flags, base, base_flags);
   inheritFree(type, type_flags, base, base_flags);
 }
@@ -1831,22 +1722,22 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
   Str type_name(&scope, type.name());
 
   // tp_basicsize -> sizeof(PyObject)
-  DCHECK(hasSlot(type, ExtensionSlot::kBasicSize),
+  DCHECK(type.hasSlot(Type::Slot::kBasicSize),
          "Basic size must always be present");
-  Int basic_size(&scope, extensionSlot(type, ExtensionSlot::kBasicSize));
+  Int basic_size(&scope, type.slot(Type::Slot::kBasicSize));
   if (basic_size.asWord() == 0) {
     basic_size = runtime->newInt(sizeof(PyObject));
-    setExtensionSlot(type, ExtensionSlot::kBasicSize, *basic_size);
+    type.setSlot(Type::Slot::kBasicSize, *basic_size);
   }
   DCHECK(basic_size.asWord() >= static_cast<word>(sizeof(PyObject)),
          "sizeof(PyObject) is the minimum size required for an extension "
          "instance");
 
   // tp_new -> PyType_GenericNew
-  if (!hasSlot(type, ExtensionSlot::kNew)) {
+  if (!type.hasSlot(Type::Slot::kNew)) {
     Object default_new(
         &scope, runtime->newIntFromCPtr(bit_cast<void*>(&PyType_GenericNew)));
-    setExtensionSlot(type, ExtensionSlot::kNew, *default_new);
+    type.setSlot(Type::Slot::kNew, *default_new);
     Str dunder_new_name(&scope, runtime->symbols()->at(SymbolId::kDunderNew));
     Str qualname(&scope,
                  runtime->newStrFromFmt("%S.%S", &type_name, &dunder_new_name));
@@ -1866,17 +1757,17 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
   }
 
   // tp_alloc -> PyType_GenericAlloc
-  if (!hasSlot(type, ExtensionSlot::kAlloc)) {
+  if (!type.hasSlot(Type::Slot::kAlloc)) {
     Object default_alloc(
         &scope, runtime->newIntFromCPtr(bit_cast<void*>(&PyType_GenericAlloc)));
-    setExtensionSlot(type, ExtensionSlot::kAlloc, *default_alloc);
+    type.setSlot(Type::Slot::kAlloc, *default_alloc);
   }
 
   // tp_dealloc -> subtypeDealloc
-  if (!hasSlot(type, ExtensionSlot::kDealloc)) {
+  if (!type.hasSlot(Type::Slot::kDealloc)) {
     Object default_dealloc(
         &scope, runtime->newIntFromCPtr(bit_cast<void*>(&subtypeDealloc)));
-    setExtensionSlot(type, ExtensionSlot::kDealloc, *default_dealloc);
+    type.setSlot(Type::Slot::kDealloc, *default_dealloc);
   }
 
   return NoneType::object();
@@ -1912,42 +1803,40 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   type_layout.setNumInObjectAttributes(3);
 
   // Initialize the extension slots tuple
-  Object extension_slots(
-      &scope, runtime->newTuple(static_cast<int>(ExtensionSlot::kEnd)));
-  type.setExtensionSlots(*extension_slots);
+  Object extension_slots(&scope,
+                         runtime->newTuple(static_cast<int>(Type::Slot::kEnd)));
+  type.setSlots(*extension_slots);
 
   // Set Py_tp_bases
   PyObject* bases_handle = ApiHandle::borrowedReference(thread, *bases_obj);
-  setExtensionSlot(type, ExtensionSlot::kBases,
-                   runtime->newIntFromCPtr(bases_handle));
+  type.setSlot(Type::Slot::kBases, runtime->newIntFromCPtr(bases_handle));
 
   // Set Py_tp_base
   Type base_type(&scope, Tuple::cast(type.mro()).at(1));
   PyObject* base_handle = ApiHandle::borrowedReference(thread, *base_type);
-  setExtensionSlot(type, ExtensionSlot::kBase,
-                   runtime->newIntFromCPtr(base_handle));
+  type.setSlot(Type::Slot::kBase, runtime->newIntFromCPtr(base_handle));
 
   // Set tp_flags
   Object tp_flags(&scope, runtime->newInt(spec->flags | Py_TPFLAGS_READY |
                                           Py_TPFLAGS_HEAPTYPE));
-  setExtensionSlot(type, ExtensionSlot::kFlags, *tp_flags);
+  type.setSlot(Type::Slot::kFlags, *tp_flags);
 
   // Set the native instance size
   Object basic_size(&scope, runtime->newInt(spec->basicsize));
   Object item_size(&scope, runtime->newInt(spec->itemsize));
-  setExtensionSlot(type, ExtensionSlot::kBasicSize, *basic_size);
-  setExtensionSlot(type, ExtensionSlot::kItemSize, *item_size);
+  type.setSlot(Type::Slot::kBasicSize, *basic_size);
+  type.setSlot(Type::Slot::kItemSize, *item_size);
 
   // Set the type slots
   for (PyType_Slot* slot = spec->slots; slot->slot; slot++) {
     void* slot_ptr = slot->pfunc;
     Object field(&scope, runtime->newIntFromCPtr(slot_ptr));
-    ExtensionSlot field_id = slotToTypeSlot(slot->slot);
-    if (field_id >= ExtensionSlot::kEnd) {
+    Type::Slot field_id = slotToTypeSlot(slot->slot);
+    if (field_id >= Type::Slot::kEnd) {
       thread->raiseWithFmt(LayoutId::kRuntimeError, "invalid slot offset");
       return nullptr;
     }
-    setExtensionSlot(type, field_id, *field);
+    type.setSlot(field_id, *field);
   }
 
   if (addOperators(thread, type).isError()) return nullptr;
@@ -1959,10 +1848,10 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   if (addGetSet(thread, type).isError()) return nullptr;
 
   // Inherit special slots from dominant base
-  if (!base_type.extensionSlots().isNoneType()) {
+  if (!base_type.slots().isNoneType()) {
     inheritGCFlagsAndSlots(thread, type, base_type);
     // !PyBaseObject_Type and Py_TPFLAGS_HEAPTYPE are guaranteed so skip check
-    if (!hasSlot(type, ExtensionSlot::kNew)) {
+    if (!type.hasSlot(Type::Slot::kNew)) {
       copySlot(type, base_type, Py_tp_new);
     }
     inheritNonFunctionSlots(type, base_type);
@@ -1972,11 +1861,10 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   Tuple mro(&scope, type.mro());
   for (word i = 1; i < mro.length(); i++) {
     Type base(&scope, mro.at(i));
-    // Skip inheritance if base does not define extensionSlots
-    if (base.extensionSlots().isNoneType()) continue;
+    // Skip inheritance if base does not define slots
+    if (!base.hasSlots()) continue;
     // Bases must define Py_TPFLAGS_BASETYPE
-    word base_flags =
-        Int::cast(extensionSlot(base, ExtensionSlot::kFlags)).asWord();
+    word base_flags = Int::cast(base.slot(Type::Slot::kFlags)).asWord();
     if ((base_flags & Py_TPFLAGS_BASETYPE) == 0) {
       thread->raiseWithFmt(LayoutId::kTypeError,
                            "type is not an acceptable base type");
@@ -2002,12 +1890,12 @@ PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type_obj,
   Type type(&scope, ApiHandle::fromPyTypeObject(type_obj)->asObject());
   DCHECK(!type.isBuiltin(),
          "Type is unmanaged. Please initialize using PyType_FromSpec");
-  DCHECK(!type.extensionSlots().isNoneType(),
+  DCHECK(type.hasSlots(),
          "GenericAlloc from types initialized through Python code");
 
   // Allocate a new instance
-  Int basic_size(&scope, extensionSlot(type, ExtensionSlot::kBasicSize));
-  Int item_size(&scope, extensionSlot(type, ExtensionSlot::kItemSize));
+  Int basic_size(&scope, type.slot(Type::Slot::kBasicSize));
+  Int item_size(&scope, type.slot(Type::Slot::kItemSize));
   Py_ssize_t size = Utils::roundUp(
       nitems * item_size.asWord() + basic_size.asWord(), kWordSize);
   PyObject* result = static_cast<PyObject*>(PyObject_Calloc(1, size));
@@ -2028,15 +1916,15 @@ PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type_obj,
 PY_EXPORT Py_ssize_t _PyObject_SIZE_Func(PyObject* obj) {
   HandleScope scope;
   Type type(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  Int basic_size(&scope, extensionSlot(type, ExtensionSlot::kBasicSize));
+  Int basic_size(&scope, type.slot(Type::Slot::kBasicSize));
   return basic_size.asWord();
 }
 
 PY_EXPORT Py_ssize_t _PyObject_VAR_SIZE_Func(PyObject* obj, Py_ssize_t nitems) {
   HandleScope scope;
   Type type(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  Int basic_size(&scope, extensionSlot(type, ExtensionSlot::kBasicSize));
-  Int item_size(&scope, extensionSlot(type, ExtensionSlot::kItemSize));
+  Int basic_size(&scope, type.slot(Type::Slot::kBasicSize));
+  Int item_size(&scope, type.slot(Type::Slot::kItemSize));
   return Utils::roundUp(nitems * item_size.asWord() + basic_size.asWord(),
                         kWordSize);
 }
