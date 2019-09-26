@@ -224,6 +224,101 @@ class _BufferedIOBaseTests(unittest.TestCase):
         self.assertRaises(_io.UnsupportedOperation, f.write, b"")
 
 
+class BufferedWriterTests(unittest.TestCase):
+    def test_dunder_init_with_non_writable_stream_raises_os_error(self):
+        with _io.FileIO(_getfd(), mode="r") as file_reader:
+            with self.assertRaises(OSError) as context:
+                _io.BufferedWriter(file_reader)
+        self.assertEqual(str(context.exception), "File or stream is not writable.")
+
+    def test_dunder_init_with_non_positive_size_raises_value_error(self):
+        with _io.BytesIO(b"123") as bytes_writer:
+            with self.assertRaises(ValueError) as context:
+                _io.BufferedWriter(bytes_writer, 0)
+            self.assertEqual(
+                str(context.exception), "buffer size must be strictly positive"
+            )
+
+    def test_flush_with_closed_raises_value_error(self):
+        writer = _io.BufferedWriter(_io.BytesIO(b"hello"))
+        writer.close()
+        with self.assertRaises(ValueError) as context:
+            writer.flush()
+        self.assertEqual(str(context.exception), "flush of closed file")
+
+    def test_flush_writes_buffered_bytes(self):
+        with _io.BytesIO(b"Hello world!") as bytes_io:
+            with _io.BufferedWriter(bytes_io) as writer:
+                writer.write(b"foo bar")
+                self.assertEqual(bytes_io.getvalue(), b"Hello world!")
+                writer.flush()
+                self.assertEqual(bytes_io.getvalue(), b"foo barorld!")
+
+    def test_raw_returns_raw(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            with _io.BufferedWriter(bytes_io) as buffered_io:
+                self.assertIs(buffered_io.raw, bytes_io)
+
+    def test_seek_with_invalid_whence_raises_value_error(self):
+        with _io.BufferedWriter(_io.BytesIO(b"hello")) as writer:
+            with self.assertRaisesRegex(ValueError, "invalid whence"):
+                writer.seek(0, 3)
+
+    def test_seek_calls_raw_seek(self):
+        class C(_io.BytesIO):
+            seek = Mock(name="seek", return_value=42)
+
+        with C(b"hello") as bytes_io:
+            with _io.BufferedWriter(bytes_io) as writer:
+                self.assertEqual(writer.seek(10), 42)
+                bytes_io.seek.assert_called_once()
+
+    def test_tell_counts_buffered_bytes(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            with _io.BufferedWriter(bytes_io) as writer:
+                self.assertEqual(bytes_io.tell(), 0)
+                self.assertEqual(writer.tell(), 0)
+                writer.write(b"123")
+                self.assertEqual(bytes_io.tell(), 0)
+                self.assertEqual(writer.tell(), 3)
+
+    def test_truncate_uses_tell_for_default_pos(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            with _io.BufferedWriter(bytes_io) as writer:
+                writer.write(b"123")
+                self.assertEqual(writer.truncate(), 3)
+                self.assertEqual(bytes_io.getvalue(), b"123")
+
+    def test_truncate_with_pos_truncates_raw(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            with _io.BufferedWriter(bytes_io) as writer:
+                writer.write(b"123")
+                self.assertEqual(writer.truncate(4), 4)
+                self.assertEqual(bytes_io.getvalue(), b"123l")
+
+    def test_writable_calls_raw_writable(self):
+        class C(_io.BytesIO):
+            writable = Mock(name="writable", return_value=True)
+
+        with C(b"hello") as bytes_io:
+            with _io.BufferedWriter(bytes_io) as writer:
+                bytes_io.writable.assert_called_once()
+                self.assertIs(writer.writable(), True)
+                self.assertEqual(bytes_io.writable.call_count, 2)
+
+    def test_write_with_closed_raises_value_error(self):
+        writer = _io.BufferedWriter(_io.BytesIO(b"hello"))
+        writer.close()
+        with self.assertRaises(ValueError) as context:
+            writer.write(b"")
+        self.assertEqual(str(context.exception), "write to closed file")
+
+    def test_write_with_str_raises_type_error(self):
+        with _io.BufferedWriter(_io.BytesIO(b"hello")) as writer:
+            with self.assertRaisesRegex(TypeError, "str"):
+                writer.write("")
+
+
 class BytesIOTests(unittest.TestCase):
     def test_dunder_init_with_none_initial_value_sets_empty_string(self):
         with _io.BytesIO() as f:

@@ -29,6 +29,7 @@ class Handle;
   V(AsyncGenerator)                                                            \
   V(BoundMethod)                                                               \
   V(BufferedReader)                                                            \
+  V(BufferedWriter)                                                            \
   V(ByteArray)                                                                 \
   V(ByteArrayIterator)                                                         \
   V(Bytes)                                                                     \
@@ -278,6 +279,7 @@ class RawObject {
   bool isBaseException() const;
   bool isBoundMethod() const;
   bool isBufferedReader() const;
+  bool isBufferedWriter() const;
   bool isByteArray() const;
   bool isByteArrayIterator() const;
   bool isBytesIO() const;
@@ -3126,6 +3128,28 @@ class RawBufferedReader : public RawUnderBufferedIOMixin {
   RAW_OBJECT_COMMON_NO_CAST(BufferedReader);
 };
 
+class RawBufferedWriter : public RawUnderBufferedIOMixin {
+ public:
+  // Getters and setters
+  RawObject bufferSize() const;
+  void setBufferSize(RawObject buffer_size) const;
+  RawObject closed() const;
+  void setClosed(RawObject closed) const;
+  RawObject writeBuf() const;
+  void setWriteBuf(RawObject under_write_buf) const;
+  RawObject writeLock() const;
+  void setWriteLock(RawObject under_write_lock) const;
+
+  // Layout
+  static const int kBufferSizeOffset = RawUnderBufferedIOMixin::kSize;
+  static const int kClosedOffset = kBufferSizeOffset + kPointerSize;
+  static const int kWriteBufOffset = kClosedOffset + kPointerSize;
+  static const int kWriteLockOffset = kWriteBufOffset + kPointerSize;
+  static const int kSize = kWriteLockOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON_NO_CAST(BufferedWriter);
+};
+
 class RawBytesIO : public RawUnderBufferedIOBase {
  public:
   // Getters and setters
@@ -3386,6 +3410,10 @@ inline bool RawObject::isBoundMethod() const {
 
 inline bool RawObject::isBufferedReader() const {
   return isHeapObjectWithLayout(LayoutId::kBufferedReader);
+}
+
+inline bool RawObject::isBufferedWriter() const {
+  return isHeapObjectWithLayout(LayoutId::kBufferedWriter);
 }
 
 inline bool RawObject::isUnderBufferedIOBase() const {
@@ -6200,6 +6228,40 @@ inline word RawBufferedReader::readPos() const {
 
 inline void RawBufferedReader::setReadPos(word read_pos) const {
   instanceVariableAtPut(kReadPosOffset, RawSmallInt::fromWord(read_pos));
+}
+
+// RawBufferedWriter
+
+inline RawObject RawBufferedWriter::bufferSize() const {
+  return instanceVariableAt(kBufferSizeOffset);
+}
+
+inline void RawBufferedWriter::setBufferSize(RawObject buffer_size) const {
+  instanceVariableAtPut(kBufferSizeOffset, buffer_size);
+}
+
+inline RawObject RawBufferedWriter::closed() const {
+  return instanceVariableAt(kClosedOffset);
+}
+
+inline void RawBufferedWriter::setClosed(RawObject closed) const {
+  instanceVariableAtPut(kClosedOffset, closed);
+}
+
+inline RawObject RawBufferedWriter::writeBuf() const {
+  return instanceVariableAt(kWriteBufOffset);
+}
+
+inline void RawBufferedWriter::setWriteBuf(RawObject write_buf) const {
+  instanceVariableAtPut(kWriteBufOffset, write_buf);
+}
+
+inline RawObject RawBufferedWriter::writeLock() const {
+  return instanceVariableAt(kWriteLockOffset);
+}
+
+inline void RawBufferedWriter::setWriteLock(RawObject write_lock) const {
+  instanceVariableAtPut(kWriteLockOffset, write_lock);
 }
 
 // RawBytesIO

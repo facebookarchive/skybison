@@ -63,6 +63,14 @@ class BufferedReaderBuiltins
   static const BuiltinAttribute kAttributes[];
 };
 
+class BufferedWriterBuiltins
+    : public Builtins<BufferedWriterBuiltins, SymbolId::kBufferedWriter,
+                      LayoutId::kBufferedWriter,
+                      LayoutId::kUnderBufferedIOMixin> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+};
+
 class BytesIOBuiltins
     : public Builtins<BytesIOBuiltins, SymbolId::kBytesIO, LayoutId::kBytesIO,
                       LayoutId::kUnderBufferedIOBase> {

@@ -30,6 +30,7 @@ of open() are intended to be used as keyword arguments."""
 # helper here.
 _Unbound = _Unbound  # noqa: F821
 _address = _address  # noqa: F821
+_bytearray_len = _bytearray_len  # noqa: F821
 _bytes_check = _bytes_check  # noqa: F821
 _byteslike_guard = _byteslike_guard  # noqa: F821
 _float_check = _float_check  # noqa: F821
@@ -50,7 +51,7 @@ DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
 
 
 import builtins
-from errno import EISDIR as errno_EISDIR
+from errno import EAGAIN as errno_EAGAIN, EISDIR as errno_EISDIR
 
 from _os import (
     close as _os_close,
@@ -85,13 +86,6 @@ class BufferedRWPair:
 
 
 class BufferedRandom:
-    """unimplemented"""
-
-    def __init__(self, *args, **kwargs):
-        _unimplemented()
-
-
-class BufferedWriter:
     """unimplemented"""
 
     def __init__(self, *args, **kwargs):
@@ -900,6 +894,90 @@ class BufferedReader(_BufferedIOMixin, bootstrap=True):
             pos = _BufferedIOMixin.seek(self, pos, whence)
             self._reset_read_buf()
             return pos
+
+
+class BufferedWriter(_BufferedIOMixin, bootstrap=True):
+    def __init__(self, raw, buffer_size=DEFAULT_BUFFER_SIZE):
+        if not raw.writable():
+            raise UnsupportedOperation("File or stream is not writable.")
+
+        _BufferedIOMixin.__init__(self, raw)
+        if buffer_size <= 0:
+            raise ValueError("buffer size must be strictly positive")
+        self.buffer_size = buffer_size
+        self._write_buf = bytearray()  # TODO(T47880928): use a memoryview
+        self._write_lock = _thread_Lock()
+
+    def _flush_unlocked(self):
+        if self.closed:
+            raise ValueError("flush of closed file")
+        while self._write_buf:
+            try:
+                n = self.raw.write(self._write_buf)
+            except BlockingIOError:
+                raise RuntimeError(
+                    "self.raw should implement RawIOBase: "
+                    "it should not raise BlockingIOError"
+                )
+            if n is None:
+                raise BlockingIOError(
+                    errno_EAGAIN, "write could not complete without blocking", 0
+                )
+            if n < 0 or n > _bytearray_len(self._write_buf):
+                raise IOError(
+                    f"raw write() returned invalid length {n} (should have "
+                    f"been between 0 and {_bytearray_len(self._write_buf)})"
+                )
+            del self._write_buf[:n]
+
+    def flush(self):
+        with self._write_lock:
+            self._flush_unlocked()
+
+    def seek(self, pos, whence=0):
+        _whence_guard(whence)
+        with self._write_lock:
+            self._flush_unlocked()
+            return _BufferedIOMixin.seek(self, pos, whence)
+
+    def tell(self):
+        return _BufferedIOMixin.tell(self) + _bytearray_len(self._write_buf)
+
+    def truncate(self, pos=None):
+        with self._write_lock:
+            self._flush_unlocked()
+            if pos is None:
+                pos = self.raw.tell()
+            return self.raw.truncate(pos)
+
+    def writable(self):
+        return self.raw.writable()
+
+    def write(self, b):
+        if self.closed:
+            raise ValueError("write to closed file")
+        if _str_check(b):
+            raise TypeError("can't write str to binary stream")
+        with self._write_lock:
+            if _bytearray_len(self._write_buf) > self.buffer_size:
+                # We're full, so let's pre-flush the buffer.  (This may raise
+                # BlockingIOError with characters_written == 0.)
+                self._flush_unlocked()
+            before = _bytearray_len(self._write_buf)
+            self._write_buf.extend(b)
+            written = _bytearray_len(self._write_buf) - before
+            if _bytearray_len(self._write_buf) > self.buffer_size:
+                try:
+                    self._flush_unlocked()
+                except BlockingIOError as e:
+                    if _bytearray_len(self._write_buf) > self.buffer_size:
+                        # We've hit the buffer_size. We have to accept a partial
+                        # write and cut back our buffer.
+                        overage = _bytearray_len(self._write_buf) - self.buffer_size
+                        written -= overage
+                        self._write_buf = self._write_buf[: self.buffer_size]
+                        raise BlockingIOError(e.errno, e.strerror, written)
+            return written
 
 
 class BytesIO(bootstrap=True):

@@ -445,6 +445,8 @@ class Runtime;
   V(UnderWeakLink, "_weaklink")                                                \
   V(UnderWeakRef, "_weakref")                                                  \
   V(UnderWritable, "_writable")                                                \
+  V(UnderWriteBuf, "_write_buf")                                               \
+  V(UnderWriteLock, "_write_lock")                                             \
   V(UnderWritenl, "_writenl")                                                  \
   V(UnderWritetranslate, "_writetranslate")                                    \
   V(Abs, "abs")                                                                \
@@ -477,6 +479,7 @@ class Runtime;
   V(BufferError, "BufferError")                                                \
   V(BufferSize, "buffer_size")                                                 \
   V(BufferedReader, "BufferedReader")                                          \
+  V(BufferedWriter, "BufferedWriter")                                          \
   V(BuiltinModuleNames, "builtin_module_names")                                \
   V(Builtins, "builtins")                                                      \
   V(ByteArray, "bytearray")                                                    \
