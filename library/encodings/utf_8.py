@@ -26,7 +26,11 @@ class IncrementalEncoder(codecs.IncrementalEncoder):
         return codecs.utf_8_encode(input, self.errors)[0]
 
 class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
-    _buffer_decode = codecs.utf_8_decode
+    # TODO(T54587721): Revert change once we can bind builtins as class methods
+    #_buffer_decode = codecs.utf_8_decode
+    @staticmethod
+    def _buffer_decode(input, errors, final):
+        return codecs.utf_8_decode(input, errors, final)
 
 class StreamWriter(codecs.StreamWriter):
     encode = codecs.utf_8_encode
