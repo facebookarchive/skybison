@@ -186,7 +186,8 @@ PY_EXPORT void PyBuffer_Release(Py_buffer* view) {
   if (pyobj == nullptr) return;
 
   // TODO(T38246066) call bf_releasebuffer type slot.
-  DCHECK(PyBytes_Check(pyobj), "buffer protocol only implemented for bytes");
+  DCHECK(PyBytes_Check(pyobj) || PyByteArray_Check(pyobj),
+         "buffer protocol only implemented for bytes");
 
   view->obj = nullptr;
   Py_DECREF(pyobj);
@@ -937,15 +938,21 @@ PY_EXPORT PyObject* PyObject_Format(PyObject* obj, PyObject* format_spec) {
 
 PY_EXPORT int PyObject_GetBuffer(PyObject* obj, Py_buffer* view, int flags) {
   DCHECK(obj != nullptr, "obj must not be nullptr");
+  char* buffer;
+  Py_ssize_t length;
   if (PyBytes_Check(obj)) {
-    char* buffer;
-    Py_ssize_t length;
     if (PyBytes_AsStringAndSize(obj, &buffer, &length) < 0) return -1;
-    return PyBuffer_FillInfo(view, obj, buffer, length, 1 /* readonly */,
-                             flags);
+  } else if (PyByteArray_Check(obj)) {
+    // TODO(T54579154): This creates a copy of the object which does not stay in
+    // sync. We should have a way to pin the memory to allow direct access.
+    buffer = PyByteArray_AsString(obj);
+    if (buffer == nullptr) return -1;
+    length = PyByteArray_Size(obj);
+  } else {
+    // TODO(T38246066) call bf_getbuffer type slot.
+    UNIMPLEMENTED("buffer protocol bf_getbuffer()");
   }
-  // TODO(T38246066) call bf_getbuffer type slot.
-  UNIMPLEMENTED("buffer protocol bf_getbuffer()");
+  return PyBuffer_FillInfo(view, obj, buffer, length, /*readonly=*/1, flags);
 }
 
 PY_EXPORT PyObject* PyObject_GetItem(PyObject* obj, PyObject* key) {

@@ -1695,6 +1695,20 @@ TEST_F(AbstractExtensionApiTest, PyObjectGetBufferWithBytesReturnsBuffer) {
   EXPECT_EQ(Py_REFCNT(bytes), old_refcnt);
 }
 
+TEST_F(AbstractExtensionApiTest, PyObjectGetBufferWithByteArrayReturnsBuffer) {
+  Py_buffer buffer;
+  PyObjectPtr bytearray(PyByteArray_FromStringAndSize("hello\0world", 11));
+  Py_ssize_t old_refcnt = Py_REFCNT(bytearray);
+  int result = PyObject_GetBuffer(bytearray, &buffer, 0);
+  EXPECT_EQ(Py_REFCNT(bytearray), old_refcnt + 1);
+  ASSERT_EQ(buffer.len, 11);
+  EXPECT_EQ(std::memcmp(buffer.buf, "hello\0world", 11), 0);
+  ASSERT_EQ(result, 0);
+  PyBuffer_Release(&buffer);
+  EXPECT_EQ(buffer.obj, nullptr);
+  EXPECT_EQ(Py_REFCNT(bytearray), old_refcnt);
+}
+
 TEST_F(AbstractExtensionApiTest, CallFunctionObjArgsWithNoArgsReturnsValue) {
   PyRun_SimpleString(R"(
 def func():
