@@ -114,46 +114,45 @@ void Scavenger::processDelayedReferences() {
 }
 
 void Scavenger::processFinalizableReferences() {
-  // Native instances
   for (ListEntry *entry = runtime_->trackedNativeObjects(), *next;
        entry != nullptr; entry = next) {
     next = entry->next;
-    ApiHandle* handle = reinterpret_cast<ApiHandle*>(entry + 1);
+    ApiHandle* native_instance = reinterpret_cast<ApiHandle*>(entry + 1);
+    scavengePointer(reinterpret_cast<RawObject*>(&native_instance->reference_));
+    if (native_instance->refcnt() > 2) continue;
+    RawObject native_proxy = native_instance->asObject();
+    if (HeapObject::cast(native_proxy).isForwarding()) continue;
 
-    // Something is still pointing to this native instance
-    if (HeapObject::cast(handle->asObject()).isForwarding() ||
-        handle->refcnt() > 1) {
-      scavengePointer(reinterpret_cast<RawObject*>(&handle->reference_));
+    // Deallocate immediately or add to finalization queue
+    RawType type = Type::cast(runtime_->typeOf(native_instance->asObject()));
+    if (!type.hasFlag(Type::Flag::kHasDefaultDealloc)) {
+      RawNativeProxy::enqueueReference(native_proxy,
+                                       runtime_->finalizableReferences());
       continue;
     }
-
-    // The native object is only reachable through the managed native proxy
-    // TODO(eelizondo): Only deallocate directly if it's a default dealloc
-    RawType type = Type::cast(runtime_->typeOf(handle->asObject()));
     auto func = reinterpret_cast<destructor>(
         Int::cast(type.slot(Type::Slot::kDealloc)).asWord());
-    (*func)(handle);
+    (*func)(native_instance);
   }
-
-  // Native instances with GC flag set
   for (ListEntry *entry = runtime_->trackedNativeGcObjects(), *next;
        entry != nullptr; entry = next) {
     next = entry->next;
-    ApiHandle* handle = reinterpret_cast<ApiHandle*>(entry + 1);
+    ApiHandle* native_instance = reinterpret_cast<ApiHandle*>(entry + 1);
+    scavengePointer(reinterpret_cast<RawObject*>(&native_instance->reference_));
+    if (native_instance->refcnt() > 2) continue;
+    RawObject native_proxy = native_instance->asObject();
+    if (HeapObject::cast(native_proxy).isForwarding()) continue;
 
-    // Something is still pointing to this native instance
-    if (HeapObject::cast(handle->asObject()).isForwarding() ||
-        handle->refcnt() > 1) {
-      scavengePointer(reinterpret_cast<RawObject*>(&handle->reference_));
+    // Deallocate immediately or add to finalization queue
+    RawType type = Type::cast(runtime_->typeOf(native_instance->asObject()));
+    if (!type.hasFlag(Type::Flag::kHasDefaultDealloc)) {
+      RawNativeProxy::enqueueReference(native_proxy,
+                                       runtime_->finalizableReferences());
       continue;
     }
-
-    // The native object is only reachable through the managed native proxy
-    // TODO(eelizondo): Only deallocate directly if it's a default dealloc
-    RawType type = Type::cast(runtime_->typeOf(handle->asObject()));
     auto func = reinterpret_cast<destructor>(
         Int::cast(type.slot(Type::Slot::kDealloc)).asWord());
-    (*func)(handle);
+    (*func)(native_instance);
   }
 }
 

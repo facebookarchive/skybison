@@ -98,6 +98,7 @@ class UnderBuiltinsModule {
                                        word nargs);
   static RawObject underFrozenSetGuard(Thread* thread, Frame* frame,
                                        word nargs);
+  static RawObject underGc(Thread* thread, Frame* frame, word nargs);
   static RawObject underGetMemberByte(Thread* thread, Frame* frame, word nargs);
   static RawObject underGetMemberChar(Thread* thread, Frame* frame, word nargs);
   static RawObject underGetMemberDouble(Thread* thread, Frame* frame,

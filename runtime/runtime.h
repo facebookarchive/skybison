@@ -239,6 +239,7 @@ class Runtime {
   RawObject newTupleIterator(const Tuple& tuple, word length);
 
   void processCallbacks();
+  void processFinalizers();
 
   RawObject strConcat(Thread* thread, const Str& left, const Str& right);
   RawObject strJoin(Thread* thread, const Str& sep, const Tuple& items,
@@ -310,6 +311,7 @@ class Runtime {
   // Return the head of the tracked native objects list.
   ListEntry* trackedNativeObjects();
   ListEntry* trackedNativeGcObjects();
+  RawObject* finalizableReferences();
 
   void visitRoots(PointerVisitor* visitor);
 
@@ -1037,6 +1039,9 @@ class Runtime {
   // Linked list of tracked extension objects.
   ListEntry* tracked_native_objects_ = nullptr;
   ListEntry* tracked_native_gc_objects_ = nullptr;
+
+  // List of native instances which can be finalizable through tp_dealloc
+  RawObject finalizable_references_ = NoneType::object();
 
   // A List of Layout objects, indexed by layout id.
   RawObject layouts_ = NoneType::object();

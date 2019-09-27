@@ -1474,6 +1474,8 @@ ListEntry* Runtime::trackedNativeGcObjects() {
   return tracked_native_gc_objects_;
 }
 
+RawObject* Runtime::finalizableReferences() { return &finalizable_references_; }
+
 RawObject Runtime::identityHash(RawObject object) {
   RawHeapObject src = HeapObject::cast(object);
   word code = src.header().hashCode();
@@ -1816,6 +1818,9 @@ void Runtime::collectGarbage() {
   if (run_callback) {
     processCallbacks();
   }
+  if (finalizable_references_ != NoneType::object()) {
+    processFinalizers();
+  }
 }
 
 void Runtime::processCallbacks() {
@@ -1833,6 +1838,32 @@ void Runtime::processCallbacks() {
     Interpreter::callMethod1(thread, frame, callback, weak);
     thread->ignorePendingException();
     WeakRef::cast(*weak).setCallback(NoneType::object());
+  }
+
+  thread->setPendingExceptionType(*saved_type);
+  thread->setPendingExceptionValue(*saved_value);
+  thread->setPendingExceptionTraceback(*saved_traceback);
+}
+
+void Runtime::processFinalizers() {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object saved_type(&scope, thread->pendingExceptionType());
+  Object saved_value(&scope, thread->pendingExceptionValue());
+  Object saved_traceback(&scope, thread->pendingExceptionTraceback());
+  thread->clearPendingException();
+
+  while (finalizable_references_ != NoneType::object()) {
+    Object native_proxy(
+        &scope, RawNativeProxy::dequeueReference(&finalizable_references_));
+    Type type(&scope, typeOf(*native_proxy));
+    DCHECK(type.hasFlag(Type::Flag::kIsNativeProxy),
+           "A native instance must come from an extension type");
+    DCHECK(type.hasSlot(Type::Slot::kDealloc),
+           "Extension types must have a dealloc slot");
+    Int slot(&scope, type.slot(Type::Slot::kDealloc));
+    auto func = reinterpret_cast<destructor>(slot.asWord());
+    (*func)(reinterpret_cast<PyObject*>(nativeProxyPtr(*native_proxy)));
   }
 
   thread->setPendingExceptionType(*saved_type);
@@ -2024,6 +2055,9 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
 
   // Visit GC callbacks
   visitor->visitPointer(&callbacks_);
+
+  // Visit finalizable native instances
+  visitor->visitPointer(&finalizable_references_);
 }
 
 void Runtime::visitThreadRoots(PointerVisitor* visitor) {

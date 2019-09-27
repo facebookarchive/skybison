@@ -154,8 +154,8 @@ TEST_F(TypeExtensionApiTest, GenericAllocationReturnsMallocMemory) {
   PyObjectPtr result(PyType_GenericAlloc(
       reinterpret_cast<PyTypeObject*>(type.get()), item_size));
   ASSERT_NE(result, nullptr);
-  // TODO(T53456038): Switch back to EXPECT_EQ, once initial refcount is fixed
-  EXPECT_GE(Py_REFCNT(result), 1);
+  ASSERT_GE(Py_REFCNT(result), 1);  // CPython
+  ASSERT_LE(Py_REFCNT(result), 2);  // Pyro
   EXPECT_EQ(Py_SIZE(result.get()), item_size);
 }
 
@@ -3000,11 +3000,19 @@ TEST_F(TypeExtensionApiTest, FromSpecWithoutDeallocInheritsDefaultDealloc) {
 
   // Create an instance
   FooObject* instance = PyObject_New(FooObject, tp);
-  ASSERT_EQ(Py_REFCNT(instance), 1);
+  ASSERT_GE(Py_REFCNT(instance), 1);  // CPython
+  ASSERT_LE(Py_REFCNT(instance), 2);  // Pyro
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt + 1);
 
   // Trigger a tp_dealloc
   Py_DECREF(instance);
+  PyRun_SimpleString(R"(
+try:
+  import _builtins
+  _builtins._gc()
+except:
+  pass
+)");
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt);
 }
 
@@ -3035,11 +3043,19 @@ TEST_F(TypeExtensionApiTest, DefaultDeallocCallsDelAndFinalize) {
 
   // Create an instance
   FooObject* instance = PyObject_New(FooObject, tp);
-  ASSERT_EQ(Py_REFCNT(instance), 1);
+  ASSERT_GE(Py_REFCNT(instance), 1);  // CPython
+  ASSERT_LE(Py_REFCNT(instance), 2);  // Pyro
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt + 1);
 
   // Trigger a tp_dealloc
   Py_DECREF(instance);
+  PyRun_SimpleString(R"(
+try:
+  import _builtins
+  _builtins._gc()
+except:
+  pass
+)");
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt);
   PyObjectPtr called_del(testing::moduleGet("__main__", "called_del"));
   EXPECT_EQ(called_del, Py_True);
@@ -3096,11 +3112,19 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesSubclassInheritsParentDealloc) {
 
   // Create an instance
   FooObject* instance = PyObject_New(FooObject, tp);
-  ASSERT_EQ(Py_REFCNT(instance), 1);
+  ASSERT_GE(Py_REFCNT(instance), 1);  // CPython
+  ASSERT_LE(Py_REFCNT(instance), 2);  // Pyro
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt + 1);
 
   // Trigger a tp_dealloc
   Py_DECREF(instance);
+  PyRun_SimpleString(R"(
+try:
+  import _builtins
+  _builtins._gc()
+except:
+  pass
+)");
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt);
 }
 
@@ -3149,11 +3173,19 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesSubclassInheritsDefaultDealloc) {
 
   // Create an instance
   FooObject* instance = PyObject_New(FooObject, tp);
-  ASSERT_EQ(Py_REFCNT(instance), 1);
+  ASSERT_GE(Py_REFCNT(instance), 1);  // CPython
+  ASSERT_LE(Py_REFCNT(instance), 2);  // Pyro
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt + 1);
 
   // Trigger a tp_dealloc
   Py_DECREF(instance);
+  PyRun_SimpleString(R"(
+try:
+  import _builtins
+  _builtins._gc()
+except:
+  pass
+)");
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt);
 }
 
@@ -3227,11 +3259,20 @@ TEST_F(TypeExtensionApiTest, FromSpecWithGCFlagCallsDealloc) {
 
   // Create an instance
   PyObject* instance = PyObject_GC_New(PyObject, tp);
-  ASSERT_EQ(Py_REFCNT(instance), 1);
+  PyObject_GC_Track(instance);
+  ASSERT_GE(Py_REFCNT(instance), 1);  // CPython
+  ASSERT_LE(Py_REFCNT(instance), 2);  // Pyro
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt + 1);
 
   // Trigger a tp_dealloc
   Py_DECREF(instance);
+  PyRun_SimpleString(R"(
+try:
+  import _builtins
+  _builtins._gc()
+except:
+  pass
+)");
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt);
   PyObjectPtr called_del(testing::moduleGet("__main__", "called_del"));
   EXPECT_EQ(called_del, Py_True);
@@ -3306,6 +3347,7 @@ class Foo:
   };
   destructor dealloc_func = [](PyObject* self) {
     PyTypeObject* type = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
     PyObject_GC_Del(self);
     Py_DECREF(type);
   };

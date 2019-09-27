@@ -1310,7 +1310,7 @@ static void subtypeDealloc(PyObject* self) {
   auto del_func = reinterpret_cast<destructor>(PyType_GetSlot(type, Py_tp_del));
   if (del_func != nullptr) {
     (*del_func)(self);
-    if (Py_REFCNT(self) > 0) {
+    if (Py_REFCNT(self) > 1) {
       return;  // Resurrected
     }
   }
@@ -1455,6 +1455,7 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   type.setSlot(Type::Slot::kItemSize, *item_size);
 
   // Set the type slots
+  bool has_default_dealloc = true;
   for (PyType_Slot* slot = spec->slots; slot->slot; slot++) {
     void* slot_ptr = slot->pfunc;
     Object field(&scope, runtime->newIntFromCPtr(slot_ptr));
@@ -1463,7 +1464,15 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
       thread->raiseWithFmt(LayoutId::kRuntimeError, "invalid slot offset");
       return nullptr;
     }
+    if (field_id == Type::Slot::kDealloc || field_id == Type::Slot::kDel ||
+        field_id == Type::Slot::kFinalize) {
+      has_default_dealloc = false;
+    }
     type.setSlot(field_id, *field);
+  }
+  if (has_default_dealloc) {
+    type.setFlags(
+        static_cast<Type::Flag>(type.flags() | Type::Flag::kHasDefaultDealloc));
   }
 
   if (addOperators(thread, type).isError()) return nullptr;

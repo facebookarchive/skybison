@@ -303,6 +303,11 @@ def _frozenset_guard(obj):
 
 
 @_patch
+def _gc():
+    pass
+
+
+@_patch
 def _get_member_byte(addr):
     pass
 

@@ -669,6 +669,36 @@ RawObject RawWeakRef::spliceQueue(RawObject tail1, RawObject tail2) {
   return tail2;
 }
 
+// RawNativeProxy
+
+void RawNativeProxy::enqueueReference(RawObject reference, RawObject* tail) {
+  DCHECK(Thread::current()->runtime()->isInstanceOfNativeProxy(reference),
+         "Must have a NativeProxy layout");
+  if (*tail == RawNoneType::object()) {
+    reference.rawCast<RawNativeProxy>().setLink(reference);
+  } else {
+    RawObject head = (*tail).rawCast<RawNativeProxy>().link();
+    (*tail).rawCast<RawNativeProxy>().setLink(reference);
+    reference.rawCast<RawNativeProxy>().setLink(head);
+  }
+  *tail = reference;
+}
+
+RawObject RawNativeProxy::dequeueReference(RawObject* tail) {
+  DCHECK(*tail != RawNoneType::object(), "empty queue");
+  DCHECK(Thread::current()->runtime()->isInstanceOfNativeProxy(*tail),
+         "Must have a NativeProxy layout");
+  RawObject head = (*tail).rawCast<RawNativeProxy>().link();
+  if (head == *tail) {
+    *tail = RawNoneType::object();
+  } else {
+    RawObject next = head.rawCast<RawNativeProxy>().link();
+    (*tail).rawCast<RawNativeProxy>().setLink(next);
+  }
+  head.rawCast<RawNativeProxy>().setLink(RawNoneType::object());
+  return head;
+}
+
 // RawHeapFrame
 
 word RawHeapFrame::numAttributes(word extra_words) {

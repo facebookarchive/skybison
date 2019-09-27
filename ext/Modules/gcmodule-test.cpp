@@ -57,7 +57,8 @@ TEST_F(GcModuleExtensionApiTest, NewReturnsAllocatedObject) {
       PyObject_GC_New(BarObject, reinterpret_cast<PyTypeObject*>(type.get()));
   ASSERT_NE(instance, nullptr);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_EQ(Py_REFCNT(instance), 1);
+  ASSERT_GE(Py_REFCNT(instance), 1);  // CPython
+  ASSERT_LE(Py_REFCNT(instance), 2);  // Pyro
   EXPECT_EQ(Py_REFCNT(type), refcnt + 1);
   PyObject_GC_Del(instance);
 }
@@ -85,7 +86,8 @@ TEST_F(GcModuleExtensionApiTest, NewVarReturnsAllocatedObject) {
       BarContainer, reinterpret_cast<PyTypeObject*>(type.get()), 5);
   ASSERT_NE(instance, nullptr);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_EQ(Py_REFCNT(instance), 1);
+  ASSERT_GE(Py_REFCNT(instance), 1);  // CPython
+  ASSERT_LE(Py_REFCNT(instance), 2);  // Pyro
   EXPECT_EQ(Py_SIZE(instance), 5);
   PyObject_GC_Del(instance);
 }

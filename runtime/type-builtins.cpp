@@ -391,18 +391,21 @@ static void inheritSlots(const Type& type, const Type& base) {
 
 RawObject addInheritedSlots(const Type& type) {
   Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Type base_type(&scope, Tuple::cast(type.mro()).at(1));
 
   if (!type.hasSlots()) {
-    type.setSlots(
-        thread->runtime()->newTuple(static_cast<int>(Type::Slot::kEnd)));
+    type.setSlots(runtime->newTuple(static_cast<int>(Type::Slot::kEnd)));
     type.setSlot(Type::Slot::kFlags, SmallInt::fromWord(0));
     if (base_type.hasSlots()) {
       type.setSlot(Type::Slot::kFlags, base_type.slot(Type::Slot::kFlags));
     }
     type.setSlot(Type::Slot::kBasicSize, SmallInt::fromWord(0));
     type.setSlot(Type::Slot::kItemSize, SmallInt::fromWord(0));
+    type.setSlot(Type::Slot::kBase,
+                 runtime->newIntFromCPtr(
+                     ApiHandle::borrowedReference(thread, *base_type)));
   }
 
   // Inherit special slots from dominant base

@@ -1534,6 +1534,11 @@ class RawNativeProxy : public RawHeapObject {
   RawObject link() const;
   void setLink(RawObject reference) const;
 
+  // TODO(eelizondo): Other finalizers will require the same logic. This should
+  // be moved to a more generic location
+  static void enqueueReference(RawObject reference, RawObject* tail);
+  static RawObject dequeueReference(RawObject* tail);
+
   // Layout.
   static const int kNativeOffset = RawHeapObject::kSize;
   static const int kDictOffset = kNativeOffset + kPointerSize;

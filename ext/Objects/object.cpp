@@ -27,20 +27,13 @@ PY_EXPORT PyObject* PyNotImplemented_Ptr() {
 }
 
 PY_EXPORT void _Py_Dealloc_Func(PyObject* obj) {
-  if (ApiHandle::isManaged(obj)) {
-    ApiHandle::fromPyObject(obj)->dispose();
-    return;
-  }
-  PyTypeObject* type = reinterpret_cast<PyTypeObject*>(PyObject_Type(obj));
-  Py_DECREF(type);  // Create a borrowed reference
-  auto dealloc = bit_cast<destructor>(PyType_GetSlot(type, Py_tp_dealloc));
-  dealloc(obj);
+  if (ApiHandle::isManaged(obj)) ApiHandle::fromPyObject(obj)->dispose();
 }
 
 PY_EXPORT void Py_INCREF_Func(PyObject* obj) { obj->ob_refcnt++; }
 
 PY_EXPORT void Py_DECREF_Func(PyObject* obj) {
-  DCHECK(ApiHandle::nativeRefcnt(obj) > 0, "Reference count underflowed");
+  DCHECK(obj->ob_refcnt > 1, "Reference count underflowed");
   obj->ob_refcnt--;
   if (obj->ob_refcnt == 0) _Py_Dealloc_Func(obj);
 }
@@ -240,7 +233,7 @@ PY_EXPORT PyObject* PyObject_Init(PyObject* obj, PyTypeObject* typeobj) {
   obj->reference_ = native_proxy.raw();
   obj->ob_type = typeobj;
   Py_INCREF(typeobj);
-  obj->ob_refcnt = 1;
+  obj->ob_refcnt = 2;
   return obj;
 }
 
