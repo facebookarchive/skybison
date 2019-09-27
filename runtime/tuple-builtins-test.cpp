@@ -242,6 +242,18 @@ TEST_F(TupleBuiltinsTest, DunderAddWithNonTupleRightHandSideReturnsError) {
             runtime_.typeAt(LayoutId::kTypeError));
 }
 
+TEST_F(TupleBuiltinsTest, DunderAddWithEmptyTuplesReturnsEmptyTuple) {
+  HandleScope scope(thread_);
+  Tuple empty_tuple1(&scope, tupleFromRange(0, 0));
+  Tuple empty_tuple2(&scope, tupleFromRange(0, 0));
+  Object result(
+      &scope, runBuiltin(TupleBuiltins::dunderAdd, empty_tuple1, empty_tuple2));
+
+  ASSERT_TRUE(result.isTuple());
+  Tuple tuple(&scope, *result);
+  EXPECT_EQ(tuple.length(), 0);
+}
+
 TEST_F(TupleBuiltinsTest, DunderAddWithEmptyTupleReturnsTuple) {
   HandleScope scope(thread_);
   Tuple empty_tuple(&scope, tupleFromRange(0, 0));

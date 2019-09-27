@@ -106,11 +106,13 @@ RawObject TupleBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   word rlength = right.length();
 
   word new_length = llength + rlength;
-  if (new_length > kMaxWord) {
+  if (new_length > SmallInt::kMaxValue) {
     return thread->raiseWithFmt(LayoutId::kOverflowError,
                                 "cannot fit 'int' into an index-sized integer");
   }
-
+  if (new_length == 0) {
+    return runtime->emptyTuple();
+  }
   MutableTuple new_tuple(&scope, runtime->newMutableTuple(new_length));
   new_tuple.replaceFromWith(0, *left, llength);
   new_tuple.replaceFromWith(llength, *right, rlength);
