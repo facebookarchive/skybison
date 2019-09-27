@@ -397,7 +397,6 @@ RawObject addInheritedSlots(const Type& type) {
   // Inherit special slots from dominant base
   if (base_type.hasSlots()) {
     inheritGCFlagsAndSlots(thread, type, base_type);
-    // !PyBaseObject_Type and Py_TPFLAGS_HEAPTYPE are guaranteed so skip check
     if (!type.hasSlot(Type::Slot::kNew)) {
       copySlot(type, base_type, Type::Slot::kNew);
     }

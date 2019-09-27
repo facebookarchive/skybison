@@ -1,5 +1,4 @@
-// obmalloc.c implementation
-
+#include "capi-handles.h"
 #include "cpython-func.h"
 #include "runtime.h"
 
@@ -10,9 +9,6 @@ PY_EXPORT void* PyObject_Malloc(size_t size) {
       static_cast<ListEntry*>(PyMem_RawMalloc(sizeof(ListEntry) + size));
   entry->prev = nullptr;
   entry->next = nullptr;
-  if (!Thread::current()->runtime()->trackNativeObject(entry)) {
-    Py_FatalError("GC object already tracked");
-  }
   return reinterpret_cast<void*>(entry + 1);
 }
 
@@ -44,7 +40,7 @@ PY_EXPORT void PyObject_Free(void* ptr) {
   if (ptr == nullptr) return;
   ListEntry* entry = static_cast<ListEntry*>(ptr) - 1;
   Thread::current()->runtime()->untrackNativeObject(entry);
-  return PyMem_RawFree(reinterpret_cast<void*>(entry));
+  return PyMem_RawFree(entry);
 }
 
 PY_EXPORT void* PyMem_Malloc(size_t size) { return PyMem_RawMalloc(size); }

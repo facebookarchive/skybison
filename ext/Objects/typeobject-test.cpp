@@ -3194,4 +3194,43 @@ class Foo: pass
   EXPECT_EQ(res, nullptr);
 }
 
+TEST_F(TypeExtensionApiTest, FromSpecWithGCFlagCallsDealloc) {
+  destructor dealloc_func = [](PyObject* self) {
+    moduleSet("__main__", "called_del", Py_True);
+    PyTypeObject* type = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+    PyObject_GC_Del(self);
+    Py_DECREF(type);
+  };
+  static PyType_Slot slots[2];
+  slots[0] = {Py_tp_dealloc, reinterpret_cast<void*>(dealloc_func)};
+  slots[1] = {0, nullptr};
+  static PyType_Spec spec;
+  spec = {
+      "__main__.Foo",
+      sizeof(PyObject),
+      0,
+      Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+      slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(type), 1);
+
+  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(type.get());
+  ASSERT_NE(PyType_GetSlot(tp, Py_tp_dealloc), nullptr);
+  Py_ssize_t type_refcnt = Py_REFCNT(tp);
+
+  // Create an instance
+  PyObject* instance = PyObject_GC_New(PyObject, tp);
+  ASSERT_EQ(Py_REFCNT(instance), 1);
+  ASSERT_EQ(Py_REFCNT(tp), type_refcnt + 1);
+
+  // Trigger a tp_dealloc
+  Py_DECREF(instance);
+  ASSERT_EQ(Py_REFCNT(tp), type_refcnt);
+  PyObjectPtr called_del(testing::moduleGet("__main__", "called_del"));
+  EXPECT_EQ(called_del, Py_True);
+}
+
 }  // namespace python

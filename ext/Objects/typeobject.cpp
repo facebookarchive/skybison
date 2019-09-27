@@ -1416,8 +1416,12 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   Tuple bases_obj(&scope, runtime->emptyTuple());
   if (bases != nullptr) bases_obj = ApiHandle::fromPyObject(bases)->asObject();
   Dict dict(&scope, runtime->newDict());
+  word flags = Type::Flag::kIsNativeProxy;
+  if (spec->flags & Py_TPFLAGS_HAVE_GC) {
+    flags |= Type::Flag::kHasCycleGC;
+  }
   Object type_obj(&scope, typeNew(thread, LayoutId::kType, type_name, bases_obj,
-                                  dict, Type::Flag::kIsNativeProxy));
+                                  dict, static_cast<Type::Flag>(flags)));
   if (type_obj.isError()) return nullptr;
   Type type(&scope, *type_obj);
   Layout type_layout(&scope, type.instanceLayout());
@@ -1495,7 +1499,13 @@ PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type_obj,
   Int item_size(&scope, type.slot(Type::Slot::kItemSize));
   Py_ssize_t size = Utils::roundUp(
       nitems * item_size.asWord() + basic_size.asWord(), kWordSize);
-  PyObject* result = static_cast<PyObject*>(PyObject_Calloc(1, size));
+
+  PyObject* result = nullptr;
+  if (type.hasFlag(Type::Flag::kHasCycleGC)) {
+    result = static_cast<PyObject*>(_PyObject_GC_Malloc(size));
+  } else {
+    result = static_cast<PyObject*>(PyObject_Calloc(1, size));
+  }
   if (result == nullptr) {
     thread->raiseMemoryError();
     return nullptr;
@@ -1507,6 +1517,12 @@ PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type_obj,
   } else {
     PyObject_InitVar(reinterpret_cast<PyVarObject*>(result), type_obj, nitems);
   }
+
+  // Track object in native GC queue
+  if (type.hasFlag(Type::Flag::kHasCycleGC)) {
+    PyObject_GC_Track(result);
+  }
+
   return result;
 }
 

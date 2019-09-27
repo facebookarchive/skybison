@@ -309,6 +309,7 @@ class Runtime {
 
   // Return the head of the tracked native objects list.
   ListEntry* trackedNativeObjects();
+  ListEntry* trackedNativeGcObjects();
 
   void visitRoots(PointerVisitor* visitor);
 

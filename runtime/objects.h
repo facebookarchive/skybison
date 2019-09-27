@@ -1059,6 +1059,12 @@ class RawType : public RawHeapObject {
 
     // Instances have a native proxy layout
     kIsNativeProxy = 1 << 10,
+
+    // Has the extension flag Py_TPFLAGS_HAVE_GC
+    kHasCycleGC = 1 << 11,
+
+    // Has a default extension dealloc slot
+    kHasDefaultDealloc = 1 << 12,
   };
 
   enum class Slot {

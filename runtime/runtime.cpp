@@ -1470,6 +1470,10 @@ bool Runtime::untrackNativeObject(ListEntry* entry) {
 
 ListEntry* Runtime::trackedNativeObjects() { return tracked_native_objects_; }
 
+ListEntry* Runtime::trackedNativeGcObjects() {
+  return tracked_native_gc_objects_;
+}
+
 RawObject Runtime::identityHash(RawObject object) {
   RawHeapObject src = HeapObject::cast(object);
   word code = src.header().hashCode();
@@ -4498,6 +4502,11 @@ void Runtime::freeApiHandles() {
   while (tracked_native_objects_ != nullptr) {
     auto entry = static_cast<ListEntry*>(tracked_native_objects_);
     untrackNativeObject(entry);
+    std::free(entry);
+  }
+  while (tracked_native_gc_objects_ != nullptr) {
+    auto entry = static_cast<ListEntry*>(tracked_native_gc_objects_);
+    untrackNativeGcObject(entry);
     std::free(entry);
   }
 }

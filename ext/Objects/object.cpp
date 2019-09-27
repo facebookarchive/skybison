@@ -32,11 +32,9 @@ PY_EXPORT void _Py_Dealloc_Func(PyObject* obj) {
     return;
   }
   PyTypeObject* type = reinterpret_cast<PyTypeObject*>(PyObject_Type(obj));
+  Py_DECREF(type);  // Create a borrowed reference
   auto dealloc = bit_cast<destructor>(PyType_GetSlot(type, Py_tp_dealloc));
-  ListEntry* entry = reinterpret_cast<ListEntry*>(obj) - 1;
-  Thread::current()->runtime()->untrackNativeObject(entry);
   dealloc(obj);
-  Py_DECREF(type);
 }
 
 PY_EXPORT void Py_INCREF_Func(PyObject* obj) { obj->ob_refcnt++; }
@@ -233,12 +231,17 @@ PY_EXPORT PyObject* PyObject_Init(PyObject* obj, PyTypeObject* typeobj) {
   Object native_proxy(&scope, runtime->newInstance(layout));
   runtime->setNativeProxyPtr(*native_proxy, obj);
 
+  // Native GC instace tracking is handled by PyObject_GC_Track
+  if (!type_obj.hasFlag(Type::Flag::kHasCycleGC)) {
+    runtime->trackNativeObject(reinterpret_cast<ListEntry*>(obj) - 1);
+  }
+
   // Initialize the native object
   obj->reference_ = native_proxy.raw();
   obj->ob_type = typeobj;
-    Py_INCREF(typeobj);
-    obj->ob_refcnt = 1;
-    return obj;
+  Py_INCREF(typeobj);
+  obj->ob_refcnt = 1;
+  return obj;
 }
 
 PY_EXPORT PyVarObject* PyObject_InitVar(PyVarObject* obj, PyTypeObject* type,
