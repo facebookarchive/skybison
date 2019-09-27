@@ -871,9 +871,6 @@ class FileLoader:
 
     def get_data(self, path):
         """Return the data from path as raw bytes."""
-        # TODO(eelizondo): Remve once _io is fully imported
-        if True:
-            return _io._readfile(path)
         with _io.FileIO(path, "r") as file:
             return file.read()
 

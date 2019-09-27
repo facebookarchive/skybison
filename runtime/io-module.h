@@ -9,9 +9,6 @@ namespace python {
 
 class UnderIoModule : public ModuleBase<UnderIoModule, SymbolId::kUnderIo> {
  public:
-  static RawObject underReadFile(Thread* thread, Frame* frame, word nargs);
-
-  static const BuiltinMethod kBuiltinMethods[];
   static const BuiltinType kBuiltinTypes[];
   static const char* const kFrozenData;
 };

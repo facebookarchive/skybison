@@ -23,23 +23,4 @@ TEST_F(IoModuleTest, PostInitializeSetsBuiltinBaseToSupertype) {
   EXPECT_EQ(bytes_io.builtinBase(), LayoutId::kUnderBufferedIOBase);
 }
 
-TEST_F(IoModuleTest, ReadFileBytesAsString) {
-  int fd;
-  testing::unique_file_ptr filename(OS::temporaryFile("filebytes-test", &fd));
-  char c_filedata[] = "Foo, Bar, Baz";
-  ssize_t filedata_len = std::strlen(c_filedata);
-  ssize_t written_bytes = write(fd, c_filedata, filedata_len + 1);
-  ASSERT_EQ(written_bytes, filedata_len + 1);
-  close(fd);
-
-  HandleScope scope(thread_);
-  Str pyfile(&scope, runtime_.newStrFromFmt(R"(
-import _io
-file_bytes = _io._readfile("%s")
-)",
-                                            filename.get()));
-  unique_c_ptr<char> c_pyfile(pyfile.toCStr());
-  ASSERT_FALSE(testing::runFromCStr(&runtime_, c_pyfile.get()).isError());
-}
-
 }  // namespace python

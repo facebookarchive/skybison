@@ -2231,9 +2231,3 @@ def open(  # noqa: C901
 
 
 builtins.open = open
-
-
-# TODO(T47813347): Kill this function once FileIO is written.
-@_patch
-def _readfile(path):
-    pass

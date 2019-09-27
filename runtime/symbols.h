@@ -345,7 +345,6 @@ class Runtime;
   V(UnderRaw, "_raw")                                                          \
   V(UnderRawIOBase, "_RawIOBase")                                              \
   V(UnderReadBuf, "_read_buf")                                                 \
-  V(UnderReadFile, "_readfile")                                                \
   V(UnderReadLock, "_read_lock")                                               \
   V(UnderReadPos, "_read_pos")                                                 \
   V(UnderReadable, "_readable")                                                \

@@ -11,11 +11,6 @@
 
 namespace python {
 
-const BuiltinMethod UnderIoModule::kBuiltinMethods[] = {
-    {SymbolId::kUnderReadFile, underReadFile},
-    {SymbolId::kSentinelId, nullptr},
-};
-
 const BuiltinType UnderIoModule::kBuiltinTypes[] = {
     {SymbolId::kBufferedReader, LayoutId::kBufferedReader},
     {SymbolId::kBufferedWriter, LayoutId::kBufferedWriter},
@@ -33,19 +28,6 @@ const BuiltinType UnderIoModule::kBuiltinTypes[] = {
 };
 
 const char* const UnderIoModule::kFrozenData = kUnderIoModuleData;
-
-RawObject UnderIoModule::underReadFile(Thread* thread, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Str path(&scope, args.get(0));
-  unique_c_ptr<char> c_path(path.toCStr());
-  word length;
-  std::unique_ptr<const char[]> c_filedata(OS::readFile(c_path.get(), &length));
-  View<byte> data(reinterpret_cast<const byte*>(c_filedata.get()), length);
-  Bytes bytes(&scope, thread->runtime()->newBytesWithAll(data));
-  return *bytes;
-}
 
 const BuiltinAttribute UnderIOBaseBuiltins::kAttributes[] = {
     {SymbolId::kUnderClosed, UnderIOBase::kClosedOffset},
