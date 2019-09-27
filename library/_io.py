@@ -2233,12 +2233,6 @@ def open(  # noqa: C901
 builtins.open = open
 
 
-# TODO(T47813322): Kill this function once IncrementalNewlineDecoder is written.
-@_patch
-def _readbytes(bytes):
-    pass
-
-
 # TODO(T47813347): Kill this function once FileIO is written.
 @_patch
 def _readfile(path):

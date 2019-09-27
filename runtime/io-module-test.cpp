@@ -36,14 +36,10 @@ TEST_F(IoModuleTest, ReadFileBytesAsString) {
   Str pyfile(&scope, runtime_.newStrFromFmt(R"(
 import _io
 file_bytes = _io._readfile("%s")
-filestr = _io._readbytes(file_bytes)
 )",
                                             filename.get()));
   unique_c_ptr<char> c_pyfile(pyfile.toCStr());
   ASSERT_FALSE(testing::runFromCStr(&runtime_, c_pyfile.get()).isError());
-
-  Str filestr(&scope, testing::mainModuleAt(&runtime_, "filestr"));
-  EXPECT_TRUE(filestr.equalsCStr(c_filedata));
 }
 
 }  // namespace python

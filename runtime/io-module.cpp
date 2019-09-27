@@ -12,7 +12,6 @@
 namespace python {
 
 const BuiltinMethod UnderIoModule::kBuiltinMethods[] = {
-    {SymbolId::kUnderReadBytes, underReadBytes},
     {SymbolId::kUnderReadFile, underReadFile},
     {SymbolId::kSentinelId, nullptr},
 };
@@ -46,20 +45,6 @@ RawObject UnderIoModule::underReadFile(Thread* thread, Frame* frame,
   View<byte> data(reinterpret_cast<const byte*>(c_filedata.get()), length);
   Bytes bytes(&scope, thread->runtime()->newBytesWithAll(data));
   return *bytes;
-}
-
-RawObject UnderIoModule::underReadBytes(Thread* thread, Frame* frame,
-                                        word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object bytes_obj(&scope, args.get(0));
-  Bytes bytes(&scope, bytesUnderlying(thread, bytes_obj));
-  word length = bytes.length();
-  std::unique_ptr<char[]> data(new char[length + 1]);
-  for (word idx = 0; idx < length; idx++) data[idx] = bytes.byteAt(idx);
-  data[length] = '\0';
-  Str result(&scope, thread->runtime()->newStrFromCStr(data.get()));
-  return *result;
 }
 
 const BuiltinAttribute UnderIOBaseBuiltins::kAttributes[] = {
