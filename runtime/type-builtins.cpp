@@ -394,6 +394,17 @@ RawObject addInheritedSlots(const Type& type) {
   HandleScope scope(thread);
   Type base_type(&scope, Tuple::cast(type.mro()).at(1));
 
+  if (!type.hasSlots()) {
+    type.setSlots(
+        thread->runtime()->newTuple(static_cast<int>(Type::Slot::kEnd)));
+    type.setSlot(Type::Slot::kFlags, SmallInt::fromWord(0));
+    if (base_type.hasSlots()) {
+      type.setSlot(Type::Slot::kFlags, base_type.slot(Type::Slot::kFlags));
+    }
+    type.setSlot(Type::Slot::kBasicSize, SmallInt::fromWord(0));
+    type.setSlot(Type::Slot::kItemSize, SmallInt::fromWord(0));
+  }
+
   // Inherit special slots from dominant base
   if (base_type.hasSlots()) {
     inheritGCFlagsAndSlots(thread, type, base_type);
@@ -681,11 +692,6 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     base_type = bases.at(i);
     addSubclass(thread, base_type, type);
   }
-  if (bases.length() == 1) {
-    // TODO(T40540469): Slot inheritance is much more complicated than this, but
-    // this is good enough for our current needs.
-    type.setSlots(base_type.slots());
-  }
 
   // Copy down class flags from bases
   word flags = static_cast<word>(type.flags());
@@ -693,7 +699,7 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     Type cur(&scope, mro.at(i));
     flags |= cur.flags();
   }
-  if (!type.isBuiltin() && flags ^ Type::Flag::kIsNativeProxy) {
+  if (!type.isBuiltin() && !(flags & Type::Flag::kIsNativeProxy)) {
     // TODO(T53800222): We may need a better signal than is/is not a builtin
     // class.
     flags |= Type::Flag::kHasDunderDict;
@@ -712,6 +718,18 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     Object property(&scope, runtime->newProperty(instance_proxy, none, none));
     runtime->typeDictAtPutById(thread, type_dict, SymbolId::kDunderDict,
                                property);
+  }
+
+  // TODO(T54448451): Decide whether type needs to become a builtin base
+  if (type.hasFlag(Type::Flag::kIsNativeProxy)) {
+    DCHECK(type.builtinBase() == LayoutId::kObject,
+           "A NativeProxy is not compatible with builtin type layouts");
+    if (addInheritedSlots(type).isError()) {
+      return Error::exception();
+    }
+    layout = runtime->createNativeProxyLayout(thread, layout);
+    layout.setDescribedType(*type);
+    type.setInstanceLayout(*layout);
   }
 
   return *type;

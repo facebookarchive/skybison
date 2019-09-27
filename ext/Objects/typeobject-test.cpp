@@ -1811,7 +1811,11 @@ static void createBarTypeWithMembers() {
   slots[5] = {0, nullptr};
   static PyType_Spec spec;
   spec = {
-      "__main__.Bar", sizeof(BarObject), 0, Py_TPFLAGS_DEFAULT, slots,
+      "__main__.Bar",
+      sizeof(BarObject),
+      0,
+      Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+      slots,
   };
   PyObjectPtr type(PyType_FromSpec(&spec));
   ASSERT_NE(type, nullptr);
@@ -3231,6 +3235,109 @@ TEST_F(TypeExtensionApiTest, FromSpecWithGCFlagCallsDealloc) {
   ASSERT_EQ(Py_REFCNT(tp), type_refcnt);
   PyObjectPtr called_del(testing::moduleGet("__main__", "called_del"));
   EXPECT_EQ(called_del, Py_True);
+}
+
+TEST_F(TypeExtensionApiTest, ManagedTypeInheritsTpFlagsFromCType) {
+  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  ASSERT_EQ(PyRun_SimpleString(R"(
+class Baz(Bar): pass
+)"),
+            0);
+  PyObjectPtr baz_type(moduleGet("__main__", "Baz"));
+  EXPECT_TRUE(PyType_GetFlags(reinterpret_cast<PyTypeObject*>(baz_type.get())) &
+              Py_TPFLAGS_HEAPTYPE);
+}
+
+TEST_F(TypeExtensionApiTest, ManagedTypeInheritsFromCType) {
+  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  ASSERT_EQ(PyRun_SimpleString(R"(
+r1 = Bar().t_bool
+class Baz(Bar): pass
+r2 = Baz().t_bool
+)"),
+            0);
+  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  ASSERT_EQ(PyBool_Check(r1), 1);
+  EXPECT_EQ(r1, Py_True);
+  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  ASSERT_EQ(PyBool_Check(r2), 1);
+  EXPECT_EQ(r2, Py_True);
+}
+
+TEST_F(TypeExtensionApiTest, ManagedTypeWithLayoutInheritsFromCType) {
+  ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
+  ASSERT_EQ(PyRun_SimpleString(R"(
+class Baz(Bar):
+    def __init__(self):
+        self.value = 123
+baz = Baz()
+r1 = baz.t_bool
+r2 = baz.value
+)"),
+            0);
+  PyObjectPtr baz(moduleGet("__main__", "baz"));
+  ASSERT_NE(baz, nullptr);
+  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  ASSERT_EQ(PyBool_Check(r1), 1);
+  EXPECT_EQ(r1, Py_False);
+  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  EXPECT_TRUE(isLongEqualsLong(r2, 123));
+}
+
+TEST_F(TypeExtensionApiTest, CTypeInheritsFromManagedType) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+class Foo:
+    def foo(self):
+        return 123
+)"),
+            0);
+  PyObjectPtr foo_type(moduleGet("__main__", "Foo"));
+
+  struct FooObject {
+    PyObject_HEAD PyObject* dict;
+    int t_int;
+  };
+  static PyMemberDef members[2];
+  members[0] = {const_cast<char*>("t_int"), T_INT, offsetof(FooObject, t_int)};
+  members[1] = {nullptr};
+  initproc init_func = [](PyObject* self, PyObject*, PyObject*) {
+    reinterpret_cast<FooObject*>(self)->t_int = 321;
+    return 0;
+  };
+  destructor dealloc_func = [](PyObject* self) {
+    PyTypeObject* type = Py_TYPE(self);
+    PyObject_GC_Del(self);
+    Py_DECREF(type);
+  };
+  static PyType_Slot slots[4];
+  slots[0] = {Py_tp_init, reinterpret_cast<void*>(init_func)};
+  slots[1] = {Py_tp_members, reinterpret_cast<void*>(members)};
+  slots[2] = {Py_tp_dealloc, reinterpret_cast<void*>(dealloc_func)},
+  slots[3] = {0, nullptr};
+  static PyType_Spec spec;
+  spec = {
+      "__main__.FooSubclass",
+      sizeof(FooObject),
+      0,
+      Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+      slots,
+  };
+
+  PyObjectPtr bases(PyTuple_Pack(1, foo_type.get()));
+  PyObjectPtr type(PyType_FromSpecWithBases(&spec, bases));
+  ASSERT_NE(type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(type), 1);
+  ASSERT_EQ(moduleSet("__main__", "FooSubclass", type), 0);
+
+  ASSERT_EQ(PyRun_SimpleString(R"(
+r1 = FooSubclass().foo()
+r2 = FooSubclass().t_int
+)"),
+            0);
+  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  EXPECT_TRUE(isLongEqualsLong(r1, 123));
+  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  EXPECT_TRUE(isLongEqualsLong(r2, 321));
 }
 
 }  // namespace python

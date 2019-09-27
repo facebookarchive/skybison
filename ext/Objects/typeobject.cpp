@@ -750,8 +750,12 @@ RawObject addOperators(Thread* thread, const Type& type) {
     if (slot_value.isNoneType()) continue;
     DCHECK(slot_value.isInt(), "unexpected slot type");
 
+    // Unlike most slots, we always allow __new__ to be overwritten by a subtype
     Str slot_name(&scope, runtime->symbols()->at(slot.name));
-    if (!runtime->typeDictAtByStr(thread, dict, slot_name).isError()) continue;
+    if (slot.id != Type::Slot::kNew &&
+        !runtime->typeDictAtByStr(thread, dict, slot_name).isError()) {
+      continue;
+    }
 
     // When given PyObject_HashNotImplemented, put None in the type dict
     // rather than a wrapper. CPython does this regardless of which slot it
@@ -1424,8 +1428,6 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
                                   dict, static_cast<Type::Flag>(flags)));
   if (type_obj.isError()) return nullptr;
   Type type(&scope, *type_obj);
-  Layout type_layout(&scope, type.instanceLayout());
-  type_layout.setNumInObjectAttributes(3);
 
   // Initialize the extension slots tuple
   Object extension_slots(&scope,

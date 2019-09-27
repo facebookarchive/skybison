@@ -642,6 +642,10 @@ class Runtime {
   bool layoutFindAttribute(Thread* thread, const Layout& layout,
                            const Str& name_interned, AttributeInfo* info);
 
+  // Creates a new layout by adding empty slots to the base_layout
+  // to match the NativeProxy layout
+  RawObject createNativeProxyLayout(Thread* thread, const Layout& base_layout);
+
   // Add the attribute to the overflow array.
   //
   // This returns a new layout by either following a pre-existing edge or
