@@ -30,6 +30,19 @@ RawObject bytesReprSingleQuotes(Thread* thread, const Bytes& self);
 // Scans self to select an appropriate delimiter (single or double quotes).
 RawObject bytesReprSmartQuotes(Thread* thread, const Bytes& self);
 
+// Strips the given characters from the end(s) of the given bytes. For left and
+// right variants, strips only the specified side. For space variants, strips
+// all ASCII whitespace from the specified side(s).
+RawObject bytesStrip(Thread* thread, const Bytes& bytes, word bytes_len,
+                     const Bytes& chars, word chars_len);
+RawObject bytesStripLeft(Thread* thread, const Bytes& bytes, word bytes_len,
+                         const Bytes& chars, word chars_len);
+RawObject bytesStripRight(Thread* thread, const Bytes& bytes, word bytes_len,
+                          const Bytes& chars, word chars_len);
+RawObject bytesStripSpace(Thread* thread, const Bytes& bytes, word len);
+RawObject bytesStripSpaceLeft(Thread* thread, const Bytes& bytes, word len);
+RawObject bytesStripSpaceRight(Thread* thread, const Bytes& bytes, word len);
+
 // Returns the internal bytes value of an instance of bytes.
 RawObject bytesUnderlying(Thread* thread, const Object& obj);
 
@@ -80,6 +93,9 @@ class BytesBuiltins
   static RawObject dunderRepr(Thread* thread, Frame* frame, word nargs);
 
   static RawObject hex(Thread* thread, Frame* frame, word nargs);
+  static RawObject lstrip(Thread* thread, Frame* frame, word nargs);
+  static RawObject rstrip(Thread* thread, Frame* frame, word nargs);
+  static RawObject strip(Thread* thread, Frame* frame, word nargs);
   static RawObject translate(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinAttribute kAttributes[];

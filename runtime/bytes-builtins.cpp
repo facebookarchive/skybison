@@ -136,6 +136,92 @@ RawObject bytesReprSmartQuotes(Thread* thread, const Bytes& self) {
   return bytesReprWithDelimiter(thread, self, has_single_quote ? '"' : '\'');
 }
 
+// Returns the index of the first byte in bytes that is not in chars.
+static word bytesSpanLeft(const Bytes& bytes, word bytes_len,
+                          const Bytes& chars, word chars_len) {
+  for (word left = 0; left < bytes_len; left++) {
+    byte ch = bytes.byteAt(left);
+    bool found_in_chars = false;
+    for (word i = 0; i < chars_len; i++) {
+      if (ch == chars.byteAt(i)) {
+        found_in_chars = true;
+        break;
+      }
+    }
+    if (!found_in_chars) {
+      return left;
+    }
+  }
+  return bytes_len;
+}
+
+// Returns the index of the last byte in bytes that is not in chars. Stops at
+// and returns the left bound if all characters to the right were found.
+static word bytesSpanRight(const Bytes& bytes, word bytes_len,
+                           const Bytes& chars, word chars_len, word left) {
+  for (word right = bytes_len; left < right; right--) {
+    byte ch = bytes.byteAt(right - 1);
+    bool found_in_chars = false;
+    for (word i = 0; i < chars_len; i++) {
+      if (ch == chars.byteAt(i)) {
+        found_in_chars = true;
+        break;
+      }
+    }
+    if (!found_in_chars) {
+      return right;
+    }
+  }
+  return left;
+}
+
+RawObject bytesStrip(Thread* thread, const Bytes& bytes, word bytes_len,
+                     const Bytes& chars, word chars_len) {
+  word left = bytesSpanLeft(bytes, bytes_len, chars, chars_len);
+  word right = bytesSpanRight(bytes, bytes_len, chars, chars_len, left);
+  return thread->runtime()->bytesSubseq(thread, bytes, left, right - left);
+}
+
+RawObject bytesStripLeft(Thread* thread, const Bytes& bytes, word bytes_len,
+                         const Bytes& chars, word chars_len) {
+  word left = bytesSpanLeft(bytes, bytes_len, chars, chars_len);
+  return thread->runtime()->bytesSubseq(thread, bytes, left, bytes_len - left);
+}
+
+RawObject bytesStripRight(Thread* thread, const Bytes& bytes, word bytes_len,
+                          const Bytes& chars, word chars_len) {
+  word right = bytesSpanRight(bytes, bytes_len, chars, chars_len, 0);
+  return thread->runtime()->bytesSubseq(thread, bytes, 0, right);
+}
+
+RawObject bytesStripSpace(Thread* thread, const Bytes& bytes, word len) {
+  word left = 0;
+  while (left < len && isSpaceASCII(bytes.byteAt(left))) {
+    left++;
+  }
+  word right = len;
+  while (right > left && isSpaceASCII(bytes.byteAt(right - 1))) {
+    right--;
+  }
+  return thread->runtime()->bytesSubseq(thread, bytes, left, right - left);
+}
+
+RawObject bytesStripSpaceLeft(Thread* thread, const Bytes& bytes, word len) {
+  word left = 0;
+  while (left < len && isSpaceASCII(bytes.byteAt(left))) {
+    left++;
+  }
+  return thread->runtime()->bytesSubseq(thread, bytes, left, len - left);
+}
+
+RawObject bytesStripSpaceRight(Thread* thread, const Bytes& bytes, word len) {
+  word right = len;
+  while (right > 0 && isSpaceASCII(bytes.byteAt(right - 1))) {
+    right--;
+  }
+  return thread->runtime()->bytesSubseq(thread, bytes, 0, right);
+}
+
 RawObject bytesUnderlying(Thread* thread, const Object& obj) {
   if (obj.isBytes()) return *obj;
   DCHECK(thread->runtime()->isInstanceOfBytes(*obj),
@@ -291,6 +377,9 @@ const BuiltinMethod BytesBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNe, dunderNe},
     {SymbolId::kDunderRepr, dunderRepr},
     {SymbolId::kHex, hex},
+    {SymbolId::kLStrip, lstrip},
+    {SymbolId::kRStrip, rstrip},
+    {SymbolId::kStrip, strip},
     {SymbolId::kTranslate, translate},
     {SymbolId::kSentinelId, nullptr},
 };
@@ -518,6 +607,93 @@ RawObject BytesBuiltins::hex(Thread* thread, Frame* frame, word nargs) {
   }
   Bytes self(&scope, bytesUnderlying(thread, obj));
   return bytesHex(thread, self, self.length());
+}
+
+RawObject BytesBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfBytes(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
+  }
+  Bytes self(&scope, bytesUnderlying(thread, self_obj));
+  Object chars_obj(&scope, args.get(1));
+  if (chars_obj.isNoneType()) {
+    return bytesStripSpaceLeft(thread, self, self.length());
+  }
+  if (runtime->isInstanceOfBytes(*chars_obj)) {
+    Bytes chars(&scope, bytesUnderlying(thread, chars_obj));
+    return bytesStripLeft(thread, self, self.length(), chars, chars.length());
+  }
+  if (runtime->isInstanceOfByteArray(*chars_obj)) {
+    ByteArray chars(&scope, *chars_obj);
+    Bytes chars_bytes(&scope, chars.bytes());
+    return bytesStripLeft(thread, self, self.length(), chars_bytes,
+                          chars.numItems());
+  }
+  // TODO(T38246066): support bytes-like objects other than bytes, bytearray
+  return thread->raiseWithFmt(LayoutId::kTypeError,
+                              "a bytes-like object is required, not '%T'",
+                              &chars_obj);
+}
+
+RawObject BytesBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfBytes(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
+  }
+  Bytes self(&scope, bytesUnderlying(thread, self_obj));
+  Object chars_obj(&scope, args.get(1));
+  if (chars_obj.isNoneType()) {
+    return bytesStripSpaceRight(thread, self, self.length());
+  }
+  if (runtime->isInstanceOfBytes(*chars_obj)) {
+    Bytes chars(&scope, bytesUnderlying(thread, chars_obj));
+    return bytesStripRight(thread, self, self.length(), chars, chars.length());
+  }
+  if (runtime->isInstanceOfByteArray(*chars_obj)) {
+    ByteArray chars(&scope, *chars_obj);
+    Bytes chars_bytes(&scope, chars.bytes());
+    return bytesStripRight(thread, self, self.length(), chars_bytes,
+                           chars.numItems());
+  }
+  // TODO(T38246066): support bytes-like objects other than bytes, bytearray
+  return thread->raiseWithFmt(LayoutId::kTypeError,
+                              "a bytes-like object is required, not '%T'",
+                              &chars_obj);
+}
+
+RawObject BytesBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfBytes(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
+  }
+  Bytes self(&scope, bytesUnderlying(thread, self_obj));
+  Object chars_obj(&scope, args.get(1));
+  if (chars_obj.isNoneType()) {
+    return bytesStripSpace(thread, self, self.length());
+  }
+  if (runtime->isInstanceOfBytes(*chars_obj)) {
+    Bytes chars(&scope, bytesUnderlying(thread, chars_obj));
+    return bytesStrip(thread, self, self.length(), chars, chars.length());
+  }
+  if (runtime->isInstanceOfByteArray(*chars_obj)) {
+    ByteArray chars(&scope, *chars_obj);
+    Bytes chars_bytes(&scope, chars.bytes());
+    return bytesStrip(thread, self, self.length(), chars_bytes,
+                      chars.numItems());
+  }
+  // TODO(T38246066): support bytes-like objects other than bytes, bytearray
+  return thread->raiseWithFmt(LayoutId::kTypeError,
+                              "a bytes-like object is required, not '%T'",
+                              &chars_obj);
 }
 
 RawObject BytesBuiltins::translate(Thread* thread, Frame* frame, word nargs) {

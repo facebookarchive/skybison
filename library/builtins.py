@@ -1567,7 +1567,7 @@ class bytearray(bootstrap=True):
         _unimplemented()
 
     def lstrip(self, bytes=None):
-        _unimplemented()
+        pass
 
     @staticmethod
     def maketrans(frm, to) -> bytes:
@@ -1627,7 +1627,7 @@ class bytearray(bootstrap=True):
         _unimplemented()
 
     def rstrip(self, bytes=None):
-        _unimplemented()
+        pass
 
     def split(self, sep=None, maxsplit=-1):
         _unimplemented()
@@ -1647,7 +1647,7 @@ class bytearray(bootstrap=True):
         return False
 
     def strip(self, bytes=None):
-        _unimplemented()
+        pass
 
     def swapcase(self):
         _unimplemented()
@@ -1903,7 +1903,7 @@ class bytes(bootstrap=True):
         _unimplemented()
 
     def lstrip(self, bytes=None):
-        _unimplemented()
+        pass
 
     @staticmethod
     def maketrans(frm, to) -> bytes:
@@ -1958,7 +1958,7 @@ class bytes(bootstrap=True):
         _unimplemented()
 
     def rstrip(self, bytes=None):
-        _unimplemented()
+        pass
 
     def split(self, sep=None, maxsplit=-1):
         _bytes_guard(self)
@@ -1984,7 +1984,7 @@ class bytes(bootstrap=True):
         return False
 
     def strip(self, bytes=None):
-        _unimplemented()
+        pass
 
     def swapcase(self):
         _unimplemented()

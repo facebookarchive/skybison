@@ -44,6 +44,9 @@ const BuiltinMethod ByteArrayBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderRepr, dunderRepr},
     {SymbolId::kHex, hex},
+    {SymbolId::kLStrip, lstrip},
+    {SymbolId::kRStrip, rstrip},
+    {SymbolId::kStrip, strip},
     {SymbolId::kTranslate, translate},
     {SymbolId::kSentinelId, nullptr},
 };
@@ -611,6 +614,108 @@ RawObject ByteArrayBuiltins::hex(Thread* thread, Frame* frame, word nargs) {
   ByteArray self(&scope, *obj);
   Bytes bytes(&scope, self.bytes());
   return bytesHex(thread, bytes, self.numItems());
+}
+
+RawObject ByteArrayBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+  }
+  ByteArray self(&scope, *self_obj);
+  Bytes self_bytes(&scope, self.bytes());
+  Object chars_obj(&scope, args.get(1));
+  Bytes result_bytes(&scope, Bytes::empty());
+  if (chars_obj.isNoneType()) {
+    result_bytes = bytesStripSpaceLeft(thread, self_bytes, self.numItems());
+  } else if (runtime->isInstanceOfBytes(*chars_obj)) {
+    Bytes chars(&scope, bytesUnderlying(thread, chars_obj));
+    result_bytes = bytesStripLeft(thread, self_bytes, self.numItems(), chars,
+                                  chars.length());
+  } else if (runtime->isInstanceOfByteArray(*chars_obj)) {
+    ByteArray chars(&scope, *chars_obj);
+    Bytes chars_bytes(&scope, chars.bytes());
+    result_bytes = bytesStripLeft(thread, self_bytes, self.numItems(),
+                                  chars_bytes, chars.numItems());
+  } else {
+    // TODO(T38246066): support bytes-like objects other than bytes, bytearray
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "a bytes-like object is required, not '%T'",
+                                &chars_obj);
+  }
+  ByteArray result(&scope, runtime->newByteArray());
+  runtime->byteArrayIadd(thread, result, result_bytes, result_bytes.length());
+  return *result;
+}
+
+RawObject ByteArrayBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+  }
+  ByteArray self(&scope, *self_obj);
+  Bytes self_bytes(&scope, self.bytes());
+  Object chars_obj(&scope, args.get(1));
+  Bytes result_bytes(&scope, Bytes::empty());
+  if (chars_obj.isNoneType()) {
+    result_bytes = bytesStripSpaceRight(thread, self_bytes, self.numItems());
+  } else if (runtime->isInstanceOfBytes(*chars_obj)) {
+    Bytes chars(&scope, bytesUnderlying(thread, chars_obj));
+    result_bytes = bytesStripRight(thread, self_bytes, self.numItems(), chars,
+                                   chars.length());
+  } else if (runtime->isInstanceOfByteArray(*chars_obj)) {
+    ByteArray chars(&scope, *chars_obj);
+    Bytes chars_bytes(&scope, chars.bytes());
+    result_bytes = bytesStripRight(thread, self_bytes, self.numItems(),
+                                   chars_bytes, chars.numItems());
+  } else {
+    // TODO(T38246066): support bytes-like objects other than bytes, bytearray
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "a bytes-like object is required, not '%T'",
+                                &chars_obj);
+  }
+  ByteArray result(&scope, runtime->newByteArray());
+  runtime->byteArrayIadd(thread, result, result_bytes, result_bytes.length());
+  return *result;
+}
+
+RawObject ByteArrayBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+  }
+  ByteArray self(&scope, *self_obj);
+  Bytes self_bytes(&scope, self.bytes());
+  Object chars_obj(&scope, args.get(1));
+  Bytes result_bytes(&scope, Bytes::empty());
+  if (chars_obj.isNoneType()) {
+    result_bytes = bytesStripSpace(thread, self_bytes, self.numItems());
+  } else if (runtime->isInstanceOfBytes(*chars_obj)) {
+    Bytes chars(&scope, bytesUnderlying(thread, chars_obj));
+    result_bytes =
+        bytesStrip(thread, self_bytes, self.numItems(), chars, chars.length());
+  } else if (runtime->isInstanceOfByteArray(*chars_obj)) {
+    ByteArray chars(&scope, *chars_obj);
+    Bytes chars_bytes(&scope, chars.bytes());
+    result_bytes = bytesStrip(thread, self_bytes, self.numItems(), chars_bytes,
+                              chars.numItems());
+  } else {
+    // TODO(T38246066): support bytes-like objects other than bytes, bytearray
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "a bytes-like object is required, not '%T'",
+                                &chars_obj);
+  }
+  ByteArray result(&scope, runtime->newByteArray());
+  runtime->byteArrayIadd(thread, result, result_bytes, result_bytes.length());
+  return *result;
 }
 
 RawObject ByteArrayBuiltins::translate(Thread* thread, Frame* frame,

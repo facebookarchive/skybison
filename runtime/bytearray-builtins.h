@@ -43,6 +43,9 @@ class ByteArrayBuiltins
   static RawObject dunderRepr(Thread* thread, Frame* frame, word nargs);
 
   static RawObject hex(Thread* thread, Frame* frame, word nargs);
+  static RawObject lstrip(Thread* thread, Frame* frame, word nargs);
+  static RawObject rstrip(Thread* thread, Frame* frame, word nargs);
+  static RawObject strip(Thread* thread, Frame* frame, word nargs);
   static RawObject translate(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinAttribute kAttributes[];

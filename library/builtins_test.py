@@ -690,6 +690,31 @@ class ByteArrayTests(unittest.TestCase):
             str(context.exception),
         )
 
+    def test_lstrip_with_non_byteslike_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytearray().lstrip("")
+        self.assertEqual(
+            str(context.exception), "a bytes-like object is required, not 'str'"
+        )
+
+    def test_lstrip_with_none_or_default_strips_ascii_space(self):
+        self.assertEqual(bytearray().lstrip(None), b"")
+        self.assertEqual(bytearray(b"    ").lstrip(None), b"")
+        self.assertEqual(bytearray(b"  hi  ").lstrip(), b"hi  ")
+
+    def test_lstrip_with_byteslike_strips_bytes(self):
+        self.assertEqual(bytearray().lstrip(b"123"), b"")
+        self.assertEqual(bytearray(b"1aaa1").lstrip(bytearray()), b"1aaa1")
+        self.assertEqual(bytearray(b"1 aaa1").lstrip(bytearray(b" 1")), b"aaa1")
+        self.assertEqual(bytearray(b"hello").lstrip(b"ho"), b"ello")
+
+    def test_lstrip_noop_returns_new_bytearray(self):
+        arr = bytearray(b"abcd")
+        result = arr.lstrip(b"e")
+        self.assertIsInstance(result, bytearray)
+        self.assertEqual(result, arr)
+        self.assertIsNot(result, arr)
+
     def test_rfind_with_bytes_self_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             bytearray.rfind(b"", bytearray())
@@ -804,6 +829,31 @@ class ByteArrayTests(unittest.TestCase):
             haystack.rindex(needle, 0, 2)
         self.assertEqual(str(context.exception), "subsection not found")
 
+    def test_rstrip_with_non_byteslike_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytearray().rstrip("")
+        self.assertEqual(
+            str(context.exception), "a bytes-like object is required, not 'str'"
+        )
+
+    def test_rstrip_with_none_or_default_strips_ascii_space(self):
+        self.assertEqual(bytearray().rstrip(None), b"")
+        self.assertEqual(bytearray(b"    ").rstrip(None), b"")
+        self.assertEqual(bytearray(b"  hi  ").rstrip(), b"  hi")
+
+    def test_rstrip_with_byteslike_strips_bytes(self):
+        self.assertEqual(bytearray().rstrip(b"123"), b"")
+        self.assertEqual(bytearray(b"1aaa1").rstrip(bytearray()), b"1aaa1")
+        self.assertEqual(bytearray(b"1 aaa1").rstrip(bytearray(b" 1")), b"1 aaa")
+        self.assertEqual(bytearray(b"hello").rstrip(b"lo"), b"he")
+
+    def test_rstrip_noop_returns_new_bytearray(self):
+        arr = bytearray(b"abcd")
+        result = arr.rstrip(b"e")
+        self.assertIsInstance(result, bytearray)
+        self.assertEqual(result, arr)
+        self.assertIsNot(result, arr)
+
     def test_startswith_with_bytes_self_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             bytearray.startswith(b"", bytearray())
@@ -846,6 +896,31 @@ class ByteArrayTests(unittest.TestCase):
         haystack = bytearray(b"12345")
         self.assertFalse(haystack.startswith(b"", 3, 2))
         self.assertFalse(haystack.startswith(bytearray(), 6))
+
+    def test_strip_with_non_byteslike_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytearray().strip("")
+        self.assertEqual(
+            str(context.exception), "a bytes-like object is required, not 'str'"
+        )
+
+    def test_strip_with_none_or_default_strips_ascii_space(self):
+        self.assertEqual(bytearray().strip(None), b"")
+        self.assertEqual(bytearray(b"     ").strip(None), b"")
+        self.assertEqual(bytearray(b"  h i  ").strip(), b"h i")
+
+    def test_strip_with_byteslike_strips_bytes(self):
+        self.assertEqual(bytearray().strip(b"123"), b"")
+        self.assertEqual(bytearray(b"1aaa1").strip(bytearray()), b"1aaa1")
+        self.assertEqual(bytearray(b"1 aaa1").strip(bytearray(b" 1")), b"aaa")
+        self.assertEqual(bytearray(b"hello").strip(b"ho"), b"ell")
+
+    def test_strip_noop_returns_new_bytearray(self):
+        arr = bytearray(b"abcd")
+        result = arr.strip(b"e")
+        self.assertIsInstance(result, bytearray)
+        self.assertEqual(result, arr)
+        self.assertIsNot(result, arr)
 
 
 class BytesTests(unittest.TestCase):
@@ -1204,6 +1279,24 @@ class BytesTests(unittest.TestCase):
             str(context.exception),
         )
 
+    def test_lstrip_with_non_byteslike_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            b"".lstrip("")
+        self.assertEqual(
+            str(context.exception), "a bytes-like object is required, not 'str'"
+        )
+
+    def test_lstrip_with_none_or_default_strips_ascii_space(self):
+        self.assertEqual(b"".lstrip(None), b"")
+        self.assertEqual(b"      ".lstrip(None), b"")
+        self.assertEqual(b"  hi  ".lstrip(), b"hi  ")
+
+    def test_lstrip_with_byteslike_strips_bytes(self):
+        self.assertEqual(b"".lstrip(b"123"), b"")
+        self.assertEqual(b"1aaa1".lstrip(bytearray()), b"1aaa1")
+        self.assertEqual(b"1 aaa1".lstrip(bytearray(b" 1")), b"aaa1")
+        self.assertEqual(b"hello".lstrip(b"eho"), b"llo")
+
     def test_rfind_with_bytearray_self_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             bytes.rfind(bytearray(), b"")
@@ -1318,6 +1411,24 @@ class BytesTests(unittest.TestCase):
             haystack.rindex(needle, 0, 2)
         self.assertEqual(str(context.exception), "subsection not found")
 
+    def test_rstrip_with_non_byteslike_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            b"".rstrip("")
+        self.assertEqual(
+            str(context.exception), "a bytes-like object is required, not 'str'"
+        )
+
+    def test_rstrip_with_none_or_default_strips_ascii_space(self):
+        self.assertEqual(b"".rstrip(None), b"")
+        self.assertEqual(b"      ".rstrip(None), b"")
+        self.assertEqual(b"  hi  ".rstrip(), b"  hi")
+
+    def test_rstrip_with_byteslike_strips_bytes(self):
+        self.assertEqual(b"".rstrip(b"123"), b"")
+        self.assertEqual(b"1aaa1".rstrip(bytearray()), b"1aaa1")
+        self.assertEqual(b"1aa a1".rstrip(bytearray(b" 1")), b"1aa a")
+        self.assertEqual(b"hello".rstrip(b"lo"), b"he")
+
     def test_split_with_non_bytes_self_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             bytes.split("foo bar")
@@ -1423,6 +1534,24 @@ class BytesTests(unittest.TestCase):
         haystack = b"12345"
         self.assertFalse(haystack.startswith(b"", 3, 2))
         self.assertFalse(haystack.startswith(bytearray(), 6))
+
+    def test_strip_with_non_byteslike_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            b"".strip("")
+        self.assertEqual(
+            str(context.exception), "a bytes-like object is required, not 'str'"
+        )
+
+    def test_strip_with_none_or_default_strips_ascii_space(self):
+        self.assertEqual(b"".strip(None), b"")
+        self.assertEqual(b"    ".strip(None), b"")
+        self.assertEqual(b"  hi  ".strip(), b"hi")
+
+    def test_strip_with_byteslike_strips_bytes(self):
+        self.assertEqual(b"".strip(b"123"), b"")
+        self.assertEqual(b"1aaa1".strip(bytearray()), b"1aaa1")
+        self.assertEqual(b"1 aaa1".strip(bytearray(b" 1")), b"aaa")
+        self.assertEqual(b"hello".strip(b"ho"), b"ell")
 
 
 class ChrTests(unittest.TestCase):
