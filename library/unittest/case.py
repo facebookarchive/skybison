@@ -1021,11 +1021,9 @@ class TestCase(object):
                     differing += ('Unable to index element %d '
                                   'of second %s\n' % (len1, seq_type_name))
         standardMsg = differing
-        # TODO(T42594791): Enable difflib and pprint
-        # diffMsg = '\n' + '\n'.join(
-        #     difflib.ndiff(pprint.pformat(seq1).splitlines(),
-        #                   pprint.pformat(seq2).splitlines()))
-        diffMsg = '\n' + '\n'
+        diffMsg = '\n' + '\n'.join(
+            difflib.ndiff(pprint.pformat(seq1).splitlines(),
+                          pprint.pformat(seq2).splitlines()))
 
         standardMsg = self._truncateMessage(standardMsg, diffMsg)
         msg = self._formatMessage(msg, standardMsg)
@@ -1136,11 +1134,9 @@ class TestCase(object):
 
         if d1 != d2:
             standardMsg = '%s != %s' % _common_shorten_repr(d1, d2)
-            # TODO(T42594791): Enable difflib and pprint
-            # diff = ('\n' + '\n'.join(difflib.ndiff(
-            #                pprint.pformat(d1).splitlines(),
-            #                pprint.pformat(d2).splitlines())))
-            diff = '\n' + '\n'
+            diff = ('\n' + '\n'.join(difflib.ndiff(
+                           pprint.pformat(d1).splitlines(),
+                           pprint.pformat(d2).splitlines())))
             standardMsg = self._truncateMessage(standardMsg, diff)
             self.fail(self._formatMessage(msg, standardMsg))
 
@@ -1222,9 +1218,7 @@ class TestCase(object):
                 firstlines = [first + '\n']
                 secondlines = [second + '\n']
             standardMsg = '%s != %s' % _common_shorten_repr(first, second)
-            # TODO(T42594791): Enable difflib and pprint
-            # diff = '\n' + ''.join(difflib.ndiff(firstlines, secondlines))
-            diff = '\n'
+            diff = '\n' + ''.join(difflib.ndiff(firstlines, secondlines))
             standardMsg = self._truncateMessage(standardMsg, diff)
             self.fail(self._formatMessage(msg, standardMsg))
 
