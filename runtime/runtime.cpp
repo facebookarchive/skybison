@@ -4210,12 +4210,12 @@ bool Runtime::isSubclass(const Type& subclass, const Type& superclass) {
 }
 
 void* Runtime::nativeProxyPtr(RawObject object) {
-  DCHECK(isInstanceOfNativeProxy(object), "Must have a NativeProxy layout");
+  DCHECK(isNativeProxy(object), "Must have a NativeProxy layout");
   return Int::cast(object.rawCast<RawNativeProxy>().native()).asCPtr();
 }
 
 void Runtime::setNativeProxyPtr(RawObject object, void* c_ptr) {
-  DCHECK(isInstanceOfNativeProxy(object), "Must have a NativeProxy layout");
+  DCHECK(isNativeProxy(object), "Must have a NativeProxy layout");
   DCHECK(c_ptr != nullptr, "The native instance must have a valid address");
   object.rawCast<RawNativeProxy>().setNative(newIntFromCPtr(c_ptr));
 }

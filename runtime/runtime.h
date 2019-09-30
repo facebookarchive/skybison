@@ -726,7 +726,7 @@ class Runtime {
   DEFINE_IS_USER_INSTANCE(Tuple)
 #undef DEFINE_IS_USER_INSTANCE
 
-  bool isInstanceOfNativeProxy(RawObject obj) {
+  bool isNativeProxy(RawObject obj) {
     return typeOf(obj).rawCast<RawType>().hasFlag(
         RawType::Flag::kIsNativeProxy);
   }

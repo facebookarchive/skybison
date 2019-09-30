@@ -672,7 +672,7 @@ RawObject RawWeakRef::spliceQueue(RawObject tail1, RawObject tail2) {
 // RawNativeProxy
 
 void RawNativeProxy::enqueueReference(RawObject reference, RawObject* tail) {
-  DCHECK(Thread::current()->runtime()->isInstanceOfNativeProxy(reference),
+  DCHECK(Thread::current()->runtime()->isNativeProxy(reference),
          "Must have a NativeProxy layout");
   if (*tail == RawNoneType::object()) {
     reference.rawCast<RawNativeProxy>().setLink(reference);
@@ -686,7 +686,7 @@ void RawNativeProxy::enqueueReference(RawObject reference, RawObject* tail) {
 
 RawObject RawNativeProxy::dequeueReference(RawObject* tail) {
   DCHECK(*tail != RawNoneType::object(), "empty queue");
-  DCHECK(Thread::current()->runtime()->isInstanceOfNativeProxy(*tail),
+  DCHECK(Thread::current()->runtime()->isNativeProxy(*tail),
          "Must have a NativeProxy layout");
   RawObject head = (*tail).rawCast<RawNativeProxy>().link();
   if (head == *tail) {
