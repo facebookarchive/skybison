@@ -474,9 +474,9 @@ gettmarg(PyObject *args, struct tm *p)
 #ifdef HAVE_STRUCT_TM_TM_ZONE
     if (Py_TYPE(args) == (PyTypeObject *)timestate_global->StructTimeType) {
         PyObject *item;
-        item = PyTuple_GET_ITEM(args, 9);
+        item = PyStructSequence_GET_ITEM(args, 9);
         p->tm_zone = item == Py_None ? NULL : PyUnicode_AsUTF8(item);
-        item = PyTuple_GET_ITEM(args, 10);
+        item = PyStructSequence_GET_ITEM(args, 10);
         p->tm_gmtoff = item == Py_None ? 0 : PyLong_AsLong(item);
         if (PyErr_Occurred())
             return 0;
