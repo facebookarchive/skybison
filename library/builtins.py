@@ -53,7 +53,6 @@ _dict_guard = _dict_guard  # noqa: F821
 _dict_lookup = _dict_lookup  # noqa: F821
 _dict_lookup_next = _dict_lookup_next  # noqa: F821
 _dict_popitem = _dict_popitem  # noqa: F821
-_dict_update_mapping = _dict_update_mapping  # noqa: F821
 _divmod = _divmod  # noqa: F821
 _float_check = _float_check  # noqa: F821
 _float_divmod = _float_divmod  # noqa: F821
@@ -2171,7 +2170,9 @@ class dict(bootstrap=True):
         if seq is _Unbound:
             return
         if hasattr(seq, "keys"):
-            return _dict_update_mapping(self, seq)
+            for key in seq.keys():
+                dict.__setitem__(self, key, seq[key])
+            return None
         num_items = 0
         for x in iter(seq):
             item = tuple(x)

@@ -120,7 +120,6 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderDictLookup, underDictLookup},
     {SymbolId::kUnderDictLookupNext, underDictLookupNext},
     {SymbolId::kUnderDictPopitem, underDictPopitem},
-    {SymbolId::kUnderDictUpdateMapping, underDictUpdateMapping},
     {SymbolId::kUnderDivmod, underDivmod},
     {SymbolId::kUnderFloatCheck, underFloatCheck},
     {SymbolId::kUnderFloatDivmod, underFloatDivmod},
@@ -1527,22 +1526,6 @@ RawObject UnderBuiltinsModule::underDictPopitem(Thread* thread, Frame* frame,
   Dict::Bucket::setTombstone(*data, index);
   dict.setNumItems(dict.numItems() - 1);
   return *result;
-}
-
-RawObject UnderBuiltinsModule::underDictUpdateMapping(Thread* thread,
-                                                      Frame* frame,
-                                                      word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object self_obj(&scope, args.get(0));
-  Object other(&scope, args.get(1));
-  Runtime* runtime = thread->runtime();
-  DCHECK(runtime->isInstanceOfDict(*self_obj), "self must be instance of dict");
-  Type other_type(&scope, runtime->typeOf(*other));
-  DCHECK(!typeLookupInMroById(thread, other_type, SymbolId::kKeys).isError(),
-         "other must have 'keys' method");
-  Dict self(&scope, *self_obj);
-  return dictMergeOverride(thread, self, other);
 }
 
 RawObject UnderBuiltinsModule::underDivmod(Thread* thread, Frame* frame,

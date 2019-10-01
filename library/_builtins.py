@@ -248,13 +248,6 @@ def _dict_popitem(self):
     pass
 
 
-# TODO(T43319065): Re-write the non-dict-dict case in managed code in
-# dict.update
-@_patch
-def _dict_update_mapping(self, seq):
-    pass
-
-
 @_patch
 def _divmod(number, divisor):
     pass

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import unittest
 import warnings
+from unittest.mock import Mock
 
 from test_support import pyro_only
 
@@ -1799,6 +1800,51 @@ class DictTests(unittest.TestCase):
             "dictionary update sequence element #1 has length 3; 2 is required",
             str(context.exception),
         )
+
+    def test_update_with_keys_attribute_calls_keys_method(self):
+        class C:
+            keys = Mock(name="keys", return_value=())
+
+        c = C()
+        {}.update(c)
+        c.keys.assert_called_once()
+
+    def test_update_with_keys_instance_attribute_calls_keys(self):
+        class C:
+            pass
+
+        d = {}
+        c = C()
+        c.keys = Mock(name="keys", return_value=())
+        d.update(c)
+        c.keys.assert_called_once()
+
+    def test_update_with_keys_calls_dunder_iter_on_result(self):
+        class D:
+            __iter__ = Mock(name="__iter__", return_value=[].__iter__())
+
+        iterable = D()
+
+        class C:
+            keys = Mock(name="keys", return_value=iterable)
+
+        c = C()
+        {}.update(c)
+        iterable.__iter__.assert_called_once()
+
+    def test_update_with_keys_attribute_calls_getitem_with_key(self):
+        class C:
+            def keys(self):
+                return ("foo", "bar")
+
+            __getitem__ = Mock(name="__getitem__", return_value="baz")
+
+        d = {}
+        c = C()
+        d.update(c)
+        self.assertEqual(c.__getitem__.call_count, 2)
+        self.assertEqual(d["foo"], "baz")
+        self.assertEqual(d["bar"], "baz")
 
     def test_dunder_delitem_with_none_dunder_hash(self):
         class C:
