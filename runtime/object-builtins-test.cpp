@@ -433,6 +433,128 @@ TEST_F(ObjectBuiltinsTest,
   EXPECT_EQ(instance.layoutId(), layout.id());
 }
 
+TEST_F(ObjectBuiltinsTest,
+       InstanceGetAttributeWithInObjectAttributeReturnsValue) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C:
+  def __init__(self):
+    self.foo = 42
+instance = C()
+)")
+                   .isError());
+  Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
+  Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
+  ASSERT_TRUE(layout.hasTupleOverflow());
+  Str name(&scope, runtime_.internStrFromCStr(thread_, "foo"));
+  AttributeInfo info;
+  ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
+  ASSERT_TRUE(info.isInObject());
+
+  EXPECT_TRUE(
+      isIntEqualsWord(instanceGetAttribute(thread_, instance, name), 42));
+}
+
+TEST_F(ObjectBuiltinsTest,
+       InstanceGetAttributeWithTupleOverflowAttributeReturnsValue) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C: pass
+instance = C()
+instance.foo = 42
+)")
+                   .isError());
+  Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
+  Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
+  ASSERT_TRUE(layout.hasTupleOverflow());
+  Str name(&scope, runtime_.internStrFromCStr(thread_, "foo"));
+  AttributeInfo info;
+  ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
+  ASSERT_TRUE(info.isOverflow());
+
+  EXPECT_TRUE(
+      isIntEqualsWord(instanceGetAttribute(thread_, instance, name), 42));
+}
+
+TEST_F(ObjectBuiltinsTest,
+       InstanceGetAttributeWithDictOverflowAttributeReturnsValue) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+def instance(): pass
+instance.foo = 42
+)")
+                   .isError());
+  HeapObject instance(&scope, mainModuleAt(&runtime_, "instance"));
+  Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
+  ASSERT_TRUE(layout.hasDictOverflow());
+  Str name(&scope, runtime_.internStrFromCStr(thread_, "foo"));
+  AttributeInfo info;
+  ASSERT_FALSE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
+
+  EXPECT_TRUE(
+      isIntEqualsWord(instanceGetAttribute(thread_, instance, name), 42));
+}
+
+TEST_F(
+    ObjectBuiltinsTest,
+    InstanceGetAttributeWithNonExistentAttributeDictOverflowReturnsErrorNotFound) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+def instance(): pass
+)")
+                   .isError());
+  HeapObject instance(&scope, mainModuleAt(&runtime_, "instance"));
+  Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
+  ASSERT_TRUE(layout.hasDictOverflow());
+  Str name(&scope, runtime_.internStrFromCStr(thread_, "does_not_exist"));
+  EXPECT_TRUE(instanceGetAttribute(thread_, instance, name).isErrorNotFound());
+}
+
+TEST_F(ObjectBuiltinsTest, InstanceSetAttrSetsInObjectAttribute) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C:
+  def __init__(self, set_value):
+    if set_value:
+      self.foo = 42
+instance = C(False)
+)")
+                   .isError());
+  Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
+  Str name(&scope, runtime_.internStrFromCStr(thread_, "bar"));
+  Object value(&scope, runtime_.newInt(-7));
+  EXPECT_TRUE(instanceSetAttr(thread_, instance, name, value).isNoneType());
+
+  Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
+  AttributeInfo info;
+  ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
+  ASSERT_TRUE(info.isInObject());
+
+  EXPECT_TRUE(
+      isIntEqualsWord(instanceGetAttribute(thread_, instance, name), -7));
+}
+
+TEST_F(ObjectBuiltinsTest, InstanceSetAttrSetsTupleOverflowAttribute) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C: pass
+instance = C()
+)")
+                   .isError());
+  Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
+  Str name(&scope, runtime_.internStrFromCStr(thread_, "bar"));
+  Object value(&scope, runtime_.newInt(-14));
+  EXPECT_TRUE(instanceSetAttr(thread_, instance, name, value).isNoneType());
+
+  Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
+  AttributeInfo info;
+  ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
+  ASSERT_TRUE(info.isOverflow());
+
+  EXPECT_TRUE(
+      isIntEqualsWord(instanceGetAttribute(thread_, instance, name), -14));
+}
+
 TEST_F(ObjectBuiltinsTest, ObjectGetAttributeReturnsInstanceValue) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
