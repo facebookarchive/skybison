@@ -317,6 +317,40 @@ TEST_F(UnicodeExtensionApiTest,
   PyMem_Free(ucs4_string);
 }
 
+TEST_F(UnicodeExtensionApiTest, AsWideCharStringWithNullptrRaisesInternalCall) {
+  EXPECT_EQ(_PyUnicode_AsWideCharString(nullptr), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       AsWideCharStringWithNonStringRaisesBadArgument) {
+  PyObjectPtr not_string(PyTuple_New(0));
+  EXPECT_EQ(_PyUnicode_AsWideCharString(not_string), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       AsWideCharStringWithNonASCIIStringReturnsNullTerminatedBuffer) {
+  PyObjectPtr unicode(PyUnicode_FromString("ab\xc3\xa5"));
+  wchar_t* wide_string = _PyUnicode_AsWideCharString(unicode);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ('a', wide_string[0]);
+  EXPECT_EQ('b', wide_string[1]);
+  EXPECT_EQ(0xe5, wide_string[2]);
+  EXPECT_EQ(0, wide_string[3]);
+  PyMem_Free(wide_string);
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       AsWideCharStringWithEmbeddedNullRaisesValueError) {
+  PyObjectPtr unicode(PyUnicode_FromStringAndSize("ab\0c", 4));
+  EXPECT_EQ(nullptr, _PyUnicode_AsWideCharString(unicode));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
 TEST_F(UnicodeExtensionApiTest, CheckWithStrReturnsTrue) {
   PyObjectPtr str(PyUnicode_FromString("ab\u00e4p"));
   EXPECT_TRUE(PyUnicode_Check(str));

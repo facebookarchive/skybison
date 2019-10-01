@@ -911,8 +911,38 @@ PY_EXPORT Py_ssize_t PyUnicode_AsWideChar(PyObject* /* e */, wchar_t* /* w */,
   UNIMPLEMENTED("PyUnicode_AsWideChar");
 }
 
-PY_EXPORT wchar_t* _PyUnicode_AsWideCharString(PyObject* /* unicodee */) {
-  UNIMPLEMENTED("_PyUnicode_AsWideCharString");
+PY_EXPORT wchar_t* _PyUnicode_AsWideCharString(PyObject* unicode) {
+  Thread* thread = Thread::current();
+  if (unicode == nullptr) {
+    thread->raiseBadInternalCall();
+    return nullptr;
+  }
+  HandleScope scope(thread);
+  Object unicode_obj(&scope, ApiHandle::fromPyObject(unicode)->asObject());
+  if (!thread->runtime()->isInstanceOfStr(*unicode_obj)) {
+    thread->raiseBadArgument();
+    return nullptr;
+  }
+  Str unicode_str(&scope, strUnderlying(thread, unicode_obj));
+  word len = unicode_str.codePointLength();
+  wchar_t* buf =
+      static_cast<wchar_t*>(PyMem_Malloc((len + 1) * sizeof(wchar_t)));
+  for (word i = 0; i < len; ++i) {
+    word temp;
+    int32_t cp = unicode_str.codePointAt(i, &temp);
+    if (cp == '\0') {
+      PyMem_Free(buf);
+      thread->raiseWithFmt(LayoutId::kValueError, "embedded null character");
+      return nullptr;
+    }
+#if !defined(__STDC_ISO_10646__) && !defined(__APPLE__)
+#error Need guarantee that wchar_t contains UTF-32
+#endif
+    static_assert(sizeof(wchar_t) == sizeof(cp), "Requires 32bit wchar_t");
+    buf[i] = static_cast<wchar_t>(cp);
+  }
+  buf[len] = '\0';
+  return buf;
 }
 
 PY_EXPORT wchar_t* PyUnicode_AsWideCharString(PyObject* /* e */,
