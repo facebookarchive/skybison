@@ -818,9 +818,7 @@ requires_lzma = unittest.skipUnless(lzma, 'requires lzma')
 
 is_jython = sys.platform.startswith('java')
 
-# TODO(T53108940): Implement open
-#_ANDROID_API_LEVEL = sysconfig.get_config_var('ANDROID_API_LEVEL')
-_ANDROID_API_LEVEL = 0
+_ANDROID_API_LEVEL = sysconfig.get_config_var('ANDROID_API_LEVEL')
 is_android = (_ANDROID_API_LEVEL is not None and _ANDROID_API_LEVEL > 0)
 
 if sys.platform != 'win32':
@@ -2048,11 +2046,9 @@ def run_unittest(*classes):
 def _check_docstrings():
     """Just used to check if docstrings are enabled"""
 
-# TODO(T53108940): Implement open
-#MISSING_C_DOCSTRINGS = (check_impl_detail() and
-#                        sys.platform != 'win32' and
-#                        not sysconfig.get_config_var('WITH_DOC_STRINGS'))
-MISSING_C_DOCSTRINGS = False
+MISSING_C_DOCSTRINGS = (check_impl_detail() and
+                        sys.platform != 'win32' and
+                        not sysconfig.get_config_var('WITH_DOC_STRINGS'))
 
 HAVE_DOCSTRINGS = (_check_docstrings.__doc__ is not None and
                    not MISSING_C_DOCSTRINGS)
