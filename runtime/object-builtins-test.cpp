@@ -333,6 +333,106 @@ TEST_F(NoneBuiltinsTest, BuiltinBaseIsNone) {
   EXPECT_EQ(none_type.builtinBase(), LayoutId::kNoneType);
 }
 
+TEST_F(ObjectBuiltinsTest,
+       InstanceDelAttrWithInObjectAttributeDeletesAttribute) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C:
+  def __init__(self):
+    self.foo = 42
+instance = C()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
+  Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
+  Str name(&scope, runtime_.internStrFromCStr(thread_, "foo"));
+  AttributeInfo info;
+  ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
+  ASSERT_TRUE(info.isInObject());
+
+  EXPECT_TRUE(instanceDelAttr(thread_, instance, name).isNoneType());
+  EXPECT_TRUE(instanceGetAttribute(thread_, instance, name).isErrorNotFound());
+  EXPECT_TRUE(instanceDelAttr(thread_, instance, name).isErrorNotFound());
+}
+
+TEST_F(ObjectBuiltinsTest,
+       InstanceDelAttrWithTupleOverflowAttributeDeletesAttribute) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C: pass
+instance = C()
+instance.foo = 42
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
+  Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
+  Str name(&scope, runtime_.internStrFromCStr(thread_, "foo"));
+  AttributeInfo info;
+  ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
+  ASSERT_TRUE(info.isOverflow());
+
+  EXPECT_TRUE(instanceDelAttr(thread_, instance, name).isNoneType());
+  EXPECT_TRUE(instanceGetAttribute(thread_, instance, name).isErrorNotFound());
+  EXPECT_TRUE(instanceDelAttr(thread_, instance, name).isErrorNotFound());
+}
+
+TEST_F(ObjectBuiltinsTest,
+       InstanceDelAttrWithNonexistentAttributeReturnsErrorNotFound) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C: pass
+instance = C()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
+  Str name(&scope, runtime_.internStrFromCStr(thread_, "does_not_exist"));
+  EXPECT_TRUE(instanceDelAttr(thread_, instance, name).isErrorNotFound());
+}
+
+TEST_F(ObjectBuiltinsTest,
+       InstanceDelAttrWithTupleOverflowAttributeKeepsOtherAttributes) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C: pass
+instance = C()
+instance.y = 2
+instance.z = 3
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
+  Str y(&scope, runtime_.internStrFromCStr(thread_, "y"));
+  Object result(&scope, instanceDelAttr(thread_, instance, y));
+  EXPECT_TRUE(instanceGetAttribute(thread_, instance, y).isErrorNotFound());
+  EXPECT_TRUE(result.isNoneType());
+  Str z(&scope, runtime_.internStrFromCStr(thread_, "z"));
+  EXPECT_TRUE(isIntEqualsWord(instanceGetAttribute(thread_, instance, z), 3));
+}
+
+TEST_F(ObjectBuiltinsTest,
+       InstanceDelAttrWithReadonlyAttributeRaisesAttributeError) {
+  HandleScope scope(thread_);
+  BuiltinAttribute attrs[] = {
+      {SymbolId::kDunderGlobals, 0, AttributeFlags::kReadOnly},
+      {SymbolId::kSentinelId, -1},
+  };
+  BuiltinMethod builtins[] = {
+      {SymbolId::kSentinelId, nullptr},
+  };
+  LayoutId layout_id = runtime_.reserveLayoutId(thread_);
+  Type type(&scope,
+            runtime_.addBuiltinType(SymbolId::kVersion, layout_id,
+                                    LayoutId::kObject, attrs, builtins));
+  Layout layout(&scope, type.instanceLayout());
+  runtime_.layoutAtPut(layout_id, *layout);
+  Instance instance(&scope, runtime_.newInstance(layout));
+  Str attribute_name(&scope,
+                     runtime_.internStrFromCStr(thread_, "__globals__"));
+  EXPECT_TRUE(raisedWithStr(instanceDelAttr(thread_, instance, attribute_name),
+                            LayoutId::kAttributeError,
+                            "'__globals__' attribute is read-only"));
+  EXPECT_EQ(instance.layoutId(), layout.id());
+}
+
 TEST_F(ObjectBuiltinsTest, ObjectGetAttributeReturnsInstanceValue) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
@@ -737,25 +837,6 @@ i.foo = 0
   Interpreter::storeAttrWithLocation(thread_, *i, *to_cache, *value2);
   EXPECT_TRUE(
       isIntEqualsWord(instanceGetAttribute(thread_, heap_object, name), 11));
-}
-
-TEST_F(ObjectBuiltinsTest,
-       InstanceDelWithOverflowAttributeKeepsOtherAttributes) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-class C: pass
-instance = C()
-instance.y = 2
-instance.z = 3
-)")
-                   .isError());
-  HandleScope scope(thread_);
-  HeapObject instance(&scope, mainModuleAt(&runtime_, "instance"));
-  Str y(&scope, runtime_.internStrFromCStr(thread_, "y"));
-  Object result(&scope, runtime_.instanceDel(thread_, instance, y));
-  EXPECT_TRUE(instanceGetAttribute(thread_, instance, y).isErrorNotFound());
-  EXPECT_TRUE(result.isNoneType());
-  Str z(&scope, runtime_.internStrFromCStr(thread_, "z"));
-  EXPECT_TRUE(isIntEqualsWord(instanceGetAttribute(thread_, instance, z), 3));
 }
 
 }  // namespace python

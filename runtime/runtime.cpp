@@ -433,7 +433,8 @@ RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
   HeapObject instance(&scope, *receiver);
   Str name_str(&scope, strUnderlying(thread, name));
   Str name_interned(&scope, internStr(thread, name_str));
-  Object result(&scope, instanceDel(thread, instance, name_interned));
+  Object result(&scope,
+                python::instanceDelAttr(thread, instance, name_interned));
   if (result.isErrorNotFound()) {
     Str type_name(&scope, type.name());
     return thread->raiseWithFmt(LayoutId::kAttributeError,
@@ -4287,40 +4288,6 @@ RawObject Runtime::layoutGetOverflowDict(Thread* thread,
   Object overflow(&scope, instance.instanceVariableAt(offset));
   DCHECK(overflow.isDict(), "layout dict overflow must be dict");
   return *overflow;
-}
-
-RawObject Runtime::instanceDel(Thread* thread, const HeapObject& instance,
-                               const Str& name_interned) {
-  HandleScope scope(thread);
-
-  // Remove the reference to the attribute value from the instance
-  Layout layout(&scope, layoutAt(instance.layoutId()));
-  AttributeInfo info;
-  if (!layoutFindAttribute(thread, layout, name_interned, &info)) {
-    return Error::notFound();
-  }
-
-  if (info.isReadOnly()) {
-    return thread->raiseWithFmt(LayoutId::kAttributeError,
-                                "'%S' attribute is read-only", &name_interned);
-  }
-
-  // Make the attribute invisible
-  Object new_layout(&scope,
-                    layoutDeleteAttribute(thread, layout, name_interned));
-  DCHECK(!new_layout.isError(), "should always find attribute here");
-  LayoutId new_layout_id = Layout::cast(*new_layout).id();
-  instance.setHeader(instance.header().withLayoutId(new_layout_id));
-
-  if (info.isInObject()) {
-    instance.instanceVariableAtPut(info.offset(), NoneType::object());
-  } else {
-    Tuple overflow(&scope, instance.instanceVariableAt(
-                               Layout::cast(*new_layout).overflowOffset()));
-    overflow.atPut(info.offset(), NoneType::object());
-  }
-
-  return NoneType::object();
 }
 
 RawObject Runtime::layoutFollowEdge(const List& edges, const Object& label) {

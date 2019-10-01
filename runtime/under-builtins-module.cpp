@@ -1808,7 +1808,7 @@ RawObject UnderBuiltinsModule::underInstanceDelattr(Thread* thread,
   Str name_str(&scope, strUnderlying(thread, name));
   Runtime* runtime = thread->runtime();
   Str name_interned(&scope, runtime->internStr(thread, name_str));
-  return runtime->instanceDel(thread, instance, name_interned);
+  return instanceDelAttr(thread, instance, name_interned);
 }
 
 RawObject UnderBuiltinsModule::underInstanceGetattr(Thread* thread,

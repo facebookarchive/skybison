@@ -629,14 +629,6 @@ class Runtime {
   RawObject attributeDel(Thread* thread, const Object& receiver,
                          const Object& name);
 
-  // Attribute deletion primitive for instances.
-  //
-  // This operates directly on the instance and does not respect Python
-  // semantics for attribute deletion. This handles mutating the layout if the
-  // attribute exists. Returns Error::object() if the attribute is not found.
-  RawObject instanceDel(Thread* thread, const HeapObject& instance,
-                        const Str& name_interned);
-
   // Looks up the named attribute in the layout.
   //
   // If the attribute is found this returns true and sets info.

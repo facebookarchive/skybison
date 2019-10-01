@@ -21,6 +21,41 @@ RawObject objectRaiseAttributeError(Thread* thread, const Object& object,
                               &name_str);
 }
 
+RawObject instanceDelAttr(Thread* thread, const HeapObject& instance,
+                          const Str& name_interned) {
+  HandleScope scope(thread);
+
+  // Remove the reference to the attribute value from the instance
+  Runtime* runtime = thread->runtime();
+  Layout layout(&scope, runtime->layoutAt(instance.layoutId()));
+  AttributeInfo info;
+  if (!runtime->layoutFindAttribute(thread, layout, name_interned, &info)) {
+    return Error::notFound();
+  }
+
+  if (info.isReadOnly()) {
+    return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                "'%S' attribute is read-only", &name_interned);
+  }
+
+  // Make the attribute invisible
+  Object new_layout(
+      &scope, runtime->layoutDeleteAttribute(thread, layout, name_interned));
+  DCHECK(!new_layout.isError(), "should always find attribute here");
+  LayoutId new_layout_id = Layout::cast(*new_layout).id();
+  instance.setHeader(instance.header().withLayoutId(new_layout_id));
+
+  if (info.isInObject()) {
+    instance.instanceVariableAtPut(info.offset(), NoneType::object());
+  } else {
+    Tuple overflow(&scope, instance.instanceVariableAt(
+                               Layout::cast(*new_layout).overflowOffset()));
+    overflow.atPut(info.offset(), NoneType::object());
+  }
+
+  return NoneType::object();
+}
+
 static RawObject instanceGetAttributeSetLocation(Thread* thread,
                                                  const HeapObject& object,
                                                  const Str& name_interned,

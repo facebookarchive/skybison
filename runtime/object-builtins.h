@@ -5,6 +5,9 @@
 
 namespace python {
 
+RawObject instanceDelAttr(Thread* thread, const HeapObject& instance,
+                          const Str& name_interned);
+
 RawObject instanceGetAttribute(Thread* thread, const HeapObject& object,
                                const Str& name_interned);
 
