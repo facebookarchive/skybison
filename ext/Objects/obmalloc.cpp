@@ -25,13 +25,13 @@ PY_EXPORT void* PyObject_Calloc(size_t nelem, size_t size) {
 PY_EXPORT void* PyObject_Realloc(void* ptr, size_t size) {
   if (ptr == nullptr) return PyObject_Malloc(size);
   ListEntry* entry = static_cast<ListEntry*>(ptr) - 1;
-  Thread::current()->runtime()->untrackNativeObject(entry);
+  bool removed = Thread::current()->runtime()->untrackNativeObject(entry);
   entry = static_cast<ListEntry*>(
       PyMem_RawRealloc(entry, sizeof(ListEntry) + size));
   entry->prev = nullptr;
   entry->next = nullptr;
-  if (!Thread::current()->runtime()->trackNativeObject(entry)) {
-    Py_FatalError("GC object already tracked");
+  if (removed) {
+    Thread::current()->runtime()->trackNativeObject(entry);
   }
   return reinterpret_cast<void*>(entry + 1);
 }

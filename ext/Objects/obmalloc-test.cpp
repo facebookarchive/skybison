@@ -53,4 +53,52 @@ TEST_F(ObmallocExtensionApiTest, MemResizeMovesContents) {
   PyMem_FREE(ptr);
 }
 
+TEST_F(ObmallocExtensionApiTest, MallocAllocatesMemory) {
+  void* ptr = PyObject_Malloc(1);
+  EXPECT_NE(ptr, nullptr);
+  PyObject_Free(ptr);
+}
+
+TEST_F(ObmallocExtensionApiTest, CallocAllocatesMemory) {
+  void* ptr = PyObject_Calloc(1, 1);
+  EXPECT_NE(ptr, nullptr);
+  PyObject_Free(ptr);
+}
+
+TEST_F(ObmallocExtensionApiTest, ReallocAllocatesMemory) {
+  auto* ptr = reinterpret_cast<char*>(PyObject_Malloc(1));
+  ASSERT_NE(ptr, nullptr);
+  *ptr = 98;
+  ptr = reinterpret_cast<char*>(PyObject_Realloc(ptr, 2));
+  ASSERT_NE(ptr, nullptr);
+  ptr[1] = 87;
+
+  EXPECT_EQ(*ptr, 98);
+  EXPECT_EQ(ptr[1], 87);
+  PyObject_Free(ptr);
+}
+
+TEST_F(ObmallocExtensionApiTest, ReallocOnlyRetracksPyObjects) {
+  auto* ptr = reinterpret_cast<char*>(PyObject_Malloc(1));
+  ASSERT_NE(ptr, nullptr);
+  *ptr = 98;
+
+  // Trigger a gc
+  PyRun_SimpleString(R"(
+try:
+  import _builtins
+  _builtins._gc()
+except:
+  pass
+)");
+
+  ptr = reinterpret_cast<char*>(PyObject_Realloc(ptr, 2));
+  ASSERT_NE(ptr, nullptr);
+  ptr[1] = 87;
+
+  EXPECT_EQ(*ptr, 98);
+  EXPECT_EQ(ptr[1], 87);
+  PyObject_Free(ptr);
+}
+
 }  // namespace python
