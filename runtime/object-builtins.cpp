@@ -30,6 +30,17 @@ RawObject instanceDelAttr(Thread* thread, const HeapObject& instance,
   Layout layout(&scope, runtime->layoutAt(instance.layoutId()));
   AttributeInfo info;
   if (!runtime->layoutFindAttribute(thread, layout, name_interned, &info)) {
+    if (layout.hasDictOverflow()) {
+      word offset = SmallInt::cast(layout.overflowAttributes()).value();
+      Object overflow_dict_obj(&scope, instance.instanceVariableAt(offset));
+      if (!overflow_dict_obj.isNoneType()) {
+        Dict overflow_dict(&scope, *overflow_dict_obj);
+        Object result(&scope, runtime->dictRemoveByStr(thread, overflow_dict,
+                                                       name_interned));
+        if (result.isError()) return *result;
+        return NoneType::object();
+      }
+    }
     return Error::notFound();
   }
 
@@ -78,16 +89,12 @@ static RawObject instanceGetAttributeSetLocation(Thread* thread,
     return overflow.at(info.offset());
   }
   if (layout.hasDictOverflow()) {
-    Dict overflow(&scope,
-                  runtime->layoutGetOverflowDict(thread, object, layout));
-    Object name_str_hash(&scope, Interpreter::hash(thread, name_interned));
-    if (name_interned.isErrorException()) return *name_str_hash;
-    Object obj(&scope,
-               runtime->dictAt(thread, overflow, name_interned, name_str_hash));
-    if (obj.isValueCell()) {
-      obj = ValueCell::cast(*obj).value();
+    word offset = SmallInt::cast(layout.overflowAttributes()).value();
+    Object overflow_dict_obj(&scope, object.instanceVariableAt(offset));
+    if (!overflow_dict_obj.isNoneType()) {
+      Dict overflow_dict(&scope, *overflow_dict_obj);
+      return runtime->dictAtByStr(thread, overflow_dict, name_interned);
     }
-    return *obj;
   }
   return Error::notFound();
 }
@@ -117,6 +124,19 @@ static RawObject instanceSetAttrSetLocation(Thread* thread,
           "Cannot set attribute '%S' on sealed class '%T'", &name_interned,
           &instance);
     }
+
+    if (layout.hasDictOverflow()) {
+      word offset = SmallInt::cast(layout.overflowAttributes()).value();
+      Object overflow_dict_obj(&scope, instance.instanceVariableAt(offset));
+      if (overflow_dict_obj.isNoneType()) {
+        overflow_dict_obj = runtime->newDict();
+        instance.instanceVariableAtPut(offset, *overflow_dict_obj);
+      }
+      Dict overflow_dict(&scope, *overflow_dict_obj);
+      runtime->dictAtPutByStr(thread, overflow_dict, name_interned, value);
+      return NoneType::object();
+    }
+
     // Transition the layout
     layout = runtime->layoutAddAttribute(thread, layout, name_interned, 0);
     has_new_layout_id = true;

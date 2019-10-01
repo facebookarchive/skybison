@@ -4275,21 +4275,6 @@ RawObject Runtime::computeBuiltinBase(Thread* thread, const Type& type) {
   return *candidate;
 }
 
-RawObject Runtime::layoutGetOverflowDict(Thread* thread,
-                                         const HeapObject& instance,
-                                         const Layout& layout) {
-  DCHECK(layout.hasDictOverflow(), "layout must have dict overflow");
-  word offset = SmallInt::cast(layout.overflowAttributes()).value();
-  HandleScope scope(thread);
-  if (instance.instanceVariableAt(offset).isNoneType()) {
-    // Lazily initialize the dict
-    instance.instanceVariableAtPut(offset, newDict());
-  }
-  Object overflow(&scope, instance.instanceVariableAt(offset));
-  DCHECK(overflow.isDict(), "layout dict overflow must be dict");
-  return *overflow;
-}
-
 RawObject Runtime::layoutFollowEdge(const List& edges, const Object& label) {
   DCHECK(edges.numItems() % 2 == 0,
          "edges must contain an even number of elements");

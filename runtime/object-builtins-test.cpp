@@ -434,6 +434,41 @@ TEST_F(ObjectBuiltinsTest,
 }
 
 TEST_F(ObjectBuiltinsTest,
+       InstanceDelAttrWithDictOverflowAttributeDeletesAttribute) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+def instance(): pass
+instance.foo = 42
+)")
+                   .isError());
+  HeapObject instance(&scope, mainModuleAt(&runtime_, "instance"));
+  Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
+  ASSERT_TRUE(layout.hasDictOverflow());
+  Str name(&scope, runtime_.internStrFromCStr(thread_, "foo"));
+  AttributeInfo info;
+  ASSERT_FALSE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
+
+  EXPECT_TRUE(instanceDelAttr(thread_, instance, name).isNoneType());
+  EXPECT_TRUE(instanceGetAttribute(thread_, instance, name).isErrorNotFound());
+  EXPECT_TRUE(instanceDelAttr(thread_, instance, name).isErrorNotFound());
+}
+
+TEST_F(
+    ObjectBuiltinsTest,
+    InstanceDelAttrWithNonexistentAttributeDictOverflowReturnsErrorNotFound) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+def instance(): pass
+)")
+                   .isError());
+  HeapObject instance(&scope, mainModuleAt(&runtime_, "instance"));
+  Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
+  ASSERT_TRUE(layout.hasDictOverflow());
+  Str name(&scope, runtime_.internStrFromCStr(thread_, "does_not_exist"));
+  EXPECT_TRUE(instanceDelAttr(thread_, instance, name).isErrorNotFound());
+}
+
+TEST_F(ObjectBuiltinsTest,
        InstanceGetAttributeWithInObjectAttributeReturnsValue) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
@@ -553,6 +588,27 @@ instance = C()
 
   EXPECT_TRUE(
       isIntEqualsWord(instanceGetAttribute(thread_, instance, name), -14));
+}
+
+TEST_F(ObjectBuiltinsTest, InstanceSetAttrSetsDictOverflowAttribute) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+def instance(): pass
+)")
+                   .isError());
+  HeapObject instance(&scope, mainModuleAt(&runtime_, "instance"));
+  Str name(&scope, runtime_.internStrFromCStr(thread_, "bar"));
+  Object value(&scope, runtime_.newInt(4711));
+  Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
+  ASSERT_TRUE(layout.hasDictOverflow());
+
+  EXPECT_TRUE(instanceSetAttr(thread_, instance, name, value).isNoneType());
+  EXPECT_EQ(instance.layoutId(), layout.id());
+
+  AttributeInfo info;
+  ASSERT_FALSE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
+  EXPECT_TRUE(
+      isIntEqualsWord(instanceGetAttribute(thread_, instance, name), 4711));
 }
 
 TEST_F(ObjectBuiltinsTest, ObjectGetAttributeReturnsInstanceValue) {

@@ -880,10 +880,6 @@ class Runtime {
   // (eg the result of compiling some_file.py). Return the result.
   NODISCARD RawObject executeModule(const Code& code, const Module& module);
 
-  // Get the overflow dict from the overflow attribute pointer
-  RawObject layoutGetOverflowDict(Thread* thread, const HeapObject& instance,
-                                  const Layout& layout);
-
   // TODO(T46009010): Make this into a private function after making
   // 'builtins._dict_setitem' into a dict builtin function
   void dictEnsureCapacity(Thread* thread, const Dict& dict);
