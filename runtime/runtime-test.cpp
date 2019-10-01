@@ -2744,7 +2744,7 @@ def new_foo():
   EXPECT_FALSE(runtime_.layoutFindAttribute(thread_, new_layout, attr, &info));
 }
 
-TEST_F(RuntimeTest, InstanceDelWithread_OnlyAttributeRaisesAttributeError) {
+TEST_F(RuntimeTest, InstanceDelWithReadonlyAttributeRaisesAttributeError) {
   HandleScope scope(thread_);
 
   BuiltinAttribute attrs[] = {
@@ -2766,6 +2766,7 @@ TEST_F(RuntimeTest, InstanceDelWithread_OnlyAttributeRaisesAttributeError) {
   EXPECT_TRUE(raisedWithStr(
       runtime_.instanceDel(thread_, instance, attribute_name),
       LayoutId::kAttributeError, "'__globals__' attribute is read-only"));
+  EXPECT_EQ(instance.layoutId(), layout.id());
 }
 
 TEST_F(RuntimeTest, ClassWithTypeMetaclassIsConcreteType) {

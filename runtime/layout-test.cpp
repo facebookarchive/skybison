@@ -103,14 +103,6 @@ TEST_F(LayoutTest, AddDuplicateAttributes) {
   EXPECT_TRUE(info.isOverflow());
 }
 
-TEST_F(LayoutTest, DeleteNonExistentAttribute) {
-  HandleScope scope(thread_);
-  Layout layout(&scope, runtime_.layoutCreateEmpty(thread_));
-  Str attr(&scope, runtime_.internStrFromCStr(thread_, "myattr"));
-  RawObject result = runtime_.layoutDeleteAttribute(thread_, layout, attr);
-  EXPECT_TRUE(result.isError());
-}
-
 TEST_F(LayoutTest, DeleteInObjectAttribute) {
   HandleScope scope(thread_);
 

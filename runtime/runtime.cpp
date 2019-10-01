@@ -434,7 +434,7 @@ RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
   Str name_str(&scope, strUnderlying(thread, name));
   Str name_interned(&scope, internStr(thread, name_str));
   Object result(&scope, instanceDel(thread, instance, name_interned));
-  if (result.isError()) {
+  if (result.isErrorNotFound()) {
     Str type_name(&scope, type.name());
     return thread->raiseWithFmt(LayoutId::kAttributeError,
                                 "'%S' object has no attribute '%S'", &type_name,
@@ -4293,29 +4293,30 @@ RawObject Runtime::instanceDel(Thread* thread, const HeapObject& instance,
                                const Str& name_interned) {
   HandleScope scope(thread);
 
-  // Make the attribute invisible
-  Layout old_layout(&scope, layoutAt(instance.layoutId()));
-  Object result(&scope,
-                layoutDeleteAttribute(thread, old_layout, name_interned));
-  if (result.isError()) return *result;
-  LayoutId new_layout_id = Layout::cast(*result).id();
-  instance.setHeader(instance.header().withLayoutId(new_layout_id));
-
   // Remove the reference to the attribute value from the instance
+  Layout layout(&scope, layoutAt(instance.layoutId()));
   AttributeInfo info;
-  bool found = layoutFindAttribute(thread, old_layout, name_interned, &info);
-  CHECK(found, "couldn't find attribute");
+  if (!layoutFindAttribute(thread, layout, name_interned, &info)) {
+    return Error::notFound();
+  }
 
   if (info.isReadOnly()) {
     return thread->raiseWithFmt(LayoutId::kAttributeError,
                                 "'%S' attribute is read-only", &name_interned);
   }
 
+  // Make the attribute invisible
+  Object new_layout(&scope,
+                    layoutDeleteAttribute(thread, layout, name_interned));
+  DCHECK(!new_layout.isError(), "should always find attribute here");
+  LayoutId new_layout_id = Layout::cast(*new_layout).id();
+  instance.setHeader(instance.header().withLayoutId(new_layout_id));
+
   if (info.isInObject()) {
     instance.instanceVariableAtPut(info.offset(), NoneType::object());
   } else {
-    Tuple overflow(&scope,
-                   instance.instanceVariableAt(old_layout.overflowOffset()));
+    Tuple overflow(&scope, instance.instanceVariableAt(
+                               Layout::cast(*new_layout).overflowOffset()));
     overflow.atPut(info.offset(), NoneType::object());
   }
 
@@ -4488,18 +4489,16 @@ RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
                                          const Str& name_interned) {
   HandleScope scope(thread);
 
-  // See if the attribute exists
-  AttributeInfo info;
-  if (!layoutFindAttribute(thread, layout, name_interned, &info)) {
-    return Error::notFound();
-  }
-
   // Check if an edge exists for removing the attribute
   List edges(&scope, layout.deletions());
   RawObject next_layout = layoutFollowEdge(edges, name_interned);
   if (!next_layout.isError()) {
     return next_layout;
   }
+
+  AttributeInfo info;
+  bool found = layoutFindAttribute(thread, layout, name_interned, &info);
+  DCHECK(found, "layoutDeleteAttribute() called with nonexistent attribute");
 
   // No edge was found, create a new layout and add an edge
   Layout new_layout(&scope, layoutCreateChild(thread, layout));
