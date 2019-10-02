@@ -25,7 +25,7 @@ if (NOT RES EQUAL 0)
 endif()
 
 set(FBCODE_DIR "${FBSOURCE_DIR}/fbcode")
-set(LLVM_BIN "${FBCODE_DIR}/third-party-buck/platform007/tools/llvm-fb/bin")
+set(LLVM_BIN "${FBCODE_DIR}/third-party-buck/platform007/build/llvm-fb/bin")
 
 # Default to release build
 set(CMAKE_BUILD_TYPE "Release" CACHE STRING "")
