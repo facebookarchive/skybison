@@ -1273,9 +1273,9 @@ class UnderBufferedIOMixinTests(unittest.TestCase):
         result = _BufferedIOMixin(C())
         self.assertEqual(result.__repr__(), "<_io._BufferedIOMixin name='foo'>")
 
-    def test_close_with_none_raw_does_nothing(self):
+    def test_close_with_none_raw_raises_value_error(self):
         result = _BufferedIOMixin(None)
-        self.assertIsNone(result.close())
+        self.assertRaisesRegex(ValueError, "raw stream has been detached", result.close)
 
     def test_close_with_closed_raw_does_nothing(self):
         class C:
@@ -1312,6 +1312,11 @@ class UnderBufferedIOMixinTests(unittest.TestCase):
         result = _BufferedIOMixin(C())
         self.assertRaises(UserWarning, result.close)
 
+    def test_closed_with_none_raw_raises_value_error(self):
+        result = _BufferedIOMixin(None)
+        with self.assertRaisesRegex(ValueError, "raw stream has been detached"):
+            result.closed
+
     def test_closed_calls_raw_closed(self):
         # TODO(T53510135): Use unittest.mock
         class C:
@@ -1325,7 +1330,9 @@ class UnderBufferedIOMixinTests(unittest.TestCase):
 
     def test_detach_with_none_raw_raises_value_error(self):
         result = _BufferedIOMixin(None)
-        self.assertRaises(ValueError, result.detach)
+        self.assertRaisesRegex(
+            ValueError, "raw stream has been detached", result.detach
+        )
 
     def test_detach_calls_raw_flush(self):
         # TODO(T53510135): Use unittest.mock
@@ -1338,6 +1345,18 @@ class UnderBufferedIOMixinTests(unittest.TestCase):
         result = _BufferedIOMixin(C())
         self.assertRaises(UserWarning, result.detach)
 
+    def test_detach_returns_raw_and_sets_none(self):
+        with _io.BytesIO() as raw:
+            result = _BufferedIOMixin(raw)
+            self.assertIs(result.detach(), raw)
+            self.assertIs(result.raw, None)
+
+    def test_fileno_with_none_raw_raises_value_error(self):
+        result = _BufferedIOMixin(None)
+        self.assertRaisesRegex(
+            ValueError, "raw stream has been detached", result.fileno
+        )
+
     def test_fileno_calls_raw_fileno(self):
         # TODO(T53510135): Use unittest.mock
         class C:
@@ -1348,6 +1367,10 @@ class UnderBufferedIOMixinTests(unittest.TestCase):
 
         result = _BufferedIOMixin(C())
         self.assertRaises(UserWarning, result.fileno)
+
+    def test_flush_with_none_raw_raises_value_error(self):
+        result = _BufferedIOMixin(None)
+        self.assertRaisesRegex(ValueError, "raw stream has been detached", result.flush)
 
     def test_flush_with_closed_raw_raises_value_error(self):
         class C:
@@ -1381,6 +1404,12 @@ class UnderBufferedIOMixinTests(unittest.TestCase):
         result = _BufferedIOMixin(C())
         self.assertRaises(UserWarning, result.isatty)
 
+    def test_isatty_with_none_raw_raises_value_error(self):
+        result = _BufferedIOMixin(None)
+        self.assertRaisesRegex(
+            ValueError, "raw stream has been detached", result.isatty
+        )
+
     def test_mode_calls_raw_mode(self):
         # TODO(T53510135): Use unittest.mock
         class C:
@@ -1402,6 +1431,15 @@ class UnderBufferedIOMixinTests(unittest.TestCase):
         result = _BufferedIOMixin(C())
         with self.assertRaises(UserWarning):
             result.name
+
+    def test_seek_with_none_raw_raises_value_error(self):
+        result = _BufferedIOMixin(None)
+        with self.assertRaisesRegex(ValueError, "raw stream has been detached"):
+            result.seek(0)
+
+    def test_tell_with_none_raw_raises_value_error(self):
+        result = _BufferedIOMixin(None)
+        self.assertRaisesRegex(ValueError, "raw stream has been detached", result.tell)
 
     def test_tell_calls_raw_tell(self):
         # TODO(T53510135): Use unittest.mock

@@ -69,6 +69,11 @@ from _os import (
 from _thread import Lock as _thread_Lock
 
 
+def _detached_guard(self):
+    if self.raw is None:
+        raise ValueError("raw stream has been detached")
+
+
 def _whence_guard(whence):
     if whence == 0 or whence == 1 or whence == 2:
         return
@@ -647,6 +652,7 @@ class _BufferedIOMixin(_BufferedIOBase, bootstrap=True):
     ### Positioning ###
 
     def seek(self, pos, whence=0):
+        _detached_guard(self)
         _whence_guard(whence)
         new_position = self.raw.seek(pos, whence)
         if new_position < 0:
@@ -654,6 +660,7 @@ class _BufferedIOMixin(_BufferedIOBase, bootstrap=True):
         return new_position
 
     def tell(self):
+        _detached_guard(self)
         pos = self.raw.tell()
         if pos < 0:
             raise OSError("tell() returned an invalid position")
@@ -677,7 +684,7 @@ class _BufferedIOMixin(_BufferedIOBase, bootstrap=True):
         self.raw.flush()
 
     def close(self):
-        if self.raw is not None and not self.closed:
+        if not self.closed:
             try:
                 # may raise BlockingIOError or BrokenPipeError etc
                 self.flush()
@@ -685,8 +692,7 @@ class _BufferedIOMixin(_BufferedIOBase, bootstrap=True):
                 self.raw.close()
 
     def detach(self):
-        if self.raw is None:
-            raise ValueError("raw stream already detached")
+        _detached_guard(self)
         self.flush()
         raw = self._raw
         self._raw = None
@@ -694,8 +700,17 @@ class _BufferedIOMixin(_BufferedIOBase, bootstrap=True):
 
     ### Inquiries ###
 
+    def readable(self):
+        _detached_guard(self)
+        return self.raw.readable()
+
     def seekable(self):
+        _detached_guard(self)
         return self.raw.seekable()
+
+    def writable(self):
+        _detached_guard(self)
+        return self.raw.writable()
 
     @property
     def raw(self):
@@ -703,22 +718,27 @@ class _BufferedIOMixin(_BufferedIOBase, bootstrap=True):
 
     @property
     def closed(self):
+        _detached_guard(self)
         return self.raw.closed
 
     @property
     def name(self):
+        _detached_guard(self)
         return self.raw.name
 
     @property
     def mode(self):
+        _detached_guard(self)
         return self.raw.mode
 
     ### Lower-level APIs ###
 
     def fileno(self):
+        _detached_guard(self)
         return self.raw.fileno()
 
     def isatty(self):
+        _detached_guard(self)
         return self.raw.isatty()
 
 
@@ -802,9 +822,6 @@ class BufferedReader(_BufferedIOMixin, bootstrap=True):
             return self._read_unlocked(size)
 
     def _read_unlocked(self, n=None):
-        if self.raw is None:
-            raise ValueError("raw stream has been detached")
-
         if self.closed:
             raise ValueError("read of closed file")
 
