@@ -1821,7 +1821,7 @@ RawObject UnderBuiltinsModule::underInstanceKeys(Thread* thread, Frame* frame,
   for (word i = 0, length = in_object.length(); i < length; i++) {
     Tuple pair(&scope, in_object.at(i));
     Object name(&scope, pair.at(0));
-    if (name.isNoneType() || name == runtime->symbols()->DunderDict()) continue;
+    if (name.isNoneType()) continue;
     runtime->listAdd(thread, result, name);
   }
   // Add overflow attributes
@@ -1830,9 +1830,7 @@ RawObject UnderBuiltinsModule::underInstanceKeys(Thread* thread, Frame* frame,
     for (word i = 0; i < overflow.length(); i++) {
       Tuple pair(&scope, overflow.at(i));
       Object name(&scope, pair.at(0));
-      if (name.isNoneType() || name == runtime->symbols()->DunderDict()) {
-        continue;
-      }
+      if (name.isNoneType()) continue;
       runtime->listAdd(thread, result, name);
     }
   } else {
