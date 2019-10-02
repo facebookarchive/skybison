@@ -572,6 +572,7 @@ set(
   ext/Objects/memoryobject-test.cpp
   ext/Objects/methodobject-test.cpp
   ext/Objects/moduleobject-test.cpp
+  ext/Objects/namespaceobject-test.cpp
   ext/Objects/object-test.cpp
   ext/Objects/obmalloc-test.cpp
   ext/Objects/setobject-test.cpp

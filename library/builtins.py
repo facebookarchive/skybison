@@ -656,6 +656,20 @@ class KeyError(bootstrap=True):
         return super(KeyError, self).__str__()
 
 
+class SimpleNamespace:
+    def __init__(self, kwds=None):
+        if kwds is not None:
+            instance_proxy(self).update(kwds)
+
+    def __repr__(self):
+        if _repr_enter(self):
+            return "{...}"
+        proxy = instance_proxy(self)
+        kwpairs = [f"{key}={value!r}" for key, value in proxy.items()]
+        _repr_leave(self)
+        return "namespace(" + ", ".join(kwpairs) + ")"
+
+
 class NoneType(bootstrap=True):
     __class__ = NoneType  # noqa: F821
 

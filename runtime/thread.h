@@ -116,6 +116,7 @@ class Thread {
   // Calls out to the interpreter to lookup and call a function with the given
   // argument(s). Returns Error<NotFound> if the function can't be found, or the
   // result of the call otherwise (which may be Error<Exception>).
+  RawObject invokeFunction0(SymbolId module, SymbolId name);
   RawObject invokeFunction1(SymbolId module, SymbolId name,
                             const Handle<RawObject>& arg1);
   RawObject invokeFunction2(SymbolId module, SymbolId name,

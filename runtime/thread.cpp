@@ -309,6 +309,13 @@ RawObject Thread::invokeMethodStatic4(LayoutId type, SymbolId method_name,
                                   arg2, arg3);
 }
 
+RawObject Thread::invokeFunction0(SymbolId module, SymbolId name) {
+  HandleScope scope(this);
+  Object func(&scope, runtime()->lookupNameInModule(this, module, name));
+  if (func.isError()) return *func;
+  return Interpreter::callFunction0(this, currentFrame_, func);
+}
+
 RawObject Thread::invokeFunction1(SymbolId module, SymbolId name,
                                   const Object& arg1) {
   HandleScope scope(this);

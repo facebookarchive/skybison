@@ -758,6 +758,7 @@ class Runtime;
   V(Setattr, "setattr")                                                        \
   V(Setter, "setter")                                                          \
   V(Signed, "signed")                                                          \
+  V(SimpleNamespace, "SimpleNamespace")                                        \
   V(Siphash24, "siphash24")                                                    \
   V(Size, "size")                                                              \
   V(Slice, "slice")                                                            \
