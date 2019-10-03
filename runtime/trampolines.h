@@ -84,6 +84,13 @@ RawObject methodTrampolineKeywordsKw(Thread* thread, Frame* caller,
 RawObject methodTrampolineKeywordsEx(Thread* thread, Frame* caller,
                                      word flags) ALIGN_16;
 
+RawObject methodTrampolineFastCall(Thread* thread, Frame* frame,
+                                   word argc) ALIGN_16;
+RawObject methodTrampolineFastCallKw(Thread* thread, Frame* frame,
+                                     word argc) ALIGN_16;
+RawObject methodTrampolineFastCallEx(Thread* thread, Frame* frame,
+                                     word flags) ALIGN_16;
+
 // module trampolines
 
 RawObject moduleTrampolineNoArgs(Thread* thread, Frame* caller,
@@ -112,6 +119,13 @@ RawObject moduleTrampolineKeywords(Thread* thread, Frame* caller,
 RawObject moduleTrampolineKeywordsKw(Thread* thread, Frame* caller,
                                      word argc) ALIGN_16;
 RawObject moduleTrampolineKeywordsEx(Thread* thread, Frame* caller,
+                                     word flags) ALIGN_16;
+
+RawObject moduleTrampolineFastCall(Thread* thread, Frame* frame,
+                                   word argc) ALIGN_16;
+RawObject moduleTrampolineFastCallKw(Thread* thread, Frame* frame,
+                                     word argc) ALIGN_16;
+RawObject moduleTrampolineFastCallEx(Thread* thread, Frame* frame,
                                      word flags) ALIGN_16;
 
 // Aborts immediately when called

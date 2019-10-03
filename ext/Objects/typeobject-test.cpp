@@ -3382,4 +3382,333 @@ r2 = FooSubclass().t_int
   EXPECT_TRUE(isLongEqualsLong(r2, 321));
 }
 
+// METH_FASTCALL
+
+TEST_F(TypeExtensionApiTest, MethodsMethFastCallNoArg) {
+  _PyCFunctionFast meth = [](PyObject* self, PyObject**, Py_ssize_t nargs,
+                             PyObject* kwnames) {
+    EXPECT_EQ(kwnames, nullptr);
+    return PyTuple_Pack(2, self, PyLong_FromSsize_t(nargs));
+  };
+  static PyMethodDef methods[] = {
+      {"fastcall", reinterpret_cast<PyCFunction>(reinterpret_cast<void*>(meth)),
+       METH_FASTCALL},
+      {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  testing::moduleSet("__main__", "C", type);
+
+  PyRun_SimpleString(R"(
+self = C()
+result = self.fastcall()
+)");
+  PyObjectPtr self(testing::moduleGet("__main__", "self"));
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyTuple_CheckExact(result), 1);
+  ASSERT_EQ(PyTuple_Size(result), 2);
+  EXPECT_EQ(PyTuple_GetItem(result, 0), self);
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 1), 0));
+}
+
+TEST_F(TypeExtensionApiTest, MethodsMethFastCallPosCall) {
+  _PyCFunctionFast meth = [](PyObject* self, PyObject** args, Py_ssize_t nargs,
+                             PyObject* kwnames) {
+    EXPECT_EQ(kwnames, nullptr);
+    return PyTuple_Pack(3, self, args[0], PyLong_FromSsize_t(nargs));
+  };
+  static PyMethodDef methods[] = {
+      {"fastcall", reinterpret_cast<PyCFunction>(reinterpret_cast<void*>(meth)),
+       METH_FASTCALL},
+      {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  testing::moduleSet("__main__", "C", type);
+
+  PyRun_SimpleString(R"(
+self = C()
+result = self.fastcall(1234)
+)");
+  PyObjectPtr self(testing::moduleGet("__main__", "self"));
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyTuple_CheckExact(result), 1);
+  ASSERT_EQ(PyTuple_Size(result), 3);
+  EXPECT_EQ(PyTuple_GetItem(result, 0), self);
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 1), 1234));
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 2), 1));
+}
+
+TEST_F(TypeExtensionApiTest, MethodsMethFastCallPosCallMultiArgs) {
+  _PyCFunctionFast meth = [](PyObject* self, PyObject** args, Py_ssize_t nargs,
+                             PyObject* kwnames) {
+    EXPECT_EQ(kwnames, nullptr);
+    return PyTuple_Pack(4, self, args[0], args[1], PyLong_FromSsize_t(nargs));
+  };
+  static PyMethodDef methods[] = {
+      {"fastcall", reinterpret_cast<PyCFunction>(reinterpret_cast<void*>(meth)),
+       METH_FASTCALL},
+      {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  testing::moduleSet("__main__", "C", type);
+
+  PyRun_SimpleString(R"(
+self = C()
+result = self.fastcall(1234, 5678)
+)");
+  PyObjectPtr self(testing::moduleGet("__main__", "self"));
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyTuple_CheckExact(result), 1);
+  ASSERT_EQ(PyTuple_Size(result), 4);
+  EXPECT_EQ(PyTuple_GetItem(result, 0), self);
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 1), 1234));
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 2), 5678));
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 3), 2));
+}
+
+TEST_F(TypeExtensionApiTest, MethodsMethFastCallKwCall) {
+  _PyCFunctionFast meth = [](PyObject* self, PyObject** args, Py_ssize_t nargs,
+                             PyObject* kwnames) {
+    return PyTuple_Pack(5, self, args[0], args[1], PyLong_FromSsize_t(nargs),
+                        kwnames);
+  };
+  static PyMethodDef methods[] = {
+      {"fastcall", reinterpret_cast<PyCFunction>(reinterpret_cast<void*>(meth)),
+       METH_FASTCALL},
+      {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  testing::moduleSet("__main__", "C", type);
+
+  PyRun_SimpleString(R"(
+self = C()
+result = self.fastcall(1234, kwarg=5678)
+)");
+  PyObjectPtr self(testing::moduleGet("__main__", "self"));
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyTuple_CheckExact(result), 1);
+  ASSERT_EQ(PyTuple_Size(result), 5);
+  EXPECT_EQ(PyTuple_GetItem(result, 0), self);
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 1), 1234));
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 2), 5678));
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 3), 1));
+
+  PyObject* kwnames = PyTuple_GetItem(result, 4);
+  ASSERT_EQ(PyTuple_CheckExact(kwnames), 1);
+  ASSERT_EQ(PyTuple_Size(kwnames), 1);
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyTuple_GetItem(kwnames, 0), "kwarg"));
+}
+
+TEST_F(TypeExtensionApiTest, MethodsMethFastCallKwCallMultiArg) {
+  _PyCFunctionFast meth = [](PyObject* self, PyObject** args, Py_ssize_t nargs,
+                             PyObject* kwnames) {
+    return PyTuple_Pack(7, self, args[0], args[1], args[2], args[3],
+                        PyLong_FromSsize_t(nargs), kwnames);
+  };
+  static PyMethodDef methods[] = {
+      {"fastcall", reinterpret_cast<PyCFunction>(reinterpret_cast<void*>(meth)),
+       METH_FASTCALL},
+      {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  testing::moduleSet("__main__", "C", type);
+
+  PyRun_SimpleString(R"(
+self = C()
+result = self.fastcall(1234, 99, kwarg=5678, kwdos=22)
+)");
+  PyObjectPtr self(testing::moduleGet("__main__", "self"));
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyTuple_CheckExact(result), 1);
+  ASSERT_EQ(PyTuple_Size(result), 7);
+  EXPECT_EQ(PyTuple_GetItem(result, 0), self);
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 1), 1234));
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 2), 99));
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 3), 5678));
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 4), 22));
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 5), 2));
+
+  PyObject* kwnames = PyTuple_GetItem(result, 6);
+  ASSERT_EQ(PyTuple_CheckExact(kwnames), 1);
+  ASSERT_EQ(PyTuple_Size(kwnames), 2);
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyTuple_GetItem(kwnames, 0), "kwarg"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyTuple_GetItem(kwnames, 1), "kwdos"));
+}
+
+TEST_F(TypeExtensionApiTest, MethodsMethFastCallExCall) {
+  _PyCFunctionFast meth = [](PyObject* self, PyObject** args, Py_ssize_t nargs,
+                             PyObject* kwnames) {
+    return PyTuple_Pack(5, self, args[0], args[1], PyLong_FromLong(nargs),
+                        kwnames);
+  };
+  static PyMethodDef methods[] = {
+      {"fastcall", reinterpret_cast<PyCFunction>(reinterpret_cast<void*>(meth)),
+       METH_FASTCALL},
+      {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  testing::moduleSet("__main__", "C", type);
+
+  PyRun_SimpleString(R"(
+self = C()
+result = self.fastcall(*[1234], kwarg=5678)
+)");
+  PyObjectPtr self(testing::moduleGet("__main__", "self"));
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyTuple_CheckExact(result), 1);
+  ASSERT_EQ(PyTuple_Size(result), 5);
+  EXPECT_EQ(PyTuple_GetItem(result, 0), self);
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 1), 1234));
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 2), 5678));
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 3), 1));
+
+  PyObject* kwnames = PyTuple_GetItem(result, 4);
+  ASSERT_EQ(PyTuple_CheckExact(kwnames), 1);
+  ASSERT_EQ(PyTuple_Size(kwnames), 1);
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyTuple_GetItem(kwnames, 0), "kwarg"));
+}
+
+TEST_F(TypeExtensionApiTest, MethodsMethFastCallExCallMultiArg) {
+  _PyCFunctionFast meth = [](PyObject* self, PyObject** args, Py_ssize_t nargs,
+                             PyObject* kwnames) {
+    return PyTuple_Pack(7, self, args[0], args[1], args[2], args[3],
+                        PyLong_FromSsize_t(nargs), kwnames);
+  };
+  static PyMethodDef methods[] = {
+      {"fastcall", reinterpret_cast<PyCFunction>(reinterpret_cast<void*>(meth)),
+       METH_FASTCALL},
+      {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  testing::moduleSet("__main__", "C", type);
+
+  PyRun_SimpleString(R"(
+self = C()
+result = self.fastcall(*[1234, 99], kwarg=5678, kwdos=22)
+)");
+  PyObjectPtr self(testing::moduleGet("__main__", "self"));
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyTuple_CheckExact(result), 1);
+  ASSERT_EQ(PyTuple_Size(result), 7);
+  EXPECT_EQ(PyTuple_GetItem(result, 0), self);
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 1), 1234));
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 2), 99));
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 3), 5678));
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 4), 22));
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 5), 2));
+
+  PyObject* kwnames = PyTuple_GetItem(result, 6);
+  ASSERT_EQ(PyTuple_CheckExact(kwnames), 1);
+  ASSERT_EQ(PyTuple_Size(kwnames), 2);
+
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyTuple_GetItem(kwnames, 0), "kwarg"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyTuple_GetItem(kwnames, 1), "kwdos"));
+}
+
+TEST_F(TypeExtensionApiTest, MethodsMethFastCallExEmptyKwargsCall) {
+  _PyCFunctionFast meth = [](PyObject* self, PyObject** args, Py_ssize_t nargs,
+                             PyObject* kwnames) {
+    EXPECT_EQ(kwnames, nullptr);
+    return PyTuple_Pack(3, self, args[0], PyLong_FromSsize_t(nargs));
+  };
+  static PyMethodDef methods[] = {
+      {"fastcall", reinterpret_cast<PyCFunction>(reinterpret_cast<void*>(meth)),
+       METH_FASTCALL},
+      {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  testing::moduleSet("__main__", "C", type);
+
+  PyRun_SimpleString(R"(
+self = C()
+result = self.fastcall(*[1234], *{})
+)");
+  PyObjectPtr self(testing::moduleGet("__main__", "self"));
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyTuple_CheckExact(result), 1);
+  ASSERT_EQ(PyTuple_Size(result), 3);
+  EXPECT_EQ(PyTuple_GetItem(result, 0), self);
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 1), 1234));
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 2), 1));
+}
+
 }  // namespace python

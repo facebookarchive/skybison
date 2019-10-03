@@ -1741,9 +1741,6 @@ static int vgetargskeywords(PyObject* args, PyObject* keywords,
 static bool parserInit(struct _PyArg_Parser* parser, int* keyword_count) {
   DCHECK(parser->format != nullptr, "parser->format must not be null");
   DCHECK(parser->keywords != nullptr, "parser->keywords must not be null");
-  if (parser->fname != nullptr) {
-    return true;
-  }
 
   // grab the function name or custom error msg first (mutually exclusive)
   parser->fname = strchr(parser->format, ':');

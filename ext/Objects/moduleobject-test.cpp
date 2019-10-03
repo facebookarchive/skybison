@@ -697,6 +697,139 @@ TEST_F(ModuleExtensionApiTest, MethodWithClassFlagRaisesException) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
 }
 
+TEST_F(ModuleExtensionApiTest, MethodWithFastCallReturnsArg) {
+  _PyCFunctionFast foo_func = [](PyObject* module, PyObject** args,
+                                 Py_ssize_t num_args,
+                                 PyObject* kwnames) -> PyObject* {
+    EXPECT_TRUE(PyModule_Check(module));
+    int value;
+    static const char* const keywords[] = {"input", nullptr};
+    static _PyArg_Parser parser = {"i:fastcall", keywords};
+    EXPECT_EQ(_PyArg_ParseStack(args, num_args, kwnames, &parser, &value), 1);
+    return PyLong_FromLong(value);
+  };
+  PyMethodDef foo_methods[] = {
+      {"fastcall",
+       reinterpret_cast<binaryfunc>(reinterpret_cast<void*>(foo_func)),
+       METH_FASTCALL},
+      {nullptr}};
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT, "foo", nullptr, 0, foo_methods,
+  };
+  PyObjectPtr module(PyModule_Create(&def));
+  moduleSet("__main__", "foo", module);
+  ASSERT_TRUE(PyModule_CheckExact(module));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+
+  PyRun_SimpleString(R"(
+x = foo.fastcall(10)
+)");
+  PyObjectPtr result(moduleGet("__main__", "x"));
+  ASSERT_EQ(isLongEqualsLong(result, 10), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ModuleExtensionApiTest, MethodWithFastCallKwReturnsArg) {
+  _PyCFunctionFast foo_func = [](PyObject* module, PyObject** args,
+                                 Py_ssize_t num_args,
+                                 PyObject* kwnames) -> PyObject* {
+    EXPECT_TRUE(PyModule_Check(module));
+    int value;
+    static const char* const keywords[] = {"input", nullptr};
+    static _PyArg_Parser parser = {"i:fastcall", keywords};
+    EXPECT_EQ(_PyArg_ParseStack(args, num_args, kwnames, &parser, &value), 1);
+    return PyLong_FromLong(value);
+  };
+  PyMethodDef foo_methods[] = {
+      {"fastcall",
+       reinterpret_cast<binaryfunc>(reinterpret_cast<void*>(foo_func)),
+       METH_FASTCALL},
+      {nullptr}};
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT, "foo", nullptr, 0, foo_methods,
+  };
+  PyObjectPtr module(PyModule_Create(&def));
+  moduleSet("__main__", "foo", module);
+  ASSERT_TRUE(PyModule_CheckExact(module));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+
+  PyRun_SimpleString(R"(
+z = foo.fastcall(input=30)
+)");
+  PyObjectPtr result(moduleGet("__main__", "z"));
+  ASSERT_EQ(isLongEqualsLong(result, 30), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ModuleExtensionApiTest, MethodWithFastCallExTupleReturnsArg) {
+  _PyCFunctionFast foo_func = [](PyObject* module, PyObject** args,
+                                 Py_ssize_t num_args,
+                                 PyObject* kwnames) -> PyObject* {
+    EXPECT_TRUE(PyModule_Check(module));
+    int value;
+    static const char* const keywords[] = {"input", nullptr};
+    static _PyArg_Parser parser = {"i:fastcall", keywords};
+    EXPECT_EQ(_PyArg_ParseStack(args, num_args, kwnames, &parser, &value), 1);
+    return PyLong_FromLong(value);
+  };
+  PyMethodDef foo_methods[] = {
+      {"fastcall",
+       reinterpret_cast<binaryfunc>(reinterpret_cast<void*>(foo_func)),
+       METH_FASTCALL},
+      {nullptr}};
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT, "foo", nullptr, 0, foo_methods,
+  };
+  PyObjectPtr module(PyModule_Create(&def));
+  moduleSet("__main__", "foo", module);
+  ASSERT_TRUE(PyModule_CheckExact(module));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+
+  PyRun_SimpleString(R"(
+args = (20,)
+y = foo.fastcall(*args)
+)");
+  PyObjectPtr result(moduleGet("__main__", "y"));
+  ASSERT_EQ(isLongEqualsLong(result, 20), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ModuleExtensionApiTest, MethodWithFastCallExDictReturnsArg) {
+  _PyCFunctionFast foo_func = [](PyObject* module, PyObject** args,
+                                 Py_ssize_t num_args,
+                                 PyObject* kwnames) -> PyObject* {
+    EXPECT_TRUE(PyModule_Check(module));
+    int value;
+    static const char* const keywords[] = {"input", nullptr};
+    static _PyArg_Parser parser = {"i:fastcall", keywords};
+    EXPECT_EQ(_PyArg_ParseStack(args, num_args, kwnames, &parser, &value), 1);
+    return PyLong_FromLong(value);
+  };
+  PyMethodDef foo_methods[] = {
+      {"fastcall",
+       reinterpret_cast<binaryfunc>(reinterpret_cast<void*>(foo_func)),
+       METH_FASTCALL},
+      {nullptr}};
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT, "foo", nullptr, 0, foo_methods,
+  };
+  PyObjectPtr module(PyModule_Create(&def));
+  moduleSet("__main__", "foo", module);
+  ASSERT_TRUE(PyModule_CheckExact(module));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+
+  PyRun_SimpleString(R"(
+r = foo.fastcall(**{'input': 40})
+)");
+  PyObjectPtr result(moduleGet("__main__", "r"));
+  ASSERT_EQ(isLongEqualsLong(result, 40), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(ModuleExtensionApiTest, MethodWithVariableArgsReturnsArg) {
   binaryfunc foo_func = [](PyObject*, PyObject* args) -> PyObject* {
     int value;

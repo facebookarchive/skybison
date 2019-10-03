@@ -1384,6 +1384,158 @@ TEST_F(TrampolinesTest,
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
+static PyObject* pyCFunctionFastFunc(PyObject*, PyObject** args,
+                                     Py_ssize_t argc, PyObject*) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Tuple tuple(&scope, thread->runtime()->newTuple(2));
+  tuple.atPut(0, ApiHandle::fromPyObject(*args)->asObject());
+  tuple.atPut(1, SmallInt::fromWord(argc));
+  return ApiHandle::newReference(thread, *tuple);
+}
+
+TEST_F(TrampolinesTest, ExtensionModuleFastCallReceivesArgsReturns) {
+  HandleScope scope(thread_);
+  Function callee(
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(pyCFunctionFastFunc),
+                  "", ExtensionMethodType::kMethFastCall));
+
+  // Set up a code object that calls the function with a single argument.
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime_.newTuple(2));
+  consts.atPut(0, *callee);
+  consts.atPut(1, SmallInt::fromWord(1111));
+  code.setConsts(*consts);
+  const byte bytecode[] = {LOAD_CONST,    0, LOAD_CONST,   1,
+                           CALL_FUNCTION, 1, RETURN_VALUE, 0};
+  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setStacksize(2);
+
+  // Execute the code and make sure we get back the result we expect
+  RawObject output = runCode(code);
+  Tuple result(&scope, output);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 1111));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 1));
+}
+
+TEST_F(TrampolinesTest, ExtensionModuleFastCallReturnsNullRaisesSystemError) {
+  _PyCFunctionFast func = [](PyObject*, PyObject**, Py_ssize_t,
+                             PyObject*) -> PyObject* { return nullptr; };
+
+  HandleScope scope(thread_);
+  Function callee(&scope, functionFromModuleMethodDef(
+                              thread_, "foo", bit_cast<void*>(func), "",
+                              ExtensionMethodType::kMethFastCall));
+
+  // Set up a code object that calls the function without arguments
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime_.newTuple(1));
+  consts.atPut(0, *callee);
+  code.setConsts(*consts);
+  const byte bytecode[] = {LOAD_CONST, 0, CALL_FUNCTION, 0, RETURN_VALUE, 0};
+  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setStacksize(1);
+
+  // Execute the code and make sure we get back the result we expect
+  EXPECT_TRUE(raisedWithStr(runCode(code), LayoutId::kSystemError,
+                            "NULL return without exception set"));
+}
+
+TEST_F(TrampolinesTest, ExtensionModuleFastcallReceivesKwArgsReturns) {
+  HandleScope scope(thread_);
+  Function callee(
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(pyCFunctionFastFunc),
+                  "", ExtensionMethodType::kMethFastCall));
+
+  // Set up a code object that calls the builtin with ("bar", foo=1111)
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime_.newTuple(4));
+  consts.atPut(0, *callee);
+  consts.atPut(1, runtime_.newStrFromCStr("bar"));
+  consts.atPut(2, SmallInt::fromWord(1111));
+  Tuple kw_tuple(&scope, runtime_.newTuple(1));
+  kw_tuple.atPut(0, runtime_.newStrFromCStr("foo"));
+  consts.atPut(3, *kw_tuple);
+  code.setConsts(*consts);
+
+  // load arguments and call builtin kw function
+  const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST,       1, LOAD_CONST,   2,
+                           LOAD_CONST, 3, CALL_FUNCTION_KW, 2, RETURN_VALUE, 0};
+  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setStacksize(4);
+
+  // Execute the code and make sure we get back the result we expect
+  RawObject output = runCode(code);
+  Tuple result(&scope, output);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "bar"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 1));
+}
+
+TEST_F(TrampolinesTest, ExtensionModuleFastCallReceivesVariableArgsReturns) {
+  HandleScope scope(thread_);
+  Function callee(
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(pyCFunctionFastFunc),
+                  "", ExtensionMethodType::kMethFastCall));
+
+  // Set up a code object that calls with (*(10))
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime_.newTuple(2));
+  consts.atPut(0, *callee);
+  Tuple arg_tuple(&scope, runtime_.newTuple(1));
+  arg_tuple.atPut(0, SmallInt::fromWord(10));
+  consts.atPut(1, *arg_tuple);
+  code.setConsts(*consts);
+
+  // load arguments and call builtin kw function
+  const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1,
+                           CALL_FUNCTION_EX, 0, RETURN_VALUE, 0};
+  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setStacksize(2);
+
+  // Execute the code and make sure we get back the result we expect
+  RawObject output = runCode(code);
+  Tuple result(&scope, output);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 10));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 1));
+}
+
+TEST_F(TrampolinesTest, ExtensionModuleFastCallReceivesVariableKwArgsReturns) {
+  HandleScope scope(thread_);
+  Function callee(
+      &scope, functionFromModuleMethodDef(
+                  thread_, "foo", reinterpret_cast<void*>(pyCFunctionFastFunc),
+                  "", ExtensionMethodType::kMethFastCall));
+
+  // Set up a code object that calls with (*(10), **{"foo":1111})
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime_.newTuple(3));
+  consts.atPut(0, *callee);
+  Tuple arg_tuple(&scope, runtime_.newTuple(1));
+  arg_tuple.atPut(0, SmallInt::fromWord(10));
+  consts.atPut(1, *arg_tuple);
+  Dict kw_dict(&scope, runtime_.newDict());
+  Str name(&scope, runtime_.newStrFromCStr("foo"));
+  Object value(&scope, SmallInt::fromWord(1111));
+  runtime_.dictAtPutByStr(thread_, kw_dict, name, value);
+  consts.atPut(2, *kw_dict);
+  code.setConsts(*consts);
+
+  // load arguments and call builtin kw function
+  const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1, LOAD_CONST, 2,
+                           CALL_FUNCTION_EX, 1, RETURN_VALUE, 0};
+  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setStacksize(3);
+
+  // Execute the code and make sure we get back the result we expect
+  RawObject output = runCode(code);
+  Tuple result(&scope, output);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 10));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 1));
+}
+
 TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesNoArgsReturns) {
   HandleScope scope(thread_);
   Function callee(

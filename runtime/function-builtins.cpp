@@ -38,6 +38,11 @@ RawObject functionFromMethodDef(Thread* thread, const char* c_name, void* meth,
       entry_kw = methodTrampolineKeywordsKw;
       entry_ex = methodTrampolineKeywordsEx;
       break;
+    case ExtensionMethodType::kMethFastCall:
+      entry = methodTrampolineFastCall;
+      entry_kw = methodTrampolineFastCallKw;
+      entry_ex = methodTrampolineFastCallEx;
+      break;
     default:
       UNIMPLEMENTED("Unsupported MethodDef type");
   }
@@ -94,6 +99,11 @@ RawObject functionFromModuleMethodDef(Thread* thread, const char* c_name,
       entry = moduleTrampolineKeywords;
       entry_kw = moduleTrampolineKeywordsKw;
       entry_ex = moduleTrampolineKeywordsEx;
+      break;
+    case ExtensionMethodType::kMethFastCall:
+      entry = moduleTrampolineFastCall;
+      entry_kw = moduleTrampolineFastCallKw;
+      entry_ex = moduleTrampolineFastCallEx;
       break;
     default:
       UNIMPLEMENTED("Unsupported MethodDef type");
