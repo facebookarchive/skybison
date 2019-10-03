@@ -2122,6 +2122,38 @@ sys.displayhook = my_displayhook
   EXPECT_EQ(*my_global, *unique);
 }
 
+TEST_F(InterpreterTest, PrintExprtDoesntPushToStack) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+import sys
+
+def my_displayhook(value):
+  pass
+
+sys.displayhook = my_displayhook
+  )")
+                   .isError());
+
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime_.newTuple(2));
+  consts.atPut(0, SmallInt::fromWord(42));
+  consts.atPut(1, SmallInt::fromWord(0));
+  code.setConsts(*consts);
+
+  Tuple varnames(&scope, runtime_.newTuple(0));
+  code.setVarnames(*varnames);
+  code.setNlocals(0);
+  // This bytecode loads 42 onto the stack, along with a value to print.
+  // It then returns the top of the stack, which should be 42.
+  const byte bytecode[] = {
+      LOAD_CONST, 0, LOAD_CONST, 1, PRINT_EXPR, 0, RETURN_VALUE, 0,
+  };
+  code.setCode(runtime_.newBytesWithAll(bytecode));
+
+  Object result_obj(&scope, runCode(code));
+  EXPECT_TRUE(isIntEqualsWord(*result_obj, 42));
+}
+
 TEST_F(InterpreterTest, GetAiterCallsAiter) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(

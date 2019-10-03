@@ -1621,9 +1621,11 @@ HANDLER_INLINE Continue Interpreter::doPrintExpr(Thread* thread, word) {
   if (value_cell.isUnbound()) {
     UNIMPLEMENTED("RuntimeError: lost sys.displayhook");
   }
-  frame->pushValue(value_cell.value());
-  frame->pushValue(*value);
-  return doCallFunction(thread, 1);
+  // TODO(T55021263): Replace with non-recursive call
+  Object display_hook(&scope, value_cell.value());
+  return callMethod1(thread, frame, display_hook, value).isErrorException()
+             ? Continue::UNWIND
+             : Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doLoadBuildClass(Thread* thread, word) {
