@@ -414,18 +414,19 @@ RawObject BuiltinsModule::chr(Thread* thread, Frame* frame, word nargs) {
   return SmallStr::fromCodePoint(static_cast<int32_t>(code_point));
 }
 
-static RawObject compileBytes(const Bytes& source, const Str& filename) {
-  word bytes_len = source.length();
+static RawObject compileFromBytes(const Bytes& source, word source_len,
+                                  const Str& filename) {
+  DCHECK_BOUND(source_len, source.length());
   unique_c_ptr<byte[]> source_bytes(
-      static_cast<byte*>(std::malloc(bytes_len + 1)));
-  source.copyTo(source_bytes.get(), bytes_len);
-  source_bytes[bytes_len] = '\0';
+      static_cast<byte*>(std::malloc(source_len + 1)));
+  source.copyTo(source_bytes.get(), source_len);
+  source_bytes[source_len] = '\0';
   unique_c_ptr<char[]> filename_str(filename.toCStr());
   return compileFromCStr(reinterpret_cast<char*>(source_bytes.get()),
                          filename_str.get());
 }
 
-static RawObject compileStr(const Str& source, const Str& filename) {
+static RawObject compileFromStr(const Str& source, const Str& filename) {
   unique_c_ptr<char[]> source_str(source.toCStr());
   unique_c_ptr<char[]> filename_str(filename.toCStr());
   return compileFromCStr(source_str.get(), filename_str.get());
@@ -434,46 +435,78 @@ static RawObject compileStr(const Str& source, const Str& filename) {
 RawObject BuiltinsModule::compile(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  // TODO(T40808881): Add compile support for bytearray, buffer, and subclasses
-  Object data(&scope, args.get(0));
-  if (!data.isStr() && !data.isBytes()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "compile() currently only supports a str or bytes source");
+  Object source_obj(&scope, args.get(0));
+  Object filename_obj(&scope, args.get(1));
+  Object mode_obj(&scope, args.get(2));
+  Object flags_obj(&scope, args.get(3));
+  Object dont_inherit(&scope, args.get(4));
+  Object optimize_obj(&scope, args.get(5));
+  Runtime* runtime = thread->runtime();
+
+  if (!runtime->isInstanceOfStr(*filename_obj)) {
+    // TODO(T39919821): convert using the implementation of PyUnicode_FSDecoder
+    UNIMPLEMENTED("PyUnicode_FSDecoder");
   }
-  Str filename(&scope, args.get(1));
-  Str mode(&scope, args.get(2));
-  // TODO(emacs): Refactor into sane argument-fetching code
-  if (args.get(3) != SmallInt::fromWord(0)) {  // not the default
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "compile() does not yet support user-supplied flags");
+  if (!runtime->isInstanceOfStr(*mode_obj)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "compile() argument 3 must be str, not %T",
+                                &mode_obj);
   }
-  // TODO(T40872645): Add support for compiler flag forwarding
-  if (args.get(4) == Bool::falseObj()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "compile() does not yet support compiler flag forwarding");
+  if (!runtime->isInstanceOfInt(*flags_obj)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "an integer is required (got type %T)",
+                                &flags_obj);
   }
-  if (args.get(5) != SmallInt::fromWord(-1)) {  // not the default
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "compile() does not yet support user-supplied optimize");
+  if (!runtime->isInstanceOfInt(*dont_inherit)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "an integer is required (got type %T)",
+                                &dont_inherit);
   }
-  // Note: mode doesn't actually do anything yet.
-  if (!mode.equalsCStr("exec") && !mode.equalsCStr("eval") &&
-      !mode.equalsCStr("single")) {
-    return thread->raiseWithFmt(
-        LayoutId::kValueError,
-        "Expected mode to be 'exec', 'eval', or 'single' in 'compile'");
+  if (!runtime->isInstanceOfInt(*optimize_obj)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "an integer is required (got type %T)",
+                                &optimize_obj);
   }
 
-  if (data.isStr()) {
-    Str source_str(&scope, *data);
-    return compileStr(source_str, filename);
+  if (flags_obj != SmallInt::fromWord(0)) {
+    UNIMPLEMENTED("user-supplied flags");
   }
-  Bytes source_bytes(&scope, bytesUnderlying(thread, data));
-  return compileBytes(source_bytes, filename);
+
+  if (optimize_obj != SmallInt::fromWord(-1)) {
+    UNIMPLEMENTED("user-supplied optimize");
+  }
+
+  if (dont_inherit != Bool::trueObj()) {
+    // TODO(T40872645): Add support for compiler flag forwarding
+    UNIMPLEMENTED("compiler flag forwarding");
+  }
+
+  Str mode(&scope, strUnderlying(thread, mode_obj));
+  if (mode.equalsCStr("exec") || mode.equalsCStr("eval") ||
+      mode.equalsCStr("single")) {
+    // TODO(T54976162): add support for compiler mode
+  } else {
+    return thread->raiseWithFmt(
+        LayoutId::kValueError,
+        "compile() mode must be 'exec', 'eval' or 'single'");
+  }
+
+  Str filename(&scope, strUnderlying(thread, filename_obj));
+  if (runtime->isInstanceOfStr(*source_obj)) {
+    Str source(&scope, strUnderlying(thread, source_obj));
+    return compileFromStr(source, filename);
+  }
+  if (runtime->isInstanceOfBytes(*source_obj)) {
+    Bytes source(&scope, bytesUnderlying(thread, source_obj));
+    return compileFromBytes(source, source.length(), filename);
+  }
+  if (runtime->isInstanceOfByteArray(*source_obj)) {
+    ByteArray source(&scope, *source_obj);
+    Bytes source_bytes(&scope, source.bytes());
+    return compileFromBytes(source_bytes, source.numItems(), filename);
+  }
+  // TODO(T38246066): bytes-like other than bytes/bytearray
+  UNIMPLEMENTED("compile source from buffer or AST");
 }
 
 RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
@@ -531,8 +564,8 @@ RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
   if (source_obj.isStr()) {
     Str source(&scope, *source_obj);
     Str filename(&scope, runtime->newStrFromCStr("<exec string>"));
-    source_obj = compileStr(source, filename);
-    DCHECK(source_obj.isCode(), "compileStr must return code object");
+    source_obj = compileFromStr(source, filename);
+    DCHECK(source_obj.isCode(), "compileFromStr must return code object");
   }
   Code code(&scope, *source_obj);
   if (code.numFreevars() != 0) {

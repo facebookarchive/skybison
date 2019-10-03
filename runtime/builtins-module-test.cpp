@@ -765,6 +765,27 @@ TEST_F(BuiltinsModuleTest, BuiltinCompile) {
   ASSERT_TRUE(names.contains(runtime_.newStrFromCStr("b")));
 }
 
+TEST_F(BuiltinsModuleTest, BuiltinCompileWithByteArrayReturnsCode) {
+  HandleScope scope(thread_);
+  const byte source_bytes[] = "a = 1; b = 2";
+  ByteArray source(&scope, runtime_.newByteArray());
+  runtime_.byteArrayExtend(thread_, source, source_bytes);
+  Object filename(&scope, runtime_.newStrFromCStr("<string>"));
+  Object mode(&scope, runtime_.newStrFromCStr("eval"));
+  Object flags(&scope, SmallInt::fromWord(0));
+  Object dont_inherit(&scope, Bool::trueObj());
+  Object optimize(&scope, SmallInt::fromWord(-1));
+  Code code(&scope, runBuiltin(BuiltinsModule::compile, source, filename, mode,
+                               flags, dont_inherit, optimize));
+  EXPECT_TRUE(isStrEqualsCStr(code.filename(), "<string>"));
+
+  ASSERT_TRUE(code.names().isTuple());
+  Tuple names(&scope, code.names());
+  ASSERT_EQ(names.length(), 2);
+  ASSERT_TRUE(names.contains(runtime_.newStrFromCStr("a")));
+  ASSERT_TRUE(names.contains(runtime_.newStrFromCStr("b")));
+}
+
 TEST_F(BuiltinsModuleTest, BuiltinCompileBytes) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
@@ -802,6 +823,25 @@ code = compile(data, "<string>", "eval", dont_inherit=True)
   ASSERT_TRUE(names.contains(runtime_.newStrFromCStr("b")));
 }
 
+TEST_F(BuiltinsModuleTest, BuiltinCompileWithStrSubclass) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class Foo(str): pass
+data = Foo("a = 1; b = 2")
+code = compile(data, "<string>", "eval", dont_inherit=True)
+)")
+                   .isError());
+  Code code(&scope, mainModuleAt(&runtime_, "code"));
+  Object filename(&scope, code.filename());
+  EXPECT_TRUE(isStrEqualsCStr(*filename, "<string>"));
+
+  ASSERT_TRUE(code.names().isTuple());
+  Tuple names(&scope, code.names());
+  ASSERT_EQ(names.length(), 2);
+  ASSERT_TRUE(names.contains(runtime_.newStrFromCStr("a")));
+  ASSERT_TRUE(names.contains(runtime_.newStrFromCStr("b")));
+}
+
 TEST_F(BuiltinsModuleDeathTest, BuiltinCompileRaisesTypeErrorGivenTooFewArgs) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime_, "compile(1)"), LayoutId::kTypeError,
@@ -820,7 +860,7 @@ TEST_F(BuiltinsModuleTest, BuiltinCompileRaisesTypeErrorGivenBadMode) {
       runFromCStr(&runtime_,
                   "compile('hello', 'hello', 'hello', dont_inherit=True)"),
       LayoutId::kValueError,
-      "Expected mode to be 'exec', 'eval', or 'single' in 'compile'"));
+      "compile() mode must be 'exec', 'eval' or 'single'"));
 }
 
 TEST_F(BuiltinsModuleTest, BuiltinExecSetsGlobal) {
