@@ -10,6 +10,25 @@ using namespace testing;
 
 using IterExtensionApiTest = ExtensionApi;
 
+TEST_F(IterExtensionApiTest, CallIterNewReturnsIterator) {
+  PyRun_SimpleString(R"(
+class C:
+  def __init__(self):
+    self.x = -3
+  def __next__(self):
+    self.x += 2
+    return self.x
+i = C()
+)");
+  PyObjectPtr i(moduleGet("__main__", "i"));
+  PyObjectPtr sentinel(PyLong_FromLong(5));
+  PyObjectPtr iterator(PyCallIter_New(i, sentinel));
+  PyObjectPtr type(PyObject_Type(iterator));
+  EXPECT_EQ(strcmp(_PyType_Name(reinterpret_cast<PyTypeObject*>(type.get())),
+                   "callable_iterator"),
+            0);
+}
+
 TEST_F(IterExtensionApiTest, SeqIterNewWithNonSequenceRaises) {
   ASSERT_EQ(PySeqIter_New(Py_None), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);

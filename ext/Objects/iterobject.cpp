@@ -15,8 +15,16 @@ PY_EXPORT PyObject* PySeqIter_New(PyObject* seq) {
   return ApiHandle::newReference(thread, runtime->newSeqIterator(seq_obj));
 }
 
-PY_EXPORT PyObject* PyCallIter_New(PyObject* /* e */, PyObject* /* l */) {
-  UNIMPLEMENTED("PyCallIter_New");
+PY_EXPORT PyObject* PyCallIter_New(PyObject* pycallable, PyObject* pysentinel) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object callable(&scope, ApiHandle::fromPyObject(pycallable)->asObject());
+  Object sentinel(&scope, ApiHandle::fromPyObject(pysentinel)->asObject());
+  Object result(&scope, thread->invokeFunction2(SymbolId::kBuiltins,
+                                                SymbolId::kCallableIterator,
+                                                callable, sentinel));
+  if (result.isErrorException()) return nullptr;
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT int PyIter_Check_Func(PyObject* iter) {

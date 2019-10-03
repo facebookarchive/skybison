@@ -1091,38 +1091,6 @@ iter(C())
                      LayoutId::kUserWarning));
 }
 
-TEST_F(BuiltinsModuleTest, IterWithCallableReturnsIterator) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-class C:
-  def __init__(self):
-    self.x = 0
-  def __call__(self):
-    self.x += 1
-    return self.x
-c = C()
-callable_iter = iter(c, 3)
-reduced = callable_iter.__reduce__()
-l = list(callable_iter)
-)")
-                   .isError());
-  HandleScope scope(thread_);
-  Object l(&scope, mainModuleAt(&runtime_, "l"));
-  EXPECT_PYLIST_EQ(l, {1, 2});
-
-  Object iter(&scope, moduleAtByCStr(&runtime_, "builtins", "iter"));
-  Object c(&scope, mainModuleAt(&runtime_, "c"));
-  Object reduced_obj(&scope, mainModuleAt(&runtime_, "reduced"));
-  ASSERT_TRUE(reduced_obj.isTuple());
-  Tuple reduced(&scope, *reduced_obj);
-  ASSERT_EQ(reduced.length(), 2);
-  EXPECT_EQ(reduced.at(0), iter);
-  ASSERT_TRUE(reduced.at(1).isTuple());
-  Tuple inner(&scope, reduced.at(1));
-  ASSERT_EQ(inner.length(), 2);
-  EXPECT_EQ(inner.at(0), c);
-  EXPECT_TRUE(isIntEqualsWord(inner.at(1), 3));
-}
-
 TEST_F(BuiltinsModuleTest, NextWithoutIteratorRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 class C:

@@ -488,6 +488,7 @@ class Runtime;
   V(BytesIterator, "bytes_iterator")                                           \
   V(BytesWarning, "BytesWarning")                                              \
   V(Callable, "callable")                                                      \
+  V(CallableIterator, "callable_iterator")                                     \
   V(Cast, "cast")                                                              \
   V(Cause, "cause")                                                            \
   V(ChildProcessError, "ChildProcessError")                                    \

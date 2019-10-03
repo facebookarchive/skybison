@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import builtins
 import unittest
 import warnings
 from unittest.mock import Mock
@@ -1553,6 +1554,36 @@ class BytesTests(unittest.TestCase):
         self.assertEqual(b"1aaa1".strip(bytearray()), b"1aaa1")
         self.assertEqual(b"1 aaa1".strip(bytearray(b" 1")), b"aaa")
         self.assertEqual(b"hello".strip(b"ho"), b"ell")
+
+
+class CallableIteratorTest(unittest.TestCase):
+    def test_callable_iterator_iterates_till_sentinel(self):
+        class C:
+            def __init__(self):
+                self.x = 0
+
+            def __call__(self):
+                self.x += 1
+                return self.x
+
+        i = C()
+        it = iter(i, 5)
+        self.assertFalse(hasattr(it, "__len__"))
+        self.assertEqual(list(it), [1, 2, 3, 4])
+
+    @pyro_only
+    def test_callable_iterator_dunder_init_initializes(self):
+        class C:
+            def __init__(self):
+                self.x = -5
+
+            def __call__(self):
+                self.x += 3
+                return self.x
+
+        i = C()
+        it = builtins.callable_iterator(i, 7)
+        self.assertEqual(list(it), [-2, 1, 4])
 
 
 class ChrTests(unittest.TestCase):

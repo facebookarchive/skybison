@@ -2967,6 +2967,24 @@ def issubclass(cls, type_or_tuple) -> bool:
     return _issubclass(cls, type_or_tuple)
 
 
+class callable_iterator:
+    def __init__(self, callable, sentinel):
+        self.__callable = callable
+        self.__sentinel = sentinel
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        value = self.__callable()
+        if self.__sentinel == value:
+            raise StopIteration()
+        return value
+
+    def __reduce__(self):
+        return (iter, (self.__callable, self.__sentinel))
+
+
 def iter(obj, sentinel=None):
     if sentinel is None:
         dunder_iter = _Unbound
@@ -2982,24 +3000,7 @@ def iter(obj, sentinel=None):
             return iterator(obj)
         raise TypeError(f"'{_type(obj).__name__}' object is not iterable")
 
-    class CallIter:
-        def __init__(self, callable, sentinel):
-            self.__callable = callable
-            self.__sentinel = sentinel
-
-        def __iter__(self):
-            return self
-
-        def __next__(self):
-            value = self.__callable()
-            if self.__sentinel == value:
-                raise StopIteration()
-            return value
-
-        def __reduce__(self):
-            return (iter, (self.__callable, self.__sentinel))
-
-    return CallIter(obj, sentinel)
+    return callable_iterator(obj, sentinel)
 
 
 class iterator(bootstrap=True):
