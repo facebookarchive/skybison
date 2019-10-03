@@ -179,7 +179,7 @@ result = f.__call__(3)
   EXPECT_TRUE(isIntEqualsWord(*result, 3));
 }
 
-TEST_F(FunctionBuiltinsTest, DunderGlobalsIsDict) {
+TEST_F(FunctionBuiltinsTest, DunderGlobalsIsModuleProxy) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def f(a):
   return a
@@ -188,23 +188,7 @@ result = f.__globals__
                    .isError());
   HandleScope scope(thread_);
   Object result(&scope, mainModuleAt(&runtime_, "result"));
-  EXPECT_TRUE(result.isDict());
-}
-
-// TODO(T48823386): Update this test once we pass ModuleProxy in
-// function.__globals__.
-TEST_F(FunctionBuiltinsTest, FunctionGlobalsIsEqualToModuleProxyContainedDict) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-import sys
-function_globals = sys.exit.__globals__
-module_proxy = sys.__dict__
-)")
-                   .isError());
-  HandleScope scope(thread_);
-  Object function_globals(&scope, mainModuleAt(&runtime_, "function_globals"));
-  ModuleProxy module_proxy(&scope, mainModuleAt(&runtime_, "module_proxy"));
-  Object module_dict(&scope, Module::cast(module_proxy.module()).dict());
-  EXPECT_EQ(*function_globals, *module_dict);
+  EXPECT_TRUE(result.isModuleProxy());
 }
 
 TEST_F(FunctionBuiltinsTest, FunctionSetAttrSetsAttribute) {

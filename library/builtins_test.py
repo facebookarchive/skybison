@@ -2634,6 +2634,25 @@ class FrozensetTests(unittest.TestCase):
         self.assertFalse(frozenset({1, 2}).issuperset(range(1, 4)))
 
 
+class FunctionTests(unittest.TestCase):
+    def test_dunder_globals_returns_identical_object(self):
+        def foo():
+            pass
+
+        self.assertIs(foo.__globals__, foo.__globals__)
+
+    def test_dunder_globals_returns_dict_of_defining_module_dict(self):
+        from types import ModuleType
+
+        module = ModuleType("test_module")
+        module_code = """
+def foo():
+  pass
+        """
+        exec(module_code, module.__dict__)
+        self.assertIs(module.__dict__["foo"].__globals__, module.__dict__)
+
+
 class GeneratorTests(unittest.TestCase):
     def test_managed_stop_iteration(self):
         warnings.filterwarnings(

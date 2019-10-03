@@ -296,6 +296,11 @@ def _frozenset_guard(obj):
 
 
 @_patch
+def _function_globals(obj):
+    pass
+
+
+@_patch
 def _gc():
     pass
 

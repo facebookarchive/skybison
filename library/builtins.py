@@ -60,6 +60,7 @@ _float_format = _float_format  # noqa: F821
 _float_guard = _float_guard  # noqa: F821
 _frozenset_check = _frozenset_check  # noqa: F821
 _frozenset_guard = _frozenset_guard  # noqa: F821
+_function_globals = _function_globals  # noqa: F821
 _get_member_byte = _get_member_byte  # noqa: F821
 _get_member_char = _get_member_char  # noqa: F821
 _get_member_double = _get_member_double  # noqa: F821
@@ -194,6 +195,8 @@ def __build_class__(func, name, *bases, metaclass=_Unbound, bootstrap=False, **k
 class function(bootstrap=True):
     def __call__(self, *args, **kwargs):
         return self(*args, **kwargs)
+
+    __globals__ = _property(_function_globals)
 
     def __get__(self, instance, owner):
         pass

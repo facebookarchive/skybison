@@ -175,7 +175,7 @@ TEST_F(DebuggingTests, DumpExtendedHeapObjectWithOverflowDict) {
   EXPECT_EQ(ss.str(), R"(heap object <type "function">:
   (in-object) "__code__" = <code "name0">
   (in-object) "__doc__" = "const0"
-  (in-object) "__globals__" = {}
+  (in-object) None = {}
   (in-object) "__module__" = "barmodule"
   (in-object) "__name__" = "baz"
   (in-object) "__qualname__" = "footype.baz"

@@ -128,6 +128,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderFloatSignbit, underFloatSignbit},
     {SymbolId::kUnderFrozenSetCheck, underFrozenSetCheck},
     {SymbolId::kUnderFrozenSetGuard, underFrozenSetGuard},
+    {SymbolId::kUnderFunctionGlobals, underFunctionGlobals},
     {SymbolId::kUnderGc, underGc},
     {SymbolId::kUnderGetMemberByte, underGetMemberByte},
     {SymbolId::kUnderGetMemberChar, underGetMemberChar},
@@ -1652,6 +1653,19 @@ RawObject UnderBuiltinsModule::underFrozenSetGuard(Thread* thread, Frame* frame,
     return NoneType::object();
   }
   return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kFrozenSet);
+}
+
+RawObject UnderBuiltinsModule::underFunctionGlobals(Thread* thread,
+                                                    Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  if (!self.isFunction()) {
+    return thread->raiseRequiresType(self, SymbolId::kFunction);
+  }
+  Function function(&scope, *self);
+  Module module(&scope, function.moduleObject());
+  return module.moduleProxy();
 }
 
 RawObject UnderBuiltinsModule::underGc(Thread* thread, Frame* /* frame */,

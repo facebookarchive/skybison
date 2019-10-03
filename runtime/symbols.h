@@ -230,6 +230,7 @@ class Runtime;
   V(UnderFrozenSetCheck, "_frozenset_check")                                   \
   V(UnderFrozenSetGuard, "_frozenset_guard")                                   \
   V(UnderFspath, "_fspath")                                                    \
+  V(UnderFunctionGlobals, "_function_globals")                                 \
   V(UnderFunctools, "_functools")                                              \
   V(UnderGc, "_gc")                                                            \
   V(UnderGetframeCode, "_getframe_code")                                       \
