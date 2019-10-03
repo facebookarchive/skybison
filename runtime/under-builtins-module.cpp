@@ -170,6 +170,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderMappingProxyGuard, underMappingProxyGuard},
     {SymbolId::kUnderMappingProxyMapping, underMappingProxyMapping},
     {SymbolId::kUnderMappingProxySetMapping, underMappingProxySetMapping},
+    {SymbolId::kUnderMemoryviewCheck, underMemoryviewCheck},
     {SymbolId::kUnderMemoryviewGuard, underMemoryviewGuard},
     {SymbolId::kUnderMemoryviewItemsize, underMemoryviewItemsize},
     {SymbolId::kUnderMemoryviewNbytes, underMemoryviewNbytes},
@@ -2355,6 +2356,12 @@ RawObject UnderBuiltinsModule::underMappingProxySetMapping(Thread* thread,
   MappingProxy mappingproxy(&scope, args.get(0));
   mappingproxy.setMapping(args.get(1));
   return *mappingproxy;
+}
+
+RawObject UnderBuiltinsModule::underMemoryviewCheck(Thread*, Frame* frame,
+                                                    word nargs) {
+  Arguments args(frame, nargs);
+  return Bool::fromBool(args.get(0).isMemoryView());
 }
 
 RawObject UnderBuiltinsModule::underMemoryviewGuard(Thread* thread,

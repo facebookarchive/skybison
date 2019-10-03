@@ -12,6 +12,7 @@
 namespace python {
 
 const BuiltinType UnderIoModule::kBuiltinTypes[] = {
+    {SymbolId::kBufferedRandom, LayoutId::kBufferedRandom},
     {SymbolId::kBufferedReader, LayoutId::kBufferedReader},
     {SymbolId::kBufferedWriter, LayoutId::kBufferedWriter},
     {SymbolId::kBytesIO, LayoutId::kBytesIO},
@@ -54,6 +55,17 @@ void UnderBufferedIOBaseBuiltins::postInitialize(Runtime*,
 
 const BuiltinAttribute UnderBufferedIOMixinBuiltins::kAttributes[] = {
     {SymbolId::kUnderRaw, UnderBufferedIOMixin::kUnderlyingOffset},
+    {SymbolId::kSentinelId, 0},
+};
+
+const BuiltinAttribute BufferedRandomBuiltins::kAttributes[] = {
+    {SymbolId::kUnderRaw, BufferedRandom::kUnderlyingOffset},
+    {SymbolId::kUnderReadBuf, BufferedRandom::kReadBufOffset},
+    {SymbolId::kUnderReadLock, BufferedRandom::kReadLockOffset},
+    {SymbolId::kUnderReadPos, BufferedRandom::kReadPosOffset},
+    {SymbolId::kUnderWriteBuf, BufferedRandom::kWriteBufOffset},
+    {SymbolId::kUnderWriteLock, BufferedRandom::kWriteLockOffset},
+    {SymbolId::kBufferSize, BufferedRandom::kBufferSizeOffset},
     {SymbolId::kSentinelId, 0},
 };
 

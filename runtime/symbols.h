@@ -290,6 +290,7 @@ class Runtime;
   V(UnderMappingProxyGuard, "_mappingproxy_guard")                             \
   V(UnderMappingProxyMapping, "_mappingproxy_mapping")                         \
   V(UnderMappingProxySetMapping, "_mappingproxy_set_mapping")                  \
+  V(UnderMemoryviewCheck, "_memoryview_check")                                 \
   V(UnderMemoryviewGuard, "_memoryview_guard")                                 \
   V(UnderMemoryviewItemsize, "_memoryview_itemsize")                           \
   V(UnderMemoryviewNbytes, "_memoryview_nbytes")                               \
@@ -477,6 +478,7 @@ class Runtime;
   V(BrokenPipeError, "BrokenPipeError")                                        \
   V(BufferError, "BufferError")                                                \
   V(BufferSize, "buffer_size")                                                 \
+  V(BufferedRandom, "BufferedRandom")                                          \
   V(BufferedReader, "BufferedReader")                                          \
   V(BufferedWriter, "BufferedWriter")                                          \
   V(BuiltinModuleNames, "builtin_module_names")                                \

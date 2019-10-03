@@ -28,6 +28,7 @@ class Handle;
   V(Object)                                                                    \
   V(AsyncGenerator)                                                            \
   V(BoundMethod)                                                               \
+  V(BufferedRandom)                                                            \
   V(BufferedReader)                                                            \
   V(BufferedWriter)                                                            \
   V(ByteArray)                                                                 \
@@ -278,6 +279,7 @@ class RawObject {
   bool isAsyncGenerator() const;
   bool isBaseException() const;
   bool isBoundMethod() const;
+  bool isBufferedRandom() const;
   bool isBufferedReader() const;
   bool isBufferedWriter() const;
   bool isByteArray() const;
@@ -3121,6 +3123,37 @@ class RawUnderBufferedIOMixin : public RawUnderBufferedIOBase {
   RAW_OBJECT_COMMON_NO_CAST(UnderBufferedIOMixin);
 };
 
+class RawBufferedRandom : public RawUnderBufferedIOMixin {
+ public:
+  // Getters and setters
+  word bufferSize() const;
+  void setBufferSize(word buffer_size) const;
+  RawObject closed() const;
+  void setClosed(RawObject closed) const;
+  RawObject readBuf() const;
+  void setReadBuf(RawObject read_buf) const;
+  RawObject readLock() const;
+  void setReadLock(RawObject read_lock) const;
+  word readPos() const;
+  void setReadPos(word read_pos) const;
+  RawObject writeBuf() const;
+  void setWriteBuf(RawObject under_write_buf) const;
+  RawObject writeLock() const;
+  void setWriteLock(RawObject under_write_lock) const;
+
+  // Layout
+  static const int kBufferSizeOffset = RawUnderBufferedIOMixin::kSize;
+  static const int kClosedOffset = kBufferSizeOffset + kPointerSize;
+  static const int kReadBufOffset = kClosedOffset + kPointerSize;
+  static const int kReadLockOffset = kReadBufOffset + kPointerSize;
+  static const int kReadPosOffset = kReadLockOffset + kPointerSize;
+  static const int kWriteBufOffset = kReadPosOffset + kPointerSize;
+  static const int kWriteLockOffset = kWriteBufOffset + kPointerSize;
+  static const int kSize = kWriteLockOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON_NO_CAST(BufferedRandom);
+};
+
 class RawBufferedReader : public RawUnderBufferedIOMixin {
  public:
   // Getters and setters
@@ -3423,6 +3456,10 @@ inline bool RawObject::isBaseException() const {
 
 inline bool RawObject::isBoundMethod() const {
   return isHeapObjectWithLayout(LayoutId::kBoundMethod);
+}
+
+inline bool RawObject::isBufferedRandom() const {
+  return isHeapObjectWithLayout(LayoutId::kBufferedRandom);
 }
 
 inline bool RawObject::isBufferedReader() const {
@@ -6219,6 +6256,64 @@ inline RawObject RawUnderBufferedIOMixin::underlying() const {
 
 inline void RawUnderBufferedIOMixin::setUnderlying(RawObject value) const {
   instanceVariableAtPut(kUnderlyingOffset, value);
+}
+
+// RawBufferedRandom
+
+inline word RawBufferedRandom::bufferSize() const {
+  return RawSmallInt::cast(instanceVariableAt(kBufferSizeOffset)).value();
+}
+
+inline void RawBufferedRandom::setBufferSize(word buffer_size) const {
+  instanceVariableAtPut(kBufferSizeOffset, RawSmallInt::fromWord(buffer_size));
+}
+
+inline RawObject RawBufferedRandom::closed() const {
+  return instanceVariableAt(kClosedOffset);
+}
+
+inline void RawBufferedRandom::setClosed(RawObject closed) const {
+  instanceVariableAtPut(kClosedOffset, closed);
+}
+
+inline RawObject RawBufferedRandom::readLock() const {
+  return instanceVariableAt(kReadLockOffset);
+}
+
+inline void RawBufferedRandom::setReadLock(RawObject read_lock) const {
+  instanceVariableAtPut(kReadLockOffset, read_lock);
+}
+
+inline RawObject RawBufferedRandom::readBuf() const {
+  return instanceVariableAt(kReadBufOffset);
+}
+
+inline void RawBufferedRandom::setReadBuf(RawObject read_buf) const {
+  instanceVariableAtPut(kReadBufOffset, read_buf);
+}
+
+inline word RawBufferedRandom::readPos() const {
+  return RawSmallInt::cast(instanceVariableAt(kReadPosOffset)).value();
+}
+
+inline void RawBufferedRandom::setReadPos(word read_pos) const {
+  instanceVariableAtPut(kReadPosOffset, RawSmallInt::fromWord(read_pos));
+}
+
+inline RawObject RawBufferedRandom::writeBuf() const {
+  return instanceVariableAt(kWriteBufOffset);
+}
+
+inline void RawBufferedRandom::setWriteBuf(RawObject write_buf) const {
+  instanceVariableAtPut(kWriteBufOffset, write_buf);
+}
+
+inline RawObject RawBufferedRandom::writeLock() const {
+  return instanceVariableAt(kWriteLockOffset);
+}
+
+inline void RawBufferedRandom::setWriteLock(RawObject write_lock) const {
+  instanceVariableAtPut(kWriteLockOffset, write_lock);
 }
 
 // RawBufferedReader

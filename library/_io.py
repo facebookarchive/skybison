@@ -32,10 +32,12 @@ _Unbound = _Unbound  # noqa: F821
 _address = _address  # noqa: F821
 _bytearray_len = _bytearray_len  # noqa: F821
 _bytes_check = _bytes_check  # noqa: F821
+_bytes_len = _bytes_len  # noqa: F821
 _byteslike_guard = _byteslike_guard  # noqa: F821
 _float_check = _float_check  # noqa: F821
 _index = _index  # noqa: F821
 _int_check = _int_check  # noqa: F821
+_memoryview_check = _memoryview_check  # noqa: F821
 _object_type_hasattr = _object_type_hasattr  # noqa: F821
 _object_type_getattr = _object_type_getattr  # noqa: F821
 _os_write = _os_write  # noqa: F821
@@ -81,13 +83,6 @@ def _whence_guard(whence):
 
 
 BlockingIOError = builtins.BlockingIOError
-
-
-class BufferedRandom:
-    """unimplemented"""
-
-    def __init__(self, *args, **kwargs):
-        _unimplemented()
 
 
 class IncrementalNewlineDecoder(bootstrap=True):
@@ -794,6 +789,102 @@ class BufferedRWPair(_BufferedIOBase):
 
     def write(self, b):
         return self.writer.write(b)
+
+
+class BufferedRandom(_BufferedIOMixin, bootstrap=True):
+    def __init__(self, raw, buffer_size=DEFAULT_BUFFER_SIZE):
+        if not raw.seekable():
+            raise UnsupportedOperation("File or stream is not seekable.")
+        if not raw.readable():
+            raise UnsupportedOperation("File or stream is not readable.")
+        if not raw.writable():
+            raise UnsupportedOperation("File or stream is not writable.")
+
+        _BufferedIOMixin.__init__(self, raw)
+        if buffer_size <= 0:
+            raise ValueError("buffer size must be strictly positive")
+        self.buffer_size = buffer_size
+        self._read_lock = _thread_Lock()
+        self._write_lock = _thread_Lock()
+        self._write_buf = bytearray()  # TODO(T47880928): use a memoryview
+        self._reset_read_buf()
+
+    def _flush_unlocked(self):
+        return BufferedWriter._flush_unlocked(self)
+
+    def _peek_unlocked(self, n=0):
+        return BufferedReader._peek_unlocked(self, n)
+
+    def _read_unlocked(self, n=None):
+        return BufferedReader._read_unlocked(self, n)
+
+    def _readinto(self, buf, read1):
+        return BufferedReader._readinto(self, buf, read1)
+
+    def _reset_read_buf(self):
+        return BufferedReader._reset_read_buf(self)
+
+    def flush(self):
+        with self._write_lock:
+            self._flush_unlocked()
+
+    def peek(self, size=0):
+        if self.closed:
+            raise ValueError("peek of closed file")
+        self.flush()
+        return BufferedReader.peek(self, size)
+
+    def read(self, size=None):
+        if self.closed:
+            raise ValueError("read of closed file")
+        self.flush()
+        return BufferedReader.read(self, size)
+
+    def read1(self, size):
+        if self.closed:
+            raise ValueError("read of closed file")
+        self.flush()
+        return BufferedReader.read1(self, size)
+
+    def readinto(self, b):
+        self.flush()
+        return BufferedReader.readinto(self, b)
+
+    def readinto1(self, b):
+        self.flush()
+        return BufferedReader.readinto1(self, b)
+
+    def seek(self, pos, whence=0):
+        _whence_guard(whence)
+        if self.closed:
+            raise ValueError("seek of closed file")
+        self.flush()
+        if self._read_buf:
+            with self._read_lock:
+                self.raw.seek(self._read_pos - _bytes_len(self._read_buf), 1)
+        pos = self.raw.seek(pos, whence)
+        with self._read_lock:
+            self._reset_read_buf()
+        if pos < 0:
+            raise OSError("seek() returned invalid position")
+        return pos
+
+    def tell(self):
+        if self._write_buf:
+            return BufferedWriter.tell(self)
+        return BufferedReader.tell(self)
+
+    def truncate(self, pos=None):
+        return BufferedWriter.truncate(self, self.tell() if pos is None else pos)
+
+    def write(self, b):
+        if self.closed:
+            raise ValueError("write to closed file")
+        if self._read_buf:
+            with self._read_lock:
+                self.raw.seek(self._read_pos - _bytes_len(self._read_buf), 1)
+                self._reset_read_buf()
+        return BufferedWriter.write(self, b)
 
 
 class BufferedReader(_BufferedIOMixin, bootstrap=True):

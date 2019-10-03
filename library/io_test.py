@@ -394,6 +394,210 @@ class BufferedRWPairTests(unittest.TestCase):
                 self.assertEqual(writer.writable.call_count, 3)
 
 
+class BufferedRandomTests(unittest.TestCase):
+    def test_dunder_init_with_non_seekable_raises_unsupported_operation(self):
+        class C(_io.BytesIO):
+            def seekable(self):
+                return False
+
+        c = C()
+        with self.assertRaisesRegex(_io.UnsupportedOperation, "not seekable"):
+            _io.BufferedRandom(c)
+
+    def test_dunder_init_with_non_readable_raises_unsupported_operation(self):
+        class C(_io.BytesIO):
+            def readable(self):
+                return False
+
+        c = C()
+        with self.assertRaisesRegex(_io.UnsupportedOperation, "not readable"):
+            _io.BufferedRandom(c)
+
+    def test_dunder_init_with_non_writable_raises_unsupported_operation(self):
+        class C(_io.BytesIO):
+            def writable(self):
+                return False
+
+        c = C()
+        with self.assertRaisesRegex(_io.UnsupportedOperation, "not writable"):
+            _io.BufferedRandom(c)
+
+    def test_dunder_init_with_non_positive_buffer_size_raises_value_error(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            with self.assertRaisesRegex(ValueError, "buffer size"):
+                _io.BufferedRandom(bytes_io, 0)
+
+    def test_flush_with_closed_raises_value_error(self):
+        writer = _io.BufferedRandom(_io.BytesIO(b"hello"))
+        writer.close()
+        self.assertRaisesRegex(ValueError, "flush of closed file", writer.flush)
+
+    def test_flush_writes_buffered_bytes(self):
+        with _io.BytesIO(b"Hello world!") as bytes_io:
+            with _io.BufferedRandom(bytes_io) as writer:
+                writer.write(b"foo bar")
+                self.assertEqual(bytes_io.getvalue(), b"Hello world!")
+                writer.flush()
+                self.assertEqual(bytes_io.getvalue(), b"foo barorld!")
+
+    def test_peek_returns_bytes(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            with _io.BufferedRandom(bytes_io) as buffer:
+                self.assertEqual(buffer.peek(), b"hello")
+
+    def test_peek_with_negative_returns_bytes(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            with _io.BufferedRandom(bytes_io) as buffer:
+                self.assertEqual(buffer.peek(-1), b"hello")
+
+    def test_raw_returns_raw(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            with _io.BufferedRandom(bytes_io) as buffered_io:
+                self.assertIs(buffered_io.raw, bytes_io)
+
+    def test_read_with_detached_stream_raises_value_error(self):
+        with _io.BytesIO() as bytes_io:
+            buffered = _io.BufferedRandom(bytes_io)
+            buffered.detach()
+            self.assertRaisesRegex(ValueError, "detached", buffered.read)
+
+    def test_read_with_closed_stream_raises_value_error(self):
+        bytes_io = _io.BytesIO(b"hello")
+        buffered = _io.BufferedRandom(bytes_io)
+        bytes_io.close()
+        self.assertRaisesRegex(ValueError, "read of closed file", buffered.read)
+
+    def test_read_with_negative_size_raises_value_error(self):
+        with _io.BytesIO() as bytes_io:
+            buffered = _io.BufferedRandom(bytes_io)
+            with self.assertRaisesRegex(ValueError, "read length"):
+                buffered.read(-2)
+
+    def test_read_with_none_size_calls_raw_readall(self):
+        class C(_io.BytesIO):
+            def readall(self):
+                raise UserWarning("foo")
+
+        with C() as bytes_io:
+            buffered = _io.BufferedRandom(bytes_io)
+            with self.assertRaises(UserWarning) as context:
+                buffered.read(None)
+        self.assertEqual(context.exception.args, ("foo",))
+
+    def test_read_reads_bytes(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            buffered = _io.BufferedRandom(bytes_io, buffer_size=1)
+            result = buffered.read()
+            self.assertEqual(result, b"hello")
+
+    def test_read_reads_count_bytes(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            buffered = _io.BufferedRandom(bytes_io, buffer_size=1)
+            result = buffered.read(3)
+            self.assertEqual(result, b"hel")
+
+    def test_read1_with_negative_raises_value_error(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            buffered = _io.BufferedRandom(bytes_io, buffer_size=10)
+            with self.assertRaisesRegex(ValueError, "must be positive"):
+                buffered.read1(-1)
+
+    def test_read1_calls_read(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            buffered = _io.BufferedRandom(bytes_io, buffer_size=1)
+            result = buffered.read1(3)
+            self.assertEqual(result, b"hel")
+
+    def test_read1_reads_from_buffer(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            buffered = _io.BufferedRandom(bytes_io, buffer_size=10)
+            result = buffered.read1(1)
+            self.assertEqual(result, b"h")
+
+    def test_readable_calls_raw_readable(self):
+        class C(_io.BytesIO):
+            readable = Mock(name="readable", return_value=True)
+
+        with C() as raw:
+            with _io.BufferedRandom(raw) as buffer:
+                self.assertEqual(raw.readable.call_count, 1)
+                self.assertTrue(buffer.readable())
+                self.assertEqual(raw.readable.call_count, 2)
+
+    def test_seek_with_invalid_whence_raises_value_error(self):
+        with _io.BufferedRandom(_io.BytesIO(b"hello")) as writer:
+            with self.assertRaisesRegex(ValueError, "invalid whence"):
+                writer.seek(0, 3)
+
+    def test_seek_calls_raw_seek(self):
+        class C(_io.BytesIO):
+            seek = Mock(name="seek", return_value=42)
+
+        with C(b"hello") as bytes_io:
+            with _io.BufferedRandom(bytes_io) as writer:
+                self.assertEqual(writer.seek(10), 42)
+                bytes_io.seek.assert_called_once()
+
+    def test_seek_resets_position(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            buffered = _io.BufferedRandom(bytes_io)
+            buffered.read(2)
+            self.assertEqual(buffered.tell(), 2)
+            buffered.seek(0)
+            self.assertEqual(buffered.tell(), 0)
+
+    def test_tell_returns_current_position(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            buffered = _io.BufferedRandom(bytes_io)
+            self.assertEqual(buffered.tell(), 0)
+            buffered.read(2)
+            self.assertEqual(buffered.tell(), 2)
+
+    def test_tell_counts_buffered_bytes(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            with _io.BufferedRandom(bytes_io) as writer:
+                self.assertEqual(bytes_io.tell(), 0)
+                self.assertEqual(writer.tell(), 0)
+                writer.write(b"123")
+                self.assertEqual(bytes_io.tell(), 0)
+                self.assertEqual(writer.tell(), 3)
+
+    def test_truncate_uses_tell_for_default_pos(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            with _io.BufferedRandom(bytes_io) as writer:
+                writer.write(b"123")
+                self.assertEqual(writer.truncate(), 3)
+                self.assertEqual(bytes_io.getvalue(), b"123")
+
+    def test_truncate_with_pos_truncates_raw(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            with _io.BufferedRandom(bytes_io) as writer:
+                writer.write(b"123")
+                self.assertEqual(writer.truncate(4), 4)
+                self.assertEqual(bytes_io.getvalue(), b"123l")
+
+    def test_writable_calls_raw_writable(self):
+        class C(_io.BytesIO):
+            writable = Mock(name="writable", return_value=True)
+
+        with C(b"hello") as bytes_io:
+            with _io.BufferedRandom(bytes_io) as writer:
+                bytes_io.writable.assert_called_once()
+                self.assertIs(writer.writable(), True)
+                self.assertEqual(bytes_io.writable.call_count, 2)
+
+    def test_write_with_closed_raises_value_error(self):
+        writer = _io.BufferedRandom(_io.BytesIO(b"hello"))
+        writer.close()
+        with self.assertRaisesRegex(ValueError, "write to closed file"):
+            writer.write(b"")
+
+    def test_write_with_str_raises_type_error(self):
+        with _io.BufferedRandom(_io.BytesIO(b"hello")) as writer:
+            with self.assertRaisesRegex(TypeError, "str"):
+                writer.write("")
+
+
 class BufferedWriterTests(unittest.TestCase):
     def test_dunder_init_with_non_writable_stream_raises_os_error(self):
         with _io.FileIO(_getfd(), mode="r") as file_reader:

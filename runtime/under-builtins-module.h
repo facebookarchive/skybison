@@ -157,6 +157,8 @@ class UnderBuiltinsModule {
                                             word nargs);
   static RawObject underMappingProxySetMapping(Thread* thread, Frame* frame,
                                                word nargs);
+  static RawObject underMemoryviewCheck(Thread* thread, Frame* frame,
+                                        word nargs);
   static RawObject underMemoryviewGuard(Thread* thread, Frame* frame,
                                         word nargs);
   static RawObject underMemoryviewItemsize(Thread* thread, Frame* frame,

@@ -89,6 +89,7 @@ class WARN_UNUSED Handle : public T {
   V(Object)                                                                    \
   V(Bool)                                                                      \
   V(BoundMethod)                                                               \
+  V(BufferedRandom)                                                            \
   V(BufferedReader)                                                            \
   V(BufferedWriter)                                                            \
   V(ByteArrayIterator)                                                         \

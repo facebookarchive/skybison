@@ -51,6 +51,14 @@ class UnderBufferedIOMixinBuiltins
   static const BuiltinAttribute kAttributes[];
 };
 
+class BufferedRandomBuiltins
+    : public Builtins<BufferedRandomBuiltins, SymbolId::kBufferedRandom,
+                      LayoutId::kBufferedRandom,
+                      LayoutId::kUnderBufferedIOMixin> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+};
+
 class BufferedReaderBuiltins
     : public Builtins<BufferedReaderBuiltins, SymbolId::kBufferedReader,
                       LayoutId::kBufferedReader,
