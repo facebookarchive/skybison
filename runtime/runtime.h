@@ -126,7 +126,7 @@ class Runtime {
   RawObject newFrozenSet();
 
   RawObject newFunctionWithCode(Thread* thread, const Object& qualname,
-                                const Code& code, const Object& globals_dict);
+                                const Code& code, const Object& module_obj);
 
   RawObject newFunctionWithCustomEntry(Thread* thread, const Object& name,
                                        const Object& code,

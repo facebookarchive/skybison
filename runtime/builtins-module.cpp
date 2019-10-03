@@ -506,6 +506,7 @@ RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
   } else if (locals.isNoneType()) {
     locals = *globals_obj;
   }
+  Object module_obj(&scope, NoneType::object());
   if (locals.isModuleProxy() && globals_obj == locals) {
     // Unwrap module proxy. We use locals == globals as a signal to enable some
     // shortcuts for execution in module scope. They ensure correct behavior
@@ -517,6 +518,7 @@ RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
     if (globals_obj.isModuleProxy()) {
       Module module(&scope, ModuleProxy::cast(*globals_obj).module());
       globals_obj = module.dict();
+      module_obj = *module;
     } else {
       return thread->raiseWithFmt(LayoutId::kTypeError,
                                   "Expected 'globals' to be dict in 'exec'");
@@ -538,8 +540,17 @@ RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
         LayoutId::kTypeError,
         "Expected 'source' not to have free variables in 'exec'");
   }
-  Dict globals(&scope, *globals_obj);
-  return thread->exec(code, globals, locals);
+  DCHECK(globals_obj.isDict(), "globals_obj should be a Dict");
+  if (module_obj.isNoneType()) {
+    // exec() is executed with a globals not backing up a module. Create a
+    // temporary module.
+    Str empty_str(&scope, Str::empty());
+    module_obj = runtime->newModule(empty_str);
+    // TODO(T54956257): Wrap values in ValueCell in globals_obj.
+    Module::cast(*module_obj).setDict(*globals_obj);
+  }
+  Module module(&scope, *module_obj);
+  return thread->exec(code, module, locals);
 }
 
 RawObject BuiltinsModule::id(Thread* thread, Frame* frame, word nargs) {

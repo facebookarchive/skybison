@@ -52,9 +52,9 @@ static RawObject makeTestFunction(Thread* thread) {
   Runtime* runtime = thread->runtime();
   Object qualname(&scope, runtime->newStrFromCStr("footype.baz"));
   Code code(&scope, makeTestCode(thread));
-  Dict globals(&scope, runtime->newDict());
+  Module module(&scope, runtime->findOrCreateMainModule());
   Function func(&scope,
-                runtime->newFunctionWithCode(thread, qualname, code, globals));
+                runtime->newFunctionWithCode(thread, qualname, code, module));
   Dict annotations(&scope, runtime->newDict());
   Str return_name(&scope, runtime->newStrFromCStr("return"));
   Object int_type(&scope, runtime->typeAt(LayoutId::kInt));
@@ -168,7 +168,8 @@ i.baz = ()
 
 TEST_F(DebuggingTests, DumpExtendedHeapObjectWithOverflowDict) {
   HandleScope scope(thread_);
-  Object func(&scope, makeTestFunction(thread_));
+  Function func(&scope, makeTestFunction(thread_));
+  func.setGlobals(runtime_.newDict());
   std::stringstream ss;
   dumpExtendedHeapObject(ss, RawHeapObject::cast(*func));
   EXPECT_EQ(ss.str(), R"(heap object <type "function">:
@@ -580,9 +581,9 @@ def func(arg0, arg1):
                                     /*flags=*/0, /*entry=*/nullptr,
                                     /*parameter_names=*/empty_tuple, name));
   Str qualname(&scope, runtime_.newStrFromCStr("test._bytearray_check"));
-  Dict globals(&scope, runtime_.newDict());
+  Module module(&scope, runtime_.findOrCreateMainModule());
   Function builtin(
-      &scope, runtime_.newFunctionWithCode(thread_, qualname, code, globals));
+      &scope, runtime_.newFunctionWithCode(thread_, qualname, code, module));
 
   Frame* root = thread_->currentFrame();
   ASSERT_TRUE(root->isSentinel());

@@ -28,9 +28,9 @@ static RawObject createDummyBuiltinFunction(Thread* thread) {
             runtime->newBuiltinCode(/*argcount=*/1, /*posonlyargcount=*/0,
                                     /*kwonlyargcount=*/0,
                                     /*flags=*/0, entry, parameter_names, name));
-  Object globals(&scope, NoneType::object());
+  Object module(&scope, NoneType::object());
   Function function(&scope,
-                    runtime->newFunctionWithCode(thread, name, code, globals));
+                    runtime->newFunctionWithCode(thread, name, code, module));
   function.setIntrinsicId(static_cast<word>(SymbolId::kUnderIntCheck));
   return *function;
 }
@@ -1652,9 +1652,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderPatchWithMissingFuncRaisesAttributeError) {
   Object name(&scope, runtime_.newStrFromCStr("bar"));
   Code code(&scope, newEmptyCode());
   code.setName(*name);
-  Dict globals(&scope, module.dict());
   Function function(&scope,
-                    runtime_.newFunctionWithCode(thread_, name, code, globals));
+                    runtime_.newFunctionWithCode(thread_, name, code, module));
 
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(UnderBuiltinsModule::underPatch, function),

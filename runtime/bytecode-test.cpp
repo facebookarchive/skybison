@@ -66,9 +66,9 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadAttrOperations) {
       EXTENDED_ARG, 3,         LOAD_ATTR,    4,    LOAD_ATTR,    77,
   };
   code.setCode(runtime_.newBytesWithAll(bytecode));
-  Dict globals(&scope, runtime_.newDict());
+  Module module(&scope, runtime_.findOrCreateMainModule());
   Function function(&scope,
-                    runtime_.newFunctionWithCode(thread_, name, code, globals));
+                    runtime_.newFunctionWithCode(thread_, name, code, module));
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {
@@ -101,9 +101,9 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesZeroArgMethodCalls) {
       EXTENDED_ARG, 3,         LOAD_ATTR,     4,    CALL_FUNCTION, 1,
       LOAD_ATTR,    4,         CALL_FUNCTION, 0};
   code.setCode(runtime_.newBytesWithAll(bytecode));
-  Dict globals(&scope, runtime_.newDict());
+  Module module(&scope, runtime_.findOrCreateMainModule());
   Function function(&scope,
-                    runtime_.newFunctionWithCode(thread_, name, code, globals));
+                    runtime_.newFunctionWithCode(thread_, name, code, module));
 
   byte expected[] = {NOP,
                      99,
@@ -165,9 +165,9 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadConstOperations) {
   consts.atPut(6, runtime_.newTuple(4));
   code.setConsts(*consts);
 
-  Dict globals(&scope, runtime_.newDict());
+  Module module(&scope, runtime_.findOrCreateMainModule());
   Function function(&scope,
-                    runtime_.newFunctionWithCode(thread_, name, code, globals));
+                    runtime_.newFunctionWithCode(thread_, name, code, module));
 
   byte expected[] = {
       LOAD_IMMEDIATE, static_cast<byte>(opargFromObject(NoneType::object())),
@@ -192,9 +192,9 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadMethodOperations) {
       EXTENDED_ARG, 3,           LOAD_METHOD,  4,    LOAD_METHOD,  77,
   };
   code.setCode(runtime_.newBytesWithAll(bytecode));
-  Dict globals(&scope, runtime_.newDict());
+  Module module(&scope, runtime_.findOrCreateMainModule());
   Function function(&scope,
-                    runtime_.newFunctionWithCode(thread_, name, code, globals));
+                    runtime_.newFunctionWithCode(thread_, name, code, module));
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {
@@ -223,9 +223,9 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesStoreAttr) {
   Code code(&scope, newEmptyCode());
   byte bytecode[] = {STORE_ATTR, 48};
   code.setCode(runtime_.newBytesWithAll(bytecode));
-  Dict globals(&scope, runtime_.newDict());
+  Module module(&scope, runtime_.findOrCreateMainModule());
   Function function(&scope,
-                    runtime_.newFunctionWithCode(thread_, name, code, globals));
+                    runtime_.newFunctionWithCode(thread_, name, code, module));
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {STORE_ATTR_CACHED, 0};
@@ -268,9 +268,9 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesBinaryOpcodes) {
       0,
   };
   code.setCode(runtime_.newBytesWithAll(bytecode));
-  Dict globals(&scope, runtime_.newDict());
+  Module module(&scope, runtime_.findOrCreateMainModule());
   Function function(&scope,
-                    runtime_.newFunctionWithCode(thread_, name, code, globals));
+                    runtime_.newFunctionWithCode(thread_, name, code, module));
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {
@@ -344,9 +344,9 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesInplaceOpcodes) {
       0,
   };
   code.setCode(runtime_.newBytesWithAll(bytecode));
-  Dict globals(&scope, runtime_.newDict());
+  Module module(&scope, runtime_.findOrCreateMainModule());
   Function function(&scope,
-                    runtime_.newFunctionWithCode(thread_, name, code, globals));
+                    runtime_.newFunctionWithCode(thread_, name, code, module));
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {
@@ -400,9 +400,9 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesCompareOpOpcodes) {
       COMPARE_OP, CompareOp::EXC_MATCH,
   };
   code.setCode(runtime_.newBytesWithAll(bytecode));
-  Dict globals(&scope, runtime_.newDict());
+  Module module(&scope, runtime_.findOrCreateMainModule());
   Function function(&scope,
-                    runtime_.newFunctionWithCode(thread_, name, code, globals));
+                    runtime_.newFunctionWithCode(thread_, name, code, module));
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {
@@ -439,9 +439,9 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesReservesCachesForGlobalVariables) {
   };
   code.setCode(runtime_.newBytesWithAll(bytecode));
   code.setNames(runtime_.newTuple(12));
-  Dict globals(&scope, runtime_.newDict());
+  Module module(&scope, runtime_.findOrCreateMainModule());
   Function function(&scope,
-                    runtime_.newFunctionWithCode(thread_, name, code, globals));
+                    runtime_.newFunctionWithCode(thread_, name, code, module));
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {
@@ -501,9 +501,9 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadFastAndStoreFastOpcodes) {
                              /*filename=*/empty_string, /*name=*/empty_string,
                              /*firstlineno=*/0, lnotab));
 
-  Dict globals(&scope, runtime_.newDict());
+  Module module(&scope, runtime_.findOrCreateMainModule());
   Function function(&scope, runtime_.newFunctionWithCode(thread_, empty_string,
-                                                         code, globals));
+                                                         code, module));
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {

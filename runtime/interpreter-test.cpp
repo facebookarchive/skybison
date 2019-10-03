@@ -604,9 +604,9 @@ TEST_F(InterpreterTest, DoBinaryOpWithCacheHitCallsCachedMethod) {
   code.setCode(runtime_.newBytesWithAll(bytecode));
 
   Object qualname(&scope, Str::empty());
-  Dict globals(&scope, runtime_.newDict());
+  Module module(&scope, runtime_.findOrCreateMainModule());
   Function function(
-      &scope, runtime_.newFunctionWithCode(thread_, qualname, code, globals));
+      &scope, runtime_.newFunctionWithCode(thread_, qualname, code, module));
 
   // Update inline cache.
   EXPECT_TRUE(isIntEqualsWord(
@@ -651,9 +651,9 @@ v1 = 7
   code.setCode(runtime_.newBytesWithAll(bytecode));
 
   Object qualname(&scope, Str::empty());
-  Dict globals(&scope, runtime_.newDict());
+  Module module(&scope, runtime_.findOrCreateMainModule());
   Function function(
-      &scope, runtime_.newFunctionWithCode(thread_, qualname, code, globals));
+      &scope, runtime_.newFunctionWithCode(thread_, qualname, code, module));
 
   // Update inline cache.
   EXPECT_TRUE(isIntEqualsWord(
@@ -1724,9 +1724,9 @@ TEST_F(InterpreterTest, StackCleanupAfterCallFunction) {
   code.setCode(runtime_.newBytesWithAll(bytecode));
 
   Object qualname(&scope, Str::empty());
-  Dict globals(&scope, runtime_.newDict());
+  Module module(&scope, runtime_.findOrCreateMainModule());
   Function callee(
-      &scope, runtime_.newFunctionWithCode(thread_, qualname, code, globals));
+      &scope, runtime_.newFunctionWithCode(thread_, qualname, code, module));
   Tuple defaults(&scope, runtime_.newTuple(2));
 
   defaults.atPut(0, SmallInt::fromWord(1));
@@ -1774,9 +1774,9 @@ TEST_F(InterpreterTest, StackCleanupAfterCallExFunction) {
   code.setCode(runtime_.newBytesWithAll(bytecode));
 
   Object qualname(&scope, Str::empty());
-  Dict globals(&scope, runtime_.newDict());
+  Module module(&scope, runtime_.findOrCreateMainModule());
   Function callee(
-      &scope, runtime_.newFunctionWithCode(thread_, qualname, code, globals));
+      &scope, runtime_.newFunctionWithCode(thread_, qualname, code, module));
   Tuple defaults(&scope, runtime_.newTuple(2));
 
   defaults.atPut(0, SmallInt::fromWord(1));
@@ -1831,9 +1831,9 @@ TEST_F(InterpreterTest, StackCleanupAfterCallKwFunction) {
   code.setCode(runtime_.newBytesWithAll(bytecode));
 
   Object qualname(&scope, Str::empty());
-  Dict globals(&scope, runtime_.newDict());
+  Module module(&scope, runtime_.findOrCreateMainModule());
   Function callee(
-      &scope, runtime_.newFunctionWithCode(thread_, qualname, code, globals));
+      &scope, runtime_.newFunctionWithCode(thread_, qualname, code, module));
   Tuple defaults(&scope, runtime_.newTuple(2));
   defaults.atPut(0, SmallInt::fromWord(1));
   defaults.atPut(1, SmallInt::fromWord(2));
@@ -2196,9 +2196,8 @@ manager = M()
   code.setCode(runtime_.newBytesWithAll(bytecode));
   code.setFlags(Code::Flags::NOFREE);
 
-  Dict globals(&scope, main.dict());
   Dict locals(&scope, runtime_.newDict());
-  EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, globals, locals), 42));
+  EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, main, locals), 42));
   Object enter(&scope, mainModuleAt(&runtime_, "enter"));
   EXPECT_EQ(*enter, *manager);
   Object exit(&scope, mainModuleAt(&runtime_, "exit"));

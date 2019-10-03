@@ -2046,6 +2046,9 @@ class RawFunction : public RawHeapObject {
   RawObject module() const;
   void setModule(RawObject module) const;
 
+  RawObject moduleObject() const;
+  void setModuleObject(RawObject module) const;
+
   // The function's name
   RawObject name() const;
   void setName(RawObject name) const;
@@ -2100,7 +2103,8 @@ class RawFunction : public RawHeapObject {
   static const int kNameOffset = kDocOffset + kPointerSize;
   static const int kQualnameOffset = kNameOffset + kPointerSize;
   static const int kModuleOffset = kQualnameOffset + kPointerSize;
-  static const int kDefaultsOffset = kModuleOffset + kPointerSize;
+  static const int kModuleObjectOffset = kModuleOffset + kPointerSize;
+  static const int kDefaultsOffset = kModuleObjectOffset + kPointerSize;
   static const int kAnnotationsOffset = kDefaultsOffset + kPointerSize;
   static const int kKwDefaultsOffset = kAnnotationsOffset + kPointerSize;
   static const int kClosureOffset = kKwDefaultsOffset + kPointerSize;
@@ -5495,6 +5499,14 @@ inline RawObject RawFunction::module() const {
 
 inline void RawFunction::setModule(RawObject module) const {
   instanceVariableAtPut(kModuleOffset, module);
+}
+
+inline RawObject RawFunction::moduleObject() const {
+  return instanceVariableAt(kModuleObjectOffset);
+}
+
+inline void RawFunction::setModuleObject(RawObject module_object) const {
+  instanceVariableAtPut(kModuleObjectOffset, module_object);
 }
 
 inline RawObject RawFunction::name() const {

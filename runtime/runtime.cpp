@@ -655,7 +655,10 @@ RawObject Runtime::newFunction(Thread* thread, const Object& name,
 
 RawObject Runtime::newFunctionWithCode(Thread* thread, const Object& qualname,
                                        const Code& code,
-                                       const Object& globals_dict) {
+                                       const Object& module_obj) {
+  DCHECK(module_obj.isNoneType() ||
+             thread->runtime()->isInstanceOfModule(*module_obj),
+         "module_obj should be either None or a Module");
   HandleScope scope(thread);
 
   Function::Entry entry;
@@ -714,8 +717,10 @@ RawObject Runtime::newFunctionWithCode(Thread* thread, const Object& qualname,
   DCHECK(isInstanceOfStr(*qualname), "expected str");
   function.setQualname(*qualname);
 
-  if (!globals_dict.isNoneType()) {
-    Dict globals(&scope, *globals_dict);
+  if (!module_obj.isNoneType()) {
+    Module module(&scope, *module_obj);
+    Dict globals(&scope, module.dict());
+    function.setModuleObject(*module_obj);
     Object module_name(
         &scope, moduleDictAtById(thread, globals, SymbolId::kDunderName));
     if (!module_name.isErrorNotFound()) {
@@ -1907,7 +1912,7 @@ RawObject Runtime::executeModule(const Code& code, const Module& module) {
   HandleScope scope;
   DCHECK(code.argcount() == 0, "invalid argcount %ld", code.argcount());
   Dict globals(&scope, module.dict());
-  return Thread::current()->exec(code, globals, globals);
+  return Thread::current()->exec(code, module, globals);
 }
 
 RawObject Runtime::printTraceback(Thread* /* thread */,
@@ -2584,9 +2589,8 @@ void Runtime::createUnderBuiltinsModule(Thread* thread) {
                                      /*kwonlyargcount=*/0, /*flags=*/0,
                                      UnderBuiltinsModule::underPatch,
                                      parameters, name));
-    Dict globals(&scope, module.dict());
     Function under_patch(&scope,
-                         newFunctionWithCode(thread, name, code, globals));
+                         newFunctionWithCode(thread, name, code, module));
     moduleAtPutByStr(thread, module, name, under_patch);
   }
 

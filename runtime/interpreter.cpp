@@ -1,5 +1,7 @@
 #include "interpreter.h"
 
+#include "debugging.h"
+
 #include <cstdio>
 #include <cstdlib>
 #include <sstream>
@@ -3126,10 +3128,10 @@ HANDLER_INLINE Continue Interpreter::doMakeFunction(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   Object qualname(&scope, frame->popValue());
   Code code(&scope, frame->popValue());
-  Dict globals(&scope, frame->function().globals());
+  Module module(&scope, frame->function().moduleObject());
   Runtime* runtime = thread->runtime();
   Function function(
-      &scope, runtime->newFunctionWithCode(thread, qualname, code, globals));
+      &scope, runtime->newFunctionWithCode(thread, qualname, code, module));
   if (arg & MakeFunctionFlag::CLOSURE) {
     function.setClosure(frame->popValue());
     DCHECK(runtime->isInstanceOfTuple(function.closure()), "expected tuple");

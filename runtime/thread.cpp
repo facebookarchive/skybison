@@ -180,7 +180,7 @@ Frame* Thread::popFrame() {
   return currentFrame_;
 }
 
-RawObject Thread::exec(const Code& code, const Dict& globals,
+RawObject Thread::exec(const Code& code, const Module& module,
                        const Object& locals) {
   HandleScope scope(this);
   Object qualname(&scope, Str::empty());
@@ -190,16 +190,16 @@ RawObject Thread::exec(const Code& code, const Dict& globals,
 
   Runtime* runtime = this->runtime();
   Object builtins_module_obj(
-      &scope, moduleDictAtById(this, globals, SymbolId::kDunderBuiltins));
+      &scope, moduleAtById(this, module, SymbolId::kDunderBuiltins));
   if (builtins_module_obj.isErrorNotFound()) {
     builtins_module_obj = runtime->findModuleById(SymbolId::kBuiltins);
     DCHECK(!builtins_module_obj.isNoneType(), "invalid builtins module");
-    moduleDictAtPutById(this, globals, SymbolId::kDunderBuiltins,
-                        builtins_module_obj);
+    moduleAtPutById(this, module, SymbolId::kDunderBuiltins,
+                    builtins_module_obj);
   }
 
-  Function function(
-      &scope, runtime->newFunctionWithCode(this, qualname, code, globals));
+  Function function(&scope,
+                    runtime->newFunctionWithCode(this, qualname, code, module));
   // Push implicit globals.
   currentFrame()->pushValue(*locals);
   // Push function to be available from frame.function().

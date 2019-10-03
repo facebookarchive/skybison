@@ -43,6 +43,7 @@ PY_EXPORT PyObject* PyEval_EvalCode(PyObject* code, PyObject* globals,
   Runtime* runtime = thread->runtime();
   locals = locals != nullptr ? locals : globals;
   Object locals_obj(&scope, ApiHandle::fromPyObject(locals)->asObject());
+  Object module_obj(&scope, NoneType::object());
   if (locals_obj.isModuleProxy() && globals_obj == locals_obj) {
     // Unwrap module proxy. We use locals == globals as a signal to enable some
     // shortcuts for execution in module scope (e.g., import.c).
@@ -54,17 +55,23 @@ PY_EXPORT PyObject* PyEval_EvalCode(PyObject* code, PyObject* globals,
     if (globals_obj.isModuleProxy()) {
       Module module(&scope, ModuleProxy::cast(*globals_obj).module());
       globals_obj = module.dict();
+      module_obj = *module;
     } else {
       thread->raiseBadInternalCall();
       return nullptr;
     }
   }
-  Dict globals_dict(&scope, *globals_obj);
+  DCHECK(globals_obj.isDict(), "globals_obj should be a Dict");
+  if (module_obj.isNoneType()) {
+    // TODO(T54956257): Wrap values in ValueCell in globals_obj.
+    UNIMPLEMENTED("passing dict for globals");
+  }
   if (!runtime->isMapping(thread, locals_obj)) {
     thread->raiseBadInternalCall();
     return nullptr;
   }
-  Object result(&scope, thread->exec(code_code, globals_dict, locals_obj));
+  Module module(&scope, *module_obj);
+  Object result(&scope, thread->exec(code_code, module, locals_obj));
   if (result.isError()) return nullptr;
   return ApiHandle::newReference(thread, *result);
 }

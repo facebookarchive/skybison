@@ -683,14 +683,14 @@ static RawObject testingFunctionCachingAttributes(Thread* thread,
   HandleScope scope(thread);
   Object name(&scope, Str::empty());
   Code code(&scope, newEmptyCode());
-  Dict globals(&scope, runtime->newDict());
   MutableBytes rewritten_bytecode(&scope,
                                   runtime->newMutableBytesUninitialized(8));
   rewritten_bytecode.byteAtPut(0, LOAD_ATTR_CACHED);
   rewritten_bytecode.byteAtPut(1, 1);
 
+  Module module(&scope, runtime->findOrCreateMainModule());
   Function function(&scope,
-                    runtime->newFunctionWithCode(thread, name, code, globals));
+                    runtime->newFunctionWithCode(thread, name, code, module));
   function.setRewrittenBytecode(*rewritten_bytecode);
 
   Tuple original_arguments(&scope, runtime->newTuple(2));
@@ -1298,7 +1298,6 @@ static RawObject testingFunction(Thread* thread) {
   HandleScope scope(thread);
   Object name(&scope, Str::empty());
   Code code(&scope, newEmptyCode());
-  Dict globals(&scope, runtime->newDict());
   MutableBytes rewritten_bytecode(&scope,
                                   runtime->newMutableBytesUninitialized(8));
   rewritten_bytecode.byteAtPut(0, LOAD_GLOBAL);
@@ -1310,8 +1309,9 @@ static RawObject testingFunction(Thread* thread) {
   rewritten_bytecode.byteAtPut(6, STORE_GLOBAL);
   rewritten_bytecode.byteAtPut(7, 1);
 
+  Module module(&scope, runtime->findOrCreateMainModule());
   Function function(&scope,
-                    runtime->newFunctionWithCode(thread, name, code, globals));
+                    runtime->newFunctionWithCode(thread, name, code, module));
   function.setRewrittenBytecode(*rewritten_bytecode);
 
   code.setNames(runtime->newTuple(2));

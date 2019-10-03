@@ -42,9 +42,12 @@ TEST_F(CevalExtensionApiTest, EvalCodeReturnsNonNull) {
   ASSERT_NE(code, nullptr);
   PyArena_Free(arena);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
-  PyObjectPtr globals(PyDict_New());
+  PyRun_SimpleString(R"(
+module_dict = locals()
+)");
+  PyObjectPtr module_dict(moduleGet("__main__", "module_dict"));
   PyObjectPtr locals(PyDict_New());
-  EXPECT_NE(PyEval_EvalCode(code, globals, locals), nullptr);
+  EXPECT_NE(PyEval_EvalCode(code, /*globals=*/module_dict, locals), nullptr);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 

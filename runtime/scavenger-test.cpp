@@ -261,9 +261,9 @@ def g(ref, b=2):
                                       /*kwonlyargcount=*/0, /*flags=*/0,
                                       doGarbageCollection,
                                       /*parameter_names=*/empty_tuple, name));
-    Dict globals(&scope, runtime_.newDict());
-    Function collect(
-        &scope, runtime_.newFunctionWithCode(thread_, name, code, globals));
+    Module module(&scope, runtime_.findOrCreateMainModule());
+    Function collect(&scope,
+                     runtime_.newFunctionWithCode(thread_, name, code, module));
 
     WeakRef ref1_inner(&scope, runtime_.newWeakRef(thread_, array1, collect));
     ref1 = *ref1_inner;

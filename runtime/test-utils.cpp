@@ -263,9 +263,8 @@ RawFunction newEmptyFunction() {
   Code code(&scope, newEmptyCode());
   Object qualname(&scope, Str::empty());
   Module main(&scope, runtime->findOrCreateMainModule());
-  Dict globals(&scope, main.dict());
   return Function::cast(
-      runtime->newFunctionWithCode(thread, qualname, code, globals));
+      runtime->newFunctionWithCode(thread, qualname, code, main));
 }
 
 RawObject newIntWithDigits(Runtime* runtime, View<uword> digits) {
@@ -329,9 +328,8 @@ RawObject runBuiltinImpl(NativeMethodType method,
                                             /*flags=*/0, method,
                                             parameter_names, name));
   Module main(&scope, runtime->findOrCreateMainModule());
-  Dict globals(&scope, main.dict());
   Function function(&scope,
-                    runtime->newFunctionWithCode(thread, name, code, globals));
+                    runtime->newFunctionWithCode(thread, name, code, main));
 
   Frame* frame = thread->currentFrame();
   frame->pushValue(*function);
@@ -352,9 +350,8 @@ RawObject runCode(const Code& code) {
   Runtime* runtime = thread->runtime();
   Module main(&scope, runtime->findOrCreateMainModule());
   Object qualname(&scope, runtime->symbols()->Anonymous());
-  Dict globals(&scope, main.dict());
-  Function function(
-      &scope, runtime->newFunctionWithCode(thread, qualname, code, globals));
+  Function function(&scope,
+                    runtime->newFunctionWithCode(thread, qualname, code, main));
   return Interpreter::callFunction0(thread, thread->currentFrame(), function);
 }
 

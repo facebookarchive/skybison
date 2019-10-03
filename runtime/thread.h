@@ -59,7 +59,7 @@ class Thread {
   Frame* popFrame();
 
   // Runs a code object on the current thread.
-  RawObject exec(const Handle<RawCode>& code, const Handle<RawDict>& globals,
+  RawObject exec(const Handle<RawCode>& code, const Handle<RawModule>& module,
                  const Handle<RawObject>& locals);
 
   // Runs a class body function on the current thread.

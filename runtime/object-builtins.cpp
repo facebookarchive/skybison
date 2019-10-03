@@ -372,9 +372,9 @@ void ObjectBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
                 /*flags=*/0, dunderGetattribute, parameter_names, name));
   Object qualname(
       &scope, runtime->internStrFromCStr(thread, "object.__getattribute__"));
-  Object globals(&scope, NoneType::object());
+  Object module_obj(&scope, NoneType::object());
   Function dunder_getattribute(
-      &scope, runtime->newFunctionWithCode(thread, qualname, code, globals));
+      &scope, runtime->newFunctionWithCode(thread, qualname, code, module_obj));
 
   runtime->typeDictAtPutByStr(thread, type_dict, name, dunder_getattribute);
 }

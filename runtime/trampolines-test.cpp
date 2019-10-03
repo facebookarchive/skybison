@@ -736,9 +736,9 @@ TEST_F(TrampolinesTest, InterpreterClosureUsesArgOverCellValue) {
   ASSERT_TRUE(!code.cell2arg().isNoneType());
 
   Object qualname(&scope, runtime_.newStrFromCStr("foo"));
-  Dict globals(&scope, runtime_.newDict());
+  Module module(&scope, runtime_.findOrCreateMainModule());
   Function foo(&scope,
-               runtime_.newFunctionWithCode(thread_, qualname, code, globals));
+               runtime_.newFunctionWithCode(thread_, qualname, code, module));
   Tuple closure_tuple(&scope, runtime_.newTuple(1));
   closure_tuple.atPut(0, runtime_.newInt(99));
   foo.setClosure(*closure_tuple);
@@ -829,8 +829,8 @@ static RawObject makeFunctionWithPosOnlyArg(Thread* thread) {
                              /*cellvars=*/empty_tuple,
                              /*filename=*/empty_str, name,
                              /*firstlineno=*/0, /*lnotab=*/empty_bytes));
-  Dict globals(&scope, runtime->newDict());
-  return runtime->newFunctionWithCode(thread, name, code, globals);
+  Module module(&scope, runtime->findOrCreateMainModule());
+  return runtime->newFunctionWithCode(thread, name, code, module);
 }
 
 TEST_F(TrampolinesTest, KeywordCallRejectsPositionalOnlyArgumentNames) {
@@ -903,9 +903,9 @@ TEST_F(TrampolinesTest, KeywordCallWithPositionalOnlyArgumentsAndVarKeyArgs) {
                              /*cellvars=*/empty_tuple,
                              /*filename=*/empty_str, name,
                              /*firstlineno=*/0, /*lnotab=*/empty_bytes));
-  Dict globals(&scope, runtime_.newDict());
+  Module module(&scope, runtime_.findOrCreateMainModule());
   Function foo(&scope,
-               runtime_.newFunctionWithCode(thread_, name, code, globals));
+               runtime_.newFunctionWithCode(thread_, name, code, module));
   Tuple defaults(&scope, runtime_.newTuple(2));
   defaults.atPut(0, runtime_.newInt(7));
   defaults.atPut(1, runtime_.newInt(10));

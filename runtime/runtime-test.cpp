@@ -46,8 +46,8 @@ RawObject makeTestFunction() {
   consts.atPut(0, NoneType::object());
   code.setConsts(*consts);
   Object qualname(&scope, runtime->newStrFromCStr("foo"));
-  Dict globals(&scope, runtime->newDict());
-  return runtime->newFunctionWithCode(thread, qualname, code, globals);
+  Module module(&scope, runtime->findOrCreateMainModule());
+  return runtime->newFunctionWithCode(thread, qualname, code, module);
 }
 
 TEST_F(RuntimeTest, CollectGarbage) {
