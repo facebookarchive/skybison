@@ -956,6 +956,21 @@ class BytesTests(unittest.TestCase):
     def test_dunder_new_with_ignore_errors_returns_bytes(self):
         self.assertEqual(bytes("fo\x80o", "ascii", "ignore"), b"foo")
 
+    def test_dunder_new_with_bytes_subclass_returns_bytes_subclass(self):
+        class A(bytes):
+            pass
+
+        class B(bytes):
+            pass
+
+        class C:
+            def __bytes__(self):
+                return B()
+
+        self.assertIsInstance(bytes.__new__(A, b""), A)
+        self.assertIsInstance(bytes.__new__(B, 2), B)
+        self.assertIsInstance(bytes.__new__(A, C()), A)
+
     def test_count_with_bytearray_self_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             bytes.count(bytearray(), b"")

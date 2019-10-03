@@ -33,6 +33,8 @@ class UnderBuiltinsModule {
   static RawObject underByteArraySetSlice(Thread* thread, Frame* frame,
                                           word nargs);
   static RawObject underBytesCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underBytesFromBytes(Thread* thread, Frame* frame,
+                                       word nargs);
   static RawObject underBytesFromInts(Thread* thread, Frame* frame, word nargs);
   static RawObject underBytesGetItem(Thread* thread, Frame* frame, word nargs);
   static RawObject underBytesGetSlice(Thread* thread, Frame* frame, word nargs);

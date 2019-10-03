@@ -89,8 +89,8 @@ other = Foo(b"1234")
 )")
                    .isError());
   HandleScope scope;
-  ByteArray self(&scope, runtime_.newByteArray());
-  Bytes other(&scope, mainModuleAt(&runtime_, "other"));
+  Object self(&scope, runtime_.newByteArray());
+  Object other(&scope, mainModuleAt(&runtime_, "other"));
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderAdd, self, other));
   EXPECT_TRUE(isByteArrayEqualsCStr(self, ""));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "1234"));
@@ -499,15 +499,15 @@ TEST_F(ByteArrayBuiltinsTest, DunderIaddWithBytesOtherConcatenatesToSelf) {
 }
 
 TEST_F(ByteArrayBuiltinsTest,
-       DunderAddWithBytesSubclassOtherConcatenatesToSelf) {
+       DunderIaddWithBytesSubclassOtherConcatenatesToSelf) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo(bytes): pass
 other = Foo(b"1234")
 )")
                    .isError());
   HandleScope scope;
-  ByteArray self(&scope, runtime_.newByteArray());
-  Bytes other(&scope, mainModuleAt(&runtime_, "other"));
+  Object self(&scope, runtime_.newByteArray());
+  Object other(&scope, mainModuleAt(&runtime_, "other"));
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderIadd, self, other));
   const char* expected = "1234";
   EXPECT_TRUE(isByteArrayEqualsCStr(self, expected));

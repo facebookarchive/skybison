@@ -69,6 +69,11 @@ def _bytes_check(obj):
 
 
 @_patch
+def _bytes_from_bytes(cls, value):
+    pass
+
+
+@_patch
 def _bytes_from_ints(source):
     pass
 

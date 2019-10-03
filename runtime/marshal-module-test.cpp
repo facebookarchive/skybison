@@ -30,7 +30,7 @@ class Foo(bytes): pass
 foo = Foo(b"\xbc\x00\x00\x00\x00")
 )")
                    .isError());
-  Bytes bytes(&scope, mainModuleAt(&runtime_, "foo"));
+  Object bytes(&scope, mainModuleAt(&runtime_, "foo"));
   Object obj(&scope, runBuiltin(MarshalModule::loads, bytes));
   ASSERT_TRUE(obj.isSet());
   EXPECT_EQ(Set::cast(*obj).numItems(), 0);

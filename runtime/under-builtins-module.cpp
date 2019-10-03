@@ -84,6 +84,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderByteArraySetitem, underByteArraySetItem},
     {SymbolId::kUnderByteArraySetslice, underByteArraySetSlice},
     {SymbolId::kUnderBytesCheck, underBytesCheck},
+    {SymbolId::kUnderBytesFromBytes, underBytesFromBytes},
     {SymbolId::kUnderBytesFromInts, underBytesFromInts},
     {SymbolId::kUnderBytesGetitem, underBytesGetItem},
     {SymbolId::kUnderBytesGetslice, underBytesGetSlice},
@@ -611,6 +612,21 @@ RawObject UnderBuiltinsModule::underByteArrayLen(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   ByteArray self(&scope, args.get(0));
   return SmallInt::fromWord(self.numItems());
+}
+
+RawObject UnderBuiltinsModule::underBytesFromBytes(Thread* thread, Frame* frame,
+                                                   word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Type type(&scope, args.get(0));
+  DCHECK(type.builtinBase() == LayoutId::kBytes, "type must subclass bytes");
+  Object value(&scope, args.get(1));
+  value = bytesUnderlying(thread, value);
+  if (type.isBuiltin()) return *value;
+  Layout type_layout(&scope, type.instanceLayout());
+  UserBytesBase instance(&scope, thread->runtime()->newInstance(type_layout));
+  instance.setValue(*value);
+  return *instance;
 }
 
 RawObject UnderBuiltinsModule::underBytesFromInts(Thread* thread, Frame* frame,

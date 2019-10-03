@@ -355,7 +355,7 @@ dc = Foo(b"DC")
 )")
                    .isError());
   HandleScope scope(thread_);
-  Bytes self(&scope, mainModuleAt(&runtime_, "sep"));
+  Object self(&scope, mainModuleAt(&runtime_, "sep"));
   Tuple iter(&scope, runtime_.newTuple(2));
   iter.atPut(0, mainModuleAt(&runtime_, "ac"));
   iter.atPut(1, mainModuleAt(&runtime_, "dc"));
@@ -673,9 +673,9 @@ class Foo(bytes): pass
 foo = Foo(b"42")
 )")
                    .isError());
-  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
-  Bytes bytes(&scope, mainModuleAt(&runtime_, "foo"));
-  Int base(&scope, SmallInt::fromWord(21));
+  Object type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Object bytes(&scope, mainModuleAt(&runtime_, "foo"));
+  Object base(&scope, SmallInt::fromWord(21));
   EXPECT_EQ(
       runBuiltin(UnderBuiltinsModule::underIntNewFromBytes, type, bytes, base),
       SmallInt::fromWord(86));

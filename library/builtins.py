@@ -18,6 +18,7 @@ _bytearray_len = _bytearray_len  # noqa: F821
 _bytearray_setitem = _bytearray_setitem  # noqa: F821
 _bytearray_setslice = _bytearray_setslice  # noqa: F821
 _bytes_check = _bytes_check  # noqa: F821
+_bytes_from_bytes = _bytes_from_bytes  # noqa: F821
 _bytes_from_ints = _bytes_from_ints  # noqa: F821
 _bytes_getitem = _bytes_getitem  # noqa: F821
 _bytes_getslice = _bytes_getslice  # noqa: F821
@@ -1751,44 +1752,38 @@ class bytes(bootstrap=True):
             raise TypeError(
                 f"bytes.__new__(X): X is not a type object ({_type(cls).__name__})"
             )
-        if not issubclass(cls, bytes):
+        if not _type_issubclass(cls, bytes):
             raise TypeError(
                 f"bytes.__new__({cls.__name__}): "
                 f"{cls.__name__} is not a subtype of bytes"
             )
         if source is _Unbound:
             if encoding is _Unbound and errors is _Unbound:
-                # TODO(T36619847): implement bytes subclasses
-                return b""
+                return _bytes_from_bytes(cls, b"")
             raise TypeError("encoding or errors without sequence argument")
         if encoding is not _Unbound:
             if not _str_check(source):
                 raise TypeError("encoding without a string argument")
-            # TODO(T36619847): implement bytes subclasses
-            if errors is _Unbound:
-                return str.encode(source, encoding)
-            return str.encode(source, encoding, errors)
+            return _bytes_from_bytes(cls, str.encode(source, encoding, errors))
         if errors is not _Unbound:
             if _str_check(source):
                 raise TypeError("string argument without an encoding")
             raise TypeError("errors without a string argument")
-        if hasattr(source, "__bytes__"):
-            result = source.__bytes__()
+        dunder_bytes = _object_type_getattr(source, "__bytes__")
+        if dunder_bytes is not _Unbound:
+            result = dunder_bytes()
             if not _bytes_check(result):
                 raise TypeError(
                     f"__bytes__ returned non-bytes (type {_type(result).__name__})"
                 )
-            return result
+            return _bytes_from_bytes(cls, result)
         if _str_check(source):
             raise TypeError("string argument without an encoding")
         if _int_check(source):
-            # TODO(T36619847): implement bytes subclasses
-            return _bytes_repeat(b"\x00", source)
+            return _bytes_from_bytes(cls, _bytes_repeat(b"\x00", source))
         if _object_type_hasattr(source, "__index__"):
-            # TODO(T36619847): implement bytes subclasses
-            return _bytes_repeat(b"\x00", _index(source))
-        # TODO(T36619847): implement bytes subclasses
-        return _bytes_new(source)
+            return _bytes_from_bytes(cls, _bytes_repeat(b"\x00", _index(source)))
+        return _bytes_from_bytes(cls, _bytes_new(source))
 
     def __repr__(self) -> str:  # noqa: T484
         pass

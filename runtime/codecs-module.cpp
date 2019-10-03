@@ -627,8 +627,7 @@ RawObject UnderCodecsModule::underUnicodeEscapeDecode(Thread* thread,
          "Third arg to _unicode_escape_decode must be int");
   DCHECK(output_obj.isStrArray(),
          "Fourth arg to _unicode_escape_decode must be _strarray");
-  // TODO(T36619847): Bytes subclass handling
-  Bytes bytes(&scope, *bytes_obj);
+  Bytes bytes(&scope, bytesUnderlying(thread, bytes_obj));
   Str errors(&scope, strUnderlying(thread, errors_obj));
   Int index(&scope, intUnderlying(thread, index_obj));
   StrArray dst(&scope, *output_obj);
