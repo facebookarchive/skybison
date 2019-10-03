@@ -509,9 +509,7 @@ class instance_proxy:
 
 
 class object(bootstrap=True):  # noqa: E999
-    @_property
-    def __class__(self):
-        return _type(self)
+    __class__ = _property(_type)
 
     @__class__.setter  # noqa: F811
     def __class__(self, value):
@@ -2056,13 +2054,9 @@ class complex(bootstrap=True):
     def __repr__(self):
         return f"({self.real}+{self.imag}j)"
 
-    @_property
-    def imag(self):
-        return _complex_imag(self)
+    imag = _property(_complex_imag)
 
-    @_property
-    def real(self):
-        return _complex_real(self)
+    real = _property(_complex_real)
 
 
 copyright = ""
@@ -3463,9 +3457,7 @@ def min(arg1, arg2=_Unbound, *args, key=_Unbound, default=_Unbound):  # noqa: C9
 
 
 class module(bootstrap=True):
-    @_property
-    def __dict__(self):
-        return _module_proxy(self)
+    __dict__ = _property(_module_proxy)
 
     def __dir__(self):
         if not isinstance(self, module):
