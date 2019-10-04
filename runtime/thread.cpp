@@ -197,11 +197,16 @@ RawObject Thread::exec(const Code& code, const Module& module,
     moduleAtPutById(this, module, SymbolId::kDunderBuiltins,
                     builtins_module_obj);
   }
-
+  Object implicit_globals(&scope, NoneType::object());
+  // If locals is equals to the backing dict for module in which code is
+  // executed, set implicit globals to None as the signal to skip it.
+  if (module.dict() != *locals) {
+    implicit_globals = *locals;
+  }
   Function function(&scope,
                     runtime->newFunctionWithCode(this, qualname, code, module));
   // Push implicit globals.
-  currentFrame()->pushValue(*locals);
+  currentFrame()->pushValue(*implicit_globals);
   // Push function to be available from frame.function().
   currentFrame()->pushValue(*function);
   if (UNLIKELY(pushCallFrame(*function) == nullptr)) {
@@ -209,7 +214,7 @@ RawObject Thread::exec(const Code& code, const Module& module,
   }
   Object result(&scope, Interpreter::execute(this));
   DCHECK(currentFrame()->topValue() == function, "stack mismatch");
-  DCHECK(currentFrame()->peek(1) == *locals, "stack mismatch");
+  DCHECK(currentFrame()->peek(1) == *implicit_globals, "stack mismatch");
   currentFrame()->dropValues(2);
   return *result;
 }

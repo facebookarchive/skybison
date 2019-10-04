@@ -1807,7 +1807,7 @@ HANDLER_INLINE Continue Interpreter::doSetupAnnotations(Thread* thread, word) {
   Frame* frame = thread->currentFrame();
   Str dunder_annotations(&scope,
                          runtime->symbols()->at(SymbolId::kDunderAnnotations));
-  if (frame->function().globals() == frame->implicitGlobals()) {
+  if (frame->implicitGlobals().isNoneType()) {
     // Module body
     Dict globals_dict(&scope, frame->function().globals());
     if (moduleDictAtByStr(thread, globals_dict, dunder_annotations)
@@ -1866,7 +1866,11 @@ HANDLER_INLINE Continue Interpreter::doImportStar(Thread* thread, word) {
   // body anymore.
 
   Module module(&scope, frame->popValue());
-  Dict implicit_globals(&scope, frame->implicitGlobals());
+  Object implicit_globals_obj(&scope, frame->implicitGlobals());
+  if (implicit_globals_obj.isNoneType()) {
+    implicit_globals_obj = frame->function().globals();
+  }
+  Dict implicit_globals(&scope, *implicit_globals_obj);
   thread->runtime()->moduleImportAllFrom(implicit_globals, module);
   return Continue::NEXT;
 }
@@ -1939,8 +1943,8 @@ HANDLER_INLINE Continue Interpreter::doStoreName(Thread* thread, word arg) {
   Str name(&scope, Tuple::cast(names).at(arg));
   Object value(&scope, frame->popValue());
   Object implicit_globals_obj(&scope, frame->implicitGlobals());
-  if (implicit_globals_obj == frame->function().globals()) {
-    Dict module_dict(&scope, *implicit_globals_obj);
+  if (implicit_globals_obj.isNoneType()) {
+    Dict module_dict(&scope, frame->function().globals());
     moduleDictAtPutByStr(thread, module_dict, name, value);
     return Continue::NEXT;
   }
@@ -1969,7 +1973,7 @@ HANDLER_INLINE Continue Interpreter::doDeleteName(Thread* thread, word arg) {
   // This avoids duplicating all the cache invalidation logic here.
   // TODO(T47581831) This should be removed and invalidation should happen when
   // changing the globals dictionary.
-  if (implicit_globals_obj == frame->function().globals()) {
+  if (implicit_globals_obj.isNoneType()) {
     return doDeleteGlobal(thread, arg);
   }
   RawObject names = Code::cast(frame->code()).names();
@@ -2417,7 +2421,7 @@ HANDLER_INLINE Continue Interpreter::doLoadName(Thread* thread, word arg) {
   Object names(&scope, Code::cast(frame->code()).names());
   Str name(&scope, Tuple::cast(*names).at(arg));
   Object implicit_globals_obj(&scope, frame->implicitGlobals());
-  if (implicit_globals_obj != frame->function().globals()) {
+  if (!implicit_globals_obj.isNoneType()) {
     // Give implicit_globals_obj a higher priority than globals.
     if (implicit_globals_obj.isDict()) {
       // Shortcut for the common case of implicit_globals being a dict.
@@ -3001,7 +3005,7 @@ HANDLER_INLINE Continue Interpreter::doStoreAnnotation(Thread* thread,
   Str name(&scope, Tuple::cast(*names).at(arg));
   Object annotations(&scope, NoneType::object());
   Str dunder_annotations(&scope, runtime->symbols()->DunderAnnotations());
-  if (frame->function().globals() == frame->implicitGlobals()) {
+  if (frame->implicitGlobals().isNoneType()) {
     // Module body
     Dict globals_dict(&scope, frame->function().globals());
     annotations = moduleDictAtByStr(thread, globals_dict, dunder_annotations);
@@ -3009,7 +3013,7 @@ HANDLER_INLINE Continue Interpreter::doStoreAnnotation(Thread* thread,
     // Class body
     Object implicit_globals(&scope, frame->implicitGlobals());
     if (implicit_globals.isDict()) {
-      Dict implicit_globals_dict(&scope, frame->implicitGlobals());
+      Dict implicit_globals_dict(&scope, *implicit_globals);
       annotations = runtime->dictAtByStr(thread, implicit_globals_dict,
                                          dunder_annotations);
     } else {
@@ -3341,8 +3345,7 @@ HANDLER_INLINE Continue Interpreter::doLoadClassDeref(Thread* thread,
   word idx = arg - code.numCellvars();
   Str name(&scope, Tuple::cast(code.freevars()).at(idx));
   Object result(&scope, NoneType::object());
-
-  if (frame->function().globals() == frame->implicitGlobals()) {
+  if (frame->implicitGlobals().isNoneType()) {
     // Module body
     Dict globals_dict(&scope, frame->function().globals());
     result = moduleDictAtByStr(thread, globals_dict, name);
@@ -3350,7 +3353,7 @@ HANDLER_INLINE Continue Interpreter::doLoadClassDeref(Thread* thread,
     // Class body
     Object implicit_globals(&scope, frame->implicitGlobals());
     if (implicit_globals.isDict()) {
-      Dict implicit_globals_dict(&scope, frame->implicitGlobals());
+      Dict implicit_globals_dict(&scope, *implicit_globals);
       result =
           thread->runtime()->dictAtByStr(thread, implicit_globals_dict, name);
     } else {

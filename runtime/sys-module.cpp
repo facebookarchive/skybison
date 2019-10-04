@@ -274,13 +274,12 @@ RawObject SysModule::underGetframeLocals(Thread* thread, Frame* frame,
   if (function.hasOptimizedOrNewLocals()) {
     return dictOfLocalsFromFunctionFrame(thread, frame);
   }
-  Object implicit_globals_obj(&scope, frame->implicitGlobals());
-  if (implicit_globals_obj == function.globals()) {
+  if (frame->implicitGlobals().isNoneType()) {
     // Module scope
     return frameGlobals(thread, frame);
   }
   // Other non-function scope (e.g., class scope)
-  return *implicit_globals_obj;
+  return frame->implicitGlobals();
 }
 
 }  // namespace python

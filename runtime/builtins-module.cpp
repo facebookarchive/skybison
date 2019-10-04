@@ -536,7 +536,8 @@ RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
         UNIMPLEMENTED("locals() not implemented yet");
       }
     }
-  } else if (locals.isNoneType()) {
+  }
+  if (locals.isNoneType()) {
     locals = *globals_obj;
   }
   Object module_obj(&scope, NoneType::object());
