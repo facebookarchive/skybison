@@ -1157,43 +1157,45 @@ TEST_F(InterpreterTest, CompareOpSetMethodSetsReverseMethod) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class A:
-  def __init__(self, x):
-    self.x = x
-class ASub(A):
+  pass
+
+class B(A):
   def __ge__(self, other):
     return (self, other)
-v0 = A(3)
-v1 = ASub(7)
-v2 = A(8)
-v3 = ASub(2)
+
+a1 = A()
+b1 = B()
+a2 = A()
+b2 = B()
 )")
                    .isError());
-  Object v0(&scope, mainModuleAt(&runtime_, "v0"));
-  Object v1(&scope, mainModuleAt(&runtime_, "v1"));
-  Object v2(&scope, mainModuleAt(&runtime_, "v2"));
-  Object v3(&scope, mainModuleAt(&runtime_, "v3"));
+
+  Object a1(&scope, mainModuleAt(&runtime_, "a1"));
+  Object b1(&scope, mainModuleAt(&runtime_, "b1"));
   Object method(&scope, NoneType::object());
   BinaryOpFlags flags;
   Object result_obj(&scope, Interpreter::compareOperationSetMethod(
                                 thread_, thread_->currentFrame(), CompareOp::LE,
-                                v0, v1, &method, &flags));
+                                a1, b1, &method, &flags));
   EXPECT_TRUE(method.isFunction());
-  EXPECT_EQ(flags, kBinaryOpReflected);
+  EXPECT_EQ(flags, kBinaryOpReflected | kBinaryOpNotImplementedRetry);
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
-  EXPECT_EQ(result.at(0), v1);
-  EXPECT_EQ(result.at(1), v0);
+  EXPECT_EQ(result.at(0), b1);
+  EXPECT_EQ(result.at(1), a1);
 
-  ASSERT_EQ(v0.layoutId(), v2.layoutId());
-  ASSERT_EQ(v1.layoutId(), v3.layoutId());
+  Object a2(&scope, mainModuleAt(&runtime_, "a2"));
+  Object b2(&scope, mainModuleAt(&runtime_, "b2"));
+  ASSERT_EQ(a1.layoutId(), a2.layoutId());
+  ASSERT_EQ(b1.layoutId(), b2.layoutId());
   result_obj = Interpreter::binaryOperationWithMethod(
-      thread_, thread_->currentFrame(), *method, flags, *v2, *v3);
+      thread_, thread_->currentFrame(), *method, flags, *a2, *b2);
   ASSERT_TRUE(result_obj.isTuple());
   result = *result_obj;
   ASSERT_EQ(result.length(), 2);
-  EXPECT_EQ(result.at(0), v3);
-  EXPECT_EQ(result.at(1), v2);
+  EXPECT_EQ(result.at(0), b2);
+  EXPECT_EQ(result.at(1), a2);
 }
 
 TEST_F(InterpreterTest,

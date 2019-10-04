@@ -532,13 +532,25 @@ class object(bootstrap=True):  # noqa: E999
             raise TypeError("format_spec must be empty string")
         return str(self)
 
+    def __ge__(self, other):
+        return NotImplemented
+
     # __getattribute__ is defined in C++ code.
+
+    def __gt__(self, other):
+        return NotImplemented
 
     def __hash__(self):
         pass
 
     def __init__(self, *args, **kwargs):
         pass
+
+    def __le__(self, other):
+        return NotImplemented
+
+    def __lt__(self, other):
+        return NotImplemented
 
     def __ne__(self, other):
         res = _type(self).__eq__(self, other)

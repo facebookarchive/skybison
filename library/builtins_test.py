@@ -5356,6 +5356,18 @@ class ObjectTests(unittest.TestCase):
         self.assertIs(d["foo"], value)
         self.assertIs(instance.foo, value)
 
+    def test_ge_returns_not_implemented(self):
+        self.assertIs(object().__ge__(object()), NotImplemented)
+
+    def test_gt_returns_not_implemented(self):
+        self.assertIs(object().__gt__(object()), NotImplemented)
+
+    def test_le_returns_not_implemented(self):
+        self.assertIs(object().__le__(object()), NotImplemented)
+
+    def test_lt_returns_not_implemented(self):
+        self.assertIs(object().__lt__(object()), NotImplemented)
+
 
 class OctTests(unittest.TestCase):
     def test_returns_string(self):
