@@ -138,11 +138,11 @@ class SysTests(unittest.TestCase):
         class C(int):
             pass
 
-        self.assertIsInstance(sys._getframe_globals(C(0)), dict)
+        self.assertIsInstance(sys._getframe_globals(C(0)), module_proxy)  # noqa: F821
 
     @pyro_only
-    def test_getframe_globals_returns_dict(self):
-        self.assertIsInstance(sys._getframe_globals(0), dict)
+    def test_getframe_globals_returns_module_proxy(self):
+        self.assertIsInstance(sys._getframe_globals(0), module_proxy)  # noqa: F821
 
     @pyro_only
     def test_getframe_lineno_returns_int(self):
