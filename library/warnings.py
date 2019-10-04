@@ -48,9 +48,15 @@ def _formatwarnmsg_impl(msg):
     s = f"{msg.filename}:{msg.lineno}: {msg.category.__name__}: {msg.message}\n"
 
     if msg.line is None:
-        # TODO(T43250173): Support linecache
-        line = None
-        linecache = None
+        try:
+            import linecache
+
+            line = linecache.getline(msg.filename, msg.lineno)
+        except Exception:
+            # When a warning is logged during Python shutdown, linecache
+            # and the import machinery don't work anymore
+            line = None
+            linecache = None
     else:
         line = msg.line
     if line:
@@ -405,9 +411,9 @@ def warn_explicit(  # noqa: C901
 
     # Prime the linecache for formatting, in case the
     # "file" is actually in a zipfile or something.
-    # TODO(T43250173): Support linecache
-    # import linecache
-    # linecache.getlines(filename, module_globals)
+    import linecache
+
+    linecache.getlines(filename, module_globals)
 
     if action == "error":
         raise message
