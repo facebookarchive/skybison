@@ -612,18 +612,32 @@ RawObject BuiltinsModule::oct(Thread* thread, Frame* frame, word nargs) {
 RawObject BuiltinsModule::ord(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object str_obj(&scope, args.get(0));
-  if (!thread->runtime()->isInstanceOfStr(*str_obj)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "Unsupported type in builtin 'ord'");
-  }
-  Str str(&scope, strUnderlying(thread, str_obj));
-  if (str.isSmallStr() && *str != Str::empty()) {
-    word num_bytes;
-    int32_t code_point = str.codePointAt(0, &num_bytes);
-    if (num_bytes == str.charLength()) {
+  Object obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (runtime->isInstanceOfBytes(*obj)) {
+    Bytes bytes(&scope, bytesUnderlying(thread, obj));
+    if (bytes.length() == 1) {
+      int32_t code_point = bytes.byteAt(0);
       return SmallInt::fromWord(code_point);
     }
+  } else if (runtime->isInstanceOfStr(*obj)) {
+    Str str(&scope, strUnderlying(thread, obj));
+    if (str.isSmallStr() && *str != Str::empty()) {
+      word num_bytes;
+      int32_t code_point = str.codePointAt(0, &num_bytes);
+      if (num_bytes == str.charLength()) {
+        return SmallInt::fromWord(code_point);
+      }
+    }
+  } else if (runtime->isInstanceOfByteArray(*obj)) {
+    ByteArray byte_array(&scope, *obj);
+    if (byte_array.numItems() == 1) {
+      int32_t code_point = byte_array.byteAt(0);
+      return SmallInt::fromWord(code_point);
+    }
+  } else {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "Unsupported type in builtin 'ord'");
   }
   return thread->raiseWithFmt(LayoutId::kTypeError,
                               "Builtin 'ord' expects string of length 1");

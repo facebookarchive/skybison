@@ -237,6 +237,65 @@ TEST_F(BuiltinsModuleTest, BuiltinOrd) {
                             "Unsupported type in builtin 'ord'"));
 }
 
+TEST_F(BuiltinsModuleTest, BuiltinOrdWithByteArray) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+a_bytearray = bytearray(b'A')
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object a_bytearray(&scope, mainModuleAt(&runtime_, "a_bytearray"));
+  EXPECT_TRUE(
+      isIntEqualsWord(runBuiltin(BuiltinsModule::ord, a_bytearray), 65));
+}
+
+TEST_F(BuiltinsModuleTest, BuiltinOrdWithEmptyByteArrayRaisesTypeError) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+a_bytearray = bytearray(b'')
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object empty(&scope, mainModuleAt(&runtime_, "a_bytearray"));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::ord, empty),
+                            LayoutId::kTypeError,
+                            "Builtin 'ord' expects string of length 1"));
+}
+
+TEST_F(BuiltinsModuleTest, BuiltinOrdWithLongByteArrayRaisesTypeError) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+a_bytearray = bytearray(b'AB')
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object not_a_char(&scope, mainModuleAt(&runtime_, "a_bytearray"));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::ord, not_a_char),
+                            LayoutId::kTypeError,
+                            "Builtin 'ord' expects string of length 1"));
+}
+
+TEST_F(BuiltinsModuleTest, BuiltinOrdWithBytes) {
+  unsigned char bytes[] = {'A'};
+  HandleScope scope(thread_);
+  Object a_bytes(&scope, runtime_.newBytesWithAll(bytes));
+  EXPECT_TRUE(isIntEqualsWord(runBuiltin(BuiltinsModule::ord, a_bytes), 65));
+}
+
+TEST_F(BuiltinsModuleTest, BuiltinOrdWithEmptyBytesRaisesTypeError) {
+  HandleScope scope(thread_);
+  Object empty(&scope, Bytes::empty());
+  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::ord, empty),
+                            LayoutId::kTypeError,
+                            "Builtin 'ord' expects string of length 1"));
+}
+
+TEST_F(BuiltinsModuleTest, BuiltinOrdWithLongBytesRaisesTypeError) {
+  unsigned char bytes[] = {'A', 'B'};
+  HandleScope scope(thread_);
+  Object too_many_bytes(&scope, runtime_.newBytesWithAll(bytes));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::ord, too_many_bytes),
+                            LayoutId::kTypeError,
+                            "Builtin 'ord' expects string of length 1"));
+}
+
 TEST_F(BuiltinsModuleTest, BuiltinOrdWithStrSubclass) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class MyStr(str): pass
