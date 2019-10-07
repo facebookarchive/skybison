@@ -2,7 +2,9 @@
 """Weak-reference support module."""
 _Unbound = _Unbound  # noqa: F821
 _index = _index  # noqa: F821
+_property = _property  # noqa: F821
 _unimplemented = _unimplemented  # noqa: F821
+_weakref_callback = _weakref_callback  # noqa: F821
 
 __all__ = ["CallableProxyType", "ProxyType", "ReferenceType", "ref", "proxy"]
 
@@ -49,6 +51,8 @@ def proxy(object, callback=None):
 class ref(bootstrap=True):
     def __call__(self):
         pass
+
+    __callback__ = _property(_weakref_callback)
 
     def __new__(cls, referent, callback=None):
         pass

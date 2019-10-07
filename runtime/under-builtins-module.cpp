@@ -252,6 +252,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderTypeProxyLen, underTypeProxyLen},
     {SymbolId::kUnderTypeProxyValues, underTypeProxyValues},
     {SymbolId::kUnderUnimplemented, underUnimplemented},
+    {SymbolId::kUnderWeakRefCallback, underWeakRefCallback},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -3372,6 +3373,19 @@ RawObject UnderBuiltinsModule::underUnimplemented(Thread* thread, Frame* frame,
   }
 
   std::abort();
+}
+
+RawObject UnderBuiltinsModule::underWeakRefCallback(Thread* thread,
+                                                    Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfWeakRef(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kUnderWeakRef);
+  }
+  WeakRef self(&scope, *self_obj);
+  return self.callback();
 }
 
 }  // namespace python

@@ -271,6 +271,8 @@ class UnderBuiltinsModule {
   static RawObject underTypeProxyValues(Thread* thread, Frame* frame,
                                         word nargs);
   static RawObject underUnimplemented(Thread* thread, Frame* frame, word nargs);
+  static RawObject underWeakRefCallback(Thread* thread, Frame* frame,
+                                        word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];
   static const BuiltinType kBuiltinTypes[];

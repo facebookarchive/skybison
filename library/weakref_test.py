@@ -4,6 +4,37 @@ import weakref
 
 
 class WeakRefTests(unittest.TestCase):
+    def test_ref_dunder_callback_readonly(self):
+        class C:
+            pass
+
+        def callback(*args):
+            pass
+
+        obj = C()
+        ref = weakref.ref(obj)
+        with self.assertRaises(AttributeError):
+            ref.__callback__ = callback
+
+    def test_ref_dunder_callback_with_callback_returns_callback(self):
+        class C:
+            pass
+
+        def callback(*args):
+            pass
+
+        obj = C()
+        ref = weakref.ref(obj, callback)
+        self.assertIs(ref.__callback__, callback)
+
+    def test_ref_dunder_callback_without_callback_returns_none(self):
+        class C:
+            pass
+
+        obj = C()
+        ref = weakref.ref(obj)
+        self.assertIsNone(ref.__callback__)
+
     def test_ref_dunder_call_with_non_ref_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             weakref.ref.__call__("not a weakref")

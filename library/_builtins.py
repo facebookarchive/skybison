@@ -920,3 +920,8 @@ def _type_proxy_values(self):
 def _unimplemented():
     """Prints a message and a stacktrace, and stops the program execution."""
     pass
+
+
+@_patch
+def _weakref_callback(self):
+    pass

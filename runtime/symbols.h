@@ -444,6 +444,7 @@ class Runtime;
   V(UnderWarnings, "_warnings")                                                \
   V(UnderWeakLink, "_weaklink")                                                \
   V(UnderWeakRef, "_weakref")                                                  \
+  V(UnderWeakRefCallback, "_weakref_callback")                                 \
   V(UnderWritable, "_writable")                                                \
   V(UnderWriteBuf, "_write_buf")                                               \
   V(UnderWriteLock, "_write_lock")                                             \
