@@ -619,7 +619,7 @@ word strFindFirstNonWhitespace(const Str& str) {
 bool strHasPrefix(const Str& str, const Str& prefix, word start) {
   word str_len = str.charLength();
   word prefix_len = prefix.charLength();
-  if (str_len - start + 1 < prefix_len) {
+  if (str_len - start < prefix_len) {
     return false;
   }
   for (word i = 0; i < prefix_len; i++) {

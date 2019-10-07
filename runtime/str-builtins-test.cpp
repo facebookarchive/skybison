@@ -533,6 +533,35 @@ TEST_F(StrBuiltinsTest, DunderGetItemWithIntReturnsCodePointAtIndex) {
   ASSERT_EQ(result, SmallStr::fromCodePoint(0x05D2));
 }
 
+TEST_F(StrBuiltinsTest, HasPrefixWithPrefixPastEndOfStrReturnsFalse) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, runtime_.newStrFromCStr("hello"));
+  Str needle(&scope, runtime_.newStrFromCStr("hel"));
+  EXPECT_TRUE(strHasPrefix(haystack, needle, 0));
+  EXPECT_FALSE(strHasPrefix(haystack, needle, 1));
+  EXPECT_FALSE(strHasPrefix(haystack, needle, 3));
+}
+
+TEST_F(StrBuiltinsTest, HasPrefixWithNonPrefixPastEndOfStrReturnsFalse) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, runtime_.newStrFromCStr("hello"));
+  Str needle(&scope, runtime_.newStrFromCStr("lop"));
+  EXPECT_FALSE(strHasPrefix(haystack, needle, 0));
+  EXPECT_FALSE(strHasPrefix(haystack, needle, 1));
+  EXPECT_FALSE(strHasPrefix(haystack, needle, 3));
+}
+
+TEST_F(StrBuiltinsTest, HasPrefixWithEmptyNeedleReturnsTrue) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, runtime_.newStrFromCStr("hello"));
+  Str empty(&scope, Str::empty());
+  EXPECT_TRUE(strHasPrefix(empty, empty, 0));
+  EXPECT_FALSE(strHasPrefix(empty, empty, 1));
+  EXPECT_TRUE(strHasPrefix(haystack, empty, 0));
+  EXPECT_TRUE(strHasPrefix(haystack, empty, 5));
+  EXPECT_FALSE(strHasPrefix(haystack, empty, 6));
+}
+
 TEST_F(StrBuiltinsTest, IndexWithLargeIntRaisesIndexError) {
   HandleScope scope(thread_);
   Str hello(&scope, runtime_.newStrFromCStr("hello"));
