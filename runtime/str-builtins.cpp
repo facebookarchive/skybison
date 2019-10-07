@@ -566,8 +566,7 @@ bool strIsASCII(const Str& str) {
   return true;
 }
 
-RawObject strFind(const Str& haystack, const Str& needle, word start,
-                  word end) {
+word strFind(const Str& haystack, const Str& needle, word start, word end) {
   if (end < 0 || start < 0) {
     Slice::adjustSearchIndices(&start, &end, haystack.codePointLength());
   }
@@ -575,14 +574,14 @@ RawObject strFind(const Str& haystack, const Str& needle, word start,
   word start_index = haystack.offsetByCodePoints(0, start);
   if (start_index == haystack.charLength() && needle.charLength() > 0) {
     // Haystack is too small; fast early return
-    return SmallInt::fromWord(-1);
+    return -1;
   }
   word end_index = haystack.offsetByCodePoints(start_index, end - start);
 
   if ((end_index - start_index) < needle.charLength() ||
       start_index > end_index) {
     // Haystack is too small; fast early return
-    return SmallInt::fromWord(-1);
+    return -1;
   }
 
   // Loop is in byte space, not code point space
@@ -596,17 +595,17 @@ RawObject strFind(const Str& haystack, const Str& needle, word start,
       // length of the string.
       if (start_index >= i) {
         // The start is greater than the length of the string.
-        return SmallInt::fromWord(-1);
+        return -1;
       }
       // If the start is within bounds, just return the last found index.
       break;
     }
     if (has_match) {
-      return SmallInt::fromWord(result);
+      return result;
     }
     i = next;
   }
-  return SmallInt::fromWord(-1);
+  return -1;
 }
 
 word strFindFirstNonWhitespace(const Str& str) {
@@ -631,8 +630,7 @@ bool strHasPrefix(const Str& str, const Str& prefix, word start) {
   return true;
 }
 
-RawObject strRFind(const Str& haystack, const Str& needle, word start,
-                   word end) {
+word strRFind(const Str& haystack, const Str& needle, word start, word end) {
   if (end < 0 || start < 0) {
     Slice::adjustSearchIndices(&start, &end, haystack.codePointLength());
   }
@@ -640,14 +638,14 @@ RawObject strRFind(const Str& haystack, const Str& needle, word start,
   word start_index = haystack.offsetByCodePoints(0, start);
   if (start_index == haystack.charLength() && needle.charLength() > 0) {
     // Haystack is too small; fast early return
-    return SmallInt::fromWord(-1);
+    return -1;
   }
   word end_index = haystack.offsetByCodePoints(start_index, end - start);
 
   if ((end_index - start_index) < needle.charLength() ||
       start_index > end_index) {
     // Haystack is too small; fast early return
-    return SmallInt::fromWord(-1);
+    return -1;
   }
 
   // Loop is in byte space, not code point space
@@ -664,14 +662,14 @@ RawObject strRFind(const Str& haystack, const Str& needle, word start,
       // length of the string.
       if (start_index >= i) {
         // The start is greater than the length of the string.
-        return SmallInt::fromWord(-1);
+        return -1;
       }
       // If the start is within bounds, just return the last found index.
       break;
     }
     i = next;
   }
-  return SmallInt::fromWord(last_index);
+  return last_index;
 }
 
 RawObject StrBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {

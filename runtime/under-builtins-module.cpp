@@ -2951,7 +2951,8 @@ RawObject UnderBuiltinsModule::underStrFind(Thread* thread, Frame* frame,
     Int end_int(&scope, intUnderlying(thread, end_obj));
     end = end_int.asWordSaturated();
   }
-  return strFind(haystack, needle, start, end);
+  word result = strFind(haystack, needle, start, end);
+  return SmallInt::fromWord(result);
 }
 
 RawObject UnderBuiltinsModule::underStrFromStr(Thread* thread, Frame* frame,
@@ -3044,7 +3045,8 @@ RawObject UnderBuiltinsModule::underStrRFind(Thread* thread, Frame* frame,
     Int end_int(&scope, intUnderlying(thread, end_obj));
     end = end_int.asWordSaturated();
   }
-  return strRFind(haystack, needle, start, end);
+  word result = strRFind(haystack, needle, start, end);
+  return SmallInt::fromWord(result);
 }
 
 RawObject UnderBuiltinsModule::underStrSplitlines(Thread* thread, Frame* frame,

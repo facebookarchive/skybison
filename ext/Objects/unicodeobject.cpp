@@ -1489,29 +1489,23 @@ PY_EXPORT Py_ssize_t PyUnicode_Find(PyObject* str, PyObject* substr,
   DCHECK(direction == -1 || direction == 1, "direction must be -1 or 1");
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
-  Object substr_obj(&scope, ApiHandle::fromPyObject(substr)->asObject());
+  Object haystack_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
+  Object needle_obj(&scope, ApiHandle::fromPyObject(substr)->asObject());
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfStr(*str_obj)) {
+  if (!runtime->isInstanceOfStr(*haystack_obj)) {
     thread->raiseWithFmt(LayoutId::kTypeError,
                          "PyUnicode_Find requires a 'str' instance");
     return -2;
   }
-  Str str_str(&scope, strUnderlying(thread, str_obj));
-  if (!runtime->isInstanceOfStr(*substr_obj)) {
+  Str haystack(&scope, strUnderlying(thread, haystack_obj));
+  if (!runtime->isInstanceOfStr(*needle_obj)) {
     thread->raiseWithFmt(LayoutId::kTypeError,
                          "PyUnicode_Find requires a 'str' instance");
     return -2;
   }
-  Str substr_str(&scope, strUnderlying(thread, substr_obj));
-  auto fn = (direction == 1) ? strFind : strRFind;
-  Int result(&scope, (*fn)(str_str, substr_str, start, end));
-  OptInt<Py_ssize_t> maybe_int = result.asInt<Py_ssize_t>();
-  if (maybe_int.error == CastError::None) {
-    return maybe_int.value;
-  }
-  thread->raiseWithFmt(LayoutId::kOverflowError, "int overflow or underflow");
-  return -2;
+  Str needle(&scope, strUnderlying(thread, needle_obj));
+  if (direction == 1) return strFind(haystack, needle, start, end);
+  return strRFind(haystack, needle, start, end);
 }
 
 PY_EXPORT Py_ssize_t PyUnicode_FindChar(PyObject* str, Py_UCS4 ch,
@@ -1525,20 +1519,14 @@ PY_EXPORT Py_ssize_t PyUnicode_FindChar(PyObject* str, Py_UCS4 ch,
     return -2;
   }
   HandleScope scope(thread);
-  Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
+  Object haystack_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
   Runtime* runtime = thread->runtime();
-  DCHECK(runtime->isInstanceOfStr(*str_obj),
+  DCHECK(runtime->isInstanceOfStr(*haystack_obj),
          "PyUnicode_FindChar requires a 'str' instance");
-  Str str_str(&scope, strUnderlying(thread, str_obj));
-  Str substr(&scope, SmallStr::fromCodePoint(ch));
-  auto fn = (direction == 1) ? strFind : strRFind;
-  Int result(&scope, (*fn)(str_str, substr, start, end));
-  OptInt<Py_ssize_t> maybe_int = result.asInt<Py_ssize_t>();
-  if (maybe_int.error == CastError::None) {
-    return maybe_int.value;
-  }
-  thread->raiseWithFmt(LayoutId::kOverflowError, "int overflow or underflow");
-  return -2;
+  Str haystack(&scope, strUnderlying(thread, haystack_obj));
+  Str needle(&scope, SmallStr::fromCodePoint(ch));
+  if (direction == 1) return strFind(haystack, needle, start, end);
+  return strRFind(haystack, needle, start, end);
 }
 
 PY_EXPORT PyObject* PyUnicode_Format(PyObject* /* t */, PyObject* /* s */) {

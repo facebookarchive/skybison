@@ -27,7 +27,7 @@ RawObject strEscapeNonASCII(Thread* thread, const Object& str_obj);
 // Look for needle in haystack in the range [start, end]. Return the first
 // index found in that range, or -1 if needle was not found. Note that start
 // and end are code point offsets, not byte offsets.
-RawObject strFind(const Str& haystack, const Str& needle, word start, word end);
+word strFind(const Str& haystack, const Str& needle, word start, word end);
 
 // Find the index of the first non-whitespace character in the string. If there
 // are no non-whitespace characters, return the length of the string.
@@ -51,8 +51,7 @@ bool strIsASCII(const Str& str);
 // Look for needle in haystack in the range [start, end]. Return the last
 // index found in that range, or -1 if needle was not found. Note that start
 // and end are code point offsets, not byte offsets.
-RawObject strRFind(const Str& haystack, const Str& needle, word start,
-                   word end);
+word strRFind(const Str& haystack, const Str& needle, word start, word end);
 
 RawObject strStrip(Thread* thread, const Str& src, const Str& str);
 RawObject strStripLeft(Thread* thread, const Str& src, const Str& str);
