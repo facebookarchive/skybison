@@ -532,8 +532,7 @@ RawObject ByteArrayBuiltins::dunderNew(Thread* thread, Frame* frame,
   return *result;
 }
 
-// TODO(T48660163): Escape single quotes
-RawObject byteArrayReprSmartQuotes(Thread* thread, const ByteArray& self) {
+RawObject byteArrayRepr(Thread* thread, const ByteArray& self) {
   word length = self.numItems();
   word affix_length = 14;  // strlen("bytearray(b'')") == 14
   if (length > (kMaxWord - affix_length) / 4) {
@@ -565,7 +564,7 @@ RawObject byteArrayReprSmartQuotes(Thread* thread, const ByteArray& self) {
   runtime->byteArrayExtend(thread, buffer, bytearray_str);
   for (word i = 0; i < length; i++) {
     byte current = self.byteAt(i);
-    if (current == quote || current == '\\') {
+    if (current == '\'' || current == '\\') {
       const byte bytes[] = {'\\', current};
       runtime->byteArrayExtend(thread, buffer, bytes);
     } else if (current == '\t') {
@@ -601,7 +600,7 @@ RawObject ByteArrayBuiltins::dunderRepr(Thread* thread, Frame* frame,
     return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
   }
   ByteArray self(&scope, *self_obj);
-  return byteArrayReprSmartQuotes(thread, self);
+  return byteArrayRepr(thread, self);
 }
 
 RawObject ByteArrayBuiltins::hex(Thread* thread, Frame* frame, word nargs) {

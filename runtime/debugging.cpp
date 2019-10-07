@@ -260,7 +260,7 @@ std::ostream& operator<<(std::ostream& os, RawByteArray value) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, value);
-  Object repr_obj(&scope, byteArrayReprSmartQuotes(thread, self));
+  Object repr_obj(&scope, byteArrayRepr(thread, self));
   if (repr_obj.isError()) return os << "<ERROR: An exception occurred.>";
   Str repr(&scope, *repr_obj);
   unique_c_ptr<char[]> data(repr.toCStr());

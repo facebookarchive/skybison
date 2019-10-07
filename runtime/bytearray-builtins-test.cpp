@@ -1316,7 +1316,7 @@ TEST_F(ByteArrayBuiltinsTest,
   const byte bytes[] = {'_', '\'', '_'};
   runtime_.byteArrayExtend(thread_, self, bytes);
   Object repr(&scope, runBuiltin(ByteArrayBuiltins::dunderRepr, self));
-  EXPECT_TRUE(isStrEqualsCStr(*repr, R"(bytearray(b"_'_"))"));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, R"(bytearray(b"_\'_"))"));
 }
 
 TEST_F(ByteArrayBuiltinsTest,

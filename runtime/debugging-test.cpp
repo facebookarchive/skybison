@@ -346,8 +346,7 @@ TEST_F(DebuggingTests, FormatByteArray) {
   ASSERT_TRUE(bytearray.isByteArray());
   std::stringstream ss;
   ss << bytearray;
-  // TODO(T48660163): Fix test to escape single quote
-  EXPECT_EQ(ss.str(), "bytearray(b\"foo'\")");
+  EXPECT_EQ(ss.str(), R"(bytearray(b"foo\'"))");
 }
 
 TEST_F(DebuggingTests, FormatCode) {

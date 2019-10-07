@@ -16,7 +16,7 @@ RawObject byteArrayAsBytes(Thread* thread, Runtime* runtime,
 
 // Returns a new Str containing the repr of self. On error, raise & return
 // OverflowError.
-RawObject byteArrayReprSmartQuotes(Thread* thread, const ByteArray& self);
+RawObject byteArrayRepr(Thread* thread, const ByteArray& self);
 
 // Writes the value to the array as two hex digits.
 void writeByteAsHexDigits(Thread* thread, const ByteArray& array, byte value);
