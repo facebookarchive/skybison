@@ -351,8 +351,8 @@ unicodedata_UCD_normalize(PyObject *self, PyObject *args)
     const char *form;
     PyObject *input;
 
-    if (!PyArg_ParseTuple(args, "sO!:normalize",
-        &form, &PyUnicode_Type, &input)) {
+    if (!PyArg_ParseTuple(args, "sO:normalize",
+        &form, &input)) {
         goto exit;
     }
     return_value = unicodedata_UCD_normalize_impl(self, form, input);
@@ -424,4 +424,4 @@ unicodedata_UCD_lookup(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=535a7c0d2c913000 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=162e44ebe96945df input=a9049054013a1b77]*/

@@ -932,7 +932,7 @@ Valid values for form are 'NFC', 'NFKC', 'NFD', and 'NFKD'.
 static PyObject *
 unicodedata_UCD_normalize_impl(PyObject *self, const char *form,
                                PyObject *input)
-/*[clinic end generated code: output=62d1f8870027efdc input=cd092e631cf11883]*/
+/*[clinic end generated code: output=62d1f8870027efdc input=05f211ffe1a12e3f]*/
 {
     if (!PyUnicode_Check(input)) {
         PyErr_Format(PyExc_TypeError,
