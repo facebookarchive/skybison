@@ -1906,11 +1906,6 @@ statresult_new(PyTypeObject *type, PyObject *args)
     return (PyObject*)result;
 }
 
-static PyMethodDef StatResultType_dunder_new = {
-    "__new__", (PyCFunction)statresult_new, METH_VARARGS
-};
-
-
 static int
 _posix_clear(PyObject *module)
 {
@@ -5582,11 +5577,6 @@ convert_sched_param(PyObject *param, struct sched_param *res)
     res->sched_priority = Py_SAFE_DOWNCAST(priority, long, int);
     return 1;
 }
-
-static PyMethodDef SchedParamType_dunder_new = {
-    "__new__", (PyCFunction)os_sched_param, METH_VARARGS | METH_KEYWORDS
-};
-
 #endif /* defined(HAVE_SCHED_SETSCHEDULER) || defined(HAVE_SCHED_SETPARAM) */
 
 
@@ -11390,12 +11380,14 @@ typedef struct {
 static void
 DirEntry_dealloc(DirEntry *entry)
 {
+    PyTypeObject *tp = Py_TYPE(entry);
     Py_XDECREF(entry->name);
     Py_XDECREF(entry->path);
     Py_XDECREF(entry->stat);
     Py_XDECREF(entry->lstat);
     freefunc entry_free = PyType_GetSlot(Py_TYPE(entry), Py_tp_free);
     entry_free((PyObject *)entry);
+    Py_DECREF(tp);
 }
 
 /* Forward reference */
@@ -11750,7 +11742,6 @@ DirEntry_from_find_data(path_t *path, WIN32_FIND_DATAW *dataW)
     ULONG reparse_tag;
     wchar_t *joined_path;
 
-    PyObject *module = PyState_FindModule(&posixmodule);
     PyObject *DirEntryType = _posixstate(self)->DirEntryType;
     entry = PyObject_New(DirEntry, (PyTypeObject *)DirEntryType);
     if (!entry)
@@ -12079,11 +12070,13 @@ ScandirIterator_finalize(ScandirIterator *iterator)
 static void
 ScandirIterator_dealloc(ScandirIterator *iterator)
 {
+    PyTypeObject *tp = Py_TYPE(iterator);
     if (PyObject_CallFinalizerFromDealloc((PyObject *)iterator) < 0)
         return;
 
     freefunc iterator_free = PyType_GetSlot(Py_TYPE(iterator), Py_tp_free);
     iterator_free((PyObject *)iterator);
+    Py_DECREF(tp);
 }
 
 static PyMethodDef ScandirIterator_methods[] = {
@@ -12307,6 +12300,16 @@ error:
 #endif   /* HAVE_GETRANDOM_SYSCALL */
 
 #include "clinic/posixmodule.c.h"
+
+#if defined(HAVE_SCHED_SETSCHEDULER) || defined(HAVE_SCHED_SETPARAM)
+static PyMethodDef SchedParamType_dunder_new = {
+    "__new__", (PyCFunction)os_sched_param, METH_VARARGS | METH_KEYWORDS
+};
+#endif
+
+static PyMethodDef StatResultType_dunder_new = {
+    "__new__", (PyCFunction)statresult_new, METH_VARARGS
+};
 
 /*[clinic input]
 dump buffer
@@ -13112,8 +13115,10 @@ INITFUNC(void)
     const char * const *trace;
 
     m = PyState_FindModule(&posixmodule);
-    if (m != NULL)
+    if (m != NULL) {
+        Py_INCREF(m);
         return m;
+    }
 
     m = PyModule_Create(&posixmodule);
     if (m == NULL)
@@ -13150,27 +13155,39 @@ INITFUNC(void)
 
 #if defined(HAVE_WAITID) && !defined(__APPLE__)
     waitid_result_desc.name = MODNAME ".waitid_result";
-    PyTypeObject *WaitidResultType = PyStructSequence_NewType(&waitid_result_desc);
+    PyObject *WaitidResultType = (PyObject *)PyStructSequence_NewType(&waitid_result_desc);
     if (WaitidResultType == NULL) {
         return NULL;
     }
+    Py_INCREF(WaitidResultType);
+    PyModule_AddObject(m, "waitid_result", WaitidResultType);
+    _posixstate(m)->WaitidResultType = WaitidResultType;
 #endif
 
     stat_result_desc.name = "os.stat_result"; /* see issue #19209 */
-    PyTypeObject *StatResultType = PyStructSequence_NewType(&stat_result_desc);
+    PyObject *StatResultType = (PyObject *)PyStructSequence_NewType(&stat_result_desc);
     if (StatResultType == NULL) {
         return NULL;
     }
-    _posixstate(m)->structseq_new = (newfunc)PyType_GetSlot(StatResultType, Py_tp_new);
-    dunder_new = PyDescr_NewClassMethod(StatResultType, &StatResultType_dunder_new);
-    PyObject_SetAttrString((PyObject *)StatResultType, "__new__", dunder_new);
+    Py_INCREF(StatResultType);
+    PyModule_AddObject(m, "stat_result", StatResultType);
+    _posixstate(m)->StatResultType = StatResultType;
+
+    /* Add a custom __new__ to the structsequence */
+    _posixstate(m)->structseq_new = (newfunc)PyType_GetSlot((PyTypeObject *)StatResultType, Py_tp_new);
+    dunder_new = PyDescr_NewClassMethod((PyTypeObject *)StatResultType, &StatResultType_dunder_new);
+    PyObject_SetAttrString(StatResultType, "__new__", dunder_new);
     Py_DECREF(dunder_new);
 
     statvfs_result_desc.name = "os.statvfs_result"; /* see issue #19209 */
-    PyTypeObject *StatVFSResultType = PyStructSequence_NewType(&statvfs_result_desc);
+    PyObject *StatVFSResultType = (PyObject *)PyStructSequence_NewType(&statvfs_result_desc);
     if (StatVFSResultType == NULL) {
         return NULL;
     }
+    Py_INCREF(StatVFSResultType);
+    PyModule_AddObject(m, "statvfs_result", StatVFSResultType);
+    _posixstate(m)->StatVFSResultType = StatVFSResultType;
+
 #ifdef NEED_TICKS_PER_SECOND
 #  if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
     ticks_per_second = sysconf(_SC_CLK_TCK);
@@ -13183,71 +13200,59 @@ INITFUNC(void)
 
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER)
     sched_param_desc.name = MODNAME ".sched_param";
-    PyTypeObject *SchedParamType = PyStructSequence_NewType(&sched_param_desc);
+    PyObject *SchedParamType = (PyObject *)PyStructSequence_NewType(&sched_param_desc);
     if (SchedParamType == NULL) {
         return NULL;
     }
-    dunder_new = PyDescr_NewClassMethod(SchedParamType, &SchedParamType_dunder_new);
-    PyObject_SetAttrString((PyObject *)SchedParamType, "__new__", dunder_new);
+    Py_INCREF(SchedParamType);
+    PyModule_AddObject(m, "sched_param", SchedParamType);
+    _posixstate(m)->SchedParamType = SchedParamType;
+
+    /* Add a custom __new__ to the structsequence */
+    dunder_new = PyDescr_NewClassMethod((PyTypeObject *)SchedParamType, &SchedParamType_dunder_new);
+    PyObject_SetAttrString(SchedParamType, "__new__", dunder_new);
     Py_DECREF(dunder_new);
 #endif
 
     /* initialize TerminalSize_info */
-    PyTypeObject *TerminalSizeType = PyStructSequence_NewType(&TerminalSize_desc);
+    PyObject *TerminalSizeType = (PyObject *)PyStructSequence_NewType(&TerminalSize_desc);
     if (TerminalSizeType == NULL) {
         return NULL;
     }
+    Py_INCREF(TerminalSizeType);
+    PyModule_AddObject(m, "terminal_size", TerminalSizeType);
+    _posixstate(m)->TerminalSizeType = TerminalSizeType;
 
     /* initialize scandir types */
-    PyTypeObject *ScandirIteratorType = (PyTypeObject *)PyType_FromSpec(&ScandirIteratorType_spec);
+    PyObject *ScandirIteratorType = PyType_FromSpec(&ScandirIteratorType_spec);
     if (ScandirIteratorType == NULL)
         return NULL;
-    _posixstate(m)->ScandirIteratorType = (PyObject *)ScandirIteratorType;
-    Py_INCREF(_posixstate(m)->ScandirIteratorType);
+    _posixstate(m)->ScandirIteratorType = ScandirIteratorType;
 
-    PyTypeObject *DirEntryType = (PyTypeObject *)PyType_FromSpec(&DirEntryType_spec);
+    PyObject *DirEntryType = PyType_FromSpec(&DirEntryType_spec);
     if (DirEntryType == NULL)
         return NULL;
-#if defined(HAVE_WAITID) && !defined(__APPLE__)
-    Py_INCREF((PyObject*) WaitidResultType);
-    PyModule_AddObject(m, "waitid_result", (PyObject*) WaitidResultType);
-    _posixstate(m)->WaitidResultType = (PyObject *)WaitidResultType;
-    Py_INCREF(_posixstate(m)->WaitidResultType);
-#endif
-    Py_INCREF((PyObject*) StatResultType);
-    PyModule_AddObject(m, "stat_result", (PyObject*) StatResultType);
-    _posixstate(m)->StatResultType = (PyObject *)StatResultType;
-    Py_INCREF(_posixstate(m)->StatResultType);
-    Py_INCREF((PyObject*) StatVFSResultType);
-    PyModule_AddObject(m, "statvfs_result",
-                       (PyObject*) StatVFSResultType);
-    _posixstate(m)->StatVFSResultType = (PyObject *)StatVFSResultType;
-    Py_INCREF(_posixstate(m)->StatVFSResultType);
-
-#if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER)
-    Py_INCREF(SchedParamType);
-    PyModule_AddObject(m, "sched_param", (PyObject *)SchedParamType);
-    _posixstate(m)->SchedParamType = (PyObject *)SchedParamType;
-    Py_INCREF(_posixstate(m)->SchedParamType);
-#endif
+    Py_INCREF(DirEntryType);
+    PyModule_AddObject(m, "DirEntry", DirEntryType);
+    _posixstate(m)->DirEntryType = DirEntryType;
 
     times_result_desc.name = MODNAME ".times_result";
-    PyTypeObject *TimesResultType = PyStructSequence_NewType(&times_result_desc);
+    PyObject *TimesResultType = (PyObject *)PyStructSequence_NewType(&times_result_desc);
     if (TimesResultType == NULL) {
         return NULL;
     }
-    PyModule_AddObject(m, "times_result", (PyObject *)TimesResultType);
-    _posixstate(m)->TimesResultType = (PyObject *)TimesResultType;
-    Py_INCREF(_posixstate(m)->TimesResultType);
+    Py_INCREF(TimesResultType);
+    PyModule_AddObject(m, "times_result", TimesResultType);
+    _posixstate(m)->TimesResultType = TimesResultType;
 
     uname_result_desc.name = MODNAME ".uname_result";
     PyTypeObject *UnameResultType = PyStructSequence_NewType(&uname_result_desc);
     if (UnameResultType == NULL) {
         return NULL;
     }
+    Py_INCREF(UnameResultType);
     PyModule_AddObject(m, "uname_result", (PyObject *)UnameResultType);
     _posixstate(m)->UnameResultType = (PyObject *)UnameResultType;
-    Py_INCREF(_posixstate(m)->UnameResultType);
 
 #ifdef __APPLE__
     /*
@@ -13287,30 +13292,16 @@ INITFUNC(void)
 
 #endif /* __APPLE__ */
 
-    Py_INCREF(TerminalSizeType);
-    PyModule_AddObject(m, "terminal_size", (PyObject*)TerminalSizeType);
-    _posixstate(m)->TerminalSizeType = (PyObject *)TerminalSizeType;
-    Py_INCREF(_posixstate(m)->TerminalSizeType);
-
-    PyObject *billion = PyLong_FromLong(1000000000);
-    if (!billion)
+    if ((_posixstate(m)->billion = PyLong_FromLong(1000000000)) == NULL)
         return NULL;
-    _posixstate(m)->billion = billion;
-    Py_INCREF(_posixstate(m)->billion);
-
 #if defined(HAVE_WAIT3) || defined(HAVE_WAIT4)
     if ((_posixstate(m)->struct_rusage = PyUnicode_FromString("struct_rusage")) == NULL)
         return NULL;
-    Py_INCREF(_posixstate(m)->struct_rusage);
 #endif
-
     if ((_posixstate(m)->st_mode = PyUnicode_FromString("st_mode")) == NULL)
         return NULL;
-    Py_INCREF(_posixstate(m)->st_mode);
-
     if ((_posixstate(m)->fspath = PyUnicode_FromString("__fspath__")) == NULL)
         return NULL;
-    Py_INCREF(_posixstate(m)->fspath);
     if ((_posixstate(m)->dunderget = PyUnicode_FromString("__get__")) == NULL)
         return NULL;
 
@@ -13340,11 +13331,6 @@ INITFUNC(void)
         Py_DECREF(unicode);
     }
     PyModule_AddObject(m, "_have_functions", list);
-
-    Py_INCREF((PyObject *) DirEntryType);
-    PyModule_AddObject(m, "DirEntry", (PyObject *)DirEntryType);
-    _posixstate(m)->DirEntryType = (PyObject *)DirEntryType;
-    Py_INCREF(_posixstate(m)->DirEntryType);
 
     PyState_AddModule(m, &posixmodule);
     return m;

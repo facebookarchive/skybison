@@ -972,7 +972,6 @@ lookup_special(PyObject *self, PyObject *func_name) {
     return func;
 }
 
-
 static PyObject * math_ceil(PyObject *self, PyObject *number) {
     PyObject *method, *result;
 

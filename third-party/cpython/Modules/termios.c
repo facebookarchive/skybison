@@ -994,7 +994,6 @@ PyInit_termios(void)
         PyModule_AddIntConstant(m, constant->name, constant->value);
         ++constant;
     }
-
     PyState_AddModule(m, &termiosmodule);
     return m;
 }

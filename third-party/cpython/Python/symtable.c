@@ -336,10 +336,16 @@ PySymtable_BuildObject(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
         recursion_limit * COMPILER_STACK_FRAME_SCALE : recursion_limit;
 
     /* Make the initial symbol information gathering pass */
-    if (!GET_IDENTIFIER(top) ||
-        !symtable_enter_block(st, GET_IDENTIFIER(top), ModuleBlock, (void *)mod, 0, 0)) {
-        PySymtable_Free(st);
-        return NULL;
+    {
+        PyObject *top_str = GET_IDENTIFIER(top);
+        if (!top_str ||
+            !symtable_enter_block(st, top_str, ModuleBlock,
+                                  (void *)mod, 0, 0)) {
+            Py_XDECREF(top_str);
+            PySymtable_Free(st);
+            return NULL;
+        }
+        Py_DECREF(top_str);
     }
 
     st->st_top = st->st_cur;
@@ -653,6 +659,7 @@ drop_class_free(PySTEntryObject *ste, PyObject *free)
     if (!dunder_class)
         return 0;
     res = PySet_Discard(free, dunder_class);
+    Py_DECREF(dunder_class);
     if (res < 0)
         return 0;
     if (res)
@@ -867,6 +874,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
             goto error;
         if (PySet_Add(newbound, dunder_class) < 0)
             goto error;
+        Py_DECREF(dunder_class);
     }
 
     /* Recursively call analyze_child_block() on each child block.
@@ -1475,16 +1483,20 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         VISIT(st, expr, e->v.UnaryOp.operand);
         break;
     case Lambda_kind: {
-        if (!GET_IDENTIFIER(lambda))
+        PyObject *lambda_str = GET_IDENTIFIER(lambda);
+        if (!lambda_str)
             VISIT_QUIT(st, 0);
         if (e->v.Lambda.args->defaults)
             VISIT_SEQ(st, expr, e->v.Lambda.args->defaults);
         if (e->v.Lambda.args->kw_defaults)
             VISIT_SEQ_WITH_NULL(st, expr, e->v.Lambda.args->kw_defaults);
-        if (!symtable_enter_block(st, GET_IDENTIFIER(lambda),
+        if (!symtable_enter_block(st, lambda_str,
                                   FunctionBlock, (void *)e, e->lineno,
-                                  e->col_offset))
+                                  e->col_offset)) {
+            Py_XDECREF(lambda_str);
             VISIT_QUIT(st, 0);
+        }
+        Py_DECREF(lambda_str);
         VISIT(st, arguments, e->v.Lambda.args);
         VISIT(st, expr, e->v.Lambda.body);
         if (!symtable_exit_block(st, (void *)e))
@@ -1576,9 +1588,13 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         if (e->v.Name.ctx == Load &&
             st->st_cur->ste_type == FunctionBlock &&
             _PyUnicode_EqualToASCIIString(e->v.Name.id, "super")) {
-            if (!GET_IDENTIFIER(__class__) ||
-                !symtable_add_def(st, GET_IDENTIFIER(__class__), USE))
+            PyObject *dunder_class_str = GET_IDENTIFIER(__class__);
+            if (!dunder_class_str ||
+                !symtable_add_def(st, dunder_class_str, USE)) {
+                Py_XDECREF(dunder_class_str);
                 VISIT_QUIT(st, 0);
+            }
+            Py_DECREF(dunder_class_str);
         }
         break;
     /* child nodes of List and Tuple will have expr_context set */
@@ -1830,32 +1846,44 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
 static int
 symtable_visit_genexp(struct symtable *st, expr_ty e)
 {
-    return symtable_handle_comprehension(st, e, GET_IDENTIFIER(genexpr),
+    PyObject *genexpr_str = GET_IDENTIFIER(genexpr);
+    int res = symtable_handle_comprehension(st, e, genexpr_str,
                                          e->v.GeneratorExp.generators,
                                          e->v.GeneratorExp.elt, NULL);
+    Py_DECREF(genexpr_str);
+    return res;
 }
 
 static int
 symtable_visit_listcomp(struct symtable *st, expr_ty e)
 {
-    return symtable_handle_comprehension(st, e, GET_IDENTIFIER(listcomp),
+    PyObject *listcomp_str = GET_IDENTIFIER(listcomp);
+    int res = symtable_handle_comprehension(st, e, listcomp_str,
                                          e->v.ListComp.generators,
                                          e->v.ListComp.elt, NULL);
+    Py_DECREF(listcomp_str);
+    return res;
 }
 
 static int
 symtable_visit_setcomp(struct symtable *st, expr_ty e)
 {
-    return symtable_handle_comprehension(st, e, GET_IDENTIFIER(setcomp),
+    PyObject *setcomp_str = GET_IDENTIFIER(setcomp);
+    int res = symtable_handle_comprehension(st, e, setcomp_str,
                                          e->v.SetComp.generators,
                                          e->v.SetComp.elt, NULL);
+    Py_DECREF(setcomp_str);
+    return res;
 }
 
 static int
 symtable_visit_dictcomp(struct symtable *st, expr_ty e)
 {
-    return symtable_handle_comprehension(st, e, GET_IDENTIFIER(dictcomp),
+    PyObject *dictcomp_str = GET_IDENTIFIER(dictcomp);
+    int res = symtable_handle_comprehension(st, e, dictcomp_str,
                                          e->v.DictComp.generators,
                                          e->v.DictComp.key,
                                          e->v.DictComp.value);
+    Py_DECREF(dictcomp_str);
+    return res;
 }

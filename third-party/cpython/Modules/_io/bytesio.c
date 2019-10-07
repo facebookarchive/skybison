@@ -927,6 +927,7 @@ bytesio_setstate(bytesio *self, PyObject *state)
 static void
 bytesio_dealloc(bytesio *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
     if (self->exports > 0) {
         PyErr_SetString(PyExc_SystemError,
@@ -937,7 +938,8 @@ bytesio_dealloc(bytesio *self)
     Py_CLEAR(self->dict);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
-    Py_TYPE(self)->tp_free(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -1036,6 +1038,11 @@ static PyGetSetDef bytesio_getsetlist[] = {
     {NULL},            /* sentinel */
 };
 
+static PyMemberDef bytesio_members[] = {
+    {"__weaklistoffset__", T_NONE, offsetof(bytesio, weakreflist), READONLY},
+    {NULL}
+};
+
 static struct PyMethodDef bytesio_methods[] = {
     _IO_BYTESIO_READABLE_METHODDEF
     _IO_BYTESIO_SEEKABLE_METHODDEF
@@ -1070,6 +1077,7 @@ PyType_Slot PyBytesIO_Type_slots[] = {
     {Py_tp_clear, bytesio_clear},
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, bytesio_iternext},
+    {Py_tp_members, bytesio_members},
     {Py_tp_methods, bytesio_methods},
     {Py_tp_getset, bytesio_getsetlist},
     {Py_tp_init, _io_BytesIO___init__},

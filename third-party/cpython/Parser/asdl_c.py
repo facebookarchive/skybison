@@ -78,14 +78,18 @@ class EmitVisitor(asdl.VisitorBase):
     def __init__(self, file):
         self.file = file
         self.identifiers = set()
+        self.singletons = set()
+        self.types = set()
         super(EmitVisitor, self).__init__()
 
     def emit_identifier(self, name):
-        name = str(name)
-        if name in self.identifiers:
-            return
-        self.emit("_Py_IDENTIFIER(%s);" % name, 0)
-        self.identifiers.add(name)
+        self.identifiers.add(str(name))
+
+    def emit_singleton(self, name):
+        self.singletons.add(str(name))
+
+    def emit_type(self, name):
+        self.types.add(str(name))
 
     def emit(self, s, depth, reflow=True):
         # XXX reflow long lines?
@@ -390,9 +394,8 @@ class Obj2ModVisitor(PickleVisitor):
     def simpleSum(self, sum, name):
         self.funcHeader(name)
         for t in sum.types:
-            line = ("isinstance = PyObject_IsInstance(obj, "
-                    "(PyObject *)%s_type);")
-            self.emit(line % (t.name,), 1)
+            self.emit("isinstance = PyObject_IsInstance(obj, "
+                      f"astmodulestate_global->{t.name}_type);", 1)
             self.emit("if (isinstance == -1) {", 1)
             self.emit("return 1;", 2)
             self.emit("}", 1)
@@ -408,6 +411,7 @@ class Obj2ModVisitor(PickleVisitor):
     def complexSum(self, sum, name):
         self.funcHeader(name)
         self.emit("PyObject *tmp = NULL;", 1)
+        self.emit("PyObject *tp;", 1)
         for a in sum.attributes:
             self.visitAttributeDeclaration(a, name, sum=sum)
         self.emit("", 0)
@@ -419,8 +423,8 @@ class Obj2ModVisitor(PickleVisitor):
         for a in sum.attributes:
             self.visitField(a, name, sum=sum, depth=1)
         for t in sum.types:
-            line = "isinstance = PyObject_IsInstance(obj, (PyObject*)%s_type);"
-            self.emit(line % (t.name,), 1)
+            self.emit(f"tp = astmodulestate_global->{t.name}_type;", 1)
+            self.emit("isinstance = PyObject_IsInstance(obj, tp);", 1)
             self.emit("if (isinstance == -1) {", 1)
             self.emit("return 1;", 2)
             self.emit("}", 1)
@@ -497,21 +501,21 @@ class Obj2ModVisitor(PickleVisitor):
     def visitField(self, field, name, sum=None, prod=None, depth=0):
         ctype = get_c_type(field.type)
         if field.opt:
-            check = "exists_not_none(obj, &PyId_%s)" % (field.name,)
+            check = f"exists_not_none(obj, astmodulestate_global->{field.name})"
         else:
-            check = "_PyObject_HasAttrId(obj, &PyId_%s)" % (field.name,)
+            check = f"PyObject_HasAttr(obj, astmodulestate_global->{field.name})"
         self.emit("if (%s) {" % (check,), depth, reflow=False)
         self.emit("int res;", depth+1)
         if field.seq:
             self.emit("Py_ssize_t len;", depth+1)
             self.emit("Py_ssize_t i;", depth+1)
-        self.emit("tmp = _PyObject_GetAttrId(obj, &PyId_%s);" % field.name, depth+1)
+        self.emit("tmp = PyObject_GetAttr(obj, "
+                  f"astmodulestate_global->{field.name});", depth+1)
         self.emit("if (tmp == NULL) goto failed;", depth+1)
         if field.seq:
             self.emit("if (!PyList_Check(tmp)) {", depth+1)
-            self.emit("PyErr_Format(PyExc_TypeError, \"%s field \\\"%s\\\" must "
-                      "be a list, not a %%.200s\", tmp->ob_type->tp_name);" %
-                      (name, field.name),
+            self.emit(f"PyErr_Format(PyExc_TypeError, \"{name} field \\\"{field.name}\\\" must "
+                      "be a list, not a %.200s\", _PyType_Name(Py_TYPE(tmp)));",
                       depth+2, reflow=False)
             self.emit("goto failed;", depth+2)
             self.emit("}", depth+1)
@@ -570,7 +574,7 @@ class MarshalPrototypeVisitor(PickleVisitor):
 class PyTypesDeclareVisitor(PickleVisitor):
 
     def visitProduct(self, prod, name):
-        self.emit("static PyTypeObject *%s_type;" % name, 0)
+        self.emit_type(f"{name}_type")
         self.emit("static PyObject* ast2obj_%s(void*);" % name, 0)
         if prod.attributes:
             for a in prod.attributes:
@@ -588,7 +592,7 @@ class PyTypesDeclareVisitor(PickleVisitor):
             self.emit("};", 0)
 
     def visitSum(self, sum, name):
-        self.emit("static PyTypeObject *%s_type;" % name, 0)
+        self.emit_type(f"{name}_type")
         if sum.attributes:
             for a in sum.attributes:
                 self.emit_identifier(a.name)
@@ -599,17 +603,13 @@ class PyTypesDeclareVisitor(PickleVisitor):
         ptype = "void*"
         if is_simple(sum):
             ptype = get_c_type(name)
-            tnames = []
             for t in sum.types:
-                tnames.append(str(t.name)+"_singleton")
-            tnames = ", *".join(tnames)
-            self.emit("static PyObject *%s;" % tnames, 0)
+                self.emit_singleton(f"{str(t.name)}_singleton")
         self.emit("static PyObject* ast2obj_%s(%s);" % (name, ptype), 0)
         for t in sum.types:
             self.visitConstructor(t, name)
 
     def visitConstructor(self, cons, name):
-        self.emit("static PyTypeObject *%s_type;" % cons.name, 0)
         if cons.fields:
             for t in cons.fields:
                 self.emit_identifier(t.name)
@@ -630,10 +630,12 @@ typedef struct {
 static void
 ast_dealloc(AST_object *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
     Py_CLEAR(self->dict);
     Py_TYPE(self)->tp_free(self);
+    Py_DECREF(tp);
 }
 
 static int
@@ -653,11 +655,10 @@ ast_clear(AST_object *self)
 static int
 ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 {
-    _Py_IDENTIFIER(_fields);
     Py_ssize_t i, numfields = 0;
     int res = -1;
     PyObject *key, *value, *fields;
-    fields = _PyObject_GetAttrId((PyObject*)Py_TYPE(self), &PyId__fields);
+    fields = PyObject_GetAttr((PyObject*)Py_TYPE(self), astmodulestate_global->_fields);
     if (!fields)
         PyErr_Clear();
     if (fields) {
@@ -670,7 +671,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
         if (numfields != PyTuple_GET_SIZE(args)) {
             PyErr_Format(PyExc_TypeError, "%.400s constructor takes %s"
                          "%zd positional argument%s",
-                         Py_TYPE(self)->tp_name,
+                         _PyType_Name(Py_TYPE(self)),
                          numfields == 0 ? "" : "either 0 or ",
                          numfields, numfields == 1 ? "" : "s");
             res = -1;
@@ -707,8 +708,7 @@ static PyObject *
 ast_type_reduce(PyObject *self, PyObject *unused)
 {
     PyObject *res;
-    _Py_IDENTIFIER(__dict__);
-    PyObject *dict = _PyObject_GetAttrId(self, &PyId___dict__);
+    PyObject *dict = PyObject_GetAttr(self, astmodulestate_global->__dict__);
     if (dict == NULL) {
         if (PyErr_ExceptionMatches(PyExc_AttributeError))
             PyErr_Clear();
@@ -723,6 +723,11 @@ ast_type_reduce(PyObject *self, PyObject *unused)
     return Py_BuildValue("O()", Py_TYPE(self));
 }
 
+static PyMemberDef ast_type_members[] = {
+    {"__dictoffset__", T_NONE, offsetof(AST_object, dict), READONLY},
+    {NULL}  /* Sentinel */
+};
+
 static PyMethodDef ast_type_methods[] = {
     {"__reduce__", ast_type_reduce, METH_NOARGS, NULL},
     {NULL}
@@ -733,50 +738,32 @@ static PyGetSetDef ast_type_getsets[] = {
     {NULL}
 };
 
-static PyTypeObject AST_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+static PyType_Slot AST_type_slots[] = {
+    {Py_tp_dealloc, ast_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_setattro, PyObject_GenericSetAttr},
+    {Py_tp_traverse, ast_traverse},
+    {Py_tp_clear, ast_clear},
+    {Py_tp_members, ast_type_members},
+    {Py_tp_methods, ast_type_methods},
+    {Py_tp_getset, ast_type_getsets},
+    {Py_tp_init, ast_type_init},
+    {Py_tp_alloc, PyType_GenericAlloc},
+    {Py_tp_new, PyType_GenericNew},
+    {Py_tp_free, PyType_GenericNew},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, 0},
+};
+
+static PyType_Spec AST_type_spec = {
     "_ast.AST",
     sizeof(AST_object),
     0,
-    (destructor)ast_dealloc, /* tp_dealloc */
-    0,                       /* tp_print */
-    0,                       /* tp_getattr */
-    0,                       /* tp_setattr */
-    0,                       /* tp_reserved */
-    0,                       /* tp_repr */
-    0,                       /* tp_as_number */
-    0,                       /* tp_as_sequence */
-    0,                       /* tp_as_mapping */
-    0,                       /* tp_hash */
-    0,                       /* tp_call */
-    0,                       /* tp_str */
-    PyObject_GenericGetAttr, /* tp_getattro */
-    PyObject_GenericSetAttr, /* tp_setattro */
-    0,                       /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, /* tp_flags */
-    0,                       /* tp_doc */
-    (traverseproc)ast_traverse, /* tp_traverse */
-    (inquiry)ast_clear,      /* tp_clear */
-    0,                       /* tp_richcompare */
-    0,                       /* tp_weaklistoffset */
-    0,                       /* tp_iter */
-    0,                       /* tp_iternext */
-    ast_type_methods,        /* tp_methods */
-    0,                       /* tp_members */
-    ast_type_getsets,        /* tp_getset */
-    0,                       /* tp_base */
-    0,                       /* tp_dict */
-    0,                       /* tp_descr_get */
-    0,                       /* tp_descr_set */
-    offsetof(AST_object, dict),/* tp_dictoffset */
-    (initproc)ast_type_init, /* tp_init */
-    PyType_GenericAlloc,     /* tp_alloc */
-    PyType_GenericNew,       /* tp_new */
-    PyObject_GC_Del,         /* tp_free */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    AST_type_slots
 };
 
-
-static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int num_fields)
+static PyObject* make_type(char *type, PyObject* base, char** fields, int num_fields)
 {
     PyObject *fnames, *result;
     int i;
@@ -793,13 +780,12 @@ static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int
     result = PyObject_CallFunction((PyObject*)Py_TYPE(base), "s(O){sOss}",
                     type, base, "_fields", fnames, "__module__", "_ast");
     Py_DECREF(fnames);
-    return (PyTypeObject*)result;
+    return result;
 }
 
-static int add_attributes(PyTypeObject* type, char**attrs, int num_fields)
+static int add_attributes(PyObject* type, char** attrs, int num_fields)
 {
     int i, result;
-    _Py_IDENTIFIER(_attributes);
     PyObject *s, *l = PyTuple_New(num_fields);
     if (!l)
         return 0;
@@ -811,7 +797,7 @@ static int add_attributes(PyTypeObject* type, char**attrs, int num_fields)
         }
         PyTuple_SET_ITEM(l, i, s);
     }
-    result = _PyObject_SetAttrId((PyObject*)type, &PyId__attributes, l) >= 0;
+    result = PyObject_SetAttr(type, astmodulestate_global->_attributes, l) >= 0;
     Py_DECREF(l);
     return result;
 }
@@ -939,14 +925,11 @@ static int obj2ast_int(PyObject* obj, int* out, PyArena* arena)
 
 static int add_ast_fields(void)
 {
-    PyObject *empty_tuple, *d;
-    if (PyType_Ready(&AST_type) < 0)
-        return -1;
-    d = AST_type.tp_dict;
+    PyObject *empty_tuple;
     empty_tuple = PyTuple_New(0);
     if (!empty_tuple ||
-        PyDict_SetItemString(d, "_fields", empty_tuple) < 0 ||
-        PyDict_SetItemString(d, "_attributes", empty_tuple) < 0) {
+        PyObject_SetAttrString(astmodulestate_global->AST_type, "_fields", empty_tuple) < 0 ||
+        PyObject_SetAttrString(astmodulestate_global->AST_type, "_attributes", empty_tuple) < 0) {
         Py_XDECREF(empty_tuple);
         return -1;
     }
@@ -954,10 +937,10 @@ static int add_ast_fields(void)
     return 0;
 }
 
-static int exists_not_none(PyObject *obj, _Py_Identifier *id)
+static int exists_not_none(PyObject *obj, PyObject *id)
 {
     int isnone;
-    PyObject *attr = _PyObject_GetAttrId(obj, id);
+    PyObject *attr = PyObject_GetAttr(obj, id);
     if (!attr) {
         PyErr_Clear();
         return 0;
@@ -971,12 +954,21 @@ static int exists_not_none(PyObject *obj, _Py_Identifier *id)
 
         self.emit("static int init_types(void)",0)
         self.emit("{", 0)
-        self.emit("static int initialized;", 1)
-        self.emit("if (initialized) return 1;", 1)
+        self.emit("PyObject *m;", 1)
+        self.emit("if (PyState_FindModule(&_astmodule) == NULL) {", 1)
+        self.emit("m = PyModule_Create(&_astmodule);", 2)
+        self.emit("if (!m) return 0;", 12)
+        self.emit("PyState_AddModule(m, &_astmodule);", 2)
+        self.emit("}", 1)
+        self.emit("astmodulestate *state = astmodulestate_global;", 1)
+        self.emit("if (state->initialized) return 1;", 1)
+        self.emit("if (init_identifiers() < 0) return 0;", 1)
+        self.emit("state->AST_type = PyType_FromSpec(&AST_type_spec);", 1)
+        self.emit("if (!state->AST_type) return 0;", 1)
         self.emit("if (add_ast_fields() < 0) return 0;", 1)
         for dfn in mod.dfns:
             self.visit(dfn)
-        self.emit("initialized = 1;", 1)
+        self.emit("state->initialized = 1;", 1)
         self.emit("return 1;", 1);
         self.emit("}", 0)
 
@@ -985,24 +977,29 @@ static int exists_not_none(PyObject *obj, _Py_Identifier *id)
             fields = name+"_fields"
         else:
             fields = "NULL"
-        self.emit('%s_type = make_type("%s", &AST_type, %s, %d);' %
-                        (name, name, fields, len(prod.fields)), 1)
-        self.emit("if (!%s_type) return 0;" % name, 1)
+        state_name = f"state->{name}"
+        self.emit_type("AST_type")
+        self.emit(f"{state_name}_type = make_type(\"{name}\", "
+                  f"state->AST_type, {fields}, {len(prod.fields)});", 1)
+        self.emit_type(f"{name}_type")
+        self.emit(f"if (!{state_name}_type) return 0;", 1)
         if prod.attributes:
-            self.emit("if (!add_attributes(%s_type, %s_attributes, %d)) return 0;" %
-                            (name, name, len(prod.attributes)), 1)
+            self.emit(f"if (!add_attributes({state_name}_type, {name}_attributes, "
+                      f"{len(prod.attributes)})) return 0;", 1)
         else:
-            self.emit("if (!add_attributes(%s_type, NULL, 0)) return 0;" % name, 1)
+            self.emit(f"if (!add_attributes({state_name}_type, NULL, 0)) return 0;", 1)
 
     def visitSum(self, sum, name):
-        self.emit('%s_type = make_type("%s", &AST_type, NULL, 0);' %
-                  (name, name), 1)
-        self.emit("if (!%s_type) return 0;" % name, 1)
+        state_name = f"state->{name}"
+        self.emit(f"{state_name}_type = make_type(\"{name}\", "
+                  "state->AST_type, NULL, 0);", 1)
+        self.emit_type(f"{name}_type")
+        self.emit(f"if (!{state_name}_type) return 0;", 1)
         if sum.attributes:
-            self.emit("if (!add_attributes(%s_type, %s_attributes, %d)) return 0;" %
-                            (name, name, len(sum.attributes)), 1)
+            self.emit(f"if (!add_attributes({state_name}_type, "
+                      f"{name}_attributes, {len(sum.attributes)})) return 0;", 1)
         else:
-            self.emit("if (!add_attributes(%s_type, NULL, 0)) return 0;" % name, 1)
+            self.emit(f"if (!add_attributes({state_name}_type, NULL, 0)) return 0;", 1)
         simple = is_simple(sum)
         for t in sum.types:
             self.visitConstructor(t, name, simple)
@@ -1012,30 +1009,30 @@ static int exists_not_none(PyObject *obj, _Py_Identifier *id)
             fields = cons.name+"_fields"
         else:
             fields = "NULL"
-        self.emit('%s_type = make_type("%s", %s_type, %s, %d);' %
-                            (cons.name, cons.name, name, fields, len(cons.fields)), 1)
-        self.emit("if (!%s_type) return 0;" % cons.name, 1)
+        state_name = f"state->{name}"
+        cons_state_name = f"state->{cons.name}"
+        self.emit(f"{cons_state_name}_type = make_type(\"{cons.name}\", "
+                  f"{state_name}_type, {fields}, {len(cons.fields)});", 1)
+        self.emit_type(f"{cons.name}_type")
+        self.emit(f"if (!{cons_state_name}_type) return 0;", 1)
         if simple:
-            self.emit("%s_singleton = PyType_GenericNew(%s_type, NULL, NULL);" %
-                             (cons.name, cons.name), 1)
-            self.emit("if (!%s_singleton) return 0;" % cons.name, 1)
+            self.emit(f"{cons_state_name}_singleton = PyType_GenericNew("
+                      f"(PyTypeObject *){cons_state_name}_type, NULL, NULL);", 1)
+            self.emit(f"if (!{cons_state_name}_singleton) return 0;", 1)
 
 
 class ASTModuleVisitor(PickleVisitor):
 
     def visitModule(self, mod):
-        self.emit("static struct PyModuleDef _astmodule = {", 0)
-        self.emit('  PyModuleDef_HEAD_INIT, "_ast"', 0)
-        self.emit("};", 0)
         self.emit("PyMODINIT_FUNC", 0)
         self.emit("PyInit__ast(void)", 0)
         self.emit("{", 0)
-        self.emit("PyObject *m, *d;", 1)
+        self.emit("PyObject *m;", 1)
         self.emit("if (!init_types()) return NULL;", 1)
-        self.emit('m = PyModule_Create(&_astmodule);', 1)
+        self.emit('m = PyState_FindModule(&_astmodule);', 1)
         self.emit("if (!m) return NULL;", 1)
-        self.emit("d = PyModule_GetDict(m);", 1)
-        self.emit('if (PyDict_SetItemString(d, "AST", (PyObject*)&AST_type) < 0) return NULL;', 1)
+        self.emit('Py_INCREF(astmodulestate(m)->AST_type);', 1)
+        self.emit('if (PyModule_AddObject(m, "AST", astmodulestate_global->AST_type) < 0) return NULL;', 1)
         self.emit('if (PyModule_AddIntMacro(m, PyCF_ONLY_AST) < 0)', 1)
         self.emit("return NULL;", 2)
         for dfn in mod.dfns:
@@ -1055,7 +1052,9 @@ class ASTModuleVisitor(PickleVisitor):
         self.addObj(cons.name)
 
     def addObj(self, name):
-        self.emit('if (PyDict_SetItemString(d, "%s", (PyObject*)%s_type) < 0) return NULL;' % (name, name), 1)
+        self.emit(f"if (PyModule_AddObject(m, \"{name}\", "
+                  f"astmodulestate_global->{name}_type) < 0) return NULL;", 1)
+        self.emit(f"Py_INCREF(astmodulestate(m)->{name}_type);", 1)
 
 
 _SPECIALIZED_SEQUENCES = ('stmt', 'expr')
@@ -1093,6 +1092,7 @@ class ObjVisitor(PickleVisitor):
         self.emit("{", 0)
         self.emit("%s o = (%s)_o;" % (ctype, ctype), 1)
         self.emit("PyObject *result = NULL, *value = NULL;", 1)
+        self.emit("PyTypeObject *tp;", 1)
         self.emit('if (!o) {', 1)
         self.emit("Py_INCREF(Py_None);", 2)
         self.emit('return Py_None;', 2)
@@ -1121,7 +1121,7 @@ class ObjVisitor(PickleVisitor):
         for a in sum.attributes:
             self.emit("value = ast2obj_%s(o->%s);" % (a.type, a.name), 1)
             self.emit("if (!value) goto failed;", 1)
-            self.emit('if (_PyObject_SetAttrId(result, &PyId_%s, value) < 0)' % a.name, 1)
+            self.emit(f"if (PyObject_SetAttr(result, astmodulestate_global->{a.name}, value) < 0)", 1)
             self.emit('goto failed;', 2)
             self.emit('Py_DECREF(value);', 1)
         self.func_end()
@@ -1132,8 +1132,8 @@ class ObjVisitor(PickleVisitor):
         self.emit("switch(o) {", 1)
         for t in sum.types:
             self.emit("case %s:" % t.name, 2)
-            self.emit("Py_INCREF(%s_singleton);" % t.name, 3)
-            self.emit("return %s_singleton;" % t.name, 3)
+            self.emit(f"Py_INCREF(astmodulestate_global->{t.name}_singleton);", 3)
+            self.emit(f"return astmodulestate_global->{t.name}_singleton;", 3)
         self.emit("default:", 2)
         self.emit('/* should never happen, but just in case ... */', 3)
         code = "PyErr_Format(PyExc_SystemError, \"unknown %s found\");" % name
@@ -1144,21 +1144,23 @@ class ObjVisitor(PickleVisitor):
 
     def visitProduct(self, prod, name):
         self.func_begin(name)
-        self.emit("result = PyType_GenericNew(%s_type, NULL, NULL);" % name, 1);
+        self.emit(f"tp = (PyTypeObject *)astmodulestate_global->{name}_type;", 1)
+        self.emit("result = PyType_GenericNew(tp, NULL, NULL);", 1);
         self.emit("if (!result) return NULL;", 1)
         for field in prod.fields:
             self.visitField(field, name, 1, True)
         for a in prod.attributes:
             self.emit("value = ast2obj_%s(o->%s);" % (a.type, a.name), 1)
             self.emit("if (!value) goto failed;", 1)
-            self.emit('if (_PyObject_SetAttrId(result, &PyId_%s, value) < 0)' % a.name, 1)
+            self.emit(f"if (PyObject_SetAttr(result, astmodulestate_global->{a.name}, value) < 0)", 1)
             self.emit('goto failed;', 2)
             self.emit('Py_DECREF(value);', 1)
         self.func_end()
 
     def visitConstructor(self, cons, enum, name):
         self.emit("case %s_kind:" % cons.name, 1)
-        self.emit("result = PyType_GenericNew(%s_type, NULL, NULL);" % cons.name, 2);
+        self.emit(f"tp = (PyTypeObject *)astmodulestate_global->{cons.name}_type;", 2)
+        self.emit("result = PyType_GenericNew(tp, NULL, NULL);", 2);
         self.emit("if (!result) goto failed;", 2)
         for f in cons.fields:
             self.visitField(f, cons.name, 2, False)
@@ -1173,7 +1175,7 @@ class ObjVisitor(PickleVisitor):
             value = "o->v.%s.%s" % (name, field.name)
         self.set(field, value, depth)
         emit("if (!value) goto failed;", 0)
-        emit('if (_PyObject_SetAttrId(result, &PyId_%s, value) == -1)' % field.name, 0)
+        emit(f"if (PyObject_SetAttr(result, astmodulestate_global->{field.name}, value) == -1)", 0)
         emit("goto failed;", 1)
         emit("Py_DECREF(value);", 0)
 
@@ -1229,9 +1231,9 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
     char *req_name[] = {"Module", "Expression", "Interactive"};
     int isinstance;
 
-    req_type[0] = (PyObject*)Module_type;
-    req_type[1] = (PyObject*)Expression_type;
-    req_type[2] = (PyObject*)Interactive_type;
+    req_type[0] = astmodulestate_global->Module_type;
+    req_type[1] = astmodulestate_global->Expression_type;
+    req_type[2] = astmodulestate_global->Interactive_type;
 
     assert(0 <= mode && mode <= 2);
 
@@ -1243,7 +1245,7 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
         return NULL;
     if (!isinstance) {
         PyErr_Format(PyExc_TypeError, "expected %s node, got %.400s",
-                     req_name[mode], Py_TYPE(ast)->tp_name);
+                     req_name[mode], _PyType_Name(Py_TYPE(ast)));
         return NULL;
     }
     if (obj2ast_mod(ast, &res, arena) != 0)
@@ -1256,7 +1258,7 @@ int PyAST_Check(PyObject* obj)
 {
     if (!init_types())
         return -1;
-    return PyObject_IsInstance(obj, (PyObject*)&AST_type);
+    return PyObject_IsInstance(obj, astmodulestate_global->AST_type);
 }
 """
 
@@ -1268,6 +1270,86 @@ class ChainOfVisitors:
         for v in self.visitors:
             v.visit(object)
             v.emit("", 0)
+
+
+def generate_module_def(f, mod):
+    # Gather all the data needed for ModuleSpec
+    visitor_list = set()
+    with open(os.devnull, "w") as devnull:
+        visitor = PyTypesDeclareVisitor(devnull)
+        visitor.visit(mod)
+        visitor_list.add(visitor)
+        visitor = PyTypesVisitor(devnull)
+        visitor.visit(mod)
+        visitor_list.add(visitor)
+
+    state_strings = set(["__dict__", "_attributes", "_fields"])
+    module_state = set(["__dict__", "_attributes", "_fields"])
+    for visitor in visitor_list:
+          for identifier in visitor.identifiers:
+              module_state.add(identifier)
+              state_strings.add(identifier)
+          for singleton in visitor.singletons:
+              module_state.add(singleton)
+          for tp in visitor.types:
+              module_state.add(tp)
+    state_strings = sorted(state_strings)
+    module_state = sorted(module_state)
+    f.write('typedef struct {\n')
+    f.write('    int initialized;\n')
+    for s in module_state:
+          f.write('    PyObject *' + s + ';\n')
+    f.write('} astmodulestate;\n\n')
+    f.write("""
+#define astmodulestate(o) ((astmodulestate *)PyModule_GetState(o))
+
+static int astmodule_clear(PyObject *module)
+{
+""")
+    for s in module_state:
+        f.write("    Py_CLEAR(astmodulestate(module)->" + s + ');\n')
+    f.write("""
+    return 0;
+}
+
+static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
+{
+""")
+    for s in module_state:
+        f.write("    Py_VISIT(astmodulestate(module)->" + s + ');\n')
+    f.write("""
+    return 0;
+}
+
+static void astmodule_free(void* module) {
+    astmodule_clear((PyObject*)module);
+}
+
+static struct PyModuleDef _astmodule = {
+    PyModuleDef_HEAD_INIT,
+    "_ast",
+    NULL,
+    sizeof(astmodulestate),
+    NULL,
+    NULL,
+    astmodule_traverse,
+    astmodule_clear,
+    astmodule_free,
+};
+
+#define astmodulestate_global ((astmodulestate *)PyModule_GetState(PyState_FindModule(&_astmodule)))
+
+""")
+    f.write('static int init_identifiers(void)\n')
+    f.write('{\n')
+    f.write('    astmodulestate *state = astmodulestate_global;\n')
+    for identifier in state_strings:
+        f.write('    if ((state->' + identifier)
+        f.write(' = PyUnicode_InternFromString("')
+        f.write(identifier + '")) == NULL) return 0;\n')
+    f.write('    return 1;\n')
+    f.write('};\n\n')
+
 
 common_msg = "/* File automatically generated by %s. */\n\n"
 
@@ -1302,8 +1384,11 @@ def main(srcfile, dump_module=False):
             f.write('\n')
             f.write('#include "Python.h"\n')
             f.write('#include "%s-ast.h"\n' % mod.name)
+            f.write('#include "structmember.h"\n')
             f.write('\n')
-            f.write("static PyTypeObject AST_type;\n")
+
+            generate_module_def(f, mod)
+
             v = ChainOfVisitors(
                 PyTypesDeclareVisitor(f),
                 PyTypesVisitor(f),

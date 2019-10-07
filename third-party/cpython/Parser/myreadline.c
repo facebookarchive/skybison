@@ -27,11 +27,15 @@ typedef struct {
 #define myreadlinestate_global ((myreadlinestate *)PyModule_GetState(PyState_FindModule(&myreadlinemodule)))
 
 static int myreadline_clear(PyObject *module) {
-     myreadlinestate* state = myreadlinestate(module);
-     state->_PyOS_ReadlineTState = NULL;
-     PyThread_free_lock(state->_PyOS_ReadlineLock);
-     state->_PyOS_ReadlineLock = NULL;
-     return 0;
+    myreadlinestate* state = myreadlinestate(module);
+    state->_PyOS_ReadlineTState = NULL;
+#ifdef WITH_THREAD
+    if (state->_PyOS_ReadlineLock != NULL) {
+        PyThread_free_lock(state->_PyOS_ReadlineLock);
+    }
+#endif
+    state->_PyOS_ReadlineLock = NULL;
+    return 0;
 }
 
 static void myreadline_free(void *module) {
@@ -380,14 +384,17 @@ char *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *);
 char *
 PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 {
+    PyObject *mod;
     char *rv, *res;
     size_t len;
 
-    if (PyImport_ImportModuleNoBlock("_myreadline") == NULL) {
+    mod = PyImport_ImportModuleNoBlock("_myreadline");
+    if (mod == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                         "can't initialize _myreadline module");
         return NULL;
     }
+    Py_DECREF(mod);
 
     myreadlinestate *module_state = myreadlinestate_global;
     if (module_state->_PyOS_ReadlineTState == PyThreadState_Get()) {

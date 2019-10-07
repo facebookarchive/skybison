@@ -2744,14 +2744,22 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
     PyTypeObject *type, *base;
 
     PyType_Slot *slot;
-    Py_ssize_t nmembers;
+    Py_ssize_t nmembers, weaklistoffset, dictoffset;
     char *s, *res_start;
 
     nmembers = 0;
+    weaklistoffset = 0;
+    dictoffset = 0;
     for (slot = spec->slots; slot->slot; slot++) {
         if (slot->slot == Py_tp_members) {
             for (memb = slot->pfunc; memb->name != NULL; memb++) {
                 nmembers++;
+                if (strcmp(memb->name, "__weaklistoffset__") == 0) {
+                    weaklistoffset = memb->offset;
+                }
+                if (strcmp(memb->name, "__dictoffset__") == 0) {
+                    dictoffset = memb->offset;
+                }
             }
         }
     }
@@ -2875,6 +2883,17 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
     if (type->tp_dictoffset) {
         res->ht_cached_keys = _PyDict_NewKeysForClass();
+    }
+
+    if (weaklistoffset) {
+        type->tp_weaklistoffset = weaklistoffset;
+        if (PyDict_DelItemString((PyObject *)type->tp_dict, "__weaklistoffset__") < 0)
+            goto fail;
+    }
+    if (dictoffset) {
+        type->tp_dictoffset = dictoffset;
+        if (PyDict_DelItemString((PyObject *)type->tp_dict, "__dictoffset__") < 0)
+            goto fail;
     }
 
     /* Set type.__module__ */

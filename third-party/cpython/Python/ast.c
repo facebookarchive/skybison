@@ -649,6 +649,7 @@ new_identifier(const char *n, struct compiling *c)
         }
         PyObject *args[2] = {form, id};
         id2 = _PyObject_FastCall(c->c_normalize, args, 2);
+        Py_DECREF(form);
         Py_DECREF(id);
         if (!id2)
             return NULL;
@@ -3251,6 +3252,7 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
                 str = PyUnicode_DecodeUTF8(PyBytes_AS_STRING(bytes),
                                            PyBytes_GET_SIZE(bytes),
                                            NULL);
+                Py_DECREF(bytes);
                 if (!str)
                     return NULL;
                 PyUnicode_InternInPlace(&str);

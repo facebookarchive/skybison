@@ -519,6 +519,7 @@ fileio_setattro(fileio *self, PyObject *name, PyObject *value)
 static void
 fileio_dealloc(fileio *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     self->finalizing = 1;
     if (_PyIOBase_finalize((PyObject *) self) < 0)
         return;
@@ -526,7 +527,8 @@ fileio_dealloc(fileio *self)
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
     Py_CLEAR(self->dict);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    tp->tp_free((PyObject *)self);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -1192,6 +1194,7 @@ static PyGetSetDef fileio_getsetlist[] = {
 static PyMemberDef fileio_members[] = {
     {"_blksize", T_UINT, offsetof(fileio, blksize), 0},
     {"_finalizing", T_BOOL, offsetof(fileio, finalizing), 0},
+    {"__weaklistoffset__", T_NONE, offsetof(fileio, weakreflist), READONLY},
     {NULL}
 };
 

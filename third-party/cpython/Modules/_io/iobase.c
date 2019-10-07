@@ -334,18 +334,16 @@ iobase_dealloc(iobase *self)
        However, if the derived class declares a __slots__, those slots are
        already gone.
     */
+    PyTypeObject *tp = Py_TYPE(self);
     if (_PyIOBase_finalize((PyObject *) self) < 0) {
-        /* When called from a heap type's dealloc, the type will be
-           decref'ed on return (see e.g. subtype_dealloc in typeobject.c). */
-        if (PyType_HasFeature(Py_TYPE(self), Py_TPFLAGS_HEAPTYPE))
-            Py_INCREF(Py_TYPE(self));
         return;
     }
     _PyObject_GC_UNTRACK(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
     Py_CLEAR(self->dict);
-    Py_TYPE(self)->tp_free((PyObject *) self);
+    tp->tp_free((PyObject *) self);
+    Py_DECREF(tp);
 }
 
 /* Inquiry methods */
@@ -777,6 +775,11 @@ _io__IOBase_writelines(PyObject *self, PyObject *lines)
 
 #include "clinic/iobase.c.h"
 
+static PyMemberDef iobase_members[] = {
+    {"__weaklistoffset__", T_NONE, offsetof(iobase, weakreflist), READONLY},
+    {NULL}
+};
+
 static PyMethodDef iobase_methods[] = {
     {"seek", iobase_seek, METH_VARARGS, iobase_seek_doc},
     _IO__IOBASE_TELL_METHODDEF
@@ -822,6 +825,7 @@ PyType_Slot PyIOBase_Type_slots[] = {
     {Py_tp_clear, iobase_clear},
     {Py_tp_iter, iobase_iter},
     {Py_tp_iternext, iobase_iternext},
+    {Py_tp_members, iobase_members},
     {Py_tp_methods, iobase_methods},
     {Py_tp_getset, iobase_getset},
     {Py_tp_new, PyType_GenericNew},

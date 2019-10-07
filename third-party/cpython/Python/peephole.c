@@ -327,7 +327,7 @@ safe_multiply(PyObject *v, PyObject *w)
 static PyObject *
 safe_power(PyObject *v, PyObject *w)
 {
-    if (PyLong_Check(v) && PyLong_Check(w) && _PyLong_Sign(v) && _PyLong_Sign(w) > 0) {
+    if (PyLong_Check(v) && PyLong_Check(w) && _PyLong_Sign(v) && _PyLong_Sign(w) == 1) {
         size_t vbits = _PyLong_NumBits(v);
         size_t wbits = PyLong_AsSize_t(w);
         if (vbits == (size_t)-1 || wbits == (size_t)-1) {

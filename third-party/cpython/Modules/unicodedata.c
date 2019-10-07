@@ -113,7 +113,6 @@ UCD_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 
 static PyType_Slot UCD_Type_slots[] = {
     {Py_tp_new, UCD_new},
-    {Py_tp_dealloc, PyObject_Del},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_methods, unicodedata_functions},
     {Py_tp_members, DB_members},

@@ -293,11 +293,13 @@ EXIT:
 static void
 capsule_dealloc(PyObject *o)
 {
+    PyTypeObject *tp = Py_TYPE(o);
     PyCapsule *capsule = (PyCapsule *)o;
     if (capsule->destructor) {
         capsule->destructor(o);
     }
     PyObject_DEL(o);
+    Py_DECREF(tp);
 }
 
 

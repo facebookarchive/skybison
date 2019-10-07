@@ -611,6 +611,7 @@ stringio_clear(stringio *self)
 static void
 stringio_dealloc(stringio *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
     self->ok = 0;
     if (self->buf) {
@@ -624,7 +625,8 @@ stringio_dealloc(stringio *self)
     Py_CLEAR(self->dict);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
-    Py_TYPE(self)->tp_free(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -1013,6 +1015,11 @@ stringio_newlines(stringio *self, void *context)
 
 #include "clinic/stringio.c.h"
 
+static PyMemberDef stringio_members[] = {
+    {"__weaklistoffset__", T_NONE, offsetof(stringio, weakreflist), READONLY},
+    {NULL}
+};
+
 static struct PyMethodDef stringio_methods[] = {
     _IO_STRINGIO_CLOSE_METHODDEF
     _IO_STRINGIO_GETVALUE_METHODDEF
@@ -1054,6 +1061,7 @@ PyType_Slot PyStringIO_Type_slots[] = {
     {Py_tp_traverse, stringio_traverse},
     {Py_tp_clear, stringio_clear},
     {Py_tp_iternext, stringio_iternext},
+    {Py_tp_members, stringio_members},
     {Py_tp_methods, stringio_methods},
     {Py_tp_getset, stringio_getset},
     {Py_tp_init, _io_StringIO___init__},

@@ -335,6 +335,7 @@ _enter_buffered_busy(buffered *self)
 static void
 buffered_dealloc(buffered *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     self->finalizing = 1;
     if (_PyIOBase_finalize((PyObject *) self) < 0)
         return;
@@ -354,7 +355,8 @@ buffered_dealloc(buffered *self)
     }
 #endif
     Py_CLEAR(self->dict);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    tp->tp_free((PyObject *)self);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -2124,13 +2126,15 @@ bufferedrwpair_clear(rwpair *self)
 static void
 bufferedrwpair_dealloc(rwpair *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)self);
     Py_CLEAR(self->reader);
     Py_CLEAR(self->writer);
     Py_CLEAR(self->dict);
-    Py_TYPE(self)->tp_free((PyObject *) self);
+    tp->tp_free((PyObject *) self);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -2384,6 +2388,7 @@ static PyMethodDef bufferedreader_methods[] = {
 static PyMemberDef bufferedreader_members[] = {
     {"raw", T_OBJECT, offsetof(buffered, raw), READONLY},
     {"_finalizing", T_BOOL, offsetof(buffered, finalizing), 0},
+    {"__weaklistoffset__", T_NONE, offsetof(buffered, weakreflist), READONLY},
     {NULL}
 };
 
@@ -2444,6 +2449,7 @@ static PyMethodDef bufferedwriter_methods[] = {
 static PyMemberDef bufferedwriter_members[] = {
     {"raw", T_OBJECT, offsetof(buffered, raw), READONLY},
     {"_finalizing", T_BOOL, offsetof(buffered, finalizing), 0},
+    {"__weaklistoffset__", T_NONE, offsetof(buffered, weakreflist), READONLY},
     {NULL}
 };
 
@@ -2479,6 +2485,10 @@ PyType_Spec PyBufferedWriter_Type_spec = {
     PyBufferedWriter_Type_slots
 };
 
+static PyMemberDef bufferedrwpair_members[] = {
+    {"__weaklistoffset__", T_NONE, offsetof(rwpair, weakreflist), READONLY},
+    {NULL}
+};
 
 static PyMethodDef bufferedrwpair_methods[] = {
     {"read", (PyCFunction)bufferedrwpair_read, METH_VARARGS},
@@ -2511,6 +2521,7 @@ PyType_Slot PyBufferedRWPair_Type_slots[] = {
     {Py_tp_doc, _io_BufferedRWPair___init____doc__},
     {Py_tp_traverse, bufferedrwpair_traverse},
     {Py_tp_clear, bufferedrwpair_clear},
+    {Py_tp_members, bufferedrwpair_members},
     {Py_tp_methods, bufferedrwpair_methods},
     {Py_tp_getset, bufferedrwpair_getset},
     {Py_tp_init, _io_BufferedRWPair___init__},
@@ -2557,6 +2568,7 @@ static PyMethodDef bufferedrandom_methods[] = {
 static PyMemberDef bufferedrandom_members[] = {
     {"raw", T_OBJECT, offsetof(buffered, raw), READONLY},
     {"_finalizing", T_BOOL, offsetof(buffered, finalizing), 0},
+    {"__weaklistoffset__", T_NONE, offsetof(buffered, weakreflist), READONLY},
     {NULL}
 };
 

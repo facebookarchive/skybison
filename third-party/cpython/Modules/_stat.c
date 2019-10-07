@@ -508,13 +508,11 @@ PyMODINIT_FUNC
 PyInit__stat(void)
 {
     PyObject *m;
-
     m = PyState_FindModule(&statmodule);
     if (m != NULL) {
         Py_INCREF(m);
         return m;
     }
-
     m = PyModule_Create(&statmodule);
     if (m == NULL)
         return NULL;

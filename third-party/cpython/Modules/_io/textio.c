@@ -222,9 +222,11 @@ _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
 static void
 incrementalnewlinedecoder_dealloc(nldecoder_object *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     Py_CLEAR(self->decoder);
     Py_CLEAR(self->errors);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    tp->tp_free((PyObject *)self);
+    Py_DECREF(tp);
 }
 
 static int
@@ -1021,6 +1023,7 @@ textiowrapper_clear(textio *self)
 static void
 textiowrapper_dealloc(textio *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     self->finalizing = 1;
     if (_PyIOBase_finalize((PyObject *) self) < 0)
         return;
@@ -1029,7 +1032,8 @@ textiowrapper_dealloc(textio *self)
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)self);
     textiowrapper_clear(self);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    tp->tp_free((PyObject *)self);
+    Py_DECREF(tp);
 }
 
 static int
@@ -2812,6 +2816,7 @@ static PyMemberDef textiowrapper_members[] = {
     {"buffer", T_OBJECT, offsetof(textio, buffer), READONLY},
     {"line_buffering", T_BOOL, offsetof(textio, line_buffering), READONLY},
     {"_finalizing", T_BOOL, offsetof(textio, finalizing), 0},
+    {"__weaklistoffset__", T_NONE, offsetof(textio, weakreflist), READONLY},
     {NULL}
 };
 

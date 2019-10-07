@@ -642,19 +642,21 @@ PyInit_fcntl(void)
 {
     PyObject *m;
 
-    if ((m = PyState_FindModule(&fcntlmodule)) != NULL) {
+    m = PyState_FindModule(&fcntlmodule);
+    if (m != NULL) {
         Py_INCREF(m);
         return m;
     }
+
     /* Create the module and add the functions and documentation */
     m = PyModule_Create(&fcntlmodule);
     if (m == NULL)
         return NULL;
-    PyState_AddModule(m, &fcntlmodule);
 
     /* Add some symbolic constants to the module */
     if (all_ins(m) < 0)
         return NULL;
 
+    PyState_AddModule(m, &fcntlmodule);
     return m;
 }

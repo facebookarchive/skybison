@@ -429,6 +429,7 @@ winconsoleio_clear(winconsoleio *self)
 static void
 winconsoleio_dealloc(winconsoleio *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     self->finalizing = 1;
     if (_PyIOBase_finalize((PyObject *) self) < 0)
         return;
@@ -436,7 +437,8 @@ winconsoleio_dealloc(winconsoleio *self)
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
     Py_CLEAR(self->dict);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    tp->tp_free((PyObject *)self);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -1142,6 +1144,7 @@ static PyGetSetDef winconsoleio_getsetlist[] = {
 static PyMemberDef winconsoleio_members[] = {
     {"_blksize", T_UINT, offsetof(winconsoleio, blksize), 0},
     {"_finalizing", T_BOOL, offsetof(winconsoleio, finalizing), 0},
+    {"__weaklistoffset__", T_NONE, offsetof(winconsoleio, weakreflist), READONLY},
     {NULL}
 };
 

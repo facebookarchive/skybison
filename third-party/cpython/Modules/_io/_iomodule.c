@@ -738,8 +738,10 @@ PyInit__io(void)
 {
     PyObject* bases;
     PyObject *m = PyState_FindModule(&_PyIO_Module);
-    if (m != NULL)
+    if (m != NULL) {
+        Py_INCREF(m);
         return m;
+    }
 
     m = PyModule_Create(&_PyIO_Module);
     _PyIO_State *state = NULL;
@@ -884,7 +886,6 @@ PyInit__io(void)
     */
     /* Facebook: Fix the types that are setting weaklist and dict offset */
     ADD_TYPE_SPEC(PyIOBase_Type, PyIOBase_Type_spec, "_IOBase");
-    ((PyTypeObject *)state->PyIOBase_Type)->tp_weaklistoffset = offsetof(iobase, weakreflist);
     bases = PyTuple_Pack(1, state->PyIOBase_Type);
     ADD_TYPE_SPEC_WITH_BASES(
         PyRawIOBase_Type, PyRawIOBase_Type_spec, "_RawIOBase", bases);
@@ -900,13 +901,11 @@ PyInit__io(void)
     bases = PyTuple_Pack(1, state->PyRawIOBase_Type);
     ADD_TYPE_SPEC_WITH_BASES(
         PyFileIO_Type, PyFileIO_Type_spec, "FileIO", bases);
-    ((PyTypeObject *)state->PyFileIO_Type)->tp_weaklistoffset = offsetof(fileio, weakreflist);
 
     /* BytesIO */
     bases = PyTuple_Pack(1, state->PyBufferedIOBase_Type);
     ADD_TYPE_SPEC_WITH_BASES(
         PyBytesIO_Type, PyBytesIO_Type_spec, "BytesIO", bases);
-    ((PyTypeObject *)state->PyBytesIO_Type)->tp_weaklistoffset = offsetof(bytesio, weakreflist);
     if (PyType_Ready(&_PyBytesIOBuffer_Type) < 0)
         goto fail;
 
@@ -914,45 +913,38 @@ PyInit__io(void)
     bases = PyTuple_Pack(1, state->PyTextIOBase_Type);
     ADD_TYPE_SPEC_WITH_BASES(
         PyStringIO_Type, PyStringIO_Type_spec, "StringIO", bases);
-    ((PyTypeObject *)state->PyStringIO_Type)->tp_weaklistoffset = offsetof(stringio, weakreflist);
 
 #ifdef MS_WINDOWS
     /* WindowsConsoleIO */
     bases = PyTuple_Pack(1, state->PyRawIOBase_Type);
     ADD_TYPE_SPEC_WITH_BASES(
         PyWindowsConsoleIO_Type, _WindowsConsoleIO_Type_spec, "_WindowsConsoleIO", bases);
-    ((PyTypeObject *)state->PyWindowsConsoleIO_Type)->tp_weaklistoffset = offsetof(winconsoleio, weakreflist);
 #endif
 
     /* BufferedReader */
     bases = PyTuple_Pack(1, state->PyBufferedIOBase_Type);
     ADD_TYPE_SPEC_WITH_BASES(
         PyBufferedReader_Type, PyBufferedReader_Type_spec, "BufferedReader", bases);
-    ((PyTypeObject *)state->PyBufferedReader_Type)->tp_weaklistoffset = offsetof(buffered, weakreflist);
 
     /* BufferedWriter */
     bases = PyTuple_Pack(1, state->PyBufferedIOBase_Type);
     ADD_TYPE_SPEC_WITH_BASES(
         PyBufferedWriter_Type, PyBufferedWriter_Type_spec, "BufferedWriter", bases);
-    ((PyTypeObject *)state->PyBufferedWriter_Type)->tp_weaklistoffset = offsetof(buffered, weakreflist);
 
     /* BufferedRWPair */
     bases = PyTuple_Pack(1, state->PyBufferedIOBase_Type);
     ADD_TYPE_SPEC_WITH_BASES(
         PyBufferedRWPair_Type, PyBufferedRWPair_Type_spec, "BufferedRWPair", bases);
-    ((PyTypeObject *)state->PyBufferedRWPair_Type)->tp_weaklistoffset = offsetof(rwpair, weakreflist);
 
     /* BufferedRandom */
     bases = PyTuple_Pack(1, state->PyBufferedIOBase_Type);
     ADD_TYPE_SPEC_WITH_BASES(
         PyBufferedRandom_Type, PyBufferedRandom_Type_spec, "BufferedRandom", bases);
-    ((PyTypeObject *)state->PyBufferedRandom_Type)->tp_weaklistoffset = offsetof(buffered, weakreflist);
 
     /* TextIOWrapper */
     bases = PyTuple_Pack(1, state->PyTextIOBase_Type);
     ADD_TYPE_SPEC_WITH_BASES(
         PyTextIOWrapper_Type, PyTextIOWrapper_Type_spec, "TextIOWrapper", bases);
-    ((PyTypeObject *)state->PyTextIOWrapper_Type)->tp_weaklistoffset = offsetof(textio, weakreflist);
 
     /* IncrementalNewlineDecoder */
     ADD_TYPE_SPEC(
