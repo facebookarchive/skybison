@@ -332,7 +332,7 @@ RawObject Interpreter::stringJoin(Thread* thread, RawObject* sp, word num) {
   return *result;
 }
 
-RawObject Interpreter::callDescriptorGet(Thread* thread, Frame* caller,
+RawObject Interpreter::callDescriptorGet(Thread* thread, Frame* frame,
                                          const Object& descriptor,
                                          const Object& receiver,
                                          const Object& receiver_type) {
@@ -342,11 +342,11 @@ RawObject Interpreter::callDescriptorGet(Thread* thread, Frame* caller,
   Object method(&scope, typeLookupInMroById(thread, descriptor_type,
                                             SymbolId::kDunderGet));
   DCHECK(!method.isError(), "no __get__ method found");
-  return callMethod3(thread, caller, method, descriptor, receiver,
+  return callMethod3(thread, frame, method, descriptor, receiver,
                      receiver_type);
 }
 
-RawObject Interpreter::callDescriptorSet(Thread* thread, Frame* caller,
+RawObject Interpreter::callDescriptorSet(Thread* thread, Frame* frame,
                                          const Object& descriptor,
                                          const Object& receiver,
                                          const Object& value) {
@@ -356,10 +356,10 @@ RawObject Interpreter::callDescriptorSet(Thread* thread, Frame* caller,
   Object method(&scope, typeLookupInMroById(thread, descriptor_type,
                                             SymbolId::kDunderSet));
   DCHECK(!method.isError(), "no __set__ method found");
-  return callMethod3(thread, caller, method, descriptor, receiver, value);
+  return callMethod3(thread, frame, method, descriptor, receiver, value);
 }
 
-RawObject Interpreter::callDescriptorDelete(Thread* thread, Frame* caller,
+RawObject Interpreter::callDescriptorDelete(Thread* thread, Frame* frame,
                                             const Object& descriptor,
                                             const Object& receiver) {
   HandleScope scope(thread);
@@ -368,10 +368,10 @@ RawObject Interpreter::callDescriptorDelete(Thread* thread, Frame* caller,
   Object method(&scope, typeLookupInMroById(thread, descriptor_type,
                                             SymbolId::kDunderDelete));
   DCHECK(!method.isError(), "no __delete__ method found");
-  return callMethod2(thread, caller, method, descriptor, receiver);
+  return callMethod2(thread, frame, method, descriptor, receiver);
 }
 
-RawObject Interpreter::lookupMethod(Thread* thread, Frame* /* caller */,
+RawObject Interpreter::lookupMethod(Thread* thread, Frame* /* frame */,
                                     const Object& receiver, SymbolId selector) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -385,140 +385,140 @@ RawObject Interpreter::lookupMethod(Thread* thread, Frame* /* caller */,
   return resolveDescriptorGet(thread, method, receiver, type);
 }
 
-RawObject Interpreter::callFunction0(Thread* thread, Frame* caller,
+RawObject Interpreter::callFunction0(Thread* thread, Frame* frame,
                                      const Object& func) {
-  caller->pushValue(*func);
-  return call(thread, caller, 0);
+  frame->pushValue(*func);
+  return call(thread, frame, 0);
 }
 
-RawObject Interpreter::callFunction1(Thread* thread, Frame* caller,
+RawObject Interpreter::callFunction1(Thread* thread, Frame* frame,
                                      const Object& func, const Object& arg1) {
-  caller->pushValue(*func);
-  caller->pushValue(*arg1);
-  return call(thread, caller, 1);
+  frame->pushValue(*func);
+  frame->pushValue(*arg1);
+  return call(thread, frame, 1);
 }
 
-RawObject Interpreter::callFunction2(Thread* thread, Frame* caller,
+RawObject Interpreter::callFunction2(Thread* thread, Frame* frame,
                                      const Object& func, const Object& arg1,
                                      const Object& arg2) {
-  caller->pushValue(*func);
-  caller->pushValue(*arg1);
-  caller->pushValue(*arg2);
-  return call(thread, caller, 2);
+  frame->pushValue(*func);
+  frame->pushValue(*arg1);
+  frame->pushValue(*arg2);
+  return call(thread, frame, 2);
 }
 
-RawObject Interpreter::callFunction3(Thread* thread, Frame* caller,
+RawObject Interpreter::callFunction3(Thread* thread, Frame* frame,
                                      const Object& func, const Object& arg1,
                                      const Object& arg2, const Object& arg3) {
-  caller->pushValue(*func);
-  caller->pushValue(*arg1);
-  caller->pushValue(*arg2);
-  caller->pushValue(*arg3);
-  return call(thread, caller, 3);
+  frame->pushValue(*func);
+  frame->pushValue(*arg1);
+  frame->pushValue(*arg2);
+  frame->pushValue(*arg3);
+  return call(thread, frame, 3);
 }
 
-RawObject Interpreter::callFunction4(Thread* thread, Frame* caller,
+RawObject Interpreter::callFunction4(Thread* thread, Frame* frame,
                                      const Object& func, const Object& arg1,
                                      const Object& arg2, const Object& arg3,
                                      const Object& arg4) {
-  caller->pushValue(*func);
-  caller->pushValue(*arg1);
-  caller->pushValue(*arg2);
-  caller->pushValue(*arg3);
-  caller->pushValue(*arg4);
-  return call(thread, caller, 4);
+  frame->pushValue(*func);
+  frame->pushValue(*arg1);
+  frame->pushValue(*arg2);
+  frame->pushValue(*arg3);
+  frame->pushValue(*arg4);
+  return call(thread, frame, 4);
 }
 
-RawObject Interpreter::callFunction5(Thread* thread, Frame* caller,
+RawObject Interpreter::callFunction5(Thread* thread, Frame* frame,
                                      const Object& func, const Object& arg1,
                                      const Object& arg2, const Object& arg3,
                                      const Object& arg4, const Object& arg5) {
-  caller->pushValue(*func);
-  caller->pushValue(*arg1);
-  caller->pushValue(*arg2);
-  caller->pushValue(*arg3);
-  caller->pushValue(*arg4);
-  caller->pushValue(*arg5);
-  return call(thread, caller, 5);
+  frame->pushValue(*func);
+  frame->pushValue(*arg1);
+  frame->pushValue(*arg2);
+  frame->pushValue(*arg3);
+  frame->pushValue(*arg4);
+  frame->pushValue(*arg5);
+  return call(thread, frame, 5);
 }
 
-RawObject Interpreter::callFunction6(Thread* thread, Frame* caller,
+RawObject Interpreter::callFunction6(Thread* thread, Frame* frame,
                                      const Object& func, const Object& arg1,
                                      const Object& arg2, const Object& arg3,
                                      const Object& arg4, const Object& arg5,
                                      const Object& arg6) {
-  caller->pushValue(*func);
-  caller->pushValue(*arg1);
-  caller->pushValue(*arg2);
-  caller->pushValue(*arg3);
-  caller->pushValue(*arg4);
-  caller->pushValue(*arg5);
-  caller->pushValue(*arg6);
-  return call(thread, caller, 6);
+  frame->pushValue(*func);
+  frame->pushValue(*arg1);
+  frame->pushValue(*arg2);
+  frame->pushValue(*arg3);
+  frame->pushValue(*arg4);
+  frame->pushValue(*arg5);
+  frame->pushValue(*arg6);
+  return call(thread, frame, 6);
 }
 
-RawObject Interpreter::callFunction(Thread* thread, Frame* caller,
+RawObject Interpreter::callFunction(Thread* thread, Frame* frame,
                                     const Object& func, const Tuple& args) {
-  caller->pushValue(*func);
+  frame->pushValue(*func);
   word length = args.length();
   for (word i = 0; i < length; i++) {
-    caller->pushValue(args.at(i));
+    frame->pushValue(args.at(i));
   }
-  return call(thread, caller, length);
+  return call(thread, frame, length);
 }
 
-RawObject Interpreter::callMethod1(Thread* thread, Frame* caller,
+RawObject Interpreter::callMethod1(Thread* thread, Frame* frame,
                                    const Object& method, const Object& self) {
   word nargs = 0;
-  caller->pushValue(*method);
+  frame->pushValue(*method);
   if (method.isFunction()) {
-    caller->pushValue(*self);
+    frame->pushValue(*self);
     nargs += 1;
   }
-  return call(thread, caller, nargs);
+  return call(thread, frame, nargs);
 }
 
-RawObject Interpreter::callMethod2(Thread* thread, Frame* caller,
+RawObject Interpreter::callMethod2(Thread* thread, Frame* frame,
                                    const Object& method, const Object& self,
                                    const Object& other) {
   word nargs = 1;
-  caller->pushValue(*method);
+  frame->pushValue(*method);
   if (method.isFunction()) {
-    caller->pushValue(*self);
+    frame->pushValue(*self);
     nargs += 1;
   }
-  caller->pushValue(*other);
-  return call(thread, caller, nargs);
+  frame->pushValue(*other);
+  return call(thread, frame, nargs);
 }
 
-RawObject Interpreter::callMethod3(Thread* thread, Frame* caller,
+RawObject Interpreter::callMethod3(Thread* thread, Frame* frame,
                                    const Object& method, const Object& self,
                                    const Object& arg1, const Object& arg2) {
   word nargs = 2;
-  caller->pushValue(*method);
+  frame->pushValue(*method);
   if (method.isFunction()) {
-    caller->pushValue(*self);
+    frame->pushValue(*self);
     nargs += 1;
   }
-  caller->pushValue(*arg1);
-  caller->pushValue(*arg2);
-  return call(thread, caller, nargs);
+  frame->pushValue(*arg1);
+  frame->pushValue(*arg2);
+  return call(thread, frame, nargs);
 }
 
-RawObject Interpreter::callMethod4(Thread* thread, Frame* caller,
+RawObject Interpreter::callMethod4(Thread* thread, Frame* frame,
                                    const Object& method, const Object& self,
                                    const Object& arg1, const Object& arg2,
                                    const Object& arg3) {
   word nargs = 3;
-  caller->pushValue(*method);
+  frame->pushValue(*method);
   if (method.isFunction()) {
-    caller->pushValue(*self);
+    frame->pushValue(*self);
     nargs += 1;
   }
-  caller->pushValue(*arg1);
-  caller->pushValue(*arg2);
-  caller->pushValue(*arg3);
-  return call(thread, caller, nargs);
+  frame->pushValue(*arg1);
+  frame->pushValue(*arg2);
+  frame->pushValue(*arg3);
+  return call(thread, frame, nargs);
 }
 
 HANDLER_INLINE
@@ -605,7 +605,7 @@ static RawObject binaryOperationLookupReflected(Thread* thread,
 }
 
 static RawObject executeAndCacheBinaryOp(
-    Thread* thread, Frame* caller, const Object& method, BinaryOpFlags flags,
+    Thread* thread, Frame* frame, const Object& method, BinaryOpFlags flags,
     const Object& left, const Object& right, Object* method_out,
     BinaryOpFlags* flags_out) {
   if (method.isErrorNotFound()) {
@@ -616,16 +616,16 @@ static RawObject executeAndCacheBinaryOp(
     DCHECK(method.isFunction(), "must be a plain function");
     *method_out = *method;
     *flags_out = flags;
-    return Interpreter::binaryOperationWithMethod(thread, caller, *method,
-                                                  flags, *left, *right);
+    return Interpreter::binaryOperationWithMethod(thread, frame, *method, flags,
+                                                  *left, *right);
   }
   if (flags & kBinaryOpReflected) {
-    return Interpreter::callMethod2(thread, caller, method, right, left);
+    return Interpreter::callMethod2(thread, frame, method, right, left);
   }
-  return Interpreter::callMethod2(thread, caller, method, left, right);
+  return Interpreter::callMethod2(thread, frame, method, left, right);
 }
 
-RawObject Interpreter::binaryOperationSetMethod(Thread* thread, Frame* caller,
+RawObject Interpreter::binaryOperationSetMethod(Thread* thread, Frame* frame,
                                                 BinaryOp op, const Object& left,
                                                 const Object& right,
                                                 Object* method_out,
@@ -667,20 +667,20 @@ RawObject Interpreter::binaryOperationSetMethod(Thread* thread, Frame* caller,
     }
   }
 
-  Object result(&scope,
-                executeAndCacheBinaryOp(thread, caller, method, flags, left,
-                                        right, method_out, flags_out));
+  Object result(
+      &scope, executeAndCacheBinaryOp(thread, frame, method, flags, left, right,
+                                      method_out, flags_out));
   if (!result.isNotImplementedType()) return *result;
 
   // Invoke a 2nd method (normal or reverse depends on what we did the first
   // time) or report an error.
-  return binaryOperationRetry(thread, caller, op, flags, left, right);
+  return binaryOperationRetry(thread, frame, op, flags, left, right);
 }
 
-RawObject Interpreter::binaryOperation(Thread* thread, Frame* caller,
+RawObject Interpreter::binaryOperation(Thread* thread, Frame* frame,
                                        BinaryOp op, const Object& left,
                                        const Object& right) {
-  return binaryOperationSetMethod(thread, caller, op, left, right, nullptr,
+  return binaryOperationSetMethod(thread, frame, op, left, right, nullptr,
                                   nullptr);
 }
 
@@ -697,7 +697,7 @@ HANDLER_INLINE Continue Interpreter::doBinaryOperation(BinaryOp op,
 }
 
 RawObject Interpreter::inplaceOperationSetMethod(
-    Thread* thread, Frame* caller, BinaryOp op, const Object& left,
+    Thread* thread, Frame* frame, BinaryOp op, const Object& left,
     const Object& right, Object* method_out, BinaryOpFlags* flags_out) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -718,19 +718,19 @@ RawObject Interpreter::inplaceOperationSetMethod(
     // Make sure we do not put a possible 2nd method call (from
     // binaryOperationSetMethod() down below) into the cache.
     method_out = nullptr;
-    Object result(&scope, callMethod2(thread, caller, method, left, right));
+    Object result(&scope, callMethod2(thread, frame, method, left, right));
     if (result != NotImplementedType::object()) {
       return *result;
     }
   }
-  return binaryOperationSetMethod(thread, caller, op, left, right, method_out,
+  return binaryOperationSetMethod(thread, frame, op, left, right, method_out,
                                   flags_out);
 }
 
-RawObject Interpreter::inplaceOperation(Thread* thread, Frame* caller,
+RawObject Interpreter::inplaceOperation(Thread* thread, Frame* frame,
                                         BinaryOp op, const Object& left,
                                         const Object& right) {
-  return inplaceOperationSetMethod(thread, caller, op, left, right, nullptr,
+  return inplaceOperationSetMethod(thread, frame, op, left, right, nullptr,
                                    nullptr);
 }
 
@@ -747,7 +747,7 @@ HANDLER_INLINE Continue Interpreter::doInplaceOperation(BinaryOp op,
 }
 
 RawObject Interpreter::compareOperationSetMethod(
-    Thread* thread, Frame* caller, CompareOp op, const Object& left,
+    Thread* thread, Frame* frame, CompareOp op, const Object& left,
     const Object& right, Object* method_out, BinaryOpFlags* flags_out) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -787,15 +787,15 @@ RawObject Interpreter::compareOperationSetMethod(
     }
   }
 
-  Object result(&scope,
-                executeAndCacheBinaryOp(thread, caller, method, flags, left,
-                                        right, method_out, flags_out));
+  Object result(
+      &scope, executeAndCacheBinaryOp(thread, frame, method, flags, left, right,
+                                      method_out, flags_out));
   if (!result.isNotImplementedType()) return *result;
 
-  return compareOperationRetry(thread, caller, op, flags, left, right);
+  return compareOperationRetry(thread, frame, op, flags, left, right);
 }
 
-RawObject Interpreter::compareOperationRetry(Thread* thread, Frame* caller,
+RawObject Interpreter::compareOperationRetry(Thread* thread, Frame* frame,
                                              CompareOp op, BinaryOpFlags flags,
                                              const Object& left,
                                              const Object& right) {
@@ -806,25 +806,25 @@ RawObject Interpreter::compareOperationRetry(Thread* thread, Frame* caller,
     // If we tried reflected first, try normal now.
     if (flags & kBinaryOpReflected) {
       SymbolId selector = runtime->comparisonSelector(op);
-      Object method(&scope, lookupMethod(thread, caller, left, selector));
+      Object method(&scope, lookupMethod(thread, frame, left, selector));
       if (method.isError()) {
         if (method.isErrorException()) return *method;
         DCHECK(method.isErrorNotFound(), "expected not found");
       } else {
-        Object result(&scope, callMethod2(thread, caller, method, left, right));
+        Object result(&scope, callMethod2(thread, frame, method, left, right));
         if (!result.isNotImplementedType()) return *result;
       }
     } else {
       // If we tried normal first, try to find a reflected method and call it.
       SymbolId selector = runtime->swappedComparisonSelector(op);
-      Object method(&scope, lookupMethod(thread, caller, right, selector));
+      Object method(&scope, lookupMethod(thread, frame, right, selector));
       if (!method.isErrorNotFound()) {
         if (!method.isFunction()) {
           Type right_type(&scope, runtime->typeOf(*right));
           method = resolveDescriptorGet(thread, method, right, right_type);
           if (method.isError()) return *method;
         }
-        Object result(&scope, callMethod2(thread, caller, method, right, left));
+        Object result(&scope, callMethod2(thread, frame, method, right, left));
         if (!result.isNotImplementedType()) return *result;
       }
     }
@@ -842,20 +842,20 @@ RawObject Interpreter::compareOperationRetry(Thread* thread, Frame* caller,
 }
 
 HANDLER_INLINE USED RawObject Interpreter::binaryOperationWithMethod(
-    Thread* thread, Frame* caller, RawObject method, BinaryOpFlags flags,
+    Thread* thread, Frame* frame, RawObject method, BinaryOpFlags flags,
     RawObject left, RawObject right) {
-  caller->pushValue(method);
+  frame->pushValue(method);
   if (flags & kBinaryOpReflected) {
-    caller->pushValue(right);
-    caller->pushValue(left);
+    frame->pushValue(right);
+    frame->pushValue(left);
   } else {
-    caller->pushValue(left);
-    caller->pushValue(right);
+    frame->pushValue(left);
+    frame->pushValue(right);
   }
-  return call(thread, caller, 2);
+  return call(thread, frame, 2);
 }
 
-RawObject Interpreter::binaryOperationRetry(Thread* thread, Frame* caller,
+RawObject Interpreter::binaryOperationRetry(Thread* thread, Frame* frame,
                                             BinaryOp op, BinaryOpFlags flags,
                                             const Object& left,
                                             const Object& right) {
@@ -866,12 +866,12 @@ RawObject Interpreter::binaryOperationRetry(Thread* thread, Frame* caller,
     // If we tried reflected first, try normal now.
     if (flags & kBinaryOpReflected) {
       SymbolId selector = runtime->binaryOperationSelector(op);
-      Object method(&scope, lookupMethod(thread, caller, left, selector));
+      Object method(&scope, lookupMethod(thread, frame, left, selector));
       if (method.isError()) {
         if (method.isErrorException()) return *method;
         DCHECK(method.isErrorNotFound(), "expected not found");
       } else {
-        Object result(&scope, callMethod2(thread, caller, method, left, right));
+        Object result(&scope, callMethod2(thread, frame, method, left, right));
         if (!result.isNotImplementedType()) return *result;
       }
     } else {
@@ -884,7 +884,7 @@ RawObject Interpreter::binaryOperationRetry(Thread* thread, Frame* caller,
           method = resolveDescriptorGet(thread, method, right, right_type);
           if (method.isError()) return *method;
         }
-        Object result(&scope, callMethod2(thread, caller, method, right, left));
+        Object result(&scope, callMethod2(thread, frame, method, right, left));
         if (!result.isNotImplementedType()) return *result;
       }
     }
@@ -894,29 +894,29 @@ RawObject Interpreter::binaryOperationRetry(Thread* thread, Frame* caller,
   return thread->raiseUnsupportedBinaryOperation(left, right, op_symbol);
 }
 
-RawObject Interpreter::compareOperation(Thread* thread, Frame* caller,
+RawObject Interpreter::compareOperation(Thread* thread, Frame* frame,
                                         CompareOp op, const Object& left,
                                         const Object& right) {
-  return compareOperationSetMethod(thread, caller, op, left, right, nullptr,
+  return compareOperationSetMethod(thread, frame, op, left, right, nullptr,
                                    nullptr);
 }
 
-RawObject Interpreter::sequenceIterSearch(Thread* thread, Frame* caller,
+RawObject Interpreter::sequenceIterSearch(Thread* thread, Frame* frame,
                                           const Object& value,
                                           const Object& container) {
   HandleScope scope(thread);
   Object dunder_iter(
-      &scope, lookupMethod(thread, caller, container, SymbolId::kDunderIter));
+      &scope, lookupMethod(thread, frame, container, SymbolId::kDunderIter));
   if (dunder_iter.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "__iter__ not defined on object");
   }
-  Object iter(&scope, callMethod1(thread, caller, dunder_iter, container));
+  Object iter(&scope, callMethod1(thread, frame, dunder_iter, container));
   if (iter.isError()) {
     return *iter;
   }
   Object dunder_next(&scope,
-                     lookupMethod(thread, caller, iter, SymbolId::kDunderNext));
+                     lookupMethod(thread, frame, iter, SymbolId::kDunderNext));
   if (dunder_next.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "__next__ not defined on iterator");
@@ -925,7 +925,7 @@ RawObject Interpreter::sequenceIterSearch(Thread* thread, Frame* caller,
   Object compare_result(&scope, NoneType::object());
   Object result(&scope, NoneType::object());
   for (;;) {
-    current = callMethod1(thread, caller, dunder_next, iter);
+    current = callMethod1(thread, frame, dunder_next, iter);
     if (current.isError()) {
       if (thread->hasPendingStopIteration()) {
         thread->clearPendingStopIteration();
@@ -933,7 +933,7 @@ RawObject Interpreter::sequenceIterSearch(Thread* thread, Frame* caller,
       }
       return *current;
     }
-    compare_result = compareOperation(thread, caller, EQ, value, current);
+    compare_result = compareOperation(thread, frame, EQ, value, current);
     if (compare_result.isError()) {
       return *compare_result;
     }
@@ -947,21 +947,20 @@ RawObject Interpreter::sequenceIterSearch(Thread* thread, Frame* caller,
   return Bool::falseObj();
 }
 
-RawObject Interpreter::sequenceContains(Thread* thread, Frame* caller,
+RawObject Interpreter::sequenceContains(Thread* thread, Frame* frame,
                                         const Object& value,
                                         const Object& container) {
   HandleScope scope(thread);
-  Object method(&scope, lookupMethod(thread, caller, container,
+  Object method(&scope, lookupMethod(thread, frame, container,
                                      SymbolId::kDunderContains));
   if (!method.isError()) {
-    Object result(&scope,
-                  callMethod2(thread, caller, method, container, value));
+    Object result(&scope, callMethod2(thread, frame, method, container, value));
     if (result.isError()) {
       return *result;
     }
     return isTrue(thread, *result);
   }
-  return sequenceIterSearch(thread, caller, value, container);
+  return sequenceIterSearch(thread, frame, value, container);
 }
 
 HANDLER_INLINE USED RawObject Interpreter::isTrue(Thread* thread,

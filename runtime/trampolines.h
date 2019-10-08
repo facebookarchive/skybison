@@ -11,77 +11,76 @@ class Thread;
 
 using PrepareCallFunc = RawObject (*)(Thread*, RawFunction, Frame*, word);
 RawObject preparePositionalCall(Thread* thread, RawFunction function_raw,
-                                Frame* caller, word argc);
+                                Frame* frame, word argc);
 RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
-                             Frame* caller, word argc);
+                             Frame* frame, word argc);
 RawObject prepareExplodeCall(Thread* thread, RawFunction function_raw,
-                             Frame* caller, word flags);
+                             Frame* frame, word flags);
 
 void processFreevarsAndCellvars(Thread* thread, const Function& function,
                                 Frame* callee_frame);
 
 // Entry points for ordinary interpreted functions
-RawObject interpreterTrampoline(Thread* thread, Frame* caller,
+RawObject interpreterTrampoline(Thread* thread, Frame* frame,
                                 word argc) ALIGN_16;
-RawObject interpreterTrampolineKw(Thread* thread, Frame* caller,
+RawObject interpreterTrampolineKw(Thread* thread, Frame* frame,
                                   word argc) ALIGN_16;
-RawObject interpreterTrampolineEx(Thread* thread, Frame* caller,
+RawObject interpreterTrampolineEx(Thread* thread, Frame* frame,
                                   word flags) ALIGN_16;
 
 // Entry points for interpreted functions with either cell variables or free
 // variables.
-RawObject interpreterClosureTrampoline(Thread* thread, Frame* caller,
+RawObject interpreterClosureTrampoline(Thread* thread, Frame* frame,
                                        word argc) ALIGN_16;
-RawObject interpreterClosureTrampolineKw(Thread* thread, Frame* caller,
+RawObject interpreterClosureTrampolineKw(Thread* thread, Frame* frame,
                                          word argc) ALIGN_16;
-RawObject interpreterClosureTrampolineEx(Thread* thread, Frame* caller,
+RawObject interpreterClosureTrampolineEx(Thread* thread, Frame* frame,
                                          word flags) ALIGN_16;
 
 // Entry points for co-routine and generator functions.
-RawObject generatorTrampoline(Thread* thread, Frame* caller,
-                              word argc) ALIGN_16;
-RawObject generatorTrampolineKw(Thread* thread, Frame* caller,
+RawObject generatorTrampoline(Thread* thread, Frame* frame, word argc) ALIGN_16;
+RawObject generatorTrampolineKw(Thread* thread, Frame* frame,
                                 word argc) ALIGN_16;
-RawObject generatorTrampolineEx(Thread* thread, Frame* caller,
+RawObject generatorTrampolineEx(Thread* thread, Frame* frame,
                                 word flags) ALIGN_16;
 
 // Entry points for co-routine and generator functions with either cell
 // variables or free variables.
-RawObject generatorClosureTrampoline(Thread* thread, Frame* caller,
+RawObject generatorClosureTrampoline(Thread* thread, Frame* frame,
                                      word argc) ALIGN_16;
-RawObject generatorClosureTrampolineKw(Thread* thread, Frame* caller,
+RawObject generatorClosureTrampolineKw(Thread* thread, Frame* frame,
                                        word argc) ALIGN_16;
-RawObject generatorClosureTrampolineEx(Thread* thread, Frame* caller,
+RawObject generatorClosureTrampolineEx(Thread* thread, Frame* frame,
                                        word flags) ALIGN_16;
 
 // method trampolines
 
-RawObject methodTrampolineNoArgs(Thread* thread, Frame* caller,
+RawObject methodTrampolineNoArgs(Thread* thread, Frame* frame,
                                  word argc) ALIGN_16;
-RawObject methodTrampolineNoArgsKw(Thread* thread, Frame* caller,
+RawObject methodTrampolineNoArgsKw(Thread* thread, Frame* frame,
                                    word argc) ALIGN_16;
-RawObject methodTrampolineNoArgsEx(Thread* thread, Frame* caller,
+RawObject methodTrampolineNoArgsEx(Thread* thread, Frame* frame,
                                    word flags) ALIGN_16;
 
-RawObject methodTrampolineOneArg(Thread* thread, Frame* caller,
+RawObject methodTrampolineOneArg(Thread* thread, Frame* frame,
                                  word argc) ALIGN_16;
-RawObject methodTrampolineOneArgKw(Thread* thread, Frame* caller,
+RawObject methodTrampolineOneArgKw(Thread* thread, Frame* frame,
                                    word argc) ALIGN_16;
-RawObject methodTrampolineOneArgEx(Thread* thread, Frame* caller,
+RawObject methodTrampolineOneArgEx(Thread* thread, Frame* frame,
                                    word flags) ALIGN_16;
 
-RawObject methodTrampolineVarArgs(Thread* thread, Frame* caller,
+RawObject methodTrampolineVarArgs(Thread* thread, Frame* frame,
                                   word argc) ALIGN_16;
-RawObject methodTrampolineVarArgsKw(Thread* thread, Frame* caller,
+RawObject methodTrampolineVarArgsKw(Thread* thread, Frame* frame,
                                     word argc) ALIGN_16;
-RawObject methodTrampolineVarArgsEx(Thread* thread, Frame* caller,
+RawObject methodTrampolineVarArgsEx(Thread* thread, Frame* frame,
                                     word flags) ALIGN_16;
 
-RawObject methodTrampolineKeywords(Thread* thread, Frame* caller,
+RawObject methodTrampolineKeywords(Thread* thread, Frame* frame,
                                    word argc) ALIGN_16;
-RawObject methodTrampolineKeywordsKw(Thread* thread, Frame* caller,
+RawObject methodTrampolineKeywordsKw(Thread* thread, Frame* frame,
                                      word argc) ALIGN_16;
-RawObject methodTrampolineKeywordsEx(Thread* thread, Frame* caller,
+RawObject methodTrampolineKeywordsEx(Thread* thread, Frame* frame,
                                      word flags) ALIGN_16;
 
 RawObject methodTrampolineFastCall(Thread* thread, Frame* frame,
@@ -93,32 +92,32 @@ RawObject methodTrampolineFastCallEx(Thread* thread, Frame* frame,
 
 // module trampolines
 
-RawObject moduleTrampolineNoArgs(Thread* thread, Frame* caller,
+RawObject moduleTrampolineNoArgs(Thread* thread, Frame* frame,
                                  word argc) ALIGN_16;
-RawObject moduleTrampolineNoArgsKw(Thread* thread, Frame* caller,
+RawObject moduleTrampolineNoArgsKw(Thread* thread, Frame* frame,
                                    word argc) ALIGN_16;
-RawObject moduleTrampolineNoArgsEx(Thread* thread, Frame* caller,
+RawObject moduleTrampolineNoArgsEx(Thread* thread, Frame* frame,
                                    word flags) ALIGN_16;
 
-RawObject moduleTrampolineOneArg(Thread* thread, Frame* caller,
+RawObject moduleTrampolineOneArg(Thread* thread, Frame* frame,
                                  word argc) ALIGN_16;
-RawObject moduleTrampolineOneArgKw(Thread* thread, Frame* caller,
+RawObject moduleTrampolineOneArgKw(Thread* thread, Frame* frame,
                                    word argc) ALIGN_16;
-RawObject moduleTrampolineOneArgEx(Thread* thread, Frame* caller,
+RawObject moduleTrampolineOneArgEx(Thread* thread, Frame* frame,
                                    word flags) ALIGN_16;
 
-RawObject moduleTrampolineVarArgs(Thread* thread, Frame* caller,
+RawObject moduleTrampolineVarArgs(Thread* thread, Frame* frame,
                                   word argc) ALIGN_16;
-RawObject moduleTrampolineVarArgsKw(Thread* thread, Frame* caller,
+RawObject moduleTrampolineVarArgsKw(Thread* thread, Frame* frame,
                                     word argc) ALIGN_16;
-RawObject moduleTrampolineVarArgsEx(Thread* thread, Frame* caller,
+RawObject moduleTrampolineVarArgsEx(Thread* thread, Frame* frame,
                                     word flags) ALIGN_16;
 
-RawObject moduleTrampolineKeywords(Thread* thread, Frame* caller,
+RawObject moduleTrampolineKeywords(Thread* thread, Frame* frame,
                                    word argc) ALIGN_16;
-RawObject moduleTrampolineKeywordsKw(Thread* thread, Frame* caller,
+RawObject moduleTrampolineKeywordsKw(Thread* thread, Frame* frame,
                                      word argc) ALIGN_16;
-RawObject moduleTrampolineKeywordsEx(Thread* thread, Frame* caller,
+RawObject moduleTrampolineKeywordsEx(Thread* thread, Frame* frame,
                                      word flags) ALIGN_16;
 
 RawObject moduleTrampolineFastCall(Thread* thread, Frame* frame,
@@ -129,23 +128,21 @@ RawObject moduleTrampolineFastCallEx(Thread* thread, Frame* frame,
                                      word flags) ALIGN_16;
 
 // Aborts immediately when called
-RawObject unimplementedTrampoline(Thread* thread, Frame* caller_frame,
-                                  word) ALIGN_16;
+RawObject unimplementedTrampoline(Thread* thread, Frame* frame, word) ALIGN_16;
 
-RawObject builtinTrampoline(Thread* thread, Frame* caller, word argc) ALIGN_16;
-RawObject builtinTrampolineKw(Thread* thread, Frame* caller,
-                              word argc) ALIGN_16;
-RawObject builtinTrampolineEx(Thread* thread, Frame* caller,
+RawObject builtinTrampoline(Thread* thread, Frame* frame, word argc) ALIGN_16;
+RawObject builtinTrampolineKw(Thread* thread, Frame* frame, word argc) ALIGN_16;
+RawObject builtinTrampolineEx(Thread* thread, Frame* frame,
                               word flags) ALIGN_16;
 
 RawObject processDefaultArguments(Thread* thread, RawFunction function_raw,
-                                  Frame* caller, const word argc);
+                                  Frame* frame, const word argc);
 
 inline RawObject preparePositionalCall(Thread* thread, RawFunction function_raw,
-                                       Frame* caller, word argc) {
+                                       Frame* frame, word argc) {
   // Are we one of the less common cases?
   if (argc != function_raw.argcount() || !function_raw.hasSimpleCall()) {
-    return processDefaultArguments(thread, function_raw, caller, argc);
+    return processDefaultArguments(thread, function_raw, frame, argc);
   }
   return function_raw;
 }

@@ -48,17 +48,17 @@ bool givenExceptionMatches(Thread* thread, const Object& given,
 
 RawObject createException(Thread* thread, const Type& type,
                           const Object& value) {
-  Frame* caller = thread->currentFrame();
+  Frame* frame = thread->currentFrame();
 
   if (value.isNoneType()) {
-    return Interpreter::callFunction0(thread, caller, type);
+    return Interpreter::callFunction0(thread, frame, type);
   }
   if (thread->runtime()->isInstanceOfTuple(*value)) {
     HandleScope scope(thread);
     Tuple args(&scope, tupleUnderlying(thread, value));
-    return Interpreter::callFunction(thread, caller, type, args);
+    return Interpreter::callFunction(thread, frame, type, args);
   }
-  return Interpreter::callFunction1(thread, caller, type, value);
+  return Interpreter::callFunction1(thread, frame, type, value);
 }
 
 void normalizeException(Thread* thread, Object* exc, Object* val,

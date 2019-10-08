@@ -72,61 +72,61 @@ class Interpreter {
 
   static RawObject isTrue(Thread* thread, RawObject value_obj);
 
-  static RawObject callDescriptorGet(Thread* thread, Frame* caller,
+  static RawObject callDescriptorGet(Thread* thread, Frame* frame,
                                      const Object& descriptor,
                                      const Object& receiver,
                                      const Object& receiver_type);
 
-  static RawObject callDescriptorSet(Thread* thread, Frame* caller,
+  static RawObject callDescriptorSet(Thread* thread, Frame* frame,
                                      const Object& descriptor,
                                      const Object& receiver,
                                      const Object& value);
 
-  static RawObject callDescriptorDelete(Thread* thread, Frame* caller,
+  static RawObject callDescriptorDelete(Thread* thread, Frame* frame,
                                         const Object& descriptor,
                                         const Object& receiver);
 
-  static RawObject lookupMethod(Thread* thread, Frame* caller,
+  static RawObject lookupMethod(Thread* thread, Frame* frame,
                                 const Object& receiver, SymbolId selector);
 
-  static RawObject callFunction0(Thread* thread, Frame* caller,
+  static RawObject callFunction0(Thread* thread, Frame* frame,
                                  const Object& func);
-  static RawObject callFunction1(Thread* thread, Frame* caller,
+  static RawObject callFunction1(Thread* thread, Frame* frame,
                                  const Object& func, const Object& arg1);
-  static RawObject callFunction2(Thread* thread, Frame* caller,
+  static RawObject callFunction2(Thread* thread, Frame* frame,
                                  const Object& func, const Object& arg1,
                                  const Object& arg2);
-  static RawObject callFunction3(Thread* thread, Frame* caller,
+  static RawObject callFunction3(Thread* thread, Frame* frame,
                                  const Object& func, const Object& arg1,
                                  const Object& arg2, const Object& arg3);
-  static RawObject callFunction4(Thread* thread, Frame* caller,
+  static RawObject callFunction4(Thread* thread, Frame* frame,
                                  const Object& func, const Object& arg1,
                                  const Object& arg2, const Object& arg3,
                                  const Object& arg4);
-  static RawObject callFunction5(Thread* thread, Frame* caller,
+  static RawObject callFunction5(Thread* thread, Frame* frame,
                                  const Object& func, const Object& arg1,
                                  const Object& arg2, const Object& arg3,
                                  const Object& arg4, const Object& arg5);
-  static RawObject callFunction6(Thread* thread, Frame* caller,
+  static RawObject callFunction6(Thread* thread, Frame* frame,
                                  const Object& func, const Object& arg1,
                                  const Object& arg2, const Object& arg3,
                                  const Object& arg4, const Object& arg5,
                                  const Object& arg6);
-  static RawObject callFunction(Thread* thread, Frame* caller,
+  static RawObject callFunction(Thread* thread, Frame* frame,
                                 const Object& func, const Tuple& args);
 
-  static RawObject callMethod1(Thread* thread, Frame* caller,
+  static RawObject callMethod1(Thread* thread, Frame* frame,
                                const Object& method, const Object& self);
 
-  static RawObject callMethod2(Thread* thread, Frame* caller,
+  static RawObject callMethod2(Thread* thread, Frame* frame,
                                const Object& method, const Object& self,
                                const Object& other);
 
-  static RawObject callMethod3(Thread* thread, Frame* caller,
+  static RawObject callMethod3(Thread* thread, Frame* frame,
                                const Object& method, const Object& self,
                                const Object& arg1, const Object& arg2);
 
-  static RawObject callMethod4(Thread* thread, Frame* caller,
+  static RawObject callMethod4(Thread* thread, Frame* frame,
                                const Object& method, const Object& self,
                                const Object& arg1, const Object& arg2,
                                const Object& arg3);
@@ -144,13 +144,13 @@ class Interpreter {
   static RawObject unaryOperation(Thread* thread, const Object& self,
                                   SymbolId selector);
 
-  static RawObject binaryOperation(Thread* thread, Frame* caller, BinaryOp op,
+  static RawObject binaryOperation(Thread* thread, Frame* frame, BinaryOp op,
                                    const Object& left, const Object& right);
 
   // Lookup and invoke a binary operation (like `__add__`, `__sub__`, ...).
   // Sets `method_out` and `flags_out` to the lookup result if it is possible
   // to cache it.
-  static RawObject binaryOperationSetMethod(Thread* thread, Frame* caller,
+  static RawObject binaryOperationSetMethod(Thread* thread, Frame* frame,
                                             BinaryOp op, const Object& left,
                                             const Object& right,
                                             Object* method_out,
@@ -159,7 +159,7 @@ class Interpreter {
   // Calls a previously cached binary operation. Note that the caller still
   // needs to check for a `NotImplemented` result and call
   // `binaryOperationRetry()` if necessary.
-  static RawObject binaryOperationWithMethod(Thread* thread, Frame* caller,
+  static RawObject binaryOperationWithMethod(Thread* thread, Frame* frame,
                                              RawObject method,
                                              BinaryOpFlags flags,
                                              RawObject left, RawObject right);
@@ -172,39 +172,39 @@ class Interpreter {
   // This represents the second half of the binary operation calling mechanism
   // after we attempted a first lookup and call. It is a separate function so we
   // can use it independently of the first lookup using inline caching.
-  static RawObject binaryOperationRetry(Thread* thread, Frame* caller,
+  static RawObject binaryOperationRetry(Thread* thread, Frame* frame,
                                         BinaryOp op, BinaryOpFlags flags,
                                         const Object& left,
                                         const Object& right);
 
-  static RawObject inplaceOperation(Thread* thread, Frame* caller, BinaryOp op,
+  static RawObject inplaceOperation(Thread* thread, Frame* frame, BinaryOp op,
                                     const Object& left, const Object& right);
 
-  static RawObject inplaceOperationSetMethod(Thread* thread, Frame* caller,
+  static RawObject inplaceOperationSetMethod(Thread* thread, Frame* frame,
                                              BinaryOp op, const Object& left,
                                              const Object& right,
                                              Object* method_out,
                                              BinaryOpFlags* flags_out);
 
-  static RawObject compareOperationRetry(Thread* thread, Frame* caller,
+  static RawObject compareOperationRetry(Thread* thread, Frame* frame,
                                          CompareOp op, BinaryOpFlags flags,
                                          const Object& left,
                                          const Object& right);
 
-  static RawObject compareOperationSetMethod(Thread* thread, Frame* caller,
+  static RawObject compareOperationSetMethod(Thread* thread, Frame* frame,
                                              CompareOp op, const Object& left,
                                              const Object& right,
                                              Object* method_out,
                                              BinaryOpFlags* flags_out);
 
-  static RawObject compareOperation(Thread* thread, Frame* caller, CompareOp op,
+  static RawObject compareOperation(Thread* thread, Frame* frame, CompareOp op,
                                     const Object& left, const Object& right);
 
-  static RawObject sequenceIterSearch(Thread* thread, Frame* caller,
+  static RawObject sequenceIterSearch(Thread* thread, Frame* frame,
                                       const Object& value,
                                       const Object& container);
 
-  static RawObject sequenceContains(Thread* thread, Frame* caller,
+  static RawObject sequenceContains(Thread* thread, Frame* frame,
                                     const Object& value,
                                     const Object& container);
 
