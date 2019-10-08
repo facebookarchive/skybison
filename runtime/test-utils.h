@@ -208,6 +208,8 @@ RawObject listFromRange(word start, word stop);
 
 ::testing::AssertionResult isIntEqualsDigits(RawObject obj, View<uword> digits);
 
+RawObject layoutCreateEmpty(Thread* thread);
+
 // Check if the return value of a call and current thread state indicate that an
 // exception was raised with the given type.
 ::testing::AssertionResult raised(RawObject return_value, LayoutId layout_id);

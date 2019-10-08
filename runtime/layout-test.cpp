@@ -23,7 +23,7 @@ TEST(AttributeInfoTest, WithFlags) {
 
 TEST_F(LayoutTest, FindAttribute) {
   HandleScope scope(thread_);
-  Layout layout(&scope, runtime_.layoutCreateEmpty(thread_));
+  Layout layout(&scope, testing::layoutCreateEmpty(thread_));
 
   // Should fail to find an attribute that isn't present
   Str attr(&scope, runtime_.internStrFromCStr(thread_, "myattr"));
@@ -46,7 +46,7 @@ TEST_F(LayoutTest, FindAttribute) {
 
 TEST_F(LayoutTest, AddNewAttributes) {
   HandleScope scope(thread_);
-  Layout layout(&scope, runtime_.layoutCreateEmpty(thread_));
+  Layout layout(&scope, testing::layoutCreateEmpty(thread_));
 
   // Should fail to find an attribute that isn't present
   Str attr(&scope, runtime_.internStrFromCStr(thread_, "myattr"));
@@ -81,7 +81,7 @@ TEST_F(LayoutTest, AddNewAttributes) {
 
 TEST_F(LayoutTest, AddDuplicateAttributes) {
   HandleScope scope(thread_);
-  Layout layout(&scope, runtime_.layoutCreateEmpty(thread_));
+  Layout layout(&scope, testing::layoutCreateEmpty(thread_));
 
   // Add an attribute
   Str attr(&scope, runtime_.internStrFromCStr(thread_, "myattr"));
@@ -113,7 +113,7 @@ TEST_F(LayoutTest, DeleteInObjectAttribute) {
   entry.atPut(1, AttributeInfo(2222, AttributeFlags::kInObject).asSmallInt());
   Tuple array(&scope, runtime_.newTuple(1));
   array.atPut(0, *entry);
-  Layout layout(&scope, runtime_.layoutCreateEmpty(thread_));
+  Layout layout(&scope, testing::layoutCreateEmpty(thread_));
   layout.setInObjectAttributes(*array);
 
   // Deleting the attribute should succeed and return a new layout
@@ -155,7 +155,7 @@ TEST_F(LayoutTest, DeleteOverflowAttribute) {
     entry.atPut(1, AttributeInfo(i, 0).asSmallInt());
     attrs.atPut(i, *entry);
   }
-  Layout layout(&scope, runtime_.layoutCreateEmpty(thread_));
+  Layout layout(&scope, testing::layoutCreateEmpty(thread_));
   layout.setOverflowAttributes(*attrs);
 
   // Delete the middle attribute. Make sure a new layout is created and the
@@ -228,7 +228,7 @@ TEST_F(LayoutTest, DeleteAndAddInObjectAttribute) {
 
   // Create a new layout with one overflow attribute and one in-object
   // attribute
-  Layout layout(&scope, runtime_.layoutCreateEmpty(thread_));
+  Layout layout(&scope, testing::layoutCreateEmpty(thread_));
   Str inobject(&scope, runtime_.internStrFromCStr(thread_, "inobject"));
   layout.setInObjectAttributes(
       createLayoutAttribute(&runtime_, inobject, AttributeFlags::kInObject));

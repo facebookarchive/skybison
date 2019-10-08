@@ -788,9 +788,6 @@ class Runtime {
   // Clear the allocated memory from all extension related objects
   void freeApiHandles();
 
-  // Creates an layout with a new ID and no attributes.
-  RawObject layoutCreateEmpty(Thread* thread);
-
   // Import all the public module's symbols to the given dict
   void moduleImportAllFrom(const Dict& dict, const Module& module);
 

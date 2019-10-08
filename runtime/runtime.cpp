@@ -4335,14 +4335,6 @@ bool Runtime::layoutFindAttribute(Thread* thread, const Layout& layout,
   return false;
 }
 
-RawObject Runtime::layoutCreateEmpty(Thread* thread) {
-  HandleScope scope(thread);
-  Layout result(&scope, newLayout());
-  result.setId(reserveLayoutId(thread));
-  layoutAtPut(result.id(), *result);
-  return *result;
-}
-
 RawObject Runtime::layoutCreateChild(Thread* thread, const Layout& layout) {
   HandleScope scope(thread);
   Layout new_layout(&scope, newLayout());

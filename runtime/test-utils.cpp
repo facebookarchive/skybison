@@ -573,6 +573,15 @@ RawObject listFromRange(word start, word stop) {
   return ::testing::AssertionSuccess();
 }
 
+RawObject layoutCreateEmpty(Thread* thread) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Layout result(&scope, runtime->newLayout());
+  result.setId(runtime->reserveLayoutId(thread));
+  runtime->layoutAtPut(result.id(), *result);
+  return *result;
+}
+
 ::testing::AssertionResult raised(RawObject return_value, LayoutId layout_id) {
   return raisedWithStr(return_value, layout_id, nullptr);
 }

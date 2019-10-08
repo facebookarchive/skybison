@@ -60,7 +60,7 @@ TEST_F(HeapTest, AllocateBigLargeInt) {
 
 TEST_F(HeapTest, AllocateBigInstance) {
   HandleScope scope(thread_);
-  Layout layout(&scope, runtime_.layoutCreateEmpty(thread_));
+  Layout layout(&scope, testing::layoutCreateEmpty(thread_));
   Object result(&scope, runtime_.heap()->createInstance(layout.id(), 100000));
   ASSERT_TRUE(result.isInstance());
   EXPECT_EQ(Instance::cast(*result).headerCountOrOverflow(), 100000);

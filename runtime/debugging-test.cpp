@@ -204,7 +204,7 @@ TEST_F(DebuggingTests, DumpExtendedLayout) {
     entry.atPut(1, AttributeInfo(i, 0).asSmallInt());
     overflow.atPut(i, *entry);
   }
-  Layout layout(&scope, runtime_.layoutCreateEmpty(thread_));
+  Layout layout(&scope, layoutCreateEmpty(thread_));
   layout.setOverflowAttributes(*overflow);
 
   // Set some in-object attributes
@@ -241,7 +241,7 @@ TEST_F(DebuggingTests, DumpExtendedLayout) {
 
 TEST_F(DebuggingTests, DumpExtendedLayoutWithSealedLayout) {
   HandleScope scope(thread_);
-  Layout layout(&scope, runtime_.layoutCreateEmpty(thread_));
+  Layout layout(&scope, layoutCreateEmpty(thread_));
   layout.setOverflowAttributes(NoneType::object());
   // Set some in-object attributes
   Object inobj1(&scope, runtime_.newStrFromCStr("foo"));
@@ -271,7 +271,7 @@ TEST_F(DebuggingTests, DumpExtendedLayoutWithSealedLayout) {
 
 TEST_F(DebuggingTests, DumpExtendedLayoutWithDictOverflow) {
   HandleScope scope(thread_);
-  Layout layout(&scope, runtime_.layoutCreateEmpty(thread_));
+  Layout layout(&scope, layoutCreateEmpty(thread_));
   layout.setOverflowAttributes(SmallInt::fromWord(654321));
   layout.setInObjectAttributes(runtime_.emptyTuple());
   layout.setNumInObjectAttributes(0);
@@ -440,7 +440,7 @@ TEST_F(DebuggingTests, FormatLargeStr) {
 
 TEST_F(DebuggingTests, FormatLayout) {
   HandleScope scope(thread_);
-  Layout layout(&scope, runtime_.layoutCreateEmpty(thread_));
+  Layout layout(&scope, layoutCreateEmpty(thread_));
   layout.setId(static_cast<LayoutId>(101));
   Type type(&scope, runtime_.typeAt(LayoutId::kFloat));
   layout.setDescribedType(*type);
