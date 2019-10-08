@@ -159,11 +159,14 @@ i.baz = ()
   ASSERT_TRUE(i.isHeapObject());
   std::stringstream ss;
   dumpExtended(ss, *i);
-  EXPECT_EQ(ss.str(), R"(heap object <type "C">:
+  std::stringstream expected;
+  expected << "heap object with layout " << static_cast<word>(i.layoutId())
+           << R"( (<type "C">):
   (in-object) "foo" = 5
   (in-object) "bar" = "hello"
   (overflow)  "baz" = ()
-)");
+)";
+  EXPECT_EQ(ss.str(), expected.str());
 }
 
 TEST_F(DebuggingTests, DumpExtendedHeapObjectWithOverflowDict) {
@@ -172,7 +175,9 @@ TEST_F(DebuggingTests, DumpExtendedHeapObjectWithOverflowDict) {
   func.setGlobals(runtime_.newDict());
   std::stringstream ss;
   dumpExtendedHeapObject(ss, RawHeapObject::cast(*func));
-  EXPECT_EQ(ss.str(), R"(heap object <type "function">:
+  std::stringstream expected;
+  expected << "heap object with layout " << static_cast<word>(func.layoutId())
+           << R"( (<type "function">):
   (in-object) "__code__" = <code "name0">
   (in-object) "__doc__" = "const0"
   (in-object) None = {}
@@ -181,7 +186,8 @@ TEST_F(DebuggingTests, DumpExtendedHeapObjectWithOverflowDict) {
   (in-object) "__qualname__" = "footype.baz"
   (in-object) "__dict__" = {"funcattr0": 4}
   overflow dict: {"funcattr0": 4}
-)");
+)";
+  EXPECT_EQ(ss.str(), expected.str());
 }
 
 TEST_F(DebuggingTests, DumpExtendedLayout) {

@@ -123,9 +123,11 @@ std::ostream& dumpExtendedHeapObject(std::ostream& os, RawHeapObject value) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   HeapObject heap_object(&scope, value);
-  Layout layout(&scope, runtime->layoutAt(heap_object.layoutId()));
+  LayoutId layout_id = heap_object.layoutId();
+  os << "heap object with layout " << static_cast<word>(layout_id);
+  Layout layout(&scope, runtime->layoutAt(layout_id));
   Type type(&scope, layout.describedType());
-  os << "heap object " << type << ":\n";
+  os << " (" << type << "):\n";
   Tuple in_object(&scope, layout.inObjectAttributes());
   Tuple entry(&scope, runtime->emptyTuple());
   for (word i = 0, length = in_object.length(); i < length; i++) {
