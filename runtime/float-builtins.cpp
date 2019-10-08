@@ -278,10 +278,10 @@ RawObject FloatBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
 }
 
 void decodeDouble(double value, bool* is_neg, int* exp, uint64_t* mantissa) {
-  const uword man_mask = (uword{1} << kDoubleMantissaBits) - 1;
-  const uword num_exp_bits = kBitsPerDouble - kDoubleMantissaBits - 1;
-  const uword exp_mask = (uword{1} << num_exp_bits) - 1;
-  const uword exp_bias = (uword{1} << (num_exp_bits - 1)) - 1;
+  const uint64_t man_mask = (uint64_t{1} << kDoubleMantissaBits) - 1;
+  const int num_exp_bits = kBitsPerDouble - kDoubleMantissaBits - 1;
+  const uint64_t exp_mask = (uint64_t{1} << num_exp_bits) - 1;
+  const int exp_bias = (1 << (num_exp_bits - 1)) - 1;
   uint64_t value_bits = bit_cast<uint64_t>(value);
   *is_neg = value_bits >> (kBitsPerDouble - 1);
   *exp = ((value_bits >> kDoubleMantissaBits) & exp_mask) - exp_bias;
@@ -293,8 +293,8 @@ static RawObject intFromDouble(Thread* thread, double value) {
   int exp;
   uint64_t man;
   decodeDouble(value, &is_neg, &exp, &man);
-  int exp_bits = kBitsPerDouble - kDoubleMantissaBits - 1;
-  int max_exp = 1 << (exp_bits - 1);
+  const int exp_bits = kBitsPerDouble - kDoubleMantissaBits - 1;
+  const int max_exp = 1 << (exp_bits - 1);
   if (exp == max_exp) {
     if (man == 0) {
       return thread->raiseWithFmt(LayoutId::kOverflowError,
@@ -304,7 +304,7 @@ static RawObject intFromDouble(Thread* thread, double value) {
                                 "cannot convert float NaN to integer");
   }
 
-  // No fractional part.
+  // No integral part.
   if (exp < 0) {
     return SmallInt::fromWord(0);
   }
@@ -331,7 +331,7 @@ static RawObject intFromDouble(Thread* thread, double value) {
              : (man_with_implicit_one >> (kDoubleMantissaBits - exp)));
     return runtime->newInt(is_neg ? -result : result);
   }
-  // TODO(djang): Make another interface for intBInaryLshift() to accept
+  // TODO(djang): Make another interface for intBinaryLshift() to accept
   // words directly.
   HandleScope scope(thread);
   Int unshifted_result(&scope, runtime->newInt(is_neg ? -man_with_implicit_one
