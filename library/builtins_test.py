@@ -5663,6 +5663,52 @@ class PropertyTests(unittest.TestCase):
 
 
 class RangeTests(unittest.TestCase):
+    def test_dunder_contains_with_int_less_than_start_returns_false(self):
+        self.assertFalse(range(1, 5).__contains__(0))
+
+    def test_dunder_contains_with_int_equals_start_returns_true(self):
+        self.assertTrue(range(1, 5).__contains__(1))
+
+    def test_dunder_contains_with_int_in_range_returns_true(self):
+        self.assertTrue(range(1, 5).__contains__(3))
+
+    def test_dunder_contains_with_int_equals_stop_returns_false(self):
+        self.assertFalse(range(1, 5).__contains__(5))
+
+    def test_dunder_contains_with_int_in_stride_returns_true(self):
+        self.assertTrue(range(1, 5, 2).__contains__(3))
+
+    def test_dunder_contains_with_int_not_in_stride_returns_false(self):
+        self.assertFalse(range(1, 5, 2).__contains__(4))
+
+    def test_dunder_contains_with_negative_step_and_int_greater_than_start_returns_false(  # noqa: B950
+        self
+    ):
+        self.assertFalse(range(5, 1, -1).__contains__(6))
+
+    def test_dunder_contains_with_negative_step_and_int_equals_start_returns_true(self):
+        self.assertTrue(range(5, 1, -1).__contains__(5))
+
+    def test_dunder_contains_with_negative_step_and_int_less_than_start_returns_true(  # noqa: B950
+        self
+    ):
+        self.assertTrue(range(5, 1, -1).__contains__(4))
+
+    def test_dunder_contains_with_negative_step_and_int_equals_stop_returns_false(self):
+        self.assertFalse(range(5, 1, -1).__contains__(1))
+
+    def test_dunder_contains_with_negative_step_and_int_greater_than_stop_returns_true(  # noqa: B950
+        self
+    ):
+        self.assertTrue(range(5, 1, -1).__contains__(2))
+
+    def test_dunder_contains_with_non_int_falls_back_to_iter_search(self):
+        class C:
+            __eq__ = Mock(name="__eq__", return_value=False)
+
+        range(1, 10, 3).__contains__(C())
+        self.assertEqual(C.__eq__.call_count, 3)
+
     def test_dunder_eq_with_non_range_self_raises_type_error(self):
         with self.assertRaises(TypeError):
             range.__eq__(1, 2)

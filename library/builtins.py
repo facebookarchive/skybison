@@ -3676,6 +3676,24 @@ def quit():
 
 
 class range(bootstrap=True):
+    def __contains__(self, num):
+        _range_guard(self)
+        if _int_checkexact(num) or num is True or num is False:
+            start = self.start
+            stop = self.stop
+            step = self.step
+            if step is 1:
+                # Fast path; only two comparisons required
+                return start <= num < stop
+            if step > 0:
+                if num < start or num >= stop:
+                    return False
+            elif num > start or num <= stop:
+                return False
+            return (num - start) % step == 0
+
+        return num in self.__iter__()
+
     def __eq__(self, other):
         _range_guard(self)
         if not _range_check(other):
