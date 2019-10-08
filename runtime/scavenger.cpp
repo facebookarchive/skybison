@@ -118,15 +118,22 @@ void Scavenger::processFinalizableReferences() {
        entry != nullptr; entry = next) {
     next = entry->next;
     ApiHandle* native_instance = reinterpret_cast<ApiHandle*>(entry + 1);
-    scavengePointer(reinterpret_cast<RawObject*>(&native_instance->reference_));
-    if (native_instance->refcnt() > 2) continue;
     RawObject native_proxy = native_instance->asObject();
-    if (HeapObject::cast(native_proxy).isForwarding()) continue;
+    if (native_instance->refcnt() > 1 ||
+        HeapObject::cast(native_proxy).isForwarding()) {
+      // The extension object is being kept alive by a reference from an
+      // extension object or by a managed reference. Blacken the reference.
+      scavengePointer(
+          reinterpret_cast<RawObject*>(&native_instance->reference_));
+      continue;
+    }
 
     // Deallocate immediately or add to finalization queue
     RawType type = Type::cast(runtime_->typeOf(native_instance->asObject()));
     if (!type.hasFlag(Type::Flag::kHasDefaultDealloc)) {
-      RawNativeProxy::enqueueReference(native_proxy,
+      scavengePointer(
+          reinterpret_cast<RawObject*>(&native_instance->reference_));
+      RawNativeProxy::enqueueReference(native_instance->asObject(),
                                        runtime_->finalizableReferences());
       continue;
     }
@@ -134,19 +141,27 @@ void Scavenger::processFinalizableReferences() {
         Int::cast(type.slot(Type::Slot::kDealloc)).asWord());
     (*func)(native_instance);
   }
+  // TODO(T55208267): Merge GC extension instances to the native extension list
   for (ListEntry *entry = runtime_->trackedNativeGcObjects(), *next;
        entry != nullptr; entry = next) {
     next = entry->next;
     ApiHandle* native_instance = reinterpret_cast<ApiHandle*>(entry + 1);
-    scavengePointer(reinterpret_cast<RawObject*>(&native_instance->reference_));
-    if (native_instance->refcnt() > 2) continue;
     RawObject native_proxy = native_instance->asObject();
-    if (HeapObject::cast(native_proxy).isForwarding()) continue;
+    if (native_instance->refcnt() > 1 ||
+        HeapObject::cast(native_proxy).isForwarding()) {
+      // The extension object is being kept alive by a reference from an
+      // extension object or by a managed reference. Blacken the reference.
+      scavengePointer(
+          reinterpret_cast<RawObject*>(&native_instance->reference_));
+      continue;
+    }
 
     // Deallocate immediately or add to finalization queue
     RawType type = Type::cast(runtime_->typeOf(native_instance->asObject()));
     if (!type.hasFlag(Type::Flag::kHasDefaultDealloc)) {
-      RawNativeProxy::enqueueReference(native_proxy,
+      scavengePointer(
+          reinterpret_cast<RawObject*>(&native_instance->reference_));
+      RawNativeProxy::enqueueReference(native_instance->asObject(),
                                        runtime_->finalizableReferences());
       continue;
     }

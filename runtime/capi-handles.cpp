@@ -134,10 +134,9 @@ ApiHandle* ApiHandle::borrowedReference(Thread* thread, RawObject obj) {
 
 RawObject ApiHandle::stealReference(Thread* thread, PyObject* py_obj) {
   HandleScope scope(thread);
-  // Using ApiHandle::fromPyObject() here is sketchy since the provenance of
-  // py_obj is unknown, but it's the best we can do for now.
-  Object obj(&scope, ApiHandle::fromPyObject(py_obj)->asObject());
-  // TODO(T42827325): We should decref py_obj before returning.
+  ApiHandle* handle = ApiHandle::fromPyObject(py_obj);
+  Object obj(&scope, handle->asObject());
+  handle->decref();
   return *obj;
 }
 
