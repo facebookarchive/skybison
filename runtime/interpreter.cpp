@@ -2699,30 +2699,21 @@ HANDLER_INLINE Continue Interpreter::doImportName(Thread* thread, word arg) {
   Object name(&scope, Tuple::cast(code.names()).at(arg));
   Object fromlist(&scope, frame->popValue());
   Object level(&scope, frame->popValue());
-  Dict dict_no_value_cells(&scope, runtime->newDict());
-  // TODO(T41326706) Pass in a real globals dict here. For now create a small
-  // dict with just the things needed by importlib.
-  Dict globals(&scope, frame->function().globals());
-  Object value(&scope, NoneType::object());
-  for (SymbolId id : {SymbolId::kDunderPackage, SymbolId::kDunderSpec,
-                      SymbolId::kDunderName}) {
-    value = moduleDictAtById(thread, globals, id);
-    runtime->dictAtPutById(thread, dict_no_value_cells, id, value);
-  }
+  Module module(&scope, frame->function().moduleObject());
+  Object globals(&scope, module.moduleProxy());
   // TODO(T41634372) Pass in a dict that is similar to what `builtins.locals`
   // returns. Use `None` for now since the default importlib behavior is to
   // ignore the value and this only matters if `__import__` is replaced.
   Object locals(&scope, NoneType::object());
 
-  // Call builtins.__import__(name, dict_no_value_cells, locals, fromlist,
-  //                          level).
+  // Call builtins.__import__(name, globals, locals, fromlist, level).
   ValueCell dunder_import_cell(&scope, runtime->dunderImport());
   DCHECK(!dunder_import_cell.isUnbound(), "builtins module not initialized");
   Object dunder_import(&scope, dunder_import_cell.value());
 
   frame->pushValue(*dunder_import);
   frame->pushValue(*name);
-  frame->pushValue(*dict_no_value_cells);
+  frame->pushValue(*globals);
   frame->pushValue(*locals);
   frame->pushValue(*fromlist);
   frame->pushValue(*level);

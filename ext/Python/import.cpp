@@ -140,19 +140,13 @@ PY_EXPORT PyObject* PyImport_Import(PyObject* module_name) {
   HandleScope scope(thread);
 
   Object name_obj(&scope, ApiHandle::fromPyObject(module_name)->asObject());
-  Dict globals_obj(&scope, runtime->newDict());
+  Object globals_obj(&scope, NoneType::object());
   Frame* current_frame = thread->currentFrame();
-  if (!current_frame->isSentinel() &&
-      current_frame->function().globals().isDict()) {
-    Dict globals(&scope, current_frame->function().globals());
-    Object value(&scope, NoneType::object());
-    for (SymbolId id : {SymbolId::kDunderPackage, SymbolId::kDunderSpec,
-                        SymbolId::kDunderName}) {
-      // TODO(T41326706): This loop is a workaround so that cpython users do not
-      // acccidentally see ValueCells in the module dict.
-      value = moduleDictAtById(thread, globals, id);
-      runtime->dictAtPutById(thread, globals_obj, id, value);
-    }
+  if (current_frame->isSentinel()) {
+    globals_obj = runtime->newDict();
+  } else {
+    Module module(&scope, current_frame->function().moduleObject());
+    globals_obj = module.moduleProxy();
   }
   Object fromlist_obj(&scope, runtime->emptyTuple());
   Object level_obj(&scope, SmallInt::fromWord(0));
