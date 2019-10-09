@@ -779,6 +779,9 @@ class Runtime {
   // Returns whether object's class provides a __delete__ method
   bool isDeleteDescriptor(Thread* thread, const Object& object);
 
+  // Returns whether object's class provides a __next__ method
+  bool isIterator(Thread* thread, const Object& obj);
+
   // Return whether object's class supports the sequence protocol
   bool isSequence(Thread* thread, const Object& obj);
 

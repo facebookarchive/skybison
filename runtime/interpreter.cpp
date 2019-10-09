@@ -901,17 +901,37 @@ RawObject Interpreter::compareOperation(Thread* thread, Frame* frame,
                                    nullptr);
 }
 
+static RawObject createIterator(Thread* thread, Frame* frame,
+                                const Object& iterable) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object dunder_iter(&scope, Interpreter::lookupMethod(thread, frame, iterable,
+                                                       SymbolId::kDunderIter));
+  if (dunder_iter.isError() || dunder_iter.isNoneType()) {
+    if (dunder_iter.isErrorNotFound() &&
+        runtime->isSequence(thread, iterable)) {
+      return runtime->newSeqIterator(iterable);
+    }
+    thread->clearPendingException();
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'%T' object is not iterable", &iterable);
+  }
+  Object iterator(
+      &scope, Interpreter::callMethod1(thread, frame, dunder_iter, iterable));
+  if (iterator.isErrorException()) return *iterator;
+  if (!runtime->isIterator(thread, iterator)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "iter() returned non-iterator of type '%T'",
+                                &iterator);
+  }
+  return *iterator;
+}
+
 RawObject Interpreter::sequenceIterSearch(Thread* thread, Frame* frame,
                                           const Object& value,
                                           const Object& container) {
   HandleScope scope(thread);
-  Object dunder_iter(
-      &scope, lookupMethod(thread, frame, container, SymbolId::kDunderIter));
-  if (dunder_iter.isError()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "__iter__ not defined on object");
-  }
-  Object iter(&scope, callMethod1(thread, frame, dunder_iter, container));
+  Object iter(&scope, createIterator(thread, frame, container));
   if (iter.isError()) {
     return *iter;
   }
@@ -1571,22 +1591,12 @@ HANDLER_INLINE Continue Interpreter::doGetIter(Thread* thread, word) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object iterable(&scope, frame->popValue());
-  Object method(&scope,
-                lookupMethod(thread, frame, iterable, SymbolId::kDunderIter));
-  if (method.isError()) {
-    if (method.isErrorNotFound()) {
-      Runtime* runtime = thread->runtime();
-      if (runtime->isSequence(thread, iterable)) {
-        frame->pushValue(runtime->newSeqIterator(iterable));
-        return Continue::NEXT;
-      }
-    }
-    thread->clearPendingException();
-    thread->raiseWithFmt(LayoutId::kTypeError, "'%T' object is not iterable",
-                         &iterable);
-    return Continue::UNWIND;
-  }
-  return tailcallMethod1(thread, *method, *iterable);
+  // TODO(T44729606): Add caching, and turn into a simpler call for builtin
+  // types with known iterator creating functions
+  Object iterator(&scope, createIterator(thread, frame, iterable));
+  if (iterator.isErrorException()) return Continue::UNWIND;
+  frame->pushValue(*iterator);
+  return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doGetYieldFromIter(Thread* thread, word) {
@@ -1609,13 +1619,12 @@ HANDLER_INLINE Continue Interpreter::doGetYieldFromIter(Thread* thread, word) {
   }
 
   frame->dropValues(1);
-  Object method(&scope,
-                lookupMethod(thread, frame, iterable, SymbolId::kDunderIter));
-  if (method.isError()) {
-    thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
-    return Continue::UNWIND;
-  }
-  return tailcallMethod1(thread, *method, *iterable);
+  // TODO(T44729661): Add caching, and turn into a simpler call for builtin
+  // types with known iterator creating functions
+  Object iterator(&scope, createIterator(thread, frame, iterable));
+  if (iterator.isErrorException()) return Continue::UNWIND;
+  frame->pushValue(*iterator);
+  return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doPrintExpr(Thread* thread, word) {
@@ -2029,13 +2038,7 @@ HANDLER_INLINE Continue Interpreter::doUnpackSequence(Thread* thread,
     Tuple tuple(&scope, list.items());
     return unpackSequenceWithLength(thread, frame, tuple, arg, list.numItems());
   }
-  Object iter_method(
-      &scope, lookupMethod(thread, frame, iterable, SymbolId::kDunderIter));
-  if (iter_method.isError()) {
-    thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
-    return Continue::UNWIND;
-  }
-  Object iterator(&scope, callMethod1(thread, frame, iter_method, iterable));
+  Object iterator(&scope, createIterator(thread, frame, iterable));
   if (iterator.isError()) return Continue::UNWIND;
 
   Object next_method(
@@ -2200,13 +2203,7 @@ HANDLER_INLINE Continue Interpreter::doUnpackEx(Thread* thread, word arg) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object iterable(&scope, frame->popValue());
-  Object iter_method(
-      &scope, lookupMethod(thread, frame, iterable, SymbolId::kDunderIter));
-  if (iter_method.isError()) {
-    thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
-    return Continue::UNWIND;
-  }
-  Object iterator(&scope, callMethod1(thread, frame, iter_method, iterable));
+  Object iterator(&scope, createIterator(thread, frame, iterable));
   if (iterator.isError()) return Continue::UNWIND;
 
   Object next_method(

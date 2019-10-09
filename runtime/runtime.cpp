@@ -502,6 +502,12 @@ bool Runtime::isDeleteDescriptor(Thread* thread, const Object& object) {
   return !typeLookupInMroById(thread, type, SymbolId::kDunderDelete).isError();
 }
 
+bool Runtime::isIterator(Thread* thread, const Object& obj) {
+  HandleScope scope(thread);
+  Type type(&scope, typeOf(*obj));
+  return !typeLookupInMroById(thread, type, SymbolId::kDunderNext).isError();
+}
+
 bool Runtime::isMapping(Thread* thread, const Object& obj) {
   if (obj.isDict()) return true;
   HandleScope scope(thread);

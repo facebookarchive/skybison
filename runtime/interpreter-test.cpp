@@ -1521,6 +1521,36 @@ TEST_F(InterpreterTest, DoDeleteSubscrDoesntPushToStack) {
   EXPECT_EQ(list.numItems(), 0);
 }
 
+TEST_F(InterpreterTest, GetIterWithSequenceReturnsIterator) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class Sequence:
+    def __getitem__(s, i):
+        return ("foo", "bar")[i]
+
+seq = Sequence()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime_.newTuple(1));
+  consts.atPut(0, mainModuleAt(&runtime_, "seq"));
+  code.setConsts(*consts);
+
+  Tuple varnames(&scope, runtime_.newTuple(0));
+  code.setVarnames(*varnames);
+  code.setNlocals(0);
+  const byte bytecode[] = {
+      LOAD_CONST, 0, GET_ITER, 0, RETURN_VALUE, 0,
+  };
+  code.setCode(runtime_.newBytesWithAll(bytecode));
+
+  Object result_obj(&scope, runCode(code));
+  EXPECT_TRUE(runtime_.isIterator(thread_, result_obj));
+  Type result_type(&scope, runtime_.typeOf(*result_obj));
+  EXPECT_TRUE(isStrEqualsCStr(result_type.name(), "iterator"));
+}
+
 TEST_F(InterpreterTest,
        GetIterWithRaisingDescriptorDunderIterPropagatesException) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
@@ -1653,6 +1683,29 @@ TEST_F(InterpreterTest, SequenceIterSearchWithListReturnsFalse) {
       &scope, Interpreter::sequenceIterSearch(thread_, frame, val, container));
   ASSERT_FALSE(result.isError());
   EXPECT_EQ(result, Bool::falseObj());
+}
+
+TEST_F(InterpreterTest, SequenceIterSearchWithSequenceSearchesIterator) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class Seq:
+    def __getitem__(s, i):
+        return ("foo", "bar", 42)[i]
+
+seq_iter = Seq()
+)")
+                   .isError());
+  Frame* frame = thread_->currentFrame();
+  ASSERT_TRUE(frame->isSentinel());
+  Object seq_iter(&scope, mainModuleAt(&runtime_, "seq_iter"));
+  Object obj_in_seq(&scope, SmallInt::fromWord(42));
+  Object contains_true(&scope, Interpreter::sequenceIterSearch(
+                                   thread_, frame, obj_in_seq, seq_iter));
+  EXPECT_EQ(contains_true, Bool::trueObj());
+  Object obj_not_in_seq(&scope, NoneType::object());
+  Object contains_false(&scope, Interpreter::sequenceIterSearch(
+                                    thread_, frame, obj_not_in_seq, seq_iter));
+  EXPECT_EQ(contains_false, Bool::falseObj());
 }
 
 TEST_F(InterpreterTest,
@@ -2007,7 +2060,7 @@ TEST_F(InterpreterTest, IterateOnNonIterable) {
 a, b = None
 )";
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, src), LayoutId::kTypeError,
-                            "object is not iterable"));
+                            "'NoneType' object is not iterable"));
 }
 
 TEST_F(InterpreterTest, DunderIterReturnsNonIterable) {
@@ -2018,7 +2071,7 @@ class Foo:
 a, b = Foo()
 )";
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, src), LayoutId::kTypeError,
-                            "iter() returned non-iterator"));
+                            "iter() returned non-iterator of type 'int'"));
 }
 
 TEST_F(InterpreterTest, UnpackSequence) {
@@ -2034,6 +2087,23 @@ a, b, c = l
   EXPECT_TRUE(isIntEqualsWord(*a, 1));
   EXPECT_TRUE(isIntEqualsWord(*b, 2));
   EXPECT_TRUE(isIntEqualsWord(*c, 3));
+}
+
+TEST_F(InterpreterTest, UnpackSequenceWithSeqIterator) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class Seq:
+  def __getitem__(s, i):
+    return ("foo", "bar", 42)[i]
+a, b, c = Seq()
+)")
+                   .isError());
+  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
+  EXPECT_TRUE(isStrEqualsCStr(*a, "foo"));
+  EXPECT_TRUE(isStrEqualsCStr(*b, "bar"));
+  EXPECT_TRUE(isIntEqualsWord(*c, 42));
 }
 
 TEST_F(InterpreterTest, UnpackSequenceTooFewObjects) {
@@ -2281,6 +2351,20 @@ a, b, c, *d, e, f, g  = l
   EXPECT_TRUE(isIntEqualsWord(*e, 5));
   EXPECT_TRUE(isIntEqualsWord(*f, 6));
   EXPECT_TRUE(isIntEqualsWord(*g, 7));
+}
+
+TEST_F(InterpreterTest, UnpackSequenceExWithSeqIterator) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class Seq:
+  def __getitem__(s, i):
+    return ("foo", "bar", 42)[i]
+a, *b = Seq()
+)")
+                   .isError());
+  EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(&runtime_, "a"), "foo"));
+  Object b(&scope, mainModuleAt(&runtime_, "b"));
+  EXPECT_PYLIST_EQ(b, {"bar", 42});
 }
 
 TEST_F(InterpreterTest, UnpackSequenceExWithNoElementsAfter) {
@@ -3246,7 +3330,8 @@ TEST_F(InterpreterTest, YieldFromIterReturnsIter) {
 
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class FooIterator:
-    pass
+    def __next__(self):
+        pass
 
 class Foo:
     def __iter__(self):
@@ -3281,6 +3366,43 @@ foo = Foo()
   EXPECT_TRUE(isStrEqualsCStr(result_type.name(), "FooIterator"));
 }
 
+TEST_F(InterpreterTest, YieldFromIterWithSequenceReturnsIter) {
+  HandleScope scope(thread_);
+
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class FooSequence:
+    def __getitem__(self, i):
+        return ("foo", "bar")[i]
+
+foo = FooSequence()
+	)")
+                   .isError());
+
+  Object foo(&scope, mainModuleAt(&runtime_, "foo"));
+
+  // Create a code object and set the foo instance as a const
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime_.newTuple(1));
+  consts.atPut(0, *foo);
+  code.setConsts(*consts);
+
+  // Python code:
+  // foo = FooSequence()
+  // def bar():
+  //     yield from foo
+  const byte bytecode[] = {
+      LOAD_CONST,          0,  // (foo)
+      GET_YIELD_FROM_ITER, 0,  // iter(foo)
+      RETURN_VALUE,        0,
+  };
+  code.setCode(runtime_.newBytesWithAll(bytecode));
+
+  // Confirm that the returned value is a sequence iterator
+  Object result(&scope, runCode(code));
+  Type result_type(&scope, runtime_.typeOf(*result));
+  EXPECT_TRUE(isStrEqualsCStr(result_type.name(), "iterator"));
+}
+
 TEST_F(InterpreterTest, YieldFromIterRaisesException) {
   const char* src = R"(
 def yield_from_func():
@@ -3291,7 +3413,7 @@ for i in yield_from_func():
 	)";
 
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, src), LayoutId::kTypeError,
-                            "object is not iterable"));
+                            "'int' object is not iterable"));
 }
 
 TEST_F(InterpreterTest, MakeFunctionSetsDunderModule) {
