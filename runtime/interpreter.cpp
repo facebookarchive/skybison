@@ -1366,7 +1366,13 @@ Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
     return Continue::UNWIND;
   }
   if (index >= 0 && getitem.isFunction()) {
-    icUpdateAttr(frame->caches(), index, container.layoutId(), *getitem);
+    // TODO(T55274956): Make this into a separate function to be shared.
+    Tuple caches(&scope, frame->caches());
+    Str get_item_name(
+        &scope, thread->runtime()->symbols()->at(SymbolId::kDunderGetitem));
+    Function dependent(&scope, frame->function());
+    icUpdateAttr(thread, caches, index, container.layoutId(), getitem,
+                 get_item_name, dependent);
   }
 
   getitem = resolveDescriptorGet(thread, getitem, container, type);
@@ -2086,7 +2092,12 @@ bool Interpreter::forIterUpdateCache(Thread* thread, word arg, word index) {
   }
 
   if (index >= 0 && next.isFunction()) {
-    icUpdateAttr(frame->caches(), index, iter.layoutId(), *next);
+    Tuple caches(&scope, frame->caches());
+    Str next_name(&scope,
+                  thread->runtime()->symbols()->at(SymbolId::kDunderNext));
+    Function dependent(&scope, frame->function());
+    icUpdateAttr(thread, caches, index, iter.layoutId(), next, next_name,
+                 dependent);
   }
 
   next = resolveDescriptorGet(thread, next, iter, type);
@@ -2312,16 +2323,11 @@ Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg) {
                 storeAttrSetLocation(thread, receiver, name, value, &location));
   if (result.isError()) return Continue::UNWIND;
   if (!location.isNoneType()) {
-    LayoutId layout_id = receiver.layoutId();
-    icUpdateAttr(frame->caches(), arg, layout_id, *location);
-    Type receiver_type(&scope, thread->runtime()->typeOf(*receiver));
-    if (!receiver_type.isSealed()) {
-      // We do not need to tell an unmodifable type about this cache entry
-      // since it will never be invalidated.
-      Object dependent(&scope, frame->function());
-      icInsertDependencyForTypeLookupInMro(thread, receiver_type, name,
-                                           dependent);
-    }
+    Tuple caches(&scope, frame->caches());
+    // Type receiver_type(&scope, thread->runtime()->typeOf(*receiver));
+    Function dependent(&scope, frame->function());
+    icUpdateAttr(thread, caches, arg, receiver.layoutId(), location, name,
+                 dependent);
   }
   return Continue::NEXT;
 }
@@ -2570,16 +2576,10 @@ Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
   Object result(&scope, loadAttrSetLocation(thread, receiver, name, &location));
   if (result.isError()) return Continue::UNWIND;
   if (!location.isNoneType()) {
-    LayoutId layout_id = receiver.layoutId();
-    icUpdateAttr(frame->caches(), arg, layout_id, *location);
-    Type receiver_type(&scope, thread->runtime()->typeOf(*receiver));
-    if (!receiver_type.isSealed()) {
-      // We do not need to tell an unmodifable type about this cache entry
-      // since it will never be invalidated.
-      Object dependent(&scope, frame->function());
-      icInsertDependencyForTypeLookupInMro(thread, receiver_type, name,
-                                           dependent);
-    }
+    Tuple caches(&scope, frame->caches());
+    Function dependent(&scope, frame->function());
+    icUpdateAttr(thread, caches, arg, receiver.layoutId(), location, name,
+                 dependent);
   }
   frame->setTopValue(*result);
   return Continue::NEXT;

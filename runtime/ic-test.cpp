@@ -103,18 +103,20 @@ TEST_F(IcTest, IcLookupGlobalVar) {
   EXPECT_TRUE(icLookupGlobalVar(*caches, 1).isNoneType());
 }
 
-TEST_F(IcTest, IcUpdateSetsEmptyEntry) {
+TEST_F(IcTest, IcUpdateAttrSetsEmptyEntry) {
   HandleScope scope(thread_);
 
   Tuple caches(&scope, runtime_.newTuple(1 * kIcPointersPerCache));
   Object value(&scope, runtime_.newInt(88));
-  icUpdateAttr(*caches, 0, LayoutId::kSmallStr, *value);
+  Str name(&scope, Str::empty());
+  Function dependent(&scope, newEmptyFunction());
+  icUpdateAttr(thread_, caches, 0, LayoutId::kSmallInt, value, name, dependent);
   EXPECT_TRUE(isIntEqualsWord(caches.at(kIcEntryKeyOffset),
-                              static_cast<word>(LayoutId::kSmallStr)));
+                              static_cast<word>(LayoutId::kSmallInt)));
   EXPECT_TRUE(isIntEqualsWord(caches.at(kIcEntryValueOffset), 88));
 }
 
-TEST_F(IcTest, IcUpdateUpdatesExistingEntry) {
+TEST_F(IcTest, IcUpdateAttrUpdatesExistingEntry) {
   HandleScope scope(thread_);
 
   Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerCache));
@@ -128,7 +130,9 @@ TEST_F(IcTest, IcUpdateUpdatesExistingEntry) {
   caches.atPut(cache_offset + 3 * kIcPointersPerEntry + kIcEntryKeyOffset,
                layoutIdAsSmallInt(LayoutId::kBytes));
   Object value(&scope, runtime_.newStrFromCStr("test"));
-  icUpdateAttr(*caches, 1, LayoutId::kSmallStr, *value);
+  Str name(&scope, Str::empty());
+  Function dependent(&scope, newEmptyFunction());
+  icUpdateAttr(thread_, caches, 1, LayoutId::kSmallStr, value, name, dependent);
   EXPECT_TRUE(isIntEqualsWord(
       caches.at(cache_offset + 2 * kIcPointersPerEntry + kIcEntryKeyOffset),
       static_cast<word>(LayoutId::kSmallStr)));
@@ -137,7 +141,7 @@ TEST_F(IcTest, IcUpdateUpdatesExistingEntry) {
       "test"));
 }
 
-TEST_F(IcTest, IcInsertDependencyForTypeLookupInMroAddsDependencyFollowingMro) {
+TEST_F(IcTest, IcUpdateAttrInsertsDependencyUpToDefiningType) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class A:
@@ -148,41 +152,57 @@ class B(A):
 
 class C(B):
   bar = "class C"
+
+c = C()
 )")
                    .isError());
-  Type a(&scope, mainModuleAt(&runtime_, "A"));
-  Type b(&scope, mainModuleAt(&runtime_, "B"));
-  Type c(&scope, mainModuleAt(&runtime_, "C"));
-  Str foo(&scope, runtime_.newStrFromCStr("foo"));
-  Object dependent(&scope, SmallInt::fromWord(1234));
-
   // Inserting dependent adds dependent to a new Placeholder in C for 'foo', and
   // to the existing ValueCell in B. A won't be affected since it's not visited
   // during MRO traversal.
-  icInsertDependencyForTypeLookupInMro(thread_, c, foo, dependent);
+  Tuple caches(&scope, runtime_.newTuple(4));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
+  Object value(&scope, SmallInt::fromWord(1234));
+  Str foo(&scope, runtime_.newStrFromCStr("foo"));
+  Function dependent(&scope, newEmptyFunction());
+  icUpdateAttr(thread_, caches, 0, c.layoutId(), value, foo, dependent);
 
-  Tuple mro(&scope, c.mro());
-  ASSERT_EQ(mro.length(), 4);
-  ASSERT_EQ(mro.at(0), c);
-  ASSERT_EQ(mro.at(1), b);
-  ASSERT_EQ(mro.at(2), a);
+  Type type_a(&scope, mainModuleAt(&runtime_, "A"));
+  Dict type_a_dict(&scope, type_a.dict());
+  EXPECT_TRUE(
+      runtime_.dictAtByStr(thread_, type_a_dict, foo).isErrorNotFound());
 
-  Dict a_dict(&scope, a.dict());
-  EXPECT_TRUE(runtime_.dictAtByStr(thread_, a_dict, foo).isErrorNotFound());
-
-  Dict b_dict(&scope, b.dict());
-  ValueCell b_entry(&scope, runtime_.dictAtByStr(thread_, b_dict, foo));
+  Type type_b(&scope, mainModuleAt(&runtime_, "B"));
+  Dict type_b_dict(&scope, type_b.dict());
+  ValueCell b_entry(&scope, runtime_.dictAtByStr(thread_, type_b_dict, foo));
   EXPECT_FALSE(b_entry.isPlaceholder());
   WeakLink b_link(&scope, b_entry.dependencyLink());
   EXPECT_EQ(b_link.referent(), dependent);
   EXPECT_TRUE(b_link.next().isNoneType());
 
-  Dict c_dict(&scope, c.dict());
-  ValueCell c_entry(&scope, runtime_.dictAtByStr(thread_, c_dict, foo));
+  Type type_c(&scope, mainModuleAt(&runtime_, "C"));
+  Dict type_c_dict(&scope, type_c.dict());
+  ValueCell c_entry(&scope, runtime_.dictAtByStr(thread_, type_c_dict, foo));
   EXPECT_TRUE(c_entry.isPlaceholder());
   WeakLink c_link(&scope, c_entry.dependencyLink());
   EXPECT_EQ(c_link.referent(), dependent);
   EXPECT_TRUE(c_link.next().isNoneType());
+}
+
+TEST_F(IcTest, IcUpdateAttrDoesNotInsertsDependencyToSealedType) {
+  HandleScope scope(thread_);
+  Str instance(&scope, runtime_.newStrFromCStr("str instance"));
+  Tuple caches(&scope, runtime_.newTuple(4));
+  Object value(&scope, SmallInt::fromWord(1234));
+  Str dunder_add(&scope, runtime_.symbols()->at(SymbolId::kDunderAdd));
+  Function dependent(&scope, newEmptyFunction());
+  icUpdateAttr(thread_, caches, 0, instance.layoutId(), value, dunder_add,
+               dependent);
+
+  Type type_str(&scope, runtime_.typeAt(LayoutId::kStr));
+  Dict type_str_dict(&scope, type_str.dict());
+  ValueCell dunder_add_entry(
+      &scope, runtime_.dictAtByStr(thread_, type_str_dict, dunder_add));
+  EXPECT_TRUE(dunder_add_entry.dependencyLink().isNoneType());
 }
 
 static RawObject dependencyLinkOfTypeAttr(Thread* thread, const Type& type,
@@ -731,7 +751,9 @@ c = C()
   // Create an attribute cache for an instance of C, under name "foo".
   Object instance(&scope, mainModuleAt(&runtime_, "c"));
   Tuple caches(&scope, dependent.caches());
-  icUpdateAttr(*caches, 1, instance.layoutId(), SmallInt::fromWord(1234));
+  Object value(&scope, SmallInt::fromWord(1234));
+  Str name(&scope, Str::empty());
+  icUpdateAttr(thread_, caches, 1, instance.layoutId(), value, name, dependent);
   ASSERT_EQ(icLookupAttr(*caches, 1, instance.layoutId()),
             SmallInt::fromWord(1234));
 
@@ -771,7 +793,9 @@ c = C()
   // Create an instance offset cache for an instance of C, under name "foo".
   Object instance(&scope, mainModuleAt(&runtime_, "c"));
   Tuple caches(&scope, dependent.caches());
-  icUpdateAttr(*caches, 1, instance.layoutId(), SmallInt::fromWord(1234));
+  Object value(&scope, SmallInt::fromWord(1234));
+  Str name(&scope, Str::empty());
+  icUpdateAttr(thread_, caches, 1, instance.layoutId(), value, name, dependent);
   ASSERT_EQ(icLookupAttr(*caches, 1, instance.layoutId()),
             SmallInt::fromWord(1234));
 
@@ -836,15 +860,19 @@ c = C()
   // Create a cache for a.foo in dependent.
   Object a(&scope, mainModuleAt(&runtime_, "a"));
   Tuple caches(&scope, dependent.caches());
-  icUpdateAttr(*caches, 1, a.layoutId(), SmallInt::fromWord(100));
+  Object value_100(&scope, SmallInt::fromWord(100));
+  Str name(&scope, Str::empty());
+  icUpdateAttr(thread_, caches, 1, a.layoutId(), value_100, name, dependent);
   ASSERT_EQ(icLookupAttr(*caches, 1, a.layoutId()), SmallInt::fromWord(100));
   // Create a cache for b.foo in dependent.
   Object b(&scope, mainModuleAt(&runtime_, "b"));
-  icUpdateAttr(*caches, 1, b.layoutId(), SmallInt::fromWord(200));
+  Object value_200(&scope, SmallInt::fromWord(200));
+  icUpdateAttr(thread_, caches, 1, b.layoutId(), value_200, name, dependent);
   ASSERT_EQ(icLookupAttr(*caches, 1, b.layoutId()), SmallInt::fromWord(200));
   // Create a cache for c.foo in dependent.
   Object c(&scope, mainModuleAt(&runtime_, "c"));
-  icUpdateAttr(*caches, 1, c.layoutId(), SmallInt::fromWord(300));
+  Object value_300(&scope, SmallInt::fromWord(300));
+  icUpdateAttr(thread_, caches, 1, c.layoutId(), value_300, name, dependent);
   ASSERT_EQ(icLookupAttr(*caches, 1, c.layoutId()), SmallInt::fromWord(300));
 
   // Trigger invalidation by updating B.foo.
@@ -904,13 +932,15 @@ c = C()
       icInsertDependentToValueCellDependencyLink(thread_, dependent1, bar));
   runtime_.dictAtPutByStr(thread_, type_dict, bar_name, bar);
 
-  Object instance(&scope, mainModuleAt(&runtime_, "c"));
   Tuple dependent0_caches(&scope, dependent0.caches());
+  Object instance(&scope, mainModuleAt(&runtime_, "c"));
   {
     // Create an attribute cache for an instance of C, under name "foo" in
     // dependent0.
-    icUpdateAttr(*dependent0_caches, 1, instance.layoutId(),
-                 SmallInt::fromWord(1234));
+    Str name(&scope, Str::empty());
+    Object value(&scope, SmallInt::fromWord(1234));
+    icUpdateAttr(thread_, dependent0_caches, 1, instance.layoutId(), value,
+                 name, dependent0);
     ASSERT_EQ(icLookupAttr(*dependent0_caches, 1, instance.layoutId()),
               SmallInt::fromWord(1234));
   }
@@ -918,9 +948,11 @@ c = C()
   Tuple dependent1_caches(&scope, dependent1.caches());
   {
     // Create an attribute cache for an instance of C, under name "bar" in
-    // dependent0.
-    icUpdateAttr(*dependent1_caches, 1, instance.layoutId(),
-                 SmallInt::fromWord(5678));
+    // dependent1.
+    Str name(&scope, Str::empty());
+    Object value(&scope, SmallInt::fromWord(5678));
+    icUpdateAttr(thread_, dependent1_caches, 1, instance.layoutId(), value,
+                 name, dependent1);
     ASSERT_EQ(icLookupAttr(*dependent1_caches, 1, instance.layoutId()),
               SmallInt::fromWord(5678));
   }

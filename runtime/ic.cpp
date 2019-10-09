@@ -8,8 +8,41 @@
 
 namespace python {
 
-void icUpdateAttr(RawTuple caches, word index, LayoutId layout_id,
-                  RawObject value) {
+// Perform the same lookup operation as typeLookupNameInMro as we're inserting
+// dependent into the ValueCell in each visited type dictionary.
+static void insertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
+                                               const Str& name,
+                                               const Object& dependent) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Tuple mro(&scope, type.mro());
+  NoneType none(&scope, NoneType::object());
+  for (word i = 0; i < mro.length(); i++) {
+    Type mro_type(&scope, mro.at(i));
+    if (mro_type.isSealed()) break;
+    Dict dict(&scope, mro_type.dict());
+    // TODO(T46428372): Consider using a specialized dict lookup to avoid 2
+    // probings.
+    Object result(&scope, runtime->dictAtByStr(thread, dict, name));
+    DCHECK(result.isErrorNotFound() || result.isValueCell(),
+           "value must be ValueCell if found");
+    if (result.isErrorNotFound()) {
+      result = runtime->dictAtPutInValueCellByStr(thread, dict, name, none);
+      ValueCell::cast(*result).makePlaceholder();
+    }
+    ValueCell value_cell(&scope, *result);
+    icInsertDependentToValueCellDependencyLink(thread, dependent, value_cell);
+    if (!value_cell.isPlaceholder()) {
+      // Attribute lookup terminates here. Therefore, no dependency tracking is
+      // needed afterwards.
+      return;
+    }
+  }
+}
+
+void icUpdateAttr(Thread* thread, const Tuple& caches, word index,
+                  LayoutId layout_id, const Object& value, const Str& name,
+                  const Function& dependent) {
   RawSmallInt key = SmallInt::fromWord(static_cast<word>(layout_id));
   RawObject entry_key = NoneType::object();
   for (word i = index * kIcPointersPerCache, end = i + kIcPointersPerCache;
@@ -17,7 +50,14 @@ void icUpdateAttr(RawTuple caches, word index, LayoutId layout_id,
     entry_key = caches.at(i + kIcEntryKeyOffset);
     if (entry_key.isNoneType() || entry_key == key) {
       caches.atPut(i + kIcEntryKeyOffset, key);
-      caches.atPut(i + kIcEntryValueOffset, value);
+      caches.atPut(i + kIcEntryValueOffset, *value);
+      // We do not need to tell an unmodifable type about this cache entry
+      // since it will never be invalidated.
+      HandleScope scope(thread);
+      Type type(&scope, thread->runtime()->typeAt(layout_id));
+      if (!type.isSealed()) {
+        insertDependencyForTypeLookupInMro(thread, type, name, dependent);
+      }
       return;
     }
   }
@@ -61,12 +101,12 @@ static void insertBinaryOpDependencies(Thread* thread,
   Runtime* runtime = thread->runtime();
   Type left_type(&scope, runtime->typeAt(left_layout_id));
   Str left_op_name(&scope, runtime->symbols()->at(left_operator_id));
-  icInsertDependencyForTypeLookupInMro(thread, left_type, left_op_name,
-                                       dependent);
+  insertDependencyForTypeLookupInMro(thread, left_type, left_op_name,
+                                     dependent);
   Type right_type(&scope, runtime->typeAt(right_layout_id));
   Str right_op_name(&scope, runtime->symbols()->at(right_operator_id));
-  icInsertDependencyForTypeLookupInMro(thread, right_type, right_op_name,
-                                       dependent);
+  insertDependencyForTypeLookupInMro(thread, right_type, right_op_name,
+                                     dependent);
 }
 
 void icInsertBinaryOpDependencies(Thread* thread, const Function& dependent,
@@ -101,43 +141,13 @@ void icInsertInplaceOpDependencies(Thread* thread, const Function& dependent,
   Type left_type(&scope, runtime->typeAt(left_layout_id));
   Str inplace_op_name(
       &scope, runtime->symbols()->at(runtime->inplaceOperationSelector(op)));
-  icInsertDependencyForTypeLookupInMro(thread, left_type, inplace_op_name,
-                                       dependent);
+  insertDependencyForTypeLookupInMro(thread, left_type, inplace_op_name,
+                                     dependent);
   SymbolId left_operator_id = runtime->binaryOperationSelector(op);
   SymbolId right_operator_id = runtime->swappedBinaryOperationSelector(op);
   insertBinaryOpDependencies(thread, dependent, left_layout_id,
                              left_operator_id, right_layout_id,
                              right_operator_id);
-}
-
-void icInsertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
-                                          const Str& name,
-                                          const Object& dependent) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Tuple mro(&scope, type.mro());
-  NoneType none(&scope, NoneType::object());
-  for (word i = 0; i < mro.length(); i++) {
-    Type mro_type(&scope, mro.at(i));
-    if (mro_type.isSealed()) break;
-    Dict dict(&scope, mro_type.dict());
-    // TODO(T46428372): Consider using a specialized dict lookup to avoid 2
-    // probings.
-    Object result(&scope, runtime->dictAtByStr(thread, dict, name));
-    DCHECK(result.isErrorNotFound() || result.isValueCell(),
-           "value must be ValueCell if found");
-    if (result.isErrorNotFound()) {
-      result = runtime->dictAtPutInValueCellByStr(thread, dict, name, none);
-      ValueCell::cast(*result).makePlaceholder();
-    }
-    ValueCell value_cell(&scope, *result);
-    icInsertDependentToValueCellDependencyLink(thread, dependent, value_cell);
-    if (!value_cell.isPlaceholder()) {
-      // Attribute lookup terminates here. Therefore, no dependency tracking is
-      // needed afterwards.
-      return;
-    }
-  }
 }
 
 void icDeleteDependentInValueCell(Thread* thread, const ValueCell& value_cell,

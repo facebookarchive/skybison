@@ -25,8 +25,9 @@ RawObject icLookupGlobalVar(RawTuple caches, word index);
 
 // Sets a cache entry for an attribute to the given `layout_id` as key and
 // `value` as value.
-void icUpdateAttr(RawTuple caches, word index, LayoutId layout_id,
-                  RawObject value);
+void icUpdateAttr(Thread* thread, const Tuple& caches, word index,
+                  LayoutId layout_id, const Object& value, const Str& name,
+                  const Function& dependent);
 
 // Insert dependent into dependentLink of the given value_cell. Returns true if
 // depdent didn't exist in dependencyLink, and false otherwise.
@@ -53,12 +54,6 @@ void icInsertInplaceOpDependencies(Thread* thread, const Function& dependent,
                                    LayoutId left_layout_id,
                                    LayoutId right_layout_id,
                                    Interpreter::BinaryOp op);
-
-// Perform the same lookup operation as typeLookupNameInMro as we're inserting
-// dependent into the ValueCell in each visited type dictionary.
-void icInsertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
-                                          const Str& name,
-                                          const Object& dependent);
 
 class IcIterator;
 
