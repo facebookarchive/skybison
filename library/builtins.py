@@ -145,6 +145,7 @@ _staticmethod_isabstract = _staticmethod_isabstract  # noqa: F821
 _str_check = _str_check  # noqa: F821
 _str_checkexact = _str_checkexact  # noqa: F821
 _str_count = _str_count  # noqa: F821
+_str_endswith = _str_endswith  # noqa: F821
 _str_guard = _str_guard  # noqa: F821
 _str_join = _str_join  # noqa: F821
 _str_escape_non_ascii = _str_escape_non_ascii  # noqa: F821
@@ -4134,53 +4135,26 @@ class str(bootstrap=True):
 
         return _codecs.encode(self, encoding, errors)
 
-    def endswith(self, suffix, start=0, end=None):  # noqa: C901
+    def endswith(self, suffix, start=None, end=None):
         _str_guard(self)
-
-        def real_bounds_from_slice_bounds(start, end, length):
-            if start < 0:
-                start = length + start
-            if start < 0:
-                start = 0
-            if start > length:
-                start = length
-
-            if end is None or end > length:
-                end = length
-            if end < 0:
-                end = length + end
-            if end < 0:
-                end = 0
-            return start, end
-
-        def suffix_match(cmp, sfx, start, end):
-            if not _str_check(sfx):
-                raise TypeError("endswith suffix must be a str")
-            sfx_len = _str_len(sfx)
-            # If the suffix is longer than the string its comparing against, it
-            # can't be a match.
-            if end - start < sfx_len:
-                return False
-            start = end - sfx_len
-
-            # Iterate through cmp from [end - sfx_len, end), checking against
-            # the characters in the suffix.
-            i = 0
-            while i < sfx_len:
-                if cmp[start + i] != sfx[i]:
-                    return False
-                i += 1
-            return True
-
-        str_len = _str_len(self)
-        start, end = real_bounds_from_slice_bounds(start, end, str_len)
-        if not _tuple_check(suffix):
-            return suffix_match(self, suffix, start, end)
-
-        for suf in suffix:
-            if suffix_match(self, suf, start, end):
-                return True
-        return False
+        start = _slice_index(start)
+        end = _slice_index(end)
+        if _tuple_check(suffix):
+            for item in suffix:
+                if not _str_check(item):
+                    raise TypeError(
+                        "tuple for endswith must only contain str, "
+                        f"not {_type(item).__name__}"
+                    )
+                if _str_endswith(self, item, start, end):
+                    return True
+            return False
+        if not _str_check(suffix):
+            raise TypeError(
+                "endswith first arg must be str or a tuple of str, "
+                f"not {_type(suffix).__name__}"
+            )
+        return _str_endswith(self, suffix, start, end)
 
     def expandtabs(self, tabsize=8):
         _unimplemented()

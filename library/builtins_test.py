@@ -6559,6 +6559,70 @@ class StrTests(unittest.TestCase):
     def test_encode_idna_returns_ascii_encoded_str(self):
         self.assertEqual("foo".encode("idna"), b"foo")
 
+    def test_endswith_with_non_str_or_tuple_prefix_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            "".endswith([])
+        self.assertEqual(
+            str(context.exception),
+            "endswith first arg must be str or a tuple of str, not list",
+        )
+
+    def test_endswith_with_non_str_or_tuple_prefix_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            "hello".endswith(("e", b"", "h"))
+        self.assertEqual(
+            str(context.exception),
+            "tuple for endswith must only contain str, not bytes",
+        )
+
+    def test_endswith_with_empty_string_returns_true_for_valid_bounds(self):
+        self.assertTrue("".endswith(""))
+        self.assertTrue("".endswith("", -1))
+        self.assertTrue("".endswith("", 0, 10))
+        self.assertTrue("hello".endswith(""))
+        self.assertTrue("hello".endswith("", 5))
+        self.assertTrue("hello".endswith("", 2, -1))
+
+    def test_endswith_with_empty_string_returns_false_for_invalid_bounds(self):
+        self.assertFalse("".endswith("", 1))
+        self.assertFalse("hello".endswith("", 6))
+        self.assertFalse("hello".endswith("", -1, 1))
+
+    def test_endswith_with_suffix_returns_true(self):
+        self.assertTrue("hello".endswith("o"))
+        self.assertTrue("hello".endswith("lo"))
+        self.assertTrue("hello".endswith("llo"))
+        self.assertTrue("hello".endswith("ello"))
+        self.assertTrue("hello".endswith("hello"))
+
+    def test_endswith_with_nonsuffix_returns_false(self):
+        self.assertFalse("hello".endswith("l"))
+        self.assertFalse("hello".endswith("allo"))
+        self.assertFalse("hello".endswith("he"))
+        self.assertFalse("hello".endswith("elo"))
+        self.assertFalse("hello".endswith("foo"))
+
+    def test_endswith_with_substr_at_end_returns_true(self):
+        self.assertTrue("hello".endswith("e", 0, 2))
+        self.assertTrue("hello".endswith("ll", 1, 4))
+        self.assertTrue("hello".endswith("lo", 2, 7))
+        self.assertTrue("hello".endswith("o", 0, 100))
+
+    def test_endswith_outside_bounds_returns_false(self):
+        self.assertFalse("hello".endswith("hello", 0, 4))
+        self.assertFalse("hello".endswith("llo", 1, 4))
+        self.assertFalse("hello".endswith("hell", 0, 2))
+        self.assertFalse("hello".endswith("o", 2, 4))
+
+    def test_endswith_with_negative_bounds_relative_to_end(self):
+        self.assertTrue("hello".endswith("ll", 1, -1))
+        self.assertTrue("hello".endswith("e", 0, -3))
+        self.assertFalse("hello".endswith("ello", -10, -1))
+
+    def test_endswith_with_tuple(self):
+        self.assertTrue("hello".endswith(("l", "o", "l")))
+        self.assertFalse("hello".endswith(("foo", "bar")))
+
     def test_format_single_open_curly_brace_raises_value_error(self):
         with self.assertRaises(ValueError) as context:
             str.format("{")

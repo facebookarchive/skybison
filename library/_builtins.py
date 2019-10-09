@@ -737,6 +737,11 @@ def _str_count(self, sub, start, end):
 
 
 @_patch
+def _str_endswith(self, suffix, start, end):
+    pass
+
+
+@_patch
 def _str_guard(obj):
     pass
 

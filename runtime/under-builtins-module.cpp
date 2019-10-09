@@ -216,6 +216,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrCheck, underStrCheck},
     {SymbolId::kUnderStrCheckExact, underStrCheckExact},
     {SymbolId::kUnderStrCount, underStrCount},
+    {SymbolId::kUnderStrEndswith, underStrEndsWith},
     {SymbolId::kUnderStrGuard, underStrGuard},
     {SymbolId::kUnderStrJoin, underStrJoin},
     {SymbolId::kUnderStrEscapeNonAscii, underStrEscapeNonAscii},
@@ -2922,6 +2923,44 @@ RawObject UnderBuiltinsModule::underStrCount(Thread* thread, Frame* frame,
     end = end_int.asWordSaturated();
   }
   return strCount(haystack, needle, start, end);
+}
+
+RawObject UnderBuiltinsModule::underStrEndsWith(Thread* thread, Frame* frame,
+                                                word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Object suffix_obj(&scope, args.get(1));
+  Object start_obj(&scope, args.get(2));
+  Object end_obj(&scope, args.get(3));
+  Str self(&scope, strUnderlying(thread, self_obj));
+  Str suffix(&scope, strUnderlying(thread, suffix_obj));
+
+  word len = self.codePointLength();
+  word start = 0;
+  word end = len;
+  if (!start_obj.isNoneType()) {
+    Int start_int(&scope, intUnderlying(thread, start_obj));
+    start = start_int.asWordSaturated();  // TODO(T55084422): bounds checking
+  }
+  if (!end_obj.isNoneType()) {
+    Int end_int(&scope, intUnderlying(thread, end_obj));
+    end = end_int.asWordSaturated();  // TODO(T55084422): bounds checking
+  }
+
+  Slice::adjustSearchIndices(&start, &end, len);
+  word suffix_len = suffix.codePointLength();
+  if (start + suffix_len > end) {
+    return Bool::falseObj();
+  }
+  word start_offset = self.offsetByCodePoints(0, end - suffix_len);
+  word suffix_chars = suffix.charLength();
+  for (word i = start_offset, j = 0; j < suffix_chars; i++, j++) {
+    if (self.charAt(i) != suffix.charAt(j)) {
+      return Bool::falseObj();
+    }
+  }
+  return Bool::trueObj();
 }
 
 RawObject UnderBuiltinsModule::underStrEscapeNonAscii(Thread* thread,

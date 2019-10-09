@@ -388,6 +388,7 @@ class Runtime;
   V(UnderStrCheck, "_str_check")                                               \
   V(UnderStrCheckExact, "_str_checkexact")                                     \
   V(UnderStrCount, "_str_count")                                               \
+  V(UnderStrEndswith, "_str_endswith")                                         \
   V(UnderStrGuard, "_str_guard")                                               \
   V(UnderStrJoin, "_str_join")                                                 \
   V(UnderStrEscapeNonAscii, "_str_escape_non_ascii")                           \
