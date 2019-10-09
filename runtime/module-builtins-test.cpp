@@ -292,7 +292,7 @@ TEST_F(ModuleBuiltinsTest,
   EXPECT_TRUE(result.isErrorNotFound());
 }
 
-TEST_F(ModuleBuiltinsTest, ModuleDictKeysFiltersOutPlaceholders) {
+TEST_F(ModuleBuiltinsTest, ModuleKeysFiltersOutPlaceholders) {
   HandleScope scope(thread_);
   Dict module_dict(&scope, runtime_.newDict());
 
@@ -309,7 +309,11 @@ TEST_F(ModuleBuiltinsTest, ModuleDictKeysFiltersOutPlaceholders) {
   ValueCell::cast(runtime_.dictAt(thread_, module_dict, bar, bar_hash))
       .makePlaceholder();
 
-  List keys(&scope, moduleDictKeys(thread_, module_dict));
+  Str name(&scope, Str::empty());
+  Module module(&scope, runtime_.newModule(name));
+  module.setDict(*module_dict);
+
+  List keys(&scope, moduleKeys(thread_, module));
   EXPECT_EQ(keys.numItems(), 2);
   EXPECT_EQ(keys.at(0), *foo);
   EXPECT_EQ(keys.at(1), *baz);

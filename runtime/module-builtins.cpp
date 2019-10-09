@@ -202,9 +202,10 @@ RawObject moduleDictValueCellAtPutByStr(Thread* thread, const Dict& module_dict,
                                                       value);
 }
 
-RawObject moduleDictKeys(Thread* thread, const Dict& module_dict) {
+RawObject moduleKeys(Thread* thread, const Module& module) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
+  Dict module_dict(&scope, module.dict());
   Tuple buckets(&scope, module_dict.data());
   List result(&scope, runtime->newList());
   Object value(&scope, NoneType::object());
