@@ -255,6 +255,7 @@ class Runtime;
   V(UnderHashInfo, "_HashInfo")                                                \
   V(UnderImp, "_imp")                                                          \
   V(UnderIndex, "_index")                                                      \
+  V(UnderIndexCheck, "_index_check")                                           \
   V(UnderInstall, "_install")                                                  \
   V(UnderInstance, "_instance")                                                \
   V(UnderInstanceDelattr, "_instance_delattr")                                 \
