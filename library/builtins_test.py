@@ -6809,6 +6809,67 @@ class StrTests(unittest.TestCase):
 
         self.assertEqual(str.splitlines("\n", C()), [""])
 
+    def test_startswith_with_non_str_or_tuple_prefix_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            "".startswith([])
+        self.assertEqual(
+            str(context.exception),
+            "startswith first arg must be str or a tuple of str, not list",
+        )
+
+    def test_startswith_with_non_str_or_tuple_prefix_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            "hello".startswith(("e", b"", "h"))
+        self.assertEqual(
+            str(context.exception),
+            "tuple for startswith must only contain str, not bytes",
+        )
+
+    def test_startswith_with_empty_string_returns_true_for_valid_start(self):
+        self.assertTrue("".startswith(""))
+        self.assertTrue("".startswith("", -1))
+        self.assertTrue("hello".startswith("", 5))
+
+    def test_startswith_with_empty_string_returns_false_for_invalid_start(self):
+        self.assertFalse("".startswith("", 1))
+        self.assertFalse("hello".startswith("", 6))
+
+    def test_startswith_with_prefix_returns_true(self):
+        self.assertTrue("hello".startswith("h"))
+        self.assertTrue("hello".startswith("he"))
+        self.assertTrue("hello".startswith("hel"))
+        self.assertTrue("hello".startswith("hell"))
+        self.assertTrue("hello".startswith("hello"))
+
+    def test_startswith_with_nonprefix_returns_false(self):
+        self.assertFalse("hello".startswith("e"))
+        self.assertFalse("hello".startswith("l"))
+        self.assertFalse("hello".startswith("el"))
+        self.assertFalse("hello".startswith("llo"))
+        self.assertFalse("hello".startswith("hi"))
+        self.assertFalse("hello".startswith("hello there"))
+
+    def test_startswith_with_substr_at_start_returns_true(self):
+        self.assertTrue("hello".startswith("e", 1))
+        self.assertTrue("hello".startswith("ll", 2))
+        self.assertTrue("hello".startswith("lo", 3))
+        self.assertTrue("hello".startswith("o", 4))
+
+    def test_startswith_outside_bounds_returns_false(self):
+        self.assertFalse("hello".startswith("hello", 0, 4))
+        self.assertFalse("hello".startswith("llo", 2, 3))
+        self.assertFalse("hello".startswith("lo", 3, 4))
+        self.assertFalse("hello".startswith("o", 4, 4))
+
+    def test_startswith_with_negative_bounds_relative_to_end(self):
+        self.assertTrue("hello".startswith("he", 0, -1))
+        self.assertTrue("hello".startswith("llo", -3))
+        self.assertFalse("hello".startswith("ello", -4, -2))
+
+    def test_startswith_with_tuple(self):
+        self.assertTrue("hello".startswith(("r", "h", "s")))
+        self.assertFalse("hello".startswith(("foo", "bar")))
+
     def test_str_new_with_bytes_and_no_encoding_returns_str(self):
         decoded = str(b"abc")
         self.assertEqual(decoded, "b'abc'")

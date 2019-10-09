@@ -777,6 +777,11 @@ def _str_splitlines(self, keepends):
 
 
 @_patch
+def _str_startswith(self, prefix, start, end):
+    pass
+
+
+@_patch
 def _strarray_iadd(self, other):
     pass
 

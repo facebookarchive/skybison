@@ -224,6 +224,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrReplace, underStrReplace},
     {SymbolId::kUnderStrRFind, underStrRFind},
     {SymbolId::kUnderStrSplitlines, underStrSplitlines},
+    {SymbolId::kUnderStrStartswith, underStrStartsWith},
     {SymbolId::kUnderTupleCheck, underTupleCheck},
     {SymbolId::kUnderTupleCheckExact, underTupleCheckExact},
     {SymbolId::kUnderTupleGetitem, underTupleGetItem},
@@ -3064,6 +3065,43 @@ RawObject UnderBuiltinsModule::underStrSplitlines(Thread* thread, Frame* frame,
   Int keepends_int(&scope, intUnderlying(thread, keepends_obj));
   bool keepends = !keepends_int.isZero();
   return strSplitlines(thread, self, keepends);
+}
+
+RawObject UnderBuiltinsModule::underStrStartsWith(Thread* thread, Frame* frame,
+                                                  word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Object prefix_obj(&scope, args.get(1));
+  Object start_obj(&scope, args.get(2));
+  Object end_obj(&scope, args.get(3));
+  Str self(&scope, strUnderlying(thread, self_obj));
+  Str prefix(&scope, strUnderlying(thread, prefix_obj));
+
+  word len = self.codePointLength();
+  word start = 0;
+  word end = len;
+  if (!start_obj.isNoneType()) {
+    Int start_int(&scope, intUnderlying(thread, start_obj));
+    start = start_int.asWordSaturated();  // TODO(T55084422): bounds checking
+  }
+  if (!end_obj.isNoneType()) {
+    Int end_int(&scope, intUnderlying(thread, end_obj));
+    end = end_int.asWordSaturated();  // TODO(T55084422): bounds checking
+  }
+
+  Slice::adjustSearchIndices(&start, &end, len);
+  if (start + prefix.codePointLength() > end) {
+    return Bool::falseObj();
+  }
+  word start_offset = self.offsetByCodePoints(0, start);
+  word prefix_chars = prefix.charLength();
+  for (word i = start_offset, j = 0; j < prefix_chars; i++, j++) {
+    if (self.charAt(i) != prefix.charAt(j)) {
+      return Bool::falseObj();
+    }
+  }
+  return Bool::trueObj();
 }
 
 RawObject UnderBuiltinsModule::underTupleCheck(Thread* thread, Frame* frame,

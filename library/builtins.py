@@ -153,6 +153,7 @@ _str_len = _str_len  # noqa: F821
 _str_replace = _str_replace  # noqa: F821
 _str_rfind = _str_rfind  # noqa: F821
 _str_splitlines = _str_splitlines  # noqa: F821
+_str_startswith = _str_startswith  # noqa: F821
 _traceback = _traceback  # noqa: F821
 _tuple_check = _tuple_check  # noqa: F821
 _tuple_checkexact = _tuple_checkexact  # noqa: F821
@@ -4398,52 +4399,26 @@ class str(bootstrap=True):
             keepends = int(keepends)
         return _str_splitlines(self, keepends)
 
-    def startswith(self, prefix, start=0, end=None):  # noqa: C901
+    def startswith(self, prefix, start=None, end=None):
         _str_guard(self)
-
-        def real_bounds_from_slice_bounds(start, end, length):
-            if start < 0:
-                start = length + start
-            if start < 0:
-                start = 0
-            if start > length:
-                start = length
-
-            if end is None or end > length:
-                end = length
-            if end < 0:
-                end = length + end
-            if end < 0:
-                end = 0
-            return start, end
-
-        def prefix_match(cmp, prefix, start, end):
-            if not _str_check(prefix):
-                raise TypeError("startswith prefix must be a str")
-            prefix_len = _str_len(prefix)
-            # If the prefix is longer than the string its comparing against, it
-            # can't be a match.
-            if end - start < prefix_len:
-                return False
-            end = start + prefix_len
-
-            # Iterate through cmp from [start, end), checking against
-            # the characters in the suffix.
-            i = 0
-            while i < prefix_len:
-                if cmp[start + i] != prefix[i]:
-                    return False
-                i += 1
-            return True
-
-        start, end = real_bounds_from_slice_bounds(start, end, _str_len(self))
-        if not _tuple_check(prefix):
-            return prefix_match(self, prefix, start, end)
-
-        for pref in prefix:
-            if prefix_match(self, pref, start, end):
-                return True
-        return False
+        start = _slice_index(start)
+        end = _slice_index(end)
+        if _tuple_check(prefix):
+            for item in prefix:
+                if not _str_check(item):
+                    raise TypeError(
+                        "tuple for startswith must only contain str, "
+                        f"not {_type(item).__name__}"
+                    )
+                if _str_startswith(self, item, start, end):
+                    return True
+            return False
+        if not _str_check(prefix):
+            raise TypeError(
+                "startswith first arg must be str or a tuple of str, "
+                f"not {_type(prefix).__name__}"
+            )
+        return _str_startswith(self, prefix, start, end)
 
     def strip(self, other=None):
         pass
