@@ -2393,11 +2393,11 @@ HANDLER_INLINE Continue Interpreter::doStoreGlobalCached(Thread* thread,
 HANDLER_INLINE Continue Interpreter::doDeleteGlobal(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
+  Module module(&scope, frame->function().moduleObject());
   Tuple names(&scope, Code::cast(frame->code()).names());
   Str name(&scope, names.at(arg));
   Object name_hash(&scope, strHash(thread, *name));
-  Dict globals(&scope, frame->function().globals());
-  if (moduleDictRemove(thread, globals, name, name_hash).isErrorNotFound()) {
+  if (moduleRemove(thread, module, name, name_hash).isErrorNotFound()) {
     return raiseUndefinedName(thread, name);
   }
   return Continue::NEXT;

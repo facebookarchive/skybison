@@ -216,21 +216,6 @@ RawObject moduleDictValueCellAtPutByStr(Thread* thread, const Dict& module_dict,
                                                       value);
 }
 
-RawObject moduleDictRemove(Thread* thread, const Dict& module_dict,
-                           const Object& key, const Object& key_hash) {
-  HandleScope scope(thread);
-  Object result(&scope, thread->runtime()->dictRemove(thread, module_dict, key,
-                                                      key_hash));
-  DCHECK(result.isErrorNotFound() || result.isValueCell(),
-         "dictRemove must return either ErrorNotFound or ValueCell");
-  if (result.isErrorNotFound()) {
-    return *result;
-  }
-  ValueCell value_cell(&scope, *result);
-  icInvalidateGlobalVar(thread, value_cell);
-  return value_cell.value();
-}
-
 RawObject moduleDictKeys(Thread* thread, const Dict& module_dict) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -253,6 +238,22 @@ RawObject moduleLen(Thread* thread, const Module& module) {
     ++count;
   }
   return SmallInt::fromWord(count);
+}
+
+RawObject moduleRemove(Thread* thread, const Module& module, const Object& key,
+                       const Object& key_hash) {
+  HandleScope scope(thread);
+  Dict module_dict(&scope, module.dict());
+  Object result(&scope, thread->runtime()->dictRemove(thread, module_dict, key,
+                                                      key_hash));
+  DCHECK(result.isErrorNotFound() || result.isValueCell(),
+         "dictRemove must return either ErrorNotFound or ValueCell");
+  if (result.isErrorNotFound()) {
+    return *result;
+  }
+  ValueCell value_cell(&scope, *result);
+  icInvalidateGlobalVar(thread, value_cell);
+  return value_cell.value();
 }
 
 RawObject moduleValues(Thread* thread, const Module& module) {

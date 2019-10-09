@@ -78,10 +78,6 @@ RawObject moduleDictValueCellAtPut(Thread* thread, const Dict& module_dict,
 RawObject moduleDictValueCellAtPutByStr(Thread* thread, const Dict& module_dict,
                                         const Str& name, const Object& value);
 
-// Remove the ValueCell associcated with key in module_dict.
-RawObject moduleDictRemove(Thread* thread, const Dict& module_dict,
-                           const Object& key, const Object& key_hash);
-
 // Returns keys associated with non-placeholder ValueCells in module_dict.
 RawObject moduleDictKeys(Thread* thread, const Dict& module_dict);
 
@@ -89,6 +85,10 @@ RawObject moduleInit(Thread* thread, const Module& module, const Object& name);
 
 // Returns the number of keys associated with non-placeholder ValueCells.
 RawObject moduleLen(Thread* thread, const Module& module);
+
+// Remove the ValueCell associcated with key in module_dict.
+RawObject moduleRemove(Thread* thread, const Module& module, const Object& key,
+                       const Object& key_hash);
 
 // Returns the list of values contained in non-placeholder ValueCells.
 RawObject moduleValues(Thread* thread, const Module& module);

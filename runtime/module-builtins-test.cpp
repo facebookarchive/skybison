@@ -310,35 +310,6 @@ TEST_F(ModuleBuiltinsTest, ModuleDictBuiltinsReturnsMinimalDict) {
   EXPECT_EQ(moduleDictAtByStr(thread_, result, none_name), NoneType::object());
 }
 
-TEST_F(ModuleBuiltinsTest,
-       ModuleDictRemoveInvalidateCachedModuleDictValueCell) {
-  HandleScope scope(thread_);
-  EXPECT_FALSE(runFromCStr(&runtime_, R"(
-a = 4
-
-def foo():
-  return a
-
-foo()
-)")
-                   .isError());
-  Module module(&scope, findMainModule(&runtime_));
-  Dict module_dict(&scope, module.dict());
-  Str a(&scope, runtime_.newStrFromCStr("a"));
-  ValueCell value_cell_a(&scope,
-                         moduleDictValueCellAtByStr(thread_, module_dict, a));
-
-  // The looked up module entry got cached in function foo().
-  Function function_foo(&scope, mainModuleAt(&runtime_, "foo"));
-  Tuple caches(&scope, function_foo.caches());
-  ASSERT_EQ(icLookupGlobalVar(*caches, 0), *value_cell_a);
-
-  // Updating global variable a does not invalidate the cache.
-  Object a_hash(&scope, strHash(thread_, *a));
-  moduleDictRemove(thread_, module_dict, a, a_hash);
-  EXPECT_TRUE(icLookupGlobalVar(*caches, 0).isNoneType());
-}
-
 TEST_F(ModuleBuiltinsTest, ModuleDictKeysFiltersOutPlaceholders) {
   HandleScope scope(thread_);
   Dict module_dict(&scope, runtime_.newDict());
@@ -385,6 +356,33 @@ TEST_F(ModuleBuiltinsTest, ModuleLenReturnsItemCountExcludingPlaceholders) {
 
   SmallInt after_len(&scope, moduleLen(thread_, module));
   EXPECT_EQ(previous_len.value(), after_len.value() + 1);
+}
+
+TEST_F(ModuleBuiltinsTest, ModuleRemoveInvalidatesCachedModuleDictValueCell) {
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
+a = 4
+
+def foo():
+  return a
+
+foo()
+)")
+                   .isError());
+
+  // The looked up module entry got cached in function foo().
+  Function function_foo(&scope, mainModuleAt(&runtime_, "foo"));
+  Tuple caches(&scope, function_foo.caches());
+
+  Module module(&scope, findMainModule(&runtime_));
+  Dict module_dict(&scope, module.dict());
+  Str a(&scope, runtime_.newStrFromCStr("a"));
+  ASSERT_EQ(icLookupGlobalVar(*caches, 0),
+            moduleDictValueCellAtByStr(thread_, module_dict, a));
+
+  Object a_hash(&scope, strHash(thread_, *a));
+  EXPECT_FALSE(moduleRemove(thread_, module, a, a_hash).isError());
+  EXPECT_TRUE(icLookupGlobalVar(*caches, 0).isNoneType());
 }
 
 TEST_F(ModuleBuiltinsTest, ModuleValuesFiltersOutPlaceholders) {

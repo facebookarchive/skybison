@@ -2426,11 +2426,9 @@ RawObject UnderBuiltinsModule::underModuleProxyDelitem(Thread* thread,
   Object key(&scope, args.get(1));
   Module module(&scope, self.module());
   DCHECK(module.moduleProxy() == self, "module.proxy != proxy.module");
-  // TODO(T45091174): Pass Module instead.
-  Dict module_dict(&scope, module.dict());
   Object key_hash(&scope, Interpreter::hash(thread, key));
   if (key_hash.isErrorException()) return *key_hash;
-  Object result(&scope, moduleDictRemove(thread, module_dict, key, key_hash));
+  Object result(&scope, moduleRemove(thread, module, key, key_hash));
   if (result.isErrorNotFound()) {
     return thread->raiseWithFmt(LayoutId::kKeyError, "'%S'", &key);
   }
