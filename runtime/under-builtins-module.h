@@ -181,6 +181,8 @@ class UnderBuiltinsModule {
                                            word nargs);
   static RawObject underModuleProxyValues(Thread* thread, Frame* frame,
                                           word nargs);
+  static RawObject underObjectCreateIterator(Thread* thread, Frame* frame,
+                                             word nargs);
   static RawObject underObjectTypeGetAttr(Thread* thread, Frame* frame,
                                           word nargs);
   static RawObject underObjectTypeHasattr(Thread* thread, Frame* frame,

@@ -571,6 +571,11 @@ def _module_proxy_values(self):
 
 
 @_patch
+def _object_create_iterator(self):
+    pass
+
+
+@_patch
 def _object_type_getattr(obj, name):
     """Looks up the named attribute on the object's type, resolving descriptors.
 Behaves like _PyObject_LookupSpecial."""

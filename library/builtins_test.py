@@ -3863,6 +3863,21 @@ class IterTests(unittest.TestCase):
         self.assertEqual(str(context.exception), "'C' object is not iterable")
         self.assertTrue(dunder_get_called)
 
+    def test_iter_with_non_iterator_raises_type_error(self):
+        class NonIter:
+            pass
+
+        class Foo:
+            def __iter__(self):
+                return NonIter()
+
+        foo = Foo()
+        with self.assertRaises(TypeError) as context:
+            iter(foo)
+        self.assertEqual(
+            str(context.exception), "iter() returned non-iterator of type 'NonIter'"
+        )
+
     def test_iter_with_none_dunder_iter_raises_type_error(self):
         class Foo:
             __iter__ = None

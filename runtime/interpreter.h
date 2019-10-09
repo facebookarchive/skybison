@@ -200,6 +200,9 @@ class Interpreter {
   static RawObject compareOperation(Thread* thread, Frame* frame, CompareOp op,
                                     const Object& left, const Object& right);
 
+  static RawObject createIterator(Thread* thread, Frame* frame,
+                                  const Object& iterable);
+
   static RawObject sequenceIterSearch(Thread* thread, Frame* frame,
                                       const Object& value,
                                       const Object& container);

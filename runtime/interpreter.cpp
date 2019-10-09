@@ -901,12 +901,12 @@ RawObject Interpreter::compareOperation(Thread* thread, Frame* frame,
                                    nullptr);
 }
 
-static RawObject createIterator(Thread* thread, Frame* frame,
-                                const Object& iterable) {
+RawObject Interpreter::createIterator(Thread* thread, Frame* frame,
+                                      const Object& iterable) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Object dunder_iter(&scope, Interpreter::lookupMethod(thread, frame, iterable,
-                                                       SymbolId::kDunderIter));
+  Object dunder_iter(
+      &scope, lookupMethod(thread, frame, iterable, SymbolId::kDunderIter));
   if (dunder_iter.isError() || dunder_iter.isNoneType()) {
     if (dunder_iter.isErrorNotFound() &&
         runtime->isSequence(thread, iterable)) {
@@ -916,8 +916,7 @@ static RawObject createIterator(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "'%T' object is not iterable", &iterable);
   }
-  Object iterator(
-      &scope, Interpreter::callMethod1(thread, frame, dunder_iter, iterable));
+  Object iterator(&scope, callMethod1(thread, frame, dunder_iter, iterable));
   if (iterator.isErrorException()) return *iterator;
   if (!runtime->isIterator(thread, iterator)) {
     return thread->raiseWithFmt(LayoutId::kTypeError,

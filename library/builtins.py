@@ -113,6 +113,7 @@ _module_proxy_keys = _module_proxy_keys  # noqa: F821
 _module_proxy_len = _module_proxy_len  # noqa: F821
 _module_proxy_setitem = _module_proxy_setitem  # noqa: F821
 _module_proxy_values = _module_proxy_values  # noqa: F821
+_object_create_iterator = _object_create_iterator  # noqa: F821
 _object_type_getattr = _object_type_getattr  # noqa: F821
 _object_type_hasattr = _object_type_hasattr  # noqa: F821
 _patch = _patch  # noqa: F821
@@ -2995,19 +2996,7 @@ class callable_iterator:
 
 def iter(obj, sentinel=None):
     if sentinel is None:
-        dunder_iter = _Unbound
-        try:
-            dunder_iter = _object_type_getattr(obj, "__iter__")
-        except Exception:
-            pass
-        if dunder_iter is None:
-            raise TypeError(f"'{_type(obj).__name__}' object is not iterable")
-        if dunder_iter is not _Unbound:
-            return dunder_iter()
-        if _object_type_hasattr(obj, "__getitem__"):
-            return iterator(obj)
-        raise TypeError(f"'{_type(obj).__name__}' object is not iterable")
-
+        return _object_create_iterator(obj)
     return callable_iterator(obj, sentinel)
 
 

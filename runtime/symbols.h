@@ -331,6 +331,7 @@ class Runtime;
   V(UnderNewMemberSetReadonly, "_new_member_set_readonly")                     \
   V(UnderNewMemberSetReadonlyStrings, "_new_member_set_readonly_strings")      \
   V(UnderNumberCheck, "_number_check")                                         \
+  V(UnderObjectCreateIterator, "_object_create_iterator")                      \
   V(UnderObjectTypeGetattr, "_object_type_getattr")                            \
   V(UnderObjectTypeHasattr, "_object_type_hasattr")                            \
   V(UnderOs, "_os")                                                            \

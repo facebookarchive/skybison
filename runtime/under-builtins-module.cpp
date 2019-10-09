@@ -183,6 +183,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderModuleProxyLen, underModuleProxyLen},
     {SymbolId::kUnderModuleProxySetitem, underModuleProxySetitem},
     {SymbolId::kUnderModuleProxyValues, underModuleProxyValues},
+    {SymbolId::kUnderObjectCreateIterator, underObjectCreateIterator},
     {SymbolId::kUnderObjectTypeGetattr, underObjectTypeGetAttr},
     {SymbolId::kUnderObjectTypeHasattr, underObjectTypeHasattr},
     {SymbolId::kUnderOsWrite, underOsWrite},
@@ -2505,6 +2506,15 @@ RawObject UnderBuiltinsModule::underModuleProxyValues(Thread* thread,
   Module module(&scope, self.module());
   DCHECK(module.moduleProxy() == self, "module.proxy != proxy.module");
   return moduleValues(thread, module);
+}
+
+RawObject UnderBuiltinsModule::underObjectCreateIterator(Thread* thread,
+                                                         Frame* frame,
+                                                         word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object object(&scope, args.get(0));
+  return Interpreter::createIterator(thread, thread->currentFrame(), object);
 }
 
 RawObject UnderBuiltinsModule::underObjectTypeGetAttr(Thread* thread,
