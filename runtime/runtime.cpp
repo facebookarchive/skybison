@@ -2845,10 +2845,11 @@ RawObject Runtime::bytesJoin(Thread* thread, const Bytes& sep, word sep_length,
 
 RawObject Runtime::bytesRepeat(Thread* thread, const Bytes& source, word length,
                                word count) {
-  DCHECK(length > 0, "length should be positive");
-  DCHECK(count > 0, "count should be positive");
   DCHECK_BOUND(length, source.length());
   DCHECK_BOUND(count, kMaxWord / length);
+  if (count == 0 || length == 0) {
+    return Bytes::empty();
+  }
   bool is_mutable = source.isMutableBytes();
   if (length == 1) {
     byte item = source.byteAt(0);

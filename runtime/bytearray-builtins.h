@@ -32,7 +32,6 @@ class ByteArrayBuiltins
   static RawObject dunderGt(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderIadd(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderImul(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLe(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);

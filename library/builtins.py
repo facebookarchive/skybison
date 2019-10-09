@@ -1391,7 +1391,30 @@ class bytearray(bootstrap=True):
         pass
 
     def __init__(self, source=_Unbound, encoding=_Unbound, errors=_Unbound):
-        pass
+        _bytearray_guard(self)
+        _bytearray_clear(self)
+        if source is _Unbound:
+            if encoding is not _Unbound or errors is not _Unbound:
+                raise TypeError("encoding or errors without sequence argument")
+        elif _str_check(source):
+            if encoding is _Unbound:
+                raise TypeError("string argument without an encoding")
+            encoded = str.encode(source, encoding, errors)
+            _bytearray_setslice(self, 0, 0, 1, encoded)
+        elif encoding is not _Unbound or errors is not _Unbound:
+            raise TypeError("encoding or errors without a string argument")
+        elif _byteslike_check(source):
+            _bytearray_setslice(self, 0, 0, 1, source)
+        elif _index_check(source):
+            count = _index(source)
+            # TODO(T55084422): make sure that source fits into a Py_ssize_t
+            if count < -2 ** 63 or count >= 2 ** 63:
+                raise OverflowError("cannot fit count into an index-sized integer")
+            if count < 0:
+                raise ValueError("negative count")
+            _bytearray_setslice(self, 0, 0, 1, _bytes_repeat(b"\x00", count))
+        else:
+            _bytearray_setslice(self, 0, 0, 1, _bytes_new(source))
 
     def __iter__(self):
         pass

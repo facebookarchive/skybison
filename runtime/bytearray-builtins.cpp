@@ -34,7 +34,6 @@ const BuiltinMethod ByteArrayBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderGt, dunderGt},
     {SymbolId::kDunderIadd, dunderIadd},
     {SymbolId::kDunderImul, dunderImul},
-    {SymbolId::kDunderInit, dunderInit},
     {SymbolId::kDunderIter, dunderIter},
     {SymbolId::kDunderLe, dunderLe},
     {SymbolId::kDunderLen, dunderLen},
@@ -287,83 +286,6 @@ RawObject ByteArrayBuiltins::dunderImul(Thread* thread, Frame* frame,
   DCHECK(self.capacity() == new_length, "unexpected result length");
   self.setNumItems(new_length);
   return *self;
-}
-
-RawObject ByteArrayBuiltins::dunderInit(Thread* thread, Frame* frame,
-                                        word nargs) {
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Object self_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
-  }
-  ByteArray self(&scope, *self_obj);
-  // always clear the existing contents of the array
-  if (self.numItems() > 0) {
-    self.downsize(0);
-  }
-  Object source(&scope, args.get(1));
-  Object encoding(&scope, args.get(2));
-  Object errors(&scope, args.get(3));
-  if (source.isUnbound()) {
-    if (encoding.isUnbound() && errors.isUnbound()) {
-      return NoneType::object();
-    }
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "encoding or errors without sequence argument");
-  }
-  if (runtime->isInstanceOfStr(*source)) {
-    if (encoding.isUnbound()) {
-      return thread->raiseWithFmt(LayoutId::kTypeError,
-                                  "string argument without an encoding");
-    }
-    Object encoded(
-        &scope, errors.isUnbound()
-                    ? thread->invokeMethod2(source, SymbolId::kEncode, encoding)
-                    : thread->invokeMethod3(source, SymbolId::kEncode, encoding,
-                                            errors));
-    if (encoded.isError()) {
-      DCHECK(!encoded.isErrorNotFound(), "str.encode() not found");
-      return *encoded;
-    }
-    Bytes bytes(&scope, *encoded);
-    runtime->byteArrayIadd(thread, self, bytes, bytes.length());
-    return NoneType::object();
-  }
-  if (!encoding.isUnbound() || !errors.isUnbound()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "encoding or errors without a string argument");
-  }
-  if (runtime->isInstanceOfInt(*source)) {
-    Int count_int(&scope, intUnderlying(thread, source));
-    if (count_int.isLargeInt()) {
-      return thread->raiseWithFmt(
-          LayoutId::kOverflowError,
-          "cannot fit count into an index-sized integer", &source);
-    }
-    word count = count_int.asWord();
-    if (count < 0) {
-      return thread->raiseWithFmt(LayoutId::kValueError, "negative count");
-    }
-    runtime->byteArrayEnsureCapacity(thread, self, count);
-    self.setNumItems(count);
-  } else if (runtime->isInstanceOfBytes(*source)) {  // TODO(T38246066)
-    Bytes bytes(&scope, bytesUnderlying(thread, source));
-    runtime->byteArrayIadd(thread, self, bytes, bytes.length());
-  } else if (runtime->isInstanceOfByteArray(*source)) {
-    ByteArray array(&scope, *source);
-    Bytes bytes(&scope, array.bytes());
-    runtime->byteArrayIadd(thread, self, bytes, array.numItems());
-  } else {
-    Object maybe_bytes(
-        &scope, thread->invokeFunction1(SymbolId::kBuiltins,
-                                        SymbolId::kUnderBytesNew, source));
-    if (maybe_bytes.isError()) return *maybe_bytes;
-    Bytes bytes(&scope, *maybe_bytes);
-    runtime->byteArrayIadd(thread, self, bytes, bytes.length());
-  }
-  return NoneType::object();
 }
 
 RawObject ByteArrayBuiltins::dunderIter(Thread* thread, Frame* frame,

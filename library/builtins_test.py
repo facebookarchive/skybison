@@ -184,6 +184,115 @@ class ByteArrayTests(unittest.TestCase):
     def test_dunder_hash_is_none(self):
         self.assertIs(bytearray.__hash__, None)
 
+    def test_dunder_init_with_non_bytearray_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__init__' requires a 'bytearray' object but received a 'bytes'",
+            bytearray.__init__,
+            b"",
+        )
+
+    def test_dunder_init_no_args_clears_array(self):
+        ba = bytearray(b"123")
+        self.assertIsNone(ba.__init__())
+        self.assertEqual(ba, b"")
+
+    def test_dunder_init_with_encoding_without_source_raises_type_error(self):
+        ba = bytearray.__new__(bytearray)
+        with self.assertRaises(TypeError) as context:
+            ba.__init__(encoding="utf-8")
+        self.assertEqual(
+            str(context.exception), "encoding or errors without sequence argument"
+        )
+
+    def test_dunder_init_with_errors_without_source_raises_type_error(self):
+        ba = bytearray.__new__(bytearray)
+        with self.assertRaises(TypeError) as context:
+            ba.__init__(errors="strict")
+        self.assertEqual(
+            str(context.exception), "encoding or errors without sequence argument"
+        )
+
+    def test_dunder_init_with_str_without_encoding_raises_type_error(self):
+        ba = bytearray.__new__(bytearray)
+        with self.assertRaises(TypeError) as context:
+            ba.__init__("")
+        self.assertEqual(str(context.exception), "string argument without an encoding")
+
+    def test_dunder_init_with_ascii_str_copies_bytes(self):
+        ba = bytearray.__new__(bytearray)
+        self.assertIsNone(ba.__init__("hello", "ascii"))
+        self.assertEqual(ba, b"hello")
+
+    def test_dunder_init_with_invalid_unicode_propagates_surrogate_error(self):
+        ba = bytearray.__new__(bytearray)
+        with self.assertRaises(UnicodeEncodeError) as context:
+            ba.__init__("hello\uac80world", "ascii")
+        self.assertIn("ascii", str(context.exception))
+
+    def test_dunder_init_with_ignore_errors_copies_bytes(self):
+        ba = bytearray.__new__(bytearray)
+        self.assertIsNone(ba.__init__("hello\uac80world", "ascii", "ignore"))
+        self.assertEqual(ba, b"helloworld")
+
+    def test_dunder_init_with_non_str_and_encoding_raises_type_error(self):
+        ba = bytearray.__new__(bytearray)
+        with self.assertRaises(TypeError) as context:
+            ba.__init__(0, encoding="utf-8")
+        self.assertEqual(
+            str(context.exception), "encoding or errors without a string argument"
+        )
+
+    def test_dunder_init_with_non_str_and_errors_raises_type_error(self):
+        ba = bytearray.__new__(bytearray)
+        with self.assertRaises(TypeError) as context:
+            ba.__init__(0, errors="ignore")
+        self.assertEqual(
+            str(context.exception), "encoding or errors without a string argument"
+        )
+
+    def test_dunder_init_with_int_fills_with_null_bytes(self):
+        ba = bytearray.__new__(bytearray)
+        self.assertIsNone(ba.__init__(5))
+        self.assertEqual(ba, b"\x00\x00\x00\x00\x00")
+
+    def test_dunder_init_with_int_subclass_fills_with_null_bytes(self):
+        class N(int):
+            pass
+
+        ba = bytearray.__new__(bytearray)
+        self.assertIsNone(ba.__init__(N(3)))
+        self.assertEqual(ba, b"\x00\x00\x00")
+
+    def test_dunder_init_with_index_fills_with_null_bytes(self):
+        class N:
+            def __index__(self):
+                return 3
+
+        ba = bytearray.__new__(bytearray)
+        self.assertIsNone(ba.__init__(N()))
+        self.assertEqual(ba, b"\x00\x00\x00")
+
+    def test_dunder_init_with_bytes_copies_bytes(self):
+        ba = bytearray.__new__(bytearray)
+        self.assertIsNone(ba.__init__(b"abc"))
+        self.assertEqual(ba, b"abc")
+
+    def test_dunder_init_with_other_bytearray_copies_bytes(self):
+        ba = bytearray.__new__(bytearray)
+        self.assertIsNone(ba.__init__(bytearray(b"abc")))
+        self.assertEqual(ba, b"abc")
+
+    def test_dunder_init_with_self_empties(self):
+        ba = bytearray.__new__(bytearray)
+        self.assertIsNone(ba.__init__(ba))
+        self.assertEqual(ba, b"")
+
+    def test_dunder_init_with_iterable_copies_bytes(self):
+        ba = bytearray.__new__(bytearray)
+        self.assertIsNone(ba.__init__([100, 101, 102]))
+        self.assertEqual(ba, b"def")
+
     def test_dunder_setitem_with_non_bytearray_raises_type_error(self):
         with self.assertRaises(TypeError):
             bytearray.__setitem__(None, 1, 5)
