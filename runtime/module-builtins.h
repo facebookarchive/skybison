@@ -20,28 +20,9 @@ RawObject moduleAtById(Thread* thread, const Module& module, SymbolId id);
 // Same as moduleAtById but returns the underlying ValueCell.
 RawObject moduleValueCellAtById(Thread* thread, const Module& module,
                                 SymbolId id);
-// Same as moduleAt but with dict type parameter.
-RawObject moduleDictAt(Thread* thread, const Dict& module_dict,
-                       const Object& key, const Object& key_hash);
-// Same as moduleAt but with dict type parameter.
-RawObject moduleDictAtByStr(Thread* thread, const Dict& module_dict,
-                            const Str& name);
-// Same as moduleAt but with dict type parameter.
-RawObject moduleDictAtById(Thread* thread, const Dict& module_dict,
-                           SymbolId id);
-
-// Only callable by Interpreter for manipulating caches. Same as moduleAt but
-// returns the ValueCell if found.
-RawObject moduleDictValueCellAt(Thread* thread, const Dict& dict,
-                                const Object& key, const Object& key_hash);
-// Only callable by Interpreter for manipulating caches. Same as moduleAt but
-// returns the ValueCell if found.
-RawObject moduleDictValueCellAtByStr(Thread* thread, const Dict& dict,
-                                     const Str& name);
-// Only callable by Interpreter for manipulating caches. Same as moduleAt but
-// returns the ValueCell if found.
-RawObject moduleDictValueCellAtById(Thread* thread, const Dict& dict,
-                                    SymbolId id);
+// Same as moduleAtByStr but returns the underlying ValueCell.
+RawObject moduleValueCellAtByStr(Thread* thread, const Module& module,
+                                 const Str& name);
 
 // Associate key with value in module.
 RawObject moduleAtPut(Thread* thread, const Module& module, const Object& key,
@@ -52,27 +33,6 @@ RawObject moduleAtPutByStr(Thread* thread, const Module& module,
 // Associate id with value in module.
 RawObject moduleAtPutById(Thread* thread, const Module& module, SymbolId id,
                           const Object& value);
-// Same as moduleAtPut with dict type parameter.
-RawObject moduleDictAtPut(Thread* thread, const Dict& module_dict,
-                          const Object& key, const Object& key_hash,
-                          const Object& value);
-// Same as moduleAtPutByStr with dict type parameter.
-RawObject moduleDictAtPutByStr(Thread* thread, const Dict& module_dict,
-                               const Str& name, const Object& value);
-// Same as moduleAtPutById with dict type parameter.
-RawObject moduleDictAtPutById(Thread* thread, const Dict& module_dict,
-                              SymbolId id, const Object& value);
-
-// Only callable by Interpreter for manipulating caches. Same as moduleAtPut but
-// returns the inserted ValueCell.
-RawObject moduleDictValueCellAtPut(Thread* thread, const Dict& module_dict,
-                                   const Object& key, const Object& key_hash,
-                                   const Object& value);
-
-// Only callable by Interpreter for manipulating caches. Same as
-// moduleAtPutByStr but returns the inserted ValueCell.
-RawObject moduleDictValueCellAtPutByStr(Thread* thread, const Dict& module_dict,
-                                        const Str& name, const Object& value);
 
 RawObject moduleInit(Thread* thread, const Module& module, const Object& name);
 

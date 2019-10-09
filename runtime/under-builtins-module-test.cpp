@@ -1510,8 +1510,7 @@ TEST_F(UnderBuiltinsModuleTest, UnderModuleDirListWithFilteredOutPlaceholders) {
   moduleAtPutByStr(thread_, module, bar, value);
   moduleAtPutByStr(thread_, module, baz, value);
 
-  Dict module_dict(&scope, module.dict());
-  ValueCell::cast(moduleDictValueCellAtByStr(thread_, module_dict, bar))
+  ValueCell::cast(moduleValueCellAtByStr(thread_, module, bar))
       .makePlaceholder();
 
   List keys(&scope, runBuiltin(UnderBuiltinsModule::underModuleDir, module));

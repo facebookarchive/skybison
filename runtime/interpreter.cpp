@@ -2136,9 +2136,7 @@ RawObject Interpreter::globalsAt(Thread* thread, const Module& module,
                                  const Str& name, const Function& function,
                                  word cache_index) {
   HandleScope scope(thread);
-  Dict module_dict(&scope, module.dict());
-  Object module_result(&scope,
-                       moduleDictValueCellAtByStr(thread, module_dict, name));
+  Object module_result(&scope, moduleValueCellAtByStr(thread, module, name));
   if (module_result.isValueCell()) {
     ValueCell value_cell(&scope, *module_result);
     if (isCacheEnabledForFunction(function)) {
@@ -2147,15 +2145,15 @@ RawObject Interpreter::globalsAt(Thread* thread, const Module& module,
     return value_cell.value();
   }
   Module builtins(&scope, builtinsModule(thread, module));
-  Dict builtins_dict(&scope, builtins.dict());
-  Object builtins_result(
-      &scope, moduleDictValueCellAtByStr(thread, builtins_dict, name));
+  Object builtins_result(&scope,
+                         moduleValueCellAtByStr(thread, builtins, name));
   if (builtins_result.isValueCell()) {
     ValueCell value_cell(&scope, *builtins_result);
     if (isCacheEnabledForFunction(function)) {
       icUpdateGlobalVar(thread, function, cache_index, value_cell);
       // Set up a placeholder in module to signify that a builtin entry under
       // the same name is cached.
+      Dict module_dict(&scope, module.dict());
       NoneType none(&scope, NoneType::object());
       ValueCell module_value_cell(&scope,
                                   thread->runtime()->dictAtPutInValueCellByStr(

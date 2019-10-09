@@ -7,162 +7,86 @@
 #include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "thread.h"
 
 namespace python {
+
+static RawObject unwrapValueCell(RawObject result) {
+  if (result.isErrorNotFound()) {
+    return result;
+  }
+  RawValueCell value_cell = ValueCell::cast(result);
+  if (value_cell.isPlaceholder()) {
+    return Error::notFound();
+  }
+  return value_cell.value();
+}
 
 RawObject moduleAt(Thread* thread, const Module& module, const Object& key,
                    const Object& key_hash) {
   HandleScope scope(thread);
   Dict dict(&scope, module.dict());
-  return moduleDictAt(thread, dict, key, key_hash);
+  return unwrapValueCell(
+      thread->runtime()->dictAt(thread, dict, key, key_hash));
 }
 
 RawObject moduleAtByStr(Thread* thread, const Module& module, const Str& name) {
   HandleScope scope(thread);
   Dict dict(&scope, module.dict());
-  return moduleDictAtByStr(thread, dict, name);
+  return unwrapValueCell(thread->runtime()->dictAtByStr(thread, dict, name));
 }
 
 RawObject moduleAtById(Thread* thread, const Module& module, SymbolId id) {
   HandleScope scope(thread);
   Dict dict(&scope, module.dict());
-  return moduleDictAtById(thread, dict, id);
+  return unwrapValueCell(thread->runtime()->dictAtById(thread, dict, id));
+}
+
+static RawObject filterPlaceholderValueCell(RawObject result) {
+  if (result.isErrorNotFound()) {
+    return result;
+  }
+  RawValueCell value_cell = ValueCell::cast(result);
+  if (value_cell.isPlaceholder()) {
+    return Error::notFound();
+  }
+  return value_cell;
 }
 
 RawObject moduleValueCellAtById(Thread* thread, const Module& module,
                                 SymbolId id) {
   HandleScope scope(thread);
   Dict dict(&scope, module.dict());
-  return moduleDictValueCellAtById(thread, dict, id);
+  return filterPlaceholderValueCell(
+      thread->runtime()->dictAtById(thread, dict, id));
 }
 
-RawObject moduleDictAt(Thread* thread, const Dict& module_dict,
-                       const Object& key, const Object& key_hash) {
-  RawObject result = moduleDictValueCellAt(thread, module_dict, key, key_hash);
-  if (!result.isErrorNotFound()) {
-    return ValueCell::cast(result).value();
-  }
-  return Error::notFound();
-}
-
-RawObject moduleDictAtByStr(Thread* thread, const Dict& module_dict,
-                            const Str& name) {
-  RawObject result = moduleDictValueCellAtByStr(thread, module_dict, name);
-  if (!result.isErrorNotFound()) {
-    return ValueCell::cast(result).value();
-  }
-  return Error::notFound();
-}
-
-RawObject moduleDictAtById(Thread* thread, const Dict& module_dict,
-                           SymbolId id) {
-  RawObject result = moduleDictValueCellAtById(thread, module_dict, id);
-  if (!result.isErrorNotFound()) {
-    return ValueCell::cast(result).value();
-  }
-  return Error::notFound();
-}
-
-RawObject moduleDictValueCellAt(Thread* thread, const Dict& dict,
-                                const Object& key, const Object& key_hash) {
-  HandleScope scope(thread);
-  Object result(&scope, thread->runtime()->dictAt(thread, dict, key, key_hash));
-  DCHECK(result.isErrorNotFound() || result.isValueCell(),
-         "global dict lookup result must return either ErrorNotFound or "
-         "ValueCell");
-  if (result.isErrorNotFound() || ValueCell::cast(*result).isPlaceholder()) {
-    return Error::notFound();
-  }
-  return *result;
-}
-
-RawObject moduleDictValueCellAtByStr(Thread* thread, const Dict& dict,
-                                     const Str& name) {
-  HandleScope scope(thread);
-  Object result(&scope, thread->runtime()->dictAtByStr(thread, dict, name));
-  DCHECK(result.isErrorNotFound() || result.isValueCell(),
-         "global dict lookup result must return either ErrorNotFound or "
-         "ValueCell");
-  if (result.isErrorNotFound() || ValueCell::cast(*result).isPlaceholder()) {
-    return Error::notFound();
-  }
-  return *result;
-}
-
-RawObject moduleDictValueCellAtById(Thread* thread, const Dict& dict,
-                                    SymbolId id) {
-  HandleScope scope(thread);
-  Object result(&scope, thread->runtime()->dictAtById(thread, dict, id));
-  DCHECK(result.isErrorNotFound() || result.isValueCell(),
-         "global dict lookup result must return either ErrorNotFound or "
-         "ValueCell");
-  if (result.isErrorNotFound() || ValueCell::cast(*result).isPlaceholder()) {
-    return Error::notFound();
-  }
-  return *result;
-}
-
-RawObject moduleAtPut(Thread* thread, const Module& module, const Object& key,
-                      const Object& key_hash, const Object& value) {
+RawObject moduleValueCellAtByStr(Thread* thread, const Module& module,
+                                 const Str& name) {
   HandleScope scope(thread);
   Dict dict(&scope, module.dict());
-  return moduleDictAtPut(thread, dict, key, key_hash, value);
+  return filterPlaceholderValueCell(
+      thread->runtime()->dictAtByStr(thread, dict, name));
 }
 
-RawObject moduleAtPutByStr(Thread* thread, const Module& module,
-                           const Str& name, const Object& value) {
-  HandleScope scope(thread);
-  Dict dict(&scope, module.dict());
-  return moduleDictAtPutByStr(thread, dict, name, value);
-}
-
-RawObject moduleAtPutById(Thread* thread, const Module& module, SymbolId id,
-                          const Object& value) {
-  HandleScope scope(thread);
-  Dict dict(&scope, module.dict());
-  return moduleDictAtPutById(thread, dict, id, value);
-}
-
-RawObject moduleDictAtPut(Thread* thread, const Dict& module_dict,
-                          const Object& key, const Object& key_hash,
-                          const Object& value) {
-  HandleScope scope(thread);
-  Object result(&scope, moduleDictValueCellAtPut(thread, module_dict, key,
-                                                 key_hash, value));
-  if (result.isError()) {
-    return *result;
-  }
-  return *result;
-}
-
-RawObject moduleDictAtPutByStr(Thread* thread, const Dict& module_dict,
-                               const Str& name, const Object& value) {
-  return moduleDictValueCellAtPutByStr(thread, module_dict, name, value);
-}
-
-RawObject moduleDictAtPutById(Thread* thread, const Dict& module_dict,
-                              SymbolId id, const Object& value) {
-  HandleScope scope(thread);
-  Str name(&scope, thread->runtime()->symbols()->at(id));
-  return moduleDictAtPutByStr(thread, module_dict, name, value);
-}
-
-RawObject moduleDictValueCellAtPut(Thread* thread, const Dict& module_dict,
-                                   const Object& key, const Object& key_hash,
-                                   const Object& value) {
+static RawObject moduleValueCellAtPut(Thread* thread, const Module& module,
+                                      const Object& key, const Object& key_hash,
+                                      const Object& value) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
+  Dict module_dict(&scope, module.dict());
   Object module_result(&scope,
                        runtime->dictAt(thread, module_dict, key, key_hash));
   if (module_result.isValueCell() &&
       ValueCell::cast(*module_result).isPlaceholder()) {
     // A builtin entry is cached under the same key, so invalidate its caches.
-    Module builtins_module(&scope, moduleDictAtById(thread, module_dict,
-                                                    SymbolId::kDunderBuiltins));
-    Dict builtins(&scope, builtins_module.dict());
-    Object builtins_result(
-        &scope, moduleDictValueCellAt(thread, builtins, key, key_hash));
+    Module builtins_module(
+        &scope, moduleAtById(thread, module, SymbolId::kDunderBuiltins));
+    Dict builtins_dict(&scope, builtins_module.dict());
+    Object builtins_result(&scope,
+                           filterPlaceholderValueCell(thread->runtime()->dictAt(
+                               thread, builtins_dict, key, key_hash)));
     DCHECK(builtins_result.isValueCell(), "a builtin entry must exist");
     ValueCell builtins_value_cell(&scope, *builtins_result);
     DCHECK(!builtins_value_cell.dependencyLink().isNoneType(),
@@ -173,27 +97,24 @@ RawObject moduleDictValueCellAtPut(Thread* thread, const Dict& module_dict,
                                                  key_hash, value);
 }
 
-RawObject moduleDictValueCellAtPutByStr(Thread* thread, const Dict& module_dict,
-                                        const Str& name, const Object& value) {
+RawObject moduleAtPut(Thread* thread, const Module& module, const Object& key,
+                      const Object& key_hash, const Object& value) {
+  return moduleValueCellAtPut(thread, module, key, key_hash, value);
+}
+
+RawObject moduleAtPutByStr(Thread* thread, const Module& module,
+                           const Str& name, const Object& value) {
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Object module_result(&scope, runtime->dictAtByStr(thread, module_dict, name));
-  if (module_result.isValueCell() &&
-      ValueCell::cast(*module_result).isPlaceholder()) {
-    // A builtin entry is cached under the same name, so invalidate its caches.
-    Module builtins_module(&scope, moduleDictAtById(thread, module_dict,
-                                                    SymbolId::kDunderBuiltins));
-    Dict builtins(&scope, builtins_module.dict());
-    Object builtins_result(&scope,
-                           moduleDictValueCellAtByStr(thread, builtins, name));
-    DCHECK(builtins_result.isValueCell(), "a builtin entry must exist");
-    ValueCell builtins_value_cell(&scope, *builtins_result);
-    DCHECK(!builtins_value_cell.dependencyLink().isNoneType(),
-           "the builtin valuecell must have a dependent");
-    icInvalidateGlobalVar(thread, builtins_value_cell);
-  }
-  return thread->runtime()->dictAtPutInValueCellByStr(thread, module_dict, name,
-                                                      value);
+  Object name_hash(&scope, strHash(thread, *name));
+  return moduleValueCellAtPut(thread, module, name, name_hash, value);
+}
+
+RawObject moduleAtPutById(Thread* thread, const Module& module, SymbolId id,
+                          const Object& value) {
+  HandleScope scope(thread);
+  Str name(&scope, thread->runtime()->symbols()->at(id));
+  Object name_hash(&scope, strHash(thread, *name));
+  return moduleValueCellAtPut(thread, module, name, name_hash, value);
 }
 
 RawObject moduleKeys(Thread* thread, const Module& module) {
