@@ -133,18 +133,12 @@ RawObject moduleDictAtPut(Thread* thread, const Dict& module_dict,
   if (result.isError()) {
     return *result;
   }
-  return ValueCell::cast(*result).value();
+  return *result;
 }
 
 RawObject moduleDictAtPutByStr(Thread* thread, const Dict& module_dict,
                                const Str& name, const Object& value) {
-  HandleScope scope(thread);
-  Object result(
-      &scope, moduleDictValueCellAtPutByStr(thread, module_dict, name, value));
-  if (result.isError()) {
-    return *result;
-  }
-  return ValueCell::cast(*result).value();
+  return moduleDictValueCellAtPutByStr(thread, module_dict, name, value);
 }
 
 RawObject moduleDictAtPutById(Thread* thread, const Dict& module_dict,

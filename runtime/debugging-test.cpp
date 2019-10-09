@@ -172,7 +172,6 @@ i.baz = ()
 TEST_F(DebuggingTests, DumpExtendedHeapObjectWithOverflowDict) {
   HandleScope scope(thread_);
   Function func(&scope, makeTestFunction(thread_));
-  func.setGlobals(runtime_.newDict());
   std::stringstream ss;
   dumpExtendedHeapObject(ss, RawHeapObject::cast(*func));
   std::stringstream expected;
@@ -180,7 +179,6 @@ TEST_F(DebuggingTests, DumpExtendedHeapObjectWithOverflowDict) {
            << R"( (<type "function">):
   (in-object) "__code__" = <code "name0">
   (in-object) "__doc__" = "const0"
-  (in-object) None = {}
   (in-object) "__module__" = "barmodule"
   (in-object) "__name__" = "baz"
   (in-object) "__qualname__" = "footype.baz"

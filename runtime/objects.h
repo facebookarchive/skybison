@@ -1991,11 +1991,6 @@ class RawFunction : public RawHeapObject {
   word flags() const;
   void setFlags(word flags) const;
 
-  // The dict that holds this function's global namespace. User-code
-  // cannot change this
-  RawObject globals() const;
-  void setGlobals(RawObject globals) const;
-
   // Returns true if the function is an async generator.
   bool isAsyncGenerator() const;
 
@@ -2110,8 +2105,7 @@ class RawFunction : public RawHeapObject {
   static const int kAnnotationsOffset = kDefaultsOffset + kPointerSize;
   static const int kKwDefaultsOffset = kAnnotationsOffset + kPointerSize;
   static const int kClosureOffset = kKwDefaultsOffset + kPointerSize;
-  static const int kGlobalsOffset = kClosureOffset + kPointerSize;
-  static const int kEntryOffset = kGlobalsOffset + kPointerSize;
+  static const int kEntryOffset = kClosureOffset + kPointerSize;
   static const int kEntryKwOffset = kEntryOffset + kPointerSize;
   static const int kEntryExOffset = kEntryKwOffset + kPointerSize;
   static const int kRewrittenBytecodeOffset = kEntryExOffset + kPointerSize;
@@ -5448,14 +5442,6 @@ inline void RawFunction::setFlags(word flags) const {
       flags, old_flags.isNoneType()
                  ? -1
                  : RawSmallInt::cast(old_flags).value() >> kIntrinsicIdOffset);
-}
-
-inline RawObject RawFunction::globals() const {
-  return instanceVariableAt(kGlobalsOffset);
-}
-
-inline void RawFunction::setGlobals(RawObject globals) const {
-  instanceVariableAtPut(kGlobalsOffset, globals);
 }
 
 inline bool RawFunction::isAsyncGenerator() const {

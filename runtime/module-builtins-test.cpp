@@ -248,8 +248,8 @@ TEST_F(ModuleBuiltinsTest, ModuleDictAtPutReturnsStoredValue) {
   Dict globals(&scope, runtime_.newDict());
   Str name(&scope, runtime_.newStrFromCStr("a"));
   Object value(&scope, runtime_.newStrFromCStr("a's value"));
-  Object result(&scope, moduleDictAtPutByStr(thread_, globals, name, value));
-  EXPECT_EQ(*result, value);
+  ValueCell result(&scope, moduleDictAtPutByStr(thread_, globals, name, value));
+  EXPECT_EQ(result.value(), value);
 }
 
 TEST_F(ModuleBuiltinsTest, ModuleDictAtReturnsErrorNotFoundForPlaceholder) {

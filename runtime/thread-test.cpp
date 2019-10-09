@@ -523,10 +523,10 @@ TEST_F(ThreadTest, LoadGlobal) {
   code.setFlags(Code::Flags::NOFREE);
 
   Module module(&scope, runtime_.findOrCreateMainModule());
-  Dict globals(&scope, module.dict());
   Object value(&scope, runtime_.newInt(1234));
-  moduleDictAtPutByStr(thread_, globals, name, value);
+  moduleAtPutByStr(thread_, module, name, value);
 
+  Dict globals(&scope, module.dict());
   EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, module, globals), 1234));
 }
 
@@ -552,7 +552,7 @@ TEST_F(ThreadTest, StoreGlobalCreateValueCell) {
   Module module(&scope, runtime_.findOrCreateMainModule());
   Dict globals(&scope, module.dict());
   EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, module, globals), 42));
-  EXPECT_TRUE(isIntEqualsWord(moduleDictAtByStr(thread_, globals, name), 42));
+  EXPECT_TRUE(isIntEqualsWord(moduleAtByStr(thread_, module, name), 42));
 }
 
 TEST_F(ThreadTest, StoreGlobalReuseValueCell) {
@@ -575,11 +575,11 @@ TEST_F(ThreadTest, StoreGlobalReuseValueCell) {
   code.setFlags(Code::Flags::NOFREE);
 
   Module module(&scope, runtime_.findOrCreateMainModule());
-  Dict globals(&scope, module.dict());
   Object value(&scope, runtime_.newInt(99));
-  moduleDictAtPutByStr(thread_, globals, name, value);
+  moduleAtPutByStr(thread_, module, name, value);
+  Dict globals(&scope, module.dict());
   EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, module, globals), 42));
-  EXPECT_TRUE(isIntEqualsWord(moduleDictAtByStr(thread_, globals, name), 42));
+  EXPECT_TRUE(isIntEqualsWord(moduleAtByStr(thread_, module, name), 42));
 }
 
 TEST_F(ThreadTest, LoadNameInModuleBodyFromBuiltins) {

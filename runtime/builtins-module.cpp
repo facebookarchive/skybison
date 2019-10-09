@@ -298,8 +298,8 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
 
     // A bootstrap class initialization uses the existing class dictionary.
     CHECK(frame->previousFrame() != nullptr, "must have a caller frame");
-    Dict globals(&scope, frame->previousFrame()->function().globals());
-    Object type_obj(&scope, moduleDictAtByStr(thread, globals, name_str));
+    Module module(&scope, frame->previousFrame()->function().moduleObject());
+    Object type_obj(&scope, moduleAtByStr(thread, module, name_str));
     CHECK(type_obj.isType(),
           "Name '%s' is not bound to a type object. "
           "You may need to add it to the builtins module.",
@@ -528,9 +528,12 @@ RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
   Object globals_obj(&scope, args.get(1));
   Object locals(&scope, args.get(2));
   Runtime* runtime = thread->runtime();
+  Object module_obj(&scope, NoneType::object());
   if (globals_obj.isNoneType()) {
     Frame* caller_frame = frame->previousFrame();
-    globals_obj = caller_frame->function().globals();
+    Module module(&scope, caller_frame->function().moduleObject());
+    globals_obj = module.dict();
+    module_obj = caller_frame->function().moduleObject();
     if (locals.isNoneType()) {
       if (!caller_frame->function().hasOptimizedOrNewLocals()) {
         locals = caller_frame->implicitGlobals();
@@ -544,7 +547,6 @@ RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
   if (locals.isNoneType()) {
     locals = *globals_obj;
   }
-  Object module_obj(&scope, NoneType::object());
   if (locals.isModuleProxy() && globals_obj == locals) {
     // Unwrap module proxy. We use locals == globals as a signal to enable some
     // shortcuts for execution in module scope. They ensure correct behavior

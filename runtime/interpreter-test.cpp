@@ -4225,12 +4225,12 @@ result = foo()
   EXPECT_TRUE(
       isIntEqualsWord(valueCellValue(icLookupGlobalVar(*caches, 0)), 400));
 
-  Dict globals(&scope, function.globals());
+  Module module(&scope, function.moduleObject());
   Str name(&scope, runtime_.newStrFromCStr("a"));
-  Object module_dict_entry(&scope,
-                           runtime_.dictAtByStr(thread_, globals, name));
-  ASSERT_TRUE(module_dict_entry.isValueCell());
-  EXPECT_TRUE(ValueCell::cast(*module_dict_entry).isPlaceholder());
+  Dict module_dict(&scope, module.dict());
+  Object module_entry(&scope, runtime_.dictAtByStr(thread_, module_dict, name));
+  ASSERT_TRUE(module_entry.isValueCell());
+  EXPECT_TRUE(ValueCell::cast(*module_entry).isPlaceholder());
 }
 
 TEST_F(InterpreterTest, StoreGlobalCachedInvalidatesCachedBuiltinToBeShadowed) {

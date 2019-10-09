@@ -431,15 +431,15 @@ class Interpreter {
   // This lookup is done considering placeholders created for caching. If a
   // lookup succeeds, the found value is cached in function's cache at
   // cache_index. Returns Error::notFound() if both lookups are failed.
-  static RawObject globalsAt(Thread* thread, const Dict& module_dict,
+  static RawObject globalsAt(Thread* thread, const Module& module,
                              const Str& name, const Function& function,
                              word cache_index);
 
   // Asssocicate `name` with value in module_dict, and update function's cache
   // at cache_index.
-  static RawObject globalsAtPut(Thread* thread, const Dict& module_dict,
-                                const Str& name, const Object& value,
-                                const Function& function, word cache_index);
+  static void globalsAtPut(Thread* thread, const Module& module,
+                           const Str& name, const Object& value,
+                           const Function& function, word cache_index);
 
   // Slow path for isTrue check. Does a __bool__ method call, etc.
   static RawObject isTrueSlowPath(Thread* thread, RawObject value_obj);

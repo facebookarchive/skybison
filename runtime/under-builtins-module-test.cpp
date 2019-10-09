@@ -1497,23 +1497,22 @@ TEST_F(UnderBuiltinsModuleTest, UnderMemoryViewNbytesReturnsSizeOfMemoryView) {
 
 TEST_F(UnderBuiltinsModuleTest, UnderModuleDirListWithFilteredOutPlaceholders) {
   HandleScope scope(thread_);
-  Dict module_dict(&scope, runtime_.newDict());
+  Str module_name(&scope, runtime_.newStrFromCStr("module"));
+  Module module(&scope, runtime_.newModule(module_name));
+  module.setDict(runtime_.newDict());
 
   Str foo(&scope, runtime_.newStrFromCStr("foo"));
   Str bar(&scope, runtime_.newStrFromCStr("bar"));
   Str baz(&scope, runtime_.newStrFromCStr("baz"));
   Str value(&scope, runtime_.newStrFromCStr("value"));
 
-  moduleDictAtPutByStr(thread_, module_dict, foo, value);
-  moduleDictAtPutByStr(thread_, module_dict, bar, value);
-  moduleDictAtPutByStr(thread_, module_dict, baz, value);
+  moduleAtPutByStr(thread_, module, foo, value);
+  moduleAtPutByStr(thread_, module, bar, value);
+  moduleAtPutByStr(thread_, module, baz, value);
 
-  ValueCell::cast(runtime_.dictAtByStr(thread_, module_dict, bar))
+  Dict module_dict(&scope, module.dict());
+  ValueCell::cast(moduleDictValueCellAtByStr(thread_, module_dict, bar))
       .makePlaceholder();
-
-  Str module_name(&scope, runtime_.newStrFromCStr("module"));
-  Module module(&scope, runtime_.newModule(module_name));
-  module.setDict(*module_dict);
 
   List keys(&scope, runBuiltin(UnderBuiltinsModule::underModuleDir, module));
   EXPECT_EQ(keys.numItems(), 2);
