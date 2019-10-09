@@ -103,24 +103,6 @@ RawObject moduleDictValueCellAtById(Thread* thread, const Dict& dict,
   return *result;
 }
 
-RawDict moduleDictBuiltins(Thread* thread, const Dict& dict) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Object builtins_module(
-      &scope, moduleDictAtById(thread, dict, SymbolId::kDunderBuiltins));
-  if (!builtins_module.isErrorNotFound()) {
-    CHECK(runtime->isInstanceOfModule(*builtins_module),
-          "expected builtins module");
-    return RawDict::cast(Module::cast(*builtins_module).dict());
-  }
-
-  // Create a minimal builtins dictionary with just `{'None': None}`.
-  Dict builtins(&scope, runtime->newDict());
-  Object none(&scope, NoneType::object());
-  moduleDictAtPutById(thread, builtins, SymbolId::kNone, none);
-  return *builtins;
-}
-
 RawObject moduleAtPut(Thread* thread, const Module& module, const Object& key,
                       const Object& key_hash, const Object& value) {
   HandleScope scope(thread);
@@ -182,7 +164,9 @@ RawObject moduleDictValueCellAtPut(Thread* thread, const Dict& module_dict,
   if (module_result.isValueCell() &&
       ValueCell::cast(*module_result).isPlaceholder()) {
     // A builtin entry is cached under the same key, so invalidate its caches.
-    Dict builtins(&scope, moduleDictBuiltins(thread, module_dict));
+    Module builtins_module(&scope, moduleDictAtById(thread, module_dict,
+                                                    SymbolId::kDunderBuiltins));
+    Dict builtins(&scope, builtins_module.dict());
     Object builtins_result(
         &scope, moduleDictValueCellAt(thread, builtins, key, key_hash));
     DCHECK(builtins_result.isValueCell(), "a builtin entry must exist");
@@ -203,7 +187,9 @@ RawObject moduleDictValueCellAtPutByStr(Thread* thread, const Dict& module_dict,
   if (module_result.isValueCell() &&
       ValueCell::cast(*module_result).isPlaceholder()) {
     // A builtin entry is cached under the same name, so invalidate its caches.
-    Dict builtins(&scope, moduleDictBuiltins(thread, module_dict));
+    Module builtins_module(&scope, moduleDictAtById(thread, module_dict,
+                                                    SymbolId::kDunderBuiltins));
+    Dict builtins(&scope, builtins_module.dict());
     Object builtins_result(&scope,
                            moduleDictValueCellAtByStr(thread, builtins, name));
     DCHECK(builtins_result.isValueCell(), "a builtin entry must exist");

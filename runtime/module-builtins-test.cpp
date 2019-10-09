@@ -212,7 +212,9 @@ foo()
                    .isError());
   Module module(&scope, findMainModule(&runtime_));
   Dict module_dict(&scope, module.dict());
-  Dict builtins_dict(&scope, moduleDictBuiltins(thread_, module_dict));
+  Module builtins(&scope, moduleDictAtById(thread_, module_dict,
+                                           SymbolId::kDunderBuiltins));
+  Dict builtins_dict(&scope, builtins.dict());
   Str a(&scope, runtime_.newStrFromCStr("a"));
   Str new_value(&scope, runtime_.newStrFromCStr("value"));
   ValueCell value_cell_a(&scope,
@@ -288,26 +290,6 @@ TEST_F(ModuleBuiltinsTest,
   value_cell.makePlaceholder();
   Object result(&scope, moduleDictValueCellAtByStr(thread_, globals, name));
   EXPECT_TRUE(result.isErrorNotFound());
-}
-
-TEST_F(ModuleBuiltinsTest, ModuleDictBuiltinsReturnsDunderBuiltins) {
-  HandleScope scope(thread_);
-  Dict globals(&scope, runtime_.newDict());
-  Str name(&scope, runtime_.newStrFromCStr("mybuiltins"));
-  Module module(&scope, runtime_.newModule(name));
-  moduleDictAtPutById(thread_, globals, SymbolId::kDunderBuiltins, module);
-
-  Dict result(&scope, moduleDictBuiltins(thread_, globals));
-  EXPECT_EQ(result, module.dict());
-}
-
-TEST_F(ModuleBuiltinsTest, ModuleDictBuiltinsReturnsMinimalDict) {
-  HandleScope scope(thread_);
-  Dict globals(&scope, runtime_.newDict());
-  Dict result(&scope, moduleDictBuiltins(thread_, globals));
-  EXPECT_EQ(result.numItems(), 1);
-  Str none_name(&scope, runtime_.newStrFromCStr("None"));
-  EXPECT_EQ(moduleDictAtByStr(thread_, result, none_name), NoneType::object());
 }
 
 TEST_F(ModuleBuiltinsTest, ModuleDictKeysFiltersOutPlaceholders) {

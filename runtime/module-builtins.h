@@ -43,10 +43,6 @@ RawObject moduleDictValueCellAtByStr(Thread* thread, const Dict& dict,
 RawObject moduleDictValueCellAtById(Thread* thread, const Dict& dict,
                                     SymbolId id);
 
-// Returns `__builtins__` of a module dict. Returns a new dict with a single
-// `{"None": None}` entry if `__builtins__` does not exist.
-RawDict moduleDictBuiltins(Thread* thread, const Dict& dict);
-
 // Associate key with value in module.
 RawObject moduleAtPut(Thread* thread, const Module& module, const Object& key,
                       const Object& key_hash, const Object& value);

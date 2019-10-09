@@ -2122,6 +2122,19 @@ static bool isCacheEnabledForFunction(const Function& function) {
   return Tuple::cast(function.caches()).length() > 0;
 }
 
+static RawObject builtinsModuleDict(Thread* thread, const Dict& module_dict) {
+  HandleScope scope(thread);
+  Object builtins_obj(
+      &scope, moduleDictAtById(thread, module_dict, SymbolId::kDunderBuiltins));
+  if (builtins_obj.isErrorNotFound()) {
+    return Error::notFound();
+  }
+  CHECK(thread->runtime()->isInstanceOfModule(*builtins_obj),
+        "expected builtins to be a module");
+  Module builtins_module(&scope, *builtins_obj);
+  return builtins_module.dict();
+}
+
 RawObject Interpreter::globalsAt(Thread* thread, const Dict& module_dict,
                                  const Str& name, const Function& function,
                                  word cache_index) {
@@ -2135,7 +2148,7 @@ RawObject Interpreter::globalsAt(Thread* thread, const Dict& module_dict,
     }
     return value_cell.value();
   }
-  Dict builtins(&scope, moduleDictBuiltins(thread, module_dict));
+  Dict builtins(&scope, builtinsModuleDict(thread, module_dict));
   Object builtins_result(&scope,
                          moduleDictValueCellAtByStr(thread, builtins, name));
   if (builtins_result.isValueCell()) {
@@ -2455,7 +2468,7 @@ HANDLER_INLINE Continue Interpreter::doLoadName(Thread* thread, word arg) {
     frame->pushValue(*module_dict_result);
     return Continue::NEXT;
   }
-  Dict builtins(&scope, moduleDictBuiltins(thread, module_dict));
+  Dict builtins(&scope, builtinsModuleDict(thread, module_dict));
   Object builtins_result(&scope, moduleDictAtByStr(thread, builtins, name));
   if (!builtins_result.isErrorNotFound()) {
     frame->pushValue(*builtins_result);
