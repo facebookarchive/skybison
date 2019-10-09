@@ -645,6 +645,17 @@ void icInvalidateGlobalVar(Thread* thread, const ValueCell& value_cell) {
   value_cell.setDependencyLink(NoneType::object());
 }
 
+bool IcIterator::isAttrNameEqualTo(const Str& attr_name) const {
+  DCHECK(isAttrCache(), "should be only called for attribute caches");
+  if (bytecode_op_.bc == FOR_ITER_CACHED) {
+    return attr_name == runtime_->symbols()->at(SymbolId::kDunderNext);
+  }
+  if (bytecode_op_.bc == BINARY_SUBSCR_CACHED) {
+    return attr_name == runtime_->symbols()->at(SymbolId::kDunderGetitem);
+  }
+  return attr_name.equals(names_.at(originalArg(*function_, bytecode_op_.arg)));
+}
+
 RawObject IcIterator::leftMethodName() const {
   DCHECK(isBinaryOpCache() || isInplaceOpCache(),
          "should be only called for binop or inplace-ops");

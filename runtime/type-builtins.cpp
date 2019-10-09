@@ -755,8 +755,6 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
 // NOTE: Keep the order of these type attributes same as the one from
 // rewriteOperation.
 static const SymbolId kUnimplementedTypeAttrUpdates[] = {
-    // FOR_ITER
-    SymbolId::kDunderNext,
     // LOAD_ATTR, LOAD_METHOD
     SymbolId::kDunderGetattribute,
     // STORE_ATTR

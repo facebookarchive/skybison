@@ -276,6 +276,8 @@ class IcIterator {
       case LOAD_ATTR_CACHED:
       case LOAD_METHOD_CACHED:
       case STORE_ATTR_CACHED:
+      case FOR_ITER_CACHED:
+      case BINARY_SUBSCR_CACHED:
         return true;
       default:
         return false;
@@ -299,11 +301,7 @@ class IcIterator {
     return static_cast<LayoutId>(SmallInt::cast(key()).value());
   }
 
-  bool isAttrNameEqualTo(const Str& attr_name) const {
-    DCHECK(isAttrCache(), "should be only called for attribute caches");
-    return attr_name.equals(
-        names_.at(originalArg(*function_, bytecode_op_.arg)));
-  }
+  bool isAttrNameEqualTo(const Str& attr_name) const;
 
   bool isInstanceAttr() const {
     DCHECK(isAttrCache(), "should be only called for attribute caches");

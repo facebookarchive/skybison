@@ -1647,21 +1647,31 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   bytecode.byteAtPut(11, 2);
   bytecode.byteAtPut(12, STORE_ATTR_CACHED);
   bytecode.byteAtPut(13, 3);
+  bytecode.byteAtPut(14, FOR_ITER_CACHED);
+  bytecode.byteAtPut(15, 4);
+  bytecode.byteAtPut(16, BINARY_SUBSCR_CACHED);
+  bytecode.byteAtPut(17, 5);
   bytecode.byteAtPut(18, LOAD_GLOBAL);
   bytecode.byteAtPut(19, 100);
 
-  word num_caches = 4;
+  word num_caches = 6;
   Tuple original_args(&scope, runtime_.newTuple(num_caches));
   original_args.atPut(0, SmallInt::fromWord(0));
   original_args.atPut(1, SmallInt::fromWord(1));
   original_args.atPut(2, SmallInt::fromWord(2));
   original_args.atPut(3, SmallInt::fromWord(3));
+  original_args.atPut(4, SmallInt::fromWord(-1));
+  original_args.atPut(5, SmallInt::fromWord(-1));
 
   Tuple names(&scope, runtime_.newTuple(4));
-  names.atPut(0, runtime_.newStrFromCStr("load_attr_cached_attr_name"));
-  names.atPut(1, runtime_.newStrFromCStr("load_method_cached_attr_name"));
-  names.atPut(2, runtime_.newStrFromCStr("load_attr_cached_attr_name2"));
-  names.atPut(3, runtime_.newStrFromCStr("store_attr_cached_attr_name"));
+  names.atPut(
+      0, runtime_.internStrFromCStr(thread_, "load_attr_cached_attr_name"));
+  names.atPut(
+      1, runtime_.internStrFromCStr(thread_, "load_method_cached_attr_name"));
+  names.atPut(
+      2, runtime_.internStrFromCStr(thread_, "load_attr_cached_attr_name2"));
+  names.atPut(
+      3, runtime_.internStrFromCStr(thread_, "store_attr_cached_attr_name"));
 
   Tuple caches(&scope, runtime_.newTuple(num_caches * kIcPointersPerCache));
   // Caches for LOAD_ATTR_CACHED at 2.
@@ -1696,6 +1706,22 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   caches.atPut(store_attr_cached_index + kIcEntryValueOffset,
                SmallInt::fromWord(40));
 
+  // Caches for FOR_ITER_CACHED at 14.
+  word for_iter_cached_index =
+      4 * kIcPointersPerCache + 3 * kIcPointersPerEntry;
+  caches.atPut(for_iter_cached_index + kIcEntryKeyOffset,
+               layoutIdOfObjectAsSmallInt(Str::empty()));
+  caches.atPut(for_iter_cached_index + kIcEntryValueOffset,
+               SmallInt::fromWord(50));
+
+  // Caches for BINARY_SUBSCR_CACHED at 16.
+  word binary_subscr_cached_index =
+      5 * kIcPointersPerCache + 3 * kIcPointersPerEntry;
+  caches.atPut(binary_subscr_cached_index + kIcEntryKeyOffset,
+               layoutIdOfObjectAsSmallInt(runtime_.emptyTuple()));
+  caches.atPut(binary_subscr_cached_index + kIcEntryValueOffset,
+               SmallInt::fromWord(60));
+
   Function function(&scope, newEmptyFunction());
   function.setRewrittenBytecode(*bytecode);
   function.setCaches(*caches);
@@ -1707,7 +1733,8 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   ASSERT_TRUE(it.isAttrCache());
   EXPECT_FALSE(it.isBinaryOpCache());
   Str load_attr_cached_attr_name(
-      &scope, runtime_.newStrFromCStr("load_attr_cached_attr_name"));
+      &scope,
+      runtime_.internStrFromCStr(thread_, "load_attr_cached_attr_name"));
   EXPECT_TRUE(it.isAttrNameEqualTo(load_attr_cached_attr_name));
   EXPECT_EQ(it.layoutId(), Bool::trueObj().layoutId());
   EXPECT_TRUE(it.isInstanceAttr());
@@ -1725,7 +1752,8 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   ASSERT_TRUE(it.isAttrCache());
   EXPECT_FALSE(it.isBinaryOpCache());
   Str load_method_cached_attr_name(
-      &scope, runtime_.newStrFromCStr("load_method_cached_attr_name"));
+      &scope,
+      runtime_.internStrFromCStr(thread_, "load_method_cached_attr_name"));
   EXPECT_TRUE(it.isAttrNameEqualTo(load_method_cached_attr_name));
   EXPECT_EQ(it.layoutId(), SmallInt::fromWord(100).layoutId());
   EXPECT_TRUE(it.isInstanceAttr());
@@ -1735,7 +1763,8 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   ASSERT_TRUE(it.isAttrCache());
   EXPECT_FALSE(it.isBinaryOpCache());
   Str store_attr_cached_attr_name(
-      &scope, runtime_.newStrFromCStr("store_attr_cached_attr_name"));
+      &scope,
+      runtime_.internStrFromCStr(thread_, "store_attr_cached_attr_name"));
   EXPECT_TRUE(it.isAttrNameEqualTo(store_attr_cached_attr_name));
   EXPECT_EQ(it.layoutId(), NoneType::object().layoutId());
   EXPECT_TRUE(it.isInstanceAttr());
@@ -1745,6 +1774,26 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
       caches.at(store_attr_cached_index + kIcEntryKeyOffset).isNoneType());
   EXPECT_TRUE(
       caches.at(store_attr_cached_index + kIcEntryValueOffset).isNoneType());
+
+  it.next();
+  ASSERT_TRUE(it.hasNext());
+  ASSERT_TRUE(it.isAttrCache());
+  EXPECT_FALSE(it.isBinaryOpCache());
+  Str for_iter_cached_attr_name(
+      &scope, runtime_.internStrFromCStr(thread_, "__next__"));
+  EXPECT_TRUE(it.isAttrNameEqualTo(for_iter_cached_attr_name));
+  EXPECT_EQ(it.layoutId(), Str::empty().layoutId());
+  EXPECT_TRUE(it.isInstanceAttr());
+
+  it.next();
+  ASSERT_TRUE(it.hasNext());
+  ASSERT_TRUE(it.isAttrCache());
+  EXPECT_FALSE(it.isBinaryOpCache());
+  Str binary_subscr_cached_attr_name(
+      &scope, runtime_.internStrFromCStr(thread_, "__getitem__"));
+  EXPECT_TRUE(it.isAttrNameEqualTo(binary_subscr_cached_attr_name));
+  EXPECT_EQ(it.layoutId(), runtime_.emptyTuple().layoutId());
+  EXPECT_TRUE(it.isInstanceAttr());
 
   it.next();
   EXPECT_FALSE(it.hasNext());
