@@ -114,6 +114,23 @@ foo = Foo()
   EXPECT_EQ(step, 1);
 }
 
+TEST_F(SliceBuiltinsTest, UnpackWithIntSubclassesUnpacksInts) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class N(int):
+  pass
+s = slice(N(2), N(13), N(-2))
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Slice slice(&scope, mainModuleAt(&runtime_, "s"));
+  word start, stop, step;
+  EXPECT_EQ(sliceUnpack(thread_, slice, &start, &stop, &step),
+            NoneType::object());
+  EXPECT_EQ(start, 2);
+  EXPECT_EQ(stop, 13);
+  EXPECT_EQ(step, -2);
+}
+
 TEST_F(SliceBuiltinsTest, UnpackWithZeroStepRaisesValueError) {
   HandleScope scope(thread_);
   Object none(&scope, NoneType::object());

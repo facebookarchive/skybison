@@ -25,7 +25,7 @@ RawObject sliceUnpack(Thread* thread, const Slice& slice, word* start,
   } else {
     step_obj = sliceIndex(thread, step_obj);
     if (step_obj.isError()) return *step_obj;
-    Int index(&scope, *step_obj);
+    Int index(&scope, intUnderlying(thread, step_obj));
     if (index.isZero()) {
       return thread->raiseWithFmt(LayoutId::kValueError,
                                   "slice step cannot be zero");
@@ -51,7 +51,7 @@ RawObject sliceUnpack(Thread* thread, const Slice& slice, word* start,
   } else {
     start_obj = sliceIndex(thread, start_obj);
     if (start_obj.isError()) return *start_obj;
-    Int index(&scope, *start_obj);
+    Int index(&scope, intUnderlying(thread, start_obj));
     word start_word = index.asWordSaturated();
     if (start_word > SmallInt::kMaxValue) {
       *start = SmallInt::kMaxValue;
@@ -68,7 +68,7 @@ RawObject sliceUnpack(Thread* thread, const Slice& slice, word* start,
   } else {
     stop_obj = sliceIndex(thread, stop_obj);
     if (stop_obj.isError()) return *stop_obj;
-    Int index(&scope, *stop_obj);
+    Int index(&scope, intUnderlying(thread, stop_obj));
     word stop_word = index.asWordSaturated();
     if (stop_word > SmallInt::kMaxValue) {
       *stop = SmallInt::kMaxValue;
