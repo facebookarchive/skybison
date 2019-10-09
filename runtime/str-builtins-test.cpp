@@ -907,93 +907,75 @@ b = "hello".endswith(("asdf", "foo", "bar"))
   EXPECT_FALSE(b.value());
 }
 
-TEST_F(StrBuiltinsTest, DunderReprOnASCIIStr) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = "hello".__repr__()
-)")
-                   .isError());
+TEST_F(StrBuiltinsTest, DunderReprWithPrintableASCIIReturnsStr) {
   HandleScope scope(thread_);
-  Str a(&scope, mainModuleAt(&runtime_, "a"));
-
-  EXPECT_TRUE(isStrEqualsCStr(*a, "'hello'"));
+  Object str(&scope, runtime_.newStrFromCStr("hello"));
+  Object repr(&scope, runBuiltin(StrBuiltins::dunderRepr, str));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, "'hello'"));
 }
 
-TEST_F(StrBuiltinsTest, DunderReprOnASCIIStrOfSubClass) {
+TEST_F(StrBuiltinsTest, DunderReprWithStrSubclassReturnsStr) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class SubStr(str): pass
 substr = SubStr("hello")
-a = substr.__repr__()
-  )")
-                   .isError());
-  EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(&runtime_, "a"), "'hello'"));
-}
-
-TEST_F(StrBuiltinsTest, DunderReprOnASCIINonPrintable) {
-  // 6 is the ACK character.
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = "\x06".__repr__()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Str a(&scope, mainModuleAt(&runtime_, "a"));
-
-  EXPECT_TRUE(isStrEqualsCStr(*a, "'\\x06'"));
+  Object substr(&scope, mainModuleAt(&runtime_, "substr"));
+  Object repr(&scope, runBuiltin(StrBuiltins::dunderRepr, substr));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, "'hello'"));
 }
 
-TEST_F(StrBuiltinsTest, DunderReprOnStrWithDoubleQuotes) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = 'hello "world"'.__repr__()
-)")
-                   .isError());
+TEST_F(StrBuiltinsTest, DunderReprWithNonPrintableASCIIReturnsStr) {
   HandleScope scope(thread_);
-  Str a(&scope, mainModuleAt(&runtime_, "a"));
-
-  EXPECT_TRUE(isStrEqualsCStr(*a, "'hello \"world\"'"));
+  Object str(&scope, runtime_.newStrFromCStr("\x06"));  // ACK character
+  Object repr(&scope, runBuiltin(StrBuiltins::dunderRepr, str));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, R"('\x06')"));
 }
 
-TEST_F(StrBuiltinsTest, DunderReprOnStrWithSingleQuotes) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = "hello 'world'".__repr__()
-)")
-                   .isError());
+TEST_F(StrBuiltinsTest, DunderReprWithDoubleQuotesReturnsStr) {
   HandleScope scope(thread_);
-  Str a(&scope, mainModuleAt(&runtime_, "a"));
-
-  EXPECT_TRUE(isStrEqualsCStr(*a, "\"hello 'world'\""));
+  Object str(&scope, runtime_.newStrFromCStr("hello \"world\""));
+  Object repr(&scope, runBuiltin(StrBuiltins::dunderRepr, str));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, R"('hello "world"')"));
 }
 
-TEST_F(StrBuiltinsTest, DunderReprOnStrWithBothQuotes) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = "hello 'world', I am your \"father\"".__repr__()
-)")
-                   .isError());
+TEST_F(StrBuiltinsTest, DunderReprWithSingleQuotesReturnsStr) {
   HandleScope scope(thread_);
-  Str a(&scope, mainModuleAt(&runtime_, "a"));
-
-  EXPECT_TRUE(isStrEqualsCStr(*a, R"('hello \'world\', I am your "father"')"));
+  Object str(&scope, runtime_.newStrFromCStr("hello 'world'"));
+  Object repr(&scope, runBuiltin(StrBuiltins::dunderRepr, str));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, R"("hello 'world'")"));
 }
 
-TEST_F(StrBuiltinsTest, DunderReprOnStrWithNestedQuotes) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = "hello 'world, \"I am 'your \"father\"'\"'".__repr__()
-)")
-                   .isError());
+TEST_F(StrBuiltinsTest, DunderReprWithBothQuotesReturnsStr) {
   HandleScope scope(thread_);
-  Str a(&scope, mainModuleAt(&runtime_, "a"));
+  Object str(&scope, runtime_.newStrFromCStr("'hello' \"world\""));
+  Object repr(&scope, runBuiltin(StrBuiltins::dunderRepr, str));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, R"('\'hello\' "world"')"));
+}
 
+TEST_F(StrBuiltinsTest, DunderReprWithNestedQuotesReturnsStr) {
+  HandleScope scope(thread_);
+  Object str(&scope, runtime_.newStrFromCStr(
+                         R"(hello 'world, "I am 'your "father"'"')"));
+  Object repr(&scope, runBuiltin(StrBuiltins::dunderRepr, str));
   EXPECT_TRUE(
-      isStrEqualsCStr(*a, R"('hello \'world, "I am \'your "father"\'"\'')"));
+      isStrEqualsCStr(*repr, R"('hello \'world, "I am \'your "father"\'"\'')"));
 }
 
 TEST_F(StrBuiltinsTest, DunderReprOnCommonEscapeSequences) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = "\n \t \r \\".__repr__()
-)")
-                   .isError());
   HandleScope scope(thread_);
-  Str a(&scope, mainModuleAt(&runtime_, "a"));
+  Object str(&scope, runtime_.newStrFromCStr("\n \t \r \\"));
+  Object repr(&scope, runBuiltin(StrBuiltins::dunderRepr, str));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, R"('\n \t \r \\')"));
+}
 
-  EXPECT_TRUE(isStrEqualsCStr(*a, "'\\n \\t \\r \\\\'"));
+TEST_F(StrBuiltinsTest, DunderReprWithUnicodeReturnsStr) {
+  HandleScope scope(thread_);
+  Object str(&scope,
+             runtime_.newStrFromCStr("foo\U0001d4eb\U0001d4ea\U0001d4fb"));
+  Object repr(&scope, runBuiltin(StrBuiltins::dunderRepr, str));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, "'foo\U0001d4eb\U0001d4ea\U0001d4fb'"));
 }
 
 TEST_F(StrBuiltinsTest, DunderStr) {

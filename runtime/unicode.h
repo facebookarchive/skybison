@@ -43,7 +43,15 @@ inline bool isIdContinueASCII(byte b) {
   return isIdStartASCII(b) || isDigitASCII(b);
 }
 
-inline bool isPrintableASCII(byte b) { return ' ' <= b && b < '\x7F'; }
+inline bool isPrintableASCII(byte b) { return ' ' <= b && b < kMaxASCII; }
+
+inline bool isPrintableUnicode(int32_t cp) {
+  // TODO(T55176519): implement using Unicode database
+  if (cp <= kMaxASCII) {
+    return isPrintableASCII(cp);
+  }
+  return true;
+}
 
 // TODO(T43723300): implement isUnicodeSpace
 

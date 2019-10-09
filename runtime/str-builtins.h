@@ -146,8 +146,6 @@ class StrBuiltins
   static const BuiltinMethod kBuiltinMethods[];
 
  private:
-  static void byteToHex(byte** buf, byte convert);
-
   DISALLOW_IMPLICIT_CONSTRUCTORS(StrBuiltins);
 };
 

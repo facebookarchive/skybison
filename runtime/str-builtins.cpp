@@ -874,13 +874,13 @@ RawObject StrBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
 
 // Convert a byte to its hex digits, and write them out to buf.
 // Increments buf to point after the written characters.
-void StrBuiltins::byteToHex(byte** buf, byte convert) {
+static void byteToHex(const MutableBytes& buf, word index, byte convert) {
   static byte hexdigits[] = {'0', '1', '2', '3', '4', '5', '6', '7',
                              '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
   // Since convert is unsigned, the right shift will not propagate the sign
   // bit, and the upper bits will be zero.
-  *(*buf)++ = hexdigits[convert >> 4];
-  *(*buf)++ = hexdigits[convert & 0x0f];
+  buf.byteAtPut(index, hexdigits[convert >> 4]);
+  buf.byteAtPut(index + 1, hexdigits[convert & 0x0f]);
 }
 
 RawObject StrBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
@@ -893,104 +893,107 @@ RawObject StrBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   }
   Str self(&scope, strUnderlying(thread, self_obj));
   const word self_len = self.charLength();
-  word output_size = 0;
+  word result_len = 0;
   word squote = 0;
   word dquote = 0;
-  // Precompute the size so that only one string allocation is necessary.
-  for (word i = 0; i < self_len; ++i) {
-    word incr = 1;
-    byte ch = self.charAt(i);
-    switch (ch) {
-      case '\'':
-        squote++;
-        break;
-      case '"':
-        dquote++;
-        break;
-      case '\\':
-        // FALLTHROUGH
-      case '\t':
-        // FALLTHROUGH
-      case '\r':
-        // FALLTHROUGH
-      case '\n':
-        incr = 2;
-        break;
-      default:
-        if (ch < ' ' || ch == 0x7f) {
-          incr = 4;  // \xHH
-        }
-        break;
+  // Precompute the size so that only one allocation is necessary.
+  for (word i = 0, char_len; i < self_len; i += char_len) {
+    int32_t code_point = self.codePointAt(i, &char_len);
+    if (code_point == '\'') {
+      squote++;
+      result_len += 1;
+    } else if (code_point == '"') {
+      dquote++;
+      result_len += 1;
+    } else if (code_point == '\\' || code_point == '\t' || code_point == '\r' ||
+               code_point == '\n') {
+      result_len += 2;
+    } else if (isPrintableUnicode(code_point)) {
+      result_len += char_len;
+    } else if (code_point < 0x100) {
+      result_len += 4;
+    } else if (code_point < 0x10000) {
+      result_len += 6;
+    } else {
+      result_len += 10;
     }
-    output_size += incr;
   }
 
   byte quote = '\'';
-  bool unchanged = (output_size == self_len);
+  bool unchanged = (result_len == self_len);
   if (squote > 0) {
     unchanged = false;
     // If there are both single quotes and double quotes, the outer quote will
     // be singles, and all internal quotes will need to be escaped.
     if (dquote > 0) {
       // Add the size of the escape backslashes on the single quotes.
-      output_size += squote;
+      result_len += squote;
     } else {
       quote = '"';
     }
   }
-  output_size += 2;  // quotes
+  result_len += 2;  // quotes
 
-  std::unique_ptr<byte[]> buf(new byte[output_size]);
-  // Write in the quotes.
-  buf[0] = quote;
-  buf[output_size - 1] = quote;
+  MutableBytes buf(&scope, runtime->newMutableBytesUninitialized(result_len));
+  buf.byteAtPut(0, quote);
+  buf.byteAtPut(result_len - 1, quote);
   if (unchanged) {
-    // Rest of the characters were all unmodified, copy them directly into the
-    // buffer.
-    self.copyTo(buf.get() + 1, self_len);
-  } else {
-    byte* curr = buf.get() + 1;
-    for (word i = 0; i < self_len; ++i) {
-      byte ch = self.charAt(i);
-      // quote can't be handled in the switch case because it's not a constant.
-      if (ch == quote) {
-        *curr++ = '\\';
-        *curr++ = ch;
-        continue;
+    // Remaining characters were unmodified, so copy them directly.
+    buf.replaceFromWithStr(1, *self, self_len);
+    return buf.becomeStr();
+  }
+  word out = 1;
+  for (word in = 0, char_len; in < self_len; in += char_len) {
+    int32_t code_point = self.codePointAt(in, &char_len);
+    if (code_point == quote) {
+      buf.byteAtPut(out++, '\\');
+      buf.byteAtPut(out++, quote);
+    } else if (code_point == '\\') {
+      buf.byteAtPut(out++, '\\');
+      buf.byteAtPut(out++, '\\');
+    } else if (code_point == '\t') {
+      buf.byteAtPut(out++, '\\');
+      buf.byteAtPut(out++, 't');
+    } else if (code_point == '\r') {
+      buf.byteAtPut(out++, '\\');
+      buf.byteAtPut(out++, 'r');
+    } else if (code_point == '\n') {
+      buf.byteAtPut(out++, '\\');
+      buf.byteAtPut(out++, 'n');
+    } else if (' ' <= code_point && code_point < kMaxASCII) {
+      buf.byteAtPut(out++, code_point);
+    } else if (code_point <= kMaxASCII) {
+      buf.byteAtPut(out++, '\\');
+      buf.byteAtPut(out++, 'x');
+      byteToHex(buf, out, code_point);
+      out += 2;
+    } else if (isPrintableUnicode(code_point)) {
+      for (word i = 0; i < char_len; i++) {
+        buf.byteAtPut(out + i, self.charAt(in + i));
       }
-      switch (ch) {
-        case '\\':
-          *curr++ = '\\';
-          *curr++ = ch;
-          break;
-        case '\t':
-          *curr++ = '\\';
-          *curr++ = 't';
-          break;
-        case '\r':
-          *curr++ = '\\';
-          *curr++ = 'r';
-          break;
-        case '\n':
-          *curr++ = '\\';
-          *curr++ = 'n';
-          break;
-        default:
-          if (ch >= 32 && ch < 127) {
-            *curr++ = ch;
-          } else {
-            // Map non-printable ASCII to '\xhh'.
-            *curr++ = '\\';
-            *curr++ = 'x';
-            byteToHex(&curr, ch);
-          }
-          break;
+      out += char_len;
+    } else if (code_point <= 0xff) {
+      buf.byteAtPut(out++, '\\');
+      buf.byteAtPut(out++, 'x');
+      byteToHex(buf, out, code_point);
+      out += 2;
+    } else if (code_point <= 0xffff) {
+      buf.byteAtPut(out++, '\\');
+      buf.byteAtPut(out++, 'u');
+      byteToHex(buf, out, code_point);
+      byteToHex(buf, out + 2, code_point >> kBitsPerByte);
+      out += 4;
+    } else {
+      buf.byteAtPut(out++, '\\');
+      buf.byteAtPut(out++, 'U');
+      for (word i = 0; i < 4; i++, out += 2) {
+        byteToHex(buf, out, code_point >> (i * kBitsPerByte));
       }
     }
-    DCHECK(curr == buf.get() + output_size - 1,
-           "Didn't write the correct number of characters out");
   }
-  return runtime->newStrWithAll(View<byte>{buf.get(), output_size});
+  DCHECK(out == result_len - 1, "wrote %ld characters, expected %ld", out - 1,
+         result_len - 2);
+  return buf.becomeStr();
 }
 
 RawObject StrBuiltins::isalnum(Thread* thread, Frame* frame, word nargs) {
