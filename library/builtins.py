@@ -960,10 +960,6 @@ def _index(obj) -> int:
     raise TypeError(f"__index__ returned non-int (type {_type(result).__name__})")
 
 
-def _index_check(obj) -> bool:
-    return _int_check(obj) or _object_type_hasattr(obj, "__index__")
-
-
 def _int(obj) -> int:
     # equivalent to _PyLong_FromNbInt
     if _int_checkexact(obj):
@@ -1177,19 +1173,21 @@ def _range_getslice(self: range, start: int, stop: int, step: int) -> range:
     return range(new_start, new_stop, new_step)
 
 
-def _slice_index(obj) -> int:
-    if obj is None:
-        return obj
-    if _index_check(obj):
-        return _index(obj)
+def _slice_index(num) -> int:
+    if num is None or _int_check(num):
+        return num
+    if _object_type_hasattr(num, "__index__"):
+        return _index(num)
     raise TypeError(
         "slice indices must be integers or None or have an __index__ method"
     )
 
 
-def _slice_index_not_none(obj) -> int:
-    if _index_check(obj):
-        return _index(obj)
+def _slice_index_not_none(num) -> int:
+    if _int_check(num):
+        return num
+    if _object_type_hasattr(num, "__index__"):
+        return _index(num)
     raise TypeError("slice indices must be integers or have an __index__ method")
 
 
@@ -1362,13 +1360,15 @@ class bytearray(bootstrap=True):
 
     def __delitem__(self, key):
         _bytearray_guard(self)
+        if _int_check(key):
+            return _bytearray_delitem(self, key)
         if _slice_check(key):
             step = _slice_step(_slice_index(key.step))
             length = _bytearray_len(self)
             start = _slice_start(_slice_index(key.start), step, length)
             stop = _slice_stop(_slice_index(key.stop), step, length)
             return _bytearray_delslice(self, start, stop, step)
-        if _index_check(key):
+        if _object_type_hasattr(key, "__index__"):
             return _bytearray_delitem(self, _index(key))
         raise TypeError("bytearray indices must be integers or slices")
 
@@ -1407,7 +1407,7 @@ class bytearray(bootstrap=True):
             raise TypeError("encoding or errors without a string argument")
         elif _byteslike_check(source):
             _bytearray_setslice(self, 0, 0, 1, source)
-        elif _index_check(source):
+        elif _int_check(source) or _object_type_hasattr(source, "__index__"):
             count = _index(source)
             # TODO(T55084422): make sure that source fits into a Py_ssize_t
             if count < -2 ** 63 or count >= 2 ** 63:
@@ -1454,6 +1454,9 @@ class bytearray(bootstrap=True):
 
     def __setitem__(self, key, value):
         _bytearray_guard(self)
+        if _int_check(key):
+            _int_guard(value)
+            return _bytearray_setitem(self, key, value)
         if _slice_check(key):
             step = _slice_step(_slice_index(key.step))
             length = _bytearray_len(self)
@@ -1469,7 +1472,7 @@ class bytearray(bootstrap=True):
                     )
                 value = _bytes_new(it)
             return _bytearray_setslice(self, start, stop, step, value)
-        if _index_check(key):
+        if _object_type_hasattr(key, "__index__"):
             _int_guard(value)
             return _bytearray_setitem(self, _index(key), value)
         raise TypeError("bytearray indices must be integers or slices")
@@ -1742,13 +1745,15 @@ class bytes(bootstrap=True):
 
     def __getitem__(self, key):
         _bytes_guard(self)
+        if _int_check(key):
+            return _bytes_getitem(self, key)
         if _slice_check(key):
             step = _slice_step(_slice_index(key.step))
             length = _bytes_len(self)
             start = _slice_start(_slice_index(key.start), step, length)
             stop = _slice_stop(_slice_index(key.stop), step, length)
             return _bytes_getslice(self, start, stop, step)
-        if _index_check(key):
+        if _object_type_hasattr(key, "__index__"):
             return _bytes_getitem(self, _index(key))
         raise TypeError(
             f"byte indices must be integers or slice, not {_type(key).__name__}"
@@ -1813,7 +1818,9 @@ class bytes(bootstrap=True):
             return _bytes_from_bytes(cls, result)
         if _str_check(source):
             raise TypeError("string argument without an encoding")
-        if _index_check(source):
+        if _int_check(source):
+            return _bytes_from_bytes(cls, _bytes_repeat(b"\x00", source))
+        if _object_type_hasattr(source, "__index__"):
             return _bytes_from_bytes(cls, _bytes_repeat(b"\x00", _index(source)))
         return _bytes_from_bytes(cls, _bytes_new(source))
 
@@ -3055,13 +3062,15 @@ class list(bootstrap=True):
 
     def __delitem__(self, key) -> None:
         _list_guard(self)
+        if _int_check(key):
+            return _list_delitem(self, key)
         if _slice_check(key):
             step = _slice_step(_slice_index(key.step))
             length = _list_len(self)
             start = _slice_start(_slice_index(key.start), step, length)
             stop = _slice_stop(_slice_index(key.stop), step, length)
             return _list_delslice(self, start, stop, step)
-        if _index_check(key):
+        if _object_type_hasattr(key, "__index__"):
             return _list_delitem(self, _index(key))
         raise TypeError("list indices must be integers or slices")
 
@@ -3086,13 +3095,15 @@ class list(bootstrap=True):
 
     def __getitem__(self, key):
         _list_guard(self)
+        if _int_check(key):
+            return _list_getitem(self, key)
         if _slice_check(key):
             step = _slice_step(_slice_index(key.step))
             length = _list_len(self)
             start = _slice_start(_slice_index(key.start), step, length)
             stop = _slice_stop(_slice_index(key.stop), step, length)
             return _list_getslice(self, start, stop, step)
-        if _index_check(key):
+        if _object_type_hasattr(key, "__index__"):
             return _list_getitem(self, _index(key))
         raise TypeError(
             f"list indices must be integers or slices, not {_type(key).__name__}"
@@ -3720,14 +3731,20 @@ class range(bootstrap=True):
         return NotImplemented
 
     def __getitem__(self, key):
-        _range_guard(self)
+        if not _range_check(self):
+            raise TypeError(
+                "'__getitem__' requires a 'range' object but received a "
+                f"'{_type(self).__name__}'"
+            )
+        if _int_check(key):
+            return _range_getitem(self, key)
         if _slice_check(key):
             step = _slice_step(_slice_index(key.step))
             length = _range_len(self)
             start = _slice_start(_slice_index(key.start), step, length)
             stop = _slice_stop(_slice_index(key.stop), step, length)
             return _range_getslice(self, start, stop, step)
-        if _index_check(key):
+        if _object_type_hasattr(key, "__index__"):
             return _range_getitem(self, _index(key))
         raise TypeError(
             f"range indices must be integers or slices, not {_type(key).__name__}"
@@ -4490,13 +4507,15 @@ class tuple(bootstrap=True):
 
     def __getitem__(self, index):
         _tuple_guard(self)
+        if _int_check(index):
+            return _tuple_getitem(self, index)
         if _slice_check(index):
             step = _slice_step(_slice_index(index.step))
             length = _tuple_len(self)
             start = _slice_start(_slice_index(index.start), step, length)
             stop = _slice_stop(_slice_index(index.stop), step, length)
             return _tuple_getslice(self, start, stop, step)
-        if _index_check(index):
+        if _object_type_hasattr(index, "__index__"):
             return _tuple_getitem(self, _index(index))
         raise TypeError(
             f"tuple indices must be integers or slices, not {_type(index).__name__}"
