@@ -95,6 +95,15 @@ class TracebackPrinter : public FrameVisitor {
   std::vector<std::string> lines_;
 };
 
+word Utils::memoryFindCharReverse(byte* haystack, byte needle, word length) {
+  DCHECK(haystack != nullptr, "haystack cannot be null");
+  DCHECK(length >= 0, "haystack length must be nonnegative");
+  for (word i = length - 1; i >= 0; i--) {
+    if (haystack[i] == needle) return i;
+  }
+  return -1;
+}
+
 void Utils::printTracebackToStderr() { printTraceback(&std::cerr); }
 
 void Utils::printTraceback(std::ostream* os) {

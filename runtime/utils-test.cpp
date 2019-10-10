@@ -15,6 +15,27 @@ using namespace testing;
 
 using UtilsTest = RuntimeFixture;
 
+TEST(UtilsTestNoFixture,
+     MemoryFindCharReverseWithEmptyHaystackReturnsNegativeOne) {
+  byte haystack[] = "hello";
+  int needle = 'h';
+  EXPECT_EQ(Utils::memoryFindCharReverse(haystack, needle, 0), -1);
+}
+
+TEST(UtilsTestNoFixture,
+     MemoryFindCharReverseWithNeedleInHaystackReturnsLocation) {
+  byte haystack[] = "hello";
+  int needle = 'h';
+  EXPECT_EQ(Utils::memoryFindCharReverse(haystack, needle, 5), 0);
+}
+
+TEST(UtilsTestNoFixture,
+     MemoryFindCharReverseWithNeedleInHaystackReturnsRightmostLocation) {
+  byte haystack[] = "helloh";
+  int needle = 'h';
+  EXPECT_EQ(Utils::memoryFindCharReverse(haystack, needle, 6), 5);
+}
+
 TEST(UtilsTestNoFixture, RotateLeft) {
   EXPECT_EQ(Utils::rotateLeft(1ULL, 0), 0x0000000000000001ULL);
   EXPECT_EQ(Utils::rotateLeft(1ULL, 1), 0x0000000000000002ULL);
