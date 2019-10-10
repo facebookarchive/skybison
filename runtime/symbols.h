@@ -398,6 +398,7 @@ class Runtime;
   V(UnderStrMod, "_str_mod")                                                   \
   V(UnderStrReplace, "_str_replace")                                           \
   V(UnderStrRFind, "_str_rfind")                                               \
+  V(UnderStrRPartition, "_str_rpartition")                                     \
   V(UnderStrSplitlines, "_str_splitlines")                                     \
   V(UnderStrStartswith, "_str_startswith")                                     \
   V(UnderStructseqField, "_structseq_field")                                   \

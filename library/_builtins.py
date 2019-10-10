@@ -782,6 +782,11 @@ def _str_rfind(self, sub, start, end):
 
 
 @_patch
+def _str_rpartition(self, sep):
+    pass
+
+
+@_patch
 def _str_splitlines(self, keepends):
     pass
 

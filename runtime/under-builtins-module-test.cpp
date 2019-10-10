@@ -1742,6 +1742,105 @@ TEST_F(UnderBuiltinsModuleTest, UnderStrArrayIaddWithStrReturnsStrArray) {
   EXPECT_EQ(self, result);
 }
 
+TEST_F(UnderBuiltinsModuleTest, RpartitionOnSingleCharStrPartitionsCorrectly) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("hello"));
+  Str sep(&scope, runtime_.newStrFromCStr("l"));
+  Tuple result(&scope,
+               runBuiltin(UnderBuiltinsModule::underStrRPartition, str, sep));
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hel"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "l"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "o"));
+}
+
+TEST_F(UnderBuiltinsModuleTest, RpartitionOnMultiCharStrPartitionsCorrectly) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("hello"));
+  Str sep(&scope, runtime_.newStrFromCStr("ll"));
+  Tuple result(&scope,
+               runBuiltin(UnderBuiltinsModule::underStrRPartition, str, sep));
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "he"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "ll"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "o"));
+}
+
+TEST_F(UnderBuiltinsModuleTest, RpartitionOnSuffixPutsEmptyStrAtEndOfResult) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("hello"));
+  Str sep(&scope, runtime_.newStrFromCStr("lo"));
+  Tuple result(&scope,
+               runBuiltin(UnderBuiltinsModule::underStrRPartition, str, sep));
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hel"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "lo"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       RpartitionOnNonExistentSuffixPutsStrAtEndOfResult) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("hello"));
+  Str sep(&scope, runtime_.newStrFromCStr("lop"));
+  Tuple result(&scope,
+               runBuiltin(UnderBuiltinsModule::underStrRPartition, str, sep));
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "hello"));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       RpartitionOnPrefixPutsEmptyStrAtBeginningOfResult) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("hello"));
+  Str sep(&scope, runtime_.newStrFromCStr("he"));
+  Tuple result(&scope,
+               runBuiltin(UnderBuiltinsModule::underStrRPartition, str, sep));
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "he"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "llo"));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       RpartitionOnNonExistentPrefixPutsStrAtEndOfResult) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("hello"));
+  Str sep(&scope, runtime_.newStrFromCStr("hex"));
+  Tuple result(&scope,
+               runBuiltin(UnderBuiltinsModule::underStrRPartition, str, sep));
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "hello"));
+}
+
+TEST_F(UnderBuiltinsModuleTest, RpartitionLargerStrPutsStrAtEndOfResult) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("hello"));
+  Str sep(&scope, runtime_.newStrFromCStr("foobarbaz"));
+  Tuple result(&scope,
+               runBuiltin(UnderBuiltinsModule::underStrRPartition, str, sep));
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "hello"));
+}
+
+TEST_F(UnderBuiltinsModuleTest, RpartitionEmptyStrReturnsTupleOfEmptyStrings) {
+  HandleScope scope(thread_);
+  Str str(&scope, Str::empty());
+  Str sep(&scope, runtime_.newStrFromCStr("a"));
+  Tuple result(&scope,
+               runBuiltin(UnderBuiltinsModule::underStrRPartition, str, sep));
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderTupleCheckExactWithExactTupleReturnsTrue) {
   HandleScope scope(thread_);
   Object obj(&scope, runtime_.newTuple(0));

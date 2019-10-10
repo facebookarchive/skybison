@@ -225,6 +225,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrLen, underStrLen},
     {SymbolId::kUnderStrReplace, underStrReplace},
     {SymbolId::kUnderStrRFind, underStrRFind},
+    {SymbolId::kUnderStrRPartition, underStrRPartition},
     {SymbolId::kUnderStrSplitlines, underStrSplitlines},
     {SymbolId::kUnderStrStartswith, underStrStartsWith},
     {SymbolId::kUnderTupleCheck, underTupleCheck},
@@ -3093,6 +3094,66 @@ RawObject UnderBuiltinsModule::underStrRFind(Thread* thread, Frame* frame,
   }
   word result = strRFind(haystack, needle, start, end);
   return SmallInt::fromWord(result);
+}
+
+static word findReverse(const Str& haystack, word haystack_len,
+                        const Str& needle, word needle_len) {
+  byte haystack_buf[SmallStr::kMaxLength];
+  byte* haystack_ptr = haystack_buf;
+  if (haystack.isSmallStr()) {
+    haystack.copyTo(haystack_buf, haystack_len);
+  } else {
+    haystack_ptr = reinterpret_cast<byte*>(LargeStr::cast(*haystack).address());
+  }
+  byte needle_buf[SmallStr::kMaxLength];
+  byte* needle_ptr = needle_buf;
+  if (needle.isSmallStr()) {
+    needle.copyTo(needle_buf, needle_len);
+  } else {
+    needle_ptr = reinterpret_cast<byte*>(LargeStr::cast(*needle).address());
+  }
+  return Utils::memoryFindReverse(haystack_ptr, haystack_len, needle_ptr,
+                                  needle_len);
+}
+
+// Look for needle in haystack, starting from the right. Return a tuple
+// containing:
+// * haystack up to but not including needle
+// * needle
+// * haystack after and not including needle
+// If needle is not found in haystack, return ("", "", haystack)
+RawObject UnderBuiltinsModule::underStrRPartition(Thread* thread, Frame* frame,
+                                                  word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object haystack_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  DCHECK(runtime->isInstanceOfStr(*haystack_obj),
+         "_str_rfind requires 'str' instance");
+  Object needle_obj(&scope, args.get(1));
+  DCHECK(runtime->isInstanceOfStr(*needle_obj),
+         "_str_rfind requires 'str' instance");
+  Str haystack(&scope, strUnderlying(thread, haystack_obj));
+  Str needle(&scope, strUnderlying(thread, needle_obj));
+  MutableTuple result(&scope, runtime->newMutableTuple(3));
+  result.atPut(0, Str::empty());
+  result.atPut(1, Str::empty());
+  result.atPut(2, *haystack);
+  word haystack_len = haystack.charLength();
+  word needle_len = needle.charLength();
+  if (haystack_len < needle_len) {
+    // Fast path when needle is bigger than haystack
+    return result.becomeImmutable();
+  }
+  word prefix_len = findReverse(haystack, haystack_len, needle, needle_len);
+  if (prefix_len < 0) return result.becomeImmutable();
+  result.atPut(0, runtime->strSubstr(thread, haystack, 0, prefix_len));
+  result.atPut(1, *needle);
+  word suffix_start = prefix_len + needle_len;
+  word suffix_len = haystack_len - suffix_start;
+  result.atPut(2,
+               runtime->strSubstr(thread, haystack, suffix_start, suffix_len));
+  return result.becomeImmutable();
 }
 
 RawObject UnderBuiltinsModule::underStrSplitlines(Thread* thread, Frame* frame,

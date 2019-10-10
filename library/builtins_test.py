@@ -6974,6 +6974,17 @@ class StrTests(unittest.TestCase):
         result = "".join(elements)
         self.assertEqual(result, "abc")
 
+    def test_rpartition_with_non_str_self_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError, "requires a 'str'", str.rpartition, None, "hello"
+        )
+
+    def test_rpartition_with_non_str_sep_raises_type_error(self):
+        self.assertRaises(TypeError, str.rpartition, "hello", None)
+
+    def test_rpartition_partitions_str(self):
+        self.assertEqual("hello".rpartition("l"), ("hel", "l", "o"))
+
     def test_splitlines_with_non_str_raises_type_error(self):
         with self.assertRaises(TypeError):
             str.splitlines(None)

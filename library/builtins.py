@@ -154,6 +154,7 @@ _str_from_str = _str_from_str  # noqa: F821
 _str_len = _str_len  # noqa: F821
 _str_replace = _str_replace  # noqa: F821
 _str_rfind = _str_rfind  # noqa: F821
+_str_rpartition = _str_rpartition  # noqa: F821
 _str_splitlines = _str_splitlines  # noqa: F821
 _str_startswith = _str_startswith  # noqa: F821
 _traceback = _traceback  # noqa: F821
@@ -4300,9 +4301,9 @@ class str(bootstrap=True):
         _unimplemented()
 
     def rpartition(self, sep):
-        # TODO(T37438017): Write in C++
-        before, itself, after = self[::-1].partition(sep[::-1])[::-1]
-        return before[::-1], itself[::-1], after[::-1]
+        _str_guard(self)
+        _str_guard(sep)
+        return _str_rpartition(self, sep)
 
     def rsplit(self, sep=None, maxsplit=-1):
         # TODO(T37437993): Write in C++
