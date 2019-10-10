@@ -63,8 +63,8 @@ PY_EXPORT PyObject* PyEval_EvalCode(PyObject* code, PyObject* globals,
   }
   DCHECK(globals_obj.isDict(), "globals_obj should be a Dict");
   if (module_obj.isNoneType()) {
-    // TODO(T54956257): Wrap values in ValueCell in globals_obj.
-    UNIMPLEMENTED("passing dict for globals");
+    // TODO(T54956257): Create a temporary module object from globals_obj.
+    UNIMPLEMENTED("User-defined globals is unsupported");
   }
   if (!runtime->isMapping(thread, locals_obj)) {
     thread->raiseBadInternalCall();

@@ -582,12 +582,8 @@ RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
   }
   DCHECK(globals_obj.isDict(), "globals_obj should be a Dict");
   if (module_obj.isNoneType()) {
-    // exec() is executed with a globals not backing up a module. Create a
-    // temporary module.
-    Str empty_str(&scope, Str::empty());
-    module_obj = runtime->newModule(empty_str);
-    // TODO(T54956257): Wrap values in ValueCell in globals_obj.
-    Module::cast(*module_obj).setDict(*globals_obj);
+    // TODO(T54956257): Create a temporary module object from globals_obj.
+    UNIMPLEMENTED("User-defined globals is unsupported");
   }
   Module module(&scope, *module_obj);
   return thread->exec(code, module, locals);

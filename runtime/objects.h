@@ -2043,6 +2043,7 @@ class RawFunction : public RawHeapObject {
   RawObject module() const;
   void setModule(RawObject module) const;
 
+  // The module where this function was defined
   RawObject moduleObject() const;
   void setModuleObject(RawObject module) const;
 

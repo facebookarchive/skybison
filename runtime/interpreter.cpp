@@ -1,7 +1,5 @@
 #include "interpreter.h"
 
-#include "debugging.h"
-
 #include <cstdio>
 #include <cstdlib>
 #include <sstream>

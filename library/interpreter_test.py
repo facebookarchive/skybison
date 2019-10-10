@@ -52,7 +52,12 @@ class IntepreterTest(unittest.TestCase):
             def __getitem__(self, key):
                 return (key, 17)
 
-        globals = {"foo": None}
+        # TODO(T54956257): Use regular dict for globals.
+        from types import ModuleType
+
+        module = ModuleType("test_module")
+        globals = module.__dict__
+        globals["foo"] = None
         locals = C()
         exec('assert(foo == ("foo", 17))', globals, locals)
 
@@ -62,9 +67,11 @@ class IntepreterTest(unittest.TestCase):
                 self.result = key
                 raise KeyError()
 
-        # TODO(matthiasb): Pyro does not accept normal dicts as globals, so we
-        # need this workaround instead of `globals = {"foo": 99}`.
-        globals = {}
+        # TODO(T54956257): Use regular dict for globals.
+        from types import ModuleType
+
+        module = ModuleType("test_module")
+        globals = module.__dict__
         exec("foo = 99", globals)
         self.assertIn("foo", globals)
 
@@ -118,7 +125,11 @@ class IntepreterTest(unittest.TestCase):
                 self.result = key
                 raise UserWarning("bar")
 
-        globals = {"bar": 42}
+        # TODO(T54956257): Use regular dict for globals.
+        from types import ModuleType
+
+        module = ModuleType("test_module")
+        globals = module.__dict__
         locals = C()
         with self.assertRaises(NameError) as context:
             exec("del foo", globals, locals)
@@ -136,7 +147,12 @@ class IntepreterTest(unittest.TestCase):
         class C(dict):
             __delitem__ = d
 
-        globals = {"bar": 42}
+        # TODO(T54956257): Use regular dict for globals.
+        from types import ModuleType
+
+        module = ModuleType("test_module")
+
+        globals = module.__dict__
         locals = C()
         with self.assertRaises(NameError) as context:
             exec("del foo", globals, locals)

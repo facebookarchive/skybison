@@ -227,8 +227,12 @@ class SysTests(unittest.TestCase):
                 result_key = key
                 result_value = value
 
+        # TODO(T54956257): Use regular dict for globals.
+        from types import ModuleType
+
+        module = ModuleType("test_module")
         c = C()
-        exec("result = _getframe_locals()", {}, c)
+        exec("result = _getframe_locals()", module.__dict__, c)
         self.assertEqual(result_key, "result")
         self.assertIs(result_value, c)
 
