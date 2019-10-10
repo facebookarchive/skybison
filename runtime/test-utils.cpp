@@ -355,6 +355,24 @@ RawObject runCode(const Code& code) {
   return Interpreter::callFunction0(thread, thread->currentFrame(), function);
 }
 
+RawObject runCodeNoBytecodeRewriting(const Code& code) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Module main(&scope, runtime->findOrCreateMainModule());
+  Object qualname(&scope, runtime->symbols()->Anonymous());
+  Bytes bytecode(&scope, code.code());
+  code.setCode(runtime->newBytes(0, 0));
+
+  Function function(&scope,
+                    runtime->newFunctionWithCode(thread, qualname, code, main));
+  MutableBytes rewritten_bytecode(
+      &scope, runtime->newMutableBytesUninitialized(bytecode.length()));
+  rewritten_bytecode.replaceFromWith(0, *bytecode, bytecode.length());
+  function.setRewrittenBytecode(*rewritten_bytecode);
+  return Interpreter::callFunction0(thread, thread->currentFrame(), function);
+}
+
 RawObject runFromCStr(Runtime* runtime, const char* c_str) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);

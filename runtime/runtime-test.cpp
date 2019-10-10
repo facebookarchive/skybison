@@ -100,7 +100,7 @@ TEST(RuntimeTestNoFixture, AllocateAndCollectGarbage) {
   const word allocation_size = Utils::roundUp(
       array_length + HeapObject::headerSize(array_length), kPointerSize);
   const word total_allocation_size = heap_size * 10;
-  Runtime runtime(heap_size, /*cache_enabled=*/false);
+  Runtime runtime(heap_size, /*cache_enabled=*/true);
   ASSERT_TRUE(runtime.heap()->verify());
   for (word i = 0; i < total_allocation_size; i += allocation_size) {
     runtime.newBytes(array_length, 0);
@@ -2385,19 +2385,6 @@ class C:
 del C.__setattr__
 )")),
                "unimplemented cache invalidation for type.__setattr__ update");
-}
-
-TEST(
-    RuntimeTestNoFixture,
-    DeleteClassAttributeWithUnimplementedCacheInvalidationDoesNotTerminatesPyroWhenCacheIsDisabled) {
-  Runtime runtime(/*cache_enabled=*/false);
-  EXPECT_FALSE(runFromCStr(&runtime, R"(
-class C:
-  def __add__(self, other): return 4
-
-del C.__add__
-)")
-                   .isError());
 }
 
 TEST_F(RuntimeModuleAttrTest, DeleteUnknownAttribute) {

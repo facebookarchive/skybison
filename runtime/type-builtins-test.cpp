@@ -1008,16 +1008,4 @@ C.__setattr__ = lambda self, key: 5
                "unimplemented cache invalidation for type.__setattr__ update");
 }
 
-TEST_F(
-    TypeBuiltinsDeathTest,
-    DunderSetAttrWithUnimplementedCacheInvalidationDoesNotTerminatePyroWhenCacheIsDisabled) {
-  Runtime runtime(/*cache_enabled=*/false);
-  EXPECT_FALSE(runFromCStr(&runtime_, R"(
-class C: pass
-
-C.__getattribute__ = lambda self, key: 5
-)")
-                   .isError());
-}
-
 }  // namespace python

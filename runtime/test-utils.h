@@ -161,7 +161,12 @@ RawObject runBuiltinImpl(NativeMethodType method,
 
 RawObject runBuiltin(NativeMethodType method);
 
+// Create an ad-hoc function with 0 parameters for `code` and execute it in the
+// current thread.
 NODISCARD RawObject runCode(const Code& code);
+
+// Same as `runCode()` but disables bytecode rewriting.
+NODISCARD RawObject runCodeNoBytecodeRewriting(const Code& code);
 
 // Helper to compile and run a snippet of Python code.
 NODISCARD RawObject runFromCStr(Runtime* runtime, const char* c_str);

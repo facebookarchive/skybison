@@ -1334,30 +1334,26 @@ result = cache_compare_op(a, b)
       *cache_compare_op);
 }
 
-TEST(InterpreterTestNoFixture, DoStoreFastStoresValue) {
-  Runtime runtime(/*cache_enabled=*/false);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(InterpreterTest, DoStoreFastStoresValue) {
+  HandleScope scope(thread_);
 
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime.newTuple(1));
+  Tuple consts(&scope, runtime_.newTuple(1));
   consts.atPut(0, SmallInt::fromWord(1111));
   code.setConsts(*consts);
   code.setNlocals(2);
   const byte bytecode[] = {LOAD_CONST, 0, STORE_FAST,   1,
                            LOAD_FAST,  1, RETURN_VALUE, 0};
-  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime_.newBytesWithAll(bytecode));
 
-  EXPECT_TRUE(isIntEqualsWord(runCode(code), 1111));
+  EXPECT_TRUE(isIntEqualsWord(runCodeNoBytecodeRewriting(code), 1111));
 }
 
-TEST(InterpreterTestFixture, DoLoadFastReverseLoadsValue) {
-  Runtime runtime(/*cache_enabled=*/false);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(InterpreterTest, DoLoadFastReverseLoadsValue) {
+  HandleScope scope(thread_);
 
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime.newTuple(4));
+  Tuple consts(&scope, runtime_.newTuple(4));
   consts.atPut(0, SmallInt::fromWord(1));
   consts.atPut(1, SmallInt::fromWord(22));
   consts.atPut(2, SmallInt::fromWord(333));
@@ -1373,9 +1369,9 @@ TEST(InterpreterTestFixture, DoLoadFastReverseLoadsValue) {
       LOAD_FAST_REVERSE, 1,                                         // 333
       BUILD_TUPLE,       4, RETURN_VALUE, 0,
   };
-  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime_.newBytesWithAll(bytecode));
 
-  Object result_obj(&scope, runCode(code));
+  Object result_obj(&scope, runCodeNoBytecodeRewriting(code));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 4);
@@ -1385,40 +1381,36 @@ TEST(InterpreterTestFixture, DoLoadFastReverseLoadsValue) {
   EXPECT_TRUE(isIntEqualsWord(result.at(3), 333));
 }
 
-TEST(InterpreterTestNoFixture,
-     DoLoadFastReverseFromUninitializedLocalRaisesUnboundLocalError) {
-  Runtime runtime(/*cache_enabled=*/false);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(InterpreterTest,
+       DoLoadFastReverseFromUninitializedLocalRaisesUnboundLocalError) {
+  HandleScope scope(thread_);
 
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime.newTuple(1));
+  Tuple consts(&scope, runtime_.newTuple(1));
   consts.atPut(0, SmallInt::fromWord(42));
   code.setConsts(*consts);
-  Tuple varnames(&scope, runtime.newTuple(3));
-  varnames.atPut(0, runtime.internStrFromCStr(thread, "foo"));
-  varnames.atPut(1, runtime.internStrFromCStr(thread, "bar"));
-  varnames.atPut(2, runtime.internStrFromCStr(thread, "baz"));
+  Tuple varnames(&scope, runtime_.newTuple(3));
+  varnames.atPut(0, runtime_.internStrFromCStr(thread_, "foo"));
+  varnames.atPut(1, runtime_.internStrFromCStr(thread_, "bar"));
+  varnames.atPut(2, runtime_.internStrFromCStr(thread_, "baz"));
   code.setVarnames(*varnames);
   code.setNlocals(3);
   const byte bytecode[] = {
       LOAD_CONST,  0, STORE_FAST,        0, LOAD_CONST,   0, STORE_FAST, 2,
       DELETE_FAST, 2, LOAD_FAST_REVERSE, 0, RETURN_VALUE, 0,
   };
-  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime_.newBytesWithAll(bytecode));
 
-  EXPECT_TRUE(
-      raisedWithStr(runCode(code), LayoutId::kUnboundLocalError,
-                    "local variable 'baz' referenced before assignment"));
+  EXPECT_TRUE(raisedWithStr(
+      runCodeNoBytecodeRewriting(code), LayoutId::kUnboundLocalError,
+      "local variable 'baz' referenced before assignment"));
 }
 
-TEST(InterpreterTestNoFixture, DoStoreFastReverseStoresValue) {
-  Runtime runtime(/*cache_enabled=*/false);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(InterpreterTest, DoStoreFastReverseStoresValue) {
+  HandleScope scope(thread_);
 
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime.newTuple(4));
+  Tuple consts(&scope, runtime_.newTuple(4));
   consts.atPut(0, SmallInt::fromWord(1));
   consts.atPut(1, SmallInt::fromWord(22));
   consts.atPut(2, SmallInt::fromWord(333));
@@ -1436,9 +1428,9 @@ TEST(InterpreterTestNoFixture, DoStoreFastReverseStoresValue) {
       LOAD_FAST,   3,  // 1
       BUILD_TUPLE, 4, RETURN_VALUE,       0,
   };
-  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime_.newBytesWithAll(bytecode));
 
-  Object result_obj(&scope, runCode(code));
+  Object result_obj(&scope, runCodeNoBytecodeRewriting(code));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 4);
@@ -4717,11 +4709,9 @@ cache_A_iadd(a, b)
   EXPECT_TRUE(b_radd_value_cell.dependencyLink().isNoneType());
 }
 
-TEST(InterpreterTestNoFixture, LoadMethodLoadingMethodFollowedByCallMethod) {
-  Runtime runtime(/*cache_enabled=*/false);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  EXPECT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(InterpreterTest, LoadMethodLoadingMethodFollowedByCallMethod) {
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __init__(self):
     self.val = 40
@@ -4735,16 +4725,17 @@ def test():
 c = C()
 )")
                    .isError());
-  Function test_function(&scope, mainModuleAt(&runtime, "test"));
+  Function test_function(&scope, mainModuleAt(&runtime_, "test"));
   MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
-  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR);
+  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_CACHED);
   ASSERT_EQ(bytecode.byteAt(8), CALL_FUNCTION);
   bytecode.byteAtPut(2, LOAD_METHOD);
   bytecode.byteAtPut(8, CALL_METHOD);
 
-  EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::callFunction0(thread, thread->currentFrame(), test_function),
-      70));
+  EXPECT_TRUE(
+      isIntEqualsWord(Interpreter::callFunction0(
+                          thread_, thread_->currentFrame(), test_function),
+                      70));
 }
 
 TEST_F(InterpreterTest,
