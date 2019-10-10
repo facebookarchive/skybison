@@ -750,56 +750,26 @@ TEST_F(TrampolinesTest, InterpreterClosureUsesArgOverCellValue) {
                       3));
 }
 
-TEST(TrampolinesTestNoFixture, InterpreterClosureUsesCellValue) {
-  Runtime runtime(/*cache_enabled=*/false);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(TrampolinesTest, InterpreterClosureUsesCellValue) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+def foo(arg):
+  def bar():
+    return arg * 3
+  arg = 5
+  return bar()
 
-  // Create code object
-  word nlocals = 2;
-  Tuple consts(&scope, runtime.newTuple(1));
-  consts.atPut(0, runtime.newInt(10));
-  Tuple varnames(&scope, runtime.newTuple(nlocals));
-  Tuple cellvars(&scope, runtime.newTuple(2));
-  Str bar(&scope, runtime.internStrFromCStr(thread, "bar"));
-  Str baz(&scope, runtime.internStrFromCStr(thread, "baz"));
-  Str foobar(&scope, runtime.internStrFromCStr(thread, "foobar"));
-  varnames.atPut(0, *bar);
-  varnames.atPut(1, *baz);
-  cellvars.atPut(0, *foobar);
-  cellvars.atPut(1, *bar);
-  const byte bytecode[] = {LOAD_CONST, 0, STORE_DEREF,  0,
-                           LOAD_DEREF, 0, RETURN_VALUE, 0};
-  Bytes bc(&scope, runtime.newBytesWithAll(bytecode));
-  Object empty_str(&scope, Str::empty());
-  Object empty_bytes(&scope, Bytes::empty());
-  Tuple empty_tuple(&scope, runtime.emptyTuple());
-  Code code(&scope,
-            runtime.newCode(/*argcount=*/1, /*posonlyargcount=*/0,
-                            /*kwonlyargcount=*/0, nlocals, /*stacksize=*/0,
-                            /*flags=*/0, /*code=*/bc, consts,
-                            /*names=*/empty_tuple, varnames,
-                            /*freevars=*/empty_tuple, cellvars,
-                            /*filename=*/empty_str, /*name=*/empty_str,
-                            /*firstlineno=*/0, /*lnotab=*/empty_bytes));
+result = foo(-2)
+)")
+                   .isError());
+  Function foo(&scope, mainModuleAt(&runtime_, "foo"));
+  ASSERT_EQ(foo.entry(), &interpreterClosureTrampoline);
+  // Ensure that cellvar was populated.
+  Code code(&scope, foo.code());
   ASSERT_TRUE(!code.cell2arg().isNoneType());
-
-  // Create a function
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
-def foo(bar): pass
-)")
-                   .isError());
-  Function foo(&scope, mainModuleAt(&runtime, "foo"));
-  foo.setEntry(interpreterTrampoline);
-  foo.setCode(*code);
-
-  // Run function
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
-result = foo(1)
-)")
-                   .isError());
-  Object result(&scope, testing::mainModuleAt(&runtime, "result"));
-  EXPECT_TRUE(isIntEqualsWord(*result, 10));
+  Tuple cellvars(&scope, code.cellvars());
+  ASSERT_EQ(cellvars.length(), 1);
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result"), 15));
 }
 
 static RawObject makeFunctionWithPosOnlyArg(Thread* thread) {
