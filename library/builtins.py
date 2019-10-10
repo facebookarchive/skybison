@@ -4140,6 +4140,8 @@ class str(bootstrap=True):
         _str_guard(self)
         start = _slice_index(start)
         end = _slice_index(end)
+        if _str_check(suffix):
+            return _str_endswith(self, suffix, start, end)
         if _tuple_check(suffix):
             for item in suffix:
                 if not _str_check(item):
@@ -4150,12 +4152,10 @@ class str(bootstrap=True):
                 if _str_endswith(self, item, start, end):
                     return True
             return False
-        if not _str_check(suffix):
-            raise TypeError(
-                "endswith first arg must be str or a tuple of str, "
-                f"not {_type(suffix).__name__}"
-            )
-        return _str_endswith(self, suffix, start, end)
+        raise TypeError(
+            "endswith first arg must be str or a tuple of str, "
+            f"not {_type(suffix).__name__}"
+        )
 
     def expandtabs(self, tabsize=8):
         _unimplemented()
@@ -4373,6 +4373,8 @@ class str(bootstrap=True):
         _str_guard(self)
         start = _slice_index(start)
         end = _slice_index(end)
+        if _str_check(prefix):
+            return _str_startswith(self, prefix, start, end)
         if _tuple_check(prefix):
             for item in prefix:
                 if not _str_check(item):
@@ -4383,12 +4385,10 @@ class str(bootstrap=True):
                 if _str_startswith(self, item, start, end):
                     return True
             return False
-        if not _str_check(prefix):
-            raise TypeError(
-                "startswith first arg must be str or a tuple of str, "
-                f"not {_type(prefix).__name__}"
-            )
-        return _str_startswith(self, prefix, start, end)
+        raise TypeError(
+            "startswith first arg must be str or a tuple of str, "
+            f"not {_type(prefix).__name__}"
+        )
 
     def strip(self, other=None):
         pass
