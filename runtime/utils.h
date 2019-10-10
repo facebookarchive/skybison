@@ -148,6 +148,11 @@ class Utils {
   // offset, or -1 if not found.
   static word memoryFindCharReverse(byte* haystack, byte needle, word length);
 
+  // Search backwards through `haystack` looking for `needle`. Return the byte
+  // offset, or -1 if not found.
+  static word memoryFindReverse(byte* haystack, word haystack_len, byte* needle,
+                                word needle_len);
+
   template <typename T>
   static T minimum(T x, T y) {
     return x < y ? x : y;

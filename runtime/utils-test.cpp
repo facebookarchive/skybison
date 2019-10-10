@@ -36,6 +36,59 @@ TEST(UtilsTestNoFixture,
   EXPECT_EQ(Utils::memoryFindCharReverse(haystack, needle, 6), 5);
 }
 
+TEST(UtilsTestNoFixture, MemoryFindReverseWithEmptyHaystackReturnsNegativeOne) {
+  byte haystack[] = "hello";
+  byte needle[] = "el";
+  EXPECT_EQ(Utils::memoryFindReverse(haystack, 0, needle, 2), -1);
+}
+
+TEST(UtilsTestNoFixture, MemoryFindReverseWithEmptyNeedleReturnsNegativeOne) {
+  byte haystack[] = "hello";
+  byte needle[] = "el";
+  EXPECT_EQ(Utils::memoryFindReverse(haystack, 5, needle, 0), -1);
+}
+
+TEST(UtilsTestNoFixture,
+     MemoryFindReverseWithHaystackSmallerThanNeedleReturnsNegativeOne) {
+  byte haystack[] = "hello";
+  byte needle[] = "el";
+  EXPECT_EQ(Utils::memoryFindReverse(haystack, 1, needle, 2), -1);
+}
+
+TEST(UtilsTestNoFixture,
+     MemoryFindReverseWithCharNeedleInHaystackReturnsLocation) {
+  byte haystack[] = "hello";
+  byte needle[] = "el";
+  EXPECT_EQ(Utils::memoryFindReverse(haystack, 5, needle, 1), 1);
+}
+
+TEST(UtilsTestNoFixture,
+     MemoryFindReverseWithCharNeedleNotInHaystackReturnsNegativeOne) {
+  byte haystack[] = "hello";
+  byte needle[] = "q";
+  EXPECT_EQ(Utils::memoryFindReverse(haystack, 5, needle, 1), -1);
+}
+
+TEST(UtilsTestNoFixture, MemoryFindReverseWithNeedleInHaystackReturnsLocation) {
+  byte haystack[] = "hello";
+  byte needle[] = "el";
+  EXPECT_EQ(Utils::memoryFindReverse(haystack, 5, needle, 2), 1);
+}
+
+TEST(UtilsTestNoFixture,
+     MemoryFindReverseWithNeedleInHaystackReturnsFirstLocationFromRight) {
+  byte haystack[] = "hello hello";
+  byte needle[] = "el";
+  EXPECT_EQ(Utils::memoryFindReverse(haystack, 11, needle, 2), 7);
+}
+
+TEST(UtilsTestNoFixture,
+     MemoryFindReverseWithNeedleNotInHaystackReturnsNegativeOne) {
+  byte haystack[] = "hello";
+  byte needle[] = "qo";
+  EXPECT_EQ(Utils::memoryFindReverse(haystack, 5, needle, 2), -1);
+}
+
 TEST(UtilsTestNoFixture, RotateLeft) {
   EXPECT_EQ(Utils::rotateLeft(1ULL, 0), 0x0000000000000001ULL);
   EXPECT_EQ(Utils::rotateLeft(1ULL, 1), 0x0000000000000002ULL);

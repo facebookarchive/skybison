@@ -104,6 +104,32 @@ word Utils::memoryFindCharReverse(byte* haystack, byte needle, word length) {
   return -1;
 }
 
+word Utils::memoryFindReverse(byte* haystack, word haystack_len, byte* needle,
+                              word needle_len) {
+  DCHECK(haystack != nullptr, "haystack cannot be null");
+  DCHECK(needle != nullptr, "needle cannot be null");
+  DCHECK(haystack_len >= 0, "haystack length must be nonnegative");
+  DCHECK(needle_len >= 0, "needle length must be nonnegative");
+  // We need something to compare
+  if (haystack_len == 0 || needle_len == 0) return -1;
+  // The needle is too big to be contained in haystack
+  if (haystack_len < needle_len) return -1;
+  byte needle_start = *needle;
+  if (needle_len == 1) {
+    // Fast path: one character
+    return memoryFindCharReverse(haystack, needle_start, haystack_len);
+  }
+  // The last position where its possible to find needle in haystack
+  word last_offset = haystack_len - needle_len;
+  for (word i = last_offset; i >= 0; i--) {
+    if (haystack[i] == needle_start &&
+        std::memcmp(haystack + i, needle, needle_len) == 0) {
+      return i;
+    }
+  }
+  return -1;
+}
+
 void Utils::printTracebackToStderr() { printTraceback(&std::cerr); }
 
 void Utils::printTraceback(std::ostream* os) {
