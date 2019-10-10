@@ -1005,8 +1005,8 @@ static RawObject memberSetter(Thread* thread, PyMemberDef& member) {
     case T_UBYTE: {
       Int num_bytes(&scope, runtime->newInt(1));
       Int min_value(&scope, runtime->newInt(0));
-      Int max_value(&scope,
-                    runtime->newInt(std::numeric_limits<unsigned char>::max()));
+      Int max_value(&scope, runtime->newIntFromUnsigned(
+                                std::numeric_limits<unsigned char>::max()));
       Str primitive_type(&scope, runtime->newStrFromCStr("unsigned char"));
       Function setter(
           &scope, thread->invokeFunction5(
@@ -1028,8 +1028,8 @@ static RawObject memberSetter(Thread* thread, PyMemberDef& member) {
     case T_USHORT: {
       Int num_bytes(&scope, runtime->newInt(2));
       Int min_value(&scope, runtime->newInt(0));
-      Int max_value(
-          &scope, runtime->newInt(std::numeric_limits<unsigned short>::max()));
+      Int max_value(&scope, runtime->newIntFromUnsigned(
+                                std::numeric_limits<unsigned short>::max()));
       Str primitive_type(&scope, runtime->newStrFromCStr("unsigned short"));
       Function setter(
           &scope, thread->invokeFunction5(
@@ -1051,8 +1051,8 @@ static RawObject memberSetter(Thread* thread, PyMemberDef& member) {
     case T_UINT: {
       Int num_bytes(&scope, runtime->newInt(4));
       Int min_value(&scope, runtime->newInt(0));
-      Int max_value(&scope,
-                    runtime->newInt(std::numeric_limits<unsigned int>::max()));
+      Int max_value(&scope, runtime->newIntFromUnsigned(
+                                std::numeric_limits<unsigned int>::max()));
       Str primitive_type(&scope, runtime->newStrFromCStr("unsigned int"));
       Function setter(
           &scope, thread->invokeFunction5(
@@ -1074,8 +1074,8 @@ static RawObject memberSetter(Thread* thread, PyMemberDef& member) {
     case T_ULONG: {
       Int num_bytes(&scope, runtime->newInt(8));
       Int min_value(&scope, runtime->newInt(0));
-      Int max_value(&scope,
-                    runtime->newInt(std::numeric_limits<unsigned long>::max()));
+      Int max_value(&scope, runtime->newIntFromUnsigned(
+                                std::numeric_limits<unsigned long>::max()));
       Str primitive_type(&scope, runtime->newStrFromCStr("unsigned long"));
       Function setter(
           &scope, thread->invokeFunction5(
@@ -1155,9 +1155,9 @@ static RawObject memberSetter(Thread* thread, PyMemberDef& member) {
     case T_ULONGLONG: {
       Int num_bytes(&scope, runtime->newInt(8));
       Int min_value(&scope, runtime->newInt(0));
-      Int max_value(
-          &scope,
-          runtime->newInt(std::numeric_limits<unsigned long long>::max()));
+      Int max_value(&scope,
+                    runtime->newIntFromUnsigned(
+                        std::numeric_limits<unsigned long long>::max()));
       Str primitive_type(&scope, runtime->newStrFromCStr("unsigned long long"));
       Function setter(
           &scope, thread->invokeFunction5(
