@@ -1782,15 +1782,16 @@ HANDLER_INLINE Continue Interpreter::doWithCleanupStart(Thread* thread, word) {
         TryBlock(block.kind(), block.handler(), block.level() - 1));
   }
 
-  Object result(&scope,
-                callFunction3(thread, frame, exit, exc, value, traceback));
-  if (result.isError()) return Continue::UNWIND;
-
-  // Push exc and result to be consumed by WITH_CLEANUP_FINISH.
+  // Push exc, to be consumed by WITH_CLEANUP_FINISH.
   frame->pushValue(*exc);
-  frame->pushValue(*result);
 
-  return Continue::NEXT;
+  // Call exit(exc, value, traceback), leaving the result on the stack for
+  // WITH_CLEANUP_FINISH.
+  frame->pushValue(*exit);
+  frame->pushValue(*exc);
+  frame->pushValue(*value);
+  frame->pushValue(*traceback);
+  return doCallFunction(thread, 3);
 }
 
 HANDLER_INLINE Continue Interpreter::doWithCleanupFinish(Thread* thread, word) {
