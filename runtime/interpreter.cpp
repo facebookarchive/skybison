@@ -1747,6 +1747,7 @@ HANDLER_INLINE Continue Interpreter::doWithCleanupStart(Thread* thread, word) {
   if (exc.isNoneType()) {
     // The with block exited normally. __exit__ is just below the None.
     exit = frame->topValue();
+    frame->setTopValue(*exc);
   } else if (exc.isSmallInt()) {
     // The with block exited for a return, continue, or break. __exit__ will be
     // below 'why' and an optional return value (depending on 'why').
@@ -1757,6 +1758,8 @@ HANDLER_INLINE Continue Interpreter::doWithCleanupStart(Thread* thread, word) {
     } else {
       exit = frame->topValue();
     }
+    frame->setTopValue(*exc);
+    exc = NoneType::object();
   } else {
     // The stack contains the caught exception, the previous exception state,
     // then __exit__. Grab __exit__ then shift everything else down.
@@ -1764,6 +1767,9 @@ HANDLER_INLINE Continue Interpreter::doWithCleanupStart(Thread* thread, word) {
     for (word i = 5; i > 0; i--) {
       frame->setValueAt(frame->peek(i - 1), i);
     }
+
+    // Put exc at the top of the stack and grab value/traceback from below it.
+    frame->setTopValue(*exc);
     value = frame->peek(1);
     traceback = frame->peek(2);
 
@@ -1775,10 +1781,6 @@ HANDLER_INLINE Continue Interpreter::doWithCleanupStart(Thread* thread, word) {
     frame->blockStack()->push(
         TryBlock(block.kind(), block.handler(), block.level() - 1));
   }
-
-  // Regardless of what happened above, exc should be put back at the new top of
-  // the stack.
-  frame->setTopValue(*exc);
 
   Object result(&scope,
                 callFunction3(thread, frame, exit, exc, value, traceback));

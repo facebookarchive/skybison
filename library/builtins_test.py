@@ -1817,6 +1817,27 @@ class CodeTests(unittest.TestCase):
         self.assertEqual(hash(first_foo_code), hash(second_foo_code))
 
 
+class ContextManagerTests(unittest.TestCase):
+    def test_dunder_exit_return(self):
+        class Manager:
+            def __init__(self, test_case):
+                self._test_case = test_case
+
+            def __enter__(self):
+                pass
+
+            def __exit__(self, ty, val, tb):
+                self._test_case.assertIs(ty, None)
+                self._test_case.assertIs(val, None)
+                self._test_case.assertIs(tb, None)
+
+        def f():
+            with Manager(self):
+                return 10
+
+        self.assertEqual(f(), 10)
+
+
 class ComplexTests(unittest.TestCase):
     def test_dunder_hash_with_0_image_returns_float_hash(self):
         self.assertEqual(complex.__hash__(complex(0.0)), float.__hash__(0.0))
