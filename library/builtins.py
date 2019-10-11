@@ -229,25 +229,6 @@ class classmethod(bootstrap=True):
         pass
 
 
-class code(bootstrap=True):
-    def __hash__(self):
-        _code_guard(self)
-        result = (
-            hash(self.co_name)
-            ^ hash(self.co_code)
-            ^ hash(self.co_consts)
-            ^ hash(self.co_names)
-            ^ hash(self.co_varnames)
-            ^ hash(self.co_freevars)
-            ^ hash(self.co_cellvars)
-            ^ self.co_argcount
-            ^ self.co_kwonlyargcount
-            ^ self.co_nlocals
-            ^ self.co_flags
-        )
-        return result if result != -1 else -2
-
-
 class property(bootstrap=True):
     def __delete__(self, instance):
         pass
@@ -355,165 +336,6 @@ class type(bootstrap=True):
 
     def mro(self):
         pass
-
-
-class type_proxy(bootstrap=True):
-    def __contains__(self, key) -> bool:
-        _type_proxy_guard(self)
-        return _type_proxy_get(self, key, _Unbound) is not _Unbound  # noqa: T484
-
-    def __eq__(self, other):
-        _unimplemented()
-
-    def __getitem__(self, key):
-        _type_proxy_guard(self)
-        result = _type_proxy_get(self, key, _Unbound)
-        if result is _Unbound:
-            raise KeyError(key)
-        return result
-
-    __hash__ = None
-
-    # type_proxy is not designed to be instantiated.
-    def __init__(self, *args, **kwargs):
-        _unimplemented()
-
-    def __iter__(self):
-        _type_proxy_guard(self)
-        # TODO(T53302128): Return an iterable to avoid materializing a list of keys.
-        return iter(_type_proxy_keys(self))
-
-    def __len__(self):
-        _type_proxy_guard(self)
-        return _type_proxy_len(self)
-
-    # type_proxy is not designed to be subclassed.
-    def __new__(cls, *args, **kwargs):
-        _unimplemented()
-
-    def __repr__(self):
-        _type_proxy_guard(self)
-        if _repr_enter(self):
-            return "{...}"
-        kwpairs = [f"{key!r}: {self[key]!r}" for key in _type_proxy_keys(self)]
-        _repr_leave(self)
-        return "{" + ", ".join(kwpairs) + "}"
-
-    def copy(self):
-        _type_proxy_guard(self)
-        # TODO(T53302128): Return an iterable to avoid materializing the list of items.
-        keys = _type_proxy_keys(self)
-        values = _type_proxy_values(self)
-        return {keys[i]: values[i] for i in range(len(keys))}
-
-    def get(self, key, default=None):
-        _type_proxy_guard(self)
-        return _type_proxy_get(self, key, default)
-
-    def items(self):
-        _type_proxy_guard(self)
-        # TODO(T53302128): Return an iterable to avoid materializing the list of items.
-        keys = _type_proxy_keys(self)
-        values = _type_proxy_values(self)
-        return [(keys[i], values[i]) for i in range(len(keys))]
-
-    def keys(self):
-        _type_proxy_guard(self)
-        # TODO(T53302128): Return an iterable to avoid materializing the list of keys.
-        return _type_proxy_keys(self)
-
-    def values(self):
-        _type_proxy_guard(self)
-        # TODO(T53302128): Return an iterable to avoid materializing the list of values.
-        return _type_proxy_values(self)
-
-
-class instance_proxy:
-    def __contains__(self, key):
-        return _instance_getattr(self._instance, key) is not _Unbound
-
-    def __delitem__(self, key):
-        _instance_delattr(self._instance, key)
-
-    def __getitem__(self, key):
-        result = _instance_getattr(self._instance, key)
-        if result is _Unbound:
-            raise KeyError(key)
-        return result
-
-    __hash__ = None
-
-    def __init__(self, instance):
-        self._instance = instance
-
-    def __iter__(self):
-        return self.keys().__iter__()
-
-    def __len__(self):
-        return len(self.keys())
-
-    def __repr__(self):
-        # TODO(T53507197): Use _sequence_repr
-        if _repr_enter(self):
-            return "{...}"
-        kwpairs = [f"{key!r}: {value!r}" for key, value in self.items()]
-        _repr_leave(self)
-        return "instance_proxy({" + ", ".join(kwpairs) + "})"
-
-    def __setitem__(self, key, value):
-        _instance_setattr(self._instance, key, value)
-
-    def clear(self):
-        instance = self._instance
-        for key in _instance_keys(instance):
-            _instance_delattr(instance, key)
-
-    def update(self, d):
-        instance = self._instance
-        for key, value in d.items():
-            _instance_setattr(instance, key, value)
-
-    def items(self):
-        # TODO(emacs): Return an iterator.
-        result = []
-        instance = self._instance
-        for key in self.keys():
-            value = _instance_getattr(instance, key)
-            assert value is not _Unbound
-            result.append((key, value))
-        return result
-
-    def keys(self):
-        # TODO(emacs): Return an iterator.
-        return _instance_keys(self._instance)
-
-    def pop(self, key, default=_Unbound):
-        instance = self._instance
-        value = _instance_getattr(instance, key)
-        if value is _Unbound:
-            if default is _Unbound:
-                raise KeyError(key)
-            return default
-        _instance_delattr(instance, key)
-        return value
-
-    def popitem(self):
-        keys = self.keys()
-        if not keys:
-            raise KeyError("dictionary is empty")
-        key = keys[-1]
-        instance = self._instance
-        value = _instance_getattr(instance, key)
-        _instance_delattr(instance, key)
-        return key, value
-
-    def setdefault(self, key, default=None):
-        instance = self._instance
-        value = _instance_getattr(instance, key)
-        if value is not _Unbound:
-            return value
-        _instance_setattr(instance, key, default)
-        return default
 
 
 class object(bootstrap=True):  # noqa: E999
@@ -632,23 +454,7 @@ class BaseException(bootstrap=True):
     del _maybe_unbound_property
 
 
-def _exception_new(mod_name: str, exc_name: str, base, type_dict) -> type:
-    _str_guard(mod_name)
-    _str_guard(exc_name)
-    _dict_guard(type_dict)
-    if "__module__" not in type_dict:
-        type_dict["__module__"] = mod_name
-    if not isinstance(base, tuple):
-        base = (base,)
-    return type(exc_name, base, type_dict)
-
-
 Ellipsis = ...
-
-
-class ellipsis(bootstrap=True):
-    def __repr__(self):
-        return "Ellipsis"
 
 
 EnvironmentError = OSError
@@ -674,20 +480,6 @@ class KeyError(bootstrap=True):
         return super(KeyError, self).__str__()
 
 
-class SimpleNamespace:
-    def __init__(self, kwds=None):
-        if kwds is not None:
-            instance_proxy(self).update(kwds)
-
-    def __repr__(self):
-        if _repr_enter(self):
-            return "{...}"
-        proxy = instance_proxy(self)
-        kwpairs = [f"{key}={value!r}" for key, value in proxy.items()]
-        _repr_leave(self)
-        return "namespace(" + ", ".join(kwpairs) + ")"
-
-
 class NoneType(bootstrap=True):
     __class__ = NoneType  # noqa: F821
 
@@ -701,6 +493,20 @@ class NoneType(bootstrap=True):
 class NotImplementedType(bootstrap=True):
     def __repr__(self):
         return "NotImplemented"
+
+
+class SimpleNamespace:
+    def __init__(self, kwds=None):
+        if kwds is not None:
+            instance_proxy(self).update(kwds)
+
+    def __repr__(self):
+        if _repr_enter(self):
+            return "{...}"
+        proxy = instance_proxy(self)
+        kwpairs = [f"{key}={value!r}" for key, value in proxy.items()]
+        _repr_leave(self)
+        return "namespace(" + ", ".join(kwpairs) + ")"
 
 
 class StopIteration(bootstrap=True):
@@ -907,6 +713,17 @@ def _float(value) -> float:
         f"{_type(value).__name__}.__float__ returned non-float "
         f"(type {_type(result).__name__})"
     )
+
+
+def _exception_new(mod_name: str, exc_name: str, base, type_dict) -> type:
+    _str_guard(mod_name)
+    _str_guard(exc_name)
+    _dict_guard(type_dict)
+    if "__module__" not in type_dict:
+        type_dict["__module__"] = mod_name
+    if not isinstance(base, tuple):
+        base = (base,)
+    return type(exc_name, base, type_dict)
 
 
 _formatter = None
@@ -1309,6 +1126,10 @@ def _structseq_repr(self):
     # TODO(T40273054): Iterate attributes and return field names
     tuple_values = ", ".join([repr(i) for i in self])
     return f"{_type(self).__name__}({tuple_values})"
+
+
+def _type_name(cls):
+    return f"{cls.__module__}.{cls.__qualname__}"
 
 
 def abs(x):
@@ -2071,6 +1892,25 @@ def chr(c):
     pass
 
 
+class code(bootstrap=True):
+    def __hash__(self):
+        _code_guard(self)
+        result = (
+            hash(self.co_name)
+            ^ hash(self.co_code)
+            ^ hash(self.co_consts)
+            ^ hash(self.co_names)
+            ^ hash(self.co_varnames)
+            ^ hash(self.co_freevars)
+            ^ hash(self.co_cellvars)
+            ^ self.co_argcount
+            ^ self.co_kwonlyargcount
+            ^ self.co_nlocals
+            ^ self.co_flags
+        )
+        return result if result != -1 else -2
+
+
 @_patch
 def compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1):
     pass
@@ -2292,6 +2132,11 @@ def dir(obj=_Unbound):
 
 
 divmod = _divmod
+
+
+class ellipsis(bootstrap=True):
+    def __repr__(self):
+        return "Ellipsis"
 
 
 class enumerate:
@@ -2633,6 +2478,94 @@ def id(obj):
 
 def input(prompt=None):
     _unimplemented()
+
+
+class instance_proxy:
+    def __contains__(self, key):
+        return _instance_getattr(self._instance, key) is not _Unbound
+
+    def __delitem__(self, key):
+        _instance_delattr(self._instance, key)
+
+    def __getitem__(self, key):
+        result = _instance_getattr(self._instance, key)
+        if result is _Unbound:
+            raise KeyError(key)
+        return result
+
+    __hash__ = None
+
+    def __init__(self, instance):
+        self._instance = instance
+
+    def __iter__(self):
+        return self.keys().__iter__()
+
+    def __len__(self):
+        return len(self.keys())
+
+    def __repr__(self):
+        # TODO(T53507197): Use _sequence_repr
+        if _repr_enter(self):
+            return "{...}"
+        kwpairs = [f"{key!r}: {value!r}" for key, value in self.items()]
+        _repr_leave(self)
+        return "instance_proxy({" + ", ".join(kwpairs) + "})"
+
+    def __setitem__(self, key, value):
+        _instance_setattr(self._instance, key, value)
+
+    def clear(self):
+        instance = self._instance
+        for key in _instance_keys(instance):
+            _instance_delattr(instance, key)
+
+    def update(self, d):
+        instance = self._instance
+        for key, value in d.items():
+            _instance_setattr(instance, key, value)
+
+    def items(self):
+        # TODO(emacs): Return an iterator.
+        result = []
+        instance = self._instance
+        for key in self.keys():
+            value = _instance_getattr(instance, key)
+            assert value is not _Unbound
+            result.append((key, value))
+        return result
+
+    def keys(self):
+        # TODO(emacs): Return an iterator.
+        return _instance_keys(self._instance)
+
+    def pop(self, key, default=_Unbound):
+        instance = self._instance
+        value = _instance_getattr(instance, key)
+        if value is _Unbound:
+            if default is _Unbound:
+                raise KeyError(key)
+            return default
+        _instance_delattr(instance, key)
+        return value
+
+    def popitem(self):
+        keys = self.keys()
+        if not keys:
+            raise KeyError("dictionary is empty")
+        key = keys[-1]
+        instance = self._instance
+        value = _instance_getattr(instance, key)
+        _instance_delattr(instance, key)
+        return key, value
+
+    def setdefault(self, key, default=None):
+        instance = self._instance
+        value = _instance_getattr(instance, key)
+        if value is not _Unbound:
+            return value
+        _instance_setattr(instance, key, default)
+        return default
 
 
 class int(bootstrap=True):
@@ -4650,8 +4583,75 @@ class tuple_iterator(bootstrap=True):
         pass
 
 
-def _type_name(cls):
-    return f"{cls.__module__}.{cls.__qualname__}"
+class type_proxy(bootstrap=True):
+    def __contains__(self, key) -> bool:
+        _type_proxy_guard(self)
+        return _type_proxy_get(self, key, _Unbound) is not _Unbound  # noqa: T484
+
+    def __eq__(self, other):
+        _unimplemented()
+
+    def __getitem__(self, key):
+        _type_proxy_guard(self)
+        result = _type_proxy_get(self, key, _Unbound)
+        if result is _Unbound:
+            raise KeyError(key)
+        return result
+
+    __hash__ = None
+
+    # type_proxy is not designed to be instantiated.
+    def __init__(self, *args, **kwargs):
+        _unimplemented()
+
+    def __iter__(self):
+        _type_proxy_guard(self)
+        # TODO(T53302128): Return an iterable to avoid materializing a list of keys.
+        return iter(_type_proxy_keys(self))
+
+    def __len__(self):
+        _type_proxy_guard(self)
+        return _type_proxy_len(self)
+
+    # type_proxy is not designed to be subclassed.
+    def __new__(cls, *args, **kwargs):
+        _unimplemented()
+
+    def __repr__(self):
+        _type_proxy_guard(self)
+        if _repr_enter(self):
+            return "{...}"
+        kwpairs = [f"{key!r}: {self[key]!r}" for key in _type_proxy_keys(self)]
+        _repr_leave(self)
+        return "{" + ", ".join(kwpairs) + "}"
+
+    def copy(self):
+        _type_proxy_guard(self)
+        # TODO(T53302128): Return an iterable to avoid materializing the list of items.
+        keys = _type_proxy_keys(self)
+        values = _type_proxy_values(self)
+        return {keys[i]: values[i] for i in range(len(keys))}
+
+    def get(self, key, default=None):
+        _type_proxy_guard(self)
+        return _type_proxy_get(self, key, default)
+
+    def items(self):
+        _type_proxy_guard(self)
+        # TODO(T53302128): Return an iterable to avoid materializing the list of items.
+        keys = _type_proxy_keys(self)
+        values = _type_proxy_values(self)
+        return [(keys[i], values[i]) for i in range(len(keys))]
+
+    def keys(self):
+        _type_proxy_guard(self)
+        # TODO(T53302128): Return an iterable to avoid materializing the list of keys.
+        return _type_proxy_keys(self)
+
+    def values(self):
+        _type_proxy_guard(self)
+        # TODO(T53302128): Return an iterable to avoid materializing the list of values.
+        return _type_proxy_values(self)
 
 
 def vars(obj=_Unbound):
