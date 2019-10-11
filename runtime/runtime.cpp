@@ -4091,7 +4091,9 @@ static int numTrailBytes(byte ch) {
 
 RawObject Runtime::strSlice(Thread* thread, const Str& str, word start,
                             word stop, word step) {
-  word length = Slice::adjustIndices(str.charLength(), &start, &stop, step);
+  // TODO(T55573386): Don't compute the length when stop is unspecified.
+  word length =
+      Slice::adjustIndices(str.codePointLength(), &start, &stop, step);
   word num_bytes = 0;
   for (word i = 0, str_index = start; i < length; i++, str_index += step) {
     // TODO(T54139192): adjust the char index incrementally instead of
