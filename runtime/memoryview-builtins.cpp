@@ -4,6 +4,12 @@
 
 namespace python {
 
+const BuiltinAttribute MemoryViewBuiltins::kAttributes[] = {
+    {SymbolId::kFormat, RawMemoryView::kFormatOffset,
+     AttributeFlags::kReadOnly},
+    {SymbolId::kSentinelId, -1},
+};
+
 const BuiltinMethod MemoryViewBuiltins::kBuiltinMethods[] = {
     {SymbolId::kCast, cast},
     {SymbolId::kDunderGetitem, dunderGetItem},

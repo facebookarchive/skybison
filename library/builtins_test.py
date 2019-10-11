@@ -4735,6 +4735,16 @@ class MemoryviewTests(unittest.TestCase):
         with view as ctx:
             self.assertIs(view, ctx)
 
+    def test_format_returns_format_string(self):
+        view = memoryview(b"asde")
+        self.assertEqual(view.format, "B")
+        self.assertEqual(view.cast("h").format, "h")
+
+    def test_format_is_read_only(self):
+        view = memoryview(b"asde")
+        with self.assertRaises(AttributeError):
+            view.format = "h"
+
     def test_itemsize_returns_size_of_item_chars(self):
         src = b"abcd"
         view = memoryview(src)

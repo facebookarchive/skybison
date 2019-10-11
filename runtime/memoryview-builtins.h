@@ -16,6 +16,7 @@ class MemoryViewBuiltins
   static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
 
+  static const BuiltinAttribute kAttributes[];
   static const BuiltinMethod kBuiltinMethods[];
 
  private:
