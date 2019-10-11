@@ -15,8 +15,10 @@ int main(int argc, const char** argv) {
   if (enable_cache != nullptr && enable_cache[0] == '0') {
     cache_enabled = false;
   }
-  // TODO(T43657667) Add code that can decide what we can cache and remove this.
-  python::Runtime runtime(cache_enabled);
+  // TODO(T43657667): Add code that can decide what we can cache and remove
+  // this.
+  // TODO(T55262429): Reduce the heap size once memory issues are fixed.
+  python::Runtime runtime(1 * kGiB, cache_enabled);
   python::Thread* thread = python::Thread::current();
   runtime.setArgv(thread, argc, argv);
   if (argc < 2) {
