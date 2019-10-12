@@ -75,35 +75,6 @@ byte* Thread::stackPtr() {
   return reinterpret_cast<byte*>(currentFrame_->valueStackTop());
 }
 
-inline Frame* Thread::openAndLinkFrame(word num_args, word num_vars,
-                                       word stack_depth) {
-  DCHECK(num_args >= 0, "must have 0 or more arguments");
-  DCHECK(num_vars >= 0, "must have 0 or more locals");
-  DCHECK(stack_depth >= 0, "stack depth cannot be negative");
-
-  if (UNLIKELY(wouldStackOverflow(Frame::kSize +
-                                  (num_vars + stack_depth) * kPointerSize))) {
-    return nullptr;
-  }
-
-  // Initialize the frame.
-  byte* new_sp = stackPtr() - num_vars * kPointerSize - Frame::kSize;
-  Frame* frame = reinterpret_cast<Frame*>(new_sp);
-  frame->init(num_args + num_vars);
-
-  // return a pointer to the base of the frame
-  linkFrame(frame);
-  DCHECK(frame->function().totalLocals() == num_args + num_vars,
-         "local counts mismatched");
-  DCHECK(frame->isInvalid() == nullptr, "invalid frame");
-  return frame;
-}
-
-void Thread::linkFrame(Frame* frame) {
-  frame->setPreviousFrame(currentFrame_);
-  currentFrame_ = frame;
-}
-
 bool Thread::wouldStackOverflow(word max_size) {
   // Check that there is sufficient space on the stack
   // TODO(T36407214): Grow stack
@@ -115,25 +86,48 @@ bool Thread::wouldStackOverflow(word max_size) {
   return true;
 }
 
+void Thread::linkFrame(Frame* frame) {
+  frame->setPreviousFrame(currentFrame_);
+  currentFrame_ = frame;
+}
+
+inline Frame* Thread::openAndLinkFrame(word size, word total_locals) {
+  // Initialize the frame.
+  byte* new_sp = stackPtr() - size;
+  Frame* frame = reinterpret_cast<Frame*>(new_sp);
+  frame->init(total_locals);
+
+  // return a pointer to the base of the frame
+  linkFrame(frame);
+  DCHECK(frame->isInvalid() == nullptr, "invalid frame");
+  return frame;
+}
+
 Frame* Thread::pushNativeFrame(word nargs) {
-  // TODO(T36407290): native frames push arguments onto the stack when calling
-  // back into the interpreter, but we can't statically know how much stack
-  // space they will need. We may want to extend the api for such native calls
-  // to include a declaration of how much space is needed. However, that's of
-  // limited use right now since we can't detect an "overflow" of a frame
-  // anyway.
-  return openAndLinkFrame(nargs, 0, 0);
+  if (UNLIKELY(wouldStackOverflow(Frame::kSize))) {
+    return nullptr;
+  }
+
+  Frame* result = openAndLinkFrame(Frame::kSize, nargs);
+  DCHECK(result->function().totalLocals() == nargs, "local counts mismatch");
+  return result;
 }
 
 Frame* Thread::pushCallFrame(RawFunction function) {
-  Frame* result = openAndLinkFrame(function.totalArgs(), function.totalVars(),
-                                   function.stacksize());
-  if (UNLIKELY(result == nullptr)) {
+  word total_vars = function.totalVars();
+  word initial_size = Frame::kSize + total_vars * kPointerSize;
+  word max_size = initial_size + function.stacksize() * kPointerSize;
+  if (UNLIKELY(wouldStackOverflow(max_size))) {
     return nullptr;
   }
+
+  word total_locals = function.totalArgs() + total_vars;
+  Frame* result = openAndLinkFrame(initial_size, total_locals);
   result->setBytecode(MutableBytes::cast(function.rewrittenBytecode()));
   result->setCaches(Tuple::cast(function.caches()));
   result->setVirtualPC(0);
+  DCHECK(result->function().totalLocals() == total_locals,
+         "local counts mismatch");
   return result;
 }
 
