@@ -484,11 +484,6 @@ class Interpreter {
   static Continue callTrampoline(Thread* thread, Function::Entry entry,
                                  word argc, RawObject* post_call_sp);
 
-  // After a callable is prepared and all arguments are processed, push a frame
-  // for the callee and update the Context to begin executing it.
-  static Frame* pushFrame(Thread* thread, RawFunction function,
-                          RawObject* post_call_sp);
-
   // Resolve a callable object to a function (resolving `__call__` descriptors
   // as necessary).
   // This is only a helper for the `prepareCallableCall` implementation:

@@ -17,8 +17,7 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
 RawObject prepareExplodeCall(Thread* thread, RawFunction function_raw,
                              Frame* frame, word flags);
 
-void processFreevarsAndCellvars(Thread* thread, const Function& function,
-                                Frame* callee_frame);
+void processFreevarsAndCellvars(Thread* thread, Frame* frame);
 
 // Entry points for ordinary interpreted functions
 RawObject interpreterTrampoline(Thread* thread, Frame* frame,

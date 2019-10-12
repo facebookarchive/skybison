@@ -3053,17 +3053,6 @@ HANDLER_INLINE Continue Interpreter::doRaiseVarargs(Thread* thread, word arg) {
   return Continue::UNWIND;
 }
 
-HANDLER_INLINE Frame* Interpreter::pushFrame(Thread* thread,
-                                             RawFunction function,
-                                             RawObject* post_call_sp) {
-  Frame* caller_frame = thread->currentFrame();
-  Frame* callee_frame = thread->pushCallFrame(function);
-  // Pop the arguments off of the caller's stack now that the callee "owns"
-  // them.
-  caller_frame->setValueStackTop(post_call_sp);
-  return callee_frame;
-}
-
 HANDLER_INLINE
 Continue Interpreter::callTrampoline(Thread* thread, Function::Entry entry,
                                      word argc, RawObject* post_call_sp) {
@@ -3107,14 +3096,14 @@ Interpreter::handleCall(Thread* thread, word argc, word callable_idx,
   if (result.isError()) return Continue::UNWIND;
   function = RawFunction::cast(result);
 
-  Frame* callee_frame = pushFrame(thread, function, post_call_sp);
+  bool has_freevars_or_cellvars = function.hasFreevarsOrCellvars();
+  Frame* callee_frame = thread->pushCallFrame(function);
   if (UNLIKELY(callee_frame == nullptr)) {
     return Continue::UNWIND;
   }
-  if (function.hasFreevarsOrCellvars()) {
-    HandleScope scope(thread);
-    Function function_handle(&scope, function);
-    processFreevarsAndCellvars(thread, function_handle, callee_frame);
+  caller_frame->setValueStackTop(post_call_sp);
+  if (has_freevars_or_cellvars) {
+    processFreevarsAndCellvars(thread, callee_frame);
   }
   return Continue::NEXT;
 }
@@ -3253,12 +3242,14 @@ HANDLER_INLINE Continue Interpreter::doCallFunctionEx(Thread* thread,
     return Continue::UNWIND;
   }
 
-  Frame* callee_frame = pushFrame(thread, *function, post_call_sp);
+  bool has_freevars_or_cellvars = function.hasFreevarsOrCellvars();
+  Frame* callee_frame = thread->pushCallFrame(*function);
   if (UNLIKELY(callee_frame == nullptr)) {
     return Continue::UNWIND;
   }
-  if (function.hasFreevarsOrCellvars()) {
-    processFreevarsAndCellvars(thread, function, callee_frame);
+  caller_frame->setValueStackTop(post_call_sp);
+  if (has_freevars_or_cellvars) {
+    processFreevarsAndCellvars(thread, callee_frame);
   }
   return Continue::NEXT;
 }

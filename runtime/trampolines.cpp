@@ -14,13 +14,12 @@
 namespace python {
 
 // Populate the free variable and cell variable arguments.
-void processFreevarsAndCellvars(Thread* thread, const Function& function,
-                                Frame* callee_frame) {
-  CHECK(function.hasFreevarsOrCellvars(),
-        "no free variables or cell variables");
-
+void processFreevarsAndCellvars(Thread* thread, Frame* frame) {
   // initialize cell variables
   HandleScope scope(thread);
+  Function function(&scope, frame->function());
+  DCHECK(function.hasFreevarsOrCellvars(),
+         "no free variables or cell variables");
   Code code(&scope, function.code());
   Runtime* runtime = thread->runtime();
   word num_locals = code.nlocals();
@@ -30,7 +29,7 @@ void processFreevarsAndCellvars(Thread* thread, const Function& function,
 
     // Allocate a cell for a local variable if cell2arg is not preset
     if (code.cell2arg().isNoneType()) {
-      callee_frame->setLocal(num_locals + i, *value_cell);
+      frame->setLocal(num_locals + i, *value_cell);
       continue;
     }
 
@@ -38,15 +37,15 @@ void processFreevarsAndCellvars(Thread* thread, const Function& function,
     // the cell does not match any argument
     Object arg_index(&scope, Tuple::cast(code.cell2arg()).at(i));
     if (arg_index.isNoneType()) {
-      callee_frame->setLocal(num_locals + i, *value_cell);
+      frame->setLocal(num_locals + i, *value_cell);
       continue;
     }
 
     // Allocate a cell for an argument
     word local_idx = Int::cast(*arg_index).asWord();
-    value_cell.setValue(callee_frame->local(local_idx));
-    callee_frame->setLocal(local_idx, NoneType::object());
-    callee_frame->setLocal(num_locals + i, *value_cell);
+    value_cell.setValue(frame->local(local_idx));
+    frame->setLocal(local_idx, NoneType::object());
+    frame->setLocal(num_locals + i, *value_cell);
   }
 
   // initialize free variables
@@ -54,8 +53,8 @@ void processFreevarsAndCellvars(Thread* thread, const Function& function,
              code.numFreevars() == Tuple::cast(function.closure()).length(),
          "Number of freevars is different than the closure.");
   for (word i = 0; i < code.numFreevars(); i++) {
-    callee_frame->setLocal(num_locals + num_cellvars + i,
-                           Tuple::cast(function.closure()).at(i));
+    frame->setLocal(num_locals + num_cellvars + i,
+                    Tuple::cast(function.closure()).at(i));
   }
 }
 
@@ -582,7 +581,7 @@ RawObject generatorClosureTrampoline(Thread* thread, Frame* frame, word argc) {
   if (UNLIKELY(callee_frame == nullptr)) {
     return Error::exception();
   }
-  processFreevarsAndCellvars(thread, function, callee_frame);
+  processFreevarsAndCellvars(thread, callee_frame);
   Str qualname(&scope, function.qualname());
   return createGenerator(thread, function, qualname);
 }
@@ -601,7 +600,7 @@ RawObject generatorClosureTrampolineKw(Thread* thread, Frame* frame,
   if (UNLIKELY(callee_frame == nullptr)) {
     return Error::exception();
   }
-  processFreevarsAndCellvars(thread, function, callee_frame);
+  processFreevarsAndCellvars(thread, callee_frame);
   Str qualname(&scope, function.qualname());
   return createGenerator(thread, function, qualname);
 }
@@ -621,7 +620,7 @@ RawObject generatorClosureTrampolineEx(Thread* thread, Frame* frame,
   if (UNLIKELY(callee_frame == nullptr)) {
     return Error::exception();
   }
-  processFreevarsAndCellvars(thread, function, callee_frame);
+  processFreevarsAndCellvars(thread, callee_frame);
   Str qualname(&scope, function.qualname());
   return createGenerator(thread, function, qualname);
 }
@@ -682,7 +681,7 @@ RawObject interpreterClosureTrampoline(Thread* thread, Frame* frame,
   if (UNLIKELY(callee_frame == nullptr)) {
     return Error::exception();
   }
-  processFreevarsAndCellvars(thread, function, callee_frame);
+  processFreevarsAndCellvars(thread, callee_frame);
   return Interpreter::execute(thread);
 }
 
@@ -700,7 +699,7 @@ RawObject interpreterClosureTrampolineKw(Thread* thread, Frame* frame,
   if (UNLIKELY(callee_frame == nullptr)) {
     return Error::exception();
   }
-  processFreevarsAndCellvars(thread, function, callee_frame);
+  processFreevarsAndCellvars(thread, callee_frame);
   return Interpreter::execute(thread);
 }
 
@@ -719,7 +718,7 @@ RawObject interpreterClosureTrampolineEx(Thread* thread, Frame* frame,
   if (UNLIKELY(callee_frame == nullptr)) {
     return Error::exception();
   }
-  processFreevarsAndCellvars(thread, function, callee_frame);
+  processFreevarsAndCellvars(thread, callee_frame);
   return Interpreter::execute(thread);
 }
 
