@@ -33,6 +33,7 @@ _address = _address  # noqa: F821
 _bytearray_len = _bytearray_len  # noqa: F821
 _bytes_check = _bytes_check  # noqa: F821
 _bytes_len = _bytes_len  # noqa: F821
+_byteslike_check = _byteslike_check  # noqa: F821
 _byteslike_guard = _byteslike_guard  # noqa: F821
 _float_check = _float_check  # noqa: F821
 _index = _index  # noqa: F821
@@ -1453,7 +1454,7 @@ class FileIO(_RawIOBase, bootstrap=True):
         self._checkClosed()
         self._checkWritable()
         buf = byteslike
-        if not _bytes_check(byteslike):
+        if not _byteslike_check(byteslike):
             if not _object_type_hasattr(byteslike, "__buffer__"):
                 raise TypeError(
                     "a bytes-like object is required, not "

@@ -2551,8 +2551,18 @@ RawObject UnderBuiltinsModule::underOsWrite(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object fd_obj(&scope, args.get(0));
   CHECK(fd_obj.isSmallInt(), "fd must be small int");
-  Bytes bytes_buf(&scope, args.get(1));
-  size_t count = bytes_buf.length();
+  Object bytes_obj(&scope, args.get(1));
+  Bytes bytes_buf(&scope, Bytes::empty());
+  size_t count;
+  // TODO(T55505775): Add support for more byteslike types instead of switching
+  // on bytes/bytearray
+  if (bytes_obj.isByteArray()) {
+    bytes_buf = ByteArray::cast(*bytes_obj).bytes();
+    count = ByteArray::cast(*bytes_obj).numItems();
+  } else {
+    bytes_buf = *bytes_obj;
+    count = bytes_buf.length();
+  }
   std::unique_ptr<byte[]> buffer(new byte[count]);
   bytes_buf.copyTo(buffer.get(), count);
   ssize_t result;

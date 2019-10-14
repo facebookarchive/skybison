@@ -1219,6 +1219,18 @@ class FileIOTests(unittest.TestCase):
         )
         f.close()
 
+    def test_write_writes_bytes(self):
+        r, w = os.pipe()
+        with _io.FileIO(w, mode="w") as f:
+            f.write(b"hello world")
+        os.close(r)
+
+    def test_write_writes_bytearray(self):
+        r, w = os.pipe()
+        with _io.FileIO(w, mode="w") as f:
+            f.write(bytearray(b"hello world"))
+        os.close(r)
+
 
 @pyro_only
 class FspathTests(unittest.TestCase):
