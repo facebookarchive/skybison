@@ -269,30 +269,6 @@ PY_EXPORT int PyMapping_HasKeyString(PyObject* obj, const char* key) {
   return 0;
 }
 
-// TODO(T40432322): Re-inline into PyObject_GetIter
-static RawObject getIter(Thread* thread, const Object& obj) {
-  HandleScope scope(thread);
-  Object iter(&scope, thread->invokeMethod1(obj, SymbolId::kDunderIter));
-  Runtime* runtime = thread->runtime();
-  if (iter.isError()) {
-    // If the object is a sequence, make a new sequence iterator. It doesn't
-    // need to have __iter__.
-    if (iter.isErrorNotFound()) {
-      if (runtime->isSequence(thread, obj)) return runtime->newSeqIterator(obj);
-      return thread->raiseWithFmt(LayoutId::kTypeError,
-                                  "object is not iterable");
-    }
-    return *iter;
-  }
-  // If the object has __iter__, ensure that the resulting object has __next__.
-  Type type(&scope, runtime->typeOf(*iter));
-  if (typeLookupInMroById(thread, type, SymbolId::kDunderNext).isError()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "iter() returned non-iterator");
-  }
-  return *iter;
-}
-
 // TODO(T40432322): Re-inline into PySequence_Fast
 static RawObject sequenceFast(Thread* thread, const Object& seq,
                               const Str& msg) {
@@ -301,7 +277,9 @@ static RawObject sequenceFast(Thread* thread, const Object& seq,
   }
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Object iter(&scope, getIter(thread, seq));
+
+  Object iter(&scope,
+              Interpreter::createIterator(thread, thread->currentFrame(), seq));
   if (iter.isError()) {
     Object given(&scope, thread->pendingExceptionType());
     Object exc(&scope, runtime->typeAt(LayoutId::kTypeError));
@@ -972,7 +950,8 @@ PY_EXPORT PyObject* PyObject_GetIter(PyObject* pyobj) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
-  Object result(&scope, getIter(thread, obj));
+  Object result(
+      &scope, Interpreter::createIterator(thread, thread->currentFrame(), obj));
   if (result.isError()) {
     return nullptr;
   }

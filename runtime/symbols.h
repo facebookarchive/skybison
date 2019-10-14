@@ -271,6 +271,7 @@ class Runtime;
   V(UnderIntNewFromStr, "_int_new_from_str")                                   \
   V(UnderIOBase, "_IOBase")                                                    \
   V(UnderIo, "_io")                                                            \
+  V(UnderIter, "_iter")                                                        \
   V(UnderLatin1Decode, "_latin_1_decode")                                      \
   V(UnderLatin1Encode, "_latin_1_encode")                                      \
   V(UnderLineBuffering, "_line_buffering")                                     \
@@ -331,7 +332,6 @@ class Runtime;
   V(UnderNewMemberSetReadonly, "_new_member_set_readonly")                     \
   V(UnderNewMemberSetReadonlyStrings, "_new_member_set_readonly_strings")      \
   V(UnderNumberCheck, "_number_check")                                         \
-  V(UnderObjectCreateIterator, "_object_create_iterator")                      \
   V(UnderObjectTypeGetattr, "_object_type_getattr")                            \
   V(UnderObjectTypeHasattr, "_object_type_hasattr")                            \
   V(UnderOs, "_os")                                                            \

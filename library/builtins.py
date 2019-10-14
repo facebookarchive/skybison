@@ -113,7 +113,7 @@ _module_proxy_keys = _module_proxy_keys  # noqa: F821
 _module_proxy_len = _module_proxy_len  # noqa: F821
 _module_proxy_setitem = _module_proxy_setitem  # noqa: F821
 _module_proxy_values = _module_proxy_values  # noqa: F821
-_object_create_iterator = _object_create_iterator  # noqa: F821
+_iter = _iter  # noqa: F821
 _object_type_getattr = _object_type_getattr  # noqa: F821
 _object_type_hasattr = _object_type_hasattr  # noqa: F821
 _patch = _patch  # noqa: F821
@@ -2954,7 +2954,7 @@ class callable_iterator:
 
 def iter(obj, sentinel=None):
     if sentinel is None:
-        return _object_create_iterator(obj)
+        return _iter(obj)
     return callable_iterator(obj, sentinel)
 
 

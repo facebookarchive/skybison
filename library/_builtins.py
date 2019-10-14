@@ -571,7 +571,7 @@ def _module_proxy_values(self):
 
 
 @_patch
-def _object_create_iterator(self):
+def _iter(self):
     pass
 
 
