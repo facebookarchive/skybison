@@ -445,6 +445,7 @@ class Runtime;
   V(UnderUtf32Encode, "_utf_32_encode")                                        \
   V(UnderUtf8Decode, "_utf_8_decode")                                          \
   V(UnderUtf8Encode, "_utf_8_encode")                                          \
+  V(UnderValgrind, "_valgrind")                                                \
   V(UnderWarnings, "_warnings")                                                \
   V(UnderWeakLink, "_weaklink")                                                \
   V(UnderWeakRef, "_weakref")                                                  \
@@ -497,6 +498,7 @@ class Runtime;
   V(BytesWarning, "BytesWarning")                                              \
   V(Callable, "callable")                                                      \
   V(CallableIterator, "callable_iterator")                                     \
+  V(CallgrindDumpStatsAt, "callgrind_dump_stats_at")                           \
   V(Cast, "cast")                                                              \
   V(Cause, "cause")                                                            \
   V(ChildProcessError, "ChildProcessError")                                    \

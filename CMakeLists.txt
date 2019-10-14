@@ -34,6 +34,7 @@ set(BENCHMARK_ENABLE_INSTALL CACHE BOOL OFF)
 add_subdirectory(third-party/benchmark-1.3.0)
 add_subdirectory(third-party/googletest-1.8.1)
 add_subdirectory(third-party/siphash-20170224)
+add_subdirectory(third-party/valgrind-3.15.0)
 
 if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
   set(OS_DEFINE "-DOS_OSX")
@@ -191,6 +192,7 @@ set(
   library/_os.py
   library/_str_mod.py
   library/_thread.py
+  library/_valgrind.py
   library/_warnings.py
   library/_weakref.py
   library/builtins.py
@@ -382,6 +384,8 @@ add_library(
   runtime/under-str-mod-module.h
   runtime/under-thread-module.cpp
   runtime/under-thread-module.h
+  runtime/under-valgrind-module.cpp
+  runtime/under-valgrind-module.h
   runtime/unicode.h
   runtime/utils.cpp
   runtime/utils.h
@@ -405,7 +409,8 @@ target_link_libraries(
   PRIVATE
   frozen-modules
   dl
-  siphash)
+  siphash
+  valgrind)
 # TODO(T42692043): This awkwardness should go away once we freeze the stdlib.
 target_compile_definitions(runtime PRIVATE PYRO_BASEDIR="${CMAKE_SOURCE_DIR}")
 
@@ -529,6 +534,7 @@ add_library(
   runtime/type-builtins-test.cpp
   runtime/under-builtins-module-test.cpp
   runtime/under-os-module-test.cpp
+  runtime/under-valgrind-module-test.cpp
   runtime/utils-test.cpp
   runtime/vector-test.cpp
   runtime/warnings-module-test.cpp)

@@ -62,6 +62,7 @@
 #include "under-os-module.h"
 #include "under-str-mod-module.h"
 #include "under-thread-module.h"
+#include "under-valgrind-module.h"
 #include "utils.h"
 #include "visitor.h"
 #include "warnings-module.h"
@@ -2130,6 +2131,7 @@ const ModuleInitializer Runtime::kBuiltinModules[] = {
     {SymbolId::kUnderThread, &UnderThreadModule::initialize},
     {SymbolId::kUnderIo, &UnderIoModule::initialize},
     {SymbolId::kUnderStrMod, &UnderStrModModule::initialize},
+    {SymbolId::kUnderValgrind, &UnderValgrindModule::initialize},
     {SymbolId::kMarshal, &MarshalModule::initialize},
     {SymbolId::kUnderWarnings, &UnderWarningsModule::initialize},
     {SymbolId::kOperator, &OperatorModule::initialize},
