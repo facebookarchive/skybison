@@ -410,6 +410,18 @@ class object(bootstrap=True):  # noqa: E999
 # End: Early definitions
 
 
+class ArithmeticError(Exception, bootstrap=True):
+    pass
+
+
+class AssertionError(Exception, bootstrap=True):
+    pass
+
+
+class AttributeError(Exception, bootstrap=True):
+    pass
+
+
 class BaseException(bootstrap=True):
     # Some properties of BaseException can be Unbound to indicate that they're
     # nullptr from the C-API's point of view. We want to hide that distinction
@@ -457,10 +469,78 @@ class BaseException(bootstrap=True):
     del _maybe_unbound_property
 
 
+class BlockingIOError(OSError, bootstrap=True):
+    pass
+
+
+class BrokenPipeError(ConnectionError, bootstrap=True):
+    pass
+
+
+class BufferError(Exception, bootstrap=True):
+    pass
+
+
+class BytesWarning(Warning, bootstrap=True):
+    pass
+
+
+class ChildProcessError(OSError, bootstrap=True):
+    pass
+
+
+class ConnectionAbortedError(ConnectionError, bootstrap=True):
+    pass
+
+
+class ConnectionError(OSError, bootstrap=True):
+    pass
+
+
+class ConnectionRefusedError(ConnectionError, bootstrap=True):
+    pass
+
+
+class ConnectionResetError(ConnectionError, bootstrap=True):
+    pass
+
+
+class DeprecationWarning(Warning, bootstrap=True):
+    pass
+
+
+class EOFError(Exception, bootstrap=True):
+    pass
+
+
 Ellipsis = ...
 
 
 EnvironmentError = OSError
+
+
+class Exception(BaseException, bootstrap=True):
+    pass
+
+
+class FileExistsError(OSError, bootstrap=True):
+    pass
+
+
+class FileNotFoundError(OSError, bootstrap=True):
+    pass
+
+
+class FloatingPointError(ArithmeticError, bootstrap=True):
+    pass
+
+
+class FutureWarning(Warning, bootstrap=True):
+    pass
+
+
+class GeneratorExit(BaseException, bootstrap=True):
+    pass
 
 
 IOError = OSError
@@ -476,11 +556,51 @@ class ImportError(Exception, bootstrap=True):
         self.path = path
 
 
+class ImportWarning(Warning, bootstrap=True):
+    pass
+
+
+class IndentationError(SyntaxError, bootstrap=True):
+    pass
+
+
+class IndexError(LookupError, bootstrap=True):
+    pass
+
+
+class InterruptedError(OSError, bootstrap=True):
+    pass
+
+
+class IsADirectoryError(OSError, bootstrap=True):
+    pass
+
+
 class KeyError(LookupError, bootstrap=True):
     def __str__(self):
         if _tuple_check(self.args) and _tuple_len(self.args) == 1:
             return repr(self.args[0])
         return super(KeyError, self).__str__()
+
+
+class KeyboardInterrupt(BaseException, bootstrap=True):
+    pass
+
+
+class LookupError(Exception, bootstrap=True):
+    pass
+
+
+class MemoryError(Exception, bootstrap=True):
+    pass
+
+
+class ModuleNotFoundError(ImportError, bootstrap=True):
+    pass
+
+
+class NameError(Exception, bootstrap=True):
+    pass
 
 
 class NoneType(bootstrap=True):
@@ -493,9 +613,57 @@ class NoneType(bootstrap=True):
         pass
 
 
+class NotADirectoryError(OSError, bootstrap=True):
+    pass
+
+
 class NotImplementedType(bootstrap=True):
     def __repr__(self):
         return "NotImplemented"
+
+
+class NotImplementedError(RuntimeError, bootstrap=True):
+    pass
+
+
+class OSError(Exception, bootstrap=True):
+    pass
+
+
+class OverflowError(ArithmeticError, bootstrap=True):
+    pass
+
+
+class PendingDeprecationWarning(Warning, bootstrap=True):
+    pass
+
+
+class PermissionError(OSError, bootstrap=True):
+    pass
+
+
+class ProcessLookupError(OSError, bootstrap=True):
+    pass
+
+
+class RecursionError(RuntimeError, bootstrap=True):
+    pass
+
+
+class ReferenceError(Exception, bootstrap=True):
+    pass
+
+
+class ResourceWarning(Warning, bootstrap=True):
+    pass
+
+
+class RuntimeError(Exception, bootstrap=True):
+    pass
+
+
+class RuntimeWarning(Warning, bootstrap=True):
+    pass
 
 
 class SimpleNamespace:
@@ -510,6 +678,10 @@ class SimpleNamespace:
         kwpairs = [f"{key}={value!r}" for key, value in proxy.items()]
         _repr_leave(self)
         return "namespace(" + ", ".join(kwpairs) + ")"
+
+
+class StopAsyncIteration(Exception, bootstrap=True):
+    pass
 
 
 class StopIteration(Exception, bootstrap=True):
@@ -550,9 +722,33 @@ class SyntaxError(Exception, bootstrap=True):
             return f"{self.msg!s} (line {self.lineno})"
 
 
+class SyntaxWarning(Warning, bootstrap=True):
+    pass
+
+
+class SystemError(Exception, bootstrap=True):
+    pass
+
+
 class SystemExit(BaseException, bootstrap=True):
     def __init__(self, *args, **kwargs):
         pass
+
+
+class TabError(IndentationError, bootstrap=True):
+    pass
+
+
+class TimeoutError(OSError, bootstrap=True):
+    pass
+
+
+class TypeError(Exception, bootstrap=True):
+    pass
+
+
+class UnboundLocalError(NameError, bootstrap=True):
+    pass
 
 
 class UnicodeDecodeError(UnicodeError, bootstrap=True):
@@ -602,6 +798,26 @@ class UnicodeTranslateError(UnicodeError, bootstrap=True):
         if not _str_check(reason):
             raise TypeError(f"argument 4 must be str, not {_type(reason).__name__}")
         self.reason = reason
+
+
+class UnicodeWarning(Warning, bootstrap=True):
+    pass
+
+
+class UserWarning(Warning, bootstrap=True):
+    pass
+
+
+class ValueError(Exception, bootstrap=True):
+    pass
+
+
+class Warning(Exception, bootstrap=True):
+    pass
+
+
+class ZeroDivisionError(ArithmeticError, bootstrap=True):
+    pass
 
 
 @_patch

@@ -1907,6 +1907,32 @@ RawObject Runtime::findOrCreateMainModule() {
   return *main;
 }
 
+static void checkBuiltinTypeDeclarations(Thread* thread, const Module& module) {
+  // Ensure builtin types have been declared.
+  HandleScope scope(thread);
+  List values(&scope, moduleValues(thread, module));
+  Object value(&scope, NoneType::object());
+  Runtime* runtime = thread->runtime();
+  for (word i = 0, num_items = values.numItems(); i < num_items; i++) {
+    value = values.at(i);
+    if (!runtime->isInstanceOfType(*value)) continue;
+    Type type(&scope, *value);
+    if (!type.isBuiltin()) continue;
+    Dict type_dict(&scope, type.dict());
+    // Check whether __doc__ exists as a signal that the type was declared.
+    if (!runtime->typeDictAtById(thread, type_dict, SymbolId::kDunderDoc)
+             .isErrorNotFound()) {
+      continue;
+    }
+    Str name(&scope, type.name());
+    unique_c_ptr<char> name_cstr(name.toCStr());
+    Str module_name(&scope, module.name());
+    unique_c_ptr<char> module_name_cstr(module_name.toCStr());
+    DCHECK(false, "Builtin type %s.%s not defined", module_name_cstr.get(),
+           name_cstr.get());
+  }
+}
+
 RawObject Runtime::executeFrozenModule(const char* buffer,
                                        const Module& module) {
   HandleScope scope;
@@ -1915,7 +1941,12 @@ RawObject Runtime::executeFrozenModule(const char* buffer,
   reader.readLong();
   reader.readLong();
   Code code(&scope, reader.readObject());
-  return executeModule(code, module);
+  Object result(&scope, executeModule(code, module));
+  if (result.isErrorException()) return *result;
+  if (DCHECK_IS_ON()) {
+    checkBuiltinTypeDeclarations(Thread::current(), module);
+  }
+  return NoneType::object();
 }
 
 RawObject Runtime::executeModule(const Code& code, const Module& module) {
