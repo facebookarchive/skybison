@@ -177,7 +177,7 @@ Frame* Thread::popFrame() {
 RawObject Thread::exec(const Code& code, const Module& module,
                        const Object& locals) {
   HandleScope scope(this);
-  Object qualname(&scope, Str::empty());
+  Object qualname(&scope, code.name());
 
   CHECK(!code.hasOptimizedOrNewLocals(),
         "exec() code must not have CO_OPTIMIZED or CO_NEWLOCALS");
