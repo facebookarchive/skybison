@@ -156,6 +156,7 @@ _str_partition = _str_partition  # noqa: F821
 _str_replace = _str_replace  # noqa: F821
 _str_rfind = _str_rfind  # noqa: F821
 _str_rpartition = _str_rpartition  # noqa: F821
+_str_split = _str_split  # noqa: F821
 _str_splitlines = _str_splitlines  # noqa: F821
 _str_startswith = _str_startswith  # noqa: F821
 _tuple_check = _tuple_check  # noqa: F821
@@ -1226,40 +1227,6 @@ def _slice_index_not_none(num) -> int:
     if _object_type_hasattr(num, "__index__"):
         return _index(num)
     raise TypeError("slice indices must be integers or have an __index__ method")
-
-
-def _str_split_whitespace(self, maxsplit):
-    length = _str_len(self)
-    i = 0
-    res = []
-    num_split = 0
-    while True:
-        # find the beginning of the next word
-        while i < length:
-            if not str.__getitem__(self, i).isspace():
-                break  # found
-            i += 1
-        else:
-            break  # end of string, finished
-
-        # find the end of the word
-        if maxsplit == num_split:
-            j = length  # take all the rest of the string
-        else:
-            j = i + 1
-            while j < length and not str.__getitem__(self, j).isspace():
-                j += 1
-            num_split += 1
-
-        # the word is self[i:j]
-        res.append(self[i:j])
-
-        # continue to look from the character following the space after the word
-        if j < length:
-            i = j + 1
-        else:
-            break
-    return res
 
 
 class _strarray(bootstrap=True):  # noqa: F821
@@ -4459,54 +4426,16 @@ class str(bootstrap=True):
     def rstrip(self, other=None):
         pass
 
-    def split(self, sep=None, maxsplit=-1):  # noqa: C901
+    def split(self, sep=None, maxsplit=-1):
         _str_guard(self)
-        # If the separator is not specified, split on all whitespace characters.
-        if sep is None:
-            return _str_split_whitespace(self, maxsplit)
-        if maxsplit == 0:
-            return [self]
-        if not _str_check(sep):
-            raise TypeError("must be str or None")
-        sep_len = _str_len(sep)
-        if sep_len == 0:
-            raise ValueError("empty separator")
-
-        def strcmp(cmp, other, start):
-            """Returns True if other is in cmp at the position start"""
-            i = 0
-            cmp_len = _str_len(cmp)
-            other_len = _str_len(other)
-            # If the other string is longer than the rest of the current string,
-            # then it is not a match.
-            if start + other_len > cmp_len:
-                return False
-            while i < other_len and start + i < cmp_len:
-                if cmp[start + i] != other[i]:
-                    return False
-                i += 1
-            return True
-
-        # TODO(dulinr): This path uses random-access indices on strings, which
-        # is not efficient for UTF-8 strings.
-        parts = []
-        i = 0
-        str_len = _str_len(self)
-        # The index of the string starting after the last match.
-        last_match = 0
-        while i < str_len:
-            if strcmp(self, sep, i):
-                parts.append(self[last_match:i])
-                last_match = i + sep_len
-                # If we've hit the max number of splits, return early.
-                maxsplit -= 1
-                if maxsplit == 0:
-                    break
-                i += sep_len
-            else:
-                i += 1
-        parts.append(self[last_match:])
-        return parts
+        if _int_check(maxsplit) and (sep is None or _str_check(sep)):
+            return _str_split(self, sep, maxsplit)
+        if _float_check(maxsplit):
+            raise TypeError("integer argument expected, got float")
+        maxsplit = _index(maxsplit)
+        if sep is None or _str_check(sep):
+            return _str_split(self, sep, maxsplit)
+        raise TypeError(f"must be str or None, not {_type(sep).__name__}")
 
     def splitlines(self, keepends=False):
         _str_guard(self)

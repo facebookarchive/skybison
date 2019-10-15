@@ -47,7 +47,7 @@ RawObject strCount(const Str& haystack, const Str& needle, word start,
 
 word strCountSubStrFromTo(const Str& haystack, const Str& needle, word start,
                           word end, word max_count) {
-  DCHECK(max_count > 0, "max_count must be positive");
+  DCHECK(max_count >= 0, "max_count must be non-negative");
   word needle_len = needle.charLength();
   word num_match = 0;
   // Loop is in byte space, not code point space

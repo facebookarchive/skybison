@@ -7016,6 +7016,50 @@ class StrTests(unittest.TestCase):
     def test_rpartition_partitions_str(self):
         self.assertEqual("hello".rpartition("l"), ("hel", "l", "o"))
 
+    def test_split_with_empty_separator_list_raises_type_error(self):
+        self.assertRaisesRegex(TypeError, "must be str or None", str.split, "abc", [])
+
+    def test_split_with_empty_separator_list_and_bad_maxsplit_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "cannot be interpreted as an integer",
+            str.split,
+            "abc",
+            [],
+            maxsplit="bad",
+        )
+
+    def test_split_with_empty_separator_raises_value_error(self):
+        self.assertRaisesRegex(ValueError, "empty separator", str.split, "abc", "")
+
+    def test_split_with_repeated_sep_consolidates_spaces(self):
+        self.assertEqual("hello".split("l"), ["he", "", "o"])
+
+    def test_split_with_none_separator_splits_on_whitespace(self):
+        self.assertEqual("a\t\n b c".split(), ["a", "b", "c"])
+
+    def test_split_with_adjacent_separators_coalesces_spaces(self):
+        self.assertEqual("hello".split("l"), ["he", "", "o"])
+
+    def test_split_with_negative_maxsplit_splits_all(self):
+        self.assertEqual("a b c".split(" ", maxsplit=-10), ["a", "b", "c"])
+
+    def test_split_with_non_int_maxsplit_calls_dunder_index(self):
+        class C:
+            __index__ = Mock(name="__index__", return_value=1)
+
+        result = "a b c".split(" ", maxsplit=C())
+        self.assertEqual(result, ["a", "b c"])
+        C.__index__.assert_called_once()
+
+    def test_split_with_int_subclass_maxsplit_does_not_call_dunder_index(self):
+        class C(int):
+            __index__ = Mock(name="__index__", return_value=1)
+
+        result = "a b c".split(" ", maxsplit=C(5))
+        self.assertEqual(result, ["a", "b", "c"])
+        C.__index__.assert_not_called()
+
     def test_splitlines_with_non_str_raises_type_error(self):
         with self.assertRaises(TypeError):
             str.splitlines(None)

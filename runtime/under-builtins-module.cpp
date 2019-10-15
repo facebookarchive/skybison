@@ -227,6 +227,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrReplace, underStrReplace},
     {SymbolId::kUnderStrRFind, underStrRFind},
     {SymbolId::kUnderStrRPartition, underStrRPartition},
+    {SymbolId::kUnderStrSplit, underStrSplit},
     {SymbolId::kUnderStrSplitlines, underStrSplitlines},
     {SymbolId::kUnderStrStartswith, underStrStartsWith},
     {SymbolId::kUnderTupleCheck, underTupleCheck},
@@ -3199,6 +3200,94 @@ RawObject UnderBuiltinsModule::underStrRPartition(Thread* thread, Frame* frame,
   result.atPut(2,
                runtime->strSubstr(thread, haystack, suffix_start, suffix_len));
   return result.becomeImmutable();
+}
+
+static RawObject strSplitWhitespace(Thread* thread, const Str& self,
+                                    word maxsplit) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  List result(&scope, runtime->newList());
+  if (maxsplit < 0) {
+    maxsplit = kMaxWord;
+  }
+  word self_length = self.charLength();
+  word num_split = 0;
+  Str substr(&scope, Str::empty());
+  for (word i = 0, j = 0; j < self_length; i = self.offsetByCodePoints(j, 1)) {
+    // Find beginning of next word
+    word cp_length;
+    // TODO(T43723300): Use isSpaceUnicode
+    while (i < self_length && isSpaceASCII(self.codePointAt(i, &cp_length))) {
+      i += cp_length;
+    }
+    if (i == self_length) {
+      // End of string; finished
+      break;
+    }
+
+    // Find end of next word
+    if (maxsplit == num_split) {
+      // Take the rest of the string
+      j = self_length;
+    } else {
+      j = self.offsetByCodePoints(i, 1);
+      // TODO(T43723300): Use isSpaceUnicode
+      while (j < self_length &&
+             !isSpaceASCII(self.codePointAt(j, &cp_length))) {
+        j += cp_length;
+      }
+      num_split += 1;
+    }
+    substr = runtime->strSubstr(thread, self, i, j - i);
+    runtime->listAdd(thread, result, substr);
+  }
+  return *result;
+}
+
+RawObject UnderBuiltinsModule::underStrSplit(Thread* thread, Frame* frame,
+                                             word nargs) {
+  Runtime* runtime = thread->runtime();
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Str self(&scope, strUnderlying(thread, self_obj));
+  Object sep_obj(&scope, args.get(1));
+  Object maxsplit_obj(&scope, args.get(2));
+  Int maxsplit_int(&scope, intUnderlying(thread, maxsplit_obj));
+  word maxsplit = maxsplit_int.asWordSaturated();
+  if (sep_obj.isNoneType()) {
+    return strSplitWhitespace(thread, self, maxsplit);
+  }
+  Str sep(&scope, strUnderlying(thread, sep_obj));
+  if (sep.charLength() == 0) {
+    return thread->raiseWithFmt(LayoutId::kValueError, "empty separator");
+  }
+  if (maxsplit < 0) {
+    maxsplit = kMaxWord;
+  }
+  word num_splits = strCountSubStr(self, sep, maxsplit);
+  word result_len = num_splits + 1;
+  MutableTuple result_items(&scope, runtime->newMutableTuple(result_len));
+  word last_idx = 0;
+  word sep_len = sep.charLength();
+  for (word i = 0, result_idx = 0; result_idx < num_splits;) {
+    if (strHasPrefix(self, sep, i)) {
+      result_items.atPut(
+          result_idx++,
+          runtime->strSubstr(thread, self, last_idx, i - last_idx));
+      i += sep_len;
+      last_idx = i;
+    } else {
+      i = self.offsetByCodePoints(i, 1);
+    }
+  }
+  result_items.atPut(
+      num_splits,
+      runtime->strSubstr(thread, self, last_idx, self.charLength() - last_idx));
+  List result(&scope, runtime->newList());
+  result.setItems(*result_items);
+  result.setNumItems(result_len);
+  return *result;
 }
 
 RawObject UnderBuiltinsModule::underStrSplitlines(Thread* thread, Frame* frame,

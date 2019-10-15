@@ -791,6 +791,11 @@ def _str_rpartition(self, sep):
 
 
 @_patch
+def _str_split(self, sep, maxsplit):
+    pass
+
+
+@_patch
 def _str_splitlines(self, keepends):
     pass
 

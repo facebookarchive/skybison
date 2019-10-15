@@ -237,6 +237,7 @@ class UnderBuiltinsModule {
   static RawObject underStrReplace(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrRFind(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrRPartition(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrSplit(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrSplitlines(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrStartsWith(Thread* thread, Frame* frame, word nargs);
   static RawObject underTupleCheck(Thread* thread, Frame* frame, word nargs);

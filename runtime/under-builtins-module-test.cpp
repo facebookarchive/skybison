@@ -1937,6 +1937,81 @@ TEST_F(UnderBuiltinsModuleTest, RpartitionEmptyStrReturnsTupleOfEmptyStrings) {
   EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
 }
 
+TEST_F(UnderBuiltinsModuleTest,
+       UnderStrSplitWithStrEqualsSepReturnsTwoEmptyStrings) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("haystack"));
+  Str sep(&scope, runtime_.newStrFromCStr("haystack"));
+  Int maxsplit(&scope, SmallInt::fromWord(100));
+  List result(&scope, runBuiltin(UnderBuiltinsModule::underStrSplit, str, sep,
+                                 maxsplit));
+  EXPECT_PYLIST_EQ(result, {"", ""});
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderStrSplitWithSepNotInStrReturnsListOfStr) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("haystack"));
+  Str sep(&scope, runtime_.newStrFromCStr("foobar"));
+  Int maxsplit(&scope, SmallInt::fromWord(100));
+  List result(&scope, runBuiltin(UnderBuiltinsModule::underStrSplit, str, sep,
+                                 maxsplit));
+  ASSERT_EQ(result.numItems(), 1);
+  EXPECT_EQ(result.at(0), *str);
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderStrSplitWithSepInUnderStrSplitsOnSep) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("hello world hello world"));
+  Str sep(&scope, runtime_.newStrFromCStr(" w"));
+  Int maxsplit(&scope, SmallInt::fromWord(100));
+  List result(&scope, runBuiltin(UnderBuiltinsModule::underStrSplit, str, sep,
+                                 maxsplit));
+  EXPECT_PYLIST_EQ(result, {"hello", "orld hello", "orld"});
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderStrSplitWithSepInUnderStrSplitsOnSepMaxsplit) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("a b c d e"));
+  Str sep(&scope, runtime_.newStrFromCStr(" "));
+  Int maxsplit(&scope, SmallInt::fromWord(2));
+  List result(&scope, runBuiltin(UnderBuiltinsModule::underStrSplit, str, sep,
+                                 maxsplit));
+  EXPECT_PYLIST_EQ(result, {"a", "b", "c d e"});
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderStrSplitWithSepInUnderStrSplitsOnSepMaxsplitZero) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("a b c d e"));
+  Str sep(&scope, runtime_.newStrFromCStr(" "));
+  Int maxsplit(&scope, SmallInt::fromWord(0));
+  List result(&scope, runBuiltin(UnderBuiltinsModule::underStrSplit, str, sep,
+                                 maxsplit));
+  EXPECT_PYLIST_EQ(result, {"a b c d e"});
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderStrSplitWhitespaceSplitsOnWhitespace) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("a   \t  b c"));
+  Object sep(&scope, NoneType::object());
+  Int maxsplit(&scope, SmallInt::fromWord(100));
+  List result(&scope, runBuiltin(UnderBuiltinsModule::underStrSplit, str, sep,
+                                 maxsplit));
+  EXPECT_PYLIST_EQ(result, {"a", "b", "c"});
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderStrSplitWhitespaceSplitsOnWhitespaceAtEnd) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("a   \t  b c  "));
+  Object sep(&scope, NoneType::object());
+  Int maxsplit(&scope, SmallInt::fromWord(100));
+  List result(&scope, runBuiltin(UnderBuiltinsModule::underStrSplit, str, sep,
+                                 maxsplit));
+  EXPECT_PYLIST_EQ(result, {"a", "b", "c"});
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderTupleCheckExactWithExactTupleReturnsTrue) {
   HandleScope scope(thread_);
   Object obj(&scope, runtime_.newTuple(0));
