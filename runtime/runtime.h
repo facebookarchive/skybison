@@ -892,6 +892,12 @@ class Runtime {
   // SmallInt objects.
   static RawObject objectEquals(Thread* thread, RawObject o0, RawObject o1);
 
+  void* parserGrammar() { return parser_grammar_; }
+  void setParserGrammar(void* grammar, void (*grammar_free)(void*)) {
+    parser_grammar_ = grammar;
+    parser_grammar_free_func_ = grammar_free;
+  }
+
  private:
   void initializeApiData();
   void initializeExceptionTypes();
@@ -1084,6 +1090,9 @@ class Runtime {
   NewValueCellCallback new_value_cell_callback_;
 
   Symbols* symbols_;
+
+  void* parser_grammar_ = nullptr;
+  void (*parser_grammar_free_func_)(void*) = nullptr;
 
   word max_module_index_ = 0;
 

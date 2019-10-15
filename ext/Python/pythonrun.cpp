@@ -400,18 +400,32 @@ static void errInput(perrdetail* err) {
   errInputCleanup(msg_obj, err);
 }
 
+static void freeGrammar(void* grammar) {
+  if (grammar != nullptr) {
+    PyGrammar_RemoveAccelerators(static_cast<::grammar*>(grammar));
+    std::free(grammar);
+  }
+}
+
+static grammar* initializeGrammar() {
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  grammar* g = static_cast<grammar*>(runtime->parserGrammar());
+  if (g == nullptr) {
+    g = static_cast<grammar*>(std::malloc(sizeof(_PyParser_Grammar)));
+    CHECK(g != nullptr, "could not allocate memory for parser grammar");
+    std::memcpy(g, &_PyParser_Grammar, sizeof(_PyParser_Grammar));
+    runtime->setParserGrammar(g, freeGrammar);
+  }
+  return g;
+}
+
 PY_EXPORT struct _node* PyParser_SimpleParseStringFlagsFilename(
     const char* str, const char* filename, int start, int flags) {
   perrdetail err;
   node* mod;
-  {
-    // TODO(T53544009): Cache accelerators on runtime instead of having a
-    // use-once shallow copy of the global grammar.
-    grammar g = _PyParser_Grammar;
-    mod = PyParser_ParseStringFlagsFilename(str, filename, &g, start, &err,
-                                            flags);
-    PyGrammar_RemoveAccelerators(&g);
-  }
+  grammar* g = initializeGrammar();
+  mod = PyParser_ParseStringFlagsFilename(str, filename, g, start, &err, flags);
   if (mod == nullptr) errInput(&err);
   Py_CLEAR(err.filename);
   return mod;
@@ -458,15 +472,9 @@ PY_EXPORT mod_ty PyParser_ASTFromFileObject(FILE* fp, PyObject* filename,
                                             int* errcode, PyArena* arena) {
   perrdetail err;
   int iflags = parserFlags(flags);
-  node* parse_tree;
-  {
-    // TODO(T53544009): Cache accelerators on runtime instead of having a
-    // use-once shallow copy of the global grammar.
-    grammar g = _PyParser_Grammar;
-    parse_tree = PyParser_ParseFileObject(fp, filename, enc, &g, start, ps1,
-                                          ps2, &err, &iflags);
-    PyGrammar_RemoveAccelerators(&g);
-  }
+  grammar* g = initializeGrammar();
+  node* parse_tree = PyParser_ParseFileObject(fp, filename, enc, g, start, ps1,
+                                              ps2, &err, &iflags);
   PyCompilerFlags localflags;
   if (flags == nullptr) {
     localflags.cf_flags = 0;
@@ -504,14 +512,8 @@ PY_EXPORT mod_ty PyParser_ASTFromStringObject(const char* s, PyObject* filename,
                                               PyArena* arena) {
   perrdetail err;
   int iflags = parserFlags(flags);
-  node* n;
-  {
-    // TODO(T53544009): Cache accelerators on runtime instead of having a
-    // use-once shallow copy of the global grammar.
-    grammar g = _PyParser_Grammar;
-    n = PyParser_ParseStringObject(s, filename, &g, start, &err, &iflags);
-    PyGrammar_RemoveAccelerators(&g);
-  }
+  grammar* g = initializeGrammar();
+  node* n = PyParser_ParseStringObject(s, filename, g, start, &err, &iflags);
   PyCompilerFlags localflags;
   if (flags == nullptr) {
     localflags.cf_flags = 0;
