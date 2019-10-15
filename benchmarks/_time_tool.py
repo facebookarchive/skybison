@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import sys
 import time
 
@@ -109,11 +110,20 @@ class TimeTool:
 
 
 def main(argv):
-    benchmark_path = sys.argv[1]
+    benchmark_path = os.path.realpath(sys.argv[1])
     directory, _, name_and_ext = benchmark_path.rpartition("/")
     name, _, _ = name_and_ext.rpartition(".")
     sys.path.append(directory)
     module = __import__(name)
+    module_file = getattr(module, "__file__", "<builtin>")
+    if os.path.realpath(module_file) != benchmark_path:
+        print(
+            f"Module {name} was imported from {module_file}, not "
+            f"{benchmark_path} as expected. Does your benchmark name conflict "
+            "with a builtin module?",
+            file=sys.stderr,
+        )
+        sys.exit(1)
     sys.path.pop()
     time_tool = TimeTool()
     result = time_tool.run(module)
