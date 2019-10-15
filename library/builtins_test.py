@@ -6898,6 +6898,9 @@ class StrTests(unittest.TestCase):
         self.assertTrue(" \t\r\n".isspace())
         self.assertFalse(" _".isspace())
 
+    def test_isspace_with_multichar_unicode_spaces_returns_true(self):
+        self.assertTrue(" \t\u3000\n\u202f".isspace())
+
     def test_isspace_with_non_str_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             str.isspace(None)

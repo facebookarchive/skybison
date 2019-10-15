@@ -1209,16 +1209,18 @@ RawObject StrBuiltins::isspace(Thread* thread, Frame* frame, word nargs) {
   if (char_length == 0) {
     return Bool::falseObj();
   }
-  word i = 0;
+  if (char_length == 1) {
+    return isSpaceASCII(self.charAt(0)) ? Bool::trueObj() : Bool::falseObj();
+  }
+  word byte_index = 0;
   do {
-    byte b = self.charAt(i++);
-    if (b > kMaxASCII) {
-      UNIMPLEMENTED("non-ASCII character");
-    }
-    if (!isSpaceASCII(b)) {
+    word codepoint_len;
+    int32_t codepoint = self.codePointAt(byte_index, &codepoint_len);
+    if (!isSpaceUnicode(codepoint)) {
       return Bool::falseObj();
     }
-  } while (i < char_length);
+    byte_index += codepoint_len;
+  } while (byte_index < char_length);
   return Bool::trueObj();
 }
 
