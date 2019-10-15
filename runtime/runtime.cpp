@@ -2381,13 +2381,6 @@ void Runtime::createBuiltinsModule(Thread* thread) {
       value = moduleAtById(thread, under_builtins, id);
       moduleAtPutById(thread, module, id, value);
     }
-    for (word i = 0;
-         UnderBuiltinsModule::kBuiltinTypes[i].name != SymbolId::kSentinelId;
-         i++) {
-      SymbolId id = UnderBuiltinsModule::kBuiltinTypes[i].name;
-      value = moduleAtById(thread, under_builtins, id);
-      moduleAtPutById(thread, module, id, value);
-    }
     value = moduleAtById(thread, under_builtins, SymbolId::kUnderPatch);
     moduleAtPutById(thread, module, SymbolId::kUnderPatch, value);
     value = moduleAtById(thread, under_builtins, SymbolId::kUnderUnbound);
@@ -2583,12 +2576,6 @@ void Runtime::createUnderBuiltinsModule(Thread* thread) {
     moduleAddBuiltinFunction(module,
                              UnderBuiltinsModule::kBuiltinMethods[i].name,
                              UnderBuiltinsModule::kBuiltinMethods[i].address);
-  }
-  for (word i = 0;
-       UnderBuiltinsModule::kBuiltinTypes[i].name != SymbolId::kSentinelId;
-       i++) {
-    moduleAddBuiltinType(module, UnderBuiltinsModule::kBuiltinTypes[i].name,
-                         UnderBuiltinsModule::kBuiltinTypes[i].type);
   }
 
   // We have to patch _patch manually.

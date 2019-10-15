@@ -189,6 +189,7 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
     {SymbolId::kTypeProxy, LayoutId::kTypeProxy},
     {SymbolId::kUnboundLocalError, LayoutId::kUnboundLocalError},
     {SymbolId::kUnderStrArray, LayoutId::kStrArray},
+    {SymbolId::kUnderTraceback, LayoutId::kTraceback},
     {SymbolId::kUnicodeDecodeError, LayoutId::kUnicodeDecodeError},
     {SymbolId::kUnicodeEncodeError, LayoutId::kUnicodeEncodeError},
     {SymbolId::kUnicodeError, LayoutId::kUnicodeError},

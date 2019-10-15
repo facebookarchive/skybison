@@ -279,7 +279,6 @@ class UnderBuiltinsModule {
                                         word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];
-  static const BuiltinType kBuiltinTypes[];
   static const char* const kFrozenData;
   static const SymbolId kIntrinsicIds[];
 };

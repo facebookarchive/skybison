@@ -157,7 +157,6 @@ _str_rfind = _str_rfind  # noqa: F821
 _str_rpartition = _str_rpartition  # noqa: F821
 _str_splitlines = _str_splitlines  # noqa: F821
 _str_startswith = _str_startswith  # noqa: F821
-_traceback = _traceback  # noqa: F821
 _tuple_check = _tuple_check  # noqa: F821
 _tuple_checkexact = _tuple_checkexact  # noqa: F821
 _tuple_getitem = _tuple_getitem  # noqa: F821
@@ -268,6 +267,10 @@ class staticmethod(bootstrap=True):
 
     def __new__(cls, fn):
         pass
+
+
+class _traceback(bootstrap=True):
+    pass
 
 
 class type(bootstrap=True):

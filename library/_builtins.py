@@ -4,7 +4,6 @@
 # These values are injected by our boot process. flake8 has no knowledge about
 # their definitions and will complain without these circular assignments.
 _patch = _patch  # noqa: F821
-_traceback = _traceback  # noqa: F821
 _Unbound = _Unbound  # noqa: F821
 
 

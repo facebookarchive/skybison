@@ -260,11 +260,6 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kSentinelId, nullptr},
 };
 
-const BuiltinType UnderBuiltinsModule::kBuiltinTypes[] = {
-    {SymbolId::kUnderTraceback, LayoutId::kTraceback},
-    {SymbolId::kSentinelId, LayoutId::kSentinelId},
-};
-
 const char* const UnderBuiltinsModule::kFrozenData = kUnderBuiltinsModuleData;
 
 // clang-format off
