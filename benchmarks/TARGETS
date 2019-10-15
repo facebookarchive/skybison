@@ -39,7 +39,7 @@ python_library(
 python_library(
     name = "benchmarks",
     srcs = [
-        "benchmarks/base64.py",
+        "benchmarks/bench_base64.py",
         "benchmarks/deltablue.py",
         "benchmarks/fannkuch.py",
         "benchmarks/nbody.py",
