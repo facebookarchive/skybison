@@ -3488,6 +3488,14 @@ TEST_F(RuntimeStrTest, StrSliceUnicode) {
   EXPECT_TRUE(isStrEqualsCStr(*slice, u8"\u05d9\u05dc \u05d5"));
 }
 
+TEST_F(RuntimeStrTest, StrSliceUnicodeWithStepOne) {
+  HandleScope scope(thread_);
+  Str str(&scope,
+          runtime_.newStrFromCStr(u8"\u05d0\u05e0\u05d9 \u05dc\u05d0 "));
+  Str slice(&scope, runtime_.strSlice(thread_, str, 2, 5, 1));
+  EXPECT_TRUE(isStrEqualsCStr(*slice, u8"\u05d9 \u05dc"));
+}
+
 TEST_F(RuntimeStrTest, StrSliceUnicodeWithNegativeStop) {
   HandleScope scope(thread_);
   Str str(&scope,

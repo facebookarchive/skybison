@@ -4100,6 +4100,12 @@ RawObject Runtime::strSlice(Thread* thread, const Str& str, word start,
   word length =
       Slice::adjustIndices(str.codePointLength(), &start, &stop, step);
   word num_bytes = 0;
+  if (step == 1) {
+    word start_index = str.offsetByCodePoints(0, start);
+    word end_index = str.offsetByCodePoints(start_index, length);
+    num_bytes = end_index - start_index;
+    return strSubstr(thread, str, start_index, num_bytes);
+  }
   for (word i = 0, str_index = start; i < length; i++, str_index += step) {
     // TODO(T54139192): adjust the char index incrementally instead of
     // recomputing it on each iteration.
