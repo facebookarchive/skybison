@@ -20,7 +20,7 @@ def run(cmd, **kwargs):
     env["PYTHONHASHSEED"] = "0"
     env["PYRO_ENABLE_CACHE"] = "1"
     log.info(f">>> {' '.join(cmd)}")
-    return subprocess.run(cmd, encoding="UTF-8", env=env, **kwargs)
+    return subprocess.run(cmd, encoding="UTF-8", env=env, check=True, **kwargs)
 
 
 def pin_to_cpus():
@@ -88,9 +88,6 @@ class TimeTool(SequentialPerformanceTool):
             ]
         )
         completed_process = run(command, stdout=subprocess.PIPE)
-        if completed_process.returncode != 0:
-            log.error(f"Couldn't run: {completed_process.args}")
-            return {}
         time_output = completed_process.stdout.strip()
         events = [event.split(" , ") for event in time_output.split("\n")]
         result = {event[0]: event[1] for event in events}
