@@ -144,6 +144,11 @@ class Utils {
     return x > y ? x : y;
   }
 
+  // Search forwards through `haystack` looking for `needle`. Return the byte
+  // offset, or -1 if not found.
+  static word memoryFind(byte* haystack, word haystack_len, byte* needle,
+                         word needle_len);
+
   // Search backwards through `haystack` looking for `needle`. Return the byte
   // offset, or -1 if not found.
   static word memoryFindCharReverse(byte* haystack, byte needle, word length);

@@ -95,6 +95,27 @@ class TracebackPrinter : public FrameVisitor {
   std::vector<std::string> lines_;
 };
 
+word Utils::memoryFind(byte* haystack, word haystack_len, byte* needle,
+                       word needle_len) {
+  DCHECK(haystack != nullptr, "haystack cannot be null");
+  DCHECK(needle != nullptr, "needle cannot be null");
+  DCHECK(haystack_len >= 0, "haystack length must be nonnegative");
+  DCHECK(needle_len >= 0, "needle length must be nonnegative");
+  // We need something to compare
+  if (haystack_len == 0 || needle_len == 0) return -1;
+  // The needle is too big to be contained in haystack
+  if (haystack_len < needle_len) return -1;
+  void* result;
+  if (needle_len == 1) {
+    // Fast path: one character
+    result = ::memchr(haystack, *needle, haystack_len);
+  } else {
+    result = ::memmem(haystack, haystack_len, needle, needle_len);
+  }
+  if (result == nullptr) return -1;
+  return reinterpret_cast<byte*>(result) - haystack;
+}
+
 word Utils::memoryFindCharReverse(byte* haystack, byte needle, word length) {
   DCHECK(haystack != nullptr, "haystack cannot be null");
   DCHECK(length >= 0, "haystack length must be nonnegative");
