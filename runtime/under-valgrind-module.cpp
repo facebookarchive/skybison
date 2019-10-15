@@ -27,9 +27,8 @@ RawObject UnderValgrindModule::callgrindDumpStatsAt(Thread* thread,
   }
   HandleScope scope(thread);
   Str pos_str(&scope, args.get(0));
-  byte buf[128];
+  byte buf[128] = {0};
   pos_str.copyTo(buf, 127 < pos_str.charLength() ? 127 : pos_str.charLength());
-  buf[127] = 0;
   CALLGRIND_DUMP_STATS_AT(buf);
   return NoneType::object();
 }
