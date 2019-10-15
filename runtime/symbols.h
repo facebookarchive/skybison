@@ -395,6 +395,7 @@ class Runtime;
   V(UnderStrFromStr, "_str_from_str")                                          \
   V(UnderStrLen, "_str_len")                                                   \
   V(UnderStrMod, "_str_mod")                                                   \
+  V(UnderStrPartition, "_str_partition")                                       \
   V(UnderStrReplace, "_str_replace")                                           \
   V(UnderStrRFind, "_str_rfind")                                               \
   V(UnderStrRPartition, "_str_rpartition")                                     \

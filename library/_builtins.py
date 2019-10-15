@@ -771,6 +771,11 @@ def _str_len(self):
 
 
 @_patch
+def _str_partition(self, sep):
+    pass
+
+
+@_patch
 def _str_replace(self, old, newstr, count):
     pass
 

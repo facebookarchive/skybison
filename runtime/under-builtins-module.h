@@ -233,6 +233,7 @@ class UnderBuiltinsModule {
   static RawObject underStrFind(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrFromStr(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrLen(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrPartition(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrReplace(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrRFind(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrRPartition(Thread* thread, Frame* frame, word nargs);

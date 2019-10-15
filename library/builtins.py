@@ -152,6 +152,7 @@ _str_escape_non_ascii = _str_escape_non_ascii  # noqa: F821
 _str_find = _str_find  # noqa: F821
 _str_from_str = _str_from_str  # noqa: F821
 _str_len = _str_len  # noqa: F821
+_str_partition = _str_partition  # noqa: F821
 _str_replace = _str_replace  # noqa: F821
 _str_rfind = _str_rfind  # noqa: F821
 _str_rpartition = _str_rpartition  # noqa: F821
@@ -4410,25 +4411,8 @@ class str(bootstrap=True):
 
     def partition(self, sep):
         _str_guard(self)
-        if not _str_check(sep):
-            raise TypeError(f"must be str, not {_type(sep).__name__}")
-        sep_len = _str_len(sep)
-        if not sep_len:
-            raise ValueError("empty separator")
-        sep_0 = sep[0]
-        i = 0
-        str_len = _str_len(self)
-        while i < str_len:
-            if self[i] == sep_0:
-                j = 1
-                while j < sep_len:
-                    if i + j >= str_len or self[i + j] != sep[j]:
-                        break
-                    j += 1
-                else:
-                    return (self[:i], sep, self[i + j :])
-            i += 1
-        return (self, "", "")
+        _str_guard(sep)
+        return _str_partition(self, sep)
 
     def replace(self, old, new, count=None):
         _str_guard(self)

@@ -1742,6 +1742,102 @@ TEST_F(UnderBuiltinsModuleTest, UnderStrArrayIaddWithStrReturnsStrArray) {
   EXPECT_EQ(self, result);
 }
 
+TEST_F(UnderBuiltinsModuleTest, PartitionOnSingleCharStr) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("hello"));
+  Str sep(&scope, runtime_.newStrFromCStr("l"));
+  Tuple result(&scope,
+               runBuiltin(UnderBuiltinsModule::underStrPartition, str, sep));
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "he"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "l"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "lo"));
+}
+
+TEST_F(UnderBuiltinsModuleTest, PartitionOnMultiCharStr) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("hello"));
+  Str sep(&scope, runtime_.newStrFromCStr("ll"));
+  Tuple result(&scope,
+               runBuiltin(UnderBuiltinsModule::underStrPartition, str, sep));
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "he"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "ll"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "o"));
+}
+
+TEST_F(UnderBuiltinsModuleTest, PartitionOnExistingSuffix) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("hello"));
+  Str sep(&scope, runtime_.newStrFromCStr("lo"));
+  Tuple result(&scope,
+               runBuiltin(UnderBuiltinsModule::underStrPartition, str, sep));
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hel"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "lo"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
+}
+
+TEST_F(UnderBuiltinsModuleTest, PartitionOnNonExistentSuffix) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("hello"));
+  Str sep(&scope, runtime_.newStrFromCStr("lop"));
+  Tuple result(&scope,
+               runBuiltin(UnderBuiltinsModule::underStrPartition, str, sep));
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hello"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
+}
+
+TEST_F(UnderBuiltinsModuleTest, PartitionOnExistingPrefix) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("hello"));
+  Str sep(&scope, runtime_.newStrFromCStr("he"));
+  Tuple result(&scope,
+               runBuiltin(UnderBuiltinsModule::underStrPartition, str, sep));
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "he"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "llo"));
+}
+
+TEST_F(UnderBuiltinsModuleTest, PartitionOnNonExistentPrefix) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("hello"));
+  Str sep(&scope, runtime_.newStrFromCStr("hex"));
+  Tuple result(&scope,
+               runBuiltin(UnderBuiltinsModule::underStrPartition, str, sep));
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hello"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
+}
+
+TEST_F(UnderBuiltinsModuleTest, PartitionLargerStr) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("hello"));
+  Str sep(&scope, runtime_.newStrFromCStr("abcdefghijk"));
+  Tuple result(&scope,
+               runBuiltin(UnderBuiltinsModule::underStrPartition, str, sep));
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hello"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
+}
+
+TEST_F(UnderBuiltinsModuleTest, PartitionEmptyStr) {
+  HandleScope scope(thread_);
+  Str str(&scope, Str::empty());
+  Str sep(&scope, runtime_.newStrFromCStr("a"));
+  Tuple result(&scope,
+               runBuiltin(UnderBuiltinsModule::underStrPartition, str, sep));
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
+}
+
 TEST_F(UnderBuiltinsModuleTest, RpartitionOnSingleCharStrPartitionsCorrectly) {
   HandleScope scope(thread_);
   Str str(&scope, runtime_.newStrFromCStr("hello"));
