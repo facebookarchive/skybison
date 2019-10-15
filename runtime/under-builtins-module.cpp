@@ -787,6 +787,7 @@ RawObject UnderBuiltinsModule::underBytesRepeat(Thread* thread, Frame* frame,
   Bytes self(&scope, bytesUnderlying(thread, self_obj));
   Object count_obj(&scope, args.get(1));
   Int count_int(&scope, intUnderlying(thread, count_obj));
+  // TODO(T55084422): unify bounds checking
   word count = count_int.asWordSaturated();
   if (!SmallInt::isValid(count)) {
     return thread->raiseWithFmt(LayoutId::kOverflowError,

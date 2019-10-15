@@ -1229,13 +1229,7 @@ class bytearray(bootstrap=True):
         elif _byteslike_check(source):
             _bytearray_setslice(self, 0, 0, 1, source)
         elif _int_check(source) or _object_type_hasattr(source, "__index__"):
-            count = _index(source)
-            # TODO(T55084422): make sure that source fits into a Py_ssize_t
-            if count < -2 ** 63 or count >= 2 ** 63:
-                raise OverflowError("cannot fit count into an index-sized integer")
-            if count < 0:
-                raise ValueError("negative count")
-            _bytearray_setslice(self, 0, 0, 1, _bytes_repeat(b"\x00", count))
+            _bytearray_setslice(self, 0, 0, 1, _bytes_repeat(b"\x00", _index(source)))
         else:
             _bytearray_setslice(self, 0, 0, 1, _bytes_new(source))
 
