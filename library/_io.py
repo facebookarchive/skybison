@@ -435,7 +435,7 @@ class _IOBase(bootstrap=True):
             self.write(line)
 
 
-class _TextIOBase(_IOBase):
+class _TextIOBase(_IOBase, bootstrap=True):
     def read(self, size=-1):
         self._unsupported("read")
 
@@ -1136,7 +1136,7 @@ class BufferedWriter(_BufferedIOMixin, bootstrap=True):
             return written
 
 
-class BytesIO(bootstrap=True):
+class BytesIO(_BufferedIOBase, bootstrap=True):
     """Buffered I/O implementation using an in-memory bytes buffer."""
 
     def __init__(self, initial_bytes=None):

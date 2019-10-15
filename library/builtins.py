@@ -463,7 +463,7 @@ EnvironmentError = OSError
 IOError = OSError
 
 
-class ImportError(bootstrap=True):
+class ImportError(Exception, bootstrap=True):
     def __init__(self, *args, name=None, path=None):
         # TODO(mpage): Call super once we have EX calling working for built-in methods
         self.args = args
@@ -473,7 +473,7 @@ class ImportError(bootstrap=True):
         self.path = path
 
 
-class KeyError(bootstrap=True):
+class KeyError(LookupError, bootstrap=True):
     def __str__(self):
         if _tuple_check(self.args) and _tuple_len(self.args) == 1:
             return repr(self.args[0])
@@ -509,12 +509,12 @@ class SimpleNamespace:
         return "namespace(" + ", ".join(kwpairs) + ")"
 
 
-class StopIteration(bootstrap=True):
+class StopIteration(Exception, bootstrap=True):
     def __init__(self, *args, **kwargs):
         pass
 
 
-class SyntaxError(bootstrap=True):
+class SyntaxError(Exception, bootstrap=True):
     def __init__(self, *args, **kwargs):
         # TODO(T52743795): Replace with super() when that is fixed
         super(SyntaxError, self).__init__(*args, **kwargs)
@@ -547,7 +547,7 @@ class SyntaxError(bootstrap=True):
             return f"{self.msg!s} (line {self.lineno})"
 
 
-class SystemExit(bootstrap=True):
+class SystemExit(BaseException, bootstrap=True):
     def __init__(self, *args, **kwargs):
         pass
 
@@ -583,7 +583,7 @@ class UnicodeEncodeError(UnicodeError, bootstrap=True):
         self.reason = reason
 
 
-class UnicodeError(bootstrap=True):  # noqa: B903
+class UnicodeError(ValueError, bootstrap=True):  # noqa: B903
     def __init__(self, *args):
         self.args = args
 
@@ -1161,7 +1161,7 @@ def bin(number) -> str:
     pass
 
 
-class bool(bootstrap=True):
+class bool(int, bootstrap=True):
     def __new__(cls, val=False):
         pass
 

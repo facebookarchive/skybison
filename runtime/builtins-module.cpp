@@ -302,6 +302,18 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
           name_str.toCStr());
     Type type(&scope, *type_obj);
 
+    if (bases.length() == 0 && name != runtime->symbols()->ObjectTypename()) {
+      bases = runtime->implicitBases();
+    }
+    Tuple builtin_bases(&scope, type.bases());
+    word bases_length = bases.length();
+    CHECK(builtin_bases.length() == bases_length, "mismatching bases for '%s'",
+          name_str.toCStr());
+    for (word i = 0; i < bases_length; i++) {
+      CHECK(builtin_bases.at(i) == bases.at(i), "mismatching bases for '%s'",
+            name_str.toCStr());
+    }
+
     Dict patch_type(&scope, runtime->newDict());
     Object result(&scope, thread->runClassFunction(body, patch_type));
     if (result.isError()) return *result;

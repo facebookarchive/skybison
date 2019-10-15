@@ -36,9 +36,9 @@ class UnderRawIOBaseBuiltins
 };
 
 class UnderBufferedIOBaseBuiltins
-    : public Builtins<
-          UnderBufferedIOBaseBuiltins, SymbolId::kUnderBufferedIOBase,
-          LayoutId::kUnderBufferedIOBase, LayoutId::kUnderRawIOBase> {
+    : public Builtins<UnderBufferedIOBaseBuiltins,
+                      SymbolId::kUnderBufferedIOBase,
+                      LayoutId::kUnderBufferedIOBase, LayoutId::kUnderIOBase> {
  public:
   static void postInitialize(Runtime* runtime, const Type& new_type);
 };

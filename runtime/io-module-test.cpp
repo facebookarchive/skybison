@@ -17,7 +17,7 @@ TEST_F(IoModuleTest, PostInitializeSetsBuiltinBaseToSupertype) {
 
   Type buffered_io_base(&scope,
                         runtime_.typeAt(LayoutId::kUnderBufferedIOBase));
-  EXPECT_EQ(buffered_io_base.builtinBase(), LayoutId::kUnderRawIOBase);
+  EXPECT_EQ(buffered_io_base.builtinBase(), LayoutId::kUnderIOBase);
 
   Type bytes_io(&scope, runtime_.typeAt(LayoutId::kBytesIO));
   EXPECT_EQ(bytes_io.builtinBase(), LayoutId::kUnderBufferedIOBase);
