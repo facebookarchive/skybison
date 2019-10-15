@@ -34,8 +34,6 @@ class OS {
 
   static char* temporaryFile(const char* prefix, int* fd);
 
-  static const char* getenv(const char* var);
-
   static const char* name();
 
   static bool dirExists(const char* dir);

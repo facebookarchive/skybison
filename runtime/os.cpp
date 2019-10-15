@@ -154,8 +154,6 @@ char* OS::temporaryFile(const char* prefix, int* fd) {
   return buffer;
 }
 
-const char* OS::getenv(const char* var) { return ::getenv(var); }
-
 bool OS::dirExists(const char* dir) {
   struct stat st;
   int err = ::stat(dir, &st);
