@@ -13,6 +13,9 @@ namespace python {
 
 const BuiltinMethod UnderValgrindModule::kBuiltinMethods[] = {
     {SymbolId::kCallgrindDumpStatsAt, callgrindDumpStatsAt},
+    {SymbolId::kCallgrindStartInstrumentation, callgrindStartInstrumentation},
+    {SymbolId::kCallgrindStopInstrumentation, callgrindStopInstrumentation},
+    {SymbolId::kCallgrindZeroStats, callgrindZeroStats},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -30,6 +33,23 @@ RawObject UnderValgrindModule::callgrindDumpStatsAt(Thread* thread,
   byte buf[128] = {0};
   pos_str.copyTo(buf, 127 < pos_str.charLength() ? 127 : pos_str.charLength());
   CALLGRIND_DUMP_STATS_AT(buf);
+  return NoneType::object();
+}
+
+RawObject UnderValgrindModule::callgrindStartInstrumentation(Thread*, Frame*,
+                                                             word) {
+  CALLGRIND_START_INSTRUMENTATION;
+  return NoneType::object();
+}
+
+RawObject UnderValgrindModule::callgrindStopInstrumentation(Thread*, Frame*,
+                                                            word) {
+  CALLGRIND_STOP_INSTRUMENTATION;
+  return NoneType::object();
+}
+
+RawObject UnderValgrindModule::callgrindZeroStats(Thread*, Frame*, word) {
+  CALLGRIND_ZERO_STATS;
   return NoneType::object();
 }
 

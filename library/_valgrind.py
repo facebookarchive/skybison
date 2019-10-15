@@ -9,3 +9,18 @@ _patch = _patch  # noqa: F821
 @_patch
 def callgrind_dump_stats_at(pos_str=None):
     pass
+
+
+@_patch
+def callgrind_start_instrumentation():
+    pass
+
+
+@_patch
+def callgrind_stop_instrumentation():
+    pass
+
+
+@_patch
+def callgrind_zero_stats():
+    pass
