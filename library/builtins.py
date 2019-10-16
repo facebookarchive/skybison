@@ -4262,8 +4262,6 @@ class str(bootstrap=True):
 
     def encode(self, encoding="utf-8", errors=_Unbound) -> bytes:
         _str_guard(self)
-        import _codecs
-
         return _codecs.encode(self, encoding, errors)
 
     def endswith(self, suffix, start=None, end=None):
@@ -4781,8 +4779,6 @@ class type_proxy(bootstrap=True):
 
 def vars(obj=_Unbound):
     if obj is _Unbound:
-        import sys
-
         return _sys._getframe_locals(1)
     try:
         return obj.__dict__
