@@ -11,8 +11,7 @@ class Thread;
 class UnderValgrindModule
     : public ModuleBase<UnderValgrindModule, SymbolId::kUnderValgrind> {
  public:
-  static RawObject callgrindDumpStatsAt(Thread* thread, Frame* frame,
-                                        word nargs);
+  static RawObject callgrindDumpStats(Thread* thread, Frame* frame, word nargs);
   static RawObject callgrindStartInstrumentation(Thread* thread, Frame* frame,
                                                  word nargs);
   static RawObject callgrindStopInstrumentation(Thread* thread, Frame* frame,

@@ -7,12 +7,13 @@
 #include "handles.h"
 #include "int-builtins.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "thread.h"
 
 namespace python {
 
 const BuiltinMethod UnderValgrindModule::kBuiltinMethods[] = {
-    {SymbolId::kCallgrindDumpStatsAt, callgrindDumpStatsAt},
+    {SymbolId::kCallgrindDumpStats, callgrindDumpStats},
     {SymbolId::kCallgrindStartInstrumentation, callgrindStartInstrumentation},
     {SymbolId::kCallgrindStopInstrumentation, callgrindStopInstrumentation},
     {SymbolId::kCallgrindZeroStats, callgrindZeroStats},
@@ -21,18 +22,21 @@ const BuiltinMethod UnderValgrindModule::kBuiltinMethods[] = {
 
 const char* const UnderValgrindModule::kFrozenData = kUnderValgrindModuleData;
 
-RawObject UnderValgrindModule::callgrindDumpStatsAt(Thread* thread,
-                                                    Frame* frame, word nargs) {
+RawObject UnderValgrindModule::callgrindDumpStats(Thread* thread, Frame* frame,
+                                                  word nargs) {
   Arguments args(frame, nargs);
-  if (!args.get(0).isStr()) {
+  HandleScope scope(thread);
+  Object description(&scope, args.get(0));
+  if (description.isNoneType()) {
     CALLGRIND_DUMP_STATS;
     return NoneType::object();
   }
-  HandleScope scope(thread);
-  Str pos_str(&scope, args.get(0));
-  byte buf[128] = {0};
-  pos_str.copyTo(buf, 127 < pos_str.charLength() ? 127 : pos_str.charLength());
-  CALLGRIND_DUMP_STATS_AT(buf);
+  if (!thread->runtime()->isInstanceOfStr(*description)) {
+    return thread->raiseRequiresType(description, SymbolId::kStr);
+  }
+  Str description_str(&scope, strUnderlying(thread, description));
+  unique_c_ptr<char> description_cstr(description_str.toCStr());
+  CALLGRIND_DUMP_STATS_AT(description_cstr.get());
   return NoneType::object();
 }
 

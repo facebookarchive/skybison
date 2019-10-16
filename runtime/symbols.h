@@ -501,7 +501,7 @@ class Runtime;
   V(BytesWarning, "BytesWarning")                                              \
   V(Callable, "callable")                                                      \
   V(CallableIterator, "callable_iterator")                                     \
-  V(CallgrindDumpStatsAt, "callgrind_dump_stats_at")                           \
+  V(CallgrindDumpStats, "callgrind_dump_stats")                                \
   V(CallgrindStartInstrumentation, "callgrind_start_instrumentation")          \
   V(CallgrindStopInstrumentation, "callgrind_stop_instrumentation")            \
   V(CallgrindZeroStats, "callgrind_zero_stats")                                \

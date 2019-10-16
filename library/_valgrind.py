@@ -7,7 +7,7 @@ _patch = _patch  # noqa: F821
 
 
 @_patch
-def callgrind_dump_stats_at(pos_str=None):
+def callgrind_dump_stats(description=None):
     pass
 
 

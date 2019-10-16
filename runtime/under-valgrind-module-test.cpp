@@ -11,14 +11,16 @@ using namespace testing;
 
 using UnderValgrindModuleTest = RuntimeFixture;
 
-TEST_F(UnderValgrindModuleTest, UnderCallgrindDumpStatsAtDoesNothing) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-import _valgrind
-_valgrind.callgrind_dump_stats_at()
-_valgrind.callgrind_dump_stats_at("service_load")
-_valgrind.callgrind_dump_stats_at("a" * 1024)
-)")
-                   .isError());
+TEST_F(UnderValgrindModuleTest, UnderCallgrindDumpStatsWithNoneDoesNothing) {
+  HandleScope scope(thread_);
+  Object none(&scope, NoneType::object());
+  runBuiltin(UnderValgrindModule::callgrindDumpStats, none);
+}
+
+TEST_F(UnderValgrindModuleTest, UnderCallgrindDumpStatsWithStringDoesNothing) {
+  HandleScope scope(thread_);
+  Object string(&scope, runtime_.newStrFromCStr("service_load"));
+  runBuiltin(UnderValgrindModule::callgrindDumpStats, string);
 }
 
 TEST_F(UnderValgrindModuleTest, UnderCallgrindStartInstrumentationDoesNothing) {
