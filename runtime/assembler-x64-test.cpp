@@ -57,7 +57,7 @@ TEST(AssemblerTest, Labels) {
   Label loop;
   as.bind(&loop);
   as.nop();
-  as.jmp(&loop);
+  as.jmp(&loop, Assembler::kNearJump);
   EXPECT_TRUE(assemblerContainsBytes(&as, expected));
 }
 

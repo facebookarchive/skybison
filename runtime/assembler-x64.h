@@ -754,10 +754,10 @@ class Assembler {
 
   void ud2();
 
-  void jcc(Condition condition, Label* label, bool near = kFarJump);
+  void jcc(Condition condition, Label* label, bool near);
   void jmp(Register reg) { emitUnaryL(reg, 0xff, 4); }
   void jmp(Address address) { emitUnaryL(address, 0xff, 4); }
-  void jmp(Label* label, bool near = kFarJump);
+  void jmp(Label* label, bool near);
 
   void lockCmpxchgq(Address address, Register reg) {
     lock();
@@ -771,7 +771,6 @@ class Assembler {
 
   void align(int alignment);
   void bind(Label* label);
-  void jump(Label* label) { jmp(label); }
 
   // Debugging and bringup support.
   void breakpoint() { int3(); }

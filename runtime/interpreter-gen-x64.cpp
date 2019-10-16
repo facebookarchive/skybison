@@ -716,13 +716,13 @@ void emitHandler<RETURN_VALUE>(EmitEnv* env) {
   // check for the common case here:
   // Go to slow_path if frame == entry_frame...
   __ cmpq(kFrameReg, Address(RBP, kEntryFrameOffset));
-  __ jcc(EQUAL, &slow_path);
+  __ jcc(EQUAL, &slow_path, Assembler::kNearJump);
 
   // or frame->blockStack()->depth() != 0...
   __ cmpq(
       Address(kFrameReg, Frame::kBlockStackOffset + BlockStack::kDepthOffset),
       Immediate(SmallInt::fromWord(0).raw()));
-  __ jcc(NOT_EQUAL, &slow_path);
+  __ jcc(NOT_EQUAL, &slow_path, Assembler::kNearJump);
 
   // or frame->function()->isGenerator().
   __ movq(r_scratch, Address(kFrameReg, Frame::kLocalsOffset));
@@ -730,7 +730,7 @@ void emitHandler<RETURN_VALUE>(EmitEnv* env) {
           Address(r_scratch, Frame::kFunctionOffsetFromLocals * kPointerSize));
   __ testq(Address(r_scratch, heapObjectDisp(Function::kFlagsOffset)),
            Immediate(SmallInt::fromWord(Function::kGenerator).raw()));
-  __ jcc(NOT_ZERO, &slow_path);
+  __ jcc(NOT_ZERO, &slow_path, Assembler::kNearJump);
 
   // Fast path: pop return value, restore caller frame, push return value.
   __ popq(RAX);
