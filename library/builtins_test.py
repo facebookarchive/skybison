@@ -13,6 +13,23 @@ except ImportError:
     pass
 
 
+class AbsTests(unittest.TestCase):
+    def test_abs_calls_dunder_abs(self):
+        class C:
+            __abs__ = Mock(name="__abs__", return_value=3)
+
+        abs(C())
+        C.__abs__.assert_called_once()
+
+    def test_abs_with_non_callable_dunder_abs_raises_type_error(self):
+        class C:
+            __abs__ = None
+
+        instance = C()
+        with self.assertRaisesRegex(TypeError, "'NoneType' object is not callable"):
+            abs(instance)
+
+
 class BinTests(unittest.TestCase):
     def test_returns_string(self):
         self.assertEqual(bin(0), "0b0")
