@@ -91,13 +91,14 @@ class Runtime {
 
   RawObject newClassMethod();
 
-  RawObject newCode(word argcount, word posonlyargcount, word kwonlyargcount,
-                    word nlocals, word stacksize, word flags,
-                    const Object& code, const Object& consts,
-                    const Object& names, const Object& varnames,
-                    const Object& freevars, const Object& cellvars,
-                    const Object& filename, const Object& name,
-                    word firstlineno, const Object& lnotab);
+  NODISCARD RawObject newCode(word argcount, word posonlyargcount,
+                              word kwonlyargcount, word nlocals, word stacksize,
+                              word flags, const Object& code,
+                              const Object& consts, const Object& names,
+                              const Object& varnames, const Object& freevars,
+                              const Object& cellvars, const Object& filename,
+                              const Object& name, word firstlineno,
+                              const Object& lnotab);
 
   RawObject newBuiltinCode(word argcount, word posonlyargcount,
                            word kwonlyargcount, word flags,
@@ -217,8 +218,8 @@ class Runtime {
   RawObject newStrFromCStr(const char* c_str);
   RawObject strFromStrArray(const StrArray& array);
 
-  RawObject strFormat(Thread* thread, char* dst, word size, const Str& fmt,
-                      va_list args);
+  NODISCARD RawObject strFormat(Thread* thread, char* dst, word size,
+                                const Str& fmt, va_list args);
   // Creates a new string constructed from a format and a list of arguments,
   // similar to sprintf.
   // %c formats an ASCII character
@@ -242,8 +243,8 @@ class Runtime {
   void processFinalizers();
 
   RawObject strConcat(Thread* thread, const Str& left, const Str& right);
-  RawObject strJoin(Thread* thread, const Str& sep, const Tuple& items,
-                    word allocated);
+  NODISCARD RawObject strJoin(Thread* thread, const Str& sep,
+                              const Tuple& items, word allocated);
 
   // Creates a new Str containing `str` repeated `count` times.
   RawObject strRepeat(Thread* thread, const Str& str, word count);
@@ -392,7 +393,8 @@ class Runtime {
   SymbolId comparisonSelector(CompareOp op);
   SymbolId swappedComparisonSelector(CompareOp op);
 
-  RawObject iteratorLengthHint(Thread* thread, const Object& iterator);
+  NODISCARD RawObject iteratorLengthHint(Thread* thread,
+                                         const Object& iterator);
 
   RawObject buildClass() { return build_class_; }
 
@@ -447,12 +449,14 @@ class Runtime {
                           word suffix_len, word start, word end);
 
   // Returns a new Bytes from the first `length` int-like elements in the tuple.
-  RawObject bytesFromTuple(Thread* thread, const Tuple& items, word length);
+  NODISCARD RawObject bytesFromTuple(Thread* thread, const Tuple& items,
+                                     word length);
 
   // Concatenates an iterable of bytes-like objects with a separator. Returns
   // Bytes or MutableBytes, depending on `sep`'s type.
-  RawObject bytesJoin(Thread* thread, const Bytes& sep, word sep_length,
-                      const Tuple& src, word src_length);
+  NODISCARD RawObject bytesJoin(Thread* thread, const Bytes& sep,
+                                word sep_length, const Tuple& src,
+                                word src_length);
 
   // Creates a new Bytes or MutableBytes (depending on `source`'s type)
   // containing the first `length` bytes of the `source` repeated `count` times.
@@ -575,8 +579,8 @@ class Runtime {
 
   // Compute the set intersection between a set and an iterator
   // Returns either a new set with the intersection or an Error object.
-  RawObject setIntersection(Thread* thread, const SetBase& set,
-                            const Object& iterable);
+  NODISCARD RawObject setIntersection(Thread* thread, const SetBase& set,
+                                      const Object& iterable);
 
   // Delete the value equivalent to `key` from the set.
   // Returns true if a value was removed, false if no equivalent value existed.
@@ -585,16 +589,16 @@ class Runtime {
 
   // Update a set from an iterator
   // Returns either the updated set or an Error object.
-  RawObject setUpdate(Thread* thread, const SetBase& dst,
-                      const Object& iterable);
+  NODISCARD RawObject setUpdate(Thread* thread, const SetBase& dst,
+                                const Object& iterable);
 
   RawObject tupleSubseq(Thread* thread, const Tuple& self, word start,
                         word length);
 
   // Resume a GeneratorBase, passing it the given value and returning either the
   // yielded value or Error on termination.
-  RawObject genSend(Thread* thread, const GeneratorBase& gen,
-                    const Object& value);
+  NODISCARD RawObject genSend(Thread* thread, const GeneratorBase& gen,
+                              const Object& value);
 
   // Save the current Frame to the given generator.
   void genSave(Thread* thread, const GeneratorBase& gen);
@@ -618,16 +622,16 @@ class Runtime {
   RawObject classConstructor(const Type& type);
 
   // Implements `receiver.name`
-  RawObject attributeAt(Thread* thread, const Object& object,
-                        const Object& name_str);
-  RawObject attributeAtById(Thread* thread, const Object& receiver,
-                            SymbolId id);
-  RawObject attributeAtByCStr(Thread* thread, const Object& receiver,
-                              const char* name);
+  NODISCARD RawObject attributeAt(Thread* thread, const Object& object,
+                                  const Object& name_str);
+  NODISCARD RawObject attributeAtById(Thread* thread, const Object& receiver,
+                                      SymbolId id);
+  NODISCARD RawObject attributeAtByCStr(Thread* thread, const Object& receiver,
+                                        const char* name);
 
   // Implements `del receiver.name`
-  RawObject attributeDel(Thread* thread, const Object& receiver,
-                         const Object& name);
+  NODISCARD RawObject attributeDel(Thread* thread, const Object& receiver,
+                                   const Object& name);
 
   // Looks up the named attribute in the layout.
   //
@@ -656,7 +660,7 @@ class Runtime {
   RawObject layoutDeleteAttribute(Thread* thread, const Layout& layout,
                                   const Str& name_interned);
 
-  RawObject computeBuiltinBase(Thread* thread, const Type& type);
+  NODISCARD RawObject computeBuiltinBase(Thread* thread, const Type& type);
 
   void typeAddBuiltinFunction(const Type& type, SymbolId name,
                               Function::Entry entry);
@@ -870,7 +874,7 @@ class Runtime {
 
   // If the importlib module has already been initialized and added, return it.
   // Else, create and add it to the runtime.
-  RawObject findOrCreateImportlibModule(Thread* thread);
+  NODISCARD RawObject findOrCreateImportlibModule(Thread* thread);
 
   // If the main module has already been initialized and added, return it.
   // Else, create and add it to the runtime.
@@ -950,16 +954,16 @@ class Runtime {
   RawTuple setGrow(Thread* thread, const Tuple& data);
 
   // Generic attribute deletion code used for class objects
-  RawObject classDelAttr(Thread* thread, const Object& receiver,
-                         const Object& name);
+  NODISCARD RawObject classDelAttr(Thread* thread, const Object& receiver,
+                                   const Object& name);
 
   // Generic attribute deletion code used for instance objects
-  RawObject instanceDelAttr(Thread* thread, const Object& receiver,
-                            const Object& name);
+  NODISCARD RawObject instanceDelAttr(Thread* thread, const Object& receiver,
+                                      const Object& name);
 
   // Generic attribute deletion code used for module objects
-  RawObject moduleDelAttr(Thread* thread, const Object& receiver,
-                          const Object& name);
+  NODISCARD RawObject moduleDelAttr(Thread* thread, const Object& receiver,
+                                    const Object& name);
 
   // helper function add builtin types
   void moduleAddBuiltinType(const Module& module, SymbolId name,

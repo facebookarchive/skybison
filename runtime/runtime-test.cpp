@@ -1813,15 +1813,15 @@ TEST_F(RuntimeSetTest, UpdateSet) {
     Object value(&scope, SmallInt::fromWord(i));
     setHashAndAdd(thread_, set, value);
   }
-  runtime_.setUpdate(thread_, set, set1_handle);
+  ASSERT_FALSE(runtime_.setUpdate(thread_, set, set1_handle).isError());
   ASSERT_EQ(set.numItems(), 8);
   for (word i = 4; i < 12; i++) {
     Object value(&scope, SmallInt::fromWord(i));
     setHashAndAdd(thread_, set1, value);
   }
-  runtime_.setUpdate(thread_, set, set1_handle);
+  ASSERT_FALSE(runtime_.setUpdate(thread_, set, set1_handle).isError());
   ASSERT_EQ(set.numItems(), 12);
-  runtime_.setUpdate(thread_, set, set1_handle);
+  ASSERT_FALSE(runtime_.setUpdate(thread_, set, set1_handle).isError());
   ASSERT_EQ(set.numItems(), 12);
 }
 
@@ -1839,9 +1839,9 @@ TEST_F(RuntimeSetTest, UpdateList) {
   }
   ASSERT_EQ(set.numItems(), 8);
   Object list_handle(&scope, *list);
-  runtime_.setUpdate(thread_, set, list_handle);
+  ASSERT_FALSE(runtime_.setUpdate(thread_, set, list_handle).isError());
   ASSERT_EQ(set.numItems(), 12);
-  runtime_.setUpdate(thread_, set, list_handle);
+  ASSERT_FALSE(runtime_.setUpdate(thread_, set, list_handle).isError());
   ASSERT_EQ(set.numItems(), 12);
 }
 
@@ -1860,7 +1860,7 @@ TEST_F(RuntimeSetTest, UpdateListIterator) {
   ASSERT_EQ(set.numItems(), 8);
   Object list_handle(&scope, *list);
   Object list_iterator(&scope, runtime_.newListIterator(list_handle));
-  runtime_.setUpdate(thread_, set, list_iterator);
+  ASSERT_FALSE(runtime_.setUpdate(thread_, set, list_iterator).isError());
   ASSERT_EQ(set.numItems(), 12);
 }
 
@@ -1877,7 +1877,7 @@ TEST_F(RuntimeSetTest, UpdateTuple) {
   }
   ASSERT_EQ(set.numItems(), 8);
   Object object_array_handle(&scope, *object_array);
-  runtime_.setUpdate(thread_, set, object_array_handle);
+  ASSERT_FALSE(runtime_.setUpdate(thread_, set, object_array_handle).isError());
   ASSERT_EQ(set.numItems(), 12);
 }
 
@@ -1887,7 +1887,7 @@ TEST_F(RuntimeSetTest, UpdateIterator) {
   Int one(&scope, SmallInt::fromWord(1));
   Int four(&scope, SmallInt::fromWord(4));
   Object iterable(&scope, runtime_.newRange(one, four, one));
-  runtime_.setUpdate(thread_, set, iterable);
+  ASSERT_FALSE(runtime_.setUpdate(thread_, set, iterable).isError());
 
   ASSERT_EQ(set.numItems(), 3);
 }
@@ -2874,7 +2874,7 @@ TEST_F(RuntimeTest, LazyInitializationOfFunctionDictWithAttribute) {
   ASSERT_TRUE(function.dict().isNoneType());
 
   Object key(&scope, runtime_.newStrFromCStr("bar"));
-  runtime_.attributeAt(thread_, function, key);
+  EXPECT_TRUE(runtime_.attributeAt(thread_, function, key).isError());
   EXPECT_TRUE(function.dict().isDict());
 }
 
@@ -2884,7 +2884,7 @@ TEST_F(RuntimeTest, LazyInitializationOfFunctionDict) {
   ASSERT_TRUE(function.dict().isNoneType());
 
   Object key(&scope, runtime_.newStrFromCStr("__dict__"));
-  runtime_.attributeAt(thread_, function, key);
+  EXPECT_FALSE(runtime_.attributeAt(thread_, function, key).isError());
   EXPECT_TRUE(function.dict().isDict());
 }
 
