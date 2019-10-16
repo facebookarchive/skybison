@@ -3601,6 +3601,26 @@ TEST_F(RuntimeStrArrayTest, AppendStrAppendsValidUTF8) {
                               "a\xC3\xA9\xE2\xB3\x80\xF0\x9F\x86\x92"));
 }
 
+TEST_F(RuntimeStrArrayTest, AddStrArrayAppendsValidUTF8) {
+  HandleScope scope(thread_);
+
+  StrArray array(&scope, runtime_.newStrArray());
+  StrArray one(&scope, runtime_.newStrArray());
+  Str one_contents(&scope, runtime_.newStrFromCStr("a\xC3\xA9"));
+  runtime_.strArrayAddStr(thread_, one, one_contents);
+  StrArray two(&scope, runtime_.newStrArray());
+  Str two_contents(&scope,
+                   runtime_.newStrFromCStr("\xE2\xB3\x80\xF0\x9F\x86\x92"));
+  runtime_.strArrayAddStr(thread_, two, two_contents);
+
+  runtime_.strArrayAddStrArray(thread_, array, one);
+  runtime_.strArrayAddStrArray(thread_, array, two);
+  EXPECT_EQ(array.numItems(), 10);
+
+  EXPECT_TRUE(isStrEqualsCStr(runtime_.strFromStrArray(array),
+                              "a\xC3\xA9\xE2\xB3\x80\xF0\x9F\x86\x92"));
+}
+
 TEST_F(RuntimeStrArrayTest, AddASCIIAppendsASCII) {
   HandleScope scope(thread_);
 

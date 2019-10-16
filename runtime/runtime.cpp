@@ -4213,6 +4213,19 @@ void Runtime::strArrayAddStr(Thread* thread, const StrArray& array,
   array.setNumItems(new_length);
 }
 
+void Runtime::strArrayAddStrArray(Thread* thread, const StrArray& array,
+                                  const StrArray& str) {
+  word length = str.numItems();
+  if (length == 0) return;
+  word num_items = array.numItems();
+  word new_length = length + num_items;
+  strArrayEnsureCapacity(thread, array, new_length);
+  byte* dst =
+      reinterpret_cast<byte*>(MutableBytes::cast(array.items()).address());
+  str.copyTo(dst + num_items, length);
+  array.setNumItems(new_length);
+}
+
 void Runtime::strArrayEnsureCapacity(Thread* thread, const StrArray& array,
                                      word min_capacity) {
   DCHECK_BOUND(min_capacity, SmallInt::kMaxValue);

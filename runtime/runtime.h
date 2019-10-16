@@ -860,6 +860,8 @@ class Runtime {
 
   void strArrayAddASCII(Thread* thread, const StrArray& array, byte code_point);
   void strArrayAddStr(Thread* thread, const StrArray& array, const Str& str);
+  void strArrayAddStrArray(Thread* thread, const StrArray& array,
+                           const StrArray& str);
 
   // Ensures that the str array has at least the desired capacity.
   // Allocates if the existing capacity is insufficient.
