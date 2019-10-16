@@ -384,6 +384,7 @@ class Runtime;
   V(UnderStdout, "_stdout")                                                    \
   V(UnderStdoutFd, "_stdout_fd")                                               \
   V(UnderStrArray, "_strarray")                                                \
+  V(UnderStrArrayClear, "_strarray_clear")                                     \
   V(UnderStrArrayIadd, "_strarray_iadd")                                       \
   V(UnderStrCheck, "_str_check")                                               \
   V(UnderStrCheckExact, "_str_checkexact")                                     \

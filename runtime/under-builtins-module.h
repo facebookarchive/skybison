@@ -221,6 +221,7 @@ class UnderBuiltinsModule {
   static RawObject underSliceStop(Thread* thread, Frame* frame, word nargs);
   static RawObject underStaticMethodIsAbstract(Thread* thread, Frame* frame,
                                                word nargs);
+  static RawObject underStrArrayClear(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrArrayIadd(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrCheckExact(Thread* thread, Frame* frame, word nargs);

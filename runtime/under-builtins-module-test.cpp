@@ -1731,6 +1731,22 @@ result = _str_from_str(Sub, 'value')
   EXPECT_TRUE(isStrEqualsCStr(*result, "value"));
 }
 
+TEST_F(UnderBuiltinsModuleTest, UnderStrArrayClearSetsNumItemsToZero) {
+  HandleScope scope(thread_);
+  StrArray self(&scope, runtime_.newStrArray());
+  Str other(&scope, runtime_.newStrFromCStr("hello"));
+  runtime_.strArrayAddStr(thread_, self, other);
+  ASSERT_EQ(self.numItems(), 5);
+  EXPECT_TRUE(
+      runBuiltin(UnderBuiltinsModule::underStrArrayClear, self).isNoneType());
+  EXPECT_EQ(self.numItems(), 0);
+
+  // Make sure that str does not show up again
+  other = runtime_.newStrFromCStr("abcd");
+  runtime_.strArrayAddStr(thread_, self, other);
+  EXPECT_TRUE(isStrEqualsCStr(runtime_.strFromStrArray(self), "abcd"));
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderStrArrayIaddWithStrReturnsStrArray) {
   HandleScope scope(thread_);
   StrArray self(&scope, runtime_.newStrArray());

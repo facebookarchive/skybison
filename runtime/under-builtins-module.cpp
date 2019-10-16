@@ -212,6 +212,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderSliceStep, underSliceStep},
     {SymbolId::kUnderSliceStop, underSliceStop},
     {SymbolId::kUnderStaticMethodIsAbstract, underStaticMethodIsAbstract},
+    {SymbolId::kUnderStrArrayClear, underStrArrayClear},
     {SymbolId::kUnderStrArrayIadd, underStrArrayIadd},
     {SymbolId::kUnderStrCheck, underStrCheck},
     {SymbolId::kUnderStrCheckExact, underStrCheckExact},
@@ -2882,6 +2883,15 @@ RawObject UnderBuiltinsModule::underStaticMethodIsAbstract(Thread* thread,
   StaticMethod self(&scope, args.get(0));
   Object func(&scope, self.function());
   return isAbstract(thread, func);
+}
+
+RawObject UnderBuiltinsModule::underStrArrayClear(Thread* thread, Frame* frame,
+                                                  word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  StrArray self(&scope, args.get(0));
+  self.setNumItems(0);
+  return NoneType::object();
 }
 
 RawObject UnderBuiltinsModule::underStrArrayIadd(Thread* thread, Frame* frame,

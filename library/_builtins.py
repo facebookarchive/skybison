@@ -806,6 +806,11 @@ def _str_startswith(self, prefix, start, end):
 
 
 @_patch
+def _strarray_clear(self):
+    pass
+
+
+@_patch
 def _strarray_iadd(self, other):
     pass
 
