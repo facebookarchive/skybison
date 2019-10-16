@@ -192,6 +192,24 @@ _unimplemented = _unimplemented  # noqa: F821
 
 # Begin: Early definitions that are necessary to process the rest of the file:
 
+# This function is called after all builtins modules are initialized to enable
+# __import__ to work correctly.
+def _init():
+    global _codecs
+    import _codecs
+
+    global _frozen_importlib
+    import _frozen_importlib
+
+    global _str_mod
+    import _str_mod
+
+    global _sys
+    import sys as _sys
+
+    global _warnings
+    import warnings as _warnings
+
 
 @_patch
 def __build_class__(func, name, *bases, metaclass=_Unbound, bootstrap=False, **kwargs):
@@ -1009,9 +1027,7 @@ def _int(obj) -> int:
     if _int_checkexact(result):
         return result
     if _int_check(result):
-        import warnings
-
-        warnings.warn(
+        _warnings.warn(
             f"__int__ returned non-int (type {_type(result).__name__}).  "
             "The ability to return an instance of a strict subclass of int "
             "is deprecated, and may be removed in a future version of Python.",
@@ -1161,9 +1177,7 @@ def _new_member_set_integral(offset, num_bytes, min_value, max_value, primitive_
             raise TypeError("attribute value type must be int")
         _set_member_integral(_pyobject_offset(instance, offset), value, num_bytes)
         if value < min_value or value > max_value:
-            import warnings
-
-            warnings.warn(f"Truncation of value to {primitive_type}")
+            _warnings.warn(f"Truncation of value to {primitive_type}")
 
     return setter
 
@@ -1320,9 +1334,11 @@ def _type_name(cls):
 
 
 def abs(x):
-    import operator
-
-    return operator.abs(x)
+    "Same as a.__abs__()."
+    dunder_abs = getattr(x, "__abs__", None)
+    if dunder_abs is None:
+        raise TypeError(f"bad operand type for abs(): '{type(x).__name__}'")
+    return dunder_abs()
 
 
 def all(iterable):
@@ -1518,8 +1534,6 @@ class bytearray(bootstrap=True):
         return _byteslike_count(self, sub, start, end)
 
     def decode(self, encoding="utf-8", errors=_Unbound):
-        import _codecs
-
         return _codecs.decode(self, encoding, errors)
 
     def endswith(self, suffix, start=_Unbound, end=_Unbound):
@@ -1865,8 +1879,6 @@ class bytes(bootstrap=True):
         return _byteslike_count(self, sub, start, end)
 
     def decode(self, encoding="utf-8", errors="strict") -> str:
-        import _codecs
-
         return _codecs.decode(self, encoding, errors)
 
     def endswith(self, suffix, start=_Unbound, end=_Unbound):
@@ -2304,9 +2316,7 @@ class dict_values(bootstrap=True):
 
 def dir(obj=_Unbound):
     if obj is _Unbound:
-        import sys
-
-        names = sys._getframe_locals(1).keys()
+        names = _sys._getframe_locals(1).keys()
     else:
         names = _type(obj).__dir__(obj)
     return sorted(names)
@@ -2415,9 +2425,7 @@ class float(bootstrap=True):
         typearg = str(typearg)
         if typearg != "double" and typearg != "float":
             raise ValueError("__getformat__() argument 1 must be 'double' or 'float'")
-        import sys
-
-        return f"IEEE, {sys.byteorder}-endian"
+        return f"IEEE, {_sys.byteorder}-endian"
 
     def __gt__(self, n: float) -> bool:
         pass
@@ -3365,9 +3373,7 @@ class list_iterator(bootstrap=True):
 
 
 def locals():
-    import sys
-
-    return sys._getframe_locals(1)
+    return _sys._getframe_locals(1)
 
 
 class longrange_iterator(bootstrap=True):
@@ -3617,8 +3623,6 @@ class module(bootstrap=True):
         pass
 
     def __repr__(self):
-        import _frozen_importlib
-
         return _frozen_importlib._module_repr(self)
 
     def __setattr__(self, name, value):
@@ -3779,12 +3783,10 @@ def pow(x, y, z=None):
 
 def print(*args, sep=" ", end="\n", file=None, flush=False):
     if file is None:
-        import sys
-
         try:
-            file = sys.stdout
+            file = _sys.stdout
         except AttributeError:
-            raise RuntimeError("lost sys.stdout")
+            raise RuntimeError("lost _sys.stdout")
         if file is None:
             return
     if args:
@@ -4182,8 +4184,6 @@ class str(bootstrap=True):
                 f"'__mod__' requires a 'str' object "
                 f"but received a '{_type(self).__name__}'"
             )
-        import _str_mod
-
         return _str_mod.format(self, other)
 
     def __mul__(self, n: int) -> str:
@@ -4216,7 +4216,6 @@ class str(bootstrap=True):
                 "decoding to str: need a bytes-like object, "
                 f"'{_type(obj).__name__}' found"
             )
-        import _codecs
 
         if errors is _Unbound:
             return _str_from_str(cls, _codecs.decode(obj, encoding))
@@ -4784,7 +4783,7 @@ def vars(obj=_Unbound):
     if obj is _Unbound:
         import sys
 
-        return sys._getframe_locals(1)
+        return _sys._getframe_locals(1)
     try:
         return obj.__dict__
     except Exception:

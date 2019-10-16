@@ -2183,6 +2183,10 @@ void Runtime::initializeModules() {
   for (word i = 0; kBuiltinModules[i].name != SymbolId::kSentinelId; i++) {
     kBuiltinModules[i].create_module(thread);
   }
+  // Run builtins._init to import modules required in builtins.
+  CHECK(!thread->invokeFunction0(SymbolId::kBuiltins, SymbolId::kUnderInit)
+             .isError(),
+        "Failed to run builtins._init");
 }
 
 void Runtime::initializeApiData() {

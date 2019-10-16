@@ -130,11 +130,7 @@ def is_not(a, b):
 
 
 def abs(x):
-    "Same as a.__abs__()."
-    dunder_abs = getattr(x, "__abs__", None)
-    if dunder_abs is None:
-        raise TypeError(f"bad operand type for abs(): '{type(x).__name__}'")
-    return dunder_abs()
+    return __builtins__.abs(x)
 
 
 def add(a, b):

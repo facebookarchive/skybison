@@ -254,6 +254,7 @@ class Runtime;
   V(UnderHasRead1, "_has_read1")                                               \
   V(UnderHashInfo, "_HashInfo")                                                \
   V(UnderImp, "_imp")                                                          \
+  V(UnderInit, "_init")                                                        \
   V(UnderIndex, "_index")                                                      \
   V(UnderInstall, "_install")                                                  \
   V(UnderInstance, "_instance")                                                \
