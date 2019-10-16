@@ -599,21 +599,29 @@ int32_t RawStr::codePointAt(word index, word* char_length) const {
 }
 
 word RawStr::offsetByCodePoints(word index, word count) const {
-  word len = charLength();
-  while (count-- && index < len) {
-    byte ch = charAt(index);
-    if (ch <= kMaxASCII) {
-      index++;
-    } else if ((ch & 0xE0) == 0xC0) {
-      index += 2;
-    } else if ((ch & 0xF0) == 0xE0) {
-      index += 3;
-    } else {
-      DCHECK((ch & 0xF8) == 0xF0, "invalid code unit");
-      index += 4;
+  if (count >= 0) {
+    word len = charLength();
+    while (count-- && index < len) {
+      byte ch = charAt(index);
+      if (ch <= kMaxASCII) {
+        index++;
+      } else if ((ch & 0xE0) == 0xC0) {
+        index += 2;
+      } else if ((ch & 0xF0) == 0xE0) {
+        index += 3;
+      } else {
+        DCHECK((ch & 0xF8) == 0xF0, "invalid code unit");
+        index += 4;
+      }
     }
+    return Utils::minimum(index, len);
   }
-  return Utils::minimum(index, len);
+  while (count < 0) {
+    index--;
+    if (index < 0) return -1;
+    if ((charAt(index) & 0xC0) != 0x80) count++;
+  }
+  return index;
 }
 
 // RawStrArray

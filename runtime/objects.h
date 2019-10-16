@@ -516,9 +516,10 @@ class RawStr : public RawObject {
   int32_t codePointAt(word char_index, word* char_length) const;
   word codePointLength() const;
 
-  // Counts forward through the code points of the string, starting at the
-  // specified char index. Returns the char index at the offset,
-  // or length() if the offset reaches the end of the string.
+  // Returns an index into a string offset by either a positive or negative
+  // number of code points.  Otherwise, if the new index would be negative, -1
+  // is returned or if the new index would be greater than the length of the
+  // string, the length is returned.
   word offsetByCodePoints(word char_index, word count) const;
 
   // Conversion to an unescaped C string.  The underlying memory is allocated

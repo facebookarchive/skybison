@@ -969,6 +969,74 @@ TEST_F(LargeStrTest, CodePointLength) {
   EXPECT_EQ(str.codePointLength(), 23);
 }
 
+TEST_F(StringTest, ReverseOffsetByCodePointsEmptyString) {
+  HandleScope scope(thread_);
+  Str empty(&scope, Str::empty());
+
+  word i = empty.charLength();
+  ASSERT_EQ(0, i);
+
+  EXPECT_EQ(-1, empty.offsetByCodePoints(i, -1));
+}
+
+TEST_F(StringTest, ReverseOffsetByCodePointsStringLength1) {
+  HandleScope scope(thread_);
+
+  Str str1(&scope, runtime_.newStrFromCStr("1"));
+  word len = str1.charLength();
+  ASSERT_EQ(1, len);
+
+  EXPECT_EQ(1, str1.offsetByCodePoints(len, 0));
+  EXPECT_EQ(0, str1.offsetByCodePoints(len, -1));
+  EXPECT_EQ(-1, str1.offsetByCodePoints(len, -2));
+}
+
+TEST_F(StringTest, ReverseOffsetByCodePointsStringLength3) {
+  HandleScope scope(thread_);
+
+  Str str3(&scope, runtime_.newStrFromCStr("123"));
+  word len = str3.charLength();
+  ASSERT_EQ(3, len);
+
+  EXPECT_EQ(2, str3.offsetByCodePoints(len, -1));
+  EXPECT_EQ(1, str3.offsetByCodePoints(len, -2));
+  EXPECT_EQ(0, str3.offsetByCodePoints(len, -3));
+  EXPECT_EQ(-1, str3.offsetByCodePoints(len, -4));
+
+  EXPECT_EQ(1, str3.offsetByCodePoints(len - 1, -1));
+  EXPECT_EQ(0, str3.offsetByCodePoints(len - 1, -2));
+  EXPECT_EQ(-1, str3.offsetByCodePoints(len - 1, -3));
+  EXPECT_EQ(-1, str3.offsetByCodePoints(len - 1, -4));
+
+  EXPECT_EQ(0, str3.offsetByCodePoints(len - 2, -1));
+  EXPECT_EQ(-1, str3.offsetByCodePoints(len - 2, -2));
+  EXPECT_EQ(-1, str3.offsetByCodePoints(len - 2, -3));
+  EXPECT_EQ(-1, str3.offsetByCodePoints(len - 2, -4));
+}
+
+TEST_F(StringTest, ReverseOffsetByCodePointsUnicodeStringLength5) {
+  HandleScope scope(thread_);
+
+  Str str5(&scope, runtime_.newStrFromCStr("\x41\xD7\x91\xD7\x92"));
+  word len = str5.charLength();
+  ASSERT_EQ(5, len);
+
+  EXPECT_EQ(3, str5.offsetByCodePoints(len, -1));
+  EXPECT_EQ(1, str5.offsetByCodePoints(len, -2));
+  EXPECT_EQ(0, str5.offsetByCodePoints(len, -3));
+  EXPECT_EQ(-1, str5.offsetByCodePoints(len, -4));
+
+  EXPECT_EQ(1, str5.offsetByCodePoints(len - 2, -1));
+  EXPECT_EQ(0, str5.offsetByCodePoints(len - 2, -2));
+  EXPECT_EQ(-1, str5.offsetByCodePoints(len - 2, -3));
+  EXPECT_EQ(-1, str5.offsetByCodePoints(len - 2, -4));
+
+  EXPECT_EQ(0, str5.offsetByCodePoints(len - 4, -1));
+  EXPECT_EQ(-1, str5.offsetByCodePoints(len - 4, -2));
+  EXPECT_EQ(-1, str5.offsetByCodePoints(len - 4, -3));
+  EXPECT_EQ(-1, str5.offsetByCodePoints(len - 4, -4));
+}
+
 TEST_F(StringTest, ToCString) {
   HandleScope scope(thread_);
 
