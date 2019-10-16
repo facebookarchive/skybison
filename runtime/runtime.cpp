@@ -1850,7 +1850,7 @@ void Runtime::processCallbacks() {
   thread->clearPendingException();
 
   while (callbacks_ != NoneType::object()) {
-    Object weak(&scope, WeakRef::dequeueReference(&callbacks_));
+    Object weak(&scope, WeakRef::dequeue(&callbacks_));
     Object callback(&scope, WeakRef::cast(*weak).callback());
     Interpreter::callMethod1(thread, frame, callback, weak);
     thread->ignorePendingException();
@@ -1871,8 +1871,8 @@ void Runtime::processFinalizers() {
   thread->clearPendingException();
 
   while (finalizable_references_ != NoneType::object()) {
-    Object native_proxy(
-        &scope, RawNativeProxy::dequeueReference(&finalizable_references_));
+    Object native_proxy(&scope,
+                        RawNativeProxy::dequeue(&finalizable_references_));
     Type type(&scope, typeOf(*native_proxy));
     DCHECK(type.hasFlag(Type::Flag::kIsNativeProxy),
            "A native instance must come from an extension type");

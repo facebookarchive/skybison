@@ -632,30 +632,43 @@ int32_t RawStrArray::codePointAt(word index, word* char_length) const {
                          char_length);
 }
 
-// RawWeakRef
+// Linked list helpers
 
-void RawWeakRef::enqueueReference(RawObject reference, RawObject* tail) {
+static void enqueueReference(RawObject reference, RawObject* tail,
+                             word link_offset) {
   if (*tail == RawNoneType::object()) {
-    RawWeakRef::cast(reference).setLink(reference);
+    RawHeapObject::cast(reference).instanceVariableAtPut(link_offset,
+                                                         reference);
   } else {
-    RawObject head = RawWeakRef::cast(*tail).link();
-    RawWeakRef::cast(*tail).setLink(reference);
-    RawWeakRef::cast(reference).setLink(head);
+    RawObject head = RawHeapObject::cast(*tail).instanceVariableAt(link_offset);
+    RawHeapObject::cast(*tail).instanceVariableAtPut(link_offset, reference);
+    RawHeapObject::cast(reference).instanceVariableAtPut(link_offset, head);
   }
   *tail = reference;
 }
 
-RawObject RawWeakRef::dequeueReference(RawObject* tail) {
+static RawObject dequeueReference(RawObject* tail, word link_offset) {
   DCHECK(*tail != RawNoneType::object(), "empty queue");
-  RawObject head = RawWeakRef::cast(*tail).link();
+  RawObject head = RawHeapObject::cast(*tail).instanceVariableAt(link_offset);
   if (head == *tail) {
     *tail = RawNoneType::object();
   } else {
-    RawObject next = RawWeakRef::cast(head).link();
-    RawWeakRef::cast(*tail).setLink(next);
+    RawObject next = RawHeapObject::cast(head).instanceVariableAt(link_offset);
+    RawHeapObject::cast(*tail).instanceVariableAtPut(link_offset, next);
   }
-  RawWeakRef::cast(head).setLink(RawNoneType::object());
+  RawHeapObject::cast(head).instanceVariableAtPut(link_offset,
+                                                  RawNoneType::object());
   return head;
+}
+
+// RawWeakRef
+
+void RawWeakRef::enqueue(RawObject reference, RawObject* tail) {
+  enqueueReference(reference, tail, RawWeakRef::kLinkOffset);
+}
+
+RawObject RawWeakRef::dequeue(RawObject* tail) {
+  return dequeueReference(tail, RawWeakRef::kLinkOffset);
 }
 
 // Append tail2 to tail1 and return the new tail.
@@ -679,32 +692,16 @@ RawObject RawWeakRef::spliceQueue(RawObject tail1, RawObject tail2) {
 
 // RawNativeProxy
 
-void RawNativeProxy::enqueueReference(RawObject reference, RawObject* tail) {
+void RawNativeProxy::enqueue(RawObject reference, RawObject* tail) {
   DCHECK(Thread::current()->runtime()->isNativeProxy(reference),
-         "Must have a NativeProxy layout");
-  if (*tail == RawNoneType::object()) {
-    reference.rawCast<RawNativeProxy>().setLink(reference);
-  } else {
-    RawObject head = (*tail).rawCast<RawNativeProxy>().link();
-    (*tail).rawCast<RawNativeProxy>().setLink(reference);
-    reference.rawCast<RawNativeProxy>().setLink(head);
-  }
-  *tail = reference;
+         "expected native proxy");
+  enqueueReference(reference, tail, RawNativeProxy::kLinkOffset);
 }
 
-RawObject RawNativeProxy::dequeueReference(RawObject* tail) {
-  DCHECK(*tail != RawNoneType::object(), "empty queue");
+RawObject RawNativeProxy::dequeue(RawObject* tail) {
   DCHECK(Thread::current()->runtime()->isNativeProxy(*tail),
-         "Must have a NativeProxy layout");
-  RawObject head = (*tail).rawCast<RawNativeProxy>().link();
-  if (head == *tail) {
-    *tail = RawNoneType::object();
-  } else {
-    RawObject next = head.rawCast<RawNativeProxy>().link();
-    (*tail).rawCast<RawNativeProxy>().setLink(next);
-  }
-  head.rawCast<RawNativeProxy>().setLink(RawNoneType::object());
-  return head;
+         "expected native proxy");
+  return dequeueReference(tail, RawNativeProxy::kLinkOffset);
 }
 
 // RawHeapFrame

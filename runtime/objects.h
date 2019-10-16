@@ -1539,8 +1539,8 @@ class RawNativeProxy : public RawHeapObject {
 
   // TODO(eelizondo): Other finalizers will require the same logic. This should
   // be moved to a more generic location
-  static void enqueueReference(RawObject reference, RawObject* tail);
-  static RawObject dequeueReference(RawObject* tail);
+  static void enqueue(RawObject reference, RawObject* tail);
+  static RawObject dequeue(RawObject* tail);
 
   // Layout.
   static const int kNativeOffset = RawHeapObject::kSize;
@@ -2671,8 +2671,8 @@ class RawWeakRef : public RawHeapObject {
   RawObject link() const;
   void setLink(RawObject reference) const;
 
-  static void enqueueReference(RawObject reference, RawObject* tail);
-  static RawObject dequeueReference(RawObject* tail);
+  static void enqueue(RawObject reference, RawObject* tail);
+  static RawObject dequeue(RawObject* tail);
   static RawObject spliceQueue(RawObject tail1, RawObject tail2);
 
   // Layout.

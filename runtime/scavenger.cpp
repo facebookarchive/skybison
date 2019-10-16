@@ -76,7 +76,7 @@ void Scavenger::processGrayObjects() {
       scan += RawHeader::kSize;
       if (object.isWeakRef() && hasWhiteReferent(object)) {
         // Delay the reference object for later processing.
-        WeakRef::enqueueReference(object, &delayed_references_);
+        WeakRef::enqueue(object, &delayed_references_);
         // Skip over the referent field and continue scavenging.
         scan += kPointerSize;
       }
@@ -96,8 +96,7 @@ void Scavenger::processGrayObjects() {
 // later.
 void Scavenger::processDelayedReferences() {
   while (delayed_references_ != NoneType::object()) {
-    RawWeakRef weak =
-        WeakRef::cast(WeakRef::dequeueReference(&delayed_references_));
+    RawWeakRef weak = WeakRef::cast(WeakRef::dequeue(&delayed_references_));
     if (!weak.referent().isHeapObject()) {
       continue;
     }
@@ -107,7 +106,7 @@ void Scavenger::processDelayedReferences() {
     } else {
       weak.setReferent(NoneType::object());
       if (!weak.callback().isNoneType()) {
-        WeakRef::enqueueReference(weak, &delayed_callbacks_);
+        WeakRef::enqueue(weak, &delayed_callbacks_);
       }
     }
   }
@@ -133,8 +132,8 @@ void Scavenger::processFinalizableReferences() {
     if (!type.hasFlag(Type::Flag::kHasDefaultDealloc)) {
       scavengePointer(
           reinterpret_cast<RawObject*>(&native_instance->reference_));
-      RawNativeProxy::enqueueReference(native_instance->asObject(),
-                                       runtime_->finalizableReferences());
+      RawNativeProxy::enqueue(native_instance->asObject(),
+                              runtime_->finalizableReferences());
       continue;
     }
     auto func = reinterpret_cast<destructor>(
@@ -161,8 +160,8 @@ void Scavenger::processFinalizableReferences() {
     if (!type.hasFlag(Type::Flag::kHasDefaultDealloc)) {
       scavengePointer(
           reinterpret_cast<RawObject*>(&native_instance->reference_));
-      RawNativeProxy::enqueueReference(native_instance->asObject(),
-                                       runtime_->finalizableReferences());
+      RawNativeProxy::enqueue(native_instance->asObject(),
+                              runtime_->finalizableReferences());
       continue;
     }
     auto func = reinterpret_cast<destructor>(
