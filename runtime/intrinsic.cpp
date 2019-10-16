@@ -447,6 +447,46 @@ static bool isInstance(Thread* thread, Frame* frame) {
   return false;
 }
 
+static bool len(Frame* frame) {
+  RawObject arg = frame->topValue();
+  switch (arg.layoutId()) {
+    case LayoutId::kByteArray:
+      frame->popValue();
+      frame->setTopValue(SmallInt::fromWord(ByteArray::cast(arg).numItems()));
+      return true;
+    case LayoutId::kBytes:
+      frame->popValue();
+      frame->setTopValue(SmallInt::fromWord(Bytes::cast(arg).length()));
+      return true;
+    case LayoutId::kDict:
+      frame->popValue();
+      frame->setTopValue(SmallInt::fromWord(Dict::cast(arg).numItems()));
+      return true;
+    case LayoutId::kFrozenSet:
+      frame->popValue();
+      frame->setTopValue(SmallInt::fromWord(FrozenSet::cast(arg).numItems()));
+      return true;
+    case LayoutId::kList:
+      frame->popValue();
+      frame->setTopValue(SmallInt::fromWord(List::cast(arg).numItems()));
+      return true;
+    case LayoutId::kSet:
+      frame->popValue();
+      frame->setTopValue(SmallInt::fromWord(Set::cast(arg).numItems()));
+      return true;
+    case LayoutId::kStr:
+      frame->popValue();
+      frame->setTopValue(SmallInt::fromWord(Str::cast(arg).codePointLength()));
+      return true;
+    case LayoutId::kTuple:
+      frame->popValue();
+      frame->setTopValue(SmallInt::fromWord(Tuple::cast(arg).length()));
+      return true;
+    default:
+      return false;
+  }
+}
+
 bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
   switch (name) {
     case SymbolId::kUnderByteArrayCheck:
@@ -557,6 +597,8 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
       return underTypeGuard(thread, frame);
     case SymbolId::kIsInstance:
       return isInstance(thread, frame);
+    case SymbolId::kLen:
+      return len(frame);
     default:
       UNREACHABLE("function %s does not have an intrinsic implementation",
                   Symbols::predefinedSymbolAt(name));
