@@ -638,6 +638,38 @@ void typeAddDocstring(Thread* thread, const Type& type) {
   }
 }
 
+static RawObject computeBuiltinBase(Thread* thread, const Type& type) {
+  // The base class can only be one of the builtin bases including object.
+  // We use the first non-object builtin base if any, throw if multiple.
+  HandleScope scope(thread);
+  Tuple mro(&scope, type.mro());
+  Runtime* runtime = thread->runtime();
+  Type object_type(&scope, runtime->typeAt(LayoutId::kObject));
+  Type candidate(&scope, *object_type);
+  // Skip itself since builtin class won't go through this.
+  DCHECK(*type == mro.at(0) && type.instanceLayout().isNoneType(),
+         "type's layout should not be set at this point");
+  for (word i = 1; i < mro.length(); i++) {
+    Type mro_type(&scope, mro.at(i));
+    if (!mro_type.isBuiltin()) {
+      continue;
+    }
+    Type builtin_base(&scope, runtime->typeAt(mro_type.builtinBase()));
+    if (*candidate == *object_type) {
+      candidate = *mro_type;
+    } else if (runtime->isSubclass(candidate, builtin_base)) {
+      continue;
+    } else if (runtime->isSubclass(builtin_base, candidate)) {
+      candidate = *builtin_base;
+    } else {
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
+          "multiple bases have instance lay-out conflict");
+    }
+  }
+  return *candidate;
+}
+
 RawObject typeInit(Thread* thread, const Type& type, const Str& name,
                    const Tuple& bases, const Dict& dict, const Tuple& mro) {
   type.setName(*name);
@@ -675,7 +707,7 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   typeAddDocstring(thread, type);
 
   // Compute builtin base class
-  Object builtin_base(&scope, runtime->computeBuiltinBase(thread, type));
+  Object builtin_base(&scope, computeBuiltinBase(thread, type));
   if (builtin_base.isError()) {
     return *builtin_base;
   }

@@ -4304,37 +4304,6 @@ RawObject Runtime::newTupleIterator(const Tuple& tuple, word length) {
 
 RawObject Runtime::emptyFrozenSet() { return empty_frozen_set_; }
 
-RawObject Runtime::computeBuiltinBase(Thread* thread, const Type& type) {
-  // The base class can only be one of the builtin bases including object.
-  // We use the first non-object builtin base if any, throw if multiple.
-  HandleScope scope(thread);
-  Tuple mro(&scope, type.mro());
-  Type object_type(&scope, typeAt(LayoutId::kObject));
-  Type candidate(&scope, *object_type);
-  // Skip itself since builtin class won't go through this.
-  DCHECK(*type == mro.at(0) && type.instanceLayout().isNoneType(),
-         "type's layout should not be set at this point");
-  for (word i = 1; i < mro.length(); i++) {
-    Type mro_type(&scope, mro.at(i));
-    if (!mro_type.isBuiltin()) {
-      continue;
-    }
-    Type builtin_base(&scope, typeAt(mro_type.builtinBase()));
-    if (*candidate == *object_type) {
-      candidate = *mro_type;
-    } else if (isSubclass(candidate, builtin_base)) {
-      continue;
-    } else if (isSubclass(builtin_base, candidate)) {
-      candidate = *builtin_base;
-    } else {
-      return thread->raiseWithFmt(
-          LayoutId::kTypeError,
-          "multiple bases have instance lay-out conflict");
-    }
-  }
-  return *candidate;
-}
-
 RawObject Runtime::layoutFollowEdge(const List& edges, const Object& label) {
   DCHECK(edges.numItems() % 2 == 0,
          "edges must contain an even number of elements");

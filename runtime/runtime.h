@@ -657,8 +657,6 @@ class Runtime {
   RawObject layoutDeleteAttribute(Thread* thread, const Layout& layout,
                                   const Str& name_interned);
 
-  NODISCARD RawObject computeBuiltinBase(Thread* thread, const Type& type);
-
   void typeAddBuiltinFunction(const Type& type, SymbolId name,
                               Function::Entry entry);
 
