@@ -393,9 +393,6 @@ class Runtime {
   SymbolId comparisonSelector(CompareOp op);
   SymbolId swappedComparisonSelector(CompareOp op);
 
-  NODISCARD RawObject iteratorLengthHint(Thread* thread,
-                                         const Object& iterator);
-
   RawObject buildClass() { return build_class_; }
 
   RawObject displayHook() { return display_hook_; }

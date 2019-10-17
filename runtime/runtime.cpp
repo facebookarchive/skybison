@@ -4565,26 +4565,6 @@ void Runtime::freeApiHandles() {
   }
 }
 
-RawObject Runtime::iteratorLengthHint(Thread* thread, const Object& iterator) {
-  HandleScope scope(thread);
-  Object length_hint_method(
-      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
-                                        iterator, SymbolId::kDunderLengthHint));
-  if (length_hint_method.isError()) {
-    return *length_hint_method;
-  }
-  Object result(&scope, Interpreter::callMethod1(thread, thread->currentFrame(),
-                                                 length_hint_method, iterator));
-  if (result.isError()) {
-    return *result;
-  }
-  if (!result.isSmallInt()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "__length_hint__ returned non-integer value");
-  }
-  return *result;
-}
-
 RawObject Runtime::bytesToInt(Thread* thread, const Bytes& bytes,
                               endian endianness, bool is_signed) {
   word length = bytes.length();
