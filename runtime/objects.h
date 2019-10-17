@@ -1250,14 +1250,14 @@ class RawTypeProxy : public RawHeapObject {
   RAW_OBJECT_COMMON(TypeProxy);
 };
 
-class RawArray : public RawHeapObject {
+class RawArrayBase : public RawHeapObject {
  public:
   word length() const;
 
-  RAW_OBJECT_COMMON_NO_CAST(Array);
+  RAW_OBJECT_COMMON_NO_CAST(ArrayBase);
 };
 
-class RawLargeBytes : public RawArray {
+class RawLargeBytes : public RawArrayBase {
  public:
   byte byteAt(word index) const;
   void copyTo(byte* dst, word length) const;
@@ -1302,7 +1302,7 @@ class RawMutableBytes : public RawLargeBytes {
   RAW_OBJECT_COMMON(MutableBytes);
 };
 
-class RawTuple : public RawArray {
+class RawTuple : public RawArrayBase {
  public:
   // Getters and setters.
   RawObject at(word index) const;
@@ -1350,7 +1350,7 @@ class RawUserTupleBase : public RawHeapObject {
   RAW_OBJECT_COMMON_NO_CAST(UserTupleBase);
 };
 
-class RawLargeStr : public RawArray {
+class RawLargeStr : public RawArrayBase {
  public:
   // Getters and setters.
   byte charAt(word index) const;
@@ -4623,9 +4623,9 @@ inline void RawTypeProxy::setType(RawObject type) const {
   instanceVariableAtPut(kTypeOffset, type);
 }
 
-// RawArray
+// RawArrayBase
 
-inline word RawArray::length() const { return headerCountOrOverflow(); }
+inline word RawArrayBase::length() const { return headerCountOrOverflow(); }
 
 // RawLargeBytes
 
