@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import itertools
 import unittest
+from unittest.mock import Mock
 
 
 class ChainTest(unittest.TestCase):
@@ -54,6 +55,49 @@ class ChainTest(unittest.TestCase):
             tuple(itertools.chain.from_iterable(["12", "34", "56"])),
             ("1", "2", "3", "4", "5", "6"),
         )
+
+
+class CycleTests(unittest.TestCase):
+    def test_dunder_init_with_seq_does_calls_dunder_iter(self):
+        class C:
+            __iter__ = Mock(name="__iter__", return_value=[].__iter__())
+
+        instance = C()
+        itertools.cycle(instance)
+        C.__iter__.assert_called_once()
+
+    def test_dunder_init_with_seq_dunder_iter_returning_non_iter_raises_type_error(
+        self
+    ):
+        class C:
+            def __iter__(self):
+                return 5
+
+        instance = C()
+        with self.assertRaisesRegex(
+            TypeError, "iter\\(\\) returned non-iterator of type 'int'"
+        ):
+            itertools.cycle(instance)
+
+    def test_dunder_iter_yields_self(self):
+        result = itertools.cycle([])
+        self.assertIs(result.__iter__(), result)
+
+    def test_dunder_next_iterates_through_sequence(self):
+        result = itertools.cycle([1, 2, 3])
+        self.assertEqual(next(result), 1)
+        self.assertEqual(next(result), 2)
+        self.assertEqual(next(result), 3)
+
+    def test_dunder_next_cycles_through_sequence(self):
+        result = itertools.cycle([1, 2, 3])
+        self.assertEqual(next(result), 1)
+        self.assertEqual(next(result), 2)
+        self.assertEqual(next(result), 3)
+        self.assertEqual(next(result), 1)
+        self.assertEqual(next(result), 2)
+        self.assertEqual(next(result), 3)
+        self.assertEqual(next(result), 1)
 
 
 class ItertoolsTests(unittest.TestCase):

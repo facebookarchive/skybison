@@ -80,7 +80,29 @@ class count:
 
 
 class cycle:
-    def __init__(self, p):
+    def __init__(self, seq):
+        self._seq = iter(seq)
+        self._saved = []
+        self._first_pass = True
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        try:
+            result = next(self._seq)
+            if self._first_pass:
+                self._saved.append(result)
+            return result
+        except StopIteration:
+            self._first_pass = False
+            self._seq = iter(self._saved)
+            return next(self._seq)
+
+    def __reduce__(self):
+        _unimplemented()
+
+    def __setstate__(self):
         _unimplemented()
 
 
