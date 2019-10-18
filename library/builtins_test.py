@@ -6236,6 +6236,21 @@ class RangeTests(unittest.TestCase):
 
         self.assertEqual(range(3).count(A()), 2)
 
+    def test_index_with_int_in_range_returns_index(self):
+        self.assertEqual(range(3).index(1), 1)
+
+    def test_index_with_int_not_in_range_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            range(3).index(4)
+        self.assertEqual(str(context.exception), "4 is not in range")
+
+    def test_index_with_overloaded_eq_returns_all_indexs(self):
+        class A:
+            def __eq__(self, other):
+                return other == 1 or other == 2
+
+        self.assertEqual(range(3).index(A()), 1)
+
 
 class RangeIteratorTests(unittest.TestCase):
     def test_dunder_iter_returns_self(self):

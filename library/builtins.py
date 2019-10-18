@@ -3920,6 +3920,19 @@ class range(bootstrap=True):
                 seen += 1
         return seen
 
+    def index(self, value):
+        _range_guard(self)
+        if _int_checkexact(value) or _bool_check(value):
+            if range.__contains__(self, value):
+                return int.__floordiv__(value - self.start, self.step)
+        else:
+            i = 0
+            for element in self:
+                if element == value:
+                    return i
+                i += 1
+        raise ValueError(f"{value} is not in range")
+
 
 class range_iterator(bootstrap=True):
     def __iter__(self):
