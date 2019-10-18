@@ -7,6 +7,7 @@
 # defined yet in the execution of this module. flake8 has no knowledge about
 # their definitions and will complain without these circular assignments.
 _address = _address  # noqa: F821
+_bool_check = _bool_check  # noqa: F821
 _bound_method = _bound_method  # noqa: F821
 _bytearray_check = _bytearray_check  # noqa: F821
 _bytearray_clear = _bytearray_clear  # noqa: F821
@@ -3809,7 +3810,7 @@ def quit():
 class range(bootstrap=True):
     def __contains__(self, num):
         _range_guard(self)
-        if _int_checkexact(num) or num is True or num is False:
+        if _int_checkexact(num) or _bool_check(num):
             start = self.start
             stop = self.stop
             step = self.step
@@ -3908,6 +3909,16 @@ class range(bootstrap=True):
         if self.step == 1:
             return f"range({self.start!r}, {self.stop!r})"
         return f"range({self.start!r}, {self.stop!r}, {self.step!r})"
+
+    def count(self, value):
+        _range_guard(self)
+        if _int_checkexact(value) or _bool_check(value):
+            return 1 if range.__contains__(self, value) else 0
+        seen = 0
+        for i in self:
+            if i == value:
+                seen += 1
+        return seen
 
 
 class range_iterator(bootstrap=True):

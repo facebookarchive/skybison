@@ -74,6 +74,7 @@ static RawObject raiseRequiresFromCaller(Thread* thread, Frame* frame,
 const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderAddress, underAddress},
     {SymbolId::kUnderBoundMethod, underBoundMethod},
+    {SymbolId::kUnderBoolCheck, underBoolCheck},
     {SymbolId::kUnderByteArrayCheck, underByteArrayCheck},
     {SymbolId::kUnderByteArrayClear, underByteArrayClear},
     {SymbolId::kUnderByteArrayDelitem, underByteArrayDelItem},
@@ -267,6 +268,7 @@ const char* const UnderBuiltinsModule::kFrozenData = kUnderBuiltinsModuleData;
 
 // clang-format off
 const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
+    SymbolId::kUnderBoolCheck,
     SymbolId::kUnderByteArrayCheck,
     SymbolId::kUnderByteArrayGuard,
     SymbolId::kUnderByteArrayLen,
@@ -320,6 +322,12 @@ RawObject UnderBuiltinsModule::underAddress(Thread* thread, Frame* frame,
                                             word nargs) {
   Arguments args(frame, nargs);
   return thread->runtime()->newInt(args.get(0).raw());
+}
+
+RawObject UnderBuiltinsModule::underBoolCheck(Thread* /* t */, Frame* frame,
+                                              word nargs) {
+  Arguments args(frame, nargs);
+  return Bool::fromBool(args.get(0).isBool());
 }
 
 RawObject UnderBuiltinsModule::underBoundMethod(Thread* thread, Frame* frame,

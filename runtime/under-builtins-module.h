@@ -15,6 +15,7 @@ void copyFunctionEntries(Thread* thread, const Function& base,
 class UnderBuiltinsModule {
  public:
   static RawObject underAddress(Thread* thread, Frame* frame, word nargs);
+  static RawObject underBoolCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underBoundMethod(Thread* thread, Frame* frame, word nargs);
   static RawObject underByteArrayCheck(Thread* thread, Frame* frame,
                                        word nargs);

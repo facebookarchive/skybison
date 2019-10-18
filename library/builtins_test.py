@@ -6223,6 +6223,19 @@ class RangeTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             range(0, 1, 2).stop = 2
 
+    def test_count_with_int_in_range_returns_one(self):
+        self.assertEqual(range(3).count(1), 1)
+
+    def test_count_with_int_not_in_range_returns_zero(self):
+        self.assertEqual(range(3).count(4), 0)
+
+    def test_count_with_overloaded_eq_returns_all_counts(self):
+        class A:
+            def __eq__(self, other):
+                return other == 1 or other == 2
+
+        self.assertEqual(range(3).count(A()), 2)
+
 
 class RangeIteratorTests(unittest.TestCase):
     def test_dunder_iter_returns_self(self):

@@ -4,6 +4,11 @@
 
 namespace python {
 
+static bool underBoolCheck(Frame* frame) {
+  frame->setTopValue(Bool::fromBool(frame->popValue().isBool()));
+  return true;
+}
+
 static bool underByteArrayCheck(Thread* thread, Frame* frame) {
   frame->setTopValue(Bool::fromBool(
       thread->runtime()->isInstanceOfByteArray(frame->popValue())));
@@ -489,6 +494,8 @@ static bool len(Frame* frame) {
 
 bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
   switch (name) {
+    case SymbolId::kUnderBoolCheck:
+      return underBoolCheck(frame);
     case SymbolId::kUnderByteArrayCheck:
       return underByteArrayCheck(thread, frame);
     case SymbolId::kUnderByteArrayGuard:

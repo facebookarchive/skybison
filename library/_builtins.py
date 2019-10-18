@@ -13,6 +13,11 @@ def _address(c):
 
 
 @_patch
+def _bool_check(self):
+    pass
+
+
+@_patch
 def _bound_method(fn, owner):
     pass
 
