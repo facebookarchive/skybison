@@ -3904,6 +3904,11 @@ class range(bootstrap=True):
     def __new__(cls, start_or_stop, stop=_Unbound, step=_Unbound):
         pass
 
+    def __repr__(self):
+        if self.step == 1:
+            return f"range({self.start!r}, {self.stop!r})"
+        return f"range({self.start!r}, {self.stop!r}, {self.step!r})"
+
 
 class range_iterator(bootstrap=True):
     def __iter__(self):

@@ -6189,6 +6189,28 @@ class RangeTests(unittest.TestCase):
         self.assertEqual(obj.stop, 11)
         self.assertEqual(obj.step, 12)
 
+    def test_dunder_repr_with_no_step_calls_repr(self):
+        class Repr(int):
+            def __repr__(self):
+                return "repr"
+
+            def __str__(self):
+                return "1"
+
+        r = range(Repr(2), Repr(4))
+        self.assertEqual(repr(r), "range(repr, repr)")
+
+    def test_dunder_repr_with_step_calls_repr(self):
+        class Repr(int):
+            def __repr__(self):
+                return "repr"
+
+            def __str__(self):
+                return "1"
+
+        r = range(Repr(2), Repr(4), Repr(2))
+        self.assertEqual(repr(r), "range(repr, repr, repr)")
+
     def test_start_is_readonly(self):
         with self.assertRaises(AttributeError):
             range(0, 1, 2).start = 2
