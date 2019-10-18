@@ -1690,6 +1690,7 @@ PY_EXPORT void PyUnicode_InternInPlace(PyObject** pobj) {
   HeapObject heap_obj(&scope, *obj);
   HeapObject result(&scope, thread->runtime()->internStr(thread, obj));
   if (result.address() != heap_obj.address()) {
+    Py_DECREF(*pobj);
     *pobj = ApiHandle::newReference(thread, *result);
   }
 }

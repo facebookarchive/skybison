@@ -100,7 +100,7 @@ static PyObject* moduleProxy(PyObject* module_obj) {
 // error on failure.
 static int PyRun_InteractiveOneObjectEx(FILE* fp, PyObject* filename,
                                         PyCompilerFlags* flags) {
-  PyObject* mod_name = PyUnicode_InternFromString("__main__"); /* borrowed */
+  PyObject* mod_name = PyUnicode_InternFromString("__main__");
   if (mod_name == nullptr) {
     return -1;
   }
@@ -133,6 +133,7 @@ static int PyRun_InteractiveOneObjectEx(FILE* fp, PyObject* filename,
   }
   PyArena* arena = PyArena_New();
   if (arena == nullptr) {
+    Py_DECREF(mod_name);
     return -1;
   }
   char* enc = nullptr;
@@ -140,6 +141,7 @@ static int PyRun_InteractiveOneObjectEx(FILE* fp, PyObject* filename,
   mod_ty mod = PyParser_ASTFromFileObject(fp, filename, enc, Py_single_input,
                                           ps1, ps2, flags, &errcode, arena);
   if (mod == nullptr) {
+    Py_DECREF(mod_name);
     PyArena_Free(arena);
     if (errcode == E_EOF) {
       PyErr_Clear();
@@ -148,6 +150,7 @@ static int PyRun_InteractiveOneObjectEx(FILE* fp, PyObject* filename,
     return -1;
   }
   PyObject* module = PyImport_AddModuleObject(mod_name);
+  Py_DECREF(mod_name);
   if (module == nullptr) {
     PyArena_Free(arena);
     return -1;
