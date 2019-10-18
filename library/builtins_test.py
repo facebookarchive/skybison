@@ -6251,6 +6251,12 @@ class RangeTests(unittest.TestCase):
 
         self.assertEqual(range(3).index(A()), 1)
 
+    def test_hash_equals_equivalent_tuple_hashes(self):
+        self.assertEqual(hash(range(0)), hash((0, None, None)))
+        self.assertEqual(hash(range(1)), hash((1, 0, None)))
+        self.assertEqual(hash(range(1, 4)), hash((3, 1, 1)))
+        self.assertEqual(hash(range(0, 4, 2)), hash((2, 0, 2)))
+
 
 class RangeIteratorTests(unittest.TestCase):
     def test_dunder_iter_returns_self(self):

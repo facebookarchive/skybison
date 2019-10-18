@@ -3871,6 +3871,15 @@ class range(bootstrap=True):
         _range_guard(self)
         return NotImplemented
 
+    def __hash__(self):
+        _range_guard(self)
+        range_len = _range_len(self)
+        if not range_len:
+            return tuple.__hash__((range_len, None, None))
+        if range_len == 1:
+            return tuple.__hash__((range_len, self.start, None))
+        return tuple.__hash__((range_len, self.start, self.step))
+
     def __iter__(self):
         pass
 
