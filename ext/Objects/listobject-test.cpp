@@ -190,13 +190,13 @@ TEST_F(ListExtensionApiTest, SETITEMWithListSetsItemAtIndex) {
   // Replace three with four
   Py_ssize_t three_refcnt = Py_REFCNT(three.get());
   Py_ssize_t idx = 2;
-  Py_ssize_t four_refcnt = Py_REFCNT(four.get());
+  Py_INCREF(four);  // keep an extra reference for checking below SetItem
   PyList_SET_ITEM(list.get(), idx, four);
-  EXPECT_EQ(Py_REFCNT(four.get()), four_refcnt);
   EXPECT_EQ(Py_REFCNT(three.get()), three_refcnt);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(PyList_GetItem(list, idx), four);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
+  Py_DECREF(four);
 }
 
 TEST_F(ListExtensionApiTest, SetSliceOnNonListRaisesSystemError) {

@@ -102,7 +102,7 @@ PY_EXPORT int PyList_SET_ITEM_Func(PyObject* pylist, Py_ssize_t i,
   DCHECK(runtime->isInstanceOfList(*list_obj), "pylist must be a list");
   List list(&scope, *list_obj);
   DCHECK_INDEX(i, list.numItems());
-  list.atPut(i, ApiHandle::fromPyObject(item)->asObject());
+  list.atPut(i, ApiHandle::stealReference(thread, item));
   return 0;
 }
 
@@ -121,7 +121,7 @@ PY_EXPORT int PyList_SetItem(PyObject* pylist, Py_ssize_t i, PyObject* item) {
                          "index out of bounds in PyList_SetItem");
     return -1;
   }
-  list.atPut(i, ApiHandle::fromPyObject(item)->asObject());
+  list.atPut(i, ApiHandle::stealReference(thread, item));
   return 0;
 }
 
@@ -144,7 +144,6 @@ PY_EXPORT int PyList_Append(PyObject* op, PyObject* newitem) {
   List list(&scope, *list_obj);
 
   runtime->listAdd(thread, list, value);
-  Py_INCREF(newitem);
   return 0;
 }
 
