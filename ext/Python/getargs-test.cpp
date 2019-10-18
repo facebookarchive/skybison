@@ -139,6 +139,7 @@ TEST_F(GetArgsExtensionApiTest, ParseTupleMultipleObjects) {
   PyObject* pytuple = PyTuple_New(3);
   PyObject* in1 = PyLong_FromLong(111);
   PyObject* in2 = Py_None;
+  Py_INCREF(in2);
   PyObject* in3 = PyLong_FromLong(333);
   ASSERT_NE(-1, PyTuple_SetItem(pytuple, 0, in1));
   ASSERT_NE(-1, PyTuple_SetItem(pytuple, 1, in2));
@@ -190,7 +191,9 @@ TEST_F(GetArgsExtensionApiTest, ParseTupleString) {
 
 TEST_F(GetArgsExtensionApiTest, ParseTupleStringFromNone) {
   PyObjectPtr pytuple(PyTuple_New(2));
+  Py_INCREF(Py_None);
   ASSERT_NE(-1, PyTuple_SetItem(pytuple, 0, Py_None));
+  Py_INCREF(Py_None);
   ASSERT_NE(-1, PyTuple_SetItem(pytuple, 1, Py_None));
 
   char *out1, *out2;

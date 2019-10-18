@@ -12,7 +12,9 @@ using GetArgsSsizeTExtensionApiTest = ExtensionApi;
 
 TEST_F(GetArgsSsizeTExtensionApiTest, ParseTupleStringFromNone) {
   PyObjectPtr pytuple(PyTuple_New(2));
+  Py_INCREF(Py_None);
   ASSERT_NE(-1, PyTuple_SetItem(pytuple, 0, Py_None));
+  Py_INCREF(Py_None);
   ASSERT_NE(-1, PyTuple_SetItem(pytuple, 1, Py_None));
 
   char *out1, *out2;

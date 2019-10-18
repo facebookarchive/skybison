@@ -676,6 +676,7 @@ PyAPI_FUNC(PyObject*) PyTuple_GetItem(PyObject*, Py_ssize_t);
 PyAPI_FUNC(PyObject*) PyTuple_GetSlice(PyObject*, Py_ssize_t, Py_ssize_t);
 PyAPI_FUNC(PyObject*) PyTuple_New(Py_ssize_t);
 PyAPI_FUNC(PyObject*) PyTuple_Pack(Py_ssize_t, ...);
+PyAPI_FUNC(int) PyTuple_SET_ITEM_Func(PyObject*, Py_ssize_t, PyObject*);
 PyAPI_FUNC(int) PyTuple_SetItem(PyObject*, Py_ssize_t, PyObject*);
 PyAPI_FUNC(Py_ssize_t) PyTuple_Size(PyObject*);
 PyAPI_FUNC(unsigned int) PyType_ClearCache();
@@ -1061,8 +1062,7 @@ PyAPI_FUNC(void) Py_LeaveRecursiveCall_Func();
 
 #define PyTuple_GET_SIZE(op) PyTuple_Size((PyObject*)op)
 #define PyTuple_GET_ITEM(op, i) PyTuple_GetItem((PyObject*)op, i)
-// TODO(T46331042): Make SET_ITEM more similar to CPython implementation
-#define PyTuple_SET_ITEM(op, i, v) PyTuple_SetItem((PyObject*)op, i, v)
+#define PyTuple_SET_ITEM(op, i, v) PyTuple_SET_ITEM_Func((PyObject*)op, i, v)
 
 #define PyStructSequence_GET_ITEM(op, i)                                       \
   PyStructSequence_GetItem((PyObject*)op, i)

@@ -377,6 +377,7 @@ TEST_F(BytesExtensionApiTest, FromObjectWithTupleReturnsBytes) {
 
 TEST_F(BytesExtensionApiTest, FromObjectWithNonIntTupleRaisesTypeError) {
   PyObjectPtr tuple(PyTuple_New(1));
+  Py_INCREF(Py_None);
   PyTuple_SetItem(tuple, 0, Py_None);
   ASSERT_EQ(PyBytes_FromObject(tuple), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);

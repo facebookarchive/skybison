@@ -36,6 +36,7 @@ TEST_F(TupleExtensionApiTest, NewAndSize) {
 }
 
 TEST_F(TupleExtensionApiTest, SetItemWithNonTupleReturnsNegative) {
+  Py_INCREF(Py_None);
   int result = PyTuple_SetItem(Py_True, 0, Py_None);
   EXPECT_EQ(result, -1);
 
@@ -45,6 +46,7 @@ TEST_F(TupleExtensionApiTest, SetItemWithNonTupleReturnsNegative) {
 
 TEST_F(TupleExtensionApiTest, SetItemWithInvalidIndexReturnsNegative) {
   PyObject* pytuple = PyTuple_New(1);
+  Py_INCREF(Py_None);
   int result = PyTuple_SetItem(pytuple, 2, Py_None);
   EXPECT_EQ(result, -1);
 
@@ -54,6 +56,7 @@ TEST_F(TupleExtensionApiTest, SetItemWithInvalidIndexReturnsNegative) {
 
 TEST_F(TupleExtensionApiTest, SetItemReturnsZero) {
   PyObject* pytuple = PyTuple_New(1);
+  Py_INCREF(Py_None);
   int result = PyTuple_SetItem(pytuple, 0, Py_None);
   EXPECT_EQ(result, 0);
 }
@@ -67,6 +70,7 @@ obj = Foo((1, 2));
   // PyTuple_SetItem() wants the tuple's reference count to be 1, so remove the
   // reference from __main__.
   moduleSet("__main__", "obj", Py_None);
+  Py_INCREF(Py_None);
   int result = PyTuple_SetItem(pytuple, 0, Py_None);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(result, 0);
@@ -109,12 +113,10 @@ TEST_F(TupleExtensionApiTest, GetItemReturnsBorrowedReference) {
   Py_ssize_t pos = 3;
   PyObject* pytuple = PyTuple_New(length);
   PyObject* pyitem = PyLong_FromLong(0);
-  long refcnt = Py_REFCNT(pyitem);
+  Py_INCREF(pyitem);  // keep an extra reference for checking below SetItem
   ASSERT_EQ(PyTuple_SetItem(pytuple, pos, pyitem), 0);
-  // PyTuple_SetItem "steals" a reference to the item.  Verify that the
-  // reference count did not change.
-  EXPECT_EQ(Py_REFCNT(pyitem), refcnt);
 
+  long refcnt = Py_REFCNT(pyitem);
   PyObject* pyresult = PyTuple_GetItem(pytuple, pos);
   // PyTuple_GetItem "borrows" a reference for the return value.  Verify the
   // reference count did not change.

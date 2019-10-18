@@ -132,7 +132,9 @@ TEST_F(ErrorsExtensionApiTest, NewExceptionWithSingleBaseCreatesBasesTuple) {
 
 TEST_F(ErrorsExtensionApiTest, NewExceptionWithBaseTupleStoresTuple) {
   PyObjectPtr bases(PyTuple_New(2));
+  Py_INCREF(PyExc_SystemError);
   ASSERT_EQ(PyTuple_SetItem(bases, 0, PyExc_SystemError), 0);
+  Py_INCREF(PyExc_ValueError);
   ASSERT_EQ(PyTuple_SetItem(bases, 1, PyExc_ValueError), 0);
   PyObjectPtr type(PyErr_NewException("Module.Name", bases, nullptr));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
@@ -311,6 +313,7 @@ TEST_F(ErrorsExtensionApiTest, GetExcInfoWhenCaughtException) {
     PyObject* args = PyObject_GetAttrString(p_value, "args");
     PyObject* first_arg = PyTuple_GetItem(args, 0);
     EXPECT_TRUE(isUnicodeEqualsCStr(first_arg, "some str"));
+    Py_INCREF(Py_None);
     return Py_None;
   };
   PyMethodDef foo_methods[] = {{"noargs", func, METH_NOARGS}, {nullptr}};
