@@ -2282,16 +2282,16 @@ HANDLER_INLINE Continue Interpreter::doUnpackEx(Thread* thread, word arg) {
 void Interpreter::storeAttrWithLocation(Thread* thread, RawObject receiver,
                                         RawObject location, RawObject value) {
   word offset = SmallInt::cast(location).value();
-  RawHeapObject heap_object = HeapObject::cast(receiver);
+  RawInstance instance = Instance::cast(receiver);
   if (offset >= 0) {
-    heap_object.instanceVariableAtPut(offset, value);
+    instance.instanceVariableAtPut(offset, value);
     return;
   }
 
   RawLayout layout =
       Layout::cast(thread->runtime()->layoutAt(receiver.layoutId()));
   RawTuple overflow =
-      Tuple::cast(heap_object.instanceVariableAt(layout.overflowOffset()));
+      Tuple::cast(instance.instanceVariableAt(layout.overflowOffset()));
   overflow.atPut(-offset - 1, value);
 }
 
@@ -2602,15 +2602,15 @@ HANDLER_INLINE USED RawObject Interpreter::loadAttrWithLocation(
   word offset = SmallInt::cast(location).value();
 
   DCHECK(receiver.isHeapObject(), "expected heap object");
-  RawHeapObject heap_object = HeapObject::cast(receiver);
+  RawInstance instance = Instance::cast(receiver);
   if (offset >= 0) {
-    return heap_object.instanceVariableAt(offset);
+    return instance.instanceVariableAt(offset);
   }
 
   RawLayout layout =
       Layout::cast(thread->runtime()->layoutAt(receiver.layoutId()));
   RawTuple overflow =
-      Tuple::cast(heap_object.instanceVariableAt(layout.overflowOffset()));
+      Tuple::cast(instance.instanceVariableAt(layout.overflowOffset()));
   return overflow.at(-offset - 1);
 }
 

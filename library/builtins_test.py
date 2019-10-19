@@ -3300,11 +3300,10 @@ class IntTests(unittest.TestCase):
         self.assertEqual(int.__hash__(-value), -2278332794247153219)
 
     def test_dunder_new_with_bool_class_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
+        with self.assertRaisesRegex(
+            TypeError, r"int\.__new__\(bool\) is not safe.*bool\.__new__\(\)"
+        ):
             int.__new__(bool, 0)
-        self.assertEqual(
-            str(context.exception), "int.__new__(bool) is not safe, use bool.__new__()"
-        )
 
     def test_dunder_new_with_dunder_int_subclass_warns(self):
         class Num(int):
@@ -5250,6 +5249,12 @@ class NotImplementedTypeTests(unittest.TestCase):
 
 
 class ObjectTests(unittest.TestCase):
+    def test_dunder_new_with_builtin_type_raises_type_error(self):
+        with self.assertRaisesRegex(
+            TypeError, r"object\.__new__\(int\) is not safe.*int\.__new__\(\)"
+        ):
+            object.__new__(int)
+
     def test_dunder_subclasshook_returns_not_implemented(self):
         self.assertIs(object.__subclasshook__(), NotImplemented)
         self.assertIs(object.__subclasshook__(int), NotImplemented)

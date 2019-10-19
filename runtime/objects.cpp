@@ -394,7 +394,7 @@ RawObject RawMutableBytes::becomeStr() const {
 void RawMutableTuple::fill(RawObject value) const {
   word len = length();
   if (value.isNoneType()) {
-    std::memset(reinterpret_cast<byte*>(address()), -1, len * kWordSize);
+    initialize();
     return;
   }
   for (word i = 0; i < len; i++) {
@@ -637,27 +637,26 @@ int32_t RawStrArray::codePointAt(word index, word* char_length) const {
 static void enqueueReference(RawObject reference, RawObject* tail,
                              word link_offset) {
   if (*tail == RawNoneType::object()) {
-    RawHeapObject::cast(reference).instanceVariableAtPut(link_offset,
-                                                         reference);
+    Instance::cast(reference).instanceVariableAtPut(link_offset, reference);
   } else {
-    RawObject head = RawHeapObject::cast(*tail).instanceVariableAt(link_offset);
-    RawHeapObject::cast(*tail).instanceVariableAtPut(link_offset, reference);
-    RawHeapObject::cast(reference).instanceVariableAtPut(link_offset, head);
+    RawObject head = Instance::cast(*tail).instanceVariableAt(link_offset);
+    Instance::cast(*tail).instanceVariableAtPut(link_offset, reference);
+    Instance::cast(reference).instanceVariableAtPut(link_offset, head);
   }
   *tail = reference;
 }
 
 static RawObject dequeueReference(RawObject* tail, word link_offset) {
   DCHECK(*tail != RawNoneType::object(), "empty queue");
-  RawObject head = RawHeapObject::cast(*tail).instanceVariableAt(link_offset);
+  RawObject head = Instance::cast(*tail).instanceVariableAt(link_offset);
   if (head == *tail) {
     *tail = RawNoneType::object();
   } else {
-    RawObject next = RawHeapObject::cast(head).instanceVariableAt(link_offset);
-    RawHeapObject::cast(*tail).instanceVariableAtPut(link_offset, next);
+    RawObject next = Instance::cast(head).instanceVariableAt(link_offset);
+    Instance::cast(*tail).instanceVariableAtPut(link_offset, next);
   }
-  RawHeapObject::cast(head).instanceVariableAtPut(link_offset,
-                                                  RawNoneType::object());
+  Instance::cast(head).instanceVariableAtPut(link_offset,
+                                             RawNoneType::object());
   return head;
 }
 

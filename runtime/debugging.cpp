@@ -118,12 +118,12 @@ std::ostream& dumpExtendedFunction(std::ostream& os, RawFunction value) {
   return os;
 }
 
-std::ostream& dumpExtendedHeapObject(std::ostream& os, RawHeapObject value) {
+std::ostream& dumpExtendedInstance(std::ostream& os, RawInstance value) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  HeapObject heap_object(&scope, value);
-  LayoutId layout_id = heap_object.layoutId();
+  Instance instance(&scope, value);
+  LayoutId layout_id = instance.layoutId();
   os << "heap object with layout " << static_cast<word>(layout_id);
   Layout layout(&scope, runtime->layoutAt(layout_id));
   Type type(&scope, layout.describedType());
@@ -134,13 +134,13 @@ std::ostream& dumpExtendedHeapObject(std::ostream& os, RawHeapObject value) {
     entry = in_object.at(i);
     AttributeInfo info(entry.at(1));
     os << "  (in-object) " << entry.at(0) << " = "
-       << heap_object.instanceVariableAt(info.offset()) << '\n';
+       << instance.instanceVariableAt(info.offset()) << '\n';
   }
   Object overflow_attributes_obj(&scope, layout.overflowAttributes());
   if (overflow_attributes_obj.isTuple()) {
     Tuple overflow_attributes(&scope, *overflow_attributes_obj);
     Tuple overflow(&scope,
-                   heap_object.instanceVariableAt(layout.overflowOffset()));
+                   instance.instanceVariableAt(layout.overflowOffset()));
     for (word i = 0, length = overflow_attributes.length(); i < length; i++) {
       entry = overflow_attributes.at(i);
       AttributeInfo info(entry.at(1));
@@ -149,7 +149,7 @@ std::ostream& dumpExtendedHeapObject(std::ostream& os, RawHeapObject value) {
     }
   } else if (overflow_attributes_obj.isSmallInt()) {
     word offset = RawSmallInt::cast(*overflow_attributes_obj).value();
-    os << "  overflow dict: " << heap_object.instanceVariableAt(offset) << '\n';
+    os << "  overflow dict: " << instance.instanceVariableAt(offset) << '\n';
   }
   return os;
 }
@@ -231,7 +231,7 @@ std::ostream& dumpExtended(std::ostream& os, RawObject value) {
       return dumpExtendedType(os, Type::cast(value));
     default:
       if (value.isInstance()) {
-        return dumpExtendedHeapObject(os, RawHeapObject::cast(value));
+        return dumpExtendedInstance(os, Instance::cast(value));
       }
       return os << value;
   }

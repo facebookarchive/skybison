@@ -2833,7 +2833,7 @@ class int(bootstrap=True):
 
     def __new__(cls, x=_Unbound, base=_Unbound) -> int:  # noqa: C901
         if cls is bool:
-            raise TypeError("int.__new__(bool) is not safe, use bool.__new__()")
+            raise TypeError("int.__new__(bool) is not safe. Use bool.__new__()")
         if not _type_check(cls):
             raise TypeError(
                 f"int.__new__(X): X is not a type object ({_type(cls).__name__})"

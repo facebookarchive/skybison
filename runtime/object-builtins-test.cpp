@@ -105,10 +105,10 @@ i = C()
   Object value(&scope, runtime_.newInt(42));
   EXPECT_TRUE(
       runBuiltin(ObjectBuiltins::dunderSetattr, i, name, value).isNoneType());
-  ASSERT_TRUE(i.isHeapObject());
-  HeapObject i_heap_object(&scope, *i);
+  ASSERT_TRUE(i.isInstance());
+  Instance i_instance(&scope, *i);
   EXPECT_TRUE(
-      isIntEqualsWord(instanceGetAttribute(thread_, i_heap_object, name), 42));
+      isIntEqualsWord(instanceGetAttribute(thread_, i_instance, name), 42));
 }
 
 TEST_F(ObjectBuiltinsTest, DunderSetattrWithNonStringNameRaisesTypeError) {
@@ -441,7 +441,7 @@ def instance(): pass
 instance.foo = 42
 )")
                    .isError());
-  HeapObject instance(&scope, mainModuleAt(&runtime_, "instance"));
+  Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
   Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
   ASSERT_TRUE(layout.hasDictOverflow());
   Str name(&scope, runtime_.internStrFromCStr(thread_, "foo"));
@@ -461,7 +461,7 @@ TEST_F(
 def instance(): pass
 )")
                    .isError());
-  HeapObject instance(&scope, mainModuleAt(&runtime_, "instance"));
+  Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
   Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
   ASSERT_TRUE(layout.hasDictOverflow());
   Str name(&scope, runtime_.internStrFromCStr(thread_, "does_not_exist"));
@@ -519,7 +519,7 @@ def instance(): pass
 instance.foo = 42
 )")
                    .isError());
-  HeapObject instance(&scope, mainModuleAt(&runtime_, "instance"));
+  Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
   Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
   ASSERT_TRUE(layout.hasDictOverflow());
   Str name(&scope, runtime_.internStrFromCStr(thread_, "foo"));
@@ -538,7 +538,7 @@ TEST_F(
 def instance(): pass
 )")
                    .isError());
-  HeapObject instance(&scope, mainModuleAt(&runtime_, "instance"));
+  Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
   Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
   ASSERT_TRUE(layout.hasDictOverflow());
   Str name(&scope, runtime_.internStrFromCStr(thread_, "does_not_exist"));
@@ -596,7 +596,7 @@ TEST_F(ObjectBuiltinsTest, InstanceSetAttrSetsDictOverflowAttribute) {
 def instance(): pass
 )")
                    .isError());
-  HeapObject instance(&scope, mainModuleAt(&runtime_, "instance"));
+  Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
   Str name(&scope, runtime_.internStrFromCStr(thread_, "bar"));
   Object value(&scope, runtime_.newInt(4711));
   Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
@@ -972,14 +972,12 @@ i = C()
       objectSetAttrSetLocation(thread_, i, name, name_hash, value, &to_cache)
           .isNoneType());
   EXPECT_TRUE(isIntEqualsWord(*to_cache, info.offset()));
-  ASSERT_TRUE(i.isHeapObject());
-  HeapObject heap_object(&scope, *i);
-  EXPECT_TRUE(
-      isIntEqualsWord(heap_object.instanceVariableAt(info.offset()), 7));
+  ASSERT_TRUE(i.isInstance());
+  Instance instance(&scope, *i);
+  EXPECT_TRUE(isIntEqualsWord(instance.instanceVariableAt(info.offset()), 7));
 
   Interpreter::storeAttrWithLocation(thread_, *i, *to_cache, *value2);
-  EXPECT_TRUE(
-      isIntEqualsWord(heap_object.instanceVariableAt(info.offset()), 99));
+  EXPECT_TRUE(isIntEqualsWord(instance.instanceVariableAt(info.offset()), 99));
 }
 
 TEST_F(ObjectBuiltinsTest,
@@ -1008,13 +1006,13 @@ i.foo = 0
           .isNoneType());
   EXPECT_TRUE(isIntEqualsWord(*to_cache, -info.offset() - 1));
   ASSERT_TRUE(i.isHeapObject());
-  HeapObject heap_object(&scope, *i);
+  Instance instance(&scope, *i);
   EXPECT_TRUE(
-      isIntEqualsWord(instanceGetAttribute(thread_, heap_object, name), -8));
+      isIntEqualsWord(instanceGetAttribute(thread_, instance, name), -8));
 
   Interpreter::storeAttrWithLocation(thread_, *i, *to_cache, *value2);
   EXPECT_TRUE(
-      isIntEqualsWord(instanceGetAttribute(thread_, heap_object, name), 11));
+      isIntEqualsWord(instanceGetAttribute(thread_, instance, name), 11));
 }
 
 }  // namespace python

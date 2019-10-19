@@ -199,7 +199,7 @@ RawObject Heap::createMutableTuple(word length) {
   auto result = raw.rawCast<RawMutableTuple>();
   result.setHeaderAndOverflow(length, 0, LayoutId::kMutableTuple,
                               ObjectFormat::kObjects);
-  result.initialize(length * kPointerSize, NoneType::object());
+  result.initialize();
   return MutableTuple::cast(result);
 }
 
@@ -210,7 +210,7 @@ RawObject Heap::createTuple(word length) {
   auto result = raw.rawCast<RawTuple>();
   result.setHeaderAndOverflow(length, 0, LayoutId::kTuple,
                               ObjectFormat::kObjects);
-  result.initialize(length * kPointerSize, NoneType::object());
+  result.initialize();
   return Tuple::cast(result);
 }
 

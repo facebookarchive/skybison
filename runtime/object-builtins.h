@@ -5,13 +5,13 @@
 
 namespace python {
 
-RawObject instanceDelAttr(Thread* thread, const HeapObject& instance,
+RawObject instanceDelAttr(Thread* thread, const Instance& instance,
                           const Str& name_interned);
 
-RawObject instanceGetAttribute(Thread* thread, const HeapObject& object,
+RawObject instanceGetAttribute(Thread* thread, const Instance& instance,
                                const Str& name_interned);
 
-RawObject instanceSetAttr(Thread* thread, const HeapObject& instance,
+RawObject instanceSetAttr(Thread* thread, const Instance& instance,
                           const Str& name_interned, const Object& value);
 
 RawObject objectGetAttribute(Thread* thread, const Object& object,

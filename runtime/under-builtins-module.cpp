@@ -1827,7 +1827,7 @@ RawObject UnderBuiltinsModule::underInstanceDelattr(Thread* thread,
                                                     Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  HeapObject instance(&scope, args.get(0));
+  Instance instance(&scope, args.get(0));
   Object name(&scope, args.get(1));
   // TODO(T53626118) Raise an exception when `name_str` is a string subclass
   // that overrides `__eq__` or `__hash__`.
@@ -1841,7 +1841,7 @@ RawObject UnderBuiltinsModule::underInstanceGetattr(Thread* thread,
                                                     Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  HeapObject instance(&scope, args.get(0));
+  Instance instance(&scope, args.get(0));
   Object name(&scope, args.get(1));
   // TODO(T53626118) Raise an exception when `name_str` is a string subclass
   // that overrides `__eq__` or `__hash__`.
@@ -1855,9 +1855,9 @@ RawObject UnderBuiltinsModule::underInstanceKeys(Thread* thread, Frame* frame,
                                                  word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object object(&scope, args.get(0));
+  Instance instance(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
-  Layout layout(&scope, runtime->layoutAt(object.layoutId()));
+  Layout layout(&scope, runtime->layoutAt(instance.layoutId()));
   List result(&scope, runtime->newList());
   // Add in-object attributes
   Tuple in_object(&scope, layout.inObjectAttributes());
@@ -1888,7 +1888,7 @@ RawObject UnderBuiltinsModule::underInstanceSetattr(Thread* thread,
                                                     Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  HeapObject instance(&scope, args.get(0));
+  Instance instance(&scope, args.get(0));
   Object name(&scope, args.get(1));
   // TODO(T53626118) Raise an exception when `name_str` is a string subclass
   // that overrides `__eq__` or `__hash__`.

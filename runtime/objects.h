@@ -24,8 +24,22 @@ class Handle;
   V(NoneType)
 
 // Python types that hold a pointer to heap-allocated data in a RawObject.
+// Subclasses of `RawInstance` are listed separately in `INSTANCE_CLASS_NAMES`.
 #define HEAP_CLASS_NAMES(V)                                                    \
-  V(Object)                                                                    \
+  V(Bytes)                                                                     \
+  V(Complex)                                                                   \
+  V(Ellipsis)                                                                  \
+  V(Float)                                                                     \
+  V(Int)                                                                       \
+  V(LargeBytes)                                                                \
+  V(LargeInt)                                                                  \
+  V(LargeStr)                                                                  \
+  V(MutableBytes)                                                              \
+  V(MutableTuple)                                                              \
+  V(Str)                                                                       \
+  V(Tuple)
+
+#define INSTANCE_CLASS_NAMES(V)                                                \
   V(AsyncGenerator)                                                            \
   V(BoundMethod)                                                               \
   V(BufferedRandom)                                                            \
@@ -33,12 +47,10 @@ class Handle;
   V(BufferedWriter)                                                            \
   V(ByteArray)                                                                 \
   V(ByteArrayIterator)                                                         \
-  V(Bytes)                                                                     \
   V(BytesIO)                                                                   \
   V(BytesIterator)                                                             \
   V(ClassMethod)                                                               \
   V(Code)                                                                      \
-  V(Complex)                                                                   \
   V(Coroutine)                                                                 \
   V(Dict)                                                                      \
   V(DictItemIterator)                                                          \
@@ -47,19 +59,13 @@ class Handle;
   V(DictKeys)                                                                  \
   V(DictValueIterator)                                                         \
   V(DictValues)                                                                \
-  V(Ellipsis)                                                                  \
   V(ExceptionState)                                                            \
   V(FileIO)                                                                    \
-  V(Float)                                                                     \
   V(FrozenSet)                                                                 \
   V(Function)                                                                  \
   V(Generator)                                                                 \
   V(HeapFrame)                                                                 \
-  V(Int)                                                                       \
   V(IncrementalNewlineDecoder)                                                 \
-  V(LargeBytes)                                                                \
-  V(LargeInt)                                                                  \
-  V(LargeStr)                                                                  \
   V(Layout)                                                                    \
   V(List)                                                                      \
   V(ListIterator)                                                              \
@@ -68,8 +74,7 @@ class Handle;
   V(MemoryView)                                                                \
   V(Module)                                                                    \
   V(ModuleProxy)                                                               \
-  V(MutableBytes)                                                              \
-  V(MutableTuple)                                                              \
+  V(Object)                                                                    \
   V(Property)                                                                  \
   V(Range)                                                                     \
   V(RangeIterator)                                                             \
@@ -78,13 +83,11 @@ class Handle;
   V(SetIterator)                                                               \
   V(Slice)                                                                     \
   V(StaticMethod)                                                              \
-  V(Str)                                                                       \
   V(StrArray)                                                                  \
   V(StrIterator)                                                               \
   V(Super)                                                                     \
   V(TextIOWrapper)                                                             \
   V(Traceback)                                                                 \
-  V(Tuple)                                                                     \
   V(TupleIterator)                                                             \
   V(Type)                                                                      \
   V(TypeProxy)                                                                 \
@@ -167,6 +170,7 @@ class Handle;
 #define CLASS_NAMES(V)                                                         \
   IMMEDIATE_CLASS_NAMES(V)                                                     \
   HEAP_CLASS_NAMES(V)                                                          \
+  INSTANCE_CLASS_NAMES(V)                                                      \
   EXCEPTION_CLASS_NAMES(V)
 
 // This enumerates layout ids of intrinsic classes. Notably, the layout of an
@@ -202,17 +206,20 @@ enum class LayoutId : word {
 // clang-format off
   // Heap objects
 #define LAYOUT_ID(name) k##name,
+#define GET_FIRST(name) k##name + 0 *
+#define GET_LAST(name) 0 + k##name *
   HEAP_CLASS_NAMES(LAYOUT_ID)
+  kLastNonInstance = HEAP_CLASS_NAMES(GET_LAST) 1,
+
+  INSTANCE_CLASS_NAMES(LAYOUT_ID)
   EXCEPTION_CLASS_NAMES(LAYOUT_ID)
-#undef LAYOUT_ID
 
   // Mark the first and last Exception LayoutIds, to allow range comparisons.
-#define GET_FIRST(name) k##name + 0 *
   kFirstException = EXCEPTION_CLASS_NAMES(GET_FIRST) 0,
-#undef GET_FIRST
-#define GET_LAST(name) 0 + k##name *
   kLastException = EXCEPTION_CLASS_NAMES(GET_LAST) 1,
+#undef GET_FIRST
 #undef GET_LAST
+#undef LAYOUT_ID
   // clang-format on
 
   kLastBuiltinId = kLastException,
@@ -246,6 +253,8 @@ CLASS_NAMES(CASE)
     return object.rawCast<Raw##ty>();                                          \
   }                                                                            \
   RAW_OBJECT_COMMON_NO_CAST(ty)
+
+inline bool isInstanceLayout(LayoutId id);
 
 class RawObject {
  public:
@@ -846,11 +855,6 @@ class RawHeapObject : public RawObject {
   RawObject forward() const;
   void forwardTo(RawObject object) const;
 
-  // This is only public for the inline-cache to use. All other cases should
-  // use more specific getter methods in the subclasses.
-  RawObject instanceVariableAt(word offset) const;
-  void instanceVariableAtPut(word offset, RawObject value) const;
-
   static const uword kIsForwarded = static_cast<uword>(-3);
 
   // Layout.
@@ -861,6 +865,20 @@ class RawHeapObject : public RawObject {
   static const word kMinimumSize = kPointerSize * 2;
 
   RAW_OBJECT_COMMON(HeapObject);
+};
+
+// Instances are objects with attributes described via the layout system.
+class RawInstance : public RawHeapObject {
+ public:
+  // Sizing.
+  static word allocationSize(word num_attr);
+
+  // This is only public for the inline-cache to use. All other cases should
+  // use more specific getter methods in the subclasses.
+  RawObject instanceVariableAt(word offset) const;
+  void instanceVariableAtPut(word offset, RawObject value) const;
+
+  RAW_OBJECT_COMMON(Instance);
 
  private:
   // Instance initialization should only done by the Heap.
@@ -869,7 +887,7 @@ class RawHeapObject : public RawObject {
   friend class Heap;
 };
 
-class RawBaseException : public RawHeapObject {
+class RawBaseException : public RawInstance {
  public:
   // Getters and setters.
   RawObject args() const;
@@ -1047,7 +1065,7 @@ class RawUnicodeTranslateError : public RawUnicodeErrorBase {
   RAW_OBJECT_COMMON(UnicodeTranslateError);
 };
 
-class RawType : public RawHeapObject {
+class RawType : public RawInstance {
  public:
   enum Flag : word {
     kNone = 0,
@@ -1237,7 +1255,7 @@ class RawType : public RawHeapObject {
   RAW_OBJECT_COMMON(Type);
 };
 
-class RawTypeProxy : public RawHeapObject {
+class RawTypeProxy : public RawInstance {
  public:
   // The type is instance is a proxy to.
   RawObject type() const;
@@ -1312,6 +1330,10 @@ class RawTuple : public RawArrayBase {
 
   RAW_OBJECT_COMMON(Tuple);
 
+ protected:
+  // Fill tuple with `None`.
+  void initialize() const;
+
  private:
   // Sizing.
   static word allocationSize(word length);
@@ -1337,7 +1359,7 @@ class RawMutableTuple : public RawTuple {
   RAW_OBJECT_COMMON(MutableTuple);
 };
 
-class RawUserTupleBase : public RawHeapObject {
+class RawUserTupleBase : public RawInstance {
  public:
   // Getters and setters.
   RawObject tupleValue() const;
@@ -1452,7 +1474,7 @@ class RawFloat : public RawHeapObject {
   friend class Heap;
 };
 
-class RawUserBytesBase : public RawHeapObject {
+class RawUserBytesBase : public RawInstance {
  public:
   // Getters and setters.
   RawObject value() const;
@@ -1465,7 +1487,7 @@ class RawUserBytesBase : public RawHeapObject {
   RAW_OBJECT_COMMON_NO_CAST(UserBytesBase);
 };
 
-class RawUserFloatBase : public RawHeapObject {
+class RawUserFloatBase : public RawInstance {
  public:
   // Getters and setters.
   RawObject value() const;
@@ -1478,7 +1500,7 @@ class RawUserFloatBase : public RawHeapObject {
   RAW_OBJECT_COMMON_NO_CAST(UserFloatBase);
 };
 
-class RawUserIntBase : public RawHeapObject {
+class RawUserIntBase : public RawInstance {
  public:
   // Getters and setters.
   RawObject value() const;
@@ -1491,7 +1513,7 @@ class RawUserIntBase : public RawHeapObject {
   RAW_OBJECT_COMMON_NO_CAST(UserIntBase);
 };
 
-class RawUserStrBase : public RawHeapObject {
+class RawUserStrBase : public RawInstance {
  public:
   // Getters and setters.
   RawObject value() const;
@@ -1524,7 +1546,7 @@ class RawComplex : public RawHeapObject {
   friend class Heap;
 };
 
-class RawNativeProxy : public RawHeapObject {
+class RawNativeProxy : public RawInstance {
  public:
   RawObject native() const;
   void setNative(RawObject native_ptr) const;
@@ -1551,7 +1573,7 @@ class RawNativeProxy : public RawHeapObject {
   RAW_OBJECT_COMMON_NO_CAST(NativeProxy);
 };
 
-class RawProperty : public RawHeapObject {
+class RawProperty : public RawInstance {
  public:
   // Getters and setters
   RawObject getter() const;
@@ -1572,7 +1594,7 @@ class RawProperty : public RawHeapObject {
   RAW_OBJECT_COMMON(Property);
 };
 
-class RawRange : public RawHeapObject {
+class RawRange : public RawInstance {
  public:
   // Getters and setters.
   RawObject start() const;
@@ -1593,7 +1615,7 @@ class RawRange : public RawHeapObject {
   RAW_OBJECT_COMMON(Range);
 };
 
-class RawSlice : public RawHeapObject {
+class RawSlice : public RawInstance {
  public:
   // Getters.
   RawObject start() const;
@@ -1638,7 +1660,7 @@ class RawSlice : public RawHeapObject {
   friend class Runtime;
 };
 
-class RawStaticMethod : public RawHeapObject {
+class RawStaticMethod : public RawInstance {
  public:
   // Getters and setters
   RawObject function() const;
@@ -1651,7 +1673,7 @@ class RawStaticMethod : public RawHeapObject {
   RAW_OBJECT_COMMON(StaticMethod);
 };
 
-class RawIteratorBase : public RawHeapObject {
+class RawIteratorBase : public RawInstance {
  public:
   // Getters and setters.
   word index() const;
@@ -1715,7 +1737,7 @@ class RawListIterator : public RawIteratorBase {
   RAW_OBJECT_COMMON(ListIterator);
 };
 
-class RawLongRangeIterator : public RawHeapObject {
+class RawLongRangeIterator : public RawInstance {
  public:
   // Getters and setters.
   RawObject next() const;
@@ -1737,7 +1759,7 @@ class RawLongRangeIterator : public RawHeapObject {
 };
 
 // RangeIterator guarantees that start, stop, step, and length are all SmallInt.
-class RawRangeIterator : public RawHeapObject {
+class RawRangeIterator : public RawInstance {
  public:
   // Getters and setters.
   word next() const;
@@ -1794,7 +1816,7 @@ class RawTupleIterator : public RawIteratorBase {
   RAW_OBJECT_COMMON(TupleIterator);
 };
 
-class RawCode : public RawHeapObject {
+class RawCode : public RawInstance {
  public:
   // Matching CPython
   enum Flags {
@@ -1917,7 +1939,7 @@ class Thread;
  *
  *     https://docs.python.org/3/reference/datamodel.html
  */
-class RawFunction : public RawHeapObject {
+class RawFunction : public RawInstance {
  public:
   /**
    * An entry point into a function.
@@ -2127,15 +2149,7 @@ class RawFunction : public RawHeapObject {
   static const word kFlagsMask = (1 << kFlagsBits) - 1;
 };
 
-class RawInstance : public RawHeapObject {
- public:
-  // Sizing.
-  static word allocationSize(word num_attr);
-
-  RAW_OBJECT_COMMON(Instance);
-};
-
-class RawMappingProxy : public RawHeapObject {
+class RawMappingProxy : public RawInstance {
  public:
   // Setters and getters.
   RawObject mapping() const;
@@ -2151,7 +2165,7 @@ class RawMappingProxy : public RawHeapObject {
 // Descriptor for a block of memory.
 // Contrary to cpython, this is a reference to a `bytes` object which may be
 // moved around by the garbage collector.
-class RawMemoryView : public RawHeapObject {
+class RawMemoryView : public RawInstance {
  public:
   // Setters and getters.
   RawObject buffer() const;
@@ -2177,7 +2191,7 @@ class RawMemoryView : public RawHeapObject {
   RAW_OBJECT_COMMON(MemoryView);
 };
 
-class RawModule : public RawHeapObject {
+class RawModule : public RawInstance {
  public:
   // Setters and getters.
   RawObject name() const;
@@ -2205,7 +2219,7 @@ class RawModule : public RawHeapObject {
   RAW_OBJECT_COMMON(Module);
 };
 
-class RawModuleProxy : public RawHeapObject {
+class RawModuleProxy : public RawInstance {
  public:
   // Module that this ModuleProxy is created for.
   // moduleproxy.module().moduleproxy() == moduleproxy holds.
@@ -2230,7 +2244,7 @@ class RawModuleProxy : public RawHeapObject {
  *   [Bytes   ] - Pointer to a RawMutableBytes with the underlying data.
  *   [NumItems] - Number of bytes currently in the array.
  */
-class RawByteArray : public RawHeapObject {
+class RawByteArray : public RawInstance {
  public:
   // Getters and setters
   byte byteAt(word index) const;
@@ -2276,7 +2290,7 @@ class RawByteArray : public RawHeapObject {
  *   [Items   ] - Pointer to a RawMutableBytes with the underlying data.
  *   [NumItems] - Number of bytes currently in the array.
  */
-class RawStrArray : public RawHeapObject {
+class RawStrArray : public RawInstance {
  public:
   // Getters and setters
   RawObject items() const;
@@ -2314,7 +2328,7 @@ class RawStrArray : public RawHeapObject {
  * Tombstone buckets are stored as (RawNoneType, <not RawNoneType>, <Any>).
  *
  */
-class RawDict : public RawHeapObject {
+class RawDict : public RawInstance {
  public:
   class Bucket;
 
@@ -2460,7 +2474,7 @@ class RawDict::Bucket {
   DISALLOW_HEAP_ALLOCATION();
 };
 
-class RawDictViewBase : public RawHeapObject {
+class RawDictViewBase : public RawInstance {
  public:
   // Getters and setters
   RawObject dict() const;
@@ -2489,7 +2503,7 @@ class RawDictValues : public RawDictViewBase {
 /**
  * A simple set implementation. Used by set and frozenset.
  */
-class RawSetBase : public RawHeapObject {
+class RawSetBase : public RawInstance {
  public:
   class Bucket;
 
@@ -2591,7 +2605,7 @@ class RawSetBase::Bucket {
  *   [Length] - Number of elements currently in the list
  *   [Elems ] - Pointer to an RawTuple that contains list elements
  */
-class RawList : public RawHeapObject {
+class RawList : public RawInstance {
  public:
   // Getters and setters.
   RawObject at(word index) const;
@@ -2622,7 +2636,7 @@ class RawList : public RawHeapObject {
   RAW_OBJECT_COMMON(List);
 };
 
-class RawValueCell : public RawHeapObject {
+class RawValueCell : public RawInstance {
  public:
   // Getters and setters
   RawObject value() const;
@@ -2651,7 +2665,7 @@ class RawEllipsis : public RawHeapObject {
   RAW_OBJECT_COMMON(Ellipsis);
 };
 
-class RawWeakRef : public RawHeapObject {
+class RawWeakRef : public RawInstance {
  public:
   // Getters and setters
 
@@ -2730,7 +2744,7 @@ class RawWeakLink : public RawWeakRef {
  * The LOAD_ATTR for `f.bar` creates a `RawBoundMethod`, which is then called
  * directly by the subsequent CALL_FUNCTION opcode.
  */
-class RawBoundMethod : public RawHeapObject {
+class RawBoundMethod : public RawInstance {
  public:
   // Getters and setters
 
@@ -2750,7 +2764,7 @@ class RawBoundMethod : public RawHeapObject {
   RAW_OBJECT_COMMON(BoundMethod);
 };
 
-class RawClassMethod : public RawHeapObject {
+class RawClassMethod : public RawInstance {
  public:
   // Getters and setters
   RawObject function() const;
@@ -2802,7 +2816,7 @@ class RawClassMethod : public RawHeapObject {
  * the two layouts, and the instance is assigned the new layout.
  *
  */
-class RawLayout : public RawHeapObject {
+class RawLayout : public RawInstance {
  public:
   // Getters and setters.
   LayoutId id() const;
@@ -2895,7 +2909,7 @@ class RawLayout : public RawHeapObject {
   RAW_OBJECT_COMMON(Layout);
 };
 
-class RawSuper : public RawHeapObject {
+class RawSuper : public RawInstance {
  public:
   // getters and setters
   RawObject type() const;
@@ -2940,7 +2954,7 @@ class RawSuper : public RawHeapObject {
  *   | maxStackSize         |
  *   +----------------------+
  */
-class RawHeapFrame : public RawHeapObject {
+class RawHeapFrame : public RawInstance {
  public:
   // The size of the embedded frame + stack and locals, in words.
   word numFrameWords() const;
@@ -2987,7 +3001,7 @@ class RawHeapFrame : public RawHeapObject {
  * TODO(T38009294): This class won't exist forever. Think very hard about
  * adding any more bits of state to it.
  */
-class RawExceptionState : public RawHeapObject {
+class RawExceptionState : public RawInstance {
  public:
   // Getters and setters.
   RawObject type() const;
@@ -3015,7 +3029,7 @@ class RawExceptionState : public RawHeapObject {
  * Base class containing functionality needed by all objects representing a
  * suspended execution frame: RawGenerator, RawCoroutine, and AsyncGenerator.
  */
-class RawGeneratorBase : public RawHeapObject {
+class RawGeneratorBase : public RawInstance {
  public:
   // Get or set the RawHeapFrame embedded in this RawGeneratorBase.
   RawObject heapFrame() const;
@@ -3069,7 +3083,7 @@ class RawAsyncGenerator : public RawGeneratorBase {
   RAW_OBJECT_COMMON(AsyncGenerator);
 };
 
-class RawTraceback : public RawHeapObject {
+class RawTraceback : public RawInstance {
  public:
   // Layout.
   static const int kNextOffset = RawHeapObject::kSize;
@@ -3083,7 +3097,7 @@ class RawTraceback : public RawHeapObject {
 
 // The primitive IO types
 
-class RawUnderIOBase : public RawHeapObject {
+class RawUnderIOBase : public RawInstance {
  public:
   // Getters and setters
   bool closed() const;
@@ -3254,7 +3268,7 @@ class RawFileIO : public RawUnderRawIOBase {
   RAW_OBJECT_COMMON_NO_CAST(FileIO);
 };
 
-class RawIncrementalNewlineDecoder : public RawHeapObject {
+class RawIncrementalNewlineDecoder : public RawInstance {
  public:
   // Getters and setters
   RawObject errors() const;
@@ -3356,6 +3370,10 @@ class RawTextIOWrapper : public RawUnderTextIOBase {
 
 // RawObject
 
+inline bool isInstanceLayout(LayoutId id) {
+  return id > LayoutId::kLastNonInstance;
+}
+
 inline RawObject::RawObject(uword raw) : raw_{raw} {}
 
 inline uword RawObject::raw() const { return raw_; }
@@ -3439,7 +3457,7 @@ inline bool RawObject::isHeapObjectWithLayout(LayoutId layout_id) const {
 
 inline bool RawObject::isInstance() const {
   return isHeapObject() && (RawHeapObject::cast(*this).header().layoutId() >
-                            LayoutId::kLastBuiltinId);
+                            LayoutId::kLastNonInstance);
 }
 
 inline bool RawObject::isAsyncGenerator() const {
@@ -4262,23 +4280,25 @@ inline uword RawHeapObject::baseAddress() const {
 }
 
 inline RawHeader RawHeapObject::header() const {
-  return RawHeader::cast(instanceVariableAt(kHeaderOffset));
+  return *reinterpret_cast<RawHeader*>(address() + kHeaderOffset);
 }
 
 inline void RawHeapObject::setHeader(RawHeader header) const {
-  instanceVariableAtPut(kHeaderOffset, header);
+  *reinterpret_cast<RawHeader*>(address() + kHeaderOffset) = header;
 }
 
 inline word RawHeapObject::headerOverflow() const {
   DCHECK(header().hasOverflow(), "expected Overflow");
-  return RawSmallInt::cast(instanceVariableAt(kHeaderOverflowOffset)).value();
+  return reinterpret_cast<RawSmallInt*>(address() + kHeaderOverflowOffset)
+      ->value();
 }
 
 inline void RawHeapObject::setHeaderAndOverflow(word count, word hash,
                                                 LayoutId id,
                                                 ObjectFormat format) const {
   if (count > RawHeader::kCountMax) {
-    instanceVariableAtPut(kHeaderOverflowOffset, RawSmallInt::fromWord(count));
+    *reinterpret_cast<RawSmallInt*>(address() + kHeaderOverflowOffset) =
+        RawSmallInt::fromWord(count);
     count = RawHeader::kCountOverflowFlag;
   }
   setHeader(RawHeader::from(count, hash, id, format));
@@ -4319,7 +4339,7 @@ inline word RawHeapObject::headerSize(word count) {
   return result;
 }
 
-inline void RawHeapObject::initialize(word size, RawObject value) const {
+inline void RawInstance::initialize(word size, RawObject value) const {
   for (word offset = RawHeapObject::kSize; offset < size;
        offset += kPointerSize) {
     instanceVariableAtPut(offset, value);
@@ -4349,12 +4369,12 @@ inline void RawHeapObject::forwardTo(RawObject object) const {
       object;
 }
 
-inline RawObject RawHeapObject::instanceVariableAt(word offset) const {
+inline RawObject RawInstance::instanceVariableAt(word offset) const {
   return *reinterpret_cast<RawObject*>(address() + offset);
 }
 
-inline void RawHeapObject::instanceVariableAtPut(word offset,
-                                                 RawObject value) const {
+inline void RawInstance::instanceVariableAtPut(word offset,
+                                               RawObject value) const {
   *reinterpret_cast<RawObject*>(address() + offset) = value;
 }
 
@@ -4697,14 +4717,18 @@ inline word RawTuple::allocationSize(word length) {
   return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
 }
 
+inline void RawTuple::initialize() const {
+  std::memset(reinterpret_cast<byte*>(address()), -1, length() * kWordSize);
+}
+
 inline RawObject RawTuple::at(word index) const {
   DCHECK_INDEX(index, length());
-  return instanceVariableAt(index * kPointerSize);
+  return *reinterpret_cast<RawObject*>(address() + (index * kPointerSize));
 }
 
 inline void RawTuple::atPut(word index, RawObject value) const {
   DCHECK_INDEX(index, length());
-  instanceVariableAtPut(index * kPointerSize, value);
+  *reinterpret_cast<RawObject*>(address() + (index * kPointerSize)) = value;
 }
 
 // RawUserTupleBase

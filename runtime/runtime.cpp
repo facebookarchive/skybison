@@ -434,19 +434,19 @@ RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
   }
 
   // No delete descriptor found, delete from the instance
-  HeapObject instance(&scope, *receiver);
-  Str name_str(&scope, strUnderlying(thread, name));
-  Str name_interned(&scope, internStr(thread, name_str));
-  Object result(&scope,
-                python::instanceDelAttr(thread, instance, name_interned));
-  if (result.isErrorNotFound()) {
-    Str type_name(&scope, type.name());
-    return thread->raiseWithFmt(LayoutId::kAttributeError,
-                                "'%S' object has no attribute '%S'", &type_name,
-                                &name);
+  if (receiver.isInstance()) {
+    Instance instance(&scope, *receiver);
+    Str name_str(&scope, strUnderlying(thread, name));
+    Str name_interned(&scope, internStr(thread, name_str));
+    Object result(&scope,
+                  python::instanceDelAttr(thread, instance, name_interned));
+    if (!result.isErrorNotFound()) return *result;
   }
 
-  return *result;
+  Str type_name(&scope, type.name());
+  return thread->raiseWithFmt(LayoutId::kAttributeError,
+                              "'%S' object has no attribute '%S'", &type_name,
+                              &name);
 }
 
 RawObject Runtime::moduleDelAttr(Thread* thread, const Object& receiver,
@@ -806,7 +806,7 @@ RawObject Runtime::newInstance(const Layout& layout) {
   // This takes into account the potential overflow pointer.
   word num_attrs = layout.instanceSize() / kPointerSize;
   RawObject object = heap()->createInstance(layout.id(), num_attrs);
-  RawHeapObject instance = HeapObject::cast(object);
+  RawInstance instance = Instance::cast(object);
   // Set the overflow array
   instance.instanceVariableAtPut(layout.overflowOffset(), empty_tuple_);
   return instance;

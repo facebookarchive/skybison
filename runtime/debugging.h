@@ -10,7 +10,7 @@ namespace python {
 std::ostream& dumpExtendedCode(std::ostream& os, RawCode value,
                                const char* indent);
 std::ostream& dumpExtendedFunction(std::ostream& os, RawFunction value);
-std::ostream& dumpExtendedHeapObject(std::ostream& os, RawHeapObject value);
+std::ostream& dumpExtendedInstance(std::ostream& os, RawInstance value);
 std::ostream& dumpExtendedLayout(std::ostream& os, RawLayout value,
                                  const char* indent);
 std::ostream& dumpExtendedType(std::ostream& os, RawType value);

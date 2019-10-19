@@ -21,7 +21,7 @@ RawObject objectRaiseAttributeError(Thread* thread, const Object& object,
                               &name_str);
 }
 
-RawObject instanceDelAttr(Thread* thread, const HeapObject& instance,
+RawObject instanceDelAttr(Thread* thread, const Instance& instance,
                           const Str& name_interned) {
   HandleScope scope(thread);
 
@@ -68,21 +68,22 @@ RawObject instanceDelAttr(Thread* thread, const HeapObject& instance,
 }
 
 static RawObject instanceGetAttributeSetLocation(Thread* thread,
-                                                 const HeapObject& object,
+                                                 const Instance& instance,
                                                  const Str& name_interned,
                                                  Object* location_out) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Layout layout(&scope, runtime->layoutAt(object.layoutId()));
+  Layout layout(&scope, runtime->layoutAt(instance.layoutId()));
   AttributeInfo info;
   if (runtime->layoutFindAttribute(thread, layout, name_interned, &info)) {
     if (info.isInObject()) {
       if (location_out != nullptr) {
         *location_out = RawSmallInt::fromWord(info.offset());
       }
-      return object.instanceVariableAt(info.offset());
+      return instance.instanceVariableAt(info.offset());
     }
-    Tuple overflow(&scope, object.instanceVariableAt(layout.overflowOffset()));
+    Tuple overflow(&scope,
+                   instance.instanceVariableAt(layout.overflowOffset()));
     if (location_out != nullptr) {
       *location_out = RawSmallInt::fromWord(-info.offset() - 1);
     }
@@ -90,7 +91,7 @@ static RawObject instanceGetAttributeSetLocation(Thread* thread,
   }
   if (layout.hasDictOverflow()) {
     word offset = SmallInt::cast(layout.overflowAttributes()).value();
-    Object overflow_dict_obj(&scope, object.instanceVariableAt(offset));
+    Object overflow_dict_obj(&scope, instance.instanceVariableAt(offset));
     if (!overflow_dict_obj.isNoneType()) {
       Dict overflow_dict(&scope, *overflow_dict_obj);
       return runtime->dictAtByStr(thread, overflow_dict, name_interned);
@@ -99,14 +100,14 @@ static RawObject instanceGetAttributeSetLocation(Thread* thread,
   return Error::notFound();
 }
 
-RawObject instanceGetAttribute(Thread* thread, const HeapObject& object,
+RawObject instanceGetAttribute(Thread* thread, const Instance& instance,
                                const Str& name_interned) {
-  return instanceGetAttributeSetLocation(thread, object, name_interned,
+  return instanceGetAttributeSetLocation(thread, instance, name_interned,
                                          nullptr);
 }
 
 static RawObject instanceSetAttrSetLocation(Thread* thread,
-                                            const HeapObject& instance,
+                                            const Instance& instance,
                                             const Str& name_interned,
                                             const Object& value,
                                             Object* location_out) {
@@ -182,7 +183,7 @@ static RawObject instanceSetAttrSetLocation(Thread* thread,
   return NoneType::object();
 }
 
-RawObject instanceSetAttr(Thread* thread, const HeapObject& instance,
+RawObject instanceSetAttr(Thread* thread, const Instance& instance,
                           const Str& name_interned, const Object& value) {
   return instanceSetAttrSetLocation(thread, instance, name_interned, value,
                                     nullptr);
@@ -206,8 +207,8 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
   }
 
   // No data descriptor found on the class, look at the instance.
-  if (object.isHeapObject()) {
-    HeapObject instance(&scope, *object);
+  if (object.isInstance()) {
+    Instance instance(&scope, *object);
     // TODO(T53626118) Raise an exception when `name_str` is a string subclass
     // that overrides `__eq__` or `__hash__`.
     Str name_underlying(&scope, strUnderlying(thread, name_str));
@@ -261,8 +262,8 @@ RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
   }
 
   // No data descriptor found, store on the instance.
-  if (object.isHeapObject()) {
-    HeapObject instance(&scope, *object);
+  if (object.isInstance()) {
+    Instance instance(&scope, *object);
     // TODO(T53626118) Raise an exception when `name_str` is a string subclass
     // that overrides `__eq__` or `__hash__`.
     Str name_underlying(&scope, strUnderlying(thread, name_str));
@@ -441,7 +442,16 @@ RawObject ObjectBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Type type(&scope, args.get(0));
   if (!type.hasFlag(Type::Flag::kIsAbstract)) {
     Layout layout(&scope, type.instanceLayout());
-    return thread->runtime()->newInstance(layout);
+    LayoutId id = layout.id();
+    Runtime* runtime = thread->runtime();
+    if (!isInstanceLayout(id)) {
+      Object type_name(&scope, type.name());
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
+          "object.__new__(%S) is not safe. Use %S.__new__()", &type_name,
+          &type_name);
+    }
+    return runtime->newInstance(layout);
   }
   // `type` is an abstract class and cannot be instantiated.
   Object name(&scope, type.name());

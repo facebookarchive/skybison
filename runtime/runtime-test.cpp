@@ -3106,7 +3106,7 @@ TEST_F(RuntimeTest, InstanceAtPutWithReadOnlyAttributeRaisesAttributeError) {
                                     LayoutId::kObject, attrs, builtins));
   Layout layout(&scope, type.instanceLayout());
   runtime_.layoutAtPut(layout_id, *layout);
-  HeapObject instance(&scope, runtime_.newInstance(layout));
+  Instance instance(&scope, runtime_.newInstance(layout));
   Str attribute_name(&scope,
                      runtime_.internStrFromCStr(thread_, "__globals__"));
   Object value(&scope, NoneType::object());
@@ -3133,7 +3133,7 @@ class C(): pass
 a = C()
 )")
                    .isError());
-  HeapObject a(&scope, mainModuleAt(&runtime_, "a"));
+  Instance a(&scope, mainModuleAt(&runtime_, "a"));
   Str attr(&scope, runtime_.newStrFromCStr("attr"));
   Str value(&scope, runtime_.newStrFromCStr("value"));
   Object result(&scope, instanceSetAttr(thread_, a, attr, value));

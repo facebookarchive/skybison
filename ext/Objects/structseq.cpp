@@ -67,8 +67,8 @@ PY_EXPORT void PyStructSequence_SetItem(PyObject* structseq, Py_ssize_t pos,
   Str field_name(&scope, field_names.at(pos));
 
   // Bypass the immutability of structseq_field.__set__
-  HeapObject structseq_heap(&scope, *structseq_obj);
-  instanceSetAttr(thread, structseq_heap, field_name, value_obj);
+  Instance instance(&scope, *structseq_obj);
+  instanceSetAttr(thread, instance, field_name, value_obj);
   value_handle->decref();  // steal reference
 }
 

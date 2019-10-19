@@ -144,7 +144,7 @@ TEST_F(DebuggingTests, DumpExtendedFunction) {
 )");
 }
 
-TEST_F(DebuggingTests, DumpExtendedHeapObject) {
+TEST_F(DebuggingTests, DumpExtendedInstance) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
@@ -156,7 +156,7 @@ i.baz = ()
 )")
                    .isError());
   Object i(&scope, mainModuleAt(&runtime_, "i"));
-  ASSERT_TRUE(i.isHeapObject());
+  ASSERT_TRUE(i.isInstance());
   std::stringstream ss;
   dumpExtended(ss, *i);
   std::stringstream expected;
@@ -169,11 +169,11 @@ i.baz = ()
   EXPECT_EQ(ss.str(), expected.str());
 }
 
-TEST_F(DebuggingTests, DumpExtendedHeapObjectWithOverflowDict) {
+TEST_F(DebuggingTests, DumpExtendedInstanceWithOverflowDict) {
   HandleScope scope(thread_);
   Function func(&scope, makeTestFunction(thread_));
   std::stringstream ss;
-  dumpExtendedHeapObject(ss, RawHeapObject::cast(*func));
+  dumpExtendedInstance(ss, RawInstance::cast(*func));
   std::stringstream expected;
   expected << "heap object with layout " << static_cast<word>(func.layoutId())
            << R"( (<type "function">):
