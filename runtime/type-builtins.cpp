@@ -721,27 +721,22 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   layout.setDescribedType(*type);
   type.setInstanceLayout(*layout);
 
-  // Add this type as a direct subclass of each of its bases
+  // Add this type as a direct subclass of each of its bases; Merge flags.
+  word flags = static_cast<word>(type.flags());
   Type base_type(&scope, *type);
   for (word i = 0; i < bases.length(); i++) {
     base_type = bases.at(i);
     addSubclass(thread, base_type, type);
+    flags |= base_type.flags();
   }
+  flags &= ~Type::Flag::kIsAbstract;
 
-  // Copy down class flags from bases
-  word flags = static_cast<word>(type.flags());
-  for (word i = 1; i < mro.length(); i++) {
-    Type cur(&scope, mro.at(i));
-    flags |= cur.flags();
-  }
   if (!type.isBuiltin() && !(flags & Type::Flag::kIsNativeProxy)) {
     // TODO(T53800222): We may need a better signal than is/is not a builtin
     // class.
     flags |= Type::Flag::kHasDunderDict;
   }
-  type.setFlagsAndBuiltinBase(
-      static_cast<Type::Flag>(flags & ~Type::Flag::kIsAbstract),
-      base_layout_id);
+  type.setFlagsAndBuiltinBase(static_cast<Type::Flag>(flags), base_layout_id);
 
   if (type.hasFlag(Type::Flag::kHasDunderDict) &&
       typeLookupInMroById(thread, type, SymbolId::kDunderDict)
