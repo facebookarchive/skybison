@@ -3260,6 +3260,17 @@ class HexTests(unittest.TestCase):
         )
 
 
+@pyro_only
+class InstanceProxyTests(unittest.TestCase):
+    def test_dunder_init_with_non_instance_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            builtins.instance_proxy(42)
+        self.assertEqual(
+            str(context.exception),
+            "'__init__' requires a 'instance' object but received a 'int'",
+        )
+
+
 class IntTests(unittest.TestCase):
     def test_dunder_hash_with_small_number_returns_self(self):
         self.assertEqual(int.__hash__(0), 0)

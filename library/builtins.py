@@ -78,6 +78,7 @@ _get_member_ulong = _get_member_ulong  # noqa: F821
 _get_member_ushort = _get_member_ushort  # noqa: F821
 _instance_delattr = _instance_delattr  # noqa: F821
 _instance_getattr = _instance_getattr  # noqa: F821
+_instance_guard = _instance_guard  # noqa: F821
 _instance_keys = _instance_keys  # noqa: F821
 _instance_setattr = _instance_setattr  # noqa: F821
 _int_check = _int_check  # noqa: F821
@@ -2672,13 +2673,19 @@ def input(prompt=None):
 
 class instance_proxy:
     def __contains__(self, key):
-        return _instance_getattr(self._instance, key) is not _Unbound
+        instance = self._instance
+        _instance_guard(instance)
+        return _instance_getattr(instance, key) is not _Unbound
 
     def __delitem__(self, key):
-        _instance_delattr(self._instance, key)
+        instance = self._instance
+        _instance_guard(instance)
+        _instance_delattr(instance, key)
 
     def __getitem__(self, key):
-        result = _instance_getattr(self._instance, key)
+        instance = self._instance
+        _instance_guard(instance)
+        result = _instance_getattr(instance, key)
         if result is _Unbound:
             raise KeyError(key)
         return result
@@ -2686,6 +2693,7 @@ class instance_proxy:
     __hash__ = None
 
     def __init__(self, instance):
+        _instance_guard(instance)
         self._instance = instance
 
     def __iter__(self):
@@ -2703,22 +2711,27 @@ class instance_proxy:
         return "instance_proxy({" + ", ".join(kwpairs) + "})"
 
     def __setitem__(self, key, value):
-        _instance_setattr(self._instance, key, value)
+        instance = self._instance
+        _instance_guard(instance)
+        _instance_setattr(instance, key, value)
 
     def clear(self):
         instance = self._instance
+        _instance_guard(instance)
         for key in _instance_keys(instance):
             _instance_delattr(instance, key)
 
     def update(self, d):
         instance = self._instance
+        _instance_guard(instance)
         for key, value in d.items():
             _instance_setattr(instance, key, value)
 
     def items(self):
         # TODO(emacs): Return an iterator.
-        result = []
         instance = self._instance
+        _instance_guard(instance)
+        result = []
         for key in self.keys():
             value = _instance_getattr(instance, key)
             assert value is not _Unbound
@@ -2727,10 +2740,13 @@ class instance_proxy:
 
     def keys(self):
         # TODO(emacs): Return an iterator.
-        return _instance_keys(self._instance)
+        instance = self._instance
+        _instance_guard(instance)
+        return _instance_keys(instance)
 
     def pop(self, key, default=_Unbound):
         instance = self._instance
+        _instance_guard(instance)
         value = _instance_getattr(instance, key)
         if value is _Unbound:
             if default is _Unbound:
@@ -2740,17 +2756,19 @@ class instance_proxy:
         return value
 
     def popitem(self):
+        instance = self._instance
+        _instance_guard(instance)
         keys = self.keys()
         if not keys:
             raise KeyError("dictionary is empty")
         key = keys[-1]
-        instance = self._instance
         value = _instance_getattr(instance, key)
         _instance_delattr(instance, key)
         return key, value
 
     def setdefault(self, key, default=None):
         instance = self._instance
+        _instance_guard(instance)
         value = _instance_getattr(instance, key)
         if value is not _Unbound:
             return value

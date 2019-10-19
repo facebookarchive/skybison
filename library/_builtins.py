@@ -390,6 +390,11 @@ def _instance_getattr(obj, name):
 
 
 @_patch
+def _instance_guard(obj):
+    pass
+
+
+@_patch
 def _instance_keys(obj):
     pass
 

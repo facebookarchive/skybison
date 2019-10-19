@@ -147,6 +147,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderGetMemberUShort, underGetMemberUShort},
     {SymbolId::kUnderInstanceDelattr, underInstanceDelattr},
     {SymbolId::kUnderInstanceGetattr, underInstanceGetattr},
+    {SymbolId::kUnderInstanceGuard, underInstanceGuard},
     {SymbolId::kUnderInstanceKeys, underInstanceKeys},
     {SymbolId::kUnderInstanceSetattr, underInstanceSetattr},
     {SymbolId::kUnderIntCheck, underIntCheck},
@@ -1849,6 +1850,15 @@ RawObject UnderBuiltinsModule::underInstanceGetattr(Thread* thread,
   Str name_interned(&scope, thread->runtime()->internStr(thread, name_str));
   Object result(&scope, instanceGetAttribute(thread, instance, name_interned));
   return result.isErrorNotFound() ? Unbound::object() : *result;
+}
+
+RawObject UnderBuiltinsModule::underInstanceGuard(Thread* thread, Frame* frame,
+                                                  word nargs) {
+  Arguments args(frame, nargs);
+  if (args.get(0).isInstance()) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kInstance);
 }
 
 RawObject UnderBuiltinsModule::underInstanceKeys(Thread* thread, Frame* frame,

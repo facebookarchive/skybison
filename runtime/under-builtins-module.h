@@ -127,6 +127,7 @@ class UnderBuiltinsModule {
                                         word nargs);
   static RawObject underInstanceGetattr(Thread* thread, Frame* frame,
                                         word nargs);
+  static RawObject underInstanceGuard(Thread* thread, Frame* frame, word nargs);
   static RawObject underInstanceKeys(Thread* thread, Frame* frame, word nargs);
   static RawObject underInstanceSetattr(Thread* thread, Frame* frame,
                                         word nargs);

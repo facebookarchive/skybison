@@ -261,6 +261,7 @@ class Runtime;
   V(UnderInstance, "_instance")                                                \
   V(UnderInstanceDelattr, "_instance_delattr")                                 \
   V(UnderInstanceGetattr, "_instance_getattr")                                 \
+  V(UnderInstanceGuard, "_instance_guard")                                     \
   V(UnderInstanceKeys, "_instance_keys")                                       \
   V(UnderInstanceSetattr, "_instance_setattr")                                 \
   V(UnderIntCheck, "_int_check")                                               \
