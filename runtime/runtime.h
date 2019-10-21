@@ -4,6 +4,7 @@
 #include "callback.h"
 #include "handles.h"
 #include "heap.h"
+#include "interpreter-gen.h"
 #include "interpreter.h"
 #include "layout.h"
 #include "symbols.h"
@@ -298,6 +299,8 @@ class Runtime {
   void setArgv(Thread* thread, int argc, const char** argv);
 
   Heap* heap() { return &heap_; }
+
+  Interpreter* interpreter() { return interpreter_.get(); }
 
   // Tracks extension native non-GC and GC objects.
   // Returns true if an untracked entry becomes tracked, false, otherwise.
@@ -905,6 +908,7 @@ class Runtime {
   void initializeHeapTypes();
   void initializeImmediateTypes();
   void initializeInterned();
+  void initializeInterpreter();
   void initializeLayouts();
   void initializeModules();
   void initializePrimitiveInstances();
@@ -1027,6 +1031,8 @@ class Runtime {
   static const ModuleInitializer kBuiltinModules[];
 
   Heap heap_;
+
+  std::unique_ptr<Interpreter> interpreter_;
 
   // TODO(T46009495): This is a temporary list tracking native objects to
   // correctly free their memory at runtime destruction. However, this should

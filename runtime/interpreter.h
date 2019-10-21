@@ -54,8 +54,12 @@ class Interpreter {
   };
   static const word kNumContinues = 4;
 
-  using AsmInterpreter = void (*)(Thread*, Frame*);
   using OpcodeHandler = Continue (*)(Thread* thread, word arg);
+
+  virtual ~Interpreter();
+  // Initialize per-thread interpreter state. Must be called on each thread
+  // before the interpreter can execute code on it.
+  virtual void setupThread(Thread* thread) = 0;
 
   static RawObject execute(Thread* thread);
 
@@ -512,10 +516,8 @@ class Interpreter {
   static Continue inplaceOpUpdateCache(Thread* thread, word arg);
   static Continue inplaceOpFallback(Thread* thread, word arg,
                                     BinaryOpFlags flags);
-
-  static void executeImpl(Thread* thread, Frame* entry_frame);
-
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Interpreter);
 };
+
+Interpreter* createCppInterpreter();
 
 }  // namespace python

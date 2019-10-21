@@ -41,6 +41,8 @@ using Continue = Interpreter::Continue;
 #define HANDLER_INLINE __attribute__((noinline))
 #endif
 
+Interpreter::~Interpreter() {}
+
 RawObject Interpreter::prepareCallable(Thread* thread, Frame* frame,
                                        Object* callable, Object* self) {
   DCHECK(!callable->isFunction(),
@@ -3871,20 +3873,30 @@ RawObject Interpreter::execute(Thread* thread) {
     if (unwind(thread, entry_frame)) return do_return();
   }
 
-  static const auto asm_interpreter = []() -> Interpreter::AsmInterpreter {
-    const char* env = getenv("PYRO_CPP_INTERPRETER");
-    if (env == nullptr || env[0] == '\0') return generateInterpreter();
-    return nullptr;
-  }();
-  if (asm_interpreter != nullptr) {
-    asm_interpreter(thread, entry_frame);
-  } else {
-    executeImpl(thread, entry_frame);
-  }
+  InterpreterThreadState::MainLoopFunc main_loop =
+      thread->interpreterState()->main_loop;
+  main_loop(thread, entry_frame);
   return do_return();
 }
 
-void Interpreter::executeImpl(Thread* thread, Frame* entry_frame) {
+namespace {
+
+class CppInterpreter : public Interpreter {
+ public:
+  ~CppInterpreter() override;
+  void setupThread(Thread* thread) override;
+
+ private:
+  static void interpreterLoop(Thread* thread, Frame* entry_frame);
+};
+
+CppInterpreter::~CppInterpreter() {}
+
+void CppInterpreter::setupThread(Thread* thread) {
+  thread->interpreterState()->main_loop = interpreterLoop;
+}
+
+void CppInterpreter::interpreterLoop(Thread* thread, Frame* entry_frame) {
   // Silence warnings about computed goto
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
@@ -3945,5 +3957,9 @@ handle_return_or_unwind:
   goto* next_label();
 #pragma GCC diagnostic pop
 }
+
+}  // namespace
+
+Interpreter* createCppInterpreter() { return new CppInterpreter(); }
 
 }  // namespace python

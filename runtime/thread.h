@@ -37,6 +37,13 @@ class Handles {
   Handle<RawObject>* head_ = nullptr;
 };
 
+void uninitializedMainLoop(Thread*, Frame*);
+
+struct InterpreterThreadState {
+  using MainLoopFunc = void (*)(Thread*, Frame*);
+  MainLoopFunc main_loop = uninitializedMainLoop;
+};
+
 class Thread {
  public:
   static const int kDefaultStackSize = 1 * kMiB;
@@ -73,6 +80,8 @@ class Thread {
   Runtime* runtime() { return runtime_; }
 
   Frame* currentFrame() { return currentFrame_; }
+
+  InterpreterThreadState* interpreterState() { return &interpreter_state_; }
 
   // The stack pointer is computed by taking the value stack top of the current
   // frame.
@@ -302,6 +311,7 @@ class Thread {
   Frame* currentFrame_;
   Thread* next_;
   Runtime* runtime_;
+  InterpreterThreadState interpreter_state_;
 
   // State of the pending exception.
   RawObject pending_exc_type_;

@@ -851,18 +851,37 @@ void emitInterpreter(EmitEnv* env) {
   }
 }
 
-}  // namespace
+class X64Interpreter : public Interpreter {
+ public:
+  X64Interpreter();
+  ~X64Interpreter() override;
+  void setupThread(Thread* thread) override;
 
-Interpreter::AsmInterpreter generateInterpreter() {
+ private:
+  byte* code_;
+  word size_;
+};
+
+X64Interpreter::X64Interpreter() {
   EmitEnv env;
   emitInterpreter(&env);
 
   // Finalize the code.
-  word size = env.as.codeSize();
-  byte* code = OS::allocateMemory(size, &size);
-  env.as.finalizeInstructions(MemoryRegion(code, size));
-  OS::protectMemory(code, size, OS::kReadExecute);
-  return reinterpret_cast<Interpreter::AsmInterpreter>(code);
+  size_ = env.as.codeSize();
+  code_ = OS::allocateMemory(size_, &size_);
+  env.as.finalizeInstructions(MemoryRegion(code_, size_));
+  OS::protectMemory(code_, size_, OS::kReadExecute);
 }
+
+X64Interpreter::~X64Interpreter() { OS::freeMemory(code_, size_); }
+
+void X64Interpreter::setupThread(Thread* thread) {
+  thread->interpreterState()->main_loop =
+      reinterpret_cast<InterpreterThreadState::MainLoopFunc>(code_);
+}
+
+}  // namespace
+
+Interpreter* createAsmInterpreter() { return new X64Interpreter(); }
 
 }  // namespace python

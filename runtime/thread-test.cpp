@@ -42,6 +42,7 @@ TEST_F(ThreadTest, RunEmptyFunction) {
 
   Thread thread2(1 * kKiB);
   thread2.setRuntime(&runtime_);
+  runtime_.interpreter()->setupThread(&thread2);
   Thread::setCurrentThread(&thread2);
   EXPECT_TRUE(runCode(code).isNoneType());
 

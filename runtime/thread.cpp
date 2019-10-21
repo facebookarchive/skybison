@@ -27,6 +27,10 @@ void Handles::visitPointers(PointerVisitor* visitor) {
   }
 }
 
+void uninitializedMainLoop(Thread*, Frame*) {
+  UNREACHABLE("interpreter main loop not initialized on this thread");
+}
+
 thread_local Thread* Thread::current_thread_ = nullptr;
 
 Thread::Thread(word size)

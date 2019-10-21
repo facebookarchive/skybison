@@ -109,6 +109,7 @@ Runtime::Runtime(word heap_size, bool cache_enabled)
       cache_enabled_(cache_enabled) {
   initializeDebugging();
   initializeRandom();
+  initializeInterpreter();
   initializeThreads();
   // This must be called before initializeTypes is called. Methods in
   // initializeTypes rely on instances that are created in this method.
@@ -1979,11 +1980,21 @@ RawObject Runtime::importModuleFromCode(const Code& code, const Object& name) {
   return *module;
 }
 
+void Runtime::initializeInterpreter() {
+  const char* pyro_cpp_interpreter = std::getenv("PYRO_CPP_INTERPRETER");
+  if (pyro_cpp_interpreter == nullptr || pyro_cpp_interpreter[0] == '\0') {
+    interpreter_.reset(createAsmInterpreter());
+  } else {
+    interpreter_.reset(createCppInterpreter());
+  }
+}
+
 void Runtime::initializeThreads() {
   auto main_thread = new Thread(Thread::kDefaultStackSize);
   main_thread->setCaughtExceptionState(heap()->create<RawExceptionState>());
   threads_ = main_thread;
   main_thread->setRuntime(this);
+  interpreter_->setupThread(main_thread);
   Thread::setCurrentThread(main_thread);
 }
 
