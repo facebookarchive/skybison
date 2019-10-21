@@ -3829,6 +3829,22 @@ RawObject Runtime::genSend(Thread* thread, const GeneratorBase& gen,
   exc_state.setPrevious(thread->caughtExceptionState());
   thread->setCaughtExceptionState(*exc_state);
 
+  // TODO(bsimmers): This check is only relevant for generators, and each
+  // callsite can know statically whether or not an exception is ready for
+  // throwing. Once the shape of the interpreter settles down, we should
+  // restructure it to take advantage of this fact, likely by adding an
+  // alternate entry point that always throws (and asserts that an exception is
+  // pending).
+  // TODO(matthiasb): We should not call the internal `unwind()` function here.
+  // This will be resolved in an upcoming diff that moves this whole function
+  // into the interpreter.
+  if (thread->hasPendingException() &&
+      Interpreter::unwind(thread, live_frame)) {
+    thread->setCaughtExceptionState(exc_state.previous());
+    exc_state.setPrevious(NoneType::object());
+    return Error::exception();
+  }
+
   Object result(&scope, Interpreter::execute(thread));
   thread->setCaughtExceptionState(exc_state.previous());
   exc_state.setPrevious(NoneType::object());

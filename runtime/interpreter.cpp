@@ -3855,26 +3855,10 @@ Continue Interpreter::doBinaryOpCached(Thread* thread, word arg) {
 }
 
 RawObject Interpreter::execute(Thread* thread) {
-  Frame* entry_frame = thread->currentFrame();
-
-  // TODO(bsimmers): This check is only relevant for generators, and each
-  // callsite of Interpreter::execute() can know statically whether or not an
-  // exception is ready for throwing. Once the shape of the interpreter settles
-  // down, we should restructure it to take advantage of this fact, likely by
-  // adding an alternate entry point that always throws (and asserts that an
-  // exception is pending).
-  if (thread->hasPendingException()) {
-    DCHECK(entry_frame->function().isGeneratorLike(),
-           "Entered dispatch loop with a pending exception outside of "
-           "generator/coroutine");
-    if (unwind(thread, entry_frame)) {
-      return Error::exception();
-    }
-  }
-
+  DCHECK(!thread->hasPendingException(), "unhandled exception lingering");
   InterpreterThreadState::MainLoopFunc main_loop =
       thread->interpreterState()->main_loop;
-  return main_loop(thread, entry_frame);
+  return main_loop(thread);
 }
 
 namespace {
@@ -3885,7 +3869,7 @@ class CppInterpreter : public Interpreter {
   void setupThread(Thread* thread) override;
 
  private:
-  static RawObject interpreterLoop(Thread* thread, Frame* entry_frame);
+  static RawObject interpreterLoop(Thread* thread);
 };
 
 CppInterpreter::~CppInterpreter() {}
@@ -3894,7 +3878,7 @@ void CppInterpreter::setupThread(Thread* thread) {
   thread->interpreterState()->main_loop = interpreterLoop;
 }
 
-RawObject CppInterpreter::interpreterLoop(Thread* thread, Frame* entry_frame) {
+RawObject CppInterpreter::interpreterLoop(Thread* thread) {
   // Silence warnings about computed goto
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
@@ -3906,6 +3890,7 @@ RawObject CppInterpreter::interpreterLoop(Thread* thread, Frame* entry_frame) {
 #undef OP
   };
 
+  Frame* entry_frame = thread->currentFrame();
   Bytecode bc;
   int32_t arg;
   Continue cont;

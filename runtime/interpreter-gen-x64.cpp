@@ -761,10 +761,10 @@ void emitInterpreter(EmitEnv* env) {
   for (Register r : kUsedCalleeSavedRegs) {
     __ pushq(r);
   }
-  __ pushq(kArgRegs[1]);  // entry_frame
 
   __ movq(kThreadReg, kArgRegs[0]);
   __ movq(kFrameReg, Address(kThreadReg, Thread::currentFrameOffset()));
+  __ pushq(kFrameReg);  // entry_frame
 
   // Materialize the handler base address into a register. The offset will be
   // patched right before emitting the first handler.
