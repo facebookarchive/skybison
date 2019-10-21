@@ -269,79 +269,31 @@ PY_EXPORT int PyMapping_HasKeyString(PyObject* obj, const char* key) {
   return 0;
 }
 
-// TODO(T40432322): Re-inline into PySequence_Fast
-static RawObject sequenceFast(Thread* thread, const Object& seq,
-                              const Str& msg) {
-  if (seq.isList() || seq.isTuple()) {
-    return *seq;
-  }
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-
-  Object iter(&scope,
-              Interpreter::createIterator(thread, thread->currentFrame(), seq));
-  if (iter.isError()) {
-    Object given(&scope, thread->pendingExceptionType());
-    Object exc(&scope, runtime->typeAt(LayoutId::kTypeError));
-    if (givenExceptionMatches(thread, given, exc)) {
-      thread->setPendingExceptionValue(*msg);
-    }
-    return Error::exception();
-  }
-  return thread->invokeFunction1(SymbolId::kBuiltins, SymbolId::kList, seq);
-}
-
-// TODO(T40432322): Delete
-static PyObject* callMappingMethod(Thread* thread, const Object& map,
-                                   SymbolId method, const char* method_name) {
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-  Object result(&scope, thread->invokeMethod1(map, method));
-  if (result.isError()) {
-    if (result.isErrorNotFound()) {
-      thread->raiseWithFmt(LayoutId::kAttributeError, "could not call %s",
-                           method_name);
-    }
-    return nullptr;
-  }
-  Str msg(&scope, runtime->newStrFromFmt("%s are not iterable", method_name));
-  result = sequenceFast(thread, result, msg);
-  if (result.isError()) {
-    return nullptr;
-  }
-  return ApiHandle::newReference(thread, *result);
-}
-
-// TODO(T40432322): Copy over wholesale from CPython 3.6
 PY_EXPORT PyObject* PyMapping_Items(PyObject* mapping) {
-  DCHECK(mapping != nullptr, "mapping was null");
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Object map(&scope, ApiHandle::fromPyObject(mapping)->asObject());
-  if (map.isDict()) {
-    Dict dict(&scope, *map);
-    return ApiHandle::newReference(thread,
-                                   thread->runtime()->dictItems(thread, dict));
+  if (PyDict_CheckExact(mapping)) {
+    return PyDict_Items(mapping);
   }
-  return callMappingMethod(thread, map, SymbolId::kItems, "o.items()");
+  PyObject* items = PyObject_CallMethod(mapping, "items", nullptr);
+  if (items == nullptr) {
+    return nullptr;
+  }
+  PyObject* fast = PySequence_Fast(items, "mapping.items() are not iterable");
+  Py_DECREF(items);
+  return fast;
 }
 
-// TODO(T40432322): Copy over wholesale from CPython 3.6
 PY_EXPORT PyObject* PyMapping_Keys(PyObject* mapping) {
   DCHECK(mapping != nullptr, "mapping was null");
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Object map(&scope, ApiHandle::fromPyObject(mapping)->asObject());
-  if (map.isDict()) {
-    Dict dict(&scope, *map);
-    return ApiHandle::newReference(thread,
-                                   thread->runtime()->dictKeys(thread, dict));
+  if (PyDict_CheckExact(mapping)) {
+    return PyDict_Keys(mapping);
   }
-  return callMappingMethod(thread, map, SymbolId::kKeys, "o.keys()");
-}
-
-PY_EXPORT Py_ssize_t PyMapping_Length(PyObject* pyobj) {
-  return objectLength(pyobj);
+  PyObject* keys = PyObject_CallMethod(mapping, "keys", nullptr);
+  if (keys == nullptr) {
+    return nullptr;
+  }
+  PyObject* fast = PySequence_Fast(keys, "mapping.keys() are not iterable");
+  Py_DECREF(keys);
+  return fast;
 }
 
 PY_EXPORT int PyMapping_SetItemString(PyObject* obj, const char* key,
@@ -363,18 +315,17 @@ PY_EXPORT Py_ssize_t PyMapping_Size(PyObject* pyobj) {
   return objectLength(pyobj);
 }
 
-// TODO(T40432322): Copy over wholesale from CPython 3.6
 PY_EXPORT PyObject* PyMapping_Values(PyObject* mapping) {
-  DCHECK(mapping != nullptr, "mapping was null");
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Object map(&scope, ApiHandle::fromPyObject(mapping)->asObject());
-  if (map.isDict()) {
-    Dict dict(&scope, *map);
-    return ApiHandle::newReference(thread,
-                                   thread->runtime()->dictValues(thread, dict));
+  if (PyDict_CheckExact(mapping)) {
+    return PyDict_Values(mapping);
   }
-  return callMappingMethod(thread, map, SymbolId::kValues, "o.values()");
+  PyObject* values = PyObject_CallMethod(mapping, "values", nullptr);
+  if (values == nullptr) {
+    return nullptr;
+  }
+  PyObject* fast = PySequence_Fast(values, "mapping.values() are not iterable");
+  Py_DECREF(values);
+  return fast;
 }
 
 // Number Protocol
@@ -1233,8 +1184,24 @@ PY_EXPORT PyObject* PySequence_Fast(PyObject* seq, const char* msg) {
   }
   HandleScope scope(thread);
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
-  Str msg_obj(&scope, thread->runtime()->newStrFromCStr(msg));
-  Object result(&scope, sequenceFast(thread, seq_obj, msg_obj));
+
+  if (seq_obj.isList() || seq_obj.isTuple()) {
+    return ApiHandle::newReference(thread, *seq_obj);
+  }
+  Object iter(&scope, Interpreter::createIterator(
+                          thread, thread->currentFrame(), seq_obj));
+  if (iter.isError()) {
+    Object given(&scope, thread->pendingExceptionType());
+    Runtime* runtime = thread->runtime();
+    Object exc(&scope, runtime->typeAt(LayoutId::kTypeError));
+    if (givenExceptionMatches(thread, given, exc)) {
+      thread->setPendingExceptionValue(runtime->newStrFromCStr(msg));
+    }
+    return nullptr;
+  }
+
+  Object result(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
+                                                SymbolId::kList, seq_obj));
   if (result.isError()) {
     return nullptr;
   }
