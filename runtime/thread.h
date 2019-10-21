@@ -58,12 +58,11 @@ class Thread {
   // Private method. Call pushCallFrame() or pushNativeFrame() isntead.
   Frame* pushCallFrame(RawFunction function);
   Frame* pushNativeFrame(word nargs);
+  Frame* pushHeapFrame(const Handle<RawHeapFrame>& heap_frame);
   Frame* pushClassFunctionFrame(const Handle<RawFunction>& function);
 
-  // Returns true if growing by `max_size` bytes would cause a stack overflow.
-  bool wouldStackOverflow(word max_size);
-
   Frame* popFrame();
+  Frame* popFrameToHeapFrame(const Handle<RawHeapFrame>& heap_frame);
 
   // Runs a code object on the current thread.
   RawObject exec(const Handle<RawCode>& code, const Handle<RawModule>& module,
@@ -332,6 +331,8 @@ class Thread {
   int recursion_limit_ = 1000;  // CPython's default: Py_DEFAULT_RECURSION_LIMIT
 
   static thread_local Thread* current_thread_;
+
+  bool wouldStackOverflow(word max_size);
 
   DISALLOW_COPY_AND_ASSIGN(Thread);
 };

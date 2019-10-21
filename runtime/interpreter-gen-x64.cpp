@@ -710,7 +710,6 @@ void emitHandler<COMPARE_IS_NOT>(EmitEnv* env) {
 template <>
 void emitHandler<RETURN_VALUE>(EmitEnv* env) {
   Label slow_path;
-  Register r_scratch = RAX;
 
   // TODO(bsimmers): Until we emit smarter RETURN_* opcodes from the compiler,
   // check for the common case here:
@@ -723,14 +722,6 @@ void emitHandler<RETURN_VALUE>(EmitEnv* env) {
       Address(kFrameReg, Frame::kBlockStackOffset + BlockStack::kDepthOffset),
       Immediate(SmallInt::fromWord(0).raw()));
   __ jcc(NOT_EQUAL, &slow_path, Assembler::kNearJump);
-
-  // or frame->function()->isGenerator().
-  __ movq(r_scratch, Address(kFrameReg, Frame::kLocalsOffset));
-  __ movq(r_scratch,
-          Address(r_scratch, Frame::kFunctionOffsetFromLocals * kPointerSize));
-  __ testq(Address(r_scratch, heapObjectDisp(Function::kFlagsOffset)),
-           Immediate(SmallInt::fromWord(Function::kGenerator).raw()));
-  __ jcc(NOT_ZERO, &slow_path, Assembler::kNearJump);
 
   // Fast path: pop return value, restore caller frame, push return value.
   __ popq(RAX);

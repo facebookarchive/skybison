@@ -514,12 +514,12 @@ static RawObject createGenerator(Thread* thread, const Function& function,
                                  const Str& qualname) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
+  HeapFrame heap_frame(&scope, runtime->newHeapFrame(function));
+  thread->popFrameToHeapFrame(heap_frame);
   GeneratorBase gen_base(&scope, createGeneratorObject(runtime, function));
-  gen_base.setHeapFrame(runtime->newHeapFrame(function));
+  gen_base.setHeapFrame(*heap_frame);
   gen_base.setExceptionState(runtime->newExceptionState());
   gen_base.setQualname(*qualname);
-  runtime->genSave(thread, gen_base);
-  thread->popFrame();
   return *gen_base;
 }
 

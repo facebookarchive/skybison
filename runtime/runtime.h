@@ -595,14 +595,6 @@ class Runtime {
   RawObject tupleSubseq(Thread* thread, const Tuple& self, word start,
                         word length);
 
-  // Resume a GeneratorBase, passing it the given value and returning either the
-  // yielded value or Error on termination.
-  NODISCARD RawObject genSend(Thread* thread, const GeneratorBase& gen,
-                              const Object& value);
-
-  // Save the current Frame to the given generator.
-  void genSave(Thread* thread, const GeneratorBase& gen);
-
   NewValueCellCallback* newValueCellCallback() {
     return &new_value_cell_callback_;
   }

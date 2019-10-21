@@ -13,43 +13,6 @@ RawGeneratorBase generatorFromStackFrame(Frame* frame) {
   return GeneratorBase::cast(frame->previousFrame()->local(0));
 }
 
-// Check that the generator is in an OK state to resume, run it, then check if
-// it's newly-finished.
-static RawObject sendImpl(Thread* thread, const GeneratorBase& gen,
-                          const Object& value) {
-  HandleScope scope(thread);
-  HeapFrame heap_frame(&scope, gen.heapFrame());
-  // Don't resume an already-running generator.
-  if (gen.running() == Bool::trueObj()) {
-    return thread->raiseWithFmt(LayoutId::kValueError, "%T already executing",
-                                &gen);
-  }
-  // If the generator has finished and we're not already sending an exception,
-  // raise StopIteration.
-  word pc = heap_frame.virtualPC();
-  if (pc == Frame::kFinishedGeneratorPC && !thread->hasPendingException()) {
-    return thread->raise(LayoutId::kStopIteration, NoneType::object());
-  }
-  // Don't allow sending non-None values before the generator is primed.
-  if (pc == 0 && !value.isNoneType()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError, "can't send non-None value to a just-started %T",
-        &gen);
-  }
-
-  gen.setRunning(Bool::trueObj());
-  Object result(&scope, thread->runtime()->genSend(thread, gen, value));
-  gen.setRunning(Bool::falseObj());
-
-  if (!result.isError() &&
-      heap_frame.virtualPC() == Frame::kFinishedGeneratorPC) {
-    // The generator finished normally. Forward its return value in a
-    // StopIteration.
-    return thread->raise(LayoutId::kStopIteration, *result);
-  }
-  return *result;
-}
-
 template <typename T, SymbolId name, LayoutId type>
 RawObject GeneratorBaseBuiltins<T, name, type>::send(Thread* thread,
                                                      Frame* frame, word nargs) {
@@ -59,7 +22,7 @@ RawObject GeneratorBaseBuiltins<T, name, type>::send(Thread* thread,
   if (self.layoutId() != type) return thread->raiseRequiresType(self, name);
   GeneratorBase gen(&scope, *self);
   Object value(&scope, args.get(1));
-  return sendImpl(thread, gen, value);
+  return Interpreter::resumeGenerator(thread, gen, value);
 }
 
 // If the given GeneratorBase is suspended at a YIELD_FROM instruction, return
@@ -115,11 +78,7 @@ static RawObject genThrowDoRaise(Thread* thread, const GeneratorBase& gen,
                                 &exc);
   }
 
-  thread->setPendingExceptionType(*exc);
-  thread->setPendingExceptionValue(*value);
-  thread->setPendingExceptionTraceback(*tb);
-  Object none(&scope, NoneType::object());
-  return sendImpl(thread, gen, none);
+  return Interpreter::resumeGeneratorWithRaise(thread, gen, exc, value, tb);
 }
 
 // Delegate the given exception to yf.throw(). If yf does not have a throw
@@ -175,12 +134,17 @@ static RawObject genThrowYieldFrom(Thread* thread, const GeneratorBase& gen,
     DCHECK(*subiter == *yf, "Unexpected subiter on generator stack");
     hf.setVirtualPC(hf.virtualPC() + kCodeUnitSize);
 
-    Object subiter_value(&scope, NoneType::object());
     if (thread->hasPendingStopIteration()) {
-      subiter_value = thread->pendingStopIterationValue();
+      Object subiter_value(&scope, thread->pendingStopIterationValue());
       thread->clearPendingException();
+      return Interpreter::resumeGenerator(thread, gen, subiter_value);
     }
-    return sendImpl(thread, gen, subiter_value);
+    Object exc_type(&scope, thread->pendingExceptionType());
+    Object exc_value(&scope, thread->pendingExceptionValue());
+    Object exc_traceback(&scope, thread->pendingExceptionTraceback());
+    thread->clearPendingException();
+    return Interpreter::resumeGeneratorWithRaise(thread, gen, exc_type,
+                                                 exc_value, exc_traceback);
   }
 
   return *result;
@@ -254,7 +218,7 @@ RawObject GeneratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   }
   Generator gen(&scope, *self);
   Object value(&scope, NoneType::object());
-  return sendImpl(thread, gen, value);
+  return Interpreter::resumeGenerator(thread, gen, value);
 }
 
 const BuiltinMethod CoroutineBuiltins::kBuiltinMethods[] = {

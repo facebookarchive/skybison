@@ -62,6 +62,14 @@ class Interpreter {
   virtual void setupThread(Thread* thread) = 0;
 
   static RawObject execute(Thread* thread);
+  static RawObject resumeGenerator(Thread* thread,
+                                   const GeneratorBase& generator,
+                                   const Object& send_value);
+  static RawObject resumeGeneratorWithRaise(Thread* thread,
+                                            const GeneratorBase& generator,
+                                            const Object& type,
+                                            const Object& value,
+                                            const Object& traceback);
 
   static RawObject call(Thread* thread, Frame* frame, word nargs);
   static RawObject callKw(Thread* thread, Frame* frame, word nargs);

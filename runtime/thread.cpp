@@ -135,6 +135,25 @@ Frame* Thread::pushCallFrame(RawFunction function) {
   return result;
 }
 
+Frame* Thread::pushHeapFrame(const HeapFrame& heap_frame) {
+  word num_frame_words = heap_frame.numFrameWords();
+  word size = num_frame_words * kPointerSize;
+  if (UNLIKELY(wouldStackOverflow(size))) {
+    return nullptr;
+  }
+
+  byte* src =
+      reinterpret_cast<byte*>(heap_frame.address() + HeapFrame::kFrameOffset);
+  byte* dest = stackPtr() - size;
+  std::memcpy(dest, src, num_frame_words * kPointerSize);
+  word value_stack_size = heap_frame.maxStackSize() * kPointerSize;
+  Frame* result = reinterpret_cast<Frame*>(dest + value_stack_size);
+  result->unstashInternalPointers(Function::cast(heap_frame.function()));
+  linkFrame(result);
+  DCHECK(result->isInvalid() == nullptr, "invalid frame");
+  return result;
+}
+
 Frame* Thread::pushClassFunctionFrame(const Function& function) {
   HandleScope scope(this);
   Frame* result = pushCallFrame(*function);
@@ -176,6 +195,19 @@ Frame* Thread::popFrame() {
   DCHECK(!frame->isSentinel(), "cannot pop initial frame");
   currentFrame_ = frame->previousFrame();
   return currentFrame_;
+}
+
+Frame* Thread::popFrameToHeapFrame(const HeapFrame& heap_frame) {
+  Frame* frame = currentFrame();
+  DCHECK(frame->valueStackSize() <= heap_frame.maxStackSize(),
+         "not enough space in RawGeneratorBase to save live stack");
+  byte* dest =
+      reinterpret_cast<byte*>(heap_frame.address() + HeapFrame::kFrameOffset);
+  byte* src = reinterpret_cast<byte*>(frame->valueStackBase() -
+                                      heap_frame.maxStackSize());
+  std::memcpy(dest, src, heap_frame.numFrameWords() * kPointerSize);
+  heap_frame.stashInternalPointers(frame);
+  return popFrame();
 }
 
 RawObject Thread::exec(const Code& code, const Module& module,

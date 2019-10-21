@@ -1144,22 +1144,6 @@ bool Interpreter::popBlock(Thread* thread, TryBlock::Why why, RawObject value) {
   return true;
 }
 
-static void markGeneratorFinished(Frame* frame) {
-  // Write to the Generator's HeapFrame directly so we don't have to save the
-  // live frame to it one last time.
-  RawGeneratorBase gen = generatorFromStackFrame(frame);
-  RawHeapFrame heap_frame = HeapFrame::cast(gen.heapFrame());
-  heap_frame.setVirtualPC(Frame::kFinishedGeneratorPC);
-}
-
-// If the current frame is executing a Generator, mark it as finished.
-HANDLER_INLINE
-static void finishCurrentGenerator(Frame* frame) {
-  if (frame->function().isGenerator()) {
-    markGeneratorFinished(frame);
-  }
-}
-
 RawObject Interpreter::handleReturn(Thread* thread, Frame* entry_frame) {
   Frame* frame = thread->currentFrame();
   RawObject retval = frame->popValue();
@@ -1168,7 +1152,6 @@ RawObject Interpreter::handleReturn(Thread* thread, Frame* entry_frame) {
       return Error::error();  // continue interpreter loop.
     }
   }
-  finishCurrentGenerator(frame);
 
   // Check whether we should exit the interpreter loop.
   if (frame == entry_frame) {
@@ -1257,11 +1240,9 @@ bool Interpreter::unwind(Thread* thread, Frame* entry_frame) {
     }
 
     if (frame == entry_frame) break;
-    finishCurrentGenerator(frame);
     frame = thread->popFrame();
   }
 
-  finishCurrentGenerator(frame);
   thread->popFrame();
   return true;
 }
@@ -1684,13 +1665,9 @@ HANDLER_INLINE Continue Interpreter::doYieldFrom(Thread* thread, word) {
     return Continue::NEXT;
   }
 
-  // Unlike YIELD_VALUE, don't update PC in the frame: we want this
-  // instruction to re-execute until the subiterator is exhausted.
-  GeneratorBase gen(&scope, generatorFromStackFrame(frame));
-  thread->runtime()->genSave(thread, gen);
-  HeapFrame heap_frame(&scope, gen.heapFrame());
-  heap_frame.setVirtualPC(heap_frame.virtualPC() - kCodeUnitSize);
-  frame = thread->popFrame();
+  // Decrement PC: We want this to re-execute until the subiterator is
+  // exhausted.
+  frame->setVirtualPC(frame->virtualPC() - kCodeUnitSize);
   frame->pushValue(*result);
   return Continue::YIELD;
 }
@@ -1863,15 +1840,7 @@ HANDLER_INLINE Continue Interpreter::doSetupAnnotations(Thread* thread, word) {
   return Continue::NEXT;
 }
 
-HANDLER_INLINE Continue Interpreter::doYieldValue(Thread* thread, word) {
-  Frame* frame = thread->currentFrame();
-  HandleScope scope(thread);
-
-  Object result(&scope, frame->popValue());
-  GeneratorBase gen(&scope, generatorFromStackFrame(frame));
-  thread->runtime()->genSave(thread, gen);
-  frame = thread->popFrame();
-  frame->pushValue(*result);
+HANDLER_INLINE Continue Interpreter::doYieldValue(Thread*, word) {
   return Continue::YIELD;
 }
 
@@ -3859,6 +3828,102 @@ RawObject Interpreter::execute(Thread* thread) {
   InterpreterThreadState::MainLoopFunc main_loop =
       thread->interpreterState()->main_loop;
   return main_loop(thread);
+}
+
+static RawObject resumeGeneratorImpl(Thread* thread,
+                                     const GeneratorBase& generator,
+                                     const HeapFrame& heap_frame,
+                                     const ExceptionState& exc_state) {
+  HandleScope scope(thread);
+  Frame* frame = thread->currentFrame();
+  generator.setRunning(Bool::trueObj());
+  Object result(&scope, Interpreter::execute(thread));
+  generator.setRunning(Bool::falseObj());
+  thread->setCaughtExceptionState(exc_state.previous());
+  exc_state.setPrevious(NoneType::object());
+
+  // Did generator end with yield?
+  if (thread->currentFrame() == frame) {
+    thread->popFrameToHeapFrame(heap_frame);
+    return *result;
+  }
+  // Generator ended with return.
+  heap_frame.setVirtualPC(Frame::kFinishedGeneratorPC);
+  if (result.isError()) return *result;
+  return thread->raise(LayoutId::kStopIteration, *result);
+}
+
+RawObject Interpreter::resumeGenerator(Thread* thread,
+                                       const GeneratorBase& generator,
+                                       const Object& send_value) {
+  if (generator.running() == Bool::trueObj()) {
+    return thread->raiseWithFmt(LayoutId::kValueError, "%T already executing",
+                                &generator);
+  }
+  HandleScope scope(thread);
+  HeapFrame heap_frame(&scope, generator.heapFrame());
+  word pc = heap_frame.virtualPC();
+  if (pc == Frame::kFinishedGeneratorPC) {
+    return thread->raise(LayoutId::kStopIteration, NoneType::object());
+  }
+  Frame* frame = thread->pushHeapFrame(heap_frame);
+  if (frame == nullptr) {
+    return Error::exception();
+  }
+  if (pc != 0) {
+    frame->pushValue(*send_value);
+  } else if (!send_value.isNoneType()) {
+    thread->popFrame();
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError, "can't send non-None value to a just-started %T",
+        &generator);
+  }
+
+  // TODO(T38009294): Improve the compiler to avoid this exception state
+  // overhead on every generator entry.
+  ExceptionState exc_state(&scope, generator.exceptionState());
+  exc_state.setPrevious(thread->caughtExceptionState());
+  thread->setCaughtExceptionState(*exc_state);
+  return resumeGeneratorImpl(thread, generator, heap_frame, exc_state);
+}
+
+RawObject Interpreter::resumeGeneratorWithRaise(Thread* thread,
+                                                const GeneratorBase& generator,
+                                                const Object& type,
+                                                const Object& value,
+                                                const Object& traceback) {
+  if (generator.running() == Bool::trueObj()) {
+    return thread->raiseWithFmt(LayoutId::kValueError, "%T already executing",
+                                &generator);
+  }
+  HandleScope scope(thread);
+  HeapFrame heap_frame(&scope, generator.heapFrame());
+  Frame* frame = thread->pushHeapFrame(heap_frame);
+  if (frame == nullptr) {
+    return Error::exception();
+  }
+
+  // TODO(T38009294): Improve the compiler to avoid this exception state
+  // overhead on every generator entry.
+  ExceptionState exc_state(&scope, generator.exceptionState());
+  exc_state.setPrevious(thread->caughtExceptionState());
+  thread->setCaughtExceptionState(*exc_state);
+  thread->setPendingExceptionType(*type);
+  thread->setPendingExceptionValue(*value);
+  thread->setPendingExceptionTraceback(*traceback);
+  if (unwind(thread, frame)) {
+    thread->setCaughtExceptionState(exc_state.previous());
+    exc_state.setPrevious(NoneType::object());
+    if (thread->currentFrame() != frame) {
+      heap_frame.setVirtualPC(Frame::kFinishedGeneratorPC);
+    }
+    return Error::exception();
+  }
+  if (frame->virtualPC() == Frame::kFinishedGeneratorPC) {
+    thread->popFrame();
+    return thread->raise(LayoutId::kStopIteration, NoneType::object());
+  }
+  return resumeGeneratorImpl(thread, generator, heap_frame, exc_state);
 }
 
 namespace {
