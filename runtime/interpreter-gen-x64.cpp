@@ -776,6 +776,10 @@ void emitInterpreter(EmitEnv* env) {
   emitRestoreInterpreterState(env, kAllState);
   emitNextOpcode(env);
 
+  Label return_with_error_exception;
+  __ bind(&return_with_error_exception);
+  __ movq(RAX, Immediate(Error::exception().raw()));
+
   Label do_return;
   __ bind(&do_return);
   __ leaq(RSP, Address(RBP, -kNumCalleeSavedRegs * int{kPointerSize}));
@@ -796,7 +800,7 @@ void emitInterpreter(EmitEnv* env) {
     __ movq(RAX, Immediate(reinterpret_cast<word>(Interpreter::unwind)));
     __ call(RAX);
     __ cmpb(RAX, Immediate(0));
-    __ jcc(NOT_EQUAL, &do_return, Assembler::kFarJump);
+    __ jcc(NOT_EQUAL, &return_with_error_exception, Assembler::kFarJump);
     emitRestoreInterpreterState(env, kAllState);
     emitNextOpcode(env);
   }
@@ -811,7 +815,10 @@ void emitInterpreter(EmitEnv* env) {
     __ movq(kArgRegs[1], Address(RBP, kEntryFrameOffset));
     __ movq(RAX, Immediate(reinterpret_cast<word>(Interpreter::handleReturn)));
     __ call(RAX);
-    __ cmpb(RAX, Immediate(0));
+    // Check RAX.isErrorError()
+    static_assert(Object::kImmediateTagBits + Error::kKindBits <= 8,
+                  "tag should fit a byte for cmpb");
+    __ cmpb(RAX, Immediate(Error::error().raw()));
     __ jcc(NOT_EQUAL, &do_return, Assembler::kFarJump);
     emitRestoreInterpreterState(env, kAllState);
     emitNextOpcode(env);
@@ -823,6 +830,17 @@ void emitInterpreter(EmitEnv* env) {
   {
     env->current_handler = "YIELD pseudo-handler";
     HandlerSizer sizer(env, kHandlerSize);
+    // RAX = thread->currentFrame()->popValue()
+    Register r_scratch_frame = RDX;
+    Register r_scratch_top = RCX;
+    __ movq(r_scratch_frame, Address(kThreadReg, Thread::currentFrameOffset()));
+    __ movq(r_scratch_top,
+            Address(r_scratch_frame, Frame::kValueStackTopOffset));
+    __ movq(RAX, Address(r_scratch_top, 0));
+    __ addq(r_scratch_top, Immediate(kPointerSize));
+    __ movq(Address(r_scratch_frame, Frame::kValueStackTopOffset),
+            r_scratch_top);
+
     __ jmp(&do_return, Assembler::kFarJump);
   }
 

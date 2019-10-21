@@ -268,6 +268,7 @@ class RawObject {
   // Immediate objects
   bool isBool() const;
   bool isError() const;
+  bool isErrorError() const;
   bool isErrorException() const;
   bool isErrorNoMoreItems() const;
   bool isErrorNotFound() const;
@@ -3396,6 +3397,10 @@ inline bool RawObject::isBool() const {
 
 inline bool RawObject::isError() const {
   return (raw() & kImmediateTagMask) == kErrorTag;
+}
+
+inline bool RawObject::isErrorError() const {
+  return raw() == RawError::error().raw();
 }
 
 inline bool RawObject::isErrorException() const {

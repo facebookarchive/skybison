@@ -256,9 +256,9 @@ class Interpreter {
   static bool popBlock(Thread* thread, TryBlock::Why why, RawObject value);
 
   // Pop from the block stack until a handler that cares about 'return' is
-  // found, or the stack is emptied. The return value is meant to be
-  // interpreted like unwind()'s return value.
-  static bool handleReturn(Thread* thread, Frame* entry_frame);
+  // found, or the stack is emptied. A return value that is not `Error::error()`
+  // indicates that we should exit the interpreter loop and return that value.
+  static RawObject handleReturn(Thread* thread, Frame* entry_frame);
 
   // Pop from the block stack until a handler that cares about 'break' or
   // 'continue' is found.

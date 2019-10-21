@@ -1160,23 +1160,25 @@ static void finishCurrentGenerator(Frame* frame) {
   }
 }
 
-bool Interpreter::handleReturn(Thread* thread, Frame* entry_frame) {
+RawObject Interpreter::handleReturn(Thread* thread, Frame* entry_frame) {
   Frame* frame = thread->currentFrame();
   RawObject retval = frame->popValue();
   while (frame->blockStack()->depth() > 0) {
     if (popBlock(thread, TryBlock::Why::kReturn, retval)) {
-      return false;
+      return Error::error();  // continue interpreter loop.
     }
   }
   finishCurrentGenerator(frame);
+
+  // Check whether we should exit the interpreter loop.
   if (frame == entry_frame) {
-    frame->pushValue(retval);
-    return true;
+    thread->popFrame();
+    return retval;
   }
 
   frame = thread->popFrame();
   frame->pushValue(retval);
-  return false;
+  return Error::error();  // continue interpreter loop.
 }
 
 HANDLER_INLINE void Interpreter::handleLoopExit(Thread* thread,
@@ -1251,7 +1253,7 @@ bool Interpreter::unwind(Thread* thread, Frame* entry_frame) {
       frame->pushValue(*value);
       frame->pushValue(*type);
       frame->setVirtualPC(block.handler());
-      return false;
+      return false;  // continue interpreter loop.
     }
 
     if (frame == entry_frame) break;
@@ -1260,7 +1262,7 @@ bool Interpreter::unwind(Thread* thread, Frame* entry_frame) {
   }
 
   finishCurrentGenerator(frame);
-  frame->pushValue(Error::exception());
+  thread->popFrame();
   return true;
 }
 
@@ -1688,6 +1690,7 @@ HANDLER_INLINE Continue Interpreter::doYieldFrom(Thread* thread, word) {
   thread->runtime()->genSave(thread, gen);
   HeapFrame heap_frame(&scope, gen.heapFrame());
   heap_frame.setVirtualPC(heap_frame.virtualPC() - kCodeUnitSize);
+  frame = thread->popFrame();
   frame->pushValue(*result);
   return Continue::YIELD;
 }
@@ -1867,6 +1870,7 @@ HANDLER_INLINE Continue Interpreter::doYieldValue(Thread* thread, word) {
   Object result(&scope, frame->popValue());
   GeneratorBase gen(&scope, generatorFromStackFrame(frame));
   thread->runtime()->genSave(thread, gen);
+  frame = thread->popFrame();
   frame->pushValue(*result);
   return Continue::YIELD;
 }
@@ -3851,13 +3855,6 @@ Continue Interpreter::doBinaryOpCached(Thread* thread, word arg) {
 }
 
 RawObject Interpreter::execute(Thread* thread) {
-  auto do_return = [thread] {
-    Frame* frame = thread->currentFrame();
-    RawObject return_val = frame->popValue();
-    thread->popFrame();
-    return return_val;
-  };
-
   Frame* entry_frame = thread->currentFrame();
 
   // TODO(bsimmers): This check is only relevant for generators, and each
@@ -3870,13 +3867,14 @@ RawObject Interpreter::execute(Thread* thread) {
     DCHECK(entry_frame->function().isGeneratorLike(),
            "Entered dispatch loop with a pending exception outside of "
            "generator/coroutine");
-    if (unwind(thread, entry_frame)) return do_return();
+    if (unwind(thread, entry_frame)) {
+      return Error::exception();
+    }
   }
 
   InterpreterThreadState::MainLoopFunc main_loop =
       thread->interpreterState()->main_loop;
-  main_loop(thread, entry_frame);
-  return do_return();
+  return main_loop(thread, entry_frame);
 }
 
 namespace {
@@ -3887,7 +3885,7 @@ class CppInterpreter : public Interpreter {
   void setupThread(Thread* thread) override;
 
  private:
-  static void interpreterLoop(Thread* thread, Frame* entry_frame);
+  static RawObject interpreterLoop(Thread* thread, Frame* entry_frame);
 };
 
 CppInterpreter::~CppInterpreter() {}
@@ -3896,7 +3894,7 @@ void CppInterpreter::setupThread(Thread* thread) {
   thread->interpreterState()->main_loop = interpreterLoop;
 }
 
-void CppInterpreter::interpreterLoop(Thread* thread, Frame* entry_frame) {
+RawObject CppInterpreter::interpreterLoop(Thread* thread, Frame* entry_frame) {
   // Silence warnings about computed goto
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
@@ -3947,12 +3945,17 @@ extendedArg:
 
 handle_return_or_unwind:
   if (cont == Continue::UNWIND) {
-    if (unwind(thread, entry_frame)) return;
+    if (unwind(thread, entry_frame)) {
+      return Error::exception();
+    }
   } else if (cont == Continue::RETURN) {
-    if (handleReturn(thread, entry_frame)) return;
+    RawObject result = handleReturn(thread, entry_frame);
+    if (!result.isErrorError()) {
+      return result;
+    }
   } else {
     DCHECK(cont == Continue::YIELD, "expected RETURN, UNWIND or YIELD");
-    return;
+    return thread->currentFrame()->popValue();
   }
   goto* next_label();
 #pragma GCC diagnostic pop

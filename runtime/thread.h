@@ -37,10 +37,10 @@ class Handles {
   Handle<RawObject>* head_ = nullptr;
 };
 
-void uninitializedMainLoop(Thread*, Frame*);
+RawObject uninitializedMainLoop(Thread*, Frame*);
 
 struct InterpreterThreadState {
-  using MainLoopFunc = void (*)(Thread*, Frame*);
+  using MainLoopFunc = RawObject (*)(Thread*, Frame*);
   MainLoopFunc main_loop = uninitializedMainLoop;
 };
 
