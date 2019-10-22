@@ -450,12 +450,10 @@ bool nextTypeDictItem(RawTuple data, word* idx) {
 RawObject typeLookupInMro(Thread* thread, const Type& type, const Object& key,
                           const Object& key_hash) {
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
   Tuple mro(&scope, type.mro());
   for (word i = 0; i < mro.length(); i++) {
     Type mro_type(&scope, mro.at(i));
-    Dict dict(&scope, mro_type.dict());
-    Object value(&scope, runtime->typeDictAt(thread, dict, key, key_hash));
+    Object value(&scope, typeAt(thread, mro_type, key, key_hash));
     if (!value.isError()) {
       return *value;
     }
@@ -466,12 +464,10 @@ RawObject typeLookupInMro(Thread* thread, const Type& type, const Object& key,
 RawObject typeLookupInMroByStr(Thread* thread, const Type& type,
                                const Str& name) {
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
   Tuple mro(&scope, type.mro());
   for (word i = 0; i < mro.length(); i++) {
     Type mro_type(&scope, mro.at(i));
-    Dict dict(&scope, mro_type.dict());
-    Object value(&scope, runtime->typeDictAtByStr(thread, dict, name));
+    Object value(&scope, typeAtByStr(thread, mro_type, name));
     if (!value.isError()) {
       return *value;
     }
@@ -509,7 +505,89 @@ RawObject typeAt(Thread* thread, const Type& type, const Object& key,
                  const Object& key_hash) {
   HandleScope scope(thread);
   Dict dict(&scope, type.dict());
-  return thread->runtime()->typeDictAt(thread, dict, key, key_hash);
+  Object value(&scope, thread->runtime()->dictAt(thread, dict, key, key_hash));
+  DCHECK(value.isErrorNotFound() || value.isValueCell(),
+         "type dictionaries must return either ErrorNotFound or ValueCell");
+  if (value.isErrorNotFound() || ValueCell::cast(*value).isPlaceholder()) {
+    return Error::notFound();
+  }
+  return ValueCell::cast(*value).value();
+}
+
+RawObject typeAtByStr(Thread* thread, const Type& type, const Str& name) {
+  HandleScope scope(thread);
+  Dict dict(&scope, type.dict());
+  Object value(&scope, thread->runtime()->dictAtByStr(thread, dict, name));
+  DCHECK(value.isErrorNotFound() || value.isValueCell(),
+         "type dictionaries must return either ErrorNotFound or ValueCell");
+  if (value.isErrorNotFound() || ValueCell::cast(*value).isPlaceholder()) {
+    return Error::notFound();
+  }
+  return ValueCell::cast(*value).value();
+}
+
+RawObject typeAtById(Thread* thread, const Type& type, SymbolId id) {
+  HandleScope scope(thread);
+  Dict dict(&scope, type.dict());
+  Object value(&scope, thread->runtime()->dictAtById(thread, dict, id));
+  DCHECK(value.isErrorNotFound() || value.isValueCell(),
+         "type dictionaries must return either ErrorNotFound or ValueCell");
+  if (value.isErrorNotFound() || ValueCell::cast(*value).isPlaceholder()) {
+    return Error::notFound();
+  }
+  return ValueCell::cast(*value).value();
+}
+
+RawObject typeAtPut(Thread* thread, const Type& type, const Object& key,
+                    const Object& key_hash, const Object& value) {
+  HandleScope scope(thread);
+  Dict dict(&scope, type.dict());
+  ValueCell value_cell(&scope, thread->runtime()->dictAtPutInValueCell(
+                                   thread, dict, key, key_hash, value));
+  DCHECK(value_cell.dependencyLink().isNoneType(),
+         "should not have any cache dependency");
+  return *value_cell;
+}
+
+RawObject typeAtPutByStr(Thread* thread, const Type& type, const Str& name,
+                         const Object& value) {
+  HandleScope scope(thread);
+  Dict dict(&scope, type.dict());
+  ValueCell value_cell(&scope, thread->runtime()->dictAtPutInValueCellByStr(
+                                   thread, dict, name, value));
+  if (!value_cell.dependencyLink().isNoneType()) {
+    icInvalidateAttr(thread, type, name, value_cell);
+  }
+  return *value_cell;
+}
+
+RawObject typeAtPutById(Thread* thread, const Type& type, SymbolId id,
+                        const Object& value) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Dict dict(&scope, type.dict());
+  Str name(&scope, runtime->symbols()->at(id));
+  ValueCell value_cell(
+      &scope, runtime->dictAtPutInValueCellByStr(thread, dict, name, value));
+  if (!value_cell.dependencyLink().isNoneType()) {
+    icInvalidateAttr(thread, type, name, value_cell);
+  }
+  return *value_cell;
+}
+
+RawObject typeRemove(Thread* thread, const Type& type, const Str& name) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Dict type_dict(&scope, type.dict());
+  Object result(&scope, runtime->dictAtByStr(thread, type_dict, name));
+  if (result.isErrorNotFound()) {
+    return *result;
+  }
+  ValueCell value_cell(&scope, *result);
+  if (!value_cell.dependencyLink().isNoneType()) {
+    icInvalidateAttr(thread, type, name, value_cell);
+  }
+  return runtime->dictRemoveByStr(thread, type_dict, name);
 }
 
 RawObject typeKeys(Thread* thread, const Type& type) {
@@ -628,13 +706,10 @@ static void addSubclass(Thread* thread, const Type& base, const Type& type) {
 void typeAddDocstring(Thread* thread, const Type& type) {
   // If the type dictionary doesn't contain a __doc__, set it from the doc
   // slot
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Dict type_dict(&scope, type.dict());
-  if (runtime->typeDictAtById(thread, type_dict, SymbolId::kDunderDoc)
-          .isErrorNotFound()) {
+  if (typeAtById(thread, type, SymbolId::kDunderDoc).isErrorNotFound()) {
+    HandleScope scope(thread);
     Object doc(&scope, type.doc());
-    runtime->typeDictAtPutById(thread, type_dict, SymbolId::kDunderDoc, doc);
+    typeAtPutById(thread, type, SymbolId::kDunderDoc, doc);
   }
 }
 
@@ -679,6 +754,7 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   HandleScope scope(thread);
   // Copy dict to new type_dict and wrap values in ValueCells.
   Dict type_dict(&scope, runtime->newDictWithSize(dict.numItems()));
+  type.setDict(*type_dict);
   {
     Tuple data(&scope, dict.data());
     Object value(&scope, NoneType::object());
@@ -690,12 +766,12 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
              "value should not be a placeholder value cell");
       key = Dict::Bucket::key(*data, i);
       key_hash = Dict::Bucket::hash(*data, i);
-      runtime->typeDictAtPut(thread, type_dict, key, key_hash, value);
+      typeAtPut(thread, type, key, key_hash, value);
     }
   }
 
-  Object class_cell(&scope, runtime->typeDictAtById(
-                                thread, type_dict, SymbolId::kDunderClassCell));
+  Object class_cell(&scope,
+                    typeAtById(thread, type, SymbolId::kDunderClassCell));
   if (!class_cell.isErrorNotFound()) {
     DCHECK(class_cell.isValueCell(), "class cell must be a value cell");
     ValueCell::cast(*class_cell).setValue(*type);
@@ -746,8 +822,7 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
         &scope, moduleAtById(thread, builtins, SymbolId::kInstanceProxy));
     Object none(&scope, NoneType::object());
     Object property(&scope, runtime->newProperty(instance_proxy, none, none));
-    runtime->typeDictAtPutById(thread, type_dict, SymbolId::kDunderDict,
-                               property);
+    typeAtPutById(thread, type, SymbolId::kDunderDict, property);
   }
 
   // TODO(T54448451): Decide whether type needs to become a builtin base
@@ -832,13 +907,7 @@ RawObject typeSetAttr(Thread* thread, const Type& type,
   }
 
   // No data descriptor found, store the attribute in the type dict
-  Dict type_dict(&scope, type.dict());
-  ValueCell value_cell(&scope, runtime->typeDictAtPutByStr(
-                                   thread, type_dict, name_interned, value));
-  if (!value_cell.dependencyLink().isNoneType()) {
-    // TODO(T46362789): Move cache invalidation logic into dict API.
-    icInvalidateAttr(thread, type, name_interned, value_cell);
-  }
+  typeAtPutByStr(thread, type, name_interned, value);
   return NoneType::object();
 }
 

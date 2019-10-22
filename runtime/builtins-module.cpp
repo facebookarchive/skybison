@@ -213,17 +213,15 @@ const SymbolId BuiltinsModule::kIntrinsicIds[] = {
 
 static void patchTypeDict(Thread* thread, const Type& base_type,
                           const Dict& patch) {
-  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Tuple patch_data(&scope, patch.data());
-  Dict type_dict(&scope, base_type.dict());
   for (word i = Dict::Bucket::kFirst;
        Dict::Bucket::nextItem(*patch_data, &i);) {
     Str key(&scope, Dict::Bucket::key(*patch_data, i));
     Object patch_obj(&scope, Dict::Bucket::value(*patch_data, i));
 
     // Copy function entries if the method already exists as a native builtin.
-    Object base_obj(&scope, runtime->typeDictAtByStr(thread, type_dict, key));
+    Object base_obj(&scope, typeAtByStr(thread, base_type, key));
     if (!base_obj.isError()) {
       CHECK(patch_obj.isFunction(), "Python should only annotate functions");
       Function patch_fn(&scope, *patch_obj);
@@ -233,7 +231,7 @@ static void patchTypeDict(Thread* thread, const Type& base_type,
 
       copyFunctionEntries(thread, base_fn, patch_fn);
     }
-    runtime->typeDictAtPutByStr(thread, type_dict, key, patch_obj);
+    typeAtPutByStr(thread, base_type, key, patch_obj);
   }
 }
 

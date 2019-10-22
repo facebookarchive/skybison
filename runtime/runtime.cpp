@@ -403,14 +403,12 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
   }
 
   // No delete descriptor found, attempt to delete from the type dict
-  Dict type_dict(&scope, type.dict());
-  if (dictRemoveByStr(thread, type_dict, name_interned).isError()) {
+  if (typeRemove(thread, type, name_interned).isErrorNotFound()) {
     Str type_name(&scope, type.name());
     return thread->raiseWithFmt(LayoutId::kAttributeError,
                                 "type object '%S' has no attribute '%S'",
-                                &type_name, &name_obj);
+                                &type_name, &name_interned);
   }
-
   return NoneType::object();
 }
 
@@ -836,8 +834,7 @@ void Runtime::typeAddBuiltinFunction(const Type& type, SymbolId name,
   Function function(&scope,
                     newFunctionWithCode(thread, qualname, code, globals));
 
-  Dict dict(&scope, type.dict());
-  typeDictAtPutByStr(thread, dict, name_str, function);
+  typeAtPutByStr(thread, type, name_str, function);
 }
 
 RawObject Runtime::newList() {
@@ -1920,10 +1917,8 @@ static void checkBuiltinTypeDeclarations(Thread* thread, const Module& module) {
     if (!runtime->isInstanceOfType(*value)) continue;
     Type type(&scope, *value);
     if (!type.isBuiltin()) continue;
-    Dict type_dict(&scope, type.dict());
     // Check whether __doc__ exists as a signal that the type was declared.
-    if (!runtime->typeDictAtById(thread, type_dict, SymbolId::kDunderDoc)
-             .isErrorNotFound()) {
+    if (!typeAtById(thread, type, SymbolId::kDunderDoc).isErrorNotFound()) {
       continue;
     }
     Str name(&scope, type.name());
@@ -2245,60 +2240,6 @@ RawObject Runtime::typeAt(LayoutId layout_id) {
   return Layout::cast(layoutAt(layout_id)).describedType();
 }
 
-RawObject Runtime::typeDictAt(Thread* thread, const Dict& dict,
-                              const Object& key, const Object& key_hash) {
-  HandleScope scope(thread);
-  Object value(&scope, dictAt(thread, dict, key, key_hash));
-  DCHECK(value.isErrorNotFound() || value.isValueCell(),
-         "type dictionaries must return either ErrorNotFound or ValueCell");
-  if (value.isErrorNotFound() || ValueCell::cast(*value).isPlaceholder()) {
-    return Error::notFound();
-  }
-  return ValueCell::cast(*value).value();
-}
-
-RawObject Runtime::typeDictAtByStr(Thread* thread, const Dict& dict,
-                                   const Str& name) {
-  HandleScope scope(thread);
-  Object value(&scope, dictAtByStr(thread, dict, name));
-  DCHECK(value.isErrorNotFound() || value.isValueCell(),
-         "type dictionaries must return either ErrorNotFound or ValueCell");
-  if (value.isErrorNotFound() || ValueCell::cast(*value).isPlaceholder()) {
-    return Error::notFound();
-  }
-  return ValueCell::cast(*value).value();
-}
-
-RawObject Runtime::typeDictAtById(Thread* thread, const Dict& dict,
-                                  SymbolId id) {
-  HandleScope scope(thread);
-  Object value(&scope, dictAtById(thread, dict, id));
-  DCHECK(value.isErrorNotFound() || value.isValueCell(),
-         "type dictionaries must return either ErrorNotFound or ValueCell");
-  if (value.isErrorNotFound() || ValueCell::cast(*value).isPlaceholder()) {
-    return Error::notFound();
-  }
-  return ValueCell::cast(*value).value();
-}
-
-RawObject Runtime::typeDictAtPut(Thread* thread, const Dict& dict,
-                                 const Object& key, const Object& key_hash,
-                                 const Object& value) {
-  return dictAtPutInValueCell(thread, dict, key, key_hash, value);
-}
-
-RawObject Runtime::typeDictAtPutByStr(Thread* thread, const Dict& dict,
-                                      const Str& name, const Object& value) {
-  return dictAtPutInValueCellByStr(thread, dict, name, value);
-}
-
-RawObject Runtime::typeDictAtPutById(Thread* thread, const Dict& dict,
-                                     SymbolId id, const Object& value) {
-  HandleScope scope(thread);
-  Str name(&scope, symbols()->at(id));
-  return dictAtPutInValueCellByStr(thread, dict, name, value);
-}
-
 LayoutId Runtime::reserveLayoutId(Thread* thread) {
   HandleScope scope(thread);
   List list(&scope, layouts_);
@@ -2445,15 +2386,11 @@ void Runtime::createBuiltinsModule(Thread* thread) {
   CHECK(!dunder_import_.isErrorNotFound(), "__import__ not found");
 
   Type object(&scope, typeAt(LayoutId::kObject));
-  Dict object_dict(&scope, object.dict());
   object_dunder_getattribute_ =
-      typeDictAtById(thread, object_dict, SymbolId::kDunderGetattribute);
-  object_dunder_init_ =
-      typeDictAtById(thread, object_dict, SymbolId::kDunderInit);
-  object_dunder_new_ =
-      typeDictAtById(thread, object_dict, SymbolId::kDunderNew);
-  object_dunder_setattr_ =
-      typeDictAtById(thread, object_dict, SymbolId::kDunderSetattr);
+      typeAtById(thread, object, SymbolId::kDunderGetattribute);
+  object_dunder_init_ = typeAtById(thread, object, SymbolId::kDunderInit);
+  object_dunder_new_ = typeAtById(thread, object, SymbolId::kDunderNew);
+  object_dunder_setattr_ = typeAtById(thread, object, SymbolId::kDunderSetattr);
 
   // Mark functions that have an intrinsic implementation.
   for (word i = 0; BuiltinsModule::kIntrinsicIds[i] != SymbolId::kSentinelId;
@@ -3843,9 +3780,7 @@ void Runtime::collectAttributes(const Code& code, const Dict& attributes) {
 
 RawObject Runtime::classConstructor(const Type& type) {
   Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Dict type_dict(&scope, type.dict());
-  return typeDictAtById(thread, type_dict, SymbolId::kDunderInit);
+  return typeAtById(thread, type, SymbolId::kDunderInit);
 }
 
 RawObject Runtime::computeInitialLayout(Thread* thread, const Type& type,

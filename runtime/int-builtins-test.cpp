@@ -8,6 +8,7 @@
 #include "objects.h"
 #include "runtime.h"
 #include "test-utils.h"
+#include "type-builtins.h"
 
 namespace python {
 
@@ -501,13 +502,12 @@ TEST_F(IntBuiltinsTest, DunderCeilAliasesDunderInt) {
   Thread* thread = Thread::current();
   HandleScope scope(thread_);
   Type type(&scope, moduleAtByCStr(&runtime_, "builtins", "int"));
-  Dict dict(&scope, type.dict());
   Str ceil_name(&scope, runtime_.newStrFromCStr("__ceil__"));
-  Object ceil_obj(&scope, runtime_.typeDictAtByStr(thread, dict, ceil_name));
+  Object ceil_obj(&scope, typeAtByStr(thread, type, ceil_name));
   ASSERT_TRUE(ceil_obj.isFunction());
   Function ceil(&scope, *ceil_obj);
   Str dint_name(&scope, runtime_.newStrFromCStr("__int__"));
-  Object dint_obj(&scope, runtime_.typeDictAtByStr(thread, dict, dint_name));
+  Object dint_obj(&scope, typeAtByStr(thread, type, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *ceil_obj);
   EXPECT_EQ(Code::cast(ceil.code()).code(), Code::cast(dint.code()).code());
@@ -520,13 +520,12 @@ TEST_F(IntBuiltinsTest, DunderFloorAliasesDunderInt) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Type type(&scope, moduleAtByCStr(&runtime_, "builtins", "int"));
-  Dict dict(&scope, type.dict());
   Str floor_name(&scope, runtime_.newStrFromCStr("__floor__"));
-  Object floor_obj(&scope, runtime_.typeDictAtByStr(thread, dict, floor_name));
+  Object floor_obj(&scope, typeAtByStr(thread, type, floor_name));
   ASSERT_TRUE(floor_obj.isFunction());
   Function floor(&scope, *floor_obj);
   Str dint_name(&scope, runtime_.newStrFromCStr("__int__"));
-  Object dint_obj(&scope, runtime_.typeDictAtByStr(thread, dict, dint_name));
+  Object dint_obj(&scope, typeAtByStr(thread, type, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *floor_obj);
   EXPECT_EQ(Code::cast(floor.code()).code(), Code::cast(dint.code()).code());
@@ -1427,13 +1426,12 @@ TEST_F(IntBuiltinsTest, DunderIndexAliasesDunderInt) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Type type(&scope, moduleAtByCStr(&runtime_, "builtins", "int"));
-  Dict dict(&scope, type.dict());
   Str index_name(&scope, runtime_.newStrFromCStr("__index__"));
-  Object index_obj(&scope, runtime_.typeDictAtByStr(thread, dict, index_name));
+  Object index_obj(&scope, typeAtByStr(thread, type, index_name));
   ASSERT_TRUE(index_obj.isFunction());
   Function index(&scope, *index_obj);
   Str dint_name(&scope, runtime_.newStrFromCStr("__int__"));
-  Object dint_obj(&scope, runtime_.typeDictAtByStr(thread, dict, dint_name));
+  Object dint_obj(&scope, typeAtByStr(thread, type, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *index_obj);
   EXPECT_EQ(Code::cast(index.code()).code(), Code::cast(dint.code()).code());
@@ -2086,13 +2084,12 @@ TEST_F(IntBuiltinsTest, DunderPosAliasesDunderInt) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Type type(&scope, moduleAtByCStr(&runtime_, "builtins", "int"));
-  Dict dict(&scope, type.dict());
   Str pos_name(&scope, runtime_.newStrFromCStr("__pos__"));
-  Object pos_obj(&scope, runtime_.typeDictAtByStr(thread, dict, pos_name));
+  Object pos_obj(&scope, typeAtByStr(thread, type, pos_name));
   ASSERT_TRUE(pos_obj.isFunction());
   Function pos(&scope, *pos_obj);
   Str dint_name(&scope, runtime_.newStrFromCStr("__int__"));
-  Object dint_obj(&scope, runtime_.typeDictAtByStr(thread, dict, dint_name));
+  Object dint_obj(&scope, typeAtByStr(thread, type, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *pos_obj);
   EXPECT_EQ(Code::cast(pos.code()).code(), Code::cast(dint.code()).code());
@@ -2179,13 +2176,12 @@ TEST_F(IntBuiltinsTest, DunderRoundAliasesDunderInt) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Type type(&scope, moduleAtByCStr(&runtime_, "builtins", "int"));
-  Dict dict(&scope, type.dict());
   Str round_name(&scope, runtime_.newStrFromCStr("__round__"));
-  Object round_obj(&scope, runtime_.typeDictAtByStr(thread, dict, round_name));
+  Object round_obj(&scope, typeAtByStr(thread, type, round_name));
   ASSERT_TRUE(round_obj.isFunction());
   Function round(&scope, *round_obj);
   Str dint_name(&scope, runtime_.newStrFromCStr("__int__"));
-  Object dint_obj(&scope, runtime_.typeDictAtByStr(thread, dict, dint_name));
+  Object dint_obj(&scope, typeAtByStr(thread, type, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *round_obj);
   EXPECT_EQ(Code::cast(round.code()).code(), Code::cast(dint.code()).code());
@@ -2198,13 +2194,12 @@ TEST_F(IntBuiltinsTest, DunderTruncAliasesDunderInt) {
   Thread* thread = Thread::current();
   HandleScope scope(thread_);
   Type type(&scope, moduleAtByCStr(&runtime_, "builtins", "int"));
-  Dict dict(&scope, type.dict());
   Str trunc_name(&scope, runtime_.newStrFromCStr("__trunc__"));
-  Object trunc_obj(&scope, runtime_.typeDictAtByStr(thread, dict, trunc_name));
+  Object trunc_obj(&scope, typeAtByStr(thread, type, trunc_name));
   ASSERT_TRUE(trunc_obj.isFunction());
   Function trunc(&scope, *trunc_obj);
   Str dint_name(&scope, runtime_.newStrFromCStr("__int__"));
-  Object dint_obj(&scope, runtime_.typeDictAtByStr(thread, dict, dint_name));
+  Object dint_obj(&scope, typeAtByStr(thread, type, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *trunc_obj);
   EXPECT_EQ(Code::cast(trunc.code()).code(), Code::cast(dint.code()).code());
@@ -2537,13 +2532,12 @@ TEST_F(IntBuiltinsTest, DunderStrAliasesDunderRepr) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Type type(&scope, moduleAtByCStr(&runtime_, "builtins", "int"));
-  Dict dict(&scope, type.dict());
   Str str_name(&scope, runtime_.newStrFromCStr("__str__"));
-  Object str_obj(&scope, runtime_.typeDictAtByStr(thread, dict, str_name));
+  Object str_obj(&scope, typeAtByStr(thread, type, str_name));
   ASSERT_TRUE(str_obj.isFunction());
   Function str(&scope, *str_obj);
   Str repr_name(&scope, runtime_.newStrFromCStr("__repr__"));
-  Object repr_obj(&scope, runtime_.typeDictAtByStr(thread, dict, repr_name));
+  Object repr_obj(&scope, typeAtByStr(thread, type, repr_name));
   ASSERT_TRUE(repr_obj.isFunction());
   Function repr(&scope, *str_obj);
   EXPECT_EQ(Code::cast(str.code()).code(), Code::cast(repr.code()).code());
@@ -3158,14 +3152,12 @@ TEST_F(IntBuiltinsTest, ConjugateAliasesDunderInt) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Type type(&scope, moduleAtByCStr(&runtime_, "builtins", "int"));
-  Dict dict(&scope, type.dict());
   Str conjugate_name(&scope, runtime_.newStrFromCStr("conjugate"));
-  Object conjugate_obj(&scope,
-                       runtime_.typeDictAtByStr(thread, dict, conjugate_name));
+  Object conjugate_obj(&scope, typeAtByStr(thread, type, conjugate_name));
   ASSERT_TRUE(conjugate_obj.isFunction());
   Function conjugate(&scope, *conjugate_obj);
   Str dint_name(&scope, runtime_.newStrFromCStr("__int__"));
-  Object dint_obj(&scope, runtime_.typeDictAtByStr(thread, dict, dint_name));
+  Object dint_obj(&scope, typeAtByStr(thread, type, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *conjugate_obj);
   EXPECT_EQ(Code::cast(conjugate.code()).code(),

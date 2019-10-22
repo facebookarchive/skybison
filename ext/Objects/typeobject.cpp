@@ -741,7 +741,6 @@ static RawObject newExtCode(Thread* thread, const Object& name,
 RawObject addOperators(Thread* thread, const Type& type) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Dict dict(&scope, type.dict());
   Str type_name(&scope, type.name());
 
   for (const SlotDef& slot : kSlotdefs) {
@@ -753,7 +752,7 @@ RawObject addOperators(Thread* thread, const Type& type) {
     // Unlike most slots, we always allow __new__ to be overwritten by a subtype
     Str slot_name(&scope, runtime->symbols()->at(slot.name));
     if (slot.id != Type::Slot::kNew &&
-        !runtime->typeDictAtByStr(thread, dict, slot_name).isError()) {
+        !typeAtByStr(thread, type, slot_name).isError()) {
       continue;
     }
 
@@ -763,7 +762,7 @@ RawObject addOperators(Thread* thread, const Type& type) {
     if (Int::cast(*slot_value).asCPtr() ==
         bit_cast<void*>(&PyObject_HashNotImplemented)) {
       Object none(&scope, NoneType::object());
-      runtime->typeDictAtPutByStr(thread, dict, slot_name, none);
+      typeAtPutByStr(thread, type, slot_name, none);
       return NoneType::object();
     }
 
@@ -790,7 +789,7 @@ RawObject addOperators(Thread* thread, const Type& type) {
     }
 
     // Finally, put the wrapper in the type dict.
-    runtime->typeDictAtPutByStr(thread, dict, slot_name, func_obj);
+    typeAtPutByStr(thread, type, slot_name, func_obj);
   }
 
   return NoneType::object();
@@ -1233,7 +1232,6 @@ RawObject addMethods(Thread* thread, const Type& type) {
   if (slot_value.isNoneType()) return NoneType::object();
   DCHECK(slot_value.isInt(), "unexpected slot type");
   auto methods = bit_cast<PyMethodDef*>(Int::cast(*slot_value).asCPtr());
-  Dict dict(&scope, type.dict());
   for (word i = 0; methods[i].ml_name != nullptr; i++) {
     Str name(&scope, runtime->internStrFromCStr(thread, methods[i].ml_name));
     Object function(
@@ -1242,7 +1240,7 @@ RawObject addMethods(Thread* thread, const Type& type) {
             thread, methods[i].ml_name, bit_cast<void*>(methods[i].ml_meth),
             methods[i].ml_doc, methodTypeFromMethodFlags(methods[i].ml_flags)));
     if (function.isError()) return *function;
-    runtime->typeDictAtPutByStr(thread, dict, name, function);
+    typeAtPutByStr(thread, type, name, function);
   }
   return NoneType::object();
 }
@@ -1253,7 +1251,6 @@ RawObject addMembers(Thread* thread, const Type& type) {
   if (slot_value.isNoneType()) return NoneType::object();
   DCHECK(slot_value.isInt(), "unexpected slot type");
   auto members = bit_cast<PyMemberDef*>(Int::cast(*slot_value).asCPtr());
-  Dict dict(&scope, type.dict());
   Object none(&scope, NoneType::object());
   Runtime* runtime = thread->runtime();
   for (word i = 0; members[i].name != nullptr; i++) {
@@ -1263,7 +1260,7 @@ RawObject addMembers(Thread* thread, const Type& type) {
     Object setter(&scope, memberSetter(thread, members[i]));
     if (setter.isError()) return *setter;
     Object property(&scope, runtime->newProperty(getter, setter, none));
-    runtime->typeDictAtPutByStr(thread, dict, name, property);
+    typeAtPutByStr(thread, type, name, property);
   }
   return NoneType::object();
 }
@@ -1274,7 +1271,6 @@ RawObject addGetSet(Thread* thread, const Type& type) {
   if (slot_value.isNoneType()) return NoneType::object();
   DCHECK(slot_value.isInt(), "unexpected slot type");
   auto getsets = bit_cast<PyGetSetDef*>(Int::cast(*slot_value).asCPtr());
-  Dict dict(&scope, type.dict());
   Object none(&scope, NoneType::object());
   Runtime* runtime = thread->runtime();
   for (word i = 0; getsets[i].name != nullptr; i++) {
@@ -1284,7 +1280,7 @@ RawObject addGetSet(Thread* thread, const Type& type) {
     Object setter(&scope, getSetSetter(thread, name, getsets[i]));
     if (setter.isError()) return *setter;
     Object property(&scope, runtime->newProperty(getter, setter, none));
-    runtime->typeDictAtPutByStr(thread, dict, name, property);
+    typeAtPutByStr(thread, type, name, property);
   }
   return NoneType::object();
 }
@@ -1343,7 +1339,6 @@ static void subtypeDealloc(PyObject* self) {
 static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Dict dict(&scope, type.dict());
   Str type_name(&scope, type.name());
 
   // tp_basicsize -> sizeof(PyObject)
@@ -1378,7 +1373,7 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
                     thread->invokeFunction1(SymbolId::kBuiltins,
                                             SymbolId::kStaticMethod, func));
     if (func_obj.isError()) return *func;
-    runtime->typeDictAtPutByStr(thread, dict, dunder_new_name, func_obj);
+    typeAtPutByStr(thread, type, dunder_new_name, func_obj);
   }
 
   // tp_alloc -> PyType_GenericAlloc

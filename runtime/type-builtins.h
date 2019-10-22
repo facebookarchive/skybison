@@ -20,8 +20,25 @@ bool nextTypeDictItem(RawTuple data, word* idx);
 
 void typeAddDocstring(Thread* thread, const Type& type);
 
+// TODO(T55440299): Remove this once interned str is the only key type for
+// type dictionaries.
 RawObject typeAt(Thread* thread, const Type& type, const Object& key,
                  const Object& key_hash);
+
+RawObject typeAtByStr(Thread* thread, const Type& type, const Str& name);
+
+RawObject typeAtById(Thread* thread, const Type& type, SymbolId id);
+
+RawObject typeAtPut(Thread* thread, const Type& type, const Object& key,
+                    const Object& key_hash, const Object& value);
+
+RawObject typeAtPutByStr(Thread* thread, const Type& type, const Str& name,
+                         const Object& value);
+
+RawObject typeAtPutById(Thread* thread, const Type& type, SymbolId id,
+                        const Object& value);
+
+RawObject typeRemove(Thread* thread, const Type& type, const Str& name);
 
 RawObject typeKeys(Thread* thread, const Type& type);
 

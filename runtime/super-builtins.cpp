@@ -32,9 +32,7 @@ RawObject superGetAttribute(Thread* thread, const Super& super,
   }
   for (; i < mro_length; i++) {
     Type type(&scope, mro.at(i));
-    Dict dict(&scope, type.dict());
-    Object value(&scope,
-                 runtime->typeDictAt(thread, dict, name_str, name_hash));
+    Object value(&scope, typeAt(thread, type, name_str, name_hash));
     if (value.isError()) {
       continue;
     }

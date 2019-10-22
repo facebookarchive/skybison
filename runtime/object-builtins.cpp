@@ -361,7 +361,6 @@ void ObjectBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
   // Manually create `__getattribute__` method to avoid bootstrap problems.
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Dict type_dict(&scope, new_type.dict());
 
   Tuple parameter_names(&scope, runtime->newTuple(2));
   parameter_names.atPut(0, runtime->symbols()->Self());
@@ -377,7 +376,7 @@ void ObjectBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
   Function dunder_getattribute(
       &scope, runtime->newFunctionWithCode(thread, qualname, code, module_obj));
 
-  runtime->typeDictAtPutByStr(thread, type_dict, name, dunder_getattribute);
+  typeAtPutByStr(thread, new_type, name, dunder_getattribute);
 }
 
 RawObject ObjectBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
