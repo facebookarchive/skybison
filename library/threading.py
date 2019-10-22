@@ -105,6 +105,8 @@ class _ThreadLocal:
     pass
 
 
+local = _ThreadLocal
+
 _main_thread = _PseudoThread()
 
 
@@ -125,10 +127,6 @@ def current_thread():
 
 def enumerate():
     _unimplemented()
-
-
-def local():
-    return _thread_local
 
 
 def get_ident():
