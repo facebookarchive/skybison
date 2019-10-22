@@ -13150,7 +13150,6 @@ INITFUNC(void)
     /* Save putenv() parameters as values here, so we can collect them when they
      * get re-set with another call for the same key. */
     _posixstate(m)->posix_putenv_garbage = PyDict_New();
-    Py_INCREF(_posixstate(m)->posix_putenv_garbage);
 #endif
 
 #if defined(HAVE_WAITID) && !defined(__APPLE__)

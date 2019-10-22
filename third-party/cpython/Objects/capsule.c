@@ -367,7 +367,6 @@ PyMODINIT_FUNC PyInit__capsule(void) {
     if (PyCapsule_Type == NULL) {
         return NULL;
     }
-    Py_INCREF(PyCapsule_Type);
     capsulestate(mod)->PyCapsule_Type = (PyObject*)PyCapsule_Type;
 
     PyState_AddModule(mod, &capsulemodule);
