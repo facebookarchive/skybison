@@ -413,7 +413,7 @@ class ThreadTests(BaseTestCase):
         t.setDaemon(True)
         t.getName()
         t.setName("name")
-        t.isAlive()
+        t.is_alive()
         e = threading.Event()
         e.isSet()
         threading.activeCount()
