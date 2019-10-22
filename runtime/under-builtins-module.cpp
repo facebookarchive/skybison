@@ -3394,15 +3394,22 @@ RawObject UnderBuiltinsModule::underTupleGetItem(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfTuple(*self_obj)) {
+    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kTuple);
+  }
   Tuple self(&scope, tupleUnderlying(thread, self_obj));
   Object key_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfInt(*key_obj)) {
+    return Unbound::object();
+  }
   Int key(&scope, intUnderlying(thread, key_obj));
-  word index = key.asWordSaturated();
-  if (!SmallInt::isValid(index)) {
+  if (key.isLargeInt()) {
     return thread->raiseWithFmt(LayoutId::kIndexError,
                                 "cannot fit '%T' into an index-sized integer",
                                 &key_obj);
   }
+  word index = key.asWord();
   word length = self.length();
   if (index < 0) {
     index += length;

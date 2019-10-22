@@ -4618,9 +4618,9 @@ class tuple(bootstrap=True):
         return len_self >= len_other
 
     def __getitem__(self, index):
-        _tuple_guard(self)
-        if _int_check(index):
-            return _tuple_getitem(self, index)
+        result = _tuple_getitem(self, index)
+        if result is not _Unbound:
+            return result
         if _slice_check(index):
             step = _slice_step(_slice_index(index.step))
             length = _tuple_len(self)
