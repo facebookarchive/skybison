@@ -2285,15 +2285,21 @@ RawObject UnderBuiltinsModule::underListGetItem(Thread* thread, Frame* frame,
                                                 word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  List self(&scope, args.get(0));
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfList(*self_obj)) {
+    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kList);
+  }
+  List self(&scope, *self_obj);
   Object key_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfInt(*key_obj)) return Unbound::object();
   Int key(&scope, intUnderlying(thread, key_obj));
-  word index = key.asWordSaturated();
-  if (!SmallInt::isValid(index)) {
+  if (key.isLargeInt()) {
     return thread->raiseWithFmt(LayoutId::kIndexError,
                                 "cannot fit '%T' into an index-sized integer",
                                 &key_obj);
   }
+  word index = key.asWord();
   word length = self.numItems();
   if (index < 0) {
     index += length;
