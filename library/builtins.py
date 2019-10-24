@@ -200,9 +200,6 @@ def _init():
     global _codecs
     import _codecs
 
-    global _frozen_importlib
-    import _frozen_importlib
-
     global _str_mod
     import _str_mod
 
@@ -3621,6 +3618,12 @@ def min(arg1, arg2=_Unbound, *args, key=_Unbound, default=_Unbound):  # noqa: C9
     return result
 
 
+# This is just a placeholder implementation to be patched by
+# importlib/_bootstrap.py for its _module_repr implementation.
+def _module_repr(module):
+    _unimplemented()
+
+
 class module(bootstrap=True):
     __dict__ = _property(_module_proxy)
 
@@ -3642,7 +3645,7 @@ class module(bootstrap=True):
         pass
 
     def __repr__(self):
-        return _frozen_importlib._module_repr(self)
+        return _module_repr(self)
 
     def __setattr__(self, name, value):
         pass
@@ -3832,7 +3835,7 @@ class range(bootstrap=True):
             start = self.start
             stop = self.stop
             step = self.step
-            if step is 1:
+            if step is 1:  # noqa: F632
                 # Fast path; only two comparisons required
                 return start <= num < stop
             if step > 0:

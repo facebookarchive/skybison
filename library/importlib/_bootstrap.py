@@ -318,6 +318,9 @@ def _module_repr(module):
         return f"<module {repr(name)} from {repr(filename)}>"
 
 
+__builtins__._module_repr = _module_repr
+
+
 class _installed_safely:
     def __init__(self, module):
         self._module = module
@@ -1170,7 +1173,7 @@ def _setup(sys_module, _imp_module):
     except ImportError:
         # Python was built without threads
         thread_module = None
-    setattr(self_module, "_thread", thread_module)
+    self_module._thread = thread_module
 
 
 def _install(sys_module, _imp_module):
