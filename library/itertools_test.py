@@ -190,5 +190,31 @@ class ProductTests(unittest.TestCase):
         )
 
 
+class RepeatTests(unittest.TestCase):
+    def test_dunder_init_with_non_int_times_raises_type_error(self):
+        self.assertRaises(TypeError, itertools.repeat, 5, "not_an_int")
+
+    def test_dunder_init_with_negative_times_repeats_zero_times(self):
+        iterator = itertools.repeat(5, -1)
+        self.assertEqual(tuple(iterator), ())
+
+    def test_dunder_init_with_zero_times_repeats_zero_times(self):
+        iterator = itertools.repeat(5, 0)
+        self.assertEqual(tuple(iterator), ())
+
+    def test_dunder_init_with_three_times_repeats_three_times(self):
+        iterator = itertools.repeat(5, 3)
+        self.assertEqual(next(iterator), 5)
+        self.assertEqual(next(iterator), 5)
+        self.assertEqual(next(iterator), 5)
+        self.assertRaises(StopIteration, next, iterator)
+
+    def test_dunder_init_with_no_times_repeats(self):
+        iterator = itertools.repeat(5)
+        self.assertEqual(next(iterator), 5)
+        self.assertEqual(next(iterator), 5)
+        self.assertEqual(next(iterator), 5)
+
+
 if __name__ == "__main__":
     unittest.main()

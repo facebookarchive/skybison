@@ -2,6 +2,7 @@
 """Functional tools for creating and using iterators."""
 # TODO(T42113424) Replace stubs with an actual implementation
 _Unbound = _Unbound  # noqa: F821
+_int_guard = _int_guard  # noqa: F821
 _list_len = _list_len  # noqa: F821
 _tuple_len = _tuple_len  # noqa: F821
 _unimplemented = _unimplemented  # noqa: F821
@@ -220,8 +221,22 @@ class product:
 
 
 class repeat:
-    def __init__(self, elem, n=_Unbound):
-        _unimplemented()
+    def __init__(self, elem, times=None):
+        self._elem = elem
+        if times is not None:
+            _int_guard(times)
+        self._times = times
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self._times is None:
+            return self._elem
+        if self._times > 0:
+            self._times -= 1
+            return self._elem
+        raise StopIteration
 
 
 class starmap:
