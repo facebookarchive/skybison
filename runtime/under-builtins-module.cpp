@@ -25,6 +25,7 @@
 #include "type-builtins.h"
 #include "unicode.h"
 #include "vector.h"
+#include "warnings-module.h"
 
 namespace python {
 
@@ -261,6 +262,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderTypeProxyLen, underTypeProxyLen},
     {SymbolId::kUnderTypeProxyValues, underTypeProxyValues},
     {SymbolId::kUnderUnimplemented, underUnimplemented},
+    {SymbolId::kUnderWarn, underWarn},
     {SymbolId::kUnderWeakRefCallback, underWeakRefCallback},
     {SymbolId::kSentinelId, nullptr},
 };
@@ -3691,6 +3693,18 @@ RawObject UnderBuiltinsModule::underUnimplemented(Thread* thread, Frame* frame,
   }
 
   std::abort();
+}
+
+RawObject UnderBuiltinsModule::underWarn(Thread* thread, Frame* frame,
+                                         word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object message(&scope, args.get(0));
+  Object category(&scope, args.get(1));
+  Object stacklevel(&scope, args.get(2));
+  Object source(&scope, args.get(3));
+  return thread->invokeFunction4(SymbolId::kWarnings, SymbolId::kWarn, message,
+                                 category, stacklevel, source);
 }
 
 RawObject UnderBuiltinsModule::underWeakRefCallback(Thread* thread,

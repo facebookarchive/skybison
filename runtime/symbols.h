@@ -452,6 +452,7 @@ class Runtime;
   V(UnderUtf8Decode, "_utf_8_decode")                                          \
   V(UnderUtf8Encode, "_utf_8_encode")                                          \
   V(UnderValgrind, "_valgrind")                                                \
+  V(UnderWarn, "_warn")                                                        \
   V(UnderWarnings, "_warnings")                                                \
   V(UnderWeakLink, "_weaklink")                                                \
   V(UnderWeakRef, "_weakref")                                                  \

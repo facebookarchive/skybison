@@ -190,6 +190,7 @@ _type_proxy_len = _type_proxy_len  # noqa: F821
 _type_proxy_values = _type_proxy_values  # noqa: F821
 _Unbound = _Unbound  # noqa: F821
 _unimplemented = _unimplemented  # noqa: F821
+_warn = _warn  # noqa: F821
 
 
 # Begin: Early definitions that are necessary to process the rest of the file:
@@ -205,9 +206,6 @@ def _init():
 
     global _sys
     import sys as _sys
-
-    global _warnings
-    import warnings as _warnings
 
 
 @_patch
@@ -1026,7 +1024,7 @@ def _int(obj) -> int:
     if _int_checkexact(result):
         return result
     if _int_check(result):
-        _warnings.warn(
+        _warn(
             f"__int__ returned non-int (type {_type(result).__name__}).  "
             "The ability to return an instance of a strict subclass of int "
             "is deprecated, and may be removed in a future version of Python.",
@@ -1176,7 +1174,7 @@ def _new_member_set_integral(offset, num_bytes, min_value, max_value, primitive_
             raise TypeError("attribute value type must be int")
         _set_member_integral(_pyobject_offset(instance, offset), value, num_bytes)
         if value < min_value or value > max_value:
-            _warnings.warn(f"Truncation of value to {primitive_type}")
+            _warn(f"Truncation of value to {primitive_type}")
 
     return setter
 

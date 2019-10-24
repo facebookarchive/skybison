@@ -967,5 +967,11 @@ def _unimplemented():
 
 
 @_patch
+def _warn(message, category=None, stacklevel=1, source=None):
+    """Calls warnings.warn."""
+    pass
+
+
+@_patch
 def _weakref_callback(self):
     pass
