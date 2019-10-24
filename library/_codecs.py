@@ -730,3 +730,21 @@ _codec_error_registry = {"strict": strict_errors, "ignore": ignore_errors}
 @_patch
 def _bytearray_string_append(dst: bytearray, data: str):
     pass
+
+
+# TODO(T56317935): Move into native code.
+# NOTE: This should behave the same as codecs.getincrementaldecoder.
+def getincrementaldecoder(encoding):
+    decoder = lookup(encoding).incrementaldecoder
+    if decoder is None:
+        raise LookupError(encoding)
+    return decoder
+
+
+# TODO(T56317935): Move into native code.
+# NOTE: This should behave the same as codecs.getincrementalencoder.
+def getincrementalencoder(encoding):
+    encoder = lookup(encoding).incrementalencoder
+    if encoder is None:
+        raise LookupError(encoding)
+    return encoder

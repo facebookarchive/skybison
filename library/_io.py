@@ -48,6 +48,7 @@ _str_len = _str_len  # noqa: F821
 _type = _type  # noqa: F821
 _type_name = _type_name  # noqa: F821
 _unimplemented = _unimplemented  # noqa: F821
+_warn = _warn  # noqa: F821
 
 
 DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
@@ -56,6 +57,10 @@ DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
 import builtins
 from errno import EAGAIN as errno_EAGAIN, EISDIR as errno_EISDIR
 
+from _codecs import (
+    getincrementaldecoder as _codecs_getincrementaldecoder,
+    getincrementalencoder as _codecs_getincrementalencoder,
+)
 from _os import (
     close as _os_close,
     fstat_size as _os_fstat_size,
@@ -1364,11 +1369,7 @@ class FileIO(_RawIOBase, bootstrap=True):
 
     def __del__(self):
         if not self.closed and self._closefd:
-            import warnings
-
-            warnings.warn(
-                f"unclosed file {self!r}", ResourceWarning, stacklevel=2, source=self
-            )
+            _warn(f"unclosed file {self!r}", ResourceWarning, stacklevel=2, source=self)
             self.close()
 
     def __getstate__(self):
@@ -1686,20 +1687,14 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
         return chars
 
     def _get_decoder(self):
-        import codecs
-        import encodings  # noqa: F401
-
-        make_decoder = codecs.getincrementaldecoder(self._encoding)
+        make_decoder = _codecs_getincrementaldecoder(self._encoding)
         decoder = make_decoder(self._errors)
         if self._readuniversal:
             return IncrementalNewlineDecoder(decoder, self._readtranslate)
         return decoder
 
     def _get_encoder(self):
-        import codecs
-        import encodings  # noqa: F401
-
-        make_encoder = codecs.getincrementalencoder(self._encoding)
+        make_encoder = _codecs_getincrementalencoder(self._encoding)
         return make_encoder(self._errors)
 
     def _pack_cookie(
@@ -2278,9 +2273,7 @@ def open(  # noqa: C901
     if "U" in modes:
         if creating or writing or appending or updating:
             raise ValueError("mode U cannot be combined with 'x', 'w', 'a', or '+'")
-        import warnings
-
-        warnings.warn("'U' mode is deprecated", DeprecationWarning, 2)
+        _warn("'U' mode is deprecated", DeprecationWarning, 2)
         reading = True
     if text and binary:
         raise ValueError("can't have text and binary mode at once")
