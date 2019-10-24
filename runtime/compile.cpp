@@ -33,7 +33,12 @@ RawObject compileFromCStr(const char* buffer, const char* file_name) {
       reinterpret_cast<struct _mod*>(node), file_name, &flags, 0, arena));
   PyArena_Free(arena);
   if (pycode == nullptr) return Error::exception();
-  return ApiHandle::fromPyObject(pycode)->asObject();
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ApiHandle* handle = ApiHandle::fromPyObject(pycode);
+  Object result(&scope, handle->asObject());
+  handle->decref();
+  return *result;
 }
 
 int runInteractive(FILE* fp) {
