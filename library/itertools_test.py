@@ -216,5 +216,29 @@ class RepeatTests(unittest.TestCase):
         self.assertEqual(next(iterator), 5)
 
 
+class ZipLongestTests(unittest.TestCase):
+    def test_dunder_init_with_no_seqs_returns_empty_iterator(self):
+        iterator = itertools.zip_longest()
+        self.assertEqual(tuple(iterator), ())
+
+    def test_dunder_init_calls_dunder_iter_on_seqs(self):
+        class C:
+            __iter__ = Mock(name="__iter__", return_value=().__iter__())
+
+        itertools.zip_longest(C(), C())
+        self.assertEqual(C.__iter__.call_count, 2)
+
+    def test_dunder_next_fills_with_none(self):
+        right = itertools.zip_longest([], [1, 2, 3])
+        self.assertEqual(list(right), [(None, 1), (None, 2), (None, 3)])
+
+        left = itertools.zip_longest([1, 2, 3], [])
+        self.assertEqual(list(left), [(1, None), (2, None), (3, None)])
+
+    def test_dunder_next_fills_with_fill_value(self):
+        right = itertools.zip_longest("ab", [1, 2, 3], fillvalue="X")
+        self.assertEqual(list(right), [("a", 1), ("b", 2), ("X", 3)])
+
+
 if __name__ == "__main__":
     unittest.main()

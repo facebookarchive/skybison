@@ -254,5 +254,28 @@ class takewhile:
 
 
 class zip_longest:
-    def __init__(self, p, q, *args):
-        _unimplemented()
+    def __init__(self, *seqs, fillvalue=None):
+        length = _tuple_len(seqs)
+        self._iters = [iter(seq) for seq in seqs]
+        self._num_iters = length
+        self._num_active = length
+        self._fillvalue = fillvalue
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        iters = self._iters
+        if not self._num_active:
+            raise StopIteration
+        fillvalue = self._fillvalue
+        values = [fillvalue] * self._num_iters
+        for i, it in enumerate(iters):
+            try:
+                values[i] = next(it)
+            except StopIteration:
+                self._num_active -= 1
+                if not self._num_active:
+                    raise
+                self._iters[i] = repeat(fillvalue)
+        return tuple(values)
