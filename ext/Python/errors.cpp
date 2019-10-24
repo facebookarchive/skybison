@@ -24,7 +24,7 @@ PY_EXPORT PyObject* PyErr_Occurred() {
   if (!thread->hasPendingException()) {
     return nullptr;
   }
-  return ApiHandle::newReference(thread, thread->pendingExceptionType());
+  return ApiHandle::borrowedReference(thread, thread->pendingExceptionType());
 }
 
 PY_EXPORT PyObject* PyErr_Format(PyObject* exception, const char* format, ...) {
