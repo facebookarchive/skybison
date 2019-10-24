@@ -398,7 +398,7 @@ TEST_F(ModuleExtensionApiTest, GetFilenameObjectFailsIfFilenameNotString) {
   ASSERT_NE(module, nullptr);
   EXPECT_TRUE(PyModule_CheckExact(module));
 
-  testing::PyObjectPtr not_a_string(PyLong_FromLong(1));
+  PyObject* not_a_string = PyLong_FromLong(1);
 
   PyModule_AddObject(module, "__file__", not_a_string);
   testing::PyObjectPtr result(PyModule_GetFilenameObject(module));

@@ -171,6 +171,7 @@ TEST_F(ListExtensionApiTest, SetItemWithListSetsItemAtIndex) {
 
   Py_ssize_t idx = 2;
   PyObjectPtr four(PyLong_FromLong(4));
+  Py_INCREF(four);
   EXPECT_EQ(PyList_SetItem(list, idx, four), 0);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(PyList_GetItem(list, idx), four);
@@ -182,7 +183,6 @@ TEST_F(ListExtensionApiTest, SETITEMWithListSetsItemAtIndex) {
   PyObjectPtr one(PyLong_FromLong(1));
   PyObjectPtr two(PyLong_FromLong(2));
   PyObjectPtr three(PyLong_FromLong(3));
-  PyObjectPtr four(PyLong_FromLong(4));
   PyList_Append(list, one);
   PyList_Append(list, two);
   PyList_Append(list, three);
@@ -190,13 +190,13 @@ TEST_F(ListExtensionApiTest, SETITEMWithListSetsItemAtIndex) {
   // Replace three with four
   Py_ssize_t three_refcnt = Py_REFCNT(three.get());
   Py_ssize_t idx = 2;
+  PyObjectPtr four(PyLong_FromLong(4));
   Py_INCREF(four);  // keep an extra reference for checking below SetItem
   PyList_SET_ITEM(list.get(), idx, four);
   EXPECT_EQ(Py_REFCNT(three.get()), three_refcnt);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(PyList_GetItem(list, idx), four);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  Py_DECREF(four);
 }
 
 TEST_F(ListExtensionApiTest, SetSliceOnNonListRaisesSystemError) {

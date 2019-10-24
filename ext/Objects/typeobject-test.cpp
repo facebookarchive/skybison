@@ -3200,8 +3200,8 @@ foo.bar = 1
   PyObjectPtr foo(moduleGet("__main__", "foo"));
   PyObjectPtr foo_type(PyObject_Type(foo));
   PyObjectPtr bar_str(PyUnicode_FromString("bar"));
-  PyObjectPtr res(
-      _PyType_Lookup(reinterpret_cast<PyTypeObject*>(foo_type.get()), bar_str));
+  PyObject* res =
+      _PyType_Lookup(reinterpret_cast<PyTypeObject*>(foo_type.get()), bar_str);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_NE(res, nullptr);
   EXPECT_TRUE(isLongEqualsLong(res, 2));
