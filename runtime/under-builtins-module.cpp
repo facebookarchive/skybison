@@ -3193,6 +3193,7 @@ RawObject UnderBuiltinsModule::underStrRFind(Thread* thread, Frame* frame,
     Int end_int(&scope, intUnderlying(thread, end_obj));
     end = end_int.asWordSaturated();
   }
+  Slice::adjustSearchIndices(&start, &end, haystack.codePointLength());
   word result = strRFind(haystack, needle, start, end);
   return SmallInt::fromWord(result);
 }

@@ -631,45 +631,34 @@ bool strHasPrefix(const Str& str, const Str& prefix, word start) {
 }
 
 word strRFind(const Str& haystack, const Str& needle, word start, word end) {
-  if (end < 0 || start < 0) {
-    Slice::adjustSearchIndices(&start, &end, haystack.codePointLength());
-  }
-
+  // Haystack slice is empty; fast early return
+  if (start > end) return -1;
+  // Needle is empty
+  if (needle == Str::empty()) return end;
   word start_index = haystack.offsetByCodePoints(0, start);
-  if (start_index == haystack.charLength() && needle.charLength() > 0) {
+  if (start_index == haystack.charLength()) {
     // Haystack is too small; fast early return
     return -1;
   }
   word end_index = haystack.offsetByCodePoints(start_index, end - start);
-
   if ((end_index - start_index) < needle.charLength() ||
       start_index > end_index) {
     // Haystack is too small; fast early return
     return -1;
   }
-
   // Loop is in byte space, not code point space
-  word result = start;
-  word last_index = -1;
+  // Invariant: cp_offset and byte_offset describe the same offset into the
+  // string, but one is in code point space and the other is in byte space
   // TODO(T41400083): Use a different search algorithm
-  for (word i = start_index; i <= end_index - needle.charLength(); result++) {
-    if (strHasPrefix(haystack, needle, i)) {
-      last_index = result;
+  for (word cp_offset = end - 1,
+            byte_offset = haystack.offsetByCodePoints(end_index, -1);
+       byte_offset >= 0; cp_offset--,
+            byte_offset = haystack.offsetByCodePoints(byte_offset, -1)) {
+    if (strHasPrefix(haystack, needle, byte_offset)) {
+      return cp_offset;
     }
-    word next = haystack.offsetByCodePoints(i, 1);
-    if (i == next) {
-      // We've reached a fixpoint; offsetByCodePoints will not advance past the
-      // length of the string.
-      if (start_index >= i) {
-        // The start is greater than the length of the string.
-        return -1;
-      }
-      // If the start is within bounds, just return the last found index.
-      break;
-    }
-    i = next;
   }
-  return last_index;
+  return -1;
 }
 
 RawObject StrBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {

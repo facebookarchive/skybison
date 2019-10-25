@@ -2072,6 +2072,14 @@ result = "hello".rfind("h", 0, 100)
   EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result"), 0));
 }
 
+TEST_F(StrBuiltinsTest, RfindWithEndLessThanLengthStartsAtEnd) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+result = "aaaabb".rfind("b", 0, 5)
+)")
+                   .isError());
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result"), 4));
+}
+
 TEST_F(StrBuiltinsTest, RfindCallsDunderIndexOnEnd) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
@@ -2114,6 +2122,22 @@ result = "aaaabbbb".rfind("b", 0, C())
 )")
                    .isError());
   EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result"), -1));
+}
+
+TEST_F(StrBuiltinsTest, RfindWithEmptyHaystackAndNeedleReturnsZero) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+result = "".rfind("")
+)")
+                   .isError());
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result"), 0));
+}
+
+TEST_F(StrBuiltinsTest, RfindWithEmptyHaystackAndNeedleAndBoundsReturnsZero) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+result = "".rfind("", 0, 5)
+)")
+                   .isError());
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result"), 0));
 }
 
 TEST_F(StrBuiltinsTest, RfindCharWithEmptyNeedleReturnsLength) {
