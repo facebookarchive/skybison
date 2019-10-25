@@ -50,6 +50,9 @@ class _IOStream:
     def __init__(self, fd):
         self._fd = fd
 
+    def fileno(self):
+        return self._fd
+
     def flush(self):
         pass
 

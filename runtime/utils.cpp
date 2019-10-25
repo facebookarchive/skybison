@@ -1,16 +1,17 @@
 #include "utils.h"
 
-#include "debugging.h"
-#include "frame.h"
-#include "handles.h"
-#include "runtime.h"
-#include "thread.h"
+#include <dlfcn.h>
+#include <unistd.h>
 
 #include <iostream>
 #include <sstream>
 #include <vector>
 
-#include <dlfcn.h>
+#include "debugging.h"
+#include "frame.h"
+#include "handles.h"
+#include "runtime.h"
+#include "thread.h"
 
 namespace py {
 
@@ -157,6 +158,13 @@ void Utils::printTraceback(std::ostream* os) {
   TracebackPrinter printer;
   Thread::current()->visitFrames(&printer);
   printer.print(os);
+}
+
+void Utils::printTracebackToFd(word fd, bool /* all_threads */) {
+  // TODO(wmeehan): if all_threads is true, dump every thread's traceback
+  std::ostringstream tb;
+  printTraceback(&tb);
+  write(fd, tb.str().c_str(), tb.str().length());
 }
 
 void Utils::printDebugInfoAndAbort() {

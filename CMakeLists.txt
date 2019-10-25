@@ -196,6 +196,7 @@ set(
   library/_warnings.py
   library/_weakref.py
   library/builtins.py
+  library/faulthandler.py
   library/importlib/_bootstrap.py
   library/importlib/_bootstrap_external.py
   library/marshal.py
@@ -289,6 +290,8 @@ add_library(
   runtime/dict-builtins.h
   runtime/exception-builtins.cpp
   runtime/exception-builtins.h
+  runtime/faulthandler-module.cpp
+  runtime/faulthandler-module.h
   runtime/file.h
   runtime/float-builtins.cpp
   runtime/float-builtins.h
@@ -489,6 +492,7 @@ add_library(
   runtime/descriptor-builtins-test.cpp
   runtime/dict-builtins-test.cpp
   runtime/exception-builtins-test.cpp
+  runtime/faulthandler-module-test.cpp
   runtime/float-builtins-test.cpp
   runtime/float-conversion-test.cpp
   runtime/function-builtins-test.cpp

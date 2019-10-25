@@ -190,8 +190,9 @@ class Utils {
   }
 
   // Prints a python level stack trace to stderr or the stream of your choice.
-  static void printTracebackToStderr();
   static void printTraceback(std::ostream* os);
+  static void printTracebackToFd(word fd, bool all_threads);
+  static void printTracebackToStderr();
 
   // Print the current traceback, information about the pending exception, if
   // one is set, and call std::abort().

@@ -3,7 +3,7 @@
 import sys
 
 
-# These values are injected by our boot process. These lines make flake8 happy.
+_patch = _patch  # noqa: F821
 _unimplemented = _unimplemented  # noqa: F821
 
 
@@ -48,8 +48,9 @@ def disable():
     _unimplemented()
 
 
+@_patch
 def dump_traceback(file=sys.stderr, all_threads=True):
-    _unimplemented()
+    pass
 
 
 def dump_traceback_later(timeout, repeat=False, file=sys.stderr, exit=False):

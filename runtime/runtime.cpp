@@ -23,6 +23,7 @@
 #include "descriptor-builtins.h"
 #include "dict-builtins.h"
 #include "exception-builtins.h"
+#include "faulthandler-module.h"
 #include "float-builtins.h"
 #include "frame.h"
 #include "frozen-modules.h"
@@ -2172,6 +2173,7 @@ const ModuleInitializer Runtime::kBuiltinModules[] = {
     {SymbolId::kUnderIo, &UnderIoModule::initialize},
     {SymbolId::kUnderStrMod, &UnderStrModModule::initialize},
     {SymbolId::kUnderValgrind, &UnderValgrindModule::initialize},
+    {SymbolId::kFaulthandler, &FaulthandlerModule::initialize},
     {SymbolId::kMarshal, &MarshalModule::initialize},
     {SymbolId::kUnderWarnings, &UnderWarningsModule::initialize},
     {SymbolId::kOperator, &OperatorModule::initialize},

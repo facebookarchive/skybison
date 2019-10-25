@@ -561,6 +561,7 @@ class Runtime;
   V(Divmod, "divmod")                                                          \
   V(DotSo, ".so")                                                              \
   V(Dummy, "dummy")                                                            \
+  V(DumpTraceback, "dump_traceback")                                           \
   V(EOFError, "EOFError")                                                      \
   V(Ellipsis, "ellipsis")                                                      \
   V(Encode, "encode")                                                          \
@@ -579,6 +580,7 @@ class Runtime;
   V(Extend, "extend")                                                          \
   V(ExtensionSuffixes, "extension_suffixes")                                   \
   V(False, "False")                                                            \
+  V(Faulthandler, "faulthandler")                                              \
   V(File, "file")                                                              \
   V(FileIO, "FileIO")                                                          \
   V(FileExistsError, "FileExistsError")                                        \
