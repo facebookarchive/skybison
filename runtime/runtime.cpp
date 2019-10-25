@@ -3225,7 +3225,7 @@ bool Runtime::dictLookup(Thread* thread, const Tuple& data, const Object& key,
     return false;
   }
   RawObject key_hash_raw = *key_hash;
-  DCHECK(!key_hash_raw.isSmallInt(), "key_hash must be SmallInt");
+  DCHECK(key_hash_raw.isSmallInt(), "key_hash must be SmallInt");
   word next_free_index = -1;
   uword perturb;
   word bucket_mask;
