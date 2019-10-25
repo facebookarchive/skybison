@@ -30,7 +30,7 @@ CAPI_BLACKLIST = {
     "_Py_TrueStruct",  # expansion of Py_True
 }
 
-FBCODE_PLATFORM = "gcc-5-glibc-2.23"
+FBCODE_PLATFORM = "platform007"
 
 
 # Yield all .o files in the given cpython directory that look like they're from
