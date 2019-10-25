@@ -78,7 +78,7 @@ class Thread {
 
   Runtime* runtime() { return runtime_; }
 
-  Frame* currentFrame() { return currentFrame_; }
+  Frame* currentFrame() { return current_frame_; }
 
   InterpreterThreadState* interpreterState() { return &interpreter_state_; }
 
@@ -292,7 +292,7 @@ class Thread {
   }
   void setRecursionLimit(int limit) { recursion_limit_ = limit; }
 
-  static int currentFrameOffset() { return offsetof(Thread, currentFrame_); }
+  static int currentFrameOffset() { return offsetof(Thread, current_frame_); }
 
   static int runtimeOffset() { return offsetof(Thread, runtime_); }
 
@@ -306,8 +306,8 @@ class Thread {
   byte* start_;
   byte* end_;
 
-  // currentFrame_ always points to the top-most frame on the stack.
-  Frame* currentFrame_;
+  // current_frame_ always points to the top-most frame on the stack.
+  Frame* current_frame_;
   Thread* next_;
   Runtime* runtime_;
   InterpreterThreadState interpreter_state_;
