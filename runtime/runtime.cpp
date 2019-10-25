@@ -3222,11 +3222,13 @@ bool Runtime::dictLookup(Thread* thread, const Tuple& data, const Object& key,
     *index = -1;
     return false;
   }
+  RawObject key_hash_raw = *key_hash;
+  DCHECK(!key_hash_raw.isSmallInt(), "key_hash must be SmallInt");
   word next_free_index = -1;
   uword perturb;
   word bucket_mask;
   for (word current =
-           Dict::Bucket::bucket(*data, *key_hash, &bucket_mask, &perturb);
+           Dict::Bucket::bucket(*data, key_hash_raw, &bucket_mask, &perturb);
        ; current = Dict::Bucket::nextBucket(current, bucket_mask, &perturb)) {
     word current_index = current * Dict::Bucket::kNumPointers;
     if (Dict::Bucket::isEmpty(*data, current_index)) {
@@ -3240,7 +3242,7 @@ bool Runtime::dictLookup(Thread* thread, const Tuple& data, const Object& key,
       if (next_free_index == -1) {
         next_free_index = current_index;
       }
-    } else if (!Dict::Bucket::hash(*data, current_index).isNoneType()) {
+    } else if (Dict::Bucket::hash(*data, current_index) == key_hash_raw) {
       RawObject eq =
           equals(thread, Dict::Bucket::key(*data, current_index), *key);
       if (eq == Bool::trueObj()) {
