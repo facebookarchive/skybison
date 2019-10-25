@@ -4,7 +4,7 @@
 #include "handles.h"
 #include "objects.h"
 
-namespace python {
+namespace py {
 
 class PointerVisitor;
 
@@ -133,4 +133,4 @@ class ApiHandle : public PyObject {
 static_assert(sizeof(ApiHandle) == sizeof(PyObject),
               "ApiHandle must not add members to PyObject");
 
-}  // namespace python
+}  // namespace py

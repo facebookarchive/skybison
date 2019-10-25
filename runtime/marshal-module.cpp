@@ -9,7 +9,7 @@
 #include "runtime.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 const BuiltinMethod MarshalModule::kBuiltinMethods[] = {
     {SymbolId::kLoads, loads},
@@ -39,4 +39,4 @@ RawObject MarshalModule::loads(Thread* thread, Frame* frame, word nargs) {
   return reader.readObject();
 }
 
-}  // namespace python
+}  // namespace py

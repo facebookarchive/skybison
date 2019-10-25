@@ -4,7 +4,7 @@
 #include "objects.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 struct FormatSpec {
   char alignment;
@@ -58,4 +58,4 @@ RawObject parseFormatSpec(Thread* thread, const Str& spec, int32_t default_type,
 RawObject raiseUnknownFormatError(Thread* thread, int32_t format_code,
                                   const Object& object);
 
-}  // namespace python
+}  // namespace py

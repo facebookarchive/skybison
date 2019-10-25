@@ -2,7 +2,7 @@
 #include "dict-builtins.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT PyObject* _PyNamespace_New(PyObject* kwds) {
   Thread* thread = Thread::current();
@@ -24,4 +24,4 @@ PY_EXPORT PyObject* _PyNamespace_New(PyObject* kwds) {
   return ApiHandle::newReference(thread, *result);
 }
 
-}  // namespace python
+}  // namespace py

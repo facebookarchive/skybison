@@ -11,7 +11,7 @@
 #include "runtime.h"
 #include "sys-module.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT void PyErr_SetString(PyObject* exc, const char* msg) {
   PyObject* value = PyUnicode_FromString(msg);
@@ -743,4 +743,4 @@ PY_EXPORT void _PyErr_ChainExceptions(PyObject* exc, PyObject* val,
   }
 }
 
-}  // namespace python
+}  // namespace py

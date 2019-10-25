@@ -4,7 +4,7 @@
 #include "memoryview-builtins.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -450,4 +450,4 @@ TEST_F(MemoryViewBuiltinsTest, DunderNewWithInvalidTypeRaisesTypeError) {
                             "memoryview.__new__(X): X is not 'memoryview'"));
 }
 
-}  // namespace python
+}  // namespace py

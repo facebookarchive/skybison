@@ -5,7 +5,7 @@
 #include "globals.h"
 #include "utils.h"
 
-namespace python {
+namespace py {
 
 template <typename T>
 class View {
@@ -32,4 +32,4 @@ class View {
   word length_;
 };
 
-}  // namespace python
+}  // namespace py

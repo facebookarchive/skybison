@@ -4,7 +4,7 @@
 #include "runtime.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -228,4 +228,4 @@ ag = async_gen()
   EXPECT_TRUE(result.isAsyncGenerator());
 }
 
-}  // namespace python
+}  // namespace py

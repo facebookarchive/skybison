@@ -13,7 +13,7 @@
 #include "test-utils.h"
 #include "trampolines.h"
 
-namespace python {
+namespace py {
 using namespace testing;
 
 using RuntimeAttributeTest = RuntimeFixture;
@@ -3631,4 +3631,4 @@ TEST_F(RuntimeStrArrayTest, AddASCIIAppendsASCII) {
   EXPECT_TRUE(isStrEqualsCStr(runtime_.strFromStrArray(array), "hi"));
 }
 
-}  // namespace python
+}  // namespace py

@@ -2,7 +2,7 @@
 
 #include "frozen-modules.h"
 
-namespace python {
+namespace py {
 
 const char* const UnderThreadModule::kFrozenData = kUnderThreadModuleData;
 

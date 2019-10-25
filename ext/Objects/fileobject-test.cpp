@@ -4,7 +4,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using FileObjectExtensionApiTest = ExtensionApi;
 
@@ -148,4 +148,4 @@ TEST_F(FileObjectExtensionApiTest, WriteStringWithSetExceptionFails) {
   EXPECT_EQ(PyErr_ExceptionMatches(PyExc_TypeError), 1);
 }
 
-}  // namespace python
+}  // namespace py

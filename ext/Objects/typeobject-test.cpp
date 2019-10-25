@@ -5,7 +5,7 @@
 #include "capi-testing.h"
 #include "structmember.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -3711,4 +3711,4 @@ result = self.fastcall(*[1234], *{})
   EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 2), 1));
 }
 
-}  // namespace python
+}  // namespace py

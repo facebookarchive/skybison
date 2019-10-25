@@ -5,7 +5,7 @@
 #include "runtime.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -1441,4 +1441,4 @@ TEST_F(CodecsModuleTest,
   EXPECT_TRUE(isBytesEqualsBytes(bytes, expected));
 }
 
-}  // namespace python
+}  // namespace py

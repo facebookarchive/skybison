@@ -5,7 +5,7 @@
 #include "test-utils.h"
 #include "trampolines.h"
 
-namespace python {
+namespace py {
 using namespace testing;
 
 using ScavengerTest = RuntimeFixture;
@@ -378,4 +378,4 @@ class C:
   EXPECT_TRUE(isIntEqualsWord(thread_->pendingExceptionValue(), 99));
 }
 
-}  // namespace python
+}  // namespace py

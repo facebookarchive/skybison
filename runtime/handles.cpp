@@ -4,7 +4,7 @@
 #include "objects.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 // do_type_check<T> is a helper struct to perform an exact or subtype check,
 // based on which handle list contains T.
@@ -43,4 +43,4 @@ HANDLE_TYPES(INSTANTIATE)
 SUBTYPE_HANDLE_TYPES(INSTANTIATE)
 #undef INSTANTIATE
 
-}  // namespace python
+}  // namespace py

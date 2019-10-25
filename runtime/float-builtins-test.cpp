@@ -9,7 +9,7 @@
 #include "runtime.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -1238,4 +1238,4 @@ two = C(2)
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderLt, self, two), Bool::trueObj());
 }
 
-}  // namespace python
+}  // namespace py

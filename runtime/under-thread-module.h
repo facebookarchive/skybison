@@ -2,7 +2,7 @@
 
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 class UnderThreadModule
     : public ModuleBase<UnderThreadModule, SymbolId::kUnderThread> {
@@ -10,4 +10,4 @@ class UnderThreadModule
   static const char* const kFrozenData;
 };
 
-}  // namespace python
+}  // namespace py

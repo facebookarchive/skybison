@@ -3,7 +3,7 @@
 #include "globals.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 RawObject instanceDelAttr(Thread* thread, const Instance& instance,
                           const Str& name_interned);
@@ -79,4 +79,4 @@ class NoneBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(NoneBuiltins);
 };
 
-}  // namespace python
+}  // namespace py

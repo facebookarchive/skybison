@@ -3,7 +3,7 @@
 #include "objects.h"
 #include "utils.h"
 
-namespace python {
+namespace py {
 
 enum AttributeFlags {
   kNone = 0,
@@ -106,4 +106,4 @@ inline RawSmallInt AttributeInfo::asSmallInt() {
   return RawSmallInt::cast(RawObject{value_});
 }
 
-}  // namespace python
+}  // namespace py

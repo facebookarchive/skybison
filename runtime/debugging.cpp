@@ -12,7 +12,7 @@
 #include "runtime.h"
 #include "vector.h"
 
-namespace python {
+namespace py {
 
 static const char* kOpNames[] = {
 #define OPNAME(name, num, handler) #name,
@@ -620,4 +620,4 @@ void initializeDebugging() {
   // annotations on the dump functions.
 }
 
-}  // namespace python
+}  // namespace py

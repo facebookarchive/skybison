@@ -5,7 +5,7 @@
 #include "Python.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 TEST(MysnprintfTest, Snprintf) {
   char str[5];
@@ -23,4 +23,4 @@ TEST(MysnprintfTest, Snprintf) {
   EXPECT_STREQ(str, "1234");
 }
 
-}  // namespace python
+}  // namespace py

@@ -2,7 +2,7 @@
 
 #include "int-builtins.h"
 
-namespace python {
+namespace py {
 
 const BuiltinAttribute MemoryViewBuiltins::kAttributes[] = {
     {SymbolId::kFormat, RawMemoryView::kFormatOffset,
@@ -276,4 +276,4 @@ RawObject MemoryViewBuiltins::dunderNew(Thread* thread, Frame* frame,
                               "memoryview: a bytes-like object is required");
 }
 
-}  // namespace python
+}  // namespace py

@@ -2,8 +2,8 @@
 
 #include "frozen-modules.h"
 
-namespace python {
+namespace py {
 
 const char* const UnderStrModModule::kFrozenData = kUnderStrUnderModModuleData;
 
-}  // namespace python
+}  // namespace py

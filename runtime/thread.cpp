@@ -18,7 +18,7 @@
 #include "type-builtins.h"
 #include "visitor.h"
 
-namespace python {
+namespace py {
 
 void Handles::visitPointers(PointerVisitor* visitor) {
   for (Object* handle = head_; handle != nullptr;
@@ -659,4 +659,4 @@ void Thread::reprLeave(const Object& obj) {
   }
 }
 
-}  // namespace python
+}  // namespace py

@@ -2,7 +2,7 @@
 
 #include <pthread.h>
 
-namespace python {
+namespace py {
 
 class Mutex {
  public:
@@ -16,4 +16,4 @@ class Mutex {
   void* lock_ = nullptr;
 };
 
-}  // namespace python
+}  // namespace py

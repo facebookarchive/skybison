@@ -2,7 +2,7 @@
 
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 RawSmallInt complexHash(RawObject value);
 
@@ -21,4 +21,4 @@ class ComplexBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(ComplexBuiltins);
 };
 
-}  // namespace python
+}  // namespace py

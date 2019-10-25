@@ -21,7 +21,7 @@ int Py_UnbufferedStdioFlag = 0;
 int Py_UseClassExceptionsFlag = 1;
 int Py_VerboseFlag = 0;
 
-namespace python {
+namespace py {
 
 PY_EXPORT void Py_Initialize() { new Runtime; }
 
@@ -103,4 +103,4 @@ PY_EXPORT void _Py_PyAtExit(void (*func)(void)) {
 
 PY_EXPORT void _Py_RestoreSignals() { UNIMPLEMENTED("_Py_RestoreSignals"); }
 
-}  // namespace python
+}  // namespace py

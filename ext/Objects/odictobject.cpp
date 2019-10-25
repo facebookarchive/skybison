@@ -1,7 +1,7 @@
 #include "capi-handles.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT int PyODict_DelItem(PyObject* /* d */, PyObject* /* y */) {
   UNIMPLEMENTED("PyODict_DelItem");
@@ -14,4 +14,4 @@ PY_EXPORT int PyODict_SetItem(PyObject* /* d */, PyObject* /* y */,
   UNIMPLEMENTED("PyODict_SetItem");
 }
 
-}  // namespace python
+}  // namespace py

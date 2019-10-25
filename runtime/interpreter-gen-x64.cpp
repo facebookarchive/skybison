@@ -24,7 +24,7 @@
 // - PC (as an offset) fits in a uint32_t.
 // - Immediate objects fit in 8 bits.
 
-namespace python {
+namespace py {
 
 namespace {
 
@@ -893,4 +893,4 @@ void X64Interpreter::setupThread(Thread* thread) {
 
 Interpreter* createAsmInterpreter() { return new X64Interpreter(); }
 
-}  // namespace python
+}  // namespace py

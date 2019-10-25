@@ -4,7 +4,7 @@
 #include "runtime.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 using namespace testing;
 
 using ExceptionBuiltinsTest = RuntimeFixture;
@@ -703,4 +703,4 @@ exc = UnicodeTranslateError('en', i, i, 're')
   EXPECT_TRUE(isIntEqualsWord(err.end(), 1));
 }
 
-}  // namespace python
+}  // namespace py

@@ -6,7 +6,7 @@
 
 #include <cstring>
 
-namespace python {
+namespace py {
 
 /**
  * TryBlock contains the unmarshaled block stack information.
@@ -564,4 +564,4 @@ inline TryBlock BlockStack::pop() {
   return TryBlock(block);
 }
 
-}  // namespace python
+}  // namespace py

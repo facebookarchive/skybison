@@ -6,7 +6,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -85,4 +85,4 @@ TEST_F(SysExtensionApiTest, WriteStderr) {
   EXPECT_EQ(streams.err(), "2 + 2 = 4");
 }
 
-}  // namespace python
+}  // namespace py

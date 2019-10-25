@@ -6,7 +6,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -141,4 +141,4 @@ TEST_F(FloatExtensionApiTest, Pack8) {
   EXPECT_EQ(_PyFloat_Unpack8(ptr, /* le */ true), 1.5);
 }
 
-}  // namespace python
+}  // namespace py

@@ -4,7 +4,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using ModSupportExtensionApiTest = ExtensionApi;
 
@@ -154,4 +154,4 @@ TEST_F(ModSupportExtensionApiTest, BuildValueTupleOfInt) {
   ASSERT_EQ(PyLong_AsLong(item3), 444);
 }
 
-}  // namespace python
+}  // namespace py

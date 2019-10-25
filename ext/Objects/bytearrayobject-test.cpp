@@ -6,7 +6,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -219,4 +219,4 @@ TEST_F(ByteArrayExtensionApiTest, ResizeSmallerThenLarger) {
   EXPECT_EQ(PyByteArray_Size(array), len + 1);
 }
 
-}  // namespace python
+}  // namespace py

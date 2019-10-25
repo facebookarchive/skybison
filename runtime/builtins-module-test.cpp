@@ -6,7 +6,7 @@
 #include "test-utils.h"
 #include "trampolines.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -1607,4 +1607,4 @@ res1 = abs(Foo())
                             "bad operand type for abs(): 'Foo'"));
 }
 
-}  // namespace python
+}  // namespace py

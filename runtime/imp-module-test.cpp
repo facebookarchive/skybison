@@ -5,7 +5,7 @@
 #include "runtime.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 using namespace testing;
 
 using ImpModuleTest = RuntimeFixture;
@@ -271,4 +271,4 @@ result2 = _imp.create_builtin(*spec)
   EXPECT_EQ(*result1, *result2);
 }
 
-}  // namespace python
+}  // namespace py

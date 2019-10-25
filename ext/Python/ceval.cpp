@@ -1,7 +1,7 @@
 #include "capi-handles.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT PyObject* PyEval_GetBuiltins() {
   UNIMPLEMENTED("PyEval_GetBuiltins");
@@ -177,4 +177,4 @@ PY_EXPORT PyObject* _PyEval_EvalFrameDefault(PyFrameObject* /* f */,
   UNIMPLEMENTED("_PyEval_EvalFrameDefault");
 }
 
-}  // namespace python
+}  // namespace py

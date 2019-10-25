@@ -9,7 +9,7 @@
 #include "objects.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 extern "C" struct _inittab _PyImport_Inittab[];
 
@@ -216,4 +216,4 @@ RawObject UnderImpModule::releaseLock(Thread* thread, Frame*, word) {
   return RawNoneType::object();
 }
 
-}  // namespace python
+}  // namespace py

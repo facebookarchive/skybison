@@ -12,7 +12,7 @@
 #include "thread.h"
 #include "type-builtins.h"
 
-namespace python {
+namespace py {
 
 RawObject tupleIteratorNext(Thread* thread, const TupleIterator& iter) {
   word idx = iter.index();
@@ -279,4 +279,4 @@ RawObject TupleIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   return SmallInt::fromWord(tuple.length() - tuple_iterator.index());
 }
 
-}  // namespace python
+}  // namespace py

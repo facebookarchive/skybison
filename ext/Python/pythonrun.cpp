@@ -30,7 +30,7 @@ typedef struct _mod* mod_ty;
 // from graminit.c
 extern grammar _PyParser_Grammar;
 
-namespace python {
+namespace py {
 
 PY_EXPORT int PyRun_AnyFileExFlags(FILE* fp, const char* filename, int closeit,
                                    PyCompilerFlags* flags) {
@@ -545,4 +545,4 @@ PY_EXPORT mod_ty PyParser_ASTFromString(const char* s, const char* filename,
   return mod;
 }
 
-}  // namespace python
+}  // namespace py

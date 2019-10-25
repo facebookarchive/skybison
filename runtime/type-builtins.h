@@ -6,7 +6,7 @@
 #include "runtime.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 // Convert an CPython's extension slot ints into a RawType::Slot
 Type::Slot slotToTypeSlot(int slot);
@@ -114,4 +114,4 @@ class TypeProxyBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(TypeProxyBuiltins);
 };
 
-}  // namespace python
+}  // namespace py

@@ -4,7 +4,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -202,4 +202,4 @@ r1 = bar.foo()
   EXPECT_EQ(PyTuple_Size(arg1), 0);
 }
 
-}  // namespace python
+}  // namespace py

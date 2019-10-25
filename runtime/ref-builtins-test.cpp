@@ -5,7 +5,7 @@
 #include "super-builtins.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -103,4 +103,4 @@ ref = _weakref.ref(c)
                             LayoutId::kException, "foo"));
 }
 
-}  // namespace python
+}  // namespace py

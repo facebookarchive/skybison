@@ -5,7 +5,7 @@
 #include "test-utils.h"
 #include "trampolines.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -110,4 +110,4 @@ result = (inst.a, inst.b)
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 3));
 }
 
-}  // namespace python
+}  // namespace py

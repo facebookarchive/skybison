@@ -4,7 +4,7 @@
 #include "runtime.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -195,4 +195,4 @@ TEST_F(TestUtils, NewEmptyCode) {
   EXPECT_TRUE(code.varnames().isTuple());
 }
 
-}  // namespace python
+}  // namespace py

@@ -5,7 +5,7 @@
 #include "objects.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT PyObject* PyTrue_Ptr() {
   return ApiHandle::borrowedReference(Thread::current(), Bool::trueObj());
@@ -23,4 +23,4 @@ PY_EXPORT PyObject* PyBool_FromLong(long v) {
   return ApiHandle::newReference(Thread::current(), Bool::fromBool(v));
 }
 
-}  // namespace python
+}  // namespace py

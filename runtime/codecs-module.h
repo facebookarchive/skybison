@@ -5,7 +5,7 @@
 #include "objects.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 class UnderCodecsModule
     : public ModuleBase<UnderCodecsModule, SymbolId::kUnderCodecs> {
@@ -30,4 +30,4 @@ class UnderCodecsModule
   static const char* const kFrozenData;
 };
 
-}  // namespace python
+}  // namespace py

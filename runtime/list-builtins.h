@@ -6,7 +6,7 @@
 #include "runtime.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 // Extends a list from an exact tuple or exact list. Modifies dst in-place.
 // Returns either the None or an Error object if allocation failed.
@@ -77,4 +77,4 @@ class ListIteratorBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(ListIteratorBuiltins);
 };
 
-}  // namespace python
+}  // namespace py

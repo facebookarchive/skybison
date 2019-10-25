@@ -68,7 +68,7 @@
 #include "warnings-module.h"
 #include "weakref-module.h"
 
-namespace python {
+namespace py {
 
 extern "C" struct _inittab _PyImport_Inittab[];
 
@@ -437,8 +437,7 @@ RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
     Instance instance(&scope, *receiver);
     Str name_str(&scope, strUnderlying(thread, name));
     Str name_interned(&scope, internStr(thread, name_str));
-    Object result(&scope,
-                  python::instanceDelAttr(thread, instance, name_interned));
+    Object result(&scope, py::instanceDelAttr(thread, instance, name_interned));
     if (!result.isErrorNotFound()) return *result;
   }
 
@@ -5542,4 +5541,4 @@ const BuiltinType ModuleBaseBase::kBuiltinTypes[] = {
     {SymbolId::kSentinelId, LayoutId::kSentinelId},
 };
 
-}  // namespace python
+}  // namespace py

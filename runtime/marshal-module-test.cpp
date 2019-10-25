@@ -6,7 +6,7 @@
 #include "runtime.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 namespace testing {
 
@@ -48,4 +48,4 @@ TEST_F(MarshalModuleTest, LoadsIgnoresExtraBytesAtEnd) {
 
 }  // namespace testing
 
-}  // namespace python
+}  // namespace py

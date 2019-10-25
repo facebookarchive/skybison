@@ -2,7 +2,7 @@
 
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 static bool underBoolCheck(Frame* frame) {
   frame->setTopValue(Bool::fromBool(frame->popValue().isBool()));
@@ -612,4 +612,4 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
   }
 }
 
-}  // namespace python
+}  // namespace py

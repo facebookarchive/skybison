@@ -3,7 +3,7 @@
 #include "cpython-func.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 static ListEntry* fromGCObject(void* gc_obj) {
   return static_cast<ListEntry*>(gc_obj) - 1;
@@ -63,4 +63,4 @@ PY_EXPORT PyVarObject* _PyObject_GC_Resize(PyVarObject* /* p */,
   UNIMPLEMENTED("_PyObject_GC_Resize");
 }
 
-}  // namespace python
+}  // namespace py

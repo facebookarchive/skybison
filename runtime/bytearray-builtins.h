@@ -2,7 +2,7 @@
 
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 // Appends a byte to the end of the array.
 inline void byteArrayAdd(Thread* thread, Runtime* runtime,
@@ -68,4 +68,4 @@ class ByteArrayIteratorBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(ByteArrayIteratorBuiltins);
 };
 
-}  // namespace python
+}  // namespace py

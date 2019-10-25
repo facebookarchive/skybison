@@ -6,7 +6,7 @@
 #include "runtime.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 // Creates a new dict with shallow copies of the given dict's elements.
 RawObject dictCopy(Thread* thread, const Dict& dict);
@@ -144,4 +144,4 @@ class DictValuesBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictValuesBuiltins);
 };
 
-}  // namespace python
+}  // namespace py

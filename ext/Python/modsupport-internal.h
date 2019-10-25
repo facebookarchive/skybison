@@ -6,11 +6,11 @@
 
 #include "cpython-types.h"
 
-namespace python {
+namespace py {
 
 const int kFlagSizeT = 1;
 
 PyObject* makeValueFromFormat(const char** p_format, std::va_list* p_va,
                               int flags);
 
-}  // namespace python
+}  // namespace py

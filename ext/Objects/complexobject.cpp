@@ -6,7 +6,7 @@
 #include "runtime.h"
 #include "type-builtins.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT double _Py_c_abs(Py_complex x) {
   double result = std::hypot(x.real, x.imag);
@@ -142,4 +142,4 @@ PY_EXPORT PyObject* PyComplex_FromDoubles(double real, double imag) {
                                  thread->runtime()->newComplex(real, imag));
 }
 
-}  // namespace python
+}  // namespace py

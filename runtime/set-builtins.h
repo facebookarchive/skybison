@@ -6,7 +6,7 @@
 #include "runtime.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 // Returns a shallow copy of a set
 RawObject setCopy(Thread* thread, const SetBase& set);
@@ -100,4 +100,4 @@ class SetIteratorBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(SetIteratorBuiltins);
 };
 
-}  // namespace python
+}  // namespace py

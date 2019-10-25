@@ -6,7 +6,7 @@
 #include "runtime.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -245,4 +245,4 @@ sys.exit()
               ::testing::ExitedWithCode(0), "");
 }
 
-}  // namespace python
+}  // namespace py

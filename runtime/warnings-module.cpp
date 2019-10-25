@@ -7,7 +7,7 @@
 #include "runtime.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 namespace {
 RawObject getCategory(Thread* thread, const Object& message,
@@ -69,4 +69,4 @@ RawObject UnderWarningsModule::warn(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-}  // namespace python
+}  // namespace py

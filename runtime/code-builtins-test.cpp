@@ -2,7 +2,7 @@
 
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -180,4 +180,4 @@ TEST_F(CodeBuiltinsTest, CoLnotabReturnsLnotab) {
   EXPECT_TRUE(isBytesEqualsCStr(result, "lnotab"));
 }
 
-}  // namespace python
+}  // namespace py

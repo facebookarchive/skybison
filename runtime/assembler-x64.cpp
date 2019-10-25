@@ -9,7 +9,7 @@
 
 #include "globals.h"
 
-namespace python {
+namespace py {
 namespace x64 {
 
 void Assembler::initializeMemoryWithBreakpoints(uword data, word length) {
@@ -840,4 +840,4 @@ void Assembler::emitGenericShift(bool wide, int rm, Register operand,
 }
 
 }  // namespace x64
-}  // namespace python
+}  // namespace py

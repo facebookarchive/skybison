@@ -1,7 +1,7 @@
 #include "capi-handles.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT PyObject* PySeqIter_New(PyObject* seq) {
   Thread* thread = Thread::current();
@@ -31,4 +31,4 @@ PY_EXPORT int PyIter_Check_Func(PyObject* iter) {
   return ApiHandle::fromPyObject(iter)->asObject().isSeqIterator();
 }
 
-}  // namespace python
+}  // namespace py

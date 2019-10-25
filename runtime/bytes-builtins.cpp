@@ -8,7 +8,7 @@
 #include "unicode.h"
 #include "utils.h"
 
-namespace python {
+namespace py {
 
 word bytesCount(const Bytes& haystack, word haystack_len, const Bytes& needle,
                 word needle_len, word start, word end) {
@@ -796,4 +796,4 @@ RawObject BytesIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   return SmallInt::fromWord(underlying.length() - iter.index());
 }
 
-}  // namespace python
+}  // namespace py

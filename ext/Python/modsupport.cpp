@@ -10,7 +10,7 @@
 #include "objects.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT int PyModule_AddObject(PyObject* pymodule, const char* name,
                                  PyObject* obj) {
@@ -484,4 +484,4 @@ PY_EXPORT PyObject* PyEval_CallMethod(PyObject* /* j */, const char* /* e */,
   UNIMPLEMENTED("PyEval_CallMethod");
 }
 
-}  // namespace python
+}  // namespace py

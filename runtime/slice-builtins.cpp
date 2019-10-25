@@ -5,7 +5,7 @@
 #include "objects.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 static ALWAYS_INLINE RawObject sliceIndex(Thread* thread, const Object& obj) {
   if (obj.isInt()) return *obj;
@@ -123,4 +123,4 @@ RawObject SliceBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   return runtime->newSlice(start, stop, step);
 }
 
-}  // namespace python
+}  // namespace py

@@ -4,7 +4,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 namespace testing {
 
 using GenExtensionApiTest = ExtensionApi;
@@ -14,4 +14,4 @@ TEST_F(GenExtensionApiTest, ClearFreeListReturnsZeroPyro) {
 }
 
 }  // namespace testing
-}  // namespace python
+}  // namespace py

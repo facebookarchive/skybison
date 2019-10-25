@@ -12,7 +12,7 @@
 #include "runtime.h"
 #include "symbols.h"
 
-namespace python {
+namespace py {
 
 const BuiltinMethod UnderOsModule::kBuiltinMethods[] = {
     {SymbolId::kClose, close},
@@ -182,4 +182,4 @@ RawObject UnderOsModule::setNoinheritable(Thread* thread, Frame* frame,
 
 const char* const UnderOsModule::kFrozenData = kUnderOsModuleData;
 
-}  // namespace python
+}  // namespace py

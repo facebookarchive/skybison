@@ -8,7 +8,7 @@
 #include "thread.h"
 #include "type-builtins.h"
 
-namespace python {
+namespace py {
 
 RawObject superGetAttribute(Thread* thread, const Super& super,
                             const Object& name_str, const Object& name_hash) {
@@ -183,4 +183,4 @@ RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-}  // namespace python
+}  // namespace py

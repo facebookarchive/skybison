@@ -5,7 +5,7 @@
 #include "int-builtins.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 static PyObject* typeObjectHandle(LayoutId id) {
   Thread* thread = Thread::current();
@@ -649,4 +649,4 @@ PY_EXPORT int PyUnicodeTranslateError_SetStart(PyObject* exc,
   return unicodeErrorSetStart(exc, start);
 }
 
-}  // namespace python
+}  // namespace py

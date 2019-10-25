@@ -3,7 +3,7 @@
 #include "ic.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 const char* const kBytecodeNames[] = {
 #define NAME(name, value, handler) #name,
@@ -240,4 +240,4 @@ void rewriteBytecode(Thread* thread, const Function& function) {
   function.setOriginalArguments(*original_arguments);
 }
 
-}  // namespace python
+}  // namespace py

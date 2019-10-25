@@ -4,7 +4,7 @@
 
 #include "globals.h"
 
-namespace python {
+namespace py {
 
 class File {
  public:
@@ -48,4 +48,4 @@ class File {
   static const word kNoInheritFlag;
 };
 
-}  // namespace python
+}  // namespace py

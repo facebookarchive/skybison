@@ -1,6 +1,6 @@
 #include "code-builtins.h"
 
-namespace python {
+namespace py {
 
 const BuiltinAttribute CodeBuiltins::kAttributes[] = {
     {SymbolId::kCoArgcount, RawCode::kArgcountOffset,
@@ -31,4 +31,4 @@ const BuiltinAttribute CodeBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
-}  // namespace python
+}  // namespace py

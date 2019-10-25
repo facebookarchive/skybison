@@ -7,7 +7,7 @@
 #include "runtime.h"
 #include "visitor.h"
 
-namespace python {
+namespace py {
 
 ApiHandle* ApiHandle::alloc(Thread* thread, RawObject reference) {
   ApiHandle* result = static_cast<ApiHandle*>(std::malloc(sizeof(ApiHandle)));
@@ -250,4 +250,4 @@ void ApiHandle::dispose() {
   std::free(this);
 }
 
-}  // namespace python
+}  // namespace py

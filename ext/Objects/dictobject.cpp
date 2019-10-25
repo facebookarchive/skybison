@@ -8,7 +8,7 @@
 #include "objects.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT int PyDict_CheckExact_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject().isDict();
@@ -339,4 +339,4 @@ PY_EXPORT PyObject* PyObject_GenericGetDict(PyObject* /* j */, void* /* t */) {
   UNIMPLEMENTED("PyObject_GenericGetDict");
 }
 
-}  // namespace python
+}  // namespace py

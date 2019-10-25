@@ -2,7 +2,7 @@
 
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 class StrArrayBuiltins
     : public Builtins<StrArrayBuiltins, SymbolId::kUnderStrArray,
@@ -18,4 +18,4 @@ class StrArrayBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(StrArrayBuiltins);
 };
 
-}  // namespace python
+}  // namespace py

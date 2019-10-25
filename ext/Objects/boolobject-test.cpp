@@ -3,7 +3,7 @@
 #include "Python.h"
 #include "capi-fixture.h"
 
-namespace python {
+namespace py {
 
 using BoolExtensionApiTest = ExtensionApi;
 
@@ -28,4 +28,4 @@ TEST_F(BoolExtensionApiTest, CheckBoolIdentity) {
   EXPECT_EQ(pybool_false, pybool2);
 }
 
-}  // namespace python
+}  // namespace py

@@ -4,7 +4,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -1392,4 +1392,4 @@ TEST_F(DictExtensionApiTest, UpdateOverwritesKeys) {
   EXPECT_EQ(PyDict_GetItem(lhs, three), four);
 }
 
-}  // namespace python
+}  // namespace py

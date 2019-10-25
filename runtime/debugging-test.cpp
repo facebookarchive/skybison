@@ -8,7 +8,7 @@
 #include "debugging.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -658,4 +658,4 @@ TEST_F(DebuggingTests, FormatFrameNullptr) {
   EXPECT_EQ(ss.str(), "<nullptr>");
 }
 
-}  // namespace python
+}  // namespace py

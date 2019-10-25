@@ -4,7 +4,7 @@
 #include "symbols.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 // Executes the function at the given symbol without pushing a new frame.
 // If the call succeeds, pops the arguments off of the caller's frame, sets the
@@ -12,4 +12,4 @@ namespace python {
 // stack unchanged and returns false.
 bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name);
 
-}  // namespace python
+}  // namespace py

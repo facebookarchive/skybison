@@ -3,7 +3,7 @@
 #include "runtime.h"
 #include "visitor.h"
 
-namespace python {
+namespace py {
 
 // clang-format off
 static const char* kPredefinedSymbols[] = {
@@ -42,4 +42,4 @@ const char* Symbols::predefinedSymbolAt(SymbolId id) {
   return kPredefinedSymbols[index];
 }
 
-}  // namespace python
+}  // namespace py

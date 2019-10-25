@@ -9,7 +9,7 @@
 
 #include "utils.h"
 
-namespace python {
+namespace py {
 
 int File::close(int fd) { return ::close(fd) < 0 ? -errno : 0; }
 
@@ -67,4 +67,4 @@ int File::truncate(int fd, int64_t size) {
 const word File::kBinaryFlag = 0;
 const word File::kNoInheritFlag = O_CLOEXEC;
 
-}  // namespace python
+}  // namespace py

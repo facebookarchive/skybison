@@ -1,6 +1,6 @@
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT int PyErr_CheckSignals() {
   // TODO(T43363720): Check thread for pending signal
@@ -19,4 +19,4 @@ PY_EXPORT void PyOS_AfterFork() {
   // TODO(T39596544): do nothing until we have a GIL.
 }
 
-}  // namespace python
+}  // namespace py

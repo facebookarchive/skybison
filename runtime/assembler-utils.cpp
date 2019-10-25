@@ -11,7 +11,7 @@
 #include "memory-region.h"
 #include "utils.h"
 
-namespace python {
+namespace py {
 
 #ifndef NDEBUG
 AssemblerBuffer::EnsureCapacity::EnsureCapacity(AssemblerBuffer* buffer) {
@@ -107,4 +107,4 @@ void AssemblerBuffer::extendCapacity() {
   DCHECK(size() == old_size, "assert()");
 }
 
-}  // namespace python
+}  // namespace py

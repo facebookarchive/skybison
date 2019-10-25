@@ -8,7 +8,7 @@
 
 extern "C" int _Py_normalize_encoding(const char*, char*, size_t);
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -2298,4 +2298,4 @@ TEST_F(UnicodeExtensionApiTest, IsIdentifierWithInvalidIdentifierReturnsFalse) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
-}  // namespace python
+}  // namespace py

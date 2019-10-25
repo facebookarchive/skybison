@@ -3,7 +3,7 @@
 #include "compile.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -32,4 +32,4 @@ TEST_F(CompileTest, CompileFromCStrWithSyntaxErrorRaisesSyntaxErrorException) {
   EXPECT_TRUE(raised(compileFromCStr(",,,", "<test>"), LayoutId::kSyntaxError));
 }
 
-}  // namespace python
+}  // namespace py

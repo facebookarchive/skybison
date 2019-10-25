@@ -2,7 +2,7 @@
 #include "cpython-func.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT void* PyObject_Malloc(size_t size) {
   ListEntry* entry =
@@ -102,4 +102,4 @@ PY_EXPORT char* _PyMem_Strdup(const char* str) {
   return result;
 }
 
-}  // namespace python
+}  // namespace py

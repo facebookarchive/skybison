@@ -6,7 +6,7 @@
 #include "runtime.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 // Return the next item from the iterator, or Error if there are no items left.
 RawObject tupleIteratorNext(Thread* thread, const TupleIterator& iter);
@@ -52,4 +52,4 @@ class TupleIteratorBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(TupleIteratorBuiltins);
 };
 
-}  // namespace python
+}  // namespace py

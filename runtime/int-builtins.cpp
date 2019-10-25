@@ -12,7 +12,7 @@
 #include "str-builtins.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 void IntBuiltins::postInitialize(Runtime*, const Type& new_type) {
   new_type.setBuiltinBase(LayoutId::kInt);
@@ -920,4 +920,4 @@ RawObject intUnderlying(Thread* thread, const Object& obj) {
   return user_int.value();
 }
 
-}  // namespace python
+}  // namespace py

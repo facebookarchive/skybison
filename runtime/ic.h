@@ -6,7 +6,7 @@
 #include "interpreter.h"
 #include "objects.h"
 
-namespace python {
+namespace py {
 
 // Looks for a cache entry for an attribute with a `layout_id` key.
 // Returns the cached value. Returns `ErrorNotFound` if none was found.
@@ -404,4 +404,4 @@ inline RawObject icLookupGlobalVar(RawTuple caches, word index) {
   return caches.at(index);
 }
 
-}  // namespace python
+}  // namespace py

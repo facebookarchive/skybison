@@ -4,7 +4,7 @@
 #include "super-builtins.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -425,4 +425,4 @@ s = C().foo()
   EXPECT_EQ(superGetAttribute(thread_, s, name, name_hash), super_type);
 }
 
-}  // namespace python
+}  // namespace py

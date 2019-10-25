@@ -7,7 +7,7 @@
 #include "objects.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 static const word kStdoutFd = 1;
 static const word kStderrFd = 2;
@@ -44,4 +44,4 @@ class SysModule {
   static const char* const kFrozenData;
 };
 
-}  // namespace python
+}  // namespace py

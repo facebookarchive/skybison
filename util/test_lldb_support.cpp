@@ -3,7 +3,7 @@
 #include "handles.h"
 #include "runtime.h"
 
-using namespace python;
+using namespace py;
 
 int main(int argc, char* argv[]) {
   Runtime runtime;
@@ -24,32 +24,32 @@ int main(int argc, char* argv[]) {
 
   // clang-format off
 
-  // exp: (python::RawObject) imm1 = None
+  // exp: (py::RawObject) imm1 = None
   RawObject imm1 = NoneType::object();
-  // exp: (python::Object) imm2 = Error
+  // exp: (py::Object) imm2 = Error
   Object imm2(&scope, Error::object());
-  // exp: (python::Object) imm3 = False
+  // exp: (py::Object) imm3 = False
   Object imm3(&scope, Bool::falseObj());
-  // exp: (python::Object) imm4 = True
+  // exp: (py::Object) imm4 = True
   Object imm4(&scope, Bool::trueObj());
-  // exp: (python::Object) imm5 = NotImplemented
+  // exp: (py::Object) imm5 = NotImplemented
   Object imm5(&scope, NotImplementedType::object());
-  // exp: (python::Object) imm6 = Unbound
+  // exp: (py::Object) imm6 = Unbound
   Object imm6(&scope, Unbound::object());
 
-  // exp: (python::RawSmallInt) int1 = 1234
+  // exp: (py::RawSmallInt) int1 = 1234
   RawSmallInt int1 = SmallInt::fromWord(1234);
-  // re: \(python::Int\) int2 = HeapObject @ 0x[0-9a-f]+ Header<kDataArray64, kLargeInt, hash=0, count=1>
+  // re: \(py::Int\) int2 = HeapObject @ 0x[0-9a-f]+ Header<kDataArray64, kLargeInt, hash=0, count=1>
   Int int2(&scope, runtime.newInt(SmallInt::kMaxValue + 1));
 
-  // exp: (python::RawObject) str1 = SmallStr('short')
+  // exp: (py::RawObject) str1 = SmallStr('short')
   RawObject str1 = SmallStr::fromCStr("short");
-  // re: \(python::Str\) str2 = HeapObject @ 0x[0-9a-f]+ Header<kDataArray8, kLargeStr, hash=0, count=15>
+  // re: \(py::Str\) str2 = HeapObject @ 0x[0-9a-f]+ Header<kDataArray8, kLargeStr, hash=0, count=15>
   Str str2(&scope, runtime.newStrFromCStr("a longer string"));
 
-  // re: \(python::RawObject\) heap1 = HeapObject @ 0x[0-9a-f]+ Header<kObjectArray, kTuple, hash=0, count=10>
+  // re: \(py::RawObject\) heap1 = HeapObject @ 0x[0-9a-f]+ Header<kObjectArray, kTuple, hash=0, count=10>
   RawObject heap1 = runtime.newTuple(10);
-  // re: \(python::HeapObject\) heap2 = HeapObject @ 0x[0-9a-f]+ Header<kObjectInstance, kList, hash=0, count=2>
+  // re: \(py::HeapObject\) heap2 = HeapObject @ 0x[0-9a-f]+ Header<kObjectInstance, kList, hash=0, count=2>
   HeapObject heap2(&scope, runtime.newList());
 
   // clang-format on

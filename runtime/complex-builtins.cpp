@@ -6,7 +6,7 @@
 #include "objects.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 RawSmallInt complexHash(RawObject value) {
   RawComplex value_complex = RawComplex::cast(value);
@@ -126,4 +126,4 @@ RawObject ComplexBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
                              self.imag() + other_imag);
 }
 
-}  // namespace python
+}  // namespace py

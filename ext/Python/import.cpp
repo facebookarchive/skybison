@@ -5,7 +5,7 @@
 #include "module-builtins.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT PyObject* PyImport_GetModuleDict(void) {
   Thread* thread = Thread::current();
@@ -208,4 +208,4 @@ PY_EXPORT int _PyImport_ReleaseLock() {
   return importReleaseLock(Thread::current()) ? 1 : -1;
 }
 
-}  // namespace python
+}  // namespace py

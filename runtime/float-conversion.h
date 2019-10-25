@@ -1,6 +1,6 @@
 #pragma once
 
-namespace python {
+namespace py {
 
 double parseInfOrNan(const char* p, char** endptr);
 
@@ -26,4 +26,4 @@ char* formatFloat(double value, char format_code, int precision, bool skip_sign,
 // Round double value to `ndigits` decimal digits.
 double doubleRoundDecimals(double value, int ndigits);
 
-}  // namespace python
+}  // namespace py

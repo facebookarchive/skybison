@@ -5,7 +5,7 @@
 #include "objects.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 RawObject getAttribute(Thread* thread, const Object& self, const Object& name);
 RawObject hasAttribute(Thread* thread, const Object& self, const Object& name);
@@ -39,4 +39,4 @@ class BuiltinsModule {
   static const SymbolId kIntrinsicIds[];
 };
 
-}  // namespace python
+}  // namespace py

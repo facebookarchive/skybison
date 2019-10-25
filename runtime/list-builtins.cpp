@@ -9,7 +9,7 @@
 #include "thread.h"
 #include "tuple-builtins.h"
 
-namespace python {
+namespace py {
 
 RawObject listExtend(Thread* thread, const List& dst, const Object& iterable) {
   HandleScope scope(thread);
@@ -621,4 +621,4 @@ RawObject ListBuiltins::dunderSetItem(Thread* thread, Frame* frame,
                               "list indices must be integers or slices");
 }
 
-}  // namespace python
+}  // namespace py

@@ -4,7 +4,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -159,4 +159,4 @@ TEST_F(PystateExtensionApiTest,
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_RecursionError));
 }
 
-}  // namespace python
+}  // namespace py

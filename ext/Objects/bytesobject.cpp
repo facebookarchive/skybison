@@ -8,7 +8,7 @@
 #include "runtime.h"
 #include "utils.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT int PyBytes_CheckExact_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject().isBytes();
@@ -577,4 +577,4 @@ PY_EXPORT void* _PyBytesWriter_WriteBytes(_PyBytesWriter* writer, void* str,
   return writer->ptr;
 }
 
-}  // namespace python
+}  // namespace py

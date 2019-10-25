@@ -2,7 +2,7 @@
 #include "module-builtins.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 typedef enum { PyGILState_LOCKED, PyGILState_UNLOCKED } PyGILState_STATE;
 
@@ -155,4 +155,4 @@ PY_EXPORT int _PyThreadState_GetRecursionDepth(PyThreadState* ts) {
   return thread->recursionDepth();
 }
 
-}  // namespace python
+}  // namespace py

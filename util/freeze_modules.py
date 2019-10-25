@@ -10,8 +10,8 @@ import sys
 import tempfile
 
 
-NAMESPACE_HEADER = "namespace python {"
-NAMESPACE_FOOTER = "}  // namespace python"
+NAMESPACE_HEADER = "namespace py {"
+NAMESPACE_FOOTER = "}  // namespace py"
 UPPERCASE_RE = re.compile("_([a-zA-Z])")
 
 

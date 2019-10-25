@@ -2,7 +2,7 @@
 
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 class CodeBuiltins
     : public Builtins<CodeBuiltins, SymbolId::kCode, LayoutId::kCode> {
@@ -13,4 +13,4 @@ class CodeBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(CodeBuiltins);
 };
 
-}  // namespace python
+}  // namespace py

@@ -7,7 +7,7 @@
 #include "str-builtins.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -408,4 +408,4 @@ result = sys.__repr__()
   EXPECT_TRUE(isStrEqualsCStr(*result, "<module 'sys' (built-in)>"));
 }
 
-}  // namespace python
+}  // namespace py

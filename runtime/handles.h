@@ -3,7 +3,7 @@
 #include "objects.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 template <typename>
 class Handle;
@@ -67,7 +67,7 @@ class WARN_UNUSED Handle : public T {
   }
 
   static_assert(std::is_base_of<RawObject, T>::value,
-                "You can only get a handle to a python::RawObject.");
+                "You can only get a handle to a py::RawObject.");
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(Handle);
   DISALLOW_HEAP_ALLOCATION();
@@ -197,4 +197,4 @@ HANDLE_TYPES(HANDLE_ALIAS)
 SUBTYPE_HANDLE_TYPES(HANDLE_ALIAS)
 #undef HANDLE_ALIAS
 
-}  // namespace python
+}  // namespace py

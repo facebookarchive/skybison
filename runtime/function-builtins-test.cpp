@@ -6,7 +6,7 @@
 #include "str-builtins.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 namespace testing {
 
 using FunctionBuiltinsTest = RuntimeFixture;
@@ -210,4 +210,4 @@ TEST_F(FunctionBuiltinsTest, FunctionSetAttrSetsAttribute) {
 }
 
 }  // namespace testing
-}  // namespace python
+}  // namespace py

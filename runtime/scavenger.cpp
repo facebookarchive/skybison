@@ -8,7 +8,7 @@
 #include "runtime.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 void ScavengeVisitor::visitPointer(RawObject* pointer) {
   scavenger_->scavengePointer(pointer);
@@ -183,4 +183,4 @@ RawObject Scavenger::transport(RawObject old_object) {
   return to_object;
 }
 
-}  // namespace python
+}  // namespace py

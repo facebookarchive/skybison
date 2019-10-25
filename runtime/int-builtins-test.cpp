@@ -10,7 +10,7 @@
 #include "test-utils.h"
 #include "type-builtins.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -3205,4 +3205,4 @@ TEST_F(IntBuiltinsTest, CompareWithBigNegativeNumber) {
   EXPECT_GT(b.compare(*a), 0);
 }
 
-}  // namespace python
+}  // namespace py

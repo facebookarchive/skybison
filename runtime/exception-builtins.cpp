@@ -13,7 +13,7 @@
 #include "sys-module.h"
 #include "tuple-builtins.h"
 
-namespace python {
+namespace py {
 
 bool givenExceptionMatches(Thread* thread, const Object& given,
                            const Object& exc) {
@@ -642,4 +642,4 @@ const BuiltinAttribute* const UnicodeEncodeErrorBuiltins::kAttributes =
 const BuiltinAttribute* const UnicodeTranslateErrorBuiltins::kAttributes =
     kUnicodeErrorBaseAttributes;
 
-}  // namespace python
+}  // namespace py

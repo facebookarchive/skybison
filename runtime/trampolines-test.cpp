@@ -8,7 +8,7 @@
 #include "runtime.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 using namespace testing;
 
 using CallTest = RuntimeFixture;
@@ -2198,4 +2198,4 @@ init()
                             "name 'action_class' is not defined"));
 }
 
-}  // namespace python
+}  // namespace py

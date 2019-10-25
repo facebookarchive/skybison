@@ -4,7 +4,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -44,4 +44,4 @@ TEST_F(MemoryViewExtensionApiTest, FromMemoryReturnsMemoryView) {
   EXPECT_TRUE(PyMemoryView_Check(result));
 }
 
-}  // namespace python
+}  // namespace py

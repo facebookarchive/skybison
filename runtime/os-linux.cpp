@@ -6,7 +6,7 @@
 
 #include "utils.h"
 
-namespace python {
+namespace py {
 
 const char* OS::name() { return "linux"; }
 
@@ -25,4 +25,4 @@ char* OS::executablePath() {
   return buffer;
 }
 
-}  // namespace python
+}  // namespace py

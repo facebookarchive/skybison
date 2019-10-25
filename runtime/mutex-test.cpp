@@ -2,7 +2,7 @@
 
 #include "mutex.h"
 
-namespace python {
+namespace py {
 
 TEST(MutexTest, TryLockWithBusyLockReturnsFailure) {
   Mutex mu;
@@ -21,4 +21,4 @@ TEST(MutexTest, ReleaseWithBusyLockAllowsItToBeAcquiredAgain) {
   mu.unlock();
 }
 
-}  // namespace python
+}  // namespace py

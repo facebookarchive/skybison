@@ -12,7 +12,7 @@
 #include "thread.h"
 #include "type-builtins.h"
 
-namespace python {
+namespace py {
 
 RawObject objectRaiseAttributeError(Thread* thread, const Object& object,
                                     const Object& name_str) {
@@ -521,4 +521,4 @@ RawObject NoneBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->symbols()->None();
 }
 
-}  // namespace python
+}  // namespace py

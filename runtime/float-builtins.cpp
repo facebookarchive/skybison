@@ -12,7 +12,7 @@
 #include "runtime.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 RawObject asFloatObject(Thread* thread, const Object& obj) {
   // Object is float
@@ -725,4 +725,4 @@ RawObject FloatBuiltins::dunderPow(Thread* thread, Frame* frame, word nargs) {
   return runtime->newFloat(std::pow(left, right));
 }
 
-}  // namespace python
+}  // namespace py

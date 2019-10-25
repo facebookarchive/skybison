@@ -4,7 +4,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -42,4 +42,4 @@ TEST_F(NamespaceExtensionApiTest,
   EXPECT_EQ(PyObject_GetAttr(pynamespace, key), value);
 }
 
-}  // namespace python
+}  // namespace py

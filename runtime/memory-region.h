@@ -7,7 +7,7 @@
 
 #include "globals.h"
 
-namespace python {
+namespace py {
 
 class MemoryRegion {
  public:
@@ -26,4 +26,4 @@ class MemoryRegion {
   uword size_;
 };
 
-}  // namespace python
+}  // namespace py

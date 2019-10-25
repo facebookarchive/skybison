@@ -5,7 +5,7 @@
 #include "globals.h"
 #include "objects.h"
 
-namespace python {
+namespace py {
 
 const BuiltinType UnderWeakrefModule::kBuiltinTypes[] = {
     {SymbolId::kRef, LayoutId::kWeakRef},
@@ -14,4 +14,4 @@ const BuiltinType UnderWeakrefModule::kBuiltinTypes[] = {
 
 const char* const UnderWeakrefModule::kFrozenData = kUnderWeakrefModuleData;
 
-}  // namespace python
+}  // namespace py

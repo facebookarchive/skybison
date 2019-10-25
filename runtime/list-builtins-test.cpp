@@ -6,7 +6,7 @@
 #include "runtime.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -1380,4 +1380,4 @@ l = [C()]
   EXPECT_EQ(ref.referent(), NoneType::object());
 }
 
-}  // namespace python
+}  // namespace py

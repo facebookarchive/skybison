@@ -10,7 +10,7 @@
 #include "runtime.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -100,4 +100,4 @@ TEST_F(FloatConversionTest, ParseFloatWithInfinityReturnsDouble) {
   EXPECT_TRUE(std::isinf(value));
 }
 
-}  // namespace python
+}  // namespace py

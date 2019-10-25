@@ -5,7 +5,7 @@
 
 #include <string>
 
-namespace python {
+namespace py {
 
 RawGeneratorBase generatorFromStackFrame(Frame* frame) {
   // For now, we have the invariant that GeneratorBase bodies are only invoked
@@ -233,4 +233,4 @@ const BuiltinAttribute CoroutineBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
-}  // namespace python
+}  // namespace py

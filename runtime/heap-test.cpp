@@ -6,7 +6,7 @@
 #include "runtime.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 using namespace testing;
 
 using HeapTest = RuntimeFixture;
@@ -73,4 +73,4 @@ TEST_F(HeapTest, AllocateMutableBytes) {
   EXPECT_EQ(MutableBytes::cast(*result).length(), 15);
 }
 
-}  // namespace python
+}  // namespace py

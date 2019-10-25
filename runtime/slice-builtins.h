@@ -2,7 +2,7 @@
 
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 // Unpacks the slice indices into the three words.
 // Picks an appropriate default value for any None index.
@@ -25,4 +25,4 @@ class SliceBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(SliceBuiltins);
 };
 
-}  // namespace python
+}  // namespace py

@@ -5,7 +5,7 @@
 #include "runtime.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 /* Attempts to get a float value out of obj.
  * If obj is already a RawFloat, return it immediately.
@@ -63,4 +63,4 @@ inline RawSmallInt floatHash(RawObject value) {
   return doubleHash(Float::cast(value).value());
 }
 
-}  // namespace python
+}  // namespace py

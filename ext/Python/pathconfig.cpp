@@ -1,6 +1,6 @@
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT wchar_t* Py_GetExecPrefix() { UNIMPLEMENTED("Py_GetExecPrefix"); }
 
@@ -16,4 +16,4 @@ PY_EXPORT void Py_SetPath(const wchar_t* /* h */) {
   UNIMPLEMENTED("Py_SetPath");
 }
 
-}  // namespace python
+}  // namespace py

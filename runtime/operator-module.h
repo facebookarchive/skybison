@@ -3,11 +3,11 @@
 #include "runtime.h"
 #include "symbols.h"
 
-namespace python {
+namespace py {
 
 class OperatorModule : public ModuleBase<OperatorModule, SymbolId::kOperator> {
  public:
   static const char* const kFrozenData;
 };
 
-}  // namespace python
+}  // namespace py

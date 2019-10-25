@@ -6,7 +6,7 @@
 #include "str-builtins.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -929,4 +929,4 @@ TEST_F(DictBuiltinsTest, NumAttributesMatchesObjectSize) {
             (RawDict::kSize - RawHeapObject::kSize) / kPointerSize);
 }
 
-}  // namespace python
+}  // namespace py

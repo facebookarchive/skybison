@@ -1,7 +1,7 @@
 #include "function-utils.h"
 
-namespace python {
+namespace py {
 
 // This file is currently here for linting purposes only.
 
-}  // namespace python
+}  // namespace py

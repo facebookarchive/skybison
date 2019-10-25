@@ -20,7 +20,7 @@
 // However there were no changes to the algorithm and there are no plans to
 // do so at the moment!
 
-namespace python {
+namespace py {
 
 static char* dtoa(double dd, int mode, int ndigits, int* decpt, int* sign,
                   char** rve);
@@ -209,8 +209,8 @@ static char* formatFloatShort(double d, char format_code, int mode,
                               bool use_alt_formatting,
                               const char* const* float_strings,
                               FormatResultKind* type) {
-  // python::dtoa returns a digit string (no decimal point or exponent).
-  // Must be matched by a call to python::freedtoa.
+  // py::dtoa returns a digit string (no decimal point or exponent).
+  // Must be matched by a call to py::freedtoa.
   char* digits_end;
   int decpt_as_int;
   int sign;
@@ -3118,4 +3118,4 @@ failed_malloc:
   return nullptr;
 }
 
-}  // namespace python
+}  // namespace py

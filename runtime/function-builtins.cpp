@@ -8,7 +8,7 @@
 #include "str-builtins.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 RawObject functionFromMethodDef(Thread* thread, const char* c_name, void* meth,
                                 const char* c_doc, ExtensionMethodType type) {
@@ -259,4 +259,4 @@ const BuiltinAttribute BoundMethodBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, 0},
 };
 
-}  // namespace python
+}  // namespace py

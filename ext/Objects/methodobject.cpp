@@ -1,7 +1,7 @@
 #include "capi-handles.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT int PyCFunction_ClearFreeList() { return 0; }
 
@@ -27,4 +27,4 @@ PY_EXPORT PyObject* PyCFunction_Call(PyObject* /* c */, PyObject* /* s */,
   UNIMPLEMENTED("PyCFunction_Call");
 }
 
-}  // namespace python
+}  // namespace py

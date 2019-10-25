@@ -4,7 +4,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -198,4 +198,4 @@ TEST_F(SliceExtensionApiTest, UnpackWithIndicesSetsValues) {
   EXPECT_EQ(step, 10);
 }
 
-}  // namespace python
+}  // namespace py

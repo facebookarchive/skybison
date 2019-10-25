@@ -6,7 +6,7 @@
 #include "objects.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 // Copy the code, entry, and interpreter info from base to patch.
 void copyFunctionEntries(Thread* thread, const Function& base,
@@ -289,4 +289,4 @@ class UnderBuiltinsModule {
   static const SymbolId kIntrinsicIds[];
 };
 
-}  // namespace python
+}  // namespace py

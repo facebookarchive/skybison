@@ -6,7 +6,7 @@
 #include "str-builtins.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -2443,4 +2443,4 @@ substr = SubStr("some string")
   EXPECT_TRUE(isStrEqualsCStr(*underlying, "some string"));
 }
 
-}  // namespace python
+}  // namespace py

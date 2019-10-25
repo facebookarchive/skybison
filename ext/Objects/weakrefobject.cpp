@@ -1,7 +1,7 @@
 #include "capi-handles.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT int PyWeakref_Check_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject().isWeakRef();
@@ -88,4 +88,4 @@ PY_EXPORT PyObject* PyWeakref_NewRef(PyObject* obj, PyObject* callback) {
   return nullptr;
 }
 
-}  // namespace python
+}  // namespace py

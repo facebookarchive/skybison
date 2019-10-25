@@ -7,7 +7,7 @@
 #include "objects.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT PyObject* PyList_New(Py_ssize_t size) {
   if (size < 0) {
@@ -263,4 +263,4 @@ PY_EXPORT int PyList_Sort(PyObject* pylist) {
   return 0;
 }
 
-}  // namespace python
+}  // namespace py

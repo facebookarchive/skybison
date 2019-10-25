@@ -2,7 +2,7 @@
 
 #include "space.h"
 
-namespace python {
+namespace py {
 
 TEST(SpaceTest, Allocate) {
   Space space(64 * kKiB);
@@ -28,4 +28,4 @@ TEST(SpaceTest, Allocate) {
   EXPECT_EQ(space.start(), space.fill());
 }
 
-}  // namespace python
+}  // namespace py

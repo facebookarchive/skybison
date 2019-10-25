@@ -5,7 +5,7 @@
 #include "objects.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 class NamedtupleModule
     : public ModuleBase<NamedtupleModule, SymbolId::kNamedtuple> {
@@ -13,4 +13,4 @@ class NamedtupleModule
   static const char* const kFrozenData;
 };
 
-}  // namespace python
+}  // namespace py

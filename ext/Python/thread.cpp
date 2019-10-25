@@ -7,7 +7,7 @@
 #include "pythread.h"
 #include "utils.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT PyThread_type_lock PyThread_allocate_lock(void) {
   return static_cast<void*>(new Mutex());
@@ -35,4 +35,4 @@ PY_EXPORT long PyThread_get_thread_ident() {
   return bit_cast<long>(pthread_self());
 }
 
-}  // namespace python
+}  // namespace py

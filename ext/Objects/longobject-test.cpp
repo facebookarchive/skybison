@@ -6,7 +6,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -724,4 +724,4 @@ TEST_F(LongExtensionApiTest, FromDoubleRaisesAndReturnsNull) {
   EXPECT_EQ(pylong, nullptr);
 }
 
-}  // namespace python
+}  // namespace py

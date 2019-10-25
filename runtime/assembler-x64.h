@@ -9,7 +9,7 @@
 #include "globals.h"
 #include "utils.h"
 
-namespace python {
+namespace py {
 namespace x64 {
 
 enum Register {
@@ -895,4 +895,4 @@ inline void Assembler::emitFixup(AssemblerFixup* fixup) {
 inline void Assembler::emitOperandSizeOverride() { emitUint8(0x66); }
 
 }  // namespace x64
-}  // namespace python
+}  // namespace py

@@ -4,7 +4,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -40,4 +40,4 @@ def foo(x):
   EXPECT_EQ(result, integer);
 }
 
-}  // namespace python
+}  // namespace py

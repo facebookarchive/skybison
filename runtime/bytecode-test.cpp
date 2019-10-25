@@ -4,7 +4,7 @@
 #include "ic.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -516,4 +516,4 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadFastAndStoreFastOpcodes) {
   EXPECT_EQ(Tuple::cast(function.caches()).length(), 0);
 }
 
-}  // namespace python
+}  // namespace py

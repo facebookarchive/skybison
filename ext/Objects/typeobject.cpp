@@ -20,7 +20,7 @@
 #include "type-builtins.h"
 #include "utils.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT int PyType_CheckExact_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject().isType();
@@ -1616,4 +1616,4 @@ PY_EXPORT PyObject* _PyType_Lookup(PyTypeObject* type, PyObject* name) {
   return ApiHandle::borrowedReference(thread, *res);
 }
 
-}  // namespace python
+}  // namespace py

@@ -4,7 +4,7 @@
 #include "objects.h"
 #include "space.h"
 
-namespace python {
+namespace py {
 
 class Heap {
  public:
@@ -60,4 +60,4 @@ RawObject Heap::create() {
   return createInstance(ObjectLayoutId<T>::value, T::kSize / kPointerSize);
 }
 
-}  // namespace python
+}  // namespace py

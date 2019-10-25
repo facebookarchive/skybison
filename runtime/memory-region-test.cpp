@@ -2,7 +2,7 @@
 
 #include "memory-region.h"
 
-namespace python {
+namespace py {
 namespace testing {
 
 TEST(MemoryRegionTest, CopyFrom) {
@@ -31,4 +31,4 @@ TEST(MemoryRegionTest, CopyFrom) {
 }
 
 }  // namespace testing
-}  // namespace python
+}  // namespace py

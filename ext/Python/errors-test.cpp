@@ -8,7 +8,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 using ErrorsExtensionApiTest = ExtensionApi;
@@ -846,4 +846,4 @@ except ValueError as exc:
   EXPECT_EQ(PyException_GetContext(inner_exc), nullptr);
 }
 
-}  // namespace python
+}  // namespace py

@@ -6,7 +6,7 @@
 #include "runtime.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -91,4 +91,4 @@ TEST_F(ComplexBuiltinsTest, BuiltinBaseIsComplex) {
   EXPECT_EQ(complex_type.builtinBase(), LayoutId::kComplex);
 }
 
-}  // namespace python
+}  // namespace py

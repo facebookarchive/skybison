@@ -3,7 +3,7 @@
 #include "bytes-builtins.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -1638,4 +1638,4 @@ TEST_F(BytesIteratorBuiltinsTest, DunderNextReturnsNextElement) {
                      LayoutId::kStopIteration));
 }
 
-}  // namespace python
+}  // namespace py

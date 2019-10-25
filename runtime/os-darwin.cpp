@@ -7,7 +7,7 @@
 
 #include "utils.h"
 
-namespace python {
+namespace py {
 
 const char* OS::name() { return "darwin"; }
 
@@ -24,4 +24,4 @@ char* OS::executablePath() {
   return path;
 }
 
-}  // namespace python
+}  // namespace py

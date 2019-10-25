@@ -12,7 +12,7 @@
 #include "runtime.h"
 #include "trampolines.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT int PyModule_CheckExact_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject().isModule();
@@ -214,4 +214,4 @@ PY_EXPORT int PyModule_SetDocString(PyObject* m, const char* doc) {
   return 0;
 }
 
-}  // namespace python
+}  // namespace py

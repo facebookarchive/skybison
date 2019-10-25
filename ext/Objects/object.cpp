@@ -10,7 +10,7 @@
 #include "runtime.h"
 #include "str-builtins.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT PyObject* PyEllipsis_Ptr() {
   Thread* thread = Thread::current();
@@ -454,4 +454,4 @@ PY_EXPORT void _PyTrash_thread_destroy_chain() {
   UNIMPLEMENTED("_PyTrash_thread_destroy_chain");
 }
 
-}  // namespace python
+}  // namespace py

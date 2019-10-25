@@ -3,7 +3,7 @@
 #include "globals.h"
 #include "handles.h"
 
-namespace python {
+namespace py {
 
 class RawList;
 class RawObject;
@@ -75,4 +75,4 @@ class Marshal {
   DISALLOW_IMPLICIT_CONSTRUCTORS(Marshal);
 };
 
-}  // namespace python
+}  // namespace py

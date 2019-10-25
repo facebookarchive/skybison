@@ -3,7 +3,7 @@
 #include "Python.h"
 #include "gtest/gtest.h"
 
-namespace python {
+namespace py {
 namespace testing {
 
 // Holder for a reference to PyObject - reference count is decremented when
@@ -90,4 +90,4 @@ class CaptureStdStreams {
 };
 
 }  // namespace testing
-}  // namespace python
+}  // namespace py

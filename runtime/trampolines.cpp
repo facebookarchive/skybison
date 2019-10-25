@@ -11,7 +11,7 @@
 #include "thread.h"
 #include "tuple-builtins.h"
 
-namespace python {
+namespace py {
 
 // Populate the free variable and cell variable arguments.
 void processFreevarsAndCellvars(Thread* thread, Frame* frame) {
@@ -1408,4 +1408,4 @@ RawObject builtinTrampolineEx(Thread* thread, Frame* frame, word flags) {
       prepareExplodeCall);
 }
 
-}  // namespace python
+}  // namespace py

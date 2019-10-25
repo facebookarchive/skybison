@@ -3,7 +3,7 @@
 #include "globals.h"
 #include "mutex.h"
 
-namespace python {
+namespace py {
 
 class OS {
  public:
@@ -46,4 +46,4 @@ class OS {
   DISALLOW_IMPLICIT_CONSTRUCTORS(OS);
 };
 
-}  // namespace python
+}  // namespace py

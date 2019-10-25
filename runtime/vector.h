@@ -10,7 +10,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace python {
+namespace py {
 
 // A partial clone of std::vector<>. Only supports POD types.  Based on llvm's
 // SmallVector, but simpler.
@@ -162,4 +162,4 @@ class Vector {
   T* end_ = nullptr;
 };
 
-}  // namespace python
+}  // namespace py

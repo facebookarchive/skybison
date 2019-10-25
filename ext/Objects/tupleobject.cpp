@@ -7,7 +7,7 @@
 #include "runtime.h"
 #include "tuple-builtins.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT PyObject* PyTuple_New(Py_ssize_t length) {
   Thread* thread = Thread::current();
@@ -158,4 +158,4 @@ PY_EXPORT PyObject* PyTuple_GetSlice(PyObject* pytuple, Py_ssize_t low,
       thread, runtime->tupleSubseq(thread, tuple, low, high - low));
 }
 
-}  // namespace python
+}  // namespace py

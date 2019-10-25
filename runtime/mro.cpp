@@ -1,7 +1,7 @@
 #include "mro.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 // Fills merge_lists with the MROs of the parents, followed by the parents list.
 static word populateMergeLists(Thread* thread, const Tuple& merge_lists,
@@ -140,4 +140,4 @@ RawObject computeMro(Thread* thread, const Type& type, const Tuple& parents) {
   return runtime->tupleSubseq(thread, new_mro, 0, next_idx);
 }
 
-}  // namespace python
+}  // namespace py

@@ -3,7 +3,7 @@
 #include "runtime.h"
 #include "str-builtins.h"
 
-namespace python {
+namespace py {
 
 const BuiltinMethod StrArrayBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderInit, dunderInit},
@@ -57,4 +57,4 @@ RawObject StrArrayBuiltins::dunderStr(Thread* thread, Frame* frame,
   return thread->runtime()->strFromStrArray(self);
 }
 
-}  // namespace python
+}  // namespace py

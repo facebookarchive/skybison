@@ -4,7 +4,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -92,4 +92,4 @@ TEST_F(GcModuleExtensionApiTest, NewVarReturnsAllocatedObject) {
   PyObject_GC_Del(instance);
 }
 
-}  // namespace python
+}  // namespace py

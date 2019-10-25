@@ -10,7 +10,7 @@
 #include "utils.h"
 #include "view.h"
 
-namespace python {
+namespace py {
 
 enum {
   TYPE_NULL = '0',
@@ -472,4 +472,4 @@ RawObject Marshal::Reader::readLongObject() {
   return result;
 }
 
-}  // namespace python
+}  // namespace py

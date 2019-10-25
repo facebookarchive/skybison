@@ -5,7 +5,7 @@
 
 #include "capi-fixture.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -15,4 +15,4 @@ TEST_F(FrameExtensionApiTest, ClearFreeListReturnsZeroPyro) {
   EXPECT_EQ(PyFrame_ClearFreeList(), 0);
 }
 
-}  // namespace python
+}  // namespace py

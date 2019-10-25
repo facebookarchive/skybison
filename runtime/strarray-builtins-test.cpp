@@ -3,7 +3,7 @@
 #include "strarray-builtins.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -59,4 +59,4 @@ TEST_F(StrArrayBuiltinsTest, DunderStrWithSimpleStrArrayReturnsStr) {
   EXPECT_TRUE(isStrEqualsCStr(*repr, test_str));
 }
 
-}  // namespace python
+}  // namespace py

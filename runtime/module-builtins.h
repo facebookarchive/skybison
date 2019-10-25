@@ -7,7 +7,7 @@
 #include "runtime.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 // Look up the value of ValueCell associated with key in module with
 // consideration of placeholders created for caching.
@@ -85,4 +85,4 @@ class ModuleProxyBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(ModuleProxyBuiltins);
 };
 
-}  // namespace python
+}  // namespace py

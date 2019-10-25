@@ -27,7 +27,7 @@
 #include "vector.h"
 #include "warnings-module.h"
 
-namespace python {
+namespace py {
 
 static bool isPass(const Code& code) {
   HandleScope scope;
@@ -3677,7 +3677,7 @@ RawObject UnderBuiltinsModule::underTypeInit(Thread* thread, Frame* frame,
 
 RawObject UnderBuiltinsModule::underUnimplemented(Thread* thread, Frame* frame,
                                                   word) {
-  python::Utils::printTracebackToStderr();
+  py::Utils::printTracebackToStderr();
 
   // Attempt to identify the calling function.
   HandleScope scope(thread);
@@ -3720,4 +3720,4 @@ RawObject UnderBuiltinsModule::underWeakRefCallback(Thread* thread,
   return self.callback();
 }
 
-}  // namespace python
+}  // namespace py

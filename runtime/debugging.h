@@ -5,7 +5,7 @@
 #include "handles.h"
 #include "objects.h"
 
-namespace python {
+namespace py {
 
 std::ostream& dumpExtendedCode(std::ostream& os, RawCode value,
                                const char* indent);
@@ -54,4 +54,4 @@ void dumpSingleFrame(Frame* frame);
 
 void initializeDebugging();
 
-}  // namespace python
+}  // namespace py

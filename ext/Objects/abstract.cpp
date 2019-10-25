@@ -12,7 +12,7 @@
 #include "runtime.h"
 #include "type-builtins.h"
 
-namespace python {
+namespace py {
 
 static PyObject* nullError(Thread* thread) {
   if (!thread->hasPendingException()) {
@@ -1405,4 +1405,4 @@ PY_EXPORT PyObject* PySequence_Tuple(PyObject* seq) {
   return ApiHandle::newReference(thread, *result);
 }
 
-}  // namespace python
+}  // namespace py

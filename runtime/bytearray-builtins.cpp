@@ -5,7 +5,7 @@
 #include "runtime.h"
 #include "slice-builtins.h"
 
-namespace python {
+namespace py {
 
 RawObject byteArrayAsBytes(Thread* thread, Runtime* runtime,
                            const ByteArray& array) {
@@ -754,4 +754,4 @@ RawObject ByteArrayIteratorBuiltins::dunderLengthHint(Thread* thread,
   return SmallInt::fromWord(bytearray.numItems() - self.index());
 }
 
-}  // namespace python
+}  // namespace py

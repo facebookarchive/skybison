@@ -5,7 +5,7 @@
 #include "test-utils.h"
 #include "tuple-builtins.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -624,4 +624,4 @@ tuple.__lt__(t1, t2)
   EXPECT_FALSE(Thread::current()->hasPendingException());
 }
 
-}  // namespace python
+}  // namespace py

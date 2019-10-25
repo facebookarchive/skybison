@@ -1,7 +1,7 @@
 #include "capi-handles.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT PyObject* PyInstanceMethod_New(PyObject* /* c */) {
   UNIMPLEMENTED("PyInstanceMethod_New");
@@ -24,4 +24,4 @@ PY_EXPORT PyObject* PyMethod_New(PyObject* callable, PyObject* self) {
   return ApiHandle::newReference(thread, *result);
 }
 
-}  // namespace python
+}  // namespace py

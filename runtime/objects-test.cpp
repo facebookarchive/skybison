@@ -6,7 +6,7 @@
 #include "str-builtins.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -1364,4 +1364,4 @@ TEST(ErrorTest, ErrorHasCorrectKind) {
   EXPECT_EQ(Error::outOfBounds().kind(), ErrorKind::kOutOfBounds);
 }
 
-}  // namespace python
+}  // namespace py

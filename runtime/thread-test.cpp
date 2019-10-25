@@ -13,7 +13,7 @@
 #include "test-utils.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 using namespace testing;
 
 using BuildSlice = RuntimeFixture;
@@ -2217,4 +2217,4 @@ TEST_F(ThreadTest, RaiseWithFmtFormatsString) {
       LayoutId::kTypeError, "hello dict"));
 }
 
-}  // namespace python
+}  // namespace py

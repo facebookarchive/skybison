@@ -3,7 +3,7 @@
 #include "mutex.h"
 #include "utils.h"
 
-namespace python {
+namespace py {
 
 Mutex::Mutex() {
   pthread_mutex_t* lock = new pthread_mutex_t;
@@ -42,4 +42,4 @@ void Mutex::unlock() {
   DCHECK(result == 0, "failed to unlock mutex with error code of %d", result);
 }
 
-}  // namespace python
+}  // namespace py

@@ -9,7 +9,7 @@
 #include "runtime.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 const BuiltinType UnderIoModule::kBuiltinTypes[] = {
     {SymbolId::kBufferedRandom, LayoutId::kBufferedRandom},
@@ -132,4 +132,4 @@ const BuiltinAttribute TextIOWrapperBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, 0},
 };
 
-}  // namespace python
+}  // namespace py

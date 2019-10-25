@@ -1,7 +1,7 @@
 #include "capi-handles.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT int PyFrame_ClearFreeList() { return 0; }
 
@@ -23,4 +23,4 @@ PY_EXPORT PyFrameObject* PyFrame_New(PyThreadState* /* e */,
   UNIMPLEMENTED("PyFrame_New");
 }
 
-}  // namespace python
+}  // namespace py

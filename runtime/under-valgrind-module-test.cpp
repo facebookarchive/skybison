@@ -5,7 +5,7 @@
 #include "test-utils.h"
 #include "under-valgrind-module.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -47,4 +47,4 @@ _valgrind.callgrind_zero_stats()
                    .isError());
 }
 
-}  // namespace python
+}  // namespace py

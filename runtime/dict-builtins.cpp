@@ -9,7 +9,7 @@
 #include "thread.h"
 #include "type-builtins.h"
 
-namespace python {
+namespace py {
 
 RawObject dictCopy(Thread* thread, const Dict& dict) {
   HandleScope scope(thread);
@@ -667,4 +667,4 @@ RawObject DictValuesBuiltins::dunderIter(Thread* thread, Frame* frame,
   return thread->runtime()->newDictValueIterator(thread, dict);
 }
 
-}  // namespace python
+}  // namespace py

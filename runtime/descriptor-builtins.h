@@ -6,7 +6,7 @@
 #include "runtime.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 class ClassMethodBuiltins
     : public Builtins<ClassMethodBuiltins, SymbolId::kClassmethod,
@@ -45,4 +45,4 @@ class PropertyBuiltins : public Builtins<PropertyBuiltins, SymbolId::kProperty,
   static const BuiltinMethod kBuiltinMethods[];
 };
 
-}  // namespace python
+}  // namespace py

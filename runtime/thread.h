@@ -5,7 +5,7 @@
 #include "symbols.h"
 #include "vector.h"
 
-namespace python {
+namespace py {
 
 template <typename>
 class Handle;
@@ -337,4 +337,4 @@ class Thread {
   DISALLOW_COPY_AND_ASSIGN(Thread);
 };
 
-}  // namespace python
+}  // namespace py

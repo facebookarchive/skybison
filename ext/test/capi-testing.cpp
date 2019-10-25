@@ -5,7 +5,7 @@
 #include "Python.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 namespace testing {
 
 PyObject* moduleGet(const char* module, const char* name) {
@@ -150,4 +150,4 @@ if hasattr(sys, "stderr") and hasattr(sys.stderr, "flush"):
 }
 
 }  // namespace testing
-}  // namespace python
+}  // namespace py

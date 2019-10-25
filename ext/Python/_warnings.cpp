@@ -8,7 +8,7 @@
 #include "runtime.h"
 #include "utils.h"
 
-namespace python {
+namespace py {
 
 static void callWarn(PyObject* category, PyObject* message,
                      Py_ssize_t stack_level, PyObject* source) {
@@ -121,4 +121,4 @@ PY_EXPORT int PyErr_WarnFormat(PyObject* category, Py_ssize_t stack_level,
   return res;
 }
 
-}  // namespace python
+}  // namespace py

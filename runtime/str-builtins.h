@@ -6,7 +6,7 @@
 #include "runtime.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 // Look for needle in haystack in the range [start, end]. Return the number of
 // occurrences found in that range. Note that start and end are code point
@@ -171,4 +171,4 @@ inline RawSmallInt strHash(Thread* thread, RawObject object) {
   return SmallInt::cast(thread->runtime()->valueHash(object));
 }
 
-}  // namespace python
+}  // namespace py

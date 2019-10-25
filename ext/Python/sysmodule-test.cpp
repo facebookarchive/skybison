@@ -4,7 +4,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -60,4 +60,4 @@ o = C()
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
-}  // namespace python
+}  // namespace py

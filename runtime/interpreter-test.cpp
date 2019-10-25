@@ -16,7 +16,7 @@
 
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 using namespace testing;
 
 using InterpreterDeathTest = RuntimeFixture;
@@ -5038,4 +5038,4 @@ TEST_F(InterpreterTest, DoIntrinsicWithSlowPathDoesNotAlterStack) {
   EXPECT_EQ(frame->peek(0), *obj);
 }
 
-}  // namespace python
+}  // namespace py

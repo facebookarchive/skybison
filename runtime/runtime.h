@@ -10,7 +10,7 @@
 #include "symbols.h"
 #include "view.h"
 
-namespace python {
+namespace py {
 
 class AttributeInfo;
 class Heap;
@@ -1159,4 +1159,4 @@ class ModuleBase : public ModuleBaseBase {
   }
 };
 
-}  // namespace python
+}  // namespace py

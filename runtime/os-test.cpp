@@ -4,7 +4,7 @@
 
 #include "os.h"
 
-namespace python {
+namespace py {
 
 static int count(const byte* array, byte ch, int length) {
   int result = 0;
@@ -61,4 +61,4 @@ TEST(OsTest, allocateUseAndFreeMultiplePages) {
   EXPECT_TRUE(is_free);
 }
 
-}  // namespace python
+}  // namespace py

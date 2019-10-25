@@ -4,7 +4,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using ObjectExtensionApiTest = ExtensionApi;
 
@@ -877,4 +877,4 @@ TEST_F(ObjectExtensionApiTest, PyEllipsisIdentityIsEqual) {
   EXPECT_EQ(ellipsis1, ellipsis2);
 }
 
-}  // namespace python
+}  // namespace py

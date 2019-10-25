@@ -5,7 +5,7 @@
 #include "runtime.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using LayoutTest = testing::RuntimeFixture;
 
@@ -270,4 +270,4 @@ TEST_F(LayoutTest, VerifyChildLayout) {
   EXPECT_EQ(child.instanceSize(), parent.instanceSize());
 }
 
-}  // namespace python
+}  // namespace py

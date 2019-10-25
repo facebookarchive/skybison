@@ -1,7 +1,7 @@
 #include "capi-handles.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT PyObject* PyOS_FSPath(PyObject* path) {
   Thread* thread = Thread::current();
@@ -24,4 +24,4 @@ PY_EXPORT PyObject* PyOS_FSPath(PyObject* path) {
   return ApiHandle::newReference(thread, *result);
 }
 
-}  // namespace python
+}  // namespace py

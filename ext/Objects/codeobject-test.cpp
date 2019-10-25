@@ -4,7 +4,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -527,4 +527,4 @@ TEST_F(CodeExtensionApiTest, NewWithNonBytesLnotabRaisesSystemError) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
-}  // namespace python
+}  // namespace py

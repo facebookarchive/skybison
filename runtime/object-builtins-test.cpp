@@ -7,7 +7,7 @@
 #include "str-builtins.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -1015,4 +1015,4 @@ i.foo = 0
       isIntEqualsWord(instanceGetAttribute(thread_, instance, name), 11));
 }
 
-}  // namespace python
+}  // namespace py

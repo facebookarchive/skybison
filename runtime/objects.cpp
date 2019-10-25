@@ -7,7 +7,7 @@
 
 #include <cstring>
 
-namespace python {
+namespace py {
 
 // RawSmallBytes
 
@@ -725,4 +725,4 @@ void RawHeapFrame::stashInternalPointers(Frame* original_frame) const {
   frame()->stashInternalPointers(original_frame);
 }
 
-}  // namespace python
+}  // namespace py

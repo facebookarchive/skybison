@@ -1,7 +1,7 @@
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT const char* Py_GetVersion() { UNIMPLEMENTED("Py_GetVersion"); }
 
-}  // namespace python
+}  // namespace py

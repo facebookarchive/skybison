@@ -5,7 +5,7 @@
 #include "runtime.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 class UnderOsModule : public ModuleBase<UnderOsModule, SymbolId::kUnderOs> {
  public:
@@ -24,4 +24,4 @@ class UnderOsModule : public ModuleBase<UnderOsModule, SymbolId::kUnderOs> {
   static const char* const kFrozenData;
 };
 
-}  // namespace python
+}  // namespace py

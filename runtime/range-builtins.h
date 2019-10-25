@@ -3,7 +3,7 @@
 #include "globals.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 // Returns the same value as Slice::length for SmallInt, but allows LargeInt.
 RawObject rangeLen(Thread* thread, const Object& start_obj,
@@ -51,4 +51,4 @@ class RangeIteratorBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(RangeIteratorBuiltins);
 };
 
-}  // namespace python
+}  // namespace py

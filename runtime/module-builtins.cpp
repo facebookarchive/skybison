@@ -10,7 +10,7 @@
 #include "str-builtins.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 static RawObject unwrapValueCell(RawObject result) {
   if (result.isErrorNotFound()) {
@@ -402,4 +402,4 @@ RawObject ModuleBuiltins::dunderSetattr(Thread* thread, Frame* frame,
   return moduleSetAttr(thread, self, name, name_hash, value);
 }
 
-}  // namespace python
+}  // namespace py

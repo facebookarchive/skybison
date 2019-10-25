@@ -1,6 +1,6 @@
 #pragma once
 
-namespace python {
+namespace py {
 
 template <typename T>
 class Callback {
@@ -8,4 +8,4 @@ class Callback {
   virtual T call() = 0;
 };
 
-}  // namespace python
+}  // namespace py

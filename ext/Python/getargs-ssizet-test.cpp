@@ -4,7 +4,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -39,4 +39,4 @@ TEST_F(GetArgsSsizeTExtensionApiTest, ParseTupleStringWithSize) {
   EXPECT_EQ(7, size2);
 }
 
-}  // namespace python
+}  // namespace py

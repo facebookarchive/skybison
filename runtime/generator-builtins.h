@@ -2,7 +2,7 @@
 
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 // Get the RawGeneratorBase corresponding to the given Frame, assuming it is
 // executing in a resumed GeneratorBase.
@@ -57,4 +57,4 @@ class AsyncGeneratorBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(AsyncGeneratorBuiltins);
 };
 
-}  // namespace python
+}  // namespace py

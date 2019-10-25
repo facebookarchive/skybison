@@ -4,7 +4,7 @@
 #include "handles.h"
 #include "objects.h"
 
-namespace python {
+namespace py {
 
 class Frame;
 class Thread;
@@ -146,4 +146,4 @@ inline RawObject preparePositionalCall(Thread* thread, RawFunction function_raw,
   return function_raw;
 }
 
-}  // namespace python
+}  // namespace py

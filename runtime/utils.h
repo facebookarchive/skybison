@@ -22,7 +22,7 @@
               __func__, #expr);                                                \
       fprintf(stderr, __VA_ARGS__);                                            \
       fputc('\n', stderr);                                                     \
-      python::Utils::printDebugInfoAndAbort();                                 \
+      py::Utils::printDebugInfoAndAbort();                                     \
     }                                                                          \
   } while (0)
 
@@ -34,7 +34,7 @@
               __LINE__, __func__, static_cast<word>(index),                    \
               static_cast<word>(high) - 1);                                    \
       fputc('\n', stderr);                                                     \
-      python::Utils::printDebugInfoAndAbort();                                 \
+      py::Utils::printDebugInfoAndAbort();                                     \
     }                                                                          \
   } while (0)
 
@@ -46,7 +46,7 @@
               __LINE__, __func__, static_cast<word>(val),                      \
               static_cast<word>(high));                                        \
       fputc('\n', stderr);                                                     \
-      python::Utils::printDebugInfoAndAbort();                                 \
+      py::Utils::printDebugInfoAndAbort();                                     \
     }                                                                          \
   } while (0)
 
@@ -75,7 +75,7 @@
             __func__);                                                         \
     fprintf(stderr, __VA_ARGS__);                                              \
     fputc('\n', stderr);                                                       \
-    python::Utils::printDebugInfoAndAbort();                                   \
+    py::Utils::printDebugInfoAndAbort();                                       \
   } while (0)
 
 #define UNREACHABLE(...)                                                       \
@@ -83,10 +83,10 @@
     fprintf(stderr, "%s:%d %s: unreachable: ", __FILE__, __LINE__, __func__);  \
     fprintf(stderr, __VA_ARGS__);                                              \
     fputc('\n', stderr);                                                       \
-    python::Utils::printDebugInfoAndAbort();                                   \
+    py::Utils::printDebugInfoAndAbort();                                       \
   } while (0)
 
-namespace python {
+namespace py {
 
 class Utils {
  public:
@@ -216,4 +216,4 @@ struct FreeDeleter {
 template <typename T>
 using unique_c_ptr = std::unique_ptr<T, FreeDeleter>;
 
-}  // namespace python
+}  // namespace py

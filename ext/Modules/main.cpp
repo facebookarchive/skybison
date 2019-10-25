@@ -1,7 +1,7 @@
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT int Py_Main(int /* c */, wchar_t **argv) { UNIMPLEMENTED("Py_Main"); }
 
-}  // namespace python
+}  // namespace py

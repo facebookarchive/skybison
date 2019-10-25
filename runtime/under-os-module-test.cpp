@@ -7,7 +7,7 @@
 #include "test-utils.h"
 #include "under-os-module.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 using UnderOsModuleTest = RuntimeFixture;
@@ -308,4 +308,4 @@ TEST_F(UnderOsModuleTest, SetNoInheritableWithFdSetsNoInheritable) {
   ::close(fd);
 }
 
-}  // namespace python
+}  // namespace py

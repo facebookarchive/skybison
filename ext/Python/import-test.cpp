@@ -4,7 +4,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -178,4 +178,4 @@ TEST_F(ImportExtensionApiTest,
   Py_DECREF(name);
 }
 
-}  // namespace python
+}  // namespace py

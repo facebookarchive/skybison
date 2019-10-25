@@ -6,7 +6,7 @@
 #include "cpython-func.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 #define FLAG_COMPAT 1
 #define FLAG_SIZE_T 2
@@ -2083,4 +2083,4 @@ PY_EXPORT int PyArg_ValidateKeywordArguments(PyObject*) {
 // Adding empty function to be compatible with cpython
 PY_EXPORT void _PyArg_Fini(void) { return; }
 
-}  // namespace python
+}  // namespace py

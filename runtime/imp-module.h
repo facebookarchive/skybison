@@ -5,7 +5,7 @@
 #include "objects.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 void importAcquireLock(Thread* thread);
 bool importReleaseLock(Thread* thread);
@@ -28,4 +28,4 @@ class UnderImpModule : public ModuleBase<UnderImpModule, SymbolId::kUnderImp> {
   static const char* const kFrozenData;
 };
 
-}  // namespace python
+}  // namespace py

@@ -6,7 +6,7 @@
 #include "int-builtins.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT PyObject* PyFile_GetLine(PyObject* /* f */, int /* n */) {
   UNIMPLEMENTED("PyFile_GetLine");
@@ -148,4 +148,4 @@ PY_EXPORT char* Py_UniversalNewlineFgets(char* buf, int buf_size, FILE* stream,
   return buf;
 }
 
-}  // namespace python
+}  // namespace py

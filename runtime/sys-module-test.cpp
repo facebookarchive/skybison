@@ -11,7 +11,7 @@
 #include "test-utils.h"
 #include "under-builtins-module.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -263,4 +263,4 @@ result = sys._getframe_locals(0)
   EXPECT_EQ(result.module(), findMainModule(&runtime_));
 }
 
-}  // namespace python
+}  // namespace py

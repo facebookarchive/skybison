@@ -9,7 +9,7 @@
 
 #include "utils.h"
 
-namespace python {
+namespace py {
 
 void MemoryRegion::copyFrom(uword offset, MemoryRegion from) const {
   DCHECK(size() >= from.size(), "source cannot be larger than destination");
@@ -18,4 +18,4 @@ void MemoryRegion::copyFrom(uword offset, MemoryRegion from) const {
                from.size());
 }
 
-}  // namespace python
+}  // namespace py

@@ -3,7 +3,7 @@
 #include "Python.h"
 #include "capi-fixture.h"
 
-namespace python {
+namespace py {
 
 using PylifecycleExtensionApiTest = ExtensionApi;
 
@@ -24,4 +24,4 @@ raise SystemExit(123)
               ::testing::ExitedWithCode(123), "foo");
 }
 
-}  // namespace python
+}  // namespace py

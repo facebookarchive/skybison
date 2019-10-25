@@ -6,7 +6,7 @@
 #include "runtime.h"
 #include "tuple-builtins.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT int PyCode_Check_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject().isCode();
@@ -223,4 +223,4 @@ PY_EXPORT PyObject* _PyCode_ConstantKey(PyObject* op) {
   return ApiHandle::newReference(thread, *result);
 }
 
-}  // namespace python
+}  // namespace py

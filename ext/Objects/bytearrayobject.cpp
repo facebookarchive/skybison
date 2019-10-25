@@ -2,7 +2,7 @@
 #include "capi-handles.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT char* PyByteArray_AsString(PyObject* pyobj) {
   DCHECK(pyobj != nullptr, "null argument to PyByteArray_AsString");
@@ -124,4 +124,4 @@ PY_EXPORT Py_ssize_t PyByteArray_Size(PyObject* pyobj) {
   return static_cast<Py_ssize_t>(ByteArray::cast(*obj).numItems());
 }
 
-}  // namespace python
+}  // namespace py

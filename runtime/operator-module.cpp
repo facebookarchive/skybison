@@ -3,6 +3,6 @@
 #include "frozen-modules.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 const char* const OperatorModule::kFrozenData = kOperatorModuleData;
-}  // namespace python
+}  // namespace py

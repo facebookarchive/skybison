@@ -8,7 +8,7 @@
 #include "test-utils.h"
 #include "type-builtins.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -1128,4 +1128,4 @@ C.__setattr__ = lambda self, key: 5
                "unimplemented cache invalidation for type.__setattr__ update");
 }
 
-}  // namespace python
+}  // namespace py

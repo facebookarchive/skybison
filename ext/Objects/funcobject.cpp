@@ -1,7 +1,7 @@
 #include "capi-handles.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT PyObject* PyClassMethod_New(PyObject* callable) {
   DCHECK(callable != nullptr, "uninitialized staticmethod object");
@@ -53,4 +53,4 @@ PY_EXPORT PyObject* _PyFunction_FastCallKeywords(PyObject* /* c */,
   UNIMPLEMENTED("_PyFunction_FastCallKeywords");
 }
 
-}  // namespace python
+}  // namespace py

@@ -5,7 +5,7 @@
 #include "function-utils.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT PyObject* PyDescr_NewClassMethod(PyTypeObject* type,
                                            PyMethodDef* def) {
@@ -63,4 +63,4 @@ PY_EXPORT PyObject* PyWrapper_New(PyObject* /* d */, PyObject* /* f */) {
   UNIMPLEMENTED("PyWrapper_New");
 }
 
-}  // namespace python
+}  // namespace py

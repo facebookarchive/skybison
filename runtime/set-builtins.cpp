@@ -7,7 +7,7 @@
 #include "thread.h"
 #include "tuple-builtins.h"
 
-namespace python {
+namespace py {
 
 RawSmallInt frozensetHash(Thread* thread, const Object& frozenset) {
   HandleScope scope(thread);
@@ -758,4 +758,4 @@ RawObject SetIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   return SmallInt::fromWord(set.numItems() - set_iterator.consumedCount());
 }
 
-}  // namespace python
+}  // namespace py

@@ -6,7 +6,7 @@
 #include "runtime.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -213,4 +213,4 @@ TEST_F(RangeIteratorBuiltinsTest, DunderNextModifiesPendingLength) {
   EXPECT_TRUE(isIntEqualsWord(*length_hint, 0));
 }
 
-}  // namespace python
+}  // namespace py

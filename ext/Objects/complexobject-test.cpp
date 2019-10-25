@@ -7,7 +7,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -191,4 +191,4 @@ TEST_F(ComplexExtensionApiTest, RealAsDoubleWithNonFloatRaisesTypeError) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
-}  // namespace python
+}  // namespace py

@@ -5,7 +5,7 @@
 #include "objects.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 class UnderWeakrefModule
     : public ModuleBase<UnderWeakrefModule, SymbolId::kUnderWeakRef> {
@@ -14,4 +14,4 @@ class UnderWeakrefModule
   static const char* const kFrozenData;
 };
 
-}  // namespace python
+}  // namespace py

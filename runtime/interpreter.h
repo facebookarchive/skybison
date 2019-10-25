@@ -7,7 +7,7 @@
 #include "symbols.h"
 #include "trampolines.h"
 
-namespace python {
+namespace py {
 
 class RawObject;
 class Frame;
@@ -528,4 +528,4 @@ class Interpreter {
 
 Interpreter* createCppInterpreter();
 
-}  // namespace python
+}  // namespace py

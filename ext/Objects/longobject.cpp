@@ -34,7 +34,7 @@ unsigned char _PyLong_DigitValue[256] = {
 };
 // clang-format on
 
-namespace python {
+namespace py {
 
 PY_EXPORT int PyLong_CheckExact_Func(PyObject* obj) {
   RawObject arg = ApiHandle::fromPyObject(obj)->asObject();
@@ -371,4 +371,4 @@ PY_EXPORT int _PyLong_Sign(PyObject* vv) {
   return value.isZero() ? 0 : (value.isNegative() ? -1 : 1);
 }
 
-}  // namespace python
+}  // namespace py

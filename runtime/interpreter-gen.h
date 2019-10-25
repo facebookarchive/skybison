@@ -1,9 +1,9 @@
 #pragma once
 
-namespace python {
+namespace py {
 
 class Interpreter;
 
 Interpreter* createAsmInterpreter();
 
-}  // namespace python
+}  // namespace py

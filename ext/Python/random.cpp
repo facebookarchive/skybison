@@ -3,7 +3,7 @@
 #include "cpython-types.h"
 #include "os.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT int _PyOS_URandom(void* buffer, Py_ssize_t size) {
   // TODO(T41026101): use an interface that trades off not blocking for a
@@ -20,4 +20,4 @@ PY_EXPORT int _PyOS_URandomNonblock(void* buffer, Py_ssize_t size) {
   return success ? 0 : -1;
 }
 
-}  // namespace python
+}  // namespace py

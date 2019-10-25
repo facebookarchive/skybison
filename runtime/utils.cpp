@@ -12,7 +12,7 @@
 
 #include <dlfcn.h>
 
-namespace python {
+namespace py {
 
 class TracebackPrinter : public FrameVisitor {
  public:
@@ -182,4 +182,4 @@ void Utils::printDebugInfoAndAbort() {
   std::abort();
 }
 
-}  // namespace python
+}  // namespace py

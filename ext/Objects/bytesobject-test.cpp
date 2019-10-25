@@ -6,7 +6,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -899,4 +899,4 @@ TEST_F(BytesWriterExtensionApiTest, WriteBytesGrowsAndWrites) {
   EXPECT_STREQ(PyBytes_AsString(result), "Hello");
 }
 
-}  // namespace python
+}  // namespace py

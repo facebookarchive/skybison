@@ -6,7 +6,7 @@
 #include "runtime.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 class RefBuiltins
     : public Builtins<RefBuiltins, SymbolId::kRef, LayoutId::kWeakRef> {
@@ -17,4 +17,4 @@ class RefBuiltins
   static const BuiltinMethod kBuiltinMethods[];
 };
 
-}  // namespace python
+}  // namespace py

@@ -4,7 +4,7 @@
 
 const char* Py_hexdigits = "0123456789abcdef";
 
-namespace python {
+namespace py {
 
 PY_EXPORT PyObject* PyCodec_BackslashReplaceErrors(PyObject* /* c */) {
   UNIMPLEMENTED("PyCodec_BackslashReplaceErrors");
@@ -139,4 +139,4 @@ PY_EXPORT PyObject* PyCodec_XMLCharRefReplaceErrors(PyObject* /* c */) {
   UNIMPLEMENTED("PyCodec_XMLCharRefReplaceErrors");
 }
 
-}  // namespace python
+}  // namespace py

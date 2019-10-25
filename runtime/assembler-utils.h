@@ -10,7 +10,7 @@
 #include "utils.h"
 #include "vector.h"
 
-namespace python {
+namespace py {
 
 // Forward declarations.
 namespace x64 {
@@ -257,6 +257,6 @@ class AssemblerBuffer {
   friend class AssemblerFixup;
 };
 
-}  // namespace python
+}  // namespace py
 
 #include "assembler-x64.h"

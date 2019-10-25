@@ -4,7 +4,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -888,4 +888,4 @@ x = foo.kwArgs(value=40)
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
-}  // namespace python
+}  // namespace py

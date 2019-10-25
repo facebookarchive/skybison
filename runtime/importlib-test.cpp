@@ -8,7 +8,7 @@
 #include "runtime.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -158,4 +158,4 @@ meta_path = sys.meta_path
   ASSERT_TRUE(meta_path.isList());
 }
 
-}  // namespace python
+}  // namespace py

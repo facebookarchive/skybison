@@ -3,7 +3,7 @@
 #include "objects.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 // Counts distinct occurrences of needle in haystack in the range [start, end).
 word bytesCount(const Bytes& haystack, word haystack_len, const Bytes& needle,
@@ -128,4 +128,4 @@ inline RawSmallInt bytesHash(Thread* thread, RawObject object) {
   return SmallInt::cast(thread->runtime()->valueHash(object));
 }
 
-}  // namespace python
+}  // namespace py

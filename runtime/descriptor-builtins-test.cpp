@@ -6,7 +6,7 @@
 #include "runtime.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -345,4 +345,4 @@ result = foo.y
   EXPECT_TRUE(isIntEqualsWord(*result, 123));
 }
 
-}  // namespace python
+}  // namespace py

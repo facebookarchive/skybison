@@ -3,7 +3,7 @@
 #include "objects.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 class Frame;
 class Thread;
@@ -22,4 +22,4 @@ class WarningsModule : public ModuleBase<WarningsModule, SymbolId::kWarnings> {
   static const char* const kFrozenData;
 };
 
-}  // namespace python
+}  // namespace py

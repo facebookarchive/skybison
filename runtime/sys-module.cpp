@@ -19,7 +19,7 @@
 #include "runtime.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 const char* const SysModule::kFrozenData = kSysModuleData;
 
@@ -282,4 +282,4 @@ RawObject SysModule::underGetframeLocals(Thread* thread, Frame* frame,
   return frame->implicitGlobals();
 }
 
-}  // namespace python
+}  // namespace py

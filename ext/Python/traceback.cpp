@@ -1,6 +1,6 @@
 #include "capi-handles.h"
 
-namespace python {
+namespace py {
 
 struct PyFrameObject;
 
@@ -12,4 +12,4 @@ PY_EXPORT int PyTraceBack_Print(PyObject* /* v */, PyObject* /* f */) {
   UNIMPLEMENTED("PyTraceBack_Print");
 }
 
-}  // namespace python
+}  // namespace py

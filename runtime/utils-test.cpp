@@ -9,7 +9,7 @@
 #include "test-utils.h"
 #include "utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -289,4 +289,4 @@ TEST(UtilsTestNoFixture, FailedDcheckWithNoThread) {
               ::testing::KilledBySignal(SIGABRT), "something went wrong!");
 }
 
-}  // namespace python
+}  // namespace py

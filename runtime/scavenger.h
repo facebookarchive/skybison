@@ -5,7 +5,7 @@
 #include "runtime.h"
 #include "visitor.h"
 
-namespace python {
+namespace py {
 
 class Scavenger;
 
@@ -55,4 +55,4 @@ class Scavenger {
   DISALLOW_COPY_AND_ASSIGN(Scavenger);
 };
 
-}  // namespace python
+}  // namespace py

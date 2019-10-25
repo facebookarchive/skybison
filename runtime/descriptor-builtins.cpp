@@ -6,7 +6,7 @@
 #include "runtime.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 // classmethod
 
@@ -212,4 +212,4 @@ RawObject PropertyBuiltins::setter(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newProperty(getter, setter, deleter);
 }
 
-}  // namespace python
+}  // namespace py

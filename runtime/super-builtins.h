@@ -6,7 +6,7 @@
 #include "runtime.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 RawObject superGetAttribute(Thread* thread, const Super& super,
                             const Object& name_str, const Object& name_hash);
@@ -22,4 +22,4 @@ class SuperBuiltins
   static const BuiltinAttribute kAttributes[];
 };
 
-}  // namespace python
+}  // namespace py

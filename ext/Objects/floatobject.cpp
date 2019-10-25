@@ -10,7 +10,7 @@
 #include "objects.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT PyObject* PyFloat_FromDouble(double fval) {
   Thread* thread = Thread::current();
@@ -245,4 +245,4 @@ PY_EXPORT double _PyFloat_Unpack8(const unsigned char* p, int little_endian) {
   return bit_cast<double>(as_int);
 }
 
-}  // namespace python
+}  // namespace py

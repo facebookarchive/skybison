@@ -6,7 +6,7 @@
 #include "type-builtins.h"
 #include "utils.h"
 
-namespace python {
+namespace py {
 
 // Perform the same lookup operation as typeLookupNameInMro as we're inserting
 // dependent into the ValueCell in each visited type dictionary.
@@ -703,4 +703,4 @@ RawObject IcIterator::inplaceMethodName() const {
   return runtime_->symbols()->at(method);
 }
 
-}  // namespace python
+}  // namespace py

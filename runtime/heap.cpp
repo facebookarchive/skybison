@@ -7,7 +7,7 @@
 #include "runtime.h"
 #include "visitor.h"
 
-namespace python {
+namespace py {
 
 Heap::Heap(word size) { space_ = new Space(size); }
 
@@ -214,4 +214,4 @@ RawObject Heap::createTuple(word length) {
   return Tuple::cast(result);
 }
 
-}  // namespace python
+}  // namespace py

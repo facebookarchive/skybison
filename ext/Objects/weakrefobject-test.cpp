@@ -4,7 +4,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -123,4 +123,4 @@ obj = C()
   EXPECT_EQ(referent, obj);
 }
 
-}  // namespace python
+}  // namespace py

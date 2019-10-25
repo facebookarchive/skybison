@@ -6,7 +6,7 @@
 #include "globals.h"
 #include "utils.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT int PyOS_snprintf(char* str, size_t size, const char* format, ...) {
   va_list va;
@@ -28,4 +28,4 @@ PY_EXPORT int PyOS_vsnprintf(char* str, size_t size, const char* format,
   return std::vsnprintf(str, size, format, va);
 }
 
-}  // namespace python
+}  // namespace py

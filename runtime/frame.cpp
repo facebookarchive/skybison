@@ -6,7 +6,7 @@
 #include "objects.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 const char* Frame::isInvalid() {
   if (!at(kPreviousFrameOffset).isSmallInt()) {
@@ -37,4 +37,4 @@ RawObject frameGlobals(Thread* thread, Frame* frame) {
   return module.moduleProxy();
 }
 
-}  // namespace python
+}  // namespace py

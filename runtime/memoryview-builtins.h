@@ -3,7 +3,7 @@
 #include "globals.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 RawObject memoryviewItemsize(Thread* thread, const MemoryView& view);
 
@@ -23,4 +23,4 @@ class MemoryViewBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(MemoryViewBuiltins);
 };
 
-}  // namespace python
+}  // namespace py

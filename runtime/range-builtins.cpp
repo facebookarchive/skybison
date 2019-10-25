@@ -5,7 +5,7 @@
 #include "int-builtins.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 RawObject rangeLen(Thread* thread, const Object& start_obj,
                    const Object& stop_obj, const Object& step_obj) {
@@ -264,4 +264,4 @@ RawObject RangeIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   return SmallInt::fromWord(next);
 }
 
-}  // namespace python
+}  // namespace py

@@ -29,7 +29,7 @@
 #include "type-builtins.h"
 #include "utils.h"
 
-namespace python {
+namespace py {
 
 using Continue = Interpreter::Continue;
 
@@ -4015,4 +4015,4 @@ handle_return_or_unwind:
 
 Interpreter* createCppInterpreter() { return new CppInterpreter(); }
 
-}  // namespace python
+}  // namespace py

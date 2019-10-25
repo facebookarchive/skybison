@@ -10,7 +10,7 @@
 #include "trampolines.h"
 #include "under-builtins-module.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -2063,4 +2063,4 @@ foobar()
                ".*'_unimplemented' called in function 'foobar'.");
 }
 
-}  // namespace python
+}  // namespace py

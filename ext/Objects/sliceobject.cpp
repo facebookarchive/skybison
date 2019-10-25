@@ -3,7 +3,7 @@
 #include "runtime.h"
 #include "slice-builtins.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT int PySlice_Check_Func(PyObject* pyobj) {
   return ApiHandle::fromPyObject(pyobj)->asObject().isSlice();
@@ -81,4 +81,4 @@ PY_EXPORT int PySlice_Unpack(PyObject* pyobj, Py_ssize_t* start_ptr,
   return 0;
 }
 
-}  // namespace python
+}  // namespace py

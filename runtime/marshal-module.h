@@ -5,7 +5,7 @@
 #include "objects.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 extern word marshalVersion;
 
@@ -17,4 +17,4 @@ class MarshalModule : public ModuleBase<MarshalModule, SymbolId::kMarshal> {
   static const char* const kFrozenData;
 };
 
-}  // namespace python
+}  // namespace py

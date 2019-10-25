@@ -4,7 +4,7 @@
 #include "set-builtins.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -1355,4 +1355,4 @@ TEST_F(SetBuiltinsTest, DunderOrReturnsSetContainingUnionOfElements) {
   EXPECT_TRUE(setIncludes(thread, result, three));
 }
 
-}  // namespace python
+}  // namespace py

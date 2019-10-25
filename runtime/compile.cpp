@@ -7,7 +7,7 @@
 #include "marshal.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 RawObject bytecodeToCode(Thread* thread, const char* buffer) {
   HandleScope scope(thread);
@@ -48,4 +48,4 @@ int runInteractive(FILE* fp) {
                               /*closeit=*/0, &flags);
 }
 
-}  // namespace python
+}  // namespace py

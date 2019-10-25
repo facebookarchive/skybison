@@ -3,7 +3,7 @@
 #include "ic.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -1935,4 +1935,4 @@ TEST_F(IcTest, IcIteratorIteratesOverInplaceOpCaches) {
   EXPECT_FALSE(it.hasNext());
 }
 
-}  // namespace python
+}  // namespace py

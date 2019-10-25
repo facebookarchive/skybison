@@ -6,7 +6,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -37,4 +37,4 @@ TEST_F(ThreadExtensionApiTest, ReleaseWithBusyLockAllowsItToBeAcquiredAgain) {
   PyThread_free_lock(lock);
 }
 
-}  // namespace python
+}  // namespace py

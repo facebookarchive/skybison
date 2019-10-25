@@ -8,7 +8,7 @@
 #include "runtime.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -574,4 +574,4 @@ TEST_F(MarshalReaderTest,
   EXPECT_TRUE(isIntEqualsWord(*result, -0x8000000000000000));
 }
 
-}  // namespace python
+}  // namespace py

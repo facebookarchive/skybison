@@ -3,7 +3,7 @@
 #include "bytearray-builtins.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -1407,4 +1407,4 @@ it = iter(ba)
                      LayoutId::kStopIteration));
 }
 
-}  // namespace python
+}  // namespace py

@@ -3,7 +3,7 @@
 #include "cpython-data.h"
 #include "function-builtins.h"
 
-namespace python {
+namespace py {
 
 static_assert(static_cast<int>(ExtensionMethodType::kMethVarArgs) ==
                   METH_VARARGS,
@@ -42,4 +42,4 @@ inline ExtensionMethodType methodTypeFromMethodFlags(int flag) {
   return static_cast<ExtensionMethodType>(flag);
 }
 
-}  // namespace python
+}  // namespace py

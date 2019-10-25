@@ -9,7 +9,7 @@
 
 char* PyStructSequence_UnnamedField = const_cast<char*>("unnamed field");
 
-namespace python {
+namespace py {
 
 PY_EXPORT PyObject* PyStructSequence_GetItem(PyObject* structseq,
                                              Py_ssize_t pos) {
@@ -164,4 +164,4 @@ PY_EXPORT PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc* desc) {
       ApiHandle::newReference(thread, *type));
 }
 
-}  // namespace python
+}  // namespace py

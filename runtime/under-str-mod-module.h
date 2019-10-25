@@ -5,7 +5,7 @@
 #include "objects.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 class UnderStrModModule
     : public ModuleBase<UnderStrModModule, SymbolId::kUnderStrMod> {
@@ -13,4 +13,4 @@ class UnderStrModModule
   static const char* const kFrozenData;
 };
 
-}  // namespace python
+}  // namespace py

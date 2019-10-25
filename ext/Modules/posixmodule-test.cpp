@@ -4,7 +4,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -71,4 +71,4 @@ foo = Foo()
   EXPECT_TRUE(isUnicodeEqualsCStr(result, "/some/path"));
 }
 
-}  // namespace python
+}  // namespace py

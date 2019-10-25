@@ -4,7 +4,7 @@
 
 #include "capi-fixture.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -101,4 +101,4 @@ except:
   PyObject_Free(ptr);
 }
 
-}  // namespace python
+}  // namespace py

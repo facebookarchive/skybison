@@ -4,7 +4,7 @@
 
 #include "os.h"
 
-namespace python {
+namespace py {
 
 Space::Space(word size) {
   raw_ = OS::allocateMemory(size, &size);
@@ -28,4 +28,4 @@ void Space::reset() {
   fill_ = start();
 }
 
-}  // namespace python
+}  // namespace py

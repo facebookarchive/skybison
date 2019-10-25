@@ -6,7 +6,7 @@
 #include "runtime.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 enum class ExtensionMethodType {
   kMethVarArgs = 1 << 0,
@@ -79,4 +79,4 @@ class BoundMethodBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(BoundMethodBuiltins);
 };
 
-}  // namespace python
+}  // namespace py

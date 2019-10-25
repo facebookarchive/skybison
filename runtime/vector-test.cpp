@@ -2,7 +2,7 @@
 
 #include "vector.h"
 
-namespace python {
+namespace py {
 
 TEST(VectorTest, BasicTest) {
   Vector<int> int_v;
@@ -105,4 +105,4 @@ TEST(VectorTest, Reserve) {
   }
 }
 
-}  // namespace python
+}  // namespace py

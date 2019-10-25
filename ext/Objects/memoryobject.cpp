@@ -3,7 +3,7 @@
 #include "capi-handles.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT int PyMemoryView_Check_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject().isMemoryView();
@@ -41,4 +41,4 @@ PY_EXPORT PyObject* PyMemoryView_GetContiguous(PyObject* /* j */, int /* e */,
   UNIMPLEMENTED("PyMemoryView_GetContiguous");
 }
 
-}  // namespace python
+}  // namespace py

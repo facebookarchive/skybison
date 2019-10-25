@@ -14,7 +14,7 @@
 #include "globals.h"
 #include "utils.h"
 
-namespace python {
+namespace py {
 
 byte* OS::allocateMemory(word size, word* allocated_size) {
   size = Utils::roundUp(size, kPageSize);
@@ -194,4 +194,4 @@ double OS::currentTime() {
   return result;
 }
 
-}  // namespace python
+}  // namespace py

@@ -3,7 +3,7 @@
 #include "assembler-x64.h"
 #include "memory-region.h"
 
-namespace python {
+namespace py {
 namespace x64 {
 
 using namespace testing;
@@ -172,4 +172,4 @@ TEST(AssemblerTest, TestqWithSignedLongImm) {
 }
 
 }  // namespace x64
-}  // namespace python
+}  // namespace py

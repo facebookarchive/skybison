@@ -2,7 +2,7 @@
 
 #include "globals.h"
 
-namespace python {
+namespace py {
 
 // This should be used only for bytes objects. For strings, use isUnicodeSpace.
 inline bool isSpaceASCII(byte ch) {
@@ -98,4 +98,4 @@ inline bool isUTF8Continuation(byte b) {
   return (b & 0xC0) == 0x80;  // Test for 0b10xxxxxx
 }
 
-}  // namespace python
+}  // namespace py

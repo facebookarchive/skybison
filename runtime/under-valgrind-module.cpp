@@ -10,7 +10,7 @@
 #include "str-builtins.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 const BuiltinMethod UnderValgrindModule::kBuiltinMethods[] = {
     {SymbolId::kCallgrindDumpStats, callgrindDumpStats},
@@ -57,4 +57,4 @@ RawObject UnderValgrindModule::callgrindZeroStats(Thread*, Frame*, word) {
   return NoneType::object();
 }
 
-}  // namespace python
+}  // namespace py

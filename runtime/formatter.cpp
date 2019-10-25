@@ -2,7 +2,7 @@
 
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 static bool isAlignmentSpec(int32_t cp) {
   switch (cp) {
@@ -862,4 +862,4 @@ RawObject formatIntOctal(Thread* thread, const Int& value, FormatSpec* format) {
                        putOctalDigits);
 }
 
-}  // namespace python
+}  // namespace py

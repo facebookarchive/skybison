@@ -4,7 +4,7 @@
 #include "slice-builtins.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -351,4 +351,4 @@ TEST_F(SliceBuiltinsTest, IndicesTruncatesToLength) {
   EXPECT_EQ(indices.at(2), SmallInt::fromWord(2));
 }
 
-}  // namespace python
+}  // namespace py

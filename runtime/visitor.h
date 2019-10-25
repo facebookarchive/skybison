@@ -1,6 +1,6 @@
 #pragma once
 
-namespace python {
+namespace py {
 
 class RawObject;
 
@@ -10,4 +10,4 @@ class PointerVisitor {
   virtual ~PointerVisitor() = default;
 };
 
-}  // namespace python
+}  // namespace py

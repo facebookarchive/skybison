@@ -5,7 +5,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -102,4 +102,4 @@ TEST_F(UnderWarningsExtensionApiTest,
             "bar:1: FutureWarning: foo\nbar:1: FutureWarning: foo\n");
 }
 
-}  // namespace python
+}  // namespace py

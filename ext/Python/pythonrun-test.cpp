@@ -15,7 +15,7 @@
 
 #include "gmock/gmock-matchers.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -366,4 +366,4 @@ TEST_F(PythonrunExtensionApiTest,
   PyNode_Free(node);
 }
 
-}  // namespace python
+}  // namespace py

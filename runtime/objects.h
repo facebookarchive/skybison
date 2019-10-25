@@ -7,7 +7,7 @@
 #include "utils.h"
 #include "view.h"
 
-namespace python {
+namespace py {
 
 class Frame;
 template <typename T>
@@ -6659,4 +6659,4 @@ inline void RawTextIOWrapper::setB2cratio(RawObject b2cratio) const {
   instanceVariableAtPut(kB2cratioOffset, b2cratio);
 }
 
-}  // namespace python
+}  // namespace py

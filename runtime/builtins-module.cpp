@@ -18,7 +18,7 @@
 #include "type-builtins.h"
 #include "under-builtins-module.h"
 
-namespace python {
+namespace py {
 
 RawObject getAttribute(Thread* thread, const Object& self, const Object& name) {
   Runtime* runtime = thread->runtime();
@@ -729,4 +729,4 @@ RawObject BuiltinsModule::setattr(Thread* thread, Frame* frame, word nargs) {
   return setAttribute(thread, self, name, value);
 }
 
-}  // namespace python
+}  // namespace py

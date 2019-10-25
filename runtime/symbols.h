@@ -3,7 +3,7 @@
 #include "heap.h"
 #include "visitor.h"
 
-namespace python {
+namespace py {
 
 class Runtime;
 
@@ -891,4 +891,4 @@ class Symbols {
   RawObject* symbols_;
 };
 
-}  // namespace python
+}  // namespace py

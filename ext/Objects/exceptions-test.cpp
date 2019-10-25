@@ -4,7 +4,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -933,4 +933,4 @@ exc = ErrorSubclass("object", 2, 4, "reason")
   EXPECT_EQ(PyUnicode_CompareWithASCIIString(result, "foobar"), 0);
 }
 
-}  // namespace python
+}  // namespace py

@@ -26,7 +26,7 @@
 
 #endif
 
-namespace python {
+namespace py {
 
 namespace testing {
 
@@ -99,8 +99,8 @@ inline std::vector<Value> make_list(std::vector<Value> l) { return l; }
 // Handle<Object> list(&scope, moduleAt(...));
 // EXPECT_PYLIST_EQ(*list, {Value::None(), false, 42, 123.456, "a string"});
 #define EXPECT_PYLIST_EQ(l1, ...)                                              \
-  EXPECT_PRED_FORMAT2(::python::testing::AssertPyListEqual, l1,                \
-                      ::python::testing::make_list(__VA_ARGS__))
+  EXPECT_PRED_FORMAT2(::py::testing::AssertPyListEqual, l1,                    \
+                      ::py::testing::make_list(__VA_ARGS__))
 
 // Calls func using the supplied arguments.
 //
@@ -271,4 +271,4 @@ class TemporaryDirectory {
 const uword kHighbitUword = uword{1} << (kBitsPerWord - 1);
 
 }  // namespace testing
-}  // namespace python
+}  // namespace py

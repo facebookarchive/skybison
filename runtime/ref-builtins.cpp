@@ -6,7 +6,7 @@
 #include "runtime.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 const BuiltinMethod RefBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNew, dunderNew},
@@ -32,4 +32,4 @@ RawObject RefBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newWeakRef(thread, referent, callback);
 }
 
-}  // namespace python
+}  // namespace py

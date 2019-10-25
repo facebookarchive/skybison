@@ -5,7 +5,7 @@
 #include "Python.h"
 #include "gtest/gtest.h"
 
-namespace python {
+namespace py {
 
 class ExtensionApi : public ::testing::Test {
  protected:
@@ -25,4 +25,4 @@ class ExtensionApi : public ::testing::Test {
   char* saved_locale_;
 };
 
-}  // namespace python
+}  // namespace py

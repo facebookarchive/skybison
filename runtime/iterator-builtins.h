@@ -2,7 +2,7 @@
 
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 class SeqIteratorBuiltins
     : public Builtins<SeqIteratorBuiltins, SymbolId::kSeqIterator,
@@ -14,4 +14,4 @@ class SeqIteratorBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(SeqIteratorBuiltins);
 };
 
-}  // namespace python
+}  // namespace py

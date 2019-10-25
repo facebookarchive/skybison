@@ -16,7 +16,7 @@
 #include "str-builtins.h"
 #include "thread.h"
 
-namespace python {
+namespace py {
 
 Type::Slot slotToTypeSlot(int slot) {
   switch (slot) {
@@ -1098,4 +1098,4 @@ RawObject TypeBuiltins::mro(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-}  // namespace python
+}  // namespace py

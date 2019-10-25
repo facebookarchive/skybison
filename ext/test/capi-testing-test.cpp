@@ -6,7 +6,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -56,4 +56,4 @@ TEST_F(ExtensionApiTestingUtilsTest, IsLongEqualsLong) {
   EXPECT_STREQ(bad_type.message(), "'hello, there!' is not equal to 5678");
 }
 
-}  // namespace python
+}  // namespace py

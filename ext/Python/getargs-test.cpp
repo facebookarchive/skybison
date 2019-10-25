@@ -3,7 +3,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -445,4 +445,4 @@ TEST_F(GetArgsExtensionApiTest, NoPositionalWithNonEmptyTupleRaisesTypeError) {
 }
 #pragma pop_macro("_PyArg_NoPositional")
 
-}  // namespace python
+}  // namespace py

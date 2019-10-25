@@ -3,7 +3,7 @@
 #include "globals.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 // Internal equivalent to PyErr_GivenExceptionMatches(): Return whether or not
 // given is a subtype of any of the BaseException subtypes in exc, which may
@@ -143,4 +143,4 @@ class UnicodeTranslateErrorBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(UnicodeTranslateErrorBuiltins);
 };
 
-}  // namespace python
+}  // namespace py

@@ -12,7 +12,7 @@
 // Put `USE()` around expression or variables to avoid unused variable warnings.
 #define USE(x) static_cast<void>(x)
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -286,4 +286,4 @@ BENCHMARK_F(HandleBenchmark, Visit)(benchmark::State& state) {
   }
 }
 
-}  // namespace python
+}  // namespace py

@@ -11,7 +11,7 @@
 extern "C" unsigned char _PyLong_DigitValue[];  // from Include/longobject.h
 extern "C" unsigned int _Py_ctype_table[];      // from Include/pyctype.h
 
-namespace python {
+namespace py {
 
 const int32_t kLowSurrogateStart = 0xDC00;
 const int32_t kHighSurrogateStart = 0xD800;
@@ -1202,4 +1202,4 @@ RawObject UnderCodecsModule::underByteArrayStringAppend(Thread* thread,
   return NoneType::object();
 }
 
-}  // namespace python
+}  // namespace py

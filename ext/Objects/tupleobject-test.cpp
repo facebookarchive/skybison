@@ -4,7 +4,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -303,4 +303,4 @@ TEST_F(TupleExtensionApiTest, GetSliceReturnsSmallerTuple) {
   EXPECT_EQ(PyTuple_GetItem(result, 1), two);
 }
 
-}  // namespace python
+}  // namespace py

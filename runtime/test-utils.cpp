@@ -26,7 +26,7 @@
 #include "thread.h"
 #include "utils.h"
 
-namespace python {
+namespace py {
 
 namespace testing {
 
@@ -685,4 +685,4 @@ void writeFile(const std::string& path, const std::string& contents) {
 }
 
 }  // namespace testing
-}  // namespace python
+}  // namespace py

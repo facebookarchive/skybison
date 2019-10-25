@@ -5,7 +5,7 @@
 #include "objects.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 class UnderIoModule : public ModuleBase<UnderIoModule, SymbolId::kUnderIo> {
  public:
@@ -102,4 +102,4 @@ class TextIOWrapperBuiltins
   static const BuiltinAttribute kAttributes[];
 };
 
-}  // namespace python
+}  // namespace py

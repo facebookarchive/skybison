@@ -6,7 +6,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 using CevalExtensionApiTest = ExtensionApi;
@@ -109,4 +109,4 @@ module_dict = locals()
   EXPECT_EQ(PyLong_AsDouble(result), 3.0);
 }
 
-}  // namespace python
+}  // namespace py

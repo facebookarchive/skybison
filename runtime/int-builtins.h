@@ -3,7 +3,7 @@
 #include "globals.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 // Convert bool `object` to Int.
 RawObject convertBoolToInt(RawObject object);
@@ -121,4 +121,4 @@ inline RawSmallInt intHash(RawObject value) {
   return largeIntHash(LargeInt::cast(value));
 }
 
-}  // namespace python
+}  // namespace py

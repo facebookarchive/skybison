@@ -6,7 +6,7 @@
 #include "runtime.h"
 #include "sys-module.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT size_t _PySys_GetSizeOf(PyObject* o) {
   Thread* thread = Thread::current();
@@ -94,4 +94,4 @@ PY_EXPORT void PySys_WriteStdout(const char* format, ...) {
   va_end(va);
 }
 
-}  // namespace python
+}  // namespace py

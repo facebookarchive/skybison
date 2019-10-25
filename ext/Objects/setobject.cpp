@@ -3,7 +3,7 @@
 #include "runtime.h"
 #include "set-builtins.h"
 
-namespace python {
+namespace py {
 
 PY_EXPORT int PyFrozenSet_Check_Func(PyObject* obj) {
   DCHECK(obj != nullptr, "obj must not be nullptr");
@@ -184,4 +184,4 @@ PY_EXPORT Py_ssize_t PySet_Size(PyObject* anyset) {
   return set.numItems();
 }
 
-}  // namespace python
+}  // namespace py

@@ -2,8 +2,8 @@
 
 #include "frozen-modules.h"
 
-namespace python {
+namespace py {
 
 const char* const NamedtupleModule::kFrozenData = kUnderNamedtupleModuleData;
 
-}  // namespace python
+}  // namespace py

@@ -5,7 +5,7 @@
 #include "runtime.h"
 #include "test-utils.h"
 
-namespace python {
+namespace py {
 
 using IoModuleTest = testing::RuntimeFixture;
 
@@ -23,4 +23,4 @@ TEST_F(IoModuleTest, PostInitializeSetsBuiltinBaseToSupertype) {
   EXPECT_EQ(bytes_io.builtinBase(), LayoutId::kUnderBufferedIOBase);
 }
 
-}  // namespace python
+}  // namespace py

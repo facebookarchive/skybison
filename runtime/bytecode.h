@@ -3,7 +3,7 @@
 #include "handles.h"
 #include "objects.h"
 
-namespace python {
+namespace py {
 
 // Define the set of bytecodes.
 //
@@ -363,4 +363,4 @@ inline word originalArg(RawFunction function, word index) {
       .value();
 }
 
-}  // namespace python
+}  // namespace py

@@ -3,7 +3,7 @@
 #include "globals.h"
 #include "utils.h"
 
-namespace python {
+namespace py {
 
 class Space {
  public:
@@ -59,4 +59,4 @@ class Space {
   DISALLOW_COPY_AND_ASSIGN(Space);
 };
 
-}  // namespace python
+}  // namespace py

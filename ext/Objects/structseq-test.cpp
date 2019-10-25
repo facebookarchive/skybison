@@ -4,7 +4,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -519,4 +519,4 @@ TEST_F(StructSeqExtensionApiTest, GetSlotNewOnStructSeqReturnsSlot) {
   EXPECT_TRUE(isLongEqualsLong(third, 333));
 }
 
-}  // namespace python
+}  // namespace py

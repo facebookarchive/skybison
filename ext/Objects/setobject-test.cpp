@@ -4,7 +4,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-namespace python {
+namespace py {
 
 using namespace testing;
 
@@ -352,4 +352,4 @@ TEST_F(SetExtensionApiTest, DiscardWithSetRemovesItem) {
   EXPECT_EQ(PySet_Size(set), 0);
 }
 
-}  // namespace python
+}  // namespace py

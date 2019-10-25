@@ -11,7 +11,7 @@
 #include "tuple-builtins.h"
 #include "unicode.h"
 
-namespace python {
+namespace py {
 
 RawObject strCount(const Str& haystack, const Str& needle, word start,
                    word end) {
@@ -1389,4 +1389,4 @@ RawObject StrIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   return SmallInt::fromWord(str.charLength() - str_iterator.index());
 }
 
-}  // namespace python
+}  // namespace py

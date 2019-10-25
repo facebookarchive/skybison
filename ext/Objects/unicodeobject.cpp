@@ -50,7 +50,7 @@ extern "C" const unsigned char _Py_ascii_whitespace[] = {  // NOLINT
 };
 // clang-format on
 
-namespace python {
+namespace py {
 
 typedef byte Py_UCS1;
 typedef uint16_t Py_UCS2;
@@ -2096,4 +2096,4 @@ PY_EXPORT wchar_t* _Py_DecodeUTF8_surrogateescape(const char* /* s */,
   UNIMPLEMENTED("_Py_DecodeUTF8_surrogateescape");
 }
 
-}  // namespace python
+}  // namespace py
