@@ -5,7 +5,7 @@
 #include "objects.h"
 #include "runtime.h"
 
-namespace python {
+namespace py {
 
 class FaulthandlerModule
     : public ModuleBase<FaulthandlerModule, SymbolId::kFaulthandler> {
@@ -16,4 +16,4 @@ class FaulthandlerModule
   static const char* const kFrozenData;
 };
 
-}  // namespace python
+}  // namespace py

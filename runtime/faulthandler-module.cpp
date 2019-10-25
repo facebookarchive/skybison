@@ -5,7 +5,7 @@
 #include "runtime.h"
 #include "sys-module.h"
 
-namespace python {
+namespace py {
 
 const char* const FaulthandlerModule::kFrozenData = kFaulthandlerModuleData;
 
@@ -79,4 +79,4 @@ RawObject FaulthandlerModule::dumpTraceback(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-}  // namespace python
+}  // namespace py
