@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import itertools
+import operator
 import unittest
 from unittest.mock import Mock
 
@@ -238,6 +239,35 @@ class ZipLongestTests(unittest.TestCase):
     def test_dunder_next_fills_with_fill_value(self):
         right = itertools.zip_longest("ab", [1, 2, 3], fillvalue="X")
         self.assertEqual(list(right), [("a", 1), ("b", 2), ("X", 3)])
+
+
+class AccumulateTests(unittest.TestCase):
+    def test_accumulate_with_iterable_accumulates(self):
+        self.assertTupleEqual(tuple(itertools.accumulate([1, 2, 3, 4])), (1, 3, 6, 10))
+
+    def test_accumulate_with_func_arg_none_uses_addition(self):
+        self.assertTupleEqual(
+            tuple(itertools.accumulate([1, 2, 3, 4], None)), (1, 3, 6, 10)
+        )
+
+    def test_accumulate_with_func_arg_uses_func(self):
+        self.assertTupleEqual(
+            tuple(itertools.accumulate([1, 2, 3, 4], operator.mul)), (1, 2, 6, 24)
+        )
+
+    def test_accumulate_with_empty_iterable_returns_stopped_iterator(self):
+        iterator = itertools.accumulate([])
+        self.assertRaises(StopIteration, next, iterator)
+
+    def test_accumulate_with_no_iterable_raises_type_error(self):
+        self.assertRaises(TypeError, itertools.accumulate)
+
+    def test_accumulate_dunder_next_with_non_callable_func_raises_type_error(self):
+        iterator = itertools.accumulate([1, 2, 3, 4], "this is not a function")
+        next(iterator)
+        self.assertRaisesRegex(
+            TypeError, "'str' object is not callable", next, iterator
+        )
 
 
 if __name__ == "__main__":

@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 """Functional tools for creating and using iterators."""
+import operator
+
+
 # TODO(T42113424) Replace stubs with an actual implementation
 _Unbound = _Unbound  # noqa: F821
 _int_guard = _int_guard  # noqa: F821
@@ -9,8 +12,27 @@ _unimplemented = _unimplemented  # noqa: F821
 
 
 class accumulate:
-    def __init__(self, p, func=_Unbound):
-        _unimplemented()
+    def __new__(cls, iterable, func=None):
+        result = super(accumulate, cls).__new__(cls)
+        result._it = iter(iterable)
+        result._func = operator.add if func is None else func
+        result._accumulated = None
+        return result
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        result = self._accumulated
+
+        if result is None:
+            result = next(self._it)
+            self._accumulated = result
+            return result
+
+        result = self._func(result, next(self._it))
+        self._accumulated = result
+        return result
 
 
 class chain:
