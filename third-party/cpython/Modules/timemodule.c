@@ -287,6 +287,7 @@ time_clear(PyObject *m)
 {
    timestate *state = timestate(m);
    Py_CLEAR(state->StructTimeType);
+   Py_CLEAR(state->_strptime_time);
    return 0;
 }
 
@@ -295,6 +296,7 @@ time_traverse(PyObject *m, visitproc visit, void *arg)
 {
     timestate *state = timestate(m);
     Py_VISIT(state->StructTimeType);
+    Py_VISIT(state->_strptime_time);
     return 0;
 }
 
