@@ -49,6 +49,9 @@ PY_EXPORT int PyTuple_SET_ITEM_Func(PyObject* pytuple, Py_ssize_t pos,
 
   Object tupleobj(&scope, ApiHandle::fromPyObject(pytuple)->asObject());
   Runtime* runtime = thread->runtime();
+  Object newitem(&scope, pyitem == nullptr
+                             ? NoneType::object()
+                             : ApiHandle::stealReference(thread, pyitem));
   if (!runtime->isInstanceOfTuple(*tupleobj)) {
     thread->raiseBadInternalCall();
     return -1;
@@ -61,7 +64,7 @@ PY_EXPORT int PyTuple_SET_ITEM_Func(PyObject* pytuple, Py_ssize_t pos,
     return -1;
   }
 
-  tuple.atPut(pos, ApiHandle::stealReference(thread, pyitem));
+  tuple.atPut(pos, *newitem);
   return 0;
 }
 
@@ -72,6 +75,9 @@ PY_EXPORT int PyTuple_SetItem(PyObject* pytuple, Py_ssize_t pos,
 
   Object tupleobj(&scope, ApiHandle::fromPyObject(pytuple)->asObject());
   Runtime* runtime = thread->runtime();
+  Object newitem(&scope, pyitem == nullptr
+                             ? NoneType::object()
+                             : ApiHandle::stealReference(thread, pyitem));
   if (!runtime->isInstanceOfTuple(*tupleobj)) {
     thread->raiseBadInternalCall();
     return -1;
@@ -84,7 +90,7 @@ PY_EXPORT int PyTuple_SetItem(PyObject* pytuple, Py_ssize_t pos,
     return -1;
   }
 
-  tuple.atPut(pos, ApiHandle::stealReference(thread, pyitem));
+  tuple.atPut(pos, *newitem);
   return 0;
 }
 

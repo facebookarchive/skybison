@@ -40,14 +40,14 @@ PY_EXPORT void PyStructSequence_SetItem(PyObject* structseq, Py_ssize_t pos,
   Str n_fields_key(&scope, runtime->symbols()->NFields());
   Int n_fields(&scope,
                runtime->attributeAt(thread, structseq_obj, n_fields_key));
+  Object value_obj(&scope, value == nullptr
+                               ? NoneType::object()
+                               : ApiHandle::stealReference(thread, value));
   if (pos < 0 || pos >= n_fields.asWord()) {
     thread->raiseWithFmt(LayoutId::kIndexError,
                          "tuple assignment index out of range");
     return;
   }
-  ApiHandle* value_handle = ApiHandle::fromPyObject(value);
-  Object value_obj(&scope, value_handle->asObject());
-
   // Try to set to the tuple first
   Str n_sequence_key(&scope, runtime->symbols()->NSequenceFields());
   Int n_sequence(&scope,
@@ -56,7 +56,6 @@ PY_EXPORT void PyStructSequence_SetItem(PyObject* structseq, Py_ssize_t pos,
     UserTupleBase user_tuple(&scope, *structseq_obj);
     Tuple tuple(&scope, user_tuple.tupleValue());
     tuple.atPut(pos, *value_obj);
-    value_handle->decref();  // steal reference
     return;
   }
 
@@ -69,7 +68,6 @@ PY_EXPORT void PyStructSequence_SetItem(PyObject* structseq, Py_ssize_t pos,
   // Bypass the immutability of structseq_field.__set__
   Instance instance(&scope, *structseq_obj);
   instanceSetAttr(thread, instance, field_name, value_obj);
-  value_handle->decref();  // steal reference
 }
 
 PY_EXPORT PyObject* PyStructSequence_New(PyTypeObject* pytype) {
