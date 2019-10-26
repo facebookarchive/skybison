@@ -51,6 +51,7 @@ _dict_bucket_set_value = _dict_bucket_set_value  # noqa: F821
 _dict_bucket_value = _dict_bucket_value  # noqa: F821
 _dict_check = _dict_check  # noqa: F821
 _dict_checkexact = _dict_checkexact  # noqa: F821
+_dict_get = _dict_get  # noqa: F821
 _dict_guard = _dict_guard  # noqa: F821
 _dict_lookup = _dict_lookup  # noqa: F821
 _dict_lookup_next = _dict_lookup_next  # noqa: F821
@@ -2152,7 +2153,7 @@ def delattr(obj, name):
 class dict(bootstrap=True):
     def __contains__(self, key) -> bool:
         _dict_guard(self)
-        return dict.get(self, key, _Unbound) is not _Unbound  # noqa: T484
+        return _dict_get(self, key, _Unbound) is not _Unbound  # noqa: T484
 
     def __delitem__(self, key):
         pass
@@ -2162,7 +2163,7 @@ class dict(bootstrap=True):
 
     def __getitem__(self, key):
         _dict_guard(self)
-        result = dict.get(self, key, _Unbound)
+        result = _dict_get(self, key, _Unbound)
         if result is _Unbound:
             if not _dict_checkexact(self):
                 dunder_missing = _object_type_getattr(self, "__missing__")
@@ -2207,8 +2208,7 @@ class dict(bootstrap=True):
         _dict_guard(self)
         return dict(self)
 
-    def get(self, key, default=None):
-        pass
+    get = _dict_get
 
     def items(self):
         pass
@@ -2218,7 +2218,7 @@ class dict(bootstrap=True):
 
     def pop(self, key, default=_Unbound):
         _dict_guard(self)
-        value = dict.get(self, key, default)
+        value = _dict_get(self, key, default)
         if value is _Unbound:
             raise KeyError(key)
         if key in self:
@@ -2234,7 +2234,7 @@ class dict(bootstrap=True):
 
     def setdefault(self, key, default=None):
         _dict_guard(self)
-        value = dict.get(self, key, _Unbound)
+        value = _dict_get(self, key, _Unbound)
         if value is _Unbound:
             dict.__setitem__(self, key, default)
             return default

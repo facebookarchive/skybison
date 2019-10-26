@@ -232,6 +232,12 @@ def _dict_checkexact(obj):
     pass
 
 
+# TODO(T56301601): Move this into a type-specific file.
+@_patch
+def _dict_get(self, key, default=None):
+    pass
+
+
 @_patch
 def _dict_guard(obj):
     pass

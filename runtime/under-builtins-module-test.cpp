@@ -365,6 +365,92 @@ dc = Foo(b"DC")
 }
 
 TEST_F(UnderBuiltinsModuleTest,
+       UnderDictGetWithNotEnoughArgumentsRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime_, "_dict_get()"), LayoutId::kTypeError,
+      "TypeError: '_dict_get' takes min 2 positional arguments but 0 given"));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderDictGetWithTooManyArgumentsRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime_, "_dict_get({}, 123, 456, 789)"),
+      LayoutId::kTypeError,
+      "TypeError: '_dict_get' takes max 3 positional arguments but 4 given"));
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderDictGetWithUnhashableTypeRaisesTypeError) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class Foo:
+  __hash__ = 2
+key = Foo()
+)")
+                   .isError());
+  Dict dict(&scope, runtime_.newDict());
+  Object key(&scope, mainModuleAt(&runtime_, "key"));
+  Object default_obj(&scope, NoneType::object());
+  ASSERT_TRUE(raised(
+      runBuiltin(UnderBuiltinsModule::underDictGet, dict, key, default_obj),
+      LayoutId::kTypeError));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderDictGetWithIntSubclassHashReturnsDefaultValue) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class N(int):
+  pass
+class Foo:
+  def __hash__(self):
+    return N(12)
+key = Foo()
+)")
+                   .isError());
+  Dict dict(&scope, runtime_.newDict());
+  Object key(&scope, mainModuleAt(&runtime_, "key"));
+  Object default_obj(&scope, runtime_.newInt(5));
+  EXPECT_EQ(
+      runBuiltin(UnderBuiltinsModule::underDictGet, dict, key, default_obj),
+      default_obj);
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderDictGetReturnsDefaultValue) {
+  ASSERT_FALSE(
+      runFromCStr(&runtime_, "res = _dict_get({}, 123, 456)").isError());
+  EXPECT_EQ(mainModuleAt(&runtime_, "res"), RawSmallInt::fromWord(456));
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderDictGetReturnsNone) {
+  ASSERT_FALSE(runFromCStr(&runtime_, "result = _dict_get({}, 123)").isError());
+  EXPECT_TRUE(mainModuleAt(&runtime_, "result").isNoneType());
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderDictGetReturnsValue) {
+  HandleScope scope(thread_);
+  Dict dict(&scope, runtime_.newDict());
+  Object key(&scope, runtime_.newInt(123));
+  Object hash(&scope, Interpreter::hash(thread_, key));
+  ASSERT_FALSE(hash.isErrorException());
+  Object value(&scope, runtime_.newInt(456));
+  runtime_.dictAtPut(thread_, dict, key, hash, value);
+  Object dflt(&scope, runtime_.newInt(789));
+  Object result(&scope,
+                runBuiltin(UnderBuiltinsModule::underDictGet, dict, key, dflt));
+  EXPECT_TRUE(isIntEqualsWord(*result, 456));
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderDictGetWithNonDictRaisesTypeError) {
+  HandleScope scope(thread_);
+  Object foo(&scope, runtime_.newInt(123));
+  Object bar(&scope, runtime_.newInt(456));
+  Object baz(&scope, runtime_.newInt(789));
+  EXPECT_TRUE(
+      raised(runBuiltin(UnderBuiltinsModule::underDictGet, foo, bar, baz),
+             LayoutId::kTypeError));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
        UnderDictPopitemRemovesAvailableItemAndReturnsTupleOfKeyAndValue) {
   HandleScope scope(thread_);
   // Create {"a": 1, "b": 2}.

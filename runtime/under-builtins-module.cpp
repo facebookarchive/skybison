@@ -118,6 +118,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderDictBucketValue, underDictBucketValue},
     {SymbolId::kUnderDictCheck, underDictCheck},
     {SymbolId::kUnderDictCheckExact, underDictCheckExact},
+    {SymbolId::kUnderDictGet, underDictGet},
     {SymbolId::kUnderDictGuard, underDictGuard},
     {SymbolId::kUnderDictLen, underDictLen},
     {SymbolId::kUnderDictLookup, underDictLookup},
@@ -1418,6 +1419,27 @@ RawObject UnderBuiltinsModule::underDictCheckExact(Thread*, Frame* frame,
                                                    word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(args.get(0).isDict());
+}
+
+RawObject UnderBuiltinsModule::underDictGet(Thread* thread, Frame* frame,
+                                            word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  Object key(&scope, args.get(1));
+  Object default_obj(&scope, args.get(2));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(*self)) {
+    return thread->raiseRequiresType(self, SymbolId::kDict);
+  }
+  Dict dict(&scope, *self);
+
+  // Check key hash
+  Object key_hash(&scope, Interpreter::hash(thread, key));
+  if (key_hash.isErrorException()) return *key_hash;
+  Object result(&scope, runtime->dictAt(thread, dict, key, key_hash));
+  if (result.isErrorNotFound()) return *default_obj;
+  return *result;
 }
 
 RawObject UnderBuiltinsModule::underDictGuard(Thread* thread, Frame* frame,
