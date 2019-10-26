@@ -125,6 +125,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderDictLookupNext, underDictLookupNext},
     {SymbolId::kUnderDictPopitem, underDictPopitem},
     {SymbolId::kUnderDictSetItem, underDictSetItem},
+    {SymbolId::kUnderDictUpdate, underDictUpdate},
     {SymbolId::kUnderDivmod, underDivmod},
     {SymbolId::kUnderFloatCheck, underFloatCheck},
     {SymbolId::kUnderFloatDivmod, underFloatDivmod},
@@ -1599,6 +1600,35 @@ RawObject UnderBuiltinsModule::underDictSetItem(Thread* thread, Frame* frame,
   Object key_hash(&scope, Interpreter::hash(thread, key));
   if (key_hash.isErrorException()) return *key_hash;
   runtime->dictAtPut(thread, dict, key, key_hash, value);
+  return NoneType::object();
+}
+
+RawObject UnderBuiltinsModule::underDictUpdate(Thread* thread, Frame* frame,
+                                               word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(*self_obj)) {
+    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kDict);
+  }
+  Dict self(&scope, *self_obj);
+  Object other_obj(&scope, args.get(1));
+  if (!other_obj.isDict()) return Unbound::object();
+  if (*other_obj != *self) {
+    Object key(&scope, NoneType::object());
+    Object value(&scope, NoneType::object());
+    Object hash(&scope, NoneType::object());
+    Dict other(&scope, *other_obj);
+    Tuple other_data(&scope, other.data());
+    for (word i = Dict::Bucket::kFirst;
+         Dict::Bucket::nextItem(*other_data, &i);) {
+      key = Dict::Bucket::key(*other_data, i);
+      value = Dict::Bucket::value(*other_data, i);
+      hash = Dict::Bucket::hash(*other_data, i);
+      runtime->dictAtPut(thread, self, key, hash, value);
+    }
+  }
   return NoneType::object();
 }
 

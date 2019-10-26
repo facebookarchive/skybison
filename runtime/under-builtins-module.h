@@ -89,6 +89,7 @@ class UnderBuiltinsModule {
   static RawObject underDictLookup(Thread* thread, Frame* frame, word nargs);
   static RawObject underDictLookupNext(Thread* thread, Frame* frame,
                                        word nargs);
+  static RawObject underDictUpdate(Thread* thread, Frame* frame, word nargs);
   static RawObject underDictPopitem(Thread* thread, Frame* frame, word nargs);
   static RawObject underDictSetItem(Thread* thread, Frame* frame, word nargs);
   static RawObject underDivmod(Thread* thread, Frame* frame, word nargs);

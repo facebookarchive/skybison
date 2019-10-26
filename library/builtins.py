@@ -57,6 +57,7 @@ _dict_lookup = _dict_lookup  # noqa: F821
 _dict_lookup_next = _dict_lookup_next  # noqa: F821
 _dict_popitem = _dict_popitem  # noqa: F821
 _dict_setitem = _dict_setitem  # noqa: F821
+_dict_update = _dict_update  # noqa: F821
 _divmod = _divmod  # noqa: F821
 _float_check = _float_check  # noqa: F821
 _float_divmod = _float_divmod  # noqa: F821
@@ -2242,7 +2243,8 @@ class dict(bootstrap=True):
         return value
 
     def update(self, seq=_Unbound):
-        _dict_guard(self)
+        if _dict_update(self, seq) is not _Unbound:
+            return
         if seq is _Unbound:
             return
         if hasattr(seq, "keys"):

@@ -269,6 +269,12 @@ def _dict_setitem(self, key, value):
     pass
 
 
+# TODO(T56301601): Move this into a type-specific file.
+@_patch
+def _dict_update(self, other):
+    pass
+
+
 @_patch
 def _divmod(number, divisor):
     pass

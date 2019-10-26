@@ -214,6 +214,7 @@ class Runtime;
   V(UnderDictLookupNext, "_dict_lookup_next")                                  \
   V(UnderDictPopitem, "_dict_popitem")                                         \
   V(UnderDictSetItem, "_dict_setitem")                                         \
+  V(UnderDictUpdate, "_dict_update")                                           \
   V(UnderDivmod, "_divmod")                                                    \
   V(UnderEncoder, "_encoder")                                                  \
   V(UnderEncoding, "_encoding")                                                \
