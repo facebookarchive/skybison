@@ -1359,6 +1359,7 @@ static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,
     freelist.entries = PyMem_NEW(freelistentry_t, len);
     if (freelist.entries == nullptr) {
       PyErr_NoMemory();
+      Py_DECREF(kwtuple);
       return 0;
     }
     freelist.entries_malloced = 1;
@@ -1379,12 +1380,14 @@ static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,
                  (parser->fname == nullptr) ? "function" : parser->fname,
                  (parser->fname == nullptr) ? "" : "()", len,
                  (len == 1) ? "" : "s", nargs + num_keywords);
+    Py_DECREF(kwtuple);
     return cleanreturn(0, &freelist);
   }
   if (parser->max < nargs) {
     PyErr_Format(
         PyExc_TypeError, "Function takes %s %d positional arguments (%d given)",
         (parser->min != INT_MAX) ? "at most" : "exactly", parser->max, nargs);
+    Py_DECREF(kwtuple);
     return cleanreturn(0, &freelist);
   }
 
@@ -1407,6 +1410,7 @@ static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,
       if (keywords != nullptr) {
         current_arg = PyDict_GetItem(keywords, keyword);
         if (current_arg == nullptr && PyErr_Occurred()) {
+          Py_DECREF(kwtuple);
           return cleanreturn(0, &freelist);
         }
       } else {
@@ -1421,6 +1425,7 @@ static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,
                      "Argument given by name ('%U') "
                      "and position (%d)",
                      keyword, i + 1);
+        Py_DECREF(kwtuple);
         return cleanreturn(0, &freelist);
       }
     } else if (i < nargs) {
@@ -1434,6 +1439,7 @@ static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,
                                     msgbuf, sizeof(msgbuf), &freelist);
       if (msg) {
         seterror(i + 1, msg, levels, parser->fname, parser->custom_msg);
+        Py_DECREF(kwtuple);
         return cleanreturn(0, &freelist);
       }
       continue;
@@ -1454,11 +1460,13 @@ static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,
                      "'%U' (pos %d) not found",
                      keyword, i + 1);
       }
+      Py_DECREF(kwtuple);
       return cleanreturn(0, &freelist);
     }
     // current code reports success when all required args fulfilled and no
     // keyword args left, with no further validation.
     if (!num_keywords) {
+      Py_DECREF(kwtuple);
       return cleanreturn(1, &freelist);
     }
 
@@ -1478,6 +1486,7 @@ static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,
       while (PyDict_Next(keywords, &pos1, &key, &value)) {
         if (!PyUnicode_Check(key)) {
           PyErr_SetString(PyExc_TypeError, "keywords must be strings");
+          Py_DECREF(kwtuple);
           return cleanreturn(0, &freelist);
         }
         int match = PySequence_Contains(kwtuple, key);
@@ -1488,6 +1497,7 @@ static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,
                          "argument for this function",
                          key);
           }
+          Py_DECREF(kwtuple);
           return cleanreturn(0, &freelist);
         }
       }
@@ -1498,6 +1508,7 @@ static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,
 
         if (!PyUnicode_Check(key)) {
           PyErr_SetString(PyExc_TypeError, "keywords must be strings");
+          Py_DECREF(kwtuple);
           return cleanreturn(0, &freelist);
         }
 
@@ -1509,11 +1520,13 @@ static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,
                          "argument for this function",
                          key);
           }
+          Py_DECREF(kwtuple);
           return cleanreturn(0, &freelist);
         }
       }
     }
   }
+  Py_DECREF(kwtuple);
   return cleanreturn(1, &freelist);
 }
 
