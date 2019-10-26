@@ -293,16 +293,15 @@ PY_EXPORT void PyErr_SetExcInfo(PyObject* type, PyObject* value,
   HandleScope scope(thread);
   Object type_obj(&scope, type == nullptr
                               ? NoneType::object()
-                              : ApiHandle::fromPyObject(type)->asObject());
+                              : ApiHandle::stealReference(thread, type));
   thread->setCaughtExceptionType(*type_obj);
   Object value_obj(&scope, value == nullptr
                                ? NoneType::object()
-                               : ApiHandle::fromPyObject(value)->asObject());
+                               : ApiHandle::stealReference(thread, value));
   thread->setCaughtExceptionValue(*value_obj);
-  Object traceback_obj(&scope,
-                       traceback == nullptr
-                           ? NoneType::object()
-                           : ApiHandle::fromPyObject(traceback)->asObject());
+  Object traceback_obj(&scope, traceback == nullptr ? NoneType::object()
+                                                    : ApiHandle::stealReference(
+                                                          thread, traceback));
   thread->setCaughtExceptionTraceback(*traceback_obj);
 }
 

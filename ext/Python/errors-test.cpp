@@ -566,6 +566,7 @@ TEST_F(ErrorsExtensionApiTest,
 
 TEST_F(ErrorsExtensionApiTest, SetExcInfoValuesRetrievedByGetExcInfo) {
   PyObjectPtr type(PyExc_TypeError);
+  Py_INCREF(type);
   PyObjectPtr val(PyUnicode_FromString("some str"));
   PyObject* traceback = nullptr;
   PyErr_SetExcInfo(PyExc_TypeError, val, traceback);
