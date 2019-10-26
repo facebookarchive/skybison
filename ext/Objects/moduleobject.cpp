@@ -65,10 +65,18 @@ PY_EXPORT PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
     moduleAtPutById(thread, module, SymbolId::kDunderDoc, doc);
   }
 
-  ApiHandle* result = ApiHandle::newReference(thread, *module);
-  if (def->m_size > 0) {
-    result->setCache(std::malloc(def->m_size));
+  Py_ssize_t m_size = def->m_size;
+  void* state = nullptr;
+  if (m_size > 0) {
+    state = std::calloc(1, m_size);
+    if (state == nullptr) {
+      PyErr_NoMemory();
+      return nullptr;
+    }
   }
+
+  ApiHandle* result = ApiHandle::newReference(thread, *module);
+  result->setCache(state);
 
   // TODO(eelizondo): Check m_slots
   // TODO(eelizondo): Set md_state
