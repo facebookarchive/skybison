@@ -162,6 +162,7 @@ PY_EXPORT int PyImport_ImportFrozenModule(const char* name) {
   // CPython's and Pyro's frozen modules do not match. Instead, just treat
   // this C-API as PyImport_ImportModule
   PyObject* result = PyImport_ImportModule(name);
+  Py_XDECREF(result);
   return result == nullptr ? -1 : 0;
 }
 
@@ -169,6 +170,7 @@ PY_EXPORT int PyImport_ImportFrozenModuleObject(PyObject* name) {
   // CPython's and Pyro's frozen modules do not match. Instead, just treat
   // this C-API as PyImport_ImportModule
   PyObject* result = PyImport_Import(name);
+  Py_XDECREF(result);
   return result == nullptr ? -1 : 0;
 }
 
