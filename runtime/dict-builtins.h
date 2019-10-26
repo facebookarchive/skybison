@@ -53,7 +53,6 @@ class DictBuiltins
   static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderSetItem(Thread* thread, Frame* frame, word nargs);
 
   static RawObject items(Thread* thread, Frame* frame, word nargs);
   static RawObject keys(Thread* thread, Frame* frame, word nargs);

@@ -480,6 +480,69 @@ TEST_F(UnderBuiltinsModuleTest,
       runBuiltin(UnderBuiltinsModule::underDictPopitem, dict).isNoneType());
 }
 
+TEST_F(UnderBuiltinsModuleTest,
+       UnderDictSetItemWithKeyHashReturningNonIntRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+class E:
+  def __hash__(self): return "non int"
+
+d = {}
+_dict_setitem(d, E(), 4)
+)"),
+                            LayoutId::kTypeError,
+                            "__hash__ method should return an integer"));
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderDictSetItemWithExistingKey) {
+  HandleScope scope(thread_);
+  Dict dict(&scope, runtime_.newDictWithSize(1));
+  Str key(&scope, runtime_.newStrFromCStr("foo"));
+  Object val(&scope, runtime_.newInt(0));
+  Object val2(&scope, runtime_.newInt(1));
+  runtime_.dictAtPutByStr(thread_, dict, key, val);
+
+  Object result(&scope, runBuiltin(UnderBuiltinsModule::underDictSetItem, dict,
+                                   key, val2));
+  ASSERT_TRUE(result.isNoneType());
+  ASSERT_EQ(dict.numItems(), 1);
+  ASSERT_EQ(dict.numUsableItems(), 5 - 1);
+  ASSERT_EQ(runtime_.dictAtByStr(thread_, dict, key), *val2);
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderDictSetItemWithNonExistentKey) {
+  HandleScope scope(thread_);
+  Dict dict(&scope, runtime_.newDictWithSize(1));
+  ASSERT_EQ(dict.numItems(), 0);
+  ASSERT_EQ(dict.numUsableItems(), 5);
+  Str key(&scope, runtime_.newStrFromCStr("foo"));
+  Object val(&scope, runtime_.newInt(0));
+  Object result(&scope, runBuiltin(UnderBuiltinsModule::underDictSetItem, dict,
+                                   key, val));
+  ASSERT_TRUE(result.isNoneType());
+  ASSERT_EQ(dict.numItems(), 1);
+  ASSERT_EQ(dict.numUsableItems(), 5 - 1);
+  ASSERT_EQ(runtime_.dictAtByStr(thread_, dict, key), *val);
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderDictSetItemWithDictSubclassSetsItem) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class foo(dict):
+  pass
+d = foo()
+)")
+                   .isError());
+  Dict dict(&scope, mainModuleAt(&runtime_, "d"));
+  Str key(&scope, runtime_.newStrFromCStr("a"));
+  Str value(&scope, runtime_.newStrFromCStr("b"));
+  Object result1(&scope, runBuiltin(UnderBuiltinsModule::underDictSetItem, dict,
+                                    key, value));
+  EXPECT_TRUE(result1.isNoneType());
+  Object result2(&scope, runtime_.dictAtByStr(thread_, dict, key));
+  ASSERT_TRUE(result2.isStr());
+  EXPECT_EQ(Str::cast(*result2), *value);
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderDivmodReturnsQuotientAndDividend) {
   HandleScope scope(thread_);
   Int number(&scope, SmallInt::fromWord(1234));

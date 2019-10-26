@@ -254,7 +254,6 @@ const BuiltinMethod DictBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderIter, dunderIter},
     {SymbolId::kDunderLen, dunderLen},
     {SymbolId::kDunderNew, dunderNew},
-    {SymbolId::kDunderSetitem, dunderSetItem},
     {SymbolId::kItems, items},
     {SymbolId::kKeys, keys},
     {SymbolId::kValues, values},
@@ -358,24 +357,6 @@ RawObject DictBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   }
   Dict dict(&scope, *self);
   return SmallInt::fromWord(dict.numItems());
-}
-
-RawObject DictBuiltins::dunderSetItem(Thread* thread, Frame* frame,
-                                      word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  Object key(&scope, args.get(1));
-  Object value(&scope, args.get(2));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfDict(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kDict);
-  }
-  Dict dict(&scope, *self);
-  Object key_hash(&scope, Interpreter::hash(thread, key));
-  if (key_hash.isErrorException()) return *key_hash;
-  runtime->dictAtPut(thread, dict, key, key_hash, value);
-  return NoneType::object();
 }
 
 RawObject DictBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {

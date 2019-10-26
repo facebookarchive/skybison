@@ -48,7 +48,7 @@ PY_EXPORT int PyDict_SetItem(PyObject* pydict, PyObject* key, PyObject* value) {
   Object keyobj(&scope, ApiHandle::fromPyObject(key)->asObject());
   Object valueobj(&scope, ApiHandle::fromPyObject(value)->asObject());
   Object result(&scope, thread->invokeFunction3(SymbolId::kBuiltins,
-                                                SymbolId::kUnderDictSetItem,
+                                                SymbolId::kUnderCapiDictSetItem,
                                                 dictobj, keyobj, valueobj));
   return result.isError() ? -1 : 0;
 }
@@ -61,7 +61,7 @@ PY_EXPORT int PyDict_SetItemString(PyObject* pydict, const char* key,
   Object keyobj(&scope, thread->runtime()->newStrFromCStr(key));
   Object valueobj(&scope, ApiHandle::fromPyObject(value)->asObject());
   Object result(&scope, thread->invokeFunction3(SymbolId::kBuiltins,
-                                                SymbolId::kUnderDictSetItem,
+                                                SymbolId::kUnderCapiDictSetItem,
                                                 dictobj, keyobj, valueobj));
   return result.isError() ? -1 : 0;
 }

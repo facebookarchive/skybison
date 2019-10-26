@@ -90,6 +90,7 @@ class UnderBuiltinsModule {
   static RawObject underDictLookupNext(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underDictPopitem(Thread* thread, Frame* frame, word nargs);
+  static RawObject underDictSetItem(Thread* thread, Frame* frame, word nargs);
   static RawObject underDivmod(Thread* thread, Frame* frame, word nargs);
   static RawObject underFloatCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underFloatDivmod(Thread* thread, Frame* frame, word nargs);

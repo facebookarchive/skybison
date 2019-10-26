@@ -184,6 +184,7 @@ class Runtime;
   V(UnderByteslikeRfindByteslike, "_byteslike_rfind_byteslike")                \
   V(UnderByteslikeRfindInt, "_byteslike_rfind_int")                            \
   V(UnderByteslikeStartsWith, "_byteslike_startswith")                         \
+  V(UnderCapiDictSetItem, "_capi_dict_setitem")                                \
   V(UnderClassMethod, "_classmethod")                                          \
   V(UnderClassMethodIsAbstract, "_classmethod_isabstract")                     \
   V(UnderClosed, "_closed")                                                    \

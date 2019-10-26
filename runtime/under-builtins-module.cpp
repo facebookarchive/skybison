@@ -124,6 +124,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderDictLookup, underDictLookup},
     {SymbolId::kUnderDictLookupNext, underDictLookupNext},
     {SymbolId::kUnderDictPopitem, underDictPopitem},
+    {SymbolId::kUnderDictSetItem, underDictSetItem},
     {SymbolId::kUnderDivmod, underDivmod},
     {SymbolId::kUnderFloatCheck, underFloatCheck},
     {SymbolId::kUnderFloatDivmod, underFloatDivmod},
@@ -1581,6 +1582,24 @@ RawObject UnderBuiltinsModule::underDictPopitem(Thread* thread, Frame* frame,
   Dict::Bucket::setTombstone(*data, index);
   dict.setNumItems(dict.numItems() - 1);
   return *result;
+}
+
+RawObject UnderBuiltinsModule::underDictSetItem(Thread* thread, Frame* frame,
+                                                word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  Object key(&scope, args.get(1));
+  Object value(&scope, args.get(2));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(*self)) {
+    return thread->raiseRequiresType(self, SymbolId::kDict);
+  }
+  Dict dict(&scope, *self);
+  Object key_hash(&scope, Interpreter::hash(thread, key));
+  if (key_hash.isErrorException()) return *key_hash;
+  runtime->dictAtPut(thread, dict, key, key_hash, value);
+  return NoneType::object();
 }
 
 RawObject UnderBuiltinsModule::underDivmod(Thread* thread, Frame* frame,

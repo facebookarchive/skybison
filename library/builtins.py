@@ -56,6 +56,7 @@ _dict_guard = _dict_guard  # noqa: F821
 _dict_lookup = _dict_lookup  # noqa: F821
 _dict_lookup_next = _dict_lookup_next  # noqa: F821
 _dict_popitem = _dict_popitem  # noqa: F821
+_dict_setitem = _dict_setitem  # noqa: F821
 _divmod = _divmod  # noqa: F821
 _float_check = _float_check  # noqa: F821
 _float_divmod = _float_divmod  # noqa: F821
@@ -901,7 +902,8 @@ def _dict_getitem(self, key):
     return _Unbound
 
 
-def _dict_setitem(self, key, value):
+# TODO(T56367459): Use _dict_setitem instead.
+def _capi_dict_setitem(self, key, value):
     # Fast path. From the probing strategy, most dictionary lookups will
     # successfully match the first non-empty bucket it finds or completely
     # fail to find a single match.
@@ -2198,8 +2200,7 @@ class dict(bootstrap=True):
         _repr_leave(self)
         return "{" + ", ".join(kwpairs) + "}"
 
-    def __setitem__(self, key, value):
-        pass
+    __setitem__ = _dict_setitem
 
     def clear(self):
         pass
@@ -2236,7 +2237,7 @@ class dict(bootstrap=True):
         _dict_guard(self)
         value = _dict_get(self, key, _Unbound)
         if value is _Unbound:
-            dict.__setitem__(self, key, default)
+            _dict_setitem(self, key, default)
             return default
         return value
 
@@ -2246,7 +2247,7 @@ class dict(bootstrap=True):
             return
         if hasattr(seq, "keys"):
             for key in seq.keys():
-                dict.__setitem__(self, key, seq[key])
+                _dict_setitem(self, key, seq[key])
             return None
         num_items = 0
         for x in iter(seq):
@@ -2256,7 +2257,7 @@ class dict(bootstrap=True):
                     f"dictionary update sequence element #{num_items} has length "
                     f"{_tuple_len(item)}; 2 is required"
                 )
-            dict.__setitem__(self, *item)
+            _dict_setitem(self, *item)
             num_items += 1
 
     def values(self):
