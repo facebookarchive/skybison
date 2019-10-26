@@ -110,6 +110,16 @@ result = Structseq((1,2))
   EXPECT_EQ(PyLong_AsLong(value), 2);
 }
 
+TEST_F(StructSeqExtensionApiTest, SETITEMOnlyDecrefsOnce) {
+  PyObjectPtr type(PyStructSequence_NewType(&desc));
+  PyObjectPtr seq(PyStructSequence_New(type.asTypeObject()));
+  PyObject* value = PyUnicode_FromString("my_unique_string");
+  Py_ssize_t refcnt = Py_REFCNT(value);
+  PyStructSequence_SET_ITEM(seq.get(), 0, value);
+  // Pyro will have refcount of 1 less than CPython
+  EXPECT_LE(Py_REFCNT(value), refcnt);
+}
+
 TEST_F(StructSeqExtensionApiTest, NewInstanceWithLargerThanMinLenReturnsValue) {
   PyObjectPtr type(PyStructSequence_NewType(&desc));
   ASSERT_NE(type, nullptr);

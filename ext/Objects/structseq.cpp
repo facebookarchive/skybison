@@ -27,8 +27,9 @@ PY_EXPORT PyObject* PyStructSequence_GetItem(PyObject* structseq,
   return ApiHandle::borrowedReference(thread, *result);
 }
 
-PY_EXPORT void PyStructSequence_SetItem(PyObject* structseq, Py_ssize_t pos,
-                                        PyObject* value) {
+PY_EXPORT PyObject* PyStructSequence_SET_ITEM_Func(PyObject* structseq,
+                                                   Py_ssize_t pos,
+                                                   PyObject* value) {
   // This function can't be implemented in Python since it's an immutable type
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -46,7 +47,7 @@ PY_EXPORT void PyStructSequence_SetItem(PyObject* structseq, Py_ssize_t pos,
   if (pos < 0 || pos >= n_fields.asWord()) {
     thread->raiseWithFmt(LayoutId::kIndexError,
                          "tuple assignment index out of range");
-    return;
+    return value;
   }
   // Try to set to the tuple first
   Str n_sequence_key(&scope, runtime->symbols()->NSequenceFields());
@@ -56,7 +57,7 @@ PY_EXPORT void PyStructSequence_SetItem(PyObject* structseq, Py_ssize_t pos,
     UserTupleBase user_tuple(&scope, *structseq_obj);
     Tuple tuple(&scope, user_tuple.tupleValue());
     tuple.atPut(pos, *value_obj);
-    return;
+    return value;
   }
 
   // Fall back to the hidden fields.
@@ -68,6 +69,12 @@ PY_EXPORT void PyStructSequence_SetItem(PyObject* structseq, Py_ssize_t pos,
   // Bypass the immutability of structseq_field.__set__
   Instance instance(&scope, *structseq_obj);
   instanceSetAttr(thread, instance, field_name, value_obj);
+  return value;
+}
+
+PY_EXPORT void PyStructSequence_SetItem(PyObject* structseq, Py_ssize_t pos,
+                                        PyObject* value) {
+  PyStructSequence_SET_ITEM_Func(structseq, pos, value);
 }
 
 PY_EXPORT PyObject* PyStructSequence_New(PyTypeObject* pytype) {

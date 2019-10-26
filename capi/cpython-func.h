@@ -969,6 +969,8 @@ PyAPI_FUNC(int) PyModule_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyModule_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyObject_CheckBuffer_Func(PyObject*);
 PyAPI_FUNC(int) PySlice_Check_Func(PyObject*);
+PyAPI_FUNC(PyObject*)
+    PyStructSequence_SET_ITEM_Func(PyObject*, Py_ssize_t, PyObject*);
 PyAPI_FUNC(int) PyTuple_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyTuple_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyType_CheckExact_Func(PyObject*);
@@ -1067,7 +1069,7 @@ PyAPI_FUNC(void) Py_LeaveRecursiveCall_Func();
 #define PyStructSequence_GET_ITEM(op, i)                                       \
   PyStructSequence_GetItem((PyObject*)op, i)
 #define PyStructSequence_SET_ITEM(op, i, v)                                    \
-  (PyStructSequence_SetItem((PyObject*)op, i, v), v)
+  PyStructSequence_SET_ITEM_Func((PyObject*)op, i, v)
 
 #define PyUnicode_GET_LENGTH(op) PyUnicode_GetLength((PyObject*)op)
 #define PyUnicode_GET_SIZE(op) PyUnicode_GetSize((PyObject*)op)
