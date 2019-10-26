@@ -607,10 +607,11 @@ static word vaBuildValuePushFrame(Frame* frame, const char* format,
                                   std::va_list* va, int build_value_flags) {
   if (format == nullptr) return 0;
   word num_values = 0;
+  Thread* thread = Thread::current();
   for (const char* f = format; *f != '\0';) {
     PyObject* value = makeValueFromFormat(&f, va, build_value_flags);
     if (value == nullptr) break;
-    frame->pushValue(ApiHandle::fromPyObject(value)->asObject());
+    frame->pushValue(ApiHandle::stealReference(thread, value));
     num_values++;
   }
   return num_values;
