@@ -320,8 +320,9 @@ extern const char* Py_hexdigits;
 #define CO_MAXBLOCKS 20
 
 /* Compiler Flags */
-#define Py_file_input 257
 #define Py_single_input 256
+#define Py_file_input 257
+#define Py_eval_input 258
 
 #define PyCF_MASK                                                              \
   (CO_FUTURE_DIVISION | CO_FUTURE_ABSOLUTE_IMPORT | CO_FUTURE_WITH_STATEMENT | \
