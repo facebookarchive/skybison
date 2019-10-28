@@ -242,6 +242,15 @@ extern const unsigned char _Py_ctype_toupper[256];
 #define Py_GT 4
 #define Py_GE 5
 
+/* Masks and values used by FORMAT_VALUE opcode. */
+#define FVC_MASK 0x3
+#define FVC_NONE 0x0
+#define FVC_STR 0x1
+#define FVC_REPR 0x2
+#define FVC_ASCII 0x3
+#define FVS_MASK 0x4
+#define FVS_HAVE_SPEC 0x4
+
 /* Flag bits for printing: */
 #define Py_PRINT_RAW 1 /* No string quotes etc. */
 
