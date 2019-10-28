@@ -267,6 +267,7 @@ class Runtime;
   V(UnderInstanceGuard, "_instance_guard")                                     \
   V(UnderInstanceKeys, "_instance_keys")                                       \
   V(UnderInstanceSetattr, "_instance_setattr")                                 \
+  V(UnderInt, "_int")                                                          \
   V(UnderIntCheck, "_int_check")                                               \
   V(UnderIntCheckExact, "_int_checkexact")                                     \
   V(UnderIntFromBytes, "_int_from_bytes")                                      \

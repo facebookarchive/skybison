@@ -85,32 +85,6 @@ PY_EXPORT PyObject* PyLong_FromSize_t(size_t ival) {
   return PyLong_FromUnsignedLong(ival);
 }
 
-// Convert object to a RawInt.
-// - If the object is an Int return it unchanged.
-// - If object has an __int__ method call it and return the result.
-// Throws if the conversion isn't possible.
-static RawObject asIntObject(Thread* thread, const Object& object) {
-  Runtime* runtime = thread->runtime();
-  if (runtime->isInstanceOfInt(*object)) {
-    return *object;
-  }
-
-  // Try calling __int__
-  HandleScope scope(thread);
-  Frame* frame = thread->currentFrame();
-  Object method(&scope, Interpreter::lookupMethod(thread, frame, object,
-                                                  SymbolId::kDunderInt));
-  if (method.isError()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError, "an integer is required");
-  }
-  Object result(&scope,
-                Interpreter::callMethod1(thread, frame, method, object));
-  if (result.isError() || runtime->isInstanceOfInt(*result)) {
-    return *result;
-  }
-  return thread->raiseWithFmt(LayoutId::kTypeError, "__int__ returned non-int");
-}
-
 // Attempt to convert the given PyObject to T. When overflow != nullptr,
 // *overflow will be set to -1, 1, or 0 to indicate underflow, overflow, or
 // neither, respectively. When under/overflow occurs, -1 is returned; otherwise,
@@ -121,20 +95,22 @@ static RawObject asIntObject(Thread* thread, const Object& object) {
 template <typename T>
 static T asInt(PyObject* pylong, const char* type_name, int* overflow) {
   Thread* thread = Thread::current();
-  HandleScope scope(thread);
-
   if (pylong == nullptr) {
     thread->raiseBadInternalCall();
     return -1;
   }
-  Object object(&scope, ApiHandle::fromPyObject(pylong)->asObject());
 
-  Object longobj(&scope, asIntObject(thread, object));
-  if (longobj.isError()) {
-    return -1;
+  HandleScope scope(thread);
+  Object long_obj(&scope, ApiHandle::fromPyObject(pylong)->asObject());
+  if (!thread->runtime()->isInstanceOfInt(*long_obj)) {
+    long_obj = thread->invokeFunction1(SymbolId::kBuiltins, SymbolId::kUnderInt,
+                                       long_obj);
+    if (long_obj.isError()) {
+      return -1;
+    }
   }
 
-  Int num(&scope, intUnderlying(thread, longobj));
+  Int num(&scope, intUnderlying(thread, long_obj));
   auto const result = num.asInt<T>();
   if (result.error == CastError::None) {
     if (overflow) *overflow = 0;
@@ -157,21 +133,23 @@ static T asInt(PyObject* pylong, const char* type_name, int* overflow) {
 template <typename T>
 static T asIntWithoutOverflowCheck(PyObject* pylong) {
   Thread* thread = Thread::current();
-  HandleScope scope(thread);
-
   if (pylong == nullptr) {
     thread->raiseBadInternalCall();
     return -1;
   }
-  Object object(&scope, ApiHandle::fromPyObject(pylong)->asObject());
 
-  Object longobj(&scope, asIntObject(thread, object));
-  if (longobj.isError()) {
-    return -1;
+  HandleScope scope(thread);
+  Object long_obj(&scope, ApiHandle::fromPyObject(pylong)->asObject());
+  if (!thread->runtime()->isInstanceOfInt(*long_obj)) {
+    long_obj = thread->invokeFunction1(SymbolId::kBuiltins, SymbolId::kUnderInt,
+                                       long_obj);
+    if (long_obj.isError()) {
+      return -1;
+    }
   }
-  static_assert(sizeof(T) <= sizeof(word), "T requires multiple digits");
-  Int intobj(&scope, intUnderlying(thread, longobj));
-  return intobj.digitAt(0);
+
+  Int num(&scope, intUnderlying(thread, long_obj));
+  return num.digitAt(0);
 }
 
 PY_EXPORT size_t _PyLong_NumBits(PyObject* pylong) {
