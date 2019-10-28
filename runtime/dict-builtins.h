@@ -8,6 +8,9 @@
 
 namespace py {
 
+// Remove all items from a Dict.
+void dictClear(Thread* thread, const Dict& dict);
+
 // Creates a new dict with shallow copies of the given dict's elements.
 RawObject dictCopy(Thread* thread, const Dict& dict);
 

@@ -264,10 +264,7 @@ static const Type::Slot kInheritableSlots[] = {
 static void* baseBaseSlot(const Type& base, Type::Slot slot) {
   if (!base.hasSlot(Type::Slot::kBase)) return nullptr;
   HandleScope scope(Thread::current());
-  Int basebase_handle(&scope, base.slot(Type::Slot::kBase));
-  Type basebase(
-      &scope,
-      reinterpret_cast<ApiHandle*>(basebase_handle.asCPtr())->asObject());
+  Type basebase(&scope, base.slot(Type::Slot::kBase));
   if (!basebase.hasSlots() || !basebase.hasSlot(slot)) {
     return nullptr;
   }
@@ -397,15 +394,14 @@ RawObject addInheritedSlots(const Type& type) {
 
   if (!type.hasSlots()) {
     type.setSlots(runtime->newTuple(static_cast<int>(Type::Slot::kEnd)));
-    type.setSlot(Type::Slot::kFlags, SmallInt::fromWord(0));
     if (base_type.hasSlots()) {
       type.setSlot(Type::Slot::kFlags, base_type.slot(Type::Slot::kFlags));
+    } else {
+      type.setSlot(Type::Slot::kFlags, SmallInt::fromWord(0));
     }
     type.setSlot(Type::Slot::kBasicSize, SmallInt::fromWord(0));
     type.setSlot(Type::Slot::kItemSize, SmallInt::fromWord(0));
-    type.setSlot(Type::Slot::kBase,
-                 runtime->newIntFromCPtr(
-                     ApiHandle::borrowedReference(thread, *base_type)));
+    type.setSlot(Type::Slot::kBase, *base_type);
   }
 
   // Inherit special slots from dominant base

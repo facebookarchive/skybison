@@ -887,8 +887,11 @@ PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot) {
   if (slot_obj.isNoneType()) {
     return nullptr;
   }
-  Int address(&scope, *slot_obj);
-  return address.asCPtr();
+  if (slot_obj.isInt()) {
+    Int address(&scope, *slot_obj);
+    return address.asCPtr();
+  }
+  return ApiHandle::borrowedReference(thread, *slot_obj);
 }
 
 PY_EXPORT int PyType_Ready(PyTypeObject*) {
@@ -1429,14 +1432,9 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
                          runtime->newTuple(static_cast<int>(Type::Slot::kEnd)));
   type.setSlots(*extension_slots);
 
-  // Set Py_tp_bases
-  PyObject* bases_handle = ApiHandle::borrowedReference(thread, *bases_obj);
-  type.setSlot(Type::Slot::kBases, runtime->newIntFromCPtr(bases_handle));
-
-  // Set Py_tp_base
-  Type base_type(&scope, Tuple::cast(type.mro()).at(1));
-  PyObject* base_handle = ApiHandle::borrowedReference(thread, *base_type);
-  type.setSlot(Type::Slot::kBase, runtime->newIntFromCPtr(base_handle));
+  // Set Py_tp_bases and Py_tp_base
+  type.setSlot(Type::Slot::kBases, *bases_obj);
+  type.setSlot(Type::Slot::kBase, Tuple::cast(type.mro()).at(1));
 
   // Set tp_flags
   Object tp_flags(&scope, runtime->newInt(spec->flags | Py_TPFLAGS_READY |

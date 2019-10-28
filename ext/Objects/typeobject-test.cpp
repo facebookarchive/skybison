@@ -3711,4 +3711,28 @@ result = self.fastcall(*[1234], *{})
   EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 2), 1));
 }
 
+TEST(TypeExtensionApiTestNoFixture, DeallocSlotCalledDuringFinalize) {
+  Py_Initialize();
+
+  static bool destroyed = false;
+  destructor dealloc = [](PyObject* self) {
+    PyTypeObject* type = Py_TYPE(self);
+    destroyed = true;
+    PyObject_Del(self);
+    Py_DECREF(type);
+  };
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_tp_dealloc, dealloc));
+
+  PyTypeObject* type =
+      reinterpret_cast<PyTypeObject*>(moduleGet("__main__", "Bar"));
+  PyObject* obj = PyObject_New(PyObject, type);
+  Py_DECREF(type);
+  ASSERT_EQ(moduleSet("__main__", "bar_obj", obj), 0);
+  Py_DECREF(obj);
+
+  ASSERT_FALSE(destroyed);
+  Py_FinalizeEx();
+  ASSERT_TRUE(destroyed);
+}
+
 }  // namespace py

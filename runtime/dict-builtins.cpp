@@ -11,6 +11,16 @@
 
 namespace py {
 
+void dictClear(Thread* thread, const Dict& dict) {
+  if (dict.capacity() == 0) return;
+
+  HandleScope scope(thread);
+  dict.setNumItems(0);
+  MutableTuple data(&scope, dict.data());
+  data.fill(NoneType::object());
+  dict.resetNumUsableItems();
+}
+
 RawObject dictCopy(Thread* thread, const Dict& dict) {
   HandleScope scope(thread);
   Dict copy(&scope, thread->runtime()->newDict());
@@ -268,13 +278,7 @@ RawObject DictBuiltins::clear(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self, SymbolId::kDict);
   }
   Dict dict(&scope, *self);
-  if (dict.capacity() == 0) {
-    return NoneType::object();
-  }
-  dict.setNumItems(0);
-  MutableTuple data(&scope, dict.data());
-  data.fill(NoneType::object());
-  dict.resetNumUsableItems();
+  dictClear(thread, dict);
   return NoneType::object();
 }
 
