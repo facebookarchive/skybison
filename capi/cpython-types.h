@@ -328,6 +328,8 @@ typedef struct {
   unsigned char readonly;
 } _PyUnicodeWriter;
 
+typedef uint16_t _Py_CODEUNIT;
+
 // The following types are intentionally incomplete to make it impossible to
 // dereference the objects
 typedef struct _arena PyArena;

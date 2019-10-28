@@ -119,6 +119,10 @@ extern const unsigned char _Py_ctype_toupper[256];
 
 #define Py_CLEANUP_SUPPORTED 0x20000
 
+#define PY_SIZE_MAX SIZE_MAX
+#define PY_SSIZE_T_MAX ((Py_ssize_t)(((size_t)-1) >> 1))
+#define PY_SSIZE_T_MIN (-PY_SSIZE_T_MAX - 1)
+
 /* Define to printf format modifier for Py_ssize_t */
 #define PY_FORMAT_SIZE_T "z"
 
