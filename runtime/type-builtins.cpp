@@ -482,11 +482,25 @@ RawObject typeLookupInMroById(Thread* thread, const Type& type, SymbolId id) {
 }
 
 bool typeIsDataDescriptor(Thread* thread, const Type& type) {
+  if (type.isBuiltin()) {
+    return Layout::cast(type.instanceLayout()).id() == LayoutId::kProperty;
+  }
   // TODO(T25692962): Track "descriptorness" through a bit on the class
   return !typeLookupInMroById(thread, type, SymbolId::kDunderSet).isError();
 }
 
 bool typeIsNonDataDescriptor(Thread* thread, const Type& type) {
+  if (type.isBuiltin()) {
+    switch (Layout::cast(type.instanceLayout()).id()) {
+      case LayoutId::kClassMethod:
+      case LayoutId::kFunction:
+      case LayoutId::kProperty:
+      case LayoutId::kStaticMethod:
+        return true;
+      default:
+        return false;
+    }
+  }
   // TODO(T25692962): Track "descriptorness" through a bit on the class
   return !typeLookupInMroById(thread, type, SymbolId::kDunderGet).isError();
 }
