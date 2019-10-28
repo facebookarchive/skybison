@@ -1118,6 +1118,18 @@ PyAPI_FUNC(void) Py_LeaveRecursiveCall_Func();
 #define Py_REFCNT(op) (((PyObject*)op)->ob_refcnt)
 #define Py_XDECREF(op) Py_DecRef((PyObject*)op)
 #define Py_XINCREF(op) Py_IncRef((PyObject*)op)
+#define Py_SETREF(op, op2)                                                     \
+  do {                                                                         \
+    PyObject* _py_tmp = (PyObject*)(op);                                       \
+    (op) = (op2);                                                              \
+    Py_DECREF(_py_tmp);                                                        \
+  } while (0)
+#define Py_XSETREF(op, op2)                                                    \
+  do {                                                                         \
+    PyObject* _py_tmp = (PyObject*)(op);                                       \
+    (op) = (op2);                                                              \
+    Py_XDECREF(_py_tmp);                                                       \
+  } while (0)
 
 #define PyObject_MALLOC PyObject_Malloc
 #define PyObject_REALLOC PyObject_Realloc
