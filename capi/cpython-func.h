@@ -1074,6 +1074,8 @@ PyAPI_FUNC(void) Py_LeaveRecursiveCall_Func();
 #define PyList_GET_SIZE(op) PyList_Size((PyObject*)op)
 #define PyList_SET_ITEM(op, i, v) PyList_SET_ITEM_Func((PyObject*)op, i, v)
 
+#define PyLong_AS_LONG(op) PyLong_AsLong(op)
+
 #define PySet_GET_SIZE(op) PySet_Size((PyObject*)op)
 
 #define PyTuple_GET_SIZE(op) PyTuple_Size((PyObject*)op)
