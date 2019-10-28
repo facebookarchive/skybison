@@ -9,6 +9,12 @@ extern "C" {
 
 #define PyAPI_FUNC(RTYPE) RTYPE
 
+#ifdef __cplusplus
+#define PyMODINIT_FUNC extern "C" PyObject*
+#else
+#define PyMODINIT_FUNC PyObject*
+#endif
+
 /* Singletons */
 PyAPI_FUNC(PyObject*) PyExc_ArithmeticError_Ptr();
 PyAPI_FUNC(PyObject*) PyExc_AssertionError_Ptr();

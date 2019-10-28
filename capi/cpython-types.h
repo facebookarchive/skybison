@@ -203,6 +203,13 @@ typedef struct PyModuleDef_Base {
   PyObject* m_copy;
 } PyModuleDef_Base;
 
+#define PyModuleDef_HEAD_INIT                                                  \
+  {                                                                            \
+    PyObject_HEAD_INIT(NULL) NULL, /* m_init */                                \
+        0,                         /* m_index */                               \
+        NULL,                      /* m_copy */                                \
+  }
+
 typedef struct PyModuleDef_Slot {
   int slot;
   void* value;
