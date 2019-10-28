@@ -3910,7 +3910,12 @@ inline void* RawInt::asCPtr() const {
 
 template <typename T>
 OptInt<T> RawInt::asInt() const {
-  if (isSmallInt()) return RawSmallInt::cast(*this).asInt<T>();
+  if (isSmallInt()) {
+    return RawSmallInt::cast(*this).asInt<T>();
+  }
+  if (isBool()) {
+    return OptInt<T>::valid(RawBool::cast(*this).value() ? 1 : 0);
+  }
   return RawLargeInt::cast(*this).asInt<T>();
 }
 

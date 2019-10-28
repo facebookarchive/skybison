@@ -396,6 +396,20 @@ TEST_F(IntTest, AsIntWithNegativeLargeIntReturnsUnderflow) {
   EXPECT_EQ(negative.asInt<uword>().error, CastError::Underflow);
 }
 
+TEST_F(IntTest, AsIntWithTrueReturnsOne) {
+  HandleScope scope(thread_);
+  Int value(&scope, Bool::trueObj());
+  EXPECT_VALID(value.asInt<word>(), 1);
+  EXPECT_VALID(value.asInt<uint8_t>(), 1);
+}
+
+TEST_F(IntTest, AsIntWithFalseReturnsZero) {
+  HandleScope scope(thread_);
+  Int value(&scope, Bool::falseObj());
+  EXPECT_VALID(value.asInt<uword>(), 0);
+  EXPECT_VALID(value.asInt<int32_t>(), 0);
+}
+
 #undef EXPECT_VALID
 
 TEST_F(IntTest, SmallIntFromWordTruncatedWithSmallNegativeNumberReturnsSelf) {

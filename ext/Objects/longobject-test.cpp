@@ -211,6 +211,11 @@ x = X()
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(LongExtensionApiTest, AsLongWithBoolReturnsLong) {
+  EXPECT_EQ(PyLong_AsLong(Py_True), 1);
+  EXPECT_EQ(PyLong_AsLong(Py_False), 0);
+}
+
 TEST_F(LongExtensionApiTest, FromStringReturnsLong) {
   PyObjectPtr long0(PyLong_FromString("1", nullptr, 10));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
