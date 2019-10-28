@@ -293,9 +293,41 @@ extern const char* Py_hexdigits;
 #define Py_TPFLAGS_HAVE_GC (1UL << 14)
 #define Py_TPFLAGS_DEFAULT (1UL << 18)
 
+/* Masks for PyCodeObject co_flags */
+#define CO_OPTIMIZED 0x0001
+#define CO_NEWLOCALS 0x0002
+#define CO_VARARGS 0x0004
+#define CO_VARKEYWORDS 0x0008
+#define CO_NESTED 0x0010
+#define CO_GENERATOR 0x0020
+#define CO_NOFREE 0x0040
+#define CO_COROUTINE 0x0080
+#define CO_ITERABLE_COROUTINE 0x0100
+#define CO_ASYNC_GENERATOR 0x0200
+
+#define CO_FUTURE_DIVISION 0x2000
+#define CO_FUTURE_ABSOLUTE_IMPORT 0x4000
+#define CO_FUTURE_WITH_STATEMENT 0x8000
+#define CO_FUTURE_PRINT_FUNCTION 0x10000
+#define CO_FUTURE_UNICODE_LITERALS 0x20000
+#define CO_FUTURE_BARRY_AS_BDFL 0x40000
+#define CO_FUTURE_GENERATOR_STOP 0x80000
+
+#define CO_MAXBLOCKS 20
+
 /* Compiler Flags */
 #define Py_file_input 257
 #define Py_single_input 256
+
+#define PyCF_MASK                                                              \
+  (CO_FUTURE_DIVISION | CO_FUTURE_ABSOLUTE_IMPORT | CO_FUTURE_WITH_STATEMENT | \
+   CO_FUTURE_PRINT_FUNCTION | CO_FUTURE_UNICODE_LITERALS |                     \
+   CO_FUTURE_BARRY_AS_BDFL | CO_FUTURE_GENERATOR_STOP)
+#define PyCF_MASK_OBSOLETE (CO_NESTED)
+#define PyCF_SOURCE_IS_UTF8 0x0100
+#define PyCF_DONT_IMPLY_DEDENT 0x0200
+#define PyCF_ONLY_AST 0x0400
+#define PyCF_IGNORE_COOKIE 0x0800
 
 #ifdef __cplusplus
 }
