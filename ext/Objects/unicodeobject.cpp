@@ -58,19 +58,6 @@ typedef uint16_t Py_UCS2;
 static const int kMaxLongLongChars = 19;  // len(str(2**63-1))
 static const int kOverallocateFactor = 4;
 
-struct _PyUnicodeWriter {  // NOLINT
-  PyObject* buffer;
-  void* data;
-  enum PyUnicode_Kind kind;
-  Py_UCS4 maxchar;
-  Py_ssize_t size;
-  Py_ssize_t pos;
-  Py_ssize_t min_length;
-  Py_UCS4 min_char;
-  unsigned char overallocate;
-  unsigned char readonly;
-};  // NOLINT
-
 static RawObject symbolFromError(Thread* thread, const char* error) {
   Runtime* runtime = thread->runtime();
   Symbols* symbols = runtime->symbols();
@@ -116,9 +103,9 @@ PY_EXPORT void _PyUnicodeWriter_Init(_PyUnicodeWriter* writer) {
   writer->kind = PyUnicode_4BYTE_KIND;
 }
 
-PY_EXPORT int _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter* writer,
-                                               Py_ssize_t length,
-                                               Py_UCS4 /* maxchar */) {
+static int _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter* writer,
+                                            Py_ssize_t length,
+                                            Py_UCS4 /* maxchar */) {
   writer->maxchar = kMaxUnicode;
   if (length > kMaxWord - writer->pos) {
     Thread::current()->raiseMemoryError();

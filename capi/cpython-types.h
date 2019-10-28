@@ -308,6 +308,19 @@ typedef struct {
   unsigned char stack_buffer[128];  // byte[128]
 } _PyBytesWriter;
 
+typedef struct {
+  PyObject* buffer;
+  void* data;
+  enum PyUnicode_Kind kind;
+  Py_UCS4 maxchar;
+  Py_ssize_t size;
+  Py_ssize_t pos;
+  Py_ssize_t min_length;
+  Py_UCS4 min_char;
+  unsigned char overallocate;
+  unsigned char readonly;
+} _PyUnicodeWriter;
+
 // The following types are intentionally incomplete to make it impossible to
 // dereference the objects
 typedef struct _arena PyArena;

@@ -857,6 +857,20 @@ PyAPI_FUNC(Py_ssize_t)
     PyUnicode_Tailmatch(PyObject*, PyObject*, Py_ssize_t, Py_ssize_t, int);
 PyAPI_FUNC(PyObject*) PyUnicode_Translate(PyObject*, PyObject*, const char*);
 PyAPI_FUNC(int) PyUnicode_WriteChar(PyObject*, Py_ssize_t, Py_UCS4);
+PyAPI_FUNC(void) _PyUnicodeWriter_Dealloc(_PyUnicodeWriter*);
+PyAPI_FUNC(PyObject*) _PyUnicodeWriter_Finish(_PyUnicodeWriter*);
+PyAPI_FUNC(void) _PyUnicodeWriter_Init(_PyUnicodeWriter*);
+PyAPI_FUNC(int)
+    _PyUnicodeWriter_Prepare(_PyUnicodeWriter*, Py_ssize_t, Py_UCS4);
+PyAPI_FUNC(int) _PyUnicodeWriter_WriteASCIIString(_PyUnicodeWriter*,
+                                                  const char*, Py_ssize_t);
+PyAPI_FUNC(int) _PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter*, Py_UCS4);
+PyAPI_FUNC(int) _PyUnicodeWriter_WriteChar(_PyUnicodeWriter*, Py_UCS4);
+PyAPI_FUNC(int) _PyUnicodeWriter_WriteLatin1String(_PyUnicodeWriter*,
+                                                   const char*, Py_ssize_t);
+PyAPI_FUNC(int) _PyUnicodeWriter_WriteStr(_PyUnicodeWriter*, PyObject*);
+PyAPI_FUNC(int) _PyUnicodeWriter_WriteSubstring(_PyUnicodeWriter*, PyObject*,
+                                                Py_ssize_t, Py_ssize_t);
 PyAPI_FUNC(PyObject*) PyWeakref_GetObject(PyObject*);
 PyAPI_FUNC(PyObject*) PyWeakref_NewProxy(PyObject*, PyObject*);
 PyAPI_FUNC(PyObject*) PyWeakref_NewRef(PyObject*, PyObject*);
@@ -1151,6 +1165,11 @@ PyAPI_FUNC(void) Py_LeaveRecursiveCall_Func();
 
 #define Py_EnterRecursiveCall(where) Py_EnterRecursiveCall_Func(where)
 #define Py_LeaveRecursiveCall() Py_LeaveRecursiveCall_Func()
+
+/* Define identity macro so `generate_cpython_sources.py` deletes the cpython
+ * macro. TODO(T56488016): Remove this macro when the generator is gone. */
+#define _PyUnicodeWriter_Prepare(WRITER, LENGTH, MAXCHAR)                      \
+  _PyUnicodeWriter_Prepare(WRITER, LENGTH, MAXCHAR)
 
 #ifdef __cplusplus
 }
