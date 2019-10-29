@@ -376,7 +376,7 @@ void ObjectBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
   Function dunder_getattribute(
       &scope, runtime->newFunctionWithCode(thread, qualname, code, module_obj));
 
-  typeAtPutByStr(thread, new_type, name, dunder_getattribute);
+  typeAtPut(thread, new_type, name, dunder_getattribute);
 }
 
 RawObject ObjectBuiltins::dunderGetattribute(Thread* thread, Frame* frame,

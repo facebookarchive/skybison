@@ -17,6 +17,14 @@ Built-in Types
   CPython initializes it with `None` and only sets it to a dictionary in
   `module.__init__`.
 
+- Type dictionaries must only have `str` keys that do not override `__eq__` or
+  `__hash__`. This Example will raise a `TypeError`:
+```python
+>>> class A:
+...   locals()[500] = 1
+...
+TypeError: '_type_init' requires a 'str' object but got 'int'
+```
 
 Interpreter
 -----------

@@ -762,7 +762,7 @@ RawObject addOperators(Thread* thread, const Type& type) {
     if (Int::cast(*slot_value).asCPtr() ==
         bit_cast<void*>(&PyObject_HashNotImplemented)) {
       Object none(&scope, NoneType::object());
-      typeAtPutByStr(thread, type, slot_name, none);
+      typeAtPut(thread, type, slot_name, none);
       return NoneType::object();
     }
 
@@ -789,7 +789,7 @@ RawObject addOperators(Thread* thread, const Type& type) {
     }
 
     // Finally, put the wrapper in the type dict.
-    typeAtPutByStr(thread, type, slot_name, func_obj);
+    typeAtPut(thread, type, slot_name, func_obj);
   }
 
   return NoneType::object();
@@ -1243,7 +1243,7 @@ RawObject addMethods(Thread* thread, const Type& type) {
             thread, methods[i].ml_name, bit_cast<void*>(methods[i].ml_meth),
             methods[i].ml_doc, methodTypeFromMethodFlags(methods[i].ml_flags)));
     if (function.isError()) return *function;
-    typeAtPutByStr(thread, type, name, function);
+    typeAtPut(thread, type, name, function);
   }
   return NoneType::object();
 }
@@ -1263,7 +1263,7 @@ RawObject addMembers(Thread* thread, const Type& type) {
     Object setter(&scope, memberSetter(thread, members[i]));
     if (setter.isError()) return *setter;
     Object property(&scope, runtime->newProperty(getter, setter, none));
-    typeAtPutByStr(thread, type, name, property);
+    typeAtPut(thread, type, name, property);
   }
   return NoneType::object();
 }
@@ -1283,7 +1283,7 @@ RawObject addGetSet(Thread* thread, const Type& type) {
     Object setter(&scope, getSetSetter(thread, name, getsets[i]));
     if (setter.isError()) return *setter;
     Object property(&scope, runtime->newProperty(getter, setter, none));
-    typeAtPutByStr(thread, type, name, property);
+    typeAtPut(thread, type, name, property);
   }
   return NoneType::object();
 }
@@ -1376,7 +1376,7 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
                     thread->invokeFunction1(SymbolId::kBuiltins,
                                             SymbolId::kStaticMethod, func));
     if (func_obj.isError()) return *func;
-    typeAtPutByStr(thread, type, dunder_new_name, func_obj);
+    typeAtPut(thread, type, dunder_new_name, func_obj);
   }
 
   // tp_alloc -> PyType_GenericAlloc

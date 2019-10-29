@@ -231,7 +231,7 @@ static void patchTypeDict(Thread* thread, const Type& base_type,
 
       copyFunctionEntries(thread, base_fn, patch_fn);
     }
-    typeAtPutByStr(thread, base_type, key, patch_obj);
+    typeAtPut(thread, base_type, key, patch_obj);
   }
 }
 

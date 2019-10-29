@@ -548,19 +548,8 @@ RawObject typeAtById(Thread* thread, const Type& type, SymbolId id) {
   return ValueCell::cast(*value).value();
 }
 
-RawObject typeAtPut(Thread* thread, const Type& type, const Object& key,
-                    const Object& key_hash, const Object& value) {
-  HandleScope scope(thread);
-  Dict dict(&scope, type.dict());
-  ValueCell value_cell(&scope, thread->runtime()->dictAtPutInValueCell(
-                                   thread, dict, key, key_hash, value));
-  DCHECK(value_cell.dependencyLink().isNoneType(),
-         "should not have any cache dependency");
-  return *value_cell;
-}
-
-RawObject typeAtPutByStr(Thread* thread, const Type& type, const Str& name,
-                         const Object& value) {
+RawObject typeAtPut(Thread* thread, const Type& type, const Str& name,
+                    const Object& value) {
   HandleScope scope(thread);
   Dict dict(&scope, type.dict());
   ValueCell value_cell(&scope, thread->runtime()->dictAtPutInValueCellByStr(
@@ -768,15 +757,18 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   {
     Tuple data(&scope, dict.data());
     Object value(&scope, NoneType::object());
-    Object key(&scope, NoneType::object());
-    Object key_hash(&scope, NoneType::object());
+    Object key_obj(&scope, NoneType::object());
+    Str key(&scope, Str::empty());
     for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
       value = Dict::Bucket::value(*data, i);
       DCHECK(!(value.isValueCell() && ValueCell::cast(*value).isPlaceholder()),
              "value should not be a placeholder value cell");
-      key = Dict::Bucket::key(*data, i);
-      key_hash = Dict::Bucket::hash(*data, i);
-      typeAtPut(thread, type, key, key_hash, value);
+      key_obj = Dict::Bucket::key(*data, i);
+      if (!key_obj.isStr()) {
+        return thread->raiseRequiresType(key_obj, SymbolId::kStr);
+      }
+      key = *key_obj;
+      typeAtPut(thread, type, key, value);
     }
   }
 
@@ -917,7 +909,7 @@ RawObject typeSetAttr(Thread* thread, const Type& type,
   }
 
   // No data descriptor found, store the attribute in the type dict
-  typeAtPutByStr(thread, type, name_interned, value);
+  typeAtPut(thread, type, name_interned, value);
   return NoneType::object();
 }
 

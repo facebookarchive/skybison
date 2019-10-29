@@ -29,11 +29,8 @@ RawObject typeAtByStr(Thread* thread, const Type& type, const Str& name);
 
 RawObject typeAtById(Thread* thread, const Type& type, SymbolId id);
 
-RawObject typeAtPut(Thread* thread, const Type& type, const Object& key,
-                    const Object& key_hash, const Object& value);
-
-RawObject typeAtPutByStr(Thread* thread, const Type& type, const Str& name,
-                         const Object& value);
+RawObject typeAtPut(Thread* thread, const Type& type, const Str& name,
+                    const Object& value);
 
 RawObject typeAtPutById(Thread* thread, const Type& type, SymbolId id,
                         const Object& value);
