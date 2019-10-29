@@ -630,11 +630,13 @@ typedef struct {
 static void
 ast_dealloc(AST_object *self)
 {
+    freefunc free_func;
     PyTypeObject *tp = Py_TYPE(self);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
     Py_CLEAR(self->dict);
-    Py_TYPE(self)->tp_free(self);
+    free_func = PyType_GetSlot(tp, Py_tp_free);
+    free_func(self);
     Py_DECREF(tp);
 }
 
