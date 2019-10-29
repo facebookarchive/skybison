@@ -29,11 +29,8 @@ TEST_F(MarshalReaderTest, ReadBytes) {
   EXPECT_EQ(s2[1], 'l');
 }
 
-TEST_F(MarshalReaderTest, ReadTypeAscii) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-
-  // Read a non ref
+TEST_F(MarshalReaderTest, ReadTypeAsciiNonRef) {
+  HandleScope scope(thread_);
   Marshal::Reader reader(&scope, &runtime_, "\x61\x0a\x00\x00\x00testing123");
   Object result(&scope, reader.readObject());
   EXPECT_EQ(reader.numRefs(), 0);
@@ -42,31 +39,30 @@ TEST_F(MarshalReaderTest, ReadTypeAscii) {
   // Shouldn't have interned the string during unmarshaling, so interning it
   // now should return the same string
   Object str(&scope, runtime_.newStrFromCStr("testing123"));
-  EXPECT_EQ(runtime_.internStr(thread, str), *str);
+  EXPECT_EQ(runtime_.internStr(thread_, str), *str);
+}
 
-  // Read a ref
-  Marshal::Reader ref_reader(&scope, &runtime_,
-                             "\xe1\x0a\x00\x00\x00testing321");
-  Object ref_result(&scope, ref_reader.readObject());
-  EXPECT_EQ(ref_reader.numRefs(), 1);
-  EXPECT_TRUE(isStrEqualsCStr(*ref_result, "testing321"));
+TEST_F(MarshalReaderTest, ReadTypeAsciiRef) {
+  HandleScope scope(thread_);
+  Marshal::Reader reader(&scope, &runtime_, "\xe1\x0a\x00\x00\x00testing321");
+  Object result(&scope, reader.readObject());
+  EXPECT_EQ(reader.numRefs(), 1);
+  EXPECT_TRUE(isStrEqualsCStr(*result, "testing321"));
 
   // Shouldn't have interned the string during unmarshaling, so interning it
   // now should return the same string
-  Object str2(&scope, runtime_.newStrFromCStr("testing321"));
-  EXPECT_EQ(runtime_.internStr(thread, str2), *str2);
-
-  // Read an ascii string with negative length
-  Marshal::Reader neg_reader(&scope, &runtime_,
-                             "\x61\xf6\xff\xff\xfftesting123");
-  EXPECT_TRUE(neg_reader.readObject().isError());
+  Object str(&scope, runtime_.newStrFromCStr("testing321"));
+  EXPECT_EQ(runtime_.internStr(thread_, str), *str);
 }
 
-TEST_F(MarshalReaderTest, ReadTypeAsciiInterned) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(MarshalReaderTest, ReadTypeAsciiWithNegativeLengthReturnsError) {
+  HandleScope scope(thread_);
+  Marshal::Reader reader(&scope, &runtime_, "\x61\xf6\xff\xff\xfftesting123");
+  EXPECT_TRUE(reader.readObject().isError());
+}
 
-  // Read a non ref
+TEST_F(MarshalReaderTest, ReadTypeAsciiInternedNonRef) {
+  HandleScope scope(thread_);
   Marshal::Reader reader(&scope, &runtime_, "\x41\x0a\x00\x00\x00testing123");
   Object result(&scope, reader.readObject());
   EXPECT_EQ(reader.numRefs(), 0);
@@ -75,31 +71,30 @@ TEST_F(MarshalReaderTest, ReadTypeAsciiInterned) {
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
   Object str(&scope, runtime_.newStrFromCStr("testing123"));
-  EXPECT_NE(runtime_.internStr(thread, str), *str);
+  EXPECT_NE(runtime_.internStr(thread_, str), *str);
+}
 
-  // Read a ref
-  Marshal::Reader ref_reader(&scope, &runtime_,
-                             "\xc1\x0a\x00\x00\x00testing321");
-  Object ref_result(&scope, ref_reader.readObject());
-  EXPECT_EQ(ref_reader.numRefs(), 1);
-  EXPECT_TRUE(isStrEqualsCStr(*ref_result, "testing321"));
+TEST_F(MarshalReaderTest, ReadTypeAsciiInternedRef) {
+  HandleScope scope(thread_);
+  Marshal::Reader reader(&scope, &runtime_, "\xc1\x0a\x00\x00\x00testing321");
+  Object result(&scope, reader.readObject());
+  EXPECT_EQ(reader.numRefs(), 1);
+  EXPECT_TRUE(isStrEqualsCStr(*result, "testing321"));
 
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
-  Object str2(&scope, runtime_.newStrFromCStr("testing321"));
-  EXPECT_NE(runtime_.internStr(thread, str2), *str2);
-
-  // Read an ascii string with negative length
-  Marshal::Reader neg_reader(&scope, &runtime_,
-                             "\x41\xf6\xff\xff\xfftesting123");
-  EXPECT_TRUE(neg_reader.readObject().isError());
+  Object str(&scope, runtime_.newStrFromCStr("testing321"));
+  EXPECT_NE(runtime_.internStr(thread_, str), *str);
 }
 
-TEST_F(MarshalReaderTest, ReadTypeUnicode) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(MarshalReaderTest, ReadTypeAsciiInternedWithNegativeLengthReturnsError) {
+  HandleScope scope(thread_);
+  Marshal::Reader reader(&scope, &runtime_, "\x41\xf6\xff\xff\xfftesting123");
+  EXPECT_TRUE(reader.readObject().isError());
+}
 
-  // Read a non ref
+TEST_F(MarshalReaderTest, ReadTypeUnicodeNonRef) {
+  HandleScope scope(thread_);
   Marshal::Reader reader(&scope, &runtime_, "\x75\x0a\x00\x00\x00testing123");
   Object result(&scope, reader.readObject());
   EXPECT_EQ(reader.numRefs(), 0);
@@ -108,31 +103,30 @@ TEST_F(MarshalReaderTest, ReadTypeUnicode) {
   // Shouldn't have interned the string during unmarshaling, so interning it
   // now should return the same string
   Object str(&scope, runtime_.newStrFromCStr("testing123"));
-  EXPECT_EQ(runtime_.internStr(thread, str), *str);
+  EXPECT_EQ(runtime_.internStr(thread_, str), *str);
+}
 
-  // Read a ref
-  Marshal::Reader ref_reader(&scope, &runtime_,
-                             "\xf5\x0a\x00\x00\x00testing321");
-  Object ref_result(&scope, ref_reader.readObject());
-  EXPECT_EQ(ref_reader.numRefs(), 1);
-  EXPECT_TRUE(isStrEqualsCStr(*ref_result, "testing321"));
+TEST_F(MarshalReaderTest, ReadTypeUnicodeRef) {
+  HandleScope scope(thread_);
+  Marshal::Reader reader(&scope, &runtime_, "\xf5\x0a\x00\x00\x00testing321");
+  Object result(&scope, reader.readObject());
+  EXPECT_EQ(reader.numRefs(), 1);
+  EXPECT_TRUE(isStrEqualsCStr(*result, "testing321"));
 
   // Shouldn't have interned the string during unmarshaling, so interning it
   // now should return the same string
-  Object str2(&scope, runtime_.newStrFromCStr("testing321"));
-  EXPECT_EQ(runtime_.internStr(thread, str2), *str2);
-
-  // Read an unicode string with negative length
-  Marshal::Reader neg_reader(&scope, &runtime_,
-                             "\x75\xf6\xff\xff\xfftesting123");
-  EXPECT_TRUE(neg_reader.readObject().isError());
+  Object str(&scope, runtime_.newStrFromCStr("testing321"));
+  EXPECT_EQ(runtime_.internStr(thread_, str), *str);
 }
 
-TEST_F(MarshalReaderTest, ReadTypeInterned) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(MarshalReaderTest, ReadTypeUnicodeWithNegativeLengthReturnsError) {
+  HandleScope scope(thread_);
+  Marshal::Reader reader(&scope, &runtime_, "\x75\xf6\xff\xff\xfftesting123");
+  EXPECT_TRUE(reader.readObject().isError());
+}
 
-  // Read a non ref
+TEST_F(MarshalReaderTest, ReadTypeInternedNonRef) {
+  HandleScope scope(thread_);
   Marshal::Reader reader(&scope, &runtime_, "\x74\x0a\x00\x00\x00testing123");
   Object result(&scope, reader.readObject());
   EXPECT_EQ(reader.numRefs(), 0);
@@ -141,31 +135,30 @@ TEST_F(MarshalReaderTest, ReadTypeInterned) {
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
   Object str(&scope, runtime_.newStrFromCStr("testing123"));
-  EXPECT_NE(runtime_.internStr(thread, str), *str);
+  EXPECT_NE(runtime_.internStr(thread_, str), *str);
+}
 
-  // Read a ref
-  Marshal::Reader ref_reader(&scope, &runtime_,
-                             "\xf4\x0a\x00\x00\x00testing321");
-  Object ref_result(&scope, ref_reader.readObject());
-  EXPECT_EQ(ref_reader.numRefs(), 1);
+TEST_F(MarshalReaderTest, ReadTypeInternedRef) {
+  HandleScope scope(thread_);
+  Marshal::Reader reader(&scope, &runtime_, "\xf4\x0a\x00\x00\x00testing321");
+  Object ref_result(&scope, reader.readObject());
+  EXPECT_EQ(reader.numRefs(), 1);
   EXPECT_TRUE(isStrEqualsCStr(*ref_result, "testing321"));
 
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
-  Object str2(&scope, runtime_.newStrFromCStr("testing321"));
-  EXPECT_NE(runtime_.internStr(thread, str2), *str2);
-
-  // Read an interned string with negative length
-  Marshal::Reader neg_reader(&scope, &runtime_,
-                             "\x74\xf6\xff\xff\xfftesting123");
-  EXPECT_TRUE(neg_reader.readObject().isError());
+  Object str(&scope, runtime_.newStrFromCStr("testing321"));
+  EXPECT_NE(runtime_.internStr(thread_, str), *str);
 }
 
-TEST_F(MarshalReaderTest, ReadTypeShortAsciiInterned) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(MarshalReaderTest, ReadTypeWithInternedWithNegativeLengthReturnsError) {
+  HandleScope scope(thread_);
+  Marshal::Reader reader(&scope, &runtime_, "\x74\xf6\xff\xff\xfftesting123");
+  EXPECT_TRUE(reader.readObject().isError());
+}
 
-  // Read a non ref
+TEST_F(MarshalReaderTest, ReadTypeShortAsciiInternedNonRef) {
+  HandleScope scope(thread_);
   Marshal::Reader reader(&scope, &runtime_, "\x5a\x0atesting123");
   Object result(&scope, reader.readObject());
   EXPECT_EQ(reader.numRefs(), 0);
@@ -174,18 +167,20 @@ TEST_F(MarshalReaderTest, ReadTypeShortAsciiInterned) {
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
   Object str(&scope, runtime_.newStrFromCStr("testing123"));
-  EXPECT_NE(runtime_.internStr(thread, str), *str);
+  EXPECT_NE(runtime_.internStr(thread_, str), *str);
+}
 
-  // Read a ref
-  Marshal::Reader ref_reader(&scope, &runtime_, "\xda\x0atesting321");
-  Object ref_result(&scope, ref_reader.readObject());
-  EXPECT_EQ(ref_reader.numRefs(), 1);
-  EXPECT_TRUE(isStrEqualsCStr(*ref_result, "testing321"));
+TEST_F(MarshalReaderTest, ReadTypeShortAsciiInternedRef) {
+  HandleScope scope(thread_);
+  Marshal::Reader reader(&scope, &runtime_, "\xda\x0atesting321");
+  Object result(&scope, reader.readObject());
+  EXPECT_EQ(reader.numRefs(), 1);
+  EXPECT_TRUE(isStrEqualsCStr(*result, "testing321"));
 
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
-  Object str2(&scope, runtime_.newStrFromCStr("testing321"));
-  EXPECT_NE(runtime_.internStr(thread, str2), *str2);
+  Object str(&scope, runtime_.newStrFromCStr("testing321"));
+  EXPECT_NE(runtime_.internStr(thread_, str), *str);
 }
 
 TEST_F(MarshalReaderTest, ReadLong) {
@@ -490,8 +485,7 @@ TEST_F(MarshalReaderTest, ReadObjectSetOnEmptySetReturnsEmptySet) {
 }
 
 TEST_F(MarshalReaderTest, ReadObjectSetOnNonEmptySetReturnsCorrectNonEmptySet) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+  HandleScope scope(thread_);
   // marshal.dumps(set([1,2,3]))
   const char* buffer =
       "\xbc\x03\x00\x00\x00\xe9\x01\x00\x00\x00\xe9\x02\x00\x00\x00\xe9\x03\x00"
@@ -502,11 +496,11 @@ TEST_F(MarshalReaderTest, ReadObjectSetOnNonEmptySetReturnsCorrectNonEmptySet) {
   Set set(&scope, *obj);
   EXPECT_EQ(set.numItems(), 3);
   Int one(&scope, SmallInt::fromWord(1));
-  EXPECT_TRUE(setIncludes(thread, set, one));
+  EXPECT_TRUE(setIncludes(thread_, set, one));
   Int two(&scope, SmallInt::fromWord(2));
-  EXPECT_TRUE(setIncludes(thread, set, two));
+  EXPECT_TRUE(setIncludes(thread_, set, two));
   Int three(&scope, SmallInt::fromWord(3));
-  EXPECT_TRUE(setIncludes(thread, set, three));
+  EXPECT_TRUE(setIncludes(thread_, set, three));
 }
 
 TEST_F(MarshalReaderTest, ReadObjectFrozenSetOnEmptySetReturnsEmptyFrozenSet) {
@@ -529,8 +523,7 @@ TEST_F(MarshalReaderTest,
 
 TEST_F(MarshalReaderTest,
        ReadObjectFrozenSetOnNonEmptySetReturnsCorrectNonEmptyFrozenSet) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+  HandleScope scope(thread_);
   // marshal.dumps(frozenset([1,2,3]))
   const char* buffer =
       "\xbe\x03\x00\x00\x00\xe9\x01\x00\x00\x00\xe9\x02\x00\x00\x00\xe9\x03\x00"
@@ -541,11 +534,11 @@ TEST_F(MarshalReaderTest,
   FrozenSet set(&scope, *obj);
   EXPECT_EQ(set.numItems(), 3);
   Int one(&scope, SmallInt::fromWord(1));
-  EXPECT_TRUE(setIncludes(thread, set, one));
+  EXPECT_TRUE(setIncludes(thread_, set, one));
   Int two(&scope, SmallInt::fromWord(2));
-  EXPECT_TRUE(setIncludes(thread, set, two));
+  EXPECT_TRUE(setIncludes(thread_, set, two));
   Int three(&scope, SmallInt::fromWord(3));
-  EXPECT_TRUE(setIncludes(thread, set, three));
+  EXPECT_TRUE(setIncludes(thread_, set, three));
 }
 
 TEST_F(MarshalReaderTest,
