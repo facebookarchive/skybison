@@ -13,7 +13,7 @@ _unimplemented = _unimplemented  # noqa: F821
 
 class accumulate:
     def __new__(cls, iterable, func=None):
-        result = super(accumulate, cls).__new__(cls)
+        result = object.__new__(cls)
         result._it = iter(iterable)
         result._func = operator.add if func is None else func
         result._accumulated = None
@@ -40,7 +40,7 @@ class chain:
         return self
 
     def __new__(cls, *iterables):
-        result = super(chain, cls).__new__(cls)
+        result = object.__new__(cls)
         result._it = None
         result._iterables = iter(iterables)
         return result
@@ -61,7 +61,7 @@ class chain:
 
     @classmethod
     def from_iterable(cls, iterable):
-        result = super(chain, cls).__new__(cls)
+        result = object.__new__(cls)
         result._it = None
         result._iterables = iter(iterable)
         return result
