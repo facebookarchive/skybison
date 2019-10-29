@@ -265,8 +265,37 @@ PY_EXPORT int PyObject_Not(PyObject* obj) {
   return res == 0;
 }
 
-PY_EXPORT int PyObject_Print(PyObject* /* p */, FILE* /* p */, int /* s */) {
-  UNIMPLEMENTED("PyObject_Print");
+PY_EXPORT int PyObject_Print(PyObject* obj, FILE* fp, int flags) {
+  if (PyErr_CheckSignals()) return -1;
+  std::clearerr(fp);  // Clear any previous error condition
+  if (obj == nullptr) {
+    std::fprintf(fp, "<nil>");
+  } else {
+    PyObject* str =
+        flags & Py_PRINT_RAW ? PyObject_Str(obj) : PyObject_Repr(obj);
+    if (str == nullptr) return -1;
+    if (!PyUnicode_Check(str)) {
+      PyErr_Format(PyExc_TypeError, "str() or repr() returned '%.100s'",
+                   _PyType_Name(str->ob_type));
+      Py_DECREF(str);
+      return -1;
+    }
+    PyObject* bytes =
+        PyUnicode_AsEncodedString(str, "utf-8", "backslashreplace");
+    Py_DECREF(str);
+    if (bytes == nullptr) {
+      return -1;
+    }
+    char* c_str = PyBytes_AsString(bytes);
+    std::fputs(c_str, fp);
+    Py_DECREF(bytes);
+  }
+  if (std::ferror(fp)) {
+    PyErr_SetFromErrno(PyExc_IOError);
+    std::clearerr(fp);
+    return -1;
+  }
+  return 0;
 }
 
 // TODO(T38571506): Handle recursive objects safely.

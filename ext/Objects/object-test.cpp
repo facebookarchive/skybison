@@ -300,6 +300,62 @@ TEST_F(ObjectExtensionApiTest, HasAttrStringWithAttrReturnsTrue) {
   EXPECT_TRUE(PyObject_HasAttrString(module, "foo"));
 }
 
+TEST_F(ObjectExtensionApiTest, PrintWithNullObjPrintsNil) {
+  CaptureStdStreams streams;
+  int result = PyObject_Print(nullptr, stdout, 0);
+  EXPECT_EQ(result, 0);
+  EXPECT_EQ(streams.out(), "<nil>");
+}
+
+TEST_F(ObjectExtensionApiTest, PrintWithZeroFlagsCallsDunderRepr) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+class C:
+  def __repr__(self):
+    return "foo"
+  def __str__(self):
+    return "bar"
+obj = C()
+  )"),
+            0);
+  CaptureStdStreams streams;
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  int result = PyObject_Print(obj, stdout, 0);
+  EXPECT_EQ(result, 0);
+  EXPECT_EQ(streams.out(), "foo");
+}
+
+TEST_F(ObjectExtensionApiTest, PrintWithRawFlagsCallsDunderStr) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+class C:
+  def __repr__(self):
+    return "foo"
+  def __str__(self):
+    return "bar"
+obj = C()
+  )"),
+            0);
+  CaptureStdStreams streams;
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  int result = PyObject_Print(obj, stdout, Py_PRINT_RAW);
+  EXPECT_EQ(result, 0);
+  EXPECT_EQ(streams.out(), "bar");
+}
+
+TEST_F(ObjectExtensionApiTest, PrintReplacesBackslashes) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+class C:
+  def __repr__(self):
+    return r"foo\bar"
+obj = C()
+  )"),
+            0);
+  CaptureStdStreams streams;
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  int result = PyObject_Print(obj, stdout, 0);
+  EXPECT_EQ(result, 0);
+  EXPECT_EQ(streams.out(), "foo\\bar");
+}
+
 TEST_F(ObjectExtensionApiTest, RefCountDecreaseDeallocsHandle) {
   long value = 10;
   PyObject* o = PyLong_FromLong(value);
