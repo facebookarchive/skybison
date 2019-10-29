@@ -109,10 +109,10 @@ PY_EXPORT PyObject* PyObject_GenericGetAttr(PyObject* obj, PyObject* name) {
                          "attribute name must be string, not '%s'", &name_obj);
     return nullptr;
   }
-  Object name_hash(&scope, Interpreter::hash(thread, name_obj));
-  if (name_hash.isErrorException()) return nullptr;
-  Object result(&scope,
-                objectGetAttribute(thread, object, name_obj, name_hash));
+  Object hash_obj(&scope, Interpreter::hash(thread, name_obj));
+  if (hash_obj.isErrorException()) return nullptr;
+  word hash = SmallInt::cast(*hash_obj).value();
+  Object result(&scope, objectGetAttribute(thread, object, name_obj, hash));
   if (result.isError()) {
     if (!result.isErrorException()) {
       thread->raiseWithFmt(LayoutId::kAttributeError, "%s", &name_obj);
@@ -133,12 +133,13 @@ PY_EXPORT int PyObject_GenericSetAttr(PyObject* obj, PyObject* name,
                          "attribute name must be string, not '%s'", &name_obj);
     return -1;
   }
-  Object name_hash(&scope, Interpreter::hash(thread, name_obj));
-  if (name_hash.isErrorException()) return -1;
+  Object hash_obj(&scope, Interpreter::hash(thread, name_obj));
+  if (hash_obj.isErrorException()) return -1;
+  word hash = SmallInt::cast(*hash_obj).value();
 
   Object value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
   Object result(&scope,
-                objectSetAttr(thread, object, name_obj, name_hash, value_obj));
+                objectSetAttr(thread, object, name_obj, hash, value_obj));
   if (result.isError()) {
     if (!result.isErrorException()) {
       thread->raiseWithFmt(LayoutId::kAttributeError, "%s", &name_obj);

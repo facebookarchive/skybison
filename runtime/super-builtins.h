@@ -9,7 +9,7 @@
 namespace py {
 
 RawObject superGetAttribute(Thread* thread, const Super& super,
-                            const Object& name_str, const Object& name_hash);
+                            const Object& name_str, word hash);
 
 class SuperBuiltins
     : public Builtins<SuperBuiltins, SymbolId::kSuper, LayoutId::kSuper> {

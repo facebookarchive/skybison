@@ -199,10 +199,9 @@ TEST_F(FunctionBuiltinsTest, FunctionSetAttrSetsAttribute) {
   ASSERT_TRUE(foo_obj.isFunction());
   Function foo(&scope, *foo_obj);
   Str name(&scope, runtime_.internStrFromCStr(thread, "bar"));
-  Object name_hash(&scope, strHash(thread_, *name));
+  word hash = strHash(thread_, *name);
   Object value(&scope, runtime_.newInt(6789));
-  EXPECT_TRUE(
-      functionSetAttr(thread, foo, name, name_hash, value).isNoneType());
+  EXPECT_TRUE(functionSetAttr(thread, foo, name, hash, value).isNoneType());
   ASSERT_TRUE(foo.dict().isDict());
   Dict function_dict(&scope, foo.dict());
   EXPECT_TRUE(

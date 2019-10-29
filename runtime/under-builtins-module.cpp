@@ -1364,12 +1364,10 @@ RawObject UnderBuiltinsModule::underDictBucketInsert(Thread* thread,
   Tuple data(&scope, dict.data());
   word index = ~Int::cast(args.get(1)).asWord();
   Object key(&scope, args.get(2));
-  Object key_hash(&scope, args.get(3));
-  key_hash = SmallInt::fromWordTruncated(
-      Int::cast(intUnderlying(thread, key_hash)).digitAt(0));
+  SmallInt hash(&scope, args.get(3));
   Object value(&scope, args.get(4));
   bool has_empty_slot = Dict::Bucket::isEmpty(*data, index);
-  Dict::Bucket::set(*data, index, *key_hash, *key, *value);
+  Dict::Bucket::set(*data, index, hash.value(), *key, *value);
   dict.setNumItems(dict.numItems() + 1);
   if (has_empty_slot) {
     dict.decrementNumUsableItems();
@@ -1437,9 +1435,10 @@ RawObject UnderBuiltinsModule::underDictGet(Thread* thread, Frame* frame,
   Dict dict(&scope, *self);
 
   // Check key hash
-  Object key_hash(&scope, Interpreter::hash(thread, key));
-  if (key_hash.isErrorException()) return *key_hash;
-  Object result(&scope, runtime->dictAt(thread, dict, key, key_hash));
+  Object hash_obj(&scope, Interpreter::hash(thread, key));
+  if (hash_obj.isErrorException()) return *hash_obj;
+  word hash = SmallInt::cast(*hash_obj).value();
+  Object result(&scope, runtime->dictAt(thread, dict, key, hash));
   if (result.isErrorNotFound()) return *default_obj;
   return *result;
 }
@@ -1474,12 +1473,7 @@ RawObject UnderBuiltinsModule::underDictLookup(Thread* thread, Frame* frame,
   }
   Dict dict(&scope, *dict_obj);
   Object key(&scope, args.get(1));
-  Object key_hash(&scope, args.get(2));
-  if (!runtime->isInstanceOfInt(*key_hash)) {
-    return thread->raiseRequiresType(key_hash, SymbolId::kInt);
-  }
-  key_hash = intUnderlying(thread, key_hash);
-  key_hash = SmallInt::fromWordTruncated(Int::cast(*key_hash).digitAt(0));
+  word hash = SmallInt::cast(args.get(2)).value();
   if (dict.capacity() == 0) {
     dict.setData(runtime->newMutableTuple(Runtime::kInitialDictCapacity *
                                           Dict::Bucket::kNumPointers));
@@ -1487,7 +1481,7 @@ RawObject UnderBuiltinsModule::underDictLookup(Thread* thread, Frame* frame,
   }
   Tuple data(&scope, dict.data());
   word bucket_mask = Dict::Bucket::bucketMask(data.length());
-  uword perturb = static_cast<uword>(RawSmallInt::cast(*key_hash).value());
+  uword perturb = static_cast<uword>(hash);
   word index = Dict::Bucket::reduceIndex(data.length(), perturb);
   // Track the first place where an item could be inserted. This might be
   // the index zero. Therefore, all negative insertion indexes will be
@@ -1504,8 +1498,7 @@ RawObject UnderBuiltinsModule::underDictLookup(Thread* thread, Frame* frame,
       if (key.raw() == Dict::Bucket::key(*data, index).raw()) {
         return SmallInt::fromWord(index);
       }
-      if (SmallInt::cast(*key_hash).value() ==
-          SmallInt::cast(Dict::Bucket::hash(*data, index)).value()) {
+      if (Dict::Bucket::hash(*data, index) == hash) {
         return SmallInt::fromWord(index);
       }
     }
@@ -1523,12 +1516,10 @@ RawObject UnderBuiltinsModule::underDictLookupNext(Thread* thread, Frame* frame,
   Tuple data(&scope, dict.data());
   word index = Int::cast(args.get(1)).asWord();
   Object key(&scope, args.get(2));
-  Object key_hash(&scope, args.get(3));
-  key_hash = SmallInt::fromWordTruncated(
-      Int::cast(intUnderlying(thread, key_hash)).digitAt(0));
+  word hash = SmallInt::cast(args.get(3)).value();
   uword perturb;
   if (args.get(4).isUnbound()) {
-    perturb = static_cast<uword>(RawSmallInt::cast(*key_hash).value());
+    perturb = static_cast<uword>(hash);
   } else {
     perturb = Int::cast(args.get(4)).asWord();
   }
@@ -1554,8 +1545,7 @@ RawObject UnderBuiltinsModule::underDictLookupNext(Thread* thread, Frame* frame,
       result.atPut(1, SmallInt::fromWord(perturb));
       return *result;
     }
-    if (SmallInt::cast(*key_hash).value() ==
-        SmallInt::cast(Dict::Bucket::hash(*data, index)).value()) {
+    if (hash == Dict::Bucket::hash(*data, index)) {
       result.atPut(0, SmallInt::fromWord(index));
       result.atPut(1, SmallInt::fromWord(perturb));
       return *result;
@@ -1597,9 +1587,10 @@ RawObject UnderBuiltinsModule::underDictSetItem(Thread* thread, Frame* frame,
     return thread->raiseRequiresType(self, SymbolId::kDict);
   }
   Dict dict(&scope, *self);
-  Object key_hash(&scope, Interpreter::hash(thread, key));
-  if (key_hash.isErrorException()) return *key_hash;
-  runtime->dictAtPut(thread, dict, key, key_hash, value);
+  Object hash_obj(&scope, Interpreter::hash(thread, key));
+  if (hash_obj.isErrorException()) return *hash_obj;
+  word hash = SmallInt::cast(*hash_obj).value();
+  runtime->dictAtPut(thread, dict, key, hash, value);
   return NoneType::object();
 }
 
@@ -1618,14 +1609,13 @@ RawObject UnderBuiltinsModule::underDictUpdate(Thread* thread, Frame* frame,
   if (*other_obj != *self) {
     Object key(&scope, NoneType::object());
     Object value(&scope, NoneType::object());
-    Object hash(&scope, NoneType::object());
     Dict other(&scope, *other_obj);
     Tuple other_data(&scope, other.data());
     for (word i = Dict::Bucket::kFirst;
          Dict::Bucket::nextItem(*other_data, &i);) {
       key = Dict::Bucket::key(*other_data, i);
       value = Dict::Bucket::value(*other_data, i);
-      hash = Dict::Bucket::hash(*other_data, i);
+      word hash = Dict::Bucket::hash(*other_data, i);
       runtime->dictAtPut(thread, self, key, hash, value);
     }
   }
@@ -2532,9 +2522,10 @@ RawObject UnderBuiltinsModule::underModuleProxyDelitem(Thread* thread,
   Object key(&scope, args.get(1));
   Module module(&scope, self.module());
   DCHECK(module.moduleProxy() == self, "module.proxy != proxy.module");
-  Object key_hash(&scope, Interpreter::hash(thread, key));
-  if (key_hash.isErrorException()) return *key_hash;
-  Object result(&scope, moduleRemove(thread, module, key, key_hash));
+  Object hash_obj(&scope, Interpreter::hash(thread, key));
+  if (hash_obj.isErrorException()) return *hash_obj;
+  word hash = SmallInt::cast(*hash_obj).value();
+  Object result(&scope, moduleRemove(thread, module, key, hash));
   if (result.isErrorNotFound()) {
     return thread->raiseWithFmt(LayoutId::kKeyError, "'%S'", &key);
   }
@@ -2550,9 +2541,10 @@ RawObject UnderBuiltinsModule::underModuleProxyGet(Thread* thread, Frame* frame,
   Object default_obj(&scope, args.get(2));
   Module module(&scope, self.module());
   DCHECK(module.moduleProxy() == self, "module.proxy != proxy.module");
-  Object key_hash(&scope, Interpreter::hash(thread, key));
-  if (key_hash.isErrorException()) return *key_hash;
-  Object result(&scope, moduleAt(thread, module, key, key_hash));
+  Object hash_obj(&scope, Interpreter::hash(thread, key));
+  if (hash_obj.isErrorException()) return *hash_obj;
+  word hash = SmallInt::cast(*hash_obj).value();
+  Object result(&scope, moduleAt(thread, module, key, hash));
   if (result.isError()) {
     return *default_obj;
   }
@@ -2598,9 +2590,10 @@ RawObject UnderBuiltinsModule::underModuleProxySetitem(Thread* thread,
   Object value(&scope, args.get(2));
   Module module(&scope, self.module());
   DCHECK(module.moduleProxy() == self, "module.proxy != proxy.module");
-  Object key_hash(&scope, Interpreter::hash(thread, key));
-  if (key_hash.isErrorException()) return *key_hash;
-  return moduleAtPut(thread, module, key, key_hash, value);
+  Object hash_obj(&scope, Interpreter::hash(thread, key));
+  if (hash_obj.isErrorException()) return *hash_obj;
+  word hash = SmallInt::cast(*hash_obj).value();
+  return moduleAtPut(thread, module, key, hash, value);
 }
 
 RawObject UnderBuiltinsModule::underModuleProxyValues(Thread* thread,
@@ -3683,9 +3676,10 @@ RawObject UnderBuiltinsModule::underTypeProxyGet(Thread* thread, Frame* frame,
   Object key(&scope, args.get(1));
   Object default_obj(&scope, args.get(2));
   Type type(&scope, self.type());
-  Object key_hash(&scope, Interpreter::hash(thread, key));
-  if (key_hash.isErrorException()) return *key_hash;
-  Object result(&scope, typeAt(thread, type, key, key_hash));
+  Object hash_obj(&scope, Interpreter::hash(thread, key));
+  if (hash_obj.isErrorException()) return *hash_obj;
+  word hash = SmallInt::cast(*hash_obj).value();
+  Object result(&scope, typeAt(thread, type, key, hash));
   if (result.isError()) {
     return *default_obj;
   }

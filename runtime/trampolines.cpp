@@ -369,9 +369,10 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
           runtime->listAdd(thread, saved_values, value);
         } else {
           // New, add it and associated value to the varkeyargs dict
-          Object key_hash(&scope, Interpreter::hash(thread, key));
-          if (key_hash.isErrorException()) return *key_hash;
-          runtime->dictAtPut(thread, dict, key, key_hash, value);
+          Object hash_obj(&scope, Interpreter::hash(thread, key));
+          if (hash_obj.isErrorException()) return *hash_obj;
+          word hash = SmallInt::cast(*hash_obj).value();
+          runtime->dictAtPut(thread, dict, key, hash, value);
           argc--;
         }
       }

@@ -47,12 +47,13 @@ PY_EXPORT int PySet_Add(PyObject* anyset, PyObject* key) {
 
   Set set(&scope, *set_obj);
   Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
-  Object key_obj_hash(&scope, Interpreter::hash(thread, key_obj));
-  if (key_obj_hash.isErrorException()) {
+  Object hash_obj(&scope, Interpreter::hash(thread, key_obj));
+  if (hash_obj.isErrorException()) {
     return -1;
   }
+  word hash = SmallInt::cast(*hash_obj).value();
 
-  runtime->setAdd(thread, set, key_obj, key_obj_hash);
+  runtime->setAdd(thread, set, key_obj, hash);
   return 0;
 }
 
@@ -74,7 +75,7 @@ PY_EXPORT int _PySet_NextEntry(PyObject* pyset, Py_ssize_t* ppos,
   DCHECK(phash != nullptr, "phash must not be null");
   *pkey = ApiHandle::borrowedReference(
       thread, SetBase::Bucket::value(*set_data, *ppos));
-  *phash = SmallInt::cast(SetBase::Bucket::hash(*set_data, *ppos)).value();
+  *phash = SetBase::Bucket::hash(*set_data, *ppos);
   return true;
 }
 
@@ -109,11 +110,12 @@ PY_EXPORT int PySet_Contains(PyObject* anyset, PyObject* key) {
 
   SetBase set(&scope, *set_obj);
   Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
-  Object key_hash(&scope, Interpreter::hash(thread, key_obj));
-  if (key_hash.isErrorException()) {
+  Object hash_obj(&scope, Interpreter::hash(thread, key_obj));
+  if (hash_obj.isErrorException()) {
     return -1;
   }
-  return runtime->setIncludes(thread, set, key_obj, key_hash);
+  word hash = SmallInt::cast(*hash_obj).value();
+  return runtime->setIncludes(thread, set, key_obj, hash);
 }
 
 PY_EXPORT int PySet_Discard(PyObject* pyset, PyObject* pykey) {
@@ -127,11 +129,12 @@ PY_EXPORT int PySet_Discard(PyObject* pyset, PyObject* pykey) {
   }
   Set set(&scope, *set_obj);
   Object key(&scope, ApiHandle::fromPyObject(pykey)->asObject());
-  Object key_hash(&scope, Interpreter::hash(thread, key));
-  if (key_hash.isErrorException()) {
+  Object hash_obj(&scope, Interpreter::hash(thread, key));
+  if (hash_obj.isErrorException()) {
     return -1;
   }
-  return runtime->setRemove(thread, set, key, key_hash);
+  word hash = SmallInt::cast(*hash_obj).value();
+  return runtime->setRemove(thread, set, key, hash);
 }
 
 PY_EXPORT PyObject* PySet_New(PyObject* iterable) {

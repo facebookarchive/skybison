@@ -2,6 +2,7 @@
 
 #include "builtins-module.h"
 #include "dict-builtins.h"
+#include "int-builtins.h"
 #include "runtime.h"
 #include "str-builtins.h"
 #include "test-utils.h"
@@ -24,8 +25,7 @@ TEST_F(DictBuiltinsTest, DictAtGrowsToInitialCapacity) {
   EXPECT_EQ(dict.capacity(), 0);
 
   Object key(&scope, runtime_.newInt(123));
-  Object hash(&scope, Interpreter::hash(thread_, key));
-  ASSERT_FALSE(hash.isErrorException());
+  word hash = intHash(*key);
   Object value(&scope, runtime_.newInt(456));
   runtime_.dictAtPut(thread_, dict, key, hash, value);
   int expected = Runtime::kInitialDictCapacity;
@@ -750,10 +750,9 @@ TEST_F(DictBuiltinsTest, NextBucketProbesAllBuckets) {
   HandleScope scope(thread_);
   Dict dict(&scope, runtime_.newDict());
   Object key(&scope, runtime_.newInt(123));
-  Object key_hash(&scope, Interpreter::hash(thread_, key));
-  ASSERT_FALSE(key_hash.isErrorException());
+  word hash = intHash(*key);
   Object value(&scope, runtime_.newInt(456));
-  runtime_.dictAtPut(thread_, dict, key, key_hash, value);
+  runtime_.dictAtPut(thread_, dict, key, hash, value);
 
   Tuple data(&scope, dict.data());
   ASSERT_EQ(data.length(),
@@ -763,7 +762,7 @@ TEST_F(DictBuiltinsTest, NextBucketProbesAllBuckets) {
 
   uword perturb;
   word bucket_mask;
-  word current = Dict::Bucket::bucket(*data, *key_hash, &bucket_mask, &perturb);
+  word current = Dict::Bucket::bucket(*data, hash, &bucket_mask, &perturb);
   probed[current] = true;
   // Probe until perturb becomes zero.
   while (perturb > 0) {

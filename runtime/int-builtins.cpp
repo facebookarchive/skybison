@@ -40,7 +40,7 @@ void LargeIntBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
       .setDescribedType(runtime->typeAt(kSuperType));
 }
 
-RawSmallInt largeIntHash(RawLargeInt value) {
+word largeIntHash(RawLargeInt value) {
   const word bits_per_half = kBitsPerWord / 2;
 
   // The following computes `value % modulus` with
@@ -144,7 +144,7 @@ RawSmallInt largeIntHash(RawLargeInt value) {
     DCHECK(result != static_cast<uword>(word{-1}),
            "should only have -1 for negative numbers");
   }
-  return RawSmallInt::fromWord(static_cast<word>(result));
+  return result;
 }
 
 // Used only for UserIntBase as a heap-allocated object.
@@ -449,9 +449,10 @@ RawObject IntBuiltins::dunderFormat(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject IntBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
-  return intUnaryOp(
-      thread, frame, nargs,
-      [](Thread*, const Int& self) -> RawObject { return intHash(*self); });
+  return intUnaryOp(thread, frame, nargs,
+                    [](Thread*, const Int& self) -> RawObject {
+                      return SmallInt::fromWord(intHash(*self));
+                    });
 }
 
 RawObject IntBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {

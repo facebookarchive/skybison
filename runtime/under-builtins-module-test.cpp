@@ -4,6 +4,7 @@
 
 #include "builtins-module.h"
 #include "bytearray-builtins.h"
+#include "int-builtins.h"
 #include "module-builtins.h"
 #include "runtime.h"
 #include "test-utils.h"
@@ -430,8 +431,7 @@ TEST_F(UnderBuiltinsModuleTest, UnderDictGetReturnsValue) {
   HandleScope scope(thread_);
   Dict dict(&scope, runtime_.newDict());
   Object key(&scope, runtime_.newInt(123));
-  Object hash(&scope, Interpreter::hash(thread_, key));
-  ASSERT_FALSE(hash.isErrorException());
+  word hash = intHash(*key);
   Object value(&scope, runtime_.newInt(456));
   runtime_.dictAtPut(thread_, dict, key, hash, value);
   Object dflt(&scope, runtime_.newInt(789));

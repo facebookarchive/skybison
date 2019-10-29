@@ -472,7 +472,7 @@ RawObject BytesBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
   }
   Bytes self(&scope, bytesUnderlying(thread, self_obj));
-  return bytesHash(thread, *self);
+  return SmallInt::fromWord(bytesHash(thread, *self));
 }
 
 RawObject BytesBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {

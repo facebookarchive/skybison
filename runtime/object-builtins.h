@@ -15,14 +15,13 @@ RawObject instanceSetAttr(Thread* thread, const Instance& instance,
                           const Str& name_interned, const Object& value);
 
 RawObject objectGetAttribute(Thread* thread, const Object& object,
-                             const Object& name_str, const Object& name_hash);
+                             const Object& name_str, word hash);
 
 // Same as `objectGetAttribute()` but stores a value into `location_out` that is
 // used by the inline cache and interpreted by
 // `Interpreter::loadAttrWithLocation()`.
 RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
-                                        const Object& name_str,
-                                        const Object& name_hash,
+                                        const Object& name_str, word hash,
                                         Object* location_out);
 
 // Raise an AttributeError that `object` has no attribute named `name_str`.
@@ -30,13 +29,11 @@ RawObject objectRaiseAttributeError(Thread* thread, const Object& object,
                                     const Object& name_str);
 
 RawObject objectSetAttr(Thread* thread, const Object& object,
-                        const Object& name_str, const Object& name_hash,
-                        const Object& value);
+                        const Object& name_str, word hash, const Object& value);
 
 RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
-                                   const Object& name_str,
-                                   const Object& name_hash, const Object& value,
-                                   Object* location_out);
+                                   const Object& name_str, word hash,
+                                   const Object& value, Object* location_out);
 
 RawObject objectDelItem(Thread* thread, const Object& object,
                         const Object& key);

@@ -556,7 +556,7 @@ class RawSmallInt : public RawObject {
   template <typename T>
   if_unsigned_t<T, OptInt<T>> asInt() const;
 
-  RawSmallInt hash() const;
+  word hash() const;
 
   // Construction.
   static RawSmallInt fromWord(word value);
@@ -575,11 +575,12 @@ class RawSmallInt : public RawObject {
   static constexpr bool isValid(word value) {
     return (value >= kMinValue) && (value <= kMaxValue);
   }
+  static word truncate(word value);
 
   // Constants.
   static const word kBits = kBitsPerPointer - kSmallIntTagBits;
-  static const word kMinValue = -(1L << (kBits - 1));
-  static const word kMaxValue = (1L << (kBits - 1)) - 1;
+  static const word kMinValue = -(word{1} << (kBits - 1));
+  static const word kMaxValue = (word{1} << (kBits - 1)) - 1;
 
   RAW_OBJECT_COMMON(SmallInt);
 };
@@ -676,7 +677,7 @@ class RawSmallBytes : public RawObject {
   // Read adjacent bytes as `uint32_t` integer.
   uint32_t uint32At(word index) const;
 
-  RawSmallInt hash() const;
+  word hash() const;
 
   // Constants.
   static const word kMaxLength = kWordSize - 1;
@@ -707,7 +708,7 @@ class RawSmallStr : public RawObject {
   // with malloc and must be freed by the caller.
   char* toCStr() const;
 
-  RawSmallInt hash() const;
+  word hash() const;
 
   // Constants.
   static const word kMaxLength = kWordSize - 1;
@@ -791,7 +792,7 @@ class RawBool : public RawObject {
   // Getters and setters.
   bool value() const;
 
-  RawSmallInt hash() const;
+  word hash() const;
 
   // Singletons
   static RawBool trueObj();
@@ -2371,15 +2372,15 @@ class RawDict : public RawInstance {
 // dict. None of operations here do bounds checking on the backing array.
 class RawDict::Bucket {
  public:
-  static word bucket(RawTuple data, RawObject hash, word* bucket_mask,
+  static word bucket(RawTuple data, word hash, word* bucket_mask,
                      uword* perturb) {
     const word nbuckets = data.length() / kNumPointers;
     DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld is not a power of 2", nbuckets);
     DCHECK(nbuckets > 0, "bucket size <= 0");
-    const word value = RawSmallInt::cast(hash).value();
-    *perturb = static_cast<uword>(value);
+    DCHECK(RawSmallInt::isValid(hash), "hash out of range");
+    *perturb = static_cast<uword>(hash);
     *bucket_mask = nbuckets - 1;
-    return *bucket_mask & value;
+    return *bucket_mask & hash;
   }
 
   static word bucketMask(word data_length) {
@@ -2403,32 +2404,39 @@ class RawDict::Bucket {
     return (current * 5 + 1 + *perturb) & bucket_mask;
   }
 
-  static RawObject hash(RawTuple data, word index) {
+  static word hash(RawTuple data, word index) {
+    return RawSmallInt::cast(data.at(index + kHashOffset)).value();
+  }
+
+  static RawObject hashRaw(RawTuple data, word index) {
     return data.at(index + kHashOffset);
   }
 
   static bool isEmpty(RawTuple data, word index) {
-    return hash(data, index).isNoneType() && key(data, index).isNoneType();
+    return data.at(index + kHashOffset).isNoneType() &&
+           key(data, index).isNoneType();
   }
 
   static bool isTombstone(RawTuple data, word index) {
-    return hash(data, index).isNoneType() && !key(data, index).isNoneType();
+    return data.at(index + kHashOffset).isNoneType() &&
+           !key(data, index).isNoneType();
   }
 
   static RawObject key(RawTuple data, word index) {
     return data.at(index + kKeyOffset);
   }
 
-  static void set(RawTuple data, word index, RawObject hash, RawObject key,
+  static void set(RawTuple data, word index, word hash, RawObject key,
                   RawObject value) {
-    data.atPut(index + kHashOffset, hash);
+    data.atPut(index + kHashOffset, RawSmallInt::fromWordTruncated(hash));
     data.atPut(index + kKeyOffset, key);
     data.atPut(index + kValueOffset, value);
   }
 
   static void setTombstone(RawTuple data, word index) {
-    set(data, index, RawNoneType::object(), RawError::notFound(),
-        RawNoneType::object());
+    data.atPut(index + kHashOffset, RawNoneType::object());
+    data.atPut(index + kKeyOffset, RawError::notFound());
+    data.atPut(index + kValueOffset, RawNoneType::object());
   }
 
   static void setValue(RawTuple data, word index, RawObject value) {
@@ -2540,36 +2548,43 @@ class RawFrozenSet : public RawSetBase {
 class RawSetBase::Bucket {
  public:
   // none of these operations do bounds checking on the backing array
-  static word getIndex(RawTuple data, RawObject hash) {
+  static word getIndex(RawTuple data, word hash) {
+    DCHECK(RawSmallInt::isValid(hash), "hash out of range");
     word nbuckets = data.length() / kNumPointers;
     DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld not a power of 2", nbuckets);
-    word value = RawSmallInt::cast(hash).value();
-    return (value & (nbuckets - 1)) * kNumPointers;
+    return (hash & (nbuckets - 1)) * kNumPointers;
   }
 
-  static RawObject hash(RawTuple data, word index) {
-    return data.at(index + kHashOffset);
+  static bool hasValue(RawTuple data, word index) {
+    return !data.at(index).isNoneType();
+  }
+
+  static word hash(RawTuple data, word index) {
+    return RawSmallInt::cast(data.at(index + kHashOffset)).value();
   }
 
   static bool isEmpty(RawTuple data, word index) {
-    return hash(data, index).isNoneType() && value(data, index).isNoneType();
+    return data.at(index + kHashOffset).isNoneType() &&
+           value(data, index).isNoneType();
   }
 
   static bool isTombstone(RawTuple data, word index) {
-    return hash(data, index).isNoneType() && !value(data, index).isNoneType();
+    return data.at(index + kHashOffset).isNoneType() &&
+           !value(data, index).isNoneType();
   }
 
   static RawObject value(RawTuple data, word index) {
     return data.at(index + kKeyOffset);
   }
 
-  static void set(RawTuple data, word index, RawObject hash, RawObject value) {
-    data.atPut(index + kHashOffset, hash);
+  static void set(RawTuple data, word index, word hash, RawObject value) {
+    data.atPut(index + kHashOffset, RawSmallInt::fromWordTruncated(hash));
     data.atPut(index + kKeyOffset, value);
   }
 
   static void setTombstone(RawTuple data, word index) {
-    set(data, index, RawNoneType::object(), RawError::notFound());
+    data.atPut(index + kHashOffset, RawNoneType::object());
+    data.atPut(index + kKeyOffset, RawError::notFound());
   }
 
   static bool nextItem(RawTuple data, word* idx) {
@@ -4039,12 +4054,16 @@ inline RawSmallInt RawSmallInt::fromAlignedCPtr(void* ptr) {
   return fromReinterpretedWord(reinterpret_cast<word>(ptr));
 }
 
-inline RawSmallInt RawSmallInt::hash() const {
+inline word RawSmallInt::truncate(word value) {
+  return (value << kSmallIntTagBits) >> kSmallIntTagBits;
+}
+
+inline word RawSmallInt::hash() const {
   word val = value();
   uword abs = static_cast<uword>(val);
   // Shortcut for positive values smaller than `kArithmeticHashModulus`.
   if (abs < kArithmeticHashModulus) {
-    return *this;
+    return value();
   }
   // Compute `value % kArithmeticHashModulus` (with C/C++ style modulo).  This
   // uses the algorithm from `longIntHash()` simplified for a single word.
@@ -4073,7 +4092,7 @@ inline RawSmallInt RawSmallInt::hash() const {
       result -= 1;
     }
   }
-  return fromWord(static_cast<word>(result));
+  return result;
 }
 
 // RawHeader
@@ -4176,8 +4195,8 @@ inline uint32_t RawSmallBytes::uint32At(word index) const {
   return result;
 }
 
-inline RawSmallInt RawSmallBytes::hash() const {
-  return RawSmallInt::fromWord(raw() >> RawObject::kImmediateTagBits);
+inline word RawSmallBytes::hash() const {
+  return static_cast<word>(raw() >> RawObject::kImmediateTagBits);
 }
 
 // RawSmallStr
@@ -4202,8 +4221,8 @@ inline void RawSmallStr::copyTo(byte* dst, word char_length) const {
   }
 }
 
-inline RawSmallInt RawSmallStr::hash() const {
-  return RawSmallInt::fromWord(raw() >> RawObject::kImmediateTagBits);
+inline word RawSmallStr::hash() const {
+  return static_cast<word>(raw() >> RawObject::kImmediateTagBits);
 }
 
 // RawError
@@ -4241,9 +4260,7 @@ inline RawBool RawBool::trueObj() { return fromBool(true); }
 
 inline RawBool RawBool::falseObj() { return fromBool(false); }
 
-inline RawSmallInt RawBool::hash() const {
-  return RawSmallInt::fromWord(value() ? 1 : 0);
-}
+inline word RawBool::hash() const { return value(); }
 
 inline RawBool RawBool::negate(RawObject value) {
   DCHECK(value.isBool(), "not a boolean instance");

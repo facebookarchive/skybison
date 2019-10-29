@@ -225,42 +225,7 @@ RawObject Interpreter::prepareCallableEx(Thread* thread, Frame* frame,
   return *callable;
 }
 
-RawObject Interpreter::hash(Thread* thread, const Object& value) {
-  // Directly call into hash functions for all types supported by the marshal
-  // code to avoid bootstrapping problems. It also helps performance.
-  LayoutId layout_id = value.layoutId();
-  switch (layout_id) {
-    case LayoutId::kBool:
-      return Bool::cast(*value).hash();
-    case LayoutId::kComplex:
-      return complexHash(*value);
-    case LayoutId::kFloat:
-      return floatHash(*value);
-    case LayoutId::kFrozenSet:
-      return frozensetHash(thread, value);
-    case LayoutId::kSmallInt:
-      return SmallInt::cast(*value).hash();
-    case LayoutId::kLargeBytes:
-    case LayoutId::kSmallBytes:
-      return bytesHash(thread, *value);
-    case LayoutId::kLargeInt:
-      return largeIntHash(LargeInt::cast(*value));
-    case LayoutId::kLargeStr:
-    case LayoutId::kSmallStr:
-      return strHash(thread, *value);
-    case LayoutId::kTuple: {
-      HandleScope scope(thread);
-      Tuple value_tuple(&scope, *value);
-      return tupleHash(thread, value_tuple);
-    }
-    case LayoutId::kNoneType:
-    case LayoutId::kEllipsis:
-    case LayoutId::kStopIteration:
-      return thread->runtime()->hash(*value);
-    default:
-      break;
-  }
-
+static RawObject callDunderHash(Thread* thread, const Object& value) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   // TODO(T52406106): This lookup is unfortunately not inline-cached but should
@@ -296,7 +261,54 @@ RawObject Interpreter::hash(Thread* thread, const Object& value) {
   // `Py_hash_t` (aka `Py_ssize_t`) while we must return a `SmallInt` here so
   // we have to invoke the large int hashing for 1 bit smaller numbers than
   // cpython.
-  return largeIntHash(LargeInt::cast(*hash_int));
+  return SmallInt::fromWord(largeIntHash(LargeInt::cast(*hash_int)));
+}
+
+RawObject Interpreter::hash(Thread* thread, const Object& value) {
+  // Directly call into hash functions for all types supported by the marshal
+  // code to avoid bootstrapping problems. It also helps performance.
+  LayoutId layout_id = value.layoutId();
+  word result;
+  switch (layout_id) {
+    case LayoutId::kBool:
+      result = Bool::cast(*value).hash();
+      break;
+    case LayoutId::kComplex:
+      result = complexHash(*value);
+      break;
+    case LayoutId::kFloat:
+      result = floatHash(*value);
+      break;
+    case LayoutId::kFrozenSet:
+      return frozensetHash(thread, value);
+    case LayoutId::kSmallInt:
+      result = SmallInt::cast(*value).hash();
+      break;
+    case LayoutId::kLargeBytes:
+    case LayoutId::kSmallBytes:
+      result = bytesHash(thread, *value);
+      break;
+    case LayoutId::kLargeInt:
+      result = largeIntHash(LargeInt::cast(*value));
+      break;
+    case LayoutId::kLargeStr:
+    case LayoutId::kSmallStr:
+      result = strHash(thread, *value);
+      break;
+    case LayoutId::kTuple: {
+      HandleScope scope(thread);
+      Tuple value_tuple(&scope, *value);
+      return tupleHash(thread, value_tuple);
+    }
+    case LayoutId::kNoneType:
+    case LayoutId::kEllipsis:
+    case LayoutId::kStopIteration:
+      result = thread->runtime()->hash(*value);
+      break;
+    default:
+      return callDunderHash(thread, value);
+  }
+  return SmallInt::fromWordTruncated(result);
 }
 
 RawObject Interpreter::stringJoin(Thread* thread, RawObject* sp, word num) {
@@ -2281,8 +2293,8 @@ RawObject Interpreter::storeAttrSetLocation(Thread* thread,
   Object dunder_setattr(
       &scope, typeLookupInMroById(thread, type, SymbolId::kDunderSetattr));
   if (dunder_setattr == runtime->objectDunderSetattr()) {
-    Object name_hash(&scope, strHash(thread, *name));
-    return objectSetAttrSetLocation(thread, object, name, name_hash, value,
+    word hash = strHash(thread, *name);
+    return objectSetAttrSetLocation(thread, object, name, hash, value,
                                     location_out);
   }
   Object result(&scope, thread->invokeMethod3(object, SymbolId::kDunderSetattr,
@@ -2380,8 +2392,8 @@ HANDLER_INLINE Continue Interpreter::doDeleteGlobal(Thread* thread, word arg) {
   Module module(&scope, frame->function().moduleObject());
   Tuple names(&scope, Code::cast(frame->code()).names());
   Str name(&scope, names.at(arg));
-  Object name_hash(&scope, strHash(thread, *name));
-  if (moduleRemove(thread, module, name, name_hash).isErrorNotFound()) {
+  word hash = strHash(thread, *name);
+  if (moduleRemove(thread, module, name, hash).isErrorNotFound()) {
     return raiseUndefinedName(thread, name);
   }
   return Continue::NEXT;
@@ -2482,11 +2494,14 @@ HANDLER_INLINE Continue Interpreter::doBuildSet(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   Runtime* runtime = thread->runtime();
   Set set(&scope, runtime->newSet());
+  Object value(&scope, NoneType::object());
+  Object hash_obj(&scope, NoneType::object());
   for (word i = arg - 1; i >= 0; i--) {
-    Object value(&scope, frame->popValue());
-    Object value_hash(&scope, hash(thread, value));
-    if (value_hash.isErrorException()) return Continue::UNWIND;
-    runtime->setAdd(thread, set, value, value_hash);
+    value = frame->popValue();
+    hash_obj = hash(thread, value);
+    if (hash_obj.isErrorException()) return Continue::UNWIND;
+    word hash = SmallInt::cast(*hash_obj).value();
+    runtime->setAdd(thread, set, value, hash);
   }
   frame->pushValue(*set);
   return Continue::NEXT;
@@ -2497,12 +2512,16 @@ HANDLER_INLINE Continue Interpreter::doBuildMap(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
   Dict dict(&scope, runtime->newDictWithSize(arg));
+  Object value(&scope, NoneType::object());
+  Object key(&scope, NoneType::object());
+  Object hash_obj(&scope, NoneType::object());
   for (word i = 0; i < arg; i++) {
-    Object value(&scope, frame->popValue());
-    Object key(&scope, frame->popValue());
-    Object key_hash(&scope, hash(thread, key));
-    if (key_hash.isErrorException()) return Continue::UNWIND;
-    runtime->dictAtPut(thread, dict, key, key_hash, value);
+    value = frame->popValue();
+    key = frame->popValue();
+    hash_obj = hash(thread, key);
+    if (hash_obj.isErrorException()) return Continue::UNWIND;
+    word hash = SmallInt::cast(*hash_obj).value();
+    runtime->dictAtPut(thread, dict, key, hash, value);
   }
   frame->pushValue(*dict);
   return Continue::NEXT;
@@ -2529,9 +2548,9 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread, const Object& object,
   Object dunder_getattribute(
       &scope, typeLookupInMroById(thread, type, SymbolId::kDunderGetattribute));
   if (dunder_getattribute == runtime->objectDunderGetattribute()) {
-    Object name_hash(&scope, strHash(thread, *name));
-    Object result(&scope, objectGetAttributeSetLocation(
-                              thread, object, name, name_hash, location_out));
+    word hash = strHash(thread, *name);
+    Object result(&scope, objectGetAttributeSetLocation(thread, object, name,
+                                                        hash, location_out));
     if (result.isErrorNotFound()) {
       result = thread->invokeMethod2(object, SymbolId::kDunderGetattr, name);
       if (result.isErrorNotFound()) {
@@ -2730,8 +2749,8 @@ HANDLER_INLINE Continue Interpreter::doImportFrom(Thread* thread, word arg) {
   if (from.isModule()) {
     // Common case of a lookup done on the built-in module type.
     Module from_module(&scope, *from);
-    Object name_hash(&scope, strHash(thread, *name));
-    value = moduleGetAttribute(thread, from_module, name, name_hash);
+    word hash = strHash(thread, *name);
+    value = moduleGetAttribute(thread, from_module, name, hash);
   } else {
     // Do a generic attribute lookup.
     value = thread->runtime()->attributeAt(thread, from, name);
@@ -3277,12 +3296,13 @@ HANDLER_INLINE Continue Interpreter::doSetAdd(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
   Object value(&scope, frame->popValue());
-  Object value_hash(&scope, hash(thread, value));
-  if (value_hash.isErrorException()) {
+  Object hash_obj(&scope, hash(thread, value));
+  if (hash_obj.isErrorException()) {
     return Continue::UNWIND;
   }
+  word hash = SmallInt::cast(*hash_obj).value();
   Set set(&scope, Set::cast(frame->peek(arg - 1)));
-  thread->runtime()->setAdd(thread, set, value, value_hash);
+  thread->runtime()->setAdd(thread, set, value, hash);
   return Continue::NEXT;
 }
 
@@ -3292,9 +3312,10 @@ HANDLER_INLINE Continue Interpreter::doMapAdd(Thread* thread, word arg) {
   Object key(&scope, frame->popValue());
   Object value(&scope, frame->popValue());
   Dict dict(&scope, Dict::cast(frame->peek(arg - 1)));
-  Object key_hash(&scope, Interpreter::hash(thread, key));
-  if (key_hash.isErrorException()) return Continue::UNWIND;
-  thread->runtime()->dictAtPut(thread, dict, key, key_hash, value);
+  Object hash_obj(&scope, Interpreter::hash(thread, key));
+  if (hash_obj.isErrorException()) return Continue::UNWIND;
+  word hash = SmallInt::cast(*hash_obj).value();
+  thread->runtime()->dictAtPut(thread, dict, key, hash, value);
   return Continue::NEXT;
 }
 
@@ -3556,12 +3577,15 @@ HANDLER_INLINE Continue Interpreter::doBuildConstKeyMap(Thread* thread,
   HandleScope scope(thread);
   Tuple keys(&scope, frame->popValue());
   Dict dict(&scope, thread->runtime()->newDictWithSize(keys.length()));
+  Object key(&scope, NoneType::object());
+  Object hash_obj(&scope, NoneType::object());
   for (word i = arg - 1; i >= 0; i--) {
-    Object key(&scope, keys.at(i));
-    Object key_hash(&scope, Interpreter::hash(thread, key));
-    if (key_hash.isErrorException()) return Continue::UNWIND;
+    key = keys.at(i);
+    hash_obj = Interpreter::hash(thread, key);
+    if (hash_obj.isErrorException()) return Continue::UNWIND;
+    word hash = SmallInt::cast(*hash_obj).value();
     Object value(&scope, frame->popValue());
-    thread->runtime()->dictAtPut(thread, dict, key, key_hash, value);
+    thread->runtime()->dictAtPut(thread, dict, key, hash, value);
   }
   frame->pushValue(*dict);
   return Continue::NEXT;

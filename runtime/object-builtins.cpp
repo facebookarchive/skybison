@@ -190,14 +190,13 @@ RawObject instanceSetAttr(Thread* thread, const Instance& instance,
 }
 
 RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
-                                        const Object& name_str,
-                                        const Object& name_hash,
+                                        const Object& name_str, word hash,
                                         Object* location_out) {
   // Look for the attribute in the class
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->typeOf(*object));
-  Object type_attr(&scope, typeLookupInMro(thread, type, name_str, name_hash));
+  Object type_attr(&scope, typeLookupInMro(thread, type, name_str, hash));
   if (!type_attr.isError()) {
     Type type_attr_type(&scope, runtime->typeOf(*type_attr));
     if (typeIsDataDescriptor(thread, type_attr_type)) {
@@ -235,20 +234,18 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
 }
 
 RawObject objectGetAttribute(Thread* thread, const Object& object,
-                             const Object& name_str, const Object& name_hash) {
-  return objectGetAttributeSetLocation(thread, object, name_str, name_hash,
-                                       nullptr);
+                             const Object& name_str, word hash) {
+  return objectGetAttributeSetLocation(thread, object, name_str, hash, nullptr);
 }
 
 RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
-                                   const Object& name_str,
-                                   const Object& name_hash, const Object& value,
-                                   Object* location_out) {
+                                   const Object& name_str, word hash,
+                                   const Object& value, Object* location_out) {
   Runtime* runtime = thread->runtime();
   // Check for a data descriptor
   HandleScope scope(thread);
   Type type(&scope, runtime->typeOf(*object));
-  Object type_attr(&scope, typeLookupInMro(thread, type, name_str, name_hash));
+  Object type_attr(&scope, typeLookupInMro(thread, type, name_str, hash));
   if (!type_attr.isError()) {
     Type type_attr_type(&scope, runtime->typeOf(*type_attr));
     if (typeIsDataDescriptor(thread, type_attr_type)) {
@@ -275,9 +272,9 @@ RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
 }
 
 RawObject objectSetAttr(Thread* thread, const Object& object,
-                        const Object& name_str, const Object& name_hash,
+                        const Object& name_str, word hash,
                         const Object& value) {
-  return objectSetAttrSetLocation(thread, object, name_str, name_hash, value,
+  return objectSetAttrSetLocation(thread, object, name_str, hash, value,
                                   nullptr);
 }
 
@@ -390,10 +387,11 @@ RawObject ObjectBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(
         LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
   }
-  Object name_hash(&scope, Interpreter::hash(thread, name));
-  if (name_hash.isErrorException()) return *name_hash;
+  Object hash_obj(&scope, Interpreter::hash(thread, name));
+  if (hash_obj.isErrorException()) return *hash_obj;
+  word hash = SmallInt::cast(*hash_obj).value();
 
-  Object result(&scope, objectGetAttribute(thread, self, name, name_hash));
+  Object result(&scope, objectGetAttribute(thread, self, name, hash));
   if (result.isErrorNotFound()) {
     return objectRaiseAttributeError(thread, self, name);
   }
@@ -402,7 +400,7 @@ RawObject ObjectBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
 
 RawObject ObjectBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
-  return thread->runtime()->hash(args.get(0));
+  return SmallInt::fromWord(thread->runtime()->hash(args.get(0)));
 }
 
 RawObject ObjectBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
@@ -481,9 +479,11 @@ RawObject ObjectBuiltins::dunderSetattr(Thread* thread, Frame* frame,
   if (!name.isStr()) {
     UNIMPLEMENTED("Strict subclass of string");
   }
-  Object name_hash(&scope, Interpreter::hash(thread, name));
+  Object hash_obj(&scope, Interpreter::hash(thread, name));
+  if (hash_obj.isErrorException()) return *hash_obj;
+  word hash = SmallInt::cast(*hash_obj).value();
   Object value(&scope, args.get(2));
-  return objectSetAttr(thread, self, name, name_hash, value);
+  return objectSetAttr(thread, self, name, hash, value);
 }
 
 RawObject ObjectBuiltins::dunderSizeof(Thread* thread, Frame* frame,

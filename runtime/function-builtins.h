@@ -47,10 +47,10 @@ RawObject functionFromModuleMethodDef(Thread* thread, const char* c_name,
                                       ExtensionMethodType type);
 
 RawObject functionGetAttribute(Thread* thread, const Function& function,
-                               const Object& name_str, const Object& name_hash);
+                               const Object& name_str, word hash);
 
 RawObject functionSetAttr(Thread* thread, const Function& function,
-                          const Object& name_str, const Object& name_hash,
+                          const Object& name_str, word hash,
                           const Object& value);
 
 class FunctionBuiltins : public Builtins<FunctionBuiltins, SymbolId::kFunction,

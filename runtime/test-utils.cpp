@@ -185,16 +185,18 @@ bool listContains(const Object& list_obj, const Object& key) {
 
 bool setIncludes(Thread* thread, const SetBase& set, const Object& key) {
   HandleScope scope(thread);
-  Object key_hash(&scope, Interpreter::hash(thread, key));
-  CHECK(key_hash.isSmallInt(), "key must be hashable");
-  return thread->runtime()->setIncludes(thread, set, key, key_hash);
+  Object hash_obj(&scope, Interpreter::hash(thread, key));
+  CHECK(hash_obj.isSmallInt(), "key must be hashable");
+  word hash = SmallInt::cast(*hash_obj).value();
+  return thread->runtime()->setIncludes(thread, set, key, hash);
 }
 
 void setHashAndAdd(Thread* thread, const SetBase& set, const Object& value) {
   HandleScope scope(thread);
-  Object value_hash(&scope, Interpreter::hash(thread, value));
-  CHECK(value_hash.isSmallInt(), "value must be hashable");
-  thread->runtime()->setAdd(thread, set, value, value_hash);
+  Object hash_obj(&scope, Interpreter::hash(thread, value));
+  CHECK(hash_obj.isSmallInt(), "value must be hashable");
+  word hash = SmallInt::cast(*hash_obj).value();
+  thread->runtime()->setAdd(thread, set, value, hash);
 }
 
 static RawObject findModuleByCStr(Runtime* runtime, const char* name) {
@@ -300,12 +302,13 @@ RawObject setFromRange(word start, word stop) {
   HandleScope scope(thread);
   Set result(&scope, thread->runtime()->newSet());
   Object value(&scope, NoneType::object());
-  Object value_hash(&scope, NoneType::object());
+  Object hash_obj(&scope, NoneType::object());
   for (word i = start; i < stop; i++) {
     value = SmallInt::fromWord(i);
-    value_hash = Interpreter::hash(thread, value);
-    if (value_hash.isErrorException()) return *value_hash;
-    thread->runtime()->setAdd(thread, result, value, value_hash);
+    hash_obj = Interpreter::hash(thread, value);
+    if (hash_obj.isErrorException()) return *hash_obj;
+    word hash = SmallInt::cast(*hash_obj).value();
+    thread->runtime()->setAdd(thread, result, value, hash);
   }
   return *result;
 }

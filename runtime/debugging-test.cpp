@@ -367,12 +367,13 @@ TEST_F(DebuggingTests, FormatDict) {
   Dict dict(&scope, runtime_.newDict());
   Str key0(&scope, runtime_.newStrFromCStr("hello"));
   Object key1(&scope, NoneType::object());
-  Object key1_hash(&scope, Interpreter::hash(thread_, key1));
-  ASSERT_FALSE(key1_hash.isErrorException());
+  Object hash_obj(&scope, Interpreter::hash(thread_, key1));
+  ASSERT_FALSE(hash_obj.isErrorException());
+  word hash = SmallInt::cast(*hash_obj).value();
   Object value0(&scope, runtime_.newInt(88));
   Object value1(&scope, runtime_.emptyTuple());
   runtime_.dictAtPutByStr(thread_, dict, key0, value0);
-  runtime_.dictAtPut(thread_, dict, key1, key1_hash, value1);
+  runtime_.dictAtPut(thread_, dict, key1, hash, value1);
   std::stringstream ss;
   ss << dict;
   EXPECT_TRUE(ss.str() == R"({"hello": 88, None: ()})" ||

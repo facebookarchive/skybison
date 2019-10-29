@@ -19,9 +19,9 @@ RawObject asFloatObject(Thread* thread, const Object& obj);
 // Grabs the base float value from an instance of float.
 RawObject floatUnderlying(Thread* thread, const Object& obj);
 
-RawSmallInt doubleHash(double value);
+word doubleHash(double value);
 
-RawSmallInt floatHash(RawObject value);
+word floatHash(RawObject value);
 
 class FloatBuiltins
     : public Builtins<FloatBuiltins, SymbolId::kFloat, LayoutId::kFloat> {
@@ -59,7 +59,7 @@ class FloatBuiltins
 
 void decodeDouble(double value, bool* is_neg, int* exp, uint64_t* mantissa);
 
-inline RawSmallInt floatHash(RawObject value) {
+inline word floatHash(RawObject value) {
   return doubleHash(Float::cast(value).value());
 }
 

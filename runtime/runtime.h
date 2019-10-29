@@ -287,10 +287,10 @@ class Runtime {
 
   // Compute hash value suitable for `RawObject::operator==` (aka `a is b`)
   // equality tests.
-  RawObject hash(RawObject object);
+  word hash(RawObject object);
   // Compute hash value for objects with byte payload. This is a helper to
   // implement `xxxHash()` functions.
-  RawObject valueHash(RawObject object);
+  word valueHash(RawObject object);
 
   word siphash24(View<byte> array);
 
@@ -487,8 +487,8 @@ class Runtime {
   // Associate a value with the supplied key.
   //
   // This handles growing the backing Tuple if needed.
-  void dictAtPut(Thread* thread, const Dict& dict, const Object& key,
-                 const Object& key_hash, const Object& value);
+  void dictAtPut(Thread* thread, const Dict& dict, const Object& key, word hash,
+                 const Object& value);
 
   // Does the same as `dictAtPut` but only works for `key` being a `str`
   // instance. It must not be used with instances of a `str` subclass.
@@ -503,7 +503,7 @@ class Runtime {
   // Look up the value associated with `key`. Returns the associated value or
   // `Error::notFound()`.
   RawObject dictAt(Thread* thread, const Dict& dict, const Object& key,
-                   const Object& key_hash);
+                   word hash);
 
   // Look up the value associated with `name`. `name` must be an instance of
   // `str` but not of a subclass. Returns the associated value or
@@ -517,13 +517,13 @@ class Runtime {
   // Looks up and returns the value associated with the key.  If the key is
   // absent, calls thunk and inserts its result as the value.
   RawObject dictAtIfAbsentPut(Thread* thread, const Dict& dict,
-                              const Object& key, const Object& key_hash,
+                              const Object& key, word hash,
                               Callback<RawObject>* thunk);
 
   // Stores value in a ValueCell associated with `key`. Reuses an existing
   // value cell when possible.
   RawObject dictAtPutInValueCell(Thread* thread, const Dict& dict,
-                                 const Object& key, const Object& key_hash,
+                                 const Object& key, word hash,
                                  const Object& value);
 
   // Stores value in a ValueCell associated with `name`. Reuses an existing
@@ -533,7 +533,7 @@ class Runtime {
 
   // Returns true if the dict contains the specified key.
   bool dictIncludes(Thread* thread, const Dict& dict, const Object& key,
-                    const Object& key_hash);
+                    word hash);
 
   // Returns true if the dict contains an entry associated with `name`.
   // `name` must by a `str` instance (but no subclass).
@@ -543,7 +543,7 @@ class Runtime {
   // Returns the value that was associated before deletion or
   // `Error:notFound()`.
   RawObject dictRemove(Thread* thread, const Dict& dict, const Object& key,
-                       const Object& key_hash);
+                       word hash);
 
   // Try to remove entry associated with `name` from `dict`.
   // Returns the value that was associated before deletion or
@@ -562,10 +562,10 @@ class Runtime {
   // Add `value` to set if there is no equivalent value present yet. Returns
   // `value` if it was added or the existing equivalent value.
   RawObject setAdd(Thread* thread, const SetBase& set, const Object& value,
-                   const Object& value_hash);
+                   word hash);
 
   bool setIncludes(Thread* thread, const SetBase& set, const Object& key,
-                   const Object& key_hash);
+                   word hash);
 
   // Compute the set intersection between a set and an iterator
   // Returns either a new set with the intersection or an Error object.
@@ -574,8 +574,7 @@ class Runtime {
 
   // Delete the value equivalent to `key` from the set.
   // Returns true if a value was removed, false if no equivalent value existed.
-  bool setRemove(Thread* thread, const Set& set, const Object& key,
-                 const Object& key_hash);
+  bool setRemove(Thread* thread, const Set& set, const Object& key, word hash);
 
   // Update a set from an iterator
   // Returns either the updated set or an Error object.
@@ -905,8 +904,8 @@ class Runtime {
   void visitRuntimeRoots(PointerVisitor* visitor);
   void visitThreadRoots(PointerVisitor* visitor);
 
-  RawObject identityHash(RawObject object);
-  RawObject immediateHash(RawObject object);
+  word identityHash(RawObject object);
+  word immediateHash(RawObject object);
 
   RawObject createMro(const Layout& subclass_layout, LayoutId superclass_id);
 
@@ -926,11 +925,11 @@ class Runtime {
   // function returns false and sets index to the location where the key would
   // be inserted. If the dict is full, it sets index to -1.
   bool dictLookup(Thread* thread, const Tuple& data, const Object& key,
-                  const Object& key_hash, word* index, DictEq equals);
+                  word hash, word* index, DictEq equals);
 
   template <SetLookupType type>
   word setLookup(Thread* thread, const Tuple& data, const Object& key,
-                 const Object& key_hash);
+                 word hash);
 
   RawTuple setGrow(Thread* thread, const Tuple& data);
 

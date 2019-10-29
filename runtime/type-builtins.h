@@ -23,7 +23,7 @@ void typeAddDocstring(Thread* thread, const Type& type);
 // TODO(T55440299): Remove this once interned str is the only key type for
 // type dictionaries.
 RawObject typeAt(Thread* thread, const Type& type, const Object& key,
-                 const Object& key_hash);
+                 word hash);
 
 RawObject typeAtByStr(Thread* thread, const Type& type, const Str& name);
 
@@ -44,7 +44,7 @@ RawObject typeLen(Thread* thread, const Type& type);
 RawObject typeValues(Thread* thread, const Type& type);
 
 RawObject typeGetAttribute(Thread* thread, const Type& type,
-                           const Object& name_str, const Object& name_hash);
+                           const Object& name_str, word hash);
 
 // Returns true if the type defines a __set__ method.
 bool typeIsDataDescriptor(Thread* thread, const Type& type);
@@ -64,7 +64,7 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
 // Looks up `key` in the dict of each entry in type's MRO. Returns
 // `Error::notFound()` if the name was not found.
 RawObject typeLookupInMro(Thread* thread, const Type& type, const Object& key,
-                          const Object& key_hash);
+                          word hash);
 
 // Looks up `name` in the dict of each entry in type's MRO. Returns
 // `Error::notFound()` if the name was not found.

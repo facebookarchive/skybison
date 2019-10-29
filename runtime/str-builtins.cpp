@@ -483,7 +483,7 @@ RawObject StrBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self, SymbolId::kStr);
   }
   Str self_str(&scope, strUnderlying(thread, self));
-  return strHash(thread, *self_str);
+  return SmallInt::fromWord(strHash(thread, *self_str));
 }
 
 void strInternInTuple(Thread* thread, const Object& items) {

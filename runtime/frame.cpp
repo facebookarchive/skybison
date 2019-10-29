@@ -23,8 +23,9 @@ RawObject frameGlobals(Thread* thread, Frame* frame) {
   // TODO(T36407403): avoid a reverse mapping by reading the module directly
   // out of the function object or the frame.
   Object name(&scope, frame->function().module());
-  Object hash(&scope, Interpreter::hash(thread, name));
-  if (hash.isErrorException()) return *hash;
+  Object hash_obj(&scope, Interpreter::hash(thread, name));
+  if (hash_obj.isErrorException()) return *hash_obj;
+  word hash = SmallInt::cast(*hash_obj).value();
 
   Runtime* runtime = thread->runtime();
   Dict modules(&scope, runtime->modules());

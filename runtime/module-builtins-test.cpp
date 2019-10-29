@@ -266,8 +266,8 @@ TEST_F(ModuleBuiltinsTest, ModuleLenReturnsItemCountExcludingPlaceholders) {
   SmallInt previous_len(&scope, moduleLen(thread_, module));
 
   Dict module_dict(&scope, module.dict());
-  Object bar_hash(&scope, strHash(thread_, *bar));
-  ValueCell::cast(runtime_.dictAt(thread_, module_dict, bar, bar_hash))
+  word hash = strHash(thread_, *bar);
+  ValueCell::cast(runtime_.dictAt(thread_, module_dict, bar, hash))
       .makePlaceholder();
 
   SmallInt after_len(&scope, moduleLen(thread_, module));
@@ -295,8 +295,8 @@ foo()
   ASSERT_EQ(icLookupGlobalVar(*caches, 0),
             moduleValueCellAtByStr(thread_, module, a));
 
-  Object a_hash(&scope, strHash(thread_, *a));
-  EXPECT_FALSE(moduleRemove(thread_, module, a, a_hash).isError());
+  word hash = strHash(thread_, *a);
+  EXPECT_FALSE(moduleRemove(thread_, module, a, hash).isError());
   EXPECT_TRUE(icLookupGlobalVar(*caches, 0).isNoneType());
 }
 
@@ -331,9 +331,9 @@ TEST_F(ModuleBuiltinsTest, ModuleGetAttributeReturnsInstanceValue) {
   ASSERT_FALSE(runFromCStr(&runtime_, "x = 42").isError());
   Module module(&scope, runtime_.findModuleById(SymbolId::kDunderMain));
   Object name(&scope, runtime_.newStrFromCStr("x"));
-  Object name_hash(&scope, strHash(thread_, *name));
-  EXPECT_TRUE(isIntEqualsWord(
-      moduleGetAttribute(thread_, module, name, name_hash), 42));
+  word hash = strHash(thread_, *name);
+  EXPECT_TRUE(
+      isIntEqualsWord(moduleGetAttribute(thread_, module, name, hash), 42));
 }
 
 TEST_F(ModuleBuiltinsTest, ModuleGetAttributeWithNonExistentNameReturnsError) {
@@ -341,8 +341,8 @@ TEST_F(ModuleBuiltinsTest, ModuleGetAttributeWithNonExistentNameReturnsError) {
   Object module_name(&scope, runtime_.newStrFromCStr(""));
   Module module(&scope, runtime_.newModule(module_name));
   Object name(&scope, runtime_.newStrFromCStr("xxx"));
-  Object name_hash(&scope, strHash(thread_, *name));
-  EXPECT_TRUE(moduleGetAttribute(thread_, module, name, name_hash).isError());
+  word hash = strHash(thread_, *name);
+  EXPECT_TRUE(moduleGetAttribute(thread_, module, name, hash).isError());
   EXPECT_FALSE(thread_->hasPendingException());
 }
 
@@ -351,12 +351,10 @@ TEST_F(ModuleBuiltinsTest, ModuleSetAttrSetsAttribute) {
   Object module_name(&scope, runtime_.newStrFromCStr("foo"));
   Module module(&scope, runtime_.newModule(module_name));
   Object name(&scope, runtime_.internStrFromCStr(thread_, "bar"));
-  Object name_hash(&scope, strHash(thread_, *name));
+  word hash = strHash(thread_, *name);
   Object value(&scope, runtime_.newInt(-543));
-  EXPECT_TRUE(
-      moduleSetAttr(thread_, module, name, name_hash, value).isNoneType());
-  EXPECT_TRUE(
-      isIntEqualsWord(moduleAt(thread_, module, name, name_hash), -543));
+  EXPECT_TRUE(moduleSetAttr(thread_, module, name, hash, value).isNoneType());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(thread_, module, name, hash), -543));
 }
 
 TEST_F(ModuleBuiltinsTest, NewModuleDunderReprReturnsString) {

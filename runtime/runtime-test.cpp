@@ -5,10 +5,12 @@
 
 #include "bytecode.h"
 #include "frame.h"
+#include "int-builtins.h"
 #include "layout.h"
 #include "module-builtins.h"
 #include "object-builtins.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "symbols.h"
 #include "test-utils.h"
 #include "trampolines.h"
@@ -364,12 +366,10 @@ TEST_F(RuntimeDictTest, DictAtPutRetainsExistingKeyObject) {
   HandleScope scope(thread_);
   Dict dict(&scope, runtime_.newDict());
   Str key0(&scope, runtime_.newStrFromCStr("foobarbazbam"));
-  Object key0_hash(&scope, Interpreter::hash(thread_, key0));
-  ASSERT_FALSE(key0_hash.isErrorException());
+  word key0_hash = strHash(thread_, *key0);
   Object value0(&scope, SmallInt::fromWord(123));
   Str key1(&scope, runtime_.newStrFromCStr("foobarbazbam"));
-  Object key1_hash(&scope, Interpreter::hash(thread_, key1));
-  ASSERT_FALSE(key1_hash.isErrorException());
+  word key1_hash = strHash(thread_, *key1);
   Object value1(&scope, SmallInt::fromWord(456));
   ASSERT_NE(key0, key1);
   ASSERT_EQ(key0_hash, key1_hash);
@@ -393,28 +393,27 @@ TEST_F(RuntimeDictTest, GetSet) {
   HandleScope scope(thread_);
   Dict dict(&scope, runtime_.newDict());
   Object key(&scope, SmallInt::fromWord(12345));
-  Object key_hash(&scope, Interpreter::hash(thread_, key));
-  ASSERT_FALSE(key_hash.isErrorException());
+  word hash = intHash(*key);
 
   // Looking up a key that doesn't exist should fail
-  EXPECT_TRUE(runtime_.dictAt(thread_, dict, key, key_hash).isError());
+  EXPECT_TRUE(runtime_.dictAt(thread_, dict, key, hash).isError());
 
   // Store a value
   Object stored(&scope, SmallInt::fromWord(67890));
-  runtime_.dictAtPut(thread_, dict, key, key_hash, stored);
+  runtime_.dictAtPut(thread_, dict, key, hash, stored);
   EXPECT_EQ(dict.numItems(), 1);
 
   // Retrieve the stored value
-  RawObject retrieved = runtime_.dictAt(thread_, dict, key, key_hash);
+  RawObject retrieved = runtime_.dictAt(thread_, dict, key, hash);
   EXPECT_EQ(retrieved, *stored);
 
   // Overwrite the stored value
   Object new_value(&scope, SmallInt::fromWord(5555));
-  runtime_.dictAtPut(thread_, dict, key, key_hash, new_value);
+  runtime_.dictAtPut(thread_, dict, key, hash, new_value);
   EXPECT_EQ(dict.numItems(), 1);
 
   // Get the new value
-  retrieved = runtime_.dictAt(thread_, dict, key, key_hash);
+  retrieved = runtime_.dictAt(thread_, dict, key, hash);
   EXPECT_EQ(retrieved, *new_value);
 }
 
@@ -422,26 +421,25 @@ TEST_F(RuntimeDictTest, Remove) {
   HandleScope scope(thread_);
   Dict dict(&scope, runtime_.newDict());
   Object key(&scope, SmallInt::fromWord(12345));
-  Object key_hash(&scope, Interpreter::hash(thread_, key));
-  ASSERT_FALSE(key_hash.isErrorException());
+  word hash = intHash(*key);
 
   // Removing a key that doesn't exist should fail
-  bool is_missing = runtime_.dictRemove(thread_, dict, key, key_hash).isError();
+  bool is_missing = runtime_.dictRemove(thread_, dict, key, hash).isError();
   EXPECT_TRUE(is_missing);
 
   // Removing a key that exists should succeed and return the value that was
   // stored.
   Object stored(&scope, SmallInt::fromWord(54321));
 
-  runtime_.dictAtPut(thread_, dict, key, key_hash, stored);
+  runtime_.dictAtPut(thread_, dict, key, hash, stored);
   EXPECT_EQ(dict.numItems(), 1);
 
-  RawObject retrieved = runtime_.dictRemove(thread_, dict, key, key_hash);
+  RawObject retrieved = runtime_.dictRemove(thread_, dict, key, hash);
   ASSERT_FALSE(retrieved.isError());
   ASSERT_EQ(SmallInt::cast(retrieved).value(), SmallInt::cast(*stored).value());
 
   // Looking up a key that was deleted should fail
-  EXPECT_TRUE(runtime_.dictAt(thread_, dict, key, key_hash).isError());
+  EXPECT_TRUE(runtime_.dictAt(thread_, dict, key, hash).isError());
   EXPECT_EQ(dict.numItems(), 0);
 }
 
@@ -452,18 +450,16 @@ TEST_F(RuntimeDictTest, Length) {
   // Add 10 items and make sure length reflects it
   for (int i = 0; i < 10; i++) {
     Object key(&scope, SmallInt::fromWord(i));
-    Object key_hash(&scope, Interpreter::hash(thread_, key));
-    ASSERT_FALSE(key_hash.isErrorException());
-    runtime_.dictAtPut(thread_, dict, key, key_hash, key);
+    word hash = intHash(*key);
+    runtime_.dictAtPut(thread_, dict, key, hash, key);
   }
   EXPECT_EQ(dict.numItems(), 10);
 
   // Remove half the items
   for (int i = 0; i < 5; i++) {
     Object key(&scope, SmallInt::fromWord(i));
-    Object key_hash(&scope, Interpreter::hash(thread_, key));
-    ASSERT_FALSE(key_hash.isErrorException());
-    ASSERT_FALSE(runtime_.dictRemove(thread_, dict, key, key_hash).isError());
+    word hash = intHash(*key);
+    ASSERT_FALSE(runtime_.dictRemove(thread_, dict, key, hash).isError());
   }
   EXPECT_EQ(dict.numItems(), 5);
 }
@@ -473,8 +469,7 @@ TEST_F(RuntimeDictTest, AtIfAbsentPutLength) {
   Dict dict(&scope, runtime_.newDict());
 
   Object k1(&scope, SmallInt::fromWord(1));
-  Object k1_hash(&scope, Interpreter::hash(thread_, k1));
-  ASSERT_FALSE(k1_hash.isErrorException());
+  word k1_hash = intHash(*k1);
   Object v1(&scope, SmallInt::fromWord(111));
   runtime_.dictAtPut(thread_, dict, k1, k1_hash, v1);
   EXPECT_EQ(dict.numItems(), 1);
@@ -490,8 +485,7 @@ TEST_F(RuntimeDictTest, AtIfAbsentPutLength) {
 
   // Add new item
   Object k2(&scope, SmallInt::fromWord(2));
-  Object k2_hash(&scope, Interpreter::hash(thread_, k2));
-  ASSERT_FALSE(k2_hash.isErrorException());
+  word k2_hash = intHash(*k2);
   SmallIntCallback cb(222);
   runtime_.dictAtIfAbsentPut(thread_, dict, k2, k2_hash, &cb);
   EXPECT_EQ(dict.numItems(), 2);
@@ -500,8 +494,7 @@ TEST_F(RuntimeDictTest, AtIfAbsentPutLength) {
 
   // Don't overrwite existing item 1 -> v1
   Object k3(&scope, SmallInt::fromWord(1));
-  Object k3_hash(&scope, Interpreter::hash(thread_, k3));
-  ASSERT_FALSE(k3_hash.isErrorException());
+  word k3_hash = intHash(*k3);
   SmallIntCallback cb3(333);
   runtime_.dictAtIfAbsentPut(thread_, dict, k3, k3_hash, &cb3);
   EXPECT_EQ(dict.numItems(), 2);
@@ -515,10 +508,9 @@ TEST_F(RuntimeDictTest, DictAtPutGrowsDictWhenDictIsEmpty) {
   EXPECT_EQ(dict.capacity(), 0);
 
   Object first_key(&scope, SmallInt::fromWord(0));
-  Object first_key_hash(&scope, Interpreter::hash(thread_, first_key));
-  ASSERT_FALSE(first_key_hash.isErrorException());
+  word hash = intHash(*first_key);
   Object first_value(&scope, SmallInt::fromWord(1));
-  runtime_.dictAtPut(thread_, dict, first_key, first_key_hash, first_value);
+  runtime_.dictAtPut(thread_, dict, first_key, hash, first_value);
 
   word initial_capacity = Runtime::kInitialDictCapacity;
   EXPECT_EQ(dict.numItems(), 1);
@@ -534,10 +526,9 @@ TEST_F(RuntimeDictTest, DictAtPutGrowsDictWhenTwoThirdsUsed) {
   word threshold = ((Runtime::kInitialDictCapacity * 2) / 3) - 1;
   for (word i = 0; i < threshold; i++) {
     Object key(&scope, SmallInt::fromWord(i));
-    Object key_hash(&scope, Interpreter::hash(thread_, key));
-    ASSERT_FALSE(key_hash.isErrorException());
+    word hash = intHash(*key);
     Object value(&scope, SmallInt::fromWord(-i));
-    runtime_.dictAtPut(thread_, dict, key, key_hash, value);
+    runtime_.dictAtPut(thread_, dict, key, hash, value);
   }
   EXPECT_EQ(dict.numItems(), threshold);
   EXPECT_EQ(dict.numUsableItems(), 1);
@@ -546,8 +537,7 @@ TEST_F(RuntimeDictTest, DictAtPutGrowsDictWhenTwoThirdsUsed) {
 
   // Add another key which should force us to double the capacity
   Object last_key(&scope, SmallInt::fromWord(threshold));
-  Object last_key_hash(&scope, Interpreter::hash(thread_, last_key));
-  ASSERT_FALSE(last_key_hash.isErrorException());
+  word last_key_hash = intHash(*last_key);
   Object last_value(&scope, SmallInt::fromWord(-threshold));
   runtime_.dictAtPut(thread_, dict, last_key, last_key_hash, last_value);
   EXPECT_EQ(dict.numItems(), threshold + 1);
@@ -558,9 +548,8 @@ TEST_F(RuntimeDictTest, DictAtPutGrowsDictWhenTwoThirdsUsed) {
   // Make sure we can still read all the stored keys/values.
   for (word i = 0; i <= threshold; i++) {
     Object key(&scope, SmallInt::fromWord(i));
-    Object key_hash(&scope, Interpreter::hash(thread_, key));
-    ASSERT_FALSE(key_hash.isErrorException());
-    RawObject value = runtime_.dictAt(thread_, dict, key, key_hash);
+    word hash = intHash(*key);
+    RawObject value = runtime_.dictAt(thread_, dict, key, hash);
     ASSERT_FALSE(value.isError());
     EXPECT_TRUE(isIntEqualsWord(value, -i));
   }
@@ -579,11 +568,13 @@ i1 = C()
 )")
                    .isError());
   Object i0(&scope, mainModuleAt(&runtime_, "i0"));
-  Object i0_hash(&scope, Interpreter::hash(thread_, i0));
-  ASSERT_FALSE(i0_hash.isErrorException());
+  Object i0_hash_obj(&scope, Interpreter::hash(thread_, i0));
+  ASSERT_FALSE(i0_hash_obj.isErrorException());
+  word i0_hash = SmallInt::cast(*i0_hash_obj).value();
   Object i1(&scope, mainModuleAt(&runtime_, "i1"));
-  Object i1_hash(&scope, Interpreter::hash(thread_, i1));
-  ASSERT_FALSE(i1_hash.isErrorException());
+  Object i1_hash_obj(&scope, Interpreter::hash(thread_, i1));
+  ASSERT_FALSE(i1_hash_obj.isErrorException());
+  word i1_hash = SmallInt::cast(*i1_hash_obj).value();
   ASSERT_EQ(i0_hash, i1_hash);
 
   Dict dict(&scope, runtime_.newDict());
@@ -606,13 +597,11 @@ TEST_F(RuntimeDictTest, MixedKeys) {
 
   // Add keys of different type
   Object int_key(&scope, SmallInt::fromWord(100));
-  Object int_key_hash(&scope, Interpreter::hash(thread_, int_key));
-  ASSERT_FALSE(int_key_hash.isErrorException());
+  word int_key_hash = intHash(*int_key);
   runtime_.dictAtPut(thread_, dict, int_key, int_key_hash, int_key);
 
   Object str_key(&scope, runtime_.newStrFromCStr("testing 123"));
-  Object str_key_hash(&scope, Interpreter::hash(thread_, str_key));
-  ASSERT_FALSE(str_key_hash.isErrorException());
+  word str_key_hash = strHash(thread_, *str_key);
   runtime_.dictAtPut(thread_, dict, str_key, str_key_hash, str_key);
 
   // Make sure we get the appropriate values back out
@@ -638,9 +627,10 @@ TEST_F(RuntimeDictTest, GetKeys) {
   Dict dict(&scope, runtime_.newDict());
   for (word i = 0; i < keys.length(); i++) {
     Object key(&scope, keys.at(i));
-    Object key_hash(&scope, Interpreter::hash(thread_, key));
-    ASSERT_FALSE(key_hash.isErrorException());
-    runtime_.dictAtPut(thread_, dict, key, key_hash, key);
+    Object hash_obj(&scope, Interpreter::hash(thread_, key));
+    ASSERT_FALSE(hash_obj.isErrorException());
+    word hash = SmallInt::cast(*hash_obj).value();
+    runtime_.dictAtPut(thread_, dict, key, hash, key);
   }
 
   // Grab the keys and verify everything is there
@@ -1013,8 +1003,8 @@ TEST_F(RuntimeStrTest, NewStrFromUTF32WithLargeNonASCIIReturnsString) {
 
 TEST_F(RuntimeTest, HashBools) {
   // In CPython, False hashes to 0 and True hashes to 1.
-  EXPECT_TRUE(isIntEqualsWord(runtime_.hash(Bool::falseObj()), 0));
-  EXPECT_TRUE(isIntEqualsWord(runtime_.hash(Bool::trueObj()), 1));
+  EXPECT_EQ(runtime_.hash(Bool::falseObj()), 0);
+  EXPECT_EQ(runtime_.hash(Bool::trueObj()), 1);
 }
 
 TEST_F(RuntimeTest, HashLargeBytes) {
@@ -1024,7 +1014,7 @@ TEST_F(RuntimeTest, HashLargeBytes) {
   const byte src1[] = {0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8};
   LargeBytes arr1(&scope, runtime_.newBytesWithAll(src1));
   EXPECT_EQ(arr1.header().hashCode(), 0);
-  word hash1 = SmallInt::cast(runtime_.hash(*arr1)).value();
+  word hash1 = runtime_.hash(*arr1);
   EXPECT_NE(arr1.header().hashCode(), 0);
   EXPECT_EQ(arr1.header().hashCode(), hash1);
 
@@ -1034,7 +1024,7 @@ TEST_F(RuntimeTest, HashLargeBytes) {
   // LargeBytes with different values should (ideally) hash differently.
   const byte src2[] = {0x8, 0x7, 0x6, 0x5, 0x4, 0x3, 0x2, 0x1};
   LargeBytes arr2(&scope, runtime_.newBytesWithAll(src2));
-  word hash2 = SmallInt::cast(runtime_.hash(*arr2)).value();
+  word hash2 = runtime_.hash(*arr2);
   EXPECT_NE(hash1, hash2);
 
   word code2 = runtime_.siphash24(src2);
@@ -1043,25 +1033,24 @@ TEST_F(RuntimeTest, HashLargeBytes) {
   // LargeBytes with the same value should hash the same.
   LargeBytes arr3(&scope, runtime_.newBytesWithAll(src1));
   EXPECT_NE(arr3, arr1);
-  word hash3 = SmallInt::cast(runtime_.hash(*arr3)).value();
+  word hash3 = runtime_.hash(*arr3);
   EXPECT_EQ(hash1, hash3);
 }
 
 TEST_F(RuntimeTest, HashSmallInts) {
   // In CPython, Ints hash to themselves.
-  EXPECT_TRUE(isIntEqualsWord(runtime_.hash(SmallInt::fromWord(123)), 123));
-  EXPECT_TRUE(isIntEqualsWord(runtime_.hash(SmallInt::fromWord(456)), 456));
+  EXPECT_EQ(runtime_.hash(SmallInt::fromWord(123)), 123);
+  EXPECT_EQ(runtime_.hash(SmallInt::fromWord(456)), 456);
+  EXPECT_EQ(runtime_.hash(SmallInt::fromWord(-1)), -2);
 }
 
 TEST_F(RuntimeTest, HashSingletonImmediates) {
   // In CPython, these objects hash to arbitrary values.
   word none_value = NoneType::object().raw();
-  RawSmallInt hash_none = SmallInt::cast(runtime_.hash(NoneType::object()));
-  EXPECT_EQ(hash_none.value(), none_value);
+  EXPECT_EQ(runtime_.hash(NoneType::object()), none_value);
 
   word error_value = Error::error().raw();
-  RawSmallInt hash_error = SmallInt::cast(runtime_.hash(Error::error()));
-  EXPECT_EQ(hash_error.value(), error_value);
+  EXPECT_EQ(runtime_.hash(Error::error()), error_value);
 }
 
 TEST_F(RuntimeTest, HashStr) {
@@ -1070,18 +1059,18 @@ TEST_F(RuntimeTest, HashStr) {
   // LargeStr instances have their hash codes computed lazily.
   Object str1(&scope, runtime_.newStrFromCStr("testing 123"));
   EXPECT_EQ(HeapObject::cast(*str1).header().hashCode(), 0);
-  RawSmallInt hash1 = SmallInt::cast(runtime_.hash(*str1));
+  word hash1 = runtime_.hash(*str1);
   EXPECT_NE(HeapObject::cast(*str1).header().hashCode(), 0);
-  EXPECT_EQ(HeapObject::cast(*str1).header().hashCode(), hash1.value());
+  EXPECT_EQ(HeapObject::cast(*str1).header().hashCode(), hash1);
 
   // Str with different values should (ideally) hash differently.
   Str str2(&scope, runtime_.newStrFromCStr("321 testing"));
-  RawSmallInt hash2 = SmallInt::cast(runtime_.hash(*str2));
+  word hash2 = runtime_.hash(*str2);
   EXPECT_NE(hash1, hash2);
 
   // Strings with the same value should hash the same.
   Str str3(&scope, runtime_.newStrFromCStr("testing 123"));
-  RawSmallInt hash3 = SmallInt::cast(runtime_.hash(*str3));
+  word hash3 = runtime_.hash(*str3);
   EXPECT_EQ(hash1, hash3);
 }
 
@@ -1163,7 +1152,7 @@ TEST_F(RuntimeTest, HashCodeSizeCheck) {
   uword first = runtime_.random();
   EXPECT_EQ(first, high);
   runtime_.seedRandom(state, secret);
-  EXPECT_TRUE(isIntEqualsWord(runtime_.hash(code), 1));
+  EXPECT_EQ(runtime_.hash(code), 1);
 }
 
 TEST_F(RuntimeTest, NewCapacity) {
@@ -1716,11 +1705,10 @@ TEST_F(RuntimeSetTest, Add) {
   HandleScope scope(thread_);
   Set set(&scope, runtime_.newSet());
   Object value(&scope, SmallInt::fromWord(12345));
-  Object value_hash(&scope, Interpreter::hash(thread_, value));
-  ASSERT_FALSE(value_hash.isErrorException());
+  word hash = intHash(*value);
 
   // Store a value
-  runtime_.setAdd(thread_, set, value, value_hash);
+  runtime_.setAdd(thread_, set, value, hash);
   EXPECT_EQ(set.numItems(), 1);
 
   // Retrieve the stored value
@@ -1728,8 +1716,7 @@ TEST_F(RuntimeSetTest, Add) {
 
   // Add a new value
   Object new_value(&scope, SmallInt::fromWord(5555));
-  Object new_value_hash(&scope, Interpreter::hash(thread_, new_value));
-  ASSERT_FALSE(new_value_hash.isErrorException());
+  word new_value_hash = intHash(*new_value);
   runtime_.setAdd(thread_, set, new_value, new_value_hash);
   EXPECT_EQ(set.numItems(), 2);
 
@@ -1738,8 +1725,7 @@ TEST_F(RuntimeSetTest, Add) {
 
   // Add a existing value
   Object same_value(&scope, SmallInt::fromWord(12345));
-  Object same_value_hash(&scope, Interpreter::hash(thread_, same_value));
-  ASSERT_FALSE(same_value_hash.isErrorException());
+  word same_value_hash = intHash(*same_value);
   RawObject old_value =
       runtime_.setAdd(thread_, set, same_value, same_value_hash);
   EXPECT_EQ(set.numItems(), 2);
@@ -1750,15 +1736,15 @@ TEST_F(RuntimeSetTest, Remove) {
   HandleScope scope(thread_);
   Set set(&scope, runtime_.newSet());
   Object value(&scope, SmallInt::fromWord(12345));
-  Object value_hash(&scope, Interpreter::hash(thread_, value));
+  word hash = intHash(*value);
 
   // Removing a key that doesn't exist should fail
-  EXPECT_FALSE(runtime_.setRemove(thread_, set, value, value_hash));
+  EXPECT_FALSE(runtime_.setRemove(thread_, set, value, hash));
 
   setHashAndAdd(thread_, set, value);
   EXPECT_EQ(set.numItems(), 1);
 
-  ASSERT_TRUE(runtime_.setRemove(thread_, set, value, value_hash));
+  ASSERT_TRUE(runtime_.setRemove(thread_, set, value, hash));
   EXPECT_EQ(set.numItems(), 0);
 
   // Looking up a key that was deleted should fail

@@ -8,18 +8,16 @@
 
 namespace py {
 
-RawSmallInt complexHash(RawObject value) {
+word complexHash(RawObject value) {
   RawComplex value_complex = RawComplex::cast(value);
-  uword hash_real =
-      static_cast<uword>(doubleHash(value_complex.real()).value());
-  uword hash_imag =
-      static_cast<uword>(doubleHash(value_complex.imag()).value());
+  uword hash_real = static_cast<uword>(doubleHash(value_complex.real()));
+  uword hash_imag = static_cast<uword>(doubleHash(value_complex.imag()));
 
   uword result = hash_real + kHashImag * hash_imag;
   if (result == static_cast<uword>(word{-1})) {
     result--;
   }
-  return RawSmallInt::fromWordTruncated(static_cast<word>(result));
+  return static_cast<word>(result);
 }
 
 const BuiltinMethod ComplexBuiltins::kBuiltinMethods[] = {
@@ -45,7 +43,7 @@ RawObject ComplexBuiltins::dunderHash(Thread* thread, Frame* frame,
   if (!self_obj.isComplex()) {
     UNIMPLEMENTED("Subclasses of complex");
   }
-  return complexHash(*self_obj);
+  return SmallInt::fromWord(complexHash(*self_obj));
 }
 
 RawObject ComplexBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {

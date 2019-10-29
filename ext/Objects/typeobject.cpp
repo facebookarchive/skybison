@@ -1603,11 +1603,12 @@ PY_EXPORT PyObject* _PyType_Lookup(PyTypeObject* type, PyObject* name) {
   if (!runtime->isInstanceOfStr(*name_obj)) {
     return nullptr;
   }
-  Object name_hash(&scope, Interpreter::hash(thread, name_obj));
-  if (name_hash.isErrorException()) {
+  Object hash_obj(&scope, Interpreter::hash(thread, name_obj));
+  if (hash_obj.isErrorException()) {
     return nullptr;
   }
-  Object res(&scope, typeLookupInMro(thread, type_obj, name_obj, name_hash));
+  word hash = SmallInt::cast(*hash_obj).value();
+  Object res(&scope, typeLookupInMro(thread, type_obj, name_obj, hash));
   if (res.isErrorNotFound()) {
     return nullptr;
   }

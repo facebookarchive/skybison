@@ -400,18 +400,20 @@ static RawObject printExceptionChain(Thread* thread, const Object& file,
                                      const Object& value, const Set& seen) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Object value_hash(&scope, Interpreter::hash(thread, value));
-  if (value_hash.isErrorException()) return *value_hash;
-  runtime->setAdd(thread, seen, value, value_hash);
+  Object hash_obj(&scope, Interpreter::hash(thread, value));
+  if (hash_obj.isErrorException()) return *hash_obj;
+  word hash = SmallInt::cast(*hash_obj).value();
+  runtime->setAdd(thread, seen, value, hash);
 
   if (runtime->isInstanceOfBaseException(*value)) {
     BaseException exc(&scope, *value);
     Object cause(&scope, exc.cause());
     Object context(&scope, exc.context());
     if (!cause.isNoneType()) {
-      Object cause_hash(&scope, Interpreter::hash(thread, cause));
-      if (cause_hash.isErrorException()) return *cause_hash;
-      if (!runtime->setIncludes(thread, seen, cause, cause_hash)) {
+      hash_obj = Interpreter::hash(thread, cause);
+      if (hash_obj.isErrorException()) return *hash_obj;
+      hash = SmallInt::cast(*hash_obj).value();
+      if (!runtime->setIncludes(thread, seen, cause, hash)) {
         MAY_RAISE(printExceptionChain(thread, file, cause, seen));
         MAY_RAISE(
             fileWriteString(thread, file,
@@ -420,9 +422,10 @@ static RawObject printExceptionChain(Thread* thread, const Object& file,
       }
     } else if (!context.isNoneType() &&
                exc.suppressContext() != RawBool::trueObj()) {
-      Object context_hash(&scope, Interpreter::hash(thread, context));
-      if (context_hash.isErrorException()) return *context_hash;
-      if (!runtime->setIncludes(thread, seen, context, context_hash)) {
+      hash_obj = Interpreter::hash(thread, context);
+      if (hash_obj.isErrorException()) return *hash_obj;
+      hash = SmallInt::cast(*hash_obj).value();
+      if (!runtime->setIncludes(thread, seen, context, hash)) {
         MAY_RAISE(printExceptionChain(thread, file, context, seen));
         MAY_RAISE(
             fileWriteString(thread, file,

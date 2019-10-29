@@ -74,10 +74,10 @@ PY_EXPORT PyObject* PyImport_AddModuleObject(PyObject* name) {
 
   Dict modules_dict(&scope, runtime->modules());
   Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
-  Object name_hash(&scope, Interpreter::hash(thread, name_obj));
-  if (name_hash.isErrorException()) return nullptr;
-  Object module(&scope,
-                runtime->dictAt(thread, modules_dict, name_obj, name_hash));
+  Object hash_obj(&scope, Interpreter::hash(thread, name_obj));
+  if (hash_obj.isErrorException()) return nullptr;
+  word hash = SmallInt::cast(*hash_obj).value();
+  Object module(&scope, runtime->dictAt(thread, modules_dict, name_obj, hash));
   if (!module.isErrorNotFound()) {
     return ApiHandle::borrowedReference(thread, *module);
   }

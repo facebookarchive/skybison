@@ -11,7 +11,7 @@
 namespace py {
 
 RawObject superGetAttribute(Thread* thread, const Super& super,
-                            const Object& name_str, const Object& name_hash) {
+                            const Object& name_str, word hash) {
   // This must return `super`.
   Runtime* runtime = thread->runtime();
   if (Str::cast(runtime->symbols()->DunderClass()).equals(*name_str)) {
@@ -32,7 +32,7 @@ RawObject superGetAttribute(Thread* thread, const Super& super,
   }
   for (; i < mro_length; i++) {
     Type type(&scope, mro.at(i));
-    Object value(&scope, typeAt(thread, type, name_str, name_hash));
+    Object value(&scope, typeAt(thread, type, name_str, hash));
     if (value.isError()) {
       continue;
     }
@@ -48,7 +48,7 @@ RawObject superGetAttribute(Thread* thread, const Super& super,
                                           self, start_type);
   }
 
-  return objectGetAttribute(thread, super, name_str, name_hash);
+  return objectGetAttribute(thread, super, name_str, hash);
 }
 
 const BuiltinMethod SuperBuiltins::kBuiltinMethods[] = {
@@ -82,9 +82,10 @@ RawObject SuperBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(
         LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
   }
-  Object name_hash(&scope, Interpreter::hash(thread, name));
-  if (name_hash.isErrorException()) return *name_hash;
-  Object result(&scope, superGetAttribute(thread, self, name, name_hash));
+  Object hash_obj(&scope, Interpreter::hash(thread, name));
+  if (hash_obj.isErrorException()) return *hash_obj;
+  word hash = SmallInt::cast(*hash_obj).value();
+  Object result(&scope, superGetAttribute(thread, self, name, hash));
   if (result.isErrorNotFound()) {
     return thread->raiseWithFmt(LayoutId::kAttributeError,
                                 "super object has no attribute '%S'", &name);

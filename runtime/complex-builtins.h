@@ -4,7 +4,7 @@
 
 namespace py {
 
-RawSmallInt complexHash(RawObject value);
+word complexHash(RawObject value);
 
 class ComplexBuiltins
     : public Builtins<ComplexBuiltins, SymbolId::kComplex, LayoutId::kComplex> {

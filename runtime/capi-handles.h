@@ -110,20 +110,18 @@ class ApiHandle : public PyObject {
   // TODO(T44244793): Remove these functions when handles have their own
   // specialized hash table.
   static RawObject dictAtIdentityEquals(Thread* thread, const Dict& dict,
-                                        const Object& key,
-                                        const Object& key_hash);
+                                        const Object& key, word hash);
 
   // TODO(T44244793): Remove these functions when handles have their own
   // specialized hash table.
   static void dictAtPutIdentityEquals(Thread* thread, const Dict& dict,
-                                      const Object& key, const Object& value,
-                                      const Object& key_hash);
+                                      const Object& key, word hash,
+                                      const Object& value);
 
   // TODO(T44244793): Remove these functions when handles have their own
   // specialized hash table.
   static RawObject dictRemoveIdentityEquals(Thread* thread, const Dict& dict,
-                                            const Object& key,
-                                            const Object& key_hash);
+                                            const Object& key, word hash);
 
   static const long kManagedBit = 1L << 31;
 

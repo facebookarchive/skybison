@@ -30,13 +30,12 @@ static RawObject identityEqual(Thread*, RawObject a, RawObject b) {
 // Look up the value associated with key. Checks for identity equality, not
 // structural equality. Returns Error::object() if the key was not found.
 RawObject ApiHandle::dictAtIdentityEquals(Thread* thread, const Dict& dict,
-                                          const Object& key,
-                                          const Object& key_hash) {
+                                          const Object& key, word hash) {
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word index = -1;
-  bool found = thread->runtime()->dictLookup(thread, data, key, key_hash,
-                                             &index, identityEqual);
+  bool found = thread->runtime()->dictLookup(thread, data, key, hash, &index,
+                                             identityEqual);
   if (found) {
     DCHECK(index != -1, "invalid index %ld", index);
     return Dict::Bucket::value(*data, index);
@@ -45,8 +44,8 @@ RawObject ApiHandle::dictAtIdentityEquals(Thread* thread, const Dict& dict,
 }
 
 void ApiHandle::dictAtPutIdentityEquals(Thread* thread, const Dict& dict,
-                                        const Object& key, const Object& value,
-                                        const Object& key_hash) {
+                                        const Object& key, word hash,
+                                        const Object& value) {
   Runtime* runtime = thread->runtime();
   if (dict.capacity() == 0) {
     dict.setData(runtime->newMutableTuple(Runtime::kInitialDictCapacity *
@@ -57,10 +56,10 @@ void ApiHandle::dictAtPutIdentityEquals(Thread* thread, const Dict& dict,
   Tuple data(&scope, dict.data());
   word index = -1;
   bool found =
-      runtime->dictLookup(thread, data, key, key_hash, &index, identityEqual);
+      runtime->dictLookup(thread, data, key, hash, &index, identityEqual);
   DCHECK(index != -1, "invalid index %ld", index);
   bool empty_slot = Dict::Bucket::isEmpty(*data, index);
-  Dict::Bucket::set(*data, index, *key_hash, *key, *value);
+  Dict::Bucket::set(*data, index, hash, *key, *value);
   if (found) {
     return;
   }
@@ -73,14 +72,13 @@ void ApiHandle::dictAtPutIdentityEquals(Thread* thread, const Dict& dict,
 }
 
 RawObject ApiHandle::dictRemoveIdentityEquals(Thread* thread, const Dict& dict,
-                                              const Object& key,
-                                              const Object& key_hash) {
+                                              const Object& key, word hash) {
   HandleScope scope;
   Tuple data(&scope, dict.data());
   word index = -1;
   Object result(&scope, Error::notFound());
-  bool found = thread->runtime()->dictLookup(thread, data, key, key_hash,
-                                             &index, identityEqual);
+  bool found = thread->runtime()->dictLookup(thread, data, key, hash, &index,
+                                             identityEqual);
   if (found) {
     DCHECK(index != -1, "unexpected index %ld", index);
     result = Dict::Bucket::value(*data, index);
@@ -106,8 +104,8 @@ ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
   HandleScope scope(thread);
   Dict dict(&scope, runtime->apiHandles());
   Object key(&scope, obj);
-  Object key_hash(&scope, runtime->hash(*key));
-  Object value(&scope, dictAtIdentityEquals(thread, dict, key, key_hash));
+  word hash = runtime->hash(*key);
+  Object value(&scope, dictAtIdentityEquals(thread, dict, key, hash));
 
   // Get the handle of a builtin instance
   if (!value.isError()) {
@@ -118,7 +116,7 @@ ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
   ApiHandle* handle = ApiHandle::alloc(thread, obj);
   handle->setManaged();
   Object object(&scope, runtime->newIntFromCPtr(static_cast<void*>(handle)));
-  dictAtPutIdentityEquals(thread, dict, key, object, key_hash);
+  dictAtPutIdentityEquals(thread, dict, key, hash, object);
   return handle;
 }
 
@@ -208,9 +206,9 @@ void* ApiHandle::cache() {
   HandleScope scope(thread);
 
   Object key(&scope, asObject());
-  Object key_hash(&scope, runtime->hash(*key));
+  word hash = runtime->hash(*key);
   Dict caches(&scope, runtime->apiCaches());
-  Object cache(&scope, dictAtIdentityEquals(thread, caches, key, key_hash));
+  Object cache(&scope, dictAtIdentityEquals(thread, caches, key, hash));
   DCHECK(cache.isInt() || cache.isError(), "unexpected cache type");
   if (!cache.isError()) return Int::cast(*cache).asCPtr();
   return nullptr;
@@ -222,10 +220,10 @@ void ApiHandle::setCache(void* value) {
   HandleScope scope(thread);
 
   Object key(&scope, asObject());
-  Object key_hash(&scope, runtime->hash(*key));
+  word hash = runtime->hash(*key);
   Dict caches(&scope, runtime->apiCaches());
   Int cache(&scope, runtime->newIntFromCPtr(value));
-  dictAtPutIdentityEquals(thread, caches, key, cache, key_hash);
+  dictAtPutIdentityEquals(thread, caches, key, hash, cache);
 }
 
 void ApiHandle::dispose() {
@@ -238,12 +236,12 @@ void ApiHandle::dispose() {
   // a weakref to call the module's m_free once's the module is collected
 
   Object key(&scope, asObject());
-  Object key_hash(&scope, runtime->hash(*key));
+  word hash = runtime->hash(*key);
   Dict dict(&scope, runtime->apiHandles());
-  dictRemoveIdentityEquals(thread, dict, key, key_hash);
+  dictRemoveIdentityEquals(thread, dict, key, hash);
 
   dict = runtime->apiCaches();
-  Object cache(&scope, dictRemoveIdentityEquals(thread, dict, key, key_hash));
+  Object cache(&scope, dictRemoveIdentityEquals(thread, dict, key, hash));
   DCHECK(cache.isInt() || cache.isError(), "unexpected cache type");
   if (!cache.isError()) std::free(Int::cast(*cache).asCPtr());
 

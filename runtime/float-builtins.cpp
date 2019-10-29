@@ -340,7 +340,7 @@ static RawObject intFromDouble(Thread* thread, double value) {
   return runtime->intBinaryLshift(thread, unshifted_result, shifting_bits);
 }
 
-RawSmallInt doubleHash(double value) {
+word doubleHash(double value) {
   bool is_neg;
   int exp;
   uint64_t mantissa;
@@ -356,7 +356,7 @@ RawSmallInt doubleHash(double value) {
     } else {
       result = kHashNan;
     }
-    return SmallInt::fromWord(result);
+    return result;
   }
 
   // The problem in the following is that for float numbers that compare equal
@@ -373,7 +373,7 @@ RawSmallInt doubleHash(double value) {
     mantissa |= uint64_t{1} << kDoubleMantissaBits;
   } else if (mantissa == 0) {
     // Shortcut for 0.0 / -0.0.
-    return SmallInt::fromWord(0);
+    return 0;
   } else {
     // sub-normal number, adjust exponent.
     exp += 1;
@@ -407,7 +407,7 @@ RawSmallInt doubleHash(double value) {
   // Note: We cannot cache the hash value in the object header, because the
   // result must correspond to the hash values of SmallInt/LargeInt. The object
   // header however has fewer bits and can only store non-negative hash codes.
-  return SmallInt::fromWord(static_cast<word>(result));
+  return static_cast<word>(result);
 }
 
 RawObject FloatBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
@@ -418,7 +418,7 @@ RawObject FloatBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
   }
   Object self_float(&scope, floatUnderlying(thread, self_obj));
-  return floatHash(*self_float);
+  return SmallInt::fromWord(floatHash(*self_float));
 }
 
 RawObject FloatBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {

@@ -119,19 +119,18 @@ RawObject functionFromModuleMethodDef(Thread* thread, const char* c_name,
 }
 
 RawObject functionGetAttribute(Thread* thread, const Function& function,
-                               const Object& name_str,
-                               const Object& name_hash) {
+                               const Object& name_str, word hash) {
   // TODO(T39611261): Figure out a way to skip dict init.
   // Initialize Dict if non-existent
   if (function.dict().isNoneType()) {
     function.setDict(thread->runtime()->newDict());
   }
 
-  return objectGetAttribute(thread, function, name_str, name_hash);
+  return objectGetAttribute(thread, function, name_str, hash);
 }
 
 RawObject functionSetAttr(Thread* thread, const Function& function,
-                          const Object& name_str, const Object& name_hash,
+                          const Object& name_str, word hash,
                           const Object& value) {
   Runtime* runtime = thread->runtime();
   // Initialize Dict if non-existent
@@ -150,7 +149,7 @@ RawObject functionSetAttr(Thread* thread, const Function& function,
     return instanceSetAttr(thread, function, name_interned, value);
   }
   Dict function_dict(&scope, function.dict());
-  runtime->dictAtPut(thread, function_dict, name_str, name_hash, value);
+  runtime->dictAtPut(thread, function_dict, name_str, hash, value);
   return NoneType::object();
 }
 
@@ -218,9 +217,10 @@ RawObject FunctionBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(
         LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
   }
-  Object name_hash(&scope, Interpreter::hash(thread, name));
-  if (name_hash.isErrorException()) return *name_hash;
-  Object result(&scope, functionGetAttribute(thread, self, name, name_hash));
+  Object hash_obj(&scope, Interpreter::hash(thread, name));
+  if (hash_obj.isErrorException()) return *hash_obj;
+  word hash = SmallInt::cast(*hash_obj).value();
+  Object result(&scope, functionGetAttribute(thread, self, name, hash));
   if (result.isErrorNotFound()) {
     Object function_name(&scope, self.name());
     return thread->raiseWithFmt(LayoutId::kAttributeError,
@@ -245,10 +245,11 @@ RawObject FunctionBuiltins::dunderSetattr(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(
         LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
   }
-  Object name_hash(&scope, Interpreter::hash(thread, name));
-  if (name_hash.isErrorException()) return *name_hash;
+  Object hash_obj(&scope, Interpreter::hash(thread, name));
+  if (hash_obj.isErrorException()) return *hash_obj;
+  word hash = SmallInt::cast(*hash_obj).value();
   Object value(&scope, args.get(2));
-  return functionSetAttr(thread, self, name, name_hash, value);
+  return functionSetAttr(thread, self, name, hash, value);
 }
 
 const BuiltinAttribute BoundMethodBuiltins::kAttributes[] = {

@@ -28,9 +28,9 @@ bool compareDoubleWithInt(Thread* thread, double left, const Int& right,
 // does not have __index__ or if __index__ returns non-int.
 RawObject intFromIndex(Thread* thread, const Object& obj);
 
-RawSmallInt largeIntHash(RawLargeInt value);
+word largeIntHash(RawLargeInt value);
 
-RawSmallInt intHash(RawObject value);
+word intHash(RawObject value);
 
 // Grabs the base int value from an instance of int.
 RawObject intUnderlying(Thread* thread, const Object& obj);
@@ -111,7 +111,7 @@ class BoolBuiltins : public Builtins<BoolBuiltins, SymbolId::kBool,
   DISALLOW_IMPLICIT_CONSTRUCTORS(BoolBuiltins);
 };
 
-inline RawSmallInt intHash(RawObject value) {
+inline word intHash(RawObject value) {
   if (value.isSmallInt()) {
     return SmallInt::cast(value).hash();
   }

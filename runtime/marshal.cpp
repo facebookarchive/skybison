@@ -347,11 +347,14 @@ RawObject Marshal::Reader::doSetElements(int32_t length, RawObject set_obj) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   SetBase set(&scope, set_obj);
+  Object value(&scope, NoneType::object());
+  Object hash_obj(&scope, NoneType::object());
   for (int32_t i = 0; i < length; i++) {
-    Object value(&scope, readObject());
-    Object value_hash(&scope, Interpreter::hash(thread, value));
-    DCHECK(!value_hash.isErrorException(), "must be hashable");
-    RawObject result = runtime_->setAdd(thread, set, value, value_hash);
+    value = readObject();
+    hash_obj = Interpreter::hash(thread, value);
+    DCHECK(!hash_obj.isErrorException(), "must be hashable");
+    word hash = SmallInt::cast(*hash_obj).value();
+    RawObject result = runtime_->setAdd(thread, set, value, hash);
     if (result.isError()) {
       return result;
     }

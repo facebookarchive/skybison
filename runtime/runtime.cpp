@@ -424,12 +424,13 @@ RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
         LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
   }
   HandleScope scope(thread);
-  Object name_hash(&scope, Interpreter::hash(thread, name));
-  if (name_hash.isErrorException()) return *name_hash;
+  Object hash_obj(&scope, Interpreter::hash(thread, name));
+  if (hash_obj.isErrorException()) return *hash_obj;
+  word hash = SmallInt::cast(*hash_obj).value();
 
   // Check for a descriptor with __delete__
   Type type(&scope, typeOf(*receiver));
-  Object type_attr(&scope, typeLookupInMro(thread, type, name, name_hash));
+  Object type_attr(&scope, typeLookupInMro(thread, type, name, hash));
   if (!type_attr.isError()) {
     if (isDeleteDescriptor(thread, type_attr)) {
       return Interpreter::callDescriptorDelete(thread, thread->currentFrame(),
@@ -459,12 +460,13 @@ RawObject Runtime::moduleDelAttr(Thread* thread, const Object& receiver,
         LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
   }
   HandleScope scope(thread);
-  Object name_hash(&scope, Interpreter::hash(thread, name));
-  if (name_hash.isErrorException()) return *name_hash;
+  Object hash_obj(&scope, Interpreter::hash(thread, name));
+  if (hash_obj.isErrorException()) return *hash_obj;
+  word hash = SmallInt::cast(*hash_obj).value();
 
   // Check for a descriptor with __delete__
   Type type(&scope, typeOf(*receiver));
-  Object type_attr(&scope, typeLookupInMro(thread, type, name, name_hash));
+  Object type_attr(&scope, typeLookupInMro(thread, type, name, hash));
   if (!type_attr.isError()) {
     if (isDeleteDescriptor(thread, type_attr)) {
       return Interpreter::callDescriptorDelete(thread, thread->currentFrame(),
@@ -475,7 +477,7 @@ RawObject Runtime::moduleDelAttr(Thread* thread, const Object& receiver,
   // No delete descriptor found, attempt to delete from the module dict
   Module module(&scope, *receiver);
   Dict module_dict(&scope, module.dict());
-  if (dictRemove(thread, module_dict, name, name_hash).isError()) {
+  if (dictRemove(thread, module_dict, name, hash).isError()) {
     Str module_name(&scope, module.name());
     return thread->raiseWithFmt(LayoutId::kAttributeError,
                                 "module '%S' has no attribute '%S'",
@@ -1363,8 +1365,8 @@ RawObject Runtime::internStr(Thread* thread, const Object& str) {
   if (str.isSmallStr()) {
     return *str;
   }
-  Object key_hash(&scope, strHash(thread, *str));
-  return setAdd(thread, set, str, key_hash);
+  word hash = strHash(thread, *str);
+  return setAdd(thread, set, str, hash);
 }
 
 bool Runtime::isInternedStr(Thread* thread, const Object& str) {
@@ -1375,15 +1377,15 @@ bool Runtime::isInternedStr(Thread* thread, const Object& str) {
   HandleScope scope(thread);
   Set set(&scope, interned());
   Tuple data(&scope, set.data());
-  Object str_hash(&scope, strHash(thread, *str));
-  word index = setLookup<SetLookupType::Lookup>(thread, data, str, str_hash);
+  word hash = strHash(thread, *str);
+  word index = setLookup<SetLookupType::Lookup>(thread, data, str, hash);
   if (index < 0) {
     return false;
   }
   return SetBase::Bucket::value(*data, index) == str;
 }
 
-RawObject Runtime::hash(RawObject object) {
+word Runtime::hash(RawObject object) {
   if (!object.isHeapObject()) {
     return immediateHash(object);
   }
@@ -1393,20 +1395,20 @@ RawObject Runtime::hash(RawObject object) {
   return identityHash(object);
 }
 
-RawObject Runtime::immediateHash(RawObject object) {
+word Runtime::immediateHash(RawObject object) {
   if (object.isSmallStr()) {
     return SmallStr::cast(object).hash();
   }
   if (object.isSmallInt()) {
-    return object;
+    return SmallInt::cast(object).hash();
   }
   if (object.isBool()) {
-    return convertBoolToInt(object);
+    return Bool::cast(object).hash();
   }
   if (object.isSmallBytes()) {
     return SmallBytes::cast(object).hash();
   }
-  return SmallInt::fromWord(object.raw());
+  return static_cast<word>(object.raw());
 }
 
 // Xoroshiro128+
@@ -1493,7 +1495,7 @@ ListEntry* Runtime::trackedNativeGcObjects() {
 
 RawObject* Runtime::finalizableReferences() { return &finalizable_references_; }
 
-RawObject Runtime::identityHash(RawObject object) {
+word Runtime::identityHash(RawObject object) {
   RawHeapObject src = HeapObject::cast(object);
   word code = src.header().hashCode();
   if (code == RawHeader::kUninitializedHash) {
@@ -1501,7 +1503,7 @@ RawObject Runtime::identityHash(RawObject object) {
     code = (code == RawHeader::kUninitializedHash) ? code + 1 : code;
     src.setHeader(src.header().withHashCode(code));
   }
-  return SmallInt::fromWord(code);
+  return code;
 }
 
 word Runtime::siphash24(View<byte> array) {
@@ -1512,7 +1514,7 @@ word Runtime::siphash24(View<byte> array) {
   return result;
 }
 
-RawObject Runtime::valueHash(RawObject object) {
+word Runtime::valueHash(RawObject object) {
   RawHeapObject src = HeapObject::cast(object);
   RawHeader header = src.header();
   word code = header.hashCode();
@@ -1524,7 +1526,7 @@ RawObject Runtime::valueHash(RawObject object) {
     src.setHeader(header.withHashCode(code));
     DCHECK(code == src.header().hashCode(), "hash failure");
   }
-  return SmallInt::fromWord(code);
+  return code;
 }
 
 void Runtime::initializeTypes() {
@@ -3066,7 +3068,7 @@ RawObject Runtime::objectEquals(Thread* thread, RawObject o0, RawObject o1) {
 }
 
 void Runtime::dictAtPut(Thread* thread, const Dict& dict, const Object& key,
-                        const Object& key_hash, const Object& value) {
+                        word hash, const Object& value) {
   // TODO(T44245141): Move initialization of an empty dict to
   // dictEnsureCapacity.
   if (dict.capacity() == 0) {
@@ -3077,14 +3079,14 @@ void Runtime::dictAtPut(Thread* thread, const Dict& dict, const Object& key,
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word index = -1;
-  bool found = dictLookup(thread, data, key, key_hash, &index, objectEquals);
+  bool found = dictLookup(thread, data, key, hash, &index, objectEquals);
   DCHECK(index != -1, "invalid index %ld", index);
   if (found) {
     Dict::Bucket::setValue(*data, index, *value);
     return;
   }
   bool empty_slot = Dict::Bucket::isEmpty(*data, index);
-  Dict::Bucket::set(*data, index, *key_hash, *key, *value);
+  Dict::Bucket::set(*data, index, hash, *key, *value);
   dict.setNumItems(dict.numItems() + 1);
   if (empty_slot) {
     dict.decrementNumUsableItems();
@@ -3095,9 +3097,8 @@ void Runtime::dictAtPut(Thread* thread, const Dict& dict, const Object& key,
 
 void Runtime::dictAtPutByStr(Thread* thread, const Dict& dict, const Str& name,
                              const Object& value) {
-  HandleScope scope(thread);
-  Object name_hash(&scope, strHash(thread, *name));
-  dictAtPut(thread, dict, name, name_hash, value);
+  word hash = strHash(thread, *name);
+  dictAtPut(thread, dict, name, hash, value);
 }
 
 void Runtime::dictAtPutById(Thread* thread, const Dict& dict, SymbolId id,
@@ -3108,11 +3109,11 @@ void Runtime::dictAtPutById(Thread* thread, const Dict& dict, SymbolId id,
 }
 
 RawObject Runtime::dictAt(Thread* thread, const Dict& dict, const Object& key,
-                          const Object& key_hash) {
+                          word hash) {
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word index = -1;
-  bool found = dictLookup(thread, data, key, key_hash, &index, objectEquals);
+  bool found = dictLookup(thread, data, key, hash, &index, objectEquals);
   if (found) {
     return Dict::Bucket::value(*data, index);
   }
@@ -3121,9 +3122,8 @@ RawObject Runtime::dictAt(Thread* thread, const Dict& dict, const Object& key,
 
 RawObject Runtime::dictAtByStr(Thread* thread, const Dict& dict,
                                const Str& name) {
-  HandleScope scope(thread);
-  Object name_hash(&scope, strHash(thread, *name));
-  return dictAt(thread, dict, name, name_hash);
+  word hash = strHash(thread, *name);
+  return dictAt(thread, dict, name, hash);
 }
 
 RawObject Runtime::dictAtById(Thread* thread, const Dict& dict, SymbolId id) {
@@ -3133,7 +3133,7 @@ RawObject Runtime::dictAtById(Thread* thread, const Dict& dict, SymbolId id) {
 }
 
 RawObject Runtime::dictAtIfAbsentPut(Thread* thread, const Dict& dict,
-                                     const Object& key, const Object& key_hash,
+                                     const Object& key, word hash,
                                      Callback<RawObject>* thunk) {
   // TODO(T44245141): Move initialization of an empty dict to
   // dictEnsureCapacity.
@@ -3145,14 +3145,14 @@ RawObject Runtime::dictAtIfAbsentPut(Thread* thread, const Dict& dict,
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word index = -1;
-  bool found = dictLookup(thread, data, key, key_hash, &index, objectEquals);
+  bool found = dictLookup(thread, data, key, hash, &index, objectEquals);
   DCHECK(index != -1, "invalid index %ld", index);
   if (found) {
     return Dict::Bucket::value(*data, index);
   }
   bool empty_slot = Dict::Bucket::isEmpty(*data, index);
   Object value(&scope, thunk->call());
-  Dict::Bucket::set(*data, index, *key_hash, *key, *value);
+  Dict::Bucket::set(*data, index, hash, *key, *value);
   dict.setNumItems(dict.numItems() + 1);
   if (empty_slot) {
     DCHECK(dict.numUsableItems() > 0, "dict.numIsableItems() must be positive");
@@ -3167,19 +3167,18 @@ RawObject Runtime::dictAtPutInValueCellByStr(Thread* thread, const Dict& dict,
                                              const Str& name,
                                              const Object& value) {
   HandleScope scope(thread);
-  Object name_hash(&scope, strHash(thread, *name));
-  Object result(&scope, dictAtIfAbsentPut(thread, dict, name, name_hash,
+  word hash = strHash(thread, *name);
+  Object result(&scope, dictAtIfAbsentPut(thread, dict, name, hash,
                                           newValueCellCallback()));
   ValueCell::cast(*result).setValue(*value);
   return *result;
 }
 
 RawObject Runtime::dictAtPutInValueCell(Thread* thread, const Dict& dict,
-                                        const Object& key,
-                                        const Object& key_hash,
+                                        const Object& key, word hash,
                                         const Object& value) {
   HandleScope scope(thread);
-  Object result(&scope, dictAtIfAbsentPut(thread, dict, key, key_hash,
+  Object result(&scope, dictAtIfAbsentPut(thread, dict, key, hash,
                                           newValueCellCallback()));
   ValueCell::cast(*result).setValue(*value);
   return *result;
@@ -3187,33 +3186,31 @@ RawObject Runtime::dictAtPutInValueCell(Thread* thread, const Dict& dict,
 
 bool Runtime::dictIncludesByStr(Thread* thread, const Dict& dict,
                                 const Str& name) {
-  HandleScope scope;
-  Object name_hash(&scope, strHash(thread, *name));
-  return dictIncludes(thread, dict, name, name_hash);
+  word hash = strHash(thread, *name);
+  return dictIncludes(thread, dict, name, hash);
 }
 
 bool Runtime::dictIncludes(Thread* thread, const Dict& dict, const Object& key,
-                           const Object& key_hash) {
+                           word hash) {
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word ignore;
-  return dictLookup(thread, data, key, key_hash, &ignore, objectEquals);
+  return dictLookup(thread, data, key, hash, &ignore, objectEquals);
 }
 
 RawObject Runtime::dictRemoveByStr(Thread* thread, const Dict& dict,
                                    const Str& name) {
-  HandleScope scope(thread);
-  Object name_hash(&scope, strHash(thread, *name));
-  return dictRemove(thread, dict, name, name_hash);
+  word hash = strHash(thread, *name);
+  return dictRemove(thread, dict, name, hash);
 }
 
 RawObject Runtime::dictRemove(Thread* thread, const Dict& dict,
-                              const Object& key, const Object& key_hash) {
+                              const Object& key, word hash) {
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word index = -1;
   Object result(&scope, Error::notFound());
-  bool found = dictLookup(thread, data, key, key_hash, &index, objectEquals);
+  bool found = dictLookup(thread, data, key, hash, &index, objectEquals);
   if (found) {
     result = Dict::Bucket::value(*data, index);
     Dict::Bucket::setTombstone(*data, index);
@@ -3223,21 +3220,19 @@ RawObject Runtime::dictRemove(Thread* thread, const Dict& dict,
 }
 
 bool Runtime::dictLookup(Thread* thread, const Tuple& data, const Object& key,
-                         const Object& key_hash, word* index, DictEq equals) {
+                         word hash, word* index, DictEq equals) {
   if (data.length() == 0) {
     *index = -1;
     return false;
   }
-  RawObject key_hash_raw = *key_hash;
-  DCHECK(key_hash_raw.isSmallInt(), "key_hash must be SmallInt");
   word next_free_index = -1;
   uword perturb;
   word bucket_mask;
-  for (word current =
-           Dict::Bucket::bucket(*data, key_hash_raw, &bucket_mask, &perturb);
+  RawSmallInt hash_int = SmallInt::fromWord(hash);
+  for (word current = Dict::Bucket::bucket(*data, hash, &bucket_mask, &perturb);
        ; current = Dict::Bucket::nextBucket(current, bucket_mask, &perturb)) {
     word current_index = current * Dict::Bucket::kNumPointers;
-    if (Dict::Bucket::hash(*data, current_index) == key_hash_raw) {
+    if (Dict::Bucket::hashRaw(*data, current_index) == hash_int) {
       RawObject eq =
           equals(thread, Dict::Bucket::key(*data, current_index), *key);
       if (eq == Bool::trueObj()) {
@@ -3266,17 +3261,16 @@ bool Runtime::dictLookup(Thread* thread, const Tuple& data, const Object& key,
 
 // Insert `key`/`value` into dictionary assuming no bucket with an equivalent
 // key and no tombstones exist.
-static void dictInsertNoUpdate(const Tuple& data, const Object& key,
-                               const Object& key_hash, const Object& value) {
+static void dictInsertNoUpdate(const Tuple& data, const Object& key, word hash,
+                               const Object& value) {
   DCHECK(data.length() > 0, "dict must not be empty");
   uword perturb;
   word bucket_mask;
-  for (word current =
-           Dict::Bucket::bucket(*data, *key_hash, &bucket_mask, &perturb);
+  for (word current = Dict::Bucket::bucket(*data, hash, &bucket_mask, &perturb);
        ; current = Dict::Bucket::nextBucket(current, bucket_mask, &perturb)) {
     word current_index = current * Dict::Bucket::kNumPointers;
     if (Dict::Bucket::isEmpty(*data, current_index)) {
-      Dict::Bucket::set(*data, current_index, *key_hash, *key, *value);
+      Dict::Bucket::set(*data, current_index, hash, *key, *value);
       return;
     }
   }
@@ -3297,11 +3291,10 @@ void Runtime::dictEnsureCapacity(Thread* thread, const Dict& dict) {
       &scope, newMutableTuple(new_capacity * Dict::Bucket::kNumPointers));
   // Re-insert items
   Object key(&scope, NoneType::object());
-  Object hash(&scope, NoneType::object());
   Object value(&scope, NoneType::object());
   for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
     key = Dict::Bucket::key(*data, i);
-    hash = Dict::Bucket::hash(*data, i);
+    word hash = Dict::Bucket::hash(*data, i);
     value = Dict::Bucket::value(*data, i);
     dictInsertNoUpdate(new_data, key, hash, value);
   }
@@ -3448,8 +3441,8 @@ RawObject Runtime::newFrozenSet() {
 
 template <SetLookupType type>
 word Runtime::setLookup(Thread* thread, const Tuple& data, const Object& key,
-                        const Object& key_hash) {
-  word start = SetBase::Bucket::getIndex(*data, *key_hash);
+                        word hash) {
+  word start = SetBase::Bucket::getIndex(*data, hash);
   word current = start;
   word next_free_index = -1;
 
@@ -3460,7 +3453,7 @@ word Runtime::setLookup(Thread* thread, const Tuple& data, const Object& key,
   }
 
   do {
-    if (!SetBase::Bucket::hash(*data, current).isNoneType()) {
+    if (SetBase::Bucket::hasValue(*data, current)) {
       RawObject eq =
           objectEquals(thread, SetBase::Bucket::value(*data, current), *key);
       if (eq == Bool::trueObj()) {
@@ -3498,24 +3491,24 @@ RawTuple Runtime::setGrow(Thread* thread, const Tuple& data) {
   }
   MutableTuple new_data(&scope, newMutableTuple(new_length));
   // Re-insert items
+  Object value(&scope, NoneType::object());
   for (word i = SetBase::Bucket::kFirst;
        SetBase::Bucket::nextItem(*data, &i);) {
-    Object value(&scope, SetBase::Bucket::value(*data, i));
-    Object value_hash(&scope, SetBase::Bucket::hash(*data, i));
-    word index = setLookup<SetLookupType::Insertion>(thread, new_data, value,
-                                                     value_hash);
+    value = SetBase::Bucket::value(*data, i);
+    word hash = SetBase::Bucket::hash(*data, i);
+    word index =
+        setLookup<SetLookupType::Insertion>(thread, new_data, value, hash);
     DCHECK(index != -1, "unexpected index %ld", index);
-    SetBase::Bucket::set(*new_data, index, *value_hash, *value);
+    SetBase::Bucket::set(*new_data, index, hash, *value);
   }
   return *new_data;
 }
 
 RawObject Runtime::setAdd(Thread* thread, const SetBase& set,
-                          const Object& value, const Object& value_hash) {
+                          const Object& value, word hash) {
   HandleScope scope(thread);
   Tuple data(&scope, set.data());
-  word index =
-      setLookup<SetLookupType::Lookup>(thread, data, value, value_hash);
+  word index = setLookup<SetLookupType::Lookup>(thread, data, value, hash);
   if (index != -1) {
     return SetBase::Bucket::value(*data, index);
   }
@@ -3523,20 +3516,19 @@ RawObject Runtime::setAdd(Thread* thread, const SetBase& set,
   if (data.length() == 0 || set.numItems() >= data.length() / 2) {
     new_data = setGrow(thread, data);
   }
-  index =
-      setLookup<SetLookupType::Insertion>(thread, new_data, value, value_hash);
+  index = setLookup<SetLookupType::Insertion>(thread, new_data, value, hash);
   DCHECK(index != -1, "unexpected index %ld", index);
   set.setData(*new_data);
-  SetBase::Bucket::set(*new_data, index, *value_hash, *value);
+  SetBase::Bucket::set(*new_data, index, hash, *value);
   set.setNumItems(set.numItems() + 1);
   return *value;
 }
 
 bool Runtime::setIncludes(Thread* thread, const SetBase& set, const Object& key,
-                          const Object& key_hash) {
+                          word hash) {
   HandleScope scope(thread);
   Tuple data(&scope, set.data());
-  return setLookup<SetLookupType::Lookup>(thread, data, key, key_hash) != -1;
+  return setLookup<SetLookupType::Lookup>(thread, data, key, hash) != -1;
 }
 
 RawObject Runtime::setIntersection(Thread* thread, const SetBase& set,
@@ -3545,7 +3537,6 @@ RawObject Runtime::setIntersection(Thread* thread, const SetBase& set,
   SetBase dst(&scope, isInstanceOfSet(*set) ? Runtime::newSet()
                                             : Runtime::newFrozenSet());
   Object value(&scope, NoneType::object());
-  Object value_hash(&scope, NoneType::object());
   // Special case for sets
   if (isInstanceOfSetBase(*iterable)) {
     SetBase self(&scope, *set);
@@ -3563,10 +3554,10 @@ RawObject Runtime::setIntersection(Thread* thread, const SetBase& set,
     for (word i = SetBase::Bucket::kFirst;
          SetBase::Bucket::nextItem(*data, &i);) {
       value = SetBase::Bucket::value(*data, i);
-      value_hash = SetBase::Bucket::hash(*data, i);
-      if (setLookup<SetLookupType::Lookup>(thread, other_data, value,
-                                           value_hash) != -1) {
-        setAdd(thread, dst, value, value_hash);
+      word hash = SetBase::Bucket::hash(*data, i);
+      if (setLookup<SetLookupType::Lookup>(thread, other_data, value, hash) !=
+          -1) {
+        setAdd(thread, dst, value, hash);
       }
     }
     return *dst;
@@ -3602,7 +3593,7 @@ RawObject Runtime::setIntersection(Thread* thread, const SetBase& set,
       if (thread->clearPendingStopIteration()) break;
       return *value;
     }
-    value_hash = hash(*value);
+    word value_hash = hash(*value);
     if (setLookup<SetLookupType::Lookup>(thread, data, value, value_hash) !=
         -1) {
       setAdd(thread, dst, value, value_hash);
@@ -3612,10 +3603,10 @@ RawObject Runtime::setIntersection(Thread* thread, const SetBase& set,
 }
 
 bool Runtime::setRemove(Thread* thread, const Set& set, const Object& key,
-                        const Object& key_hash) {
+                        word hash) {
   HandleScope scope(thread);
   Tuple data(&scope, set.data());
-  word index = setLookup<SetLookupType::Lookup>(thread, data, key, key_hash);
+  word index = setLookup<SetLookupType::Lookup>(thread, data, key, hash);
   if (index != -1) {
     SetBase::Bucket::setTombstone(*data, index);
     set.setNumItems(set.numItems() - 1);
@@ -3628,15 +3619,16 @@ RawObject Runtime::setUpdate(Thread* thread, const SetBase& dst,
                              const Object& iterable) {
   HandleScope scope(thread);
   Object elt(&scope, NoneType::object());
-  Object elt_hash(&scope, NoneType::object());
+  Object hash_obj(&scope, NoneType::object());
   // Special case for lists
   if (iterable.isList()) {
     List src(&scope, *iterable);
     for (word i = 0; i < src.numItems(); i++) {
       elt = src.at(i);
-      elt_hash = Interpreter::hash(thread, elt);
-      if (elt_hash.isErrorException()) return *elt_hash;
-      setAdd(thread, dst, elt, elt_hash);
+      hash_obj = Interpreter::hash(thread, elt);
+      if (hash_obj.isErrorException()) return *hash_obj;
+      word hash = SmallInt::cast(*hash_obj).value();
+      setAdd(thread, dst, elt, hash);
     }
     return *dst;
   }
@@ -3646,9 +3638,10 @@ RawObject Runtime::setUpdate(Thread* thread, const SetBase& dst,
     List src(&scope, list_iter.iterable());
     for (word i = 0; i < src.numItems(); i++) {
       elt = src.at(i);
-      elt_hash = Interpreter::hash(thread, elt);
-      if (elt_hash.isErrorException()) return *elt_hash;
-      setAdd(thread, dst, elt, elt_hash);
+      hash_obj = Interpreter::hash(thread, elt);
+      if (hash_obj.isErrorException()) return *hash_obj;
+      word hash = SmallInt::cast(*hash_obj).value();
+      setAdd(thread, dst, elt, hash);
     }
   }
   // Special case for tuples
@@ -3657,9 +3650,10 @@ RawObject Runtime::setUpdate(Thread* thread, const SetBase& dst,
     if (tuple.length() > 0) {
       for (word i = 0; i < tuple.length(); i++) {
         elt = tuple.at(i);
-        elt_hash = Interpreter::hash(thread, elt);
-        if (elt_hash.isErrorException()) return *elt_hash;
-        setAdd(thread, dst, elt, elt_hash);
+        hash_obj = Interpreter::hash(thread, elt);
+        if (hash_obj.isErrorException()) return *hash_obj;
+        word hash = SmallInt::cast(*hash_obj).value();
+        setAdd(thread, dst, elt, hash);
       }
     }
     return *dst;
@@ -3673,8 +3667,8 @@ RawObject Runtime::setUpdate(Thread* thread, const SetBase& dst,
            SetBase::Bucket::nextItem(*data, &i);) {
         elt = SetBase::Bucket::value(*data, i);
         // take hash from data to avoid recomputing it.
-        elt_hash = SetBase::Bucket::hash(*data, i);
-        setAdd(thread, dst, elt, elt_hash);
+        word hash = SetBase::Bucket::hash(*data, i);
+        setAdd(thread, dst, elt, hash);
       }
     }
     return *dst;
@@ -3685,8 +3679,8 @@ RawObject Runtime::setUpdate(Thread* thread, const SetBase& dst,
     Tuple data(&scope, dict.data());
     for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
       elt = Dict::Bucket::key(*data, i);
-      elt_hash = Dict::Bucket::hash(*data, i);
-      setAdd(thread, dst, elt, elt_hash);
+      word hash = Dict::Bucket::hash(*data, i);
+      setAdd(thread, dst, elt, hash);
     }
     return *dst;
   }
@@ -3717,9 +3711,10 @@ RawObject Runtime::setUpdate(Thread* thread, const SetBase& dst,
       if (thread->clearPendingStopIteration()) break;
       return *elt;
     }
-    elt_hash = Interpreter::hash(thread, elt);
-    if (elt_hash.isErrorException()) return *elt_hash;
-    setAdd(thread, dst, elt, elt_hash);
+    hash_obj = Interpreter::hash(thread, elt);
+    if (hash_obj.isErrorException()) return *hash_obj;
+    word hash = SmallInt::cast(*hash_obj).value();
+    setAdd(thread, dst, elt, hash);
   }
   return *dst;
 }

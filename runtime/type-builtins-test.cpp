@@ -50,10 +50,10 @@ TEST_F(TypeBuiltinsTest, TypeAtReturnsNoPlaceholderValue) {
   HandleScope scope(thread_);
   Type type(&scope, runtime_.newType());
   Str name(&scope, runtime_.newStrFromCStr("__eq__"));
-  Object name_hash(&scope, strHash(thread_, *name));
+  word hash = strHash(thread_, *name);
   Object value(&scope, runtime_.newStrFromCStr("__eq__'s value"));
   typeAtPut(thread_, type, name, value);
-  EXPECT_EQ(typeAt(thread_, type, name, name_hash), *value);
+  EXPECT_EQ(typeAt(thread_, type, name, hash), *value);
   EXPECT_EQ(typeAtByStr(thread_, type, name), *value);
   EXPECT_EQ(typeAtById(thread_, type, SymbolId::kDunderEq), *value);
 }
@@ -62,11 +62,11 @@ TEST_F(TypeBuiltinsTest, TypeAtReturnsErrorNotFoundForPlaceholder) {
   HandleScope scope(thread_);
   Type type(&scope, runtime_.newType());
   Str name(&scope, runtime_.newStrFromCStr("__eq__"));
-  Object name_hash(&scope, strHash(thread_, *name));
+  word hash = strHash(thread_, *name);
   Object value(&scope, runtime_.newStrFromCStr("__eq__'s value"));
   ValueCell value_cell(&scope, typeAtPut(thread_, type, name, value));
   value_cell.makePlaceholder();
-  EXPECT_TRUE(typeAt(thread_, type, name, name_hash).isErrorNotFound());
+  EXPECT_TRUE(typeAt(thread_, type, name, hash).isErrorNotFound());
   EXPECT_TRUE(typeAtByStr(thread_, type, name).isErrorNotFound());
   EXPECT_TRUE(typeAtById(thread_, type, SymbolId::kDunderEq).isErrorNotFound());
 }
@@ -808,9 +808,8 @@ class C:
   ASSERT_TRUE(runtime_.isInstanceOfType(*c_obj));
   Type c(&scope, *c_obj);
   Object name(&scope, runtime_.newStrFromCStr("x"));
-  Object name_hash(&scope, strHash(thread_, *name));
-  EXPECT_TRUE(
-      isIntEqualsWord(typeGetAttribute(thread_, c, name, name_hash), 42));
+  word hash = strHash(thread_, *name);
+  EXPECT_TRUE(isIntEqualsWord(typeGetAttribute(thread_, c, name, hash), 42));
 }
 
 TEST_F(TypeBuiltinsTest, TypeGetAttributeReturnsMetaclassAttributeValue) {
@@ -825,9 +824,8 @@ class C(metaclass=M): pass
   ASSERT_TRUE(runtime_.isInstanceOfType(*c_obj));
   Type c(&scope, *c_obj);
   Object name(&scope, runtime_.newStrFromCStr("x"));
-  Object name_hash(&scope, strHash(thread_, *name));
-  EXPECT_TRUE(
-      isIntEqualsWord(typeGetAttribute(thread_, c, name, name_hash), 77));
+  word hash = strHash(thread_, *name);
+  EXPECT_TRUE(isIntEqualsWord(typeGetAttribute(thread_, c, name, hash), 77));
 }
 
 TEST_F(TypeBuiltinsTest, TypeGetAttributeWithMissingAttributeReturnsError) {
@@ -837,8 +835,8 @@ TEST_F(TypeBuiltinsTest, TypeGetAttributeWithMissingAttributeReturnsError) {
   ASSERT_TRUE(runtime_.isInstanceOfType(*c_obj));
   Type c(&scope, *c_obj);
   Object name(&scope, runtime_.newStrFromCStr("xxx"));
-  Object name_hash(&scope, strHash(thread_, *name));
-  EXPECT_TRUE(typeGetAttribute(thread_, c, name, name_hash).isError());
+  word hash = strHash(thread_, *name);
+  EXPECT_TRUE(typeGetAttribute(thread_, c, name, hash).isError());
   EXPECT_FALSE(thread_->hasPendingException());
 }
 
@@ -861,8 +859,8 @@ class A(metaclass=M): pass
   ASSERT_TRUE(runtime_.isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
   Object name(&scope, runtime_.newStrFromCStr("foo"));
-  Object name_hash(&scope, strHash(thread_, *name));
-  Object result_obj(&scope, typeGetAttribute(thread_, a, name, name_hash));
+  word hash = strHash(thread_, *name);
+  Object result_obj(&scope, typeGetAttribute(thread_, a, name, hash));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 3);
@@ -886,9 +884,8 @@ class A(metaclass=M): pass
   ASSERT_TRUE(runtime_.isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
   Object name(&scope, runtime_.newStrFromCStr("foo"));
-  Object name_hash(&scope, strHash(thread_, *name));
-  EXPECT_TRUE(
-      isIntEqualsWord(typeGetAttribute(thread_, a, name, name_hash), 42));
+  word hash = strHash(thread_, *name);
+  EXPECT_TRUE(isIntEqualsWord(typeGetAttribute(thread_, a, name, hash), 42));
 }
 
 TEST_F(TypeBuiltinsTest, TypeGetAttributePrefersDataDescriptorOverTypeAttr) {
@@ -907,9 +904,8 @@ class A(metaclass=M):
   ASSERT_TRUE(runtime_.isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
   Object name(&scope, runtime_.newStrFromCStr("foo"));
-  Object name_hash(&scope, strHash(thread_, *name));
-  EXPECT_TRUE(
-      isIntEqualsWord(typeGetAttribute(thread_, a, name, name_hash), 42));
+  word hash = strHash(thread_, *name);
+  EXPECT_TRUE(isIntEqualsWord(typeGetAttribute(thread_, a, name, hash), 42));
 }
 
 TEST_F(TypeBuiltinsTest, TypeGetAttributePrefersFieldOverNonDataDescriptor) {
@@ -927,9 +923,8 @@ class A(metaclass=M):
   ASSERT_TRUE(runtime_.isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
   Object name(&scope, runtime_.newStrFromCStr("foo"));
-  Object name_hash(&scope, strHash(thread_, *name));
-  EXPECT_TRUE(
-      isIntEqualsWord(typeGetAttribute(thread_, a, name, name_hash), 12));
+  word hash = strHash(thread_, *name);
+  EXPECT_TRUE(isIntEqualsWord(typeGetAttribute(thread_, a, name, hash), 12));
 }
 
 TEST_F(TypeBuiltinsTest, TypeGetAttributePropagatesDunderGetException) {
@@ -947,18 +942,17 @@ class A(metaclass=M): pass
   ASSERT_TRUE(runtime_.isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
   Object name(&scope, runtime_.newStrFromCStr("foo"));
-  Object name_hash(&scope, strHash(thread_, *name));
-  EXPECT_TRUE(raised(typeGetAttribute(thread_, a, name, name_hash),
-                     LayoutId::kUserWarning));
+  word hash = strHash(thread_, *name);
+  EXPECT_TRUE(
+      raised(typeGetAttribute(thread_, a, name, hash), LayoutId::kUserWarning));
 }
 
 TEST_F(TypeBuiltinsTest, TypeGetAttributeOnNoneTypeReturnsFunction) {
   HandleScope scope(thread_);
   Type none_type(&scope, runtime_.typeAt(LayoutId::kNoneType));
   Object name(&scope, runtime_.newStrFromCStr("__repr__"));
-  Object name_hash(&scope, strHash(thread_, *name));
-  EXPECT_TRUE(
-      typeGetAttribute(thread_, none_type, name, name_hash).isFunction());
+  word hash = strHash(thread_, *name);
+  EXPECT_TRUE(typeGetAttribute(thread_, none_type, name, hash).isFunction());
 }
 
 TEST_F(TypeBuiltinsTest, TypeSetAttrSetsAttribute) {

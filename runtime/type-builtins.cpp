@@ -444,12 +444,12 @@ bool nextTypeDictItem(RawTuple data, word* idx) {
 }
 
 RawObject typeLookupInMro(Thread* thread, const Type& type, const Object& key,
-                          const Object& key_hash) {
+                          word hash) {
   HandleScope scope(thread);
   Tuple mro(&scope, type.mro());
   for (word i = 0; i < mro.length(); i++) {
     Type mro_type(&scope, mro.at(i));
-    Object value(&scope, typeAt(thread, mro_type, key, key_hash));
+    Object value(&scope, typeAt(thread, mro_type, key, hash));
     if (!value.isError()) {
       return *value;
     }
@@ -512,10 +512,10 @@ RawObject resolveDescriptorGet(Thread* thread, const Object& descr,
 }
 
 RawObject typeAt(Thread* thread, const Type& type, const Object& key,
-                 const Object& key_hash) {
+                 word hash) {
   HandleScope scope(thread);
   Dict dict(&scope, type.dict());
-  Object value(&scope, thread->runtime()->dictAt(thread, dict, key, key_hash));
+  Object value(&scope, thread->runtime()->dictAt(thread, dict, key, hash));
   DCHECK(value.isErrorNotFound() || value.isValueCell(),
          "type dictionaries must return either ErrorNotFound or ValueCell");
   if (value.isErrorNotFound() || ValueCell::cast(*value).isPlaceholder()) {
@@ -629,13 +629,12 @@ RawObject typeValues(Thread* thread, const Type& type) {
 }
 
 RawObject typeGetAttribute(Thread* thread, const Type& type,
-                           const Object& name_str, const Object& name_hash) {
+                           const Object& name_str, word hash) {
   // Look for the attribute in the meta class
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type meta_type(&scope, runtime->typeOf(*type));
-  Object meta_attr(&scope,
-                   typeLookupInMro(thread, meta_type, name_str, name_hash));
+  Object meta_attr(&scope, typeLookupInMro(thread, meta_type, name_str, hash));
   if (!meta_attr.isError()) {
     Type meta_attr_type(&scope, runtime->typeOf(*meta_attr));
     if (typeIsDataDescriptor(thread, meta_attr_type)) {
@@ -645,7 +644,7 @@ RawObject typeGetAttribute(Thread* thread, const Type& type,
   }
 
   // No data descriptor found on the meta class, look in the mro of the type
-  Object attr(&scope, typeLookupInMro(thread, type, name_str, name_hash));
+  Object attr(&scope, typeLookupInMro(thread, type, name_str, hash));
   if (!attr.isError()) {
     Type attr_type(&scope, runtime->typeOf(*attr));
     if (typeIsNonDataDescriptor(thread, attr_type)) {
@@ -695,8 +694,7 @@ static void addSubclass(Thread* thread, const Type& base, const Type& type) {
   Dict subclasses(&scope, base.subclasses());
   LayoutId type_id = Layout::cast(type.instanceLayout()).id();
   Object key(&scope, SmallInt::fromWord(static_cast<word>(type_id)));
-  Object hash(&scope, Interpreter::hash(thread, key));
-  DCHECK(!hash.isErrorException(), "SmallInt must be hashable");
+  word hash = SmallInt::cast(*key).hash();
   Object none(&scope, NoneType::object());
   Object value(&scope, runtime->newWeakRef(thread, type, none));
   runtime->dictAtPut(thread, subclasses, key, hash, value);
@@ -958,7 +956,7 @@ RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
   Type self(&scope, *self_obj);
 
   Object dunder_new_name(&scope, runtime->symbols()->DunderNew());
-  Object dunder_new_name_hash(&scope, strHash(thread, *dunder_new_name));
+  word dunder_new_name_hash = strHash(thread, *dunder_new_name);
   Object dunder_new(&scope, typeGetAttribute(thread, self, dunder_new_name,
                                              dunder_new_name_hash));
   CHECK(!dunder_new.isError(), "self must have __new__");
@@ -977,7 +975,7 @@ RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
   }
 
   Object dunder_init_name(&scope, runtime->symbols()->DunderInit());
-  Object dunder_init_name_hash(&scope, strHash(thread, *dunder_init_name));
+  word dunder_init_name_hash = strHash(thread, *dunder_init_name);
   Object dunder_init(&scope, typeGetAttribute(thread, self, dunder_init_name,
                                               dunder_init_name_hash));
   CHECK(!dunder_init.isError(), "self must have __init__");
@@ -1011,9 +1009,10 @@ RawObject TypeBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(
         LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
   }
-  Object name_hash(&scope, Interpreter::hash(thread, name));
-  if (name_hash.isErrorException()) return *name_hash;
-  Object result(&scope, typeGetAttribute(thread, self, name, name_hash));
+  Object hash_obj(&scope, Interpreter::hash(thread, name));
+  if (hash_obj.isErrorException()) return *hash_obj;
+  word hash = SmallInt::cast(*hash_obj).value();
+  Object result(&scope, typeGetAttribute(thread, self, name, hash));
   if (result.isErrorNotFound()) {
     Object type_name(&scope, self.name());
     return thread->raiseWithFmt(LayoutId::kAttributeError,

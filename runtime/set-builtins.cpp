@@ -17,7 +17,7 @@ RawSmallInt frozensetHash(Thread* thread, const Object& frozenset) {
   uword result = 0;
   for (word i = SetBase::Bucket::kFirst;
        SetBase::Bucket::nextItem(*data, &i);) {
-    word value_hash = SmallInt::cast(SetBase::Bucket::hash(*data, i)).value();
+    word value_hash = SetBase::Bucket::hash(*data, i);
     uword h = static_cast<uword>(value_hash);
     result ^= ((h ^ uword{89869747}) ^ (h << 16)) * uword{3644798167};
   }
@@ -60,10 +60,10 @@ RawObject SetBaseBuiltins::dunderContains(Thread* thread, Frame* frame,
   }
   SetBase set(&scope, *self);
   Object key(&scope, args.get(1));
-  Object key_hash(&scope, Interpreter::hash(thread, key));
-  if (key_hash.isErrorException()) return *key_hash;
-  return Bool::fromBool(
-      thread->runtime()->setIncludes(thread, set, key, key_hash));
+  Object hash_obj(&scope, Interpreter::hash(thread, key));
+  if (hash_obj.isErrorException()) return *hash_obj;
+  word hash = SmallInt::cast(*hash_obj).value();
+  return Bool::fromBool(thread->runtime()->setIncludes(thread, set, key, hash));
 }
 
 RawObject SetBaseBuiltins::dunderIter(Thread* thread, Frame* frame,
@@ -88,7 +88,6 @@ RawObject SetBaseBuiltins::isDisjoint(Thread* thread, Frame* frame,
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   Object value(&scope, NoneType::object());
-  Object value_hash(&scope, NoneType::object());
   if (!thread->runtime()->isInstanceOfSetBase(*self)) {
     return thread->raiseWithFmt(
         LayoutId::kTypeError,
@@ -112,8 +111,8 @@ RawObject SetBaseBuiltins::isDisjoint(Thread* thread, Frame* frame,
     for (word i = SetBase::Bucket::kFirst;
          SetBase::Bucket::nextItem(*data, &i);) {
       value = SetBase::Bucket::value(*data, i);
-      value_hash = SetBase::Bucket::hash(*data, i);
-      if (runtime->setIncludes(thread, b, value, value_hash)) {
+      word hash = SetBase::Bucket::hash(*data, i);
+      if (runtime->setIncludes(thread, b, value, hash)) {
         return Bool::falseObj();
       }
     }
@@ -139,6 +138,7 @@ RawObject SetBaseBuiltins::isDisjoint(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "iter() returned a non-iterator");
   }
+  Object hash_obj(&scope, NoneType::object());
   for (;;) {
     value = Interpreter::callMethod1(thread, thread->currentFrame(),
                                      next_method, iterator);
@@ -146,9 +146,10 @@ RawObject SetBaseBuiltins::isDisjoint(Thread* thread, Frame* frame,
       if (thread->clearPendingStopIteration()) break;
       return *value;
     }
-    value_hash = Interpreter::hash(thread, value);
-    if (value_hash.isErrorException()) return *value_hash;
-    if (runtime->setIncludes(thread, a, value, value_hash)) {
+    hash_obj = Interpreter::hash(thread, value);
+    if (hash_obj.isErrorException()) return *hash_obj;
+    word hash = SmallInt::cast(*hash_obj).value();
+    if (runtime->setIncludes(thread, a, value, hash)) {
       return Bool::falseObj();
     }
   }
@@ -474,12 +475,11 @@ RawObject setCopy(Thread* thread, const SetBase& set) {
   Tuple data(&scope, set.data());
   MutableTuple new_data(&scope, runtime->newMutableTuple(data.length()));
   Object value(&scope, NoneType::object());
-  Object value_hash(&scope, NoneType::object());
   for (word i = SetBase::Bucket::kFirst;
        SetBase::Bucket::nextItem(*data, &i);) {
     value = SetBase::Bucket::value(*data, i);
-    value_hash = SetBase::Bucket::hash(*data, i);
-    SetBase::Bucket::set(*new_data, i, *value_hash, *value);
+    word hash = SetBase::Bucket::hash(*data, i);
+    SetBase::Bucket::set(*new_data, i, hash, *value);
   }
   new_set.setData(*new_data);
   new_set.setNumItems(set.numItems());
@@ -490,12 +490,11 @@ bool setIsSubset(Thread* thread, const SetBase& set, const SetBase& other) {
   HandleScope scope(thread);
   Tuple data(&scope, set.data());
   Object value(&scope, NoneType::object());
-  Object value_hash(&scope, NoneType::object());
   for (word i = SetBase::Bucket::kFirst;
        SetBase::Bucket::nextItem(*data, &i);) {
     value = RawSetBase::Bucket::value(*data, i);
-    value_hash = RawSetBase::Bucket::hash(*data, i);
-    if (!thread->runtime()->setIncludes(thread, other, value, value_hash)) {
+    word hash = RawSetBase::Bucket::hash(*data, i);
+    if (!thread->runtime()->setIncludes(thread, other, value, hash)) {
       return false;
     }
   }
@@ -562,10 +561,11 @@ RawObject SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
   }
   Set set(&scope, *self);
   Object value(&scope, args.get(1));
-  Object value_hash(&scope, Interpreter::hash(thread, value));
-  if (value_hash.isErrorException()) return *value_hash;
+  Object hash_obj(&scope, Interpreter::hash(thread, value));
+  if (hash_obj.isErrorException()) return *hash_obj;
+  word hash = SmallInt::cast(*hash_obj).value();
 
-  Object result(&scope, runtime->setAdd(thread, set, value, value_hash));
+  Object result(&scope, runtime->setAdd(thread, set, value, hash));
   if (result.isError()) return *result;
   return NoneType::object();
 }
@@ -591,9 +591,10 @@ RawObject SetBuiltins::discard(Thread* thread, Frame* frame, word nargs) {
   }
   Set self(&scope, *self_obj);
   Object key(&scope, args.get(1));
-  Object key_hash(&scope, Interpreter::hash(thread, key));
-  if (key_hash.isErrorException()) return *key_hash;
-  runtime->setRemove(thread, self, key, key_hash);
+  Object hash_obj(&scope, Interpreter::hash(thread, key));
+  if (hash_obj.isErrorException()) return *hash_obj;
+  word hash = SmallInt::cast(*hash_obj).value();
+  runtime->setRemove(thread, self, key, hash);
   return NoneType::object();
 }
 
@@ -659,9 +660,10 @@ RawObject SetBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
   }
   Set set(&scope, *self);
   Object key(&scope, args.get(1));
-  Object key_hash(&scope, Interpreter::hash(thread, key));
-  if (key_hash.isErrorException()) return *key_hash;
-  if (!runtime->setRemove(thread, set, key, key_hash)) {
+  Object hash_obj(&scope, Interpreter::hash(thread, key));
+  if (hash_obj.isErrorException()) return *hash_obj;
+  word hash = SmallInt::cast(*hash_obj).value();
+  if (!runtime->setRemove(thread, set, key, hash)) {
     return thread->raise(LayoutId::kKeyError, *key);
   }
   return NoneType::object();

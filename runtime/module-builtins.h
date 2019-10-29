@@ -12,7 +12,7 @@ namespace py {
 // Look up the value of ValueCell associated with key in module with
 // consideration of placeholders created for caching.
 RawObject moduleAt(Thread* thread, const Module& module, const Object& key,
-                   const Object& key_hash);
+                   word hash);
 // Same as moduleAt but with the Str `name` as key.
 RawObject moduleAtByStr(Thread* thread, const Module& module, const Str& name);
 // Same as moduleAt but with SymbolId as key.
@@ -26,7 +26,7 @@ RawObject moduleValueCellAtByStr(Thread* thread, const Module& module,
 
 // Associate key with value in module.
 RawObject moduleAtPut(Thread* thread, const Module& module, const Object& key,
-                      const Object& key_hash, const Object& value);
+                      word hash, const Object& value);
 // Associate name with value in module.
 RawObject moduleAtPutByStr(Thread* thread, const Module& module,
                            const Str& name, const Object& value);
@@ -44,17 +44,16 @@ RawObject moduleLen(Thread* thread, const Module& module);
 
 // Remove the ValueCell associcated with key in module_dict.
 RawObject moduleRemove(Thread* thread, const Module& module, const Object& key,
-                       const Object& key_hash);
+                       word hash);
 
 // Returns the list of values contained in non-placeholder ValueCells.
 RawObject moduleValues(Thread* thread, const Module& module);
 
 RawObject moduleGetAttribute(Thread* thread, const Module& module,
-                             const Object& name_str, const Object& name_hash);
+                             const Object& name_str, word hash);
 
 RawObject moduleSetAttr(Thread* thread, const Module& module,
-                        const Object& name_str, const Object& name_hash,
-                        const Object& value);
+                        const Object& name_str, word hash, const Object& value);
 
 // A version of Dict::Bucket::nextItem for module dict to filter out
 // placeholders.
