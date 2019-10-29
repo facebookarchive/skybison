@@ -135,8 +135,20 @@ class dropwhile:
 
 
 class filterfalse:
-    def __init__(self, pred, seq):
-        _unimplemented()
+    def __new__(cls, predicate, iterable):
+        result = object.__new__(cls)
+        result._it = iter(iterable)
+        result._predicate = bool if predicate is None else predicate
+        return result
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        while True:
+            item = next(self._it)
+            if not self._predicate(item):
+                return item
 
 
 # internal helper class for groupby

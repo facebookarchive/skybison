@@ -336,5 +336,19 @@ class GroupbyTests(unittest.TestCase):
         self.assertEqual(next(grouper[1]), 4)
 
 
+class FilterFalseTests(unittest.TestCase):
+    def test_filterfalse_with_no_predicate_returns_false_values(self):
+        it = itertools.filterfalse(None, range(10))
+        self.assertTupleEqual(tuple(it), (0,))
+
+    def test_filterfalse_with_predicate_returns_filtered_values(self):
+        it = itertools.filterfalse(lambda x: x % 2, range(10))
+        self.assertTupleEqual(tuple(it), (0, 2, 4, 6, 8))
+
+    def test_filterfalse_with_no_sequence_raises_typeerror(self):
+        with self.assertRaises(TypeError):
+            itertools.filterfalse(None, None)
+
+
 if __name__ == "__main__":
     unittest.main()
