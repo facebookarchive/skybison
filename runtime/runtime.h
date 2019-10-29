@@ -915,8 +915,6 @@ class Runtime {
                         word total_vars, word stacksize, Function::Entry entry,
                         Function::Entry entry_kw, Function::Entry entry_ex);
 
-  static bool dictHasEmptyItem(const Tuple& data);
-
   // Execute a frozen module by marshalling it into a code object and then
   // executing it.
   RawObject executeFrozenModule(const char* buffer, const Module& module);
