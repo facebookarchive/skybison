@@ -19,7 +19,6 @@
 #include "code-builtins.h"
 #include "codecs-module.h"
 #include "complex-builtins.h"
-#include "debugging.h"
 #include "descriptor-builtins.h"
 #include "dict-builtins.h"
 #include "exception-builtins.h"
@@ -108,7 +107,6 @@ Runtime::Runtime(word heap_size, bool cache_enabled)
     : heap_(heap_size),
       new_value_cell_callback_(this),
       cache_enabled_(cache_enabled) {
-  initializeDebugging();
   initializeRandom();
   initializeInterpreter();
   initializeThreads();
@@ -120,6 +118,12 @@ Runtime::Runtime(word heap_size, bool cache_enabled)
   initializeTypes();
   initializeApiData();
   initializeModules();
+
+  // This creates a reference that prevents the linker from garbage collecting
+  // all of the symbols in debugging.cpp.  This is a temporary workaround until
+  // we can fix the build to prevent symbols in debugging.cpp from being GCed.
+  extern void initializeDebugging();
+  initializeDebugging();
 }
 
 Runtime::Runtime() : Runtime(128 * kMiB, true) {}

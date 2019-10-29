@@ -4,7 +4,6 @@
 #include <cinttypes>
 
 #include "builtins-module.h"
-#include "debugging.h"
 #include "frame.h"
 #include "int-builtins.h"
 #include "module-builtins.h"
@@ -450,7 +449,6 @@ RawObject displayException(Thread* thread, const Object& value,
 
   ValueCell sys_stderr_cell(&scope, runtime->sysStderr());
   if (sys_stderr_cell.isUnbound()) {
-    dump(value);
     fputs("lost sys.stderr\n", stderr);
     return NoneType::object();
   }
