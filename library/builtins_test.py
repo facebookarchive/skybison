@@ -5874,6 +5874,12 @@ class PropertyTests(unittest.TestCase):
 
 
 class RangeTests(unittest.TestCase):
+    def test_dunder_bool_with_empty_range_returns_true(self):
+        self.assertFalse(range(0).__bool__())
+
+    def test_dunder_bool_with_non_empty_range_returns_true(self):
+        self.assertTrue(range(1).__bool__())
+
     def test_dunder_contains_with_int_less_than_start_returns_false(self):
         self.assertFalse(range(1, 5).__contains__(0))
 
@@ -6243,6 +6249,12 @@ class RangeTests(unittest.TestCase):
 
         r = range(Repr(2), Repr(4), Repr(2))
         self.assertEqual(repr(r), "range(repr, repr, repr)")
+
+    def test_dunder_reversed_with_returns_reversed_iterator(self):
+        rev_iter = range(1, 6, 2).__reversed__()
+        self.assertEqual(rev_iter.__next__(), 5)
+        self.assertEqual(rev_iter.__next__(), 3)
+        self.assertEqual(rev_iter.__next__(), 1)
 
     def test_start_is_readonly(self):
         with self.assertRaises(AttributeError):

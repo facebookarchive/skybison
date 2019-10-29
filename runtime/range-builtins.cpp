@@ -155,7 +155,13 @@ RawObject RangeBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   Object start(&scope, self.start());
   Object stop(&scope, self.stop());
   Object step(&scope, self.step());
-  return rangeLen(thread, start, stop, step);
+  Int len(&scope, rangeLen(thread, start, stop, step));
+  // TODO(T55084422): Streamline int bounds checking in Pyro
+  if (len.isLargeInt() && LargeInt::cast(*len).numDigits() > 1) {
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "Python int too large to convert to C ssize_t");
+  }
+  return *len;
 }
 
 RawObject RangeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {

@@ -3842,6 +3842,10 @@ def quit():
 
 
 class range(bootstrap=True):
+    def __bool__(self):
+        _range_guard(self)
+        return bool(_range_len(self))
+
     def __contains__(self, num):
         _range_guard(self)
         if _int_checkexact(num) or _bool_check(num):
@@ -3952,6 +3956,13 @@ class range(bootstrap=True):
         if self.step == 1:
             return f"range({self.start!r}, {self.stop!r})"
         return f"range({self.start!r}, {self.stop!r}, {self.step!r})"
+
+    def __reversed__(self):
+        _range_guard(self)
+        self_len = _range_len(self)
+        new_stop = self.start - self.step
+        new_start = new_stop + (self_len * self.step)
+        return range.__iter__(range(new_start, new_stop, -self.step))
 
     def count(self, value):
         _range_guard(self)
