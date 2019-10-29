@@ -191,6 +191,7 @@ class Runtime;
   V(UnderCloseFd, "_closefd")                                                  \
   V(UnderCodecs, "_codecs")                                                    \
   V(UnderCodeGuard, "_code_guard")                                             \
+  V(UnderComplexCheck, "_complex_check")                                       \
   V(UnderComplexImag, "_complex_imag")                                         \
   V(UnderComplexReal, "_complex_real")                                         \
   V(UnderCreated, "_created")                                                  \

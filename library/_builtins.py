@@ -188,6 +188,11 @@ def _code_guard(c):
 
 
 @_patch
+def _complex_check(c):
+    pass
+
+
+@_patch
 def _complex_imag(c):
     pass
 

@@ -1881,6 +1881,23 @@ class ComplexTests(unittest.TestCase):
             float.__hash__(2.0) + float.__hash__(-3.0) * imag_hash,
         )
 
+    def test_dunder_eq_with_num_and_non_zero_imaginary_returns_false(self):
+        self.assertFalse(complex(1, 1).__eq__(1))
+        self.assertFalse(complex(1.0, 1).__eq__(1))
+
+    def test_dunder_eq_with_num_compares_real_field(self):
+        self.assertTrue(complex(2, 0).__eq__(2))
+        self.assertTrue(complex(3.2, 0).__eq__(3.2))
+
+    def test_dunder_eq_with_complex_compares_both_fields(self):
+        self.assertTrue(complex(1.2, 3.4), complex(1.2, 3.4))
+        self.assertFalse(complex(3.2, 0).__eq__(complex(3.2, 1)))
+        self.assertFalse(complex(1, 1).__eq__(complex(3.2, 1)))
+
+    def test_dunder_eq_with_non_num_or_complex_returns_false(self):
+        self.assertIs(complex(3.2, 0).__eq__([3.2, 0]), NotImplemented)
+        self.assertIs(complex(1, 1).__eq__("(1+1j)"), NotImplemented)
+
 
 class DelattrTests(unittest.TestCase):
     def test_non_str_as_name_raises_type_error(self):

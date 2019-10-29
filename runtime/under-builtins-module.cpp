@@ -109,6 +109,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderClassMethod, underClassMethod},
     {SymbolId::kUnderClassMethodIsAbstract, underClassMethodIsAbstract},
     {SymbolId::kUnderCodeGuard, underCodeGuard},
+    {SymbolId::kUnderComplexCheck, underComplexCheck},
     {SymbolId::kUnderComplexImag, underComplexImag},
     {SymbolId::kUnderComplexReal, underComplexReal},
     {SymbolId::kUnderDelattr, underDelattr},
@@ -283,6 +284,7 @@ const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
     SymbolId::kUnderBytesLen,
     SymbolId::kUnderByteslikeCheck,
     SymbolId::kUnderByteslikeGuard,
+    SymbolId::kUnderComplexCheck,
     SymbolId::kUnderDictCheck,
     SymbolId::kUnderDictCheckExact,
     SymbolId::kUnderDictGuard,
@@ -1313,6 +1315,12 @@ RawObject UnderBuiltinsModule::underCodeGuard(Thread* thread, Frame* frame,
     return NoneType::object();
   }
   return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kCode);
+}
+
+RawObject UnderBuiltinsModule::underComplexCheck(Thread* thread, Frame* frame,
+                                                 word nargs) {
+  Arguments args(frame, nargs);
+  return Bool::fromBool(thread->runtime()->isInstanceOfComplex(args.get(0)));
 }
 
 RawObject UnderBuiltinsModule::underComplexImag(Thread* thread, Frame* frame,

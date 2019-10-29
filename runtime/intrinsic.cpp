@@ -73,6 +73,12 @@ static bool underByteslikeGuard(Thread* thread, Frame* frame) {
   return false;
 }
 
+static bool underComplexCheck(Thread* thread, Frame* frame) {
+  frame->setTopValue(Bool::fromBool(
+      thread->runtime()->isInstanceOfComplex(frame->popValue())));
+  return true;
+}
+
 static bool underDictCheck(Thread* thread, Frame* frame) {
   frame->setTopValue(
       Bool::fromBool(thread->runtime()->isInstanceOfDict(frame->popValue())));
@@ -512,6 +518,8 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
       return underByteslikeCheck(thread, frame);
     case SymbolId::kUnderByteslikeGuard:
       return underByteslikeGuard(thread, frame);
+    case SymbolId::kUnderComplexCheck:
+      return underComplexCheck(thread, frame);
     case SymbolId::kUnderDictCheck:
       return underDictCheck(thread, frame);
     case SymbolId::kUnderDictCheckExact:
