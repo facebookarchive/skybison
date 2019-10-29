@@ -270,5 +270,71 @@ class AccumulateTests(unittest.TestCase):
         )
 
 
+class GroupbyTests(unittest.TestCase):
+    def test_groupby_returns_groups(self):
+        it = itertools.groupby("AAAABBBCCD")
+        self.assertEqual(next(it)[0], "A")
+        self.assertEqual(next(it)[0], "B")
+        self.assertEqual(next(it)[0], "C")
+        self.assertEqual(next(it)[0], "D")
+
+    def test_groupby_returns_all_elements_in_all_groups(self):
+        it = itertools.groupby("AAAABBBCCD")
+        group = next(it)[1]
+        self.assertTupleEqual(tuple(group), ("A", "A", "A", "A"))
+        group = next(it)[1]
+        self.assertTupleEqual(tuple(group), ("B", "B", "B"))
+        group = next(it)[1]
+        self.assertTupleEqual(tuple(group), ("C", "C"))
+        group = next(it)[1]
+        self.assertEqual(next(group), "D")
+
+    def test_groupby_raises_stopiteration_after_all_groups(self):
+        it = itertools.groupby("AAAABBBCCD")
+        for _i in range(4):
+            next(it)
+        self.assertRaises(StopIteration, next, it)
+
+    def test_groupby_first_group_raises_stopiteration_after_all_elements(self):
+        it = itertools.groupby("AAAABBBCCD")
+        group = next(it)[1]
+        for _i in range(4):
+            next(group)
+        self.assertRaises(StopIteration, next, group)
+
+    def test_groupby_last_group_raises_stopiteration_after_all_elements(self):
+        it = itertools.groupby("AAAABBBCCD")
+        for _i in range(3):
+            next(it)
+        group = next(it)[1]
+        next(group)
+        self.assertRaises(StopIteration, next, group)
+
+    def test_groupby_group_raises_stopiteration_after_advancing_groupby(self):
+        it = itertools.groupby("AAAABBBCCD")
+        group = next(it)[1]
+        next(it)
+        self.assertRaises(StopIteration, next, group)
+
+    def test_groupby_handles_none_values(self):
+        it = itertools.groupby([1, None, None, None])
+        group = next(it)[1]
+        self.assertEqual(next(group), 1)
+        group = next(it)[1]
+        self.assertTupleEqual(tuple(group), (None, None, None))
+
+    def test_groupby_with_key_func_returns_keys_and_groups(self):
+        def keyfunc(value):
+            return 4 if value == 4 else 1
+
+        it = itertools.groupby([1, 2, 3, 4], keyfunc)
+        grouper = next(it)
+        self.assertEqual(grouper[0], 1)
+        self.assertTupleEqual(tuple(grouper[1]), (1, 2, 3))
+        grouper = next(it)
+        self.assertEqual(grouper[0], 4)
+        self.assertEqual(next(grouper[1]), 4)
+
+
 if __name__ == "__main__":
     unittest.main()
