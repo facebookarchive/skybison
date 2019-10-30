@@ -3079,7 +3079,7 @@ void Runtime::dictAtPut(Thread* thread, const Dict& dict, const Object& key,
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word index = -1;
-  bool found = dictLookup(thread, data, key, hash, &index, objectEquals);
+  bool found = dictLookup(thread, data, key, hash, &index);
   DCHECK(index != -1, "invalid index %ld", index);
   if (found) {
     Dict::Bucket::setValue(*data, index, *value);
@@ -3113,7 +3113,7 @@ RawObject Runtime::dictAt(Thread* thread, const Dict& dict, const Object& key,
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word index = -1;
-  bool found = dictLookup(thread, data, key, hash, &index, objectEquals);
+  bool found = dictLookup(thread, data, key, hash, &index);
   if (found) {
     return Dict::Bucket::value(*data, index);
   }
@@ -3145,7 +3145,7 @@ RawObject Runtime::dictAtIfAbsentPut(Thread* thread, const Dict& dict,
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word index = -1;
-  bool found = dictLookup(thread, data, key, hash, &index, objectEquals);
+  bool found = dictLookup(thread, data, key, hash, &index);
   DCHECK(index != -1, "invalid index %ld", index);
   if (found) {
     return Dict::Bucket::value(*data, index);
@@ -3195,7 +3195,7 @@ bool Runtime::dictIncludes(Thread* thread, const Dict& dict, const Object& key,
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word ignore;
-  return dictLookup(thread, data, key, hash, &ignore, objectEquals);
+  return dictLookup(thread, data, key, hash, &ignore);
 }
 
 RawObject Runtime::dictRemoveByStr(Thread* thread, const Dict& dict,
@@ -3210,7 +3210,7 @@ RawObject Runtime::dictRemove(Thread* thread, const Dict& dict,
   Tuple data(&scope, dict.data());
   word index = -1;
   Object result(&scope, Error::notFound());
-  bool found = dictLookup(thread, data, key, hash, &index, objectEquals);
+  bool found = dictLookup(thread, data, key, hash, &index);
   if (found) {
     result = Dict::Bucket::value(*data, index);
     Dict::Bucket::setTombstone(*data, index);
@@ -3220,7 +3220,7 @@ RawObject Runtime::dictRemove(Thread* thread, const Dict& dict,
 }
 
 bool Runtime::dictLookup(Thread* thread, const Tuple& data, const Object& key,
-                         word hash, word* index, DictEq equals) {
+                         word hash, word* index) {
   if (data.length() == 0) {
     *index = -1;
     return false;
@@ -3234,7 +3234,7 @@ bool Runtime::dictLookup(Thread* thread, const Tuple& data, const Object& key,
     word current_index = current * Dict::Bucket::kNumPointers;
     if (Dict::Bucket::hashRaw(*data, current_index) == hash_int) {
       RawObject eq =
-          equals(thread, Dict::Bucket::key(*data, current_index), *key);
+          objectEquals(thread, Dict::Bucket::key(*data, current_index), *key);
       if (eq == Bool::trueObj()) {
         *index = current_index;
         return true;

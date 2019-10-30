@@ -23,8 +23,41 @@ ApiHandle* ApiHandle::alloc(Thread* thread, RawObject reference) {
   return result;
 }
 
-static RawObject identityEqual(Thread*, RawObject a, RawObject b) {
-  return Bool::fromBool(a == b);
+// TODO(T44244793): Remove these functions when handles have their own
+// specialized hash table.
+static bool dictLookupIdentityEquals(RawTuple data, RawObject key, word hash,
+                                     word* index) {
+  if (data.length() == 0) {
+    *index = -1;
+    return false;
+  }
+  word next_free_index = -1;
+  uword perturb;
+  word bucket_mask;
+  RawSmallInt hash_int = SmallInt::fromWord(hash);
+  for (word current = Dict::Bucket::bucket(data, hash, &bucket_mask, &perturb);;
+       current = Dict::Bucket::nextBucket(current, bucket_mask, &perturb)) {
+    word current_index = current * Dict::Bucket::kNumPointers;
+    if (Dict::Bucket::hashRaw(data, current_index) == hash_int) {
+      if (Dict::Bucket::key(data, current_index) == key) {
+        *index = current_index;
+        return true;
+      }
+      continue;
+    }
+    if (Dict::Bucket::isEmpty(data, current_index)) {
+      if (next_free_index == -1) {
+        next_free_index = current_index;
+      }
+      *index = next_free_index;
+      return false;
+    }
+    if (Dict::Bucket::isTombstone(data, current_index)) {
+      if (next_free_index == -1) {
+        next_free_index = current_index;
+      }
+    }
+  }
 }
 
 // Look up the value associated with key. Checks for identity equality, not
@@ -34,8 +67,7 @@ RawObject ApiHandle::dictAtIdentityEquals(Thread* thread, const Dict& dict,
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word index = -1;
-  bool found = thread->runtime()->dictLookup(thread, data, key, hash, &index,
-                                             identityEqual);
+  bool found = dictLookupIdentityEquals(*data, *key, hash, &index);
   if (found) {
     DCHECK(index != -1, "invalid index %ld", index);
     return Dict::Bucket::value(*data, index);
@@ -55,8 +87,7 @@ void ApiHandle::dictAtPutIdentityEquals(Thread* thread, const Dict& dict,
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word index = -1;
-  bool found =
-      runtime->dictLookup(thread, data, key, hash, &index, identityEqual);
+  bool found = dictLookupIdentityEquals(*data, *key, hash, &index);
   DCHECK(index != -1, "invalid index %ld", index);
   bool empty_slot = Dict::Bucket::isEmpty(*data, index);
   Dict::Bucket::set(*data, index, hash, *key, *value);
@@ -73,12 +104,11 @@ void ApiHandle::dictAtPutIdentityEquals(Thread* thread, const Dict& dict,
 
 RawObject ApiHandle::dictRemoveIdentityEquals(Thread* thread, const Dict& dict,
                                               const Object& key, word hash) {
-  HandleScope scope;
+  HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word index = -1;
   Object result(&scope, Error::notFound());
-  bool found = thread->runtime()->dictLookup(thread, data, key, hash, &index,
-                                             identityEqual);
+  bool found = dictLookupIdentityEquals(*data, *key, hash, &index);
   if (found) {
     DCHECK(index != -1, "unexpected index %ld", index);
     result = Dict::Bucket::value(*data, index);

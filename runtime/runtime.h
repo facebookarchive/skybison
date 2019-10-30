@@ -925,7 +925,7 @@ class Runtime {
   // function returns false and sets index to the location where the key would
   // be inserted. If the dict is full, it sets index to -1.
   bool dictLookup(Thread* thread, const Tuple& data, const Object& key,
-                  word hash, word* index, DictEq equals);
+                  word hash, word* index);
 
   template <SetLookupType type>
   word setLookup(Thread* thread, const Tuple& data, const Object& key,
