@@ -2845,6 +2845,17 @@ class FrozensetTests(unittest.TestCase):
 
 
 class FunctionTests(unittest.TestCase):
+    def test_dunder_dict_matches_attributes(self):
+        def foo():
+            pass
+
+        d = foo.__dict__
+        self.assertEqual(len(d), 0)
+        foo.bar = 42
+        self.assertEqual(d["bar"], 42)
+        d["baz"] = -8
+        self.assertEqual(foo.baz, -8)
+
     def test_dunder_globals_returns_identical_object(self):
         def foo():
             pass

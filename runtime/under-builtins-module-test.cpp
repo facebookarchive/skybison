@@ -611,6 +611,35 @@ i = C(False)
   EXPECT_EQ(List::cast(*result).numItems(), 0);
 }
 
+TEST_F(UnderBuiltinsModuleTest, UnderInstanceOverflowDictAllocatesDictionary) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+def instance():
+  pass
+)")
+                   .isError());
+  Object instance_obj(&scope, mainModuleAt(&runtime_, "instance"));
+  ASSERT_TRUE(instance_obj.isHeapObject());
+  Instance instance(&scope, *instance_obj);
+  Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
+  ASSERT_TRUE(layout.hasDictOverflow());
+  word offset = SmallInt::cast(layout.overflowAttributes()).value();
+  ASSERT_TRUE(instance.instanceVariableAt(offset).isNoneType());
+
+  Object result0(
+      &scope,
+      runBuiltin(UnderBuiltinsModule::underInstanceOverflowDict, instance));
+  ASSERT_EQ(instance.layoutId(), layout.id());
+  Object overflow_dict(&scope, instance.instanceVariableAt(offset));
+  EXPECT_TRUE(result0.isDict());
+  EXPECT_EQ(result0, overflow_dict);
+
+  Object result1(
+      &scope,
+      runBuiltin(UnderBuiltinsModule::underInstanceOverflowDict, instance));
+  EXPECT_EQ(result0, result1);
+}
+
 TEST_F(UnderBuiltinsModuleTest,
        UnderIntFromBytesWithLittleEndianReturnsSmallInt) {
   HandleScope scope(thread_);

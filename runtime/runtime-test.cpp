@@ -2854,26 +2854,6 @@ foo.x = 3
   EXPECT_TRUE(isIntEqualsWord(*value, 3));
 }
 
-TEST_F(RuntimeTest, LazyInitializationOfFunctionDictWithAttribute) {
-  HandleScope scope(thread_);
-  Function function(&scope, makeTestFunction());
-  ASSERT_TRUE(function.dict().isNoneType());
-
-  Object key(&scope, runtime_.newStrFromCStr("bar"));
-  EXPECT_TRUE(runtime_.attributeAt(thread_, function, key).isError());
-  EXPECT_TRUE(function.dict().isDict());
-}
-
-TEST_F(RuntimeTest, LazyInitializationOfFunctionDict) {
-  HandleScope scope(thread_);
-  Function function(&scope, makeTestFunction());
-  ASSERT_TRUE(function.dict().isNoneType());
-
-  Object key(&scope, runtime_.newStrFromCStr("__dict__"));
-  EXPECT_FALSE(runtime_.attributeAt(thread_, function, key).isError());
-  EXPECT_TRUE(function.dict().isDict());
-}
-
 TEST_F(RuntimeTest, NotMatchingCellAndVarNamesSetsCell2ArgToNone) {
   HandleScope scope(thread_);
   word argcount = 3;

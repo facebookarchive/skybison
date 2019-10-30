@@ -136,6 +136,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderFrozenSetCheck, underFrozenSetCheck},
     {SymbolId::kUnderFrozenSetGuard, underFrozenSetGuard},
     {SymbolId::kUnderFunctionGlobals, underFunctionGlobals},
+    {SymbolId::kUnderFunctionGuard, underFunctionGuard},
     {SymbolId::kUnderGc, underGc},
     {SymbolId::kUnderGetMemberByte, underGetMemberByte},
     {SymbolId::kUnderGetMemberChar, underGetMemberChar},
@@ -154,6 +155,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderInstanceGetattr, underInstanceGetattr},
     {SymbolId::kUnderInstanceGuard, underInstanceGuard},
     {SymbolId::kUnderInstanceKeys, underInstanceKeys},
+    {SymbolId::kUnderInstanceOverflowDict, underInstanceOverflowDict},
     {SymbolId::kUnderInstanceSetattr, underInstanceSetattr},
     {SymbolId::kUnderIntCheck, underIntCheck},
     {SymbolId::kUnderIntCheckExact, underIntCheckExact},
@@ -1769,6 +1771,15 @@ RawObject UnderBuiltinsModule::underFunctionGlobals(Thread* thread,
   return module.moduleProxy();
 }
 
+RawObject UnderBuiltinsModule::underFunctionGuard(Thread* thread, Frame* frame,
+                                                  word nargs) {
+  Arguments args(frame, nargs);
+  if (args.get(0).isFunction()) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kFunction);
+}
+
 RawObject UnderBuiltinsModule::underGc(Thread* thread, Frame* /* frame */,
                                        word /* nargs */) {
   thread->runtime()->collectGarbage();
@@ -1963,6 +1974,25 @@ RawObject UnderBuiltinsModule::underInstanceKeys(Thread* thread, Frame* frame,
     CHECK(layout.overflowAttributes().isNoneType(), "no overflow");
   }
   return *result;
+}
+
+RawObject UnderBuiltinsModule::underInstanceOverflowDict(Thread* thread,
+                                                         Frame* frame,
+                                                         word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object object(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  Layout layout(&scope, runtime->layoutAt(object.layoutId()));
+  CHECK(layout.hasDictOverflow(), "expected dict overflow layout");
+  word offset = SmallInt::cast(layout.overflowAttributes()).value();
+  Instance instance(&scope, *object);
+  Object overflow_dict_obj(&scope, instance.instanceVariableAt(offset));
+  if (overflow_dict_obj.isNoneType()) {
+    overflow_dict_obj = runtime->newDict();
+    instance.instanceVariableAtPut(offset, *overflow_dict_obj);
+  }
+  return *overflow_dict_obj;
 }
 
 RawObject UnderBuiltinsModule::underInstanceSetattr(Thread* thread,

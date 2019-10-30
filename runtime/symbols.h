@@ -237,6 +237,7 @@ class Runtime;
   V(UnderFrozenSetGuard, "_frozenset_guard")                                   \
   V(UnderFspath, "_fspath")                                                    \
   V(UnderFunctionGlobals, "_function_globals")                                 \
+  V(UnderFunctionGuard, "_function_guard")                                     \
   V(UnderFunctools, "_functools")                                              \
   V(UnderGc, "_gc")                                                            \
   V(UnderGetframeCode, "_getframe_code")                                       \
@@ -267,6 +268,7 @@ class Runtime;
   V(UnderInstanceGetattr, "_instance_getattr")                                 \
   V(UnderInstanceGuard, "_instance_guard")                                     \
   V(UnderInstanceKeys, "_instance_keys")                                       \
+  V(UnderInstanceOverflowDict, "_instance_overflow_dict")                      \
   V(UnderInstanceSetattr, "_instance_setattr")                                 \
   V(UnderInt, "_int")                                                          \
   V(UnderIntCheck, "_int_check")                                               \

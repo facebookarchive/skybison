@@ -183,7 +183,7 @@ TEST_F(DebuggingTests, DumpExtendedInstanceWithOverflowDict) {
   (in-object) "__module__" = "barmodule"
   (in-object) "__name__" = "baz"
   (in-object) "__qualname__" = "footype.baz"
-  (in-object) "__dict__" = {"funcattr0": 4}
+  (in-object) None = {"funcattr0": 4}
   overflow dict: {"funcattr0": 4}
 )";
   EXPECT_EQ(ss.str(), expected.str());

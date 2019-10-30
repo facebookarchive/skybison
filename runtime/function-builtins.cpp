@@ -120,12 +120,6 @@ RawObject functionFromModuleMethodDef(Thread* thread, const char* c_name,
 
 RawObject functionGetAttribute(Thread* thread, const Function& function,
                                const Object& name_str, word hash) {
-  // TODO(T39611261): Figure out a way to skip dict init.
-  // Initialize Dict if non-existent
-  if (function.dict().isNoneType()) {
-    function.setDict(thread->runtime()->newDict());
-  }
-
   return objectGetAttribute(thread, function, name_str, hash);
 }
 
@@ -168,7 +162,7 @@ const BuiltinAttribute FunctionBuiltins::kAttributes[] = {
     {SymbolId::kDunderModule, RawFunction::kModuleOffset},
     {SymbolId::kDunderName, RawFunction::kNameOffset},
     {SymbolId::kDunderQualname, RawFunction::kQualnameOffset},
-    {SymbolId::kDunderDict, RawFunction::kDictOffset},
+    {SymbolId::kInvalid, RawFunction::kDictOffset},
     {SymbolId::kSentinelId, -1},
 };
 

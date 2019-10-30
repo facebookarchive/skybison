@@ -67,6 +67,7 @@ _float_guard = _float_guard  # noqa: F821
 _frozenset_check = _frozenset_check  # noqa: F821
 _frozenset_guard = _frozenset_guard  # noqa: F821
 _function_globals = _function_globals  # noqa: F821
+_function_guard = _function_guard  # noqa: F821
 _get_member_byte = _get_member_byte  # noqa: F821
 _get_member_char = _get_member_char  # noqa: F821
 _get_member_double = _get_member_double  # noqa: F821
@@ -84,6 +85,7 @@ _instance_delattr = _instance_delattr  # noqa: F821
 _instance_getattr = _instance_getattr  # noqa: F821
 _instance_guard = _instance_guard  # noqa: F821
 _instance_keys = _instance_keys  # noqa: F821
+_instance_overflow_dict = _instance_overflow_dict  # noqa: F821
 _instance_setattr = _instance_setattr  # noqa: F821
 _int_check = _int_check  # noqa: F821
 _int_checkexact = _int_checkexact  # noqa: F821
@@ -219,9 +221,16 @@ def __build_class__(func, name, *bases, metaclass=_Unbound, bootstrap=False, **k
 
 class function(bootstrap=True):
     def __call__(self, *args, **kwargs):
+        _function_guard(self)
         return self(*args, **kwargs)
 
     __globals__ = _property(_function_globals)
+
+    @_property
+    def __dict__(self):
+        # TODO(T56646836) we should not need to define a custom __dict__.
+        _function_guard(self)
+        return _instance_overflow_dict(self)
 
     def __get__(self, instance, owner):
         pass
@@ -230,6 +239,7 @@ class function(bootstrap=True):
         pass
 
     def __repr__(self):
+        _function_guard(self)
         return f"<function {self.__name__} at {_address(self):#x}>"
 
     def __setattr__(self, name, value):

@@ -333,6 +333,11 @@ def _function_globals(obj):
 
 
 @_patch
+def _function_guard(obj):
+    pass
+
+
+@_patch
 def _gc():
     pass
 
@@ -419,6 +424,11 @@ def _instance_guard(obj):
 
 @_patch
 def _instance_keys(obj):
+    pass
+
+
+@_patch
+def _instance_overflow_dict(obj):
     pass
 
 

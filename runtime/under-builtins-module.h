@@ -105,6 +105,7 @@ class UnderBuiltinsModule {
                                        word nargs);
   static RawObject underFunctionGlobals(Thread* thread, Frame* frame,
                                         word nargs);
+  static RawObject underFunctionGuard(Thread* thread, Frame* frame, word nargs);
   static RawObject underGc(Thread* thread, Frame* frame, word nargs);
   static RawObject underGetMemberByte(Thread* thread, Frame* frame, word nargs);
   static RawObject underGetMemberChar(Thread* thread, Frame* frame, word nargs);
@@ -133,6 +134,8 @@ class UnderBuiltinsModule {
                                         word nargs);
   static RawObject underInstanceGuard(Thread* thread, Frame* frame, word nargs);
   static RawObject underInstanceKeys(Thread* thread, Frame* frame, word nargs);
+  static RawObject underInstanceOverflowDict(Thread* thread, Frame* frame,
+                                             word nargs);
   static RawObject underInstanceSetattr(Thread* thread, Frame* frame,
                                         word nargs);
   static RawObject underIntCheck(Thread* thread, Frame* frame, word nargs);
