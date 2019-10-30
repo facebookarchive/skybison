@@ -543,7 +543,7 @@ RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
     globals_obj = module.dict();
     module_obj = caller_frame->function().moduleObject();
     if (locals.isNoneType()) {
-      if (!caller_frame->function().hasOptimizedOrNewLocals()) {
+      if (!caller_frame->function().hasOptimizedOrNewlocals()) {
         locals = caller_frame->implicitGlobals();
       } else {
         // TODO(T41634372) This should transfer locals into a dictionary similar

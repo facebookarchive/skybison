@@ -2961,7 +2961,7 @@ TEST_F(RuntimeTest, NewCodeWithCellvarsTurnsOffNofreeFlag) {
                         nlocals, /*stacksize=*/0, /*flags=*/0, code_code,
                         empty_tuple, empty_tuple, varnames, empty_tuple,
                         cellvars, empty_str, empty_str, 0, empty_bytes));
-  EXPECT_FALSE(code.flags() & Code::Flags::NOFREE);
+  EXPECT_FALSE(code.flags() & Code::Flags::kNofree);
 }
 
 TEST_F(RuntimeTest, NewCodeWithNoFreevarsOrCellvarsSetsNofreeFlag) {
@@ -2980,7 +2980,7 @@ TEST_F(RuntimeTest, NewCodeWithNoFreevarsOrCellvarsSetsNofreeFlag) {
                   empty_str, empty_str, 0, empty_bytes));
   ASSERT_TRUE(code_obj.isCode());
   Code code(&scope, *code_obj);
-  EXPECT_TRUE(code.flags() & Code::Flags::NOFREE);
+  EXPECT_TRUE(code.flags() & Code::Flags::kNofree);
 }
 
 TEST_F(RuntimeTest,

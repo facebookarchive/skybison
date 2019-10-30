@@ -560,15 +560,9 @@ RawObject Runtime::newCode(word argcount, word posonlyargcount,
   Tuple cellvars_tuple(&scope, tupleUnderlying(thread, cellvars));
   Tuple freevars_tuple(&scope, tupleUnderlying(thread, freevars));
   if (cellvars_tuple.length() == 0 && freevars_tuple.length() == 0) {
-    flags |= Code::Flags::NOFREE;
+    flags |= Code::Flags::kNofree;
   } else {
-    flags &= ~Code::Flags::NOFREE;
-  }
-
-  if (kwonlyargcount == 0 && (flags & Code::Flags::NOFREE) &&
-      !(flags & (Code::Flags::VARARGS | Code::Flags::VARKEYARGS))) {
-    // Set up shortcut for detecting fast case for calls
-    flags |= Code::Flags::SIMPLE_CALL;
+    flags &= ~Code::Flags::kNofree;
   }
 
   Code result(&scope, heap()->create<RawCode>());
@@ -633,9 +627,9 @@ RawObject Runtime::newBuiltinCode(word argcount, word posonlyargcount,
   Object empty_string(&scope, Str::empty());
   Object lnotab(&scope, Bytes::empty());
   word nlocals = argcount + kwonlyargcount +
-                 ((flags & Code::Flags::VARARGS) != 0) +
-                 ((flags & Code::Flags::VARKEYARGS) != 0);
-  flags |= Code::Flags::OPTIMIZED | Code::Flags::NEWLOCALS;
+                 ((flags & Code::Flags::kVarargs) != 0) +
+                 ((flags & Code::Flags::kVarkeyargs) != 0);
+  flags |= Code::Flags::kOptimized | Code::Flags::kNewlocals;
   Object entry_ptr(&scope, newIntFromCPtr(bit_cast<void*>(entry)));
   return newCode(argcount, posonlyargcount, kwonlyargcount, nlocals,
                  /*stacksize=*/0, flags, entry_ptr, /*consts=*/empty_tuple,
@@ -680,8 +674,12 @@ RawObject Runtime::newFunctionWithCode(Thread* thread, const Object& qualname,
   Function::Entry entry_kw;
   Function::Entry entry_ex;
   word flags = code.flags();
+  if (code.kwonlyargcount() == 0 && (flags & Code::Flags::kNofree) &&
+      !(flags & (Code::Flags::kVarargs | Code::Flags::kVarkeyargs))) {
+    flags |= Function::Flags::kSimpleCall;
+  }
   word stacksize = code.stacksize();
-  if (!code.hasOptimizedAndNewLocals()) {
+  if (!code.hasOptimizedAndNewlocals()) {
     // We do not support calling non-optimized functions directly. We only allow
     // them in Thread::exec() and Thread::runClassFunction().
     entry = unimplementedTrampoline;

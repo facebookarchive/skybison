@@ -40,8 +40,8 @@ static RawObject makeTestCode(Thread* thread) {
   word kwonlyargcount = 0;
   word nlocals = 4;
   word stacksize = 1;
-  word flags = Code::NESTED | Code::OPTIMIZED | Code::NEWLOCALS |
-               Code::VARARGS | Code::VARKEYARGS;
+  word flags = Code::kNested | Code::kOptimized | Code::kNewlocals |
+               Code::kVarargs | Code::kVarkeyargs;
   return runtime->newCode(argcount, posonlyargcount, kwonlyargcount, nlocals,
                           stacksize, flags, bytes, consts, names, varnames,
                           freevars, cellvars, filename, name, 0, lnotab);
@@ -121,6 +121,7 @@ TEST_F(DebuggingTests, DumpExtendedFunction) {
   kwdefaults: {"name0": None}
   intrinsic_id: list
   dict: {"funcattr0": 4}
+  flags: optimized newlocals varargs varkeyargs nested interpreted
   code: code "name0":
     flags: optimized newlocals varargs varkeyargs nested
     argcount: 1

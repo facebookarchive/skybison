@@ -725,7 +725,7 @@ TEST_F(TrampolinesTest, InterpreterClosureUsesArgOverCellValue) {
   Tuple empty_tuple(&scope, runtime_.emptyTuple());
   Object empty_str(&scope, Str::empty());
   Object empty_bytes(&scope, Bytes::empty());
-  word flags = Code::Flags::OPTIMIZED | Code::Flags::NEWLOCALS;
+  word flags = Code::Flags::kOptimized | Code::Flags::kNewlocals;
   Code code(&scope,
             runtime_.newCode(/*argcount=*/1, /*posonlyargcount=*/0,
                              /*kwonlyargcount=*/0, nlocals, /*stacksize=*/0,
@@ -793,7 +793,7 @@ static RawObject makeFunctionWithPosOnlyArg(Thread* thread) {
             runtime->newCode(/*argcount=*/2, /*posonlyargcount=*/1,
                              /*kwonlyargcount=*/0, /*nlocals=*/2,
                              /*stacksize=*/2,
-                             Code::Flags::NEWLOCALS | Code::Flags::OPTIMIZED,
+                             Code::Flags::kNewlocals | Code::Flags::kOptimized,
                              bc, /*consts=*/empty_tuple,
                              /*names=*/empty_tuple, varnames,
                              /*freevars=*/empty_tuple,
@@ -865,8 +865,8 @@ TEST_F(TrampolinesTest, KeywordCallWithPositionalOnlyArgumentsAndVarKeyArgs) {
             runtime_.newCode(/*argcount=*/3, /*posonlyargcount=*/2,
                              /*kwonlyargcount=*/0, /*nlocals=*/4,
                              /*stacksize=*/4,
-                             Code::Flags::NEWLOCALS | Code::Flags::OPTIMIZED |
-                                 Code::Flags::VARKEYARGS,
+                             Code::Flags::kNewlocals | Code::Flags::kOptimized |
+                                 Code::Flags::kVarkeyargs,
                              bc,
                              /*consts=*/empty_tuple,
                              /*names=*/empty_tuple, varnames,

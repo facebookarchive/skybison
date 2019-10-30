@@ -34,7 +34,7 @@ static RawObject makeTestCode() {
   word kwonlyargcount = 1;
   word nlocals = 2;
   word stacksize = 3;
-  word flags = Code::Flags::NESTED | Code::Flags::GENERATOR;
+  word flags = Code::Flags::kNested | Code::Flags::kGenerator;
   word firstlineno = 5;
   return runtime->newCode(argcount, posonlyargcount, kwonlyargcount, nlocals,
                           stacksize, flags, bytes, consts, names, varnames,
@@ -88,7 +88,7 @@ TEST_F(CodeBuiltinsTest, CoFlagsReturnsFlags) {
   Object key(&scope, runtime_.newStrFromCStr("co_flags"));
   Object result(&scope, runtime_.attributeAt(thread_, code, key));
   EXPECT_TRUE(
-      isIntEqualsWord(*result, Code::Flags::NESTED | Code::Flags::GENERATOR));
+      isIntEqualsWord(*result, Code::Flags::kNested | Code::Flags::kGenerator));
 }
 
 TEST_F(CodeBuiltinsTest, CoCodeReturnsCode) {

@@ -1825,20 +1825,19 @@ class RawCode : public RawInstance {
     // Local variables are organized in an array and LOAD_FAST/STORE_FAST are
     // used when this flag is set. Otherwise local variable accesses use
     // LOAD_NAME/STORE_NAME to modify a dictionary ("implicit globals").
-    OPTIMIZED = 0x0001,
+    kOptimized = 0x0001,
     // Local variables start in an uninitialized state. If this is not set then
     // the variables are initialized with the values in the implicit globals.
-    NEWLOCALS = 0x0002,
-    VARARGS = 0x0004,
-    VARKEYARGS = 0x0008,
-    NESTED = 0x0010,
-    GENERATOR = 0x0020,
-    NOFREE = 0x0040,  // Shortcut for no free or cell vars
-    COROUTINE = 0x0080,
-    ITERABLE_COROUTINE = 0x0100,
-    ASYNC_GENERATOR = 0x0200,
-    SIMPLE_CALL = 0x0400,  // TODO(T45713862): remove
-    LAST = SIMPLE_CALL,
+    kNewlocals = 0x0002,
+    kVarargs = 0x0004,
+    kVarkeyargs = 0x0008,
+    kNested = 0x0010,
+    kGenerator = 0x0020,
+    kNofree = 0x0040,  // Shortcut for no free or cell vars
+    kCoroutine = 0x0080,
+    kIterableCoroutine = 0x0100,
+    kAsyncGenerator = 0x0200,
+    kLast = kAsyncGenerator,
   };
 
   // Getters and setters.
@@ -1878,8 +1877,8 @@ class RawCode : public RawInstance {
 
   bool isGeneratorLike() const;
   bool hasFreevarsOrCellvars() const;
-  bool hasOptimizedAndNewLocals() const;
-  bool hasOptimizedOrNewLocals() const;
+  bool hasOptimizedAndNewlocals() const;
+  bool hasOptimizedOrNewlocals() const;
 
   bool isNative() const;
 
@@ -1954,18 +1953,18 @@ class RawFunction : public RawInstance {
   enum Flags {
     kNone = 0,
     // Matching Code::Flags (and CPython)
-    kOptimized = RawCode::Flags::OPTIMIZED,
-    kNewLocals = RawCode::Flags::NEWLOCALS,
-    kVarargs = RawCode::Flags::VARARGS,
-    kVarkeyargs = RawCode::Flags::VARKEYARGS,
-    kNested = RawCode::Flags::NESTED,
-    kGenerator = RawCode::Flags::GENERATOR,
-    kNoFree = RawCode::Flags::NOFREE,
-    kCoroutine = RawCode::Flags::COROUTINE,
-    kIterableCoroutine = RawCode::Flags::ITERABLE_COROUTINE,
-    kAsyncGenerator = RawCode::Flags::ASYNC_GENERATOR,
-    kSimpleCall = RawCode::Flags::SIMPLE_CALL,  // Speeds detection of fast call
-    kInterpreted = RawCode::Flags::LAST << 1,   // Executable by the interpreter
+    kOptimized = RawCode::Flags::kOptimized,
+    kNewlocals = RawCode::Flags::kNewlocals,
+    kVarargs = RawCode::Flags::kVarargs,
+    kVarkeyargs = RawCode::Flags::kVarkeyargs,
+    kNested = RawCode::Flags::kNested,
+    kGenerator = RawCode::Flags::kGenerator,
+    kNofree = RawCode::Flags::kNofree,
+    kCoroutine = RawCode::Flags::kCoroutine,
+    kIterableCoroutine = RawCode::Flags::kIterableCoroutine,
+    kAsyncGenerator = RawCode::Flags::kAsyncGenerator,
+    kSimpleCall = RawCode::Flags::kLast << 1,   // Speeds detection of fast call
+    kInterpreted = RawCode::Flags::kLast << 2,  // Executable by the interpreter
   };
 
   // Getters and setters.
@@ -2036,7 +2035,7 @@ class RawFunction : public RawInstance {
   bool isIterableCoroutine() const;
 
   // Returns true if the function has the optimized or newlocals flag.
-  bool hasOptimizedOrNewLocals() const;
+  bool hasOptimizedOrNewlocals() const;
 
   // Returns true if the function has a simple calling convention.
   bool hasSimpleCall() const;
@@ -4842,10 +4841,10 @@ inline RawObject RawCode::cell2arg() const {
 inline word RawCode::totalArgs() const {
   uword f = flags();
   word res = argcount() + kwonlyargcount();
-  if (f & VARARGS) {
+  if (f & kVarargs) {
     res++;
   }
-  if (f & VARKEYARGS) {
+  if (f & kVarkeyargs) {
     res++;
   }
   return res;
@@ -4987,20 +4986,20 @@ inline void RawCode::setVarnames(RawObject value) const {
 
 inline bool RawCode::isGeneratorLike() const {
   return flags() &
-         (Flags::COROUTINE | Flags::GENERATOR | Flags::ASYNC_GENERATOR);
+         (Flags::kCoroutine | Flags::kGenerator | Flags::kAsyncGenerator);
 }
 
 inline bool RawCode::hasFreevarsOrCellvars() const {
-  return !(flags() & Flags::NOFREE);
+  return !(flags() & Flags::kNofree);
 }
 
-inline bool RawCode::hasOptimizedAndNewLocals() const {
-  return (flags() & (Flags::OPTIMIZED | Flags::NEWLOCALS)) ==
-         (Flags::OPTIMIZED | Flags::NEWLOCALS);
+inline bool RawCode::hasOptimizedAndNewlocals() const {
+  return (flags() & (Flags::kOptimized | Flags::kNewlocals)) ==
+         (Flags::kOptimized | Flags::kNewlocals);
 }
 
-inline bool RawCode::hasOptimizedOrNewLocals() const {
-  return flags() & (Flags::OPTIMIZED | Flags::NEWLOCALS);
+inline bool RawCode::hasOptimizedOrNewlocals() const {
+  return flags() & (Flags::kOptimized | Flags::kNewlocals);
 }
 
 inline bool RawCode::isNative() const { return code().isInt(); }
@@ -5511,7 +5510,7 @@ inline bool RawFunction::isGeneratorLike() const {
 }
 
 inline bool RawFunction::hasFreevarsOrCellvars() const {
-  return !(flags() & Flags::kNoFree);
+  return !(flags() & Flags::kNofree);
 }
 
 inline bool RawFunction::isGenerator() const {
@@ -5522,8 +5521,8 @@ inline bool RawFunction::isIterableCoroutine() const {
   return flags() & Flags::kIterableCoroutine;
 }
 
-inline bool RawFunction::hasOptimizedOrNewLocals() const {
-  return flags() & (Flags::kOptimized | Flags::kNewLocals);
+inline bool RawFunction::hasOptimizedOrNewlocals() const {
+  return flags() & (Flags::kOptimized | Flags::kNewlocals);
 }
 
 inline bool RawFunction::hasSimpleCall() const {

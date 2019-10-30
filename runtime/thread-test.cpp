@@ -521,7 +521,7 @@ TEST_F(ThreadTest, LoadGlobal) {
 
   const byte bytecode[] = {LOAD_GLOBAL, 0, RETURN_VALUE, 0};
   code.setCode(runtime_.newBytesWithAll(bytecode));
-  code.setFlags(Code::Flags::NOFREE);
+  code.setFlags(Code::Flags::kNofree);
 
   Module module(&scope, runtime_.findOrCreateMainModule());
   Object value(&scope, runtime_.newInt(1234));
@@ -548,7 +548,7 @@ TEST_F(ThreadTest, StoreGlobalCreateValueCell) {
   const byte bytecode[] = {LOAD_CONST, 0, STORE_GLOBAL, 0,
                            LOAD_CONST, 0, RETURN_VALUE, 0};
   code.setCode(runtime_.newBytesWithAll(bytecode));
-  code.setFlags(Code::Flags::NOFREE);
+  code.setFlags(Code::Flags::kNofree);
 
   Module module(&scope, runtime_.findOrCreateMainModule());
   Dict globals(&scope, module.dict());
@@ -573,7 +573,7 @@ TEST_F(ThreadTest, StoreGlobalReuseValueCell) {
   const byte bytecode[] = {LOAD_CONST, 0, STORE_GLOBAL, 0,
                            LOAD_CONST, 0, RETURN_VALUE, 0};
   code.setCode(runtime_.newBytesWithAll(bytecode));
-  code.setFlags(Code::Flags::NOFREE);
+  code.setFlags(Code::Flags::kNofree);
 
   Module module(&scope, runtime_.findOrCreateMainModule());
   Object value(&scope, runtime_.newInt(99));
@@ -595,7 +595,7 @@ TEST_F(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
 
   const byte bytecode[] = {LOAD_NAME, 0, RETURN_VALUE, 0};
   code.setCode(runtime_.newBytesWithAll(bytecode));
-  code.setFlags(Code::Flags::NOFREE);
+  code.setFlags(Code::Flags::kNofree);
 
   Object module_name(&scope, runtime_.symbols()->Builtins());
   Module builtins(&scope, runtime_.newModule(module_name));
@@ -619,7 +619,7 @@ TEST_F(ThreadTest, LoadNameFromGlobals) {
 
   const byte bytecode[] = {LOAD_NAME, 0, RETURN_VALUE, 0};
   code.setCode(runtime_.newBytesWithAll(bytecode));
-  code.setFlags(Code::Flags::NOFREE);
+  code.setFlags(Code::Flags::kNofree);
 
   Module module(&scope, runtime_.findOrCreateMainModule());
   Object value(&scope, runtime_.newInt(321));
@@ -641,7 +641,7 @@ TEST_F(ThreadTest, LoadNameFromLocals) {
 
   const byte bytecode[] = {LOAD_NAME, 0, RETURN_VALUE, 0};
   code.setCode(runtime_.newBytesWithAll(bytecode));
-  code.setFlags(Code::Flags::NOFREE);
+  code.setFlags(Code::Flags::kNofree);
 
   Module module(&scope, runtime_.findOrCreateMainModule());
   Object globals_value(&scope, runtime_.newInt(456));
@@ -659,8 +659,8 @@ TEST_F(ThreadTest, MakeFunction) {
   Code func_code(&scope, newEmptyCode());
   func_code.setName(*name);
   func_code.setCode(runtime_.newBytes(0, 0));
-  func_code.setFlags(Code::Flags::OPTIMIZED | Code::Flags::NEWLOCALS |
-                     Code::Flags::NOFREE);
+  func_code.setFlags(Code::Flags::kOptimized | Code::Flags::kNewlocals |
+                     Code::Flags::kNofree);
 
   Code code(&scope, newEmptyCode());
 
@@ -1789,7 +1789,7 @@ TEST_F(ThreadTest, BreakLoopWhileLoopBytecode) {
                            LOAD_CONST,        3,  // None
                            RETURN_VALUE,      0};
   code.setCode(runtime_.newBytesWithAll(bytecode));
-  code.setFlags(Code::Flags::NOFREE);
+  code.setFlags(Code::Flags::kNofree);
 
   Module module(&scope, runtime_.findOrCreateMainModule());
   Dict locals(&scope, runtime_.newDict());
@@ -2152,7 +2152,7 @@ TEST_F(ThreadTest, LoadTypeDerefFromLocal) {
                            LOAD_CLASSDEREF, 0, RETURN_VALUE, 0};
   code.setCode(runtime_.newBytesWithAll(bytecode));
   code.setStacksize(2);
-  code.setFlags(Code::Flags::NOFREE);
+  code.setFlags(Code::Flags::kNofree);
 
   Module module(&scope, runtime_.findOrCreateMainModule());
   Dict locals(&scope, runtime_.newDict());
@@ -2184,7 +2184,7 @@ TEST_F(ThreadTest, ExecSetsMissingDunderBuiltins) {
   code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
   code.setCode(runtime_.newBytesWithAll(bytecode));
-  code.setFlags(Code::Flags::NOFREE);
+  code.setFlags(Code::Flags::kNofree);
   Module module(&scope, runtime_.findOrCreateMainModule());
   Dict globals(&scope, module.dict());
 

@@ -468,7 +468,7 @@ static const SymbolId kParamsTypeArgsKwargs[] = {
 #define KWSLOT(NAME, SLOT, PARAMETERS, FUNCTION, WRAPPER, DOC)                 \
   {                                                                            \
     SymbolId::NAME, Type::Slot::SLOT, PARAMETERS, ARRAYSIZE(PARAMETERS),       \
-        WRAPPER, Code::Flags::VARARGS | Code::Flags::VARKEYARGS, DOC           \
+        WRAPPER, Code::Flags::kVarargs | Code::Flags::kVarkeyargs, DOC         \
   }
 #define UNSLOT(NAME, C_NAME, SLOT, FUNCTION, WRAPPER, DOC)                     \
   TPSLOT(NAME, SLOT, kParamsSelf, FUNCTION, WRAPPER,                           \
@@ -716,9 +716,9 @@ static RawObject newExtCode(Thread* thread, const Object& name,
     varnames.atPut(i, runtime->symbols()->at(parameters[i]));
   }
 
-  word argcount = num_parameters - ((flags & Code::Flags::VARARGS) != 0) -
-                  ((flags & Code::Flags::VARKEYARGS) != 0);
-  flags |= Code::Flags::OPTIMIZED | Code::Flags::NEWLOCALS;
+  word argcount = num_parameters - ((flags & Code::Flags::kVarargs) != 0) -
+                  ((flags & Code::Flags::kVarkeyargs) != 0);
+  flags |= Code::Flags::kOptimized | Code::Flags::kNewlocals;
 
   Object filename(&scope, Str::empty());
   Object lnotab(&scope, Bytes::empty());
@@ -1367,7 +1367,7 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
     Code code(&scope,
               newExtCode(thread, dunder_new_name, kParamsTypeArgsKwargs,
                          ARRAYSIZE(kParamsTypeArgsKwargs),
-                         Code::Flags::VARARGS | Code::Flags::VARKEYARGS,
+                         Code::Flags::kVarargs | Code::Flags::kVarkeyargs,
                          bit_cast<void*>(&wrapVarkwTernaryfunc), default_new));
     Object globals(&scope, NoneType::object());
     Function func(

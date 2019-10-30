@@ -243,7 +243,7 @@ RawCode newEmptyCode() {
   Tuple empty_tuple(&scope, runtime->emptyTuple());
   Object empty_string(&scope, Str::empty());
   Object empty_bytes(&scope, Bytes::empty());
-  word flags = Code::Flags::OPTIMIZED | Code::Flags::NEWLOCALS;
+  word flags = Code::Flags::kOptimized | Code::Flags::kNewlocals;
   return Code::cast(runtime->newCode(/*argcount=*/0, /*posonlyargcount=*/0,
                                      /*kwonlyargcount=*/0, /*nlocals=*/0,
                                      /*stacksize=*/0, flags, code,

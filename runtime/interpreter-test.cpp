@@ -2290,7 +2290,7 @@ manager = M()
   const byte bytecode[] = {LOAD_CONST, 1, BEFORE_ASYNC_WITH, 0, POP_TOP, 0,
                            LOAD_CONST, 0, RETURN_VALUE,      0};
   code.setCode(runtime_.newBytesWithAll(bytecode));
-  code.setFlags(Code::Flags::NOFREE);
+  code.setFlags(Code::Flags::kNofree);
 
   Dict locals(&scope, runtime_.newDict());
   EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, main, locals), 42));

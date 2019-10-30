@@ -45,23 +45,25 @@ std::ostream& dumpMutableBytecode(std::ostream& os,
   return os;
 }
 
+static void dumpCodeFlags(std::ostream& os, word flags) {
+  if (flags & Code::kOptimized) os << " optimized";
+  if (flags & Code::kNewlocals) os << " newlocals";
+  if (flags & Code::kVarargs) os << " varargs";
+  if (flags & Code::kVarkeyargs) os << " varkeyargs";
+  if (flags & Code::kNested) os << " nested";
+  if (flags & Code::kGenerator) os << " generator";
+  if (flags & Code::kNofree) os << " nofree";
+  if (flags & Code::kCoroutine) os << " coroutine";
+  if (flags & Code::kIterableCoroutine) os << " iterable_coroutine";
+  if (flags & Code::kAsyncGenerator) os << " async_generator";
+}
+
 std::ostream& dumpExtendedCode(std::ostream& os, RawCode value,
                                const char* indent) {
   HandleScope scope;
   Code code(&scope, value);
   os << "code " << code.name() << ":\n" << indent << "  flags:";
-  word flags = code.flags();
-  if (flags & Code::OPTIMIZED) os << " optimized";
-  if (flags & Code::NEWLOCALS) os << " newlocals";
-  if (flags & Code::VARARGS) os << " varargs";
-  if (flags & Code::VARKEYARGS) os << " varkeyargs";
-  if (flags & Code::NESTED) os << " nested";
-  if (flags & Code::GENERATOR) os << " generator";
-  if (flags & Code::NOFREE) os << " nofree";
-  if (flags & Code::COROUTINE) os << " coroutine";
-  if (flags & Code::ITERABLE_COROUTINE) os << " iterable_coroutine";
-  if (flags & Code::ASYNC_GENERATOR) os << " async_generator";
-  if (flags & Code::SIMPLE_CALL) os << " simple_call";
+  dumpCodeFlags(os, code.flags());
   os << '\n';
   os << indent << "  argcount: " << code.argcount() << '\n'
      << indent << "  posonlyargcount: " << code.posonlyargcount() << '\n'
@@ -104,7 +106,14 @@ std::ostream& dumpExtendedFunction(std::ostream& os, RawFunction value) {
      << "  intrinsic_id: " << static_cast<SymbolId>(function.intrinsicId())
      << '\n'
      << "  dict: " << function.dict() << '\n'
-     << "  code: ";
+     << "  flags:";
+  word flags = function.flags();
+  dumpCodeFlags(os, flags);
+  if (flags & Function::Flags::kSimpleCall) os << " simple_call";
+  if (flags & Function::Flags::kInterpreted) os << " interpreted";
+  os << '\n';
+
+  os << "  code: ";
   if (function.code().isCode()) {
     dumpExtendedCode(os, Code::cast(function.code()), "  ");
     if (function.rewrittenBytecode().isMutableBytes()) {

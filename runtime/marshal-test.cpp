@@ -442,7 +442,7 @@ TEST_F(MarshalReaderTest, ReadObjectCode) {
   EXPECT_EQ(code.nlocals(), 0);
   EXPECT_EQ(code.stacksize(), 1);
   EXPECT_TRUE(code.cell2arg().isNoneType());
-  EXPECT_EQ(code.flags(), Code::SIMPLE_CALL | Code::NOFREE);
+  EXPECT_EQ(code.flags(), Code::Flags::kNofree);
 
   ASSERT_TRUE(code.code().isBytes());
   EXPECT_NE(Bytes::cast(code.code()).length(), 0);

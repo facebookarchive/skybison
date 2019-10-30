@@ -215,7 +215,7 @@ RawObject Thread::exec(const Code& code, const Module& module,
   HandleScope scope(this);
   Object qualname(&scope, code.name());
 
-  CHECK(!code.hasOptimizedOrNewLocals(),
+  CHECK(!code.hasOptimizedOrNewlocals(),
         "exec() code must not have CO_OPTIMIZED or CO_NEWLOCALS");
 
   Runtime* runtime = this->runtime();
@@ -250,7 +250,7 @@ RawObject Thread::exec(const Code& code, const Module& module,
 }
 
 RawObject Thread::runClassFunction(const Function& function, const Dict& dict) {
-  CHECK(!function.hasOptimizedOrNewLocals(),
+  CHECK(!function.hasOptimizedOrNewlocals(),
         "runClassFunction() code must not have CO_OPTIMIZED or CO_NEWLOCALS");
 
   HandleScope scope(this);

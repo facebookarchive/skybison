@@ -271,7 +271,7 @@ RawObject SysModule::underGetframeLocals(Thread* thread, Frame* frame,
                                 "call stack is not deep enough");
   }
   Function function(&scope, frame->function());
-  if (function.hasOptimizedOrNewLocals()) {
+  if (function.hasOptimizedOrNewlocals()) {
     return dictOfLocalsFromFunctionFrame(thread, frame);
   }
   if (frame->implicitGlobals().isNoneType()) {

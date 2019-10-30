@@ -340,7 +340,7 @@ inline void Frame::setVirtualPC(word pc) {
 
 inline RawObject Frame::implicitGlobals() {
   DCHECK(previousFrame() != nullptr, "must not be called on initial frame");
-  DCHECK(!function().hasOptimizedOrNewLocals(),
+  DCHECK(!function().hasOptimizedOrNewlocals(),
          "implicit globals not available");
   // Thread::exec() and Thread::runClassFunction() place implicit globals there.
   return *(locals() + kImplicitGlobalsOffsetFromLocals);
