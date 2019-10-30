@@ -569,7 +569,7 @@ instance = C(False)
       isIntEqualsWord(instanceGetAttribute(thread_, instance, name), -7));
 }
 
-TEST_F(ObjectBuiltinsTest, InstanceSetAttrSetsTupleOverflowAttribute) {
+TEST_F(ObjectBuiltinsTest, InstanceSetAttrSetsNewTupleOverflowAttribute) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C: pass
@@ -582,6 +582,35 @@ instance = C()
   EXPECT_TRUE(instanceSetAttr(thread_, instance, name, value).isNoneType());
 
   Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
+  Tuple overflow(&scope, instance.instanceVariableAt(layout.overflowOffset()));
+  EXPECT_EQ(overflow.length(), 1);
+
+  AttributeInfo info;
+  ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
+  ASSERT_TRUE(info.isOverflow());
+
+  EXPECT_TRUE(
+      isIntEqualsWord(instanceGetAttribute(thread_, instance, name), -14));
+}
+
+TEST_F(ObjectBuiltinsTest, InstanceSetAttrSetsExistingTupleOverflowAttribute) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C: pass
+instance = C()
+instance.bar = 5000
+)")
+                   .isError());
+  Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
+  Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
+  Tuple overflow(&scope, instance.instanceVariableAt(layout.overflowOffset()));
+  ASSERT_EQ(overflow.length(), 1);
+
+  Str name(&scope, runtime_.internStrFromCStr(thread_, "bar"));
+  Object value(&scope, runtime_.newInt(-14));
+  EXPECT_TRUE(instanceSetAttr(thread_, instance, name, value).isNoneType());
+  ASSERT_EQ(overflow.length(), 1);
+
   AttributeInfo info;
   ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
   ASSERT_TRUE(info.isOverflow());

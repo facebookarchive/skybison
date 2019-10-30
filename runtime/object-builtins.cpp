@@ -163,14 +163,19 @@ static RawObject instanceSetAttrSetLocation(Thread* thread,
     }
   } else {
     // Build the new overflow array
-    Tuple old_overflow(&scope,
-                       instance.instanceVariableAt(layout.overflowOffset()));
-    word old_len = old_overflow.length();
-    MutableTuple new_overflow(&scope, runtime->newMutableTuple(old_len + 1));
-    new_overflow.replaceFromWith(0, *old_overflow, old_len);
-    new_overflow.atPut(info.offset(), *value);
-    instance.instanceVariableAtPut(layout.overflowOffset(),
-                                   new_overflow.becomeImmutable());
+    Tuple overflow(&scope,
+                   instance.instanceVariableAt(layout.overflowOffset()));
+    word len = overflow.length();
+    if (info.offset() < len) {
+      overflow.atPut(info.offset(), *value);
+    } else {
+      MutableTuple new_overflow(&scope,
+                                runtime->newMutableTuple(info.offset() + 1));
+      new_overflow.replaceFromWith(0, *overflow, len);
+      new_overflow.atPut(info.offset(), *value);
+      instance.instanceVariableAtPut(layout.overflowOffset(),
+                                     new_overflow.becomeImmutable());
+    }
     if (location_out != nullptr) {
       *location_out = SmallInt::fromWord(-info.offset() - 1);
     }
