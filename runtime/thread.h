@@ -37,12 +37,7 @@ class Handles {
   Handle<RawObject>* head_ = nullptr;
 };
 
-RawObject uninitializedMainLoop(Thread*);
-
-struct InterpreterThreadState {
-  using MainLoopFunc = RawObject (*)(Thread*);
-  MainLoopFunc main_loop = uninitializedMainLoop;
-};
+RawObject uninitializedInterpreterFunc(Thread*);
 
 class Thread {
  public:
@@ -80,7 +75,10 @@ class Thread {
 
   Frame* currentFrame() { return current_frame_; }
 
-  InterpreterThreadState* interpreterState() { return &interpreter_state_; }
+  using InterpreterFunc = RawObject (*)(Thread*);
+
+  InterpreterFunc interpreterFunc() { return interpreter_func_; }
+  void setInterpreterFunc(InterpreterFunc func) { interpreter_func_ = func; }
 
   // The stack pointer is computed by taking the value stack top of the current
   // frame.
@@ -310,7 +308,7 @@ class Thread {
   Frame* current_frame_;
   Thread* next_;
   Runtime* runtime_;
-  InterpreterThreadState interpreter_state_;
+  InterpreterFunc interpreter_func_ = uninitializedInterpreterFunc;
 
   // State of the pending exception.
   RawObject pending_exc_type_;

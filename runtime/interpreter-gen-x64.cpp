@@ -885,8 +885,7 @@ X64Interpreter::X64Interpreter() {
 X64Interpreter::~X64Interpreter() { OS::freeMemory(code_, size_); }
 
 void X64Interpreter::setupThread(Thread* thread) {
-  thread->interpreterState()->main_loop =
-      reinterpret_cast<InterpreterThreadState::MainLoopFunc>(code_);
+  thread->setInterpreterFunc(reinterpret_cast<Thread::InterpreterFunc>(code_));
 }
 
 }  // namespace

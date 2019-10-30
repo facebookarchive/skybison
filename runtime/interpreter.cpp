@@ -3849,9 +3849,7 @@ Continue Interpreter::doBinaryOpCached(Thread* thread, word arg) {
 
 RawObject Interpreter::execute(Thread* thread) {
   DCHECK(!thread->hasPendingException(), "unhandled exception lingering");
-  InterpreterThreadState::MainLoopFunc main_loop =
-      thread->interpreterState()->main_loop;
-  return main_loop(thread);
+  return thread->interpreterFunc()(thread);
 }
 
 static RawObject resumeGeneratorImpl(Thread* thread,
@@ -3964,7 +3962,7 @@ class CppInterpreter : public Interpreter {
 CppInterpreter::~CppInterpreter() {}
 
 void CppInterpreter::setupThread(Thread* thread) {
-  thread->interpreterState()->main_loop = interpreterLoop;
+  thread->setInterpreterFunc(interpreterLoop);
 }
 
 RawObject CppInterpreter::interpreterLoop(Thread* thread) {

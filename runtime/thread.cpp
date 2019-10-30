@@ -27,7 +27,7 @@ void Handles::visitPointers(PointerVisitor* visitor) {
   }
 }
 
-RawObject uninitializedMainLoop(Thread*) {
+RawObject uninitializedInterpreterFunc(Thread*) {
   UNREACHABLE("interpreter main loop not initialized on this thread");
 }
 
