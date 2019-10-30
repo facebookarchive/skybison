@@ -4,8 +4,8 @@
 
 namespace py {
 
-// This should be used only for bytes objects. For strings, use isUnicodeSpace.
-inline bool isSpaceASCII(byte ch) {
+// This should be used only for bytes objects. For strings, use isSpace.
+inline bool isSpaceASCII(int32_t ch) {
   switch (ch) {
     case '\t':
     case '\n':
@@ -23,20 +23,11 @@ inline bool isSpaceASCII(byte ch) {
   }
 }
 
-// Returns 1 for Unicode characters having the bidirectional
-// type 'WS', 'B' or 'S' or the category 'Zs', 0 otherwise.
-inline bool isSpaceUnicode(int32_t cp) {
+// Returns true for Unicode characters having the bidirectional
+// type 'WS', 'B' or 'S' or the category 'Zs', false otherwise.
+inline bool isSpace(int32_t cp) {
+  if (cp <= kMaxASCII) return isSpaceASCII(cp);
   switch (cp) {
-    case 0x0009:
-    case 0x000A:
-    case 0x000B:
-    case 0x000C:
-    case 0x000D:
-    case 0x001C:
-    case 0x001D:
-    case 0x001E:
-    case 0x001F:
-    case 0x0020:
     case 0x0085:
     case 0x00A0:
     case 0x1680:
@@ -91,8 +82,6 @@ inline bool isPrintableUnicode(int32_t cp) {
   }
   return true;
 }
-
-// TODO(T43723300): implement isUnicodeSpace
 
 inline bool isUTF8Continuation(byte b) {
   return (b & 0xC0) == 0x80;  // Test for 0b10xxxxxx

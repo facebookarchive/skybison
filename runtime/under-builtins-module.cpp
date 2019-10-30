@@ -3324,10 +3324,11 @@ static RawObject strSplitWhitespace(Thread* thread, const Str& self,
   Str substr(&scope, Str::empty());
   for (word i = 0, j = 0; j < self_length; i = self.offsetByCodePoints(j, 1)) {
     // Find beginning of next word
-    word cp_length;
-    // TODO(T43723300): Use isSpaceUnicode
-    while (i < self_length && isSpaceASCII(self.codePointAt(i, &cp_length))) {
-      i += cp_length;
+    {
+      word num_bytes;
+      while (i < self_length && isSpace(self.codePointAt(i, &num_bytes))) {
+        i += num_bytes;
+      }
     }
     if (i == self_length) {
       // End of string; finished
@@ -3340,10 +3341,11 @@ static RawObject strSplitWhitespace(Thread* thread, const Str& self,
       j = self_length;
     } else {
       j = self.offsetByCodePoints(i, 1);
-      // TODO(T43723300): Use isSpaceUnicode
-      while (j < self_length &&
-             !isSpaceASCII(self.codePointAt(j, &cp_length))) {
-        j += cp_length;
+      {
+        word num_bytes;
+        while (j < self_length && !isSpace(self.codePointAt(j, &num_bytes))) {
+          j += num_bytes;
+        }
       }
       num_split += 1;
     }

@@ -2156,9 +2156,10 @@ TEST_F(UnderBuiltinsModuleTest,
   EXPECT_PYLIST_EQ(result, {"a b c d e"});
 }
 
-TEST_F(UnderBuiltinsModuleTest, UnderStrSplitWhitespaceSplitsOnWhitespace) {
+TEST_F(UnderBuiltinsModuleTest,
+       UnderStrSplitWhitespaceSplitsOnUnicodeWhitespace) {
   HandleScope scope(thread_);
-  Str str(&scope, runtime_.newStrFromCStr("a   \t  b c"));
+  Str str(&scope, runtime_.newStrFromCStr(u8"a  \u3000 \t  b\u205fc"));
   Object sep(&scope, NoneType::object());
   Int maxsplit(&scope, SmallInt::fromWord(100));
   List result(&scope, runBuiltin(UnderBuiltinsModule::underStrSplit, str, sep,

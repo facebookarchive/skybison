@@ -185,7 +185,6 @@ RawObject strSplitlines(Thread* thread, const Str& str, bool keepends) {
   return *result;
 }
 
-// TODO(T43723300): Handle unicode
 RawObject strStripSpace(Thread* thread, const Str& src) {
   word length = src.charLength();
   if (length == 0) {
@@ -195,15 +194,25 @@ RawObject strStripSpace(Thread* thread, const Str& src) {
     return Str::empty();
   }
   word first = 0;
-  while (first < length && isSpaceASCII(src.charAt(first))) {
-    ++first;
+  while (first < length) {
+    word num_bytes;
+    int32_t ch = src.codePointAt(first, &num_bytes);
+    if (!isSpace(ch)) {
+      break;
+    }
+    first += num_bytes;
   }
-  word last = 0;
-  for (word i = length - 1; i >= first && isSpaceASCII(src.charAt(i)); i--) {
-    last++;
+  word last = length;
+  while (last > first) {
+    last = src.offsetByCodePoints(last, -1);
+    word num_bytes;
+    int32_t ch = src.codePointAt(last, &num_bytes);
+    if (!isSpace(ch)) {
+      last += num_bytes;
+      break;
+    }
   }
-  return thread->runtime()->strSubstr(thread, src, first,
-                                      length - first - last);
+  return thread->runtime()->strSubstr(thread, src, first, last - first);
 }
 
 RawObject strStripSpaceLeft(Thread* thread, const Str& src) {
@@ -215,8 +224,13 @@ RawObject strStripSpaceLeft(Thread* thread, const Str& src) {
     return Str::empty();
   }
   word first = 0;
-  while (first < length && isSpaceASCII(src.charAt(first))) {
-    ++first;
+  while (first < length) {
+    word num_bytes;
+    int32_t ch = src.codePointAt(first, &num_bytes);
+    if (!isSpace(ch)) {
+      break;
+    }
+    first += num_bytes;
   }
   return thread->runtime()->strSubstr(thread, src, first, length - first);
 }
@@ -229,11 +243,17 @@ RawObject strStripSpaceRight(Thread* thread, const Str& src) {
   if (length == 1 && isSpaceASCII(src.charAt(0))) {
     return Str::empty();
   }
-  word last = 0;
-  for (word i = length - 1; i >= 0 && isSpaceASCII(src.charAt(i)); i--) {
-    last++;
+  word last = length;
+  while (last > 0) {
+    last = src.offsetByCodePoints(last, -1);
+    word num_bytes;
+    int32_t ch = src.codePointAt(last, &num_bytes);
+    if (!isSpace(ch)) {
+      last += num_bytes;
+      break;
+    }
   }
-  return thread->runtime()->strSubstr(thread, src, 0, length - last);
+  return thread->runtime()->strSubstr(thread, src, 0, last);
 }
 
 RawObject strStrip(Thread* thread, const Str& src, const Str& str) {
@@ -610,8 +630,9 @@ word strFind(const Str& haystack, const Str& needle, word start, word end) {
 
 word strFindFirstNonWhitespace(const Str& str) {
   word i = 0;
-  while (i < str.charLength() && isSpaceASCII(str.charAt(i))) {
-    i++;
+  for (word codepoint_len, length = str.charLength(); i < length;
+       i += codepoint_len) {
+    if (!isSpace(str.codePointAt(i, &codepoint_len))) return i;
   }
   return i;
 }
@@ -1203,12 +1224,12 @@ RawObject StrBuiltins::isspace(Thread* thread, Frame* frame, word nargs) {
   }
   word byte_index = 0;
   do {
-    word codepoint_len;
-    int32_t codepoint = self.codePointAt(byte_index, &codepoint_len);
-    if (!isSpaceUnicode(codepoint)) {
+    word num_bytes;
+    int32_t codepoint = self.codePointAt(byte_index, &num_bytes);
+    if (!isSpace(codepoint)) {
       return Bool::falseObj();
     }
-    byte_index += codepoint_len;
+    byte_index += num_bytes;
   } while (byte_index < char_length);
   return Bool::trueObj();
 }

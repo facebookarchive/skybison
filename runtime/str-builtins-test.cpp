@@ -1624,9 +1624,11 @@ TEST_F(StrBuiltinsTest, StripSpaceWithUnstrippableSmallStrIsIdentity) {
   EXPECT_EQ(*str, *stripped_str);
 }
 
-TEST_F(StrBuiltinsTest, StripSpaceWithFullyStrippableStrReturnsEmptyStr) {
+TEST_F(StrBuiltinsTest,
+       StripSpaceWithFullyStrippableUnicodeStrReturnsEmptyStr) {
   HandleScope scope(thread_);
-  Str str(&scope, runtime_.newStrFromCStr("\n\r\t\f         \n\t\r\f"));
+  Str str(&scope,
+          runtime_.newStrFromCStr(u8"\n\r\t\f \u3000  \u202f \n\t\r\f"));
   Str lstripped_str(&scope, strStripSpaceLeft(thread_, str));
   EXPECT_EQ(lstripped_str.charLength(), 0);
 
@@ -1650,7 +1652,7 @@ TEST_F(StrBuiltinsTest, StripSpaceLeft) {
   Str lstripped_str1(&scope, strStripSpaceLeft(thread_, str1));
   EXPECT_TRUE(isStrEqualsCStr(*lstripped_str1, "Lot of leading space  "));
 
-  Str str2(&scope, runtime_.newStrFromCStr("\n\n\n              \ntest"));
+  Str str2(&scope, runtime_.newStrFromCStr(u8"\n\n\n  \u2005    \ntest"));
   ASSERT_TRUE(str2.isLargeStr());
   Str lstripped_str2(&scope, strStripSpaceLeft(thread_, str2));
   ASSERT_TRUE(lstripped_str2.isSmallStr());
@@ -1671,7 +1673,7 @@ TEST_F(StrBuiltinsTest, StripSpaceRight) {
   Str rstripped_str1(&scope, strStripSpaceRight(thread_, str1));
   EXPECT_TRUE(isStrEqualsCStr(*rstripped_str1, "  Lot of trailing space"));
 
-  Str str2(&scope, runtime_.newStrFromCStr("test\n      \n\n\n"));
+  Str str2(&scope, runtime_.newStrFromCStr(u8"test\n  \u2004 \n\n"));
   ASSERT_TRUE(str2.isLargeStr());
   Str rstripped_str2(&scope, strStripSpaceRight(thread_, str2));
   ASSERT_TRUE(rstripped_str2.isSmallStr());
@@ -1694,7 +1696,8 @@ TEST_F(StrBuiltinsTest, StripSpaceBoth) {
   EXPECT_TRUE(
       isStrEqualsCStr(*stripped_str1, "Lot of leading and trailing space"));
 
-  Str str2(&scope, runtime_.newStrFromCStr("\n\ttest\t      \n\n\n"));
+  Str str2(&scope,
+           runtime_.newStrFromCStr(u8"\n\u00a0\ttest\t  \u1680    \n\n\n"));
   ASSERT_TRUE(str2.isLargeStr());
   Str stripped_str2(&scope, strStripSpace(thread_, str2));
   ASSERT_TRUE(stripped_str2.isSmallStr());
@@ -1837,13 +1840,13 @@ TEST_F(StrBuiltinsTest, FindFirstNonWhitespaceWithEmptyStringReturnsZero) {
 
 TEST_F(StrBuiltinsTest, FindFirstNonWhitespaceWithOnlyWhitespaceReturnsLength) {
   HandleScope scope(thread_);
-  Str str(&scope, runtime_.newStrFromCStr("     "));
+  Str str(&scope, runtime_.newStrFromCStr(u8" \u205f "));
   EXPECT_EQ(strFindFirstNonWhitespace(str), str.charLength());
 }
 
 TEST_F(StrBuiltinsTest, FindFirstNonWhitespaceFindsFirstNonWhitespaceChar) {
   HandleScope scope(thread_);
-  Str str(&scope, runtime_.newStrFromCStr("     foo   "));
+  Str str(&scope, runtime_.newStrFromCStr(u8" \u3000 foo   "));
   EXPECT_EQ(strFindFirstNonWhitespace(str), 5);
 }
 
