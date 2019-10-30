@@ -350,5 +350,86 @@ class FilterFalseTests(unittest.TestCase):
             itertools.filterfalse(None, None)
 
 
+class TeeTests(unittest.TestCase):
+    def test_default_n_retuns_two_iterators(self):
+        its = itertools.tee([1, 2, 3, 4, 5])
+        self.assertEqual(len(its), 2)
+
+    def test_tee_returns_multiple_working_iterators(self):
+        its = itertools.tee([2, 4, 6, 8, 10])
+        self.assertTupleEqual(tuple(its[0]), (2, 4, 6, 8, 10))
+        self.assertTupleEqual(tuple(its[1]), (2, 4, 6, 8, 10))
+
+    def test_tee_with_long_iterable(self):
+        its = itertools.tee(list(range(200)))
+        self.assertTupleEqual(tuple(its[0]), tuple(range(200)))
+        self.assertTupleEqual(tuple(its[1]), tuple(range(200)))
+
+    def test_tee_with_n_equal_three_returns_three_working_iterators(self):
+        its = itertools.tee(["A", "B"], 3)
+        self.assertTupleEqual(tuple(its[0]), ("A", "B"))
+        self.assertTupleEqual(tuple(its[1]), ("A", "B"))
+        self.assertTupleEqual(tuple(its[2]), ("A", "B"))
+
+    def test_tee_with_copyable_iterator_as_class_attribute(self):
+        class CopyableRangeIterator:
+            def __init__(self, n, i=0):
+                self._n = n
+                self._i = i
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                if self._i == self._n:
+                    raise StopIteration
+                value = self._i
+                self._i += 1
+                return value
+
+            def __copy__(self):
+                return self.__class__(self._n)
+
+        its = itertools.tee(CopyableRangeIterator(2))
+        self.assertTrue(isinstance(its[0], CopyableRangeIterator))
+        self.assertTupleEqual(tuple(its[0]), (0, 1))
+        self.assertTupleEqual(tuple(its[1]), (0, 1))
+
+    def test_tee_with_copyable_iterator_as_instance_attribute(self):
+        class CopyableRangeIterator:
+            def __init__(self, n, i=0):
+                self._n = n
+                self._i = i
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                if self._i == self._n:
+                    raise StopIteration
+                value = self._i
+                self._i += 1
+                return value
+
+        # This is a bit contrived
+        it = CopyableRangeIterator(3)
+        it.__copy__ = lambda: CopyableRangeIterator(it._n)
+        its = itertools.tee(it)
+        self.assertTrue(isinstance(its[0], CopyableRangeIterator))
+        self.assertTupleEqual(tuple(its[0]), (0, 1, 2))
+        self.assertTupleEqual(tuple(its[1]), (0, 1, 2))
+
+    def test_tee_with_non_integer_n_raises_typeerror(self):
+        with self.assertRaises(TypeError):
+            itertools.tee([1, 2, 3, 4, 5], "2")
+
+    def test_tee_with_n_lessthan_zero_raises_valueerror(self):
+        with self.assertRaises(ValueError):
+            itertools.tee([1, 2, 3, 4, 5], -2)
+
+    def test_tee_with_n_equal_zero_returns_empty_tuple(self):
+        self.assertEqual(itertools.tee([1, 2, 3, 4, 5], 0), ())
+
+
 if __name__ == "__main__":
     unittest.main()

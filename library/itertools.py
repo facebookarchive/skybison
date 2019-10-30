@@ -325,8 +325,82 @@ class starmap:
         _unimplemented()
 
 
-def tee(it, n=2):
-    _unimplemented()
+def tee(iterable, n=2):
+    _int_guard(n)
+    if n < 0:
+        raise ValueError("n must be >= 0")
+    if n == 0:
+        return ()
+
+    it = iter(iterable)
+    copyable = it if hasattr(it, "__copy__") else _tee.from_iterable(it)
+    copyfunc = copyable.__copy__
+    return tuple(copyable if i == 0 else copyfunc() for i in range(n))
+
+
+# Internal cache for tee, a linked list where each link is a cached window to
+# a section of the source iterator
+class _tee_dataobject:
+    # CPython sets this at 57 to align exactly with cache line size. We choose
+    # 55 to align with cache lines in our system: Arrays <=255 elements have 1
+    # word of header. The header and each data element is 8 bytes on a 64-bit
+    # machine.  Cache lines are 64-bytes on all x86 machines though they tend to
+    # be fetched in pairs, so any multiple of 8 minus 1 up to 255 is fine.
+    _MAX_VALUES = 55
+
+    def __init__(self, it):
+        self._num_read = 0
+        self._next_link = _Unbound
+        self._it = it
+        self._values = []
+
+    def get_item(self, i):
+        assert i < self.__class__._MAX_VALUES
+
+        if i < self._num_read:
+            return self._values[i]
+        else:
+            assert i == self._num_read
+            value = next(self._it)
+            self._num_read += 1
+            # mutable tuple might be a nice future optimization here
+            self._values.append(value)
+            return value
+
+    def next_link(self):
+        if self._next_link is _Unbound:
+            self._next_link = self.__class__(self._it)
+        return self._next_link
+
+
+class _tee:
+    def __copy__(self):
+        return self.__class__(self._data, self._index)
+
+    def __init__(self, data, index):
+        self._data = data
+        self._index = index
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self._index >= _tee_dataobject._MAX_VALUES:
+            self._data = self._data.next_link()
+            self._index = 0
+
+        value = self._data.get_item(self._index)
+        self._index += 1
+        return value
+
+    @classmethod
+    def from_iterable(cls, iterable):
+        it = iter(iterable)
+
+        if isinstance(it, _tee):
+            return it.__copy__()
+        else:
+            return cls(_tee_dataobject(it), 0)
 
 
 class takewhile:
