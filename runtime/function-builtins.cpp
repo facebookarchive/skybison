@@ -118,39 +118,8 @@ RawObject functionFromModuleMethodDef(Thread* thread, const char* c_name,
   return *function;
 }
 
-RawObject functionGetAttribute(Thread* thread, const Function& function,
-                               const Object& name_str, word hash) {
-  return objectGetAttribute(thread, function, name_str, hash);
-}
-
-RawObject functionSetAttr(Thread* thread, const Function& function,
-                          const Object& name_str, word hash,
-                          const Object& value) {
-  Runtime* runtime = thread->runtime();
-  // Initialize Dict if non-existent
-  HandleScope scope(thread);
-  if (function.dict().isNoneType()) {
-    function.setDict(runtime->newDict());
-  }
-
-  // TODO(T53626118) Raise an exception when `name_str` is a string subclass
-  // that overrides `__eq__` or `__hash__`.
-  Str name_underlying(&scope, strUnderlying(thread, name_str));
-  Str name_interned(&scope, runtime->internStr(thread, name_underlying));
-  AttributeInfo info;
-  Layout layout(&scope, runtime->layoutAt(function.layoutId()));
-  if (runtime->layoutFindAttribute(thread, layout, name_interned, &info)) {
-    return instanceSetAttr(thread, function, name_interned, value);
-  }
-  Dict function_dict(&scope, function.dict());
-  runtime->dictAtPut(thread, function_dict, name_str, hash, value);
-  return NoneType::object();
-}
-
 const BuiltinMethod FunctionBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderGet, dunderGet},
-    {SymbolId::kDunderGetattribute, dunderGetattribute},
-    {SymbolId::kDunderSetattr, dunderSetattr},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -194,56 +163,6 @@ RawObject FunctionBuiltins::dunderGet(Thread* thread, Frame* frame,
     }
   }
   return thread->runtime()->newBoundMethod(self, instance);
-}
-
-RawObject FunctionBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
-                                               word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object self_obj(&scope, args.get(0));
-  Runtime* runtime = thread->runtime();
-  if (!self_obj.isFunction()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kFunction);
-  }
-  Function self(&scope, *self_obj);
-  Object name(&scope, args.get(1));
-  if (!runtime->isInstanceOfStr(*name)) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
-  }
-  Object hash_obj(&scope, Interpreter::hash(thread, name));
-  if (hash_obj.isErrorException()) return *hash_obj;
-  word hash = SmallInt::cast(*hash_obj).value();
-  Object result(&scope, functionGetAttribute(thread, self, name, hash));
-  if (result.isErrorNotFound()) {
-    Object function_name(&scope, self.name());
-    return thread->raiseWithFmt(LayoutId::kAttributeError,
-                                "function '%S' has no attribute '%S'",
-                                &function_name, &name);
-  }
-  return *result;
-}
-
-RawObject FunctionBuiltins::dunderSetattr(Thread* thread, Frame* frame,
-                                          word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object self_obj(&scope, args.get(0));
-  Runtime* runtime = thread->runtime();
-  if (!self_obj.isFunction()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kFunction);
-  }
-  Function self(&scope, *self_obj);
-  Object name(&scope, args.get(1));
-  if (!runtime->isInstanceOfStr(*name)) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
-  }
-  Object hash_obj(&scope, Interpreter::hash(thread, name));
-  if (hash_obj.isErrorException()) return *hash_obj;
-  word hash = SmallInt::cast(*hash_obj).value();
-  Object value(&scope, args.get(2));
-  return functionSetAttr(thread, self, name, hash, value);
 }
 
 const BuiltinAttribute BoundMethodBuiltins::kAttributes[] = {

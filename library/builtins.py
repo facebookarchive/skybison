@@ -235,15 +235,9 @@ class function(bootstrap=True):
     def __get__(self, instance, owner):
         pass
 
-    def __getattribute__(self, name):
-        pass
-
     def __repr__(self):
         _function_guard(self)
         return f"<function {self.__name__} at {_address(self):#x}>"
-
-    def __setattr__(self, name, value):
-        pass
 
 
 class classmethod(bootstrap=True):

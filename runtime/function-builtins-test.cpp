@@ -83,68 +83,6 @@ TEST_F(FunctionBuiltinsTest, DunderGetWithNoneInstanceReturnsSelf) {
   EXPECT_EQ(result, func);
 }
 
-TEST_F(FunctionBuiltinsTest, DunderGetattributeReturnsAttribute) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-def foo(): pass
-foo.bar = -4
-)")
-                   .isError());
-  Object foo(&scope, mainModuleAt(&runtime_, "foo"));
-  Object name(&scope, runtime_.newStrFromCStr("bar"));
-  EXPECT_TRUE(isIntEqualsWord(
-      runBuiltin(FunctionBuiltins::dunderGetattribute, foo, name), -4));
-}
-
-TEST_F(FunctionBuiltinsTest,
-       DunderGetattributeWithNonStringNameRaisesTypeError) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, "def foo(): pass").isError());
-  Object foo(&scope, mainModuleAt(&runtime_, "foo"));
-  Object name(&scope, runtime_.newInt(0));
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(FunctionBuiltins::dunderGetattribute, foo, name),
-      LayoutId::kTypeError, "attribute name must be string, not 'int'"));
-}
-
-TEST_F(FunctionBuiltinsTest,
-       DunderGetattributeWithMissingAttributeRaisesAttributeError) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, "def foo(): pass").isError());
-  Object foo(&scope, mainModuleAt(&runtime_, "foo"));
-  Object name(&scope, runtime_.newStrFromCStr("xxx"));
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(FunctionBuiltins::dunderGetattribute, foo, name),
-      LayoutId::kAttributeError, "function 'foo' has no attribute 'xxx'"));
-}
-
-TEST_F(FunctionBuiltinsTest, DunderSetattrSetsAttribute) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  ASSERT_FALSE(runFromCStr(&runtime_, "def foo(): pass").isError());
-  Object foo(&scope, mainModuleAt(&runtime_, "foo"));
-  Str name(&scope, runtime_.newStrFromCStr("foobarbaz"));
-  Object value(&scope, runtime_.newInt(1337));
-  EXPECT_TRUE(runBuiltin(FunctionBuiltins::dunderSetattr, foo, name, value)
-                  .isNoneType());
-  ASSERT_TRUE(foo.isFunction());
-  ASSERT_TRUE(Function::cast(*foo).dict().isDict());
-  Dict function_dict(&scope, Function::cast(*foo).dict());
-  EXPECT_TRUE(
-      isIntEqualsWord(runtime_.dictAtByStr(thread, function_dict, name), 1337));
-}
-
-TEST_F(FunctionBuiltinsTest, DunderSetattrWithNonStringNameRaisesTypeError) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, "def foo(): pass").isError());
-  Object foo(&scope, mainModuleAt(&runtime_, "foo"));
-  Object name(&scope, runtime_.newInt(0));
-  Object value(&scope, runtime_.newInt(1));
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(FunctionBuiltins::dunderSetattr, foo, name, value),
-      LayoutId::kTypeError, "attribute name must be string, not 'int'"));
-}
-
 TEST_F(FunctionBuiltinsTest, ReprHandlesNormalFunctions) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def f(): pass
@@ -189,23 +127,6 @@ result = f.__globals__
   HandleScope scope(thread_);
   Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(result.isModuleProxy());
-}
-
-TEST_F(FunctionBuiltinsTest, FunctionSetAttrSetsAttribute) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  ASSERT_FALSE(runFromCStr(&runtime_, "def foo(): pass").isError());
-  Object foo_obj(&scope, mainModuleAt(&runtime_, "foo"));
-  ASSERT_TRUE(foo_obj.isFunction());
-  Function foo(&scope, *foo_obj);
-  Str name(&scope, runtime_.internStrFromCStr(thread, "bar"));
-  word hash = strHash(thread_, *name);
-  Object value(&scope, runtime_.newInt(6789));
-  EXPECT_TRUE(functionSetAttr(thread, foo, name, hash, value).isNoneType());
-  ASSERT_TRUE(foo.dict().isDict());
-  Dict function_dict(&scope, foo.dict());
-  EXPECT_TRUE(
-      isIntEqualsWord(runtime_.dictAtByStr(thread, function_dict, name), 6789));
 }
 
 }  // namespace testing
