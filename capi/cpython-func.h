@@ -528,6 +528,7 @@ PyAPI_FUNC(PyObject*) PyObject_Format(PyObject*, PyObject*);
 PyAPI_FUNC(void) PyObject_Free(void*);
 PyAPI_FUNC(void) PyObject_GC_Del(void*);
 PyAPI_FUNC(PyObject*) _PyObject_GC_Malloc(size_t);
+PyAPI_FUNC(PyObject*) _PyObject_GC_Calloc(size_t);
 PyAPI_FUNC(PyObject*) _PyObject_GC_New(PyTypeObject*);
 PyAPI_FUNC(PyVarObject*) _PyObject_GC_NewVar(PyTypeObject*, Py_ssize_t);
 PyAPI_FUNC(PyVarObject*) _PyObject_GC_Resize(PyVarObject*, Py_ssize_t);

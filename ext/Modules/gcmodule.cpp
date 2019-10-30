@@ -43,6 +43,18 @@ PY_EXPORT PyObject* _PyObject_GC_Malloc(size_t basicsize) {
   return reinterpret_cast<PyObject*>(entry + 1);
 }
 
+PY_EXPORT PyObject* _PyObject_GC_Calloc(size_t basicsize) {
+  ListEntry* entry =
+      static_cast<ListEntry*>(PyMem_Calloc(1, sizeof(ListEntry) + basicsize));
+  if (entry == nullptr) {
+    return PyErr_NoMemory();
+  }
+  entry->prev = nullptr;
+  entry->next = nullptr;
+
+  return reinterpret_cast<PyObject*>(entry + 1);
+}
+
 PY_EXPORT PyObject* _PyObject_GC_New(PyTypeObject* type) {
   PyObject* obj =
       static_cast<PyObject*>(_PyObject_GC_Malloc(_PyObject_SIZE(type)));

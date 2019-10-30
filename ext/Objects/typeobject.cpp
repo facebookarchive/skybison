@@ -1506,16 +1506,14 @@ PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type_obj,
 
   PyObject* result = nullptr;
   if (type.hasFlag(Type::Flag::kHasCycleGC)) {
-    result = static_cast<PyObject*>(_PyObject_GC_Malloc(size));
+    result = static_cast<PyObject*>(_PyObject_GC_Calloc(size));
   } else {
-    result = static_cast<PyObject*>(PyObject_Malloc(size));
+    result = static_cast<PyObject*>(PyObject_Calloc(1, size));
   }
   if (result == nullptr) {
     thread->raiseMemoryError();
     return nullptr;
   }
-  // TODO(T56499271): We should not need to zero initialize here.
-  std::memset(result, 0, size);
 
   // Initialize the newly-allocated instance
   if (item_size.asWord() == 0) {
