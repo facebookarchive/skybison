@@ -3768,17 +3768,16 @@ RawObject UnderBuiltinsModule::underTypeInit(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
   Str name(&scope, args.get(1));
-  Tuple bases(&scope, args.get(2));
-  Dict dict(&scope, args.get(3));
+  Dict dict(&scope, args.get(2));
   Tuple mro(&scope, thread->runtime()->emptyTuple());
-  if (args.get(4).isUnbound()) {
-    Object mro_obj(&scope, computeMro(thread, type, bases));
+  if (args.get(3).isUnbound()) {
+    Object mro_obj(&scope, computeMro(thread, type));
     if (mro_obj.isError()) return *mro_obj;
     mro = *mro_obj;
   } else {
-    mro = args.get(4);
+    mro = args.get(3);
   }
-  return typeInit(thread, type, name, bases, dict, mro);
+  return typeInit(thread, type, name, dict, mro);
 }
 
 RawObject UnderBuiltinsModule::underUnimplemented(Thread* thread, Frame* frame,

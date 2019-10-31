@@ -68,18 +68,13 @@ static RawObject findNext(Thread* thread, const Tuple& merge_lists,
   return Error::notFound();
 }
 
-RawObject computeMro(Thread* thread, const Type& type, const Tuple& parents) {
+RawObject computeMro(Thread* thread, const Type& type) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
 
-  // Special case for no explicit ancestors.
+  Tuple parents(&scope, type.bases());
   word num_parents = parents.length();
-  if (num_parents == 0) {
-    Tuple new_mro(&scope, runtime->newTuple(2));
-    new_mro.atPut(0, *type);
-    new_mro.atPut(1, runtime->typeAt(LayoutId::kObject));
-    return *new_mro;
-  }
+  DCHECK(num_parents > 0, "must have at least 1 parent");
 
   Vector<word> merge_list_indices;
   word merge_list_length = num_parents + 1;

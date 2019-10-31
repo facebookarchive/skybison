@@ -339,7 +339,7 @@ class type(bootstrap=True):
         _dict_guard(type_dict)
         instance = _type_new(cls, bases)
         mro = _Unbound if cls is type else tuple(cls.mro(instance))
-        return _type_init(instance, name_or_object, bases, type_dict, mro)
+        return _type_init(instance, name_or_object, type_dict, mro)
 
     @_classmethod
     def __prepare__(self, *args, **kwargs):

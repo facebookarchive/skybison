@@ -954,7 +954,7 @@ def _type_proxy(type_obj):
 
 
 @_patch
-def _type_init(metaclass_instance, name, bases, dict, mro):
+def _type_init(metaclass_instance, name, dict, mro):
     pass
 
 

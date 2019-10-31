@@ -760,7 +760,7 @@ static RawObject computeBuiltinBase(Thread* thread, const Type& type) {
 }
 
 RawObject typeInit(Thread* thread, const Type& type, const Str& name,
-                   const Tuple& bases, const Dict& dict, const Tuple& mro) {
+                   const Dict& dict, const Tuple& mro) {
   type.setName(*name);
   Runtime* runtime = thread->runtime();
   type.setMro(*mro);
@@ -815,6 +815,7 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   type.setInstanceLayout(*layout);
 
   // Add this type as a direct subclass of each of its bases; Merge flags.
+  Tuple bases(&scope, type.bases());
   word flags = static_cast<word>(type.flags());
   Type base_type(&scope, *type);
   for (word i = 0; i < bases.length(); i++) {
@@ -863,12 +864,12 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->newTypeWithMetaclass(metaclass_id));
   type.setName(*name);
-  Object mro_obj(&scope, computeMro(thread, type, bases));
+  type.setBases(*bases);
+  Object mro_obj(&scope, computeMro(thread, type));
   if (mro_obj.isError()) return *mro_obj;
   Tuple mro(&scope, *mro_obj);
-  type.setBases(bases.length() > 0 ? *bases : runtime->implicitBases());
   type.setFlags(flags);
-  return typeInit(thread, type, name, bases, dict, mro);
+  return typeInit(thread, type, name, dict, mro);
 }
 
 // NOTE: Keep the order of these type attributes same as the one from
@@ -1106,8 +1107,7 @@ RawObject TypeBuiltins::mro(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self, SymbolId::kType);
   }
   Type type(&scope, *self);
-  Tuple parents(&scope, type.bases());
-  Object mro(&scope, computeMro(thread, type, parents));
+  Object mro(&scope, computeMro(thread, type));
   if (mro.isError()) {
     return *mro;
   }

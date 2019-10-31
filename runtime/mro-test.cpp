@@ -16,8 +16,8 @@ class A: pass
                    .isError());
   Object a_obj(&scope, mainModuleAt(&runtime_, "A"));
   Type a(&scope, *a_obj);
-  Tuple parents(&scope, runtime_.emptyTuple());
-  Object result_obj(&scope, computeMro(thread_, a, parents));
+  a.setBases(runtime_.implicitBases());
+  Object result_obj(&scope, computeMro(thread_, a));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -36,9 +36,10 @@ class B(A): pass
   Object a_obj(&scope, mainModuleAt(&runtime_, "A"));
   Object b_obj(&scope, mainModuleAt(&runtime_, "B"));
   Type b(&scope, *b_obj);
-  Tuple parents(&scope, runtime_.newTuple(1));
-  parents.atPut(0, *a_obj);
-  Object result_obj(&scope, computeMro(thread_, b, parents));
+  Tuple bases(&scope, runtime_.newTuple(1));
+  bases.atPut(0, *a_obj);
+  b.setBases(*bases);
+  Object result_obj(&scope, computeMro(thread_, b));
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 3);
   EXPECT_EQ(result.at(0), b);
@@ -59,10 +60,11 @@ class C(A, B): pass
   Object b_obj(&scope, mainModuleAt(&runtime_, "B"));
   Object c_obj(&scope, mainModuleAt(&runtime_, "C"));
   Type c(&scope, *c_obj);
-  Tuple parents(&scope, runtime_.newTuple(2));
-  parents.atPut(0, *a_obj);
-  parents.atPut(1, *b_obj);
-  Object result_obj(&scope, computeMro(thread_, c, parents));
+  Tuple bases(&scope, runtime_.newTuple(2));
+  bases.atPut(0, *a_obj);
+  bases.atPut(1, *b_obj);
+  c.setBases(*bases);
+  Object result_obj(&scope, computeMro(thread_, c));
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 4);
   EXPECT_EQ(result.at(0), c);
@@ -81,11 +83,11 @@ class B(A): pass
   Object a_obj(&scope, mainModuleAt(&runtime_, "A"));
   Object b_obj(&scope, mainModuleAt(&runtime_, "B"));
   Type c(&scope, runtime_.newType());
-  Tuple parents(&scope, runtime_.newTuple(2));
-  parents.atPut(0, *a_obj);
-  parents.atPut(1, *b_obj);
-  EXPECT_TRUE(raisedWithStr(computeMro(thread_, c, parents),
-                            LayoutId::kTypeError,
+  Tuple bases(&scope, runtime_.newTuple(2));
+  bases.atPut(0, *a_obj);
+  bases.atPut(1, *b_obj);
+  c.setBases(*bases);
+  EXPECT_TRUE(raisedWithStr(computeMro(thread_, c), LayoutId::kTypeError,
                             "Cannot create a consistent method resolution "
                             "order (MRO) for bases A, B"));
 }

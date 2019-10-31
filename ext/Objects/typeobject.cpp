@@ -1415,7 +1415,7 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   // matching the layout of RawNativeProxy
   // TODO(T53922464): Set the layout to the dict overflow state
   // TODO(T54277314): Fill the dictionary before creating the type
-  Tuple bases_obj(&scope, runtime->emptyTuple());
+  Tuple bases_obj(&scope, runtime->implicitBases());
   if (bases != nullptr) bases_obj = ApiHandle::fromPyObject(bases)->asObject();
   Dict dict(&scope, runtime->newDict());
   word flags = Type::Flag::kIsNativeProxy;

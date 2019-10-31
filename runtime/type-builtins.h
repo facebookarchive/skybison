@@ -59,7 +59,7 @@ RawObject resolveDescriptorGet(Thread* thread, const Object& descr,
                                const Object& instance_type);
 
 RawObject typeInit(Thread* thread, const Type& type, const Str& name,
-                   const Tuple& bases, const Dict& dict, const Tuple& mro);
+                   const Dict& dict, const Tuple& mro);
 
 // Looks up `key` in the dict of each entry in type's MRO. Returns
 // `Error::notFound()` if the name was not found.
