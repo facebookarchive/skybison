@@ -9,9 +9,9 @@
 
 namespace py {
 
-RawObject bytecodeToCode(Thread* thread, const char* buffer) {
+RawObject bytecodeToCode(Thread* thread, View<byte> data) {
   HandleScope scope(thread);
-  Marshal::Reader reader(&scope, thread->runtime(), buffer);
+  Marshal::Reader reader(&scope, thread->runtime(), data);
   reader.readLong();
   reader.readLong();
   reader.readLong();

@@ -31,11 +31,9 @@ RawObject MarshalModule::loads(Thread* thread, Frame* frame, word nargs) {
   word length = bytes.length();
   // TODO(T38902583): Use updated Marshal reader to read from Bytes object
   // directly
-  std::unique_ptr<char[]> buffer(new char[length]);
-  for (word i = 0; i < length; i++) {
-    buffer[i] = bytes.byteAt(i);
-  }
-  Marshal::Reader reader(&scope, runtime, buffer.get());
+  std::unique_ptr<byte[]> buffer(new byte[length]);
+  bytes.copyTo(buffer.get(), length);
+  Marshal::Reader reader(&scope, runtime, View<byte>(buffer.get(), length));
   return reader.readObject();
 }
 

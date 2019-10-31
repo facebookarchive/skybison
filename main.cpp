@@ -41,7 +41,8 @@ int main(int argc, const char** argv) {
     code_obj = py::compileFromCStr(buffer_cstr.get(), file_name);
   } else {
     // Interpret as .pyc and unmarshal
-    code_obj = bytecodeToCode(thread, buffer.get());
+    py::View<byte> data(reinterpret_cast<byte*>(buffer.get()), file_len);
+    code_obj = bytecodeToCode(thread, data);
   }
 
   // TODO(T39499894): Rewrite this whole function to use the C-API.

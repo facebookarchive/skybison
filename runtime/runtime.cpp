@@ -1937,7 +1937,10 @@ static void checkBuiltinTypeDeclarations(Thread* thread, const Module& module) {
 RawObject Runtime::executeFrozenModule(const char* buffer,
                                        const Module& module) {
   HandleScope scope;
-  Marshal::Reader reader(&scope, this, buffer);
+  // TODO(matthiasb): We must not use strlen here!
+  word length = std::strlen(buffer);
+  View<byte> data(reinterpret_cast<const byte*>(buffer), length);
+  Marshal::Reader reader(&scope, this, data);
   reader.readLong();
   reader.readLong();
   reader.readLong();

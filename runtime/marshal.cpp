@@ -45,13 +45,12 @@ enum {
   TYPE_SHORT_ASCII_INTERNED = 'Z',
 };
 
-Marshal::Reader::Reader(HandleScope* scope, Runtime* runtime,
-                        const char* buffer)
+Marshal::Reader::Reader(HandleScope* scope, Runtime* runtime, View<byte> buffer)
     : runtime_(runtime),
       refs_(scope, runtime->newList()),
-      start_(reinterpret_cast<const byte*>(buffer)),
+      start_(buffer.data()),
       depth_(0),
-      length_(std::strlen(buffer)),
+      length_(buffer.length()),
       pos_(0) {
   end_ = start_ + length_;
 }
