@@ -727,36 +727,32 @@ void typeAddDocstring(Thread* thread, const Type& type) {
   }
 }
 
-static RawObject computeBuiltinBase(Thread* thread, const Type& type) {
+static LayoutId computeBuiltinBase(Thread* thread, const Tuple& bases) {
   // The base class can only be one of the builtin bases including object.
   // We use the first non-object builtin base if any, throw if multiple.
   HandleScope scope(thread);
-  Tuple mro(&scope, type.mro());
+  Type base0(&scope, bases.at(0));
+  word length = bases.length();
+  if (length == 1) {
+    return base0.builtinBase();
+  }
   Runtime* runtime = thread->runtime();
-  Type object_type(&scope, runtime->typeAt(LayoutId::kObject));
-  Type candidate(&scope, *object_type);
-  // Skip itself since builtin class won't go through this.
-  DCHECK(*type == mro.at(0) && type.instanceLayout().isNoneType(),
-         "type's layout should not be set at this point");
-  for (word i = 1; i < mro.length(); i++) {
-    Type mro_type(&scope, mro.at(i));
-    if (!mro_type.isBuiltin()) {
+  Type result(&scope, runtime->typeAt(base0.builtinBase()));
+  for (word i = 1; i < length; i++) {
+    Type base(&scope, bases.at(i));
+    Type builtin_base(&scope, runtime->typeAt(base.builtinBase()));
+    if (result == builtin_base || runtime->isSubclass(result, builtin_base)) {
       continue;
     }
-    Type builtin_base(&scope, runtime->typeAt(mro_type.builtinBase()));
-    if (*candidate == *object_type) {
-      candidate = *mro_type;
-    } else if (runtime->isSubclass(candidate, builtin_base)) {
-      continue;
-    } else if (runtime->isSubclass(builtin_base, candidate)) {
-      candidate = *builtin_base;
+    if (runtime->isSubclass(builtin_base, result)) {
+      result = *builtin_base;
     } else {
-      return thread->raiseWithFmt(
-          LayoutId::kTypeError,
-          "multiple bases have instance lay-out conflict");
+      thread->raiseWithFmt(LayoutId::kTypeError,
+                           "multiple bases have instance lay-out conflict");
+      return LayoutId::kError;
     }
   }
-  return *candidate;
+  return result.builtinBase();
 }
 
 RawObject typeInit(Thread* thread, const Type& type, const Str& name,
@@ -799,23 +795,19 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   // TODO(T53997177): Centralize type initialization
   typeAddDocstring(thread, type);
 
-  // Compute builtin base class
-  Object builtin_base(&scope, computeBuiltinBase(thread, type));
-  if (builtin_base.isError()) {
-    return *builtin_base;
+  Tuple bases(&scope, type.bases());
+  LayoutId builtin_base = computeBuiltinBase(thread, bases);
+  if (builtin_base == LayoutId::kError) {
+    return Error::exception();
   }
-  Type builtin_base_type(&scope, *builtin_base);
-  LayoutId base_layout_id =
-      Layout::cast(builtin_base_type.instanceLayout()).id();
 
   // Initialize instance layout
   Layout layout(&scope,
-                runtime->computeInitialLayout(thread, type, base_layout_id));
+                runtime->computeInitialLayout(thread, type, builtin_base));
   layout.setDescribedType(*type);
   type.setInstanceLayout(*layout);
 
   // Add this type as a direct subclass of each of its bases; Merge flags.
-  Tuple bases(&scope, type.bases());
   word flags = static_cast<word>(type.flags());
   Type base_type(&scope, *type);
   for (word i = 0; i < bases.length(); i++) {
@@ -830,7 +822,7 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     // class.
     flags |= Type::Flag::kHasDunderDict;
   }
-  type.setFlagsAndBuiltinBase(static_cast<Type::Flag>(flags), base_layout_id);
+  type.setFlagsAndBuiltinBase(static_cast<Type::Flag>(flags), builtin_base);
 
   if (type.hasFlag(Type::Flag::kHasDunderDict) &&
       typeLookupInMroById(thread, type, SymbolId::kDunderDict)

@@ -58,33 +58,16 @@ TEST_F(RuntimeTest, CollectGarbage) {
   ASSERT_TRUE(runtime_.heap()->verify());
 }
 
-TEST_F(RuntimeTest, ComputeBuiltinBaseChecksBuiltinBaseOfMROTypes) {
+TEST_F(RuntimeTest, ComputeBuiltinBaseReturnsMostSpecificBase) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
-class OneFromLeastUpperBound(LookupError, SystemError):
-  pass
-class TwoFromLeastUpperBound(UnicodeDecodeError, LookupError):
+class C(UnicodeDecodeError, LookupError):
   pass
 )")
                    .isError());
   HandleScope scope;
-  Object lookup_sub(&scope, mainModuleAt(&runtime_, "OneFromLeastUpperBound"));
-  Object unic_dec_sub(&scope,
-                      mainModuleAt(&runtime_, "TwoFromLeastUpperBound"));
-  ASSERT_TRUE(lookup_sub.isType());
-  ASSERT_TRUE(unic_dec_sub.isType());
-  Type lookup_sub_type(&scope, *lookup_sub);
-  Type unic_dec_sub_type(&scope, *unic_dec_sub);
-  EXPECT_EQ(lookup_sub_type.builtinBase(), LayoutId::kLookupError);
-  EXPECT_EQ(unic_dec_sub_type.builtinBase(), LayoutId::kUnicodeDecodeError);
-
-  // Ensure that the subclass has its superclasses in its mro
-  Type lookup_type(&scope, runtime_.typeAt(LayoutId::kLookupError));
-  Type system_type(&scope, runtime_.typeAt(LayoutId::kSystemError));
-  Type unic_dec_type(&scope, runtime_.typeAt(LayoutId::kUnicodeDecodeError));
-  EXPECT_TRUE(runtime_.isSubclass(lookup_sub_type, lookup_type));
-  EXPECT_TRUE(runtime_.isSubclass(lookup_sub_type, system_type));
-  EXPECT_TRUE(runtime_.isSubclass(unic_dec_sub_type, unic_dec_type));
-  EXPECT_TRUE(runtime_.isSubclass(unic_dec_sub_type, lookup_type));
+  Object c(&scope, mainModuleAt(&runtime_, "C"));
+  ASSERT_TRUE(c.isType());
+  EXPECT_EQ(Type::cast(*c).builtinBase(), LayoutId::kUnicodeDecodeError);
 }
 
 TEST_F(RuntimeTest, ComputeBuiltinBaseWithConflictingBasesRaisesTypeError) {
