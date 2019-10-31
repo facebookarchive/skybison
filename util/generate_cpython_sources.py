@@ -90,19 +90,6 @@ HEADER_DEFINITIONS_REGEX = {
     "enum": [SymbolRegex(regex=re.compile("^enum(.|\n)*?};", re.MULTILINE), pos=1)],
 }
 
-SOURCE_DEFINITIONS_REGEX = {
-    "pytypeobject": [
-        SymbolRegex(
-            regex=re.compile("^PyTypeObject.*= {(.|\n)*?};.*\n", re.MULTILINE), pos=1
-        )
-    ],
-    "pyfunction": [
-        SymbolRegex(
-            regex=re.compile("^[a-zA-Z](.|.\n)*?{\n\s(.|\n)*?\n}", re.MULTILINE), pos=1
-        )
-    ],
-}
-
 
 SPECIAL_CHARS_REGEX = re.compile("[\*|,|;|\(|\)|]")
 
@@ -135,21 +122,6 @@ def find_symbols_in_file(lines, regex_dict):
                 if len(modified_match) > sr.pos:
                     symbols_dict[symbol_type].append(modified_match[sr.pos])
     return symbols_dict
-
-
-# Given a list of files, find all the defined symbols
-def create_source_symbols_dict(modified_source_paths):
-    source_dict = {}
-    for path in modified_source_paths:
-        if not path.endswith(".cpp"):
-            continue
-        with open(path, "r") as f:
-            lines = f.read()
-        symbols_dict = find_symbols_in_file(lines, SOURCE_SYMBOL_REGEX)
-        if any(len(x) for x in symbols_dict.values()):
-            c_path = os.path.basename(path).replace(".cpp", ".c")
-            source_dict[c_path] = symbols_dict
-    return source_dict
 
 
 # Given a list of files, find all the defined symbols
@@ -196,7 +168,7 @@ def modify_file(lines, symbols_dict, regex_dict):
 
 
 # Given a list of sources files, modify the patterns that were annotated
-def create_output_file_dict(source_paths, header_symbols_dict, source_symbols_dict):
+def create_output_file_dict(source_paths, header_symbols_dict):
     output_file_dict = {}
     # Iterate all source files
     for path in source_paths:
@@ -204,10 +176,7 @@ def create_output_file_dict(source_paths, header_symbols_dict, source_symbols_di
 
         # Modules should not be patched. This quickly skips over them
         # to just copy the file directly.
-        # Please note that posixmodule is an exception. This C Extension also
-        # contains the implementation of a public C-API. However, this pattern
-        # should not be followed
-        if "Modules" in path and "posixmodule" not in path:
+        if "Modules" in path:
             continue
 
         if path.endswith(".h"):
@@ -217,14 +186,6 @@ def create_output_file_dict(source_paths, header_symbols_dict, source_symbols_di
                 lines, header_symbols_dict, HEADER_DEFINITIONS_REGEX
             )
 
-        if path.endswith(".c"):
-            file_name = os.path.basename(path)
-            if file_name in source_symbols_dict.keys():
-                with open(path, "r") as f:
-                    lines = f.read()
-                output_file_dict[path] = modify_file(
-                    lines, source_symbols_dict[file_name], SOURCE_DEFINITIONS_REGEX
-                )
     return output_file_dict
 
 
@@ -293,10 +254,7 @@ def main(args):
     args = parser.parse_args()
 
     header_symbols_dict = create_header_symbols_dict(args.modified)
-    source_symbols_dict = create_source_symbols_dict(args.modified)
-    output_file_dict = create_output_file_dict(
-        args.sources, header_symbols_dict, source_symbols_dict
-    )
+    output_file_dict = create_output_file_dict(args.sources, header_symbols_dict)
     output_files_to_directory(args.output_dir, output_file_dict)
 
 

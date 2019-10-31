@@ -351,15 +351,21 @@ string(
 
 list(APPEND CPYTHON_SOURCES "ext/Include/Python.h")
 
+set(EXTENSION_API_HEADERS
+  ${CMAKE_SOURCE_DIR}/capi/cpython-data.h
+  ${CMAKE_SOURCE_DIR}/capi/cpython-func.h
+  ${CMAKE_SOURCE_DIR}/capi/cpython-types.h
+)
+
 add_custom_command(
   OUTPUT ${CPYTHON_OUTPUT_SOURCES}
   COMMAND
     python3 util/generate_cpython_sources.py
     -sources ${CPYTHON_SOURCES}
-    -modified ${CPYTHON_MODIFIED_SOURCES}
+    -modified ${EXTENSION_API_HEADERS}
     -output_dir ${CMAKE_BINARY_DIR}
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  DEPENDS ${CPYTHON_SOURCES} ${CPYTHON_MODIFIED_SOURCES} util/generate_cpython_sources.py
+  DEPENDS ${CPYTHON_SOURCES} ${EXTENSION_API_HEADERS} util/generate_cpython_sources.py
   COMMENT "Generating CPython source files")
 
 # This target is built in util/run_clang_tidy.py:create_compile_commands() to

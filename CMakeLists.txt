@@ -107,9 +107,7 @@ set(
 # Define the `cpython` target
 set(
   CPYTHON_MODIFIED_SOURCES
-  ${CMAKE_SOURCE_DIR}/capi/cpython-data.h
-  ${CMAKE_SOURCE_DIR}/capi/cpython-func.h
-  ${CMAKE_SOURCE_DIR}/capi/cpython-types.h
+  ${EXTENSION_API_HEADERS}
   ${CMAKE_SOURCE_DIR}/ext/Modules/gcmodule.cpp
   ${CMAKE_SOURCE_DIR}/ext/Modules/signalmodule.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/abstract.cpp
