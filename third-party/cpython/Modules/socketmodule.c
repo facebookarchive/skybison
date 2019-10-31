@@ -6539,6 +6539,7 @@ static int socketmodule_traverse(PyObject *m, visitproc visit, void *arg) {
     Py_VISIT(state->socket_herror);
     Py_VISIT(state->socket_gaierror);
     Py_VISIT(state->socket_timeout);
+    Py_VISIT(state->PySocketModuleAPI.error);
     return 0;
 }
 
@@ -6548,6 +6549,7 @@ static int socketmodule_clear(PyObject *m) {
     Py_CLEAR(state->socket_herror);
     Py_CLEAR(state->socket_gaierror);
     Py_CLEAR(state->socket_timeout);
+    Py_CLEAR(state->PySocketModuleAPI.error);
     return 0;
 }
 

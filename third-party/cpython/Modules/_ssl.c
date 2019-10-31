@@ -5286,6 +5286,8 @@ _sslmodule_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(_sslmodulestate(module)->PySSLEOFErrorObject);
     Py_VISIT(_sslmodulestate(module)->err_codes_to_names);
     Py_VISIT(_sslmodulestate(module)->lib_codes_to_names);
+    Py_VISIT(_sslmodulestate(module)->reason);
+    Py_VISIT(_sslmodulestate(module)->library);
     return 0;
 }
 
@@ -5304,6 +5306,8 @@ _sslmodule_clear(PyObject *module)
     Py_CLEAR(_sslmodulestate(module)->PySSLEOFErrorObject);
     Py_CLEAR(_sslmodulestate(module)->err_codes_to_names);
     Py_CLEAR(_sslmodulestate(module)->lib_codes_to_names);
+    Py_CLEAR(_sslmodulestate(module)->reason);
+    Py_CLEAR(_sslmodulestate(module)->library);
     return 0;
 }
 
