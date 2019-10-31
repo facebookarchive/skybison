@@ -2224,7 +2224,9 @@ class dict(bootstrap=True):
 
     def copy(self):
         _dict_guard(self)
-        return dict(self)
+        result = {}
+        result.update(self)
+        return result
 
     get = _dict_get
 
