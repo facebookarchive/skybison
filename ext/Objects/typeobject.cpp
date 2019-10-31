@@ -750,9 +750,8 @@ RawObject addOperators(Thread* thread, const Type& type) {
     DCHECK(slot_value.isInt(), "unexpected slot type");
 
     // Unlike most slots, we always allow __new__ to be overwritten by a subtype
-    Str slot_name(&scope, runtime->symbols()->at(slot.name));
     if (slot.id != Type::Slot::kNew &&
-        !typeAtByStr(thread, type, slot_name).isError()) {
+        !typeAtById(thread, type, slot.name).isError()) {
       continue;
     }
 
@@ -762,11 +761,12 @@ RawObject addOperators(Thread* thread, const Type& type) {
     if (Int::cast(*slot_value).asCPtr() ==
         bit_cast<void*>(&PyObject_HashNotImplemented)) {
       Object none(&scope, NoneType::object());
-      typeAtPut(thread, type, slot_name, none);
+      typeAtPutById(thread, type, slot.name, none);
       return NoneType::object();
     }
 
     // Create the wrapper function.
+    Str slot_name(&scope, runtime->symbols()->at(slot.name));
     Str qualname(&scope,
                  runtime->newStrFromFmt("%S.%S", &type_name, &slot_name));
     Code code(&scope, newExtCode(thread, slot_name, slot.parameters,
@@ -789,7 +789,7 @@ RawObject addOperators(Thread* thread, const Type& type) {
     }
 
     // Finally, put the wrapper in the type dict.
-    typeAtPut(thread, type, slot_name, func_obj);
+    typeAtPutById(thread, type, slot.name, func_obj);
   }
 
   return NoneType::object();
@@ -1257,7 +1257,7 @@ RawObject addMembers(Thread* thread, const Type& type) {
   Object none(&scope, NoneType::object());
   Runtime* runtime = thread->runtime();
   for (word i = 0; members[i].name != nullptr; i++) {
-    Str name(&scope, runtime->newStrFromCStr(members[i].name));
+    Str name(&scope, runtime->internStrFromCStr(thread, members[i].name));
     Object getter(&scope, memberGetter(thread, members[i]));
     if (getter.isError()) return *getter;
     Object setter(&scope, memberSetter(thread, members[i]));
@@ -1277,7 +1277,7 @@ RawObject addGetSet(Thread* thread, const Type& type) {
   Object none(&scope, NoneType::object());
   Runtime* runtime = thread->runtime();
   for (word i = 0; getsets[i].name != nullptr; i++) {
-    Str name(&scope, runtime->newStrFromCStr(getsets[i].name));
+    Str name(&scope, runtime->internStrFromCStr(thread, getsets[i].name));
     Object getter(&scope, getSetGetter(thread, name, getsets[i]));
     if (getter.isError()) return *getter;
     Object setter(&scope, getSetSetter(thread, name, getsets[i]));
@@ -1376,7 +1376,7 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
                     thread->invokeFunction1(SymbolId::kBuiltins,
                                             SymbolId::kStaticMethod, func));
     if (func_obj.isError()) return *func;
-    typeAtPut(thread, type, dunder_new_name, func_obj);
+    typeAtPutById(thread, type, SymbolId::kDunderNew, func_obj);
   }
 
   // tp_alloc -> PyType_GenericAlloc

@@ -548,14 +548,16 @@ RawObject typeAtById(Thread* thread, const Type& type, SymbolId id) {
   return ValueCell::cast(*value).value();
 }
 
-RawObject typeAtPut(Thread* thread, const Type& type, const Str& name,
+RawObject typeAtPut(Thread* thread, const Type& type, const Str& interned_name,
                     const Object& value) {
+  DCHECK(thread->runtime()->isInternedStr(thread, interned_name),
+         "name should be an interned str");
   HandleScope scope(thread);
   Dict dict(&scope, type.dict());
   ValueCell value_cell(&scope, thread->runtime()->dictAtPutInValueCellByStr(
-                                   thread, dict, name, value));
+                                   thread, dict, interned_name, value));
   if (!value_cell.dependencyLink().isNoneType()) {
-    icInvalidateAttr(thread, type, name, value_cell);
+    icInvalidateAttr(thread, type, interned_name, value_cell);
   }
   return *value_cell;
 }
@@ -780,7 +782,7 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
       if (!key_obj.isStr()) {
         return thread->raiseRequiresType(key_obj, SymbolId::kStr);
       }
-      key = *key_obj;
+      key = runtime->internStr(thread, key_obj);
       typeAtPut(thread, type, key, value);
     }
   }

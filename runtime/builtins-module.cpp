@@ -213,6 +213,7 @@ const SymbolId BuiltinsModule::kIntrinsicIds[] = {
 
 static void patchTypeDict(Thread* thread, const Type& base_type,
                           const Dict& patch) {
+  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Tuple patch_data(&scope, patch.data());
   for (word i = Dict::Bucket::kFirst;
@@ -231,6 +232,9 @@ static void patchTypeDict(Thread* thread, const Type& base_type,
 
       copyFunctionEntries(thread, base_fn, patch_fn);
     }
+    // key is not yet interned since patch_type is a implicit global from
+    // running the class body and not yet converted into a type dict yet.
+    key = runtime->internStr(thread, key);
     typeAtPut(thread, base_type, key, patch_obj);
   }
 }

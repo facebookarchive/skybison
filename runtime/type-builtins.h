@@ -29,7 +29,7 @@ RawObject typeAtByStr(Thread* thread, const Type& type, const Str& name);
 
 RawObject typeAtById(Thread* thread, const Type& type, SymbolId id);
 
-RawObject typeAtPut(Thread* thread, const Type& type, const Str& name,
+RawObject typeAtPut(Thread* thread, const Type& type, const Str& interned_name,
                     const Object& value);
 
 RawObject typeAtPutById(Thread* thread, const Type& type, SymbolId id,

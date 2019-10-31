@@ -838,7 +838,7 @@ void Runtime::typeAddBuiltinFunction(const Type& type, SymbolId name,
   Function function(&scope,
                     newFunctionWithCode(thread, qualname, code, globals));
 
-  typeAtPut(thread, type, name_str, function);
+  typeAtPutById(thread, type, name, function);
 }
 
 RawObject Runtime::newList() {
