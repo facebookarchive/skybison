@@ -5,7 +5,6 @@
 
 namespace py {
 
-RawObject bytecodeToCode(Thread* thread, View<byte> data);
 RawObject compileFromCStr(const char* buffer, const char* file_name);
 int runInteractive(FILE* fp);
 

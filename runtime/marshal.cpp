@@ -12,6 +12,8 @@
 
 namespace py {
 
+const int32_t kPycMagic = 3379 | (int32_t{'\r'} << 16) | (int32_t{'\n'} << 24);
+
 enum {
   TYPE_NULL = '0',
   TYPE_NONE = 'N',
@@ -53,6 +55,25 @@ Marshal::Reader::Reader(HandleScope* scope, Runtime* runtime, View<byte> buffer)
       length_(buffer.length()),
       pos_(0) {
   end_ = start_ + length_;
+}
+
+RawObject Marshal::Reader::readPycHeader(const Str& filename) {
+  Thread* thread = Thread::current();
+  const word header_length = 12;
+  if (length_ - pos_ < header_length) {
+    return thread->raiseWithFmt(
+        LayoutId::kEOFError, "reached end of file while reading header of '%S'",
+        &filename);
+  }
+  int32_t magic = readLong();
+  if (magic != kPycMagic) {
+    return thread->raiseWithFmt(LayoutId::kImportError,
+                                "unsupported magic number in '%S'", &filename);
+  }
+  readLong();  // read source timestamp.
+  readLong();  // read source length.
+  DCHECK(pos_ == header_length, "size mismatch");
+  return NoneType::object();
 }
 
 const byte* Marshal::Reader::readBytes(int length) {

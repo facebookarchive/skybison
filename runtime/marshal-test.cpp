@@ -30,6 +30,40 @@ TEST_F(MarshalReaderTest, ReadBytes) {
   EXPECT_EQ(s2[1], 'l');
 }
 
+TEST_F(MarshalReaderTest, ReadPycHeaderReturnsNone) {
+  HandleScope scope(thread_);
+  byte bytes[] = "\x33\x0d\x0d\x0a\x00\x00\x00\x00\x00\x00\x00\x00";
+  Marshal::Reader reader(&scope, &runtime_, bytes);
+  Str filename(&scope, runtime_.newStrFromCStr(""));
+  EXPECT_TRUE(reader.readPycHeader(filename).isNoneType());
+}
+
+TEST_F(MarshalReaderTest, ReadPycHeaderRaisesEOFError) {
+  HandleScope scope(thread_);
+  byte bytes[] = "\x33\x0d\x0d\x0a\x00\x00\x00\x00\x00\x00";
+  Marshal::Reader reader(&scope, &runtime_, bytes);
+  Str filename(&scope, runtime_.newStrFromCStr(""));
+  EXPECT_TRUE(raised(reader.readPycHeader(filename), LayoutId::kEOFError));
+}
+
+TEST_F(MarshalReaderTest, ReadPycHeaderWithZeroSizedFileRaisesEOFError) {
+  HandleScope scope(thread_);
+  View<byte> bytes(nullptr, 0);
+  Marshal::Reader reader(&scope, &runtime_, bytes);
+  Str filename(&scope, runtime_.newStrFromCStr(""));
+  EXPECT_TRUE(raised(reader.readPycHeader(filename), LayoutId::kEOFError));
+}
+
+TEST_F(MarshalReaderTest, ReadPycHeaderRaisesImportError) {
+  HandleScope scope(thread_);
+  byte bytes[] = "1234        ";
+  Marshal::Reader reader(&scope, &runtime_, bytes);
+  Str filename(&scope, runtime_.newStrFromCStr("<test input>"));
+  EXPECT_TRUE(raisedWithStr(reader.readPycHeader(filename),
+                            LayoutId::kImportError,
+                            "unsupported magic number in '<test input>'"));
+}
+
 TEST_F(MarshalReaderTest, ReadTypeAsciiNonRef) {
   HandleScope scope(thread_);
   const byte bytes[] = "\x61\x0a\x00\x00\x00testing123";

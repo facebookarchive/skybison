@@ -1937,13 +1937,15 @@ static void checkBuiltinTypeDeclarations(Thread* thread, const Module& module) {
 RawObject Runtime::executeFrozenModule(const char* buffer,
                                        const Module& module) {
   HandleScope scope;
-  // TODO(matthiasb): We must not use strlen here!
-  word length = std::strlen(buffer);
+  // TODO(matthiasb): 12 is a minimum, we should be using the actual
+  // length here!
+  word length = 12;
   View<byte> data(reinterpret_cast<const byte*>(buffer), length);
   Marshal::Reader reader(&scope, this, data);
-  reader.readLong();
-  reader.readLong();
-  reader.readLong();
+  Str filename(&scope, module.name());
+  if (reader.readPycHeader(filename).isErrorException()) {
+    return Error::exception();
+  }
   Code code(&scope, reader.readObject());
   Object result(&scope, executeModule(code, module));
   if (result.isErrorException()) return *result;

@@ -17,6 +17,8 @@ class Marshal {
     // protocol object
     Reader(HandleScope* scope, Runtime* runtime, View<byte> buffer);
 
+    RawObject readPycHeader(const Str& filename);
+
     double readBinaryFloat();
 
     byte readByte();

@@ -9,15 +9,6 @@
 
 namespace py {
 
-RawObject bytecodeToCode(Thread* thread, View<byte> data) {
-  HandleScope scope(thread);
-  Marshal::Reader reader(&scope, thread->runtime(), data);
-  reader.readLong();
-  reader.readLong();
-  reader.readLong();
-  return reader.readObject();
-}
-
 // TODO(T47585202): Remove and expose through a C-API module.
 RawObject compileFromCStr(const char* buffer, const char* file_name) {
   PyCompilerFlags flags;

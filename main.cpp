@@ -32,7 +32,12 @@ static py::RawObject runFile(py::Thread* thread, const char* filename) {
   } else {
     // Interpret as .pyc and unmarshal
     py::View<byte> data(reinterpret_cast<byte*>(buffer.get()), file_len);
-    code_obj = bytecodeToCode(thread, data);
+    py::Marshal::Reader reader(&scope, runtime, data);
+    py::Str filename_str(&scope, runtime->newStrFromCStr(filename));
+    if (reader.readPycHeader(filename_str).isErrorException()) {
+      return py::Error::exception();
+    }
+    code_obj = reader.readObject();
   }
   if (code_obj.isErrorException()) return *code_obj;
 
