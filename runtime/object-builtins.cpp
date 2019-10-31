@@ -203,6 +203,15 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
   Type type(&scope, runtime->typeOf(*object));
   Object type_attr(&scope, typeLookupInMro(thread, type, name_str, hash));
   if (!type_attr.isError()) {
+    // TODO(T56252621): Remove this once property gets cached.
+    if (type_attr.isProperty()) {
+      Object getter(&scope, Property::cast(*type_attr).getter());
+      DCHECK(!object.isNoneType(), "object cannot be NoneType");
+      if (!getter.isNoneType()) {
+        return Interpreter::callFunction1(thread, thread->currentFrame(),
+                                          getter, object);
+      }
+    }
     Type type_attr_type(&scope, runtime->typeOf(*type_attr));
     if (typeIsDataDescriptor(thread, type_attr_type)) {
       return Interpreter::callDescriptorGet(thread, thread->currentFrame(),

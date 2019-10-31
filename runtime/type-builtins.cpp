@@ -636,6 +636,14 @@ RawObject typeGetAttribute(Thread* thread, const Type& type,
   Type meta_type(&scope, runtime->typeOf(*type));
   Object meta_attr(&scope, typeLookupInMro(thread, meta_type, name_str, hash));
   if (!meta_attr.isError()) {
+    // TODO(T56002494): Remove this once type.__getattribute__ gets cached.
+    if (meta_attr.isProperty()) {
+      Object getter(&scope, Property::cast(*meta_attr).getter());
+      if (!getter.isNoneType()) {
+        return Interpreter::callFunction1(thread, thread->currentFrame(),
+                                          getter, type);
+      }
+    }
     Type meta_attr_type(&scope, runtime->typeOf(*meta_attr));
     if (typeIsDataDescriptor(thread, meta_attr_type)) {
       return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
@@ -646,6 +654,13 @@ RawObject typeGetAttribute(Thread* thread, const Type& type,
   // No data descriptor found on the meta class, look in the mro of the type
   Object attr(&scope, typeLookupInMro(thread, type, name_str, hash));
   if (!attr.isError()) {
+    // TODO(T56002494): Remove this once type.__getattribute__ gets cached.
+    if (attr.isFunction()) {
+      // We always return the function object itself instead of a BoundMethod
+      // due to the exception made below and another exception for NoneType in
+      // function.__get__.
+      return *attr;
+    }
     Type attr_type(&scope, runtime->typeOf(*attr));
     if (typeIsNonDataDescriptor(thread, attr_type)) {
       // Unfortunately calling `__get__` for a lookup on `type(None)` will look

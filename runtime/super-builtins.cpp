@@ -44,6 +44,15 @@ RawObject superGetAttribute(Thread* thread, const Super& super,
     if (super.object() != *start_type) {
       self = super.object();
     }
+    // TODO(T56507184): Remove this once super.__getattribute__ gets cached.
+    if (value.isFunction()) {
+      // See FunctionBuiltins::dunderGet for details.
+      if (self.isNoneType() &&
+          start_type.builtinBase() != LayoutId::kNoneType) {
+        return *value;
+      }
+      return runtime->newBoundMethod(value, self);
+    }
     return Interpreter::callDescriptorGet(thread, thread->currentFrame(), value,
                                           self, start_type);
   }
