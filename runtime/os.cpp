@@ -95,22 +95,27 @@ char* OS::readFile(const char* filename, word* len_out) {
   ScopedFd fd(::open(filename, O_RDONLY));
   if (fd.get() == -1) {
     fprintf(stderr, "open error: %s %s\n", filename, std::strerror(errno));
+    return nullptr;
   }
   CHECK(fd.get() != -1, "get failure");
   word length = ::lseek(fd.get(), 0, SEEK_END);
   CHECK(length != -1, "lseek failure");
   ::lseek(fd.get(), 0, SEEK_SET);
-  char* buffer = new char[length];
+  std::unique_ptr<char[]> buffer(new char[length]);
   {
     word result;
     do {
-      result = ::read(fd.get(), buffer, length);
+      result = ::read(fd.get(), buffer.get(), length);
     } while (result == -1 && errno == EINTR);
+    if (result == -1) {
+      fprintf(stderr, "read error: %s %s\n", filename, std::strerror(errno));
+      return nullptr;
+    }
   }
   if (len_out != nullptr) {
     *len_out = length;
   }
-  return buffer;
+  return buffer.release();
 }
 
 void OS::writeFileExcl(const char* filename, const char* contents, word len) {
