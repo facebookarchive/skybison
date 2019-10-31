@@ -340,8 +340,18 @@ class repeat:
 
 
 class starmap:
-    def __init__(self, fun, seq):
-        _unimplemented()
+    def __iter__(self):
+        return self
+
+    def __new__(cls, function, iterable):
+        result = object.__new__(cls)
+        result._it = iter(iterable)
+        result._func = function
+        return result
+
+    def __next__(self):
+        args = next(self._it)
+        return self._func(*args)
 
 
 def tee(iterable, n=2):

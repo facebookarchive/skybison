@@ -475,5 +475,37 @@ class TakeWhileTests(unittest.TestCase):
         self.assertTupleEqual(tuple(it), ())
 
 
+class StarMapTests(unittest.TestCase):
+    def test_starmap_returns_arguments_mapped_onto_function(self):
+        it = itertools.starmap(pow, [(2, 5), (3, 2), (10, 3)])
+        self.assertTupleEqual(tuple(it), (32, 9, 1000))
+
+    def test_starmap_handles_tuple_subclass(self):
+        class C(tuple):
+            pass
+
+        points = [C((3, 4)), C((9, 10)), C((-2, -1))]
+        self.assertTrue(isinstance(points[0], tuple))
+        self.assertFalse(points[0] is tuple)
+
+        it = itertools.starmap(lambda x, y: x ** 2 + y ** 2, points)
+        self.assertTupleEqual(tuple(it), (25, 181, 5))
+
+    def test_starmap_passing_empty_sequence_returns_empty_iterator(self):
+        self.assertEqual(tuple(itertools.starmap(pow, [])), ())
+
+    def test_starmap_passing_none_function_raises_typeerror(self):
+        it = itertools.starmap(None, [(2, 5), (3, 2), (10, 3)])
+        self.assertRaises(TypeError, next, it)
+
+    def test_starmap_passing_none_iterable_raises_typeerror(self):
+        with self.assertRaises(TypeError):
+            itertools.starmap(pow, None)
+
+    def test_starmap_passing_non_sequences_raises_typeerror(self):
+        it = itertools.starmap(None, [1, 2])
+        self.assertRaisesRegex(TypeError, "'int' object is not iterable", next, it)
+
+
 if __name__ == "__main__":
     unittest.main()
