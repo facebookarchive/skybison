@@ -235,7 +235,6 @@ class Runtime;
   V(UnderFrozenImportlibExternal, "_frozen_importlib_external")                \
   V(UnderFrozenSetCheck, "_frozenset_check")                                   \
   V(UnderFrozenSetGuard, "_frozenset_guard")                                   \
-  V(UnderFspath, "_fspath")                                                    \
   V(UnderFunctionGlobals, "_function_globals")                                 \
   V(UnderFunctionGuard, "_function_guard")                                     \
   V(UnderFunctools, "_functools")                                              \

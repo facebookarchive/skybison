@@ -111,7 +111,6 @@ set(
   ${CMAKE_SOURCE_DIR}/capi/cpython-func.h
   ${CMAKE_SOURCE_DIR}/capi/cpython-types.h
   ${CMAKE_SOURCE_DIR}/ext/Modules/gcmodule.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Modules/posixmodule.cpp
   ${CMAKE_SOURCE_DIR}/ext/Modules/signalmodule.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/abstract.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/boolobject.cpp
