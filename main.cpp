@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <memory>
 
+#include "capi/cpython-func.h"
 #include "runtime/compile.h"
 #include "runtime/exception-builtins.h"
 #include "runtime/marshal.h"
@@ -60,7 +61,9 @@ int main(int argc, const char** argv) {
   py::Thread* thread = py::Thread::current();
   runtime.setArgv(thread, argc, argv);
   if (argc < 2) {
-    return py::runInteractive(stdin);
+    PyCompilerFlags flags;
+    flags.cf_flags = 0;
+    return PyRun_AnyFileExFlags(stdin, "<stdin>", /*closeit=*/0, &flags);
   }
 
   py::HandleScope scope(thread);
