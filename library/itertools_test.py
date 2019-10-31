@@ -431,5 +431,27 @@ class TeeTests(unittest.TestCase):
         self.assertEqual(itertools.tee([1, 2, 3, 4, 5], 0), ())
 
 
+class DropWhileTests(unittest.TestCase):
+    def test_dropwhile_passing_none_predicate_raises_typeerror(self):
+        it = itertools.dropwhile(None, [1, 2, 3])
+        self.assertRaises(TypeError, next, it)
+
+    def test_dropwhile_passing_none_iterator_raises_typeerror(self):
+        with self.assertRaises(TypeError):
+            itertools.dropwhile(lambda x: x % 2, None)
+
+    def test_dropwhile_returns_correct_elements_dropping_start(self):
+        it = itertools.dropwhile(lambda x: x < 5, [1, 4, 6, 4, 1])
+        self.assertTupleEqual(tuple(it), (6, 4, 1))
+
+    def test_dropwhile_with_true_predicate_drops_all_elements(self):
+        it = itertools.dropwhile(lambda x: True, [1, 4, 6, 4, 1])
+        self.assertTupleEqual(tuple(it), ())
+
+    def test_dropwhile_with_false_predicate_returns_all_elements(self):
+        it = itertools.dropwhile(lambda x: False, [1, 4, 6, 4, 1])
+        self.assertTupleEqual(tuple(it), (1, 4, 6, 4, 1))
+
+
 if __name__ == "__main__":
     unittest.main()
