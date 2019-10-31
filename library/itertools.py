@@ -423,8 +423,26 @@ class _tee:
 
 
 class takewhile:
-    def __init__(self, pred, seq):
-        _unimplemented()
+    def __iter__(self):
+        return self
+
+    def __new__(cls, predicate, iterable):
+        result = object.__new__(cls)
+        result._it = iter(iterable)
+        result._func = predicate
+        result._stop = False
+        return result
+
+    def __next__(self):
+        if self._stop:
+            raise StopIteration
+
+        item = next(self._it)
+        if self._func(item):
+            return item
+
+        self._stop = True
+        raise StopIteration
 
 
 class zip_longest:

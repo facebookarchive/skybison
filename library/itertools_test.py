@@ -453,5 +453,27 @@ class DropWhileTests(unittest.TestCase):
         self.assertTupleEqual(tuple(it), (1, 4, 6, 4, 1))
 
 
+class TakeWhileTests(unittest.TestCase):
+    def test_takewhile_passing_none_predicate_raises_typeerror(self):
+        it = itertools.takewhile(None, [1, 2, 3])
+        self.assertRaises(TypeError, next, it)
+
+    def test_takewhile_passing_none_iterator_raises_typeerror(self):
+        with self.assertRaises(TypeError):
+            itertools.takewhile(lambda x: x % 2, None)
+
+    def test_takewhile_returns_correct_elements_dropping_end(self):
+        it = itertools.takewhile(lambda x: x < 5, [1, 4, 6, 4, 1])
+        self.assertTupleEqual(tuple(it), (1, 4))
+
+    def test_takewhile_with_true_predicate_returns_all_elements(self):
+        it = itertools.takewhile(lambda x: True, [1, 4, 6, 4, 1])
+        self.assertTupleEqual(tuple(it), (1, 4, 6, 4, 1))
+
+    def test_takewhile_with_false_predicate_drops_all_elements(self):
+        it = itertools.takewhile(lambda x: False, [1, 4, 6, 4, 1])
+        self.assertTupleEqual(tuple(it), ())
+
+
 if __name__ == "__main__":
     unittest.main()
