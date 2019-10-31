@@ -594,6 +594,7 @@ set(
   ext/Python/errors-test.cpp
   ext/Python/getargs-ssizet-test.cpp
   ext/Python/getargs-test.cpp
+  ext/Python/getversion-test.cpp
   ext/Python/import-test.cpp
   ext/Python/modsupport-test.cpp
   ext/Python/mysnprintf-test.cpp
