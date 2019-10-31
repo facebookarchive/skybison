@@ -3492,80 +3492,61 @@ HANDLER_INLINE Continue Interpreter::doSetupAsyncWith(Thread* thread,
 HANDLER_INLINE Continue Interpreter::doFormatValue(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
-  int conv = (arg & FVC_MASK_FLAG);
-  int have_fmt_spec = (arg & FVS_MASK_FLAG) == FVS_HAVE_SPEC_FLAG;
   Runtime* runtime = thread->runtime();
   Object fmt_spec(&scope, Str::empty());
-  if (have_fmt_spec) {
+  if (arg & kFormatValueHasSpecBit) {
     fmt_spec = frame->popValue();
   }
   Object value(&scope, frame->popValue());
-  Object method(&scope, NoneType::object());
-  switch (conv) {
-    case FVC_STR_FLAG: {
-      method = lookupMethod(thread, frame, value, SymbolId::kDunderStr);
-      CHECK(!method.isError(),
-            "__str__ doesn't exist for this object, which is impossible since "
-            "object has a __str__, and everything descends from object");
-      value = callMethod1(thread, frame, method, value);
-      if (value.isError()) {
-        return Continue::UNWIND;
+  switch (static_cast<FormatValueConv>(arg & kFormatValueConvMask)) {
+    case FormatValueConv::kStr: {
+      if (!value.isStr()) {
+        value = thread->invokeMethod1(value, SymbolId::kDunderStr);
+        DCHECK(!value.isErrorNotFound(), "`__str__` should always exist");
+        if (value.isErrorException()) return Continue::UNWIND;
+        if (!runtime->isInstanceOfStr(*value)) {
+          thread->raiseWithFmt(LayoutId::kTypeError,
+                               "__str__ returned non-string (type %T)", &value);
+          return Continue::UNWIND;
+        }
       }
+      break;
+    }
+    case FormatValueConv::kRepr: {
+      value = thread->invokeMethod1(value, SymbolId::kDunderRepr);
+      DCHECK(!value.isErrorNotFound(), "`__repr__` should always exist");
+      if (value.isErrorException()) return Continue::UNWIND;
       if (!runtime->isInstanceOfStr(*value)) {
         thread->raiseWithFmt(LayoutId::kTypeError,
-                             "__str__ returned non-string");
+                             "__repr__ returned non-string (type %T)", &value);
         return Continue::UNWIND;
       }
       break;
     }
-    case FVC_REPR_FLAG: {
-      method = lookupMethod(thread, frame, value, SymbolId::kDunderRepr);
-      CHECK(!method.isError(),
-            "__repr__ doesn't exist for this object, which is impossible since "
-            "object has a __repr__, and everything descends from object");
-      value = callMethod1(thread, frame, method, value);
-      if (value.isError()) {
-        return Continue::UNWIND;
-      }
+    case FormatValueConv::kAscii: {
+      value = thread->invokeMethod1(value, SymbolId::kDunderRepr);
+      DCHECK(!value.isErrorNotFound(), "`__repr__` should always exist");
+      if (value.isErrorException()) return Continue::UNWIND;
       if (!runtime->isInstanceOfStr(*value)) {
         thread->raiseWithFmt(LayoutId::kTypeError,
-                             "__repr__ returned non-string");
-        return Continue::UNWIND;
-      }
-      break;
-    }
-    case FVC_ASCII_FLAG: {
-      method = lookupMethod(thread, frame, value, SymbolId::kDunderRepr);
-      CHECK(!method.isError(),
-            "__repr__ doesn't exist for this object, which is impossible since "
-            "object has a __repr__, and everything descends from object");
-      value = callMethod1(thread, frame, method, value);
-      if (value.isError()) {
-        return Continue::UNWIND;
-      }
-      if (!runtime->isInstanceOfStr(*value)) {
-        thread->raiseWithFmt(LayoutId::kTypeError,
-                             "__repr__ returned non-string");
+                             "__repr__ returned non-string (type %T)", &value);
         return Continue::UNWIND;
       }
       value = strEscapeNonASCII(thread, value);
       break;
     }
-    default:  // 0: no conv
+    case FormatValueConv::kNone:
       break;
   }
-  method = lookupMethod(thread, frame, value, SymbolId::kDunderFormat);
-  if (method.isError()) {
-    return Continue::UNWIND;
-  }
-  value = callMethod2(thread, frame, method, value, fmt_spec);
-  if (value.isError()) {
-    return Continue::UNWIND;
-  }
-  if (!runtime->isInstanceOfStr(*value)) {
-    thread->raiseWithFmt(LayoutId::kTypeError,
-                         "__format__ returned non-string");
-    return Continue::UNWIND;
+
+  if (fmt_spec != Str::empty() || !value.isStr()) {
+    value = thread->invokeMethod2(value, SymbolId::kDunderFormat, fmt_spec);
+    if (value.isErrorException()) return Continue::UNWIND;
+    if (!runtime->isInstanceOfStr(*value)) {
+      thread->raiseWithFmt(LayoutId::kTypeError,
+                           "__format__ must return a str, not %T", &value);
+      return Continue::UNWIND;
+    }
   }
   frame->pushValue(*value);
   return Continue::NEXT;

@@ -296,15 +296,15 @@ enum CompareOp {
   BAD
 };
 
-enum FormatValueFlag {
-  FVC_MASK_FLAG = 0x3,
-  FVC_NONE_FLAG = 0x0,
-  FVC_STR_FLAG = 0x1,
-  FVC_REPR_FLAG = 0x2,
-  FVC_ASCII_FLAG = 0x3,
-  FVS_MASK_FLAG = 0x4,
-  FVS_HAVE_SPEC_FLAG = 0x4
+enum class FormatValueConv {
+  kNone = 0,
+  kStr = 1,
+  kRepr = 2,
+  kAscii = 3,
 };
+
+const word kFormatValueConvMask = 0x3;
+const word kFormatValueHasSpecBit = 0x4;
 
 enum MakeFunctionFlag {
   DEFAULT = 0x01,
