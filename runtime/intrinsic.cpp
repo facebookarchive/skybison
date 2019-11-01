@@ -484,42 +484,44 @@ static bool isInstance(Thread* thread, Frame* frame) {
 
 static bool len(Frame* frame) {
   RawObject arg = frame->topValue();
+  word length;
   switch (arg.layoutId()) {
     case LayoutId::kByteArray:
-      frame->popValue();
-      frame->setTopValue(SmallInt::fromWord(ByteArray::cast(arg).numItems()));
-      return true;
-    case LayoutId::kBytes:
-      frame->popValue();
-      frame->setTopValue(SmallInt::fromWord(Bytes::cast(arg).length()));
-      return true;
+      length = ByteArray::cast(arg).numItems();
+      break;
     case LayoutId::kDict:
-      frame->popValue();
-      frame->setTopValue(SmallInt::fromWord(Dict::cast(arg).numItems()));
-      return true;
+      length = Dict::cast(arg).numItems();
+      break;
     case LayoutId::kFrozenSet:
-      frame->popValue();
-      frame->setTopValue(SmallInt::fromWord(FrozenSet::cast(arg).numItems()));
-      return true;
+      length = FrozenSet::cast(arg).numItems();
+      break;
+    case LayoutId::kLargeBytes:
+      length = LargeBytes::cast(arg).length();
+      break;
+    case LayoutId::kLargeStr:
+      length = LargeStr::cast(arg).codePointLength();
+      break;
     case LayoutId::kList:
-      frame->popValue();
-      frame->setTopValue(SmallInt::fromWord(List::cast(arg).numItems()));
-      return true;
+      length = List::cast(arg).numItems();
+      break;
     case LayoutId::kSet:
-      frame->popValue();
-      frame->setTopValue(SmallInt::fromWord(Set::cast(arg).numItems()));
-      return true;
-    case LayoutId::kStr:
-      frame->popValue();
-      frame->setTopValue(SmallInt::fromWord(Str::cast(arg).codePointLength()));
-      return true;
+      length = Set::cast(arg).numItems();
+      break;
+    case LayoutId::kSmallBytes:
+      length = SmallBytes::cast(arg).length();
+      break;
+    case LayoutId::kSmallStr:
+      length = SmallStr::cast(arg).codePointLength();
+      break;
     case LayoutId::kTuple:
-      frame->popValue();
-      frame->setTopValue(SmallInt::fromWord(Tuple::cast(arg).length()));
-      return true;
+      length = Tuple::cast(arg).length();
+      break;
     default:
       return false;
   }
+  frame->popValue();
+  frame->setTopValue(SmallInt::fromWord(length));
+  return true;
 }
 
 bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
