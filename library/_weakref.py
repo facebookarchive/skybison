@@ -5,6 +5,9 @@ _index = _index  # noqa: F821
 _property = _property  # noqa: F821
 _unimplemented = _unimplemented  # noqa: F821
 _weakref_callback = _weakref_callback  # noqa: F821
+_weakref_check = _weakref_check  # noqa: F821
+_weakref_guard = _weakref_guard  # noqa: F821
+_weakref_referent = _weakref_referent  # noqa: F821
 
 __all__ = ["CallableProxyType", "ProxyType", "ReferenceType", "ref", "proxy"]
 
@@ -54,6 +57,42 @@ class ref(bootstrap=True):
 
     __callback__ = _property(_weakref_callback)
 
+    def __eq__(self, other):
+        _weakref_guard(self)
+        if not _weakref_check(other):
+            return NotImplemented
+        self_referent = _weakref_referent(self)
+        other_referent = _weakref_referent(other)
+        if self_referent is None or other_referent is None:
+            return self is other
+        return self_referent == other_referent
+
+    def __ge__(self, other):
+        _weakref_guard(self)
+        return NotImplemented
+
+    def __gt__(self, other):
+        _weakref_guard(self)
+        return NotImplemented
+
+    def __le__(self, other):
+        _weakref_guard(self)
+        return NotImplemented
+
+    def __lt__(self, other):
+        _weakref_guard(self)
+        return NotImplemented
+
+    def __ne__(self, other):
+        _weakref_guard(self)
+        if not _weakref_check(other):
+            return NotImplemented
+        self_referent = _weakref_referent(self)
+        other_referent = _weakref_referent(other)
+        if self_referent is None or other_referent is None:
+            return self is not other
+        return self_referent != other_referent
+
     def __new__(cls, referent, callback=None):
         pass
 
@@ -61,7 +100,8 @@ class ref(bootstrap=True):
         return None
 
     def __hash__(self):
-        obj = ref.__call__(self)
+        _weakref_guard(self)
+        obj = _weakref_referent(self)
         if obj is None:
             raise TypeError("weak object has gone away")
         return hash(obj)

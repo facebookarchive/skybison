@@ -1008,3 +1008,18 @@ def _warn(message, category=None, stacklevel=1, source=None):
 @_patch
 def _weakref_callback(self):
     pass
+
+
+@_patch
+def _weakref_check(self):
+    pass
+
+
+@_patch
+def _weakref_guard(self):
+    pass
+
+
+@_patch
+def _weakref_referent(self):
+    pass

@@ -458,6 +458,21 @@ static bool underTypeGuard(Thread* thread, Frame* frame) {
   return false;
 }
 
+static bool underWeakRefCheck(Thread* thread, Frame* frame) {
+  frame->setTopValue(Bool::fromBool(
+      thread->runtime()->isInstanceOfWeakRef(frame->popValue())));
+  return true;
+}
+
+static bool underWeakRefGuard(Thread* thread, Frame* frame) {
+  if (thread->runtime()->isInstanceOfWeakRef(frame->topValue())) {
+    frame->popValue();
+    frame->setTopValue(NoneType::object());
+    return true;
+  }
+  return false;
+}
+
 static bool isInstance(Thread* thread, Frame* frame) {
   if (thread->runtime()->typeOf(frame->peek(1)) == frame->peek(0)) {
     frame->dropValues(2);
@@ -621,6 +636,10 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
       return underTypeCheckExact(frame);
     case SymbolId::kUnderTypeGuard:
       return underTypeGuard(thread, frame);
+    case SymbolId::kUnderWeakRefCheck:
+      return underWeakRefCheck(thread, frame);
+    case SymbolId::kUnderWeakRefGuard:
+      return underWeakRefGuard(thread, frame);
     case SymbolId::kIsInstance:
       return isInstance(thread, frame);
     case SymbolId::kLen:

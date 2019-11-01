@@ -290,6 +290,10 @@ class UnderBuiltinsModule {
   static RawObject underWarn(Thread* thread, Frame* frame, word nargs);
   static RawObject underWeakRefCallback(Thread* thread, Frame* frame,
                                         word nargs);
+  static RawObject underWeakRefCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underWeakRefGuard(Thread* thread, Frame* frame, word nargs);
+  static RawObject underWeakRefReferent(Thread* thread, Frame* frame,
+                                        word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];
   static const char* const kFrozenData;

@@ -270,6 +270,9 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderUnimplemented, underUnimplemented},
     {SymbolId::kUnderWarn, underWarn},
     {SymbolId::kUnderWeakRefCallback, underWeakRefCallback},
+    {SymbolId::kUnderWeakRefCheck, underWeakRefCheck},
+    {SymbolId::kUnderWeakRefGuard, underWeakRefGuard},
+    {SymbolId::kUnderWeakRefReferent, underWeakRefReferent},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -3821,10 +3824,38 @@ RawObject UnderBuiltinsModule::underWeakRefCallback(Thread* thread,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfWeakRef(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kUnderWeakRef);
+    return thread->raiseRequiresType(self_obj, SymbolId::kRef);
   }
   WeakRef self(&scope, *self_obj);
   return self.callback();
+}
+
+RawObject UnderBuiltinsModule::underWeakRefCheck(Thread* thread, Frame* frame,
+                                                 word nargs) {
+  Arguments args(frame, nargs);
+  return Bool::fromBool(thread->runtime()->isInstanceOfWeakRef(args.get(0)));
+}
+
+RawObject UnderBuiltinsModule::underWeakRefGuard(Thread* thread, Frame* frame,
+                                                 word nargs) {
+  Arguments args(frame, nargs);
+  if (thread->runtime()->isInstanceOfWeakRef(args.get(0))) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kRef);
+}
+
+RawObject UnderBuiltinsModule::underWeakRefReferent(Thread* thread,
+                                                    Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfWeakRef(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kRef);
+  }
+  WeakRef self(&scope, *self_obj);
+  return self.referent();
 }
 
 }  // namespace py

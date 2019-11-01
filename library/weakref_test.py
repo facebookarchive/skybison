@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import unittest
 import weakref
+from unittest.mock import MagicMock
 
 
 class WeakRefTests(unittest.TestCase):
@@ -43,6 +44,94 @@ class WeakRefTests(unittest.TestCase):
             or str(context.exception)
             == "descriptor '__call__' requires a 'weakref' object but received a 'str'"
         )
+
+    def test_dunder_eq_proxies_dunder_eq(self):
+        class C:
+            def __eq__(self, other):
+                return self is other
+
+        obj1 = C()
+        obj2 = C()
+        ref1 = weakref.ref(obj1)
+        ref2 = weakref.ref(obj2)
+        obj1.__eq__ = MagicMock()
+        self.assertIs(ref1.__eq__(ref2), False)
+        obj1.__eq__.called_once_with(obj1, obj2)
+        self.assertIs(ref1.__eq__(ref1), True)
+        obj1.__eq__.called_once_with(obj1, obj1)
+
+    def test_dunder_eq_with_non_ref_returns_not_implemented(self):
+        class C:
+            pass
+
+        obj = C()
+        ref = weakref.ref(obj)
+        not_a_ref = object()
+        self.assertIs(ref.__eq__(not_a_ref), NotImplemented)
+
+    def test_dunder_ge_always_returns_not_implemented(self):
+        class C:
+            pass
+
+        obj = C()
+        ref = weakref.ref(obj)
+        not_a_ref = object()
+        self.assertIs(ref.__ge__(ref), NotImplemented)
+        self.assertIs(ref.__ge__(not_a_ref), NotImplemented)
+
+    def test_dunder_gt_always_returns_not_implemented(self):
+        class C:
+            pass
+
+        obj = C()
+        ref = weakref.ref(obj)
+        not_a_ref = object()
+        self.assertIs(ref.__gt__(ref), NotImplemented)
+        self.assertIs(ref.__gt__(not_a_ref), NotImplemented)
+
+    def test_dunder_le_always_returns_not_implemented(self):
+        class C:
+            pass
+
+        obj = C()
+        ref = weakref.ref(obj)
+        not_a_ref = object()
+        self.assertIs(ref.__le__(ref), NotImplemented)
+        self.assertIs(ref.__le__(not_a_ref), NotImplemented)
+
+    def test_dunder_lt_always_returns_not_implemented(self):
+        class C:
+            pass
+
+        obj = C()
+        ref = weakref.ref(obj)
+        not_a_ref = object()
+        self.assertIs(ref.__lt__(ref), NotImplemented)
+        self.assertIs(ref.__lt__(not_a_ref), NotImplemented)
+
+    def test_dunder_ne_proxies_dunder_ne(self):
+        class C:
+            def __ne__(self, other):
+                return self is other
+
+        obj1 = C()
+        obj2 = C()
+        ref1 = weakref.ref(obj1)
+        ref2 = weakref.ref(obj2)
+        obj1.__ne__ = MagicMock()
+        self.assertIs(ref1.__ne__(ref2), False)
+        obj1.__ne__.called_once_with(obj1, obj2)
+        self.assertIs(ref1.__ne__(ref1), True)
+        obj1.__ne__.called_once_with(obj1, obj1)
+
+    def test_dunder_ne_with_non_ref_returns_not_implemented(self):
+        class C:
+            pass
+
+        obj = C()
+        ref = weakref.ref(obj)
+        not_a_ref = object()
+        self.assertIs(ref.__ne__(not_a_ref), NotImplemented)
 
     def test_hash_on_proxy_not_callable_object_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
