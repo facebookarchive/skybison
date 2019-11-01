@@ -21,7 +21,7 @@ test = codecs.CodecInfo('test', None, None, incrementaldecoder=Inc)
   )");
 
   PyObjectPtr test(moduleGet("__main__", "test"));
-  PyObject* inc_dec(_PyCodecInfo_GetIncrementalDecoder(test, "ignore"));
+  PyObjectPtr inc_dec(_PyCodecInfo_GetIncrementalDecoder(test, "ignore"));
   ASSERT_EQ(moduleSet("__main__", "inc_dec", inc_dec), 0);
 
   PyRun_SimpleString(R"(

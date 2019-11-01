@@ -198,8 +198,10 @@ TEST_F(CodeExtensionApiTest, ConstantKeyWithTupleReturnsTwoTuple) {
 }
 
 TEST_F(CodeExtensionApiTest, ConstantKeyWithFrozenSetReturnsTwoTuple) {
-  PyObjectPtr iterable(PyTuple_Pack(3, PyLong_FromLong(0), PyLong_FromLong(1),
-                                    PyLong_FromLong(2)));
+  PyObjectPtr zero(PyLong_FromLong(0));
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyObjectPtr iterable(PyTuple_Pack(3, zero.get(), one.get(), two.get()));
   PyObjectPtr obj(PyFrozenSet_New(iterable));
   PyObjectPtr result(_PyCode_ConstantKey(obj));
   ASSERT_NE(result, nullptr);

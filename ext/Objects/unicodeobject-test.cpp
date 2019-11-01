@@ -21,23 +21,23 @@ TEST_F(UnicodeExtensionApiTest, AsEncodedStringFromNonStringReturnsNull) {
 
 TEST_F(UnicodeExtensionApiTest, AsEncodedStringWithNullSizeReturnsUTF8) {
   const char* str = "utf-8 \xc3\xa8";
-  PyObject* pyunicode = PyUnicode_FromString(str);
+  PyObjectPtr pyunicode(PyUnicode_FromString(str));
 
-  PyObject* bytes = PyUnicode_AsEncodedString(pyunicode, nullptr, nullptr);
+  PyObjectPtr bytes(PyUnicode_AsEncodedString(pyunicode, nullptr, nullptr));
   EXPECT_TRUE(isBytesEqualsCStr(bytes, str));
 }
 
 TEST_F(UnicodeExtensionApiTest, AsEncodedStringASCIIUsesErrorHandler) {
-  PyObject* pyunicode = PyUnicode_FromString("non\xc3\xa8-ascii");
+  PyObjectPtr pyunicode(PyUnicode_FromString("non\xc3\xa8-ascii"));
 
-  PyObject* bytes = PyUnicode_AsEncodedString(pyunicode, "ascii", "ignore");
+  PyObjectPtr bytes(PyUnicode_AsEncodedString(pyunicode, "ascii", "ignore"));
   EXPECT_TRUE(isBytesEqualsCStr(bytes, "non-ascii"));
 }
 
 TEST_F(UnicodeExtensionApiTest, AsEncodedStringLatin1ReturnsLatin1) {
-  PyObject* pyunicode = PyUnicode_FromString("latin-1 \xc3\xa8");
+  PyObjectPtr pyunicode(PyUnicode_FromString("latin-1 \xc3\xa8"));
 
-  PyObject* bytes = PyUnicode_AsEncodedString(pyunicode, "latin-1", nullptr);
+  PyObjectPtr bytes(PyUnicode_AsEncodedString(pyunicode, "latin-1", nullptr));
   EXPECT_TRUE(isBytesEqualsCStr(bytes, "latin-1 \xe8"));
 }
 
@@ -50,7 +50,7 @@ substr = SubStr("some string")
   PyObjectPtr substr(moduleGet("__main__", "substr"));
   const char* expected = "some string";
 
-  PyObject* bytes = PyUnicode_AsEncodedString(substr, "ascii", nullptr);
+  PyObjectPtr bytes(PyUnicode_AsEncodedString(substr, "ascii", nullptr));
   EXPECT_TRUE(isBytesEqualsCStr(bytes, expected));
 }
 
@@ -71,8 +71,8 @@ _codecs.register(lookup_function)
 substr = "some test"
 )");
   PyObjectPtr substr(moduleGet("__main__", "substr"));
-  PyObject* bytes = PyUnicode_AsEncodedString(
-      substr, "encode-with-bytearray-return", nullptr);
+  PyObjectPtr bytes(PyUnicode_AsEncodedString(
+      substr, "encode-with-bytearray-return", nullptr));
   EXPECT_TRUE(isBytesEqualsCStr(bytes, "expected"));
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_NE(streams.err().find(
@@ -112,7 +112,7 @@ TEST_F(UnicodeExtensionApiTest, AsUTF8FromNonStringReturnsNull) {
 
 TEST_F(UnicodeExtensionApiTest, AsUTF8WithNullSizeReturnsCString) {
   const char* str = "Some C String";
-  PyObject* pyunicode = PyUnicode_FromString(str);
+  PyObjectPtr pyunicode(PyUnicode_FromString(str));
 
   // Pass a nullptr size
   char* cstring = PyUnicode_AsUTF8AndSize(pyunicode, nullptr);
@@ -137,7 +137,7 @@ substr = SubStr("some string")
 
 TEST_F(UnicodeExtensionApiTest, AsUTF8WithReferencedSizeReturnsCString) {
   const char* str = "Some C String";
-  PyObject* pyunicode = PyUnicode_FromString(str);
+  PyObjectPtr pyunicode(PyUnicode_FromString(str));
 
   // Pass a size reference
   Py_ssize_t size = 0;
@@ -155,7 +155,7 @@ TEST_F(UnicodeExtensionApiTest, AsUTF8WithReferencedSizeReturnsCString) {
 
 TEST_F(UnicodeExtensionApiTest, AsUTF8ReturnsCString) {
   const char* str = "Some other C String";
-  PyObject* pyobj = PyUnicode_FromString(str);
+  PyObjectPtr pyobj(PyUnicode_FromString(str));
 
   char* cstring = PyUnicode_AsUTF8(pyobj);
   ASSERT_NE(cstring, nullptr);
@@ -255,8 +255,8 @@ TEST_F(UnicodeExtensionApiTest,
 
 TEST_F(UnicodeExtensionApiTest, AsUCS4WithoutCopyNullReturnsNotNullTerminated) {
   Py_UCS4 buffer[] = {0x1f192, 'h', 0xe4, 'l', 0x2cc0};
-  PyObject* unicode(PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, buffer,
-                                              Py_ARRAY_LENGTH(buffer)));
+  PyObjectPtr unicode(PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, buffer,
+                                                Py_ARRAY_LENGTH(buffer)));
   Py_UCS4 target[6];
   target[5] = 1;
   Py_UCS4* ucs4_string =
@@ -272,8 +272,8 @@ TEST_F(UnicodeExtensionApiTest, AsUCS4WithoutCopyNullReturnsNotNullTerminated) {
 
 TEST_F(UnicodeExtensionApiTest, AsUCS4WithCopyNullReturnsNullTerminated) {
   Py_UCS4 buffer[] = {0x1f192, 'h', 0xe4, 'l', 0x2cc0};
-  PyObject* unicode(PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, buffer,
-                                              Py_ARRAY_LENGTH(buffer)));
+  PyObjectPtr unicode(PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, buffer,
+                                                Py_ARRAY_LENGTH(buffer)));
   Py_UCS4 target[6];
   target[5] = 1;
   Py_UCS4* ucs4_string =
@@ -1235,6 +1235,9 @@ TEST_F(UnicodeExtensionApiTest,
   EXPECT_EQ(temp, 11);
   PyUnicodeDecodeError_GetEnd(value, &temp);
   EXPECT_EQ(temp, 12);
+  Py_XDECREF(exc);
+  Py_XDECREF(value);
+  Py_XDECREF(tb);
 }
 
 TEST_F(UnicodeExtensionApiTest, DecodeUTF8StatefulReturnsString) {
@@ -1275,8 +1278,9 @@ TEST_F(UnicodeExtensionApiTest, UnderDecodeUnicodeEscapeReturnsFirstInvalid) {
 TEST_F(UnicodeExtensionApiTest,
        UnderDecodeUnicodeEscapeSetsFirstInvalidEscapeToNull) {
   const char* invalid = reinterpret_cast<const char*>(0x100);
-  EXPECT_NE(_PyUnicode_DecodeUnicodeEscape("hello", 5, nullptr, &invalid),
-            nullptr);
+  PyObjectPtr result(
+      _PyUnicode_DecodeUnicodeEscape("hello", 5, nullptr, &invalid));
+  EXPECT_NE(result, nullptr);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(invalid, nullptr);
 }
@@ -1536,6 +1540,7 @@ TEST_F(UnicodeExtensionApiTest, InternInPlaceWritesNewHandleBack) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_NE(b, b_addr);
   Py_DECREF(a);
+  Py_DECREF(b);
 }
 
 TEST_F(UnicodeExtensionApiTest, InternFromStringReturnsStr) {
@@ -1816,7 +1821,7 @@ TEST_F(UnicodeExtensionApiTest, NewWithZeroSizeAndInvalidMaxCharReturnsStr) {
 
 TEST_F(UnicodeExtensionApiTest, FromKindAndDataWithNegativeOneRaiseError) {
   char c = 'a';
-  PyObject* empty(PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, &c, -1));
+  PyObjectPtr empty(PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, &c, -1));
   EXPECT_EQ(empty, nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
@@ -1824,7 +1829,7 @@ TEST_F(UnicodeExtensionApiTest, FromKindAndDataWithNegativeOneRaiseError) {
 
 TEST_F(UnicodeExtensionApiTest, FromKindAndDataWithInvalidKindRaiseError) {
   char c = 'a';
-  PyObject* empty(PyUnicode_FromKindAndData(100, &c, 1));
+  PyObjectPtr empty(PyUnicode_FromKindAndData(100, &c, 1));
   EXPECT_EQ(empty, nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
@@ -1833,8 +1838,8 @@ TEST_F(UnicodeExtensionApiTest, FromKindAndDataWithInvalidKindRaiseError) {
 TEST_F(UnicodeExtensionApiTest,
        FromKindAndDataWithOneByteKindAndASCIICodePointsReturnsStr) {
   Py_UCS1 buffer[] = {'h', 'e', 'l', 'l', 'o'};
-  PyObject* str(PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, buffer,
-                                          Py_ARRAY_LENGTH(buffer)));
+  PyObjectPtr str(PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, buffer,
+                                            Py_ARRAY_LENGTH(buffer)));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_TRUE(PyUnicode_CheckExact(str));
   EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "hello"));
@@ -1843,8 +1848,8 @@ TEST_F(UnicodeExtensionApiTest,
 TEST_F(UnicodeExtensionApiTest,
        FromKindAndDataWithOneByteKindAndLatin1CodePointsReturnsStr) {
   Py_UCS1 buffer[] = {'h', 0xe4, 'l', 'l', 'o'};
-  PyObject* str(PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, buffer,
-                                          Py_ARRAY_LENGTH(buffer)));
+  PyObjectPtr str(PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, buffer,
+                                            Py_ARRAY_LENGTH(buffer)));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_TRUE(PyUnicode_CheckExact(str));
   EXPECT_STREQ(PyUnicode_AsUTF8(str), "h\xc3\xa4llo");
@@ -1853,8 +1858,8 @@ TEST_F(UnicodeExtensionApiTest,
 TEST_F(UnicodeExtensionApiTest,
        FromKindAndDataWithTwoByteKindAndBMPCodePointsReturnsStr) {
   Py_UCS2 buffer[] = {'h', 0xe4, 'l', 0x2cc0, 'o'};
-  PyObject* str(PyUnicode_FromKindAndData(PyUnicode_2BYTE_KIND, buffer,
-                                          Py_ARRAY_LENGTH(buffer)));
+  PyObjectPtr str(PyUnicode_FromKindAndData(PyUnicode_2BYTE_KIND, buffer,
+                                            Py_ARRAY_LENGTH(buffer)));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_TRUE(PyUnicode_CheckExact(str));
   EXPECT_STREQ(PyUnicode_AsUTF8(str), "h\xc3\xa4l\xe2\xb3\x80o");
@@ -1863,8 +1868,8 @@ TEST_F(UnicodeExtensionApiTest,
 TEST_F(UnicodeExtensionApiTest,
        FromKindAndDataWithFourByteKindAndNonBMPCodePointsReturnsStr) {
   Py_UCS4 buffer[] = {0x1f192, 'h', 0xe4, 'l', 0x2cc0};
-  PyObject* str(PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, buffer,
-                                          Py_ARRAY_LENGTH(buffer)));
+  PyObjectPtr str(PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, buffer,
+                                            Py_ARRAY_LENGTH(buffer)));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_TRUE(PyUnicode_CheckExact(str));
   EXPECT_STREQ(PyUnicode_AsUTF8(str), "\xf0\x9f\x86\x92h\xc3\xa4l\xe2\xb3\x80");

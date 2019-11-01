@@ -305,13 +305,15 @@ TEST_F(PythonrunExtensionApiTest, PyErrPrintExWithNoExceptHookPrintsException) {
 }
 
 TEST_F(PythonrunExtensionApiTest, PyErrPrintWithSystemExitExits) {
-  PyObjectPtr zero(PyLong_FromLong(0));
+  PyObject* zero = PyLong_FromLong(0);
   PyErr_SetObject(PyExc_SystemExit, zero);
+  Py_DECREF(zero);
   EXPECT_EXIT(PyErr_Print(), ::testing::ExitedWithCode(0), "^$");
 
   PyErr_Clear();
-  PyObjectPtr three(PyLong_FromLong(3));
+  PyObject* three = PyLong_FromLong(3);
   PyErr_SetObject(PyExc_SystemExit, three);
+  Py_DECREF(three);
   EXPECT_EXIT(PyErr_Print(), ::testing::ExitedWithCode(3), "^$");
 }
 

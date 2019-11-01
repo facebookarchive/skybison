@@ -22,13 +22,13 @@ TEST_F(ModuleExtensionApiTest, SpamModule) {
   // PyInit_spam
   const long val = 5;
   {
-    PyObject* m = PyModule_Create(&def);
+    PyObjectPtr m(PyModule_Create(&def));
     PyObject* de = PyDict_New();
     PyModule_AddObject(m, "constants", de);
 
     const char* c = "CONST";
-    PyObject* u = PyUnicode_FromString(c);
-    PyObject* v = PyLong_FromLong(val);
+    PyObjectPtr u(PyUnicode_FromString(c));
+    PyObjectPtr v(PyLong_FromLong(val));
     PyModule_AddIntConstant(m, c, val);
     PyDict_SetItem(de, v, u);
     ASSERT_EQ(testing::moduleSet("__main__", "spam", m), 0);
@@ -36,7 +36,7 @@ TEST_F(ModuleExtensionApiTest, SpamModule) {
 
   PyRun_SimpleString("x = spam.CONST");
 
-  PyObject* x = testing::moduleGet("__main__", "x");
+  PyObjectPtr x(testing::moduleGet("__main__", "x"));
   long result = PyLong_AsLong(x);
   ASSERT_EQ(result, val);
 }
@@ -93,11 +93,11 @@ TEST_F(ModuleExtensionApiTest, CreateAddsDocstring) {
       mod_doc,
   };
 
-  PyObject* module = PyModule_Create(&def);
+  PyObjectPtr module(PyModule_Create(&def));
   ASSERT_NE(module, nullptr);
   EXPECT_TRUE(PyModule_CheckExact(module));
 
-  PyObject* doc = PyObject_GetAttrString(module, "__doc__");
+  PyObjectPtr doc(PyObject_GetAttrString(module, "__doc__"));
   EXPECT_TRUE(isUnicodeEqualsCStr(doc, mod_doc));
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
@@ -171,7 +171,7 @@ TEST_F(ModuleExtensionApiTest, GetDefWithExtensionModuleRetunsNonNull) {
       "mydoc",
   };
 
-  PyObject* module = PyModule_Create(&def);
+  PyObjectPtr module(PyModule_Create(&def));
   ASSERT_NE(module, nullptr);
 
   PyModuleDef* result = PyModule_GetDef(module);
@@ -193,7 +193,7 @@ TEST_F(ModuleExtensionApiTest, GetDefWithNonExtensionModuleReturnsNull) {
 }
 
 TEST_F(ModuleExtensionApiTest, CheckTypeOnNonModuleReturnsZero) {
-  PyObject* pylong = PyLong_FromLong(10);
+  PyObjectPtr pylong(PyLong_FromLong(10));
   EXPECT_FALSE(PyModule_Check(pylong));
   EXPECT_FALSE(PyModule_CheckExact(pylong));
   EXPECT_EQ(PyErr_Occurred(), nullptr);
@@ -205,7 +205,7 @@ TEST_F(ModuleExtensionApiTest, CheckTypeOnModuleReturnsOne) {
       PyModuleDef_HEAD_INIT,
       "mymodule",
   };
-  PyObject* module = PyModule_Create(&def);
+  PyObjectPtr module(PyModule_Create(&def));
   EXPECT_TRUE(PyModule_Check(module));
   EXPECT_TRUE(PyModule_CheckExact(module));
   EXPECT_EQ(PyErr_Occurred(), nullptr);
@@ -220,11 +220,11 @@ TEST_F(ModuleExtensionApiTest, SetDocStringChangesDoc) {
       mod_doc,
   };
 
-  PyObject* module = PyModule_Create(&def);
+  PyObjectPtr module(PyModule_Create(&def));
   ASSERT_NE(module, nullptr);
   EXPECT_TRUE(PyModule_CheckExact(module));
 
-  PyObject* orig_doc = PyObject_GetAttrString(module, "__doc__");
+  PyObjectPtr orig_doc(PyObject_GetAttrString(module, "__doc__"));
   EXPECT_TRUE(isUnicodeEqualsCStr(orig_doc, mod_doc));
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 
@@ -232,7 +232,7 @@ TEST_F(ModuleExtensionApiTest, SetDocStringChangesDoc) {
   int result = PyModule_SetDocString(module, edit_mod_doc);
   ASSERT_EQ(result, 0);
 
-  PyObject* edit_doc = PyObject_GetAttrString(module, "__doc__");
+  PyObjectPtr edit_doc(PyObject_GetAttrString(module, "__doc__"));
   EXPECT_TRUE(isUnicodeEqualsCStr(edit_doc, edit_mod_doc));
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
@@ -244,14 +244,14 @@ TEST_F(ModuleExtensionApiTest, SetDocStringCreatesDoc) {
       "mymodule",
   };
 
-  PyObject* module = PyModule_Create(&def);
+  PyObjectPtr module(PyModule_Create(&def));
   ASSERT_NE(module, nullptr);
   EXPECT_TRUE(PyModule_CheckExact(module));
 
   const char* edit_mod_doc = "edited doc";
   ASSERT_EQ(PyModule_SetDocString(module, edit_mod_doc), 0);
 
-  PyObject* doc = PyObject_GetAttrString(module, "__doc__");
+  PyObjectPtr doc(PyObject_GetAttrString(module, "__doc__"));
   EXPECT_TRUE(isUnicodeEqualsCStr(doc, edit_mod_doc));
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
@@ -274,9 +274,10 @@ TEST_F(ModuleExtensionApiTest, ModuleCreateDoesNotAddToModuleDict) {
       PyModuleDef_HEAD_INIT,
       name,
   };
-  ASSERT_NE(PyModule_Create(&def), nullptr);
+  PyObjectPtr module(PyModule_Create(&def));
+  ASSERT_NE(module, nullptr);
   PyObject* mods = PyImport_GetModuleDict();
-  PyObject* name_obj = PyUnicode_FromString(name);
+  PyObjectPtr name_obj(PyUnicode_FromString(name));
   EXPECT_EQ(PyDict_GetItem(mods, name_obj), nullptr);
 }
 
@@ -394,7 +395,7 @@ TEST_F(ModuleExtensionApiTest, GetFilenameObjectFailsIfFilenameNotString) {
       "mymodule",
   };
 
-  PyObject* module = PyModule_Create(&def);
+  PyObjectPtr module(PyModule_Create(&def));
   ASSERT_NE(module, nullptr);
   EXPECT_TRUE(PyModule_CheckExact(module));
 
@@ -498,15 +499,19 @@ TEST_F(ModuleExtensionApiTest, ExecDefRunsMultipleSlotsInOrderPyro) {
   };
 
   slot_func mod_exec_second = [](PyObject* module) {
-    if (PyObject_GetAttrString(module, "__doc__") != nullptr) {
-      PyObject_SetAttrString(module, "test1", PyUnicode_FromString("testing1"));
+    PyObjectPtr doc(PyObject_GetAttrString(module, "__doc__"));
+    if (doc != nullptr) {
+      PyObjectPtr attr(PyUnicode_FromString("testing1"));
+      PyObject_SetAttrString(module, "test1", attr);
     }
     return 0;
   };
 
   slot_func mod_exec_third = [](PyObject* module) {
-    if (PyObject_GetAttrString(module, "__doc__") != nullptr) {
-      PyObject_SetAttrString(module, "test2", PyUnicode_FromString("testing2"));
+    PyObjectPtr doc(PyObject_GetAttrString(module, "__doc__"));
+    if (doc != nullptr) {
+      PyObjectPtr attr(PyUnicode_FromString("testing2"));
+      PyObject_SetAttrString(module, "test2", attr);
     }
     return 0;
   };
@@ -650,7 +655,7 @@ TEST_F(ModuleExtensionApiTest, GetNameDoesNotIncrementModuleNameRefcount) {
   ASSERT_NE(module, nullptr);
   EXPECT_TRUE(PyModule_Check(module));
 
-  PyObject* name = PyModule_GetNameObject(module);
+  PyObjectPtr name(PyModule_GetNameObject(module));
   EXPECT_TRUE(isUnicodeEqualsCStr(name, mod_name));
 
   Py_ssize_t name_count = Py_REFCNT(name);

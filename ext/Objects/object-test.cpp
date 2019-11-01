@@ -130,8 +130,8 @@ c = C()
 }
 
 TEST_F(ObjectExtensionApiTest, SetAttrWithInvalidTypeReturnsNegative) {
-  PyObject* key = PyUnicode_FromString("a_key");
-  PyObject* value = PyLong_FromLong(5);
+  PyObjectPtr key(PyUnicode_FromString("a_key"));
+  PyObjectPtr value(PyLong_FromLong(5));
   EXPECT_EQ(PyObject_SetAttr(Py_None, key, value), -1);
 }
 
@@ -141,8 +141,8 @@ TEST_F(ObjectExtensionApiTest, SetAttrWithInvalidKeyReturnsNegative) {
       PyModuleDef_HEAD_INIT,
       "test",
   };
-  PyObject* module = PyModule_Create(&def);
-  PyObject* value = PyLong_FromLong(5);
+  PyObjectPtr module(PyModule_Create(&def));
+  PyObjectPtr value(PyLong_FromLong(5));
   EXPECT_EQ(PyObject_SetAttr(module, Py_None, value), -1);
 }
 
@@ -152,9 +152,9 @@ TEST_F(ObjectExtensionApiTest, SetAttrReturnsZero) {
       PyModuleDef_HEAD_INIT,
       "test",
   };
-  PyObject* module = PyModule_Create(&def);
-  PyObject* key = PyUnicode_FromString("a_key");
-  PyObject* value = PyLong_FromLong(5);
+  PyObjectPtr module(PyModule_Create(&def));
+  PyObjectPtr key(PyUnicode_FromString("a_key"));
+  PyObjectPtr value(PyLong_FromLong(5));
   EXPECT_EQ(PyObject_SetAttr(module, key, value), 0);
 }
 
@@ -164,9 +164,9 @@ TEST_F(ObjectExtensionApiTest, GetAttrWithNoneExistingKeyReturnsNull) {
       PyModuleDef_HEAD_INIT,
       "test",
   };
-  PyObject* module = PyModule_Create(&def);
+  PyObjectPtr module(PyModule_Create(&def));
 
-  PyObject* key = PyUnicode_FromString("a_key");
+  PyObjectPtr key(PyUnicode_FromString("a_key"));
   EXPECT_EQ(PyObject_GetAttr(module, key), nullptr);
 }
 
@@ -177,9 +177,9 @@ TEST_F(ObjectExtensionApiTest, GetAttrWithInvalidTypeReturnsNull) {
       "test",
   };
   int expected_int = 5;
-  PyObject* module = PyModule_Create(&def);
-  PyObject* key = PyUnicode_FromString("a_key");
-  PyObject* value = PyLong_FromLong(expected_int);
+  PyObjectPtr module(PyModule_Create(&def));
+  PyObjectPtr key(PyUnicode_FromString("a_key"));
+  PyObjectPtr value(PyLong_FromLong(expected_int));
   ASSERT_EQ(PyObject_SetAttr(module, key, value), 0);
 
   EXPECT_EQ(PyObject_GetAttr(Py_None, key), nullptr);
@@ -192,9 +192,9 @@ TEST_F(ObjectExtensionApiTest, GetAttrWithInvalidKeyReturnsNull) {
       "test",
   };
   int expected_int = 5;
-  PyObject* module = PyModule_Create(&def);
-  PyObject* key = PyUnicode_FromString("a_key");
-  PyObject* value = PyLong_FromLong(expected_int);
+  PyObjectPtr module(PyModule_Create(&def));
+  PyObjectPtr key(PyUnicode_FromString("a_key"));
+  PyObjectPtr value(PyLong_FromLong(expected_int));
   ASSERT_EQ(PyObject_SetAttr(module, key, value), 0);
 
   EXPECT_EQ(PyObject_GetAttr(module, Py_None), nullptr);
@@ -207,12 +207,12 @@ TEST_F(ObjectExtensionApiTest, GetAttrReturnsCorrectValue) {
       "test",
   };
   int expected_int = 5;
-  PyObject* module = PyModule_Create(&def);
-  PyObject* key = PyUnicode_FromString("a_key");
-  PyObject* value = PyLong_FromLong(expected_int);
+  PyObjectPtr module(PyModule_Create(&def));
+  PyObjectPtr key(PyUnicode_FromString("a_key"));
+  PyObjectPtr value(PyLong_FromLong(expected_int));
   ASSERT_EQ(PyObject_SetAttr(module, key, value), 0);
 
-  PyObject* dict_result = PyObject_GetAttr(module, key);
+  PyObjectPtr dict_result(PyObject_GetAttr(module, key));
   ASSERT_NE(dict_result, nullptr);
   EXPECT_EQ(PyLong_AsLong(dict_result), expected_int);
 }
@@ -225,11 +225,11 @@ TEST_F(ObjectExtensionApiTest, GetAttrStringReturnsCorrectValue) {
   };
   const char* key = "a_key";
   int expected_int = 5;
-  PyObject* module = PyModule_Create(&def);
-  PyObject* value = PyLong_FromLong(expected_int);
+  PyObjectPtr module(PyModule_Create(&def));
+  PyObjectPtr value(PyLong_FromLong(expected_int));
   ASSERT_EQ(PyObject_SetAttrString(module, key, value), 0);
 
-  PyObject* dict_result = PyObject_GetAttrString(module, key);
+  PyObjectPtr dict_result(PyObject_GetAttrString(module, key));
   ASSERT_NE(dict_result, nullptr);
   EXPECT_EQ(PyLong_AsLong(dict_result), expected_int);
 }
@@ -370,6 +370,7 @@ TEST_F(ObjectExtensionApiTest, IncrementDecrementRefCount) {
   EXPECT_EQ(Py_REFCNT(o), refcnt + 1);
   Py_DECREF(o);
   EXPECT_EQ(Py_REFCNT(o), refcnt);
+  Py_DECREF(o);
 }
 
 TEST_F(ObjectExtensionApiTest, IncrementDecrementRefCountWithPyObjectPtr) {
@@ -389,6 +390,7 @@ TEST_F(ObjectExtensionApiTest, IncrementDecrementRefCountWithPyObjectPtr) {
     h = nullptr;
     EXPECT_EQ(Py_REFCNT(o), refcnt);
   }
+  Py_DECREF(o);
 }
 
 TEST_F(ObjectExtensionApiTest, GenericGetAttrFindsCorrectlySetValue) {
@@ -718,6 +720,8 @@ TEST_F(ObjectExtensionApiTest, SelfIterIncrementsRefcount) {
   PyObject* o2 = PyObject_SelfIter(o);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(Py_REFCNT(o2), refcnt + 1);
+  Py_DECREF(o);
+  Py_DECREF(o);
 }
 
 TEST_F(ObjectExtensionApiTest, NotWithTrueReturnsFalse) {

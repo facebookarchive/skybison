@@ -4400,18 +4400,6 @@ void Runtime::freeApiHandles() {
     }
   }
 
-  // Free any ApiHandles with no native references: this is always safe to do,
-  // and will help the GC collect more objects until it has better handle
-  // support.
-  // TODO(bsimmers): This should happen as part of collectGarbage(), not here.
-  Dict handles(&scope, apiHandles());
-  Tuple handles_buckets(&scope, handles.data());
-  for (word i = Dict::Bucket::kFirst;
-       Dict::Bucket::nextItem(*handles_buckets, &i);) {
-    ApiHandle* handle = ApiHandle::atIndex(this, i);
-    if (ApiHandle::nativeRefcnt(handle) == 0) handle->dispose();
-  }
-
   // Clear the modules dict and run a GC, to run dealloc slots on any now-dead
   // NativeProxy objects.
   dictClear(thread, modules);
@@ -4419,7 +4407,8 @@ void Runtime::freeApiHandles() {
 
   // Finally, skip trying to cleanly deallocate the object. Just free the
   // memory without calling the deallocation functions.
-  handles_buckets = handles.data();
+  Dict handles(&scope, apiHandles());
+  Tuple handles_buckets(&scope, handles.data());
   for (word i = Dict::Bucket::kFirst;
        Dict::Bucket::nextItem(*handles_buckets, &i);) {
     ApiHandle* handle = ApiHandle::atIndex(this, i);

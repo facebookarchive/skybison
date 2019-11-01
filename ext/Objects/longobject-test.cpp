@@ -53,7 +53,7 @@ TEST_F(LongExtensionApiTest, CheckExactWithBoolReturnsFalse) {
 
 TEST_F(LongExtensionApiTest, CheckWithTypeReturnsFalse) {
   PyObjectPtr pylong(PyLong_FromLong(10));
-  PyObjectPtr type(reinterpret_cast<PyObject*>(Py_TYPE(pylong)));
+  PyObject* type = reinterpret_cast<PyObject*>(Py_TYPE(pylong));
   EXPECT_FALSE(PyLong_Check(type));
   EXPECT_FALSE(PyLong_CheckExact(type));
 }

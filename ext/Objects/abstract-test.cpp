@@ -206,8 +206,10 @@ c = C()
 // PyIter_Next
 
 TEST_F(AbstractExtensionApiTest, PyIterNextReturnsNext) {
-  PyObjectPtr tuple(PyTuple_Pack(3, PyLong_FromLong(1), PyLong_FromLong(2),
-                                 PyLong_FromLong(3)));
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyObjectPtr three(PyLong_FromLong(3));
+  PyObjectPtr tuple(PyTuple_Pack(3, one.get(), two.get(), three.get()));
   PyObjectPtr iter(PyObject_GetIter(tuple));
   ASSERT_NE(iter, nullptr);
   PyObjectPtr next(PyIter_Next(iter));
@@ -379,7 +381,8 @@ c = C()
 TEST_F(AbstractExtensionApiTest, PyNumberAbsoluteCallsDunderAbs) {
   PyObjectPtr negative(PyLong_FromLong(-10));
   PyObjectPtr positive(PyLong_FromLong(10));
-  EXPECT_EQ(PyNumber_Absolute(negative), positive);
+  PyObjectPtr result(PyNumber_Absolute(negative));
+  EXPECT_EQ(result, positive);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
@@ -1642,7 +1645,7 @@ c = C()
   EXPECT_TRUE(isUnicodeEqualsCStr(result, "-5(9, 'dd', 8)"));
 }
 
-TEST_F(AbstractExtensionApiTest, PyObject_CallObjectCalls) {
+TEST_F(AbstractExtensionApiTest, PyObjectCallObjectCalls) {
   PyRun_SimpleString(R"(
 class C:
   x = 9
@@ -1651,13 +1654,15 @@ class C:
 c = C()
 )");
   PyObjectPtr c(moduleGet("__main__", "c"));
-  PyObjectPtr args(PyTuple_Pack(
-      3, PyLong_FromLong(1), PyUnicode_FromString("two"), PyLong_FromLong(3)));
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two(PyUnicode_FromString("two"));
+  PyObjectPtr three(PyLong_FromLong(3));
+  PyObjectPtr args(PyTuple_Pack(3, one.get(), two.get(), three.get()));
   PyObjectPtr result(PyObject_CallObject(c, args));
   EXPECT_TRUE(isUnicodeEqualsCStr(result, "9(1, 'two', 3)"));
 }
 
-TEST_F(AbstractExtensionApiTest, PyObject_CallObjectWithArgsNullptrCalls) {
+TEST_F(AbstractExtensionApiTest, PyObjectCallObjectWithArgsNullptrCalls) {
   PyRun_SimpleString(R"(
 def func(*args, **kwargs):
   return f"{args!r}{kwargs!r}"
@@ -2488,8 +2493,12 @@ TEST_F(AbstractExtensionApiTest, PySequenceConcatWithNullRightRaises) {
 }
 
 TEST_F(AbstractExtensionApiTest, PySequenceConcatCallsDunderAdd) {
-  PyObjectPtr left(PyTuple_Pack(2, PyLong_FromLong(1), PyLong_FromLong(2)));
-  PyObjectPtr right(PyTuple_Pack(2, PyLong_FromLong(3), PyLong_FromLong(4)));
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyObjectPtr three(PyLong_FromLong(3));
+  PyObjectPtr four(PyLong_FromLong(4));
+  PyObjectPtr left(PyTuple_Pack(2, one.get(), two.get()));
+  PyObjectPtr right(PyTuple_Pack(2, three.get(), four.get()));
   PyObjectPtr result(PySequence_Concat(left, right));
   ASSERT_NE(result, nullptr);
   ASSERT_TRUE(PyTuple_CheckExact(result));
@@ -2508,7 +2517,9 @@ TEST_F(AbstractExtensionApiTest, PySequenceRepeatWithNullSeqRaises) {
 }
 
 TEST_F(AbstractExtensionApiTest, PySequenceRepeatCallsDunderMul) {
-  PyObjectPtr seq(PyTuple_Pack(2, PyLong_FromLong(1), PyLong_FromLong(2)));
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyObjectPtr seq(PyTuple_Pack(2, one.get(), two.get()));
   PyObjectPtr result(PySequence_Repeat(seq, 2));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
@@ -2527,7 +2538,9 @@ TEST_F(AbstractExtensionApiTest, PySequenceCountWithNullSeqRaises) {
 }
 
 TEST_F(AbstractExtensionApiTest, PySequenceCountWithNullObjRaises) {
-  PyObjectPtr tuple(PyTuple_Pack(2, PyLong_FromLong(1), PyLong_FromLong(2)));
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyObjectPtr tuple(PyTuple_Pack(2, one.get(), two.get()));
   EXPECT_EQ(PySequence_Count(tuple, nullptr), -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
@@ -2535,8 +2548,10 @@ TEST_F(AbstractExtensionApiTest, PySequenceCountWithNullObjRaises) {
 
 TEST_F(AbstractExtensionApiTest, PySequenceCountCountsOccurrences) {
   PyObjectPtr obj(PyLong_FromLong(2));
-  PyObjectPtr tuple(PyTuple_Pack(3, PyLong_FromLong(1), PyLong_FromLong(2),
-                                 PyLong_FromLong(2)));
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two1(PyLong_FromLong(2));
+  PyObjectPtr two2(PyLong_FromLong(2));
+  PyObjectPtr tuple(PyTuple_Pack(3, one.get(), two1.get(), two2.get()));
   EXPECT_EQ(PySequence_Count(tuple, obj), 2);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
@@ -2552,7 +2567,7 @@ c = C()
   PyObjectPtr result(PySequence_GetItem(c, 0));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_EQ(result, PyLong_FromLong(7));
+  EXPECT_EQ(PyLong_AsLong(result), 7);
 }
 
 TEST_F(AbstractExtensionApiTest, PySequenceSetItemWithNullValCallsDelItem) {
@@ -2651,17 +2666,19 @@ c = C()
 }
 
 TEST_F(AbstractExtensionApiTest, PySequenceIndexWithNullObjRaises) {
-  PyObjectPtr tuple(PyTuple_Pack(2, PyLong_FromLong(1), PyLong_FromLong(2)));
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyObjectPtr tuple(PyTuple_Pack(2, one.get(), two.get()));
   EXPECT_EQ(PySequence_Index(tuple, nullptr), -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
 TEST_F(AbstractExtensionApiTest, PySequenceIndexFindsFirstOccurrence) {
-  PyObjectPtr obj(PyLong_FromLong(2));
-  PyObjectPtr tuple(PyTuple_Pack(3, PyLong_FromLong(1), PyLong_FromLong(2),
-                                 PyLong_FromLong(2)));
-  EXPECT_EQ(PySequence_Index(tuple, obj), 1);
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyObjectPtr tuple(PyTuple_Pack(3, one.get(), two.get(), two.get()));
+  EXPECT_EQ(PySequence_Index(tuple, two), 1);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
@@ -3108,7 +3125,8 @@ c = C()
 )");
   PyObjectPtr c(moduleGet("__main__", "c"));
   PyObjectPtr key(PyLong_FromLong(7));
-  EXPECT_EQ(PyObject_GetItem(c, key), key);
+  PyObjectPtr result(PyObject_GetItem(c, key));
+  EXPECT_EQ(result, key);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 

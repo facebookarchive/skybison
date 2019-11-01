@@ -175,6 +175,7 @@ TEST_F(BytesExtensionApiTest, ConcatWithBytesConcatenatesByteStrings) {
   PyBytes_Concat(&foo, bar);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(PyBytes_Size(foo), 6);
+  Py_DECREF(foo);
 }
 
 TEST_F(BytesExtensionApiTest, ConcatWithBytesSubclassesReturnsBytes) {
@@ -199,6 +200,7 @@ TEST_F(BytesExtensionApiTest, ConcatDoesNotDecrefSecondArg) {
   PyBytes_Concat(&foo, bar);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(Py_REFCNT(bar), refcnt);
+  Py_DECREF(foo);
 }
 
 TEST_F(BytesExtensionApiTest, ConcatAndDelDecrefsSecondArg) {
@@ -222,8 +224,9 @@ TEST_F(BytesExtensionApiTest, DecodeEscapeReturnsString) {
 
 TEST_F(BytesExtensionApiTest, UnderDecodeEscapeSetsFirstInvalidEscapeToNull) {
   const char* invalid = reinterpret_cast<const char*>(0x100);
-  EXPECT_NE(_PyBytes_DecodeEscape("hello", 5, nullptr, 0, nullptr, &invalid),
-            nullptr);
+  PyObjectPtr result(
+      _PyBytes_DecodeEscape("hello", 5, nullptr, 0, nullptr, &invalid));
+  EXPECT_NE(result, nullptr);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(invalid, nullptr);
 }
@@ -441,7 +444,8 @@ obj = HasIter()
 
 TEST_F(BytesExtensionApiTest, FromObjectWithSetReturnsBytes) {
   PyObjectPtr set(PySet_New(nullptr));
-  PySet_Add(set, PyLong_FromLong('a'));
+  PyObjectPtr obj(PyLong_FromLong('a'));
+  PySet_Add(set, obj);
   PyObjectPtr bytes(PyBytes_FromObject(set));
   EXPECT_STREQ(PyBytes_AsString(bytes), "a");
 }

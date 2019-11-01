@@ -132,8 +132,8 @@ TEST_F(DescrExtensionApiTest, ClassMethodCallWithNonBoundClassRaisesTypeError) {
 
 TEST_F(DescrExtensionApiTest, DictProxyNewWithMappingReturnsMappingProxy) {
   PyObjectPtr dict(PyDict_New());
-  PyObject* key = PyLong_FromLong(10);
-  PyObject* value = PyLong_FromLong(54321);
+  PyObjectPtr key(PyLong_FromLong(10));
+  PyObjectPtr value(PyLong_FromLong(54321));
   // Insert the value into the dictionary
   ASSERT_EQ(PyDict_SetItem(dict, key, value), 0);
 

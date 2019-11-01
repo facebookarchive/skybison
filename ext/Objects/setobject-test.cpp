@@ -313,7 +313,8 @@ TEST_F(SetExtensionApiTest, PopWithNonSetRaisesSystemError) {
 }
 
 TEST_F(SetExtensionApiTest, PopWithEmptySetRaisesKeyError) {
-  ASSERT_EQ(PySet_Pop(PySet_New(nullptr)), nullptr);
+  PyObjectPtr set(PySet_New(nullptr));
+  ASSERT_EQ(PySet_Pop(set), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_KeyError));
 }
@@ -323,7 +324,8 @@ TEST_F(SetExtensionApiTest, PopWithNonEmptySetRemovesItem) {
   PyObjectPtr elt(PyLong_FromLong(5));
   ASSERT_EQ(PySet_Add(set, elt), 0);
   ASSERT_EQ(PySet_Size(set), 1);
-  ASSERT_EQ(PySet_Pop(set), elt);
+  PyObjectPtr result(PySet_Pop(set));
+  ASSERT_EQ(result, elt);
   EXPECT_EQ(PySet_Size(set), 0);
 }
 

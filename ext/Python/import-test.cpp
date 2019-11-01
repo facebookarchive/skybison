@@ -135,6 +135,7 @@ TEST_F(ImportExtensionApiTest, ImportModuleLevelObjectReturnsModule) {
   Py_DECREF(globals);
   Py_DECREF(fromlist);
   Py_DECREF(name);
+  Py_DECREF(module);
 }
 
 TEST_F(ImportExtensionApiTest,

@@ -75,7 +75,8 @@ TEST_F(TypeExtensionApiTest, FromSpecCreatesRuntimeType) {
 
   testing::moduleSet("__main__", "Empty", type);
   PyRun_SimpleString("x = Empty");
-  EXPECT_TRUE(PyType_CheckExact(testing::moduleGet("__main__", "x")));
+  PyObjectPtr result(testing::moduleGet("__main__", "x"));
+  EXPECT_TRUE(PyType_CheckExact(result));
 }
 
 TEST_F(TypeExtensionApiTest, FromSpecWithInvalidSlotRaisesError) {
@@ -1778,6 +1779,19 @@ static void createBarTypeWithMembers() {
     void* slot = PyType_GetSlot(type, Py_tp_alloc);
     return reinterpret_cast<allocfunc>(slot)(type, 0);
   };
+  freefunc dealloc_func = [](void* self_ptr) {
+    PyObject* self = reinterpret_cast<PyObject*>(self_ptr);
+    BarObject* self_bar = reinterpret_cast<BarObject*>(self);
+    // Guaranteed to be null or initialized by something
+    Py_XDECREF(self_bar->t_object);
+    PyTypeObject* type = Py_TYPE(self);
+    // Since this object is subtypable (has Py_TPFLAGS_BASETYPE), we must pull
+    // out tp_free slot instead of calling PyObject_Del.
+    void* slot = PyType_GetSlot(type, Py_tp_free);
+    assert(slot != nullptr);
+    reinterpret_cast<freefunc>(slot)(self);
+    Py_DECREF(type);
+  };
   initproc init_func = [](PyObject* self, PyObject*, PyObject*) {
     reinterpret_cast<BarObject*>(self)->t_bool = 1;
     reinterpret_cast<BarObject*>(self)->t_byte = -12;
@@ -1800,15 +1814,16 @@ static void createBarTypeWithMembers() {
     reinterpret_cast<BarObject*>(self)->t_ulonglong = -1;
     return 0;
   };
-  static PyType_Slot slots[6];
+  static PyType_Slot slots[7];
   // TODO(T40540469): Most of functions should be inherited from object.
   // However, inheritance is not supported yet. For now, just set them manually.
   slots[0] = {Py_tp_new, reinterpret_cast<void*>(new_func)};
   slots[1] = {Py_tp_init, reinterpret_cast<void*>(init_func)};
   slots[2] = {Py_tp_alloc, reinterpret_cast<void*>(PyType_GenericAlloc)},
-  slots[3] = {Py_tp_dealloc, reinterpret_cast<void*>(deallocLeafObject)};
+  slots[3] = {Py_tp_dealloc, reinterpret_cast<void*>(dealloc_func)};
   slots[4] = {Py_tp_members, reinterpret_cast<void*>(members)};
-  slots[5] = {0, nullptr};
+  slots[5] = {Py_tp_free, reinterpret_cast<void*>(PyObject_Del)};
+  slots[6] = {0, nullptr};
   static PyType_Spec spec;
   spec = {
       "__main__.Bar",
@@ -3295,6 +3310,7 @@ TEST_F(TypeExtensionApiTest, ManagedTypeInheritsFromCType) {
 r1 = Bar().t_bool
 class Baz(Bar): pass
 r2 = Baz().t_bool
+r3 = Baz().t_object
 )"),
             0);
   PyObjectPtr r1(moduleGet("__main__", "r1"));
@@ -3303,6 +3319,9 @@ r2 = Baz().t_bool
   PyObjectPtr r2(moduleGet("__main__", "r2"));
   ASSERT_EQ(PyBool_Check(r2), 1);
   EXPECT_EQ(r2, Py_True);
+  PyObjectPtr r3(moduleGet("__main__", "r3"));
+  ASSERT_EQ(PyList_Check(r3), 1);
+  EXPECT_EQ(PyList_Size(r3), 0);
 }
 
 TEST_F(TypeExtensionApiTest, ManagedTypeWithLayoutInheritsFromCType) {
@@ -3314,6 +3333,7 @@ class Baz(Bar):
 baz = Baz()
 r1 = baz.t_bool
 r2 = baz.value
+r3 = baz.t_object
 )"),
             0);
   PyObjectPtr baz(moduleGet("__main__", "baz"));
@@ -3323,6 +3343,8 @@ r2 = baz.value
   EXPECT_EQ(r1, Py_False);
   PyObjectPtr r2(moduleGet("__main__", "r2"));
   EXPECT_TRUE(isLongEqualsLong(r2, 123));
+  PyObjectPtr r3(moduleGet("__main__", "r3"));
+  EXPECT_FALSE(PyList_Check(r3));
 }
 
 TEST_F(TypeExtensionApiTest, CTypeInheritsFromManagedType) {
@@ -3388,7 +3410,8 @@ TEST_F(TypeExtensionApiTest, MethodsMethFastCallNoArg) {
   _PyCFunctionFast meth = [](PyObject* self, PyObject**, Py_ssize_t nargs,
                              PyObject* kwnames) {
     EXPECT_EQ(kwnames, nullptr);
-    return PyTuple_Pack(2, self, PyLong_FromSsize_t(nargs));
+    PyObjectPtr nargs_obj(PyLong_FromSsize_t(nargs));
+    return PyTuple_Pack(2, self, nargs_obj.get());
   };
   static PyMethodDef methods[] = {
       {"fastcall", reinterpret_cast<PyCFunction>(reinterpret_cast<void*>(meth)),
@@ -3424,7 +3447,8 @@ TEST_F(TypeExtensionApiTest, MethodsMethFastCallPosCall) {
   _PyCFunctionFast meth = [](PyObject* self, PyObject** args, Py_ssize_t nargs,
                              PyObject* kwnames) {
     EXPECT_EQ(kwnames, nullptr);
-    return PyTuple_Pack(3, self, args[0], PyLong_FromSsize_t(nargs));
+    PyObjectPtr nargs_obj(PyLong_FromSsize_t(nargs));
+    return PyTuple_Pack(3, self, args[0], nargs_obj.get());
   };
   static PyMethodDef methods[] = {
       {"fastcall", reinterpret_cast<PyCFunction>(reinterpret_cast<void*>(meth)),
@@ -3461,7 +3485,8 @@ TEST_F(TypeExtensionApiTest, MethodsMethFastCallPosCallMultiArgs) {
   _PyCFunctionFast meth = [](PyObject* self, PyObject** args, Py_ssize_t nargs,
                              PyObject* kwnames) {
     EXPECT_EQ(kwnames, nullptr);
-    return PyTuple_Pack(4, self, args[0], args[1], PyLong_FromSsize_t(nargs));
+    PyObjectPtr nargs_obj(PyLong_FromSsize_t(nargs));
+    return PyTuple_Pack(4, self, args[0], args[1], nargs_obj.get());
   };
   static PyMethodDef methods[] = {
       {"fastcall", reinterpret_cast<PyCFunction>(reinterpret_cast<void*>(meth)),
@@ -3498,8 +3523,8 @@ result = self.fastcall(1234, 5678)
 TEST_F(TypeExtensionApiTest, MethodsMethFastCallKwCall) {
   _PyCFunctionFast meth = [](PyObject* self, PyObject** args, Py_ssize_t nargs,
                              PyObject* kwnames) {
-    return PyTuple_Pack(5, self, args[0], args[1], PyLong_FromSsize_t(nargs),
-                        kwnames);
+    PyObjectPtr nargs_obj(PyLong_FromSsize_t(nargs));
+    return PyTuple_Pack(5, self, args[0], args[1], nargs_obj.get(), kwnames);
   };
   static PyMethodDef methods[] = {
       {"fastcall", reinterpret_cast<PyCFunction>(reinterpret_cast<void*>(meth)),
@@ -3541,8 +3566,9 @@ result = self.fastcall(1234, kwarg=5678)
 TEST_F(TypeExtensionApiTest, MethodsMethFastCallKwCallMultiArg) {
   _PyCFunctionFast meth = [](PyObject* self, PyObject** args, Py_ssize_t nargs,
                              PyObject* kwnames) {
+    PyObjectPtr nargs_obj(PyLong_FromSsize_t(nargs));
     return PyTuple_Pack(7, self, args[0], args[1], args[2], args[3],
-                        PyLong_FromSsize_t(nargs), kwnames);
+                        nargs_obj.get(), kwnames);
   };
   static PyMethodDef methods[] = {
       {"fastcall", reinterpret_cast<PyCFunction>(reinterpret_cast<void*>(meth)),
@@ -3587,8 +3613,8 @@ result = self.fastcall(1234, 99, kwarg=5678, kwdos=22)
 TEST_F(TypeExtensionApiTest, MethodsMethFastCallExCall) {
   _PyCFunctionFast meth = [](PyObject* self, PyObject** args, Py_ssize_t nargs,
                              PyObject* kwnames) {
-    return PyTuple_Pack(5, self, args[0], args[1], PyLong_FromLong(nargs),
-                        kwnames);
+    PyObjectPtr nargs_obj(PyLong_FromLong(nargs));
+    return PyTuple_Pack(5, self, args[0], args[1], nargs_obj.get(), kwnames);
   };
   static PyMethodDef methods[] = {
       {"fastcall", reinterpret_cast<PyCFunction>(reinterpret_cast<void*>(meth)),
@@ -3630,8 +3656,9 @@ result = self.fastcall(*[1234], kwarg=5678)
 TEST_F(TypeExtensionApiTest, MethodsMethFastCallExCallMultiArg) {
   _PyCFunctionFast meth = [](PyObject* self, PyObject** args, Py_ssize_t nargs,
                              PyObject* kwnames) {
+    PyObjectPtr nargs_obj(PyLong_FromSsize_t(nargs));
     return PyTuple_Pack(7, self, args[0], args[1], args[2], args[3],
-                        PyLong_FromSsize_t(nargs), kwnames);
+                        nargs_obj.get(), kwnames);
   };
   static PyMethodDef methods[] = {
       {"fastcall", reinterpret_cast<PyCFunction>(reinterpret_cast<void*>(meth)),
@@ -3678,7 +3705,8 @@ TEST_F(TypeExtensionApiTest, MethodsMethFastCallExEmptyKwargsCall) {
   _PyCFunctionFast meth = [](PyObject* self, PyObject** args, Py_ssize_t nargs,
                              PyObject* kwnames) {
     EXPECT_EQ(kwnames, nullptr);
-    return PyTuple_Pack(3, self, args[0], PyLong_FromSsize_t(nargs));
+    PyObjectPtr nargs_obj(PyLong_FromSsize_t(nargs));
+    return PyTuple_Pack(3, self, args[0], nargs_obj.get());
   };
   static PyMethodDef methods[] = {
       {"fastcall", reinterpret_cast<PyCFunction>(reinterpret_cast<void*>(meth)),
@@ -3711,28 +3739,6 @@ result = self.fastcall(*[1234], *{})
   EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(result, 2), 1));
 }
 
-TEST(TypeExtensionApiTestNoFixture, DeallocSlotCalledDuringFinalize) {
-  Py_Initialize();
-
-  static bool destroyed = false;
-  destructor dealloc = [](PyObject* self) {
-    PyTypeObject* type = Py_TYPE(self);
-    destroyed = true;
-    PyObject_Del(self);
-    Py_DECREF(type);
-  };
-  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Bar", Py_tp_dealloc, dealloc));
-
-  PyTypeObject* type =
-      reinterpret_cast<PyTypeObject*>(moduleGet("__main__", "Bar"));
-  PyObject* obj = PyObject_New(PyObject, type);
-  Py_DECREF(type);
-  ASSERT_EQ(moduleSet("__main__", "bar_obj", obj), 0);
-  Py_DECREF(obj);
-
-  ASSERT_FALSE(destroyed);
-  Py_FinalizeEx();
-  ASSERT_TRUE(destroyed);
-}
+// TODO(emacs): Add back DeallocCalledDuringFinalize test
 
 }  // namespace py

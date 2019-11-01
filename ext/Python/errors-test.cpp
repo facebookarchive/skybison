@@ -310,10 +310,13 @@ TEST_F(ErrorsExtensionApiTest, GetExcInfoWhenCaughtException) {
     PyObject* p_traceback;
     PyErr_GetExcInfo(&p_type, &p_value, &p_traceback);
     EXPECT_EQ(p_type, PyExc_Exception);
-    PyObject* args = PyObject_GetAttrString(p_value, "args");
+    PyObjectPtr args(PyObject_GetAttrString(p_value, "args"));
     PyObject* first_arg = PyTuple_GetItem(args, 0);
     EXPECT_TRUE(isUnicodeEqualsCStr(first_arg, "some str"));
     Py_INCREF(Py_None);
+    Py_XDECREF(p_type);
+    Py_XDECREF(p_value);
+    Py_XDECREF(p_traceback);
     return Py_None;
   };
   PyMethodDef foo_methods[] = {{"noargs", func, METH_NOARGS}, {nullptr}};
@@ -372,8 +375,8 @@ TEST_F(ErrorsExtensionApiTest, GivenExceptionMatchesWithTuple) {
   Py_DECREF(exc2);
 
   // Recursion
-  PyObject* exc3 =
-      PyTuple_Pack(2, PyTuple_Pack(1, PyExc_Exception), PyExc_Warning);
+  PyObjectPtr inner(PyTuple_Pack(1, PyExc_Exception));
+  PyObject* exc3 = PyTuple_Pack(2, inner.get(), PyExc_Warning);
   ASSERT_NE(exc3, nullptr);
   EXPECT_EQ(PyErr_GivenExceptionMatches(PyExc_MemoryError, exc3), 1);
   EXPECT_EQ(PyErr_GivenExceptionMatches(PyExc_SystemExit, exc3), 0);
@@ -443,7 +446,6 @@ TEST_F(ErrorsExtensionApiTest, NormalizeCreatesException) {
   EXPECT_EQ(PyTuple_GetItem(args, 0), val_orig);
 
   Py_DECREF(val);
-  Py_DECREF(exc);
 }
 
 TEST_F(ErrorsExtensionApiTest, NormalizeWithNullTypeDoesNothing) {
@@ -471,7 +473,6 @@ TEST_F(ErrorsExtensionApiTest, NormalizeWithNullValueUsesNone) {
   EXPECT_EQ(PyTuple_Size(args), 0);
 
   Py_DECREF(val);
-  Py_DECREF(exc);
 }
 
 TEST_F(ErrorsExtensionApiTest, NormalizeWithTupleUsesArgs) {
@@ -495,7 +496,6 @@ TEST_F(ErrorsExtensionApiTest, NormalizeWithTupleUsesArgs) {
   EXPECT_EQ(PyTuple_GetItem(args, 1), t1);
 
   Py_DECREF(val);
-  Py_DECREF(exc);
 }
 
 TEST_F(ErrorsExtensionApiTest, NormalizeWithNonExceptionDoesNothing) {
@@ -529,7 +529,6 @@ class BadException(Exception):
 
   const char* msg = "couldn't construct BadException";
   PyObject* val = PyUnicode_FromString(msg);
-  Py_INCREF(val);
   PyObject* tb = nullptr;
   PyErr_NormalizeException(&exc, &val, &tb);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
@@ -541,8 +540,9 @@ class BadException(Exception):
   PyObject* str = PyTuple_GetItem(args, 0);
   EXPECT_TRUE(isUnicodeEqualsCStr(str, msg));
 
-  Py_DECREF(val);
-  Py_DECREF(exc);
+  Py_XDECREF(val);
+  Py_XDECREF(exc);
+  Py_XDECREF(tb);
 }
 
 TEST_F(ErrorsExtensionApiTest, ProgramTextObjectWithNullFilenameReturnsNull) {
@@ -569,7 +569,7 @@ TEST_F(ErrorsExtensionApiTest, SetExcInfoValuesRetrievedByGetExcInfo) {
   Py_INCREF(type);
   PyObjectPtr val(PyUnicode_FromString("some str"));
   PyObject* traceback = nullptr;
-  PyErr_SetExcInfo(PyExc_TypeError, val, traceback);
+  PyErr_SetExcInfo(type, val, traceback);
 
   PyObject* p_type;
   PyObject* p_value;
@@ -843,7 +843,8 @@ except ValueError as exc:
   ASSERT_NE(inner_exc, nullptr);
   PyObjectPtr outer_exc(moduleGet("__main__", "outer_exc"));
   ASSERT_NE(outer_exc, nullptr);
-  EXPECT_EQ(PyException_GetContext(outer_exc), inner_exc);
+  PyObjectPtr outer_ctx(PyException_GetContext(outer_exc));
+  EXPECT_EQ(outer_ctx, inner_exc);
   EXPECT_EQ(PyException_GetContext(inner_exc), nullptr);
 }
 

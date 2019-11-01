@@ -35,8 +35,8 @@ TEST_F(ListExtensionApiTest, NewReturnsList) {
 }
 
 TEST_F(ListExtensionApiTest, AppendToNonListReturnsNegative) {
-  PyObject* dict = PyDict_New();
-  PyObject* pylong = PyLong_FromLong(10);
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr pylong(PyLong_FromLong(10));
   int result = PyList_Append(dict, pylong);
   EXPECT_EQ(result, -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
@@ -44,7 +44,7 @@ TEST_F(ListExtensionApiTest, AppendToNonListReturnsNegative) {
 }
 
 TEST_F(ListExtensionApiTest, AppendWithNullValueReturnsNegative) {
-  PyObject* list = PyList_New(0);
+  PyObjectPtr list(PyList_New(0));
   int result = PyList_Append(list, nullptr);
   EXPECT_EQ(result, -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
@@ -52,8 +52,8 @@ TEST_F(ListExtensionApiTest, AppendWithNullValueReturnsNegative) {
 }
 
 TEST_F(ListExtensionApiTest, AppendReturnsZero) {
-  PyObject* list = PyList_New(0);
-  PyObject* pylong = PyLong_FromLong(10);
+  PyObjectPtr list(PyList_New(0));
+  PyObjectPtr pylong(PyLong_FromLong(10));
   int result = PyList_Append(list, pylong);
   EXPECT_EQ(result, 0);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
@@ -155,7 +155,8 @@ TEST_F(ListExtensionApiTest, SetItemWithNonListReturnsNegativeOne) {
 
 TEST_F(ListExtensionApiTest, SetItemWithBadIndexRaisesIndexError) {
   Py_ssize_t size = 0;
-  ASSERT_EQ(PyList_SetItem(PyList_New(size), size + 1, nullptr), -1);
+  PyObjectPtr list(PyList_New(size));
+  ASSERT_EQ(PyList_SetItem(list, size + 1, nullptr), -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_IndexError));
 }
@@ -250,7 +251,8 @@ TEST_F(ListExtensionApiTest, GetSliceOnNonListRaisesSystemError) {
 }
 
 TEST_F(ListExtensionApiTest, GetSliceOnEmptyListReturnsEmptyList) {
-  PyObjectPtr result(PyList_GetSlice(PyList_New(0), 0, 0));
+  PyObjectPtr list(PyList_New(0));
+  PyObjectPtr result(PyList_GetSlice(list, 0, 0));
   ASSERT_NE(result, nullptr);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(PyList_Size(result), 0);
@@ -333,7 +335,8 @@ TEST_F(ListExtensionApiTest, InsertWithNonListRaisesSystemError) {
 }
 
 TEST_F(ListExtensionApiTest, InsertWithNullItemRaisesSystemError) {
-  ASSERT_EQ(PyList_Insert(PyList_New(0), 0, nullptr), -1);
+  PyObjectPtr list(PyList_New(0));
+  ASSERT_EQ(PyList_Insert(list, 0, nullptr), -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
@@ -492,7 +495,8 @@ TEST_F(ListExtensionApiTest, SortWithNonComparableElementsRaisesTypeError) {
   PyList_Append(list, two);
   PyObjectPtr one(PyLong_FromLong(1));
   PyList_Append(list, one);
-  PyList_Append(list, PyUnicode_FromString("bar"));
+  PyObjectPtr bar(PyUnicode_FromString("bar"));
+  PyList_Append(list, bar);
   ASSERT_EQ(PyList_Size(list), 4);
   ASSERT_EQ(PyList_Sort(list), -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);

@@ -30,7 +30,7 @@ TEST_F(GetArgsExtensionApiTest, ParseStackWithLongKWNamesRaisesTypeError) {
   PyObject* args[] = {long10};
   int nargs = Py_ARRAY_LENGTH(args);
 
-  PyObject* kwnames = PyTuple_New(1);
+  PyObjectPtr kwnames(PyTuple_New(1));
   PyObject* in1 = PyLong_FromLong(37);
   ASSERT_NE(-1, PyTuple_SetItem(kwnames, 0, in1));
 
@@ -136,7 +136,7 @@ TEST_F(GetArgsExtensionApiTest, ParseTupleOneObject) {
 }
 
 TEST_F(GetArgsExtensionApiTest, ParseTupleMultipleObjects) {
-  PyObject* pytuple = PyTuple_New(3);
+  PyObjectPtr pytuple(PyTuple_New(3));
   PyObject* in1 = PyLong_FromLong(111);
   PyObject* in2 = Py_None;
   Py_INCREF(in2);
@@ -155,7 +155,7 @@ TEST_F(GetArgsExtensionApiTest, ParseTupleMultipleObjects) {
 }
 
 TEST_F(GetArgsExtensionApiTest, ParseTupleUnicodeObject) {
-  PyObject* pytuple = PyTuple_New(1);
+  PyObjectPtr pytuple(PyTuple_New(1));
   PyObject* in1 = PyUnicode_FromString("pyro");
   ASSERT_NE(-1, PyTuple_SetItem(pytuple, 0, in1));
 
@@ -177,7 +177,7 @@ TEST_F(GetArgsExtensionApiTest, ParseTupleWithWrongType) {
 }
 
 TEST_F(GetArgsExtensionApiTest, ParseTupleString) {
-  PyObject* pytuple = PyTuple_New(2);
+  PyObjectPtr pytuple(PyTuple_New(2));
   PyObject* in1 = PyUnicode_FromString("hello");
   PyObject* in2 = PyUnicode_FromString("world");
   ASSERT_NE(-1, PyTuple_SetItem(pytuple, 0, in1));
@@ -220,7 +220,7 @@ TEST_F(GetArgsExtensionApiTest, ParseTupleStringWithSize) {
 
 TEST_F(GetArgsExtensionApiTest, ParseTupleNumbers) {
   const int k_ints = 11;
-  PyObject* pytuple = PyTuple_New(k_ints);
+  PyObjectPtr pytuple(PyTuple_New(k_ints));
   for (int i = 0; i < k_ints; i++) {
     ASSERT_EQ(0, PyTuple_SetItem(pytuple, i, PyLong_FromLong(123 + i)));
   }
@@ -403,7 +403,8 @@ TEST_F(GetArgsExtensionApiTest, NoKeywordsWithNonDictRaisesSystemError) {
 #undef _PyArg_NoKeywords
 TEST_F(GetArgsExtensionApiTest, NoKeywordsWithNonEmptyDictRaisesTypeError) {
   PyObjectPtr non_empty_dict(PyDict_New());
-  PyDict_SetItemString(non_empty_dict, "my key", PyTuple_New(0));
+  PyObjectPtr tuple(PyTuple_New(0));
+  PyDict_SetItemString(non_empty_dict, "my key", tuple);
   EXPECT_EQ(_PyArg_NoKeywords("", non_empty_dict.get()), 0);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));

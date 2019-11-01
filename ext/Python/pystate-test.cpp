@@ -90,9 +90,9 @@ TEST_F(PystateExtensionApiTest, AddModuleAddsModule) {
   ASSERT_NE(found_module, nullptr);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_TRUE(PyModule_CheckExact(found_module));
-  EXPECT_EQ(PyUnicode_Compare(PyModule_GetNameObject(found_module),
-                              PyModule_GetNameObject(module)),
-            0);
+  PyObjectPtr found_name(PyModule_GetNameObject(found_module));
+  PyObjectPtr module_name(PyModule_GetNameObject(module));
+  EXPECT_EQ(PyUnicode_Compare(found_name, module_name), 0);
   Py_DECREF(module);
 }
 

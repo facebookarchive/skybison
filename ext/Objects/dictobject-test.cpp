@@ -22,8 +22,8 @@ TEST_F(DictExtensionApiTest, GetItemFromNonDictReturnsNull) {
 }
 
 TEST_F(DictExtensionApiTest, GetItemNonExistingKeyReturnsNull) {
-  PyObject* dict = PyDict_New();
-  PyObject* nonkey = PyLong_FromLong(10);
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr nonkey(PyLong_FromLong(10));
 
   // Pass a non existing key
   PyObject* result = PyDict_GetItem(dict, nonkey);
@@ -328,17 +328,23 @@ d = D()
   ASSERT_EQ(PyDict_SetItem(dict, c, value), 0);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_EQ(PyDict_Size(dict), 1);
-  ASSERT_EQ(PyLong_AsLong(moduleGet("__main__", "c_eq")), 0);
-  ASSERT_EQ(PyLong_AsLong(moduleGet("__main__", "c_hash")), 1);
+  PyObjectPtr c_eq(moduleGet("__main__", "c_eq"));
+  ASSERT_EQ(PyLong_AsLong(c_eq), 0);
+  PyObjectPtr c_hash(moduleGet("__main__", "c_hash"));
+  ASSERT_EQ(PyLong_AsLong(c_hash), 1);
 
   PyObjectPtr d(moduleGet("__main__", "d"));
   PyObject* result = PyDict_GetItem(dict, d);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_EQ(PyLong_AsLong(result), 500);
-  EXPECT_EQ(PyLong_AsLong(moduleGet("__main__", "c_hash")), 1);
-  EXPECT_EQ(PyLong_AsLong(moduleGet("__main__", "d_hash")), 2);
-  EXPECT_EQ(PyLong_AsLong(moduleGet("__main__", "c_eq")), 3);
-  EXPECT_EQ(PyLong_AsLong(moduleGet("__main__", "d_eq")), 4);
+  c_hash = moduleGet("__main__", "c_hash");
+  EXPECT_EQ(PyLong_AsLong(c_hash), 1);
+  PyObjectPtr d_hash(moduleGet("__main__", "d_hash"));
+  EXPECT_EQ(PyLong_AsLong(d_hash), 2);
+  c_eq = moduleGet("__main__", "c_eq");
+  EXPECT_EQ(PyLong_AsLong(c_eq), 3);
+  PyObjectPtr d_eq(moduleGet("__main__", "d_eq"));
+  EXPECT_EQ(PyLong_AsLong(d_eq), 4);
 }
 
 TEST_F(DictExtensionApiTest, GetItemComparesHashValueFirst) {
@@ -379,8 +385,8 @@ TEST_F(DictExtensionApiTest, GetItemKnownHashFromNonDictRaisesSystemError) {
 }
 
 TEST_F(DictExtensionApiTest, GetItemKnownHashNonExistingKeyReturnsNull) {
-  PyObject* dict = PyDict_New();
-  PyObject* nonkey = PyLong_FromLong(10);
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr nonkey(PyLong_FromLong(11));
 
   // Pass a non existing key
   PyObject* result = _PyDict_GetItem_KnownHash(dict, nonkey, 0);
@@ -711,17 +717,23 @@ d = D()
   ASSERT_EQ(PyDict_SetItem(dict, c, value), 0);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_EQ(PyDict_Size(dict), 1);
-  ASSERT_EQ(PyLong_AsLong(moduleGet("__main__", "c_eq")), 0);
-  ASSERT_EQ(PyLong_AsLong(moduleGet("__main__", "c_hash")), 1);
+  PyObjectPtr c_eq(moduleGet("__main__", "c_eq"));
+  ASSERT_EQ(PyLong_AsLong(c_eq), 0);
+  PyObjectPtr c_hash(moduleGet("__main__", "c_hash"));
+  ASSERT_EQ(PyLong_AsLong(c_hash), 1);
 
   PyObjectPtr d(moduleGet("__main__", "d"));
   ASSERT_EQ(PyDict_SetItem(dict, d, value), 0);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_EQ(PyDict_Size(dict), 1);
-  EXPECT_EQ(PyLong_AsLong(moduleGet("__main__", "c_hash")), 1);
-  EXPECT_EQ(PyLong_AsLong(moduleGet("__main__", "d_hash")), 2);
-  EXPECT_EQ(PyLong_AsLong(moduleGet("__main__", "c_eq")), 3);
-  EXPECT_EQ(PyLong_AsLong(moduleGet("__main__", "d_eq")), 4);
+  c_hash = moduleGet("__main__", "c_hash");
+  EXPECT_EQ(PyLong_AsLong(c_hash), 1);
+  PyObjectPtr d_hash(moduleGet("__main__", "d_hash"));
+  EXPECT_EQ(PyLong_AsLong(d_hash), 2);
+  c_eq = moduleGet("__main__", "c_eq");
+  EXPECT_EQ(PyLong_AsLong(c_eq), 3);
+  PyObjectPtr d_eq(moduleGet("__main__", "d_eq"));
+  EXPECT_EQ(PyLong_AsLong(d_eq), 4);
 }
 
 TEST_F(DictExtensionApiTest, SetItemRetainsExistingKeyObject) {
@@ -1080,7 +1092,8 @@ TEST_F(DictExtensionApiTest, NextWithEmptyDictReturnsFalse) {
   PyObject* key = nullptr;
   PyObject* value = nullptr;
   Py_ssize_t pos = 0;
-  EXPECT_EQ(PyDict_Next(PyDict_New(), &pos, &key, &value), 0);
+  PyObjectPtr dict(PyDict_New());
+  EXPECT_EQ(PyDict_Next(dict, &pos, &key, &value), 0);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
 }
 
