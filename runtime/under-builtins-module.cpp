@@ -1842,16 +1842,16 @@ RawObject UnderBuiltinsModule::underGetMemberPyObject(Thread* thread,
                                                       Frame* frame,
                                                       word nargs) {
   Arguments args(frame, nargs);
-  auto addr = Int::cast(args.get(0)).asCPtr();
-  auto pyobject = reinterpret_cast<PyObject**>(addr);
-  if (*pyobject == nullptr) {
+  ApiHandle* value =
+      *reinterpret_cast<ApiHandle**>(Int::cast(args.get(0)).asCPtr());
+  if (value == nullptr) {
     if (args.get(1).isNoneType()) return NoneType::object();
     HandleScope scope(thread);
     Str name(&scope, args.get(1));
     return thread->raiseWithFmt(LayoutId::kAttributeError,
                                 "Object attribute '%S' is nullptr", &name);
   }
-  return ApiHandle::fromPyObject(*pyobject)->asObject();
+  return value->asObject();
 }
 
 RawObject UnderBuiltinsModule::underGetMemberShort(Thread* thread, Frame* frame,
@@ -2908,9 +2908,11 @@ RawObject UnderBuiltinsModule::underSetMemberPyObject(Thread* thread,
                                                       Frame* frame,
                                                       word nargs) {
   Arguments args(frame, nargs);
-  auto addr = Int::cast(args.get(0)).asCPtr();
-  PyObject* value = ApiHandle::borrowedReference(thread, args.get(1));
-  std::memcpy(reinterpret_cast<void*>(addr), &value, sizeof(value));
+  ApiHandle* newvalue = ApiHandle::newReference(thread, args.get(1));
+  ApiHandle** oldvalue =
+      reinterpret_cast<ApiHandle**>(Int::cast(args.get(0)).asCPtr());
+  (*oldvalue)->decref();
+  *oldvalue = newvalue;
   return NoneType::object();
 }
 

@@ -2117,7 +2117,7 @@ TEST_F(TypeExtensionApiTest, MemberObjectPyro) {
 b = Bar()
 b.t_object.append(9)
 r1 = b.t_object
-b.t_object = tuple()
+b.t_object = (1, "a", 2, "b", 3, "c")
 r2 = b.t_object
 )"),
             0);
@@ -2129,7 +2129,7 @@ r2 = b.t_object
   EXPECT_TRUE(isLongEqualsLong(item, 9));
   PyObjectPtr r2(moduleGet("__main__", "r2"));
   ASSERT_EQ(PyTuple_Check(r2), 1);
-  EXPECT_EQ(PyTuple_Size(r2), 0);
+  EXPECT_EQ(PyTuple_Size(r2), 6);
 }
 
 TEST_F(TypeExtensionApiTest, MemberObjectWithNullPyro) {
