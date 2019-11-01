@@ -253,6 +253,36 @@ RawObject objectGetAttribute(Thread* thread, const Object& object,
   return objectGetAttributeSetLocation(thread, object, name_str, hash, nullptr);
 }
 
+RawObject objectNew(Thread* thread, const Type& type) {
+  HandleScope scope(thread);
+  if (!type.hasFlag(Type::Flag::kIsAbstract)) {
+    Layout layout(&scope, type.instanceLayout());
+    LayoutId id = layout.id();
+    Runtime* runtime = thread->runtime();
+    if (!isInstanceLayout(id)) {
+      Object type_name(&scope, type.name());
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
+          "object.__new__(%S) is not safe. Use %S.__new__()", &type_name,
+          &type_name);
+    }
+    return runtime->newInstance(layout);
+  }
+  // `type` is an abstract class and cannot be instantiated.
+  Object name(&scope, type.name());
+  Object comma(&scope, SmallStr::fromCStr(", "));
+  Object methods(&scope, type.abstractMethods());
+  Object sorted(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
+                                                SymbolId::kSorted, methods));
+  if (sorted.isError()) return *sorted;
+  Object joined(&scope, thread->invokeMethod2(comma, SymbolId::kJoin, sorted));
+  if (joined.isError()) return *joined;
+  return thread->raiseWithFmt(
+      LayoutId::kTypeError,
+      "Can't instantiate abstract class %S with abstract methods %S", &name,
+      &joined);
+}
+
 RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
                                    const Object& name_str, word hash,
                                    const Object& value, Object* location_out) {
@@ -452,33 +482,12 @@ RawObject ObjectBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
 RawObject ObjectBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Type type(&scope, args.get(0));
-  if (!type.hasFlag(Type::Flag::kIsAbstract)) {
-    Layout layout(&scope, type.instanceLayout());
-    LayoutId id = layout.id();
-    Runtime* runtime = thread->runtime();
-    if (!isInstanceLayout(id)) {
-      Object type_name(&scope, type.name());
-      return thread->raiseWithFmt(
-          LayoutId::kTypeError,
-          "object.__new__(%S) is not safe. Use %S.__new__()", &type_name,
-          &type_name);
-    }
-    return runtime->newInstance(layout);
+  Object type_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfType(*type_obj)) {
+    return thread->raiseRequiresType(type_obj, SymbolId::kType);
   }
-  // `type` is an abstract class and cannot be instantiated.
-  Object name(&scope, type.name());
-  Object comma(&scope, SmallStr::fromCStr(", "));
-  Object methods(&scope, type.abstractMethods());
-  Object sorted(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
-                                                SymbolId::kSorted, methods));
-  if (sorted.isError()) return *sorted;
-  Object joined(&scope, thread->invokeMethod2(comma, SymbolId::kJoin, sorted));
-  if (joined.isError()) return *joined;
-  return thread->raiseWithFmt(
-      LayoutId::kTypeError,
-      "Can't instantiate abstract class %S with abstract methods %S", &name,
-      &joined);
+  Type type(&scope, args.get(0));
+  return objectNew(thread, type);
 }
 
 RawObject ObjectBuiltins::dunderSetattr(Thread* thread, Frame* frame,

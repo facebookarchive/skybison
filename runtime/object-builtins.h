@@ -35,6 +35,8 @@ RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
                                    const Object& name_str, word hash,
                                    const Object& value, Object* location_out);
 
+RawObject objectNew(Thread* thread, const Type& type);
+
 RawObject objectDelItem(Thread* thread, const Object& object,
                         const Object& key);
 
