@@ -68,8 +68,60 @@ class chain:
 
 
 class combinations:
-    def __init__(self, p, r):
-        _unimplemented()
+    def __iter__(self):
+        return self
+
+    def __new__(cls, iterable, r):
+        _int_guard(r)
+        if r < 0:
+            raise ValueError("r must be non-negative")
+
+        result = object.__new__(cls)
+
+        seq = tuple(iterable)
+        n = _tuple_len(seq)
+
+        if r > n:
+            result._seq = None
+            return result
+
+        result._seq = seq
+        result._indices = list(range(r))
+        result._r = r
+        result._index_delta = n - r
+        return result
+
+    def __next__(self):
+        seq = self._seq
+        if seq is None:
+            raise StopIteration
+
+        r = self._r
+        indices = self._indices
+        index_delta = self._index_delta
+
+        # The result is the elements of the sequence at the current indices
+        result = (*(seq[indices[i]] for i in range(r)),)
+
+        # Scan indices right-to-left until finding one that is not at its
+        # maximum (i + n - r).
+        i = r - 1
+        while i >= 0:
+            if indices[i] < i + index_delta:
+                # Increment the current index which we know is not at its
+                # maximum.  Then move back to the right setting each index
+                # to its lowest possible value (one higher than the index
+                # to its left -- this maintains the sort order invariant).
+                indices[i] += 1
+                for j in range(i + 1, r):
+                    indices[j] = indices[j - 1] + 1
+                break
+            i -= 1
+        else:
+            # The indices are all at their maximum values and we're done.
+            self._seq = None
+
+        return result
 
 
 class combinations_with_replacement:

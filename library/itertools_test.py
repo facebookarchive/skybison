@@ -507,5 +507,36 @@ class StarMapTests(unittest.TestCase):
         self.assertRaisesRegex(TypeError, "'int' object is not iterable", next, it)
 
 
+class CombinationsTests(unittest.TestCase):
+    def test_too_few_arguments_raises_type_error(self):
+        self.assertRaises(TypeError, itertools.combinations)
+
+    def test_too_many_arguments_raises_type_error(self):
+        self.assertRaises(TypeError, itertools.combinations, "1", "2", "3", "4")
+
+    def test_non_int_r_type_error(self):
+        self.assertRaises(TypeError, itertools.combinations, "1", 1.0)
+
+    def test_empty_returns_single_empty_combination(self):
+        self.assertTupleEqual(tuple(itertools.combinations((), 0)), ((),))
+
+    def test_r_zero_returns_single_empty_combination(self):
+        self.assertTupleEqual(tuple(itertools.combinations("A", 0)), ((),))
+
+    def test_r_gt_length_returns_stopped_iterator(self):
+        self.assertTupleEqual(tuple(itertools.combinations("A", 2)), ())
+
+    def test_r_lt_length_returns_items_with_length_r(self):
+        result = tuple(itertools.combinations("Bam!", 2))
+        self.assertTupleEqual(
+            result,
+            (("B", "a"), ("B", "m"), ("B", "!"), ("a", "m"), ("a", "!"), ("m", "!")),
+        )
+
+    def test_ordinary_iterable(self):
+        result = tuple(itertools.combinations(range(4), 3))
+        self.assertTupleEqual(result, ((0, 1, 2), (0, 1, 3), (0, 2, 3), (1, 2, 3)))
+
+
 if __name__ == "__main__":
     unittest.main()
