@@ -580,5 +580,41 @@ class CombinationsWithReplacementTests(unittest.TestCase):
         self.assertTupleEqual(result, ((0,), (1,), (2,), (3,)))
 
 
+class CompressTests(unittest.TestCase):
+    def test_empty_data_returns_stopped_iterator(self):
+        self.assertEqual(tuple(itertools.compress([], [1, 0])), ())
+
+    def test_empty_selectors_returns_stopped_iterator(self):
+        self.assertEqual(tuple(itertools.compress("TYLER", [])), ())
+
+    def test_numeric_selector_values(self):
+        result = "".join(itertools.compress("T_Y_L_E_R", [1, 0, 1, 0, 1, 0, 1, 0, 1]))
+        self.assertEqual(result, "TYLER")
+
+    def test_boolean_selector_values(self):
+        result = tuple(itertools.compress([2, 3, 4], [True, False, False]))
+        self.assertTupleEqual(result, (2,))
+
+    def test_other_selector_values(self):
+        result = "".join(
+            itertools.compress("FOUBAR", [None, [1], (), "hello", b"", {1: 2}])
+        )
+        self.assertEqual(result, "OBR")
+
+    def test_data_length_gt_selector_length(self):
+        result = tuple(itertools.compress([2, 3, 4, 5, 6], [1, 0, 1]))
+        self.assertTupleEqual(result, (2, 4))
+
+    def test_data_length_lt_selector_length(self):
+        result = tuple(itertools.compress([2, 3, 4], [1, 0, 1, 1, 1, 1]))
+        self.assertTupleEqual(result, (2, 4))
+
+    def test_passing_non_iterable_data_raises_typeerror(self):
+        self.assertRaises(TypeError, itertools.compress, None, [1, 2, 3])
+
+    def test_passing_non_iterable_selectors_raises_typeerror(self):
+        self.assertRaises(TypeError, itertools.compress, [1, 2, 3], None)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -180,8 +180,24 @@ class combinations_with_replacement:
 
 
 class compress:
-    def __init__(self, data, selectors):
-        _unimplemented()
+    def __iter__(self):
+        return self
+
+    def __new__(cls, data, selectors):
+        result = object.__new__(cls)
+        result._data = iter(data)
+        result._selectors = iter(selectors)
+        return result
+
+    def __next__(self):
+        data = self._data
+        selectors = self._selectors
+
+        while True:
+            datum = next(data)
+            selector = next(selectors)
+            if selector:
+                return datum
 
 
 class count:
