@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include "dict-builtins.h"
 #include "ref-builtins.h"
 #include "runtime.h"
 #include "super-builtins.h"
@@ -28,7 +29,7 @@ weak = ref(a)
   Module main(&scope, findMainModule(&runtime_));
   Dict globals(&scope, main.dict());
   Str name(&scope, runtime_.newStrFromCStr("a"));
-  runtime_.dictRemoveByStr(thread_, globals, name);
+  dictRemoveByStr(thread_, globals, name);
 
   runtime_.collectGarbage();
   weak = mainModuleAt(&runtime_, "weak");
@@ -57,7 +58,7 @@ weak = ref(a, f)
   Module main(&scope, findMainModule(&runtime_));
   Dict globals(&scope, main.dict());
   Str name(&scope, runtime_.newStrFromCStr("a"));
-  runtime_.dictRemoveByStr(thread_, globals, name);
+  dictRemoveByStr(thread_, globals, name);
 
   runtime_.collectGarbage();
   weak = mainModuleAt(&runtime_, "weak");

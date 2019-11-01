@@ -1,5 +1,6 @@
 #include "function-builtins.h"
 
+#include "dict-builtins.h"
 #include "frame.h"
 #include "globals.h"
 #include "object-builtins.h"

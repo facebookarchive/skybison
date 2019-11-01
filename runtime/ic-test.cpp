@@ -1,6 +1,8 @@
 #include "gtest/gtest.h"
 
 #include "ic.h"
+
+#include "dict-builtins.h"
 #include "test-utils.h"
 
 namespace py {
@@ -168,12 +170,11 @@ c = C()
 
   Type type_a(&scope, mainModuleAt(&runtime_, "A"));
   Dict type_a_dict(&scope, type_a.dict());
-  EXPECT_TRUE(
-      runtime_.dictAtByStr(thread_, type_a_dict, foo).isErrorNotFound());
+  EXPECT_TRUE(dictAtByStr(thread_, type_a_dict, foo).isErrorNotFound());
 
   Type type_b(&scope, mainModuleAt(&runtime_, "B"));
   Dict type_b_dict(&scope, type_b.dict());
-  ValueCell b_entry(&scope, runtime_.dictAtByStr(thread_, type_b_dict, foo));
+  ValueCell b_entry(&scope, dictAtByStr(thread_, type_b_dict, foo));
   EXPECT_FALSE(b_entry.isPlaceholder());
   WeakLink b_link(&scope, b_entry.dependencyLink());
   EXPECT_EQ(b_link.referent(), dependent);
@@ -181,7 +182,7 @@ c = C()
 
   Type type_c(&scope, mainModuleAt(&runtime_, "C"));
   Dict type_c_dict(&scope, type_c.dict());
-  ValueCell c_entry(&scope, runtime_.dictAtByStr(thread_, type_c_dict, foo));
+  ValueCell c_entry(&scope, dictAtByStr(thread_, type_c_dict, foo));
   EXPECT_TRUE(c_entry.isPlaceholder());
   WeakLink c_link(&scope, c_entry.dependencyLink());
   EXPECT_EQ(c_link.referent(), dependent);
@@ -200,8 +201,8 @@ TEST_F(IcTest, IcUpdateAttrDoesNotInsertsDependencyToSealedType) {
 
   Type type_str(&scope, runtime_.typeAt(LayoutId::kStr));
   Dict type_str_dict(&scope, type_str.dict());
-  ValueCell dunder_add_entry(
-      &scope, runtime_.dictAtByStr(thread_, type_str_dict, dunder_add));
+  ValueCell dunder_add_entry(&scope,
+                             dictAtByStr(thread_, type_str_dict, dunder_add));
   EXPECT_TRUE(dunder_add_entry.dependencyLink().isNoneType());
 }
 
@@ -211,8 +212,8 @@ static RawObject dependencyLinkOfTypeAttr(Thread* thread, const Type& type,
   Runtime* runtime = thread->runtime();
   Dict type_dict(&scope, type.dict());
   Str attribute_name_str(&scope, runtime->newStrFromCStr(attribute_name));
-  ValueCell value_cell(
-      &scope, runtime->dictAtByStr(thread, type_dict, attribute_name_str));
+  ValueCell value_cell(&scope,
+                       dictAtByStr(thread, type_dict, attribute_name_str));
   return value_cell.dependencyLink();
 }
 
@@ -508,13 +509,11 @@ y(a)
   Function dependent_y(&scope, mainModuleAt(&runtime_, "y"));
 
   // A.foo -> x
-  ValueCell foo_in_a(&scope,
-                     runtime_.dictAtByStr(thread_, type_dict_a, foo_name));
+  ValueCell foo_in_a(&scope, dictAtByStr(thread_, type_dict_a, foo_name));
   ASSERT_EQ(WeakLink::cast(foo_in_a.dependencyLink()).referent(), *dependent_x);
 
   // A.bar -> y
-  ValueCell bar_in_a(&scope,
-                     runtime_.dictAtByStr(thread_, type_dict_a, bar_name));
+  ValueCell bar_in_a(&scope, dictAtByStr(thread_, type_dict_a, bar_name));
   ASSERT_EQ(WeakLink::cast(bar_in_a.dependencyLink()).referent(), *dependent_y);
 
   LayoutId type_a_instance_layout_id =
@@ -577,21 +576,18 @@ x(a)
   Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
 
   // A.foo -> x
-  ValueCell foo_in_a(&scope,
-                     runtime_.dictAtByStr(thread_, type_dict_a, foo_name));
+  ValueCell foo_in_a(&scope, dictAtByStr(thread_, type_dict_a, foo_name));
   ASSERT_FALSE(foo_in_a.isPlaceholder());
   ASSERT_EQ(WeakLink::cast(foo_in_a.dependencyLink()).referent(), *dependent_x);
 
   // B.foo -> x
-  ValueCell foo_in_b(&scope,
-                     runtime_.dictAtByStr(thread_, type_dict_b, foo_name));
+  ValueCell foo_in_b(&scope, dictAtByStr(thread_, type_dict_b, foo_name));
   ASSERT_FALSE(foo_in_b.isPlaceholder());
   ASSERT_EQ(WeakLink::cast(foo_in_b.dependencyLink()).referent(), *dependent_x);
 
   // C.foo -> x
   // Note that this dependency is a placeholder.
-  ValueCell foo_in_c(&scope,
-                     runtime_.dictAtByStr(thread_, type_dict_c, foo_name));
+  ValueCell foo_in_c(&scope, dictAtByStr(thread_, type_dict_c, foo_name));
   ASSERT_TRUE(foo_in_c.isPlaceholder());
   ASSERT_EQ(WeakLink::cast(foo_in_c.dependencyLink()).referent(), *dependent_x);
 
@@ -685,8 +681,7 @@ x(c)
 
   // Assign C.foo to a real value.
   Dict type_c_dict(&scope, type_c.dict());
-  ValueCell foo_in_c(&scope,
-                     runtime_.dictAtByStr(thread_, type_c_dict, foo_name));
+  ValueCell foo_in_c(&scope, dictAtByStr(thread_, type_c_dict, foo_name));
   foo_in_c.setValue(NoneType::object());
   // Check if B.foo is not retrived from C.foo from now on.
   EXPECT_FALSE(icIsCachedAttributeAffectedByUpdatedType(
@@ -746,7 +741,7 @@ c = C()
   ValueCell foo(&scope, runtime_.newValueCell());
   ASSERT_TRUE(
       icInsertDependentToValueCellDependencyLink(thread_, dependent, foo));
-  runtime_.dictAtPutByStr(thread_, type_dict, foo_name, foo);
+  dictAtPutByStr(thread_, type_dict, foo_name, foo);
 
   // Create an attribute cache for an instance of C, under name "foo".
   Object instance(&scope, mainModuleAt(&runtime_, "c"));
@@ -788,7 +783,7 @@ c = C()
   ValueCell foo(&scope, runtime_.newValueCell());
   ASSERT_TRUE(
       icInsertDependentToValueCellDependencyLink(thread_, dependent, foo));
-  runtime_.dictAtPutByStr(thread_, type_dict, foo_name, foo);
+  dictAtPutByStr(thread_, type_dict, foo_name, foo);
 
   // Create an instance offset cache for an instance of C, under name "foo".
   Object instance(&scope, mainModuleAt(&runtime_, "c"));
@@ -840,22 +835,22 @@ c = C()
 
   // The following lines simulate that dependent caches a.foo, b.foo, c.foo, and
   // x.foo. A.foo -> dependent.
-  ValueCell a_foo(&scope, runtime_.dictAtByStr(thread_, a_type_dict, foo_name));
+  ValueCell a_foo(&scope, dictAtByStr(thread_, a_type_dict, foo_name));
   ASSERT_TRUE(
       icInsertDependentToValueCellDependencyLink(thread_, dependent, a_foo));
-  runtime_.dictAtPutByStr(thread_, a_type_dict, foo_name, a_foo);
+  dictAtPutByStr(thread_, a_type_dict, foo_name, a_foo);
   // B.foo -> dependent.
-  ValueCell b_foo(&scope, runtime_.dictAtByStr(thread_, b_type_dict, foo_name));
+  ValueCell b_foo(&scope, dictAtByStr(thread_, b_type_dict, foo_name));
   ASSERT_TRUE(
       icInsertDependentToValueCellDependencyLink(thread_, dependent, b_foo));
-  runtime_.dictAtPutByStr(thread_, b_type_dict, foo_name, b_foo);
+  dictAtPutByStr(thread_, b_type_dict, foo_name, b_foo);
   // C.foo -> dependent.
   ValueCell c_foo(&scope, runtime_.newValueCell());
   // This is a placeholder since C.foo is resolved to B.foo.
   c_foo.makePlaceholder();
   ASSERT_TRUE(
       icInsertDependentToValueCellDependencyLink(thread_, dependent, c_foo));
-  runtime_.dictAtPutByStr(thread_, c_type_dict, foo_name, c_foo);
+  dictAtPutByStr(thread_, c_type_dict, foo_name, c_foo);
 
   // Create a cache for a.foo in dependent.
   Object a(&scope, mainModuleAt(&runtime_, "a"));
@@ -922,7 +917,7 @@ c = C()
   foo.setValue(*data_descriptor);
   ASSERT_TRUE(
       icInsertDependentToValueCellDependencyLink(thread_, dependent0, foo));
-  runtime_.dictAtPutByStr(thread_, type_dict, foo_name, foo);
+  dictAtPutByStr(thread_, type_dict, foo_name, foo);
 
   // bar -> dependent1.
   ValueCell bar(&scope, runtime_.newValueCell());
@@ -930,7 +925,7 @@ c = C()
 
   ASSERT_TRUE(
       icInsertDependentToValueCellDependencyLink(thread_, dependent1, bar));
-  runtime_.dictAtPutByStr(thread_, type_dict, bar_name, bar);
+  dictAtPutByStr(thread_, type_dict, bar_name, bar);
 
   Tuple dependent0_caches(&scope, dependent0.caches());
   Object instance(&scope, mainModuleAt(&runtime_, "c"));
@@ -1100,16 +1095,16 @@ cache_compare_op(a, b)
   Type type_a(&scope, mainModuleAt(&runtime_, "A"));
   Dict type_a_dict(&scope, type_a.dict());
   Str dunder_ge_name(&scope, runtime_.newStrFromCStr("__ge__"));
-  ValueCell dunder_ge(
-      &scope, runtime_.dictAtByStr(thread_, type_a_dict, dunder_ge_name));
+  ValueCell dunder_ge(&scope,
+                      dictAtByStr(thread_, type_a_dict, dunder_ge_name));
   WeakLink dunder_ge_link(&scope, dunder_ge.dependencyLink());
   // Precondition check that cache_compare_op is a dependent of A.__ge__.
   ASSERT_EQ(dunder_ge_link.referent(), *cache_compare_op);
   Type type_b(&scope, mainModuleAt(&runtime_, "B"));
   Dict type_b_dict(&scope, type_b.dict());
   Str dunder_le_name(&scope, runtime_.newStrFromCStr("__le__"));
-  ValueCell dunder_le(
-      &scope, runtime_.dictAtByStr(thread_, type_b_dict, dunder_le_name));
+  ValueCell dunder_le(&scope,
+                      dictAtByStr(thread_, type_b_dict, dunder_le_name));
   WeakLink dunder_le_link(&scope, dunder_le.dependencyLink());
   // Precondition check that cache_compare_op is a dependent of B.__le__.
   ASSERT_EQ(dunder_le_link.referent(), *cache_compare_op);

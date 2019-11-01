@@ -2,6 +2,7 @@
 
 #include "capi-handles.h"
 
+#include "dict-builtins.h"
 #include "int-builtins.h"
 #include "object-builtins.h"
 #include "runtime.h"
@@ -70,7 +71,7 @@ TEST_F(CApiHandlesTest, BuiltinIntObjectReturnsApiHandle) {
   word hash = intHash(*obj);
   ApiHandle* handle = ApiHandle::newReference(thread_, *obj);
   EXPECT_NE(handle, nullptr);
-  EXPECT_TRUE(runtime_.dictIncludes(thread_, dict, obj, hash));
+  EXPECT_TRUE(dictIncludes(thread_, dict, obj, hash));
 }
 
 TEST_F(CApiHandlesTest, ApiHandleReturnsBuiltinIntObject) {
@@ -88,12 +89,12 @@ TEST_F(CApiHandlesTest, BuiltinObjectReturnsApiHandle) {
   Dict dict(&scope, runtime_.apiHandles());
   Object obj(&scope, runtime_.newList());
   word hash = runtime_.hash(*obj);
-  ASSERT_FALSE(runtime_.dictIncludes(thread_, dict, obj, hash));
+  ASSERT_FALSE(dictIncludes(thread_, dict, obj, hash));
 
   ApiHandle* handle = ApiHandle::newReference(thread_, *obj);
   EXPECT_NE(handle, nullptr);
 
-  EXPECT_TRUE(runtime_.dictIncludes(thread_, dict, obj, hash));
+  EXPECT_TRUE(dictIncludes(thread_, dict, obj, hash));
 }
 
 TEST_F(CApiHandlesTest, BuiltinObjectReturnsSameApiHandle) {
@@ -211,7 +212,7 @@ TEST_F(CApiHandlesTest, Cache) {
   word hash = runtime_.hash(*key);
   handle1->dispose();
   Dict caches(&scope, runtime_.apiCaches());
-  EXPECT_TRUE(runtime_.dictAt(thread_, caches, key, hash).isError());
+  EXPECT_TRUE(dictAt(thread_, caches, key, hash).isError());
   EXPECT_EQ(handle2->cache(), buffer1);
 }
 

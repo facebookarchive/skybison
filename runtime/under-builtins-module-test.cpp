@@ -4,6 +4,7 @@
 
 #include "builtins-module.h"
 #include "bytearray-builtins.h"
+#include "dict-builtins.h"
 #include "int-builtins.h"
 #include "module-builtins.h"
 #include "runtime.h"
@@ -433,7 +434,7 @@ TEST_F(UnderBuiltinsModuleTest, UnderDictGetReturnsValue) {
   Object key(&scope, runtime_.newInt(123));
   word hash = intHash(*key);
   Object value(&scope, runtime_.newInt(456));
-  runtime_.dictAtPut(thread_, dict, key, hash, value);
+  dictAtPut(thread_, dict, key, hash, value);
   Object dflt(&scope, runtime_.newInt(789));
   Object result(&scope,
                 runBuiltin(UnderBuiltinsModule::underDictGet, dict, key, dflt));
@@ -459,14 +460,14 @@ TEST_F(UnderBuiltinsModuleTest,
   Object a_value(&scope, SmallInt::fromWord(1));
   Str b(&scope, runtime_.newStrFromCStr("b"));
   Object b_value(&scope, SmallInt::fromWord(2));
-  runtime_.dictAtPutByStr(thread_, dict, a, a_value);
-  runtime_.dictAtPutByStr(thread_, dict, b, b_value);
+  dictAtPutByStr(thread_, dict, a, a_value);
+  dictAtPutByStr(thread_, dict, b, b_value);
 
   Tuple result(&scope, runBuiltin(UnderBuiltinsModule::underDictPopitem, dict));
   ASSERT_EQ(result.length(), 2);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), "a"));
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 1));
-  EXPECT_TRUE(runtime_.dictAtByStr(thread_, dict, a).isErrorNotFound());
+  EXPECT_TRUE(dictAtByStr(thread_, dict, a).isErrorNotFound());
   EXPECT_EQ(dict.numItems(), 1);
 }
 
@@ -499,14 +500,14 @@ TEST_F(UnderBuiltinsModuleTest, UnderDictSetItemWithExistingKey) {
   Str key(&scope, runtime_.newStrFromCStr("foo"));
   Object val(&scope, runtime_.newInt(0));
   Object val2(&scope, runtime_.newInt(1));
-  runtime_.dictAtPutByStr(thread_, dict, key, val);
+  dictAtPutByStr(thread_, dict, key, val);
 
   Object result(&scope, runBuiltin(UnderBuiltinsModule::underDictSetItem, dict,
                                    key, val2));
   ASSERT_TRUE(result.isNoneType());
   ASSERT_EQ(dict.numItems(), 1);
   ASSERT_EQ(dict.numUsableItems(), 5 - 1);
-  ASSERT_EQ(runtime_.dictAtByStr(thread_, dict, key), *val2);
+  ASSERT_EQ(dictAtByStr(thread_, dict, key), *val2);
 }
 
 TEST_F(UnderBuiltinsModuleTest, UnderDictSetItemWithNonExistentKey) {
@@ -521,7 +522,7 @@ TEST_F(UnderBuiltinsModuleTest, UnderDictSetItemWithNonExistentKey) {
   ASSERT_TRUE(result.isNoneType());
   ASSERT_EQ(dict.numItems(), 1);
   ASSERT_EQ(dict.numUsableItems(), 5 - 1);
-  ASSERT_EQ(runtime_.dictAtByStr(thread_, dict, key), *val);
+  ASSERT_EQ(dictAtByStr(thread_, dict, key), *val);
 }
 
 TEST_F(UnderBuiltinsModuleTest, UnderDictSetItemWithDictSubclassSetsItem) {
@@ -538,7 +539,7 @@ d = foo()
   Object result1(&scope, runBuiltin(UnderBuiltinsModule::underDictSetItem, dict,
                                     key, value));
   EXPECT_TRUE(result1.isNoneType());
-  Object result2(&scope, runtime_.dictAtByStr(thread_, dict, key));
+  Object result2(&scope, dictAtByStr(thread_, dict, key));
   ASSERT_TRUE(result2.isStr());
   EXPECT_EQ(Str::cast(*result2), *value);
 }

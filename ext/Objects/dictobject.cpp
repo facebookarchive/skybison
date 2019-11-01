@@ -33,7 +33,7 @@ PY_EXPORT int _PyDict_SetItem_KnownHash(PyObject* pydict, PyObject* key,
   Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
   Object value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
   word hash = SmallInt::truncate(pyhash);
-  runtime->dictAtPut(thread, dict, key_obj, hash, value_obj);
+  dictAtPut(thread, dict, key_obj, hash, value_obj);
   return 0;
 }
 
@@ -105,7 +105,7 @@ PY_EXPORT PyObject* _PyDict_GetItem_KnownHash(PyObject* pydict, PyObject* key,
   Dict dict(&scope, *dictobj);
   Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
   word hash = SmallInt::truncate(pyhash);
-  Object value(&scope, runtime->dictAt(thread, dict, key_obj, hash));
+  Object value(&scope, dictAt(thread, dict, key_obj, hash));
   if (value.isError()) return nullptr;
   return ApiHandle::borrowedReference(thread, *value);
 }
@@ -144,13 +144,12 @@ PY_EXPORT int PyDict_ClearFreeList() { return 0; }
 PY_EXPORT int PyDict_Contains(PyObject* pydict, PyObject* key) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
   Dict dict(&scope, ApiHandle::fromPyObject(pydict)->asObject());
   Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
   Object hash_obj(&scope, Interpreter::hash(thread, key_obj));
   if (hash_obj.isErrorException()) return -1;
   word hash = SmallInt::cast(*hash_obj).value();
-  return runtime->dictIncludes(thread, dict, key_obj, hash);
+  return dictIncludes(thread, dict, key_obj, hash);
 }
 
 PY_EXPORT PyObject* PyDict_Copy(PyObject* pydict) {
@@ -183,7 +182,7 @@ PY_EXPORT int PyDict_DelItem(PyObject* pydict, PyObject* key) {
   Object hash_obj(&scope, Interpreter::hash(thread, key_obj));
   if (hash_obj.isErrorException()) return -1;
   word hash = SmallInt::cast(*hash_obj).value();
-  if (runtime->dictRemove(thread, dict, key_obj, hash).isError()) {
+  if (dictRemove(thread, dict, key_obj, hash).isError()) {
     thread->raise(LayoutId::kKeyError, *key_obj);
     return -1;
   }
@@ -213,7 +212,7 @@ PY_EXPORT PyObject* PyDict_GetItemWithError(PyObject* pydict, PyObject* key) {
   if (hash_obj.isErrorException()) return nullptr;
   word hash = SmallInt::cast(*hash_obj).value();
   Dict dict(&scope, *dict_obj);
-  Object value(&scope, runtime->dictAt(thread, dict, key_obj, hash));
+  Object value(&scope, dictAt(thread, dict, key_obj, hash));
   if (value.isError()) {
     return nullptr;
   }
@@ -230,7 +229,22 @@ PY_EXPORT PyObject* PyDict_Items(PyObject* pydict) {
     return nullptr;
   }
   Dict dict(&scope, *dict_obj);
-  return ApiHandle::newReference(thread, runtime->dictItems(thread, dict));
+  word len = dict.numItems();
+  List result(&scope, runtime->newList());
+  if (len > 0) {
+    Tuple data(&scope, dict.data());
+    MutableTuple items(&scope, runtime->newMutableTuple(len));
+    word num_items = 0;
+    for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
+      Tuple kvpair(&scope, runtime->newTuple(2));
+      kvpair.atPut(0, Dict::Bucket::key(*data, i));
+      kvpair.atPut(1, Dict::Bucket::value(*data, i));
+      items.atPut(num_items++, *kvpair);
+    }
+    result.setItems(*items);
+    result.setNumItems(len);
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT PyObject* PyDict_Keys(PyObject* pydict) {
@@ -243,7 +257,7 @@ PY_EXPORT PyObject* PyDict_Keys(PyObject* pydict) {
     return nullptr;
   }
   Dict dict(&scope, *dict_obj);
-  return ApiHandle::newReference(thread, runtime->dictKeys(thread, dict));
+  return ApiHandle::newReference(thread, dictKeys(thread, dict));
 }
 
 PY_EXPORT int PyDict_Merge(PyObject* left, PyObject* right,
@@ -335,7 +349,19 @@ PY_EXPORT PyObject* PyDict_Values(PyObject* pydict) {
     return nullptr;
   }
   Dict dict(&scope, *dict_obj);
-  return ApiHandle::newReference(thread, runtime->dictValues(thread, dict));
+  word len = dict.numItems();
+  List result(&scope, runtime->newList());
+  if (len > 0) {
+    Tuple data(&scope, dict.data());
+    MutableTuple values(&scope, runtime->newMutableTuple(len));
+    word num_values = 0;
+    for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
+      values.atPut(num_values++, Dict::Bucket::value(*data, i));
+    }
+    result.setItems(*values);
+    result.setNumItems(len);
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT PyObject* PyObject_GenericGetDict(PyObject* /* j */, void* /* t */) {

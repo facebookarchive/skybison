@@ -1,6 +1,7 @@
 #include "module-builtins.h"
 
 #include "capi-handles.h"
+#include "dict-builtins.h"
 #include "frame.h"
 #include "globals.h"
 #include "ic.h"
@@ -27,19 +28,19 @@ RawObject moduleAt(Thread* thread, const Module& module, const Object& key,
                    word hash) {
   HandleScope scope(thread);
   Dict dict(&scope, module.dict());
-  return unwrapValueCell(thread->runtime()->dictAt(thread, dict, key, hash));
+  return unwrapValueCell(dictAt(thread, dict, key, hash));
 }
 
 RawObject moduleAtByStr(Thread* thread, const Module& module, const Str& name) {
   HandleScope scope(thread);
   Dict dict(&scope, module.dict());
-  return unwrapValueCell(thread->runtime()->dictAtByStr(thread, dict, name));
+  return unwrapValueCell(dictAtByStr(thread, dict, name));
 }
 
 RawObject moduleAtById(Thread* thread, const Module& module, SymbolId id) {
   HandleScope scope(thread);
   Dict dict(&scope, module.dict());
-  return unwrapValueCell(thread->runtime()->dictAtById(thread, dict, id));
+  return unwrapValueCell(dictAtById(thread, dict, id));
 }
 
 static RawObject filterPlaceholderValueCell(RawObject result) {
@@ -57,42 +58,37 @@ RawObject moduleValueCellAtById(Thread* thread, const Module& module,
                                 SymbolId id) {
   HandleScope scope(thread);
   Dict dict(&scope, module.dict());
-  return filterPlaceholderValueCell(
-      thread->runtime()->dictAtById(thread, dict, id));
+  return filterPlaceholderValueCell(dictAtById(thread, dict, id));
 }
 
 RawObject moduleValueCellAtByStr(Thread* thread, const Module& module,
                                  const Str& name) {
   HandleScope scope(thread);
   Dict dict(&scope, module.dict());
-  return filterPlaceholderValueCell(
-      thread->runtime()->dictAtByStr(thread, dict, name));
+  return filterPlaceholderValueCell(dictAtByStr(thread, dict, name));
 }
 
 static RawObject moduleValueCellAtPut(Thread* thread, const Module& module,
                                       const Object& key, word hash,
                                       const Object& value) {
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
   Dict module_dict(&scope, module.dict());
-  Object module_result(&scope, runtime->dictAt(thread, module_dict, key, hash));
+  Object module_result(&scope, dictAt(thread, module_dict, key, hash));
   if (module_result.isValueCell() &&
       ValueCell::cast(*module_result).isPlaceholder()) {
     // A builtin entry is cached under the same key, so invalidate its caches.
     Module builtins_module(
         &scope, moduleAtById(thread, module, SymbolId::kDunderBuiltins));
     Dict builtins_dict(&scope, builtins_module.dict());
-    Object builtins_result(&scope,
-                           filterPlaceholderValueCell(thread->runtime()->dictAt(
-                               thread, builtins_dict, key, hash)));
+    Object builtins_result(&scope, filterPlaceholderValueCell(dictAt(
+                                       thread, builtins_dict, key, hash)));
     DCHECK(builtins_result.isValueCell(), "a builtin entry must exist");
     ValueCell builtins_value_cell(&scope, *builtins_result);
     DCHECK(!builtins_value_cell.dependencyLink().isNoneType(),
            "the builtin valuecell must have a dependent");
     icInvalidateGlobalVar(thread, builtins_value_cell);
   }
-  return thread->runtime()->dictAtPutInValueCell(thread, module_dict, key, hash,
-                                                 value);
+  return dictAtPutInValueCell(thread, module_dict, key, hash, value);
 }
 
 RawObject moduleAtPut(Thread* thread, const Module& module, const Object& key,
@@ -143,8 +139,7 @@ RawObject moduleRemove(Thread* thread, const Module& module, const Object& key,
                        word hash) {
   HandleScope scope(thread);
   Dict module_dict(&scope, module.dict());
-  Object result(&scope,
-                thread->runtime()->dictRemove(thread, module_dict, key, hash));
+  Object result(&scope, dictRemove(thread, module_dict, key, hash));
   DCHECK(result.isErrorNotFound() || result.isValueCell(),
          "dictRemove must return either ErrorNotFound or ValueCell");
   if (result.isErrorNotFound()) {

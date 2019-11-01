@@ -1827,11 +1827,11 @@ HANDLER_INLINE Continue Interpreter::doSetupAnnotations(Thread* thread, word) {
     Object implicit_globals(&scope, frame->implicitGlobals());
     if (implicit_globals.isDict()) {
       Dict implicit_globals_dict(&scope, frame->implicitGlobals());
-      if (!runtime->dictIncludesByStr(thread, implicit_globals_dict,
-                                      dunder_annotations)) {
+      if (!dictIncludesByStr(thread, implicit_globals_dict,
+                             dunder_annotations)) {
         Object annotations(&scope, runtime->newDict());
-        runtime->dictAtPutByStr(thread, implicit_globals_dict,
-                                dunder_annotations, annotations);
+        dictAtPutByStr(thread, implicit_globals_dict, dunder_annotations,
+                       annotations);
       }
     } else {
       if (objectGetItem(thread, implicit_globals, dunder_annotations)
@@ -1950,7 +1950,7 @@ HANDLER_INLINE Continue Interpreter::doStoreName(Thread* thread, word arg) {
   }
   if (implicit_globals_obj.isDict()) {
     Dict implicit_globals(&scope, *implicit_globals_obj);
-    thread->runtime()->dictAtPutByStr(thread, implicit_globals, name, value);
+    dictAtPutByStr(thread, implicit_globals, name, value);
   } else {
     if (objectSetItem(thread, implicit_globals_obj, name, value)
             .isErrorException()) {
@@ -1980,9 +1980,7 @@ HANDLER_INLINE Continue Interpreter::doDeleteName(Thread* thread, word arg) {
   Str name(&scope, Tuple::cast(names).at(arg));
   if (implicit_globals_obj.isDict()) {
     Dict implicit_globals(&scope, *implicit_globals_obj);
-    if (thread->runtime()
-            ->dictRemoveByStr(thread, implicit_globals, name)
-            .isErrorNotFound()) {
+    if (dictRemoveByStr(thread, implicit_globals, name).isErrorNotFound()) {
       return raiseUndefinedName(thread, name);
     }
   } else {
@@ -2143,9 +2141,8 @@ RawObject Interpreter::globalsAt(Thread* thread, const Module& module,
       // the same name is cached.
       Dict module_dict(&scope, module.dict());
       NoneType none(&scope, NoneType::object());
-      ValueCell module_value_cell(&scope,
-                                  thread->runtime()->dictAtPutInValueCellByStr(
-                                      thread, module_dict, name, none));
+      ValueCell module_value_cell(
+          &scope, dictAtPutInValueCellByStr(thread, module_dict, name, none));
       module_value_cell.makePlaceholder();
     }
     return value_cell.value();
@@ -2414,7 +2411,6 @@ HANDLER_INLINE Continue Interpreter::doLoadImmediate(Thread* thread, word arg) {
 
 HANDLER_INLINE Continue Interpreter::doLoadName(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object names(&scope, Code::cast(frame->code()).names());
   Str name(&scope, Tuple::cast(*names).at(arg));
@@ -2424,8 +2420,7 @@ HANDLER_INLINE Continue Interpreter::doLoadName(Thread* thread, word arg) {
     if (implicit_globals_obj.isDict()) {
       // Shortcut for the common case of implicit_globals being a dict.
       Dict implicit_globals(&scope, *implicit_globals_obj);
-      Object result(&scope,
-                    runtime->dictAtByStr(thread, implicit_globals, name));
+      Object result(&scope, dictAtByStr(thread, implicit_globals, name));
       DCHECK(!result.isError() || result.isErrorNotFound(),
              "expected value or not found");
       if (!result.isErrorNotFound()) {
@@ -2521,7 +2516,7 @@ HANDLER_INLINE Continue Interpreter::doBuildMap(Thread* thread, word arg) {
     hash_obj = hash(thread, key);
     if (hash_obj.isErrorException()) return Continue::UNWIND;
     word hash = SmallInt::cast(*hash_obj).value();
-    runtime->dictAtPut(thread, dict, key, hash, value);
+    dictAtPut(thread, dict, key, hash, value);
   }
   frame->pushValue(*dict);
   return Continue::NEXT;
@@ -3003,8 +2998,8 @@ HANDLER_INLINE Continue Interpreter::doStoreAnnotation(Thread* thread,
     Object implicit_globals(&scope, frame->implicitGlobals());
     if (implicit_globals.isDict()) {
       Dict implicit_globals_dict(&scope, *implicit_globals);
-      annotations = runtime->dictAtByStr(thread, implicit_globals_dict,
-                                         dunder_annotations);
+      annotations =
+          dictAtByStr(thread, implicit_globals_dict, dunder_annotations);
     } else {
       annotations = objectGetItem(thread, implicit_globals, dunder_annotations);
       if (annotations.isErrorException()) {
@@ -3014,7 +3009,7 @@ HANDLER_INLINE Continue Interpreter::doStoreAnnotation(Thread* thread,
   }
   if (annotations.isDict()) {
     Dict annotations_dict(&scope, *annotations);
-    runtime->dictAtPutByStr(thread, annotations_dict, name, value);
+    dictAtPutByStr(thread, annotations_dict, name, value);
   } else {
     if (objectSetItem(thread, annotations, name, value).isErrorException()) {
       return Continue::UNWIND;
@@ -3315,7 +3310,7 @@ HANDLER_INLINE Continue Interpreter::doMapAdd(Thread* thread, word arg) {
   Object hash_obj(&scope, Interpreter::hash(thread, key));
   if (hash_obj.isErrorException()) return Continue::UNWIND;
   word hash = SmallInt::cast(*hash_obj).value();
-  thread->runtime()->dictAtPut(thread, dict, key, hash, value);
+  dictAtPut(thread, dict, key, hash, value);
   return Continue::NEXT;
 }
 
@@ -3336,8 +3331,7 @@ HANDLER_INLINE Continue Interpreter::doLoadClassDeref(Thread* thread,
     Object implicit_globals(&scope, frame->implicitGlobals());
     if (implicit_globals.isDict()) {
       Dict implicit_globals_dict(&scope, *implicit_globals);
-      result =
-          thread->runtime()->dictAtByStr(thread, implicit_globals_dict, name);
+      result = dictAtByStr(thread, implicit_globals_dict, name);
     } else {
       result = objectGetItem(thread, implicit_globals, name);
       if (result.isErrorException()) {
@@ -3566,7 +3560,7 @@ HANDLER_INLINE Continue Interpreter::doBuildConstKeyMap(Thread* thread,
     if (hash_obj.isErrorException()) return Continue::UNWIND;
     word hash = SmallInt::cast(*hash_obj).value();
     Object value(&scope, frame->popValue());
-    thread->runtime()->dictAtPut(thread, dict, key, hash, value);
+    dictAtPut(thread, dict, key, hash, value);
   }
   frame->pushValue(*dict);
   return Continue::NEXT;

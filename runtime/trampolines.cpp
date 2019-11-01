@@ -1,6 +1,7 @@
 #include "trampolines.h"
 
 #include "capi-handles.h"
+#include "dict-builtins.h"
 #include "frame.h"
 #include "globals.h"
 #include "handles.h"
@@ -109,7 +110,7 @@ RawObject processDefaultArguments(Thread* thread, RawFunction function_raw,
       word first_kw = function.argcount();
       for (word i = 0; i < code.kwonlyargcount(); i++) {
         Str name(&scope, formal_names.at(first_kw + i));
-        RawObject val = runtime->dictAtByStr(thread, kw_defaults, name);
+        RawObject val = dictAtByStr(thread, kw_defaults, name);
         if (!val.isError()) {
           frame->pushValue(val);
           new_argc++;
@@ -268,7 +269,7 @@ static RawObject checkArgs(Thread* thread, const Function& function,
       // How about a kwonly default?
       Dict kw_defaults(&scope, function.kwDefaults());
       Str name(&scope, formal_names.at(arg_pos + start));
-      RawObject val = thread->runtime()->dictAtByStr(thread, kw_defaults, name);
+      RawObject val = dictAtByStr(thread, kw_defaults, name);
       if (!val.isError()) {
         *(kw_arg_base - arg_pos) = val;
         continue;  // Got it, move on to the next
@@ -372,7 +373,7 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
           Object hash_obj(&scope, Interpreter::hash(thread, key));
           if (hash_obj.isErrorException()) return *hash_obj;
           word hash = SmallInt::cast(*hash_obj).value();
-          runtime->dictAtPut(thread, dict, key, hash, value);
+          dictAtPut(thread, dict, key, hash, value);
           argc--;
         }
       }
@@ -947,7 +948,7 @@ RawObject methodTrampolineKeywordsKw(Thread* thread, Frame* frame, word argc) {
     for (word i = 0; i < num_keywords; i++) {
       Str name(&scope, kw_names.at(i));
       Object value(&scope, frame->peek(num_keywords - i));
-      runtime->dictAtPutByStr(thread, dict, name, value);
+      dictAtPutByStr(thread, dict, name, value);
     }
     kwargs = *dict;
   }
@@ -1036,7 +1037,7 @@ RawObject methodTrampolineFastCallEx(Thread* thread, Frame* frame, word flags) {
   Tuple kwnames_tuple(&scope, runtime->emptyTuple());
   if (has_varkeywords) {
     Dict dict(&scope, frame->topValue());
-    List dict_keys(&scope, runtime->dictKeys(thread, dict));
+    List dict_keys(&scope, dictKeys(thread, dict));
     kwnames_tuple = runtime->newTuple(dict_keys.numItems());
     num_keywords = kwnames_tuple.length();
     for (word j = 0; j < num_keywords; j++) {
@@ -1059,8 +1060,8 @@ RawObject methodTrampolineFastCallEx(Thread* thread, Frame* frame, word flags) {
     Dict dict(&scope, frame->topValue());
     for (word i = num_positional; i < (num_positional + num_keywords); i++) {
       Str key(&scope, kwnames_tuple.at(i - num_positional));
-      fastcall_args[i] = ApiHandle::borrowedReference(
-          thread, runtime->dictAtByStr(thread, dict, key));
+      fastcall_args[i] =
+          ApiHandle::borrowedReference(thread, dictAtByStr(thread, dict, key));
     }
   }
 
@@ -1238,7 +1239,7 @@ RawObject moduleTrampolineKeywordsKw(Thread* thread, Frame* frame, word argc) {
     for (word i = 0; i < num_keywords; i++) {
       Str name(&scope, kw_names.at(i));
       Object value(&scope, frame->peek(num_keywords - i));
-      runtime->dictAtPutByStr(thread, dict, name, value);
+      dictAtPutByStr(thread, dict, name, value);
     }
     kwargs = *dict;
   }
@@ -1308,7 +1309,7 @@ RawObject moduleTrampolineFastCallEx(Thread* thread, Frame* frame, word flags) {
   Tuple kwnames_tuple(&scope, runtime->emptyTuple());
   if (has_varkeywords) {
     Dict dict(&scope, frame->topValue());
-    List dict_keys(&scope, runtime->dictKeys(thread, dict));
+    List dict_keys(&scope, dictKeys(thread, dict));
     kwnames_tuple = runtime->newTuple(dict_keys.numItems());
     num_keywords = kwnames_tuple.length();
     for (word j = 0; j < num_keywords; j++) {
@@ -1331,8 +1332,8 @@ RawObject moduleTrampolineFastCallEx(Thread* thread, Frame* frame, word flags) {
     Dict dict(&scope, frame->topValue());
     for (word i = num_positional; i < (num_positional + num_keywords); i++) {
       Str key(&scope, kwnames_tuple.at(i - num_positional));
-      fastcall_args[i] = ApiHandle::borrowedReference(
-          thread, runtime->dictAtByStr(thread, dict, key));
+      fastcall_args[i] =
+          ApiHandle::borrowedReference(thread, dictAtByStr(thread, dict, key));
     }
   }
 

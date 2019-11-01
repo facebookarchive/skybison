@@ -1384,7 +1384,7 @@ RawObject UnderBuiltinsModule::underDictBucketInsert(Thread* thread,
   dict.setNumItems(dict.numItems() + 1);
   if (has_empty_slot) {
     dict.decrementNumUsableItems();
-    thread->runtime()->dictEnsureCapacity(thread, dict);
+    dictEnsureCapacity(thread, dict);
   }
   return NoneType::object();
 }
@@ -1451,7 +1451,7 @@ RawObject UnderBuiltinsModule::underDictGet(Thread* thread, Frame* frame,
   Object hash_obj(&scope, Interpreter::hash(thread, key));
   if (hash_obj.isErrorException()) return *hash_obj;
   word hash = SmallInt::cast(*hash_obj).value();
-  Object result(&scope, runtime->dictAt(thread, dict, key, hash));
+  Object result(&scope, dictAt(thread, dict, key, hash));
   if (result.isErrorNotFound()) return *default_obj;
   return *result;
 }
@@ -1603,7 +1603,7 @@ RawObject UnderBuiltinsModule::underDictSetItem(Thread* thread, Frame* frame,
   Object hash_obj(&scope, Interpreter::hash(thread, key));
   if (hash_obj.isErrorException()) return *hash_obj;
   word hash = SmallInt::cast(*hash_obj).value();
-  runtime->dictAtPut(thread, dict, key, hash, value);
+  dictAtPut(thread, dict, key, hash, value);
   return NoneType::object();
 }
 
@@ -1629,7 +1629,7 @@ RawObject UnderBuiltinsModule::underDictUpdate(Thread* thread, Frame* frame,
       key = Dict::Bucket::key(*other_data, i);
       value = Dict::Bucket::value(*other_data, i);
       word hash = Dict::Bucket::hash(*other_data, i);
-      runtime->dictAtPut(thread, self, key, hash, value);
+      dictAtPut(thread, self, key, hash, value);
     }
   }
   return NoneType::object();

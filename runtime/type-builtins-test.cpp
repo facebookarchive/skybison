@@ -1,12 +1,14 @@
 #include "gtest/gtest.h"
 
+#include "type-builtins.h"
+
+#include "dict-builtins.h"
 #include "handles.h"
 #include "ic.h"
 #include "objects.h"
 #include "runtime.h"
 #include "str-builtins.h"
 #include "test-utils.h"
-#include "type-builtins.h"
 
 namespace py {
 
@@ -32,12 +34,9 @@ TEST_F(TypeBuiltinsTest, NextTypeDictItemReturnsNextNonPlaceholder) {
 
   // Only baz is not Placeholder.
   Dict type_dict(&scope, type.dict());
-  ValueCell::cast(runtime_.dictAtByStr(thread_, type_dict, foo))
-      .makePlaceholder();
-  ValueCell::cast(runtime_.dictAtByStr(thread_, type_dict, bar))
-      .makePlaceholder();
-  ValueCell::cast(runtime_.dictAtByStr(thread_, type_dict, qux))
-      .makePlaceholder();
+  ValueCell::cast(dictAtByStr(thread_, type_dict, foo)).makePlaceholder();
+  ValueCell::cast(dictAtByStr(thread_, type_dict, bar)).makePlaceholder();
+  ValueCell::cast(dictAtByStr(thread_, type_dict, qux)).makePlaceholder();
 
   Tuple buckets(&scope, type_dict.data());
   word i = Dict::Bucket::kFirst;
@@ -200,7 +199,7 @@ TEST_F(TypeBuiltinsTest, TypeKeysFiltersOutPlaceholders) {
   typeAtPut(thread_, type, bar, value);
   typeAtPut(thread_, type, baz, value);
 
-  ValueCell::cast(runtime_.dictAtByStr(thread_, dict, bar)).makePlaceholder();
+  ValueCell::cast(dictAtByStr(thread_, dict, bar)).makePlaceholder();
 
   List keys(&scope, typeKeys(thread_, type));
   EXPECT_EQ(keys.numItems(), 2);
@@ -224,7 +223,7 @@ TEST_F(TypeBuiltinsTest, TypeLenReturnsItemCountExcludingPlaceholders) {
 
   SmallInt previous_len(&scope, typeLen(thread_, type));
 
-  ValueCell::cast(runtime_.dictAtByStr(thread_, dict, bar)).makePlaceholder();
+  ValueCell::cast(dictAtByStr(thread_, dict, bar)).makePlaceholder();
 
   SmallInt after_len(&scope, typeLen(thread_, type));
   EXPECT_EQ(previous_len.value(), after_len.value() + 1);
@@ -246,7 +245,7 @@ TEST_F(TypeBuiltinsTest, TypeValuesFiltersOutPlaceholders) {
   typeAtPut(thread_, type, bar, bar_value);
   typeAtPut(thread_, type, baz, baz_value);
 
-  ValueCell::cast(runtime_.dictAtByStr(thread_, dict, bar)).makePlaceholder();
+  ValueCell::cast(dictAtByStr(thread_, dict, bar)).makePlaceholder();
 
   List values(&scope, typeValues(thread_, type));
   EXPECT_TRUE(listContains(values, foo_value));

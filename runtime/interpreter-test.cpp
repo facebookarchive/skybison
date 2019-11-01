@@ -4,6 +4,7 @@
 
 #include "bytecode.h"
 #include "compile.h"
+#include "dict-builtins.h"
 #include "frame.h"
 #include "handles.h"
 #include "ic.h"
@@ -208,8 +209,7 @@ result = cache_binary_op(a, b)
   // Verify that A.__add__ has the dependent.
   Dict type_a_dict(&scope, type_a.dict());
   Str left_op_name(&scope, runtime_.symbols()->at(SymbolId::kDunderAdd));
-  Object type_a_attr(&scope,
-                     runtime_.dictAtByStr(thread_, type_a_dict, left_op_name));
+  Object type_a_attr(&scope, dictAtByStr(thread_, type_a_dict, left_op_name));
   ASSERT_TRUE(type_a_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*type_a_attr).dependencyLink().isWeakLink());
   EXPECT_EQ(
@@ -219,8 +219,7 @@ result = cache_binary_op(a, b)
   // Verify that B.__radd__ has the dependent.
   Dict type_b_dict(&scope, type_b.dict());
   Str right_op_name(&scope, runtime_.symbols()->at(SymbolId::kDunderRadd));
-  Object type_b_attr(&scope,
-                     runtime_.dictAtByStr(thread_, type_b_dict, right_op_name));
+  Object type_b_attr(&scope, dictAtByStr(thread_, type_b_dict, right_op_name));
   ASSERT_TRUE(type_b_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*type_b_attr).dependencyLink().isWeakLink());
   EXPECT_EQ(
@@ -706,8 +705,8 @@ cache_inplace_op(a, b)
   // Verify that A.__imul__ has the dependent.
   Dict type_a_dict(&scope, type_a.dict());
   Str inplace_op_name(&scope, runtime_.symbols()->at(SymbolId::kDunderImul));
-  Object inplace_attr(
-      &scope, runtime_.dictAtByStr(thread_, type_a_dict, inplace_op_name));
+  Object inplace_attr(&scope,
+                      dictAtByStr(thread_, type_a_dict, inplace_op_name));
   ASSERT_TRUE(inplace_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*inplace_attr).dependencyLink().isWeakLink());
   EXPECT_EQ(WeakLink::cast(ValueCell::cast(*inplace_attr).dependencyLink())
@@ -716,8 +715,7 @@ cache_inplace_op(a, b)
 
   // Verify that A.__mul__ has the dependent.
   Str left_op_name(&scope, runtime_.symbols()->at(SymbolId::kDunderMul));
-  Object type_a_attr(&scope,
-                     runtime_.dictAtByStr(thread_, type_a_dict, left_op_name));
+  Object type_a_attr(&scope, dictAtByStr(thread_, type_a_dict, left_op_name));
   ASSERT_TRUE(type_a_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*type_a_attr).dependencyLink().isWeakLink());
   EXPECT_EQ(
@@ -727,8 +725,7 @@ cache_inplace_op(a, b)
   // Verify that B.__rmul__ has the dependent.
   Dict type_b_dict(&scope, type_b.dict());
   Str right_op_name(&scope, runtime_.symbols()->at(SymbolId::kDunderRmul));
-  Object type_b_attr(&scope,
-                     runtime_.dictAtByStr(thread_, type_b_dict, right_op_name));
+  Object type_b_attr(&scope, dictAtByStr(thread_, type_b_dict, right_op_name));
   ASSERT_TRUE(type_b_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*type_b_attr).dependencyLink().isWeakLink());
   EXPECT_EQ(
@@ -1313,8 +1310,7 @@ result = cache_compare_op(a, b)
   Type a_type(&scope, mainModuleAt(&runtime_, "A"));
   Dict a_type_dict(&scope, a_type.dict());
   Str left_op_name(&scope, runtime_.symbols()->at(SymbolId::kDunderGe));
-  Object a_type_attr(&scope,
-                     runtime_.dictAtByStr(thread_, a_type_dict, left_op_name));
+  Object a_type_attr(&scope, dictAtByStr(thread_, a_type_dict, left_op_name));
   ASSERT_TRUE(a_type_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*a_type_attr).dependencyLink().isWeakLink());
   EXPECT_EQ(
@@ -1325,8 +1321,7 @@ result = cache_compare_op(a, b)
   Type b_type(&scope, mainModuleAt(&runtime_, "B"));
   Dict b_type_dict(&scope, b_type.dict());
   Str right_op_name(&scope, runtime_.symbols()->at(SymbolId::kDunderLe));
-  Object b_type_attr(&scope,
-                     runtime_.dictAtByStr(thread_, b_type_dict, right_op_name));
+  Object b_type_attr(&scope, dictAtByStr(thread_, b_type_dict, right_op_name));
   ASSERT_TRUE(b_type_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*b_type_attr).dependencyLink().isWeakLink());
   EXPECT_EQ(
@@ -2423,19 +2418,19 @@ d = {**{'a': 1, 'b': 2}, 'c': 3, **{'d': 4}}
   EXPECT_EQ(dict.numItems(), 4);
 
   Str name(&scope, runtime_.newStrFromCStr("a"));
-  Object el0(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el0(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
   name = runtime_.newStrFromCStr("b");
-  Object el1(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el1(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
   name = runtime_.newStrFromCStr("c");
-  Object el2(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el2(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
   name = runtime_.newStrFromCStr("d");
-  Object el3(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el3(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
@@ -2467,19 +2462,19 @@ d = {**Foo(), 'd': 4}
   EXPECT_EQ(dict.numItems(), 4);
 
   Str name(&scope, runtime_.newStrFromCStr("a"));
-  Object el0(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el0(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
   name = runtime_.newStrFromCStr("b");
-  Object el1(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el1(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
   name = runtime_.newStrFromCStr("c");
-  Object el2(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el2(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
   name = runtime_.newStrFromCStr("d");
-  Object el3(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el3(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
@@ -2511,19 +2506,19 @@ d = {**Foo(), 'd': 4}
   EXPECT_EQ(dict.numItems(), 4);
 
   Str name(&scope, runtime_.newStrFromCStr("a"));
-  Object el0(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el0(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
   name = runtime_.newStrFromCStr("b");
-  Object el1(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el1(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
   name = runtime_.newStrFromCStr("c");
-  Object el2(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el2(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
   name = runtime_.newStrFromCStr("d");
-  Object el3(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el3(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
@@ -2570,19 +2565,19 @@ d = {**Foo(), 'd': 4}
   EXPECT_EQ(dict.numItems(), 4);
 
   Str name(&scope, runtime_.newStrFromCStr("a"));
-  Object el0(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el0(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
   name = runtime_.newStrFromCStr("b");
-  Object el1(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el1(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
   name = runtime_.newStrFromCStr("c");
-  Object el2(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el2(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
   name = runtime_.newStrFromCStr("d");
-  Object el3(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el3(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
@@ -2926,19 +2921,19 @@ d = foo(**{'a': 1, 'b': 2}, **{'c': 3, 'd': 4})
   EXPECT_EQ(dict.numItems(), 4);
 
   Str name(&scope, runtime_.newStrFromCStr("a"));
-  Object el0(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el0(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
   name = runtime_.newStrFromCStr("b");
-  Object el1(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el1(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
   name = runtime_.newStrFromCStr("c");
-  Object el2(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el2(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
   name = runtime_.newStrFromCStr("d");
-  Object el3(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el3(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
@@ -2969,19 +2964,19 @@ d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
   EXPECT_EQ(dict.numItems(), 4);
 
   Str name(&scope, runtime_.newStrFromCStr("a"));
-  Object el0(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el0(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
   name = runtime_.newStrFromCStr("b");
-  Object el1(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el1(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
   name = runtime_.newStrFromCStr("c");
-  Object el2(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el2(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
   name = runtime_.newStrFromCStr("d");
-  Object el3(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el3(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
@@ -3012,19 +3007,19 @@ d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
   EXPECT_EQ(dict.numItems(), 4);
 
   Str name(&scope, runtime_.newStrFromCStr("a"));
-  Object el0(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el0(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
   name = runtime_.newStrFromCStr("b");
-  Object el1(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el1(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
   name = runtime_.newStrFromCStr("c");
-  Object el2(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el2(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
   name = runtime_.newStrFromCStr("d");
-  Object el3(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el3(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
@@ -3073,19 +3068,19 @@ d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
   EXPECT_EQ(dict.numItems(), 4);
 
   Str name(&scope, runtime_.newStrFromCStr("a"));
-  Object el0(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el0(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
   name = runtime_.newStrFromCStr("b");
-  Object el1(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el1(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
   name = runtime_.newStrFromCStr("c");
-  Object el2(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el2(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
   name = runtime_.newStrFromCStr("d");
-  Object el3(&scope, runtime_.dictAtByStr(thread_, dict, name));
+  Object el3(&scope, dictAtByStr(thread_, dict, name));
   EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
@@ -4220,7 +4215,7 @@ result = foo()
   Module module(&scope, function.moduleObject());
   Str name(&scope, runtime_.newStrFromCStr("a"));
   Dict module_dict(&scope, module.dict());
-  Object module_entry(&scope, runtime_.dictAtByStr(thread_, module_dict, name));
+  Object module_entry(&scope, dictAtByStr(thread_, module_dict, name));
   ASSERT_TRUE(module_entry.isValueCell());
   EXPECT_TRUE(ValueCell::cast(*module_entry).isPlaceholder());
 }
@@ -4475,14 +4470,14 @@ c = C()
   Dict type_b_dict(&scope, type_b.dict());
   Dict type_c_dict(&scope, type_c.dict());
   Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
-  Object result(&scope, runtime_.dictAtByStr(thread_, type_b_dict, foo_name));
+  Object result(&scope, dictAtByStr(thread_, type_b_dict, foo_name));
   ASSERT_TRUE(result.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*result).dependencyLink().isWeakLink());
   EXPECT_EQ(
       WeakLink::cast(ValueCell::cast(*result).dependencyLink()).referent(),
       *get_foo);
 
-  result = runtime_.dictAtByStr(thread_, type_c_dict, foo_name);
+  result = dictAtByStr(thread_, type_c_dict, foo_name);
   ASSERT_TRUE(result.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*result).dependencyLink().isWeakLink());
   EXPECT_EQ(
@@ -4501,11 +4496,11 @@ c = C()
 
   // Verify that all type dictionaries in C's mro dropped dependencies to
   // get_foo.
-  result = runtime_.dictAtByStr(thread_, type_b_dict, foo_name);
+  result = dictAtByStr(thread_, type_b_dict, foo_name);
   ASSERT_TRUE(result.isValueCell());
   EXPECT_TRUE(ValueCell::cast(*result).dependencyLink().isNoneType());
 
-  result = runtime_.dictAtByStr(thread_, type_c_dict, foo_name);
+  result = dictAtByStr(thread_, type_c_dict, foo_name);
   ASSERT_TRUE(result.isValueCell());
   EXPECT_TRUE(ValueCell::cast(*result).dependencyLink().isNoneType());
 }
@@ -4548,7 +4543,7 @@ cache_A_add(a, b)
   // Ensure that cache_a_add is being tracked as a dependent from A.__add__.
   Dict type_a_dict(&scope, Type::cast(mainModuleAt(&runtime_, "A")).dict());
   ValueCell a_add_value_cell(
-      &scope, runtime_.dictAtById(thread_, type_a_dict, SymbolId::kDunderAdd));
+      &scope, dictAtById(thread_, type_a_dict, SymbolId::kDunderAdd));
   ASSERT_FALSE(a_add_value_cell.isPlaceholder());
   EXPECT_EQ(WeakLink::cast(a_add_value_cell.dependencyLink()).referent(),
             *cache_a_add);
@@ -4556,7 +4551,7 @@ cache_A_add(a, b)
   // Ensure that cache_a_add is being tracked as a dependent from B.__radd__.
   Dict type_b_dict(&scope, Type::cast(mainModuleAt(&runtime_, "B")).dict());
   ValueCell b_radd_value_cell(
-      &scope, runtime_.dictAtById(thread_, type_b_dict, SymbolId::kDunderRadd));
+      &scope, dictAtById(thread_, type_b_dict, SymbolId::kDunderRadd));
   ASSERT_TRUE(b_radd_value_cell.isPlaceholder());
   EXPECT_EQ(WeakLink::cast(b_radd_value_cell.dependencyLink()).referent(),
             *cache_a_add);
@@ -4675,13 +4670,13 @@ cache_A_iadd(a, b)
   // Ensure that cache_a_iadd is being tracked as a dependent from A.__iadd__.
   Dict type_a_dict(&scope, Type::cast(mainModuleAt(&runtime_, "A")).dict());
   ValueCell a_iadd_value_cell(
-      &scope, runtime_.dictAtById(thread_, type_a_dict, SymbolId::kDunderIadd));
+      &scope, dictAtById(thread_, type_a_dict, SymbolId::kDunderIadd));
   ASSERT_FALSE(a_iadd_value_cell.isPlaceholder());
   EXPECT_EQ(WeakLink::cast(a_iadd_value_cell.dependencyLink()).referent(),
             *cache_a_iadd);
 
   ValueCell a_add_value_cell(
-      &scope, runtime_.dictAtById(thread_, type_a_dict, SymbolId::kDunderAdd));
+      &scope, dictAtById(thread_, type_a_dict, SymbolId::kDunderAdd));
   ASSERT_TRUE(a_add_value_cell.isPlaceholder());
   EXPECT_EQ(WeakLink::cast(a_add_value_cell.dependencyLink()).referent(),
             *cache_a_iadd);
@@ -4689,7 +4684,7 @@ cache_A_iadd(a, b)
   // Ensure that cache_a_iadd is being tracked as a dependent from B.__riadd__.
   Dict type_b_dict(&scope, Type::cast(mainModuleAt(&runtime_, "B")).dict());
   ValueCell b_radd_value_cell(
-      &scope, runtime_.dictAtById(thread_, type_b_dict, SymbolId::kDunderRadd));
+      &scope, dictAtById(thread_, type_b_dict, SymbolId::kDunderRadd));
   ASSERT_TRUE(b_radd_value_cell.isPlaceholder());
   EXPECT_EQ(WeakLink::cast(b_radd_value_cell.dependencyLink()).referent(),
             *cache_a_iadd);
@@ -4870,8 +4865,7 @@ c = C()
   // Verify that cache_attribute function is added as a dependent.
   Dict type_c_dict(&scope, type_c.dict());
   Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
-  ValueCell value_cell(&scope,
-                       runtime_.dictAtByStr(thread_, type_c_dict, foo_name));
+  ValueCell value_cell(&scope, dictAtByStr(thread_, type_c_dict, foo_name));
   ASSERT_TRUE(value_cell.dependencyLink().isWeakLink());
   EXPECT_EQ(WeakLink::cast(value_cell.dependencyLink()).referent(),
             *cache_attribute);
@@ -4906,8 +4900,7 @@ c = C()
   // Verify that cache_attribute function is added as a dependent.
   Dict type_c_dict(&scope, type_c.dict());
   Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
-  ValueCell value_cell(&scope,
-                       runtime_.dictAtByStr(thread_, type_c_dict, foo_name));
+  ValueCell value_cell(&scope, dictAtByStr(thread_, type_c_dict, foo_name));
   ASSERT_TRUE(value_cell.dependencyLink().isWeakLink());
   EXPECT_EQ(WeakLink::cast(value_cell.dependencyLink()).referent(),
             *cache_attribute);
@@ -4969,8 +4962,7 @@ function_that_caches_attr_lookup(a, b, c)
   // and appears on the dependency list of A.foo.
   Dict type_a_dict(&scope, type_a.dict());
   Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
-  ValueCell foo_in_a(&scope,
-                     runtime_.dictAtByStr(thread_, type_a_dict, foo_name));
+  ValueCell foo_in_a(&scope, dictAtByStr(thread_, type_a_dict, foo_name));
   ASSERT_TRUE(foo_in_a.dependencyLink().isWeakLink());
   ASSERT_EQ(WeakLink::cast(foo_in_a.dependencyLink()).referent(),
             *function_that_caches_attr_lookup);
@@ -4978,8 +4970,7 @@ function_that_caches_attr_lookup(a, b, c)
   // Verify that function_that_caches_attr_lookup cached the attribute lookup
   // and appears on the dependency list of B.foo.
   Dict type_b_dict(&scope, type_b.dict());
-  ValueCell foo_in_b(&scope,
-                     runtime_.dictAtByStr(thread_, type_b_dict, foo_name));
+  ValueCell foo_in_b(&scope, dictAtByStr(thread_, type_b_dict, foo_name));
   ASSERT_TRUE(foo_in_b.dependencyLink().isWeakLink());
   ASSERT_EQ(WeakLink::cast(foo_in_b.dependencyLink()).referent(),
             *function_that_caches_attr_lookup);
@@ -4987,8 +4978,7 @@ function_that_caches_attr_lookup(a, b, c)
   // Verify that function_that_caches_attr_lookup cached the attribute lookup
   // and appears on the dependency list of C.foo.
   Dict type_c_dict(&scope, type_b.dict());
-  ValueCell foo_in_c(&scope,
-                     runtime_.dictAtByStr(thread_, type_c_dict, foo_name));
+  ValueCell foo_in_c(&scope, dictAtByStr(thread_, type_c_dict, foo_name));
   ASSERT_TRUE(foo_in_c.dependencyLink().isWeakLink());
   ASSERT_EQ(WeakLink::cast(foo_in_c.dependencyLink()).referent(),
             *function_that_caches_attr_lookup);

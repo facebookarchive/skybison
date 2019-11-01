@@ -1,6 +1,7 @@
 #include "builtins-module.h"
 #include "capi-handles.h"
 #include "cpython-func.h"
+#include "dict-builtins.h"
 #include "module-builtins.h"
 #include "object-builtins.h"
 #include "objects.h"
@@ -110,7 +111,7 @@ PY_EXPORT PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc* desc) {
   // Add n_sequence_fields
   Dict dict(&scope, runtime->newDict());
   Object n_sequence(&scope, runtime->newInt(desc->n_in_sequence));
-  runtime->dictAtPutById(thread, dict, SymbolId::kNSequenceFields, n_sequence);
+  dictAtPutById(thread, dict, SymbolId::kNSequenceFields, n_sequence);
 
   // Add n_fields
   word num_fields = 0;
@@ -120,32 +121,30 @@ PY_EXPORT PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc* desc) {
     num_fields++;
   }
   Object n_fields(&scope, runtime->newInt(num_fields));
-  runtime->dictAtPutById(thread, dict, SymbolId::kNFields, n_fields);
+  dictAtPutById(thread, dict, SymbolId::kNFields, n_fields);
 
   // unnamed fields are banned. This is done to support _structseq_getitem(),
   // which accesses hidden fields by name.
   Object unnamed_fields(&scope, runtime->newInt(0));
-  runtime->dictAtPutById(thread, dict, SymbolId::kNUnnamedFields,
-                         unnamed_fields);
+  dictAtPutById(thread, dict, SymbolId::kNUnnamedFields, unnamed_fields);
 
   // Add __new__
   Module builtins(&scope, runtime->findModuleById(SymbolId::kBuiltins));
   Function structseq_new(
       &scope, moduleAtById(thread, builtins, SymbolId::kUnderStructseqNew));
-  runtime->dictAtPutById(thread, dict, SymbolId::kDunderNew, structseq_new);
+  dictAtPutById(thread, dict, SymbolId::kDunderNew, structseq_new);
 
   // Add __repr__
   Function structseq_repr(
       &scope, moduleAtById(thread, builtins, SymbolId::kUnderStructseqRepr));
-  runtime->dictAtPutById(thread, dict, SymbolId::kDunderRepr, structseq_repr);
+  dictAtPutById(thread, dict, SymbolId::kDunderRepr, structseq_repr);
 
   Tuple field_names(&scope, runtime->newTuple(num_fields));
   for (word i = 0; i < num_fields; i++) {
     field_names.atPut(i,
                       runtime->internStrFromCStr(thread, desc->fields[i].name));
   }
-  runtime->dictAtPutById(thread, dict, SymbolId::kUnderStructseqFieldNames,
-                         field_names);
+  dictAtPutById(thread, dict, SymbolId::kUnderStructseqFieldNames, field_names);
 
   // Create type
   Tuple bases(&scope, runtime->newTuple(1));

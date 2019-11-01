@@ -515,7 +515,7 @@ RawObject typeAt(Thread* thread, const Type& type, const Object& key,
                  word hash) {
   HandleScope scope(thread);
   Dict dict(&scope, type.dict());
-  Object value(&scope, thread->runtime()->dictAt(thread, dict, key, hash));
+  Object value(&scope, dictAt(thread, dict, key, hash));
   DCHECK(value.isErrorNotFound() || value.isValueCell(),
          "type dictionaries must return either ErrorNotFound or ValueCell");
   if (value.isErrorNotFound() || ValueCell::cast(*value).isPlaceholder()) {
@@ -527,7 +527,7 @@ RawObject typeAt(Thread* thread, const Type& type, const Object& key,
 RawObject typeAtByStr(Thread* thread, const Type& type, const Str& name) {
   HandleScope scope(thread);
   Dict dict(&scope, type.dict());
-  Object value(&scope, thread->runtime()->dictAtByStr(thread, dict, name));
+  Object value(&scope, dictAtByStr(thread, dict, name));
   DCHECK(value.isErrorNotFound() || value.isValueCell(),
          "type dictionaries must return either ErrorNotFound or ValueCell");
   if (value.isErrorNotFound() || ValueCell::cast(*value).isPlaceholder()) {
@@ -539,7 +539,7 @@ RawObject typeAtByStr(Thread* thread, const Type& type, const Str& name) {
 RawObject typeAtById(Thread* thread, const Type& type, SymbolId id) {
   HandleScope scope(thread);
   Dict dict(&scope, type.dict());
-  Object value(&scope, thread->runtime()->dictAtById(thread, dict, id));
+  Object value(&scope, dictAtById(thread, dict, id));
   DCHECK(value.isErrorNotFound() || value.isValueCell(),
          "type dictionaries must return either ErrorNotFound or ValueCell");
   if (value.isErrorNotFound() || ValueCell::cast(*value).isPlaceholder()) {
@@ -554,8 +554,8 @@ RawObject typeAtPut(Thread* thread, const Type& type, const Str& interned_name,
          "name should be an interned str");
   HandleScope scope(thread);
   Dict dict(&scope, type.dict());
-  ValueCell value_cell(&scope, thread->runtime()->dictAtPutInValueCellByStr(
-                                   thread, dict, interned_name, value));
+  ValueCell value_cell(
+      &scope, dictAtPutInValueCellByStr(thread, dict, interned_name, value));
   if (!value_cell.dependencyLink().isNoneType()) {
     icInvalidateAttr(thread, type, interned_name, value_cell);
   }
@@ -568,8 +568,8 @@ RawObject typeAtPutById(Thread* thread, const Type& type, SymbolId id,
   Runtime* runtime = thread->runtime();
   Dict dict(&scope, type.dict());
   Str name(&scope, runtime->symbols()->at(id));
-  ValueCell value_cell(
-      &scope, runtime->dictAtPutInValueCellByStr(thread, dict, name, value));
+  ValueCell value_cell(&scope,
+                       dictAtPutInValueCellByStr(thread, dict, name, value));
   if (!value_cell.dependencyLink().isNoneType()) {
     icInvalidateAttr(thread, type, name, value_cell);
   }
@@ -578,9 +578,8 @@ RawObject typeAtPutById(Thread* thread, const Type& type, SymbolId id,
 
 RawObject typeRemove(Thread* thread, const Type& type, const Str& name) {
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
   Dict type_dict(&scope, type.dict());
-  Object result(&scope, runtime->dictAtByStr(thread, type_dict, name));
+  Object result(&scope, dictAtByStr(thread, type_dict, name));
   if (result.isErrorNotFound()) {
     return *result;
   }
@@ -588,7 +587,7 @@ RawObject typeRemove(Thread* thread, const Type& type, const Str& name) {
   if (!value_cell.dependencyLink().isNoneType()) {
     icInvalidateAttr(thread, type, name, value_cell);
   }
-  return runtime->dictRemoveByStr(thread, type_dict, name);
+  return dictRemoveByStr(thread, type_dict, name);
 }
 
 RawObject typeKeys(Thread* thread, const Type& type) {
@@ -714,7 +713,7 @@ static void addSubclass(Thread* thread, const Type& base, const Type& type) {
   word hash = SmallInt::cast(*key).hash();
   Object none(&scope, NoneType::object());
   Object value(&scope, runtime->newWeakRef(thread, type, none));
-  runtime->dictAtPut(thread, subclasses, key, hash, value);
+  dictAtPut(thread, subclasses, key, hash, value);
 }
 
 void typeAddDocstring(Thread* thread, const Type& type) {
@@ -789,7 +788,7 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     DCHECK(class_cell.isValueCell(), "class cell must be a value cell");
     ValueCell::cast(*class_cell).setValue(*type);
     Str class_cell_name(&scope, runtime->symbols()->DunderClassCell());
-    runtime->dictRemoveByStr(thread, type_dict, class_cell_name);
+    dictRemoveByStr(thread, type_dict, class_cell_name);
   }
   type.setDict(*type_dict);
   // TODO(T53997177): Centralize type initialization

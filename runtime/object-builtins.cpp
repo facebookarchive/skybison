@@ -2,6 +2,7 @@
 
 #include <cinttypes>
 
+#include "dict-builtins.h"
 #include "frame.h"
 #include "globals.h"
 #include "ic.h"
@@ -35,8 +36,8 @@ RawObject instanceDelAttr(Thread* thread, const Instance& instance,
       Object overflow_dict_obj(&scope, instance.instanceVariableAt(offset));
       if (!overflow_dict_obj.isNoneType()) {
         Dict overflow_dict(&scope, *overflow_dict_obj);
-        Object result(&scope, runtime->dictRemoveByStr(thread, overflow_dict,
-                                                       name_interned));
+        Object result(&scope,
+                      dictRemoveByStr(thread, overflow_dict, name_interned));
         if (result.isError()) return *result;
         return NoneType::object();
       }
@@ -94,7 +95,7 @@ static RawObject instanceGetAttributeSetLocation(Thread* thread,
     Object overflow_dict_obj(&scope, instance.instanceVariableAt(offset));
     if (!overflow_dict_obj.isNoneType()) {
       Dict overflow_dict(&scope, *overflow_dict_obj);
-      return runtime->dictAtByStr(thread, overflow_dict, name_interned);
+      return dictAtByStr(thread, overflow_dict, name_interned);
     }
   }
   return Error::notFound();
@@ -134,7 +135,7 @@ static RawObject instanceSetAttrSetLocation(Thread* thread,
         instance.instanceVariableAtPut(offset, *overflow_dict_obj);
       }
       Dict overflow_dict(&scope, *overflow_dict_obj);
-      runtime->dictAtPutByStr(thread, overflow_dict, name_interned, value);
+      dictAtPutByStr(thread, overflow_dict, name_interned, value);
       return NoneType::object();
     }
 

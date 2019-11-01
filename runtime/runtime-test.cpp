@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "bytecode.h"
+#include "dict-builtins.h"
 #include "frame.h"
 #include "int-builtins.h"
 #include "layout.h"
@@ -22,7 +23,6 @@ using RuntimeAttributeTest = RuntimeFixture;
 using RuntimeByteArrayTest = RuntimeFixture;
 using RuntimeBytesTest = RuntimeFixture;
 using RuntimeClassAttrTest = RuntimeFixture;
-using RuntimeDictTest = RuntimeFixture;
 using RuntimeFunctionAttrTest = RuntimeFixture;
 using RuntimeInstanceAttrTest = RuntimeFixture;
 using RuntimeIntTest = RuntimeFixture;
@@ -334,302 +334,6 @@ TEST_F(RuntimeBytesTest, Subseq) {
 
   Bytes copy(&scope, runtime_.bytesSubseq(thread_, bytes, 6, 5));
   EXPECT_TRUE(isBytesEqualsCStr(copy, "world"));
-}
-
-TEST_F(RuntimeDictTest, EmptyDictInvariants) {
-  HandleScope scope(thread_);
-  Dict dict(&scope, runtime_.newDict());
-
-  EXPECT_EQ(dict.numItems(), 0);
-  ASSERT_TRUE(dict.data().isTuple());
-  EXPECT_EQ(Tuple::cast(dict.data()).length(), 0);
-}
-
-TEST_F(RuntimeDictTest, DictAtPutRetainsExistingKeyObject) {
-  HandleScope scope(thread_);
-  Dict dict(&scope, runtime_.newDict());
-  Str key0(&scope, runtime_.newStrFromCStr("foobarbazbam"));
-  word key0_hash = strHash(thread_, *key0);
-  Object value0(&scope, SmallInt::fromWord(123));
-  Str key1(&scope, runtime_.newStrFromCStr("foobarbazbam"));
-  word key1_hash = strHash(thread_, *key1);
-  Object value1(&scope, SmallInt::fromWord(456));
-  ASSERT_NE(key0, key1);
-  ASSERT_EQ(key0_hash, key1_hash);
-
-  runtime_.dictAtPut(thread_, dict, key0, key0_hash, value0);
-  ASSERT_EQ(dict.numItems(), 1);
-  ASSERT_EQ(runtime_.dictAt(thread_, dict, key0, key0_hash), *value0);
-
-  // Overwrite the stored value
-  runtime_.dictAtPut(thread_, dict, key1, key1_hash, value1);
-  ASSERT_EQ(dict.numItems(), 1);
-  ASSERT_EQ(runtime_.dictAt(thread_, dict, key1, key1_hash), *value1);
-
-  Tuple data(&scope, dict.data());
-  word i = Dict::Bucket::kFirst;
-  Dict::Bucket::nextItem(*data, &i);
-  EXPECT_EQ(Dict::Bucket::key(*data, i), key0);
-}
-
-TEST_F(RuntimeDictTest, GetSet) {
-  HandleScope scope(thread_);
-  Dict dict(&scope, runtime_.newDict());
-  Object key(&scope, SmallInt::fromWord(12345));
-  word hash = intHash(*key);
-
-  // Looking up a key that doesn't exist should fail
-  EXPECT_TRUE(runtime_.dictAt(thread_, dict, key, hash).isError());
-
-  // Store a value
-  Object stored(&scope, SmallInt::fromWord(67890));
-  runtime_.dictAtPut(thread_, dict, key, hash, stored);
-  EXPECT_EQ(dict.numItems(), 1);
-
-  // Retrieve the stored value
-  RawObject retrieved = runtime_.dictAt(thread_, dict, key, hash);
-  EXPECT_EQ(retrieved, *stored);
-
-  // Overwrite the stored value
-  Object new_value(&scope, SmallInt::fromWord(5555));
-  runtime_.dictAtPut(thread_, dict, key, hash, new_value);
-  EXPECT_EQ(dict.numItems(), 1);
-
-  // Get the new value
-  retrieved = runtime_.dictAt(thread_, dict, key, hash);
-  EXPECT_EQ(retrieved, *new_value);
-}
-
-TEST_F(RuntimeDictTest, Remove) {
-  HandleScope scope(thread_);
-  Dict dict(&scope, runtime_.newDict());
-  Object key(&scope, SmallInt::fromWord(12345));
-  word hash = intHash(*key);
-
-  // Removing a key that doesn't exist should fail
-  bool is_missing = runtime_.dictRemove(thread_, dict, key, hash).isError();
-  EXPECT_TRUE(is_missing);
-
-  // Removing a key that exists should succeed and return the value that was
-  // stored.
-  Object stored(&scope, SmallInt::fromWord(54321));
-
-  runtime_.dictAtPut(thread_, dict, key, hash, stored);
-  EXPECT_EQ(dict.numItems(), 1);
-
-  RawObject retrieved = runtime_.dictRemove(thread_, dict, key, hash);
-  ASSERT_FALSE(retrieved.isError());
-  ASSERT_EQ(SmallInt::cast(retrieved).value(), SmallInt::cast(*stored).value());
-
-  // Looking up a key that was deleted should fail
-  EXPECT_TRUE(runtime_.dictAt(thread_, dict, key, hash).isError());
-  EXPECT_EQ(dict.numItems(), 0);
-}
-
-TEST_F(RuntimeDictTest, Length) {
-  HandleScope scope(thread_);
-  Dict dict(&scope, runtime_.newDict());
-
-  // Add 10 items and make sure length reflects it
-  for (int i = 0; i < 10; i++) {
-    Object key(&scope, SmallInt::fromWord(i));
-    word hash = intHash(*key);
-    runtime_.dictAtPut(thread_, dict, key, hash, key);
-  }
-  EXPECT_EQ(dict.numItems(), 10);
-
-  // Remove half the items
-  for (int i = 0; i < 5; i++) {
-    Object key(&scope, SmallInt::fromWord(i));
-    word hash = intHash(*key);
-    ASSERT_FALSE(runtime_.dictRemove(thread_, dict, key, hash).isError());
-  }
-  EXPECT_EQ(dict.numItems(), 5);
-}
-
-TEST_F(RuntimeDictTest, AtIfAbsentPutLength) {
-  HandleScope scope(thread_);
-  Dict dict(&scope, runtime_.newDict());
-
-  Object k1(&scope, SmallInt::fromWord(1));
-  word k1_hash = intHash(*k1);
-  Object v1(&scope, SmallInt::fromWord(111));
-  runtime_.dictAtPut(thread_, dict, k1, k1_hash, v1);
-  EXPECT_EQ(dict.numItems(), 1);
-
-  class SmallIntCallback : public Callback<RawObject> {
-   public:
-    explicit SmallIntCallback(int i) : i_(i) {}
-    RawObject call() override { return SmallInt::fromWord(i_); }
-
-   private:
-    int i_;
-  };
-
-  // Add new item
-  Object k2(&scope, SmallInt::fromWord(2));
-  word k2_hash = intHash(*k2);
-  SmallIntCallback cb(222);
-  runtime_.dictAtIfAbsentPut(thread_, dict, k2, k2_hash, &cb);
-  EXPECT_EQ(dict.numItems(), 2);
-  RawObject retrieved = runtime_.dictAt(thread_, dict, k2, k2_hash);
-  EXPECT_TRUE(isIntEqualsWord(retrieved, 222));
-
-  // Don't overrwite existing item 1 -> v1
-  Object k3(&scope, SmallInt::fromWord(1));
-  word k3_hash = intHash(*k3);
-  SmallIntCallback cb3(333);
-  runtime_.dictAtIfAbsentPut(thread_, dict, k3, k3_hash, &cb3);
-  EXPECT_EQ(dict.numItems(), 2);
-  retrieved = runtime_.dictAt(thread_, dict, k3, k3_hash);
-  EXPECT_EQ(retrieved, *v1);
-}
-
-TEST_F(RuntimeDictTest, DictAtPutGrowsDictWhenDictIsEmpty) {
-  HandleScope scope(thread_);
-  Dict dict(&scope, runtime_.newDict());
-  EXPECT_EQ(dict.capacity(), 0);
-
-  Object first_key(&scope, SmallInt::fromWord(0));
-  word hash = intHash(*first_key);
-  Object first_value(&scope, SmallInt::fromWord(1));
-  runtime_.dictAtPut(thread_, dict, first_key, hash, first_value);
-
-  word initial_capacity = Runtime::kInitialDictCapacity;
-  EXPECT_EQ(dict.numItems(), 1);
-  EXPECT_EQ(dict.capacity(), initial_capacity);
-}
-
-TEST_F(RuntimeDictTest, DictAtPutGrowsDictWhenTwoThirdsUsed) {
-  HandleScope scope(thread_);
-  Dict dict(&scope, runtime_.newDict());
-
-  // Fill in one fewer keys than would require growing the underlying object
-  // array again.
-  word threshold = ((Runtime::kInitialDictCapacity * 2) / 3) - 1;
-  for (word i = 0; i < threshold; i++) {
-    Object key(&scope, SmallInt::fromWord(i));
-    word hash = intHash(*key);
-    Object value(&scope, SmallInt::fromWord(-i));
-    runtime_.dictAtPut(thread_, dict, key, hash, value);
-  }
-  EXPECT_EQ(dict.numItems(), threshold);
-  EXPECT_EQ(dict.numUsableItems(), 1);
-  word initial_capacity = Runtime::kInitialDictCapacity;
-  EXPECT_EQ(dict.capacity(), initial_capacity);
-
-  // Add another key which should force us to double the capacity
-  Object last_key(&scope, SmallInt::fromWord(threshold));
-  word last_key_hash = intHash(*last_key);
-  Object last_value(&scope, SmallInt::fromWord(-threshold));
-  runtime_.dictAtPut(thread_, dict, last_key, last_key_hash, last_value);
-  EXPECT_EQ(dict.numItems(), threshold + 1);
-  EXPECT_EQ(dict.capacity(), initial_capacity * Runtime::kDictGrowthFactor);
-  EXPECT_EQ(dict.numUsableItems(),
-            ((dict.capacity() * 2) / 3) - dict.numItems());
-
-  // Make sure we can still read all the stored keys/values.
-  for (word i = 0; i <= threshold; i++) {
-    Object key(&scope, SmallInt::fromWord(i));
-    word hash = intHash(*key);
-    RawObject value = runtime_.dictAt(thread_, dict, key, hash);
-    ASSERT_FALSE(value.isError());
-    EXPECT_TRUE(isIntEqualsWord(value, -i));
-  }
-}
-
-TEST_F(RuntimeDictTest, CollidingKeys) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-class C:
-  def __eq__(self, other):
-    return self is other
-  def __hash__(self):
-    return 0
-i0 = C()
-i1 = C()
-)")
-                   .isError());
-  Object i0(&scope, mainModuleAt(&runtime_, "i0"));
-  Object i0_hash_obj(&scope, Interpreter::hash(thread_, i0));
-  ASSERT_FALSE(i0_hash_obj.isErrorException());
-  word i0_hash = SmallInt::cast(*i0_hash_obj).value();
-  Object i1(&scope, mainModuleAt(&runtime_, "i1"));
-  Object i1_hash_obj(&scope, Interpreter::hash(thread_, i1));
-  ASSERT_FALSE(i1_hash_obj.isErrorException());
-  word i1_hash = SmallInt::cast(*i1_hash_obj).value();
-  ASSERT_EQ(i0_hash, i1_hash);
-
-  Dict dict(&scope, runtime_.newDict());
-
-  // Add two different keys with different values using the same hash
-  runtime_.dictAtPut(thread_, dict, i0, i0_hash, i0);
-  runtime_.dictAtPut(thread_, dict, i1, i1_hash, i1);
-
-  // Make sure we get both back
-  Object retrieved(&scope, runtime_.dictAt(thread_, dict, i0, i0_hash));
-  EXPECT_EQ(retrieved, i0);
-
-  retrieved = runtime_.dictAt(thread_, dict, i1, i1_hash);
-  EXPECT_EQ(retrieved, i1);
-}
-
-TEST_F(RuntimeDictTest, MixedKeys) {
-  HandleScope scope(thread_);
-  Dict dict(&scope, runtime_.newDict());
-
-  // Add keys of different type
-  Object int_key(&scope, SmallInt::fromWord(100));
-  word int_key_hash = intHash(*int_key);
-  runtime_.dictAtPut(thread_, dict, int_key, int_key_hash, int_key);
-
-  Object str_key(&scope, runtime_.newStrFromCStr("testing 123"));
-  word str_key_hash = strHash(thread_, *str_key);
-  runtime_.dictAtPut(thread_, dict, str_key, str_key_hash, str_key);
-
-  // Make sure we get the appropriate values back out
-  RawObject retrieved = runtime_.dictAt(thread_, dict, int_key, int_key_hash);
-  EXPECT_EQ(retrieved, *int_key);
-
-  retrieved = runtime_.dictAt(thread_, dict, str_key, str_key_hash);
-  ASSERT_TRUE(retrieved.isStr());
-  EXPECT_EQ(*str_key, retrieved);
-}
-
-TEST_F(RuntimeDictTest, GetKeys) {
-  HandleScope scope(thread_);
-
-  // Create keys
-  Tuple keys(&scope, runtime_.newTuple(4));
-  keys.atPut(0, SmallInt::fromWord(100));
-  keys.atPut(1, runtime_.newStrFromCStr("testing 123"));
-  keys.atPut(2, Bool::trueObj());
-  keys.atPut(3, NoneType::object());
-
-  // Add keys to dict
-  Dict dict(&scope, runtime_.newDict());
-  for (word i = 0; i < keys.length(); i++) {
-    Object key(&scope, keys.at(i));
-    Object hash_obj(&scope, Interpreter::hash(thread_, key));
-    ASSERT_FALSE(hash_obj.isErrorException());
-    word hash = SmallInt::cast(*hash_obj).value();
-    runtime_.dictAtPut(thread_, dict, key, hash, key);
-  }
-
-  // Grab the keys and verify everything is there
-  List retrieved(&scope, runtime_.dictKeys(thread_, dict));
-  ASSERT_EQ(retrieved.numItems(), keys.length());
-  for (word i = 0; i < keys.length(); i++) {
-    Object key(&scope, keys.at(i));
-    EXPECT_TRUE(listContains(retrieved, key)) << " missing key " << i;
-  }
-}
-
-TEST_F(RuntimeDictTest, CanCreateDictItems) {
-  HandleScope scope(thread_);
-  Dict dict(&scope, runtime_.newDict());
-  RawObject iter = runtime_.newDictItemIterator(thread_, dict);
-  ASSERT_TRUE(iter.isDictItemIterator());
 }
 
 TEST_F(RuntimeListTest, ListGrowth) {
@@ -1296,7 +1000,7 @@ TEST_F(RuntimeTest, CollectAttributes) {
   EXPECT_EQ(attributes.numItems(), 1);
 
   // Check that we collected 'foo'
-  Object result(&scope, runtime_.dictAtByStr(thread_, attributes, foo));
+  Object result(&scope, dictAtByStr(thread_, attributes, foo));
   ASSERT_TRUE(result.isStr());
   EXPECT_TRUE(Str::cast(*result).equals(*foo));
 
@@ -1315,12 +1019,12 @@ TEST_F(RuntimeTest, CollectAttributes) {
   EXPECT_EQ(attributes.numItems(), 3);
 
   // Check that we collected 'bar'
-  result = runtime_.dictAtByStr(thread_, attributes, bar);
+  result = dictAtByStr(thread_, attributes, bar);
   ASSERT_TRUE(result.isStr());
   EXPECT_TRUE(Str::cast(*result).equals(*bar));
 
   // Check that we collected 'baz'
-  result = runtime_.dictAtByStr(thread_, attributes, baz);
+  result = dictAtByStr(thread_, attributes, baz);
   ASSERT_TRUE(result.isStr());
   EXPECT_TRUE(Str::cast(*result).equals(*baz));
 }
@@ -1359,7 +1063,7 @@ TEST_F(RuntimeTest, CollectAttributesWithExtendedArg) {
   EXPECT_EQ(attributes.numItems(), 1);
 
   // Check that we collected 'foo'
-  Object result(&scope, runtime_.dictAtByStr(thread_, attributes, foo));
+  Object result(&scope, dictAtByStr(thread_, attributes, foo));
   ASSERT_TRUE(result.isStr());
   EXPECT_TRUE(Str::cast(*result).equals(*foo));
 }
@@ -1374,7 +1078,7 @@ TEST_F(RuntimeTest, GetTypeConstructor) {
 
   Str init(&scope, runtime_.symbols()->DunderInit());
   Object func(&scope, makeTestFunction());
-  runtime_.dictAtPutInValueCellByStr(thread_, type_dict, init, func);
+  dictAtPutInValueCellByStr(thread_, type_dict, init, func);
 
   EXPECT_EQ(runtime_.classConstructor(type), *func);
 }
@@ -2759,18 +2463,15 @@ TEST_F(RuntimeModuleTest, ModuleImportsAllPublicSymbols) {
   Dict module_dict(&scope, module.dict());
   Str symbol_str1(&scope, runtime_.newStrFromCStr("public_symbol"));
   Str symbol_str2(&scope, runtime_.newStrFromCStr("_private_symbol"));
-  runtime_.dictAtPutInValueCellByStr(thread_, module_dict, symbol_str1,
-                                     symbol_str1);
-  runtime_.dictAtPutInValueCellByStr(thread_, module_dict, symbol_str2,
-                                     symbol_str2);
+  dictAtPutInValueCellByStr(thread_, module_dict, symbol_str1, symbol_str1);
+  dictAtPutInValueCellByStr(thread_, module_dict, symbol_str2, symbol_str2);
 
   // Import public symbols to dictionary
   Dict symbols_dict(&scope, runtime_.newDict());
   runtime_.moduleImportAllFrom(symbols_dict, module);
   EXPECT_EQ(symbols_dict.numItems(), 1);
 
-  ValueCell result(&scope,
-                   runtime_.dictAtByStr(thread_, symbols_dict, symbol_str1));
+  ValueCell result(&scope, dictAtByStr(thread_, symbols_dict, symbol_str1));
   EXPECT_TRUE(isStrEqualsCStr(result.value(), "public_symbol"));
 }
 
@@ -2833,7 +2534,7 @@ foo.x = 3
   Function function(&scope, mainModuleAt(&runtime_, "foo"));
   Dict function_dict(&scope, function.dict());
   Str name(&scope, runtime_.newStrFromCStr("x"));
-  Object value(&scope, runtime_.dictAtByStr(thread_, function_dict, name));
+  Object value(&scope, dictAtByStr(thread_, function_dict, name));
   EXPECT_TRUE(isIntEqualsWord(*value, 3));
 }
 
@@ -3494,7 +3195,7 @@ TEST_F(RuntimeTest, NonModuleInModulesDoesNotCrash) {
   Object not_a_module(&scope, runtime_.newInt(42));
   Str name(&scope, runtime_.newStrFromCStr("a_valid_module_name"));
   Dict modules(&scope, runtime_.modules());
-  runtime_.dictAtPutByStr(thread_, modules, name, not_a_module);
+  dictAtPutByStr(thread_, modules, name, not_a_module);
 
   Object result(&scope, runtime_.findModule(name));
   EXPECT_EQ(result, not_a_module);

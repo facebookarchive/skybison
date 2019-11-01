@@ -1,7 +1,9 @@
 #include "gtest/gtest.h"
 
-#include "ic.h"
 #include "module-builtins.h"
+
+#include "dict-builtins.h"
+#include "ic.h"
 #include "objects.h"
 #include "runtime.h"
 #include "str-builtins.h"
@@ -113,8 +115,8 @@ static RawModule createTestingModule(Thread* thread) {
   // Create a module dict with builtins in it.
   Dict module_dict(&scope, runtime->newDict());
   Str dunder_builtins_name(&scope, runtime->symbols()->DunderBuiltins());
-  runtime->dictAtPutInValueCellByStr(thread, module_dict, dunder_builtins_name,
-                                     builtins_module);
+  dictAtPutInValueCellByStr(thread, module_dict, dunder_builtins_name,
+                            builtins_module);
 
   Str module_name(&scope, runtime->newStrFromCStr("__main__"));
   Module module(&scope, runtime->newModule(module_name));
@@ -151,8 +153,7 @@ TEST_F(ModuleBuiltinsTest, ModuleAtReturnsErrorNotFoundForPlaceholder) {
   moduleAtPutByStr(thread_, module, name, value);
 
   Dict module_dict(&scope, module.dict());
-  ValueCell value_cell(&scope,
-                       runtime_.dictAtByStr(thread_, module_dict, name));
+  ValueCell value_cell(&scope, dictAtByStr(thread_, module_dict, name));
   value_cell.makePlaceholder();
   EXPECT_TRUE(moduleAtByStr(thread_, module, name).isErrorNotFound());
 }
@@ -267,8 +268,7 @@ TEST_F(ModuleBuiltinsTest, ModuleLenReturnsItemCountExcludingPlaceholders) {
 
   Dict module_dict(&scope, module.dict());
   word hash = strHash(thread_, *bar);
-  ValueCell::cast(runtime_.dictAt(thread_, module_dict, bar, hash))
-      .makePlaceholder();
+  ValueCell::cast(dictAt(thread_, module_dict, bar, hash)).makePlaceholder();
 
   SmallInt after_len(&scope, moduleLen(thread_, module));
   EXPECT_EQ(previous_len.value(), after_len.value() + 1);
@@ -317,8 +317,7 @@ TEST_F(ModuleBuiltinsTest, ModuleValuesFiltersOutPlaceholders) {
   moduleAtPutByStr(thread_, module, baz, baz_value);
 
   Dict module_dict(&scope, module.dict());
-  ValueCell::cast(runtime_.dictAtByStr(thread_, module_dict, bar))
-      .makePlaceholder();
+  ValueCell::cast(dictAtByStr(thread_, module_dict, bar)).makePlaceholder();
 
   List values(&scope, moduleValues(thread_, module));
   EXPECT_TRUE(listContains(values, foo_value));

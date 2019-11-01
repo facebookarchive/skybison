@@ -6,6 +6,7 @@
 
 #include "bytecode.h"
 #include "debugging.h"
+#include "dict-builtins.h"
 #include "test-utils.h"
 
 namespace py {
@@ -58,13 +59,13 @@ static RawObject makeTestFunction(Thread* thread) {
   Dict annotations(&scope, runtime->newDict());
   Str return_name(&scope, runtime->newStrFromCStr("return"));
   Object int_type(&scope, runtime->typeAt(LayoutId::kInt));
-  runtime->dictAtPutByStr(thread, annotations, return_name, int_type);
+  dictAtPutByStr(thread, annotations, return_name, int_type);
   func.setAnnotations(*annotations);
   func.setClosure(runtime->emptyTuple());
   Dict kw_defaults(&scope, runtime->newDict());
   Str name0(&scope, runtime->newStrFromCStr("name0"));
   Object none(&scope, NoneType::object());
-  runtime->dictAtPutByStr(thread, kw_defaults, name0, none);
+  dictAtPutByStr(thread, kw_defaults, name0, none);
   func.setKwDefaults(*kw_defaults);
   Tuple defaults(&scope, runtime->newTuple(1));
   defaults.atPut(0, runtime->newInt(-9));
@@ -75,7 +76,7 @@ static RawObject makeTestFunction(Thread* thread) {
   Dict attrs(&scope, runtime->newDict());
   Str attr_name(&scope, runtime->newStrFromCStr("funcattr0"));
   Object attr_value(&scope, runtime->newInt(4));
-  runtime->dictAtPutByStr(thread, attrs, attr_name, attr_value);
+  dictAtPutByStr(thread, attrs, attr_name, attr_value);
   func.setDict(*attrs);
   return *func;
 }
@@ -373,8 +374,8 @@ TEST_F(DebuggingTests, FormatDict) {
   word hash = SmallInt::cast(*hash_obj).value();
   Object value0(&scope, runtime_.newInt(88));
   Object value1(&scope, runtime_.emptyTuple());
-  runtime_.dictAtPutByStr(thread_, dict, key0, value0);
-  runtime_.dictAtPut(thread_, dict, key1, hash, value1);
+  dictAtPutByStr(thread_, dict, key0, value0);
+  dictAtPut(thread_, dict, key1, hash, value1);
   std::stringstream ss;
   ss << dict;
   EXPECT_TRUE(ss.str() == R"({"hello": 88, None: ()})" ||

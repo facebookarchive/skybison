@@ -1,5 +1,6 @@
 #include "capi-handles.h"
 #include "cpython-func.h"
+#include "dict-builtins.h"
 #include "imp-module.h"
 #include "int-builtins.h"
 #include "module-builtins.h"
@@ -77,7 +78,7 @@ PY_EXPORT PyObject* PyImport_AddModuleObject(PyObject* name) {
   Object hash_obj(&scope, Interpreter::hash(thread, name_obj));
   if (hash_obj.isErrorException()) return nullptr;
   word hash = SmallInt::cast(*hash_obj).value();
-  Object module(&scope, runtime->dictAt(thread, modules_dict, name_obj, hash));
+  Object module(&scope, dictAt(thread, modules_dict, name_obj, hash));
   if (!module.isErrorNotFound()) {
     return ApiHandle::borrowedReference(thread, *module);
   }

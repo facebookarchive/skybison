@@ -3,6 +3,7 @@
 #include "cpython-data.h"
 #include "cpython-func.h"
 #include "cpython-types.h"
+#include "dict-builtins.h"
 #include "object-builtins.h"
 #include "runtime.h"
 #include "visitor.h"
@@ -98,7 +99,7 @@ void ApiHandle::dictAtPutIdentityEquals(Thread* thread, const Dict& dict,
   if (empty_slot) {
     DCHECK(dict.numUsableItems() > 0, "dict.numIsableItems() must be positive");
     dict.decrementNumUsableItems();
-    runtime->dictEnsureCapacity(thread, dict);
+    dictEnsureCapacity(thread, dict);
   }
 }
 

@@ -6,6 +6,7 @@
 #include "cpython-func.h"
 
 #include "capi-handles.h"
+#include "dict-builtins.h"
 #include "exception-builtins.h"
 #include "fileutils.h"
 #include "runtime.h"
@@ -204,7 +205,7 @@ PY_EXPORT PyObject* PyErr_NewExceptionWithDoc(const char* name, const char* doc,
     }
     Dict dict(&scope, *dict_obj);
     Object doc_str(&scope, runtime->newStrFromCStr(doc));
-    runtime->dictAtPutById(thread, dict, SymbolId::kDunderDoc, doc_str);
+    dictAtPutById(thread, dict, SymbolId::kDunderDoc, doc_str);
   }
 
   const char* dot = std::strrchr(name, '.');

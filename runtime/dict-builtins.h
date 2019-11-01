@@ -8,8 +8,79 @@
 
 namespace py {
 
+// Associate a value with the supplied key.
+//
+// This handles growing the backing Tuple if needed.
+void dictAtPut(Thread* thread, const Dict& dict, const Object& key, word hash,
+               const Object& value);
+
+// Does the same as `dictAtPut` but only works for `key` being a `str`
+// instance. It must not be used with instances of a `str` subclass.
+void dictAtPutByStr(Thread* thread, const Dict& dict, const Str& name,
+                    const Object& value);
+
+// Does the same as `dictAtPut` but uses symbol `id` (converted to a string)
+// as key.
+void dictAtPutById(Thread* thread, const Dict& dict, SymbolId id,
+                   const Object& value);
+
+// Look up the value associated with `key`. Returns the associated value or
+// `Error::notFound()`.
+RawObject dictAt(Thread* thread, const Dict& dict, const Object& key,
+                 word hash);
+
+// Look up the value associated with `name`. `name` must be an instance of
+// `str` but not of a subclass. Returns the associated value or
+// `Error::notFound()`.
+RawObject dictAtByStr(Thread* thread, const Dict& dict, const Str& name);
+
+// Look up the value associated with `id`. Returns the associated value or
+// `Error::notFound()`.
+RawObject dictAtById(Thread* thread, const Dict& dict, SymbolId id);
+
+// Looks up and returns the value associated with the key.  If the key is
+// absent, calls thunk and inserts its result as the value.
+RawObject dictAtIfAbsentPut(Thread* thread, const Dict& dict, const Object& key,
+                            word hash, Callback<RawObject>* thunk);
+
+// Stores value in a ValueCell associated with `key`. Reuses an existing
+// value cell when possible.
+RawObject dictAtPutInValueCell(Thread* thread, const Dict& dict,
+                               const Object& key, word hash,
+                               const Object& value);
+
+// Stores value in a ValueCell associated with `name`. Reuses an existing
+// value cell when possible.
+RawObject dictAtPutInValueCellByStr(Thread* thread, const Dict& dict,
+                                    const Str& name, const Object& value);
+
 // Remove all items from a Dict.
 void dictClear(Thread* thread, const Dict& dict);
+
+// Returns true if the dict contains the specified key.
+bool dictIncludes(Thread* thread, const Dict& dict, const Object& key,
+                  word hash);
+
+// Returns true if the dict contains an entry associated with `name`.
+// `name` must by a `str` instance (but no subclass).
+bool dictIncludesByStr(Thread* thread, const Dict& dict, const Str& name);
+
+// TODO(T46009010): Make this into a private function after making
+// 'builtins._dict_setitem' into a dict builtin function
+void dictEnsureCapacity(Thread* thread, const Dict& dict);
+
+// Try to remove entry associated with `key` from `dict`.
+// Returns the value that was associated before deletion or
+// `Error:notFound()`.
+RawObject dictRemove(Thread* thread, const Dict& dict, const Object& key,
+                     word hash);
+
+// Try to remove entry associated with `name` from `dict`.
+// Returns the value that was associated before deletion or
+// `Error:notFound()`.
+RawObject dictRemoveByStr(Thread* thread, const Dict& dict, const Str& name);
+
+RawObject dictKeys(Thread* thread, const Dict& dict);
 
 // Creates a new dict with shallow copies of the given dict's elements.
 RawObject dictCopy(Thread* thread, const Dict& dict);

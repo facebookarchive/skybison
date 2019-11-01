@@ -1,6 +1,7 @@
 #include "ic.h"
 
 #include "bytecode.h"
+#include "dict-builtins.h"
 #include "interpreter.h"
 #include "runtime.h"
 #include "type-builtins.h"
@@ -14,7 +15,6 @@ static void insertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
                                                const Str& name,
                                                const Object& dependent) {
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
   Tuple mro(&scope, type.mro());
   NoneType none(&scope, NoneType::object());
   for (word i = 0; i < mro.length(); i++) {
@@ -23,11 +23,11 @@ static void insertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
     Dict dict(&scope, mro_type.dict());
     // TODO(T46428372): Consider using a specialized dict lookup to avoid 2
     // probings.
-    Object result(&scope, runtime->dictAtByStr(thread, dict, name));
+    Object result(&scope, dictAtByStr(thread, dict, name));
     DCHECK(result.isErrorNotFound() || result.isValueCell(),
            "value must be ValueCell if found");
     if (result.isErrorNotFound()) {
-      result = runtime->dictAtPutInValueCellByStr(thread, dict, name, none);
+      result = dictAtPutInValueCellByStr(thread, dict, name, none);
       ValueCell::cast(*result).makePlaceholder();
     }
     ValueCell value_cell(&scope, *result);
@@ -190,7 +190,7 @@ void icDeleteDependentFromInheritingTypes(Thread* thread,
     // search here.
     if (type.isSealed()) break;
     Dict dict(&scope, type.dict());
-    ValueCell value_cell(&scope, runtime->dictAtByStr(thread, dict, attr_name));
+    ValueCell value_cell(&scope, dictAtByStr(thread, dict, attr_name));
     icDeleteDependentInValueCell(thread, value_cell, dependent);
     if (type == new_defining_type) {
       // This can be a placeholder for some caching opcodes that depend on not
@@ -216,7 +216,7 @@ RawObject icHighestSuperTypeNotInMroOfOtherCachedTypes(
       break;
     }
     Dict type_dict(&scope, type.dict());
-    if (!runtime->dictIncludesByStr(thread, type_dict, attr_name) ||
+    if (!dictIncludesByStr(thread, type_dict, attr_name) ||
         icIsAttrCachedInDependent(thread, type, attr_name, dependent)) {
       break;
     }
@@ -245,7 +245,7 @@ bool icIsCachedAttributeAffectedByUpdatedType(Thread* thread,
     // search here.
     if (type.isSealed()) break;
     Dict dict(&scope, type.dict());
-    Object result(&scope, runtime->dictAtByStr(thread, dict, attribute_name));
+    Object result(&scope, dictAtByStr(thread, dict, attribute_name));
     if (type == updated_type) {
       // The current type in MRO is the searched type, and the searched
       // attribute is unfound in MRO so far, so type[attribute_name] is the one

@@ -6,10 +6,167 @@
 #include "interpreter.h"
 #include "objects.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "thread.h"
 #include "type-builtins.h"
 
 namespace py {
+
+static bool dictLookup(Thread* thread, const Tuple& data, const Object& key,
+                       word hash, word* index) {
+  if (data.length() == 0) {
+    *index = -1;
+    return false;
+  }
+  word next_free_index = -1;
+  uword perturb;
+  word bucket_mask;
+  RawSmallInt hash_int = SmallInt::fromWord(hash);
+  for (word current = Dict::Bucket::bucket(*data, hash, &bucket_mask, &perturb);
+       ; current = Dict::Bucket::nextBucket(current, bucket_mask, &perturb)) {
+    word current_index = current * Dict::Bucket::kNumPointers;
+    if (Dict::Bucket::hashRaw(*data, current_index) == hash_int) {
+      RawObject eq = Runtime::objectEquals(
+          thread, Dict::Bucket::key(*data, current_index), *key);
+      if (eq == Bool::trueObj()) {
+        *index = current_index;
+        return true;
+      }
+      if (eq.isErrorException()) {
+        UNIMPLEMENTED("exception in key comparison");
+      }
+      continue;
+    }
+    if (Dict::Bucket::isEmpty(*data, current_index)) {
+      if (next_free_index == -1) {
+        next_free_index = current_index;
+      }
+      *index = next_free_index;
+      return false;
+    }
+    if (Dict::Bucket::isTombstone(*data, current_index)) {
+      if (next_free_index == -1) {
+        next_free_index = current_index;
+      }
+    }
+  }
+}
+
+void dictAtPut(Thread* thread, const Dict& dict, const Object& key, word hash,
+               const Object& value) {
+  // TODO(T44245141): Move initialization of an empty dict to
+  // dictEnsureCapacity.
+  if (dict.capacity() == 0) {
+    dict.setData(thread->runtime()->newMutableTuple(
+        Runtime::kInitialDictCapacity * Dict::Bucket::kNumPointers));
+    dict.resetNumUsableItems();
+  }
+  HandleScope scope(thread);
+  Tuple data(&scope, dict.data());
+  word index = -1;
+  bool found = dictLookup(thread, data, key, hash, &index);
+  DCHECK(index != -1, "invalid index %ld", index);
+  if (found) {
+    Dict::Bucket::setValue(*data, index, *value);
+    return;
+  }
+  bool empty_slot = Dict::Bucket::isEmpty(*data, index);
+  Dict::Bucket::set(*data, index, hash, *key, *value);
+  dict.setNumItems(dict.numItems() + 1);
+  if (empty_slot) {
+    dict.decrementNumUsableItems();
+    dictEnsureCapacity(thread, dict);
+  }
+  DCHECK(dict.hasUsableItems(), "dict must have an empty bucket left");
+}
+
+void dictAtPutByStr(Thread* thread, const Dict& dict, const Str& name,
+                    const Object& value) {
+  word hash = strHash(thread, *name);
+  dictAtPut(thread, dict, name, hash, value);
+}
+
+void dictAtPutById(Thread* thread, const Dict& dict, SymbolId id,
+                   const Object& value) {
+  HandleScope scope(thread);
+  Str name(&scope, thread->runtime()->symbols()->at(id));
+  dictAtPutByStr(thread, dict, name, value);
+}
+
+RawObject dictAt(Thread* thread, const Dict& dict, const Object& key,
+                 word hash) {
+  HandleScope scope(thread);
+  Tuple data(&scope, dict.data());
+  word index = -1;
+  bool found = dictLookup(thread, data, key, hash, &index);
+  if (found) {
+    return Dict::Bucket::value(*data, index);
+  }
+  return Error::notFound();
+}
+
+RawObject dictAtByStr(Thread* thread, const Dict& dict, const Str& name) {
+  word hash = strHash(thread, *name);
+  return dictAt(thread, dict, name, hash);
+}
+
+RawObject dictAtById(Thread* thread, const Dict& dict, SymbolId id) {
+  HandleScope scope(thread);
+  Str name(&scope, thread->runtime()->symbols()->at(id));
+  return dictAtByStr(thread, dict, name);
+}
+
+RawObject dictAtIfAbsentPut(Thread* thread, const Dict& dict, const Object& key,
+                            word hash, Callback<RawObject>* thunk) {
+  // TODO(T44245141): Move initialization of an empty dict to
+  // dictEnsureCapacity.
+  if (dict.capacity() == 0) {
+    dict.setData(thread->runtime()->newMutableTuple(
+        Runtime::kInitialDictCapacity * Dict::Bucket::kNumPointers));
+    dict.resetNumUsableItems();
+  }
+  HandleScope scope(thread);
+  Tuple data(&scope, dict.data());
+  word index = -1;
+  bool found = dictLookup(thread, data, key, hash, &index);
+  DCHECK(index != -1, "invalid index %ld", index);
+  if (found) {
+    return Dict::Bucket::value(*data, index);
+  }
+  bool empty_slot = Dict::Bucket::isEmpty(*data, index);
+  Object value(&scope, thunk->call());
+  Dict::Bucket::set(*data, index, hash, *key, *value);
+  dict.setNumItems(dict.numItems() + 1);
+  if (empty_slot) {
+    DCHECK(dict.numUsableItems() > 0, "dict.numIsableItems() must be positive");
+    dict.decrementNumUsableItems();
+    dictEnsureCapacity(thread, dict);
+  }
+  DCHECK(dict.hasUsableItems(), "dict must have an empty bucket left");
+  return *value;
+}
+
+RawObject dictAtPutInValueCellByStr(Thread* thread, const Dict& dict,
+                                    const Str& name, const Object& value) {
+  HandleScope scope(thread);
+  word hash = strHash(thread, *name);
+  Object result(&scope,
+                dictAtIfAbsentPut(thread, dict, name, hash,
+                                  thread->runtime()->newValueCellCallback()));
+  ValueCell::cast(*result).setValue(*value);
+  return *result;
+}
+
+RawObject dictAtPutInValueCell(Thread* thread, const Dict& dict,
+                               const Object& key, word hash,
+                               const Object& value) {
+  HandleScope scope(thread);
+  Object result(&scope,
+                dictAtIfAbsentPut(thread, dict, key, hash,
+                                  thread->runtime()->newValueCellCallback()));
+  ValueCell::cast(*result).setValue(*value);
+  return *result;
+}
 
 void dictClear(Thread* thread, const Dict& dict) {
   if (dict.capacity() == 0) return;
@@ -19,6 +176,103 @@ void dictClear(Thread* thread, const Dict& dict) {
   MutableTuple data(&scope, dict.data());
   data.fill(NoneType::object());
   dict.resetNumUsableItems();
+}
+
+bool dictIncludesByStr(Thread* thread, const Dict& dict, const Str& name) {
+  word hash = strHash(thread, *name);
+  return dictIncludes(thread, dict, name, hash);
+}
+
+bool dictIncludes(Thread* thread, const Dict& dict, const Object& key,
+                  word hash) {
+  HandleScope scope(thread);
+  Tuple data(&scope, dict.data());
+  word ignore;
+  return dictLookup(thread, data, key, hash, &ignore);
+}
+
+RawObject dictRemoveByStr(Thread* thread, const Dict& dict, const Str& name) {
+  word hash = strHash(thread, *name);
+  return dictRemove(thread, dict, name, hash);
+}
+
+RawObject dictRemove(Thread* thread, const Dict& dict, const Object& key,
+                     word hash) {
+  HandleScope scope(thread);
+  Tuple data(&scope, dict.data());
+  word index = -1;
+  Object result(&scope, Error::notFound());
+  bool found = dictLookup(thread, data, key, hash, &index);
+  if (found) {
+    result = Dict::Bucket::value(*data, index);
+    Dict::Bucket::setTombstone(*data, index);
+    dict.setNumItems(dict.numItems() - 1);
+  }
+  return *result;
+}
+
+// Insert `key`/`value` into dictionary assuming no bucket with an equivalent
+// key and no tombstones exist.
+static void dictInsertNoUpdate(const Tuple& data, const Object& key, word hash,
+                               const Object& value) {
+  DCHECK(data.length() > 0, "dict must not be empty");
+  uword perturb;
+  word bucket_mask;
+  for (word current = Dict::Bucket::bucket(*data, hash, &bucket_mask, &perturb);
+       ; current = Dict::Bucket::nextBucket(current, bucket_mask, &perturb)) {
+    word current_index = current * Dict::Bucket::kNumPointers;
+    if (Dict::Bucket::isEmpty(*data, current_index)) {
+      Dict::Bucket::set(*data, current_index, hash, *key, *value);
+      return;
+    }
+  }
+}
+
+void dictEnsureCapacity(Thread* thread, const Dict& dict) {
+  // TODO(T44245141): Move initialization of an empty dict here.
+  DCHECK(dict.capacity() > 0 && Utils::isPowerOfTwo(dict.capacity()),
+         "dict capacity must be power of two, greater than zero");
+  if (dict.hasUsableItems()) {
+    return;
+  }
+  // TODO(T44247845): Handle overflow here.
+  word new_capacity = dict.capacity() * Runtime::kDictGrowthFactor;
+  HandleScope scope(thread);
+  Tuple data(&scope, dict.data());
+  MutableTuple new_data(&scope, thread->runtime()->newMutableTuple(
+                                    new_capacity * Dict::Bucket::kNumPointers));
+  // Re-insert items
+  Object key(&scope, NoneType::object());
+  Object value(&scope, NoneType::object());
+  for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
+    key = Dict::Bucket::key(*data, i);
+    word hash = Dict::Bucket::hash(*data, i);
+    value = Dict::Bucket::value(*data, i);
+    dictInsertNoUpdate(new_data, key, hash, value);
+  }
+  dict.setData(*new_data);
+  dict.resetNumUsableItems();
+}
+
+RawObject dictKeys(Thread* thread, const Dict& dict) {
+  word len = dict.numItems();
+  Runtime* runtime = thread->runtime();
+  if (len == 0) {
+    return runtime->newList();
+  }
+  HandleScope scope(thread);
+  Tuple data(&scope, dict.data());
+  Tuple keys(&scope, runtime->newMutableTuple(len));
+  word num_keys = 0;
+  for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
+    DCHECK(num_keys < keys.length(), "%ld ! < %ld", num_keys, keys.length());
+    keys.atPut(num_keys, Dict::Bucket::key(*data, i));
+    num_keys++;
+  }
+  List result(&scope, runtime->newList());
+  result.setItems(*keys);
+  result.setNumItems(len);
+  return *result;
 }
 
 RawObject dictCopy(Thread* thread, const Dict& dict) {
@@ -40,7 +294,6 @@ enum class Override {
 
 RawObject dictMergeDict(Thread* thread, const Dict& dict, const Object& mapping,
                         Override do_override) {
-  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   if (*mapping == *dict) return NoneType::object();
 
@@ -54,8 +307,8 @@ RawObject dictMergeDict(Thread* thread, const Dict& dict, const Object& mapping,
     value = Dict::Bucket::value(*other_data, i);
     word hash = Dict::Bucket::hash(*other_data, i);
     if (do_override == Override::kOverride ||
-        !runtime->dictIncludes(thread, dict, key, hash)) {
-      runtime->dictAtPut(thread, dict, key, hash, value);
+        !dictIncludes(thread, dict, key, hash)) {
+      dictAtPut(thread, dict, key, hash, value);
     } else if (do_override == Override::kError) {
       return thread->raise(LayoutId::kKeyError, *key);
     }
@@ -102,11 +355,11 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
       if (hash_obj.isErrorException()) return *hash_obj;
       word hash = SmallInt::cast(*hash_obj).value();
       if (do_override == Override::kOverride ||
-          !runtime->dictIncludes(thread, dict, key, hash)) {
+          !dictIncludes(thread, dict, key, hash)) {
         value = Interpreter::callMethod2(thread, frame, subscr_method, mapping,
                                          key);
         if (value.isError()) return *value;
-        runtime->dictAtPut(thread, dict, key, hash, value);
+        dictAtPut(thread, dict, key, hash, value);
       } else if (do_override == Override::kError) {
         return thread->raise(LayoutId::kKeyError, *key);
       }
@@ -122,11 +375,11 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
       if (hash_obj.isErrorException()) return *hash_obj;
       word hash = SmallInt::cast(*hash_obj).value();
       if (do_override == Override::kOverride ||
-          !runtime->dictIncludes(thread, dict, key, hash)) {
+          !dictIncludes(thread, dict, key, hash)) {
         value = Interpreter::callMethod2(thread, frame, subscr_method, mapping,
                                          key);
         if (value.isError()) return *value;
-        runtime->dictAtPut(thread, dict, key, hash, value);
+        dictAtPut(thread, dict, key, hash, value);
       } else if (do_override == Override::kError) {
         return thread->raise(LayoutId::kKeyError, *key);
       }
@@ -165,11 +418,11 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
     if (hash_obj.isErrorException()) return *hash_obj;
     word hash = SmallInt::cast(*hash_obj).value();
     if (do_override == Override::kOverride ||
-        !runtime->dictIncludes(thread, dict, key, hash)) {
+        !dictIncludes(thread, dict, key, hash)) {
       value =
           Interpreter::callMethod2(thread, frame, subscr_method, mapping, key);
       if (value.isError()) return *value;
-      runtime->dictAtPut(thread, dict, key, hash, value);
+      dictAtPut(thread, dict, key, hash, value);
     } else if (do_override == Override::kError) {
       return thread->raise(LayoutId::kKeyError, *key);
     }
@@ -299,7 +552,7 @@ RawObject DictBuiltins::dunderDelItem(Thread* thread, Frame* frame,
   if (hash_obj.isErrorException()) return *hash_obj;
   word hash = SmallInt::cast(*hash_obj).value();
   // Remove the key. If it doesn't exist, throw a KeyError.
-  if (runtime->dictRemove(thread, dict, key, hash).isError()) {
+  if (dictRemove(thread, dict, key, hash).isError()) {
     return thread->raise(LayoutId::kKeyError, *key);
   }
   return NoneType::object();
@@ -331,7 +584,7 @@ RawObject DictBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*self_data, &i);) {
     key = Dict::Bucket::key(*self_data, i);
     word hash = Dict::Bucket::hash(*self_data, i);
-    right_value = runtime->dictAt(thread, other, key, hash);
+    right_value = dictAt(thread, other, key, hash);
     if (right_value.isErrorNotFound()) {
       return Bool::falseObj();
     }
