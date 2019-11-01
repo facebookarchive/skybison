@@ -43,7 +43,13 @@ TEST_F(GcModuleExtensionApiTest, NewReturnsAllocatedObject) {
   struct BarObject {
     PyObject_HEAD int value;
   };
+  destructor dealloc = [](PyObject* self) {
+    PyTypeObject* type = Py_TYPE(self);
+    PyObject_GC_Del(self);
+    Py_DECREF(type);
+  };
   PyType_Slot slots[] = {
+      {Py_tp_dealloc, reinterpret_cast<void*>(dealloc)},
       {0, nullptr},
   };
   static PyType_Spec spec;
@@ -53,14 +59,14 @@ TEST_F(GcModuleExtensionApiTest, NewReturnsAllocatedObject) {
   };
   PyObjectPtr type(PyType_FromSpec(&spec));
   Py_ssize_t refcnt = Py_REFCNT(type.get());
-  BarObject* instance =
-      PyObject_GC_New(BarObject, reinterpret_cast<PyTypeObject*>(type.get()));
+  PyObjectPtr instance(reinterpret_cast<PyObject*>(
+      PyObject_GC_New(BarObject, type.asTypeObject())));
+  PyObject_GC_Track(instance);
   ASSERT_NE(instance, nullptr);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_GE(Py_REFCNT(instance), 1);  // CPython
   ASSERT_LE(Py_REFCNT(instance), 2);  // Pyro
   EXPECT_EQ(Py_REFCNT(type), refcnt + 1);
-  PyObject_GC_Del(instance);
 }
 
 TEST_F(GcModuleExtensionApiTest, NewVarReturnsAllocatedObject) {
@@ -70,7 +76,13 @@ TEST_F(GcModuleExtensionApiTest, NewVarReturnsAllocatedObject) {
   struct BarContainer {
     PyObject_VAR_HEAD BarObject* items[1];
   };
+  destructor dealloc = [](PyObject* self) {
+    PyTypeObject* type = Py_TYPE(self);
+    PyObject_GC_Del(self);
+    Py_DECREF(type);
+  };
   PyType_Slot slots[] = {
+      {Py_tp_dealloc, reinterpret_cast<void*>(dealloc)},
       {0, nullptr},
   };
   static PyType_Spec spec;
@@ -82,14 +94,14 @@ TEST_F(GcModuleExtensionApiTest, NewVarReturnsAllocatedObject) {
       slots,
   };
   PyObjectPtr type(PyType_FromSpec(&spec));
-  BarContainer* instance = PyObject_GC_NewVar(
-      BarContainer, reinterpret_cast<PyTypeObject*>(type.get()), 5);
+  PyObjectPtr instance(reinterpret_cast<PyObject*>(
+      PyObject_GC_NewVar(BarContainer, type.asTypeObject(), 5)));
+  PyObject_GC_Track(instance);
   ASSERT_NE(instance, nullptr);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_GE(Py_REFCNT(instance), 1);  // CPython
   ASSERT_LE(Py_REFCNT(instance), 2);  // Pyro
-  EXPECT_EQ(Py_SIZE(instance), 5);
-  PyObject_GC_Del(instance);
+  EXPECT_EQ(Py_SIZE(instance.get()), 5);
 }
 
 }  // namespace py
