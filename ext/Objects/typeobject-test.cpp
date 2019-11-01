@@ -1838,7 +1838,7 @@ static void createBarTypeWithMembers() {
   ASSERT_EQ(moduleSet("__main__", "Bar", type), 0);
 }
 
-TEST_F(TypeExtensionApiTest, MemberBoolPyro) {
+TEST_F(TypeExtensionApiTest, MemberBool) {
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1855,7 +1855,7 @@ r2 = b.t_bool
   EXPECT_EQ(r2, Py_False);
 }
 
-TEST_F(TypeExtensionApiTest, MemberBytePyro) {
+TEST_F(TypeExtensionApiTest, MemberByte) {
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1872,7 +1872,7 @@ r2 = b.t_byte
   EXPECT_TRUE(isLongEqualsLong(r2, 21));
 }
 
-TEST_F(TypeExtensionApiTest, MemberUBytePyro) {
+TEST_F(TypeExtensionApiTest, MemberUByte) {
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1889,7 +1889,7 @@ r2 = b.t_ubyte
   EXPECT_TRUE(isLongEqualsLong(r2, 21));
 }
 
-TEST_F(TypeExtensionApiTest, MemberShortPyro) {
+TEST_F(TypeExtensionApiTest, MemberShort) {
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1906,7 +1906,7 @@ r2 = b.t_short
   EXPECT_TRUE(isLongEqualsLong(r2, 21));
 }
 
-TEST_F(TypeExtensionApiTest, MemberUShortPyro) {
+TEST_F(TypeExtensionApiTest, MemberUShort) {
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1923,7 +1923,7 @@ r2 = b.t_ushort
   EXPECT_TRUE(isLongEqualsLong(r2, 21));
 }
 
-TEST_F(TypeExtensionApiTest, MemberIntPyro) {
+TEST_F(TypeExtensionApiTest, MemberInt) {
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1940,7 +1940,7 @@ r2 = b.t_int
   EXPECT_TRUE(isLongEqualsLong(r2, 4321));
 }
 
-TEST_F(TypeExtensionApiTest, MemberUIntPyro) {
+TEST_F(TypeExtensionApiTest, MemberUInt) {
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1958,7 +1958,7 @@ r2 = b.t_uint
   EXPECT_EQ(PyLong_AsUnsignedLong(r2), 4321);
 }
 
-TEST_F(TypeExtensionApiTest, MemberLongPyro) {
+TEST_F(TypeExtensionApiTest, MemberLong) {
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1975,7 +1975,7 @@ r2 = b.t_long
   EXPECT_TRUE(isLongEqualsLong(r2, 4321));
 }
 
-TEST_F(TypeExtensionApiTest, MemberULongPyro) {
+TEST_F(TypeExtensionApiTest, MemberULong) {
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -1993,7 +1993,7 @@ r2 = b.t_ulong
   EXPECT_EQ(PyLong_AsUnsignedLong(r2), 4321);
 }
 
-TEST_F(TypeExtensionApiTest, MemberLongLongPyro) {
+TEST_F(TypeExtensionApiTest, MemberLongLong) {
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -2010,7 +2010,7 @@ r2 = b.t_longlong
   EXPECT_TRUE(isLongEqualsLong(r2, -4321));
 }
 
-TEST_F(TypeExtensionApiTest, MemberULongLongPyro) {
+TEST_F(TypeExtensionApiTest, MemberULongLong) {
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -2028,7 +2028,7 @@ r2 = b.t_ulonglong
   EXPECT_EQ(PyLong_AsUnsignedLongLong(r2), 4321);
 }
 
-TEST_F(TypeExtensionApiTest, MemberFloatPyro) {
+TEST_F(TypeExtensionApiTest, MemberFloat) {
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -2045,7 +2045,7 @@ r2 = b.t_float
   EXPECT_EQ(PyFloat_AsDouble(r2), 1.5);
 }
 
-TEST_F(TypeExtensionApiTest, MemberDoublePyro) {
+TEST_F(TypeExtensionApiTest, MemberDouble) {
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -2062,7 +2062,7 @@ r2 = b.t_double
   EXPECT_EQ(PyFloat_AsDouble(r2), 1.5);
 }
 
-TEST_F(TypeExtensionApiTest, MemberCharPyro) {
+TEST_F(TypeExtensionApiTest, MemberChar) {
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -2079,7 +2079,7 @@ r2 = b.t_char
   EXPECT_TRUE(isUnicodeEqualsCStr(r2, "b"));
 }
 
-TEST_F(TypeExtensionApiTest, MemberStringPyro) {
+TEST_F(TypeExtensionApiTest, MemberString) {
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -2091,7 +2091,7 @@ r1 = b.t_string
   EXPECT_TRUE(isUnicodeEqualsCStr(r1, "foo"));
 }
 
-TEST_F(TypeExtensionApiTest, MemberStringRaisesTypeErrorPyro) {
+TEST_F(TypeExtensionApiTest, MemberStringRaisesTypeError) {
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -2111,7 +2111,7 @@ r1 = b.t_string
   EXPECT_TRUE(isUnicodeEqualsCStr(r1, "foo"));
 }
 
-TEST_F(TypeExtensionApiTest, MemberObjectPyro) {
+TEST_F(TypeExtensionApiTest, MemberObject) {
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -2132,7 +2132,7 @@ r2 = b.t_object
   EXPECT_EQ(PyTuple_Size(r2), 6);
 }
 
-TEST_F(TypeExtensionApiTest, MemberObjectWithNullPyro) {
+TEST_F(TypeExtensionApiTest, MemberObjectWithNull) {
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -2143,7 +2143,7 @@ r1 = b.t_object_null
   EXPECT_EQ(r1, Py_None);
 }
 
-TEST_F(TypeExtensionApiTest, MemberObjectExPyro) {
+TEST_F(TypeExtensionApiTest, MemberObjectEx) {
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -2164,7 +2164,7 @@ r2 = b.t_objectex
   EXPECT_EQ(PyTuple_Size(r2), 0);
 }
 
-TEST_F(TypeExtensionApiTest, MemberObjectExWithNullRaisesAttributeErrorPyro) {
+TEST_F(TypeExtensionApiTest, MemberObjectExWithNullRaisesAttributeError) {
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -2180,7 +2180,7 @@ except AttributeError:
   EXPECT_EQ(raised, Py_True);
 }
 
-TEST_F(TypeExtensionApiTest, MemberPySsizeTPyro) {
+TEST_F(TypeExtensionApiTest, MemberPySsizeT) {
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -2197,7 +2197,7 @@ r2 = b.t_pyssize
   EXPECT_EQ(PyLong_AsSsize_t(r2), 4321);
 }
 
-TEST_F(TypeExtensionApiTest, MemberReadOnlyRaisesAttributeErrorPyro) {
+TEST_F(TypeExtensionApiTest, MemberReadOnlyRaisesAttributeError) {
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -2217,7 +2217,7 @@ except AttributeError:
   EXPECT_EQ(raised, Py_True);
 }
 
-TEST_F(TypeExtensionApiTest, MemberIntSetIncorrectTypeRaisesTypeErrorPyro) {
+TEST_F(TypeExtensionApiTest, MemberIntSetIncorrectTypeRaisesTypeError) {
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -2237,7 +2237,7 @@ r1 = b.t_int
   EXPECT_TRUE(isLongEqualsLong(r1, -1234));
 }
 
-TEST_F(TypeExtensionApiTest, MemberCharIncorrectSizeRaisesTypeErrorPyro) {
+TEST_F(TypeExtensionApiTest, MemberCharIncorrectSizeRaisesTypeError) {
   ASSERT_NO_FATAL_FAILURE(createBarTypeWithMembers());
   ASSERT_EQ(PyRun_SimpleString(R"(
 b = Bar()
@@ -2257,6 +2257,8 @@ r1 = b.t_char
   EXPECT_TRUE(isUnicodeEqualsCStr(r1, "a"));
 }
 
+// Pyro raises a SystemError but CPython returns a new type.
+// TODO(T56634824): Figure out why Pyro differs from CPython.
 TEST_F(TypeExtensionApiTest, MemberUnknownRaisesSystemErrorPyro) {
   int unknown_type = -1;
   // clang-format off
