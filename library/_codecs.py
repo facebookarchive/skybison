@@ -30,12 +30,13 @@ def register(search_func):
 
 
 def lookup(encoding):
-    encoding = encoding.lower().replace(" ", "-")
-    if encoding in codec_search_cache:
-        return codec_search_cache[encoding]
+    cached = codec_search_cache.get(encoding)
+    if cached is not None:
+        return cached
+    normalized_encoding = encoding.lower().replace(" ", "-")
     result = None
     for search_func in codec_search_path:
-        result = search_func(encoding)
+        result = search_func(normalized_encoding)
         if result is None:
             continue
         if not _tuple_check(result) or not len(result) == 4:
