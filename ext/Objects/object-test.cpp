@@ -894,14 +894,13 @@ TEST_F(ObjectExtensionApiTest, NewReturnsAllocatedObject) {
   };
   PyObjectPtr type(PyType_FromSpec(&spec));
   Py_ssize_t refcnt = Py_REFCNT(type.get());
-  BarObject* instance =
-      PyObject_New(BarObject, reinterpret_cast<PyTypeObject*>(type.get()));
+  PyObjectPtr instance(reinterpret_cast<PyObject*>(
+      PyObject_New(BarObject, type.asTypeObject())));
   ASSERT_NE(instance, nullptr);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   // TODO(T53456038): Switch back to EXPECT_EQ, once initial refcount is fixed
   EXPECT_GE(Py_REFCNT(instance), 1);
   EXPECT_EQ(Py_REFCNT(type), refcnt + 1);
-  PyObject_Free(instance);
 }
 
 TEST_F(ObjectExtensionApiTest, NewVarReturnsAllocatedObject) {
@@ -920,14 +919,13 @@ TEST_F(ObjectExtensionApiTest, NewVarReturnsAllocatedObject) {
       slots,
   };
   PyObjectPtr type(PyType_FromSpec(&spec));
-  BarContainer* instance = PyObject_NewVar(
-      BarContainer, reinterpret_cast<PyTypeObject*>(type.get()), 5);
+  PyObjectPtr instance(reinterpret_cast<PyObject*>(
+      PyObject_NewVar(BarContainer, type.asTypeObject(), 5)));
   ASSERT_NE(instance, nullptr);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   // TODO(T53456038): Switch back to EXPECT_EQ, once initial refcount is fixed
   EXPECT_GE(Py_REFCNT(instance), 1);
-  EXPECT_EQ(Py_SIZE(instance), 5);
-  PyObject_Free(instance);
+  EXPECT_EQ(Py_SIZE(instance.get()), 5);
 }
 
 TEST_F(ObjectExtensionApiTest, PyEllipsisIdentityIsEqual) {
