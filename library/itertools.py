@@ -125,8 +125,58 @@ class combinations:
 
 
 class combinations_with_replacement:
-    def __init__(self, p, r):
-        _unimplemented()
+    def __iter__(self):
+        return self
+
+    def __new__(cls, iterable, r):
+        _int_guard(r)
+        if r < 0:
+            raise ValueError("r must be non-negative")
+
+        result = object.__new__(cls)
+
+        seq = tuple(iterable)
+
+        # We can't create combinations is if seq is empty and r > 0
+        if not seq and r:
+            result._seq = None
+            return result
+
+        result._seq = seq
+        result._indices = [0] * r
+        result._r = r
+        result._max_index = _tuple_len(seq) - 1
+        return result
+
+    def __next__(self):
+        seq = self._seq
+        if seq is None:
+            raise StopIteration
+
+        r = self._r
+        indices = self._indices
+        max_index = self._max_index
+
+        # The result is the elements of the sequence at the current indices
+        result = (*(seq[indices[i]] for i in range(r)),)
+
+        # Scan indices right-to-left until finding one that is not at its
+        # maximum (n - 1).
+        i = r - 1
+        while i >= 0:
+            if indices[i] < max_index:
+                # Increment the current index which we know is not at its
+                # maximum.  Then set all to the right to the same value.
+                index = indices[i] = indices[i] + 1
+                for j in range(i, r):
+                    indices[j] = index
+                break
+            i -= 1
+        else:
+            # The indices are all at their maximum values and we're done.
+            self._seq = None
+
+        return result
 
 
 class compress:

@@ -538,5 +538,47 @@ class CombinationsTests(unittest.TestCase):
         self.assertTupleEqual(result, ((0, 1, 2), (0, 1, 3), (0, 2, 3), (1, 2, 3)))
 
 
+class CombinationsWithReplacementTests(unittest.TestCase):
+    def test_too_few_arguments_raises_type_error(self):
+        self.assertRaises(TypeError, itertools.combinations_with_replacement)
+
+    def test_too_many_arguments_raises_type_error(self):
+        self.assertRaises(
+            TypeError, itertools.combinations_with_replacement, "1", "2", "3", "4"
+        )
+
+    def test_non_int_r_type_error(self):
+        self.assertRaises(TypeError, itertools.combinations_with_replacement, "1", 1.0)
+
+    def test_empty_returns_single_empty_combination(self):
+        self.assertTupleEqual(
+            tuple(itertools.combinations_with_replacement((), 0)), ((),)
+        )
+
+    def test_r_zero_returns_single_empty_combination(self):
+        self.assertTupleEqual(
+            tuple(itertools.combinations_with_replacement("A", 0)), ((),)
+        )
+
+    def test_r_gt_length_returns_items_with_length_r(self):
+        self.assertTupleEqual(
+            tuple(itertools.combinations_with_replacement("A", 2)), (("A", "A"),)
+        )
+
+    def test_r_positive_and_length_zero_returns_stopped_iterator(self):
+        self.assertTupleEqual(tuple(itertools.combinations("A", 2)), ())
+
+    def test_r_lt_length_returns_items_with_length_r(self):
+        result = tuple(itertools.combinations_with_replacement("CBA", 2))
+        self.assertTupleEqual(
+            result,
+            (("C", "C"), ("C", "B"), ("C", "A"), ("B", "B"), ("B", "A"), ("A", "A")),
+        )
+
+    def test_ordinary_iterable(self):
+        result = tuple(itertools.combinations_with_replacement(range(4), 1))
+        self.assertTupleEqual(result, ((0,), (1,), (2,), (3,)))
+
+
 if __name__ == "__main__":
     unittest.main()
