@@ -992,6 +992,7 @@ PyAPI_FUNC(int) PyObject_CheckBuffer_Func(PyObject*);
 PyAPI_FUNC(int) PySlice_Check_Func(PyObject*);
 PyAPI_FUNC(PyObject*)
     PyStructSequence_SET_ITEM_Func(PyObject*, Py_ssize_t, PyObject*);
+PyAPI_FUNC(int) PyTraceBack_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyTuple_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyTuple_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyType_CheckExact_Func(PyObject*);
@@ -1060,6 +1061,7 @@ PyAPI_FUNC(void) Py_LeaveRecursiveCall_Func();
 #define PyModule_CheckExact(op) (PyModule_CheckExact_Func((PyObject*)(op)))
 #define PyObject_CheckBuffer(op) (PyObject_CheckBuffer_Func((PyObject*)(op)))
 #define PySlice_Check(op) (PySlice_Check_Func((PyObject*)(op)))
+#define PyTraceBack_Check(op) (PyTraceBack_Check_Func((PyObject*)(op)))
 #define PyTuple_Check(op) (PyTuple_Check_Func((PyObject*)(op)))
 #define PyTuple_CheckExact(op) (PyTuple_CheckExact_Func((PyObject*)(op)))
 #define PyType_Check(op) (PyType_Check_Func((PyObject*)(op)))

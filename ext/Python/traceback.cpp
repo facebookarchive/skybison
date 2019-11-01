@@ -4,6 +4,10 @@ namespace py {
 
 struct PyFrameObject;
 
+PY_EXPORT int PyTraceBack_Check_Func(PyObject* obj) {
+  return ApiHandle::fromPyObject(obj)->asObject().isTraceback();
+}
+
 PY_EXPORT int PyTraceBack_Here(PyFrameObject* /* e */) {
   UNIMPLEMENTED("PyTraceBack_Here");
 }
