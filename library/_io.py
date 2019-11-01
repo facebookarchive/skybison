@@ -388,7 +388,7 @@ class _IOBase(bootstrap=True):
 
         if size is None:
             size = -1
-        elif not isinstance(size, int):
+        elif not _int_check(size):
             raise TypeError("size must be an integer")
         res = bytearray()
         while size < 0 or len(res) < size:
@@ -596,7 +596,7 @@ class _BufferedIOBase(_IOBase, bootstrap=True):
         return self._readinto(b, read1=True)
 
     def _readinto(self, b, read1):
-        if not isinstance(b, memoryview):
+        if not _memoryview_check(b):
             b = memoryview(b)
         # TODO(emacs): Here and throughout this file, come up with a better
         # buffer / byteslike name than "b"
@@ -1003,7 +1003,7 @@ class BufferedReader(_BufferedIOMixin, bootstrap=True):
         # Need to create a memoryview object of type 'b', otherwise we may not
         # be able to assign bytes to it, and slicing it would create a new
         # object.
-        if not isinstance(buf, memoryview):
+        if not _memoryview_check(buf):
             buf = memoryview(buf)
         if buf.nbytes == 0:
             return 0
@@ -2242,21 +2242,21 @@ def open(  # noqa: C901
 ):
     if not _int_check(file):
         file = _fspath(file)
-    if not isinstance(file, (str, bytes, int)):
+    if not _str_check(file) and not _bytes_check(file) and not _int_check(file):
         # TODO(emacs): Is this check necessary? os.fspath guarantees str/bytes,
         # above check guarantees int or str or bytes
         raise TypeError("invalid file: %r" % file)
-    if not isinstance(mode, str):
+    if not _str_check(mode):
         raise TypeError(f"open() argument 2 must be str, not {_type(mode).__name__}")
-    if not isinstance(buffering, int):
+    if not _int_check(buffering):
         raise TypeError(
             f"an integer is required (got type {_type(buffering).__name__})"
         )
-    if encoding is not None and not isinstance(encoding, str):
+    if encoding is not None and not _str_check(encoding):
         raise TypeError(
             f"open() argument 4 must be str or None, not {_type(encoding).__name__}"
         )
-    if errors is not None and not isinstance(errors, str):
+    if errors is not None and not _str_check(errors):
         raise TypeError(
             f"open() argument 5 must be str or None, not {_type(errors).__name__}"
         )

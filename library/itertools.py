@@ -5,6 +5,7 @@ import operator
 
 # TODO(T42113424) Replace stubs with an actual implementation
 _Unbound = _Unbound  # noqa: F821
+_int_check = _int_check  # noqa: F821
 _int_guard = _int_guard  # noqa: F821
 _list_len = _list_len  # noqa: F821
 _tuple_len = _tuple_len  # noqa: F821
@@ -393,7 +394,7 @@ class permutations:
 
 class product:
     def __init__(self, *iterables, repeat=1):
-        if not isinstance(repeat, int):
+        if not _int_check(repeat):
             raise TypeError
         length = _tuple_len(iterables) if repeat else 0
         i = 0

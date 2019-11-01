@@ -19,6 +19,8 @@ from _builtins import _eq as eq, _lt as lt
 # These values are injected by our boot process. flake8 has no knowledge about
 # their definitions.
 _divmod = _divmod  # noqa: F821
+_int_check = _int_check  # noqa: F821
+_str_check = _str_check  # noqa: F821
 _type_name = _type_name  # noqa: F821
 
 
@@ -286,7 +288,7 @@ def length_hint(obj, default=0):
     over- or under-estimate by an arbitrary amount. The result will be an
     integer >= 0.
     """
-    if not isinstance(default, int):
+    if not _int_check(default):
         msg = "'%s' object cannot be interpreted as an integer" % type(default).__name__
         raise TypeError(msg)
 
@@ -306,7 +308,7 @@ def length_hint(obj, default=0):
         return default
     if val is NotImplemented:
         return default
-    if not isinstance(val, int):
+    if not _int_check(val):
         msg = "__length_hint__ must be integer, not %s" % type(val).__name__
         raise TypeError(msg)
     if val < 0:
@@ -331,7 +333,7 @@ class attrgetter:
 
     def __init__(self, attr, *attrs):
         if not attrs:
-            if not isinstance(attr, str):
+            if not _str_check(attr):
                 raise TypeError("attribute name must be a string")
             self._attrs = (attr,)
             names = attr.split(".")
@@ -416,7 +418,7 @@ class methodcaller:
             raise TypeError(msg)
         self = args[0]
         self._name = args[1]
-        if not isinstance(self._name, str):
+        if not _str_check(self._name):
             raise TypeError("method name must be a string")
         self._args = args[2:]
         self._kwargs = kwargs

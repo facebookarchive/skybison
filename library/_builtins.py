@@ -553,6 +553,11 @@ def _mappingproxy_set_mapping(obj, mapping):
 
 
 @_patch
+def _memoryview_check(obj):
+    pass
+
+
+@_patch
 def _memoryview_guard(obj):
     pass
 

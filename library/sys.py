@@ -5,6 +5,7 @@
 # about their definitions and will complain without these lines.
 _Unbound = _Unbound  # noqa: F821
 _base_dir = _base_dir  # noqa: F821
+_int_check = _int_check  # noqa: F821
 _os_write = _os_write  # noqa: F821
 _patch = _patch  # noqa: F821
 _stderr_fd = _stderr_fd  # noqa: F821
@@ -177,7 +178,7 @@ def getsizeof(object, default=_Unbound):
             raise TypeError(f"Type {cls.__name__} doesn't define __sizeof__")
         return default
     result = size(object)
-    if not isinstance(result, int):
+    if not _int_check(result):
         if default is _Unbound:
             raise TypeError("an integer is required")
         return default

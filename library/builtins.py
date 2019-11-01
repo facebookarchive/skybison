@@ -966,7 +966,7 @@ def _exception_new(mod_name: str, exc_name: str, base, type_dict) -> type:
     _dict_guard(type_dict)
     if "__module__" not in type_dict:
         type_dict["__module__"] = mod_name
-    if not isinstance(base, tuple):
+    if not _tuple_check(base):
         base = (base,)
     return type(exc_name, base, type_dict)
 
@@ -1141,7 +1141,7 @@ def _new_member_get_ushort(offset):
 
 def _new_member_set_bool(offset):
     def setter(instance, value):
-        if not isinstance(value, bool):
+        if not _bool_check(value):
             raise TypeError("attribute value type must be bool")
         _set_member_integral(_pyobject_offset(instance, offset), int(value), 4)
 
@@ -1150,7 +1150,7 @@ def _new_member_set_bool(offset):
 
 def _new_member_set_char(offset):
     def setter(instance, value):
-        if not isinstance(value, str):
+        if not _str_check(value):
             raise TypeError("attribute value type must be str")
         if len(value) != 1:
             raise TypeError("attribute str length must be 1")
@@ -1161,7 +1161,7 @@ def _new_member_set_char(offset):
 
 def _new_member_set_double(offset):
     def setter(instance, value):
-        if not isinstance(value, float):
+        if not _float_check(value):
             raise TypeError("attribute value type must be float")
         _set_member_double(_pyobject_offset(instance, offset), value)
 
@@ -1170,7 +1170,7 @@ def _new_member_set_double(offset):
 
 def _new_member_set_float(offset):
     def setter(instance, value):
-        if not isinstance(value, float):
+        if not _float_check(value):
             raise TypeError("attribute value type must be float")
         _set_member_float(_pyobject_offset(instance, offset), value)
 
@@ -1179,7 +1179,7 @@ def _new_member_set_float(offset):
 
 def _new_member_set_integral(offset, num_bytes, min_value, max_value, primitive_type):
     def setter(instance, value):
-        if not isinstance(value, int):
+        if not _int_check(value):
             raise TypeError("attribute value type must be int")
         _set_member_integral(_pyobject_offset(instance, offset), value, num_bytes)
         if value < min_value or value > max_value:
@@ -1326,8 +1326,7 @@ def _structseq_new(cls, sequence, dict={}):  # noqa B006
 
 
 def _structseq_repr(self):
-    if not isinstance(self, tuple):
-        raise TypeError("__repr__(): self is not a tuple")
+    _tuple_guard(self)
     if not hasattr(self, "n_sequence_fields"):
         raise TypeError("__repr__(): self is not a self")
     # TODO(T40273054): Iterate attributes and return field names
