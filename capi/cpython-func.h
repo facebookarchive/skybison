@@ -948,6 +948,12 @@ PyAPI_FUNC(wchar_t*) _Py_DecodeUTF8_surrogateescape(const char*, Py_ssize_t);
 PyAPI_FUNC(struct _mod*) PyParser_ASTFromString(const char*, const char*, int,
                                                 PyCompilerFlags*, PyArena*);
 PyAPI_FUNC(struct _mod*)
+    PyParser_ASTFromStringObject(const char*, PyObject*, int, PyCompilerFlags*,
+                                 PyArena*);
+PyAPI_FUNC(struct _mod*)
+    PyParser_ASTFromFileObject(FILE*, PyObject*, const char*, int, const char*,
+                               const char*, PyCompilerFlags*, int*, PyArena*);
+PyAPI_FUNC(struct _mod*)
     PyParser_ASTFromFileObject(FILE*, PyObject*, const char*, int, const char*,
                                const char*, PyCompilerFlags*, int*, PyArena*);
 PyAPI_FUNC(PyCodeObject*)

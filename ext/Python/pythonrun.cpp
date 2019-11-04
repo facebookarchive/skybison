@@ -215,25 +215,17 @@ PY_EXPORT int PyRun_SimpleFileExFlags(FILE* /*fp*/, const char* /*filename*/,
 }
 
 PY_EXPORT int PyRun_SimpleStringFlags(const char* str, PyCompilerFlags* flags) {
-  // TODO(eelizondo): Implement the usage of flags
-  if (flags != nullptr) {
-    UNIMPLEMENTED("Can't specify compiler flags");
-  }
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Object code_obj(&scope, compileFromCStr(str, "<string>"));
-  if (code_obj.isError()) {
-    printPendingExceptionWithSysLastVars(thread);
+  PyObject* module = PyImport_AddModule("__main__");
+  if (module == nullptr) return -1;
+  PyObject* module_proxy = PyModule_GetDict(module);
+  PyObject* result =
+      PyRun_StringFlags(str, Py_file_input, module_proxy, module_proxy, flags);
+  if (result == nullptr) {
+    PyErr_Print();
     return -1;
   }
-  Code code(&scope, *code_obj);
-  Runtime* runtime = thread->runtime();
-  Module main_module(&scope, runtime->findOrCreateMainModule());
-  Object result(&scope, runtime->executeModule(code, main_module));
-  DCHECK(thread->isErrorValueOk(*result), "Error/pending exception mismatch");
-  if (!result.isError()) return 0;
-  printPendingExceptionWithSysLastVars(thread);
-  return -1;
+  Py_DECREF(result);
+  return 0;
 }
 
 PY_EXPORT void PyErr_Display(PyObject* /* exc */, PyObject* value,
@@ -446,10 +438,23 @@ PY_EXPORT PyObject* PyRun_FileExFlags(FILE* /* p */, const char* /* r */,
   UNIMPLEMENTED("PyRun_FileExFlags");
 }
 
-PY_EXPORT PyObject* PyRun_StringFlags(const char* /* r */, int /* t */,
-                                      PyObject* /* s */, PyObject* /* s */,
-                                      PyCompilerFlags* /* s */) {
-  UNIMPLEMENTED("PyRun_StringFlags");
+PY_EXPORT PyObject* PyRun_StringFlags(const char* str, int start,
+                                      PyObject* globals, PyObject* locals,
+                                      PyCompilerFlags* flags) {
+  Thread* thread = Thread::current();
+  PyObject* filename = ApiHandle::borrowedReference(
+      thread, thread->runtime()->symbols()->LtStringGt());
+
+  PyArena* arena = PyArena_New();
+  if (arena == nullptr) return nullptr;
+
+  mod_ty mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
+  PyObject* ret = nullptr;
+  if (mod != nullptr) {
+    ret = runMod(mod, filename, globals, locals, flags, arena);
+  }
+  PyArena_Free(arena);
+  return ret;
 }
 
 static int parserFlags(PyCompilerFlags* flags) {

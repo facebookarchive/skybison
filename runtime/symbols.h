@@ -706,6 +706,7 @@ class Runtime;
   V(Lt, "lt")                                                                  \
   V(LtAnonymousGt, "<anonymous>")                                              \
   V(LtNullGt, "<NULL>")                                                        \
+  V(LtStringGt, "<string>")                                                    \
   V(Marshal, "marshal")                                                        \
   V(Matmul, "matmul")                                                          \
   V(Maxsize, "maxsize")                                                        \

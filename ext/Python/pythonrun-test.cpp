@@ -21,23 +21,48 @@ using namespace testing;
 
 using PythonrunExtensionApiTest = ExtensionApi;
 
-TEST_F(PythonrunExtensionApiTest, RunSimpleStringReturnsZero) {
+TEST_F(PythonrunExtensionApiTest, SimpleStringReturnsZero) {
   EXPECT_EQ(PyRun_SimpleString("a = 42"), 0);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr value(moduleGet("__main__", "a"));
+  EXPECT_TRUE(isLongEqualsLong(value, 42));
 }
 
-TEST_F(PythonrunExtensionApiTest,
-       RunSimpleStringWithSyntaxErrorRaisesSyntaxError) {
+TEST_F(PythonrunExtensionApiTest, SimpleStringPrintsSyntaxError) {
+  CaptureStdStreams streams;
   EXPECT_EQ(PyRun_SimpleString(",,,"), -1);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(streams.err().find("SyntaxError: invalid syntax\n"),
+            std::string::npos);
 }
 
-TEST_F(PythonrunExtensionApiTest, RunSimpleStringPrintsUncaughtException) {
+TEST_F(PythonrunExtensionApiTest, SimpleStringPrintsUncaughtException) {
   CaptureStdStreams streams;
   ASSERT_EQ(PyRun_SimpleString("raise RuntimeError('boom')"), -1);
   // TODO(T39919701): Check the whole string once we have tracebacks.
-  ASSERT_THAT(streams.err(), ::testing::EndsWith("RuntimeError: boom\n"));
+  ASSERT_NE(streams.err().find("RuntimeError: boom\n"), std::string::npos);
   EXPECT_EQ(streams.out(), "");
+}
+
+TEST_F(PythonrunExtensionApiTest, SimpleStringFlagsReturnsZero) {
+  PyCompilerFlags flags;
+  flags.cf_flags = CO_FUTURE_BARRY_AS_BDFL;
+  EXPECT_EQ(PyRun_SimpleStringFlags("foo = 13 <> 42", &flags), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr value(moduleGet("__main__", "foo"));
+  EXPECT_EQ(value, Py_True);
+}
+
+TEST_F(PythonrunExtensionApiTest, StringFlagsReturnsResult) {
+  PyObject* module = PyImport_AddModule("__main__");
+  ASSERT_NE(module, nullptr);
+  PyObject* module_proxy = PyModule_GetDict(module);
+  PyCompilerFlags flags;
+  flags.cf_flags = CO_FUTURE_BARRY_AS_BDFL;
+  EXPECT_TRUE(
+      isLongEqualsLong(PyRun_StringFlags("(7 <> 7) + 3", Py_eval_input,
+                                         module_proxy, module_proxy, &flags),
+                       3));
 }
 
 TEST_F(PythonrunExtensionApiTest, PyErrDisplayPrintsException) {
