@@ -475,7 +475,6 @@ class Runtime;
   V(AcquireLock, "acquire_lock")                                               \
   V(Add, "add")                                                                \
   V(AndUnder, "and_")                                                          \
-  V(Anonymous, "<anonymous>")                                                  \
   V(Append, "append")                                                          \
   V(Args, "args")                                                              \
   V(Argv, "argv")                                                              \
@@ -705,6 +704,8 @@ class Runtime;
   V(Lseek, "lseek")                                                            \
   V(Lshift, "lshift")                                                          \
   V(Lt, "lt")                                                                  \
+  V(LtAnonymousGt, "<anonymous>")                                              \
+  V(LtNullGt, "<NULL>")                                                        \
   V(Marshal, "marshal")                                                        \
   V(Matmul, "matmul")                                                          \
   V(Maxsize, "maxsize")                                                        \
@@ -738,7 +739,6 @@ class Runtime;
   V(NotImplemented, "NotImplemented")                                          \
   V(NotImplementedError, "NotImplementedError")                                \
   V(NotImplementedType, "NotImplementedType")                                  \
-  V(Null, "<NULL>")                                                            \
   V(NullArgumentToInternalRoutine, "null argument to internal routine")        \
   V(OSError, "OSError")                                                        \
   V(ObjectTypename, "object")                                                  \

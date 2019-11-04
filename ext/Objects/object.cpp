@@ -47,7 +47,7 @@ PY_EXPORT PyObject* PyObject_ASCII(PyObject* pyobj) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   if (pyobj == nullptr) {
-    return ApiHandle::newReference(thread, runtime->symbols()->Null());
+    return ApiHandle::newReference(thread, runtime->symbols()->LtNullGt());
   }
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
@@ -304,7 +304,7 @@ PY_EXPORT PyObject* PyObject_Repr(PyObject* obj) {
   Thread* thread = Thread::current();
   if (obj == nullptr) {
     return ApiHandle::newReference(thread,
-                                   thread->runtime()->symbols()->Null());
+                                   thread->runtime()->symbols()->LtNullGt());
   }
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
@@ -397,7 +397,7 @@ PY_EXPORT PyObject* PyObject_Str(PyObject* obj) {
   Thread* thread = Thread::current();
   if (obj == nullptr) {
     return ApiHandle::newReference(thread,
-                                   thread->runtime()->symbols()->Null());
+                                   thread->runtime()->symbols()->LtNullGt());
   }
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
