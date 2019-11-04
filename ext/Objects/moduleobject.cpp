@@ -97,8 +97,19 @@ PY_EXPORT PyModuleDef* PyModule_GetDef(PyObject* pymodule) {
   return static_cast<PyModuleDef*>(def.asCPtr());
 }
 
-PY_EXPORT PyObject* PyModule_GetDict(PyObject*) {
-  UNIMPLEMENTED("PyModule_GetDict unsupported");
+PY_EXPORT PyObject* PyModule_GetDict(PyObject* pymodule) {
+  // Return the module_proxy object. Note that this is not a `PyDict` instance
+  // so contrary to cpython it will not work with `PyDict_xxx` functions. It
+  // does work with PyEval_EvalCode.
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object module_obj(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
+  if (!thread->runtime()->isInstanceOfModule(*module_obj)) {
+    thread->raiseBadArgument();
+    return nullptr;
+  }
+  Module module(&scope, *module_obj);
+  return ApiHandle::borrowedReference(thread, module.moduleProxy());
 }
 
 PY_EXPORT PyObject* PyModule_GetNameObject(PyObject* mod) {

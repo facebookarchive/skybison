@@ -41,6 +41,18 @@ TEST_F(ModuleExtensionApiTest, SpamModule) {
   ASSERT_EQ(result, val);
 }
 
+TEST_F(ModuleExtensionApiTest, GetDictReturnsMapping) {
+  PyRun_SimpleString(R"(
+foo = 42
+)");
+  PyObjectPtr name(PyUnicode_FromString("__main__"));
+  PyObjectPtr main(importGetModule(name));
+  ASSERT_TRUE(PyModule_Check(main));
+  PyObject* module_dict = PyModule_GetDict(main);
+  PyObjectPtr value(PyMapping_GetItemString(module_dict, "foo"));
+  EXPECT_TRUE(isLongEqualsLong(value, 42));
+}
+
 TEST_F(ModuleExtensionApiTest, NewObjectWithNonStringNameReturnsModule) {
   testing::PyObjectPtr long_name(PyLong_FromLong(2));
   testing::PyObjectPtr module(PyModule_NewObject(long_name));
