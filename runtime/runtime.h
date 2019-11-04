@@ -574,10 +574,6 @@ class Runtime {
   void typeAddBuiltinFunction(const Type& type, SymbolId name,
                               Function::Entry entry);
 
-  // Converts the offset in code's bytecode into the corresponding line number
-  // in the backing source file.
-  word codeOffsetToLineNum(Thread* thread, const Code& code, word offset);
-
   // Return true if subclass is a subclass of superclass
   bool isSubclass(const Type& subclass, const Type& superclass);
 

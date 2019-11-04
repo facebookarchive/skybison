@@ -44,14 +44,13 @@ class TracebackPrinter : public FrameVisitor {
 
       // Extract line number unless it is a native functions.
       if (!code.isNative() && code.lnotab().isBytes()) {
-        Runtime* runtime = thread->runtime();
         // virtualPC() points to the next PC. The currently executing PC
         // should be immediately before this when raising an exception which
         // should be the only relevant case for managed code. This value will
         // be off when we produce debug output in a failed `CHECK` or in lldb
         // immediately after a jump.
         word pc = Utils::maximum(frame->virtualPC() - kCodeUnitSize, word{0});
-        word linenum = runtime->codeOffsetToLineNum(thread, code, pc);
+        word linenum = code.offsetToLineNum(pc);
         line << "line " << linenum << ", ";
       }
     }

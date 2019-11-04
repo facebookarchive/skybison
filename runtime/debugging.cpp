@@ -541,7 +541,7 @@ static void dumpSingleFrame(Thread* thread, std::ostream& os, Frame* frame) {
         // Print filename and line number, if possible.
         os << " (" << code.filename();
         if (code.lnotab().isBytes()) {
-          os << ":" << thread->runtime()->codeOffsetToLineNum(thread, code, pc);
+          os << ":" << code.offsetToLineNum(pc);
         }
         os << ")";
         os << '\n';

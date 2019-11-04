@@ -1897,6 +1897,10 @@ class RawCode : public RawInstance {
   word nlocals() const;
   void setNlocals(word value) const;
 
+  // Converts the offset in this code's bytecode into the corresponding line
+  // number in the backing source file.
+  word offsetToLineNum(word offset) const;
+
   word stacksize() const;
   void setStacksize(word value) const;
 

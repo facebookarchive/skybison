@@ -206,7 +206,7 @@ RawObject SysModule::underGetframeLineno(Thread* thread, Frame* frame,
   }
   Code code(&scope, frame->code());
   word pc = frame->virtualPC();
-  word lineno = thread->runtime()->codeOffsetToLineNum(thread, code, pc);
+  word lineno = code.offsetToLineNum(pc);
   return SmallInt::fromWord(lineno);
 }
 

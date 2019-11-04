@@ -14,6 +14,7 @@ using ByteArrayTest = RuntimeFixture;
 using LargeBytesTest = RuntimeFixture;
 using MutableBytesTest = RuntimeFixture;
 using SmallBytesTest = RuntimeFixture;
+using CodeTest = RuntimeFixture;
 using ComplexTest = RuntimeFixture;
 using DoubleTest = RuntimeFixture;
 using IntTest = RuntimeFixture;
@@ -104,6 +105,46 @@ TEST_F(MutableBytesTest, ReplaceFromWithStartAtReplacesStartingAtSrcIndex) {
   dst.replaceFromWithStartAt(0, *src, 7, 20);
   const byte expected[] = "patrick";
   EXPECT_TRUE(isMutableBytesEqualsBytes(dst, expected));
+}
+
+TEST_F(CodeTest, OffsetToLineNumReturnsLineNumber) {
+  const char* src = R"(
+def func():
+  a = 1
+  b = 2
+  print(a, b)
+)";
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  HandleScope scope(thread_);
+
+  // The bytecode for func is roughly:
+  // LOAD_CONST     # a = 1
+  // STORE_FAST
+  //
+  // LOAD_CONST     # b = 2
+  // STORE_FAST
+  //
+  // LOAD_GLOBAL    # print(a, b)
+  // LOAD_FAST
+  // LOAD_FAST
+  // CALL_FUNCTION
+
+  Function func(&scope, mainModuleAt(&runtime_, "func"));
+  Code code(&scope, func.code());
+  ASSERT_EQ(code.firstlineno(), 2);
+
+  // a = 1
+  EXPECT_EQ(code.offsetToLineNum(0), 3);
+  EXPECT_EQ(code.offsetToLineNum(2), 3);
+
+  // b = 2
+  EXPECT_EQ(code.offsetToLineNum(4), 4);
+  EXPECT_EQ(code.offsetToLineNum(6), 4);
+
+  // print(a, b)
+  for (word i = 8; i < Bytes::cast(code.code()).length(); i++) {
+    EXPECT_EQ(code.offsetToLineNum(i), 5);
+  }
 }
 
 TEST_F(DoubleTest, DoubleTest) {

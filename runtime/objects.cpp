@@ -152,6 +152,24 @@ word RawBytes::compare(RawBytes that) const {
   return this_len - that_len;
 }
 
+// RawCode
+
+word RawCode::offsetToLineNum(word offset) const {
+  // See https://github.com/python/cpython/blob/master/Objects/lnotab_notes.txt
+  // for details about the line number table format
+  RawBytes table = Bytes::cast(lnotab());
+  word line = firstlineno();
+  word cur_offset = 0;
+  for (word i = 0; i < table.length(); i += 2) {
+    cur_offset += table.byteAt(i);
+    if (cur_offset > offset) {
+      break;
+    }
+    line += static_cast<int8_t>(table.byteAt(i + 1));
+  }
+  return line;
+}
+
 // RawLargeStr
 
 bool RawLargeStr::equals(RawObject that) const {

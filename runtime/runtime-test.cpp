@@ -1277,46 +1277,6 @@ c = MyTypeWithAttributes(1)
   EXPECT_EQ(*value, SmallInt::fromWord(1));
 }
 
-TEST_F(RuntimeTest, ComputeLineNumberForBytecodeOffset) {
-  const char* src = R"(
-def func():
-  a = 1
-  b = 2
-  print(a, b)
-)";
-  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
-  HandleScope scope(thread_);
-
-  // The bytecode for func is roughly:
-  // LOAD_CONST     # a = 1
-  // STORE_FAST
-  //
-  // LOAD_CONST     # b = 2
-  // STORE_FAST
-  //
-  // LOAD_GLOBAL    # print(a, b)
-  // LOAD_FAST
-  // LOAD_FAST
-  // CALL_FUNCTION
-
-  Function func(&scope, mainModuleAt(&runtime_, "func"));
-  Code code(&scope, func.code());
-  ASSERT_EQ(code.firstlineno(), 2);
-
-  // a = 1
-  EXPECT_EQ(runtime_.codeOffsetToLineNum(thread_, code, 0), 3);
-  EXPECT_EQ(runtime_.codeOffsetToLineNum(thread_, code, 2), 3);
-
-  // b = 2
-  EXPECT_EQ(runtime_.codeOffsetToLineNum(thread_, code, 4), 4);
-  EXPECT_EQ(runtime_.codeOffsetToLineNum(thread_, code, 6), 4);
-
-  // print(a, b)
-  for (word i = 8; i < Bytes::cast(code.code()).length(); i++) {
-    EXPECT_EQ(runtime_.codeOffsetToLineNum(thread_, code, i), 5);
-  }
-}
-
 TEST_F(RuntimeTest, IsInstanceOf) {
   HandleScope scope(thread_);
   EXPECT_FALSE(runtime_.isInstanceOfInt(NoneType::object()));
