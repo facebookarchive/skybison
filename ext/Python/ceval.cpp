@@ -1,4 +1,6 @@
 #include "capi-handles.h"
+#include "cpython-data.h"
+#include "cpython-func.h"
 #include "runtime.h"
 
 namespace py {
@@ -8,10 +10,6 @@ PY_EXPORT PyObject* PyEval_GetBuiltins() {
 }
 
 PY_EXPORT PyObject* PyEval_GetGlobals() { UNIMPLEMENTED("PyEval_GetGlobals"); }
-
-PY_EXPORT int PyEval_MergeCompilerFlags(PyCompilerFlags* /* f */) {
-  UNIMPLEMENTED("PyEval_MergeCompilerFlags");
-}
 
 PY_EXPORT void PyEval_AcquireLock() { UNIMPLEMENTED("PyEval_AcquireLock"); }
 
@@ -77,11 +75,11 @@ PY_EXPORT PyObject* PyEval_EvalCode(PyObject* code, PyObject* globals,
 }
 
 PY_EXPORT PyObject* PyEval_EvalCodeEx(PyObject* /* o */, PyObject* /* s */,
-                                      PyObject* /* s */,
-                                      PyObject* const* /* s */, int /* t */,
-                                      PyObject* const* /* s */, int /* t */,
-                                      PyObject* const* /* s */, int /* t */,
-                                      PyObject* /* s */, PyObject* /* e */) {
+                                      PyObject* /* s */, PyObject** /* s */,
+                                      int /* t */, PyObject** /* s */,
+                                      int /* t */, PyObject** /* s */,
+                                      int /* t */, PyObject* /* s */,
+                                      PyObject* /* e */) {
   UNIMPLEMENTED("PyEval_EvalCodeEx");
 }
 
@@ -147,6 +145,17 @@ PY_EXPORT void Py_LeaveRecursiveCall_Func() {
 }
 
 PY_EXPORT int Py_MakePendingCalls() { UNIMPLEMENTED("Py_MakePendingCalls"); }
+
+PY_EXPORT int PyEval_MergeCompilerFlags(PyCompilerFlags* flags) {
+  Thread* thread = Thread::current();
+  Frame* frame = thread->currentFrame();
+  if (!frame->isSentinel()) {
+    word code_flags = Code::cast(frame->function().code()).flags();
+    int compiler_flags = code_flags & PyCF_MASK;
+    flags->cf_flags |= compiler_flags;
+  }
+  return flags->cf_flags != 0;
+}
 
 PY_EXPORT void Py_SetRecursionLimit(int limit) {
   Thread::current()->setRecursionLimit(limit);

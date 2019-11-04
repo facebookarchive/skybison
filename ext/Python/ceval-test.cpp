@@ -109,4 +109,43 @@ module_dict = locals()
   EXPECT_EQ(PyLong_AsDouble(result), 3.0);
 }
 
+TEST_F(CevalExtensionApiTest, MergeCompilerFlagsReturnsTrue) {
+  PyCompilerFlags flags;
+  flags.cf_flags = CO_FUTURE_BARRY_AS_BDFL;
+  EXPECT_NE(PyEval_MergeCompilerFlags(&flags), 0);
+  EXPECT_EQ(flags.cf_flags, CO_FUTURE_BARRY_AS_BDFL);
+}
+
+TEST_F(CevalExtensionApiTest, MergeCompilerFlagsReturnsFalse) {
+  PyCompilerFlags flags;
+  flags.cf_flags = 0;
+  EXPECT_EQ(PyEval_MergeCompilerFlags(&flags), 0);
+  EXPECT_EQ(flags.cf_flags, 0);
+}
+
+static PyObject* testMergeCompilerFlags(PyObject*, PyObject*) {
+  PyCompilerFlags flags;
+  flags.cf_flags = 0xfba0000;
+  EXPECT_NE(PyEval_MergeCompilerFlags(&flags), 0);
+  return PyLong_FromLong(flags.cf_flags);
+}
+
+TEST_F(CevalExtensionApiTest, MergeCompilerFlagsMergesCodeFlags) {
+  static PyMethodDef methods[] = {
+      {"test_merge_compiler_flags", testMergeCompilerFlags, METH_NOARGS, ""},
+      {nullptr, nullptr}};
+  static PyModuleDef def = {PyModuleDef_HEAD_INIT, "test_module", nullptr, 0,
+                            methods};
+  PyObjectPtr module(PyModule_Create(&def));
+  moduleSet("__main__", "test_module", module);
+  PyCompilerFlags flags;
+  flags.cf_flags = CO_FUTURE_BARRY_AS_BDFL;
+  ASSERT_EQ(PyRun_SimpleStringFlags(
+                "result = test_module.test_merge_compiler_flags()", &flags),
+            0);
+  PyObjectPtr result(moduleGet("__main__", "result"));
+  ASSERT_FALSE(0xfba0000 & CO_FUTURE_BARRY_AS_BDFL);
+  EXPECT_TRUE(isLongEqualsLong(result, 0xfba0000 | CO_FUTURE_BARRY_AS_BDFL));
+}
+
 }  // namespace py
