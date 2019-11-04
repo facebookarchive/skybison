@@ -393,6 +393,46 @@ TEST_F(UnicodeExtensionApiTest, DATAReturnsSamePointer) {
   EXPECT_EQ(p1, p2);
 }
 
+TEST_F(UnicodeExtensionApiTest, FSDecoderWithStrSetsString) {
+  PyObjectPtr str(PyUnicode_FromString("foo"));
+  PyObject* result;
+  EXPECT_EQ(PyUnicode_FSDecoder(str, &result), Py_CLEANUP_SUPPORTED);
+
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "foo"));
+
+  EXPECT_EQ(PyUnicode_FSDecoder(nullptr, &result), 1);
+  EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, FSDecoderWithBytesSetsString) {
+  const char bytes[] = "bar";
+  PyObjectPtr pybytes(PyBytes_FromStringAndSize(bytes, sizeof(bytes) - 1));
+  PyObject* result;
+  EXPECT_EQ(PyUnicode_FSDecoder(pybytes, &result), Py_CLEANUP_SUPPORTED);
+
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, bytes));
+
+  EXPECT_EQ(PyUnicode_FSDecoder(nullptr, &result), 1);
+  EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, FSDecoderRaisesValueError) {
+  const char bytes[] = "foo\0bar";
+  PyObjectPtr pybytes(PyBytes_FromStringAndSize(bytes, sizeof(bytes) - 1));
+  PyObject* result;
+  EXPECT_EQ(PyUnicode_FSDecoder(pybytes, &result), 0);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+TEST_F(UnicodeExtensionApiTest, FSDecoderRaisesTypeError) {
+  PyObjectPtr pyint(PyLong_FromLong(42));
+  PyObject* result;
+  EXPECT_EQ(PyUnicode_FSDecoder(pyint, &result), 0);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
 TEST_F(UnicodeExtensionApiTest, FindWithNonStrSelfRaisesTypeError) {
   PyObject* self = Py_None;
   PyObjectPtr sub(PyUnicode_FromString("ll"));

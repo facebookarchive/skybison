@@ -628,6 +628,16 @@ word strFind(const Str& haystack, const Str& needle, word start, word end) {
   return -1;
 }
 
+word strFindAsciiChar(const Str& haystack, byte needle) {
+  DCHECK(needle <= kMaxASCII, "must only be called for ASCII `needle`");
+  for (word i = 0, length = haystack.charLength(); i < length; i++) {
+    if (haystack.charAt(i) == needle) {
+      return i;
+    }
+  }
+  return -1;
+}
+
 word strFindFirstNonWhitespace(const Str& str) {
   word i = 0;
   for (word codepoint_len, length = str.charLength(); i < length;

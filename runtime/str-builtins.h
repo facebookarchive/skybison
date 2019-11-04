@@ -29,6 +29,8 @@ RawObject strEscapeNonASCII(Thread* thread, const Object& str_obj);
 // and end are code point offsets, not byte offsets.
 word strFind(const Str& haystack, const Str& needle, word start, word end);
 
+word strFindAsciiChar(const Str& haystack, byte needle);
+
 // Find the index of the first non-whitespace character in the string. If there
 // are no non-whitespace characters, return the length of the string.
 word strFindFirstNonWhitespace(const Str& str);
