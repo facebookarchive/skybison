@@ -914,6 +914,12 @@ class Runtime {
   // Removes an entry from the linked list
   static bool listEntryRemove(ListEntry* entry, ListEntry** root);
 
+  word numTrackedApiHandles() { return Dict::cast(api_handles_).numItems(); }
+
+  word numTrackedNativeObjects() { return num_tracked_native_objects_; }
+
+  word numTrackedNativeGcObjects() { return num_tracked_native_gc_objects_; }
+
   // The size newCapacity grows to if array is empty. Must be large enough to
   // guarantee a LargeBytes/LargeStr for ByteArray/StrArray.
   static const int kInitialEnsuredCapacity = kWordSize * 2;
@@ -931,7 +937,10 @@ class Runtime {
   // be moved to a lower level abstraction in the C-API such as PyObject_Malloc
   // Linked list of tracked extension objects.
   ListEntry* tracked_native_objects_ = nullptr;
+  word num_tracked_native_objects_ = 0;
+
   ListEntry* tracked_native_gc_objects_ = nullptr;
+  word num_tracked_native_gc_objects_ = 0;
 
   // List of native instances which can be finalizable through tp_dealloc
   RawObject finalizable_references_ = NoneType::object();

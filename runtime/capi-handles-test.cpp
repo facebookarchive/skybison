@@ -210,6 +210,7 @@ TEST_F(CApiHandlesTest, Cache) {
 
   Object key(&scope, handle1->asObject());
   word hash = runtime_.hash(*key);
+  handle1->type()->decref();
   handle1->dispose();
   Dict caches(&scope, runtime_.apiCaches());
   EXPECT_TRUE(dictAt(thread_, caches, key, hash).isError());

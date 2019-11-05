@@ -28,6 +28,7 @@ RawObject Scavenger::scavenge() {
   to_ = new Space(from_->size());
   processRoots();
   processGrayObjects();
+  processApiHandles();
   processFinalizableReferences();
   processDelayedReferences();
   runtime_->heap()->setSpace(to_);
@@ -83,6 +84,39 @@ void Scavenger::processGrayObjects() {
       for (; scan < end; scan += kPointerSize) {
         scavengePointer(reinterpret_cast<RawObject*>(scan));
       }
+    }
+  }
+}
+
+void Scavenger::processApiHandles() {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Dict handles(&scope, runtime_->apiHandles());
+  Tuple handle_data(&scope, handles.data());
+  Dict caches(&scope, runtime_->apiCaches());
+  Object key(&scope, NoneType::object());
+  Object cache_value(&scope, NoneType::object());
+  // Loops through the handle table clearing out handles which are not
+  // referenced by managed objects or by an extension object.
+  for (word i = Dict::Bucket::kFirst;
+       Dict::Bucket::nextItem(*handle_data, &i);) {
+    RawObject value = Dict::Bucket::value(*handle_data, i);
+    ApiHandle* handle = static_cast<ApiHandle*>(Int::cast(value).asCPtr());
+    if (ApiHandle::nativeRefcnt(handle) == 0) {
+      key = Dict::Bucket::key(*handle_data, i);
+      word hash = runtime_->hash(*key);
+      // TODO(T56760343): Remove the dict lookup. This should become simpler
+      // when it is easier to associate a cache with a handle or when the need
+      // for caches is eliminated.
+      cache_value =
+          ApiHandle::dictRemoveIdentityEquals(thread, caches, key, hash);
+      if (!cache_value.isError()) {
+        std::free(Int::cast(*cache_value).asCPtr());
+      }
+      Dict::Bucket::setTombstone(*handle_data, i);
+      handles.setNumItems(handles.numItems() - 1);
+      handle->type()->decref();
+      std::free(handle);
     }
   }
 }

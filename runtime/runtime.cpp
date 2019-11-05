@@ -1470,19 +1470,27 @@ bool Runtime::listEntryRemove(ListEntry* entry, ListEntry** root) {
 }
 
 bool Runtime::trackNativeGcObject(ListEntry* entry) {
-  return listEntryInsert(entry, &tracked_native_gc_objects_);
+  bool did_insert = listEntryInsert(entry, &tracked_native_gc_objects_);
+  if (did_insert) num_tracked_native_gc_objects_++;
+  return did_insert;
 }
 
 bool Runtime::untrackNativeGcObject(ListEntry* entry) {
-  return listEntryRemove(entry, &tracked_native_gc_objects_);
+  bool did_remove = listEntryRemove(entry, &tracked_native_gc_objects_);
+  if (did_remove) num_tracked_native_gc_objects_--;
+  return did_remove;
 }
 
 bool Runtime::trackNativeObject(ListEntry* entry) {
-  return listEntryInsert(entry, &tracked_native_objects_);
+  bool did_insert = listEntryInsert(entry, &tracked_native_objects_);
+  if (did_insert) num_tracked_native_objects_++;
+  return did_insert;
 }
 
 bool Runtime::untrackNativeObject(ListEntry* entry) {
-  return listEntryRemove(entry, &tracked_native_objects_);
+  bool did_remove = listEntryRemove(entry, &tracked_native_objects_);
+  if (did_remove) num_tracked_native_objects_--;
+  return did_remove;
 }
 
 ListEntry* Runtime::trackedNativeObjects() { return tracked_native_objects_; }
@@ -4084,6 +4092,7 @@ void Runtime::freeApiHandles() {
           reinterpret_cast<PyModuleDef*>(Int::cast(module.def()).asCPtr());
       ApiHandle* handle = ApiHandle::borrowedReference(thread, *module);
       if (def->m_free != nullptr) def->m_free(handle);
+      handle->type()->decref();
       handle->dispose();
     }
   }
@@ -4091,6 +4100,20 @@ void Runtime::freeApiHandles() {
   // Clear the modules dict and run a GC, to run dealloc slots on any now-dead
   // NativeProxy objects.
   dictClear(thread, modules);
+
+  // Process any native instance that is only referenced through the NativeProxy
+  for (;;) {
+    word before = numTrackedNativeObjects() + numTrackedNativeGcObjects() +
+                  numTrackedApiHandles();
+    collectGarbage();
+    word after = numTrackedNativeObjects() + numTrackedNativeGcObjects() +
+                 numTrackedApiHandles();
+    word num_handles_collected = before - after;
+    if (num_handles_collected == 0) {
+      // Fixpoint: no change in tracking
+      break;
+    }
+  }
   collectGarbage();
 
   // Finally, skip trying to cleanly deallocate the object. Just free the

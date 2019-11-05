@@ -43,6 +43,8 @@ class Scavenger {
 
   void processGrayObjects();
 
+  void processApiHandles();
+
   void processRoots();
 
   ScavengeVisitor visitor_;

@@ -17,6 +17,7 @@ ApiHandle* ApiHandle::alloc(Thread* thread, RawObject reference) {
   RawObject type = thread->runtime()->typeOf(reference);
   if (reference == type) {
     result->ob_type = reinterpret_cast<PyTypeObject*>(result);
+    result->incref();
   } else {
     result->ob_type =
         reinterpret_cast<PyTypeObject*>(ApiHandle::newReference(thread, type));
@@ -207,7 +208,9 @@ void ApiHandle::visitReferences(RawObject handles, PointerVisitor* visitor) {
       if (heap_value.isForwarding()) value = heap_value.forward();
     }
     ApiHandle* handle = castFromObject(*value);
-    visitor->visitPointer(reinterpret_cast<RawObject*>(&handle->reference_));
+    if (ApiHandle::nativeRefcnt(handle) > 0) {
+      visitor->visitPointer(reinterpret_cast<RawObject*>(&handle->reference_));
+    }
   }
 }
 

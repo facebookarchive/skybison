@@ -603,12 +603,12 @@ RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
 
 RawObject BuiltinsModule::id(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
-  // NOTE: An ID must be unique for the lifetime of an object. If we ever free
-  // an unreferenced API handle before its referent becomes garbage, this code
-  // will need to provide an additional signal to keep the handle alive as long
-  // as its referent is alive.
+  // NOTE: This pins a handle until the runtime exits.
+  // TODO(emacs): Either determine that this function is used so little that it
+  // does not matter or add a section to the GC to clean up handles created by
+  // id().
   return thread->runtime()->newIntFromCPtr(
-      ApiHandle::borrowedReference(thread, args.get(0)));
+      ApiHandle::newReference(thread, args.get(0)));
 }
 
 RawObject BuiltinsModule::oct(Thread* thread, Frame* frame, word nargs) {

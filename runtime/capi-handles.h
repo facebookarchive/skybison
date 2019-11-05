@@ -92,6 +92,11 @@ class ApiHandle : public PyObject {
   // Returns the number of references to this handle from extension code.
   word refcnt() { return ob_refcnt; }
 
+  // TODO(T44244793): Remove these functions when handles have their own
+  // specialized hash table.
+  static RawObject dictRemoveIdentityEquals(Thread* thread, const Dict& dict,
+                                            const Object& key, word hash);
+
  private:
   // Allocates a handle for a managed object.
   static ApiHandle* alloc(Thread* thread, RawObject reference);
@@ -117,11 +122,6 @@ class ApiHandle : public PyObject {
   static void dictAtPutIdentityEquals(Thread* thread, const Dict& dict,
                                       const Object& key, word hash,
                                       const Object& value);
-
-  // TODO(T44244793): Remove these functions when handles have their own
-  // specialized hash table.
-  static RawObject dictRemoveIdentityEquals(Thread* thread, const Dict& dict,
-                                            const Object& key, word hash);
 
   static const long kManagedBit = 1L << 31;
 

@@ -57,7 +57,7 @@ int main(int argc, const char** argv) {
   // TODO(T43657667): Add code that can decide what we can cache and remove
   // this.
   // TODO(T55262429): Reduce the heap size once memory issues are fixed.
-  py::Runtime runtime(1 * kGiB, cache_enabled);
+  py::Runtime runtime(512 * kMiB, cache_enabled);
   py::Thread* thread = py::Thread::current();
   runtime.setArgv(thread, argc, argv);
   if (argc < 2) {
