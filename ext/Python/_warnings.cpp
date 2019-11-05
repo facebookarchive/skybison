@@ -10,8 +10,8 @@
 
 namespace py {
 
-static void callWarn(PyObject* category, PyObject* message,
-                     Py_ssize_t stack_level, PyObject* source) {
+static int callWarn(PyObject* category, PyObject* message,
+                    Py_ssize_t stack_level, PyObject* source) {
   if (category == nullptr) {
     category = PyExc_RuntimeWarning;
   }
@@ -25,9 +25,13 @@ static void callWarn(PyObject* category, PyObject* message,
   Object message_obj(&scope, ApiHandle::fromPyObject(message)->asObject());
   Int stack_level_obj(&scope, thread->runtime()->newInt(stack_level));
   Object source_obj(&scope, ApiHandle::fromPyObject(source)->asObject());
-  thread->invokeFunction4(SymbolId::kWarnings, SymbolId::kWarn, message_obj,
-                          category_obj, stack_level_obj, source_obj);
-  thread->clearPendingException();
+  if (thread
+          ->invokeFunction4(SymbolId::kWarnings, SymbolId::kWarn, message_obj,
+                            category_obj, stack_level_obj, source_obj)
+          .isErrorException()) {
+    return -1;
+  }
+  return 0;
 }
 
 PY_EXPORT int PyErr_WarnEx(PyObject* category, const char* text,
@@ -36,9 +40,9 @@ PY_EXPORT int PyErr_WarnEx(PyObject* category, const char* text,
   if (message == nullptr) {
     return -1;
   }
-  callWarn(category, message, stack_level, nullptr);
+  int res = callWarn(category, message, stack_level, nullptr);
   Py_DECREF(message);
-  return 0;
+  return res;
 }
 
 static int warnFormat(PyObject* source, PyObject* category,
@@ -48,9 +52,9 @@ static int warnFormat(PyObject* source, PyObject* category,
   if (message == nullptr) {
     return -1;
   }
-  callWarn(category, message, stack_level, source);
+  int res = callWarn(category, message, stack_level, source);
   Py_DECREF(message);
-  return 0;
+  return res;
 }
 
 PY_EXPORT int PyErr_ResourceWarning(PyObject* source, Py_ssize_t stack_level,

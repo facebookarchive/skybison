@@ -27,6 +27,12 @@ TEST_F(UnderWarningsExtensionApiTest,
 }
 
 TEST_F(UnderWarningsExtensionApiTest,
+       WarnFormatWithNonTypeCategoryRaisesTypeError) {
+  EXPECT_EQ(PyErr_WarnFormat(Py_True, 0, "blah"), -1);
+  EXPECT_EQ(PyErr_Occurred(), PyExc_TypeError);
+}
+
+TEST_F(UnderWarningsExtensionApiTest,
        WarnExWithNullCategoryPrintsRuntimeWarning) {
   CaptureStdStreams streams;
   EXPECT_EQ(PyErr_WarnEx(nullptr, "bar", 0), 0);
@@ -50,6 +56,12 @@ TEST_F(UnderWarningsExtensionApiTest,
   EXPECT_EQ(PyErr_WarnEx(PyExc_RuntimeWarning, "bar", PY_SSIZE_T_MAX), 0);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(streams.err(), "sys:1: RuntimeWarning: bar\n");
+}
+
+TEST_F(UnderWarningsExtensionApiTest,
+       WarnExWithNonTypeCategoryRaisesTypeError) {
+  EXPECT_EQ(PyErr_WarnEx(Py_True, "blah", 0), -1);
+  EXPECT_EQ(PyErr_Occurred(), PyExc_TypeError);
 }
 
 TEST_F(UnderWarningsExtensionApiTest,
