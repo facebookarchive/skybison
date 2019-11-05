@@ -37,6 +37,12 @@ class accumulate:
         self._accumulated = result
         return result
 
+    def __reduce__(self):
+        _unimplemented()
+
+    def __setstate__(self):
+        _unimplemented()
+
 
 class chain:
     def __iter__(self):
@@ -61,6 +67,12 @@ class chain:
                 self._it = None
                 continue
             return result
+
+    def __reduce__(self):
+        _unimplemented()
+
+    def __setstate__(self):
+        _unimplemented()
 
     @classmethod
     def from_iterable(cls, iterable):
@@ -126,6 +138,15 @@ class combinations:
 
         return result
 
+    def __reduce__(self):
+        _unimplemented()
+
+    def __setstate__(self):
+        _unimplemented()
+
+    def __sizeof__(self):
+        _unimplemented()
+
 
 class combinations_with_replacement:
     def __iter__(self):
@@ -181,6 +202,15 @@ class combinations_with_replacement:
 
         return result
 
+    def __reduce__(self):
+        _unimplemented()
+
+    def __setstate__(self):
+        _unimplemented()
+
+    def __sizeof__(self):
+        _unimplemented()
+
 
 class compress:
     def __iter__(self):
@@ -202,6 +232,9 @@ class compress:
             if selector:
                 return datum
 
+    def __reduce__(self):
+        _unimplemented()
+
 
 class count:
     def __iter__(self):
@@ -220,6 +253,9 @@ class count:
         result = self.count
         self.count += self.step
         return result
+
+    def __reduce__(self):
+        _unimplemented()
 
     def __repr__(self):
         return f"count({self.count})"
@@ -277,6 +313,12 @@ class dropwhile:
                 self._start = True
                 return item
 
+    def __reduce__(self):
+        _unimplemented()
+
+    def __setstate__(self):
+        _unimplemented()
+
 
 class filterfalse:
     def __iter__(self):
@@ -293,6 +335,9 @@ class filterfalse:
             item = next(self._it)
             if not self._predicate(item):
                 return item
+
+    def __reduce__(self):
+        _unimplemented()
 
 
 # internal helper class for groupby
@@ -339,6 +384,12 @@ class groupby:
         self._lastkey = self._currkey
         grouper = _groupby_iterator(self, self._currkey)
         return (self._currkey, grouper)
+
+    def __reduce__(self):
+        _unimplemented()
+
+    def __setstate__(self):
+        _unimplemented()
 
     def _groupby_step(self):
         newvalue = next(self._it)
@@ -402,6 +453,15 @@ class permutations:
             self._seq = None
         return result
 
+    def __reduce__(self):
+        _unimplemented()
+
+    def __setstate__(self):
+        _unimplemented()
+
+    def __sizeof__(self):
+        _unimplemented()
+
 
 class product:
     def __iter__(self):
@@ -451,6 +511,15 @@ class product:
             self._iterables = None
         return tuple(result)
 
+    def __reduce__(self):
+        _unimplemented()
+
+    def __setstate__(self):
+        _unimplemented()
+
+    def __sizeof__(self):
+        _unimplemented()
+
 
 class repeat:
     def __iter__(self):
@@ -472,6 +541,15 @@ class repeat:
             return self._elem
         raise StopIteration
 
+    def __length_hint__(self):
+        _unimplemented()
+
+    def __reduce__(self):
+        _unimplemented()
+
+    def __repr__(self):
+        _unimplemented()
+
 
 class starmap:
     def __iter__(self):
@@ -486,6 +564,9 @@ class starmap:
     def __next__(self):
         args = next(self._it)
         return self._func(*args)
+
+    def __reduce__(self):
+        _unimplemented()
 
 
 def tee(iterable, n=2):
@@ -556,6 +637,12 @@ class _tee:
         self._index += 1
         return value
 
+    def __reduce__(self):
+        _unimplemented()
+
+    def __setstate__(self):
+        _unimplemented()
+
     @classmethod
     def from_iterable(cls, iterable):
         it = iter(iterable)
@@ -588,6 +675,12 @@ class takewhile:
         self._stop = True
         raise StopIteration
 
+    def __reduce__(self):
+        _unimplemented()
+
+    def __setstate__(self):
+        _unimplemented()
+
 
 class zip_longest:
     def __iter__(self):
@@ -617,3 +710,9 @@ class zip_longest:
                     raise
                 self._iters[i] = repeat(fillvalue)
         return tuple(values)
+
+    def __reduce__(self):
+        _unimplemented()
+
+    def __setstate__(self):
+        _unimplemented()
