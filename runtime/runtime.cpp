@@ -2758,6 +2758,7 @@ RawObject Runtime::bytesFromTuple(Thread* thread, const Tuple& items,
     if (current_byte.error == CastError::None) {
       dst[idx] = current_byte.value;
     } else {
+      // TODO(T55871582): Move error handling to caller
       return thread->raiseWithFmt(LayoutId::kValueError,
                                   "bytes must be in range(0, 256)");
     }
@@ -2787,14 +2788,10 @@ RawObject Runtime::bytesJoin(Thread* thread, const Bytes& sep, word sep_length,
     if (isInstanceOfBytes(*item)) {
       Bytes bytes(&scope, bytesUnderlying(thread, item));
       result_length += bytes.length();
-    } else if (isInstanceOfByteArray(*item)) {
+    } else {
+      DCHECK(isInstanceOfByteArray(*item), "source is not bytes-like");
       ByteArray array(&scope, *item);
       result_length += array.numItems();
-    } else {
-      return thread->raiseWithFmt(
-          LayoutId::kTypeError,
-          "sequence item %w: expected a bytes-like object, %T found", index,
-          &item);
     }
   }
 

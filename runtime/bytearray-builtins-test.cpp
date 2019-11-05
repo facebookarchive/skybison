@@ -1211,7 +1211,7 @@ TEST_F(ByteArrayBuiltinsTest, JoinWithNonIterableRaisesTypeError) {
 TEST_F(ByteArrayBuiltinsTest, JoinWithMistypedIterableRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime_, "bytearray(b' ').join([1])"), LayoutId::kTypeError,
-      "sequence item 0: expected a bytes-like object, int found"));
+      "sequence item 0: expected a bytes-like object, 'int' found"));
 }
 
 TEST_F(ByteArrayBuiltinsTest, JoinWithIterableReturnsByteArray) {

@@ -607,27 +607,42 @@ RawObject UnderBuiltinsModule::underByteArrayJoin(Thread* thread, Frame* frame,
                                                   word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
+  Object sep_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfByteArray(*sep_obj)) {
+    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kByteArray);
+  }
   ByteArray sep(&scope, args.get(0));
   Bytes sep_bytes(&scope, sep.bytes());
   Object iterable(&scope, args.get(1));
-  Object joined(&scope, NoneType::object());
-  Runtime* runtime = thread->runtime();
+  Tuple tuple(&scope, runtime->emptyTuple());
+  word length;
   if (iterable.isList()) {
-    List list(&scope, *iterable);
-    Tuple src(&scope, list.items());
-    joined = runtime->bytesJoin(thread, sep_bytes, sep.numItems(), src,
-                                list.numItems());
+    tuple = List::cast(*iterable).items();
+    length = List::cast(*iterable).numItems();
   } else if (iterable.isTuple()) {
-    Tuple src(&scope, *iterable);
-    joined = runtime->bytesJoin(thread, sep_bytes, sep.numItems(), src,
-                                src.length());
+    tuple = *iterable;
+    length = tuple.length();
+  } else {
+    // Collect items into list in Python and call again
+    return Unbound::object();
   }
-  // Check for error or slow path
-  if (!joined.isMutableBytes()) return *joined;
-  MutableBytes joined_bytes(&scope, *joined);
+  Object elt(&scope, NoneType::object());
+  for (word i = 0; i < length; i++) {
+    elt = tuple.at(i);
+    if (!runtime->isInstanceOfBytes(*elt) &&
+        !runtime->isInstanceOfByteArray(*elt)) {
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
+          "sequence item %w: expected a bytes-like object, '%T' found", i,
+          &elt);
+    }
+  }
+  Bytes joined(&scope, runtime->bytesJoin(thread, sep_bytes, sep.numItems(),
+                                          tuple, length));
   ByteArray result(&scope, runtime->newByteArray());
-  result.setBytes(*joined_bytes);
-  result.setNumItems(joined_bytes.length());
+  result.setBytes(*joined);
+  result.setNumItems(joined.length());
   return *result;
 }
 
@@ -730,21 +745,35 @@ RawObject UnderBuiltinsModule::underBytesJoin(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfBytes(*self_obj)) {
+    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kBytes);
+  }
   Bytes self(&scope, bytesUnderlying(thread, self_obj));
   Object iterable(&scope, args.get(1));
+  Tuple tuple(&scope, runtime->emptyTuple());
+  word length;
   if (iterable.isList()) {
-    List list(&scope, *iterable);
-    Tuple src(&scope, list.items());
-    return thread->runtime()->bytesJoin(thread, self, self.length(), src,
-                                        list.numItems());
+    tuple = List::cast(*iterable).items();
+    length = List::cast(*iterable).numItems();
+  } else if (iterable.isTuple()) {
+    tuple = *iterable;
+    length = Tuple::cast(*iterable).length();
+  } else {
+    // Collect items into list in Python and call again
+    return Unbound::object();
   }
-  if (iterable.isTuple()) {
-    Tuple src(&scope, *iterable);
-    return thread->runtime()->bytesJoin(thread, self, self.length(), src,
-                                        src.length());
+  Object elt(&scope, NoneType::object());
+  for (word i = 0; i < length; i++) {
+    elt = tuple.at(i);
+    if (!runtime->isInstanceOfBytes(*elt) &&
+        !runtime->isInstanceOfByteArray(*elt)) {
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
+          "sequence item %w: expected a bytes-like object, %T found", i, &elt);
+    }
   }
-  // Slow path: collect items into list in Python and call again
-  return NoneType::object();
+  return runtime->bytesJoin(thread, self, self.length(), tuple, length);
 }
 
 RawObject UnderBuiltinsModule::underBytesLen(Thread* thread, Frame* frame,

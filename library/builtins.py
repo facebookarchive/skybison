@@ -1628,9 +1628,8 @@ class bytearray(bootstrap=True):
         _unimplemented()
 
     def join(self, iterable) -> bytearray:
-        _bytearray_guard(self)
         result = _bytearray_join(self, iterable)
-        if result is not None:
+        if result is not _Unbound:
             return result
         items = [x for x in iterable]
         return _bytearray_join(self, items)
@@ -1956,9 +1955,8 @@ class bytes(bootstrap=True):
         _unimplemented()
 
     def join(self, iterable) -> bytes:
-        _bytes_guard(self)
         result = _bytes_join(self, iterable)
-        if result is not None:
+        if result is not _Unbound:
             return result
         items = [x for x in iterable]
         return _bytes_join(self, items)
