@@ -112,6 +112,183 @@ class CountTests(unittest.TestCase):
             itertools.count(start="a", step=".")
 
 
+class IsliceTests(unittest.TestCase):
+    def test_too_few_arguments_raises_type_error(self):
+        self.assertRaises(TypeError, itertools.islice, [])
+
+    def test_too_many_arguments_raises_type_error(self):
+        self.assertRaises(TypeError, itertools.islice, [], 1, 2, 3, 4)
+
+    def test_single_slice_non_int_arg_raises_value_error(self):
+        with self.assertRaises(ValueError) as ctx:
+            itertools.islice([], [])
+        self.assertEqual(
+            str(ctx.exception),
+            "Stop argument for islice() must be None or an integer: "
+            "0 <= x <= sys.maxsize.",
+        )
+
+    def test_single_slice_neg_arg_raises_value_error(self):
+        with self.assertRaises(ValueError) as ctx:
+            itertools.islice([], -1)
+        self.assertEqual(
+            str(ctx.exception),
+            "Stop argument for islice() must be None or an integer: "
+            "0 <= x <= sys.maxsize.",
+        )
+
+    def test_slice_non_int_stop_raises_value_error(self):
+        with self.assertRaises(ValueError) as ctx:
+            itertools.islice([], 0, [])
+        self.assertEqual(
+            str(ctx.exception),
+            "Stop argument for islice() must be None or an integer: "
+            "0 <= x <= sys.maxsize.",
+        )
+
+    def test_slice_neg_one_stop_raises_value_error(self):
+        with self.assertRaises(ValueError) as ctx:
+            itertools.islice([], 0, -1)
+        self.assertEqual(
+            str(ctx.exception),
+            "Stop argument for islice() must be None or an integer: "
+            "0 <= x <= sys.maxsize.",
+        )
+
+    def test_slice_neg_two_stop_raises_value_error(self):
+        with self.assertRaises(ValueError) as ctx:
+            itertools.islice([], 0, -2)
+        self.assertEqual(
+            str(ctx.exception),
+            "Indices for islice() must be None or an integer: 0 <= x <= sys.maxsize.",
+        )
+
+    def test_slice_non_int_start_raises_value_error(self):
+        with self.assertRaises(ValueError) as ctx:
+            itertools.islice([], [], 1)
+        self.assertEqual(
+            str(ctx.exception),
+            "Indices for islice() must be None or an integer: 0 <= x <= sys.maxsize.",
+        )
+
+    def test_slice_neg_int_start_raises_value_error(self):
+        with self.assertRaises(ValueError) as ctx:
+            itertools.islice([], -1, 1)
+        self.assertEqual(
+            str(ctx.exception),
+            "Indices for islice() must be None or an integer: 0 <= x <= sys.maxsize.",
+        )
+
+    def test_slice_non_int_step_raises_value_error(self):
+        with self.assertRaises(ValueError) as ctx:
+            itertools.islice([], 0, 1, [])
+        self.assertEqual(
+            str(ctx.exception), "Step for islice() must be a positive integer or None."
+        )
+
+    def test_slice_neg_int_step_raises_value_error(self):
+        with self.assertRaises(ValueError) as ctx:
+            itertools.islice([], 0, 1, -1)
+        self.assertEqual(
+            str(ctx.exception), "Step for islice() must be a positive integer or None."
+        )
+
+    def test_slice_with_none_stop_treats_stop_as_end(self):
+        islice = itertools.islice([0, 1, 2, 3], None)
+        self.assertEqual(next(islice), 0)
+        self.assertEqual(next(islice), 1)
+        self.assertEqual(next(islice), 2)
+        self.assertEqual(next(islice), 3)
+        with self.assertRaises(StopIteration):
+            next(islice)
+
+    def test_slice_with_zero_stop_immediately_stops(self):
+        islice = itertools.islice([0, 1, 2, 3], 0)
+        with self.assertRaises(StopIteration):
+            next(islice)
+
+    def test_slice_with_none_start_starts_at_zero(self):
+        islice = itertools.islice([0, 1, 2, 3], None, 2)
+        self.assertEqual(next(islice), 0)
+        self.assertEqual(next(islice), 1)
+        with self.assertRaises(StopIteration):
+            next(islice)
+
+    def test_slice_with_none_step_steps_by_one(self):
+        islice = itertools.islice([0, 1, 2, 3], 1, 3, None)
+        self.assertEqual(next(islice), 1)
+        self.assertEqual(next(islice), 2)
+        with self.assertRaises(StopIteration):
+            next(islice)
+
+    def test_slice_with_all_none_args_acts_as_the_given_iterable(self):
+        islice = itertools.islice([0, 1, 2, 3], None, None, None)
+        self.assertEqual(next(islice), 0)
+        self.assertEqual(next(islice), 1)
+        self.assertEqual(next(islice), 2)
+        self.assertEqual(next(islice), 3)
+        with self.assertRaises(StopIteration):
+            next(islice)
+
+    def test_slice_with_one_arg_stops_iterable_at_stop(self):
+        islice = itertools.islice([0, 1, 2, 3], 2)
+        self.assertEqual(next(islice), 0)
+        self.assertEqual(next(islice), 1)
+        with self.assertRaises(StopIteration):
+            next(islice)
+
+    def test_slice_with_one_arg_stops_at_end_of_iterable(self):
+        islice = itertools.islice([0, 1, 2], 4)
+        self.assertEqual(next(islice), 0)
+        self.assertEqual(next(islice), 1)
+        self.assertEqual(next(islice), 2)
+        with self.assertRaises(StopIteration):
+            next(islice)
+
+    def test_slice_with_start_and_stop_respects_slice_bounds(self):
+        islice = itertools.islice([0, 1, 2, 3], 1, 3)
+        self.assertEqual(next(islice), 1)
+        self.assertEqual(next(islice), 2)
+        with self.assertRaises(StopIteration):
+            next(islice)
+
+    def test_slice_with_step_arg_respects_slice(self):
+        islice = itertools.islice([0, 1, 2, 3, 4, 5, 6, 7, 8], 1, 6, 2)
+        self.assertEqual(next(islice), 1)
+        self.assertEqual(next(islice), 3)
+        self.assertEqual(next(islice), 5)
+        with self.assertRaises(StopIteration):
+            next(islice)
+
+    def test_slice_with_step_arg_ends_at_end_of_iterator(self):
+        islice = itertools.islice([0, 1, 2, 3, 4], 1, 6, 2)
+        self.assertEqual(next(islice), 1)
+        self.assertEqual(next(islice), 3)
+        with self.assertRaises(StopIteration):
+            next(islice)
+
+    def test_slice_calls_next_until_stop_is_reached(self):
+        class RaisesAtFive:
+            i = 0
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                if self.i < 5:
+                    result = (0, 1, 2, 3, 4)[self.i]
+                    self.i += 1
+                    return result
+                raise UserWarning(f"Called with {self.i}")
+
+        islice = itertools.islice(RaisesAtFive(), 2, 6, 2)
+        self.assertEqual(next(islice), 2)
+        self.assertEqual(next(islice), 4)
+        with self.assertRaises(UserWarning) as ctx:
+            next(islice)
+        self.assertEqual(str(ctx.exception), "Called with 5")
+
+
 class PermutationsTests(unittest.TestCase):
     def test_too_few_arguments_raises_type_error(self):
         self.assertRaises(TypeError, itertools.permutations)

@@ -399,7 +399,75 @@ class groupby:
 
 
 class islice:
-    def __init__(self, seq, *args):
+    def __new__(cls, seq, stop_or_start, stop=_Unbound, step=_Unbound):
+        result = object.__new__(cls)
+        result._it = iter(seq)
+        result._count = 0
+        if stop is _Unbound:
+            start = 0
+            stop = stop_or_start
+            step = 1
+        else:
+            start = 0 if stop_or_start is None else stop_or_start
+            if step is _Unbound or step is None:
+                step = 1
+            elif not _int_check(step) or step < 1:
+                raise ValueError(
+                    "Step for islice() must be a positive integer or None."
+                )
+        if stop is None:
+            stop = -1
+        elif not _int_check(stop) or stop == -1:
+            raise ValueError(
+                "Stop argument for islice() must be None or an "
+                "integer: 0 <= x <= sys.maxsize."
+            )
+        if not _int_check(start) or start < 0 or stop < -1:
+            raise ValueError(
+                "Indices for islice() must be None or an integer: "
+                "0 <= x <= sys.maxsize."
+            )
+        result._next = start
+        result._stop = stop
+        result._step = step
+        return result
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        it = self._it
+        if it is None:
+            raise StopIteration
+        count = self._count
+        new_next = self._next
+        while count < new_next:
+            try:
+                next(it)
+            except Exception as exc:
+                self._it = None
+                raise exc
+            count += 1
+        stop = self._stop
+        if count >= stop and stop != -1:
+            self._it = None
+            raise StopIteration
+        try:
+            item = next(it)
+        except Exception as exc:
+            self._it = None
+            raise exc
+        self._count = count + 1
+        new_next += self._step
+        if new_next > stop:
+            new_next = stop
+        self._next = new_next
+        return item
+
+    def __reduce__(self):
+        _unimplemented()
+
+    def __setstate__(self):
         _unimplemented()
 
 
