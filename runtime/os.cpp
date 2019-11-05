@@ -112,23 +112,8 @@ char* OS::readFile(const char* filename, word* len_out) {
       return nullptr;
     }
   }
-  if (len_out != nullptr) {
-    *len_out = length;
-  }
+  *len_out = length;
   return buffer.release();
-}
-
-void OS::writeFileExcl(const char* filename, const char* contents, word len) {
-  ScopedFd fd(::open(filename, O_RDWR | O_CREAT | O_EXCL, 0644));
-  CHECK(fd.get() != -1, "get failure");
-  if (len < 0) {
-    len = std::strlen(contents);
-  }
-  word result;
-  do {
-    result = ::write(fd.get(), contents, len);
-  } while (result == -1 && errno == EINTR);
-  CHECK(result == len, "Incomplete write");
 }
 
 char* OS::temporaryDirectory(const char* prefix) {

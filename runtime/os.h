@@ -25,10 +25,7 @@ class OS {
 
   static bool secureRandom(byte* ptr, word size);
 
-  static char* readFile(const char* filename, word* len_out = nullptr);
-
-  static void writeFileExcl(const char* filename, const char* contents,
-                            word len = -1);
+  static char* readFile(const char* filename, word* len_out);
 
   static char* temporaryDirectory(const char* prefix);
 
