@@ -515,6 +515,7 @@ class RawStr : public RawObject {
   byte charAt(word index) const;
   word charLength() const;
   void copyTo(byte* dst, word char_length) const;
+  void copyToStartAt(byte* dst, word char_length, word char_start) const;
 
   // Equality checks.
   word compare(RawObject string) const;
@@ -700,6 +701,7 @@ class RawSmallStr : public RawObject {
   byte charAt(word index) const;
   word charLength() const;
   void copyTo(byte* dst, word char_length) const;
+  void copyToStartAt(byte* dst, word char_length, word char_start) const;
 
   // Codepoints
   word codePointLength() const;
@@ -1380,6 +1382,7 @@ class RawLargeStr : public RawArrayBase {
   byte charAt(word index) const;
   word charLength() const;
   void copyTo(byte* dst, word char_length) const;
+  void copyToStartAt(byte* dst, word char_length, word char_start) const;
 
   // Equality checks.
   bool equals(RawObject that) const;
@@ -4224,6 +4227,15 @@ inline void RawSmallStr::copyTo(byte* dst, word char_length) const {
   }
 }
 
+inline void RawSmallStr::copyToStartAt(byte* dst, word char_length,
+                                       word char_start) const {
+  DCHECK_BOUND(char_start, charLength());
+  DCHECK_BOUND(char_start + char_length, charLength());
+  for (word i = 0; i < char_length; ++i) {
+    *dst++ = charAt(i);
+  }
+}
+
 inline word RawSmallStr::hash() const {
   return static_cast<word>(raw() >> RawObject::kImmediateTagBits);
 }
@@ -5837,6 +5849,16 @@ inline void RawStr::copyTo(byte* dst, word length) const {
   }
   DCHECK(isLargeStr(), "unexpected type");
   return RawLargeStr::cast(*this).copyTo(dst, length);
+}
+
+inline void RawStr::copyToStartAt(byte* dst, word char_length,
+                                  word char_start) const {
+  if (isSmallStr()) {
+    RawSmallStr::cast(*this).copyToStartAt(dst, char_length, char_start);
+    return;
+  }
+  DCHECK(isLargeStr(), "unexpected type");
+  return RawLargeStr::cast(*this).copyToStartAt(dst, char_length, char_start);
 }
 
 inline char* RawStr::toCStr() const {

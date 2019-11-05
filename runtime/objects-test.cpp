@@ -816,6 +816,24 @@ TEST_F(StringTest, CompareLargeStrCStrLatin1) {
   EXPECT_EQ(large_latin1.compareCStr("\xBClarge str"), 1);
 }
 
+TEST_F(StringTest, CopyToStartAtCopiesBytes) {
+  HandleScope scope(thread_);
+  Str small(&scope, runtime_.newStrFromCStr("foo"));
+  Str large(&scope, runtime_.newStrFromCStr("Hello world!"));
+
+  byte actual0[3];
+  small.copyToStartAt(actual0, 3, 0);
+  EXPECT_EQ(std::memcmp(actual0, "foo", 3), 0);
+
+  byte actual1[5];
+  large.copyToStartAt(actual1, 5, 3);
+  EXPECT_EQ(std::memcmp(actual1, "lo", 2), 0);
+
+  byte actual2[3];
+  large.copyToStartAt(actual2, 3, 4);
+  EXPECT_EQ(std::memcmp(actual2, "o w", 3), 0);
+}
+
 TEST(SmallStrTest, Tests) {
   RawObject obj0 = SmallStr::fromCStr("AB");
   ASSERT_TRUE(obj0.isSmallStr());

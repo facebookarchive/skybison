@@ -190,6 +190,14 @@ void RawLargeStr::copyTo(byte* dst, word length) const {
   std::memcpy(dst, reinterpret_cast<const byte*>(address()), length);
 }
 
+void RawLargeStr::copyToStartAt(byte* dst, word char_length,
+                                word char_start) const {
+  DCHECK_BOUND(char_start, charLength());
+  DCHECK_BOUND(char_start + char_length, charLength());
+  std::memcpy(dst, reinterpret_cast<const byte*>(address() + char_start),
+              char_length);
+}
+
 char* RawLargeStr::toCStr() const {
   word length = this->length();
   byte* result = static_cast<byte*>(std::malloc(length + 1));
