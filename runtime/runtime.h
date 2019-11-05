@@ -92,14 +92,14 @@ class Runtime {
 
   RawObject newClassMethod();
 
-  NODISCARD RawObject newCode(word argcount, word posonlyargcount,
-                              word kwonlyargcount, word nlocals, word stacksize,
-                              word flags, const Object& code,
-                              const Object& consts, const Object& names,
-                              const Object& varnames, const Object& freevars,
-                              const Object& cellvars, const Object& filename,
-                              const Object& name, word firstlineno,
-                              const Object& lnotab);
+  // TODO(T55871582): Remove code paths that can raise from the Runtime
+  RawObject newCode(word argcount, word posonlyargcount, word kwonlyargcount,
+                    word nlocals, word stacksize, word flags,
+                    const Object& code, const Object& consts,
+                    const Object& names, const Object& varnames,
+                    const Object& freevars, const Object& cellvars,
+                    const Object& filename, const Object& name,
+                    word firstlineno, const Object& lnotab);
 
   RawObject newBuiltinCode(word argcount, word posonlyargcount,
                            word kwonlyargcount, word flags,
@@ -845,14 +845,17 @@ class Runtime {
   RawTuple setGrow(Thread* thread, const Tuple& data);
 
   // Generic attribute deletion code used for class objects
+  // TODO(T55871582): Remove code paths that can raise from the Runtime
   NODISCARD RawObject classDelAttr(Thread* thread, const Object& receiver,
                                    const Object& name);
 
   // Generic attribute deletion code used for instance objects
+  // TODO(T55871582): Remove code paths that can raise from the Runtime
   NODISCARD RawObject instanceDelAttr(Thread* thread, const Object& receiver,
                                       const Object& name);
 
   // Generic attribute deletion code used for module objects
+  // TODO(T55871582): Remove code paths that can raise from the Runtime
   NODISCARD RawObject moduleDelAttr(Thread* thread, const Object& receiver,
                                     const Object& name);
 

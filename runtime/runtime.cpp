@@ -1277,7 +1277,7 @@ RawObject Runtime::newStrFromFmtV(Thread* thread, const char* fmt,
   unique_c_ptr<char> dst(static_cast<char*>(std::malloc(len + 1)));
   CHECK(dst != nullptr, "Buffer allocation failure");
   out_len = strFormat(thread, dst.get(), len, fmt_str, args_copy);
-  if (out_len.isError()) return *out_len;
+  DCHECK(!out_len.isError(), "strFormat with format string should not fail");
   va_end(args_copy);
   return newStrFromCStr(dst.get());
 }
