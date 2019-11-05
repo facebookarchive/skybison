@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import Mock
 
 
-class ChainTest(unittest.TestCase):
+class ChainTests(unittest.TestCase):
     def test_chain_with_no_iterables_returns_stoped_iterator(self):
         self.assertTupleEqual(tuple(itertools.chain()), ())
 
@@ -101,7 +101,7 @@ class CycleTests(unittest.TestCase):
         self.assertEqual(next(result), 1)
 
 
-class ItertoolsTests(unittest.TestCase):
+class CountTests(unittest.TestCase):
     def test_count_with_int_returns_iterator(self):
         iterator = itertools.count(start=7, step=-2)
         list = [next(iterator) for _ in range(5)]

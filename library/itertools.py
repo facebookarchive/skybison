@@ -8,20 +8,22 @@ _Unbound = _Unbound  # noqa: F821
 _int_check = _int_check  # noqa: F821
 _int_guard = _int_guard  # noqa: F821
 _list_len = _list_len  # noqa: F821
+_number_check = _number_check  # noqa: F821
+_object_type_hasattr = _object_type_hasattr  # noqa: F821
 _tuple_len = _tuple_len  # noqa: F821
 _unimplemented = _unimplemented  # noqa: F821
 
 
 class accumulate:
+    def __iter__(self):
+        return self
+
     def __new__(cls, iterable, func=None):
         result = object.__new__(cls)
         result._it = iter(iterable)
         result._func = operator.add if func is None else func
         result._accumulated = None
         return result
-
-    def __iter__(self):
-        return self
 
     def __next__(self):
         result = self._accumulated
@@ -202,15 +204,17 @@ class compress:
 
 
 class count:
-    def __init__(self, start=0, step=1):
-        start_type = type(start)
-        if not hasattr(start_type, "__add__") or not hasattr(start_type, "__sub__"):
-            raise TypeError("a number is required")
-        self.count = start
-        self.step = step
-
     def __iter__(self):
         return self
+
+    def __new__(cls, start=0, step=1):
+        if not _number_check(start):
+            raise TypeError("a number is required")
+
+        result = object.__new__(cls)
+        result.count = start
+        result.step = step
+        return result
 
     def __next__(self):
         result = self.count
@@ -222,13 +226,15 @@ class count:
 
 
 class cycle:
-    def __init__(self, seq):
-        self._seq = iter(seq)
-        self._saved = []
-        self._first_pass = True
-
     def __iter__(self):
         return self
+
+    def __new__(cls, seq):
+        result = object.__new__(cls)
+        result._seq = iter(seq)
+        result._saved = []
+        result._first_pass = True
+        return result
 
     def __next__(self):
         try:
@@ -273,14 +279,14 @@ class dropwhile:
 
 
 class filterfalse:
+    def __iter__(self):
+        return self
+
     def __new__(cls, predicate, iterable):
         result = object.__new__(cls)
         result._it = iter(iterable)
         result._predicate = bool if predicate is None else predicate
         return result
-
-    def __iter__(self):
-        return self
 
     def __next__(self):
         while True:
@@ -314,6 +320,9 @@ class _groupby_iterator:
 
 
 class groupby:
+    def __iter__(self):
+        return self
+
     def __new__(cls, iterable, key=None):
         result = object.__new__(cls)
         result._it = iter(iterable)
@@ -322,9 +331,6 @@ class groupby:
         result._currvalue = _Unbound
         result._keyfunc = key
         return result
-
-    def __iter__(self):
-        return self
 
     def __next__(self):
         while self._currkey == self._lastkey:
@@ -398,25 +404,27 @@ class permutations:
 
 
 class product:
-    def __init__(self, *iterables, repeat=1):
+    def __iter__(self):
+        return self
+
+    def __new__(cls, *iterables, repeat=1):
         if not _int_check(repeat):
             raise TypeError
         length = _tuple_len(iterables) if repeat else 0
         i = 0
         repeated = [None] * length
+        result = object.__new__(cls)
         while i < length:
             item = tuple(iterables[i])
             if not item:
-                self._iterables = self._digits = None
-                return
+                result._iterables = None
+                return result
             repeated[i] = item
             i += 1
         repeated *= repeat
-        self._iterables = repeated
-        self._digits = [0] * (length * repeat)
-
-    def __iter__(self):
-        return self
+        result._iterables = repeated
+        result._digits = [0] * (length * repeat)
+        return result
 
     def __next__(self):
         iterables = self._iterables
@@ -440,19 +448,21 @@ class product:
             i -= 1
         if carry:
             # counter overflowed, stop iteration
-            self._iterables = self._digits = None
+            self._iterables = None
         return tuple(result)
 
 
 class repeat:
-    def __init__(self, elem, times=None):
-        self._elem = elem
-        if times is not None:
-            _int_guard(times)
-        self._times = times
-
     def __iter__(self):
         return self
+
+    def __new__(cls, elem, times=None):
+        result = object.__new__(cls)
+        result._elem = elem
+        if times is not None:
+            _int_guard(times)
+        result._times = times
+        return result
 
     def __next__(self):
         if self._times is None:
@@ -580,15 +590,17 @@ class takewhile:
 
 
 class zip_longest:
-    def __init__(self, *seqs, fillvalue=None):
-        length = _tuple_len(seqs)
-        self._iters = [iter(seq) for seq in seqs]
-        self._num_iters = length
-        self._num_active = length
-        self._fillvalue = fillvalue
-
     def __iter__(self):
         return self
+
+    def __new__(cls, *seqs, fillvalue=None):
+        length = _tuple_len(seqs)
+        result = object.__new__(cls)
+        result._iters = [iter(seq) for seq in seqs]
+        result._num_iters = length
+        result._num_active = length
+        result._fillvalue = fillvalue
+        return result
 
     def __next__(self):
         iters = self._iters
