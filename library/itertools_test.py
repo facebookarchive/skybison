@@ -122,7 +122,7 @@ class PermutationsTests(unittest.TestCase):
     def test_non_int_r_type_error(self):
         self.assertRaises(TypeError, itertools.permutations, "1", 1.0)
 
-    def test_empty_returns_empty(self):
+    def test_empty_returns_single_empty_permutation(self):
         self.assertTupleEqual(tuple(itertools.permutations(())), ((),))
 
     def test_r_defaults_to_length(self):
@@ -135,10 +135,10 @@ class PermutationsTests(unittest.TestCase):
         len3 = itertools.permutations("123")
         self.assertTrue(all(map(lambda x: len(x) == 3, len3)))
 
-    def test_r_zero_returns_stopped_iterator(self):
+    def test_r_zero_returns_single_empty_permutation(self):
         self.assertTupleEqual(tuple(itertools.permutations("A", 0)), ((),))
 
-    def test_r_gt_length_returns_empty(self):
+    def test_r_gt_length_returns_stopped_iterator(self):
         self.assertTupleEqual(tuple(itertools.permutations("A", 2)), ())
 
     def test_r_lt_length_returns_items_with_length_r(self):

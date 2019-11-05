@@ -347,30 +347,35 @@ class islice:
 
 
 class permutations:
-    def __init__(self, iterable, r=None):
-        iterable = tuple(iterable)
-        n = _tuple_len(iterable)
-        if r is None:
-            r = n
-        elif r > n:
-            self._iterable = self._r = self._indices = self._cycles = None
-            return
-        self._iterable = iterable
-        self._r = r
-        self._indices = list(range(n))
-        self._cycles = list(range(n, n - r, -1))
-
     def __iter__(self):
         return self
 
+    def __new__(cls, iterable, r=None):
+        seq = tuple(iterable)
+        n = _tuple_len(seq)
+
+        result = object.__new__(cls)
+
+        if r is None:
+            r = n
+        elif r > n:
+            result._seq = None
+            return result
+
+        result._seq = seq
+        result._r = r
+        result._indices = list(range(n))
+        result._cycles = list(range(n, n - r, -1))
+        return result
+
     def __next__(self):
-        iterable = self._iterable
-        if iterable is None:
+        seq = self._seq
+        if seq is None:
             raise StopIteration
         r = self._r
         indices = self._indices
         indices_len = _list_len(indices)
-        result = (*(iterable[indices[i]] for i in range(r)),)
+        result = (*(seq[indices[i]] for i in range(r)),)
         cycles = self._cycles
         i = r - 1
         while i >= 0:
@@ -388,7 +393,7 @@ class permutations:
             indices[k - 1] = tmp
             i -= 1
         else:
-            self._iterable = self._r = self._indices = self._cycles = None
+            self._seq = None
         return result
 
 
