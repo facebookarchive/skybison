@@ -1596,7 +1596,6 @@ void Runtime::initializeHeapTypes() {
   ByteArrayIteratorBuiltins::initialize(this);
   BytesIteratorBuiltins::initialize(this);
   ClassMethodBuiltins::initialize(this);
-  addEmptyBuiltinType(SymbolId::kCode, LayoutId::kCode, LayoutId::kObject);
   CodeBuiltins::initialize(this);
   ComplexBuiltins::initialize(this);
   CoroutineBuiltins::initialize(this);
