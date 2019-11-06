@@ -302,7 +302,13 @@ enum PyUnicode_Kind {
 };
 
 struct _Py_Identifier;
+struct _mod;
 struct _node;
+
+// This works around a bug in `generate_cpython_sources.py` removing the
+// `typedef` from `Python-ast.h` because it saw `struct _mod` above.
+// TODO(T56488016): Remove this.
+typedef struct _mod* mod_ty;
 
 typedef struct {
   unsigned char* heap_buffer;       // byte*
@@ -327,6 +333,11 @@ typedef struct {
   unsigned char overallocate;
   unsigned char readonly;
 } _PyUnicodeWriter;
+
+typedef struct {
+  int ff_features;
+  int ff_lineno;
+} PyFutureFeatures;
 
 typedef uint16_t _Py_CODEUNIT;
 

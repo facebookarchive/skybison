@@ -97,6 +97,8 @@ PyAPI_FUNC(int)
     PyArg_ParseTupleAndKeywords(PyObject*, PyObject*, const char*, char**, ...);
 PyAPI_FUNC(int)
     PyArg_UnpackTuple(PyObject*, const char*, Py_ssize_t, Py_ssize_t, ...);
+PyAPI_FUNC(int) _PyArg_ParseStack(PyObject**, Py_ssize_t, PyObject*,
+                                  struct _PyArg_Parser*, ...);
 PyAPI_FUNC(int) PyArg_VaParse(PyObject*, const char*, va_list);
 PyAPI_FUNC(int) PyArg_VaParseTupleAndKeywords(PyObject*, PyObject*, const char*,
                                               char**, va_list);
@@ -960,6 +962,7 @@ PyAPI_FUNC(PyCodeObject*)
     PyAST_CompileEx(struct _mod*, const char*, PyCompilerFlags*, int, PyArena*);
 PyAPI_FUNC(PyCodeObject*) PyAST_CompileObject(struct _mod*, PyObject*,
                                               PyCompilerFlags*, int, PyArena*);
+PyAPI_FUNC(PyObject*) _Py_Mangle(PyObject*, PyObject*);
 PyAPI_FUNC(PyObject*) _PyNamespace_New(PyObject* kwds);
 PyAPI_FUNC(double) _Py_dg_stdnan(int sign);
 PyAPI_FUNC(double) _Py_dg_infinity(int sign);

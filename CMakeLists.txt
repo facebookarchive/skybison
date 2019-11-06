@@ -108,6 +108,18 @@ set(
 set(
   CPYTHON_MODIFIED_SOURCES
   ${EXTENSION_API_HEADERS}
+  ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/Python-ast.h
+  ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/asdl.h
+  ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/ast.h
+  ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/compile.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/compile.h
+  ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/future.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/module.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/node.h
+  ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/opcode.h
+  ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/peephole.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/symtable.h
+  ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/wordcode_helpers.h
   ${CMAKE_SOURCE_DIR}/ext/Modules/gcmodule.cpp
   ${CMAKE_SOURCE_DIR}/ext/Modules/signalmodule.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/abstract.cpp
