@@ -418,9 +418,9 @@ static grammar* initializeGrammar() {
 PY_EXPORT struct _node* PyParser_SimpleParseStringFlagsFilename(
     const char* str, const char* filename, int start, int flags) {
   perrdetail err;
-  node* mod;
-  grammar* g = initializeGrammar();
-  mod = PyParser_ParseStringFlagsFilename(str, filename, g, start, &err, flags);
+  grammar* grammar = initializeGrammar();
+  node* mod = PyParser_ParseStringFlagsFilename(str, filename, grammar, start,
+                                                &err, flags);
   if (mod == nullptr) errInput(&err);
   Py_CLEAR(err.filename);
   return mod;
@@ -480,9 +480,9 @@ PY_EXPORT mod_ty PyParser_ASTFromFileObject(FILE* fp, PyObject* filename,
                                             int* errcode, PyArena* arena) {
   perrdetail err;
   int iflags = parserFlags(flags);
-  grammar* g = initializeGrammar();
-  node* parse_tree = PyParser_ParseFileObject(fp, filename, enc, g, start, ps1,
-                                              ps2, &err, &iflags);
+  grammar* grammar = initializeGrammar();
+  node* parse_tree = PyParser_ParseFileObject(fp, filename, enc, grammar, start,
+                                              ps1, ps2, &err, &iflags);
   PyCompilerFlags localflags;
   if (flags == nullptr) {
     localflags.cf_flags = 0;
@@ -520,8 +520,9 @@ PY_EXPORT mod_ty PyParser_ASTFromStringObject(const char* s, PyObject* filename,
                                               PyArena* arena) {
   perrdetail err;
   int iflags = parserFlags(flags);
-  grammar* g = initializeGrammar();
-  node* n = PyParser_ParseStringObject(s, filename, g, start, &err, &iflags);
+  grammar* grammar = initializeGrammar();
+  node* n =
+      PyParser_ParseStringObject(s, filename, grammar, start, &err, &iflags);
   PyCompilerFlags localflags;
   if (flags == nullptr) {
     localflags.cf_flags = 0;
