@@ -63,17 +63,20 @@ RawObject FaulthandlerModule::dumpTraceback(Thread* thread, Frame* frame,
   Object file(&scope, args.get(0));
   Object all_threads(&scope, args.get(1));
 
-  if (!thread->runtime()->isInstanceOfInt(*all_threads)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "an integer is required (got type %T)",
-                                &all_threads);
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfInt(*all_threads)) {
+    return thread->raiseRequiresType(all_threads, SymbolId::kInt);
   }
 
   Object fileno(&scope, getFileno(thread, file));
   if (fileno.isError()) return *fileno;
   SmallInt fd(&scope, *fileno);
   Int all_threads_int(&scope, intUnderlying(thread, all_threads));
-  Utils::printTracebackToFd(fd.value(), !all_threads_int.isZero());
+  if (all_threads_int.isZero()) {
+    runtime->printTraceback(thread, fd.value());
+  } else {
+    UNIMPLEMENTED("all_threads=True");
+  }
 
   // TODO(wmeehan): call Pyro-equivalent to PyErr_CheckSignals
   return NoneType::object();

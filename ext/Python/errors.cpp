@@ -562,10 +562,9 @@ PY_EXPORT void PyErr_WriteUnraisable(PyObject* obj) {
     }
   }
 
-  if (runtime->printTraceback(thread, sys_stderr).isError()) {
-    thread->clearPendingException();
-    return;
-  }
+  // TODO(T42602699): Replace with user-level traceback object printer
+  // TODO(T42602545): Write to given file object
+  Utils::printTracebackToStderr();
 
   if (exc_obj.isNoneType()) {
     thread->clearPendingException();

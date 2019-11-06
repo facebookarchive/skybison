@@ -23,6 +23,7 @@
 #include "dict-builtins.h"
 #include "exception-builtins.h"
 #include "faulthandler-module.h"
+#include "file.h"
 #include "float-builtins.h"
 #include "frame.h"
 #include "frozen-modules.h"
@@ -1970,11 +1971,91 @@ RawObject Runtime::executeModule(const Code& code, const Module& module) {
   return Thread::current()->exec(code, module, globals);
 }
 
-RawObject Runtime::printTraceback(Thread* /* thread */,
-                                  const Object& /* file */) {
-  // TODO(T42602699): Replace this with an actual traceback printer
-  // TODO(T42602545): Write to given file object
-  Utils::printTracebackToStderr();
+static void writeOrAbort(int fd, const void* buffer, ssize_t size) {
+  int result = File::write(fd, buffer, size);
+  DCHECK(result >= 0, "error occurred during write (errno %d)", result);
+  DCHECK(result == size, "write incomplete (%d of %zd bytes)", result, size);
+}
+
+static void writeCStr(word fd, const char* str) {
+  writeOrAbort(fd, str, std::strlen(str));
+}
+
+static void writeStr(word fd, RawStr str) {
+  static const word buffer_length = 128;
+  byte buffer[buffer_length];
+
+  word start = 0;
+  word length = str.charLength();
+  for (word end = buffer_length; end < length;
+       start = end, end += buffer_length) {
+    str.copyToStartAt(buffer, buffer_length, start);
+    writeOrAbort(fd, buffer, buffer_length);
+  }
+  word final_size = length - start;
+  str.copyToStartAt(buffer, final_size, start);
+  writeOrAbort(fd, buffer, final_size);
+}
+
+RawObject Runtime::printTraceback(Thread* thread, word fd) {
+  // NOTE: all operations in this function must be async-signal-safe.
+  // See http://man7.org/linux/man-pages/man7/signal-safety.7.html for details.
+  static const char* in = " in ";
+  static const char* line = ", line ";
+  static const char* unknown = "???";
+  writeCStr(fd, "Stack (most recent call first):\n");
+
+  Frame* frame = thread->currentFrame();
+  while (!frame->isSentinel()) {
+    writeCStr(fd, "  File ");
+    RawFunction function = frame->function();
+    RawObject code_obj = function.code();
+    if (code_obj.isCode()) {
+      RawCode code = Code::cast(code_obj);
+      RawObject filename = code.filename();
+      if (filename.isStr()) {
+        writeCStr(fd, "\"");
+        writeStr(fd, RawStr::cast(filename));
+        writeCStr(fd, "\"");
+      } else {
+        writeCStr(fd, unknown);
+      }
+
+      writeCStr(fd, line);
+      if (!code.isNative() && code.lnotab().isBytes()) {
+        char buf[kUwordDigits10];
+        char* end = buf + kUwordDigits10;
+        char* start = end;
+        word pc = Utils::maximum(frame->virtualPC() - kCodeUnitSize, word{0});
+        word linenum = code.offsetToLineNum(pc);
+        do {
+          *--start = '0' + (linenum % 10);
+          linenum /= 10;
+        } while (linenum > 0);
+        writeOrAbort(fd, start, end - start);
+      } else {
+        writeCStr(fd, unknown);
+      }
+
+      writeCStr(fd, in);
+      RawObject name = function.name();
+      if (name.isStr()) {
+        writeStr(fd, RawStr::cast(name));
+      } else {
+        writeCStr(fd, unknown);
+      }
+    } else {
+      writeCStr(fd, unknown);
+      writeCStr(fd, line);
+      writeCStr(fd, unknown);
+      writeCStr(fd, in);
+      writeCStr(fd, unknown);
+    }
+
+    writeCStr(fd, "\n");
+    frame = frame->previousFrame();
+  }
+
   return NoneType::object();
 }
 

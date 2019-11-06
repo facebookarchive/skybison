@@ -64,6 +64,14 @@ int File::truncate(int fd, int64_t size) {
   return result < 0 ? -errno : 0;
 }
 
+int File::write(int fd, const void* buffer, size_t size) {
+  word result;
+  do {
+    result = ::write(fd, buffer, size);
+  } while (result == -1 && errno == EINTR);
+  return result < 0 ? -errno : result;
+}
+
 const word File::kBinaryFlag = 0;
 const word File::kNoInheritFlag = O_CLOEXEC;
 

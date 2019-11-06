@@ -21,7 +21,8 @@ TEST_F(FaulthandlerModuleTest,
   Object all_threads(&scope, NoneType::object());
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(FaulthandlerModule::dumpTraceback, fd, all_threads),
-      LayoutId::kTypeError, "an integer is required (got type NoneType)"));
+      LayoutId::kTypeError,
+      "'<anonymous>' requires a 'int' object but got 'NoneType'"));
 }
 
 TEST_F(FaulthandlerModuleTest, DumpTracebackWritesToFileDescriptor) {
@@ -36,12 +37,13 @@ TEST_F(FaulthandlerModuleTest, DumpTracebackWritesToFileDescriptor) {
 
   word length;
   std::unique_ptr<char[]> actual(OS::readFile(name.get(), &length));
-  char expected_prefix[] = R"(Traceback (most recent call last):
-  File "", in <anonymous>  <native function at 0x)";
+  char expected[] = R"(Stack (most recent call first):
+  File "", line ??? in <anonymous>
+)";
 
-  word prefix_length = std::strlen(expected_prefix);
-  ASSERT_GT(length, prefix_length);
-  EXPECT_EQ(std::memcmp(actual.get(), expected_prefix, prefix_length), 0);
+  word expected_length = std::strlen(expected);
+  ASSERT_EQ(length, expected_length);
+  EXPECT_EQ(std::memcmp(actual.get(), expected, expected_length), 0);
 
   close(fd);
   unlink(name.get());

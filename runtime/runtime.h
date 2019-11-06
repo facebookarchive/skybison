@@ -331,7 +331,7 @@ class Runtime {
 
   // Write the traceback to the given file object. If success, return None.
   // Else, return Error.
-  RawObject printTraceback(Thread* thread, const Object& file);
+  RawObject printTraceback(Thread* thread, word fd);
 
   // importModuleFromCode is exposed for use by the tests. We may be able to
   // remove this later.

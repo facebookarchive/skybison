@@ -41,6 +41,9 @@ class File {
   // Return 0. Return -errno on error.
   static int truncate(int fd, int64_t size);
 
+  // Return number of bytes written. Return -errno on error.
+  static int write(int fd, const void* buffer, size_t size);
+
   // This should be non-zero (O_BINARY) on NT.
   static const word kBinaryFlag;
 

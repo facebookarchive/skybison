@@ -159,15 +159,6 @@ void Utils::printTraceback(std::ostream* os) {
   printer.print(os);
 }
 
-void Utils::printTracebackToFd(word fd, bool /* all_threads */) {
-  // TODO(wmeehan): if all_threads is true, dump every thread's traceback
-  std::ostringstream tb;
-  printTraceback(&tb);
-  word length = tb.str().length();
-  word count = write(fd, tb.str().c_str(), length);
-  CHECK(count == length, "error occurred while writing");
-}
-
 void Utils::printDebugInfoAndAbort() {
   static thread_local bool aborting = false;
   if (aborting) {
@@ -179,7 +170,7 @@ void Utils::printDebugInfoAndAbort() {
 
   Thread* thread = Thread::current();
   if (thread != nullptr) {
-    printTracebackToStderr();
+    thread->runtime()->printTraceback(thread, STDERR_FILENO);
     if (thread->hasPendingException()) {
       std::cerr << "Pending exception\n  Type      : "
                 << thread->pendingExceptionType()
