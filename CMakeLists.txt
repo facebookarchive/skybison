@@ -566,7 +566,6 @@ set(
   ext/Modules/config-test.cpp
   ext/Modules/gcmodule-test.cpp
   ext/Modules/posixmodule-test.cpp
-  ext/Modules/sysmodule-test.cpp
   ext/Objects/abstract-test.cpp
   ext/Objects/boolobject-test.cpp
   ext/Objects/bytearrayobject-test.cpp
