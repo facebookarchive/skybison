@@ -8006,29 +8006,26 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
 /*[clinic end generated code: output=dafbe9a5cddb987b input=1df2eaa27c0bf1d3]*/
 {
     Py_ssize_t n;
-    PyObject *buffer;
+    _PyBytesWriter writer;
+    char *buffer;
 
     if (length < 0) {
         errno = EINVAL;
         return posix_error();
     }
-
     length = Py_MIN(length, _PY_READ_MAX);
-
-    buffer = PyBytes_FromStringAndSize((char *)NULL, length);
-    if (buffer == NULL)
-        return NULL;
-
-    n = _Py_read(fd, PyBytes_AS_STRING(buffer), length);
-    if (n == -1) {
-        Py_DECREF(buffer);
+    
+    _PyBytesWriter_Init(&writer);
+    buffer = _PyBytesWriter_Alloc(&writer, length);
+    if (buffer == NULL) {
         return NULL;
     }
-
-    if (n != length)
-        _PyBytes_Resize(&buffer, n);
-
-    return buffer;
+    n = _Py_read(fd, buffer, length);
+    if (n == -1) {
+        _PyBytesWriter_Dealloc(&writer);
+        return NULL;
+    }
+    return _PyBytesWriter_Finish(&writer, buffer + n);
 }
 
 #if (defined(HAVE_SENDFILE) && (defined(__FreeBSD__) || defined(__DragonFly__) \
