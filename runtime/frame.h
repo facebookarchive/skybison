@@ -302,6 +302,7 @@ class Arguments {
 };
 
 RawObject frameGlobals(Thread* thread, Frame* frame);
+RawObject frameLocals(Thread* thread, Frame* frame);
 
 inline void Frame::init(word total_locals) {
   setValueStackTop(reinterpret_cast<RawObject*>(this));
