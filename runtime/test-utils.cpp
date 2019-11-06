@@ -12,7 +12,6 @@
 #include "builtins-module.h"
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
-#include "compile.h"
 #include "debugging.h"
 #include "exception-builtins.h"
 #include "frame.h"
@@ -379,7 +378,10 @@ RawObject runCodeNoBytecodeRewriting(const Code& code) {
 RawObject runFromCStr(Runtime* runtime, const char* c_str) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Code code(&scope, compileFromCStr(c_str, "<test string>"));
+  Object str(&scope, runtime->newStrFromCStr(c_str));
+  Object filename(&scope, runtime->newStrFromCStr("<test string>"));
+  Code code(&scope, compile(thread, str, filename, SymbolId::kExec, /*flags=*/0,
+                            /*optimize=*/-1));
   Module main_module(&scope, runtime->findOrCreateMainModule());
   Object result(&scope, runtime->executeModule(code, main_module));
 

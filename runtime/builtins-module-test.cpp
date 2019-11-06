@@ -810,7 +810,7 @@ TEST_F(BuiltinsModuleTest, BuiltinCompile) {
   ASSERT_FALSE(
       runFromCStr(
           &runtime_,
-          R"(code = compile("a = 1\nb = 2", "<string>", "eval", dont_inherit=True))")
+          R"(code = compile("a+b", "<string>", "eval", dont_inherit=True))")
           .isError());
   Str filename(&scope, runtime_.newStrFromCStr("<string>"));
   Code code(&scope, mainModuleAt(&runtime_, "code"));
@@ -824,31 +824,10 @@ TEST_F(BuiltinsModuleTest, BuiltinCompile) {
   ASSERT_TRUE(names.contains(runtime_.newStrFromCStr("b")));
 }
 
-TEST_F(BuiltinsModuleTest, BuiltinCompileWithByteArrayReturnsCode) {
-  HandleScope scope(thread_);
-  const byte source_bytes[] = "a = 1; b = 2";
-  ByteArray source(&scope, runtime_.newByteArray());
-  runtime_.byteArrayExtend(thread_, source, source_bytes);
-  Object filename(&scope, runtime_.newStrFromCStr("<string>"));
-  Object mode(&scope, runtime_.newStrFromCStr("eval"));
-  Object flags(&scope, SmallInt::fromWord(0));
-  Object dont_inherit(&scope, Bool::trueObj());
-  Object optimize(&scope, SmallInt::fromWord(-1));
-  Code code(&scope, runBuiltin(BuiltinsModule::compile, source, filename, mode,
-                               flags, dont_inherit, optimize));
-  EXPECT_TRUE(isStrEqualsCStr(code.filename(), "<string>"));
-
-  ASSERT_TRUE(code.names().isTuple());
-  Tuple names(&scope, code.names());
-  ASSERT_EQ(names.length(), 2);
-  ASSERT_TRUE(names.contains(runtime_.newStrFromCStr("a")));
-  ASSERT_TRUE(names.contains(runtime_.newStrFromCStr("b")));
-}
-
 TEST_F(BuiltinsModuleTest, BuiltinCompileBytes) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
-data = b'a = 1; b = 2'
+data = b'a+b'
 code = compile(data, "<string>", "eval", dont_inherit=True)
 )")
                    .isError());
@@ -867,7 +846,7 @@ TEST_F(BuiltinsModuleTest, BuiltinCompileWithBytesSubclass) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo(bytes): pass
-data = Foo(b"a = 1; b = 2")
+data = Foo(b"a+b")
 code = compile(data, "<string>", "eval", dont_inherit=True)
 )")
                    .isError());
@@ -886,7 +865,7 @@ TEST_F(BuiltinsModuleTest, BuiltinCompileWithStrSubclass) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo(str): pass
-data = Foo("a = 1; b = 2")
+data = Foo("a+b")
 code = compile(data, "<string>", "eval", dont_inherit=True)
 )")
                    .isError());

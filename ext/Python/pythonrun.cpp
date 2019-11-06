@@ -1,5 +1,5 @@
+#include "builtins-module.h"
 #include "capi-handles.h"
-#include "compile.h"
 #include "cpython-data.h"
 #include "cpython-func.h"
 #include "exception-builtins.h"

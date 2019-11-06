@@ -2107,9 +2107,10 @@ class code(bootstrap=True):
         return result if result != -1 else -2
 
 
-@_patch
 def compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1):
-    pass
+    from _compile import compile
+
+    return compile(source, filename, mode, flags, dont_inherit, optimize)
 
 
 class complex(bootstrap=True):

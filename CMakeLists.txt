@@ -287,8 +287,6 @@ add_library(
   runtime/code-builtins.h
   runtime/codecs-module.cpp
   runtime/codecs-module.h
-  runtime/compile.cpp
-  runtime/compile.h
   runtime/complex-builtins.cpp
   runtime/complex-builtins.h
   runtime/debugging.cpp
@@ -495,7 +493,6 @@ add_library(
   runtime/capi-handles-test.cpp
   runtime/code-builtins-test.cpp
   runtime/codecs-module-test.cpp
-  runtime/compile-test.cpp
   runtime/complex-builtins-test.cpp
   runtime/debugging-test.cpp
   runtime/descriptor-builtins-test.cpp

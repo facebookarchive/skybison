@@ -2,7 +2,7 @@
 #include <memory>
 
 #include "capi/cpython-func.h"
-#include "runtime/compile.h"
+#include "runtime/builtins-module.h"
 #include "runtime/exception-builtins.h"
 #include "runtime/marshal.h"
 #include "runtime/os.h"
@@ -23,18 +23,17 @@ static py::RawObject runFile(py::Thread* thread, const char* filename) {
 
   py::Object code_obj(&scope, py::NoneType::object());
   const char* delim = std::strrchr(filename, '.');
+  py::View<byte> data(reinterpret_cast<byte*>(buffer.get()), file_len);
+  py::Str filename_str(&scope, runtime->newStrFromCStr(filename));
   if (delim && std::strcmp(delim, ".pyc") != 0) {
     // Interpret as .py and compile
-    std::unique_ptr<char[]> buffer_cstr(new char[file_len + 1]);
-    if (buffer_cstr == nullptr) std::exit(EXIT_FAILURE);
-    std::memcpy(buffer_cstr.get(), buffer.get(), file_len);
-    buffer_cstr[file_len] = '\0';
-    code_obj = py::compileFromCStr(buffer_cstr.get(), filename);
+    py::Object source(&scope, runtime->newStrWithAll(data));
+    code_obj = py::compile(thread, source, filename_str, py::SymbolId::kExec,
+                           /*flags=*/0, /*optimize=*/-1);
   } else {
     // Interpret as .pyc and unmarshal
     py::View<byte> data(reinterpret_cast<byte*>(buffer.get()), file_len);
     py::Marshal::Reader reader(&scope, runtime, data);
-    py::Str filename_str(&scope, runtime->newStrFromCStr(filename));
     if (reader.readPycHeader(filename_str).isErrorException()) {
       return py::Error::exception();
     }

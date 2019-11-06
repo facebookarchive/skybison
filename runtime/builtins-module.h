@@ -12,12 +12,14 @@ RawObject hasAttribute(Thread* thread, const Object& self, const Object& name);
 RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
                        const Object& value);
 
+RawObject compile(Thread* thread, const Object& source, const Object& filename,
+                  SymbolId mode, word flags, int optimize);
+
 class BuiltinsModule {
  public:
   static RawObject bin(Thread* thread, Frame* frame, word nargs);
   static RawObject callable(Thread* thread, Frame* frame, word nargs);
   static RawObject chr(Thread* thread, Frame* frame, word nargs);
-  static RawObject compile(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderBuildClass(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderImport(Thread* thread, Frame* frame, word nargs);
   static RawObject exec(Thread* thread, Frame* frame, word nargs);

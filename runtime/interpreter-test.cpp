@@ -2,8 +2,8 @@
 
 #include <memory>
 
+#include "builtins-module.h"
 #include "bytecode.h"
-#include "compile.h"
 #include "dict-builtins.h"
 #include "frame.h"
 #include "handles.h"
@@ -2731,17 +2731,18 @@ v = outer()
 
 TEST_F(InterpreterTest, ImportStarImportsPublicSymbols) {
   HandleScope scope(thread_);
-
-  const char* module_src = R"(
+  Object module_src(&scope, runtime_.newStrFromCStr(R"(
 def public_symbol():
     return 1
 def public_symbol2():
     return 2
-)";
+)"));
+  Object filename(&scope, runtime_.newStrFromCStr("<test string>"));
 
   // Preload the module
   Object name(&scope, runtime_.newStrFromCStr("test_module"));
-  Code code(&scope, compileFromCStr(module_src, "<test string>"));
+  Code code(&scope,
+            compile(thread_, module_src, filename, SymbolId::kExec, 0, -1));
   ASSERT_FALSE(runtime_.importModuleFromCode(code, name).isError());
 
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
@@ -2759,17 +2760,18 @@ b = public_symbol2()
 
 TEST_F(InterpreterTest, ImportStarDoesNotImportPrivateSymbols) {
   HandleScope scope(thread_);
-
-  const char* module_src = R"(
+  Object module_src(&scope, runtime_.newStrFromCStr(R"(
 def public_symbol():
     return 1
 def _private_symbol():
     return 2
-)";
+)"));
+  Object filename(&scope, runtime_.newStrFromCStr("<test string>"));
 
   // Preload the module
   Object name(&scope, runtime_.newStrFromCStr("test_module"));
-  Code code(&scope, compileFromCStr(module_src, "<test string>"));
+  Code code(&scope,
+            compile(thread_, module_src, filename, SymbolId::kExec, 0, -1));
   ASSERT_FALSE(runtime_.importModuleFromCode(code, name).isError());
 
   const char* main_src = R"(
@@ -3406,10 +3408,12 @@ for i in yield_from_func():
 TEST_F(InterpreterTest, MakeFunctionSetsDunderModule) {
   HandleScope scope(thread_);
   Object module_name(&scope, runtime_.newStrFromCStr("foo"));
-  Code code(&scope, compileFromCStr(R"(
+  Object module_src(&scope, runtime_.newStrFromCStr(R"(
 def bar(): pass
-)",
-                                    "<test string>"));
+)"));
+  Object filename(&scope, runtime_.newStrFromCStr("<test string>"));
+  Code code(&scope,
+            compile(thread_, module_src, filename, SymbolId::kExec, 0, -1));
   ASSERT_FALSE(runtime_.importModuleFromCode(code, module_name).isError());
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 import foo

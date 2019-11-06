@@ -4,7 +4,6 @@
 
 #include "bytes-builtins.h"
 #include "capi-handles.h"
-#include "compile.h"
 #include "exception-builtins.h"
 #include "formatter.h"
 #include "frozen-modules.h"
@@ -67,7 +66,6 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kBin, bin},
     {SymbolId::kCallable, callable},
     {SymbolId::kChr, chr},
-    {SymbolId::kCompile, compile},
     {SymbolId::kDunderImport, dunderImport},
     {SymbolId::kExec, exec},
     {SymbolId::kGetattr, getattr},
@@ -430,109 +428,23 @@ RawObject BuiltinsModule::chr(Thread* thread, Frame* frame, word nargs) {
   return SmallStr::fromCodePoint(static_cast<int32_t>(code_point));
 }
 
-static RawObject compileFromBytes(const Bytes& source, word source_len,
-                                  const Str& filename) {
-  DCHECK_BOUND(source_len, source.length());
-  unique_c_ptr<byte[]> source_bytes(
-      static_cast<byte*>(std::malloc(source_len + 1)));
-  source.copyTo(source_bytes.get(), source_len);
-  source_bytes[source_len] = '\0';
-  unique_c_ptr<char[]> filename_str(filename.toCStr());
-  return compileFromCStr(reinterpret_cast<char*>(source_bytes.get()),
-                         filename_str.get());
-}
-
-static RawObject compileFromStr(const Str& source, const Str& filename) {
-  unique_c_ptr<char[]> source_str(source.toCStr());
-  unique_c_ptr<char[]> filename_str(filename.toCStr());
-  return compileFromCStr(source_str.get(), filename_str.get());
-}
-
-RawObject BuiltinsModule::compile(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
+RawObject compile(Thread* thread, const Object& source, const Object& filename,
+                  SymbolId mode, word flags, int optimize) {
   HandleScope scope(thread);
-  Object source_obj(&scope, args.get(0));
-  Object filename_obj(&scope, args.get(1));
-  Object mode_obj(&scope, args.get(2));
-  Object flags_obj(&scope, args.get(3));
-  Object dont_inherit(&scope, args.get(4));
-  Object optimize_obj(&scope, args.get(5));
   Runtime* runtime = thread->runtime();
-
-  if (!runtime->isInstanceOfStr(*filename_obj)) {
-    // TODO(T39919821): convert using the implementation of PyUnicode_FSDecoder
-    UNIMPLEMENTED("PyUnicode_FSDecoder");
-  }
-  if (!runtime->isInstanceOfStr(*mode_obj)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "compile() argument 3 must be str, not %T",
-                                &mode_obj);
-  }
-  if (!runtime->isInstanceOfInt(*flags_obj)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "an integer is required (got type %T)",
-                                &flags_obj);
-  }
-  if (!runtime->isInstanceOfInt(*dont_inherit)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "an integer is required (got type %T)",
-                                &dont_inherit);
-  }
-  if (!runtime->isInstanceOfInt(*optimize_obj)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "an integer is required (got type %T)",
-                                &optimize_obj);
-  }
-
-  if (flags_obj != SmallInt::fromWord(0)) {
-    UNIMPLEMENTED("user-supplied flags");
-  }
-
-  if (optimize_obj != SmallInt::fromWord(-1)) {
-    UNIMPLEMENTED("user-supplied optimize");
-  }
-
-  if (dont_inherit != Bool::trueObj()) {
-    // TODO(T40872645): Add support for compiler flag forwarding
-    UNIMPLEMENTED("compiler flag forwarding");
-  }
-
-  Str mode(&scope, strUnderlying(thread, mode_obj));
-  if (mode.equalsCStr("exec") || mode.equalsCStr("eval") ||
-      mode.equalsCStr("single")) {
-    // TODO(T54976162): add support for compiler mode
-  } else {
-    return thread->raiseWithFmt(
-        LayoutId::kValueError,
-        "compile() mode must be 'exec', 'eval' or 'single'");
-  }
-
-  Str filename(&scope, strUnderlying(thread, filename_obj));
-  if (runtime->isInstanceOfStr(*source_obj)) {
-    Str source(&scope, strUnderlying(thread, source_obj));
-    return compileFromStr(source, filename);
-  }
-  if (runtime->isInstanceOfBytes(*source_obj)) {
-    Bytes source(&scope, bytesUnderlying(thread, source_obj));
-    return compileFromBytes(source, source.length(), filename);
-  }
-  if (runtime->isInstanceOfByteArray(*source_obj)) {
-    ByteArray source(&scope, *source_obj);
-    Bytes source_bytes(&scope, source.bytes());
-    return compileFromBytes(source_bytes, source.numItems(), filename);
-  }
-  // TODO(T38246066): bytes-like other than bytes/bytearray
-  UNIMPLEMENTED("compile source from buffer or AST");
+  Object mode_str(&scope, runtime->symbols()->at(mode));
+  Object flags_int(&scope, runtime->newInt(flags));
+  Object dont_inherit(&scope, Bool::trueObj());
+  Object optimize_int(&scope, SmallInt::fromWord(optimize));
+  return thread->invokeFunction6(SymbolId::kBuiltins, SymbolId::kCompile,
+                                 source, filename, mode_str, flags_int,
+                                 dont_inherit, optimize_int);
 }
 
 RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object source_obj(&scope, args.get(0));
-  if (!source_obj.isCode() && !source_obj.isStr()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError, "Expected 'source' to be str or code in 'exec'");
-  }
   // Per the docs:
   //   In all cases, if the optional parts are omitted, the code is executed in
   //   the current scope. If only globals is provided, it must be a dictionary,
@@ -580,11 +492,12 @@ RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "Expected 'locals' to be a mapping in 'exec'");
   }
-  if (source_obj.isStr()) {
-    Str source(&scope, *source_obj);
-    Str filename(&scope, runtime->newStrFromCStr("<exec string>"));
-    source_obj = compileFromStr(source, filename);
-    DCHECK(source_obj.isCode(), "compileFromStr must return code object");
+  if (!source_obj.isCode()) {
+    Object filename(&scope, runtime->newStrFromCStr("<string>"));
+    source_obj = compile(thread, source_obj, filename, SymbolId::kExec,
+                         /*flags=*/0, /*optimize=*/-1);
+    if (source_obj.isErrorException()) return *source_obj;
+    CHECK(source_obj.isCode(), "_compile.compile() did not return code object");
   }
   Code code(&scope, *source_obj);
   if (code.numFreevars() != 0) {

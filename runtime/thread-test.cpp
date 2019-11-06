@@ -2,8 +2,8 @@
 
 #include <memory>
 
+#include "builtins-module.h"
 #include "bytecode.h"
-#include "compile.h"
 #include "dict-builtins.h"
 #include "frame.h"
 #include "globals.h"
@@ -1208,19 +1208,19 @@ class Foo(object):
 
 TEST_F(ThreadTest, ImportTest) {
   HandleScope scope(thread_);
-
-  const char* module_src = R"(
+  Object module_src(&scope, runtime_.newStrFromCStr(R"(
 def say_hello():
   return "hello"
-)";
-
+)"));
+  Object filename(&scope, runtime_.newStrFromCStr("<test string>"));
   const char* main_src = R"(
 import hello
 result = hello.say_hello()
 )";
 
   // Pre-load the hello module so is cached.
-  Code code(&scope, compileFromCStr(module_src, "<test string>"));
+  Code code(&scope,
+            compile(thread_, module_src, filename, SymbolId::kExec, 0, -1));
   Object name(&scope, runtime_.newStrFromCStr("hello"));
   ASSERT_FALSE(runtime_.importModuleFromCode(code, name).isError());
   ASSERT_FALSE(runFromCStr(&runtime_, main_src).isError());
@@ -1240,19 +1240,19 @@ hello.say_hello()
 
 TEST_F(ThreadTest, ImportMissingAttributeTest) {
   HandleScope scope(thread_);
-
-  const char* module_src = R"(
+  Object module_src(&scope, runtime_.newStrFromCStr(R"(
 def say_hello():
   print("hello");
-)";
-
+)"));
+  Object filename(&scope, runtime_.newStrFromCStr("<test string>"));
   const char* main_src = R"(
 import hello
 hello.foo()
 )";
 
   // Pre-load the hello module so is cached.
-  Code code(&scope, compileFromCStr(module_src, "<test string>"));
+  Code code(&scope,
+            compile(thread_, module_src, filename, SymbolId::kExec, 0, -1));
   Object name(&scope, runtime_.newStrFromCStr("hello"));
   ASSERT_FALSE(runtime_.importModuleFromCode(code, name).isError());
 
@@ -1263,12 +1263,11 @@ hello.foo()
 
 TEST_F(ThreadTest, ModuleSetAttrTest) {
   HandleScope scope(thread_);
-
-  const char* module_src = R"(
+  Object module_src(&scope, runtime_.newStrFromCStr(R"(
 def say_hello():
   return "hello"
-)";
-
+)"));
+  Object filename(&scope, runtime_.newStrFromCStr("<test string>"));
   const char* main_src = R"(
 import hello
 def goodbye():
@@ -1278,7 +1277,8 @@ result = hello.say_hello()
 )";
 
   // Pre-load the hello module so is cached.
-  Code code(&scope, compileFromCStr(module_src, "<test string>"));
+  Code code(&scope,
+            compile(thread_, module_src, filename, SymbolId::kExec, 0, -1));
   Object name(&scope, runtime_.newStrFromCStr("hello"));
   ASSERT_FALSE(runtime_.importModuleFromCode(code, name).isError());
   ASSERT_FALSE(runFromCStr(&runtime_, main_src).isError());

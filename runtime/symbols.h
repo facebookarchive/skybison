@@ -189,8 +189,9 @@ class Runtime;
   V(UnderClassMethodIsAbstract, "_classmethod_isabstract")                     \
   V(UnderClosed, "_closed")                                                    \
   V(UnderCloseFd, "_closefd")                                                  \
-  V(UnderCodecs, "_codecs")                                                    \
   V(UnderCodeGuard, "_code_guard")                                             \
+  V(UnderCodecs, "_codecs")                                                    \
+  V(UnderCompile, "_compile")                                                  \
   V(UnderComplexCheck, "_complex_check")                                       \
   V(UnderComplexImag, "_complex_imag")                                         \
   V(UnderComplexReal, "_complex_real")                                         \
