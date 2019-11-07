@@ -12,8 +12,6 @@ namespace compile {
 PyCodeObject* PyAST_CompileObject(_mod* mod, PyObject* filename,
                                   PyCompilerFlags* flags, int optimize,
                                   PyArena* arena);
-PyFutureFeatures* PyFuture_FromAST(_mod* mod, const char* filename);
-PyFutureFeatures* PyFuture_FromASTObject(_mod* mod, PyObject* filename);
 
 PyCodeObject* PyAST_Compile(mod_ty mod, const char* filename,
                             PyCompilerFlags* flags, PyArena* arena);

@@ -962,6 +962,8 @@ PyAPI_FUNC(PyCodeObject*)
     PyAST_CompileEx(struct _mod*, const char*, PyCompilerFlags*, int, PyArena*);
 PyAPI_FUNC(PyCodeObject*) PyAST_CompileObject(struct _mod*, PyObject*,
                                               PyCompilerFlags*, int, PyArena*);
+PyAPI_FUNC(PyFutureFeatures*) PyFuture_FromAST(struct _mod*, const char*);
+PyAPI_FUNC(PyFutureFeatures*) PyFuture_FromASTObject(struct _mod*, PyObject*);
 PyAPI_FUNC(PyObject*) _Py_Mangle(PyObject*, PyObject*);
 PyAPI_FUNC(PyObject*) _PyNamespace_New(PyObject* kwds);
 PyAPI_FUNC(double) _Py_dg_stdnan(int sign);

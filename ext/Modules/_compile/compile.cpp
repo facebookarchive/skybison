@@ -274,7 +274,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     Py_INCREF(filename);
     c.c_filename = filename;
     c.c_arena = arena;
-    c.c_future = py::compile::PyFuture_FromASTObject(mod, filename);
+    c.c_future = PyFuture_FromASTObject(mod, filename);
     if (c.c_future == NULL)
         goto finally;
     if (!flags) {

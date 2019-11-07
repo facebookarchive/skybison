@@ -113,7 +113,6 @@ set(
   ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/ast.h
   ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/compile.cpp
   ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/compile.h
-  ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/future.cpp
   ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/module.cpp
   ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/node.h
   ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/opcode.h
