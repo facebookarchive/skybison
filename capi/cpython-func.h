@@ -958,6 +958,10 @@ PyAPI_FUNC(struct _mod*)
 PyAPI_FUNC(struct _mod*)
     PyParser_ASTFromFileObject(FILE*, PyObject*, const char*, int, const char*,
                                const char*, PyCompilerFlags*, int*, PyArena*);
+
+PyAPI_FUNC(PyCodeObject*) PyNode_Compile(struct _node*, const char*);
+PyAPI_FUNC(PyCodeObject*)
+    PyAST_Compile(struct _mod*, const char*, PyCompilerFlags*, PyArena*);
 PyAPI_FUNC(PyCodeObject*)
     PyAST_CompileEx(struct _mod*, const char*, PyCompilerFlags*, int, PyArena*);
 PyAPI_FUNC(PyCodeObject*) PyAST_CompileObject(struct _mod*, PyObject*,
@@ -965,6 +969,8 @@ PyAPI_FUNC(PyCodeObject*) PyAST_CompileObject(struct _mod*, PyObject*,
 PyAPI_FUNC(PyFutureFeatures*) PyFuture_FromAST(struct _mod*, const char*);
 PyAPI_FUNC(PyFutureFeatures*) PyFuture_FromASTObject(struct _mod*, PyObject*);
 PyAPI_FUNC(PyObject*) _Py_Mangle(PyObject*, PyObject*);
+PyAPI_FUNC(int) PyCompile_OpcodeStackEffect(int, int);
+
 PyAPI_FUNC(PyObject*) _PyNamespace_New(PyObject* kwds);
 PyAPI_FUNC(double) _Py_dg_stdnan(int sign);
 PyAPI_FUNC(double) _Py_dg_infinity(int sign);

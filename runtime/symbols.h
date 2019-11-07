@@ -581,6 +581,7 @@ class Runtime;
   V(Encoding, "encoding")                                                      \
   V(End, "end")                                                                \
   V(Eq, "eq")                                                                  \
+  V(Eval, "eval")                                                              \
   V(ExcInfo, "exc_info")                                                       \
   V(Excepthook, "excepthook")                                                  \
   V(Exception, "Exception")                                                    \
@@ -798,6 +799,7 @@ class Runtime;
   V(Setter, "setter")                                                          \
   V(Signed, "signed")                                                          \
   V(SimpleNamespace, "SimpleNamespace")                                        \
+  V(Single, "single")                                                          \
   V(Siphash24, "siphash24")                                                    \
   V(Size, "size")                                                              \
   V(Slice, "slice")                                                            \

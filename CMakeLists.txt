@@ -158,6 +158,7 @@ set(
   ${CMAKE_SOURCE_DIR}/ext/Python/_warnings.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/ceval.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/codecs.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/compile.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/errors.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/getargs.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/getcompiler.cpp
@@ -598,6 +599,7 @@ set(
   ext/Objects/weakrefobject-test.cpp
   ext/Python/ceval-test.cpp
   ext/Python/codecs-test.cpp
+  ext/Python/compile-test.cpp
   ext/Python/errors-test.cpp
   ext/Python/getargs-ssizet-test.cpp
   ext/Python/getargs-test.cpp

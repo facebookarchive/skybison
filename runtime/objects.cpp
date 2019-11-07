@@ -396,6 +396,14 @@ void RawMutableBytes::replaceFromWithStr(word index, RawStr src,
   src.copyTo(dst + index, char_length);
 }
 
+void RawMutableBytes::replaceFromWithStrStartAt(word dst_start, RawStr src,
+                                                word char_length,
+                                                word src_start_char) const {
+  DCHECK_BOUND(dst_start + char_length, length());
+  byte* dst = reinterpret_cast<byte*>(address());
+  src.copyToStartAt(dst + dst_start, char_length, src_start_char);
+}
+
 RawObject RawMutableBytes::becomeImmutable() const {
   word len = length();
   if (len <= SmallBytes::kMaxLength) {
