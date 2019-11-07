@@ -115,6 +115,11 @@ static bool underFloatCheck(Thread* thread, Frame* frame) {
   return true;
 }
 
+static bool underFloatCheckExact(Frame* frame) {
+  frame->setTopValue(Bool::fromBool(frame->popValue().isFloat()));
+  return true;
+}
+
 static bool underFloatGuard(Thread* thread, Frame* frame) {
   if (thread->runtime()->isInstanceOfFloat(frame->topValue())) {
     frame->popValue();
@@ -556,6 +561,8 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
       return underDictLen(frame);
     case SymbolId::kUnderFloatCheck:
       return underFloatCheck(thread, frame);
+    case SymbolId::kUnderFloatCheckExact:
+      return underFloatCheckExact(frame);
     case SymbolId::kUnderFloatGuard:
       return underFloatGuard(thread, frame);
     case SymbolId::kUnderFrozenSetCheck:

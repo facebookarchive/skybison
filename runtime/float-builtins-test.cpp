@@ -350,97 +350,6 @@ c = a - b
   EXPECT_EQ(Float::cast(*c).value(), 1.5);
 }
 
-TEST_F(FloatBuiltinsTest, DunderNewWithNoArgsReturnsZero) {
-  HandleScope scope(thread_);
-
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = float.__new__(float)
-)")
-                   .isError());
-
-  Object a(&scope, mainModuleAt(&runtime_, "a"));
-  ASSERT_TRUE(a.isFloat());
-  EXPECT_EQ(Float::cast(*a).value(), 0.0);
-}
-
-TEST_F(FloatBuiltinsTest, DunderNewWithFloatArgReturnsSameValue) {
-  HandleScope scope(thread_);
-
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = float.__new__(float, 1.0)
-)")
-                   .isError());
-
-  Object a(&scope, mainModuleAt(&runtime_, "a"));
-  ASSERT_TRUE(a.isFloat());
-  EXPECT_EQ(Float::cast(*a).value(), 1.0);
-}
-
-TEST_F(FloatBuiltinsTest, DunderNewWithUserDefinedTypeReturnsFloat) {
-  HandleScope scope(thread_);
-
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-class Foo:
-  def __float__(self):
-    return 1.0
-a = float.__new__(float, Foo())
-)")
-                   .isError());
-
-  Float a(&scope, mainModuleAt(&runtime_, "a"));
-  EXPECT_EQ(a.value(), 1.0);
-}
-
-TEST_F(FloatBuiltinsTest,
-       DunderNewWithDescriptorRaisingDescriptorDunderFloatPropagatesException) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
-class Desc:
-  def __get__(self, obj, type):
-    raise UserWarning("foo")
-class Foo:
-  __float__ = Desc()
-a = float.__new__(float, Foo())
-)"),
-                            LayoutId::kUserWarning, "foo"));
-}
-
-TEST_F(FloatBuiltinsTest, DunderNewWithStringReturnsFloat) {
-  HandleScope scope(thread_);
-
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = float.__new__(float, "1.5")
-)")
-                   .isError());
-
-  Float a(&scope, mainModuleAt(&runtime_, "a"));
-  EXPECT_EQ(a.value(), 1.5);
-}
-
-TEST_F(FloatBuiltinsTest, FloatSubclassReturnsFloat) {
-  HandleScope scope(thread_);
-
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-class SubFloat(float):
-  def __new__(self, value):
-    self.foo = 3
-    return super().__new__(self, value)
-subfloat = SubFloat(1.5)
-subfloat_foo = subfloat.foo
-)")
-                   .isError());
-
-  // Check that it's a subtype of float
-  Object subfloat(&scope, mainModuleAt(&runtime_, "subfloat"));
-  ASSERT_FALSE(subfloat.isFloat());
-  ASSERT_TRUE(runtime_.isInstanceOfFloat(*subfloat));
-
-  Float flt(&scope, floatUnderlying(thread_, subfloat));
-  EXPECT_EQ(flt.value(), 1.5);
-
-  Object foo_attr(&scope, mainModuleAt(&runtime_, "subfloat_foo"));
-  EXPECT_TRUE(isIntEqualsWord(*foo_attr, 3));
-}
-
 TEST_F(FloatBuiltinsTest, FloatSubclassKeepsFloatInMro) {
   const char* src = R"(
 class Test(float):
@@ -459,21 +368,6 @@ class Test(float):
   EXPECT_EQ(mro.at(0), *type);
   EXPECT_EQ(mro.at(1), runtime_.typeAt(LayoutId::kFloat));
   EXPECT_EQ(mro.at(2), runtime_.typeAt(LayoutId::kObject));
-}
-
-TEST_F(FloatBuiltinsTest, DunderNewWithStringOfHugeNumberReturnsInf) {
-  HandleScope scope(thread_);
-
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = float.__new__(float, "1.18973e+4932")
-b = float.__new__(float, "-1.18973e+4932")
-
-)")
-                   .isError());
-  Float a(&scope, mainModuleAt(&runtime_, "a"));
-  Float b(&scope, mainModuleAt(&runtime_, "b"));
-  EXPECT_EQ(a.value(), std::numeric_limits<double>::infinity());
-  EXPECT_EQ(b.value(), -std::numeric_limits<double>::infinity());
 }
 
 TEST_F(FloatBuiltinsTest, SubWithNonFloatSelfRaisesTypeError) {
@@ -531,25 +425,6 @@ x **= 4
                    .isError());
   Float result(&scope, mainModuleAt(&runtime_, "x"));
   EXPECT_EQ(result.value(), 16.0);
-}
-
-TEST_F(FloatBuiltinsTest, FloatNewWithDunderFloatReturnsStringRaisesTypeError) {
-  const char* src = R"(
-class Foo:
-  def __float__(self):
-    return "non-float"
-a = float.__new__(Foo)
-)";
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, src), LayoutId::kTypeError,
-                            "float.__new__(X): X is not a subtype of float"));
-}
-
-TEST_F(FloatBuiltinsTest, DunderNewWithInvalidStringRaisesValueError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
-a = float.__new__(float, "abc")
-)"),
-                            LayoutId::kValueError,
-                            "could not convert string to float"));
 }
 
 TEST_F(FloatBuiltinsTest, SubWithNonFloatOtherRaisesTypeError) {

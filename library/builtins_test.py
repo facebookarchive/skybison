@@ -2554,7 +2554,78 @@ class FloatTests(unittest.TestCase):
     def test_dunder_mod_returns_remainder(self):
         self.assertEqual(float.__mod__(3.25, -1.0), -0.75)
 
-    def test_dunder_pow_with_int_returns_float(self):
+    def test_dunder_new_with_non_class_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            float.__new__("not a type")
+        self.assertEqual(
+            str(context.exception), "float.__new__(X): X is not a type object (str)"
+        )
+
+    def test_dunder_new_with_non_float_subclass_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            float.__new__(int)
+        self.assertEqual(
+            str(context.exception), "float.__new__(int): int is not a subtype of float"
+        )
+
+    def test_dunder_new_with_default_argument_returns_zero(self):
+        self.assertEqual(float(), 0.0)
+
+    def test_dunder_new_with_float_returns_same_value(self):
+        self.assertEqual(float(1.0), 1.0)
+
+    def test_dunder_new_with_invalid_str_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            float("1880.3a01")
+
+    def test_dunder_new_with_str_returns_float(self):
+        self.assertEqual(float("1.0"), 1.0)
+
+    def test_dunder_new_with_huge_positive_str_returns_inf(self):
+        self.assertEqual(float("1.18973e+4932"), float("inf"))
+
+    def test_dunder_new_with_huge_negative_str_returns_negative_inf(self):
+        self.assertEqual(float("-1.18973e+4932"), float("-inf"))
+
+    def test_dunder_new_with_float_subclass_calls_dunder_float(self):
+        class C(float):
+            def __float__(self):
+                return 1.0
+
+        c = C()
+        self.assertEqual(c, 0.0)
+        self.assertEqual(float(c), 1.0)
+
+    def test_dunder_new_with_str_subclass_calls_dunder_float(self):
+        class C(str):
+            def __float__(self):
+                return 1.0
+
+        c = C("0.0")
+        self.assertEqual(float(c), 1.0)
+
+    def test_dunder_new_with_int_calls_dunder_float(self):
+        self.assertEqual(float(1), 1.0)
+
+    def test_dunder_new_with_raising_descriptor_propagates_exception(self):
+        class Desc:
+            def __get__(self, obj, type):
+                raise IndexError()
+
+        class C:
+            __float__ = Desc()
+
+        self.assertRaises(IndexError, float, C())
+
+    def test_dunder_new_without_dunder_float_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            float([])
+        self.assertEqual(
+            str(context.exception),
+            "float() argument must be a string or a number, not 'list'",
+        )
+
+    def test_dunder_pow_with_str_returns_float(self):
         result = float.__pow__(2.0, 4)
         self.assertIs(type(result), float)
         self.assertEqual(result, 16.0)

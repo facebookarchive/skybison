@@ -61,9 +61,13 @@ _dict_setitem = _dict_setitem  # noqa: F821
 _dict_update = _dict_update  # noqa: F821
 _divmod = _divmod  # noqa: F821
 _float_check = _float_check  # noqa: F821
+_float_checkexact = _float_checkexact  # noqa: F821
 _float_divmod = _float_divmod  # noqa: F821
 _float_format = _float_format  # noqa: F821
 _float_guard = _float_guard  # noqa: F821
+_float_new_from_byteslike = _float_new_from_byteslike  # noqa: F821
+_float_new_from_float = _float_new_from_float  # noqa: F821
+_float_new_from_str = _float_new_from_str  # noqa: F821
 _frozenset_check = _frozenset_check  # noqa: F821
 _frozenset_guard = _frozenset_guard  # noqa: F821
 _function_globals = _function_globals  # noqa: F821
@@ -2479,7 +2483,44 @@ class float(bootstrap=True):
         pass
 
     def __new__(cls, arg=0.0) -> float:
-        pass
+        if not _type_check(cls):
+            raise TypeError(
+                f"float.__new__(X): X is not a type object ({_type(cls).__name__})"
+            )
+        if not _type_issubclass(cls, float):
+            raise TypeError(
+                f"float.__new__({cls.__name__}): {cls.__name__} is not a "
+                "subtype of float"
+            )
+        if _str_checkexact(arg):
+            return _float_new_from_str(cls, arg)
+        if _float_checkexact(arg):
+            return _float_new_from_float(cls, arg)
+        dunder_float = _object_type_getattr(arg, "__float__")
+        if dunder_float is not _Unbound:
+            result = dunder_float()
+            if _float_checkexact(result):
+                return _float_new_from_float(cls, result)
+            if not _float_check(result):
+                raise TypeError(
+                    f"{_type(arg).__name__}.__float__ returned non-float "
+                    f"(type {_type(result).__name__})"
+                )
+            _warn(
+                f"{_type(arg).__name__} returned non-float (type "
+                f"{_type(result).__name__}).  The ability to return an "
+                "instance of a strict subclass of float is deprecated, and may "
+                "be removed in a future version of Python.",
+                DeprecationWarning,
+            )
+        if _str_check(arg):
+            return _float_new_from_str(cls, arg)
+        if _byteslike_check(arg):
+            return _float_new_from_byteslike(cls, arg)
+        raise TypeError(
+            "float() argument must be a string or a number, "
+            f"not '{_type(arg).__name__}'"
+        )
 
     def __pow__(self, other, mod=None) -> float:
         pass

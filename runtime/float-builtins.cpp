@@ -86,7 +86,6 @@ const BuiltinMethod FloatBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderLt, dunderLt},
     {SymbolId::kDunderMul, dunderMul},
     {SymbolId::kDunderNeg, dunderNeg},
-    {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderPow, dunderPow},
     {SymbolId::kDunderRound, dunderRound},
     {SymbolId::kDunderRtruediv, dunderRtrueDiv},
@@ -100,79 +99,6 @@ const BuiltinAttribute FloatBuiltins::kAttributes[] = {
     {SymbolId::kInvalid, UserFloatBase::kValueOffset},
     {SymbolId::kSentinelId, 0},
 };
-
-RawObject FloatBuiltins::floatFromObject(Thread* thread, Frame* frame,
-                                         word nargs) {
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Object obj(&scope, args.get(1));
-  if (runtime->isInstanceOfFloat(*obj)) {
-    return floatUnderlying(thread, obj);
-  }
-
-  // This only converts exact strings.
-  if (obj.isStr()) {
-    return floatFromString(thread, Str::cast(*obj));
-  }
-
-  // Not a float, call __float__ on it to convert.
-  // Since float itself defines __float__, subclasses of float are automatically
-  // handled here.
-  Object method(&scope, Interpreter::lookupMethod(thread, frame, obj,
-                                                  SymbolId::kDunderFloat));
-  if (method.isError()) {
-    if (method.isErrorNotFound()) {
-      return thread->raiseWithFmt(
-          LayoutId::kTypeError,
-          "TypeError: float() argument must have a __float__");
-    }
-    return *method;
-  }
-
-  Object converted(&scope,
-                   Interpreter::callMethod1(thread, frame, method, obj));
-  // If there was an exception thrown during call, propagate it up.
-  if (converted.isError()) {
-    return *converted;
-  }
-
-  // If __float__ returns a non-float, throw a type error.
-  if (!runtime->isInstanceOfFloat(*converted)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "__float__ returned non-float");
-  }
-
-  // __float__ used to be allowed to return any subtype of float, but that
-  // behavior was deprecated.
-  // TODO(dulinr): Convert this to a warning exception once that is supported.
-  CHECK(converted.isFloat(),
-        "__float__ returned a strict subclass of float, which is deprecated");
-  return *converted;
-}
-
-RawObject FloatBuiltins::floatFromString(Thread* thread, RawStr str) {
-  char* str_end = nullptr;
-  char* c_str = str.toCStr();
-  double result = std::strtod(c_str, &str_end);
-  std::free(c_str);
-
-  // Overflow, return infinity or negative infinity.
-  if (result == HUGE_VAL) {
-    return thread->runtime()->newFloat(std::numeric_limits<double>::infinity());
-  }
-  if (result == -HUGE_VAL) {
-    return thread->runtime()->newFloat(
-        -std::numeric_limits<double>::infinity());
-  }
-
-  // No conversion occurred, the string was not a valid float.
-  if (c_str == str_end) {
-    return thread->raiseWithFmt(LayoutId::kValueError,
-                                "could not convert string to float");
-  }
-  return thread->runtime()->newFloat(result);
-}
 
 RawObject FloatBuiltins::dunderAbs(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
@@ -508,31 +434,6 @@ RawObject FloatBuiltins::dunderNeg(Thread* thread, Frame* frame, word nargs) {
   }
   Float self(&scope, floatUnderlying(thread, self_obj));
   return runtime->newFloat(-self.value());
-}
-
-RawObject FloatBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Object obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfType(*obj)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "float.__new__(X): X is not a type object");
-  }
-  Type type(&scope, *obj);
-  if (type.builtinBase() != LayoutId::kFloat) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError, "float.__new__(X): X is not a subtype of float");
-  }
-
-  // Handle subclasses
-  if (!type.isBuiltin()) {
-    Layout type_layout(&scope, type.instanceLayout());
-    UserFloatBase instance(&scope, runtime->newInstance(type_layout));
-    instance.setValue(floatFromObject(thread, frame, nargs));
-    return *instance;
-  }
-  return floatFromObject(thread, frame, nargs);
 }
 
 RawObject FloatBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {

@@ -39,7 +39,6 @@ class FloatBuiltins
   static RawObject dunderLt(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderMul(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNeg(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderPow(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderRound(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderRtrueDiv(Thread* thread, Frame* frame, word nargs);
@@ -51,9 +50,6 @@ class FloatBuiltins
   static const BuiltinAttribute kAttributes[];
 
  private:
-  static RawObject floatFromObject(Thread* thread, Frame* frame, word nargs);
-  static RawObject floatFromString(Thread* thread, RawStr str);
-
   DISALLOW_IMPLICIT_CONSTRUCTORS(FloatBuiltins);
 };
 

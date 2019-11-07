@@ -296,6 +296,11 @@ def _float_check(obj):
 
 
 @_patch
+def _float_checkexact(obj):
+    pass
+
+
+@_patch
 def _float_divmod(number, divisor):
     pass
 
@@ -309,6 +314,21 @@ def _float_format(
 
 @_patch
 def _float_guard(obj):
+    pass
+
+
+@_patch
+def _float_new_from_byteslike(cls, obj):
+    pass
+
+
+@_patch
+def _float_new_from_float(cls, obj):
+    pass
+
+
+@_patch
+def _float_new_from_str(cls, obj):
     pass
 
 

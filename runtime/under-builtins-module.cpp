@@ -129,9 +129,13 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderDictUpdate, underDictUpdate},
     {SymbolId::kUnderDivmod, underDivmod},
     {SymbolId::kUnderFloatCheck, underFloatCheck},
+    {SymbolId::kUnderFloatCheckExact, underFloatCheckExact},
     {SymbolId::kUnderFloatDivmod, underFloatDivmod},
     {SymbolId::kUnderFloatFormat, underFloatFormat},
     {SymbolId::kUnderFloatGuard, underFloatGuard},
+    {SymbolId::kUnderFloatNewFromByteslike, underFloatNewFromByteslike},
+    {SymbolId::kUnderFloatNewFromFloat, underFloatNewFromFloat},
+    {SymbolId::kUnderFloatNewFromStr, underFloatNewFromStr},
     {SymbolId::kUnderFloatSignbit, underFloatSignbit},
     {SymbolId::kUnderFrozenSetCheck, underFrozenSetCheck},
     {SymbolId::kUnderFrozenSetGuard, underFrozenSetGuard},
@@ -295,6 +299,7 @@ const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
     SymbolId::kUnderDictGuard,
     SymbolId::kUnderDictLen,
     SymbolId::kUnderFloatCheck,
+    SymbolId::kUnderFloatCheckExact,
     SymbolId::kUnderFloatGuard,
     SymbolId::kUnderFrozenSetCheck,
     SymbolId::kUnderFrozenSetGuard,
@@ -1680,6 +1685,12 @@ RawObject UnderBuiltinsModule::underFloatCheck(Thread* thread, Frame* frame,
   return Bool::fromBool(thread->runtime()->isInstanceOfFloat(args.get(0)));
 }
 
+RawObject UnderBuiltinsModule::underFloatCheckExact(Thread*, Frame* frame,
+                                                    word nargs) {
+  Arguments args(frame, nargs);
+  return Bool::fromBool(args.get(0).isFloat());
+}
+
 static double floatDivmod(double x, double y, double* remainder) {
   double mod = std::fmod(x, y);
   double div = (x - mod) / y;
@@ -1764,6 +1775,66 @@ RawObject UnderBuiltinsModule::underFloatGuard(Thread* thread, Frame* frame,
     return NoneType::object();
   }
   return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kFloat);
+}
+
+static RawObject floatNew(Thread* thread, const Type& type, RawObject flt) {
+  DCHECK(flt.isFloat(), "unexpected type when creating float");
+  if (type.isBuiltin()) return flt;
+  HandleScope scope(thread);
+  Layout type_layout(&scope, type.instanceLayout());
+  UserFloatBase instance(&scope, thread->runtime()->newInstance(type_layout));
+  instance.setValue(flt);
+  return *instance;
+}
+
+RawObject UnderBuiltinsModule::underFloatNewFromByteslike(Thread* /* thread */,
+                                                          Frame* /* frame */,
+                                                          word /* nargs */) {
+  // TODO(T57022841): follow full CPython conversion for bytes-like objects
+  UNIMPLEMENTED("float.__new__ from byteslike");
+}
+
+RawObject UnderBuiltinsModule::underFloatNewFromFloat(Thread* thread,
+                                                      Frame* frame,
+                                                      word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Type type(&scope, args.get(0));
+  return floatNew(thread, type, args.get(1));
+}
+
+RawObject UnderBuiltinsModule::underFloatNewFromStr(Thread* thread,
+                                                    Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Type type(&scope, args.get(0));
+  Object arg(&scope, args.get(1));
+  Str str(&scope, strUnderlying(thread, arg));
+
+  // TODO(T57022841): follow full CPython conversion for strings
+  char* str_end = nullptr;
+  unique_c_ptr<char> c_str(str.toCStr());
+  double result = std::strtod(c_str.get(), &str_end);
+
+  // Overflow, return infinity or negative infinity.
+  if (result == HUGE_VAL) {
+    return floatNew(
+        thread, type,
+        thread->runtime()->newFloat(std::numeric_limits<double>::infinity()));
+  }
+  if (result == -HUGE_VAL) {
+    return floatNew(
+        thread, type,
+        thread->runtime()->newFloat(-std::numeric_limits<double>::infinity()));
+  }
+
+  // Conversion was incomplete; the string was not a valid float.
+  word expected_length = str.charLength();
+  if (expected_length == 0 || str_end - c_str.get() != expected_length) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "could not convert string to float");
+  }
+  return floatNew(thread, type, thread->runtime()->newFloat(result));
 }
 
 RawObject UnderBuiltinsModule::underFloatSignbit(Thread* thread, Frame* frame,

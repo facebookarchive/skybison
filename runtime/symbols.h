@@ -228,9 +228,13 @@ class Runtime;
   V(UnderFd, "_fd")                                                            \
   V(UnderFindAndLoad, "_find_and_load")                                        \
   V(UnderFloatCheck, "_float_check")                                           \
+  V(UnderFloatCheckExact, "_float_checkexact")                                 \
   V(UnderFloatDivmod, "_float_divmod")                                         \
   V(UnderFloatFormat, "_float_format")                                         \
   V(UnderFloatGuard, "_float_guard")                                           \
+  V(UnderFloatNewFromByteslike, "_float_new_from_byteslike")                   \
+  V(UnderFloatNewFromFloat, "_float_new_from_float")                           \
+  V(UnderFloatNewFromStr, "_float_new_from_str")                               \
   V(UnderFloatSignbit, "_float_signbit")                                       \
   V(UnderFrozenImportlib, "_frozen_importlib")                                 \
   V(UnderFrozenImportlibExternal, "_frozen_importlib_external")                \

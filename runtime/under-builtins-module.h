@@ -95,9 +95,17 @@ class UnderBuiltinsModule {
   static RawObject underDictSetItem(Thread* thread, Frame* frame, word nargs);
   static RawObject underDivmod(Thread* thread, Frame* frame, word nargs);
   static RawObject underFloatCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underFloatCheckExact(Thread* thread, Frame* frame,
+                                        word nargs);
   static RawObject underFloatDivmod(Thread* thread, Frame* frame, word nargs);
   static RawObject underFloatFormat(Thread* thread, Frame* frame, word nargs);
   static RawObject underFloatGuard(Thread* thread, Frame* frame, word nargs);
+  static RawObject underFloatNewFromByteslike(Thread* thread, Frame* frame,
+                                              word nargs);
+  static RawObject underFloatNewFromFloat(Thread* thread, Frame* frame,
+                                          word nargs);
+  static RawObject underFloatNewFromStr(Thread* thread, Frame* frame,
+                                        word nargs);
   static RawObject underFloatSignbit(Thread* thread, Frame* frame, word nargs);
   static RawObject underFrozenSetCheck(Thread* thread, Frame* frame,
                                        word nargs);
