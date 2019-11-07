@@ -4230,8 +4230,9 @@ inline void RawSmallStr::copyTo(byte* dst, word char_length) const {
 inline void RawSmallStr::copyToStartAt(byte* dst, word char_length,
                                        word char_start) const {
   DCHECK_BOUND(char_start, charLength());
-  DCHECK_BOUND(char_start + char_length, charLength());
-  for (word i = 0; i < char_length; ++i) {
+  word char_end = char_start + char_length;
+  DCHECK_BOUND(char_end, charLength());
+  for (word i = char_start; i < char_end; ++i) {
     *dst++ = charAt(i);
   }
 }

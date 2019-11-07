@@ -816,22 +816,38 @@ TEST_F(StringTest, CompareLargeStrCStrLatin1) {
   EXPECT_EQ(large_latin1.compareCStr("\xBClarge str"), 1);
 }
 
-TEST_F(StringTest, CopyToStartAtCopiesBytes) {
+TEST_F(StringTest, CopyToStartAtWithLargeStrCopiesBytes) {
   HandleScope scope(thread_);
-  Str small(&scope, runtime_.newStrFromCStr("foo"));
-  Str large(&scope, runtime_.newStrFromCStr("Hello world!"));
+  Str str(&scope, runtime_.newStrFromCStr("Hello world!"));
+
+  byte actual0[5];
+  str.copyToStartAt(actual0, 5, 3);
+  EXPECT_EQ(std::memcmp(actual0, "lo", 2), 0);
+
+  byte actual1[3];
+  str.copyToStartAt(actual1, 3, 4);
+  EXPECT_EQ(std::memcmp(actual1, "o w", 3), 0);
+
+  // zero-sized copies should do nothing.
+  str.copyToStartAt(nullptr, 0, 0);
+  str.copyToStartAt(nullptr, 0, 12);
+}
+
+TEST_F(StringTest, CopyToStartAtWithSmallStrCopiesBytes) {
+  HandleScope scope(thread_);
+  Str str(&scope, SmallStr::fromCStr("bar"));
 
   byte actual0[3];
-  small.copyToStartAt(actual0, 3, 0);
-  EXPECT_EQ(std::memcmp(actual0, "foo", 3), 0);
+  str.copyToStartAt(actual0, 3, 0);
+  EXPECT_EQ(std::memcmp(actual0, "bar", 3), 0);
 
-  byte actual1[5];
-  large.copyToStartAt(actual1, 5, 3);
-  EXPECT_EQ(std::memcmp(actual1, "lo", 2), 0);
+  byte actual1[2];
+  str.copyToStartAt(actual1, 2, 1);
+  EXPECT_EQ(std::memcmp(actual1, "ar", 2), 0);
 
-  byte actual2[3];
-  large.copyToStartAt(actual2, 3, 4);
-  EXPECT_EQ(std::memcmp(actual2, "o w", 3), 0);
+  // zero-sized copies should do nothing.
+  str.copyToStartAt(nullptr, 0, 0);
+  str.copyToStartAt(nullptr, 0, 3);
 }
 
 TEST(SmallStrTest, Tests) {
