@@ -354,8 +354,7 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
       Dict dict(&scope, runtime->newDict());
       List saved_keyword_list(&scope, runtime->newList());
       List saved_values(&scope, runtime->newList());
-      word formal_parm_size = code.totalArgs();
-      DCHECK(varnames.length() >= formal_parm_size,
+      DCHECK(varnames.length() >= expected_args,
              "varnames must be greater than or equal to positional args");
       RawObject* p = frame->valueStackTop() + (num_keyword_args - 1);
       word posonlyargcount = code.posonlyargcount();
@@ -364,7 +363,7 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
         Object value(&scope, *(p - i));
         word result = findName(thread, posonlyargcount, key, varnames);
         if (result < 0) return Error::exception();
-        if (result < formal_parm_size) {
+        if (result < expected_args) {
           // Got a match, stash pair for future restoration on the stack
           runtime->listAdd(thread, saved_keyword_list, key);
           runtime->listAdd(thread, saved_values, value);

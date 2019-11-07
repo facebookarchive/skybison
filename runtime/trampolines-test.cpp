@@ -2196,4 +2196,26 @@ init()
                             "name 'action_class' is not defined"));
 }
 
+TEST_F(TrampolinesTest, CallFunctionWithParameterInVarargname) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+def test(*args, **kwargs):
+    return kwargs['args']
+
+result = test(args=5)
+)")
+                   .isError());
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result"), 5));
+}
+
+TEST_F(TrampolinesTest, CallFunctionWithPositionalArgAndParameterInVarargname) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+def test(pos, *args, **kwargs):
+    return kwargs['args']
+
+result = test(1, args=5)
+)")
+                   .isError());
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result"), 5));
+}
+
 }  // namespace py
