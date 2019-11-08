@@ -4376,8 +4376,19 @@ class str(bootstrap=True):
     def casefold(self):
         _unimplemented()
 
-    def center(self, width, fillchar=" "):
-        _unimplemented()
+    def center(self, width: int, fillchar: str = " ") -> str:
+        _str_guard(self)
+        width = _index(width)
+        if not _str_check(fillchar):
+            raise TypeError(
+                f"center() argument 2 must be str, not {_type(fillchar).__name__}"
+            )
+        if _str_len(fillchar) != 1:
+            raise TypeError("The fill character must be exactly one character long")
+        fill = width - _str_len(self)
+        fill_left = (fill >> 1) + (fill & width & 1)
+        fill_right = fill - fill_left
+        return fillchar * fill_left + self + fillchar * fill_right
 
     def count(self, sub, start=None, end=None):
         _str_guard(self)
@@ -4489,8 +4500,16 @@ class str(bootstrap=True):
             raise TypeError("can only join an iterable")
         return _str_join(self, [*it])
 
-    def ljust(self, width, fillchar):
-        _unimplemented()
+    def ljust(self, width: int, fillchar: str = " ") -> str:
+        _str_guard(self)
+        width = _index(width)
+        if not _str_check(fillchar):
+            raise TypeError(
+                f"rjust() argument 2 must be str, not {_type(fillchar).__name__}"
+            )
+        if _str_len(fillchar) != 1:
+            raise TypeError("The fill character must be exactly one character long")
+        return self + fillchar * (width - _str_len(self))
 
     def lower(self):
         pass
@@ -4537,8 +4556,16 @@ class str(bootstrap=True):
     def rindex(self, sub, start=_Unbound, end=_Unbound):
         _unimplemented()
 
-    def rjust(self, width, fillchar=_Unbound):
-        _unimplemented()
+    def rjust(self, width: int, fillchar: str = " ") -> str:
+        _str_guard(self)
+        width = _index(width)
+        if not _str_check(fillchar):
+            raise TypeError(
+                f"rjust() argument 2 must be str, not {_type(fillchar).__name__}"
+            )
+        if _str_len(fillchar) != 1:
+            raise TypeError("The fill character must be exactly one character long")
+        return fillchar * (width - _str_len(self)) + self
 
     def rpartition(self, sep):
         _str_guard(self)

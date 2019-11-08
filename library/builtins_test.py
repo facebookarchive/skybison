@@ -6764,6 +6764,37 @@ class StrTests(unittest.TestCase):
             str(context.exception),
         )
 
+    def test_center_returns_justified_string(self):
+        self.assertEqual(str.center("abc", -1), "abc")
+        self.assertEqual(str.center("abc", 0), "abc")
+        self.assertEqual(str.center("abc", 1), "abc")
+        self.assertEqual(str.center("abc", 2), "abc")
+        self.assertEqual(str.center("abc", 3), "abc")
+        self.assertEqual(str.center("abc", 4), "abc ")
+        self.assertEqual(str.center("abc", 5), " abc ")
+        self.assertEqual(str.center("abc", 6), " abc  ")
+        self.assertEqual(str.center("abc", 7), "  abc  ")
+        self.assertEqual(str.center("abc", 8), "  abc   ")
+        self.assertEqual(str.center("", 4), "    ")
+        self.assertEqual(str.center("\t \n", 6), " \t \n  ")
+
+    def test_center_with_custom_fillchar_returns_str(self):
+        self.assertEqual(str.center("ba", 7, "@"), "@@@ba@@")
+        self.assertEqual(
+            str.center("x\U0001f43bx", 6, "\U0001f40d"),
+            "\U0001f40dx\U0001f43bx\U0001f40d\U0001f40d",
+        )
+
+    def test_center_with_fillchar_not_char_raises_type_error(self):
+        with self.assertRaisesRegex(
+            TypeError, "The fill character must be exactly one character long"
+        ):
+            str.center("", 2, "")
+        with self.assertRaisesRegex(
+            TypeError, "The fill character must be exactly one character long"
+        ):
+            str.center("", 2, ",,")
+
     def test_count_with_non_str_self_raises_type_error(self):
         with self.assertRaises(TypeError):
             str.count(None, "foo")
@@ -7207,6 +7238,64 @@ class StrTests(unittest.TestCase):
         elements = C(("p", "q", "r"))
         result = "".join(elements)
         self.assertEqual(result, "abc")
+
+    def test_ljust_returns_justified_string(self):
+        self.assertEqual(str.ljust("abc", -1), "abc")
+        self.assertEqual(str.ljust("abc", 0), "abc")
+        self.assertEqual(str.ljust("abc", 1), "abc")
+        self.assertEqual(str.ljust("abc", 2), "abc")
+        self.assertEqual(str.ljust("abc", 3), "abc")
+        self.assertEqual(str.ljust("abc", 4), "abc ")
+        self.assertEqual(str.ljust("abc", 5), "abc  ")
+        self.assertEqual(str.ljust("abc", 6), "abc   ")
+        self.assertEqual(str.ljust("", 4), "    ")
+        self.assertEqual(str.ljust("\t \n", 5), "\t \n  ")
+
+    def test_ljust_with_custom_fillchar_returns_str(self):
+        self.assertEqual(str.ljust("ba", 8, "@"), "ba@@@@@@")
+        self.assertEqual(
+            str.ljust("x\U0001f43bx", 5, "\U0001f40d"),
+            "x\U0001f43bx\U0001f40d\U0001f40d",
+        )
+
+    def test_ljust_with_fillchar_not_char_raises_type_error(self):
+        with self.assertRaisesRegex(
+            TypeError, "The fill character must be exactly one character long"
+        ):
+            str.ljust("", 2, "")
+        with self.assertRaisesRegex(
+            TypeError, "The fill character must be exactly one character long"
+        ):
+            str.ljust("", 2, ",,")
+
+    def test_rjust_returns_justified_string(self):
+        self.assertEqual(str.rjust("abc", -1), "abc")
+        self.assertEqual(str.rjust("abc", 0), "abc")
+        self.assertEqual(str.rjust("abc", 1), "abc")
+        self.assertEqual(str.rjust("abc", 2), "abc")
+        self.assertEqual(str.rjust("abc", 3), "abc")
+        self.assertEqual(str.rjust("abc", 4), " abc")
+        self.assertEqual(str.rjust("abc", 5), "  abc")
+        self.assertEqual(str.rjust("abc", 6), "   abc")
+        self.assertEqual(str.rjust("", 4), "    ")
+        self.assertEqual(str.rjust("\t \n", 5), "  \t \n")
+
+    def test_rjust_with_custom_fillchar_returns_str(self):
+        self.assertEqual(str.rjust("ba", 8, "@"), "@@@@@@ba")
+        self.assertEqual(
+            str.rjust("x\U0001f43bx", 5, "\U0001f40d"),
+            "\U0001f40d\U0001f40dx\U0001f43bx",
+        )
+
+    def test_rjust_with_fillchar_not_char_raises_type_error(self):
+        with self.assertRaisesRegex(
+            TypeError, "The fill character must be exactly one character long"
+        ):
+            str.rjust("", 2, "")
+        with self.assertRaisesRegex(
+            TypeError, "The fill character must be exactly one character long"
+        ):
+            str.rjust("", 2, ",,")
 
     def test_rpartition_with_non_str_self_raises_type_error(self):
         self.assertRaisesRegex(
