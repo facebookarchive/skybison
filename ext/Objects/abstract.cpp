@@ -878,9 +878,21 @@ PY_EXPORT int PyObject_GetBuffer(PyObject* obj, Py_buffer* view, int flags) {
     buffer = PyByteArray_AsString(obj);
     if (buffer == nullptr) return -1;
     length = PyByteArray_Size(obj);
+  } else if (PyMemoryView_Check(obj)) {
+    UNIMPLEMENTED("PyObject_GetBuffer() for memoryview");
   } else {
-    // TODO(T38246066) call bf_getbuffer type slot.
-    UNIMPLEMENTED("buffer protocol bf_getbuffer()");
+    Thread* thread = Thread::current();
+    HandleScope scope(thread);
+    Object obj_obj(&scope, ApiHandle::fromPyObject(obj)->asObject());
+    Type type(&scope, thread->runtime()->typeOf(*obj_obj));
+    if (type.isBuiltin()) {
+      thread->raiseWithFmt(LayoutId::kTypeError,
+                           "a bytes-like object is required, not '%T'",
+                           &obj_obj);
+      return -1;
+    }
+    // TODO(T38246066) handle subclasses or call bf_getbuffer type slot.
+    UNIMPLEMENTED("subclasses / buffer protocol bf_getbuffer()");
   }
   return PyBuffer_FillInfo(view, obj, buffer, length, /*readonly=*/1, flags);
 }

@@ -1714,6 +1714,15 @@ TEST_F(AbstractExtensionApiTest, PyObjectGetBufferWithByteArrayReturnsBuffer) {
   EXPECT_EQ(Py_REFCNT(bytearray), old_refcnt);
 }
 
+TEST_F(AbstractExtensionApiTest,
+       PyObjectGetBufferWithIntReturnsRaisesTypeError) {
+  Py_buffer buffer;
+  PyObjectPtr value(PyLong_FromLong(42));
+  EXPECT_EQ(PyObject_GetBuffer(value, &buffer, 0), -1);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
 TEST_F(AbstractExtensionApiTest, CallFunctionObjArgsWithNoArgsReturnsValue) {
   PyRun_SimpleString(R"(
 def func():
