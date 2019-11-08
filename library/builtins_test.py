@@ -7531,32 +7531,34 @@ class StrDunderFormatTests(unittest.TestCase):
 
 class StrModTests(unittest.TestCase):
     def test_empty_format_returns_empty_string(self):
-        self.assertEqual("" % (), "")
+        self.assertEqual(str.__mod__("", ()), "")
 
     def test_simple_string_returns_string(self):
-        self.assertEqual("foo bar (}" % (), "foo bar (}")
+        self.assertEqual(str.__mod__("foo bar (}", ()), "foo bar (}")
 
     def test_with_non_tuple_args_returns_string(self):
-        self.assertEqual("%s" % "foo", "foo")
-        self.assertEqual("%d" % 42, "42")
-        self.assertEqual("%s" % {"foo": "bar"}, "{'foo': 'bar'}")
+        self.assertEqual(str.__mod__("%s", "foo"), "foo")
+        self.assertEqual(str.__mod__("%d", 42), "42")
+        self.assertEqual(str.__mod__("%s", {"foo": "bar"}), "{'foo': 'bar'}")
 
     def test_with_named_args_returns_string(self):
-        self.assertEqual("%(foo)s %(bar)d" % {"foo": "ho", "bar": 42}, "ho 42")
-        self.assertEqual("%()x" % {"": 123}, "7b")
-        self.assertEqual(")%(((()) ()))s(" % {"((()) ())": 99}, ")99(")
-        self.assertEqual("%(%s)s" % {"%s": -5}, "-5")
+        self.assertEqual(
+            str.__mod__("%(foo)s %(bar)d", {"foo": "ho", "bar": 42}), "ho 42"
+        )
+        self.assertEqual(str.__mod__("%()x", {"": 123}), "7b")
+        self.assertEqual(str.__mod__(")%(((()) ()))s(", {"((()) ())": 99}), ")99(")
+        self.assertEqual(str.__mod__("%(%s)s", {"%s": -5}), "-5")
 
     def test_with_custom_mapping_returns_string(self):
         class C:
             def __getitem__(self, key):
                 return "getitem called with " + key
 
-        self.assertEqual("%(foo)s" % C(), "getitem called with foo")
+        self.assertEqual(str.__mod__("%(foo)s", C()), "getitem called with foo")
 
     def test_with_custom_mapping_propagates_errors(self):
         with self.assertRaises(KeyError) as context:
-            "%(foo)s" % {}
+            str.__mod__("%(foo)s", {})
         self.assertEqual(str(context.exception), "'foo'")
 
         class C:
@@ -7564,65 +7566,65 @@ class StrModTests(unittest.TestCase):
                 raise UserWarning()
 
         with self.assertRaises(UserWarning):
-            "%(foo)s" % C()
+            str.__mod__("%(foo)s", C())
 
     def test_without_mapping_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
-            "%(foo)s" % None
+            str.__mod__("%(foo)s", None)
         self.assertEqual(str(context.exception), "format requires a mapping")
         with self.assertRaises(TypeError) as context:
-            "%(foo)s" % "foobar"
+            str.__mod__("%(foo)s", "foobar")
         self.assertEqual(str(context.exception), "format requires a mapping")
         with self.assertRaises(TypeError) as context:
-            "%(foo)s" % ("foobar",)
+            str.__mod__("%(foo)s", ("foobar",))
         self.assertEqual(str(context.exception), "format requires a mapping")
 
     def test_positional_after_named_arg_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
-            "%(foo)s %s" % {"foo": "bar"}
+            str.__mod__("%(foo)s %s", {"foo": "bar"})
         self.assertEqual(
             str(context.exception), "not enough arguments for format string"
         )
 
     def test_mix_named_and_tuple_args_returns_string(self):
-        self.assertEqual("%s %(a)s" % {"a": 77}, "{'a': 77} 77")
+        self.assertEqual(str.__mod__("%s %(a)s", {"a": 77}), "{'a': 77} 77")
 
     def test_mapping_in_tuple_returns_string(self):
-        self.assertEqual("%s" % ({"foo": "bar"},), "{'foo': 'bar'}")
+        self.assertEqual(str.__mod__("%s", ({"foo": "bar"},)), "{'foo': 'bar'}")
 
     def test_c_format_returns_string(self):
-        self.assertEqual("%c" % ("x",), "x")
-        self.assertEqual("%c" % ("\U0001f44d",), "\U0001f44d")
-        self.assertEqual("%c" % (76,), "L")
-        self.assertEqual("%c" % (0x1F40D,), "\U0001f40d")
+        self.assertEqual(str.__mod__("%c", ("x",)), "x")
+        self.assertEqual(str.__mod__("%c", ("\U0001f44d",)), "\U0001f44d")
+        self.assertEqual(str.__mod__("%c", (76,)), "L")
+        self.assertEqual(str.__mod__("%c", (0x1F40D,)), "\U0001f40d")
 
     def test_c_format_with_non_int_returns_string(self):
         class C:
             def __index__(self):
                 return 42
 
-        self.assertEqual("%c" % (C(),), "*")
+        self.assertEqual(str.__mod__("%c", (C(),)), "*")
 
     def test_c_format_raises_overflow_error(self):
         import sys
 
-        maxunicode_range = "range(0x%x)" % (sys.maxunicode + 1)
+        maxunicode_range = str.__mod__("range(0x%x)", (sys.maxunicode + 1))
         with self.assertRaises(OverflowError) as context:
-            "%c" % (sys.maxunicode + 1,)
+            str.__mod__("%c", (sys.maxunicode + 1,))
         self.assertEqual(str(context.exception), f"%c arg not in {maxunicode_range}")
         with self.assertRaises(OverflowError) as context:
-            "%c" % (-1,)
+            str.__mod__("%c", (-1,))
         self.assertEqual(str(context.exception), f"%c arg not in {maxunicode_range}")
 
     def test_c_format_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
-            "%c" % (None,)
+            str.__mod__("%c", (None,))
         self.assertEqual(str(context.exception), f"%c requires int or char")
         with self.assertRaises(TypeError) as context:
-            "%c" % ("ab",)
+            str.__mod__("%c", ("ab",))
         self.assertEqual(str(context.exception), f"%c requires int or char")
         with self.assertRaises(TypeError) as context:
-            "%c" % (123456789012345678901234567890,)
+            str.__mod__("%c", (123456789012345678901234567890,))
         self.assertEqual(str(context.exception), f"%c requires int or char")
 
         class C:
@@ -7630,11 +7632,11 @@ class StrModTests(unittest.TestCase):
                 raise UserWarning()
 
         with self.assertRaises(TypeError) as context:
-            "%c" % (C(),)
+            str.__mod__("%c", (C(),))
         self.assertEqual(str(context.exception), f"%c requires int or char")
 
     def test_s_format_returns_string(self):
-        self.assertEqual("%s" % ("foo",), "foo")
+        self.assertEqual(str.__mod__("%s", ("foo",)), "foo")
 
         class C:
             __repr__ = None
@@ -7642,7 +7644,7 @@ class StrModTests(unittest.TestCase):
             def __str__(self):
                 return "str called"
 
-        self.assertEqual("%s" % (C(),), "str called")
+        self.assertEqual(str.__mod__("%s", (C(),)), "str called")
 
     def test_s_format_propagates_errors(self):
         class C:
@@ -7650,13 +7652,13 @@ class StrModTests(unittest.TestCase):
                 raise UserWarning()
 
         with self.assertRaises(UserWarning):
-            "%s" % (C(),)
+            str.__mod__("%s", (C(),))
 
     def test_r_format_returns_string(self):
-        self.assertEqual("%r" % (42,), "42")
-        self.assertEqual("%r" % ("foo",), "'foo'")
+        self.assertEqual(str.__mod__("%r", (42,)), "42")
+        self.assertEqual(str.__mod__("%r", ("foo",)), "'foo'")
         self.assertEqual(
-            "%r" % ({"foo": "\U0001d4eb\U0001d4ea\U0001d4fb"},),
+            str.__mod__("%r", ({"foo": "\U0001d4eb\U0001d4ea\U0001d4fb"},)),
             "{'foo': '\U0001d4eb\U0001d4ea\U0001d4fb'}",
         )
 
@@ -7666,7 +7668,7 @@ class StrModTests(unittest.TestCase):
 
             __str__ = None
 
-        self.assertEqual("%r" % (C(),), "repr called")
+        self.assertEqual(str.__mod__("%r", (C(),)), "repr called")
 
     def test_r_format_propagates_errors(self):
         class C:
@@ -7674,11 +7676,11 @@ class StrModTests(unittest.TestCase):
                 raise UserWarning()
 
         with self.assertRaises(UserWarning):
-            "%r" % (C(),)
+            str.__mod__("%r", (C(),))
 
     def test_a_format_returns_string(self):
-        self.assertEqual("%a" % (42,), "42")
-        self.assertEqual("%a" % ("foo",), "'foo'")
+        self.assertEqual(str.__mod__("%a", (42,)), "42")
+        self.assertEqual(str.__mod__("%a", ("foo",)), "'foo'")
 
         class C:
             def __repr__(self):
@@ -7686,7 +7688,7 @@ class StrModTests(unittest.TestCase):
 
             __str__ = None
 
-        self.assertEqual("%a" % (C(),), "repr called")
+        self.assertEqual(str.__mod__("%a", (C(),)), "repr called")
         # TODO(T39861344, T38702699): We should have a test with some non-ascii
         # characters here proving that they are escaped. Unfortunately
         # builtins.ascii() does not work in that case yet.
@@ -7697,28 +7699,31 @@ class StrModTests(unittest.TestCase):
                 raise UserWarning()
 
         with self.assertRaises(UserWarning):
-            "%a" % (C(),)
+            str.__mod__("%a", (C(),))
 
     def test_diu_format_returns_string(self):
-        self.assertEqual("%d" % (0,), "0")
-        self.assertEqual("%d" % (-1,), "-1")
-        self.assertEqual("%d" % (42,), "42")
-        self.assertEqual("%i" % (0,), "0")
-        self.assertEqual("%i" % (-1,), "-1")
-        self.assertEqual("%i" % (42,), "42")
-        self.assertEqual("%u" % (0,), "0")
-        self.assertEqual("%u" % (-1,), "-1")
-        self.assertEqual("%u" % (42,), "42")
+        self.assertEqual(str.__mod__("%d", (0,)), "0")
+        self.assertEqual(str.__mod__("%d", (-1,)), "-1")
+        self.assertEqual(str.__mod__("%d", (42,)), "42")
+        self.assertEqual(str.__mod__("%i", (0,)), "0")
+        self.assertEqual(str.__mod__("%i", (-1,)), "-1")
+        self.assertEqual(str.__mod__("%i", (42,)), "42")
+        self.assertEqual(str.__mod__("%u", (0,)), "0")
+        self.assertEqual(str.__mod__("%u", (-1,)), "-1")
+        self.assertEqual(str.__mod__("%u", (42,)), "42")
 
     def test_diu_format_with_largeint_returns_string(self):
         self.assertEqual(
-            "%d" % (-123456789012345678901234567890), "-123456789012345678901234567890"
+            str.__mod__("%d", (-123456789012345678901234567890,)),
+            "-123456789012345678901234567890",
         )
         self.assertEqual(
-            "%i" % (-123456789012345678901234567890), "-123456789012345678901234567890"
+            str.__mod__("%i", (-123456789012345678901234567890,)),
+            "-123456789012345678901234567890",
         )
         self.assertEqual(
-            "%u" % (-123456789012345678901234567890), "-123456789012345678901234567890"
+            str.__mod__("%u", (-123456789012345678901234567890,)),
+            "-123456789012345678901234567890",
         )
 
     def test_diu_format_with_non_int_returns_string(self):
@@ -7729,23 +7734,23 @@ class StrModTests(unittest.TestCase):
             def __index__(self):
                 raise UserWarning()
 
-        self.assertEqual("%d" % (C(),), "42")
-        self.assertEqual("%i" % (C(),), "42")
-        self.assertEqual("%u" % (C(),), "42")
+        self.assertEqual(str.__mod__("%d", (C(),)), "42")
+        self.assertEqual(str.__mod__("%i", (C(),)), "42")
+        self.assertEqual(str.__mod__("%u", (C(),)), "42")
 
     def test_diu_format_raises_typeerrors(self):
         with self.assertRaises(TypeError) as context:
-            "%d" % (None,)
+            str.__mod__("%d", (None,))
         self.assertEqual(
             str(context.exception), "%d format: a number is required, not NoneType"
         )
         with self.assertRaises(TypeError) as context:
-            "%i" % (None,)
+            str.__mod__("%i", (None,))
         self.assertEqual(
             str(context.exception), "%i format: a number is required, not NoneType"
         )
         with self.assertRaises(TypeError) as context:
-            "%u" % (None,)
+            str.__mod__("%u", (None,))
         self.assertEqual(
             str(context.exception), "%u format: a number is required, not NoneType"
         )
@@ -7756,11 +7761,11 @@ class StrModTests(unittest.TestCase):
                 raise UserWarning()
 
         with self.assertRaises(UserWarning):
-            "%d" % (C(),)
+            str.__mod__("%d", (C(),))
         with self.assertRaises(UserWarning):
-            "%i" % (C(),)
+            str.__mod__("%i", (C(),))
         with self.assertRaises(UserWarning):
-            "%u" % (C(),)
+            str.__mod__("%u", (C(),))
 
     def test_diu_format_reraises_typerrors(self):
         class C:
@@ -7768,35 +7773,37 @@ class StrModTests(unittest.TestCase):
                 raise TypeError("foobar")
 
         with self.assertRaises(TypeError) as context:
-            "%d" % (C(),)
+            str.__mod__("%d", (C(),))
         self.assertEqual(
             str(context.exception), "%d format: a number is required, not C"
         )
         with self.assertRaises(TypeError) as context:
-            "%i" % (C(),)
+            str.__mod__("%i", (C(),))
         self.assertEqual(
             str(context.exception), "%i format: a number is required, not C"
         )
         with self.assertRaises(TypeError) as context:
-            "%u" % (C(),)
+            str.__mod__("%u", (C(),))
         self.assertEqual(
             str(context.exception), "%u format: a number is required, not C"
         )
 
     def test_xX_format_returns_string(self):
-        self.assertEqual("%x" % (0,), "0")
-        self.assertEqual("%x" % (-123,), "-7b")
-        self.assertEqual("%x" % (42,), "2a")
-        self.assertEqual("%X" % (0,), "0")
-        self.assertEqual("%X" % (-123,), "-7B")
-        self.assertEqual("%X" % (42,), "2A")
+        self.assertEqual(str.__mod__("%x", (0,)), "0")
+        self.assertEqual(str.__mod__("%x", (-123,)), "-7b")
+        self.assertEqual(str.__mod__("%x", (42,)), "2a")
+        self.assertEqual(str.__mod__("%X", (0,)), "0")
+        self.assertEqual(str.__mod__("%X", (-123,)), "-7B")
+        self.assertEqual(str.__mod__("%X", (42,)), "2A")
 
     def test_xX_format_with_largeint_returns_string(self):
         self.assertEqual(
-            "%x" % (-123456789012345678901234567890), "-18ee90ff6c373e0ee4e3f0ad2"
+            str.__mod__("%x", (-123456789012345678901234567890,)),
+            "-18ee90ff6c373e0ee4e3f0ad2",
         )
         self.assertEqual(
-            "%X" % (-123456789012345678901234567890), "-18EE90FF6C373E0EE4E3F0AD2"
+            str.__mod__("%X", (-123456789012345678901234567890,)),
+            "-18EE90FF6C373E0EE4E3F0AD2",
         )
 
     def test_xX_format_with_non_int_returns_string(self):
@@ -7807,17 +7814,17 @@ class StrModTests(unittest.TestCase):
             def __index__(self):
                 return 77
 
-        self.assertEqual("%x" % (C(),), "4d")
-        self.assertEqual("%X" % (C(),), "4D")
+        self.assertEqual(str.__mod__("%x", (C(),)), "4d")
+        self.assertEqual(str.__mod__("%X", (C(),)), "4D")
 
     def test_xX_format_raises_typeerrors(self):
         with self.assertRaises(TypeError) as context:
-            "%x" % (None,)
+            str.__mod__("%x", (None,))
         self.assertEqual(
             str(context.exception), "%x format: an integer is required, not NoneType"
         )
         with self.assertRaises(TypeError) as context:
-            "%X" % (None,)
+            str.__mod__("%X", (None,))
         self.assertEqual(
             str(context.exception), "%X format: an integer is required, not NoneType"
         )
@@ -7831,9 +7838,9 @@ class StrModTests(unittest.TestCase):
                 raise UserWarning()
 
         with self.assertRaises(UserWarning):
-            "%x" % (C(),)
+            str.__mod__("%x", (C(),))
         with self.assertRaises(UserWarning):
-            "%X" % (C(),)
+            str.__mod__("%X", (C(),))
 
     def test_xX_format_reraises_typerrors(self):
         class C:
@@ -7844,24 +7851,24 @@ class StrModTests(unittest.TestCase):
                 raise TypeError("foobar")
 
         with self.assertRaises(TypeError) as context:
-            "%x" % (C(),)
+            str.__mod__("%x", (C(),))
         self.assertEqual(
             str(context.exception), "%x format: an integer is required, not C"
         )
         with self.assertRaises(TypeError) as context:
-            "%X" % (C(),)
+            str.__mod__("%X", (C(),))
         self.assertEqual(
             str(context.exception), "%X format: an integer is required, not C"
         )
 
     def test_o_format_returns_string(self):
-        self.assertEqual("%o" % (0,), "0")
-        self.assertEqual("%o" % (-123,), "-173")
-        self.assertEqual("%o" % (42,), "52")
+        self.assertEqual(str.__mod__("%o", (0,)), "0")
+        self.assertEqual(str.__mod__("%o", (-123,)), "-173")
+        self.assertEqual(str.__mod__("%o", (42,)), "52")
 
     def test_o_format_with_largeint_returns_string(self):
         self.assertEqual(
-            "%o" % (-123456789012345678901234567890),
+            str.__mod__("%o", (-123456789012345678901234567890)),
             "-143564417755415637016711617605322",
         )
 
@@ -7873,11 +7880,11 @@ class StrModTests(unittest.TestCase):
             def __index__(self):
                 return 77
 
-        self.assertEqual("%o" % (C(),), "115")
+        self.assertEqual(str.__mod__("%o", (C(),)), "115")
 
     def test_o_format_raises_typeerrors(self):
         with self.assertRaises(TypeError) as context:
-            "%o" % (None,)
+            str.__mod__("%o", (None,))
         self.assertEqual(
             str(context.exception), "%o format: an integer is required, not NoneType"
         )
@@ -7891,7 +7898,7 @@ class StrModTests(unittest.TestCase):
                 raise UserWarning()
 
         with self.assertRaises(UserWarning):
-            "%o" % (C(),)
+            str.__mod__("%o", (C(),))
 
     def test_o_format_reraises_typerrors(self):
         class C:
@@ -7902,151 +7909,152 @@ class StrModTests(unittest.TestCase):
                 raise TypeError("foobar")
 
         with self.assertRaises(TypeError) as context:
-            "%o" % (C(),)
+            str.__mod__("%o", (C(),))
         self.assertEqual(
             str(context.exception), "%o format: an integer is required, not C"
         )
 
     def test_f_format_returns_string(self):
-        self.assertEqual("%f" % (0.0,), "0.000000")
-        self.assertEqual("%f" % (-0.0,), "-0.000000")
-        self.assertEqual("%f" % (1.0,), "1.000000")
-        self.assertEqual("%f" % (-1.0,), "-1.000000")
-        self.assertEqual("%f" % (42.125), "42.125000")
+        self.assertEqual(str.__mod__("%f", (0.0,)), "0.000000")
+        self.assertEqual(str.__mod__("%f", (-0.0,)), "-0.000000")
+        self.assertEqual(str.__mod__("%f", (1.0,)), "1.000000")
+        self.assertEqual(str.__mod__("%f", (-1.0,)), "-1.000000")
+        self.assertEqual(str.__mod__("%f", (42.125)), "42.125000")
 
-        self.assertEqual("%f" % (1e3,), "1000.000000")
-        self.assertEqual("%f" % (1e6,), "1000000.000000")
+        self.assertEqual(str.__mod__("%f", (1e3,)), "1000.000000")
+        self.assertEqual(str.__mod__("%f", (1e6,)), "1000000.000000")
         self.assertEqual(
-            "%f" % (1e40,), "10000000000000000303786028427003666890752.000000"
+            str.__mod__("%f", (1e40,)),
+            "10000000000000000303786028427003666890752.000000",
         )
 
     def test_F_format_returns_string(self):
-        self.assertEqual("%F" % (42.125), "42.125000")
+        self.assertEqual(str.__mod__("%F", (42.125)), "42.125000")
 
     def test_e_format_returns_string(self):
-        self.assertEqual("%e" % (0.0,), "0.000000e+00")
-        self.assertEqual("%e" % (-0.0,), "-0.000000e+00")
-        self.assertEqual("%e" % (1.0,), "1.000000e+00")
-        self.assertEqual("%e" % (-1.0,), "-1.000000e+00")
-        self.assertEqual("%e" % (42.125), "4.212500e+01")
+        self.assertEqual(str.__mod__("%e", (0.0,)), "0.000000e+00")
+        self.assertEqual(str.__mod__("%e", (-0.0,)), "-0.000000e+00")
+        self.assertEqual(str.__mod__("%e", (1.0,)), "1.000000e+00")
+        self.assertEqual(str.__mod__("%e", (-1.0,)), "-1.000000e+00")
+        self.assertEqual(str.__mod__("%e", (42.125)), "4.212500e+01")
 
-        self.assertEqual("%e" % (1e3,), "1.000000e+03")
-        self.assertEqual("%e" % (1e6,), "1.000000e+06")
-        self.assertEqual("%e" % (1e40,), "1.000000e+40")
+        self.assertEqual(str.__mod__("%e", (1e3,)), "1.000000e+03")
+        self.assertEqual(str.__mod__("%e", (1e6,)), "1.000000e+06")
+        self.assertEqual(str.__mod__("%e", (1e40,)), "1.000000e+40")
 
     def test_E_format_returns_string(self):
-        self.assertEqual("%E" % (1.0,), "1.000000E+00")
+        self.assertEqual(str.__mod__("%E", (1.0,)), "1.000000E+00")
 
     def test_g_format_returns_string(self):
-        self.assertEqual("%g" % (0.0,), "0")
-        self.assertEqual("%g" % (-1.0,), "-1")
-        self.assertEqual("%g" % (0.125,), "0.125")
-        self.assertEqual("%g" % (3.5,), "3.5")
+        self.assertEqual(str.__mod__("%g", (0.0,)), "0")
+        self.assertEqual(str.__mod__("%g", (-1.0,)), "-1")
+        self.assertEqual(str.__mod__("%g", (0.125,)), "0.125")
+        self.assertEqual(str.__mod__("%g", (3.5,)), "3.5")
 
     def test_eEfFgG_format_with_inf_returns_string(self):
-        self.assertEqual("%e" % (float("inf"),), "inf")
-        self.assertEqual("%E" % (float("inf"),), "INF")
-        self.assertEqual("%f" % (float("inf"),), "inf")
-        self.assertEqual("%F" % (float("inf"),), "INF")
-        self.assertEqual("%g" % (float("inf"),), "inf")
-        self.assertEqual("%G" % (float("inf"),), "INF")
+        self.assertEqual(str.__mod__("%e", (float("inf"),)), "inf")
+        self.assertEqual(str.__mod__("%E", (float("inf"),)), "INF")
+        self.assertEqual(str.__mod__("%f", (float("inf"),)), "inf")
+        self.assertEqual(str.__mod__("%F", (float("inf"),)), "INF")
+        self.assertEqual(str.__mod__("%g", (float("inf"),)), "inf")
+        self.assertEqual(str.__mod__("%G", (float("inf"),)), "INF")
 
-        self.assertEqual("%e" % (-float("inf"),), "-inf")
-        self.assertEqual("%E" % (-float("inf"),), "-INF")
-        self.assertEqual("%f" % (-float("inf"),), "-inf")
-        self.assertEqual("%F" % (-float("inf"),), "-INF")
-        self.assertEqual("%g" % (-float("inf"),), "-inf")
-        self.assertEqual("%G" % (-float("inf"),), "-INF")
+        self.assertEqual(str.__mod__("%e", (-float("inf"),)), "-inf")
+        self.assertEqual(str.__mod__("%E", (-float("inf"),)), "-INF")
+        self.assertEqual(str.__mod__("%f", (-float("inf"),)), "-inf")
+        self.assertEqual(str.__mod__("%F", (-float("inf"),)), "-INF")
+        self.assertEqual(str.__mod__("%g", (-float("inf"),)), "-inf")
+        self.assertEqual(str.__mod__("%G", (-float("inf"),)), "-INF")
 
     def test_eEfFgG_format_with_nan_returns_string(self):
-        self.assertEqual("%e" % (float("nan"),), "nan")
-        self.assertEqual("%E" % (float("nan"),), "NAN")
-        self.assertEqual("%f" % (float("nan"),), "nan")
-        self.assertEqual("%F" % (float("nan"),), "NAN")
-        self.assertEqual("%g" % (float("nan"),), "nan")
-        self.assertEqual("%G" % (float("nan"),), "NAN")
+        self.assertEqual(str.__mod__("%e", (float("nan"),)), "nan")
+        self.assertEqual(str.__mod__("%E", (float("nan"),)), "NAN")
+        self.assertEqual(str.__mod__("%f", (float("nan"),)), "nan")
+        self.assertEqual(str.__mod__("%F", (float("nan"),)), "NAN")
+        self.assertEqual(str.__mod__("%g", (float("nan"),)), "nan")
+        self.assertEqual(str.__mod__("%G", (float("nan"),)), "NAN")
 
-        self.assertEqual("%e" % (float("-nan"),), "nan")
-        self.assertEqual("%E" % (float("-nan"),), "NAN")
-        self.assertEqual("%f" % (float("-nan"),), "nan")
-        self.assertEqual("%F" % (float("-nan"),), "NAN")
-        self.assertEqual("%g" % (float("-nan"),), "nan")
-        self.assertEqual("%G" % (float("-nan"),), "NAN")
+        self.assertEqual(str.__mod__("%e", (float("-nan"),)), "nan")
+        self.assertEqual(str.__mod__("%E", (float("-nan"),)), "NAN")
+        self.assertEqual(str.__mod__("%f", (float("-nan"),)), "nan")
+        self.assertEqual(str.__mod__("%F", (float("-nan"),)), "NAN")
+        self.assertEqual(str.__mod__("%g", (float("-nan"),)), "nan")
+        self.assertEqual(str.__mod__("%G", (float("-nan"),)), "NAN")
 
     def test_f_format_with_precision_returns_string(self):
         number = 1.23456789123456789
-        self.assertEqual("%.0f" % number, "1")
-        self.assertEqual("%.1f" % number, "1.2")
-        self.assertEqual("%.2f" % number, "1.23")
-        self.assertEqual("%.3f" % number, "1.235")
-        self.assertEqual("%.4f" % number, "1.2346")
-        self.assertEqual("%.5f" % number, "1.23457")
-        self.assertEqual("%.6f" % number, "1.234568")
-        self.assertEqual("%f" % number, "1.234568")
+        self.assertEqual(str.__mod__("%.0f", number), "1")
+        self.assertEqual(str.__mod__("%.1f", number), "1.2")
+        self.assertEqual(str.__mod__("%.2f", number), "1.23")
+        self.assertEqual(str.__mod__("%.3f", number), "1.235")
+        self.assertEqual(str.__mod__("%.4f", number), "1.2346")
+        self.assertEqual(str.__mod__("%.5f", number), "1.23457")
+        self.assertEqual(str.__mod__("%.6f", number), "1.234568")
+        self.assertEqual(str.__mod__("%f", number), "1.234568")
 
-        self.assertEqual("%.17f" % number, "1.23456789123456789")
-        self.assertEqual("%.25f" % number, "1.2345678912345678934769921")
+        self.assertEqual(str.__mod__("%.17f", number), "1.23456789123456789")
+        self.assertEqual(str.__mod__("%.25f", number), "1.2345678912345678934769921")
         self.assertEqual(
-            "%.60f" % number,
+            str.__mod__("%.60f", number),
             "1.234567891234567893476992139767389744520187377929687500000000",
         )
 
     def test_eEfFgG_format_with_precision_returns_string(self):
         number = 1.23456789123456789
-        self.assertEqual("%.0e" % number, "1e+00")
-        self.assertEqual("%.0E" % number, "1E+00")
-        self.assertEqual("%.0f" % number, "1")
-        self.assertEqual("%.0F" % number, "1")
-        self.assertEqual("%.0g" % number, "1")
-        self.assertEqual("%.0G" % number, "1")
-        self.assertEqual("%.4e" % number, "1.2346e+00")
-        self.assertEqual("%.4E" % number, "1.2346E+00")
-        self.assertEqual("%.4f" % number, "1.2346")
-        self.assertEqual("%.4F" % number, "1.2346")
-        self.assertEqual("%.4g" % number, "1.235")
-        self.assertEqual("%.4G" % number, "1.235")
-        self.assertEqual("%e" % number, "1.234568e+00")
-        self.assertEqual("%E" % number, "1.234568E+00")
-        self.assertEqual("%f" % number, "1.234568")
-        self.assertEqual("%F" % number, "1.234568")
-        self.assertEqual("%g" % number, "1.23457")
-        self.assertEqual("%G" % number, "1.23457")
+        self.assertEqual(str.__mod__("%.0e", number), "1e+00")
+        self.assertEqual(str.__mod__("%.0E", number), "1E+00")
+        self.assertEqual(str.__mod__("%.0f", number), "1")
+        self.assertEqual(str.__mod__("%.0F", number), "1")
+        self.assertEqual(str.__mod__("%.0g", number), "1")
+        self.assertEqual(str.__mod__("%.0G", number), "1")
+        self.assertEqual(str.__mod__("%.4e", number), "1.2346e+00")
+        self.assertEqual(str.__mod__("%.4E", number), "1.2346E+00")
+        self.assertEqual(str.__mod__("%.4f", number), "1.2346")
+        self.assertEqual(str.__mod__("%.4F", number), "1.2346")
+        self.assertEqual(str.__mod__("%.4g", number), "1.235")
+        self.assertEqual(str.__mod__("%.4G", number), "1.235")
+        self.assertEqual(str.__mod__("%e", number), "1.234568e+00")
+        self.assertEqual(str.__mod__("%E", number), "1.234568E+00")
+        self.assertEqual(str.__mod__("%f", number), "1.234568")
+        self.assertEqual(str.__mod__("%F", number), "1.234568")
+        self.assertEqual(str.__mod__("%g", number), "1.23457")
+        self.assertEqual(str.__mod__("%G", number), "1.23457")
 
     def test_g_format_with_flags_and_width_returns_string(self):
-        self.assertEqual("%5g" % 7.0, "    7")
-        self.assertEqual("%5g" % 7.2, "  7.2")
-        self.assertEqual("% 5g" % 7.2, "  7.2")
-        self.assertEqual("%+5g" % 7.2, " +7.2")
-        self.assertEqual("%5g" % -7.2, " -7.2")
-        self.assertEqual("% 5g" % -7.2, " -7.2")
-        self.assertEqual("%+5g" % -7.2, " -7.2")
+        self.assertEqual(str.__mod__("%5g", 7.0), "    7")
+        self.assertEqual(str.__mod__("%5g", 7.2), "  7.2")
+        self.assertEqual(str.__mod__("% 5g", 7.2), "  7.2")
+        self.assertEqual(str.__mod__("%+5g", 7.2), " +7.2")
+        self.assertEqual(str.__mod__("%5g", -7.2), " -7.2")
+        self.assertEqual(str.__mod__("% 5g", -7.2), " -7.2")
+        self.assertEqual(str.__mod__("%+5g", -7.2), " -7.2")
 
-        self.assertEqual("%-5g" % 7.0, "7    ")
-        self.assertEqual("%-5g" % 7.2, "7.2  ")
-        self.assertEqual("%- 5g" % 7.2, " 7.2 ")
-        self.assertEqual("%-+5g" % 7.2, "+7.2 ")
-        self.assertEqual("%-5g" % -7.2, "-7.2 ")
-        self.assertEqual("%- 5g" % -7.2, "-7.2 ")
-        self.assertEqual("%-+5g" % -7.2, "-7.2 ")
+        self.assertEqual(str.__mod__("%-5g", 7.0), "7    ")
+        self.assertEqual(str.__mod__("%-5g", 7.2), "7.2  ")
+        self.assertEqual(str.__mod__("%- 5g", 7.2), " 7.2 ")
+        self.assertEqual(str.__mod__("%-+5g", 7.2), "+7.2 ")
+        self.assertEqual(str.__mod__("%-5g", -7.2), "-7.2 ")
+        self.assertEqual(str.__mod__("%- 5g", -7.2), "-7.2 ")
+        self.assertEqual(str.__mod__("%-+5g", -7.2), "-7.2 ")
 
-        self.assertEqual("%#g" % 7.0, "7.00000")
+        self.assertEqual(str.__mod__("%#g", 7.0), "7.00000")
 
-        self.assertEqual("%#- 7.2g" % float("-nan"), " nan   ")
-        self.assertEqual("%#- 7.2g" % float("inf"), " inf   ")
-        self.assertEqual("%#- 7.2g" % float("-inf"), "-inf   ")
+        self.assertEqual(str.__mod__("%#- 7.2g", float("-nan")), " nan   ")
+        self.assertEqual(str.__mod__("%#- 7.2g", float("inf")), " inf   ")
+        self.assertEqual(str.__mod__("%#- 7.2g", float("-inf")), "-inf   ")
 
     def test_eEfFgG_format_with_flags_and_width_returns_string(self):
         number = 1.23456789123456789
-        self.assertEqual("% -#12.3e" % number, " 1.235e+00  ")
-        self.assertEqual("% -#12.3E" % number, " 1.235E+00  ")
-        self.assertEqual("% -#12.3f" % number, " 1.235      ")
-        self.assertEqual("% -#12.3F" % number, " 1.235      ")
-        self.assertEqual("% -#12.3g" % number, " 1.23       ")
-        self.assertEqual("% -#12.3G" % number, " 1.23       ")
+        self.assertEqual(str.__mod__("% -#12.3e", number), " 1.235e+00  ")
+        self.assertEqual(str.__mod__("% -#12.3E", number), " 1.235E+00  ")
+        self.assertEqual(str.__mod__("% -#12.3f", number), " 1.235      ")
+        self.assertEqual(str.__mod__("% -#12.3F", number), " 1.235      ")
+        self.assertEqual(str.__mod__("% -#12.3g", number), " 1.23       ")
+        self.assertEqual(str.__mod__("% -#12.3G", number), " 1.23       ")
 
     def test_ef_format_with_non_float_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
-            "%e" % (None,)
+            str.__mod__("%e", (None,))
         self.assertEqual(str(context.exception), "must be real number, not NoneType")
 
         class C:
@@ -8054,7 +8062,7 @@ class StrModTests(unittest.TestCase):
                 return "not a float"
 
         with self.assertRaises(TypeError) as context:
-            "%f" % (C(),)
+            str.__mod__("%f", (C(),))
         self.assertEqual(
             str(context.exception), "C.__float__ returned non-float (type str)"
         )
@@ -8065,19 +8073,19 @@ class StrModTests(unittest.TestCase):
                 raise UserWarning()
 
         with self.assertRaises(UserWarning):
-            "%g" % (C(),)
+            str.__mod__("%g", (C(),))
 
     def test_efg_format_with_non_float_returns_string(self):
         class A(float):
             pass
 
-        self.assertEqual("%e" % (A(9.625),), "%e" % (9.625,))
+        self.assertEqual(str.__mod__("%e", (A(9.625),)), str.__mod__("%e", (9.625,)))
 
         class C:
             def __float__(self):
                 return 3.5
 
-        self.assertEqual("%f" % (C(),), "%f" % (3.5,))
+        self.assertEqual(str.__mod__("%f", (C(),)), str.__mod__("%f", (3.5,)))
 
         class D:
             def __float__(self):
@@ -8089,197 +8097,199 @@ class StrModTests(unittest.TestCase):
             message=".*__float__ returned non-float.*",
             module=__name__,
         )
-        self.assertEqual("%g" % (D(),), "%g" % (-12.75,))
+        self.assertEqual(str.__mod__("%g", (D(),)), str.__mod__("%g", (-12.75,)))
 
     def test_percent_format_returns_percent(self):
-        self.assertEqual("%%" % (), "%")
+        self.assertEqual(str.__mod__("%%", ()), "%")
 
     def test_percent_with_flags_percision_and_width_returns_percent(self):
-        self.assertEqual("%0.0%" % (), "%")
-        self.assertEqual("%*.%" % (42,), "%")
-        self.assertEqual("%.*%" % (88,), "%")
-        self.assertEqual("%0#*.42%" % (1234,), "%")
+        self.assertEqual(str.__mod__("%0.0%", ()), "%")
+        self.assertEqual(str.__mod__("%*.%", (42,)), "%")
+        self.assertEqual(str.__mod__("%.*%", (88,)), "%")
+        self.assertEqual(str.__mod__("%0#*.42%", (1234,)), "%")
 
     def test_flags_get_accepted(self):
-        self.assertEqual("%-s" % "", "")
-        self.assertEqual("%+s" % "", "")
-        self.assertEqual("% s" % "", "")
-        self.assertEqual("%#s" % "", "")
-        self.assertEqual("%0s" % "", "")
-        self.assertEqual("%#-#0+ -s" % "", "")
+        self.assertEqual(str.__mod__("%-s", ""), "")
+        self.assertEqual(str.__mod__("%+s", ""), "")
+        self.assertEqual(str.__mod__("% s", ""), "")
+        self.assertEqual(str.__mod__("%#s", ""), "")
+        self.assertEqual(str.__mod__("%0s", ""), "")
+        self.assertEqual(str.__mod__("%#-#0+ -s", ""), "")
 
     def test_string_format_with_width_returns_string(self):
-        self.assertEqual("%5s" % "oh", "   oh")
-        self.assertEqual("%-5s" % "ah", "ah   ")
-        self.assertEqual("%05s" % "uh", "   uh")
-        self.assertEqual("%-# 5s" % "eh", "eh   ")
+        self.assertEqual(str.__mod__("%5s", "oh"), "   oh")
+        self.assertEqual(str.__mod__("%-5s", "ah"), "ah   ")
+        self.assertEqual(str.__mod__("%05s", "uh"), "   uh")
+        self.assertEqual(str.__mod__("%-# 5s", "eh"), "eh   ")
 
-        self.assertEqual("%0s" % "foo", "foo")
-        self.assertEqual("%-0s" % "foo", "foo")
-        self.assertEqual("%10s" % "hello world", "hello world")
-        self.assertEqual("%-10s" % "hello world", "hello world")
+        self.assertEqual(str.__mod__("%0s", "foo"), "foo")
+        self.assertEqual(str.__mod__("%-0s", "foo"), "foo")
+        self.assertEqual(str.__mod__("%10s", "hello world"), "hello world")
+        self.assertEqual(str.__mod__("%-10s", "hello world"), "hello world")
 
     def test_string_format_with_width_star_returns_string(self):
-        self.assertEqual("%*s" % (7, "foo"), "    foo")
-        self.assertEqual("%*s" % (-7, "bar"), "bar    ")
-        self.assertEqual("%-*s" % (7, "baz"), "baz    ")
-        self.assertEqual("%-*s" % (-7, "bam"), "bam    ")
+        self.assertEqual(str.__mod__("%*s", (7, "foo")), "    foo")
+        self.assertEqual(str.__mod__("%*s", (-7, "bar")), "bar    ")
+        self.assertEqual(str.__mod__("%-*s", (7, "baz")), "baz    ")
+        self.assertEqual(str.__mod__("%-*s", (-7, "bam")), "bam    ")
 
     def test_string_format_with_precision_returns_string(self):
-        self.assertEqual("%.3s" % "python", "pyt")
-        self.assertEqual("%.0s" % "python", "")
-        self.assertEqual("%.10s" % "python", "python")
+        self.assertEqual(str.__mod__("%.3s", "python"), "pyt")
+        self.assertEqual(str.__mod__("%.0s", "python"), "")
+        self.assertEqual(str.__mod__("%.10s", "python"), "python")
 
     def test_string_format_with_precision_star_returns_string(self):
-        self.assertEqual("%.*s" % (3, "monty"), "mon")
-        self.assertEqual("%.*s" % (0, "monty"), "")
-        self.assertEqual("%.*s" % (-4, "monty"), "")
+        self.assertEqual(str.__mod__("%.*s", (3, "monty")), "mon")
+        self.assertEqual(str.__mod__("%.*s", (0, "monty")), "")
+        self.assertEqual(str.__mod__("%.*s", (-4, "monty")), "")
 
     def test_string_format_with_width_and_precision_returns_string(self):
-        self.assertEqual("%8.3s" % ("foobar",), "     foo")
-        self.assertEqual("%-8.3s" % ("foobar",), "foo     ")
-        self.assertEqual("%*.3s" % (8, "foobar"), "     foo")
-        self.assertEqual("%*.3s" % (-8, "foobar"), "foo     ")
-        self.assertEqual("%8.*s" % (3, "foobar"), "     foo")
-        self.assertEqual("%-8.*s" % (3, "foobar"), "foo     ")
-        self.assertEqual("%*.*s" % (8, 3, "foobar"), "     foo")
-        self.assertEqual("%-*.*s" % (8, 3, "foobar"), "foo     ")
+        self.assertEqual(str.__mod__("%8.3s", ("foobar",)), "     foo")
+        self.assertEqual(str.__mod__("%-8.3s", ("foobar",)), "foo     ")
+        self.assertEqual(str.__mod__("%*.3s", (8, "foobar")), "     foo")
+        self.assertEqual(str.__mod__("%*.3s", (-8, "foobar")), "foo     ")
+        self.assertEqual(str.__mod__("%8.*s", (3, "foobar")), "     foo")
+        self.assertEqual(str.__mod__("%-8.*s", (3, "foobar")), "foo     ")
+        self.assertEqual(str.__mod__("%*.*s", (8, 3, "foobar")), "     foo")
+        self.assertEqual(str.__mod__("%-*.*s", (8, 3, "foobar")), "foo     ")
 
     def test_s_r_a_c_formats_accept_flags_width_precision_return_strings(self):
-        self.assertEqual("%-*.3s" % (8, "foobar"), "foo     ")
-        self.assertEqual("%-*.3r" % (8, "foobar"), "'fo     ")
-        self.assertEqual("%-*.3a" % (8, "foobar"), "'fo     ")
-        self.assertEqual("%-*.3c" % (8, 94), "^       ")
+        self.assertEqual(str.__mod__("%-*.3s", (8, "foobar")), "foo     ")
+        self.assertEqual(str.__mod__("%-*.3r", (8, "foobar")), "'fo     ")
+        self.assertEqual(str.__mod__("%-*.3a", (8, "foobar")), "'fo     ")
+        self.assertEqual(str.__mod__("%-*.3c", (8, 94)), "^       ")
 
     def test_number_format_with_sign_flag_returns_string(self):
-        self.assertEqual("%+d" % (42,), "+42")
-        self.assertEqual("%+d" % (-42,), "-42")
-        self.assertEqual("% d" % (17,), " 17")
-        self.assertEqual("% d" % (-17,), "-17")
-        self.assertEqual("%+ d" % (42,), "+42")
-        self.assertEqual("%+ d" % (-42,), "-42")
-        self.assertEqual("% +d" % (17,), "+17")
-        self.assertEqual("% +d" % (-17,), "-17")
+        self.assertEqual(str.__mod__("%+d", (42,)), "+42")
+        self.assertEqual(str.__mod__("%+d", (-42,)), "-42")
+        self.assertEqual(str.__mod__("% d", (17,)), " 17")
+        self.assertEqual(str.__mod__("% d", (-17,)), "-17")
+        self.assertEqual(str.__mod__("%+ d", (42,)), "+42")
+        self.assertEqual(str.__mod__("%+ d", (-42,)), "-42")
+        self.assertEqual(str.__mod__("% +d", (17,)), "+17")
+        self.assertEqual(str.__mod__("% +d", (-17,)), "-17")
 
     def test_number_format_alt_flag_returns_string(self):
-        self.assertEqual("%#d" % (23,), "23")
-        self.assertEqual("%#x" % (23,), "0x17")
-        self.assertEqual("%#X" % (23,), "0X17")
-        self.assertEqual("%#o" % (23,), "0o27")
+        self.assertEqual(str.__mod__("%#d", (23,)), "23")
+        self.assertEqual(str.__mod__("%#x", (23,)), "0x17")
+        self.assertEqual(str.__mod__("%#X", (23,)), "0X17")
+        self.assertEqual(str.__mod__("%#o", (23,)), "0o27")
 
     def test_number_format_with_width_returns_string(self):
-        self.assertEqual("%5d" % (123,), "  123")
-        self.assertEqual("%5d" % (-8,), "   -8")
-        self.assertEqual("%-5d" % (123,), "123  ")
-        self.assertEqual("%-5d" % (-8,), "-8   ")
+        self.assertEqual(str.__mod__("%5d", (123,)), "  123")
+        self.assertEqual(str.__mod__("%5d", (-8,)), "   -8")
+        self.assertEqual(str.__mod__("%-5d", (123,)), "123  ")
+        self.assertEqual(str.__mod__("%-5d", (-8,)), "-8   ")
 
-        self.assertEqual("%05d" % (123,), "00123")
-        self.assertEqual("%05d" % (-8,), "-0008")
-        self.assertEqual("%-05d" % (123,), "123  ")
-        self.assertEqual("%0-5d" % (-8,), "-8   ")
+        self.assertEqual(str.__mod__("%05d", (123,)), "00123")
+        self.assertEqual(str.__mod__("%05d", (-8,)), "-0008")
+        self.assertEqual(str.__mod__("%-05d", (123,)), "123  ")
+        self.assertEqual(str.__mod__("%0-5d", (-8,)), "-8   ")
 
-        self.assertEqual("%#7x" % (42,), "   0x2a")
-        self.assertEqual("%#7x" % (-42,), "  -0x2a")
+        self.assertEqual(str.__mod__("%#7x", (42,)), "   0x2a")
+        self.assertEqual(str.__mod__("%#7x", (-42,)), "  -0x2a")
 
-        self.assertEqual("%5d" % (123456,), "123456")
-        self.assertEqual("%-5d" % (-123456,), "-123456")
+        self.assertEqual(str.__mod__("%5d", (123456,)), "123456")
+        self.assertEqual(str.__mod__("%-5d", (-123456,)), "-123456")
 
     def test_number_format_with_precision_returns_string(self):
-        self.assertEqual("%.5d" % (123,), "00123")
-        self.assertEqual("%.5d" % (-123,), "-00123")
-        self.assertEqual("%.5d" % (1234567,), "1234567")
-        self.assertEqual("%#.5x" % (99,), "0x00063")
+        self.assertEqual(str.__mod__("%.5d", (123,)), "00123")
+        self.assertEqual(str.__mod__("%.5d", (-123,)), "-00123")
+        self.assertEqual(str.__mod__("%.5d", (1234567,)), "1234567")
+        self.assertEqual(str.__mod__("%#.5x", (99,)), "0x00063")
 
     def test_number_format_with_width_precision_flags_returns_string(self):
-        self.assertEqual("%8.3d" % (12,), "     012")
-        self.assertEqual("%8.3d" % (-7,), "    -007")
-        self.assertEqual("%05.3d" % (12,), "00012")
-        self.assertEqual("%+05.3d" % (12,), "+0012")
-        self.assertEqual("% 05.3d" % (12,), " 0012")
-        self.assertEqual("% 05.3x" % (19,), " 0013")
+        self.assertEqual(str.__mod__("%8.3d", (12,)), "     012")
+        self.assertEqual(str.__mod__("%8.3d", (-7,)), "    -007")
+        self.assertEqual(str.__mod__("%05.3d", (12,)), "00012")
+        self.assertEqual(str.__mod__("%+05.3d", (12,)), "+0012")
+        self.assertEqual(str.__mod__("% 05.3d", (12,)), " 0012")
+        self.assertEqual(str.__mod__("% 05.3x", (19,)), " 0013")
 
-        self.assertEqual("%-8.3d" % (12,), "012     ")
-        self.assertEqual("%-8.3d" % (-7,), "-007    ")
-        self.assertEqual("%- 8.3d" % (66,), " 066    ")
+        self.assertEqual(str.__mod__("%-8.3d", (12,)), "012     ")
+        self.assertEqual(str.__mod__("%-8.3d", (-7,)), "-007    ")
+        self.assertEqual(str.__mod__("%- 8.3d", (66,)), " 066    ")
 
     def test_width_and_precision_star_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
-            "%*d" % (42,)
+            str.__mod__("%*d", (42,))
         self.assertEqual(
             str(context.exception), "not enough arguments for format string"
         )
         with self.assertRaises(TypeError) as context:
-            "%.*d" % (42,)
+            str.__mod__("%.*d", (42,))
         self.assertEqual(
             str(context.exception), "not enough arguments for format string"
         )
         with self.assertRaises(TypeError) as context:
-            "%*.*d" % (42,)
+            str.__mod__("%*.*d", (42,))
         self.assertEqual(
             str(context.exception), "not enough arguments for format string"
         )
         with self.assertRaises(TypeError) as context:
-            "%*.*d" % (1, 2)
+            str.__mod__("%*.*d", (1, 2))
         self.assertEqual(
             str(context.exception), "not enough arguments for format string"
         )
 
     def test_negative_precision_raises_value_error(self):
         with self.assertRaises(ValueError) as context:
-            "%.-2s" % "foo"
+            str.__mod__("%.-2s", "foo")
         self.assertEqual(
             str(context.exception), "unsupported format character '-' (0x2d) at index 2"
         )
 
     def test_two_specifiers_returns_string(self):
-        self.assertEqual("%s%s" % ("foo", "bar"), "foobar")
-        self.assertEqual(",%s%s" % ("foo", "bar"), ",foobar")
-        self.assertEqual("%s,%s" % ("foo", "bar"), "foo,bar")
-        self.assertEqual("%s%s," % ("foo", "bar"), "foobar,")
-        self.assertEqual(",%s..%s---" % ("foo", "bar"), ",foo..bar---")
-        self.assertEqual(",%s...%s--" % ("foo", "bar"), ",foo...bar--")
-        self.assertEqual(",,%s.%s---" % ("foo", "bar"), ",,foo.bar---")
-        self.assertEqual(",,%s...%s-" % ("foo", "bar"), ",,foo...bar-")
-        self.assertEqual(",,,%s..%s-" % ("foo", "bar"), ",,,foo..bar-")
-        self.assertEqual(",,,%s.%s--" % ("foo", "bar"), ",,,foo.bar--")
+        self.assertEqual(str.__mod__("%s%s", ("foo", "bar")), "foobar")
+        self.assertEqual(str.__mod__(",%s%s", ("foo", "bar")), ",foobar")
+        self.assertEqual(str.__mod__("%s,%s", ("foo", "bar")), "foo,bar")
+        self.assertEqual(str.__mod__("%s%s,", ("foo", "bar")), "foobar,")
+        self.assertEqual(str.__mod__(",%s..%s---", ("foo", "bar")), ",foo..bar---")
+        self.assertEqual(str.__mod__(",%s...%s--", ("foo", "bar")), ",foo...bar--")
+        self.assertEqual(str.__mod__(",,%s.%s---", ("foo", "bar")), ",,foo.bar---")
+        self.assertEqual(str.__mod__(",,%s...%s-", ("foo", "bar")), ",,foo...bar-")
+        self.assertEqual(str.__mod__(",,,%s..%s-", ("foo", "bar")), ",,,foo..bar-")
+        self.assertEqual(str.__mod__(",,,%s.%s--", ("foo", "bar")), ",,,foo.bar--")
 
     def test_mixed_specifiers_with_percents_returns_string(self):
-        self.assertEqual("%%%s%%%s%%" % ("foo", "bar"), "%foo%bar%")
+        self.assertEqual(str.__mod__("%%%s%%%s%%", ("foo", "bar")), "%foo%bar%")
 
     def test_mixed_specifiers_returns_string(self):
-        self.assertEqual("a %d %g %s" % (123, 3.14, "baz"), "a 123 3.14 baz")
+        self.assertEqual(
+            str.__mod__("a %d %g %s", (123, 3.14, "baz")), "a 123 3.14 baz"
+        )
 
     def test_specifier_missing_format_raises_value_error(self):
         with self.assertRaises(ValueError) as context:
-            "%" % ()
+            str.__mod__("%", ())
         self.assertEqual(str(context.exception), "incomplete format")
         with self.assertRaises(ValueError) as context:
-            "%(foo)" % {"foo": None}
+            str.__mod__("%(foo)", {"foo": None})
         self.assertEqual(str(context.exception), "incomplete format")
 
     def test_unknown_specifier_raises_value_error(self):
         with self.assertRaises(ValueError) as context:
-            "try %Y" % (42)
+            str.__mod__("try %Y", (42))
         self.assertEqual(
             str(context.exception), "unsupported format character 'Y' (0x59) at index 5"
         )
 
     def test_too_few_args_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
-            "%s%s" % ("foo",)
+            str.__mod__("%s%s", ("foo",))
         self.assertEqual(
             str(context.exception), "not enough arguments for format string"
         )
 
     def test_too_many_args_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
-            "hello" % (42)
+            str.__mod__("hello", (42))
         self.assertEqual(
             str(context.exception),
             "not all arguments converted during string formatting",
         )
         with self.assertRaises(TypeError) as context:
-            "%d%s" % (1, "foo", 3)
+            str.__mod__("%d%s", (1, "foo", 3))
         self.assertEqual(
             str(context.exception),
             "not all arguments converted during string formatting",
