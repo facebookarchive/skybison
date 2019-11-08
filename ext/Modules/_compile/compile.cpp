@@ -318,24 +318,6 @@ PyAST_CompileEx(mod_ty mod, const char *filename_str, PyCompilerFlags *flags,
 
 }
 
-// TODO Decide what to do with this!!
-#if 0
-static PyCodeObject *
-PyNode_Compile(struct _node *n, const char *filename)
-{
-    PyCodeObject *co = NULL;
-    mod_ty mod;
-    PyArena *arena = PyArena_New();
-    if (!arena)
-        return NULL;
-    mod = PyAST_FromNode(n, NULL, filename, arena);
-    if (mod)
-        co = PyAST_Compile(mod, filename, NULL, arena);
-    PyArena_Free(arena);
-    return co;
-}
-#endif
-
 static void
 compiler_free(struct compiler *c)
 {

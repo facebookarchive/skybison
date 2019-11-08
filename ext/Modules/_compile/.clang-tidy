@@ -1,2 +1,4 @@
-Checks: -*
+Checks: >
+    -*,
+    google-readability-todo,
 HeaderFilterRegex: .*
