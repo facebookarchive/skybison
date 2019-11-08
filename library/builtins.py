@@ -72,6 +72,7 @@ _frozenset_check = _frozenset_check  # noqa: F821
 _frozenset_guard = _frozenset_guard  # noqa: F821
 _function_globals = _function_globals  # noqa: F821
 _function_guard = _function_guard  # noqa: F821
+_getframe_locals = _getframe_locals  # noqa: F821
 _get_member_byte = _get_member_byte  # noqa: F821
 _get_member_char = _get_member_char  # noqa: F821
 _get_member_double = _get_member_double  # noqa: F821
@@ -2336,7 +2337,7 @@ class dict_values(bootstrap=True):
 
 def dir(obj=_Unbound):
     if obj is _Unbound:
-        names = _sys._getframe_locals(1).keys()
+        names = _getframe_locals(1).keys()
     else:
         names = _type(obj).__dir__(obj)
     return sorted(names)
@@ -3447,7 +3448,7 @@ class list_iterator(bootstrap=True):
 
 
 def locals():
-    return _sys._getframe_locals(1)
+    return _getframe_locals(1)
 
 
 class longrange_iterator(bootstrap=True):
@@ -4907,7 +4908,7 @@ class type_proxy(bootstrap=True):
 
 def vars(obj=_Unbound):
     if obj is _Unbound:
-        return _sys._getframe_locals(1)
+        return _getframe_locals(1)
     try:
         return obj.__dict__
     except Exception:

@@ -91,10 +91,6 @@ void writeStderrV(Thread* thread, const char* format, va_list va) {
 const BuiltinMethod SysModule::kBuiltinMethods[] = {
     {SymbolId::kExcInfo, excInfo},
     {SymbolId::kExcepthook, excepthook},
-    {SymbolId::kUnderGetframeCode, underGetframeCode},
-    {SymbolId::kUnderGetframeGlobals, underGetframeGlobals},
-    {SymbolId::kUnderGetframeLineno, underGetframeLineno},
-    {SymbolId::kUnderGetframeLocals, underGetframeLocals},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -122,110 +118,6 @@ RawObject SysModule::excInfo(Thread* thread, Frame* /* frame */,
     result.atPut(2, RawNoneType::object());
   }
   return *result;
-}
-
-class UserVisibleFrameVisitor : public FrameVisitor {
- public:
-  UserVisibleFrameVisitor(word depth) : target_depth_(depth) {}
-
-  bool visit(Frame* frame) {
-    if (current_depth_ == target_depth_) {
-      target_ = frame;
-      return false;
-    }
-    current_depth_++;
-    return true;
-  }
-
-  Frame* target() { return target_; }
-
- private:
-  word current_depth_ = 0;
-  const word target_depth_;
-  Frame* target_ = nullptr;
-};
-
-static Frame* frameAtDepth(Thread* thread, word depth) {
-  UserVisibleFrameVisitor visitor(depth + 1);
-  thread->visitFrames(&visitor);
-  return visitor.target();
-}
-
-RawObject SysModule::underGetframeCode(Thread* thread, Frame* frame,
-                                       word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object depth_obj(&scope, args.get(0));
-  DCHECK(thread->runtime()->isInstanceOfInt(*depth_obj), "depth must be int");
-  Int depth(&scope, intUnderlying(thread, depth_obj));
-  if (depth.isNegative()) {
-    return thread->raiseWithFmt(LayoutId::kValueError, "negative stack level");
-  }
-  frame = frameAtDepth(thread, depth.asWordSaturated());
-  if (frame == nullptr) {
-    return thread->raiseWithFmt(LayoutId::kValueError,
-                                "call stack is not deep enough");
-  }
-  return frame->code();
-}
-
-RawObject SysModule::underGetframeGlobals(Thread* thread, Frame* frame,
-                                          word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object depth_obj(&scope, args.get(0));
-  DCHECK(thread->runtime()->isInstanceOfInt(*depth_obj), "depth must be int");
-  Int depth(&scope, intUnderlying(thread, depth_obj));
-  if (depth.isNegative()) {
-    return thread->raiseWithFmt(LayoutId::kValueError, "negative stack level");
-  }
-  frame = frameAtDepth(thread, depth.asWordSaturated());
-  if (frame == nullptr) {
-    return thread->raiseWithFmt(LayoutId::kValueError,
-                                "call stack is not deep enough");
-  }
-  return frameGlobals(thread, frame);
-}
-
-RawObject SysModule::underGetframeLineno(Thread* thread, Frame* frame,
-                                         word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Object depth_obj(&scope, args.get(0));
-  DCHECK(runtime->isInstanceOfInt(*depth_obj), "depth must be int");
-  Int depth(&scope, intUnderlying(thread, depth_obj));
-  if (depth.isNegative()) {
-    return thread->raiseWithFmt(LayoutId::kValueError, "negative stack level");
-  }
-  frame = frameAtDepth(thread, depth.asWordSaturated());
-  if (frame == nullptr) {
-    return thread->raiseWithFmt(LayoutId::kValueError,
-                                "call stack is not deep enough");
-  }
-  Code code(&scope, frame->code());
-  word pc = frame->virtualPC();
-  word lineno = code.offsetToLineNum(pc);
-  return SmallInt::fromWord(lineno);
-}
-
-RawObject SysModule::underGetframeLocals(Thread* thread, Frame* frame,
-                                         word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Object depth_obj(&scope, args.get(0));
-  DCHECK(runtime->isInstanceOfInt(*depth_obj), "depth must be int");
-  Int depth(&scope, intUnderlying(thread, depth_obj));
-  if (depth.isNegative()) {
-    return thread->raiseWithFmt(LayoutId::kValueError, "negative stack level");
-  }
-  frame = frameAtDepth(thread, depth.asWordSaturated());
-  if (frame == nullptr) {
-    return thread->raiseWithFmt(LayoutId::kValueError,
-                                "call stack is not deep enough");
-  }
-  return frameLocals(thread, frame);
 }
 
 }  // namespace py

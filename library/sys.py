@@ -79,26 +79,6 @@ class _VersionInfo(tuple):
     serial = _structseq_field("serial", 4)
 
 
-@_patch
-def _getframe_code(depth=0):
-    pass
-
-
-@_patch
-def _getframe_globals(depth=0):
-    pass
-
-
-@_patch
-def _getframe_lineno(depth=0) -> int:
-    pass
-
-
-@_patch
-def _getframe_locals(depth: int = 0):
-    pass
-
-
 abiflags = ""
 
 

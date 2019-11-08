@@ -428,6 +428,26 @@ def _get_member_ushort(addr):
 
 
 @_patch
+def _getframe_code(depth):
+    pass
+
+
+@_patch
+def _getframe_globals(depth):
+    pass
+
+
+@_patch
+def _getframe_lineno(depth):
+    pass
+
+
+@_patch
+def _getframe_locals(depth):
+    pass
+
+
+@_patch
 def _instance_delattr(obj, name):
     pass
 
