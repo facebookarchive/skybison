@@ -4,8 +4,7 @@
 import sys
 
 
-_getframe_code = _getframe_code  # noqa: F821
-_getframe_globals = _getframe_globals  # noqa: F821
+_getframe_function = _getframe_function  # noqa: F821
 _getframe_lineno = _getframe_lineno  # noqa: F821
 
 
@@ -304,7 +303,7 @@ def _getcategory(category):
 
 def _is_internal_frame(depth):
     """Signal whether the frame is an internal CPython implementation detail."""
-    code = _getframe_code(depth)
+    code = _getframe_function(depth).__code__
     if isinstance(code, int):
         return False
     filename = code.co_filename
@@ -334,9 +333,10 @@ def warn(message, category=None, stacklevel=1, source=None):
     # Get context information
     try:
         stacklevel = _next_external_frame(stacklevel)
-        globals = _getframe_globals(stacklevel)
+        function = _getframe_function(stacklevel)
+        globals = function.__module_object__.__dict__
         lineno = _getframe_lineno(stacklevel)
-        code = _getframe_code(stacklevel)
+        code = function.__code__
         filename = code.co_filename
     except ValueError:
         globals = {"__name__": "sys"}

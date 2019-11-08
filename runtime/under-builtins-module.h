@@ -115,9 +115,8 @@ class UnderBuiltinsModule {
                                         word nargs);
   static RawObject underFunctionGuard(Thread* thread, Frame* frame, word nargs);
   static RawObject underGc(Thread* thread, Frame* frame, word nargs);
-  static RawObject underGetframeCode(Thread* thread, Frame* frame, word nargs);
-  static RawObject underGetframeGlobals(Thread* thread, Frame* frame,
-                                        word nargs);
+  static RawObject underGetframeFunction(Thread* thread, Frame* frame,
+                                         word nargs);
   static RawObject underGetframeLineno(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underGetframeLocals(Thread* thread, Frame* frame,

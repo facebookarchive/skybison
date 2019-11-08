@@ -19,12 +19,6 @@ const char* Frame::isInvalid() {
   return nullptr;
 }
 
-RawObject frameGlobals(Thread* thread, Frame* frame) {
-  HandleScope scope(thread);
-  Module module(&scope, frame->function().moduleObject());
-  return module.moduleProxy();
-}
-
 RawObject frameLocals(Thread* thread, Frame* frame) {
   HandleScope scope(thread);
   Function function(&scope, frame->function());

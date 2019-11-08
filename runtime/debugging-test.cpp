@@ -182,6 +182,7 @@ TEST_F(DebuggingTests, DumpExtendedInstanceWithOverflowDict) {
   (in-object) "__code__" = <code "name0">
   (in-object) "__doc__" = "const0"
   (in-object) "__module__" = "barmodule"
+  (in-object) "__module_object__" = <module "__main__">
   (in-object) "__name__" = "baz"
   (in-object) "__qualname__" = "footype.baz"
   (in-object) None = {"funcattr0": 4}

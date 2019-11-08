@@ -428,12 +428,7 @@ def _get_member_ushort(addr):
 
 
 @_patch
-def _getframe_code(depth):
-    pass
-
-
-@_patch
-def _getframe_globals(depth):
+def _getframe_function(depth):
     pass
 
 

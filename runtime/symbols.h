@@ -91,6 +91,7 @@ class Runtime;
   V(DunderMatmul, "__matmul__")                                                \
   V(DunderMod, "__mod__")                                                      \
   V(DunderModule, "__module__")                                                \
+  V(DunderModuleObject, "__module_object__")                                   \
   V(DunderMro, "__mro__")                                                      \
   V(DunderMul, "__mul__")                                                      \
   V(DunderName, "__name__")                                                    \
@@ -244,8 +245,7 @@ class Runtime;
   V(UnderFunctionGuard, "_function_guard")                                     \
   V(UnderFunctools, "_functools")                                              \
   V(UnderGc, "_gc")                                                            \
-  V(UnderGetframeCode, "_getframe_code")                                       \
-  V(UnderGetframeGlobals, "_getframe_globals")                                 \
+  V(UnderGetframeFunction, "_getframe_function")                               \
   V(UnderGetframeLineno, "_getframe_lineno")                                   \
   V(UnderGetframeLocals, "_getframe_locals")                                   \
   V(UnderGetMemberByte, "_get_member_byte")                                    \

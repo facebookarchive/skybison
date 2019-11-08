@@ -13,29 +13,50 @@ except ImportError:
 
 @pyro_only
 class UnderBuiltinsTests(unittest.TestCase):
-    def test_getframe_code_with_int_subclass(self):
+    def test_getframe_function_with_int_subclass(self):
         class C(int):
             pass
 
-        code = _builtins._getframe_code(C(0))
-        self.assertEqual(code.co_name, "test_getframe_code_with_int_subclass")
+        def f():
+            return _builtins._getframe_function(C(0))
 
-    def test_getframe_code_returns_self(self):
-        code = _builtins._getframe_code(0)
-        self.assertEqual(code.co_name, "test_getframe_code_returns_self")
+        self.assertEqual(f(), f)
 
-    def test_getframe_code_returns_class_run(self):
-        code = _builtins._getframe_code(1)
-        self.assertEqual(code.co_name, "run")
+    def test_getframe_function_returns_function(self):
+        def f():
+            return _builtins._getframe_function(0)
 
-    def test_getframe_globals_with_int_subclass(self):
-        class C(int):
-            pass
+        self.assertEqual(f(), f)
 
-        self.assertIsInstance(_builtins._getframe_globals(C(0)), builtins.module_proxy)
+    def test_getframe_function_returns_class_body(self):
+        from types import FunctionType
 
-    def test_getframe_globals_returns_module_proxy(self):
-        self.assertIsInstance(_builtins._getframe_globals(0), builtins.module_proxy)
+        class C:
+            result = _builtins._getframe_function(0)
+
+        self.assertIsInstance(C.result, FunctionType)
+        self.assertEqual(C.result.__code__.co_name, "C")
+
+    def test_getframe_function_returns_parent_function(self):
+        def f():
+            return g()
+
+        def g():
+            return h()
+
+        def h():
+            return (
+                _builtins._getframe_function(0),
+                _builtins._getframe_function(1),
+                _builtins._getframe_function(2),
+            )
+
+        self.assertEqual(f(), (h, g, f))
+
+    def test_getframe_function_returns_none(self):
+        with self.assertRaises(ValueError) as context:
+            _builtins._getframe_function(9999)
+        self.assertIn("call stack is not deep enough", str(context.exception))
 
     def test_getframe_lineno_returns_int(self):
         self.assertIsInstance(_builtins._getframe_lineno(0), int)

@@ -69,7 +69,6 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kDunderImport, dunderImport},
     {SymbolId::kExec, exec},
     {SymbolId::kGetattr, getattr},
-    {SymbolId::kGlobals, globals},
     {SymbolId::kHasattr, hasattr},
     {SymbolId::kHash, hash},
     {SymbolId::kHex, hex},
@@ -604,10 +603,6 @@ RawObject BuiltinsModule::getattr(Thread* thread, Frame* frame, word nargs) {
     }
   }
   return *result;
-}
-
-RawObject BuiltinsModule::globals(Thread* thread, Frame* frame, word) {
-  return frameGlobals(thread, frame->previousFrame());
 }
 
 RawObject BuiltinsModule::hasattr(Thread* thread, Frame* frame, word nargs) {

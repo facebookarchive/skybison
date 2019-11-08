@@ -142,8 +142,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderFunctionGlobals, underFunctionGlobals},
     {SymbolId::kUnderFunctionGuard, underFunctionGuard},
     {SymbolId::kUnderGc, underGc},
-    {SymbolId::kUnderGetframeCode, underGetframeCode},
-    {SymbolId::kUnderGetframeGlobals, underGetframeGlobals},
+    {SymbolId::kUnderGetframeFunction, underGetframeFunction},
     {SymbolId::kUnderGetframeLineno, underGetframeLineno},
     {SymbolId::kUnderGetframeLocals, underGetframeLocals},
     {SymbolId::kUnderGetMemberByte, underGetMemberByte},
@@ -1924,8 +1923,8 @@ static Frame* frameAtDepth(Thread* thread, word depth) {
   return visitor.target();
 }
 
-RawObject UnderBuiltinsModule::underGetframeCode(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject UnderBuiltinsModule::underGetframeFunction(Thread* thread,
+                                                     Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object depth_obj(&scope, args.get(0));
@@ -1939,25 +1938,7 @@ RawObject UnderBuiltinsModule::underGetframeCode(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "call stack is not deep enough");
   }
-  return frame->code();
-}
-
-RawObject UnderBuiltinsModule::underGetframeGlobals(Thread* thread,
-                                                    Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object depth_obj(&scope, args.get(0));
-  DCHECK(thread->runtime()->isInstanceOfInt(*depth_obj), "depth must be int");
-  Int depth(&scope, intUnderlying(thread, depth_obj));
-  if (depth.isNegative()) {
-    return thread->raiseWithFmt(LayoutId::kValueError, "negative stack level");
-  }
-  frame = frameAtDepth(thread, depth.asWordSaturated());
-  if (frame == nullptr) {
-    return thread->raiseWithFmt(LayoutId::kValueError,
-                                "call stack is not deep enough");
-  }
-  return frameGlobals(thread, frame);
+  return frame->function();
 }
 
 RawObject UnderBuiltinsModule::underGetframeLineno(Thread* thread, Frame* frame,
