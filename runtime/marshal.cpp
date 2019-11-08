@@ -394,6 +394,7 @@ RawObject Marshal::Reader::readTypeCode() {
   int32_t nlocals = readLong();
   int32_t stacksize = readLong();
   int32_t flags = readLong();
+  CHECK(flags <= Code::Flags::kLast, "unknown flags in code object");
   Object code(&scope, readObject());
   Object consts(&scope, readObject());
   Object names(&scope, readObject());

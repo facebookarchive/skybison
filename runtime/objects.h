@@ -1843,7 +1843,14 @@ class RawCode : public RawInstance {
     kCoroutine = 0x0080,
     kIterableCoroutine = 0x0100,
     kAsyncGenerator = 0x0200,
-    kLast = kAsyncGenerator,
+    kFutureDivision = 0x2000,
+    kFutureAbsoluteImport = 0x4000,
+    kFutureWithStatement = 0x8000,
+    kFuturePrintFunction = 0x10000,
+    kFutureUnicodeLiterals = 0x20000,
+    kFutureBarryAsBdfl = 0x40000,
+    kFutureGeneratorStop = 0x80000,
+    kLast = kFutureGeneratorStop,
   };
 
   // Getters and setters.
@@ -1975,6 +1982,7 @@ class RawFunction : public RawInstance {
     kAsyncGenerator = RawCode::Flags::kAsyncGenerator,
     kSimpleCall = RawCode::Flags::kLast << 1,   // Speeds detection of fast call
     kInterpreted = RawCode::Flags::kLast << 2,  // Executable by the interpreter
+    kLast = kInterpreted,
   };
 
   // Getters and setters.
@@ -2155,9 +2163,10 @@ class RawFunction : public RawInstance {
   void setFlagsAndIntrinsicId(word flags, word id) const;
 
   // The intrinsic ID is stored in the high flag bits.
-  static const int kFlagsBits = 12;
+  static const int kFlagsBits = 31;
   static const int kIntrinsicIdOffset = kFlagsBits;
-  static const word kFlagsMask = (1 << kFlagsBits) - 1;
+  static const word kFlagsMask = (word{1} << kFlagsBits) - 1;
+  static_assert(Flags::kLast < kFlagsMask, "flags overflow");
 };
 
 class RawMappingProxy : public RawInstance {
