@@ -2102,10 +2102,6 @@ bool Interpreter::forIterUpdateCache(Thread* thread, word arg, word index) {
   return false;
 }
 
-static bool isCacheEnabledForFunction(const Function& function) {
-  return Tuple::cast(function.caches()).length() > 0;
-}
-
 static RawObject builtinsModule(Thread* thread, const Module& module) {
   HandleScope scope(thread);
   Object builtins_obj(&scope,
@@ -2125,9 +2121,7 @@ RawObject Interpreter::globalsAt(Thread* thread, const Module& module,
   Object module_result(&scope, moduleValueCellAtByStr(thread, module, name));
   if (module_result.isValueCell()) {
     ValueCell value_cell(&scope, *module_result);
-    if (isCacheEnabledForFunction(function)) {
-      icUpdateGlobalVar(thread, function, cache_index, value_cell);
-    }
+    icUpdateGlobalVar(thread, function, cache_index, value_cell);
     return value_cell.value();
   }
   Module builtins(&scope, builtinsModule(thread, module));
@@ -2135,16 +2129,14 @@ RawObject Interpreter::globalsAt(Thread* thread, const Module& module,
                          moduleValueCellAtByStr(thread, builtins, name));
   if (builtins_result.isValueCell()) {
     ValueCell value_cell(&scope, *builtins_result);
-    if (isCacheEnabledForFunction(function)) {
-      icUpdateGlobalVar(thread, function, cache_index, value_cell);
-      // Set up a placeholder in module to signify that a builtin entry under
-      // the same name is cached.
-      Dict module_dict(&scope, module.dict());
-      NoneType none(&scope, NoneType::object());
-      ValueCell module_value_cell(
-          &scope, dictAtPutInValueCellByStr(thread, module_dict, name, none));
-      module_value_cell.makePlaceholder();
-    }
+    icUpdateGlobalVar(thread, function, cache_index, value_cell);
+    // Set up a placeholder in module to signify that a builtin entry under
+    // the same name is cached.
+    Dict module_dict(&scope, module.dict());
+    NoneType none(&scope, NoneType::object());
+    ValueCell module_value_cell(
+        &scope, dictAtPutInValueCellByStr(thread, module_dict, name, none));
+    module_value_cell.makePlaceholder();
     return value_cell.value();
   }
   return Error::notFound();
@@ -2156,9 +2148,7 @@ void Interpreter::globalsAtPut(Thread* thread, const Module& module,
   HandleScope scope(thread);
   ValueCell module_result(&scope,
                           moduleAtPutByStr(thread, module, name, value));
-  if (isCacheEnabledForFunction(function)) {
-    icUpdateGlobalVar(thread, function, cache_index, module_result);
-  }
+  icUpdateGlobalVar(thread, function, cache_index, module_result);
 }
 
 HANDLER_INLINE Continue Interpreter::doForIterCached(Thread* thread, word arg) {

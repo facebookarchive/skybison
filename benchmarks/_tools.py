@@ -18,7 +18,6 @@ log = logging.getLogger(__name__)
 def run(cmd, **kwargs):
     env = dict(os.environ)
     env["PYTHONHASHSEED"] = "0"
-    env["PYRO_ENABLE_CACHE"] = "1"
     log.info(f">>> {' '.join(cmd)}")
     return subprocess.run(cmd, encoding="UTF-8", env=env, check=True, **kwargs)
 

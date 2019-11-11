@@ -85,7 +85,7 @@ TEST(RuntimeTestNoFixture, AllocateAndCollectGarbage) {
   const word allocation_size = Utils::roundUp(
       array_length + HeapObject::headerSize(array_length), kPointerSize);
   const word total_allocation_size = heap_size * 10;
-  Runtime runtime(heap_size, /*cache_enabled=*/true);
+  Runtime runtime(heap_size);
   ASSERT_TRUE(runtime.heap()->verify());
   for (word i = 0; i < total_allocation_size; i += allocation_size) {
     runtime.newBytes(array_length, 0);

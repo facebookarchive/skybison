@@ -48,15 +48,8 @@ static py::RawObject runFile(py::Thread* thread, const char* filename) {
 }
 
 int main(int argc, const char** argv) {
-  bool cache_enabled = true;
-  const char* enable_cache = std::getenv("PYRO_ENABLE_CACHE");
-  if (enable_cache != nullptr && enable_cache[0] == '0') {
-    cache_enabled = false;
-  }
-  // TODO(T43657667): Add code that can decide what we can cache and remove
-  // this.
   // TODO(T55262429): Reduce the heap size once memory issues are fixed.
-  py::Runtime runtime(512 * kMiB, cache_enabled);
+  py::Runtime runtime(512 * kMiB);
   py::Thread* thread = py::Thread::current();
   runtime.setArgv(thread, argc, argv);
   if (argc < 2) {

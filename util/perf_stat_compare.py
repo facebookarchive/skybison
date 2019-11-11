@@ -16,7 +16,7 @@ def measure_binary(binary, repetitions, events, common_args):
     for event in events:
         events_args += ["-e", event]
     env = dict(os.environ)
-    env.update({"PYRO_ENABLE_CACHE": "1", "PYTHONHASHSEED": "0"})
+    env["PYTHONHASHSEED"] = "0"
 
     return subprocess.run(
         [

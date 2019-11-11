@@ -104,10 +104,8 @@ static const SymbolId kComparisonSelector[] = {
     SymbolId::kDunderLt, SymbolId::kDunderLe, SymbolId::kDunderEq,
     SymbolId::kDunderNe, SymbolId::kDunderGt, SymbolId::kDunderGe};
 
-Runtime::Runtime(word heap_size, bool cache_enabled)
-    : heap_(heap_size),
-      new_value_cell_callback_(this),
-      cache_enabled_(cache_enabled) {
+Runtime::Runtime(word heap_size)
+    : heap_(heap_size), new_value_cell_callback_(this) {
   initializeRandom();
   initializeInterpreter();
   initializeThreads();
@@ -127,8 +125,7 @@ Runtime::Runtime(word heap_size, bool cache_enabled)
   initializeDebugging();
 }
 
-Runtime::Runtime() : Runtime(128 * kMiB, true) {}
-Runtime::Runtime(bool cache_enabled) : Runtime(128 * kMiB, cache_enabled) {}
+Runtime::Runtime() : Runtime(128 * kMiB) {}
 
 Runtime::~Runtime() {
   // TODO(T30392425): This is an ugly and fragile workaround for having multiple
@@ -384,9 +381,7 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
   HandleScope scope(thread);
   Str name_str(&scope, strUnderlying(thread, name_obj));
   Str name_interned(&scope, internStr(thread, name_str));
-  if (thread->runtime()->isCacheEnabled()) {
-    terminateIfUnimplementedTypeAttrCacheInvalidation(thread, name_interned);
-  }
+  terminateIfUnimplementedTypeAttrCacheInvalidation(thread, name_interned);
 
   Type type(&scope, *receiver);
   // TODO(mpage): This needs to handle built-in extension types.
@@ -756,11 +751,9 @@ RawObject Runtime::newFunctionWithCode(Thread* thread, const Object& qualname,
     function.setRewrittenBytecode(mutableBytesFromBytes(thread, bytecode));
     function.setCaches(emptyTuple());
     function.setOriginalArguments(emptyTuple());
-    if (isCacheEnabled()) {
-      // TODO(T45382423): Move this into a separate function to be called by a
-      // relevant opcode during opcode execution.
-      rewriteBytecode(thread, function);
-    }
+    // TODO(T45382423): Move this into a separate function to be called by a
+    // relevant opcode during opcode execution.
+    rewriteBytecode(thread, function);
   }
   return *function;
 }

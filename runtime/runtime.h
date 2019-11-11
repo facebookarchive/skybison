@@ -69,8 +69,7 @@ class Runtime {
   };
 
   Runtime();
-  explicit Runtime(bool cache_enabled);
-  Runtime(word heap_size, bool cache_enabled);
+  Runtime(word heap_size);
   ~Runtime();
 
   RawObject newAsyncGenerator();
@@ -409,8 +408,6 @@ class Runtime {
   }
 
   Symbols* symbols() { return symbols_; }
-
-  bool isCacheEnabled() { return cache_enabled_; }
 
   // Provides a growth strategy for mutable sequences. Grows by a factor of 1.5,
   // scaling up to the requested capacity if the initial factor is insufficient.
@@ -1009,8 +1006,6 @@ class Runtime {
   void (*parser_grammar_free_func_)(void*) = nullptr;
 
   word max_module_index_ = 0;
-
-  bool cache_enabled_ = false;
 
   // atexit C Function
   AtExitFn at_exit_ = nullptr;

@@ -915,9 +915,7 @@ RawObject typeSetAttr(Thread* thread, const Type& type,
   DCHECK(runtime->isInternedStr(thread, name_interned),
          "name must be an interned string");
   // Make sure cache invalidation is correctly done for this.
-  if (runtime->isCacheEnabled()) {
-    terminateIfUnimplementedTypeAttrCacheInvalidation(thread, name_interned);
-  }
+  terminateIfUnimplementedTypeAttrCacheInvalidation(thread, name_interned);
   HandleScope scope(thread);
   if (type.isBuiltin()) {
     Object type_name(&scope, type.name());
