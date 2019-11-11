@@ -42,6 +42,7 @@ _byteslike_startswith = _byteslike_startswith  # noqa: F821
 _classmethod = _classmethod  # noqa: F821
 _classmethod_isabstract = _classmethod_isabstract  # noqa: F821
 _code_guard = _code_guard  # noqa: F821
+_compile_flags_mask = _compile_flags_mask  # noqa: F821
 _complex_check = _complex_check  # noqa: F821
 _complex_imag = _complex_imag  # noqa: F821
 _complex_real = _complex_real  # noqa: F821
@@ -2116,7 +2117,14 @@ class code(bootstrap=True):
 def compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1):
     from _compile import compile
 
-    return compile(source, filename, mode, flags, dont_inherit, optimize)
+    if not dont_inherit:
+        try:
+            code = _getframe_function(1).__code__
+            flags |= code.co_flags & _compile_flags_mask
+        except ValueError:
+            pass  # May have been called on a fresh stackframe.
+
+    return compile(source, filename, mode, flags, optimize)
 
 
 class complex(bootstrap=True):

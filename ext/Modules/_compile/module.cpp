@@ -72,8 +72,7 @@ static const char* source_as_string(PyObject* cmd, const char* funcname,
 
 static PyObject* _compile_compile_impl(PyObject*, PyObject* source,
                                        PyObject* filename, const char* mode,
-                                       int flags, int dont_inherit,
-                                       int optimize) {
+                                       int flags, int optimize) {
   PyCompilerFlags cf;
   cf.cf_flags = flags | PyCF_SOURCE_IS_UTF8;
 
@@ -89,10 +88,6 @@ static PyObject* _compile_compile_impl(PyObject*, PyObject* source,
     PyErr_SetString(PyExc_ValueError, "compile(): invalid optimize value");
     Py_DECREF(filename);
     return nullptr;
-  }
-
-  if (!dont_inherit) {
-    PyEval_MergeCompilerFlags(&cf);
   }
 
   int compile_mode = -1;
@@ -163,23 +158,20 @@ static PyObject* _compile_compile_impl(PyObject*, PyObject* source,
 
 static PyObject* _compile_compile(PyObject* module, PyObject** args,
                                   Py_ssize_t nargs, PyObject* kwnames) {
-  static const char* const _keywords[] = {"source", "filename",     "mode",
-                                          "flags",  "dont_inherit", "optimize",
-                                          nullptr};
-  static _PyArg_Parser _parser = {"OO&s|iii:compile", _keywords, 0};
+  static const char* const _keywords[] = {"source", "filename", "mode",
+                                          "flags",  "optimize", nullptr};
+  static _PyArg_Parser _parser = {"OO&s|ii:compile", _keywords, 0};
   PyObject* source;
   PyObject* filename;
   const char* mode;
   int flags = 0;
-  int dont_inherit = 0;
   int optimize = -1;
   if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser, &source,
                          PyUnicode_FSDecoder, &filename, &mode, &flags,
-                         &dont_inherit, &optimize)) {
+                         &optimize)) {
     return nullptr;
   }
-  return _compile_compile_impl(module, source, filename, mode, flags,
-                               dont_inherit, optimize);
+  return _compile_compile_impl(module, source, filename, mode, flags, optimize);
 }
 
 static PyMethodDef _compile_methods[] = {

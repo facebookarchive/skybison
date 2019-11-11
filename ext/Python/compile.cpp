@@ -28,6 +28,8 @@ struct _mod {
 
 namespace py {
 
+static_assert(Code::kCompileFlagsMask == PyCF_MASK, "flags mismatch");
+
 PY_EXPORT PyObject* _Py_Mangle(PyObject* pyprivateobj, PyObject* pyident) {
   if (pyprivateobj == nullptr) {
     ApiHandle::fromPyObject(pyident)->incref();

@@ -2471,6 +2471,9 @@ void Runtime::createBuiltinsModule(Thread* thread) {
     moduleAtPutById(thread, module, SymbolId::kUnderPatch, value);
     value = moduleAtById(thread, under_builtins, SymbolId::kUnderUnbound);
     moduleAtPutById(thread, module, SymbolId::kUnderUnbound, value);
+    value =
+        moduleAtById(thread, under_builtins, SymbolId::kUnderCompileFlagsMask);
+    moduleAtPutById(thread, module, SymbolId::kUnderCompileFlagsMask, value);
   }
 
   // Add and execute builtins module.
@@ -2676,6 +2679,10 @@ void Runtime::createUnderBuiltinsModule(Thread* thread) {
 
   Object unbound_value(&scope, Unbound::object());
   moduleAtPutById(thread, module, SymbolId::kUnderUnbound, unbound_value);
+
+  Object compile_flags_mask(&scope, newInt(Code::kCompileFlagsMask));
+  moduleAtPutById(thread, module, SymbolId::kUnderCompileFlagsMask,
+                  compile_flags_mask);
 
   // Mark functions that have an intrinsic implementation.
   for (word i = 0;

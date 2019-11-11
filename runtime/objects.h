@@ -1941,6 +1941,12 @@ class RawCode : public RawInstance {
   static const int kLnotabOffset = kNameOffset + kPointerSize;
   static const int kSize = kLnotabOffset + kPointerSize;
 
+  static const word kCompileFlagsMask =
+      Flags::kFutureDivision | Flags::kFutureAbsoluteImport |
+      Flags::kFutureWithStatement | Flags::kFuturePrintFunction |
+      Flags::kFutureUnicodeLiterals | Flags::kFutureBarryAsBdfl |
+      Flags::kFutureGeneratorStop;
+
   RAW_OBJECT_COMMON(Code);
 };
 

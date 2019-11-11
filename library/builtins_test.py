@@ -1855,6 +1855,98 @@ class ContextManagerTests(unittest.TestCase):
         self.assertEqual(f(), 10)
 
 
+class CompileTests(unittest.TestCase):
+    def test_exec_mode_returns_code(self):
+        from types import ModuleType
+        from types import CodeType
+
+        code = compile("result = 42", "", "exec", 0, True, -1)
+        self.assertIsInstance(code, CodeType)
+        module = ModuleType("")
+        exec(code, module.__dict__)
+        self.assertEqual(module.result, 42)
+
+    def test_single_returns_code(self):
+        from types import ModuleType
+        from types import CodeType
+
+        code = compile("result = 8", "", "exec", 0, True, -1)
+        self.assertIsInstance(code, CodeType)
+        module = ModuleType("")
+        exec(code, module.__dict__)
+        self.assertEqual(module.result, 8)
+
+    def test_eval_mode_returns_code(self):
+        from types import CodeType
+
+        code = compile("7 * 9", "", "eval", 0, True, -1)
+        self.assertIsInstance(code, CodeType)
+        # TODO(T54193215): Evaluate code once eval() is available
+
+    def test_with_flags_returns_code(self):
+        from types import CodeType
+        import __future__
+
+        code = compile(
+            "7 <> 9", "", "eval", __future__.CO_FUTURE_BARRY_AS_BDFL, True, -1
+        )
+        self.assertIsInstance(code, CodeType)
+
+    def test_inherits_compile_flags(self):
+        from types import CodeType
+        import __future__
+
+        code = compile(
+            "compile('7 <> 9', '', 'eval')",
+            "",
+            "eval",
+            __future__.CO_FUTURE_BARRY_AS_BDFL,
+            True,
+            -1,
+        )
+        self.assertIsInstance(code, CodeType)
+
+    def test_with_bytes_source_returns_code(self):
+        from types import CodeType
+
+        code = compile(b"42", "", "eval")
+        self.assertIsInstance(code, CodeType)
+
+    def test_with_bytearray_source_returns_code(self):
+        from types import CodeType
+
+        code = compile(bytearray(b"42"), "", "eval")
+        self.assertIsInstance(code, CodeType)
+
+    def test_raises_syntax_error(self):
+        with self.assertRaises(SyntaxError) as context:
+            compile("$*@", "bar", "exec")
+        self.assertEqual(context.exception.filename, "bar")
+        self.assertEqual(context.exception.lineno, 1)
+        with self.assertRaises(SyntaxError):
+            compile("7 <> 9", "", "eval", 0, True, -1)
+
+    def test_statement_with_eval_mode_raises_syntax_error(self):
+        with self.assertRaises(SyntaxError):
+            compile("pass", "", "eval")
+
+    def test_statements_with_single_mode_raises_syntax_error(self):
+        with self.assertRaises(SyntaxError) as context:
+            compile("pass\npass", "", "single")
+        self.assertIn(
+            "multiple statements found while compiling a single statement",
+            str(context.exception),
+        )
+
+    def test_with_invalid_source_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            compile(42, "", "eval")
+
+    def test_with_invalid_mode_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            compile("", "", "not a valid mode")
+
+
 class ComplexTests(unittest.TestCase):
     def test_dunder_hash_with_0_image_returns_float_hash(self):
         self.assertEqual(complex.__hash__(complex(0.0)), float.__hash__(0.0))

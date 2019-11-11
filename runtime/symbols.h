@@ -193,6 +193,7 @@ class Runtime;
   V(UnderCodeGuard, "_code_guard")                                             \
   V(UnderCodecs, "_codecs")                                                    \
   V(UnderCompile, "_compile")                                                  \
+  V(UnderCompileFlagsMask, "_compile_flags_mask")                              \
   V(UnderComplexCheck, "_complex_check")                                       \
   V(UnderComplexImag, "_complex_imag")                                         \
   V(UnderComplexReal, "_complex_real")                                         \
