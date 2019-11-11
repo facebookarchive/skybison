@@ -34,43 +34,31 @@ PY_EXPORT PyObject* PyEval_EvalCode(PyObject* code, PyObject* globals,
     return nullptr;
   }
   HandleScope scope(thread);
-  Object code_obj(&scope, ApiHandle::fromPyObject(code)->asObject());
-  DCHECK(code_obj.isCode(), "code must be a code object");
-  Code code_code(&scope, *code_obj);
-  Object globals_obj(&scope, ApiHandle::fromPyObject(globals)->asObject());
+  Code code_code(&scope, ApiHandle::fromPyObject(code)->asObject());
   Runtime* runtime = thread->runtime();
-  locals = locals != nullptr ? locals : globals;
-  Object locals_obj(&scope, ApiHandle::fromPyObject(locals)->asObject());
+  Object globals_obj(&scope, ApiHandle::fromPyObject(globals)->asObject());
   Object module_obj(&scope, NoneType::object());
-  if (locals_obj.isModuleProxy() && globals_obj == locals_obj) {
-    // Unwrap module proxy. We use locals == globals as a signal to enable some
-    // shortcuts for execution in module scope (e.g., import.c).
-    // They ensure correct behavior even without the module proxy wrapper.
-    Module module(&scope, ModuleProxy::cast(*locals_obj).module());
-    locals_obj = module.dict();
+  if (globals_obj.isModuleProxy()) {
+    module_obj = ModuleProxy::cast(*globals_obj).module();
+  } else if (runtime->isInstanceOfDict(*globals_obj)) {
+    // TODO(T54956257): Create a temporary module object from globals.
+    UNIMPLEMENTED("User-defined globals is unsupported");
+  } else {
+    thread->raiseBadInternalCall();
+    return nullptr;
   }
-  if (!runtime->isInstanceOfDict(*globals_obj)) {
-    if (globals_obj.isModuleProxy()) {
-      Module module(&scope, ModuleProxy::cast(*globals_obj).module());
-      globals_obj = module.dict();
-      module_obj = *module;
-    } else {
+
+  Object implicit_globals(&scope, NoneType::object());
+  if (locals != nullptr && globals != locals) {
+    implicit_globals = ApiHandle::fromPyObject(locals)->asObject();
+    if (!runtime->isMapping(thread, implicit_globals)) {
       thread->raiseBadInternalCall();
       return nullptr;
     }
   }
-  DCHECK(globals_obj.isDict(), "globals_obj should be a Dict");
-  if (module_obj.isNoneType()) {
-    // TODO(T54956257): Create a temporary module object from globals_obj.
-    UNIMPLEMENTED("User-defined globals is unsupported");
-  }
-  if (!runtime->isMapping(thread, locals_obj)) {
-    thread->raiseBadInternalCall();
-    return nullptr;
-  }
   Module module(&scope, *module_obj);
-  Object result(&scope, thread->exec(code_code, module, locals_obj));
-  if (result.isError()) return nullptr;
+  Object result(&scope, thread->exec(code_code, module, implicit_globals));
+  if (result.isErrorException()) return nullptr;
   return ApiHandle::newReference(thread, *result);
 }
 

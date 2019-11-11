@@ -579,8 +579,8 @@ TEST_F(ThreadTest, StoreGlobalReuseValueCell) {
   Module module(&scope, runtime_.findOrCreateMainModule());
   Object value(&scope, runtime_.newInt(99));
   moduleAtPutByStr(thread_, module, name, value);
-  Dict globals(&scope, module.dict());
-  EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, module, globals), 42));
+  Object none(&scope, NoneType::object());
+  EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, module, none), 42));
   EXPECT_TRUE(isIntEqualsWord(moduleAtByStr(thread_, module, name), 42));
 }
 
@@ -2186,9 +2186,9 @@ TEST_F(ThreadTest, ExecSetsMissingDunderBuiltins) {
   code.setCode(runtime_.newBytesWithAll(bytecode));
   code.setFlags(Code::Flags::kNofree);
   Module module(&scope, runtime_.findOrCreateMainModule());
-  Dict globals(&scope, module.dict());
+  Object none(&scope, NoneType::object());
 
-  thread_->exec(code, module, globals);
+  thread_->exec(code, module, none);
 
   Object builtins_module(&scope, runtime_.findModuleById(SymbolId::kBuiltins));
   EXPECT_EQ(moduleAtById(thread_, module, SymbolId::kDunderBuiltins),

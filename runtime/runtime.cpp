@@ -1966,8 +1966,8 @@ RawObject Runtime::executeFrozenModule(const char* buffer,
 RawObject Runtime::executeModule(const Code& code, const Module& module) {
   HandleScope scope;
   DCHECK(code.argcount() == 0, "invalid argcount %ld", code.argcount());
-  Dict globals(&scope, module.dict());
-  return Thread::current()->exec(code, module, globals);
+  Object none(&scope, NoneType::object());
+  return Thread::current()->exec(code, module, none);
 }
 
 static void writeOrAbort(int fd, const void* buffer, ssize_t size) {

@@ -61,7 +61,7 @@ class Thread {
 
   // Runs a code object on the current thread.
   RawObject exec(const Handle<RawCode>& code, const Handle<RawModule>& module,
-                 const Handle<RawObject>& locals);
+                 const Handle<RawObject>& implicit_globals);
 
   // Runs a class body function on the current thread.
   NODISCARD RawObject runClassFunction(const Handle<RawFunction>& function,

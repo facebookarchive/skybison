@@ -467,15 +467,11 @@ RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
       }
     }
   }
-  if (locals.isNoneType()) {
-    locals = *globals_obj;
-  }
-  if (locals.isModuleProxy() && globals_obj == locals) {
-    // Unwrap module proxy. We use locals == globals as a signal to enable some
-    // shortcuts for execution in module scope. They ensure correct behavior
-    // even without the module proxy wrapper.
-    Module module(&scope, ModuleProxy::cast(*locals).module());
-    locals = module.dict();
+  if (globals_obj == locals) {
+    locals = NoneType::object();
+  } else if (!locals.isNoneType() && !runtime->isMapping(thread, locals)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "Expected 'locals' to be a mapping in 'exec'");
   }
   if (!runtime->isInstanceOfDict(*globals_obj)) {
     if (globals_obj.isModuleProxy()) {
@@ -486,10 +482,6 @@ RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
       return thread->raiseWithFmt(LayoutId::kTypeError,
                                   "Expected 'globals' to be dict in 'exec'");
     }
-  }
-  if (!runtime->isMapping(thread, locals)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "Expected 'locals' to be a mapping in 'exec'");
   }
   if (!source_obj.isCode()) {
     Object filename(&scope, runtime->newStrFromCStr("<string>"));

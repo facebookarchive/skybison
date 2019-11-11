@@ -211,12 +211,13 @@ Frame* Thread::popFrameToHeapFrame(const HeapFrame& heap_frame) {
 }
 
 RawObject Thread::exec(const Code& code, const Module& module,
-                       const Object& locals) {
+                       const Object& implicit_globals) {
   HandleScope scope(this);
   Object qualname(&scope, code.name());
 
-  CHECK(!code.hasOptimizedOrNewlocals(),
-        "exec() code must not have CO_OPTIMIZED or CO_NEWLOCALS");
+  if (code.hasOptimizedOrNewlocals()) {
+    UNIMPLEMENTED("exec() on code with CO_OPTIMIZED / CO_NEWLOCALS");
+  }
 
   Runtime* runtime = this->runtime();
   Object builtins_module_obj(
@@ -226,12 +227,6 @@ RawObject Thread::exec(const Code& code, const Module& module,
     DCHECK(!builtins_module_obj.isNoneType(), "invalid builtins module");
     moduleAtPutById(this, module, SymbolId::kDunderBuiltins,
                     builtins_module_obj);
-  }
-  Object implicit_globals(&scope, NoneType::object());
-  // If locals is equals to the backing dict for module in which code is
-  // executed, set implicit globals to None as the signal to skip it.
-  if (module.dict() != *locals) {
-    implicit_globals = *locals;
   }
   Function function(&scope,
                     runtime->newFunctionWithCode(this, qualname, code, module));
