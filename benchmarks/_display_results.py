@@ -19,7 +19,7 @@ def _format_value(value):
 
 
 def build_perf_delta_table(benchmark_results, num_interpreters):
-    # Deltas are done with every interpreter against the last intereter
+    # Deltas are done with every interpreter against the last interpreter
     # Formula: ((new / old) - 1) * 100
     results = []
     benchmark_results.sort(key=lambda x: x["benchmark"], reverse=True)

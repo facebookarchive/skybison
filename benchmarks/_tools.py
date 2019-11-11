@@ -29,8 +29,6 @@ def pin_to_cpus():
     completed_process = run(
         ["cat", "/sys/devices/system/cpu/isolated"], stdout=subprocess.PIPE
     )
-    if completed_process.returncode != 0:
-        return []
     isolated_cpus = completed_process.stdout.strip()
     if isolated_cpus == "":
         return []
@@ -142,9 +140,6 @@ class PerfStat(SequentialPerformanceTool):
                 full_command += ["--event", events.pop(0)]
             full_command += [interpreter.binary, benchmark.filepath()]
             completed_process = run(full_command, stderr=subprocess.PIPE)
-            if completed_process.returncode != 0:
-                log.error(f"Couldn't run: {completed_process.args}")
-                return {}
             perfstat_output = completed_process.stderr.strip()
             results.update(self.parse_perfstat(perfstat_output))
         return results
@@ -196,10 +191,7 @@ class Callgrind(ParallelPerformanceTool):
                 interpreter.binary,
                 benchmark.filepath(),
             ]
-            completed_process = run(command)
-            if completed_process.returncode != 0:
-                log.error(f"Couldn't run: {completed_process.args}")
-                return {}
+            run(command)
 
             with open(temp_file.name) as fd:
                 r = re.compile(r"summary:\s*(.*)")
@@ -242,9 +234,6 @@ class Size(SequentialPerformanceTool):
     def execute(self, interpreter, benchmark):
         command = ["size", "--format=sysv", interpreter.binary]
         completed_process = run(command, stdout=subprocess.PIPE)
-        if completed_process.returncode != 0:
-            log.error(f"Couldn't run: {completed_process.args}")
-            return {}
         size_output = completed_process.stdout.strip()
         size = 0
         r = re.compile(r"([a-zA-Z0-9_.]+)\s+([0-9]+)\s+[0-9a-fA-F]+$")
