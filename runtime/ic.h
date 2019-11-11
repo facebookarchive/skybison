@@ -8,6 +8,9 @@
 
 namespace py {
 
+// Returns true if function is found on a value cell's dependency list.
+bool icDependentIncluded(RawObject dependent, RawObject link);
+
 // Looks for a cache entry for an attribute with a `layout_id` key.
 // Returns the cached value. Returns `ErrorNotFound` if none was found.
 RawObject icLookupAttr(RawTuple caches, word index, LayoutId layout_id);
@@ -28,6 +31,16 @@ RawObject icLookupGlobalVar(RawTuple caches, word index);
 void icUpdateAttr(Thread* thread, const Tuple& caches, word index,
                   LayoutId layout_id, const Object& value, const Str& name,
                   const Function& dependent);
+
+bool icIsCacheEmpty(const Tuple& caches, word index);
+
+void icUpdateAttrModule(Thread* thread, const Tuple& caches, word index,
+                        const Object& receiver, const ValueCell& value_cell,
+                        const Function& dependent);
+
+void icUpdateAttrType(Thread* thread, const Tuple& caches, word index,
+                      const Object& receiver, const Str& selector,
+                      const Object& value, const Function& dependent);
 
 // Insert dependent into dependentLink of the given value_cell. Returns true if
 // depdent didn't exist in dependencyLink, and false otherwise.
@@ -274,6 +287,7 @@ class IcIterator {
   bool isAttrCache() const {
     switch (bytecode_op_.bc) {
       case LOAD_ATTR_CACHED:
+      case LOAD_ATTR_TYPE:
       case LOAD_METHOD_CACHED:
       case STORE_ATTR_CACHED:
       case FOR_ITER_CACHED:
@@ -283,6 +297,8 @@ class IcIterator {
         return false;
     }
   }
+
+  bool isModuleAttrCache() const { return bytecode_op_.bc == LOAD_ATTR_MODULE; }
 
   bool isBinaryOpCache() const {
     switch (bytecode_op_.bc) {
@@ -298,6 +314,10 @@ class IcIterator {
 
   LayoutId layoutId() const {
     DCHECK(isAttrCache(), "should be only called for attribute caches");
+    if (bytecode_op_.bc == LOAD_ATTR_TYPE) {
+      RawType type = key().rawCast<RawType>();
+      return Layout::cast(type.instanceLayout()).id();
+    }
     return static_cast<LayoutId>(SmallInt::cast(key()).value());
   }
 

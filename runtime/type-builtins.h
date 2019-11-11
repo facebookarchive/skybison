@@ -25,6 +25,9 @@ void typeAddDocstring(Thread* thread, const Type& type);
 RawObject typeAt(Thread* thread, const Type& type, const Object& key,
                  word hash);
 
+RawObject typeAtSetLocation(Thread* thread, const Type& type, const Object& key,
+                            word hash, Object* location);
+
 RawObject typeAtByStr(Thread* thread, const Type& type, const Str& name);
 
 RawObject typeAtById(Thread* thread, const Type& type, SymbolId id);
@@ -46,6 +49,10 @@ RawObject typeValues(Thread* thread, const Type& type);
 RawObject typeGetAttribute(Thread* thread, const Type& type,
                            const Object& name_str, word hash);
 
+RawObject typeGetAttributeSetLocation(Thread* thread, const Type& type,
+                                      const Object& name_str, word hash,
+                                      Object* location_out);
+
 // Returns true if the type defines a __set__ method.
 bool typeIsDataDescriptor(Thread* thread, const Type& type);
 
@@ -65,6 +72,10 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
 // `Error::notFound()` if the name was not found.
 RawObject typeLookupInMro(Thread* thread, const Type& type, const Object& key,
                           word hash);
+
+RawObject typeLookupInMroSetLocation(Thread* thread, const Type& type,
+                                     const Object& key, word hash,
+                                     Object* location);
 
 // Looks up `name` in the dict of each entry in type's MRO. Returns
 // `Error::notFound()` if the name was not found.

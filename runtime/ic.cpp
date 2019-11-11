@@ -63,7 +63,53 @@ void icUpdateAttr(Thread* thread, const Tuple& caches, word index,
   }
 }
 
-static bool dependentIncluded(RawObject dependent, RawObject link) {
+bool icIsCacheEmpty(const Tuple& caches, word index) {
+  for (word i = index * kIcPointersPerCache, end = i + kIcPointersPerCache;
+       i < end; i += kIcPointersPerEntry) {
+    if (!caches.at(i + kIcEntryKeyOffset).isNoneType()) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void icUpdateAttrModule(Thread* thread, const Tuple& caches, word index,
+                        const Object& receiver, const ValueCell& value_cell,
+                        const Function& dependent) {
+  DCHECK(icIsCacheEmpty(caches, index), "cache must be empty\n");
+  word i = index * kIcPointersPerCache;
+  caches.atPut(i + kIcEntryKeyOffset, *receiver);
+  caches.atPut(i + kIcEntryValueOffset, *value_cell);
+  RawMutableBytes bytecode =
+      RawMutableBytes::cast(dependent.rewrittenBytecode());
+  word pc = thread->currentFrame()->virtualPC() - kCodeUnitSize;
+  DCHECK(bytecode.byteAt(pc) == LOAD_ATTR_CACHED,
+         "current opcode must be LOAD_ATTR_CACHED");
+  bytecode.byteAtPut(pc, LOAD_ATTR_MODULE);
+  icInsertDependentToValueCellDependencyLink(thread, dependent, value_cell);
+}
+
+void icUpdateAttrType(Thread* thread, const Tuple& caches, word index,
+                      const Object& receiver, const Str& selector,
+                      const Object& value, const Function& dependent) {
+  DCHECK(icIsCacheEmpty(caches, index), "cache must be empty\n");
+  word i = index * kIcPointersPerCache;
+  caches.atPut(i + kIcEntryKeyOffset, *receiver);
+  caches.atPut(i + kIcEntryValueOffset, *value);
+  RawMutableBytes bytecode =
+      RawMutableBytes::cast(dependent.rewrittenBytecode());
+  word pc = thread->currentFrame()->virtualPC() - kCodeUnitSize;
+  DCHECK(bytecode.byteAt(pc) == LOAD_ATTR_CACHED,
+         "current opcode must be LOAD_ATTR_CACHED");
+  bytecode.byteAtPut(pc, LOAD_ATTR_TYPE);
+  HandleScope scope(thread);
+  Type type(&scope, *receiver);
+  if (!type.isSealed()) {
+    insertDependencyForTypeLookupInMro(thread, type, selector, dependent);
+  }
+}
+
+bool icDependentIncluded(RawObject dependent, RawObject link) {
   for (; !link.isNoneType(); link = WeakLink::cast(link).next()) {
     if (WeakLink::cast(link).referent() == dependent) {
       return true;
@@ -77,7 +123,7 @@ bool icInsertDependentToValueCellDependencyLink(Thread* thread,
                                                 const ValueCell& value_cell) {
   HandleScope scope(thread);
   Object link(&scope, value_cell.dependencyLink());
-  if (dependentIncluded(*dependent, *link)) {
+  if (icDependentIncluded(*dependent, *link)) {
     // Already included.
     return false;
   }
@@ -183,7 +229,8 @@ void icDeleteDependentFromInheritingTypes(Thread* thread,
          "icIsCachedAttributeAffectedByUpdatedType must return true");
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Tuple mro(&scope, Type::cast(runtime->typeAt(cached_layout_id)).mro());
+  Type cached_type(&scope, runtime->typeAt(cached_layout_id));
+  Tuple mro(&scope, cached_type.mro());
   for (word i = 0; i < mro.length(); ++i) {
     Type type(&scope, mro.at(i));
     // If a type is sealed, its parents must be sealed.  We can stop the MRO
@@ -500,10 +547,11 @@ void icEvictCache(Thread* thread, const Function& dependent, const Type& type,
       icEvictAttr(thread, it, type, attr, attribute_kind, dependent);
     } else if (it.isBinaryOpCache()) {
       icEvictBinaryOp(thread, it, type, attr, dependent);
-    } else {
-      DCHECK(it.isInplaceOpCache(),
-             "a cache must be for attributes, binops, or inplace-ops");
+    } else if (it.isInplaceOpCache()) {
       icEvictInplaceOp(thread, it, type, attr, dependent);
+    } else {
+      CHECK(it.isModuleAttrCache(),
+            "a cache must be for attributes, binops, or inplace-ops");
     }
   }
 }
@@ -618,26 +666,35 @@ void icInvalidateGlobalVar(Thread* thread, const ValueCell& value_cell) {
         break;
       }
     }
-    DCHECK(name_index_found >= 0,
-           "a dependent function must have cached the value");
-
     bytecode = Function::cast(*function).rewrittenBytecode();
     word bytecode_length = bytecode.length();
     for (word i = 0; i < bytecode_length;) {
       BytecodeOp op = nextBytecodeOp(bytecode, &i);
       Bytecode original_bc = op.bc;
       switch (op.bc) {
+        case LOAD_ATTR_MODULE: {
+          original_bc = LOAD_ATTR_CACHED;
+          word index = op.arg * kIcPointersPerCache;
+          if (caches.at(index + kIcEntryValueOffset) == *value_cell) {
+            caches.atPut(index + kIcEntryKeyOffset, NoneType::object());
+            caches.atPut(index + kIcEntryValueOffset, NoneType::object());
+          }
+          break;
+        }
         case LOAD_GLOBAL_CACHED:
           original_bc = LOAD_GLOBAL;
+          if (op.bc != original_bc && op.arg == name_index_found) {
+            bytecode.byteAtPut(i - 2, original_bc);
+          }
           break;
         case STORE_GLOBAL_CACHED:
           original_bc = STORE_GLOBAL;
+          if (op.bc != original_bc && op.arg == name_index_found) {
+            bytecode.byteAtPut(i - 2, original_bc);
+          }
           break;
         default:
           break;
-      }
-      if (op.bc != original_bc && op.arg == name_index_found) {
-        bytecode.byteAtPut(i - 2, original_bc);
       }
     }
     link = WeakLink::cast(*link).next();

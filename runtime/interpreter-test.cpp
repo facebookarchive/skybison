@@ -3743,10 +3743,51 @@ i = C()
 
   Str name(&scope, runtime_.newStrFromCStr("foo"));
   Object to_cache(&scope, NoneType::object());
+  Interpreter::LoadAttrKind kind;
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::loadAttrSetLocation(thread_, i, name, &to_cache), 42));
+      Interpreter::loadAttrSetLocation(thread_, i, name, &kind, &to_cache),
+      42));
+  EXPECT_EQ(kind, Interpreter::LoadAttrKind::kInstance);
   EXPECT_TRUE(isIntEqualsWord(
       Interpreter::loadAttrWithLocation(thread_, *i, *to_cache), 42));
+}
+
+TEST_F(InterpreterTest, LoadAttrWithModuleSetLocationSetsLocation) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+a_global = 1234
+)")
+                   .isError());
+  Object mod(&scope, findMainModule(&runtime_));
+  Str name(&scope, runtime_.newStrFromCStr("a_global"));
+
+  Object to_cache(&scope, NoneType::object());
+  Interpreter::LoadAttrKind kind;
+  ASSERT_TRUE(isIntEqualsWord(
+      Interpreter::loadAttrSetLocation(thread_, mod, name, &kind, &to_cache),
+      1234));
+  EXPECT_EQ(kind, Interpreter::LoadAttrKind::kModule);
+  EXPECT_EQ(to_cache.layoutId(), LayoutId::kValueCell);
+}
+
+TEST_F(InterpreterTest, LoadAttrWithTypeSetLocationSetsLocation) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C:
+  an_attribute = 1234
+)")
+                   .isError());
+  Object type(&scope, mainModuleAt(&runtime_, "C"));
+
+  Str name(&scope, runtime_.newStrFromCStr("an_attribute"));
+
+  Object to_cache(&scope, NoneType::object());
+  Interpreter::LoadAttrKind kind;
+  ASSERT_TRUE(isIntEqualsWord(
+      Interpreter::loadAttrSetLocation(thread_, type, name, &kind, &to_cache),
+      1234));
+  EXPECT_EQ(kind, Interpreter::LoadAttrKind::kType);
+  EXPECT_EQ(to_cache.layoutId(), LayoutId::kValueCell);
 }
 
 TEST_F(InterpreterTest,
@@ -3763,8 +3804,11 @@ i = C()
 
   Str name(&scope, runtime_.newStrFromCStr("foo"));
   Object to_cache(&scope, NoneType::object());
+  Interpreter::LoadAttrKind kind;
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::loadAttrSetLocation(thread_, i, name, &to_cache), 11));
+      Interpreter::loadAttrSetLocation(thread_, i, name, &kind, &to_cache),
+      11));
+  EXPECT_EQ(kind, Interpreter::LoadAttrKind::kUnknown);
   EXPECT_TRUE(to_cache.isNoneType());
 }
 
@@ -3783,8 +3827,11 @@ i = C()
 
   Str name(&scope, runtime_.newStrFromCStr("bar"));
   Object to_cache(&scope, NoneType::object());
+  Interpreter::LoadAttrKind kind;
+
   EXPECT_TRUE(isIntEqualsWord(
-      Interpreter::loadAttrSetLocation(thread_, i, name, &to_cache), 5));
+      Interpreter::loadAttrSetLocation(thread_, i, name, &kind, &to_cache), 5));
+  EXPECT_EQ(kind, Interpreter::LoadAttrKind::kInstance);
   EXPECT_TRUE(to_cache.isNoneType());
 }
 
@@ -3798,8 +3845,9 @@ obj = object()
 
   Object obj(&scope, mainModuleAt(&runtime_, "obj"));
   Str name(&scope, runtime_.newStrFromCStr("nonexistent_attr"));
+  Interpreter::LoadAttrKind kind;
   EXPECT_TRUE(raisedWithStr(
-      Interpreter::loadAttrSetLocation(thread_, obj, name, nullptr),
+      Interpreter::loadAttrSetLocation(thread_, obj, name, &kind, nullptr),
       LayoutId::kAttributeError,
       "'object' object has no attribute 'nonexistent_attr'"));
 }

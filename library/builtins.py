@@ -414,7 +414,7 @@ class object(bootstrap=True):  # noqa: E999
         return NotImplemented
 
     def __ne__(self, other):
-        res = _type(self).__eq__(self, other)
+        res = _object_type_getattr(self, "__eq__")(other)
         if res is NotImplemented:
             return NotImplemented
         return not res
@@ -4054,7 +4054,7 @@ class range_iterator(bootstrap=True):
 
 
 def repr(obj):
-    result = _type(obj).__repr__(obj)
+    result = _object_type_getattr(obj, "__repr__")()
     if not _str_check(result):
         raise TypeError("__repr__ returned non-string")
     return result

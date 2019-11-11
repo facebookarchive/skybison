@@ -255,8 +255,8 @@ namespace py {
   V(UNUSED_BYTECODE_236, 236, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_237, 237, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_238, 238, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_239, 239, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_240, 240, doInvalidBytecode)                               \
+  V(LOAD_ATTR_TYPE, 239, doLoadAttrType)                                       \
+  V(LOAD_ATTR_MODULE, 240, doLoadAttrModule)                                   \
   V(COMPARE_IS_NOT, 241, doCompareIsNot)                                       \
   V(COMPARE_IS, 242, doCompareIs)                                              \
   V(LOAD_IMMEDIATE, 243, doLoadImmediate)                                      \
@@ -334,10 +334,21 @@ BytecodeOp nextBytecodeOp(const MutableBytes& bytecode, word* index);
 inline bool isByteCodeWithCache(const Bytecode bc) {
   // TODO(T45720638): Add all caching opcodes here once they are supported for
   // cache invalidation.
-  return bc == LOAD_ATTR_CACHED || bc == LOAD_METHOD_CACHED ||
-         bc == STORE_ATTR_CACHED || bc == BINARY_OP_CACHED ||
-         bc == COMPARE_OP_CACHED || bc == INPLACE_OP_CACHED ||
-         bc == FOR_ITER_CACHED || bc == BINARY_SUBSCR_CACHED;
+  switch (bc) {
+    case BINARY_OP_CACHED:
+    case BINARY_SUBSCR_CACHED:
+    case COMPARE_OP_CACHED:
+    case FOR_ITER_CACHED:
+    case INPLACE_OP_CACHED:
+    case LOAD_ATTR_CACHED:
+    case LOAD_ATTR_MODULE:
+    case LOAD_ATTR_TYPE:
+    case LOAD_METHOD_CACHED:
+    case STORE_ATTR_CACHED:
+      return true;
+    default:
+      return false;
+  }
 }
 
 // Convert an immediate RawObject into a byte, and back to the original

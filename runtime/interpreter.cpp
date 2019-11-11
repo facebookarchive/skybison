@@ -2534,28 +2534,64 @@ HANDLER_INLINE Continue Interpreter::doLoadAttr(Thread* thread, word arg) {
   return Continue::NEXT;
 }
 
-RawObject Interpreter::loadAttrSetLocation(Thread* thread, const Object& object,
-                                           const Str& name,
+RawObject Interpreter::loadAttrSetLocation(Thread* thread,
+                                           const Object& receiver,
+                                           const Str& name, LoadAttrKind* kind,
                                            Object* location_out) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Type type(&scope, runtime->typeOf(*object));
+  Type type(&scope, runtime->typeOf(*receiver));
   Object dunder_getattribute(
       &scope, typeLookupInMroById(thread, type, SymbolId::kDunderGetattribute));
+  *kind = kUnknown;
   if (dunder_getattribute == runtime->objectDunderGetattribute()) {
     word hash = strHash(thread, *name);
-    Object result(&scope, objectGetAttributeSetLocation(thread, object, name,
+    Object result(&scope, objectGetAttributeSetLocation(thread, receiver, name,
                                                         hash, location_out));
     if (result.isErrorNotFound()) {
-      result = thread->invokeMethod2(object, SymbolId::kDunderGetattr, name);
+      result = thread->invokeMethod2(receiver, SymbolId::kDunderGetattr, name);
       if (result.isErrorNotFound()) {
-        return objectRaiseAttributeError(thread, object, name);
+        return objectRaiseAttributeError(thread, receiver, name);
+      }
+    }
+    *kind = kInstance;
+    return *result;
+  }
+  if (dunder_getattribute == runtime->moduleDunderGetattribute()) {
+    Object result(&scope, moduleGetAttributeSetLocation(thread, receiver, name,
+                                                        location_out));
+    if (!result.isErrorNotFound()) {
+      // We have a result that can be cached.
+      *kind = kModule;
+    } else {
+      // Try again
+      result = thread->invokeMethod2(receiver, SymbolId::kDunderGetattr, name);
+      if (result.isErrorNotFound()) {
+        return moduleRaiseAttributeError(thread, receiver, name);
       }
     }
     return *result;
   }
-
-  return thread->runtime()->attributeAt(thread, object, name);
+  if (dunder_getattribute == runtime->typeDunderGetattribute()) {
+    word hash = strHash(thread, *name);
+    Type receiver_type(&scope, *receiver);
+    Object result(&scope, typeGetAttributeSetLocation(
+                              thread, receiver_type, name, hash, location_out));
+    if (!result.isErrorNotFound()) {
+      // We have a result that can be cached.
+      if (location_out->isValueCell()) {
+        *kind = kType;
+      }
+    } else {
+      // Try again
+      result = thread->invokeMethod2(receiver, SymbolId::kDunderGetattr, name);
+      if (result.isErrorNotFound()) {
+        return objectRaiseAttributeError(thread, receiver, name);
+      }
+    }
+    return *result;
+  }
+  return thread->runtime()->attributeAt(thread, receiver, name);
 }
 
 Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
@@ -2567,13 +2603,37 @@ Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
            Tuple::cast(Code::cast(frame->code()).names()).at(original_arg));
 
   Object location(&scope, NoneType::object());
-  Object result(&scope, loadAttrSetLocation(thread, receiver, name, &location));
+  LoadAttrKind kind;
+  Object result(&scope,
+                loadAttrSetLocation(thread, receiver, name, &kind, &location));
   if (result.isError()) return Continue::UNWIND;
-  if (!location.isNoneType()) {
-    Tuple caches(&scope, frame->caches());
-    Function dependent(&scope, frame->function());
+  if (location.isNoneType()) {
+    frame->setTopValue(*result);
+    return Continue::NEXT;
+  }
+
+  // Cache the attribute load
+  Tuple caches(&scope, frame->caches());
+  Function dependent(&scope, frame->function());
+  if (kind == LoadAttrKind::kInstance) {
     icUpdateAttr(thread, caches, arg, receiver.layoutId(), location, name,
                  dependent);
+  } else if (kind == LoadAttrKind::kModule) {
+    word pc = frame->virtualPC() - kCodeUnitSize;
+    RawMutableBytes bytecode = frame->bytecode();
+    if (bytecode.byteAt(pc) == LOAD_ATTR_CACHED &&
+        icIsCacheEmpty(caches, arg)) {
+      ValueCell value_cell(&scope, *location);
+      icUpdateAttrModule(thread, caches, arg, receiver, value_cell, dependent);
+    }
+  } else if (kind == LoadAttrKind::kType) {
+    word pc = frame->virtualPC() - kCodeUnitSize;
+    RawMutableBytes bytecode = frame->bytecode();
+    if (bytecode.byteAt(pc) == LOAD_ATTR_CACHED &&
+        icIsCacheEmpty(caches, arg)) {
+      icUpdateAttrType(thread, caches, arg, receiver, name, location,
+                       dependent);
+    }
   }
   frame->setTopValue(*result);
   return Continue::NEXT;
@@ -2606,16 +2666,64 @@ HANDLER_INLINE USED RawObject Interpreter::loadAttrWithLocation(
 HANDLER_INLINE Continue Interpreter::doLoadAttrCached(Thread* thread,
                                                       word arg) {
   Frame* frame = thread->currentFrame();
-  RawObject receiver_raw = frame->topValue();
-  LayoutId layout_id = receiver_raw.layoutId();
+  RawObject receiver = frame->topValue();
+  LayoutId layout_id = receiver.layoutId();
   RawObject cached = icLookupAttr(frame->caches(), arg, layout_id);
   if (cached.isErrorNotFound()) {
     return loadAttrUpdateCache(thread, arg);
   }
-
-  RawObject result = loadAttrWithLocation(thread, receiver_raw, cached);
+  RawObject result = loadAttrWithLocation(thread, receiver, cached);
   frame->setTopValue(result);
   return Continue::NEXT;
+}
+
+// This code cleans-up a monomorphic cache and prepares it for its potential
+// use as a polymorphic cache.  This code should be removed when we change the
+// structure of our caches directly accessible from a function to be monomophic
+// and to allocate the relatively uncommon polymorphic caches in a separate
+// object.
+static Continue retryLoadAttrCached(Thread* thread, word arg) {
+  // Revert the opcode, clear the cache, and retry the attribute lookup.
+  Frame* frame = thread->currentFrame();
+  RawTuple caches = frame->caches();
+  word pc = frame->virtualPC() - kCodeUnitSize;
+  word index = arg * kIcPointersPerCache;
+  RawMutableBytes bytecode = frame->bytecode();
+  bytecode.byteAtPut(pc, LOAD_ATTR_CACHED);
+  caches.atPut(index + kIcEntryKeyOffset, NoneType::object());
+  caches.atPut(index + kIcEntryValueOffset, NoneType::object());
+  return Interpreter::doLoadAttrCached(thread, arg);
+}
+
+HANDLER_INLINE Continue Interpreter::doLoadAttrModule(Thread* thread,
+                                                      word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject receiver = frame->topValue();
+  RawTuple caches = frame->caches();
+  word index = arg * kIcPointersPerCache;
+  RawObject module = caches.at(index + kIcEntryKeyOffset);
+  if (receiver == module) {
+    RawObject result = caches.at(index + kIcEntryValueOffset);
+    DCHECK(result.isValueCell(), "cached value is not a value cell");
+    frame->setTopValue(ValueCell::cast(result).value());
+    return Continue::NEXT;
+  }
+  return retryLoadAttrCached(thread, arg);
+}
+
+HANDLER_INLINE Continue Interpreter::doLoadAttrType(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject receiver = frame->topValue();
+  RawTuple caches = frame->caches();
+  word index = arg * kIcPointersPerCache;
+  RawObject type = caches.at(index + kIcEntryKeyOffset);
+  if (receiver == type) {
+    RawObject result = caches.at(index + kIcEntryValueOffset);
+    DCHECK(result.isValueCell(), "cached value is not a value cell");
+    frame->setTopValue(ValueCell::cast(result).value());
+    return Continue::NEXT;
+  }
+  return retryLoadAttrCached(thread, arg);
 }
 
 static RawObject excMatch(Thread* thread, const Object& left,
@@ -2744,8 +2852,7 @@ HANDLER_INLINE Continue Interpreter::doImportFrom(Thread* thread, word arg) {
   if (from.isModule()) {
     // Common case of a lookup done on the built-in module type.
     Module from_module(&scope, *from);
-    word hash = strHash(thread, *name);
-    value = moduleGetAttribute(thread, from_module, name, hash);
+    value = moduleGetAttribute(thread, from_module, name);
   } else {
     // Do a generic attribute lookup.
     value = thread->runtime()->attributeAt(thread, from, name);

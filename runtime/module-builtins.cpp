@@ -135,6 +135,20 @@ RawObject moduleLen(Thread* thread, const Module& module) {
   return SmallInt::fromWord(count);
 }
 
+RawObject moduleRaiseAttributeError(Thread* thread, const Object& receiver,
+                                    const Object& selector) {
+  HandleScope scope(thread);
+  Module module(&scope, *receiver);
+  Object module_name(&scope, module.name());
+  if (!thread->runtime()->isInstanceOfStr(*module_name)) {
+    return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                "module has no attribute '%S'", &selector);
+  }
+  return thread->raiseWithFmt(LayoutId::kAttributeError,
+                              "module '%S' has no attribute '%S'", &module_name,
+                              &selector);
+}
+
 RawObject moduleRemove(Thread* thread, const Module& module, const Object& key,
                        word hash) {
   HandleScope scope(thread);
@@ -164,18 +178,35 @@ RawObject moduleValues(Thread* thread, const Module& module) {
 }
 
 RawObject moduleGetAttribute(Thread* thread, const Module& module,
-                             const Object& name_str, word hash) {
+                             const Object& name_str) {
+  return moduleGetAttributeSetLocation(thread, module, name_str, nullptr);
+}
+
+RawObject moduleGetAttributeSetLocation(Thread* thread, const Object& receiver,
+                                        const Object& selector,
+                                        Object* location_out) {
   // Note that PEP 562 adds support for data descriptors in module objects.
   // We are targeting python 3.6 for now, so we won't worry about that.
 
   HandleScope scope(thread);
-  Object result(&scope, moduleAt(thread, module, name_str, hash));
-  if (!result.isError()) return *result;
+  Module module(&scope, *receiver);
+  Str str(&scope, *selector);
+  Object result(&scope, moduleValueCellAtByStr(thread, module, str));
+
+  DCHECK(result.isValueCell() || result.isErrorNotFound(),
+         "result must be a value cell or not found");
+
+  if (!result.isErrorNotFound() && !ValueCell::cast(*result).isPlaceholder()) {
+    if (location_out != nullptr) {
+      *location_out = *result;
+    }
+    return ValueCell::cast(*result).value();
+  }
 
   // TODO(T42983855) dispatching to objectGetAttribute like this does not make
   // data properties on the type override module members.
 
-  return objectGetAttribute(thread, module, name_str, hash);
+  return objectGetAttribute(thread, module, selector, strHash(thread, *str));
 }
 
 RawObject moduleSetAttr(Thread* thread, const Module& module,
@@ -310,19 +341,9 @@ RawObject ModuleBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(
         LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
   }
-  Object hash_obj(&scope, Interpreter::hash(thread, name));
-  if (hash_obj.isErrorException()) return *hash_obj;
-  word hash = SmallInt::cast(*hash_obj).value();
-  Object result(&scope, moduleGetAttribute(thread, self, name, hash));
+  Object result(&scope, moduleGetAttribute(thread, self, name));
   if (result.isErrorNotFound()) {
-    Object module_name(&scope, self.name());
-    if (!runtime->isInstanceOfStr(*module_name)) {
-      return thread->raiseWithFmt(LayoutId::kAttributeError,
-                                  "module has no attribute '%S'", &name);
-    }
-    return thread->raiseWithFmt(LayoutId::kAttributeError,
-                                "module '%S' has no attribute '%S'",
-                                &module_name, &name);
+    return moduleRaiseAttributeError(thread, self, name);
   }
   return *result;
 }

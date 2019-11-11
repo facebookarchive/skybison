@@ -2180,12 +2180,14 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&empty_mutable_bytes_);
   visitor->visitPointer(&empty_tuple_);
   visitor->visitPointer(&implicit_bases_);
+  visitor->visitPointer(&module_dunder_getattribute_);
   visitor->visitPointer(&object_dunder_getattribute_);
   visitor->visitPointer(&object_dunder_init_);
   visitor->visitPointer(&object_dunder_new_);
   visitor->visitPointer(&object_dunder_setattr_);
   visitor->visitPointer(&sys_stderr_);
   visitor->visitPointer(&sys_stdout_);
+  visitor->visitPointer(&type_dunder_getattribute_);
 
   // Visit interned strings.
   visitor->visitPointer(&interned_);
@@ -2486,12 +2488,28 @@ void Runtime::createBuiltinsModule(Thread* thread) {
       moduleValueCellAtById(thread, module, SymbolId::kDunderImport);
   CHECK(!dunder_import_.isErrorNotFound(), "__import__ not found");
 
-  Type object(&scope, typeAt(LayoutId::kObject));
-  object_dunder_getattribute_ =
-      typeAtById(thread, object, SymbolId::kDunderGetattribute);
-  object_dunder_init_ = typeAtById(thread, object, SymbolId::kDunderInit);
-  object_dunder_new_ = typeAtById(thread, object, SymbolId::kDunderNew);
-  object_dunder_setattr_ = typeAtById(thread, object, SymbolId::kDunderSetattr);
+  {
+    Type object_type(&scope, typeAt(LayoutId::kObject));
+    object_dunder_getattribute_ =
+        typeAtById(thread, object_type, SymbolId::kDunderGetattribute);
+    object_dunder_init_ =
+        typeAtById(thread, object_type, SymbolId::kDunderInit);
+    object_dunder_new_ = typeAtById(thread, object_type, SymbolId::kDunderNew);
+    object_dunder_setattr_ =
+        typeAtById(thread, object_type, SymbolId::kDunderSetattr);
+  }
+
+  {
+    Type module_type(&scope, typeAt(LayoutId::kModule));
+    module_dunder_getattribute_ =
+        typeAtById(thread, module_type, SymbolId::kDunderGetattribute);
+  }
+
+  {
+    Type type_type(&scope, typeAt(LayoutId::kType));
+    type_dunder_getattribute_ =
+        typeAtById(thread, type_type, SymbolId::kDunderGetattribute);
+  }
 
   // Mark functions that have an intrinsic implementation.
   for (word i = 0; BuiltinsModule::kIntrinsicIds[i] != SymbolId::kSentinelId;

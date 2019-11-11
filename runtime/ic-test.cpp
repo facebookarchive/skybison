@@ -417,25 +417,24 @@ B__le__ = B.__le__
 
   Type type_a(&scope, mainModuleAt(&runtime_, "A"));
   // Ensure cache_compare_op is a dependent of A.__ge__.
-  ASSERT_EQ(WeakLink::cast(dependencyLinkOfTypeAttr(thread_, type_a, "__ge__"))
-                .referent(),
-            *cache_compare_op);
+  ASSERT_TRUE(icDependentIncluded(
+      *cache_compare_op, dependencyLinkOfTypeAttr(thread_, type_a, "__ge__")));
+
   Type type_b(&scope, mainModuleAt(&runtime_, "B"));
   // Ensure cache_compare_op is a dependent of B.__le__.
-  ASSERT_EQ(WeakLink::cast(dependencyLinkOfTypeAttr(thread_, type_b, "__le__"))
-                .referent(),
-            *cache_compare_op);
+  ASSERT_TRUE(icDependentIncluded(
+      *cache_compare_op, dependencyLinkOfTypeAttr(thread_, type_b, "__le__")));
 
   // Update A.__ge__ to invalidate cache for t0 = a >= b.
   Str dunder_ge_name(&scope, runtime_.newStrFromCStr("__ge__"));
   icEvictCache(thread_, cache_compare_op, type_a, dunder_ge_name,
                AttributeKind::kNotADataDescriptor);
   // The invalidation removes dependency from cache_compare_op to A.__ge__.
-  EXPECT_TRUE(dependencyLinkOfTypeAttr(thread_, type_a, "__ge__").isNoneType());
+  EXPECT_FALSE(icDependentIncluded(
+      *cache_compare_op, dependencyLinkOfTypeAttr(thread_, type_a, "__ge__")));
   // However, cache_compare_op still depends on B.__le__ since b >= 5 is cached.
-  EXPECT_EQ(WeakLink::cast(dependencyLinkOfTypeAttr(thread_, type_b, "__le__"))
-                .referent(),
-            *cache_compare_op);
+  EXPECT_TRUE(icDependentIncluded(
+      *cache_compare_op, dependencyLinkOfTypeAttr(thread_, type_b, "__le__")));
 }
 
 TEST_F(IcTest, IcDeleteDependentInValueCellDependencyLinkDeletesDependent) {
@@ -1115,7 +1114,8 @@ cache_compare_op(a, b)
   EXPECT_TRUE(
       icLookupBinaryOp(*caches, 0, a.layoutId(), b.layoutId(), &flags_out)
           .isErrorNotFound());
-  EXPECT_TRUE(dunder_ge.dependencyLink().isNoneType());
+  EXPECT_FALSE(
+      icDependentIncluded(*cache_compare_op, dunder_ge.dependencyLink()));
   EXPECT_TRUE(dunder_le.dependencyLink().isNoneType());
 }
 

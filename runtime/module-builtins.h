@@ -50,7 +50,14 @@ RawObject moduleRemove(Thread* thread, const Module& module, const Object& key,
 RawObject moduleValues(Thread* thread, const Module& module);
 
 RawObject moduleGetAttribute(Thread* thread, const Module& module,
-                             const Object& name_str, word hash);
+                             const Object& name_str);
+
+RawObject moduleGetAttributeSetLocation(Thread* thread, const Object& receiver,
+                                        const Object& selector,
+                                        Object* location_out);
+
+RawObject moduleRaiseAttributeError(Thread* thread, const Object& receiver,
+                                    const Object& selector);
 
 RawObject moduleSetAttr(Thread* thread, const Module& module,
                         const Object& name_str, word hash, const Object& value);

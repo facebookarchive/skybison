@@ -264,12 +264,15 @@ class Runtime {
                        const Object& callback);
 
   RawObject ellipsis() { return ellipsis_; }
+
+  RawObject moduleDunderGetattribute() { return module_dunder_getattribute_; }
   RawObject objectDunderGetattribute() { return object_dunder_getattribute_; }
   RawObject objectDunderInit() { return object_dunder_init_; }
   RawObject objectDunderNew() { return object_dunder_new_; }
   RawObject objectDunderSetattr() { return object_dunder_setattr_; }
   RawValueCell sysStderr() { return ValueCell::cast(sys_stderr_); }
   RawValueCell sysStdout() { return ValueCell::cast(sys_stdout_); }
+  RawObject typeDunderGetattribute() { return type_dunder_getattribute_; }
 
   void createBuiltinsModule(Thread* thread);
   void createEmptyBuiltinsModule(Thread* thread);
@@ -967,12 +970,14 @@ class Runtime {
   RawObject empty_slice_ = NoneType::object();
   RawObject empty_tuple_ = NoneType::object();
   RawObject implicit_bases_ = NoneType::object();
+  RawObject module_dunder_getattribute_ = NoneType::object();
   RawObject object_dunder_getattribute_ = NoneType::object();
   RawObject object_dunder_init_ = NoneType::object();
   RawObject object_dunder_new_ = NoneType::object();
   RawObject object_dunder_setattr_ = NoneType::object();
   RawObject sys_stderr_ = NoneType::object();
   RawObject sys_stdout_ = NoneType::object();
+  RawObject type_dunder_getattribute_ = NoneType::object();
 
   // Interned strings
   RawObject interned_ = NoneType::object();

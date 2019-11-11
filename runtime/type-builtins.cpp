@@ -445,11 +445,18 @@ bool nextTypeDictItem(RawTuple data, word* idx) {
 
 RawObject typeLookupInMro(Thread* thread, const Type& type, const Object& key,
                           word hash) {
+  return typeLookupInMroSetLocation(thread, type, key, hash, nullptr);
+}
+
+RawObject typeLookupInMroSetLocation(Thread* thread, const Type& type,
+                                     const Object& key, word hash,
+                                     Object* location) {
   HandleScope scope(thread);
   Tuple mro(&scope, type.mro());
   for (word i = 0; i < mro.length(); i++) {
     Type mro_type(&scope, mro.at(i));
-    Object value(&scope, typeAt(thread, mro_type, key, hash));
+    Object value(&scope,
+                 typeAtSetLocation(thread, mro_type, key, hash, location));
     if (!value.isError()) {
       return *value;
     }
@@ -511,8 +518,8 @@ RawObject resolveDescriptorGet(Thread* thread, const Object& descr,
                                         instance, instance_type);
 }
 
-RawObject typeAt(Thread* thread, const Type& type, const Object& key,
-                 word hash) {
+RawObject typeAtSetLocation(Thread* thread, const Type& type, const Object& key,
+                            word hash, Object* location) {
   HandleScope scope(thread);
   Dict dict(&scope, type.dict());
   Object value(&scope, dictAt(thread, dict, key, hash));
@@ -521,7 +528,15 @@ RawObject typeAt(Thread* thread, const Type& type, const Object& key,
   if (value.isErrorNotFound() || ValueCell::cast(*value).isPlaceholder()) {
     return Error::notFound();
   }
+  if (location != nullptr) {
+    *location = *value;
+  }
   return ValueCell::cast(*value).value();
+}
+
+RawObject typeAt(Thread* thread, const Type& type, const Object& key,
+                 word hash) {
+  return typeAtSetLocation(thread, type, key, hash, nullptr);
 }
 
 RawObject typeAtByStr(Thread* thread, const Type& type, const Str& name) {
@@ -631,6 +646,12 @@ RawObject typeValues(Thread* thread, const Type& type) {
 
 RawObject typeGetAttribute(Thread* thread, const Type& type,
                            const Object& name_str, word hash) {
+  return typeGetAttributeSetLocation(thread, type, name_str, hash, nullptr);
+}
+
+RawObject typeGetAttributeSetLocation(Thread* thread, const Type& type,
+                                      const Object& name_str, word hash,
+                                      Object* location_out) {
   // Look for the attribute in the meta class
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -653,7 +674,8 @@ RawObject typeGetAttribute(Thread* thread, const Type& type,
   }
 
   // No data descriptor found on the meta class, look in the mro of the type
-  Object attr(&scope, typeLookupInMro(thread, type, name_str, hash));
+  Object attr(&scope, typeLookupInMroSetLocation(thread, type, name_str, hash,
+                                                 location_out));
   if (!attr.isError()) {
     // TODO(T56002494): Remove this once type.__getattribute__ gets cached.
     if (attr.isFunction()) {
@@ -674,6 +696,9 @@ RawObject typeGetAttribute(Thread* thread, const Type& type,
       if (type.builtinBase() == LayoutId::kNoneType) {
         return *attr;
       }
+      if (location_out != nullptr) {
+        *location_out = NoneType::object();
+      }
       Object none(&scope, NoneType::object());
       return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
                                             attr, none, type);
@@ -686,7 +711,8 @@ RawObject typeGetAttribute(Thread* thread, const Type& type,
   // that overrides `__eq__` or `__hash__`.
   Str name_underlying(&scope, strUnderlying(thread, name_str));
   Str name_interned(&scope, runtime->internStr(thread, name_underlying));
-  Object result(&scope, instanceGetAttribute(thread, type, name_interned));
+  Object result(&scope, instanceGetAttributeSetLocation(
+                            thread, type, name_interned, location_out));
   if (!result.isError()) {
     return *result;
   }

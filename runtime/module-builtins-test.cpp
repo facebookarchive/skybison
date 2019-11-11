@@ -330,9 +330,7 @@ TEST_F(ModuleBuiltinsTest, ModuleGetAttributeReturnsInstanceValue) {
   ASSERT_FALSE(runFromCStr(&runtime_, "x = 42").isError());
   Module module(&scope, runtime_.findModuleById(SymbolId::kDunderMain));
   Object name(&scope, runtime_.newStrFromCStr("x"));
-  word hash = strHash(thread_, *name);
-  EXPECT_TRUE(
-      isIntEqualsWord(moduleGetAttribute(thread_, module, name, hash), 42));
+  EXPECT_TRUE(isIntEqualsWord(moduleGetAttribute(thread_, module, name), 42));
 }
 
 TEST_F(ModuleBuiltinsTest, ModuleGetAttributeWithNonExistentNameReturnsError) {
@@ -340,8 +338,7 @@ TEST_F(ModuleBuiltinsTest, ModuleGetAttributeWithNonExistentNameReturnsError) {
   Object module_name(&scope, runtime_.newStrFromCStr(""));
   Module module(&scope, runtime_.newModule(module_name));
   Object name(&scope, runtime_.newStrFromCStr("xxx"));
-  word hash = strHash(thread_, *name);
-  EXPECT_TRUE(moduleGetAttribute(thread_, module, name, hash).isError());
+  EXPECT_TRUE(moduleGetAttribute(thread_, module, name).isError());
   EXPECT_FALSE(thread_->hasPendingException());
 }
 

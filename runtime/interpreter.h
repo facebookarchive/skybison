@@ -225,8 +225,18 @@ class Interpreter {
 
   static RawObject loadAttrWithLocation(Thread* thread, RawObject receiver,
                                         RawObject location);
-  static RawObject loadAttrSetLocation(Thread* thread, const Object& object,
-                                       const Str& name, Object* location_out);
+
+  // Different caching strategies for the resolved location of a LOAD_ATTR
+  enum LoadAttrKind {
+    kInstance = 1,
+    kModule,
+    kType,
+    kUnknown,
+  };
+
+  static RawObject loadAttrSetLocation(Thread* thread, const Object& receiver,
+                                       const Str& name, LoadAttrKind* kind,
+                                       Object* location_out);
 
   // Process the operands to the RAISE_VARARGS bytecode into a pending exception
   // on ctx->thread.
@@ -347,6 +357,8 @@ class Interpreter {
   static Continue doInvalidBytecode(Thread* thread, word arg);
   static Continue doLoadAttr(Thread* thread, word arg);
   static Continue doLoadAttrCached(Thread* thread, word arg);
+  static Continue doLoadAttrModule(Thread* thread, word arg);
+  static Continue doLoadAttrType(Thread* thread, word arg);
   static Continue doLoadDeref(Thread* thread, word arg);
   static Continue doLoadFast(Thread* thread, word arg);
   static Continue doLoadFastReverse(Thread* thread, word arg);

@@ -68,10 +68,10 @@ RawObject instanceDelAttr(Thread* thread, const Instance& instance,
   return NoneType::object();
 }
 
-static RawObject instanceGetAttributeSetLocation(Thread* thread,
-                                                 const Instance& instance,
-                                                 const Str& name_interned,
-                                                 Object* location_out) {
+RawObject instanceGetAttributeSetLocation(Thread* thread,
+                                          const Instance& instance,
+                                          const Str& name_interned,
+                                          Object* location_out) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Layout layout(&scope, runtime->layoutAt(instance.layoutId()));

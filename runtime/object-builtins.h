@@ -11,6 +11,11 @@ RawObject instanceDelAttr(Thread* thread, const Instance& instance,
 RawObject instanceGetAttribute(Thread* thread, const Instance& instance,
                                const Str& name_interned);
 
+RawObject instanceGetAttributeSetLocation(Thread* thread,
+                                          const Instance& instance,
+                                          const Str& name_interned,
+                                          Object* location_out);
+
 RawObject instanceSetAttr(Thread* thread, const Instance& instance,
                           const Str& name_interned, const Object& value);
 
