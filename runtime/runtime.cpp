@@ -1964,14 +1964,8 @@ RawObject Runtime::executeModule(const Code& code, const Module& module) {
   return Thread::current()->exec(code, module, none);
 }
 
-static void writeOrAbort(int fd, const void* buffer, ssize_t size) {
-  int result = File::write(fd, buffer, size);
-  DCHECK(result >= 0, "error occurred during write (errno %d)", result);
-  DCHECK(result == size, "write incomplete (%d of %zd bytes)", result, size);
-}
-
 static void writeCStr(word fd, const char* str) {
-  writeOrAbort(fd, str, std::strlen(str));
+  File::write(fd, str, std::strlen(str));
 }
 
 static void writeStr(word fd, RawStr str) {
@@ -1983,11 +1977,11 @@ static void writeStr(word fd, RawStr str) {
   for (word end = buffer_length; end < length;
        start = end, end += buffer_length) {
     str.copyToStartAt(buffer, buffer_length, start);
-    writeOrAbort(fd, buffer, buffer_length);
+    File::write(fd, buffer, buffer_length);
   }
   word final_size = length - start;
   str.copyToStartAt(buffer, final_size, start);
-  writeOrAbort(fd, buffer, final_size);
+  File::write(fd, buffer, final_size);
 }
 
 RawObject Runtime::printTraceback(Thread* thread, word fd) {
@@ -2025,7 +2019,7 @@ RawObject Runtime::printTraceback(Thread* thread, word fd) {
           *--start = '0' + (linenum % 10);
           linenum /= 10;
         } while (linenum > 0);
-        writeOrAbort(fd, start, end - start);
+        File::write(fd, start, end - start);
       } else {
         writeCStr(fd, unknown);
       }
