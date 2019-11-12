@@ -6617,6 +6617,12 @@ class RangeTests(unittest.TestCase):
         self.assertEqual(obj.stop, 11)
         self.assertEqual(obj.step, 12)
 
+    def test_dunder_reduce_returns_tuple(self):
+        r = range(10)
+        self.assertTupleEqual(r.__reduce__(), (range, (0, 10, 1)))
+        r = range(21, 10, 2)
+        self.assertTupleEqual(r.__reduce__(), (range, (21, 10, 2)))
+
     def test_dunder_repr_with_no_step_calls_repr(self):
         class Repr(int):
             def __repr__(self):

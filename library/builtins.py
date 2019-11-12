@@ -4078,6 +4078,9 @@ class range(bootstrap=True):
     def __new__(cls, start_or_stop, stop=_Unbound, step=_Unbound):
         pass
 
+    def __reduce__(self):
+        return (range, (self.start, self.stop, self.step))
+
     def __repr__(self):
         if self.step == 1:
             return f"range({self.start!r}, {self.stop!r})"
