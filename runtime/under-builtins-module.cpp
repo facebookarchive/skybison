@@ -108,6 +108,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderByteslikeStartsWith, underByteslikeStartsWith},
     {SymbolId::kUnderClassMethod, underClassMethod},
     {SymbolId::kUnderClassMethodIsAbstract, underClassMethodIsAbstract},
+    {SymbolId::kUnderCodeCheck, underCodeCheck},
     {SymbolId::kUnderCodeGuard, underCodeGuard},
     {SymbolId::kUnderComplexCheck, underComplexCheck},
     {SymbolId::kUnderComplexImag, underComplexImag},
@@ -128,6 +129,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderDictSetItem, underDictSetItem},
     {SymbolId::kUnderDictUpdate, underDictUpdate},
     {SymbolId::kUnderDivmod, underDivmod},
+    {SymbolId::kUnderExec, underExec},
     {SymbolId::kUnderFloatCheck, underFloatCheck},
     {SymbolId::kUnderFloatCheckExact, underFloatCheckExact},
     {SymbolId::kUnderFloatDivmod, underFloatDivmod},
@@ -193,6 +195,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderMemoryviewNbytes, underMemoryviewNbytes},
     {SymbolId::kUnderModuleDir, underModuleDir},
     {SymbolId::kUnderModuleProxy, underModuleProxy},
+    {SymbolId::kUnderModuleProxyCheck, underModuleProxyCheck},
     {SymbolId::kUnderModuleProxyDelitem, underModuleProxyDelitem},
     {SymbolId::kUnderModuleProxyGet, underModuleProxyGet},
     {SymbolId::kUnderModuleProxyGuard, underModuleProxyGuard},
@@ -1298,6 +1301,12 @@ RawObject UnderBuiltinsModule::underClassMethodIsAbstract(Thread* thread,
   return isAbstract(thread, func);
 }
 
+RawObject UnderBuiltinsModule::underCodeCheck(Thread*, Frame* frame,
+                                              word nargs) {
+  Arguments args(frame, nargs);
+  return Bool::fromBool(args.get(0).isCode());
+}
+
 RawObject UnderBuiltinsModule::underCodeGuard(Thread* thread, Frame* frame,
                                               word nargs) {
   Arguments args(frame, nargs);
@@ -1628,6 +1637,16 @@ RawObject UnderBuiltinsModule::underDivmod(Thread* thread, Frame* frame,
   Object divisor(&scope, args.get(1));
   return Interpreter::binaryOperation(
       thread, frame, Interpreter::BinaryOp::DIVMOD, number, divisor);
+}
+
+RawObject UnderBuiltinsModule::underExec(Thread* thread, Frame* frame,
+                                         word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Code code(&scope, args.get(0));
+  Module module(&scope, args.get(1));
+  Object implicit_globals(&scope, args.get(2));
+  return thread->exec(code, module, implicit_globals);
 }
 
 RawObject UnderBuiltinsModule::underFloatCheck(Thread* thread, Frame* frame,
@@ -2691,6 +2710,12 @@ RawObject UnderBuiltinsModule::underModuleProxy(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Module module(&scope, args.get(0));
   return module.moduleProxy();
+}
+
+RawObject UnderBuiltinsModule::underModuleProxyCheck(Thread*, Frame* frame,
+                                                     word nargs) {
+  Arguments args(frame, nargs);
+  return Bool::fromBool(args.get(0).isModuleProxy());
 }
 
 RawObject UnderBuiltinsModule::underModuleProxyDelitem(Thread* thread,

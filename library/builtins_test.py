@@ -1881,7 +1881,7 @@ class CompileTests(unittest.TestCase):
 
         code = compile("7 * 9", "", "eval", 0, True, -1)
         self.assertIsInstance(code, CodeType)
-        # TODO(T54193215): Evaluate code once eval() is available
+        self.assertEqual(eval(code), 63)  # noqa: P204
 
     def test_with_flags_returns_code(self):
         from types import CodeType
@@ -2420,6 +2420,221 @@ class ExceptionTests(unittest.TestCase):
         self.assertIs(exc3.__context__, exc2)
         self.assertIs(exc2.__context__, exc1)
         self.assertIs(exc1.__context__, None)
+
+
+class EvalTests(unittest.TestCase):
+    def test_globals_none_accesses_function_globals(self):
+        from types import ModuleType
+
+        module = ModuleType("")
+        exec("def foo(): return eval('globals(), locals()', None, {})", module.__dict__)
+        eval_globals, eval_locals = module.foo()
+        self.assertIs(eval_globals, module.__dict__)
+        self.assertEqual(eval_locals, {})
+
+    def test_globals_and_locals_none_accesses_function_locals(self):
+        from types import ModuleType
+
+        module = ModuleType("")
+        exec(
+            "def foo(): bar = 42; return eval('globals(), locals(), bar', None, None)",
+            module.__dict__,
+        )
+        eval_globals, eval_locals, bar = module.foo()
+        self.assertIs(eval_globals, module.__dict__)
+        self.assertEqual(eval_locals, {"bar": 42})
+        self.assertEqual(bar, 42)
+
+    def test_globals_and_locals_none_accesses_implicit_globals(self):
+        class C:
+            foo = 42
+            globals, locals = eval("globals(), locals()", None, None)
+
+        self.assertIs(C.globals, globals())
+        self.assertIn("foo", C.locals)
+        self.assertEqual(C.locals["foo"], 42)
+
+    def test_locals_none_accesses_globals(self):
+        from types import ModuleType
+
+        module = ModuleType("")
+        module.foo = 42
+        eval_globals, eval_locals = eval("globals(), locals()", module.__dict__, None)
+        self.assertIs(eval_globals, module.__dict__)
+        self.assertIs(eval_locals, module.__dict__)
+
+    def test_bytes_source(self):
+        self.assertEqual(eval(b"4 * 5"), 20)  # noqa: P204
+
+    def test_bytearray_source(self):
+        self.assertEqual(eval(bytearray(b"20 / 5")), 4)  # noqa: P204
+
+    def test_code_source(self):
+        from types import CodeType
+
+        code = compile("20 - 4", "", "eval", 0, True, -1)
+        self.assertIsInstance(code, CodeType)
+        self.assertEqual(eval(code), 16)  # noqa: P204
+
+    def test_inherits_compile_flags(self):
+        from types import CodeType
+        import __future__
+
+        code = compile(
+            "eval('8 <> 9')", "", "eval", __future__.CO_FUTURE_BARRY_AS_BDFL, True, -1
+        )
+        self.assertIsInstance(code, CodeType)
+        self.assertTrue(code.co_flags & __future__.CO_FUTURE_BARRY_AS_BDFL != 0)
+        self.assertTrue(eval(code))  # noqa: P204
+
+    def test_int_source_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            eval(123)
+
+    def test_non_dict_globals_raise_type_error(self):
+        with self.assertRaises(TypeError):
+            eval("0", "not a dict")
+
+        class Mapping:
+            def __setitem__(self, key, name):
+                pass
+
+            def __getitem__(self, key):
+                pass
+
+        with self.assertRaises(TypeError):
+            eval("0", Mapping())
+
+    def test_non_mapping_locals_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            not_a_mapping = 42.4
+            eval("0", None, not_a_mapping)
+
+    def test_code_with_freevars_raises_type_error(self):
+        def func(x):
+            return lambda: x
+
+        code = func(42).__code__
+        with self.assertRaisesRegex(TypeError, "may not contain free variables"):
+            eval(code)  # noqa: P204
+
+
+class ExecTests(unittest.TestCase):
+    def test_globals_none_accesses_function_globals(self):
+        from types import ModuleType
+
+        module = ModuleType("")
+        module.foo = 42
+        module.locals = {}
+        exec("exec('result = foo', None, locals)", module.__dict__)
+        self.assertIn("result", module.locals)
+        self.assertEqual(module.locals["result"], 42)
+
+    def test_globals_and_locals_none_accesses_function_locals(self):
+        def f():
+            foo = 42  # noqa: F841
+            result = []
+            exec("result.append(foo)", None, None)
+            return result
+
+        self.assertEqual(f(), [42])
+
+    def test_globals_and_locals_none_accesses_implicit_globals(self):
+        class C:
+            foo = 42
+            exec("result = foo", None, None)
+
+        self.assertTrue(hasattr(C, "result"))
+        self.assertEqual(C.result, 42)
+
+    def test_locals_none_accesses_globals(self):
+        from types import ModuleType
+
+        module = ModuleType("")
+        module.foo = 42
+        exec("result = foo", module.__dict__, None)
+        self.assertTrue(hasattr(module, "result"))
+        self.assertEqual(module.result, 42)
+
+    def test_bytes_source(self):
+        from types import ModuleType
+
+        module = ModuleType("")
+        module.foo = 13
+        exec(b"result = foo", module.__dict__, None)
+        self.assertTrue(hasattr(module, "result"))
+        self.assertEqual(module.result, 13)
+
+    def test_bytearray_source(self):
+        from types import ModuleType
+
+        module = ModuleType("")
+        module.foo = 7
+        exec(bytearray(b"result = foo"), module.__dict__, None)
+        self.assertTrue(hasattr(module, "result"))
+        self.assertEqual(module.result, 7)
+
+    def test_code_source(self):
+        from types import ModuleType
+        from types import CodeType
+
+        code = compile("result = foo", "", "exec", 0, True, -1)
+        self.assertIsInstance(code, CodeType)
+        module = ModuleType("")
+        module.foo = 99
+        self.assertIs(exec(code, module.__dict__), None)
+        self.assertEqual(module.result, 99)
+
+    def test_inherits_compile_flags(self):
+        from types import ModuleType
+        from types import CodeType
+        import __future__
+
+        code = compile(
+            "result0 = 4 <> 4\nexec('result1 = 8 <> 9')",
+            "",
+            "exec",
+            __future__.CO_FUTURE_BARRY_AS_BDFL,
+            True,
+            -1,
+        )
+        self.assertIsInstance(code, CodeType)
+        self.assertTrue(code.co_flags & __future__.CO_FUTURE_BARRY_AS_BDFL != 0)
+        module = ModuleType("")
+        self.assertIs(exec(code, module.__dict__), None)
+        self.assertFalse(module.result0)
+        self.assertTrue(module.result1)
+
+    def test_int_source_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            exec(123)
+
+    def test_non_dict_globals_raise_type_error(self):
+        with self.assertRaises(TypeError):
+            exec("pass", "not a dict")
+
+        class Mapping:
+            def __setitem__(self, key, name):
+                pass
+
+            def __getitem__(self, key):
+                pass
+
+        with self.assertRaises(TypeError):
+            exec("pass", Mapping())
+
+    def test_non_mapping_locals_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            not_a_mapping = 42.4
+            exec("pass", None, not_a_mapping)
+
+    def test_code_with_freevars_raises_type_error(self):
+        def func(x):
+            return lambda: x
+
+        code = func(42).__code__
+        with self.assertRaisesRegex(TypeError, "may not contain free variables"):
+            exec(code)
 
 
 class FloatTests(unittest.TestCase):

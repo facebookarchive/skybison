@@ -41,6 +41,7 @@ _byteslike_rfind_int = _byteslike_rfind_int  # noqa: F821
 _byteslike_startswith = _byteslike_startswith  # noqa: F821
 _classmethod = _classmethod  # noqa: F821
 _classmethod_isabstract = _classmethod_isabstract  # noqa: F821
+_code_check = _code_check  # noqa: F821
 _code_guard = _code_guard  # noqa: F821
 _compile_flags_mask = _compile_flags_mask  # noqa: F821
 _complex_check = _complex_check  # noqa: F821
@@ -61,6 +62,7 @@ _dict_popitem = _dict_popitem  # noqa: F821
 _dict_setitem = _dict_setitem  # noqa: F821
 _dict_update = _dict_update  # noqa: F821
 _divmod = _divmod  # noqa: F821
+_exec = _exec  # noqa: F821
 _float_check = _float_check  # noqa: F821
 _float_checkexact = _float_checkexact  # noqa: F821
 _float_divmod = _float_divmod  # noqa: F821
@@ -121,6 +123,7 @@ _memoryview_itemsize = _memoryview_itemsize  # noqa: F821
 _memoryview_nbytes = _memoryview_nbytes  # noqa: F821
 _module_dir = _module_dir  # noqa: F821
 _module_proxy = _module_proxy  # noqa: F821
+_module_proxy_check = _module_proxy_check  # noqa: F821
 _module_proxy_delitem = _module_proxy_delitem  # noqa: F821
 _module_proxy_get = _module_proxy_get  # noqa: F821
 _module_proxy_guard = _module_proxy_guard  # noqa: F821
@@ -2375,12 +2378,81 @@ class enumerate:
 
 
 def eval(source, globals=None, locals=None):
-    _unimplemented()
+    if globals is None:
+        caller = _getframe_function(1)
+        module = caller.__module_object__
+        if locals is None:
+            locals = _getframe_locals(1)
+    elif _module_proxy_check(globals):
+        module = globals.__module_object__
+    elif _dict_check(globals):
+        # TODO(T41634372): Create a temporary module for the dict.
+        _unimplemented()
+    else:
+        raise TypeError("'eval' arg 2 requires a dict or None")
+
+    if locals is None:
+        pass  # this is specifically allowed
+    elif locals is globals:
+        locals = None
+    elif _mapping_check(locals):
+        pass
+    else:
+        raise TypeError("'eval' arg 3 requires a mapping or None")
+
+    if _code_check(source):
+        code = source
+    else:
+        try:
+            caller = _getframe_function(1)
+            flags = caller.__code__.co_flags & _compile_flags_mask
+        except ValueError:
+            flags = 0  # May have been called on a fresh stackframe.
+        from _compile import compile
+
+        code = compile(source, "<string>", "eval", flags, -1)
+    if code.co_freevars:
+        raise TypeError("'eval' code may not contain free variables")
+    return _exec(code, module, locals)
 
 
-@_patch
 def exec(source, globals=None, locals=None):
-    pass
+    if globals is None:
+        caller = _getframe_function(1)
+        module = caller.__module_object__
+        if locals is None:
+            locals = _getframe_locals(1)
+    elif _module_proxy_check(globals):
+        module = globals.__module_object__
+    elif _dict_check(globals):
+        # TODO(T41634372): Create a temporary module for the dict.
+        _unimplemented()
+    else:
+        raise TypeError("'exec' arg 2 requires a dict or None")
+
+    if locals is None:
+        pass  # this is specifically allowed
+    elif locals is globals:
+        locals = None
+    elif _mapping_check(locals):
+        pass
+    else:
+        raise TypeError("'exec' arg 3 requires a mapping or None")
+
+    if _code_check(source):
+        code = source
+    else:
+        try:
+            caller = _getframe_function(1)
+            flags = caller.__code__.co_flags & _compile_flags_mask
+        except ValueError:
+            flags = 0  # May have been called on a fresh stackframe.
+        from _compile import compile
+
+        code = compile(source, "<string>", "exec", flags, -1)
+    if code.co_freevars:
+        raise TypeError("'exec' code may not contain free variables")
+    _exec(code, module, locals)
 
 
 def exit():

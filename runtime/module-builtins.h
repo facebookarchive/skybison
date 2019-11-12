@@ -84,11 +84,4 @@ class ModuleBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(ModuleBuiltins);
 };
 
-class ModuleProxyBuiltins
-    : public Builtins<ModuleProxyBuiltins, SymbolId::kModuleProxy,
-                      LayoutId::kModuleProxy> {
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(ModuleProxyBuiltins);
-};
-
 }  // namespace py

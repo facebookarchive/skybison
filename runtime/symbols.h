@@ -190,6 +190,7 @@ class Runtime;
   V(UnderClassMethodIsAbstract, "_classmethod_isabstract")                     \
   V(UnderClosed, "_closed")                                                    \
   V(UnderCloseFd, "_closefd")                                                  \
+  V(UnderCodeCheck, "_code_check")                                             \
   V(UnderCodeGuard, "_code_guard")                                             \
   V(UnderCodecs, "_codecs")                                                    \
   V(UnderCompile, "_compile")                                                  \
@@ -227,6 +228,7 @@ class Runtime;
   V(UnderEscapeDecode, "_escape_decode")                                       \
   V(UnderEscapeDecodeStateful, "_escape_decode_stateful")                      \
   V(UnderExceptionNew, "_exception_new")                                       \
+  V(UnderExec, "_exec")                                                        \
   V(UnderFd, "_fd")                                                            \
   V(UnderFindAndLoad, "_find_and_load")                                        \
   V(UnderFloatCheck, "_float_check")                                           \
@@ -313,6 +315,7 @@ class Runtime;
   V(UnderModuleDir, "_module_dir")                                             \
   V(UnderModuleRepr, "_module_repr")                                           \
   V(UnderModuleProxy, "_module_proxy")                                         \
+  V(UnderModuleProxyCheck, "_module_proxy_check")                              \
   V(UnderModuleProxyDelitem, "_module_proxy_delitem")                          \
   V(UnderModuleProxyGet, "_module_proxy_get")                                  \
   V(UnderModuleProxyGuard, "_module_proxy_guard")                              \

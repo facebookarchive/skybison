@@ -43,6 +43,7 @@
 #include "marshal.h"
 #include "memoryview-builtins.h"
 #include "module-builtins.h"
+#include "module-proxy-builtins.h"
 #include "object-builtins.h"
 #include "operator-module.h"
 #include "os.h"

@@ -183,6 +183,11 @@ def _classmethod_isabstract(self):
 
 
 @_patch
+def _code_check(obj):
+    pass
+
+
+@_patch
 def _code_guard(c):
     pass
 
@@ -288,6 +293,11 @@ def _divmod(number, divisor):
 def _eq(obj, other):
     "Same as obj == other."
     return obj == other
+
+
+@_patch
+def _exec(code, module, implicit_globals):
+    pass
 
 
 @_patch
@@ -614,6 +624,11 @@ def _module_dir(module):
 
 @_patch
 def _module_proxy(module):
+    pass
+
+
+@_patch
+def _module_proxy_check(obj):
     pass
 
 

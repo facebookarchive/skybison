@@ -67,7 +67,6 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kCallable, callable},
     {SymbolId::kChr, chr},
     {SymbolId::kDunderImport, dunderImport},
-    {SymbolId::kExec, exec},
     {SymbolId::kGetattr, getattr},
     {SymbolId::kHasattr, hasattr},
     {SymbolId::kHash, hash},
@@ -438,71 +437,6 @@ RawObject compile(Thread* thread, const Object& source, const Object& filename,
   return thread->invokeFunction6(SymbolId::kBuiltins, SymbolId::kCompile,
                                  source, filename, mode_str, flags_int,
                                  dont_inherit, optimize_int);
-}
-
-RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object source_obj(&scope, args.get(0));
-  // Per the docs:
-  //   In all cases, if the optional parts are omitted, the code is executed in
-  //   the current scope. If only globals is provided, it must be a dictionary,
-  //   which will be used for both the global and the local variables.
-  Object globals_obj(&scope, args.get(1));
-  Object locals(&scope, args.get(2));
-  Runtime* runtime = thread->runtime();
-  Object module_obj(&scope, NoneType::object());
-  if (globals_obj.isNoneType()) {
-    Frame* caller_frame = frame->previousFrame();
-    Module module(&scope, caller_frame->function().moduleObject());
-    globals_obj = module.dict();
-    module_obj = caller_frame->function().moduleObject();
-    if (locals.isNoneType()) {
-      if (!caller_frame->function().hasOptimizedOrNewlocals()) {
-        locals = caller_frame->implicitGlobals();
-      } else {
-        // TODO(T41634372) This should transfer locals into a dictionary similar
-        // to calling `builtins.local()`.
-        UNIMPLEMENTED("locals() not implemented yet");
-      }
-    }
-  }
-  if (globals_obj == locals) {
-    locals = NoneType::object();
-  } else if (!locals.isNoneType() && !runtime->isMapping(thread, locals)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "Expected 'locals' to be a mapping in 'exec'");
-  }
-  if (!runtime->isInstanceOfDict(*globals_obj)) {
-    if (globals_obj.isModuleProxy()) {
-      Module module(&scope, ModuleProxy::cast(*globals_obj).module());
-      globals_obj = module.dict();
-      module_obj = *module;
-    } else {
-      return thread->raiseWithFmt(LayoutId::kTypeError,
-                                  "Expected 'globals' to be dict in 'exec'");
-    }
-  }
-  if (!source_obj.isCode()) {
-    Object filename(&scope, runtime->newStrFromCStr("<string>"));
-    source_obj = compile(thread, source_obj, filename, SymbolId::kExec,
-                         /*flags=*/0, /*optimize=*/-1);
-    if (source_obj.isErrorException()) return *source_obj;
-    CHECK(source_obj.isCode(), "_compile.compile() did not return code object");
-  }
-  Code code(&scope, *source_obj);
-  if (code.numFreevars() != 0) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "Expected 'source' not to have free variables in 'exec'");
-  }
-  DCHECK(globals_obj.isDict(), "globals_obj should be a Dict");
-  if (module_obj.isNoneType()) {
-    // TODO(T54956257): Create a temporary module object from globals_obj.
-    UNIMPLEMENTED("User-defined globals is unsupported");
-  }
-  Module module(&scope, *module_obj);
-  return thread->exec(code, module, locals);
 }
 
 RawObject BuiltinsModule::id(Thread* thread, Frame* frame, word nargs) {

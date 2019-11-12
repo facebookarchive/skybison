@@ -69,6 +69,7 @@ class UnderBuiltinsModule {
   static RawObject underClassMethod(Thread* thread, Frame* frame, word nargs);
   static RawObject underClassMethodIsAbstract(Thread* thread, Frame* frame,
                                               word nargs);
+  static RawObject underCodeCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underCodeGuard(Thread* thread, Frame* frame, word nargs);
   static RawObject underComplexCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underComplexImag(Thread* thread, Frame* frame, word nargs);
@@ -94,6 +95,7 @@ class UnderBuiltinsModule {
   static RawObject underDictPopitem(Thread* thread, Frame* frame, word nargs);
   static RawObject underDictSetItem(Thread* thread, Frame* frame, word nargs);
   static RawObject underDivmod(Thread* thread, Frame* frame, word nargs);
+  static RawObject underExec(Thread* thread, Frame* frame, word nargs);
   static RawObject underFloatCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underFloatCheckExact(Thread* thread, Frame* frame,
                                         word nargs);
@@ -191,6 +193,8 @@ class UnderBuiltinsModule {
                                          word nargs);
   static RawObject underModuleDir(Thread* thread, Frame* frame, word nargs);
   static RawObject underModuleProxy(Thread* thread, Frame* frame, word nargs);
+  static RawObject underModuleProxyCheck(Thread* thread, Frame* frame,
+                                         word nargs);
   static RawObject underModuleProxyGet(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underModuleProxyGuard(Thread* thread, Frame* frame,

@@ -343,6 +343,8 @@ add_library(
   runtime/memoryview-builtins.h
   runtime/module-builtins.cpp
   runtime/module-builtins.h
+  runtime/module-proxy-builtins.cpp
+  runtime/module-proxy-builtins.h
   runtime/mutex.h
   runtime/mro.cpp
   runtime/mro.h
