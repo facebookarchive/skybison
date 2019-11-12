@@ -225,6 +225,15 @@ def output_files_to_directory(output_directory, output_file_dict):
             write_if_different(output_gen_path, contents)
             continue
 
+        # Delete _PyObject_INIT, we are already replacing the macro that uses it
+        if "objimpl.h" in file_path:
+            contents = b"".join([line.encode("utf-8") for line in lines])
+            contents = re.sub(
+                b"static.*\n_PyObject_INIT.*\n{(.|\n)*?\n}", b"", contents
+            )
+            write_if_different(output_gen_path, contents)
+            continue
+
         # Write files
         contents = b"".join([line.encode("utf-8") for line in lines])
         write_if_different(output_gen_path, contents)
