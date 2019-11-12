@@ -2252,7 +2252,7 @@ static RawObject intFromBytes(Thread* thread, const Bytes& bytes, word length,
 
   word inferred_base = 10;
   if (b == '0') {
-    if (idx >= length) return Error::error();
+    if (idx >= length) return SmallInt::fromWord(0);
     inferred_base = inferBase(bytes.byteAt(idx));
     if (base == 0) base = inferred_base;
     if (inferred_base != 10 && base == inferred_base) {

@@ -858,6 +858,17 @@ foo = Foo(b"42")
       SmallInt::fromWord(86));
 }
 
+TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromBytesWithZero) {
+  HandleScope scope(thread_);
+  const byte src[] = {'0'};
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Bytes bytes(&scope, runtime_.newBytesWithAll(src));
+  Int base(&scope, SmallInt::fromWord(10));
+  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromBytes,
+                                   type, bytes, base));
+  EXPECT_TRUE(isIntEqualsWord(*result, 0));
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromBytesWithLargeInt) {
   HandleScope scope(thread_);
   const byte src[] = "1844674407370955161500";
