@@ -2486,7 +2486,7 @@ HANDLER_INLINE Continue Interpreter::doBuildSet(Thread* thread, word arg) {
     hash_obj = hash(thread, value);
     if (hash_obj.isErrorException()) return Continue::UNWIND;
     word hash = SmallInt::cast(*hash_obj).value();
-    runtime->setAdd(thread, set, value, hash);
+    setAdd(thread, set, value, hash);
   }
   frame->pushValue(*set);
   return Continue::NEXT;
@@ -3394,7 +3394,7 @@ HANDLER_INLINE Continue Interpreter::doSetAdd(Thread* thread, word arg) {
   }
   word hash = SmallInt::cast(*hash_obj).value();
   Set set(&scope, Set::cast(frame->peek(arg - 1)));
-  thread->runtime()->setAdd(thread, set, value, hash);
+  setAdd(thread, set, value, hash);
   return Continue::NEXT;
 }
 
@@ -3560,7 +3560,7 @@ HANDLER_INLINE Continue Interpreter::doBuildSetUnpack(Thread* thread,
   Object obj(&scope, NoneType::object());
   for (word i = 0; i < arg; i++) {
     obj = frame->peek(i);
-    if (runtime->setUpdate(thread, set, obj).isError()) return Continue::UNWIND;
+    if (setUpdate(thread, set, obj).isError()) return Continue::UNWIND;
   }
   frame->dropValues(arg - 1);
   frame->setTopValue(*set);

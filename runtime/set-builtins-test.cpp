@@ -971,7 +971,7 @@ TEST_F(SetBuiltinsTest, FrozenSetDunderNewFromFrozenSetIsIdempotent) {
   Type type(&scope, runtime_.typeAt(LayoutId::kFrozenSet));
   List nonempty_list(&scope, listFromRange(1, 5));
   FrozenSet frozenset(&scope, runtime_.newFrozenSet());
-  frozenset = runtime_.setUpdate(Thread::current(), frozenset, nonempty_list);
+  frozenset = setUpdate(Thread::current(), frozenset, nonempty_list);
   Object result(&scope,
                 runBuiltin(FrozenSetBuiltins::dunderNew, type, frozenset));
   EXPECT_EQ(*result, *frozenset);

@@ -6,6 +6,7 @@
 
 #include "heap.h"
 #include "runtime.h"
+#include "set-builtins.h"
 #include "tuple-builtins.h"
 #include "utils.h"
 #include "view.h"
@@ -374,7 +375,7 @@ RawObject Marshal::Reader::doSetElements(int32_t length, RawObject set_obj) {
     hash_obj = Interpreter::hash(thread, value);
     DCHECK(!hash_obj.isErrorException(), "must be hashable");
     word hash = SmallInt::cast(*hash_obj).value();
-    RawObject result = runtime_->setAdd(thread, set, value, hash);
+    RawObject result = setAdd(thread, set, value, hash);
     if (result.isError()) {
       return result;
     }

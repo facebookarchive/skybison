@@ -9,6 +9,298 @@
 
 namespace py {
 
+enum class SetLookupType { Lookup, Insertion };
+
+template <SetLookupType type>
+static word setLookupImpl(Thread* thread, const Tuple& data, const Object& key,
+                          word hash) {
+  word start = SetBase::Bucket::getIndex(*data, hash);
+  word current = start;
+  word next_free_index = -1;
+
+  // TODO(mpage) - Quadratic probing?
+  word length = data.length();
+  if (length == 0) {
+    return -1;
+  }
+
+  do {
+    if (SetBase::Bucket::hasValue(*data, current)) {
+      RawObject eq = Runtime::objectEquals(
+          thread, SetBase::Bucket::value(*data, current), *key);
+      if (eq == Bool::trueObj()) {
+        return current;
+      }
+      if (eq.isErrorException()) {
+        UNIMPLEMENTED("exception in value comparison");
+      }
+    }
+    if (next_free_index == -1 && SetBase::Bucket::isTombstone(*data, current)) {
+      if (type == SetLookupType::Insertion) {
+        return current;
+      }
+      next_free_index = current;
+    } else if (SetBase::Bucket::isEmpty(*data, current)) {
+      if (next_free_index == -1) {
+        next_free_index = current;
+      }
+      break;
+    }
+    current = (current + SetBase::Bucket::kNumPointers) & (length - 1);
+  } while (current != start);
+
+  if (type == SetLookupType::Insertion) {
+    return next_free_index;
+  }
+  return -1;
+}
+
+word setLookup(Thread* thread, const Tuple& data, const Object& key,
+               word hash) {
+  return setLookupImpl<SetLookupType::Lookup>(thread, data, key, hash);
+}
+
+static word setLookupForInsertion(Thread* thread, const Tuple& data,
+                                  const Object& key, word hash) {
+  return setLookupImpl<SetLookupType::Insertion>(thread, data, key, hash);
+}
+
+static RawTuple setGrow(Thread* thread, const Tuple& data) {
+  HandleScope scope(thread);
+  word new_length = data.length() * Runtime::kSetGrowthFactor;
+  if (new_length == 0) {
+    new_length = Runtime::kInitialSetCapacity * SetBase::Bucket::kNumPointers;
+  }
+  MutableTuple new_data(&scope, thread->runtime()->newMutableTuple(new_length));
+  // Re-insert items
+  Object value(&scope, NoneType::object());
+  for (word i = SetBase::Bucket::kFirst;
+       SetBase::Bucket::nextItem(*data, &i);) {
+    value = SetBase::Bucket::value(*data, i);
+    word hash = SetBase::Bucket::hash(*data, i);
+    word index = setLookupForInsertion(thread, new_data, value, hash);
+    DCHECK(index != -1, "unexpected index %ld", index);
+    SetBase::Bucket::set(*new_data, index, hash, *value);
+  }
+  return *new_data;
+}
+
+RawObject setAdd(Thread* thread, const SetBase& set, const Object& value,
+                 word hash) {
+  HandleScope scope(thread);
+  Tuple data(&scope, set.data());
+  word index = setLookup(thread, data, value, hash);
+  if (index != -1) {
+    return SetBase::Bucket::value(*data, index);
+  }
+  Tuple new_data(&scope, *data);
+  if (data.length() == 0 || set.numItems() >= data.length() / 2) {
+    new_data = setGrow(thread, data);
+  }
+  index = setLookupForInsertion(thread, new_data, value, hash);
+  DCHECK(index != -1, "unexpected index %ld", index);
+  set.setData(*new_data);
+  SetBase::Bucket::set(*new_data, index, hash, *value);
+  set.setNumItems(set.numItems() + 1);
+  return *value;
+}
+
+bool setIncludes(Thread* thread, const SetBase& set, const Object& key,
+                 word hash) {
+  HandleScope scope(thread);
+  Tuple data(&scope, set.data());
+  return setLookup(thread, data, key, hash) != -1;
+}
+
+RawObject setIntersection(Thread* thread, const SetBase& set,
+                          const Object& iterable) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  SetBase dst(&scope, runtime->isInstanceOfSet(*set) ? runtime->newSet()
+                                                     : runtime->newFrozenSet());
+  Object value(&scope, NoneType::object());
+  // Special case for sets
+  if (runtime->isInstanceOfSetBase(*iterable)) {
+    SetBase self(&scope, *set);
+    SetBase other(&scope, *iterable);
+    if (set.numItems() == 0 || other.numItems() == 0) {
+      return *dst;
+    }
+    // Iterate over the smaller set
+    if (set.numItems() > other.numItems()) {
+      self = *iterable;
+      other = *set;
+    }
+    Tuple data(&scope, self.data());
+    Tuple other_data(&scope, other.data());
+    for (word i = SetBase::Bucket::kFirst;
+         SetBase::Bucket::nextItem(*data, &i);) {
+      value = SetBase::Bucket::value(*data, i);
+      word hash = SetBase::Bucket::hash(*data, i);
+      if (setLookup(thread, other_data, value, hash) != -1) {
+        setAdd(thread, dst, value, hash);
+      }
+    }
+    return *dst;
+  }
+  // Generic case
+  Object iter_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                        iterable, SymbolId::kDunderIter));
+  if (iter_method.isError()) {
+    return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
+  }
+  Object iterator(&scope,
+                  Interpreter::callMethod1(thread, thread->currentFrame(),
+                                           iter_method, iterable));
+  if (iterator.isError()) {
+    return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
+  }
+  Object next_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                        iterator, SymbolId::kDunderNext));
+  if (next_method.isError()) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "iter() returned a non-iterator");
+  }
+  if (set.numItems() == 0) {
+    return *dst;
+  }
+  Tuple data(&scope, set.data());
+  Object hash_obj(&scope, NoneType::object());
+  for (;;) {
+    value = Interpreter::callMethod1(thread, thread->currentFrame(),
+                                     next_method, iterator);
+    if (value.isError()) {
+      if (thread->clearPendingStopIteration()) break;
+      return *value;
+    }
+    hash_obj = Interpreter::hash(thread, value);
+    if (hash_obj.isErrorException()) return *hash_obj;
+    word hash = SmallInt::cast(*hash_obj).value();
+    if (setLookup(thread, data, value, hash) != -1) {
+      setAdd(thread, dst, value, hash);
+    }
+  }
+  return *dst;
+}
+
+bool setRemove(Thread* thread, const Set& set, const Object& key, word hash) {
+  HandleScope scope(thread);
+  Tuple data(&scope, set.data());
+  word index = setLookup(thread, data, key, hash);
+  if (index != -1) {
+    SetBase::Bucket::setTombstone(*data, index);
+    set.setNumItems(set.numItems() - 1);
+    return true;
+  }
+  return false;
+}
+
+RawObject setUpdate(Thread* thread, const SetBase& dst,
+                    const Object& iterable) {
+  HandleScope scope(thread);
+  Object elt(&scope, NoneType::object());
+  Object hash_obj(&scope, NoneType::object());
+  // Special case for lists
+  if (iterable.isList()) {
+    List src(&scope, *iterable);
+    for (word i = 0; i < src.numItems(); i++) {
+      elt = src.at(i);
+      hash_obj = Interpreter::hash(thread, elt);
+      if (hash_obj.isErrorException()) return *hash_obj;
+      word hash = SmallInt::cast(*hash_obj).value();
+      setAdd(thread, dst, elt, hash);
+    }
+    return *dst;
+  }
+  // Special case for lists iterators
+  if (iterable.isListIterator()) {
+    ListIterator list_iter(&scope, *iterable);
+    List src(&scope, list_iter.iterable());
+    for (word i = 0; i < src.numItems(); i++) {
+      elt = src.at(i);
+      hash_obj = Interpreter::hash(thread, elt);
+      if (hash_obj.isErrorException()) return *hash_obj;
+      word hash = SmallInt::cast(*hash_obj).value();
+      setAdd(thread, dst, elt, hash);
+    }
+  }
+  // Special case for tuples
+  if (iterable.isTuple()) {
+    Tuple tuple(&scope, *iterable);
+    if (tuple.length() > 0) {
+      for (word i = 0; i < tuple.length(); i++) {
+        elt = tuple.at(i);
+        hash_obj = Interpreter::hash(thread, elt);
+        if (hash_obj.isErrorException()) return *hash_obj;
+        word hash = SmallInt::cast(*hash_obj).value();
+        setAdd(thread, dst, elt, hash);
+      }
+    }
+    return *dst;
+  }
+  // Special case for built-in set types
+  if (thread->runtime()->isInstanceOfSetBase(*iterable)) {
+    SetBase src(&scope, *iterable);
+    Tuple data(&scope, src.data());
+    if (src.numItems() > 0) {
+      for (word i = SetBase::Bucket::kFirst;
+           SetBase::Bucket::nextItem(*data, &i);) {
+        elt = SetBase::Bucket::value(*data, i);
+        // take hash from data to avoid recomputing it.
+        word hash = SetBase::Bucket::hash(*data, i);
+        setAdd(thread, dst, elt, hash);
+      }
+    }
+    return *dst;
+  }
+  // Special case for dicts
+  if (iterable.isDict()) {
+    Dict dict(&scope, *iterable);
+    Tuple data(&scope, dict.data());
+    for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
+      elt = Dict::Bucket::key(*data, i);
+      word hash = Dict::Bucket::hash(*data, i);
+      setAdd(thread, dst, elt, hash);
+    }
+    return *dst;
+  }
+  // Generic case
+  Object iter_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                        iterable, SymbolId::kDunderIter));
+  if (iter_method.isError()) {
+    return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
+  }
+  Object iterator(&scope,
+                  Interpreter::callMethod1(thread, thread->currentFrame(),
+                                           iter_method, iterable));
+  if (iterator.isError()) {
+    return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
+  }
+  Object next_method(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                        iterator, SymbolId::kDunderNext));
+  if (next_method.isError()) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "iter() returned a non-iterator");
+  }
+  for (;;) {
+    elt = Interpreter::callMethod1(thread, thread->currentFrame(), next_method,
+                                   iterator);
+    if (elt.isError()) {
+      if (thread->clearPendingStopIteration()) break;
+      return *elt;
+    }
+    hash_obj = Interpreter::hash(thread, elt);
+    if (hash_obj.isErrorException()) return *hash_obj;
+    word hash = SmallInt::cast(*hash_obj).value();
+    setAdd(thread, dst, elt, hash);
+  }
+  return *dst;
+}
+
 RawSmallInt frozensetHash(Thread* thread, const Object& frozenset) {
   HandleScope scope(thread);
   FrozenSet set(&scope, *frozenset);
@@ -63,7 +355,7 @@ RawObject SetBaseBuiltins::dunderContains(Thread* thread, Frame* frame,
   Object hash_obj(&scope, Interpreter::hash(thread, key));
   if (hash_obj.isErrorException()) return *hash_obj;
   word hash = SmallInt::cast(*hash_obj).value();
-  return Bool::fromBool(thread->runtime()->setIncludes(thread, set, key, hash));
+  return Bool::fromBool(setIncludes(thread, set, key, hash));
 }
 
 RawObject SetBaseBuiltins::dunderIter(Thread* thread, Frame* frame,
@@ -82,7 +374,6 @@ RawObject SetBaseBuiltins::dunderIter(Thread* thread, Frame* frame,
 
 RawObject SetBaseBuiltins::isDisjoint(Thread* thread, Frame* frame,
                                       word nargs) {
-  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -112,7 +403,7 @@ RawObject SetBaseBuiltins::isDisjoint(Thread* thread, Frame* frame,
          SetBase::Bucket::nextItem(*data, &i);) {
       value = SetBase::Bucket::value(*data, i);
       word hash = SetBase::Bucket::hash(*data, i);
-      if (runtime->setIncludes(thread, b, value, hash)) {
+      if (setIncludes(thread, b, value, hash)) {
         return Bool::falseObj();
       }
     }
@@ -149,7 +440,7 @@ RawObject SetBaseBuiltins::isDisjoint(Thread* thread, Frame* frame,
     hash_obj = Interpreter::hash(thread, value);
     if (hash_obj.isErrorException()) return *hash_obj;
     word hash = SmallInt::cast(*hash_obj).value();
-    if (runtime->setIncludes(thread, a, value, hash)) {
+    if (setIncludes(thread, a, value, hash)) {
       return Bool::falseObj();
     }
   }
@@ -171,7 +462,7 @@ RawObject SetBaseBuiltins::dunderAnd(Thread* thread, Frame* frame, word nargs) {
   }
   SetBase set(&scope, *self);
   SetBase other_set(&scope, *other);
-  return thread->runtime()->setIntersection(thread, set, other_set);
+  return setIntersection(thread, set, other_set);
 }
 
 RawObject SetBaseBuiltins::intersection(Thread* thread, Frame* frame,
@@ -192,7 +483,7 @@ RawObject SetBaseBuiltins::intersection(Thread* thread, Frame* frame,
   }
   // nargs is at least 2
   Object other(&scope, args.get(1));
-  Object result(&scope, thread->runtime()->setIntersection(thread, set, other));
+  Object result(&scope, setIntersection(thread, set, other));
   if (result.isError() || nargs == 2) {
     return *result;
   }
@@ -200,7 +491,7 @@ RawObject SetBaseBuiltins::intersection(Thread* thread, Frame* frame,
   SetBase base(&scope, *result);
   for (word i = 2; i < nargs; i++) {
     other = args.get(i);
-    result = thread->runtime()->setIntersection(thread, base, other);
+    result = setIntersection(thread, base, other);
     if (result.isError()) {
       return *result;
     }
@@ -421,7 +712,7 @@ RawObject FrozenSetBuiltins::dunderNew(Thread* thread, Frame* frame,
         "frozenset.__new__ must be called with an iterable");
   }
   FrozenSet result(&scope, runtime->newFrozenSet());
-  result = runtime->setUpdate(thread, result, iterable);
+  result = setUpdate(thread, result, iterable);
   if (result.numItems() == 0) {
     return runtime->emptyFrozenSet();
   }
@@ -494,7 +785,7 @@ bool setIsSubset(Thread* thread, const SetBase& set, const SetBase& other) {
        SetBase::Bucket::nextItem(*data, &i);) {
     value = RawSetBase::Bucket::value(*data, i);
     word hash = RawSetBase::Bucket::hash(*data, i);
-    if (!thread->runtime()->setIncludes(thread, other, value, hash)) {
+    if (!setIncludes(thread, other, value, hash)) {
       return false;
     }
   }
@@ -565,7 +856,7 @@ RawObject SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
   if (hash_obj.isErrorException()) return *hash_obj;
   word hash = SmallInt::cast(*hash_obj).value();
 
-  Object result(&scope, runtime->setAdd(thread, set, value, hash));
+  Object result(&scope, setAdd(thread, set, value, hash));
   if (result.isError()) return *result;
   return NoneType::object();
 }
@@ -594,7 +885,7 @@ RawObject SetBuiltins::discard(Thread* thread, Frame* frame, word nargs) {
   Object hash_obj(&scope, Interpreter::hash(thread, key));
   if (hash_obj.isErrorException()) return *hash_obj;
   word hash = SmallInt::cast(*hash_obj).value();
-  runtime->setRemove(thread, self, key, hash);
+  setRemove(thread, self, key, hash);
   return NoneType::object();
 }
 
@@ -611,8 +902,7 @@ RawObject SetBuiltins::dunderIand(Thread* thread, Frame* frame, word nargs) {
     return NotImplementedType::object();
   }
   Set set(&scope, *self);
-  Object intersection(&scope,
-                      thread->runtime()->setIntersection(thread, set, other));
+  Object intersection(&scope, setIntersection(thread, set, other));
   if (intersection.isError()) {
     return *intersection;
   }
@@ -632,7 +922,7 @@ RawObject SetBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   }
   Set set(&scope, *self);
   Object iterable(&scope, args.get(1));
-  Object result(&scope, runtime->setUpdate(thread, set, iterable));
+  Object result(&scope, setUpdate(thread, set, iterable));
   if (result.isError()) {
     return *result;
   }
@@ -663,7 +953,7 @@ RawObject SetBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
   Object hash_obj(&scope, Interpreter::hash(thread, key));
   if (hash_obj.isErrorException()) return *hash_obj;
   word hash = SmallInt::cast(*hash_obj).value();
-  if (!runtime->setRemove(thread, set, key, hash)) {
+  if (!setRemove(thread, set, key, hash)) {
     return thread->raise(LayoutId::kKeyError, *key);
   }
   return NoneType::object();
@@ -686,7 +976,7 @@ RawObject SetBuiltins::update(Thread* thread, Frame* frame, word nargs) {
   Object result(&scope, NoneType::object());
   for (word i = 0; i < starargs.length(); i++) {
     Object other(&scope, starargs.at(i));
-    result = runtime->setUpdate(thread, self, other);
+    result = setUpdate(thread, self, other);
     if (result.isError()) {
       return *result;
     }

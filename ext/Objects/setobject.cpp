@@ -25,7 +25,7 @@ PY_EXPORT PyObject* PyFrozenSet_New(PyObject* iterable) {
   }
   Object obj(&scope, ApiHandle::fromPyObject(iterable)->asObject());
   FrozenSet set(&scope, runtime->newFrozenSet());
-  Object result(&scope, runtime->setUpdate(thread, set, obj));
+  Object result(&scope, setUpdate(thread, set, obj));
   if (result.isError()) {
     return nullptr;
   }
@@ -53,7 +53,7 @@ PY_EXPORT int PySet_Add(PyObject* anyset, PyObject* key) {
   }
   word hash = SmallInt::cast(*hash_obj).value();
 
-  runtime->setAdd(thread, set, key_obj, hash);
+  setAdd(thread, set, key_obj, hash);
   return 0;
 }
 
@@ -115,7 +115,7 @@ PY_EXPORT int PySet_Contains(PyObject* anyset, PyObject* key) {
     return -1;
   }
   word hash = SmallInt::cast(*hash_obj).value();
-  return runtime->setIncludes(thread, set, key_obj, hash);
+  return setIncludes(thread, set, key_obj, hash);
 }
 
 PY_EXPORT int PySet_Discard(PyObject* pyset, PyObject* pykey) {
@@ -134,7 +134,7 @@ PY_EXPORT int PySet_Discard(PyObject* pyset, PyObject* pykey) {
     return -1;
   }
   word hash = SmallInt::cast(*hash_obj).value();
-  return runtime->setRemove(thread, set, key, hash);
+  return setRemove(thread, set, key, hash);
 }
 
 PY_EXPORT PyObject* PySet_New(PyObject* iterable) {
@@ -149,7 +149,7 @@ PY_EXPORT PyObject* PySet_New(PyObject* iterable) {
   Object obj(&scope, ApiHandle::fromPyObject(iterable)->asObject());
   Set set(&scope, runtime->newSet());
 
-  Object result(&scope, runtime->setUpdate(thread, set, obj));
+  Object result(&scope, setUpdate(thread, set, obj));
   if (result.isError()) {
     return nullptr;
   }

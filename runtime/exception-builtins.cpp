@@ -9,6 +9,7 @@
 #include "module-builtins.h"
 #include "objects.h"
 #include "runtime.h"
+#include "set-builtins.h"
 #include "sys-module.h"
 #include "tuple-builtins.h"
 
@@ -403,7 +404,7 @@ static RawObject printExceptionChain(Thread* thread, const Object& file,
   Object hash_obj(&scope, Interpreter::hash(thread, value));
   if (hash_obj.isErrorException()) return *hash_obj;
   word hash = SmallInt::cast(*hash_obj).value();
-  runtime->setAdd(thread, seen, value, hash);
+  setAdd(thread, seen, value, hash);
 
   if (runtime->isInstanceOfBaseException(*value)) {
     BaseException exc(&scope, *value);
@@ -413,7 +414,7 @@ static RawObject printExceptionChain(Thread* thread, const Object& file,
       hash_obj = Interpreter::hash(thread, cause);
       if (hash_obj.isErrorException()) return *hash_obj;
       hash = SmallInt::cast(*hash_obj).value();
-      if (!runtime->setIncludes(thread, seen, cause, hash)) {
+      if (!setIncludes(thread, seen, cause, hash)) {
         MAY_RAISE(printExceptionChain(thread, file, cause, seen));
         MAY_RAISE(
             fileWriteString(thread, file,
@@ -425,7 +426,7 @@ static RawObject printExceptionChain(Thread* thread, const Object& file,
       hash_obj = Interpreter::hash(thread, context);
       if (hash_obj.isErrorException()) return *hash_obj;
       hash = SmallInt::cast(*hash_obj).value();
-      if (!runtime->setIncludes(thread, seen, context, hash)) {
+      if (!setIncludes(thread, seen, context, hash)) {
         MAY_RAISE(printExceptionChain(thread, file, context, seen));
         MAY_RAISE(
             fileWriteString(thread, file,

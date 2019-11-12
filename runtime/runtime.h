@@ -47,8 +47,6 @@ struct BuiltinType {
   LayoutId type;
 };
 
-enum class SetLookupType { Lookup, Insertion };
-
 enum class ReadOnly : bool {
   ReadWrite,
   ReadOnly,
@@ -486,29 +484,6 @@ class Runtime {
   RawObject mutableBytesFromBytes(Thread* thread, const Bytes& bytes);
   RawObject mutableBytesWith(word length, byte value);
 
-  // Set related function, based on dict.
-  // Add `value` to set if there is no equivalent value present yet. Returns
-  // `value` if it was added or the existing equivalent value.
-  RawObject setAdd(Thread* thread, const SetBase& set, const Object& value,
-                   word hash);
-
-  bool setIncludes(Thread* thread, const SetBase& set, const Object& key,
-                   word hash);
-
-  // Compute the set intersection between a set and an iterator
-  // Returns either a new set with the intersection or an Error object.
-  NODISCARD RawObject setIntersection(Thread* thread, const SetBase& set,
-                                      const Object& iterable);
-
-  // Delete the value equivalent to `key` from the set.
-  // Returns true if a value was removed, false if no equivalent value existed.
-  bool setRemove(Thread* thread, const Set& set, const Object& key, word hash);
-
-  // Update a set from an iterator
-  // Returns either the updated set or an Error object.
-  NODISCARD RawObject setUpdate(Thread* thread, const SetBase& dst,
-                                const Object& iterable);
-
   RawObject tupleSubseq(Thread* thread, const Tuple& self, word start,
                         word length);
 
@@ -837,12 +812,6 @@ class Runtime {
   // Execute a frozen module by marshalling it into a code object and then
   // executing it.
   RawObject executeFrozenModule(const char* buffer, const Module& module);
-
-  template <SetLookupType type>
-  static word setLookup(Thread* thread, const Tuple& data, const Object& key,
-                        word hash);
-
-  RawTuple setGrow(Thread* thread, const Tuple& data);
 
   // Generic attribute deletion code used for class objects
   // TODO(T55871582): Remove code paths that can raise from the Runtime

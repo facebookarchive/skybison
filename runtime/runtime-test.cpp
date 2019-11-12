@@ -11,6 +11,7 @@
 #include "module-builtins.h"
 #include "object-builtins.h"
 #include "runtime.h"
+#include "set-builtins.h"
 #include "str-builtins.h"
 #include "symbols.h"
 #include "test-utils.h"
@@ -1355,7 +1356,7 @@ TEST_F(RuntimeSetTest, Add) {
   word hash = intHash(*value);
 
   // Store a value
-  runtime_.setAdd(thread_, set, value, hash);
+  setAdd(thread_, set, value, hash);
   EXPECT_EQ(set.numItems(), 1);
 
   // Retrieve the stored value
@@ -1364,7 +1365,7 @@ TEST_F(RuntimeSetTest, Add) {
   // Add a new value
   Object new_value(&scope, SmallInt::fromWord(5555));
   word new_value_hash = intHash(*new_value);
-  runtime_.setAdd(thread_, set, new_value, new_value_hash);
+  setAdd(thread_, set, new_value, new_value_hash);
   EXPECT_EQ(set.numItems(), 2);
 
   // Get the new value
@@ -1373,8 +1374,7 @@ TEST_F(RuntimeSetTest, Add) {
   // Add a existing value
   Object same_value(&scope, SmallInt::fromWord(12345));
   word same_value_hash = intHash(*same_value);
-  RawObject old_value =
-      runtime_.setAdd(thread_, set, same_value, same_value_hash);
+  RawObject old_value = setAdd(thread_, set, same_value, same_value_hash);
   EXPECT_EQ(set.numItems(), 2);
   EXPECT_EQ(old_value, *value);
 }
@@ -1386,12 +1386,12 @@ TEST_F(RuntimeSetTest, Remove) {
   word hash = intHash(*value);
 
   // Removing a key that doesn't exist should fail
-  EXPECT_FALSE(runtime_.setRemove(thread_, set, value, hash));
+  EXPECT_FALSE(setRemove(thread_, set, value, hash));
 
   setHashAndAdd(thread_, set, value);
   EXPECT_EQ(set.numItems(), 1);
 
-  ASSERT_TRUE(runtime_.setRemove(thread_, set, value, hash));
+  ASSERT_TRUE(setRemove(thread_, set, value, hash));
   EXPECT_EQ(set.numItems(), 0);
 
   // Looking up a key that was deleted should fail
@@ -1446,15 +1446,15 @@ TEST_F(RuntimeSetTest, UpdateSet) {
     Object value(&scope, SmallInt::fromWord(i));
     setHashAndAdd(thread_, set, value);
   }
-  ASSERT_FALSE(runtime_.setUpdate(thread_, set, set1_handle).isError());
+  ASSERT_FALSE(setUpdate(thread_, set, set1_handle).isError());
   ASSERT_EQ(set.numItems(), 8);
   for (word i = 4; i < 12; i++) {
     Object value(&scope, SmallInt::fromWord(i));
     setHashAndAdd(thread_, set1, value);
   }
-  ASSERT_FALSE(runtime_.setUpdate(thread_, set, set1_handle).isError());
+  ASSERT_FALSE(setUpdate(thread_, set, set1_handle).isError());
   ASSERT_EQ(set.numItems(), 12);
-  ASSERT_FALSE(runtime_.setUpdate(thread_, set, set1_handle).isError());
+  ASSERT_FALSE(setUpdate(thread_, set, set1_handle).isError());
   ASSERT_EQ(set.numItems(), 12);
 }
 
@@ -1472,9 +1472,9 @@ TEST_F(RuntimeSetTest, UpdateList) {
   }
   ASSERT_EQ(set.numItems(), 8);
   Object list_handle(&scope, *list);
-  ASSERT_FALSE(runtime_.setUpdate(thread_, set, list_handle).isError());
+  ASSERT_FALSE(setUpdate(thread_, set, list_handle).isError());
   ASSERT_EQ(set.numItems(), 12);
-  ASSERT_FALSE(runtime_.setUpdate(thread_, set, list_handle).isError());
+  ASSERT_FALSE(setUpdate(thread_, set, list_handle).isError());
   ASSERT_EQ(set.numItems(), 12);
 }
 
@@ -1493,7 +1493,7 @@ TEST_F(RuntimeSetTest, UpdateListIterator) {
   ASSERT_EQ(set.numItems(), 8);
   Object list_handle(&scope, *list);
   Object list_iterator(&scope, runtime_.newListIterator(list_handle));
-  ASSERT_FALSE(runtime_.setUpdate(thread_, set, list_iterator).isError());
+  ASSERT_FALSE(setUpdate(thread_, set, list_iterator).isError());
   ASSERT_EQ(set.numItems(), 12);
 }
 
@@ -1510,7 +1510,7 @@ TEST_F(RuntimeSetTest, UpdateTuple) {
   }
   ASSERT_EQ(set.numItems(), 8);
   Object object_array_handle(&scope, *object_array);
-  ASSERT_FALSE(runtime_.setUpdate(thread_, set, object_array_handle).isError());
+  ASSERT_FALSE(setUpdate(thread_, set, object_array_handle).isError());
   ASSERT_EQ(set.numItems(), 12);
 }
 
@@ -1520,7 +1520,7 @@ TEST_F(RuntimeSetTest, UpdateIterator) {
   Int one(&scope, SmallInt::fromWord(1));
   Int four(&scope, SmallInt::fromWord(4));
   Object iterable(&scope, runtime_.newRange(one, four, one));
-  ASSERT_FALSE(runtime_.setUpdate(thread_, set, iterable).isError());
+  ASSERT_FALSE(setUpdate(thread_, set, iterable).isError());
 
   ASSERT_EQ(set.numItems(), 3);
 }
@@ -1529,7 +1529,7 @@ TEST_F(RuntimeSetTest, UpdateWithNonIterable) {
   HandleScope scope(thread_);
   Set set(&scope, runtime_.newSet());
   Object non_iterable(&scope, NoneType::object());
-  Object result(&scope, runtime_.setUpdate(thread_, set, non_iterable));
+  Object result(&scope, setUpdate(thread_, set, non_iterable));
   ASSERT_TRUE(result.isError());
 }
 
@@ -1539,7 +1539,7 @@ TEST_F(RuntimeSetTest, EmptySetItersectionReturnsEmptySet) {
   Set set1(&scope, runtime_.newSet());
 
   // set() & set()
-  Object result(&scope, runtime_.setIntersection(thread_, set, set1));
+  Object result(&scope, setIntersection(thread_, set, set1));
   ASSERT_TRUE(result.isSet());
   EXPECT_EQ(Set::cast(*result).numItems(), 0);
 }
@@ -1555,12 +1555,12 @@ TEST_F(RuntimeSetTest, ItersectionWithEmptySetReturnsEmptySet) {
   }
 
   // set() & {0, 1, 2, 3, 4, 5, 6, 7}
-  Object result(&scope, runtime_.setIntersection(thread_, set, set1));
+  Object result(&scope, setIntersection(thread_, set, set1));
   ASSERT_TRUE(result.isSet());
   EXPECT_EQ(Set::cast(*result).numItems(), 0);
 
   // {0, 1, 2, 3, 4, 5, 6, 7} & set()
-  Object result1(&scope, runtime_.setIntersection(thread_, set1, set));
+  Object result1(&scope, setIntersection(thread_, set1, set));
   ASSERT_TRUE(result1.isSet());
   EXPECT_EQ(Set::cast(*result1).numItems(), 0);
 }
@@ -1582,7 +1582,7 @@ TEST_F(RuntimeSetTest, IntersectionReturnsSetWithCommonElements) {
   }
 
   // {0, 1, 2, 3} & {0, 1, 2, 3, 4, 5, 6, 7}
-  Set result(&scope, runtime_.setIntersection(thread_, set, set1));
+  Set result(&scope, setIntersection(thread_, set, set1));
   EXPECT_EQ(Set::cast(*result).numItems(), 4);
   key = SmallInt::fromWord(0);
   EXPECT_TRUE(setIncludes(thread_, result, key));
@@ -1594,7 +1594,7 @@ TEST_F(RuntimeSetTest, IntersectionReturnsSetWithCommonElements) {
   EXPECT_TRUE(setIncludes(thread_, result, key));
 
   // {0, 1, 2, 3, 4, 5, 6, 7} & {0, 1, 2, 3}
-  Set result1(&scope, runtime_.setIntersection(thread_, set, set1));
+  Set result1(&scope, setIntersection(thread_, set, set1));
   EXPECT_EQ(Set::cast(*result1).numItems(), 4);
   key = SmallInt::fromWord(0);
   EXPECT_TRUE(setIncludes(thread_, result1, key));
@@ -1612,14 +1612,14 @@ TEST_F(RuntimeSetTest, IntersectIterator) {
   Int one(&scope, SmallInt::fromWord(1));
   Int four(&scope, SmallInt::fromWord(4));
   Object iterable(&scope, runtime_.newRange(one, four, one));
-  Set result(&scope, runtime_.setIntersection(thread_, set, iterable));
+  Set result(&scope, setIntersection(thread_, set, iterable));
   EXPECT_EQ(result.numItems(), 0);
 
   Object key(&scope, SmallInt::fromWord(1));
   setHashAndAdd(thread_, set, key);
   key = SmallInt::fromWord(2);
   setHashAndAdd(thread_, set, key);
-  Set result1(&scope, runtime_.setIntersection(thread_, set, iterable));
+  Set result1(&scope, setIntersection(thread_, set, iterable));
   EXPECT_EQ(result1.numItems(), 2);
   EXPECT_TRUE(setIncludes(thread_, result1, key));
   key = SmallInt::fromWord(1);
@@ -1631,7 +1631,7 @@ TEST_F(RuntimeSetTest, IntersectWithNonIterable) {
   Set set(&scope, runtime_.newSet());
   Object non_iterable(&scope, NoneType::object());
 
-  Object result(&scope, runtime_.setIntersection(thread_, set, non_iterable));
+  Object result(&scope, setIntersection(thread_, set, non_iterable));
   ASSERT_TRUE(result.isError());
 }
 

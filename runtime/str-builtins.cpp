@@ -6,6 +6,7 @@
 #include "int-builtins.h"
 #include "objects.h"
 #include "runtime.h"
+#include "set-builtins.h"
 #include "slice-builtins.h"
 #include "thread.h"
 #include "tuple-builtins.h"
@@ -566,7 +567,7 @@ bool strInternConstants(Thread* thread, const Object& items) {
         seq.atPut(j, Set::Bucket::value(*data, idx));
       }
       if (strInternConstants(thread, seq)) {
-        obj = runtime->setUpdate(thread, set, seq);
+        obj = setUpdate(thread, set, seq);
         if (obj.isError()) continue;
         tuple.atPut(i, *obj);
         modified = true;

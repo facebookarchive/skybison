@@ -20,6 +20,7 @@
 #include "module-builtins.h"
 #include "os.h"
 #include "runtime.h"
+#include "set-builtins.h"
 #include "str-builtins.h"
 #include "sys-module.h"
 #include "thread.h"
@@ -187,7 +188,7 @@ bool setIncludes(Thread* thread, const SetBase& set, const Object& key) {
   Object hash_obj(&scope, Interpreter::hash(thread, key));
   CHECK(hash_obj.isSmallInt(), "key must be hashable");
   word hash = SmallInt::cast(*hash_obj).value();
-  return thread->runtime()->setIncludes(thread, set, key, hash);
+  return setIncludes(thread, set, key, hash);
 }
 
 void setHashAndAdd(Thread* thread, const SetBase& set, const Object& value) {
@@ -195,7 +196,7 @@ void setHashAndAdd(Thread* thread, const SetBase& set, const Object& value) {
   Object hash_obj(&scope, Interpreter::hash(thread, value));
   CHECK(hash_obj.isSmallInt(), "value must be hashable");
   word hash = SmallInt::cast(*hash_obj).value();
-  thread->runtime()->setAdd(thread, set, value, hash);
+  setAdd(thread, set, value, hash);
 }
 
 static RawObject findModuleByCStr(Runtime* runtime, const char* name) {
@@ -307,7 +308,7 @@ RawObject setFromRange(word start, word stop) {
     hash_obj = Interpreter::hash(thread, value);
     if (hash_obj.isErrorException()) return *hash_obj;
     word hash = SmallInt::cast(*hash_obj).value();
-    thread->runtime()->setAdd(thread, result, value, hash);
+    setAdd(thread, result, value, hash);
   }
   return *result;
 }

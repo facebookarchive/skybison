@@ -4,6 +4,7 @@
 #include "cpython-data.h"
 #include "cpython-func.h"
 #include "runtime.h"
+#include "set-builtins.h"
 #include "tuple-builtins.h"
 
 namespace py {
@@ -196,7 +197,7 @@ static RawObject constantKey(Thread* thread, const Object& obj) {
       seq.atPut(j, *item_key);
     }
     FrozenSet result(&scope, runtime->newFrozenSet());
-    result = runtime->setUpdate(thread, result, seq);
+    result = setUpdate(thread, result, seq);
     if (result.isError()) return *result;
     Tuple key(&scope, runtime->newTuple(2));
     key.atPut(0, *result);
