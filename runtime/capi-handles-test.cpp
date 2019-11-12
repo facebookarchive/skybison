@@ -21,10 +21,7 @@ static RawObject initializeExtensionType(PyObject* extension_type) {
   HandleScope scope(thread);
 
   // Initialize Type
-  PyObject* pytype_type =
-      ApiHandle::newReference(thread, runtime->layoutAt(LayoutId::kType));
   PyObject* pyobj = reinterpret_cast<PyObject*>(extension_type);
-  pyobj->ob_type = reinterpret_cast<PyTypeObject*>(pytype_type);
   Type type(&scope, runtime->newType());
 
   // Compute MRO
@@ -123,8 +120,7 @@ TEST_F(CApiHandlesTest, ExtensionInstanceObjectReturnsPyObject) {
 
   // Create instance
   Object native_proxy(&scope, runtime_.newInstance(layout));
-  PyObject* type_handle = ApiHandle::newReference(thread_, *type);
-  PyObject pyobj = {0, 1, reinterpret_cast<PyTypeObject*>(type_handle)};
+  PyObject pyobj = {0, 1};
   runtime_.setNativeProxyPtr(*native_proxy, static_cast<void*>(&pyobj));
 
   PyObject* result = ApiHandle::newReference(thread_, *native_proxy);
@@ -210,7 +206,6 @@ TEST_F(CApiHandlesTest, Cache) {
 
   Object key(&scope, handle1->asObject());
   word hash = runtime_.hash(*key);
-  handle1->type()->decref();
   handle1->dispose();
   Dict caches(&scope, runtime_.apiCaches());
   EXPECT_TRUE(dictAt(thread_, caches, key, hash).isError());
@@ -228,12 +223,9 @@ TEST_F(CApiHandlesTest, VisitReferences) {
   RememberingVisitor visitor;
   ApiHandle::visitReferences(runtime_.apiHandles(), &visitor);
 
-  // We should've visited obj1, obj2, their types, and Type.
+  // We should've visited obj1 and obj2.
   EXPECT_TRUE(visitor.hasVisited(*obj1));
-  EXPECT_TRUE(visitor.hasVisited(runtime_.typeAt(obj1.layoutId())));
   EXPECT_TRUE(visitor.hasVisited(*obj2));
-  EXPECT_TRUE(visitor.hasVisited(runtime_.typeAt(obj2.layoutId())));
-  EXPECT_TRUE(visitor.hasVisited(runtime_.typeAt(LayoutId::kType)));
 }
 
 TEST_F(CApiHandlesDeathTest, CleanupApiHandlesOnExit) {

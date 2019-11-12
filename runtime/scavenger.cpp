@@ -115,7 +115,6 @@ void Scavenger::processApiHandles() {
       }
       Dict::Bucket::setTombstone(*handle_data, i);
       handles.setNumItems(handles.numItems() - 1);
-      handle->type()->decref();
       std::free(handle);
     }
   }

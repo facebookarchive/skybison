@@ -10,6 +10,30 @@ using namespace testing;
 
 using ExceptionsExtensionApiTest = ExtensionApi;
 
+TEST_F(ExceptionsExtensionApiTest,
+       ExceptionInstanceCheckWithNonExceptionReturnsZero) {
+  PyObjectPtr obj(PyLong_FromLong(5));
+  EXPECT_EQ(PyExceptionInstance_Check(obj.get()), 0);
+}
+
+TEST_F(ExceptionsExtensionApiTest,
+       ExceptionInstanceCheckWithExceptionReturnsOne) {
+  PyRun_SimpleString("obj = TypeError()");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_EQ(PyExceptionInstance_Check(obj.get()), 1);
+}
+
+TEST_F(ExceptionsExtensionApiTest,
+       ExceptionInstanceCheckWithExceptionSubclassReturnsOne) {
+  PyRun_SimpleString(R"(
+class C(TypeError):
+  pass
+obj = C()
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_EQ(PyExceptionInstance_Check(obj.get()), 1);
+}
+
 TEST_F(ExceptionsExtensionApiTest, GettingCauseWithoutSettingItReturnsNull) {
   PyRun_SimpleString("a = TypeError()");
   PyObjectPtr exc(moduleGet("__main__", "a"));

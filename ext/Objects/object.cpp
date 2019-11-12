@@ -232,7 +232,6 @@ PY_EXPORT PyObject* PyObject_Init(PyObject* obj, PyTypeObject* typeobj) {
 
   // Initialize the native object
   obj->reference_ = native_proxy.raw();
-  obj->ob_type = typeobj;
   Py_INCREF(typeobj);
   obj->ob_refcnt = 2;
   return obj;
@@ -277,7 +276,7 @@ PY_EXPORT int PyObject_Print(PyObject* obj, FILE* fp, int flags) {
     if (str == nullptr) return -1;
     if (!PyUnicode_Check(str)) {
       PyErr_Format(PyExc_TypeError, "str() or repr() returned '%.100s'",
-                   _PyType_Name(str->ob_type));
+                   _PyType_Name(Py_TYPE(str)));
       Py_DECREF(str);
       return -1;
     }

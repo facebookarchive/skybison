@@ -349,15 +349,6 @@ static void seterror(Py_ssize_t iarg, const char* msg, int* levels,
   }
 }
 
-// Facebook: helper to replace type->tp_name
-static const char* getTypeName(PyTypeObject* pytype) {
-  PyObject* name =
-      PyObject_GetAttrString(reinterpret_cast<PyObject*>(pytype), "__name__");
-  const char* result = PyUnicode_AsUTF8(name);
-  Py_DECREF(name);
-  return result;
-}
-
 // Convert a tuple argument.
 // On entry, *p_format points to the character _after_ the opening '('.
 // On successful exit, *p_format points to the closing ')'.
@@ -404,7 +395,7 @@ static const char* converttuple(PyObject* arg, const char** p_format,
     PyOS_snprintf(msgbuf, bufsize,
                   toplevel ? "expected %d arguments, not %.50s"
                            : "must be %d-item sequence, not %.50s",
-                  n, arg == Py_None ? "None" : getTypeName(arg->ob_type));
+                  n, arg == Py_None ? "None" : _PyType_Name(Py_TYPE(arg)));
     return msgbuf;
   }
 
@@ -480,7 +471,7 @@ static const char* converterr(const char* expected, PyObject* arg, char* msgbuf,
     PyOS_snprintf(msgbuf, bufsize, "%.100s", expected);
   } else {
     PyOS_snprintf(msgbuf, bufsize, "must be %.50s, not %.50s", expected,
-                  arg == Py_None ? "None" : getTypeName(arg->ob_type));
+                  arg == Py_None ? "None" : _PyType_Name(Py_TYPE(arg)));
   }
   return msgbuf;
 }
@@ -1100,10 +1091,10 @@ static const char* convertsimple(PyObject* arg, const char** p_format,
         type = va_arg(*p_va, PyTypeObject*);
         p = va_arg(*p_va, PyObject**);
         format++;
-        if (PyType_IsSubtype(arg->ob_type, type)) {
+        if (PyType_IsSubtype(Py_TYPE(arg), type)) {
           *p = arg;
         } else {
-          return converterr(getTypeName(type), arg, msgbuf, bufsize);
+          return converterr(_PyType_Name(type), arg, msgbuf, bufsize);
         }
 
       } else if (*format == '&') {

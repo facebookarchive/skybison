@@ -45,8 +45,6 @@ class ApiHandle : public PyObject {
   // or build a new extension instance.
   RawObject asObject();
 
-  ApiHandle* type();
-
   // Each ApiHandle can have one pointer to cached data, which will be freed
   // when the handle is destroyed.
   void* cache();
@@ -54,9 +52,6 @@ class ApiHandle : public PyObject {
 
   // Remove the ApiHandle from the dictionary and free its memory
   void dispose();
-
-  // Check if the type is PyType_Type
-  bool isType();
 
   // Returns true if the PyObject* is a managed object.
   static bool isManaged(const PyObject* obj) {
@@ -98,9 +93,6 @@ class ApiHandle : public PyObject {
                                             const Object& key, word hash);
 
  private:
-  // Allocates a handle for a managed object.
-  static ApiHandle* alloc(Thread* thread, RawObject reference);
-
   // Returns a handle for a managed object.  If a handle does not already
   // exist, a new handle is created and its reference count is initialized to
   // the managed bit.

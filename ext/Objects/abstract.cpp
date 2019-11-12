@@ -1013,6 +1013,19 @@ PY_EXPORT Py_ssize_t PyObject_Size(PyObject* pyobj) {
   return objectLength(pyobj);
 }
 
+PY_EXPORT PyTypeObject* Py_TYPE_Func(PyObject* pyobj) {
+  Thread* thread = Thread::current();
+  if (pyobj == nullptr) {
+    nullError(thread);
+    return nullptr;
+  }
+
+  HandleScope scope(thread);
+  Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+  return reinterpret_cast<PyTypeObject*>(
+      ApiHandle::borrowedReference(thread, thread->runtime()->typeOf(*obj)));
+}
+
 PY_EXPORT PyObject* PyObject_Type(PyObject* pyobj) {
   Thread* thread = Thread::current();
   if (pyobj == nullptr) {

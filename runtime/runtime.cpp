@@ -4187,7 +4187,6 @@ void Runtime::freeApiHandles() {
           reinterpret_cast<PyModuleDef*>(Int::cast(module.def()).asCPtr());
       ApiHandle* handle = ApiHandle::borrowedReference(thread, *module);
       if (def->m_free != nullptr) def->m_free(handle);
-      handle->type()->decref();
       handle->dispose();
     }
   }

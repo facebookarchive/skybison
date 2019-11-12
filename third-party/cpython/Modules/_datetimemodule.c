@@ -1550,7 +1550,7 @@ checked_divmod(PyObject *a, PyObject *b)
         if (!PyTuple_Check(result)) {
             PyErr_Format(PyExc_TypeError,
                          "divmod() returned non-tuple (type %.200s)",
-                         result->ob_type->tp_name);
+                         _PyType_Name(Py_TYPE(result)));
             Py_DECREF(result);
             return NULL;
         }

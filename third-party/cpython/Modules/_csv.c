@@ -242,7 +242,7 @@ _set_char(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt)
             if (!PyUnicode_Check(src)) {
                 PyErr_Format(PyExc_TypeError,
                     "\"%s\" must be string, not %.200s", name,
-                    src->ob_type->tp_name);
+                    _PyType_Name(Py_TYPE(src)));
                 return -1;
             }
             len = PyUnicode_GetLength(src);
@@ -813,7 +813,7 @@ Reader_iternext(ReaderObj *self)
                          "iterator should return strings, "
                          "not %.200s "
                          "(did you open the file in text mode?)",
-                         lineobj->ob_type->tp_name
+                         _PyType_Name(Py_TYPE(lineobj))
                 );
             Py_DECREF(lineobj);
             return NULL;
@@ -1174,7 +1174,7 @@ csv_writerow(WriterObj *self, PyObject *seq)
     if (iter == NULL)
         return PyErr_Format(_csvstate_global->error_obj,
                             "iterable expected, not %.200s",
-                            seq->ob_type->tp_name);
+                            _PyType_Name(Py_TYPE(seq)));
 
     /* Join all fields in internal buffer.
      */

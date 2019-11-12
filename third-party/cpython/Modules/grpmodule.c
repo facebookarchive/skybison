@@ -112,7 +112,7 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
         PyErr_Clear();
         if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
                              "group id must be int, not %.200",
-                             id->ob_type->tp_name) < 0) {
+                             _PyType_Name(Py_TYPE(id))) < 0) {
             return NULL;
         }
         py_int_id = PyNumber_Long(id);

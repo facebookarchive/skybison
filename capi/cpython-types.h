@@ -22,8 +22,7 @@ typedef Py_ssize_t Py_hash_t;
 
 /* clang-format off */
 #define PyObject_HEAD_INIT(type) \
-    { _PyObject_EXTRA_INIT \
-    1, type },
+    { _PyObject_EXTRA_INIT 1},
 
 /* The modification of PyVarObject_HEAD_INIT is described in detail here:
  * https://mail.python.org/pipermail/python-dev/2018-August/154946.html */
@@ -39,7 +38,6 @@ typedef struct _PyWeakReference PyWeakReference;
 
 typedef struct _object {
   _PyObject_HEAD_EXTRA Py_ssize_t ob_refcnt;
-  struct _typeobject* ob_type;
 } PyObject;
 
 typedef struct {

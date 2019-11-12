@@ -10,21 +10,6 @@
 
 namespace py {
 
-ApiHandle* ApiHandle::alloc(Thread* thread, RawObject reference) {
-  ApiHandle* result = static_cast<ApiHandle*>(std::malloc(sizeof(ApiHandle)));
-  result->reference_ = reference.raw();
-  result->ob_refcnt = 0;
-  RawObject type = thread->runtime()->typeOf(reference);
-  if (reference == type) {
-    result->ob_type = reinterpret_cast<PyTypeObject*>(result);
-    result->incref();
-  } else {
-    result->ob_type =
-        reinterpret_cast<PyTypeObject*>(ApiHandle::newReference(thread, type));
-  }
-  return result;
-}
-
 // TODO(T44244793): Remove these functions when handles have their own
 // specialized hash table.
 static bool dictLookupIdentityEquals(RawTuple data, RawObject key, word hash,
@@ -145,7 +130,9 @@ ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
   }
 
   // Initialize an ApiHandle for a builtin object or runtime instance
-  ApiHandle* handle = ApiHandle::alloc(thread, obj);
+  ApiHandle* handle = static_cast<ApiHandle*>(std::malloc(sizeof(ApiHandle)));
+  handle->reference_ = key.raw();
+  handle->ob_refcnt = 0;
   handle->setManaged();
   Object object(&scope, runtime->newIntFromCPtr(static_cast<void*>(handle)));
   dictAtPutIdentityEquals(thread, dict, key, hash, object);
@@ -223,13 +210,6 @@ RawObject ApiHandle::asObject() {
          "A handle or native instance must point back to a heap instance");
   return RawObject{reference_};
 }
-
-bool ApiHandle::isType() {
-  // This works under the assumption only PyType_Type's metaType is itself
-  return this->type() == ApiHandle::fromPyObject(type())->type();
-}
-
-ApiHandle* ApiHandle::type() { return ApiHandle::fromPyTypeObject(ob_type); }
 
 void* ApiHandle::cache() {
   // Only managed objects can have a cached value
