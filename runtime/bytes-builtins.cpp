@@ -546,12 +546,11 @@ RawObject BytesBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   Object count_obj(&scope, intFromIndex(thread, count_index));
   if (count_obj.isError()) return *count_obj;
   Bytes self(&scope, bytesUnderlying(thread, self_obj));
-  Int count_int(&scope, intUnderlying(thread, count_obj));
-  word count = count_int.asWordSaturated();
+  word count = intUnderlying(*count_obj).asWordSaturated();
   if (!SmallInt::isValid(count)) {
     return thread->raiseWithFmt(LayoutId::kOverflowError,
                                 "cannot fit '%T' into an index-sized integer",
-                                &count_index);
+                                &count_obj);
   }
   word length = self.length();
   if (count <= 0 || length == 0) {

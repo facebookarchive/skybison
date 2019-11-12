@@ -177,7 +177,7 @@ RawObject MemoryViewBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   Object index_obj(&scope, args.get(1));
   Object index_int_obj(&scope, intFromIndex(thread, index_obj));
   if (index_int_obj.isError()) return *index_int_obj;
-  Int index_int(&scope, intUnderlying(thread, index_int_obj));
+  Int index_int(&scope, intUnderlying(*index_int_obj));
   if (index_int.isLargeInt()) {
     return thread->raiseWithFmt(LayoutId::kIndexError,
                                 "cannot fit '%T' into an index-sized integer",

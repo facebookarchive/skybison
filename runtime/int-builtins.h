@@ -32,9 +32,6 @@ word largeIntHash(RawLargeInt value);
 
 word intHash(RawObject value);
 
-// Grabs the base int value from an instance of int.
-RawObject intUnderlying(Thread* thread, const Object& obj);
-
 class IntBuiltins
     : public Builtins<IntBuiltins, SymbolId::kInt, LayoutId::kInt> {
  public:

@@ -67,7 +67,7 @@ static Py_ssize_t objectLength(PyObject* pyobj) {
   if (len.isError()) {
     return -1;
   }
-  Int index(&scope, intUnderlying(thread, len));
+  Int index(&scope, intUnderlying(*len));
   if (index.numDigits() > 1) {
     thread->raiseWithFmt(LayoutId::kOverflowError,
                          "cannot fit '%T' into an index-sized integer",
@@ -352,7 +352,7 @@ PY_EXPORT Py_ssize_t PyNumber_AsSsize_t(PyObject* obj, PyObject* overflow_err) {
   Object index(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Object num(&scope, intFromIndex(thread, index));
   if (num.isError()) return -1;
-  Int number(&scope, intUnderlying(thread, num));
+  Int number(&scope, intUnderlying(*num));
   if (overflow_err == nullptr || number.numDigits() == 1) {
     // Overflows should be clipped, or value is already in range.
     return number.asWordSaturated();
@@ -981,7 +981,7 @@ PY_EXPORT Py_ssize_t PyObject_LengthHint(PyObject* obj,
                          &length_hint);
     return -1;
   }
-  Int index(&scope, intUnderlying(thread, length_hint));
+  Int index(&scope, intUnderlying(*length_hint));
   if (!index.isSmallInt()) {
     thread->raiseWithFmt(LayoutId::kOverflowError,
                          "cannot fit '%T' into an index-sized integer",

@@ -1,7 +1,6 @@
 #include "strarray-builtins.h"
 
 #include "runtime.h"
-#include "str-builtins.h"
 
 namespace py {
 
@@ -31,7 +30,7 @@ RawObject StrArrayBuiltins::dunderInit(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "_strarray can only be initialized with str");
   }
-  Str source_str(&scope, strUnderlying(thread, source));
+  Str source_str(&scope, strUnderlying(*source));
   runtime->strArrayAddStr(thread, self, source_str);
   return NoneType::object();
 }

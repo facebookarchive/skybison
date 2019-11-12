@@ -213,8 +213,8 @@ static RawObject intBinaryOpSubclass(Thread* thread, Frame* frame, word nargs,
   if (!runtime->isInstanceOfInt(*other_obj)) {
     return NotImplementedType::object();
   }
-  Int self(&scope, intUnderlying(thread, self_obj));
-  Int other(&scope, intUnderlying(thread, other_obj));
+  Int self(&scope, intUnderlying(*self_obj));
+  Int other(&scope, intUnderlying(*other_obj));
   return op(thread, self, other);
 }
 
@@ -239,7 +239,7 @@ static RawObject intUnaryOp(Thread* thread, Frame* frame, word nargs,
   if (!thread->runtime()->isInstanceOfInt(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kInt);
   }
-  Int self(&scope, intUnderlying(thread, self_obj));
+  Int self(&scope, intUnderlying(*self_obj));
   return op(thread, self);
 }
 
@@ -395,7 +395,7 @@ RawObject IntBuiltins::dunderFormat(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfInt(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kInt);
   }
-  Int self(&scope, intUnderlying(thread, self_obj));
+  Int self(&scope, intUnderlying(*self_obj));
 
   Object spec_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfStr(*spec_obj)) {
@@ -403,7 +403,7 @@ RawObject IntBuiltins::dunderFormat(Thread* thread, Frame* frame, word nargs) {
                                 "__format__() argument 1 must be str, not %T",
                                 &spec_obj);
   }
-  Str spec(&scope, strUnderlying(thread, spec_obj));
+  Str spec(&scope, strUnderlying(*spec_obj));
 
   if (spec.charLength() == 0) {
     return formatIntDecimalSimple(thread, self);
@@ -471,13 +471,13 @@ static RawObject toBytesImpl(Thread* thread, const Object& self_obj,
   if (!runtime->isInstanceOfInt(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kInt);
   }
-  Int self(&scope, intUnderlying(thread, self_obj));
+  Int self(&scope, intUnderlying(*self_obj));
   if (!runtime->isInstanceOfInt(*length_obj)) {
     return thread->raiseWithFmt(
         LayoutId::kTypeError,
         "length argument cannot be interpreted as an integer");
   }
-  Int length_int(&scope, intUnderlying(thread, length_obj));
+  Int length_int(&scope, intUnderlying(*length_obj));
   OptInt<word> l = length_int.asInt<word>();
   if (l.error != CastError::None) {
     return thread->raiseWithFmt(LayoutId::kOverflowError,
@@ -910,15 +910,6 @@ RawObject intFromIndex(Thread* thread, const Object& obj) {
   }
   return thread->raiseWithFmt(LayoutId::kTypeError,
                               "__index__ returned non-int (type %T)", &result);
-}
-
-RawObject intUnderlying(Thread* thread, const Object& obj) {
-  DCHECK(thread->runtime()->isInstanceOfInt(*obj),
-         "cannot get a base int value from a non-int");
-  if (obj.isInt()) return *obj;
-  HandleScope scope(thread);
-  UserIntBase user_int(&scope, *obj);
-  return user_int.value();
 }
 
 }  // namespace py

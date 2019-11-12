@@ -83,10 +83,6 @@ word strRSpan(const Str& src, const Str& str, word rend);
 // Return the next item from the iterator, or Error if there are no items left.
 RawObject strIteratorNext(Thread* thread, const StrIterator& iter);
 
-// Returns internal str value if obj is a subclass of str, if obj is a str
-// return it unchanged.
-RawObject strUnderlying(Thread* thread, const Object& obj);
-
 class SmallStrBuiltins : public Builtins<SmallStrBuiltins, SymbolId::kSmallStr,
                                          LayoutId::kSmallStr, LayoutId::kStr> {
  public:

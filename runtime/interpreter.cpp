@@ -246,7 +246,7 @@ static RawObject callDunderHash(Thread* thread, const Object& value) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "__hash__ method should return an integer");
   }
-  Int hash_int(&scope, intUnderlying(thread, result));
+  Int hash_int(&scope, intUnderlying(*result));
   if (hash_int.isSmallInt()) {
     // cpython always replaces -1 hash values with -2.
     if (hash_int == SmallInt::fromWord(-1)) {
@@ -1022,7 +1022,7 @@ RawObject Interpreter::isTrueSlowPath(Thread* thread, RawObject value_obj) {
   result = thread->invokeMethod1(value, SymbolId::kDunderLen);
   if (!result.isError()) {
     if (thread->runtime()->isInstanceOfInt(*result)) {
-      Int integer(&scope, intUnderlying(thread, result));
+      Int integer(&scope, intUnderlying(*result));
       if (integer.isPositive()) return Bool::trueObj();
       if (integer.isZero()) return Bool::falseObj();
       return thread->raiseWithFmt(LayoutId::kValueError,
@@ -2724,7 +2724,7 @@ static RawObject excMatch(Thread* thread, const Object& left,
   static const char* cannot_catch_msg =
       "catching classes that do not inherit from BaseException is not allowed";
   if (runtime->isInstanceOfTuple(*right)) {
-    Tuple tuple(&scope, tupleUnderlying(thread, right));
+    Tuple tuple(&scope, tupleUnderlying(*right));
     for (word i = 0, length = tuple.length(); i < length; i++) {
       Object obj(&scope, tuple.at(i));
       if (!(runtime->isInstanceOfType(*obj) &&

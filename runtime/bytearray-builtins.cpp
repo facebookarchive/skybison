@@ -66,7 +66,7 @@ RawObject ByteArrayBuiltins::dunderAdd(Thread* thread, Frame* frame,
     other_len = array.numItems();
     other_obj = array.bytes();
   } else if (runtime->isInstanceOfBytes(*other_obj)) {
-    Bytes bytes(&scope, bytesUnderlying(thread, other_obj));
+    Bytes bytes(&scope, bytesUnderlying(*other_obj));
     other_len = bytes.length();
     other_obj = *bytes;
   } else {
@@ -100,7 +100,7 @@ RawObject ByteArrayBuiltins::dunderEq(Thread* thread, Frame* frame,
   Object other_obj(&scope, args.get(1));
   word comparison;
   if (runtime->isInstanceOfBytes(*other_obj)) {
-    Bytes other(&scope, bytesUnderlying(thread, other_obj));
+    Bytes other(&scope, bytesUnderlying(*other_obj));
     comparison = self.compare(*other, other.length());
   } else if (runtime->isInstanceOfByteArray(*other_obj)) {
     ByteArray other(&scope, *other_obj);
@@ -126,7 +126,7 @@ RawObject ByteArrayBuiltins::dunderGe(Thread* thread, Frame* frame,
   Object other_obj(&scope, args.get(1));
   word comparison;
   if (runtime->isInstanceOfBytes(*other_obj)) {
-    Bytes other(&scope, bytesUnderlying(thread, other_obj));
+    Bytes other(&scope, bytesUnderlying(*other_obj));
     comparison = self.compare(*other, other.length());
   } else if (runtime->isInstanceOfByteArray(*other_obj)) {
     ByteArray other(&scope, *other_obj);
@@ -151,7 +151,7 @@ RawObject ByteArrayBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   ByteArray self(&scope, *self_obj);
   Object index_obj(&scope, args.get(1));
   if (runtime->isInstanceOfInt(*index_obj)) {
-    Int index(&scope, intUnderlying(thread, index_obj));
+    Int index(&scope, intUnderlying(*index_obj));
     if (index.isLargeInt()) {
       return thread->raiseWithFmt(LayoutId::kIndexError,
                                   "cannot fit '%T' into an index-sized integer",
@@ -197,7 +197,7 @@ RawObject ByteArrayBuiltins::dunderGt(Thread* thread, Frame* frame,
   Object other_obj(&scope, args.get(1));
   word comparison;
   if (runtime->isInstanceOfBytes(*other_obj)) {
-    Bytes other(&scope, bytesUnderlying(thread, other_obj));
+    Bytes other(&scope, bytesUnderlying(*other_obj));
     comparison = self.compare(*other, other.length());
   } else if (runtime->isInstanceOfByteArray(*other_obj)) {
     ByteArray other(&scope, *other_obj);
@@ -227,7 +227,7 @@ RawObject ByteArrayBuiltins::dunderIadd(Thread* thread, Frame* frame,
     other_len = array.numItems();
     other_obj = array.bytes();
   } else if (runtime->isInstanceOfBytes(*other_obj)) {
-    Bytes bytes(&scope, bytesUnderlying(thread, other_obj));
+    Bytes bytes(&scope, bytesUnderlying(*other_obj));
     other_len = bytes.length();
     other_obj = *bytes;
   } else {
@@ -253,8 +253,7 @@ RawObject ByteArrayBuiltins::dunderImul(Thread* thread, Frame* frame,
   Object count_index(&scope, args.get(1));
   Object count_obj(&scope, intFromIndex(thread, count_index));
   if (count_obj.isError()) return *count_obj;
-  Int count_int(&scope, intUnderlying(thread, count_obj));
-  word count = count_int.asWordSaturated();
+  word count = intUnderlying(*count_obj).asWordSaturated();
   if (!SmallInt::isValid(count)) {
     return thread->raiseWithFmt(LayoutId::kOverflowError,
                                 "cannot fit '%T' into an index-sized integer",
@@ -314,7 +313,7 @@ RawObject ByteArrayBuiltins::dunderLe(Thread* thread, Frame* frame,
   Object other_obj(&scope, args.get(1));
   word comparison;
   if (runtime->isInstanceOfBytes(*other_obj)) {
-    Bytes other(&scope, bytesUnderlying(thread, other_obj));
+    Bytes other(&scope, bytesUnderlying(*other_obj));
     comparison = self.compare(*other, other.length());
   } else if (runtime->isInstanceOfByteArray(*other_obj)) {
     ByteArray other(&scope, *other_obj);
@@ -352,7 +351,7 @@ RawObject ByteArrayBuiltins::dunderLt(Thread* thread, Frame* frame,
   Object other_obj(&scope, args.get(1));
   word comparison;
   if (runtime->isInstanceOfBytes(*other_obj)) {
-    Bytes other(&scope, bytesUnderlying(thread, other_obj));
+    Bytes other(&scope, bytesUnderlying(*other_obj));
     comparison = self.compare(*other, other.length());
   } else if (runtime->isInstanceOfByteArray(*other_obj)) {
     ByteArray other(&scope, *other_obj);
@@ -378,8 +377,7 @@ RawObject ByteArrayBuiltins::dunderMul(Thread* thread, Frame* frame,
   Object count_index(&scope, args.get(1));
   Object count_obj(&scope, intFromIndex(thread, count_index));
   if (count_obj.isError()) return *count_obj;
-  Int count_int(&scope, intUnderlying(thread, count_obj));
-  word count = count_int.asWordSaturated();
+  word count = intUnderlying(*count_obj).asWordSaturated();
   if (!SmallInt::isValid(count)) {
     return thread->raiseWithFmt(LayoutId::kOverflowError,
                                 "cannot fit '%T' into an index-sized integer",
@@ -420,7 +418,7 @@ RawObject ByteArrayBuiltins::dunderNe(Thread* thread, Frame* frame,
   Object other_obj(&scope, args.get(1));
   word comparison;
   if (runtime->isInstanceOfBytes(*other_obj)) {
-    Bytes other(&scope, bytesUnderlying(thread, other_obj));
+    Bytes other(&scope, bytesUnderlying(*other_obj));
     comparison = self.compare(*other, other.length());
   } else if (runtime->isInstanceOfByteArray(*other_obj)) {
     ByteArray other(&scope, *other_obj);
@@ -552,7 +550,7 @@ RawObject ByteArrayBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
   if (chars_obj.isNoneType()) {
     result_bytes = bytesStripSpaceLeft(thread, self_bytes, self.numItems());
   } else if (runtime->isInstanceOfBytes(*chars_obj)) {
-    Bytes chars(&scope, bytesUnderlying(thread, chars_obj));
+    Bytes chars(&scope, bytesUnderlying(*chars_obj));
     result_bytes = bytesStripLeft(thread, self_bytes, self.numItems(), chars,
                                   chars.length());
   } else if (runtime->isInstanceOfByteArray(*chars_obj)) {
@@ -586,7 +584,7 @@ RawObject ByteArrayBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
   if (chars_obj.isNoneType()) {
     result_bytes = bytesStripSpaceRight(thread, self_bytes, self.numItems());
   } else if (runtime->isInstanceOfBytes(*chars_obj)) {
-    Bytes chars(&scope, bytesUnderlying(thread, chars_obj));
+    Bytes chars(&scope, bytesUnderlying(*chars_obj));
     result_bytes = bytesStripRight(thread, self_bytes, self.numItems(), chars,
                                    chars.length());
   } else if (runtime->isInstanceOfByteArray(*chars_obj)) {
@@ -620,7 +618,7 @@ RawObject ByteArrayBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
   if (chars_obj.isNoneType()) {
     result_bytes = bytesStripSpace(thread, self_bytes, self.numItems());
   } else if (runtime->isInstanceOfBytes(*chars_obj)) {
-    Bytes chars(&scope, bytesUnderlying(thread, chars_obj));
+    Bytes chars(&scope, bytesUnderlying(*chars_obj));
     result_bytes =
         bytesStrip(thread, self_bytes, self.numItems(), chars, chars.length());
   } else if (runtime->isInstanceOfByteArray(*chars_obj)) {
@@ -656,7 +654,7 @@ RawObject ByteArrayBuiltins::translate(Thread* thread, Frame* frame,
     table_length = BytesBuiltins::kTranslationTableLength;
     table_obj = Bytes::empty();
   } else if (runtime->isInstanceOfBytes(*table_obj)) {
-    Bytes bytes(&scope, bytesUnderlying(thread, table_obj));
+    Bytes bytes(&scope, bytesUnderlying(*table_obj));
     table_length = bytes.length();
     table_obj = *bytes;
   } else if (runtime->isInstanceOfByteArray(*table_obj)) {
@@ -678,7 +676,7 @@ RawObject ByteArrayBuiltins::translate(Thread* thread, Frame* frame,
   Object del(&scope, args.get(2));
   Bytes translated(&scope, Bytes::empty());
   if (runtime->isInstanceOfBytes(*del)) {
-    Bytes bytes(&scope, bytesUnderlying(thread, del));
+    Bytes bytes(&scope, bytesUnderlying(*del));
     translated =
         runtime->bytesTranslate(thread, self_bytes, self.numItems(), table,
                                 table_length, bytes, bytes.length());

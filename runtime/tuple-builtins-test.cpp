@@ -31,7 +31,7 @@ a = Foo()
                    .isError());
   HandleScope scope(thread_);
   UserTupleBase a(&scope, mainModuleAt(&runtime_, "a"));
-  Object obj(&scope, a.tupleValue());
+  Object obj(&scope, a.value());
   EXPECT_TRUE(obj.isTuple());
 }
 

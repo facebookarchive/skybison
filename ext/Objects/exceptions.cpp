@@ -1,8 +1,6 @@
-#include "bytes-builtins.h"
 #include "capi-handles.h"
 #include "cpython-data.h"
 #include "cpython-func.h"
-#include "int-builtins.h"
 #include "runtime.h"
 
 namespace py {
@@ -414,10 +412,10 @@ PY_EXPORT int PyUnicodeDecodeError_GetEnd(PyObject* exc, Py_ssize_t* end) {
                          "object must be instance of bytes");
     return -1;
   }
-  Bytes object(&scope, bytesUnderlying(thread, object_attr));
+  Bytes object(&scope, bytesUnderlying(*object_attr));
   Object end_attr(&scope, exc_err.end());
   DCHECK(runtime->isInstanceOfInt(*end_attr), "end must be instance of int");
-  Int end_int(&scope, intUnderlying(thread, end_attr));
+  Int end_int(&scope, intUnderlying(*end_attr));
   *end = end_int.asWord();
   if (*end < 1) {
     *end = 1;
@@ -471,11 +469,11 @@ PY_EXPORT int PyUnicodeDecodeError_GetStart(PyObject* exc, Py_ssize_t* start) {
                          "object must be instance of bytes");
     return -1;
   }
-  Bytes object(&scope, bytesUnderlying(thread, object_attr));
+  Bytes object(&scope, bytesUnderlying(*object_attr));
   Object start_attr(&scope, exc_err.start());
   DCHECK(runtime->isInstanceOfInt(*start_attr),
          "start must be instance of int");
-  Int start_int(&scope, intUnderlying(thread, start_attr));
+  Int start_int(&scope, intUnderlying(*start_attr));
   *start = start_int.asWord();
   if (*start < 0) {
     *start = 0;
@@ -553,7 +551,7 @@ PY_EXPORT int PyUnicodeEncodeError_GetEnd(PyObject* exc, Py_ssize_t* end) {
   Str object(&scope, *object_attr);
   Object end_attr(&scope, exc_err.end());
   DCHECK(runtime->isInstanceOfInt(*end_attr), "end must be instance of int");
-  Int end_int(&scope, intUnderlying(thread, end_attr));
+  Int end_int(&scope, intUnderlying(*end_attr));
   *end = end_int.asWord();
   if (*end < 1) {
     *end = 1;
@@ -601,7 +599,7 @@ PY_EXPORT int PyUnicodeEncodeError_GetStart(PyObject* exc, Py_ssize_t* start) {
   Object start_attr(&scope, exc_err.start());
   DCHECK(runtime->isInstanceOfInt(*start_attr),
          "start must be instance of int");
-  Int start_int(&scope, intUnderlying(thread, start_attr));
+  Int start_int(&scope, intUnderlying(*start_attr));
   *start = start_int.asWord();
   if (*start < 0) {
     *start = 0;

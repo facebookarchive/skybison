@@ -10,7 +10,7 @@ namespace py {
 static ALWAYS_INLINE RawObject sliceIndex(Thread* thread, const Object& obj) {
   if (obj.isInt()) return *obj;
   if (thread->runtime()->isInstanceOfInt(*obj)) {
-    return intUnderlying(thread, obj);
+    return intUnderlying(*obj);
   }
   return thread->invokeFunction1(SymbolId::kBuiltins,
                                  SymbolId::kUnderSliceIndex, obj);
@@ -25,12 +25,11 @@ RawObject sliceUnpack(Thread* thread, const Slice& slice, word* start,
   } else {
     step_obj = sliceIndex(thread, step_obj);
     if (step_obj.isError()) return *step_obj;
-    Int index(&scope, intUnderlying(thread, step_obj));
-    if (index.isZero()) {
+    word step_word = intUnderlying(*step_obj).asWordSaturated();
+    if (step_word == 0) {
       return thread->raiseWithFmt(LayoutId::kValueError,
                                   "slice step cannot be zero");
     }
-    word step_word = index.asWordSaturated();
     if (step_word > SmallInt::kMaxValue) {
       *step = SmallInt::kMaxValue;
     } else if (step_word <= SmallInt::kMinValue) {
@@ -51,8 +50,7 @@ RawObject sliceUnpack(Thread* thread, const Slice& slice, word* start,
   } else {
     start_obj = sliceIndex(thread, start_obj);
     if (start_obj.isError()) return *start_obj;
-    Int index(&scope, intUnderlying(thread, start_obj));
-    word start_word = index.asWordSaturated();
+    word start_word = intUnderlying(*start_obj).asWordSaturated();
     if (start_word > SmallInt::kMaxValue) {
       *start = SmallInt::kMaxValue;
     } else if (start_word < SmallInt::kMinValue) {
@@ -68,8 +66,7 @@ RawObject sliceUnpack(Thread* thread, const Slice& slice, word* start,
   } else {
     stop_obj = sliceIndex(thread, stop_obj);
     if (stop_obj.isError()) return *stop_obj;
-    Int index(&scope, intUnderlying(thread, stop_obj));
-    word stop_word = index.asWordSaturated();
+    word stop_word = intUnderlying(*stop_obj).asWordSaturated();
     if (stop_word > SmallInt::kMaxValue) {
       *stop = SmallInt::kMaxValue;
     } else if (stop_word < SmallInt::kMinValue) {

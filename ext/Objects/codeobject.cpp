@@ -81,8 +81,7 @@ PY_EXPORT Py_ssize_t PyCode_GetNumFree_Func(PyObject* code) {
   Object code_obj(&scope, ApiHandle::fromPyObject(code)->asObject());
   DCHECK(code_obj.isCode(), "code must be a code object");
   Code code_code(&scope, *code_obj);
-  Object freevars_obj(&scope, code_code.freevars());
-  Tuple freevars(&scope, tupleUnderlying(thread, freevars_obj));
+  Tuple freevars(&scope, code_code.freevars());
   return freevars.length();
 }
 

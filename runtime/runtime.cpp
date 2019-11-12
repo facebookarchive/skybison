@@ -379,7 +379,7 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
                                 &name_obj);
   }
   HandleScope scope(thread);
-  Str name_str(&scope, strUnderlying(thread, name_obj));
+  Str name_str(&scope, strUnderlying(*name_obj));
   Str name_interned(&scope, internStr(thread, name_str));
   terminateIfUnimplementedTypeAttrCacheInvalidation(thread, name_interned);
 
@@ -437,7 +437,7 @@ RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
   // No delete descriptor found, delete from the instance
   if (receiver.isInstance()) {
     Instance instance(&scope, *receiver);
-    Str name_str(&scope, strUnderlying(thread, name));
+    Str name_str(&scope, strUnderlying(*name));
     Str name_interned(&scope, internStr(thread, name_str));
     Object result(&scope, py::instanceDelAttr(thread, instance, name_interned));
     if (!result.isErrorNotFound()) return *result;
@@ -553,8 +553,8 @@ RawObject Runtime::newCode(word argcount, word posonlyargcount,
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Tuple cellvars_tuple(&scope, tupleUnderlying(thread, cellvars));
-  Tuple freevars_tuple(&scope, tupleUnderlying(thread, freevars));
+  Tuple cellvars_tuple(&scope, tupleUnderlying(*cellvars));
+  Tuple freevars_tuple(&scope, tupleUnderlying(*freevars));
   if (cellvars_tuple.length() == 0 && freevars_tuple.length() == 0) {
     flags |= Code::Flags::kNofree;
   } else {
@@ -579,7 +579,7 @@ RawObject Runtime::newCode(word argcount, word posonlyargcount,
   result.setFirstlineno(firstlineno);
   result.setLnotab(*lnotab);
 
-  Tuple varnames_tuple(&scope, tupleUnderlying(thread, varnames));
+  Tuple varnames_tuple(&scope, tupleUnderlying(*varnames));
   if (argcount > varnames_tuple.length() ||
       kwonlyargcount > varnames_tuple.length() ||
       result.totalArgs() > varnames_tuple.length()) {
@@ -1194,7 +1194,7 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
       } break;
       case 'S': {
         Object value_obj(&scope, **va_arg(args, Object*));
-        Str value(&scope, strUnderlying(thread, value_obj));
+        Str value(&scope, strUnderlying(*value_obj));
         word length = value.charLength();
         if (dst == nullptr) {
           len += length;
@@ -2851,8 +2851,7 @@ RawObject Runtime::bytesFromTuple(Thread* thread, const Tuple& items,
       // escape into slow path
       return NoneType::object();
     }
-    Int index(&scope, intUnderlying(thread, item));
-    OptInt<byte> current_byte = index.asInt<byte>();
+    OptInt<byte> current_byte = intUnderlying(*item).asInt<byte>();
     if (current_byte.error == CastError::None) {
       dst[idx] = current_byte.value;
     } else {
@@ -2884,7 +2883,7 @@ RawObject Runtime::bytesJoin(Thread* thread, const Bytes& sep, word sep_length,
   for (word index = 0; index < src_length; index++) {
     item = src.at(index);
     if (isInstanceOfBytes(*item)) {
-      Bytes bytes(&scope, bytesUnderlying(thread, item));
+      Bytes bytes(&scope, bytesUnderlying(*item));
       result_length += bytes.length();
     } else {
       DCHECK(isInstanceOfByteArray(*item), "source is not bytes-like");
@@ -2914,7 +2913,7 @@ RawObject Runtime::bytesJoin(Thread* thread, const Bytes& sep, word sep_length,
     Bytes bytes(&scope, Bytes::empty());
     word length;
     if (isInstanceOfBytes(*item)) {
-      bytes = bytesUnderlying(thread, item);
+      bytes = bytesUnderlying(*item);
       length = bytes.length();
     } else {
       DCHECK(isInstanceOfByteArray(*item), "source is not bytes-like");
@@ -3453,7 +3452,7 @@ RawObject Runtime::strJoin(Thread* thread, const Str& sep, const Tuple& items,
           LayoutId::kTypeError,
           "sequence item %w: expected str instance, %T found", i, &elt);
     }
-    str = strUnderlying(thread, elt);
+    str = strUnderlying(*elt);
     result_len += str.charLength();
   }
   if (allocated > 1) {
@@ -3464,7 +3463,7 @@ RawObject Runtime::strJoin(Thread* thread, const Str& sep, const Tuple& items,
     byte buffer[RawSmallStr::kMaxLength];
     for (word i = 0, offset = 0; i < allocated; ++i) {
       elt = items.at(i);
-      str = strUnderlying(thread, elt);
+      str = strUnderlying(*elt);
       word str_len = str.charLength();
       str.copyTo(&buffer[offset], str_len);
       offset += str_len;
@@ -3480,7 +3479,7 @@ RawObject Runtime::strJoin(Thread* thread, const Str& sep, const Tuple& items,
   LargeStr result(&scope, heap()->createLargeStr(result_len));
   for (word i = 0, offset = 0; i < allocated; ++i) {
     elt = items.at(i);
-    str = strUnderlying(thread, elt);
+    str = strUnderlying(*elt);
     word str_len = str.charLength();
     str.copyTo(reinterpret_cast<byte*>(result.address() + offset), str_len);
     offset += str_len;

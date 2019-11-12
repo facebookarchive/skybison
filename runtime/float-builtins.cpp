@@ -21,7 +21,7 @@ RawObject asFloatObject(Thread* thread, const Object& obj) {
   // Object is subclass of float
   Runtime* runtime = thread->runtime();
   if (runtime->isInstanceOfFloat(*obj)) {
-    return floatUnderlying(thread, obj);
+    return floatUnderlying(*obj);
   }
 
   // Try calling __float__
@@ -40,7 +40,7 @@ RawObject asFloatObject(Thread* thread, const Object& obj) {
                                 "%T.__float__ returned non-float (type %T)",
                                 &obj, &flt_obj);
   }
-  return floatUnderlying(thread, flt_obj);
+  return floatUnderlying(*flt_obj);
 }
 
 // Convert `object` to double.
@@ -52,24 +52,15 @@ static RawObject convertToDouble(Thread* thread, const Object& object,
                                  double* result) {
   Runtime* runtime = thread->runtime();
   if (runtime->isInstanceOfFloat(*object)) {
-    *result = Float::cast(floatUnderlying(thread, object)).value();
+    *result = floatUnderlying(*object).value();
     return NoneType::object();
   }
   if (runtime->isInstanceOfInt(*object)) {
     HandleScope scope(thread);
-    Int value(&scope, intUnderlying(thread, object));
+    Int value(&scope, intUnderlying(*object));
     return convertIntToDouble(thread, value, result);
   }
   return NotImplementedType::object();
-}
-
-RawObject floatUnderlying(Thread* thread, const Object& obj) {
-  if (obj.isFloat()) return *obj;
-  DCHECK(thread->runtime()->isInstanceOfFloat(*obj),
-         "cannot get a base float value from a non-float");
-  HandleScope scope(thread);
-  UserFloatBase user_float(&scope, *obj);
-  return user_float.value();
 }
 
 const BuiltinMethod FloatBuiltins::kBuiltinMethods[] = {
@@ -108,8 +99,8 @@ RawObject FloatBuiltins::dunderAbs(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfFloat(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
   }
-  Float self(&scope, floatUnderlying(thread, self_obj));
-  return runtime->newFloat(std::fabs(self.value()));
+  double self = floatUnderlying(*self_obj).value();
+  return runtime->newFloat(std::fabs(self));
 }
 
 RawObject FloatBuiltins::dunderBool(Thread* thread, Frame* frame, word nargs) {
@@ -120,8 +111,8 @@ RawObject FloatBuiltins::dunderBool(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfFloat(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
   }
-  Float self(&scope, floatUnderlying(thread, self_obj));
-  return Bool::fromBool(self.value() != 0.0);
+  double self = floatUnderlying(*self_obj).value();
+  return Bool::fromBool(self != 0.0);
 }
 
 RawObject FloatBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
@@ -132,14 +123,14 @@ RawObject FloatBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfFloat(*self)) {
     return thread->raiseRequiresType(self, SymbolId::kFloat);
   }
-  double left = Float::cast(floatUnderlying(thread, self)).value();
+  double left = floatUnderlying(*self).value();
 
   Object right(&scope, args.get(1));
   bool result;
   if (runtime->isInstanceOfFloat(*right)) {
-    result = left == Float::cast(floatUnderlying(thread, right)).value();
+    result = left == floatUnderlying(*right).value();
   } else if (runtime->isInstanceOfInt(*right)) {
-    Int right_int(&scope, intUnderlying(thread, right));
+    Int right_int(&scope, intUnderlying(*right));
     result = doubleEqualsInt(thread, left, right_int);
   } else {
     return NotImplementedType::object();
@@ -154,7 +145,7 @@ RawObject FloatBuiltins::dunderFloat(Thread* thread, Frame* frame, word nargs) {
   if (!thread->runtime()->isInstanceOfFloat(*self)) {
     return thread->raiseRequiresType(self, SymbolId::kFloat);
   }
-  return floatUnderlying(thread, self);
+  return floatUnderlying(*self);
 }
 
 RawObject FloatBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
@@ -165,14 +156,14 @@ RawObject FloatBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfFloat(*self)) {
     return thread->raiseRequiresType(self, SymbolId::kFloat);
   }
-  double left = Float::cast(floatUnderlying(thread, self)).value();
+  double left = floatUnderlying(*self).value();
 
   Object right(&scope, args.get(1));
   bool result;
   if (runtime->isInstanceOfFloat(*right)) {
-    result = left >= Float::cast(floatUnderlying(thread, right)).value();
+    result = left >= floatUnderlying(*right).value();
   } else if (runtime->isInstanceOfInt(*right)) {
-    Int right_int(&scope, intUnderlying(thread, right));
+    Int right_int(&scope, intUnderlying(*right));
     result = compareDoubleWithInt(thread, left, right_int, GE);
   } else {
     return NotImplementedType::object();
@@ -188,14 +179,14 @@ RawObject FloatBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfFloat(*self)) {
     return thread->raiseRequiresType(self, SymbolId::kFloat);
   }
-  double left = Float::cast(floatUnderlying(thread, self)).value();
+  double left = floatUnderlying(*self).value();
 
   Object right(&scope, args.get(1));
   bool result;
   if (runtime->isInstanceOfFloat(*right)) {
-    result = left > Float::cast(floatUnderlying(thread, right)).value();
+    result = left > floatUnderlying(*right).value();
   } else if (runtime->isInstanceOfInt(*right)) {
-    Int right_int(&scope, intUnderlying(thread, right));
+    Int right_int(&scope, intUnderlying(*right));
     result = compareDoubleWithInt(thread, left, right_int, GT);
   } else {
     return NotImplementedType::object();
@@ -343,8 +334,8 @@ RawObject FloatBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
   if (!thread->runtime()->isInstanceOfFloat(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
   }
-  Object self_float(&scope, floatUnderlying(thread, self_obj));
-  return SmallInt::fromWord(floatHash(*self_float));
+  double self = floatUnderlying(*self_obj).value();
+  return SmallInt::fromWord(doubleHash(self));
 }
 
 RawObject FloatBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
@@ -354,7 +345,7 @@ RawObject FloatBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
   if (!thread->runtime()->isInstanceOfFloat(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
   }
-  double self = Float::cast(floatUnderlying(thread, self_obj)).value();
+  double self = floatUnderlying(*self_obj).value();
   return intFromDouble(thread, self);
 }
 
@@ -366,14 +357,14 @@ RawObject FloatBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfFloat(*self)) {
     return thread->raiseRequiresType(self, SymbolId::kFloat);
   }
-  double left = Float::cast(floatUnderlying(thread, self)).value();
+  double left = floatUnderlying(*self).value();
 
   Object right(&scope, args.get(1));
   bool result;
   if (runtime->isInstanceOfFloat(*right)) {
-    result = left <= Float::cast(floatUnderlying(thread, right)).value();
+    result = left <= floatUnderlying(*right).value();
   } else if (runtime->isInstanceOfInt(*right)) {
-    Int right_int(&scope, intUnderlying(thread, right));
+    Int right_int(&scope, intUnderlying(*right));
     result = compareDoubleWithInt(thread, left, right_int, LE);
   } else {
     return NotImplementedType::object();
@@ -389,14 +380,14 @@ RawObject FloatBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfFloat(*self)) {
     return thread->raiseRequiresType(self, SymbolId::kFloat);
   }
-  double left = Float::cast(floatUnderlying(thread, self)).value();
+  double left = floatUnderlying(*self).value();
 
   Object right(&scope, args.get(1));
   bool result;
   if (runtime->isInstanceOfFloat(*right)) {
-    result = left < Float::cast(floatUnderlying(thread, right)).value();
+    result = left < floatUnderlying(*right).value();
   } else if (runtime->isInstanceOfInt(*right)) {
-    Int right_int(&scope, intUnderlying(thread, right));
+    Int right_int(&scope, intUnderlying(*right));
     result = compareDoubleWithInt(thread, left, right_int, LT);
   } else {
     return NotImplementedType::object();
@@ -412,8 +403,7 @@ RawObject FloatBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfFloat(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
   }
-  Float self(&scope, floatUnderlying(thread, self_obj));
-  double left = self.value();
+  double left = floatUnderlying(*self_obj).value();
 
   double right;
   Object other(&scope, args.get(1));
@@ -432,8 +422,8 @@ RawObject FloatBuiltins::dunderNeg(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfFloat(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
   }
-  Float self(&scope, floatUnderlying(thread, self_obj));
-  return runtime->newFloat(-self.value());
+  double self = floatUnderlying(*self_obj).value();
+  return runtime->newFloat(-self);
 }
 
 RawObject FloatBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
@@ -444,7 +434,7 @@ RawObject FloatBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfFloat(*self)) {
     return thread->raiseRequiresType(self, SymbolId::kFloat);
   }
-  double left = Float::cast(floatUnderlying(thread, self)).value();
+  double left = floatUnderlying(*self).value();
 
   double right;
   Object other(&scope, args.get(1));
@@ -465,8 +455,7 @@ RawObject FloatBuiltins::dunderTrueDiv(Thread* thread, Frame* frame,
   if (!runtime->isInstanceOfFloat(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
   }
-  Float self(&scope, floatUnderlying(thread, self_obj));
-  double left = self.value();
+  double left = floatUnderlying(*self_obj).value();
 
   double right;
   Object other(&scope, args.get(1));
@@ -489,7 +478,7 @@ RawObject FloatBuiltins::dunderRound(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfFloat(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
   }
-  Float value_float(&scope, floatUnderlying(thread, self_obj));
+  Float value_float(&scope, floatUnderlying(*self_obj));
   double value = value_float.value();
 
   // If ndigits is None round to nearest integer.
@@ -509,7 +498,7 @@ RawObject FloatBuiltins::dunderRound(Thread* thread, Frame* frame, word nargs) {
                                 "'%T' cannot be interpreted as an integer",
                                 &ndigits_obj);
   }
-  Int ndigits_int(&scope, intUnderlying(thread, ndigits_obj));
+  Int ndigits_int(&scope, intUnderlying(*ndigits_obj));
   if (ndigits_int.isLargeInt()) {
     return ndigits_int.isNegative() ? runtime->newFloat(0.0) : *value_float;
   }
@@ -554,8 +543,7 @@ RawObject FloatBuiltins::dunderRtrueDiv(Thread* thread, Frame* frame,
   if (!runtime->isInstanceOfFloat(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
   }
-  Float self(&scope, floatUnderlying(thread, self_obj));
-  double right = self.value();
+  double right = floatUnderlying(*self_obj).value();
 
   double left;
   Object other(&scope, args.get(1));
@@ -578,7 +566,7 @@ RawObject FloatBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfFloat(*self)) {
     return thread->raiseRequiresType(self, SymbolId::kFloat);
   }
-  double left = Float::cast(floatUnderlying(thread, self)).value();
+  double left = floatUnderlying(*self).value();
 
   double right;
   Object other(&scope, args.get(1));
@@ -596,7 +584,7 @@ RawObject FloatBuiltins::dunderTrunc(Thread* thread, Frame* frame, word nargs) {
   if (!thread->runtime()->isInstanceOfFloat(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
   }
-  double self = Float::cast(floatUnderlying(thread, self_obj)).value();
+  double self = floatUnderlying(*self_obj).value();
   double integral_part;
   static_cast<void>(std::modf(self, &integral_part));
   return intFromDouble(thread, integral_part);
@@ -615,7 +603,7 @@ RawObject FloatBuiltins::dunderPow(Thread* thread, Frame* frame, word nargs) {
         LayoutId::kTypeError,
         "pow() 3rd argument not allowed unless all arguments are integers");
   }
-  double left = Float::cast(floatUnderlying(thread, self)).value();
+  double left = floatUnderlying(*self).value();
 
   double right;
   Object other(&scope, args.get(1));

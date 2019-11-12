@@ -15,10 +15,6 @@ RawObject tupleIteratorNext(Thread* thread, const TupleIterator& iter);
 RawObject tupleSlice(Thread* thread, const Tuple& tuple, word start, word stop,
                      word step);
 
-// If obj is exactly a Tuple, return it. Otherwise, assume it's a UserTupleBase
-// and return its underlying Tuple.
-RawObject tupleUnderlying(Thread* thread, const Object& obj);
-
 RawObject tupleHash(Thread* thread, const Tuple& tuple);
 
 class TupleBuiltins

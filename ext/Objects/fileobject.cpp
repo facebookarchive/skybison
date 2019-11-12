@@ -3,7 +3,6 @@
 #include "capi-handles.h"
 #include "cpython-data.h"
 #include "cpython-func.h"
-#include "int-builtins.h"
 #include "runtime.h"
 
 namespace py {
@@ -78,7 +77,7 @@ PY_EXPORT int PyObject_AsFileDescriptor(PyObject* obj) {
       return -1;
     }
   }
-  Int result(&scope, intUnderlying(thread, object));
+  Int result(&scope, intUnderlying(*object));
   auto const optint = result.asInt<int>();
   if (optint.error != CastError::None) {
     thread->raiseWithFmt(LayoutId::kOverflowError,

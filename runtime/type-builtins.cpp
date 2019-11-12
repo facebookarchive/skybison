@@ -709,7 +709,7 @@ RawObject typeGetAttributeSetLocation(Thread* thread, const Type& type,
   // No data descriptor found on the meta class, look on the type
   // TODO(T53626118) Raise an exception when `name_str` is a string subclass
   // that overrides `__eq__` or `__hash__`.
-  Str name_underlying(&scope, strUnderlying(thread, name_str));
+  Str name_underlying(&scope, strUnderlying(*name_str));
   Str name_interned(&scope, runtime->internStr(thread, name_underlying));
   Object result(&scope, instanceGetAttributeSetLocation(
                             thread, type, name_interned, location_out));
@@ -1104,7 +1104,7 @@ RawObject TypeBuiltins::dunderSetattr(Thread* thread, Frame* frame,
         LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
   }
   // dict.__setattr__ is special in that it must copy and intern the name.
-  Str name_str(&scope, strUnderlying(thread, name));
+  Str name_str(&scope, strUnderlying(*name));
   Str interned_name(&scope, runtime->internStr(thread, name_str));
   Object value(&scope, args.get(2));
   return typeSetAttr(thread, self, interned_name, value);

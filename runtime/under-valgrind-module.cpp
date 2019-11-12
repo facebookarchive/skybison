@@ -5,9 +5,7 @@
 #include "frame.h"
 #include "frozen-modules.h"
 #include "handles.h"
-#include "int-builtins.h"
 #include "runtime.h"
-#include "str-builtins.h"
 #include "thread.h"
 
 namespace py {
@@ -34,7 +32,7 @@ RawObject UnderValgrindModule::callgrindDumpStats(Thread* thread, Frame* frame,
   if (!thread->runtime()->isInstanceOfStr(*description)) {
     return thread->raiseRequiresType(description, SymbolId::kStr);
   }
-  Str description_str(&scope, strUnderlying(thread, description));
+  Str description_str(&scope, strUnderlying(*description));
   unique_c_ptr<char> description_cstr(description_str.toCStr());
   CALLGRIND_DUMP_STATS_AT(description_cstr.get());
   return NoneType::object();

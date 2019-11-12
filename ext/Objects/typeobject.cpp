@@ -16,7 +16,6 @@
 #include "objects.h"
 #include "runtime.h"
 #include "trampolines.h"
-#include "tuple-builtins.h"
 #include "type-builtins.h"
 #include "utils.h"
 
@@ -325,7 +324,7 @@ static RawObject makeIndex(Thread* thread, const Object& obj) {
   HandleScope scope(thread);
   Object converted(&scope, intFromIndex(thread, obj));
   if (converted.isError()) return *converted;
-  Int i(&scope, intUnderlying(thread, converted));
+  Int i(&scope, intUnderlying(*converted));
   if (i.numDigits() != 1) {
     return thread->raiseWithFmt(LayoutId::kOverflowError,
                                 "cannot fit '%T' into an index-sized integer",
@@ -811,7 +810,7 @@ PyObject* slotTpNew(PyObject* type, PyObject* args, PyObject* kwargs) {
          "Slot __new__ expected nullptr or dict kwargs");
 
   // Construct a new args tuple with type at the front.
-  Tuple args_tuple(&scope, tupleUnderlying(thread, args_obj));
+  Tuple args_tuple(&scope, tupleUnderlying(*args_obj));
   MutableTuple new_args(&scope,
                         runtime->newMutableTuple(args_tuple.length() + 1));
   new_args.atPut(0, *type_obj);

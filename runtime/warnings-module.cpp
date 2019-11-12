@@ -3,7 +3,6 @@
 #include "frame.h"
 #include "frozen-modules.h"
 #include "handles.h"
-#include "int-builtins.h"
 #include "runtime.h"
 #include "thread.h"
 
@@ -56,7 +55,7 @@ RawObject UnderWarningsModule::warn(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "integer argument expected");
   }
-  auto result = Int(&scope, intUnderlying(thread, stacklevel)).asInt<word>();
+  auto result = intUnderlying(*stacklevel).asInt<word>();
   if (result.error != CastError::None) {
     return thread->raiseWithFmt(LayoutId::kOverflowError,
                                 "Python int too large to convert to C ssize_t");

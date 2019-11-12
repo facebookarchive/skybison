@@ -1,7 +1,6 @@
 #include <cstdarg>
 
 #include "capi-handles.h"
-#include "int-builtins.h"
 #include "module-builtins.h"
 #include "runtime.h"
 #include "sys-module.h"
@@ -20,7 +19,7 @@ PY_EXPORT size_t _PySys_GetSizeOf(PyObject* o) {
   }
   DCHECK(thread->runtime()->isInstanceOfInt(*result_obj),
          "sys.getsizeof() should return an int");
-  Int result(&scope, intUnderlying(thread, result_obj));
+  Int result(&scope, intUnderlying(*result_obj));
   return static_cast<size_t>(result.asWord());
 }
 

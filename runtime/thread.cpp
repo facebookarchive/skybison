@@ -540,8 +540,7 @@ RawObject Thread::pendingStopIterationValue() {
     return si.value();
   }
   if (runtime()->isInstanceOfTuple(*exc_value)) {
-    Tuple tuple(&scope, tupleUnderlying(this, exc_value));
-    return tuple.at(0);
+    return tupleUnderlying(*exc_value).at(0);
   }
   return *exc_value;
 }

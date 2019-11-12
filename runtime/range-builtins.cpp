@@ -10,9 +10,9 @@ namespace py {
 RawObject rangeLen(Thread* thread, const Object& start_obj,
                    const Object& stop_obj, const Object& step_obj) {
   HandleScope scope(thread);
-  Int start(&scope, intUnderlying(thread, start_obj));
-  Int stop(&scope, intUnderlying(thread, stop_obj));
-  Int step(&scope, intUnderlying(thread, step_obj));
+  Int start(&scope, intUnderlying(*start_obj));
+  Int stop(&scope, intUnderlying(*stop_obj));
+  Int step(&scope, intUnderlying(*step_obj));
   if (!(start.isLargeInt() || stop.isLargeInt() || step.isLargeInt())) {
     return thread->runtime()->newInt(
         Slice::length(start.asWord(), stop.asWord(), step.asWord()));
@@ -126,9 +126,9 @@ RawObject RangeBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   Object start_obj(&scope, range.start());
   Object stop_obj(&scope, range.stop());
   Object step_obj(&scope, range.step());
-  Int start_int(&scope, intUnderlying(thread, start_obj));
-  Int stop_int(&scope, intUnderlying(thread, stop_obj));
-  Int step_int(&scope, intUnderlying(thread, step_obj));
+  Int start_int(&scope, intUnderlying(*start_obj));
+  Int stop_int(&scope, intUnderlying(*stop_obj));
+  Int step_int(&scope, intUnderlying(*step_obj));
   Runtime* runtime = thread->runtime();
   if (start_int.isLargeInt() || stop_int.isLargeInt() ||
       step_int.isLargeInt()) {
@@ -210,7 +210,7 @@ RawObject RangeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   if (stop.isError()) return *stop;
   Object step(&scope, intFromIndex(thread, maybe_step));
   if (step.isError()) return *step;
-  Int step_int(&scope, intUnderlying(thread, step));
+  Int step_int(&scope, intUnderlying(*step));
   if (step_int.isZero()) {
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "range() arg 3 must not be zero");

@@ -5,7 +5,6 @@
 
 #include "builtins-module.h"
 #include "frame.h"
-#include "int-builtins.h"
 #include "module-builtins.h"
 #include "objects.h"
 #include "runtime.h"
@@ -55,7 +54,7 @@ RawObject createException(Thread* thread, const Type& type,
   }
   if (thread->runtime()->isInstanceOfTuple(*value)) {
     HandleScope scope(thread);
-    Tuple args(&scope, tupleUnderlying(thread, value));
+    Tuple args(&scope, tupleUnderlying(*value));
     return Interpreter::callFunction(thread, frame, type, args);
   }
   return Interpreter::callFunction1(thread, frame, type, value);
@@ -216,7 +215,7 @@ static bool parseSyntaxError(Thread* thread, const Object& value,
   result = runtime->attributeAtById(thread, value, SymbolId::kLineno);
   if (result.isError()) return fail();
   if (runtime->isInstanceOfInt(*result)) {
-    Int ival(&scope, intUnderlying(thread, result));
+    Int ival(&scope, intUnderlying(*result));
     if (ival.numDigits() > 1) return false;
     *lineno = ival.asWord();
   } else {
@@ -228,7 +227,7 @@ static bool parseSyntaxError(Thread* thread, const Object& value,
   if (result.isNoneType()) {
     *offset = -1;
   } else if (runtime->isInstanceOfInt(*result)) {
-    Int ival(&scope, intUnderlying(thread, result));
+    Int ival(&scope, intUnderlying(*result));
     if (ival.numDigits() > 1) return false;
     *offset = ival.asWord();
   } else {
@@ -485,10 +484,9 @@ void handleSystemExit(Thread* thread) {
   }
   if (arg.isNoneType()) do_exit(EXIT_SUCCESS);
   if (runtime->isInstanceOfInt(*arg)) {
-    Int arg_int(&scope, intUnderlying(thread, arg));
     // We could convert and check for overflow error, but the overflow error
     // should get cleared anyway.
-    do_exit(arg_int.asWordSaturated());
+    do_exit(intUnderlying(*arg).asWordSaturated());
   }
 
   // The calls below can't have an exception pending

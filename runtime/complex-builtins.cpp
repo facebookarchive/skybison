@@ -113,7 +113,7 @@ RawObject ComplexBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   Object other_obj(&scope, args.get(1));
   double other_real, other_imag;
   if (runtime->isInstanceOfInt(*other_obj)) {
-    Int other_int(&scope, intUnderlying(thread, other_obj));
+    Int other_int(&scope, intUnderlying(*other_obj));
     Object result(&scope, convertIntToDouble(thread, other_int, &other_real));
     if (result.isError()) return *result;
     other_imag = 0.0;

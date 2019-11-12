@@ -24,7 +24,7 @@ RawObject listExtend(Thread* thread, const List& dst, const Object& iterable) {
     src_tuple = src.items();
     src_length = src.numItems();
   } else {
-    src_tuple = tupleUnderlying(thread, iterable);
+    src_tuple = tupleUnderlying(*iterable);
     src_length = src_tuple.length();
   }
   word old_length = dst.numItems();
@@ -302,7 +302,7 @@ RawObject ListBuiltins::insert(Thread* thread, Frame* frame, word nargs) {
   Object index_obj(&scope, args.get(1));
   index_obj = intFromIndex(thread, index_obj);
   if (index_obj.isError()) return *index_obj;
-  Int index_int(&scope, intUnderlying(thread, index_obj));
+  Int index_int(&scope, intUnderlying(*index_obj));
   if (index_int.isLargeInt()) {
     return thread->raiseWithFmt(LayoutId::kOverflowError,
                                 "Python int too large to convert to C ssize_t");
@@ -407,8 +407,7 @@ RawObject ListBuiltins::dunderImul(Thread* thread, Frame* frame, word nargs) {
   Object count_index(&scope, args.get(1));
   Object count_obj(&scope, intFromIndex(thread, count_index));
   if (count_obj.isError()) return *count_obj;
-  Int count_int(&scope, intUnderlying(thread, count_obj));
-  word count = count_int.asWordSaturated();
+  word count = intUnderlying(*count_obj).asWordSaturated();
   if (!SmallInt::isValid(count)) {
     return thread->raiseWithFmt(LayoutId::kOverflowError,
                                 "cannot fit '%T' into an index-sized integer",

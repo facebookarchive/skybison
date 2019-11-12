@@ -41,14 +41,6 @@ RawObject tupleSlice(Thread* thread, const Tuple& tuple, word start, word stop,
   return *items;
 }
 
-RawObject tupleUnderlying(Thread* thread, const Object& obj) {
-  if (obj.isTuple()) return *obj;
-  DCHECK(thread->runtime()->isInstanceOfTuple(*obj), "Non-tuple value");
-  HandleScope scope(thread);
-  UserTupleBase base(&scope, *obj);
-  return base.tupleValue();
-}
-
 RawObject tupleHash(Thread* thread, const Tuple& tuple) {
   HandleScope scope(thread);
   Object elt(&scope, NoneType::object());
@@ -72,7 +64,7 @@ RawObject tupleHash(Thread* thread, const Tuple& tuple) {
 }
 
 const BuiltinAttribute TupleBuiltins::kAttributes[] = {
-    {SymbolId::kInvalid, UserTupleBase::kTupleOffset},
+    {SymbolId::kInvalid, UserTupleBase::kValueOffset},
     {SymbolId::kSentinelId, -1},
 };
 
@@ -94,14 +86,14 @@ RawObject TupleBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfTuple(*lhs)) {
     return thread->raiseRequiresType(lhs, SymbolId::kTuple);
   }
-  Tuple left(&scope, tupleUnderlying(thread, lhs));
+  Tuple left(&scope, tupleUnderlying(*lhs));
   Object rhs(&scope, args.get(1));
   if (!runtime->isInstanceOfTuple(*rhs)) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "can only concatenate tuple to tuple, got %T",
                                 &rhs);
   }
-  Tuple right(&scope, tupleUnderlying(thread, rhs));
+  Tuple right(&scope, tupleUnderlying(*rhs));
   word llength = left.length();
   word rlength = right.length();
 
@@ -128,7 +120,7 @@ RawObject TupleBuiltins::dunderContains(Thread* thread, Frame* frame,
     return thread->raiseRequiresType(self_obj, SymbolId::kTuple);
   }
 
-  Tuple self(&scope, tupleUnderlying(thread, self_obj));
+  Tuple self(&scope, tupleUnderlying(*self_obj));
   Object value(&scope, args.get(1));
   Object item(&scope, NoneType::object());
   Object comp_result(&scope, NoneType::object());
@@ -158,7 +150,7 @@ RawObject TupleBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfTuple(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kTuple);
   }
-  Tuple self(&scope, tupleUnderlying(thread, self_obj));
+  Tuple self(&scope, tupleUnderlying(*self_obj));
   return tupleHash(thread, self);
 }
 
@@ -170,7 +162,7 @@ RawObject TupleBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfTuple(*obj)) {
     return thread->raiseRequiresType(obj, SymbolId::kTuple);
   }
-  Tuple self(&scope, tupleUnderlying(thread, obj));
+  Tuple self(&scope, tupleUnderlying(*obj));
   return runtime->newInt(self.length());
 }
 
@@ -182,11 +174,11 @@ RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfTuple(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kTuple);
   }
-  Tuple self(&scope, tupleUnderlying(thread, self_obj));
+  Tuple self(&scope, tupleUnderlying(*self_obj));
   Object rhs(&scope, args.get(1));
   Object rhs_index(&scope, intFromIndex(thread, rhs));
   if (rhs_index.isError()) return *rhs_index;
-  Int right(&scope, intUnderlying(thread, rhs_index));
+  Int right(&scope, intUnderlying(*rhs_index));
   if (right.isLargeInt()) {
     return thread->raiseWithFmt(LayoutId::kOverflowError,
                                 "cannot fit '%T' into an index-sized integer",
@@ -228,7 +220,7 @@ RawObject TupleBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfTuple(*self)) {
     return thread->raiseRequiresType(self, SymbolId::kTuple);
   }
-  Tuple tuple(&scope, tupleUnderlying(thread, self));
+  Tuple tuple(&scope, tupleUnderlying(*self));
   return runtime->newTupleIterator(tuple, tuple.length());
 }
 

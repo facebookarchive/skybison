@@ -27,7 +27,7 @@ RawObject MarshalModule::loads(Thread* thread, Frame* frame, word nargs) {
     // TODO(T38902048): Load from buffer protocol objects
     UNIMPLEMENTED("marshal.loads with non-bytes objects");
   }
-  Bytes bytes(&scope, bytesUnderlying(thread, bytes_obj));
+  Bytes bytes(&scope, bytesUnderlying(*bytes_obj));
   word length = bytes.length();
   // TODO(T38902583): Use updated Marshal reader to read from Bytes object
   // directly

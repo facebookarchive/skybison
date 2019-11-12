@@ -2453,7 +2453,7 @@ print(result)
 TEST_F(StrBuiltinsTest, StrUnderlyingWithStrReturnsSameStr) {
   HandleScope scope(thread_);
   Str str(&scope, runtime_.newStrFromCStr("hello"));
-  Object underlying(&scope, strUnderlying(thread_, str));
+  Object underlying(&scope, strUnderlying(*str));
   EXPECT_EQ(*str, *underlying);
 }
 
@@ -2466,7 +2466,7 @@ substr = SubStr("some string")
                    .isError());
   Object substr(&scope, mainModuleAt(&runtime_, "substr"));
   ASSERT_FALSE(substr.isStr());
-  Object underlying(&scope, strUnderlying(thread_, substr));
+  Object underlying(&scope, strUnderlying(*substr));
   EXPECT_TRUE(isStrEqualsCStr(*underlying, "some string"));
 }
 

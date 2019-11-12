@@ -1369,15 +1369,17 @@ class RawMutableTuple : public RawTuple {
 class RawUserTupleBase : public RawInstance {
  public:
   // Getters and setters.
-  RawObject tupleValue() const;
-  void setTupleValue(RawObject value) const;
+  RawObject value() const;
+  void setValue(RawObject value) const;
 
   // RawLayout.
-  static const int kTupleOffset = RawHeapObject::kSize;
-  static const int kSize = kTupleOffset + kPointerSize;
+  static const int kValueOffset = RawHeapObject::kSize;
+  static const int kSize = kValueOffset + kPointerSize;
 
   RAW_OBJECT_COMMON_NO_CAST(UserTupleBase);
 };
+
+RawTuple tupleUnderlying(RawObject object);
 
 class RawLargeStr : public RawArrayBase {
  public:
@@ -1495,6 +1497,8 @@ class RawUserBytesBase : public RawInstance {
   RAW_OBJECT_COMMON_NO_CAST(UserBytesBase);
 };
 
+RawBytes bytesUnderlying(RawObject object);
+
 class RawUserFloatBase : public RawInstance {
  public:
   // Getters and setters.
@@ -1507,6 +1511,8 @@ class RawUserFloatBase : public RawInstance {
 
   RAW_OBJECT_COMMON_NO_CAST(UserFloatBase);
 };
+
+RawFloat floatUnderlying(RawObject object);
 
 class RawUserIntBase : public RawInstance {
  public:
@@ -1521,6 +1527,8 @@ class RawUserIntBase : public RawInstance {
   RAW_OBJECT_COMMON_NO_CAST(UserIntBase);
 };
 
+RawInt intUnderlying(RawObject object);
+
 class RawUserStrBase : public RawInstance {
  public:
   // Getters and setters.
@@ -1533,6 +1541,8 @@ class RawUserStrBase : public RawInstance {
 
   RAW_OBJECT_COMMON_NO_CAST(UserStrBase);
 };
+
+RawStr strUnderlying(RawObject object);
 
 class RawComplex : public RawHeapObject {
  public:
@@ -4794,13 +4804,20 @@ inline void RawTuple::atPut(word index, RawObject value) const {
 
 // RawUserTupleBase
 
-inline RawObject RawUserTupleBase::tupleValue() const {
-  return instanceVariableAt(kTupleOffset);
+inline RawObject RawUserTupleBase::value() const {
+  return instanceVariableAt(kValueOffset);
 }
 
-inline void RawUserTupleBase::setTupleValue(RawObject value) const {
+inline void RawUserTupleBase::setValue(RawObject value) const {
   DCHECK(value.isTuple(), "Only tuple type is permitted as a value");
-  instanceVariableAtPut(kTupleOffset, value);
+  instanceVariableAtPut(kValueOffset, value);
+}
+
+inline RawTuple tupleUnderlying(RawObject object) {
+  if (object.isTuple()) {
+    return RawTuple::cast(object);
+  }
+  return RawTuple::cast(object.rawCast<RawUserTupleBase>().value());
 }
 
 // RawUnicodeError
@@ -5146,6 +5163,13 @@ inline void RawUserBytesBase::setValue(RawObject value) const {
   instanceVariableAtPut(kValueOffset, value);
 }
 
+inline RawBytes bytesUnderlying(RawObject object) {
+  if (object.isBytes()) {
+    return RawBytes::cast(object);
+  }
+  return RawBytes::cast(object.rawCast<RawUserBytesBase>().value());
+}
+
 // RawUserFloatBase
 
 inline RawObject RawUserFloatBase::value() const {
@@ -5155,6 +5179,13 @@ inline RawObject RawUserFloatBase::value() const {
 inline void RawUserFloatBase::setValue(RawObject value) const {
   DCHECK(value.isFloat(), "Only float type is permitted as a value");
   instanceVariableAtPut(kValueOffset, value);
+}
+
+inline RawFloat floatUnderlying(RawObject object) {
+  if (object.isFloat()) {
+    return RawFloat::cast(object);
+  }
+  return RawFloat::cast(object.rawCast<RawUserFloatBase>().value());
 }
 
 // RawUserIntBase
@@ -5169,6 +5200,13 @@ inline void RawUserIntBase::setValue(RawObject value) const {
   instanceVariableAtPut(kValueOffset, value);
 }
 
+inline RawInt intUnderlying(RawObject object) {
+  if (object.isInt()) {
+    return RawInt::cast(object);
+  }
+  return RawInt::cast(object.rawCast<RawUserIntBase>().value());
+}
+
 // RawUserStrBase
 
 inline RawObject RawUserStrBase::value() const {
@@ -5178,6 +5216,13 @@ inline RawObject RawUserStrBase::value() const {
 inline void RawUserStrBase::setValue(RawObject value) const {
   DCHECK(value.isStr(), "Only str type is permitted as a value.");
   instanceVariableAtPut(kValueOffset, value);
+}
+
+inline RawStr strUnderlying(RawObject object) {
+  if (object.isStr()) {
+    return RawStr::cast(object);
+  }
+  return RawStr::cast(object.rawCast<RawUserStrBase>().value());
 }
 
 // RawRange

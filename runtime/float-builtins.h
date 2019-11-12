@@ -16,9 +16,6 @@ namespace py {
  */
 RawObject asFloatObject(Thread* thread, const Object& obj);
 
-// Grabs the base float value from an instance of float.
-RawObject floatUnderlying(Thread* thread, const Object& obj);
-
 word doubleHash(double value);
 
 word floatHash(RawObject value);

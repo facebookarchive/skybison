@@ -110,7 +110,7 @@ static T asInt(PyObject* pylong, const char* type_name, int* overflow) {
     }
   }
 
-  Int num(&scope, intUnderlying(thread, long_obj));
+  Int num(&scope, intUnderlying(*long_obj));
   auto const result = num.asInt<T>();
   if (result.error == CastError::None) {
     if (overflow) *overflow = 0;
@@ -148,7 +148,7 @@ static T asIntWithoutOverflowCheck(PyObject* pylong) {
     }
   }
 
-  Int num(&scope, intUnderlying(thread, long_obj));
+  Int num(&scope, intUnderlying(*long_obj));
   return num.digitAt(0);
 }
 
@@ -159,7 +159,7 @@ PY_EXPORT size_t _PyLong_NumBits(PyObject* pylong) {
   Object long_obj(&scope, ApiHandle::fromPyObject(pylong)->asObject());
   DCHECK(thread->runtime()->isInstanceOfInt(*long_obj),
          "argument to _PyLong_NumBits must be an int");
-  Int obj(&scope, intUnderlying(thread, long_obj));
+  Int obj(&scope, intUnderlying(*long_obj));
   return obj.bitLength();
 }
 
@@ -249,7 +249,7 @@ PY_EXPORT double PyLong_AsDouble(PyObject* obj) {
     thread->raiseWithFmt(LayoutId::kTypeError, "an integer is required");
     return -1.0;
   }
-  Int value(&scope, intUnderlying(thread, object));
+  Int value(&scope, intUnderlying(*object));
   double result;
   Object err(&scope, convertIntToDouble(thread, value, &result));
   return err.isError() ? -1.0 : result;
@@ -293,7 +293,7 @@ PY_EXPORT int _PyLong_AsByteArray(PyLongObject* longobj, unsigned char* dst,
   Runtime* runtime = thread->runtime();
   PyObject* pyobj = reinterpret_cast<PyObject*>(longobj);
   Object self_obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
-  Int self(&scope, intUnderlying(thread, self_obj));
+  Int self(&scope, intUnderlying(*self_obj));
   if (!is_signed && self.isNegative()) {
     thread->raiseWithFmt(LayoutId::kOverflowError,
                          "can't convert negative int to unsigned");
@@ -345,7 +345,7 @@ PY_EXPORT int _PyLong_Sign(PyObject* vv) {
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(vv)->asObject());
   DCHECK(thread->runtime()->isInstanceOfInt(*obj), "requires an integer");
-  Int value(&scope, intUnderlying(thread, obj));
+  Int value(&scope, intUnderlying(*obj));
   return value.isZero() ? 0 : (value.isNegative() ? -1 : 1);
 }
 

@@ -40,7 +40,7 @@ PY_EXPORT PyObject* _Py_Mangle(PyObject* pyprivateobj, PyObject* pyident) {
   Object privateobj_obj(&scope,
                         ApiHandle::fromPyObject(pyprivateobj)->asObject());
   Object ident_obj(&scope, ApiHandle::fromPyObject(pyident)->asObject());
-  Str ident(&scope, strUnderlying(thread, ident_obj));
+  Str ident(&scope, strUnderlying(*ident_obj));
   Runtime* runtime = thread->runtime();
   // Only mangle names that start with two underscores, but do not end with
   // two underscores or contain a dot.
@@ -54,7 +54,7 @@ PY_EXPORT PyObject* _Py_Mangle(PyObject* pyprivateobj, PyObject* pyident) {
     return pyident;
   }
 
-  Str privateobj(&scope, strUnderlying(thread, privateobj_obj));
+  Str privateobj(&scope, strUnderlying(*privateobj_obj));
   word privateobj_length = privateobj.charLength();
   word begin = 0;
   while (begin < privateobj_length && privateobj.charAt(begin) == '_') {

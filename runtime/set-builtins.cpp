@@ -5,7 +5,6 @@
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
-#include "tuple-builtins.h"
 
 namespace py {
 
@@ -972,7 +971,7 @@ RawObject SetBuiltins::update(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfTuple(*starargs_obj)) {
     return thread->raiseRequiresType(starargs_obj, SymbolId::kTuple);
   }
-  Tuple starargs(&scope, tupleUnderlying(thread, starargs_obj));
+  Tuple starargs(&scope, tupleUnderlying(*starargs_obj));
   Object result(&scope, NoneType::object());
   for (word i = 0; i < starargs.length(); i++) {
     Object other(&scope, starargs.at(i));

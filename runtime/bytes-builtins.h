@@ -43,9 +43,6 @@ RawObject bytesStripSpace(Thread* thread, const Bytes& bytes, word len);
 RawObject bytesStripSpaceLeft(Thread* thread, const Bytes& bytes, word len);
 RawObject bytesStripSpaceRight(Thread* thread, const Bytes& bytes, word len);
 
-// Returns the internal bytes value of an instance of bytes.
-RawObject bytesUnderlying(Thread* thread, const Object& obj);
-
 bool bytesIsValidUTF8(RawBytes bytes);
 
 // Test whether bytes are valid UTF-8 except that it also allows codepoints

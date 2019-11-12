@@ -263,7 +263,7 @@ RawObject BuiltinsModule::bin(Thread* thread, Frame* frame, word nargs) {
   if (number.isError()) {
     return *number;
   }
-  Int number_int(&scope, intUnderlying(thread, number));
+  Int number_int(&scope, intUnderlying(*number));
   return formatIntBinarySimple(thread, number_int);
 }
 
@@ -414,7 +414,7 @@ RawObject BuiltinsModule::chr(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "an integer is required (got type %T)", &arg);
   }
-  Int num(&scope, intUnderlying(thread, arg));
+  Int num(&scope, intUnderlying(*arg));
   if (!num.isSmallInt()) {
     return thread->raiseWithFmt(LayoutId::kOverflowError,
                                 "Python int too large to convert to C long");
@@ -523,7 +523,7 @@ RawObject BuiltinsModule::oct(Thread* thread, Frame* frame, word nargs) {
   if (number.isError()) {
     return *number;
   }
-  Int number_int(&scope, intUnderlying(thread, number));
+  Int number_int(&scope, intUnderlying(*number));
   return formatIntOctalSimple(thread, number_int);
 }
 
@@ -533,13 +533,13 @@ RawObject BuiltinsModule::ord(Thread* thread, Frame* frame, word nargs) {
   Object obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (runtime->isInstanceOfBytes(*obj)) {
-    Bytes bytes(&scope, bytesUnderlying(thread, obj));
+    Bytes bytes(&scope, bytesUnderlying(*obj));
     if (bytes.length() == 1) {
       int32_t code_point = bytes.byteAt(0);
       return SmallInt::fromWord(code_point);
     }
   } else if (runtime->isInstanceOfStr(*obj)) {
-    Str str(&scope, strUnderlying(thread, obj));
+    Str str(&scope, strUnderlying(*obj));
     if (str.isSmallStr() && *str != Str::empty()) {
       word num_bytes;
       int32_t code_point = str.codePointAt(0, &num_bytes);
@@ -620,7 +620,7 @@ RawObject BuiltinsModule::hex(Thread* thread, Frame* frame, word nargs) {
   if (number.isError()) {
     return *number;
   }
-  Int number_int(&scope, intUnderlying(thread, number));
+  Int number_int(&scope, intUnderlying(*number));
   return formatIntHexadecimalSimple(thread, number_int);
 }
 

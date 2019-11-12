@@ -69,27 +69,15 @@ RawObject UnderCodecsModule::underAsciiDecode(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object bytes_obj(&scope, args.get(0));
-  Object errors_obj(&scope, args.get(1));
-  Object index_obj(&scope, args.get(2));
-  Object output_obj(&scope, args.get(3));
-  DCHECK(runtime->isInstanceOfBytes(*bytes_obj),
-         "First arg to _ascii_decode must be str");
-  DCHECK(runtime->isInstanceOfStr(*errors_obj),
-         "Second arg to _ascii_decode must be str");
-  DCHECK(runtime->isInstanceOfInt(*index_obj),
-         "Third arg to _ascii_decode must be int");
-  DCHECK(output_obj.isStrArray(),
-         "Fourth arg to _ascii_decode must be _strarray");
-  Bytes bytes(&scope, bytesUnderlying(thread, bytes_obj));
-  Str errors(&scope, strUnderlying(thread, errors_obj));
-  Int index(&scope, intUnderlying(thread, index_obj));
-  StrArray dst(&scope, *output_obj);
+  Bytes bytes(&scope, bytesUnderlying(args.get(0)));
+  Str errors(&scope, strUnderlying(args.get(1)));
+  word index = intUnderlying(args.get(2)).asWord();
+  StrArray dst(&scope, args.get(3));
 
   Tuple result(&scope, runtime->newTuple(2));
   word length = bytes.length();
   runtime->strArrayEnsureCapacity(thread, dst, length);
-  word outpos = asciiDecode(thread, dst, bytes, index.asWord());
+  word outpos = asciiDecode(thread, dst, bytes, index);
   if (outpos == length) {
     result.atPut(0, runtime->strFromStrArray(dst));
     result.atPut(1, runtime->newInt(length));
@@ -147,26 +135,16 @@ RawObject UnderCodecsModule::underAsciiEncode(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object data_obj(&scope, args.get(0));
-  Object errors_obj(&scope, args.get(1));
-  Object index_obj(&scope, args.get(2));
   Object output_obj(&scope, args.get(3));
-  DCHECK(runtime->isInstanceOfStr(*data_obj),
-         "First arg to _ascii_encode must be str");
-  DCHECK(runtime->isInstanceOfStr(*errors_obj),
-         "Second arg to _ascii_encode must be str");
-  DCHECK(runtime->isInstanceOfInt(*index_obj),
-         "Third arg to _ascii_encode must be int");
   DCHECK(runtime->isInstanceOfByteArray(*output_obj),
          "Fourth arg to _ascii_encode must be bytearray");
-  Str data(&scope, strUnderlying(thread, data_obj));
-  Str errors(&scope, strUnderlying(thread, errors_obj));
-  Int index_int(&scope, intUnderlying(thread, index_obj));
+  Str data(&scope, strUnderlying(args.get(0)));
+  Str errors(&scope, strUnderlying(args.get(1)));
+  word i = intUnderlying(args.get(2)).asWord();
   ByteArray output(&scope, *output_obj);
 
   Tuple result(&scope, runtime->newTuple(2));
   SymbolId error_symbol = lookupSymbolForErrorHandler(errors);
-  word i = index_int.asWord();
   // TODO(T43252439): Optimize this by first checking whether the entire string
   // is ASCII, and just memcpy into a string if so
   for (word byte_offset = data.offsetByCodePoints(0, i);
@@ -295,21 +273,15 @@ RawObject UnderCodecsModule::underEscapeDecode(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object bytes_obj(&scope, args.get(0));
-  Object errors_obj(&scope, args.get(1));
-  Object recode_obj(&scope, args.get(2));
   Runtime* runtime = thread->runtime();
   if (runtime->isInstanceOfStr(*bytes_obj)) {
     // TODO(T44739505): Make sure we can decode a str
     UNIMPLEMENTED("_codecs.escape_decode with a str");
   }
-  DCHECK(runtime->isInstanceOfBytes(*bytes_obj),
-         "First arg to _escape_decode must be str or bytes");
-  DCHECK(runtime->isInstanceOfStr(*errors_obj),
-         "Second arg to _escape_decode must be str");
-  DCHECK(runtime->isInstanceOfStr(*recode_obj),
+  DCHECK(runtime->isInstanceOfStr(args.get(2)),
          "Third arg to _escape_decode must be str");
-  Bytes bytes(&scope, bytesUnderlying(thread, bytes_obj));
-  Str errors(&scope, strUnderlying(thread, errors_obj));
+  Bytes bytes(&scope, bytesUnderlying(*bytes_obj));
+  Str errors(&scope, strUnderlying(args.get(1)));
 
   ByteArray dst(&scope, runtime->newByteArray());
   word length = bytes.length();
@@ -377,10 +349,7 @@ RawObject UnderCodecsModule::underLatin1Decode(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object bytes_obj(&scope, args.get(0));
-  DCHECK(runtime->isInstanceOfBytes(*bytes_obj),
-         "First arg to _latin_1_decode must be str");
-  Bytes bytes(&scope, bytesUnderlying(thread, bytes_obj));
+  Bytes bytes(&scope, bytesUnderlying(args.get(0)));
   StrArray array(&scope, runtime->newStrArray());
   word length = bytes.length();
   runtime->strArrayEnsureCapacity(thread, array, length);
@@ -411,26 +380,16 @@ RawObject UnderCodecsModule::underLatin1Encode(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object data_obj(&scope, args.get(0));
-  Object errors_obj(&scope, args.get(1));
-  Object index_obj(&scope, args.get(2));
   Object output_obj(&scope, args.get(3));
-  DCHECK(runtime->isInstanceOfStr(*data_obj),
-         "First arg to _latin_1_encode must be str");
-  DCHECK(runtime->isInstanceOfStr(*errors_obj),
-         "Second arg to _latin_1_encode must be str");
-  DCHECK(runtime->isInstanceOfInt(*index_obj),
-         "Third arg to _latin_1_encode must be int");
   DCHECK(runtime->isInstanceOfByteArray(*output_obj),
          "Fourth arg to _latin_1_encode must be bytearray");
-  Str data(&scope, strUnderlying(thread, data_obj));
-  Str errors(&scope, strUnderlying(thread, errors_obj));
-  Int index_int(&scope, intUnderlying(thread, index_obj));
+  Str data(&scope, strUnderlying(args.get(0)));
+  Str errors(&scope, strUnderlying(args.get(1)));
+  word i = intUnderlying(args.get(2)).asWord();
   ByteArray output(&scope, *output_obj);
 
   Tuple result(&scope, runtime->newTuple(2));
   SymbolId error_symbol = lookupSymbolForErrorHandler(errors);
-  word i = index_int.asWord();
   for (word byte_offset = data.offsetByCodePoints(0, i);
        byte_offset < data.charLength(); i++) {
     word num_bytes;
@@ -614,29 +573,17 @@ RawObject UnderCodecsModule::underUnicodeEscapeDecode(Thread* thread,
                                                       word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object bytes_obj(&scope, args.get(0));
-  Object errors_obj(&scope, args.get(1));
-  Object index_obj(&scope, args.get(2));
-  Object output_obj(&scope, args.get(3));
   Runtime* runtime = thread->runtime();
-  DCHECK(runtime->isInstanceOfBytes(*bytes_obj),
-         "First arg to _unicode_escape_decode must be str");
-  DCHECK(runtime->isInstanceOfStr(*errors_obj),
-         "Second arg to _unicode_escape_decode must be str");
-  DCHECK(runtime->isInstanceOfInt(*index_obj),
-         "Third arg to _unicode_escape_decode must be int");
-  DCHECK(output_obj.isStrArray(),
-         "Fourth arg to _unicode_escape_decode must be _strarray");
-  Bytes bytes(&scope, bytesUnderlying(thread, bytes_obj));
-  Str errors(&scope, strUnderlying(thread, errors_obj));
-  Int index(&scope, intUnderlying(thread, index_obj));
-  StrArray dst(&scope, *output_obj);
+  Bytes bytes(&scope, bytesUnderlying(args.get(0)));
+  Str errors(&scope, strUnderlying(args.get(1)));
+  word index = intUnderlying(args.get(2)).asWord();
+  StrArray dst(&scope, args.get(3));
 
   Tuple result(&scope, runtime->newTuple(4));
   word length = bytes.length();
   runtime->strArrayEnsureCapacity(thread, dst, length);
   word first_invalid_escape_index = -1;
-  for (word i = index.asWord(); i < length;) {
+  for (word i = index; i < length;) {
     const char* message = nullptr;
     word start_pos = i;
     byte ch = bytes.byteAt(i++);
@@ -826,30 +773,18 @@ RawObject UnderCodecsModule::underUtf8Decode(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object bytes_obj(&scope, args.get(0));
-  Object errors_obj(&scope, args.get(1));
-  Object index_obj(&scope, args.get(2));
-  Object output_obj(&scope, args.get(3));
   Object final_obj(&scope, args.get(4));
-  // TODO(T45849551): Handle any bytes-like object
-  DCHECK(runtime->isInstanceOfBytes(*bytes_obj),
-         "First arg to _utf_8_decode must be bytes");
-  DCHECK(runtime->isInstanceOfStr(*errors_obj),
-         "Second arg to _utf_8_decode must be str");
-  DCHECK(runtime->isInstanceOfInt(*index_obj),
-         "Third arg to _utf_8_decode must be int");
-  DCHECK(output_obj.isStrArray(),
-         "Fourth arg to _utf_8_decode must be _strarray");
   DCHECK(final_obj.isBool(), "Fifth arg to _utf_8_decode must be bool");
-  Bytes bytes(&scope, bytesUnderlying(thread, bytes_obj));
-  Str errors(&scope, strUnderlying(thread, errors_obj));
-  Int index(&scope, intUnderlying(thread, index_obj));
-  StrArray dst(&scope, *output_obj);
+  // TODO(T45849551): Handle any bytes-like object
+  Bytes bytes(&scope, bytesUnderlying(args.get(0)));
+  Str errors(&scope, strUnderlying(args.get(1)));
+  word index = intUnderlying(args.get(2)).asWord();
+  StrArray dst(&scope, args.get(3));
 
   Tuple result(&scope, runtime->newTuple(3));
   word length = bytes.length();
   runtime->strArrayEnsureCapacity(thread, dst, length);
-  word i = asciiDecode(thread, dst, bytes, index.asWord());
+  word i = asciiDecode(thread, dst, bytes, index);
   if (i == length) {
     result.atPut(0, runtime->strFromStrArray(dst));
     result.atPut(1, runtime->newInt(length));
@@ -933,28 +868,18 @@ RawObject UnderCodecsModule::underUtf8Encode(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object data_obj(&scope, args.get(0));
-  Object errors_obj(&scope, args.get(1));
-  Object index_obj(&scope, args.get(2));
   Object output_obj(&scope, args.get(3));
-  DCHECK(runtime->isInstanceOfStr(*data_obj),
-         "First arg to _utf_8_encode must be str");
-  DCHECK(runtime->isInstanceOfStr(*errors_obj),
-         "Second arg to _utf_8_encode must be str");
-  DCHECK(runtime->isInstanceOfInt(*index_obj),
-         "Third arg to _utf_8_encode must be int");
   DCHECK(runtime->isInstanceOfByteArray(*output_obj),
          "Fourth arg to _utf_8_encode must be bytearray");
-  Str data(&scope, strUnderlying(thread, data_obj));
-  Str errors(&scope, strUnderlying(thread, errors_obj));
-  Int index_int(&scope, intUnderlying(thread, index_obj));
+  Str data(&scope, strUnderlying(args.get(0)));
+  Str errors(&scope, strUnderlying(args.get(1)));
+  word index = intUnderlying(args.get(2)).asWord();
   ByteArray output(&scope, *output_obj);
 
   Tuple result(&scope, runtime->newTuple(2));
   SymbolId error_symbol = lookupSymbolForErrorHandler(errors);
-  word i = index_int.asWord();
-  for (word byte_offset = data.offsetByCodePoints(0, i);
-       byte_offset < data.charLength(); i++) {
+  for (word byte_offset = data.offsetByCodePoints(0, index);
+       byte_offset < data.charLength(); index++) {
     word num_bytes;
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
     byte_offset += num_bytes;
@@ -979,18 +904,18 @@ RawObject UnderCodecsModule::underUtf8Encode(Thread* thread, Frame* frame,
         default:
           break;
       }
-      result.atPut(0, runtime->newInt(i));
+      result.atPut(0, runtime->newInt(index));
       while (byte_offset < data.charLength() &&
              isSurrogate(data.codePointAt(byte_offset, &num_bytes))) {
         byte_offset += num_bytes;
-        i++;
+        index++;
       }
-      result.atPut(1, runtime->newInt(i + 1));
+      result.atPut(1, runtime->newInt(index + 1));
       return *result;
     }
   }
   result.atPut(0, byteArrayAsBytes(thread, runtime, output));
-  result.atPut(1, runtime->newInt(i));
+  result.atPut(1, runtime->newInt(index));
   return *result;
 }
 
@@ -1019,27 +944,14 @@ RawObject UnderCodecsModule::underUtf16Encode(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object data_obj(&scope, args.get(0));
-  Object errors_obj(&scope, args.get(1));
-  Object index_obj(&scope, args.get(2));
   Object output_obj(&scope, args.get(3));
-  Object byteorder_obj(&scope, args.get(4));
-  DCHECK(runtime->isInstanceOfStr(*data_obj),
-         "First arg to _utf_16_encode must be str");
-  DCHECK(runtime->isInstanceOfStr(*errors_obj),
-         "Second arg to _utf_16_encode must be str");
-  DCHECK(runtime->isInstanceOfInt(*index_obj),
-         "Third arg to _utf_16_encode must be int");
   DCHECK(runtime->isInstanceOfByteArray(*output_obj),
          "Fourth arg to _utf_16_encode must be bytearray");
-  DCHECK(runtime->isInstanceOfInt(*byteorder_obj),
-         "Fifth arg to _utf_16_encode must be int");
-  Str data(&scope, strUnderlying(thread, data_obj));
-  Str errors(&scope, strUnderlying(thread, errors_obj));
-  Int index_int(&scope, intUnderlying(thread, index_obj));
+  Str data(&scope, strUnderlying(args.get(0)));
+  Str errors(&scope, strUnderlying(args.get(1)));
+  word index = intUnderlying(args.get(2)).asWord();
   ByteArray output(&scope, *output_obj);
-  Int byteorder_int(&scope, intUnderlying(thread, byteorder_obj));
-  OptInt<int32_t> byteorder = byteorder_int.asInt<int32_t>();
+  OptInt<int32_t> byteorder = intUnderlying(args.get(4)).asInt<int32_t>();
   if (byteorder.error != CastError::None) {
     return thread->raiseWithFmt(LayoutId::kOverflowError,
                                 "Python int too large to convert to C int");
@@ -1047,9 +959,8 @@ RawObject UnderCodecsModule::underUtf16Encode(Thread* thread, Frame* frame,
 
   Tuple result(&scope, runtime->newTuple(2));
   SymbolId error_id = lookupSymbolForErrorHandler(errors);
-  word i = index_int.asWord();
-  for (word byte_offset = data.offsetByCodePoints(0, i);
-       byte_offset < data.charLength(); i++) {
+  for (word byte_offset = data.offsetByCodePoints(0, index);
+       byte_offset < data.charLength(); index++) {
     endian endianness = byteorder.value <= 0 ? endian::little : endian::big;
     word num_bytes;
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
@@ -1081,18 +992,18 @@ RawObject UnderCodecsModule::underUtf16Encode(Thread* thread, Frame* frame,
         default:
           break;
       }
-      result.atPut(0, runtime->newInt(i));
+      result.atPut(0, runtime->newInt(index));
       while (byte_offset < data.charLength() &&
              isSurrogate(data.codePointAt(byte_offset, &num_bytes))) {
         byte_offset += num_bytes;
-        i++;
+        index++;
       }
-      result.atPut(1, runtime->newInt(i + 1));
+      result.atPut(1, runtime->newInt(index + 1));
       return *result;
     }
   }
   result.atPut(0, byteArrayAsBytes(thread, runtime, output));
-  result.atPut(1, runtime->newInt(i));
+  result.atPut(1, runtime->newInt(index));
   return *result;
 }
 
@@ -1117,27 +1028,14 @@ RawObject UnderCodecsModule::underUtf32Encode(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object data_obj(&scope, args.get(0));
-  Object errors_obj(&scope, args.get(1));
-  Object index_obj(&scope, args.get(2));
   Object output_obj(&scope, args.get(3));
-  Object byteorder_obj(&scope, args.get(4));
-  DCHECK(runtime->isInstanceOfStr(*data_obj),
-         "First arg to _utf_32_encode must be str");
-  DCHECK(runtime->isInstanceOfStr(*errors_obj),
-         "Second arg to _utf_32_encode must be str");
-  DCHECK(runtime->isInstanceOfInt(*index_obj),
-         "Third arg to _utf_32_encode must be int");
   DCHECK(runtime->isInstanceOfByteArray(*output_obj),
          "Fourth arg to _utf_32_encode must be bytearray");
-  DCHECK(runtime->isInstanceOfInt(*byteorder_obj),
-         "Fifth arg to _utf_32_encode must be int");
-  Str data(&scope, strUnderlying(thread, data_obj));
-  Str errors(&scope, strUnderlying(thread, errors_obj));
-  Int index_int(&scope, intUnderlying(thread, index_obj));
+  Str data(&scope, strUnderlying(args.get(0)));
+  Str errors(&scope, strUnderlying(args.get(1)));
+  word index = intUnderlying(args.get(2)).asWord();
   ByteArray output(&scope, *output_obj);
-  Int byteorder_int(&scope, intUnderlying(thread, byteorder_obj));
-  OptInt<int32_t> byteorder = byteorder_int.asInt<int32_t>();
+  OptInt<int32_t> byteorder = intUnderlying(args.get(4)).asInt<int32_t>();
   if (byteorder.error != CastError::None) {
     return thread->raiseWithFmt(LayoutId::kOverflowError,
                                 "Python int too large to convert to C int");
@@ -1145,9 +1043,8 @@ RawObject UnderCodecsModule::underUtf32Encode(Thread* thread, Frame* frame,
 
   Tuple result(&scope, runtime->newTuple(2));
   SymbolId error_id = lookupSymbolForErrorHandler(errors);
-  word i = index_int.asWord();
-  for (word byte_offset = data.offsetByCodePoints(0, i);
-       byte_offset < data.charLength(); i++) {
+  for (word byte_offset = data.offsetByCodePoints(0, index);
+       byte_offset < data.charLength(); index++) {
     endian endianness = byteorder.value <= 0 ? endian::little : endian::big;
     word num_bytes;
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
@@ -1172,18 +1069,18 @@ RawObject UnderCodecsModule::underUtf32Encode(Thread* thread, Frame* frame,
         default:
           break;
       }
-      result.atPut(0, runtime->newInt(i));
+      result.atPut(0, runtime->newInt(index));
       while (byte_offset < data.charLength() &&
              isSurrogate(data.codePointAt(byte_offset, &num_bytes))) {
         byte_offset += num_bytes;
-        i++;
+        index++;
       }
-      result.atPut(1, runtime->newInt(i + 1));
+      result.atPut(1, runtime->newInt(index + 1));
       return *result;
     }
   }
   result.atPut(0, byteArrayAsBytes(thread, runtime, output));
-  result.atPut(1, runtime->newInt(i));
+  result.atPut(1, runtime->newInt(index));
   return *result;
 }
 

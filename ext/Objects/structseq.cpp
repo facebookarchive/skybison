@@ -56,7 +56,7 @@ PY_EXPORT PyObject* PyStructSequence_SET_ITEM_Func(PyObject* structseq,
                  runtime->attributeAt(thread, structseq_obj, n_sequence_key));
   if (pos < n_sequence.asWord()) {
     UserTupleBase user_tuple(&scope, *structseq_obj);
-    Tuple tuple(&scope, user_tuple.tupleValue());
+    Tuple tuple(&scope, user_tuple.value());
     tuple.atPut(pos, *value_obj);
     return value;
   }

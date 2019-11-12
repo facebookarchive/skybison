@@ -463,7 +463,7 @@ RawObject listFromRange(word start, word stop) {
     return ::testing::AssertionFailure()
            << "is a '" << typeName(runtime, *result) << "'";
   }
-  Bytes result_bytes(&scope, bytesUnderlying(thread, result));
+  Bytes result_bytes(&scope, bytesUnderlying(*result));
   Bytes expected_bytes(&scope, runtime->newBytesWithAll(expected));
   if (result_bytes.compare(*expected_bytes) != 0) {
     return ::testing::AssertionFailure()
@@ -520,7 +520,7 @@ RawObject listFromRange(word start, word stop) {
     return ::testing::AssertionFailure()
            << "is a '" << typeName(runtime, *str_obj) << "'";
   }
-  Str str(&scope, strUnderlying(thread, str_obj));
+  Str str(&scope, strUnderlying(*str_obj));
   if (!str.equalsCStr(c_str)) {
     unique_c_ptr<char> str_ptr(str.toCStr());
     return ::testing::AssertionFailure()
@@ -561,7 +561,7 @@ RawObject listFromRange(word start, word stop) {
            << "is a '" << typeName(runtime, obj) << "'";
   }
   Object object(&scope, obj);
-  Int value_int(&scope, intUnderlying(thread, object));
+  Int value_int(&scope, intUnderlying(*object));
   if (value_int.numDigits() > 1 || value_int.asWord() != value) {
     return ::testing::AssertionFailure()
            << value_int << " is not equal to " << value;
@@ -589,7 +589,7 @@ RawObject listFromRange(word start, word stop) {
   }
   Int expected(&scope, newIntWithDigits(runtime, digits));
   Object value_obj(&scope, obj);
-  Int value_int(&scope, intUnderlying(thread, value_obj));
+  Int value_int(&scope, intUnderlying(*value_obj));
   if (expected.compare(*value_int) != 0) {
     return ::testing::AssertionFailure()
            << value_int << " is not equal to " << expected;

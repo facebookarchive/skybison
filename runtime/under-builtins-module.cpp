@@ -390,8 +390,7 @@ RawObject UnderBuiltinsModule::underByteArrayDelItem(Thread* thread,
   HandleScope scope(thread);
   ByteArray self(&scope, args.get(0));
   word length = self.numItems();
-  Object index_obj(&scope, args.get(1));
-  word idx = Int::cast(intUnderlying(thread, index_obj)).asWordSaturated();
+  word idx = intUnderlying(args.get(1)).asWordSaturated();
   if (idx < 0) {
     idx += length;
   }
@@ -419,18 +418,10 @@ RawObject UnderBuiltinsModule::underByteArrayDelSlice(Thread* thread,
   HandleScope scope(thread);
   ByteArray self(&scope, args.get(0));
 
-  Object start_obj(&scope, args.get(1));
-  Int start_int(&scope, intUnderlying(thread, start_obj));
-  word start = start_int.asWord();
-
-  Object stop_obj(&scope, args.get(2));
-  Int stop_int(&scope, intUnderlying(thread, stop_obj));
-  word stop = stop_int.asWord();
-
-  Object step_obj(&scope, args.get(3));
-  Int step_int(&scope, intUnderlying(thread, step_obj));
+  word start = intUnderlying(args.get(1)).asWord();
+  word stop = intUnderlying(args.get(2)).asWord();
   // Lossy truncation of step to a word is expected.
-  word step = step_int.asWordSaturated();
+  word step = intUnderlying(args.get(3)).asWordSaturated();
 
   word slice_length = Slice::length(start, stop, step);
   DCHECK_BOUND(slice_length, self.numItems());
@@ -480,12 +471,9 @@ RawObject UnderBuiltinsModule::underByteArraySetItem(Thread* thread,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   ByteArray self(&scope, args.get(0));
-  Object key_obj(&scope, args.get(1));
-  Int key(&scope, intUnderlying(thread, key_obj));
-  Object value_obj(&scope, args.get(2));
-  Int value(&scope, intUnderlying(thread, value_obj));
-  word index = key.asWordSaturated();
+  word index = intUnderlying(args.get(1)).asWordSaturated();
   if (!SmallInt::isValid(index)) {
+    Object key_obj(&scope, args.get(1));
     return thread->raiseWithFmt(LayoutId::kIndexError,
                                 "cannot fit '%T' into an index-sized integer",
                                 &key_obj);
@@ -497,7 +485,7 @@ RawObject UnderBuiltinsModule::underByteArraySetItem(Thread* thread,
   if (index < 0 || index >= length) {
     return thread->raiseWithFmt(LayoutId::kIndexError, "index out of range");
   }
-  word val = value.asWordSaturated();
+  word val = intUnderlying(args.get(2)).asWordSaturated();
   if (val < 0 || val > kMaxByte) {
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "byte must be in range(0, 256)");
@@ -512,19 +500,16 @@ RawObject UnderBuiltinsModule::underByteArraySetSlice(Thread* thread,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   ByteArray self(&scope, args.get(0));
-  Object start_obj(&scope, args.get(1));
-  word start = Int::cast(intUnderlying(thread, start_obj)).asWord();
-  Object stop_obj(&scope, args.get(2));
-  word stop = Int::cast(intUnderlying(thread, stop_obj)).asWord();
-  Object step_obj(&scope, args.get(3));
-  word step = Int::cast(intUnderlying(thread, step_obj)).asWord();
+  word start = intUnderlying(args.get(1)).asWord();
+  word stop = intUnderlying(args.get(2)).asWord();
+  word step = intUnderlying(args.get(3)).asWord();
   Object src_obj(&scope, args.get(4));
   Bytes src_bytes(&scope, Bytes::empty());
   word src_length;
 
   Runtime* runtime = thread->runtime();
   if (runtime->isInstanceOfBytes(*src_obj)) {
-    Bytes src(&scope, bytesUnderlying(thread, src_obj));
+    Bytes src(&scope, bytesUnderlying(*src_obj));
     src_bytes = *src;
     src_length = src.length();
   } else if (runtime->isInstanceOfByteArray(*src_obj)) {
@@ -668,8 +653,7 @@ RawObject UnderBuiltinsModule::underBytesFromBytes(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
   DCHECK(type.builtinBase() == LayoutId::kBytes, "type must subclass bytes");
-  Object value(&scope, args.get(1));
-  value = bytesUnderlying(thread, value);
+  Object value(&scope, bytesUnderlying(args.get(1)));
   if (type.isBuiltin()) return *value;
   Layout type_layout(&scope, type.instanceLayout());
   UserBytesBase instance(&scope, thread->runtime()->newInstance(type_layout));
@@ -712,12 +696,10 @@ RawObject UnderBuiltinsModule::underBytesGetItem(Thread* thread, Frame* frame,
                                                  word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object self_obj(&scope, args.get(0));
-  Bytes self(&scope, bytesUnderlying(thread, self_obj));
-  Object key_obj(&scope, args.get(1));
-  Int key(&scope, intUnderlying(thread, key_obj));
-  word index = key.asWordSaturated();
+  Bytes self(&scope, bytesUnderlying(args.get(0)));
+  word index = intUnderlying(args.get(1)).asWordSaturated();
   if (!SmallInt::isValid(index)) {
+    Object key_obj(&scope, args.get(1));
     return thread->raiseWithFmt(LayoutId::kIndexError,
                                 "cannot fit '%T' into an index-sized integer",
                                 &key_obj);
@@ -736,16 +718,11 @@ RawObject UnderBuiltinsModule::underBytesGetSlice(Thread* thread, Frame* frame,
                                                   word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object self_obj(&scope, args.get(0));
-  Bytes self(&scope, bytesUnderlying(thread, self_obj));
-  Object obj(&scope, args.get(1));
-  Int start(&scope, intUnderlying(thread, obj));
-  obj = args.get(2);
-  Int stop(&scope, intUnderlying(thread, obj));
-  obj = args.get(3);
-  Int step(&scope, intUnderlying(thread, obj));
-  return thread->runtime()->bytesSlice(thread, self, start.asWord(),
-                                       stop.asWord(), step.asWord());
+  Bytes self(&scope, bytesUnderlying(args.get(0)));
+  word start = intUnderlying(args.get(1)).asWord();
+  word stop = intUnderlying(args.get(2)).asWord();
+  word step = intUnderlying(args.get(3)).asWord();
+  return thread->runtime()->bytesSlice(thread, self, start, stop, step);
 }
 
 RawObject UnderBuiltinsModule::underBytesJoin(Thread* thread, Frame* frame,
@@ -757,7 +734,7 @@ RawObject UnderBuiltinsModule::underBytesJoin(Thread* thread, Frame* frame,
   if (!runtime->isInstanceOfBytes(*self_obj)) {
     return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kBytes);
   }
-  Bytes self(&scope, bytesUnderlying(thread, self_obj));
+  Bytes self(&scope, bytesUnderlying(*self_obj));
   Object iterable(&scope, args.get(1));
   Tuple tuple(&scope, runtime->emptyTuple());
   word length;
@@ -784,13 +761,10 @@ RawObject UnderBuiltinsModule::underBytesJoin(Thread* thread, Frame* frame,
   return runtime->bytesJoin(thread, self, self.length(), tuple, length);
 }
 
-RawObject UnderBuiltinsModule::underBytesLen(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underBytesLen(Thread*, Frame* frame,
                                              word nargs) {
-  HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object self_obj(&scope, args.get(0));
-  Bytes self(&scope, bytesUnderlying(thread, self_obj));
-  return SmallInt::fromWord(self.length());
+  return SmallInt::fromWord(bytesUnderlying(args.get(0)).length());
 }
 
 RawObject UnderBuiltinsModule::underBytesMaketrans(Thread* thread, Frame* frame,
@@ -802,7 +776,7 @@ RawObject UnderBuiltinsModule::underBytesMaketrans(Thread* thread, Frame* frame,
   word length;
   Runtime* runtime = thread->runtime();
   if (runtime->isInstanceOfBytes(*from_obj)) {
-    Bytes bytes(&scope, bytesUnderlying(thread, from_obj));
+    Bytes bytes(&scope, bytesUnderlying(*from_obj));
     length = bytes.length();
     from_obj = *bytes;
   } else if (runtime->isInstanceOfByteArray(*from_obj)) {
@@ -813,7 +787,7 @@ RawObject UnderBuiltinsModule::underBytesMaketrans(Thread* thread, Frame* frame,
     UNIMPLEMENTED("bytes-like other than bytes or bytearray");
   }
   if (runtime->isInstanceOfBytes(*to_obj)) {
-    Bytes bytes(&scope, bytesUnderlying(thread, to_obj));
+    Bytes bytes(&scope, bytesUnderlying(*to_obj));
     DCHECK(bytes.length() == length, "lengths should already be the same");
     to_obj = *bytes;
   } else if (runtime->isInstanceOfByteArray(*to_obj)) {
@@ -839,13 +813,11 @@ RawObject UnderBuiltinsModule::underBytesRepeat(Thread* thread, Frame* frame,
                                                 word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object self_obj(&scope, args.get(0));
-  Bytes self(&scope, bytesUnderlying(thread, self_obj));
-  Object count_obj(&scope, args.get(1));
-  Int count_int(&scope, intUnderlying(thread, count_obj));
+  Bytes self(&scope, bytesUnderlying(args.get(0)));
   // TODO(T55084422): unify bounds checking
-  word count = count_int.asWordSaturated();
+  word count = intUnderlying(args.get(1)).asWordSaturated();
   if (!SmallInt::isValid(count)) {
+    Object count_obj(&scope, args.get(1));
     return thread->raiseWithFmt(LayoutId::kOverflowError,
                                 "cannot fit '%T' into an index-sized integer",
                                 &count_obj);
@@ -861,11 +833,9 @@ RawObject UnderBuiltinsModule::underBytesSplit(Thread* thread, Frame* frame,
                                                word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object self_obj(&scope, args.get(0));
+  Bytes self(&scope, bytesUnderlying(args.get(0)));
   Object sep_obj(&scope, args.get(1));
-  Object maxsplit_obj(&scope, args.get(2));
-  Bytes self(&scope, bytesUnderlying(thread, self_obj));
-  Int maxsplit_int(&scope, intUnderlying(thread, maxsplit_obj));
+  Int maxsplit_int(&scope, intUnderlying(args.get(2)));
   if (maxsplit_int.numDigits() > 1) {
     return thread->raiseWithFmt(LayoutId::kOverflowError,
                                 "Python int too large to convert to C ssize_t");
@@ -877,7 +847,7 @@ RawObject UnderBuiltinsModule::underBytesSplit(Thread* thread, Frame* frame,
   word sep_len;
   Runtime* runtime = thread->runtime();
   if (runtime->isInstanceOfBytes(*sep_obj)) {
-    Bytes sep(&scope, bytesUnderlying(thread, sep_obj));
+    Bytes sep(&scope, bytesUnderlying(*sep_obj));
     sep_obj = *sep;
     sep_len = sep.length();
   } else if (runtime->isInstanceOfByteArray(*sep_obj)) {
@@ -929,10 +899,8 @@ RawObject UnderBuiltinsModule::underBytesSplitWhitespace(Thread* thread,
                                                          word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object self_obj(&scope, args.get(0));
-  Object maxsplit_obj(&scope, args.get(1));
-  Bytes self(&scope, bytesUnderlying(thread, self_obj));
-  Int maxsplit_int(&scope, intUnderlying(thread, maxsplit_obj));
+  Bytes self(&scope, bytesUnderlying(args.get(0)));
+  Int maxsplit_int(&scope, intUnderlying(args.get(1)));
   if (maxsplit_int.numDigits() > 1) {
     return thread->raiseWithFmt(LayoutId::kOverflowError,
                                 "Python int too large to convert to C ssize_t");
@@ -1005,7 +973,7 @@ RawObject UnderBuiltinsModule::underByteslikeCount(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   word haystack_len;
   if (runtime->isInstanceOfBytes(*self_obj)) {
-    Bytes self(&scope, bytesUnderlying(thread, self_obj));
+    Bytes self(&scope, bytesUnderlying(*self_obj));
     self_obj = *self;
     haystack_len = self.length();
   } else if (runtime->isInstanceOfByteArray(*self_obj)) {
@@ -1019,7 +987,7 @@ RawObject UnderBuiltinsModule::underByteslikeCount(Thread* thread, Frame* frame,
   Object sub_obj(&scope, args.get(1));
   word needle_len;
   if (runtime->isInstanceOfBytes(*sub_obj)) {
-    Bytes sub(&scope, bytesUnderlying(thread, sub_obj));
+    Bytes sub(&scope, bytesUnderlying(*sub_obj));
     sub_obj = *sub;
     needle_len = sub.length();
   } else if (runtime->isInstanceOfByteArray(*sub_obj)) {
@@ -1027,7 +995,7 @@ RawObject UnderBuiltinsModule::underByteslikeCount(Thread* thread, Frame* frame,
     sub_obj = sub.bytes();
     needle_len = sub.numItems();
   } else if (runtime->isInstanceOfInt(*sub_obj)) {
-    word sub = Int(&scope, intUnderlying(thread, sub_obj)).asWordSaturated();
+    word sub = intUnderlying(*sub_obj).asWordSaturated();
     if (sub < 0 || sub > kMaxByte) {
       return thread->raiseWithFmt(LayoutId::kValueError,
                                   "byte must be in range(0, 256)");
@@ -1042,8 +1010,8 @@ RawObject UnderBuiltinsModule::underByteslikeCount(Thread* thread, Frame* frame,
   Bytes needle(&scope, *sub_obj);
   Object start_obj(&scope, args.get(2));
   Object stop_obj(&scope, args.get(3));
-  word start = Int::cast(intUnderlying(thread, start_obj)).asWordSaturated();
-  word end = Int::cast(intUnderlying(thread, stop_obj)).asWordSaturated();
+  word start = intUnderlying(*start_obj).asWordSaturated();
+  word end = intUnderlying(*stop_obj).asWordSaturated();
   return SmallInt::fromWord(
       bytesCount(haystack, haystack_len, needle, needle_len, start, end));
 }
@@ -1057,7 +1025,7 @@ RawObject UnderBuiltinsModule::underByteslikeEndsWith(Thread* thread,
   Object self_obj(&scope, args.get(0));
   word self_len;
   if (runtime->isInstanceOfBytes(*self_obj)) {
-    Bytes self(&scope, bytesUnderlying(thread, self_obj));
+    Bytes self(&scope, bytesUnderlying(*self_obj));
     self_obj = *self;
     self_len = self.length();
   } else if (runtime->isInstanceOfByteArray(*self_obj)) {
@@ -1072,7 +1040,7 @@ RawObject UnderBuiltinsModule::underByteslikeEndsWith(Thread* thread,
   Object suffix_obj(&scope, args.get(1));
   word suffix_len;
   if (runtime->isInstanceOfBytes(*suffix_obj)) {
-    Bytes suffix(&scope, bytesUnderlying(thread, suffix_obj));
+    Bytes suffix(&scope, bytesUnderlying(*suffix_obj));
     suffix_obj = *suffix;
     suffix_len = suffix.length();
   } else if (runtime->isInstanceOfByteArray(*suffix_obj)) {
@@ -1090,10 +1058,10 @@ RawObject UnderBuiltinsModule::underByteslikeEndsWith(Thread* thread,
   Bytes suffix(&scope, *suffix_obj);
   Object start_obj(&scope, args.get(2));
   Object end_obj(&scope, args.get(3));
-  Int start(&scope, start_obj.isUnbound() ? SmallInt::fromWord(0)
-                                          : intUnderlying(thread, start_obj));
-  Int end(&scope, end_obj.isUnbound() ? SmallInt::fromWord(self_len)
-                                      : intUnderlying(thread, end_obj));
+  Int start(&scope, start_obj.isUnbound() ? Int::cast(SmallInt::fromWord(0))
+                                          : intUnderlying(*start_obj));
+  Int end(&scope, end_obj.isUnbound() ? Int::cast(SmallInt::fromWord(self_len))
+                                      : intUnderlying(*end_obj));
   return runtime->bytesEndsWith(self, self_len, suffix, suffix_len,
                                 start.asWordSaturated(), end.asWordSaturated());
 }
@@ -1107,7 +1075,7 @@ RawObject UnderBuiltinsModule::underByteslikeFindByteslike(Thread* thread,
   Object self_obj(&scope, args.get(0));
   word haystack_len;
   if (runtime->isInstanceOfBytes(*self_obj)) {
-    Bytes self(&scope, bytesUnderlying(thread, self_obj));
+    Bytes self(&scope, bytesUnderlying(*self_obj));
     self_obj = *self;
     haystack_len = self.length();
   } else if (runtime->isInstanceOfByteArray(*self_obj)) {
@@ -1120,7 +1088,7 @@ RawObject UnderBuiltinsModule::underByteslikeFindByteslike(Thread* thread,
   Object sub_obj(&scope, args.get(1));
   word needle_len;
   if (runtime->isInstanceOfBytes(*sub_obj)) {
-    Bytes sub(&scope, bytesUnderlying(thread, sub_obj));
+    Bytes sub(&scope, bytesUnderlying(*sub_obj));
     sub_obj = *sub;
     needle_len = sub.length();
   } else if (runtime->isInstanceOfByteArray(*sub_obj)) {
@@ -1132,13 +1100,10 @@ RawObject UnderBuiltinsModule::underByteslikeFindByteslike(Thread* thread,
   }
   Bytes haystack(&scope, *self_obj);
   Bytes needle(&scope, *sub_obj);
-  Object start_obj(&scope, args.get(2));
-  Object stop_obj(&scope, args.get(3));
-  Int start(&scope, intUnderlying(thread, start_obj));
-  Int end(&scope, intUnderlying(thread, stop_obj));
-  return SmallInt::fromWord(bytesFind(haystack, haystack_len, needle,
-                                      needle_len, start.asWordSaturated(),
-                                      end.asWordSaturated()));
+  word start = intUnderlying(args.get(2)).asWordSaturated();
+  word end = intUnderlying(args.get(3)).asWordSaturated();
+  return SmallInt::fromWord(
+      bytesFind(haystack, haystack_len, needle, needle_len, start, end));
 }
 
 RawObject UnderBuiltinsModule::underByteslikeFindInt(Thread* thread,
@@ -1146,31 +1111,25 @@ RawObject UnderBuiltinsModule::underByteslikeFindInt(Thread* thread,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
-  Object sub_obj(&scope, args.get(1));
-  Int sub_int(&scope, intUnderlying(thread, sub_obj));
-  word sub = sub_int.asWordSaturated();
+  word sub = intUnderlying(args.get(1)).asWordSaturated();
   if (sub < 0 || sub > kMaxByte) {
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "byte must be in range(0, 256)");
   }
   Bytes needle(&scope, runtime->newBytes(1, sub));
   Object self_obj(&scope, args.get(0));
-  Object start_obj(&scope, args.get(2));
-  Object stop_obj(&scope, args.get(3));
-  Int start(&scope, intUnderlying(thread, start_obj));
-  Int end(&scope, intUnderlying(thread, stop_obj));
+  word start = intUnderlying(args.get(2)).asWordSaturated();
+  word end = intUnderlying(args.get(3)).asWordSaturated();
   if (runtime->isInstanceOfBytes(*self_obj)) {
-    Bytes haystack(&scope, bytesUnderlying(thread, self_obj));
-    return SmallInt::fromWord(
-        bytesFind(haystack, haystack.length(), needle, needle.length(),
-                  start.asWordSaturated(), end.asWordSaturated()));
+    Bytes haystack(&scope, bytesUnderlying(*self_obj));
+    return SmallInt::fromWord(bytesFind(haystack, haystack.length(), needle,
+                                        needle.length(), start, end));
   }
   if (runtime->isInstanceOfByteArray(*self_obj)) {
     ByteArray self(&scope, *self_obj);
     Bytes haystack(&scope, self.bytes());
-    return SmallInt::fromWord(
-        bytesFind(haystack, self.numItems(), needle, needle.length(),
-                  start.asWordSaturated(), end.asWordSaturated()));
+    return SmallInt::fromWord(bytesFind(haystack, self.numItems(), needle,
+                                        needle.length(), start, end));
   }
   UNIMPLEMENTED("bytes-like other than bytes, bytearray");
 }
@@ -1196,7 +1155,7 @@ RawObject UnderBuiltinsModule::underByteslikeRFindByteslike(Thread* thread,
   Object self_obj(&scope, args.get(0));
   word haystack_len;
   if (runtime->isInstanceOfBytes(*self_obj)) {
-    Bytes self(&scope, bytesUnderlying(thread, self_obj));
+    Bytes self(&scope, bytesUnderlying(*self_obj));
     self_obj = *self;
     haystack_len = self.length();
   } else if (runtime->isInstanceOfByteArray(*self_obj)) {
@@ -1209,7 +1168,7 @@ RawObject UnderBuiltinsModule::underByteslikeRFindByteslike(Thread* thread,
   Object sub_obj(&scope, args.get(1));
   word needle_len;
   if (runtime->isInstanceOfBytes(*sub_obj)) {
-    Bytes sub(&scope, bytesUnderlying(thread, sub_obj));
+    Bytes sub(&scope, bytesUnderlying(*sub_obj));
     sub_obj = *sub;
     needle_len = sub.length();
   } else if (runtime->isInstanceOfByteArray(*sub_obj)) {
@@ -1221,13 +1180,10 @@ RawObject UnderBuiltinsModule::underByteslikeRFindByteslike(Thread* thread,
   }
   Bytes haystack(&scope, *self_obj);
   Bytes needle(&scope, *sub_obj);
-  Object start_obj(&scope, args.get(2));
-  Object stop_obj(&scope, args.get(3));
-  Int start(&scope, intUnderlying(thread, start_obj));
-  Int end(&scope, intUnderlying(thread, stop_obj));
-  return SmallInt::fromWord(bytesRFind(haystack, haystack_len, needle,
-                                       needle_len, start.asWordSaturated(),
-                                       end.asWordSaturated()));
+  word start = intUnderlying(args.get(2)).asWordSaturated();
+  word end = intUnderlying(args.get(3)).asWordSaturated();
+  return SmallInt::fromWord(
+      bytesRFind(haystack, haystack_len, needle, needle_len, start, end));
 }
 
 RawObject UnderBuiltinsModule::underByteslikeRFindInt(Thread* thread,
@@ -1236,31 +1192,25 @@ RawObject UnderBuiltinsModule::underByteslikeRFindInt(Thread* thread,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
-  Object sub_obj(&scope, args.get(1));
-  Int sub_int(&scope, intUnderlying(thread, sub_obj));
-  word sub = sub_int.asWordSaturated();
+  word sub = intUnderlying(args.get(1)).asWordSaturated();
   if (sub < 0 || sub > kMaxByte) {
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "byte must be in range(0, 256)");
   }
   Bytes needle(&scope, runtime->newBytes(1, sub));
   Object self_obj(&scope, args.get(0));
-  Object start_obj(&scope, args.get(2));
-  Object stop_obj(&scope, args.get(3));
-  Int start(&scope, intUnderlying(thread, start_obj));
-  Int end(&scope, intUnderlying(thread, stop_obj));
+  word start = intUnderlying(args.get(2)).asWordSaturated();
+  word end = intUnderlying(args.get(3)).asWordSaturated();
   if (runtime->isInstanceOfBytes(*self_obj)) {
-    Bytes haystack(&scope, bytesUnderlying(thread, self_obj));
-    return SmallInt::fromWord(
-        bytesRFind(haystack, haystack.length(), needle, needle.length(),
-                   start.asWordSaturated(), end.asWordSaturated()));
+    Bytes haystack(&scope, bytesUnderlying(*self_obj));
+    return SmallInt::fromWord(bytesRFind(haystack, haystack.length(), needle,
+                                         needle.length(), start, end));
   }
   if (runtime->isInstanceOfByteArray(*self_obj)) {
     ByteArray self(&scope, *self_obj);
     Bytes haystack(&scope, self.bytes());
-    return SmallInt::fromWord(
-        bytesRFind(haystack, self.numItems(), needle, needle.length(),
-                   start.asWordSaturated(), end.asWordSaturated()));
+    return SmallInt::fromWord(bytesRFind(haystack, self.numItems(), needle,
+                                         needle.length(), start, end));
   }
   UNIMPLEMENTED("bytes-like other than bytes, bytearray");
 }
@@ -1274,7 +1224,7 @@ RawObject UnderBuiltinsModule::underByteslikeStartsWith(Thread* thread,
   Object self_obj(&scope, args.get(0));
   word self_len;
   if (runtime->isInstanceOfBytes(*self_obj)) {
-    Bytes self(&scope, bytesUnderlying(thread, self_obj));
+    Bytes self(&scope, bytesUnderlying(*self_obj));
     self_obj = *self;
     self_len = self.length();
   } else if (runtime->isInstanceOfByteArray(*self_obj)) {
@@ -1289,7 +1239,7 @@ RawObject UnderBuiltinsModule::underByteslikeStartsWith(Thread* thread,
   Object prefix_obj(&scope, args.get(1));
   word prefix_len;
   if (runtime->isInstanceOfBytes(*prefix_obj)) {
-    Bytes prefix(&scope, bytesUnderlying(thread, prefix_obj));
+    Bytes prefix(&scope, bytesUnderlying(*prefix_obj));
     prefix_obj = *prefix;
     prefix_len = prefix.length();
   } else if (runtime->isInstanceOfByteArray(*prefix_obj)) {
@@ -1305,10 +1255,8 @@ RawObject UnderBuiltinsModule::underByteslikeStartsWith(Thread* thread,
   }
   Bytes self(&scope, *self_obj);
   Bytes prefix(&scope, *prefix_obj);
-  Object start_obj(&scope, args.get(2));
-  Object end_obj(&scope, args.get(3));
-  word start = Int::cast(intUnderlying(thread, start_obj)).asWordSaturated();
-  word end = Int::cast(intUnderlying(thread, end_obj)).asWordSaturated();
+  word start = intUnderlying(args.get(2)).asWordSaturated();
+  word end = intUnderlying(args.get(3)).asWordSaturated();
   return runtime->bytesStartsWith(self, self_len, prefix, prefix_len, start,
                                   end);
 }
@@ -1397,7 +1345,7 @@ RawObject UnderBuiltinsModule::underDelattr(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object obj(&scope, args.get(0));
   Object name_obj(&scope, args.get(1));
-  Str name(&scope, strUnderlying(thread, name_obj));
+  Str name(&scope, strUnderlying(*name_obj));
   Object result(&scope, thread->runtime()->attributeDel(thread, obj, name));
   if (result.isError()) {
     return *result;
@@ -1726,20 +1674,15 @@ RawObject UnderBuiltinsModule::underFloatDivmod(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
 
-  Runtime* runtime = thread->runtime();
-  Object self_obj(&scope, args.get(0));
-  Float self_float(&scope, floatUnderlying(thread, self_obj));
-  double left = self_float.value();
-
-  Object other_obj(&scope, args.get(1));
-  Float other_float(&scope, floatUnderlying(thread, other_obj));
-  double divisor = other_float.value();
+  double left = floatUnderlying(args.get(0)).value();
+  double divisor = floatUnderlying(args.get(1)).value();
   if (divisor == 0.0) {
     return thread->raiseWithFmt(LayoutId::kZeroDivisionError, "float divmod()");
   }
 
   double remainder;
   double quotient = floatDivmod(left, divisor, &remainder);
+  Runtime* runtime = thread->runtime();
   Tuple result(&scope, runtime->newTuple(2));
   result.atPut(0, runtime->newFloat(quotient));
   result.atPut(1, runtime->newFloat(remainder));
@@ -1750,8 +1693,7 @@ RawObject UnderBuiltinsModule::underFloatFormat(Thread* thread, Frame* frame,
                                                 word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object value_obj(&scope, args.get(0));
-  Float value(&scope, floatUnderlying(thread, value_obj));
+  double value = floatUnderlying(args.get(0)).value();
   Str format_code(&scope, args.get(1));
   DCHECK(format_code.charLength() == 1, "expected len(format_code) == 1");
   char format_code_char = format_code.charAt(0);
@@ -1764,10 +1706,9 @@ RawObject UnderBuiltinsModule::underFloatFormat(Thread* thread, Frame* frame,
   Bool always_add_sign(&scope, args.get(3));
   Bool add_dot_0(&scope, args.get(4));
   Bool use_alt_formatting(&scope, args.get(5));
-  unique_c_ptr<char> c_str(
-      formatFloat(value.value(), format_code_char, precision.value(),
-                  always_add_sign.value(), add_dot_0.value(),
-                  use_alt_formatting.value(), nullptr));
+  unique_c_ptr<char> c_str(formatFloat(
+      value, format_code_char, precision.value(), always_add_sign.value(),
+      add_dot_0.value(), use_alt_formatting.value(), nullptr));
   return thread->runtime()->newStrFromCStr(c_str.get());
 }
 
@@ -1812,7 +1753,7 @@ RawObject UnderBuiltinsModule::underFloatNewFromStr(Thread* thread,
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
   Object arg(&scope, args.get(1));
-  Str str(&scope, strUnderlying(thread, arg));
+  Str str(&scope, strUnderlying(*arg));
 
   // TODO(T57022841): follow full CPython conversion for strings
   char* str_end = nullptr;
@@ -1840,13 +1781,11 @@ RawObject UnderBuiltinsModule::underFloatNewFromStr(Thread* thread,
   return floatNew(thread, type, thread->runtime()->newFloat(result));
 }
 
-RawObject UnderBuiltinsModule::underFloatSignbit(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underFloatSignbit(Thread*, Frame* frame,
                                                  word nargs) {
-  HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object value_obj(&scope, args.get(0));
-  Float value(&scope, floatUnderlying(thread, value_obj));
-  return Bool::fromBool(std::signbit(value.value()));
+  double value = floatUnderlying(args.get(0)).value();
+  return Bool::fromBool(std::signbit(value));
 }
 
 RawObject UnderBuiltinsModule::underFrozenSetCheck(Thread* thread, Frame* frame,
@@ -1926,14 +1865,11 @@ static Frame* frameAtDepth(Thread* thread, word depth) {
 RawObject UnderBuiltinsModule::underGetframeFunction(Thread* thread,
                                                      Frame* frame, word nargs) {
   Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object depth_obj(&scope, args.get(0));
-  DCHECK(thread->runtime()->isInstanceOfInt(*depth_obj), "depth must be int");
-  Int depth(&scope, intUnderlying(thread, depth_obj));
-  if (depth.isNegative()) {
+  word depth = intUnderlying(args.get(0)).asWordSaturated();
+  if (depth < 0) {
     return thread->raiseWithFmt(LayoutId::kValueError, "negative stack level");
   }
-  frame = frameAtDepth(thread, depth.asWordSaturated());
+  frame = frameAtDepth(thread, depth);
   if (frame == nullptr) {
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "call stack is not deep enough");
@@ -1945,14 +1881,11 @@ RawObject UnderBuiltinsModule::underGetframeLineno(Thread* thread, Frame* frame,
                                                    word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Object depth_obj(&scope, args.get(0));
-  DCHECK(runtime->isInstanceOfInt(*depth_obj), "depth must be int");
-  Int depth(&scope, intUnderlying(thread, depth_obj));
-  if (depth.isNegative()) {
+  word depth = intUnderlying(args.get(0)).asWordSaturated();
+  if (depth < 0) {
     return thread->raiseWithFmt(LayoutId::kValueError, "negative stack level");
   }
-  frame = frameAtDepth(thread, depth.asWordSaturated());
+  frame = frameAtDepth(thread, depth);
   if (frame == nullptr) {
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "call stack is not deep enough");
@@ -1966,15 +1899,11 @@ RawObject UnderBuiltinsModule::underGetframeLineno(Thread* thread, Frame* frame,
 RawObject UnderBuiltinsModule::underGetframeLocals(Thread* thread, Frame* frame,
                                                    word nargs) {
   Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Object depth_obj(&scope, args.get(0));
-  DCHECK(runtime->isInstanceOfInt(*depth_obj), "depth must be int");
-  Int depth(&scope, intUnderlying(thread, depth_obj));
-  if (depth.isNegative()) {
+  word depth = intUnderlying(args.get(0)).asWordSaturated();
+  if (depth < 0) {
     return thread->raiseWithFmt(LayoutId::kValueError, "negative stack level");
   }
-  frame = frameAtDepth(thread, depth.asWordSaturated());
+  frame = frameAtDepth(thread, depth);
   if (frame == nullptr) {
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "call stack is not deep enough");
@@ -2107,10 +2036,9 @@ RawObject UnderBuiltinsModule::underInstanceDelattr(Thread* thread,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Instance instance(&scope, args.get(0));
-  Object name(&scope, args.get(1));
   // TODO(T53626118) Raise an exception when `name_str` is a string subclass
   // that overrides `__eq__` or `__hash__`.
-  Str name_str(&scope, strUnderlying(thread, name));
+  Str name_str(&scope, strUnderlying(args.get(1)));
   Runtime* runtime = thread->runtime();
   Str name_interned(&scope, runtime->internStr(thread, name_str));
   return instanceDelAttr(thread, instance, name_interned);
@@ -2121,10 +2049,9 @@ RawObject UnderBuiltinsModule::underInstanceGetattr(Thread* thread,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Instance instance(&scope, args.get(0));
-  Object name(&scope, args.get(1));
   // TODO(T53626118) Raise an exception when `name_str` is a string subclass
   // that overrides `__eq__` or `__hash__`.
-  Str name_str(&scope, strUnderlying(thread, name));
+  Str name_str(&scope, strUnderlying(args.get(1)));
   Str name_interned(&scope, thread->runtime()->internStr(thread, name_str));
   Object result(&scope, instanceGetAttribute(thread, instance, name_interned));
   return result.isErrorNotFound() ? Unbound::object() : *result;
@@ -2196,10 +2123,9 @@ RawObject UnderBuiltinsModule::underInstanceSetattr(Thread* thread,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Instance instance(&scope, args.get(0));
-  Object name(&scope, args.get(1));
   // TODO(T53626118) Raise an exception when `name_str` is a string subclass
   // that overrides `__eq__` or `__hash__`.
-  Str name_str(&scope, strUnderlying(thread, name));
+  Str name_str(&scope, strUnderlying(args.get(1)));
   Str name_interned(&scope, thread->runtime()->internStr(thread, name_str));
   Object value(&scope, args.get(2));
   return instanceSetAttr(thread, instance, name_interned, value);
@@ -2354,10 +2280,7 @@ RawObject UnderBuiltinsModule::underIntNewFromByteArray(Thread* thread,
   Type type(&scope, args.get(0));
   ByteArray array(&scope, args.get(1));
   Bytes bytes(&scope, array.bytes());
-  Object base_obj(&scope, args.get(2));
-  Int base_int(&scope, intUnderlying(thread, base_obj));
-  DCHECK(base_int.numDigits() == 1, "invalid base");
-  word base = base_int.asWord();
+  word base = intUnderlying(args.get(2)).asWord();
   Object result(&scope, intFromBytes(thread, bytes, array.numItems(), base));
   if (result.isError()) {
     Runtime* runtime = thread->runtime();
@@ -2375,12 +2298,8 @@ RawObject UnderBuiltinsModule::underIntNewFromBytes(Thread* thread,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
-  Object bytes_obj(&scope, args.get(1));
-  Bytes bytes(&scope, bytesUnderlying(thread, bytes_obj));
-  Object base_obj(&scope, args.get(2));
-  Int base_int(&scope, intUnderlying(thread, base_obj));
-  DCHECK(base_int.numDigits() == 1, "invalid base");
-  word base = base_int.asWord();
+  Bytes bytes(&scope, bytesUnderlying(args.get(1)));
+  word base = intUnderlying(args.get(2)).asWord();
   Object result(&scope, intFromBytes(thread, bytes, bytes.length(), base));
   if (result.isError()) {
     Str repr(&scope, bytesReprSmartQuotes(thread, bytes));
@@ -2400,7 +2319,7 @@ RawObject UnderBuiltinsModule::underIntNewFromInt(Thread* thread, Frame* frame,
   if (value.isBool()) {
     value = convertBoolToInt(*value);
   } else if (!value.isSmallInt() && !value.isLargeInt()) {
-    value = intUnderlying(thread, value);
+    value = intUnderlying(*value);
   }
   return intOrUserSubclass(thread, type, value);
 }
@@ -2488,10 +2407,7 @@ RawObject UnderBuiltinsModule::underIntNewFromStr(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
   Str str(&scope, args.get(1));
-  Object base_obj(&scope, args.get(2));
-  Int base_int(&scope, intUnderlying(thread, base_obj));
-  DCHECK(base_int.numDigits() == 1, "invalid base");
-  word base = base_int.asWord();
+  word base = intUnderlying(args.get(2)).asWord();
   Object result(&scope, intFromStr(thread, str, base));
   if (result.isError()) {
     Str repr(&scope, thread->invokeMethod1(str, SymbolId::kDunderRepr));
@@ -2528,9 +2444,7 @@ RawObject UnderBuiltinsModule::underListDelItem(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   List self(&scope, args.get(0));
   word length = self.numItems();
-  Object index_obj(&scope, args.get(1));
-  Int index_int(&scope, intUnderlying(thread, index_obj));
-  word idx = index_int.asWordSaturated();
+  word idx = intUnderlying(args.get(1)).asWordSaturated();
   if (idx < 0) {
     idx += length;
   }
@@ -2553,18 +2467,10 @@ RawObject UnderBuiltinsModule::underListDelSlice(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   List list(&scope, args.get(0));
 
-  Object start_obj(&scope, args.get(1));
-  Int start_int(&scope, intUnderlying(thread, start_obj));
-  word start = start_int.asWord();
-
-  Object stop_obj(&scope, args.get(2));
-  Int stop_int(&scope, intUnderlying(thread, stop_obj));
-  word stop = stop_int.asWord();
-
-  Object step_obj(&scope, args.get(3));
-  Int step_int(&scope, intUnderlying(thread, step_obj));
+  word start = intUnderlying(args.get(1)).asWord();
+  word stop = intUnderlying(args.get(2)).asWord();
   // Lossy truncation of step to a word is expected.
-  word step = step_int.asWordSaturated();
+  word step = intUnderlying(args.get(3)).asWordSaturated();
 
   word slice_length = Slice::length(start, stop, step);
   DCHECK(slice_length >= 0, "slice length should be positive");
@@ -2633,7 +2539,7 @@ RawObject UnderBuiltinsModule::underListGetItem(Thread* thread, Frame* frame,
   List self(&scope, *self_obj);
   Object key_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfInt(*key_obj)) return Unbound::object();
-  Int key(&scope, intUnderlying(thread, key_obj));
+  Int key(&scope, intUnderlying(*key_obj));
   if (key.isLargeInt()) {
     return thread->raiseWithFmt(LayoutId::kIndexError,
                                 "cannot fit '%T' into an index-sized integer",
@@ -2656,13 +2562,10 @@ RawObject UnderBuiltinsModule::underListGetSlice(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   List self(&scope, args.get(0));
-  Object obj(&scope, args.get(1));
-  Int start(&scope, intUnderlying(thread, obj));
-  obj = args.get(2);
-  Int stop(&scope, intUnderlying(thread, obj));
-  obj = args.get(3);
-  Int step(&scope, intUnderlying(thread, obj));
-  return listSlice(thread, self, start.asWord(), stop.asWord(), step.asWord());
+  word start = intUnderlying(args.get(1)).asWord();
+  word stop = intUnderlying(args.get(2)).asWord();
+  word step = intUnderlying(args.get(3)).asWord();
+  return listSlice(thread, self, start, stop, step);
 }
 
 RawObject UnderBuiltinsModule::underListGuard(Thread* thread, Frame* frame,
@@ -3174,10 +3077,8 @@ RawObject UnderBuiltinsModule::underSliceStart(Thread* thread, Frame* frame,
                                                word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object step_obj(&scope, args.get(1));
-  Int step(&scope, intUnderlying(thread, step_obj));
-  Object length_obj(&scope, args.get(2));
-  Int length(&scope, intUnderlying(thread, length_obj));
+  Int step(&scope, intUnderlying(args.get(1)));
+  Int length(&scope, intUnderlying(args.get(2)));
   bool negative_step = step.isNegative();
   Int lower(&scope, SmallInt::fromWord(negative_step ? -1 : 0));
   Runtime* runtime = thread->runtime();
@@ -3188,7 +3089,7 @@ RawObject UnderBuiltinsModule::underSliceStart(Thread* thread, Frame* frame,
   if (start_obj.isNoneType()) {
     return negative_step ? *upper : *lower;
   }
-  Int start(&scope, intUnderlying(thread, start_obj));
+  Int start(&scope, intUnderlying(*start_obj));
   if (start.isNegative()) {
     start = runtime->intAdd(thread, start, length);
     if (start.compare(*lower) < 0) {
@@ -3206,7 +3107,7 @@ RawObject UnderBuiltinsModule::underSliceStep(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object step_obj(&scope, args.get(0));
   if (step_obj.isNoneType()) return SmallInt::fromWord(1);
-  Int step(&scope, intUnderlying(thread, step_obj));
+  Int step(&scope, intUnderlying(*step_obj));
   if (step.isZero()) {
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "slice step cannot be zero");
@@ -3218,10 +3119,8 @@ RawObject UnderBuiltinsModule::underSliceStop(Thread* thread, Frame* frame,
                                               word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object step_obj(&scope, args.get(1));
-  Int step(&scope, intUnderlying(thread, step_obj));
-  Object length_obj(&scope, args.get(2));
-  Int length(&scope, intUnderlying(thread, length_obj));
+  Int step(&scope, intUnderlying(args.get(1)));
+  Int length(&scope, intUnderlying(args.get(2)));
   bool negative_step = step.isNegative();
   Int lower(&scope, SmallInt::fromWord(negative_step ? -1 : 0));
   Runtime* runtime = thread->runtime();
@@ -3232,7 +3131,7 @@ RawObject UnderBuiltinsModule::underSliceStop(Thread* thread, Frame* frame,
   if (stop_obj.isNoneType()) {
     return negative_step ? *lower : *upper;
   }
-  Int stop(&scope, intUnderlying(thread, stop_obj));
+  Int stop(&scope, intUnderlying(*stop_obj));
   if (stop.isNegative()) {
     stop = runtime->intAdd(thread, stop, length);
     if (stop.compare(*lower) < 0) {
@@ -3268,8 +3167,7 @@ RawObject UnderBuiltinsModule::underStrArrayIadd(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   StrArray self(&scope, args.get(0));
-  Object other_obj(&scope, args.get(1));
-  Str other(&scope, strUnderlying(thread, other_obj));
+  Str other(&scope, strUnderlying(args.get(1)));
   thread->runtime()->strArrayAddStr(thread, self, other);
   return *self;
 }
@@ -3301,13 +3199,11 @@ RawObject UnderBuiltinsModule::underStrCount(Thread* thread, Frame* frame,
   Object end_obj(&scope, args.get(3));
   word start = 0;
   if (!start_obj.isNoneType()) {
-    Int start_int(&scope, intUnderlying(thread, start_obj));
-    start = start_int.asWordSaturated();
+    start = intUnderlying(*start_obj).asWordSaturated();
   }
   word end = kMaxWord;
   if (!end_obj.isNoneType()) {
-    Int end_int(&scope, intUnderlying(thread, end_obj));
-    end = end_int.asWordSaturated();
+    end = intUnderlying(*end_obj).asWordSaturated();
   }
   return strCount(haystack, needle, start, end);
 }
@@ -3316,23 +3212,21 @@ RawObject UnderBuiltinsModule::underStrEndsWith(Thread* thread, Frame* frame,
                                                 word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object self_obj(&scope, args.get(0));
-  Object suffix_obj(&scope, args.get(1));
   Object start_obj(&scope, args.get(2));
   Object end_obj(&scope, args.get(3));
-  Str self(&scope, strUnderlying(thread, self_obj));
-  Str suffix(&scope, strUnderlying(thread, suffix_obj));
+  Str self(&scope, strUnderlying(args.get(0)));
+  Str suffix(&scope, strUnderlying(args.get(1)));
 
   word len = self.codePointLength();
   word start = 0;
   word end = len;
   if (!start_obj.isNoneType()) {
-    Int start_int(&scope, intUnderlying(thread, start_obj));
-    start = start_int.asWordSaturated();  // TODO(T55084422): bounds checking
+    // TODO(T55084422): bounds checking
+    start = intUnderlying(*start_obj).asWordSaturated();
   }
   if (!end_obj.isNoneType()) {
-    Int end_int(&scope, intUnderlying(thread, end_obj));
-    end = end_int.asWordSaturated();  // TODO(T55084422): bounds checking
+    // TODO(T55084422): bounds checking
+    end = intUnderlying(*end_obj).asWordSaturated();
   }
 
   Slice::adjustSearchIndices(&start, &end, len);
@@ -3376,13 +3270,11 @@ RawObject UnderBuiltinsModule::underStrFind(Thread* thread, Frame* frame,
   Object end_obj(&scope, args.get(3));
   word start = 0;
   if (!start_obj.isNoneType()) {
-    Int start_int(&scope, intUnderlying(thread, start_obj));
-    start = start_int.asWordSaturated();
+    start = intUnderlying(*start_obj).asWordSaturated();
   }
   word end = kMaxWord;
   if (!end_obj.isNoneType()) {
-    Int end_int(&scope, intUnderlying(thread, end_obj));
-    end = end_int.asWordSaturated();
+    end = intUnderlying(*end_obj).asWordSaturated();
   }
   word result = strFind(haystack, needle, start, end);
   return SmallInt::fromWord(result);
@@ -3394,8 +3286,7 @@ RawObject UnderBuiltinsModule::underStrFromStr(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
   DCHECK(type.builtinBase() == LayoutId::kStr, "type must subclass str");
-  Object value_obj(&scope, args.get(1));
-  Str value(&scope, strUnderlying(thread, value_obj));
+  Str value(&scope, strUnderlying(args.get(1)));
   if (type.isBuiltin()) return *value;
   Layout type_layout(&scope, type.instanceLayout());
   UserStrBase instance(&scope, thread->runtime()->newInstance(type_layout));
@@ -3433,8 +3324,7 @@ RawObject UnderBuiltinsModule::underStrLen(Thread* thread, Frame* frame,
                                            word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object self_obj(&scope, args.get(0));
-  Str self(&scope, strUnderlying(thread, self_obj));
+  Str self(&scope, strUnderlying(args.get(0)));
   return SmallInt::fromWord(self.codePointLength());
 }
 
@@ -3469,10 +3359,8 @@ RawObject UnderBuiltinsModule::underStrPartition(Thread* thread, Frame* frame,
                                                  word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object haystack_obj(&scope, args.get(0));
-  Str haystack(&scope, strUnderlying(thread, haystack_obj));
-  Object needle_obj(&scope, args.get(1));
-  Str needle(&scope, strUnderlying(thread, needle_obj));
+  Str haystack(&scope, strUnderlying(args.get(0)));
+  Str needle(&scope, strUnderlying(args.get(1)));
   Runtime* runtime = thread->runtime();
   MutableTuple result(&scope, runtime->newMutableTuple(3));
   result.atPut(0, *haystack);
@@ -3501,16 +3389,11 @@ RawObject UnderBuiltinsModule::underStrReplace(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object self_obj(&scope, args.get(0));
-  Object oldstr_obj(&scope, args.get(1));
-  Object newstr_obj(&scope, args.get(2));
-  Str self(&scope, strUnderlying(thread, self_obj));
-  Str oldstr(&scope, strUnderlying(thread, oldstr_obj));
-  Str newstr(&scope, strUnderlying(thread, newstr_obj));
-  Object count_obj(&scope, args.get(3));
-  Int count(&scope, intUnderlying(thread, count_obj));
-  return runtime->strReplace(thread, self, oldstr, newstr,
-                             count.asWordSaturated());
+  Str self(&scope, strUnderlying(args.get(0)));
+  Str oldstr(&scope, strUnderlying(args.get(1)));
+  Str newstr(&scope, strUnderlying(args.get(2)));
+  word count = intUnderlying(args.get(3)).asWordSaturated();
+  return runtime->strReplace(thread, self, oldstr, newstr, count);
 }
 
 RawObject UnderBuiltinsModule::underStrRFind(Thread* thread, Frame* frame,
@@ -3528,13 +3411,11 @@ RawObject UnderBuiltinsModule::underStrRFind(Thread* thread, Frame* frame,
   Object end_obj(&scope, args.get(3));
   word start = 0;
   if (!start_obj.isNoneType()) {
-    Int start_int(&scope, intUnderlying(thread, start_obj));
-    start = start_int.asWordSaturated();
+    start = intUnderlying(*start_obj).asWordSaturated();
   }
   word end = kMaxWord;
   if (!end_obj.isNoneType()) {
-    Int end_int(&scope, intUnderlying(thread, end_obj));
-    end = end_int.asWordSaturated();
+    end = intUnderlying(*end_obj).asWordSaturated();
   }
   Slice::adjustSearchIndices(&start, &end, haystack.codePointLength());
   word result = strRFind(haystack, needle, start, end);
@@ -3551,15 +3432,9 @@ RawObject UnderBuiltinsModule::underStrRPartition(Thread* thread, Frame* frame,
                                                   word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object haystack_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
-  DCHECK(runtime->isInstanceOfStr(*haystack_obj),
-         "_str_rfind requires 'str' instance");
-  Object needle_obj(&scope, args.get(1));
-  DCHECK(runtime->isInstanceOfStr(*needle_obj),
-         "_str_rfind requires 'str' instance");
-  Str haystack(&scope, strUnderlying(thread, haystack_obj));
-  Str needle(&scope, strUnderlying(thread, needle_obj));
+  Str haystack(&scope, strUnderlying(args.get(0)));
+  Str needle(&scope, strUnderlying(args.get(1)));
   MutableTuple result(&scope, runtime->newMutableTuple(3));
   result.atPut(0, Str::empty());
   result.atPut(1, Str::empty());
@@ -3631,16 +3506,13 @@ RawObject UnderBuiltinsModule::underStrSplit(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object self_obj(&scope, args.get(0));
-  Str self(&scope, strUnderlying(thread, self_obj));
+  Str self(&scope, strUnderlying(args.get(0)));
   Object sep_obj(&scope, args.get(1));
-  Object maxsplit_obj(&scope, args.get(2));
-  Int maxsplit_int(&scope, intUnderlying(thread, maxsplit_obj));
-  word maxsplit = maxsplit_int.asWordSaturated();
+  word maxsplit = intUnderlying(args.get(2)).asWordSaturated();
   if (sep_obj.isNoneType()) {
     return strSplitWhitespace(thread, self, maxsplit);
   }
-  Str sep(&scope, strUnderlying(thread, sep_obj));
+  Str sep(&scope, strUnderlying(*sep_obj));
   if (sep.charLength() == 0) {
     return thread->raiseWithFmt(LayoutId::kValueError, "empty separator");
   }
@@ -3682,9 +3554,7 @@ RawObject UnderBuiltinsModule::underStrSplitlines(Thread* thread, Frame* frame,
          "_str_splitlines requires 'int' instance");
   HandleScope scope(thread);
   Str self(&scope, args.get(0));
-  Object keepends_obj(&scope, args.get(1));
-  Int keepends_int(&scope, intUnderlying(thread, keepends_obj));
-  bool keepends = !keepends_int.isZero();
+  bool keepends = !intUnderlying(args.get(1)).isZero();
   return strSplitlines(thread, self, keepends);
 }
 
@@ -3692,23 +3562,21 @@ RawObject UnderBuiltinsModule::underStrStartsWith(Thread* thread, Frame* frame,
                                                   word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object self_obj(&scope, args.get(0));
-  Object prefix_obj(&scope, args.get(1));
   Object start_obj(&scope, args.get(2));
   Object end_obj(&scope, args.get(3));
-  Str self(&scope, strUnderlying(thread, self_obj));
-  Str prefix(&scope, strUnderlying(thread, prefix_obj));
+  Str self(&scope, strUnderlying(args.get(0)));
+  Str prefix(&scope, strUnderlying(args.get(1)));
 
   word len = self.codePointLength();
   word start = 0;
   word end = len;
   if (!start_obj.isNoneType()) {
-    Int start_int(&scope, intUnderlying(thread, start_obj));
-    start = start_int.asWordSaturated();  // TODO(T55084422): bounds checking
+    // TODO(T55084422): bounds checking
+    start = intUnderlying(*start_obj).asWordSaturated();
   }
   if (!end_obj.isNoneType()) {
-    Int end_int(&scope, intUnderlying(thread, end_obj));
-    end = end_int.asWordSaturated();  // TODO(T55084422): bounds checking
+    // TODO(T55084422): bounds checking
+    end = intUnderlying(*end_obj).asWordSaturated();
   }
 
   Slice::adjustSearchIndices(&start, &end, len);
@@ -3746,12 +3614,12 @@ RawObject UnderBuiltinsModule::underTupleGetItem(Thread* thread, Frame* frame,
   if (!runtime->isInstanceOfTuple(*self_obj)) {
     return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kTuple);
   }
-  Tuple self(&scope, tupleUnderlying(thread, self_obj));
+  Tuple self(&scope, tupleUnderlying(*self_obj));
   Object key_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfInt(*key_obj)) {
     return Unbound::object();
   }
-  Int key(&scope, intUnderlying(thread, key_obj));
+  Int key(&scope, intUnderlying(*key_obj));
   if (key.isLargeInt()) {
     return thread->raiseWithFmt(LayoutId::kIndexError,
                                 "cannot fit '%T' into an index-sized integer",
@@ -3773,8 +3641,7 @@ RawObject UnderBuiltinsModule::underTupleGetSlice(Thread* thread, Frame* frame,
                                                   word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object self_obj(&scope, args.get(0));
-  Tuple self(&scope, tupleUnderlying(thread, self_obj));
+  Tuple self(&scope, tupleUnderlying(args.get(0)));
   Int start(&scope, args.get(1));
   Int stop(&scope, args.get(2));
   Int step(&scope, args.get(3));
@@ -3791,13 +3658,10 @@ RawObject UnderBuiltinsModule::underTupleGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kTuple);
 }
 
-RawObject UnderBuiltinsModule::underTupleLen(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underTupleLen(Thread*, Frame* frame,
                                              word nargs) {
-  HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object self_obj(&scope, args.get(0));
-  Tuple self(&scope, tupleUnderlying(thread, self_obj));
-  return SmallInt::fromWord(self.length());
+  return SmallInt::fromWord(tupleUnderlying(args.get(0)).length());
 }
 
 RawObject UnderBuiltinsModule::underTupleNew(Thread* thread, Frame* frame,
@@ -3810,7 +3674,7 @@ RawObject UnderBuiltinsModule::underTupleNew(Thread* thread, Frame* frame,
   DCHECK(args.get(1).isTuple(), "old_tuple must be exact tuple");
   Layout layout(&scope, type.instanceLayout());
   UserTupleBase instance(&scope, thread->runtime()->newInstance(layout));
-  instance.setTupleValue(args.get(1));
+  instance.setValue(args.get(1));
   return *instance;
 }
 

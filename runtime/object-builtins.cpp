@@ -9,7 +9,6 @@
 #include "module-builtins.h"
 #include "objects.h"
 #include "runtime.h"
-#include "str-builtins.h"
 #include "thread.h"
 #include "type-builtins.h"
 
@@ -225,7 +224,7 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
     Instance instance(&scope, *object);
     // TODO(T53626118) Raise an exception when `name_str` is a string subclass
     // that overrides `__eq__` or `__hash__`.
-    Str name_underlying(&scope, strUnderlying(thread, name_str));
+    Str name_underlying(&scope, strUnderlying(*name_str));
     Str name_interned(&scope, runtime->internStr(thread, name_underlying));
     Object result(&scope, instanceGetAttributeSetLocation(
                               thread, instance, name_interned, location_out));
@@ -308,7 +307,7 @@ RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
     Instance instance(&scope, *object);
     // TODO(T53626118) Raise an exception when `name_str` is a string subclass
     // that overrides `__eq__` or `__hash__`.
-    Str name_underlying(&scope, strUnderlying(thread, name_str));
+    Str name_underlying(&scope, strUnderlying(*name_str));
     Str name_interned(&scope, runtime->internStr(thread, name_underlying));
     return instanceSetAttrSetLocation(thread, instance, name_interned, value,
                                       location_out);

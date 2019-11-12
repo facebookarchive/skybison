@@ -20,7 +20,7 @@ static RawObject getFileno(Thread* thread, const Object& file) {
     return SmallInt::fromWord(kStderrFd);
   }
   if (runtime->isInstanceOfInt(*file)) {
-    RawInt fd = RawInt::cast(intUnderlying(thread, file));
+    RawInt fd = intUnderlying(*file);
     if (fd.isNegative() || fd.isLargeInt()) {
       return thread->raiseWithFmt(LayoutId::kValueError,
                                   "file is not a valid file descriptor");
@@ -43,7 +43,7 @@ static RawObject getFileno(Thread* thread, const Object& file) {
     return thread->raiseWithFmt(LayoutId::kRuntimeError,
                                 "file.fileno() is not a valid file descriptor");
   }
-  Int fd(&scope, intUnderlying(thread, fileno));
+  Int fd(&scope, intUnderlying(*fileno));
   if (fd.isNegative() || fd.isLargeInt()) {
     return thread->raiseWithFmt(LayoutId::kRuntimeError,
                                 "file.fileno() is not a valid file descriptor");
@@ -71,7 +71,7 @@ RawObject FaulthandlerModule::dumpTraceback(Thread* thread, Frame* frame,
   Object fileno(&scope, getFileno(thread, file));
   if (fileno.isError()) return *fileno;
   SmallInt fd(&scope, *fileno);
-  Int all_threads_int(&scope, intUnderlying(thread, all_threads));
+  Int all_threads_int(&scope, intUnderlying(*all_threads));
   if (all_threads_int.isZero()) {
     runtime->printTraceback(thread, fd.value());
   } else {
