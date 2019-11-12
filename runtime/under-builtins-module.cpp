@@ -2256,27 +2256,94 @@ RawObject UnderBuiltinsModule::underIntGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kInt);
 }
 
-static RawObject intFromBytes(Thread* /* t */, const Bytes& bytes, word length,
+static word digitValue(byte digit, word base) {
+  if ('0' <= digit && digit < '0' + base) return digit - '0';
+  // Bases 2-10 are limited to numerals, but all greater bases can use letters
+  // too.
+  if (base <= 10) return -1;
+  if ('a' <= digit && digit < 'a' + base) return digit - 'a' + 10;
+  if ('A' <= digit && digit < 'A' + base) return digit - 'A' + 10;
+  return -1;
+}
+
+static word inferBase(byte second_byte) {
+  switch (second_byte) {
+    case 'x':
+    case 'X':
+      return 16;
+    case 'o':
+    case 'O':
+      return 8;
+    case 'b':
+    case 'B':
+      return 2;
+    default:
+      return 10;
+  }
+}
+
+static RawObject intFromBytes(Thread* thread, const Bytes& bytes, word length,
                               word base) {
   DCHECK_BOUND(length, bytes.length());
   DCHECK(base == 0 || (base >= 2 && base <= 36), "invalid base");
-  if (length == 0) {
-    return Error::error();
+  // Functions the same as intFromString
+  word idx = 0;
+  if (idx >= length) return Error::error();
+  byte b = bytes.byteAt(idx++);
+  while (isSpaceASCII(b)) {
+    if (idx >= length) return Error::error();
+    b = bytes.byteAt(idx++);
   }
-  unique_c_ptr<char[]> str(reinterpret_cast<char*>(std::malloc(length + 1)));
-  bytes.copyTo(reinterpret_cast<byte*>(str.get()), length);
-  str[length] = '\0';
-  char* end;
-  errno = 0;
-  const word result = std::strtoll(str.get(), &end, base);
-  const int saved_errno = errno;
-  if (end != str.get() + length || saved_errno == EINVAL) {
-    return Error::error();
+  word sign = 1;
+  switch (b) {
+    case '-':
+      sign = -1;
+      // fall through
+    case '+':
+      if (idx >= length) return Error::error();
+      b = bytes.byteAt(idx++);
+      break;
   }
-  if (SmallInt::isValid(result) && saved_errno != ERANGE) {
-    return SmallInt::fromWord(result);
+
+  word inferred_base = 10;
+  if (b == '0') {
+    if (idx >= length) return Error::error();
+    inferred_base = inferBase(bytes.byteAt(idx));
+    if (base == 0) base = inferred_base;
+    if (inferred_base != 10 && base == inferred_base) {
+      if (++idx >= length) return Error::error();
+      b = bytes.byteAt(idx++);
+    }
+  } else if (base == 0) {
+    base = 10;
   }
-  UNIMPLEMENTED("LargeInt from bytes-like");
+
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Int result(&scope, SmallInt::fromWord(0));
+  Int digit(&scope, SmallInt::fromWord(0));
+  Int base_obj(&scope, SmallInt::fromWord(base));
+  word num_start = idx;
+  for (;;) {
+    if (b == '_') {
+      // No leading underscores unless the number has a prefix
+      if (idx == num_start && inferred_base == 10) return Error::error();
+      // No trailing underscores
+      if (idx >= length) return Error::error();
+      b = bytes.byteAt(idx++);
+    }
+    word digit_val = digitValue(b, base);
+    if (digit_val == -1) return Error::error();
+    digit = Int::cast(SmallInt::fromWord(digit_val));
+    result = runtime->intAdd(thread, result, digit);
+    if (idx >= length) break;
+    b = bytes.byteAt(idx++);
+    result = runtime->intMultiply(thread, result, base_obj);
+  }
+  if (sign < 0) {
+    result = runtime->intNegate(thread, result);
+  }
+  return *result;
 }
 
 RawObject UnderBuiltinsModule::underIntNewFromByteArray(Thread* thread,
@@ -2338,33 +2405,6 @@ RawObject UnderBuiltinsModule::underIntNewFromInt(Thread* thread, Frame* frame,
   return intOrUserSubclass(thread, type, value);
 }
 
-static word digitValue(byte digit, word base) {
-  if ('0' <= digit && digit < '0' + base) return digit - '0';
-  // Bases 2-10 are limited to numerals, but all greater bases can use letters
-  // too.
-  if (base <= 10) return -1;
-  if ('a' <= digit && digit < 'a' + base) return digit - 'a' + 10;
-  if ('A' <= digit && digit < 'A' + base) return digit - 'A' + 10;
-  return -1;
-}
-
-static word inferBase(const Str& str, word start) {
-  if (str.charAt(start) == '0' && start + 1 < str.charLength()) {
-    switch (str.charAt(start + 1)) {
-      case 'x':
-      case 'X':
-        return 16;
-      case 'o':
-      case 'O':
-        return 8;
-      case 'b':
-      case 'B':
-        return 2;
-    }
-  }
-  return 10;
-}
-
 static RawObject intFromStr(Thread* thread, const Str& str, word base) {
   DCHECK(base == 0 || (base >= 2 && base <= 36), "invalid base");
   // CPython allows leading whitespace in the integer literal
@@ -2392,7 +2432,10 @@ static RawObject intFromStr(Thread* thread, const Str& str, word base) {
   // Decimal literals start at the index 0 (no prefix).
   // Octal literals (0oFOO), hex literals (0xFOO), and binary literals (0bFOO)
   // start at index 2.
-  word inferred_base = inferBase(str, start);
+  word inferred_base = 10;
+  if (str.charAt(start) == '0' && start + 1 < str.charLength()) {
+    inferred_base = inferBase(str.charAt(start + 1));
+  }
   if (base == 0) {
     base = inferred_base;
   }
