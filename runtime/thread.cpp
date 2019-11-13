@@ -1,5 +1,7 @@
 #include "thread.h"
 
+#include <signal.h>
+
 #include <cerrno>
 #include <cstdarg>
 #include <cstdio>
@@ -42,9 +44,19 @@ Thread::Thread(word size)
       pending_exc_traceback_(NoneType::object()),
       caught_exc_stack_(NoneType::object()),
       api_repr_list_(NoneType::object()) {
-  start_ = new byte[size]();  // Zero-initialize the stack
+  start_ = new byte[size_ + SIGSTKSZ]();  // Zero-initialize the stack
   // Stack growns down in order to match machine convention
-  end_ = start_ + size;
+  end_ = start_ + size_;
+
+  stack_t altstack;
+  altstack.ss_sp = end_;
+  altstack.ss_size = SIGSTKSZ;
+  altstack.ss_flags = 0;
+  if (UNLIKELY(::sigaltstack(&altstack, nullptr) != 0)) {
+    std::perror("unable to create signal-handling stack");
+    std::abort();
+  }
+
   current_frame_ = pushInitialFrame();
 }
 

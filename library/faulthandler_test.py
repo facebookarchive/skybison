@@ -20,6 +20,13 @@ class FaulthandlerTest(unittest.TestCase):
             C.fileno.assert_called_once()
             C.flush.assert_called_once()
 
+    def test_is_enabled(self):
+        self.assertIs(faulthandler.is_enabled(), False)
+        faulthandler.enable()
+        self.assertIs(faulthandler.is_enabled(), True)
+        faulthandler.disable()
+        self.assertIs(faulthandler.is_enabled(), False)
+
 
 if __name__ == "__main__":
     unittest.main()

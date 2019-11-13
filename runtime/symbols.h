@@ -367,6 +367,7 @@ class Runtime;
   V(UnderRawIOBase, "_RawIOBase")                                              \
   V(UnderReadBuf, "_read_buf")                                                 \
   V(UnderReadLock, "_read_lock")                                               \
+  V(UnderReadNull, "_read_null")                                               \
   V(UnderReadPos, "_read_pos")                                                 \
   V(UnderReadable, "_readable")                                                \
   V(UnderReadnl, "_readnl")                                                    \
@@ -388,6 +389,9 @@ class Runtime;
   V(UnderSetMemberFloat, "_set_member_float")                                  \
   V(UnderSetMemberIntegral, "_set_member_integral")                            \
   V(UnderSetMemberPyObject, "_set_member_pyobject")                            \
+  V(UnderSigabrt, "_sigabrt")                                                  \
+  V(UnderSigfpe, "_sigfpe")                                                    \
+  V(UnderSigsegv, "_sigsegv")                                                  \
   V(UnderSliceCheck, "_slice_check")                                           \
   V(UnderSliceGuard, "_slice_guard")                                           \
   V(UnderSliceIndex, "_slice_index")                                           \
@@ -573,6 +577,7 @@ class Runtime;
   V(DictKeys, "dict_keys")                                                     \
   V(DictValueIterator, "dict_valueiterator")                                   \
   V(DictValues, "dict_values")                                                 \
+  V(Disable, "disable")                                                        \
   V(Discard, "discard")                                                        \
   V(Displayhook, "displayhook")                                                \
   V(Divmod, "divmod")                                                          \
@@ -581,6 +586,7 @@ class Runtime;
   V(DumpTraceback, "dump_traceback")                                           \
   V(EOFError, "EOFError")                                                      \
   V(Ellipsis, "ellipsis")                                                      \
+  V(Enable, "enable")                                                          \
   V(Encode, "encode")                                                          \
   V(Encoding, "encoding")                                                      \
   V(End, "end")                                                                \
@@ -664,6 +670,7 @@ class Runtime;
   V(IsBuiltin, "is_builtin")                                                   \
   V(Isdir, "isdir")                                                            \
   V(IsDisjoint, "isdisjoint")                                                  \
+  V(IsEnabled, "is_enabled")                                                   \
   V(IsFrozen, "is_frozen")                                                     \
   V(IsFrozenPackage, "is_frozen_package")                                      \
   V(IsInstance, "isinstance")                                                  \

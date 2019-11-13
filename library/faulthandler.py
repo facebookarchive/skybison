@@ -20,20 +20,24 @@ def _raise_exception(code, flags=0):
     _unimplemented()
 
 
+@_patch
 def _read_null():
-    _unimplemented()
+    pass
 
 
+@_patch
 def _sigabrt():
-    _unimplemented()
+    pass
 
 
+@_patch
 def _sigfpe():
-    _unimplemented()
+    pass
 
 
+@_patch
 def _sigsegv(release_gil=False):
-    _unimplemented()
+    pass
 
 
 def _stack_overflow():
@@ -44,8 +48,9 @@ def cancel_dump_traceback_later():
     _unimplemented()
 
 
+@_patch
 def disable():
-    _unimplemented()
+    pass
 
 
 @_patch
@@ -57,12 +62,14 @@ def dump_traceback_later(timeout, repeat=False, file=sys.stderr, exit=False):
     _unimplemented()
 
 
+@_patch
 def enable(file=sys.stderr, all_threads=True):
-    _unimplemented()
+    pass
 
 
+@_patch
 def is_enabled():
-    _unimplemented()
+    pass
 
 
 def register(signum, file=sys.stderr, all_threads=True, chain=False):

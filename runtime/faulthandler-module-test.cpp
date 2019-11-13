@@ -12,7 +12,20 @@ namespace py {
 
 using namespace testing;
 
+using FaulthandlerModuleDeathTest = RuntimeFixture;
 using FaulthandlerModuleTest = RuntimeFixture;
+
+TEST_F(FaulthandlerModuleDeathTest, UnderSigabrtRaisesSIGABRT) {
+  HandleScope scope(thread_);
+  Object stderr(&scope, runtime_.sysStderr().value());
+  Object false_obj(&scope, Bool::falseObj());
+  ASSERT_EQ(runBuiltin(FaulthandlerModule::enable, stderr, false_obj),
+            NoneType::object());
+
+  const char* expected = "Fatal Python error: Aborted";
+  EXPECT_EXIT(runBuiltin(FaulthandlerModule::underSigabrt),
+              ::testing::KilledBySignal(SIGABRT), expected);
+}
 
 TEST_F(FaulthandlerModuleTest,
        DumpTracebackWithNonIntAllThreadsRaisesTypeError) {
