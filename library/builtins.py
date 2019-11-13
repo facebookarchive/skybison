@@ -177,6 +177,7 @@ _str_rpartition = _str_rpartition  # noqa: F821
 _str_split = _str_split  # noqa: F821
 _str_splitlines = _str_splitlines  # noqa: F821
 _str_startswith = _str_startswith  # noqa: F821
+_strarray_iadd = _strarray_iadd  # noqa: F821
 _tuple_check = _tuple_check  # noqa: F821
 _tuple_checkexact = _tuple_checkexact  # noqa: F821
 _tuple_getitem = _tuple_getitem  # noqa: F821
@@ -4757,7 +4758,18 @@ class str(bootstrap=True):
         _unimplemented()
 
     def translate(self, table):
-        _unimplemented()
+        _dict_guard(table)
+        result = _strarray()
+        for key in self:
+            value = table.get(ord(key), key)
+            if value is None:
+                continue
+            if _int_check(value):
+                value = chr(value)
+            elif not _str_check(value):
+                raise TypeError("character dict must return int, None or str")
+            _strarray_iadd(result, value)
+        return str(result)
 
     def upper(self):
         pass

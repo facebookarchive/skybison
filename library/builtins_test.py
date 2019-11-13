@@ -7161,6 +7161,38 @@ class StaticMethodTests(unittest.TestCase):
 
 
 class StrTests(unittest.TestCase):
+    def test_translate_without_dict(self):
+        with self.assertRaises(TypeError):
+            "abc".translate(123)
+
+    def test_translate_without_non_valid_dict_value(self):
+        with self.assertRaises(TypeError):
+            "abc".translate({97: 123.456}, "int.*, None or str")
+
+    def test_translate_without_characters_in_dict_returns_same_str(self):
+        original = "abc"
+        expected = "abc"
+        table = {120: 130, 121: 131, 122: 132}
+        self.assertEqual(original.translate(table), expected)
+
+    def test_translate_with_none_values_returns_substr(self):
+        original = "abc"
+        expected = "bc"
+        table = {97: None}
+        self.assertEqual(original.translate(table), expected)
+
+    def test_translate_returns_new_str(self):
+        original = "abc"
+        expected = "dbc"
+        table = {97: 100}
+        self.assertEqual(original.translate(table), expected)
+
+    def test_translate_returns_longer_str(self):
+        original = "abc"
+        expected = "defbc"
+        table = {97: "def"}
+        self.assertEqual(original.translate(table), expected)
+
     def test_dunder_new_with_raising_dunder_str_propagates_exception(self):
         class Desc:
             def __get__(self, obj, type):
