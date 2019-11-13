@@ -1867,8 +1867,25 @@ class bytes(bootstrap=True):
     def capitalize(self):
         _unimplemented()
 
-    def center(self):
-        _unimplemented()
+    def center(self, width, fillbyte=b" "):
+        _bytes_guard(self)
+        width = _index(width)
+        if _bytes_check(fillbyte) and _bytes_len(fillbyte) == 1:
+            pass
+        elif _bytearray_check(fillbyte) and _bytearray_len(fillbyte) == 1:
+            # convert into bytes
+            fillbyte = _bytes_from_ints(fillbyte)
+        else:
+            raise TypeError(
+                "center() argument 2 must be a byte string of length 1, not "
+                f"{_type(fillbyte).__name__}"
+            )
+
+        pad = width - _bytes_len(self)
+        if pad <= 0:
+            return self
+        left_pad = (pad >> 1) + (pad & width & 1)
+        return fillbyte * left_pad + self + fillbyte * (pad - left_pad)
 
     def count(self, sub, start=None, end=None):
         _bytes_guard(self)
@@ -1971,8 +1988,22 @@ class bytes(bootstrap=True):
         items = [x for x in iterable]
         return _bytes_join(self, items)
 
-    def ljust(self, width, fillchar=_Unbound):
-        _unimplemented()
+    def ljust(self, width, fillbyte=b" "):
+        _bytes_guard(self)
+        width = _index(width)
+        if _bytes_check(fillbyte) and _bytes_len(fillbyte) == 1:
+            pass
+        elif _bytearray_check(fillbyte) and _bytearray_len(fillbyte) == 1:
+            # convert into bytes
+            fillbyte = _bytes_from_ints(fillbyte)
+        else:
+            raise TypeError(
+                "ljust() argument 2 must be a byte string of length 1, not "
+                f"{_type(fillbyte).__name__}"
+            )
+
+        padding = width - _bytes_len(self)
+        return self + fillbyte * padding if padding > 0 else self
 
     def lower(self):
         _unimplemented()
@@ -2023,8 +2054,22 @@ class bytes(bootstrap=True):
             raise ValueError("subsection not found")
         return result
 
-    def rjust(self, width, fillchar=_Unbound):
-        _unimplemented()
+    def rjust(self, width, fillbyte=b" "):
+        _bytes_guard(self)
+        width = _index(width)
+        if _bytes_check(fillbyte) and _bytes_len(fillbyte) == 1:
+            pass
+        elif _bytearray_check(fillbyte) and _bytearray_len(fillbyte) == 1:
+            # convert into bytes
+            fillbyte = _bytes_from_ints(fillbyte)
+        else:
+            raise TypeError(
+                "rjust() argument 2 must be a byte string of length 1, not "
+                f"{_type(fillbyte).__name__}"
+            )
+
+        padding = width - _bytes_len(self)
+        return fillbyte * padding + self if padding > 0 else self
 
     def rpartition(self, sep):
         _unimplemented()

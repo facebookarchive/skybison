@@ -1052,6 +1052,49 @@ class ByteArrayTests(unittest.TestCase):
 
 
 class BytesTests(unittest.TestCase):
+    def test_center_without_growth_returns_original_bytes(self):
+        foo = b"foo"
+        self.assertIs(foo.center(-1), foo)
+        self.assertIs(foo.center(0), foo)
+        self.assertIs(foo.center(1), foo)
+        self.assertIs(foo.center(2), foo)
+        self.assertIs(foo.center(3), foo)
+
+    def test_center_with_both_odd_centers_bytes(self):
+        self.assertEqual(b"abc".center(5), b" abc ")
+        self.assertEqual(b"abc".center(7), b"  abc  ")
+
+    def test_center_with_both_even_centers_bytes(self):
+        self.assertEqual(b"".center(4), b"    ")
+        self.assertEqual(b"abcd".center(8), b"  abcd  ")
+
+    def test_center_with_odd_length_and_even_number_centers_bytes(self):
+        self.assertEqual(b"foo".center(4), b"foo ")
+        self.assertEqual(b"\t \n".center(6), b" \t \n  ")
+
+    def test_center_with_even_length_and_odd_number_centers_bytes(self):
+        self.assertEqual(b"food".center(5), b" food")
+        self.assertEqual(b"\t  \n".center(7), b"  \t  \n ")
+
+    def test_center_with_custom_fillchar_returns_bytes(self):
+        self.assertEqual(b"ba".center(7, b"@"), b"@@@ba@@")
+
+    def test_center_with_non_bytes_fillchar_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            b"".center(2, ord(" "))
+        self.assertEqual(
+            str(context.exception),
+            "center() argument 2 must be a byte string of length 1, not int",
+        )
+
+    def test_center_with_wrong_length_fillchar_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            b"".center(2, b",,")
+        self.assertEqual(
+            str(context.exception),
+            "center() argument 2 must be a byte string of length 1, not bytes",
+        )
+
     def test_decode_finds_ascii(self):
         self.assertEqual(b"abc".decode("ascii"), "abc")
 
@@ -1422,6 +1465,37 @@ class BytesTests(unittest.TestCase):
             str(context.exception),
         )
 
+    def test_ljust_without_growth_returns_original_bytes(self):
+        foo = b"foo"
+        self.assertIs(foo.ljust(-1), foo)
+        self.assertIs(foo.ljust(0), foo)
+        self.assertIs(foo.ljust(1), foo)
+        self.assertIs(foo.ljust(2), foo)
+        self.assertIs(foo.ljust(3), foo)
+
+    def test_ljust_pads_end_of_bytes(self):
+        self.assertEqual(b"abc".ljust(4), b"abc ")
+        self.assertEqual(b"abc".ljust(7), b"abc    ")
+
+    def test_ljust_with_custom_fillchar_returns_bytes(self):
+        self.assertEqual(b"ba".ljust(7, b"@"), b"ba@@@@@")
+
+    def test_ljust_with_non_bytes_fillchar_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            b"".ljust(2, ord(" "))
+        self.assertEqual(
+            str(context.exception),
+            "ljust() argument 2 must be a byte string of length 1, not int",
+        )
+
+    def test_ljust_with_wrong_length_fillchar_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            b"".ljust(2, b",,")
+        self.assertEqual(
+            str(context.exception),
+            "ljust() argument 2 must be a byte string of length 1, not bytes",
+        )
+
     def test_lstrip_with_non_byteslike_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             b"".lstrip("")
@@ -1553,6 +1627,37 @@ class BytesTests(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             haystack.rindex(needle, 0, 2)
         self.assertEqual(str(context.exception), "subsection not found")
+
+    def test_rjust_without_growth_returns_original_bytes(self):
+        foo = b"foo"
+        self.assertIs(foo.rjust(-1), foo)
+        self.assertIs(foo.rjust(0), foo)
+        self.assertIs(foo.rjust(1), foo)
+        self.assertIs(foo.rjust(2), foo)
+        self.assertIs(foo.rjust(3), foo)
+
+    def test_rjust_pads_beginning_of_bytes(self):
+        self.assertEqual(b"abc".rjust(4), b" abc")
+        self.assertEqual(b"abc".rjust(7), b"    abc")
+
+    def test_rjust_with_custom_fillchar_returns_bytes(self):
+        self.assertEqual(b"ba".rjust(7, b"@"), b"@@@@@ba")
+
+    def test_rjust_with_non_bytes_fillchar_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            b"".rjust(2, ord(" "))
+        self.assertEqual(
+            str(context.exception),
+            "rjust() argument 2 must be a byte string of length 1, not int",
+        )
+
+    def test_rjust_with_wrong_length_fillchar_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            b"".rjust(2, b",,")
+        self.assertEqual(
+            str(context.exception),
+            "rjust() argument 2 must be a byte string of length 1, not bytes",
+        )
 
     def test_rstrip_with_non_byteslike_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
