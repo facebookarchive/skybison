@@ -1253,6 +1253,21 @@ PY_EXPORT PyObject* PySequence_GetItem(PyObject* seq, Py_ssize_t idx) {
   return ApiHandle::newReference(thread, *result);
 }
 
+PY_EXPORT PyObject* PySequence_ITEM_Func(PyObject* seq, Py_ssize_t i) {
+  DCHECK(seq != nullptr, "sequence must not be nullptr");
+  DCHECK(i >= 0, "index can't be negative");
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
+  DCHECK(thread->runtime()->isSequence(thread, seq_obj),
+         "seq must be a sequence");
+  Object idx(&scope, thread->runtime()->newInt(i));
+  Object result(&scope,
+                thread->invokeMethod2(seq_obj, SymbolId::kDunderGetitem, idx));
+  if (result.isError()) return nullptr;
+  return ApiHandle::newReference(thread, *result);
+}
+
 PY_EXPORT PyObject* PySequence_GetSlice(PyObject* seq, Py_ssize_t low,
                                         Py_ssize_t high) {
   Thread* thread = Thread::current();

@@ -2579,6 +2579,33 @@ c = C()
   EXPECT_EQ(PyLong_AsLong(result), 7);
 }
 
+TEST_F(AbstractExtensionApiTest, PySequenceItemCallsDunderGetItem) {
+  PyRun_SimpleString(R"(
+class C:
+  def __getitem__(self, key):
+    return 7
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PySequence_ITEM(c, 0));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyLong_AsLong(result), 7);
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceItemDunderGetItemRaises) {
+  PyRun_SimpleString(R"(
+class C:
+  def __getitem__(self, key):
+    raise Exception("foo")
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PySequence_ITEM(c, 0));
+  ASSERT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(AbstractExtensionApiTest, PySequenceSetItemWithNullValCallsDelItem) {
   PyRun_SimpleString(R"(
 sideeffect = 0

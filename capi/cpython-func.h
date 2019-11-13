@@ -1043,6 +1043,7 @@ PyAPI_FUNC(int) _PyDict_SetItem_KnownHash(PyObject* pydict, PyObject* key,
 PyAPI_FUNC(int) Py_EnterRecursiveCall_Func(const char*);
 PyAPI_FUNC(void) Py_LeaveRecursiveCall_Func();
 PyAPI_FUNC(PyTypeObject*) Py_TYPE_Func(PyObject* obj);
+PyAPI_FUNC(PyObject*) PySequence_ITEM_Func(PyObject*, Py_ssize_t);
 
 /* Macros */
 #define _Py_Dealloc (*_Py_Dealloc_Func)
@@ -1104,6 +1105,7 @@ PyAPI_FUNC(PyTypeObject*) Py_TYPE_Func(PyObject* obj);
 
 #define PyLong_AS_LONG(op) PyLong_AsLong(op)
 
+#define PySequence_ITEM(op, i) PySequence_ITEM_Func((PyObject*)op, i)
 #define PySet_GET_SIZE(op) PySet_Size((PyObject*)op)
 
 #define PyTuple_GET_SIZE(op) PyTuple_Size((PyObject*)op)
