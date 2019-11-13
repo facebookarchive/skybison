@@ -2453,6 +2453,20 @@ class EllipsisTypeTests(unittest.TestCase):
 
 
 class ExceptionTests(unittest.TestCase):
+    def test_oserror_dunder_init_with_no_args_does_not_set_attrs(self):
+        exc = OSError()
+        self.assertIs(exc.errno, None)
+        self.assertIs(exc.strerror, None)
+        self.assertIs(exc.filename, None)
+        self.assertIs(exc.filename2, None)
+
+    def test_oserror_dunder_init_with_args_sets_attrs(self):
+        exc = OSError(1, "some error", "file", 0, "file2")
+        self.assertIs(exc.errno, 1)
+        self.assertIs(exc.strerror, "some error")
+        self.assertIs(exc.filename, "file")
+        self.assertIs(exc.filename2, "file2")
+
     def test_maybe_unbound_attributes(self):
         exc = BaseException()
         exc2 = BaseException()

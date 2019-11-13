@@ -663,7 +663,21 @@ class NotImplementedError(RuntimeError, bootstrap=True):
 
 
 class OSError(Exception, bootstrap=True):
-    pass
+    def __init__(self, *args):
+        BaseException.__init__(self, *args)
+        self.errno = None
+        self.strerror = None
+        self.filename = None
+        self.filename2 = None
+
+        arg_len = _tuple_len(args)
+        if arg_len > 2:
+            self.errno = _tuple_getitem(args, 0)
+            self.strerror = _tuple_getitem(args, 1)
+            self.filename = _tuple_getitem(args, 2)
+
+        if arg_len > 4:
+            self.filename2 = _tuple_getitem(args, 4)
 
 
 class OverflowError(ArithmeticError, bootstrap=True):
