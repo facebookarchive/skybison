@@ -2058,8 +2058,7 @@ RawObject UnderBuiltinsModule::underInstanceDelattr(Thread* thread,
   // TODO(T53626118) Raise an exception when `name_str` is a string subclass
   // that overrides `__eq__` or `__hash__`.
   Str name_str(&scope, strUnderlying(args.get(1)));
-  Runtime* runtime = thread->runtime();
-  Str name_interned(&scope, runtime->internStr(thread, name_str));
+  Str name_interned(&scope, Runtime::internStr(thread, name_str));
   return instanceDelAttr(thread, instance, name_interned);
 }
 
@@ -2071,7 +2070,7 @@ RawObject UnderBuiltinsModule::underInstanceGetattr(Thread* thread,
   // TODO(T53626118) Raise an exception when `name_str` is a string subclass
   // that overrides `__eq__` or `__hash__`.
   Str name_str(&scope, strUnderlying(args.get(1)));
-  Str name_interned(&scope, thread->runtime()->internStr(thread, name_str));
+  Str name_interned(&scope, Runtime::internStr(thread, name_str));
   Object result(&scope, instanceGetAttribute(thread, instance, name_interned));
   return result.isErrorNotFound() ? Unbound::object() : *result;
 }
@@ -2145,7 +2144,7 @@ RawObject UnderBuiltinsModule::underInstanceSetattr(Thread* thread,
   // TODO(T53626118) Raise an exception when `name_str` is a string subclass
   // that overrides `__eq__` or `__hash__`.
   Str name_str(&scope, strUnderlying(args.get(1)));
-  Str name_interned(&scope, thread->runtime()->internStr(thread, name_str));
+  Str name_interned(&scope, Runtime::internStr(thread, name_str));
   Object value(&scope, args.get(2));
   return instanceSetAttr(thread, instance, name_interned, value);
 }

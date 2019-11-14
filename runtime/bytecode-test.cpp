@@ -475,13 +475,13 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesReservesCachesForGlobalVariables) {
 TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadFastAndStoreFastOpcodes) {
   HandleScope scope(thread_);
   Tuple varnames(&scope, runtime_.newTuple(3));
-  varnames.atPut(0, runtime_.internStrFromCStr(thread_, "arg0"));
-  varnames.atPut(1, runtime_.internStrFromCStr(thread_, "var0"));
-  varnames.atPut(2, runtime_.internStrFromCStr(thread_, "var1"));
+  varnames.atPut(0, Runtime::internStrFromCStr(thread_, "arg0"));
+  varnames.atPut(1, Runtime::internStrFromCStr(thread_, "var0"));
+  varnames.atPut(2, Runtime::internStrFromCStr(thread_, "var1"));
   Tuple freevars(&scope, runtime_.newTuple(1));
-  freevars.atPut(0, runtime_.internStrFromCStr(thread_, "freevar0"));
+  freevars.atPut(0, Runtime::internStrFromCStr(thread_, "freevar0"));
   Tuple cellvars(&scope, runtime_.newTuple(1));
-  cellvars.atPut(0, runtime_.internStrFromCStr(thread_, "cellvar0"));
+  cellvars.atPut(0, Runtime::internStrFromCStr(thread_, "cellvar0"));
   word argcount = 1;
   word nlocals = 3;
   byte bytecode[] = {

@@ -74,8 +74,8 @@ TEST_F(MarshalReaderTest, ReadTypeAsciiNonRef) {
 
   // Shouldn't have interned the string during unmarshaling, so interning it
   // now should return the same string
-  Object str(&scope, runtime_.newStrFromCStr("testing123"));
-  EXPECT_EQ(runtime_.internStr(thread_, str), *str);
+  Str str(&scope, runtime_.newStrFromCStr("testing123"));
+  EXPECT_EQ(Runtime::internStr(thread_, str), *str);
 }
 
 TEST_F(MarshalReaderTest, ReadTypeAsciiRef) {
@@ -88,8 +88,8 @@ TEST_F(MarshalReaderTest, ReadTypeAsciiRef) {
 
   // Shouldn't have interned the string during unmarshaling, so interning it
   // now should return the same string
-  Object str(&scope, runtime_.newStrFromCStr("testing321"));
-  EXPECT_EQ(runtime_.internStr(thread_, str), *str);
+  Str str(&scope, runtime_.newStrFromCStr("testing321"));
+  EXPECT_EQ(Runtime::internStr(thread_, str), *str);
 }
 
 TEST_F(MarshalReaderTest, ReadTypeAsciiWithNegativeLengthReturnsError) {
@@ -109,8 +109,8 @@ TEST_F(MarshalReaderTest, ReadTypeAsciiInternedNonRef) {
 
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
-  Object str(&scope, runtime_.newStrFromCStr("testing123"));
-  EXPECT_NE(runtime_.internStr(thread_, str), *str);
+  Str str(&scope, runtime_.newStrFromCStr("testing123"));
+  EXPECT_NE(Runtime::internStr(thread_, str), *str);
 }
 
 TEST_F(MarshalReaderTest, ReadTypeAsciiInternedRef) {
@@ -123,8 +123,8 @@ TEST_F(MarshalReaderTest, ReadTypeAsciiInternedRef) {
 
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
-  Object str(&scope, runtime_.newStrFromCStr("testing321"));
-  EXPECT_NE(runtime_.internStr(thread_, str), *str);
+  Str str(&scope, runtime_.newStrFromCStr("testing321"));
+  EXPECT_NE(Runtime::internStr(thread_, str), *str);
 }
 
 TEST_F(MarshalReaderTest, ReadTypeAsciiInternedWithNegativeLengthReturnsError) {
@@ -144,8 +144,8 @@ TEST_F(MarshalReaderTest, ReadTypeUnicodeNonRef) {
 
   // Shouldn't have interned the string during unmarshaling, so interning it
   // now should return the same string
-  Object str(&scope, runtime_.newStrFromCStr("testing123"));
-  EXPECT_EQ(runtime_.internStr(thread_, str), *str);
+  Str str(&scope, runtime_.newStrFromCStr("testing123"));
+  EXPECT_EQ(Runtime::internStr(thread_, str), *str);
 }
 
 TEST_F(MarshalReaderTest, ReadTypeUnicodeRef) {
@@ -158,8 +158,8 @@ TEST_F(MarshalReaderTest, ReadTypeUnicodeRef) {
 
   // Shouldn't have interned the string during unmarshaling, so interning it
   // now should return the same string
-  Object str(&scope, runtime_.newStrFromCStr("testing321"));
-  EXPECT_EQ(runtime_.internStr(thread_, str), *str);
+  Str str(&scope, runtime_.newStrFromCStr("testing321"));
+  EXPECT_EQ(Runtime::internStr(thread_, str), *str);
 }
 
 TEST_F(MarshalReaderTest, ReadTypeUnicodeWithNegativeLengthReturnsError) {
@@ -179,8 +179,8 @@ TEST_F(MarshalReaderTest, ReadTypeInternedNonRef) {
 
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
-  Object str(&scope, runtime_.newStrFromCStr("testing123"));
-  EXPECT_NE(runtime_.internStr(thread_, str), *str);
+  Str str(&scope, runtime_.newStrFromCStr("testing123"));
+  EXPECT_NE(Runtime::internStr(thread_, str), *str);
 }
 
 TEST_F(MarshalReaderTest, ReadTypeInternedRef) {
@@ -193,8 +193,8 @@ TEST_F(MarshalReaderTest, ReadTypeInternedRef) {
 
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
-  Object str(&scope, runtime_.newStrFromCStr("testing321"));
-  EXPECT_NE(runtime_.internStr(thread_, str), *str);
+  Str str(&scope, runtime_.newStrFromCStr("testing321"));
+  EXPECT_NE(Runtime::internStr(thread_, str), *str);
 }
 
 TEST_F(MarshalReaderTest, ReadTypeWithInternedWithNegativeLengthReturnsError) {
@@ -214,8 +214,8 @@ TEST_F(MarshalReaderTest, ReadTypeShortAsciiInternedNonRef) {
 
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
-  Object str(&scope, runtime_.newStrFromCStr("testing123"));
-  EXPECT_NE(runtime_.internStr(thread_, str), *str);
+  Str str(&scope, runtime_.newStrFromCStr("testing123"));
+  EXPECT_NE(Runtime::internStr(thread_, str), *str);
 }
 
 TEST_F(MarshalReaderTest, ReadTypeShortAsciiInternedRef) {
@@ -228,8 +228,8 @@ TEST_F(MarshalReaderTest, ReadTypeShortAsciiInternedRef) {
 
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
-  Object str(&scope, runtime_.newStrFromCStr("testing321"));
-  EXPECT_NE(runtime_.internStr(thread_, str), *str);
+  Str str(&scope, runtime_.newStrFromCStr("testing321"));
+  EXPECT_NE(Runtime::internStr(thread_, str), *str);
 }
 
 TEST_F(MarshalReaderTest, ReadLong) {

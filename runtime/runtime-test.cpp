@@ -872,7 +872,7 @@ TEST_F(RuntimeTest, InternLargeStr) {
 
   // Creating an ordinary large string should not affect on the intern table.
   word num_interned = interned.numItems();
-  Object str1(&scope, runtime_.newStrFromCStr("hello, world"));
+  Str str1(&scope, runtime_.newStrFromCStr("hello, world"));
   ASSERT_TRUE(str1.isLargeStr());
   EXPECT_EQ(num_interned, interned.numItems());
   EXPECT_FALSE(setIncludes(thread_, interned, str1));
@@ -881,27 +881,27 @@ TEST_F(RuntimeTest, InternLargeStr) {
   // Interning the string should add it to the intern table and increase the
   // size of the intern table by one.
   num_interned = interned.numItems();
-  Object sym1(&scope, runtime_.internStr(thread_, str1));
+  Object sym1(&scope, Runtime::internStr(thread_, str1));
   EXPECT_TRUE(setIncludes(thread_, interned, str1));
   EXPECT_EQ(*sym1, *str1);
   EXPECT_EQ(num_interned + 1, interned.numItems());
   EXPECT_TRUE(runtime_.isInternedStr(thread_, str1));
 
-  Object str2(&scope, runtime_.newStrFromCStr("goodbye, world"));
+  Str str2(&scope, runtime_.newStrFromCStr("goodbye, world"));
   ASSERT_TRUE(str2.isLargeStr());
   EXPECT_NE(*str1, *str2);
 
   // Intern another string and make sure we get it back (as opposed to the
   // previously interned string).
   num_interned = interned.numItems();
-  Object sym2(&scope, runtime_.internStr(thread_, str2));
+  Str sym2(&scope, Runtime::internStr(thread_, str2));
   EXPECT_EQ(num_interned + 1, interned.numItems());
   EXPECT_TRUE(setIncludes(thread_, interned, str2));
   EXPECT_EQ(*sym2, *str2);
   EXPECT_NE(*sym1, *sym2);
 
   // Create a unique copy of a previously created string.
-  Object str3(&scope, runtime_.newStrFromCStr("hello, world"));
+  Str str3(&scope, runtime_.newStrFromCStr("hello, world"));
   ASSERT_TRUE(str3.isLargeStr());
   EXPECT_NE(*str1, *str3);
   EXPECT_TRUE(setIncludes(thread_, interned, str3));
@@ -909,7 +909,7 @@ TEST_F(RuntimeTest, InternLargeStr) {
 
   // Interning a duplicate string should not affecct the intern table.
   num_interned = interned.numItems();
-  Object sym3(&scope, runtime_.internStr(thread_, str3));
+  Object sym3(&scope, Runtime::internStr(thread_, str3));
   EXPECT_EQ(num_interned, interned.numItems());
   EXPECT_NE(*sym3, *str3);
   EXPECT_EQ(*sym3, *sym1);
@@ -922,13 +922,13 @@ TEST_F(RuntimeTest, InternSmallStr) {
 
   // Creating a small string should not affect the intern table.
   word num_interned = interned.numItems();
-  Object str(&scope, runtime_.newStrFromCStr("a"));
+  Str str(&scope, runtime_.newStrFromCStr("a"));
   ASSERT_TRUE(str.isSmallStr());
   EXPECT_FALSE(setIncludes(thread_, interned, str));
   EXPECT_EQ(num_interned, interned.numItems());
 
   // Interning a small string should have no affect on the intern table.
-  Object sym(&scope, runtime_.internStr(thread_, str));
+  Object sym(&scope, Runtime::internStr(thread_, str));
   EXPECT_TRUE(sym.isSmallStr());
   EXPECT_FALSE(setIncludes(thread_, interned, str));
   EXPECT_EQ(num_interned, interned.numItems());
@@ -942,7 +942,7 @@ TEST_F(RuntimeTest, InternCStr) {
   Set interned(&scope, runtime_.interned());
 
   word num_interned = interned.numItems();
-  Object sym(&scope, runtime_.internStrFromCStr(thread_, "hello, world"));
+  Str sym(&scope, Runtime::internStrFromCStr(thread_, "hello, world"));
   EXPECT_TRUE(sym.isStr());
   EXPECT_TRUE(setIncludes(thread_, interned, sym));
   EXPECT_EQ(num_interned + 1, interned.numItems());
@@ -951,13 +951,13 @@ TEST_F(RuntimeTest, InternCStr) {
 
 TEST_F(RuntimeTest, IsInternWithInternedStrReturnsTrue) {
   HandleScope scope(thread_);
-  Object str(&scope, runtime_.internStrFromCStr(thread_, "hello world"));
+  Str str(&scope, Runtime::internStrFromCStr(thread_, "hello world"));
   EXPECT_TRUE(runtime_.isInternedStr(thread_, str));
 }
 
 TEST_F(RuntimeTest, IsInternWithStrReturnsFalse) {
   HandleScope scope(thread_);
-  Object str(&scope, runtime_.newStrFromCStr("hello world"));
+  Str str(&scope, runtime_.newStrFromCStr("hello world"));
   EXPECT_FALSE(runtime_.isInternedStr(thread_, str));
 }
 
@@ -1128,11 +1128,10 @@ class MyTypeWithAttributes():
 TEST_F(RuntimeTest, VerifySymbols) {
   HandleScope scope(thread_);
   Symbols* symbols = runtime_.symbols();
-  Object value(&scope, NoneType::object());
+  Str value(&scope, Str::empty());
   for (int i = 0; i < static_cast<int>(SymbolId::kMaxId); i++) {
     SymbolId id = static_cast<SymbolId>(i);
     value = symbols->at(id);
-    ASSERT_TRUE(value.isStr());
     const char* expected = Symbols::predefinedSymbolAt(id);
     EXPECT_TRUE(runtime_.isInternedStr(thread_, value))
         << "at symbol " << expected;
@@ -1997,7 +1996,7 @@ del Foo.bar
   Object foo(&scope, mainModuleAt(&runtime_, "Foo"));
   EXPECT_EQ(args.at(0), *foo);
 
-  Object attr(&scope, runtime_.internStrFromCStr(thread_, "bar"));
+  Object attr(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   EXPECT_EQ(args.at(1), *attr);
 }
 
@@ -2505,11 +2504,11 @@ TEST_F(RuntimeTest, NotMatchingCellAndVarNamesSetsCell2ArgToNone) {
   word nlocals = 3;
   Tuple varnames(&scope, runtime_.newTuple(argcount + kwargcount));
   Tuple cellvars(&scope, runtime_.newTuple(2));
-  Str foo(&scope, runtime_.internStrFromCStr(thread_, "foo"));
-  Str bar(&scope, runtime_.internStrFromCStr(thread_, "bar"));
-  Str baz(&scope, runtime_.internStrFromCStr(thread_, "baz"));
-  Str foobar(&scope, runtime_.internStrFromCStr(thread_, "foobar"));
-  Str foobaz(&scope, runtime_.internStrFromCStr(thread_, "foobaz"));
+  Str foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Str bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
+  Str baz(&scope, Runtime::internStrFromCStr(thread_, "baz"));
+  Str foobar(&scope, Runtime::internStrFromCStr(thread_, "foobar"));
+  Str foobaz(&scope, Runtime::internStrFromCStr(thread_, "foobaz"));
   varnames.atPut(0, *foo);
   varnames.atPut(1, *bar);
   varnames.atPut(2, *baz);
@@ -2534,10 +2533,10 @@ TEST_F(RuntimeTest, MatchingCellAndVarNamesCreatesCell2Arg) {
   word nlocals = 3;
   Tuple varnames(&scope, runtime_.newTuple(argcount + kwargcount));
   Tuple cellvars(&scope, runtime_.newTuple(2));
-  Str foo(&scope, runtime_.internStrFromCStr(thread_, "foo"));
-  Str bar(&scope, runtime_.internStrFromCStr(thread_, "bar"));
-  Str baz(&scope, runtime_.internStrFromCStr(thread_, "baz"));
-  Str foobar(&scope, runtime_.internStrFromCStr(thread_, "foobar"));
+  Str foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Str bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
+  Str baz(&scope, Runtime::internStrFromCStr(thread_, "baz"));
+  Str foobar(&scope, Runtime::internStrFromCStr(thread_, "foobar"));
   varnames.atPut(0, *foo);
   varnames.atPut(1, *bar);
   varnames.atPut(2, *baz);
@@ -2567,10 +2566,10 @@ TEST_F(RuntimeTest, NewCodeWithCellvarsTurnsOffNofreeFlag) {
   word nlocals = 3;
   Tuple varnames(&scope, runtime_.newTuple(argcount));
   Tuple cellvars(&scope, runtime_.newTuple(2));
-  Str foo(&scope, runtime_.internStrFromCStr(thread_, "foo"));
-  Str bar(&scope, runtime_.internStrFromCStr(thread_, "bar"));
-  Str baz(&scope, runtime_.internStrFromCStr(thread_, "baz"));
-  Str foobar(&scope, runtime_.internStrFromCStr(thread_, "foobar"));
+  Str foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Str bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
+  Str baz(&scope, Runtime::internStrFromCStr(thread_, "baz"));
+  Str foobar(&scope, Runtime::internStrFromCStr(thread_, "foobar"));
   varnames.atPut(0, *foo);
   varnames.atPut(1, *bar);
   varnames.atPut(2, *baz);
@@ -2718,7 +2717,7 @@ TEST_F(RuntimeTest, InstanceAtPutWithReadOnlyAttributeRaisesAttributeError) {
   runtime_.layoutAtPut(layout_id, *layout);
   Instance instance(&scope, runtime_.newInstance(layout));
   Str attribute_name(&scope,
-                     runtime_.internStrFromCStr(thread_, "__globals__"));
+                     Runtime::internStrFromCStr(thread_, "__globals__"));
   Object value(&scope, NoneType::object());
   EXPECT_TRUE(
       raisedWithStr(instanceSetAttr(thread_, instance, attribute_name, value),

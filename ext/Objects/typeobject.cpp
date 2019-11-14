@@ -1229,13 +1229,12 @@ static RawObject getSetSetter(Thread* thread, const Object& name,
 
 RawObject addMethods(Thread* thread, const Type& type) {
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
   Object slot_value(&scope, type.slot(Type::Slot::kMethods));
   if (slot_value.isNoneType()) return NoneType::object();
   DCHECK(slot_value.isInt(), "unexpected slot type");
   auto methods = bit_cast<PyMethodDef*>(Int::cast(*slot_value).asCPtr());
   for (word i = 0; methods[i].ml_name != nullptr; i++) {
-    Str name(&scope, runtime->internStrFromCStr(thread, methods[i].ml_name));
+    Str name(&scope, Runtime::internStrFromCStr(thread, methods[i].ml_name));
     Object function(
         &scope,
         functionFromMethodDef(
@@ -1256,7 +1255,7 @@ RawObject addMembers(Thread* thread, const Type& type) {
   Object none(&scope, NoneType::object());
   Runtime* runtime = thread->runtime();
   for (word i = 0; members[i].name != nullptr; i++) {
-    Str name(&scope, runtime->internStrFromCStr(thread, members[i].name));
+    Str name(&scope, Runtime::internStrFromCStr(thread, members[i].name));
     Object getter(&scope, memberGetter(thread, members[i]));
     if (getter.isError()) return *getter;
     Object setter(&scope, memberSetter(thread, members[i]));
@@ -1276,7 +1275,7 @@ RawObject addGetSet(Thread* thread, const Type& type) {
   Object none(&scope, NoneType::object());
   Runtime* runtime = thread->runtime();
   for (word i = 0; getsets[i].name != nullptr; i++) {
-    Str name(&scope, runtime->internStrFromCStr(thread, getsets[i].name));
+    Str name(&scope, Runtime::internStrFromCStr(thread, getsets[i].name));
     Object getter(&scope, getSetGetter(thread, name, getsets[i]));
     if (getter.isError()) return *getter;
     Object setter(&scope, getSetSetter(thread, name, getsets[i]));
@@ -1408,7 +1407,7 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   } else {
     class_name++;
   }
-  Str type_name(&scope, runtime->internStrFromCStr(thread, class_name));
+  Str type_name(&scope, Runtime::internStrFromCStr(thread, class_name));
 
   // Create a new type for the PyTypeObject with an instance layout
   // matching the layout of RawNativeProxy

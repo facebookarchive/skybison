@@ -70,7 +70,7 @@ static RawObject symbolFromError(Thread* thread, const char* error) {
   if (std::strcmp(error, "replace") == 0) {
     return symbols->Replace();
   }
-  return runtime->internStrFromCStr(thread, error);
+  return Runtime::internStrFromCStr(thread, error);
 }
 
 PY_EXPORT void PyUnicode_WRITE_Func(enum PyUnicode_Kind kind, void* data,
@@ -1726,9 +1726,9 @@ PY_EXPORT void PyUnicode_InternInPlace(PyObject** pobj) {
   if (!obj.isLargeStr()) {
     return;
   }
-  HeapObject heap_obj(&scope, *obj);
-  HeapObject result(&scope, thread->runtime()->internStr(thread, obj));
-  if (result.address() != heap_obj.address()) {
+  Str obj_str(&scope, *obj);
+  Str result(&scope, Runtime::internStr(thread, obj_str));
+  if (result != obj_str) {
     Py_DECREF(*pobj);
     *pobj = ApiHandle::newReference(thread, *result);
   }

@@ -503,14 +503,13 @@ void strInternInTuple(Thread* thread, const Object& items) {
   Runtime* runtime = thread->runtime();
   DCHECK(runtime->isInstanceOfTuple(*items), "items must be a tuple instance");
   Tuple tuple(&scope, tupleUnderlying(*items));
-  Object obj(&scope, NoneType::object());
+  Str str(&scope, Str::empty());
   Object result(&scope, NoneType::object());
   for (word i = 0; i < tuple.length(); i++) {
-    obj = tuple.at(i);
-    CHECK(obj.isStr(), "non-string found in code slot");
-    result = runtime->internStr(thread, obj);
+    str = tuple.at(i);
+    result = Runtime::internStr(thread, str);
     if (result.isError()) continue;
-    if (result != obj) {
+    if (result != str) {
       tuple.atPut(i, *result);
     }
   }
@@ -540,7 +539,7 @@ bool strInternConstants(Thread* thread, const Object& items) {
       Str str(&scope, *obj);
       if (allNameChars(str)) {
         // if all name chars, intern in place
-        result = runtime->internStr(thread, obj);
+        result = Runtime::internStr(thread, str);
         if (result.isError()) continue;
         if (result != obj) {
           tuple.atPut(i, *result);

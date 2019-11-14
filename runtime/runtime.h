@@ -276,12 +276,13 @@ class Runtime {
   void createSysModule(Thread* thread);
   void createUnderBuiltinsModule(Thread* thread);
 
-  RawObject internStr(Thread* thread, const Object& str);
-  RawObject internStrFromCStr(Thread* thread, const char* c_str);
+  static RawObject internStr(Thread* thread, const Object& str);
+  static RawObject internStrFromAll(Thread* thread, View<byte> bytes);
+  static RawObject internStrFromCStr(Thread* thread, const char* c_str);
   // This function should only be used for `CHECK()`/`DCHECK()`. It is as slow
   // as the whole `internStr()` operation and will always return true for small
   // strings, even when the user did not explicitly intern them.
-  bool isInternedStr(Thread* thread, const Object& str);
+  static bool isInternedStr(Thread* thread, const Object& str);
 
   void collectGarbage();
 
@@ -802,6 +803,8 @@ class Runtime {
   word identityHash(RawObject object);
   word immediateHash(RawObject object);
 
+  static RawObject internLargeStr(Thread* thread, const Object& str);
+
   RawObject createMro(const Layout& subclass_layout, LayoutId superclass_id);
 
   RawObject newFunction(Thread* thread, const Object& name, const Object& code,
@@ -986,6 +989,13 @@ class Runtime {
 
   DISALLOW_COPY_AND_ASSIGN(Runtime);
 };
+
+inline RawObject Runtime::internStr(Thread* thread, const Object& str) {
+  if (str.isSmallStr()) {
+    return *str;
+  }
+  return internLargeStr(thread, str);
+}
 
 class BuiltinsBase {
  public:

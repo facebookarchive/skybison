@@ -759,7 +759,7 @@ i = C()
   consts.atPut(0, *i);
   code.setConsts(*consts);
   Tuple names(&scope, runtime_.newTuple(1));
-  names.atPut(0, runtime_.internStrFromCStr(thread_, "foo"));
+  names.atPut(0, Runtime::internStrFromCStr(thread_, "foo"));
   code.setNames(*names);
   const byte bytecode[] = {LOAD_CONST, 0, IMPORT_FROM, 0, RETURN_VALUE, 0};
   code.setCode(runtime_.newBytesWithAll(bytecode));
@@ -774,7 +774,7 @@ TEST_F(InterpreterTest, ImportFromWithNonModuleRaisesImportError) {
   consts.atPut(0, NoneType::object());
   code.setConsts(*consts);
   Tuple names(&scope, runtime_.newTuple(1));
-  names.atPut(0, runtime_.internStrFromCStr(thread_, "foo"));
+  names.atPut(0, Runtime::internStrFromCStr(thread_, "foo"));
   code.setNames(*names);
   const byte bytecode[] = {LOAD_CONST, 0, IMPORT_FROM, 0, RETURN_VALUE, 0};
   code.setCode(runtime_.newBytesWithAll(bytecode));
@@ -799,7 +799,7 @@ i = C()
   consts.atPut(0, *i);
   code.setConsts(*consts);
   Tuple names(&scope, runtime_.newTuple(1));
-  names.atPut(0, runtime_.internStrFromCStr(thread_, "foo"));
+  names.atPut(0, Runtime::internStrFromCStr(thread_, "foo"));
   code.setNames(*names);
   const byte bytecode[] = {LOAD_CONST, 0, IMPORT_FROM, 0, RETURN_VALUE, 0};
   code.setCode(runtime_.newBytesWithAll(bytecode));
@@ -1385,9 +1385,9 @@ TEST_F(InterpreterTest,
   consts.atPut(0, SmallInt::fromWord(42));
   code.setConsts(*consts);
   Tuple varnames(&scope, runtime_.newTuple(3));
-  varnames.atPut(0, runtime_.internStrFromCStr(thread_, "foo"));
-  varnames.atPut(1, runtime_.internStrFromCStr(thread_, "bar"));
-  varnames.atPut(2, runtime_.internStrFromCStr(thread_, "baz"));
+  varnames.atPut(0, Runtime::internStrFromCStr(thread_, "foo"));
+  varnames.atPut(1, Runtime::internStrFromCStr(thread_, "bar"));
+  varnames.atPut(2, Runtime::internStrFromCStr(thread_, "baz"));
   code.setVarnames(*varnames);
   code.setNlocals(3);
   const byte bytecode[] = {

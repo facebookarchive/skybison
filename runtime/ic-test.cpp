@@ -1660,13 +1660,13 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
 
   Tuple names(&scope, runtime_.newTuple(4));
   names.atPut(
-      0, runtime_.internStrFromCStr(thread_, "load_attr_cached_attr_name"));
+      0, Runtime::internStrFromCStr(thread_, "load_attr_cached_attr_name"));
   names.atPut(
-      1, runtime_.internStrFromCStr(thread_, "load_method_cached_attr_name"));
+      1, Runtime::internStrFromCStr(thread_, "load_method_cached_attr_name"));
   names.atPut(
-      2, runtime_.internStrFromCStr(thread_, "load_attr_cached_attr_name2"));
+      2, Runtime::internStrFromCStr(thread_, "load_attr_cached_attr_name2"));
   names.atPut(
-      3, runtime_.internStrFromCStr(thread_, "store_attr_cached_attr_name"));
+      3, Runtime::internStrFromCStr(thread_, "store_attr_cached_attr_name"));
 
   Tuple caches(&scope, runtime_.newTuple(num_caches * kIcPointersPerCache));
   // Caches for LOAD_ATTR_CACHED at 2.
@@ -1729,7 +1729,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   EXPECT_FALSE(it.isBinaryOpCache());
   Str load_attr_cached_attr_name(
       &scope,
-      runtime_.internStrFromCStr(thread_, "load_attr_cached_attr_name"));
+      Runtime::internStrFromCStr(thread_, "load_attr_cached_attr_name"));
   EXPECT_TRUE(it.isAttrNameEqualTo(load_attr_cached_attr_name));
   EXPECT_EQ(it.layoutId(), Bool::trueObj().layoutId());
   EXPECT_TRUE(it.isInstanceAttr());
@@ -1748,7 +1748,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   EXPECT_FALSE(it.isBinaryOpCache());
   Str load_method_cached_attr_name(
       &scope,
-      runtime_.internStrFromCStr(thread_, "load_method_cached_attr_name"));
+      Runtime::internStrFromCStr(thread_, "load_method_cached_attr_name"));
   EXPECT_TRUE(it.isAttrNameEqualTo(load_method_cached_attr_name));
   EXPECT_EQ(it.layoutId(), SmallInt::fromWord(100).layoutId());
   EXPECT_TRUE(it.isInstanceAttr());
@@ -1759,7 +1759,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   EXPECT_FALSE(it.isBinaryOpCache());
   Str store_attr_cached_attr_name(
       &scope,
-      runtime_.internStrFromCStr(thread_, "store_attr_cached_attr_name"));
+      Runtime::internStrFromCStr(thread_, "store_attr_cached_attr_name"));
   EXPECT_TRUE(it.isAttrNameEqualTo(store_attr_cached_attr_name));
   EXPECT_EQ(it.layoutId(), NoneType::object().layoutId());
   EXPECT_TRUE(it.isInstanceAttr());
@@ -1775,7 +1775,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   ASSERT_TRUE(it.isAttrCache());
   EXPECT_FALSE(it.isBinaryOpCache());
   Str for_iter_cached_attr_name(
-      &scope, runtime_.internStrFromCStr(thread_, "__next__"));
+      &scope, Runtime::internStrFromCStr(thread_, "__next__"));
   EXPECT_TRUE(it.isAttrNameEqualTo(for_iter_cached_attr_name));
   EXPECT_EQ(it.layoutId(), Str::empty().layoutId());
   EXPECT_TRUE(it.isInstanceAttr());
@@ -1785,7 +1785,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   ASSERT_TRUE(it.isAttrCache());
   EXPECT_FALSE(it.isBinaryOpCache());
   Str binary_subscr_cached_attr_name(
-      &scope, runtime_.internStrFromCStr(thread_, "__getitem__"));
+      &scope, Runtime::internStrFromCStr(thread_, "__getitem__"));
   EXPECT_TRUE(it.isAttrNameEqualTo(binary_subscr_cached_attr_name));
   EXPECT_EQ(it.layoutId(), runtime_.emptyTuple().layoutId());
   EXPECT_TRUE(it.isInstanceAttr());

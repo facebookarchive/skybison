@@ -710,7 +710,7 @@ RawObject typeGetAttributeSetLocation(Thread* thread, const Type& type,
   // TODO(T53626118) Raise an exception when `name_str` is a string subclass
   // that overrides `__eq__` or `__hash__`.
   Str name_underlying(&scope, strUnderlying(*name_str));
-  Str name_interned(&scope, runtime->internStr(thread, name_underlying));
+  Str name_interned(&scope, Runtime::internStr(thread, name_underlying));
   Object result(&scope, instanceGetAttributeSetLocation(
                             thread, type, name_interned, location_out));
   if (!result.isError()) {
@@ -803,7 +803,8 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
       if (!key_obj.isStr()) {
         return thread->raiseRequiresType(key_obj, SymbolId::kStr);
       }
-      key = runtime->internStr(thread, key_obj);
+      key = *key_obj;
+      key = Runtime::internStr(thread, key);
       typeAtPut(thread, type, key, value);
     }
   }
@@ -1105,7 +1106,7 @@ RawObject TypeBuiltins::dunderSetattr(Thread* thread, Frame* frame,
   }
   // dict.__setattr__ is special in that it must copy and intern the name.
   Str name_str(&scope, strUnderlying(*name));
-  Str interned_name(&scope, runtime->internStr(thread, name_str));
+  Str interned_name(&scope, Runtime::internStr(thread, name_str));
   Object value(&scope, args.get(2));
   return typeSetAttr(thread, self, interned_name, value);
 }

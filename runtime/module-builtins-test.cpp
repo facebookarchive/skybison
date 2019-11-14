@@ -346,7 +346,7 @@ TEST_F(ModuleBuiltinsTest, ModuleSetAttrSetsAttribute) {
   HandleScope scope(thread_);
   Object module_name(&scope, runtime_.newStrFromCStr("foo"));
   Module module(&scope, runtime_.newModule(module_name));
-  Object name(&scope, runtime_.internStrFromCStr(thread_, "bar"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   word hash = strHash(thread_, *name);
   Object value(&scope, runtime_.newInt(-543));
   EXPECT_TRUE(moduleSetAttr(thread_, module, name, hash, value).isNoneType());

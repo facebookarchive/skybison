@@ -717,7 +717,7 @@ TEST_F(TrampolinesTest, InterpreterClosureUsesArgOverCellValue) {
   word nlocals = 1;
   Tuple varnames(&scope, runtime_.newTuple(nlocals));
   Tuple cellvars(&scope, runtime_.newTuple(1));
-  Str bar(&scope, runtime_.internStrFromCStr(thread_, "bar"));
+  Str bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   varnames.atPut(0, *bar);
   cellvars.atPut(0, *bar);
   const byte bytecode[] = {LOAD_CLOSURE, 0, LOAD_DEREF, 0, RETURN_VALUE, 0};
@@ -779,12 +779,12 @@ static RawObject makeFunctionWithPosOnlyArg(Thread* thread) {
   //     return (a, b)
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Str name(&scope, runtime->internStrFromCStr(thread, "foo"));
+  Str name(&scope, Runtime::internStrFromCStr(thread, "foo"));
   const byte bytecode[] = {LOAD_FAST,   0, LOAD_FAST,    1,
                            BUILD_TUPLE, 2, RETURN_VALUE, 0};
   Tuple varnames(&scope, runtime->newTuple(2));
-  varnames.atPut(0, runtime->internStrFromCStr(thread, "a"));
-  varnames.atPut(1, runtime->internStrFromCStr(thread, "b"));
+  varnames.atPut(0, Runtime::internStrFromCStr(thread, "a"));
+  varnames.atPut(1, Runtime::internStrFromCStr(thread, "b"));
   Bytes bc(&scope, runtime->newBytesWithAll(bytecode));
   Object empty_tuple(&scope, runtime->emptyTuple());
   Object empty_str(&scope, Str::empty());
@@ -814,8 +814,8 @@ TEST_F(TrampolinesTest, KeywordCallRejectsPositionalOnlyArgumentNames) {
   frame->pushValue(runtime_.newInt(2));
   frame->pushValue(runtime_.newInt(4));
   Tuple keywords(&scope, runtime_.newTuple(2));
-  keywords.atPut(0, runtime_.internStrFromCStr(thread_, "a"));
-  keywords.atPut(1, runtime_.internStrFromCStr(thread_, "b"));
+  keywords.atPut(0, Runtime::internStrFromCStr(thread_, "a"));
+  keywords.atPut(1, Runtime::internStrFromCStr(thread_, "b"));
   frame->pushValue(*keywords);
   Object result_obj(&scope, Interpreter::callKw(thread_, frame, 2));
   EXPECT_TRUE(raisedWithStr(*result_obj, LayoutId::kTypeError,
@@ -833,7 +833,7 @@ TEST_F(TrampolinesTest, KeywordCallAcceptsNonPositionalOnlyArgumentNames) {
   frame->pushValue(runtime_.newInt(2));
   frame->pushValue(runtime_.newInt(9));
   Tuple keywords(&scope, runtime_.newTuple(1));
-  keywords.atPut(0, runtime_.internStrFromCStr(thread_, "b"));
+  keywords.atPut(0, Runtime::internStrFromCStr(thread_, "b"));
   frame->pushValue(*keywords);
   Object result_obj(&scope, Interpreter::callKw(thread_, frame, 2));
   ASSERT_TRUE(result_obj.isTuple());
@@ -849,14 +849,14 @@ TEST_F(TrampolinesTest, KeywordCallWithPositionalOnlyArgumentsAndVarKeyArgs) {
   // Create:
   //   def foo(a, b=7, /, c=10, **kwargs):
   //     return (a, b, c, kwargs)
-  Str name(&scope, runtime_.internStrFromCStr(thread_, "foo"));
+  Str name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   const byte bytecode[] = {LOAD_FAST, 0, LOAD_FAST,   1, LOAD_FAST,    2,
                            LOAD_FAST, 3, BUILD_TUPLE, 4, RETURN_VALUE, 0};
   Tuple varnames(&scope, runtime_.newTuple(4));
-  varnames.atPut(0, runtime_.internStrFromCStr(thread_, "a"));
-  varnames.atPut(1, runtime_.internStrFromCStr(thread_, "b"));
-  varnames.atPut(2, runtime_.internStrFromCStr(thread_, "c"));
-  varnames.atPut(3, runtime_.internStrFromCStr(thread_, "kwargs"));
+  varnames.atPut(0, Runtime::internStrFromCStr(thread_, "a"));
+  varnames.atPut(1, Runtime::internStrFromCStr(thread_, "b"));
+  varnames.atPut(2, Runtime::internStrFromCStr(thread_, "c"));
+  varnames.atPut(3, Runtime::internStrFromCStr(thread_, "kwargs"));
   Bytes bc(&scope, runtime_.newBytesWithAll(bytecode));
   Object empty_tuple(&scope, runtime_.emptyTuple());
   Object empty_str(&scope, Str::empty());
@@ -888,8 +888,8 @@ TEST_F(TrampolinesTest, KeywordCallWithPositionalOnlyArgumentsAndVarKeyArgs) {
   frame->pushValue(runtime_.newInt(13));
   frame->pushValue(runtime_.newInt(5));
   Tuple keywords(&scope, runtime_.newTuple(2));
-  keywords.atPut(0, runtime_.internStrFromCStr(thread_, "c"));
-  keywords.atPut(1, runtime_.internStrFromCStr(thread_, "b"));
+  keywords.atPut(0, Runtime::internStrFromCStr(thread_, "c"));
+  keywords.atPut(1, Runtime::internStrFromCStr(thread_, "b"));
   frame->pushValue(*keywords);
   Object result_obj(&scope, Interpreter::callKw(thread_, frame, 3));
 
@@ -903,7 +903,7 @@ TEST_F(TrampolinesTest, KeywordCallWithPositionalOnlyArgumentsAndVarKeyArgs) {
   ASSERT_TRUE(result.at(3).isDict());
   Dict result_dict(&scope, result.at(3));
   EXPECT_EQ(result_dict.numItems(), 1);
-  Str b_name(&scope, runtime_.internStrFromCStr(thread_, "b"));
+  Str b_name(&scope, Runtime::internStrFromCStr(thread_, "b"));
   EXPECT_TRUE(isIntEqualsWord(dictAtByStr(thread_, result_dict, b_name), 5));
 }
 

@@ -225,7 +225,7 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
     // TODO(T53626118) Raise an exception when `name_str` is a string subclass
     // that overrides `__eq__` or `__hash__`.
     Str name_underlying(&scope, strUnderlying(*name_str));
-    Str name_interned(&scope, runtime->internStr(thread, name_underlying));
+    Str name_interned(&scope, Runtime::internStr(thread, name_underlying));
     Object result(&scope, instanceGetAttributeSetLocation(
                               thread, instance, name_interned, location_out));
     if (!result.isError()) {
@@ -308,7 +308,7 @@ RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
     // TODO(T53626118) Raise an exception when `name_str` is a string subclass
     // that overrides `__eq__` or `__hash__`.
     Str name_underlying(&scope, strUnderlying(*name_str));
-    Str name_interned(&scope, runtime->internStr(thread, name_underlying));
+    Str name_interned(&scope, Runtime::internStr(thread, name_underlying));
     return instanceSetAttrSetLocation(thread, instance, name_interned, value,
                                       location_out);
   }
@@ -412,7 +412,7 @@ void ObjectBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
                 /*argcount=*/2, /*posonlyargcount=*/2, /*kwonlyargcount=*/0,
                 /*flags=*/0, dunderGetattribute, parameter_names, name));
   Object qualname(
-      &scope, runtime->internStrFromCStr(thread, "object.__getattribute__"));
+      &scope, Runtime::internStrFromCStr(thread, "object.__getattribute__"));
   Object module_obj(&scope, NoneType::object());
   Function dunder_getattribute(
       &scope, runtime->newFunctionWithCode(thread, qualname, code, module_obj));

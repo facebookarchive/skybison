@@ -142,7 +142,7 @@ PY_EXPORT PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc* desc) {
   Tuple field_names(&scope, runtime->newTuple(num_fields));
   for (word i = 0; i < num_fields; i++) {
     field_names.atPut(i,
-                      runtime->internStrFromCStr(thread, desc->fields[i].name));
+                      Runtime::internStrFromCStr(thread, desc->fields[i].name));
   }
   dictAtPutById(thread, dict, SymbolId::kUnderStructseqFieldNames, field_names);
 

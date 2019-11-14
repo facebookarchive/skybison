@@ -1344,22 +1344,28 @@ RawObject Runtime::newStrWithAll(View<byte> code_units) {
   return result;
 }
 
-RawObject Runtime::internStrFromCStr(Thread* thread, const char* c_str) {
+RawObject Runtime::internLargeStr(Thread* thread, const Object& str) {
+  DCHECK(str.isLargeStr(), "not a string");
   HandleScope scope(thread);
-  // TODO(T29648342): Optimize lookup to avoid creating an intermediary Str
-  Object str(&scope, newStrFromCStr(c_str));
-  return internStr(thread, str);
+  Runtime* runtime = thread->runtime();
+  Set set(&scope, runtime->interned());
+  word hash = runtime->valueHash(*str);
+  return setAdd(thread, set, str, hash);
 }
 
-RawObject Runtime::internStr(Thread* thread, const Object& str) {
-  HandleScope scope(thread);
-  Set set(&scope, interned());
-  DCHECK(str.isStr(), "not a string");
-  if (str.isSmallStr()) {
-    return *str;
+RawObject Runtime::internStrFromAll(Thread* thread, View<byte> bytes) {
+  if (bytes.length() <= SmallStr::kMaxLength) {
+    return SmallStr::fromBytes(bytes);
   }
-  word hash = strHash(thread, *str);
-  return setAdd(thread, set, str, hash);
+  HandleScope scope(thread);
+  // TODO(T29648342): Optimize lookup to avoid creating an intermediary Str
+  Str str(&scope, thread->runtime()->newStrWithAll(bytes));
+  return internLargeStr(thread, str);
+}
+
+RawObject Runtime::internStrFromCStr(Thread* thread, const char* c_str) {
+  View<byte> bytes(reinterpret_cast<const byte*>(c_str), std::strlen(c_str));
+  return internStrFromAll(thread, bytes);
 }
 
 bool Runtime::isInternedStr(Thread* thread, const Object& str) {
@@ -1368,7 +1374,7 @@ bool Runtime::isInternedStr(Thread* thread, const Object& str) {
   }
   DCHECK(str.isLargeStr(), "expected small or large str");
   HandleScope scope(thread);
-  Set set(&scope, interned());
+  Set set(&scope, thread->runtime()->interned());
   Tuple data(&scope, set.data());
   word hash = strHash(thread, *str);
   word index = setLookup(thread, data, str, hash);
@@ -2137,7 +2143,7 @@ void Runtime::initializeSymbols() {
   symbols_ = new Symbols(this);
   for (int i = 0; i < static_cast<int>(SymbolId::kMaxId); i++) {
     SymbolId id = static_cast<SymbolId>(i);
-    Object symbol(&scope, symbols()->at(id));
+    Str symbol(&scope, symbols()->at(id));
     internStr(thread, symbol);
   }
 }
