@@ -2299,15 +2299,17 @@ Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg) {
   Object value(&scope, frame->popValue());
 
   Object location(&scope, NoneType::object());
+  LayoutId saved_layout_id = receiver.layoutId();
   Object result(&scope,
                 storeAttrSetLocation(thread, receiver, name, value, &location));
   if (result.isError()) return Continue::UNWIND;
   if (!location.isNoneType()) {
     Tuple caches(&scope, frame->caches());
-    // Type receiver_type(&scope, thread->runtime()->typeOf(*receiver));
     Function dependent(&scope, frame->function());
-    icUpdateAttr(thread, caches, arg, receiver.layoutId(), location, name,
-                 dependent);
+    if (saved_layout_id == receiver.layoutId()) {
+      icUpdateAttr(thread, caches, arg, receiver.layoutId(), location, name,
+                   dependent);
+    }
   }
   return Continue::NEXT;
 }

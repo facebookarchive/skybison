@@ -289,9 +289,8 @@ class B:
   EXPECT_TRUE(
       icLookupAttr(*caches, 1, cached_object.layoutId()).isErrorNotFound());
   // The dependency for cache_a_foo gets deleted.
-  EXPECT_NE(WeakLink::cast(dependencyLinkOfTypeAttr(thread_, type_a, "foo"))
-                .referent(),
-            *cache_a_foo);
+  EXPECT_FALSE(icDependentIncluded(
+      *cache_a_foo, dependencyLinkOfTypeAttr(thread_, type_a, "foo")));
 }
 
 TEST_F(IcTest, IcEvictBinaryOpEvictsCacheForUpdateToLeftOperandType) {
