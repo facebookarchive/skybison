@@ -331,14 +331,15 @@ TEST_F(UnicodeExtensionApiTest,
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
-TEST_F(UnicodeExtensionApiTest,
-       AsWideCharStringWithNonASCIIStringReturnsNullTerminatedBuffer) {
-  PyObjectPtr unicode(PyUnicode_FromString("ab\xc3\xa5"));
+TEST_F(
+    UnicodeExtensionApiTest,
+    AsWideCharStringWithNonASCIICodePointReturnsNullTerminatedWideCharString) {
+  PyObjectPtr unicode(PyUnicode_FromString("a\xc3\xa5z"));
   wchar_t* wide_string = _PyUnicode_AsWideCharString(unicode);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ('a', wide_string[0]);
-  EXPECT_EQ('b', wide_string[1]);
-  EXPECT_EQ(0xe5, wide_string[2]);
+  EXPECT_EQ(0xe5, wide_string[1]);
+  EXPECT_EQ('z', wide_string[2]);
   EXPECT_EQ(0, wide_string[3]);
   PyMem_Free(wide_string);
 }

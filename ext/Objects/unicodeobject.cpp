@@ -914,19 +914,17 @@ PY_EXPORT wchar_t* _PyUnicode_AsWideCharString(PyObject* unicode) {
   word len = unicode_str.codePointLength();
   wchar_t* buf =
       static_cast<wchar_t*>(PyMem_Malloc((len + 1) * sizeof(wchar_t)));
-  for (word i = 0; i < len; ++i) {
-    word temp;
-    int32_t cp = unicode_str.codePointAt(i, &temp);
+  word byte_count = unicode_str.charLength();
+  for (word byte_index = 0, wchar_index = 0, num_bytes = 0;
+       byte_index < byte_count; byte_index += num_bytes, wchar_index += 1) {
+    int32_t cp = unicode_str.codePointAt(byte_index, &num_bytes);
     if (cp == '\0') {
       PyMem_Free(buf);
       thread->raiseWithFmt(LayoutId::kValueError, "embedded null character");
       return nullptr;
     }
-#if !defined(__STDC_ISO_10646__) && !defined(__APPLE__)
-#error Need guarantee that wchar_t contains UTF-32
-#endif
     static_assert(sizeof(wchar_t) == sizeof(cp), "Requires 32bit wchar_t");
-    buf[i] = static_cast<wchar_t>(cp);
+    buf[wchar_index] = static_cast<wchar_t>(cp);
   }
   buf[len] = '\0';
   return buf;
