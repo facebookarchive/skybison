@@ -1344,23 +1344,98 @@ RawObject Runtime::newStrWithAll(View<byte> code_units) {
   return result;
 }
 
+void Runtime::growInternSet(Thread* thread) {
+  HandleScope scope(thread);
+  Tuple old_data(&scope, interned_);
+  word old_capacity = old_data.length();
+  word new_capacity =
+      Utils::maximum(kInitialInternSetCapacity, old_capacity * 2);
+  word new_remaining = (new_capacity * 2) / 3;
+  DCHECK(Utils::isPowerOfTwo(new_capacity), "must be power of two");
+  word mask = new_capacity - 1;
+  MutableTuple new_data(&scope, newMutableTuple(new_capacity));
+  for (word i = 0, length = old_data.length(); i < length; i++) {
+    RawObject slot = old_data.at(i);
+    if (slot.isNoneType()) {
+      continue;
+    }
+    word hash = LargeStr::cast(slot).header().hashCode();
+    word idx = hash & mask;
+    word num_probes = 0;
+    while (!new_data.at(idx).isNoneType()) {
+      num_probes++;
+      idx = (idx + num_probes) & mask;
+    }
+    new_data.atPut(idx, slot);
+    new_remaining--;
+  }
+  DCHECK(new_remaining > 0, "must have remaining slots");
+  interned_ = *new_data;
+  interned_remaining_ = new_remaining;
+}
+
 RawObject Runtime::internLargeStr(Thread* thread, const Object& str) {
   DCHECK(str.isLargeStr(), "not a string");
-  HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Set set(&scope, runtime->interned());
+
+  RawMutableTuple data = MutableTuple::cast(runtime->interned_);
   word hash = runtime->valueHash(*str);
-  return setAdd(thread, set, str, hash);
+  word mask = data.length() - 1;
+  word idx = hash & mask;
+  word num_probes = 0;
+  for (;;) {
+    RawObject slot = data.at(idx);
+    if (slot == str) {
+      return *str;
+    }
+    if (slot.isNoneType()) {
+      data.atPut(idx, *str);
+      if (--runtime->interned_remaining_ == 0) {
+        runtime->growInternSet(thread);
+      }
+      return *str;
+    }
+    if (LargeStr::cast(slot).equals(*str)) {
+      return slot;
+    }
+
+    num_probes++;
+    idx = (idx + num_probes) & mask;
+  }
 }
 
 RawObject Runtime::internStrFromAll(Thread* thread, View<byte> bytes) {
   if (bytes.length() <= SmallStr::kMaxLength) {
     return SmallStr::fromBytes(bytes);
   }
-  HandleScope scope(thread);
-  // TODO(T29648342): Optimize lookup to avoid creating an intermediary Str
-  Str str(&scope, thread->runtime()->newStrWithAll(bytes));
-  return internLargeStr(thread, str);
+
+  Runtime* runtime = thread->runtime();
+  RawMutableTuple data = MutableTuple::cast(runtime->interned_);
+  word hash = runtime->siphash24(bytes);
+  hash &= RawHeader::kHashCodeMask;
+  hash = (hash == RawHeader::kUninitializedHash) ? hash + 1 : hash;
+
+  word mask = data.length() - 1;
+  word idx = hash & mask;
+  word num_probes = 0;
+  for (;;) {
+    RawObject slot = data.at(idx);
+    if (slot.isNoneType()) {
+      RawLargeStr new_str = LargeStr::cast(runtime->newStrWithAll(bytes));
+      new_str.setHeader(new_str.header().withHashCode(hash));
+      MutableTuple::cast(runtime->interned_).atPut(idx, new_str);
+      if (--runtime->interned_remaining_ == 0) {
+        runtime->growInternSet(thread);
+      }
+      return new_str;
+    }
+    if (LargeStr::cast(slot).equalsBytes(bytes)) {
+      return slot;
+    }
+
+    num_probes++;
+    idx = (idx + num_probes) & mask;
+  }
 }
 
 RawObject Runtime::internStrFromCStr(Thread* thread, const char* c_str) {
@@ -1373,15 +1448,26 @@ bool Runtime::isInternedStr(Thread* thread, const Object& str) {
     return true;
   }
   DCHECK(str.isLargeStr(), "expected small or large str");
-  HandleScope scope(thread);
-  Set set(&scope, thread->runtime()->interned());
-  Tuple data(&scope, set.data());
-  word hash = strHash(thread, *str);
-  word index = setLookup(thread, data, str, hash);
-  if (index < 0) {
+  Runtime* runtime = thread->runtime();
+  RawTuple data = Tuple::cast(runtime->interned_);
+  word hash = LargeStr::cast(*str).header().hashCode();
+  if (hash == Header::kUninitializedHash) {
     return false;
   }
-  return SetBase::Bucket::value(*data, index) == str;
+  word mask = data.length() - 1;
+  word idx = hash & mask;
+  word num_probes = 0;
+  for (;;) {
+    RawObject slot = data.at(idx);
+    if (slot == str) {
+      return true;
+    }
+    if (slot.isNoneType()) {
+      return false;
+    }
+    num_probes++;
+    idx = (idx + num_probes) & mask;
+  }
 }
 
 word Runtime::hash(RawObject object) {
@@ -2099,7 +2185,11 @@ void Runtime::initializeImplicitBases() {
   Tuple::cast(implicit_bases_).atPut(0, typeAt(LayoutId::kObject));
 }
 
-void Runtime::initializeInterned() { interned_ = newSet(); }
+void Runtime::initializeInterned() {
+  interned_ = emptyTuple();
+  interned_remaining_ = 0;
+  growInternSet(Thread::current());
+}
 
 void Runtime::initializeRandom() {
   uword random_state[2];

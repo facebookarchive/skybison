@@ -54,8 +54,8 @@ static word setLookupImpl(Thread* thread, const Tuple& data, const Object& key,
   return -1;
 }
 
-word setLookup(Thread* thread, const Tuple& data, const Object& key,
-               word hash) {
+static word setLookup(Thread* thread, const Tuple& data, const Object& key,
+                      word hash) {
   return setLookupImpl<SetLookupType::Lookup>(thread, data, key, hash);
 }
 

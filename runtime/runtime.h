@@ -393,8 +393,6 @@ class Runtime {
 
   RawObject dunderImport() { return dunder_import_; }
 
-  RawObject interned() { return interned_; }
-
   RawObject modules() { return modules_; }
 
   RawObject apiHandles() { return api_handles_; }
@@ -648,6 +646,8 @@ class Runtime {
   static const int kSetGrowthFactor = 2;
   static const int kInitialSetCapacity = 8;
 
+  static const word kInitialInternSetCapacity = 8192;
+
   // Explicitly seed the random number generator
   void seedRandom(const uword random_state[2], const uword hash_secret[2]);
 
@@ -803,6 +803,7 @@ class Runtime {
   word identityHash(RawObject object);
   word immediateHash(RawObject object);
 
+  void growInternSet(Thread* thread);
   static RawObject internLargeStr(Thread* thread, const Object& str);
 
   RawObject createMro(const Layout& subclass_layout, LayoutId superclass_id);
@@ -950,6 +951,7 @@ class Runtime {
 
   // Interned strings
   RawObject interned_ = NoneType::object();
+  word interned_remaining_ = 0;
 
   // Modules
   RawObject modules_ = NoneType::object();

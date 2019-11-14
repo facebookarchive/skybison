@@ -868,23 +868,15 @@ TEST_F(RuntimeTest, NewCapacity) {
 TEST_F(RuntimeTest, InternLargeStr) {
   HandleScope scope(thread_);
 
-  Set interned(&scope, runtime_.interned());
-
   // Creating an ordinary large string should not affect on the intern table.
-  word num_interned = interned.numItems();
   Str str1(&scope, runtime_.newStrFromCStr("hello, world"));
   ASSERT_TRUE(str1.isLargeStr());
-  EXPECT_EQ(num_interned, interned.numItems());
-  EXPECT_FALSE(setIncludes(thread_, interned, str1));
   EXPECT_FALSE(runtime_.isInternedStr(thread_, str1));
 
   // Interning the string should add it to the intern table and increase the
   // size of the intern table by one.
-  num_interned = interned.numItems();
   Object sym1(&scope, Runtime::internStr(thread_, str1));
-  EXPECT_TRUE(setIncludes(thread_, interned, str1));
   EXPECT_EQ(*sym1, *str1);
-  EXPECT_EQ(num_interned + 1, interned.numItems());
   EXPECT_TRUE(runtime_.isInternedStr(thread_, str1));
 
   Str str2(&scope, runtime_.newStrFromCStr("goodbye, world"));
@@ -893,10 +885,7 @@ TEST_F(RuntimeTest, InternLargeStr) {
 
   // Intern another string and make sure we get it back (as opposed to the
   // previously interned string).
-  num_interned = interned.numItems();
   Str sym2(&scope, Runtime::internStr(thread_, str2));
-  EXPECT_EQ(num_interned + 1, interned.numItems());
-  EXPECT_TRUE(setIncludes(thread_, interned, str2));
   EXPECT_EQ(*sym2, *str2);
   EXPECT_NE(*sym1, *sym2);
 
@@ -904,13 +893,10 @@ TEST_F(RuntimeTest, InternLargeStr) {
   Str str3(&scope, runtime_.newStrFromCStr("hello, world"));
   ASSERT_TRUE(str3.isLargeStr());
   EXPECT_NE(*str1, *str3);
-  EXPECT_TRUE(setIncludes(thread_, interned, str3));
   EXPECT_FALSE(runtime_.isInternedStr(thread_, str3));
 
   // Interning a duplicate string should not affecct the intern table.
-  num_interned = interned.numItems();
   Object sym3(&scope, Runtime::internStr(thread_, str3));
-  EXPECT_EQ(num_interned, interned.numItems());
   EXPECT_NE(*sym3, *str3);
   EXPECT_EQ(*sym3, *sym1);
 }
@@ -918,20 +904,13 @@ TEST_F(RuntimeTest, InternLargeStr) {
 TEST_F(RuntimeTest, InternSmallStr) {
   HandleScope scope(thread_);
 
-  Set interned(&scope, runtime_.interned());
-
   // Creating a small string should not affect the intern table.
-  word num_interned = interned.numItems();
   Str str(&scope, runtime_.newStrFromCStr("a"));
   ASSERT_TRUE(str.isSmallStr());
-  EXPECT_FALSE(setIncludes(thread_, interned, str));
-  EXPECT_EQ(num_interned, interned.numItems());
 
   // Interning a small string should have no affect on the intern table.
   Object sym(&scope, Runtime::internStr(thread_, str));
   EXPECT_TRUE(sym.isSmallStr());
-  EXPECT_FALSE(setIncludes(thread_, interned, str));
-  EXPECT_EQ(num_interned, interned.numItems());
   EXPECT_EQ(*sym, *str);
   EXPECT_TRUE(runtime_.isInternedStr(thread_, str));
 }
@@ -939,13 +918,8 @@ TEST_F(RuntimeTest, InternSmallStr) {
 TEST_F(RuntimeTest, InternCStr) {
   HandleScope scope(thread_);
 
-  Set interned(&scope, runtime_.interned());
-
-  word num_interned = interned.numItems();
   Str sym(&scope, Runtime::internStrFromCStr(thread_, "hello, world"));
   EXPECT_TRUE(sym.isStr());
-  EXPECT_TRUE(setIncludes(thread_, interned, sym));
-  EXPECT_EQ(num_interned + 1, interned.numItems());
   EXPECT_TRUE(runtime_.isInternedStr(thread_, sym));
 }
 

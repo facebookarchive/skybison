@@ -1391,6 +1391,7 @@ class RawLargeStr : public RawArrayBase {
 
   // Equality checks.
   bool equals(RawObject that) const;
+  bool equalsBytes(View<byte> bytes) const;
 
   // Codepoints
   word codePointLength() const;

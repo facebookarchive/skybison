@@ -36,8 +36,6 @@ RawObject setCopy(Thread* thread, const SetBase& set);
 // Returns true if set and other contain the same set of values
 bool setEquals(Thread* thread, const SetBase& set, const SetBase& other);
 
-word setLookup(Thread* thread, const Tuple& data, const Object& key, word hash);
-
 // Returns true if every element of set is in other
 // and the elements in set and other are not the same.
 // This is analogous to the < operator on Python sets.

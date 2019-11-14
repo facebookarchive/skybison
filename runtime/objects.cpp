@@ -185,6 +185,15 @@ bool RawLargeStr::equals(RawObject that) const {
   return std::memcmp(s1, s2, length()) == 0;
 }
 
+bool RawLargeStr::equalsBytes(View<byte> bytes) const {
+  word length = this->length();
+  if (bytes.length() != length) {
+    return false;
+  }
+  const void* chars = reinterpret_cast<const void*>(address());
+  return std::memcmp(chars, bytes.data(), length) == 0;
+}
+
 void RawLargeStr::copyTo(byte* dst, word length) const {
   DCHECK_BOUND(length, this->length());
   std::memcpy(dst, reinterpret_cast<const byte*>(address()), length);
