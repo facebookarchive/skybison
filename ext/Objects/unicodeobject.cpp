@@ -898,6 +898,26 @@ PY_EXPORT Py_ssize_t PyUnicode_AsWideChar(PyObject* /* e */, wchar_t* /* w */,
   UNIMPLEMENTED("PyUnicode_AsWideChar");
 }
 
+static wchar_t* unicodeAsWideChar(Thread* thread, const Str& str) {
+  word len = str.codePointLength();
+  wchar_t* buf =
+      static_cast<wchar_t*>(PyMem_Malloc((len + 1) * sizeof(wchar_t)));
+  word byte_count = str.charLength();
+  for (word byte_index = 0, wchar_index = 0, num_bytes = 0;
+       byte_index < byte_count; byte_index += num_bytes, wchar_index += 1) {
+    int32_t cp = str.codePointAt(byte_index, &num_bytes);
+    if (cp == '\0') {
+      PyMem_Free(buf);
+      thread->raiseWithFmt(LayoutId::kValueError, "embedded null character");
+      return nullptr;
+    }
+    static_assert(sizeof(wchar_t) == sizeof(cp), "Requires 32bit wchar_t");
+    buf[wchar_index] = static_cast<wchar_t>(cp);
+  }
+  buf[len] = '\0';
+  return buf;
+}
+
 PY_EXPORT wchar_t* _PyUnicode_AsWideCharString(PyObject* unicode) {
   Thread* thread = Thread::current();
   if (unicode == nullptr) {
@@ -911,23 +931,7 @@ PY_EXPORT wchar_t* _PyUnicode_AsWideCharString(PyObject* unicode) {
     return nullptr;
   }
   Str unicode_str(&scope, strUnderlying(*unicode_obj));
-  word len = unicode_str.codePointLength();
-  wchar_t* buf =
-      static_cast<wchar_t*>(PyMem_Malloc((len + 1) * sizeof(wchar_t)));
-  word byte_count = unicode_str.charLength();
-  for (word byte_index = 0, wchar_index = 0, num_bytes = 0;
-       byte_index < byte_count; byte_index += num_bytes, wchar_index += 1) {
-    int32_t cp = unicode_str.codePointAt(byte_index, &num_bytes);
-    if (cp == '\0') {
-      PyMem_Free(buf);
-      thread->raiseWithFmt(LayoutId::kValueError, "embedded null character");
-      return nullptr;
-    }
-    static_assert(sizeof(wchar_t) == sizeof(cp), "Requires 32bit wchar_t");
-    buf[wchar_index] = static_cast<wchar_t>(cp);
-  }
-  buf[len] = '\0';
-  return buf;
+  return unicodeAsWideChar(thread, unicode_str);
 }
 
 PY_EXPORT wchar_t* PyUnicode_AsWideCharString(PyObject* /* e */,
@@ -2128,9 +2132,30 @@ PY_EXPORT PyObject* _PyUnicode_AsUTF8String(PyObject* unicode,
   return ApiHandle::newReference(thread, tuple.at(0));
 }
 
-PY_EXPORT wchar_t* _Py_DecodeUTF8_surrogateescape(const char* /* s */,
-                                                  Py_ssize_t /* size */) {
-  UNIMPLEMENTED("_Py_DecodeUTF8_surrogateescape");
+PY_EXPORT wchar_t* _Py_DecodeUTF8_surrogateescape(const char* c_str,
+                                                  Py_ssize_t size) {
+  DCHECK(c_str != nullptr, "c_str cannot be null");
+
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object bytes(&scope, runtime->newBytesWithAll(View<byte>(
+                           reinterpret_cast<const byte*>(c_str), size)));
+  Object errors(&scope, runtime->symbols()->Surrogateescape());
+  Object is_final(&scope, Bool::trueObj());
+  Object result_obj(&scope, thread->invokeFunction3(SymbolId::kUnderCodecs,
+                                                    SymbolId::kUtf8Decode,
+                                                    bytes, errors, is_final));
+  if (result_obj.isError()) {
+    if (result_obj.isErrorNotFound()) {
+      thread->raiseWithFmt(LayoutId::kSystemError,
+                           "could not call _codecs._utf_8_decode");
+    }
+    return nullptr;
+  }
+  Tuple result(&scope, *result_obj);
+  Str str(&scope, result.at(0));
+  return unicodeAsWideChar(thread, str);
 }
 
 }  // namespace py

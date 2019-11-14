@@ -6,6 +6,7 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
+extern "C" wchar_t* _Py_DecodeUTF8_surrogateescape(const char*, Py_ssize_t);
 extern "C" int _Py_normalize_encoding(const char*, char*, size_t);
 
 namespace py {
@@ -2343,5 +2344,29 @@ TEST_F(UnicodeExtensionApiTest, IsIdentifierWithInvalidIdentifierReturnsFalse) {
   EXPECT_EQ(PyUnicode_IsIdentifier(unicode), 0);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
+
+// TODO(T57404483): Remove this ifdef after targeting CPython 3.7
+#if defined(__APPLE__) || defined(__ANDROID__)
+
+TEST_F(UnicodeExtensionApiTest,
+       DecodeUTF8SurrogateEscapeWithEmptyStringReturnsEmptyString) {
+  wchar_t* wpath = _Py_DecodeUTF8_surrogateescape("", 0);
+  EXPECT_STREQ(wpath, L"");
+}
+
+TEST_F(UnicodeExtensionApiTest, DecodeUTF8SurrogateEscapeReturnsWideString) {
+  const char* path = "/foo/bar/bat";
+  wchar_t* wpath = _Py_DecodeUTF8_surrogateescape(path, std::strlen(path));
+  EXPECT_STREQ(wpath, L"/foo/bar/bat");
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       DecodeUTF8SurrogateEscapeReturnsEscapedNonASCII) {
+  const char* path = "/nonchar/\x82/hello";
+  wchar_t* wpath = _Py_DecodeUTF8_surrogateescape(path, std::strlen(path));
+  EXPECT_STREQ(wpath, L"/nonchar/\xDC82/hello");
+}
+
+#endif  // __APPLE__ or __ANDROID__
 
 }  // namespace py
