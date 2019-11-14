@@ -844,6 +844,11 @@ def _str_guard(obj):
 
 
 @_patch
+def _str_ischr(obj):
+    pass
+
+
+@_patch
 def _str_join(sep, iterable):
     pass
 

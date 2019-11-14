@@ -238,6 +238,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrCount, underStrCount},
     {SymbolId::kUnderStrEndswith, underStrEndsWith},
     {SymbolId::kUnderStrGuard, underStrGuard},
+    {SymbolId::kUnderStrIsChr, underStrIsChr},
     {SymbolId::kUnderStrJoin, underStrJoin},
     {SymbolId::kUnderStrEscapeNonAscii, underStrEscapeNonAscii},
     {SymbolId::kUnderStrFind, underStrFind},
@@ -3325,6 +3326,13 @@ RawObject UnderBuiltinsModule::underStrGuard(Thread* thread, Frame* frame,
     return NoneType::object();
   }
   return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kStr);
+}
+
+RawObject UnderBuiltinsModule::underStrIsChr(Thread*, Frame* frame,
+                                             word nargs) {
+  Arguments args(frame, nargs);
+  RawStr str = strUnderlying(args.get(0));
+  return Bool::fromBool(str.isSmallStr() && str.codePointLength() == 1);
 }
 
 RawObject UnderBuiltinsModule::underStrJoin(Thread* thread, Frame* frame,

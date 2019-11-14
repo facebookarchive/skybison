@@ -164,11 +164,12 @@ _str_check = _str_check  # noqa: F821
 _str_checkexact = _str_checkexact  # noqa: F821
 _str_count = _str_count  # noqa: F821
 _str_endswith = _str_endswith  # noqa: F821
-_str_guard = _str_guard  # noqa: F821
-_str_join = _str_join  # noqa: F821
 _str_escape_non_ascii = _str_escape_non_ascii  # noqa: F821
 _str_find = _str_find  # noqa: F821
 _str_from_str = _str_from_str  # noqa: F821
+_str_guard = _str_guard  # noqa: F821
+_str_ischr = _str_ischr  # noqa: F821
+_str_join = _str_join  # noqa: F821
 _str_len = _str_len  # noqa: F821
 _str_partition = _str_partition  # noqa: F821
 _str_replace = _str_replace  # noqa: F821
@@ -4661,8 +4662,37 @@ class str(bootstrap=True):
         pass
 
     @staticmethod
-    def maketrans(x, y=None, z=None):
-        _unimplemented()
+    def maketrans(frm, to=_Unbound, to_none=_Unbound):
+        result = {}
+        if to is _Unbound:
+            _dict_guard(frm)
+            for key, value in frm.items():
+                if _str_check(key) and _str_ischr(key):
+                    key = ord(key)
+                elif not _int_check(key):
+                    raise TypeError("keys in translate table must be str or int")
+                _dict_setitem(result, key, value)
+            return result
+
+        _str_guard(frm)
+        _str_guard(to)
+        frm_iter = iter(frm)
+        to_iter = iter(to)
+        while True:
+            key = next(frm_iter, None)
+            value = next(to_iter, None)
+            if key is None and value is None:
+                break
+            elif key is None or value is None:
+                raise ValueError(
+                    "The first two maketrans arguments must have equal length"
+                )
+            _dict_setitem(result, ord(key), ord(value))
+
+        if to_none is not _Unbound:
+            for ch in to_none:
+                _dict_setitem(result, ord(ch), None)
+        return result
 
     def partition(self, sep):
         _str_guard(self)

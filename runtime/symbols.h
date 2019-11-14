@@ -412,6 +412,7 @@ class Runtime;
   V(UnderStrCount, "_str_count")                                               \
   V(UnderStrEndswith, "_str_endswith")                                         \
   V(UnderStrGuard, "_str_guard")                                               \
+  V(UnderStrIsChr, "_str_ischr")                                               \
   V(UnderStrJoin, "_str_join")                                                 \
   V(UnderStrEscapeNonAscii, "_str_escape_non_ascii")                           \
   V(UnderStrFind, "_str_find")                                                 \

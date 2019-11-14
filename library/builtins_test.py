@@ -7207,6 +7207,52 @@ class StrTests(unittest.TestCase):
         table = {97: "def"}
         self.assertEqual(original.translate(table), expected)
 
+    def test_maketrans_dict_with_non_str_or_int_keys_raises_type_error(self):
+        with self.assertRaisesRegex(TypeError, "translate table must be"):
+            str.maketrans({123.456: 2})
+
+    def test_maketrans_dict_with_int_key_returns_translation_table(self):
+        result = str.maketrans({97: 2})
+        expected = {97: 2}
+        self.assertEqual(result, expected)
+
+    def test_maketrans_dict_with_str_subtype_key_returns_translation_table(self):
+        class substr(str):
+            pass
+
+        result = str.maketrans({substr("a"): 2})
+        expected = {97: 2}
+        self.assertEqual(result, expected)
+
+    def test_maketrans_with_dict_returns_translation_table(self):
+        result = str.maketrans({"a": 2})
+        expected = {97: 2}
+        self.assertEqual(result, expected)
+
+    def test_maketrans_with_non_str_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            str.maketrans(1, "b")
+        with self.assertRaises(TypeError):
+            str.maketrans("a", 98)
+
+    def test_maketrans_with_non_equal_len_str_raises_value_error(self):
+        with self.assertRaisesRegex(ValueError, "equal len"):
+            str.maketrans("a", "ab")
+
+    def test_maketrans_with_str_returns_translation_table(self):
+        result = str.maketrans("abc", "def")
+        expected = {97: 100, 98: 101, 99: 102}
+        self.assertEqual(result, expected)
+
+    def test_maketrans_with_third_arg_non_str_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            str.maketrans("abc", "def", 123)
+
+    def test_maketrans_with_third_arg_returns_translation_table_with_none(self):
+        result = str.maketrans("abc", "def", "cd")
+        expected = {97: 100, 98: 101, 99: None, 100: None}
+        self.assertEqual(result, expected)
+
     def test_dunder_new_with_raising_dunder_str_propagates_exception(self):
         class Desc:
             def __get__(self, obj, type):
