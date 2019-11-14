@@ -163,7 +163,6 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderInstanceDelattr, underInstanceDelattr},
     {SymbolId::kUnderInstanceGetattr, underInstanceGetattr},
     {SymbolId::kUnderInstanceGuard, underInstanceGuard},
-    {SymbolId::kUnderInstanceKeys, underInstanceKeys},
     {SymbolId::kUnderInstanceOverflowDict, underInstanceOverflowDict},
     {SymbolId::kUnderInstanceSetattr, underInstanceSetattr},
     {SymbolId::kUnderIntCheck, underIntCheck},
@@ -203,6 +202,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderModuleProxyLen, underModuleProxyLen},
     {SymbolId::kUnderModuleProxySetitem, underModuleProxySetitem},
     {SymbolId::kUnderModuleProxyValues, underModuleProxyValues},
+    {SymbolId::kUnderObjectKeys, underObjectKeys},
     {SymbolId::kUnderObjectTypeGetattr, underObjectTypeGetAttr},
     {SymbolId::kUnderObjectTypeHasattr, underObjectTypeHasattr},
     {SymbolId::kUnderOsWrite, underOsWrite},
@@ -2085,39 +2085,6 @@ RawObject UnderBuiltinsModule::underInstanceGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kInstance);
 }
 
-RawObject UnderBuiltinsModule::underInstanceKeys(Thread* thread, Frame* frame,
-                                                 word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Instance instance(&scope, args.get(0));
-  Runtime* runtime = thread->runtime();
-  Layout layout(&scope, runtime->layoutAt(instance.layoutId()));
-  List result(&scope, runtime->newList());
-  // Add in-object attributes
-  Tuple in_object(&scope, layout.inObjectAttributes());
-  for (word i = 0, length = in_object.length(); i < length; i++) {
-    Tuple pair(&scope, in_object.at(i));
-    Object name(&scope, pair.at(0));
-    if (name.isNoneType()) continue;
-    runtime->listAdd(thread, result, name);
-  }
-  // Add overflow attributes
-  if (layout.hasTupleOverflow()) {
-    Tuple overflow(&scope, layout.overflowAttributes());
-    for (word i = 0; i < overflow.length(); i++) {
-      Tuple pair(&scope, overflow.at(i));
-      Object name(&scope, pair.at(0));
-      if (name.isNoneType()) continue;
-      runtime->listAdd(thread, result, name);
-    }
-  } else {
-    // Dict overflow should be handled by a __dict__ descriptor on the type,
-    // like `type` or `function`
-    CHECK(layout.overflowAttributes().isNoneType(), "no overflow");
-  }
-  return *result;
-}
-
 RawObject UnderBuiltinsModule::underInstanceOverflowDict(Thread* thread,
                                                          Frame* frame,
                                                          word nargs) {
@@ -2810,6 +2777,44 @@ RawObject UnderBuiltinsModule::underModuleProxyValues(Thread* thread,
   Module module(&scope, self.module());
   DCHECK(module.moduleProxy() == self, "module.proxy != proxy.module");
   return moduleValues(thread, module);
+}
+
+RawObject UnderBuiltinsModule::underObjectKeys(Thread* thread, Frame* frame,
+                                               word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object object(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  Layout layout(&scope, runtime->layoutAt(object.layoutId()));
+  List result(&scope, runtime->newList());
+  // Add in-object attributes
+  Tuple in_object(&scope, layout.inObjectAttributes());
+  word in_object_length = in_object.length();
+  word result_length = in_object_length;
+  if (layout.hasTupleOverflow()) {
+    result_length += Tuple::cast(layout.overflowAttributes()).length();
+  }
+  for (word i = 0; i < in_object_length; i++) {
+    Tuple pair(&scope, in_object.at(i));
+    Object name(&scope, pair.at(0));
+    if (name.isNoneType()) continue;
+    runtime->listAdd(thread, result, name);
+  }
+  // Add overflow attributes
+  if (layout.hasTupleOverflow()) {
+    Tuple overflow(&scope, layout.overflowAttributes());
+    for (word i = 0, length = overflow.length(); i < length; i++) {
+      Tuple pair(&scope, overflow.at(i));
+      Object name(&scope, pair.at(0));
+      if (name.isNoneType()) continue;
+      runtime->listAdd(thread, result, name);
+    }
+  } else {
+    // TODO(T57446141): Dict overflow should be handled by a __dict__ descriptor
+    // on the type, like `type` or `function`
+    CHECK(layout.overflowAttributes().isNoneType(), "no overflow");
+  }
+  return *result;
 }
 
 RawObject UnderBuiltinsModule::underObjectTypeGetAttr(Thread* thread,

@@ -5785,6 +5785,74 @@ class NotImplementedTypeTests(unittest.TestCase):
 
 
 class ObjectTests(unittest.TestCase):
+    def test_dir_without_dict_returns_type_attributes(self):
+        o = dir(object())
+        self.assertIn("__class__", o)
+        self.assertIn("__repr__", o)
+        self.assertIn("__doc__", o)
+
+    def test_dir_with_builtin_returns_attributes(self):
+        s = dir("foo")
+        self.assertIn("__class__", s)
+        self.assertIn("__repr__", s)
+        self.assertIn("__doc__", s)
+        self.assertIn("lower", s)
+        self.assertIn("strip", s)
+
+    def test_dir_with_builtin_subclass_returns_attributes(self):
+        class Foo(str):
+            def foo(self):
+                pass
+
+        s = dir(Foo("bar"))
+        self.assertIn("__class__", s)
+        self.assertIn("__repr__", s)
+        self.assertIn("__doc__", s)
+        self.assertIn("lower", s)
+        self.assertIn("strip", s)
+        self.assertIn("foo", s)
+
+    def test_dir_with_custom_object_returns_attribtues(self):
+        class Foo:
+            def foo(self):
+                pass
+
+        f = dir(Foo())
+        self.assertIn("__class__", f)
+        self.assertIn("__repr__", f)
+        self.assertIn("__doc__", f)
+        self.assertIn("foo", f)
+
+    def test_dir_with_inherited_object_returns_base_attribtues(self):
+        class Foo:
+            def foo(self):
+                pass
+
+        class Bar(Foo):
+            def bar(self):
+                pass
+
+        b = dir(Bar())
+        self.assertIn("__class__", b)
+        self.assertIn("__repr__", b)
+        self.assertIn("__doc__", b)
+        self.assertIn("foo", b)
+        self.assertIn("bar", b)
+
+    def test_dir_with_custom_dunder_dict_returns_attribtues(self):
+        class Foo:
+            __slots__ = ["__dict__"]
+            __dict__ = "hey"
+
+            def foo(self):
+                pass
+
+        f = dir(Foo())
+        self.assertIn("__class__", f)
+        self.assertIn("__repr__", f)
+        self.assertIn("__doc__", f)
+        self.assertIn("foo", f)
+
     def test_dunder_new_with_builtin_type_raises_type_error(self):
         with self.assertRaisesRegex(
             TypeError, r"object\.__new__\(int\) is not safe.*int\.__new__\(\)"

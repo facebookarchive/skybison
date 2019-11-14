@@ -606,7 +606,7 @@ TEST_F(UnderBuiltinsModuleTest, UnderFloatDivmodWithNanReturnsNan) {
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderInstanceKeysWithUnassignedNumInObjectAttributes) {
+       UnderObjectKeysWithUnassignedNumInObjectAttributes) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
@@ -617,7 +617,7 @@ i = C(False)
 )")
                    .isError());
   Object i(&scope, mainModuleAt(&runtime_, "i"));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underInstanceKeys, i));
+  Object result(&scope, runBuiltin(UnderBuiltinsModule::underObjectKeys, i));
   ASSERT_TRUE(result.isList());
   EXPECT_EQ(List::cast(*result).numItems(), 0);
 }

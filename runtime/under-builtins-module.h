@@ -149,7 +149,6 @@ class UnderBuiltinsModule {
   static RawObject underInstanceGetattr(Thread* thread, Frame* frame,
                                         word nargs);
   static RawObject underInstanceGuard(Thread* thread, Frame* frame, word nargs);
-  static RawObject underInstanceKeys(Thread* thread, Frame* frame, word nargs);
   static RawObject underInstanceOverflowDict(Thread* thread, Frame* frame,
                                              word nargs);
   static RawObject underInstanceSetattr(Thread* thread, Frame* frame,
@@ -209,6 +208,7 @@ class UnderBuiltinsModule {
                                            word nargs);
   static RawObject underModuleProxyValues(Thread* thread, Frame* frame,
                                           word nargs);
+  static RawObject underObjectKeys(Thread* thread, Frame* frame, word nargs);
   static RawObject underObjectTypeGetAttr(Thread* thread, Frame* frame,
                                           word nargs);
   static RawObject underObjectTypeHasattr(Thread* thread, Frame* frame,

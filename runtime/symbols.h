@@ -274,7 +274,6 @@ class Runtime;
   V(UnderInstanceDelattr, "_instance_delattr")                                 \
   V(UnderInstanceGetattr, "_instance_getattr")                                 \
   V(UnderInstanceGuard, "_instance_guard")                                     \
-  V(UnderInstanceKeys, "_instance_keys")                                       \
   V(UnderInstanceOverflowDict, "_instance_overflow_dict")                      \
   V(UnderInstanceSetattr, "_instance_setattr")                                 \
   V(UnderInt, "_int")                                                          \
@@ -350,6 +349,7 @@ class Runtime;
   V(UnderNewMemberSetReadonly, "_new_member_set_readonly")                     \
   V(UnderNewMemberSetReadonlyStrings, "_new_member_set_readonly_strings")      \
   V(UnderNumberCheck, "_number_check")                                         \
+  V(UnderObjectKeys, "_object_keys")                                           \
   V(UnderObjectTypeGetattr, "_object_type_getattr")                            \
   V(UnderObjectTypeHasattr, "_object_type_hasattr")                            \
   V(UnderOs, "_os")                                                            \

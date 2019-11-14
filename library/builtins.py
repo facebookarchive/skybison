@@ -93,7 +93,6 @@ _get_member_ushort = _get_member_ushort  # noqa: F821
 _instance_delattr = _instance_delattr  # noqa: F821
 _instance_getattr = _instance_getattr  # noqa: F821
 _instance_guard = _instance_guard  # noqa: F821
-_instance_keys = _instance_keys  # noqa: F821
 _instance_overflow_dict = _instance_overflow_dict  # noqa: F821
 _instance_setattr = _instance_setattr  # noqa: F821
 _int_check = _int_check  # noqa: F821
@@ -132,6 +131,7 @@ _module_proxy_len = _module_proxy_len  # noqa: F821
 _module_proxy_setitem = _module_proxy_setitem  # noqa: F821
 _module_proxy_values = _module_proxy_values  # noqa: F821
 _iter = _iter  # noqa: F821
+_object_keys = _object_keys  # noqa: F821
 _object_type_getattr = _object_type_getattr  # noqa: F821
 _object_type_hasattr = _object_type_hasattr  # noqa: F821
 _patch = _patch  # noqa: F821
@@ -386,7 +386,9 @@ class object(bootstrap=True):  # noqa: E999
         _unimplemented()
 
     def __dir__(self):
-        _unimplemented()
+        attrs = _object_keys(self)
+        attrs.extend(type.__dir__(self.__class__))
+        return attrs
 
     def __eq__(self, other):
         if self is other:
@@ -2915,7 +2917,7 @@ class instance_proxy:
     def clear(self):
         instance = self._instance
         _instance_guard(instance)
-        for key in _instance_keys(instance):
+        for key in _object_keys(instance):
             _instance_delattr(instance, key)
 
     def update(self, d):
@@ -2939,7 +2941,7 @@ class instance_proxy:
         # TODO(emacs): Return an iterator.
         instance = self._instance
         _instance_guard(instance)
-        return _instance_keys(instance)
+        return _object_keys(instance)
 
     def pop(self, key, default=_Unbound):
         instance = self._instance

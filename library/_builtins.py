@@ -468,11 +468,6 @@ def _instance_guard(obj):
 
 
 @_patch
-def _instance_keys(obj):
-    pass
-
-
-@_patch
 def _instance_overflow_dict(obj):
     pass
 
@@ -669,6 +664,11 @@ def _module_proxy_values(self):
 
 @_patch
 def _iter(self):
+    pass
+
+
+@_patch
+def _object_keys(self):
     pass
 
 
