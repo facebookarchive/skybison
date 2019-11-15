@@ -1958,6 +1958,13 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
         self._rewind_decoded_chars(len(line) - endpos)
         return line[:endpos]
 
+    def _reset_encoder(self, position):
+        if self._encoder:
+            if position != 0:
+                self._encoder.setstate(0)
+            else:
+                self._encoder.reset()
+
     def seek(self, cookie, whence=0):  # noqa: C901
         if not _int_check(whence):
             raise TypeError(
@@ -1966,13 +1973,6 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
         self._checkAttached()
         self._checkClosed()
         self._checkSeekable("underlying stream is not seekable")
-
-        def _reset_encoder(position):
-            if self._encoder:
-                if position != 0:
-                    self._encoder.setstate(0)
-                else:
-                    self._encoder.reset()
 
         if whence == 1:  # seek relative to current position
             if cookie != 0:
@@ -1990,7 +1990,7 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
             self._snapshot = None
             if self._decoder:
                 self._decoder.reset()
-            _reset_encoder(position)
+            self._reset_encoder(position)
             return position
         elif whence != 0:
             raise ValueError(f"invalid whence ({whence}, should be 0, 1 or 2)")
@@ -2026,7 +2026,7 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
                 raise OSError("can't restore logical file position")
             self._decoded_chars_used = chars_to_skip
 
-        _reset_encoder(cookie)
+        self._reset_encoder(cookie)
         return cookie
 
     def seekable(self):
