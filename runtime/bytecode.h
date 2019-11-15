@@ -254,7 +254,7 @@ namespace py {
   V(UNUSED_BYTECODE_235, 235, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_236, 236, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_237, 237, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_238, 238, doInvalidBytecode)                               \
+  V(STORE_ATTR_INSTANCE_UPDATE, 238, doStoreAttrInstanceUpdate)                \
   V(LOAD_ATTR_TYPE, 239, doLoadAttrType)                                       \
   V(LOAD_ATTR_MODULE, 240, doLoadAttrModule)                                   \
   V(COMPARE_IS_NOT, 241, doCompareIsNot)                                       \
@@ -345,6 +345,7 @@ inline bool isByteCodeWithCache(const Bytecode bc) {
     case LOAD_ATTR_TYPE:
     case LOAD_METHOD_CACHED:
     case STORE_ATTR_CACHED:
+    case STORE_ATTR_INSTANCE_UPDATE:
       return true;
     default:
       return false;

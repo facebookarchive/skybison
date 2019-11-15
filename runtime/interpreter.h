@@ -371,6 +371,7 @@ class Interpreter {
   static Continue doSetupWith(Thread* thread, word arg);
   static Continue doStoreAttr(Thread* thread, word arg);
   static Continue doStoreAttrCached(Thread* thread, word arg);
+  static Continue doStoreAttrInstanceUpdate(Thread* thread, word arg);
   static Continue doStoreSubscr(Thread* thread, word arg);
   static Continue doUnaryInvert(Thread* thread, word arg);
   static Continue doUnaryNegative(Thread* thread, word arg);

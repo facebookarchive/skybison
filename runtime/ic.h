@@ -290,6 +290,7 @@ class IcIterator {
       case LOAD_ATTR_TYPE:
       case LOAD_METHOD_CACHED:
       case STORE_ATTR_CACHED:
+      case STORE_ATTR_INSTANCE_UPDATE:
       case FOR_ITER_CACHED:
       case BINARY_SUBSCR_CACHED:
         return true;
