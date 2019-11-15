@@ -227,7 +227,19 @@ std::ostream& dumpExtendedType(std::ostream& os, RawType value) {
   return os;
 }
 
+// The functions in this file may be used during garbage collection, so this
+// function is used to approximate a read barrier until we have a better
+// solution.
+static RawObject checkForward(std::ostream& os, RawObject value) {
+  if (!value.isHeapObject()) return value;
+  RawHeapObject heap_obj = HeapObject::cast(value);
+  if (!heap_obj.isForwarding()) return value;
+  os << "<Forward to> ";
+  return heap_obj.forward();
+}
+
 std::ostream& dumpExtended(std::ostream& os, RawObject value) {
+  value = checkForward(os, value);
   LayoutId layout = value.layoutId();
   switch (layout) {
     case LayoutId::kCode:
@@ -421,6 +433,7 @@ static std::ostream& printObjectGeneric(std::ostream& os,
 }
 
 std::ostream& operator<<(std::ostream& os, RawObject value) {
+  value = checkForward(os, value);
   LayoutId layout = value.layoutId();
   switch (layout) {
     case LayoutId::kBool:

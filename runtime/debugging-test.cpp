@@ -570,6 +570,27 @@ class MyClass:
   EXPECT_EQ(ss.str(), "<type \"MyClass\">");
 }
 
+TEST_F(DebuggingTests, FormatForwardedObjects) {
+  HandleScope scope(thread_);
+  Tuple tuple(&scope, runtime_.newTuple(1));
+  List list1(&scope, runtime_.newList());
+  Int i(&scope, runtime_.newInt(1234));
+  runtime_.listAdd(thread_, list1, i);
+  tuple.atPut(0, *list1);
+
+  i = runtime_.newInt(5678);
+  List list2(&scope, runtime_.newList());
+  runtime_.listAdd(thread_, list2, i);
+  list1.forwardTo(*list2);
+  std::ostringstream ss;
+  ss << tuple;
+  EXPECT_EQ(ss.str(), "(<Forward to> [5678],)");
+
+  ss.str("");
+  dumpExtended(ss, *tuple);
+  EXPECT_EQ(ss.str(), "(<Forward to> [5678],)");
+}
+
 TEST_F(DebuggingTests, FormatFrame) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
