@@ -2668,6 +2668,12 @@ Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
   Tuple caches(&scope, frame->caches());
   Function dependent(&scope, frame->function());
   if (kind == LoadAttrKind::kInstance) {
+    word pc = frame->virtualPC() - kCodeUnitSize;
+    RawMutableBytes bytecode = frame->bytecode();
+    if (bytecode.byteAt(pc) == LOAD_ATTR_CACHED &&
+        icIsCacheEmpty(caches, arg) && location.isProperty()) {
+      bytecode.byteAtPut(pc, LOAD_ATTR_INSTANCE_PROPERTY);
+    }
     icUpdateAttr(thread, caches, arg, receiver.layoutId(), location, name,
                  dependent);
   } else if (kind == LoadAttrKind::kModule) {
@@ -2745,6 +2751,29 @@ static Continue retryLoadAttrCached(Thread* thread, word arg) {
   caches.atPut(index + kIcEntryKeyOffset, NoneType::object());
   caches.atPut(index + kIcEntryValueOffset, NoneType::object());
   return Interpreter::doLoadAttrCached(thread, arg);
+}
+
+HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceProperty(Thread* thread,
+                                                                word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject receiver = frame->topValue();
+  RawTuple caches = frame->caches();
+  word index = arg * kIcPointersPerCache;
+  if (SmallInt::fromWord(static_cast<word>(receiver.layoutId())) ==
+      caches.at(index + kIcEntryKeyOffset)) {
+    RawObject location = caches.at(index + kIcEntryValueOffset);
+    DCHECK(location.isProperty(), "cached location should be a property");
+    HandleScope scope(thread);
+    Object self(&scope, receiver);
+    Property property(&scope, location);
+    Object getter(&scope, property.getter());
+    Object result(&scope, Interpreter::callFunction1(
+                              thread, thread->currentFrame(), getter, self));
+    if (result.isError()) return Continue::UNWIND;
+    frame->setTopValue(*result);
+    return Continue::NEXT;
+  }
+  return retryLoadAttrCached(thread, arg);
 }
 
 HANDLER_INLINE Continue Interpreter::doLoadAttrModule(Thread* thread,

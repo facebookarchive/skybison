@@ -357,6 +357,7 @@ class Interpreter {
   static Continue doInvalidBytecode(Thread* thread, word arg);
   static Continue doLoadAttr(Thread* thread, word arg);
   static Continue doLoadAttrCached(Thread* thread, word arg);
+  static Continue doLoadAttrInstanceProperty(Thread* thread, word arg);
   static Continue doLoadAttrModule(Thread* thread, word arg);
   static Continue doLoadAttrType(Thread* thread, word arg);
   static Continue doLoadDeref(Thread* thread, word arg);

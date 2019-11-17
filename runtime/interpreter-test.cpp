@@ -14,6 +14,7 @@
 #include "objects.h"
 #include "runtime.h"
 #include "trampolines.h"
+#include "type-builtins.h"
 
 #include "test-utils.h"
 
@@ -3752,6 +3753,50 @@ i = C()
       Interpreter::loadAttrWithLocation(thread_, *i, *to_cache), 42));
 }
 
+TEST_F(InterpreterTest, LoadAttrSetLocationSetsLocationToProprty) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C:
+    foo = property (lambda self: "data descriptor")
+
+c = C()
+)")
+                   .isError());
+  Type type_c(&scope, mainModuleAt(&runtime_, "C"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
+
+  Str name(&scope, runtime_.newStrFromCStr("foo"));
+  Object to_cache(&scope, NoneType::object());
+  Interpreter::LoadAttrKind kind = Interpreter::LoadAttrKind::kUnknown;
+  EXPECT_TRUE(isStrEqualsCStr(
+      Interpreter::loadAttrSetLocation(thread_, c, name, &kind, &to_cache),
+      "data descriptor"));
+  EXPECT_EQ(kind, Interpreter::LoadAttrKind::kInstance);
+  EXPECT_TRUE(isStrEqualsCStr(
+      resolveDescriptorGet(thread_, to_cache, c, type_c), "data descriptor"));
+}
+
+TEST_F(InterpreterTest,
+       LoadAttrSetLocationDoesNotSetLocationToProprtyWithNoneGetter) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+C_foo = property (fget=None, fset=lambda self,v: None, fdel=lambda self: None)
+class C:
+    foo = C_foo
+
+c = C()
+)")
+                   .isError());
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
+  Str name(&scope, runtime_.newStrFromCStr("foo"));
+  Object to_cache(&scope, NoneType::object());
+  Interpreter::LoadAttrKind kind = Interpreter::LoadAttrKind::kUnknown;
+  EXPECT_TRUE(
+      Interpreter::loadAttrSetLocation(thread_, c, name, &kind, &to_cache)
+          .isError());
+  EXPECT_TRUE(to_cache.isNoneType());
+}
+
 TEST_F(InterpreterTest, LoadAttrWithModuleSetLocationSetsLocation) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
@@ -4545,16 +4590,6 @@ c = C()
   EXPECT_TRUE(isStrEqualsCStr(
       Interpreter::callFunction1(thread_, thread_->currentFrame(), get_foo, c),
       "data descriptor"));
-
-  // Verify that all type dictionaries in C's mro dropped dependencies to
-  // get_foo.
-  result = dictAtByStr(thread_, type_b_dict, foo_name);
-  ASSERT_TRUE(result.isValueCell());
-  EXPECT_TRUE(ValueCell::cast(*result).dependencyLink().isNoneType());
-
-  result = dictAtByStr(thread_, type_c_dict, foo_name);
-  ASSERT_TRUE(result.isValueCell());
-  EXPECT_TRUE(ValueCell::cast(*result).dependencyLink().isNoneType());
 }
 
 TEST_F(InterpreterTest, StoreAttrCachedInvalidatesBinaryOpCaches) {

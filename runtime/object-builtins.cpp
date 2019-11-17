@@ -208,6 +208,9 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
       Object getter(&scope, Property::cast(*type_attr).getter());
       DCHECK(!object.isNoneType(), "object cannot be NoneType");
       if (!getter.isNoneType()) {
+        if (location_out != nullptr) {
+          *location_out = *type_attr;
+        }
         return Interpreter::callFunction1(thread, thread->currentFrame(),
                                           getter, object);
       }
