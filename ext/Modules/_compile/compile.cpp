@@ -4168,9 +4168,141 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     return 1;
 }
 
+static expr_ty
+optimize_str_mod(struct compiler *c, expr_ty e)
+{
+    /* Rewrite some `"str" % (...)` expressions to f-strings. */
+    if (e->v.BinOp.right->kind != Tuple_kind)
+        return NULL;
+    asdl_seq *rhs_values = e->v.BinOp.right->v.Tuple.elts;
+    Py_ssize_t num_values = asdl_seq_LEN(rhs_values);
+
+    expr_ty lhs = e->v.BinOp.left;
+    PyObject *str = e->v.BinOp.left->v.Str.s;
+    Py_ssize_t length = PyUnicode_GetLength(str);
+
+    /* Compute an upper bound on the number of format specifiers and
+     * the number of elements in the final JoinedStr node. */
+    Py_ssize_t n_specifiers = 0;
+    Py_ssize_t max_strings = 1;
+    for (Py_ssize_t i = 0; i < length;) {
+        if (PyUnicode_READ_CHAR(str, i++) != '%')
+            continue;
+        /* Looks like an invalid string ending in a single percent. */
+        if (i >= length)
+            return NULL;
+        Py_UCS4 ch = PyUnicode_READ_CHAR(str, i++);
+        if (ch == '%') {
+            /* We currently break the string apart at `%%` */
+            max_strings++;
+            continue;
+        } else if (ch == '(') {
+            /* We don't support dict lookups and may get confused from inner '%'
+             * chars. */
+            return NULL;
+        }
+        n_specifiers++;
+        /* Will produce 1 string for the formatted value and possibly one more
+         * for the characters after. */
+        max_strings += 2;
+    }
+
+    PyArena *arena = c->c_arena;
+    expr_ty *strings =
+        (expr_ty *)(PyArena_Malloc(arena, sizeof(strings[0]) * max_strings));
+    if (strings == NULL)
+        return NULL;
+
+    Py_ssize_t segment_begin = 0;
+    Py_ssize_t value_idx = 0;
+    Py_ssize_t sidx = 0;
+    for (Py_ssize_t i = 0; i < length;) {
+        Py_UCS4 ch = PyUnicode_READ_CHAR(str, i++);
+        if (ch != '%')
+            continue;
+
+        Py_ssize_t segment_end = i - 1;
+        if (segment_end - segment_begin > 0) {
+            PyObject *substr = PyUnicode_Substring(str, segment_begin,
+                                                   segment_end);
+            PyUnicode_InternInPlace(&substr);
+            assert(sidx < max_strings && "upper bound is wrong");
+            strings[sidx++] = Str(substr, lhs->lineno, lhs->col_offset, arena);
+        }
+
+        if (i >= length)
+            return NULL;
+        ch = PyUnicode_READ_CHAR(str, i++);
+
+        /* Handle %% */
+        if (ch == '%') {
+            segment_begin = i - 1;
+            continue;
+        }
+
+        /* Handle remaining supported cases that all use an value from RHS. */
+        if (value_idx >= num_values)
+            return NULL;
+        expr_ty value = (expr_ty)asdl_seq_GET(rhs_values, value_idx++);
+        int lineno = value->lineno;
+        int col_offset = value->col_offset;
+
+        switch (ch) {
+        case 's':
+        case 'r':
+        case 'a': {
+            /* Rewrite "%s" % (x,) to f"{x!s}". */
+            expr_ty formatted = FormattedValue(value, ch, NULL,
+                                               lineno, col_offset, arena);
+            if (formatted == NULL)
+                return NULL;
+            assert(sidx < max_strings && "upper bound is wrong");
+            strings[sidx++] = formatted;
+            break;
+        }
+        default:
+            return NULL;
+        }
+        /* Begin next segment after specifier. */
+        segment_begin = i;
+    }
+    if (value_idx != num_values)
+        return NULL;
+
+    Py_ssize_t segment_end = length;
+    if (segment_end - segment_begin > 0) {
+        PyObject *substr = PyUnicode_Substring(str, segment_begin, segment_end);
+        PyUnicode_InternInPlace(&substr);
+        assert(sidx < max_strings && "upper bound is wrong");
+        strings[sidx++] = Str(substr, lhs->lineno, lhs->col_offset, arena);
+    }
+
+    asdl_seq *values = _Py_asdl_seq_new(sidx, arena);
+    for (Py_ssize_t i = 0; i < sidx; i++) {
+        asdl_seq_SET(values, i, strings[i]);
+    }
+    return JoinedStr(values, e->lineno, e->col_offset, arena);
+}
+
+static expr_ty
+optimize_expr(struct compiler *c, expr_ty e)
+{
+    if (e->kind == BinOp_kind &&
+        e->v.BinOp.op == _operator::Mod &&
+        e->v.BinOp.left->kind == Str_kind) {
+        expr_ty optimized = optimize_str_mod(c, e);
+        if (optimized != NULL)
+            return optimized;
+    }
+    return e;
+}
+
 static int
 compiler_visit_expr(struct compiler *c, expr_ty e)
 {
+    /* Apply AST transforms. */
+    e = optimize_expr(c, e);
+
     /* If expr e has a different line number than the last expr/stmt,
        set a new line number for the next instruction.
     */

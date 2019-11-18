@@ -1,0 +1,136 @@
+#!/usr/bin/env python3
+import dis
+import io
+import unittest
+
+from test_support import pyro_only
+
+
+try:
+    import _compile
+except ImportError:
+    pass
+
+
+def dis_str(code):
+    with io.StringIO() as out:
+        dis.dis(code, file=out)
+        return out.getvalue()
+
+
+@pyro_only
+class PrintfTransformTests(unittest.TestCase):
+    def test_simple(self):
+        code = _compile.compile("'foo' % ()", "", "eval")
+        self.assertEqual(
+            dis_str(code),
+            """\
+  1           0 LOAD_CONST               0 ('foo')
+              2 RETURN_VALUE
+""",
+        )
+        self.assertEqual(eval(code), str.__mod__("foo", ()))  # noqa: P204
+
+    def test_percent_a(self):
+        code = _compile.compile("'%a' % (42,)", "", "eval")
+        self.assertEqual(
+            dis_str(code),
+            """\
+  1           0 LOAD_CONST               0 (42)
+              2 FORMAT_VALUE             3 (ascii)
+              4 RETURN_VALUE
+""",
+        )
+        self.assertEqual(eval(code), str.__mod__("%a", (42,)))  # noqa: P204
+
+    def test_percent_percent(self):
+        code = _compile.compile("'%%' % ()", "", "eval")
+        self.assertEqual(
+            dis_str(code),
+            """\
+  1           0 LOAD_CONST               0 ('%')
+              2 RETURN_VALUE
+""",
+        )
+        self.assertEqual(eval(code), str.__mod__("%%", ()))  # noqa: P204
+
+    def test_percent_r(self):
+        code = _compile.compile("'%r' % ('bar',)", "", "eval")
+        self.assertEqual(
+            dis_str(code),
+            """\
+  1           0 LOAD_CONST               0 ('bar')
+              2 FORMAT_VALUE             2 (repr)
+              4 RETURN_VALUE
+""",
+        )
+        self.assertEqual(eval(code), str.__mod__("%r", ("bar",)))  # noqa: P204
+
+    def test_percent_s(self):
+        code = _compile.compile("'%s' % (42,)", "", "eval")
+        self.assertEqual(
+            dis_str(code),
+            """\
+  1           0 LOAD_CONST               0 (42)
+              2 FORMAT_VALUE             1 (str)
+              4 RETURN_VALUE
+""",
+        )
+        self.assertEqual(eval(code), str.__mod__("%s", (42,)))  # noqa: P204
+
+    def test_mixed(self):
+        code = _compile.compile("'%s %% foo %r bar %a %s' % (1,2,3,4)", "", "eval")
+        self.assertEqual(
+            dis_str(code),
+            """\
+  1           0 LOAD_CONST               0 (1)
+              2 FORMAT_VALUE             1 (str)
+              4 LOAD_CONST               1 (' ')
+              6 LOAD_CONST               2 ('% foo ')
+              8 LOAD_CONST               3 (2)
+             10 FORMAT_VALUE             2 (repr)
+             12 LOAD_CONST               4 (' bar ')
+             14 LOAD_CONST               5 (3)
+             16 FORMAT_VALUE             3 (ascii)
+             18 LOAD_CONST               1 (' ')
+             20 LOAD_CONST               6 (4)
+             22 FORMAT_VALUE             1 (str)
+             24 BUILD_STRING             8
+             26 RETURN_VALUE
+""",
+        )
+        self.assertEqual(
+            eval(code),  # noqa: P204
+            str.__mod__("%s %% foo %r bar %a %s", (1, 2, 3, 4)),
+        )
+
+    def test_no_trailing_percent(self):
+        code = _compile.compile("'foo%' % ()", "", "eval")
+        self.assertIn("BINARY_MODULO", dis_str(code))
+
+    def test_no_no_tuple(self):
+        code = _compile.compile("'%s' % x", "", "eval")
+        self.assertIn("BINARY_MODULO", dis_str(code))
+
+    def test_no_mapping_key(self):
+        code = _compile.compile("'%(foo)' % x", "", "eval")
+        self.assertIn("BINARY_MODULO", dis_str(code))
+
+        code = _compile.compile("'%(%s)' % x", "", "eval")
+        self.assertIn("BINARY_MODULO", dis_str(code))
+
+    def test_no_tuple_too_small(self):
+        code = _compile.compile("'%s%s%s' % (1,2)", "", "eval")
+        self.assertIn("BINARY_MODULO", dis_str(code))
+
+    def test_no_tuple_too_big(self):
+        code = _compile.compile("'%s%s%s' % (1,2,3,4)", "", "eval")
+        self.assertIn("BINARY_MODULO", dis_str(code))
+
+    def test_no_unknown_specifier(self):
+        code = _compile.compile("'%Z' % (None,)", "", "eval")
+        self.assertIn("BINARY_MODULO", dis_str(code))
+
+
+if __name__ == "__main__":
+    unittest.main()
