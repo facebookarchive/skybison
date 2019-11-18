@@ -4511,6 +4511,18 @@ class str(bootstrap=True):
     def __str__(self):
         return self
 
+    def _mod_check_single_arg(self, value):
+        """Helper function used by the compiler when transforming some
+        printf-style formatting to f-strings."""
+        if _tuple_check(value):
+            len = _tuple_len(value)
+            if len == 0:
+                raise TypeError("not enough arguments for format string")
+            if len > 1:
+                raise TypeError("not all arguments converted during string formatting")
+            return value
+        return (value,)
+
     def _mod_convert_number(self, value):
         """Helper function used by the compiler when transforming some
         printf-style formatting to f-strings."""

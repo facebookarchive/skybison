@@ -170,12 +170,51 @@ class PrintfTransformTests(unittest.TestCase):
             str.__mod__("%s %% foo %r bar %a %s", (1, 2, 3, 4)),
         )
 
+    def test_without_tuple(self):
+        code = _compile.compile("'%s' % 5.5", "", "eval")
+        self.assertEqual(
+            dis_str(code),
+            """\
+  1           0 LOAD_CONST               0 ('')
+              2 LOAD_ATTR                0 (_mod_check_single_arg)
+              4 LOAD_CONST               1 (5.5)
+              6 CALL_FUNCTION            1
+              8 LOAD_CONST               2 (0)
+             10 BINARY_SUBSCR
+             12 FORMAT_VALUE             1 (str)
+             14 RETURN_VALUE
+""",
+        )
+        self.assertEqual(eval(code), str.__mod__("%s", 5.5))  # noqa: P204
+
+    def test_without_tuple_formats_value(self):
+        code = _compile.compile("'%s' % x", "", "eval")
+        self.assertNotIn("BINARY_MODULO", dis_str(code))
+        self.assertEqual(
+            eval(code, None, {"x": -8}), str.__mod__("%s", -8)  # noqa: P204
+        )
+        self.assertEqual(
+            eval(code, None, {"x": (True,)}), str.__mod__("%s", (True,))  # noqa: P204
+        )
+
+    def test_without_tuple_raises_type_error(self):
+        code = _compile.compile("'%s' % x", "", "eval")
+        self.assertNotIn("BINARY_MODULO", dis_str(code))
+        with self.assertRaisesRegex(
+            TypeError, "not enough arguments for format string"
+        ):
+            eval(code, None, {"x": ()})  # noqa: P204
+        with self.assertRaisesRegex(
+            TypeError, "not all arguments converted during string formatting"
+        ):
+            eval(code, None, {"x": (1, 2)})  # noqa: P204
+
     def test_no_trailing_percent(self):
         code = _compile.compile("'foo%' % ()", "", "eval")
         self.assertIn("BINARY_MODULO", dis_str(code))
 
     def test_no_no_tuple(self):
-        code = _compile.compile("'%s' % x", "", "eval")
+        code = _compile.compile("'%s%s' % x", "", "eval")
         self.assertIn("BINARY_MODULO", dis_str(code))
 
     def test_no_mapping_key(self):

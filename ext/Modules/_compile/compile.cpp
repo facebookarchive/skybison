@@ -4169,13 +4169,33 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
 }
 
 static expr_ty
+create_conversion_call(const char *name, expr_ty value, int lineno,
+                       int col_offset, PyArena *arena)
+{
+    /* Create an expression corresponding to `"".name(value)`.
+     * Calling a method on the empty string is a hack to get at a well-known
+     * function from the standard library regardless of the surrounding
+     * environment. */
+    expr_ty empty_str = Str(PyUnicode_InternFromString(""), lineno, col_offset,
+                            arena);
+    if (empty_str == NULL)
+        return NULL;
+    identifier id = PyUnicode_InternFromString(name);
+    if (id == NULL)
+        return NULL;
+    expr_ty method = Attribute(empty_str, id, Load, lineno, col_offset, arena);
+    if (method == NULL)
+        return NULL;
+    asdl_seq *call_args = _Py_asdl_seq_new(1, arena);
+    asdl_seq_SET(call_args, 0, value);
+    asdl_seq *call_kwargs = _Py_asdl_seq_new(0, arena);
+    return Call(method, call_args, call_kwargs, lineno, col_offset, arena);
+}
+
+static expr_ty
 optimize_str_mod(struct compiler *c, expr_ty e)
 {
     /* Rewrite some `"str" % (...)` expressions to f-strings. */
-    if (e->v.BinOp.right->kind != Tuple_kind)
-        return NULL;
-    asdl_seq *rhs_values = e->v.BinOp.right->v.Tuple.elts;
-    Py_ssize_t num_values = asdl_seq_LEN(rhs_values);
 
     expr_ty lhs = e->v.BinOp.left;
     PyObject *str = e->v.BinOp.left->v.Str.s;
@@ -4205,6 +4225,21 @@ optimize_str_mod(struct compiler *c, expr_ty e)
         /* Will produce 1 string for the formatted value and possibly one more
          * for the characters after. */
         max_strings += 2;
+    }
+
+    asdl_seq *rhs_values = NULL;
+    Py_ssize_t num_values;
+    expr_ty rhs = e->v.BinOp.right;
+    if (rhs->kind == Tuple_kind) {
+        rhs_values = rhs->v.Tuple.elts;
+        num_values = asdl_seq_LEN(rhs_values);
+    } else {
+        /* If RHS is not a tuple constructor, then we only support the situation
+         * with a single specifier in the string, by normalizing `rhs` to a
+         * one-element tuple: `_mod_check_single_arg(rhs)[0]` */
+        if (n_specifiers != 1)
+            return NULL;
+        num_values = 1;
     }
 
     PyArena *arena = c->c_arena;
@@ -4274,9 +4309,32 @@ optimize_str_mod(struct compiler *c, expr_ty e)
         }
 
         /* Handle remaining supported cases that all use an value from RHS. */
-        if (value_idx >= num_values)
-            return NULL;
-        expr_ty value = (expr_ty)asdl_seq_GET(rhs_values, value_idx++);
+        expr_ty value;
+        if (rhs_values != NULL) {
+          if (value_idx >= num_values)
+              return NULL;
+            value = (expr_ty)asdl_seq_GET(rhs_values, value_idx++);
+        } else {
+            /* We have a situation like `"%s" % x` without tuple on RHS.
+             * Transform to: f"{''._mod_check_single_arg(x)[0]}" */
+            expr_ty converted =
+                create_conversion_call("_mod_check_single_arg", rhs,
+                                       rhs->lineno, rhs->col_offset, arena);
+            if (converted == NULL)
+                return NULL;
+            expr_ty zero = Num(PyLong_FromLong(0), rhs->lineno, rhs->col_offset,
+                               arena);
+            if (zero == NULL)
+                return NULL;
+            slice_ty index = Index(zero, arena);
+            if (index == NULL)
+                return NULL;
+            value = Subscript(converted, index, Load, rhs->lineno,
+                              rhs->col_offset, arena);
+            if (value == NULL)
+                return NULL;
+            value_idx++;
+        }
         int lineno = value->lineno;
         int col_offset = value->col_offset;
 
@@ -4289,7 +4347,7 @@ optimize_str_mod(struct compiler *c, expr_ty e)
             /* May need to explicitly specify alignment because %5s
              * aligns right, while f"{x:5}" aligns left. */
             if (have_width) {
-                PyObject* align = PyUnicode_InternFromString(">");
+                PyObject *align = PyUnicode_InternFromString(">");
                 spec_str = PyUnicode_Concat(align, spec_str);
                 PyUnicode_InternInPlace(&spec_str);
             }
@@ -4313,23 +4371,9 @@ optimize_str_mod(struct compiler *c, expr_ty e)
             /* Rewrite "%d" % (x,) to f"{''._str_mod_convert_number(x)}".
              * Calling a method on the empty string is a hack to access a
              * well-known function regardless of the surrounding environment. */
-            expr_ty empty_str = Str(
-                PyUnicode_InternFromString(""), lineno, col_offset,
-                arena);
-            if (empty_str == NULL)
-                return NULL;
-            identifier id = PyUnicode_InternFromString("_mod_convert_number");
-            if (id == NULL)
-                return NULL;
-            expr_ty method = Attribute(empty_str, id, Load, lineno, col_offset,
-                                       arena);
-            if (method == NULL)
-                return NULL;
-            asdl_seq *call_args = _Py_asdl_seq_new(1, arena);
-            asdl_seq_SET(call_args, 0, value);
-            asdl_seq *call_kwargs = _Py_asdl_seq_new(0, arena);
-            expr_ty converted = Call(method, call_args, call_kwargs, lineno,
-                                     col_offset, arena);
+            expr_ty converted =
+                create_conversion_call("_mod_convert_number", value, lineno,
+                                       col_offset, arena);
             if (converted == NULL)
                 return NULL;
             expr_ty format_spec = NULL;
