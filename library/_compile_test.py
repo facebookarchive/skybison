@@ -115,6 +115,35 @@ class PrintfTransformTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "format requires a number, not C"):
             eval(code, None, {"x": C()})  # noqa: P204
 
+    def test_percent_s_with_width(self):
+        code = _compile.compile("'%13s' % (42,)", "", "eval")
+        self.assertEqual(
+            dis_str(code),
+            """\
+  1           0 LOAD_CONST               0 (42)
+              2 LOAD_CONST               1 ('>13')
+              4 FORMAT_VALUE             5 (str, with format)
+              6 RETURN_VALUE
+""",
+        )
+        self.assertEqual(eval(code), str.__mod__("%13s", (42,)))  # noqa: P204
+
+    def test_percent_d_with_width_and_flags(self):
+        code = _compile.compile("'%05d' % (-5,)", "", "eval")
+        self.assertEqual(
+            dis_str(code),
+            """\
+  1           0 LOAD_CONST               0 ('')
+              2 LOAD_ATTR                0 (_mod_convert_number)
+              4 LOAD_CONST               3 (-5)
+              6 CALL_FUNCTION            1
+              8 LOAD_CONST               2 ('05')
+             10 FORMAT_VALUE             4 (with format)
+             12 RETURN_VALUE
+""",
+        )
+        self.assertEqual(eval(code), str.__mod__("%05d", (-5,)))  # noqa: P204
+
     def test_mixed(self):
         code = _compile.compile("'%s %% foo %r bar %a %s' % (1,2,3,4)", "", "eval")
         self.assertEqual(

@@ -4234,6 +4234,39 @@ optimize_str_mod(struct compiler *c, expr_ty e)
             return NULL;
         ch = PyUnicode_READ_CHAR(str, i++);
 
+        /* Parse flags and width. */
+        Py_ssize_t spec_begin = i - 1;
+        int have_width = 0;
+        for (;;) {
+            switch (ch) {
+            case '0':
+                /* TODO(matthiasb): Support ' ', '+', '#' etc.
+                 * They mostly have the same meaning. However they can appear
+                 * in any order here but must follow stricter convertions in
+                 * f-strings. */
+                if (i >= length)
+                    return NULL;
+                ch = PyUnicode_READ_CHAR(str, i++);
+                continue;
+            default:
+                break;
+            }
+            break;
+        }
+        if ('1' <= ch && ch <= '9') {
+            have_width = 1;
+            do {
+              if (i >= length)
+                  return NULL;
+              ch = PyUnicode_READ_CHAR(str, i++);
+            } while ('0' <= ch && ch <= '9');
+        }
+        PyObject *spec_str = NULL;
+        if (i - 1 - spec_begin > 0) {
+            spec_str = PyUnicode_Substring(str, spec_begin, i - 1);
+            PyUnicode_InternInPlace(&spec_str);
+        }
+
         /* Handle %% */
         if (ch == '%') {
             segment_begin = i - 1;
@@ -4252,7 +4285,21 @@ optimize_str_mod(struct compiler *c, expr_ty e)
         case 'r':
         case 'a': {
             /* Rewrite "%s" % (x,) to f"{x!s}". */
-            expr_ty formatted = FormattedValue(value, ch, NULL,
+
+            /* May need to explicitly specify alignment because %5s
+             * aligns right, while f"{x:5}" aligns left. */
+            if (have_width) {
+                PyObject* align = PyUnicode_InternFromString(">");
+                spec_str = PyUnicode_Concat(align, spec_str);
+                PyUnicode_InternInPlace(&spec_str);
+            }
+            expr_ty format_spec = NULL;
+            if (spec_str != NULL) {
+                format_spec = Str(spec_str, lineno, col_offset, arena);
+                if (format_spec == NULL)
+                    return NULL;
+            }
+            expr_ty formatted = FormattedValue(value, ch, format_spec,
                                                lineno, col_offset, arena);
             if (formatted == NULL)
                 return NULL;
@@ -4285,8 +4332,14 @@ optimize_str_mod(struct compiler *c, expr_ty e)
                                      col_offset, arena);
             if (converted == NULL)
                 return NULL;
-            expr_ty formatted = FormattedValue(converted, -1, NULL, lineno,
-                                               col_offset, arena);
+            expr_ty format_spec = NULL;
+            if (spec_str != NULL) {
+                format_spec = Str(spec_str, lineno, col_offset, arena);
+                if (format_spec == NULL)
+                    return NULL;
+            }
+            expr_ty formatted = FormattedValue(converted, -1, format_spec,
+                                               lineno, col_offset, arena);
             if (formatted == NULL)
                 return NULL;
             assert(sidx < max_strings && "upper bound is wrong");
