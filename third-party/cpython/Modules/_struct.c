@@ -14,6 +14,7 @@ typedef struct {
     PyObject *PyStructType;
     PyObject *unpackiter_type;
     PyObject *StructError;
+    PyObject *cache;
 } _structmodulestate;
 
 #define _structmodulestate(o) ((_structmodulestate *)PyModule_GetState(o))
@@ -2028,20 +2029,19 @@ static PyType_Spec PyStructType_spec = {
 /* ---- Standalone functions  ---- */
 
 #define MAXCACHE 100
-static PyObject *cache = NULL;
 
 static PyObject *
 cache_struct(PyObject *fmt)
 {
-    PyObject * s_object;
+    PyObject *s_object;
 
-    if (cache == NULL) {
-        cache = PyDict_New();
-        if (cache == NULL)
+    if (_structmodulestate_global->cache == NULL) {
+        _structmodulestate_global->cache = PyDict_New();
+        if (_structmodulestate_global->cache == NULL)
             return NULL;
     }
 
-    s_object = PyDict_GetItem(cache, fmt);
+    s_object = PyDict_GetItem(_structmodulestate_global->cache, fmt);
     if (s_object != NULL) {
         Py_INCREF(s_object);
         return s_object;
@@ -2049,10 +2049,10 @@ cache_struct(PyObject *fmt)
 
     s_object = PyObject_CallFunctionObjArgs(_structmodulestate_global->PyStructType, fmt, NULL);
     if (s_object != NULL) {
-        if (PyDict_Size(cache) >= MAXCACHE)
-            PyDict_Clear(cache);
+        if (PyDict_Size(_structmodulestate_global->cache) >= MAXCACHE)
+            PyDict_Clear(_structmodulestate_global->cache);
         /* Attempt to cache the result */
-        if (PyDict_SetItem(cache, fmt, s_object) == -1)
+        if (PyDict_SetItem(_structmodulestate_global->cache, fmt, s_object) == -1)
             PyErr_Clear();
     }
     return s_object;
@@ -2064,7 +2064,7 @@ PyDoc_STRVAR(clearcache_doc,
 static PyObject *
 clearcache(PyObject *self)
 {
-    Py_CLEAR(cache);
+    Py_CLEAR(_structmodulestate_global->cache);
     Py_RETURN_NONE;
 }
 
