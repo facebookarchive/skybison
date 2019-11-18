@@ -31,13 +31,13 @@ result = _warnings.warn("something went wrong")
 }
 
 TEST_F(WarningsModuleTest, WarnWithNoArgsRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, R"(
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime_, R"(
 import _warnings
 _warnings.warn()
 )"),
-      LayoutId::kTypeError,
-      "TypeError: 'warn' takes min 1 positional arguments but 0 given"));
+                    LayoutId::kTypeError,
+                    "'warn' takes min 1 positional arguments but 0 given"));
 }
 
 TEST_F(WarningsModuleTest, WarnWithInvalidCategoryRaisesTypeError) {

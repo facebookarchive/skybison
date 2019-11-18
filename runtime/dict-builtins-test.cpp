@@ -561,7 +561,7 @@ TEST_F(DictBuiltinsTest, ValuesReturnsDictValues) {
 TEST_F(DictBuiltinsTest, UpdateWithNoArgumentsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime_, "dict.update()"), LayoutId::kTypeError,
-      "TypeError: 'dict.update' takes min 1 positional arguments but 0 given"));
+      "'dict.update' takes min 1 positional arguments but 0 given"));
 }
 
 TEST_F(DictBuiltinsTest, UpdateWithNonDictRaisesTypeError) {

@@ -370,7 +370,7 @@ TEST_F(UnderBuiltinsModuleTest,
        UnderDictGetWithNotEnoughArgumentsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime_, "_dict_get()"), LayoutId::kTypeError,
-      "TypeError: '_dict_get' takes min 2 positional arguments but 0 given"));
+      "'_dict_get' takes min 2 positional arguments but 0 given"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
@@ -378,7 +378,7 @@ TEST_F(UnderBuiltinsModuleTest,
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime_, "_dict_get({}, 123, 456, 789)"),
       LayoutId::kTypeError,
-      "TypeError: '_dict_get' takes max 3 positional arguments but 4 given"));
+      "'_dict_get' takes max 3 positional arguments but 4 given"));
 }
 
 TEST_F(UnderBuiltinsModuleTest, UnderDictGetWithUnhashableTypeRaisesTypeError) {

@@ -71,8 +71,8 @@ RawObject processDefaultArguments(Thread* thread, RawFunction function_raw,
     if (default_args.length() < (function.argcount() - new_argc)) {
       return thread->raiseWithFmt(
           LayoutId::kTypeError,
-          "TypeError: '%F' takes min %w positional arguments but %w given",
-          &function, function.argcount() - default_args.length(), argc);
+          "'%F' takes min %w positional arguments but %w given", &function,
+          function.argcount() - default_args.length(), argc);
     }
     const word positional_only = function.argcount() - default_args.length();
     for (; new_argc < function.argcount(); new_argc++) {
@@ -94,8 +94,8 @@ RawObject processDefaultArguments(Thread* thread, RawFunction function_raw,
     } else {
       return thread->raiseWithFmt(
           LayoutId::kTypeError,
-          "TypeError: '%F' takes max %w positional arguments but %w given",
-          &function, function.argcount(), argc);
+          "'%F' takes max %w positional arguments but %w given", &function,
+          function.argcount(), argc);
     }
   }
 
@@ -115,13 +115,13 @@ RawObject processDefaultArguments(Thread* thread, RawFunction function_raw,
           frame->pushValue(val);
           new_argc++;
         } else {
-          return thread->raiseWithFmt(
-              LayoutId::kTypeError, "TypeError: missing keyword-only argument");
+          return thread->raiseWithFmt(LayoutId::kTypeError,
+                                      "missing keyword-only argument");
         }
       }
     } else {
       return thread->raiseWithFmt(LayoutId::kTypeError,
-                                  "TypeError: missing keyword-only argument");
+                                  "missing keyword-only argument");
     }
   }
 
@@ -142,9 +142,8 @@ RawObject processDefaultArguments(Thread* thread, RawFunction function_raw,
   // not.
   if (new_argc != function.totalArgs()) {
     return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "TypeError: '%F' takes %w positional arguments but %w given", &function,
-        function.argcount(),
+        LayoutId::kTypeError, "'%F' takes %w positional arguments but %w given",
+        &function, function.argcount(),
         new_argc - function.hasVarargs() - function.hasVarkeyargs());
   }
   return *function;
@@ -209,8 +208,7 @@ static RawObject checkArgs(Thread* thread, const Function& function,
       // A matching keyword arg but for a positional-only parameter.
       return Thread::current()->raiseWithFmt(
           LayoutId::kTypeError,
-          "TypeError: keyword argument specified for positional-only argument "
-          "'%S'",
+          "keyword argument specified for positional-only argument '%S'",
           &formal_name);
     }
     // Mismatch.  Try to fix it.  Note: args grow down.
@@ -275,8 +273,7 @@ static RawObject checkArgs(Thread* thread, const Function& function,
         continue;  // Got it, move on to the next
       }
     }
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "TypeError: missing argument");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "missing argument");
   }
   return NoneType::object();
 }
@@ -347,7 +344,7 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
       // Too many positional args passed?
       if (num_positional_args > function.argcount()) {
         return thread->raiseWithFmt(LayoutId::kTypeError,
-                                    "TypeError: Too many positional arguments");
+                                    "Too many positional arguments");
       }
       // If we have keyword arguments that don't appear in the formal parameter
       // list, add them to a keyword dict.
@@ -393,8 +390,7 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
   RawObject* kw_arg_base = (frame->valueStackTop() + num_keyword_args) -
                            1;  // pointer to first non-positional arg
   if (UNLIKELY(argc > expected_args)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "TypeError: Too many arguments");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "Too many arguments");
   }
   if (UNLIKELY(argc < expected_args)) {
     // Too few args passed.  Can we supply default args to make it work?

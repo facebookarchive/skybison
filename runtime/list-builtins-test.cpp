@@ -338,7 +338,7 @@ TEST_F(ListBuiltinsTest, DunderContainsWithNonListSelfRaisesTypeError) {
 TEST_F(ListBuiltinsTest, ListInsertWithMissingArgumentsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime_, "[1, 2].insert()"), LayoutId::kTypeError,
-      "TypeError: 'list.insert' takes 3 positional arguments but 1 given"));
+      "'list.insert' takes 3 positional arguments but 1 given"));
 }
 
 TEST_F(ListBuiltinsTest, ListInsertWithNonListRaisesTypeError) {
@@ -841,39 +841,39 @@ result = a
 }
 
 TEST_F(ListBuiltinsTest, DelItemWithTooFewArgumentsRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime_, R"(
 [].__delitem__()
 )"),
-                            LayoutId::kTypeError,
-                            "TypeError: 'list.__delitem__' takes 2 positional "
-                            "arguments but 1 given"));
+      LayoutId::kTypeError,
+      "'list.__delitem__' takes 2 positional arguments but 1 given"));
 }
 
 TEST_F(ListBuiltinsTest, SetItemWithTooFewArgumentsRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime_, R"(
 [].__setitem__(1)
 )"),
-                            LayoutId::kTypeError,
-                            "TypeError: 'list.__setitem__' takes 3 positional "
-                            "arguments but 2 given"));
+      LayoutId::kTypeError,
+      "'list.__setitem__' takes 3 positional arguments but 2 given"));
 }
 
 TEST_F(ListBuiltinsTest, DelItemWithTooManyArgumentsRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime_, R"(
 [].__delitem__(1, 2)
 )"),
-                            LayoutId::kTypeError,
-                            "TypeError: 'list.__delitem__' takes max 2 "
-                            "positional arguments but 3 given"));
+      LayoutId::kTypeError,
+      "'list.__delitem__' takes max 2 positional arguments but 3 given"));
 }
 
 TEST_F(ListBuiltinsTest, SetItemWithTooManyArgumentsRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime_, R"(
 [].__setitem__(1, 2, 3)
 )"),
-                            LayoutId::kTypeError,
-                            "TypeError: 'list.__setitem__' takes max 3 "
-                            "positional arguments but 4 given"));
+      LayoutId::kTypeError,
+      "'list.__setitem__' takes max 3 positional arguments but 4 given"));
 }
 
 TEST_F(ListBuiltinsTest, DelItemWithNonIntegralIndexRaisesTypeError) {

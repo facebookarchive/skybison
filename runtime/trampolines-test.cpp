@@ -818,9 +818,9 @@ TEST_F(TrampolinesTest, KeywordCallRejectsPositionalOnlyArgumentNames) {
   keywords.atPut(1, Runtime::internStrFromCStr(thread_, "b"));
   frame->pushValue(*keywords);
   Object result_obj(&scope, Interpreter::callKw(thread_, frame, 2));
-  EXPECT_TRUE(raisedWithStr(*result_obj, LayoutId::kTypeError,
-                            "TypeError: keyword argument specified for "
-                            "positional-only argument 'a'"));
+  EXPECT_TRUE(raisedWithStr(
+      *result_obj, LayoutId::kTypeError,
+      "keyword argument specified for positional-only argument 'a'"));
 }
 
 TEST_F(TrampolinesTest, KeywordCallAcceptsNonPositionalOnlyArgumentNames) {
@@ -2071,7 +2071,7 @@ TEST_F(TrampolinesDeathTest, BuiltinTrampolineExWithTooFewArgsRaisesTypeError) {
   createAndPatchBuiltinNumArgs(&runtime_);
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime_, "dummy(*(1,))"), LayoutId::kTypeError,
-      "TypeError: 'dummy' takes 2 positional arguments but 1 given"));
+      "'dummy' takes 2 positional arguments but 1 given"));
 }
 
 TEST_F(TrampolinesDeathTest,
@@ -2079,7 +2079,7 @@ TEST_F(TrampolinesDeathTest,
   createAndPatchBuiltinNumArgs(&runtime_);
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime_, "dummy(*(1,2,3,4,5))"), LayoutId::kTypeError,
-      "TypeError: 'dummy' takes max 2 positional arguments but 5 given"));
+      "'dummy' takes max 2 positional arguments but 5 given"));
 }
 
 TEST_F(TrampolinesTest, CallFunctionExWithNamedArgAndExplodeKwargs) {

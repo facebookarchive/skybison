@@ -881,16 +881,16 @@ code = compile(data, "<string>", "eval", dont_inherit=True)
 }
 
 TEST_F(BuiltinsModuleDeathTest, BuiltinCompileRaisesTypeErrorGivenTooFewArgs) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, "compile(1)"), LayoutId::kTypeError,
-      "TypeError: 'compile' takes min 3 positional arguments but 1 given"));
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime_, "compile(1)"), LayoutId::kTypeError,
+                    "'compile' takes min 3 positional arguments but 1 given"));
 }
 
 TEST_F(BuiltinsModuleDeathTest, BuiltinCompileRaisesTypeErrorGivenTooManyArgs) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime_, "compile(1, 2, 3, 4, 5, 6, 7, 8, 9)"),
       LayoutId::kTypeError,
-      "TypeError: 'compile' takes max 6 positional arguments but 9 given"));
+      "'compile' takes max 6 positional arguments but 9 given"));
 }
 
 TEST_F(BuiltinsModuleTest, BuiltinCompileRaisesTypeErrorGivenBadMode) {
@@ -1202,9 +1202,9 @@ TEST_F(BuiltinsModuleTest, MaxWithMultipleArgsReturnsMaximum) {
 }
 
 TEST_F(BuiltinsModuleTest, MaxWithNoArgsRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, "max()"), LayoutId::kTypeError,
-      "TypeError: 'max' takes min 1 positional arguments but 0 given"));
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime_, "max()"), LayoutId::kTypeError,
+                    "'max' takes min 1 positional arguments but 0 given"));
 }
 
 TEST_F(BuiltinsModuleTest, MaxWithIterableReturnsMaximum) {
@@ -1280,9 +1280,9 @@ TEST_F(BuiltinsModuleTest, MinWithMultipleArgsReturnsMinimum) {
 }
 
 TEST_F(BuiltinsModuleTest, MinWithNoArgsRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, "min()"), LayoutId::kTypeError,
-      "TypeError: 'min' takes min 1 positional arguments but 0 given"));
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime_, "min()"), LayoutId::kTypeError,
+                    "'min' takes min 1 positional arguments but 0 given"));
 }
 
 TEST_F(BuiltinsModuleTest, MinWithIterableReturnsMinimum) {

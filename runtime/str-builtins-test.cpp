@@ -217,14 +217,14 @@ TEST_F(StrBuiltinsTest, DunderNewWithTypeCallsTypeDunderStr) {
 TEST_F(StrBuiltinsTest, DunderNewWithNoArgsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime_, "str.__new__()"), LayoutId::kTypeError,
-      "TypeError: 'str.__new__' takes min 1 positional arguments but 0 given"));
+      "'str.__new__' takes min 1 positional arguments but 0 given"));
 }
 
 TEST_F(StrBuiltinsTest, DunderNewWithTooManyArgsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime_, "str.__new__(str, 1, 2, 3, 4)"),
       LayoutId::kTypeError,
-      "TypeError: 'str.__new__' takes max 4 positional arguments but 5 given"));
+      "'str.__new__' takes max 4 positional arguments but 5 given"));
 }
 
 TEST_F(StrBuiltinsTest, DunderNewWithNonTypeArgRaisesTypeError) {
@@ -356,7 +356,7 @@ TEST_F(StrBuiltinsTest, DunderLenWithExtraArgumentRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime_, "l = 'aloha'.__len__('arg')"),
       LayoutId::kTypeError,
-      "TypeError: 'str.__len__' takes max 1 positional arguments but 2 given"));
+      "'str.__len__' takes max 1 positional arguments but 2 given"));
 }
 
 TEST_F(StrBuiltinsTest, DunderMulWithNonStrRaisesTypeError) {
@@ -1475,7 +1475,7 @@ result = s is s.replace("z", "b")
 TEST_F(StrBuiltinsTest, ReplaceWithMissingArgRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime_, "'aa'.replace('a')"), LayoutId::kTypeError,
-      "TypeError: 'str.replace' takes min 3 positional arguments but 2 given"));
+      "'str.replace' takes min 3 positional arguments but 2 given"));
 }
 
 TEST_F(StrBuiltinsTest, ReplaceWithNonIntCountRaisesTypeError) {
