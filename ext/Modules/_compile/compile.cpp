@@ -4260,6 +4260,39 @@ optimize_str_mod(struct compiler *c, expr_ty e)
             strings[sidx++] = formatted;
             break;
         }
+        case 'd':
+        case 'i':
+        case 'u': {
+            /* Rewrite "%d" % (x,) to f"{''._str_mod_convert_number(x)}".
+             * Calling a method on the empty string is a hack to access a
+             * well-known function regardless of the surrounding environment. */
+            expr_ty empty_str = Str(
+                PyUnicode_InternFromString(""), lineno, col_offset,
+                arena);
+            if (empty_str == NULL)
+                return NULL;
+            identifier id = PyUnicode_InternFromString("_mod_convert_number");
+            if (id == NULL)
+                return NULL;
+            expr_ty method = Attribute(empty_str, id, Load, lineno, col_offset,
+                                       arena);
+            if (method == NULL)
+                return NULL;
+            asdl_seq *call_args = _Py_asdl_seq_new(1, arena);
+            asdl_seq_SET(call_args, 0, value);
+            asdl_seq *call_kwargs = _Py_asdl_seq_new(0, arena);
+            expr_ty converted = Call(method, call_args, call_kwargs, lineno,
+                                     col_offset, arena);
+            if (converted == NULL)
+                return NULL;
+            expr_ty formatted = FormattedValue(converted, -1, NULL, lineno,
+                                               col_offset, arena);
+            if (formatted == NULL)
+                return NULL;
+            assert(sidx < max_strings && "upper bound is wrong");
+            strings[sidx++] = formatted;
+            break;
+        }
         default:
             return NULL;
         }

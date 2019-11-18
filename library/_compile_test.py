@@ -78,6 +78,43 @@ class PrintfTransformTests(unittest.TestCase):
         )
         self.assertEqual(eval(code), str.__mod__("%s", (42,)))  # noqa: P204
 
+    def test_percent_d_i_u(self):
+        expected = """\
+  1           0 LOAD_CONST               0 ('')
+              2 LOAD_ATTR                0 (_mod_convert_number)
+              4 LOAD_CONST               2 (-13)
+              6 CALL_FUNCTION            1
+              8 FORMAT_VALUE             0
+             10 RETURN_VALUE
+"""
+        code0 = _compile.compile("'%d' % (-13,)", "", "eval")
+        code1 = _compile.compile("'%i' % (-13,)", "", "eval")
+        code2 = _compile.compile("'%u' % (-13,)", "", "eval")
+        self.assertEqual(dis_str(code0), expected)
+        self.assertEqual(dis_str(code1), expected)
+        self.assertEqual(dis_str(code2), expected)
+        self.assertEqual(eval(code0), str.__mod__("%d", (-13,)))  # noqa: P204
+        self.assertEqual(eval(code1), str.__mod__("%i", (-13,)))  # noqa: P204
+        self.assertEqual(eval(code2), str.__mod__("%u", (-13,)))  # noqa: P204
+
+    def test_percent_d_calls_dunder_int(self):
+        class C:
+            def __int__(self):
+                return 7
+
+        code = _compile.compile("'%d' % (x,)", "", "eval")
+        self.assertNotIn("BINARY_MOD", dis_str(code))
+        self.assertEqual(eval(code, None, {"x": C()}), "7")  # noqa: P204
+
+    def test_percent_d_raises_type_error(self):
+        class C:
+            pass
+
+        code = _compile.compile("'%d' % (x,)", "", "eval")
+        self.assertNotIn("BINARY_MOD", dis_str(code))
+        with self.assertRaisesRegex(TypeError, "format requires a number, not C"):
+            eval(code, None, {"x": C()})  # noqa: P204
+
     def test_mixed(self):
         code = _compile.compile("'%s %% foo %r bar %a %s' % (1,2,3,4)", "", "eval")
         self.assertEqual(

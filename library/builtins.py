@@ -4511,6 +4511,13 @@ class str(bootstrap=True):
     def __str__(self):
         return self
 
+    def _mod_convert_number(self, value):
+        """Helper function used by the compiler when transforming some
+        printf-style formatting to f-strings."""
+        if not _number_check(value):
+            raise TypeError(f"format requires a number, not {_type(value).__name__}")
+        return _int(value)
+
     def capitalize(self):
         _str_guard(self)
         if not self:
