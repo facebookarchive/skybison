@@ -7363,6 +7363,12 @@ class StrTests(unittest.TestCase):
             "\U0001f40dx\U0001f43bx\U0001f40d\U0001f40d",
         )
 
+    def test_center_returns_identity(self):
+        s = "foo bar baz bam!"
+        self.assertIs(str.center(s, -1), s)
+        self.assertIs(str.center(s, 5), s)
+        self.assertIs(str.center(s, len(s)), s)
+
     def test_center_with_fillchar_not_char_raises_type_error(self):
         with self.assertRaisesRegex(
             TypeError, "The fill character must be exactly one character long"
@@ -7836,6 +7842,12 @@ class StrTests(unittest.TestCase):
             "x\U0001f43bx\U0001f40d\U0001f40d",
         )
 
+    def test_ljust_returns_identity(self):
+        s = "foo bar baz bam!"
+        self.assertIs(str.ljust(s, -1), s)
+        self.assertIs(str.ljust(s, 5), s)
+        self.assertIs(str.ljust(s, len(s)), s)
+
     def test_ljust_with_fillchar_not_char_raises_type_error(self):
         with self.assertRaisesRegex(
             TypeError, "The fill character must be exactly one character long"
@@ -7864,6 +7876,12 @@ class StrTests(unittest.TestCase):
             str.rjust("x\U0001f43bx", 5, "\U0001f40d"),
             "\U0001f40d\U0001f40dx\U0001f43bx",
         )
+
+    def test_rjust_returns_identity(self):
+        s = "foo bar baz bam!"
+        self.assertIs(str.rjust(s, -1), s)
+        self.assertIs(str.rjust(s, 5), s)
+        self.assertIs(str.rjust(s, len(s)), s)
 
     def test_rjust_with_fillchar_not_char_raises_type_error(self):
         with self.assertRaisesRegex(

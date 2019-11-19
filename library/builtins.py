@@ -4550,10 +4550,12 @@ class str(bootstrap=True):
             )
         if _str_len(fillchar) != 1:
             raise TypeError("The fill character must be exactly one character long")
-        fill = width - _str_len(self)
-        fill_left = (fill >> 1) + (fill & width & 1)
-        fill_right = fill - fill_left
-        return fillchar * fill_left + self + fillchar * fill_right
+
+        pad = width - _str_len(self)
+        if pad <= 0:
+            return self
+        left_pad = (pad >> 1) + (pad & width & 1)
+        return fillchar * left_pad + self + fillchar * (pad - left_pad)
 
     def count(self, sub, start=None, end=None):
         _str_guard(self)
@@ -4674,7 +4676,8 @@ class str(bootstrap=True):
             )
         if _str_len(fillchar) != 1:
             raise TypeError("The fill character must be exactly one character long")
-        return self + fillchar * (width - _str_len(self))
+        padding = width - _str_len(self)
+        return self + fillchar * padding if padding > 0 else self
 
     def lower(self):
         pass
@@ -4759,7 +4762,8 @@ class str(bootstrap=True):
             )
         if _str_len(fillchar) != 1:
             raise TypeError("The fill character must be exactly one character long")
-        return fillchar * (width - _str_len(self)) + self
+        padding = width - _str_len(self)
+        return fillchar * padding + self if padding > 0 else self
 
     def rpartition(self, sep):
         _str_guard(self)
