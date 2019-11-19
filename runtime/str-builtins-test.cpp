@@ -110,55 +110,6 @@ a_le_a = S('a') <= S('a')
   EXPECT_EQ(mainModuleAt(&runtime_, "a_le_a"), Bool::trueObj());
 }
 
-TEST_F(StrBuiltinsTest, LowerOnASCIILettersReturnsLowerCaseString) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = "HELLO".lower()
-b = "HeLLo".lower()
-c = "hellO".lower()
-)")
-                   .isError());
-  HandleScope scope(thread_);
-  Object a(&scope, mainModuleAt(&runtime_, "a"));
-  Object b(&scope, mainModuleAt(&runtime_, "b"));
-  Object c(&scope, mainModuleAt(&runtime_, "c"));
-  EXPECT_TRUE(isStrEqualsCStr(*a, "hello"));
-  EXPECT_TRUE(isStrEqualsCStr(*b, "hello"));
-  EXPECT_TRUE(isStrEqualsCStr(*c, "hello"));
-}
-
-TEST_F(StrBuiltinsTest, LowerOnASCIILettersWithSubClassReturnsLowerCaseString) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-class SubStr(str): pass
-a = SubStr("HELLO").lower()
-b = SubStr("HeLLo").lower()
-c = SubStr("hellO").lower()
-)")
-                   .isError());
-  EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(&runtime_, "a"), "hello"));
-  EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(&runtime_, "b"), "hello"));
-  EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(&runtime_, "c"), "hello"));
-}
-
-TEST_F(StrBuiltinsTest, LowerOnLowercaseASCIILettersReturnsSameString) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = "hello".lower()
-)")
-                   .isError());
-  HandleScope scope(thread_);
-  Object a(&scope, mainModuleAt(&runtime_, "a"));
-  EXPECT_TRUE(isStrEqualsCStr(*a, "hello"));
-}
-
-TEST_F(StrBuiltinsTest, LowerOnNumbersReturnsSameString) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = "foo 123".lower()
-)")
-                   .isError());
-  HandleScope scope(thread_);
-  Object a(&scope, mainModuleAt(&runtime_, "a"));
-  EXPECT_TRUE(isStrEqualsCStr(*a, "foo 123"));
-}
-
 TEST_F(StrBuiltinsTest, DunderNewCallsDunderStr) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo:
@@ -2300,55 +2251,6 @@ TEST_F(StrBuiltinsTest, DunderContainsWithNotPresentSubstrReturnsTrue) {
   HandleScope scope(thread_);
   Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_EQ(*result, Bool::falseObj());
-}
-
-TEST_F(StrBuiltinsTest, UpperOnASCIILettersReturnsUpperCaseString) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = "hello".upper()
-b = "HeLLo".upper()
-c = "hellO".upper()
-)")
-                   .isError());
-  HandleScope scope(thread_);
-  Object a(&scope, mainModuleAt(&runtime_, "a"));
-  Object b(&scope, mainModuleAt(&runtime_, "b"));
-  Object c(&scope, mainModuleAt(&runtime_, "c"));
-  EXPECT_TRUE(isStrEqualsCStr(*a, "HELLO"));
-  EXPECT_TRUE(isStrEqualsCStr(*b, "HELLO"));
-  EXPECT_TRUE(isStrEqualsCStr(*c, "HELLO"));
-}
-
-TEST_F(StrBuiltinsTest, UpperOnASCIILettersOfSubClassReturnsUpperCaseString) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-class SubStr(str): pass
-a = SubStr("hello").upper()
-b = SubStr("HeLLo").upper()
-c = SubStr("hellO").upper()
-)")
-                   .isError());
-  EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(&runtime_, "a"), "HELLO"));
-  EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(&runtime_, "b"), "HELLO"));
-  EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(&runtime_, "c"), "HELLO"));
-}
-
-TEST_F(StrBuiltinsTest, UpperOnUppercaseASCIILettersReturnsSameString) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = "HELLO".upper()
-)")
-                   .isError());
-  HandleScope scope(thread_);
-  Object a(&scope, mainModuleAt(&runtime_, "a"));
-  EXPECT_TRUE(isStrEqualsCStr(*a, "HELLO"));
-}
-
-TEST_F(StrBuiltinsTest, UpperOnNumbersReturnsSameString) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = "foo 123".upper()
-)")
-                   .isError());
-  HandleScope scope(thread_);
-  Object a(&scope, mainModuleAt(&runtime_, "a"));
-  EXPECT_TRUE(isStrEqualsCStr(*a, "FOO 123"));
 }
 
 TEST_F(StrBuiltinsTest, CapitalizeReturnsCapitalizedStr) {

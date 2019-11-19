@@ -719,22 +719,39 @@ RawObject StrBuiltins::lower(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, SymbolId::kStr);
   }
   Str self(&scope, strUnderlying(*self_obj));
-  std::unique_ptr<byte[]> buf(new byte[self.charLength()]);
-  byte* bufp = buf.get();
-  for (word i = 0; i < self.charLength(); i++) {
+  word length = self.charLength();
+
+  // Search for the first uppercase character.
+  word i = 0;
+  for (; i < length; i++) {
     byte c = self.charAt(i);
     if (c > kMaxASCII) {
-      UNIMPLEMENTED("Lowercase non-ASCII characters");
+      // TODO(T57791326) support non-ASCII
+      UNIMPLEMENTED("non-ASCII characters");
     }
     if (c >= 'A' && c <= 'Z') {
-      bufp[i] = c - 'A' + 'a';
-    } else {
-      bufp[i] = c;
+      break;
     }
   }
-  Str result(&scope,
-             runtime->newStrWithAll(View<byte>{bufp, self.charLength()}));
-  return *result;
+  if (i >= length && self_obj.isStr()) {
+    return *self_obj;
+  }
+
+  // Create new string object and translate remaining characters.
+  MutableBytes result(&scope, runtime->newMutableBytesUninitialized(length));
+  result.replaceFromWithStr(0, *self, i);
+  for (; i < length; i++) {
+    byte c = self.charAt(i);
+    if (c > kMaxASCII) {
+      // TODO(T57791326) support non-ASCII
+      UNIMPLEMENTED("non-ASCII characters");
+    }
+    if (c >= 'A' && c <= 'Z') {
+      c -= 'A' - 'a';
+    }
+    result.byteAtPut(i, c);
+  }
+  return result.becomeStr();
 }
 
 RawObject StrBuiltins::upper(Thread* thread, Frame* frame, word nargs) {
@@ -746,22 +763,39 @@ RawObject StrBuiltins::upper(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, SymbolId::kStr);
   }
   Str self(&scope, strUnderlying(*self_obj));
-  std::unique_ptr<byte[]> buf(new byte[self.charLength()]);
-  byte* bufp = buf.get();
-  for (word i = 0; i < self.charLength(); i++) {
+  word length = self.charLength();
+
+  // Search for the first lowercase character.
+  word i = 0;
+  for (; i < length; i++) {
     byte c = self.charAt(i);
     if (c > kMaxASCII) {
-      UNIMPLEMENTED("Uppercase non-ASCII characters");
+      // TODO(T57791406) support non-ASCII
+      UNIMPLEMENTED("non-ASCII characters");
     }
     if (c >= 'a' && c <= 'z') {
-      bufp[i] = c - 'a' + 'A';
-    } else {
-      bufp[i] = c;
+      break;
     }
   }
-  Str result(&scope,
-             runtime->newStrWithAll(View<byte>{bufp, self.charLength()}));
-  return *result;
+  if (i >= length && self_obj.isStr()) {
+    return *self_obj;
+  }
+
+  // Create new string object and translate remaining characters.
+  MutableBytes result(&scope, runtime->newMutableBytesUninitialized(length));
+  result.replaceFromWithStr(0, *self, i);
+  for (; i < length; i++) {
+    byte c = self.charAt(i);
+    if (c > kMaxASCII) {
+      // TODO(T57791406) support non-ASCII
+      UNIMPLEMENTED("non-ASCII characters");
+    }
+    if (c >= 'a' && c <= 'z') {
+      c -= 'a' - 'A';
+    }
+    result.byteAtPut(i, c);
+  }
+  return result.becomeStr();
 }
 
 RawObject StrBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {

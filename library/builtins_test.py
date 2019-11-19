@@ -7858,6 +7858,23 @@ class StrTests(unittest.TestCase):
         ):
             str.ljust("", 2, ",,")
 
+    def test_lower_returns_lowercased_string(self):
+        self.assertEqual(str.lower("HELLO"), "hello")
+        self.assertEqual(str.lower("HeLLo_WoRlD"), "hello_world")
+        self.assertEqual(str.lower("hellO World!"), "hello world!")
+        self.assertEqual(str.lower(""), "")
+        self.assertEqual(str.lower("1234"), "1234")
+        self.assertEqual(str.lower("$%^*("), "$%^*(")
+
+    def test_lower_with_str_subclass_returns_str(self):
+        class C(str):
+            pass
+
+        self.assertEqual(str.lower(C("HeLLo")), "hello")
+        self.assertIs(type(str.lower(C("HeLLo"))), str)
+        self.assertIs(type(str.lower(C(""))), str)
+        self.assertIs(type(str.lower(C("lower"))), str)
+
     def test_rjust_returns_justified_string(self):
         self.assertEqual(str.rjust("abc", -1), "abc")
         self.assertEqual(str.rjust("abc", 0), "abc")
@@ -8079,6 +8096,23 @@ class StrTests(unittest.TestCase):
                 return "test"
 
         self.assertEqual(str(A()), "test")
+
+    def test_upper_returns_uppercased_string(self):
+        self.assertEqual(str.upper("hello"), "HELLO")
+        self.assertEqual(str.upper("HeLLo_WoRlD"), "HELLO_WORLD")
+        self.assertEqual(str.upper("hellO World!"), "HELLO WORLD!")
+        self.assertEqual(str.upper(""), "")
+        self.assertEqual(str.upper("1234"), "1234")
+        self.assertEqual(str.upper("$%^*("), "$%^*(")
+
+    def test_upper_with_str_subclass_returns_str(self):
+        class C(str):
+            pass
+
+        self.assertEqual(str.upper(C("HeLLo")), "HELLO")
+        self.assertIs(type(str.upper(C("HeLLo"))), str)
+        self.assertIs(type(str.upper(C(""))), str)
+        self.assertIs(type(str.upper(C("upper"))), str)
 
 
 class StrDunderFormatTests(unittest.TestCase):
