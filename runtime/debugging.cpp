@@ -498,6 +498,16 @@ std::ostream& operator<<(std::ostream& os, RawType value) {
   return os << "<type " << value.name() << ">";
 }
 
+std::ostream& operator<<(std::ostream& os, RawValueCell value) {
+  os << "<value_cell ";
+  if (value.isPlaceholder()) {
+    os << "placeholder>";
+  } else {
+    os << '(' << value.value() << ")>";
+  }
+  return os;
+}
+
 static void dumpSingleFrame(Thread* thread, std::ostream& os, Frame* frame) {
   if (const char* invalid = frame->isInvalid()) {
     os << "- invalid frame (" << invalid << ")\n";
@@ -660,6 +670,9 @@ static bool dumpSimple(std::ostream& os, RawObject value) {
       return true;
     case LayoutId::kType:
       os << Type::cast(value);
+      return true;
+    case LayoutId::kValueCell:
+      os << ValueCell::cast(value);
       return true;
     default:
       return false;

@@ -753,4 +753,23 @@ TEST_F(DebuggingTests, FormatFrameNullptr) {
   EXPECT_EQ(ss.str(), "<nullptr>");
 }
 
+TEST_F(DebuggingTests, FormatValueCellWithValue) {
+  HandleScope scope(thread_);
+  Object value(&scope, runtime_.newInt(42));
+  Object value_cell(&scope, runtime_.newValueCell());
+  ValueCell::cast(*value_cell).setValue(*value);
+  std::stringstream ss;
+  ss << value_cell;
+  EXPECT_EQ(ss.str(), "<value_cell (42)>");
+}
+
+TEST_F(DebuggingTests, FormatValueCellPlaceHolder) {
+  HandleScope scope(thread_);
+  Object value_cell(&scope, runtime_.newValueCell());
+  ValueCell::cast(*value_cell).makePlaceholder();
+  std::stringstream ss;
+  ss << value_cell;
+  EXPECT_EQ(ss.str(), "<value_cell placeholder>");
+}
+
 }  // namespace py

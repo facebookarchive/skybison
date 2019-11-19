@@ -40,6 +40,7 @@ std::ostream& operator<<(std::ostream& os, RawSmallStr value);
 std::ostream& operator<<(std::ostream& os, RawStr value);
 std::ostream& operator<<(std::ostream& os, RawTuple value);
 std::ostream& operator<<(std::ostream& os, RawType value);
+std::ostream& operator<<(std::ostream& os, RawValueCell value);
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const Handle<T>& value) {
   return os << *value;
