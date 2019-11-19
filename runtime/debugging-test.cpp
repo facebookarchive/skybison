@@ -191,6 +191,35 @@ TEST_F(DebuggingTests, DumpExtendedInstanceWithOverflowDict) {
   EXPECT_EQ(ss.str(), expected.str());
 }
 
+TEST_F(DebuggingTests, DumpExtendedInstanceWithInvalidLayout) {
+  HandleScope scope(thread_);
+  Instance instance(&scope, runtime_.newList());
+  LayoutId old_id = instance.layoutId();
+  // Temporarily set an invalid layout id...
+  instance.setHeader(
+      instance.header().withLayoutId(static_cast<LayoutId>(9999)));
+  std::stringstream ss;
+  dumpExtendedInstance(ss, *instance);
+  instance.setHeader(instance.header().withLayoutId(old_id));
+  EXPECT_EQ(ss.str(), "heap object with layout 9999\n");
+}
+
+TEST_F(DebuggingTests, DumpExtendedInstanceWithLayoutWithoutType) {
+  HandleScope scope(thread_);
+  Instance instance(&scope, runtime_.newList());
+  Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
+  Object old_type(&scope, layout.describedType());
+  // Temporarily set an invalid type...
+  layout.setDescribedType(NoneType::object());
+  std::stringstream ss;
+  dumpExtendedInstance(ss, *instance);
+  layout.setDescribedType(*old_type);
+  std::stringstream expected;
+  expected << "heap object with layout " << static_cast<word>(LayoutId::kList)
+           << '\n';
+  EXPECT_EQ(ss.str(), expected.str());
+}
+
 TEST_F(DebuggingTests, DumpExtendedLayout) {
   HandleScope scope(thread_);
   // Create a new layout with several overflow attributes
@@ -508,7 +537,7 @@ foo = Foo()
   EXPECT_EQ(ss.str(), R"(<"Foo" object>)");
 }
 
-TEST_F(DebuggingTests, FormatObjectWithUnknownType) {
+TEST_F(DebuggingTests, FormatObjectWithTypeWithoutName) {
   HandleScope scope(thread_);
   Object obj(&scope, NotImplementedType::object());
   // Phabricate a nameless type...
@@ -519,6 +548,38 @@ TEST_F(DebuggingTests, FormatObjectWithUnknownType) {
   ss << obj;
   expected << "<object with LayoutId " << static_cast<word>(obj.layoutId())
            << ">";
+  EXPECT_EQ(ss.str(), expected.str());
+}
+
+TEST_F(DebuggingTests, FormatObjectWithInvalidLayoutId) {
+  HandleScope scope(thread_);
+  Object object(&scope, runtime_.newList());
+  LayoutId old_id = object.layoutId();
+  // Temporary set an invalid layout id.
+  HeapObject::cast(*object).setHeader(
+      HeapObject::cast(*object).header().withLayoutId(
+          static_cast<LayoutId>(9999)));
+  std::stringstream ss;
+  ss << object;
+  HeapObject::cast(*object).setHeader(
+      HeapObject::cast(*object).header().withLayoutId(old_id));
+  EXPECT_EQ(ss.str(), "<object with LayoutId 9999>");
+}
+
+TEST_F(DebuggingTests, FormatObjectWithLayoutWithInvalidType) {
+  HandleScope scope(thread_);
+  Layout layout(&scope, runtime_.layoutAt(LayoutId::kObject));
+  Object object(&scope, runtime_.newInstance(layout));
+  Object old_type(&scope, layout.describedType());
+  // Temporary set an invalid layout id.
+  layout.setDescribedType(NoneType::object());
+  std::stringstream ss;
+  ss << object;
+  layout.setDescribedType(*old_type);
+
+  std::stringstream expected;
+  expected << "<object with LayoutId " << static_cast<word>(LayoutId::kObject)
+           << '>';
   EXPECT_EQ(ss.str(), expected.str());
 }
 

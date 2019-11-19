@@ -136,7 +136,16 @@ std::ostream& dumpExtendedInstance(std::ostream& os, RawInstance value) {
   Instance instance(&scope, value);
   LayoutId layout_id = instance.layoutId();
   os << "heap object with layout " << static_cast<word>(layout_id);
-  Layout layout(&scope, runtime->layoutAt(layout_id));
+  Object layout_obj(&scope, runtime->layoutAtSafe(layout_id));
+  if (!layout_obj.isLayout()) {
+    os << '\n';
+    return os;
+  }
+  Layout layout(&scope, *layout_obj);
+  if (!runtime->isInstanceOfType(layout.describedType())) {
+    os << '\n';
+    return os;
+  }
   Type type(&scope, layout.describedType());
   os << " (" << type << "):\n";
   Tuple in_object(&scope, layout.inObjectAttributes());
@@ -216,9 +225,14 @@ std::ostream& dumpExtendedType(std::ostream& os, RawType value) {
   if (type.hasFlag(Type::kHasDunderDict)) os << " has_dunder_dict";
   if (type.hasFlag(Type::kIsNativeProxy)) os << " is_native_proxy";
   os << '\n';
-  Layout builtin_base_layout(&scope,
-                             thread->runtime()->layoutAt(type.builtinBase()));
-  os << "  builtin base: " << builtin_base_layout << '\n';
+  Object builtin_base_layout(
+      &scope, thread->runtime()->layoutAtSafe(type.builtinBase()));
+  os << "  builtin base: ";
+  if (builtin_base_layout.isLayout()) {
+    os << builtin_base_layout << '\n';
+  } else {
+    os << "invalid layout\n";
+  }
   if (type.instanceLayout().isLayout()) {
     dumpExtendedLayout(os, Layout::cast(type.instanceLayout()), "  ");
   } else {
@@ -244,16 +258,19 @@ static std::ostream& dumpObjectGeneric(std::ostream& os, RawObject object_raw) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object object(&scope, object_raw);
-  Object type_obj(&scope, thread->runtime()->typeOf(*object));
-  if (thread->runtime()->isInstanceOfType(*type_obj)) {
-    Type type(&scope, *type_obj);
-    Object name(&scope, type.name());
-    if (name.isStr()) {
-      return os << '<' << name << " object>";
+  LayoutId id = object.layoutId();
+  Object layout(&scope, thread->runtime()->layoutAtSafe(id));
+  if (layout.isLayout()) {
+    Object type_obj(&scope, Layout::cast(*layout).describedType());
+    if (thread->runtime()->isInstanceOfType(*type_obj)) {
+      Type type(&scope, *type_obj);
+      Object name(&scope, type.name());
+      if (name.isStr()) {
+        return os << '<' << name << " object>";
+      }
     }
   }
-  return os << "<object with LayoutId " << static_cast<word>(object.layoutId())
-            << '>';
+  return os << "<object with LayoutId " << static_cast<word>(id) << '>';
 }
 
 std::ostream& dumpExtended(std::ostream& os, RawObject value) {

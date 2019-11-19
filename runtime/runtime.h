@@ -367,6 +367,9 @@ class Runtime {
     return List::cast(layouts_).at(static_cast<word>(layout_id));
   }
   void layoutAtPut(LayoutId layout_id, RawObject object);
+  // Get layout for `layout_id` and attempt not to crash for invalid ids. This
+  // is for debug dumpers. Do not use for other purposes!
+  RawObject layoutAtSafe(LayoutId layout_id);
 
   // Bootstrapping primitive for creating a built-in class that has built-in
   // attributes and/or methods.

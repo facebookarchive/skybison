@@ -173,6 +173,16 @@ RawObject Runtime::newLayout() {
   return *layout;
 }
 
+RawObject Runtime::layoutAtSafe(LayoutId layout_id) {
+  word id = static_cast<word>(layout_id);
+  if (id < 0 || id >= List::cast(layouts_).numItems()) {
+    return Error::notFound();
+  }
+  RawObject result = List::cast(layouts_).at(id);
+  if (result.isNoneType()) return Error::notFound();
+  return result;
+}
+
 RawObject Runtime::layoutCreateSubclassWithBuiltins(
     LayoutId subclass_id, LayoutId superclass_id,
     View<BuiltinAttribute> attributes) {
