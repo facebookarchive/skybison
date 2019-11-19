@@ -89,5 +89,17 @@ class CaptureStdStreams {
   bool restored_stderr_{false};
 };
 
+// Creates a temporary directory and cleans it up when the object is destroyed.
+// TODO(tylerk): T57732104 Hoist this into the test harness (along with similar
+// functionality in test-utils.h)
+class TempDirectory {
+ public:
+  TempDirectory();
+  TempDirectory(const char* prefix);
+  ~TempDirectory();
+
+  std::string path;
+};
+
 }  // namespace testing
 }  // namespace py

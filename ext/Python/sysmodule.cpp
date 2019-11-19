@@ -1,6 +1,7 @@
 #include <cstdarg>
 
 #include "capi-handles.h"
+#include "cpython-data.h"
 #include "module-builtins.h"
 #include "runtime.h"
 #include "sys-module.h"
@@ -63,12 +64,41 @@ PY_EXPORT void PySys_ResetWarnOptions() {
   UNIMPLEMENTED("PySys_ResetWarnOptions");
 }
 
-PY_EXPORT void PySys_SetArgv(int /* c */, wchar_t** /* argv */) {
-  UNIMPLEMENTED("PySys_SetArgv");
+PY_EXPORT void PySys_SetArgv(int argc, wchar_t** argv) {
+  PySys_SetArgvEx(argc, argv, Py_IsolatedFlag == 0);
 }
 
-PY_EXPORT void PySys_SetArgvEx(int /* c */, wchar_t** /* argv */, int /* h */) {
-  UNIMPLEMENTED("PySys_SetArgvEx");
+PY_EXPORT void PySys_SetArgvEx(int argc, wchar_t** argv, int updatepath) {
+  CHECK(argc >= 0, "Unexpected argc");
+
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  List args(&scope, runtime->newList());
+
+  Str arg(&scope, Str::empty());
+  if (argc == 0 || argv == nullptr) {
+    // Ensure at least one (empty) argument is seen
+    runtime->listAdd(thread, args, arg);
+  } else {
+    for (int i = 0; i < argc; i++) {
+      char* arg_cstr = Py_EncodeLocale(argv[i], nullptr);
+      arg = runtime->newStrFromCStr(arg_cstr);
+      PyMem_Free(arg_cstr);
+      runtime->listAdd(thread, args, arg);
+    }
+  }
+  Module sys_module(&scope, runtime->findModuleById(SymbolId::kSys));
+  moduleAtPutById(thread, sys_module, SymbolId::kArgv, args);
+
+  if (updatepath == 0) {
+    return;
+  }
+
+  arg = args.at(0);
+  Object result(&scope, thread->invokeFunction1(
+                            SymbolId::kSys, SymbolId::kUnderUpdatePath, arg));
+  CHECK(!result.isError(), "Error updating sys.path from argv[0]");
 }
 
 PY_EXPORT int PySys_SetObject(const char* /* e */, PyObject* /* v */) {

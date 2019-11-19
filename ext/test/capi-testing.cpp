@@ -149,5 +149,30 @@ if hasattr(sys, "stderr") and hasattr(sys.stderr, "flush"):
   return ::testing::internal::GetCapturedStderr();
 }
 
+TempDirectory::TempDirectory() : TempDirectory("PYRO_TEST") {}
+
+TempDirectory::TempDirectory(const char* prefix) {
+  const char* tmpdir = std::getenv("TMPDIR");
+  if (tmpdir == nullptr) {
+    tmpdir = "/tmp/";
+  }
+  const char* format = "%s%s.XXXXXXXX";
+  int length = std::snprintf(nullptr, 0, format, tmpdir, prefix);
+
+  std::unique_ptr<char[]> buffer(new char[length]);
+  std::snprintf(buffer.get(), length, format, tmpdir, prefix);
+  char* result(::mkdtemp(buffer.get()));
+  assert(result != nullptr);
+  path = result;
+  assert(!path.empty());
+  if (path.back() != '/') path += "/";
+}
+
+TempDirectory::~TempDirectory() {
+  std::string cleanup = "rm -rf " + path;
+  system(cleanup.c_str());
+  assert(system(cleanup.c_str()) == 0);
+}
+
 }  // namespace testing
 }  // namespace py

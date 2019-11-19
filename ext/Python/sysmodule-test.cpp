@@ -1,5 +1,8 @@
 #include "gtest/gtest.h"
 
+#include <unistd.h>
+
+#include <cstdlib>
 #include <string>
 
 #include "Python.h"
@@ -133,6 +136,212 @@ TEST_F(SysModuleExtensionApiTest, WriteStderr) {
   PySys_WriteStderr("2 + 2 = %d", 4);
   EXPECT_EQ(streams.out(), "");
   EXPECT_EQ(streams.err(), "2 + 2 = 4");
+}
+
+TEST_F(SysModuleExtensionApiTest,
+       SetArgvWithEmptyArgvPopulatesSysArgvAndSysPathWithEmptyString) {
+  wchar_t arg0[] = L"python";
+  wchar_t* wargv[] = {arg0};
+  PySys_SetArgv(0, wargv + 1);
+
+  PyObject* argv = PySys_GetObject("argv");
+  EXPECT_EQ(PyList_Size(argv), size_t{1});
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(argv, 0), ""));
+  PyObject* sys_path = PySys_GetObject("path");
+  PyObject* sys_path0 = PyList_GetItem(sys_path, 0);
+  EXPECT_TRUE(isUnicodeEqualsCStr(sys_path0, ""));
+}
+
+TEST_F(SysModuleExtensionApiTest,
+       SetArgvWithScriptAndArgsPopulatesSysArgvWithScriptAndArgs) {
+  wchar_t arg0[] = L"script.py";
+  wchar_t arg1[] = L"3";
+  wchar_t arg2[] = L"2";
+  wchar_t* wargv[] = {arg0, arg1, arg2};
+  PySys_SetArgv(3, wargv);
+  PyObject* argv = PySys_GetObject("argv");
+  EXPECT_EQ(PyList_Size(argv), size_t{3});
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(argv, 0), "script.py"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(argv, 1), "3"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(argv, 2), "2"));
+}
+
+TEST_F(SysModuleExtensionApiTest,
+       SetArgvWithModuleArgInsertsEmptyStringIntoSysPath) {
+  wchar_t arg0[] = L"-m";
+  wchar_t* wargv[] = {arg0};
+  PySys_SetArgv(1, wargv);
+
+  PyObject* sys_path = PySys_GetObject("path");
+  PyObject* sys_path0 = PyList_GetItem(sys_path, 0);
+  EXPECT_TRUE(isUnicodeEqualsCStr(sys_path0, ""));
+}
+
+TEST_F(SysModuleExtensionApiTest,
+       SetArgvWithScriptArgInsertsEmptyStringIntoSysPath) {
+  wchar_t arg0[] = L"-c";
+  wchar_t* wargv[] = {arg0};
+  PySys_SetArgv(1, wargv);
+
+  PyObject* sys_path = PySys_GetObject("path");
+  PyObject* sys_path0 = PyList_GetItem(sys_path, 0);
+  EXPECT_TRUE(isUnicodeEqualsCStr(sys_path0, ""));
+}
+
+TEST_F(SysModuleExtensionApiTest,
+       SetArgvWithAbsolutePathInsertsPathIntoSysPath) {
+  TempDirectory tmpdir;
+  std::string tmpfile = tmpdir.path + "scriptfile.py";
+  std::string touch = "touch " + tmpfile;
+  std::system(touch.c_str());
+
+  wchar_t arg0[] = L"python";
+  wchar_t* arg1 = Py_DecodeLocale(tmpfile.c_str(), nullptr);
+  wchar_t* wargv[] = {arg0, arg1};
+  PySys_SetArgv(1, wargv + 1);
+
+  PyObject* sys_path = PySys_GetObject("path");
+  PyObject* sys_path0 = PyList_GetItem(sys_path, 0);
+  char* abs_realpath = ::realpath(tmpdir.path.c_str(), nullptr);
+  EXPECT_TRUE(isUnicodeEqualsCStr(sys_path0, abs_realpath));
+
+  PyMem_Free(arg1);
+  std::free(abs_realpath);
+}
+
+TEST_F(SysModuleExtensionApiTest, SetArgvWithLocalPathAddsPathStringToSysPath) {
+  TempDirectory tmpdir;
+  char* cwd = ::getcwd(nullptr, 0);
+  ::chdir(tmpdir.path.c_str());
+
+  std::string tmpfile = "scriptfile.py";
+  std::string touch = "touch " + tmpfile;
+  std::system(touch.c_str());
+
+  wchar_t arg0[] = L"python";
+  wchar_t* arg1 = Py_DecodeLocale(tmpfile.c_str(), nullptr);
+  wchar_t* wargv[] = {arg0, arg1};
+  PySys_SetArgv(1, wargv + 1);
+
+  PyObject* sys_path = PySys_GetObject("path");
+  PyObject* sys_path0 = PyList_GetItem(sys_path, 0);
+  char* abs_path = ::realpath(tmpdir.path.c_str(), nullptr);
+  EXPECT_TRUE(isUnicodeEqualsCStr(sys_path0, abs_path));
+
+  ::chdir(cwd);
+  PyMem_Free(arg1);
+  std::free(abs_path);
+  std::free(cwd);
+}
+
+TEST_F(SysModuleExtensionApiTest, SetArgvWithRelativePathAddsPathToSysPath) {
+  TempDirectory tmpdir;
+  char* cwd = ::getcwd(nullptr, 0);
+  ::chdir(tmpdir.path.c_str());
+
+  std::string relative_path = "./";
+  std::string tmpfile = relative_path + "scriptfile.py";
+  std::string touch = "touch " + tmpfile;
+  std::system(touch.c_str());
+
+  wchar_t arg0[] = L"python";
+  wchar_t* arg1 = Py_DecodeLocale(tmpfile.c_str(), nullptr);
+  wchar_t* wargv[] = {arg0, arg1};
+  PySys_SetArgv(1, wargv + 1);
+
+  PyObject* sys_path = PySys_GetObject("path");
+  PyObject* sys_path0 = PyList_GetItem(sys_path, 0);
+  char* abs_path = ::realpath(relative_path.c_str(), nullptr);
+  EXPECT_TRUE(isUnicodeEqualsCStr(sys_path0, abs_path));
+
+  ::chdir(cwd);
+  PyMem_Free(arg1);
+  std::free(cwd);
+  std::free(abs_path);
+}
+
+TEST_F(SysModuleExtensionApiTest, SetArgvWithRootPathInsertsRootIntoSysPath) {
+  wchar_t arg0[] = L"python";
+  wchar_t arg1[] = L"/root_script.py";
+  wchar_t* wargv[] = {arg0, arg1};
+  PySys_SetArgv(1, wargv + 1);
+
+  PyObject* sys_path = PySys_GetObject("path");
+  PyObject* sys_path0 = PyList_GetItem(sys_path, 0);
+  EXPECT_TRUE(isUnicodeEqualsCStr(sys_path0, "/"));
+}
+
+TEST_F(SysModuleExtensionApiTest,
+       SetArgvWithLocalSymlinkInsertsPathIntoSysPath) {
+  TempDirectory tmpdir;
+  std::string tmpfile = tmpdir.path + "scriptfile.py";
+  std::string linkfile = tmpdir.path + "scriptlink.py";
+  std::string touch = "touch " + tmpfile;
+  std::system(touch.c_str());
+  std::string ln = "ln -s scriptfile.py " + linkfile;
+  std::system(ln.c_str());
+
+  wchar_t arg0[] = L"python";
+  wchar_t* arg1 = Py_DecodeLocale(linkfile.c_str(), nullptr);
+  wchar_t* wargv[] = {arg0, arg1};
+  PySys_SetArgv(1, wargv + 1);
+
+  PyObject* sys_path = PySys_GetObject("path");
+  PyObject* sys_path0 = PyList_GetItem(sys_path, 0);
+  char* abs_realpath = ::realpath(tmpdir.path.c_str(), nullptr);
+  EXPECT_TRUE(isUnicodeEqualsCStr(sys_path0, abs_realpath));
+
+  PyMem_Free(arg1);
+  std::free(abs_realpath);
+}
+
+TEST_F(SysModuleExtensionApiTest,
+       SetArgvWithAbsoluteSymlinkInsertsPathIntoSysPath) {
+  TempDirectory tmpdir1;
+  TempDirectory tmpdir2;
+  std::string tmpfile = tmpdir1.path + "scriptfile.py";
+  std::string linkfile = tmpdir2.path + "scriptlink.py";
+  std::string touch = "touch " + tmpfile;
+  std::system(touch.c_str());
+  std::string ln = "ln -s " + tmpfile + " " + linkfile;
+  std::system(ln.c_str());
+
+  wchar_t arg0[] = L"python";
+  wchar_t* arg1 = Py_DecodeLocale(linkfile.c_str(), nullptr);
+  wchar_t* wargv[] = {arg0, arg1};
+  PySys_SetArgv(1, wargv + 1);
+
+  PyObject* sys_path = PySys_GetObject("path");
+  PyObject* sys_path0 = PyList_GetItem(sys_path, 0);
+  char* abs_realpath = ::realpath(tmpdir1.path.c_str(), nullptr);
+  EXPECT_TRUE(isUnicodeEqualsCStr(sys_path0, abs_realpath));
+
+  PyMem_Free(arg1);
+  std::free(abs_realpath);
+}
+
+TEST_F(SysModuleExtensionApiTest,
+       SetArgvWithRelativeSymlinkInsertsPathIntoSysPath) {
+  TempDirectory tmpdir;
+  std::string tmpfile = tmpdir.path + "scriptfile.py";
+  std::string linkfile = tmpdir.path + "scriptlink.py";
+  std::string touch = "touch " + tmpfile;
+  std::system(touch.c_str());
+  std::string ln = "ln -s ./scriptfile.py " + linkfile;
+  std::system(ln.c_str());
+
+  wchar_t arg0[] = L"python";
+  wchar_t* arg1 = Py_DecodeLocale(linkfile.c_str(), nullptr);
+  wchar_t* wargv[] = {arg0, arg1};
+  PySys_SetArgv(1, wargv + 1);
+
+  PyObject* sys_path = PySys_GetObject("path");
+  PyObject* sys_path0 = PyList_GetItem(sys_path, 0);
+  char* abs_realpath = ::realpath(tmpdir.path.c_str(), nullptr);
+  EXPECT_TRUE(isUnicodeEqualsCStr(sys_path0, abs_realpath));
+
+  PyMem_Free(arg1);
+  std::free(abs_realpath);
 }
 
 }  // namespace py

@@ -469,6 +469,7 @@ class Runtime;
   V(UnderUnicodeEscapeDecode, "_unicode_escape_decode")                        \
   V(UnderUnicodeEscapeDecodeStateful, "_unicode_escape_decode_stateful")       \
   V(UnderUnimplemented, "_unimplemented")                                      \
+  V(UnderUpdatePath, "_updatepath")                                            \
   V(UnderUtf16Encode, "_utf_16_encode")                                        \
   V(UnderUtf32Encode, "_utf_32_encode")                                        \
   V(UnderUtf8Decode, "_utf_8_decode")                                          \
