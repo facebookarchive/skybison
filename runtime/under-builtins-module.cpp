@@ -98,6 +98,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderBytesSplit, underBytesSplit},
     {SymbolId::kUnderBytesSplitWhitespace, underBytesSplitWhitespace},
     {SymbolId::kUnderByteslikeCheck, underByteslikeCheck},
+    {SymbolId::kUnderByteslikeCompareDigest, underByteslikeCompareDigest},
     {SymbolId::kUnderByteslikeCount, underByteslikeCount},
     {SymbolId::kUnderByteslikeEndsWith, underByteslikeEndsWith},
     {SymbolId::kUnderByteslikeFindByteslike, underByteslikeFindByteslike},
@@ -235,6 +236,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrArrayIadd, underStrArrayIadd},
     {SymbolId::kUnderStrCheck, underStrCheck},
     {SymbolId::kUnderStrCheckExact, underStrCheckExact},
+    {SymbolId::kUnderStrCompareDigest, underStrCompareDigest},
     {SymbolId::kUnderStrCount, underStrCount},
     {SymbolId::kUnderStrEndswith, underStrEndsWith},
     {SymbolId::kUnderStrGuard, underStrGuard},
@@ -967,6 +969,49 @@ RawObject UnderBuiltinsModule::underByteslikeCheck(Thread* thread, Frame* frame,
                                                    word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isByteslike(args.get(0)));
+}
+
+RawObject UnderBuiltinsModule::underByteslikeCompareDigest(Thread* thread,
+                                                           Frame* frame,
+                                                           word nargs) {
+  Runtime* runtime = thread->runtime();
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object left_obj(&scope, args.get(0));
+  Object right_obj(&scope, args.get(1));
+  DCHECK(runtime->isInstanceOfBytes(*left_obj) ||
+             runtime->isInstanceOfByteArray(*left_obj),
+         "_byteslike_compare_digest requires 'bytes' or 'bytearray' instance");
+  DCHECK(runtime->isInstanceOfBytes(*right_obj) ||
+             runtime->isInstanceOfByteArray(*right_obj),
+         "_byteslike_compare_digest requires 'bytes' or 'bytearray' instance");
+  // TODO(T57794178): Use volatile
+  Bytes left(&scope, Bytes::empty());
+  Bytes right(&scope, Bytes::empty());
+  word left_len = 0;
+  word right_len = 0;
+  if (runtime->isInstanceOfBytes(*left_obj)) {
+    left = bytesUnderlying(*left_obj);
+    left_len = left.length();
+  } else {
+    ByteArray byte_array(&scope, *left_obj);
+    left = byte_array.bytes();
+    left_len = byte_array.numItems();
+  }
+  if (runtime->isInstanceOfBytes(*right_obj)) {
+    right = bytesUnderlying(*right_obj);
+    right_len = right.length();
+  } else {
+    ByteArray byte_array(&scope, *right_obj);
+    right = byte_array.bytes();
+    right_len = byte_array.numItems();
+  }
+  word length = Utils::minimum(left_len, right_len);
+  word result = (right_len == left_len) ? 0 : 1;
+  for (word i = 0; i < length; i++) {
+    result |= left.byteAt(i) ^ right.byteAt(i);
+  }
+  return Bool::fromBool(result == 0);
 }
 
 RawObject UnderBuiltinsModule::underByteslikeCount(Thread* thread, Frame* frame,
@@ -3212,6 +3257,30 @@ RawObject UnderBuiltinsModule::underStrCheckExact(Thread*, Frame* frame,
                                                   word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(args.get(0).isStr());
+}
+
+RawObject UnderBuiltinsModule::underStrCompareDigest(Thread* thread,
+                                                     Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  // TODO(T57794178): Use volatile
+  Object left_obj(&scope, args.get(0));
+  Object right_obj(&scope, args.get(1));
+  DCHECK(runtime->isInstanceOfStr(*left_obj),
+         "_str_compare_digest requires 'str' instance");
+  DCHECK(runtime->isInstanceOfStr(*right_obj),
+         "_str_compare_digest requires 'str' instance");
+  Str left(&scope, strUnderlying(*left_obj));
+  Str right(&scope, strUnderlying(*right_obj));
+  word left_len = left.charLength();
+  word right_len = right.charLength();
+  word length = Utils::minimum(left_len, right_len);
+  word result = (right_len == left_len) ? 0 : 1;
+  for (word i = 0; i < length; i++) {
+    result |= left.charAt(i) ^ right.charAt(i);
+  }
+  return Bool::fromBool(result == 0);
 }
 
 RawObject UnderBuiltinsModule::underStrCount(Thread* thread, Frame* frame,

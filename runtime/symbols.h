@@ -177,6 +177,7 @@ class Runtime;
   V(UnderBytesSplit, "_bytes_split")                                           \
   V(UnderBytesSplitWhitespace, "_bytes_split_whitespace")                      \
   V(UnderByteslikeCheck, "_byteslike_check")                                   \
+  V(UnderByteslikeCompareDigest, "_byteslike_compare_digest")                  \
   V(UnderByteslikeCount, "_byteslike_count")                                   \
   V(UnderByteslikeEndsWith, "_byteslike_endswith")                             \
   V(UnderByteslikeFindByteslike, "_byteslike_find_byteslike")                  \
@@ -409,6 +410,7 @@ class Runtime;
   V(UnderStrArrayIadd, "_strarray_iadd")                                       \
   V(UnderStrCheck, "_str_check")                                               \
   V(UnderStrCheckExact, "_str_checkexact")                                     \
+  V(UnderStrCompareDigest, "_str_compare_digest")                              \
   V(UnderStrCount, "_str_count")                                               \
   V(UnderStrEndswith, "_str_endswith")                                         \
   V(UnderStrGuard, "_str_guard")                                               \

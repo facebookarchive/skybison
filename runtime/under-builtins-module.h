@@ -50,6 +50,8 @@ class UnderBuiltinsModule {
                                              word nargs);
   static RawObject underByteslikeCheck(Thread* thread, Frame* frame,
                                        word nargs);
+  static RawObject underByteslikeCompareDigest(Thread* thread, Frame* frame,
+                                               word nargs);
   static RawObject underByteslikeCount(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underByteslikeEndsWith(Thread* thread, Frame* frame,
@@ -252,6 +254,8 @@ class UnderBuiltinsModule {
   static RawObject underStrArrayIadd(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrCheckExact(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrCompareDigest(Thread* thread, Frame* frame,
+                                         word nargs);
   static RawObject underStrCount(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrEndsWith(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrGuard(Thread* thread, Frame* frame, word nargs);

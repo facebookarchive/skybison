@@ -133,6 +133,11 @@ def _byteslike_check(obj):
 
 
 @_patch
+def _byteslike_compare_digest(a, b):
+    pass
+
+
+@_patch
 def _byteslike_count(self, sub, start, end):
     pass
 
@@ -825,6 +830,11 @@ def _str_check(obj):
 
 @_patch
 def _str_checkexact(obj):
+    pass
+
+
+@_patch
+def _str_compare_digest(a, b):
     pass
 
 
