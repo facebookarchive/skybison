@@ -324,6 +324,15 @@ class C(A, B):
   EXPECT_EQ(ss.str(), expected.str());
 }
 
+TEST_F(DebuggingTests,
+       DumpExtendedPrefersSimpleDumperOverDumpExtendedInstance) {
+  HandleScope scope(thread_);
+  List list(&scope, runtime_.newList());
+  std::stringstream ss;
+  dumpExtended(ss, *list);
+  EXPECT_EQ(ss.str(), "[]\n");
+}
+
 TEST_F(DebuggingTests, FormatBool) {
   std::stringstream ss;
   ss << Bool::trueObj() << ';' << Bool::falseObj();
@@ -588,7 +597,7 @@ TEST_F(DebuggingTests, FormatForwardedObjects) {
 
   ss.str("");
   dumpExtended(ss, *tuple);
-  EXPECT_EQ(ss.str(), "(<Forward to> [5678],)");
+  EXPECT_EQ(ss.str(), "(<Forward to> [5678],)\n");
 }
 
 TEST_F(DebuggingTests, FormatFrame) {

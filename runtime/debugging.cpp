@@ -14,6 +14,8 @@
 
 namespace py {
 
+static bool dumpSimple(std::ostream& os, RawObject value);
+
 static const char* kOpNames[] = {
 #define OPNAME(name, num, handler) #name,
     FOREACH_BYTECODE(OPNAME)};
@@ -238,6 +240,22 @@ static RawObject checkForward(std::ostream& os, RawObject value) {
   return heap_obj.forward();
 }
 
+static std::ostream& dumpObjectGeneric(std::ostream& os, RawObject object_raw) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object object(&scope, object_raw);
+  Object type_obj(&scope, thread->runtime()->typeOf(*object));
+  if (thread->runtime()->isInstanceOfType(*type_obj)) {
+    Type type(&scope, *type_obj);
+    Object name(&scope, type.name());
+    if (name.isStr()) {
+      return os << '<' << name << " object>";
+    }
+  }
+  return os << "<object with LayoutId " << static_cast<word>(object.layoutId())
+            << '>';
+}
+
 std::ostream& dumpExtended(std::ostream& os, RawObject value) {
   value = checkForward(os, value);
   LayoutId layout = value.layoutId();
@@ -251,10 +269,14 @@ std::ostream& dumpExtended(std::ostream& os, RawObject value) {
     case LayoutId::kType:
       return dumpExtendedType(os, Type::cast(value));
     default:
+      if (dumpSimple(os, value)) {
+        return os << '\n';
+      }
       if (value.isInstance()) {
         return dumpExtendedInstance(os, Instance::cast(value));
       }
-      return os << value;
+      dumpObjectGeneric(os, value);
+      return os << '\n';
   }
 }
 
@@ -415,72 +437,10 @@ std::ostream& operator<<(std::ostream& os, RawModule value) {
 
 std::ostream& operator<<(std::ostream& os, RawNoneType) { return os << "None"; }
 
-static std::ostream& printObjectGeneric(std::ostream& os,
-                                        RawObject object_raw) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Object object(&scope, object_raw);
-  Object type_obj(&scope, thread->runtime()->typeOf(*object));
-  if (thread->runtime()->isInstanceOfType(*type_obj)) {
-    Type type(&scope, *type_obj);
-    Object name(&scope, type.name());
-    if (name.isStr()) {
-      return os << '<' << name << " object>";
-    }
-  }
-  return os << "<object with LayoutId " << static_cast<word>(object.layoutId())
-            << '>';
-}
-
 std::ostream& operator<<(std::ostream& os, RawObject value) {
   value = checkForward(os, value);
-  LayoutId layout = value.layoutId();
-  switch (layout) {
-    case LayoutId::kBool:
-      return os << Bool::cast(value);
-    case LayoutId::kBoundMethod:
-      return os << BoundMethod::cast(value);
-    case LayoutId::kByteArray:
-      return os << ByteArray::cast(value);
-    case LayoutId::kCode:
-      return os << Code::cast(value);
-    case LayoutId::kDict:
-      return os << Dict::cast(value);
-    case LayoutId::kError:
-      return os << Error::cast(value);
-    case LayoutId::kFloat:
-      return os << Float::cast(value);
-    case LayoutId::kFunction:
-      return os << Function::cast(value);
-    case LayoutId::kLargeBytes:
-      return os << Bytes::cast(value);
-    case LayoutId::kLargeInt:
-      return os << LargeInt::cast(value);
-    case LayoutId::kLargeStr:
-      return os << LargeStr::cast(value);
-    case LayoutId::kLayout:
-      return os << Layout::cast(value);
-    case LayoutId::kList:
-      return os << List::cast(value);
-    case LayoutId::kModule:
-      return os << Module::cast(value);
-    case LayoutId::kMutableBytes:
-      return os << Bytes::cast(value);
-    case LayoutId::kNoneType:
-      return os << NoneType::cast(value);
-    case LayoutId::kSmallBytes:
-      return os << Bytes::cast(value);
-    case LayoutId::kSmallInt:
-      return os << SmallInt::cast(value);
-    case LayoutId::kSmallStr:
-      return os << SmallStr::cast(value);
-    case LayoutId::kTuple:
-      return os << Tuple::cast(value);
-    case LayoutId::kType:
-      return os << Type::cast(value);
-    default:
-      return printObjectGeneric(os, value);
-  }
+  if (dumpSimple(os, value)) return os;
+  return dumpObjectGeneric(os, value);
 }
 
 std::ostream& operator<<(std::ostream& os, RawSmallInt value) {
@@ -619,14 +579,82 @@ std::ostream& operator<<(std::ostream& os, Frame* frame) {
   return os;
 }
 
+static bool dumpSimple(std::ostream& os, RawObject value) {
+  switch (value.layoutId()) {
+    case LayoutId::kBool:
+      os << Bool::cast(value);
+      return true;
+    case LayoutId::kBoundMethod:
+      os << BoundMethod::cast(value);
+      return true;
+    case LayoutId::kByteArray:
+      os << ByteArray::cast(value);
+      return true;
+    case LayoutId::kCode:
+      os << Code::cast(value);
+      return true;
+    case LayoutId::kDict:
+      os << Dict::cast(value);
+      return true;
+    case LayoutId::kError:
+      os << Error::cast(value);
+      return true;
+    case LayoutId::kFloat:
+      os << Float::cast(value);
+      return true;
+    case LayoutId::kFunction:
+      os << Function::cast(value);
+      return true;
+    case LayoutId::kLargeBytes:
+      os << Bytes::cast(value);
+      return true;
+    case LayoutId::kLargeInt:
+      os << LargeInt::cast(value);
+      return true;
+    case LayoutId::kLargeStr:
+      os << LargeStr::cast(value);
+      return true;
+    case LayoutId::kLayout:
+      os << Layout::cast(value);
+      return true;
+    case LayoutId::kList:
+      os << List::cast(value);
+      return true;
+    case LayoutId::kModule:
+      os << Module::cast(value);
+      return true;
+    case LayoutId::kMutableBytes:
+      os << Bytes::cast(value);
+      return true;
+    case LayoutId::kNoneType:
+      os << NoneType::cast(value);
+      return true;
+    case LayoutId::kSmallBytes:
+      os << Bytes::cast(value);
+      return true;
+    case LayoutId::kSmallInt:
+      os << SmallInt::cast(value);
+      return true;
+    case LayoutId::kSmallStr:
+      os << SmallStr::cast(value);
+      return true;
+    case LayoutId::kTuple:
+      os << Tuple::cast(value);
+      return true;
+    case LayoutId::kType:
+      os << Type::cast(value);
+      return true;
+    default:
+      return false;
+  }
+}
+
 USED void dump(RawObject object) {
   dumpExtended(std::cerr, object);
-  std::cerr << '\n';
 }
 
 USED void dump(const Object& object) {
   dumpExtended(std::cerr, *object);
-  std::cerr << '\n';
 }
 
 USED void dump(Frame* frame) { std::cerr << frame; }
