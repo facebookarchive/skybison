@@ -726,7 +726,9 @@ dir_fd_converter(PyObject *o, void *p)
 
 typedef struct {
     PyObject *billion;
+#ifdef HAVE_PUTENV
     PyObject *posix_putenv_garbage;
+#endif /* HAVE_PUTENV */
     int stat_float_times;
     PyObject *DirEntryType;
     PyObject *ScandirIteratorType;
@@ -1910,7 +1912,9 @@ static int
 _posix_clear(PyObject *module)
 {
     Py_CLEAR(_posixstate(module)->billion);
+#ifdef HAVE_PUTENV
     Py_CLEAR(_posixstate(module)->posix_putenv_garbage);
+#endif /* HAVE_PUTENV */
     Py_CLEAR(_posixstate(module)->DirEntryType);
     Py_CLEAR(_posixstate(module)->ScandirIteratorType);
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER)
@@ -1937,7 +1941,9 @@ static int
 _posix_traverse(PyObject *module, visitproc visit, void *arg)
 {
     Py_VISIT(_posixstate(module)->billion);
+#ifdef HAVE_PUTENV
     Py_VISIT(_posixstate(module)->posix_putenv_garbage);
+#endif /* HAVE_PUTENV */
     Py_VISIT(_posixstate(module)->DirEntryType);
     Py_VISIT(_posixstate(module)->ScandirIteratorType);
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER)
@@ -9120,6 +9126,7 @@ os_unsetenv_impl(PyObject *module, PyObject *name)
         return posix_error();
 #endif
 
+#ifdef HAVE_PUTENV
     /* Remove the key from posix_putenv_garbage;
      * this will cause it to be collected.  This has to
      * happen after the real unsetenv() call because the
@@ -9129,6 +9136,7 @@ os_unsetenv_impl(PyObject *module, PyObject *name)
         /* really not much we can do; just leak */
         PyErr_Clear();
     }
+#endif /* HAVE_PUTENV */
     Py_RETURN_NONE;
 }
 #endif /* HAVE_UNSETENV */
@@ -12451,7 +12459,9 @@ static PyMethodDef posix_methods[] = {
     OS_TRUNCATE_METHODDEF
     OS_POSIX_FALLOCATE_METHODDEF
     OS_POSIX_FADVISE_METHODDEF
+#ifdef HAVE_PUTENV
     OS_PUTENV_METHODDEF
+#endif /* HAVE_PUTENV */
     OS_UNSETENV_METHODDEF
     OS_STRERROR_METHODDEF
     OS_FCHDIR_METHODDEF
