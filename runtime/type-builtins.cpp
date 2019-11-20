@@ -991,8 +991,13 @@ const BuiltinAttribute TypeBuiltins::kAttributes[] = {
     {SymbolId::kDunderFlags, RawType::kFlagsOffset, AttributeFlags::kReadOnly},
     {SymbolId::kDunderMro, RawType::kMroOffset, AttributeFlags::kReadOnly},
     {SymbolId::kDunderName, RawType::kNameOffset},
+    {SymbolId::kInvalid, RawType::kAbstractMethodsOffset},
+    {SymbolId::kInvalid, RawType::kBasesOffset},
     {SymbolId::kInvalid, RawType::kDictOffset},
+    {SymbolId::kInvalid, RawType::kInstanceLayoutOffset},
     {SymbolId::kInvalid, RawType::kProxyOffset},
+    {SymbolId::kInvalid, RawType::kSlotsOffset},
+    {SymbolId::kInvalid, RawType::kSubclassesOffset},
     {SymbolId::kSentinelId, -1},
 };
 

@@ -1249,8 +1249,8 @@ class RawType : public RawInstance {
   static const int kFlagsOffset = kDocOffset + kPointerSize;
   static const int kDictOffset = kFlagsOffset + kPointerSize;
   static const int kSlotsOffset = kDictOffset + kPointerSize;
-  static const int kAbstractMethods = kSlotsOffset + kPointerSize;
-  static const int kSubclassesOffset = kAbstractMethods + kPointerSize;
+  static const int kAbstractMethodsOffset = kSlotsOffset + kPointerSize;
+  static const int kSubclassesOffset = kAbstractMethodsOffset + kPointerSize;
   static const int kProxyOffset = kSubclassesOffset + kPointerSize;
   static const int kSize = kProxyOffset + kPointerSize;
 
@@ -4655,11 +4655,11 @@ inline void RawType::setSlot(Slot slot_id, RawObject slot_obj) const {
 }
 
 inline RawObject RawType::abstractMethods() const {
-  return instanceVariableAt(kAbstractMethods);
+  return instanceVariableAt(kAbstractMethodsOffset);
 }
 
 inline void RawType::setAbstractMethods(RawObject methods) const {
-  instanceVariableAtPut(kAbstractMethods, methods);
+  instanceVariableAtPut(kAbstractMethodsOffset, methods);
 }
 
 inline RawObject RawType::subclasses() const {
