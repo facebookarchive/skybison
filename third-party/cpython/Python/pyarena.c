@@ -172,6 +172,10 @@ PyArena_Free(PyArena *arena)
     assert(arena->a_objects->ob_refcnt == 1);
     */
 
+    for (Py_ssize_t i = 0; i < PyList_Size(arena->a_objects); i++) {
+        PyObject *obj = PyList_GetItem(arena->a_objects, i);
+        Py_DECREF(obj);
+    }
     Py_DECREF(arena->a_objects);
     PyMem_Free(arena);
 }
@@ -202,9 +206,5 @@ PyArena_Malloc(PyArena *arena, size_t size)
 int
 PyArena_AddPyObject(PyArena *arena, PyObject *obj)
 {
-    int r = PyList_Append(arena->a_objects, obj);
-    if (r >= 0) {
-        Py_DECREF(obj);
-    }
-    return r;
+    return PyList_Append(arena->a_objects, obj);
 }
