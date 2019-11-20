@@ -8,6 +8,13 @@
 
 namespace py {
 
+// Prepare `name_obj` to be used as an attribute name: Raise a TypeError if it
+// is not a string; reject some string subclasses. Otherwise return an
+// interned string that can be used with attribute accessors.
+RawObject attributeName(Thread* thread, const Object& name_obj);
+
+RawObject attributeNameNoException(Thread* thread, const Object& name_obj);
+
 // Convert an CPython's extension slot ints into a RawType::Slot
 Type::Slot slotToTypeSlot(int slot);
 
@@ -20,25 +27,25 @@ bool nextTypeDictItem(RawTuple data, word* idx);
 
 void typeAddDocstring(Thread* thread, const Type& type);
 
-// TODO(T55440299): Remove this once interned str is the only key type for
-// type dictionaries.
-RawObject typeAt(Thread* thread, const Type& type, const Object& key,
-                 word hash);
+RawObject typeAt(Thread* thread, const Type& type, const Object& name);
 
-RawObject typeAtSetLocation(Thread* thread, const Type& type, const Object& key,
-                            word hash, Object* location);
+// Optimized version for situation in which the hash is already known so we
+// can skip reading it from the string object.
+RawObject typeAtWithHash(Thread* thread, const Type& type, const Object& name,
+                         word hash);
 
-RawObject typeAtByStr(Thread* thread, const Type& type, const Str& name);
+RawObject typeAtSetLocation(Thread* thread, const Type& type,
+                            const Object& name, word hash, Object* location);
 
 RawObject typeAtById(Thread* thread, const Type& type, SymbolId id);
 
-RawObject typeAtPut(Thread* thread, const Type& type, const Str& interned_name,
+RawObject typeAtPut(Thread* thread, const Type& type, const Object& name,
                     const Object& value);
 
 RawObject typeAtPutById(Thread* thread, const Type& type, SymbolId id,
                         const Object& value);
 
-RawObject typeRemove(Thread* thread, const Type& type, const Str& name);
+RawObject typeRemove(Thread* thread, const Type& type, const Object& name);
 
 RawObject typeKeys(Thread* thread, const Type& type);
 
@@ -47,11 +54,10 @@ RawObject typeLen(Thread* thread, const Type& type);
 RawObject typeValues(Thread* thread, const Type& type);
 
 RawObject typeGetAttribute(Thread* thread, const Type& type,
-                           const Object& name_str, word hash);
+                           const Object& name);
 
 RawObject typeGetAttributeSetLocation(Thread* thread, const Type& type,
-                                      const Object& name_str, word hash,
-                                      Object* location_out);
+                                      const Object& name, Object* location_out);
 
 // Returns true if the type defines a __set__ method.
 bool typeIsDataDescriptor(Thread* thread, const Type& type);
@@ -70,17 +76,10 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
 
 // Looks up `key` in the dict of each entry in type's MRO. Returns
 // `Error::notFound()` if the name was not found.
-RawObject typeLookupInMro(Thread* thread, const Type& type, const Object& key,
-                          word hash);
+RawObject typeLookupInMro(Thread* thread, const Type& type, const Object& name);
 
 RawObject typeLookupInMroSetLocation(Thread* thread, const Type& type,
-                                     const Object& key, word hash,
-                                     Object* location);
-
-// Looks up `name` in the dict of each entry in type's MRO. Returns
-// `Error::notFound()` if the name was not found.
-RawObject typeLookupInMroByStr(Thread* thread, const Type& type,
-                               const Str& name);
+                                     const Object& name, Object* location);
 
 // Looks up `id` in the dict of each entry in type's MRO. Returns
 // `Error::notFound()` if the name was not found.
@@ -89,13 +88,13 @@ RawObject typeLookupInMroById(Thread* thread, const Type& type, SymbolId id);
 RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
                   const Tuple& bases, const Dict& dict, Type::Flag flags);
 
-RawObject typeSetAttr(Thread* thread, const Type& type,
-                      const Str& name_interned, const Object& value);
+RawObject typeSetAttr(Thread* thread, const Type& type, const Object& name,
+                      const Object& value);
 
 // Terminate the process if cache invalidation for updating attr_name in type
 // objects is unimplemented.
 void terminateIfUnimplementedTypeAttrCacheInvalidation(Thread* thread,
-                                                       const Str& attr_name);
+                                                       const Object& attr_name);
 
 class TypeBuiltins
     : public Builtins<TypeBuiltins, SymbolId::kType, LayoutId::kType> {

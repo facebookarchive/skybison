@@ -203,7 +203,6 @@ class Runtime;
   V(UnderDecodedChars, "_decoded_chars")                                       \
   V(UnderDecodedCharsUsed, "_decoded_chars_used")                              \
   V(UnderDecoder, "_decoder")                                                  \
-  V(UnderDelattr, "_delattr")                                                  \
   V(UnderDeleter, "_deleter")                                                  \
   V(UnderDescrClassMethod, "_descrclassmethod")                                \
   V(UnderDictBucketInsert, "_dict_bucket_insert")                              \
@@ -572,6 +571,7 @@ class Runtime;
   V(CountOf, "countOf")                                                        \
   V(CrRunning, "cr_running")                                                   \
   V(CreateBuiltin, "create_builtin")                                           \
+  V(Delattr, "delattr")                                                        \
   V(Deleter, "deleter")                                                        \
   V(DeprecationWarning, "DeprecationWarning")                                  \
   V(Dict, "dict")                                                              \

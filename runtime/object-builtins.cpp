@@ -15,28 +15,27 @@
 namespace py {
 
 RawObject objectRaiseAttributeError(Thread* thread, const Object& object,
-                                    const Object& name_str) {
+                                    const Object& name) {
   return thread->raiseWithFmt(LayoutId::kAttributeError,
                               "'%T' object has no attribute '%S'", &object,
-                              &name_str);
+                              &name);
 }
 
 RawObject instanceDelAttr(Thread* thread, const Instance& instance,
-                          const Str& name_interned) {
+                          const Object& name) {
   HandleScope scope(thread);
 
   // Remove the reference to the attribute value from the instance
   Runtime* runtime = thread->runtime();
   Layout layout(&scope, runtime->layoutAt(instance.layoutId()));
   AttributeInfo info;
-  if (!runtime->layoutFindAttribute(thread, layout, name_interned, &info)) {
+  if (!runtime->layoutFindAttribute(thread, layout, name, &info)) {
     if (layout.hasDictOverflow()) {
       word offset = SmallInt::cast(layout.overflowAttributes()).value();
       Object overflow_dict_obj(&scope, instance.instanceVariableAt(offset));
       if (!overflow_dict_obj.isNoneType()) {
         Dict overflow_dict(&scope, *overflow_dict_obj);
-        Object result(&scope,
-                      dictRemoveByStr(thread, overflow_dict, name_interned));
+        Object result(&scope, dictRemoveByStr(thread, overflow_dict, name));
         if (result.isError()) return *result;
         return NoneType::object();
       }
@@ -46,12 +45,12 @@ RawObject instanceDelAttr(Thread* thread, const Instance& instance,
 
   if (info.isReadOnly()) {
     return thread->raiseWithFmt(LayoutId::kAttributeError,
-                                "'%S' attribute is read-only", &name_interned);
+                                "'%S' attribute is read-only", &name);
   }
 
   // Make the attribute invisible
-  Object new_layout(
-      &scope, runtime->layoutDeleteAttribute(thread, layout, name_interned));
+  Object new_layout(&scope,
+                    runtime->layoutDeleteAttribute(thread, layout, name));
   DCHECK(!new_layout.isError(), "should always find attribute here");
   LayoutId new_layout_id = Layout::cast(*new_layout).id();
   instance.setHeader(instance.header().withLayoutId(new_layout_id));
@@ -69,13 +68,13 @@ RawObject instanceDelAttr(Thread* thread, const Instance& instance,
 
 RawObject instanceGetAttributeSetLocation(Thread* thread,
                                           const Instance& instance,
-                                          const Str& name_interned,
+                                          const Object& name,
                                           Object* location_out) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Layout layout(&scope, runtime->layoutAt(instance.layoutId()));
   AttributeInfo info;
-  if (runtime->layoutFindAttribute(thread, layout, name_interned, &info)) {
+  if (runtime->layoutFindAttribute(thread, layout, name, &info)) {
     if (info.isInObject()) {
       if (location_out != nullptr) {
         *location_out = RawSmallInt::fromWord(info.offset());
@@ -94,21 +93,20 @@ RawObject instanceGetAttributeSetLocation(Thread* thread,
     Object overflow_dict_obj(&scope, instance.instanceVariableAt(offset));
     if (!overflow_dict_obj.isNoneType()) {
       Dict overflow_dict(&scope, *overflow_dict_obj);
-      return dictAtByStr(thread, overflow_dict, name_interned);
+      return dictAtByStr(thread, overflow_dict, name);
     }
   }
   return Error::notFound();
 }
 
 RawObject instanceGetAttribute(Thread* thread, const Instance& instance,
-                               const Str& name_interned) {
-  return instanceGetAttributeSetLocation(thread, instance, name_interned,
-                                         nullptr);
+                               const Object& name) {
+  return instanceGetAttributeSetLocation(thread, instance, name, nullptr);
 }
 
 static RawObject instanceSetAttrSetLocation(Thread* thread,
                                             const Instance& instance,
-                                            const Str& name_interned,
+                                            const Object& name,
                                             const Object& value,
                                             Object* location_out) {
   HandleScope scope(thread);
@@ -118,12 +116,11 @@ static RawObject instanceSetAttrSetLocation(Thread* thread,
   Runtime* runtime = thread->runtime();
   Layout layout(&scope, runtime->layoutAt(instance.layoutId()));
   AttributeInfo info;
-  if (!runtime->layoutFindAttribute(thread, layout, name_interned, &info)) {
+  if (!runtime->layoutFindAttribute(thread, layout, name, &info)) {
     if (layout.isSealed()) {
       return thread->raiseWithFmt(
           LayoutId::kAttributeError,
-          "Cannot set attribute '%S' on sealed class '%T'", &name_interned,
-          &instance);
+          "Cannot set attribute '%S' on sealed class '%T'", &name, &instance);
     }
 
     if (layout.hasDictOverflow()) {
@@ -134,23 +131,22 @@ static RawObject instanceSetAttrSetLocation(Thread* thread,
         instance.instanceVariableAtPut(offset, *overflow_dict_obj);
       }
       Dict overflow_dict(&scope, *overflow_dict_obj);
-      dictAtPutByStr(thread, overflow_dict, name_interned, value);
+      dictAtPutByStr(thread, overflow_dict, name, value);
       return NoneType::object();
     }
 
     // Transition the layout
-    layout = runtime->layoutAddAttribute(thread, layout, name_interned, 0);
+    layout = runtime->layoutAddAttribute(thread, layout, name, 0);
     has_new_layout_id = true;
 
-    bool found =
-        runtime->layoutFindAttribute(thread, layout, name_interned, &info);
+    bool found = runtime->layoutFindAttribute(thread, layout, name, &info);
     DCHECK(found, "couldn't find attribute on new layout");
   }
 
   if (info.isReadOnly()) {
     return thread->raiseWithFmt(LayoutId::kAttributeError,
                                 "'%T.%S' attribute is read-only", &instance,
-                                &name_interned);
+                                &name);
   }
 
   DCHECK(!thread->runtime()->isInstanceOfType(*instance),
@@ -189,19 +185,18 @@ static RawObject instanceSetAttrSetLocation(Thread* thread,
 }
 
 RawObject instanceSetAttr(Thread* thread, const Instance& instance,
-                          const Str& name_interned, const Object& value) {
-  return instanceSetAttrSetLocation(thread, instance, name_interned, value,
-                                    nullptr);
+                          const Object& name, const Object& value) {
+  return instanceSetAttrSetLocation(thread, instance, name, value, nullptr);
 }
 
 RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
-                                        const Object& name_str, word hash,
+                                        const Object& name,
                                         Object* location_out) {
   // Look for the attribute in the class
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->typeOf(*object));
-  Object type_attr(&scope, typeLookupInMro(thread, type, name_str, hash));
+  Object type_attr(&scope, typeLookupInMro(thread, type, name));
   if (!type_attr.isError()) {
     // TODO(T56252621): Remove this once property gets cached.
     if (type_attr.isProperty()) {
@@ -225,12 +220,8 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
   // No data descriptor found on the class, look at the instance.
   if (object.isInstance()) {
     Instance instance(&scope, *object);
-    // TODO(T53626118) Raise an exception when `name_str` is a string subclass
-    // that overrides `__eq__` or `__hash__`.
-    Str name_underlying(&scope, strUnderlying(*name_str));
-    Str name_interned(&scope, Runtime::internStr(thread, name_underlying));
-    Object result(&scope, instanceGetAttributeSetLocation(
-                              thread, instance, name_interned, location_out));
+    Object result(&scope, instanceGetAttributeSetLocation(thread, instance,
+                                                          name, location_out));
     if (!result.isError()) {
       return *result;
     }
@@ -251,8 +242,8 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
 }
 
 RawObject objectGetAttribute(Thread* thread, const Object& object,
-                             const Object& name_str, word hash) {
-  return objectGetAttributeSetLocation(thread, object, name_str, hash, nullptr);
+                             const Object& name) {
+  return objectGetAttributeSetLocation(thread, object, name, nullptr);
 }
 
 RawObject objectNew(Thread* thread, const Type& type) {
@@ -286,13 +277,13 @@ RawObject objectNew(Thread* thread, const Type& type) {
 }
 
 RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
-                                   const Object& name_str, word hash,
-                                   const Object& value, Object* location_out) {
+                                   const Object& name, const Object& value,
+                                   Object* location_out) {
   Runtime* runtime = thread->runtime();
   // Check for a data descriptor
   HandleScope scope(thread);
   Type type(&scope, runtime->typeOf(*object));
-  Object type_attr(&scope, typeLookupInMro(thread, type, name_str, hash));
+  Object type_attr(&scope, typeLookupInMro(thread, type, name));
   if (!type_attr.isError()) {
     Type type_attr_type(&scope, runtime->typeOf(*type_attr));
     if (typeIsDataDescriptor(thread, type_attr_type)) {
@@ -308,21 +299,15 @@ RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
   // No data descriptor found, store on the instance.
   if (object.isInstance()) {
     Instance instance(&scope, *object);
-    // TODO(T53626118) Raise an exception when `name_str` is a string subclass
-    // that overrides `__eq__` or `__hash__`.
-    Str name_underlying(&scope, strUnderlying(*name_str));
-    Str name_interned(&scope, Runtime::internStr(thread, name_underlying));
-    return instanceSetAttrSetLocation(thread, instance, name_interned, value,
+    return instanceSetAttrSetLocation(thread, instance, name, value,
                                       location_out);
   }
-  return objectRaiseAttributeError(thread, object, name_str);
+  return objectRaiseAttributeError(thread, object, name);
 }
 
 RawObject objectSetAttr(Thread* thread, const Object& object,
-                        const Object& name_str, word hash,
-                        const Object& value) {
-  return objectSetAttrSetLocation(thread, object, name_str, hash, value,
-                                  nullptr);
+                        const Object& name, const Object& value) {
+  return objectSetAttrSetLocation(thread, object, name, value, nullptr);
 }
 
 RawObject objectDelItem(Thread* thread, const Object& object,
@@ -409,7 +394,7 @@ void ObjectBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
   Tuple parameter_names(&scope, runtime->newTuple(2));
   parameter_names.atPut(0, runtime->symbols()->Self());
   parameter_names.atPut(1, runtime->symbols()->Name());
-  Str name(&scope, runtime->symbols()->at(SymbolId::kDunderGetattribute));
+  Object name(&scope, runtime->symbols()->at(SymbolId::kDunderGetattribute));
   Code code(&scope,
             runtime->newBuiltinCode(
                 /*argcount=*/2, /*posonlyargcount=*/2, /*kwonlyargcount=*/0,
@@ -430,16 +415,9 @@ RawObject ObjectBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Object name(&scope, args.get(1));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfStr(*name)) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
-  }
-  Object hash_obj(&scope, Interpreter::hash(thread, name));
-  if (hash_obj.isErrorException()) return *hash_obj;
-  word hash = SmallInt::cast(*hash_obj).value();
-
-  Object result(&scope, objectGetAttribute(thread, self, name, hash));
+  name = attributeName(thread, name);
+  if (name.isErrorException()) return *name;
+  Object result(&scope, objectGetAttribute(thread, self, name));
   if (result.isErrorNotFound()) {
     return objectRaiseAttributeError(thread, self, name);
   }
@@ -498,19 +476,10 @@ RawObject ObjectBuiltins::dunderSetattr(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Object name(&scope, args.get(1));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfStr(*name)) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
-  }
-  if (!name.isStr()) {
-    UNIMPLEMENTED("Strict subclass of string");
-  }
-  Object hash_obj(&scope, Interpreter::hash(thread, name));
-  if (hash_obj.isErrorException()) return *hash_obj;
-  word hash = SmallInt::cast(*hash_obj).value();
+  name = attributeName(thread, name);
+  if (name.isErrorException()) return *name;
   Object value(&scope, args.get(2));
-  return objectSetAttr(thread, self, name, hash, value);
+  return objectSetAttr(thread, self, name, value);
 }
 
 RawObject ObjectBuiltins::dunderSizeof(Thread* thread, Frame* frame,

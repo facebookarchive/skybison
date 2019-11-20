@@ -725,9 +725,10 @@ PY_EXPORT PyObject* PyObject_CallMethodObjArgs(PyObject* pyobj,
   }
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
-  Object name_obj(&scope, ApiHandle::fromPyObject(py_method_name)->asObject());
-  Object callable(&scope,
-                  thread->runtime()->attributeAt(thread, obj, name_obj));
+  Object name(&scope, ApiHandle::fromPyObject(py_method_name)->asObject());
+  name = attributeName(thread, name);
+  if (name.isErrorException()) return nullptr;
+  Object callable(&scope, thread->runtime()->attributeAt(thread, obj, name));
   if (callable.isError()) return nullptr;
 
   va_list va;

@@ -310,9 +310,8 @@ s = B().getsuper()
   Object s_obj(&scope, mainModuleAt(&runtime_, "s"));
   ASSERT_TRUE(s_obj.isSuper());
   Super s(&scope, *s_obj);
-  Object name(&scope, runtime_.newStrFromCStr("x"));
-  word hash = strHash(thread_, *name);
-  EXPECT_TRUE(isIntEqualsWord(superGetAttribute(thread_, s, name, hash), 13));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "x"));
+  EXPECT_TRUE(isIntEqualsWord(superGetAttribute(thread_, s, name), 13));
 }
 
 TEST_F(SuperBuiltinsTest, SuperGetAttributeWithMissingAttributeReturnsError) {
@@ -329,9 +328,8 @@ s = B().getsuper()
   Object s_obj(&scope, mainModuleAt(&runtime_, "s"));
   ASSERT_TRUE(s_obj.isSuper());
   Super s(&scope, *s_obj);
-  Object name(&scope, runtime_.newStrFromCStr("x"));
-  word hash = strHash(thread_, *name);
-  EXPECT_TRUE(superGetAttribute(thread_, s, name, hash).isError());
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "x"));
+  EXPECT_TRUE(superGetAttribute(thread_, s, name).isError());
   EXPECT_FALSE(thread_->hasPendingException());
 }
 
@@ -358,9 +356,8 @@ s = i.getsuper()
   Object s_obj(&scope, mainModuleAt(&runtime_, "s"));
   ASSERT_TRUE(s_obj.isSuper());
   Super s(&scope, *s_obj);
-  Object name(&scope, runtime_.newStrFromCStr("x"));
-  word hash = strHash(thread_, *name);
-  Object result_obj(&scope, superGetAttribute(thread_, s, name, hash));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "x"));
+  Object result_obj(&scope, superGetAttribute(thread_, s, name));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 3);
@@ -391,9 +388,8 @@ s = i.getsuper()
   Object s_obj(&scope, mainModuleAt(&runtime_, "s"));
   ASSERT_TRUE(s_obj.isSuper());
   Super s(&scope, *s_obj);
-  Object name(&scope, runtime_.newStrFromCStr("x"));
-  word hash = strHash(thread_, *name);
-  Object result_obj(&scope, superGetAttribute(thread_, s, name, hash));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "x"));
+  Object result_obj(&scope, superGetAttribute(thread_, s, name));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 3);
@@ -414,10 +410,9 @@ s = C().foo()
   Object s_obj(&scope, mainModuleAt(&runtime_, "s"));
   ASSERT_TRUE(s_obj.isSuper());
   Super s(&scope, *s_obj);
-  Object name(&scope, runtime_.newStrFromCStr("__class__"));
-  word hash = strHash(thread_, *name);
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "__class__"));
   Type super_type(&scope, runtime_.typeAt(LayoutId::kSuper));
-  EXPECT_EQ(superGetAttribute(thread_, s, name, hash), super_type);
+  EXPECT_EQ(superGetAttribute(thread_, s, name), super_type);
 }
 
 }  // namespace py

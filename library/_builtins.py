@@ -213,11 +213,6 @@ def _complex_real(c):
 
 
 @_patch
-def _delattr(obj, name):
-    pass
-
-
-@_patch
 def _dict_bucket_insert(self, index, key, key_hash, value):
     pass
 

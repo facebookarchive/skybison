@@ -209,7 +209,7 @@ result = cache_binary_op(a, b)
 
   // Verify that A.__add__ has the dependent.
   Dict type_a_dict(&scope, type_a.dict());
-  Str left_op_name(&scope, runtime_.symbols()->at(SymbolId::kDunderAdd));
+  Object left_op_name(&scope, runtime_.symbols()->at(SymbolId::kDunderAdd));
   Object type_a_attr(&scope, dictAtByStr(thread_, type_a_dict, left_op_name));
   ASSERT_TRUE(type_a_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*type_a_attr).dependencyLink().isWeakLink());
@@ -219,7 +219,7 @@ result = cache_binary_op(a, b)
 
   // Verify that B.__radd__ has the dependent.
   Dict type_b_dict(&scope, type_b.dict());
-  Str right_op_name(&scope, runtime_.symbols()->at(SymbolId::kDunderRadd));
+  Object right_op_name(&scope, runtime_.symbols()->at(SymbolId::kDunderRadd));
   Object type_b_attr(&scope, dictAtByStr(thread_, type_b_dict, right_op_name));
   ASSERT_TRUE(type_b_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*type_b_attr).dependencyLink().isWeakLink());
@@ -705,7 +705,7 @@ cache_inplace_op(a, b)
 
   // Verify that A.__imul__ has the dependent.
   Dict type_a_dict(&scope, type_a.dict());
-  Str inplace_op_name(&scope, runtime_.symbols()->at(SymbolId::kDunderImul));
+  Object inplace_op_name(&scope, runtime_.symbols()->at(SymbolId::kDunderImul));
   Object inplace_attr(&scope,
                       dictAtByStr(thread_, type_a_dict, inplace_op_name));
   ASSERT_TRUE(inplace_attr.isValueCell());
@@ -715,7 +715,7 @@ cache_inplace_op(a, b)
             *cache_inplace_op);
 
   // Verify that A.__mul__ has the dependent.
-  Str left_op_name(&scope, runtime_.symbols()->at(SymbolId::kDunderMul));
+  Object left_op_name(&scope, runtime_.symbols()->at(SymbolId::kDunderMul));
   Object type_a_attr(&scope, dictAtByStr(thread_, type_a_dict, left_op_name));
   ASSERT_TRUE(type_a_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*type_a_attr).dependencyLink().isWeakLink());
@@ -725,7 +725,7 @@ cache_inplace_op(a, b)
 
   // Verify that B.__rmul__ has the dependent.
   Dict type_b_dict(&scope, type_b.dict());
-  Str right_op_name(&scope, runtime_.symbols()->at(SymbolId::kDunderRmul));
+  Object right_op_name(&scope, runtime_.symbols()->at(SymbolId::kDunderRmul));
   Object type_b_attr(&scope, dictAtByStr(thread_, type_b_dict, right_op_name));
   ASSERT_TRUE(type_b_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*type_b_attr).dependencyLink().isWeakLink());
@@ -1103,17 +1103,17 @@ c = C()
   Object called(&scope, mainModuleAt(&runtime_, "called"));
   EXPECT_TRUE(isStrEqualsCStr(*called, "A"));
 
-  Str called_name(&scope, runtime_.newStrFromCStr("called"));
+  Object called_name(&scope, Runtime::internStrFromCStr(thread_, "called"));
   Object none(&scope, NoneType::object());
   Module main(&scope, findMainModule(&runtime_));
-  moduleAtPutByStr(thread_, main, called_name, none);
+  moduleAtPut(thread_, main, called_name, none);
   Object b_eq_a(&scope, Interpreter::compareOperation(thread_, frame,
                                                       CompareOp::EQ, b, a));
   EXPECT_EQ(b_eq_a, Bool::trueObj());
   called = mainModuleAt(&runtime_, "called");
   EXPECT_TRUE(isStrEqualsCStr(*called, "B"));
 
-  moduleAtPutByStr(thread_, main, called_name, none);
+  moduleAtPut(thread_, main, called_name, none);
   Object c_eq_a(&scope, Interpreter::compareOperation(thread_, frame,
                                                       CompareOp::EQ, c, a));
   EXPECT_EQ(c_eq_a, Bool::trueObj());
@@ -1121,7 +1121,7 @@ c = C()
   EXPECT_TRUE(isStrEqualsCStr(*called, "C"));
 
   // When rhs is a subtype of lhs, only rhs.__eq__(rhs) is tried.
-  moduleAtPutByStr(thread_, main, called_name, none);
+  moduleAtPut(thread_, main, called_name, none);
   Object a_eq_c(&scope, Interpreter::compareOperation(thread_, frame,
                                                       CompareOp::EQ, a, c));
   EXPECT_EQ(a_eq_c, Bool::trueObj());
@@ -1310,7 +1310,7 @@ result = cache_compare_op(a, b)
   // Verify that A.__ge__ has the dependent.
   Type a_type(&scope, mainModuleAt(&runtime_, "A"));
   Dict a_type_dict(&scope, a_type.dict());
-  Str left_op_name(&scope, runtime_.symbols()->at(SymbolId::kDunderGe));
+  Object left_op_name(&scope, runtime_.symbols()->at(SymbolId::kDunderGe));
   Object a_type_attr(&scope, dictAtByStr(thread_, a_type_dict, left_op_name));
   ASSERT_TRUE(a_type_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*a_type_attr).dependencyLink().isWeakLink());
@@ -1321,7 +1321,7 @@ result = cache_compare_op(a, b)
   // Verify that B.__le__ has the dependent.
   Type b_type(&scope, mainModuleAt(&runtime_, "B"));
   Dict b_type_dict(&scope, b_type.dict());
-  Str right_op_name(&scope, runtime_.symbols()->at(SymbolId::kDunderLe));
+  Object right_op_name(&scope, runtime_.symbols()->at(SymbolId::kDunderLe));
   Object b_type_attr(&scope, dictAtByStr(thread_, b_type_dict, right_op_name));
   ASSERT_TRUE(b_type_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*b_type_attr).dependencyLink().isWeakLink());
@@ -1756,8 +1756,8 @@ TEST_F(InterpreterTest, StackCleanupAfterCallFunction) {
   code.setConsts(*consts);
 
   Tuple names(&scope, runtime_.newTuple(1));
-  Object key(&scope, runtime_.newStrFromCStr("foo"));
-  names.atPut(0, *key);
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  names.atPut(0, *name);
   code.setNames(*names);
   code.setArgcount(2);
   code.setNlocals(2);
@@ -1806,8 +1806,8 @@ TEST_F(InterpreterTest, StackCleanupAfterCallExFunction) {
   code.setConsts(*consts);
 
   Tuple names(&scope, runtime_.newTuple(1));
-  Object key(&scope, runtime_.newStrFromCStr("foo"));
-  names.atPut(0, *key);
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  names.atPut(0, *name);
   code.setNames(*names);
   code.setArgcount(2);
   code.setNlocals(2);
@@ -1859,15 +1859,15 @@ TEST_F(InterpreterTest, StackCleanupAfterCallKwFunction) {
   code.setConsts(*consts);
 
   Tuple names(&scope, runtime_.newTuple(1));
-  Object key(&scope, runtime_.newStrFromCStr("foo"));
-  names.atPut(0, *key);
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  names.atPut(0, *name);
   code.setNames(*names);
   code.setArgcount(2);
   code.setNlocals(2);
   code.setStacksize(1);
   Tuple var_names(&scope, runtime_.newTuple(2));
-  var_names.atPut(0, runtime_.newStrFromCStr("a"));
-  var_names.atPut(1, runtime_.newStrFromCStr("b"));
+  var_names.atPut(0, Runtime::internStrFromCStr(thread_, "a"));
+  var_names.atPut(1, Runtime::internStrFromCStr(thread_, "b"));
   code.setVarnames(*var_names);
 
   const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
@@ -1888,7 +1888,7 @@ TEST_F(InterpreterTest, StackCleanupAfterCallKwFunction) {
 
   // Push function pointer and argument
   Tuple arg_names(&scope, runtime_.newTuple(1));
-  arg_names.atPut(0, runtime_.newStrFromCStr("b"));
+  arg_names.atPut(0, Runtime::internStrFromCStr(thread_, "b"));
   frame->pushValue(*callee);
   frame->pushValue(SmallInt::fromWord(4));
   frame->pushValue(*arg_names);
@@ -2281,7 +2281,7 @@ manager = M()
   consts.atPut(1, *manager);
   code.setConsts(*consts);
   Tuple names(&scope, runtime_.newTuple(1));
-  names.atPut(0, runtime_.newStrFromCStr("manager"));
+  names.atPut(0, Runtime::internStrFromCStr(thread_, "manager"));
   code.setNames(*names);
   const byte bytecode[] = {LOAD_CONST, 1, BEFORE_ASYNC_WITH, 0, POP_TOP, 0,
                            LOAD_CONST, 0, RETURN_VALUE,      0};
@@ -2898,7 +2898,7 @@ TEST_F(InterpreterTest, GetAwaitableOnNonAwaitable) {
   HandleScope scope(thread_);
   Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime_.newTuple(1));
-  consts.atPut(0, runtime_.newStrFromCStr("foo"));
+  consts.atPut(0, Runtime::internStrFromCStr(thread_, "foo"));
   code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_AWAITABLE, 0, RETURN_VALUE, 0};
   code.setCode(runtime_.newBytesWithAll(bytecode));
@@ -3742,7 +3742,7 @@ i = C()
                    .isError());
   Object i(&scope, mainModuleAt(&runtime_, "i"));
 
-  Str name(&scope, runtime_.newStrFromCStr("foo"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object to_cache(&scope, NoneType::object());
   Interpreter::LoadAttrKind kind;
   EXPECT_TRUE(isIntEqualsWord(
@@ -3804,7 +3804,7 @@ a_global = 1234
 )")
                    .isError());
   Object mod(&scope, findMainModule(&runtime_));
-  Str name(&scope, runtime_.newStrFromCStr("a_global"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "a_global"));
 
   Object to_cache(&scope, NoneType::object());
   Interpreter::LoadAttrKind kind;
@@ -3824,7 +3824,7 @@ class C:
                    .isError());
   Object type(&scope, mainModuleAt(&runtime_, "C"));
 
-  Str name(&scope, runtime_.newStrFromCStr("an_attribute"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "an_attribute"));
 
   Object to_cache(&scope, NoneType::object());
   Interpreter::LoadAttrKind kind;
@@ -3847,7 +3847,7 @@ i = C()
                    .isError());
   Object i(&scope, mainModuleAt(&runtime_, "i"));
 
-  Str name(&scope, runtime_.newStrFromCStr("foo"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object to_cache(&scope, NoneType::object());
   Interpreter::LoadAttrKind kind;
   EXPECT_TRUE(isIntEqualsWord(
@@ -3870,7 +3870,7 @@ i = C()
                    .isError());
   Object i(&scope, mainModuleAt(&runtime_, "i"));
 
-  Str name(&scope, runtime_.newStrFromCStr("bar"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   Object to_cache(&scope, NoneType::object());
   Interpreter::LoadAttrKind kind;
 
@@ -3889,7 +3889,7 @@ obj = object()
                    .isError());
 
   Object obj(&scope, mainModuleAt(&runtime_, "obj"));
-  Str name(&scope, runtime_.newStrFromCStr("nonexistent_attr"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "nonexistent_attr"));
   Interpreter::LoadAttrKind kind;
   EXPECT_TRUE(raisedWithStr(
       Interpreter::loadAttrSetLocation(thread_, obj, name, &kind, nullptr),
@@ -3903,7 +3903,7 @@ TEST_F(InterpreterTest, LoadAttrWithoutAttrUnwindsAttributeException) {
   // Set up a code object that runs: {}.foo
   Code code(&scope, newEmptyCode());
   Tuple names(&scope, runtime_.newTuple(1));
-  Str foo(&scope, runtime_.newStrFromCStr("foo"));
+  Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   names.atPut(0, *foo);
   code.setNames(*names);
 
@@ -4310,7 +4310,7 @@ result = foo()
       isIntEqualsWord(valueCellValue(icLookupGlobalVar(*caches, 0)), 400));
 
   Module module(&scope, function.moduleObject());
-  Str name(&scope, runtime_.newStrFromCStr("a"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "a"));
   Dict module_dict(&scope, module.dict());
   Object module_entry(&scope, dictAtByStr(thread_, module_dict, name));
   ASSERT_TRUE(module_entry.isValueCell());
@@ -4566,7 +4566,7 @@ c = C()
   // Verify that all type dictionaries in C's mro have dependentices to get_foo.
   Dict type_b_dict(&scope, type_b.dict());
   Dict type_c_dict(&scope, type_c.dict());
-  Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
+  Object foo_name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object result(&scope, dictAtByStr(thread_, type_b_dict, foo_name));
   ASSERT_TRUE(result.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*result).dependencyLink().isWeakLink());
@@ -4951,7 +4951,7 @@ c = C()
 
   // Verify that cache_attribute function is added as a dependent.
   Dict type_c_dict(&scope, type_c.dict());
-  Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
+  Object foo_name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   ValueCell value_cell(&scope, dictAtByStr(thread_, type_c_dict, foo_name));
   ASSERT_TRUE(value_cell.dependencyLink().isWeakLink());
   EXPECT_EQ(WeakLink::cast(value_cell.dependencyLink()).referent(),
@@ -4986,7 +4986,7 @@ c = C()
 
   // Verify that cache_attribute function is added as a dependent.
   Dict type_c_dict(&scope, type_c.dict());
-  Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
+  Object foo_name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   ValueCell value_cell(&scope, dictAtByStr(thread_, type_c_dict, foo_name));
   ASSERT_TRUE(value_cell.dependencyLink().isWeakLink());
   EXPECT_EQ(WeakLink::cast(value_cell.dependencyLink()).referent(),
@@ -5048,7 +5048,7 @@ function_that_caches_attr_lookup(a, b, c)
   // Verify that function_that_caches_attr_lookup cached the attribute lookup
   // and appears on the dependency list of A.foo.
   Dict type_a_dict(&scope, type_a.dict());
-  Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
+  Object foo_name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   ValueCell foo_in_a(&scope, dictAtByStr(thread_, type_a_dict, foo_name));
   ASSERT_TRUE(foo_in_a.dependencyLink().isWeakLink());
   ASSERT_EQ(WeakLink::cast(foo_in_a.dependencyLink()).referent(),

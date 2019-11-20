@@ -23,7 +23,7 @@ static RawObject createDummyBuiltinFunction(Thread* thread) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Function::Entry entry = UnderBuiltinsModule::underIntCheck;
-  Str name(&scope, runtime->symbols()->UnderIntCheck());
+  Object name(&scope, runtime->symbols()->UnderIntCheck());
   Tuple parameter_names(&scope, runtime->newTuple(1));
   parameter_names.atPut(0, runtime->symbols()->Self());
   Code code(&scope,
@@ -1891,17 +1891,16 @@ TEST_F(UnderBuiltinsModuleTest, UnderModuleDirListWithFilteredOutPlaceholders) {
   Module module(&scope, runtime_.newModule(module_name));
   module.setDict(runtime_.newDict());
 
-  Str foo(&scope, runtime_.newStrFromCStr("foo"));
-  Str bar(&scope, runtime_.newStrFromCStr("bar"));
-  Str baz(&scope, runtime_.newStrFromCStr("baz"));
+  Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
+  Object baz(&scope, Runtime::internStrFromCStr(thread_, "baz"));
   Str value(&scope, runtime_.newStrFromCStr("value"));
 
-  moduleAtPutByStr(thread_, module, foo, value);
-  moduleAtPutByStr(thread_, module, bar, value);
-  moduleAtPutByStr(thread_, module, baz, value);
+  moduleAtPut(thread_, module, foo, value);
+  moduleAtPut(thread_, module, bar, value);
+  moduleAtPut(thread_, module, baz, value);
 
-  ValueCell::cast(moduleValueCellAtByStr(thread_, module, bar))
-      .makePlaceholder();
+  ValueCell::cast(moduleValueCellAt(thread_, module, bar)).makePlaceholder();
 
   List keys(&scope, runBuiltin(UnderBuiltinsModule::underModuleDir, module));
   EXPECT_EQ(keys.numItems(), 2);

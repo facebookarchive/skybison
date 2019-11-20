@@ -12,7 +12,7 @@ namespace py {
 // Perform the same lookup operation as typeLookupNameInMro as we're inserting
 // dependent into the ValueCell in each visited type dictionary.
 static void insertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
-                                               const Str& name,
+                                               const Object& name,
                                                const Object& dependent) {
   HandleScope scope(thread);
   Tuple mro(&scope, type.mro());
@@ -41,7 +41,7 @@ static void insertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
 }
 
 void icUpdateAttr(Thread* thread, const Tuple& caches, word index,
-                  LayoutId layout_id, const Object& value, const Str& name,
+                  LayoutId layout_id, const Object& value, const Object& name,
                   const Function& dependent) {
   RawSmallInt key = SmallInt::fromWord(static_cast<word>(layout_id));
   RawObject entry_key = NoneType::object();
@@ -90,7 +90,7 @@ void icUpdateAttrModule(Thread* thread, const Tuple& caches, word index,
 }
 
 void icUpdateAttrType(Thread* thread, const Tuple& caches, word index,
-                      const Object& receiver, const Str& selector,
+                      const Object& receiver, const Object& selector,
                       const Object& value, const Function& dependent) {
   DCHECK(icIsCacheEmpty(caches, index), "cache must be empty\n");
   word i = index * kIcPointersPerCache;
@@ -146,11 +146,11 @@ static void insertBinaryOpDependencies(Thread* thread,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type left_type(&scope, runtime->typeAt(left_layout_id));
-  Str left_op_name(&scope, runtime->symbols()->at(left_operator_id));
+  Object left_op_name(&scope, runtime->symbols()->at(left_operator_id));
   insertDependencyForTypeLookupInMro(thread, left_type, left_op_name,
                                      dependent);
   Type right_type(&scope, runtime->typeAt(right_layout_id));
-  Str right_op_name(&scope, runtime->symbols()->at(right_operator_id));
+  Object right_op_name(&scope, runtime->symbols()->at(right_operator_id));
   insertDependencyForTypeLookupInMro(thread, right_type, right_op_name,
                                      dependent);
 }
@@ -185,7 +185,7 @@ void icInsertInplaceOpDependencies(Thread* thread, const Function& dependent,
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Type left_type(&scope, runtime->typeAt(left_layout_id));
-  Str inplace_op_name(
+  Object inplace_op_name(
       &scope, runtime->symbols()->at(runtime->inplaceOperationSelector(op)));
   insertDependencyForTypeLookupInMro(thread, left_type, inplace_op_name,
                                      dependent);
@@ -221,7 +221,7 @@ void icDeleteDependentInValueCell(Thread* thread, const ValueCell& value_cell,
 
 void icDeleteDependentFromInheritingTypes(Thread* thread,
                                           LayoutId cached_layout_id,
-                                          const Str& attr_name,
+                                          const Object& attr_name,
                                           const Type& new_defining_type,
                                           const Object& dependent) {
   DCHECK(icIsCachedAttributeAffectedByUpdatedType(thread, cached_layout_id,
@@ -251,7 +251,7 @@ void icDeleteDependentFromInheritingTypes(Thread* thread,
 }
 
 RawObject icHighestSuperTypeNotInMroOfOtherCachedTypes(
-    Thread* thread, LayoutId cached_layout_id, const Str& attr_name,
+    Thread* thread, LayoutId cached_layout_id, const Object& attr_name,
     const Function& dependent) {
   HandleScope scope(thread);
   Object supertype_obj(&scope, NoneType::object());
@@ -277,7 +277,7 @@ RawObject icHighestSuperTypeNotInMroOfOtherCachedTypes(
 
 bool icIsCachedAttributeAffectedByUpdatedType(Thread* thread,
                                               LayoutId cached_layout_id,
-                                              const Str& attribute_name,
+                                              const Object& attribute_name,
                                               const Type& updated_type) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -316,7 +316,7 @@ bool icIsCachedAttributeAffectedByUpdatedType(Thread* thread,
 }
 
 bool icIsAttrCachedInDependent(Thread* thread, const Type& type,
-                               const Str& attr_name,
+                               const Object& attr_name,
                                const Function& dependent) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -332,17 +332,17 @@ bool icIsAttrCachedInDependent(Thread* thread, const Type& type,
     } else {
       DCHECK(it.isBinaryOpCache() || it.isInplaceOpCache(),
              "a cache must be for binops or inplace-ops");
-      if (attr_name.equals(it.leftMethodName()) &&
+      if (attr_name == it.leftMethodName() &&
           icIsCachedAttributeAffectedByUpdatedType(thread, it.leftLayoutId(),
                                                    attr_name, type)) {
         return true;
       }
-      if (attr_name.equals(it.rightMethodName()) &&
+      if (attr_name == it.rightMethodName() &&
           icIsCachedAttributeAffectedByUpdatedType(thread, it.rightLayoutId(),
                                                    attr_name, type)) {
         return true;
       }
-      if (it.isInplaceOpCache() && attr_name.equals(it.inplaceMethodName()) &&
+      if (it.isInplaceOpCache() && attr_name == it.inplaceMethodName() &&
           icIsCachedAttributeAffectedByUpdatedType(thread, it.leftLayoutId(),
                                                    attr_name, type)) {
         return true;
@@ -353,7 +353,7 @@ bool icIsAttrCachedInDependent(Thread* thread, const Type& type,
 }
 
 void icEvictAttr(Thread* thread, const IcIterator& it, const Type& updated_type,
-                 const Str& updated_attr, AttributeKind attribute_kind,
+                 const Object& updated_attr, AttributeKind attribute_kind,
                  const Function& dependent) {
   DCHECK(it.isAttrCache(), "ic should point to an attribute cache");
   if (!it.isAttrNameEqualTo(updated_attr)) {
@@ -385,12 +385,13 @@ void icEvictAttr(Thread* thread, const IcIterator& it, const Type& updated_type,
 
 void icDeleteDependentToDefiningType(Thread* thread, const Function& dependent,
                                      LayoutId cached_layout_id,
-                                     const Str& attr) {
+                                     const Object& attr_name) {
   HandleScope scope(thread);
   // Walk up the MRO from the updated class looking for a super type that is not
   // referenced by another cache in this same function.
-  Object supertype_obj(&scope, icHighestSuperTypeNotInMroOfOtherCachedTypes(
-                                   thread, cached_layout_id, attr, dependent));
+  Object supertype_obj(&scope,
+                       icHighestSuperTypeNotInMroOfOtherCachedTypes(
+                           thread, cached_layout_id, attr_name, dependent));
   if (supertype_obj.isErrorNotFound()) {
     // typeAt(other_cached_layout_id).other_method_name_id is still cached so no
     // more dependencies need to be deleted.
@@ -401,7 +402,7 @@ void icDeleteDependentToDefiningType(Thread* thread, const Function& dependent,
   // of supertypes from the updated type up to the last supertype that is
   // exclusively referenced by the type in this cache (and no other caches in
   // this function.)
-  icDeleteDependentFromInheritingTypes(thread, cached_layout_id, attr,
+  icDeleteDependentFromInheritingTypes(thread, cached_layout_id, attr_name,
                                        supertype, dependent);
 
   // TODO(T54202245): Remove depdency links in the parent classes of
@@ -410,7 +411,7 @@ void icDeleteDependentToDefiningType(Thread* thread, const Function& dependent,
 
 // TODO(T54277418): Pass SymbolId for updated_attr.
 void icEvictBinaryOp(Thread* thread, const IcIterator& it,
-                     const Type& updated_type, const Str& updated_attr,
+                     const Type& updated_type, const Object& updated_attr,
                      const Function& dependent) {
   if (it.leftMethodName() != updated_attr &&
       it.rightMethodName() != updated_attr) {
@@ -438,7 +439,7 @@ void icEvictBinaryOp(Thread* thread, const IcIterator& it,
   LayoutId cached_layout_id = it.leftLayoutId();
   LayoutId other_cached_layout_id = it.rightLayoutId();
   HandleScope scope(thread);
-  Str other_method_name(&scope, it.rightMethodName());
+  Object other_method_name(&scope, it.rightMethodName());
   if (evict_rhs) {
     // The RHS type is the one that is being affected.  This is either because
     // the RHS type is a supertype of the LHS type or because the LHS type did
@@ -462,7 +463,7 @@ void icEvictBinaryOp(Thread* thread, const IcIterator& it,
 }
 
 void icEvictInplaceOp(Thread* thread, const IcIterator& it,
-                      const Type& updated_type, const Str& updated_attr,
+                      const Type& updated_type, const Object& updated_attr,
                       const Function& dependent) {
   if (it.inplaceMethodName() != updated_attr &&
       it.leftMethodName() != updated_attr &&
@@ -496,9 +497,9 @@ void icEvictInplaceOp(Thread* thread, const IcIterator& it,
   LayoutId left_layout_id = it.leftLayoutId();
   LayoutId right_layout_id = it.rightLayoutId();
   HandleScope scope(thread);
-  Str inplace_method_name(&scope, it.inplaceMethodName());
-  Str left_method_name(&scope, it.leftMethodName());
-  Str right_method_name(&scope, it.rightMethodName());
+  Object inplace_method_name(&scope, it.inplaceMethodName());
+  Object left_method_name(&scope, it.leftMethodName());
+  Object right_method_name(&scope, it.rightMethodName());
   it.evict();
 
   // Remove this function from the dependency links in the dictionaries of
@@ -537,18 +538,18 @@ void icEvictInplaceOp(Thread* thread, const IcIterator& it,
 }
 
 void icEvictCache(Thread* thread, const Function& dependent, const Type& type,
-                  const Str& attr, AttributeKind attribute_kind) {
+                  const Object& attr_name, AttributeKind attribute_kind) {
   HandleScope scope(thread);
-  // Scan through all caches and delete caches shadowed by type.attr.
+  // Scan through all caches and delete caches shadowed by type.attr_name.
   // TODO(T54277418): Filter out attr that cannot be converted to SymbolId.
   for (IcIterator it(&scope, thread->runtime(), *dependent); it.hasNext();
        it.next()) {
     if (it.isAttrCache()) {
-      icEvictAttr(thread, it, type, attr, attribute_kind, dependent);
+      icEvictAttr(thread, it, type, attr_name, attribute_kind, dependent);
     } else if (it.isBinaryOpCache()) {
-      icEvictBinaryOp(thread, it, type, attr, dependent);
+      icEvictBinaryOp(thread, it, type, attr_name, dependent);
     } else if (it.isInplaceOpCache()) {
-      icEvictInplaceOp(thread, it, type, attr, dependent);
+      icEvictInplaceOp(thread, it, type, attr_name, dependent);
     } else {
       CHECK(it.isModuleAttrCache(),
             "a cache must be for attributes, binops, or inplace-ops");
@@ -556,7 +557,7 @@ void icEvictCache(Thread* thread, const Function& dependent, const Type& type,
   }
 }
 
-void icInvalidateAttr(Thread* thread, const Type& type, const Str& attr_name,
+void icInvalidateAttr(Thread* thread, const Type& type, const Object& attr_name,
                       const ValueCell& value) {
   HandleScope scope(thread);
   // Delete caches for attr_name to be shadowed by the type[attr_name]
@@ -702,7 +703,7 @@ void icInvalidateGlobalVar(Thread* thread, const ValueCell& value_cell) {
   value_cell.setDependencyLink(NoneType::object());
 }
 
-bool IcIterator::isAttrNameEqualTo(const Str& attr_name) const {
+bool IcIterator::isAttrNameEqualTo(const Object& attr_name) const {
   DCHECK(isAttrCache(), "should be only called for attribute caches");
   if (bytecode_op_.bc == FOR_ITER_CACHED) {
     return attr_name == runtime_->symbols()->at(SymbolId::kDunderNext);
@@ -710,7 +711,7 @@ bool IcIterator::isAttrNameEqualTo(const Str& attr_name) const {
   if (bytecode_op_.bc == BINARY_SUBSCR_CACHED) {
     return attr_name == runtime_->symbols()->at(SymbolId::kDunderGetitem);
   }
-  return attr_name.equals(names_.at(originalArg(*function_, bytecode_op_.arg)));
+  return attr_name == names_.at(originalArg(*function_, bytecode_op_.arg));
 }
 
 RawObject IcIterator::leftMethodName() const {

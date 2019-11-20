@@ -105,7 +105,7 @@ c = C()
 )")
                    .isError());
   Object c(&scope, mainModuleAt(&runtime_, "c"));
-  Object name(&scope, runtime_.newStrFromCStr("foo"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object result_obj(&scope, runtime_.attributeAt(thread_, c, name));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
@@ -124,7 +124,7 @@ c = C()
 )")
                    .isError());
   Object c(&scope, mainModuleAt(&runtime_, "c"));
-  Object name(&scope, runtime_.newStrFromCStr("foo"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   EXPECT_TRUE(
       raised(runtime_.attributeAt(thread_, c, name), LayoutId::kUserWarning));
 }
@@ -140,9 +140,9 @@ c = C()
 )")
                    .isError());
   Object c(&scope, mainModuleAt(&runtime_, "c"));
-  Object foo(&scope, runtime_.newStrFromCStr("foo"));
+  Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   EXPECT_TRUE(isIntEqualsWord(runtime_.attributeAt(thread_, c, foo), 10));
-  Object bar(&scope, runtime_.newStrFromCStr("bar"));
+  Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   Object result_obj(&scope, runtime_.attributeAt(thread_, c, bar));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
@@ -163,7 +163,7 @@ c = C()
 )")
                    .isError());
   Object c(&scope, mainModuleAt(&runtime_, "c"));
-  Object foo(&scope, runtime_.newStrFromCStr("foo"));
+  Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   EXPECT_TRUE(
       raised(runtime_.attributeAt(thread_, c, foo), LayoutId::kUserWarning));
 }
@@ -885,7 +885,7 @@ TEST_F(RuntimeTest, InternLargeStr) {
 
   // Intern another string and make sure we get it back (as opposed to the
   // previously interned string).
-  Str sym2(&scope, Runtime::internStr(thread_, str2));
+  Object sym2(&scope, Runtime::internStr(thread_, str2));
   EXPECT_EQ(*sym2, *str2);
   EXPECT_NE(*sym1, *sym2);
 
@@ -918,14 +918,14 @@ TEST_F(RuntimeTest, InternSmallStr) {
 TEST_F(RuntimeTest, InternCStr) {
   HandleScope scope(thread_);
 
-  Str sym(&scope, Runtime::internStrFromCStr(thread_, "hello, world"));
+  Object sym(&scope, Runtime::internStrFromCStr(thread_, "hello, world"));
   EXPECT_TRUE(sym.isStr());
   EXPECT_TRUE(runtime_.isInternedStr(thread_, sym));
 }
 
 TEST_F(RuntimeTest, IsInternWithInternedStrReturnsTrue) {
   HandleScope scope(thread_);
-  Str str(&scope, Runtime::internStrFromCStr(thread_, "hello world"));
+  Object str(&scope, Runtime::internStrFromCStr(thread_, "hello world"));
   EXPECT_TRUE(runtime_.isInternedStr(thread_, str));
 }
 
@@ -1051,7 +1051,7 @@ TEST_F(RuntimeTest, GetTypeConstructor) {
 
   EXPECT_TRUE(runtime_.classConstructor(type).isErrorNotFound());
 
-  Str init(&scope, runtime_.symbols()->DunderInit());
+  Object init(&scope, runtime_.symbols()->DunderInit());
   Object func(&scope, makeTestFunction());
   dictAtPutInValueCellByStr(thread_, type_dict, init, func);
 
@@ -1245,7 +1245,7 @@ c = MyTypeWithAttributes(1)
   Type cls(&scope, layout.describedType());
   EXPECT_TRUE(isStrEqualsCStr(cls.name(), "MyTypeWithAttributes"));
 
-  Object name(&scope, runtime_.newStrFromCStr("x"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "x"));
   Object value(&scope, runtime_.attributeAt(thread_, instance, name));
   EXPECT_FALSE(value.isError());
   EXPECT_EQ(*value, SmallInt::fromWord(1));
@@ -1762,8 +1762,8 @@ Foo()
 TEST_F(RuntimeAttributeTest, NoInstanceDictReturnsClassAttribute) {
   HandleScope scope(thread_);
   Object immediate(&scope, SmallInt::fromWord(-1));
-  Object name(&scope, runtime_.symbols()->DunderNeg());
-  RawObject attr = runtime_.attributeAt(thread_, immediate, name);
+  RawObject attr =
+      runtime_.attributeAtById(thread_, immediate, SymbolId::kDunderNeg);
   ASSERT_TRUE(attr.isBoundMethod());
 }
 
@@ -2021,7 +2021,7 @@ def test(module):
   args.atPut(0, findMainModule(&runtime_));
   EXPECT_EQ(callFunction(test, args), SmallInt::fromWord(123));
 
-  Object attr(&scope, runtime_.newStrFromCStr("foo"));
+  Object attr(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object module(&scope, findMainModule(&runtime_));
   EXPECT_TRUE(runtime_.attributeAt(thread_, module, attr).isError());
 }
@@ -2478,11 +2478,11 @@ TEST_F(RuntimeTest, NotMatchingCellAndVarNamesSetsCell2ArgToNone) {
   word nlocals = 3;
   Tuple varnames(&scope, runtime_.newTuple(argcount + kwargcount));
   Tuple cellvars(&scope, runtime_.newTuple(2));
-  Str foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  Str bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
-  Str baz(&scope, Runtime::internStrFromCStr(thread_, "baz"));
-  Str foobar(&scope, Runtime::internStrFromCStr(thread_, "foobar"));
-  Str foobaz(&scope, Runtime::internStrFromCStr(thread_, "foobaz"));
+  Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
+  Object baz(&scope, Runtime::internStrFromCStr(thread_, "baz"));
+  Object foobar(&scope, Runtime::internStrFromCStr(thread_, "foobar"));
+  Object foobaz(&scope, Runtime::internStrFromCStr(thread_, "foobaz"));
   varnames.atPut(0, *foo);
   varnames.atPut(1, *bar);
   varnames.atPut(2, *baz);
@@ -2507,10 +2507,10 @@ TEST_F(RuntimeTest, MatchingCellAndVarNamesCreatesCell2Arg) {
   word nlocals = 3;
   Tuple varnames(&scope, runtime_.newTuple(argcount + kwargcount));
   Tuple cellvars(&scope, runtime_.newTuple(2));
-  Str foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  Str bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
-  Str baz(&scope, Runtime::internStrFromCStr(thread_, "baz"));
-  Str foobar(&scope, Runtime::internStrFromCStr(thread_, "foobar"));
+  Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
+  Object baz(&scope, Runtime::internStrFromCStr(thread_, "baz"));
+  Object foobar(&scope, Runtime::internStrFromCStr(thread_, "foobar"));
   varnames.atPut(0, *foo);
   varnames.atPut(1, *bar);
   varnames.atPut(2, *baz);
@@ -2540,10 +2540,10 @@ TEST_F(RuntimeTest, NewCodeWithCellvarsTurnsOffNofreeFlag) {
   word nlocals = 3;
   Tuple varnames(&scope, runtime_.newTuple(argcount));
   Tuple cellvars(&scope, runtime_.newTuple(2));
-  Str foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  Str bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
-  Str baz(&scope, Runtime::internStrFromCStr(thread_, "baz"));
-  Str foobar(&scope, Runtime::internStrFromCStr(thread_, "foobar"));
+  Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
+  Object baz(&scope, Runtime::internStrFromCStr(thread_, "baz"));
+  Object foobar(&scope, Runtime::internStrFromCStr(thread_, "foobar"));
   varnames.atPut(0, *foo);
   varnames.atPut(1, *bar);
   varnames.atPut(2, *baz);

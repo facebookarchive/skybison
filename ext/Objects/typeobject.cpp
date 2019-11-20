@@ -15,6 +15,7 @@
 #include "mro.h"
 #include "objects.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "trampolines.h"
 #include "type-builtins.h"
 #include "utils.h"
@@ -1234,7 +1235,7 @@ RawObject addMethods(Thread* thread, const Type& type) {
   DCHECK(slot_value.isInt(), "unexpected slot type");
   auto methods = bit_cast<PyMethodDef*>(Int::cast(*slot_value).asCPtr());
   for (word i = 0; methods[i].ml_name != nullptr; i++) {
-    Str name(&scope, Runtime::internStrFromCStr(thread, methods[i].ml_name));
+    Object name(&scope, Runtime::internStrFromCStr(thread, methods[i].ml_name));
     Object function(
         &scope,
         functionFromMethodDef(
@@ -1255,7 +1256,7 @@ RawObject addMembers(Thread* thread, const Type& type) {
   Object none(&scope, NoneType::object());
   Runtime* runtime = thread->runtime();
   for (word i = 0; members[i].name != nullptr; i++) {
-    Str name(&scope, Runtime::internStrFromCStr(thread, members[i].name));
+    Object name(&scope, Runtime::internStrFromCStr(thread, members[i].name));
     Object getter(&scope, memberGetter(thread, members[i]));
     if (getter.isError()) return *getter;
     Object setter(&scope, memberSetter(thread, members[i]));
@@ -1275,7 +1276,7 @@ RawObject addGetSet(Thread* thread, const Type& type) {
   Object none(&scope, NoneType::object());
   Runtime* runtime = thread->runtime();
   for (word i = 0; getsets[i].name != nullptr; i++) {
-    Str name(&scope, Runtime::internStrFromCStr(thread, getsets[i].name));
+    Object name(&scope, Runtime::internStrFromCStr(thread, getsets[i].name));
     Object getter(&scope, getSetGetter(thread, name, getsets[i]));
     if (getter.isError()) return *getter;
     Object setter(&scope, getSetSetter(thread, name, getsets[i]));
@@ -1592,21 +1593,14 @@ PY_EXPORT const char* _PyType_Name(PyTypeObject* type) {
 
 PY_EXPORT PyObject* _PyType_Lookup(PyTypeObject* type, PyObject* name) {
   Thread* thread = Thread::current();
-  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Type type_obj(
       &scope,
       ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type))->asObject());
   Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
-  if (!runtime->isInstanceOfStr(*name_obj)) {
-    return nullptr;
-  }
-  Object hash_obj(&scope, Interpreter::hash(thread, name_obj));
-  if (hash_obj.isErrorException()) {
-    return nullptr;
-  }
-  word hash = SmallInt::cast(*hash_obj).value();
-  Object res(&scope, typeLookupInMro(thread, type_obj, name_obj, hash));
+  name_obj = attributeNameNoException(thread, name_obj);
+  if (name_obj.isErrorError()) return nullptr;
+  Object res(&scope, typeLookupInMro(thread, type_obj, name_obj));
   if (res.isErrorNotFound()) {
     return nullptr;
   }

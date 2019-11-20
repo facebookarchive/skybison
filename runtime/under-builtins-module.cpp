@@ -114,7 +114,6 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderComplexCheck, underComplexCheck},
     {SymbolId::kUnderComplexImag, underComplexImag},
     {SymbolId::kUnderComplexReal, underComplexReal},
-    {SymbolId::kUnderDelattr, underDelattr},
     {SymbolId::kUnderDictBucketInsert, underDictBucketInsert},
     {SymbolId::kUnderDictBucketKey, underDictBucketKey},
     {SymbolId::kUnderDictBucketSetValue, underDictBucketSetValue},
@@ -1394,20 +1393,6 @@ RawObject UnderBuiltinsModule::underComplexReal(Thread* thread, Frame* frame,
   return runtime->newFloat(self.real());
 }
 
-RawObject UnderBuiltinsModule::underDelattr(Thread* thread, Frame* frame,
-                                            word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object obj(&scope, args.get(0));
-  Object name_obj(&scope, args.get(1));
-  Str name(&scope, strUnderlying(*name_obj));
-  Object result(&scope, thread->runtime()->attributeDel(thread, obj, name));
-  if (result.isError()) {
-    return *result;
-  }
-  return NoneType::object();
-}
-
 // TODO(T46009010): Move this method body into the dictionary API
 RawObject UnderBuiltinsModule::underDictBucketInsert(Thread* thread,
                                                      Frame* frame, word nargs) {
@@ -2101,11 +2086,10 @@ RawObject UnderBuiltinsModule::underInstanceDelattr(Thread* thread,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Instance instance(&scope, args.get(0));
-  // TODO(T53626118) Raise an exception when `name_str` is a string subclass
-  // that overrides `__eq__` or `__hash__`.
-  Str name_str(&scope, strUnderlying(args.get(1)));
-  Str name_interned(&scope, Runtime::internStr(thread, name_str));
-  return instanceDelAttr(thread, instance, name_interned);
+  Object name(&scope, args.get(1));
+  name = attributeName(thread, name);
+  if (name.isErrorException()) return *name;
+  return instanceDelAttr(thread, instance, name);
 }
 
 RawObject UnderBuiltinsModule::underInstanceGetattr(Thread* thread,
@@ -2113,11 +2097,10 @@ RawObject UnderBuiltinsModule::underInstanceGetattr(Thread* thread,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Instance instance(&scope, args.get(0));
-  // TODO(T53626118) Raise an exception when `name_str` is a string subclass
-  // that overrides `__eq__` or `__hash__`.
-  Str name_str(&scope, strUnderlying(args.get(1)));
-  Str name_interned(&scope, Runtime::internStr(thread, name_str));
-  Object result(&scope, instanceGetAttribute(thread, instance, name_interned));
+  Object name(&scope, args.get(1));
+  name = attributeName(thread, name);
+  if (name.isErrorException()) return *name;
+  Object result(&scope, instanceGetAttribute(thread, instance, name));
   return result.isErrorNotFound() ? Unbound::object() : *result;
 }
 
@@ -2154,12 +2137,11 @@ RawObject UnderBuiltinsModule::underInstanceSetattr(Thread* thread,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Instance instance(&scope, args.get(0));
-  // TODO(T53626118) Raise an exception when `name_str` is a string subclass
-  // that overrides `__eq__` or `__hash__`.
-  Str name_str(&scope, strUnderlying(args.get(1)));
-  Str name_interned(&scope, Runtime::internStr(thread, name_str));
+  Object name(&scope, args.get(1));
+  name = attributeName(thread, name);
+  if (name.isErrorException()) return *name;
   Object value(&scope, args.get(2));
-  return instanceSetAttr(thread, instance, name_interned, value);
+  return instanceSetAttr(thread, instance, name, value);
 }
 
 RawObject UnderBuiltinsModule::underIntCheck(Thread* thread, Frame* frame,
@@ -2754,14 +2736,13 @@ RawObject UnderBuiltinsModule::underModuleProxyGet(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   ModuleProxy self(&scope, args.get(0));
-  Object key(&scope, args.get(1));
+  Object name(&scope, args.get(1));
+  name = attributeName(thread, name);
+  if (name.isErrorException()) return *name;
   Object default_obj(&scope, args.get(2));
   Module module(&scope, self.module());
   DCHECK(module.moduleProxy() == self, "module.proxy != proxy.module");
-  Object hash_obj(&scope, Interpreter::hash(thread, key));
-  if (hash_obj.isErrorException()) return *hash_obj;
-  word hash = SmallInt::cast(*hash_obj).value();
-  Object result(&scope, moduleAt(thread, module, key, hash));
+  Object result(&scope, moduleAt(thread, module, name));
   if (result.isError()) {
     return *default_obj;
   }
@@ -2803,14 +2784,13 @@ RawObject UnderBuiltinsModule::underModuleProxySetitem(Thread* thread,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   ModuleProxy self(&scope, args.get(0));
-  Object key(&scope, args.get(1));
+  Object name(&scope, args.get(1));
+  name = attributeName(thread, name);
+  if (name.isErrorException()) return *name;
   Object value(&scope, args.get(2));
   Module module(&scope, self.module());
   DCHECK(module.moduleProxy() == self, "module.proxy != proxy.module");
-  Object hash_obj(&scope, Interpreter::hash(thread, key));
-  if (hash_obj.isErrorException()) return *hash_obj;
-  word hash = SmallInt::cast(*hash_obj).value();
-  return moduleAtPut(thread, module, key, hash, value);
+  return moduleAtPut(thread, module, name, value);
 }
 
 RawObject UnderBuiltinsModule::underModuleProxyValues(Thread* thread,
@@ -2868,9 +2848,11 @@ RawObject UnderBuiltinsModule::underObjectTypeGetAttr(Thread* thread,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object instance(&scope, args.get(0));
+  Object name(&scope, args.get(1));
+  name = attributeName(thread, name);
+  if (name.isErrorException()) return *name;
   Type type(&scope, thread->runtime()->typeOf(*instance));
-  Str name(&scope, args.get(1));
-  Object attr(&scope, typeLookupInMroByStr(thread, type, name));
+  Object attr(&scope, typeLookupInMro(thread, type, name));
   if (attr.isErrorNotFound()) {
     return Unbound::object();
   }
@@ -2883,8 +2865,10 @@ RawObject UnderBuiltinsModule::underObjectTypeHasattr(Thread* thread,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Type type(&scope, thread->runtime()->typeOf(args.get(0)));
-  Str name(&scope, args.get(1));
-  Object result(&scope, typeLookupInMroByStr(thread, type, name));
+  Object name(&scope, args.get(1));
+  name = attributeName(thread, name);
+  if (name.isErrorException()) return *name;
+  Object result(&scope, typeLookupInMro(thread, type, name));
   return Bool::fromBool(!result.isErrorNotFound());
 }
 
@@ -2933,11 +2917,11 @@ RawObject UnderBuiltinsModule::underPatch(Thread* thread, Frame* frame,
                                 "_patch expects function argument");
   }
   Function patch_fn(&scope, *patch_fn_obj);
-  Str fn_name(&scope, patch_fn.name());
+  Object fn_name(&scope, patch_fn.name());
   Runtime* runtime = thread->runtime();
   Object module_name(&scope, patch_fn.module());
   Module module(&scope, runtime->findModule(module_name));
-  Object base_fn_obj(&scope, moduleAtByStr(thread, module, fn_name));
+  Object base_fn_obj(&scope, moduleAt(thread, module, fn_name));
   if (!base_fn_obj.isFunction()) {
     if (base_fn_obj.isErrorNotFound()) {
       return thread->raiseWithFmt(LayoutId::kAttributeError,
@@ -3924,13 +3908,12 @@ RawObject UnderBuiltinsModule::underTypeProxyGet(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   TypeProxy self(&scope, args.get(0));
-  Object key(&scope, args.get(1));
+  Object name(&scope, args.get(1));
+  name = attributeName(thread, name);
+  if (name.isErrorException()) return *name;
   Object default_obj(&scope, args.get(2));
   Type type(&scope, self.type());
-  Object hash_obj(&scope, Interpreter::hash(thread, key));
-  if (hash_obj.isErrorException()) return *hash_obj;
-  word hash = SmallInt::cast(*hash_obj).value();
-  Object result(&scope, typeAt(thread, type, key, hash));
+  Object result(&scope, typeAt(thread, type, name));
   if (result.isError()) {
     return *default_obj;
   }

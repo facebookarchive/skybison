@@ -6,39 +6,39 @@
 namespace py {
 
 RawObject instanceDelAttr(Thread* thread, const Instance& instance,
-                          const Str& name_interned);
+                          const Object& name);
 
 RawObject instanceGetAttribute(Thread* thread, const Instance& instance,
-                               const Str& name_interned);
+                               const Object& name);
 
 RawObject instanceGetAttributeSetLocation(Thread* thread,
                                           const Instance& instance,
-                                          const Str& name_interned,
+                                          const Object& name_interned,
                                           Object* location_out);
 
 RawObject instanceSetAttr(Thread* thread, const Instance& instance,
-                          const Str& name_interned, const Object& value);
+                          const Object& name, const Object& value);
 
 RawObject objectGetAttribute(Thread* thread, const Object& object,
-                             const Object& name_str, word hash);
+                             const Object& name);
 
 // Same as `objectGetAttribute()` but stores a value into `location_out` that is
 // used by the inline cache and interpreted by
 // `Interpreter::loadAttrWithLocation()`.
 RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
-                                        const Object& name_str, word hash,
+                                        const Object& name,
                                         Object* location_out);
 
-// Raise an AttributeError that `object` has no attribute named `name_str`.
+// Raise an AttributeError that `object` has no attribute named `name`.
 RawObject objectRaiseAttributeError(Thread* thread, const Object& object,
-                                    const Object& name_str);
+                                    const Object& name);
 
 RawObject objectSetAttr(Thread* thread, const Object& object,
-                        const Object& name_str, word hash, const Object& value);
+                        const Object& name, const Object& value);
 
 RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
-                                   const Object& name_str, word hash,
-                                   const Object& value, Object* location_out);
+                                   const Object& name, const Object& value,
+                                   Object* location_out);
 
 RawObject objectNew(Thread* thread, const Type& type);
 

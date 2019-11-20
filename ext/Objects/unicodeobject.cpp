@@ -1729,7 +1729,7 @@ PY_EXPORT void PyUnicode_InternInPlace(PyObject** pobj) {
     return;
   }
   Str obj_str(&scope, *obj);
-  Str result(&scope, Runtime::internStr(thread, obj_str));
+  Object result(&scope, Runtime::internStr(thread, obj_str));
   if (result != obj_str) {
     Py_DECREF(*pobj);
     *pobj = ApiHandle::newReference(thread, *result);

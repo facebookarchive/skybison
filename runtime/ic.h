@@ -29,7 +29,7 @@ RawObject icLookupGlobalVar(RawTuple caches, word index);
 // Sets a cache entry for an attribute to the given `layout_id` as key and
 // `value` as value.
 void icUpdateAttr(Thread* thread, const Tuple& caches, word index,
-                  LayoutId layout_id, const Object& value, const Str& name,
+                  LayoutId layout_id, const Object& value, const Object& name,
                   const Function& dependent);
 
 bool icIsCacheEmpty(const Tuple& caches, word index);
@@ -39,7 +39,7 @@ void icUpdateAttrModule(Thread* thread, const Tuple& caches, word index,
                         const Function& dependent);
 
 void icUpdateAttrType(Thread* thread, const Tuple& caches, word index,
-                      const Object& receiver, const Str& selector,
+                      const Object& receiver, const Object& selector,
                       const Object& value, const Function& dependent);
 
 // Insert dependent into dependentLink of the given value_cell. Returns true if
@@ -75,14 +75,14 @@ enum class AttributeKind { kDataDescriptor, kNotADataDescriptor };
 // Try evicting the attribute cache entry pointed-to by `it` and its
 // dependencies to dependent.
 void icEvictAttr(Thread* thread, const IcIterator& it, const Type& updated_type,
-                 const Str& updated_attr, AttributeKind attribute_kind,
+                 const Object& updated_attr, AttributeKind attribute_kind,
                  const Function& dependent);
 
 // Delete dependent from the MRO of cached_layout_id up to the type defining
 // `attr`.
 void icDeleteDependentToDefiningType(Thread* thread, const Function& dependent,
                                      LayoutId cached_layout_id,
-                                     const Str& attr);
+                                     const Object& attr);
 
 // icEvictBinaryOp tries evicting the binary op cache pointed-to by `it` and
 // deletes the evicted cache' dependencies.
@@ -126,14 +126,14 @@ void icDeleteDependentToDefiningType(Thread* thread, const Function& dependent,
 // In the example, since cache_binop still caches B.__le__ at line 2 we cannot
 // delete this dependency. If line 2 didn't exist, we could delete it.
 void icEvictBinaryOp(Thread* thread, const IcIterator& it,
-                     const Type& updated_type, const Str& updated_attr,
+                     const Type& updated_type, const Object& updated_attr,
                      const Function& dependent);
 
 // Similar to icEvictBinopCache, but handle updates to dunder functions for
 // inplace operations (e.g., iadd, imul, and etc.).
 // TODO(T54575269): Pass SymbolId for updated_attr.
 void icEvictInplaceOp(Thread* thread, const IcIterator& it,
-                      const Type& updated_type, const Str& updated_attr,
+                      const Type& updated_type, const Object& updated_attr,
                       const Function& dependent);
 
 // Delete dependent in ValueCell's dependencyLink.
@@ -143,7 +143,7 @@ void icDeleteDependentInValueCell(Thread* thread, const ValueCell& value_cell,
 // Delete dependencies from cached_type to new_defining_type to dependent.
 void icDeleteDependentFromInheritingTypes(Thread* thread,
                                           LayoutId cached_layout_id,
-                                          const Str& attr_name,
+                                          const Object& attr_name,
                                           const Type& new_defining_type,
                                           const Object& dependent);
 
@@ -153,7 +153,7 @@ void icDeleteDependentFromInheritingTypes(Thread* thread,
 // type is returned, it's safe to delete `dependent` from all types between
 // `cached_type` and the returned type.
 RawObject icHighestSuperTypeNotInMroOfOtherCachedTypes(
-    Thread* thread, LayoutId cached_layout_id, const Str& attr_name,
+    Thread* thread, LayoutId cached_layout_id, const Object& attr_name,
     const Function& dependent);
 
 // Returns true if a cached attribute from type cached_type is affected by
@@ -175,20 +175,21 @@ RawObject icHighestSuperTypeNotInMroOfOtherCachedTypes(
 // to C.foo.
 bool icIsCachedAttributeAffectedByUpdatedType(Thread* thread,
                                               LayoutId cached_layout_id,
-                                              const Str& attribute_name,
+                                              const Object& attribute_name,
                                               const Type& updated_type);
 
 // Returns true if updating type.attribute_name will affect any caches in
 // function in any form. For example, updating A.foo will affect any opcode
 // that caches A's subclasses' foo attributes.
 bool icIsAttrCachedInDependent(Thread* thread, const Type& type,
-                               const Str& attr_name, const Function& dependent);
+                               const Object& attr_name,
+                               const Function& dependent);
 
 // Evict caches for attribute_name to be shadowed by an update to
 // type[attribute_name] in dependent's cache entries, and delete obsolete
 // dependencies between dependent and other type attributes in caches' MRO.
 void icEvictCache(Thread* thread, const Function& dependent, const Type& type,
-                  const Str& attr, AttributeKind attribute_kind);
+                  const Object& attr_name, AttributeKind attribute_kind);
 
 // Invalidate caches to be shadowed by a type attribute update made to
 // type[attribute_name]. data_descriptor is set to true when the newly assigned
@@ -196,7 +197,7 @@ void icEvictCache(Thread* thread, const Function& dependent, const Type& type,
 // called after the type attribute update is already made.
 //
 // Refer to https://fb.quip.com/q568ASVbNIad for the details of this process.
-void icInvalidateAttr(Thread* thread, const Type& type, const Str& attr_name,
+void icInvalidateAttr(Thread* thread, const Type& type, const Object& attr_name,
                       const ValueCell& value);
 
 // Sets a cache entry to a `left_layout_id` and `right_layout_id` key with
@@ -323,7 +324,7 @@ class IcIterator {
     return static_cast<LayoutId>(SmallInt::cast(key()).value());
   }
 
-  bool isAttrNameEqualTo(const Str& attr_name) const;
+  bool isAttrNameEqualTo(const Object& attr_name) const;
 
   bool isInstanceAttr() const {
     DCHECK(isAttrCache(), "should be only called for attribute caches");

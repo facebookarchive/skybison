@@ -16,7 +16,7 @@ void dictAtPut(Thread* thread, const Dict& dict, const Object& key, word hash,
 
 // Does the same as `dictAtPut` but only works for `key` being a `str`
 // instance. It must not be used with instances of a `str` subclass.
-void dictAtPutByStr(Thread* thread, const Dict& dict, const Str& name,
+void dictAtPutByStr(Thread* thread, const Dict& dict, const Object& name,
                     const Object& value);
 
 // Does the same as `dictAtPut` but uses symbol `id` (converted to a string)
@@ -32,7 +32,7 @@ RawObject dictAt(Thread* thread, const Dict& dict, const Object& key,
 // Look up the value associated with `name`. `name` must be an instance of
 // `str` but not of a subclass. Returns the associated value or
 // `Error::notFound()`.
-RawObject dictAtByStr(Thread* thread, const Dict& dict, const Str& name);
+RawObject dictAtByStr(Thread* thread, const Dict& dict, const Object& name);
 
 // Look up the value associated with `id`. Returns the associated value or
 // `Error::notFound()`.
@@ -52,7 +52,7 @@ RawObject dictAtPutInValueCell(Thread* thread, const Dict& dict,
 // Stores value in a ValueCell associated with `name`. Reuses an existing
 // value cell when possible.
 RawObject dictAtPutInValueCellByStr(Thread* thread, const Dict& dict,
-                                    const Str& name, const Object& value);
+                                    const Object& name, const Object& value);
 
 // Remove all items from a Dict.
 void dictClear(Thread* thread, const Dict& dict);
@@ -63,7 +63,7 @@ bool dictIncludes(Thread* thread, const Dict& dict, const Object& key,
 
 // Returns true if the dict contains an entry associated with `name`.
 // `name` must by a `str` instance (but no subclass).
-bool dictIncludesByStr(Thread* thread, const Dict& dict, const Str& name);
+bool dictIncludesByStr(Thread* thread, const Dict& dict, const Object& name);
 
 // TODO(T46009010): Make this into a private function after making
 // 'builtins._dict_setitem' into a dict builtin function
@@ -78,7 +78,7 @@ RawObject dictRemove(Thread* thread, const Dict& dict, const Object& key,
 // Try to remove entry associated with `name` from `dict`.
 // Returns the value that was associated before deletion or
 // `Error:notFound()`.
-RawObject dictRemoveByStr(Thread* thread, const Dict& dict, const Str& name);
+RawObject dictRemoveByStr(Thread* thread, const Dict& dict, const Object& name);
 
 RawObject dictKeys(Thread* thread, const Dict& dict);
 

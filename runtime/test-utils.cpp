@@ -222,8 +222,8 @@ RawObject moduleAtByCStr(Runtime* runtime, const char* module_name,
     return Error::notFound();
   }
   Module module(&scope, *mod_obj);
-  Str name_str(&scope, runtime->newStrFromCStr(name));
-  return moduleAtByStr(thread, module, name_str);
+  Object name_obj(&scope, Runtime::internStrFromCStr(thread, name));
+  return moduleAt(thread, module, name_obj);
 }
 
 std::string typeName(Runtime* runtime, RawObject obj) {

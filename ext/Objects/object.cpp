@@ -9,6 +9,7 @@
 #include "object-builtins.h"
 #include "runtime.h"
 #include "str-builtins.h"
+#include "type-builtins.h"
 
 namespace py {
 
@@ -104,18 +105,12 @@ PY_EXPORT PyObject* PyObject_GenericGetAttr(PyObject* obj, PyObject* name) {
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
-  if (!thread->runtime()->isInstanceOfStr(*name_obj)) {
-    thread->raiseWithFmt(LayoutId::kTypeError,
-                         "attribute name must be string, not '%s'", &name_obj);
-    return nullptr;
-  }
-  Object hash_obj(&scope, Interpreter::hash(thread, name_obj));
-  if (hash_obj.isErrorException()) return nullptr;
-  word hash = SmallInt::cast(*hash_obj).value();
-  Object result(&scope, objectGetAttribute(thread, object, name_obj, hash));
+  name_obj = attributeName(thread, name_obj);
+  if (name_obj.isErrorException()) return nullptr;
+  Object result(&scope, objectGetAttribute(thread, object, name_obj));
   if (result.isError()) {
-    if (!result.isErrorException()) {
-      thread->raiseWithFmt(LayoutId::kAttributeError, "%s", &name_obj);
+    if (result.isErrorNotFound()) {
+      objectRaiseAttributeError(thread, object, name_obj);
     }
     return nullptr;
   }
@@ -128,22 +123,11 @@ PY_EXPORT int PyObject_GenericSetAttr(PyObject* obj, PyObject* name,
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
-  if (!thread->runtime()->isInstanceOfStr(*name_obj)) {
-    thread->raiseWithFmt(LayoutId::kTypeError,
-                         "attribute name must be string, not '%s'", &name_obj);
-    return -1;
-  }
-  Object hash_obj(&scope, Interpreter::hash(thread, name_obj));
-  if (hash_obj.isErrorException()) return -1;
-  word hash = SmallInt::cast(*hash_obj).value();
-
+  name_obj = attributeName(thread, name_obj);
+  if (name_obj.isErrorException()) return -1;
   Object value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
-  Object result(&scope,
-                objectSetAttr(thread, object, name_obj, hash, value_obj));
-  if (result.isError()) {
-    if (!result.isErrorException()) {
-      thread->raiseWithFmt(LayoutId::kAttributeError, "%s", &name_obj);
-    }
+  Object result(&scope, objectSetAttr(thread, object, name_obj, value_obj));
+  if (result.isErrorException()) {
     return -1;
   }
   return 0;

@@ -7,6 +7,7 @@
 
 namespace py {
 
+RawObject delAttribute(Thread* thread, const Object& self, const Object& name);
 RawObject getAttribute(Thread* thread, const Object& self, const Object& name);
 RawObject hasAttribute(Thread* thread, const Object& self, const Object& name);
 RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
@@ -20,6 +21,7 @@ class BuiltinsModule {
   static RawObject bin(Thread* thread, Frame* frame, word nargs);
   static RawObject callable(Thread* thread, Frame* frame, word nargs);
   static RawObject chr(Thread* thread, Frame* frame, word nargs);
+  static RawObject delattr(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderBuildClass(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderImport(Thread* thread, Frame* frame, word nargs);
   static RawObject getattr(Thread* thread, Frame* frame, word nargs);

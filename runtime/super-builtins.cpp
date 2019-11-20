@@ -5,16 +5,17 @@
 #include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "thread.h"
 #include "type-builtins.h"
 
 namespace py {
 
 RawObject superGetAttribute(Thread* thread, const Super& super,
-                            const Object& name_str, word hash) {
+                            const Object& name) {
   // This must return `super`.
   Runtime* runtime = thread->runtime();
-  if (Str::cast(runtime->symbols()->DunderClass()).equals(*name_str)) {
+  if (name == runtime->symbols()->DunderClass()) {
     return runtime->typeOf(*super);
   }
 
@@ -32,7 +33,7 @@ RawObject superGetAttribute(Thread* thread, const Super& super,
   }
   for (; i < mro_length; i++) {
     Type type(&scope, mro.at(i));
-    Object value(&scope, typeAt(thread, type, name_str, hash));
+    Object value(&scope, typeAt(thread, type, name));
     if (value.isError()) {
       continue;
     }
@@ -57,7 +58,7 @@ RawObject superGetAttribute(Thread* thread, const Super& super,
                                           self, start_type);
   }
 
-  return objectGetAttribute(thread, super, name_str, hash);
+  return objectGetAttribute(thread, super, name);
 }
 
 const BuiltinMethod SuperBuiltins::kBuiltinMethods[] = {
@@ -81,20 +82,14 @@ RawObject SuperBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
-  Runtime* runtime = thread->runtime();
   if (!self_obj.isSuper()) {
     return thread->raiseRequiresType(self_obj, SymbolId::kSuper);
   }
   Super self(&scope, *self_obj);
   Object name(&scope, args.get(1));
-  if (!runtime->isInstanceOfStr(*name)) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
-  }
-  Object hash_obj(&scope, Interpreter::hash(thread, name));
-  if (hash_obj.isErrorException()) return *hash_obj;
-  word hash = SmallInt::cast(*hash_obj).value();
-  Object result(&scope, superGetAttribute(thread, self, name, hash));
+  name = attributeName(thread, name);
+  if (name.isErrorException()) return *name;
+  Object result(&scope, superGetAttribute(thread, self, name));
   if (result.isErrorNotFound()) {
     return thread->raiseWithFmt(LayoutId::kAttributeError,
                                 "super object has no attribute '%S'", &name);

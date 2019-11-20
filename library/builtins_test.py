@@ -3626,9 +3626,7 @@ class HasattrTests(unittest.TestCase):
     def test_hasattr_with_non_string_attr_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             hasattr(None, 42)
-        self.assertEqual(
-            str(context.exception), "hasattr(): attribute name must be string"
-        )
+        self.assertIn("attribute name must be string", str(context.exception))
 
 
 class HashTests(unittest.TestCase):

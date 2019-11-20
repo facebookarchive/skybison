@@ -235,7 +235,7 @@ class Interpreter {
   };
 
   static RawObject loadAttrSetLocation(Thread* thread, const Object& receiver,
-                                       const Str& name, LoadAttrKind* kind,
+                                       const Object& name, LoadAttrKind* kind,
                                        Object* location_out);
 
   // Process the operands to the RAISE_VARARGS bytecode into a pending exception
@@ -243,7 +243,7 @@ class Interpreter {
   static void raise(Thread* thread, RawObject exc_obj, RawObject cause_obj);
 
   static RawObject storeAttrSetLocation(Thread* thread, const Object& object,
-                                        const Str& name, const Object& value,
+                                        const Object& name, const Object& value,
                                         Object* location_out);
   static void storeAttrWithLocation(Thread* thread, RawObject receiver,
                                     RawObject location, RawObject value);
@@ -458,13 +458,13 @@ class Interpreter {
   // lookup succeeds, the found value is cached in function's cache at
   // cache_index. Returns Error::notFound() if both lookups are failed.
   static RawObject globalsAt(Thread* thread, const Module& module,
-                             const Str& name, const Function& function,
+                             const Object& name, const Function& function,
                              word cache_index);
 
   // Asssocicate `name` with value in module_dict, and update function's cache
   // at cache_index.
   static void globalsAtPut(Thread* thread, const Module& module,
-                           const Str& name, const Object& value,
+                           const Object& name, const Object& value,
                            const Function& function, word cache_index);
 
   // Slow path for isTrue check. Does a __bool__ method call, etc.

@@ -76,7 +76,6 @@ class UnderBuiltinsModule {
   static RawObject underComplexCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underComplexImag(Thread* thread, Frame* frame, word nargs);
   static RawObject underComplexReal(Thread* thread, Frame* frame, word nargs);
-  static RawObject underDelattr(Thread* thread, Frame* frame, word nargs);
   static RawObject underDictBucketInsert(Thread* thread, Frame* frame,
                                          word nargs);
   static RawObject underDictBucketKey(Thread* thread, Frame* frame, word nargs);

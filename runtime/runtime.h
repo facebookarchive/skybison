@@ -267,6 +267,8 @@ class Runtime {
   RawObject objectDunderInit() { return object_dunder_init_; }
   RawObject objectDunderNew() { return object_dunder_new_; }
   RawObject objectDunderSetattr() { return object_dunder_setattr_; }
+  RawObject strDunderEq() { return str_dunder_eq_; }
+  RawObject strDunderHash() { return str_dunder_hash_; }
   RawValueCell sysStderr() { return ValueCell::cast(sys_stderr_); }
   RawValueCell sysStdout() { return ValueCell::cast(sys_stdout_); }
   RawObject typeDunderGetattribute() { return type_dunder_getattribute_; }
@@ -279,6 +281,7 @@ class Runtime {
   static RawObject internStr(Thread* thread, const Object& str);
   static RawObject internStrFromAll(Thread* thread, View<byte> bytes);
   static RawObject internStrFromCStr(Thread* thread, const char* c_str);
+  static RawObject internLargeStr(Thread* thread, const Object& str);
   // This function should only be used for `CHECK()`/`DCHECK()`. It is as slow
   // as the whole `internStr()` operation and will always return true for small
   // strings, even when the user did not explicitly intern them.
@@ -509,7 +512,7 @@ class Runtime {
 
   // Implements `receiver.name`
   NODISCARD RawObject attributeAt(Thread* thread, const Object& object,
-                                  const Object& name_str);
+                                  const Object& name);
   NODISCARD RawObject attributeAtById(Thread* thread, const Object& receiver,
                                       SymbolId id);
   NODISCARD RawObject attributeAtByCStr(Thread* thread, const Object& receiver,
@@ -524,7 +527,7 @@ class Runtime {
   // If the attribute is found this returns true and sets info.
   // Returns false otherwise.
   bool layoutFindAttribute(Thread* thread, const Layout& layout,
-                           const Str& name_interned, AttributeInfo* info);
+                           const Object& name, AttributeInfo* info);
 
   // Creates a new layout by adding empty slots to the base_layout
   // to match the NativeProxy layout
@@ -535,7 +538,7 @@ class Runtime {
   // This returns a new layout by either following a pre-existing edge or
   // adding one.
   RawObject layoutAddAttribute(Thread* thread, const Layout& layout,
-                               const Str& name_interned, word flags);
+                               const Object& name, word flags);
 
   // Delete the named attribute from the layout.
   //
@@ -544,7 +547,7 @@ class Runtime {
   //
   // If the attribute doesn't exist, Error::object() is returned.
   RawObject layoutDeleteAttribute(Thread* thread, const Layout& layout,
-                                  const Str& name_interned);
+                                  const Object& name);
 
   void typeAddBuiltinFunction(const Type& type, SymbolId name,
                               Function::Entry entry);
@@ -807,7 +810,6 @@ class Runtime {
   word immediateHash(RawObject object);
 
   void growInternSet(Thread* thread);
-  static RawObject internLargeStr(Thread* thread, const Object& str);
 
   RawObject createMro(const Layout& subclass_layout, LayoutId superclass_id);
 
@@ -948,6 +950,8 @@ class Runtime {
   RawObject object_dunder_init_ = NoneType::object();
   RawObject object_dunder_new_ = NoneType::object();
   RawObject object_dunder_setattr_ = NoneType::object();
+  RawObject str_dunder_eq_ = NoneType::object();
+  RawObject str_dunder_hash_ = NoneType::object();
   RawObject sys_stderr_ = NoneType::object();
   RawObject sys_stdout_ = NoneType::object();
   RawObject type_dunder_getattribute_ = NoneType::object();
@@ -1047,8 +1051,8 @@ class ModuleBase : public ModuleBaseBase {
   static void initialize(Thread* thread) {
     HandleScope scope(thread);
     Runtime* runtime = thread->runtime();
-    Str name_str(&scope, runtime->symbols()->at(name));
-    Module module(&scope, runtime->newModule(name_str));
+    Object name_obj(&scope, runtime->symbols()->at(name));
+    Module module(&scope, runtime->newModule(name_obj));
     for (word i = 0; T::kBuiltinMethods[i].name != SymbolId::kSentinelId; i++) {
       runtime->moduleAddBuiltinFunction(module, T::kBuiltinMethods[i].name,
                                         T::kBuiltinMethods[i].address);
@@ -1059,7 +1063,7 @@ class ModuleBase : public ModuleBaseBase {
     }
     runtime->addModule(module);
     CHECK(!runtime->executeFrozenModule(T::kFrozenData, module).isError(),
-          "Failed to initialize %s module", name_str.toCStr());
+          "Failed to initialize %s module", Str::cast(*name_obj).toCStr());
   }
 };
 

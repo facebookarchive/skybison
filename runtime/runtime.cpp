@@ -383,16 +383,9 @@ RawObject Runtime::newTypeProxy(const Type& type) {
 }
 
 RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
-                                const Object& name_obj) {
-  if (!isInstanceOfStr(*name_obj)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "attribute name must be string, not '%T'",
-                                &name_obj);
-  }
+                                const Object& name) {
   HandleScope scope(thread);
-  Str name_str(&scope, strUnderlying(*name_obj));
-  Str name_interned(&scope, internStr(thread, name_str));
-  terminateIfUnimplementedTypeAttrCacheInvalidation(thread, name_interned);
+  terminateIfUnimplementedTypeAttrCacheInvalidation(thread, name);
 
   Type type(&scope, *receiver);
   // TODO(mpage): This needs to handle built-in extension types.
@@ -405,8 +398,7 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
 
   // Check for a delete descriptor
   Type metatype(&scope, typeOf(*receiver));
-  Object meta_attr(&scope,
-                   typeLookupInMroByStr(thread, metatype, name_interned));
+  Object meta_attr(&scope, typeLookupInMro(thread, metatype, name));
   if (!meta_attr.isError()) {
     if (isDeleteDescriptor(thread, meta_attr)) {
       return Interpreter::callDescriptorDelete(thread, thread->currentFrame(),
@@ -415,29 +407,22 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
   }
 
   // No delete descriptor found, attempt to delete from the type dict
-  if (typeRemove(thread, type, name_interned).isErrorNotFound()) {
+  if (typeRemove(thread, type, name).isErrorNotFound()) {
     Str type_name(&scope, type.name());
     return thread->raiseWithFmt(LayoutId::kAttributeError,
                                 "type object '%S' has no attribute '%S'",
-                                &type_name, &name_interned);
+                                &type_name, &name);
   }
   return NoneType::object();
 }
 
 RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
                                    const Object& name) {
-  if (!isInstanceOfStr(*name)) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
-  }
   HandleScope scope(thread);
-  Object hash_obj(&scope, Interpreter::hash(thread, name));
-  if (hash_obj.isErrorException()) return *hash_obj;
-  word hash = SmallInt::cast(*hash_obj).value();
 
   // Check for a descriptor with __delete__
   Type type(&scope, typeOf(*receiver));
-  Object type_attr(&scope, typeLookupInMro(thread, type, name, hash));
+  Object type_attr(&scope, typeLookupInMro(thread, type, name));
   if (!type_attr.isError()) {
     if (isDeleteDescriptor(thread, type_attr)) {
       return Interpreter::callDescriptorDelete(thread, thread->currentFrame(),
@@ -448,9 +433,7 @@ RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
   // No delete descriptor found, delete from the instance
   if (receiver.isInstance()) {
     Instance instance(&scope, *receiver);
-    Str name_str(&scope, strUnderlying(*name));
-    Str name_interned(&scope, internStr(thread, name_str));
-    Object result(&scope, py::instanceDelAttr(thread, instance, name_interned));
+    Object result(&scope, py::instanceDelAttr(thread, instance, name));
     if (!result.isErrorNotFound()) return *result;
   }
 
@@ -462,18 +445,10 @@ RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
 
 RawObject Runtime::moduleDelAttr(Thread* thread, const Object& receiver,
                                  const Object& name) {
-  if (!isInstanceOfStr(*name)) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
-  }
-  HandleScope scope(thread);
-  Object hash_obj(&scope, Interpreter::hash(thread, name));
-  if (hash_obj.isErrorException()) return *hash_obj;
-  word hash = SmallInt::cast(*hash_obj).value();
-
   // Check for a descriptor with __delete__
+  HandleScope scope(thread);
   Type type(&scope, typeOf(*receiver));
-  Object type_attr(&scope, typeLookupInMro(thread, type, name, hash));
+  Object type_attr(&scope, typeLookupInMro(thread, type, name));
   if (!type_attr.isError()) {
     if (isDeleteDescriptor(thread, type_attr)) {
       return Interpreter::callDescriptorDelete(thread, thread->currentFrame(),
@@ -484,7 +459,7 @@ RawObject Runtime::moduleDelAttr(Thread* thread, const Object& receiver,
   // No delete descriptor found, attempt to delete from the module dict
   Module module(&scope, *receiver);
   Dict module_dict(&scope, module.dict());
-  if (dictRemove(thread, module_dict, name, hash).isError()) {
+  if (dictRemoveByStr(thread, module_dict, name).isError()) {
     Str module_name(&scope, module.name());
     return thread->raiseWithFmt(LayoutId::kAttributeError,
                                 "module '%S' has no attribute '%S'",
@@ -832,7 +807,7 @@ void Runtime::typeAddBuiltinFunction(const Type& type, SymbolId name,
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Str qualname(&scope, newQualname(thread, type, name));
-  Str name_str(&scope, symbols()->at(name));
+  Object name_str(&scope, symbols()->at(name));
   Tuple empty_tuple(&scope, emptyTuple());
   Code code(&scope, newBuiltinCode(/*argcount=*/0, /*posonlyargcount=*/0,
                                    /*kwonlyargcount=*/0,
@@ -2243,7 +2218,7 @@ void Runtime::initializeSymbols() {
   symbols_ = new Symbols(this);
   for (int i = 0; i < static_cast<int>(SymbolId::kMaxId); i++) {
     SymbolId id = static_cast<SymbolId>(i);
-    Str symbol(&scope, symbols()->at(id));
+    Object symbol(&scope, symbols()->at(id));
     internStr(thread, symbol);
   }
 }
@@ -2279,6 +2254,8 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&object_dunder_init_);
   visitor->visitPointer(&object_dunder_new_);
   visitor->visitPointer(&object_dunder_setattr_);
+  visitor->visitPointer(&str_dunder_eq_);
+  visitor->visitPointer(&str_dunder_hash_);
   visitor->visitPointer(&sys_stderr_);
   visitor->visitPointer(&sys_stdout_);
   visitor->visitPointer(&type_dunder_getattribute_);
@@ -2340,8 +2317,8 @@ RawObject Runtime::findModule(const Object& name) {
 
 RawObject Runtime::findModuleById(SymbolId name) {
   HandleScope scope;
-  Str name_str(&scope, symbols()->at(name));
-  return findModule(name_str);
+  Object name_obj(&scope, symbols()->at(name));
+  return findModule(name_obj);
 }
 
 RawObject Runtime::lookupNameInModule(Thread* thread, SymbolId module_name,
@@ -2476,16 +2453,16 @@ RawObject Runtime::moduleAddBuiltinFunction(const Module& module, SymbolId name,
                                             Function::Entry entry) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Str name_str(&scope, symbols()->at(name));
+  Object name_obj(&scope, symbols()->at(name));
   Tuple empty_tuple(&scope, emptyTuple());
   Code code(&scope, newBuiltinCode(/*argcount=*/0, /*posonlyargcount=*/0,
                                    /*kwonlyargcount=*/0,
                                    /*flags=*/0, entry,
-                                   /*parameter_names=*/empty_tuple, name_str));
+                                   /*parameter_names=*/empty_tuple, name_obj));
   Object globals(&scope, NoneType::object());
   Function function(&scope,
-                    newFunctionWithCode(thread, name_str, code, globals));
-  return moduleAtPutByStr(thread, module, name_str, function);
+                    newFunctionWithCode(thread, name_obj, code, globals));
+  return moduleAtPut(thread, module, name_obj, function);
 }
 
 void Runtime::moduleAddBuiltinType(const Module& module, SymbolId name,
@@ -2506,7 +2483,7 @@ void Runtime::moduleImportAllFrom(const Dict& dict, const Module& module) {
     Str symbol_name(&scope, Dict::Bucket::key(*buckets, i));
     // Load all the symbols not starting with '_'
     if (symbol_name.charAt(0) != '_') {
-      Object value(&scope, moduleAtByStr(thread, module, symbol_name));
+      Object value(&scope, moduleAt(thread, module, symbol_name));
       DCHECK(!value.isErrorNotFound(), "value must not be ErrorNotFound");
       dictAtPutInValueCellByStr(thread, dict, symbol_name, value);
     }
@@ -2600,6 +2577,12 @@ void Runtime::createBuiltinsModule(Thread* thread) {
   }
 
   {
+    Type str_type(&scope, typeAt(LayoutId::kStr));
+    str_dunder_eq_ = typeAtById(thread, str_type, SymbolId::kDunderEq);
+    str_dunder_hash_ = typeAtById(thread, str_type, SymbolId::kDunderHash);
+  }
+
+  {
     Type type_type(&scope, typeAt(LayoutId::kType));
     type_dunder_getattribute_ =
         typeAtById(thread, type_type, SymbolId::kDunderGetattribute);
@@ -2617,7 +2600,7 @@ void Runtime::createBuiltinsModule(Thread* thread) {
 void Runtime::createEmptyBuiltinsModule(Thread* thread) {
   HandleScope scope(thread);
 
-  Str name(&scope, symbols()->Builtins());
+  Object name(&scope, symbols()->Builtins());
   Module builtins(&scope, newModule(name));
   addModule(builtins);
 }
@@ -2631,7 +2614,7 @@ void Runtime::createImportlibModule(Thread* thread) {
   // This replicates that mapping for compatibility
 
   // Run _bootstrap.py
-  Str importlib_name(&scope, symbols()->UnderFrozenImportlib());
+  Object importlib_name(&scope, symbols()->UnderFrozenImportlib());
   Module importlib(&scope, newModule(importlib_name));
   CHECK(!executeFrozenModule(kUnderBootstrapModuleData, importlib).isError(),
         "Failed to initialize _bootstrap module");
@@ -2661,8 +2644,8 @@ void Runtime::createImportlibModule(Thread* thread) {
 
 void Runtime::createSysModule(Thread* thread) {
   HandleScope scope(thread);
-  Str name_str(&scope, symbols()->Sys());
-  Module module(&scope, newModule(name_str));
+  Object name(&scope, symbols()->Sys());
+  Module module(&scope, newModule(name));
   for (word i = 0; SysModule::kBuiltinMethods[i].name != SymbolId::kSentinelId;
        i++) {
     moduleAddBuiltinFunction(module, SysModule::kBuiltinMethods[i].name,
@@ -2765,8 +2748,8 @@ void Runtime::createSysModule(Thread* thread) {
 
 void Runtime::createUnderBuiltinsModule(Thread* thread) {
   HandleScope scope(thread);
-  Str name_str(&scope, symbols()->UnderBuiltins());
-  Module module(&scope, newModule(name_str));
+  Object module_name(&scope, symbols()->UnderBuiltins());
+  Module module(&scope, newModule(module_name));
   for (word i = 0;
        UnderBuiltinsModule::kBuiltinMethods[i].name != SymbolId::kSentinelId;
        i++) {
@@ -2779,14 +2762,14 @@ void Runtime::createUnderBuiltinsModule(Thread* thread) {
   {
     Tuple parameters(&scope, newTuple(1));
     parameters.atPut(0, newStrFromCStr("function"));
-    Str name(&scope, symbols()->UnderPatch());
+    Object name(&scope, symbols()->UnderPatch());
     Code code(&scope, newBuiltinCode(/*argcount=*/1, /*posonlyargcount=*/0,
                                      /*kwonlyargcount=*/0, /*flags=*/0,
                                      UnderBuiltinsModule::underPatch,
                                      parameters, name));
     Function under_patch(&scope,
                          newFunctionWithCode(thread, name, code, module));
-    moduleAtPutByStr(thread, module, name, under_patch);
+    moduleAtPut(thread, module, name, under_patch);
   }
 
   Object unbound_value(&scope, Unbound::object());
@@ -3459,11 +3442,11 @@ RawObject Runtime::computeInitialLayout(Thread* thread, const Type& type,
 }
 
 RawObject Runtime::attributeAt(Thread* thread, const Object& object,
-                               const Object& name_str) {
-  DCHECK(isInstanceOfStr(*name_str), "name must be a str subclass");
+                               const Object& name) {
+  DCHECK(isInternedStr(thread, name), "name must be an interned str");
   HandleScope scope(thread);
   Object result(&scope, thread->invokeMethod2(
-                            object, SymbolId::kDunderGetattribute, name_str));
+                            object, SymbolId::kDunderGetattribute, name));
   if (!result.isErrorException() ||
       !thread->pendingExceptionMatches(LayoutId::kAttributeError)) {
     return *result;
@@ -3474,7 +3457,7 @@ RawObject Runtime::attributeAt(Thread* thread, const Object& object,
   Object saved_value(&scope, thread->pendingExceptionValue());
   Object saved_traceback(&scope, thread->pendingExceptionTraceback());
   thread->clearPendingException();
-  result = thread->invokeMethod2(object, SymbolId::kDunderGetattr, name_str);
+  result = thread->invokeMethod2(object, SymbolId::kDunderGetattr, name);
   if (result.isErrorNotFound()) {
     thread->setPendingExceptionType(*saved_type);
     thread->setPendingExceptionValue(*saved_value);
@@ -3487,15 +3470,15 @@ RawObject Runtime::attributeAt(Thread* thread, const Object& object,
 RawObject Runtime::attributeAtById(Thread* thread, const Object& receiver,
                                    SymbolId id) {
   HandleScope scope(thread);
-  Object name_str(&scope, symbols()->at(id));
-  return attributeAt(thread, receiver, name_str);
+  Object name(&scope, symbols()->at(id));
+  return attributeAt(thread, receiver, name);
 }
 
 RawObject Runtime::attributeAtByCStr(Thread* thread, const Object& receiver,
                                      const char* name) {
   HandleScope scope(thread);
-  Object name_str(&scope, internStrFromCStr(thread, name));
-  return attributeAt(thread, receiver, name_str);
+  Object name_obj(&scope, internStrFromCStr(thread, name));
+  return attributeAt(thread, receiver, name_obj);
 }
 
 RawObject Runtime::attributeDel(Thread* thread, const Object& receiver,
@@ -3824,15 +3807,14 @@ void Runtime::layoutAddEdge(Thread* thread, const List& edges,
 }
 
 bool Runtime::layoutFindAttribute(Thread* thread, const Layout& layout,
-                                  const Str& name_interned,
-                                  AttributeInfo* info) {
+                                  const Object& name, AttributeInfo* info) {
   HandleScope scope(thread);
 
   // Check in-object attributes
   Tuple in_object(&scope, layout.inObjectAttributes());
   for (word i = 0; i < in_object.length(); i++) {
     Tuple entry(&scope, in_object.at(i));
-    if (entry.at(0) == *name_interned) {
+    if (entry.at(0) == *name) {
       *info = AttributeInfo(entry.at(1));
       return true;
     }
@@ -3849,7 +3831,7 @@ bool Runtime::layoutFindAttribute(Thread* thread, const Layout& layout,
   Tuple overflow(&scope, layout.overflowAttributes());
   for (word i = 0; i < overflow.length(); i++) {
     Tuple entry(&scope, overflow.at(i));
-    if (entry.at(0) == *name_interned) {
+    if (entry.at(0) == *name) {
       *info = AttributeInfo(entry.at(1));
       return true;
     }
@@ -3904,12 +3886,12 @@ RawObject Runtime::createNativeProxyLayout(Thread* thread,
 }
 
 RawObject Runtime::layoutAddAttribute(Thread* thread, const Layout& layout,
-                                      const Str& name_interned, word flags) {
+                                      const Object& name, word flags) {
   HandleScope scope(thread);
 
   // Check if a edge for the attribute addition already exists
   List edges(&scope, layout.additions());
-  RawObject result = layoutFollowEdge(edges, name_interned);
+  RawObject result = layoutFollowEdge(edges, name);
   if (!result.isError()) {
     return result;
   }
@@ -3921,23 +3903,23 @@ RawObject Runtime::layoutAddAttribute(Thread* thread, const Layout& layout,
     AttributeInfo info(inobject.length() * kPointerSize,
                        flags | AttributeFlags::kInObject);
     new_layout.setInObjectAttributes(
-        layoutAddAttributeEntry(thread, inobject, name_interned, info));
+        layoutAddAttributeEntry(thread, inobject, name, info));
   } else {
     Tuple overflow(&scope, layout.overflowAttributes());
     AttributeInfo info(overflow.length(), flags);
     new_layout.setOverflowAttributes(
-        layoutAddAttributeEntry(thread, overflow, name_interned, info));
+        layoutAddAttributeEntry(thread, overflow, name, info));
   }
 
   // Add the edge to the existing layout
   Object value(&scope, *new_layout);
-  layoutAddEdge(thread, edges, name_interned, value);
+  layoutAddEdge(thread, edges, name, value);
 
   return *new_layout;
 }
 
 static RawObject markEntryDeleted(Thread* thread, RawObject entries,
-                                  const Str& name_interned) {
+                                  const Object& name) {
   HandleScope scope(thread);
   Tuple entries_old(&scope, entries);
   word length = entries_old.length();
@@ -3946,7 +3928,7 @@ static RawObject markEntryDeleted(Thread* thread, RawObject entries,
   Tuple entry(&scope, runtime->emptyTuple());
   for (word i = 0; i < length; i++) {
     entry = entries_old.at(i);
-    if (entry.at(0) == name_interned) {
+    if (entry.at(0) == name) {
       AttributeInfo old_info(entry.at(1));
       entry = runtime->newTuple(2);
       entry.atPut(0, NoneType::object());
@@ -3959,33 +3941,33 @@ static RawObject markEntryDeleted(Thread* thread, RawObject entries,
 }
 
 RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
-                                         const Str& name_interned) {
+                                         const Object& name) {
   HandleScope scope(thread);
 
   // Check if an edge exists for removing the attribute
   List edges(&scope, layout.deletions());
-  RawObject next_layout = layoutFollowEdge(edges, name_interned);
+  RawObject next_layout = layoutFollowEdge(edges, name);
   if (!next_layout.isError()) {
     return next_layout;
   }
 
   AttributeInfo info;
-  bool found = layoutFindAttribute(thread, layout, name_interned, &info);
+  bool found = layoutFindAttribute(thread, layout, name, &info);
   DCHECK(found, "layoutDeleteAttribute() called with nonexistent attribute");
 
   // No edge was found, create a new layout and add an edge
   Layout new_layout(&scope, layoutCreateChild(thread, layout));
   if (info.isInObject()) {
     new_layout.setInObjectAttributes(
-        markEntryDeleted(thread, layout.inObjectAttributes(), name_interned));
+        markEntryDeleted(thread, layout.inObjectAttributes(), name));
   } else {
     new_layout.setOverflowAttributes(
-        markEntryDeleted(thread, layout.overflowAttributes(), name_interned));
+        markEntryDeleted(thread, layout.overflowAttributes(), name));
   }
 
   // Add the edge to the existing layout
   Object value(&scope, *new_layout);
-  layoutAddEdge(thread, edges, name_interned, value);
+  layoutAddEdge(thread, edges, name, value);
 
   return *new_layout;
 }

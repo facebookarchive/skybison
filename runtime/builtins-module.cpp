@@ -19,24 +19,31 @@
 
 namespace py {
 
-RawObject getAttribute(Thread* thread, const Object& self, const Object& name) {
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfStr(*name)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "getattr(): attribute name must be string");
-  }
-  return runtime->attributeAt(thread, self, name);
+RawObject delAttribute(Thread* thread, const Object& self,
+                       const Object& name_obj) {
+  HandleScope scope(thread);
+  Object name(&scope, attributeName(thread, name_obj));
+  if (name.isErrorException()) return *name;
+  Object result(&scope, thread->runtime()->attributeDel(thread, self, name));
+  if (result.isErrorException()) return *result;
+  return NoneType::object();
 }
 
-RawObject hasAttribute(Thread* thread, const Object& self, const Object& name) {
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfStr(*name)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "hasattr(): attribute name must be string");
-  }
-
+RawObject getAttribute(Thread* thread, const Object& self,
+                       const Object& name_obj) {
   HandleScope scope(thread);
-  Object result(&scope, runtime->attributeAt(thread, self, name));
+  Object name(&scope, attributeName(thread, name_obj));
+  if (name.isErrorException()) return *name;
+  return thread->runtime()->attributeAt(thread, self, name);
+}
+
+RawObject hasAttribute(Thread* thread, const Object& self,
+                       const Object& name_obj) {
+  HandleScope scope(thread);
+  Object name(&scope, attributeName(thread, name_obj));
+  if (name.isErrorException()) return *name;
+
+  Object result(&scope, thread->runtime()->attributeAt(thread, self, name));
   if (!result.isErrorException()) {
     return Bool::trueObj();
   }
@@ -47,17 +54,15 @@ RawObject hasAttribute(Thread* thread, const Object& self, const Object& name) {
   return Bool::falseObj();
 }
 
-RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
-                       const Object& value) {
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfStr(*name)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "setattr(): attribute name must be string");
-  }
+RawObject setAttribute(Thread* thread, const Object& self,
+                       const Object& name_obj, const Object& value) {
   HandleScope scope(thread);
+  Object name(&scope, attributeName(thread, name_obj));
+  if (name.isErrorException()) return *name;
+
   Object result(&scope, thread->invokeMethod3(self, SymbolId::kDunderSetattr,
                                               name, value));
-  if (result.isError()) return *result;
+  if (result.isErrorException()) return *result;
   return NoneType::object();
 }
 
@@ -66,6 +71,7 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kBin, bin},
     {SymbolId::kCallable, callable},
     {SymbolId::kChr, chr},
+    {SymbolId::kDelattr, delattr},
     {SymbolId::kDunderImport, dunderImport},
     {SymbolId::kGetattr, getattr},
     {SymbolId::kHasattr, hasattr},
@@ -213,11 +219,11 @@ static void patchTypeDict(Thread* thread, const Type& base_type,
   Tuple patch_data(&scope, patch.data());
   for (word i = Dict::Bucket::kFirst;
        Dict::Bucket::nextItem(*patch_data, &i);) {
-    Str key(&scope, Dict::Bucket::key(*patch_data, i));
+    Str name(&scope, Dict::Bucket::key(*patch_data, i));
     Object patch_obj(&scope, Dict::Bucket::value(*patch_data, i));
 
     // Copy function entries if the method already exists as a native builtin.
-    Object base_obj(&scope, typeAtByStr(thread, base_type, key));
+    Object base_obj(&scope, typeAt(thread, base_type, name));
     if (!base_obj.isError()) {
       CHECK(patch_obj.isFunction(), "Python should only annotate functions");
       Function patch_fn(&scope, *patch_obj);
@@ -227,10 +233,7 @@ static void patchTypeDict(Thread* thread, const Type& base_type,
 
       copyFunctionEntries(thread, base_fn, patch_fn);
     }
-    // key is not yet interned since patch_type is a implicit global from
-    // running the class body and not yet converted into a type dict yet.
-    key = Runtime::internStr(thread, key);
-    typeAtPut(thread, base_type, key, patch_obj);
+    typeAtPut(thread, base_type, name, patch_obj);
   }
 }
 
@@ -265,6 +268,15 @@ RawObject BuiltinsModule::bin(Thread* thread, Frame* frame, word nargs) {
   return formatIntBinarySimple(thread, number_int);
 }
 
+RawObject BuiltinsModule::delattr(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  Object name(&scope, args.get(1));
+  Object result(&scope, delAttribute(thread, self, name));
+  return *result;
+}
+
 RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
                                            word nargs) {
   Runtime* runtime = thread->runtime();
@@ -289,16 +301,15 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
 
   if (bootstrap == Bool::trueObj()) {
     CHECK(name.isStr(), "bootstrap class names must not be str subclass");
-    Str name_str(&scope, *name);
 
     // A bootstrap class initialization uses the existing class dictionary.
     CHECK(frame->previousFrame() != nullptr, "must have a caller frame");
     Module module(&scope, frame->previousFrame()->function().moduleObject());
-    Object type_obj(&scope, moduleAtByStr(thread, module, name_str));
+    Object type_obj(&scope, moduleAt(thread, module, name));
     CHECK(type_obj.isType(),
           "Name '%s' is not bound to a type object. "
           "You may need to add it to the builtins module.",
-          name_str.toCStr());
+          Str::cast(*name).toCStr());
     Type type(&scope, *type_obj);
 
     if (bases.length() == 0 && name != runtime->symbols()->ObjectTypename()) {
@@ -307,10 +318,10 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
     Tuple builtin_bases(&scope, type.bases());
     word bases_length = bases.length();
     CHECK(builtin_bases.length() == bases_length, "mismatching bases for '%s'",
-          name_str.toCStr());
+          Str::cast(*name).toCStr());
     for (word i = 0; i < bases_length; i++) {
       CHECK(builtin_bases.at(i) == bases.at(i), "mismatching bases for '%s'",
-            name_str.toCStr());
+            Str::cast(*name).toCStr());
     }
 
     Dict patch_type(&scope, runtime->newDict());

@@ -41,7 +41,7 @@ PY_EXPORT int PyState_AddModule(PyObject* module, struct PyModuleDef* def) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Str module_name(&scope, Runtime::internStrFromCStr(thread, def->m_name));
+  Object module_name(&scope, Runtime::internStrFromCStr(thread, def->m_name));
   if (!runtime->findModule(module_name).isNoneType()) {
     return 0;
   }
@@ -75,7 +75,8 @@ PY_EXPORT PyObject* PyState_FindModule(struct PyModuleDef* module) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Str module_name(&scope, Runtime::internStrFromCStr(thread, module->m_name));
+  Object module_name(&scope,
+                     Runtime::internStrFromCStr(thread, module->m_name));
   Object module_obj(&scope, runtime->findModule(module_name));
   if (module_obj.isNoneType()) {
     return nullptr;

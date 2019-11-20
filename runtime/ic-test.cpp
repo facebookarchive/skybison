@@ -110,7 +110,7 @@ TEST_F(IcTest, IcUpdateAttrSetsEmptyEntry) {
 
   Tuple caches(&scope, runtime_.newTuple(1 * kIcPointersPerCache));
   Object value(&scope, runtime_.newInt(88));
-  Str name(&scope, Str::empty());
+  Object name(&scope, Str::empty());
   Function dependent(&scope, newEmptyFunction());
   icUpdateAttr(thread_, caches, 0, LayoutId::kSmallInt, value, name, dependent);
   EXPECT_TRUE(isIntEqualsWord(caches.at(kIcEntryKeyOffset),
@@ -132,7 +132,7 @@ TEST_F(IcTest, IcUpdateAttrUpdatesExistingEntry) {
   caches.atPut(cache_offset + 3 * kIcPointersPerEntry + kIcEntryKeyOffset,
                layoutIdAsSmallInt(LayoutId::kBytes));
   Object value(&scope, runtime_.newStrFromCStr("test"));
-  Str name(&scope, Str::empty());
+  Object name(&scope, Str::empty());
   Function dependent(&scope, newEmptyFunction());
   icUpdateAttr(thread_, caches, 1, LayoutId::kSmallStr, value, name, dependent);
   EXPECT_TRUE(isIntEqualsWord(
@@ -164,7 +164,7 @@ c = C()
   Tuple caches(&scope, runtime_.newTuple(4));
   Object c(&scope, mainModuleAt(&runtime_, "c"));
   Object value(&scope, SmallInt::fromWord(1234));
-  Str foo(&scope, runtime_.newStrFromCStr("foo"));
+  Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Function dependent(&scope, newEmptyFunction());
   icUpdateAttr(thread_, caches, 0, c.layoutId(), value, foo, dependent);
 
@@ -194,7 +194,7 @@ TEST_F(IcTest, IcUpdateAttrDoesNotInsertsDependencyToSealedType) {
   Str instance(&scope, runtime_.newStrFromCStr("str instance"));
   Tuple caches(&scope, runtime_.newTuple(4));
   Object value(&scope, SmallInt::fromWord(1234));
-  Str dunder_add(&scope, runtime_.symbols()->at(SymbolId::kDunderAdd));
+  Object dunder_add(&scope, runtime_.symbols()->at(SymbolId::kDunderAdd));
   Function dependent(&scope, newEmptyFunction());
   icUpdateAttr(thread_, caches, 0, instance.layoutId(), value, dunder_add,
                dependent);
@@ -209,9 +209,9 @@ TEST_F(IcTest, IcUpdateAttrDoesNotInsertsDependencyToSealedType) {
 static RawObject dependencyLinkOfTypeAttr(Thread* thread, const Type& type,
                                           const char* attribute_name) {
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
   Dict type_dict(&scope, type.dict());
-  Str attribute_name_str(&scope, runtime->newStrFromCStr(attribute_name));
+  Object attribute_name_str(&scope,
+                            Runtime::internStrFromCStr(thread, attribute_name));
   ValueCell value_cell(&scope,
                        dictAtByStr(thread, type_dict, attribute_name_str));
   return value_cell.dependencyLink();
@@ -250,7 +250,8 @@ class B:
   // should have no effect.
   Type cached_type(&scope, mainModuleAt(&runtime_, "A"));
   IcIterator it(&scope, &runtime_, *cache_a_foo);
-  Str not_cached_attr_name(&scope, runtime_.newStrFromCStr("random"));
+  Object not_cached_attr_name(&scope,
+                              Runtime::internStrFromCStr(thread_, "random"));
   icEvictAttr(thread_, it, cached_type, not_cached_attr_name,
               AttributeKind::kNotADataDescriptor, cache_a_foo);
   EXPECT_FALSE(
@@ -262,7 +263,7 @@ class B:
   // Try evicting instance attribute caches for a non-data descriptor
   // assignment.  Because instance attributes have a higher priority than
   // non-data descriptors, nothing should be evicted.
-  Str foo(&scope, runtime_.newStrFromCStr("foo"));
+  Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   icEvictAttr(thread_, it, cached_type, foo, AttributeKind::kNotADataDescriptor,
               cache_a_foo);
   EXPECT_FALSE(
@@ -327,7 +328,7 @@ cache_binop(a, b)
   IcIterator it(&scope, &runtime_, *cache_binop);
 
   // An update to A.__ge__ invalidates the binop cache for a >= b.
-  Str dunder_ge(&scope, runtime_.newStrFromCStr("__ge__"));
+  Object dunder_ge(&scope, Runtime::internStrFromCStr(thread_, "__ge__"));
   icEvictBinaryOp(thread_, it, left_operand_type, dunder_ge, cache_binop);
   EXPECT_TRUE(icLookupBinaryOp(*caches, 0, left_operand.layoutId(),
                                right_operand.layoutId(), &flags_out)
@@ -366,7 +367,7 @@ cache_binop(a, b)
                    .isErrorNotFound());
 
   IcIterator it(&scope, &runtime_, *cache_binop);
-  Str dunder_le(&scope, runtime_.newStrFromCStr("__le__"));
+  Object dunder_le(&scope, Runtime::internStrFromCStr(thread_, "__le__"));
   // An update to B.__le__ invalidates the binop cache for a >= b.
   icEvictBinaryOp(thread_, it, right_operand_type, dunder_le, cache_binop);
   EXPECT_TRUE(icLookupBinaryOp(*caches, 0, left_operand.layoutId(),
@@ -425,7 +426,7 @@ B__le__ = B.__le__
       *cache_compare_op, dependencyLinkOfTypeAttr(thread_, type_b, "__le__")));
 
   // Update A.__ge__ to invalidate cache for t0 = a >= b.
-  Str dunder_ge_name(&scope, runtime_.newStrFromCStr("__ge__"));
+  Object dunder_ge_name(&scope, Runtime::internStrFromCStr(thread_, "__ge__"));
   icEvictCache(thread_, cache_compare_op, type_a, dunder_ge_name,
                AttributeKind::kNotADataDescriptor);
   // The invalidation removes dependency from cache_compare_op to A.__ge__.
@@ -501,8 +502,8 @@ y(a)
   HandleScope scope(thread_);
   Type type_a(&scope, mainModuleAt(&runtime_, "A"));
   Dict type_dict_a(&scope, type_a.dict());
-  Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
-  Str bar_name(&scope, runtime_.newStrFromCStr("bar"));
+  Object foo_name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Object bar_name(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   Function dependent_x(&scope, mainModuleAt(&runtime_, "x"));
   Function dependent_y(&scope, mainModuleAt(&runtime_, "y"));
 
@@ -571,7 +572,7 @@ x(a)
   Dict type_dict_a(&scope, a.dict());
   Dict type_dict_b(&scope, b.dict());
   Dict type_dict_c(&scope, c.dict());
-  Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
+  Object foo_name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
 
   // A.foo -> x
   ValueCell foo_in_a(&scope, dictAtByStr(thread_, type_dict_a, foo_name));
@@ -637,7 +638,7 @@ cache_foo(b)
 
   // Now cache_foo doesn't depend on neither A.foo nor B.foo, so this should
   // return A.
-  Str foo(&scope, runtime_.newStrFromCStr("foo"));
+  Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object result(&scope, icHighestSuperTypeNotInMroOfOtherCachedTypes(
                             thread_, b_obj.layoutId(), foo, cache_foo));
   EXPECT_EQ(result, *a_type);
@@ -666,7 +667,7 @@ x(c)
   Type type_a(&scope, mainModuleAt(&runtime_, "A"));
   Type type_b(&scope, mainModuleAt(&runtime_, "B"));
   Type type_c(&scope, mainModuleAt(&runtime_, "C"));
-  Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
+  Object foo_name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
 
   LayoutId type_c_instance_layout_id =
       Layout::cast(type_c.instanceLayout()).id();
@@ -690,8 +691,8 @@ x(c)
 }
 
 // Create a function that maps cache index 1 to the given attribute name.
-static RawObject testingFunctionCachingAttributes(Thread* thread,
-                                                  Str& attribute_name) {
+static RawObject testingFunctionCachingAttributes(
+    Thread* thread, const Object& attribute_name) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object name(&scope, Str::empty());
@@ -730,8 +731,8 @@ c = C()
   HandleScope scope(thread_);
   Type type(&scope, mainModuleAt(&runtime_, "C"));
   Dict type_dict(&scope, type.dict());
-  Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
-  Str bar_name(&scope, runtime_.newStrFromCStr("bar"));
+  Object foo_name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Object bar_name(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   Function dependent(&scope,
                      testingFunctionCachingAttributes(thread_, foo_name));
 
@@ -745,7 +746,7 @@ c = C()
   Object instance(&scope, mainModuleAt(&runtime_, "c"));
   Tuple caches(&scope, dependent.caches());
   Object value(&scope, SmallInt::fromWord(1234));
-  Str name(&scope, Str::empty());
+  Object name(&scope, Str::empty());
   icUpdateAttr(thread_, caches, 1, instance.layoutId(), value, name, dependent);
   ASSERT_EQ(icLookupAttr(*caches, 1, instance.layoutId()),
             SmallInt::fromWord(1234));
@@ -773,7 +774,7 @@ c = C()
   HandleScope scope(thread_);
   Type type(&scope, mainModuleAt(&runtime_, "C"));
   Dict type_dict(&scope, type.dict());
-  Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
+  Object foo_name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Function dependent(&scope,
                      testingFunctionCachingAttributes(thread_, foo_name));
 
@@ -787,7 +788,7 @@ c = C()
   Object instance(&scope, mainModuleAt(&runtime_, "c"));
   Tuple caches(&scope, dependent.caches());
   Object value(&scope, SmallInt::fromWord(1234));
-  Str name(&scope, Str::empty());
+  Object name(&scope, Str::empty());
   icUpdateAttr(thread_, caches, 1, instance.layoutId(), value, name, dependent);
   ASSERT_EQ(icLookupAttr(*caches, 1, instance.layoutId()),
             SmallInt::fromWord(1234));
@@ -827,7 +828,7 @@ c = C()
   Dict b_type_dict(&scope, b_type.dict());
   Type c_type(&scope, mainModuleAt(&runtime_, "C"));
   Dict c_type_dict(&scope, c_type.dict());
-  Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
+  Object foo_name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Function dependent(&scope,
                      testingFunctionCachingAttributes(thread_, foo_name));
 
@@ -854,7 +855,7 @@ c = C()
   Object a(&scope, mainModuleAt(&runtime_, "a"));
   Tuple caches(&scope, dependent.caches());
   Object value_100(&scope, SmallInt::fromWord(100));
-  Str name(&scope, Str::empty());
+  Object name(&scope, Str::empty());
   icUpdateAttr(thread_, caches, 1, a.layoutId(), value_100, name, dependent);
   ASSERT_EQ(icLookupAttr(*caches, 1, a.layoutId()), SmallInt::fromWord(100));
   // Create a cache for b.foo in dependent.
@@ -899,8 +900,8 @@ c = C()
   HandleScope scope(thread_);
   Type type(&scope, mainModuleAt(&runtime_, "C"));
   Dict type_dict(&scope, type.dict());
-  Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
-  Str bar_name(&scope, runtime_.newStrFromCStr("bar"));
+  Object foo_name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Object bar_name(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   Function dependent0(&scope,
                       testingFunctionCachingAttributes(thread_, foo_name));
   Function dependent1(&scope,
@@ -930,7 +931,7 @@ c = C()
   {
     // Create an attribute cache for an instance of C, under name "foo" in
     // dependent0.
-    Str name(&scope, Str::empty());
+    Object name(&scope, Str::empty());
     Object value(&scope, SmallInt::fromWord(1234));
     icUpdateAttr(thread_, dependent0_caches, 1, instance.layoutId(), value,
                  name, dependent0);
@@ -942,7 +943,7 @@ c = C()
   {
     // Create an attribute cache for an instance of C, under name "bar" in
     // dependent1.
-    Str name(&scope, Str::empty());
+    Object name(&scope, Str::empty());
     Object value(&scope, SmallInt::fromWord(5678));
     icUpdateAttr(thread_, dependent1_caches, 1, instance.layoutId(), value,
                  name, dependent1);
@@ -1004,8 +1005,8 @@ cache_Y_foo()
   Type type_b(&scope, mainModuleAt(&runtime_, "B"));
   Type type_x(&scope, mainModuleAt(&runtime_, "X"));
   Type type_y(&scope, mainModuleAt(&runtime_, "Y"));
-  Str foo(&scope, runtime_.newStrFromCStr("foo"));
-  Str bar(&scope, runtime_.newStrFromCStr("bar"));
+  Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   Function cache_y_foo(&scope, mainModuleAt(&runtime_, "cache_Y_foo"));
 
   // Note that cache_y_foo depends both on X.foo and Y.foo since an
@@ -1042,8 +1043,8 @@ cache_Y_ge()
   Type type_y(&scope, mainModuleAt(&runtime_, "Y"));
   Type type_a(&scope, mainModuleAt(&runtime_, "A"));
   Type type_b(&scope, mainModuleAt(&runtime_, "B"));
-  Str dunder_ge(&scope, runtime_.newStrFromCStr("__ge__"));
-  Str dunder_le(&scope, runtime_.newStrFromCStr("__le__"));
+  Object dunder_ge(&scope, Runtime::internStrFromCStr(thread_, "__ge__"));
+  Object dunder_le(&scope, Runtime::internStrFromCStr(thread_, "__le__"));
   Function cache_ge(&scope, mainModuleAt(&runtime_, "cache_Y_ge"));
 
   // Note that cache_ge indirectly depends on X, but directly on Y since both
@@ -1092,7 +1093,7 @@ cache_compare_op(a, b)
   ASSERT_EQ(*cached, *type_a_dunder_ge);
   Type type_a(&scope, mainModuleAt(&runtime_, "A"));
   Dict type_a_dict(&scope, type_a.dict());
-  Str dunder_ge_name(&scope, runtime_.newStrFromCStr("__ge__"));
+  Object dunder_ge_name(&scope, Runtime::internStrFromCStr(thread_, "__ge__"));
   ValueCell dunder_ge(&scope,
                       dictAtByStr(thread_, type_a_dict, dunder_ge_name));
   WeakLink dunder_ge_link(&scope, dunder_ge.dependencyLink());
@@ -1100,7 +1101,7 @@ cache_compare_op(a, b)
   ASSERT_EQ(dunder_ge_link.referent(), *cache_compare_op);
   Type type_b(&scope, mainModuleAt(&runtime_, "B"));
   Dict type_b_dict(&scope, type_b.dict());
-  Str dunder_le_name(&scope, runtime_.newStrFromCStr("__le__"));
+  Object dunder_le_name(&scope, Runtime::internStrFromCStr(thread_, "__le__"));
   ValueCell dunder_le(&scope,
                       dictAtByStr(thread_, type_b_dict, dunder_le_name));
   WeakLink dunder_le_link(&scope, dunder_le.dependencyLink());
@@ -1726,7 +1727,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   ASSERT_TRUE(it.hasNext());
   ASSERT_TRUE(it.isAttrCache());
   EXPECT_FALSE(it.isBinaryOpCache());
-  Str load_attr_cached_attr_name(
+  Object load_attr_cached_attr_name(
       &scope,
       Runtime::internStrFromCStr(thread_, "load_attr_cached_attr_name"));
   EXPECT_TRUE(it.isAttrNameEqualTo(load_attr_cached_attr_name));
@@ -1745,7 +1746,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   ASSERT_TRUE(it.hasNext());
   ASSERT_TRUE(it.isAttrCache());
   EXPECT_FALSE(it.isBinaryOpCache());
-  Str load_method_cached_attr_name(
+  Object load_method_cached_attr_name(
       &scope,
       Runtime::internStrFromCStr(thread_, "load_method_cached_attr_name"));
   EXPECT_TRUE(it.isAttrNameEqualTo(load_method_cached_attr_name));
@@ -1756,7 +1757,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   ASSERT_TRUE(it.hasNext());
   ASSERT_TRUE(it.isAttrCache());
   EXPECT_FALSE(it.isBinaryOpCache());
-  Str store_attr_cached_attr_name(
+  Object store_attr_cached_attr_name(
       &scope,
       Runtime::internStrFromCStr(thread_, "store_attr_cached_attr_name"));
   EXPECT_TRUE(it.isAttrNameEqualTo(store_attr_cached_attr_name));
@@ -1773,7 +1774,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   ASSERT_TRUE(it.hasNext());
   ASSERT_TRUE(it.isAttrCache());
   EXPECT_FALSE(it.isBinaryOpCache());
-  Str for_iter_cached_attr_name(
+  Object for_iter_cached_attr_name(
       &scope, Runtime::internStrFromCStr(thread_, "__next__"));
   EXPECT_TRUE(it.isAttrNameEqualTo(for_iter_cached_attr_name));
   EXPECT_EQ(it.layoutId(), Str::empty().layoutId());
@@ -1783,7 +1784,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   ASSERT_TRUE(it.hasNext());
   ASSERT_TRUE(it.isAttrCache());
   EXPECT_FALSE(it.isBinaryOpCache());
-  Str binary_subscr_cached_attr_name(
+  Object binary_subscr_cached_attr_name(
       &scope, Runtime::internStrFromCStr(thread_, "__getitem__"));
   EXPECT_TRUE(it.isAttrNameEqualTo(binary_subscr_cached_attr_name));
   EXPECT_EQ(it.layoutId(), runtime_.emptyTuple().layoutId());
@@ -1851,10 +1852,12 @@ TEST_F(IcTest, IcIteratorIteratesOverBinaryOpCaches) {
   EXPECT_EQ(it.leftLayoutId(), SmallInt::fromWord(-1).layoutId());
   EXPECT_EQ(it.rightLayoutId(), SmallStr::fromCStr("").layoutId());
   {
-    Str left_operator_name(&scope, runtime_.newStrFromCStr("__ge__"));
-    EXPECT_TRUE(left_operator_name.equals(it.leftMethodName()));
-    Str right_operator_name(&scope, runtime_.newStrFromCStr("__le__"));
-    EXPECT_TRUE(right_operator_name.equals(it.rightMethodName()));
+    Object left_operator_name(&scope,
+                              Runtime::internStrFromCStr(thread_, "__ge__"));
+    EXPECT_EQ(left_operator_name, it.leftMethodName());
+    Object right_operator_name(&scope,
+                               Runtime::internStrFromCStr(thread_, "__le__"));
+    EXPECT_EQ(right_operator_name, it.rightMethodName());
   }
 
   it.next();
@@ -1864,10 +1867,12 @@ TEST_F(IcTest, IcIteratorIteratesOverBinaryOpCaches) {
   EXPECT_EQ(it.leftLayoutId(), SmallStr::fromCStr("").layoutId());
   EXPECT_EQ(it.rightLayoutId(), SmallInt::fromWord(-1).layoutId());
   {
-    Str left_operator_name(&scope, runtime_.newStrFromCStr("__add__"));
-    EXPECT_TRUE(left_operator_name.equals(it.leftMethodName()));
-    Str right_operator_name(&scope, runtime_.newStrFromCStr("__radd__"));
-    EXPECT_TRUE(right_operator_name.equals(it.rightMethodName()));
+    Object left_operator_name(&scope,
+                              Runtime::internStrFromCStr(thread_, "__add__"));
+    EXPECT_EQ(left_operator_name, it.leftMethodName());
+    Object right_operator_name(&scope,
+                               Runtime::internStrFromCStr(thread_, "__radd__"));
+    EXPECT_EQ(right_operator_name, it.rightMethodName());
   }
 
   it.next();
@@ -1917,12 +1922,15 @@ TEST_F(IcTest, IcIteratorIteratesOverInplaceOpCaches) {
   EXPECT_EQ(it.leftLayoutId(), SmallStr::fromCStr("").layoutId());
   EXPECT_EQ(it.rightLayoutId(), SmallInt::fromWord(-1).layoutId());
   {
-    Str inplace_operator_name(&scope, runtime_.newStrFromCStr("__imul__"));
-    EXPECT_TRUE(inplace_operator_name.equals(it.inplaceMethodName()));
-    Str left_operator_name(&scope, runtime_.newStrFromCStr("__mul__"));
-    EXPECT_TRUE(left_operator_name.equals(it.leftMethodName()));
-    Str right_operator_name(&scope, runtime_.newStrFromCStr("__rmul__"));
-    EXPECT_TRUE(right_operator_name.equals(it.rightMethodName()));
+    Object inplace_operator_name(
+        &scope, Runtime::internStrFromCStr(thread_, "__imul__"));
+    EXPECT_EQ(inplace_operator_name, it.inplaceMethodName());
+    Object left_operator_name(&scope,
+                              Runtime::internStrFromCStr(thread_, "__mul__"));
+    EXPECT_EQ(left_operator_name, it.leftMethodName());
+    Object right_operator_name(&scope,
+                               Runtime::internStrFromCStr(thread_, "__rmul__"));
+    EXPECT_EQ(right_operator_name, it.rightMethodName());
   }
 
   it.next();

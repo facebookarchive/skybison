@@ -516,7 +516,7 @@ TEST_F(ThreadTest, LoadGlobal) {
 
   Code code(&scope, newEmptyCode());
   Tuple names(&scope, runtime_.newTuple(1));
-  Str name(&scope, runtime_.newStrFromCStr("foo"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   names.atPut(0, *name);
   code.setNames(*names);
 
@@ -526,7 +526,7 @@ TEST_F(ThreadTest, LoadGlobal) {
 
   Module module(&scope, runtime_.findOrCreateMainModule());
   Object value(&scope, runtime_.newInt(1234));
-  moduleAtPutByStr(thread_, module, name, value);
+  moduleAtPut(thread_, module, name, value);
 
   Dict globals(&scope, module.dict());
   EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, module, globals), 1234));
@@ -542,7 +542,7 @@ TEST_F(ThreadTest, StoreGlobalCreateValueCell) {
   code.setConsts(*consts);
 
   Tuple names(&scope, runtime_.newTuple(1));
-  Str name(&scope, runtime_.newStrFromCStr("foo"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   names.atPut(0, *name);
   code.setNames(*names);
 
@@ -554,7 +554,7 @@ TEST_F(ThreadTest, StoreGlobalCreateValueCell) {
   Module module(&scope, runtime_.findOrCreateMainModule());
   Dict globals(&scope, module.dict());
   EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, module, globals), 42));
-  EXPECT_TRUE(isIntEqualsWord(moduleAtByStr(thread_, module, name), 42));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(thread_, module, name), 42));
 }
 
 TEST_F(ThreadTest, StoreGlobalReuseValueCell) {
@@ -567,7 +567,7 @@ TEST_F(ThreadTest, StoreGlobalReuseValueCell) {
   code.setConsts(*consts);
 
   Tuple names(&scope, runtime_.newTuple(1));
-  Str name(&scope, runtime_.newStrFromCStr("foo"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   names.atPut(0, *name);
   code.setNames(*names);
 
@@ -578,10 +578,10 @@ TEST_F(ThreadTest, StoreGlobalReuseValueCell) {
 
   Module module(&scope, runtime_.findOrCreateMainModule());
   Object value(&scope, runtime_.newInt(99));
-  moduleAtPutByStr(thread_, module, name, value);
+  moduleAtPut(thread_, module, name, value);
   Object none(&scope, NoneType::object());
   EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, module, none), 42));
-  EXPECT_TRUE(isIntEqualsWord(moduleAtByStr(thread_, module, name), 42));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(thread_, module, name), 42));
 }
 
 TEST_F(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
@@ -590,7 +590,7 @@ TEST_F(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
   Code code(&scope, newEmptyCode());
 
   Tuple names(&scope, runtime_.newTuple(1));
-  Str name(&scope, runtime_.newStrFromCStr("foo"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   names.atPut(0, *name);
   code.setNames(*names);
 
@@ -603,7 +603,7 @@ TEST_F(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
   Module module(&scope, runtime_.findOrCreateMainModule());
   moduleAtPutById(thread_, module, SymbolId::kDunderBuiltins, builtins);
   Object value(&scope, runtime_.newInt(123));
-  moduleAtPutByStr(thread_, builtins, name, value);
+  moduleAtPut(thread_, builtins, name, value);
   Dict locals(&scope, runtime_.newDict());
   EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, module, locals), 123));
 }
@@ -614,7 +614,7 @@ TEST_F(ThreadTest, LoadNameFromGlobals) {
   Code code(&scope, newEmptyCode());
 
   Tuple names(&scope, runtime_.newTuple(1));
-  Str name(&scope, runtime_.newStrFromCStr("foo"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   names.atPut(0, *name);
   code.setNames(*names);
 
@@ -624,7 +624,7 @@ TEST_F(ThreadTest, LoadNameFromGlobals) {
 
   Module module(&scope, runtime_.findOrCreateMainModule());
   Object value(&scope, runtime_.newInt(321));
-  moduleAtPutByStr(thread_, module, name, value);
+  moduleAtPut(thread_, module, name, value);
   Dict locals(&scope, runtime_.newDict());
 
   EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, module, locals), 321));
@@ -636,7 +636,7 @@ TEST_F(ThreadTest, LoadNameFromLocals) {
   Code code(&scope, newEmptyCode());
 
   Tuple names(&scope, runtime_.newTuple(1));
-  Str name(&scope, runtime_.newStrFromCStr("foo"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   names.atPut(0, *name);
   code.setNames(*names);
 
@@ -646,7 +646,7 @@ TEST_F(ThreadTest, LoadNameFromLocals) {
 
   Module module(&scope, runtime_.findOrCreateMainModule());
   Object globals_value(&scope, runtime_.newInt(456));
-  moduleAtPutByStr(thread_, module, name, globals_value);
+  moduleAtPut(thread_, module, name, globals_value);
   Dict locals(&scope, runtime_.newDict());
   Object locals_value(&scope, runtime_.newInt(654));
   dictAtPutByStr(thread_, locals, name, locals_value);
@@ -1008,7 +1008,7 @@ class C:
   ASSERT_TRUE(cls_dict.isDict());
 
   // Check for the __init__ method name in the dict
-  Str meth_name(&scope, runtime_.symbols()->DunderInit());
+  Object meth_name(&scope, runtime_.symbols()->DunderInit());
   ASSERT_TRUE(dictIncludesByStr(thread_, cls_dict, meth_name));
   value = dictAtByStr(thread_, cls_dict, meth_name);
   ASSERT_TRUE(value.isValueCell());

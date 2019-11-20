@@ -47,7 +47,6 @@ _compile_flags_mask = _compile_flags_mask  # noqa: F821
 _complex_check = _complex_check  # noqa: F821
 _complex_imag = _complex_imag  # noqa: F821
 _complex_real = _complex_real  # noqa: F821
-_delattr = _delattr  # noqa: F821
 _dict_bucket_insert = _dict_bucket_insert  # noqa: F821
 _dict_bucket_key = _dict_bucket_key  # noqa: F821
 _dict_bucket_set_value = _dict_bucket_set_value  # noqa: F821
@@ -2241,10 +2240,9 @@ class coroutine(bootstrap=True):
 credits = ""
 
 
+@_patch
 def delattr(obj, name):
-    if not _str_check(name):
-        raise TypeError(f"attribute name must be string, not '{_type(name).__name__}'")
-    return _delattr(obj, name)
+    pass
 
 
 class dict(bootstrap=True):

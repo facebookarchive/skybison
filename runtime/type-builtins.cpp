@@ -18,6 +18,60 @@
 
 namespace py {
 
+RawObject attributeName(Thread* thread, const Object& name_obj) {
+  if (name_obj.isSmallStr()) {
+    return *name_obj;
+  }
+  if (name_obj.isLargeStr()) {
+    return Runtime::internLargeStr(thread, name_obj);
+  }
+
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfStr(*name_obj)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "attribute name must be string, not '%T'",
+                                &name_obj);
+  }
+  HandleScope scope(thread);
+  Type type(&scope, runtime->typeOf(*name_obj));
+  if (typeLookupInMroById(thread, type, SymbolId::kDunderEq) !=
+          runtime->strDunderEq() ||
+      typeLookupInMroById(thread, type, SymbolId::kDunderHash) !=
+          runtime->strDunderHash()) {
+    UNIMPLEMENTED(
+        "str subclasses with __eq__ or __hash__ not supported as attribute "
+        "name");
+  }
+  Str name_str(&scope, strUnderlying(*name_obj));
+  return Runtime::internStr(thread, name_str);
+}
+
+RawObject attributeNameNoException(Thread* thread, const Object& name_obj) {
+  if (name_obj.isSmallStr()) {
+    return *name_obj;
+  }
+  if (name_obj.isLargeStr()) {
+    return Runtime::internLargeStr(thread, name_obj);
+  }
+
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfStr(*name_obj)) {
+    return Error::error();
+  }
+  HandleScope scope(thread);
+  Type type(&scope, runtime->typeOf(*name_obj));
+  if (typeLookupInMroById(thread, type, SymbolId::kDunderEq) !=
+          runtime->strDunderEq() ||
+      typeLookupInMroById(thread, type, SymbolId::kDunderHash) !=
+          runtime->strDunderHash()) {
+    UNIMPLEMENTED(
+        "str subclasses with __eq__ or __hash__ not supported as attribute "
+        "name");
+  }
+  Str name_str(&scope, strUnderlying(*name_obj));
+  return Runtime::internStr(thread, name_str);
+}
+
 Type::Slot slotToTypeSlot(int slot) {
   switch (slot) {
     case Py_mp_ass_subscript:
@@ -443,20 +497,15 @@ bool nextTypeDictItem(RawTuple data, word* idx) {
   return false;
 }
 
-RawObject typeLookupInMro(Thread* thread, const Type& type, const Object& key,
-                          word hash) {
-  return typeLookupInMroSetLocation(thread, type, key, hash, nullptr);
-}
-
 RawObject typeLookupInMroSetLocation(Thread* thread, const Type& type,
-                                     const Object& key, word hash,
-                                     Object* location) {
+                                     const Object& name, Object* location) {
   HandleScope scope(thread);
   Tuple mro(&scope, type.mro());
+  word hash = strHash(thread, *name);
   for (word i = 0; i < mro.length(); i++) {
     Type mro_type(&scope, mro.at(i));
     Object value(&scope,
-                 typeAtSetLocation(thread, mro_type, key, hash, location));
+                 typeAtSetLocation(thread, mro_type, name, hash, location));
     if (!value.isError()) {
       return *value;
     }
@@ -464,13 +513,14 @@ RawObject typeLookupInMroSetLocation(Thread* thread, const Type& type,
   return Error::notFound();
 }
 
-RawObject typeLookupInMroByStr(Thread* thread, const Type& type,
-                               const Str& name) {
+RawObject typeLookupInMro(Thread* thread, const Type& type,
+                          const Object& name) {
   HandleScope scope(thread);
   Tuple mro(&scope, type.mro());
+  word hash = strHash(thread, *name);
   for (word i = 0; i < mro.length(); i++) {
     Type mro_type(&scope, mro.at(i));
-    Object value(&scope, typeAtByStr(thread, mro_type, name));
+    Object value(&scope, typeAtWithHash(thread, mro_type, name, hash));
     if (!value.isError()) {
       return *value;
     }
@@ -480,8 +530,8 @@ RawObject typeLookupInMroByStr(Thread* thread, const Type& type,
 
 RawObject typeLookupInMroById(Thread* thread, const Type& type, SymbolId id) {
   HandleScope scope(thread);
-  Str name(&scope, thread->runtime()->symbols()->at(id));
-  return typeLookupInMroByStr(thread, type, name);
+  Object name(&scope, thread->runtime()->symbols()->at(id));
+  return typeLookupInMro(thread, type, name);
 }
 
 bool typeIsDataDescriptor(Thread* thread, const Type& type) {
@@ -518,11 +568,29 @@ RawObject resolveDescriptorGet(Thread* thread, const Object& descr,
                                         instance, instance_type);
 }
 
-RawObject typeAtSetLocation(Thread* thread, const Type& type, const Object& key,
-                            word hash, Object* location) {
+RawObject typeAtWithHash(Thread* thread, const Type& type, const Object& name,
+                         word hash) {
   HandleScope scope(thread);
   Dict dict(&scope, type.dict());
-  Object value(&scope, dictAt(thread, dict, key, hash));
+  Object value(&scope, dictAt(thread, dict, name, hash));
+  DCHECK(value.isErrorNotFound() || value.isValueCell(),
+         "type dictionaries must return either ErrorNotFound or ValueCell");
+  if (value.isErrorNotFound() || ValueCell::cast(*value).isPlaceholder()) {
+    return Error::notFound();
+  }
+  return ValueCell::cast(*value).value();
+}
+
+RawObject typeAt(Thread* thread, const Type& type, const Object& name) {
+  word hash = strHash(thread, *name);
+  return typeAtWithHash(thread, type, name, hash);
+}
+
+RawObject typeAtSetLocation(Thread* thread, const Type& type,
+                            const Object& name, word hash, Object* location) {
+  HandleScope scope(thread);
+  Dict dict(&scope, type.dict());
+  Object value(&scope, dictAt(thread, dict, name, hash));
   DCHECK(value.isErrorNotFound() || value.isValueCell(),
          "type dictionaries must return either ErrorNotFound or ValueCell");
   if (value.isErrorNotFound() || ValueCell::cast(*value).isPlaceholder()) {
@@ -530,23 +598,6 @@ RawObject typeAtSetLocation(Thread* thread, const Type& type, const Object& key,
   }
   if (location != nullptr) {
     *location = *value;
-  }
-  return ValueCell::cast(*value).value();
-}
-
-RawObject typeAt(Thread* thread, const Type& type, const Object& key,
-                 word hash) {
-  return typeAtSetLocation(thread, type, key, hash, nullptr);
-}
-
-RawObject typeAtByStr(Thread* thread, const Type& type, const Str& name) {
-  HandleScope scope(thread);
-  Dict dict(&scope, type.dict());
-  Object value(&scope, dictAtByStr(thread, dict, name));
-  DCHECK(value.isErrorNotFound() || value.isValueCell(),
-         "type dictionaries must return either ErrorNotFound or ValueCell");
-  if (value.isErrorNotFound() || ValueCell::cast(*value).isPlaceholder()) {
-    return Error::notFound();
   }
   return ValueCell::cast(*value).value();
 }
@@ -563,16 +614,16 @@ RawObject typeAtById(Thread* thread, const Type& type, SymbolId id) {
   return ValueCell::cast(*value).value();
 }
 
-RawObject typeAtPut(Thread* thread, const Type& type, const Str& interned_name,
+RawObject typeAtPut(Thread* thread, const Type& type, const Object& name,
                     const Object& value) {
-  DCHECK(thread->runtime()->isInternedStr(thread, interned_name),
+  DCHECK(thread->runtime()->isInternedStr(thread, name),
          "name should be an interned str");
   HandleScope scope(thread);
   Dict dict(&scope, type.dict());
-  ValueCell value_cell(
-      &scope, dictAtPutInValueCellByStr(thread, dict, interned_name, value));
+  ValueCell value_cell(&scope,
+                       dictAtPutInValueCellByStr(thread, dict, name, value));
   if (!value_cell.dependencyLink().isNoneType()) {
-    icInvalidateAttr(thread, type, interned_name, value_cell);
+    icInvalidateAttr(thread, type, name, value_cell);
   }
   return *value_cell;
 }
@@ -582,7 +633,7 @@ RawObject typeAtPutById(Thread* thread, const Type& type, SymbolId id,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Dict dict(&scope, type.dict());
-  Str name(&scope, runtime->symbols()->at(id));
+  Object name(&scope, runtime->symbols()->at(id));
   ValueCell value_cell(&scope,
                        dictAtPutInValueCellByStr(thread, dict, name, value));
   if (!value_cell.dependencyLink().isNoneType()) {
@@ -591,7 +642,7 @@ RawObject typeAtPutById(Thread* thread, const Type& type, SymbolId id,
   return *value_cell;
 }
 
-RawObject typeRemove(Thread* thread, const Type& type, const Str& name) {
+RawObject typeRemove(Thread* thread, const Type& type, const Object& name) {
   HandleScope scope(thread);
   Dict type_dict(&scope, type.dict());
   Object result(&scope, dictAtByStr(thread, type_dict, name));
@@ -645,18 +696,18 @@ RawObject typeValues(Thread* thread, const Type& type) {
 }
 
 RawObject typeGetAttribute(Thread* thread, const Type& type,
-                           const Object& name_str, word hash) {
-  return typeGetAttributeSetLocation(thread, type, name_str, hash, nullptr);
+                           const Object& name) {
+  return typeGetAttributeSetLocation(thread, type, name, nullptr);
 }
 
 RawObject typeGetAttributeSetLocation(Thread* thread, const Type& type,
-                                      const Object& name_str, word hash,
+                                      const Object& name,
                                       Object* location_out) {
   // Look for the attribute in the meta class
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type meta_type(&scope, runtime->typeOf(*type));
-  Object meta_attr(&scope, typeLookupInMro(thread, meta_type, name_str, hash));
+  Object meta_attr(&scope, typeLookupInMro(thread, meta_type, name));
   if (!meta_attr.isError()) {
     // TODO(T56002494): Remove this once type.__getattribute__ gets cached.
     if (meta_attr.isProperty()) {
@@ -674,8 +725,8 @@ RawObject typeGetAttributeSetLocation(Thread* thread, const Type& type,
   }
 
   // No data descriptor found on the meta class, look in the mro of the type
-  Object attr(&scope, typeLookupInMroSetLocation(thread, type, name_str, hash,
-                                                 location_out));
+  Object attr(&scope,
+              typeLookupInMroSetLocation(thread, type, name, location_out));
   if (!attr.isError()) {
     // TODO(T56002494): Remove this once type.__getattribute__ gets cached.
     if (attr.isFunction()) {
@@ -707,12 +758,7 @@ RawObject typeGetAttributeSetLocation(Thread* thread, const Type& type,
   }
 
   // No data descriptor found on the meta class, look on the type
-  // TODO(T53626118) Raise an exception when `name_str` is a string subclass
-  // that overrides `__eq__` or `__hash__`.
-  Str name_underlying(&scope, strUnderlying(*name_str));
-  Str name_interned(&scope, Runtime::internStr(thread, name_underlying));
-  Object result(&scope, instanceGetAttributeSetLocation(
-                            thread, type, name_interned, location_out));
+  Object result(&scope, instanceGetAttribute(thread, type, name));
   if (!result.isError()) {
     return *result;
   }
@@ -793,19 +839,15 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   {
     Tuple data(&scope, dict.data());
     Object value(&scope, NoneType::object());
-    Object key_obj(&scope, NoneType::object());
-    Str key(&scope, Str::empty());
+    Object item_name(&scope, NoneType::object());
     for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
       value = Dict::Bucket::value(*data, i);
       DCHECK(!(value.isValueCell() && ValueCell::cast(*value).isPlaceholder()),
              "value should not be a placeholder value cell");
-      key_obj = Dict::Bucket::key(*data, i);
-      if (!key_obj.isStr()) {
-        return thread->raiseRequiresType(key_obj, SymbolId::kStr);
-      }
-      key = *key_obj;
-      key = Runtime::internStr(thread, key);
-      typeAtPut(thread, type, key, value);
+      item_name = Dict::Bucket::key(*data, i);
+      item_name = attributeName(thread, item_name);
+      if (item_name.isErrorException()) return *item_name;
+      typeAtPut(thread, type, item_name, value);
     }
   }
 
@@ -814,7 +856,7 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   if (!class_cell.isErrorNotFound()) {
     DCHECK(class_cell.isValueCell(), "class cell must be a value cell");
     ValueCell::cast(*class_cell).setValue(*type);
-    Str class_cell_name(&scope, runtime->symbols()->DunderClassCell());
+    Object class_cell_name(&scope, runtime->symbols()->DunderClassCell());
     dictRemoveByStr(thread, type_dict, class_cell_name);
   }
   type.setDict(*type_dict);
@@ -898,25 +940,25 @@ static const SymbolId kUnimplementedTypeAttrUpdates[] = {
     // STORE_ATTR
     SymbolId::kDunderSetattr};
 
-void terminateIfUnimplementedTypeAttrCacheInvalidation(Thread* thread,
-                                                       const Str& attr_name) {
+void terminateIfUnimplementedTypeAttrCacheInvalidation(
+    Thread* thread, const Object& attr_name) {
   Runtime* runtime = thread->runtime();
+  DCHECK(Runtime::isInternedStr(thread, attr_name), "expected interned str");
   for (uword i = 0; i < ARRAYSIZE(kUnimplementedTypeAttrUpdates); ++i) {
-    if (attr_name.equals(
-            runtime->symbols()->at(kUnimplementedTypeAttrUpdates[i]))) {
+    if (attr_name == runtime->symbols()->at(kUnimplementedTypeAttrUpdates[i])) {
       UNIMPLEMENTED("unimplemented cache invalidation for type.%s update",
-                    attr_name.toCStr());
+                    Str::cast(*attr_name).toCStr());
     }
   }
 }
 
-RawObject typeSetAttr(Thread* thread, const Type& type,
-                      const Str& name_interned, const Object& value) {
+RawObject typeSetAttr(Thread* thread, const Type& type, const Object& name,
+                      const Object& value) {
   Runtime* runtime = thread->runtime();
-  DCHECK(runtime->isInternedStr(thread, name_interned),
+  DCHECK(runtime->isInternedStr(thread, name),
          "name must be an interned string");
   // Make sure cache invalidation is correctly done for this.
-  terminateIfUnimplementedTypeAttrCacheInvalidation(thread, name_interned);
+  terminateIfUnimplementedTypeAttrCacheInvalidation(thread, name);
   HandleScope scope(thread);
   if (type.isBuiltin()) {
     Object type_name(&scope, type.name());
@@ -927,8 +969,7 @@ RawObject typeSetAttr(Thread* thread, const Type& type,
 
   // Check for a data descriptor
   Type metatype(&scope, runtime->typeOf(*type));
-  Object meta_attr(&scope,
-                   typeLookupInMroByStr(thread, metatype, name_interned));
+  Object meta_attr(&scope, typeLookupInMro(thread, metatype, name));
   if (!meta_attr.isError()) {
     Type meta_attr_type(&scope, runtime->typeOf(*meta_attr));
     if (typeIsDataDescriptor(thread, meta_attr_type)) {
@@ -941,7 +982,7 @@ RawObject typeSetAttr(Thread* thread, const Type& type,
   }
 
   // No data descriptor found, store the attribute in the type dict
-  typeAtPut(thread, type, name_interned, value);
+  typeAtPut(thread, type, name, value);
   return NoneType::object();
 }
 
@@ -991,9 +1032,7 @@ RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
 
   // `instance = self.__new__(...)`
   Object dunder_new_name(&scope, runtime->symbols()->DunderNew());
-  word dunder_new_name_hash = strHash(thread, *dunder_new_name);
-  Object dunder_new(&scope, typeGetAttribute(thread, self, dunder_new_name,
-                                             dunder_new_name_hash));
+  Object dunder_new(&scope, typeGetAttribute(thread, self, dunder_new_name));
   Object instance(&scope, NoneType::object());
   Object call_args_obj(&scope, NoneType::object());
   if (dunder_new == runtime->objectDunderNew()) {
@@ -1021,9 +1060,7 @@ RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
 
   // instance.__init__(...)
   Object dunder_init_name(&scope, runtime->symbols()->DunderInit());
-  word dunder_init_name_hash = strHash(thread, *dunder_init_name);
-  Object dunder_init(&scope, typeGetAttribute(thread, self, dunder_init_name,
-                                              dunder_init_name_hash));
+  Object dunder_init(&scope, typeGetAttribute(thread, self, dunder_init_name));
   // `object.__init__` does nothing, we may be able to just skip things.
   // The exception to the rule being `object.__init__` raising errors when
   // arguments are provided and nothing is overridden.
@@ -1066,14 +1103,9 @@ RawObject TypeBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
   }
   Type self(&scope, *self_obj);
   Object name(&scope, args.get(1));
-  if (!runtime->isInstanceOfStr(*name)) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
-  }
-  Object hash_obj(&scope, Interpreter::hash(thread, name));
-  if (hash_obj.isErrorException()) return *hash_obj;
-  word hash = SmallInt::cast(*hash_obj).value();
-  Object result(&scope, typeGetAttribute(thread, self, name, hash));
+  name = attributeName(thread, name);
+  if (name.isErrorException()) return *name;
+  Object result(&scope, typeGetAttribute(thread, self, name));
   if (result.isErrorNotFound()) {
     Object type_name(&scope, self.name());
     return thread->raiseWithFmt(LayoutId::kAttributeError,
@@ -1100,15 +1132,10 @@ RawObject TypeBuiltins::dunderSetattr(Thread* thread, Frame* frame,
         "can't set attributes of built-in/extension type '%S'", &type_name);
   }
   Object name(&scope, args.get(1));
-  if (!runtime->isInstanceOfStr(*name)) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
-  }
-  // dict.__setattr__ is special in that it must copy and intern the name.
-  Str name_str(&scope, strUnderlying(*name));
-  Str interned_name(&scope, Runtime::internStr(thread, name_str));
+  name = attributeName(thread, name);
+  if (name.isErrorException()) return *name;
   Object value(&scope, args.get(2));
-  return typeSetAttr(thread, self, interned_name, value);
+  return typeSetAttr(thread, self, name, value);
 }
 
 RawObject TypeBuiltins::dunderSubclasses(Thread* thread, Frame* frame,

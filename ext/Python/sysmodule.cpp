@@ -30,8 +30,8 @@ PY_EXPORT PyObject* PySys_GetObject(const char* name) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Module module(&scope, runtime->findModuleById(SymbolId::kSys));
-  Str name_str(&scope, runtime->newStrFromCStr(name));
-  Object result(&scope, moduleAtByStr(thread, module, name_str));
+  Object name_obj(&scope, Runtime::internStrFromCStr(thread, name));
+  Object result(&scope, moduleAt(thread, module, name_obj));
   if (result.isErrorNotFound()) return nullptr;
   return ApiHandle::borrowedReference(thread, *result);
 }

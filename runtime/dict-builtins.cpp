@@ -80,7 +80,7 @@ void dictAtPut(Thread* thread, const Dict& dict, const Object& key, word hash,
   DCHECK(dict.hasUsableItems(), "dict must have an empty bucket left");
 }
 
-void dictAtPutByStr(Thread* thread, const Dict& dict, const Str& name,
+void dictAtPutByStr(Thread* thread, const Dict& dict, const Object& name,
                     const Object& value) {
   word hash = strHash(thread, *name);
   dictAtPut(thread, dict, name, hash, value);
@@ -89,7 +89,7 @@ void dictAtPutByStr(Thread* thread, const Dict& dict, const Str& name,
 void dictAtPutById(Thread* thread, const Dict& dict, SymbolId id,
                    const Object& value) {
   HandleScope scope(thread);
-  Str name(&scope, thread->runtime()->symbols()->at(id));
+  Object name(&scope, thread->runtime()->symbols()->at(id));
   dictAtPutByStr(thread, dict, name, value);
 }
 
@@ -105,14 +105,14 @@ RawObject dictAt(Thread* thread, const Dict& dict, const Object& key,
   return Error::notFound();
 }
 
-RawObject dictAtByStr(Thread* thread, const Dict& dict, const Str& name) {
+RawObject dictAtByStr(Thread* thread, const Dict& dict, const Object& name) {
   word hash = strHash(thread, *name);
   return dictAt(thread, dict, name, hash);
 }
 
 RawObject dictAtById(Thread* thread, const Dict& dict, SymbolId id) {
   HandleScope scope(thread);
-  Str name(&scope, thread->runtime()->symbols()->at(id));
+  Object name(&scope, thread->runtime()->symbols()->at(id));
   return dictAtByStr(thread, dict, name);
 }
 
@@ -147,7 +147,7 @@ RawObject dictAtIfAbsentPut(Thread* thread, const Dict& dict, const Object& key,
 }
 
 RawObject dictAtPutInValueCellByStr(Thread* thread, const Dict& dict,
-                                    const Str& name, const Object& value) {
+                                    const Object& name, const Object& value) {
   HandleScope scope(thread);
   word hash = strHash(thread, *name);
   Object result(&scope,
@@ -178,7 +178,7 @@ void dictClear(Thread* thread, const Dict& dict) {
   dict.resetNumUsableItems();
 }
 
-bool dictIncludesByStr(Thread* thread, const Dict& dict, const Str& name) {
+bool dictIncludesByStr(Thread* thread, const Dict& dict, const Object& name) {
   word hash = strHash(thread, *name);
   return dictIncludes(thread, dict, name, hash);
 }
@@ -191,7 +191,8 @@ bool dictIncludes(Thread* thread, const Dict& dict, const Object& key,
   return dictLookup(thread, data, key, hash, &ignore);
 }
 
-RawObject dictRemoveByStr(Thread* thread, const Dict& dict, const Str& name) {
+RawObject dictRemoveByStr(Thread* thread, const Dict& dict,
+                          const Object& name) {
   word hash = strHash(thread, *name);
   return dictRemove(thread, dict, name, hash);
 }

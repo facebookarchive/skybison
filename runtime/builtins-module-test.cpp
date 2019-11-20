@@ -659,7 +659,7 @@ class Foo: pass
 getattr(Foo(), 1)
 )";
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, src), LayoutId::kTypeError,
-                            "getattr(): attribute name must be string"));
+                            "attribute name must be string, not 'int'"));
 }
 
 TEST_F(BuiltinsModuleTest, GetAttrWithNonStringAttrAndDefaultRaisesTypeError) {
@@ -668,7 +668,7 @@ class Foo: pass
 getattr(Foo(), 1, 2)
 )";
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, src), LayoutId::kTypeError,
-                            "getattr(): attribute name must be string"));
+                            "attribute name must be string, not 'int'"));
 }
 
 TEST_F(BuiltinsModuleTest,
@@ -754,7 +754,7 @@ class Foo:
 a = setattr(Foo, 2, 'foo')
 )";
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, src), LayoutId::kTypeError,
-                            "setattr(): attribute name must be string"));
+                            "attribute name must be string, not 'int'"));
 }
 
 TEST_F(BuiltinsModuleTest, ModuleAttrReturnsBuiltinsName) {

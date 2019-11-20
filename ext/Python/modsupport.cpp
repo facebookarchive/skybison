@@ -28,10 +28,10 @@ PY_EXPORT int PyModule_AddObject(PyObject* pymodule, const char* name,
     // TODO(cshapiro): throw a TypeError
     return -1;
   }
-  Str name_str(&scope, runtime->newStrFromCStr(name));
+  Object name_obj(&scope, Runtime::internStrFromCStr(thread, name));
   Module module(&scope, *module_obj);
   Object value(&scope, ApiHandle::stealReference(thread, obj));
-  moduleAtPutByStr(thread, module, name_str, value);
+  moduleAtPut(thread, module, name_obj, value);
   return 0;
 }
 

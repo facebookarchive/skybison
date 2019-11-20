@@ -8,8 +8,8 @@
 #include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"
-#include "str-builtins.h"
 #include "thread.h"
+#include "type-builtins.h"
 
 namespace py {
 
@@ -24,14 +24,7 @@ static RawObject unwrapValueCell(RawObject result) {
   return value_cell.value();
 }
 
-RawObject moduleAt(Thread* thread, const Module& module, const Object& key,
-                   word hash) {
-  HandleScope scope(thread);
-  Dict dict(&scope, module.dict());
-  return unwrapValueCell(dictAt(thread, dict, key, hash));
-}
-
-RawObject moduleAtByStr(Thread* thread, const Module& module, const Str& name) {
+RawObject moduleAt(Thread* thread, const Module& module, const Object& name) {
   HandleScope scope(thread);
   Dict dict(&scope, module.dict());
   return unwrapValueCell(dictAtByStr(thread, dict, name));
@@ -61,53 +54,45 @@ RawObject moduleValueCellAtById(Thread* thread, const Module& module,
   return filterPlaceholderValueCell(dictAtById(thread, dict, id));
 }
 
-RawObject moduleValueCellAtByStr(Thread* thread, const Module& module,
-                                 const Str& name) {
+RawObject moduleValueCellAt(Thread* thread, const Module& module,
+                            const Object& name) {
   HandleScope scope(thread);
   Dict dict(&scope, module.dict());
   return filterPlaceholderValueCell(dictAtByStr(thread, dict, name));
 }
 
 static RawObject moduleValueCellAtPut(Thread* thread, const Module& module,
-                                      const Object& key, word hash,
-                                      const Object& value) {
+                                      const Object& name, const Object& value) {
   HandleScope scope(thread);
   Dict module_dict(&scope, module.dict());
-  Object module_result(&scope, dictAt(thread, module_dict, key, hash));
+  Object module_result(&scope, dictAtByStr(thread, module_dict, name));
   if (module_result.isValueCell() &&
       ValueCell::cast(*module_result).isPlaceholder()) {
-    // A builtin entry is cached under the same key, so invalidate its caches.
+    // A builtin entry is cached under the same name, so invalidate its caches.
     Module builtins_module(
         &scope, moduleAtById(thread, module, SymbolId::kDunderBuiltins));
     Dict builtins_dict(&scope, builtins_module.dict());
-    Object builtins_result(&scope, filterPlaceholderValueCell(dictAt(
-                                       thread, builtins_dict, key, hash)));
+    Object builtins_result(&scope, filterPlaceholderValueCell(dictAtByStr(
+                                       thread, builtins_dict, name)));
     DCHECK(builtins_result.isValueCell(), "a builtin entry must exist");
     ValueCell builtins_value_cell(&scope, *builtins_result);
     DCHECK(!builtins_value_cell.dependencyLink().isNoneType(),
            "the builtin valuecell must have a dependent");
     icInvalidateGlobalVar(thread, builtins_value_cell);
   }
-  return dictAtPutInValueCell(thread, module_dict, key, hash, value);
+  return dictAtPutInValueCellByStr(thread, module_dict, name, value);
 }
 
-RawObject moduleAtPut(Thread* thread, const Module& module, const Object& key,
-                      word hash, const Object& value) {
-  return moduleValueCellAtPut(thread, module, key, hash, value);
-}
-
-RawObject moduleAtPutByStr(Thread* thread, const Module& module,
-                           const Str& name, const Object& value) {
-  word hash = strHash(thread, *name);
-  return moduleValueCellAtPut(thread, module, name, hash, value);
+RawObject moduleAtPut(Thread* thread, const Module& module, const Object& name,
+                      const Object& value) {
+  return moduleValueCellAtPut(thread, module, name, value);
 }
 
 RawObject moduleAtPutById(Thread* thread, const Module& module, SymbolId id,
                           const Object& value) {
   HandleScope scope(thread);
-  Str name(&scope, thread->runtime()->symbols()->at(id));
-  word hash = strHash(thread, *name);
-  return moduleValueCellAtPut(thread, module, name, hash, value);
+  Object name(&scope, thread->runtime()->symbols()->at(id));
+  return moduleValueCellAtPut(thread, module, name, value);
 }
 
 RawObject moduleKeys(Thread* thread, const Module& module) {
@@ -135,18 +120,17 @@ RawObject moduleLen(Thread* thread, const Module& module) {
   return SmallInt::fromWord(count);
 }
 
-RawObject moduleRaiseAttributeError(Thread* thread, const Object& receiver,
-                                    const Object& selector) {
+RawObject moduleRaiseAttributeError(Thread* thread, const Module& module,
+                                    const Object& name) {
   HandleScope scope(thread);
-  Module module(&scope, *receiver);
   Object module_name(&scope, module.name());
   if (!thread->runtime()->isInstanceOfStr(*module_name)) {
     return thread->raiseWithFmt(LayoutId::kAttributeError,
-                                "module has no attribute '%S'", &selector);
+                                "module has no attribute '%S'", &name);
   }
   return thread->raiseWithFmt(LayoutId::kAttributeError,
                               "module '%S' has no attribute '%S'", &module_name,
-                              &selector);
+                              &name);
 }
 
 RawObject moduleRemove(Thread* thread, const Module& module, const Object& key,
@@ -178,20 +162,18 @@ RawObject moduleValues(Thread* thread, const Module& module) {
 }
 
 RawObject moduleGetAttribute(Thread* thread, const Module& module,
-                             const Object& name_str) {
-  return moduleGetAttributeSetLocation(thread, module, name_str, nullptr);
+                             const Object& name) {
+  return moduleGetAttributeSetLocation(thread, module, name, nullptr);
 }
 
-RawObject moduleGetAttributeSetLocation(Thread* thread, const Object& receiver,
-                                        const Object& selector,
+RawObject moduleGetAttributeSetLocation(Thread* thread, const Module& module,
+                                        const Object& name,
                                         Object* location_out) {
   // Note that PEP 562 adds support for data descriptors in module objects.
   // We are targeting python 3.6 for now, so we won't worry about that.
 
   HandleScope scope(thread);
-  Module module(&scope, *receiver);
-  Str str(&scope, *selector);
-  Object result(&scope, moduleValueCellAtByStr(thread, module, str));
+  Object result(&scope, moduleValueCellAt(thread, module, name));
 
   DCHECK(result.isValueCell() || result.isErrorNotFound(),
          "result must be a value cell or not found");
@@ -206,15 +188,12 @@ RawObject moduleGetAttributeSetLocation(Thread* thread, const Object& receiver,
   // TODO(T42983855) dispatching to objectGetAttribute like this does not make
   // data properties on the type override module members.
 
-  return objectGetAttribute(thread, module, selector, strHash(thread, *str));
+  return objectGetAttribute(thread, module, name);
 }
 
 RawObject moduleSetAttr(Thread* thread, const Module& module,
-                        const Object& name_str, word hash,
-                        const Object& value) {
-  Runtime* runtime = thread->runtime();
-  DCHECK(runtime->isInstanceOfStr(*name_str), "name must be a string");
-  moduleAtPut(thread, module, name_str, hash, value);
+                        const Object& name, const Object& value) {
+  moduleAtPut(thread, module, name, value);
   return NoneType::object();
 }
 
@@ -337,10 +316,8 @@ RawObject ModuleBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
   }
   Module self(&scope, *self_obj);
   Object name(&scope, args.get(1));
-  if (!runtime->isInstanceOfStr(*name)) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
-  }
+  name = attributeName(thread, name);
+  if (name.isErrorException()) return *name;
   Object result(&scope, moduleGetAttribute(thread, self, name));
   if (result.isErrorNotFound()) {
     return moduleRaiseAttributeError(thread, self, name);
@@ -406,15 +383,10 @@ RawObject ModuleBuiltins::dunderSetattr(Thread* thread, Frame* frame,
   }
   Module self(&scope, *self_obj);
   Object name(&scope, args.get(1));
-  if (!runtime->isInstanceOfStr(*name)) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
-  }
-  Object hash_obj(&scope, Interpreter::hash(thread, name));
-  if (hash_obj.isErrorException()) return *hash_obj;
-  word hash = SmallInt::cast(*hash_obj).value();
+  name = attributeName(thread, name);
+  if (name.isErrorException()) return *name;
   Object value(&scope, args.get(2));
-  return moduleSetAttr(thread, self, name, hash, value);
+  return moduleSetAttr(thread, self, name, value);
 }
 
 }  // namespace py

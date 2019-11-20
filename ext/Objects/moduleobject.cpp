@@ -56,7 +56,7 @@ PY_EXPORT PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
 
       function.setModule(*module);
       Str function_name(&scope, function.name());
-      moduleAtPutByStr(thread, module, function_name, function);
+      moduleAtPut(thread, module, function_name, function);
     }
   }
 

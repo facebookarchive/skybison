@@ -26,6 +26,9 @@ Built-in Types
 TypeError: '_type_init' requires a 'str' object but got 'int'
 ```
 
+- Object attributes must only have `str` names that do not override `__eq__` or
+  `__hash__`. Identities of attribute names may not preserved.
+
 Interpreter
 -----------
 

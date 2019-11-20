@@ -564,8 +564,9 @@ static RawObject raiseUnaryOpTypeError(Thread* thread, const Object& object,
                                        SymbolId selector) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Str type_name(&scope, Type::cast(runtime->typeOf(*object)).name());
-  Str op_name(&scope, runtime->symbols()->at(selector));
+  Type type(&scope, runtime->typeOf(*object));
+  Object type_name(&scope, type.name());
+  Object op_name(&scope, runtime->symbols()->at(selector));
   return thread->raiseWithFmt(LayoutId::kTypeError,
                               "bad operand type for unary '%S': '%S'", &op_name,
                               &type_name);
@@ -1482,8 +1483,8 @@ HANDLER_INLINE Continue Interpreter::doBeforeAsyncWith(Thread* thread, word) {
 
   // resolve __aexit__ an push it
   Runtime* runtime = thread->runtime();
-  Object exit_selector(&scope, runtime->symbols()->DunderAexit());
-  Object exit(&scope, runtime->attributeAt(thread, manager, exit_selector));
+  Object exit(&scope, runtime->attributeAtById(thread, manager,
+                                               SymbolId::kDunderAexit));
   if (exit.isError()) {
     UNIMPLEMENTED("throw TypeError");
   }
@@ -1818,9 +1819,9 @@ HANDLER_INLINE Continue Interpreter::doSetupAnnotations(Thread* thread, word) {
   if (frame->implicitGlobals().isNoneType()) {
     // Module body
     Module module(&scope, frame->function().moduleObject());
-    if (moduleAtByStr(thread, module, dunder_annotations).isErrorNotFound()) {
+    if (moduleAt(thread, module, dunder_annotations).isErrorNotFound()) {
       Object annotations(&scope, runtime->newDict());
-      moduleAtPutByStr(thread, module, dunder_annotations, annotations);
+      moduleAtPut(thread, module, dunder_annotations, annotations);
     }
   } else {
     // Class body
@@ -1945,7 +1946,7 @@ HANDLER_INLINE Continue Interpreter::doStoreName(Thread* thread, word arg) {
   Object implicit_globals_obj(&scope, frame->implicitGlobals());
   if (implicit_globals_obj.isNoneType()) {
     Module module(&scope, frame->function().moduleObject());
-    moduleAtPutByStr(thread, module, name, value);
+    moduleAtPut(thread, module, name, value);
     return Continue::NEXT;
   }
   if (implicit_globals_obj.isDict()) {
@@ -1960,7 +1961,7 @@ HANDLER_INLINE Continue Interpreter::doStoreName(Thread* thread, word arg) {
   return Continue::NEXT;
 }
 
-static Continue raiseUndefinedName(Thread* thread, const Str& name) {
+static Continue raiseUndefinedName(Thread* thread, const Object& name) {
   thread->raiseWithFmt(LayoutId::kNameError, "name '%S' is not defined", &name);
   return Continue::UNWIND;
 }
@@ -2115,18 +2116,17 @@ static RawObject builtinsModule(Thread* thread, const Module& module) {
 }
 
 RawObject Interpreter::globalsAt(Thread* thread, const Module& module,
-                                 const Str& name, const Function& function,
+                                 const Object& name, const Function& function,
                                  word cache_index) {
   HandleScope scope(thread);
-  Object module_result(&scope, moduleValueCellAtByStr(thread, module, name));
+  Object module_result(&scope, moduleValueCellAt(thread, module, name));
   if (module_result.isValueCell()) {
     ValueCell value_cell(&scope, *module_result);
     icUpdateGlobalVar(thread, function, cache_index, value_cell);
     return value_cell.value();
   }
   Module builtins(&scope, builtinsModule(thread, module));
-  Object builtins_result(&scope,
-                         moduleValueCellAtByStr(thread, builtins, name));
+  Object builtins_result(&scope, moduleValueCellAt(thread, builtins, name));
   if (builtins_result.isValueCell()) {
     ValueCell value_cell(&scope, *builtins_result);
     icUpdateGlobalVar(thread, function, cache_index, value_cell);
@@ -2143,11 +2143,10 @@ RawObject Interpreter::globalsAt(Thread* thread, const Module& module,
 }
 
 void Interpreter::globalsAtPut(Thread* thread, const Module& module,
-                               const Str& name, const Object& value,
+                               const Object& name, const Object& value,
                                const Function& function, word cache_index) {
   HandleScope scope(thread);
-  ValueCell module_result(&scope,
-                          moduleAtPutByStr(thread, module, name, value));
+  ValueCell module_result(&scope, moduleAtPut(thread, module, name, value));
   icUpdateGlobalVar(thread, function, cache_index, module_result);
 }
 
@@ -2271,7 +2270,7 @@ void Interpreter::storeAttrWithLocation(Thread* thread, RawObject receiver,
 
 RawObject Interpreter::storeAttrSetLocation(Thread* thread,
                                             const Object& object,
-                                            const Str& name,
+                                            const Object& name,
                                             const Object& value,
                                             Object* location_out) {
   Runtime* runtime = thread->runtime();
@@ -2280,9 +2279,7 @@ RawObject Interpreter::storeAttrSetLocation(Thread* thread,
   Object dunder_setattr(
       &scope, typeLookupInMroById(thread, type, SymbolId::kDunderSetattr));
   if (dunder_setattr == runtime->objectDunderSetattr()) {
-    word hash = strHash(thread, *name);
-    return objectSetAttrSetLocation(thread, object, name, hash, value,
-                                    location_out);
+    return objectSetAttrSetLocation(thread, object, name, value, location_out);
   }
   Object result(&scope, thread->invokeMethod3(object, SymbolId::kDunderSetattr,
                                               name, value));
@@ -2393,8 +2390,8 @@ HANDLER_INLINE Continue Interpreter::doStoreAttr(Thread* thread, word arg) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object receiver(&scope, frame->popValue());
-  auto names = Code::cast(frame->code()).names();
-  Object name(&scope, Tuple::cast(names).at(arg));
+  Tuple names(&scope, Code::cast(frame->code()).names());
+  Str name(&scope, names.at(arg));
   Object value(&scope, frame->popValue());
   if (thread->invokeMethod3(receiver, SymbolId::kDunderSetattr, name, value)
           .isError()) {
@@ -2407,8 +2404,8 @@ HANDLER_INLINE Continue Interpreter::doDeleteAttr(Thread* thread, word arg) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object receiver(&scope, frame->popValue());
-  auto names = Code::cast(frame->code()).names();
-  Object name(&scope, Tuple::cast(names).at(arg));
+  Tuple names(&scope, Code::cast(frame->code()).names());
+  Str name(&scope, names.at(arg));
   if (thread->runtime()->attributeDel(thread, receiver, name).isError()) {
     return Continue::UNWIND;
   }
@@ -2492,13 +2489,13 @@ HANDLER_INLINE Continue Interpreter::doLoadName(Thread* thread, word arg) {
     }
   }
   Module module(&scope, frame->function().moduleObject());
-  Object module_result(&scope, moduleAtByStr(thread, module, name));
+  Object module_result(&scope, moduleAt(thread, module, name));
   if (!module_result.isErrorNotFound()) {
     frame->pushValue(*module_result);
     return Continue::NEXT;
   }
   Module builtins(&scope, builtinsModule(thread, module));
-  Object builtins_result(&scope, moduleAtByStr(thread, builtins, name));
+  Object builtins_result(&scope, moduleAt(thread, builtins, name));
   if (!builtins_result.isErrorNotFound()) {
     frame->pushValue(*builtins_result);
     return Continue::NEXT;
@@ -2578,8 +2575,8 @@ HANDLER_INLINE Continue Interpreter::doLoadAttr(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
   Object receiver(&scope, frame->topValue());
-  auto names = Code::cast(frame->code()).names();
-  Object name(&scope, Tuple::cast(names).at(arg));
+  Tuple names(&scope, Code::cast(frame->code()).names());
+  Str name(&scope, names.at(arg));
   RawObject result = thread->runtime()->attributeAt(thread, receiver, name);
   if (result.isError()) return Continue::UNWIND;
   frame->setTopValue(result);
@@ -2588,7 +2585,8 @@ HANDLER_INLINE Continue Interpreter::doLoadAttr(Thread* thread, word arg) {
 
 RawObject Interpreter::loadAttrSetLocation(Thread* thread,
                                            const Object& receiver,
-                                           const Str& name, LoadAttrKind* kind,
+                                           const Object& name,
+                                           LoadAttrKind* kind,
                                            Object* location_out) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -2597,9 +2595,8 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread,
       &scope, typeLookupInMroById(thread, type, SymbolId::kDunderGetattribute));
   *kind = kUnknown;
   if (dunder_getattribute == runtime->objectDunderGetattribute()) {
-    word hash = strHash(thread, *name);
     Object result(&scope, objectGetAttributeSetLocation(thread, receiver, name,
-                                                        hash, location_out));
+                                                        location_out));
     if (result.isErrorNotFound()) {
       result = thread->invokeMethod2(receiver, SymbolId::kDunderGetattr, name);
       if (result.isErrorNotFound()) {
@@ -2610,7 +2607,8 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread,
     return *result;
   }
   if (dunder_getattribute == runtime->moduleDunderGetattribute()) {
-    Object result(&scope, moduleGetAttributeSetLocation(thread, receiver, name,
+    Module module(&scope, *receiver);
+    Object result(&scope, moduleGetAttributeSetLocation(thread, module, name,
                                                         location_out));
     if (!result.isErrorNotFound()) {
       // We have a result that can be cached.
@@ -2619,16 +2617,15 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread,
       // Try again
       result = thread->invokeMethod2(receiver, SymbolId::kDunderGetattr, name);
       if (result.isErrorNotFound()) {
-        return moduleRaiseAttributeError(thread, receiver, name);
+        return moduleRaiseAttributeError(thread, module, name);
       }
     }
     return *result;
   }
   if (dunder_getattribute == runtime->typeDunderGetattribute()) {
-    word hash = strHash(thread, *name);
-    Type receiver_type(&scope, *receiver);
-    Object result(&scope, typeGetAttributeSetLocation(
-                              thread, receiver_type, name, hash, location_out));
+    Type object_as_type(&scope, *receiver);
+    Object result(&scope, typeGetAttributeSetLocation(thread, object_as_type,
+                                                      name, location_out));
     if (!result.isErrorNotFound()) {
       // We have a result that can be cached.
       if (location_out->isValueCell()) {
@@ -2903,7 +2900,7 @@ HANDLER_INLINE Continue Interpreter::doImportName(Thread* thread, word arg) {
 }
 
 static RawObject tryImportFromSysModules(Thread* thread, const Object& from,
-                                         const Str& name) {
+                                         const Object& name) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object fully_qualified_name(
@@ -3176,11 +3173,11 @@ HANDLER_INLINE Continue Interpreter::doStoreAnnotation(Thread* thread,
   Object value(&scope, frame->popValue());
   Str name(&scope, Tuple::cast(*names).at(arg));
   Object annotations(&scope, NoneType::object());
-  Str dunder_annotations(&scope, runtime->symbols()->DunderAnnotations());
+  Object dunder_annotations(&scope, runtime->symbols()->DunderAnnotations());
   if (frame->implicitGlobals().isNoneType()) {
     // Module body
     Module module(&scope, frame->function().moduleObject());
-    annotations = moduleAtByStr(thread, module, dunder_annotations);
+    annotations = moduleAt(thread, module, dunder_annotations);
   } else {
     // Class body
     Object implicit_globals(&scope, frame->implicitGlobals());
@@ -3513,7 +3510,7 @@ HANDLER_INLINE Continue Interpreter::doLoadClassDeref(Thread* thread,
   if (frame->implicitGlobals().isNoneType()) {
     // Module body
     Module module(&scope, frame->function().moduleObject());
-    result = moduleAtByStr(thread, module, name);
+    result = moduleAt(thread, module, name);
   } else {
     // Class body
     Object implicit_globals(&scope, frame->implicitGlobals());

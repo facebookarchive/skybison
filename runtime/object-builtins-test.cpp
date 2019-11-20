@@ -101,7 +101,7 @@ i = C()
 )")
                    .isError());
   Object i(&scope, mainModuleAt(&runtime_, "i"));
-  Str name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object value(&scope, runtime_.newInt(42));
   EXPECT_TRUE(
       runBuiltin(ObjectBuiltins::dunderSetattr, i, name, value).isNoneType());
@@ -345,7 +345,7 @@ instance = C()
   HandleScope scope(thread_);
   Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
   Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
-  Str name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   AttributeInfo info;
   ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
   ASSERT_TRUE(info.isInObject());
@@ -366,7 +366,7 @@ instance.foo = 42
   HandleScope scope(thread_);
   Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
   Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
-  Str name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   AttributeInfo info;
   ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
   ASSERT_TRUE(info.isOverflow());
@@ -385,7 +385,7 @@ instance = C()
                    .isError());
   HandleScope scope(thread_);
   Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
-  Str name(&scope, Runtime::internStrFromCStr(thread_, "does_not_exist"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "does_not_exist"));
   EXPECT_TRUE(instanceDelAttr(thread_, instance, name).isErrorNotFound());
 }
 
@@ -400,11 +400,11 @@ instance.z = 3
                    .isError());
   HandleScope scope(thread_);
   Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
-  Str y(&scope, Runtime::internStrFromCStr(thread_, "y"));
+  Object y(&scope, Runtime::internStrFromCStr(thread_, "y"));
   Object result(&scope, instanceDelAttr(thread_, instance, y));
   EXPECT_TRUE(instanceGetAttribute(thread_, instance, y).isErrorNotFound());
   EXPECT_TRUE(result.isNoneType());
-  Str z(&scope, Runtime::internStrFromCStr(thread_, "z"));
+  Object z(&scope, Runtime::internStrFromCStr(thread_, "z"));
   EXPECT_TRUE(isIntEqualsWord(instanceGetAttribute(thread_, instance, z), 3));
 }
 
@@ -444,7 +444,7 @@ instance.foo = 42
   Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
   Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
   ASSERT_TRUE(layout.hasDictOverflow());
-  Str name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   AttributeInfo info;
   ASSERT_FALSE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
 
@@ -464,7 +464,7 @@ def instance(): pass
   Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
   Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
   ASSERT_TRUE(layout.hasDictOverflow());
-  Str name(&scope, Runtime::internStrFromCStr(thread_, "does_not_exist"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "does_not_exist"));
   EXPECT_TRUE(instanceDelAttr(thread_, instance, name).isErrorNotFound());
 }
 
@@ -481,7 +481,7 @@ instance = C()
   Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
   Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
   ASSERT_TRUE(layout.hasTupleOverflow());
-  Str name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   AttributeInfo info;
   ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
   ASSERT_TRUE(info.isInObject());
@@ -502,7 +502,7 @@ instance.foo = 42
   Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
   Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
   ASSERT_TRUE(layout.hasTupleOverflow());
-  Str name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   AttributeInfo info;
   ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
   ASSERT_TRUE(info.isOverflow());
@@ -522,7 +522,7 @@ instance.foo = 42
   Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
   Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
   ASSERT_TRUE(layout.hasDictOverflow());
-  Str name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   AttributeInfo info;
   ASSERT_FALSE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
 
@@ -541,7 +541,7 @@ def instance(): pass
   Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
   Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
   ASSERT_TRUE(layout.hasDictOverflow());
-  Str name(&scope, Runtime::internStrFromCStr(thread_, "does_not_exist"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "does_not_exist"));
   EXPECT_TRUE(instanceGetAttribute(thread_, instance, name).isErrorNotFound());
 }
 
@@ -556,7 +556,7 @@ instance = C(False)
 )")
                    .isError());
   Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
-  Str name(&scope, Runtime::internStrFromCStr(thread_, "bar"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   Object value(&scope, runtime_.newInt(-7));
   EXPECT_TRUE(instanceSetAttr(thread_, instance, name, value).isNoneType());
 
@@ -577,7 +577,7 @@ instance = C()
 )")
                    .isError());
   Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
-  Str name(&scope, Runtime::internStrFromCStr(thread_, "bar"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   Object value(&scope, runtime_.newInt(-14));
   EXPECT_TRUE(instanceSetAttr(thread_, instance, name, value).isNoneType());
 
@@ -606,7 +606,7 @@ instance.bar = 5000
   Tuple overflow(&scope, instance.instanceVariableAt(layout.overflowOffset()));
   ASSERT_EQ(overflow.length(), 1);
 
-  Str name(&scope, Runtime::internStrFromCStr(thread_, "bar"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   Object value(&scope, runtime_.newInt(-14));
   EXPECT_TRUE(instanceSetAttr(thread_, instance, name, value).isNoneType());
   ASSERT_EQ(overflow.length(), 1);
@@ -626,7 +626,7 @@ def instance(): pass
 )")
                    .isError());
   Instance instance(&scope, mainModuleAt(&runtime_, "instance"));
-  Str name(&scope, Runtime::internStrFromCStr(thread_, "bar"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   Object value(&scope, runtime_.newInt(4711));
   Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
   ASSERT_TRUE(layout.hasDictOverflow());
@@ -649,9 +649,8 @@ c.__hash__ = 42
 )")
                    .isError());
   Object c(&scope, mainModuleAt(&runtime_, "c"));
-  Object name(&scope, runtime_.newStrFromCStr("__hash__"));
-  word hash = strHash(thread_, *name);
-  EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread_, c, name, hash), 42));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "__hash__"));
+  EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread_, c, name), 42));
 }
 
 TEST_F(ObjectBuiltinsTest, ObjectGetAttributeReturnsTypeValue) {
@@ -663,9 +662,8 @@ c = C()
 )")
                    .isError());
   Object c(&scope, mainModuleAt(&runtime_, "c"));
-  Object name(&scope, runtime_.newStrFromCStr("x"));
-  word hash = strHash(thread_, *name);
-  EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread_, c, name, hash), -11));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "x"));
+  EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread_, c, name), -11));
 }
 
 TEST_F(ObjectBuiltinsTest, ObjectGetAttributeWithNonExistentNameReturnsError) {
@@ -676,9 +674,8 @@ c = C()
 )")
                    .isError());
   Object c(&scope, mainModuleAt(&runtime_, "c"));
-  Object name(&scope, runtime_.newStrFromCStr("xxx"));
-  word hash = strHash(thread_, *name);
-  EXPECT_TRUE(objectGetAttribute(thread_, c, name, hash).isError());
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "xxx"));
+  EXPECT_TRUE(objectGetAttribute(thread_, c, name).isError());
   EXPECT_FALSE(thread_->hasPendingException());
 }
 
@@ -694,9 +691,8 @@ a = A()
 )")
                    .isError());
   Object a(&scope, mainModuleAt(&runtime_, "a"));
-  Object name(&scope, runtime_.newStrFromCStr("foo"));
-  word hash = strHash(thread_, *name);
-  EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread_, a, name, hash), 42));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread_, a, name), 42));
 }
 
 TEST_F(ObjectBuiltinsTest,
@@ -711,9 +707,8 @@ a = A()
 )")
                    .isError());
   Object a(&scope, mainModuleAt(&runtime_, "a"));
-  Object name(&scope, runtime_.newStrFromCStr("foo"));
-  word hash = strHash(thread_, *name);
-  EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread_, a, name, hash), 42));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread_, a, name), 42));
 }
 
 TEST_F(ObjectBuiltinsTest,
@@ -731,9 +726,8 @@ A.foo = D()
 )")
                    .isError());
   Object a(&scope, mainModuleAt(&runtime_, "a"));
-  Str name(&scope, runtime_.newStrFromCStr("foo"));
-  word hash = strHash(thread_, *name);
-  EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread_, a, name, hash), 42));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread_, a, name), 42));
 }
 
 TEST_F(ObjectBuiltinsTest,
@@ -749,9 +743,8 @@ a.foo = 12
 )")
                    .isError());
   Object a(&scope, mainModuleAt(&runtime_, "a"));
-  Object name(&scope, runtime_.newStrFromCStr("foo"));
-  word hash = strHash(thread_, *name);
-  EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread_, a, name, hash), 12));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread_, a, name), 12));
 }
 
 TEST_F(ObjectBuiltinsTest, ObjectGetAttributePropagatesDunderGetException) {
@@ -766,19 +759,17 @@ a = A()
 )")
                    .isError());
   Object a(&scope, mainModuleAt(&runtime_, "a"));
-  Object name(&scope, runtime_.newStrFromCStr("foo"));
-  word hash = strHash(thread_, *name);
-  EXPECT_TRUE(raised(objectGetAttribute(thread_, a, name, hash),
-                     LayoutId::kUserWarning));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  EXPECT_TRUE(
+      raised(objectGetAttribute(thread_, a, name), LayoutId::kUserWarning));
 }
 
 TEST_F(ObjectBuiltinsTest,
        ObjectGetAttributeOnNoneNonDataDescriptorReturnsBoundMethod) {
   HandleScope scope(thread_);
   Object none(&scope, NoneType::object());
-  Object name(&scope, runtime_.newStrFromCStr("__repr__"));
-  word hash = strHash(thread_, *name);
-  EXPECT_TRUE(objectGetAttribute(thread_, none, name, hash).isBoundMethod());
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "__repr__"));
+  EXPECT_TRUE(objectGetAttribute(thread_, none, name).isBoundMethod());
 }
 
 TEST_F(ObjectBuiltinsTest,
@@ -795,11 +786,10 @@ i = C()
   Object foo(&scope, mainModuleAt(&runtime_, "foo"));
   Object i(&scope, mainModuleAt(&runtime_, "i"));
 
-  Object name(&scope, runtime_.newStrFromCStr("foo"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object to_cache(&scope, NoneType::object());
-  word hash = strHash(thread_, *name);
-  Object result_obj(
-      &scope, objectGetAttributeSetLocation(thread_, i, name, hash, &to_cache));
+  Object result_obj(&scope,
+                    objectGetAttributeSetLocation(thread_, i, name, &to_cache));
   ASSERT_TRUE(result_obj.isBoundMethod());
   BoundMethod result(&scope, *result_obj);
   EXPECT_EQ(result.function(), foo);
@@ -827,15 +817,14 @@ i = C()
   Object i(&scope, mainModuleAt(&runtime_, "i"));
 
   Layout layout(&scope, runtime_.layoutAt(i.layoutId()));
-  Str name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   AttributeInfo info;
   ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
   ASSERT_TRUE(info.isInObject());
 
   Object to_cache(&scope, NoneType::object());
-  word hash = strHash(thread_, *name);
   EXPECT_TRUE(isIntEqualsWord(
-      objectGetAttributeSetLocation(thread_, i, name, hash, &to_cache), 42));
+      objectGetAttributeSetLocation(thread_, i, name, &to_cache), 42));
   EXPECT_TRUE(isIntEqualsWord(*to_cache, info.offset()));
 
   EXPECT_TRUE(isIntEqualsWord(
@@ -856,15 +845,14 @@ i.foo = 17
   Object i(&scope, mainModuleAt(&runtime_, "i"));
 
   Layout layout(&scope, runtime_.layoutAt(i.layoutId()));
-  Str name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   AttributeInfo info;
   ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
   ASSERT_TRUE(info.isOverflow());
 
   Object to_cache(&scope, NoneType::object());
-  word hash = strHash(thread_, *name);
   EXPECT_TRUE(isIntEqualsWord(
-      objectGetAttributeSetLocation(thread_, i, name, hash, &to_cache), 17));
+      objectGetAttributeSetLocation(thread_, i, name, &to_cache), 17));
   EXPECT_TRUE(isIntEqualsWord(*to_cache, -info.offset() - 1));
 
   EXPECT_TRUE(isIntEqualsWord(
@@ -882,11 +870,10 @@ i = C()
                    .isError());
   Object i(&scope, mainModuleAt(&runtime_, "i"));
 
-  Object name(&scope, runtime_.newStrFromCStr("xxx"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "xxx"));
   Object to_cache(&scope, NoneType::object());
-  word hash = strHash(thread_, *name);
-  EXPECT_TRUE(objectGetAttributeSetLocation(thread_, i, name, hash, &to_cache)
-                  .isError());
+  EXPECT_TRUE(
+      objectGetAttributeSetLocation(thread_, i, name, &to_cache).isError());
   EXPECT_TRUE(to_cache.isNoneType());
 }
 
@@ -900,9 +887,8 @@ i = C()
   Object i(&scope, mainModuleAt(&runtime_, "i"));
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object value(&scope, runtime_.newInt(47));
-  word hash = strHash(thread_, *name);
-  EXPECT_TRUE(objectSetAttr(thread_, i, name, hash, value).isNoneType());
-  EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread_, i, name, hash), 47));
+  EXPECT_TRUE(objectSetAttr(thread_, i, name, value).isNoneType());
+  EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread_, i, name), 47));
 }
 
 TEST_F(ObjectBuiltinsTest, ObjectSetAttrOnDataDescriptorCallsDunderSet) {
@@ -922,10 +908,9 @@ i = C()
                    .isError());
   Object i(&scope, mainModuleAt(&runtime_, "i"));
   Object foo_descr(&scope, mainModuleAt(&runtime_, "foo_descr"));
-  Str name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  word hash = strHash(thread_, *name);
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object value(&scope, runtime_.newInt(47));
-  EXPECT_TRUE(objectSetAttr(thread_, i, name, hash, value).isNoneType());
+  EXPECT_TRUE(objectSetAttr(thread_, i, name, value).isNoneType());
   Object set_args_obj(&scope, mainModuleAt(&runtime_, "set_args"));
   ASSERT_TRUE(set_args_obj.isTuple());
   Tuple dunder_set_args(&scope, *set_args_obj);
@@ -948,19 +933,17 @@ i = C()
                    .isError());
   Object i(&scope, mainModuleAt(&runtime_, "i"));
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  word hash = strHash(thread_, *name);
   Object value(&scope, runtime_.newInt(1));
-  EXPECT_TRUE(raised(objectSetAttr(thread_, i, name, hash, value),
-                     LayoutId::kUserWarning));
+  EXPECT_TRUE(
+      raised(objectSetAttr(thread_, i, name, value), LayoutId::kUserWarning));
 }
 
 TEST_F(ObjectBuiltinsTest, ObjectSetAttrOnNonHeapObjectRaisesAttributeError) {
   HandleScope scope(thread_);
   Object object(&scope, runtime_.newInt(42));
-  Str name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  word hash = strHash(thread_, *name);
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object value(&scope, runtime_.newInt(1));
-  EXPECT_TRUE(raisedWithStr(objectSetAttr(thread_, object, name, hash, value),
+  EXPECT_TRUE(raisedWithStr(objectSetAttr(thread_, object, name, value),
                             LayoutId::kAttributeError,
                             "'int' object has no attribute 'foo'"));
 }
@@ -975,8 +958,7 @@ i = C()
 )")
                    .isError());
   Object i(&scope, mainModuleAt(&runtime_, "i"));
-  Str name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  word hash = strHash(thread_, *name);
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
 
   AttributeInfo info;
   Layout layout(&scope, runtime_.layoutAt(i.layoutId()));
@@ -986,7 +968,7 @@ i = C()
   Object value(&scope, runtime_.newInt(7));
   Object value2(&scope, runtime_.newInt(99));
   Object to_cache(&scope, NoneType::object());
-  EXPECT_TRUE(objectSetAttrSetLocation(thread_, i, name, hash, value, &to_cache)
+  EXPECT_TRUE(objectSetAttrSetLocation(thread_, i, name, value, &to_cache)
                   .isNoneType());
   EXPECT_TRUE(isIntEqualsWord(*to_cache, info.offset()));
   ASSERT_TRUE(i.isInstance());
@@ -1007,8 +989,7 @@ i.foo = 0
 )")
                    .isError());
   Object i(&scope, mainModuleAt(&runtime_, "i"));
-  Str name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  word hash = strHash(thread_, *name);
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
 
   AttributeInfo info;
   Layout layout(&scope, runtime_.layoutAt(i.layoutId()));
@@ -1018,7 +999,7 @@ i.foo = 0
   Object value(&scope, runtime_.newInt(-8));
   Object value2(&scope, runtime_.newInt(11));
   Object to_cache(&scope, NoneType::object());
-  EXPECT_TRUE(objectSetAttrSetLocation(thread_, i, name, hash, value, &to_cache)
+  EXPECT_TRUE(objectSetAttrSetLocation(thread_, i, name, value, &to_cache)
                   .isNoneType());
   EXPECT_TRUE(isIntEqualsWord(*to_cache, -info.offset() - 1));
   ASSERT_TRUE(i.isHeapObject());

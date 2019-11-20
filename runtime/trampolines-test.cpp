@@ -717,7 +717,7 @@ TEST_F(TrampolinesTest, InterpreterClosureUsesArgOverCellValue) {
   word nlocals = 1;
   Tuple varnames(&scope, runtime_.newTuple(nlocals));
   Tuple cellvars(&scope, runtime_.newTuple(1));
-  Str bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
+  Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   varnames.atPut(0, *bar);
   cellvars.atPut(0, *bar);
   const byte bytecode[] = {LOAD_CLOSURE, 0, LOAD_DEREF, 0, RETURN_VALUE, 0};
@@ -779,7 +779,7 @@ static RawObject makeFunctionWithPosOnlyArg(Thread* thread) {
   //     return (a, b)
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Str name(&scope, Runtime::internStrFromCStr(thread, "foo"));
+  Object name(&scope, Runtime::internStrFromCStr(thread, "foo"));
   const byte bytecode[] = {LOAD_FAST,   0, LOAD_FAST,    1,
                            BUILD_TUPLE, 2, RETURN_VALUE, 0};
   Tuple varnames(&scope, runtime->newTuple(2));
@@ -849,7 +849,7 @@ TEST_F(TrampolinesTest, KeywordCallWithPositionalOnlyArgumentsAndVarKeyArgs) {
   // Create:
   //   def foo(a, b=7, /, c=10, **kwargs):
   //     return (a, b, c, kwargs)
-  Str name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   const byte bytecode[] = {LOAD_FAST, 0, LOAD_FAST,   1, LOAD_FAST,    2,
                            LOAD_FAST, 3, BUILD_TUPLE, 4, RETURN_VALUE, 0};
   Tuple varnames(&scope, runtime_.newTuple(4));
@@ -903,7 +903,7 @@ TEST_F(TrampolinesTest, KeywordCallWithPositionalOnlyArgumentsAndVarKeyArgs) {
   ASSERT_TRUE(result.at(3).isDict());
   Dict result_dict(&scope, result.at(3));
   EXPECT_EQ(result_dict.numItems(), 1);
-  Str b_name(&scope, Runtime::internStrFromCStr(thread_, "b"));
+  Object b_name(&scope, Runtime::internStrFromCStr(thread_, "b"));
   EXPECT_TRUE(isIntEqualsWord(dictAtByStr(thread_, result_dict, b_name), 5));
 }
 
