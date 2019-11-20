@@ -1130,6 +1130,7 @@ PyAPI_FUNC(PyObject*) PySequence_ITEM_Func(PyObject*, Py_ssize_t);
 #define PyUnicode_WRITE(kind, data, index, value)                              \
   PyUnicode_WRITE_Func(kind, data, index, value)
 #define PyUnicode_IS_ASCII(op) PyUnicode_IS_ASCII_Func((PyObject*)op)
+#define PyUnicode_IS_COMPACT_ASCII(op) PyUnicode_IS_ASCII_Func((PyObject*)op)
 
 #define Py_MIN(x, y) (((x) > (y)) ? (y) : (x))
 #define Py_MAX(x, y) (((x) > (y)) ? (x) : (y))

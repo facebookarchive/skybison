@@ -2327,6 +2327,16 @@ TEST_F(UnicodeExtensionApiTest, IsAsciiWithNonAsciiCharsReturnsZero) {
   EXPECT_EQ(PyUnicode_IS_ASCII(unicode.get()), 0);
 }
 
+TEST_F(UnicodeExtensionApiTest, IsCompactAsciiWithAsciiOnlyCharsReturnsOne) {
+  PyObjectPtr unicode(PyUnicode_FromString("foo"));
+  EXPECT_EQ(PyUnicode_IS_COMPACT_ASCII(unicode.get()), 1);
+}
+
+TEST_F(UnicodeExtensionApiTest, IsCompactAsciiWithNonAsciiCharsReturnsZero) {
+  PyObjectPtr unicode(PyUnicode_FromString("fo\u00e4o"));
+  EXPECT_EQ(PyUnicode_IS_COMPACT_ASCII(unicode.get()), 0);
+}
+
 TEST_F(UnicodeExtensionApiTest, IsIdentifierWithEmptyStringReturnsFalse) {
   PyObjectPtr unicode(PyUnicode_FromString(""));
   EXPECT_EQ(PyUnicode_IsIdentifier(unicode), 0);
