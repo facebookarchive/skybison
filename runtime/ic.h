@@ -198,7 +198,7 @@ void icEvictCache(Thread* thread, const Function& dependent, const Type& type,
 //
 // Refer to https://fb.quip.com/q568ASVbNIad for the details of this process.
 void icInvalidateAttr(Thread* thread, const Type& type, const Object& attr_name,
-                      const ValueCell& value);
+                      const ValueCell& value_cell);
 
 // Sets a cache entry to a `left_layout_id` and `right_layout_id` key with
 // the given `value` and `flags` as value.

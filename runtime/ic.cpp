@@ -17,8 +17,9 @@ static void insertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
                                                const Object& dependent) {
   HandleScope scope(thread);
   Tuple mro(&scope, type.mro());
+  Type mro_type(&scope, *type);
   for (word i = 0; i < mro.length(); i++) {
-    Type mro_type(&scope, mro.at(i));
+    mro_type = mro.at(i);
     if (mro_type.isSealed()) break;
     ValueCell value_cell(&scope, typeValueCellAtPut(thread, mro_type, name));
     icInsertDependentToValueCellDependencyLink(thread, dependent, value_cell);
@@ -221,14 +222,17 @@ void icDeleteDependentFromInheritingTypes(Thread* thread,
   Runtime* runtime = thread->runtime();
   Type cached_type(&scope, runtime->typeAt(cached_layout_id));
   Tuple mro(&scope, cached_type.mro());
+  Type mro_type(&scope, *cached_type);
+  word hash = strHash(thread, *attr_name);
   for (word i = 0; i < mro.length(); ++i) {
-    Type type(&scope, mro.at(i));
-    // If a type is sealed, its parents must be sealed.  We can stop the MRO
+    mro_type = mro.at(i);
+    // If a mro_type is sealed, its parents must be sealed.  We can stop the MRO
     // search here.
-    if (type.isSealed()) break;
-    ValueCell value_cell(&scope, typeValueCellAt(thread, type, attr_name));
+    if (mro_type.isSealed()) break;
+    ValueCell value_cell(&scope,
+                         typeValueCellAtWithHash(mro_type, attr_name, hash));
     icDeleteDependentInValueCell(thread, value_cell, dependent);
-    if (type == new_defining_type) {
+    if (mro_type == new_defining_type) {
       // This can be a placeholder for some caching opcodes that depend on not
       // found attributes. For example, a >= b depends on type(b).__le__  even
       // when it is not found in case it's defined afterwards.
@@ -247,12 +251,14 @@ RawObject icHighestSuperTypeNotInMroOfOtherCachedTypes(
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->typeAt(cached_layout_id));
   Tuple mro(&scope, type.mro());
+  word hash = strHash(thread, *attr_name);
+  Type mro_type(&scope, *type);
   for (word i = 0; i < mro.length(); ++i) {
-    Type mro_type(&scope, mro.at(i));
+    mro_type = mro.at(i);
     if (mro_type.isSealed()) {
       break;
     }
-    if (typeValueCellAt(thread, mro_type, attr_name).isErrorNotFound() ||
+    if (typeValueCellAtWithHash(mro_type, attr_name, hash).isErrorNotFound() ||
         icIsAttrCachedInDependent(thread, mro_type, attr_name, dependent)) {
       break;
     }
@@ -277,12 +283,13 @@ bool icIsCachedAttributeAffectedByUpdatedType(Thread* thread,
   Tuple mro(&scope, cached_type.mro());
   Type mro_type(&scope, *cached_type);
   Object result(&scope, NoneType::object());
+  word hash = strHash(thread, *attribute_name);
   for (word i = 0; i < mro.length(); ++i) {
     mro_type = mro.at(i);
     // If a type is sealed, its parents must be sealed.  We can stop the MRO
     // search here.
     if (mro_type.isSealed()) break;
-    result = typeValueCellAt(thread, mro_type, attribute_name);
+    result = typeValueCellAtWithHash(mro_type, attribute_name, hash);
     if (mro_type == updated_type) {
       // The current type in MRO is the searched type, and the searched
       // attribute is unfound in MRO so far, so type[attribute_name] is the one

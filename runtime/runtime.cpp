@@ -366,9 +366,8 @@ RawObject Runtime::newTypeWithMetaclass(LayoutId metaclass_id) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Type result(&scope, heap()->createType(metaclass_id));
-  Dict dict(&scope, newDict());
   result.setFlagsAndBuiltinBase(Type::Flag::kNone, LayoutId::kObject);
-  result.setDict(*dict);
+  typeInitAttributes(thread, result);
   result.setDoc(NoneType::object());
   result.setAbstractMethods(Unbound::object());
   return *result;

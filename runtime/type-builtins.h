@@ -21,21 +21,12 @@ Type::Slot slotToTypeSlot(int slot);
 // Inherit slots defined by a C Extension
 RawObject addInheritedSlots(const Type& type);
 
-// A version of Dict::Bucket::nextItem for type dict to filter out
-// placeholders.
-bool nextTypeDictItem(RawTuple data, word* idx);
-
 void typeAddDocstring(Thread* thread, const Type& type);
 
 RawObject typeAt(Thread* thread, const Type& type, const Object& name);
 
-// Optimized version for situation in which the hash is already known so we
-// can skip reading it from the string object.
-RawObject typeAtWithHash(Thread* thread, const Type& type, const Object& name,
-                         word hash);
-
-RawObject typeAtSetLocation(Thread* thread, const Type& type,
-                            const Object& name, word hash, Object* location);
+RawObject typeAtSetLocation(const Type& type, const Object& name, word hash,
+                            Object* location);
 
 RawObject typeAtById(Thread* thread, const Type& type, SymbolId id);
 
@@ -74,6 +65,8 @@ RawObject resolveDescriptorGet(Thread* thread, const Object& descr,
 RawObject typeInit(Thread* thread, const Type& type, const Str& name,
                    const Dict& dict, const Tuple& mro);
 
+void typeInitAttributes(Thread* thread, const Type& type);
+
 // Looks up `key` in the dict of each entry in type's MRO. Returns
 // `Error::notFound()` if the name was not found.
 RawObject typeLookupInMro(Thread* thread, const Type& type, const Object& name);
@@ -101,6 +94,12 @@ void terminateIfUnimplementedTypeAttrCacheInvalidation(Thread* thread,
 // do not use except for tests and ic.cpp!
 RawObject typeValueCellAt(Thread* thread, const Type& type, const Object& name);
 
+// Look-up underlying value-cell to a name.
+// WARNING: This is a low-level access circumventing cache invalidation logic,
+// do not use except for tests and ic.cpp!
+RawObject typeValueCellAtWithHash(const Type& type, const Object& name,
+                                  word hash);
+
 // Look-up or insert a value-cell for a given name.
 // WARNING: This is a low-level access circumventing cache invalidation logic,
 // do not use except for tests and ic.cpp!
@@ -110,8 +109,6 @@ RawObject typeValueCellAtPut(Thread* thread, const Type& type,
 class TypeBuiltins
     : public Builtins<TypeBuiltins, SymbolId::kType, LayoutId::kType> {
  public:
-  static void postInitialize(Runtime* runtime, const Type& new_type);
-
   static RawObject dunderCall(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGetattribute(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderSetattr(Thread* thread, Frame* frame, word nargs);

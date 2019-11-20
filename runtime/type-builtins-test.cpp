@@ -17,34 +17,6 @@ using namespace testing;
 using TypeBuiltinsDeathTest = RuntimeFixture;
 using TypeBuiltinsTest = RuntimeFixture;
 
-TEST_F(TypeBuiltinsTest, NextTypeDictItemReturnsNextNonPlaceholder) {
-  HandleScope scope(thread_);
-  Type type(&scope, runtime_.newType());
-
-  Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
-  Object baz(&scope, Runtime::internStrFromCStr(thread_, "baz"));
-  Object qux(&scope, Runtime::internStrFromCStr(thread_, "qux"));
-  Str value(&scope, runtime_.newStrFromCStr("value"));
-
-  typeAtPut(thread_, type, foo, value);
-  typeAtPut(thread_, type, bar, value);
-  typeAtPut(thread_, type, baz, value);
-  typeAtPut(thread_, type, qux, value);
-
-  // Only baz is not Placeholder.
-  Dict type_dict(&scope, type.dict());
-  ValueCell::cast(dictAtByStr(thread_, type_dict, foo)).makePlaceholder();
-  ValueCell::cast(dictAtByStr(thread_, type_dict, bar)).makePlaceholder();
-  ValueCell::cast(dictAtByStr(thread_, type_dict, qux)).makePlaceholder();
-
-  Tuple buckets(&scope, type_dict.data());
-  word i = Dict::Bucket::kFirst;
-  EXPECT_TRUE(nextTypeDictItem(*buckets, &i));
-  EXPECT_TRUE(isStrEqualsCStr(Dict::Bucket::key(*buckets, i), "baz"));
-  EXPECT_FALSE(nextTypeDictItem(*buckets, &i));
-}
-
 TEST_F(TypeBuiltinsTest, TypeAtReturnsNoPlaceholderValue) {
   HandleScope scope(thread_);
   Type type(&scope, runtime_.newType());
@@ -129,6 +101,21 @@ cache_a_eq(a)
   Object none(&scope, NoneType::object());
   typeAtPutById(thread_, type_a, SymbolId::kDunderEq, none);
   EXPECT_TRUE(icLookupAttr(*caches, 1, a.layoutId()).isErrorNotFound());
+}
+
+TEST_F(TypeBuiltinsTest, TypeAtPutDoesNotGrowOnTombstones) {
+  HandleScope scope(thread_);
+  Type type(&scope, runtime_.newType());
+  ASSERT_TRUE(type.attributes().isTuple());
+  word initial_capacity = Tuple::cast(type.attributes()).length();
+  // Insert and remove symbols to fill the dictionary with tombstones.
+  Object name(&scope, NoneType::object());
+  for (word i = 0; i < static_cast<word>(SymbolId::kMaxId); i++) {
+    name = runtime_.symbols()->at(static_cast<SymbolId>(i));
+    typeValueCellAtPut(thread_, type, name);
+    typeRemove(thread_, type, name);
+  }
+  EXPECT_EQ(Tuple::cast(type.attributes()).length(), initial_capacity);
 }
 
 TEST_F(TypeBuiltinsTest, TypeRemoveForNonExistingEntryReturnsErrorNotFound) {

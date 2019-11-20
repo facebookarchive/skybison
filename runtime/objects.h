@@ -1208,8 +1208,11 @@ class RawType : public RawInstance {
   void setFlagsAndBuiltinBase(Flag value, LayoutId base) const;
   void setBuiltinBase(LayoutId base) const;
 
-  RawObject dict() const;
-  void setDict(RawObject dict) const;
+  RawObject attributes() const;
+  void setAttributes(RawObject mutable_tuple) const;
+
+  word attributesRemaining() const;
+  void setAttributesRemaining(word free) const;
 
   bool isBuiltin() const;
 
@@ -1247,8 +1250,10 @@ class RawType : public RawInstance {
   static const int kNameOffset = kInstanceLayoutOffset + kPointerSize;
   static const int kDocOffset = kNameOffset + kPointerSize;
   static const int kFlagsOffset = kDocOffset + kPointerSize;
-  static const int kDictOffset = kFlagsOffset + kPointerSize;
-  static const int kSlotsOffset = kDictOffset + kPointerSize;
+  static const int kAttributesOffset = kFlagsOffset + kPointerSize;
+  static const int kAttributesRemainingOffset =
+      kFlagsOffset + kAttributesOffset;
+  static const int kSlotsOffset = kAttributesRemainingOffset + kPointerSize;
   static const int kAbstractMethodsOffset = kSlotsOffset + kPointerSize;
   static const int kSubclassesOffset = kAbstractMethodsOffset + kPointerSize;
   static const int kProxyOffset = kSubclassesOffset + kPointerSize;
@@ -4618,12 +4623,22 @@ inline LayoutId RawType::builtinBase() const {
   return static_cast<LayoutId>(flags() & kBuiltinBaseMask);
 }
 
-inline RawObject RawType::dict() const {
-  return instanceVariableAt(kDictOffset);
+inline RawObject RawType::attributes() const {
+  return instanceVariableAt(kAttributesOffset);
 }
 
-inline void RawType::setDict(RawObject dict) const {
-  instanceVariableAtPut(kDictOffset, dict);
+inline void RawType::setAttributes(RawObject mutable_tuple) const {
+  instanceVariableAtPut(kAttributesOffset, mutable_tuple);
+}
+
+inline word RawType::attributesRemaining() const {
+  return RawSmallInt::cast(instanceVariableAt(kAttributesRemainingOffset))
+      .value();
+}
+
+inline void RawType::setAttributesRemaining(word free) const {
+  instanceVariableAtPut(kAttributesRemainingOffset,
+                        RawSmallInt::fromWord(free));
 }
 
 inline bool RawType::isExtensionType() const {
