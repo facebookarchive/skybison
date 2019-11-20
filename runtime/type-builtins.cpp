@@ -586,6 +586,13 @@ RawObject typeAt(Thread* thread, const Type& type, const Object& name) {
   return typeAtWithHash(thread, type, name, hash);
 }
 
+RawObject typeValueCellAt(Thread* thread, const Type& type,
+                          const Object& name) {
+  HandleScope scope(thread);
+  Dict dict(&scope, type.dict());
+  return dictAtByStr(thread, dict, name);
+}
+
 RawObject typeAtSetLocation(Thread* thread, const Type& type,
                             const Object& name, word hash, Object* location) {
   HandleScope scope(thread);
@@ -626,6 +633,15 @@ RawObject typeAtPut(Thread* thread, const Type& type, const Object& name,
     icInvalidateAttr(thread, type, name, value_cell);
   }
   return *value_cell;
+}
+
+RawObject typeValueCellAtPut(Thread* thread, const Type& type,
+                             const Object& name) {
+  HandleScope scope(thread);
+  Dict dict(&scope, type.dict());
+  word hash = strHash(thread, *name);
+  return dictAtIfAbsentPut(thread, dict, name, hash,
+                           thread->runtime()->newValueCellCallback());
 }
 
 RawObject typeAtPutById(Thread* thread, const Type& type, SymbolId id,
@@ -857,9 +873,8 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     DCHECK(class_cell.isValueCell(), "class cell must be a value cell");
     ValueCell::cast(*class_cell).setValue(*type);
     Object class_cell_name(&scope, runtime->symbols()->DunderClassCell());
-    dictRemoveByStr(thread, type_dict, class_cell_name);
+    typeRemove(thread, type, class_cell_name);
   }
-  type.setDict(*type_dict);
   // TODO(T53997177): Centralize type initialization
   typeAddDocstring(thread, type);
 

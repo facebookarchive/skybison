@@ -184,7 +184,6 @@ cache_a_eq(a)
 TEST_F(TypeBuiltinsTest, TypeKeysFiltersOutPlaceholders) {
   HandleScope scope(thread_);
   Type type(&scope, runtime_.newType());
-  Dict dict(&scope, type.dict());
 
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
@@ -195,7 +194,7 @@ TEST_F(TypeBuiltinsTest, TypeKeysFiltersOutPlaceholders) {
   typeAtPut(thread_, type, bar, value);
   typeAtPut(thread_, type, baz, value);
 
-  ValueCell::cast(dictAtByStr(thread_, dict, bar)).makePlaceholder();
+  ValueCell::cast(typeValueCellAt(thread_, type, bar)).makePlaceholder();
 
   List keys(&scope, typeKeys(thread_, type));
   EXPECT_EQ(keys.numItems(), 2);
@@ -206,7 +205,6 @@ TEST_F(TypeBuiltinsTest, TypeKeysFiltersOutPlaceholders) {
 TEST_F(TypeBuiltinsTest, TypeLenReturnsItemCountExcludingPlaceholders) {
   HandleScope scope(thread_);
   Type type(&scope, runtime_.newType());
-  Dict dict(&scope, type.dict());
 
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
@@ -219,7 +217,7 @@ TEST_F(TypeBuiltinsTest, TypeLenReturnsItemCountExcludingPlaceholders) {
 
   SmallInt previous_len(&scope, typeLen(thread_, type));
 
-  ValueCell::cast(dictAtByStr(thread_, dict, bar)).makePlaceholder();
+  ValueCell::cast(typeValueCellAt(thread_, type, bar)).makePlaceholder();
 
   SmallInt after_len(&scope, typeLen(thread_, type));
   EXPECT_EQ(previous_len.value(), after_len.value() + 1);
@@ -228,7 +226,6 @@ TEST_F(TypeBuiltinsTest, TypeLenReturnsItemCountExcludingPlaceholders) {
 TEST_F(TypeBuiltinsTest, TypeValuesFiltersOutPlaceholders) {
   HandleScope scope(thread_);
   Type type(&scope, runtime_.newType());
-  Dict dict(&scope, type.dict());
 
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object foo_value(&scope, runtime_.newStrFromCStr("foo_value"));
@@ -241,7 +238,7 @@ TEST_F(TypeBuiltinsTest, TypeValuesFiltersOutPlaceholders) {
   typeAtPut(thread_, type, bar, bar_value);
   typeAtPut(thread_, type, baz, baz_value);
 
-  ValueCell::cast(dictAtByStr(thread_, dict, bar)).makePlaceholder();
+  ValueCell::cast(typeValueCellAt(thread_, type, bar)).makePlaceholder();
 
   List values(&scope, typeValues(thread_, type));
   EXPECT_TRUE(listContains(values, foo_value));

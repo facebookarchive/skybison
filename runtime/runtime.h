@@ -62,7 +62,11 @@ class Runtime {
   class NewValueCellCallback : public Callback<RawObject> {
    public:
     explicit NewValueCellCallback(Runtime* runtime) : runtime_(runtime) {}
-    RawObject call() { return runtime_->newValueCell(); }
+    RawObject call() {
+      RawObject result = runtime_->newValueCell();
+      ValueCell::cast(result).makePlaceholder();
+      return result;
+    }
     Runtime* runtime_;
   };
 

@@ -13,6 +13,7 @@
 #include "runtime.h"
 #include "test-utils.h"
 #include "thread.h"
+#include "type-builtins.h"
 
 namespace py {
 using namespace testing;
@@ -985,14 +986,10 @@ class C:
   Module mod(&scope, findMainModule(&runtime_));
   ASSERT_TRUE(mod.isModule());
 
-  Dict mod_dict(&scope, mod.dict());
-  ASSERT_TRUE(mod_dict.isDict());
-
-  // Check for the class name in the module dict
-  Str cls_name(&scope, runtime_.newStrFromCStr("C"));
-  Object value(&scope, dictAtByStr(thread_, mod_dict, cls_name));
-  ASSERT_TRUE(value.isValueCell());
-  Type cls(&scope, ValueCell::cast(*value).value());
+  Str cls_name(&scope, Runtime::internStrFromCStr(thread_, "C"));
+  Object value(&scope, moduleAt(thread_, mod, cls_name));
+  ASSERT_TRUE(value.isType());
+  Type cls(&scope, *value);
 
   // Check class MRO
   Tuple mro(&scope, cls.mro());
@@ -1004,15 +1001,10 @@ class C:
   ASSERT_TRUE(cls.name().isSmallStr());
   EXPECT_EQ(cls.name(), SmallStr::fromCStr("C"));
 
-  Dict cls_dict(&scope, cls.dict());
-  ASSERT_TRUE(cls_dict.isDict());
-
   // Check for the __init__ method name in the dict
-  Object meth_name(&scope, runtime_.symbols()->DunderInit());
-  ASSERT_TRUE(dictIncludesByStr(thread_, cls_dict, meth_name));
-  value = dictAtByStr(thread_, cls_dict, meth_name);
-  ASSERT_TRUE(value.isValueCell());
-  ASSERT_TRUE(ValueCell::cast(*value).value().isFunction());
+  value = typeAtById(thread_, cls, SymbolId::kDunderInit);
+  ASSERT_FALSE(value.isError());
+  EXPECT_TRUE(value.isFunction());
 }
 
 static RawObject nativeExceptionTest(Thread* thread, Frame*, word) {

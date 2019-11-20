@@ -96,6 +96,17 @@ RawObject typeSetAttr(Thread* thread, const Type& type, const Object& name,
 void terminateIfUnimplementedTypeAttrCacheInvalidation(Thread* thread,
                                                        const Object& attr_name);
 
+// Look-up underlying value-cell to a name.
+// WARNING: This is a low-level access circumventing cache invalidation logic,
+// do not use except for tests and ic.cpp!
+RawObject typeValueCellAt(Thread* thread, const Type& type, const Object& name);
+
+// Look-up or insert a value-cell for a given name.
+// WARNING: This is a low-level access circumventing cache invalidation logic,
+// do not use except for tests and ic.cpp!
+RawObject typeValueCellAtPut(Thread* thread, const Type& type,
+                             const Object& name);
+
 class TypeBuiltins
     : public Builtins<TypeBuiltins, SymbolId::kType, LayoutId::kType> {
  public:

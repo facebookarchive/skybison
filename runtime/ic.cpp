@@ -4,6 +4,7 @@
 #include "dict-builtins.h"
 #include "interpreter.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "type-builtins.h"
 #include "utils.h"
 
@@ -16,21 +17,10 @@ static void insertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
                                                const Object& dependent) {
   HandleScope scope(thread);
   Tuple mro(&scope, type.mro());
-  NoneType none(&scope, NoneType::object());
   for (word i = 0; i < mro.length(); i++) {
     Type mro_type(&scope, mro.at(i));
     if (mro_type.isSealed()) break;
-    Dict dict(&scope, mro_type.dict());
-    // TODO(T46428372): Consider using a specialized dict lookup to avoid 2
-    // probings.
-    Object result(&scope, dictAtByStr(thread, dict, name));
-    DCHECK(result.isErrorNotFound() || result.isValueCell(),
-           "value must be ValueCell if found");
-    if (result.isErrorNotFound()) {
-      result = dictAtPutInValueCellByStr(thread, dict, name, none);
-      ValueCell::cast(*result).makePlaceholder();
-    }
-    ValueCell value_cell(&scope, *result);
+    ValueCell value_cell(&scope, typeValueCellAtPut(thread, mro_type, name));
     icInsertDependentToValueCellDependencyLink(thread, dependent, value_cell);
     if (!value_cell.isPlaceholder()) {
       // Attribute lookup terminates here. Therefore, no dependency tracking is
@@ -236,8 +226,7 @@ void icDeleteDependentFromInheritingTypes(Thread* thread,
     // If a type is sealed, its parents must be sealed.  We can stop the MRO
     // search here.
     if (type.isSealed()) break;
-    Dict dict(&scope, type.dict());
-    ValueCell value_cell(&scope, dictAtByStr(thread, dict, attr_name));
+    ValueCell value_cell(&scope, typeValueCellAt(thread, type, attr_name));
     icDeleteDependentInValueCell(thread, value_cell, dependent);
     if (type == new_defining_type) {
       // This can be a placeholder for some caching opcodes that depend on not
@@ -256,18 +245,18 @@ RawObject icHighestSuperTypeNotInMroOfOtherCachedTypes(
   HandleScope scope(thread);
   Object supertype_obj(&scope, NoneType::object());
   Runtime* runtime = thread->runtime();
-  Tuple mro(&scope, Type::cast(runtime->typeAt(cached_layout_id)).mro());
+  Type type(&scope, runtime->typeAt(cached_layout_id));
+  Tuple mro(&scope, type.mro());
   for (word i = 0; i < mro.length(); ++i) {
-    Type type(&scope, mro.at(i));
-    if (type.isSealed()) {
+    Type mro_type(&scope, mro.at(i));
+    if (mro_type.isSealed()) {
       break;
     }
-    Dict type_dict(&scope, type.dict());
-    if (!dictIncludesByStr(thread, type_dict, attr_name) ||
-        icIsAttrCachedInDependent(thread, type, attr_name, dependent)) {
+    if (typeValueCellAt(thread, mro_type, attr_name).isErrorNotFound() ||
+        icIsAttrCachedInDependent(thread, mro_type, attr_name, dependent)) {
       break;
     }
-    supertype_obj = *type;
+    supertype_obj = *mro_type;
   }
   if (supertype_obj.isNoneType()) {
     return Error::notFound();
@@ -286,14 +275,15 @@ bool icIsCachedAttributeAffectedByUpdatedType(Thread* thread,
     return false;
   }
   Tuple mro(&scope, cached_type.mro());
+  Type mro_type(&scope, *cached_type);
+  Object result(&scope, NoneType::object());
   for (word i = 0; i < mro.length(); ++i) {
-    Type type(&scope, mro.at(i));
+    mro_type = mro.at(i);
     // If a type is sealed, its parents must be sealed.  We can stop the MRO
     // search here.
-    if (type.isSealed()) break;
-    Dict dict(&scope, type.dict());
-    Object result(&scope, dictAtByStr(thread, dict, attribute_name));
-    if (type == updated_type) {
+    if (mro_type.isSealed()) break;
+    result = typeValueCellAt(thread, mro_type, attribute_name);
+    if (mro_type == updated_type) {
       // The current type in MRO is the searched type, and the searched
       // attribute is unfound in MRO so far, so type[attribute_name] is the one
       // retrieved from this mro.
@@ -305,8 +295,7 @@ bool icIsCachedAttributeAffectedByUpdatedType(Thread* thread,
       // above.
       return false;
     }
-    ValueCell value_cell(&scope, *result);
-    if (!value_cell.isPlaceholder()) {
+    if (!ValueCell::cast(*result).isPlaceholder()) {
       // A non-placeholder is found for the attribute, this is retrived as the
       // value for the attribute, so no shadowing happens.
       return false;
@@ -558,15 +547,15 @@ void icEvictCache(Thread* thread, const Function& dependent, const Type& type,
 }
 
 void icInvalidateAttr(Thread* thread, const Type& type, const Object& attr_name,
-                      const ValueCell& value) {
+                      const ValueCell& value_cell) {
   HandleScope scope(thread);
   // Delete caches for attr_name to be shadowed by the type[attr_name]
   // change in all dependents that depend on the attribute being updated.
-  Type value_type(&scope, thread->runtime()->typeOf(value.value()));
+  Type value_type(&scope, thread->runtime()->typeOf(value_cell.value()));
   AttributeKind attribute_kind = typeIsDataDescriptor(thread, value_type)
                                      ? AttributeKind::kDataDescriptor
                                      : AttributeKind::kNotADataDescriptor;
-  Object link(&scope, value.dependencyLink());
+  Object link(&scope, value_cell.dependencyLink());
   while (!link.isNoneType()) {
     Function dependent(&scope, WeakLink::cast(*link).referent());
     // Capturing the next node in case the current node is deleted by
@@ -577,7 +566,7 @@ void icInvalidateAttr(Thread* thread, const Type& type, const Object& attr_name,
   // In case is_data_descriptor is true, we shouldn't see any dependents after
   // caching invalidation.
   DCHECK(attribute_kind == AttributeKind::kNotADataDescriptor ||
-             value.dependencyLink().isNoneType(),
+             value_cell.dependencyLink().isNoneType(),
          "dependencyLink must be None if is_data_descriptor is true");
 }
 

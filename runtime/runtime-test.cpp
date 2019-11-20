@@ -16,6 +16,7 @@
 #include "symbols.h"
 #include "test-utils.h"
 #include "trampolines.h"
+#include "type-builtins.h"
 
 namespace py {
 using namespace testing;
@@ -1046,14 +1047,11 @@ TEST_F(RuntimeTest, CollectAttributesWithExtendedArg) {
 TEST_F(RuntimeTest, GetTypeConstructor) {
   HandleScope scope(thread_);
   Type type(&scope, runtime_.newType());
-  Dict type_dict(&scope, runtime_.newDict());
-  type.setDict(*type_dict);
 
   EXPECT_TRUE(runtime_.classConstructor(type).isErrorNotFound());
 
-  Object init(&scope, runtime_.symbols()->DunderInit());
   Object func(&scope, makeTestFunction());
-  dictAtPutInValueCellByStr(thread_, type_dict, init, func);
+  typeAtPutById(thread_, type, SymbolId::kDunderInit, func);
 
   EXPECT_EQ(runtime_.classConstructor(type), *func);
 }
