@@ -2076,11 +2076,10 @@ PY_EXPORT Py_UCS4 PyUnicode_READ_CHAR_Func(PyObject* obj, Py_ssize_t index) {
 PY_EXPORT int PyUnicode_IS_ASCII_Func(PyObject* obj) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object str_obj(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  DCHECK(thread->runtime()->isInstanceOfStr(*str_obj),
+  Object str(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  DCHECK(thread->runtime()->isInstanceOfStr(*str),
          "strIsASCII must receive a unicode object");
-  Str str(&scope, strUnderlying(*str_obj));
-  return strIsASCII(str) ? 1 : 0;
+  return strUnderlying(*str).isASCII() ? 1 : 0;
 }
 
 PY_EXPORT int _Py_normalize_encoding(const char* encoding, char* lower,

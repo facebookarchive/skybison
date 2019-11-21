@@ -78,6 +78,12 @@ RawSmallStr RawSmallStr::fromBytes(View<byte> data) {
                      kSmallStrTag);
 }
 
+bool RawSmallStr::isASCII() const {
+  uword block = raw() >> kBitsPerByte;
+  uword non_ascii_mask = (~uword{0} / 0xFF) << (kBitsPerByte - 1);
+  return (block & non_ascii_mask) == 0;
+}
+
 char* RawSmallStr::toCStr() const {
   word length = charLength();
   byte* result = static_cast<byte*>(std::malloc(length + 1));
@@ -254,6 +260,20 @@ word RawLargeStr::codePointLength() const {
     result -= num_trailing;
   }
   return result;
+}
+
+bool RawLargeStr::isASCII() const {
+  // Depends on invariants specified in RawLargeStr::codePointLength
+  word length = this->length();
+  word size_in_words = (length + kWordSize - 1) >> kWordSizeLog2;
+  const uword* data = reinterpret_cast<const uword*>(address());
+  uword non_ascii_mask = (~uword{0} / 0xFF) << (kBitsPerByte - 1);
+  for (word i = 0; i < size_in_words; i++) {
+    // Read an entire word of code units.
+    uword block = data[i];
+    if ((block & non_ascii_mask) != 0) return false;
+  }
+  return true;
 }
 
 // RawList

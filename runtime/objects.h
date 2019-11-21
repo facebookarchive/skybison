@@ -526,6 +526,7 @@ class RawStr : public RawObject {
   // Codepoints
   int32_t codePointAt(word char_index, word* char_length) const;
   word codePointLength() const;
+  bool isASCII() const;
 
   // Returns an index into a string offset by either a positive or negative
   // number of code points.  Otherwise, if the new index would be negative, -1
@@ -705,6 +706,7 @@ class RawSmallStr : public RawObject {
 
   // Codepoints
   word codePointLength() const;
+  bool isASCII() const;
 
   // Conversion to an unescaped C string.  The underlying memory is allocated
   // with malloc and must be freed by the caller.
@@ -1400,6 +1402,7 @@ class RawLargeStr : public RawArrayBase {
 
   // Codepoints
   word codePointLength() const;
+  bool isASCII() const;
 
   // Conversion to an unescaped C string.  The underlying memory is allocated
   // with malloc and must be freed by the caller.
@@ -5955,6 +5958,14 @@ inline word RawStr::codePointLength() const {
   }
   DCHECK(isLargeStr(), "unexpected type");
   return RawLargeStr::cast(*this).codePointLength();
+}
+
+inline bool RawStr::isASCII() const {
+  if (isSmallStr()) {
+    return RawSmallStr::cast(*this).isASCII();
+  }
+  DCHECK(isLargeStr(), "unexpected type");
+  return RawLargeStr::cast(*this).isASCII();
 }
 
 // RawLargeStr

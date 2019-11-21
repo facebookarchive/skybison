@@ -952,6 +952,16 @@ TEST(SmallStrTest, CodePointLengthWithThreeCodePoints) {
   EXPECT_EQ(Str::cast(len4).codePointLength(), 3);
 }
 
+TEST(SmallStrTest, IsASCIIReturnsTrueIfAndOnlyIfAllASCII) {
+  RawObject all_ascii = SmallStr::fromCStr("abc");
+  ASSERT_TRUE(Str::cast(all_ascii).isSmallStr());
+  EXPECT_TRUE(Str::cast(all_ascii).isASCII());
+
+  RawObject some_non_ascii = SmallStr::fromCStr("a\xC2\xA3g");
+  ASSERT_TRUE(Str::cast(some_non_ascii).isSmallStr());
+  EXPECT_FALSE(Str::cast(some_non_ascii).isASCII());
+}
+
 TEST(SmallStrTest, FromCodePointOneByte) {
   RawObject obj = SmallStr::fromCodePoint(0x24);
   ASSERT_TRUE(obj.isSmallStr());
@@ -1089,6 +1099,18 @@ TEST_F(LargeStrTest, CodePointLength) {
   EXPECT_TRUE(str.isLargeStr());
   EXPECT_EQ(str.charLength(), std::strlen(code_units));
   EXPECT_EQ(str.codePointLength(), 23);
+}
+
+TEST_F(LargeStrTest, IsASCIIReturnsTrueIfAndOnlyIfAllASCII) {
+  HandleScope scope(thread_);
+
+  Str ascii(&scope, runtime_.newStrFromCStr("01234567012345670"));
+  EXPECT_TRUE(ascii.isLargeStr());
+  EXPECT_TRUE(ascii.isASCII());
+
+  Str unicode(&scope, runtime_.newStrFromCStr("ascii \xd7\x99\xd7\xa9 pad"));
+  EXPECT_TRUE(unicode.isLargeStr());
+  EXPECT_FALSE(unicode.isASCII());
 }
 
 TEST_F(StringTest, ReverseOffsetByCodePointsEmptyString) {
