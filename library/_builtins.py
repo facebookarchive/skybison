@@ -839,6 +839,11 @@ def _str_count(self, sub, start, end):
 
 
 @_patch
+def _str_encode(self):
+    pass
+
+
+@_patch
 def _str_endswith(self, suffix, start, end):
     pass
 

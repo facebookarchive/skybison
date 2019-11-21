@@ -237,6 +237,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrCheckExact, underStrCheckExact},
     {SymbolId::kUnderStrCompareDigest, underStrCompareDigest},
     {SymbolId::kUnderStrCount, underStrCount},
+    {SymbolId::kUnderStrEncode, underStrEncode},
     {SymbolId::kUnderStrEndswith, underStrEndsWith},
     {SymbolId::kUnderStrGuard, underStrGuard},
     {SymbolId::kUnderStrIsChr, underStrIsChr},
@@ -3235,6 +3236,26 @@ RawObject UnderBuiltinsModule::underStrCheck(Thread* thread, Frame* frame,
                                              word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfStr(args.get(0)));
+}
+
+RawObject UnderBuiltinsModule::underStrEncode(Thread* thread, Frame* frame,
+                                              word nargs) {
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object data_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfStr(*data_obj)) {
+    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kStr);
+  }
+  Str data(&scope, strUnderlying(*data_obj));
+  // TODO(T57890153): Allow encodings (like cp1026) that aren't ASCII supersets
+  if (!data.isASCII()) {
+    return Unbound::object();
+  }
+  word data_len = data.charLength();
+  MutableBytes bytes(&scope, runtime->newMutableBytesUninitialized(data_len));
+  bytes.replaceFromWithStr(0, *data, data_len);
+  return bytes.becomeImmutable();
 }
 
 RawObject UnderBuiltinsModule::underStrCheckExact(Thread*, Frame* frame,

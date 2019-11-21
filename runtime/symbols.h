@@ -411,6 +411,7 @@ class Runtime;
   V(UnderStrCheckExact, "_str_checkexact")                                     \
   V(UnderStrCompareDigest, "_str_compare_digest")                              \
   V(UnderStrCount, "_str_count")                                               \
+  V(UnderStrEncode, "_str_encode")                                             \
   V(UnderStrEndswith, "_str_endswith")                                         \
   V(UnderStrGuard, "_str_guard")                                               \
   V(UnderStrIsChr, "_str_ischr")                                               \

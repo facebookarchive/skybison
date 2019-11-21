@@ -256,6 +256,7 @@ class UnderBuiltinsModule {
   static RawObject underStrCompareDigest(Thread* thread, Frame* frame,
                                          word nargs);
   static RawObject underStrCount(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrEncode(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrEndsWith(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrGuard(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrIsChr(Thread* thread, Frame* frame, word nargs);

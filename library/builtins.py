@@ -162,6 +162,7 @@ _staticmethod_isabstract = _staticmethod_isabstract  # noqa: F821
 _str_check = _str_check  # noqa: F821
 _str_checkexact = _str_checkexact  # noqa: F821
 _str_count = _str_count  # noqa: F821
+_str_encode = _str_encode  # noqa: F821
 _str_endswith = _str_endswith  # noqa: F821
 _str_escape_non_ascii = _str_escape_non_ascii  # noqa: F821
 _str_find = _str_find  # noqa: F821
@@ -4566,7 +4567,9 @@ class str(bootstrap=True):
         return _str_count(self, sub, start, end)
 
     def encode(self, encoding="utf-8", errors=_Unbound) -> bytes:
-        _str_guard(self)
+        result = _str_encode(self)
+        if result is not _Unbound:
+            return result
         return _codecs.encode(self, encoding, errors)
 
     def endswith(self, suffix, start=None, end=None):
