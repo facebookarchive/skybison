@@ -93,9 +93,8 @@ class ApiHandle : public PyObject {
                                             const Object& key, word hash);
 
  private:
-  // Returns a handle for a managed object.  If a handle does not already
-  // exist, a new handle is created and its reference count is initialized to
-  // the managed bit.
+  // Returns an owned handle for a managed object. If a handle does not already
+  // exist, a new handle is created.
   static ApiHandle* ensure(Thread* thread, RawObject obj);
 
   // Cast RawObject to ApiHandle*

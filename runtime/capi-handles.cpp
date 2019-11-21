@@ -115,7 +115,9 @@ ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
 
   // Get the PyObject pointer from extension instances
   if (runtime->isNativeProxy(obj)) {
-    return static_cast<ApiHandle*>(runtime->nativeProxyPtr(obj));
+    ApiHandle* result = static_cast<ApiHandle*>(runtime->nativeProxyPtr(obj));
+    result->incref();
+    return result;
   }
 
   HandleScope scope(thread);
@@ -126,27 +128,30 @@ ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
 
   // Get the handle of a builtin instance
   if (!value.isError()) {
-    return castFromObject(*value);
+    ApiHandle* result = castFromObject(*value);
+    result->incref();
+    return result;
   }
 
   // Initialize an ApiHandle for a builtin object or runtime instance
   ApiHandle* handle = static_cast<ApiHandle*>(std::malloc(sizeof(ApiHandle)));
-  handle->reference_ = key.raw();
-  handle->ob_refcnt = 0;
-  handle->setManaged();
   Object object(&scope, runtime->newIntFromCPtr(static_cast<void*>(handle)));
+  handle->reference_ = NoneType::object().raw();
+  handle->ob_refcnt = 1;
+  handle->setManaged();
   dictAtPutIdentityEquals(thread, dict, key, hash, object);
+  handle->reference_ = key.raw();
   return handle;
 }
 
 ApiHandle* ApiHandle::newReference(Thread* thread, RawObject obj) {
-  ApiHandle* result = ApiHandle::ensure(thread, obj);
-  result->incref();
-  return result;
+  return ApiHandle::ensure(thread, obj);
 }
 
 ApiHandle* ApiHandle::borrowedReference(Thread* thread, RawObject obj) {
-  return ApiHandle::ensure(thread, obj);
+  ApiHandle* result = ApiHandle::ensure(thread, obj);
+  result->decref();
+  return result;
 }
 
 RawObject ApiHandle::stealReference(Thread* thread, PyObject* py_obj) {
