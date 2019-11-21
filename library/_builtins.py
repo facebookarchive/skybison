@@ -804,12 +804,27 @@ def _slice_start(start, step, length):
 
 
 @_patch
+def _slice_start_long(start, step, length):
+    pass
+
+
+@_patch
 def _slice_step(step):
     pass
 
 
 @_patch
+def _slice_step_long(step):
+    pass
+
+
+@_patch
 def _slice_stop(stop, step, length):
+    pass
+
+
+@_patch
+def _slice_stop_long(stop, step, length):
     pass
 
 

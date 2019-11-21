@@ -245,8 +245,12 @@ class UnderBuiltinsModule {
   static RawObject underSliceCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underSliceGuard(Thread* thread, Frame* frame, word nargs);
   static RawObject underSliceStart(Thread* thread, Frame* frame, word nargs);
+  static RawObject underSliceStartLong(Thread* thread, Frame* frame,
+                                       word nargs);
   static RawObject underSliceStep(Thread* thread, Frame* frame, word nargs);
+  static RawObject underSliceStepLong(Thread* thread, Frame* frame, word nargs);
   static RawObject underSliceStop(Thread* thread, Frame* frame, word nargs);
+  static RawObject underSliceStopLong(Thread* thread, Frame* frame, word nargs);
   static RawObject underStaticMethodIsAbstract(Thread* thread, Frame* frame,
                                                word nargs);
   static RawObject underStrArrayClear(Thread* thread, Frame* frame, word nargs);

@@ -156,8 +156,11 @@ _set_member_pyobject = _set_member_pyobject  # noqa: F821
 _slice_check = _slice_check  # noqa: F821
 _slice_guard = _slice_guard  # noqa: F821
 _slice_start = _slice_start  # noqa: F821
+_slice_start_long = _slice_start_long  # noqa: F821
 _slice_step = _slice_step  # noqa: F821
+_slice_step_long = _slice_step_long  # noqa: F821
 _slice_stop = _slice_stop  # noqa: F821
+_slice_stop_long = _slice_stop_long  # noqa: F821
 _staticmethod_isabstract = _staticmethod_isabstract  # noqa: F821
 _str_check = _str_check  # noqa: F821
 _str_checkexact = _str_checkexact  # noqa: F821
@@ -4082,10 +4085,10 @@ class range(bootstrap=True):
         if _int_check(key):
             return _range_getitem(self, key)
         if _slice_check(key):
-            step = _slice_step(_slice_index(key.step))
+            step = _slice_step_long(_slice_index(key.step))
             length = _range_len(self)
-            start = _slice_start(_slice_index(key.start), step, length)
-            stop = _slice_stop(_slice_index(key.stop), step, length)
+            start = _slice_start_long(_slice_index(key.start), step, length)
+            stop = _slice_stop_long(_slice_index(key.stop), step, length)
             return _range_getslice(self, start, stop, step)
         if _object_type_hasattr(key, "__index__"):
             return _range_getitem(self, _index(key))
@@ -4394,9 +4397,9 @@ class slice(bootstrap=True):
         length = _index(length)
         if length < 0:
             raise ValueError("length should not be negative")
-        step = _slice_step(_slice_index(self.step))
-        start = _slice_start(_slice_index(self.start), step, length)
-        stop = _slice_stop(_slice_index(self.stop), step, length)
+        step = _slice_step_long(_slice_index(self.step))
+        start = _slice_start_long(_slice_index(self.start), step, length)
+        stop = _slice_stop_long(_slice_index(self.stop), step, length)
         return start, stop, step
 
 

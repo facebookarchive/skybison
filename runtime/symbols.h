@@ -397,8 +397,11 @@ class Runtime;
   V(UnderSliceIndex, "_slice_index")                                           \
   V(UnderSliceIndexNotNone, "_slice_index_not_none")                           \
   V(UnderSliceStart, "_slice_start")                                           \
+  V(UnderSliceStartLong, "_slice_start_long")                                  \
   V(UnderSliceStep, "_slice_step")                                             \
+  V(UnderSliceStepLong, "_slice_step_long")                                    \
   V(UnderSliceStop, "_slice_stop")                                             \
+  V(UnderSliceStopLong, "_slice_stop_long")                                    \
   V(UnderSnapshot, "_snapshot")                                                \
   V(UnderStaticMethodIsAbstract, "_staticmethod_isabstract")                   \
   V(UnderStderrFd, "_stderr_fd")                                               \

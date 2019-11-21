@@ -228,8 +228,11 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderSliceCheck, underSliceCheck},
     {SymbolId::kUnderSliceGuard, underSliceGuard},
     {SymbolId::kUnderSliceStart, underSliceStart},
+    {SymbolId::kUnderSliceStartLong, underSliceStartLong},
     {SymbolId::kUnderSliceStep, underSliceStep},
+    {SymbolId::kUnderSliceStepLong, underSliceStepLong},
     {SymbolId::kUnderSliceStop, underSliceStop},
+    {SymbolId::kUnderSliceStopLong, underSliceStopLong},
     {SymbolId::kUnderStaticMethodIsAbstract, underStaticMethodIsAbstract},
     {SymbolId::kUnderStrArrayClear, underStrArrayClear},
     {SymbolId::kUnderStrArrayIadd, underStrArrayIadd},
@@ -424,10 +427,9 @@ RawObject UnderBuiltinsModule::underByteArrayDelSlice(Thread* thread,
   HandleScope scope(thread);
   ByteArray self(&scope, args.get(0));
 
-  word start = intUnderlying(args.get(1)).asWord();
-  word stop = intUnderlying(args.get(2)).asWord();
-  // Lossy truncation of step to a word is expected.
-  word step = intUnderlying(args.get(3)).asWordSaturated();
+  word start = SmallInt::cast(args.get(1)).value();
+  word stop = SmallInt::cast(args.get(2)).value();
+  word step = SmallInt::cast(args.get(3)).value();
 
   word slice_length = Slice::length(start, stop, step);
   DCHECK_BOUND(slice_length, self.numItems());
@@ -506,9 +508,9 @@ RawObject UnderBuiltinsModule::underByteArraySetSlice(Thread* thread,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   ByteArray self(&scope, args.get(0));
-  word start = intUnderlying(args.get(1)).asWord();
-  word stop = intUnderlying(args.get(2)).asWord();
-  word step = intUnderlying(args.get(3)).asWord();
+  word start = SmallInt::cast(args.get(1)).value();
+  word stop = SmallInt::cast(args.get(2)).value();
+  word step = SmallInt::cast(args.get(3)).value();
   Object src_obj(&scope, args.get(4));
   Bytes src_bytes(&scope, Bytes::empty());
   word src_length;
@@ -725,9 +727,9 @@ RawObject UnderBuiltinsModule::underBytesGetSlice(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Bytes self(&scope, bytesUnderlying(args.get(0)));
-  word start = intUnderlying(args.get(1)).asWord();
-  word stop = intUnderlying(args.get(2)).asWord();
-  word step = intUnderlying(args.get(3)).asWord();
+  word start = SmallInt::cast(args.get(1)).value();
+  word stop = SmallInt::cast(args.get(2)).value();
+  word step = SmallInt::cast(args.get(3)).value();
   return thread->runtime()->bytesSlice(thread, self, start, stop, step);
 }
 
@@ -2481,10 +2483,9 @@ RawObject UnderBuiltinsModule::underListDelSlice(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   List list(&scope, args.get(0));
 
-  word start = intUnderlying(args.get(1)).asWord();
-  word stop = intUnderlying(args.get(2)).asWord();
-  // Lossy truncation of step to a word is expected.
-  word step = intUnderlying(args.get(3)).asWordSaturated();
+  word start = SmallInt::cast(args.get(1)).value();
+  word stop = SmallInt::cast(args.get(2)).value();
+  word step = SmallInt::cast(args.get(3)).value();
 
   word slice_length = Slice::length(start, stop, step);
   DCHECK(slice_length >= 0, "slice length should be positive");
@@ -2576,9 +2577,9 @@ RawObject UnderBuiltinsModule::underListGetSlice(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   List self(&scope, args.get(0));
-  word start = intUnderlying(args.get(1)).asWord();
-  word stop = intUnderlying(args.get(2)).asWord();
-  word step = intUnderlying(args.get(3)).asWord();
+  word start = SmallInt::cast(args.get(1)).value();
+  word stop = SmallInt::cast(args.get(2)).value();
+  word step = SmallInt::cast(args.get(3)).value();
   return listSlice(thread, self, start, stop, step);
 }
 
@@ -3133,8 +3134,36 @@ RawObject UnderBuiltinsModule::underSliceGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kSlice);
 }
 
-RawObject UnderBuiltinsModule::underSliceStart(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underSliceStart(Thread*, Frame* frame,
                                                word nargs) {
+  Arguments args(frame, nargs);
+  RawObject start_obj = args.get(0);
+  word step = SmallInt::cast(args.get(1)).value();
+  word length = SmallInt::cast(args.get(2)).value();
+  if (start_obj.isNoneType()) {
+    return SmallInt::fromWord(step < 0 ? length - 1 : 0);
+  }
+
+  word lower, upper;
+  if (step < 0) {
+    lower = -1;
+    upper = length - 1;
+  } else {
+    lower = 0;
+    upper = length;
+  }
+
+  word start = intUnderlying(start_obj).asWordSaturated();
+  if (start < 0) {
+    start = Utils::maximum(start + length, lower);
+  } else {
+    start = Utils::minimum(start, upper);
+  }
+  return SmallInt::fromWord(start);
+}
+
+RawObject UnderBuiltinsModule::underSliceStartLong(Thread* thread, Frame* frame,
+                                                   word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Int step(&scope, intUnderlying(args.get(1)));
@@ -3164,19 +3193,72 @@ RawObject UnderBuiltinsModule::underSliceStart(Thread* thread, Frame* frame,
 RawObject UnderBuiltinsModule::underSliceStep(Thread* thread, Frame* frame,
                                               word nargs) {
   Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object step_obj(&scope, args.get(0));
+  RawObject step_obj = args.get(0);
   if (step_obj.isNoneType()) return SmallInt::fromWord(1);
-  Int step(&scope, intUnderlying(*step_obj));
-  if (step.isZero()) {
+  RawInt step = intUnderlying(step_obj);
+  if (step == SmallInt::fromWord(0) || step == Bool::falseObj()) {
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "slice step cannot be zero");
   }
-  return *step;
+  if (step.isSmallInt()) {
+    return step;
+  }
+  if (step == Bool::trueObj()) {
+    return SmallInt::fromWord(1);
+  }
+  return SmallInt::fromWord(step.isNegative() ? SmallInt::kMinValue
+                                              : SmallInt::kMaxValue);
 }
 
-RawObject UnderBuiltinsModule::underSliceStop(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underSliceStepLong(Thread* thread, Frame* frame,
+                                                  word nargs) {
+  Arguments args(frame, nargs);
+  RawObject step_obj = args.get(0);
+  if (step_obj.isNoneType()) return SmallInt::fromWord(1);
+  RawInt step = intUnderlying(step_obj);
+  if (step == SmallInt::fromWord(0) || step == Bool::falseObj()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "slice step cannot be zero");
+  }
+  if (step.isSmallInt()) {
+    return step;
+  }
+  if (step == Bool::trueObj()) {
+    return SmallInt::fromWord(1);
+  }
+  return step;
+}
+
+RawObject UnderBuiltinsModule::underSliceStop(Thread*, Frame* frame,
                                               word nargs) {
+  Arguments args(frame, nargs);
+  RawObject stop_obj = args.get(0);
+  word step = SmallInt::cast(args.get(1)).value();
+  word length = SmallInt::cast(args.get(2)).value();
+  if (stop_obj.isNoneType()) {
+    return SmallInt::fromWord(step < 0 ? -1 : length);
+  }
+
+  word lower, upper;
+  if (step < 0) {
+    lower = -1;
+    upper = length - 1;
+  } else {
+    lower = 0;
+    upper = length;
+  }
+
+  word stop = intUnderlying(stop_obj).asWordSaturated();
+  if (stop < 0) {
+    stop = Utils::maximum(stop + length, lower);
+  } else {
+    stop = Utils::minimum(stop, upper);
+  }
+  return SmallInt::fromWord(stop);
+}
+
+RawObject UnderBuiltinsModule::underSliceStopLong(Thread* thread, Frame* frame,
+                                                  word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Int step(&scope, intUnderlying(args.get(1)));
@@ -3753,11 +3835,10 @@ RawObject UnderBuiltinsModule::underTupleGetSlice(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Tuple self(&scope, tupleUnderlying(args.get(0)));
-  Int start(&scope, args.get(1));
-  Int stop(&scope, args.get(2));
-  Int step(&scope, args.get(3));
-  return tupleSlice(thread, self, start.asWordSaturated(),
-                    stop.asWordSaturated(), step.asWordSaturated());
+  word start = SmallInt::cast(args.get(1)).value();
+  word stop = SmallInt::cast(args.get(2)).value();
+  word step = SmallInt::cast(args.get(3)).value();
+  return tupleSlice(thread, self, start, stop, step);
 }
 
 RawObject UnderBuiltinsModule::underTupleGuard(Thread* thread, Frame* frame,

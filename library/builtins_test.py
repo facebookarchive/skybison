@@ -4803,6 +4803,26 @@ class ListTests(unittest.TestCase):
         del a[4 :: 1 << 333]
         self.assertEqual(a, [0, 1, 2, 3])
 
+    def test_delslice_with_large_stop_deletes_to_end(self):
+        a = [0, 1, 2, 3, 4]
+        del a[2 : 1 << 333]
+        self.assertEqual(a, [0, 1])
+
+    def test_delslice_with_negative_large_stop_deletes_nothing(self):
+        a = [0, 1, 2, 3, 4]
+        del a[2 : -(1 << 333)]
+        self.assertEqual(a, [0, 1, 2, 3, 4])
+
+    def test_delslice_with_true_stop_deletes_to_one(self):
+        a = [0, 1, 2, 3, 4]
+        del a[:True]
+        self.assertEqual(a, [1, 2, 3, 4])
+
+    def test_delslice_with_false_stop_deletes_to_zero(self):
+        a = [0, 1, 2, 3, 4]
+        del a[:False]
+        self.assertEqual(a, [0, 1, 2, 3, 4])
+
     def test_getitem_with_int_subclass_does_not_call_dunder_index(self):
         class C(int):
             def __index__(self):
