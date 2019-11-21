@@ -2283,6 +2283,7 @@ _structmodule_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(_structmodulestate(module)->PyStructType);
     Py_VISIT(_structmodulestate(module)->unpackiter_type);
     Py_VISIT(_structmodulestate(module)->StructError);
+    Py_VISIT(_structmodulestate(module)->cache);
     return 0;
 }
 
@@ -2292,6 +2293,7 @@ _structmodule_clear(PyObject *module)
     Py_CLEAR(_structmodulestate(module)->PyStructType);
     Py_CLEAR(_structmodulestate(module)->unpackiter_type);
     Py_CLEAR(_structmodulestate(module)->StructError);
+    Py_CLEAR(_structmodulestate(module)->cache);
     return 0;
 }
 
