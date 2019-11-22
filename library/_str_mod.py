@@ -102,7 +102,7 @@ def format(string: str, args) -> str:  # noqa: C901
         while True:
             c = it.__next__()
             idx += 1
-            if c is not "%":  # noqa: P202
+            if c is not "%":  # noqa: F632
                 continue
 
             _strarray_iadd(result, string[begin:idx])
@@ -112,7 +112,7 @@ def format(string: str, args) -> str:  # noqa: C901
             idx += 1
 
             # Parse named reference.
-            if c is "(":  # noqa: P202
+            if c is "(":  # noqa: F632
                 if args_dict is None:
                     if (
                         _tuple_check(args)
@@ -127,9 +127,9 @@ def format(string: str, args) -> str:  # noqa: C901
                 while pcount > 0:
                     c = it.__next__()
                     idx += 1
-                    if c is ")":  # noqa: P202
+                    if c is ")":  # noqa: F632
                         pcount -= 1
-                    elif c is "(":  # noqa: P202
+                    elif c is "(":  # noqa: F632
                         pcount += 1
                 key = string[keystart:idx]
 
@@ -148,16 +148,16 @@ def format(string: str, args) -> str:  # noqa: C901
             positive_sign = ""
             use_alt_formatting = False
             while True:
-                if c is "-":  # noqa: P202
+                if c is "-":  # noqa: F632
                     flags |= _FLAG_LJUST
-                elif c is "+":  # noqa: P202
+                elif c is "+":  # noqa: F632
                     positive_sign = "+"
-                elif c is " ":  # noqa: P202
-                    if positive_sign is not "+":  # noqa: P202
+                elif c is " ":  # noqa: F632
+                    if positive_sign is not "+":  # noqa: F632
                         positive_sign = " "
-                elif c is "#":  # noqa: P202
+                elif c is "#":  # noqa: F632
                     use_alt_formatting = True
-                elif c is "0":  # noqa: P202
+                elif c is "0":  # noqa: F632
                     flags |= _FLAG_ZERO
                 else:
                     break
@@ -166,7 +166,7 @@ def format(string: str, args) -> str:  # noqa: C901
 
             # Parse width.
             width = -1
-            if c is "*":  # noqa: P202
+            if c is "*":  # noqa: F632
                 if arg_idx >= args_len:
                     raise TypeError("not enough arguments for format string")
                 arg = args_tuple[arg_idx]
@@ -191,11 +191,11 @@ def format(string: str, args) -> str:  # noqa: C901
 
             # Parse precision.
             precision = -1
-            if c is ".":  # noqa: P202
+            if c is ".":  # noqa: F632
                 precision = 0
                 c = it.__next__()
                 idx += 1
-                if c is "*":  # noqa: P202
+                if c is "*":  # noqa: F632
                     if arg_idx >= args_len:
                         raise TypeError("not enough arguments for format string")
                     arg = args_tuple[arg_idx]
@@ -215,24 +215,24 @@ def format(string: str, args) -> str:  # noqa: C901
                         precision *= 10
 
             # Parse and process format.
-            if c is not "%":  # noqa: P202
+            if c is not "%":  # noqa: F632
                 if arg_idx >= args_len:
                     raise TypeError("not enough arguments for format string")
                 arg = args_tuple[arg_idx]
                 arg_idx += 1
 
-            if c is "%":  # noqa: P202
+            if c is "%":  # noqa: F632
                 _strarray_iadd(result, "%")
-            elif c is "s":  # noqa: P202
+            elif c is "s":  # noqa: F632
                 fragment = str(arg)
                 _format_string(result, flags, width, precision, fragment)
-            elif c is "r":  # noqa: P202
+            elif c is "r":  # noqa: F632
                 fragment = repr(arg)
                 _format_string(result, flags, width, precision, fragment)
-            elif c is "a":  # noqa: P202
+            elif c is "a":  # noqa: F632
                 fragment = ascii(arg)
                 _format_string(result, flags, width, precision, fragment)
-            elif c is "c":  # noqa: P202
+            elif c is "c":  # noqa: F632
                 if _str_check(arg):
                     if _str_len(arg) != 1:
                         raise TypeError("%c requires int or char")
@@ -249,7 +249,7 @@ def format(string: str, args) -> str:  # noqa: C901
                     except Exception:
                         raise TypeError("%c requires int or char")
                 _format_string(result, flags, width, precision, fragment)
-            elif c is "d" or c is "i" or c is "u":  # noqa: P202
+            elif c is "d" or c is "i" or c is "u":  # noqa: F632
                 try:
                     if not _number_check(arg):
                         raise TypeError()
@@ -264,7 +264,7 @@ def format(string: str, args) -> str:  # noqa: C901
                     sign = positive_sign
                 fragment = int.__str__(value)
                 _format_number(result, flags, width, precision, sign, "", fragment)
-            elif c is "x":  # noqa: P202
+            elif c is "x":  # noqa: F632
                 try:
                     if not _number_check(arg):
                         raise TypeError()
@@ -280,7 +280,7 @@ def format(string: str, args) -> str:  # noqa: C901
                 prefix = "0x" if use_alt_formatting else ""
                 fragment = _int_format_hexadecimal(value)
                 _format_number(result, flags, width, precision, sign, prefix, fragment)
-            elif c is "X":  # noqa: P202
+            elif c is "X":  # noqa: F632
                 try:
                     if not _number_check(arg):
                         raise TypeError()
@@ -296,7 +296,7 @@ def format(string: str, args) -> str:  # noqa: C901
                 prefix = "0X" if use_alt_formatting else ""
                 fragment = _int_format_hexadecimal_upcase(value)
                 _format_number(result, flags, width, precision, sign, prefix, fragment)
-            elif c is "o":  # noqa: P202
+            elif c is "o":  # noqa: F632
                 try:
                     if not _number_check(arg):
                         raise TypeError()
