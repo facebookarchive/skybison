@@ -5460,6 +5460,16 @@ class ModuleTests(unittest.TestCase):
             str(context.exception), "module.__new__(C): C is not a subtype of module"
         )
 
+    def test_non_module_with_module_getattribute(self):
+        from types import ModuleType
+
+        class C:
+            __getattribute__ = ModuleType.__getattribute__
+
+        c = C()
+        with self.assertRaises(TypeError):
+            c.foo
+
 
 class ModuleProxyTests(unittest.TestCase):
     def setUp(self):
@@ -9792,6 +9802,14 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(m.attr, "foo")
         m.attr = "bar"
         self.assertEqual(m.attr, "bar")
+
+    def test_non_type_with_type_getattribute(self):
+        class C:
+            __getattribute__ = type.__getattribute__
+
+        c = C()
+        with self.assertRaises(TypeError):
+            c.foo
 
 
 class TypeProxyTests(unittest.TestCase):

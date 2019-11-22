@@ -2606,7 +2606,8 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread,
     *kind = kInstance;
     return *result;
   }
-  if (dunder_getattribute == runtime->moduleDunderGetattribute()) {
+  if (dunder_getattribute == runtime->moduleDunderGetattribute() &&
+      runtime->isInstanceOfModule(*receiver)) {
     Module module(&scope, *receiver);
     Object result(&scope, moduleGetAttributeSetLocation(thread, module, name,
                                                         location_out));
@@ -2622,7 +2623,8 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread,
     }
     return *result;
   }
-  if (dunder_getattribute == runtime->typeDunderGetattribute()) {
+  if (dunder_getattribute == runtime->typeDunderGetattribute() &&
+      runtime->isInstanceOfType(*receiver)) {
     Type object_as_type(&scope, *receiver);
     Object result(&scope, typeGetAttributeSetLocation(thread, object_as_type,
                                                       name, location_out));
