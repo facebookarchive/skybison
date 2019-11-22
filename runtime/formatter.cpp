@@ -164,7 +164,7 @@ RawObject parseFormatSpec(Thread* thread, const Str& spec, int32_t default_type,
         if (result->thousands_separator == '_') {
           break;
         }
-        /* fall through */
+        FALLTHROUGH;
       default:
         if (32 < result->type && result->type <= kMaxASCII) {
           return thread->raiseWithFmt(

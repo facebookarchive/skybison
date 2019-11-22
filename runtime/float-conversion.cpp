@@ -466,7 +466,7 @@ char* formatFloat(double value, char format_code, int precision, bool skip_sign,
     case 'E':
       float_strings = kUcFloatStrings;
       format_code = 'e';
-      // Fall through.
+      FALLTHROUGH;
     case 'e':
       mode = 2;
       precision++;
@@ -476,7 +476,7 @@ char* formatFloat(double value, char format_code, int precision, bool skip_sign,
     case 'F':
       float_strings = kUcFloatStrings;
       format_code = 'f';
-      // Fall through.
+      FALLTHROUGH;
     case 'f':
       mode = 3;
       break;
@@ -485,7 +485,7 @@ char* formatFloat(double value, char format_code, int precision, bool skip_sign,
     case 'G':
       float_strings = kUcFloatStrings;
       format_code = 'g';
-      // Fall through.
+      FALLTHROUGH;
     case 'g':
       mode = 2;
       // precision 0 makes no sense for 'g' format; interpret as 1
@@ -1663,7 +1663,7 @@ static double strtod(const char* s00, char** se) {
   switch (c) {
     case '-':
       sign = true;
-      // fall through
+      FALLTHROUGH;
     case '+':
       c = *++s;
   }
@@ -2654,7 +2654,7 @@ static char* dtoa(double dd, int mode, int ndigits, int* decpt, int* sign,
       break;
     case 2:
       leftright = 0;
-      // fall through
+      FALLTHROUGH;
     case 4:
       if (ndigits <= 0) {
         ndigits = 1;
@@ -2663,7 +2663,7 @@ static char* dtoa(double dd, int mode, int ndigits, int* decpt, int* sign,
       break;
     case 3:
       leftright = 0;
-      // fall through
+      FALLTHROUGH;
     case 5:
       i = ndigits + k + 1;
       ilim = i;

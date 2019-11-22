@@ -138,6 +138,16 @@ inline D bit_cast(const S& src) {
 
 #define ALWAYS_INLINE inline __attribute__((always_inline))
 
+#if defined(__clang__)
+#define FALLTHROUGH [[clang::fallthrough]]
+#elif defined(__GNUC__)
+#define FALLTHROUGH __attribute__((fallthrough))
+#else
+#define FALLTHROUGH                                                            \
+  do {                                                                         \
+  } while (0)
+#endif
+
 #define NEVER_INLINE __attribute__((noinline))
 
 #define USED __attribute__((used))

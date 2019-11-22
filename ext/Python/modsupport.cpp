@@ -266,9 +266,7 @@ PyObject* makeValueFromFormat(const char** p_format, std::va_list* p_va,
         if (sizeof(size_t) != sizeof(long)) {
           return PyLong_FromSsize_t(va_arg(*p_va, Py_ssize_t));
         }
-        // fall through
-        // Falls through from 'n' to 'l' if Py_ssize_t is long (above comment
-        // avoids compiler warning)
+        FALLTHROUGH;
       case 'l':
         return PyLong_FromLong(va_arg(*p_va, long));
 
