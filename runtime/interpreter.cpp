@@ -2667,14 +2667,20 @@ Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
   Tuple caches(&scope, frame->caches());
   Function dependent(&scope, frame->function());
   if (kind == LoadAttrKind::kInstance) {
-    word pc = frame->virtualPC() - kCodeUnitSize;
-    RawMutableBytes bytecode = frame->bytecode();
-    if (bytecode.byteAt(pc) == LOAD_ATTR_CACHED &&
-        icIsCacheEmpty(caches, arg) && location.isProperty()) {
-      bytecode.byteAtPut(pc, LOAD_ATTR_INSTANCE_PROPERTY);
+    if (location.isProperty()) {
+      // Property can be handled only for LOAD_ATTR_INSTANCE_PROPERTY.
+      word pc = frame->virtualPC() - kCodeUnitSize;
+      RawMutableBytes bytecode = frame->bytecode();
+      if (bytecode.byteAt(pc) == LOAD_ATTR_CACHED &&
+          icIsCacheEmpty(caches, arg)) {
+        bytecode.byteAtPut(pc, LOAD_ATTR_INSTANCE_PROPERTY);
+        icUpdateAttr(thread, caches, arg, receiver.layoutId(), location, name,
+                     dependent);
+      }
+    } else {
+      icUpdateAttr(thread, caches, arg, receiver.layoutId(), location, name,
+                   dependent);
     }
-    icUpdateAttr(thread, caches, arg, receiver.layoutId(), location, name,
-                 dependent);
   } else if (kind == LoadAttrKind::kModule) {
     word pc = frame->virtualPC() - kCodeUnitSize;
     RawMutableBytes bytecode = frame->bytecode();

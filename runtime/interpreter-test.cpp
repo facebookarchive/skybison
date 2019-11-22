@@ -4902,6 +4902,29 @@ c = C()
                       70));
 }
 
+TEST_F(InterpreterTest, LoadMethodCachedDoesNotCacheProperty) {
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
+class C:
+  @property
+  def foo(self): return lambda: 1234
+
+def call_foo(c):
+  return c.foo()
+
+c = C()
+call_foo(c)
+)")
+                   .isError());
+  Function call_foo(&scope, mainModuleAt(&runtime_, "call_foo"));
+  MutableBytes bytecode(&scope, call_foo.rewrittenBytecode());
+  ASSERT_EQ(bytecode.byteAt(2), LOAD_METHOD_CACHED);
+  ASSERT_EQ(bytecode.byteAt(4), CALL_METHOD);
+
+  Tuple caches(&scope, call_foo.caches());
+  EXPECT_TRUE(icIsCacheEmpty(caches, bytecode.byteAt(3)));
+}
+
 TEST_F(InterpreterTest, DoLoadImmediate) {
   HandleScope scope(thread_);
   EXPECT_FALSE(runFromCStr(&runtime_, R"(
