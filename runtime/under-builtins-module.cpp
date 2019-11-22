@@ -192,6 +192,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderMemoryviewGuard, underMemoryviewGuard},
     {SymbolId::kUnderMemoryviewItemsize, underMemoryviewItemsize},
     {SymbolId::kUnderMemoryviewNbytes, underMemoryviewNbytes},
+    {SymbolId::kUnderMemoryviewSetitem, underMemoryviewSetitem},
     {SymbolId::kUnderModuleDir, underModuleDir},
     {SymbolId::kUnderModuleProxy, underModuleProxy},
     {SymbolId::kUnderModuleProxyCheck, underModuleProxyCheck},
@@ -2690,6 +2691,38 @@ RawObject UnderBuiltinsModule::underMemoryviewNbytes(Thread* thread,
   }
   MemoryView self(&scope, *self_obj);
   return SmallInt::fromWord(self.length());
+}
+
+RawObject UnderBuiltinsModule::underMemoryviewSetitem(Thread* thread,
+                                                      Frame* frame,
+                                                      word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isMemoryView()) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kMemoryView);
+  }
+  MemoryView self(&scope, *self_obj);
+  if (self.readOnly()) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "cannot modify read-only memory");
+  }
+  Object index_obj(&scope, args.get(1));
+  if (!index_obj.isInt()) return Unbound::object();
+  Int index_int(&scope, *index_obj);
+  word index = index_int.asWord();
+  word item_size = SmallInt::cast(memoryviewItemsize(thread, self)).value();
+  word byte_index = (index < 0 ? -index : index) * item_size;
+  if (byte_index + item_size > self.length()) {
+    return thread->raiseWithFmt(LayoutId::kIndexError, "index out of bounds");
+  }
+  if (index < 0) {
+    byte_index = self.length() - byte_index;
+  }
+
+  Object value(&scope, args.get(2));
+  Int bytes(&scope, SmallInt::fromWord(byte_index));
+  return memoryviewSetitem(thread, self, bytes, value);
 }
 
 RawObject UnderBuiltinsModule::underModuleDir(Thread* thread, Frame* frame,

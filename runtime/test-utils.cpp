@@ -290,6 +290,9 @@ RawObject newMemoryView(View<byte> bytes, const char* format,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Bytes bytes_obj(&scope, runtime->newBytesWithAll(bytes));
+  if (read_only == ReadOnly::ReadWrite) {
+    bytes_obj = runtime->mutableBytesFromBytes(thread, bytes_obj);
+  }
   MemoryView result(
       &scope,
       runtime->newMemoryView(thread, bytes_obj, bytes_obj.length(), read_only));

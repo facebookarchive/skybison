@@ -1,11 +1,15 @@
 #include "memoryview-builtins.h"
 
+#include "bytes-builtins.h"
+#include "float-builtins.h"
 #include "int-builtins.h"
 
 namespace py {
 
 const BuiltinAttribute MemoryViewBuiltins::kAttributes[] = {
     {SymbolId::kFormat, RawMemoryView::kFormatOffset,
+     AttributeFlags::kReadOnly},
+    {SymbolId::kReadonly, RawMemoryView::kReadOnlyOffset,
      AttributeFlags::kReadOnly},
     {SymbolId::kSentinelId, -1},
 };
@@ -69,6 +73,226 @@ RawObject memoryviewItemsize(Thread* thread, const MemoryView& view) {
   word item_size = itemSize(format_c);
   DCHECK(item_size > 0, "invalid memoryview");
   return SmallInt::fromWord(item_size);
+}
+
+static RawObject raiseInvalidValueError(Thread* thread, char format) {
+  return thread->raiseWithFmt(LayoutId::kValueError,
+                              "memoryview: invalid value for format '%c'",
+                              format);
+}
+
+static RawObject raiseInvalidTypeError(Thread* thread, char format) {
+  return thread->raiseWithFmt(
+      LayoutId::kTypeError, "memoryview: invalid type for format '%c'", format);
+}
+
+static bool isIntFormat(char format) {
+  switch (format) {
+    case 'b':
+      FALLTHROUGH;
+    case 'h':
+      FALLTHROUGH;
+    case 'i':
+      FALLTHROUGH;
+    case 'l':
+      FALLTHROUGH;
+    case 'B':
+      FALLTHROUGH;
+    case 'H':
+      FALLTHROUGH;
+    case 'I':
+      FALLTHROUGH;
+    case 'L':
+      FALLTHROUGH;
+    case 'q':
+      FALLTHROUGH;
+    case 'Q':
+      FALLTHROUGH;
+    case 'n':
+      FALLTHROUGH;
+    case 'N':
+      FALLTHROUGH;
+    case 'P':
+      return true;
+    default:
+      return false;
+  }
+}
+
+static RawObject packObject(Thread* thread, uword address, char format,
+                            word index, RawObject value) {
+  byte* dst = reinterpret_cast<byte*>(address + index);
+  if (isIntFormat(format)) {
+    if (!value.isInt()) return Unbound::object();
+    switch (format) {
+      case 'b': {
+        OptInt<char> opt_val = RawInt::cast(value).asInt<char>();
+        if (opt_val.error != CastError::None) {
+          return raiseInvalidValueError(thread, format);
+        }
+        std::memcpy(dst, &opt_val.value, sizeof(opt_val.value));
+        break;
+      }
+      case 'h': {
+        OptInt<short> opt_val = RawInt::cast(value).asInt<short>();
+        if (opt_val.error != CastError::None) {
+          return raiseInvalidValueError(thread, format);
+        }
+        std::memcpy(dst, &opt_val.value, sizeof(opt_val.value));
+        break;
+      }
+      case 'i': {
+        OptInt<int> opt_val = RawInt::cast(value).asInt<int>();
+        if (opt_val.error != CastError::None) {
+          return raiseInvalidValueError(thread, format);
+        }
+        std::memcpy(dst, &opt_val.value, sizeof(opt_val.value));
+        break;
+      }
+      case 'l': {
+        OptInt<long> opt_val = RawInt::cast(value).asInt<long>();
+        if (opt_val.error != CastError::None) {
+          return raiseInvalidValueError(thread, format);
+        }
+        std::memcpy(dst, &opt_val.value, sizeof(opt_val.value));
+        break;
+      }
+      case 'B': {
+        OptInt<unsigned char> opt_val =
+            RawInt::cast(value).asInt<unsigned char>();
+        if (opt_val.error != CastError::None) {
+          return raiseInvalidValueError(thread, format);
+        }
+        std::memcpy(dst, &opt_val.value, sizeof(opt_val.value));
+        break;
+      }
+      case 'H': {
+        OptInt<unsigned short> opt_val =
+            RawInt::cast(value).asInt<unsigned short>();
+        if (opt_val.error != CastError::None) {
+          return raiseInvalidValueError(thread, format);
+        }
+        std::memcpy(dst, &opt_val.value, sizeof(opt_val.value));
+        break;
+      }
+      case 'I': {
+        OptInt<unsigned int> opt_val =
+            RawInt::cast(value).asInt<unsigned int>();
+        if (opt_val.error != CastError::None) {
+          return raiseInvalidValueError(thread, format);
+        }
+        std::memcpy(dst, &opt_val.value, sizeof(opt_val.value));
+        break;
+      }
+      case 'L': {
+        OptInt<unsigned long> opt_val =
+            RawInt::cast(value).asInt<unsigned long>();
+        if (opt_val.error != CastError::None) {
+          return raiseInvalidValueError(thread, format);
+        }
+        std::memcpy(dst, &opt_val.value, sizeof(opt_val.value));
+        break;
+      }
+      case 'q': {
+        OptInt<long long> opt_val = RawInt::cast(value).asInt<long long>();
+        if (opt_val.error != CastError::None) {
+          return raiseInvalidValueError(thread, format);
+        }
+        std::memcpy(dst, &opt_val.value, sizeof(opt_val.value));
+        break;
+      }
+      case 'Q': {
+        OptInt<unsigned long long> opt_val =
+            RawInt::cast(value).asInt<unsigned long long>();
+        if (opt_val.error != CastError::None) {
+          return raiseInvalidValueError(thread, format);
+        }
+        std::memcpy(dst, &opt_val.value, sizeof(opt_val.value));
+        break;
+      }
+      case 'n': {
+        OptInt<ssize_t> opt_val = RawInt::cast(value).asInt<ssize_t>();
+        if (opt_val.error != CastError::None) {
+          return raiseInvalidValueError(thread, format);
+        }
+        std::memcpy(dst, &opt_val.value, sizeof(opt_val.value));
+        break;
+      }
+      case 'N': {
+        OptInt<size_t> opt_val = RawInt::cast(value).asInt<size_t>();
+        if (opt_val.error != CastError::None) {
+          return raiseInvalidValueError(thread, format);
+        }
+        std::memcpy(dst, &opt_val.value, sizeof(opt_val.value));
+        break;
+      }
+      case 'P': {
+        OptInt<uintptr_t> opt_val = RawInt::cast(value).asInt<uintptr_t>();
+        if (opt_val.error != CastError::None) {
+          return raiseInvalidValueError(thread, format);
+        }
+        std::memcpy(dst, &opt_val.value, sizeof(opt_val.value));
+        break;
+      }
+    }
+    return NoneType::object();
+  }
+
+  switch (format) {
+    case 'f': {
+      if (!value.isFloat()) return Unbound::object();
+      float value_float = Float::cast(floatUnderlying(value)).value();
+      std::memcpy(dst, &value_float, sizeof(value_float));
+      return NoneType::object();
+    }
+
+    case 'd': {
+      if (!value.isFloat()) return Unbound::object();
+      double value_double = Float::cast(floatUnderlying(value)).value();
+      std::memcpy(dst, &value_double, sizeof(value_double));
+      return NoneType::object();
+    }
+
+    case 'c': {
+      if (!value.isBytes()) return raiseInvalidTypeError(thread, format);
+      RawBytes value_bytes = bytesUnderlying(value);
+      if (value_bytes.length() != 1) {
+        return raiseInvalidValueError(thread, format);
+      }
+      *dst = value_bytes.byteAt(0);
+      return NoneType::object();
+    }
+
+    case '?': {
+      if (!value.isBool()) return Unbound::object();
+      bool value_bool = Bool::cast(value).value();
+      std::memcpy(dst, &value_bool, sizeof(value_bool));
+      return NoneType::object();
+    }
+    default:
+      UNREACHABLE("invalid format");
+  }
+  return NoneType::object();
+}
+
+RawObject memoryviewSetitem(Thread* thread, const MemoryView& view,
+                            const Int& index, const Object& value) {
+  HandleScope scope(thread);
+  Object buffer(&scope, view.buffer());
+  Str format(&scope, view.format());
+  char fmt = formatChar(format);
+  // TODO(T58046846): Replace DCHECK(char > 0) checks
+  DCHECK(fmt > 0, "invalid memoryview");
+  word byte_index = index.asWord();
+  DCHECK_INDEX(byte_index,
+               view.length() - static_cast<word>(itemSize(fmt) - 1));
+  if (buffer.isMutableBytes()) {
+    return packObject(thread, LargeBytes::cast(*buffer).address(), fmt,
+                      byte_index, *value);
+  }
+  DCHECK(buffer.isInt(), "memoryview.__setitem__ with non bytes/memory");
+  return packObject(thread, Int::cast(*buffer).asInt<uword>().value, fmt,
+                    byte_index, *value);
 }
 
 static RawObject unpackObject(Thread* thread, uword address, word length,

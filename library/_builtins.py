@@ -613,6 +613,11 @@ def _memoryview_nbytes(self):
 
 
 @_patch
+def _memoryview_setitem(self, key, value):
+    pass
+
+
+@_patch
 def _module_dir(module):
     pass
 

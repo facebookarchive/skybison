@@ -6,6 +6,8 @@
 namespace py {
 
 RawObject memoryviewItemsize(Thread* thread, const MemoryView& view);
+RawObject memoryviewSetitem(Thread* thread, const MemoryView& view,
+                            const Int& index, const Object& value);
 
 class MemoryViewBuiltins
     : public Builtins<MemoryViewBuiltins, SymbolId::kMemoryView,

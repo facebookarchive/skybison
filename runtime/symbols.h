@@ -311,6 +311,7 @@ class Runtime;
   V(UnderMemoryviewGuard, "_memoryview_guard")                                 \
   V(UnderMemoryviewItemsize, "_memoryview_itemsize")                           \
   V(UnderMemoryviewNbytes, "_memoryview_nbytes")                               \
+  V(UnderMemoryviewSetitem, "_memoryview_setitem")                             \
   V(UnderModuleDir, "_module_dir")                                             \
   V(UnderModuleRepr, "_module_repr")                                           \
   V(UnderModuleProxy, "_module_proxy")                                         \
@@ -795,6 +796,7 @@ class Runtime;
   V(Range, "range")                                                            \
   V(RangeIterator, "range_iterator")                                           \
   V(Read, "read")                                                              \
+  V(Readonly, "readonly")                                                      \
   V(Reason, "reason")                                                          \
   V(RecursionError, "RecursionError")                                          \
   V(Ref, "ref")                                                                \

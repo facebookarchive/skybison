@@ -5333,6 +5333,39 @@ class MemoryviewTests(unittest.TestCase):
         view = memoryview(b"foobar")
         view.release()
 
+    def test_setitem_with_non_memoryview_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            memoryview.__setitem__(None, 1, 1)
+        self.assertIn("requires a 'memoryview' object", str(context.exception))
+
+    def test_setitem_with_bytes_memoryview_raises_type_error(self):
+        view = memoryview(b"foobar")
+        with self.assertRaises(TypeError) as context:
+            view[0] = 1
+        self.assertIn("cannot modify read-only memory", str(context.exception))
+
+    def test_setitem_with_too_big_index_raises_index_error(self):
+        view = memoryview(bytearray(b"12345678")).cast("I")
+        with self.assertRaises(IndexError) as context:
+            view[2] = None
+        self.assertIn("index out of bounds", str(context.exception))
+
+    def test_setitem_with_negative_index(self):
+        view = memoryview(bytearray(b"hello"))
+        m = ord("m")
+        view[-2] = m
+        self.assertEqual(view[3], m)
+
+    def test_setitem_with_class_with_index(self):
+        class IndSet:
+            def __index__(self):
+                return 0
+
+        view = memoryview(bytearray(b"hello"))
+        m = ord("m")
+        view[IndSet()] = m
+        self.assertEqual(view[0], m)
+
     def test_tolist_with_non_memoryview_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             memoryview.tolist(None)

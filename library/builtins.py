@@ -119,6 +119,7 @@ _mappingproxy_set_mapping = _mappingproxy_set_mapping  # noqa: F821
 _memoryview_guard = _memoryview_guard  # noqa: F821
 _memoryview_itemsize = _memoryview_itemsize  # noqa: F821
 _memoryview_nbytes = _memoryview_nbytes  # noqa: F821
+_memoryview_setitem = _memoryview_setitem  # noqa: F821
 _module_dir = _module_dir  # noqa: F821
 _module_proxy = _module_proxy  # noqa: F821
 _module_proxy_check = _module_proxy_check  # noqa: F821
@@ -3759,6 +3760,31 @@ class memoryview(bootstrap=True):
 
     def __new__(cls, object):
         pass
+
+    def __setitem__(self, key, value):
+        result = _memoryview_setitem(self, key, value)
+        if result is not _Unbound:
+            return result
+        if _int_check(key) or _object_type_hasattr(key, "__index__"):
+            key = _index(key)
+            fmt = self.format
+            if fmt == "f" or fmt == "d":
+                try:
+                    val_float = float(value)
+                except TypeError:
+                    raise TypeError(f"memoryview: invalid type for format '{fmt}'")
+                return _memoryview_setitem(self, key, val_float)
+            elif fmt == "?":
+                return _memoryview_setitem(self, key, bool(value))
+            else:
+                try:
+                    val_int = _index(value)
+                except TypeError:
+                    raise TypeError(f"memoryview: invalid type for format '{fmt}'")
+                return _memoryview_setitem(self, key, val_int)
+        if _slice_check(key):
+            _unimplemented()
+        raise TypeError("memoryview: invalid slice key")
 
     def cast(self, format: str) -> memoryview:
         pass
