@@ -2362,19 +2362,14 @@ TEST_F(UnicodeExtensionApiTest,
        DecodeUTF8SurrogateEscapeWithEmptyStringReturnsEmptyString) {
   wchar_t* wpath = _Py_DecodeUTF8_surrogateescape("", 0);
   EXPECT_STREQ(wpath, L"");
+  PyMem_RawFree(wpath);
 }
 
 TEST_F(UnicodeExtensionApiTest, DecodeUTF8SurrogateEscapeReturnsWideString) {
   const char* path = "/foo/bar/bat";
   wchar_t* wpath = _Py_DecodeUTF8_surrogateescape(path, std::strlen(path));
   EXPECT_STREQ(wpath, L"/foo/bar/bat");
-}
-
-TEST_F(UnicodeExtensionApiTest,
-       DecodeUTF8SurrogateEscapeReturnsEscapedNonASCII) {
-  const char* path = "/nonchar/\x82/hello";
-  wchar_t* wpath = _Py_DecodeUTF8_surrogateescape(path, std::strlen(path));
-  EXPECT_STREQ(wpath, L"/nonchar/\xDC82/hello");
+  PyMem_RawFree(wpath);
 }
 
 #endif  // __APPLE__ or __ANDROID__

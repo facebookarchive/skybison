@@ -2109,27 +2109,18 @@ PY_EXPORT PyObject* _PyUnicode_AsUTF8String(PyObject* unicode,
 PY_EXPORT wchar_t* _Py_DecodeUTF8_surrogateescape(const char* c_str,
                                                   Py_ssize_t size) {
   DCHECK(c_str != nullptr, "c_str cannot be null");
-
-  Thread* thread = Thread::current();
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-  Object bytes(&scope, runtime->newBytesWithAll(View<byte>(
-                           reinterpret_cast<const byte*>(c_str), size)));
-  Object errors(&scope, runtime->symbols()->Surrogateescape());
-  Object is_final(&scope, Bool::trueObj());
-  Object result_obj(&scope, thread->invokeFunction3(SymbolId::kUnderCodecs,
-                                                    SymbolId::kUtf8Decode,
-                                                    bytes, errors, is_final));
-  if (result_obj.isError()) {
-    if (result_obj.isErrorNotFound()) {
-      thread->raiseWithFmt(LayoutId::kSystemError,
-                           "could not call _codecs._utf_8_decode");
-    }
-    return nullptr;
+  wchar_t* wc_str =
+      static_cast<wchar_t*>(PyMem_RawMalloc((size + 1) * sizeof(wchar_t)));
+  for (int i = 0; i < size; i++) {
+    char ch = c_str[i];
+    // TODO(T57811636): Support UTF-8 arguments on macOS (not a priority right
+    // now). We don't have UTF-8 decoding machinery that is decoupled from the
+    // runtime
+    CHECK(!(ch & 0x80), "UTF-8 argument support unimplemented");
+    wc_str[i] = static_cast<wchar_t>(ch);
   }
-  Tuple result(&scope, *result_obj);
-  Str str(&scope, result.at(0));
-  return unicodeAsWideChar(thread, str);
+  wc_str[size] = '\0';
+  return wc_str;
 }
 
 }  // namespace py
