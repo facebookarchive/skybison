@@ -146,36 +146,13 @@ void Scavenger::processDelayedReferences() {
 }
 
 void Scavenger::processFinalizableReferences() {
-  for (ListEntry *entry = runtime_->trackedNativeObjects(), *next;
-       entry != nullptr; entry = next) {
-    next = entry->next;
-    ApiHandle* native_instance = reinterpret_cast<ApiHandle*>(entry + 1);
-    RawObject native_proxy = native_instance->asObject();
-    if (native_instance->refcnt() > 1 ||
-        HeapObject::cast(native_proxy).isForwarding()) {
-      // The extension object is being kept alive by a reference from an
-      // extension object or by a managed reference. Blacken the reference.
-      scavengePointer(
-          reinterpret_cast<RawObject*>(&native_instance->reference_));
-      continue;
-    }
-
-    // Deallocate immediately or add to finalization queue
-    RawType type = Type::cast(runtime_->typeOf(native_instance->asObject()));
-    if (!type.hasFlag(Type::Flag::kHasDefaultDealloc)) {
-      scavengePointer(
-          reinterpret_cast<RawObject*>(&native_instance->reference_));
-      RawNativeProxy::enqueue(native_instance->asObject(),
-                              runtime_->finalizableReferences());
-      continue;
-    }
-    auto func = reinterpret_cast<destructor>(
-        Int::cast(type.slot(Type::Slot::kDealloc)).asWord());
-    (*func)(native_instance);
-  }
+  processNativeList(runtime_->trackedNativeObjects());
   // TODO(T55208267): Merge GC extension instances to the native extension list
-  for (ListEntry *entry = runtime_->trackedNativeGcObjects(), *next;
-       entry != nullptr; entry = next) {
+  processNativeList(runtime_->trackedNativeGcObjects());
+}
+
+void Scavenger::processNativeList(ListEntry* entry) {
+  for (ListEntry* next; entry != nullptr; entry = next) {
     next = entry->next;
     ApiHandle* native_instance = reinterpret_cast<ApiHandle*>(entry + 1);
     RawObject native_proxy = native_instance->asObject();
