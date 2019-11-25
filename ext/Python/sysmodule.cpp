@@ -4,6 +4,7 @@
 #include "cpython-data.h"
 #include "module-builtins.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "sys-module.h"
 
 namespace py {
@@ -82,9 +83,9 @@ PY_EXPORT void PySys_SetArgvEx(int argc, wchar_t** argv, int updatepath) {
     runtime->listAdd(thread, args, arg);
   } else {
     for (int i = 0; i < argc; i++) {
-      char* arg_cstr = Py_EncodeLocale(argv[i], nullptr);
-      arg = runtime->newStrFromCStr(arg_cstr);
-      PyMem_Free(arg_cstr);
+      RawObject result = newStrFromWideChar(thread, argv[i]);
+      CHECK(!result.isErrorException(), "Invalid unicode character in argv");
+      arg = result;
       runtime->listAdd(thread, args, arg);
     }
   }
