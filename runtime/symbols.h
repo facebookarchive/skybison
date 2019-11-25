@@ -361,6 +361,7 @@ class Runtime;
   V(UnderProperty, "_property")                                                \
   V(UnderPropertyIsAbstract, "_property_isabstract")                           \
   V(UnderPyObjectOffset, "_pyobject_offset")                                   \
+  V(UnderPythonPath, "_python_path")                                           \
   V(UnderRangeCheck, "_range_check")                                           \
   V(UnderRangeGuard, "_range_guard")                                           \
   V(UnderRangeLen, "_range_len")                                               \

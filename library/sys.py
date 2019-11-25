@@ -8,6 +8,7 @@ _base_dir = _base_dir  # noqa: F821
 _int_check = _int_check  # noqa: F821
 _os_write = _os_write  # noqa: F821
 _patch = _patch  # noqa: F821
+_python_path = _python_path  # noqa: F821
 _stderr_fd = _stderr_fd  # noqa: F821
 _stdout_fd = _stdout_fd  # noqa: F821
 _structseq_field = _structseq_field  # noqa: F821
@@ -187,7 +188,12 @@ meta_path = []
 
 
 # TODO(T42692043) Put the standard library into the python binary instead.
-path = ["", _base_dir + "/library", _base_dir + "/third-party/cpython/Lib"]
+path = [
+    "",
+    *_python_path,
+    _base_dir + "/library",
+    _base_dir + "/third-party/cpython/Lib",
+]
 
 
 path_hooks = []

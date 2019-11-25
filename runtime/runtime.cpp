@@ -2668,6 +2668,16 @@ void Runtime::createSysModule(Thread* thread) {
   Object base_dir(&scope, newStrFromCStr(PYRO_BASEDIR));
   moduleAtPutById(thread, module, SymbolId::kUnderBaseDir, base_dir);
 
+  List python_path(&scope, newList());
+  const char* python_path_cstr = std::getenv("PYTHONPATH");
+  if (python_path_cstr != nullptr) {
+    Str python_path_str(&scope, newStrFromCStr(python_path_cstr));
+    Str sep(&scope, newStrFromCStr(":"));
+    python_path = thread->invokeMethod2(python_path_str, SymbolId::kSplit, sep);
+    CHECK(!python_path.isError(), "Failed to calculate PYTHONPATH");
+  }
+  moduleAtPutById(thread, module, SymbolId::kUnderPythonPath, python_path);
+
   Object byteorder(
       &scope,
       newStrFromCStr(endian::native == endian::little ? "little" : "big"));
