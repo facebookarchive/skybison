@@ -543,6 +543,11 @@ PyInit__random(void)
         return NULL;
     }
 
+    m = PyState_FindModule(&_randommodule);
+    if (m != NULL) {
+        Py_INCREF(m);
+        return m;
+    }
     m = PyModule_Create(&_randommodule);
     if (m == NULL) {
         Py_DECREF(Random_Type);
@@ -568,6 +573,7 @@ PyInit__random(void)
     Py_DECREF(longval);
     _randomstate(m)->Long___abs__ = abs;
 
+    PyState_AddModule(m, &_randommodule);
     return m;
 
 fail:
