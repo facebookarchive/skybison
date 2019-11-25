@@ -1961,6 +1961,30 @@ class ContextManagerTests(unittest.TestCase):
 
 
 class CompileTests(unittest.TestCase):
+    def test_eval_str_with_left_whitespace_returns(self):
+        res = eval(" 1 + 1")
+        self.assertEqual(res, 2)
+
+    def test_eval_bytes_with_left_whitespace_returns(self):
+        res = eval(b" 1 + 1")  # noqa: P204
+        self.assertEqual(res, 2)
+
+    def test_eval_bytearray_with_left_whitespace_returns(self):
+        res = eval(bytearray(b" 1 + 1"))  # noqa: P204
+        self.assertEqual(res, 2)
+
+    def test_eval_str_with_right_whitespace_returns(self):
+        res = eval("1 + 1 ")
+        self.assertEqual(res, 2)
+
+    def test_eval_bytes_with_right_whitespace_returns(self):
+        res = eval(b"1 + 1 ")  # noqa: P204
+        self.assertEqual(res, 2)
+
+    def test_eval_bytearray_with_left_whitespace_returns(self):
+        res = eval(bytearray(b"1 + 1 "))  # noqa: P204
+        self.assertEqual(res, 2)
+
     def test_exec_mode_returns_code(self):
         from types import ModuleType
         from types import CodeType

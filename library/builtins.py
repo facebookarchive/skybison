@@ -2476,6 +2476,8 @@ def eval(source, globals=None, locals=None):
             flags = 0  # May have been called on a fresh stackframe.
         from _compile import compile
 
+        if _str_check(source) or _byteslike_check(source):
+            source = source.lstrip()
         code = compile(source, "<string>", "eval", flags, -1)
     if code.co_freevars:
         raise TypeError("'eval' code may not contain free variables")
