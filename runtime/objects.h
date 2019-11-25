@@ -1649,9 +1649,6 @@ class RawSlice : public RawInstance {
   RawObject stop() const;
   RawObject step() const;
 
-  // Returns the correct start, stop, and step word values from this slice
-  void unpack(word* start, word* stop, word* step) const;
-
   // Calculate the number of items that a slice addresses
   static word length(word start, word stop, word step);
 

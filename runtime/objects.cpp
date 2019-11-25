@@ -505,39 +505,6 @@ bool RawTuple::contains(RawObject object) const {
 
 // RawSlice
 
-void RawSlice::unpack(word* start, word* stop, word* step) const {
-  if (this->step().isNoneType()) {
-    *step = 1;
-  } else {
-    // TODO(T27897506): CPython uses _PyEval_SliceIndex to convert any
-    //       integer to eval any object into a valid index. For now, it'll
-    //       assume that all indices are SmallInts.
-    *step = RawSmallInt::cast(this->step()).value();
-    if (*step == 0) {
-      UNIMPLEMENTED("Throw ValueError. slice step cannot be zero");
-    }
-    // Here *step might be -RawSmallInt::kMaxValue-1; in this case we replace
-    // it with -RawSmallInt::kMaxValue.  This doesn't affect the semantics,
-    // and it guards against later undefined behaviour resulting from code that
-    // does "step = -step" as part of a slice reversal.
-    if (*step < -RawSmallInt::kMaxValue) {
-      *step = -RawSmallInt::kMaxValue;
-    }
-  }
-
-  if (this->start().isNoneType()) {
-    *start = (*step < 0) ? RawSmallInt::kMaxValue : 0;
-  } else {
-    *start = RawSmallInt::cast(this->start()).value();
-  }
-
-  if (this->stop().isNoneType()) {
-    *stop = (*step < 0) ? RawSmallInt::kMinValue : RawSmallInt::kMaxValue;
-  } else {
-    *stop = RawSmallInt::cast(this->stop()).value();
-  }
-}
-
 word RawSlice::length(word start, word stop, word step) {
   if (step < 0) {
     if (stop < start) {
