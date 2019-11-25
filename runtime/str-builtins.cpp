@@ -1,5 +1,7 @@
 #include "str-builtins.h"
 
+#include <cwchar>
+
 #include "formatter.h"
 #include "frame.h"
 #include "globals.h"
@@ -13,6 +15,26 @@
 #include "unicode.h"
 
 namespace py {
+
+RawObject newStrFromWideChar(Thread* thread, const wchar_t* wc_str) {
+  return newStrFromWideCharWithLength(thread, wc_str, std::wcslen(wc_str));
+}
+
+RawObject newStrFromWideCharWithLength(Thread* thread, const wchar_t* wc_str,
+                                       word length) {
+  static_assert(sizeof(*wc_str) * kBitsPerByte == 32,
+                "only 32bit wchar_t supported.");
+
+  for (word i = 0; i < length; ++i) {
+    if (wc_str[i] < 0 || wc_str[i] > kMaxUnicode) {
+      return thread->raiseWithFmt(LayoutId::kValueError,
+                                  "character is not in range");
+    }
+  }
+
+  return thread->runtime()->newStrFromUTF32(
+      View<int32_t>(reinterpret_cast<const int32_t*>(wc_str), length));
+}
 
 RawObject strCount(const Str& haystack, const Str& needle, word start,
                    word end) {

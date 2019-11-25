@@ -8,6 +8,10 @@
 
 namespace py {
 
+RawObject newStrFromWideChar(Thread* thread, const wchar_t* wc_str);
+RawObject newStrFromWideCharWithLength(Thread* thread, const wchar_t* wc_str,
+                                       word length);
+
 // Look for needle in haystack in the range [start, end]. Return the number of
 // occurrences found in that range. Note that start and end are code point
 // offsets, not byte offsets.

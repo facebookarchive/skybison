@@ -1657,25 +1657,12 @@ PY_EXPORT PyObject* PyUnicode_FromWideChar(const wchar_t* buffer,
     thread->raiseBadInternalCall();
     return nullptr;
   }
-  if (size == -1) {
-    size = std::wcslen(buffer);
-  }
 
-  if (sizeof(*buffer) * kBitsPerByte == 16) {
-    // TODO(T38042082): Implement newStrFromUTF16
-    UNIMPLEMENTED("newStrFromUTF16");
-  }
-  CHECK(sizeof(*buffer) * kBitsPerByte == 32,
-        "size of wchar_t should be either 16 or 32 bits");
-  for (Py_ssize_t i = 0; i < size; ++i) {
-    if (buffer[i] > kMaxUnicode) {
-      thread->raiseWithFmt(LayoutId::kValueError, "character is not in range");
-      return nullptr;
-    }
-  }
-  return ApiHandle::newReference(
-      thread, thread->runtime()->newStrFromUTF32(
-                  View<int32_t>(bit_cast<int32_t*>(buffer), size)));
+  RawObject result = size == -1
+                         ? newStrFromWideChar(thread, buffer)
+                         : newStrFromWideCharWithLength(thread, buffer, size);
+  return result.isErrorException() ? nullptr
+                                   : ApiHandle::newReference(thread, result);
 }
 
 PY_EXPORT const char* PyUnicode_GetDefaultEncoding() {
@@ -2020,22 +2007,10 @@ PY_EXPORT PyObject* PyUnicode_FromUnicode(const Py_UNICODE* code_units,
     UNIMPLEMENTED("_PyUnicode_New");
   }
 
-  if (sizeof(*code_units) * kBitsPerByte == 16) {
-    // TODO(T38042082): Implement newStrFromUTF16
-    UNIMPLEMENTED("newStrFromUTF16");
-  }
-  CHECK(sizeof(*code_units) * kBitsPerByte == 32,
-        "size of Py_UNICODE should be either 16 or 32 bits");
   Thread* thread = Thread::current();
-  for (Py_ssize_t i = 0; i < size; ++i) {
-    if (code_units[i] > kMaxUnicode) {
-      thread->raiseWithFmt(LayoutId::kValueError, "character is not in range");
-      return nullptr;
-    }
-  }
-  return ApiHandle::newReference(
-      thread, thread->runtime()->newStrFromUTF32(
-                  View<int32_t>(bit_cast<int32_t*>(code_units), size)));
+  RawObject result = newStrFromWideCharWithLength(thread, code_units, size);
+  return result.isErrorException() ? nullptr
+                                   : ApiHandle::newReference(thread, result);
 }
 
 PY_EXPORT int PyUnicode_KIND_Func(PyObject* obj) {
