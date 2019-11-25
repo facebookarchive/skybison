@@ -32,7 +32,6 @@ static py::RawObject runFile(py::Thread* thread, const char* filename) {
                            /*flags=*/0, /*optimize=*/-1);
   } else {
     // Interpret as .pyc and unmarshal
-    py::View<byte> data(reinterpret_cast<byte*>(buffer.get()), file_len);
     py::Marshal::Reader reader(&scope, runtime, data);
     if (reader.readPycHeader(filename_str).isErrorException()) {
       return py::Error::exception();
@@ -61,7 +60,7 @@ int main(int argc, const char** argv) {
   py::HandleScope scope(thread);
   py::Object result(&scope, runFile(thread, argv[1]));
   if (result.isErrorException()) {
-    py::printPendingException(py::Thread::current());
+    py::printPendingException(thread);
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;
