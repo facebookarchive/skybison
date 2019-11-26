@@ -641,6 +641,7 @@ pbkdf2_hmac(PyObject *self, PyObject *args, PyObject *kwdict)
     long iterations, dklen;
     int retval;
     const EVP_MD *digest;
+    _PyBytesWriter writer;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "sy*y*l|O:pbkdf2_hmac",
                                      kwlist, &name, &password, &salt,
@@ -697,11 +698,11 @@ pbkdf2_hmac(PyObject *self, PyObject *args, PyObject *kwdict)
         goto end;
     }
 
-    key_obj = PyBytes_FromStringAndSize(NULL, dklen);
-    if (key_obj == NULL) {
+    _PyBytesWriter_Init(&writer);
+    key = _PyBytesWriter_Alloc(&writer, dklen);
+    if (key == NULL) {
         goto end;
     }
-    key = PyBytes_AS_STRING(key_obj);
 
     Py_BEGIN_ALLOW_THREADS
 #if HAS_FAST_PKCS5_PBKDF2_HMAC
@@ -718,10 +719,11 @@ pbkdf2_hmac(PyObject *self, PyObject *args, PyObject *kwdict)
     Py_END_ALLOW_THREADS
 
     if (!retval) {
-        Py_CLEAR(key_obj);
+        _PyBytesWriter_Dealloc(&writer);
         _setException(PyExc_ValueError);
         goto end;
     }
+    key_obj = _PyBytesWriter_Finish(&writer, key + dklen);
 
   end:
     PyBuffer_Release(&password);
@@ -760,10 +762,10 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
                      long maxmem, long dklen)
 /*[clinic end generated code: output=14849e2aa2b7b46c input=48a7d63bf3f75c42]*/
 {
-    PyObject *key_obj = NULL;
     char *key;
     int retval;
     unsigned long n, r, p;
+    _PyBytesWriter writer;
 
     if (password->len > INT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
@@ -833,11 +835,11 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
         return NULL;
    }
 
-    key_obj = PyBytes_FromStringAndSize(NULL, dklen);
-    if (key_obj == NULL) {
+    _PyBytesWriter_Init(&writer);
+    key = _PyBytesWriter_Alloc(&writer, dklen);
+    if (key == NULL) {
         return NULL;
     }
-    key = PyBytes_AS_STRING(key_obj);
 
     Py_BEGIN_ALLOW_THREADS
     retval = EVP_PBE_scrypt(
@@ -849,11 +851,11 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
     Py_END_ALLOW_THREADS
 
     if (!retval) {
-        Py_CLEAR(key_obj);
         _setException(PyExc_ValueError);
+        _PyBytesWriter_Dealloc(&writer);
         return NULL;
     }
-    return key_obj;
+    return _PyBytesWriter_Finish(&writer, key + dklen);
 }
 #endif
 
@@ -1057,11 +1059,18 @@ PyInit__hashlib(void)
         return NULL;
     }
 
+    m = PyState_FindModule(&_hashlibmodule);
+    if (m != NULL) {
+        Py_INCREF(m);
+        return m;
+    }
     m = PyModule_Create(&_hashlibmodule);
     if (m == NULL) {
         Py_DECREF(EVP_Type);
         return NULL;
     }
+    PyState_AddModule(m, &_hashlibmodule);
+
     _hashlibstate(m)->EVP_Type = EVP_Type;
 
     openssl_md_meth_names = generate_hash_name_list();
