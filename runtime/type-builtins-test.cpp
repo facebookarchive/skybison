@@ -23,7 +23,7 @@ TEST_F(TypeBuiltinsTest, TypeAtReturnsNoPlaceholderValue) {
   Object name(&scope, Runtime::internStrFromCStr(thread_, "__eq__"));
   Object value(&scope, Runtime::internStrFromCStr(thread_, "__eq__'s value"));
   typeAtPut(thread_, type, name, value);
-  EXPECT_EQ(typeAt(thread_, type, name), *value);
+  EXPECT_EQ(typeAt(type, name), *value);
   EXPECT_EQ(typeAtById(thread_, type, SymbolId::kDunderEq), *value);
 }
 
@@ -34,7 +34,7 @@ TEST_F(TypeBuiltinsTest, TypeAtReturnsErrorNotFoundForPlaceholder) {
   Object value(&scope, Runtime::internStrFromCStr(thread_, "__eq__'s value"));
   ValueCell value_cell(&scope, typeAtPut(thread_, type, name, value));
   value_cell.makePlaceholder();
-  EXPECT_TRUE(typeAt(thread_, type, name).isErrorNotFound());
+  EXPECT_TRUE(typeAt(type, name).isErrorNotFound());
   EXPECT_TRUE(typeAtById(thread_, type, SymbolId::kDunderEq).isErrorNotFound());
 }
 
@@ -46,7 +46,7 @@ TEST_F(TypeBuiltinsTest, TypeAtPutPutsValueInValueCell) {
 
   ValueCell result(&scope, typeAtPut(thread_, type, name, value));
   ASSERT_EQ(result.value(), *value);
-  EXPECT_EQ(typeAt(thread_, type, name), *value);
+  EXPECT_EQ(typeAt(type, name), *value);
   result.setValue(NoneType::object());
 
   result = typeAtPutById(thread_, type, SymbolId::kDunderEq, value);
@@ -139,9 +139,9 @@ class A:
   HandleScope scope(thread_);
   Type type(&scope, mainModuleAt(&runtime_, "A"));
   Object dunder_eq(&scope, Runtime::internStrFromCStr(thread_, "__eq__"));
-  ASSERT_FALSE(typeAt(thread_, type, dunder_eq).isErrorNotFound());
+  ASSERT_FALSE(typeAt(type, dunder_eq).isErrorNotFound());
   ASSERT_FALSE(typeRemove(thread_, type, dunder_eq).isErrorNotFound());
-  EXPECT_TRUE(typeAt(thread_, type, dunder_eq).isErrorNotFound());
+  EXPECT_TRUE(typeAt(type, dunder_eq).isErrorNotFound());
 }
 
 TEST_F(TypeBuiltinsTest, TypeRemoveInvalidatesCache) {
@@ -181,7 +181,7 @@ TEST_F(TypeBuiltinsTest, TypeKeysFiltersOutPlaceholders) {
   typeAtPut(thread_, type, bar, value);
   typeAtPut(thread_, type, baz, value);
 
-  ValueCell::cast(typeValueCellAt(thread_, type, bar)).makePlaceholder();
+  ValueCell::cast(typeValueCellAt(type, bar)).makePlaceholder();
 
   List keys(&scope, typeKeys(thread_, type));
   EXPECT_EQ(keys.numItems(), 2);
@@ -204,7 +204,7 @@ TEST_F(TypeBuiltinsTest, TypeLenReturnsItemCountExcludingPlaceholders) {
 
   SmallInt previous_len(&scope, typeLen(thread_, type));
 
-  ValueCell::cast(typeValueCellAt(thread_, type, bar)).makePlaceholder();
+  ValueCell::cast(typeValueCellAt(type, bar)).makePlaceholder();
 
   SmallInt after_len(&scope, typeLen(thread_, type));
   EXPECT_EQ(previous_len.value(), after_len.value() + 1);
@@ -225,7 +225,7 @@ TEST_F(TypeBuiltinsTest, TypeValuesFiltersOutPlaceholders) {
   typeAtPut(thread_, type, bar, bar_value);
   typeAtPut(thread_, type, baz, baz_value);
 
-  ValueCell::cast(typeValueCellAt(thread_, type, bar)).makePlaceholder();
+  ValueCell::cast(typeValueCellAt(type, bar)).makePlaceholder();
 
   List values(&scope, typeValues(thread_, type));
   EXPECT_TRUE(listContains(values, foo_value));
@@ -510,7 +510,7 @@ TEST_F(TypeBuiltinsTest, DunderSetattrSetsAttribute) {
   Object value(&scope, runtime_.newInt(-7331));
   EXPECT_TRUE(
       runBuiltin(TypeBuiltins::dunderSetattr, c, name, value).isNoneType());
-  EXPECT_TRUE(isIntEqualsWord(typeAt(thread_, c, name), -7331));
+  EXPECT_TRUE(isIntEqualsWord(typeAt(c, name), -7331));
 }
 
 TEST_F(TypeBuiltinsTest, DunderSetattrWithNonStrNameRaisesTypeError) {
@@ -933,7 +933,7 @@ TEST_F(TypeBuiltinsTest, TypeSetAttrSetsAttribute) {
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foobarbaz"));
   Object value(&scope, runtime_.newInt(-444));
   EXPECT_TRUE(typeSetAttr(thread_, c, name, value).isNoneType());
-  EXPECT_TRUE(isIntEqualsWord(typeAt(thread_, c, name), -444));
+  EXPECT_TRUE(isIntEqualsWord(typeAt(c, name), -444));
 }
 
 TEST_F(TypeBuiltinsTest, TypeSetAttrCallsDunderSetOnDataDescriptor) {

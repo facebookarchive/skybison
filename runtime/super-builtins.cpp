@@ -33,7 +33,7 @@ RawObject superGetAttribute(Thread* thread, const Super& super,
   }
   for (; i < mro_length; i++) {
     Type type(&scope, mro.at(i));
-    Object value(&scope, typeAt(thread, type, name));
+    Object value(&scope, typeAt(type, name));
     if (value.isError()) {
       continue;
     }

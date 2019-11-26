@@ -223,7 +223,7 @@ static void patchTypeDict(Thread* thread, const Type& base_type,
     Object patch_obj(&scope, Dict::Bucket::value(*patch_data, i));
 
     // Copy function entries if the method already exists as a native builtin.
-    Object base_obj(&scope, typeAt(thread, base_type, name));
+    Object base_obj(&scope, typeAt(base_type, name));
     if (!base_obj.isError()) {
       CHECK(patch_obj.isFunction(), "Python should only annotate functions");
       Function patch_fn(&scope, *patch_obj);

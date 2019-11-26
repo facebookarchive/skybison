@@ -555,14 +555,24 @@ static RawObject typeAtWithHash(RawType type, RawObject name, word hash) {
   return ValueCell::cast(result).value();
 }
 
-RawObject typeAt(Thread* thread, const Type& type, const Object& name) {
-  word hash = strHash(thread, *name);
+static word internedStrHash(RawObject name) {
+  if (name.isSmallStr()) {
+    return SmallStr::cast(name).hash();
+  }
+  word hash = LargeStr::cast(name).header().hashCode();
+  DCHECK(hash != Header::kUninitializedHash,
+         "hash has not been computed (string not interned?)");
+  return hash;
+}
+
+RawObject typeAt(const Type& type, const Object& name) {
+  word hash = internedStrHash(*name);
   return typeAtWithHash(*type, *name, hash);
 }
 
-RawObject typeValueCellAt(Thread* thread, const Type& type,
-                          const Object& name) {
-  return typeValueCellAtWithHash(type, name, strHash(thread, *name));
+RawObject typeValueCellAt(const Type& type, const Object& name) {
+  word hash = internedStrHash(*name);
+  return typeValueCellAtWithHash(type, name, hash);
 }
 
 RawObject typeValueCellAtWithHash(const Type& type, const Object& name,
@@ -583,7 +593,7 @@ static RawObject typeAtSetLocation(RawType type, RawObject name, word hash,
 
 RawObject typeAtById(Thread* thread, const Type& type, SymbolId id) {
   RawObject str = thread->runtime()->symbols()->at(id);
-  word hash = strHash(thread, str);
+  word hash = internedStrHash(str);
   return typeAtWithHash(*type, str, hash);
 }
 
@@ -647,7 +657,7 @@ static NEVER_INLINE void typeGrowAttributes(Thread* thread, const Type& type) {
       continue;
     }
     DCHECK(key.isStr(), "key must be None, _Unbound or str");
-    word hash = strHash(thread, *key);
+    word hash = internedStrHash(*key);
     word bucket = hash & mask;
     word num_probes = 0;
     while (new_data.at(bucket * kBucketNumWords + kBucketKeyOffset) !=
@@ -670,7 +680,7 @@ RawObject inline USED typeValueCellAtPut(Thread* thread, const Type& type,
   HandleScope scope(thread);
   MutableTuple data_obj(&scope, type.attributes());
   RawMutableTuple data = *data_obj;
-  word hash = strHash(thread, *name);
+  word hash = internedStrHash(*name);
   word mask = (data.length() - 1) >> 1;
   for (word bucket = hash & mask, num_probes = 0, last_tombstone = -1;;
        bucket = (bucket + ++num_probes) & mask) {
@@ -714,7 +724,7 @@ RawObject typeLookupInMroSetLocation(Thread* thread, const Type& type,
                                      const Object& name, Object* location) {
   RawTuple mro = Tuple::cast(type.mro());
   RawObject name_raw = *name;
-  word hash = strHash(thread, name_raw);
+  word hash = internedStrHash(name_raw);
   for (word i = 0; i < mro.length(); i++) {
     DCHECK(thread->runtime()->isInstanceOfType(mro.at(i)), "non-type in MRO");
     RawType mro_type = mro.at(i).rawCast<RawType>();
@@ -730,7 +740,7 @@ RawObject typeLookupInMro(Thread* thread, const Type& type,
                           const Object& name) {
   RawTuple mro = Tuple::cast(type.mro());
   RawObject name_raw = *name;
-  word hash = strHash(thread, name_raw);
+  word hash = internedStrHash(name_raw);
   for (word i = 0; i < mro.length(); i++) {
     DCHECK(thread->runtime()->isInstanceOfType(mro.at(i)), "non-type in MRO");
     RawType mro_type = mro.at(i).rawCast<RawType>();
@@ -751,7 +761,7 @@ RawObject typeLookupInMroById(Thread* thread, const Type& type, SymbolId id) {
 RawObject typeRemove(Thread* thread, const Type& type, const Object& name) {
   HandleScope scope(thread);
   MutableTuple data(&scope, type.attributes());
-  word hash = strHash(thread, *name);
+  word hash = internedStrHash(*name);
   word mask = (data.length() - 1) >> 1;
   Object key(&scope, NoneType::object());
   for (word bucket = hash & mask, num_probes = 0;;

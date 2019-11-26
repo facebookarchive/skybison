@@ -499,15 +499,14 @@ right = X(0b0101)
 }
 
 TEST_F(IntBuiltinsTest, DunderCeilAliasesDunderInt) {
-  Thread* thread = Thread::current();
   HandleScope scope(thread_);
   Type type(&scope, moduleAtByCStr(&runtime_, "builtins", "int"));
   Object ceil_name(&scope, Runtime::internStrFromCStr(thread_, "__ceil__"));
-  Object ceil_obj(&scope, typeAt(thread, type, ceil_name));
+  Object ceil_obj(&scope, typeAt(type, ceil_name));
   ASSERT_TRUE(ceil_obj.isFunction());
   Function ceil(&scope, *ceil_obj);
   Object dint_name(&scope, Runtime::internStrFromCStr(thread_, "__int__"));
-  Object dint_obj(&scope, typeAt(thread, type, dint_name));
+  Object dint_obj(&scope, typeAt(type, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *ceil_obj);
   EXPECT_EQ(Code::cast(ceil.code()).code(), Code::cast(dint.code()).code());
@@ -521,11 +520,11 @@ TEST_F(IntBuiltinsTest, DunderFloorAliasesDunderInt) {
   HandleScope scope(thread);
   Type type(&scope, moduleAtByCStr(&runtime_, "builtins", "int"));
   Object floor_name(&scope, Runtime::internStrFromCStr(thread_, "__floor__"));
-  Object floor_obj(&scope, typeAt(thread, type, floor_name));
+  Object floor_obj(&scope, typeAt(type, floor_name));
   ASSERT_TRUE(floor_obj.isFunction());
   Function floor(&scope, *floor_obj);
   Object dint_name(&scope, Runtime::internStrFromCStr(thread_, "__int__"));
-  Object dint_obj(&scope, typeAt(thread, type, dint_name));
+  Object dint_obj(&scope, typeAt(type, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *floor_obj);
   EXPECT_EQ(Code::cast(floor.code()).code(), Code::cast(dint.code()).code());
@@ -1427,11 +1426,11 @@ TEST_F(IntBuiltinsTest, DunderIndexAliasesDunderInt) {
   HandleScope scope(thread);
   Type type(&scope, moduleAtByCStr(&runtime_, "builtins", "int"));
   Object index_name(&scope, Runtime::internStrFromCStr(thread_, "__index__"));
-  Object index_obj(&scope, typeAt(thread, type, index_name));
+  Object index_obj(&scope, typeAt(type, index_name));
   ASSERT_TRUE(index_obj.isFunction());
   Function index(&scope, *index_obj);
   Object dint_name(&scope, Runtime::internStrFromCStr(thread_, "__int__"));
-  Object dint_obj(&scope, typeAt(thread, type, dint_name));
+  Object dint_obj(&scope, typeAt(type, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *index_obj);
   EXPECT_EQ(Code::cast(index.code()).code(), Code::cast(dint.code()).code());
@@ -2085,11 +2084,11 @@ TEST_F(IntBuiltinsTest, DunderPosAliasesDunderInt) {
   HandleScope scope(thread);
   Type type(&scope, moduleAtByCStr(&runtime_, "builtins", "int"));
   Object pos_name(&scope, Runtime::internStrFromCStr(thread_, "__pos__"));
-  Object pos_obj(&scope, typeAt(thread, type, pos_name));
+  Object pos_obj(&scope, typeAt(type, pos_name));
   ASSERT_TRUE(pos_obj.isFunction());
   Function pos(&scope, *pos_obj);
   Object dint_name(&scope, Runtime::internStrFromCStr(thread_, "__int__"));
-  Object dint_obj(&scope, typeAt(thread, type, dint_name));
+  Object dint_obj(&scope, typeAt(type, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *pos_obj);
   EXPECT_EQ(Code::cast(pos.code()).code(), Code::cast(dint.code()).code());
@@ -2177,11 +2176,11 @@ TEST_F(IntBuiltinsTest, DunderRoundAliasesDunderInt) {
   HandleScope scope(thread);
   Type type(&scope, moduleAtByCStr(&runtime_, "builtins", "int"));
   Object round_name(&scope, Runtime::internStrFromCStr(thread_, "__round__"));
-  Object round_obj(&scope, typeAt(thread, type, round_name));
+  Object round_obj(&scope, typeAt(type, round_name));
   ASSERT_TRUE(round_obj.isFunction());
   Function round(&scope, *round_obj);
   Object dint_name(&scope, Runtime::internStrFromCStr(thread_, "__int__"));
-  Object dint_obj(&scope, typeAt(thread, type, dint_name));
+  Object dint_obj(&scope, typeAt(type, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *round_obj);
   EXPECT_EQ(Code::cast(round.code()).code(), Code::cast(dint.code()).code());
@@ -2191,15 +2190,14 @@ TEST_F(IntBuiltinsTest, DunderRoundAliasesDunderInt) {
 }
 
 TEST_F(IntBuiltinsTest, DunderTruncAliasesDunderInt) {
-  Thread* thread = Thread::current();
   HandleScope scope(thread_);
   Type type(&scope, moduleAtByCStr(&runtime_, "builtins", "int"));
   Object trunc_name(&scope, Runtime::internStrFromCStr(thread_, "__trunc__"));
-  Object trunc_obj(&scope, typeAt(thread, type, trunc_name));
+  Object trunc_obj(&scope, typeAt(type, trunc_name));
   ASSERT_TRUE(trunc_obj.isFunction());
   Function trunc(&scope, *trunc_obj);
   Object dint_name(&scope, Runtime::internStrFromCStr(thread_, "__int__"));
-  Object dint_obj(&scope, typeAt(thread, type, dint_name));
+  Object dint_obj(&scope, typeAt(type, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *trunc_obj);
   EXPECT_EQ(Code::cast(trunc.code()).code(), Code::cast(dint.code()).code());
@@ -2533,11 +2531,11 @@ TEST_F(IntBuiltinsTest, DunderStrAliasesDunderRepr) {
   HandleScope scope(thread);
   Type type(&scope, moduleAtByCStr(&runtime_, "builtins", "int"));
   Object str_name(&scope, Runtime::internStrFromCStr(thread_, "__str__"));
-  Object str_obj(&scope, typeAt(thread, type, str_name));
+  Object str_obj(&scope, typeAt(type, str_name));
   ASSERT_TRUE(str_obj.isFunction());
   Function str(&scope, *str_obj);
   Object repr_name(&scope, Runtime::internStrFromCStr(thread_, "__repr__"));
-  Object repr_obj(&scope, typeAt(thread, type, repr_name));
+  Object repr_obj(&scope, typeAt(type, repr_name));
   ASSERT_TRUE(repr_obj.isFunction());
   Function repr(&scope, *str_obj);
   EXPECT_EQ(Code::cast(str.code()).code(), Code::cast(repr.code()).code());
@@ -3154,11 +3152,11 @@ TEST_F(IntBuiltinsTest, ConjugateAliasesDunderInt) {
   Type type(&scope, moduleAtByCStr(&runtime_, "builtins", "int"));
   Object conjugate_name(&scope,
                         Runtime::internStrFromCStr(thread_, "conjugate"));
-  Object conjugate_obj(&scope, typeAt(thread, type, conjugate_name));
+  Object conjugate_obj(&scope, typeAt(type, conjugate_name));
   ASSERT_TRUE(conjugate_obj.isFunction());
   Function conjugate(&scope, *conjugate_obj);
   Object dint_name(&scope, Runtime::internStrFromCStr(thread_, "__int__"));
-  Object dint_obj(&scope, typeAt(thread, type, dint_name));
+  Object dint_obj(&scope, typeAt(type, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *conjugate_obj);
   EXPECT_EQ(Code::cast(conjugate.code()).code(),

@@ -23,7 +23,7 @@ RawObject addInheritedSlots(const Type& type);
 
 void typeAddDocstring(Thread* thread, const Type& type);
 
-RawObject typeAt(Thread* thread, const Type& type, const Object& name);
+RawObject typeAt(const Type& type, const Object& name);
 
 RawObject typeAtSetLocation(const Type& type, const Object& name, word hash,
                             Object* location);
@@ -92,7 +92,7 @@ void terminateIfUnimplementedTypeAttrCacheInvalidation(Thread* thread,
 // Look-up underlying value-cell to a name.
 // WARNING: This is a low-level access circumventing cache invalidation logic,
 // do not use except for tests and ic.cpp!
-RawObject typeValueCellAt(Thread* thread, const Type& type, const Object& name);
+RawObject typeValueCellAt(const Type& type, const Object& name);
 
 // Look-up underlying value-cell to a name.
 // WARNING: This is a low-level access circumventing cache invalidation logic,

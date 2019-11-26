@@ -4048,7 +4048,7 @@ RawObject UnderBuiltinsModule::underTypeProxyGet(Thread* thread, Frame* frame,
   if (name.isErrorException()) return *name;
   Object default_obj(&scope, args.get(2));
   Type type(&scope, self.type());
-  Object result(&scope, typeAt(thread, type, name));
+  Object result(&scope, typeAt(type, name));
   if (result.isError()) {
     return *default_obj;
   }
