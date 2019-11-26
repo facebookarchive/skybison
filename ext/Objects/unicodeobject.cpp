@@ -2111,7 +2111,7 @@ PY_EXPORT wchar_t* _Py_DecodeUTF8_surrogateescape(const char* c_str,
   DCHECK(c_str != nullptr, "c_str cannot be null");
   wchar_t* wc_str =
       static_cast<wchar_t*>(PyMem_RawMalloc((size + 1) * sizeof(wchar_t)));
-  for (int i = 0; i < size; i++) {
+  for (Py_ssize_t i = 0; i < size; i++) {
     char ch = c_str[i];
     // TODO(T57811636): Support UTF-8 arguments on macOS (not a priority right
     // now). We don't have UTF-8 decoding machinery that is decoupled from the
