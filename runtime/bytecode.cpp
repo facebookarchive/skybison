@@ -176,13 +176,26 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op) {
     default:
       break;
   }
-  return RewrittenOp{op.bc, op.arg, false};
+  return RewrittenOp{UNUSED_BYTECODE_0, 0, false};
 }
 
 void rewriteBytecode(Thread* thread, const Function& function) {
   HandleScope scope(thread);
-  word num_caches = 0;
-
+  Runtime* runtime = thread->runtime();
+  // Add cache entries for global variables.
+  // TODO(T58223091): This is going to over allocate somewhat in order
+  // to simplify the indexing arithmetic.  Not all names are used for
+  // globals, some are used for attributes.  This is good enough for
+  // now.
+  word names_length = Tuple::cast(Code::cast(function.code()).names()).length();
+  word num_global_caches = Utils::roundUpDiv(names_length, kIcPointersPerCache);
+  if (!function.hasOptimizedOrNewlocals()) {
+    function.setCaches(
+        runtime->newTuple(num_global_caches * kIcPointersPerCache));
+    function.setOriginalArguments(runtime->emptyTuple());
+    return;
+  }
+  word num_caches = num_global_caches;
   // Scan bytecode to figure out how many caches we need.
   MutableBytes bytecode(&scope, function.rewrittenBytecode());
   word bytecode_length = bytecode.length();
@@ -194,23 +207,17 @@ void rewriteBytecode(Thread* thread, const Function& function) {
     }
   }
 
-  // Add cache entries for global variables.  This is going to over allocate
-  // somewhat in order to simplify the indexing arithmetic.  Not all names are
-  // used for globals, some are used for attributes.  This is good enough for
-  // now.
-  word names_length = Tuple::cast(Code::cast(function.code()).names()).length();
-  word num_global_caches = Utils::roundUpDiv(names_length, kIcPointersPerCache);
-  num_caches += num_global_caches;
+  // Replace opcode arg with a cache index and zero EXTENDED_ARG args.
+  CHECK(num_caches < 256,
+        "more than 256 entries may require bytecode resizing");
 
-  Runtime* runtime = thread->runtime();
   Tuple original_arguments(&scope, runtime->newTuple(num_caches));
   for (word i = 0, cache = num_global_caches; i < bytecode_length;) {
     word begin = i;
     BytecodeOp op = nextBytecodeOp(bytecode, &i);
     RewrittenOp rewritten = rewriteOperation(function, op);
+    if (rewritten.bc == UNUSED_BYTECODE_0) continue;
     if (rewritten.needs_inline_cache) {
-      // Replace opcode arg with a cache index and zero EXTENDED_ARG args.
-      CHECK(cache < 256, "more than 256 entries may require bytecode resizing");
       for (word j = begin; j < i - kCodeUnitSize; j += kCodeUnitSize) {
         bytecode.byteAtPut(j, static_cast<byte>(Bytecode::EXTENDED_ARG));
         bytecode.byteAtPut(j + 1, 0);

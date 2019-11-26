@@ -500,6 +500,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadFastAndStoreFastOpcodes) {
                              varnames, freevars, cellvars,
                              /*filename=*/empty_string, /*name=*/empty_string,
                              /*firstlineno=*/0, lnotab));
+  code.setFlags(code.flags() | Code::Flags::kOptimized);
 
   Module module(&scope, runtime_.findOrCreateMainModule());
   Function function(&scope, runtime_.newFunctionWithCode(thread_, empty_string,
@@ -514,6 +515,27 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadFastAndStoreFastOpcodes) {
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
   EXPECT_EQ(Tuple::cast(function.originalArguments()).length(), 0);
   EXPECT_EQ(Tuple::cast(function.caches()).length(), 0);
+}
+
+TEST_F(BytecodeTest,
+       RewriteBytecodeDoesNotRewriteFunctionsWithNoOptimizedNorNewLocalsFlag) {
+  HandleScope scope(thread_);
+  Object name(&scope, Str::empty());
+  Code code(&scope, newEmptyCode());
+  byte bytecode[] = {
+      NOP,          99,        EXTENDED_ARG, 0xca, LOAD_ATTR,    0xfe,
+      NOP,          LOAD_ATTR, EXTENDED_ARG, 1,    EXTENDED_ARG, 2,
+      EXTENDED_ARG, 3,         LOAD_ATTR,    4,    LOAD_ATTR,    77,
+  };
+  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setFlags(code.flags() & ~Code::Flags::kOptimized &
+                ~Code::Flags::kNewlocals);
+  Module module(&scope, runtime_.findOrCreateMainModule());
+  Function function(&scope,
+                    runtime_.newFunctionWithCode(thread_, name, code, module));
+
+  Object rewritten_bytecode(&scope, function.rewrittenBytecode());
+  EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, bytecode));
 }
 
 }  // namespace py
