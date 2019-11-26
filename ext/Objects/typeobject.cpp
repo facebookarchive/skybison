@@ -537,7 +537,7 @@ static const SlotDef kSlotdefs[] = {
     TPSLOT(kDunderGe, kRichcompare, kParamsSelfValue, slot_tp_richcompare,
            wrapRichcompare<GE>,
            "__ge__($self, value, /)\n--\n\nReturn self>=value."),
-    TPSLOT(kDunderIter, kIter, kParamsSelfValue, slot_tp_iter, wrapUnaryfunc,
+    TPSLOT(kDunderIter, kIter, kParamsSelf, slot_tp_iter, wrapUnaryfunc,
            "__iter__($self, /)\n--\n\nImplement iter(self)."),
     TPSLOT(kDunderNext, kIternext, kParamsSelf, slot_tp_iternext, wrapNext,
            "__next__($self, /)\n--\n\nImplement next(self)."),

@@ -3765,4 +3765,22 @@ TEST(TypeExtensionApiTestNoFixture, DeallocSlotCalledDuringFinalize) {
   ASSERT_TRUE(destroyed);
 }
 
+TEST_F(TypeExtensionApiTest, CallIterSlotFromManagedCode) {
+  unaryfunc iter_func = [](PyObject* self) {
+    Py_INCREF(self);
+    return self;
+  };
+  ASSERT_NO_FATAL_FAILURE(createTypeWithSlot("Foo", Py_tp_iter, iter_func));
+
+  ASSERT_EQ(PyRun_SimpleString(R"(
+f = Foo()
+itr = f.__iter__()
+)"),
+            0);
+
+  PyObjectPtr f(moduleGet("__main__", "f"));
+  PyObjectPtr itr(moduleGet("__main__", "itr"));
+  EXPECT_EQ(f, itr);
+}
+
 }  // namespace py
