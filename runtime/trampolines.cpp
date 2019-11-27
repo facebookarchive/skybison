@@ -997,13 +997,18 @@ static RawObject callMethFastCall(Thread* thread, const Function& function,
   HandleScope scope(thread);
   Int address(&scope, function.code());
   _PyCFunctionFast method = bit_cast<_PyCFunctionFast>(address.asCPtr());
-  PyObject* self_obj = ApiHandle::borrowedReference(thread, *self);
-  PyObject* kwnames_obj = nullptr;
+  ApiHandle* self_obj = ApiHandle::newReference(thread, *self);
+  ApiHandle* kwnames_obj = nullptr;
   if (!kwnames.isNoneType()) {
-    kwnames_obj = ApiHandle::borrowedReference(thread, *kwnames);
+    kwnames_obj = ApiHandle::newReference(thread, *kwnames);
   }
-  PyObject* result = (*method)(self_obj, args, num_args, kwnames_obj);
-  return ApiHandle::checkFunctionResult(thread, result);
+  PyObject* pyresult = (*method)(self_obj, args, num_args, kwnames_obj);
+  RawObject result = ApiHandle::checkFunctionResult(thread, pyresult);
+  if (kwnames_obj != nullptr) {
+    kwnames_obj->decref();
+  }
+  self_obj->decref();
+  return result;
 }
 
 RawObject methodTrampolineFastCall(Thread* thread, Frame* frame, word argc) {
@@ -1014,12 +1019,17 @@ RawObject methodTrampolineFastCall(Thread* thread, Frame* frame, word argc) {
   std::unique_ptr<PyObject*[]> fastcall_args(new PyObject*[argc - 1]);
   for (word i = 0; i < argc - 1; i++) {
     fastcall_args[argc - i - 2] =
-        ApiHandle::borrowedReference(thread, frame->peek(i));
+        ApiHandle::newReference(thread, frame->peek(i));
   }
   Object kwnames(&scope, NoneType::object());
   word num_positional = argc - 1;
-  return callMethFastCall(thread, function, self, fastcall_args.get(),
-                          num_positional, kwnames);
+  Object result(&scope,
+                callMethFastCall(thread, function, self, fastcall_args.get(),
+                                 num_positional, kwnames));
+  for (word i = 0; i < argc - 1; i++) {
+    ApiHandle::fromPyObject(fastcall_args[argc - i - 2])->decref();
+  }
+  return *result;
 }
 
 RawObject methodTrampolineFastCallKw(Thread* thread, Frame* frame, word argc) {
@@ -1030,12 +1040,17 @@ RawObject methodTrampolineFastCallKw(Thread* thread, Frame* frame, word argc) {
   std::unique_ptr<PyObject*[]> fastcall_args(new PyObject*[argc - 1]);
   for (word i = 0; i < argc - 1; i++) {
     fastcall_args[i] =
-        ApiHandle::borrowedReference(thread, frame->peek(argc - i - 1));
+        ApiHandle::newReference(thread, frame->peek(argc - i - 1));
   }
   Tuple kwnames(&scope, frame->peek(0));
   word num_positional = argc - kwnames.length() - 1;
-  return callMethFastCall(thread, function, self, fastcall_args.get(),
-                          num_positional, kwnames);
+  Object result(&scope,
+                callMethFastCall(thread, function, self, fastcall_args.get(),
+                                 num_positional, kwnames));
+  for (word i = 0; i < argc - 1; i++) {
+    ApiHandle::fromPyObject(fastcall_args[i])->decref();
+  }
+  return *result;
 }
 
 RawObject methodTrampolineFastCallEx(Thread* thread, Frame* frame, word flags) {
@@ -1063,7 +1078,7 @@ RawObject methodTrampolineFastCallEx(Thread* thread, Frame* frame, word flags) {
 
   // Set the positional arguments
   for (word i = 0; i < num_positional; i++) {
-    fastcall_args[i] = ApiHandle::borrowedReference(thread, varargs.at(i + 1));
+    fastcall_args[i] = ApiHandle::newReference(thread, varargs.at(i + 1));
   }
 
   // Set the keyword arguments
@@ -1072,20 +1087,26 @@ RawObject methodTrampolineFastCallEx(Thread* thread, Frame* frame, word flags) {
     for (word i = num_positional; i < (num_positional + num_keywords); i++) {
       Str key(&scope, kwnames_tuple.at(i - num_positional));
       fastcall_args[i] =
-          ApiHandle::borrowedReference(thread, dictAtByStr(thread, dict, key));
+          ApiHandle::newReference(thread, dictAtByStr(thread, dict, key));
     }
   }
 
   Function function(&scope, frame->peek(has_varkeywords + 1));
   Object self(&scope, varargs.at(0));
 
+  Object result(&scope, NoneType::object());
   if (!has_varkeywords) {
     Object kwnames(&scope, NoneType::object());
-    return callMethFastCall(thread, function, self, fastcall_args.get(),
-                            num_positional, kwnames);
+    result = callMethFastCall(thread, function, self, fastcall_args.get(),
+                              num_positional, kwnames);
+  } else {
+    result = callMethFastCall(thread, function, self, fastcall_args.get(),
+                              num_positional, kwnames_tuple);
   }
-  return callMethFastCall(thread, function, self, fastcall_args.get(),
-                          num_positional, kwnames_tuple);
+  for (word i = 0; i < num_positional + num_keywords; i++) {
+    ApiHandle::fromPyObject(fastcall_args[i])->decref();
+  }
+  return *result;
 }
 
 RawObject moduleTrampolineNoArgs(Thread* thread, Frame* frame, word argc) {
@@ -1286,11 +1307,15 @@ RawObject moduleTrampolineFastCall(Thread* thread, Frame* frame, word argc) {
   std::unique_ptr<PyObject*[]> fastcall_args(new PyObject*[argc]);
   for (word i = 0; i < argc; i++) {
     fastcall_args[argc - i - 1] =
-        ApiHandle::borrowedReference(thread, frame->peek(i));
+        ApiHandle::newReference(thread, frame->peek(i));
   }
   Object kwnames(&scope, NoneType::object());
-  return callMethFastCall(thread, function, module, fastcall_args.get(), argc,
-                          kwnames);
+  Object result(&scope, callMethFastCall(thread, function, module,
+                                         fastcall_args.get(), argc, kwnames));
+  for (word i = 0; i < argc; i++) {
+    ApiHandle::fromPyObject(fastcall_args[argc - i - 1])->decref();
+  }
+  return *result;
 }
 
 RawObject moduleTrampolineFastCallKw(Thread* thread, Frame* frame, word argc) {
@@ -1300,14 +1325,18 @@ RawObject moduleTrampolineFastCallKw(Thread* thread, Frame* frame, word argc) {
 
   std::unique_ptr<PyObject*[]> fastcall_args(new PyObject*[argc]);
   for (word i = 0; i < argc; i++) {
-    fastcall_args[i] =
-        ApiHandle::borrowedReference(thread, frame->peek(argc - i));
+    fastcall_args[i] = ApiHandle::newReference(thread, frame->peek(argc - i));
   }
 
   Tuple kwnames(&scope, frame->peek(0));
   word num_positional = argc - kwnames.length();
-  return callMethFastCall(thread, function, module, fastcall_args.get(),
-                          num_positional, kwnames);
+  Object result(&scope,
+                callMethFastCall(thread, function, module, fastcall_args.get(),
+                                 num_positional, kwnames));
+  for (word i = 0; i < argc; i++) {
+    ApiHandle::fromPyObject(fastcall_args[i])->decref();
+  }
+  return *result;
 }
 
 RawObject moduleTrampolineFastCallEx(Thread* thread, Frame* frame, word flags) {
@@ -1335,7 +1364,7 @@ RawObject moduleTrampolineFastCallEx(Thread* thread, Frame* frame, word flags) {
 
   // Set the positional arguments
   for (word i = 0; i < num_positional; i++) {
-    fastcall_args[i] = ApiHandle::borrowedReference(thread, varargs.at(i));
+    fastcall_args[i] = ApiHandle::newReference(thread, varargs.at(i));
   }
 
   // Set the keyword arguments
@@ -1344,20 +1373,26 @@ RawObject moduleTrampolineFastCallEx(Thread* thread, Frame* frame, word flags) {
     for (word i = num_positional; i < (num_positional + num_keywords); i++) {
       Str key(&scope, kwnames_tuple.at(i - num_positional));
       fastcall_args[i] =
-          ApiHandle::borrowedReference(thread, dictAtByStr(thread, dict, key));
+          ApiHandle::newReference(thread, dictAtByStr(thread, dict, key));
     }
   }
 
   Function function(&scope, frame->peek(has_varkeywords + 1));
   Object module(&scope, function.module());
 
+  Object result(&scope, NoneType::object());
   if (!has_varkeywords) {
     Object kwnames(&scope, NoneType::object());
-    return callMethFastCall(thread, function, module, fastcall_args.get(),
-                            num_positional, kwnames);
+    result = callMethFastCall(thread, function, module, fastcall_args.get(),
+                              num_positional, kwnames);
+  } else {
+    result = callMethFastCall(thread, function, module, fastcall_args.get(),
+                              num_positional, kwnames_tuple);
   }
-  return callMethFastCall(thread, function, module, fastcall_args.get(),
-                          num_positional, kwnames_tuple);
+  for (word i = 0; i < num_positional + num_keywords; i++) {
+    ApiHandle::fromPyObject(fastcall_args[i])->decref();
+  }
+  return *result;
 }
 
 RawObject unimplementedTrampoline(Thread*, Frame*, word) {

@@ -2442,4 +2442,137 @@ TEST_F(TrampolinesTest, MethodTrampolineKeywordsEx) {
   EXPECT_TRUE(isIntEqualsWord(*result, 1234));
 }
 
+static PyObject* capiFunctionFastCallNullKwnames(PyObject* self,
+                                                 PyObject** args, word num_args,
+                                                 PyObject* kwnames) {
+  Thread* thread = Thread::current();
+  thread->runtime()->collectGarbage();
+  EXPECT_EQ(ApiHandle::nativeRefcnt(self), 1);
+  for (word i = 0; i < num_args; i++) {
+    EXPECT_EQ(ApiHandle::nativeRefcnt(args[i]), 1)
+        << "Expected fastcall arg #" << i << " to be owned by the trampoline";
+  }
+  EXPECT_EQ(kwnames, nullptr);
+  return ApiHandle::newReference(thread, SmallInt::fromWord(1234));
+}
+
+TEST_F(TrampolinesTest, MethodTrampolineFastCall) {
+  HandleScope scope(thread_);
+  Frame* frame = thread_->currentFrame();
+  Function function(&scope, newEmptyFunction());
+  function.setCode(runtime_.newIntFromCPtr(
+      reinterpret_cast<void*>(capiFunctionFastCallNullKwnames)));
+  frame->pushValue(*function);
+  Object self(&scope, runtime_.newTuple(1));
+  frame->pushValue(*self);
+  Object arg0(&scope, runtime_.newTuple(1));
+  frame->pushValue(*arg0);
+  Object result(&scope, methodTrampolineFastCall(thread_, frame, 2));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1234));
+}
+
+static PyObject* capiFunctionFastCall(PyObject* self, PyObject** args,
+                                      word num_args, PyObject* kwnames) {
+  Thread* thread = Thread::current();
+  thread->runtime()->collectGarbage();
+  EXPECT_EQ(ApiHandle::nativeRefcnt(self), 1);
+  word num_keywords =
+      Tuple::cast(ApiHandle::fromPyObject(kwnames)->asObject()).length();
+  for (word i = 0; i < num_args + num_keywords; i++) {
+    EXPECT_EQ(ApiHandle::nativeRefcnt(args[i]), 1)
+        << "Expected fastcall arg #" << i << " to be owned by the trampoline";
+  }
+  EXPECT_EQ(ApiHandle::nativeRefcnt(kwnames), 1);
+  return ApiHandle::newReference(thread, SmallInt::fromWord(1234));
+}
+
+TEST_F(TrampolinesTest, MethodTrampolineFastCallKw) {
+  HandleScope scope(thread_);
+  Frame* frame = thread_->currentFrame();
+  Function function(&scope, newEmptyFunction());
+  function.setCode(
+      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionFastCall)));
+  frame->pushValue(*function);
+  Object self(&scope, runtime_.newTuple(1));
+  frame->pushValue(*self);
+  Object kwarg0(&scope, runtime_.newTuple(1));
+  frame->pushValue(*kwarg0);
+  Tuple kwnames(&scope, runtime_.newTuple(1));
+  kwnames.atPut(0, SmallStr::fromCStr("foo"));
+  frame->pushValue(*kwnames);
+  Object result(&scope, methodTrampolineFastCallKw(thread_, frame, 2));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1234));
+}
+
+TEST_F(TrampolinesTest, MethodTrampolineFastCallEx) {
+  HandleScope scope(thread_);
+  Frame* frame = thread_->currentFrame();
+  Function function(&scope, newEmptyFunction());
+  function.setCode(
+      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionFastCall)));
+  frame->pushValue(*function);
+  Tuple varargs(&scope, runtime_.newTuple(2));
+  Object self(&scope, runtime_.newTuple(1));
+  varargs.atPut(0, *self);
+  varargs.atPut(1, SmallStr::fromCStr("bar"));
+  frame->pushValue(*varargs);
+  Dict varkeywords(&scope, runtime_.newDict());
+  Str key(&scope, SmallStr::fromCStr("baz"));
+  Object value(&scope, runtime_.newTuple(1));
+  dictAtPutByStr(thread_, varkeywords, key, value);
+  frame->pushValue(*varkeywords);
+  Object result(&scope, methodTrampolineFastCallEx(
+                            thread_, frame, CallFunctionExFlag::VAR_KEYWORDS));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1234));
+}
+
+TEST_F(TrampolinesTest, ModuleTrampolineFastCall) {
+  HandleScope scope(thread_);
+  Frame* frame = thread_->currentFrame();
+  Function function(&scope, newEmptyFunction());
+  function.setCode(runtime_.newIntFromCPtr(
+      reinterpret_cast<void*>(capiFunctionFastCallNullKwnames)));
+  frame->pushValue(*function);
+  Object arg0(&scope, runtime_.newTuple(1));
+  frame->pushValue(*arg0);
+  Object result(&scope, moduleTrampolineFastCall(thread_, frame, 1));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1234));
+}
+
+TEST_F(TrampolinesTest, ModuleTrampolineFastCallKw) {
+  HandleScope scope(thread_);
+  Frame* frame = thread_->currentFrame();
+  Function function(&scope, newEmptyFunction());
+  function.setCode(
+      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionFastCall)));
+  frame->pushValue(*function);
+  Object arg0(&scope, runtime_.newTuple(1));
+  frame->pushValue(*arg0);
+  Tuple kwnames(&scope, runtime_.newTuple(1));
+  kwnames.atPut(0, SmallStr::fromCStr("foo"));
+  frame->pushValue(*kwnames);
+  Object result(&scope, moduleTrampolineFastCallKw(thread_, frame, 1));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1234));
+}
+
+TEST_F(TrampolinesTest, ModuleTrampolineFastCallEx) {
+  HandleScope scope(thread_);
+  Frame* frame = thread_->currentFrame();
+  Function function(&scope, newEmptyFunction());
+  function.setCode(
+      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionFastCall)));
+  frame->pushValue(*function);
+  Tuple varargs(&scope, runtime_.newTuple(1));
+  varargs.atPut(0, SmallStr::fromCStr("bar"));
+  frame->pushValue(*varargs);
+  Dict varkeywords(&scope, runtime_.newDict());
+  Str key(&scope, SmallStr::fromCStr("baz"));
+  Object value(&scope, runtime_.newTuple(1));
+  dictAtPutByStr(thread_, varkeywords, key, value);
+  frame->pushValue(*varkeywords);
+  Object result(&scope, moduleTrampolineFastCallEx(
+                            thread_, frame, CallFunctionExFlag::VAR_KEYWORDS));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1234));
+}
+
 }  // namespace py
