@@ -328,12 +328,14 @@ class Runtime {
   void visitRoots(PointerVisitor* visitor);
 
   void addModule(const Module& module);
+  bool moduleListAtPut(Thread* thread, const Module& module, word index);
 
   RawObject moduleAddBuiltinFunction(const Module& module, SymbolId name,
                                      Function::Entry entry);
 
   RawObject findModule(const Object& name);
   RawObject findModuleById(SymbolId name);
+  RawObject moduleListAt(Thread* thread, word index);
   RawObject lookupNameInModule(Thread* thread, SymbolId module_name,
                                SymbolId name);
 
@@ -757,12 +759,6 @@ class Runtime {
   void strArrayEnsureCapacity(Thread* thread, const StrArray& array,
                               word min_capacity);
 
-  // Generate a unique number for successively initialized native modules. We
-  // don't index modules the same way as CPython, but we keep this to get a
-  // unique module index and thereby maintain some CPython invariants for
-  // testing.
-  word nextModuleIndex();
-
   // If the importlib module has already been initialized and added, return it.
   // Else, create and add it to the runtime.
   NODISCARD RawObject findOrCreateImportlibModule(Thread* thread);
@@ -966,6 +962,8 @@ class Runtime {
 
   // Modules
   RawObject modules_ = NoneType::object();
+  RawObject modules_by_index_ = NoneType::object();
+  RawObject modulesByIndex() { return modules_by_index_; }
 
   // ApiHandles
   RawObject api_handles_ = NoneType::object();
@@ -989,8 +987,6 @@ class Runtime {
 
   void* parser_grammar_ = nullptr;
   void (*parser_grammar_free_func_)(void*) = nullptr;
-
-  word max_module_index_ = 0;
 
   // atexit C Function
   AtExitFn at_exit_ = nullptr;

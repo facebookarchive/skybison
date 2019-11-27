@@ -2,6 +2,7 @@
 #include <cstdio>
 
 #include "capi-handles.h"
+#include "exception-builtins.h"
 #include "runtime.h"
 
 int Py_BytesWarningFlag = 0;
@@ -52,9 +53,17 @@ PY_EXPORT void Py_EndInterpreter(PyThreadState* /* e */) {
 PY_EXPORT void Py_Exit(int /* s */) { UNIMPLEMENTED("Py_Exit"); }
 
 PY_EXPORT void Py_FatalError(const char* msg) {
-  std::fprintf(stderr, "Fatal Python error: %s\n", msg);
   // TODO(T39151288): Correctly print exceptions when the current thread holds
   // the GIL
+  std::fprintf(stderr, "Fatal Python error: %s\n", msg);
+  Thread* thread = Thread::current();
+  if (thread != nullptr) {
+    if (thread->hasPendingException()) {
+      printPendingException(thread);
+    } else {
+      Utils::printTracebackToStderr();
+    }
+  }
   std::abort();
 }
 

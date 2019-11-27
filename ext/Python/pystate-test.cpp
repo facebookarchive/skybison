@@ -9,13 +9,14 @@ namespace py {
 using namespace testing;
 
 using PystateExtensionApiTest = ExtensionApi;
+using PystateExtensionApiTestDeathTest = ExtensionApi;
 
-TEST_F(PystateExtensionApiTest, AddModuleWithNullDefDeathTest) {
+TEST_F(PystateExtensionApiTestDeathTest, AddModuleWithNullDefDeathTest) {
   EXPECT_DEATH(PyState_AddModule(Py_None, nullptr),
                "Module Definition is NULL");
 }
 
-TEST_F(PystateExtensionApiTest, AddExistingModuleDoesNotOverridePyro) {
+TEST_F(PystateExtensionApiTestDeathTest, AddExistingModuleDoesNotOverride) {
   static struct PyModuleDef def = {
       PyModuleDef_HEAD_INIT,
       "foo",
@@ -30,11 +31,7 @@ TEST_F(PystateExtensionApiTest, AddExistingModuleDoesNotOverridePyro) {
   PyObjectPtr module(PyModule_New("foo"));
   ASSERT_NE(module, nullptr);
   ASSERT_EQ(PyState_AddModule(module, &def), 0);
-  PyObjectPtr module2(PyModule_New("foo"));
-  ASSERT_EQ(PyState_AddModule(module2, &def), 0);
-  PyObject* found_module = PyState_FindModule(&def);
-  EXPECT_EQ(module, found_module);
-  EXPECT_NE(module2, found_module);
+  EXPECT_DEATH(PyState_AddModule(module, &def), "Module already added!");
 }
 
 TEST_F(PystateExtensionApiTest, AddModuleWithSlotsRaisesSystemError) {

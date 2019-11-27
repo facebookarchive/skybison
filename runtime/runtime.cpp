@@ -2267,6 +2267,7 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
 
   // Visit modules
   visitor->visitPointer(&modules_);
+  visitor->visitPointer(&modules_by_index_);
 
   // Visit C-API data.
   visitor->visitPointer(&api_handles_);
@@ -2297,6 +2298,36 @@ void Runtime::addModule(const Module& module) {
   Str name(&scope, module.name());
   Object value(&scope, *module);
   dictAtPutByStr(thread, dict, name, value);
+}
+
+bool Runtime::moduleListAtPut(Thread* thread, const Module& module,
+                              word index) {
+  HandleScope scope(thread);
+  List module_list(&scope, modulesByIndex());
+
+  word num_items = module_list.numItems();
+  if (num_items > index) {
+    if (module == module_list.at(index)) {
+      return false;
+    }
+  }
+  Object none(&scope, NoneType::object());
+  for (int i = index - num_items; i >= 0; i--) {
+    listAdd(thread, module_list, none);
+  }
+  module_list.atPut(index, *module);
+  return true;
+}
+
+RawObject Runtime::moduleListAt(Thread* thread, word index) {
+  HandleScope scope(thread);
+  List module_list(&scope, modulesByIndex());
+
+  if (index >= module_list.numItems()) {
+    return Error::notFound();
+  }
+  Object item(&scope, module_list.at(index));
+  return item.isNoneType() ? Error::notFound() : *item;
 }
 
 RawObject Runtime::findModule(const Object& name) {
@@ -2353,6 +2384,7 @@ const ModuleInitializer Runtime::kBuiltinModules[] = {
 void Runtime::initializeModules() {
   Thread* thread = Thread::current();
   modules_ = newDict();
+  modules_by_index_ = newList();
   createEmptyBuiltinsModule(thread);
   createUnderBuiltinsModule(thread);
   createBuiltinsModule(thread);
@@ -5151,8 +5183,6 @@ RawObject Runtime::strReplace(Thread* thread, const Str& src, const Str& oldstr,
 
   return *result;
 }
-
-word Runtime::nextModuleIndex() { return ++max_module_index_; }
 
 const BuiltinAttribute BuiltinsBase::kAttributes[] = {
     {SymbolId::kSentinelId, -1},

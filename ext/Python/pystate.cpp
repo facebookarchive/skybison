@@ -1,4 +1,5 @@
 #include "capi-handles.h"
+#include "cpython-func.h"
 #include "module-builtins.h"
 #include "runtime.h"
 
@@ -33,58 +34,52 @@ PY_EXPORT void PyInterpreterState_Delete(PyInterpreterState* /* p */) {
   UNIMPLEMENTED("PyInterpreterState_Delete");
 }
 
-PY_EXPORT int PyState_AddModule(PyObject* module, struct PyModuleDef* def) {
+PY_EXPORT int PyState_AddModule(PyObject* module, PyModuleDef* def) {
   DCHECK(module != nullptr, "module must not be null");
-  CHECK(def != nullptr, "PyState_AddModule: Module Definition is NULL");
-  DCHECK(def->m_name != nullptr, "def.m_name must not be null");
-
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-  Object module_name(&scope, Runtime::internStrFromCStr(thread, def->m_name));
-  if (!runtime->findModule(module_name).isNoneType()) {
-    return 0;
+  if (!def) {
+    Py_FatalError("PyState_AddModule: Module Definition is NULL");
+    return -1;
   }
-  // Below is the body of the port of _PyState_AddModule in CPython.
   if (def->m_slots != nullptr) {
     thread->raiseWithFmt(LayoutId::kSystemError,
                          "PyState_AddModule called on module with slots");
     return -1;
   }
-  // CPython adds the module into a separate module list to do an index lookup
-  // rather than a dict for lookup efficiency. Given that we are avoiding the
-  // use of the PyModuleDef.m_base.m_index value, just insert to the module dict
+  HandleScope scope(thread);
   Module module_obj(&scope, ApiHandle::fromPyObject(module)->asObject());
   module_obj.setDef(runtime->newIntFromCPtr(def));
   Object doc_value(&scope, def->m_doc == nullptr
                                ? NoneType::object()
                                : runtime->newStrFromCStr(def->m_doc));
   moduleAtPutById(thread, module_obj, SymbolId::kDunderDoc, doc_value);
-  runtime->addModule(module_obj);
+  if (!runtime->moduleListAtPut(thread, module_obj, def->m_base.m_index)) {
+    Py_FatalError("PyState_AddModule: Module already added!");
+    return -1;
+  }
   return 0;
 }
 
-PY_EXPORT PyObject* PyState_FindModule(struct PyModuleDef* module) {
-  if (module->m_slots != nullptr) {
+PY_EXPORT PyObject* PyState_FindModule(PyModuleDef* def) {
+  if (def->m_slots != nullptr) {
     return nullptr;
   }
-  Py_ssize_t index = module->m_base.m_index;
+  Py_ssize_t index = def->m_base.m_index;
   if (index == 0) {
     return nullptr;
   }
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Object module_name(&scope,
-                     Runtime::internStrFromCStr(thread, module->m_name));
-  Object module_obj(&scope, runtime->findModule(module_name));
-  if (module_obj.isNoneType()) {
+  Object module_obj(&scope, runtime->moduleListAt(thread, index));
+  if (module_obj.isErrorNotFound()) {
     return nullptr;
   }
   return ApiHandle::borrowedReference(thread, *module_obj);
 }
 
-PY_EXPORT int PyState_RemoveModule(struct PyModuleDef* /* f */) {
+PY_EXPORT int PyState_RemoveModule(PyModuleDef* /* f */) {
   UNIMPLEMENTED("PyState_RemoveModule");
 }
 
@@ -120,8 +115,7 @@ PY_EXPORT PyThreadState* PyThreadState_Swap(PyThreadState* /* s */) {
   UNIMPLEMENTED("PyThreadState_Swap");
 }
 
-PY_EXPORT int _PyState_AddModule(PyObject* /* e */,
-                                 struct PyModuleDef* /* f */) {
+PY_EXPORT int _PyState_AddModule(PyObject* /* e */, PyModuleDef* /* f */) {
   UNIMPLEMENTED("_PyState_AddModule");
 }
 
