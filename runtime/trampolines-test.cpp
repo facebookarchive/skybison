@@ -2218,4 +2218,228 @@ result = test(1, args=5)
   EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result"), 5));
 }
 
+static PyObject* capiFunctionNoArgs(PyObject* self, PyObject* args) {
+  Thread* thread = Thread::current();
+  thread->runtime()->collectGarbage();
+  EXPECT_EQ(ApiHandle::nativeRefcnt(self), 1);
+  EXPECT_EQ(args, nullptr);
+  return ApiHandle::newReference(thread, SmallInt::fromWord(1234));
+}
+
+TEST_F(TrampolinesTest, MethodTrampolineNoArgs) {
+  HandleScope scope(thread_);
+  Frame* frame = thread_->currentFrame();
+  Function function(&scope, newEmptyFunction());
+  function.setCode(
+      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionNoArgs)));
+  frame->pushValue(*function);
+  Object self(&scope, runtime_.newTuple(1));
+  frame->pushValue(*self);
+  Object result(&scope, methodTrampolineNoArgs(thread_, frame, 1));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1234));
+}
+
+TEST_F(TrampolinesTest, MethodTrampolineNoArgsKw) {
+  HandleScope scope(thread_);
+  Frame* frame = thread_->currentFrame();
+  Function function(&scope, newEmptyFunction());
+  function.setCode(
+      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionNoArgs)));
+  frame->pushValue(*function);
+  Object self(&scope, runtime_.newTuple(1));
+  frame->pushValue(*self);
+  Object result(&scope, methodTrampolineNoArgsKw(thread_, frame, 0));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1234));
+}
+
+TEST_F(TrampolinesTest, MethodTrampolineNoArgsEx) {
+  HandleScope scope(thread_);
+  Frame* frame = thread_->currentFrame();
+  Function function(&scope, newEmptyFunction());
+  function.setCode(
+      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionNoArgs)));
+  frame->pushValue(*function);
+  Tuple varargs(&scope, runtime_.newTuple(1));
+  frame->pushValue(*varargs);
+  Object result(&scope, methodTrampolineNoArgsEx(thread_, frame, 0));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1234));
+}
+
+static PyObject* capiFunctionOneArg(PyObject* self, PyObject* args) {
+  Thread* thread = Thread::current();
+  thread->runtime()->collectGarbage();
+  EXPECT_EQ(ApiHandle::nativeRefcnt(self), 1);
+  EXPECT_EQ(ApiHandle::nativeRefcnt(args), 1);
+  return ApiHandle::newReference(thread, SmallInt::fromWord(1234));
+}
+
+TEST_F(TrampolinesTest, MethodTrampolineOneArg) {
+  HandleScope scope(thread_);
+  Frame* frame = thread_->currentFrame();
+  Function function(&scope, newEmptyFunction());
+  function.setCode(
+      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionOneArg)));
+  frame->pushValue(*function);
+  Object self(&scope, runtime_.newTuple(1));
+  frame->pushValue(*self);
+  Object args(&scope, runtime_.newTuple(1));
+  frame->pushValue(*args);
+  Object result(&scope, methodTrampolineOneArg(thread_, frame, 2));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1234));
+}
+
+TEST_F(TrampolinesTest, MethodTrampolineOneArgKw) {
+  HandleScope scope(thread_);
+  Frame* frame = thread_->currentFrame();
+  Function function(&scope, newEmptyFunction());
+  function.setCode(
+      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionOneArg)));
+  frame->pushValue(*function);
+  Object arg(&scope, runtime_.newTuple(1));
+  frame->pushValue(*arg);
+  Object self(&scope, runtime_.newTuple(1));
+  frame->pushValue(*self);
+  Tuple kwargs(&scope, runtime_.newTuple(0));
+  frame->pushValue(*kwargs);
+  Object result(&scope, methodTrampolineOneArgKw(thread_, frame, 2));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1234));
+}
+
+TEST_F(TrampolinesTest, MethodTrampolineOneArgEx) {
+  HandleScope scope(thread_);
+  Frame* frame = thread_->currentFrame();
+  Function function(&scope, newEmptyFunction());
+  function.setCode(
+      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionOneArg)));
+  frame->pushValue(*function);
+  Tuple varargs(&scope, runtime_.newTuple(2));
+  varargs.atPut(0, runtime_.newTuple(1));  // self
+  varargs.atPut(1, runtime_.newTuple(1));  // arg
+  frame->pushValue(*varargs);
+  Object result(&scope, methodTrampolineOneArgEx(thread_, frame, 0));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1234));
+}
+
+static PyObject* capiFunctionVarArgs(PyObject* self, PyObject* args) {
+  Thread* thread = Thread::current();
+  thread->runtime()->collectGarbage();
+  EXPECT_EQ(ApiHandle::nativeRefcnt(self), 1);
+  EXPECT_EQ(ApiHandle::nativeRefcnt(args), 1);
+  return ApiHandle::newReference(thread, SmallInt::fromWord(1234));
+}
+
+TEST_F(TrampolinesTest, MethodTrampolineVarArgs) {
+  HandleScope scope(thread_);
+  Frame* frame = thread_->currentFrame();
+  Function function(&scope, newEmptyFunction());
+  function.setCode(
+      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionVarArgs)));
+  frame->pushValue(*function);
+  Object self(&scope, runtime_.newTuple(1));
+  frame->pushValue(*self);
+  Object arg(&scope, runtime_.newTuple(1));
+  frame->pushValue(*arg);
+  Object result(&scope, methodTrampolineVarArgs(thread_, frame, 2));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1234));
+}
+
+TEST_F(TrampolinesTest, MethodTrampolineVarArgsKw) {
+  HandleScope scope(thread_);
+  Frame* frame = thread_->currentFrame();
+  Function function(&scope, newEmptyFunction());
+  function.setCode(
+      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionVarArgs)));
+  frame->pushValue(*function);
+  Object self(&scope, runtime_.newTuple(1));
+  frame->pushValue(*self);
+  Object arg0(&scope, runtime_.newTuple(1));
+  frame->pushValue(*arg0);
+  Object arg1(&scope, runtime_.newTuple(1));
+  frame->pushValue(*arg1);
+  Object kwargs(&scope, runtime_.newTuple(0));
+  frame->pushValue(*kwargs);
+  Object result(&scope, methodTrampolineVarArgsKw(thread_, frame, 3));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1234));
+}
+
+TEST_F(TrampolinesTest, MethodTrampolineVarArgsEx) {
+  HandleScope scope(thread_);
+  Frame* frame = thread_->currentFrame();
+  Function function(&scope, newEmptyFunction());
+  function.setCode(
+      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionVarArgs)));
+  frame->pushValue(*function);
+  Tuple varargs(&scope, runtime_.newTuple(1));
+  Object self(&scope, runtime_.newTuple(1));
+  varargs.atPut(0, *self);
+  frame->pushValue(*varargs);
+  Object result(&scope, methodTrampolineVarArgsEx(thread_, frame, 0));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1234));
+}
+
+static PyObject* capiFunctionKeywordsNullKwargs(PyObject* self, PyObject* args,
+                                                PyObject* kwargs) {
+  Thread* thread = Thread::current();
+  thread->runtime()->collectGarbage();
+  EXPECT_EQ(ApiHandle::nativeRefcnt(self), 1);
+  EXPECT_EQ(ApiHandle::nativeRefcnt(args), 1);
+  EXPECT_EQ(kwargs, nullptr);
+  return ApiHandle::newReference(thread, SmallInt::fromWord(1234));
+}
+
+TEST_F(TrampolinesTest, MethodTrampolineKeywords) {
+  HandleScope scope(thread_);
+  Frame* frame = thread_->currentFrame();
+  Function function(&scope, newEmptyFunction());
+  function.setCode(runtime_.newIntFromCPtr(
+      reinterpret_cast<void*>(capiFunctionKeywordsNullKwargs)));
+  frame->pushValue(*function);
+  Object self(&scope, runtime_.newTuple(1));
+  frame->pushValue(*self);
+  Object result(&scope, methodTrampolineKeywords(thread_, frame, 1));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1234));
+}
+
+static PyObject* capiFunctionKeywords(PyObject* self, PyObject* args,
+                                      PyObject* kwargs) {
+  Thread* thread = Thread::current();
+  thread->runtime()->collectGarbage();
+  EXPECT_EQ(ApiHandle::nativeRefcnt(self), 1);
+  EXPECT_EQ(ApiHandle::nativeRefcnt(args), 1);
+  EXPECT_EQ(ApiHandle::nativeRefcnt(kwargs), 1);
+  return ApiHandle::newReference(thread, SmallInt::fromWord(1234));
+}
+
+TEST_F(TrampolinesTest, MethodTrampolineKeywordsKw) {
+  HandleScope scope(thread_);
+  Frame* frame = thread_->currentFrame();
+  Function function(&scope, newEmptyFunction());
+  function.setCode(
+      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionKeywords)));
+  frame->pushValue(*function);
+  Object self(&scope, runtime_.newTuple(1));
+  frame->pushValue(*self);
+  frame->pushValue(SmallStr::fromCStr("bar"));
+  Tuple kwnames(&scope, runtime_.newTuple(1));
+  kwnames.atPut(0, SmallStr::fromCStr("foo"));
+  frame->pushValue(*kwnames);
+  Object result(&scope, methodTrampolineKeywordsKw(thread_, frame, 2));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1234));
+}
+
+TEST_F(TrampolinesTest, MethodTrampolineKeywordsEx) {
+  HandleScope scope(thread_);
+  Frame* frame = thread_->currentFrame();
+  Function function(&scope, newEmptyFunction());
+  function.setCode(runtime_.newIntFromCPtr(
+      reinterpret_cast<void*>(capiFunctionKeywordsNullKwargs)));
+  frame->pushValue(*function);
+  Tuple varargs(&scope, runtime_.newTuple(1));
+  Object self(&scope, runtime_.newTuple(1));
+  varargs.atPut(0, *self);
+  frame->pushValue(*varargs);
+  Object result(&scope, methodTrampolineKeywordsEx(thread_, frame, 0));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1234));
+}
+
 }  // namespace py

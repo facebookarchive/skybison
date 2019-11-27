@@ -726,9 +726,11 @@ static RawObject callMethNoArgs(Thread* thread, const Function& function,
   HandleScope scope(thread);
   Int address(&scope, function.code());
   binaryfunc method = bit_cast<binaryfunc>(address.asCPtr());
-  PyObject* self_obj = ApiHandle::borrowedReference(thread, *self);
-  PyObject* result = (*method)(self_obj, nullptr);
-  return ApiHandle::checkFunctionResult(thread, result);
+  PyObject* self_obj = ApiHandle::newReference(thread, *self);
+  PyObject* pyresult = (*method)(self_obj, nullptr);
+  Object result(&scope, ApiHandle::checkFunctionResult(thread, pyresult));
+  ApiHandle::fromPyObject(self_obj)->decref();
+  return *result;
 }
 
 RawObject methodTrampolineNoArgs(Thread* thread, Frame* frame, word argc) {
@@ -781,10 +783,13 @@ static RawObject callMethOneArg(Thread* thread, const Function& function,
   HandleScope scope(thread);
   Int address(&scope, function.code());
   binaryfunc method = bit_cast<binaryfunc>(address.asCPtr());
-  PyObject* self_obj = ApiHandle::borrowedReference(thread, *self);
-  PyObject* arg_obj = ApiHandle::borrowedReference(thread, *arg);
-  PyObject* result = (*method)(self_obj, arg_obj);
-  return ApiHandle::checkFunctionResult(thread, result);
+  PyObject* self_obj = ApiHandle::newReference(thread, *self);
+  PyObject* arg_obj = ApiHandle::newReference(thread, *arg);
+  PyObject* pyresult = (*method)(self_obj, arg_obj);
+  Object result(&scope, ApiHandle::checkFunctionResult(thread, pyresult));
+  ApiHandle::fromPyObject(self_obj)->decref();
+  ApiHandle::fromPyObject(arg_obj)->decref();
+  return *result;
 }
 
 RawObject methodTrampolineOneArg(Thread* thread, Frame* frame, word argc) {
@@ -845,10 +850,13 @@ static RawObject callMethVarArgs(Thread* thread, const Function& function,
   HandleScope scope(thread);
   Int address(&scope, function.code());
   binaryfunc method = bit_cast<binaryfunc>(address.asCPtr());
-  PyObject* self_obj = ApiHandle::borrowedReference(thread, *self);
-  PyObject* varargs_obj = ApiHandle::borrowedReference(thread, *varargs);
-  PyObject* result = (*method)(self_obj, varargs_obj);
-  return ApiHandle::checkFunctionResult(thread, result);
+  PyObject* self_obj = ApiHandle::newReference(thread, *self);
+  PyObject* varargs_obj = ApiHandle::newReference(thread, *varargs);
+  PyObject* pyresult = (*method)(self_obj, varargs_obj);
+  Object result(&scope, ApiHandle::checkFunctionResult(thread, pyresult));
+  ApiHandle::fromPyObject(self_obj)->decref();
+  ApiHandle::fromPyObject(varargs_obj)->decref();
+  return *result;
 }
 
 RawObject methodTrampolineVarArgs(Thread* thread, Frame* frame, word argc) {
@@ -867,6 +875,7 @@ RawObject methodTrampolineVarArgs(Thread* thread, Frame* frame, word argc) {
 }
 
 RawObject methodTrampolineVarArgsKw(Thread* thread, Frame* frame, word argc) {
+  DCHECK(argc > 1, "argc must be greater than 1");
   HandleScope scope(thread);
   Tuple kwargs(&scope, frame->peek(0));
   if (kwargs.length() != 0) {
@@ -909,17 +918,24 @@ static RawObject callMethKeywords(Thread* thread, const Function& function,
   HandleScope scope(thread);
   Int address(&scope, function.code());
   ternaryfunc method = bit_cast<ternaryfunc>(address.asCPtr());
-  PyObject* self_obj = ApiHandle::borrowedReference(thread, *self);
-  PyObject* args_obj = ApiHandle::borrowedReference(thread, *args);
+  PyObject* self_obj = ApiHandle::newReference(thread, *self);
+  PyObject* args_obj = ApiHandle::newReference(thread, *args);
   PyObject* kwargs_obj = nullptr;
   if (*kwargs != NoneType::object()) {
-    kwargs_obj = ApiHandle::borrowedReference(thread, *kwargs);
+    kwargs_obj = ApiHandle::newReference(thread, *kwargs);
   }
-  PyObject* result = (*method)(self_obj, args_obj, kwargs_obj);
-  return ApiHandle::checkFunctionResult(thread, result);
+  PyObject* pyresult = (*method)(self_obj, args_obj, kwargs_obj);
+  Object result(&scope, ApiHandle::checkFunctionResult(thread, pyresult));
+  ApiHandle::fromPyObject(self_obj)->decref();
+  ApiHandle::fromPyObject(args_obj)->decref();
+  if (kwargs_obj != nullptr) {
+    ApiHandle::fromPyObject(kwargs_obj)->decref();
+  }
+  return *result;
 }
 
 RawObject methodTrampolineKeywords(Thread* thread, Frame* frame, word argc) {
+  DCHECK(argc > 0, "argc must be greater than 0");
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Function function(&scope, frame->peek(argc));
