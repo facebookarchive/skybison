@@ -276,7 +276,6 @@ static PyModuleDef timemodule;
 
 typedef struct {
   PyObject *StructTimeType;
-  PyObject *_strptime_time;
 } timestate;
 
 #define timestate(o) ((timestate *)PyModule_GetState(o))
@@ -287,7 +286,6 @@ time_clear(PyObject *m)
 {
    timestate *state = timestate(m);
    Py_CLEAR(state->StructTimeType);
-   Py_CLEAR(state->_strptime_time);
    return 0;
 }
 
@@ -296,7 +294,6 @@ time_traverse(PyObject *m, visitproc visit, void *arg)
 {
     timestate *state = timestate(m);
     Py_VISIT(state->StructTimeType);
-    Py_VISIT(state->_strptime_time);
     return 0;
 }
 
@@ -759,8 +756,7 @@ time_strptime(PyObject *self, PyObject *args)
 
     if (!strptime_module)
         return NULL;
-    const char *_strptime_time_str = PyUnicode_AsUTF8(timestate_global->_strptime_time);
-    strptime_result = PyObject_CallMethod(strptime_module, _strptime_time_str,
+    strptime_result = PyObject_CallMethod(strptime_module, "_strptime_time",
                                           "O", args);
     Py_DECREF(strptime_module);
     return strptime_result;
@@ -1449,7 +1445,6 @@ PyInit_time(void)
     Py_INCREF(timestate(m)->StructTimeType);
     PyModule_AddIntConstant(m, "_STRUCT_TM_ITEMS", 11);
     PyModule_AddObject(m, "struct_time", StructTimeType);
-    timestate(m)->_strptime_time = PyUnicode_FromString("_strptime_time");
 
     if (PyErr_Occurred()) {
         return NULL;
