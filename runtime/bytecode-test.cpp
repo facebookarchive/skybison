@@ -56,6 +56,35 @@ TEST_F(BytecodeTest, OpargFromObject) {
             objectFromOparg(opargFromObject(SmallInt::fromWord(64))));
 }
 
+TEST_F(BytecodeTest, RewriteBytecodeWithMoreThanCacheLimitCapsRewriting) {
+  HandleScope scope(thread_);
+  Object name(&scope, Str::empty());
+  Code code(&scope, newEmptyCode());
+  byte bytecode[514];
+  for (int i = 0; i < 257; i++) {
+    bytecode[i * 2] = LOAD_ATTR;
+    bytecode[(i * 2) + 1] = i * 3;
+  }
+  code.setCode(runtime_.newBytesWithAll(bytecode));
+  Module module(&scope, runtime_.findOrCreateMainModule());
+  Function function(&scope,
+                    runtime_.newFunctionWithCode(thread_, name, code, module));
+  // newFunctionWithCode() calls rewriteBytecode().
+
+  byte expected[514];
+  for (int i = 0; i < 257; i++) {
+    expected[i * 2] = LOAD_ATTR_CACHED;
+    expected[(i * 2) + 1] = i;
+  }
+
+  // Bytecode inline cache rewritting is capped at 256 entires
+  expected[512] = LOAD_ATTR;
+  expected[513] = static_cast<byte>(256);
+
+  Object rewritten_bytecode(&scope, function.rewrittenBytecode());
+  EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
+}
+
 TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadAttrOperations) {
   HandleScope scope(thread_);
   Object name(&scope, Str::empty());
