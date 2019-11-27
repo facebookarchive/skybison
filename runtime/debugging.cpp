@@ -20,8 +20,8 @@ static const char* kOpNames[] = {
 #define OPNAME(name, num, handler) #name,
     FOREACH_BYTECODE(OPNAME)};
 
-std::ostream& dumpBytecode(std::ostream& os, const Bytes& bytecode,
-                           const char* indent) {
+static std::ostream& dumpBytecode(std::ostream& os, const Bytes& bytecode,
+                                  const char* indent) {
   for (word i = 0, length = bytecode.length(); i + 1 < length; i += 2) {
     byte op = bytecode.byteAt(i);
     byte arg = bytecode.byteAt(i + 1);
@@ -33,9 +33,9 @@ std::ostream& dumpBytecode(std::ostream& os, const Bytes& bytecode,
   return os;
 }
 
-std::ostream& dumpMutableBytecode(std::ostream& os,
-                                  const MutableBytes& bytecode,
-                                  const char* indent) {
+static std::ostream& dumpMutableBytecode(std::ostream& os,
+                                         const MutableBytes& bytecode,
+                                         const char* indent) {
   for (word i = 0, length = bytecode.length(); i + 1 < length; i += 2) {
     byte op = bytecode.byteAt(i);
     byte arg = bytecode.byteAt(i + 1);

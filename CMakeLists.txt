@@ -413,7 +413,8 @@ add_library(
 target_compile_options(
   runtime
   PRIVATE
-  ${PYRO_COMPILE_OPTIONS})
+  ${PYRO_COMPILE_OPTIONS}
+  -Wmissing-declarations)
 target_link_libraries(
   runtime
   PUBLIC

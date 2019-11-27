@@ -50,6 +50,8 @@ bool bytesIsValidUTF8(RawBytes bytes);
 // in strings, because python supports things like UTF-8B (aka surrogateescape).
 bool bytesIsValidStr(RawBytes bytes);
 
+RawObject bytesUnderlying(Thread* thread, const Object& obj);
+
 class SmallBytesBuiltins
     : public Builtins<SmallBytesBuiltins, SymbolId::kSmallBytes,
                       LayoutId::kSmallBytes, LayoutId::kBytes> {
