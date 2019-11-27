@@ -66,6 +66,13 @@ TEST_F(ConfigExtensionApiTest, ImportUnderSslReturnsModule) {
   EXPECT_TRUE(PyModule_Check(module));
 }
 
+TEST_F(ConfigExtensionApiTest, ImportUnderStatReturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("_stat"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
 TEST_F(ConfigExtensionApiTest, ImportUnderStentryReturnsModule) {
   PyObjectPtr module(PyImport_ImportModule("_stentry"));
   ASSERT_NE(module, nullptr);
@@ -73,8 +80,43 @@ TEST_F(ConfigExtensionApiTest, ImportUnderStentryReturnsModule) {
   EXPECT_TRUE(PyModule_Check(module));
 }
 
+TEST_F(ConfigExtensionApiTest, ImportUnderStructReturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("_struct"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
+TEST_F(ConfigExtensionApiTest, ImportAtexitReturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("atexit"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
 TEST_F(ConfigExtensionApiTest, ImportBinasciiReturnsModule) {
   PyObjectPtr module(PyImport_ImportModule("binascii"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
+TEST_F(ConfigExtensionApiTest, ImportErrnoReturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("errno"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
+TEST_F(ConfigExtensionApiTest, ImportFcntlReturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("fcntl"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
+TEST_F(ConfigExtensionApiTest, ImportGrpReturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("grp"));
   ASSERT_NE(module, nullptr);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyModule_Check(module));
@@ -100,8 +142,29 @@ b = math.floor(12.34)
   EXPECT_EQ(PyLong_Check(b), 1);
 }
 
+TEST_F(ConfigExtensionApiTest, ImportPosixReturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("posix"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
+TEST_F(ConfigExtensionApiTest, ImportPwdReturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("pwd"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
 TEST_F(ConfigExtensionApiTest, ImportSelectReturnsModule) {
   PyObjectPtr module(PyImport_ImportModule("select"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
+TEST_F(ConfigExtensionApiTest, ImportTermiosReturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("termios"));
   ASSERT_NE(module, nullptr);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyModule_Check(module));
@@ -136,13 +199,6 @@ b = time.perf_counter()
 
 TEST_F(ConfigExtensionApiTest, ImportZlibReturnsModule) {
   PyObjectPtr module(PyImport_ImportModule("zlib"));
-  ASSERT_NE(module, nullptr);
-  EXPECT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(PyModule_Check(module));
-}
-
-TEST_F(ConfigExtensionApiTest, ImportUnderStructReturnsModule) {
-  PyObjectPtr module(PyImport_ImportModule("_struct"));
   ASSERT_NE(module, nullptr);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyModule_Check(module));
