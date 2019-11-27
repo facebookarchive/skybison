@@ -7124,6 +7124,74 @@ class SeqTests(unittest.TestCase):
 
 
 class SetTests(unittest.TestCase):
+    def test_set_difference_update_with_non_iterable_raises_type_error(self):
+        a = {1, 2, 3}
+        with self.assertRaises(TypeError):
+            a.difference_update(1)
+
+    def test_set_difference_update_no_match(self):
+        a = {1, 2, 3}
+        b = {4, 5, 6}
+        a.difference_update(b)
+        self.assertEqual(len(a), 3)
+        self.assertIn(1, a)
+        self.assertIn(2, a)
+        self.assertIn(3, a)
+
+    def test_set_difference_update_removes_elements(self):
+        a = {1, 2, 3}
+        b = {2, 3}
+        a.difference_update(b)
+        self.assertEqual(len(a), 1)
+        self.assertIn(1, a)
+
+    def test_set_difference_update_with_iterable_removes_elements(self):
+        a = {1, 2, 3}
+        b = [2]
+        a.difference_update(b)
+        self.assertEqual(len(a), 2)
+        self.assertIn(1, a)
+        self.assertIn(3, a)
+
+    def test_set_difference_update_with_multiple_args_removes_elements(self):
+        a = {1, 2, 3}
+        b = [2]
+        c = {1, 3}
+        a.difference_update(b, c)
+        self.assertEqual(len(a), 0)
+
+    def test_set_subclass_difference_removes_elements(self):
+        class SubSet(set):
+            pass
+
+        a = SubSet([1, 2, 3])
+        b = {2, 3}
+        a.difference_update(b)
+        self.assertEqual(len(a), 1)
+        self.assertIn(1, a)
+
+    def test_set_subclass_difference_update_with_custom_discard(self):
+        class SubSet(set):
+            def discard(self, item):
+                pass
+
+        a = SubSet([1, 2, 3])
+        b = {2, 3}
+        a.difference_update(b)
+        self.assertEqual(len(a), 1)
+        self.assertIn(1, a)
+
+    def test_set_subclass_difference_ignores_subclass_difference_update(self):
+        class SubSet(set):
+            def difference_update(self, *others):
+                pass
+
+        a = SubSet([1, 2, 3])
+        b = {2, 3}
+        set.difference_update(a, b)
+        self.assertEqual(len(a), 1)
+        self.assertIn(1, a)
+
     def test_dunder_or_with_non_set_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             set.__or__(frozenset(), set())

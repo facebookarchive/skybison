@@ -4366,6 +4366,12 @@ class set(bootstrap=True):
             result = diff
         return set(result)
 
+    def difference_update(self, *others):
+        _set_guard(self)
+        for other in others:
+            for item in other:
+                set.discard(self, item)
+
     def discard(self, elem):
         pass
 
