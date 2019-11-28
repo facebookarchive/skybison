@@ -373,7 +373,7 @@ class Runtime {
   RawObject typeAt(LayoutId layout_id);
   RawObject layoutAt(LayoutId layout_id) {
     DCHECK(layout_id != LayoutId::kError, "Error has no Layout");
-    return List::cast(layouts_).at(static_cast<word>(layout_id));
+    return Tuple::cast(layouts_).at(static_cast<word>(layout_id));
   }
   void layoutAtPut(LayoutId layout_id, RawObject object);
   // Get layout for `layout_id` and attempt not to crash for invalid ids. This
@@ -660,6 +660,8 @@ class Runtime {
 
   static const word kInitialInternSetCapacity = 8192;
 
+  static const word kInitialLayoutTupleCapacity = 1024;
+
   // Explicitly seed the random number generator
   void seedRandom(const uword random_state[2], const uword hash_secret[2]);
 
@@ -924,8 +926,10 @@ class Runtime {
   // List of native instances which can be finalizable through tp_dealloc
   RawObject finalizable_references_ = NoneType::object();
 
-  // A List of Layout objects, indexed by layout id.
+  // A MutableTuple of Layout objects, indexed by layout id.
   RawObject layouts_ = NoneType::object();
+  // The number of layout objects in layouts_.
+  word num_layouts_ = 0;
 
   // Internal-only types, for which the Layout has a different described type
   RawObject large_bytes_ = NoneType::object();

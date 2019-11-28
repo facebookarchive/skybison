@@ -175,10 +175,10 @@ RawObject Runtime::newLayout() {
 
 RawObject Runtime::layoutAtSafe(LayoutId layout_id) {
   word id = static_cast<word>(layout_id);
-  if (id < 0 || id >= List::cast(layouts_).numItems()) {
+  if (id < 0 || id >= num_layouts_) {
     return Error::notFound();
   }
-  RawObject result = List::cast(layouts_).at(id);
+  RawObject result = Tuple::cast(layouts_).at(id);
   if (result.isNoneType()) return Error::notFound();
   return result;
 }
@@ -1613,14 +1613,11 @@ void Runtime::initializeTypes() {
 }
 
 void Runtime::initializeLayouts() {
-  HandleScope scope;
-  Tuple array(&scope, newMutableTuple(256));
-  List list(&scope, newList());
-  list.setItems(*array);
-  const word allocated = static_cast<word>(LayoutId::kLastBuiltinId) + 1;
-  CHECK(allocated < array.length(), "bad allocation %ld", allocated);
-  list.setNumItems(allocated);
-  layouts_ = *list;
+  layouts_ = newMutableTuple(kInitialLayoutTupleCapacity);
+  static_assert(
+      static_cast<word>(LayoutId::kLastBuiltinId) < kInitialLayoutTupleCapacity,
+      "initial layout tuple size too small");
+  num_layouts_ = static_cast<word>(LayoutId::kLastBuiltinId) + 1;
 }
 
 RawObject Runtime::createMro(const Layout& subclass_layout,
@@ -2435,7 +2432,7 @@ void Runtime::setSmallIntType(const Type& type) { small_int_ = *type; }
 void Runtime::setSmallStrType(const Type& type) { small_str_ = *type; }
 
 void Runtime::layoutAtPut(LayoutId layout_id, RawObject object) {
-  List::cast(layouts_).atPut(static_cast<word>(layout_id), object);
+  MutableTuple::cast(layouts_).atPut(static_cast<word>(layout_id), object);
 }
 
 RawObject Runtime::typeAt(LayoutId layout_id) {
@@ -2443,13 +2440,17 @@ RawObject Runtime::typeAt(LayoutId layout_id) {
 }
 
 LayoutId Runtime::reserveLayoutId(Thread* thread) {
-  HandleScope scope(thread);
-  List list(&scope, layouts_);
-  Object value(&scope, NoneType::object());
-  word result = list.numItems();
-  DCHECK(result <= RawHeader::kMaxLayoutId,
-         "exceeded layout id space in header word");
-  listAdd(thread, list, value);
+  word result = num_layouts_++;
+  DCHECK(result < Header::kMaxLayoutId, "layout id overflow");
+  word length = Tuple::cast(layouts_).length();
+  if (result >= length) {
+    HandleScope scope(thread);
+    Tuple old_tuple(&scope, layouts_);
+    word new_length = newCapacity(length, kInitialLayoutTupleCapacity);
+    MutableTuple new_tuple(&scope, newMutableTuple(new_length));
+    new_tuple.replaceFromWith(0, *old_tuple, length);
+    layouts_ = *new_tuple;
+  }
   return static_cast<LayoutId>(result);
 }
 

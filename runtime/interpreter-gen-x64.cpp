@@ -391,9 +391,7 @@ void emitLoadOverflowTuple(EmitEnv* env, Register r_dst, Register r_layout_id,
   __ movq(r_dst, Address(kThreadReg, Thread::runtimeOffset()));
   // Load runtime->layouts_
   __ movq(r_dst, Address(r_dst, Runtime::layoutsOffset()));
-  // Load layouts.items
-  __ movq(r_dst, Address(r_dst, heapObjectDisp(List::kItemsOffset)));
-  // Load items[r_layout_id]
+  // Load layouts_[r_layout_id]
   __ movq(r_dst, Address(r_dst, r_layout_id, TIMES_4, heapObjectDisp(0)));
   // Load layout.numInObjectAttributes
   __ movq(r_dst,
