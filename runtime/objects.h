@@ -610,8 +610,8 @@ enum class ObjectFormat {
  * Tag          3   tag for a header object
  * Format       1   enumeration describing the object encoding
  * LayoutId    20   identifier for the layout, allowing 2^20 unique layouts
- * Hash        32   bits to use for an identity hash code
  * Count        8   number of array elements or instance variables
+ * Hash        32   bits to use for an identity hash code
  */
 class RawHeader : public RawObject {
  public:
@@ -639,15 +639,15 @@ class RawHeader : public RawObject {
   static const int kLayoutIdOffset = kFormatOffset + kFormatBits;
   static const uword kLayoutIdMask = (1 << kLayoutIdBits) - 1;
 
-  static const int kHashCodeBits = 32;
-  static const int kHashCodeOffset = kLayoutIdOffset + kLayoutIdBits;
-  static const uword kHashCodeMask = (1UL << kHashCodeBits) - 1;
-
   static const int kCountBits = 8;
-  static const int kCountOffset = kHashCodeOffset + kHashCodeBits;
+  static const int kCountOffset = kLayoutIdOffset + kLayoutIdBits;
   static const uword kCountMask = (1 << kCountBits) - 1;
 
-  static const int kTotalBits = kCountOffset + kCountBits;
+  static const int kHashCodeBits = 32;
+  static const int kHashCodeOffset = kCountOffset + kCountBits;
+  static const uword kHashCodeMask = (1UL << kHashCodeBits) - 1;
+
+  static const int kTotalBits = kHashCodeOffset + kHashCodeBits;
   static_assert(kTotalBits == 64, "Header should be exactly 64 bits");
 
   static const int kCountOverflowFlag = (1 << kCountBits) - 1;
