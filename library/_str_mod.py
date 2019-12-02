@@ -17,6 +17,8 @@ _str_len = _str_len  # noqa: F821
 _strarray = _strarray  # noqa: F821
 _strarray_iadd = _strarray_iadd  # noqa: F821
 _tuple_check = _tuple_check  # noqa: F821
+_tuple_getitem = _tuple_getitem  # noqa: F821
+_tuple_len = _tuple_len  # noqa: F821
 _type = _type  # noqa: F821
 
 
@@ -87,7 +89,7 @@ def format(string: str, args) -> str:  # noqa: C901
     args_dict = None
     if _tuple_check(args):
         args_tuple = args
-        args_len = len(args_tuple)
+        args_len = _tuple_len(args_tuple)
     else:
         args_tuple = (args,)
         args_len = 1
@@ -169,7 +171,7 @@ def format(string: str, args) -> str:  # noqa: C901
             if c is "*":  # noqa: F632
                 if arg_idx >= args_len:
                     raise TypeError("not enough arguments for format string")
-                arg = args_tuple[arg_idx]
+                arg = _tuple_getitem(args_tuple, arg_idx)
                 arg_idx += 1
                 if not _int_check(arg):
                     raise TypeError("* wants int")
@@ -198,7 +200,7 @@ def format(string: str, args) -> str:  # noqa: C901
                 if c is "*":  # noqa: F632
                     if arg_idx >= args_len:
                         raise TypeError("not enough arguments for format string")
-                    arg = args_tuple[arg_idx]
+                    arg = _tuple_getitem(args_tuple, arg_idx)
                     arg_idx += 1
                     if not _int_check(arg):
                         raise TypeError("* wants int")
@@ -218,7 +220,7 @@ def format(string: str, args) -> str:  # noqa: C901
             if c is not "%":  # noqa: F632
                 if arg_idx >= args_len:
                     raise TypeError("not enough arguments for format string")
-                arg = args_tuple[arg_idx]
+                arg = _tuple_getitem(args_tuple, arg_idx)
                 arg_idx += 1
 
             if c is "%":  # noqa: F632

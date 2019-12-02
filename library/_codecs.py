@@ -4,14 +4,18 @@
 # their definitions and will complain without this gross circular helper here.
 _bytearray_check = _bytearray_check  # noqa: F821
 _bytes_check = _bytes_check  # noqa: F821
+_bytes_len = _bytes_len  # noqa: F821
 _byteslike_guard = _byteslike_guard  # noqa: F821
 _index = _index  # noqa: F821
 _int_check = _int_check  # noqa: F821
+_object_type_hasattr = _object_type_hasattr  # noqa: F821
 _patch = _patch  # noqa: F821
 _str_check = _str_check  # noqa: F821
+_str_len = _str_len  # noqa: F821
 _strarray = _strarray  # noqa: F821
 _strarray_iadd = _strarray_iadd  # noqa: F821
 _tuple_check = _tuple_check  # noqa: F821
+_tuple_len = _tuple_len  # noqa: F821
 _type = _type  # noqa: F821
 _Unbound = _Unbound  # noqa: F821
 _unimplemented = _unimplemented  # noqa: F821
@@ -39,7 +43,7 @@ def lookup(encoding):
         result = search_func(normalized_encoding)
         if result is None:
             continue
-        if not _tuple_check(result) or not len(result) == 4:
+        if not _tuple_check(result) or _tuple_len(result) != 4:
             raise TypeError("codec search functions must return 4-tuples")
         break
     if result is None:
@@ -77,7 +81,7 @@ def decode(data, encoding: str = "utf-8", errors: str = _Unbound) -> str:
             result = decoder(data)
         else:
             result = decoder(data, errors)
-        if _tuple_check(result) and len(result) == 2:
+        if _tuple_check(result) and _tuple_len(result) == 2:
             return result[0]
         # CPython does not check to make sure that the second element is an int
         raise TypeError("decoder must return a tuple (object,integer)")
@@ -97,7 +101,7 @@ def encode(data, encoding: str = "utf-8", errors: str = _Unbound) -> bytes:
             result = encoder(data)
         else:
             result = encoder(data, errors)
-        if _tuple_check(result) and len(result) == 2:
+        if _tuple_check(result) and _tuple_len(result) == 2:
             return result[0]
         # CPython does not check to make sure that the second element is an int
         raise TypeError("encoder must return a tuple (object, integer)")
@@ -155,7 +159,7 @@ def ascii_encode(data: str, errors: str = "strict"):
     result = bytearray()
     i = 0
     encoded = b""
-    length = len(data)
+    length = _str_len(data)
     while i < length:
         encoded, i = _ascii_encode(data, errors, i, result)
         if _int_check(encoded):
@@ -209,8 +213,9 @@ def _escape_decode_stateful(
     return decoded
 
 
-def escape_decode(data: bytes, errors: str = "strict") -> str:
-    return _escape_decode_stateful(data, errors)[:2]
+def escape_decode(data, errors: str = "strict"):
+    escaped, length, _ = _escape_decode_stateful(data, errors)
+    return escaped, length
 
 
 # TODO(T53437294): Import encodings.idna
@@ -268,7 +273,7 @@ def latin_1_encode(data: str, errors: str = "strict"):
     result = bytearray()
     i = 0
     encoded = b""
-    length = len(data)
+    length = _str_len(data)
     while i < length:
         encoded, i = _latin_1_encode(data, errors, i, result)
         if _int_check(encoded):
@@ -332,8 +337,9 @@ def _unicode_escape_decode_stateful(data: bytes, errors: str = "strict"):
     return str(result), i, first_invalid
 
 
-def unicode_escape_decode(data: bytes, errors: str = "strict") -> str:
-    return _unicode_escape_decode_stateful(data, errors)[:2]
+def unicode_escape_decode(data, errors: str = "strict"):
+    escaped, length, _ = _unicode_escape_decode_stateful(data, errors)
+    return escaped, length
 
 
 @_patch
@@ -399,7 +405,7 @@ def utf_8_encode(data: str, errors: str = "strict"):
     result = bytearray()
     i = 0
     encoded = bytes()
-    length = len(data)
+    length = _str_len(data)
     while i < length:
         encoded, i = _utf_8_encode(data, errors, i, result)
         if _int_check(encoded):
@@ -453,7 +459,7 @@ def utf_16_encode(data: str, errors: str = "strict", byteorder: int = 0):  # noq
         result += b"\xFF"
         result += b"\xFE"
     i = 0
-    length = len(data)
+    length = _str_len(data)
     encoded = bytes(result)
     while i < length:
         encoded, i = _utf_16_encode(data, errors, i, result, byteorder)
@@ -462,7 +468,7 @@ def utf_16_encode(data: str, errors: str = "strict", byteorder: int = 0):  # noq
                 errors, data, "surrogates not allowed", h_encoding, encoded, i
             )
             if _bytes_check(unicode):
-                if len(unicode) & 1:
+                if _bytes_len(unicode) & 1:
                     raise UnicodeEncodeError(
                         h_encoding, data, encoded, i, "surrogates not allowed"
                     )
@@ -521,7 +527,7 @@ def utf_32_encode(data: str, errors: str = "strict", byteorder: int = 0):  # noq
     if byteorder == 0:
         result += b"\xFF\xFE\x00\x00"
     i = 0
-    length = len(data)
+    length = _str_len(data)
     encoded = bytes(result)
     while i < length:
         encoded, i = _utf_32_encode(data, errors, i, result, byteorder)
@@ -530,7 +536,7 @@ def utf_32_encode(data: str, errors: str = "strict", byteorder: int = 0):  # noq
                 errors, data, "surrogates not allowed", hEncoding, encoded, i
             )
             if _bytes_check(unicode):
-                if len(unicode) & 3:
+                if _bytes_len(unicode) & 3:
                     raise UnicodeEncodeError(
                         hEncoding, data, encoded, i, "surrogates not allowed"
                     )
@@ -669,21 +675,20 @@ def _call_decode_errorhandler(
     """
     exception = UnicodeDecodeError(encoding, input, start, end, reason)
     result = lookup_error(errors)(exception)
-    if (
-        not _tuple_check(result)
-        or len(result) != 2
-        or not _str_check(result[0])
-        or not hasattr(result[1], "__index__")
-    ):
+    if not _tuple_check(result) or _tuple_len(result) != 2:
         raise TypeError("decoding error handler must return (str, int) tuple")
-    replacement = result[0]
-    pos = _index(result[1])
+
+    replacement, pos = result
+    if not _str_check(replacement) or not _object_type_hasattr(pos, "__index__"):
+        raise TypeError("decoding error handler must return (str, int) tuple")
+
+    pos = _index(pos)
     input = exception.object
     if not _bytes_check(input):
         raise TypeError("exception attribute object must be bytes")
     if pos < 0:
-        pos += len(input)
-    if not 0 <= pos <= len(input):
+        pos += _bytes_len(input)
+    if not 0 <= pos <= _bytes_len(input):
         raise IndexError(f"position {pos} from error handler out of bounds")
     _strarray_iadd(output, replacement)
 
@@ -708,18 +713,22 @@ def _call_encode_errorhandler(
     """
     exception = UnicodeEncodeError(encoding, input, start, end, reason)
     result = lookup_error(errors)(exception)
+    if not _tuple_check(result) or _tuple_len(result) != 2:
+        raise TypeError("encoding error handler must return (str/bytes, int) tuple")
+
+    unicode, pos = result
     if (
-        not _tuple_check(result)
-        or len(result) != 2
-        or not isinstance(result[0], (str, bytes))
-        or not hasattr(result[1], "__index__")
+        not _str_check(unicode)
+        and not _bytes_check(unicode)
+        or not _object_type_hasattr(pos, "__index__")
     ):
         raise TypeError("encoding error handler must return (str/bytes, int) tuple")
-    unicode = result[0]
-    pos = _index(result[1])
+
+    pos = _index(pos)
+    length = len(input)
     if pos < 0:
-        pos += len(input)
-    if not 0 <= pos <= len(input):
+        pos += length
+    if not 0 <= pos <= length:
         raise IndexError(f"position {pos} from error handler out of bounds")
 
     return unicode, pos
