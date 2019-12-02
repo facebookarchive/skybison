@@ -287,14 +287,15 @@ class IcIterator {
 
   bool isAttrCache() const {
     switch (bytecode_op_.bc) {
+      case BINARY_SUBSCR_CACHED:
+      case FOR_ITER_CACHED:
       case LOAD_ATTR_CACHED:
       case LOAD_ATTR_INSTANCE_PROPERTY:
       case LOAD_ATTR_TYPE:
       case LOAD_METHOD_CACHED:
       case STORE_ATTR_CACHED:
       case STORE_ATTR_INSTANCE_UPDATE:
-      case FOR_ITER_CACHED:
-      case BINARY_SUBSCR_CACHED:
+      case STORE_SUBSCR_CACHED:
         return true;
       default:
         return false;

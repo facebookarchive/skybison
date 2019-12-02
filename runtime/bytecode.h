@@ -252,7 +252,7 @@ namespace py {
   V(UNUSED_BYTECODE_233, 233, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_234, 234, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_235, 235, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_236, 236, doInvalidBytecode)                               \
+  V(STORE_SUBSCR_CACHED, 236, doStoreSubscrCached)                             \
   V(LOAD_ATTR_INSTANCE_PROPERTY, 237, doLoadAttrInstanceProperty)              \
   V(STORE_ATTR_INSTANCE_UPDATE, 238, doStoreAttrInstanceUpdate)                \
   V(LOAD_ATTR_TYPE, 239, doLoadAttrType)                                       \
@@ -347,6 +347,7 @@ inline bool isByteCodeWithCache(const Bytecode bc) {
     case LOAD_METHOD_CACHED:
     case STORE_ATTR_CACHED:
     case STORE_ATTR_INSTANCE_UPDATE:
+    case STORE_SUBSCR_CACHED:
       return true;
     default:
       return false;

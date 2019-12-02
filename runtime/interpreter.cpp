@@ -1537,6 +1537,72 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscr(Thread* thread, word) {
   return Continue::NEXT;
 }
 
+NEVER_INLINE Continue Interpreter::storeSubscrUpdateCache(Thread* thread,
+                                                          word arg) {
+  HandleScope scope(thread);
+  Frame* frame = thread->currentFrame();
+  Object key(&scope, frame->popValue());
+  Object container(&scope, frame->popValue());
+  Object setitem(
+      &scope, lookupMethod(thread, frame, container, SymbolId::kDunderSetitem));
+  if (setitem.isError()) {
+    if (setitem.isErrorNotFound()) {
+      thread->raiseWithFmt(LayoutId::kTypeError,
+                           "'%T' object does not support item assignment",
+                           &container);
+    }
+    return Continue::UNWIND;
+  }
+  if (setitem.isFunction()) {
+    Tuple caches(&scope, frame->caches());
+    Str set_item_name(
+        &scope, thread->runtime()->symbols()->at(SymbolId::kDunderSetitem));
+    Function dependent(&scope, frame->function());
+    icUpdateAttr(thread, caches, arg, container.layoutId(), setitem,
+                 set_item_name, dependent);
+  }
+  Object value(&scope, frame->popValue());
+  if (callMethod3(thread, frame, setitem, container, key, value).isError()) {
+    return Continue::UNWIND;
+  }
+  return Continue::NEXT;
+}
+
+HANDLER_INLINE Continue Interpreter::doStoreSubscrCached(Thread* thread,
+                                                         word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject container_raw = frame->peek(1);
+  LayoutId container_layout_id = container_raw.layoutId();
+  RawObject cached = icLookupAttr(frame->caches(), arg, container_layout_id);
+  if (cached.isErrorNotFound()) {
+    return storeSubscrUpdateCache(thread, arg);
+  }
+  DCHECK(cached.isFunction(), "cached should be a function");
+  // The shape of the frame before STORE_SUBSCR:
+  //   2: value
+  //   1: container
+  //   0: key
+  //
+  // The shape of the frame is modified to call __setitem__ as follows:
+  //   3: function (__setitem__)
+  //   2: container
+  //   1: key
+  //   0: value
+  RawObject value_raw = frame->peek(2);
+  frame->setValueAt(cached, 2);
+  frame->pushValue(value_raw);
+
+  word nargs = 3;
+  RawObject* sp = frame->valueStackTop() + nargs + 1;
+  RawObject result = Function::cast(cached).entry()(thread, frame, nargs);
+  // Clear the stack of the function object and return.
+  frame->setValueStackTop(sp);
+  if (result.isError()) {
+    return Continue::UNWIND;
+  }
+  return Continue::NEXT;
+}
+
 HANDLER_INLINE Continue Interpreter::doDeleteSubscr(Thread* thread, word) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();

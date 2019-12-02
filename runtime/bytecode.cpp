@@ -152,6 +152,8 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op) {
       int32_t reverse_arg = total_locals - op.arg - 1;
       return RewrittenOp{STORE_FAST_REVERSE, reverse_arg, false};
     }
+    case STORE_SUBSCR:
+      return RewrittenOp{STORE_SUBSCR_CACHED, op.arg, true};
     case LOAD_CONST: {
       RawObject arg_obj =
           Tuple::cast(Code::cast(function.code()).consts()).at(op.arg);

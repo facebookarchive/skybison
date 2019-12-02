@@ -374,6 +374,7 @@ class Interpreter {
   static Continue doStoreAttrCached(Thread* thread, word arg);
   static Continue doStoreAttrInstanceUpdate(Thread* thread, word arg);
   static Continue doStoreSubscr(Thread* thread, word arg);
+  static Continue doStoreSubscrCached(Thread* thread, word arg);
   static Continue doUnaryInvert(Thread* thread, word arg);
   static Continue doUnaryNegative(Thread* thread, word arg);
   static Continue doUnaryNot(Thread* thread, word arg);
@@ -522,6 +523,7 @@ class Interpreter {
 
   static Continue loadAttrUpdateCache(Thread* thread, word arg);
   static Continue storeAttrUpdateCache(Thread* thread, word arg);
+  static Continue storeSubscrUpdateCache(Thread* thread, word arg);
 
   using BinaryOpFallbackHandler = Continue (*)(Thread* thread, word arg,
                                                BinaryOpFlags flags);
