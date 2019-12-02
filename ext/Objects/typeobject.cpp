@@ -758,34 +758,41 @@ RawObject addOperators(Thread* thread, const Type& type) {
     // When given PyObject_HashNotImplemented, put None in the type dict
     // rather than a wrapper. CPython does this regardless of which slot it
     // was given for, so we do too.
-    if (Int::cast(*slot_value).asCPtr() ==
-        bit_cast<void*>(&PyObject_HashNotImplemented)) {
+    void* slot_value_ptr = Int::cast(*slot_value).asCPtr();
+    if (slot_value_ptr == bit_cast<void*>(&PyObject_HashNotImplemented)) {
       Object none(&scope, NoneType::object());
       typeAtPutById(thread, type, slot.name, none);
       return NoneType::object();
     }
 
-    // Create the wrapper function.
-    Str slot_name(&scope, runtime->symbols()->at(slot.name));
-    Str qualname(&scope,
-                 runtime->newStrFromFmt("%S.%S", &type_name, &slot_name));
-    Code code(&scope, newExtCode(thread, slot_name, slot.parameters,
-                                 slot.num_parameters, slot.flags,
-                                 bit_cast<void*>(slot.wrapper), slot_value));
-    Object globals(&scope, NoneType::object());
-    Function func(
-        &scope, runtime->newFunctionWithCode(thread, qualname, code, globals));
-    if (slot.id == Type::Slot::kNumberPower) {
-      func.setDefaults(runtime->newTuple(1));
-    }
+    Object func_obj(&scope, NoneType::object());
+    if (slot_value_ptr == bit_cast<void*>(&PyObject_GenericGetAttr)) {
+      func_obj = runtime->objectDunderGetattribute();
+    } else if (slot_value_ptr == bit_cast<void*>(&PyObject_GenericSetAttr)) {
+      func_obj = runtime->objectDunderSetattr();
+    } else {
+      // Create the wrapper function.
+      Str slot_name(&scope, runtime->symbols()->at(slot.name));
+      Str qualname(&scope,
+                   runtime->newStrFromFmt("%S.%S", &type_name, &slot_name));
+      Code code(&scope, newExtCode(thread, slot_name, slot.parameters,
+                                   slot.num_parameters, slot.flags,
+                                   bit_cast<void*>(slot.wrapper), slot_value));
+      Object globals(&scope, NoneType::object());
+      Function func(&scope, runtime->newFunctionWithCode(thread, qualname, code,
+                                                         globals));
+      if (slot.id == Type::Slot::kNumberPower) {
+        func.setDefaults(runtime->newTuple(1));
+      }
 
-    // __new__ is the one special-case static method, so wrap it
-    // appropriately.
-    Object func_obj(&scope, *func);
-    if (slot.id == Type::Slot::kNew) {
-      func_obj = thread->invokeFunction1(SymbolId::kBuiltins,
-                                         SymbolId::kStaticMethod, func);
-      if (func_obj.isError()) return *func_obj;
+      // __new__ is the one special-case static method, so wrap it
+      // appropriately.
+      func_obj = *func;
+      if (slot.id == Type::Slot::kNew) {
+        func_obj = thread->invokeFunction1(SymbolId::kBuiltins,
+                                           SymbolId::kStaticMethod, func);
+        if (func_obj.isError()) return *func_obj;
+      }
     }
 
     // Finally, put the wrapper in the type dict.
