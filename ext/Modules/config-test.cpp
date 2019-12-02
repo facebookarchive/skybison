@@ -10,6 +10,28 @@ using namespace testing;
 
 using ConfigExtensionApiTest = ExtensionApi;
 
+TEST_F(ConfigExtensionApiTest, ImportUnderAstReturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("_ast"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
+TEST_F(ConfigExtensionApiTest, ImportUnderAstModuleMethods) {
+  PyRun_SimpleString(R"(
+import ast
+c = "print('hello') "
+b = ast.parse(c)
+a = ast.dump(b)
+)");
+  PyObjectPtr a(moduleGet("__main__", "a"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(isUnicodeEqualsCStr(
+      a,
+      "Module(body=[Expr(value=Call(func=Name(id='print', ctx=Load()), "
+      "args=[Str(s='hello')], keywords=[]))])"));
+}
+
 TEST_F(ConfigExtensionApiTest, ImportUnderCapsuleReturnsModule) {
   PyObjectPtr module(PyImport_ImportModule("_capsule"));
   ASSERT_NE(module, nullptr);

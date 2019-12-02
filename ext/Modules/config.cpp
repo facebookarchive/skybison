@@ -1,6 +1,7 @@
 #include "cpython-func.h"
 #include "cpython-types.h"
 
+extern "C" PyObject* PyInit__ast();
 extern "C" PyObject* PyInit__capsule();
 extern "C" PyObject* PyInit__compile();
 extern "C" PyObject* PyInit__hashlib();
@@ -37,6 +38,7 @@ PyObject* PyInit__empty() {
 
 // clang-format off
 struct _inittab _PyImport_Inittab[] = {
+    {"_ast", PyInit__ast},
     {"_capsule", PyInit__capsule},
     {"_compile", PyInit__compile},
     {"_empty", PyInit__empty},
