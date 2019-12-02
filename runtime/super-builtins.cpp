@@ -171,13 +171,13 @@ RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   Type type(&scope, *type_obj);
   if (runtime->isInstanceOfType(*obj)) {
     Type obj_type(&scope, *obj);
-    if (runtime->isSubclass(obj_type, type)) {
+    if (typeIsSubclass(obj_type, type)) {
       obj_type_obj = *obj;
     }
   }
   if (obj_type_obj.isNoneType()) {
     Type obj_type(&scope, runtime->typeOf(*obj));
-    if (runtime->isSubclass(obj_type, type)) {
+    if (typeIsSubclass(obj_type, type)) {
       obj_type_obj = *obj_type;
     } else {
       return thread->raiseWithFmt(LayoutId::kTypeError,

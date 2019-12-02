@@ -655,7 +655,7 @@ RawObject Interpreter::binaryOperationSetMethod(Thread* thread, Frame* frame,
   Object method(&scope, NoneType::object());
   BinaryOpFlags flags = kBinaryOpNone;
   if (left_type != right_type && (left_method.isErrorNotFound() ||
-                                  runtime->isSubclass(right_type, left_type))) {
+                                  typeIsSubclass(right_type, left_type))) {
     method = binaryOperationLookupReflected(thread, op, left, right);
     if (!method.isError()) {
       flags = kBinaryOpReflected;
@@ -774,7 +774,7 @@ RawObject Interpreter::compareOperationSetMethod(
   Object method(&scope, *left_method);
   BinaryOpFlags flags = kBinaryOpNone;
   if (left_type != right_type && (left_method.isErrorNotFound() ||
-                                  runtime->isSubclass(right_type, left_type))) {
+                                  typeIsSubclass(right_type, left_type))) {
     SymbolId reverse_selector = runtime->swappedComparisonSelector(op);
     method = typeLookupInMroById(thread, right_type, reverse_selector);
     if (!method.isError()) {

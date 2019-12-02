@@ -244,9 +244,9 @@ static RawObject calculateMetaclass(Thread* thread, const Type& metaclass_type,
   Runtime* runtime = thread->runtime();
   for (word i = 0, num_bases = bases.length(); i < num_bases; i++) {
     Type base_type(&scope, runtime->typeOf(bases.at(i)));
-    if (runtime->isSubclass(base_type, result)) {
+    if (typeIsSubclass(base_type, result)) {
       result = *base_type;
-    } else if (!runtime->isSubclass(result, base_type)) {
+    } else if (!typeIsSubclass(result, base_type)) {
       return thread->raiseWithFmt(
           LayoutId::kTypeError,
           "metaclass conflict: the metaclass of a derived class must be a "

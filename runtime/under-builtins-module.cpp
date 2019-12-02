@@ -4005,7 +4005,7 @@ RawObject UnderBuiltinsModule::underTypeIsSubclass(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Type subclass(&scope, args.get(0));
   Type superclass(&scope, args.get(1));
-  return Bool::fromBool(thread->runtime()->isSubclass(subclass, superclass));
+  return Bool::fromBool(typeIsSubclass(subclass, superclass));
 }
 
 RawObject UnderBuiltinsModule::underTypeNew(Thread* thread, Frame* frame,

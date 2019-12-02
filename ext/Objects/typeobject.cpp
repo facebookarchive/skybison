@@ -1562,7 +1562,7 @@ PY_EXPORT int PyType_IsSubtype(PyTypeObject* a, PyTypeObject* b) {
   HandleScope scope(thread);
   Type a_obj(&scope, ApiHandle::fromPyTypeObject(a)->asObject());
   Type b_obj(&scope, ApiHandle::fromPyTypeObject(b)->asObject());
-  return thread->runtime()->isSubclass(a_obj, b_obj) ? 1 : 0;
+  return typeIsSubclass(a_obj, b_obj) ? 1 : 0;
 }
 
 PY_EXPORT void PyType_Modified(PyTypeObject* /* e */) {

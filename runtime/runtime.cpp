@@ -3786,17 +3786,6 @@ void Runtime::strArrayEnsureCapacity(Thread* thread, const StrArray& array,
   array.setItems(*new_bytes);
 }
 
-bool Runtime::isSubclass(const Type& subclass, const Type& superclass) {
-  HandleScope scope;
-  Tuple mro(&scope, subclass.mro());
-  for (word i = 0; i < mro.length(); i++) {
-    if (mro.at(i) == *superclass) {
-      return true;
-    }
-  }
-  return false;
-}
-
 void* Runtime::nativeProxyPtr(RawObject object) {
   DCHECK(isNativeProxy(object), "Must have a NativeProxy layout");
   return Int::cast(object.rawCast<RawNativeProxy>().native()).asCPtr();

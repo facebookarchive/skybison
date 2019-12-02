@@ -558,9 +558,6 @@ class Runtime {
   void typeAddBuiltinFunction(const Type& type, SymbolId name,
                               Function::Entry entry);
 
-  // Return true if subclass is a subclass of superclass
-  bool isSubclass(const Type& subclass, const Type& superclass);
-
   void* nativeProxyPtr(RawObject object);
 
   void setNativeProxyPtr(RawObject object, void* c_ptr);

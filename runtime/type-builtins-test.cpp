@@ -839,7 +839,7 @@ class A(metaclass=M): pass
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 3);
   Type result_0_type(&scope, runtime_.typeOf(result.at(0)));
-  EXPECT_TRUE(runtime_.isSubclass(result_0_type, d));
+  EXPECT_TRUE(typeIsSubclass(result_0_type, d));
   EXPECT_EQ(result.at(1), a);
   EXPECT_EQ(result.at(2), m);
 }

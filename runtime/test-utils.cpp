@@ -24,6 +24,7 @@
 #include "str-builtins.h"
 #include "sys-module.h"
 #include "thread.h"
+#include "type-builtins.h"
 #include "utils.h"
 
 namespace py {
@@ -634,7 +635,7 @@ RawObject layoutCreateEmpty(Thread* thread) {
 
   Type expected_type(&scope, runtime->typeAt(layout_id));
   Type exception_type(&scope, thread->pendingExceptionType());
-  if (!runtime->isSubclass(exception_type, expected_type)) {
+  if (!typeIsSubclass(exception_type, expected_type)) {
     Str expected_name(&scope, expected_type.name());
     Str actual_name(&scope, exception_type.name());
     return ::testing::AssertionFailure()

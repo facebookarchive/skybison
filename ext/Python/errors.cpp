@@ -11,6 +11,7 @@
 #include "fileutils.h"
 #include "runtime.h"
 #include "sys-module.h"
+#include "type-builtins.h"
 
 namespace py {
 
@@ -574,7 +575,7 @@ PY_EXPORT void PyErr_WriteUnraisable(PyObject* obj) {
   DCHECK(runtime->isInstanceOfType(*exc_obj), "exc must be a type");
   Type exc_type(&scope, *exc_obj);
   Type base_exception(&scope, runtime->typeAt(LayoutId::kBaseException));
-  DCHECK(runtime->isSubclass(exc_type, base_exception),
+  DCHECK(typeIsSubclass(exc_type, base_exception),
          "exc must be a subclass of BaseException");
   // TODO(T42602623): If exc_type.name() is None, Remove dotted components of
   // name, eg A.B.C => C

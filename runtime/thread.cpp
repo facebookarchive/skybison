@@ -586,7 +586,7 @@ bool Thread::pendingExceptionMatches(LayoutId type) {
   HandleScope scope(this);
   Type exc(&scope, pendingExceptionType());
   Type parent(&scope, runtime()->typeAt(type));
-  return runtime()->isSubclass(exc, parent);
+  return typeIsSubclass(exc, parent);
 }
 
 bool Thread::hasCaughtException() {

@@ -15,6 +15,8 @@ RawObject attributeName(Thread* thread, const Object& name_obj);
 
 RawObject attributeNameNoException(Thread* thread, const Object& name_obj);
 
+bool typeIsSubclass(const Type& subclass, const Type& superclass);
+
 // Convert an CPython's extension slot ints into a RawType::Slot
 Type::Slot slotToTypeSlot(int slot);
 
@@ -128,5 +130,18 @@ class TypeProxyBuiltins
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(TypeProxyBuiltins);
 };
+
+inline bool typeIsSubclass(const Type& subclass, const Type& superclass) {
+  DCHECK(Tuple::cast(subclass.mro()).at(0) == subclass, "unexpected mro");
+  if (subclass == superclass) return true;
+  RawTuple mro = Tuple::cast(subclass.mro());
+  word length = mro.length();
+  for (word i = 1; i < length; i++) {
+    if (mro.at(i) == superclass) {
+      return true;
+    }
+  }
+  return false;
+}
 
 }  // namespace py

@@ -969,10 +969,10 @@ static LayoutId computeBuiltinBase(Thread* thread, const Tuple& bases) {
   for (word i = 1; i < length; i++) {
     Type base(&scope, bases.at(i));
     Type builtin_base(&scope, runtime->typeAt(base.builtinBase()));
-    if (result == builtin_base || runtime->isSubclass(result, builtin_base)) {
+    if (result == builtin_base || typeIsSubclass(result, builtin_base)) {
       continue;
     }
-    if (runtime->isSubclass(builtin_base, result)) {
+    if (typeIsSubclass(builtin_base, result)) {
       result = *builtin_base;
     } else {
       thread->raiseWithFmt(LayoutId::kTypeError,
@@ -1216,7 +1216,7 @@ RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
         Interpreter::callEx(thread, frame, CallFunctionExFlag::VAR_KEYWORDS);
     if (instance.isErrorException()) return *instance;
     Type type(&scope, runtime->typeOf(*instance));
-    if (!runtime->isSubclass(type, self)) {
+    if (!typeIsSubclass(type, self)) {
       return *instance;
     }
     call_args_obj = *call_args;
