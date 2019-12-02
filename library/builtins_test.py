@@ -5002,6 +5002,53 @@ class ListTests(unittest.TestCase):
         self.assertEqual(r12, 2)
         self.assertEqual(r13, 3)
 
+    def test_gt_with_bigger_list_returns_true(self):
+        a = [1, 2, 4]
+        b = [1, 2, 3]
+        self.assertTrue(list.__gt__(a, b))
+
+    def test_gt_with_equal_lists_returns_false(self):
+        a = [1, 2, 3]
+        b = [1, 2, 3]
+        self.assertFalse(list.__gt__(a, b))
+
+    def test_gt_with_identity_lists_returns_false(self):
+        a = [1, 2, 3]
+        self.assertFalse(list.__gt__(a, a))
+
+    def test_gt_with_non_list_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            list.__gt__(False, [])
+        self.assertIn(
+            "'__gt__' requires a 'list' object but received a 'bool'",
+            str(context.exception),
+        )
+
+    def test_gt_with_shorter_lhs_but_bigger_elem_returns_true(self):
+        a = [1, 2, 3]
+        b = [1, 1, 1, 1]
+        self.assertTrue(list.__gt__(a, b))
+
+    def test_gt_with_shorter_lhs_returns_false(self):
+        a = [1, 2]
+        b = [1, 2, 3]
+        self.assertFalse(list.__gt__(a, b))
+
+    def test_gt_with_shorter_rhs_but_bigger_elem_returns_false(self):
+        a = [1, 1, 1, 1]
+        b = [1, 2, 3]
+        self.assertFalse(list.__gt__(a, b))
+
+    def test_gt_with_shorter_rhs_returns_true(self):
+        a = [1, 2, 3, 4]
+        b = [1, 2, 3]
+        self.assertTrue(list.__gt__(a, b))
+
+    def test_gt_with_smaller_list_returns_false(self):
+        a = [1, 2, 2]
+        b = [1, 2, 3]
+        self.assertFalse(list.__gt__(a, b))
+
     def test_index_with_non_list_self_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             list.index(1, 2)
@@ -5056,6 +5103,53 @@ class ListTests(unittest.TestCase):
         self.assertEqual(a_list.index(a), 0)
         self.assertEqual(a_list.index(n, 1), 1)
         self.assertEqual(n_list.index(n, 2, 3), 2)
+
+    def test_lt_with_bigger_list_returns_false(self):
+        a = [1, 2, 4]
+        b = [1, 2, 3]
+        self.assertFalse(list.__lt__(a, b))
+
+    def test_lt_with_equal_lists_returns_false(self):
+        a = [1, 2, 3]
+        b = [1, 2, 3]
+        self.assertFalse(list.__lt__(a, b))
+
+    def test_lt_with_identity_lists_returns_false(self):
+        a = [1, 2, 3]
+        self.assertFalse(list.__lt__(a, a))
+
+    def test_lt_with_longer_lhs_but_smaller_elem_returns_true(self):
+        a = [1, 1, 1, 1]
+        b = [1, 2, 3]
+        self.assertTrue(list.__lt__(a, b))
+
+    def test_lt_with_longer_lhs_returns_false(self):
+        a = [1, 2, 3, 4]
+        b = [1, 2, 3]
+        self.assertFalse(list.__lt__(a, b))
+
+    def test_lt_with_longer_rhs_but_smaller_elem_returns_false(self):
+        a = [1, 2, 3]
+        b = [1, 1, 1, 1]
+        self.assertFalse(list.__lt__(a, b))
+
+    def test_lt_with_longer_rhs_returns_true(self):
+        a = [1, 2]
+        b = [1, 2, 3]
+        self.assertTrue(list.__lt__(a, b))
+
+    def test_lt_with_non_list_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            list.__lt__(False, [])
+        self.assertIn(
+            "'__lt__' requires a 'list' object but received a 'bool'",
+            str(context.exception),
+        )
+
+    def test_lt_with_smaller_list_returns_true(self):
+        a = [1, 2, 2]
+        b = [1, 2, 3]
+        self.assertTrue(list.__lt__(a, b))
 
     def test_pop_with_non_list_raises_type_error(self):
         self.assertRaises(TypeError, list.pop, None)

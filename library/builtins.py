@@ -3461,6 +3461,25 @@ class list(bootstrap=True):
             f"list indices must be integers or slices, not {_type(key).__name__}"
         )
 
+    def __gt__(self, other):
+        _list_guard(self)
+        if not _list_check(other):
+            return NotImplemented
+        if self is other:
+            return False
+        idx = 0
+        self_length = _list_len(self)
+        other_length = _list_len(other)
+        self_is_longer = self_length > other_length
+        min_length = other_length if self_is_longer else self_length
+        while idx < min_length:
+            self_element = _list_getitem(self, idx)
+            other_element = _list_getitem(other, idx)
+            if self_element != other_element:
+                return self_element > other_element
+            idx += 1
+        return self_is_longer
+
     __hash__ = None
 
     def __init__(self, iterable=()):
@@ -3471,6 +3490,25 @@ class list(bootstrap=True):
 
     def __len__(self):
         pass
+
+    def __lt__(self, other):
+        _list_guard(self)
+        if not _list_check(other):
+            return NotImplemented
+        if self is other:
+            return False
+        idx = 0
+        self_length = _list_len(self)
+        other_length = _list_len(other)
+        self_is_shorter = self_length < other_length
+        min_length = self_length if self_is_shorter else other_length
+        while idx < min_length:
+            self_element = _list_getitem(self, idx)
+            other_element = _list_getitem(other, idx)
+            if self_element != other_element:
+                return self_element < other_element
+            idx += 1
+        return self_is_shorter
 
     def __mul__(self, other):
         pass
