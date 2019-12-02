@@ -2912,6 +2912,9 @@ class RawLayout : public RawInstance {
   RawObject overflowAttributes() const;
   void setOverflowAttributes(RawObject attributes) const;
 
+  void setDictOverflowOffset(word offset) const;
+  word dictOverflowOffset() const;
+
   // Returns a flattened list of tuples. Each tuple is composed of the
   // following elements, in order:
   //
@@ -6126,6 +6129,16 @@ inline void RawLayout::setOverflowAttributes(RawObject attributes) const {
   instanceVariableAtPut(kOverflowAttributesOffset, attributes);
 }
 
+inline void RawLayout::setDictOverflowOffset(word offset) const {
+  instanceVariableAtPut(kOverflowAttributesOffset,
+                        RawSmallInt::fromWord(offset));
+}
+
+inline word RawLayout::dictOverflowOffset() const {
+  return RawSmallInt::cast(instanceVariableAt(kOverflowAttributesOffset))
+      .value();
+}
+
 inline word RawLayout::instanceSize() const {
   word instance_size_in_words = numInObjectAttributes();
   instance_size_in_words += (isSealed() ? 0 : 1);
@@ -6161,6 +6174,8 @@ inline RawObject RawLayout::deletions() const {
 }
 
 inline word RawLayout::overflowOffset() const {
+  DCHECK(hasTupleOverflow() || hasDictOverflow(),
+         "must have tuple or dict overflow");
   return numInObjectAttributes() * kPointerSize;
 }
 

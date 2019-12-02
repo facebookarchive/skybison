@@ -2126,7 +2126,7 @@ RawObject UnderBuiltinsModule::underInstanceOverflowDict(Thread* thread,
   Runtime* runtime = thread->runtime();
   Layout layout(&scope, runtime->layoutAt(object.layoutId()));
   CHECK(layout.hasDictOverflow(), "expected dict overflow layout");
-  word offset = SmallInt::cast(layout.overflowAttributes()).value();
+  word offset = layout.dictOverflowOffset();
   Instance instance(&scope, *object);
   Object overflow_dict_obj(&scope, instance.instanceVariableAt(offset));
   if (overflow_dict_obj.isNoneType()) {

@@ -156,9 +156,8 @@ std::ostream& dumpExtendedInstance(std::ostream& os, RawInstance value) {
     os << "  (in-object) " << entry.at(0) << " = "
        << instance.instanceVariableAt(info.offset()) << '\n';
   }
-  Object overflow_attributes_obj(&scope, layout.overflowAttributes());
-  if (overflow_attributes_obj.isTuple()) {
-    Tuple overflow_attributes(&scope, *overflow_attributes_obj);
+  if (layout.hasTupleOverflow()) {
+    Tuple overflow_attributes(&scope, layout.overflowAttributes());
     Tuple overflow(&scope,
                    instance.instanceVariableAt(layout.overflowOffset()));
     for (word i = 0, length = overflow_attributes.length(); i < length; i++) {
@@ -167,8 +166,8 @@ std::ostream& dumpExtendedInstance(std::ostream& os, RawInstance value) {
       os << "  (overflow)  " << entry.at(0) << " = "
          << overflow.at(info.offset()) << '\n';
     }
-  } else if (overflow_attributes_obj.isSmallInt()) {
-    word offset = RawSmallInt::cast(*overflow_attributes_obj).value();
+  } else if (layout.hasDictOverflow()) {
+    word offset = layout.dictOverflowOffset();
     os << "  overflow dict: " << instance.instanceVariableAt(offset) << '\n';
   }
   return os;
@@ -193,21 +192,20 @@ std::ostream& dumpExtendedLayout(std::ostream& os, RawLayout value,
     AttributeInfo info(entry.at(1));
     os << indent << "    " << entry.at(0) << " @ " << info.offset() << '\n';
   }
-  Object overflow_attributes_obj(&scope, layout.overflowAttributes());
-  if (overflow_attributes_obj.isTuple()) {
+  if (layout.hasTupleOverflow()) {
     os << indent << "  overflow tuple:\n";
-    Tuple overflow_attributes(&scope, *overflow_attributes_obj);
+    Tuple overflow_attributes(&scope, layout.overflowAttributes());
     for (word i = 0, length = overflow_attributes.length(); i < length; i++) {
       entry = overflow_attributes.at(i);
       AttributeInfo info(entry.at(1));
       os << indent << "    " << entry.at(0) << " @ " << info.offset() << '\n';
     }
-  } else if (overflow_attributes_obj.isSmallInt()) {
-    word offset = RawSmallInt::cast(*overflow_attributes_obj).value();
-    os << indent << "  overflow dict @ " << offset << '\n';
-  } else {
-    DCHECK(value.isSealed(), "remaining case should be sealed");
+  } else if (layout.hasDictOverflow()) {
+    os << indent << "  overflow dict @ " << layout.dictOverflowOffset() << '\n';
+  } else if (layout.isSealed()) {
     os << indent << "  sealed\n";
+  } else {
+    os << indent << "  invalid overflow\n";
   }
   return os;
 }

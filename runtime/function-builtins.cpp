@@ -140,7 +140,7 @@ const BuiltinAttribute FunctionBuiltins::kAttributes[] = {
 void FunctionBuiltins::postInitialize(Runtime*, const Type& new_type) {
   HandleScope scope;
   Layout layout(&scope, new_type.instanceLayout());
-  layout.setOverflowAttributes(SmallInt::fromWord(RawFunction::kDictOffset));
+  layout.setDictOverflowOffset(RawFunction::kDictOffset);
 }
 
 RawObject FunctionBuiltins::dunderGet(Thread* thread, Frame* frame,

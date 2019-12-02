@@ -31,7 +31,7 @@ RawObject instanceDelAttr(Thread* thread, const Instance& instance,
   AttributeInfo info;
   if (!runtime->layoutFindAttribute(thread, layout, name, &info)) {
     if (layout.hasDictOverflow()) {
-      word offset = SmallInt::cast(layout.overflowAttributes()).value();
+      word offset = layout.dictOverflowOffset();
       Object overflow_dict_obj(&scope, instance.instanceVariableAt(offset));
       if (!overflow_dict_obj.isNoneType()) {
         Dict overflow_dict(&scope, *overflow_dict_obj);
@@ -89,7 +89,7 @@ RawObject instanceGetAttributeSetLocation(Thread* thread,
     return overflow.at(info.offset());
   }
   if (layout.hasDictOverflow()) {
-    word offset = SmallInt::cast(layout.overflowAttributes()).value();
+    word offset = layout.dictOverflowOffset();
     Object overflow_dict_obj(&scope, instance.instanceVariableAt(offset));
     if (!overflow_dict_obj.isNoneType()) {
       Dict overflow_dict(&scope, *overflow_dict_obj);
@@ -117,24 +117,24 @@ static RawObject instanceSetAttrSetLocation(Thread* thread,
   Layout layout(&scope, runtime->layoutAt(instance.layoutId()));
   AttributeInfo info;
   if (!runtime->layoutFindAttribute(thread, layout, name, &info)) {
-    if (layout.isSealed()) {
-      return thread->raiseWithFmt(
-          LayoutId::kAttributeError,
-          "Cannot set attribute '%S' on sealed class '%T'", &name, &instance);
-    }
-
-    if (layout.hasDictOverflow()) {
-      word offset = SmallInt::cast(layout.overflowAttributes()).value();
-      Object overflow_dict_obj(&scope, instance.instanceVariableAt(offset));
-      if (overflow_dict_obj.isNoneType()) {
-        overflow_dict_obj = runtime->newDict();
-        instance.instanceVariableAtPut(offset, *overflow_dict_obj);
+    if (!layout.hasTupleOverflow()) {
+      if (layout.hasDictOverflow()) {
+        word offset = layout.dictOverflowOffset();
+        Object overflow_dict_obj(&scope, instance.instanceVariableAt(offset));
+        if (overflow_dict_obj.isNoneType()) {
+          overflow_dict_obj = runtime->newDict();
+          instance.instanceVariableAtPut(offset, *overflow_dict_obj);
+        }
+        Dict overflow_dict(&scope, *overflow_dict_obj);
+        dictAtPutByStr(thread, overflow_dict, name, value);
+        return NoneType::object();
       }
-      Dict overflow_dict(&scope, *overflow_dict_obj);
-      dictAtPutByStr(thread, overflow_dict, name, value);
-      return NoneType::object();
+      if (layout.isSealed()) {
+        return thread->raiseWithFmt(
+            LayoutId::kAttributeError,
+            "Cannot set attribute '%S' on sealed class '%T'", &name, &instance);
+      }
     }
-
     // Transition the layout
     layout = runtime->layoutAddAttribute(thread, layout, name, 0);
     has_new_layout_id = true;

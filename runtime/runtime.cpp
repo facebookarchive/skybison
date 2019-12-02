@@ -790,7 +790,9 @@ RawObject Runtime::newInstance(const Layout& layout) {
   RawObject object = heap()->createInstance(layout.id(), num_attrs);
   RawInstance instance = Instance::cast(object);
   // Set the overflow array
-  instance.instanceVariableAtPut(layout.overflowOffset(), empty_tuple_);
+  if (layout.hasTupleOverflow()) {
+    instance.instanceVariableAtPut(layout.overflowOffset(), empty_tuple_);
+  }
   return instance;
 }
 

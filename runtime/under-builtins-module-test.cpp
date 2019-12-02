@@ -634,7 +634,7 @@ def instance():
   Instance instance(&scope, *instance_obj);
   Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
   ASSERT_TRUE(layout.hasDictOverflow());
-  word offset = SmallInt::cast(layout.overflowAttributes()).value();
+  word offset = layout.dictOverflowOffset();
   ASSERT_TRUE(instance.instanceVariableAt(offset).isNoneType());
 
   Object result0(
