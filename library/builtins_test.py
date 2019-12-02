@@ -1961,30 +1961,6 @@ class ContextManagerTests(unittest.TestCase):
 
 
 class CompileTests(unittest.TestCase):
-    def test_eval_str_with_left_whitespace_returns(self):
-        res = eval(" 1 + 1")
-        self.assertEqual(res, 2)
-
-    def test_eval_bytes_with_left_whitespace_returns(self):
-        res = eval(b" 1 + 1")  # noqa: P204
-        self.assertEqual(res, 2)
-
-    def test_eval_bytearray_with_left_whitespace_returns(self):
-        res = eval(bytearray(b" 1 + 1"))  # noqa: P204
-        self.assertEqual(res, 2)
-
-    def test_eval_str_with_right_whitespace_returns(self):
-        res = eval("1 + 1 ")
-        self.assertEqual(res, 2)
-
-    def test_eval_bytes_with_right_whitespace_returns(self):
-        res = eval(b"1 + 1 ")  # noqa: P204
-        self.assertEqual(res, 2)
-
-    def test_eval_bytearray_with_left_whitespace_returns(self):
-        res = eval(bytearray(b"1 + 1 "))  # noqa: P204
-        self.assertEqual(res, 2)
-
     def test_exec_mode_returns_code(self):
         from types import ModuleType
         from types import CodeType
@@ -2612,6 +2588,30 @@ class EvalTests(unittest.TestCase):
     def test_bytearray_source(self):
         self.assertEqual(eval(bytearray(b"20 / 5")), 4)  # noqa: P204
 
+    def test_str_with_left_whitespace_returns(self):
+        res = eval(" 1 + 1")
+        self.assertEqual(res, 2)
+
+    def test_bytes_with_left_whitespace_returns(self):
+        res = eval(b" 1 + 1")  # noqa: P204
+        self.assertEqual(res, 2)
+
+    def test_bytearray_with_left_whitespace_returns(self):
+        res = eval(bytearray(b" 1 + 1"))  # noqa: P204
+        self.assertEqual(res, 2)
+
+    def test_str_with_right_whitespace_returns(self):
+        res = eval("1 + 1 ")
+        self.assertEqual(res, 2)
+
+    def test_bytes_with_right_whitespace_returns(self):
+        res = eval(b"1 + 1 ")  # noqa: P204
+        self.assertEqual(res, 2)
+
+    def test_bytearray_with_left_whitespace_returns(self):
+        res = eval(bytearray(b"1 + 1 "))  # noqa: P204
+        self.assertEqual(res, 2)
+
     def test_code_source(self):
         from types import CodeType
 
@@ -2660,6 +2660,17 @@ class EvalTests(unittest.TestCase):
         code = func(42).__code__
         with self.assertRaisesRegex(TypeError, "may not contain free variables"):
             eval(code)  # noqa: P204
+
+    def test_globals_dict_reads_dict(self):
+        d = {"a": 1}
+        res = eval("a + 1", d)
+        self.assertEqual(res, 2)
+
+    def test_globals_dict_updates_dict(self):
+        d = {"a": 1}
+        code = compile("a = 2", "<string>", "exec")
+        eval(code, d)  # noqa: P204
+        self.assertEqual(d["a"], 2)
 
 
 class ExecTests(unittest.TestCase):
@@ -2778,6 +2789,16 @@ class ExecTests(unittest.TestCase):
         code = func(42).__code__
         with self.assertRaisesRegex(TypeError, "may not contain free variables"):
             exec(code)
+
+    def test_globals_dict_reads_dict(self):
+        d = {"a": 1}
+        exec("b = a + 1", d)
+        self.assertEqual(d["b"], 2)
+
+    def test_globals_dict_updates_dict(self):
+        d = {"a": 1}
+        exec("a = 2", d)
+        self.assertEqual(d["a"], 2)
 
 
 class FloatTests(unittest.TestCase):

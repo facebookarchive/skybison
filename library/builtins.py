@@ -2446,14 +2446,15 @@ class enumerate:
 def eval(source, globals=None, locals=None):
     if globals is None:
         caller = _getframe_function(1)
-        module = caller.__module_object__
+        mod = caller.__module_object__
         if locals is None:
             locals = _getframe_locals(1)
     elif _module_proxy_check(globals):
-        module = globals.__module_object__
+        mod = globals.__module_object__
+        globals = None
     elif _dict_check(globals):
-        # TODO(T41634372): Create a temporary module for the dict.
-        _unimplemented()
+        mod = module("")
+        mod.__dict__.update(globals)
     else:
         raise TypeError("'eval' arg 2 requires a dict or None")
 
@@ -2481,20 +2482,24 @@ def eval(source, globals=None, locals=None):
         code = compile(source, "<string>", "eval", flags, -1)
     if code.co_freevars:
         raise TypeError("'eval' code may not contain free variables")
-    return _exec(code, module, locals)
+    res = _exec(code, mod, locals)
+    if globals is not None:
+        globals.update(mod.__dict__)
+    return res
 
 
 def exec(source, globals=None, locals=None):
     if globals is None:
         caller = _getframe_function(1)
-        module = caller.__module_object__
+        mod = caller.__module_object__
         if locals is None:
             locals = _getframe_locals(1)
     elif _module_proxy_check(globals):
-        module = globals.__module_object__
+        mod = globals.__module_object__
+        globals = None
     elif _dict_check(globals):
-        # TODO(T41634372): Create a temporary module for the dict.
-        _unimplemented()
+        mod = module("")
+        mod.__dict__.update(globals)
     else:
         raise TypeError("'exec' arg 2 requires a dict or None")
 
@@ -2520,7 +2525,9 @@ def exec(source, globals=None, locals=None):
         code = compile(source, "<string>", "exec", flags, -1)
     if code.co_freevars:
         raise TypeError("'exec' code may not contain free variables")
-    _exec(code, module, locals)
+    _exec(code, mod, locals)
+    if globals is not None:
+        globals.update(mod.__dict__)
 
 
 def exit():
