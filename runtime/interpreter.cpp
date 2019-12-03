@@ -62,7 +62,7 @@ RawObject Interpreter::prepareCallable(Thread* thread, Frame* frame,
     Type type(&scope, runtime->typeOf(**callable));
     Object dunder_call(
         &scope, typeLookupInMroById(thread, type, SymbolId::kDunderCall));
-    if (!dunder_call.isError()) {
+    if (!dunder_call.isErrorNotFound()) {
       if (dunder_call.isFunction()) {
         // Avoid calling function.__get__ and creating a short-lived BoundMethod
         // object. Instead, return the unpacked values directly.
@@ -74,7 +74,7 @@ RawObject Interpreter::prepareCallable(Thread* thread, Frame* frame,
       if (typeIsNonDataDescriptor(thread, call_type)) {
         *callable =
             callDescriptorGet(thread, frame, dunder_call, *callable, type);
-        if (callable->isError()) return **callable;
+        if (callable->isErrorException()) return **callable;
         if (callable->isFunction()) return Bool::falseObj();
 
         // Retry the lookup using the object returned by the descriptor.
@@ -115,7 +115,7 @@ RawObject Interpreter::prepareCallableCallDunderCall(Thread* thread,
   Object callable(&scope, frame->peek(callable_idx));
   Object self(&scope, NoneType::object());
   RawObject result = prepareCallable(thread, frame, &callable, &self);
-  if (result.isError()) return result;
+  if (result.isErrorException()) return result;
   frame->setValueAt(*callable, callable_idx);
   if (result == Bool::trueObj()) {
     // Shift all arguments on the stack down by 1 and use the unpacked
@@ -147,7 +147,7 @@ RawObject Interpreter::call(Thread* thread, Frame* frame, word nargs) {
   RawObject* sp = frame->valueStackTop() + nargs + 1;
   RawObject callable = frame->peek(nargs);
   callable = prepareCallableCall(thread, frame, nargs, &nargs);
-  if (callable.isError()) {
+  if (callable.isErrorException()) {
     frame->setValueStackTop(sp);
     return callable;
   }
@@ -163,7 +163,7 @@ RawObject Interpreter::callKw(Thread* thread, Frame* frame, word nargs) {
   RawObject* sp = frame->valueStackTop() + nargs + 2;
   RawObject callable = frame->peek(nargs + 1);
   callable = prepareCallableCall(thread, frame, nargs + 1, &nargs);
-  if (callable.isError()) {
+  if (callable.isErrorException()) {
     frame->setValueStackTop(sp);
     return callable;
   }
@@ -180,7 +180,7 @@ RawObject Interpreter::callEx(Thread* thread, Frame* frame, word flags) {
   RawObject* post_call_sp = frame->valueStackTop() + callable_idx + 1;
   HandleScope scope(thread);
   Object callable(&scope, prepareCallableEx(thread, frame, callable_idx));
-  if (callable.isError()) return *callable;
+  if (callable.isErrorException()) return *callable;
   Object result(&scope,
                 RawFunction::cast(*callable).entryEx()(thread, frame, flags));
   frame->setValueStackTop(post_call_sp);
@@ -203,13 +203,13 @@ RawObject Interpreter::prepareCallableEx(Thread* thread, Frame* frame,
     }
     args_obj = thread->invokeFunction1(SymbolId::kBuiltins, SymbolId::kTuple,
                                        args_obj);
-    if (args_obj.isError()) return *args_obj;
+    if (args_obj.isErrorException()) return *args_obj;
     frame->setValueAt(*args_obj, args_idx);
   }
   if (!callable.isFunction()) {
     Object self(&scope, NoneType::object());
     Object result(&scope, prepareCallable(thread, frame, &callable, &self));
-    if (result.isError()) return *result;
+    if (result.isErrorException()) return *result;
     frame->setValueAt(*callable, callable_idx);
 
     if (result == Bool::trueObj()) {
@@ -235,6 +235,9 @@ static RawObject callDunderHash(Thread* thread, const Object& value) {
   if (dunder_hash.isNoneType() || dunder_hash.isError()) {
     if (dunder_hash.isErrorException()) {
       thread->clearPendingException();
+    } else {
+      DCHECK(dunder_hash.isErrorNotFound() || dunder_hash.isNoneType(),
+             "expected Error::notFound() or None");
     }
     return thread->raiseWithFmt(LayoutId::kTypeError, "unhashable type: '%T'",
                                 &value);
@@ -353,7 +356,7 @@ RawObject Interpreter::callDescriptorGet(Thread* thread, Frame* frame,
   Type descriptor_type(&scope, runtime->typeOf(*descriptor));
   Object method(&scope, typeLookupInMroById(thread, descriptor_type,
                                             SymbolId::kDunderGet));
-  DCHECK(!method.isError(), "no __get__ method found");
+  DCHECK(!method.isErrorNotFound(), "no __get__ method found");
   return callMethod3(thread, frame, method, descriptor, receiver,
                      receiver_type);
 }
@@ -367,7 +370,7 @@ RawObject Interpreter::callDescriptorSet(Thread* thread, Frame* frame,
   Type descriptor_type(&scope, runtime->typeOf(*descriptor));
   Object method(&scope, typeLookupInMroById(thread, descriptor_type,
                                             SymbolId::kDunderSet));
-  DCHECK(!method.isError(), "no __set__ method found");
+  DCHECK(!method.isErrorNotFound(), "no __set__ method found");
   return callMethod3(thread, frame, method, descriptor, receiver, value);
 }
 
@@ -379,7 +382,7 @@ RawObject Interpreter::callDescriptorDelete(Thread* thread, Frame* frame,
   Type descriptor_type(&scope, runtime->typeOf(*descriptor));
   Object method(&scope, typeLookupInMroById(thread, descriptor_type,
                                             SymbolId::kDunderDelete));
-  DCHECK(!method.isError(), "no __delete__ method found");
+  DCHECK(!method.isErrorNotFound(), "no __delete__ method found");
   return callMethod2(thread, frame, method, descriptor, receiver);
 }
 
@@ -389,7 +392,7 @@ RawObject Interpreter::lookupMethod(Thread* thread, Frame* /* frame */,
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->typeOf(*receiver));
   Object method(&scope, typeLookupInMroById(thread, type, selector));
-  if (method.isFunction() || method.isError()) {
+  if (method.isFunction() || method.isErrorNotFound()) {
     // Do not create a short-lived bound method object, and propagate
     // exceptions.
     return *method;
@@ -587,7 +590,7 @@ HANDLER_INLINE Continue Interpreter::doUnaryOperation(SymbolId selector,
   Frame* frame = thread->currentFrame();
   Object receiver(&scope, frame->topValue());
   RawObject result = unaryOperation(thread, receiver, selector);
-  if (result.isError()) return Continue::UNWIND;
+  if (result.isErrorException()) return Continue::UNWIND;
   frame->setTopValue(result);
   return Continue::NEXT;
 }
@@ -657,7 +660,7 @@ RawObject Interpreter::binaryOperationSetMethod(Thread* thread, Frame* frame,
   if (left_type != right_type && (left_method.isErrorNotFound() ||
                                   typeIsSubclass(right_type, left_type))) {
     method = binaryOperationLookupReflected(thread, op, left, right);
-    if (!method.isError()) {
+    if (!method.isErrorNotFound()) {
       flags = kBinaryOpReflected;
       if (!left_method.isErrorNotFound()) {
         flags =
@@ -666,17 +669,17 @@ RawObject Interpreter::binaryOperationSetMethod(Thread* thread, Frame* frame,
       if (!method.isFunction()) {
         method_out = nullptr;
         method = resolveDescriptorGet(thread, method, right, right_type);
-        if (method.isError()) return *method;
+        if (method.isErrorException()) return *method;
       }
     }
   }
   if (flags == kBinaryOpNone) {
     flags = kBinaryOpNotImplementedRetry;
     method = *left_method;
-    if (!method.isFunction() && !method.isError()) {
+    if (!method.isFunction() && !method.isErrorNotFound()) {
       method_out = nullptr;
       method = resolveDescriptorGet(thread, method, left, left_type);
-      if (method.isError()) return *method;
+      if (method.isErrorException()) return *method;
     }
   }
 
@@ -704,7 +707,7 @@ HANDLER_INLINE Continue Interpreter::doBinaryOperation(BinaryOp op,
   Object other(&scope, frame->popValue());
   Object self(&scope, frame->popValue());
   RawObject result = binaryOperation(thread, frame, op, self, other);
-  if (result.isError()) return Continue::UNWIND;
+  if (result.isErrorException()) return Continue::UNWIND;
   frame->pushValue(result);
   return Continue::NEXT;
 }
@@ -717,7 +720,7 @@ RawObject Interpreter::inplaceOperationSetMethod(
   SymbolId selector = runtime->inplaceOperationSelector(op);
   Type left_type(&scope, runtime->typeOf(*left));
   Object method(&scope, typeLookupInMroById(thread, left_type, selector));
-  if (!method.isError()) {
+  if (!method.isErrorNotFound()) {
     if (method.isFunction()) {
       if (method_out != nullptr) {
         *method_out = *method;
@@ -725,7 +728,7 @@ RawObject Interpreter::inplaceOperationSetMethod(
       }
     } else {
       method = resolveDescriptorGet(thread, method, left, left_type);
-      if (method.isError()) return *method;
+      if (method.isErrorException()) return *method;
     }
 
     // Make sure we do not put a possible 2nd method call (from
@@ -754,7 +757,7 @@ HANDLER_INLINE Continue Interpreter::doInplaceOperation(BinaryOp op,
   Object right(&scope, frame->popValue());
   Object left(&scope, frame->popValue());
   RawObject result = inplaceOperation(thread, frame, op, left, right);
-  if (result.isError()) return Continue::UNWIND;
+  if (result.isErrorException()) return Continue::UNWIND;
   frame->pushValue(result);
   return Continue::NEXT;
 }
@@ -777,7 +780,7 @@ RawObject Interpreter::compareOperationSetMethod(
                                   typeIsSubclass(right_type, left_type))) {
     SymbolId reverse_selector = runtime->swappedComparisonSelector(op);
     method = typeLookupInMroById(thread, right_type, reverse_selector);
-    if (!method.isError()) {
+    if (!method.isErrorNotFound()) {
       flags = kBinaryOpReflected;
       if (!left_method.isErrorNotFound()) {
         flags =
@@ -786,17 +789,17 @@ RawObject Interpreter::compareOperationSetMethod(
       if (!method.isFunction()) {
         method_out = nullptr;
         method = resolveDescriptorGet(thread, method, right, right_type);
-        if (method.isError()) return *method;
+        if (method.isErrorException()) return *method;
       }
     }
   }
   if (flags == kBinaryOpNone) {
     flags = kBinaryOpNotImplementedRetry;
     method = *left_method;
-    if (!method.isFunction() && !method.isError()) {
+    if (!method.isFunction() && !method.isErrorNotFound()) {
       method_out = nullptr;
       method = resolveDescriptorGet(thread, method, left, left_type);
-      if (method.isError()) return *method;
+      if (method.isErrorException()) return *method;
     }
   }
 
@@ -835,7 +838,7 @@ RawObject Interpreter::compareOperationRetry(Thread* thread, Frame* frame,
         if (!method.isFunction()) {
           Type right_type(&scope, runtime->typeOf(*right));
           method = resolveDescriptorGet(thread, method, right, right_type);
-          if (method.isError()) return *method;
+          if (method.isErrorException()) return *method;
         }
         Object result(&scope, callMethod2(thread, frame, method, right, left));
         if (!result.isNotImplementedType()) return *result;
@@ -895,7 +898,7 @@ RawObject Interpreter::binaryOperationRetry(Thread* thread, Frame* frame,
         if (!method.isFunction()) {
           Type right_type(&scope, runtime->typeOf(*right));
           method = resolveDescriptorGet(thread, method, right, right_type);
-          if (method.isError()) return *method;
+          if (method.isErrorException()) return *method;
         }
         Object result(&scope, callMethod2(thread, frame, method, right, left));
         if (!result.isNotImplementedType()) return *result;
@@ -944,12 +947,18 @@ RawObject Interpreter::sequenceIterSearch(Thread* thread, Frame* frame,
                                           const Object& container) {
   HandleScope scope(thread);
   Object iter(&scope, createIterator(thread, frame, container));
-  if (iter.isError()) {
+  if (iter.isErrorException()) {
     return *iter;
   }
   Object dunder_next(&scope,
                      lookupMethod(thread, frame, iter, SymbolId::kDunderNext));
   if (dunder_next.isError()) {
+    if (dunder_next.isErrorException()) {
+      thread->clearPendingException();
+    } else {
+      DCHECK(dunder_next.isErrorNotFound(),
+             "expected Error::exception() or Error::notFound()");
+    }
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "__next__ not defined on iterator");
   }
@@ -958,7 +967,7 @@ RawObject Interpreter::sequenceIterSearch(Thread* thread, Frame* frame,
   Object result(&scope, NoneType::object());
   for (;;) {
     current = callMethod1(thread, frame, dunder_next, iter);
-    if (current.isError()) {
+    if (current.isErrorException()) {
       if (thread->hasPendingStopIteration()) {
         thread->clearPendingStopIteration();
         break;
@@ -966,7 +975,7 @@ RawObject Interpreter::sequenceIterSearch(Thread* thread, Frame* frame,
       return *current;
     }
     compare_result = compareOperation(thread, frame, EQ, value, current);
-    if (compare_result.isError()) {
+    if (compare_result.isErrorException()) {
       return *compare_result;
     }
     result = isTrue(thread, *compare_result);
@@ -987,10 +996,16 @@ RawObject Interpreter::sequenceContains(Thread* thread, Frame* frame,
                                      SymbolId::kDunderContains));
   if (!method.isError()) {
     Object result(&scope, callMethod2(thread, frame, method, container, value));
-    if (result.isError()) {
+    if (result.isErrorException()) {
       return *result;
     }
     return isTrue(thread, *result);
+  }
+  if (method.isErrorException()) {
+    thread->clearPendingException();
+  } else {
+    DCHECK(method.isErrorNotFound(),
+           "expected Error::exception() or Error::notFound()");
   }
   return sequenceIterSearch(thread, frame, value, container);
 }
@@ -1055,7 +1070,7 @@ HANDLER_INLINE void Interpreter::raise(Thread* thread, RawObject exc_obj,
     // the type object to create the value.
     type = *exc;
     value = Interpreter::callFunction0(thread, frame, type);
-    if (value.isError()) return;
+    if (value.isErrorException()) return;
     if (!runtime->isInstanceOfBaseException(*value)) {
       // TODO(bsimmers): Include relevant types here once we have better string
       // formatting.
@@ -1079,11 +1094,12 @@ HANDLER_INLINE void Interpreter::raise(Thread* thread, RawObject exc_obj,
   // Handle the two-arg form of RAISE_VARARGS, corresponding to "raise x from
   // y". If the cause is a type, call it to create an instance. Either way,
   // attach the cause the the primary exception.
-  if (!cause.isError()) {  // TODO(T25860930) use Unbound rather than Error.
+  if (!cause.isErrorNotFound()) {  // TODO(T25860930) use Unbound rather than
+                                   // Error.
     if (runtime->isInstanceOfType(*cause) &&
         Type(&scope, *cause).isBaseExceptionSubclass()) {
       cause = Interpreter::callFunction0(thread, frame, cause);
-      if (cause.isError()) return;
+      if (cause.isErrorException()) return;
     } else if (!runtime->isInstanceOfBaseException(*cause) &&
                !cause.isNoneType()) {
       thread->raiseWithFmt(LayoutId::kTypeError,
@@ -1328,7 +1344,7 @@ HANDLER_INLINE Continue Interpreter::doUnaryNot(Thread* thread, word) {
   RawObject value = frame->topValue();
   if (!value.isBool()) {
     value = isTrue(thread, value);
-    if (value.isError()) return Continue::UNWIND;
+    if (value.isErrorException()) return Continue::UNWIND;
   }
   frame->setTopValue(RawBool::negate(value));
   return Continue::NEXT;
@@ -1391,7 +1407,7 @@ Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
   }
 
   getitem = resolveDescriptorGet(thread, getitem, container, type);
-  if (getitem.isError()) return Continue::UNWIND;
+  if (getitem.isErrorException()) return Continue::UNWIND;
   // Tail-call getitem(key)
   frame->setValueAt(*getitem, 1);
   return doCallFunction(thread, 1);
@@ -1440,6 +1456,12 @@ HANDLER_INLINE Continue Interpreter::doGetAiter(Thread* thread, word) {
   Object method(&scope,
                 lookupMethod(thread, frame, obj, SymbolId::kDunderAiter));
   if (method.isError()) {
+    if (method.isErrorException()) {
+      thread->clearPendingException();
+    } else {
+      DCHECK(method.isErrorNotFound(),
+             "expected Error::exception() or Error::notFound()");
+    }
     thread->raiseWithFmt(
         LayoutId::kTypeError,
         "'async for' requires an object with __aiter__ method");
@@ -1455,19 +1477,31 @@ HANDLER_INLINE Continue Interpreter::doGetAnext(Thread* thread, word) {
   Object anext(&scope,
                lookupMethod(thread, frame, obj, SymbolId::kDunderAnext));
   if (anext.isError()) {
+    if (anext.isErrorException()) {
+      thread->clearPendingException();
+    } else {
+      DCHECK(anext.isErrorNotFound(),
+             "expected Error::exception() or Error::notFound()");
+    }
     thread->raiseWithFmt(
         LayoutId::kTypeError,
         "'async for' requires an iterator with __anext__ method");
     return Continue::UNWIND;
   }
   Object awaitable(&scope, callMethod1(thread, frame, anext, obj));
-  if (awaitable.isError()) return Continue::UNWIND;
+  if (awaitable.isErrorException()) return Continue::UNWIND;
 
   // TODO(T33628943): Check if `awaitable` is a native or generator-based
   // coroutine and if it is, no need to call __await__
   Object await(&scope,
                lookupMethod(thread, frame, obj, SymbolId::kDunderAwait));
   if (await.isError()) {
+    if (await.isErrorException()) {
+      thread->clearPendingException();
+    } else {
+      DCHECK(await.isErrorNotFound(),
+             "expected Error::exception() or Error::notFound()");
+    }
     thread->raiseWithFmt(
         LayoutId::kTypeError,
         "'async for' received an invalid object from __anext__");
@@ -1485,7 +1519,7 @@ HANDLER_INLINE Continue Interpreter::doBeforeAsyncWith(Thread* thread, word) {
   Runtime* runtime = thread->runtime();
   Object exit(&scope, runtime->attributeAtById(thread, manager,
                                                SymbolId::kDunderAexit));
-  if (exit.isError()) {
+  if (exit.isErrorException()) {
     UNIMPLEMENTED("throw TypeError");
   }
   frame->pushValue(*exit);
@@ -1527,11 +1561,15 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscr(Thread* thread, word) {
       thread->raiseWithFmt(LayoutId::kTypeError,
                            "'%T' object does not support item assignment",
                            &container);
+    } else {
+      DCHECK(setitem.isErrorException(),
+             "expected Error::exception() or Error::notFound()");
     }
     return Continue::UNWIND;
   }
   Object value(&scope, frame->popValue());
-  if (callMethod3(thread, frame, setitem, container, key, value).isError()) {
+  if (callMethod3(thread, frame, setitem, container, key, value)
+          .isErrorException()) {
     return Continue::UNWIND;
   }
   return Continue::NEXT;
@@ -1550,6 +1588,9 @@ NEVER_INLINE Continue Interpreter::storeSubscrUpdateCache(Thread* thread,
       thread->raiseWithFmt(LayoutId::kTypeError,
                            "'%T' object does not support item assignment",
                            &container);
+    } else {
+      DCHECK(setitem.isErrorException(),
+             "expected Error::exception() or Error::notFound()");
     }
     return Continue::UNWIND;
   }
@@ -1562,7 +1603,8 @@ NEVER_INLINE Continue Interpreter::storeSubscrUpdateCache(Thread* thread,
                  set_item_name, dependent);
   }
   Object value(&scope, frame->popValue());
-  if (callMethod3(thread, frame, setitem, container, key, value).isError()) {
+  if (callMethod3(thread, frame, setitem, container, key, value)
+          .isErrorException()) {
     return Continue::UNWIND;
   }
   return Continue::NEXT;
@@ -1597,7 +1639,7 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscrCached(Thread* thread,
   RawObject result = Function::cast(cached).entry()(thread, frame, nargs);
   // Clear the stack of the function object and return.
   frame->setValueStackTop(sp);
-  if (result.isError()) {
+  if (result.isErrorException()) {
     return Continue::UNWIND;
   }
   return Continue::NEXT;
@@ -1615,10 +1657,13 @@ HANDLER_INLINE Continue Interpreter::doDeleteSubscr(Thread* thread, word) {
       thread->raiseWithFmt(LayoutId::kTypeError,
                            "'%T' object does not support item deletion",
                            &container);
+    } else {
+      DCHECK(delitem.isErrorException(),
+             "expected Error::exception() or Error::notFound()");
     }
     return Continue::UNWIND;
   }
-  if (callMethod2(thread, frame, delitem, container, key).isError()) {
+  if (callMethod2(thread, frame, delitem, container, key).isErrorException()) {
     return Continue::UNWIND;
   }
   return Continue::NEXT;
@@ -1721,6 +1766,12 @@ HANDLER_INLINE Continue Interpreter::doYieldFrom(Thread* thread, word) {
     Object next_method(
         &scope, lookupMethod(thread, frame, iterator, SymbolId::kDunderNext));
     if (next_method.isError()) {
+      if (next_method.isErrorException()) {
+        thread->clearPendingException();
+      } else {
+        DCHECK(next_method.isErrorNotFound(),
+               "expected Error::exception() or Error::notFound()");
+      }
       thread->raiseWithFmt(LayoutId::kTypeError,
                            "iter() returned non-iterator");
       return Continue::UNWIND;
@@ -1730,13 +1781,19 @@ HANDLER_INLINE Continue Interpreter::doYieldFrom(Thread* thread, word) {
     Object send_method(&scope,
                        lookupMethod(thread, frame, iterator, SymbolId::kSend));
     if (send_method.isError()) {
+      if (send_method.isErrorException()) {
+        thread->clearPendingException();
+      } else {
+        DCHECK(send_method.isErrorNotFound(),
+               "expected Error::exception() or Error::notFound()");
+      }
       thread->raiseWithFmt(LayoutId::kTypeError,
                            "iter() returned non-iterator");
       return Continue::UNWIND;
     }
     result = callMethod2(thread, frame, send_method, iterator, value);
   }
-  if (result.isError()) {
+  if (result.isErrorException()) {
     if (!thread->hasPendingStopIteration()) return Continue::UNWIND;
 
     frame->setTopValue(thread->pendingStopIterationValue());
@@ -1761,6 +1818,12 @@ HANDLER_INLINE Continue Interpreter::doGetAwaitable(Thread* thread, word) {
   Object await(&scope,
                lookupMethod(thread, frame, obj, SymbolId::kDunderAwait));
   if (await.isError()) {
+    if (await.isErrorException()) {
+      thread->clearPendingException();
+    } else {
+      DCHECK(await.isErrorNotFound(),
+             "expected Error::exception() or Error::notFound()");
+    }
     thread->raiseWithFmt(LayoutId::kTypeError,
                          "object can't be used in 'await' expression");
     return Continue::UNWIND;
@@ -1862,7 +1925,7 @@ HANDLER_INLINE Continue Interpreter::doWithCleanupFinish(Thread* thread, word) {
   Object exc(&scope, frame->popValue());
   if (!exc.isNoneType()) {
     Object is_true(&scope, isTrue(thread, *result));
-    if (is_true.isError()) return Continue::UNWIND;
+    if (is_true.isErrorException()) return Continue::UNWIND;
     if (*is_true == Bool::trueObj()) {
       frame->pushValue(
           SmallInt::fromWord(static_cast<int>(TryBlock::Why::kSilenced)));
@@ -2090,11 +2153,17 @@ HANDLER_INLINE Continue Interpreter::doUnpackSequence(Thread* thread,
     return unpackSequenceWithLength(thread, frame, tuple, arg, list.numItems());
   }
   Object iterator(&scope, createIterator(thread, frame, iterable));
-  if (iterator.isError()) return Continue::UNWIND;
+  if (iterator.isErrorException()) return Continue::UNWIND;
 
   Object next_method(
       &scope, lookupMethod(thread, frame, iterator, SymbolId::kDunderNext));
   if (next_method.isError()) {
+    if (next_method.isErrorException()) {
+      thread->clearPendingException();
+    } else {
+      DCHECK(next_method.isErrorNotFound(),
+             "expected Error::exception() or Error::notFound()");
+    }
     thread->raiseWithFmt(LayoutId::kTypeError, "iter() returned non-iterator");
     return Continue::UNWIND;
   }
@@ -2102,7 +2171,7 @@ HANDLER_INLINE Continue Interpreter::doUnpackSequence(Thread* thread,
   Object value(&scope, RawNoneType::object());
   for (;;) {
     value = callMethod1(thread, frame, next_method, iterator);
-    if (value.isError()) {
+    if (value.isErrorException()) {
       if (thread->clearPendingStopIteration()) {
         if (num_pushed == arg) break;
         thread->raiseWithFmt(LayoutId::kValueError,
@@ -2155,7 +2224,7 @@ bool Interpreter::forIterUpdateCache(Thread* thread, word arg, word index) {
   }
 
   next = resolveDescriptorGet(thread, next, iter, type);
-  if (next.isError()) return true;
+  if (next.isErrorException()) return true;
   Object result(&scope, callFunction0(thread, frame, next));
   if (result.isErrorException()) {
     if (thread->clearPendingStopIteration()) {
@@ -2252,11 +2321,17 @@ HANDLER_INLINE Continue Interpreter::doUnpackEx(Thread* thread, word arg) {
   HandleScope scope(thread);
   Object iterable(&scope, frame->popValue());
   Object iterator(&scope, createIterator(thread, frame, iterable));
-  if (iterator.isError()) return Continue::UNWIND;
+  if (iterator.isErrorException()) return Continue::UNWIND;
 
   Object next_method(
       &scope, lookupMethod(thread, frame, iterator, SymbolId::kDunderNext));
   if (next_method.isError()) {
+    if (next_method.isErrorException()) {
+      thread->clearPendingException();
+    } else {
+      DCHECK(next_method.isErrorNotFound(),
+             "expected Error::exception() or Error::notFound()");
+    }
     thread->raiseWithFmt(LayoutId::kTypeError, "iter() returned non-iterator");
     return Continue::UNWIND;
   }
@@ -2267,7 +2342,7 @@ HANDLER_INLINE Continue Interpreter::doUnpackEx(Thread* thread, word arg) {
   Object value(&scope, RawNoneType::object());
   for (; num_pushed < before; ++num_pushed) {
     value = callMethod1(thread, frame, next_method, iterator);
-    if (value.isError()) {
+    if (value.isErrorException()) {
       if (thread->clearPendingStopIteration()) break;
       return Continue::UNWIND;
     }
@@ -2282,7 +2357,7 @@ HANDLER_INLINE Continue Interpreter::doUnpackEx(Thread* thread, word arg) {
   List list(&scope, runtime->newList());
   for (;;) {
     value = callMethod1(thread, frame, next_method, iterator);
-    if (value.isError()) {
+    if (value.isErrorException()) {
       if (thread->clearPendingStopIteration()) break;
       return Continue::UNWIND;
     }
@@ -2365,7 +2440,7 @@ Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg) {
   LayoutId saved_layout_id = receiver.layoutId();
   Object result(&scope,
                 storeAttrSetLocation(thread, receiver, name, value, &location));
-  if (result.isError()) return Continue::UNWIND;
+  if (result.isErrorException()) return Continue::UNWIND;
   if (!location.isNoneType()) {
     Tuple caches(&scope, frame->caches());
     Function dependent(&scope, frame->function());
@@ -2397,7 +2472,7 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrCached(Thread* thread,
   RawObject receiver_raw = frame->topValue();
   LayoutId layout_id = receiver_raw.layoutId();
   RawObject cached = icLookupAttr(frame->caches(), arg, layout_id);
-  if (cached.isError()) {
+  if (cached.isErrorNotFound()) {
     return storeAttrUpdateCache(thread, arg);
   }
   RawObject value_raw = frame->peek(1);
@@ -2460,7 +2535,7 @@ HANDLER_INLINE Continue Interpreter::doStoreAttr(Thread* thread, word arg) {
   Str name(&scope, names.at(arg));
   Object value(&scope, frame->popValue());
   if (thread->invokeMethod3(receiver, SymbolId::kDunderSetattr, name, value)
-          .isError()) {
+          .isErrorException()) {
     return Continue::UNWIND;
   }
   return Continue::NEXT;
@@ -2472,7 +2547,9 @@ HANDLER_INLINE Continue Interpreter::doDeleteAttr(Thread* thread, word arg) {
   Object receiver(&scope, frame->popValue());
   Tuple names(&scope, Code::cast(frame->code()).names());
   Str name(&scope, names.at(arg));
-  if (thread->runtime()->attributeDel(thread, receiver, name).isError()) {
+  if (thread->runtime()
+          ->attributeDel(thread, receiver, name)
+          .isErrorException()) {
     return Continue::UNWIND;
   }
   return Continue::NEXT;
@@ -2644,7 +2721,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttr(Thread* thread, word arg) {
   Tuple names(&scope, Code::cast(frame->code()).names());
   Str name(&scope, names.at(arg));
   RawObject result = thread->runtime()->attributeAt(thread, receiver, name);
-  if (result.isError()) return Continue::UNWIND;
+  if (result.isErrorException()) return Continue::UNWIND;
   frame->setTopValue(result);
   return Continue::NEXT;
 }
@@ -2723,7 +2800,7 @@ Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
   LoadAttrKind kind;
   Object result(&scope,
                 loadAttrSetLocation(thread, receiver, name, &kind, &location));
-  if (result.isError()) return Continue::UNWIND;
+  if (result.isErrorException()) return Continue::UNWIND;
   if (location.isNoneType()) {
     frame->setTopValue(*result);
     return Continue::NEXT;
@@ -2840,7 +2917,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceProperty(Thread* thread,
     Object getter(&scope, property.getter());
     Object result(&scope, Interpreter::callFunction1(
                               thread, thread->currentFrame(), getter, self));
-    if (result.isError()) return Continue::UNWIND;
+    if (result.isErrorException()) return Continue::UNWIND;
     frame->setTopValue(*result);
     return Continue::NEXT;
   }
@@ -2939,7 +3016,7 @@ HANDLER_INLINE Continue Interpreter::doCompareOp(Thread* thread, word arg) {
     result = compareOperation(thread, frame, op, left, right);
   }
 
-  if (result.isError()) return Continue::UNWIND;
+  if (result.isErrorException()) return Continue::UNWIND;
   frame->pushValue(result);
   return Continue::NEXT;
 }
@@ -2979,7 +3056,7 @@ static RawObject tryImportFromSysModules(Thread* thread, const Object& from,
   Runtime* runtime = thread->runtime();
   Object fully_qualified_name(
       &scope, runtime->attributeAtById(thread, from, SymbolId::kDunderName));
-  if (fully_qualified_name.isError() ||
+  if (fully_qualified_name.isErrorException() ||
       !runtime->isInstanceOfStr(*fully_qualified_name)) {
     thread->clearPendingException();
     return Error::notFound();
@@ -3062,7 +3139,7 @@ HANDLER_INLINE Continue Interpreter::doJumpIfFalseOrPop(Thread* thread,
     frame->popValue();
     return Continue::NEXT;
   }
-  DCHECK(value.isError(), "value must be error");
+  DCHECK(value.isErrorException(), "value must be error");
   return Continue::UNWIND;
 }
 
@@ -3079,7 +3156,7 @@ HANDLER_INLINE Continue Interpreter::doJumpIfTrueOrPop(Thread* thread,
     frame->popValue();
     return Continue::NEXT;
   }
-  DCHECK(value.isError(), "value must be error");
+  DCHECK(value.isErrorException(), "value must be error");
   return Continue::UNWIND;
 }
 
@@ -3101,7 +3178,7 @@ HANDLER_INLINE Continue Interpreter::doPopJumpIfFalse(Thread* thread,
   if (value == Bool::trueObj()) {
     return Continue::NEXT;
   }
-  DCHECK(value.isError(), "value must be error");
+  DCHECK(value.isErrorException(), "value must be error");
   return Continue::UNWIND;
 }
 
@@ -3116,7 +3193,7 @@ HANDLER_INLINE Continue Interpreter::doPopJumpIfTrue(Thread* thread, word arg) {
   if (value == Bool::falseObj()) {
     return Continue::NEXT;
   }
-  DCHECK(value.isError(), "value must be error");
+  DCHECK(value.isErrorException(), "value must be error");
   return Continue::UNWIND;
 }
 
@@ -3306,7 +3383,7 @@ Continue Interpreter::callTrampoline(Thread* thread, Function::Entry entry,
                                      word argc, RawObject* post_call_sp) {
   Frame* frame = thread->currentFrame();
   RawObject result = entry(thread, frame, argc);
-  if (result.isError()) return Continue::UNWIND;
+  if (result.isErrorException()) return Continue::UNWIND;
   frame->setValueStackTop(post_call_sp);
   frame->pushValue(result);
   return Continue::NEXT;
@@ -3328,7 +3405,7 @@ Interpreter::handleCall(Thread* thread, word argc, word callable_idx,
       caller_frame->valueStackTop() + callable_idx + 1 + num_extra_pop;
   RawObject callable = caller_frame->peek(callable_idx);
   callable = prepareCallableCall(thread, caller_frame, callable_idx, &argc);
-  if (callable.isError()) return Continue::UNWIND;
+  if (callable.isErrorException()) return Continue::UNWIND;
   RawFunction function = RawFunction::cast(callable);
 
   SymbolId name = static_cast<SymbolId>(function.intrinsicId());
@@ -3341,7 +3418,7 @@ Interpreter::handleCall(Thread* thread, word argc, word callable_idx,
   }
 
   RawObject result = prepare_args(thread, function, caller_frame, argc);
-  if (result.isError()) return Continue::UNWIND;
+  if (result.isErrorException()) return Continue::UNWIND;
   function = RawFunction::cast(result);
 
   bool has_freevars_or_cellvars = function.hasFreevarsOrCellvars();
@@ -3479,14 +3556,15 @@ HANDLER_INLINE Continue Interpreter::doCallFunctionEx(Thread* thread,
   HandleScope scope(thread);
   Object callable(&scope,
                   prepareCallableEx(thread, caller_frame, callable_idx));
-  if (callable.isError()) return Continue::UNWIND;
+  if (callable.isErrorException()) return Continue::UNWIND;
 
   Function function(&scope, *callable);
   if (!function.isInterpreted()) {
     return callTrampoline(thread, function.entryEx(), arg, post_call_sp);
   }
 
-  if (prepareExplodeCall(thread, *function, caller_frame, arg).isError()) {
+  if (prepareExplodeCall(thread, *function, caller_frame, arg)
+          .isErrorException()) {
     return Continue::UNWIND;
   }
 
@@ -3513,6 +3591,9 @@ HANDLER_INLINE Continue Interpreter::doSetupWith(Thread* thread, word arg) {
     if (enter.isErrorNotFound()) {
       thread->raise(LayoutId::kAttributeError,
                     runtime->symbols()->at(SymbolId::kDunderEnter));
+    } else {
+      DCHECK(enter.isErrorException(),
+             "expected Error::exception() or Error::notFound()");
     }
     return Continue::UNWIND;
   }
@@ -3521,13 +3602,16 @@ HANDLER_INLINE Continue Interpreter::doSetupWith(Thread* thread, word arg) {
     if (exit.isErrorNotFound()) {
       thread->raise(LayoutId::kAttributeError,
                     runtime->symbols()->at(SymbolId::kDunderExit));
+    } else {
+      DCHECK(exit.isErrorException(),
+             "expected Error::exception() or Error::notFound()");
     }
     return Continue::UNWIND;
   }
   Object exit_bound(&scope, runtime->newBoundMethod(exit, mgr));
   frame->setTopValue(*exit_bound);
   Object result(&scope, callMethod1(thread, frame, enter, mgr));
-  if (result.isError()) return Continue::UNWIND;
+  if (result.isErrorException()) return Continue::UNWIND;
 
   word stack_depth = frame->valueStackBase() - frame->valueStackTop();
   BlockStack* block_stack = frame->blockStack();
@@ -3602,7 +3686,7 @@ HANDLER_INLINE Continue Interpreter::doLoadClassDeref(Thread* thread,
     }
   }
 
-  if (result.isError()) {
+  if (result.isErrorNotFound()) {
     ValueCell value_cell(&scope, frame->local(code.nlocals() + arg));
     if (value_cell.isUnbound()) {
       UNIMPLEMENTED("unbound free var %s", Str::cast(*name).toCStr());
@@ -3626,7 +3710,7 @@ HANDLER_INLINE Continue Interpreter::doBuildListUnpack(Thread* thread,
     obj = frame->peek(i);
     RawObject result = thread->invokeMethodStatic2(
         LayoutId::kList, SymbolId::kExtend, list, obj);
-    if (result.isError()) return Continue::UNWIND;
+    if (result.isErrorException()) return Continue::UNWIND;
   }
   frame->dropValues(arg - 1);
   frame->setTopValue(*list);
@@ -3642,7 +3726,7 @@ HANDLER_INLINE Continue Interpreter::doBuildMapUnpack(Thread* thread,
   Object obj(&scope, NoneType::object());
   for (word i = arg - 1; i >= 0; i--) {
     obj = frame->peek(i);
-    if (dictMergeOverride(thread, dict, obj).isError()) {
+    if (dictMergeOverride(thread, dict, obj).isErrorException()) {
       if (thread->pendingExceptionType() ==
           runtime->typeAt(LayoutId::kAttributeError)) {
         // TODO(bsimmers): Include type name once we have a better formatter.
@@ -3666,7 +3750,7 @@ HANDLER_INLINE Continue Interpreter::doBuildMapUnpackWithCall(Thread* thread,
   Object obj(&scope, NoneType::object());
   for (word i = arg - 1; i >= 0; i--) {
     obj = frame->peek(i);
-    if (dictMergeError(thread, dict, obj).isError()) {
+    if (dictMergeError(thread, dict, obj).isErrorException()) {
       if (thread->pendingExceptionType() ==
           runtime->typeAt(LayoutId::kAttributeError)) {
         thread->clearPendingException();
@@ -3704,7 +3788,7 @@ HANDLER_INLINE Continue Interpreter::doBuildTupleUnpack(Thread* thread,
     obj = frame->peek(i);
     RawObject result = thread->invokeMethodStatic2(
         LayoutId::kList, SymbolId::kExtend, list, obj);
-    if (result.isError()) return Continue::UNWIND;
+    if (result.isErrorException()) return Continue::UNWIND;
   }
   Tuple items(&scope, list.items());
   Tuple tuple(&scope, runtime->tupleSubseq(thread, items, 0, list.numItems()));
@@ -3722,7 +3806,7 @@ HANDLER_INLINE Continue Interpreter::doBuildSetUnpack(Thread* thread,
   Object obj(&scope, NoneType::object());
   for (word i = 0; i < arg; i++) {
     obj = frame->peek(i);
-    if (setUpdate(thread, set, obj).isError()) return Continue::UNWIND;
+    if (setUpdate(thread, set, obj).isErrorException()) return Continue::UNWIND;
   }
   frame->dropValues(arg - 1);
   frame->setTopValue(*set);
@@ -3947,7 +4031,7 @@ Continue Interpreter::compareOpUpdateCache(Thread* thread, word arg) {
   BinaryOpFlags flags;
   RawObject result = compareOperationSetMethod(thread, frame, op, left, right,
                                                &method, &flags);
-  if (result.isError()) return Continue::UNWIND;
+  if (result.isErrorException()) return Continue::UNWIND;
   if (!method.isNoneType()) {
     LayoutId left_layout_id = left.layoutId();
     LayoutId right_layout_id = right.layoutId();
@@ -3971,7 +4055,7 @@ Continue Interpreter::compareOpFallback(Thread* thread, word arg,
   Object left(&scope, frame->popValue());
   Object result(&scope,
                 compareOperationRetry(thread, frame, op, flags, left, right));
-  if (result.isError()) return Continue::UNWIND;
+  if (result.isErrorException()) return Continue::UNWIND;
   frame->pushValue(*result);
   return Continue::NEXT;
 }
@@ -4001,7 +4085,7 @@ Continue Interpreter::inplaceOpUpdateCache(Thread* thread, word arg) {
     icInsertInplaceOpDependencies(thread, function, left_layout_id,
                                   right_layout_id, op);
   }
-  if (result.isError()) return Continue::UNWIND;
+  if (result.isErrorException()) return Continue::UNWIND;
   frame->pushValue(result);
   return Continue::NEXT;
 }
@@ -4025,7 +4109,7 @@ Continue Interpreter::inplaceOpFallback(Thread* thread, word arg,
     // __radd__) so we have to invoke `binaryOperationRetry`.
     result = binaryOperationRetry(thread, frame, op, flags, left, right);
   }
-  if (result.isError()) return Continue::UNWIND;
+  if (result.isErrorException()) return Continue::UNWIND;
   frame->pushValue(*result);
   return Continue::NEXT;
 }
@@ -4105,7 +4189,7 @@ static RawObject resumeGeneratorImpl(Thread* thread,
   }
   // Generator ended with return.
   heap_frame.setVirtualPC(Frame::kFinishedGeneratorPC);
-  if (result.isError()) return *result;
+  if (result.isErrorException()) return *result;
   return thread->raise(LayoutId::kStopIteration, *result);
 }
 
