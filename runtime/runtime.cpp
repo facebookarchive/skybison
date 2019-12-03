@@ -3820,56 +3820,52 @@ RawObject Runtime::newTupleIterator(const Tuple& tuple, word length) {
 
 RawObject Runtime::emptyFrozenSet() { return empty_frozen_set_; }
 
-RawObject Runtime::layoutFollowEdge(const List& edges, const Object& label) {
-  DCHECK(edges.numItems() % 2 == 0,
+static RawObject layoutFollowEdge(RawObject edges, RawObject name) {
+  RawList list = List::cast(edges);
+  DCHECK(list.numItems() % 2 == 0,
          "edges must contain an even number of elements");
-  for (word i = 0; i < edges.numItems(); i++) {
-    if (edges.at(i) == *label) {
-      return edges.at(i + 1);
+  for (word i = 0, num_items = list.numItems(); i < num_items; i++) {
+    if (list.at(i) == name) {
+      return list.at(i + 1);
     }
   }
   return Error::notFound();
 }
 
-void Runtime::layoutAddEdge(Thread* thread, const List& edges,
-                            const Object& label, const Object& layout) {
+static void layoutAddEdge(Thread* thread, Runtime* runtime, const List& edges,
+                          const Object& name, const Object& layout) {
   DCHECK(edges.numItems() % 2 == 0,
          "edges must contain an even number of elements");
-  listAdd(thread, edges, label);
-  listAdd(thread, edges, layout);
+  runtime->listAdd(thread, edges, name);
+  runtime->listAdd(thread, edges, layout);
 }
 
-bool Runtime::layoutFindAttribute(Thread* thread, const Layout& layout,
-                                  const Object& name, AttributeInfo* info) {
-  HandleScope scope(thread);
-
+bool Runtime::layoutFindAttribute(RawLayout layout, const Object& name,
+                                  AttributeInfo* info) {
   // Check in-object attributes
-  Tuple in_object(&scope, layout.inObjectAttributes());
-  for (word i = 0; i < in_object.length(); i++) {
-    Tuple entry(&scope, in_object.at(i));
-    if (entry.at(0) == *name) {
+  RawTuple in_object = Tuple::cast(layout.inObjectAttributes());
+  RawObject name_raw = *name;
+  for (word i = in_object.length() - 1; i >= 0; i--) {
+    RawTuple entry = Tuple::cast(in_object.at(i));
+    if (entry.at(0) == name_raw) {
       *info = AttributeInfo(entry.at(1));
       return true;
     }
   }
 
   // Check overflow attributes
-  if (layout.isSealed()) {
+  if (!layout.hasTupleOverflow()) {
     return false;
   }
-  // There is an overflow dict; don't try and read the tuple
-  if (layout.hasDictOverflow()) {
-    return false;
-  }
-  Tuple overflow(&scope, layout.overflowAttributes());
-  for (word i = 0; i < overflow.length(); i++) {
-    Tuple entry(&scope, overflow.at(i));
-    if (entry.at(0) == *name) {
+
+  RawTuple overflow = Tuple::cast(layout.overflowAttributes());
+  for (word i = overflow.length() - 1; i >= 0; i--) {
+    RawTuple entry = Tuple::cast(overflow.at(i));
+    if (entry.at(0) == name_raw) {
       *info = AttributeInfo(entry.at(1));
       return true;
     }
   }
-
   return false;
 }
 
@@ -3919,34 +3915,35 @@ RawObject Runtime::createNativeProxyLayout(Thread* thread,
 }
 
 RawObject Runtime::layoutAddAttribute(Thread* thread, const Layout& layout,
-                                      const Object& name, word flags) {
-  HandleScope scope(thread);
-
+                                      const Object& name, word flags,
+                                      AttributeInfo* info) {
   // Check if a edge for the attribute addition already exists
-  List edges(&scope, layout.additions());
-  RawObject result = layoutFollowEdge(edges, name);
+  RawObject result = layoutFollowEdge(layout.additions(), *name);
   if (!result.isError()) {
+    bool found = layoutFindAttribute(Layout::cast(result), name, info);
+    DCHECK(found, "couldn't find attribute on new layout");
     return result;
   }
 
   // Create a new layout and figure out where to place the attribute
+  HandleScope scope(thread);
   Layout new_layout(&scope, layoutCreateChild(thread, layout));
   Tuple inobject(&scope, layout.inObjectAttributes());
   if (inobject.length() < layout.numInObjectAttributes()) {
-    AttributeInfo info(inobject.length() * kPointerSize,
-                       flags | AttributeFlags::kInObject);
+    *info = AttributeInfo(inobject.length() * kPointerSize,
+                          flags | AttributeFlags::kInObject);
     new_layout.setInObjectAttributes(
-        layoutAddAttributeEntry(thread, inobject, name, info));
+        layoutAddAttributeEntry(thread, inobject, name, *info));
   } else {
     Tuple overflow(&scope, layout.overflowAttributes());
-    AttributeInfo info(overflow.length(), flags);
+    *info = AttributeInfo(overflow.length(), flags);
     new_layout.setOverflowAttributes(
-        layoutAddAttributeEntry(thread, overflow, name, info));
+        layoutAddAttributeEntry(thread, overflow, name, *info));
   }
 
   // Add the edge to the existing layout
-  Object value(&scope, *new_layout);
-  layoutAddEdge(thread, edges, name, value);
+  List edges(&scope, layout.additions());
+  layoutAddEdge(thread, this, edges, name, new_layout);
 
   return *new_layout;
 }
@@ -3974,21 +3971,16 @@ static RawObject markEntryDeleted(Thread* thread, RawObject entries,
 }
 
 RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
-                                         const Object& name) {
-  HandleScope scope(thread);
-
+                                         const Object& name,
+                                         AttributeInfo info) {
   // Check if an edge exists for removing the attribute
-  List edges(&scope, layout.deletions());
-  RawObject next_layout = layoutFollowEdge(edges, name);
+  RawObject next_layout = layoutFollowEdge(layout.deletions(), *name);
   if (!next_layout.isError()) {
     return next_layout;
   }
 
-  AttributeInfo info;
-  bool found = layoutFindAttribute(thread, layout, name, &info);
-  DCHECK(found, "layoutDeleteAttribute() called with nonexistent attribute");
-
   // No edge was found, create a new layout and add an edge
+  HandleScope scope(thread);
   Layout new_layout(&scope, layoutCreateChild(thread, layout));
   if (info.isInObject()) {
     new_layout.setInObjectAttributes(
@@ -3999,8 +3991,8 @@ RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
   }
 
   // Add the edge to the existing layout
-  Object value(&scope, *new_layout);
-  layoutAddEdge(thread, edges, name, value);
+  List edges(&scope, layout.deletions());
+  layoutAddEdge(thread, this, edges, name, new_layout);
 
   return *new_layout;
 }

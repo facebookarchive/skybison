@@ -347,7 +347,7 @@ instance = C()
   Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   AttributeInfo info;
-  ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
+  ASSERT_TRUE(Runtime::layoutFindAttribute(*layout, name, &info));
   ASSERT_TRUE(info.isInObject());
 
   EXPECT_TRUE(instanceDelAttr(thread_, instance, name).isNoneType());
@@ -368,7 +368,7 @@ instance.foo = 42
   Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   AttributeInfo info;
-  ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
+  ASSERT_TRUE(Runtime::layoutFindAttribute(*layout, name, &info));
   ASSERT_TRUE(info.isOverflow());
 
   EXPECT_TRUE(instanceDelAttr(thread_, instance, name).isNoneType());
@@ -446,7 +446,7 @@ instance.foo = 42
   ASSERT_TRUE(layout.hasDictOverflow());
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   AttributeInfo info;
-  ASSERT_FALSE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
+  ASSERT_FALSE(Runtime::layoutFindAttribute(*layout, name, &info));
 
   EXPECT_TRUE(instanceDelAttr(thread_, instance, name).isNoneType());
   EXPECT_TRUE(instanceGetAttribute(thread_, instance, name).isErrorNotFound());
@@ -483,7 +483,7 @@ instance = C()
   ASSERT_TRUE(layout.hasTupleOverflow());
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   AttributeInfo info;
-  ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
+  ASSERT_TRUE(Runtime::layoutFindAttribute(*layout, name, &info));
   ASSERT_TRUE(info.isInObject());
 
   EXPECT_TRUE(
@@ -504,7 +504,7 @@ instance.foo = 42
   ASSERT_TRUE(layout.hasTupleOverflow());
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   AttributeInfo info;
-  ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
+  ASSERT_TRUE(Runtime::layoutFindAttribute(*layout, name, &info));
   ASSERT_TRUE(info.isOverflow());
 
   EXPECT_TRUE(
@@ -524,7 +524,7 @@ instance.foo = 42
   ASSERT_TRUE(layout.hasDictOverflow());
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   AttributeInfo info;
-  ASSERT_FALSE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
+  ASSERT_FALSE(Runtime::layoutFindAttribute(*layout, name, &info));
 
   EXPECT_TRUE(
       isIntEqualsWord(instanceGetAttribute(thread_, instance, name), 42));
@@ -562,7 +562,7 @@ instance = C(False)
 
   Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
   AttributeInfo info;
-  ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
+  ASSERT_TRUE(Runtime::layoutFindAttribute(*layout, name, &info));
   ASSERT_TRUE(info.isInObject());
 
   EXPECT_TRUE(
@@ -586,7 +586,7 @@ instance = C()
   EXPECT_EQ(overflow.length(), 1);
 
   AttributeInfo info;
-  ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
+  ASSERT_TRUE(Runtime::layoutFindAttribute(*layout, name, &info));
   ASSERT_TRUE(info.isOverflow());
 
   EXPECT_TRUE(
@@ -612,7 +612,7 @@ instance.bar = 5000
   ASSERT_EQ(overflow.length(), 1);
 
   AttributeInfo info;
-  ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
+  ASSERT_TRUE(Runtime::layoutFindAttribute(*layout, name, &info));
   ASSERT_TRUE(info.isOverflow());
 
   EXPECT_TRUE(
@@ -635,7 +635,7 @@ def instance(): pass
   EXPECT_EQ(instance.layoutId(), layout.id());
 
   AttributeInfo info;
-  ASSERT_FALSE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
+  ASSERT_FALSE(Runtime::layoutFindAttribute(*layout, name, &info));
   EXPECT_TRUE(
       isIntEqualsWord(instanceGetAttribute(thread_, instance, name), 4711));
 }
@@ -819,7 +819,7 @@ i = C()
   Layout layout(&scope, runtime_.layoutAt(i.layoutId()));
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   AttributeInfo info;
-  ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
+  ASSERT_TRUE(Runtime::layoutFindAttribute(*layout, name, &info));
   ASSERT_TRUE(info.isInObject());
 
   Object to_cache(&scope, NoneType::object());
@@ -847,7 +847,7 @@ i.foo = 17
   Layout layout(&scope, runtime_.layoutAt(i.layoutId()));
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   AttributeInfo info;
-  ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
+  ASSERT_TRUE(Runtime::layoutFindAttribute(*layout, name, &info));
   ASSERT_TRUE(info.isOverflow());
 
   Object to_cache(&scope, NoneType::object());
@@ -962,7 +962,7 @@ i = C()
 
   AttributeInfo info;
   Layout layout(&scope, runtime_.layoutAt(i.layoutId()));
-  ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
+  ASSERT_TRUE(Runtime::layoutFindAttribute(*layout, name, &info));
   ASSERT_TRUE(info.isInObject());
 
   Object value(&scope, runtime_.newInt(7));
@@ -993,7 +993,7 @@ i.foo = 0
 
   AttributeInfo info;
   Layout layout(&scope, runtime_.layoutAt(i.layoutId()));
-  ASSERT_TRUE(runtime_.layoutFindAttribute(thread_, layout, name, &info));
+  ASSERT_TRUE(Runtime::layoutFindAttribute(*layout, name, &info));
   ASSERT_TRUE(info.isOverflow());
 
   Object value(&scope, runtime_.newInt(-8));

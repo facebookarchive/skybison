@@ -29,7 +29,7 @@ RawObject instanceDelAttr(Thread* thread, const Instance& instance,
   Runtime* runtime = thread->runtime();
   Layout layout(&scope, runtime->layoutAt(instance.layoutId()));
   AttributeInfo info;
-  if (!runtime->layoutFindAttribute(thread, layout, name, &info)) {
+  if (!Runtime::layoutFindAttribute(*layout, name, &info)) {
     if (layout.hasDictOverflow()) {
       word offset = layout.dictOverflowOffset();
       Object overflow_dict_obj(&scope, instance.instanceVariableAt(offset));
@@ -49,17 +49,16 @@ RawObject instanceDelAttr(Thread* thread, const Instance& instance,
   }
 
   // Make the attribute invisible
-  Object new_layout(&scope,
-                    runtime->layoutDeleteAttribute(thread, layout, name));
-  DCHECK(!new_layout.isError(), "should always find attribute here");
-  LayoutId new_layout_id = Layout::cast(*new_layout).id();
+  Layout new_layout(&scope,
+                    runtime->layoutDeleteAttribute(thread, layout, name, info));
+  LayoutId new_layout_id = new_layout.id();
   instance.setHeader(instance.header().withLayoutId(new_layout_id));
 
   if (info.isInObject()) {
     instance.instanceVariableAtPut(info.offset(), NoneType::object());
   } else {
-    Tuple overflow(&scope, instance.instanceVariableAt(
-                               Layout::cast(*new_layout).overflowOffset()));
+    Tuple overflow(&scope,
+                   instance.instanceVariableAt(new_layout.overflowOffset()));
     overflow.atPut(info.offset(), NoneType::object());
   }
 
@@ -70,23 +69,23 @@ RawObject instanceGetAttributeSetLocation(Thread* thread,
                                           const Instance& instance,
                                           const Object& name,
                                           Object* location_out) {
-  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
   Layout layout(&scope, runtime->layoutAt(instance.layoutId()));
   AttributeInfo info;
-  if (runtime->layoutFindAttribute(thread, layout, name, &info)) {
+  if (Runtime::layoutFindAttribute(*layout, name, &info)) {
     if (info.isInObject()) {
       if (location_out != nullptr) {
-        *location_out = RawSmallInt::fromWord(info.offset());
+        *location_out = SmallInt::fromWord(info.offset());
       }
       return instance.instanceVariableAt(info.offset());
     }
-    Tuple overflow(&scope,
-                   instance.instanceVariableAt(layout.overflowOffset()));
+    word offset = info.offset();
     if (location_out != nullptr) {
-      *location_out = RawSmallInt::fromWord(-info.offset() - 1);
+      *location_out = SmallInt::fromWord(-offset - 1);
     }
-    return overflow.at(info.offset());
+    word tuple_offset = layout.overflowOffset();
+    return Tuple::cast(instance.instanceVariableAt(tuple_offset)).at(offset);
   }
   if (layout.hasDictOverflow()) {
     word offset = layout.dictOverflowOffset();
@@ -116,7 +115,7 @@ static RawObject instanceSetAttrSetLocation(Thread* thread,
   Runtime* runtime = thread->runtime();
   Layout layout(&scope, runtime->layoutAt(instance.layoutId()));
   AttributeInfo info;
-  if (!runtime->layoutFindAttribute(thread, layout, name, &info)) {
+  if (!Runtime::layoutFindAttribute(*layout, name, &info)) {
     if (!layout.hasTupleOverflow()) {
       if (layout.hasDictOverflow()) {
         word offset = layout.dictOverflowOffset();
@@ -136,14 +135,9 @@ static RawObject instanceSetAttrSetLocation(Thread* thread,
       }
     }
     // Transition the layout
-    layout = runtime->layoutAddAttribute(thread, layout, name, 0);
+    layout = runtime->layoutAddAttribute(thread, layout, name, 0, &info);
     has_new_layout_id = true;
-
-    bool found = runtime->layoutFindAttribute(thread, layout, name, &info);
-    DCHECK(found, "couldn't find attribute on new layout");
-  }
-
-  if (info.isReadOnly()) {
+  } else if (info.isReadOnly()) {
     return thread->raiseWithFmt(LayoutId::kAttributeError,
                                 "'%T.%S' attribute is read-only", &instance,
                                 &name);

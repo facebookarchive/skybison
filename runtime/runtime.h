@@ -532,8 +532,8 @@ class Runtime {
   //
   // If the attribute is found this returns true and sets info.
   // Returns false otherwise.
-  bool layoutFindAttribute(Thread* thread, const Layout& layout,
-                           const Object& name, AttributeInfo* info);
+  static bool layoutFindAttribute(RawLayout layout, const Object& name,
+                                  AttributeInfo* info);
 
   // Creates a new layout by adding empty slots to the base_layout
   // to match the NativeProxy layout
@@ -544,7 +544,8 @@ class Runtime {
   // This returns a new layout by either following a pre-existing edge or
   // adding one.
   RawObject layoutAddAttribute(Thread* thread, const Layout& layout,
-                               const Object& name, word flags);
+                               const Object& name, word flags,
+                               AttributeInfo* info);
 
   // Delete the named attribute from the layout.
   //
@@ -553,7 +554,7 @@ class Runtime {
   //
   // If the attribute doesn't exist, Error::object() is returned.
   RawObject layoutDeleteAttribute(Thread* thread, const Layout& layout,
-                                  const Object& name);
+                                  const Object& name, AttributeInfo info);
 
   void typeAddBuiltinFunction(const Type& type, SymbolId name,
                               Function::Entry entry);
@@ -852,30 +853,10 @@ class Runtime {
   void appendBuiltinAttributes(View<BuiltinAttribute> attributes,
                                const Tuple& dst, word start_index);
 
-  // Appends the edge to the list of edges.
-  //
-  // edges is expected to be a list of edges (label, layout pairs) corresponding
-  // to a class of shape altering mutations (e.g. attribute addition).
-  void layoutAddEdge(Thread* thread, const List& edges, const Object& label,
-                     const Object& layout);
-
   // Create a new tuple for the name, info pair and return a new tuple
   // containing entries + entry.
   RawObject layoutAddAttributeEntry(Thread* thread, const Tuple& entries,
                                     const Object& name, AttributeInfo info);
-
-  // Follow the edge with the supplied label, if one exists.
-  //
-  // Edges is expected to be a list composed of flattened two tuples. The
-  // elements of each tuple are expected to be, in order,
-  //
-  //   1. The label
-  //   2. The layout that would be reached by following the edge.
-  //
-  // If an edge with the supplied label exists the corresponding layout is
-  // returned. If no edge with the supplied label exists Error::object() is
-  // returned.
-  RawObject layoutFollowEdge(const List& edges, const Object& label);
 
   // Creates a new layout that will be a child layout of the supplied parent.
   //

@@ -171,8 +171,7 @@ TEST_F(SliceBuiltinsTest, SliceHasStartAttribute) {
   Layout layout(&scope, runtime_.layoutAt(LayoutId::kSlice));
   Str name(&scope, runtime_.newStrFromCStr("start"));
   AttributeInfo info;
-  ASSERT_TRUE(
-      runtime_.layoutFindAttribute(Thread::current(), layout, name, &info));
+  ASSERT_TRUE(Runtime::layoutFindAttribute(*layout, name, &info));
   EXPECT_TRUE(info.isInObject());
   EXPECT_TRUE(info.isFixedOffset());
 }
@@ -182,8 +181,7 @@ TEST_F(SliceBuiltinsTest, SliceHasStopAttribute) {
   Layout layout(&scope, runtime_.layoutAt(LayoutId::kSlice));
   Str name(&scope, runtime_.newStrFromCStr("stop"));
   AttributeInfo info;
-  ASSERT_TRUE(
-      runtime_.layoutFindAttribute(Thread::current(), layout, name, &info));
+  ASSERT_TRUE(Runtime::layoutFindAttribute(*layout, name, &info));
   EXPECT_TRUE(info.isInObject());
   EXPECT_TRUE(info.isFixedOffset());
 }
@@ -193,8 +191,7 @@ TEST_F(SliceBuiltinsTest, SliceHasStepAttribute) {
   Layout layout(&scope, runtime_.layoutAt(LayoutId::kSlice));
   Str name(&scope, runtime_.newStrFromCStr("step"));
   AttributeInfo info;
-  ASSERT_TRUE(
-      runtime_.layoutFindAttribute(Thread::current(), layout, name, &info));
+  ASSERT_TRUE(Runtime::layoutFindAttribute(*layout, name, &info));
   EXPECT_TRUE(info.isInObject());
   EXPECT_TRUE(info.isFixedOffset());
 }
