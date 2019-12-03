@@ -58,6 +58,21 @@ RawObject Interpreter::prepareCallable(Thread* thread, Frame* frame,
       return Bool::trueObj();
     }
 
+    if (callable->isType()) {
+      // In case `callable` is a type (e.g., str("value")), this call is
+      // resolved via type.__call__(callable, ...). The most common operation
+      // performed by such a path is object creation through __init__ and
+      // __new__. In case callable.underCtor is explicitly defined, it can
+      // perform such instance creation of the exact type `callable` directly
+      // without dispatching to `type.__call__` if it exists. Otherwise,
+      // callable.underCtor is guaranteed to be same as type.__call__.
+      RawType callable_as_type = Type::cast(**callable);
+      RawObject under_new = callable_as_type.underCtor();
+      DCHECK(under_new.isFunction(), "type._new is expected to be a function");
+      *self = callable_as_type;
+      *callable = under_new;
+      return Bool::trueObj();
+    }
     // TODO(T44238481): Look into using lookupMethod() once it's fixed.
     Type type(&scope, runtime->typeOf(**callable));
     Object dunder_call(

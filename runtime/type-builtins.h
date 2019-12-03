@@ -111,7 +111,6 @@ RawObject typeValueCellAtPut(Thread* thread, const Type& type,
 class TypeBuiltins
     : public Builtins<TypeBuiltins, SymbolId::kType, LayoutId::kType> {
  public:
-  static RawObject dunderCall(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGetattribute(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderSetattr(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderSubclasses(Thread* thread, Frame* frame, word nargs);

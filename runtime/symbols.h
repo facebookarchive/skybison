@@ -325,6 +325,7 @@ class Runtime;
   V(UnderModuleProxyValues, "_module_proxy_values")                            \
   V(UnderMutableBytes, "_mutablebytes")                                        \
   V(UnderMutableTuple, "_mutabletuple")                                        \
+  V(UnderNew, "_new")                                                          \
   V(UnderNewMemberGetBool, "_new_member_get_bool")                             \
   V(UnderNewMemberGetByte, "_new_member_get_byte")                             \
   V(UnderNewMemberGetChar, "_new_member_get_char")                             \
@@ -409,8 +410,10 @@ class Runtime;
   V(UnderStderrFd, "_stderr_fd")                                               \
   V(UnderStdout, "_stdout")                                                    \
   V(UnderStdoutFd, "_stdout_fd")                                               \
+  V(UnderStopIterationCtor, "_stop_iteration_ctor")                            \
   V(UnderStrArray, "_strarray")                                                \
   V(UnderStrArrayClear, "_strarray_clear")                                     \
+  V(UnderStrArrayCtor, "_strarray_ctor")                                       \
   V(UnderStrArrayIadd, "_strarray_iadd")                                       \
   V(UnderStrCheck, "_str_check")                                               \
   V(UnderStrCheckExact, "_str_checkexact")                                     \
@@ -459,6 +462,7 @@ class Runtime;
   V(UnderTypeBasesSet, "_type_bases_set")                                      \
   V(UnderTypeCheck, "_type_check")                                             \
   V(UnderTypeCheckExact, "_type_check_exact")                                  \
+  V(UnderTypeDunderCall, "_type_dunder_call")                                  \
   V(UnderTypeGuard, "_type_guard")                                             \
   V(UnderTypeInit, "_type_init")                                               \
   V(UnderTypeIsSubclass, "_type_issubclass")                                   \

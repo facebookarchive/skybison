@@ -2624,6 +2624,26 @@ void Runtime::createBuiltinsModule(Thread* thread) {
         typeAtById(thread, type_type, SymbolId::kDunderGetattribute);
   }
 
+  // Populate some builtin types with shortcut constructors.
+  {
+    Module under_builtins(&scope, findModuleById(SymbolId::kUnderBuiltins));
+    Type stop_iteration_type(&scope, typeAt(LayoutId::kStopIteration));
+    Object under_stop_iteration_ctor(
+        &scope, moduleAtById(thread, under_builtins,
+                             SymbolId::kUnderStopIterationCtor));
+    CHECK(under_stop_iteration_ctor.isFunction(),
+          "_stop_iteration_ctor should be a function");
+    stop_iteration_type.setUnderCtor(*under_stop_iteration_ctor);
+
+    Type strarray_type(&scope, typeAt(LayoutId::kStrArray));
+    Object under_strarray_ctor(
+        &scope,
+        moduleAtById(thread, under_builtins, SymbolId::kUnderStrArrayCtor));
+    CHECK(under_strarray_ctor.isFunction(),
+          "_strarray_ctor should be a function");
+    strarray_type.setUnderCtor(*under_strarray_ctor);
+  }
+
   // Mark functions that have an intrinsic implementation.
   for (word i = 0; BuiltinsModule::kIntrinsicIds[i] != SymbolId::kSentinelId;
        i++) {

@@ -6,6 +6,7 @@
 #include "builtins-module.h"
 #include "frame.h"
 #include "module-builtins.h"
+#include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "set-builtins.h"
@@ -540,7 +541,8 @@ RawObject BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
     return thread->raiseRequiresType(self_obj, SymbolId::kBaseException);
   }
   BaseException self(&scope, *self_obj);
-  self.setArgs(args.get(1));
+  Object args_obj(&scope, args.get(1));
+  self.setArgs(*args_obj);
   self.setCause(Unbound::object());
   self.setContext(Unbound::object());
   self.setTraceback(Unbound::object());
@@ -567,14 +569,14 @@ RawObject StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
     return thread->raiseRequiresType(self_obj, SymbolId::kStopIteration);
   }
   StopIteration self(&scope, *self_obj);
-  RawObject result = BaseExceptionBuiltins::dunderInit(thread, frame, nargs);
-  if (result.isError()) {
-    return result;
-  }
+  Object args_obj(&scope, args.get(1));
+  self.setArgs(*args_obj);
+  self.setCause(Unbound::object());
+  self.setContext(Unbound::object());
+  self.setTraceback(Unbound::object());
+  self.setSuppressContext(RawBool::falseObj());
   Tuple tuple(&scope, self.args());
-  if (tuple.length() > 0) {
-    self.setValue(tuple.at(0));
-  }
+  if (tuple.length() > 0) self.setValue(tuple.at(0));
   return NoneType::object();
 }
 

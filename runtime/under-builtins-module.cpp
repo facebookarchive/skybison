@@ -21,6 +21,7 @@
 #include "object-builtins.h"
 #include "range-builtins.h"
 #include "str-builtins.h"
+#include "strarray-builtins.h"
 #include "tuple-builtins.h"
 #include "type-builtins.h"
 #include "unicode.h"
@@ -235,7 +236,9 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderSliceStop, underSliceStop},
     {SymbolId::kUnderSliceStopLong, underSliceStopLong},
     {SymbolId::kUnderStaticMethodIsAbstract, underStaticMethodIsAbstract},
+    {SymbolId::kUnderStopIterationCtor, underStopIterationCtor},
     {SymbolId::kUnderStrArrayClear, underStrArrayClear},
+    {SymbolId::kUnderStrArrayCtor, underStrArrayCtor},
     {SymbolId::kUnderStrArrayIadd, underStrArrayIadd},
     {SymbolId::kUnderStrCheck, underStrCheck},
     {SymbolId::kUnderStrCheckExact, underStrCheckExact},
@@ -273,6 +276,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderTypeBasesSet, underTypeBasesSet},
     {SymbolId::kUnderTypeCheck, underTypeCheck},
     {SymbolId::kUnderTypeCheckExact, underTypeCheckExact},
+    {SymbolId::kUnderTypeDunderCall, underTypeDunderCall},
     {SymbolId::kUnderTypeGuard, underTypeGuard},
     {SymbolId::kUnderTypeInit, underTypeInit},
     {SymbolId::kUnderTypeIsSubclass, underTypeIsSubclass},
@@ -3328,6 +3332,27 @@ RawObject UnderBuiltinsModule::underStaticMethodIsAbstract(Thread* thread,
   return isAbstract(thread, func);
 }
 
+RawObject UnderBuiltinsModule::underStopIterationCtor(Thread* thread,
+                                                      Frame* frame,
+                                                      word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  DCHECK(args.get(0) == runtime->typeAt(LayoutId::kStopIteration),
+         "unexpected type; should be StopIteration");
+  Layout layout(&scope, runtime->layoutAt(LayoutId::kStopIteration));
+  StopIteration self(&scope, runtime->newInstance(layout));
+  Object args_obj(&scope, args.get(1));
+  self.setArgs(*args_obj);
+  self.setCause(Unbound::object());
+  self.setContext(Unbound::object());
+  self.setTraceback(Unbound::object());
+  self.setSuppressContext(RawBool::falseObj());
+  Tuple tuple(&scope, self.args());
+  if (tuple.length() > 0) self.setValue(tuple.at(0));
+  return *self;
+}
+
 RawObject UnderBuiltinsModule::underStrArrayClear(Thread* thread, Frame* frame,
                                                   word nargs) {
   HandleScope scope(thread);
@@ -3344,6 +3369,30 @@ RawObject UnderBuiltinsModule::underStrArrayIadd(Thread* thread, Frame* frame,
   StrArray self(&scope, args.get(0));
   Str other(&scope, strUnderlying(args.get(1)));
   thread->runtime()->strArrayAddStr(thread, self, other);
+  return *self;
+}
+
+RawObject UnderBuiltinsModule::underStrArrayCtor(Thread* thread, Frame* frame,
+                                                 word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  DCHECK(args.get(0) == runtime->typeAt(LayoutId::kStrArray),
+         "_strarray.__new__(X): X is not '_strarray'");
+  Object self_obj(&scope, runtime->newStrArray());
+  if (self_obj.isError()) return *self_obj;
+  StrArray self(&scope, *self_obj);
+  self.setNumItems(0);
+  Object source_obj(&scope, args.get(1));
+  if (source_obj.isUnbound()) {
+    return *self;
+  }
+  if (!runtime->isInstanceOfStr(*source_obj)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "_strarray can only be initialized with str");
+  }
+  Str source(&scope, strUnderlying(*source_obj));
+  runtime->strArrayAddStr(thread, self, source);
   return *self;
 }
 
@@ -3990,6 +4039,89 @@ RawObject UnderBuiltinsModule::underTypeCheckExact(Thread*, Frame* frame,
   return Bool::fromBool(args.get(0).isType());
 }
 
+RawObject UnderBuiltinsModule::underTypeDunderCall(Thread* thread, Frame* frame,
+                                                   word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  Tuple pargs(&scope, args.get(1));
+  Dict kwargs(&scope, args.get(2));
+  // Shortcut for type(x) calls.
+  if (pargs.length() == 1 && kwargs.numItems() == 0 &&
+      self_obj == runtime->typeAt(LayoutId::kType)) {
+    return runtime->typeOf(pargs.at(0));
+  }
+
+  if (!runtime->isInstanceOfType(*self_obj)) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError, "'__call__' requires a '%Y' object but got '%T'",
+        SymbolId::kType, &self_obj);
+  }
+  Type self(&scope, *self_obj);
+
+  // `instance = self.__new__(...)`
+  Object dunder_new_name(&scope, runtime->symbols()->DunderNew());
+  Object dunder_new(&scope, typeGetAttribute(thread, self, dunder_new_name));
+  Object instance(&scope, NoneType::object());
+  Object call_args_obj(&scope, NoneType::object());
+  if (dunder_new == runtime->objectDunderNew()) {
+    // Fast path when `__new__` was not overridden and is just `object.__new__`.
+    instance = objectNew(thread, self);
+    if (instance.isErrorException()) return *instance;
+  } else {
+    CHECK(!dunder_new.isError(), "self must have __new__");
+    frame->pushValue(*dunder_new);
+    MutableTuple call_args(&scope,
+                           runtime->newMutableTuple(pargs.length() + 1));
+    call_args.atPut(0, *self);
+    call_args.replaceFromWith(1, *pargs, pargs.length());
+    frame->pushValue(call_args.becomeImmutable());
+    frame->pushValue(*kwargs);
+    instance =
+        Interpreter::callEx(thread, frame, CallFunctionExFlag::VAR_KEYWORDS);
+    if (instance.isErrorException()) return *instance;
+    Type type(&scope, runtime->typeOf(*instance));
+    if (!typeIsSubclass(type, self)) {
+      return *instance;
+    }
+    call_args_obj = *call_args;
+  }
+
+  // instance.__init__(...)
+  Object dunder_init_name(&scope, runtime->symbols()->DunderInit());
+  Object dunder_init(&scope, typeGetAttribute(thread, self, dunder_init_name));
+  // `object.__init__` does nothing, we may be able to just skip things.
+  // The exception to the rule being `object.__init__` raising errors when
+  // arguments are provided and nothing is overridden.
+  if (dunder_init != runtime->objectDunderInit() ||
+      (dunder_new == runtime->objectDunderNew() &&
+       (pargs.length() != 0 || kwargs.numItems() != 0))) {
+    CHECK(!dunder_init.isError(), "self must have __init__");
+    frame->pushValue(*dunder_init);
+    if (!call_args_obj.isMutableTuple()) {
+      MutableTuple call_args(&scope,
+                             runtime->newMutableTuple(pargs.length() + 1));
+      call_args.atPut(0, *instance);
+      call_args.replaceFromWith(1, *pargs, pargs.length());
+      call_args_obj = *call_args;
+    } else {
+      MutableTuple::cast(*call_args_obj).atPut(0, *instance);
+    }
+    frame->pushValue(*call_args_obj);
+    frame->pushValue(*kwargs);
+    Object result(&scope, Interpreter::callEx(
+                              thread, frame, CallFunctionExFlag::VAR_KEYWORDS));
+    if (result.isErrorException()) return *result;
+    if (!result.isNoneType()) {
+      Object type_name(&scope, self.name());
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "%S.__init__ returned non None", &type_name);
+    }
+  }
+  return *instance;
+}
+
 RawObject UnderBuiltinsModule::underTypeGuard(Thread* thread, Frame* frame,
                                               word nargs) {
   Arguments args(frame, nargs);
@@ -4018,6 +4150,10 @@ RawObject UnderBuiltinsModule::underTypeNew(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->newTypeWithMetaclass(metaclass_id));
   type.setBases(bases.length() > 0 ? *bases : runtime->implicitBases());
+  Function under_new(
+      &scope, runtime->lookupNameInModule(thread, SymbolId::kUnderBuiltins,
+                                          SymbolId::kUnderTypeDunderCall));
+  type.setUnderCtor(*under_new);
   return *type;
 }
 

@@ -839,6 +839,11 @@ def _staticmethod_isabstract(self):
 
 
 @_patch
+def _stop_iteration_ctor(cls, *args):
+    pass
+
+
+@_patch
 def _str_check(obj):
     pass
 
@@ -949,6 +954,11 @@ def _strarray_iadd(self, other):
 
 
 @_patch
+def _strarray_ctor(cls, source=_Unbound):
+    pass
+
+
+@_patch
 def _tuple_check(obj):
     pass
 
@@ -1025,6 +1035,11 @@ def _type_check(obj):
 
 @_patch
 def _type_check_exact(obj):
+    pass
+
+
+@_patch
+def _type_dunder_call(self, *args, **kwargs):
     pass
 
 

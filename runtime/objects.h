@@ -1236,6 +1236,11 @@ class RawType : public RawInstance {
   RawObject proxy() const;
   void setProxy(RawObject proxy) const;
 
+  // Shortcut function to create an instance of this builtin_type. The semantics
+  // of this function should be same as type.__call__(builtin_type, ...).
+  RawObject underCtor() const;
+  void setUnderCtor(RawObject under_ctor) const;
+
   bool isBaseExceptionSubclass() const;
 
   // Check if the attributes on the type are sealed.
@@ -1259,7 +1264,8 @@ class RawType : public RawInstance {
   static const int kAbstractMethodsOffset = kSlotsOffset + kPointerSize;
   static const int kSubclassesOffset = kAbstractMethodsOffset + kPointerSize;
   static const int kProxyOffset = kSubclassesOffset + kPointerSize;
-  static const int kSize = kProxyOffset + kPointerSize;
+  static const int kUnderCtorOffset = kProxyOffset + kPointerSize;
+  static const int kSize = kUnderCtorOffset + kPointerSize;
 
   static const int kBuiltinBaseMask = 0xff;
 
@@ -4694,6 +4700,14 @@ inline RawObject RawType::proxy() const {
 
 inline void RawType::setProxy(RawObject proxy) const {
   instanceVariableAtPut(kProxyOffset, proxy);
+}
+
+inline RawObject RawType::underCtor() const {
+  return instanceVariableAt(kUnderCtorOffset);
+}
+
+inline void RawType::setUnderCtor(RawObject under_ctor) const {
+  instanceVariableAtPut(kUnderCtorOffset, under_ctor);
 }
 
 inline bool RawType::isBuiltin() const {

@@ -255,7 +255,10 @@ class UnderBuiltinsModule {
   static RawObject underSliceStopLong(Thread* thread, Frame* frame, word nargs);
   static RawObject underStaticMethodIsAbstract(Thread* thread, Frame* frame,
                                                word nargs);
+  static RawObject underStopIterationCtor(Thread* thread, Frame* frame,
+                                          word nargs);
   static RawObject underStrArrayClear(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrArrayCtor(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrArrayIadd(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrCheckExact(Thread* thread, Frame* frame, word nargs);
@@ -299,6 +302,8 @@ class UnderBuiltinsModule {
   static RawObject underTypeBasesSet(Thread* thread, Frame* frame, word nargs);
   static RawObject underTypeCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underTypeCheckExact(Thread* thread, Frame* frame,
+                                       word nargs);
+  static RawObject underTypeDunderCall(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underTypeGuard(Thread* thread, Frame* frame, word nargs);
   static RawObject underTypeInit(Thread* thread, Frame* frame, word nargs);

@@ -199,6 +199,7 @@ _type_bases_get = _type_bases_get  # noqa: F821
 _type_bases_set = _type_bases_set  # noqa: F821
 _type_check = _type_check  # noqa: F821
 _type_check_exact = _type_check_exact  # noqa: F821
+_type_dunder_call = _type_dunder_call  # noqa: F821
 _type_guard = _type_guard  # noqa: F821
 _type_init = _type_init  # noqa: F821
 _type_issubclass = _type_issubclass  # noqa: F821
@@ -325,8 +326,7 @@ class type(bootstrap=True):
     def __dict__(self):
         return mappingproxy(_type_proxy(self))
 
-    def __call__(self, *args, **kwargs):
-        pass
+    __call__ = _type_dunder_call
 
     def __dir__(self):
         _type_guard(self)
