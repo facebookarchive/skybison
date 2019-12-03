@@ -26,6 +26,8 @@ Scavenger::~Scavenger() {}
 
 RawObject Scavenger::scavenge() {
   to_ = new Space(from_->size());
+  // Nothing should be allocating during a GC.
+  runtime_->heap()->setSpace(nullptr);
   processRoots();
   processGrayObjects();
   processApiHandles();
@@ -165,18 +167,11 @@ void Scavenger::processNativeList(ListEntry* entry) {
       continue;
     }
 
-    // Deallocate immediately or add to finalization queue
-    RawType type = Type::cast(runtime_->typeOf(native_instance->asObject()));
-    if (!type.hasFlag(Type::Flag::kHasDefaultDealloc)) {
-      scavengePointer(
-          reinterpret_cast<RawObject*>(&native_instance->reference_));
-      RawNativeProxy::enqueue(native_instance->asObject(),
-                              runtime_->finalizableReferences());
-      continue;
-    }
-    auto func = reinterpret_cast<destructor>(
-        Int::cast(type.slot(Type::Slot::kDealloc)).asWord());
-    (*func)(native_instance);
+    // TODO(T58548736): Run safe dealloc slots here when possible rather than
+    // putting everything on the queue.
+    scavengePointer(reinterpret_cast<RawObject*>(&native_instance->reference_));
+    RawNativeProxy::enqueue(native_instance->asObject(),
+                            runtime_->finalizableReferences());
   }
 }
 
