@@ -105,6 +105,8 @@ static const SymbolId kComparisonSelector[] = {
     SymbolId::kDunderLt, SymbolId::kDunderLe, SymbolId::kDunderEq,
     SymbolId::kDunderNe, SymbolId::kDunderGt, SymbolId::kDunderGe};
 
+word Runtime::next_module_index_ = 0;
+
 Runtime::Runtime(word heap_size)
     : heap_(heap_size), new_value_cell_callback_(this) {
   initializeRandom();
@@ -5167,6 +5169,9 @@ RawObject Runtime::strReplace(Thread* thread, const Str& src, const Str& oldstr,
 
   return *result;
 }
+
+// TODO(T30392425) Ensure thread safety
+word Runtime::nextModuleIndex() { return ++next_module_index_; }
 
 const BuiltinAttribute BuiltinsBase::kAttributes[] = {
     {SymbolId::kSentinelId, -1},

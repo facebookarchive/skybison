@@ -38,7 +38,7 @@ PY_EXPORT int PyState_AddModule(PyObject* module, PyModuleDef* def) {
   DCHECK(module != nullptr, "module must not be null");
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
-  if (!def) {
+  if (def == nullptr) {
     Py_FatalError("PyState_AddModule: Module Definition is NULL");
     return -1;
   }

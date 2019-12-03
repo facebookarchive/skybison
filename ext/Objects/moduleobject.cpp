@@ -14,8 +14,6 @@
 
 namespace py {
 
-static word g_next_module_index = 0;
-
 PY_EXPORT int PyModule_CheckExact_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject().isModule();
 }
@@ -25,12 +23,9 @@ PY_EXPORT int PyModule_Check_Func(PyObject* obj) {
       ApiHandle::fromPyObject(obj)->asObject());
 }
 
-// TODO(T30392425) Ensure thread safety
-static word nextModuleIndex() { return ++g_next_module_index; }
-
 static void moduleDefInit(PyModuleDef* def) {
   if (def->m_base.m_index != 0) return;
-  def->m_base.m_index = nextModuleIndex();
+  def->m_base.m_index = Runtime::nextModuleIndex();
 }
 
 PY_EXPORT PyObject* PyModule_Create2(PyModuleDef* def, int) {
