@@ -157,6 +157,8 @@ class Runtime;
   V(UnderByteArrayClear, "_bytearray_clear")                                   \
   V(UnderByteArrayDelitem, "_bytearray_delitem")                               \
   V(UnderByteArrayDelslice, "_bytearray_delslice")                             \
+  V(UnderByteArrayGetitem, "_bytearray_getitem")                               \
+  V(UnderByteArrayGetslice, "_bytearray_getslice")                             \
   V(UnderByteArrayGuard, "_bytearray_guard")                                   \
   V(UnderByteArrayJoin, "_bytearray_join")                                     \
   V(UnderByteArrayLen, "_bytearray_len")                                       \

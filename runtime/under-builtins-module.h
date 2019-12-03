@@ -25,6 +25,10 @@ class UnderBuiltinsModule {
                                          word nargs);
   static RawObject underByteArrayDelSlice(Thread* thread, Frame* frame,
                                           word nargs);
+  static RawObject underByteArrayGetItem(Thread* thread, Frame* frame,
+                                         word nargs);
+  static RawObject underByteArrayGetSlice(Thread* thread, Frame* frame,
+                                          word nargs);
   static RawObject underByteArrayGuard(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underByteArrayJoin(Thread* thread, Frame* frame, word nargs);

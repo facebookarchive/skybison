@@ -198,6 +198,61 @@ class ByteArrayTests(unittest.TestCase):
         del result[4 :: 1 << 333]
         self.assertEqual(result, bytearray(b"0123"))
 
+    def test_dunder_getitem_with_non_index_raises_type_error(self):
+        ba = bytearray()
+        with self.assertRaises(TypeError) as context:
+            ba["not int or slice"]
+        self.assertEqual(
+            str(context.exception),
+            "bytearray indices must be integers or slices, not str",
+        )
+
+    def test_dunder_getitem_with_large_int_raises_index_error(self):
+        ba = bytearray()
+        with self.assertRaises(IndexError) as context:
+            ba[2 ** 63]
+        self.assertEqual(
+            str(context.exception), "cannot fit 'int' into an index-sized integer"
+        )
+
+    def test_dunder_getitem_positive_out_of_bounds_raises_index_error(self):
+        ba = bytearray(b"foo")
+        with self.assertRaises(IndexError) as context:
+            ba[3]
+        self.assertEqual(str(context.exception), "bytearray index out of range")
+
+    def test_dunder_getitem_negative_out_of_bounds_raises_index_error(self):
+        ba = bytearray(b"foo")
+        with self.assertRaises(IndexError) as context:
+            ba[-4]
+        self.assertEqual(str(context.exception), "bytearray index out of range")
+
+    def test_dunder_getitem_with_positive_int_returns_int(self):
+        ba = bytearray(b"foo")
+        self.assertEqual(ba[0], 102)
+        self.assertEqual(ba[1], 111)
+        self.assertEqual(ba[2], 111)
+
+    def test_dunder_getitem_with_negative_int_returns_int(self):
+        ba = bytearray(b"foo")
+        self.assertEqual(ba[-3], 102)
+        self.assertEqual(ba[-2], 111)
+        self.assertEqual(ba[-1], 111)
+
+    def test_dunder_getitem_with_int_subclass_returns_int(self):
+        class N(int):
+            pass
+
+        ba = bytearray(b"foo")
+        self.assertEqual(ba[N(0)], 102)
+        self.assertEqual(ba[N(-2)], 111)
+
+    def test_dunder_getitem_with_slice_returns_bytearray(self):
+        ba = bytearray(b"hello world")
+        result = ba[1:-1:3]
+        self.assertIsInstance(result, bytearray)
+        self.assertEqual(result, b"eoo")
+
     def test_dunder_hash_is_none(self):
         self.assertIs(bytearray.__hash__, None)
 

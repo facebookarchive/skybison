@@ -30,7 +30,6 @@ const BuiltinMethod ByteArrayBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderAdd, dunderAdd},
     {SymbolId::kDunderEq, dunderEq},
     {SymbolId::kDunderGe, dunderGe},
-    {SymbolId::kDunderGetitem, dunderGetItem},
     {SymbolId::kDunderGt, dunderGt},
     {SymbolId::kDunderIadd, dunderIadd},
     {SymbolId::kDunderImul, dunderImul},
@@ -137,51 +136,6 @@ RawObject ByteArrayBuiltins::dunderGe(Thread* thread, Frame* frame,
     return NotImplementedType::object();
   }
   return Bool::fromBool(comparison >= 0);
-}
-
-RawObject ByteArrayBuiltins::dunderGetItem(Thread* thread, Frame* frame,
-                                           word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Object self_obj(&scope, args.get(0));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
-  }
-  ByteArray self(&scope, *self_obj);
-  Object index_obj(&scope, args.get(1));
-  if (runtime->isInstanceOfInt(*index_obj)) {
-    Int index(&scope, intUnderlying(*index_obj));
-    if (index.isLargeInt()) {
-      return thread->raiseWithFmt(LayoutId::kIndexError,
-                                  "cannot fit '%T' into an index-sized integer",
-                                  &index_obj);
-    }
-    word idx = index.asWord();
-    word len = self.numItems();
-    if (idx < 0) idx += len;
-    if (idx < 0 || idx >= len) {
-      return thread->raiseWithFmt(LayoutId::kIndexError, "index out of range");
-    }
-    return SmallInt::fromWord(self.byteAt(idx));
-  }
-  if (index_obj.isSlice()) {
-    Slice slice(&scope, *index_obj);
-    word start, stop, step;
-    Object err(&scope, sliceUnpack(thread, slice, &start, &stop, &step));
-    if (err.isError()) return *err;
-    word len = Slice::adjustIndices(self.numItems(), &start, &stop, step);
-    ByteArray result(&scope, runtime->newByteArray());
-    runtime->byteArrayEnsureCapacity(thread, result, len);
-    result.setNumItems(len);
-    for (word i = 0, idx = start; i < len; i++, idx += step) {
-      result.byteAtPut(i, self.byteAt(idx));
-    }
-    return *result;
-  }
-  return thread->raiseWithFmt(
-      LayoutId::kTypeError,
-      "bytearray indices must either be slice or provide '__index__'");
 }
 
 RawObject ByteArrayBuiltins::dunderGt(Thread* thread, Frame* frame,

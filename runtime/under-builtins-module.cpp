@@ -81,6 +81,8 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderByteArrayClear, underByteArrayClear},
     {SymbolId::kUnderByteArrayDelitem, underByteArrayDelItem},
     {SymbolId::kUnderByteArrayDelslice, underByteArrayDelSlice},
+    {SymbolId::kUnderByteArrayGetitem, underByteArrayGetItem},
+    {SymbolId::kUnderByteArrayGetslice, underByteArrayGetSlice},
     {SymbolId::kUnderByteArrayGuard, underByteArrayGuard},
     {SymbolId::kUnderByteArrayJoin, underByteArrayJoin},
     {SymbolId::kUnderByteArrayLen, underByteArrayLen},
@@ -477,6 +479,98 @@ RawObject UnderBuiltinsModule::underByteArrayDelSlice(Thread* thread,
   }
   self.setNumItems(self.numItems() - slice_length);
   return NoneType::object();
+}
+
+RawObject UnderBuiltinsModule::underByteArrayGetItem(Thread* thread,
+                                                     Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kByteArray);
+  }
+  Object key(&scope, args.get(1));
+  if (runtime->isInstanceOfInt(*key)) {
+    ByteArray self(&scope, *self_obj);
+    word index = intUnderlying(*key).asWordSaturated();
+    if (!SmallInt::isValid(index)) {
+      return thread->raiseWithFmt(LayoutId::kIndexError,
+                                  "cannot fit '%T' into an index-sized integer",
+                                  &key);
+    }
+    word length = self.numItems();
+    if (index < 0) {
+      index += length;
+    }
+    if (index < 0 || index >= length) {
+      return thread->raiseWithFmt(LayoutId::kIndexError,
+                                  "bytearray index out of range");
+    }
+    return SmallInt::fromWord(self.byteAt(index));
+  }
+  if (key.isSlice()) {
+    Slice slice(&scope, *key);
+    if (!slice.step().isNoneType()) {
+      return Unbound::object();
+    }
+
+    ByteArray self(&scope, *self_obj);
+    word length = self.numItems();
+    word start, stop;
+    Object start_obj(&scope, slice.start());
+    if (start_obj.isNoneType()) {
+      start = 0;
+    } else if (start_obj.isSmallInt()) {
+      start = SmallInt::cast(*start_obj).value();
+    } else {
+      return Unbound::object();
+    }
+
+    Object stop_obj(&scope, slice.stop());
+    if (stop_obj.isNoneType()) {
+      stop = length;
+    } else if (stop_obj.isSmallInt()) {
+      stop = SmallInt::cast(*stop_obj).value();
+    } else {
+      return Unbound::object();
+    }
+
+    word result_len = Slice::adjustIndices(length, &start, &stop, 1);
+    if (result_len == 0) {
+      return runtime->newByteArray();
+    }
+
+    ByteArray result(&scope, runtime->newByteArray());
+    MutableBytes result_bytes(
+        &scope, runtime->newMutableBytesUninitialized(result_len));
+    Bytes src_bytes(&scope, self.bytes());
+    result_bytes.replaceFromWithStartAt(0, *src_bytes, result_len, start);
+    result.setBytes(*result_bytes);
+    result.setNumItems(result_len);
+    return *result;
+  }
+  return Unbound::object();
+}
+
+RawObject UnderBuiltinsModule::underByteArrayGetSlice(Thread* thread,
+                                                      Frame* frame,
+                                                      word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  ByteArray self(&scope, args.get(0));
+  word start = SmallInt::cast(args.get(1)).value();
+  word stop = SmallInt::cast(args.get(2)).value();
+  word step = SmallInt::cast(args.get(3)).value();
+  word len = Slice::length(start, stop, step);
+  Runtime* runtime = thread->runtime();
+  ByteArray result(&scope, runtime->newByteArray());
+  runtime->byteArrayEnsureCapacity(thread, result, len);
+  result.setNumItems(len);
+  for (word i = 0, idx = start; i < len; i++, idx += step) {
+    result.byteAtPut(i, self.byteAt(idx));
+  }
+  return *result;
 }
 
 RawObject UnderBuiltinsModule::underByteArraySetItem(Thread* thread,

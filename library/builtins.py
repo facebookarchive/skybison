@@ -13,6 +13,8 @@ _bytearray_check = _bytearray_check  # noqa: F821
 _bytearray_clear = _bytearray_clear  # noqa: F821
 _bytearray_delitem = _bytearray_delitem  # noqa: F821
 _bytearray_delslice = _bytearray_delslice  # noqa: F821
+_bytearray_getitem = _bytearray_getitem  # noqa: F821
+_bytearray_getslice = _bytearray_getslice  # noqa: F821
 _bytearray_guard = _bytearray_guard  # noqa: F821
 _bytearray_join = _bytearray_join  # noqa: F821
 _bytearray_len = _bytearray_len  # noqa: F821
@@ -1439,8 +1441,21 @@ class bytearray(bootstrap=True):
     def __ge__(self, value):
         pass
 
-    def __getitem__(self, key):  # -> Union[int, bytearray]
-        pass
+    def __getitem__(self, key):
+        result = _bytearray_getitem(self, key)
+        if result is not _Unbound:
+            return result
+        if _slice_check(key):
+            step = _slice_step(_slice_index(key.step))
+            length = _bytearray_len(self)
+            start = _slice_start(_slice_index(key.start), step, length)
+            stop = _slice_stop(_slice_index(key.stop), step, length)
+            return _bytearray_getslice(self, start, stop, step)
+        if _object_type_hasattr(key, "__index__"):
+            return _bytearray_getitem(self, _index(key))
+        raise TypeError(
+            f"bytearray indices must be integers or slices, not {_type(key).__name__}"
+        )
 
     def __gt__(self, value):
         pass
