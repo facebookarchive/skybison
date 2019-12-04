@@ -253,9 +253,13 @@ void emitGenericHandler(EmitEnv* env, Bytecode bc) {
   __ jmp(RAX);
 }
 
+Label* genericHandlerLabel(EmitEnv* env) {
+  return &env->call_handlers[env->current_op];
+}
+
 // Jump to the generic handler for the Bytecode being currently emitted.
 void emitJumpToGenericHandler(EmitEnv* env) {
-  __ jmp(&env->call_handlers[env->current_op], Assembler::kFarJump);
+  __ jmp(genericHandlerLabel(env), Assembler::kFarJump);
 }
 
 // Fallback handler for all unimplemented opcodes: call out to C++.
@@ -518,17 +522,13 @@ void emitHandler<STORE_ATTR_CACHED>(EmitEnv* env) {
 
 template <>
 void emitHandler<LOAD_FAST_REVERSE>(EmitEnv* env) {
-  Label not_found;
   Register r_scratch = RAX;
 
   __ movq(r_scratch, Address(kFrameReg, kOpargReg, TIMES_8, Frame::kSize));
   __ cmpb(r_scratch, Immediate(Error::notFound().raw()));
-  __ jcc(EQUAL, &not_found, Assembler::kNearJump);
+  __ jcc(EQUAL, genericHandlerLabel(env), Assembler::kFarJump);
   __ pushq(r_scratch);
   emitNextOpcode(env);
-
-  __ bind(&not_found);
-  emitJumpToGenericHandler(env);
 }
 
 template <>
