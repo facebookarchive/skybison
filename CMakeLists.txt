@@ -464,6 +464,10 @@ target_link_libraries(
 add_executable(
   python
   main.cpp)
+target_compile_options(
+  python
+  PRIVATE
+  ${PYRO_COMPILE_OPTIONS})
 target_link_libraries(
   python
   PRIVATE
