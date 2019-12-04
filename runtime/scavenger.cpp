@@ -104,7 +104,7 @@ void Scavenger::processApiHandles() {
        Dict::Bucket::nextItem(*handle_data, &i);) {
     RawObject value = Dict::Bucket::value(*handle_data, i);
     ApiHandle* handle = static_cast<ApiHandle*>(Int::cast(value).asCPtr());
-    if (ApiHandle::nativeRefcnt(handle) == 0) {
+    if (!ApiHandle::hasExtensionReference(handle)) {
       key = Dict::Bucket::key(*handle_data, i);
       word hash = runtime_->hash(*key);
       // TODO(T56760343): Remove the dict lookup. This should become simpler

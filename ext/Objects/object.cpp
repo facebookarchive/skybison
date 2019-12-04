@@ -27,13 +27,28 @@ PY_EXPORT PyObject* PyNotImplemented_Ptr() {
                                       NotImplementedType::object());
 }
 
-PY_EXPORT void _Py_Dealloc_Func(PyObject* obj) {
-  if (ApiHandle::isManaged(obj)) ApiHandle::fromPyObject(obj)->dispose();
+PY_EXPORT void _Py_Dealloc_Func(PyObject*) {
+  // Do nothing, since this function is only relevant for functions that define
+  // their own memory allocation. Right now we don't support this and all
+  // object memory is tracked by the GC.
+  UNIMPLEMENTED("_Py_Dealloc_Func");
 }
 
-PY_EXPORT void Py_INCREF_Func(PyObject* obj) { obj->ob_refcnt++; }
+PY_EXPORT void Py_INCREF_Func(PyObject* obj) {
+  if (ApiHandle::isManaged(obj)) return ApiHandle::fromPyObject(obj)->incref();
+  obj->ob_refcnt++;
+}
+
+PY_EXPORT Py_ssize_t Py_REFCNT_Func(PyObject* obj) {
+  if (ApiHandle::isManaged(obj)) return ApiHandle::fromPyObject(obj)->refcnt();
+  return obj->ob_refcnt;
+}
 
 PY_EXPORT void Py_DECREF_Func(PyObject* obj) {
+  if (ApiHandle::isManaged(obj)) return ApiHandle::fromPyObject(obj)->decref();
+  // All extension objects have a reference count of 1 which describes the
+  // reference from the heap. Therefore, only the garbage collector can cause
+  // an object to have its reference go below 1.
   DCHECK(obj->ob_refcnt > 1, "Reference count underflowed");
   obj->ob_refcnt--;
   if (obj->ob_refcnt == 0) _Py_Dealloc_Func(obj);

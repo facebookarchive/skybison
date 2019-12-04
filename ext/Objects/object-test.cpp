@@ -363,7 +363,7 @@ TEST_F(ObjectExtensionApiTest, RefCountDecreaseDeallocsHandle) {
 }
 
 TEST_F(ObjectExtensionApiTest, IncrementDecrementRefCount) {
-  PyObject* o = PyLong_FromLong(0);
+  PyObject* o = PyTuple_New(1);
   long refcnt = Py_REFCNT(o);
   EXPECT_GE(Py_REFCNT(o), 1);
   Py_INCREF(o);
@@ -374,7 +374,7 @@ TEST_F(ObjectExtensionApiTest, IncrementDecrementRefCount) {
 }
 
 TEST_F(ObjectExtensionApiTest, IncrementDecrementRefCountWithPyObjectPtr) {
-  PyObject* o = PyLong_FromLong(0);
+  PyObject* o = PyTuple_New(1);
   long refcnt = Py_REFCNT(o);
   {
     Py_INCREF(o);
@@ -431,7 +431,7 @@ TEST_F(ObjectExtensionApiTest, GetAttrIncrementsReferenceCount) {
   };
   PyObjectPtr module(PyModule_Create(&def));
   PyObjectPtr key(PyUnicode_FromString("test"));
-  PyObject* value = PyLong_FromLong(0);
+  PyObject* value = PyTuple_New(1);
   ASSERT_EQ(PyObject_SetAttr(module, key, value), 0);
 
   long refcnt = Py_REFCNT(value);
@@ -672,7 +672,7 @@ TEST_F(ObjectExtensionApiTest, ClearWithObjectSetsNull) {
 }
 
 TEST_F(ObjectExtensionApiTest, ClearWithObjectDecrefsObject) {
-  PyObject* original = PyLong_FromLong(1);
+  PyObject* original = PyTuple_New(1);
   PyObject* num = original;
   Py_ssize_t original_count = Py_REFCNT(original);
   Py_CLEAR(num);
@@ -714,7 +714,7 @@ c = C()
 }
 
 TEST_F(ObjectExtensionApiTest, SelfIterIncrementsRefcount) {
-  PyObject* o = PyLong_FromLong(0);
+  PyObject* o = PyTuple_New(1);
   long refcnt = Py_REFCNT(o);
   EXPECT_GE(Py_REFCNT(o), 1);
   PyObject* o2 = PyObject_SelfIter(o);

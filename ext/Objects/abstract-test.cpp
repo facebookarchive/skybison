@@ -17,7 +17,7 @@ using AbstractExtensionApiTest = ExtensionApi;
 TEST_F(AbstractExtensionApiTest, PyBufferFillInfoSimpleFillsInfo) {
   Py_buffer buffer;
   char buf[13];
-  PyObjectPtr pyobj(Py_None);
+  PyObjectPtr pyobj(PyTuple_New(1));
   long prev_refcount = Py_REFCNT(pyobj);
   int readonly = 1;
   int result = PyBuffer_FillInfo(&buffer, pyobj, buf, sizeof(buf), readonly,
@@ -41,7 +41,7 @@ TEST_F(AbstractExtensionApiTest,
        PyBufferFillInfoWithWritableFormatNdStridesFillsInfo) {
   Py_buffer buffer;
   char buf[7];
-  PyObjectPtr pyobj(Py_None);
+  PyObjectPtr pyobj(PyTuple_New(1));
   long prev_refcount = Py_REFCNT(pyobj);
   int readonly = 0;
   int result = PyBuffer_FillInfo(
@@ -1055,7 +1055,7 @@ TEST_F(AbstractExtensionApiTest, PyNumberLongWithNullRaisesSystemError) {
 }
 
 TEST_F(AbstractExtensionApiTest, PyNumberLongWithIntReturnsInt) {
-  PyObjectPtr intobj(PyLong_FromLong(7));
+  PyObjectPtr intobj(PyLong_FromLong(PY_SSIZE_T_MAX));
   Py_ssize_t refcnt = Py_REFCNT(intobj);
   PyObjectPtr result(PyNumber_Long(intobj));
   ASSERT_NE(result, nullptr);

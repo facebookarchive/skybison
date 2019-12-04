@@ -1021,6 +1021,7 @@ PyAPI_FUNC(int) PyWeakref_Check_Func(PyObject*);
 
 PyAPI_FUNC(void) Py_DECREF_Func(PyObject*);
 PyAPI_FUNC(void) Py_INCREF_Func(PyObject*);
+PyAPI_FUNC(Py_ssize_t) Py_REFCNT_Func(PyObject*);
 PyAPI_FUNC(void) Py_XDECREF_Func(PyObject*);
 PyAPI_FUNC(void) Py_XINCREF_Func(PyObject*);
 PyAPI_FUNC(Py_ssize_t) _PyObject_SIZE_Func(PyObject*);
@@ -1146,7 +1147,7 @@ PyAPI_FUNC(PyObject*) PySequence_ITEM_Func(PyObject*, Py_ssize_t);
   } while (0)
 #define Py_DECREF(op) Py_DECREF_Func((PyObject*)op)
 #define Py_INCREF(op) Py_INCREF_Func((PyObject*)op)
-#define Py_REFCNT(op) (((PyObject*)op)->ob_refcnt)
+#define Py_REFCNT(op) Py_REFCNT_Func(((PyObject*)op))
 #define Py_XDECREF(op) Py_DecRef((PyObject*)op)
 #define Py_XINCREF(op) Py_IncRef((PyObject*)op)
 #define Py_SETREF(op, op2)                                                     \

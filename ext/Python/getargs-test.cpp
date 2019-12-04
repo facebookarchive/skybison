@@ -124,7 +124,7 @@ TEST_F(GetArgsExtensionApiTest, ParseStackString) {
 
 TEST_F(GetArgsExtensionApiTest, ParseTupleOneObject) {
   PyObjectPtr pytuple(PyTuple_New(1));
-  PyObject* in = PyLong_FromLong(42);
+  PyObject* in = PyUnicode_FromString("hello world");
   ASSERT_NE(-1, PyTuple_SetItem(pytuple, 0, in));
 
   long refcnt = Py_REFCNT(in);
@@ -132,7 +132,7 @@ TEST_F(GetArgsExtensionApiTest, ParseTupleOneObject) {
   EXPECT_TRUE(PyArg_ParseTuple(pytuple, "O:xyz", &out));
   // This returns a borrowed reference, verify ref count did not change
   EXPECT_EQ(Py_REFCNT(out), refcnt);
-  EXPECT_EQ(42, PyLong_AsLong(out));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(out, "hello world"));
 }
 
 TEST_F(GetArgsExtensionApiTest, ParseTupleMultipleObjects) {

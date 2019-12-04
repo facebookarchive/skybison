@@ -137,18 +137,23 @@ ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
   ApiHandle* handle = static_cast<ApiHandle*>(std::malloc(sizeof(ApiHandle)));
   Object object(&scope, runtime->newIntFromCPtr(static_cast<void*>(handle)));
   handle->reference_ = NoneType::object().raw();
-  handle->ob_refcnt = 1;
-  handle->setManaged();
+  handle->ob_refcnt = 1 | kManagedBit;
   dictAtPutIdentityEquals(thread, dict, key, hash, object);
   handle->reference_ = key.raw();
   return handle;
 }
 
 ApiHandle* ApiHandle::newReference(Thread* thread, RawObject obj) {
+  if (obj.isSmallInt() || obj == NoneType::object()) {
+    return reinterpret_cast<ApiHandle*>(obj.raw() ^ kImmediateTag);
+  }
   return ApiHandle::ensure(thread, obj);
 }
 
 ApiHandle* ApiHandle::borrowedReference(Thread* thread, RawObject obj) {
+  if (obj.isSmallInt() || obj == NoneType::object()) {
+    return reinterpret_cast<ApiHandle*>(obj.raw() ^ kImmediateTag);
+  }
   ApiHandle* result = ApiHandle::ensure(thread, obj);
   result->decref();
   return result;
@@ -200,7 +205,7 @@ void ApiHandle::visitReferences(RawObject handles, PointerVisitor* visitor) {
       if (heap_value.isForwarding()) value = heap_value.forward();
     }
     ApiHandle* handle = castFromObject(*value);
-    if (ApiHandle::nativeRefcnt(handle) > 0) {
+    if (ApiHandle::hasExtensionReference(handle)) {
       visitor->visitPointer(reinterpret_cast<RawObject*>(&handle->reference_));
     }
   }
@@ -211,6 +216,9 @@ ApiHandle* ApiHandle::castFromObject(RawObject value) {
 }
 
 RawObject ApiHandle::asObject() {
+  if (isImmediate(this)) {
+    return RawObject(reinterpret_cast<uword>(this) ^ kImmediateTag);
+  }
   DCHECK(reference_ != 0 || isManaged(this),
          "A handle or native instance must point back to a heap instance");
   return RawObject{reference_};
@@ -218,6 +226,7 @@ RawObject ApiHandle::asObject() {
 
 void* ApiHandle::cache() {
   // Only managed objects can have a cached value
+  DCHECK(!isImmediate(this), "immediate handles do not have caches");
   if (!isManaged(this)) return nullptr;
 
   Thread* thread = Thread::current();

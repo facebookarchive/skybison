@@ -61,14 +61,30 @@ TEST_F(CApiHandlesTest, BorrowedApiHandles) {
   EXPECT_EQ(another_ref->refcnt(), refcnt + 1);
 }
 
-TEST_F(CApiHandlesTest, BuiltinIntObjectReturnsApiHandle) {
+TEST_F(CApiHandlesTest, BuiltinHeapAllocatedIntObjectReturnsApiHandle) {
   HandleScope scope(thread_);
-  Dict dict(&scope, runtime_.apiHandles());
-  Object obj(&scope, runtime_.newInt(1));
-  word hash = intHash(*obj);
+  Object obj(&scope, runtime_.newInt(SmallInt::kMaxValue + 1));
   ApiHandle* handle = ApiHandle::newReference(thread_, *obj);
   EXPECT_NE(handle, nullptr);
-  EXPECT_TRUE(dictIncludes(thread_, dict, obj, hash));
+  EXPECT_FALSE(ApiHandle::isImmediate(handle));
+  Dict dict(&scope, runtime_.apiHandles());
+  EXPECT_TRUE(isIntEqualsWord(
+      ApiHandle::dictAtIdentityEquals(thread_, dict, obj, runtime_.hash(*obj)),
+      reinterpret_cast<word>(handle)));
+  handle->decref();
+}
+
+TEST_F(CApiHandlesTest, BuiltinImmediateIntObjectReturnsImmediateApiHandle) {
+  HandleScope scope(thread_);
+  Object obj(&scope, runtime_.newInt(1));
+  ApiHandle* handle = ApiHandle::newReference(thread_, *obj);
+  EXPECT_NE(handle, nullptr);
+  EXPECT_TRUE(ApiHandle::isImmediate(handle));
+  Dict dict(&scope, runtime_.apiHandles());
+  EXPECT_TRUE(
+      ApiHandle::dictAtIdentityEquals(thread_, dict, obj, runtime_.hash(*obj))
+          .isErrorNotFound());
+  handle->decref();
 }
 
 TEST_F(CApiHandlesTest, ApiHandleReturnsBuiltinIntObject) {
@@ -181,7 +197,7 @@ TEST_F(CApiHandlesTest,
 TEST_F(CApiHandlesTest, Cache) {
   HandleScope scope(thread_);
 
-  auto handle1 = ApiHandle::newReference(thread_, SmallInt::fromWord(5));
+  auto handle1 = ApiHandle::newReference(thread_, runtime_.newTuple(1));
   EXPECT_EQ(handle1->cache(), nullptr);
 
   Str str(&scope,
@@ -223,8 +239,8 @@ TEST_F(CApiHandlesTest, VisitReferences) {
   RememberingVisitor visitor;
   ApiHandle::visitReferences(runtime_.apiHandles(), &visitor);
 
-  // We should've visited obj1 and obj2.
-  EXPECT_TRUE(visitor.hasVisited(*obj1));
+  // We should've visited obj2, but not obj1 since it is a SmallInt.
+  EXPECT_FALSE(visitor.hasVisited(*obj1));
   EXPECT_TRUE(visitor.hasVisited(*obj2));
 }
 

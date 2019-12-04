@@ -2221,7 +2221,7 @@ result = test(1, args=5)
 static PyObject* capiFunctionNoArgs(PyObject* self, PyObject* args) {
   Thread* thread = Thread::current();
   thread->runtime()->collectGarbage();
-  EXPECT_EQ(ApiHandle::nativeRefcnt(self), 1);
+  EXPECT_TRUE(ApiHandle::hasExtensionReference(self));
   EXPECT_EQ(args, nullptr);
   return ApiHandle::newReference(thread, SmallInt::fromWord(1234));
 }
@@ -2260,6 +2260,7 @@ TEST_F(TrampolinesTest, MethodTrampolineNoArgsEx) {
       runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionNoArgs)));
   frame->pushValue(*function);
   Tuple varargs(&scope, runtime_.newTuple(1));
+  varargs.atPut(0, runtime_.newTuple(1));  // self
   frame->pushValue(*varargs);
   Object result(&scope, methodTrampolineNoArgsEx(thread_, frame, 0));
   EXPECT_TRUE(isIntEqualsWord(*result, 1234));
@@ -2268,8 +2269,8 @@ TEST_F(TrampolinesTest, MethodTrampolineNoArgsEx) {
 static PyObject* capiFunctionOneArg(PyObject* self, PyObject* args) {
   Thread* thread = Thread::current();
   thread->runtime()->collectGarbage();
-  EXPECT_EQ(ApiHandle::nativeRefcnt(self), 1);
-  EXPECT_EQ(ApiHandle::nativeRefcnt(args), 1);
+  EXPECT_TRUE(ApiHandle::hasExtensionReference(self));
+  EXPECT_TRUE(ApiHandle::hasExtensionReference(args));
   return ApiHandle::newReference(thread, SmallInt::fromWord(1234));
 }
 
@@ -2323,8 +2324,8 @@ TEST_F(TrampolinesTest, MethodTrampolineOneArgEx) {
 static PyObject* capiFunctionVarArgs(PyObject* self, PyObject* args) {
   Thread* thread = Thread::current();
   thread->runtime()->collectGarbage();
-  EXPECT_EQ(ApiHandle::nativeRefcnt(self), 1);
-  EXPECT_EQ(ApiHandle::nativeRefcnt(args), 1);
+  EXPECT_TRUE(ApiHandle::hasExtensionReference(self));
+  EXPECT_TRUE(ApiHandle::hasExtensionReference(args));
   return ApiHandle::newReference(thread, SmallInt::fromWord(1234));
 }
 
@@ -2381,8 +2382,8 @@ static PyObject* capiFunctionKeywordsNullKwargs(PyObject* self, PyObject* args,
                                                 PyObject* kwargs) {
   Thread* thread = Thread::current();
   thread->runtime()->collectGarbage();
-  EXPECT_EQ(ApiHandle::nativeRefcnt(self), 1);
-  EXPECT_EQ(ApiHandle::nativeRefcnt(args), 1);
+  EXPECT_TRUE(ApiHandle::hasExtensionReference(self));
+  EXPECT_TRUE(ApiHandle::hasExtensionReference(args));
   EXPECT_EQ(kwargs, nullptr);
   return ApiHandle::newReference(thread, SmallInt::fromWord(1234));
 }
@@ -2404,9 +2405,9 @@ static PyObject* capiFunctionKeywords(PyObject* self, PyObject* args,
                                       PyObject* kwargs) {
   Thread* thread = Thread::current();
   thread->runtime()->collectGarbage();
-  EXPECT_EQ(ApiHandle::nativeRefcnt(self), 1);
-  EXPECT_EQ(ApiHandle::nativeRefcnt(args), 1);
-  EXPECT_EQ(ApiHandle::nativeRefcnt(kwargs), 1);
+  EXPECT_TRUE(ApiHandle::hasExtensionReference(self));
+  EXPECT_TRUE(ApiHandle::hasExtensionReference(args));
+  EXPECT_TRUE(ApiHandle::hasExtensionReference(kwargs));
   return ApiHandle::newReference(thread, SmallInt::fromWord(1234));
 }
 
@@ -2447,9 +2448,9 @@ static PyObject* capiFunctionFastCallNullKwnames(PyObject* self,
                                                  PyObject* kwnames) {
   Thread* thread = Thread::current();
   thread->runtime()->collectGarbage();
-  EXPECT_EQ(ApiHandle::nativeRefcnt(self), 1);
+  EXPECT_TRUE(ApiHandle::hasExtensionReference(self));
   for (word i = 0; i < num_args; i++) {
-    EXPECT_EQ(ApiHandle::nativeRefcnt(args[i]), 1)
+    EXPECT_TRUE(ApiHandle::hasExtensionReference(args[i]))
         << "Expected fastcall arg #" << i << " to be owned by the trampoline";
   }
   EXPECT_EQ(kwnames, nullptr);
@@ -2475,14 +2476,14 @@ static PyObject* capiFunctionFastCall(PyObject* self, PyObject** args,
                                       word num_args, PyObject* kwnames) {
   Thread* thread = Thread::current();
   thread->runtime()->collectGarbage();
-  EXPECT_EQ(ApiHandle::nativeRefcnt(self), 1);
+  EXPECT_TRUE(ApiHandle::hasExtensionReference(self));
   word num_keywords =
       Tuple::cast(ApiHandle::fromPyObject(kwnames)->asObject()).length();
   for (word i = 0; i < num_args + num_keywords; i++) {
-    EXPECT_EQ(ApiHandle::nativeRefcnt(args[i]), 1)
+    EXPECT_TRUE(ApiHandle::hasExtensionReference(args[i]))
         << "Expected fastcall arg #" << i << " to be owned by the trampoline";
   }
-  EXPECT_EQ(ApiHandle::nativeRefcnt(kwnames), 1);
+  EXPECT_TRUE(ApiHandle::hasExtensionReference(kwnames));
   return ApiHandle::newReference(thread, SmallInt::fromWord(1234));
 }
 

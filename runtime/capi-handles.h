@@ -53,25 +53,24 @@ class ApiHandle : public PyObject {
   // Remove the ApiHandle from the dictionary and free its memory
   void dispose();
 
-  // Returns true if the PyObject* is a managed object.
+  // Returns true if the PyObject* is an immediate ApiHandle or ApiHandle.
+  // Otherwise returns false since the PyObject* is an extension object.
   static bool isManaged(const PyObject* obj) {
-    return (obj->ob_refcnt & kManagedBit) != 0;
+    return isImmediate(obj) || (obj->ob_refcnt & kManagedBit) != 0;
   }
 
   // Returns the reference count of this object by masking the ManagedBit
-  static word nativeRefcnt(const PyObject* obj) {
-    return obj->ob_refcnt & ~kManagedBit;
+  // NOTE: This should only be called by the GC.
+  static bool hasExtensionReference(const PyObject* obj) {
+    DCHECK(!isImmediate(obj),
+           "Cannot get hasExtensionReference of immediate handle");
+    return (obj->ob_refcnt & ~kManagedBit) > 0;
   }
-
-  // Sets the managed status of the handle.
-  void setManaged() { ob_refcnt |= kManagedBit; }
-
-  // Clears the managed status of the handle.
-  void clearManaged() { ob_refcnt &= ~kManagedBit; }
 
   // Increments the reference count of the handle to signal the addition of a
   // reference from extension code.
   void incref() {
+    if (isImmediate(this)) return;
     DCHECK((refcnt() & ~kManagedBit) < (kManagedBit - 1),
            "Reference count overflowed");
     ++ob_refcnt;
@@ -80,17 +79,30 @@ class ApiHandle : public PyObject {
   // Decrements the reference count of the handle to signal the removal of a
   // reference count from extension code.
   void decref() {
+    if (isImmediate(this)) return;
     DCHECK((refcnt() & ~kManagedBit) > 0, "Reference count underflowed");
     --ob_refcnt;
   }
 
   // Returns the number of references to this handle from extension code.
-  word refcnt() { return ob_refcnt; }
+  word refcnt() {
+    if (isImmediate(this)) return kBorrowedBit;
+    return ob_refcnt;
+  }
+
+  static bool isImmediate(const PyObject* obj) {
+    return (reinterpret_cast<uword>(obj) & kImmediateMask) != 0;
+  }
 
   // TODO(T44244793): Remove these functions when handles have their own
   // specialized hash table.
   static RawObject dictRemoveIdentityEquals(Thread* thread, const Dict& dict,
                                             const Object& key, word hash);
+
+  // TODO(T44244793): Remove these functions when handles have their own
+  // specialized hash table.
+  static RawObject dictAtIdentityEquals(Thread* thread, const Dict& dict,
+                                        const Object& key, word hash);
 
  private:
   // Returns an owned handle for a managed object. If a handle does not already
@@ -105,16 +117,18 @@ class ApiHandle : public PyObject {
 
   // TODO(T44244793): Remove these functions when handles have their own
   // specialized hash table.
-  static RawObject dictAtIdentityEquals(Thread* thread, const Dict& dict,
-                                        const Object& key, word hash);
-
-  // TODO(T44244793): Remove these functions when handles have their own
-  // specialized hash table.
   static void dictAtPutIdentityEquals(Thread* thread, const Dict& dict,
                                       const Object& key, word hash,
                                       const Object& value);
 
   static const long kManagedBit = 1L << 31;
+  static const long kBorrowedBit = 1L << 30;
+  static const long kImmediateTag = 0x1;
+  static const long kImmediateMask = 0x7;
+
+  static_assert(kImmediateMask < alignof(PyObject*),
+                "Stronger alignment guarantees are required for immediate "
+                "tagged PyObject* to work.");
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(ApiHandle);
 };
