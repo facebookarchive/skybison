@@ -5136,6 +5136,8 @@ class tuple(bootstrap=True):
             if _tuple_checkexact(iterable):
                 return iterable
             return (*iterable,)
+        if _tuple_checkexact(iterable):
+            return _tuple_new(cls, iterable)
         return _tuple_new(cls, (*iterable,))
 
     def __repr__(self):
