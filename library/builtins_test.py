@@ -7628,6 +7628,66 @@ class SetTests(unittest.TestCase):
 
         self.assertEqual(set.union(set(), C(1, 3), C(6, 9)), {1, 2, 6, 7, 8})
 
+    def test_issuperset_with_non_set_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            set.issuperset(None, set())
+
+    def test_issuperset_with_frozenset_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            set.issuperset(frozenset(), set())
+
+    def test_issuperset_with_empty_sets_returns_true(self):
+        self.assertTrue(set.issuperset(set(), frozenset()))
+        self.assertTrue(set.issuperset(set(), set()))
+
+    def test_issuperset_with_anyset_subset_returns_true(self):
+        self.assertTrue({1}.issuperset(set()))
+        self.assertTrue({1}.issuperset(frozenset()))
+
+        self.assertTrue({1}.issuperset({1}))
+        self.assertTrue({1}.issuperset(frozenset({1})))
+
+        self.assertTrue({1, 2}.issuperset({1}))
+        self.assertTrue({1, 2}.issuperset(frozenset({1})))
+
+        self.assertTrue({1, 2}.issuperset({1, 2}))
+        self.assertTrue({1, 2}.issuperset(frozenset({1, 2})))
+
+        self.assertTrue({1, 2, 3}.issuperset({1, 2}))
+        self.assertTrue({1, 2, 3}.issuperset(frozenset({1, 2})))
+
+    def test_issuperset_with_iterable_subset_returns_true(self):
+        self.assertTrue({1}.issuperset([]))
+        self.assertTrue({1}.issuperset(range(1, 1)))
+
+        self.assertTrue({1}.issuperset([1]))
+        self.assertTrue({1}.issuperset(range(1, 2)))
+
+        self.assertTrue({1, 2}.issuperset([1]))
+        self.assertTrue({1, 2}.issuperset(range(1, 2)))
+
+        self.assertTrue({1, 2}.issuperset([1, 2]))
+        self.assertTrue({1, 2}.issuperset(range(1, 3)))
+
+        self.assertTrue({1, 2, 3}.issuperset([1, 2]))
+        self.assertTrue({1, 2, 3}.issuperset(range(1, 3)))
+
+    def test_issuperset_with_superset_returns_false(self):
+        self.assertFalse(set().issuperset({1}))
+        self.assertFalse(set().issuperset(frozenset({1})))
+        self.assertFalse(set().issuperset([1]))
+        self.assertFalse(set().issuperset(range(1, 2)))
+
+        self.assertFalse({1}.issuperset({1, 2}))
+        self.assertFalse({1}.issuperset(frozenset({1, 2})))
+        self.assertFalse({1}.issuperset([1, 2]))
+        self.assertFalse({1}.issuperset(range(1, 3)))
+
+        self.assertFalse({1, 2}.issuperset({1, 2, 3}))
+        self.assertFalse({1, 2}.issuperset(frozenset({1, 2, 3})))
+        self.assertFalse({1, 2}.issuperset([1, 2, 3]))
+        self.assertFalse({1, 2}.issuperset(range(1, 4)))
+
 
 class StaticMethodTests(unittest.TestCase):
     def test_dunder_abstractmethod_with_missing_attr_returns_false(self):

@@ -4442,6 +4442,12 @@ class set(bootstrap=True):
     def isdisjoint(self, other):
         pass
 
+    def issuperset(self, other):
+        _set_guard(self)
+        if not _set_check(other) or not _frozenset_check(other):
+            other = set(other)
+        return set.__ge__(self, other)
+
     def pop(self):
         pass
 
