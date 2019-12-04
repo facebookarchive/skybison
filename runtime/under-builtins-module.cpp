@@ -2652,25 +2652,64 @@ RawObject UnderBuiltinsModule::underListGetItem(Thread* thread, Frame* frame,
   if (!runtime->isInstanceOfList(*self_obj)) {
     return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kList);
   }
-  List self(&scope, *self_obj);
-  Object key_obj(&scope, args.get(1));
-  if (!runtime->isInstanceOfInt(*key_obj)) return Unbound::object();
-  Int key(&scope, intUnderlying(*key_obj));
-  if (key.isLargeInt()) {
-    return thread->raiseWithFmt(LayoutId::kIndexError,
-                                "cannot fit '%T' into an index-sized integer",
-                                &key_obj);
+  Object key(&scope, args.get(1));
+  if (runtime->isInstanceOfInt(*key)) {
+    word index = intUnderlying(*key).asWordSaturated();
+    if (!SmallInt::isValid(index)) {
+      return thread->raiseWithFmt(LayoutId::kIndexError,
+                                  "cannot fit '%T' into an index-sized integer",
+                                  &key);
+    }
+    List self(&scope, *self_obj);
+    word length = self.numItems();
+    if (index < 0) {
+      index += length;
+    }
+    if (index < 0 || index >= length) {
+      return thread->raiseWithFmt(LayoutId::kIndexError,
+                                  "list index out of range");
+    }
+    return self.at(index);
   }
-  word index = key.asWord();
-  word length = self.numItems();
-  if (index < 0) {
-    index += length;
+  if (key.isSlice()) {
+    Slice slice(&scope, *key);
+    if (!slice.step().isNoneType()) {
+      return Unbound::object();
+    }
+
+    word start, stop;
+    Object start_obj(&scope, slice.start());
+    if (start_obj.isNoneType()) {
+      start = 0;
+    } else if (start_obj.isSmallInt()) {
+      start = SmallInt::cast(*start_obj).value();
+    } else {
+      return Unbound::object();
+    }
+
+    Object stop_obj(&scope, slice.stop());
+    if (stop_obj.isNoneType()) {
+      stop = kMaxWord;
+    } else if (stop_obj.isSmallInt()) {
+      stop = SmallInt::cast(*stop_obj).value();
+    } else {
+      return Unbound::object();
+    }
+
+    List self(&scope, *self_obj);
+    word result_len = Slice::adjustIndices(self.numItems(), &start, &stop, 1);
+    if (result_len == 0) {
+      return runtime->newList();
+    }
+    Tuple src(&scope, self.items());
+    MutableTuple dst(&scope, runtime->newMutableTuple(result_len));
+    dst.replaceFromWithStartAt(0, *src, result_len, start);
+    List result(&scope, runtime->newList());
+    result.setItems(*dst);
+    result.setNumItems(result_len);
+    return *result;
   }
-  if (index < 0 || index >= length) {
-    return thread->raiseWithFmt(LayoutId::kIndexError,
-                                "list index out of range");
-  }
-  return self.at(index);
+  return Unbound::object();
 }
 
 RawObject UnderBuiltinsModule::underListGetSlice(Thread* thread, Frame* frame,
