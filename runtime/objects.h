@@ -2261,12 +2261,19 @@ class RawModule : public RawInstance {
   RawObject moduleProxy() const;
   void setModuleProxy(RawObject module_proxy) const;
 
+  // Unique ID allocated at module creation time.
+  word id() const;
+  void setId(word id) const;
+
   // Layout.
   static const int kNameOffset = RawHeapObject::kSize;
   static const int kDictOffset = kNameOffset + kPointerSize;
   static const int kDefOffset = kDictOffset + kPointerSize;
   static const int kModuleProxyOffset = kDefOffset + kPointerSize;
   static const int kSize = kModuleProxyOffset + kPointerSize;
+
+  // Constants.
+  static const word kMaxModuleId = RawHeader::kHashCodeMask;
 
   RAW_OBJECT_COMMON(Module);
 };
@@ -5905,6 +5912,19 @@ inline RawObject RawModule::moduleProxy() const {
 
 inline void RawModule::setModuleProxy(RawObject module_proxy) const {
   instanceVariableAtPut(kModuleProxyOffset, module_proxy);
+}
+
+inline word RawModule::id() const {
+  word index = header().hashCode();
+  DCHECK(index != RawHeader::kUninitializedHash,
+         "Module header hash field should contain a valid ID");
+  return index;
+}
+
+inline void RawModule::setId(word id) const {
+  DCHECK(static_cast<word>(id & RawHeader::kHashCodeMask) == id,
+         "Module ID %ld doesn't fit in hash code", id);
+  setHeader(header().withHashCode(id));
 }
 
 // RawModuleProxy

@@ -854,6 +854,7 @@ RawObject Runtime::newModule(const Object& name) {
   Module result(&scope, heap()->create<RawModule>());
   result.setDict(newDict());
   result.setDef(newIntFromCPtr(nullptr));
+  result.setId(reserveModuleId());
   Object init_result(&scope, moduleInit(thread, result, name));
   if (init_result.isErrorException()) return *init_result;
   return *result;
@@ -2445,7 +2446,7 @@ RawObject Runtime::typeAt(LayoutId layout_id) {
 
 LayoutId Runtime::reserveLayoutId(Thread* thread) {
   word result = num_layouts_++;
-  DCHECK(result < Header::kMaxLayoutId, "layout id overflow");
+  CHECK(result < Header::kMaxLayoutId, "layout id overflow");
   word length = Tuple::cast(layouts_).length();
   if (result >= length) {
     HandleScope scope(thread);
@@ -2456,6 +2457,13 @@ LayoutId Runtime::reserveLayoutId(Thread* thread) {
     layouts_ = *new_tuple;
   }
   return static_cast<LayoutId>(result);
+}
+
+word Runtime::reserveModuleId() {
+  // TODO(T58039604): Come up with a scheme to reuse deallocated module IDs if
+  // we run out.
+  CHECK(max_module_id_ < RawModule::kMaxModuleId, "exceeded module ID space");
+  return ++max_module_id_;
 }
 
 SymbolId Runtime::binaryOperationSelector(Interpreter::BinaryOp op) {

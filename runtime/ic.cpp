@@ -67,9 +67,11 @@ bool icIsCacheEmpty(const Tuple& caches, word index) {
 void icUpdateAttrModule(Thread* thread, const Tuple& caches, word index,
                         const Object& receiver, const ValueCell& value_cell,
                         const Function& dependent) {
+  HandleScope scope(thread);
   DCHECK(icIsCacheEmpty(caches, index), "cache must be empty\n");
   word i = index * kIcPointersPerCache;
-  caches.atPut(i + kIcEntryKeyOffset, *receiver);
+  Module module(&scope, *receiver);
+  caches.atPut(i + kIcEntryKeyOffset, SmallInt::fromWord(module.id()));
   caches.atPut(i + kIcEntryValueOffset, *value_cell);
   RawMutableBytes bytecode =
       RawMutableBytes::cast(dependent.rewrittenBytecode());

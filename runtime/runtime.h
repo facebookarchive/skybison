@@ -391,6 +391,8 @@ class Runtime {
 
   LayoutId reserveLayoutId(Thread* thread);
 
+  word reserveModuleId();
+
   SymbolId binaryOperationSelector(Interpreter::BinaryOp op);
   SymbolId swappedBinaryOperationSelector(Interpreter::BinaryOp op);
 
@@ -912,6 +914,9 @@ class Runtime {
   RawObject layouts_ = NoneType::object();
   // The number of layout objects in layouts_.
   word num_layouts_ = 0;
+
+  // The last module ID given out.
+  word max_module_id_ = 0;
 
   // Internal-only types, for which the Layout has a different described type
   RawObject large_bytes_ = NoneType::object();

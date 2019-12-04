@@ -351,6 +351,7 @@ RawObject ModuleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   // is read-only otherwise, so we can generally skip type tests for it.
   result.setDict(runtime->newDict());
   result.setDef(runtime->newIntFromCPtr(nullptr));
+  result.setId(runtime->reserveModuleId());
   return *result;
 }
 

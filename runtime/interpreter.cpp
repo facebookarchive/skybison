@@ -2945,8 +2945,12 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrModule(Thread* thread,
   RawObject receiver = frame->topValue();
   RawTuple caches = frame->caches();
   word index = arg * kIcPointersPerCache;
-  RawObject module = caches.at(index + kIcEntryKeyOffset);
-  if (receiver == module) {
+  RawObject cache_key = caches.at(index + kIcEntryKeyOffset);
+  // isInstanceOfModule() should be just as fast as isModule() in the common
+  // case. If code size or quality is an issue we can adjust this as needed
+  // based on the types that actually flow through here.
+  if (thread->runtime()->isInstanceOfModule(receiver) &&
+      SmallInt::fromWord(Module::cast(receiver).id()) == cache_key) {
     RawObject result = caches.at(index + kIcEntryValueOffset);
     DCHECK(result.isValueCell(), "cached value is not a value cell");
     frame->setTopValue(ValueCell::cast(result).value());
