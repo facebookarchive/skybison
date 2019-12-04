@@ -7362,6 +7362,23 @@ class SetTests(unittest.TestCase):
         self.assertEqual(len(a), 1)
         self.assertIn(1, a)
 
+    def test_set_clear_with_non_set_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            set.clear(1)
+
+    def test_set_clear_removes_elements(self):
+        a = {1, 2, 3}
+        a.clear()
+        self.assertEqual(len(a), 0)
+
+    def test_set_subclass_clear_removes_elements(self):
+        class SubSet(set):
+            pass
+
+        a = SubSet([1, 2, 3])
+        a.clear()
+        self.assertEqual(len(a), 0)
+
     def test_dunder_or_with_non_set_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             set.__or__(frozenset(), set())

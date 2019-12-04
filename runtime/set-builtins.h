@@ -75,6 +75,7 @@ class SetBuiltins
     : public SetBaseBuiltins,
       public Builtins<SetBuiltins, SymbolId::kSet, LayoutId::kSet> {
  public:
+  static RawObject clear(Thread* thread, Frame* frame, word nargs);
   static RawObject copy(Thread* thread, Frame* frame, word nargs);
   static RawObject discard(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderIand(Thread* thread, Frame* frame, word nargs);

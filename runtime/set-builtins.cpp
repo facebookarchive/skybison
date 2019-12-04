@@ -726,6 +726,7 @@ const BuiltinAttribute SetBuiltins::kAttributes[] = {
 
 const BuiltinMethod SetBuiltins::kBuiltinMethods[] = {
     {SymbolId::kAdd, add},
+    {SymbolId::kClear, clear},
     {SymbolId::kCopy, copy},
     {SymbolId::kDiscard, discard},
     {SymbolId::kDunderAnd, dunderAnd},
@@ -857,6 +858,23 @@ RawObject SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
 
   Object result(&scope, setAdd(thread, set, value, hash));
   if (result.isError()) return *result;
+  return NoneType::object();
+}
+
+RawObject SetBuiltins::clear(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfSet(*self)) {
+    return thread->raiseRequiresType(self, SymbolId::kSet);
+  }
+  Set set(&scope, *self);
+  if (set.numItems() == 0) {
+    return NoneType::object();
+  }
+  set.setNumItems(0);
+  MutableTuple data(&scope, set.data());
+  data.fill(NoneType::object());
   return NoneType::object();
 }
 

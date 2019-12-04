@@ -4412,6 +4412,9 @@ class set(bootstrap=True):
     def add(self, value):
         pass
 
+    def clear(self):
+        pass
+
     def copy(self):
         pass
 
