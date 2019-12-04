@@ -1,14 +1,13 @@
 #pragma once
 
 #include "globals.h"
+#include "handles-decl.h"
 #include "objects.h"
 #include "symbols.h"
 #include "vector.h"
 
 namespace py {
 
-template <typename>
-class Handle;
 class Frame;
 class FrameVisitor;
 class HandleScope;
@@ -19,22 +18,22 @@ class Handles {
  public:
   Handles() = default;
 
-  Handle<RawObject>* head() const { return head_; }
+  Object* head() const { return head_; }
 
-  Handle<RawObject>* push(Handle<RawObject>* new_head) {
-    Handle<RawObject>* old_head = head_;
+  Object* push(Object* new_head) {
+    Object* old_head = head_;
     head_ = new_head;
     return old_head;
   }
 
-  void pop(Handle<RawObject>* new_head) { head_ = new_head; }
+  void pop(Object* new_head) { head_ = new_head; }
 
   void visitPointers(PointerVisitor* visitor);
 
   DISALLOW_COPY_AND_ASSIGN(Handles);
 
  private:
-  Handle<RawObject>* head_ = nullptr;
+  Object* head_ = nullptr;
 };
 
 RawObject uninitializedInterpreterFunc(Thread*);
@@ -53,19 +52,19 @@ class Thread {
   // Private method. Call pushCallFrame() or pushNativeFrame() isntead.
   Frame* pushCallFrame(RawFunction function);
   Frame* pushNativeFrame(word nargs);
-  Frame* pushHeapFrame(const Handle<RawHeapFrame>& heap_frame);
-  Frame* pushClassFunctionFrame(const Handle<RawFunction>& function);
+  Frame* pushHeapFrame(const HeapFrame& heap_frame);
+  Frame* pushClassFunctionFrame(const Function& function);
 
   Frame* popFrame();
-  Frame* popFrameToHeapFrame(const Handle<RawHeapFrame>& heap_frame);
+  Frame* popFrameToHeapFrame(const HeapFrame& heap_frame);
 
   // Runs a code object on the current thread.
-  RawObject exec(const Handle<RawCode>& code, const Handle<RawModule>& module,
-                 const Handle<RawObject>& implicit_globals);
+  RawObject exec(const Code& code, const Module& module,
+                 const Object& implicit_globals);
 
   // Runs a class body function on the current thread.
-  NODISCARD RawObject runClassFunction(const Handle<RawFunction>& function,
-                                       const Handle<RawDict>& dict);
+  NODISCARD RawObject runClassFunction(const Function& function,
+                                       const Dict& dict);
 
   Thread* next() { return next_; }
 
@@ -93,63 +92,46 @@ class Thread {
   // Calls out to the interpreter to lookup and call a method on the receiver
   // with the given argument(s). Returns Error<NotFound> if the method can't be
   // found, or the result of the call otheriwse (which may be Error<Exception>).
-  RawObject invokeMethod1(const Handle<RawObject>& receiver, SymbolId selector);
-  RawObject invokeMethod2(const Handle<RawObject>& receiver, SymbolId selector,
-                          const Handle<RawObject>& arg1);
-  RawObject invokeMethod3(const Handle<RawObject>& receiver, SymbolId selector,
-                          const Handle<RawObject>& arg1,
-                          const Handle<RawObject>& arg2);
+  RawObject invokeMethod1(const Object& receiver, SymbolId selector);
+  RawObject invokeMethod2(const Object& receiver, SymbolId selector,
+                          const Object& arg1);
+  RawObject invokeMethod3(const Object& receiver, SymbolId selector,
+                          const Object& arg1, const Object& arg2);
 
   // Looks up a method on a type and invokes it with the given receiver and
   // argument(s). Returns Error<NotFound> if the method can't be found, or the
   // result of the call otheriwse (which may be Error<Exception>).
   // ex: str.foo(receiver, arg1, ...)
   RawObject invokeMethodStatic1(LayoutId type, SymbolId method_name,
-                                const Handle<RawObject>& receiver);
+                                const Object& receiver);
   RawObject invokeMethodStatic2(LayoutId type, SymbolId method_name,
-                                const Handle<RawObject>& receiver,
-                                const Handle<RawObject>& arg1);
+                                const Object& receiver, const Object& arg1);
   RawObject invokeMethodStatic3(LayoutId type, SymbolId method_name,
-                                const Handle<RawObject>& receiver,
-                                const Handle<RawObject>& arg1,
-                                const Handle<RawObject>& arg2);
+                                const Object& receiver, const Object& arg1,
+                                const Object& arg2);
   RawObject invokeMethodStatic4(LayoutId type, SymbolId method_name,
-                                const Handle<RawObject>& receiver,
-                                const Handle<RawObject>& arg1,
-                                const Handle<RawObject>& arg2,
-                                const Handle<RawObject>& arg3);
+                                const Object& receiver, const Object& arg1,
+                                const Object& arg2, const Object& arg3);
 
   // Calls out to the interpreter to lookup and call a function with the given
   // argument(s). Returns Error<NotFound> if the function can't be found, or the
   // result of the call otherwise (which may be Error<Exception>).
   RawObject invokeFunction0(SymbolId module, SymbolId name);
-  RawObject invokeFunction1(SymbolId module, SymbolId name,
-                            const Handle<RawObject>& arg1);
-  RawObject invokeFunction2(SymbolId module, SymbolId name,
-                            const Handle<RawObject>& arg1,
-                            const Handle<RawObject>& arg2);
-  RawObject invokeFunction3(SymbolId module, SymbolId name,
-                            const Handle<RawObject>& arg1,
-                            const Handle<RawObject>& arg2,
-                            const Handle<RawObject>& arg3);
-  RawObject invokeFunction4(SymbolId module, SymbolId name,
-                            const Handle<RawObject>& arg1,
-                            const Handle<RawObject>& arg2,
-                            const Handle<RawObject>& arg3,
-                            const Handle<RawObject>& arg4);
-  RawObject invokeFunction5(SymbolId module, SymbolId name,
-                            const Handle<RawObject>& arg1,
-                            const Handle<RawObject>& arg2,
-                            const Handle<RawObject>& arg3,
-                            const Handle<RawObject>& arg4,
-                            const Handle<RawObject>& arg5);
-  RawObject invokeFunction6(SymbolId module, SymbolId name,
-                            const Handle<RawObject>& arg1,
-                            const Handle<RawObject>& arg2,
-                            const Handle<RawObject>& arg3,
-                            const Handle<RawObject>& arg4,
-                            const Handle<RawObject>& arg5,
-                            const Handle<RawObject>& arg6);
+  RawObject invokeFunction1(SymbolId module, SymbolId name, const Object& arg1);
+  RawObject invokeFunction2(SymbolId module, SymbolId name, const Object& arg1,
+                            const Object& arg2);
+  RawObject invokeFunction3(SymbolId module, SymbolId name, const Object& arg1,
+                            const Object& arg2, const Object& arg3);
+  RawObject invokeFunction4(SymbolId module, SymbolId name, const Object& arg1,
+                            const Object& arg2, const Object& arg3,
+                            const Object& arg4);
+  RawObject invokeFunction5(SymbolId module, SymbolId name, const Object& arg1,
+                            const Object& arg2, const Object& arg3,
+                            const Object& arg4, const Object& arg5);
+  RawObject invokeFunction6(SymbolId module, SymbolId name, const Object& arg1,
+                            const Object& arg2, const Object& arg3,
+                            const Object& arg4, const Object& arg5,
+                            const Object& arg6);
 
   // Raises an exception with the given type and returns an Error that must be
   // returned up the stack by the caller.
@@ -174,13 +156,12 @@ class Thread {
   // Raises a TypeError exception of the form '<method> requires a <type(obj)>
   // object but got <expected_type>' and returns an Error object that must be
   // returned up the stack by the caller.
-  RawObject raiseRequiresType(const Handle<RawObject>& obj,
-                              SymbolId expected_type);
+  RawObject raiseRequiresType(const Object& obj, SymbolId expected_type);
 
   // Raises a TypeError exception and returns an Error object that must be
   // returned up the stack by the caller.
-  RawObject raiseUnsupportedBinaryOperation(const Handle<RawObject>& left,
-                                            const Handle<RawObject>& right,
+  RawObject raiseUnsupportedBinaryOperation(const Object& left,
+                                            const Object& right,
                                             SymbolId op_name);
 
   // Exception support
@@ -263,8 +244,7 @@ class Thread {
   //
   // Returns the updated value, which may be the result of createException(type,
   // value) if value is not an instance of BaseException.
-  RawObject chainExceptionContext(const Handle<RawType>& type,
-                                  const Handle<RawObject>& value);
+  RawObject chainExceptionContext(const Type& type, const Object& value);
 
   // Returns true if and only if obj is not an Error and there is no pending
   // exception, or obj is an Error<Exception> and there is a pending exception.
@@ -274,8 +254,8 @@ class Thread {
   // Walk all the frames on the stack starting with the top-most frame
   void visitFrames(FrameVisitor* visitor);
 
-  RawObject reprEnter(const Handle<RawObject>& obj);
-  void reprLeave(const Handle<RawObject>& obj);
+  RawObject reprEnter(const Object& obj);
+  void reprLeave(const Object& obj);
 
   int recursionLimit() { return recursion_limit_; }
   int recursionDepth() { return recursion_depth_; }
