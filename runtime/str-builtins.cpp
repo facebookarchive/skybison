@@ -166,6 +166,34 @@ static bool isLineBreak(int32_t c) {
   }
 }
 
+RawObject strSplit(Thread* thread, const Str& str, const Str& sep,
+                   word maxsplit) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  word num_splits = strCountSubStr(str, sep, maxsplit);
+  word result_len = num_splits + 1;
+  MutableTuple result_items(&scope, runtime->newMutableTuple(result_len));
+  word last_idx = 0;
+  word sep_len = sep.charLength();
+  for (word i = 0, result_idx = 0; result_idx < num_splits;) {
+    if (strHasPrefix(str, sep, i)) {
+      result_items.atPut(result_idx++, runtime->strSubstr(thread, str, last_idx,
+                                                          i - last_idx));
+      i += sep_len;
+      last_idx = i;
+    } else {
+      i = str.offsetByCodePoints(i, 1);
+    }
+  }
+  result_items.atPut(
+      num_splits,
+      runtime->strSubstr(thread, str, last_idx, str.charLength() - last_idx));
+  List result(&scope, runtime->newList());
+  result.setItems(*result_items);
+  result.setNumItems(result_len);
+  return *result;
+}
+
 RawObject strSplitlines(Thread* thread, const Str& str, bool keepends) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();

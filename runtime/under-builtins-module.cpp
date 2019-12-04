@@ -3872,7 +3872,6 @@ static RawObject strSplitWhitespace(Thread* thread, const Str& self,
 
 RawObject UnderBuiltinsModule::underStrSplit(Thread* thread, Frame* frame,
                                              word nargs) {
-  Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Str self(&scope, strUnderlying(args.get(0)));
@@ -3888,29 +3887,7 @@ RawObject UnderBuiltinsModule::underStrSplit(Thread* thread, Frame* frame,
   if (maxsplit < 0) {
     maxsplit = kMaxWord;
   }
-  word num_splits = strCountSubStr(self, sep, maxsplit);
-  word result_len = num_splits + 1;
-  MutableTuple result_items(&scope, runtime->newMutableTuple(result_len));
-  word last_idx = 0;
-  word sep_len = sep.charLength();
-  for (word i = 0, result_idx = 0; result_idx < num_splits;) {
-    if (strHasPrefix(self, sep, i)) {
-      result_items.atPut(
-          result_idx++,
-          runtime->strSubstr(thread, self, last_idx, i - last_idx));
-      i += sep_len;
-      last_idx = i;
-    } else {
-      i = self.offsetByCodePoints(i, 1);
-    }
-  }
-  result_items.atPut(
-      num_splits,
-      runtime->strSubstr(thread, self, last_idx, self.charLength() - last_idx));
-  List result(&scope, runtime->newList());
-  result.setItems(*result_items);
-  result.setNumItems(result_len);
-  return *result;
+  return strSplit(thread, self, sep, maxsplit);
 }
 
 RawObject UnderBuiltinsModule::underStrSplitlines(Thread* thread, Frame* frame,
