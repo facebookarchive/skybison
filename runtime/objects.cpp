@@ -24,6 +24,15 @@ RawSmallBytes RawSmallBytes::fromBytes(View<byte> data) {
 
 // RawSmallStr
 
+word RawSmallStr::compare(RawObject that) const {
+  word length = charLength();
+  for (word i = 0; i < length; i++) {
+    word result = charAt(i) - RawLargeStr::cast(that).charAt(i);
+    if (result != 0) return result;
+  }
+  return -1;
+}
+
 RawSmallStr RawSmallStr::fromCodePoint(int32_t code_point) {
   DCHECK_BOUND(code_point, kMaxUnicode);
   uword cp = static_cast<uword>(code_point);
@@ -177,6 +186,16 @@ word RawCode::offsetToLineNum(word offset) const {
 }
 
 // RawLargeStr
+
+word RawLargeStr::compare(RawObject that) const {
+  word this_length = charLength();
+  word that_length = RawLargeStr::cast(that).charLength();
+  word length = Utils::minimum(this_length, that_length);
+  auto s1 = reinterpret_cast<void*>(address());
+  auto s2 = reinterpret_cast<void*>(RawLargeStr::cast(that).address());
+  word result = std::memcmp(s1, s2, length);
+  return result != 0 ? result : this_length - that_length;
+}
 
 bool RawLargeStr::equals(RawObject that) const {
   if (!that.isLargeStr()) {
@@ -552,19 +571,6 @@ void RawSlice::adjustSearchIndices(word* start, word* end, word length) {
 }
 
 // RawStr
-
-word RawStr::compare(RawObject string) const {
-  RawStr that = RawStr::cast(string);
-  word length = Utils::minimum(charLength(), that.charLength());
-  for (word i = 0; i < length; i++) {
-    word diff = this->charAt(i) - that.charAt(i);
-    if (diff != 0) {
-      return (diff > 0) ? 1 : -1;
-    }
-  }
-  word diff = this->charLength() - that.charLength();
-  return (diff > 0) ? 1 : ((diff < 0) ? -1 : 0);
-}
 
 word RawStr::compareCStr(const char* c_str) const {
   word c_length = std::strlen(c_str);

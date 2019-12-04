@@ -448,7 +448,7 @@ RawObject StrBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   }
   Str self(&scope, strUnderlying(*self_obj));
   Str other(&scope, strUnderlying(*other_obj));
-  return Bool::fromBool(self.compare(*other) == 0);
+  return Bool::fromBool(self.equals(*other));
 }
 
 RawObject StrBuiltins::dunderFormat(Thread* thread, Frame* frame, word nargs) {
@@ -897,7 +897,7 @@ RawObject StrBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   }
   Str self(&scope, strUnderlying(*self_obj));
   Str other(&scope, strUnderlying(*other_obj));
-  return Bool::fromBool(self.compare(*other) != 0);
+  return Bool::fromBool(!self.equals(*other));
 }
 
 RawObject StrBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {

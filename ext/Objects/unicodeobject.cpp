@@ -559,8 +559,7 @@ PY_EXPORT int _PyUnicode_EQ(PyObject* aa, PyObject* bb) {
   Object obj_bb(&scope, ApiHandle::fromPyObject(bb)->asObject());
   Str lhs(&scope, strUnderlying(*obj_aa));
   Str rhs(&scope, strUnderlying(*obj_bb));
-  word diff = lhs.compare(*rhs);
-  return diff == 0 ? 1 : 0;
+  return lhs.equals(*rhs);
 }
 
 PY_EXPORT size_t Py_UNICODE_strlen(const Py_UNICODE* u) {
@@ -960,7 +959,8 @@ PY_EXPORT int PyUnicode_Compare(PyObject* left, PyObject* right) {
       runtime->isInstanceOfStr(*right_obj)) {
     Str left_str(&scope, strUnderlying(*left_obj));
     Str right_str(&scope, strUnderlying(*right_obj));
-    return left_str.compare(*right_str);
+    word result = left_str.compare(*right_str);
+    return result > 0 ? 1 : (result < 0 ? -1 : 0);
   }
   thread->raiseWithFmt(LayoutId::kTypeError, "Can't compare %T and %T",
                        &left_obj, &right_obj);

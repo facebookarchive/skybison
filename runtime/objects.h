@@ -518,7 +518,7 @@ class RawStr : public RawObject {
   void copyToStartAt(byte* dst, word char_length, word char_start) const;
 
   // Equality checks.
-  word compare(RawObject string) const;
+  word compare(RawObject that) const;
   word compareCStr(const char* c_str) const;
   bool equals(RawObject that) const;
   bool equalsCStr(const char* c_str) const;
@@ -703,6 +703,9 @@ class RawSmallStr : public RawObject {
   word charLength() const;
   void copyTo(byte* dst, word char_length) const;
   void copyToStartAt(byte* dst, word char_length, word char_start) const;
+
+  // Comparison
+  word compare(RawObject that) const;
 
   // Codepoints
   word codePointLength() const;
@@ -1403,6 +1406,7 @@ class RawLargeStr : public RawArrayBase {
   void copyToStartAt(byte* dst, word char_length, word char_start) const;
 
   // Equality checks.
+  word compare(RawObject that) const;
   bool equals(RawObject that) const;
   bool equalsBytes(View<byte> bytes) const;
 
@@ -5933,10 +5937,24 @@ inline word RawStr::charLength() const {
   return RawLargeStr::cast(*this).charLength();
 }
 
-inline bool RawStr::equals(RawObject that) const {
-  if (*this == that) return true;
-  if (isSmallStr()) return false;
-  return RawLargeStr::cast(*this).equals(that);
+inline word RawStr::compare(RawObject that) const {
+  if (*this == that) {
+    return 0;
+  }
+  if (isSmallStr()) {
+    if (that.isSmallStr()) {
+      word result = __builtin_bswap64(this->raw() & ~uword{0xFF}) -
+                    __builtin_bswap64(that.raw() & ~uword{0xFF});
+      return LIKELY(result != 0)
+                 ? result
+                 : this->charLength() - RawSmallStr::cast(that).charLength();
+    }
+    return RawSmallStr::cast(*this).compare(that);
+  }
+  if (that.isSmallStr()) {
+    return -RawSmallStr::cast(that).compare(*this);
+  }
+  return RawLargeStr::cast(*this).compare(that);
 }
 
 inline void RawStr::copyTo(byte* dst, word length) const {
@@ -5956,6 +5974,12 @@ inline void RawStr::copyToStartAt(byte* dst, word char_length,
   }
   DCHECK(isLargeStr(), "unexpected type");
   return RawLargeStr::cast(*this).copyToStartAt(dst, char_length, char_start);
+}
+
+inline bool RawStr::equals(RawObject that) const {
+  if (*this == that) return true;
+  if (isSmallStr()) return false;
+  return RawLargeStr::cast(*this).equals(that);
 }
 
 inline char* RawStr::toCStr() const {
