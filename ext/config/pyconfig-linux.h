@@ -735,7 +735,7 @@
 #define HAVE_PTY_H 1
 
 /* Define to 1 if you have the `putenv' function. */
-#define HAVE_PUTENV 1
+/* #undef HAVE_PUTENV */
 
 /* Define to 1 if you have the `pwrite' function. */
 #define HAVE_PWRITE 1
