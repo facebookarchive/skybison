@@ -375,7 +375,6 @@ const BuiltinMethod StrBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderEq, dunderEq},
     {SymbolId::kDunderFormat, dunderFormat},
     {SymbolId::kDunderGe, dunderGe},
-    {SymbolId::kDunderGetitem, dunderGetItem},
     {SymbolId::kDunderGt, dunderGt},
     {SymbolId::kDunderHash, dunderHash},
     {SymbolId::kDunderIter, dunderIter},
@@ -899,49 +898,6 @@ RawObject StrBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   Str self(&scope, strUnderlying(*self_obj));
   Str other(&scope, strUnderlying(*other_obj));
   return Bool::fromBool(self.compare(*other) != 0);
-}
-
-RawObject StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfStr(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kStr);
-  }
-  Str str(&scope, strUnderlying(*self));
-  Object index_obj(&scope, args.get(1));
-  if (runtime->isInstanceOfInt(*index_obj)) {
-    Int index(&scope, intUnderlying(*index_obj));
-    if (!index.isSmallInt()) {
-      return thread->raiseWithFmt(
-          LayoutId::kIndexError,
-          "cannot fit index into an index-sized integer");
-    }
-    word i = index.asWord();
-    if (i < 0) {
-      i += str.codePointLength();
-    }
-    if (i >= 0) {
-      word offset = str.offsetByCodePoints(0, i);
-      if (offset < str.charLength()) {
-        word num_bytes;
-        return SmallStr::fromCodePoint(str.codePointAt(offset, &num_bytes));
-      }
-    }
-    return thread->raiseWithFmt(LayoutId::kIndexError,
-                                "string index out of range");
-  }
-  if (index_obj.isSlice()) {
-    word start, stop, step;
-    Slice slice(&scope, *index_obj);
-    Object error(&scope, sliceUnpack(thread, slice, &start, &stop, &step));
-    if (error.isError()) return *error;
-    return runtime->strSlice(thread, str, start, stop, step);
-  }
-  // TODO(T27897506): use __index__ to get index
-  return thread->raiseWithFmt(LayoutId::kTypeError,
-                              "string indices must be integers or slices");
 }
 
 RawObject StrBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {

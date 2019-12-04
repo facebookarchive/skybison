@@ -3687,9 +3687,7 @@ static int numTrailBytes(byte ch) {
 
 RawObject Runtime::strSlice(Thread* thread, const Str& str, word start,
                             word stop, word step) {
-  // TODO(T55573386): Don't compute the length when stop is unspecified.
-  word length =
-      Slice::adjustIndices(str.codePointLength(), &start, &stop, step);
+  word length = Slice::length(start, stop, step);
   word num_bytes = 0;
   if (step == 1) {
     word start_index = str.offsetByCodePoints(0, start);

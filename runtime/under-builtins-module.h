@@ -271,13 +271,15 @@ class UnderBuiltinsModule {
   static RawObject underStrCount(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrEncode(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrEndsWith(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrGuard(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrIsChr(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrJoin(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrEscapeNonAscii(Thread* thread, Frame* frame,
                                           word nargs);
   static RawObject underStrFind(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrFromStr(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrGetItem(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrGetSlice(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrGuard(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrIsChr(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrJoin(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrLen(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrPartition(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrReplace(Thread* thread, Frame* frame, word nargs);

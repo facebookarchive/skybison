@@ -423,12 +423,14 @@ class Runtime;
   V(UnderStrCount, "_str_count")                                               \
   V(UnderStrEncode, "_str_encode")                                             \
   V(UnderStrEndswith, "_str_endswith")                                         \
-  V(UnderStrGuard, "_str_guard")                                               \
-  V(UnderStrIsChr, "_str_ischr")                                               \
-  V(UnderStrJoin, "_str_join")                                                 \
   V(UnderStrEscapeNonAscii, "_str_escape_non_ascii")                           \
   V(UnderStrFind, "_str_find")                                                 \
   V(UnderStrFromStr, "_str_from_str")                                          \
+  V(UnderStrGetitem, "_str_getitem")                                           \
+  V(UnderStrGetslice, "_str_getslice")                                         \
+  V(UnderStrGuard, "_str_guard")                                               \
+  V(UnderStrIsChr, "_str_ischr")                                               \
+  V(UnderStrJoin, "_str_join")                                                 \
   V(UnderStrLen, "_str_len")                                                   \
   V(UnderStrMod, "_str_mod")                                                   \
   V(UnderStrPartition, "_str_partition")                                       \

@@ -884,6 +884,16 @@ def _str_endswith(self, suffix, start, end):
 
 
 @_patch
+def _str_getitem(self, key):
+    pass
+
+
+@_patch
+def _str_getslice(self, start, stop, step):
+    pass
+
+
+@_patch
 def _str_guard(obj):
     pass
 

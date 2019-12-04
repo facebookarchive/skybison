@@ -7667,6 +7667,58 @@ class StaticMethodTests(unittest.TestCase):
 
 
 class StrTests(unittest.TestCase):
+    def test_dunder_getitem_with_int_returns_code_point(self):
+        s = "a\u05D0b\u05D1c\u05D2"
+        self.assertEqual(s[0], "a")
+        self.assertEqual(s[1], "\u05D0")
+        self.assertEqual(s[2], "b")
+        self.assertEqual(s[3], "\u05D1")
+        self.assertEqual(s[4], "c")
+        self.assertEqual(s[5], "\u05D2")
+
+    def test_dunder_getitem_with_large_int_raises_index_error(self):
+        s = "hello"
+        with self.assertRaises(IndexError) as context:
+            s[2 ** 63]
+        self.assertEqual(
+            str(context.exception), "cannot fit 'int' into an index-sized integer"
+        )
+
+    def test_dunder_getitem_with_negative_int_indexes_from_end(self):
+        s = "a\u05D0b\u05D1c\u05D2"
+        self.assertEqual(s[-6], "a")
+        self.assertEqual(s[-5], "\u05D0")
+        self.assertEqual(s[-4], "b")
+        self.assertEqual(s[-3], "\u05D1")
+        self.assertEqual(s[-2], "c")
+        self.assertEqual(s[-1], "\u05D2")
+
+    def test_dunder_getitem_negative_out_of_bounds_raises_index_error(self):
+        s = "hello"
+        with self.assertRaises(IndexError) as context:
+            s[-6]
+        self.assertEqual(str(context.exception), "string index out of range")
+
+    def test_dunder_getitem_positive_out_of_bounds_raises_index_error(self):
+        s = "hello"
+        with self.assertRaises(IndexError) as context:
+            s[5]
+        self.assertEqual(str(context.exception), "string index out of range")
+
+    def test_dunder_getitem_with_slice_returns_str(self):
+        s = "hello world"
+        self.assertEqual(s[6:], "world")
+        self.assertEqual(s[:5], "hello")
+        self.assertEqual(s[::2], "hlowrd")
+        self.assertEqual(s[::-1], "dlrow olleh")
+        self.assertEqual(s[1:8:2], "el o")
+        self.assertEqual(s[-1:3:-3], "doo")
+
+    def test_dunder_getitem_with_slice_uses_adjusted_bounds(self):
+        s = "hello world"
+        self.assertEqual(s[-20:5], "hello")
+        self.assertEqual(s[6:42], "world")
+
     def test_translate_without_dict(self):
         with self.assertRaises(TypeError):
             "abc".translate(123)

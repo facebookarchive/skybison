@@ -248,12 +248,14 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrCount, underStrCount},
     {SymbolId::kUnderStrEncode, underStrEncode},
     {SymbolId::kUnderStrEndswith, underStrEndsWith},
-    {SymbolId::kUnderStrGuard, underStrGuard},
-    {SymbolId::kUnderStrIsChr, underStrIsChr},
-    {SymbolId::kUnderStrJoin, underStrJoin},
     {SymbolId::kUnderStrEscapeNonAscii, underStrEscapeNonAscii},
     {SymbolId::kUnderStrFind, underStrFind},
     {SymbolId::kUnderStrFromStr, underStrFromStr},
+    {SymbolId::kUnderStrGetitem, underStrGetItem},
+    {SymbolId::kUnderStrGetslice, underStrGetSlice},
+    {SymbolId::kUnderStrGuard, underStrGuard},
+    {SymbolId::kUnderStrIsChr, underStrIsChr},
+    {SymbolId::kUnderStrJoin, underStrJoin},
     {SymbolId::kUnderStrLen, underStrLen},
     {SymbolId::kUnderStrPartition, underStrPartition},
     {SymbolId::kUnderStrReplace, underStrReplace},
@@ -3654,6 +3656,81 @@ RawObject UnderBuiltinsModule::underStrFromStr(Thread* thread, Frame* frame,
   UserStrBase instance(&scope, thread->runtime()->newInstance(type_layout));
   instance.setValue(*value);
   return *instance;
+}
+
+RawObject UnderBuiltinsModule::underStrGetItem(Thread* thread, Frame* frame,
+                                               word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfStr(*self_obj)) {
+    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kStr);
+  }
+  Object key(&scope, args.get(1));
+  if (runtime->isInstanceOfInt(*key)) {
+    Str self(&scope, strUnderlying(*self_obj));
+    word index = intUnderlying(*key).asWordSaturated();
+    if (!SmallInt::isValid(index)) {
+      return thread->raiseWithFmt(LayoutId::kIndexError,
+                                  "cannot fit '%T' into an index-sized integer",
+                                  &key);
+    }
+    if (index < 0) {
+      index += self.codePointLength();
+    }
+    if (index >= 0) {
+      word offset = self.offsetByCodePoints(0, index);
+      if (offset < self.charLength()) {
+        word ignored;
+        return SmallStr::fromCodePoint(self.codePointAt(offset, &ignored));
+      }
+    }
+    return thread->raiseWithFmt(LayoutId::kIndexError,
+                                "string index out of range");
+  }
+  if (key.isSlice()) {
+    Slice slice(&scope, *key);
+    if (!slice.step().isNoneType()) {
+      return Unbound::object();
+    }
+
+    word start, stop;
+    Object start_obj(&scope, slice.start());
+    if (start_obj.isNoneType()) {
+      start = 0;
+    } else if (start_obj.isSmallInt()) {
+      start = SmallInt::cast(*start_obj).value();
+    } else {
+      return Unbound::object();
+    }
+
+    Object stop_obj(&scope, slice.stop());
+    if (stop_obj.isNoneType()) {
+      stop = kMaxWord;
+    } else if (stop_obj.isSmallInt()) {
+      stop = SmallInt::cast(*stop_obj).value();
+    } else {
+      return Unbound::object();
+    }
+
+    Str self(&scope, *self_obj);
+    word length = self.codePointLength();
+    word result_len = Slice::adjustIndices(length, &start, &stop, 1);
+    return runtime->strSubstr(thread, self, start, result_len);
+  }
+  return Unbound::object();
+}
+
+RawObject UnderBuiltinsModule::underStrGetSlice(Thread* thread, Frame* frame,
+                                                word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Str self(&scope, strUnderlying(args.get(0)));
+  word start = SmallInt::cast(args.get(1)).value();
+  word stop = SmallInt::cast(args.get(2)).value();
+  word step = SmallInt::cast(args.get(3)).value();
+  return thread->runtime()->strSlice(thread, self, start, stop, step);
 }
 
 RawObject UnderBuiltinsModule::underStrGuard(Thread* thread, Frame* frame,

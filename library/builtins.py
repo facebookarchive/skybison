@@ -173,6 +173,8 @@ _str_endswith = _str_endswith  # noqa: F821
 _str_escape_non_ascii = _str_escape_non_ascii  # noqa: F821
 _str_find = _str_find  # noqa: F821
 _str_from_str = _str_from_str  # noqa: F821
+_str_getitem = _str_getitem  # noqa: F821
+_str_getslice = _str_getslice  # noqa: F821
 _str_guard = _str_guard  # noqa: F821
 _str_ischr = _str_ischr  # noqa: F821
 _str_join = _str_join  # noqa: F821
@@ -4527,8 +4529,21 @@ class str(bootstrap=True):
     def __ge__(self, other):
         pass
 
-    def __getitem__(self, index):
-        pass
+    def __getitem__(self, key):
+        result = _str_getitem(self, key)
+        if result is not _Unbound:
+            return result
+        if _slice_check(key):
+            step = _slice_step(_slice_index(key.step))
+            length = _str_len(self)
+            start = _slice_start(_slice_index(key.start), step, length)
+            stop = _slice_stop(_slice_index(key.stop), step, length)
+            return _str_getslice(self, start, stop, step)
+        if _object_type_hasattr(key, "__index__"):
+            return _str_getitem(self, _index(key))
+        raise TypeError(
+            f"string indices must be integers or slices, not {_type(key).__name__}"
+        )
 
     def __gt__(self, other):
         pass
@@ -4629,8 +4644,8 @@ class str(bootstrap=True):
         _str_guard(self)
         if not self:
             return self
-        first_letter = str.upper(str.__getitem__(self, 0).upper())
-        lowercase_str = str.lower(str.__getitem__(self, slice(1, None, None)))
+        first_letter = str.upper(_str_getitem(self, 0).upper())
+        lowercase_str = str.lower(_str_getslice(self, 1, _str_len(self), 1))
         return first_letter + lowercase_str
 
     def casefold(self):
