@@ -3480,20 +3480,18 @@ class list(bootstrap=True):
         _list_guard(self)
         if not _list_check(other):
             return NotImplemented
-        if self is other:
-            return False
-        idx = 0
-        self_length = _list_len(self)
-        other_length = _list_len(other)
-        self_is_longer = self_length > other_length
-        min_length = other_length if self_is_longer else self_length
-        while idx < min_length:
-            self_element = _list_getitem(self, idx)
-            other_element = _list_getitem(other, idx)
-            if self_element != other_element:
-                return self_element > other_element
-            idx += 1
-        return self_is_longer
+        i = 0
+        len_self = _list_len(self)
+        len_other = _list_len(other)
+        min_len = len_self if len_self < len_other else len_other
+        while i < min_len:
+            self_item = _list_getitem(self, i)
+            other_item = _list_getitem(other, i)
+            if self_item is not other_item and not self_item == other_item:
+                return self_item > other_item
+            i += 1
+        # If the items are all up equal up to min_len, compare lengths
+        return len_self > len_other
 
     __hash__ = None
 
@@ -3510,20 +3508,18 @@ class list(bootstrap=True):
         _list_guard(self)
         if not _list_check(other):
             return NotImplemented
-        if self is other:
-            return False
-        idx = 0
-        self_length = _list_len(self)
-        other_length = _list_len(other)
-        self_is_shorter = self_length < other_length
-        min_length = self_length if self_is_shorter else other_length
-        while idx < min_length:
-            self_element = _list_getitem(self, idx)
-            other_element = _list_getitem(other, idx)
-            if self_element != other_element:
-                return self_element < other_element
-            idx += 1
-        return self_is_shorter
+        i = 0
+        len_self = _list_len(self)
+        len_other = _list_len(other)
+        min_len = len_self if len_self < len_other else len_other
+        while i < min_len:
+            self_item = _list_getitem(self, i)
+            other_item = _list_getitem(other, i)
+            if self_item is not other_item and not self_item == other_item:
+                return self_item < other_item
+            i += 1
+        # If the items are all up equal up to min_len, compare lengths
+        return len_self < len_other
 
     def __mul__(self, other):
         pass

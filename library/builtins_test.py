@@ -5057,6 +5057,48 @@ class ListTests(unittest.TestCase):
         self.assertEqual(r12, 2)
         self.assertEqual(r13, 3)
 
+    def test_gt_with_elem_gt_and_same_size_returns_false(self):
+        class SubSet(set):
+            def __gt__(self, other):
+                return True
+
+        a = [SubSet([1])]
+        b = [SubSet([1])]
+        self.assertFalse(list.__gt__(a, b))
+
+    def test_gt_with_elem_gt_and_diff_size_returns_true(self):
+        class SubSet(set):
+            def __gt__(self, other):
+                return True
+
+        a = [SubSet([1])]
+        b = [SubSet([1, 2])]
+        self.assertTrue(list.__gt__(a, b))
+
+    def test_gt_with_elem_eq_gt_and_diff_size_returns_false(self):
+        class SubSet(set):
+            def __eq__(self, other):
+                return True
+
+            def __gt__(self, other):
+                return True
+
+        a = [SubSet([1])]
+        b = [SubSet([1, 2])]
+        self.assertFalse(list.__gt__(a, b))
+
+    def test_gt_longer_rhs_with_elem_eq_gt_and_diff_size_returns_true(self):
+        class SubSet(set):
+            def __eq__(self, other):
+                return False
+
+            def __gt__(self, other):
+                return True
+
+        a = [SubSet([1, 2])]
+        b = [SubSet([1]), 2]
+        self.assertTrue(list.__gt__(a, b))
+
     def test_gt_with_bigger_list_returns_true(self):
         a = [1, 2, 4]
         b = [1, 2, 3]
@@ -5158,6 +5200,48 @@ class ListTests(unittest.TestCase):
         self.assertEqual(a_list.index(a), 0)
         self.assertEqual(a_list.index(n, 1), 1)
         self.assertEqual(n_list.index(n, 2, 3), 2)
+
+    def test_lt_with_elem_lt_and_same_size_returns_false(self):
+        class SubSet(set):
+            def __lt__(self, other):
+                return True
+
+        a = [SubSet([1])]
+        b = [SubSet([1])]
+        self.assertFalse(list.__lt__(a, b))
+
+    def test_lt_with_elem_lt_and_diff_size_returns_true(self):
+        class SubSet(set):
+            def __lt__(self, other):
+                return True
+
+        a = [SubSet([1, 2])]
+        b = [SubSet([1])]
+        self.assertTrue(list.__lt__(a, b))
+
+    def test_lt_with_elem_eq_lt_and_diff_size_returns_false(self):
+        class SubSet(set):
+            def __eq__(self, other):
+                return True
+
+            def __lt__(self, other):
+                return True
+
+        a = [SubSet([1, 2])]
+        b = [SubSet([1])]
+        self.assertFalse(list.__lt__(a, b))
+
+    def test_lt_longer_lhs_with_elem_eq_lt_and_diff_size_returns_true(self):
+        class SubSet(set):
+            def __eq__(self, other):
+                return False
+
+            def __lt__(self, other):
+                return True
+
+        a = [SubSet([1, 2]), 2]
+        b = [SubSet([1])]
+        self.assertTrue(list.__lt__(a, b))
 
     def test_lt_with_bigger_list_returns_false(self):
         a = [1, 2, 4]
