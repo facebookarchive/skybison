@@ -46,6 +46,7 @@ template <typename T>
 static ::testing::AssertionResult failNullObj(const T& expected,
                                               const char* delim) {
   PyObjectPtr exception(PyErr_Occurred());
+  Py_INCREF(exception);
   if (exception != nullptr) {
     PyErr_Clear();
     PyObjectPtr exception_repr(PyObject_Repr(exception));
