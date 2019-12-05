@@ -4266,8 +4266,10 @@ RawObject UnderBuiltinsModule::underTypeDunderCall(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Tuple pargs(&scope, args.get(1));
   Dict kwargs(&scope, args.get(2));
+  word pargs_length = pargs.length();
+  bool is_kwargs_empty = kwargs.numItems() == 0;
   // Shortcut for type(x) calls.
-  if (pargs.length() == 1 && kwargs.numItems() == 0 &&
+  if (pargs_length == 1 && is_kwargs_empty &&
       self_obj == runtime->typeAt(LayoutId::kType)) {
     return runtime->typeOf(pargs.at(0));
   }
@@ -4291,20 +4293,28 @@ RawObject UnderBuiltinsModule::underTypeDunderCall(Thread* thread, Frame* frame,
   } else {
     CHECK(!dunder_new.isError(), "self must have __new__");
     frame->pushValue(*dunder_new);
-    MutableTuple call_args(&scope,
-                           runtime->newMutableTuple(pargs.length() + 1));
-    call_args.atPut(0, *self);
-    call_args.replaceFromWith(1, *pargs, pargs.length());
-    frame->pushValue(call_args.becomeImmutable());
-    frame->pushValue(*kwargs);
-    instance =
-        Interpreter::callEx(thread, frame, CallFunctionExFlag::VAR_KEYWORDS);
+    if (is_kwargs_empty) {
+      frame->pushValue(*self);
+      for (word i = 0; i < pargs_length; ++i) {
+        frame->pushValue(pargs.at(i));
+      }
+      instance = Interpreter::call(thread, frame, pargs_length + 1);
+    } else {
+      MutableTuple call_args(&scope,
+                             runtime->newMutableTuple(pargs_length + 1));
+      call_args.atPut(0, *self);
+      call_args.replaceFromWith(1, *pargs, pargs_length);
+      frame->pushValue(call_args.becomeImmutable());
+      frame->pushValue(*kwargs);
+      instance =
+          Interpreter::callEx(thread, frame, CallFunctionExFlag::VAR_KEYWORDS);
+      call_args_obj = *call_args;
+    }
     if (instance.isErrorException()) return *instance;
     Type type(&scope, runtime->typeOf(*instance));
     if (!typeIsSubclass(type, self)) {
       return *instance;
     }
-    call_args_obj = *call_args;
   }
 
   // instance.__init__(...)
@@ -4317,20 +4327,29 @@ RawObject UnderBuiltinsModule::underTypeDunderCall(Thread* thread, Frame* frame,
       (dunder_new == runtime->objectDunderNew() &&
        (pargs.length() != 0 || kwargs.numItems() != 0))) {
     CHECK(!dunder_init.isError(), "self must have __init__");
+    Object result(&scope, NoneType::object());
     frame->pushValue(*dunder_init);
-    if (!call_args_obj.isMutableTuple()) {
-      MutableTuple call_args(&scope,
-                             runtime->newMutableTuple(pargs.length() + 1));
-      call_args.atPut(0, *instance);
-      call_args.replaceFromWith(1, *pargs, pargs.length());
-      call_args_obj = *call_args;
+    if (is_kwargs_empty) {
+      frame->pushValue(*instance);
+      for (word i = 0; i < pargs_length; ++i) {
+        frame->pushValue(pargs.at(i));
+      }
+      result = Interpreter::call(thread, frame, pargs_length + 1);
     } else {
-      MutableTuple::cast(*call_args_obj).atPut(0, *instance);
+      if (!call_args_obj.isMutableTuple()) {
+        MutableTuple call_args(&scope,
+                               runtime->newMutableTuple(pargs_length + 1));
+        call_args.atPut(0, *instance);
+        call_args.replaceFromWith(1, *pargs, pargs_length);
+        call_args_obj = *call_args;
+      } else {
+        MutableTuple::cast(*call_args_obj).atPut(0, *instance);
+      }
+      frame->pushValue(*call_args_obj);
+      frame->pushValue(*kwargs);
+      result =
+          Interpreter::callEx(thread, frame, CallFunctionExFlag::VAR_KEYWORDS);
     }
-    frame->pushValue(*call_args_obj);
-    frame->pushValue(*kwargs);
-    Object result(&scope, Interpreter::callEx(
-                              thread, frame, CallFunctionExFlag::VAR_KEYWORDS));
     if (result.isErrorException()) return *result;
     if (!result.isNoneType()) {
       Object type_name(&scope, self.name());
