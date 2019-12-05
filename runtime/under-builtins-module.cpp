@@ -4076,27 +4076,59 @@ RawObject UnderBuiltinsModule::underTupleGetItem(Thread* thread, Frame* frame,
   if (!runtime->isInstanceOfTuple(*self_obj)) {
     return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kTuple);
   }
-  Tuple self(&scope, tupleUnderlying(*self_obj));
-  Object key_obj(&scope, args.get(1));
-  if (!runtime->isInstanceOfInt(*key_obj)) {
-    return Unbound::object();
+  Object key(&scope, args.get(1));
+  if (runtime->isInstanceOfInt(*key)) {
+    word index = intUnderlying(*key).asWordSaturated();
+    if (!SmallInt::isValid(index)) {
+      return thread->raiseWithFmt(LayoutId::kIndexError,
+                                  "cannot fit '%T' into an index-sized integer",
+                                  &key);
+    }
+    Tuple self(&scope, tupleUnderlying(*self_obj));
+    word length = self.length();
+    if (index < 0) {
+      index += length;
+    }
+    if (index < 0 || index >= length) {
+      return thread->raiseWithFmt(LayoutId::kIndexError,
+                                  "tuple index out of range");
+    }
+    return self.at(index);
   }
-  Int key(&scope, intUnderlying(*key_obj));
-  if (key.isLargeInt()) {
-    return thread->raiseWithFmt(LayoutId::kIndexError,
-                                "cannot fit '%T' into an index-sized integer",
-                                &key_obj);
+  if (key.isSlice()) {
+    Slice slice(&scope, *key);
+    if (!slice.step().isNoneType()) {
+      return Unbound::object();
+    }
+
+    word start, stop;
+    Object start_obj(&scope, slice.start());
+    if (start_obj.isNoneType()) {
+      start = 0;
+    } else if (start_obj.isSmallInt()) {
+      start = SmallInt::cast(*start_obj).value();
+    } else {
+      return Unbound::object();
+    }
+
+    Object stop_obj(&scope, slice.stop());
+    if (stop_obj.isNoneType()) {
+      stop = kMaxWord;
+    } else if (stop_obj.isSmallInt()) {
+      stop = SmallInt::cast(*stop_obj).value();
+    } else {
+      return Unbound::object();
+    }
+
+    Tuple self(&scope, tupleUnderlying(*self_obj));
+    word length = self.length();
+    word result_len = Slice::adjustIndices(length, &start, &stop, 1);
+    if (result_len == length) {
+      return *self;
+    }
+    return runtime->tupleSubseq(thread, self, start, result_len);
   }
-  word index = key.asWord();
-  word length = self.length();
-  if (index < 0) {
-    index += length;
-  }
-  if (index < 0 || index >= length) {
-    return thread->raiseWithFmt(LayoutId::kIndexError,
-                                "tuple index out of range");
-  }
-  return self.at(index);
+  return Unbound::object();
 }
 
 RawObject UnderBuiltinsModule::underTupleGetSlice(Thread* thread, Frame* frame,
