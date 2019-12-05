@@ -1,7 +1,7 @@
-#include "runtime.h"
+#include "os.h"
 
 namespace py {
 
-PY_EXPORT const char* Py_GetPlatform() { UNIMPLEMENTED("Py_GetPlatform"); }
+PY_EXPORT const char* Py_GetPlatform() { return OS::name(); }
 
 }  // namespace py
