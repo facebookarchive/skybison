@@ -38,6 +38,11 @@ class UnderBuiltinsModule {
   static RawObject underByteArraySetSlice(Thread* thread, Frame* frame,
                                           word nargs);
   static RawObject underBytesCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underBytesDecode(Thread* thread, Frame* frame, word nargs);
+  static RawObject underBytesDecodeASCII(Thread* thread, Frame* frame,
+                                         word nargs);
+  static RawObject underBytesDecodeUTF8(Thread* thread, Frame* frame,
+                                        word nargs);
   static RawObject underBytesFromBytes(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underBytesFromInts(Thread* thread, Frame* frame, word nargs);
@@ -270,6 +275,8 @@ class UnderBuiltinsModule {
                                          word nargs);
   static RawObject underStrCount(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrEncode(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrEncodeASCII(Thread* thread, Frame* frame,
+                                       word nargs);
   static RawObject underStrEndsWith(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrEscapeNonAscii(Thread* thread, Frame* frame,
                                           word nargs);

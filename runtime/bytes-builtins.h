@@ -9,6 +9,9 @@ namespace py {
 word bytesCount(const Bytes& haystack, word haystack_len, const Bytes& needle,
                 word needle_len, word start, word end);
 
+// Returns a Str object if each byte in bytes is ascii, else Unbound
+RawObject bytesDecodeASCII(Thread* thread, const Bytes& bytes);
+
 // Looks for needle in haystack in the range [start, end). Returns the first
 // starting index found in that range, or -1 if the needle was not found.
 word bytesFind(const Bytes& haystack, word haystack_len, const Bytes& needle,

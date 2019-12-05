@@ -83,6 +83,21 @@ def _bytes_check(obj):
 
 
 @_patch
+def _bytes_decode(obj, encoding):
+    pass
+
+
+@_patch
+def _bytes_decode_ascii(obj):
+    pass
+
+
+@_patch
+def _bytes_decode_utf_8(obj):
+    pass
+
+
+@_patch
 def _bytes_from_bytes(cls, value):
     pass
 
@@ -874,7 +889,12 @@ def _str_count(self, sub, start, end):
 
 
 @_patch
-def _str_encode(self):
+def _str_encode(self, encoding):
+    pass
+
+
+@_patch
+def _str_encode_ascii(self):
     pass
 
 

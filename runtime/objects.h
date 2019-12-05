@@ -452,12 +452,16 @@ class RawBytes : public RawObject {
   void copyTo(byte* dst, word length) const;
   // Copy length bytes from this to dst, starting at the given index
   void copyToStartAt(byte* dst, word length, word index) const;
+  bool isASCII() const;
   // Read adjacent bytes as `uint16_t` integer.
   uint16_t uint16At(word index) const;
   // Read adjacent bytes as `uint32_t` integer.
   uint32_t uint32At(word index) const;
   // Read adjacent bytes as `uint64_t` integer.
   uint64_t uint64At(word index) const;
+
+  // Rewrite the header to make UTF-8 conformant bytes look like a Str
+  RawObject becomeStr() const;
 
   // Returns a positive value if 'this' is greater than 'that', a negative value
   // if 'this' is less than 'that', and zero if they are the same.
@@ -674,10 +678,13 @@ class RawSmallBytes : public RawObject {
   void copyTo(byte* dst, word length) const;
   // Copy length bytes from this to dst, starting at the given index
   void copyToStartAt(byte* dst, word length, word index) const;
+  bool isASCII() const;
   // Read adjacent bytes as `uint16_t` integer.
   uint16_t uint16At(word index) const;
   // Read adjacent bytes as `uint32_t` integer.
   uint32_t uint32At(word index) const;
+  // Rewrite the tag byte to make UTF-8 conformant bytes look like a Str
+  RawObject becomeStr() const;
 
   word hash() const;
 
@@ -714,6 +721,8 @@ class RawSmallStr : public RawObject {
   // Conversion to an unescaped C string.  The underlying memory is allocated
   // with malloc and must be freed by the caller.
   char* toCStr() const;
+
+  RawObject becomeBytes() const;
 
   word hash() const;
 
@@ -1303,12 +1312,16 @@ class RawLargeBytes : public RawArrayBase {
   // Copy length bytes from this to dst, starting at the given index
   void copyToStartAt(byte* dst, word length, word index) const;
 
+  bool isASCII() const;
   // Read adjacent bytes as `uint16_t` integer.
   uint16_t uint16At(word index) const;
   // Read adjacent bytes as `uint32_t` integer.
   uint32_t uint32At(word index) const;
   // Read adjacent bytes as `uint64_t` integer.
   uint64_t uint64At(word index) const;
+
+  // Rewrite the header to make UTF-8 conformant bytes look like a Str
+  RawObject becomeStr() const;
 
   RAW_OBJECT_COMMON(LargeBytes);
 
@@ -3924,6 +3937,13 @@ ALWAYS_INLINE byte RawBytes::byteAt(word index) const {
   return RawLargeBytes::cast(*this).byteAt(index);
 }
 
+inline RawObject RawBytes::becomeStr() const {
+  if (isSmallBytes()) {
+    return RawSmallBytes::cast(*this).becomeStr();
+  }
+  return RawLargeBytes::cast(*this).becomeStr();
+}
+
 inline void RawBytes::copyTo(byte* dst, word length) const {
   if (isSmallBytes()) {
     RawSmallBytes::cast(*this).copyTo(dst, length);
@@ -3938,6 +3958,13 @@ inline void RawBytes::copyToStartAt(byte* dst, word length, word index) const {
     return;
   }
   RawLargeBytes::cast(*this).copyToStartAt(dst, length, index);
+}
+
+inline bool RawBytes::isASCII() const {
+  if (isSmallBytes()) {
+    return RawSmallBytes::cast(*this).isASCII();
+  }
+  return RawLargeBytes::cast(*this).isASCII();
 }
 
 inline uint16_t RawBytes::uint16At(word index) const {

@@ -90,6 +90,21 @@ word strCountSubStr(const Str& haystack, const Str& needle, word max_count) {
                               max_count);
 }
 
+RawObject strEncodeASCII(Thread* thread, const Str& str) {
+  HandleScope scope(thread);
+  if (!str.isASCII()) {
+    return Unbound::object();
+  }
+  if (str.isSmallStr()) {
+    return SmallStr::cast(*str).becomeBytes();
+  }
+  word str_len = str.charLength();
+  MutableBytes bytes(&scope,
+                     thread->runtime()->newMutableBytesUninitialized(str_len));
+  bytes.replaceFromWithStr(0, *str, str_len);
+  return bytes.becomeImmutable();
+}
+
 // TODO(T39861344): This can be replaced by a real string codec.
 RawObject strEscapeNonASCII(Thread* thread, const Object& str_obj) {
   CHECK(str_obj.isStr(), "strEscapeNonASCII cannot currently handle non-str");

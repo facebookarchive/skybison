@@ -4,6 +4,9 @@
 # their definitions and will complain without this gross circular helper here.
 _bytearray_check = _bytearray_check  # noqa: F821
 _bytes_check = _bytes_check  # noqa: F821
+_bytes_decode = _bytes_decode  # noqa: F821
+_bytes_decode_ascii = _bytes_decode_ascii  # noqa: F821
+_bytes_decode_utf_8 = _bytes_decode_utf_8  # noqa: F821
 _bytes_len = _bytes_len  # noqa: F821
 _byteslike_guard = _byteslike_guard  # noqa: F821
 _index = _index  # noqa: F821
@@ -11,6 +14,8 @@ _int_check = _int_check  # noqa: F821
 _object_type_hasattr = _object_type_hasattr  # noqa: F821
 _patch = _patch  # noqa: F821
 _str_check = _str_check  # noqa: F821
+_str_encode = _str_encode  # noqa: F821
+_str_encode_ascii = _str_encode_ascii  # noqa: F821
 _str_len = _str_len  # noqa: F821
 _strarray = _strarray  # noqa: F821
 _strarray_iadd = _strarray_iadd  # noqa: F821
@@ -68,6 +73,9 @@ def _lookup_text(encoding, alternate_command):
 
 
 def decode(data, encoding: str = "utf-8", errors: str = _Unbound) -> str:
+    result = _bytes_decode(data, encoding)
+    if result is not _Unbound:
+        return result
     try:
         return _codec_decode_table[encoding.lower()](
             data, "strict" if errors is _Unbound else errors
@@ -88,6 +96,9 @@ def decode(data, encoding: str = "utf-8", errors: str = _Unbound) -> str:
 
 
 def encode(data, encoding: str = "utf-8", errors: str = _Unbound) -> bytes:
+    result = _str_encode(data, encoding)
+    if result is not _Unbound:
+        return result
     try:
         return _codec_encode_table[encoding.lower()](
             data, "strict" if errors is _Unbound else errors
@@ -119,6 +130,9 @@ def ascii_decode(data: bytes, errors: str = "strict"):
             "ascii_decode() argument 2 must be str or None, not "
             f"'{_type(errors).__name__}'"
         )
+    result = _bytes_decode_ascii(data)
+    if result is not _Unbound:
+        return result, _bytes_len(data)
     result = _strarray()
     i = 0
     encoded = ""
@@ -156,6 +170,9 @@ def ascii_encode(data: str, errors: str = "strict"):
             "ascii_encode() argument 2 must be str or None, not "
             f"{_type(errors).__name__}"
         )
+    result = _str_encode_ascii(data)
+    if result is not _Unbound:
+        return result, _str_len(data)
     result = bytearray()
     i = 0
     encoded = b""
@@ -360,6 +377,9 @@ def utf_8_decode(data: bytes, errors: str = "strict", is_final: bool = False):
             "utf_8_decode() argument 2 must be str or None, not "
             f"'{_type(errors).__name__}'"
         )
+    result = _bytes_decode_utf_8(data)
+    if result is not _Unbound:
+        return result, _bytes_len(data)
     result = _strarray()
     i = 0
     encoded = ""

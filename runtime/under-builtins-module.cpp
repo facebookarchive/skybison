@@ -89,6 +89,9 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderByteArraySetitem, underByteArraySetItem},
     {SymbolId::kUnderByteArraySetslice, underByteArraySetSlice},
     {SymbolId::kUnderBytesCheck, underBytesCheck},
+    {SymbolId::kUnderBytesDecode, underBytesDecode},
+    {SymbolId::kUnderBytesDecodeASCII, underBytesDecodeASCII},
+    {SymbolId::kUnderBytesDecodeUTF8, underBytesDecodeUTF8},
     {SymbolId::kUnderBytesFromBytes, underBytesFromBytes},
     {SymbolId::kUnderBytesFromInts, underBytesFromInts},
     {SymbolId::kUnderBytesGetitem, underBytesGetItem},
@@ -247,6 +250,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrCompareDigest, underStrCompareDigest},
     {SymbolId::kUnderStrCount, underStrCount},
     {SymbolId::kUnderStrEncode, underStrEncode},
+    {SymbolId::kUnderStrEncodeASCII, underStrEncodeASCII},
     {SymbolId::kUnderStrEndswith, underStrEndsWith},
     {SymbolId::kUnderStrEscapeNonAscii, underStrEscapeNonAscii},
     {SymbolId::kUnderStrFind, underStrFind},
@@ -694,6 +698,50 @@ RawObject UnderBuiltinsModule::underBytesCheck(Thread* thread, Frame* frame,
                                                word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfBytes(args.get(0)));
+}
+
+RawObject UnderBuiltinsModule::underBytesDecode(Thread* thread, Frame* frame,
+                                                word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object bytes_obj(&scope, args.get(0));
+  if (!bytes_obj.isBytes()) {
+    return Unbound::object();
+  }
+  Bytes bytes(&scope, *bytes_obj);
+  static RawSmallStr ascii = SmallStr::fromCStr("ascii");
+  static RawSmallStr utf8 = SmallStr::fromCStr("utf-8");
+  static RawSmallStr latin1 = SmallStr::fromCStr("latin-1");
+  Str enc(&scope, args.get(1));
+  if (enc != ascii && enc != utf8 && enc != latin1 &&
+      enc.compareCStr("iso-8859-1") != 0) {
+    return Unbound::object();
+  }
+  return bytesDecodeASCII(thread, bytes);
+}
+
+RawObject UnderBuiltinsModule::underBytesDecodeASCII(Thread* thread,
+                                                     Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object bytes_obj(&scope, args.get(0));
+  if (!bytes_obj.isBytes()) {
+    return Unbound::object();
+  }
+  Bytes bytes(&scope, *bytes_obj);
+  return bytesDecodeASCII(thread, bytes);
+}
+
+RawObject UnderBuiltinsModule::underBytesDecodeUTF8(Thread* thread,
+                                                    Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object bytes_obj(&scope, args.get(0));
+  if (!bytes_obj.isBytes()) {
+    return Unbound::object();
+  }
+  Bytes bytes(&scope, *bytes_obj);
+  return bytesDecodeASCII(thread, bytes);
 }
 
 RawObject UnderBuiltinsModule::underBytesGuard(Thread* thread, Frame* frame,
@@ -3540,21 +3588,33 @@ RawObject UnderBuiltinsModule::underStrCheck(Thread* thread, Frame* frame,
 RawObject UnderBuiltinsModule::underStrEncode(Thread* thread, Frame* frame,
                                               word nargs) {
   Arguments args(frame, nargs);
-  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Object data_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfStr(*data_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kStr);
-  }
-  Str data(&scope, strUnderlying(*data_obj));
-  // TODO(T57890153): Allow encodings (like cp1026) that aren't ASCII supersets
-  if (!data.isASCII()) {
+  Object str_obj(&scope, args.get(0));
+  if (!str_obj.isStr()) {
     return Unbound::object();
   }
-  word data_len = data.charLength();
-  MutableBytes bytes(&scope, runtime->newMutableBytesUninitialized(data_len));
-  bytes.replaceFromWithStr(0, *data, data_len);
-  return bytes.becomeImmutable();
+  Str str(&scope, *str_obj);
+  static RawSmallStr ascii = SmallStr::fromCStr("ascii");
+  static RawSmallStr utf8 = SmallStr::fromCStr("utf-8");
+  static RawSmallStr latin1 = SmallStr::fromCStr("latin-1");
+  Str enc(&scope, args.get(1));
+  if (enc != ascii && enc != utf8 && enc != latin1 &&
+      enc.compareCStr("iso-8859-1") != 0) {
+    return Unbound::object();
+  }
+  return strEncodeASCII(thread, str);
+}
+
+RawObject UnderBuiltinsModule::underStrEncodeASCII(Thread* thread, Frame* frame,
+                                                   word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object str_obj(&scope, args.get(0));
+  if (!str_obj.isStr()) {
+    return Unbound::object();
+  }
+  Str str(&scope, *str_obj);
+  return strEncodeASCII(thread, str);
 }
 
 RawObject UnderBuiltinsModule::underStrCheckExact(Thread*, Frame* frame,

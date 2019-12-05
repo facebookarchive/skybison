@@ -166,6 +166,9 @@ class Runtime;
   V(UnderByteArraySetslice, "_bytearray_setslice")                             \
   V(UnderByteArrayStringAppend, "_bytearray_string_append")                    \
   V(UnderBytesCheck, "_bytes_check")                                           \
+  V(UnderBytesDecode, "_bytes_decode")                                         \
+  V(UnderBytesDecodeASCII, "_bytes_decode_ascii")                              \
+  V(UnderBytesDecodeUTF8, "_bytes_decode_utf_8")                               \
   V(UnderBytesFromBytes, "_bytes_from_bytes")                                  \
   V(UnderBytesFromInts, "_bytes_from_ints")                                    \
   V(UnderBytesGetitem, "_bytes_getitem")                                       \
@@ -422,6 +425,7 @@ class Runtime;
   V(UnderStrCompareDigest, "_str_compare_digest")                              \
   V(UnderStrCount, "_str_count")                                               \
   V(UnderStrEncode, "_str_encode")                                             \
+  V(UnderStrEncodeASCII, "_str_encode_ascii")                                  \
   V(UnderStrEndswith, "_str_endswith")                                         \
   V(UnderStrEscapeNonAscii, "_str_escape_non_ascii")                           \
   V(UnderStrFind, "_str_find")                                                 \
@@ -703,6 +707,7 @@ class Runtime;
   V(Isnumeric, "isnumeric")                                                    \
   V(Isprintable, "isprintable")                                                \
   V(Isspace, "isspace")                                                        \
+  V(Iso88591, "iso-8859-1")                                                    \
   V(Istitle, "istitle")                                                        \
   V(Isupper, "isupper")                                                        \
   V(Isub, "isub")                                                              \

@@ -21,6 +21,8 @@ _bytearray_len = _bytearray_len  # noqa: F821
 _bytearray_setitem = _bytearray_setitem  # noqa: F821
 _bytearray_setslice = _bytearray_setslice  # noqa: F821
 _bytes_check = _bytes_check  # noqa: F821
+_bytes_decode = _bytes_decode  # noqa: F821
+_bytes_decode_utf_8 = _bytes_decode_utf_8  # noqa: F821
 _bytes_from_bytes = _bytes_from_bytes  # noqa: F821
 _bytes_from_ints = _bytes_from_ints  # noqa: F821
 _bytes_getitem = _bytes_getitem  # noqa: F821
@@ -1949,6 +1951,9 @@ class bytes(bootstrap=True):
         return _byteslike_count(self, sub, start, end)
 
     def decode(self, encoding="utf-8", errors="strict") -> str:
+        result = _bytes_decode(self, encoding)
+        if result is not _Unbound:
+            return result
         return _codecs.decode(self, encoding, errors)
 
     def endswith(self, suffix, start=_Unbound, end=_Unbound):
@@ -4608,6 +4613,14 @@ class str(bootstrap=True):
                 f"'{_type(obj).__name__}' found"
             )
 
+        if encoding is _Unbound:
+            result = _bytes_decode_utf_8(obj)
+        else:
+            result = _bytes_decode(obj, encoding)
+        if result is not _Unbound:
+            if cls is str:
+                return result
+            return _str_from_str(cls, result)
         if errors is _Unbound:
             return _str_from_str(cls, _codecs.decode(obj, encoding))
         if encoding is _Unbound:
@@ -4684,7 +4697,7 @@ class str(bootstrap=True):
         return _str_count(self, sub, start, end)
 
     def encode(self, encoding="utf-8", errors=_Unbound) -> bytes:
-        result = _str_encode(self)
+        result = _str_encode(self, encoding)
         if result is not _Unbound:
             return result
         return _codecs.encode(self, encoding, errors)

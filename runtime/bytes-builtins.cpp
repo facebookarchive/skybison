@@ -10,6 +10,21 @@
 
 namespace py {
 
+RawObject bytesDecodeASCII(Thread* thread, const Bytes& bytes) {
+  HandleScope scope(thread);
+  if (!bytes.isASCII()) {
+    return Unbound::object();
+  }
+  if (bytes.isSmallBytes()) {
+    return SmallBytes::cast(*bytes).becomeStr();
+  }
+  word bytes_len = bytes.length();
+  MutableBytes buf(&scope,
+                   thread->runtime()->newMutableBytesUninitialized(bytes_len));
+  buf.replaceFromWith(0, *bytes, bytes_len);
+  return buf.becomeStr();
+}
+
 word bytesCount(const Bytes& haystack, word haystack_len, const Bytes& needle,
                 word needle_len, word start, word end) {
   DCHECK_BOUND(haystack_len, haystack.length());

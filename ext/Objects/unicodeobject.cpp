@@ -5,6 +5,7 @@
 #include <cwchar>
 
 #include "bytearray-builtins.h"
+#include "bytes-builtins.h"
 #include "capi-handles.h"
 #include "codecs-module.h"
 #include "cpython-data.h"
@@ -1277,8 +1278,20 @@ PY_EXPORT PyObject* PyUnicode_DecodeUTF8Stateful(const char* c_str,
 
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object bytes(&scope, thread->runtime()->newBytesWithAll(View<byte>(
-                           reinterpret_cast<const byte*>(c_str), size)));
+  Runtime* runtime = thread->runtime();
+  word i = 0;
+  const byte* byte_str = reinterpret_cast<const byte*>(c_str);
+  for (; i < size; ++i) {
+    if (byte_str[i] > kMaxASCII) break;
+  }
+  if (i == size) {
+    if (consumed != nullptr) {
+      *consumed = size;
+    }
+    return ApiHandle::newReference(thread,
+                                   runtime->newStrWithAll({byte_str, size}));
+  }
+  Object bytes(&scope, runtime->newBytesWithAll(View<byte>({byte_str, size})));
   Object errors_obj(&scope, symbolFromError(thread, errors));
   Object is_final(&scope, Bool::fromBool(consumed == nullptr));
   Object result_obj(&scope, thread->invokeFunction3(

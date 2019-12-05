@@ -11,6 +11,10 @@ namespace py {
 
 // RawSmallBytes
 
+RawObject RawSmallBytes::becomeStr() const {
+  return RawObject{raw() ^ kSmallBytesTag ^ kSmallStrTag};
+}
+
 RawSmallBytes RawSmallBytes::fromBytes(View<byte> data) {
   word length = data.length();
   DCHECK_BOUND(length, kMaxLength);
@@ -22,7 +26,17 @@ RawSmallBytes RawSmallBytes::fromBytes(View<byte> data) {
                        kSmallBytesTag);
 }
 
+bool RawSmallBytes::isASCII() const {
+  uword block = raw() >> kBitsPerByte;
+  uword non_ascii_mask = (~uword{0} / 0xFF) << (kBitsPerByte - 1);
+  return (block & non_ascii_mask) == 0;
+}
+
 // RawSmallStr
+
+RawObject RawSmallStr::becomeBytes() const {
+  return RawObject{raw() ^ kSmallStrTag ^ kSmallBytesTag};
+}
 
 word RawSmallStr::compare(RawObject that) const {
   word length = charLength();
@@ -183,6 +197,28 @@ word RawCode::offsetToLineNum(word offset) const {
     line += static_cast<int8_t>(table.byteAt(i + 1));
   }
   return line;
+}
+
+// RawLargeBytes
+
+RawObject RawLargeBytes::becomeStr() const {
+  DCHECK(bytesIsValidStr(RawBytes::cast(*this)), "must contain valid utf-8");
+  setHeader(header().withLayoutId(LayoutId::kLargeStr));
+  return *this;
+}
+
+bool RawLargeBytes::isASCII() const {
+  // Depends on invariants specified in RawLargeStr::codePointLength
+  word length = this->length();
+  word size_in_words = (length + kWordSize - 1) >> kWordSizeLog2;
+  const uword* data = reinterpret_cast<const uword*>(address());
+  uword non_ascii_mask = (~uword{0} / 0xFF) << (kBitsPerByte - 1);
+  for (word i = 0; i < size_in_words; i++) {
+    // Read an entire word of code units.
+    uword block = data[i];
+    if ((block & non_ascii_mask) != 0) return false;
+  }
+  return true;
 }
 
 // RawLargeStr
