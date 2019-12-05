@@ -27,7 +27,8 @@ RawObject objectGetAttribute(Thread* thread, const Object& object,
 // `Interpreter::loadAttrWithLocation()`.
 RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
                                         const Object& name,
-                                        Object* location_out);
+                                        Object* location_out,
+                                        LoadAttrKind* kind);
 
 // Raise an AttributeError that `object` has no attribute named `name`.
 RawObject objectRaiseAttributeError(Thread* thread, const Object& object,

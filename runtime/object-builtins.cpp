@@ -185,12 +185,15 @@ RawObject instanceSetAttr(Thread* thread, const Instance& instance,
 
 RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
                                         const Object& name,
-                                        Object* location_out) {
+                                        Object* location_out,
+                                        LoadAttrKind* kind) {
   // Look for the attribute in the class
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->typeOf(*object));
-  Object type_attr(&scope, typeLookupInMro(thread, type, name));
+  Object type_attr_location(&scope, NoneType::object());
+  Object type_attr(&scope, typeLookupInMroSetLocation(thread, type, name,
+                                                      &type_attr_location));
   if (!type_attr.isError()) {
     // TODO(T56252621): Remove this once property gets cached.
     if (type_attr.isProperty()) {
@@ -198,7 +201,8 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
       DCHECK(!object.isNoneType(), "object cannot be NoneType");
       if (!getter.isNoneType()) {
         if (location_out != nullptr) {
-          *location_out = *type_attr;
+          *location_out = *getter;
+          *kind = LoadAttrKind::kInstanceProperty;
         }
         return Interpreter::callFunction1(thread, thread->currentFrame(),
                                           getter, object);
@@ -206,6 +210,10 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
     }
     Type type_attr_type(&scope, runtime->typeOf(*type_attr));
     if (typeIsDataDescriptor(thread, type_attr_type)) {
+      if (location_out != nullptr) {
+        *location_out = *type_attr;
+        *kind = LoadAttrKind::kInstanceTypeDescr;
+      }
       return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
                                             type_attr, object, type);
     }
@@ -217,6 +225,7 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
     Object result(&scope, instanceGetAttributeSetLocation(thread, instance,
                                                           name, location_out));
     if (!result.isError()) {
+      if (location_out != nullptr) *kind = LoadAttrKind::kInstanceOffset;
       return *result;
     }
   }
@@ -225,19 +234,34 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
   // class search, use it.
   if (!type_attr.isError()) {
     if (type_attr.isFunction()) {
-      if (location_out != nullptr) *location_out = *type_attr;
+      if (location_out != nullptr) {
+        *location_out = *type_attr;
+        *kind = LoadAttrKind::kInstanceFunction;
+      }
       return runtime->newBoundMethod(type_attr, object);
     }
 
-    return resolveDescriptorGet(thread, type_attr, object, type);
+    Type type_attr_type(&scope, thread->runtime()->typeOf(*type_attr));
+    if (!typeIsNonDataDescriptor(thread, type_attr_type)) {
+      if (location_out != nullptr) {
+        *location_out = *type_attr;
+        *kind = LoadAttrKind::kInstanceType;
+      }
+      return *type_attr;
+    }
+    if (location_out != nullptr) {
+      *location_out = *type_attr;
+      *kind = LoadAttrKind::kInstanceTypeDescr;
+    }
+    return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
+                                          type_attr, object, type);
   }
-
   return Error::notFound();
 }
 
 RawObject objectGetAttribute(Thread* thread, const Object& object,
                              const Object& name) {
-  return objectGetAttributeSetLocation(thread, object, name, nullptr);
+  return objectGetAttributeSetLocation(thread, object, name, nullptr, nullptr);
 }
 
 RawObject objectNew(Thread* thread, const Type& type) {

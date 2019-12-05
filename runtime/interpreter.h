@@ -27,6 +27,18 @@ enum BinaryOpFlags : uint8_t {
   kInplaceBinaryOpRetry = 1 << 2,
 };
 
+// Different caching strategies for the resolved location of a LOAD_ATTR
+enum class LoadAttrKind {
+  kInstanceOffset = 1,
+  kInstanceFunction,
+  kInstanceProperty,
+  kInstanceType,
+  kInstanceTypeDescr,
+  kModule,
+  kType,
+  kUnknown,
+};
+
 class Interpreter {
  public:
   enum class BinaryOp {
@@ -226,14 +238,6 @@ class Interpreter {
   static RawObject loadAttrWithLocation(Thread* thread, RawObject receiver,
                                         RawObject location);
 
-  // Different caching strategies for the resolved location of a LOAD_ATTR
-  enum LoadAttrKind {
-    kInstance = 1,
-    kModule,
-    kType,
-    kUnknown,
-  };
-
   static RawObject loadAttrSetLocation(Thread* thread, const Object& receiver,
                                        const Object& name, LoadAttrKind* kind,
                                        Object* location_out);
@@ -358,6 +362,8 @@ class Interpreter {
   static Continue doLoadAttr(Thread* thread, word arg);
   static Continue doLoadAttrCached(Thread* thread, word arg);
   static Continue doLoadAttrInstanceProperty(Thread* thread, word arg);
+  static Continue doLoadAttrInstanceType(Thread* thread, word arg);
+  static Continue doLoadAttrInstanceTypeDescr(Thread* thread, word arg);
   static Continue doLoadAttrModule(Thread* thread, word arg);
   static Continue doLoadAttrType(Thread* thread, word arg);
   static Continue doLoadDeref(Thread* thread, word arg);

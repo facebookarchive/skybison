@@ -788,13 +788,15 @@ i = C()
 
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object to_cache(&scope, NoneType::object());
-  Object result_obj(&scope,
-                    objectGetAttributeSetLocation(thread_, i, name, &to_cache));
+  LoadAttrKind kind = LoadAttrKind::kUnknown;
+  Object result_obj(&scope, objectGetAttributeSetLocation(thread_, i, name,
+                                                          &to_cache, &kind));
   ASSERT_TRUE(result_obj.isBoundMethod());
   BoundMethod result(&scope, *result_obj);
   EXPECT_EQ(result.function(), foo);
   EXPECT_EQ(result.self(), i);
   EXPECT_EQ(to_cache, foo);
+  EXPECT_EQ(kind, LoadAttrKind::kInstanceFunction);
 
   Object load_cached_result_obj(
       &scope, Interpreter::loadAttrWithLocation(thread_, *i, *to_cache));
@@ -823,9 +825,11 @@ i = C()
   ASSERT_TRUE(info.isInObject());
 
   Object to_cache(&scope, NoneType::object());
+  LoadAttrKind kind = LoadAttrKind::kUnknown;
   EXPECT_TRUE(isIntEqualsWord(
-      objectGetAttributeSetLocation(thread_, i, name, &to_cache), 42));
+      objectGetAttributeSetLocation(thread_, i, name, &to_cache, &kind), 42));
   EXPECT_TRUE(isIntEqualsWord(*to_cache, info.offset()));
+  EXPECT_EQ(kind, LoadAttrKind::kInstanceOffset);
 
   EXPECT_TRUE(isIntEqualsWord(
       Interpreter::loadAttrWithLocation(thread_, *i, *to_cache), 42));
@@ -851,8 +855,9 @@ i.foo = 17
   ASSERT_TRUE(info.isOverflow());
 
   Object to_cache(&scope, NoneType::object());
+  LoadAttrKind kind = LoadAttrKind::kUnknown;
   EXPECT_TRUE(isIntEqualsWord(
-      objectGetAttributeSetLocation(thread_, i, name, &to_cache), 17));
+      objectGetAttributeSetLocation(thread_, i, name, &to_cache, &kind), 17));
   EXPECT_TRUE(isIntEqualsWord(*to_cache, -info.offset() - 1));
 
   EXPECT_TRUE(isIntEqualsWord(
@@ -872,9 +877,11 @@ i = C()
 
   Object name(&scope, Runtime::internStrFromCStr(thread_, "xxx"));
   Object to_cache(&scope, NoneType::object());
-  EXPECT_TRUE(
-      objectGetAttributeSetLocation(thread_, i, name, &to_cache).isError());
+  LoadAttrKind kind = LoadAttrKind::kUnknown;
+  EXPECT_TRUE(objectGetAttributeSetLocation(thread_, i, name, &to_cache, &kind)
+                  .isError());
   EXPECT_TRUE(to_cache.isNoneType());
+  EXPECT_EQ(kind, LoadAttrKind::kUnknown);
 }
 
 TEST_F(ObjectBuiltinsTest, ObjectSetAttrSetsInstanceValue) {

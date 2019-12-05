@@ -2751,17 +2751,16 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread,
   Type type(&scope, runtime->typeOf(*receiver));
   Object dunder_getattribute(
       &scope, typeLookupInMroById(thread, type, SymbolId::kDunderGetattribute));
-  *kind = kUnknown;
+  *kind = LoadAttrKind::kUnknown;
   if (dunder_getattribute == runtime->objectDunderGetattribute()) {
     Object result(&scope, objectGetAttributeSetLocation(thread, receiver, name,
-                                                        location_out));
+                                                        location_out, kind));
     if (result.isErrorNotFound()) {
       result = thread->invokeMethod2(receiver, SymbolId::kDunderGetattr, name);
       if (result.isErrorNotFound()) {
         return objectRaiseAttributeError(thread, receiver, name);
       }
     }
-    *kind = kInstance;
     return *result;
   }
   if (dunder_getattribute == runtime->moduleDunderGetattribute() &&
@@ -2771,7 +2770,7 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread,
                                                         location_out));
     if (!result.isErrorNotFound()) {
       // We have a result that can be cached.
-      *kind = kModule;
+      *kind = LoadAttrKind::kModule;
     } else {
       // Try again
       result = thread->invokeMethod2(receiver, SymbolId::kDunderGetattr, name);
@@ -2789,7 +2788,7 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread,
     if (!result.isErrorNotFound()) {
       // We have a result that can be cached.
       if (location_out->isValueCell()) {
-        *kind = kType;
+        *kind = LoadAttrKind::kType;
       }
     } else {
       // Try again
@@ -2824,36 +2823,47 @@ Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
   // Cache the attribute load
   Tuple caches(&scope, frame->caches());
   Function dependent(&scope, frame->function());
-  if (kind == LoadAttrKind::kInstance) {
-    if (location.isProperty()) {
-      // Property can be handled only for LOAD_ATTR_INSTANCE_PROPERTY.
-      word pc = frame->virtualPC() - kCodeUnitSize;
-      RawMutableBytes bytecode = frame->bytecode();
-      if (bytecode.byteAt(pc) == LOAD_ATTR_CACHED &&
-          icIsCacheEmpty(caches, arg)) {
-        bytecode.byteAtPut(pc, LOAD_ATTR_INSTANCE_PROPERTY);
-        icUpdateAttr(thread, caches, arg, receiver.layoutId(), location, name,
-                     dependent);
-      }
-    } else {
-      icUpdateAttr(thread, caches, arg, receiver.layoutId(), location, name,
-                   dependent);
-    }
-  } else if (kind == LoadAttrKind::kModule) {
+  LayoutId receiver_layout_id = receiver.layoutId();
+  if (kind == LoadAttrKind::kInstanceOffset ||
+      kind == LoadAttrKind::kInstanceFunction) {
+    // The current polymorphic cache opcode can handle these two kinds.
+    icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
+                 dependent);
+  } else {
     word pc = frame->virtualPC() - kCodeUnitSize;
     RawMutableBytes bytecode = frame->bytecode();
     if (bytecode.byteAt(pc) == LOAD_ATTR_CACHED &&
         icIsCacheEmpty(caches, arg)) {
-      ValueCell value_cell(&scope, *location);
-      icUpdateAttrModule(thread, caches, arg, receiver, value_cell, dependent);
-    }
-  } else if (kind == LoadAttrKind::kType) {
-    word pc = frame->virtualPC() - kCodeUnitSize;
-    RawMutableBytes bytecode = frame->bytecode();
-    if (bytecode.byteAt(pc) == LOAD_ATTR_CACHED &&
-        icIsCacheEmpty(caches, arg)) {
-      icUpdateAttrType(thread, caches, arg, receiver, name, location,
+      // Only monomorphic caching opcodes can support all other kinds
+      switch (kind) {
+        case LoadAttrKind::kInstanceProperty:
+          bytecode.byteAtPut(pc, LOAD_ATTR_INSTANCE_PROPERTY);
+          icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
                        dependent);
+          break;
+        case LoadAttrKind::kInstanceType:
+          bytecode.byteAtPut(pc, LOAD_ATTR_INSTANCE_TYPE);
+          icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
+                       dependent);
+          break;
+        case LoadAttrKind::kInstanceTypeDescr:
+          bytecode.byteAtPut(pc, LOAD_ATTR_INSTANCE_TYPE_DESCR);
+          icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
+                       dependent);
+          break;
+        case LoadAttrKind::kModule: {
+          ValueCell value_cell(&scope, *location);
+          DCHECK(location.isValueCell(), "location must be ValueCell");
+          icUpdateAttrModule(thread, caches, arg, receiver, value_cell,
+                             dependent);
+        } break;
+        case LoadAttrKind::kType:
+          icUpdateAttrType(thread, caches, arg, receiver, name, location,
+                           dependent);
+          break;
+        default:
+          UNREACHABLE("kinds should have been handled before");
+      }
     }
   }
   frame->setTopValue(*result);
@@ -2924,16 +2934,49 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceProperty(Thread* thread,
   word index = arg * kIcPointersPerCache;
   if (SmallInt::fromWord(static_cast<word>(receiver.layoutId())) ==
       caches.at(index + kIcEntryKeyOffset)) {
-    RawObject location = caches.at(index + kIcEntryValueOffset);
-    DCHECK(location.isProperty(), "cached location should be a property");
     HandleScope scope(thread);
     Object self(&scope, receiver);
-    Property property(&scope, location);
-    Object getter(&scope, property.getter());
+    Object getter(&scope, caches.at(index + kIcEntryValueOffset));
     Object result(&scope, Interpreter::callFunction1(
                               thread, thread->currentFrame(), getter, self));
     if (result.isErrorException()) return Continue::UNWIND;
     frame->setTopValue(*result);
+    return Continue::NEXT;
+  }
+  return retryLoadAttrCached(thread, arg);
+}
+
+HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceTypeDescr(Thread* thread,
+                                                                 word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject receiver = frame->topValue();
+  RawTuple caches = frame->caches();
+  word index = arg * kIcPointersPerCache;
+  if (SmallInt::fromWord(static_cast<word>(receiver.layoutId())) ==
+      caches.at(index + kIcEntryKeyOffset)) {
+    HandleScope scope(thread);
+    Object descr(&scope, caches.at(index + kIcEntryValueOffset));
+    Object self(&scope, receiver);
+    Type self_type(&scope, thread->runtime()->typeAt(self.layoutId()));
+    Object result(&scope,
+                  Interpreter::callDescriptorGet(thread, thread->currentFrame(),
+                                                 descr, self, self_type));
+    if (result.isError()) return Continue::UNWIND;
+    frame->setTopValue(*result);
+    return Continue::NEXT;
+  }
+  return retryLoadAttrCached(thread, arg);
+}
+
+HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceType(Thread* thread,
+                                                            word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject receiver = frame->topValue();
+  RawTuple caches = frame->caches();
+  word index = arg * kIcPointersPerCache;
+  if (SmallInt::fromWord(static_cast<word>(receiver.layoutId())) ==
+      caches.at(index + kIcEntryKeyOffset)) {
+    frame->setTopValue(caches.at(index + kIcEntryValueOffset));
     return Continue::NEXT;
   }
   return retryLoadAttrCached(thread, arg);

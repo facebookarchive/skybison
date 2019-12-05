@@ -291,6 +291,8 @@ class IcIterator {
       case FOR_ITER_CACHED:
       case LOAD_ATTR_CACHED:
       case LOAD_ATTR_INSTANCE_PROPERTY:
+      case LOAD_ATTR_INSTANCE_TYPE:
+      case LOAD_ATTR_INSTANCE_TYPE_DESCR:
       case LOAD_ATTR_TYPE:
       case LOAD_METHOD_CACHED:
       case STORE_ATTR_CACHED:
