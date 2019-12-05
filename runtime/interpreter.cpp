@@ -2934,14 +2934,9 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceProperty(Thread* thread,
   word index = arg * kIcPointersPerCache;
   if (SmallInt::fromWord(static_cast<word>(receiver.layoutId())) ==
       caches.at(index + kIcEntryKeyOffset)) {
-    HandleScope scope(thread);
-    Object self(&scope, receiver);
-    Object getter(&scope, caches.at(index + kIcEntryValueOffset));
-    Object result(&scope, Interpreter::callFunction1(
-                              thread, thread->currentFrame(), getter, self));
-    if (result.isErrorException()) return Continue::UNWIND;
-    frame->setTopValue(*result);
-    return Continue::NEXT;
+    frame->pushValue(receiver);
+    frame->setValueAt(caches.at(index + kIcEntryValueOffset), 1);
+    return doCallFunction(thread, 1);
   }
   return retryLoadAttrCached(thread, arg);
 }
