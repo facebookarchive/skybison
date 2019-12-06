@@ -124,6 +124,7 @@ _memoryview_guard = _memoryview_guard  # noqa: F821
 _memoryview_itemsize = _memoryview_itemsize  # noqa: F821
 _memoryview_nbytes = _memoryview_nbytes  # noqa: F821
 _memoryview_setitem = _memoryview_setitem  # noqa: F821
+_memoryview_setslice = _memoryview_setslice  # noqa: F821
 _module_dir = _module_dir  # noqa: F821
 _module_proxy = _module_proxy  # noqa: F821
 _module_proxy_check = _module_proxy_check  # noqa: F821
@@ -3848,7 +3849,12 @@ class memoryview(bootstrap=True):
                     raise TypeError(f"memoryview: invalid type for format '{fmt}'")
                 return _memoryview_setitem(self, key, val_int)
         if _slice_check(key):
-            _unimplemented()
+            _byteslike_guard(value)
+            step = _slice_step(_slice_index(key.step))
+            length = memoryview.__len__(self)
+            start = _slice_start(_slice_index(key.start), step, length)
+            stop = _slice_stop(_slice_index(key.stop), step, length)
+            return _memoryview_setslice(self, start, stop, step, value)
         raise TypeError("memoryview: invalid slice key")
 
     def cast(self, format: str) -> memoryview:

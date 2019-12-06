@@ -5644,6 +5644,92 @@ class MemoryviewTests(unittest.TestCase):
         view[IndSet()] = m
         self.assertEqual(view[0], m)
 
+    def test_setitem_with_slices_and_non_byteslike_raises_type_error(self):
+        view = memoryview(bytearray(b"hello"))
+        with self.assertRaises(TypeError) as context:
+            view[:1] = 0
+        self.assertIn(
+            "a bytes-like object is required, not 'int'", str(context.exception)
+        )
+
+    def test_setitem_with_bytes_and_different_format_raises_value_error(self):
+        view = memoryview(bytearray(b"0000")).cast("h")
+        with self.assertRaises(ValueError) as context:
+            view[:1] = b"a"
+        self.assertIn(
+            "memoryview assignment: lvalue and rvalue have different structures",
+            str(context.exception),
+        )
+
+    def test_setitem_with_bytearray_and_different_format_raises_value_error(self):
+        view = memoryview(bytearray(b"0000")).cast("h")
+        with self.assertRaises(ValueError) as context:
+            view[:1] = bytearray(b"a")
+        self.assertIn(
+            "memoryview assignment: lvalue and rvalue have different structures",
+            str(context.exception),
+        )
+
+    def test_setitem_with_memoryview_and_different_format_raises_value_error(self):
+        view = memoryview(bytearray(b"0000")).cast("h")
+        with self.assertRaises(ValueError) as context:
+            view[:1] = memoryview(b"a")
+        self.assertIn(
+            "memoryview assignment: lvalue and rvalue have different structures",
+            str(context.exception),
+        )
+
+    def test_setitem_with_byteslike_of_wrong_size_raises_value_error(self):
+        view = memoryview(bytearray(b"0000"))
+        with self.assertRaises(ValueError) as context:
+            view[:2] = memoryview(b"a")
+        self.assertIn(
+            "memoryview assignment: lvalue and rvalue have different structures",
+            str(context.exception),
+        )
+
+    def test_setitem_with_slices_and_bytes_and_step_1(self):
+        view = memoryview(bytearray(b"0000"))
+        view[:2] = b"zz"
+        self.assertEqual(view.tolist(), [122, 122, 48, 48])
+
+    def test_setitem_with_slices_and_bytearray_and_step_1(self):
+        view = memoryview(bytearray(b"0000"))
+        view[1:3] = bytearray(b"zz")
+        self.assertEqual(view.tolist(), [48, 122, 122, 48])
+
+    def test_setitem_with_slices_and_memoryview_byte_format_and_step_1(self):
+        view = memoryview(bytearray(b"0000"))
+        view[:2] = memoryview(b"zz")
+        self.assertEqual(view.tolist(), [122, 122, 48, 48])
+
+    def test_setitem_with_slices_and_memoryview_short_format_and_step_1(self):
+        view = memoryview(bytearray(b"0000"))
+        short_view = view.cast("h")
+        short_view[:1] = memoryview(b"zz").cast("h")
+        self.assertEqual(view.tolist(), [122, 122, 48, 48])
+
+    def test_setitem_with_slices_and_bytes_and_step_2(self):
+        view = memoryview(bytearray(b"0000"))
+        view[::2] = b"zz"
+        self.assertEqual(view.tolist(), [122, 48, 122, 48])
+
+    def test_setitem_with_slices_and_bytearray_and_step_2(self):
+        view = memoryview(bytearray(b"0000"))
+        view[1::2] = bytearray(b"zz")
+        self.assertEqual(view.tolist(), [48, 122, 48, 122])
+
+    def test_setitem_with_slices_and_memoryview_byte_format_and_step_2(self):
+        view = memoryview(bytearray(b"0000"))
+        view[::2] = memoryview(b"zz")
+        self.assertEqual(view.tolist(), [122, 48, 122, 48])
+
+    def test_setitem_with_slices_and_memoryview_short_format_and_step_2(self):
+        view = memoryview(bytearray(b"000000"))
+        short_view = view.cast("h")
+        short_view[1::2] = memoryview(b"zz").cast("h")
+        self.assertEqual(view.tolist(), [48, 48, 122, 122, 48, 48])
+
     def test_tolist_with_non_memoryview_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             memoryview.tolist(None)

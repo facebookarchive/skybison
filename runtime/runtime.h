@@ -646,7 +646,8 @@ class Runtime {
 
   inline bool isByteslike(RawObject obj) {
     // TODO(T38246066): support bytes-like objects other than bytes, bytearray
-    return isInstanceOfBytes(obj) || isInstanceOfByteArray(obj);
+    return isInstanceOfBytes(obj) || isInstanceOfByteArray(obj) ||
+           obj.isMemoryView();
   }
 
   // Clear the allocated memory from all extension related objects

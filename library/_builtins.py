@@ -643,6 +643,11 @@ def _memoryview_setitem(self, key, value):
 
 
 @_patch
+def _memoryview_setslice(self, start, stop, step, value):
+    pass
+
+
+@_patch
 def _module_dir(module):
     pass
 

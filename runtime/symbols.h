@@ -317,6 +317,7 @@ class Runtime;
   V(UnderMemoryviewItemsize, "_memoryview_itemsize")                           \
   V(UnderMemoryviewNbytes, "_memoryview_nbytes")                               \
   V(UnderMemoryviewSetitem, "_memoryview_setitem")                             \
+  V(UnderMemoryviewSetslice, "_memoryview_setslice")                           \
   V(UnderModuleDir, "_module_dir")                                             \
   V(UnderModuleRepr, "_module_repr")                                           \
   V(UnderModuleProxy, "_module_proxy")                                         \

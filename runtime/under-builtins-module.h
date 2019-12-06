@@ -202,6 +202,8 @@ class UnderBuiltinsModule {
                                          word nargs);
   static RawObject underMemoryviewSetitem(Thread* thread, Frame* frame,
                                           word nargs);
+  static RawObject underMemoryviewSetslice(Thread* thread, Frame* frame,
+                                           word nargs);
   static RawObject underModuleDir(Thread* thread, Frame* frame, word nargs);
   static RawObject underModuleProxy(Thread* thread, Frame* frame, word nargs);
   static RawObject underModuleProxyCheck(Thread* thread, Frame* frame,

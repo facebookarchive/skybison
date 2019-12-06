@@ -8,6 +8,9 @@ namespace py {
 RawObject memoryviewItemsize(Thread* thread, const MemoryView& view);
 RawObject memoryviewSetitem(Thread* thread, const MemoryView& view,
                             const Int& index, const Object& value);
+RawObject memoryviewSetslice(Thread* thread, const MemoryView& view, word start,
+                             word stop, word step, word slice_len,
+                             const Object& value);
 
 class MemoryViewBuiltins
     : public Builtins<MemoryViewBuiltins, SymbolId::kMemoryView,

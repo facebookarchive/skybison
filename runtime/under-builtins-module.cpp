@@ -199,6 +199,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderMemoryviewItemsize, underMemoryviewItemsize},
     {SymbolId::kUnderMemoryviewNbytes, underMemoryviewNbytes},
     {SymbolId::kUnderMemoryviewSetitem, underMemoryviewSetitem},
+    {SymbolId::kUnderMemoryviewSetslice, underMemoryviewSetslice},
     {SymbolId::kUnderModuleDir, underModuleDir},
     {SymbolId::kUnderModuleProxy, underModuleProxy},
     {SymbolId::kUnderModuleProxyCheck, underModuleProxyCheck},
@@ -2902,6 +2903,31 @@ RawObject UnderBuiltinsModule::underMemoryviewSetitem(Thread* thread,
   Object value(&scope, args.get(2));
   Int bytes(&scope, SmallInt::fromWord(byte_index));
   return memoryviewSetitem(thread, self, bytes, value);
+}
+
+RawObject UnderBuiltinsModule::underMemoryviewSetslice(Thread* thread,
+                                                       Frame* frame,
+                                                       word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isMemoryView()) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kMemoryView);
+  }
+  MemoryView self(&scope, *self_obj);
+  if (self.readOnly()) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "cannot modify read-only memory");
+  }
+  Int start_int(&scope, intUnderlying(args.get(1)));
+  word start = start_int.asWord();
+  Int stop_int(&scope, intUnderlying(args.get(2)));
+  word stop = stop_int.asWord();
+  Int step_int(&scope, intUnderlying(args.get(3)));
+  word step = step_int.asWord();
+  word slice_len = Slice::adjustIndices(self.length(), &start, &stop, step);
+  Object value(&scope, args.get(4));
+  return memoryviewSetslice(thread, self, start, stop, step, slice_len, value);
 }
 
 RawObject UnderBuiltinsModule::underModuleDir(Thread* thread, Frame* frame,

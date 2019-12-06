@@ -342,6 +342,98 @@ static RawObject unpackObject(Thread* thread, uword address, word length,
   }
 }
 
+static RawObject raiseDifferentStructureError(Thread* thread) {
+  return thread->raiseWithFmt(
+      LayoutId::kValueError,
+      "memoryview assignment: lvalue and rvalue have different structures");
+}
+
+RawObject memoryviewSetslice(Thread* thread, const MemoryView& view, word start,
+                             word stop, word step, word slice_len,
+                             const Object& value_obj) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Str format(&scope, view.format());
+  char fmt = formatChar(format);
+  // TODO(T58046846): Replace DCHECK(char > 0) checks
+  DCHECK(fmt > 0, "invalid memoryview");
+  Object buffer(&scope, view.buffer());
+  Bytes value_bytes(&scope, Bytes::empty());
+  if (runtime->isInstanceOfBytes(*value_obj)) {
+    value_bytes = *value_obj;
+    if (fmt != 'B' || value_bytes.length() != slice_len) {
+      return raiseDifferentStructureError(thread);
+    }
+  } else if (runtime->isInstanceOfByteArray(*value_obj)) {
+    ByteArray value_bytearray(&scope, *value_obj);
+    if (fmt != 'B' || value_bytearray.numItems() != slice_len) {
+      return raiseDifferentStructureError(thread);
+    }
+    value_bytes = value_bytearray.bytes();
+  }
+  if (value_bytes != Bytes::empty()) {
+    byte* address = nullptr;
+    if (buffer.isMutableBytes()) {
+      address = reinterpret_cast<byte*>(LargeBytes::cast(*buffer).address());
+    } else {
+      DCHECK(buffer.isInt(), "memoryview.__setitem__ with non bytes/memory");
+      address = reinterpret_cast<byte*>(Int::cast(*buffer).asCPtr());
+    }
+    if (step == 1) {
+      value_bytes.copyTo(address + start, slice_len);
+      return NoneType::object();
+    }
+    for (word i = 0; start < stop; i++, start += step) {
+      address[start] = value_bytes.byteAt(i);
+    }
+    return NoneType::object();
+  }
+
+  if (value_obj.isMemoryView()) {
+    MemoryView value(&scope, *value_obj);
+    Str value_format(&scope, value.format());
+    char value_fmt = formatChar(value_format);
+    word item_size = itemSize(value_fmt);
+    DCHECK(item_size > 0, "invalid memoryview");
+    if (fmt != value_fmt || (value.length() / item_size) != slice_len) {
+      return raiseDifferentStructureError(thread);
+    }
+    byte small_bytes_buf[SmallBytes::kMaxLength];
+    uword value_address;
+    Object value_buffer(&scope, value.buffer());
+    if (value_buffer.isLargeBytes()) {
+      value_address = LargeBytes::cast(*value_buffer).address();
+    } else if (value_buffer.isInt()) {
+      value_address = Int::cast(*value_buffer).asInt<uword>().value;
+    } else {
+      DCHECK(value_buffer.isSmallBytes(),
+             "memoryview.__setitem__ with non bytes/memory");
+      Bytes bytes(&scope, *value_buffer);
+      bytes.copyTo(small_bytes_buf, value.length());
+      value_address = reinterpret_cast<uword>(small_bytes_buf);
+    }
+    uword address;
+    if (buffer.isMutableBytes()) {
+      address = LargeBytes::cast(*buffer).address();
+    } else {
+      DCHECK(buffer.isInt(), "memoryview.__setitem__ with non bytes/memory");
+      address = Int::cast(*buffer).asInt<uword>().value;
+    }
+    if (step == 1 && item_size == 1) {
+      std::memcpy(reinterpret_cast<void*>(address + start),
+                  reinterpret_cast<void*>(value_address), slice_len);
+    }
+    start *= item_size;
+    step *= item_size;
+    for (; start < stop; value_address += item_size, start += step) {
+      std::memcpy(reinterpret_cast<void*>(address + start),
+                  reinterpret_cast<void*>(value_address), item_size);
+    }
+    return NoneType::object();
+  }
+  UNIMPLEMENTED("unexpected buffer");
+}
+
 static word pow2_remainder(word dividend, word divisor) {
   DCHECK(divisor > 0 && Utils::isPowerOfTwo(divisor), "must be power of two");
   word mask = divisor - 1;
