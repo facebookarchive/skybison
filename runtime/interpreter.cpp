@@ -3463,8 +3463,8 @@ Interpreter::handleCall(Thread* thread, word argc, word callable_idx,
   Frame* caller_frame = thread->currentFrame();
   RawObject* post_call_sp =
       caller_frame->valueStackTop() + callable_idx + 1 + num_extra_pop;
-  RawObject callable = caller_frame->peek(callable_idx);
-  callable = prepareCallableCall(thread, caller_frame, callable_idx, &argc);
+  RawObject callable =
+      prepareCallableCall(thread, caller_frame, callable_idx, &argc);
   if (callable.isErrorException()) return Continue::UNWIND;
   RawFunction function = RawFunction::cast(callable);
 
