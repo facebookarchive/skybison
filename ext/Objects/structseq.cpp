@@ -16,60 +16,44 @@ PY_EXPORT PyObject* PyStructSequence_GetItem(PyObject* structseq,
                                              Py_ssize_t pos) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object structseq_obj(&scope, ApiHandle::fromPyObject(structseq)->asObject());
-  Object pos_obj(&scope, thread->runtime()->newInt(pos));
-
-  // _structseq_getitem(structseq, pos)
-  Object result(&scope,
-                thread->invokeFunction2(SymbolId::kBuiltins,
-                                        SymbolId::kUnderStructseqGetItem,
-                                        structseq_obj, pos_obj));
-  if (result.isError()) return nullptr;
-  return ApiHandle::borrowedReference(thread, *result);
+  UserTupleBase user_tuple(&scope,
+                           ApiHandle::fromPyObject(structseq)->asObject());
+  Tuple tuple(&scope, user_tuple.value());
+  word num_in_sequence = tuple.length();
+  word user_tuple_fields = (UserTupleBase::kSize / kPointerSize);
+  word num_fields =
+      num_in_sequence + user_tuple.headerCountOrOverflow() - user_tuple_fields;
+  CHECK_INDEX(pos, num_fields);
+  if (pos < num_in_sequence) {
+    return ApiHandle::borrowedReference(thread, tuple.at(pos));
+  }
+  word offset = (pos - num_in_sequence + user_tuple_fields) * kPointerSize;
+  return ApiHandle::borrowedReference(thread,
+                                      user_tuple.instanceVariableAt(offset));
 }
 
 PY_EXPORT PyObject* PyStructSequence_SET_ITEM_Func(PyObject* structseq,
                                                    Py_ssize_t pos,
                                                    PyObject* value) {
-  // This function can't be implemented in Python since it's an immutable type
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-
-  Object structseq_obj(&scope, ApiHandle::fromPyObject(structseq)->asObject());
-
-  // Bound check
-  Str n_fields_key(&scope, runtime->symbols()->NFields());
-  Int n_fields(&scope,
-               runtime->attributeAt(thread, structseq_obj, n_fields_key));
+  UserTupleBase user_tuple(&scope,
+                           ApiHandle::fromPyObject(structseq)->asObject());
+  Tuple tuple(&scope, user_tuple.value());
   Object value_obj(&scope, value == nullptr
                                ? NoneType::object()
                                : ApiHandle::stealReference(thread, value));
-  if (pos < 0 || pos >= n_fields.asWord()) {
-    thread->raiseWithFmt(LayoutId::kIndexError,
-                         "tuple assignment index out of range");
-    return value;
-  }
-  // Try to set to the tuple first
-  Str n_sequence_key(&scope, runtime->symbols()->NSequenceFields());
-  Int n_sequence(&scope,
-                 runtime->attributeAt(thread, structseq_obj, n_sequence_key));
-  if (pos < n_sequence.asWord()) {
-    UserTupleBase user_tuple(&scope, *structseq_obj);
-    Tuple tuple(&scope, user_tuple.value());
+  word num_in_sequence = tuple.length();
+  word user_tuple_fields = (RawUserTupleBase::kSize / kPointerSize);
+  word num_fields =
+      num_in_sequence + user_tuple.headerCountOrOverflow() - user_tuple_fields;
+  CHECK_INDEX(pos, num_fields);
+  if (pos < num_in_sequence) {
     tuple.atPut(pos, *value_obj);
-    return value;
+  } else {
+    word offset = (pos - num_in_sequence + user_tuple_fields) * kPointerSize;
+    user_tuple.instanceVariableAtPut(offset, *value_obj);
   }
-
-  // Fall back to the hidden fields.
-  Str field_names_key(&scope, runtime->symbols()->UnderStructseqFieldNames());
-  Tuple field_names(
-      &scope, runtime->attributeAt(thread, structseq_obj, field_names_key));
-  Str field_name(&scope, field_names.at(pos));
-
-  // Bypass the immutability of structseq_field.__set__
-  Instance instance(&scope, *structseq_obj);
-  instanceSetAttr(thread, instance, field_name, value_obj);
   return value;
 }
 
@@ -83,15 +67,12 @@ PY_EXPORT PyObject* PyStructSequence_New(PyTypeObject* pytype) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type type(&scope, ApiHandle::fromPyTypeObject(pytype)->asObject());
-  Str n_fields_key(&scope, runtime->symbols()->NFields());
-  Int n_fields(&scope, runtime->attributeAt(thread, type, n_fields_key));
-  Tuple tuple(&scope, runtime->newTuple(n_fields.asWord()));
-
-  // _structseq_new(type, tuple)
-  Object structseq(&scope, thread->invokeFunction2(SymbolId::kBuiltins,
-                                                   SymbolId::kUnderStructseqNew,
-                                                   type, tuple));
-  return ApiHandle::newReference(thread, *structseq);
+  Layout layout(&scope, type.instanceLayout());
+  UserTupleBase result(&scope, runtime->newInstance(layout));
+  Int n_sequence_fields(&scope,
+                        typeAtById(thread, type, SymbolId::kNSequenceFields));
+  result.setValue(runtime->newTuple(n_sequence_fields.asWord()));
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc* desc) {
@@ -152,7 +133,23 @@ PY_EXPORT PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc* desc) {
   Type type(&scope, typeNew(thread, LayoutId::kType, name, bases, dict,
                             static_cast<Type::Flag>(0)));
 
-  // Add struct sequence fields
+  // Add hidden fields as in-object attributes in the instance layout.
+  Layout layout(&scope, type.instanceLayout());
+  if (num_fields > desc->n_in_sequence) {
+    Str field_name(&scope, Str::empty());
+    for (word i = desc->n_in_sequence, offset = RawUserTupleBase::kSize;
+         i < num_fields; i++, offset += kPointerSize) {
+      AttributeInfo info(offset, AttributeFlags::kInObject);
+      Tuple entries(&scope, layout.inObjectAttributes());
+      field_name = field_names.at(i);
+      layout.setNumInObjectAttributes(layout.numInObjectAttributes() + 1);
+      layout.setInObjectAttributes(
+          runtime->layoutAddAttributeEntry(thread, entries, field_name, info));
+    }
+  }
+  layout.seal();
+
+  // Add descriptors for all fields
   Str field_name(&scope, Str::empty());
   Object index(&scope, NoneType::object());
   Object field(&scope, NoneType::object());

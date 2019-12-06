@@ -4226,7 +4226,7 @@ RawObject UnderBuiltinsModule::underTupleNew(Thread* thread, Frame* frame,
   DCHECK(type != runtime->typeAt(LayoutId::kTuple), "cls must not be tuple");
   DCHECK(args.get(1).isTuple(), "old_tuple must be exact tuple");
   Layout layout(&scope, type.instanceLayout());
-  UserTupleBase instance(&scope, thread->runtime()->newInstance(layout));
+  UserTupleBase instance(&scope, runtime->newInstance(layout));
   instance.setValue(args.get(1));
   return *instance;
 }

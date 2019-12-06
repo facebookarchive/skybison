@@ -1212,7 +1212,7 @@ RawObject TypeBuiltins::dunderSetattr(Thread* thread, Frame* frame,
     return thread->raiseRequiresType(self_obj, SymbolId::kType);
   }
   Type self(&scope, *self_obj);
-  if (self.isSealed()) {
+  if (self.isBuiltin()) {
     Str type_name(&scope, self.name());
     return thread->raiseWithFmt(
         LayoutId::kTypeError,

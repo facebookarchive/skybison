@@ -549,6 +549,11 @@ class Runtime {
                                const Object& name, word flags,
                                AttributeInfo* info);
 
+  // Create a new tuple for the name, info pair and return a new tuple
+  // containing entries + entry.
+  RawObject layoutAddAttributeEntry(Thread* thread, const Tuple& entries,
+                                    const Object& name, AttributeInfo info);
+
   // Delete the named attribute from the layout.
   //
   // If the attribute exists, this returns a new layout by either following
@@ -856,11 +861,6 @@ class Runtime {
   // the in-object attributes array for built-in classes with fixed attributes.
   void appendBuiltinAttributes(View<BuiltinAttribute> attributes,
                                const Tuple& dst, word start_index);
-
-  // Create a new tuple for the name, info pair and return a new tuple
-  // containing entries + entry.
-  RawObject layoutAddAttributeEntry(Thread* thread, const Tuple& entries,
-                                    const Object& name, AttributeInfo info);
 
   // Creates a new layout that will be a child layout of the supplied parent.
   //

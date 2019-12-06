@@ -478,36 +478,6 @@ TEST_F(StructSeqExtensionApiTest,
   EXPECT_EQ(result, Py_None);
 }
 
-TEST_F(StructSeqExtensionApiTest, GetItemWithInvalidIndexRaisesIndexErrorPyro) {
-  // This is a Pyro only test as CPython does an unchecked tuple access
-  PyObjectPtr type(PyStructSequence_NewType(&desc));
-  ASSERT_NE(type, nullptr);
-  ASSERT_EQ(PyErr_Occurred(), nullptr);
-  ASSERT_TRUE(PyType_CheckExact(type));
-
-  PyObjectPtr instance(PyStructSequence_New(type.asTypeObject()));
-  ASSERT_TRUE(PyTuple_Check(instance));
-
-  ASSERT_EQ(PyStructSequence_GetItem(instance, 15), nullptr);
-  ASSERT_NE(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_IndexError));
-}
-
-TEST_F(StructSeqExtensionApiTest, SetItemWithInvalidIndexRaisesIndexPyro) {
-  // This is a Pyro only test as CPython does an unchecked tuple access
-  PyObjectPtr type(PyStructSequence_NewType(&desc));
-  ASSERT_NE(type, nullptr);
-  ASSERT_EQ(PyErr_Occurred(), nullptr);
-  ASSERT_TRUE(PyType_CheckExact(type));
-
-  PyObjectPtr instance(PyStructSequence_New(type.asTypeObject()));
-  ASSERT_TRUE(PyTuple_Check(instance));
-
-  PyStructSequence_SetItem(instance, 15, PyLong_FromLong(123));
-  ASSERT_NE(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_IndexError));
-}
-
 TEST_F(StructSeqExtensionApiTest, GetSlotNewOnStructSeqReturnsSlot) {
   PyObjectPtr type(PyStructSequence_NewType(&desc));
   ASSERT_NE(type, nullptr);
