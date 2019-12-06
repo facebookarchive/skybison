@@ -2989,7 +2989,9 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrModule(Thread* thread,
   // case. If code size or quality is an issue we can adjust this as needed
   // based on the types that actually flow through here.
   if (thread->runtime()->isInstanceOfModule(receiver) &&
-      SmallInt::fromWord(Module::cast(receiver).id()) == cache_key) {
+      // Use rawCast() to support subclasses without the overhead of a
+      // handle.
+      SmallInt::fromWord(receiver.rawCast<RawModule>().id()) == cache_key) {
     RawObject result = caches.at(index + kIcEntryValueOffset);
     DCHECK(result.isValueCell(), "cached value is not a value cell");
     frame->setTopValue(ValueCell::cast(result).value());

@@ -5867,6 +5867,19 @@ class ModuleTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             c.foo
 
+    def test_module_subclass_getattribute(self):
+        from types import ModuleType
+
+        class M(ModuleType):
+            pass
+
+        mod = M("a_module")
+        mod.foo = "bar"
+        # TODO(T58719879): Add a test that reliably uses LOAD_ATTR_MODULE as
+        # appropriate in Pyro.
+        for _i in range(2):
+            self.assertEqual(mod.foo, "bar")
+
 
 class ModuleProxyTests(unittest.TestCase):
     def setUp(self):
