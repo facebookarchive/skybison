@@ -1497,21 +1497,6 @@ uword Runtime::random() {
   return result;
 }
 
-void Runtime::setArgv(Thread* thread, int argc, const char** argv) {
-  HandleScope scope(thread);
-  List list(&scope, newList());
-  CHECK(argc >= 1, "Unexpected argc");
-  for (int i = 1; i < argc; i++) {  // skip program name (i.e. "python")
-    Object arg_val(&scope, newStrFromCStr(argv[i]));
-    listAdd(thread, list, arg_val);
-  }
-
-  Object module_name(&scope, symbols()->Sys());
-  Module sys_module(&scope, findModule(module_name));
-  Object argv_value(&scope, *list);
-  moduleAtPutById(thread, sys_module, SymbolId::kArgv, argv_value);
-}
-
 bool Runtime::listEntryInsert(ListEntry* entry, ListEntry** root) {
   // If already tracked, do nothing.
   if (entry->prev != nullptr || entry->next != nullptr || entry == *root) {

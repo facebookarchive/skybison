@@ -304,8 +304,6 @@ class Runtime {
 
   uword random();
 
-  void setArgv(Thread* thread, int argc, const char** argv);
-
   Heap* heap() { return &heap_; }
 
   Interpreter* interpreter() { return interpreter_.get(); }

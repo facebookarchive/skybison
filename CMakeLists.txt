@@ -461,13 +461,22 @@ target_link_libraries(
   PRIVATE
   cpython)
 
+# TODO(T58756349): Move ext/Modules/main.cpp to extension once circular
+# dependencies no longer exist with CPython.
 add_executable(
   python
-  main.cpp)
+  main.cpp
+  ext/Modules/main.cpp)
 target_compile_options(
   python
   PRIVATE
   ${PYRO_COMPILE_OPTIONS})
+target_include_directories(
+  python
+  INTERFACE
+  capi
+  PRIVATE
+  runtime)
 target_link_libraries(
   python
   PRIVATE
