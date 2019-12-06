@@ -265,6 +265,8 @@ class function(bootstrap=True):
 
 
 class classmethod(bootstrap=True):
+    __func__ = _unimplemented
+
     def __get__(self, instance, owner):
         pass
 
@@ -334,6 +336,9 @@ class type(bootstrap=True):
         return mappingproxy(_type_proxy(self))
 
     __call__ = _type_dunder_call
+
+    def __delattr_(self, other):
+        _unimplemented()
 
     def __dir__(self):
         _type_guard(self)
@@ -440,6 +445,9 @@ class object(bootstrap=True):  # noqa: E999
     def __new__(cls, *args, **kwargs):
         pass
 
+    def __reduce__(self):
+        _unimplemented()
+
     def __repr__(self):
         return f"<{_type(self).__name__} object at {_address(self):#x}>"
 
@@ -504,6 +512,9 @@ class BaseException(bootstrap=True):
         if not isinstance(self, BaseException):
             raise TypeError("not a BaseException object")
         return f"{self.__class__.__name__}{self.args!r}"
+
+    def __reduce__(self):
+        _unimplemented()
 
     def __str__(self):
         if not isinstance(self, BaseException):
@@ -604,6 +615,9 @@ class ImportError(Exception, bootstrap=True):
             self.msg = args[0]
         self.name = name
         self.path = path
+
+    def __reduce__(self):
+        _unimplemented()
 
 
 class ImportWarning(Warning, bootstrap=True):
@@ -1409,19 +1423,40 @@ def bin(number) -> str:
 
 
 class bool(int, bootstrap=True):
+    def __and__(self, other):
+        _unimplemented()
+
     def __new__(cls, val=False):
         pass
+
+    def __or__(self, other):
+        _unimplemented()
+
+    def __rand__(self, other):
+        _unimplemented()
 
     def __repr__(self):
         return "True" if self else "False"
 
+    def __ror__(self, other):
+        _unimplemented()
+
+    def __rxor__(self, other):
+        _unimplemented()
+
     def __str__(self) -> str:  # noqa: T484
         return bool.__repr__(self)
+
+    def __xor__(self, other):
+        _unimplemented()
 
 
 class bytearray(bootstrap=True):
     def __add__(self, other) -> bytearray:
         pass
+
+    def __alloc__(self):
+        _unimplemented()
 
     def __contains__(self, key):
         _unimplemented()
@@ -1461,6 +1496,8 @@ class bytearray(bootstrap=True):
         raise TypeError(
             f"bytearray indices must be integers or slices, not {_type(key).__name__}"
         )
+
+    __getattribute__ = object.__getattribute__
 
     def __gt__(self, value):
         pass
@@ -1516,6 +1553,12 @@ class bytearray(bootstrap=True):
 
     def __new__(cls, source=_Unbound, encoding=_Unbound, errors=_Unbound):
         pass
+
+    def __reduce__(self):
+        _unimplemented()
+
+    def __reduce_ex__(self):
+        _unimplemented()
 
     def __repr__(self):
         pass
@@ -1815,6 +1858,8 @@ class bytes(bootstrap=True):
     def __ge__(self, other):
         pass
 
+    __getattribute__ = object.__getattribute__
+
     def __getitem__(self, key):
         _bytes_guard(self)
         if _int_check(key):
@@ -1830,6 +1875,9 @@ class bytes(bootstrap=True):
         raise TypeError(
             f"byte indices must be integers or slice, not {_type(key).__name__}"
         )
+
+    def __getnewargs__(self, other):
+        _unimplemented()
 
     def __gt__(self, other):
         pass
@@ -2221,8 +2269,31 @@ def compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1):
 
 
 class complex(bootstrap=True):
+    def __abs__(self):
+        _unimplemented()
+
     def __add__(self, other):
         pass
+
+    def __divmod__(self, other):
+        _unimplemented()
+
+    def __float__(self, other):
+        _unimplemented()
+
+    def __floordiv__(self, other):
+        _unimplemented()
+
+    def __ge__(self, other):
+        _unimplemented()
+
+    __getattribute__ = object.__getattribute__
+
+    def __getnewargs__(self):
+        _unimplemented()
+
+    def __gt__(self, other):
+        _unimplemented()
 
     def __eq__(self, other) -> bool:
         imag = _complex_imag(self)
@@ -2238,13 +2309,73 @@ class complex(bootstrap=True):
     def __hash__(self) -> int:
         pass
 
+    def __int__(self):
+        _unimplemented()
+
+    def __le__(self, other):
+        _unimplemented()
+
+    def __lt__(self, other):
+        _unimplemented()
+
+    def __mod__(self, other):
+        _unimplemented()
+
+    def __mul__(self, other):
+        _unimplemented()
+
+    def __ne__(self, other):
+        _unimplemented()
+
+    def __neg__(self):
+        _unimplemented()
+
     def __new__(cls, real=0.0, imag=0.0):
         pass
 
+    def __pos__(self):
+        _unimplemented()
+
+    def __pow__(self, other):
+        _unimplemented()
+
     __radd__ = __add__
+
+    def __rdivmod__(self, other):
+        _unimplemented()
 
     def __repr__(self):
         return f"({self.real}+{self.imag}j)"
+
+    def __rfloordiv__(self, other):
+        _unimplemented()
+
+    def __rmod__(self, other):
+        _unimplemented()
+
+    def __rmul__(self, other):
+        _unimplemented()
+
+    def __rpow__(self, other):
+        _unimplemented()
+
+    def __rsub__(self, other):
+        _unimplemented()
+
+    def __rtruediv__(self, other):
+        _unimplemented()
+
+    def __str__(self, other):
+        _unimplemented()
+
+    def __sub__(self, other):
+        _unimplemented()
+
+    def __truediv__(self, other):
+        _unimplemented()
+
+    def conjugate(self):
+        _unimplemented()
 
     imag = _property(_complex_imag)
 
@@ -2284,6 +2415,11 @@ class dict(bootstrap=True):
     def __eq__(self, other):
         pass
 
+    def __ge__(self, other):
+        _unimplemented()
+
+    __getattribute__ = object.__getattribute__
+
     def __getitem__(self, key):
         _dict_guard(self)
         result = _dict_get(self, key, _Unbound)
@@ -2295,6 +2431,9 @@ class dict(bootstrap=True):
                     return dunder_missing(key)
             raise KeyError(key)
         return result
+
+    def __gt__(self, other):
+        _unimplemented()
 
     __hash__ = None
 
@@ -2308,8 +2447,14 @@ class dict(bootstrap=True):
     def __iter__(self):
         pass
 
+    def __le__(self, other):
+        _unimplemented()
+
     def __len__(self):
         pass
+
+    def __lt__(self, other):
+        _unimplemented()
 
     def __new__(cls, *args, **kwargs):
         pass
@@ -2331,6 +2476,9 @@ class dict(bootstrap=True):
         result = {}
         result.update(self)
         return result
+
+    def fromkeys(self):
+        _unimplemented()
 
     get = _dict_get
 
@@ -2453,12 +2601,17 @@ class ellipsis(bootstrap=True):
 
 
 class enumerate:
+    __getattribute__ = object.__getattribute__
+
     def __init__(self, iterable, start=0):
         self.iterator = iter(iterable)
         self.index = start
 
     def __iter__(self):
         return self
+
+    def __reduce__(self):
+        _unimplemented()
 
     def __next__(self):
         result = (self.index, next(self.iterator))
@@ -2564,6 +2717,8 @@ class filter:
     is true. If function is None, return the items that are true.
     """
 
+    __getattribute__ = object.__getattribute__
+
     def __iter__(self):
         return self
 
@@ -2579,6 +2734,9 @@ class filter:
             item = next(self.iter)
             if func(item):
                 return item
+
+    def __reduce__(self):
+        _unimplemented()
 
 
 class float(bootstrap=True):
@@ -2616,6 +2774,8 @@ class float(bootstrap=True):
     def __ge__(self, n: float) -> bool:
         pass
 
+    __getattribute__ = object.__getattribute__
+
     @classmethod
     def __getformat__(cls: type, typearg: str) -> str:
         _type_guard(cls)
@@ -2626,6 +2786,9 @@ class float(bootstrap=True):
         if typearg != "double" and typearg != "float":
             raise ValueError("__getformat__() argument 1 must be 'double' or 'float'")
         return f"IEEE, {_sys.byteorder}-endian"
+
+    def __getnewargs__(self):
+        _unimplemented()
 
     def __gt__(self, n: float) -> bool:
         pass
@@ -2702,6 +2865,9 @@ class float(bootstrap=True):
             f"not '{_type(arg).__name__}'"
         )
 
+    def __pos__(self, other):
+        _unimplemented()
+
     def __pow__(self, other, mod=None) -> float:
         pass
 
@@ -2767,6 +2933,10 @@ class float(bootstrap=True):
     def __rtruediv__(self, n: float) -> float:
         pass
 
+    @classmethod
+    def __setformat__(cls, fmt):
+        _unimplemented()
+
     def __str__(self) -> str:
         if not _float_check(self):
             raise TypeError(
@@ -2783,6 +2953,28 @@ class float(bootstrap=True):
 
     def __trunc__(self) -> int:
         pass
+
+    def as_integer_ratio(self):
+        _unimplemented()
+
+    def conjugate(self):
+        _unimplemented()
+
+    @classmethod
+    def fromhex(cls, string):
+        _unimplemented()
+
+    def hex(self):
+        _unimplemented()
+
+    def imag(self):
+        _unimplemented()
+
+    def is_integer(self):
+        _unimplemented()
+
+    def real(self):
+        _unimplemented()
 
 
 def format(obj, fmt_spec):
@@ -2811,6 +3003,8 @@ class frozenset(bootstrap=True):
     def __ge__(self, other):
         pass
 
+    __getattribute__ = object.__getattribute__
+
     def __gt__(self, other):
         pass
 
@@ -2835,8 +3029,38 @@ class frozenset(bootstrap=True):
     def __new__(cls, iterable=_Unbound):
         pass
 
+    def __or__(self, other):
+        _unimplemented()
+
+    def __rand__(self, other):
+        _unimplemented()
+
+    def __reduce__(self):
+        _unimplemented()
+
+    def __repr__(self):
+        _unimplemented()
+
+    def __ror__(self, other):
+        _unimplemented()
+
+    def __rsub__(self, other):
+        _unimplemented()
+
+    def __rxor__(self, other):
+        _unimplemented()
+
+    def __sub__(self, other):
+        _unimplemented()
+
+    def __xor__(self, other):
+        _unimplemented()
+
     def copy(self):
         pass
+
+    def difference(self, other):
+        _unimplemented()
 
     def intersection(self, other):
         pass
@@ -2844,11 +3068,20 @@ class frozenset(bootstrap=True):
     def isdisjoint(self, other):
         pass
 
+    def issubset(self, other):
+        _unimplemented()
+
     def issuperset(self, other):
         _frozenset_guard(self)
         if not _set_check(other) or not _frozenset_check(other):
             other = set(other)
         return set.__ge__(self, other)
+
+    def symmetric_difference(self, other):
+        _unimplemented()
+
+    def union(self, other):
+        _unimplemented()
 
 
 class generator(bootstrap=True):
@@ -3046,6 +3279,11 @@ class int(bootstrap=True):
 
     def __ge__(self, n: int) -> bool:
         pass
+
+    __getattribute__ = object.__getattribute__
+
+    def __getnewargs__(self):
+        _unimplemented()
 
     def __gt__(self, n: int) -> bool:
         pass
@@ -3468,6 +3706,11 @@ class list(bootstrap=True):
             i += 1
         return True
 
+    def __ge__(self, other):
+        _unimplemented()
+
+    __getattribute__ = object.__getattribute__
+
     def __getitem__(self, key):
         result = _list_getitem(self, key)
         if result is not _Unbound:
@@ -3509,6 +3752,9 @@ class list(bootstrap=True):
     def __iter__(self):
         pass
 
+    def __le__(self, other):
+        _unimplemented()
+
     def __len__(self):
         pass
 
@@ -3544,6 +3790,9 @@ class list(bootstrap=True):
         result = "[" + ", ".join([repr(i) for i in self]) + "]"
         _repr_leave(self)
         return result
+
+    def __rmul__(self, other):
+        _unimplemented()
 
     def __setitem__(self, key, value):
         pass
@@ -3675,6 +3924,8 @@ class longrange_iterator(bootstrap=True):
 
 
 class map:
+    __getattribute__ = object.__getattribute__
+
     def __init__(self, func, *iterables):
         if len(iterables) < 1:
             raise TypeError("map() must have at least two arguments.")
@@ -3690,6 +3941,9 @@ class map:
         if self.len_iters == 1:
             return func(next(self.iters[0]))
         return func(*[next(iter) for iter in self.iters])
+
+    def __reduce__(self):
+        _unimplemented()
 
 
 class mappingproxy(bootstrap=True):
@@ -4134,6 +4388,8 @@ class range(bootstrap=True):
         _range_guard(self)
         return bool(_range_len(self))
 
+    __getattribute__ = object.__getattribute__
+
     def __contains__(self, num):
         _range_guard(self)
         if _int_checkexact(num) or _bool_check(num):
@@ -4298,6 +4554,8 @@ def repr(obj):
 
 
 class reversed:
+    __getattribute__ = object.__getattribute__
+
     def __iter__(self):
         return self
 
@@ -4328,6 +4586,12 @@ class reversed:
     def __length_hint__(self):
         return self.remaining
 
+    def __reduce__(self):
+        _unimplemented()
+
+    def __setstate__(self):
+        _unimplemented()
+
 
 def round(number, ndigits=None):
     dunder_round = _object_type_getattr(number, "__round__")
@@ -4353,6 +4617,8 @@ class set(bootstrap=True):
     def __ge__(self, other):
         pass
 
+    __getattribute__ = object.__getattribute__
+
     def __gt__(self, other):
         pass
 
@@ -4364,8 +4630,14 @@ class set(bootstrap=True):
     def __init__(self, iterable=()):
         pass
 
+    def __isub__(self, other):
+        _unimplemented()
+
     def __iter__(self):
         pass
+
+    def __ixor__(self, other):
+        _unimplemented()
 
     def __le__(self, other):
         pass
@@ -4401,6 +4673,12 @@ class set(bootstrap=True):
         set.update(result, other)
         return result
 
+    def __rand__(self, other):
+        _unimplemented()
+
+    def __reduce__(self):
+        _unimplemented()
+
     def __repr__(self):
         _set_guard(self)
         if _repr_enter(self):
@@ -4412,11 +4690,23 @@ class set(bootstrap=True):
         _repr_leave(self)
         return result
 
+    def __ror__(self, other):
+        _unimplemented()
+
+    def __rsub__(self, other):
+        _unimplemented()
+
+    def __rxor__(self, other):
+        _unimplemented()
+
     def __sub__(self, other):
         _set_guard(self)
         if not _set_check(other):
             return NotImplemented
         return set.difference(self, other)
+
+    def __xor__(self, other):
+        _unimplemented()
 
     def add(self, value):
         pass
@@ -4450,8 +4740,14 @@ class set(bootstrap=True):
     def intersection(self, other):
         pass
 
+    def intersection_update(self, other):
+        _unimplemented()
+
     def isdisjoint(self, other):
         pass
+
+    def issubset(self, other):
+        _unimplemented()
 
     def issuperset(self, other):
         _set_guard(self)
@@ -4464,6 +4760,12 @@ class set(bootstrap=True):
 
     def remove(self, elt):
         pass
+
+    def symmetric_difference(self, other):
+        _unimplemented()
+
+    def symmetric_difference_update(self, other):
+        _unimplemented()
 
     def union(self, *others):
         if not _set_check(self):
@@ -4499,10 +4801,36 @@ def setattr(obj, name, value):
 
 
 class slice(bootstrap=True):
+    def __eq__(self, other):
+        _unimplemented()
+
+    def __ge__(self, other):
+        _unimplemented()
+
+    __getattribute__ = object.__getattribute__
+
+    def __gt__(self, other):
+        _unimplemented()
+
     __hash__ = None
+
+    def __le__(self, other):
+        _unimplemented()
+
+    def __lt__(self, other):
+        _unimplemented()
+
+    def __ne__(self, other):
+        _unimplemented()
 
     def __new__(cls, start_or_stop, stop=_Unbound, step=None):
         pass
+
+    def __reduce__(self):
+        _unimplemented()
+
+    def __repr__(self):
+        _unimplemented()
 
     def indices(self, length) -> tuple:  # noqa: C901
         _slice_guard(self)
@@ -4546,6 +4874,8 @@ class str(bootstrap=True):
     def __ge__(self, other):
         pass
 
+    __getattribute__ = object.__getattribute__
+
     def __getitem__(self, key):
         result = _str_getitem(self, key)
         if result is not _Unbound:
@@ -4561,6 +4891,9 @@ class str(bootstrap=True):
         raise TypeError(
             f"string indices must be integers or slices, not {_type(key).__name__}"
         )
+
+    def __getnewargs__(self):
+        _unimplemented()
 
     def __gt__(self, other):
         pass
@@ -5063,6 +5396,8 @@ class tuple(bootstrap=True):
         # If the items are all up equal up to min_len, compare lengths
         return len_self >= len_other
 
+    __getattribute__ = object.__getattribute__
+
     def __getitem__(self, index):
         result = _tuple_getitem(self, index)
         if result is not _Unbound:
@@ -5078,6 +5413,9 @@ class tuple(bootstrap=True):
         raise TypeError(
             f"tuple indices must be integers or slices, not {_type(index).__name__}"
         )
+
+    def __getnewargs__(self):
+        _unimplemented()
 
     def __gt__(self, other):
         _tuple_guard(self)
@@ -5198,6 +5536,15 @@ class tuple(bootstrap=True):
             output += ","
         return output + ")"
 
+    def __rmul__(self, other):
+        _unimplemented()
+
+    def count(self, other):
+        _unimplemented()
+
+    def index(self, other):
+        _unimplemented()
+
 
 class tuple_iterator(bootstrap=True):
     def __iter__(self):
@@ -5310,3 +5657,6 @@ class zip:
             result[i] = next(iterators[i])
             i += 1
         return (*result,)
+
+    def __reduce__(self):
+        _unimplemented()
