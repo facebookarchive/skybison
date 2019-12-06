@@ -198,7 +198,7 @@ void Assembler::emitQ(int dst, int src, int opcode, int prefix2, int prefix1) {
   if (prefix1 >= 0) {
     emitUint8(prefix1);
   }
-  emitRegRegRex(dst, src, REX_W);
+  emitRegRegREX(dst, src, REX_W);
   if (prefix2 >= 0) {
     emitUint8(prefix2);
   }
@@ -213,7 +213,7 @@ void Assembler::emitL(int dst, int src, int opcode, int prefix2, int prefix1) {
   if (prefix1 >= 0) {
     emitUint8(prefix1);
   }
-  emitRegRegRex(dst, src);
+  emitRegRegREX(dst, src);
   if (prefix2 >= 0) {
     emitUint8(prefix2);
   }
@@ -230,7 +230,7 @@ void Assembler::emitW(Register dst, Register src, int opcode, int prefix2,
     emitUint8(prefix1);
   }
   emitOperandSizeOverride();
-  emitRegRegRex(dst, src);
+  emitRegRegREX(dst, src);
   if (prefix2 >= 0) {
     emitUint8(prefix2);
   }
@@ -272,7 +272,7 @@ void Assembler::roundsd(XmmRegister dst, XmmRegister src, RoundingMode mode) {
   DCHECK(dst <= XMM15, "assert()");
   AssemblerBuffer::EnsureCapacity ensured(&buffer_);
   emitUint8(0x66);
-  emitRegRegRex(dst, src);
+  emitRegRegREX(dst, src);
   emitUint8(0x0f);
   emitUint8(0x3a);
   emitUint8(0x0b);

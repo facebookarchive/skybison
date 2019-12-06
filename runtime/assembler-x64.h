@@ -817,12 +817,12 @@ class Assembler {
   static uint8_t byteRegisterREX(Register reg);
   static uint8_t byteOperandREX(Operand operand);
 
-  void emitRegisterREX(Register reg, uint8_t rex, bool force_emit = false);
+  void emitRegisterREX(Register reg, uint8_t rex);
   void emitOperandREX(int rm, Operand operand, uint8_t rex);
   void emitRegisterOperand(int rm, int reg);
   void emitFixup(AssemblerFixup* fixup);
   void emitOperandSizeOverride();
-  void emitRegRegRex(int reg, int base, uint8_t rex = REX_NONE);
+  void emitRegRegREX(int reg, int base, uint8_t rex = REX_NONE);
   void emitOperand(int rm, Operand operand);
   void emitImmediate(Immediate imm);
   void emitComplexB(int rm, Operand operand, Immediate imm);
@@ -866,12 +866,11 @@ inline uint8_t Assembler::byteOperandREX(Operand operand) {
                               : uint8_t{REX_NONE};
 }
 
-inline void Assembler::emitRegisterREX(Register reg, uint8_t rex,
-                                       bool force_emit) {
+inline void Assembler::emitRegisterREX(Register reg, uint8_t rex) {
   DCHECK(reg != kNoRegister && reg <= R15, "assert()");
   DCHECK(rex == REX_NONE || rex == REX_W, "assert()");
   rex |= (reg > 7 ? REX_B : REX_NONE);
-  if (rex != REX_NONE || force_emit) emitUint8(REX_PREFIX | rex);
+  if (rex != REX_NONE) emitUint8(REX_PREFIX | rex);
 }
 
 inline void Assembler::emitOperandREX(int rm, Operand operand, uint8_t rex) {
@@ -879,7 +878,7 @@ inline void Assembler::emitOperandREX(int rm, Operand operand, uint8_t rex) {
   if (rex != REX_NONE) emitUint8(REX_PREFIX | rex);
 }
 
-inline void Assembler::emitRegRegRex(int reg, int base, uint8_t rex) {
+inline void Assembler::emitRegRegREX(int reg, int base, uint8_t rex) {
   DCHECK(reg != kNoRegister && reg <= R15, "assert()");
   DCHECK(base != kNoRegister && base <= R15, "assert()");
   DCHECK(rex == REX_NONE || rex == REX_W, "assert()");
