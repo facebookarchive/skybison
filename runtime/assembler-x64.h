@@ -658,6 +658,7 @@ class Assembler {
   };
   void roundsd(XmmRegister dst, XmmRegister src, RoundingMode mode);
 
+  void testb(Register dst, Register src);
   void testb(Register reg, Immediate imm);
   void testb(Address address, Immediate imm);
   void testb(Address address, Register reg);
@@ -881,7 +882,7 @@ inline void Assembler::emitOperandREX(int rm, Operand operand, uint8_t rex) {
 inline void Assembler::emitRegRegREX(int reg, int base, uint8_t rex) {
   DCHECK(reg != kNoRegister && reg <= R15, "assert()");
   DCHECK(base != kNoRegister && base <= R15, "assert()");
-  DCHECK(rex == REX_NONE || rex == REX_W, "assert()");
+  DCHECK(rex == REX_NONE || rex == REX_W || rex == REX_PREFIX, "assert()");
   if (reg > 7) rex |= REX_R;
   if (base > 7) rex |= REX_B;
   if (rex != REX_NONE) emitUint8(REX_PREFIX | rex);

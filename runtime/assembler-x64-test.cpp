@@ -130,6 +130,28 @@ TEST(AssemblerTest, TestbWithRexPrefix) {
   EXPECT_TRUE(assemblerContainsBytes(&as, expected));
 }
 
+TEST(AssemblerTest, TestbRegReg) {
+  const byte expected[] = {
+      0x84, 0xc0,        // testb %al, %al
+      0x84, 0xca,        // testb %cl, %dl
+      0x40, 0x84, 0xe5,  // testb %spl, %bpl
+      0x40, 0x84, 0xf7,  // testb %sil, %dil
+      0x45, 0x84, 0xff,  // testb %r15b, %r15b
+      0x44, 0x84, 0xf8,  // testb %r15b, %al
+      0x41, 0x84, 0xcb,  // testb %cl, %r11b
+  };
+
+  Assembler as;
+  as.testb(RAX, RAX);
+  as.testb(RCX, RDX);
+  as.testb(RSP, RBP);
+  as.testb(RSI, RDI);
+  as.testb(R15, R15);
+  as.testb(R15, RAX);
+  as.testb(RCX, R11);
+  EXPECT_TRUE(assemblerContainsBytes(&as, expected));
+}
+
 TEST(AssemblerTest, TestqWithByteImm) {
   // a8 12                   test   $0x12,%al
   // f6 c3 34                test   $0x34,%bl

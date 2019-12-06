@@ -789,8 +789,8 @@ void emitInterpreter(EmitEnv* env) {
     __ movq(kArgRegs[1], Address(RBP, kEntryFrameOffset));
 
     emitCall(env, reinterpret_cast<word>(Interpreter::unwind));
-    __ cmpb(RAX, Immediate(0));
-    __ jcc(NOT_EQUAL, &return_with_error_exception, Assembler::kFarJump);
+    __ testb(RAX, RAX);
+    __ jcc(NOT_ZERO, &return_with_error_exception, Assembler::kFarJump);
     emitRestoreInterpreterState(env, kAllState);
     emitNextOpcode(env);
   }

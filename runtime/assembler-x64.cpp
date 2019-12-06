@@ -311,6 +311,13 @@ void Assembler::emitTestB(Operand operand, Immediate imm) {
   emitUint8(imm.value());
 }
 
+void Assembler::testb(Register dst, Register src) {
+  AssemblerBuffer::EnsureCapacity ensured(&buffer_);
+  emitRegRegREX(dst, src, byteRegisterREX(dst) | byteRegisterREX(src));
+  emitUint8(0x84);
+  emitRegisterOperand(dst & 7, src);
+}
+
 void Assembler::testb(Register reg, Immediate imm) {
   emitTestB(Operand(reg), imm);
 }
