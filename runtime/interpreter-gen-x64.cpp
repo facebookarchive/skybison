@@ -276,7 +276,7 @@ void emitHandler(EmitEnv* env) {
   emitJumpToGenericHandler(env);
 }
 
-// Load the LayoutId of the RawObject in r_obj into r_dst.
+// Load the LayoutId of the RawObject in r_obj into r_dst as a SmallInt.
 //
 // Writes to r_dst.
 void emitGetLayoutId(EmitEnv* env, Register r_dst, Register r_obj) {
@@ -293,21 +293,17 @@ void emitGetLayoutId(EmitEnv* env, Register r_dst, Register r_obj) {
            Immediate(Object::kPrimaryTagMask & ~Object::kSmallIntTagMask));
   __ jcc(NOT_ZERO, &immediate, Assembler::kNearJump);
   __ movq(r_dst, Address(r_obj, heapObjectDisp(HeapObject::kHeaderOffset)));
-  __ shrl(r_dst, Immediate(Header::kLayoutIdOffset));
-  __ andl(r_dst, Immediate(Header::kLayoutIdMask));
+  __ shrl(r_dst, Immediate(Header::kLayoutIdOffset - Object::kSmallIntTagBits));
+  __ andl(r_dst, Immediate(Header::kLayoutIdMask << Object::kSmallIntTagBits));
   __ jmp(&done, Assembler::kNearJump);
 
   __ bind(&immediate);
   __ movl(r_dst, r_obj);
   __ andl(r_dst, Immediate(Object::kImmediateTagMask));
+  static_assert(Object::kSmallIntTag == 0, "Unexpected SmallInt tag");
+  __ shll(r_dst, Immediate(Object::kSmallIntTagBits));
 
   __ bind(&done);
-}
-
-// Convert the given register from an int to a SmallInt, assuming it fits.
-void emitConvertToSmallInt(EmitEnv* env, Register reg) {
-  static_assert(Object::kSmallIntTag == 0, "Unexpected SmallInt tag");
-  __ shlq(reg, Immediate(Object::kSmallIntTagBits));
 }
 
 // Convert the given register from a SmallInt to an int.
@@ -327,8 +323,6 @@ void emitConvertFromSmallInt(EmitEnv* env, Register reg) {
 void emitIcLookup(EmitEnv* env, Label* not_found, Register r_dst,
                   Register r_layout_id, Register r_caches, Register r_index,
                   Register r_scratch) {
-  emitConvertToSmallInt(env, r_layout_id);
-
   // Set r_caches = r_caches + r_index * kPointerSize * kPointersPerCache,
   // without modifying r_index.
   static_assert(kIcPointersPerCache * kPointerSize == 64,
