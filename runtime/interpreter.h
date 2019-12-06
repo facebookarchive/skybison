@@ -527,6 +527,7 @@ class Interpreter {
                                                  word callable_idx,
                                                  word* nargs);
 
+  static Continue retryLoadAttrCached(Thread* thread, word arg);
   static Continue loadAttrUpdateCache(Thread* thread, word arg);
   static Continue storeAttrUpdateCache(Thread* thread, word arg);
   static Continue storeSubscrUpdateCache(Thread* thread, word arg);

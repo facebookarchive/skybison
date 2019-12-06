@@ -2913,7 +2913,8 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrCached(Thread* thread,
 // structure of our caches directly accessible from a function to be monomophic
 // and to allocate the relatively uncommon polymorphic caches in a separate
 // object.
-static Continue retryLoadAttrCached(Thread* thread, word arg) {
+NEVER_INLINE Continue Interpreter::retryLoadAttrCached(Thread* thread,
+                                                       word arg) {
   // Revert the opcode, clear the cache, and retry the attribute lookup.
   Frame* frame = thread->currentFrame();
   RawTuple caches = frame->caches();
@@ -2923,7 +2924,7 @@ static Continue retryLoadAttrCached(Thread* thread, word arg) {
   bytecode.byteAtPut(pc, LOAD_ATTR_CACHED);
   caches.atPut(index + kIcEntryKeyOffset, NoneType::object());
   caches.atPut(index + kIcEntryValueOffset, NoneType::object());
-  return Interpreter::doLoadAttrCached(thread, arg);
+  return Interpreter::loadAttrUpdateCache(thread, arg);
 }
 
 HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceProperty(Thread* thread,
