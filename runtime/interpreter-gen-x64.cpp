@@ -142,6 +142,10 @@ Immediate boolImmediate(bool value) {
   return Immediate(Bool::fromBool(value).raw());
 }
 
+Immediate smallIntImmediate(word value) {
+  return Immediate(SmallInt::fromWord(value).raw());
+}
+
 // The offset to use to access a given offset with a HeapObject, accounting for
 // the tag bias.
 int32_t heapObjectDisp(int32_t offset) {
@@ -220,6 +224,13 @@ bool mayChangeFramePC(Bytecode bc) {
   }
 }
 
+void emitCall(EmitEnv* env, word function_addr) {
+  // TODO(bsimmers): Augment Assembler so we can use the 0xe8 call opcode when
+  // possible (this will also have implications on our allocation strategy).
+  __ movq(RAX, Immediate(function_addr));
+  __ call(RAX);
+}
+
 // Emit a call to the C++ implementation of the given Bytecode, saving and
 // restoring appropriate interpreter state before and after the call. This code
 // is emitted as a series of stubs after the main set of handlers; it's used
@@ -231,10 +242,7 @@ void emitGenericHandler(EmitEnv* env, Bytecode bc) {
   // Sync VM state to memory and restore native stack pointer.
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
 
-  // TODO(bsimmers): Augment Assembler so we can use the 0xe8 call opcode when
-  // possible (this will also have implications on our allocation strategy).
-  __ movq(RAX, Immediate(reinterpret_cast<int64_t>(kCppHandlers[bc])));
-  __ call(RAX);
+  emitCall(env, reinterpret_cast<word>(kCppHandlers[bc]));
 
   Label handle_flow;
   static_assert(static_cast<int>(Interpreter::Continue::NEXT) == 0,
@@ -718,7 +726,7 @@ void emitHandler<RETURN_VALUE>(EmitEnv* env) {
   // or frame->blockStack()->depth() != 0...
   __ cmpq(
       Address(kFrameReg, Frame::kBlockStackOffset + BlockStack::kDepthOffset),
-      Immediate(SmallInt::fromWord(0).raw()));
+      smallIntImmediate(0));
   __ jcc(NOT_EQUAL, &slow_path, Assembler::kNearJump);
 
   // Fast path: pop return value, restore caller frame, push return value.
@@ -786,8 +794,8 @@ void emitInterpreter(EmitEnv* env) {
     HandlerSizer sizer(env, kHandlerSize);
     __ movq(kArgRegs[0], kThreadReg);
     __ movq(kArgRegs[1], Address(RBP, kEntryFrameOffset));
-    __ movq(RAX, Immediate(reinterpret_cast<word>(Interpreter::unwind)));
-    __ call(RAX);
+
+    emitCall(env, reinterpret_cast<word>(Interpreter::unwind));
     __ cmpb(RAX, Immediate(0));
     __ jcc(NOT_EQUAL, &return_with_error_exception, Assembler::kFarJump);
     emitRestoreInterpreterState(env, kAllState);
@@ -802,8 +810,7 @@ void emitInterpreter(EmitEnv* env) {
     HandlerSizer sizer(env, kHandlerSize);
     __ movq(kArgRegs[0], kThreadReg);
     __ movq(kArgRegs[1], Address(RBP, kEntryFrameOffset));
-    __ movq(RAX, Immediate(reinterpret_cast<word>(Interpreter::handleReturn)));
-    __ call(RAX);
+    emitCall(env, reinterpret_cast<word>(Interpreter::handleReturn));
     // Check RAX.isErrorError()
     static_assert(Object::kImmediateTagBits + Error::kKindBits <= 8,
                   "tag should fit a byte for cmpb");
