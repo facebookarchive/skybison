@@ -39,7 +39,6 @@ class Runtime;
   V(DunderDelete, "__delete__")                                                \
   V(DunderDelitem, "__delitem__")                                              \
   V(DunderDict, "__dict__")                                                    \
-  V(DunderDir, "__dir__")                                                      \
   V(DunderDivmod, "__divmod__")                                                \
   V(DunderDoc, "__doc__")                                                      \
   V(DunderEnter, "__enter__")                                                  \
@@ -80,7 +79,6 @@ class Runtime;
   V(DunderIter, "__iter__")                                                    \
   V(DunderItruediv, "__itruediv__")                                            \
   V(DunderIxor, "__ixor__")                                                    \
-  V(DunderKeys, "__keys__")                                                    \
   V(DunderLe, "__le__")                                                        \
   V(DunderLen, "__len__")                                                      \
   V(DunderLengthHint, "__length_hint__")                                       \
@@ -137,7 +135,6 @@ class Runtime;
   V(DunderTraceback, "__traceback__")                                          \
   V(DunderTruediv, "__truediv__")                                              \
   V(DunderTrunc, "__trunc__")                                                  \
-  V(DunderValues, "__values__")                                                \
   V(DunderXor, "__xor__")                                                      \
   V(UnderAddress, "_address")                                                  \
   V(UnderAppending, "_appending")                                              \
@@ -145,7 +142,6 @@ class Runtime;
   V(UnderAsciiEncode, "_ascii_encode")                                         \
   V(UnderB2cratio, "_b2cratio")                                                \
   V(UnderBaseDir, "_base_dir")                                                 \
-  V(UnderBases, "_bases")                                                      \
   V(UnderBoolCheck, "_bool_check")                                             \
   V(UnderBootstrap, "_bootstrap")                                              \
   V(UnderBoundMethod, "_bound_method")                                         \
@@ -199,7 +195,6 @@ class Runtime;
   V(UnderCodeCheck, "_code_check")                                             \
   V(UnderCodeGuard, "_code_guard")                                             \
   V(UnderCodecs, "_codecs")                                                    \
-  V(UnderCompile, "_compile")                                                  \
   V(UnderCompileFlagsMask, "_compile_flags_mask")                              \
   V(UnderComplexCheck, "_complex_check")                                       \
   V(UnderComplexImag, "_complex_imag")                                         \
@@ -208,7 +203,6 @@ class Runtime;
   V(UnderDecodedChars, "_decoded_chars")                                       \
   V(UnderDecodedCharsUsed, "_decoded_chars_used")                              \
   V(UnderDecoder, "_decoder")                                                  \
-  V(UnderDeleter, "_deleter")                                                  \
   V(UnderDescrClassMethod, "_descrclassmethod")                                \
   V(UnderDictBucketInsert, "_dict_bucket_insert")                              \
   V(UnderDictBucketKey, "_dict_bucket_key")                                    \
@@ -235,7 +229,6 @@ class Runtime;
   V(UnderExceptionNew, "_exception_new")                                       \
   V(UnderExec, "_exec")                                                        \
   V(UnderFd, "_fd")                                                            \
-  V(UnderFindAndLoad, "_find_and_load")                                        \
   V(UnderFloatCheck, "_float_check")                                           \
   V(UnderFloatCheckExact, "_float_checkexact")                                 \
   V(UnderFloatDivmod, "_float_divmod")                                         \
@@ -251,7 +244,6 @@ class Runtime;
   V(UnderFrozenSetGuard, "_frozenset_guard")                                   \
   V(UnderFunctionGlobals, "_function_globals")                                 \
   V(UnderFunctionGuard, "_function_guard")                                     \
-  V(UnderFunctools, "_functools")                                              \
   V(UnderGc, "_gc")                                                            \
   V(UnderGetframeFunction, "_getframe_function")                               \
   V(UnderGetframeLineno, "_getframe_lineno")                                   \
@@ -275,7 +267,6 @@ class Runtime;
   V(UnderInit, "_init")                                                        \
   V(UnderIndex, "_index")                                                      \
   V(UnderInstall, "_install")                                                  \
-  V(UnderInstance, "_instance")                                                \
   V(UnderInstanceDelattr, "_instance_delattr")                                 \
   V(UnderInstanceGetattr, "_instance_getattr")                                 \
   V(UnderInstanceGuard, "_instance_guard")                                     \
@@ -319,7 +310,6 @@ class Runtime;
   V(UnderMemoryviewSetitem, "_memoryview_setitem")                             \
   V(UnderMemoryviewSetslice, "_memoryview_setslice")                           \
   V(UnderModuleDir, "_module_dir")                                             \
-  V(UnderModuleRepr, "_module_repr")                                           \
   V(UnderModuleProxy, "_module_proxy")                                         \
   V(UnderModuleProxyCheck, "_module_proxy_check")                              \
   V(UnderModuleProxyDelitem, "_module_proxy_delitem")                          \
@@ -331,7 +321,6 @@ class Runtime;
   V(UnderModuleProxyValues, "_module_proxy_values")                            \
   V(UnderMutableBytes, "_mutablebytes")                                        \
   V(UnderMutableTuple, "_mutabletuple")                                        \
-  V(UnderNew, "_new")                                                          \
   V(UnderNewMemberGetBool, "_new_member_get_bool")                             \
   V(UnderNewMemberGetByte, "_new_member_get_byte")                             \
   V(UnderNewMemberGetChar, "_new_member_get_char")                             \
@@ -339,13 +328,11 @@ class Runtime;
   V(UnderNewMemberGetFloat, "_new_member_get_float")                           \
   V(UnderNewMemberGetInt, "_new_member_get_int")                               \
   V(UnderNewMemberGetLong, "_new_member_get_long")                             \
-  V(UnderNewMemberGetNone, "_new_member_get_none")                             \
   V(UnderNewMemberGetPyObject, "_new_member_get_pyobject")                     \
   V(UnderNewMemberGetShort, "_new_member_get_short")                           \
   V(UnderNewMemberGetString, "_new_member_get_string")                         \
   V(UnderNewMemberGetUByte, "_new_member_get_ubyte")                           \
   V(UnderNewMemberGetUInt, "_new_member_get_uint")                             \
-  V(UnderNewMemberGetUIntegral, "_new_member_get_uintegral")                   \
   V(UnderNewMemberGetULong, "_new_member_get_ulong")                           \
   V(UnderNewMemberGetUShort, "_new_member_get_ushort")                         \
   V(UnderNewMemberSetBool, "_new_member_set_bool")                             \
@@ -382,7 +369,6 @@ class Runtime;
   V(UnderReadnl, "_readnl")                                                    \
   V(UnderReadtranslate, "_readtranslate")                                      \
   V(UnderReaduniversal, "_readuniversal")                                      \
-  V(UnderReferent, "_referent")                                                \
   V(UnderReprEnter, "_repr_enter")                                             \
   V(UnderReprLeave, "_repr_leave")                                             \
   V(UnderSeekable, "_seekable")                                                \
@@ -414,7 +400,6 @@ class Runtime;
   V(UnderSnapshot, "_snapshot")                                                \
   V(UnderStaticMethodIsAbstract, "_staticmethod_isabstract")                   \
   V(UnderStderrFd, "_stderr_fd")                                               \
-  V(UnderStdout, "_stdout")                                                    \
   V(UnderStdoutFd, "_stdout_fd")                                               \
   V(UnderStopIterationCtor, "_stop_iteration_ctor")                            \
   V(UnderStrArray, "_strarray")                                                \
@@ -520,7 +505,6 @@ class Runtime;
   V(AssertionError, "AssertionError")                                          \
   V(AsyncGenerator, "async_generator")                                         \
   V(AttributeError, "AttributeError")                                          \
-  V(Backslashreplace, "backslashreplace")                                      \
   V(BadArgumentToInternalFunction, "bad argument to internal function")        \
   V(BadArgumentTypeForBuiltinOperation,                                        \
     "bad argument type for built-in operation")                                \
@@ -530,7 +514,6 @@ class Runtime;
   V(BitLength, "bit_length")                                                   \
   V(BlockingIOError, "BlockingIOError")                                        \
   V(Bool, "bool")                                                              \
-  V(Bootstrap, "bootstrap")                                                    \
   V(BrokenPipeError, "BrokenPipeError")                                        \
   V(BufferError, "BufferError")                                                \
   V(BufferSize, "buffer_size")                                                 \
@@ -553,7 +536,6 @@ class Runtime;
   V(CallgrindStopInstrumentation, "callgrind_stop_instrumentation")            \
   V(CallgrindZeroStats, "callgrind_zero_stats")                                \
   V(Cast, "cast")                                                              \
-  V(Cause, "cause")                                                            \
   V(ChildProcessError, "ChildProcessError")                                    \
   V(Chr, "chr")                                                                \
   V(Classmethod, "classmethod")                                                \
@@ -578,7 +560,6 @@ class Runtime;
   V(Code, "code")                                                              \
   V(Compile, "compile")                                                        \
   V(Complex, "complex")                                                        \
-  V(Concat, "concat")                                                          \
   V(Conjugate, "conjugate")                                                    \
   V(ConnectionAbortedError, "ConnectionAbortedError")                          \
   V(ConnectionError, "ConnectionError")                                        \
@@ -613,7 +594,6 @@ class Runtime;
   V(Encode, "encode")                                                          \
   V(Encoding, "encoding")                                                      \
   V(End, "end")                                                                \
-  V(Eq, "eq")                                                                  \
   V(Eval, "eval")                                                              \
   V(ExcInfo, "exc_info")                                                       \
   V(Excepthook, "excepthook")                                                  \
@@ -623,18 +603,15 @@ class Runtime;
   V(ExecBuiltin, "exec_builtin")                                               \
   V(ExecDynamic, "exec_dynamic")                                               \
   V(Executable, "executable")                                                  \
-  V(Exit, "exit")                                                              \
   V(Extend, "extend")                                                          \
   V(ExtensionSuffixes, "extension_suffixes")                                   \
   V(False, "False")                                                            \
   V(Faulthandler, "faulthandler")                                              \
-  V(File, "file")                                                              \
   V(FileIO, "FileIO")                                                          \
   V(FileExistsError, "FileExistsError")                                        \
   V(FileNotFoundError, "FileNotFoundError")                                    \
   V(Filename, "filename")                                                      \
   V(Fileno, "fileno")                                                          \
-  V(Find, "find")                                                              \
   V(FixCoFilename, "_fix_co_filename")                                         \
   V(Float, "float")                                                            \
   V(FloatingPointError, "FloatingPointError")                                  \
@@ -642,22 +619,18 @@ class Runtime;
   V(Flush, "flush")                                                            \
   V(Format, "format")                                                          \
   V(Frame, "frame")                                                            \
-  V(FromBytes, "from_bytes")                                                   \
   V(FrozenSet, "frozenset")                                                    \
-  V(Fspath, "fspath")                                                          \
   V(FstatSize, "fstat_size")                                                   \
   V(Ftruncate, "ftruncate")                                                    \
   V(Function, "function")                                                      \
   V(FutureWarning, "FutureWarning")                                            \
   V(Generator, "generator")                                                    \
   V(GeneratorExit, "GeneratorExit")                                            \
-  V(Get, "get")                                                                \
   V(GetFrozenObject, "get_frozen_object")                                      \
   V(GetSizeOf, "getsizeof")                                                    \
   V(Getattr, "getattr")                                                        \
   V(Getter, "getter")                                                          \
   V(GiRunning, "gi_running")                                                   \
-  V(Globals, "globals")                                                        \
   V(Hasattr, "hasattr")                                                        \
   V(Hash, "hash")                                                              \
   V(HashInfo, "hash_info")                                                     \
@@ -713,7 +686,6 @@ class Runtime;
   V(Isupper, "isupper")                                                        \
   V(Isub, "isub")                                                              \
   V(Items, "items")                                                            \
-  V(Itertools, "itertools")                                                    \
   V(Itruediv, "itruediv")                                                      \
   V(Ixor, "ixor")                                                              \
   V(Join, "join")                                                              \
@@ -733,7 +705,6 @@ class Runtime;
   V(Latin1Encode, "latin_1_encode")                                            \
   V(Layout, "layout")                                                          \
   V(Len, "len")                                                                \
-  V(Length, "length")                                                          \
   V(Lineno, "lineno")                                                          \
   V(List, "list")                                                              \
   V(ListIterator, "list_iterator")                                             \
@@ -744,7 +715,6 @@ class Runtime;
   V(Lower, "lower")                                                            \
   V(Lseek, "lseek")                                                            \
   V(Lshift, "lshift")                                                          \
-  V(Lt, "lt")                                                                  \
   V(LtAnonymousGt, "<anonymous>")                                              \
   V(LtNullGt, "<NULL>")                                                        \
   V(LtStringGt, "<string>")                                                    \
@@ -755,8 +725,6 @@ class Runtime;
   V(MemoryError, "MemoryError")                                                \
   V(MappingProxy, "mappingproxy")                                              \
   V(MemoryView, "memoryview")                                                  \
-  V(MetaPath, "meta_path")                                                     \
-  V(Metaclass, "metaclass")                                                    \
   V(Method, "method")                                                          \
   V(Mod, "mod")                                                                \
   V(Mode, "mode")                                                              \
@@ -767,7 +735,6 @@ class Runtime;
   V(Mro, "mro")                                                                \
   V(Msg, "msg")                                                                \
   V(Mul, "mul")                                                                \
-  V(NativeProxy, "native_proxy")                                               \
   V(NFields, "n_fields")                                                       \
   V(NSequenceFields, "n_sequence_fields")                                      \
   V(NUnnamedFields, "n_unnamed_fields")                                        \
@@ -821,7 +788,6 @@ class Runtime;
   V(Replace, "replace")                                                        \
   V(Repr, "repr")                                                              \
   V(ResourceWarning, "ResourceWarning")                                        \
-  V(Rfind, "rfind")                                                            \
   V(Rshift, "rshift")                                                          \
   V(RuntimeError, "RuntimeError")                                              \
   V(RuntimeWarning, "RuntimeWarning")                                          \
@@ -833,11 +799,9 @@ class Runtime;
   V(SetNoinheritable, "set_noinheritable")                                     \
   V(Setattr, "setattr")                                                        \
   V(Setter, "setter")                                                          \
-  V(Signed, "signed")                                                          \
   V(SimpleNamespace, "SimpleNamespace")                                        \
   V(Single, "single")                                                          \
   V(Siphash24, "siphash24")                                                    \
-  V(Size, "size")                                                              \
   V(Slice, "slice")                                                            \
   V(SmallBytes, "smallbytes")                                                  \
   V(SmallInt, "smallint")                                                      \
@@ -860,7 +824,6 @@ class Runtime;
   V(Sub, "sub")                                                                \
   V(Super, "super")                                                            \
   V(Surrogateescape, "surrogateescape")                                        \
-  V(Surrogatepass, "surrogatepass")                                            \
   V(SyntaxError, "SyntaxError")                                                \
   V(SyntaxWarning, "SyntaxWarning")                                            \
   V(Sys, "sys")                                                                \
@@ -905,7 +868,6 @@ class Runtime;
   V(Warning, "Warning")                                                        \
   V(Warnings, "warnings")                                                      \
   V(Write, "write")                                                            \
-  V(Xmlcharrefreplace, "xmlcharrefreplace")                                    \
   V(Xor, "xor")                                                                \
   V(ZeroDivisionError, "ZeroDivisionError")
 
