@@ -87,6 +87,60 @@ TEST_F(CApiHandlesTest, BuiltinImmediateIntObjectReturnsImmediateApiHandle) {
   handle->decref();
 }
 
+TEST_F(CApiHandlesTest, BuiltinImmediateTrueObjectReturnsImmediateApiHandle) {
+  HandleScope scope(thread_);
+  Object obj(&scope, Bool::trueObj());
+  ApiHandle* handle = ApiHandle::newReference(thread_, *obj);
+  EXPECT_NE(handle, nullptr);
+  EXPECT_TRUE(ApiHandle::isImmediate(handle));
+  Dict dict(&scope, runtime_.apiHandles());
+  EXPECT_TRUE(
+      ApiHandle::dictAtIdentityEquals(thread_, dict, obj, runtime_.hash(*obj))
+          .isErrorNotFound());
+  handle->decref();
+}
+
+TEST_F(CApiHandlesTest, BuiltinImmediateFalseObjectReturnsImmediateApiHandle) {
+  HandleScope scope(thread_);
+  Object obj(&scope, Bool::falseObj());
+  ApiHandle* handle = ApiHandle::newReference(thread_, *obj);
+  EXPECT_NE(handle, nullptr);
+  EXPECT_TRUE(ApiHandle::isImmediate(handle));
+  Dict dict(&scope, runtime_.apiHandles());
+  EXPECT_TRUE(
+      ApiHandle::dictAtIdentityEquals(thread_, dict, obj, runtime_.hash(*obj))
+          .isErrorNotFound());
+  handle->decref();
+}
+
+TEST_F(CApiHandlesTest,
+       BuiltinImmediateNotImplementedObjectReturnsImmediateApiHandle) {
+  HandleScope scope(thread_);
+  Object obj(&scope, NotImplementedType::object());
+  ApiHandle* handle = ApiHandle::newReference(thread_, *obj);
+  EXPECT_NE(handle, nullptr);
+  EXPECT_TRUE(ApiHandle::isImmediate(handle));
+  Dict dict(&scope, runtime_.apiHandles());
+  EXPECT_TRUE(
+      ApiHandle::dictAtIdentityEquals(thread_, dict, obj, runtime_.hash(*obj))
+          .isErrorNotFound());
+  handle->decref();
+}
+
+TEST_F(CApiHandlesTest,
+       BuiltinImmediateUnboundObjectReturnsImmediateApiHandle) {
+  HandleScope scope(thread_);
+  Object obj(&scope, Unbound::object());
+  ApiHandle* handle = ApiHandle::newReference(thread_, *obj);
+  EXPECT_NE(handle, nullptr);
+  EXPECT_TRUE(ApiHandle::isImmediate(handle));
+  Dict dict(&scope, runtime_.apiHandles());
+  EXPECT_TRUE(
+      ApiHandle::dictAtIdentityEquals(thread_, dict, obj, runtime_.hash(*obj))
+          .isErrorNotFound());
+  handle->decref();
+}
+
 TEST_F(CApiHandlesTest, ApiHandleReturnsBuiltinIntObject) {
   HandleScope scope(thread_);
 

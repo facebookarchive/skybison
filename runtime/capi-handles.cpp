@@ -143,15 +143,25 @@ ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
   return handle;
 }
 
+// TODO(T58710656): Allow immediate handles for SmallStr
+// TODO(T58710677): Allow immediate handles for SmallBytes
+static bool isEncodeableAsImmediate(RawObject obj) {
+  DCHECK(!obj.isHeapObject(),
+         "this function should only be called on immediates");
+  // SmallStr and SmallBytes require solutions for C-API functions that read
+  // out char* whose lifetimes depend on the lifetimes of the PyObject*s.
+  return !obj.isSmallStr() && !obj.isSmallBytes();
+}
+
 ApiHandle* ApiHandle::newReference(Thread* thread, RawObject obj) {
-  if (obj.isSmallInt() || obj == NoneType::object()) {
+  if (!obj.isHeapObject() && isEncodeableAsImmediate(obj)) {
     return reinterpret_cast<ApiHandle*>(obj.raw() ^ kImmediateTag);
   }
   return ApiHandle::ensure(thread, obj);
 }
 
 ApiHandle* ApiHandle::borrowedReference(Thread* thread, RawObject obj) {
-  if (obj.isSmallInt() || obj == NoneType::object()) {
+  if (!obj.isHeapObject() && isEncodeableAsImmediate(obj)) {
     return reinterpret_cast<ApiHandle*>(obj.raw() ^ kImmediateTag);
   }
   ApiHandle* result = ApiHandle::ensure(thread, obj);
