@@ -393,6 +393,154 @@ TEST_F(ObjectExtensionApiTest, IncrementDecrementRefCountWithPyObjectPtr) {
   Py_DECREF(o);
 }
 
+TEST_F(ObjectExtensionApiTest, CallFinalizerFromDeallocWithNonZeroRefcntDies) {
+  PyObject* obj = Py_None;
+  Py_INCREF(obj);  // definitely has a non-zero refcount
+  EXPECT_DEATH(PyObject_CallFinalizerFromDealloc(obj),
+               "PyObject_CallFinalizerFromDealloc called on object with a "
+               "non-zero refcount");
+}
+
+TEST_F(ObjectExtensionApiTest,
+       CallFinalizerFromDeallocWithoutTpFinalizeFlagDoesNotCallTpFinalize) {
+  static bool dealloc_called;
+  static bool finalizer_called;
+  dealloc_called = false;
+  finalizer_called = false;
+  destructor dealloc_func = [](PyObject* self) {
+    dealloc_called = true;
+    if (PyObject_CallFinalizerFromDealloc(self) < 0) return;
+    PyTypeObject* type = Py_TYPE(self);
+    PyObject_Del(self);
+    Py_DECREF(type);
+  };
+  destructor finalizer_func = [](PyObject*) { finalizer_called = true; };
+  PyType_Slot slots[] = {
+      {Py_tp_dealloc, reinterpret_cast<void*>(dealloc_func)},
+      {Py_tp_finalize, reinterpret_cast<void*>(finalizer_func)},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  allocfunc func = reinterpret_cast<allocfunc>(
+      PyType_GetSlot(type.asTypeObject(), Py_tp_alloc));
+  ASSERT_NE(func, nullptr);
+  PyObject* obj = (*func)(type.asTypeObject(), 0);
+  ASSERT_NE(obj, nullptr);
+  EXPECT_GE(Py_REFCNT(obj), 1);
+  Py_DECREF(obj);  // Drop the reference to it
+  // Trigger a GC. PyObject_CallFinalizerFromDealloc is called during GC in
+  // Pyro and immmediately in the decref in CPython.
+  PyRun_SimpleString(R"(
+try:
+  import _builtins
+  _builtins._gc()
+except:
+  pass
+)");
+  EXPECT_TRUE(dealloc_called);
+  EXPECT_FALSE(finalizer_called);
+}
+
+TEST_F(ObjectExtensionApiTest,
+       CallFinalizerFromDeallocWithTpFinalizeFlagCallsTpFinalize) {
+  static bool dealloc_called;
+  static bool finalizer_called;
+  dealloc_called = false;
+  finalizer_called = false;
+  destructor dealloc_func = [](PyObject* self) {
+    dealloc_called = true;
+    if (PyObject_CallFinalizerFromDealloc(self) < 0) return;
+    PyTypeObject* type = Py_TYPE(self);
+    PyObject_Del(self);
+    Py_DECREF(type);
+  };
+  destructor finalizer_func = [](PyObject*) { finalizer_called = true; };
+  PyType_Slot slots[] = {
+      {Py_tp_dealloc, reinterpret_cast<void*>(dealloc_func)},
+      {Py_tp_finalize, reinterpret_cast<void*>(finalizer_func)},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", 0, 0, Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_FINALIZE, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  allocfunc func = reinterpret_cast<allocfunc>(
+      PyType_GetSlot(type.asTypeObject(), Py_tp_alloc));
+  ASSERT_NE(func, nullptr);
+  PyObject* obj = (*func)(type.asTypeObject(), 0);
+  ASSERT_NE(obj, nullptr);
+  EXPECT_GE(Py_REFCNT(obj), 1);
+  Py_DECREF(obj);  // Drop the reference to it
+  // Trigger a GC. PyObject_CallFinalizerFromDealloc is called during GC in
+  // Pyro and immmediately in the decref in CPython.
+  PyRun_SimpleString(R"(
+try:
+  import _builtins
+  _builtins._gc()
+except:
+  pass
+)");
+  EXPECT_TRUE(dealloc_called);
+  EXPECT_TRUE(finalizer_called);
+}
+
+TEST_F(
+    ObjectExtensionApiTest,
+    CallFinalizerFromDeallocWithTpFinalizeResurrectingObjectDoesNotGCObject) {
+  static bool dealloc_called;
+  static bool finalizer_called;
+  dealloc_called = false;
+  finalizer_called = false;
+  destructor dealloc_func = [](PyObject* self) {
+    dealloc_called = true;
+    if (PyObject_CallFinalizerFromDealloc(self) < 0) return;
+    PyTypeObject* type = Py_TYPE(self);
+    PyObject_Del(self);
+    Py_DECREF(type);
+  };
+  destructor finalizer_func = [](PyObject* self) {
+    finalizer_called = true;
+    Py_INCREF(self);
+  };
+  PyType_Slot slots[] = {
+      {Py_tp_dealloc, reinterpret_cast<void*>(dealloc_func)},
+      {Py_tp_finalize, reinterpret_cast<void*>(finalizer_func)},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", 0, 0, Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_FINALIZE, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  allocfunc func = reinterpret_cast<allocfunc>(
+      PyType_GetSlot(type.asTypeObject(), Py_tp_alloc));
+  ASSERT_NE(func, nullptr);
+  PyObject* obj = (*func)(type.asTypeObject(), 0);
+  ASSERT_NE(obj, nullptr);
+  EXPECT_GE(Py_REFCNT(obj), 1);
+  Py_DECREF(obj);  // Drop the reference to it
+  // Trigger a GC. PyObject_CallFinalizerFromDealloc is called during GC in
+  // Pyro and immmediately in the decref in CPython.
+  PyRun_SimpleString(R"(
+try:
+  import _builtins
+  _builtins._gc()
+except:
+  pass
+)");
+  EXPECT_TRUE(dealloc_called);
+  EXPECT_TRUE(finalizer_called);
+  EXPECT_GE(Py_REFCNT(obj), 1);
+}
+
 TEST_F(ObjectExtensionApiTest, GenericGetAttrFindsCorrectlySetValue) {
   ASSERT_EQ(PyRun_SimpleString(R"(
 class C: pass

@@ -1962,7 +1962,13 @@ void Runtime::processFinalizers() {
            "Extension types must have a dealloc slot");
     Int slot(&scope, type.slot(Type::Slot::kDealloc));
     auto func = reinterpret_cast<destructor>(slot.asWord());
-    (*func)(reinterpret_cast<PyObject*>(nativeProxyPtr(*native_proxy)));
+    PyObject* obj = reinterpret_cast<PyObject*>(nativeProxyPtr(*native_proxy));
+    CHECK(obj->ob_refcnt == 1,
+          "The runtime must hold the last reference to the PyObject* (%p). "
+          "Expecting a refcount of 1, but found %ld\n",
+          reinterpret_cast<void*>(obj), obj->ob_refcnt);
+    obj->ob_refcnt--;
+    (*func)(reinterpret_cast<PyObject*>(obj));
   }
 
   thread->setPendingExceptionType(*saved_type);

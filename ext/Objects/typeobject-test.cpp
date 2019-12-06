@@ -3744,7 +3744,8 @@ result = self.fastcall(*[1234], *{})
 TEST(TypeExtensionApiTestNoFixture, DeallocSlotCalledDuringFinalize) {
   Py_Initialize();
 
-  static bool destroyed = false;
+  static bool destroyed;
+  destroyed = false;
   destructor dealloc = [](PyObject* self) {
     PyTypeObject* type = Py_TYPE(self);
     destroyed = true;

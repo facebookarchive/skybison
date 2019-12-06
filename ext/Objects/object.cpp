@@ -107,8 +107,49 @@ PY_EXPORT PyObject* PyObject_Bytes(PyObject* pyobj) {
   return ApiHandle::newReference(thread, *result);
 }
 
-PY_EXPORT int PyObject_CallFinalizerFromDealloc(PyObject* /* f */) {
-  UNIMPLEMENTED("PyObject_CallFinalizerFromDealloc");
+PY_EXPORT void PyObject_CallFinalizer(PyObject* self) {
+  PyTypeObject* type = Py_TYPE(self);
+  unsigned long type_flags = PyType_GetFlags(type);
+  auto finalizer =
+      reinterpret_cast<destructor>(PyType_GetSlot(type, Py_tp_finalize));
+  if (!(type_flags & Py_TPFLAGS_HAVE_FINALIZE) || finalizer == nullptr) {
+    // Nothing to finalize.
+    return;
+  }
+  bool is_gc = type_flags & Py_TPFLAGS_HAVE_GC;
+  if (is_gc) {
+    // TODO(T55208267): Support GC types
+    UNIMPLEMENTED(
+        "PyObject_CallFinalizer with finalizer and gc type is not "
+        "yet supported");
+  }
+  // TODO(T55208267): Check if the type has GC flags and the object is already
+  // finalized and return early. tp_finalize should only be called once.
+  (*finalizer)(self);
+  // TODO(T55208267): Check if the type has GC flags set a bit on the object to
+  // indicate that it has been finalized already.
+}
+
+PY_EXPORT int PyObject_CallFinalizerFromDealloc(PyObject* self) {
+  DCHECK(self != nullptr, "self cannot be null");
+  if (Py_REFCNT(self) != 0) {
+    Py_FatalError(
+        "PyObject_CallFinalizerFromDealloc called on "
+        "object with a non-zero refcount");
+  }
+  // Temporarily resurrect the object.
+  self->ob_refcnt = 1;
+  // Finalize the object.
+  PyObject_CallFinalizer(self);
+  if (self->ob_refcnt == 1) {
+    // tp_finalize did not resurrect the object, so undo the temporary
+    // resurrection and put it to rest.
+    self->ob_refcnt--;
+    return 0;
+  }
+  DCHECK(Py_REFCNT(self) > 0, "refcnt must be positive");
+  // If we get here, tp_finalize resurrected the object.
+  return -1;
 }
 
 PY_EXPORT PyObject* PyObject_Dir(PyObject* /* j */) {
