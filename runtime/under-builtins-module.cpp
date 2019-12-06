@@ -361,6 +361,41 @@ const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
 };
 // clang-format on
 
+// Attempts to unpack a possibly-slice key. Returns true and sets start, stop if
+// key is a slice with None step and None/SmallInt start and stop. The start and
+// stop values must still be adjusted for the container's length. Returns false
+// if key is not a slice or if the slice bounds are not the common types.
+static bool trySlice(const Object& key, word* start, word* stop) {
+  if (!key.isSlice()) {
+    return false;
+  }
+
+  RawSlice slice = Slice::cast(*key);
+  if (!slice.step().isNoneType()) {
+    return false;
+  }
+
+  RawObject start_obj = slice.start();
+  if (start_obj.isNoneType()) {
+    *start = 0;
+  } else if (start_obj.isSmallInt()) {
+    *start = SmallInt::cast(start_obj).value();
+  } else {
+    return false;
+  }
+
+  RawObject stop_obj = slice.stop();
+  if (stop_obj.isNoneType()) {
+    *stop = kMaxWord;
+  } else if (stop_obj.isSmallInt()) {
+    *stop = SmallInt::cast(stop_obj).value();
+  } else {
+    return false;
+  }
+
+  return true;
+}
+
 RawObject UnderBuiltinsModule::underAddress(Thread* thread, Frame* frame,
                                             word nargs) {
   Arguments args(frame, nargs);
@@ -515,48 +550,26 @@ RawObject UnderBuiltinsModule::underByteArrayGetItem(Thread* thread,
     }
     return SmallInt::fromWord(self.byteAt(index));
   }
-  if (key.isSlice()) {
-    Slice slice(&scope, *key);
-    if (!slice.step().isNoneType()) {
-      return Unbound::object();
-    }
 
-    ByteArray self(&scope, *self_obj);
-    word length = self.numItems();
-    word start, stop;
-    Object start_obj(&scope, slice.start());
-    if (start_obj.isNoneType()) {
-      start = 0;
-    } else if (start_obj.isSmallInt()) {
-      start = SmallInt::cast(*start_obj).value();
-    } else {
-      return Unbound::object();
-    }
-
-    Object stop_obj(&scope, slice.stop());
-    if (stop_obj.isNoneType()) {
-      stop = length;
-    } else if (stop_obj.isSmallInt()) {
-      stop = SmallInt::cast(*stop_obj).value();
-    } else {
-      return Unbound::object();
-    }
-
-    word result_len = Slice::adjustIndices(length, &start, &stop, 1);
-    if (result_len == 0) {
-      return runtime->newByteArray();
-    }
-
-    ByteArray result(&scope, runtime->newByteArray());
-    MutableBytes result_bytes(
-        &scope, runtime->newMutableBytesUninitialized(result_len));
-    Bytes src_bytes(&scope, self.bytes());
-    result_bytes.replaceFromWithStartAt(0, *src_bytes, result_len, start);
-    result.setBytes(*result_bytes);
-    result.setNumItems(result_len);
-    return *result;
+  word start, stop;
+  if (!trySlice(key, &start, &stop)) {
+    return Unbound::object();
   }
-  return Unbound::object();
+
+  ByteArray self(&scope, *self_obj);
+  word result_len = Slice::adjustIndices(self.numItems(), &start, &stop, 1);
+  if (result_len == 0) {
+    return runtime->newByteArray();
+  }
+
+  ByteArray result(&scope, runtime->newByteArray());
+  MutableBytes result_bytes(&scope,
+                            runtime->newMutableBytesUninitialized(result_len));
+  Bytes src_bytes(&scope, self.bytes());
+  result_bytes.replaceFromWithStartAt(0, *src_bytes, result_len, start);
+  result.setBytes(*result_bytes);
+  result.setNumItems(result_len);
+  return *result;
 }
 
 RawObject UnderBuiltinsModule::underByteArrayGetSlice(Thread* thread,
@@ -2719,45 +2732,24 @@ RawObject UnderBuiltinsModule::underListGetItem(Thread* thread, Frame* frame,
     }
     return self.at(index);
   }
-  if (key.isSlice()) {
-    Slice slice(&scope, *key);
-    if (!slice.step().isNoneType()) {
-      return Unbound::object();
-    }
 
-    word start, stop;
-    Object start_obj(&scope, slice.start());
-    if (start_obj.isNoneType()) {
-      start = 0;
-    } else if (start_obj.isSmallInt()) {
-      start = SmallInt::cast(*start_obj).value();
-    } else {
-      return Unbound::object();
-    }
-
-    Object stop_obj(&scope, slice.stop());
-    if (stop_obj.isNoneType()) {
-      stop = kMaxWord;
-    } else if (stop_obj.isSmallInt()) {
-      stop = SmallInt::cast(*stop_obj).value();
-    } else {
-      return Unbound::object();
-    }
-
-    List self(&scope, *self_obj);
-    word result_len = Slice::adjustIndices(self.numItems(), &start, &stop, 1);
-    if (result_len == 0) {
-      return runtime->newList();
-    }
-    Tuple src(&scope, self.items());
-    MutableTuple dst(&scope, runtime->newMutableTuple(result_len));
-    dst.replaceFromWithStartAt(0, *src, result_len, start);
-    List result(&scope, runtime->newList());
-    result.setItems(*dst);
-    result.setNumItems(result_len);
-    return *result;
+  word start, stop;
+  if (!trySlice(key, &start, &stop)) {
+    return Unbound::object();
   }
-  return Unbound::object();
+
+  List self(&scope, *self_obj);
+  word result_len = Slice::adjustIndices(self.numItems(), &start, &stop, 1);
+  if (result_len == 0) {
+    return runtime->newList();
+  }
+  Tuple src(&scope, self.items());
+  MutableTuple dst(&scope, runtime->newMutableTuple(result_len));
+  dst.replaceFromWithStartAt(0, *src, result_len, start);
+  List result(&scope, runtime->newList());
+  result.setItems(*dst);
+  result.setNumItems(result_len);
+  return *result;
 }
 
 RawObject UnderBuiltinsModule::underListGetSlice(Thread* thread, Frame* frame,
@@ -3788,37 +3780,19 @@ RawObject UnderBuiltinsModule::underStrGetItem(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(LayoutId::kIndexError,
                                 "string index out of range");
   }
-  if (key.isSlice()) {
-    Slice slice(&scope, *key);
-    if (!slice.step().isNoneType()) {
-      return Unbound::object();
-    }
 
-    word start, stop;
-    Object start_obj(&scope, slice.start());
-    if (start_obj.isNoneType()) {
-      start = 0;
-    } else if (start_obj.isSmallInt()) {
-      start = SmallInt::cast(*start_obj).value();
-    } else {
-      return Unbound::object();
-    }
-
-    Object stop_obj(&scope, slice.stop());
-    if (stop_obj.isNoneType()) {
-      stop = kMaxWord;
-    } else if (stop_obj.isSmallInt()) {
-      stop = SmallInt::cast(*stop_obj).value();
-    } else {
-      return Unbound::object();
-    }
-
-    Str self(&scope, *self_obj);
-    word length = self.codePointLength();
-    word result_len = Slice::adjustIndices(length, &start, &stop, 1);
-    return runtime->strSubstr(thread, self, start, result_len);
+  word start, stop;
+  if (!trySlice(key, &start, &stop)) {
+    return Unbound::object();
   }
-  return Unbound::object();
+
+  Str self(&scope, *self_obj);
+  word length = self.codePointLength();
+  word result_len = Slice::adjustIndices(length, &start, &stop, 1);
+  if (result_len == length) {
+    return *self;
+  }
+  return runtime->strSubstr(thread, self, start, result_len);
 }
 
 RawObject UnderBuiltinsModule::underStrGetSlice(Thread* thread, Frame* frame,
@@ -4155,40 +4129,19 @@ RawObject UnderBuiltinsModule::underTupleGetItem(Thread* thread, Frame* frame,
     }
     return self.at(index);
   }
-  if (key.isSlice()) {
-    Slice slice(&scope, *key);
-    if (!slice.step().isNoneType()) {
-      return Unbound::object();
-    }
 
-    word start, stop;
-    Object start_obj(&scope, slice.start());
-    if (start_obj.isNoneType()) {
-      start = 0;
-    } else if (start_obj.isSmallInt()) {
-      start = SmallInt::cast(*start_obj).value();
-    } else {
-      return Unbound::object();
-    }
-
-    Object stop_obj(&scope, slice.stop());
-    if (stop_obj.isNoneType()) {
-      stop = kMaxWord;
-    } else if (stop_obj.isSmallInt()) {
-      stop = SmallInt::cast(*stop_obj).value();
-    } else {
-      return Unbound::object();
-    }
-
-    Tuple self(&scope, tupleUnderlying(*self_obj));
-    word length = self.length();
-    word result_len = Slice::adjustIndices(length, &start, &stop, 1);
-    if (result_len == length) {
-      return *self;
-    }
-    return runtime->tupleSubseq(thread, self, start, result_len);
+  word start, stop;
+  if (!trySlice(key, &start, &stop)) {
+    return Unbound::object();
   }
-  return Unbound::object();
+
+  Tuple self(&scope, tupleUnderlying(*self_obj));
+  word length = self.length();
+  word result_len = Slice::adjustIndices(length, &start, &stop, 1);
+  if (result_len == length) {
+    return *self;
+  }
+  return runtime->tupleSubseq(thread, self, start, result_len);
 }
 
 RawObject UnderBuiltinsModule::underTupleGetSlice(Thread* thread, Frame* frame,
