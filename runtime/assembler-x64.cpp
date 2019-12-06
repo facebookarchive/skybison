@@ -174,6 +174,15 @@ void Assembler::movq(Register dst, Immediate imm) {
   }
 }
 
+void Assembler::movq(Address dst, Immediate imm) {
+  CHECK(imm.isInt32(), "this instruction only exists for 32bit immediates");
+  AssemblerBuffer::EnsureCapacity ensured(&buffer_);
+  emitOperandREX(0, dst, REX_W);
+  emitUint8(0xC7);
+  emitOperand(0, dst);
+  emitImmediate(imm);
+}
+
 void Assembler::emitSimple(int opcode, int opcode2) {
   AssemblerBuffer::EnsureCapacity ensured(&buffer_);
   emitUint8(opcode);

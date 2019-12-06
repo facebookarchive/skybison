@@ -369,8 +369,7 @@ void emitPushBoundMethod(EmitEnv* env, Label* slow_path, Register r_self,
   __ xchgq(r_scratch, Address(r_space, Space::fillOffset()));
   RawHeader header = Header::from(num_attrs, 0, LayoutId::kBoundMethod,
                                   ObjectFormat::kObjects);
-  __ movq(r_space, Immediate(header.raw()));
-  __ movq(Address(r_scratch, 0), r_space);
+  __ movq(Address(r_scratch, 0), Immediate(header.raw()));
   __ leaq(r_scratch, Address(r_scratch, -BoundMethod::kHeaderOffset +
                                             Object::kHeapObjectTag));
   __ movq(Address(r_scratch, heapObjectDisp(BoundMethod::kSelfOffset)), r_self);

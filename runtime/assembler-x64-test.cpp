@@ -99,6 +99,26 @@ TEST(AssemblerTest, MovbRexPrefix) {
   EXPECT_TRUE(assemblerContainsBytes(&as, expected));
 }
 
+TEST(AssemblerTest, MovqAddressImmediate) {
+  const byte expected[] = {
+      0x48, 0xc7, 0x04, 0x24, 0x00, 0x00, 0x00, 0x00,  // movq $0x0, (%rsp)
+      0x48, 0xc7, 0x45, 0x00, 0xff, 0xff, 0xff, 0xff,  // movq $-1, (%rbp)
+      0x48, 0xc7, 0x01, 0x00, 0x00, 0x00, 0x80,  // movq $-2147483648, (%rcx)
+      0x48, 0xc7, 0x44, 0xb2, 0x0d, 0x07, 0x00, 0x00,
+      0x00,  // movq $0x7, 13(%rdx,%rsi,4)
+      0x48, 0xc7, 0x44, 0xf2, 0x9d, 0xff, 0xff, 0xff,
+      0x7f,  // movq $0x7fffffff, -99(%rdx,%rsi,8)
+  };
+
+  Assembler as;
+  as.movq(Address(RSP, 0), Immediate(0));
+  as.movq(Address(RBP, 0), Immediate(-1));
+  as.movq(Address(RCX, 0), Immediate(kMinInt32));
+  as.movq(Address(RDX, RSI, TIMES_4, 13), Immediate(7));
+  as.movq(Address(RDX, RSI, TIMES_8, -99), Immediate(0x7fffffff));
+  EXPECT_TRUE(assemblerContainsBytes(&as, expected));
+}
+
 TEST(AssemblerTest, TestbWithRexPrefix) {
   // 40 84 3e        testb   %dil, (%rsi)
   // 41 84 2c 1a     testb   %bpl, (%r10,%rbx)
