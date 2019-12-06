@@ -4427,10 +4427,10 @@ RawObject UnderBuiltinsModule::underTypeNew(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->newTypeWithMetaclass(metaclass_id));
   type.setBases(bases.length() > 0 ? *bases : runtime->implicitBases());
-  Function under_new(
+  Function type_dunder_call(
       &scope, runtime->lookupNameInModule(thread, SymbolId::kUnderBuiltins,
                                           SymbolId::kUnderTypeDunderCall));
-  type.setUnderCtor(*under_new);
+  type.setCtor(*type_dunder_call);
   return *type;
 }
 

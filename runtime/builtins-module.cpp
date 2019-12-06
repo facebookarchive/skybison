@@ -332,20 +332,21 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
     typeAddDocstring(thread, type);
     // A bootstrap type initialization is complete at this point.
 
-    Object under_new(&scope, NoneType::object());
+    Object ctor(&scope, NoneType::object());
     // Use __new__ as _ctor if __init__ is undefined.
     if (type.isBuiltin() &&
         typeAtById(thread, type, SymbolId::kDunderInit).isErrorNotFound()) {
       Object dunder_new(&scope, typeAtById(thread, type, SymbolId::kDunderNew));
       if (!dunder_new.isErrorNotFound()) {
-        under_new = *dunder_new;
+        ctor = *dunder_new;
       }
     }
-    if (under_new.isNoneType()) {
-      under_new = runtime->lookupNameInModule(thread, SymbolId::kUnderBuiltins,
-                                              SymbolId::kUnderTypeDunderCall);
+    if (ctor.isNoneType()) {
+      ctor = runtime->lookupNameInModule(thread, SymbolId::kUnderBuiltins,
+                                         SymbolId::kUnderTypeDunderCall);
     }
-    type.setUnderCtor(*under_new);
+    CHECK(ctor.isFunction(), "ctor is expected to be a function");
+    type.setCtor(*ctor);
     return *type;
   }
 

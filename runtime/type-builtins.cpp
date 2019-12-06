@@ -1077,7 +1077,7 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   Function type_dunder_call(
       &scope, runtime->lookupNameInModule(thread, SymbolId::kUnderBuiltins,
                                           SymbolId::kUnderTypeDunderCall));
-  type.setUnderCtor(*type_dunder_call);
+  type.setCtor(*type_dunder_call);
   return *type;
 }
 

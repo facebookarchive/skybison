@@ -66,11 +66,11 @@ RawObject Interpreter::prepareCallable(Thread* thread, Frame* frame,
       // perform such instance creation of the exact type `callable` directly
       // without dispatching to `type.__call__` if it exists. Otherwise,
       // callable.underCtor is guaranteed to be same as type.__call__.
-      RawType callable_as_type = Type::cast(**callable);
-      RawObject under_new = callable_as_type.underCtor();
-      DCHECK(under_new.isFunction(), "type._new is expected to be a function");
-      *self = callable_as_type;
-      *callable = under_new;
+      RawType type = Type::cast(**callable);
+      RawObject ctor = type.ctor();
+      DCHECK(ctor.isFunction(), "ctor is expected to be a function");
+      *self = type;
+      *callable = ctor;
       return Bool::trueObj();
     }
     // TODO(T44238481): Look into using lookupMethod() once it's fixed.

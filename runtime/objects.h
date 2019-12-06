@@ -1248,10 +1248,10 @@ class RawType : public RawInstance {
   RawObject proxy() const;
   void setProxy(RawObject proxy) const;
 
-  // Shortcut function to create an instance of this builtin_type. The semantics
-  // of this function should be same as type.__call__(builtin_type, ...).
-  RawObject underCtor() const;
-  void setUnderCtor(RawObject under_ctor) const;
+  // Constructor function for this class.  Either type.__call__ or
+  // a function that has the same effect as type.__call__.
+  RawObject ctor() const;
+  void setCtor(RawObject function) const;
 
   bool isBaseExceptionSubclass() const;
 
@@ -1276,8 +1276,8 @@ class RawType : public RawInstance {
   static const int kAbstractMethodsOffset = kSlotsOffset + kPointerSize;
   static const int kSubclassesOffset = kAbstractMethodsOffset + kPointerSize;
   static const int kProxyOffset = kSubclassesOffset + kPointerSize;
-  static const int kUnderCtorOffset = kProxyOffset + kPointerSize;
-  static const int kSize = kUnderCtorOffset + kPointerSize;
+  static const int kCtorOffset = kProxyOffset + kPointerSize;
+  static const int kSize = kCtorOffset + kPointerSize;
 
   static const int kBuiltinBaseMask = 0xff;
 
@@ -4740,12 +4740,12 @@ inline void RawType::setProxy(RawObject proxy) const {
   instanceVariableAtPut(kProxyOffset, proxy);
 }
 
-inline RawObject RawType::underCtor() const {
-  return instanceVariableAt(kUnderCtorOffset);
+inline RawObject RawType::ctor() const {
+  return instanceVariableAt(kCtorOffset);
 }
 
-inline void RawType::setUnderCtor(RawObject under_ctor) const {
-  instanceVariableAtPut(kUnderCtorOffset, under_ctor);
+inline void RawType::setCtor(RawObject function) const {
+  instanceVariableAtPut(kCtorOffset, function);
 }
 
 inline bool RawType::isBuiltin() const {
