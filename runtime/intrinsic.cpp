@@ -430,7 +430,7 @@ static bool underTupleGuard(Thread* thread, Frame* frame) {
 
 static bool underTupleLen(Frame* frame) {
   RawObject arg = frame->peek(0);
-  if (arg.isBytes()) {
+  if (arg.isTuple()) {
     frame->popValue();
     frame->setTopValue(SmallInt::fromWord(Tuple::cast(arg).length()));
     return true;
