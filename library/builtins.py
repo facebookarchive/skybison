@@ -56,7 +56,7 @@ _dict_bucket_key = _dict_bucket_key  # noqa: F821
 _dict_bucket_set_value = _dict_bucket_set_value  # noqa: F821
 _dict_bucket_value = _dict_bucket_value  # noqa: F821
 _dict_check = _dict_check  # noqa: F821
-_dict_checkexact = _dict_checkexact  # noqa: F821
+_dict_check_exact = _dict_check_exact  # noqa: F821
 _dict_get = _dict_get  # noqa: F821
 _dict_guard = _dict_guard  # noqa: F821
 _dict_lookup = _dict_lookup  # noqa: F821
@@ -67,7 +67,7 @@ _dict_update = _dict_update  # noqa: F821
 _divmod = _divmod  # noqa: F821
 _exec = _exec  # noqa: F821
 _float_check = _float_check  # noqa: F821
-_float_checkexact = _float_checkexact  # noqa: F821
+_float_check_exact = _float_check_exact  # noqa: F821
 _float_divmod = _float_divmod  # noqa: F821
 _float_format = _float_format  # noqa: F821
 _float_guard = _float_guard  # noqa: F821
@@ -99,7 +99,7 @@ _instance_guard = _instance_guard  # noqa: F821
 _instance_overflow_dict = _instance_overflow_dict  # noqa: F821
 _instance_setattr = _instance_setattr  # noqa: F821
 _int_check = _int_check  # noqa: F821
-_int_checkexact = _int_checkexact  # noqa: F821
+_int_check_exact = _int_check_exact  # noqa: F821
 _int_from_bytes = _int_from_bytes  # noqa: F821
 _int_guard = _int_guard  # noqa: F821
 _int_new_from_bytearray = _int_new_from_bytearray  # noqa: F821
@@ -107,7 +107,7 @@ _int_new_from_bytes = _int_new_from_bytes  # noqa: F821
 _int_new_from_int = _int_new_from_int  # noqa: F821
 _int_new_from_str = _int_new_from_str  # noqa: F821
 _list_check = _list_check  # noqa: F821
-_list_checkexact = _list_checkexact  # noqa: F821
+_list_check_exact = _list_check_exact  # noqa: F821
 _list_delitem = _list_delitem  # noqa: F821
 _list_delslice = _list_delslice  # noqa: F821
 _list_extend = _list_extend  # noqa: F821
@@ -169,7 +169,7 @@ _slice_stop = _slice_stop  # noqa: F821
 _slice_stop_long = _slice_stop_long  # noqa: F821
 _staticmethod_isabstract = _staticmethod_isabstract  # noqa: F821
 _str_check = _str_check  # noqa: F821
-_str_checkexact = _str_checkexact  # noqa: F821
+_str_check_exact = _str_check_exact  # noqa: F821
 _str_count = _str_count  # noqa: F821
 _str_encode = _str_encode  # noqa: F821
 _str_endswith = _str_endswith  # noqa: F821
@@ -191,7 +191,7 @@ _str_splitlines = _str_splitlines  # noqa: F821
 _str_startswith = _str_startswith  # noqa: F821
 _strarray_iadd = _strarray_iadd  # noqa: F821
 _tuple_check = _tuple_check  # noqa: F821
-_tuple_checkexact = _tuple_checkexact  # noqa: F821
+_tuple_check_exact = _tuple_check_exact  # noqa: F821
 _tuple_getitem = _tuple_getitem  # noqa: F821
 _tuple_getslice = _tuple_getslice  # noqa: F821
 _tuple_guard = _tuple_guard  # noqa: F821
@@ -787,7 +787,7 @@ class SyntaxError(Exception, bootstrap=True):
 
     def __str__(self):
         have_filename = _str_check(self.filename)
-        have_lineno = _int_checkexact(self.lineno)
+        have_lineno = _int_check_exact(self.lineno)
         # TODO(T52652299): Take basename of filename. See implementation of
         # function my_basename in exceptions.c
         if not have_filename and not have_lineno:
@@ -1077,13 +1077,13 @@ def _index(obj) -> int:
 
 def _int(obj) -> int:
     # equivalent to _PyLong_FromNbInt
-    if _int_checkexact(obj):
+    if _int_check_exact(obj):
         return obj
     dunder_int = _object_type_getattr(obj, "__int__")
     if dunder_int is _Unbound:
         raise TypeError(f"an integer is required (got type {_type(obj).__name__})")
     result = dunder_int()
-    if _int_checkexact(result):
+    if _int_check_exact(result):
         return result
     if _int_check(result):
         _warn(
@@ -2424,7 +2424,7 @@ class dict(bootstrap=True):
         _dict_guard(self)
         result = _dict_get(self, key, _Unbound)
         if result is _Unbound:
-            if not _dict_checkexact(self):
+            if not _dict_check_exact(self):
                 dunder_missing = _object_type_getattr(self, "__missing__")
                 if dunder_missing is not _Unbound:
                     # Subclass defined __missing__
@@ -2835,14 +2835,14 @@ class float(bootstrap=True):
                 f"float.__new__({cls.__name__}): {cls.__name__} is not a "
                 "subtype of float"
             )
-        if _str_checkexact(arg):
+        if _str_check_exact(arg):
             return _float_new_from_str(cls, arg)
-        if _float_checkexact(arg):
+        if _float_check_exact(arg):
             return _float_new_from_float(cls, arg)
         dunder_float = _object_type_getattr(arg, "__float__")
         if dunder_float is not _Unbound:
             result = dunder_float()
-            if _float_checkexact(result):
+            if _float_check_exact(result):
                 return _float_new_from_float(cls, result)
             if not _float_check(result):
                 raise TypeError(
@@ -3337,14 +3337,14 @@ class int(bootstrap=True):
                 return _int_new_from_int(cls, 0)
             raise TypeError("int() missing string argument")
         if base is _Unbound:
-            if _int_checkexact(x):
+            if _int_check_exact(x):
                 return _int_new_from_int(cls, x)
             if _object_type_hasattr(x, "__int__"):
                 return _int_new_from_int(cls, _int(x))
             dunder_trunc = _object_type_getattr(x, "__trunc__")
             if dunder_trunc is not _Unbound:
                 result = dunder_trunc()
-                if _int_checkexact(result) and cls is int:
+                if _int_check_exact(result) and cls is int:
                     return result
                 if _int_check(result):
                     return _int_new_from_int(cls, result)
@@ -3821,7 +3821,7 @@ class list(bootstrap=True):
 
     def extend(self, other):
         _list_guard(self)
-        if _tuple_checkexact(other) or _list_checkexact(other):
+        if _tuple_check_exact(other) or _list_check_exact(other):
             return _list_extend(self, other)
         for item in other:
             list.append(self, item)
@@ -3832,12 +3832,12 @@ class list(bootstrap=True):
         # enforce type int to avoid custom comparators
         i = (
             start
-            if _int_checkexact(start)
+            if _int_check_exact(start)
             else _int_new_from_int(int, _slice_index_not_none(start))
         )
         if end is _Unbound:
             end = length
-        elif not _int_checkexact(end):
+        elif not _int_check_exact(end):
             end = _int_new_from_int(int, _slice_index_not_none(end))
         if i < 0:
             i += length
@@ -4392,7 +4392,7 @@ class range(bootstrap=True):
 
     def __contains__(self, num):
         _range_guard(self)
-        if _int_checkexact(num) or _bool_check(num):
+        if _int_check_exact(num) or _bool_check(num):
             start = self.start
             stop = self.stop
             step = self.step
@@ -4513,7 +4513,7 @@ class range(bootstrap=True):
 
     def count(self, value):
         _range_guard(self)
-        if _int_checkexact(value) or _bool_check(value):
+        if _int_check_exact(value) or _bool_check(value):
             return 1 if range.__contains__(self, value) else 0
         seen = 0
         for i in self:
@@ -4523,7 +4523,7 @@ class range(bootstrap=True):
 
     def index(self, value):
         _range_guard(self)
-        if _int_checkexact(value) or _bool_check(value):
+        if _int_check_exact(value) or _bool_check(value):
             if range.__contains__(self, value):
                 return int.__floordiv__(value - self.start, self.step)
         else:
@@ -4935,7 +4935,7 @@ class str(bootstrap=True):
         if obj is _Unbound:
             return _str_from_str(cls, "")
         if encoding is _Unbound and errors is _Unbound:
-            if _str_checkexact(obj):
+            if _str_check_exact(obj):
                 return _str_from_str(cls, obj)
             dunder_str = _object_type_getattr(obj, "__str__")
             if dunder_str is _Unbound:
@@ -5129,7 +5129,7 @@ class str(bootstrap=True):
 
     def join(self, items) -> str:
         _str_guard(self)
-        if _tuple_checkexact(tuple) or _list_checkexact(items):
+        if _tuple_check_exact(tuple) or _list_check_exact(items):
             return _str_join(self, items)
         try:
             it = iter(items)
@@ -5511,10 +5511,10 @@ class tuple(bootstrap=True):
                 f"tuple.__new__(X): {_type(cls).__name__} is not a subtype of tuple"
             )
         if cls is tuple:
-            if _tuple_checkexact(iterable):
+            if _tuple_check_exact(iterable):
                 return iterable
             return (*iterable,)
-        if _tuple_checkexact(iterable):
+        if _tuple_check_exact(iterable):
             return _tuple_new(cls, iterable)
         return _tuple_new(cls, (*iterable,))
 

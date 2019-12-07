@@ -209,7 +209,7 @@ class Runtime;
   V(UnderDictBucketSetValue, "_dict_bucket_set_value")                         \
   V(UnderDictBucketValue, "_dict_bucket_value")                                \
   V(UnderDictCheck, "_dict_check")                                             \
-  V(UnderDictCheckExact, "_dict_checkexact")                                   \
+  V(UnderDictCheckExact, "_dict_check_exact")                                  \
   V(UnderDictGet, "_dict_get")                                                 \
   V(UnderDictGetItem, "_dict_getitem")                                         \
   V(UnderDictGuard, "_dict_guard")                                             \
@@ -230,7 +230,7 @@ class Runtime;
   V(UnderExec, "_exec")                                                        \
   V(UnderFd, "_fd")                                                            \
   V(UnderFloatCheck, "_float_check")                                           \
-  V(UnderFloatCheckExact, "_float_checkexact")                                 \
+  V(UnderFloatCheckExact, "_float_check_exact")                                \
   V(UnderFloatDivmod, "_float_divmod")                                         \
   V(UnderFloatFormat, "_float_format")                                         \
   V(UnderFloatGuard, "_float_guard")                                           \
@@ -274,7 +274,7 @@ class Runtime;
   V(UnderInstanceSetattr, "_instance_setattr")                                 \
   V(UnderInt, "_int")                                                          \
   V(UnderIntCheck, "_int_check")                                               \
-  V(UnderIntCheckExact, "_int_checkexact")                                     \
+  V(UnderIntCheckExact, "_int_check_exact")                                    \
   V(UnderIntFromBytes, "_int_from_bytes")                                      \
   V(UnderIntGuard, "_int_guard")                                               \
   V(UnderIntNewFromByteArray, "_int_new_from_bytearray")                       \
@@ -288,7 +288,7 @@ class Runtime;
   V(UnderLatin1Encode, "_latin_1_encode")                                      \
   V(UnderLineBuffering, "_line_buffering")                                     \
   V(UnderListCheck, "_list_check")                                             \
-  V(UnderListCheckExact, "_list_checkexact")                                   \
+  V(UnderListCheckExact, "_list_check_exact")                                  \
   V(UnderListDelitem, "_list_delitem")                                         \
   V(UnderListDelslice, "_list_delslice")                                       \
   V(UnderListExtend, "_list_extend")                                           \
@@ -407,7 +407,7 @@ class Runtime;
   V(UnderStrArrayCtor, "_strarray_ctor")                                       \
   V(UnderStrArrayIadd, "_strarray_iadd")                                       \
   V(UnderStrCheck, "_str_check")                                               \
-  V(UnderStrCheckExact, "_str_checkexact")                                     \
+  V(UnderStrCheckExact, "_str_check_exact")                                    \
   V(UnderStrCompareDigest, "_str_compare_digest")                              \
   V(UnderStrCount, "_str_count")                                               \
   V(UnderStrEncode, "_str_encode")                                             \
@@ -439,7 +439,7 @@ class Runtime;
   V(UnderTextIOBase, "_TextIOBase")                                            \
   V(UnderThread, "_thread")                                                    \
   V(UnderTupleCheck, "_tuple_check")                                           \
-  V(UnderTupleCheckExact, "_tuple_checkexact")                                 \
+  V(UnderTupleCheckExact, "_tuple_check_exact")                                \
   V(UnderTupleGetitem, "_tuple_getitem")                                       \
   V(UnderTupleGetslice, "_tuple_getslice")                                     \
   V(UnderTupleGuard, "_tuple_guard")                                           \

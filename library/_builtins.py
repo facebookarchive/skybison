@@ -263,7 +263,7 @@ def _dict_check(obj):
 
 
 @_patch
-def _dict_checkexact(obj):
+def _dict_check_exact(obj):
     pass
 
 
@@ -331,7 +331,7 @@ def _float_check(obj):
 
 
 @_patch
-def _float_checkexact(obj):
+def _float_check_exact(obj):
     pass
 
 
@@ -508,7 +508,7 @@ def _int_check(obj):
 
 
 @_patch
-def _int_checkexact(obj):
+def _int_check_exact(obj):
     pass
 
 
@@ -548,7 +548,7 @@ def _list_check(obj):
 
 
 @_patch
-def _list_checkexact(obj):
+def _list_check_exact(obj):
     pass
 
 
@@ -879,7 +879,7 @@ def _str_check(obj):
 
 
 @_patch
-def _str_checkexact(obj):
+def _str_check_exact(obj):
     pass
 
 
@@ -1009,7 +1009,7 @@ def _tuple_check(obj):
 
 
 @_patch
-def _tuple_checkexact(obj):
+def _tuple_check_exact(obj):
     pass
 
 
