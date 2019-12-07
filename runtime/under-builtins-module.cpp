@@ -106,13 +106,13 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderByteslikeCheck, underByteslikeCheck},
     {SymbolId::kUnderByteslikeCompareDigest, underByteslikeCompareDigest},
     {SymbolId::kUnderByteslikeCount, underByteslikeCount},
-    {SymbolId::kUnderByteslikeEndsWith, underByteslikeEndsWith},
+    {SymbolId::kUnderByteslikeEndswith, underByteslikeEndswith},
     {SymbolId::kUnderByteslikeFindByteslike, underByteslikeFindByteslike},
     {SymbolId::kUnderByteslikeFindInt, underByteslikeFindInt},
     {SymbolId::kUnderByteslikeGuard, underByteslikeGuard},
-    {SymbolId::kUnderByteslikeRfindByteslike, underByteslikeRFindByteslike},
-    {SymbolId::kUnderByteslikeRfindInt, underByteslikeRFindInt},
-    {SymbolId::kUnderByteslikeStartsWith, underByteslikeStartsWith},
+    {SymbolId::kUnderByteslikeRfindByteslike, underByteslikeRfindByteslike},
+    {SymbolId::kUnderByteslikeRfindInt, underByteslikeRfindInt},
+    {SymbolId::kUnderByteslikeStartswith, underByteslikeStartswith},
     {SymbolId::kUnderClassMethod, underClassMethod},
     {SymbolId::kUnderClassMethodIsAbstract, underClassMethodIsAbstract},
     {SymbolId::kUnderCodeCheck, underCodeCheck},
@@ -252,7 +252,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrCount, underStrCount},
     {SymbolId::kUnderStrEncode, underStrEncode},
     {SymbolId::kUnderStrEncodeASCII, underStrEncodeASCII},
-    {SymbolId::kUnderStrEndswith, underStrEndsWith},
+    {SymbolId::kUnderStrEndswith, underStrEndswith},
     {SymbolId::kUnderStrEscapeNonAscii, underStrEscapeNonAscii},
     {SymbolId::kUnderStrFind, underStrFind},
     {SymbolId::kUnderStrFromStr, underStrFromStr},
@@ -264,11 +264,11 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrLen, underStrLen},
     {SymbolId::kUnderStrPartition, underStrPartition},
     {SymbolId::kUnderStrReplace, underStrReplace},
-    {SymbolId::kUnderStrRFind, underStrRFind},
-    {SymbolId::kUnderStrRPartition, underStrRPartition},
+    {SymbolId::kUnderStrRfind, underStrRfind},
+    {SymbolId::kUnderStrRpartition, underStrRpartition},
     {SymbolId::kUnderStrSplit, underStrSplit},
     {SymbolId::kUnderStrSplitlines, underStrSplitlines},
-    {SymbolId::kUnderStrStartswith, underStrStartsWith},
+    {SymbolId::kUnderStrStartswith, underStrStartswith},
     {SymbolId::kUnderTupleCheck, underTupleCheck},
     {SymbolId::kUnderTupleCheckExact, underTupleCheckExact},
     {SymbolId::kUnderTupleGetitem, underTupleGetitem},
@@ -1230,7 +1230,7 @@ RawObject UnderBuiltinsModule::underByteslikeCount(Thread* thread, Frame* frame,
       bytesCount(haystack, haystack_len, needle, needle_len, start, end));
 }
 
-RawObject UnderBuiltinsModule::underByteslikeEndsWith(Thread* thread,
+RawObject UnderBuiltinsModule::underByteslikeEndswith(Thread* thread,
                                                       Frame* frame,
                                                       word nargs) {
   HandleScope scope(thread);
@@ -1360,7 +1360,7 @@ RawObject UnderBuiltinsModule::underByteslikeGuard(Thread* thread, Frame* frame,
       LayoutId::kTypeError, "a bytes-like object is required, not '%T'", &obj);
 }
 
-RawObject UnderBuiltinsModule::underByteslikeRFindByteslike(Thread* thread,
+RawObject UnderBuiltinsModule::underByteslikeRfindByteslike(Thread* thread,
                                                             Frame* frame,
                                                             word nargs) {
   HandleScope scope(thread);
@@ -1400,7 +1400,7 @@ RawObject UnderBuiltinsModule::underByteslikeRFindByteslike(Thread* thread,
       bytesRFind(haystack, haystack_len, needle, needle_len, start, end));
 }
 
-RawObject UnderBuiltinsModule::underByteslikeRFindInt(Thread* thread,
+RawObject UnderBuiltinsModule::underByteslikeRfindInt(Thread* thread,
                                                       Frame* frame,
                                                       word nargs) {
   HandleScope scope(thread);
@@ -1429,7 +1429,7 @@ RawObject UnderBuiltinsModule::underByteslikeRFindInt(Thread* thread,
   UNIMPLEMENTED("bytes-like other than bytes, bytearray");
 }
 
-RawObject UnderBuiltinsModule::underByteslikeStartsWith(Thread* thread,
+RawObject UnderBuiltinsModule::underByteslikeStartswith(Thread* thread,
                                                         Frame* frame,
                                                         word nargs) {
   HandleScope scope(thread);
@@ -3689,7 +3689,7 @@ RawObject UnderBuiltinsModule::underStrCount(Thread* thread, Frame* frame,
   return strCount(haystack, needle, start, end);
 }
 
-RawObject UnderBuiltinsModule::underStrEndsWith(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underStrEndswith(Thread* thread, Frame* frame,
                                                 word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -3941,7 +3941,7 @@ RawObject UnderBuiltinsModule::underStrReplace(Thread* thread, Frame* frame,
   return runtime->strReplace(thread, self, oldstr, newstr, count);
 }
 
-RawObject UnderBuiltinsModule::underStrRFind(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underStrRfind(Thread* thread, Frame* frame,
                                              word nargs) {
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
@@ -3973,7 +3973,7 @@ RawObject UnderBuiltinsModule::underStrRFind(Thread* thread, Frame* frame,
 // * needle
 // * haystack after and not including needle
 // If needle is not found in haystack, return ("", "", haystack)
-RawObject UnderBuiltinsModule::underStrRPartition(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underStrRpartition(Thread* thread, Frame* frame,
                                                   word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -4080,7 +4080,7 @@ RawObject UnderBuiltinsModule::underStrSplitlines(Thread* thread, Frame* frame,
   return strSplitlines(thread, self, keepends);
 }
 
-RawObject UnderBuiltinsModule::underStrStartsWith(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underStrStartswith(Thread* thread, Frame* frame,
                                                   word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);

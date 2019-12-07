@@ -2248,7 +2248,7 @@ TEST_F(UnderBuiltinsModuleTest, RpartitionOnSingleCharStrPartitionsCorrectly) {
   Str str(&scope, runtime_.newStrFromCStr("hello"));
   Str sep(&scope, runtime_.newStrFromCStr("l"));
   Tuple result(&scope,
-               runBuiltin(UnderBuiltinsModule::underStrRPartition, str, sep));
+               runBuiltin(UnderBuiltinsModule::underStrRpartition, str, sep));
   ASSERT_EQ(result.length(), 3);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hel"));
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), "l"));
@@ -2260,7 +2260,7 @@ TEST_F(UnderBuiltinsModuleTest, RpartitionOnMultiCharStrPartitionsCorrectly) {
   Str str(&scope, runtime_.newStrFromCStr("hello"));
   Str sep(&scope, runtime_.newStrFromCStr("ll"));
   Tuple result(&scope,
-               runBuiltin(UnderBuiltinsModule::underStrRPartition, str, sep));
+               runBuiltin(UnderBuiltinsModule::underStrRpartition, str, sep));
   ASSERT_EQ(result.length(), 3);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), "he"));
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), "ll"));
@@ -2272,7 +2272,7 @@ TEST_F(UnderBuiltinsModuleTest, RpartitionOnSuffixPutsEmptyStrAtEndOfResult) {
   Str str(&scope, runtime_.newStrFromCStr("hello"));
   Str sep(&scope, runtime_.newStrFromCStr("lo"));
   Tuple result(&scope,
-               runBuiltin(UnderBuiltinsModule::underStrRPartition, str, sep));
+               runBuiltin(UnderBuiltinsModule::underStrRpartition, str, sep));
   ASSERT_EQ(result.length(), 3);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hel"));
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), "lo"));
@@ -2285,7 +2285,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_.newStrFromCStr("hello"));
   Str sep(&scope, runtime_.newStrFromCStr("lop"));
   Tuple result(&scope,
-               runBuiltin(UnderBuiltinsModule::underStrRPartition, str, sep));
+               runBuiltin(UnderBuiltinsModule::underStrRpartition, str, sep));
   ASSERT_EQ(result.length(), 3);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
@@ -2298,7 +2298,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_.newStrFromCStr("hello"));
   Str sep(&scope, runtime_.newStrFromCStr("he"));
   Tuple result(&scope,
-               runBuiltin(UnderBuiltinsModule::underStrRPartition, str, sep));
+               runBuiltin(UnderBuiltinsModule::underStrRpartition, str, sep));
   ASSERT_EQ(result.length(), 3);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), "he"));
@@ -2311,7 +2311,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_.newStrFromCStr("hello"));
   Str sep(&scope, runtime_.newStrFromCStr("hex"));
   Tuple result(&scope,
-               runBuiltin(UnderBuiltinsModule::underStrRPartition, str, sep));
+               runBuiltin(UnderBuiltinsModule::underStrRpartition, str, sep));
   ASSERT_EQ(result.length(), 3);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
@@ -2323,7 +2323,7 @@ TEST_F(UnderBuiltinsModuleTest, RpartitionLargerStrPutsStrAtEndOfResult) {
   Str str(&scope, runtime_.newStrFromCStr("hello"));
   Str sep(&scope, runtime_.newStrFromCStr("foobarbaz"));
   Tuple result(&scope,
-               runBuiltin(UnderBuiltinsModule::underStrRPartition, str, sep));
+               runBuiltin(UnderBuiltinsModule::underStrRpartition, str, sep));
   ASSERT_EQ(result.length(), 3);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
@@ -2335,7 +2335,7 @@ TEST_F(UnderBuiltinsModuleTest, RpartitionEmptyStrReturnsTupleOfEmptyStrings) {
   Str str(&scope, Str::empty());
   Str sep(&scope, runtime_.newStrFromCStr("a"));
   Tuple result(&scope,
-               runBuiltin(UnderBuiltinsModule::underStrRPartition, str, sep));
+               runBuiltin(UnderBuiltinsModule::underStrRpartition, str, sep));
   ASSERT_EQ(result.length(), 3);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));

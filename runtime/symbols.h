@@ -180,13 +180,13 @@ class Runtime;
   V(UnderByteslikeCheck, "_byteslike_check")                                   \
   V(UnderByteslikeCompareDigest, "_byteslike_compare_digest")                  \
   V(UnderByteslikeCount, "_byteslike_count")                                   \
-  V(UnderByteslikeEndsWith, "_byteslike_endswith")                             \
+  V(UnderByteslikeEndswith, "_byteslike_endswith")                             \
   V(UnderByteslikeFindByteslike, "_byteslike_find_byteslike")                  \
   V(UnderByteslikeFindInt, "_byteslike_find_int")                              \
   V(UnderByteslikeGuard, "_byteslike_guard")                                   \
   V(UnderByteslikeRfindByteslike, "_byteslike_rfind_byteslike")                \
   V(UnderByteslikeRfindInt, "_byteslike_rfind_int")                            \
-  V(UnderByteslikeStartsWith, "_byteslike_startswith")                         \
+  V(UnderByteslikeStartswith, "_byteslike_startswith")                         \
   V(UnderCapiDictSetitem, "_capi_dict_setitem")                                \
   V(UnderClassMethod, "_classmethod")                                          \
   V(UnderClassMethodIsAbstract, "_classmethod_isabstract")                     \
@@ -425,8 +425,8 @@ class Runtime;
   V(UnderStrMod, "_str_mod")                                                   \
   V(UnderStrPartition, "_str_partition")                                       \
   V(UnderStrReplace, "_str_replace")                                           \
-  V(UnderStrRFind, "_str_rfind")                                               \
-  V(UnderStrRPartition, "_str_rpartition")                                     \
+  V(UnderStrRfind, "_str_rfind")                                               \
+  V(UnderStrRpartition, "_str_rpartition")                                     \
   V(UnderStrSplit, "_str_split")                                               \
   V(UnderStrSplitlines, "_str_splitlines")                                     \
   V(UnderStrStartswith, "_str_startswith")                                     \
@@ -772,7 +772,7 @@ class Runtime;
   V(ProcessLookupError, "ProcessLookupError")                                  \
   V(Property, "property")                                                      \
   V(Proxy, "proxy")                                                            \
-  V(RPartition, "rpartition")                                                  \
+  V(Rpartition, "rpartition")                                                  \
   V(RSplit, "rsplit")                                                          \
   V(RStrip, "rstrip")                                                          \
   V(Range, "range")                                                            \

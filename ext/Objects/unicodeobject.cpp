@@ -1797,7 +1797,7 @@ PY_EXPORT PyObject* PyUnicode_RPartition(PyObject* str, PyObject* sep) {
   Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
   Object sep_obj(&scope, ApiHandle::fromPyObject(sep)->asObject());
   Object result(
-      &scope, thread->invokeMethodStatic2(LayoutId::kStr, SymbolId::kRPartition,
+      &scope, thread->invokeMethodStatic2(LayoutId::kStr, SymbolId::kRpartition,
                                           str_obj, sep_obj));
   if (result.isError()) {
     if (result.isErrorNotFound()) {

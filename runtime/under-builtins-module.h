@@ -63,7 +63,7 @@ class UnderBuiltinsModule {
                                                word nargs);
   static RawObject underByteslikeCount(Thread* thread, Frame* frame,
                                        word nargs);
-  static RawObject underByteslikeEndsWith(Thread* thread, Frame* frame,
+  static RawObject underByteslikeEndswith(Thread* thread, Frame* frame,
                                           word nargs);
   static RawObject underByteslikeFindByteslike(Thread* thread, Frame* frame,
                                                word nargs);
@@ -71,11 +71,11 @@ class UnderBuiltinsModule {
                                          word nargs);
   static RawObject underByteslikeGuard(Thread* thread, Frame* frame,
                                        word nargs);
-  static RawObject underByteslikeRFindByteslike(Thread* thread, Frame* frame,
+  static RawObject underByteslikeRfindByteslike(Thread* thread, Frame* frame,
                                                 word nargs);
-  static RawObject underByteslikeRFindInt(Thread* thread, Frame* frame,
+  static RawObject underByteslikeRfindInt(Thread* thread, Frame* frame,
                                           word nargs);
-  static RawObject underByteslikeStartsWith(Thread* thread, Frame* frame,
+  static RawObject underByteslikeStartswith(Thread* thread, Frame* frame,
                                             word nargs);
   static RawObject underClassMethod(Thread* thread, Frame* frame, word nargs);
   static RawObject underClassMethodIsAbstract(Thread* thread, Frame* frame,
@@ -279,7 +279,7 @@ class UnderBuiltinsModule {
   static RawObject underStrEncode(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrEncodeASCII(Thread* thread, Frame* frame,
                                        word nargs);
-  static RawObject underStrEndsWith(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrEndswith(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrEscapeNonAscii(Thread* thread, Frame* frame,
                                           word nargs);
   static RawObject underStrFind(Thread* thread, Frame* frame, word nargs);
@@ -292,11 +292,11 @@ class UnderBuiltinsModule {
   static RawObject underStrLen(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrPartition(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrReplace(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrRFind(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrRPartition(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrRfind(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrRpartition(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrSplit(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrSplitlines(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrStartsWith(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrStartswith(Thread* thread, Frame* frame, word nargs);
   static RawObject underTupleCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underTupleCheckExact(Thread* thread, Frame* frame,
                                         word nargs);
