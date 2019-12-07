@@ -187,7 +187,7 @@ class Runtime;
   V(UnderByteslikeRfindByteslike, "_byteslike_rfind_byteslike")                \
   V(UnderByteslikeRfindInt, "_byteslike_rfind_int")                            \
   V(UnderByteslikeStartsWith, "_byteslike_startswith")                         \
-  V(UnderCapiDictSetItem, "_capi_dict_setitem")                                \
+  V(UnderCapiDictSetitem, "_capi_dict_setitem")                                \
   V(UnderClassMethod, "_classmethod")                                          \
   V(UnderClassMethodIsAbstract, "_classmethod_isabstract")                     \
   V(UnderClosed, "_closed")                                                    \
@@ -211,13 +211,13 @@ class Runtime;
   V(UnderDictCheck, "_dict_check")                                             \
   V(UnderDictCheckExact, "_dict_check_exact")                                  \
   V(UnderDictGet, "_dict_get")                                                 \
-  V(UnderDictGetItem, "_dict_getitem")                                         \
+  V(UnderDictGetitem, "_dict_getitem")                                         \
   V(UnderDictGuard, "_dict_guard")                                             \
   V(UnderDictLen, "_dict_len")                                                 \
   V(UnderDictLookup, "_dict_lookup")                                           \
   V(UnderDictLookupNext, "_dict_lookup_next")                                  \
   V(UnderDictPopitem, "_dict_popitem")                                         \
-  V(UnderDictSetItem, "_dict_setitem")                                         \
+  V(UnderDictSetitem, "_dict_setitem")                                         \
   V(UnderDictUpdate, "_dict_update")                                           \
   V(UnderDivmod, "_divmod")                                                    \
   V(UnderEncoder, "_encoder")                                                  \
@@ -432,7 +432,7 @@ class Runtime;
   V(UnderStrStartswith, "_str_startswith")                                     \
   V(UnderStructseqField, "_structseq_field")                                   \
   V(UnderStructseqFieldNames, "_structseq_field_names")                        \
-  V(UnderStructseqGetItem, "_structseq_getitem")                               \
+  V(UnderStructseqGetitem, "_structseq_getitem")                               \
   V(UnderStructseqNew, "_structseq_new")                                       \
   V(UnderStructseqRepr, "_structseq_repr")                                     \
   V(UnderTelling, "_telling")                                                  \

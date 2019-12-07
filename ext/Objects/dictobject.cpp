@@ -48,7 +48,7 @@ PY_EXPORT int PyDict_SetItem(PyObject* pydict, PyObject* key, PyObject* value) {
   Object keyobj(&scope, ApiHandle::fromPyObject(key)->asObject());
   Object valueobj(&scope, ApiHandle::fromPyObject(value)->asObject());
   Object result(&scope, thread->invokeFunction3(SymbolId::kBuiltins,
-                                                SymbolId::kUnderCapiDictSetItem,
+                                                SymbolId::kUnderCapiDictSetitem,
                                                 dictobj, keyobj, valueobj));
   return result.isError() ? -1 : 0;
 }
@@ -61,7 +61,7 @@ PY_EXPORT int PyDict_SetItemString(PyObject* pydict, const char* key,
   Object keyobj(&scope, thread->runtime()->newStrFromCStr(key));
   Object valueobj(&scope, ApiHandle::fromPyObject(value)->asObject());
   Object result(&scope, thread->invokeFunction3(SymbolId::kBuiltins,
-                                                SymbolId::kUnderCapiDictSetItem,
+                                                SymbolId::kUnderCapiDictSetitem,
                                                 dictobj, keyobj, valueobj));
   return result.isError() ? -1 : 0;
 }
@@ -80,7 +80,7 @@ static PyObject* getItem(Thread* thread, const Object& dict,
   HandleScope scope(thread);
   Object result(
       &scope, thread->invokeFunction2(SymbolId::kBuiltins,
-                                      SymbolId::kUnderDictGetItem, dict, key));
+                                      SymbolId::kUnderDictGetitem, dict, key));
   // For historical reasons, PyDict_GetItem supresses all errors that may occur
   if (result.isError()) {
     thread->clearPendingException();

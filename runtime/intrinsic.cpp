@@ -195,7 +195,7 @@ static bool underListCheckExact(Frame* frame) {
   return true;
 }
 
-static bool underListGetItem(Frame* frame) {
+static bool underListGetitem(Frame* frame) {
   RawObject arg0 = frame->peek(1);
   if (!arg0.isList()) {
     return false;
@@ -396,7 +396,7 @@ static bool underTupleCheckExact(Frame* frame) {
   return true;
 }
 
-static bool underTupleGetItem(Frame* frame) {
+static bool underTupleGetitem(Frame* frame) {
   RawObject arg0 = frame->peek(1);
   if (!arg0.isTuple()) {
     return false;
@@ -584,7 +584,7 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
     case SymbolId::kUnderListCheckExact:
       return underListCheckExact(frame);
     case SymbolId::kUnderListGetitem:
-      return underListGetItem(frame);
+      return underListGetitem(frame);
     case SymbolId::kUnderListGuard:
       return underListGuard(thread, frame);
     case SymbolId::kUnderListLen:
@@ -632,7 +632,7 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
     case SymbolId::kUnderTupleCheckExact:
       return underTupleCheckExact(frame);
     case SymbolId::kUnderTupleGetitem:
-      return underTupleGetItem(frame);
+      return underTupleGetitem(frame);
     case SymbolId::kUnderTupleGuard:
       return underTupleGuard(thread, frame);
     case SymbolId::kUnderTupleLen:

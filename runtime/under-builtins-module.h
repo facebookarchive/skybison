@@ -21,21 +21,21 @@ class UnderBuiltinsModule {
                                        word nargs);
   static RawObject underBytearrayClear(Thread* thread, Frame* frame,
                                        word nargs);
-  static RawObject underBytearrayDelItem(Thread* thread, Frame* frame,
+  static RawObject underBytearrayDelitem(Thread* thread, Frame* frame,
                                          word nargs);
-  static RawObject underBytearrayDelSlice(Thread* thread, Frame* frame,
+  static RawObject underBytearrayDelslice(Thread* thread, Frame* frame,
                                           word nargs);
-  static RawObject underBytearrayGetItem(Thread* thread, Frame* frame,
+  static RawObject underBytearrayGetitem(Thread* thread, Frame* frame,
                                          word nargs);
-  static RawObject underBytearrayGetSlice(Thread* thread, Frame* frame,
+  static RawObject underBytearrayGetslice(Thread* thread, Frame* frame,
                                           word nargs);
   static RawObject underBytearrayGuard(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underBytearrayJoin(Thread* thread, Frame* frame, word nargs);
   static RawObject underBytearrayLen(Thread* thread, Frame* frame, word nargs);
-  static RawObject underBytearraySetItem(Thread* thread, Frame* frame,
+  static RawObject underBytearraySetitem(Thread* thread, Frame* frame,
                                          word nargs);
-  static RawObject underBytearraySetSlice(Thread* thread, Frame* frame,
+  static RawObject underBytearraySetslice(Thread* thread, Frame* frame,
                                           word nargs);
   static RawObject underBytesCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underBytesDecode(Thread* thread, Frame* frame, word nargs);
@@ -46,8 +46,8 @@ class UnderBuiltinsModule {
   static RawObject underBytesFromBytes(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underBytesFromInts(Thread* thread, Frame* frame, word nargs);
-  static RawObject underBytesGetItem(Thread* thread, Frame* frame, word nargs);
-  static RawObject underBytesGetSlice(Thread* thread, Frame* frame, word nargs);
+  static RawObject underBytesGetitem(Thread* thread, Frame* frame, word nargs);
+  static RawObject underBytesGetslice(Thread* thread, Frame* frame, word nargs);
   static RawObject underBytesGuard(Thread* thread, Frame* frame, word nargs);
   static RawObject underBytesJoin(Thread* thread, Frame* frame, word nargs);
   static RawObject underBytesLen(Thread* thread, Frame* frame, word nargs);
@@ -103,7 +103,7 @@ class UnderBuiltinsModule {
                                        word nargs);
   static RawObject underDictUpdate(Thread* thread, Frame* frame, word nargs);
   static RawObject underDictPopitem(Thread* thread, Frame* frame, word nargs);
-  static RawObject underDictSetItem(Thread* thread, Frame* frame, word nargs);
+  static RawObject underDictSetitem(Thread* thread, Frame* frame, word nargs);
   static RawObject underDivmod(Thread* thread, Frame* frame, word nargs);
   static RawObject underExec(Thread* thread, Frame* frame, word nargs);
   static RawObject underFloatCheck(Thread* thread, Frame* frame, word nargs);
@@ -177,11 +177,11 @@ class UnderBuiltinsModule {
   static RawObject underListCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underListCheckExact(Thread* thread, Frame* frame,
                                        word nargs);
-  static RawObject underListDelItem(Thread* thread, Frame* frame, word nargs);
-  static RawObject underListDelSlice(Thread* thread, Frame* frame, word nargs);
+  static RawObject underListDelitem(Thread* thread, Frame* frame, word nargs);
+  static RawObject underListDelslice(Thread* thread, Frame* frame, word nargs);
   static RawObject underListExtend(Thread* thread, Frame* frame, word nargs);
-  static RawObject underListGetItem(Thread* thread, Frame* frame, word nargs);
-  static RawObject underListGetSlice(Thread* thread, Frame* frame, word nargs);
+  static RawObject underListGetitem(Thread* thread, Frame* frame, word nargs);
+  static RawObject underListGetslice(Thread* thread, Frame* frame, word nargs);
   static RawObject underListGuard(Thread* thread, Frame* frame, word nargs);
   static RawObject underListLen(Thread* thread, Frame* frame, word nargs);
   static RawObject underListSort(Thread* thread, Frame* frame, word nargs);
@@ -284,8 +284,8 @@ class UnderBuiltinsModule {
                                           word nargs);
   static RawObject underStrFind(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrFromStr(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrGetItem(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrGetSlice(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrGetitem(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrGetslice(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrGuard(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrIsChr(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrJoin(Thread* thread, Frame* frame, word nargs);
@@ -300,8 +300,8 @@ class UnderBuiltinsModule {
   static RawObject underTupleCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underTupleCheckExact(Thread* thread, Frame* frame,
                                         word nargs);
-  static RawObject underTupleGetItem(Thread* thread, Frame* frame, word nargs);
-  static RawObject underTupleGetSlice(Thread* thread, Frame* frame, word nargs);
+  static RawObject underTupleGetitem(Thread* thread, Frame* frame, word nargs);
+  static RawObject underTupleGetslice(Thread* thread, Frame* frame, word nargs);
   static RawObject underTupleGuard(Thread* thread, Frame* frame, word nargs);
   static RawObject underTupleLen(Thread* thread, Frame* frame, word nargs);
   static RawObject underTupleNew(Thread* thread, Frame* frame, word nargs);

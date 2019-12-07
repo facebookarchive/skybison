@@ -85,7 +85,7 @@ TEST_F(UnderBuiltinsModuleTest, UnderBytearrayClearSetsLengthToZero) {
   EXPECT_EQ(array.numItems(), 0);
 }
 
-TEST_F(UnderBuiltinsModuleTest, UnderBytearrayDelItemDeletesItemAtIndex) {
+TEST_F(UnderBuiltinsModuleTest, UnderBytearrayDelitemDeletesItemAtIndex) {
   HandleScope scope(thread_);
   ByteArray self(&scope, runtime_.newByteArray());
   byteArrayAdd(thread_, &runtime_, self, 'a');
@@ -94,7 +94,7 @@ TEST_F(UnderBuiltinsModuleTest, UnderBytearrayDelItemDeletesItemAtIndex) {
   byteArrayAdd(thread_, &runtime_, self, 'd');
   byteArrayAdd(thread_, &runtime_, self, 'e');
   Int idx(&scope, SmallInt::fromWord(2));
-  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underBytearrayDelItem, self, idx)
+  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underBytearrayDelitem, self, idx)
                   .isNoneType());
   EXPECT_TRUE(isByteArrayEqualsCStr(self, "abde"));
 }
@@ -111,7 +111,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Int start(&scope, SmallInt::fromWord(0));
   Int stop(&scope, SmallInt::fromWord(3));
   Int step(&scope, SmallInt::fromWord(1));
-  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underBytearrayDelSlice, self,
+  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underBytearrayDelslice, self,
                          start, stop, step)
                   .isNoneType());
   EXPECT_TRUE(isByteArrayEqualsCStr(self, "de"));
@@ -129,7 +129,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Int start(&scope, SmallInt::fromWord(0));
   Int stop(&scope, SmallInt::fromWord(3));
   Int step(&scope, SmallInt::fromWord(2));
-  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underBytearrayDelSlice, self,
+  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underBytearrayDelslice, self,
                          start, stop, step)
                   .isNoneType());
   EXPECT_TRUE(isByteArrayEqualsCStr(self, "bde"));
@@ -181,7 +181,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Int key(&scope, runtime_.newInt(SmallInt::kMaxValue + 1));
   Int value(&scope, SmallInt::fromWord(0));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underBytearraySetItem, self, key, value),
+      runBuiltin(UnderBuiltinsModule::underBytearraySetitem, self, key, value),
       LayoutId::kIndexError, "cannot fit 'int' into an index-sized integer"));
 }
 
@@ -193,7 +193,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Int key(&scope, runtime_.newInt(self.numItems()));
   Int value(&scope, SmallInt::fromWord(0));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underBytearraySetItem, self, key, value),
+      runBuiltin(UnderBuiltinsModule::underBytearraySetitem, self, key, value),
       LayoutId::kIndexError, "index out of range"));
 }
 
@@ -205,7 +205,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Int key(&scope, runtime_.newInt(0));
   Int value(&scope, SmallInt::fromWord(-1));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underBytearraySetItem, self, key, value),
+      runBuiltin(UnderBuiltinsModule::underBytearraySetitem, self, key, value),
       LayoutId::kValueError, "byte must be in range(0, 256)"));
 }
 
@@ -218,7 +218,7 @@ TEST_F(
   Int key(&scope, runtime_.newInt(-self.numItems() - 1));
   Int value(&scope, SmallInt::fromWord(0));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underBytearraySetItem, self, key, value),
+      runBuiltin(UnderBuiltinsModule::underBytearraySetitem, self, key, value),
       LayoutId::kIndexError, "index out of range"));
 }
 
@@ -230,7 +230,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Int key(&scope, runtime_.newInt(0));
   Int value(&scope, SmallInt::fromWord(kMaxByte + 1));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underBytearraySetItem, self, key, value),
+      runBuiltin(UnderBuiltinsModule::underBytearraySetitem, self, key, value),
       LayoutId::kValueError, "byte must be in range(0, 256)"));
 }
 
@@ -244,7 +244,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Int key(&scope, SmallInt::fromWord(-1));
   Int value(&scope, SmallInt::fromWord(1));
   EXPECT_TRUE(
-      runBuiltin(UnderBuiltinsModule::underBytearraySetItem, self, key, value)
+      runBuiltin(UnderBuiltinsModule::underBytearraySetitem, self, key, value)
           .isNoneType());
   EXPECT_TRUE(isByteArrayEqualsCStr(self, "ab\001"));
 }
@@ -259,7 +259,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Int key(&scope, SmallInt::fromWord(1));
   Int value(&scope, SmallInt::fromWord(1));
   EXPECT_TRUE(
-      runBuiltin(UnderBuiltinsModule::underBytearraySetItem, self, key, value)
+      runBuiltin(UnderBuiltinsModule::underBytearraySetitem, self, key, value)
           .isNoneType());
   EXPECT_TRUE(isByteArrayEqualsCStr(self, "a\001c"));
 }
@@ -280,7 +280,7 @@ TEST_F(UnderBuiltinsModuleTest,
   byteArrayAdd(thread_, &runtime_, value, 'A');
   byteArrayAdd(thread_, &runtime_, value, 'B');
   byteArrayAdd(thread_, &runtime_, value, 'C');
-  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underBytearraySetSlice, self,
+  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underBytearraySetslice, self,
                          start, stop, step, value)
                   .isNoneType());
   EXPECT_TRUE(isByteArrayEqualsCStr(self, "ABCde"));
@@ -301,7 +301,7 @@ TEST_F(UnderBuiltinsModuleTest,
   ByteArray value(&scope, runtime_.newByteArray());
   byteArrayAdd(thread_, &runtime_, value, 'A');
   byteArrayAdd(thread_, &runtime_, value, 'B');
-  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underBytearraySetSlice, self,
+  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underBytearraySetslice, self,
                          start, stop, step, value)
                   .isNoneType());
   EXPECT_TRUE(isByteArrayEqualsCStr(self, "AbBde"));
@@ -482,7 +482,7 @@ TEST_F(UnderBuiltinsModuleTest,
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderDictSetItemWithKeyHashReturningNonIntRaisesTypeError) {
+       UnderDictSetitemWithKeyHashReturningNonIntRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 class E:
   def __hash__(self): return "non int"
@@ -494,7 +494,7 @@ _dict_setitem(d, E(), 4)
                             "__hash__ method should return an integer"));
 }
 
-TEST_F(UnderBuiltinsModuleTest, UnderDictSetItemWithExistingKey) {
+TEST_F(UnderBuiltinsModuleTest, UnderDictSetitemWithExistingKey) {
   HandleScope scope(thread_);
   Dict dict(&scope, runtime_.newDictWithSize(1));
   Str key(&scope, runtime_.newStrFromCStr("foo"));
@@ -502,7 +502,7 @@ TEST_F(UnderBuiltinsModuleTest, UnderDictSetItemWithExistingKey) {
   Object val2(&scope, runtime_.newInt(1));
   dictAtPutByStr(thread_, dict, key, val);
 
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underDictSetItem, dict,
+  Object result(&scope, runBuiltin(UnderBuiltinsModule::underDictSetitem, dict,
                                    key, val2));
   ASSERT_TRUE(result.isNoneType());
   ASSERT_EQ(dict.numItems(), 1);
@@ -510,14 +510,14 @@ TEST_F(UnderBuiltinsModuleTest, UnderDictSetItemWithExistingKey) {
   ASSERT_EQ(dictAtByStr(thread_, dict, key), *val2);
 }
 
-TEST_F(UnderBuiltinsModuleTest, UnderDictSetItemWithNonExistentKey) {
+TEST_F(UnderBuiltinsModuleTest, UnderDictSetitemWithNonExistentKey) {
   HandleScope scope(thread_);
   Dict dict(&scope, runtime_.newDictWithSize(1));
   ASSERT_EQ(dict.numItems(), 0);
   ASSERT_EQ(dict.numUsableItems(), 5);
   Str key(&scope, runtime_.newStrFromCStr("foo"));
   Object val(&scope, runtime_.newInt(0));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underDictSetItem, dict,
+  Object result(&scope, runBuiltin(UnderBuiltinsModule::underDictSetitem, dict,
                                    key, val));
   ASSERT_TRUE(result.isNoneType());
   ASSERT_EQ(dict.numItems(), 1);
@@ -525,7 +525,7 @@ TEST_F(UnderBuiltinsModuleTest, UnderDictSetItemWithNonExistentKey) {
   ASSERT_EQ(dictAtByStr(thread_, dict, key), *val);
 }
 
-TEST_F(UnderBuiltinsModuleTest, UnderDictSetItemWithDictSubclassSetsItem) {
+TEST_F(UnderBuiltinsModuleTest, UnderDictSetitemWithDictSubclassSetsItem) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class foo(dict):
@@ -536,7 +536,7 @@ d = foo()
   Dict dict(&scope, mainModuleAt(&runtime_, "d"));
   Str key(&scope, runtime_.newStrFromCStr("a"));
   Str value(&scope, runtime_.newStrFromCStr("b"));
-  Object result1(&scope, runBuiltin(UnderBuiltinsModule::underDictSetItem, dict,
+  Object result1(&scope, runBuiltin(UnderBuiltinsModule::underDictSetitem, dict,
                                     key, value));
   EXPECT_TRUE(result1.isNoneType());
   Object result2(&scope, dictAtByStr(thread_, dict, key));
@@ -1632,205 +1632,205 @@ obj = C()
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderListDelItemWithNegativeIndexRemovesRelativeToEnd) {
+       UnderListDelitemWithNegativeIndexRemovesRelativeToEnd) {
   HandleScope scope(thread_);
   List list(&scope, listFromRange(1, 4));
   Object idx(&scope, SmallInt::fromWord(-3));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelItem, list, idx)
+  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelitem, list, idx)
                   .isNoneType());
   EXPECT_PYLIST_EQ(list, {2, 3});
 }
 
-TEST_F(UnderBuiltinsModuleTest, UnderListDelItemWithLastIndexRemovesLastItem) {
+TEST_F(UnderBuiltinsModuleTest, UnderListDelitemWithLastIndexRemovesLastItem) {
   HandleScope scope(thread_);
   List list(&scope, listFromRange(0, 2));
   Object idx(&scope, SmallInt::fromWord(1));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelItem, list, idx)
+  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelitem, list, idx)
                   .isNoneType());
   EXPECT_PYLIST_EQ(list, {0});
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderListDelItemWithFirstIndexRemovesFirstItem) {
+       UnderListDelitemWithFirstIndexRemovesFirstItem) {
   HandleScope scope(thread_);
   List list(&scope, listFromRange(0, 2));
   Object idx(&scope, SmallInt::fromWord(0));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelItem, list, idx)
+  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelitem, list, idx)
                   .isNoneType());
   EXPECT_PYLIST_EQ(list, {1});
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderListDelItemWithNegativeFirstIndexRemovesFirstItem) {
+       UnderListDelitemWithNegativeFirstIndexRemovesFirstItem) {
   HandleScope scope(thread_);
   List list(&scope, listFromRange(0, 2));
   Object idx(&scope, SmallInt::fromWord(-2));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelItem, list, idx)
+  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelitem, list, idx)
                   .isNoneType());
   EXPECT_PYLIST_EQ(list, {1});
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderListDelItemWithNegativeLastIndexRemovesLastItem) {
+       UnderListDelitemWithNegativeLastIndexRemovesLastItem) {
   HandleScope scope(thread_);
   List list(&scope, listFromRange(0, 2));
   Object idx(&scope, SmallInt::fromWord(-1));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelItem, list, idx)
+  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelitem, list, idx)
                   .isNoneType());
   EXPECT_PYLIST_EQ(list, {0});
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderListDelItemWithNumberGreaterThanSmallIntMaxDoesNotCrash) {
+       UnderListDelitemWithNumberGreaterThanSmallIntMaxDoesNotCrash) {
   HandleScope scope(thread_);
   List list(&scope, listFromRange(0, 2));
   Int big(&scope, runtime_.newInt(SmallInt::kMaxValue + 100));
   EXPECT_TRUE(
-      raised(runBuiltin(UnderBuiltinsModule::underListDelItem, list, big),
+      raised(runBuiltin(UnderBuiltinsModule::underListDelitem, list, big),
              LayoutId::kIndexError));
   EXPECT_PYLIST_EQ(list, {0, 1});
 }
 
-TEST_F(UnderBuiltinsModuleTest, UnderListDelSliceRemovesItems) {
+TEST_F(UnderBuiltinsModuleTest, UnderListDelsliceRemovesItems) {
   HandleScope scope(thread_);
   List list(&scope, listFromRange(1, 4));
   Int start(&scope, SmallInt::fromWord(0));
   Int stop(&scope, SmallInt::fromWord(1));
   Int step(&scope, SmallInt::fromWord(1));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelSlice, list, start,
+  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelslice, list, start,
                          stop, step)
                   .isNoneType());
   EXPECT_PYLIST_EQ(list, {2, 3});
 }
 
-TEST_F(UnderBuiltinsModuleTest, UnderListDelSliceRemovesFirstItem) {
+TEST_F(UnderBuiltinsModuleTest, UnderListDelsliceRemovesFirstItem) {
   HandleScope scope(thread_);
   List list(&scope, listFromRange(0, 2));
   Int start(&scope, SmallInt::fromWord(0));
   Int stop(&scope, SmallInt::fromWord(1));
   Int step(&scope, SmallInt::fromWord(1));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelSlice, list, start,
+  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelslice, list, start,
                          stop, step)
                   .isNoneType());
   EXPECT_PYLIST_EQ(list, {1});
 }
 
-TEST_F(UnderBuiltinsModuleTest, UnderListDelSliceRemovesLastItem) {
+TEST_F(UnderBuiltinsModuleTest, UnderListDelsliceRemovesLastItem) {
   HandleScope scope(thread_);
   List list(&scope, listFromRange(0, 2));
   Int start(&scope, SmallInt::fromWord(1));
   Int stop(&scope, SmallInt::fromWord(2));
   Int step(&scope, SmallInt::fromWord(1));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelSlice, list, start,
+  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelslice, list, start,
                          stop, step)
                   .isNoneType());
   EXPECT_PYLIST_EQ(list, {0});
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderListDelSliceWithStopEqualsLengthRemovesTrailingItems) {
+       UnderListDelsliceWithStopEqualsLengthRemovesTrailingItems) {
   HandleScope scope(thread_);
   List list(&scope, listFromRange(1, 4));
   Int start(&scope, SmallInt::fromWord(1));
   Int stop(&scope, SmallInt::fromWord(3));
   Int step(&scope, SmallInt::fromWord(1));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelSlice, list, start,
+  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelslice, list, start,
                          stop, step)
                   .isNoneType());
   EXPECT_PYLIST_EQ(list, {1});
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderListDelSliceWithStartEqualsZeroRemovesStartingItems) {
+       UnderListDelsliceWithStartEqualsZeroRemovesStartingItems) {
   HandleScope scope(thread_);
   List list(&scope, listFromRange(1, 4));
   Int start(&scope, SmallInt::fromWord(0));
   Int stop(&scope, SmallInt::fromWord(1));
   Int step(&scope, SmallInt::fromWord(1));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelSlice, list, start,
+  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelslice, list, start,
                          stop, step)
                   .isNoneType());
   EXPECT_PYLIST_EQ(list, {2, 3});
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderListDelSliceWithStartEqualsZeroAndStopEqualsLengthRemovesAllItems) {
+       UnderListDelsliceWithStartEqualsZeroAndStopEqualsLengthRemovesAllItems) {
   HandleScope scope(thread_);
   List list(&scope, listFromRange(1, 4));
   Int start(&scope, SmallInt::fromWord(0));
   Int stop(&scope, SmallInt::fromWord(3));
   Int step(&scope, SmallInt::fromWord(1));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelSlice, list, start,
+  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelslice, list, start,
                          stop, step)
                   .isNoneType());
   EXPECT_EQ(list.numItems(), 0);
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderListDelSliceWithStepEqualsTwoDeletesEveryEvenItem) {
+       UnderListDelsliceWithStepEqualsTwoDeletesEveryEvenItem) {
   HandleScope scope(thread_);
   List list(&scope, listFromRange(0, 5));
   Int start(&scope, SmallInt::fromWord(0));
   Int stop(&scope, SmallInt::fromWord(5));
   Int step(&scope, SmallInt::fromWord(2));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelSlice, list, start,
+  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelslice, list, start,
                          stop, step)
                   .isNoneType());
   EXPECT_PYLIST_EQ(list, {1, 3});
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderListDelSliceWithStepEqualsTwoDeletesEveryOddItem) {
+       UnderListDelsliceWithStepEqualsTwoDeletesEveryOddItem) {
   HandleScope scope(thread_);
   List list(&scope, listFromRange(0, 5));
   Int start(&scope, SmallInt::fromWord(1));
   Int stop(&scope, SmallInt::fromWord(5));
   Int step(&scope, SmallInt::fromWord(2));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelSlice, list, start,
+  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelslice, list, start,
                          stop, step)
                   .isNoneType());
   EXPECT_PYLIST_EQ(list, {0, 2, 4});
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderListDelSliceWithStepGreaterThanLengthDeletesOneItem) {
+       UnderListDelsliceWithStepGreaterThanLengthDeletesOneItem) {
   HandleScope scope(thread_);
   List list(&scope, listFromRange(0, 5));
   Int start(&scope, SmallInt::fromWord(0));
   Int stop(&scope, SmallInt::fromWord(5));
   Int step(&scope, SmallInt::fromWord(1000));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelSlice, list, start,
+  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelslice, list, start,
                          stop, step)
                   .isNoneType());
   EXPECT_PYLIST_EQ(list, {1, 2, 3, 4});
 }
 
-TEST_F(UnderBuiltinsModuleTest, UnderListGetItemWithNegativeIndex) {
+TEST_F(UnderBuiltinsModuleTest, UnderListGetitemWithNegativeIndex) {
   HandleScope scope(thread_);
   List list(&scope, listFromRange(1, 4));
   Object idx(&scope, SmallInt::fromWord(-3));
   Object result(&scope,
-                runBuiltin(UnderBuiltinsModule::underListGetItem, list, idx));
+                runBuiltin(UnderBuiltinsModule::underListGetitem, list, idx));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderListGetItemWithInvalidNegativeIndexRaisesIndexError) {
+       UnderListGetitemWithInvalidNegativeIndexRaisesIndexError) {
   HandleScope scope(thread_);
   List list(&scope, listFromRange(1, 4));
   Object idx(&scope, SmallInt::fromWord(-4));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underListGetItem, list, idx),
+      runBuiltin(UnderBuiltinsModule::underListGetitem, list, idx),
       LayoutId::kIndexError, "list index out of range"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderListGetItemWithInvalidPositiveIndexRaisesIndexError) {
+       UnderListGetitemWithInvalidPositiveIndexRaisesIndexError) {
   HandleScope scope(thread_);
   List list(&scope, listFromRange(1, 4));
   Object idx(&scope, SmallInt::fromWord(3));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underListGetItem, list, idx),
+      runBuiltin(UnderBuiltinsModule::underListGetitem, list, idx),
       LayoutId::kIndexError, "list index out of range"));
 }
 

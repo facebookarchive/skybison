@@ -451,17 +451,17 @@ foo_in_d = "foo" in d
   EXPECT_FALSE(foo_in_d.value());
 }
 
-TEST_F(DictBuiltinsTest, DunderDelItemOnExistingKeyReturnsNone) {
+TEST_F(DictBuiltinsTest, DunderDelitemOnExistingKeyReturnsNone) {
   HandleScope scope(thread_);
   Dict dict(&scope, runtime_.newDictWithSize(1));
   Str key(&scope, runtime_.newStrFromCStr("foo"));
   Object val(&scope, runtime_.newInt(0));
   dictAtPutByStr(thread_, dict, key, val);
-  RawObject result = runBuiltin(DictBuiltins::dunderDelItem, dict, key);
+  RawObject result = runBuiltin(DictBuiltins::dunderDelitem, dict, key);
   EXPECT_TRUE(result.isNoneType());
 }
 
-TEST_F(DictBuiltinsTest, DunderDelItemOnNonexistentKeyRaisesKeyError) {
+TEST_F(DictBuiltinsTest, DunderDelitemOnNonexistentKeyRaisesKeyError) {
   HandleScope scope(thread_);
   Dict dict(&scope, runtime_.newDictWithSize(1));
   Str key(&scope, runtime_.newStrFromCStr("foo"));
@@ -471,7 +471,7 @@ TEST_F(DictBuiltinsTest, DunderDelItemOnNonexistentKeyRaisesKeyError) {
   // "bar" doesn't exist in this dictionary, attempting to delete it should
   // cause a KeyError.
   Object key2(&scope, runtime_.newStrFromCStr("bar"));
-  RawObject result = runBuiltin(DictBuiltins::dunderDelItem, dict, key2);
+  RawObject result = runBuiltin(DictBuiltins::dunderDelitem, dict, key2);
   ASSERT_TRUE(result.isError());
 }
 
@@ -983,7 +983,7 @@ TEST_F(DictBuiltinsTest, PopWithMisingKeyRaisesKeyError) {
       raised(runFromCStr(&runtime_, "{}.pop('hello')"), LayoutId::kKeyError));
 }
 
-TEST_F(DictBuiltinsTest, PopWithSubclassDoesNotCallDunderDelItem) {
+TEST_F(DictBuiltinsTest, PopWithSubclassDoesNotCallDunderDelitem) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C(dict):
     def __delitem__(self, key):

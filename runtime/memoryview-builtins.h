@@ -17,7 +17,7 @@ class MemoryViewBuiltins
                       LayoutId::kMemoryView> {
  public:
   static RawObject cast(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderGetItem(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderGetitem(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
 

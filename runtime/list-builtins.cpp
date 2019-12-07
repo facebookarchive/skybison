@@ -171,7 +171,7 @@ const BuiltinMethod ListBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderIter, dunderIter},
     {SymbolId::kDunderLen, dunderLen},
     {SymbolId::kDunderMul, dunderMul},
-    {SymbolId::kDunderSetitem, dunderSetItem},
+    {SymbolId::kDunderSetitem, dunderSetitem},
     {SymbolId::kAppend, append},
     {SymbolId::kClear, clear},
     {SymbolId::kInsert, insert},
@@ -562,7 +562,7 @@ static RawObject listSetSlice(Thread* thread, const List& self,
   return NoneType::object();
 }
 
-RawObject ListBuiltins::dunderSetItem(Thread* thread, Frame* frame,
+RawObject ListBuiltins::dunderSetitem(Thread* thread, Frame* frame,
                                       word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);

@@ -502,14 +502,14 @@ TEST_F(BytesBuiltinsTest, DunderGeWithLexicographicallyLaterOtherReturnsFalse) {
   EXPECT_FALSE(Bool::cast(*ge).value());
 }
 
-TEST_F(BytesBuiltinsTest, DunderGetItemWithTooFewArgsRaisesTypeError) {
+TEST_F(BytesBuiltinsTest, DunderGetitemWithTooFewArgsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "bytes.__getitem__(b'')"),
                             LayoutId::kTypeError,
                             "'bytes.__getitem__' takes 2 positional "
                             "arguments but 1 given"));
 }
 
-TEST_F(BytesBuiltinsTest, DunderGetItemWithTooManyArgsRaisesTypeError) {
+TEST_F(BytesBuiltinsTest, DunderGetitemWithTooManyArgsRaisesTypeError) {
   EXPECT_TRUE(
       raisedWithStr(runFromCStr(&runtime_, "bytes.__getitem__(b'', b'', b'')"),
                     LayoutId::kTypeError,
@@ -517,52 +517,52 @@ TEST_F(BytesBuiltinsTest, DunderGetItemWithTooManyArgsRaisesTypeError) {
                     "arguments but 3 given"));
 }
 
-TEST_F(BytesBuiltinsTest, DunderGetItemWithNonBytesSelfRaisesTypeError) {
+TEST_F(BytesBuiltinsTest, DunderGetitemWithNonBytesSelfRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime_, "bytes.__getitem__(0, 1)"), LayoutId::kTypeError,
       "'__getitem__' requires a 'bytes' object but received a 'int'"));
 }
 
-TEST_F(BytesBuiltinsTest, DunderGetItemWithLargeIntRaisesIndexError) {
+TEST_F(BytesBuiltinsTest, DunderGetitemWithLargeIntRaisesIndexError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "b''[2**64]"),
                             LayoutId::kIndexError,
                             "cannot fit 'int' into an index-sized integer"));
 }
 
 TEST_F(BytesBuiltinsTest,
-       DunderGetItemWithIntGreaterOrEqualLenRaisesIndexError) {
+       DunderGetitemWithIntGreaterOrEqualLenRaisesIndexError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "b'abc'[3]"),
                             LayoutId::kIndexError, "index out of range"));
 }
 
 TEST_F(BytesBuiltinsTest,
-       DunderGetItemWithNegativeIntGreaterThanLenRaisesIndexError) {
+       DunderGetitemWithNegativeIntGreaterThanLenRaisesIndexError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "b'abc'[-4]"),
                             LayoutId::kIndexError, "index out of range"));
 }
 
-TEST_F(BytesBuiltinsTest, DunderGetItemWithNegativeIntIndexesFromEnd) {
+TEST_F(BytesBuiltinsTest, DunderGetitemWithNegativeIntIndexesFromEnd) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, "result = b'hello'[-5]").isError());
   Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 'h'));
 }
 
-TEST_F(BytesBuiltinsTest, DunderGetItemIndexesFromBeginning) {
+TEST_F(BytesBuiltinsTest, DunderGetitemIndexesFromBeginning) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, "result = b'hello'[0]").isError());
   Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 'h'));
 }
 
-TEST_F(BytesBuiltinsTest, DunderGetItemWithSliceReturnsBytes) {
+TEST_F(BytesBuiltinsTest, DunderGetitemWithSliceReturnsBytes) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, "result = b'hello world'[:3]").isError());
   Object result(&scope, mainModuleAt(&runtime_, "result"));
   EXPECT_TRUE(isBytesEqualsCStr(result, "hel"));
 }
 
-TEST_F(BytesBuiltinsTest, DunderGetItemWithSliceStepReturnsBytes) {
+TEST_F(BytesBuiltinsTest, DunderGetitemWithSliceStepReturnsBytes) {
   HandleScope scope(thread_);
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = b'hello world'[1:6:2]").isError());
@@ -570,7 +570,7 @@ TEST_F(BytesBuiltinsTest, DunderGetItemWithSliceStepReturnsBytes) {
   EXPECT_TRUE(isBytesEqualsCStr(result, "el "));
 }
 
-TEST_F(BytesBuiltinsTest, DunderGetItemWithNonIndexOtherRaisesTypeError) {
+TEST_F(BytesBuiltinsTest, DunderGetitemWithNonIndexOtherRaisesTypeError) {
   EXPECT_TRUE(
       raisedWithStr(runFromCStr(&runtime_, "b''[1.5]"), LayoutId::kTypeError,
                     "byte indices must be integers or slice, not float"));

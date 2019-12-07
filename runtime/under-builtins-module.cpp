@@ -79,23 +79,23 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderBoolCheck, underBoolCheck},
     {SymbolId::kUnderBytearrayCheck, underBytearrayCheck},
     {SymbolId::kUnderBytearrayClear, underBytearrayClear},
-    {SymbolId::kUnderBytearrayDelitem, underBytearrayDelItem},
-    {SymbolId::kUnderBytearrayDelslice, underBytearrayDelSlice},
-    {SymbolId::kUnderBytearrayGetitem, underBytearrayGetItem},
-    {SymbolId::kUnderBytearrayGetslice, underBytearrayGetSlice},
+    {SymbolId::kUnderBytearrayDelitem, underBytearrayDelitem},
+    {SymbolId::kUnderBytearrayDelslice, underBytearrayDelslice},
+    {SymbolId::kUnderBytearrayGetitem, underBytearrayGetitem},
+    {SymbolId::kUnderBytearrayGetslice, underBytearrayGetslice},
     {SymbolId::kUnderBytearrayGuard, underBytearrayGuard},
     {SymbolId::kUnderBytearrayJoin, underBytearrayJoin},
     {SymbolId::kUnderBytearrayLen, underBytearrayLen},
-    {SymbolId::kUnderBytearraySetitem, underBytearraySetItem},
-    {SymbolId::kUnderBytearraySetslice, underBytearraySetSlice},
+    {SymbolId::kUnderBytearraySetitem, underBytearraySetitem},
+    {SymbolId::kUnderBytearraySetslice, underBytearraySetslice},
     {SymbolId::kUnderBytesCheck, underBytesCheck},
     {SymbolId::kUnderBytesDecode, underBytesDecode},
     {SymbolId::kUnderBytesDecodeASCII, underBytesDecodeASCII},
     {SymbolId::kUnderBytesDecodeUTF8, underBytesDecodeUTF8},
     {SymbolId::kUnderBytesFromBytes, underBytesFromBytes},
     {SymbolId::kUnderBytesFromInts, underBytesFromInts},
-    {SymbolId::kUnderBytesGetitem, underBytesGetItem},
-    {SymbolId::kUnderBytesGetslice, underBytesGetSlice},
+    {SymbolId::kUnderBytesGetitem, underBytesGetitem},
+    {SymbolId::kUnderBytesGetslice, underBytesGetslice},
     {SymbolId::kUnderBytesGuard, underBytesGuard},
     {SymbolId::kUnderBytesJoin, underBytesJoin},
     {SymbolId::kUnderBytesLen, underBytesLen},
@@ -132,7 +132,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderDictLookup, underDictLookup},
     {SymbolId::kUnderDictLookupNext, underDictLookupNext},
     {SymbolId::kUnderDictPopitem, underDictPopitem},
-    {SymbolId::kUnderDictSetItem, underDictSetItem},
+    {SymbolId::kUnderDictSetitem, underDictSetitem},
     {SymbolId::kUnderDictUpdate, underDictUpdate},
     {SymbolId::kUnderDivmod, underDivmod},
     {SymbolId::kUnderExec, underExec},
@@ -182,11 +182,11 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderIter, underIter},
     {SymbolId::kUnderListCheck, underListCheck},
     {SymbolId::kUnderListCheckExact, underListCheckExact},
-    {SymbolId::kUnderListDelitem, underListDelItem},
-    {SymbolId::kUnderListDelslice, underListDelSlice},
+    {SymbolId::kUnderListDelitem, underListDelitem},
+    {SymbolId::kUnderListDelslice, underListDelslice},
     {SymbolId::kUnderListExtend, underListExtend},
-    {SymbolId::kUnderListGetitem, underListGetItem},
-    {SymbolId::kUnderListGetslice, underListGetSlice},
+    {SymbolId::kUnderListGetitem, underListGetitem},
+    {SymbolId::kUnderListGetslice, underListGetslice},
     {SymbolId::kUnderListGuard, underListGuard},
     {SymbolId::kUnderListLen, underListLen},
     {SymbolId::kUnderListSort, underListSort},
@@ -256,8 +256,8 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrEscapeNonAscii, underStrEscapeNonAscii},
     {SymbolId::kUnderStrFind, underStrFind},
     {SymbolId::kUnderStrFromStr, underStrFromStr},
-    {SymbolId::kUnderStrGetitem, underStrGetItem},
-    {SymbolId::kUnderStrGetslice, underStrGetSlice},
+    {SymbolId::kUnderStrGetitem, underStrGetitem},
+    {SymbolId::kUnderStrGetslice, underStrGetslice},
     {SymbolId::kUnderStrGuard, underStrGuard},
     {SymbolId::kUnderStrIsChr, underStrIsChr},
     {SymbolId::kUnderStrJoin, underStrJoin},
@@ -271,8 +271,8 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrStartswith, underStrStartsWith},
     {SymbolId::kUnderTupleCheck, underTupleCheck},
     {SymbolId::kUnderTupleCheckExact, underTupleCheckExact},
-    {SymbolId::kUnderTupleGetitem, underTupleGetItem},
-    {SymbolId::kUnderTupleGetslice, underTupleGetSlice},
+    {SymbolId::kUnderTupleGetitem, underTupleGetitem},
+    {SymbolId::kUnderTupleGetslice, underTupleGetslice},
     {SymbolId::kUnderTupleGuard, underTupleGuard},
     {SymbolId::kUnderTupleLen, underTupleLen},
     {SymbolId::kUnderTupleNew, underTupleNew},
@@ -442,7 +442,7 @@ RawObject UnderBuiltinsModule::underBytearrayGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kBytearray);
 }
 
-RawObject UnderBuiltinsModule::underBytearrayDelItem(Thread* thread,
+RawObject UnderBuiltinsModule::underBytearrayDelitem(Thread* thread,
                                                      Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -464,7 +464,7 @@ RawObject UnderBuiltinsModule::underBytearrayDelItem(Thread* thread,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underBytearrayDelSlice(Thread* thread,
+RawObject UnderBuiltinsModule::underBytearrayDelslice(Thread* thread,
                                                       Frame* frame,
                                                       word nargs) {
   // This function deletes elements that are specified by a slice by copying.
@@ -523,7 +523,7 @@ RawObject UnderBuiltinsModule::underBytearrayDelSlice(Thread* thread,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underBytearrayGetItem(Thread* thread,
+RawObject UnderBuiltinsModule::underBytearrayGetitem(Thread* thread,
                                                      Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -573,7 +573,7 @@ RawObject UnderBuiltinsModule::underBytearrayGetItem(Thread* thread,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underBytearrayGetSlice(Thread* thread,
+RawObject UnderBuiltinsModule::underBytearrayGetslice(Thread* thread,
                                                       Frame* frame,
                                                       word nargs) {
   HandleScope scope(thread);
@@ -593,7 +593,7 @@ RawObject UnderBuiltinsModule::underBytearrayGetSlice(Thread* thread,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underBytearraySetItem(Thread* thread,
+RawObject UnderBuiltinsModule::underBytearraySetitem(Thread* thread,
                                                      Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -621,7 +621,7 @@ RawObject UnderBuiltinsModule::underBytearraySetItem(Thread* thread,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underBytearraySetSlice(Thread* thread,
+RawObject UnderBuiltinsModule::underBytearraySetslice(Thread* thread,
                                                       Frame* frame,
                                                       word nargs) {
   HandleScope scope(thread);
@@ -863,7 +863,7 @@ RawObject UnderBuiltinsModule::underBytesFromInts(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underBytesGetItem(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underBytesGetitem(Thread* thread, Frame* frame,
                                                  word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -885,7 +885,7 @@ RawObject UnderBuiltinsModule::underBytesGetItem(Thread* thread, Frame* frame,
   return SmallInt::fromWord(self.byteAt(index));
 }
 
-RawObject UnderBuiltinsModule::underBytesGetSlice(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underBytesGetslice(Thread* thread, Frame* frame,
                                                   word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -1779,7 +1779,7 @@ RawObject UnderBuiltinsModule::underDictPopitem(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underDictSetItem(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underDictSetitem(Thread* thread, Frame* frame,
                                                 word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -2617,7 +2617,7 @@ RawObject UnderBuiltinsModule::underListCheckExact(Thread*, Frame* frame,
   return Bool::fromBool(args.get(0).isList());
 }
 
-RawObject UnderBuiltinsModule::underListDelItem(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underListDelitem(Thread* thread, Frame* frame,
                                                 word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -2635,7 +2635,7 @@ RawObject UnderBuiltinsModule::underListDelItem(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underListDelSlice(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underListDelslice(Thread* thread, Frame* frame,
                                                  word nargs) {
   // This function deletes elements that are specified by a slice by copying.
   // It compacts to the left elements in the slice range and then copies
@@ -2705,7 +2705,7 @@ RawObject UnderBuiltinsModule::underListExtend(Thread* thread, Frame* frame,
   return listExtend(thread, list, value);
 }
 
-RawObject UnderBuiltinsModule::underListGetItem(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underListGetitem(Thread* thread, Frame* frame,
                                                 word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -2753,7 +2753,7 @@ RawObject UnderBuiltinsModule::underListGetItem(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underListGetSlice(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underListGetslice(Thread* thread, Frame* frame,
                                                  word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -3775,7 +3775,7 @@ RawObject UnderBuiltinsModule::underStrFromStr(Thread* thread, Frame* frame,
   return *instance;
 }
 
-RawObject UnderBuiltinsModule::underStrGetItem(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underStrGetitem(Thread* thread, Frame* frame,
                                                word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -3821,7 +3821,7 @@ RawObject UnderBuiltinsModule::underStrGetItem(Thread* thread, Frame* frame,
   return runtime->strSubstr(thread, self, start, result_len);
 }
 
-RawObject UnderBuiltinsModule::underStrGetSlice(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underStrGetslice(Thread* thread, Frame* frame,
                                                 word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -4127,7 +4127,7 @@ RawObject UnderBuiltinsModule::underTupleCheckExact(Thread*, Frame* frame,
   return Bool::fromBool(args.get(0).isTuple());
 }
 
-RawObject UnderBuiltinsModule::underTupleGetItem(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underTupleGetitem(Thread* thread, Frame* frame,
                                                  word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -4170,7 +4170,7 @@ RawObject UnderBuiltinsModule::underTupleGetItem(Thread* thread, Frame* frame,
   return runtime->tupleSubseq(thread, self, start, result_len);
 }
 
-RawObject UnderBuiltinsModule::underTupleGetSlice(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underTupleGetslice(Thread* thread, Frame* frame,
                                                   word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);

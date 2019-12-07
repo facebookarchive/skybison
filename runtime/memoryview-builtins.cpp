@@ -16,7 +16,7 @@ const BuiltinAttribute MemoryViewBuiltins::kAttributes[] = {
 
 const BuiltinMethod MemoryViewBuiltins::kBuiltinMethods[] = {
     {SymbolId::kCast, cast},
-    {SymbolId::kDunderGetitem, dunderGetItem},
+    {SymbolId::kDunderGetitem, dunderGetitem},
     {SymbolId::kDunderLen, dunderLen},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kSentinelId, nullptr},
@@ -480,7 +480,7 @@ RawObject MemoryViewBuiltins::cast(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject MemoryViewBuiltins::dunderGetItem(Thread* thread, Frame* frame,
+RawObject MemoryViewBuiltins::dunderGetitem(Thread* thread, Frame* frame,
                                             word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);

@@ -515,7 +515,7 @@ const BuiltinAttribute DictBuiltins::kAttributes[] = {
 
 const BuiltinMethod DictBuiltins::kBuiltinMethods[] = {
     {SymbolId::kClear, clear},
-    {SymbolId::kDunderDelitem, dunderDelItem},
+    {SymbolId::kDunderDelitem, dunderDelitem},
     {SymbolId::kDunderEq, dunderEq},
     {SymbolId::kDunderIter, dunderIter},
     {SymbolId::kDunderLen, dunderLen},
@@ -538,7 +538,7 @@ RawObject DictBuiltins::clear(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject DictBuiltins::dunderDelItem(Thread* thread, Frame* frame,
+RawObject DictBuiltins::dunderDelitem(Thread* thread, Frame* frame,
                                       word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);

@@ -83,7 +83,6 @@ class BytesBuiltins
   static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGe(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderGetItem(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGt(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderHash(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
