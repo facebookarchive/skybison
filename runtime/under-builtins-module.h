@@ -17,25 +17,25 @@ class UnderBuiltinsModule {
   static RawObject underAddress(Thread* thread, Frame* frame, word nargs);
   static RawObject underBoolCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underBoundMethod(Thread* thread, Frame* frame, word nargs);
-  static RawObject underByteArrayCheck(Thread* thread, Frame* frame,
+  static RawObject underBytearrayCheck(Thread* thread, Frame* frame,
                                        word nargs);
-  static RawObject underByteArrayClear(Thread* thread, Frame* frame,
+  static RawObject underBytearrayClear(Thread* thread, Frame* frame,
                                        word nargs);
-  static RawObject underByteArrayDelItem(Thread* thread, Frame* frame,
+  static RawObject underBytearrayDelItem(Thread* thread, Frame* frame,
                                          word nargs);
-  static RawObject underByteArrayDelSlice(Thread* thread, Frame* frame,
+  static RawObject underBytearrayDelSlice(Thread* thread, Frame* frame,
                                           word nargs);
-  static RawObject underByteArrayGetItem(Thread* thread, Frame* frame,
+  static RawObject underBytearrayGetItem(Thread* thread, Frame* frame,
                                          word nargs);
-  static RawObject underByteArrayGetSlice(Thread* thread, Frame* frame,
+  static RawObject underBytearrayGetSlice(Thread* thread, Frame* frame,
                                           word nargs);
-  static RawObject underByteArrayGuard(Thread* thread, Frame* frame,
+  static RawObject underBytearrayGuard(Thread* thread, Frame* frame,
                                        word nargs);
-  static RawObject underByteArrayJoin(Thread* thread, Frame* frame, word nargs);
-  static RawObject underByteArrayLen(Thread* thread, Frame* frame, word nargs);
-  static RawObject underByteArraySetItem(Thread* thread, Frame* frame,
+  static RawObject underBytearrayJoin(Thread* thread, Frame* frame, word nargs);
+  static RawObject underBytearrayLen(Thread* thread, Frame* frame, word nargs);
+  static RawObject underBytearraySetItem(Thread* thread, Frame* frame,
                                          word nargs);
-  static RawObject underByteArraySetSlice(Thread* thread, Frame* frame,
+  static RawObject underBytearraySetSlice(Thread* thread, Frame* frame,
                                           word nargs);
   static RawObject underBytesCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underBytesDecode(Thread* thread, Frame* frame, word nargs);
@@ -167,7 +167,7 @@ class UnderBuiltinsModule {
   static RawObject underIntCheckExact(Thread* thread, Frame* frame, word nargs);
   static RawObject underIntFromBytes(Thread* thread, Frame* frame, word nargs);
   static RawObject underIntGuard(Thread* thread, Frame* frame, word nargs);
-  static RawObject underIntNewFromByteArray(Thread* thread, Frame* frame,
+  static RawObject underIntNewFromBytearray(Thread* thread, Frame* frame,
                                             word nargs);
   static RawObject underIntNewFromBytes(Thread* thread, Frame* frame,
                                         word nargs);
@@ -268,9 +268,9 @@ class UnderBuiltinsModule {
                                                word nargs);
   static RawObject underStopIterationCtor(Thread* thread, Frame* frame,
                                           word nargs);
-  static RawObject underStrArrayClear(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrArrayCtor(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrArrayIadd(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrarrayClear(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrarrayCtor(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrarrayIadd(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrCheckExact(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrCompareDigest(Thread* thread, Frame* frame,
@@ -337,11 +337,11 @@ class UnderBuiltinsModule {
                                         word nargs);
   static RawObject underUnimplemented(Thread* thread, Frame* frame, word nargs);
   static RawObject underWarn(Thread* thread, Frame* frame, word nargs);
-  static RawObject underWeakRefCallback(Thread* thread, Frame* frame,
+  static RawObject underWeakrefCallback(Thread* thread, Frame* frame,
                                         word nargs);
-  static RawObject underWeakRefCheck(Thread* thread, Frame* frame, word nargs);
-  static RawObject underWeakRefGuard(Thread* thread, Frame* frame, word nargs);
-  static RawObject underWeakRefReferent(Thread* thread, Frame* frame,
+  static RawObject underWeakrefCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underWeakrefGuard(Thread* thread, Frame* frame, word nargs);
+  static RawObject underWeakrefReferent(Thread* thread, Frame* frame,
                                         word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];

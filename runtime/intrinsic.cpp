@@ -9,13 +9,13 @@ static bool underBoolCheck(Frame* frame) {
   return true;
 }
 
-static bool underByteArrayCheck(Thread* thread, Frame* frame) {
+static bool underBytearrayCheck(Thread* thread, Frame* frame) {
   frame->setTopValue(Bool::fromBool(
       thread->runtime()->isInstanceOfByteArray(frame->popValue())));
   return true;
 }
 
-static bool underByteArrayGuard(Thread* thread, Frame* frame) {
+static bool underBytearrayGuard(Thread* thread, Frame* frame) {
   if (thread->runtime()->isInstanceOfByteArray(frame->topValue())) {
     frame->popValue();
     frame->setTopValue(NoneType::object());
@@ -24,7 +24,7 @@ static bool underByteArrayGuard(Thread* thread, Frame* frame) {
   return false;
 }
 
-static bool underByteArrayLen(Frame* frame) {
+static bool underBytearrayLen(Frame* frame) {
   RawObject arg = frame->popValue();
   if (arg.isByteArray()) {
     frame->setTopValue(SmallInt::fromWord(ByteArray::cast(arg).numItems()));
@@ -463,13 +463,13 @@ static bool underTypeGuard(Thread* thread, Frame* frame) {
   return false;
 }
 
-static bool underWeakRefCheck(Thread* thread, Frame* frame) {
+static bool underWeakrefCheck(Thread* thread, Frame* frame) {
   frame->setTopValue(Bool::fromBool(
       thread->runtime()->isInstanceOfWeakRef(frame->popValue())));
   return true;
 }
 
-static bool underWeakRefGuard(Thread* thread, Frame* frame) {
+static bool underWeakrefGuard(Thread* thread, Frame* frame) {
   if (thread->runtime()->isInstanceOfWeakRef(frame->topValue())) {
     frame->popValue();
     frame->setTopValue(NoneType::object());
@@ -533,12 +533,12 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
   switch (name) {
     case SymbolId::kUnderBoolCheck:
       return underBoolCheck(frame);
-    case SymbolId::kUnderByteArrayCheck:
-      return underByteArrayCheck(thread, frame);
-    case SymbolId::kUnderByteArrayGuard:
-      return underByteArrayGuard(thread, frame);
-    case SymbolId::kUnderByteArrayLen:
-      return underByteArrayLen(frame);
+    case SymbolId::kUnderBytearrayCheck:
+      return underBytearrayCheck(thread, frame);
+    case SymbolId::kUnderBytearrayGuard:
+      return underBytearrayGuard(thread, frame);
+    case SymbolId::kUnderBytearrayLen:
+      return underBytearrayLen(frame);
     case SymbolId::kUnderBytesCheck:
       return underBytesCheck(thread, frame);
     case SymbolId::kUnderBytesGuard:
@@ -645,10 +645,10 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
       return underTypeCheckExact(frame);
     case SymbolId::kUnderTypeGuard:
       return underTypeGuard(thread, frame);
-    case SymbolId::kUnderWeakRefCheck:
-      return underWeakRefCheck(thread, frame);
-    case SymbolId::kUnderWeakRefGuard:
-      return underWeakRefGuard(thread, frame);
+    case SymbolId::kUnderWeakrefCheck:
+      return underWeakrefCheck(thread, frame);
+    case SymbolId::kUnderWeakrefGuard:
+      return underWeakrefGuard(thread, frame);
     case SymbolId::kIsInstance:
       return isInstance(thread, frame);
     case SymbolId::kLen:

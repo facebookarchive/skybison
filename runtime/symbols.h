@@ -149,18 +149,18 @@ class Runtime;
   V(UnderBufferedIOBase, "_BufferedIOBase")                                    \
   V(UnderBufferedIOMixin, "_BufferedIOMixin")                                  \
   V(UnderBuiltins, "_builtins")                                                \
-  V(UnderByteArrayCheck, "_bytearray_check")                                   \
-  V(UnderByteArrayClear, "_bytearray_clear")                                   \
-  V(UnderByteArrayDelitem, "_bytearray_delitem")                               \
-  V(UnderByteArrayDelslice, "_bytearray_delslice")                             \
-  V(UnderByteArrayGetitem, "_bytearray_getitem")                               \
-  V(UnderByteArrayGetslice, "_bytearray_getslice")                             \
-  V(UnderByteArrayGuard, "_bytearray_guard")                                   \
-  V(UnderByteArrayJoin, "_bytearray_join")                                     \
-  V(UnderByteArrayLen, "_bytearray_len")                                       \
-  V(UnderByteArraySetitem, "_bytearray_setitem")                               \
-  V(UnderByteArraySetslice, "_bytearray_setslice")                             \
-  V(UnderByteArrayStringAppend, "_bytearray_string_append")                    \
+  V(UnderBytearrayCheck, "_bytearray_check")                                   \
+  V(UnderBytearrayClear, "_bytearray_clear")                                   \
+  V(UnderBytearrayDelitem, "_bytearray_delitem")                               \
+  V(UnderBytearrayDelslice, "_bytearray_delslice")                             \
+  V(UnderBytearrayGetitem, "_bytearray_getitem")                               \
+  V(UnderBytearrayGetslice, "_bytearray_getslice")                             \
+  V(UnderBytearrayGuard, "_bytearray_guard")                                   \
+  V(UnderBytearrayJoin, "_bytearray_join")                                     \
+  V(UnderBytearrayLen, "_bytearray_len")                                       \
+  V(UnderBytearraySetitem, "_bytearray_setitem")                               \
+  V(UnderBytearraySetslice, "_bytearray_setslice")                             \
+  V(UnderBytearrayStringAppend, "_bytearray_string_append")                    \
   V(UnderBytesCheck, "_bytes_check")                                           \
   V(UnderBytesDecode, "_bytes_decode")                                         \
   V(UnderBytesDecodeASCII, "_bytes_decode_ascii")                              \
@@ -277,7 +277,7 @@ class Runtime;
   V(UnderIntCheckExact, "_int_check_exact")                                    \
   V(UnderIntFromBytes, "_int_from_bytes")                                      \
   V(UnderIntGuard, "_int_guard")                                               \
-  V(UnderIntNewFromByteArray, "_int_new_from_bytearray")                       \
+  V(UnderIntNewFromBytearray, "_int_new_from_bytearray")                       \
   V(UnderIntNewFromBytes, "_int_new_from_bytes")                               \
   V(UnderIntNewFromInt, "_int_new_from_int")                                   \
   V(UnderIntNewFromStr, "_int_new_from_str")                                   \
@@ -402,10 +402,10 @@ class Runtime;
   V(UnderStderrFd, "_stderr_fd")                                               \
   V(UnderStdoutFd, "_stdout_fd")                                               \
   V(UnderStopIterationCtor, "_stop_iteration_ctor")                            \
-  V(UnderStrArray, "_strarray")                                                \
-  V(UnderStrArrayClear, "_strarray_clear")                                     \
-  V(UnderStrArrayCtor, "_strarray_ctor")                                       \
-  V(UnderStrArrayIadd, "_strarray_iadd")                                       \
+  V(UnderStrarray, "_strarray")                                                \
+  V(UnderStrarrayClear, "_strarray_clear")                                     \
+  V(UnderStrarrayCtor, "_strarray_ctor")                                       \
+  V(UnderStrarrayIadd, "_strarray_iadd")                                       \
   V(UnderStrCheck, "_str_check")                                               \
   V(UnderStrCheckExact, "_str_check_exact")                                    \
   V(UnderStrCompareDigest, "_str_compare_digest")                              \
@@ -481,11 +481,11 @@ class Runtime;
   V(UnderWarn, "_warn")                                                        \
   V(UnderWarnings, "_warnings")                                                \
   V(UnderWeakLink, "_weaklink")                                                \
-  V(UnderWeakRef, "_weakref")                                                  \
-  V(UnderWeakRefCallback, "_weakref_callback")                                 \
-  V(UnderWeakRefCheck, "_weakref_check")                                       \
-  V(UnderWeakRefGuard, "_weakref_guard")                                       \
-  V(UnderWeakRefReferent, "_weakref_referent")                                 \
+  V(UnderWeakref, "_weakref")                                                  \
+  V(UnderWeakrefCallback, "_weakref_callback")                                 \
+  V(UnderWeakrefCheck, "_weakref_check")                                       \
+  V(UnderWeakrefGuard, "_weakref_guard")                                       \
+  V(UnderWeakrefReferent, "_weakref_referent")                                 \
   V(UnderWritable, "_writable")                                                \
   V(UnderWriteBuf, "_write_buf")                                               \
   V(UnderWriteLock, "_write_lock")                                             \
@@ -522,8 +522,8 @@ class Runtime;
   V(BufferedWriter, "BufferedWriter")                                          \
   V(BuiltinModuleNames, "builtin_module_names")                                \
   V(Builtins, "builtins")                                                      \
-  V(ByteArray, "bytearray")                                                    \
-  V(ByteArrayIterator, "bytearray_iterator")                                   \
+  V(Bytearray, "bytearray")                                                    \
+  V(BytearrayIterator, "bytearray_iterator")                                   \
   V(Byteorder, "byteorder")                                                    \
   V(Bytes, "bytes")                                                            \
   V(BytesIO, "BytesIO")                                                        \

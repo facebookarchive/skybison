@@ -77,17 +77,17 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderAddress, underAddress},
     {SymbolId::kUnderBoundMethod, underBoundMethod},
     {SymbolId::kUnderBoolCheck, underBoolCheck},
-    {SymbolId::kUnderByteArrayCheck, underByteArrayCheck},
-    {SymbolId::kUnderByteArrayClear, underByteArrayClear},
-    {SymbolId::kUnderByteArrayDelitem, underByteArrayDelItem},
-    {SymbolId::kUnderByteArrayDelslice, underByteArrayDelSlice},
-    {SymbolId::kUnderByteArrayGetitem, underByteArrayGetItem},
-    {SymbolId::kUnderByteArrayGetslice, underByteArrayGetSlice},
-    {SymbolId::kUnderByteArrayGuard, underByteArrayGuard},
-    {SymbolId::kUnderByteArrayJoin, underByteArrayJoin},
-    {SymbolId::kUnderByteArrayLen, underByteArrayLen},
-    {SymbolId::kUnderByteArraySetitem, underByteArraySetItem},
-    {SymbolId::kUnderByteArraySetslice, underByteArraySetSlice},
+    {SymbolId::kUnderBytearrayCheck, underBytearrayCheck},
+    {SymbolId::kUnderBytearrayClear, underBytearrayClear},
+    {SymbolId::kUnderBytearrayDelitem, underBytearrayDelItem},
+    {SymbolId::kUnderBytearrayDelslice, underBytearrayDelSlice},
+    {SymbolId::kUnderBytearrayGetitem, underBytearrayGetItem},
+    {SymbolId::kUnderBytearrayGetslice, underBytearrayGetSlice},
+    {SymbolId::kUnderBytearrayGuard, underBytearrayGuard},
+    {SymbolId::kUnderBytearrayJoin, underBytearrayJoin},
+    {SymbolId::kUnderBytearrayLen, underBytearrayLen},
+    {SymbolId::kUnderBytearraySetitem, underBytearraySetItem},
+    {SymbolId::kUnderBytearraySetslice, underBytearraySetSlice},
     {SymbolId::kUnderBytesCheck, underBytesCheck},
     {SymbolId::kUnderBytesDecode, underBytesDecode},
     {SymbolId::kUnderBytesDecodeASCII, underBytesDecodeASCII},
@@ -175,7 +175,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderIntCheckExact, underIntCheckExact},
     {SymbolId::kUnderIntFromBytes, underIntFromBytes},
     {SymbolId::kUnderIntGuard, underIntGuard},
-    {SymbolId::kUnderIntNewFromByteArray, underIntNewFromByteArray},
+    {SymbolId::kUnderIntNewFromBytearray, underIntNewFromBytearray},
     {SymbolId::kUnderIntNewFromBytes, underIntNewFromBytes},
     {SymbolId::kUnderIntNewFromInt, underIntNewFromInt},
     {SymbolId::kUnderIntNewFromStr, underIntNewFromStr},
@@ -243,9 +243,9 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderSliceStopLong, underSliceStopLong},
     {SymbolId::kUnderStaticMethodIsAbstract, underStaticMethodIsAbstract},
     {SymbolId::kUnderStopIterationCtor, underStopIterationCtor},
-    {SymbolId::kUnderStrArrayClear, underStrArrayClear},
-    {SymbolId::kUnderStrArrayCtor, underStrArrayCtor},
-    {SymbolId::kUnderStrArrayIadd, underStrArrayIadd},
+    {SymbolId::kUnderStrarrayClear, underStrarrayClear},
+    {SymbolId::kUnderStrarrayCtor, underStrarrayCtor},
+    {SymbolId::kUnderStrarrayIadd, underStrarrayIadd},
     {SymbolId::kUnderStrCheck, underStrCheck},
     {SymbolId::kUnderStrCheckExact, underStrCheckExact},
     {SymbolId::kUnderStrCompareDigest, underStrCompareDigest},
@@ -299,10 +299,10 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderTypeProxyValues, underTypeProxyValues},
     {SymbolId::kUnderUnimplemented, underUnimplemented},
     {SymbolId::kUnderWarn, underWarn},
-    {SymbolId::kUnderWeakRefCallback, underWeakRefCallback},
-    {SymbolId::kUnderWeakRefCheck, underWeakRefCheck},
-    {SymbolId::kUnderWeakRefGuard, underWeakRefGuard},
-    {SymbolId::kUnderWeakRefReferent, underWeakRefReferent},
+    {SymbolId::kUnderWeakrefCallback, underWeakrefCallback},
+    {SymbolId::kUnderWeakrefCheck, underWeakrefCheck},
+    {SymbolId::kUnderWeakrefGuard, underWeakrefGuard},
+    {SymbolId::kUnderWeakrefReferent, underWeakrefReferent},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -311,9 +311,9 @@ const char* const UnderBuiltinsModule::kFrozenData = kUnderBuiltinsModuleData;
 // clang-format off
 const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
     SymbolId::kUnderBoolCheck,
-    SymbolId::kUnderByteArrayCheck,
-    SymbolId::kUnderByteArrayGuard,
-    SymbolId::kUnderByteArrayLen,
+    SymbolId::kUnderBytearrayCheck,
+    SymbolId::kUnderBytearrayGuard,
+    SymbolId::kUnderBytearrayLen,
     SymbolId::kUnderBytesCheck,
     SymbolId::kUnderBytesGuard,
     SymbolId::kUnderBytesLen,
@@ -418,7 +418,7 @@ RawObject UnderBuiltinsModule::underBoundMethod(Thread* thread, Frame* frame,
   return thread->runtime()->newBoundMethod(function, owner);
 }
 
-RawObject UnderBuiltinsModule::underByteArrayClear(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underBytearrayClear(Thread* thread, Frame* frame,
                                                    word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -427,22 +427,22 @@ RawObject UnderBuiltinsModule::underByteArrayClear(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underByteArrayCheck(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underBytearrayCheck(Thread* thread, Frame* frame,
                                                    word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfByteArray(args.get(0)));
 }
 
-RawObject UnderBuiltinsModule::underByteArrayGuard(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underBytearrayGuard(Thread* thread, Frame* frame,
                                                    word nargs) {
   Arguments args(frame, nargs);
   if (thread->runtime()->isInstanceOfByteArray(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kByteArray);
+  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kBytearray);
 }
 
-RawObject UnderBuiltinsModule::underByteArrayDelItem(Thread* thread,
+RawObject UnderBuiltinsModule::underBytearrayDelItem(Thread* thread,
                                                      Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -464,7 +464,7 @@ RawObject UnderBuiltinsModule::underByteArrayDelItem(Thread* thread,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underByteArrayDelSlice(Thread* thread,
+RawObject UnderBuiltinsModule::underBytearrayDelSlice(Thread* thread,
                                                       Frame* frame,
                                                       word nargs) {
   // This function deletes elements that are specified by a slice by copying.
@@ -523,14 +523,14 @@ RawObject UnderBuiltinsModule::underByteArrayDelSlice(Thread* thread,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underByteArrayGetItem(Thread* thread,
+RawObject UnderBuiltinsModule::underBytearrayGetItem(Thread* thread,
                                                      Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kByteArray);
+    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kBytearray);
   }
   Object key(&scope, args.get(1));
   if (runtime->isInstanceOfInt(*key)) {
@@ -573,7 +573,7 @@ RawObject UnderBuiltinsModule::underByteArrayGetItem(Thread* thread,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underByteArrayGetSlice(Thread* thread,
+RawObject UnderBuiltinsModule::underBytearrayGetSlice(Thread* thread,
                                                       Frame* frame,
                                                       word nargs) {
   HandleScope scope(thread);
@@ -593,7 +593,7 @@ RawObject UnderBuiltinsModule::underByteArrayGetSlice(Thread* thread,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underByteArraySetItem(Thread* thread,
+RawObject UnderBuiltinsModule::underBytearraySetItem(Thread* thread,
                                                      Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -621,7 +621,7 @@ RawObject UnderBuiltinsModule::underByteArraySetItem(Thread* thread,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underByteArraySetSlice(Thread* thread,
+RawObject UnderBuiltinsModule::underBytearraySetSlice(Thread* thread,
                                                       Frame* frame,
                                                       word nargs) {
   HandleScope scope(thread);
@@ -767,14 +767,14 @@ RawObject UnderBuiltinsModule::underBytesGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kBytes);
 }
 
-RawObject UnderBuiltinsModule::underByteArrayJoin(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underBytearrayJoin(Thread* thread, Frame* frame,
                                                   word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object sep_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfByteArray(*sep_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kByteArray);
+    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kBytearray);
   }
   ByteArray sep(&scope, args.get(0));
   Bytes sep_bytes(&scope, sep.bytes());
@@ -810,7 +810,7 @@ RawObject UnderBuiltinsModule::underByteArrayJoin(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underByteArrayLen(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underBytearrayLen(Thread* thread, Frame* frame,
                                                  word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -2451,7 +2451,7 @@ static RawObject intFromBytes(Thread* thread, const Bytes& bytes, word length,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underIntNewFromByteArray(Thread* thread,
+RawObject UnderBuiltinsModule::underIntNewFromBytearray(Thread* thread,
                                                         Frame* frame,
                                                         word nargs) {
   HandleScope scope(thread);
@@ -3554,7 +3554,7 @@ RawObject UnderBuiltinsModule::underStopIterationCtor(Thread* thread,
   return *self;
 }
 
-RawObject UnderBuiltinsModule::underStrArrayClear(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underStrarrayClear(Thread* thread, Frame* frame,
                                                   word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -3563,7 +3563,7 @@ RawObject UnderBuiltinsModule::underStrArrayClear(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underStrArrayIadd(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underStrarrayIadd(Thread* thread, Frame* frame,
                                                  word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -3573,7 +3573,7 @@ RawObject UnderBuiltinsModule::underStrArrayIadd(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject UnderBuiltinsModule::underStrArrayCtor(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underStrarrayCtor(Thread* thread, Frame* frame,
                                                  word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -4554,7 +4554,7 @@ RawObject UnderBuiltinsModule::underWarn(Thread* thread, Frame* frame,
                                  category, stacklevel, source);
 }
 
-RawObject UnderBuiltinsModule::underWeakRefCallback(Thread* thread,
+RawObject UnderBuiltinsModule::underWeakrefCallback(Thread* thread,
                                                     Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -4567,13 +4567,13 @@ RawObject UnderBuiltinsModule::underWeakRefCallback(Thread* thread,
   return self.callback();
 }
 
-RawObject UnderBuiltinsModule::underWeakRefCheck(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underWeakrefCheck(Thread* thread, Frame* frame,
                                                  word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfWeakRef(args.get(0)));
 }
 
-RawObject UnderBuiltinsModule::underWeakRefGuard(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underWeakrefGuard(Thread* thread, Frame* frame,
                                                  word nargs) {
   Arguments args(frame, nargs);
   if (thread->runtime()->isInstanceOfWeakRef(args.get(0))) {
@@ -4582,7 +4582,7 @@ RawObject UnderBuiltinsModule::underWeakRefGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kRef);
 }
 
-RawObject UnderBuiltinsModule::underWeakRefReferent(Thread* thread,
+RawObject UnderBuiltinsModule::underWeakrefReferent(Thread* thread,
                                                     Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);

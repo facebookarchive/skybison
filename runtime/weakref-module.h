@@ -8,7 +8,7 @@
 namespace py {
 
 class UnderWeakrefModule
-    : public ModuleBase<UnderWeakrefModule, SymbolId::kUnderWeakRef> {
+    : public ModuleBase<UnderWeakrefModule, SymbolId::kUnderWeakref> {
  public:
   static const BuiltinType kBuiltinTypes[];
   static const char* const kFrozenData;

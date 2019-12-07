@@ -74,18 +74,18 @@ def _int_check(self):
       "Redefinition of native code method '_int_check' in managed code");
 }
 
-TEST_F(UnderBuiltinsModuleTest, UnderByteArrayClearSetsLengthToZero) {
+TEST_F(UnderBuiltinsModuleTest, UnderBytearrayClearSetsLengthToZero) {
   HandleScope scope(thread_);
   ByteArray array(&scope, runtime_.newByteArray());
   const byte byte_array[] = {'1', '2', '3'};
   runtime_.byteArrayExtend(thread_, array, byte_array);
   ASSERT_EQ(array.numItems(), 3);
   ASSERT_FALSE(
-      runBuiltin(UnderBuiltinsModule::underByteArrayClear, array).isError());
+      runBuiltin(UnderBuiltinsModule::underBytearrayClear, array).isError());
   EXPECT_EQ(array.numItems(), 0);
 }
 
-TEST_F(UnderBuiltinsModuleTest, UnderByteArrayDelItemDeletesItemAtIndex) {
+TEST_F(UnderBuiltinsModuleTest, UnderBytearrayDelItemDeletesItemAtIndex) {
   HandleScope scope(thread_);
   ByteArray self(&scope, runtime_.newByteArray());
   byteArrayAdd(thread_, &runtime_, self, 'a');
@@ -94,13 +94,13 @@ TEST_F(UnderBuiltinsModuleTest, UnderByteArrayDelItemDeletesItemAtIndex) {
   byteArrayAdd(thread_, &runtime_, self, 'd');
   byteArrayAdd(thread_, &runtime_, self, 'e');
   Int idx(&scope, SmallInt::fromWord(2));
-  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underByteArrayDelItem, self, idx)
+  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underBytearrayDelItem, self, idx)
                   .isNoneType());
   EXPECT_TRUE(isByteArrayEqualsCStr(self, "abde"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderByteArrayDelsliceWithStepEqualsOneAndNoGrowthDeletesSlice) {
+       UnderBytearrayDelsliceWithStepEqualsOneAndNoGrowthDeletesSlice) {
   HandleScope scope(thread_);
   ByteArray self(&scope, runtime_.newByteArray());
   byteArrayAdd(thread_, &runtime_, self, 'a');
@@ -111,14 +111,14 @@ TEST_F(UnderBuiltinsModuleTest,
   Int start(&scope, SmallInt::fromWord(0));
   Int stop(&scope, SmallInt::fromWord(3));
   Int step(&scope, SmallInt::fromWord(1));
-  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underByteArrayDelSlice, self,
+  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underBytearrayDelSlice, self,
                          start, stop, step)
                   .isNoneType());
   EXPECT_TRUE(isByteArrayEqualsCStr(self, "de"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderByteArrayDelsliceWithStepEqualsTwoAndNoGrowthDeletesSlice) {
+       UnderBytearrayDelsliceWithStepEqualsTwoAndNoGrowthDeletesSlice) {
   HandleScope scope(thread_);
   ByteArray self(&scope, runtime_.newByteArray());
   byteArrayAdd(thread_, &runtime_, self, 'a');
@@ -129,25 +129,25 @@ TEST_F(UnderBuiltinsModuleTest,
   Int start(&scope, SmallInt::fromWord(0));
   Int stop(&scope, SmallInt::fromWord(3));
   Int step(&scope, SmallInt::fromWord(2));
-  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underByteArrayDelSlice, self,
+  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underBytearrayDelSlice, self,
                          start, stop, step)
                   .isNoneType());
   EXPECT_TRUE(isByteArrayEqualsCStr(self, "bde"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderByteArrayJoinWithEmptyIterableReturnsEmptyByteArray) {
+       UnderBytearrayJoinWithEmptyIterableReturnsEmptyByteArray) {
   HandleScope scope(thread_);
   ByteArray self(&scope, runtime_.newByteArray());
   byteArrayAdd(thread_, &runtime_, self, 'a');
   Object iter(&scope, runtime_.emptyTuple());
   Object result(
-      &scope, runBuiltin(UnderBuiltinsModule::underByteArrayJoin, self, iter));
+      &scope, runBuiltin(UnderBuiltinsModule::underBytearrayJoin, self, iter));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, ""));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderByteArrayJoinWithEmptySeparatorReturnsByteArray) {
+       UnderBytearrayJoinWithEmptySeparatorReturnsByteArray) {
   HandleScope scope(thread_);
   ByteArray self(&scope, runtime_.newByteArray());
   Tuple iter(&scope, runtime_.newTuple(3));
@@ -155,12 +155,12 @@ TEST_F(UnderBuiltinsModuleTest,
   iter.atPut(1, runtime_.newBytes(2, 'B'));
   iter.atPut(2, runtime_.newBytes(1, 'A'));
   Object result(
-      &scope, runBuiltin(UnderBuiltinsModule::underByteArrayJoin, self, iter));
+      &scope, runBuiltin(UnderBuiltinsModule::underBytearrayJoin, self, iter));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "ABBA"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderByteArrayJoinWithNonEmptyReturnsByteArray) {
+       UnderBytearrayJoinWithNonEmptyReturnsByteArray) {
   HandleScope scope(thread_);
   ByteArray self(&scope, runtime_.newByteArray());
   byteArrayAdd(thread_, &runtime_, self, ' ');
@@ -170,72 +170,72 @@ TEST_F(UnderBuiltinsModuleTest,
   runtime_.listAdd(thread_, iter, value);
   runtime_.listAdd(thread_, iter, value);
   Object result(
-      &scope, runBuiltin(UnderBuiltinsModule::underByteArrayJoin, self, iter));
+      &scope, runBuiltin(UnderBuiltinsModule::underBytearrayJoin, self, iter));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "* * *"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderByteArraySetitemWithLargeIntRaisesIndexError) {
+       UnderBytearraySetitemWithLargeIntRaisesIndexError) {
   HandleScope scope(thread_);
   ByteArray self(&scope, runtime_.newByteArray());
   Int key(&scope, runtime_.newInt(SmallInt::kMaxValue + 1));
   Int value(&scope, SmallInt::fromWord(0));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underByteArraySetItem, self, key, value),
+      runBuiltin(UnderBuiltinsModule::underBytearraySetItem, self, key, value),
       LayoutId::kIndexError, "cannot fit 'int' into an index-sized integer"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderByteArraySetitemWithKeyLargerThanMaxIndexRaisesIndexError) {
+       UnderBytearraySetitemWithKeyLargerThanMaxIndexRaisesIndexError) {
   HandleScope scope(thread_);
   ByteArray self(&scope, runtime_.newByteArray());
   byteArrayAdd(thread_, &runtime_, self, ' ');
   Int key(&scope, runtime_.newInt(self.numItems()));
   Int value(&scope, SmallInt::fromWord(0));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underByteArraySetItem, self, key, value),
+      runBuiltin(UnderBuiltinsModule::underBytearraySetItem, self, key, value),
       LayoutId::kIndexError, "index out of range"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderByteArraySetitemWithNegativeValueRaisesValueError) {
+       UnderBytearraySetitemWithNegativeValueRaisesValueError) {
   HandleScope scope(thread_);
   ByteArray self(&scope, runtime_.newByteArray());
   byteArrayAdd(thread_, &runtime_, self, ' ');
   Int key(&scope, runtime_.newInt(0));
   Int value(&scope, SmallInt::fromWord(-1));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underByteArraySetItem, self, key, value),
+      runBuiltin(UnderBuiltinsModule::underBytearraySetItem, self, key, value),
       LayoutId::kValueError, "byte must be in range(0, 256)"));
 }
 
 TEST_F(
     UnderBuiltinsModuleTest,
-    UnderByteArraySetitemWithKeySmallerThanNegativeLengthValueRaisesValueError) {
+    UnderBytearraySetitemWithKeySmallerThanNegativeLengthValueRaisesValueError) {
   HandleScope scope(thread_);
   ByteArray self(&scope, runtime_.newByteArray());
   byteArrayAdd(thread_, &runtime_, self, ' ');
   Int key(&scope, runtime_.newInt(-self.numItems() - 1));
   Int value(&scope, SmallInt::fromWord(0));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underByteArraySetItem, self, key, value),
+      runBuiltin(UnderBuiltinsModule::underBytearraySetItem, self, key, value),
       LayoutId::kIndexError, "index out of range"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderByteArraySetitemWithValueGreaterThanKMaxByteRaisesValueError) {
+       UnderBytearraySetitemWithValueGreaterThanKMaxByteRaisesValueError) {
   HandleScope scope(thread_);
   ByteArray self(&scope, runtime_.newByteArray());
   byteArrayAdd(thread_, &runtime_, self, ' ');
   Int key(&scope, runtime_.newInt(0));
   Int value(&scope, SmallInt::fromWord(kMaxByte + 1));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underByteArraySetItem, self, key, value),
+      runBuiltin(UnderBuiltinsModule::underBytearraySetItem, self, key, value),
       LayoutId::kValueError, "byte must be in range(0, 256)"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderByteArraySetitemWithNegativeKeyIndexesBackwards) {
+       UnderBytearraySetitemWithNegativeKeyIndexesBackwards) {
   HandleScope scope(thread_);
   ByteArray self(&scope, runtime_.newByteArray());
   byteArrayAdd(thread_, &runtime_, self, 'a');
@@ -244,13 +244,13 @@ TEST_F(UnderBuiltinsModuleTest,
   Int key(&scope, SmallInt::fromWord(-1));
   Int value(&scope, SmallInt::fromWord(1));
   EXPECT_TRUE(
-      runBuiltin(UnderBuiltinsModule::underByteArraySetItem, self, key, value)
+      runBuiltin(UnderBuiltinsModule::underBytearraySetItem, self, key, value)
           .isNoneType());
   EXPECT_TRUE(isByteArrayEqualsCStr(self, "ab\001"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderByteArraySetitemWithNegativeKeySetsItemAtIndex) {
+       UnderBytearraySetitemWithNegativeKeySetsItemAtIndex) {
   HandleScope scope(thread_);
   ByteArray self(&scope, runtime_.newByteArray());
   byteArrayAdd(thread_, &runtime_, self, 'a');
@@ -259,13 +259,13 @@ TEST_F(UnderBuiltinsModuleTest,
   Int key(&scope, SmallInt::fromWord(1));
   Int value(&scope, SmallInt::fromWord(1));
   EXPECT_TRUE(
-      runBuiltin(UnderBuiltinsModule::underByteArraySetItem, self, key, value)
+      runBuiltin(UnderBuiltinsModule::underBytearraySetItem, self, key, value)
           .isNoneType());
   EXPECT_TRUE(isByteArrayEqualsCStr(self, "a\001c"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderByteArraySetsliceWithStepEqualsOneAndNoGrowthSetsSlice) {
+       UnderBytearraySetsliceWithStepEqualsOneAndNoGrowthSetsSlice) {
   HandleScope scope(thread_);
   ByteArray self(&scope, runtime_.newByteArray());
   byteArrayAdd(thread_, &runtime_, self, 'a');
@@ -280,14 +280,14 @@ TEST_F(UnderBuiltinsModuleTest,
   byteArrayAdd(thread_, &runtime_, value, 'A');
   byteArrayAdd(thread_, &runtime_, value, 'B');
   byteArrayAdd(thread_, &runtime_, value, 'C');
-  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underByteArraySetSlice, self,
+  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underBytearraySetSlice, self,
                          start, stop, step, value)
                   .isNoneType());
   EXPECT_TRUE(isByteArrayEqualsCStr(self, "ABCde"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderByteArraySetsliceWithStepEqualsTwoAndNoGrowthSetsSlice) {
+       UnderBytearraySetsliceWithStepEqualsTwoAndNoGrowthSetsSlice) {
   HandleScope scope(thread_);
   ByteArray self(&scope, runtime_.newByteArray());
   byteArrayAdd(thread_, &runtime_, self, 'a');
@@ -301,7 +301,7 @@ TEST_F(UnderBuiltinsModuleTest,
   ByteArray value(&scope, runtime_.newByteArray());
   byteArrayAdd(thread_, &runtime_, value, 'A');
   byteArrayAdd(thread_, &runtime_, value, 'B');
-  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underByteArraySetSlice, self,
+  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underBytearraySetSlice, self,
                          start, stop, step, value)
                   .isNoneType());
   EXPECT_TRUE(isByteArrayEqualsCStr(self, "AbBde"));
@@ -777,7 +777,7 @@ TEST_F(UnderBuiltinsModuleTest,
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderIntNewFromByteArrayWithZeroBaseReturnsCodeLiteral) {
+       UnderIntNewFromBytearrayWithZeroBaseReturnsCodeLiteral) {
   HandleScope scope(thread_);
   const byte view[] = {'0', 'x', 'b', 'a', '5', 'e'};
   Type type(&scope, runtime_.typeAt(LayoutId::kInt));
@@ -785,13 +785,13 @@ TEST_F(UnderBuiltinsModuleTest,
   runtime_.byteArrayExtend(thread_, array, view);
   Int base(&scope, SmallInt::fromWord(0));
   Object result(&scope,
-                runBuiltin(UnderBuiltinsModule::underIntNewFromByteArray, type,
+                runBuiltin(UnderBuiltinsModule::underIntNewFromBytearray, type,
                            array, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 0xba5e));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderIntNewFromByteArrayWithInvalidByteRaisesValueError) {
+       UnderIntNewFromBytearrayWithInvalidByteRaisesValueError) {
   HandleScope scope(thread_);
   const byte view[] = {'$'};
   Type type(&scope, runtime_.typeAt(LayoutId::kInt));
@@ -799,13 +799,13 @@ TEST_F(UnderBuiltinsModuleTest,
   runtime_.byteArrayExtend(thread_, array, view);
   Int base(&scope, SmallInt::fromWord(36));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromByteArray, type, array,
+      runBuiltin(UnderBuiltinsModule::underIntNewFromBytearray, type, array,
                  base),
       LayoutId::kValueError, "invalid literal for int() with base 36: b'$'"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderIntNewFromByteArrayWithInvalidLiteraRaisesValueError) {
+       UnderIntNewFromBytearrayWithInvalidLiteraRaisesValueError) {
   HandleScope scope(thread_);
   const byte view[] = {'a'};
   Type type(&scope, runtime_.typeAt(LayoutId::kInt));
@@ -813,7 +813,7 @@ TEST_F(UnderBuiltinsModuleTest,
   runtime_.byteArrayExtend(thread_, array, view);
   Int base(&scope, SmallInt::fromWord(10));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromByteArray, type, array,
+      runBuiltin(UnderBuiltinsModule::underIntNewFromBytearray, type, array,
                  base),
       LayoutId::kValueError, "invalid literal for int() with base 10: b'a'"));
 }
@@ -2120,14 +2120,14 @@ result = _str_from_str(Sub, 'value')
   EXPECT_TRUE(isStrEqualsCStr(*result, "value"));
 }
 
-TEST_F(UnderBuiltinsModuleTest, UnderStrArrayClearSetsNumItemsToZero) {
+TEST_F(UnderBuiltinsModuleTest, UnderStrarrayClearSetsNumItemsToZero) {
   HandleScope scope(thread_);
   StrArray self(&scope, runtime_.newStrArray());
   Str other(&scope, runtime_.newStrFromCStr("hello"));
   runtime_.strArrayAddStr(thread_, self, other);
   ASSERT_EQ(self.numItems(), 5);
   EXPECT_TRUE(
-      runBuiltin(UnderBuiltinsModule::underStrArrayClear, self).isNoneType());
+      runBuiltin(UnderBuiltinsModule::underStrarrayClear, self).isNoneType());
   EXPECT_EQ(self.numItems(), 0);
 
   // Make sure that str does not show up again
@@ -2136,13 +2136,13 @@ TEST_F(UnderBuiltinsModuleTest, UnderStrArrayClearSetsNumItemsToZero) {
   EXPECT_TRUE(isStrEqualsCStr(runtime_.strFromStrArray(self), "abcd"));
 }
 
-TEST_F(UnderBuiltinsModuleTest, UnderStrArrayIaddWithStrReturnsStrArray) {
+TEST_F(UnderBuiltinsModuleTest, UnderStrarrayIaddWithStrReturnsStrArray) {
   HandleScope scope(thread_);
   StrArray self(&scope, runtime_.newStrArray());
   const char* test_str = "hello";
   Str other(&scope, runtime_.newStrFromCStr(test_str));
   StrArray result(
-      &scope, runBuiltin(UnderBuiltinsModule::underStrArrayIadd, self, other));
+      &scope, runBuiltin(UnderBuiltinsModule::underStrarrayIadd, self, other));
   EXPECT_TRUE(isStrEqualsCStr(runtime_.strFromStrArray(result), test_str));
   EXPECT_EQ(self, result);
 }

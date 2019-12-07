@@ -50,7 +50,7 @@ static int asciiDecode(Thread* thread, const StrArray& dst, const Bytes& src,
 const BuiltinMethod UnderCodecsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderAsciiDecode, underAsciiDecode},
     {SymbolId::kUnderAsciiEncode, underAsciiEncode},
-    {SymbolId::kUnderByteArrayStringAppend, underByteArrayStringAppend},
+    {SymbolId::kUnderBytearrayStringAppend, underBytearrayStringAppend},
     {SymbolId::kUnderEscapeDecode, underEscapeDecode},
     {SymbolId::kUnderLatin1Decode, underLatin1Decode},
     {SymbolId::kUnderLatin1Encode, underLatin1Encode},
@@ -1086,7 +1086,7 @@ RawObject UnderCodecsModule::underUtf32Encode(Thread* thread, Frame* frame,
 
 // Takes a ByteArray and a Str object, and appends each byte in the Str to the
 // ByteArray one by one
-RawObject UnderCodecsModule::underByteArrayStringAppend(Thread* thread,
+RawObject UnderCodecsModule::underBytearrayStringAppend(Thread* thread,
                                                         Frame* frame,
                                                         word nargs) {
   HandleScope scope(thread);

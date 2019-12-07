@@ -17,7 +17,7 @@ RawObject StrArrayBuiltins::dunderInit(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isStrArray()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kUnderStrArray);
+    return thread->raiseRequiresType(self_obj, SymbolId::kUnderStrarray);
   }
   StrArray self(&scope, *self_obj);
   self.setNumItems(0);
@@ -50,7 +50,7 @@ RawObject StrArrayBuiltins::dunderStr(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isStrArray()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kUnderStrArray);
+    return thread->raiseRequiresType(self_obj, SymbolId::kUnderStrarray);
   }
   StrArray self(&scope, *self_obj);
   return thread->runtime()->strFromStrArray(self);

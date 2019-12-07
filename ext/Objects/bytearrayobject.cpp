@@ -88,7 +88,7 @@ PY_EXPORT PyObject* PyByteArray_FromObject(PyObject* obj) {
   HandleScope scope(thread);
   Object src(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Object result(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
-                                                SymbolId::kByteArray, src));
+                                                SymbolId::kBytearray, src));
   return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
 }
 

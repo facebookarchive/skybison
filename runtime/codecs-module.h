@@ -21,9 +21,9 @@ class UnderCodecsModule
   static RawObject underUtf32Encode(Thread* thread, Frame* frame, word nargs);
   static RawObject underUtf8Decode(Thread* thread, Frame* frame, word nargs);
   static RawObject underUtf8Encode(Thread* thread, Frame* frame, word nargs);
-  static RawObject underByteArrayAsBytes(Thread* thread, Frame* frame,
+  static RawObject underBytearrayAsBytes(Thread* thread, Frame* frame,
                                          word nargs);
-  static RawObject underByteArrayStringAppend(Thread* thread, Frame* frame,
+  static RawObject underBytearrayStringAppend(Thread* thread, Frame* frame,
                                               word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];

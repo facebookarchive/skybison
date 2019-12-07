@@ -2361,7 +2361,7 @@ const ModuleInitializer Runtime::kBuiltinModules[] = {
     {SymbolId::kUnderCodecs, &UnderCodecsModule::initialize},
     {SymbolId::kUnderImp, &UnderImpModule::initialize},
     {SymbolId::kUnderOs, &UnderOsModule::initialize},
-    {SymbolId::kUnderWeakRef, &UnderWeakrefModule::initialize},
+    {SymbolId::kUnderWeakref, &UnderWeakrefModule::initialize},
     {SymbolId::kUnderThread, &UnderThreadModule::initialize},
     {SymbolId::kUnderIo, &UnderIoModule::initialize},
     {SymbolId::kUnderStrMod, &UnderStrModModule::initialize},
@@ -2633,7 +2633,7 @@ void Runtime::createBuiltinsModule(Thread* thread) {
     stop_iteration_type.setCtor(*ctor);
 
     Type strarray_type(&scope, typeAt(LayoutId::kStrArray));
-    ctor = moduleAtById(thread, under_builtins, SymbolId::kUnderStrArrayCtor);
+    ctor = moduleAtById(thread, under_builtins, SymbolId::kUnderStrarrayCtor);
     CHECK(ctor.isFunction(), "_strarray_ctor should be a function");
     strarray_type.setCtor(*ctor);
   }

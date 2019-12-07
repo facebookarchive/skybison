@@ -56,7 +56,7 @@ RawObject ByteArrayBuiltins::dunderAdd(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytearray);
   }
   Object other_obj(&scope, args.get(1));
   word other_len;
@@ -93,7 +93,7 @@ RawObject ByteArrayBuiltins::dunderEq(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytearray);
   }
   ByteArray self(&scope, *self_obj);
   Object other_obj(&scope, args.get(1));
@@ -119,7 +119,7 @@ RawObject ByteArrayBuiltins::dunderGe(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytearray);
   }
   ByteArray self(&scope, *self_obj);
   Object other_obj(&scope, args.get(1));
@@ -145,7 +145,7 @@ RawObject ByteArrayBuiltins::dunderGt(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytearray);
   }
   ByteArray self(&scope, *self_obj);
   Object other_obj(&scope, args.get(1));
@@ -171,7 +171,7 @@ RawObject ByteArrayBuiltins::dunderIadd(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytearray);
   }
   ByteArray self(&scope, *self_obj);
   Object other_obj(&scope, args.get(1));
@@ -201,7 +201,7 @@ RawObject ByteArrayBuiltins::dunderImul(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytearray);
   }
   ByteArray self(&scope, *self_obj);
   Object count_index(&scope, args.get(1));
@@ -248,7 +248,7 @@ RawObject ByteArrayBuiltins::dunderIter(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytearray);
   }
   ByteArray self(&scope, *self_obj);
   return runtime->newByteArrayIterator(thread, self);
@@ -261,7 +261,7 @@ RawObject ByteArrayBuiltins::dunderLe(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytearray);
   }
   ByteArray self(&scope, *self_obj);
   Object other_obj(&scope, args.get(1));
@@ -286,7 +286,7 @@ RawObject ByteArrayBuiltins::dunderLen(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytearray);
   }
   ByteArray self(&scope, *self_obj);
   return SmallInt::fromWord(self.numItems());
@@ -299,7 +299,7 @@ RawObject ByteArrayBuiltins::dunderLt(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytearray);
   }
   ByteArray self(&scope, *self_obj);
   Object other_obj(&scope, args.get(1));
@@ -325,7 +325,7 @@ RawObject ByteArrayBuiltins::dunderMul(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytearray);
   }
   ByteArray self(&scope, *self_obj);
   Object count_index(&scope, args.get(1));
@@ -366,7 +366,7 @@ RawObject ByteArrayBuiltins::dunderNe(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytearray);
   }
   ByteArray self(&scope, *self_obj);
   Object other_obj(&scope, args.get(1));
@@ -471,7 +471,7 @@ RawObject ByteArrayBuiltins::dunderRepr(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytearray);
   }
   ByteArray self(&scope, *self_obj);
   return byteArrayRepr(thread, self);
@@ -482,7 +482,7 @@ RawObject ByteArrayBuiltins::hex(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfByteArray(*obj)) {
-    return thread->raiseRequiresType(obj, SymbolId::kByteArray);
+    return thread->raiseRequiresType(obj, SymbolId::kBytearray);
   }
   ByteArray self(&scope, *obj);
   Bytes bytes(&scope, self.bytes());
@@ -495,7 +495,7 @@ RawObject ByteArrayBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytearray);
   }
   ByteArray self(&scope, *self_obj);
   Bytes self_bytes(&scope, self.bytes());
@@ -529,7 +529,7 @@ RawObject ByteArrayBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytearray);
   }
   ByteArray self(&scope, *self_obj);
   Bytes self_bytes(&scope, self.bytes());
@@ -563,7 +563,7 @@ RawObject ByteArrayBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytearray);
   }
   ByteArray self(&scope, *self_obj);
   Bytes self_bytes(&scope, self.bytes());
@@ -598,7 +598,7 @@ RawObject ByteArrayBuiltins::translate(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytearray);
   }
   ByteArray self(&scope, *self_obj);
   Bytes self_bytes(&scope, self.bytes());
@@ -669,7 +669,7 @@ RawObject ByteArrayIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isByteArrayIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kByteArrayIterator);
+    return thread->raiseRequiresType(self, SymbolId::kBytearrayIterator);
   }
   return *self;
 }
@@ -680,7 +680,7 @@ RawObject ByteArrayIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isByteArrayIterator()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kByteArrayIterator);
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytearrayIterator);
   }
   ByteArrayIterator self(&scope, *self_obj);
   ByteArray bytearray(&scope, self.iterable());
@@ -699,7 +699,7 @@ RawObject ByteArrayIteratorBuiltins::dunderLengthHint(Thread* thread,
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isByteArrayIterator()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kByteArrayIterator);
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytearrayIterator);
   }
   ByteArrayIterator self(&scope, *self_obj);
   ByteArray bytearray(&scope, self.iterable());

@@ -175,7 +175,7 @@ RawObject UnderImpModule::isBuiltin(Thread* thread, Frame* frame, word nargs) {
   // Special case internal runtime modules
   Symbols* symbols = runtime->symbols();
   if (name.equals(symbols->Builtins()) || name.equals(symbols->UnderThread()) ||
-      name.equals(symbols->Sys()) || name.equals(symbols->UnderWeakRef()) ||
+      name.equals(symbols->Sys()) || name.equals(symbols->UnderWeakref()) ||
       name.equals(symbols->UnderWarnings()) ||
       name.equals(symbols->Marshal())) {
     return RawSmallInt::fromWord(-1);

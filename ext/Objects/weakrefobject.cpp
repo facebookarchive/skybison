@@ -63,7 +63,7 @@ PY_EXPORT PyObject* PyWeakref_NewProxy(PyObject* ob, PyObject* callback) {
     callback_obj = ApiHandle::fromPyObject(callback)->asObject();
   }
   Object result_obj(
-      &scope, thread->invokeFunction2(SymbolId::kUnderWeakRef, SymbolId::kProxy,
+      &scope, thread->invokeFunction2(SymbolId::kUnderWeakref, SymbolId::kProxy,
                                       referent, callback_obj));
   if (result_obj.isError()) {
     return nullptr;
