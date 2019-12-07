@@ -213,10 +213,22 @@ PY_EXPORT int PyList_SetSlice(PyObject* list, Py_ssize_t low, Py_ssize_t high,
     thread->raiseBadInternalCall();
     return -1;
   }
-  // TODO(T44021663): Don't create a slice; instead, pass the ints directly to
-  // the relevant non-slice functions
-  Object start(&scope, runtime->newInt(low));
-  Object stop(&scope, runtime->newInt(high));
+
+  List self(&scope, *list_obj);
+  word length = self.numItems();
+  if (low < 0) {
+    low = 0;
+  } else if (low > length) {
+    low = length;
+  }
+  if (high < low) {
+    high = low;
+  } else if (high > length) {
+    high = length;
+  }
+
+  Object start(&scope, SmallInt::fromWord(low));
+  Object stop(&scope, SmallInt::fromWord(high));
   Object step(&scope, NoneType::object());
   Slice slice(&scope, runtime->newSlice(start, stop, step));
   Object result(&scope, NoneType::object());
