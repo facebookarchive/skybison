@@ -335,6 +335,8 @@ class UnderBuiltinsModule {
   static RawObject underTypeProxyLen(Thread* thread, Frame* frame, word nargs);
   static RawObject underTypeProxyValues(Thread* thread, Frame* frame,
                                         word nargs);
+  static RawObject underTypeSubclassGuard(Thread* thread, Frame* frame,
+                                          word nargs);
   static RawObject underUnimplemented(Thread* thread, Frame* frame, word nargs);
   static RawObject underWarn(Thread* thread, Frame* frame, word nargs);
   static RawObject underWeakrefCallback(Thread* thread, Frame* frame,

@@ -468,6 +468,7 @@ class Runtime;
   V(UnderTypeProxyKeys, "_type_proxy_keys")                                    \
   V(UnderTypeProxyLen, "_type_proxy_len")                                      \
   V(UnderTypeProxyValues, "_type_proxy_values")                                \
+  V(UnderTypeSubclassGuard, "_type_subclass_guard")                            \
   V(UnderUnbound, "_Unbound")                                                  \
   V(UnderUnicodeEscapeDecode, "_unicode_escape_decode")                        \
   V(UnderUnicodeEscapeDecodeStateful, "_unicode_escape_decode_stateful")       \

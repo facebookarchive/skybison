@@ -3081,18 +3081,12 @@ class FloatTests(unittest.TestCase):
         self.assertEqual(float.__mod__(3.25, -1.0), -0.75)
 
     def test_dunder_new_with_non_class_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
+        with self.assertRaises(TypeError):
             float.__new__("not a type")
-        self.assertEqual(
-            str(context.exception), "float.__new__(X): X is not a type object (str)"
-        )
 
     def test_dunder_new_with_non_float_subclass_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
+        with self.assertRaises(TypeError):
             float.__new__(int)
-        self.assertEqual(
-            str(context.exception), "float.__new__(int): int is not a subtype of float"
-        )
 
     def test_dunder_new_with_default_argument_returns_zero(self):
         self.assertEqual(float(), 0.0)
@@ -4107,9 +4101,7 @@ class IntTests(unittest.TestCase):
             int.from_bytes(b"*", byteorder="medium")
 
     def test_from_bytes_with_invalid_byteorder_raises_type_error(self):
-        with self.assertRaisesRegex(
-            TypeError, "from_bytes\\(\\) argument 2 must be str, not int"
-        ):
+        with self.assertRaises(TypeError):
             int.from_bytes(b"*", byteorder=42)
 
     def test_from_bytes_uses_type_dunder_bytes(self):

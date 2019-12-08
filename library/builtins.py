@@ -218,6 +218,7 @@ _type_proxy_guard = _type_proxy_guard  # noqa: F821
 _type_proxy_keys = _type_proxy_keys  # noqa: F821
 _type_proxy_len = _type_proxy_len  # noqa: F821
 _type_proxy_values = _type_proxy_values  # noqa: F821
+_type_subclass_guard = _type_subclass_guard  # noqa: F821
 _Unbound = _Unbound  # noqa: F821
 _unimplemented = _unimplemented  # noqa: F821
 _warn = _warn  # noqa: F821
@@ -924,16 +925,14 @@ class _descrclassmethod:
         self.fn = fn
 
     def __get__(self, instance, cls):
-        if not _type_issubclass(cls, self.cls):
-            raise TypeError(f"Expected instance of type {self.cls} not {cls}")
+        _type_subclass_guard(cls, self.cls)
         return _bound_method(self.fn, cls)
 
     def __call__(self, *args, **kwargs):
         if not args:
             raise TypeError(f"Function {self.fn} needs at least 1 argument")
         cls = args[0]
-        if not issubclass(cls, self.cls):
-            raise TypeError(f"Expected type {self.cls} not {self}")
+        _type_subclass_guard(cls, self.cls)
         return self.fn(*args, **kwargs)
 
 
@@ -1907,15 +1906,7 @@ class bytes(bootstrap=True):
         pass
 
     def __new__(cls, source=_Unbound, encoding=_Unbound, errors=_Unbound):  # noqa: C901
-        if not _type_check(cls):
-            raise TypeError(
-                f"bytes.__new__(X): X is not a type object ({_type(cls).__name__})"
-            )
-        if not _type_issubclass(cls, bytes):
-            raise TypeError(
-                f"bytes.__new__({cls.__name__}): "
-                f"{cls.__name__} is not a subtype of bytes"
-            )
+        _type_subclass_guard(cls, bytes)
         if source is _Unbound:
             if encoding is _Unbound and errors is _Unbound:
                 return _bytes_from_bytes(cls, b"")
@@ -2778,9 +2769,7 @@ class float(bootstrap=True):
 
     @classmethod
     def __getformat__(cls: type, typearg: str) -> str:
-        _type_guard(cls)
-        if not _type_issubclass(cls, float):
-            raise TypeError(f"'__getformat__' {cls.__name__} is not a subtype of float")
+        _type_subclass_guard(cls, float)
         _str_guard(typearg)
         typearg = str(typearg)
         if typearg != "double" and typearg != "float":
@@ -2826,15 +2815,7 @@ class float(bootstrap=True):
         pass
 
     def __new__(cls, arg=0.0) -> float:
-        if not _type_check(cls):
-            raise TypeError(
-                f"float.__new__(X): X is not a type object ({_type(cls).__name__})"
-            )
-        if not _type_issubclass(cls, float):
-            raise TypeError(
-                f"float.__new__({cls.__name__}): {cls.__name__} is not a "
-                "subtype of float"
-            )
+        _type_subclass_guard(cls, float)
         if _str_check_exact(arg):
             return _float_new_from_str(cls, arg)
         if _float_check_exact(arg):
@@ -3324,14 +3305,7 @@ class int(bootstrap=True):
     def __new__(cls, x=_Unbound, base=_Unbound) -> int:  # noqa: C901
         if cls is bool:
             raise TypeError("int.__new__(bool) is not safe. Use bool.__new__()")
-        if not _type_check(cls):
-            raise TypeError(
-                f"int.__new__(X): X is not a type object ({_type(cls).__name__})"
-            )
-        if not issubclass(cls, int):
-            raise TypeError(
-                f"bytes.__new__({cls.__name__}): {cls.__name__} is not a subtype of int"
-            )
+        _type_subclass_guard(cls, int)
         if x is _Unbound:
             if base is _Unbound:
                 return _int_new_from_int(cls, 0)
@@ -3531,14 +3505,8 @@ class int(bootstrap=True):
     def from_bytes(
         cls: type, bytes: bytes, byteorder: str, *, signed: bool = False
     ) -> int:
-        _type_guard(cls)
-        if not _type_issubclass(cls, int):
-            raise TypeError(f"'from_bytes' {cls.__name__} is not a subtype of int")
-        if not _str_check(byteorder):
-            raise TypeError(
-                f"from_bytes() argument 2 must be str, not "
-                f"{type(byteorder).__name__}"
-            )
+        _type_subclass_guard(cls, int)
+        _str_guard(byteorder)
         if str.__eq__(byteorder, "little"):
             byteorder_big = False
         elif str.__eq__(byteorder, "big"):
@@ -4928,10 +4896,7 @@ class str(bootstrap=True):
         pass
 
     def __new__(cls, obj=_Unbound, encoding=_Unbound, errors=_Unbound):  # noqa: C901
-        if not _type_check(cls):
-            raise TypeError("cls is not a type object")
-        if not issubclass(cls, str):
-            raise TypeError("cls is not a subtype of str")
+        _type_subclass_guard(cls, str)
         if obj is _Unbound:
             return _str_from_str(cls, "")
         if encoding is _Unbound and errors is _Unbound:
@@ -5502,14 +5467,7 @@ class tuple(bootstrap=True):
         return len_self != len_other
 
     def __new__(cls, iterable=()):
-        if not _type_check(cls):
-            raise TypeError(
-                f"tuple.__new__(X): X is not a type object ({_type(cls).__name__})"
-            )
-        if not _type_issubclass(cls, tuple):
-            raise TypeError(
-                f"tuple.__new__(X): {_type(cls).__name__} is not a subtype of tuple"
-            )
+        _type_subclass_guard(cls, tuple)
         if cls is tuple:
             if _tuple_check_exact(iterable):
                 return iterable

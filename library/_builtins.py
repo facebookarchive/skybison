@@ -1144,6 +1144,11 @@ def _type_proxy_values(self):
 
 
 @_patch
+def _type_subclass_guard(subclass, superclass):
+    pass
+
+
+@_patch
 def _unimplemented():
     """Prints a message and a stacktrace, and stops the program execution."""
     pass

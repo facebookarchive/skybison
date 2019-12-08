@@ -179,14 +179,15 @@ TEST_F(StrBuiltinsTest, DunderNewWithTooManyArgsRaisesTypeError) {
 }
 
 TEST_F(StrBuiltinsTest, DunderNewWithNonTypeArgRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "str.__new__(1)"),
-                            LayoutId::kTypeError, "cls is not a type object"));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime_, "str.__new__(1)"), LayoutId::kTypeError,
+      "'__new__' requires a 'type' object but received a 'int'"));
 }
 
 TEST_F(StrBuiltinsTest, DunderNewWithNonSubtypeArgRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "str.__new__(object)"),
                             LayoutId::kTypeError,
-                            "cls is not a subtype of str"));
+                            "'__new__': 'object' is not a subclass of 'str'"));
 }
 
 TEST_F(StrBuiltinsTest, DunderAddWithTwoStringsReturnsConcatenatedString) {

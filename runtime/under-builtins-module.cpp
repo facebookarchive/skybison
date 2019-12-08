@@ -289,6 +289,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderTypeGuard, underTypeGuard},
     {SymbolId::kUnderTypeInit, underTypeInit},
     {SymbolId::kUnderTypeIsSubclass, underTypeIsSubclass},
+    {SymbolId::kUnderTypeSubclassGuard, underTypeSubclassGuard},
     {SymbolId::kUnderTypeNew, underTypeNew},
     {SymbolId::kUnderTypeProxy, underTypeProxy},
     {SymbolId::kUnderTypeProxyCheck, underTypeProxyCheck},
@@ -4520,6 +4521,28 @@ RawObject UnderBuiltinsModule::underTypeInit(Thread* thread, Frame* frame,
     mro = args.get(3);
   }
   return typeInit(thread, type, name, dict, mro);
+}
+
+RawObject UnderBuiltinsModule::underTypeSubclassGuard(Thread* thread,
+                                                      Frame* frame,
+                                                      word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  if (!thread->runtime()->isInstanceOfType(args.get(0))) {
+    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kType);
+  }
+  Type subclass(&scope, args.get(0));
+  Type superclass(&scope, args.get(1));
+  if (typeIsSubclass(subclass, superclass)) {
+    return NoneType::object();
+  }
+  Function function(&scope, frame->previousFrame()->function());
+  Str function_name(&scope, function.name());
+  Str subclass_name(&scope, subclass.name());
+  Str superclass_name(&scope, superclass.name());
+  return thread->raiseWithFmt(LayoutId::kTypeError,
+                              "'%S': '%S' is not a subclass of '%S'",
+                              &function_name, &subclass_name, &superclass_name);
 }
 
 RawObject UnderBuiltinsModule::underUnimplemented(Thread* thread, Frame* frame,
