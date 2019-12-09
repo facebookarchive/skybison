@@ -1283,6 +1283,12 @@ def _range_getslice(self: range, start: int, stop: int, step: int) -> range:
     return range(new_start, new_stop, new_step)
 
 
+def _sequence_repr(left, seq, right) -> str:
+    result = f"{left}{', '.join(repr(x) for x in seq)}{right}"
+    _repr_leave(seq)
+    return result
+
+
 def _slice_index(num) -> int:
     if num is None or _int_check(num):
         return num
@@ -5477,22 +5483,14 @@ class tuple(bootstrap=True):
         return _tuple_new(cls, (*iterable,))
 
     def __repr__(self):
-        # TODO(T53507197): Use _sequence_repr
         _tuple_guard(self)
         if _repr_enter(self):
             return "(...)"
-        num_elems = _tuple_len(self)
-        output = "("
-        i = 0
-        while i < num_elems:
-            if i != 0:
-                output += ", "
-            output += repr(self[i])
-            i += 1
-        _repr_leave(self)
-        if num_elems == 1:
-            output += ","
-        return output + ")"
+        if _tuple_len(self) == 1:
+            elt = repr(self[0])
+            _repr_leave(self)
+            return f"({elt},)"
+        return _sequence_repr("(", self, ")")
 
     def __rmul__(self, other):
         _unimplemented()

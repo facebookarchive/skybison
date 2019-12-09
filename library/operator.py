@@ -20,6 +20,7 @@ from _builtins import _eq as eq, _lt as lt
 # their definitions.
 _divmod = _divmod  # noqa: F821
 _int_check = _int_check  # noqa: F821
+_sequence_repr = _sequence_repr  # noqa: F821
 _str_check = _str_check  # noqa: F821
 _type_name = _type_name  # noqa: F821
 
@@ -357,9 +358,7 @@ class attrgetter:
         return self._call(obj)
 
     def __repr__(self):
-        # TODO(T53507197): Use _sequence_repr
-        attrs = ", ".join(map(repr, self._attrs))
-        return f"{_type_name(self.__class__)}({attrs})"
+        return _sequence_repr(f"{_type_name(self.__class__)}(", self._attrs, ")")
 
     def __reduce__(self):
         return self.__class__, self._attrs
@@ -394,9 +393,7 @@ class itemgetter:
         return self._call(obj)
 
     def __repr__(self):
-        # TODO(T53507197): Use _sequence_repr
-        items = ", ".join(map(repr, self._items))
-        return f"{_type_name(self.__class__)}({items})"
+        return _sequence_repr(f"{_type_name(self.__class__)}(", self._attrs, ")")
 
     def __reduce__(self):
         return self.__class__, self._items
