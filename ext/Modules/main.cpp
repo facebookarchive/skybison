@@ -88,6 +88,7 @@ static RawObject runFile(Thread* thread, const char* filename) {
 PY_EXPORT int Py_BytesMain(int argc, char** argv) {
   bool print_version = false;
   bool print_help = false;
+  const char* command = nullptr;
 
   int option;
   while ((option = getopt_long(argc, argv, kSupportedOpts, kSupportedLongOpts,
@@ -95,7 +96,7 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
     // -c and -m mark the end of interpreter options - all further
     // arguments are passed to the script
     if (option == 'c') {
-      UNIMPLEMENTED("Program passed in as string");
+      command = optarg;
       break;
     }
     if (option == 'm') {
@@ -193,7 +194,8 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
   }
 
   char* filename = nullptr;
-  if (optind < argc && std::strcmp(argv[optind], "-") != 0) {
+  if (command == nullptr && optind < argc &&
+      std::strcmp(argv[optind], "-") != 0) {
     filename = argv[optind];
   }
 
@@ -202,7 +204,8 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
   Py_Initialize();
 
   if (!Py_QuietFlag &&
-      (Py_VerboseFlag || (filename == nullptr && is_interactive))) {
+      (Py_VerboseFlag ||
+       (command == nullptr && filename == nullptr && is_interactive))) {
     std::fprintf(stderr, "Python %s on %s\n", Py_GetVersion(),
                  Py_GetPlatform());
     if (!Py_NoSiteFlag) {
@@ -210,21 +213,40 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
     }
   }
 
-  wchar_t** wargv =
-      static_cast<wchar_t**>(PyMem_RawCalloc(argc - optind, sizeof(*wargv)));
-  decodeArgv(argc - optind, argv + optind, wargv);
+  int wargc;
+  wchar_t** wargv;
+  if (command != nullptr) {
+    // Start arg list with "-c", omit command but keep all other args
+    wargc = argc - optind + 1;
+    const char** argv_copy =
+        static_cast<const char**>(PyMem_RawCalloc(wargc, sizeof(*argv_copy)));
+    argv_copy[0] = "-c";
+    for (int i = optind; i < argc; i++) {
+      argv_copy[i - optind + 1] = argv[i];
+    }
+    wargv = static_cast<wchar_t**>(PyMem_RawCalloc(wargc, sizeof(*wargv)));
+    decodeArgv(wargc, argv_copy, wargv);
+    PyMem_RawFree(argv_copy);
+  } else {
+    wargc = argc - optind;
+    wargv = static_cast<wchar_t**>(PyMem_RawCalloc(wargc, sizeof(*wargv)));
+    decodeArgv(wargc, argv + optind, wargv);
+  }
   // TODO(T58637222): Use PySys_SetArgv once pyro is packaged with library
-  PySys_SetArgvEx(argc - optind, wargv, 0);
-  for (int i = 0; i < argc - optind; i++) {
+  PySys_SetArgvEx(wargc, wargv, 0);
+  for (int i = 0; i < wargc; i++) {
     PyMem_RawFree(wargv[i]);
   }
   PyMem_RawFree(wargv);
 
+  PyCompilerFlags flags;
+  flags.cf_flags = 0;
+
   int returncode = EXIT_SUCCESS;
 
-  if (filename == nullptr) {
-    PyCompilerFlags flags;
-    flags.cf_flags = 0;
+  if (command != nullptr) {
+    returncode = PyRun_SimpleStringFlags(command, &flags) != 0;
+  } else if (filename == nullptr) {
     returncode = PyRun_AnyFileExFlags(stdin, "<stdin>", /*closeit=*/0, &flags);
   } else {
     // TODO(T39499894): Rewrite this to use the C-API.
