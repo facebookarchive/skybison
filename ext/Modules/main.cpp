@@ -1,8 +1,11 @@
+#include <getopt.h>
+#include <cstdio>
 #include <cstdlib>
 #include <cwchar>
 #include <memory>
 
 #include "builtins-module.h"
+#include "cpython-data.h"
 #include "cpython-func.h"
 #include "exception-builtins.h"
 #include "marshal.h"
@@ -12,6 +15,15 @@
 #include "view.h"
 
 namespace py {
+
+static const char* const kInteractiveHelp =
+    R"(Type "help", "copyright", "credits" or "license" for more information.)";
+
+static const char* const kSupportedOpts = "+bBc:dEhiIm:OqsSuvVW:xX:";
+static const struct option kSupportedLongOpts[] = {
+    {"help", no_argument, nullptr, 'h'},
+    {"version", no_argument, nullptr, 'V'},
+    {nullptr, 0, nullptr, 0}};
 
 static void failArgConversion(const char* message, int argi) {
   std::fprintf(stderr, "Fatal python error: %s #%i\n", message, argi);
@@ -74,22 +86,143 @@ static RawObject runFile(Thread* thread, const char* filename) {
 }
 
 PY_EXPORT int Py_BytesMain(int argc, char** argv) {
+  bool print_version = false;
+  bool print_help = false;
+
+  int option;
+  while ((option = getopt_long(argc, argv, kSupportedOpts, kSupportedLongOpts,
+                               nullptr)) != -1) {
+    // -c and -m mark the end of interpreter options - all further
+    // arguments are passed to the script
+    if (option == 'c') {
+      UNIMPLEMENTED("Program passed in as string");
+      break;
+    }
+    if (option == 'm') {
+      UNIMPLEMENTED("Run library module as a script");
+      break;
+    }
+
+    wchar_t* woptarg;
+    switch (option) {
+      case 'b':
+        Py_BytesWarningFlag++;
+        UNIMPLEMENTED("Bytes Warning Flag");
+        break;
+      case 'd':
+        Py_DebugFlag++;
+        UNIMPLEMENTED("Parser Debug Flag");
+        break;
+      case 'i':
+        Py_InspectFlag++;
+        Py_InteractiveFlag++;
+        UNIMPLEMENTED("Inspect Interactively Flag");
+        break;
+      case 'I':
+        Py_IsolatedFlag++;
+        Py_NoUserSiteDirectory++;
+        Py_IgnoreEnvironmentFlag++;
+        UNIMPLEMENTED("Isolate Flag");
+        break;
+      case 'O':
+        Py_OptimizeFlag++;
+        UNIMPLEMENTED("Optimize Flag");
+        break;
+      case 'B':
+        Py_DontWriteBytecodeFlag++;
+        UNIMPLEMENTED("Don't Write Bytecode Flag");
+        break;
+      case 's':
+        Py_NoUserSiteDirectory++;
+        UNIMPLEMENTED("No User Site Directory");
+        break;
+      case 'S':
+        Py_NoSiteFlag++;
+        UNIMPLEMENTED("No site flag");
+        break;
+      case 'E':
+        Py_IgnoreEnvironmentFlag++;
+        UNIMPLEMENTED("Ignore PYTHON* environment variables");
+        break;
+      case 'u':
+        Py_UnbufferedStdioFlag = 1;
+        UNIMPLEMENTED("Unbuffered stdio flag");
+        break;
+      case 'v':
+        Py_VerboseFlag++;
+        UNIMPLEMENTED("Verbose flag");
+        break;
+      case 'x':
+        UNIMPLEMENTED("skip first line");
+        break;
+      case 'h':
+        print_help = true;
+        break;
+      case '?':
+        UNIMPLEMENTED("Help for invalid option");
+        break;
+      case 'V':
+        print_version = true;
+        break;
+      case 'W':
+        UNIMPLEMENTED("Warning options");
+        break;
+      case 'X':
+        woptarg = Py_DecodeLocale(optarg, nullptr);
+        PySys_AddXOption(woptarg);
+        PyMem_RawFree(woptarg);
+        woptarg = nullptr;
+        break;
+      case 'q':
+        Py_QuietFlag++;
+        UNIMPLEMENTED("Quiet Flag");
+        break;
+      default:
+        UNREACHABLE("Unexpected value returned from getopt_long()");
+    }
+  }
+
+  if (print_help) {
+    UNIMPLEMENTED("command line help");
+  }
+
+  if (print_version) {
+    // TODO(T58173807): Version reporting which is decoupled from runtime init
+    std::printf("Python 3.6.8+\n");
+    return 0;
+  }
+
+  char* filename = nullptr;
+  if (optind < argc && std::strcmp(argv[optind], "-") != 0) {
+    filename = argv[optind];
+  }
+
+  bool is_interactive = Py_FdIsInteractive(stdin, nullptr);
+
   Py_Initialize();
 
-  // TODO(tylerk): Parse and handle arguments as CPython does
+  if (!Py_QuietFlag &&
+      (Py_VerboseFlag || (filename == nullptr && is_interactive))) {
+    std::fprintf(stderr, "Python %s on %s\n", Py_GetVersion(),
+                 Py_GetPlatform());
+    if (!Py_NoSiteFlag) {
+      std::fprintf(stderr, "%s\n", kInteractiveHelp);
+    }
+  }
+
   wchar_t** wargv =
-      static_cast<wchar_t**>(PyMem_RawCalloc(argc - 1, sizeof(*wargv)));
-  decodeArgv(argc - 1, argv + 1, wargv);  // skip the first argument
+      static_cast<wchar_t**>(PyMem_RawCalloc(argc - optind, sizeof(*wargv)));
+  decodeArgv(argc - optind, argv + optind, wargv);
   // TODO(T58637222): Use PySys_SetArgv once pyro is packaged with library
-  PySys_SetArgvEx(argc - 1, wargv, 0);
-  for (int i = 0; i < argc - 1; i++) {
+  PySys_SetArgvEx(argc - optind, wargv, 0);
+  for (int i = 0; i < argc - optind; i++) {
     PyMem_RawFree(wargv[i]);
   }
   PyMem_RawFree(wargv);
 
   int returncode = EXIT_SUCCESS;
 
-  if (argc < 2) {
+  if (filename == nullptr) {
     PyCompilerFlags flags;
     flags.cf_flags = 0;
     returncode = PyRun_AnyFileExFlags(stdin, "<stdin>", /*closeit=*/0, &flags);
@@ -97,8 +230,7 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
     // TODO(T39499894): Rewrite this to use the C-API.
     Thread* thread = Thread::current();
     HandleScope scope(thread);
-    Object result(&scope, runFile(thread, argv[1]));
-
+    Object result(&scope, runFile(thread, filename));
     if (result.isErrorException()) {
       printPendingException(thread);
       returncode = EXIT_FAILURE;

@@ -6,6 +6,7 @@
 #include "exception-builtins.h"
 #include "runtime.h"
 
+// TODO(T57880525): Reconcile these flags with sys.py
 int Py_BytesWarningFlag = 0;
 int Py_DebugFlag = 0;
 int Py_DontWriteBytecodeFlag = 0;
