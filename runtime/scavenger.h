@@ -53,6 +53,7 @@ class Scavenger {
   Runtime* runtime_;
   Space* from_;
   Space* to_;
+  uword scan_;
   RawObject delayed_references_;
   RawObject delayed_callbacks_;
 

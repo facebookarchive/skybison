@@ -26,6 +26,7 @@ Scavenger::~Scavenger() {}
 
 RawObject Scavenger::scavenge() {
   to_ = new Space(from_->size());
+  scan_ = to_->start();
   // Nothing should be allocating during a GC.
   runtime_->heap()->setSpace(nullptr);
   processRoots();
@@ -63,7 +64,7 @@ bool Scavenger::hasWhiteReferent(RawObject reference) {
 }
 
 void Scavenger::processGrayObjects() {
-  uword scan = to_->start();
+  uword scan = scan_;
   while (scan < to_->fill()) {
     if (!(*reinterpret_cast<RawObject*>(scan)).isHeader()) {
       // Skip immediate values for alignment padding or header overflow.
@@ -88,6 +89,7 @@ void Scavenger::processGrayObjects() {
       }
     }
   }
+  scan_ = scan;
 }
 
 void Scavenger::processApiHandles() {
