@@ -2164,12 +2164,45 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
         return length
 
 
-class StringIO(TextIOWrapper):
+# TODO(T58766302): These methods were copied from TextIOWrapper and should
+# be specialized for StringIO
+class StringIO(_TextIOBase):
+    _CHUNK_SIZE = 2048
+
     def __init__(self, initial_value="", newline="\n"):
         # TODO(T53865493): Set encoding to UTF-8 instead of ASCII
-        super(StringIO, self).__init__(
-            BytesIO(), encoding="ascii", errors="surrogatepass", newline=newline
-        )
+        buffer = BytesIO()
+        if newline is not None and not _str_check(newline):
+            raise TypeError(
+                "TextIOWrapper() argument 4 must be str or None, not "
+                f"{_type(newline).__name__}"
+            )
+        if newline not in (None, "", "\n", "\r", "\r\n"):
+            raise ValueError(f"illegal newline value: {newline}")
+
+        self._buffer = buffer
+        self._line_buffering = False
+        self._encoding = "ascii"
+        self._errors = "surrogatepass"
+        self._readuniversal = not newline
+        self._readtranslate = newline is None
+        self._readnl = newline
+        self._writetranslate = newline != ""
+        self._writenl = newline or _os_linesep
+        self._decoder = self._get_decoder() if buffer.readable() else None
+        self._encoder = self._get_encoder() if buffer.writable() else None
+        self._decoded_chars = ""  # buffer for text returned from decoder
+        self._decoded_chars_used = 0  # offset into _decoded_chars for read()
+        self._snapshot = None  # info for reconstructing decoder state
+        self._seekable = self._telling = buffer.seekable()
+        self._has_read1 = hasattr(buffer, "read1")
+        self._b2cratio = 0.0
+
+        if self._seekable and self._encoder:
+            position = self.buffer.tell()
+            if position != 0:
+                self._encoder.setstate(0)
+
         if newline is None:
             self._writetranslate = False
         if initial_value is not None:
@@ -2180,6 +2213,21 @@ class StringIO(TextIOWrapper):
                 )
             self.write(initial_value)
             self.seek(0)
+
+    def __next__(self):
+        self._checkAttached()
+        self._telling = False
+        line = self.readline()
+        if not _str_check(line):
+            raise IOError(
+                "readline() should have returned a str object, not "
+                f"'{_type(line).__name__}'"
+            )
+        if not line:
+            self._snapshot = None
+            self._telling = self._seekable
+            raise StopIteration
+        return line
 
     def __repr__(self):
         return f"<_io.StringIO object at {_address(self):#x}>"
@@ -2216,6 +2264,471 @@ class StringIO(TextIOWrapper):
     def writable(self):
         self._checkClosed()
         return True
+
+    def _checkAttached(self, msg=None):
+        if self._buffer is None:
+            raise ValueError(
+                "underlying buffer has been detached" if msg is None else msg
+            )
+
+    def _get_decoded_chars(self, n=None):
+        offset = self._decoded_chars_used
+        if n is None:
+            chars = self._decoded_chars[offset:]
+        else:
+            chars = self._decoded_chars[offset : offset + n]
+        self._decoded_chars_used += len(chars)
+        return chars
+
+    def _get_decoder(self):
+        make_decoder = _codecs_getincrementaldecoder(self._encoding)
+        decoder = make_decoder(self._errors)
+        if self._readuniversal:
+            return IncrementalNewlineDecoder(decoder, self._readtranslate)
+        return decoder
+
+    def _get_encoder(self):
+        make_encoder = _codecs_getincrementalencoder(self._encoding)
+        return make_encoder(self._errors)
+
+    def _pack_cookie(
+        self, position, dec_flags=0, bytes_to_feed=0, need_eof=0, chars_to_skip=0
+    ):
+        # The meaning of a tell() cookie is: seek to position, set the
+        # decoder flags to dec_flags, read bytes_to_feed bytes, feed them
+        # into the decoder with need_eof as the EOF flag, then skip
+        # chars_to_skip characters of the decoded result.  For most simple
+        # decoders, tell() will often just give a byte offset in the file.
+        return (
+            position
+            | (dec_flags << 64)
+            | (bytes_to_feed << 128)
+            | (chars_to_skip << 192)
+            | bool(need_eof) << 256
+        )
+
+    def _read_chunk(self):
+        # The return value is True unless EOF was reached.  The decoded
+        # string is placed in self._decoded_chars (replacing its previous
+        # value).  The entire input chunk is sent to the decoder, though
+        # some of it may remain buffered in the decoder, yet to be
+        # converted.
+
+        if self._decoder is None:
+            raise UnsupportedOperation("not readable")
+
+        if self._telling:
+            # To prepare for tell(), we need to snapshot a point in the
+            # file where the decoder's input buffer is empty.
+
+            dec_buffer, dec_flags = self._decoder.getstate()
+            # Given this, we know there was a valid snapshot point
+            # len(dec_buffer) bytes ago with decoder state (b'', dec_flags).
+            if not _bytes_check(dec_buffer):
+                raise TypeError(
+                    "illegal decoder state: the first item should be a bytes "
+                    f"object, not '{_type(dec_buffer).__name__}'"
+                )
+
+        # Read a chunk, decode it, and put the result in self._decoded_chars.
+        if self._has_read1:
+            input_chunk = self.buffer.read1(self._CHUNK_SIZE)
+        else:
+            input_chunk = self.buffer.read(self._CHUNK_SIZE)
+        eof = not input_chunk
+        decoded_chars = self._decoder.decode(input_chunk, eof)
+        self._set_decoded_chars(decoded_chars)
+        if decoded_chars:
+            self._b2cratio = len(input_chunk) / len(self._decoded_chars)
+        else:
+            self._b2cratio = 0.0
+
+        if self._telling:
+            # At the snapshot point, len(dec_buffer) bytes before the read,
+            # the next input to be decoded is dec_buffer + input_chunk.
+            self._snapshot = (dec_flags, dec_buffer + input_chunk)
+
+        return not eof
+
+    def _rewind_decoded_chars(self, n):
+        if self._decoded_chars_used < n:
+            raise AssertionError("rewind decoded_chars out of bounds")
+        self._decoded_chars_used -= n
+
+    # The following three methods implement an ADT for _decoded_chars.
+    # Text returned from the decoder is buffered here until the client
+    # requests it by calling our read() or readline() method.
+    def _set_decoded_chars(self, chars):
+        self._decoded_chars = chars
+        self._decoded_chars_used = 0
+
+    def _unpack_cookie(self, bigint):
+        rest, position = divmod(bigint, 1 << 64)
+        rest, dec_flags = divmod(rest, 1 << 64)
+        rest, bytes_to_feed = divmod(rest, 1 << 64)
+        need_eof, chars_to_skip = divmod(rest, 1 << 64)
+        return position, dec_flags, bytes_to_feed, need_eof, chars_to_skip
+
+    @property
+    def buffer(self):
+        return self._buffer
+
+    def close(self):
+        self._checkAttached()
+        if not self.closed:
+            try:
+                self.flush()
+            finally:
+                self._buffer.close()
+
+    @property
+    def closed(self):
+        self._checkAttached()
+        return self._buffer.closed
+
+    def fileno(self):
+        self._checkAttached()
+        return self._buffer.fileno()
+
+    def flush(self):
+        self._checkAttached()
+        self._checkClosed()
+        self.buffer.flush()
+        self._telling = self._seekable
+
+    def isatty(self):
+        self._checkAttached()
+        return self.buffer.isatty()
+
+    @property
+    def line_buffering(self):
+        return self._line_buffering
+
+    @property
+    def name(self):
+        self._checkAttached()
+        return self._buffer.name
+
+    @property
+    def newlines(self):
+        self._checkAttached()
+        if self._decoder is None:
+            return None
+        try:
+            return self._decoder.newlines
+        except AttributeError:
+            return None
+
+    def read(self, size=None):
+        if size is None:
+            size = -1
+        elif not _int_check(size):
+            raise TypeError(f"integer argument expected, got '{_type(size).__name__}'")
+        self._checkAttached()
+        self._checkClosed()
+        self._checkReadable("not readable")
+        decoder = self._decoder
+        try:
+            size.__index__
+        except AttributeError as err:
+            raise TypeError("an integer is required") from err
+        if size < 0:
+            # Read everything.
+            result = self._get_decoded_chars() + decoder.decode(
+                self._buffer.read(), final=True
+            )
+            self._set_decoded_chars("")
+            self._snapshot = None
+            return result
+        else:
+            # Keep reading chunks until we have size characters to return.
+            eof = False
+            result = self._get_decoded_chars(size)
+            while len(result) < size and not eof:
+                eof = not self._read_chunk()
+                result += self._get_decoded_chars(size - len(result))
+            return result
+
+    def readline(self, size=None):  # noqa: C901
+        if size is None:
+            size = -1
+        elif not _int_check(size):
+            size = _index(size)
+
+        self._checkAttached()
+        self._checkClosed()
+
+        # Grab all the decoded text (we will rewind any extra bits later).
+        line = self._get_decoded_chars()
+
+        start = 0
+
+        pos = endpos = None
+        while True:
+            if self._readtranslate:
+                # Newlines are already translated, only search for \n
+                pos = line.find("\n", start)
+                if pos >= 0:
+                    endpos = pos + 1
+                    break
+                else:
+                    start = len(line)
+
+            elif self._readuniversal:
+                # Universal newline search. Find any of \r, \r\n, \n
+                # The decoder ensures that \r\n are not split in two pieces
+                nlpos = line.find("\n", start)
+                crpos = line.find("\r", start)
+                if crpos == -1:
+                    if nlpos == -1:
+                        # Nothing found
+                        start = len(line)
+                    else:
+                        # Found \n
+                        endpos = nlpos + 1
+                        break
+                elif nlpos == -1:
+                    # Found lone \r
+                    endpos = crpos + 1
+                    break
+                elif nlpos < crpos:
+                    # Found \n
+                    endpos = nlpos + 1
+                    break
+                elif nlpos == crpos + 1:
+                    # Found \r\n
+                    endpos = crpos + 2
+                    break
+                else:
+                    # Found \r
+                    endpos = crpos + 1
+                    break
+            else:
+                # non-universal
+                pos = line.find(self._readnl)
+                if pos >= 0:
+                    endpos = pos + len(self._readnl)
+                    break
+
+            if size >= 0 and len(line) >= size:
+                endpos = size  # reached length size
+                break
+
+            # No line ending seen yet - get more data'
+            while self._read_chunk():
+                if self._decoded_chars:
+                    break
+            if self._decoded_chars:
+                line += self._get_decoded_chars()
+            else:
+                # end of file
+                self._set_decoded_chars("")
+                self._snapshot = None
+                return line
+
+        if size >= 0 and endpos > size:
+            endpos = size  # don't exceed size
+
+        # Rewind _decoded_chars to just after the line ending we found.
+        self._rewind_decoded_chars(len(line) - endpos)
+        return line[:endpos]
+
+    def _reset_encoder(self, position):
+        if self._encoder:
+            if position != 0:
+                self._encoder.setstate(0)
+            else:
+                self._encoder.reset()
+
+    def seek(self, cookie, whence=0):  # noqa: C901
+        if not _int_check(whence):
+            raise TypeError(
+                f"an integer is required (got type {_type(whence).__name__})"
+            )
+        self._checkAttached()
+        self._checkClosed()
+        self._checkSeekable("underlying stream is not seekable")
+
+        if whence == 1:  # seek relative to current position
+            if cookie != 0:
+                raise UnsupportedOperation("can't do nonzero cur-relative seeks")
+            # Seeking to the current position should attempt to
+            # sync the underlying buffer with the current position.
+            whence = 0
+            cookie = self.tell()
+        elif whence == 2:  # seek relative to end of file
+            if cookie != 0:
+                raise UnsupportedOperation("can't do nonzero end-relative seeks")
+            self.flush()
+            position = self.buffer.seek(0, 2)
+            self._set_decoded_chars("")
+            self._snapshot = None
+            if self._decoder:
+                self._decoder.reset()
+            self._reset_encoder(position)
+            return position
+        elif whence != 0:
+            raise ValueError(f"invalid whence ({whence}, should be 0, 1 or 2)")
+        if cookie < 0:
+            raise ValueError(f"negative seek position {cookie!r}")
+        self.flush()
+
+        # The strategy of seek() is to go back to the safe start point
+        # and replay the effect of read(chars_to_skip) from there.
+        unpacked = self._unpack_cookie(cookie)
+        start_pos, dec_flags, bytes_to_feed, need_eof, chars_to_skip = unpacked
+        # Seek back to the safe start point.
+        self.buffer.seek(start_pos)
+        self._set_decoded_chars("")
+        self._snapshot = None
+
+        # Restore the decoder to its state from the safe start point.
+        if cookie == 0 and self._decoder:
+            self._decoder.reset()
+        elif self._decoder or dec_flags or chars_to_skip:
+            self._decoder = self._decoder
+            self._decoder.setstate((b"", dec_flags))
+            self._snapshot = (dec_flags, b"")
+
+        if chars_to_skip:
+            # Just like _read_chunk, feed the decoder and save a snapshot.
+            input_chunk = self.buffer.read(bytes_to_feed)
+            self._set_decoded_chars(self._decoder.decode(input_chunk, need_eof))
+            self._snapshot = (dec_flags, input_chunk)
+
+            # Skip chars_to_skip of the decoded characters.
+            if len(self._decoded_chars) < chars_to_skip:
+                raise OSError("can't restore logical file position")
+            self._decoded_chars_used = chars_to_skip
+
+        self._reset_encoder(cookie)
+        return cookie
+
+    def tell(self):  # noqa: C901
+        self._checkAttached()
+        self._checkClosed()
+        self._checkSeekable("underlying stream is not seekable")
+        if not self._telling:
+            raise OSError("telling position disabled by next() call")
+        self.flush()
+        position = self.buffer.tell()
+        decoder = self._decoder
+        if decoder is None or self._snapshot is None:
+            if self._decoded_chars:
+                # This should never happen.
+                raise AssertionError("pending decoded text")
+            return position
+
+        # Skip backward to the snapshot point (see _read_chunk).
+        dec_flags, next_input = self._snapshot
+        position -= len(next_input)
+
+        # How many decoded characters have been used up since the snapshot?
+        chars_to_skip = self._decoded_chars_used
+        if chars_to_skip == 0:
+            # We haven't moved from the snapshot point.
+            return self._pack_cookie(position, dec_flags)
+
+        # Starting from the snapshot position, we will walk the decoder
+        # forward until it gives us enough decoded characters.
+        saved_state = decoder.getstate()
+        try:
+            # Fast search for an acceptable start point, close to our
+            # current pos.
+            # Rationale: calling decoder.decode() has a large overhead
+            # regardless of chunk size; we want the number of such calls to
+            # be O(1) in most situations (common decoders, non-crazy input).
+            # Actually, it will be exactly 1 for fixed-size codecs (all
+            # 8-bit codecs, also UTF-16 and UTF-32).
+            skip_bytes = int(self._b2cratio * chars_to_skip)
+            skip_back = 1
+            assert skip_bytes <= len(next_input)
+            while skip_bytes > 0:
+                decoder.setstate((b"", dec_flags))
+                # Decode up to temptative start point
+                n = len(decoder.decode(next_input[:skip_bytes]))
+                if n <= chars_to_skip:
+                    b, d = decoder.getstate()
+                    if not b:
+                        # Before pos and no bytes buffered in decoder => OK
+                        dec_flags = d
+                        chars_to_skip -= n
+                        break
+                    # Skip back by buffered amount and reset heuristic
+                    skip_bytes -= len(b)
+                    skip_back = 1
+                else:
+                    # We're too far ahead, skip back a bit
+                    skip_bytes -= skip_back
+                    skip_back = skip_back * 2
+            else:
+                skip_bytes = 0
+                decoder.setstate((b"", dec_flags))
+
+            # Note our initial start point.
+            start_pos = position + skip_bytes
+            start_flags = dec_flags
+            if chars_to_skip == 0:
+                # We haven't moved from the start point.
+                return self._pack_cookie(start_pos, start_flags)
+
+            # Feed the decoder one byte at a time.  As we go, note the
+            # nearest "safe start point" before the current location
+            # (a point where the decoder has nothing buffered, so seek()
+            # can safely start from there and advance to this location).
+            bytes_fed = 0
+            need_eof = 0
+            # Chars decoded since `start_pos`
+            chars_decoded = 0
+            for i in range(skip_bytes, len(next_input)):
+                bytes_fed += 1
+                chars_decoded += len(decoder.decode(next_input[i : i + 1]))
+                dec_buffer, dec_flags = decoder.getstate()
+                if not dec_buffer and chars_decoded <= chars_to_skip:
+                    # Decoder buffer is empty, so this is a safe start point.
+                    start_pos += bytes_fed
+                    chars_to_skip -= chars_decoded
+                    start_flags, bytes_fed, chars_decoded = dec_flags, 0, 0
+                if chars_decoded >= chars_to_skip:
+                    break
+            else:
+                # We didn't get enough decoded data; signal EOF to get more.
+                chars_decoded += len(decoder.decode(b"", final=True))
+                need_eof = 1
+                if chars_decoded < chars_to_skip:
+                    raise OSError("can't reconstruct logical file position")
+
+            # The returned cookie corresponds to the last safe start point.
+            return self._pack_cookie(
+                start_pos, start_flags, bytes_fed, need_eof, chars_to_skip
+            )
+        finally:
+            decoder.setstate(saved_state)
+
+    def truncate(self, pos=None):
+        self._checkAttached()
+        self.flush()
+        return self.buffer.truncate(pos)
+
+    def write(self, text):
+        if not _str_check(text):
+            raise TypeError(f"write() argument must be str, not {_type(text).__name__}")
+        self._checkAttached()
+        self._checkClosed()
+        length = _str_len(text)
+        haslf = (self._writetranslate or self._line_buffering) and "\n" in text
+        if haslf and self._writetranslate and self._writenl != "\n":
+            text = text.replace("\n", self._writenl)
+        encoder = self._encoder
+        b = encoder.encode(text)
+        self.buffer.write(b)
+        if self._line_buffering and (haslf or "\r" in text):
+            self.flush()
+        self._set_decoded_chars("")
+        self._snapshot = None
+        if self._decoder:
+            self._decoder.reset()
+        return length
 
 
 def _fspath(obj):
