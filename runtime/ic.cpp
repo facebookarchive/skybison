@@ -102,31 +102,73 @@ void icUpdateAttrType(Thread* thread, const Tuple& caches, word index,
   }
 }
 
-bool icDependentIncluded(RawObject dependent, RawObject link) {
-  for (; !link.isNoneType(); link = WeakLink::cast(link).next()) {
-    if (WeakLink::cast(link).referent() == dependent) {
-      return true;
+static void removeDeadWeakLinks(RawValueCell cell) {
+  RawObject head = cell.dependencyLink();
+  DCHECK(!head.isNoneType(), "unlink should not be called with an empty list");
+  for (RawObject curr = cell.dependencyLink(); !curr.isNoneType();
+       curr = WeakLink::cast(curr).next()) {
+    if (!WeakLink::cast(curr).referent().isNoneType()) {
+      continue;
+    }
+    if (curr == head) {
+      // Special case: unlinking the head
+      RawObject new_head = WeakLink::cast(curr).next();
+      WeakLink::cast(new_head).setPrev(NoneType::object());
+      cell.setDependencyLink(new_head);
+      head = new_head;
+    }
+    RawObject prev = WeakLink::cast(curr).prev();
+    DCHECK(!prev.isNoneType(), "link should not be the head");
+    RawObject next = WeakLink::cast(curr).next();
+    WeakLink::cast(prev).setNext(next);
+    if (!next.isNoneType()) {
+      WeakLink::cast(next).setPrev(prev);
     }
   }
-  return false;
 }
 
 bool icInsertDependentToValueCellDependencyLink(Thread* thread,
                                                 const Object& dependent,
                                                 const ValueCell& value_cell) {
+  RawObject empty_link = NoneType::object();
+  bool has_dead_links = false;
+  for (RawObject curr = value_cell.dependencyLink(); !curr.isNoneType();
+       curr = WeakLink::cast(curr).next()) {
+    RawObject referent = WeakLink::cast(curr).referent();
+    if (referent == *dependent) {
+      // The dependent is already in the list. Don't add it again.
+      if (has_dead_links) removeDeadWeakLinks(*value_cell);
+      return false;
+    }
+    if (referent.isNoneType()) {
+      if (empty_link.isNoneType()) {
+        // Save the current WeakLink as a potential space for the new
+        // dependent.
+        empty_link = curr;
+      } else {
+        // We need to clean up the dead WeakLinks later.
+        has_dead_links = true;
+      }
+    }
+  }
+  if (!empty_link.isNoneType()) {
+    // We did not find dependent and we have a space for it, so fill the space
+    WeakLink::cast(empty_link).setReferent(*dependent);
+    if (has_dead_links) removeDeadWeakLinks(*value_cell);
+    return true;
+  }
+  // We did not find the dependent and we do not have space for it, so allocate
+  // space and prepend it to the list.
+  // Note that this implies that there were no dead WeakLinks.
   HandleScope scope(thread);
-  Object link(&scope, value_cell.dependencyLink());
-  if (icDependentIncluded(*dependent, *link)) {
-    // Already included.
-    return false;
-  }
+  Object old_head(&scope, value_cell.dependencyLink());
   Object none(&scope, NoneType::object());
-  WeakLink new_link(
-      &scope, thread->runtime()->newWeakLink(thread, dependent, none, link));
-  if (link.isWeakLink()) {
-    WeakLink::cast(*link).setPrev(*new_link);
+  WeakLink new_head(&scope, thread->runtime()->newWeakLink(thread, dependent,
+                                                           none, old_head));
+  if (old_head.isWeakLink()) {
+    WeakLink::cast(*old_head).setPrev(*new_head);
   }
-  value_cell.setDependencyLink(*new_link);
+  value_cell.setDependencyLink(*new_head);
   return true;
 }
 

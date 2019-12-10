@@ -212,6 +212,15 @@ static RawObject dependencyLinkOfTypeAttr(Thread* thread, const Type& type,
   return value_cell.dependencyLink();
 }
 
+bool icDependentIncluded(RawObject dependent, RawObject link) {
+  for (; !link.isNoneType(); link = WeakLink::cast(link).next()) {
+    if (WeakLink::cast(link).referent() == dependent) {
+      return true;
+    }
+  }
+  return false;
+}
+
 TEST_F(IcTest, IcEvictAttr) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class A:
@@ -1036,6 +1045,39 @@ cache_Y_ge()
   EXPECT_FALSE(icIsAttrCachedInDependent(thread_, type_y, dunder_le, cache_ge));
   EXPECT_FALSE(icIsAttrCachedInDependent(thread_, type_a, dunder_ge, cache_ge));
   EXPECT_FALSE(icIsAttrCachedInDependent(thread_, type_b, dunder_ge, cache_ge));
+}
+
+TEST_F(IcTest, IcDependentIncludedWithNoneLinkReturnsFalse) {
+  EXPECT_FALSE(icDependentIncluded(Unbound::object(), NoneType::object()));
+}
+
+TEST_F(IcTest, IcDependentIncludedWithDependentInChainReturnsTrue) {
+  HandleScope scope(thread_);
+  Object none(&scope, NoneType::object());
+  Object one(&scope, SmallInt::fromWord(1));
+  Object two(&scope, SmallInt::fromWord(2));
+  Object three(&scope, SmallInt::fromWord(3));
+  // Set up None <- link0 <-> link1 <-> link2 -> None
+  WeakLink link0(&scope, runtime_.newWeakLink(thread_, one, none, none));
+  WeakLink link1(&scope, runtime_.newWeakLink(thread_, two, link0, none));
+  WeakLink link2(&scope, runtime_.newWeakLink(thread_, three, link1, none));
+  link0.setNext(*link1);
+  link1.setNext(*link2);
+  EXPECT_TRUE(icDependentIncluded(*one, *link0));
+  EXPECT_TRUE(icDependentIncluded(*two, *link0));
+  EXPECT_TRUE(icDependentIncluded(*three, *link0));
+
+  EXPECT_FALSE(icDependentIncluded(*one, *link1));
+  EXPECT_TRUE(icDependentIncluded(*two, *link1));
+  EXPECT_TRUE(icDependentIncluded(*three, *link1));
+
+  EXPECT_FALSE(icDependentIncluded(*one, *link2));
+  EXPECT_FALSE(icDependentIncluded(*two, *link2));
+  EXPECT_TRUE(icDependentIncluded(*three, *link2));
+
+  EXPECT_FALSE(icDependentIncluded(Unbound::object(), *link0));
+  EXPECT_FALSE(icDependentIncluded(Unbound::object(), *link1));
+  EXPECT_FALSE(icDependentIncluded(Unbound::object(), *link2));
 }
 
 TEST_F(IcTest, IcEvictCacheEvictsCompareOpCaches) {
