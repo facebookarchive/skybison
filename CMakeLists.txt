@@ -350,8 +350,6 @@ add_library(
   runtime/object-builtins.cpp
   runtime/objects.cpp
   runtime/objects.h
-  runtime/operator-module.cpp
-  runtime/operator-module.h
   runtime/os.cpp
   runtime/os.h
   runtime/range-builtins.cpp
@@ -389,10 +387,6 @@ add_library(
   runtime/under-builtins-module.h
   runtime/under-os-module.cpp
   runtime/under-os-module.h
-  runtime/under-str-mod-module.cpp
-  runtime/under-str-mod-module.h
-  runtime/under-thread-module.cpp
-  runtime/under-thread-module.h
   runtime/under-valgrind-module.cpp
   runtime/under-valgrind-module.h
   runtime/unicode.h

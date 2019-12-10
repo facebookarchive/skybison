@@ -779,6 +779,10 @@ class Runtime {
   // (eg the result of compiling some_file.py). Return the result.
   NODISCARD RawObject executeModule(const Code& code, const Module& module);
 
+  // Execute a frozen module by marshalling it into a code object and then
+  // executing it.
+  RawObject executeFrozenModule(const char* buffer, const Module& module);
+
   static int heapOffset() { return OFFSETOF(Runtime, heap_); }
 
   static int layoutsOffset() { return OFFSETOF(Runtime, layouts_); }
@@ -825,10 +829,6 @@ class Runtime {
                         word flags, word argcount, word total_args,
                         word total_vars, word stacksize, Function::Entry entry,
                         Function::Entry entry_kw, Function::Entry entry_ex);
-
-  // Execute a frozen module by marshalling it into a code object and then
-  // executing it.
-  RawObject executeFrozenModule(const char* buffer, const Module& module);
 
   // Generic attribute deletion code used for class objects
   // TODO(T55871582): Remove code paths that can raise from the Runtime

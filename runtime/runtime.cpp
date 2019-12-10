@@ -45,7 +45,6 @@
 #include "module-builtins.h"
 #include "module-proxy-builtins.h"
 #include "object-builtins.h"
-#include "operator-module.h"
 #include "os.h"
 #include "range-builtins.h"
 #include "ref-builtins.h"
@@ -62,8 +61,6 @@
 #include "type-builtins.h"
 #include "under-builtins-module.h"
 #include "under-os-module.h"
-#include "under-str-mod-module.h"
-#include "under-thread-module.h"
 #include "under-valgrind-module.h"
 #include "utils.h"
 #include "visitor.h"
@@ -2357,6 +2354,17 @@ RawObject Runtime::lookupNameInModule(Thread* thread, SymbolId module_name,
   return moduleAtById(thread, module, name);
 }
 
+template <SymbolId Name, const char* Data>
+static void initializeManagedModule(Thread* thread) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object name_obj(&scope, runtime->symbols()->at(Name));
+  Module module(&scope, runtime->newModule(name_obj));
+  runtime->addModule(module);
+  CHECK(!runtime->executeFrozenModule(Data, module).isError(),
+        "Failed to initialize %s module", Str::cast(*name_obj).toCStr());
+}
+
 // TODO(emacs): Move these names into the modules themselves, so there is only
 // once source of truth.
 const ModuleInitializer Runtime::kBuiltinModules[] = {
@@ -2364,15 +2372,20 @@ const ModuleInitializer Runtime::kBuiltinModules[] = {
     {SymbolId::kUnderImp, &UnderImpModule::initialize},
     {SymbolId::kUnderOs, &UnderOsModule::initialize},
     {SymbolId::kUnderWeakref, &UnderWeakrefModule::initialize},
-    {SymbolId::kUnderThread, &UnderThreadModule::initialize},
+    {SymbolId::kUnderThread,
+     &initializeManagedModule<SymbolId::kUnderThread, kUnderThreadModuleData>},
     {SymbolId::kUnderIo, &UnderIoModule::initialize},
-    {SymbolId::kUnderStrMod, &UnderStrModModule::initialize},
+    {SymbolId::kUnderStrMod,
+     &initializeManagedModule<SymbolId::kUnderStrMod,
+                              kUnderStrUnderModModuleData>},
     {SymbolId::kUnderValgrind, &UnderValgrindModule::initialize},
     {SymbolId::kFaulthandler, &FaulthandlerModule::initialize},
     {SymbolId::kMarshal, &MarshalModule::initialize},
     {SymbolId::kUnderWarnings, &UnderWarningsModule::initialize},
-    {SymbolId::kOperator, &OperatorModule::initialize},
-    {SymbolId::kWarnings, &WarningsModule::initialize},
+    {SymbolId::kOperator,
+     &initializeManagedModule<SymbolId::kOperator, kOperatorModuleData>},
+    {SymbolId::kWarnings,
+     &initializeManagedModule<SymbolId::kWarnings, kWarningsModuleData>},
     {SymbolId::kSentinelId, nullptr},
 };
 
