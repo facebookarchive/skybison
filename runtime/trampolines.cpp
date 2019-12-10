@@ -59,92 +59,87 @@ void processFreevarsAndCellvars(Thread* thread, Frame* frame) {
   }
 }
 
+RawObject raiseMissingArgumentsError(Thread* thread, RawFunction function,
+                                     word argc) {
+  HandleScope scope(thread);
+  Function function_obj(&scope, function);
+  Object defaults(&scope, function_obj.defaults());
+  word n_defaults = defaults.isNoneType() ? 0 : Tuple::cast(*defaults).length();
+  return thread->raiseWithFmt(
+      LayoutId::kTypeError,
+      "'%F' takes min %w positional arguments but %w given", &function_obj,
+      function_obj.argcount() - n_defaults, argc);
+}
+
 RawObject processDefaultArguments(Thread* thread, RawFunction function_raw,
                                   Frame* frame, const word argc) {
-  HandleScope scope(thread);
-  Function function(&scope, function_raw);
-  Object tmp_varargs(&scope, NoneType::object());
-  word new_argc = argc;
-  if (new_argc < function.argcount() && function.hasDefaults()) {
-    // Add default positional args
-    Tuple default_args(&scope, function.defaults());
-    if (default_args.length() < (function.argcount() - new_argc)) {
-      return thread->raiseWithFmt(
-          LayoutId::kTypeError,
-          "'%F' takes min %w positional arguments but %w given", &function,
-          function.argcount() - default_args.length(), argc);
-    }
-    const word positional_only = function.argcount() - default_args.length();
-    for (; new_argc < function.argcount(); new_argc++) {
-      frame->pushValue(default_args.at(new_argc - positional_only));
+  word argcount = function_raw.argcount();
+  word n_missing_args = argcount - argc;
+  if (n_missing_args > 0) {
+    RawObject result =
+        addDefaultArguments(thread, function_raw, frame, argc, n_missing_args);
+    if (result.isErrorException()) return result;
+    function_raw = Function::cast(result);
+    if (function_raw.hasSimpleCall()) {
+      return function_raw;
     }
   }
+
+  HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  if ((new_argc > function.argcount()) || function.hasVarargs()) {
-    // VARARGS - spill extra positional args into the varargs tuple.
-    if (function.hasVarargs()) {
-      word len = Utils::maximum(word{0}, new_argc - function.argcount());
-      Tuple varargs(&scope, runtime->newTuple(len));
-      for (word i = (len - 1); i >= 0; i--) {
-        varargs.atPut(i, frame->topValue());
-        frame->popValue();
-        new_argc--;
-      }
-      tmp_varargs = *varargs;
-    } else {
+  Function function(&scope, function_raw);
+  Object varargs_param(&scope, runtime->emptyTuple());
+  if (n_missing_args < 0) {
+    // We have too many arguments.
+    if (!function.hasVarargs()) {
       return thread->raiseWithFmt(
           LayoutId::kTypeError,
           "'%F' takes max %w positional arguments but %w given", &function,
-          function.argcount(), argc);
+          argcount, argc);
     }
+    // Put extra positional args into the varargs tuple.
+    word len = -n_missing_args;
+    Tuple tuple(&scope, runtime->newTuple(len));
+    for (word i = (len - 1); i >= 0; i--) {
+      tuple.atPut(i, frame->popValue());
+    }
+    varargs_param = *tuple;
   }
 
   // If there are any keyword-only args, there must be defaults for them
   // because we arrived here via CALL_FUNCTION (and thus, no keywords were
   // supplied at the call site).
   Code code(&scope, function.code());
-  if (code.kwonlyargcount() != 0 && !function.kwDefaults().isNoneType()) {
+  word kwonlyargcount = code.kwonlyargcount();
+  if (kwonlyargcount > 0) {
+    if (function.kwDefaults().isNoneType()) {
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "missing keyword-only argument");
+    }
     Dict kw_defaults(&scope, function.kwDefaults());
     if (!kw_defaults.isNoneType()) {
       Tuple formal_names(&scope, code.varnames());
-      word first_kw = function.argcount();
-      for (word i = 0; i < code.kwonlyargcount(); i++) {
-        Str name(&scope, formal_names.at(first_kw + i));
-        RawObject val = dictAtByStr(thread, kw_defaults, name);
-        if (!val.isError()) {
-          frame->pushValue(val);
-          new_argc++;
-        } else {
+      word first_kw = argcount;
+      Object name(&scope, NoneType::object());
+      for (word i = 0; i < kwonlyargcount; i++) {
+        name = formal_names.at(first_kw + i);
+        RawObject value = dictAtByStr(thread, kw_defaults, name);
+        if (value.isError()) {
           return thread->raiseWithFmt(LayoutId::kTypeError,
                                       "missing keyword-only argument");
         }
+        frame->pushValue(value);
       }
-    } else {
-      return thread->raiseWithFmt(LayoutId::kTypeError,
-                                  "missing keyword-only argument");
     }
   }
 
   if (function.hasVarargs()) {
-    frame->pushValue(*tmp_varargs);
-    new_argc++;
+    frame->pushValue(*varargs_param);
   }
-
   if (function.hasVarkeyargs()) {
     // VARKEYARGS - because we arrived via CALL_FUNCTION, no keyword arguments
     // provided.  Just add an empty dict.
-    Object kwdict(&scope, runtime->newDict());
-    frame->pushValue(*kwdict);
-    new_argc++;
-  }
-
-  // At this point, we should have the correct number of arguments.  Throw if
-  // not.
-  if (new_argc != function.totalArgs()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError, "'%F' takes %w positional arguments but %w given",
-        &function, function.argcount(),
-        new_argc - function.hasVarargs() - function.hasVarkeyargs());
+    frame->pushValue(runtime->newDict());
   }
   return *function;
 }

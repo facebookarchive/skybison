@@ -15,7 +15,6 @@ using namespace testing;
 
 using CallTest = RuntimeFixture;
 using TrampolinesTest = RuntimeFixture;
-using TrampolinesDeathTest = RuntimeFixture;
 
 TEST_F(CallTest, CallBoundMethod) {
   HandleScope scope(thread_);
@@ -2067,15 +2066,14 @@ TEST_F(TrampolinesTest, BuiltinTrampolineExReceivesVarArgs) {
   EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
 
-TEST_F(TrampolinesDeathTest, BuiltinTrampolineExWithTooFewArgsRaisesTypeError) {
+TEST_F(TrampolinesTest, BuiltinTrampolineExWithTooFewArgsRaisesTypeError) {
   createAndPatchBuiltinNumArgs(&runtime_);
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime_, "dummy(*(1,))"), LayoutId::kTypeError,
-      "'dummy' takes 2 positional arguments but 1 given"));
+      "'dummy' takes min 2 positional arguments but 1 given"));
 }
 
-TEST_F(TrampolinesDeathTest,
-       BuiltinTrampolineExWithTooManyArgsRaisesTypeError) {
+TEST_F(TrampolinesTest, BuiltinTrampolineExWithTooManyArgsRaisesTypeError) {
   createAndPatchBuiltinNumArgs(&runtime_);
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime_, "dummy(*(1,2,3,4,5))"), LayoutId::kTypeError,

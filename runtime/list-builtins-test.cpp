@@ -338,7 +338,7 @@ TEST_F(ListBuiltinsTest, DunderContainsWithNonListSelfRaisesTypeError) {
 TEST_F(ListBuiltinsTest, ListInsertWithMissingArgumentsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime_, "[1, 2].insert()"), LayoutId::kTypeError,
-      "'list.insert' takes 3 positional arguments but 1 given"));
+      "'list.insert' takes min 3 positional arguments but 1 given"));
 }
 
 TEST_F(ListBuiltinsTest, ListInsertWithNonListRaisesTypeError) {
@@ -846,7 +846,7 @@ TEST_F(ListBuiltinsTest, DelitemWithTooFewArgumentsRaisesTypeError) {
 [].__delitem__()
 )"),
       LayoutId::kTypeError,
-      "'list.__delitem__' takes 2 positional arguments but 1 given"));
+      "'list.__delitem__' takes min 2 positional arguments but 1 given"));
 }
 
 TEST_F(ListBuiltinsTest, SetitemWithTooFewArgumentsRaisesTypeError) {
@@ -855,7 +855,7 @@ TEST_F(ListBuiltinsTest, SetitemWithTooFewArgumentsRaisesTypeError) {
 [].__setitem__(1)
 )"),
       LayoutId::kTypeError,
-      "'list.__setitem__' takes 3 positional arguments but 2 given"));
+      "'list.__setitem__' takes min 3 positional arguments but 2 given"));
 }
 
 TEST_F(ListBuiltinsTest, DelitemWithTooManyArgumentsRaisesTypeError) {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "frame.h"
 #include "globals.h"
 #include "handles.h"
 #include "objects.h"
@@ -134,16 +135,44 @@ RawObject builtinTrampolineKw(Thread* thread, Frame* frame, word argc) ALIGN_16;
 RawObject builtinTrampolineEx(Thread* thread, Frame* frame,
                               word flags) ALIGN_16;
 
-RawObject processDefaultArguments(Thread* thread, RawFunction function_raw,
+RawObject raiseMissingArgumentsError(Thread* thread, RawFunction function,
+                                     word argc);
+RawObject addDefaultArguments(Thread* thread, RawFunction function,
+                              Frame* frame, word argc, word n_missing_args);
+RawObject processDefaultArguments(Thread* thread, RawFunction function,
                                   Frame* frame, const word argc);
 
-inline RawObject preparePositionalCall(Thread* thread, RawFunction function_raw,
-                                       Frame* frame, word argc) {
-  // Are we one of the less common cases?
-  if (argc != function_raw.argcount() || !function_raw.hasSimpleCall()) {
-    return processDefaultArguments(thread, function_raw, frame, argc);
+inline RawObject addDefaultArguments(Thread* thread, RawFunction function,
+                                     Frame* frame, word argc,
+                                     word n_missing_args) {
+  RawObject defaults = function.defaults();
+  word n_defaults = defaults.isNoneType() ? 0 : Tuple::cast(defaults).length();
+  if (UNLIKELY(n_missing_args > n_defaults)) {
+    return raiseMissingArgumentsError(thread, function, argc);
   }
-  return function_raw;
+  // Add default args.
+  do {
+    frame->pushValue(Tuple::cast(defaults).at(n_defaults - n_missing_args));
+    n_missing_args--;
+  } while (n_missing_args > 0);
+  return function;
+}
+
+inline RawObject preparePositionalCall(Thread* thread, RawFunction function,
+                                       Frame* frame, word argc) {
+  if (!function.hasSimpleCall()) {
+    return processDefaultArguments(thread, function, frame, argc);
+  }
+
+  word argcount = function.argcount();
+  word n_missing_args = argcount - argc;
+  if (n_missing_args != 0) {
+    if (n_missing_args < 0) {
+      return processDefaultArguments(thread, function, frame, argc);
+    }
+    return addDefaultArguments(thread, function, frame, argc, n_missing_args);
+  }
+  return function;
 }
 
 }  // namespace py
