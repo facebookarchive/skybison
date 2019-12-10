@@ -741,7 +741,6 @@ class Runtime;
   V(NUnnamedFields, "n_unnamed_fields")                                        \
   V(Name, "name")                                                              \
   V(NameError, "NameError")                                                    \
-  V(Namedtuple, "namedtuple")                                                  \
   V(Neg, "neg")                                                                \
   V(None, "None")                                                              \
   V(NoneType, "NoneType")                                                      \

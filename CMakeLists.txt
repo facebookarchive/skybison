@@ -197,7 +197,6 @@ set(
   library/_codecs.py
   library/_imp.py
   library/_io.py
-  library/_namedtuple.py
   library/_os.py
   library/_str_mod.py
   library/_thread.py
@@ -348,8 +347,6 @@ add_library(
   runtime/mutex.h
   runtime/mro.cpp
   runtime/mro.h
-  runtime/namedtuple-module.cpp
-  runtime/namedtuple-module.h
   runtime/object-builtins.cpp
   runtime/objects.cpp
   runtime/objects.h
@@ -536,7 +533,6 @@ add_library(
   runtime/module-builtins-test.cpp
   runtime/mutex-test.cpp
   runtime/mro-test.cpp
-  runtime/namedtuple-module-test.cpp
   runtime/object-builtins-test.cpp
   runtime/objects-test.cpp
   runtime/os-test.cpp

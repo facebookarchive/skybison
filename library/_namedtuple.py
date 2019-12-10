@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """The internal _namedtuple module, used in the Pyro port of the collections
 module."""
+from keyword import iskeyword as _iskeyword
 
 
 # flake8 has no knowledge about these functions' definitions and will complain
@@ -8,44 +9,6 @@ module."""
 _instance_setattr = _instance_setattr  # noqa: F821
 _str_check = _str_check  # noqa: F821
 _structseq_field = _structseq_field  # noqa: F821
-
-
-def _iskeyword(s):
-    return s in [
-        "False",
-        "class",
-        "finally",
-        "is",
-        "return",
-        "None",
-        "continue",
-        "for",
-        "lambda",
-        "try",
-        "True",
-        "def",
-        "from",
-        "nonlocal",
-        "while",
-        "and",
-        "del",
-        "global",
-        "not",
-        "with",
-        "as",
-        "elif",
-        "if",
-        "or",
-        "yield",
-        "assert",
-        "else",
-        "import",
-        "pass",
-        "break",
-        "except",
-        "in",
-        "raise",
-    ]
 
 
 def _namedtuple_new(cls, *sequence, **kwargs):  # noqa B006
@@ -164,7 +127,6 @@ def namedtuple(typename, field_names, *, verbose=False, rename=False, module=Non
     cls._make = _make
 
     def _replace(self, **kwds):
-        print(self, kwds)
         result = _make(map(kwds.pop, field_names, self))
         if kwds:
             raise ValueError(f"Got unexpected field names: {kwds}")

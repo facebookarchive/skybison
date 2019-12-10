@@ -630,6 +630,60 @@ class NamedtupleTests(unittest.TestCase):
         self.assertTrue(hasattr(Foo, "b"))
         self.assertTrue(hasattr(Foo.b, "__get__"))
 
+    def test_with_non_identifier_type_name_raises_value_error(self):
+        with self.assertRaisesRegex(
+            ValueError, "Type names and field names must be valid identifiers: '5'"
+        ):
+            namedtuple("5", ["a", "b"])
+
+    def test_with_keyword_raises_value_error(self):
+        with self.assertRaisesRegex(
+            ValueError, "Type names and field names cannot be a keyword: 'from'"
+        ):
+            namedtuple("from", ["a", "b"])
+
+    def test_with_field_starting_with_underscore_raises_value_error(self):
+        with self.assertRaisesRegex(
+            ValueError, "Field names cannot start with an underscore: '_a'"
+        ):
+            namedtuple("Foo", ["_a", "b"])
+
+    def test_with_duplicate_field_name_raises_value_error(self):
+        with self.assertRaisesRegex(
+            ValueError, "Encountered duplicate field name: 'a'"
+        ):
+            namedtuple("Foo", ["a", "a"])
+
+    def test_with_too_few_args_raises_type_error(self):
+        Foo = namedtuple("Foo", ["a", "b"])
+        with self.assertRaisesRegex(TypeError, "Expected 2 arguments, got 1"):
+            Foo._make([1])
+
+    def test_under_make_returns_new_instance(self):
+        Foo = namedtuple("Foo", ["a", "b"])
+        inst = Foo._make([1, 3])
+        self.assertEqual(inst.a, 1)
+        self.assertEqual(inst.b, 3)
+        self.assertEqual(len(inst), 2)
+        self.assertEqual(inst[0], 1)
+        self.assertEqual(inst[1], 3)
+
+    def test_under_replace_with_nonexistet_field_name_raises_value_error(self):
+        Foo = namedtuple("Foo", ["a", "b"])
+        with self.assertRaisesRegex(ValueError, "Got unexpected field names.*'x'.*"):
+            Foo(1, 2)._replace(x=4)
+
+    def test_under_replace_replaces_value_at_name(self):
+        Foo = namedtuple("Foo", ["a", "b"])
+        inst = Foo(1, 2)
+        self.assertIs(inst.a, 1)
+        self.assertIs(inst.b, 2)
+        self.assertIs(inst[1], 2)
+        inst = inst._replace(b=3)
+        self.assertIs(inst.a, 1)
+        self.assertIs(inst.b, 3)
+        self.assertIs(inst[1], 3)
+
 
 if __name__ == "__main__":
     unittest.main()
