@@ -2478,6 +2478,97 @@ class DictTests(unittest.TestCase):
             dict.update({}, D())
 
 
+class DictItemsTests(unittest.TestCase):
+    def test_dunder_repr_prints_items(self):
+        result = repr({"hello": "world", "foo": "bar"}.items())
+        # TODO(T44040673): Re-write to test against one canonical output when
+        # dicts are ordered
+        self.assertTrue(
+            result == "dict_items([('hello', 'world'), ('foo', 'bar')])"
+            or result == "dict_items([('foo', 'bar'), ('hello', 'world')])"
+        )
+
+    def test_dunder_repr_calls_key_dunder_repr(self):
+        class C:
+            def __repr__(self):
+                return "foo"
+
+        result = repr({"hello": C()}.items())
+        self.assertEqual(result, "dict_items([('hello', foo)])")
+
+    def test_recursive_dunder_repr(self):
+        circular_mapping = {}
+        circular_mapping["hello"] = circular_mapping.items()
+        self.assertEqual(
+            repr(circular_mapping.items()),
+            "dict_items([('hello', dict_items([('hello', ...)]))])",
+        )
+
+
+class DictKeysTests(unittest.TestCase):
+    def test_dunder_repr_prints_keys(self):
+        result = repr({"hello": "world", "foo": "bar"}.keys())
+        # TODO(T44040673): Re-write to test against one canonical output when
+        # dicts are ordered
+        self.assertTrue(
+            result == "dict_keys(['hello', 'foo'])"
+            or result == "dict_keys(['foo', 'hello'])"
+        )
+
+    def test_dunder_repr_calls_key_dunder_repr(self):
+        class C:
+            def __repr__(self):
+                return "foo"
+
+        result = repr({C(): "world"}.keys())
+        self.assertEqual(result, "dict_keys([foo])")
+
+    def test_recursive_dunder_repr(self):
+        class C:
+            def __init__(self, value):
+                self.value = value
+
+            def __eq__(self, other):
+                return self is other
+
+            def __hash__(self):
+                return 5
+
+            def __repr__(self):
+                return self.value.__repr__()
+
+        circular_mapping = {}
+        circular_mapping[C(circular_mapping.keys())] = 10
+        self.assertEqual(repr(circular_mapping.keys()), "dict_keys([dict_keys([...])])")
+
+
+class DictValuesTests(unittest.TestCase):
+    def test_dunder_repr_prints_values(self):
+        result = repr({"hello": "world", "foo": "bar"}.values())
+        # TODO(T44040673): Re-write to test against one canonical output when
+
+        # dicts are ordered
+        self.assertTrue(
+            result == "dict_values(['world', 'bar'])"
+            or result == "dict_values(['bar', 'world'])"
+        )
+
+    def test_dunder_repr_calls_key_dunder_repr(self):
+        class C:
+            def __repr__(self):
+                return "foo"
+
+        result = repr({"hello": C()}.values())
+        self.assertEqual(result, "dict_values([foo])")
+
+    def test_recursive_dunder_repr(self):
+        circular_mapping = {}
+        circular_mapping["hello"] = circular_mapping.values()
+        self.assertEqual(
+            repr(circular_mapping.values()), "dict_values([dict_values([...])])"
+        )
+
+
 class DirTests(unittest.TestCase):
     def test_without_args_returns_locals_keys(self):
         def foo():

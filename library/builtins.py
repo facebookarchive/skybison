@@ -2545,6 +2545,11 @@ class dict_itemiterator(bootstrap=True):
 
 
 class dict_items(bootstrap=True):
+    def __repr__(self):
+        if _repr_enter(self):
+            return "..."
+        return _sequence_repr("dict_items([", self, "])")
+
     def __iter__(self):
         pass
 
@@ -2561,6 +2566,11 @@ class dict_keyiterator(bootstrap=True):
 
 
 class dict_keys(bootstrap=True):
+    def __repr__(self):
+        if _repr_enter(self):
+            return "..."
+        return _sequence_repr("dict_keys([", self, "])")
+
     def __iter__(self):
         pass
 
@@ -2577,6 +2587,11 @@ class dict_valueiterator(bootstrap=True):
 
 
 class dict_values(bootstrap=True):
+    def __repr__(self):
+        if _repr_enter(self):
+            return "..."
+        return _sequence_repr("dict_values([", self, "])")
+
     def __iter__(self):
         pass
 
