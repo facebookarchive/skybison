@@ -647,7 +647,7 @@ RawObject FrozenSetBuiltins::copy(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfFrozenSet(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kFrozenSet);
+    return thread->raiseRequiresType(self, SymbolId::kFrozenset);
   }
   FrozenSet set(&scope, *self);
   if (set.isFrozenSet()) {
@@ -662,7 +662,7 @@ RawObject FrozenSetBuiltins::dunderHash(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfFrozenSet(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kFrozenSet);
+    return thread->raiseRequiresType(self, SymbolId::kFrozenset);
   }
   FrozenSet set(&scope, *self);
   return frozensetHash(thread, set);

@@ -77,8 +77,8 @@ class UnderBuiltinsModule {
                                           word nargs);
   static RawObject underByteslikeStartswith(Thread* thread, Frame* frame,
                                             word nargs);
-  static RawObject underClassMethod(Thread* thread, Frame* frame, word nargs);
-  static RawObject underClassMethodIsAbstract(Thread* thread, Frame* frame,
+  static RawObject underClassmethod(Thread* thread, Frame* frame, word nargs);
+  static RawObject underClassmethodIsAbstract(Thread* thread, Frame* frame,
                                               word nargs);
   static RawObject underCodeCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underCodeGuard(Thread* thread, Frame* frame, word nargs);
@@ -119,9 +119,9 @@ class UnderBuiltinsModule {
   static RawObject underFloatNewFromStr(Thread* thread, Frame* frame,
                                         word nargs);
   static RawObject underFloatSignbit(Thread* thread, Frame* frame, word nargs);
-  static RawObject underFrozenSetCheck(Thread* thread, Frame* frame,
+  static RawObject underFrozensetCheck(Thread* thread, Frame* frame,
                                        word nargs);
-  static RawObject underFrozenSetGuard(Thread* thread, Frame* frame,
+  static RawObject underFrozensetGuard(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underFunctionGlobals(Thread* thread, Frame* frame,
                                         word nargs);
@@ -186,11 +186,11 @@ class UnderBuiltinsModule {
   static RawObject underListLen(Thread* thread, Frame* frame, word nargs);
   static RawObject underListSort(Thread* thread, Frame* frame, word nargs);
   static RawObject underListSwap(Thread* thread, Frame* frame, word nargs);
-  static RawObject underMappingProxyGuard(Thread* thread, Frame* frame,
+  static RawObject underMappingproxyGuard(Thread* thread, Frame* frame,
                                           word nargs);
-  static RawObject underMappingProxyMapping(Thread* thread, Frame* frame,
+  static RawObject underMappingproxyMapping(Thread* thread, Frame* frame,
                                             word nargs);
-  static RawObject underMappingProxySetMapping(Thread* thread, Frame* frame,
+  static RawObject underMappingproxySetMapping(Thread* thread, Frame* frame,
                                                word nargs);
   static RawObject underMemoryviewCheck(Thread* thread, Frame* frame,
                                         word nargs);
@@ -264,7 +264,7 @@ class UnderBuiltinsModule {
   static RawObject underSliceStepLong(Thread* thread, Frame* frame, word nargs);
   static RawObject underSliceStop(Thread* thread, Frame* frame, word nargs);
   static RawObject underSliceStopLong(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStaticMethodIsAbstract(Thread* thread, Frame* frame,
+  static RawObject underStaticmethodIsAbstract(Thread* thread, Frame* frame,
                                                word nargs);
   static RawObject underStopIterationCtor(Thread* thread, Frame* frame,
                                           word nargs);

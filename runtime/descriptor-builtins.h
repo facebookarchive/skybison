@@ -20,7 +20,7 @@ class ClassMethodBuiltins
 };
 
 class StaticMethodBuiltins
-    : public Builtins<StaticMethodBuiltins, SymbolId::kStaticMethod,
+    : public Builtins<StaticMethodBuiltins, SymbolId::kStaticmethod,
                       LayoutId::kStaticMethod> {
  public:
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);

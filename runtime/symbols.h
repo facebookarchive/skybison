@@ -188,8 +188,8 @@ class Runtime;
   V(UnderByteslikeRfindInt, "_byteslike_rfind_int")                            \
   V(UnderByteslikeStartswith, "_byteslike_startswith")                         \
   V(UnderCapiDictSetitem, "_capi_dict_setitem")                                \
-  V(UnderClassMethod, "_classmethod")                                          \
-  V(UnderClassMethodIsAbstract, "_classmethod_isabstract")                     \
+  V(UnderClassmethod, "_classmethod")                                          \
+  V(UnderClassmethodIsAbstract, "_classmethod_isabstract")                     \
   V(UnderClosed, "_closed")                                                    \
   V(UnderCloseFd, "_closefd")                                                  \
   V(UnderCodeCheck, "_code_check")                                             \
@@ -203,7 +203,7 @@ class Runtime;
   V(UnderDecodedChars, "_decoded_chars")                                       \
   V(UnderDecodedCharsUsed, "_decoded_chars_used")                              \
   V(UnderDecoder, "_decoder")                                                  \
-  V(UnderDescrClassMethod, "_descrclassmethod")                                \
+  V(UnderDescrclassmethod, "_descrclassmethod")                                \
   V(UnderDictBucketInsert, "_dict_bucket_insert")                              \
   V(UnderDictBucketKey, "_dict_bucket_key")                                    \
   V(UnderDictBucketSetValue, "_dict_bucket_set_value")                         \
@@ -240,8 +240,8 @@ class Runtime;
   V(UnderFloatSignbit, "_float_signbit")                                       \
   V(UnderFrozenImportlib, "_frozen_importlib")                                 \
   V(UnderFrozenImportlibExternal, "_frozen_importlib_external")                \
-  V(UnderFrozenSetCheck, "_frozenset_check")                                   \
-  V(UnderFrozenSetGuard, "_frozenset_guard")                                   \
+  V(UnderFrozensetCheck, "_frozenset_check")                                   \
+  V(UnderFrozensetGuard, "_frozenset_guard")                                   \
   V(UnderFunctionGlobals, "_function_globals")                                 \
   V(UnderFunctionGuard, "_function_guard")                                     \
   V(UnderGc, "_gc")                                                            \
@@ -300,9 +300,9 @@ class Runtime;
   V(UnderListSwap, "_list_swap")                                               \
   V(UnderLookupText, "_lookup_text")                                           \
   V(UnderLt, "_lt")                                                            \
-  V(UnderMappingProxyGuard, "_mappingproxy_guard")                             \
-  V(UnderMappingProxyMapping, "_mappingproxy_mapping")                         \
-  V(UnderMappingProxySetMapping, "_mappingproxy_set_mapping")                  \
+  V(UnderMappingproxyGuard, "_mappingproxy_guard")                             \
+  V(UnderMappingproxyMapping, "_mappingproxy_mapping")                         \
+  V(UnderMappingproxySetMapping, "_mappingproxy_set_mapping")                  \
   V(UnderMemoryviewCheck, "_memoryview_check")                                 \
   V(UnderMemoryviewGuard, "_memoryview_guard")                                 \
   V(UnderMemoryviewItemsize, "_memoryview_itemsize")                           \
@@ -398,7 +398,7 @@ class Runtime;
   V(UnderSliceStop, "_slice_stop")                                             \
   V(UnderSliceStopLong, "_slice_stop_long")                                    \
   V(UnderSnapshot, "_snapshot")                                                \
-  V(UnderStaticMethodIsAbstract, "_staticmethod_isabstract")                   \
+  V(UnderStaticmethodIsAbstract, "_staticmethod_isabstract")                   \
   V(UnderStderrFd, "_stderr_fd")                                               \
   V(UnderStdoutFd, "_stdout_fd")                                               \
   V(UnderStopIterationCtor, "_stop_iteration_ctor")                            \
@@ -620,7 +620,7 @@ class Runtime;
   V(Flush, "flush")                                                            \
   V(Format, "format")                                                          \
   V(Frame, "frame")                                                            \
-  V(FrozenSet, "frozenset")                                                    \
+  V(Frozenset, "frozenset")                                                    \
   V(FstatSize, "fstat_size")                                                   \
   V(Ftruncate, "ftruncate")                                                    \
   V(Function, "function")                                                      \
@@ -724,7 +724,7 @@ class Runtime;
   V(Maxsize, "maxsize")                                                        \
   V(Maxunicode, "maxunicode")                                                  \
   V(MemoryError, "MemoryError")                                                \
-  V(MappingProxy, "mappingproxy")                                              \
+  V(Mappingproxy, "mappingproxy")                                              \
   V(MemoryView, "memoryview")                                                  \
   V(Method, "method")                                                          \
   V(Mod, "mod")                                                                \
@@ -810,7 +810,7 @@ class Runtime;
   V(Sorted, "sorted")                                                          \
   V(Split, "split")                                                            \
   V(Start, "start")                                                            \
-  V(StaticMethod, "staticmethod")                                              \
+  V(Staticmethod, "staticmethod")                                              \
   V(Stderr, "stderr")                                                          \
   V(Stdout, "stdout")                                                          \
   V(Step, "step")                                                              \

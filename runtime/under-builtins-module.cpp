@@ -113,8 +113,8 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderByteslikeRfindByteslike, underByteslikeRfindByteslike},
     {SymbolId::kUnderByteslikeRfindInt, underByteslikeRfindInt},
     {SymbolId::kUnderByteslikeStartswith, underByteslikeStartswith},
-    {SymbolId::kUnderClassMethod, underClassMethod},
-    {SymbolId::kUnderClassMethodIsAbstract, underClassMethodIsAbstract},
+    {SymbolId::kUnderClassmethod, underClassmethod},
+    {SymbolId::kUnderClassmethodIsAbstract, underClassmethodIsAbstract},
     {SymbolId::kUnderCodeCheck, underCodeCheck},
     {SymbolId::kUnderCodeGuard, underCodeGuard},
     {SymbolId::kUnderComplexCheck, underComplexCheck},
@@ -145,8 +145,8 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderFloatNewFromFloat, underFloatNewFromFloat},
     {SymbolId::kUnderFloatNewFromStr, underFloatNewFromStr},
     {SymbolId::kUnderFloatSignbit, underFloatSignbit},
-    {SymbolId::kUnderFrozenSetCheck, underFrozenSetCheck},
-    {SymbolId::kUnderFrozenSetGuard, underFrozenSetGuard},
+    {SymbolId::kUnderFrozensetCheck, underFrozensetCheck},
+    {SymbolId::kUnderFrozensetGuard, underFrozensetGuard},
     {SymbolId::kUnderFunctionGlobals, underFunctionGlobals},
     {SymbolId::kUnderFunctionGuard, underFunctionGuard},
     {SymbolId::kUnderGc, underGc},
@@ -191,9 +191,9 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderListLen, underListLen},
     {SymbolId::kUnderListSort, underListSort},
     {SymbolId::kUnderListSwap, underListSwap},
-    {SymbolId::kUnderMappingProxyGuard, underMappingProxyGuard},
-    {SymbolId::kUnderMappingProxyMapping, underMappingProxyMapping},
-    {SymbolId::kUnderMappingProxySetMapping, underMappingProxySetMapping},
+    {SymbolId::kUnderMappingproxyGuard, underMappingproxyGuard},
+    {SymbolId::kUnderMappingproxyMapping, underMappingproxyMapping},
+    {SymbolId::kUnderMappingproxySetMapping, underMappingproxySetMapping},
     {SymbolId::kUnderMemoryviewCheck, underMemoryviewCheck},
     {SymbolId::kUnderMemoryviewGuard, underMemoryviewGuard},
     {SymbolId::kUnderMemoryviewItemsize, underMemoryviewItemsize},
@@ -241,7 +241,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderSliceStepLong, underSliceStepLong},
     {SymbolId::kUnderSliceStop, underSliceStop},
     {SymbolId::kUnderSliceStopLong, underSliceStopLong},
-    {SymbolId::kUnderStaticMethodIsAbstract, underStaticMethodIsAbstract},
+    {SymbolId::kUnderStaticmethodIsAbstract, underStaticmethodIsAbstract},
     {SymbolId::kUnderStopIterationCtor, underStopIterationCtor},
     {SymbolId::kUnderStrarrayClear, underStrarrayClear},
     {SymbolId::kUnderStrarrayCtor, underStrarrayCtor},
@@ -328,8 +328,8 @@ const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
     SymbolId::kUnderFloatCheck,
     SymbolId::kUnderFloatCheckExact,
     SymbolId::kUnderFloatGuard,
-    SymbolId::kUnderFrozenSetCheck,
-    SymbolId::kUnderFrozenSetGuard,
+    SymbolId::kUnderFrozensetCheck,
+    SymbolId::kUnderFrozensetGuard,
     SymbolId::kUnderIntCheck,
     SymbolId::kUnderIntCheckExact,
     SymbolId::kUnderIntGuard,
@@ -1476,7 +1476,7 @@ RawObject UnderBuiltinsModule::underByteslikeStartswith(Thread* thread,
                                   end);
 }
 
-RawObject UnderBuiltinsModule::underClassMethod(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underClassmethod(Thread* thread, Frame* frame,
                                                 word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -1503,7 +1503,7 @@ static RawObject isAbstract(Thread* thread, const Object& obj) {
   return Interpreter::isTrue(thread, *abstract);
 }
 
-RawObject UnderBuiltinsModule::underClassMethodIsAbstract(Thread* thread,
+RawObject UnderBuiltinsModule::underClassmethodIsAbstract(Thread* thread,
                                                           Frame* frame,
                                                           word nargs) {
   HandleScope scope(thread);
@@ -2005,19 +2005,19 @@ RawObject UnderBuiltinsModule::underFloatSignbit(Thread*, Frame* frame,
   return Bool::fromBool(std::signbit(value));
 }
 
-RawObject UnderBuiltinsModule::underFrozenSetCheck(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underFrozensetCheck(Thread* thread, Frame* frame,
                                                    word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfFrozenSet(args.get(0)));
 }
 
-RawObject UnderBuiltinsModule::underFrozenSetGuard(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underFrozensetGuard(Thread* thread, Frame* frame,
                                                    word nargs) {
   Arguments args(frame, nargs);
   if (thread->runtime()->isInstanceOfFrozenSet(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kFrozenSet);
+  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kFrozenset);
 }
 
 RawObject UnderBuiltinsModule::underFunctionGlobals(Thread* thread,
@@ -2805,17 +2805,17 @@ RawObject UnderBuiltinsModule::underListSwap(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underMappingProxyGuard(Thread* thread,
+RawObject UnderBuiltinsModule::underMappingproxyGuard(Thread* thread,
                                                       Frame* frame,
                                                       word nargs) {
   Arguments args(frame, nargs);
   if (args.get(0).isMappingProxy()) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kMappingProxy);
+  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kMappingproxy);
 }
 
-RawObject UnderBuiltinsModule::underMappingProxyMapping(Thread* thread,
+RawObject UnderBuiltinsModule::underMappingproxyMapping(Thread* thread,
                                                         Frame* frame,
                                                         word nargs) {
   Arguments args(frame, nargs);
@@ -2824,7 +2824,7 @@ RawObject UnderBuiltinsModule::underMappingProxyMapping(Thread* thread,
   return mappingproxy.mapping();
 }
 
-RawObject UnderBuiltinsModule::underMappingProxySetMapping(Thread* thread,
+RawObject UnderBuiltinsModule::underMappingproxySetMapping(Thread* thread,
                                                            Frame* frame,
                                                            word nargs) {
   Arguments args(frame, nargs);
@@ -3524,7 +3524,7 @@ RawObject UnderBuiltinsModule::underSliceStopLong(Thread* thread, Frame* frame,
   return *stop;
 }
 
-RawObject UnderBuiltinsModule::underStaticMethodIsAbstract(Thread* thread,
+RawObject UnderBuiltinsModule::underStaticmethodIsAbstract(Thread* thread,
                                                            Frame* frame,
                                                            word nargs) {
   HandleScope scope(thread);

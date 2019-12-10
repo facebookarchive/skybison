@@ -95,7 +95,7 @@ class SetBuiltins
 
 class FrozenSetBuiltins
     : public SetBaseBuiltins,
-      public Builtins<FrozenSetBuiltins, SymbolId::kFrozenSet,
+      public Builtins<FrozenSetBuiltins, SymbolId::kFrozenset,
                       LayoutId::kFrozenSet> {
  public:
   static RawObject copy(Thread* thread, Frame* frame, word nargs);

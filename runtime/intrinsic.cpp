@@ -129,13 +129,13 @@ static bool underFloatGuard(Thread* thread, Frame* frame) {
   return false;
 }
 
-static bool underFrozenSetCheck(Thread* thread, Frame* frame) {
+static bool underFrozensetCheck(Thread* thread, Frame* frame) {
   frame->setTopValue(Bool::fromBool(
       thread->runtime()->isInstanceOfFrozenSet(frame->popValue())));
   return true;
 }
 
-static bool underFrozenSetGuard(Thread* thread, Frame* frame) {
+static bool underFrozensetGuard(Thread* thread, Frame* frame) {
   if (thread->runtime()->isInstanceOfFrozenSet(frame->topValue())) {
     frame->popValue();
     frame->setTopValue(NoneType::object());
@@ -565,10 +565,10 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
       return underFloatCheckExact(frame);
     case SymbolId::kUnderFloatGuard:
       return underFloatGuard(thread, frame);
-    case SymbolId::kUnderFrozenSetCheck:
-      return underFrozenSetCheck(thread, frame);
-    case SymbolId::kUnderFrozenSetGuard:
-      return underFrozenSetGuard(thread, frame);
+    case SymbolId::kUnderFrozensetCheck:
+      return underFrozensetCheck(thread, frame);
+    case SymbolId::kUnderFrozensetGuard:
+      return underFrozensetGuard(thread, frame);
     case SymbolId::kUnderFunctionGuard:
       return underFunctionGuard(thread, frame);
     case SymbolId::kUnderIndex:

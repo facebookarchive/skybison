@@ -805,7 +805,7 @@ RawObject addOperators(Thread* thread, const Type& type) {
       func_obj = *func;
       if (slot.id == Type::Slot::kNew) {
         func_obj = thread->invokeFunction1(SymbolId::kBuiltins,
-                                           SymbolId::kStaticMethod, func);
+                                           SymbolId::kStaticmethod, func);
         if (func_obj.isError()) return *func_obj;
       }
     }
@@ -1395,7 +1395,7 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
         &scope, runtime->newFunctionWithCode(thread, qualname, code, globals));
     Object func_obj(&scope,
                     thread->invokeFunction1(SymbolId::kBuiltins,
-                                            SymbolId::kStaticMethod, func));
+                                            SymbolId::kStaticmethod, func));
     if (func_obj.isError()) return *func;
     typeAtPutById(thread, type, SymbolId::kDunderNew, func_obj);
   }
