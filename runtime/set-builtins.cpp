@@ -371,7 +371,7 @@ RawObject SetBaseBuiltins::dunderIter(Thread* thread, Frame* frame,
   return thread->runtime()->newSetIterator(self);
 }
 
-RawObject SetBaseBuiltins::isDisjoint(Thread* thread, Frame* frame,
+RawObject SetBaseBuiltins::isdisjoint(Thread* thread, Frame* frame,
                                       word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -638,7 +638,7 @@ const BuiltinMethod FrozenSetBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNe, dunderNe},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kIntersection, intersection},
-    {SymbolId::kIsDisjoint, isDisjoint},
+    {SymbolId::kIsdisjoint, isdisjoint},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -744,7 +744,7 @@ const BuiltinMethod SetBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNe, dunderNe},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kIntersection, intersection},
-    {SymbolId::kIsDisjoint, isDisjoint},
+    {SymbolId::kIsdisjoint, isdisjoint},
     {SymbolId::kPop, pop},
     {SymbolId::kRemove, remove},
     {SymbolId::kUpdate, update},

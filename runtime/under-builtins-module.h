@@ -78,7 +78,7 @@ class UnderBuiltinsModule {
   static RawObject underByteslikeStartswith(Thread* thread, Frame* frame,
                                             word nargs);
   static RawObject underClassmethod(Thread* thread, Frame* frame, word nargs);
-  static RawObject underClassmethodIsAbstract(Thread* thread, Frame* frame,
+  static RawObject underClassmethodIsabstract(Thread* thread, Frame* frame,
                                               word nargs);
   static RawObject underCodeCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underCodeGuard(Thread* thread, Frame* frame, word nargs);
@@ -141,7 +141,7 @@ class UnderBuiltinsModule {
                                        word nargs);
   static RawObject underGetMemberInt(Thread* thread, Frame* frame, word nargs);
   static RawObject underGetMemberLong(Thread* thread, Frame* frame, word nargs);
-  static RawObject underGetMemberPyObject(Thread* thread, Frame* frame,
+  static RawObject underGetMemberPyobject(Thread* thread, Frame* frame,
                                           word nargs);
   static RawObject underGetMemberShort(Thread* thread, Frame* frame,
                                        word nargs);
@@ -223,16 +223,16 @@ class UnderBuiltinsModule {
   static RawObject underModuleProxyValues(Thread* thread, Frame* frame,
                                           word nargs);
   static RawObject underObjectKeys(Thread* thread, Frame* frame, word nargs);
-  static RawObject underObjectTypeGetAttr(Thread* thread, Frame* frame,
+  static RawObject underObjectTypeGetattr(Thread* thread, Frame* frame,
                                           word nargs);
   static RawObject underObjectTypeHasattr(Thread* thread, Frame* frame,
                                           word nargs);
   static RawObject underOsWrite(Thread* thread, Frame* frame, word nargs);
   static RawObject underPatch(Thread* thread, Frame* frame, word nargs);
   static RawObject underProperty(Thread* thread, Frame* frame, word nargs);
-  static RawObject underPropertyIsAbstract(Thread* thread, Frame* frame,
+  static RawObject underPropertyIsabstract(Thread* thread, Frame* frame,
                                            word nargs);
-  static RawObject underPyObjectOffset(Thread* thread, Frame* frame,
+  static RawObject underPyobjectOffset(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underRangeCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underRangeGuard(Thread* thread, Frame* frame, word nargs);
@@ -253,7 +253,7 @@ class UnderBuiltinsModule {
                                        word nargs);
   static RawObject underSetMemberIntegral(Thread* thread, Frame* frame,
                                           word nargs);
-  static RawObject underSetMemberPyObject(Thread* thread, Frame* frame,
+  static RawObject underSetMemberPyobject(Thread* thread, Frame* frame,
                                           word nargs);
   static RawObject underSliceCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underSliceGuard(Thread* thread, Frame* frame, word nargs);
@@ -264,7 +264,7 @@ class UnderBuiltinsModule {
   static RawObject underSliceStepLong(Thread* thread, Frame* frame, word nargs);
   static RawObject underSliceStop(Thread* thread, Frame* frame, word nargs);
   static RawObject underSliceStopLong(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStaticmethodIsAbstract(Thread* thread, Frame* frame,
+  static RawObject underStaticmethodIsabstract(Thread* thread, Frame* frame,
                                                word nargs);
   static RawObject underStopIterationCtor(Thread* thread, Frame* frame,
                                           word nargs);
@@ -287,7 +287,7 @@ class UnderBuiltinsModule {
   static RawObject underStrGetitem(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrGetslice(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrGuard(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrIsChr(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrIschr(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrJoin(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrLen(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrPartition(Thread* thread, Frame* frame, word nargs);
@@ -306,11 +306,11 @@ class UnderBuiltinsModule {
   static RawObject underTupleLen(Thread* thread, Frame* frame, word nargs);
   static RawObject underTupleNew(Thread* thread, Frame* frame, word nargs);
   static RawObject underType(Thread* thread, Frame* frame, word nargs);
-  static RawObject underTypeAbstractMethodsDel(Thread* thread, Frame* frame,
+  static RawObject underTypeAbstractmethodsDel(Thread* thread, Frame* frame,
                                                word nargs);
-  static RawObject underTypeAbstractMethodsGet(Thread* thread, Frame* frame,
+  static RawObject underTypeAbstractmethodsGet(Thread* thread, Frame* frame,
                                                word nargs);
-  static RawObject underTypeAbstractMethodsSet(Thread* thread, Frame* frame,
+  static RawObject underTypeAbstractmethodsSet(Thread* thread, Frame* frame,
                                                word nargs);
   static RawObject underTypeBasesDel(Thread* thread, Frame* frame, word nargs);
   static RawObject underTypeBasesGet(Thread* thread, Frame* frame, word nargs);
@@ -322,7 +322,7 @@ class UnderBuiltinsModule {
                                        word nargs);
   static RawObject underTypeGuard(Thread* thread, Frame* frame, word nargs);
   static RawObject underTypeInit(Thread* thread, Frame* frame, word nargs);
-  static RawObject underTypeIsSubclass(Thread* thread, Frame* frame,
+  static RawObject underTypeIssubclass(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underTypeNew(Thread* thread, Frame* frame, word nargs);
   static RawObject underTypeProxy(Thread* thread, Frame* frame, word nargs);

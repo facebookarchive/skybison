@@ -10,7 +10,7 @@ class Runtime;
 // List of predefined symbols, one per line
 #define FOREACH_SYMBOL(V)                                                      \
   V(DunderAbs, "__abs__")                                                      \
-  V(DunderAbstractMethods, "__abstractmethods__")                              \
+  V(DunderAbstractmethods, "__abstractmethods__")                              \
   V(DunderAdd, "__add__")                                                      \
   V(DunderAenter, "__aenter__")                                                \
   V(DunderAexit, "__aexit__")                                                  \
@@ -74,7 +74,7 @@ class Runtime;
   V(DunderIor, "__ior__")                                                      \
   V(DunderIpow, "__ipow__")                                                    \
   V(DunderIrshift, "__irshift__")                                              \
-  V(DunderIsAbstractMethod, "__isabstractmethod__")                            \
+  V(DunderIsabstractMethod, "__isabstractmethod__")                            \
   V(DunderIsub, "__isub__")                                                    \
   V(DunderIter, "__iter__")                                                    \
   V(DunderItruediv, "__itruediv__")                                            \
@@ -189,7 +189,7 @@ class Runtime;
   V(UnderByteslikeStartswith, "_byteslike_startswith")                         \
   V(UnderCapiDictSetitem, "_capi_dict_setitem")                                \
   V(UnderClassmethod, "_classmethod")                                          \
-  V(UnderClassmethodIsAbstract, "_classmethod_isabstract")                     \
+  V(UnderClassmethodIsabstract, "_classmethod_isabstract")                     \
   V(UnderClosed, "_closed")                                                    \
   V(UnderCloseFd, "_closefd")                                                  \
   V(UnderCodeCheck, "_code_check")                                             \
@@ -254,7 +254,7 @@ class Runtime;
   V(UnderGetMemberFloat, "_get_member_float")                                  \
   V(UnderGetMemberInt, "_get_member_int")                                      \
   V(UnderGetMemberLong, "_get_member_long")                                    \
-  V(UnderGetMemberPyObject, "_get_member_pyobject")                            \
+  V(UnderGetMemberPyobject, "_get_member_pyobject")                            \
   V(UnderGetMemberShort, "_get_member_short")                                  \
   V(UnderGetMemberString, "_get_member_string")                                \
   V(UnderGetMemberUbyte, "_get_member_ubyte")                                  \
@@ -328,7 +328,7 @@ class Runtime;
   V(UnderNewMemberGetFloat, "_new_member_get_float")                           \
   V(UnderNewMemberGetInt, "_new_member_get_int")                               \
   V(UnderNewMemberGetLong, "_new_member_get_long")                             \
-  V(UnderNewMemberGetPyObject, "_new_member_get_pyobject")                     \
+  V(UnderNewMemberGetPyobject, "_new_member_get_pyobject")                     \
   V(UnderNewMemberGetShort, "_new_member_get_short")                           \
   V(UnderNewMemberGetString, "_new_member_get_string")                         \
   V(UnderNewMemberGetUbyte, "_new_member_get_ubyte")                           \
@@ -340,7 +340,7 @@ class Runtime;
   V(UnderNewMemberSetDouble, "_new_member_set_double")                         \
   V(UnderNewMemberSetFloat, "_new_member_set_float")                           \
   V(UnderNewMemberSetIntegral, "_new_member_set_integral")                     \
-  V(UnderNewMemberSetPyObject, "_new_member_set_pyobject")                     \
+  V(UnderNewMemberSetPyobject, "_new_member_set_pyobject")                     \
   V(UnderNewMemberSetReadonly, "_new_member_set_readonly")                     \
   V(UnderNewMemberSetReadonlyStrings, "_new_member_set_readonly_strings")      \
   V(UnderNumberCheck, "_number_check")                                         \
@@ -353,8 +353,8 @@ class Runtime;
   V(UnderPendingcr, "_pendingcr")                                              \
   V(UnderPos, "_pos")                                                          \
   V(UnderProperty, "_property")                                                \
-  V(UnderPropertyIsAbstract, "_property_isabstract")                           \
-  V(UnderPyObjectOffset, "_pyobject_offset")                                   \
+  V(UnderPropertyIsabstract, "_property_isabstract")                           \
+  V(UnderPyobjectOffset, "_pyobject_offset")                                   \
   V(UnderPythonPath, "_python_path")                                           \
   V(UnderRangeCheck, "_range_check")                                           \
   V(UnderRangeGuard, "_range_guard")                                           \
@@ -383,7 +383,7 @@ class Runtime;
   V(UnderSetMemberDouble, "_set_member_double")                                \
   V(UnderSetMemberFloat, "_set_member_float")                                  \
   V(UnderSetMemberIntegral, "_set_member_integral")                            \
-  V(UnderSetMemberPyObject, "_set_member_pyobject")                            \
+  V(UnderSetMemberPyobject, "_set_member_pyobject")                            \
   V(UnderSigabrt, "_sigabrt")                                                  \
   V(UnderSigfpe, "_sigfpe")                                                    \
   V(UnderSigsegv, "_sigsegv")                                                  \
@@ -398,7 +398,7 @@ class Runtime;
   V(UnderSliceStop, "_slice_stop")                                             \
   V(UnderSliceStopLong, "_slice_stop_long")                                    \
   V(UnderSnapshot, "_snapshot")                                                \
-  V(UnderStaticmethodIsAbstract, "_staticmethod_isabstract")                   \
+  V(UnderStaticmethodIsabstract, "_staticmethod_isabstract")                   \
   V(UnderStderrFd, "_stderr_fd")                                               \
   V(UnderStdoutFd, "_stdout_fd")                                               \
   V(UnderStopIterationCtor, "_stop_iteration_ctor")                            \
@@ -419,7 +419,7 @@ class Runtime;
   V(UnderStrGetitem, "_str_getitem")                                           \
   V(UnderStrGetslice, "_str_getslice")                                         \
   V(UnderStrGuard, "_str_guard")                                               \
-  V(UnderStrIsChr, "_str_ischr")                                               \
+  V(UnderStrIschr, "_str_ischr")                                               \
   V(UnderStrJoin, "_str_join")                                                 \
   V(UnderStrLen, "_str_len")                                                   \
   V(UnderStrMod, "_str_mod")                                                   \
@@ -448,9 +448,9 @@ class Runtime;
   V(UnderTraceback, "_traceback")                                              \
   V(UnderTranslate, "_translate")                                              \
   V(UnderType, "_type")                                                        \
-  V(UnderTypeAbstractMethodsDel, "_type_abstractmethods_del")                  \
-  V(UnderTypeAbstractMethodsGet, "_type_abstractmethods_get")                  \
-  V(UnderTypeAbstractMethodsSet, "_type_abstractmethods_set")                  \
+  V(UnderTypeAbstractmethodsDel, "_type_abstractmethods_del")                  \
+  V(UnderTypeAbstractmethodsGet, "_type_abstractmethods_get")                  \
+  V(UnderTypeAbstractmethodsSet, "_type_abstractmethods_set")                  \
   V(UnderTypeBasesDel, "_type_bases_del")                                      \
   V(UnderTypeBasesGet, "_type_bases_get")                                      \
   V(UnderTypeBasesSet, "_type_bases_set")                                      \
@@ -459,7 +459,7 @@ class Runtime;
   V(UnderTypeDunderCall, "_type_dunder_call")                                  \
   V(UnderTypeGuard, "_type_guard")                                             \
   V(UnderTypeInit, "_type_init")                                               \
-  V(UnderTypeIsSubclass, "_type_issubclass")                                   \
+  V(UnderTypeIssubclass, "_type_issubclass")                                   \
   V(UnderTypeNew, "_type_new")                                                 \
   V(UnderTypeProxy, "_type_proxy")                                             \
   V(UnderTypeProxyCheck, "_type_proxy_check")                                  \
@@ -666,12 +666,12 @@ class Runtime;
   V(IsADirectoryError, "IsADirectoryError")                                    \
   V(IsBuiltin, "is_builtin")                                                   \
   V(Isdir, "isdir")                                                            \
-  V(IsDisjoint, "isdisjoint")                                                  \
+  V(Isdisjoint, "isdisjoint")                                                  \
   V(IsEnabled, "is_enabled")                                                   \
   V(IsFrozen, "is_frozen")                                                     \
   V(IsFrozenPackage, "is_frozen_package")                                      \
-  V(IsInstance, "isinstance")                                                  \
-  V(IsSubclass, "issubclass")                                                  \
+  V(Isinstance, "isinstance")                                                  \
+  V(Issubclass, "issubclass")                                                  \
   V(Isalnum, "isalnum")                                                        \
   V(Isalpha, "isalpha")                                                        \
   V(Isatty, "isatty")                                                          \

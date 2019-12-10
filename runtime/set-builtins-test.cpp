@@ -364,7 +364,7 @@ TEST_F(SetIteratorBuiltinsTest, DunderLengthHintOnConsumedSetReturnsZero) {
   EXPECT_TRUE(isIntEqualsWord(*length_hint2, 0));
 }
 
-TEST_F(SetBuiltinsTest, SetIsDisjointWithNonIterableArg) {
+TEST_F(SetBuiltinsTest, IsdisjointWithNonIterableArg) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 s = {1}
 s.isdisjoint(None)
@@ -372,7 +372,7 @@ s.isdisjoint(None)
                             LayoutId::kTypeError, "object is not iterable"));
 }
 
-TEST_F(SetBuiltinsTest, SetIsDisjointWithSetArg) {
+TEST_F(SetBuiltinsTest, IsdisjointWithSetArg) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
@@ -381,19 +381,19 @@ TEST_F(SetBuiltinsTest, SetIsDisjointWithSetArg) {
   Object value(&scope, NoneType::object());
 
   // set().isdisjoint(set())
-  Object result(&scope, runBuiltin(SetBuiltins::isDisjoint, set, other));
+  Object result(&scope, runBuiltin(SetBuiltins::isdisjoint, set, other));
   ASSERT_TRUE(result.isBool());
   EXPECT_EQ(*result, Bool::trueObj());
 
   // set().isdisjoint({None})
   setHashAndAdd(thread, other, value);
-  Object result1(&scope, runBuiltin(SetBuiltins::isDisjoint, set, other));
+  Object result1(&scope, runBuiltin(SetBuiltins::isdisjoint, set, other));
   ASSERT_TRUE(result1.isBool());
   EXPECT_EQ(*result1, Bool::trueObj());
 
   // {None}.isdisjoint({None})
   setHashAndAdd(thread, set, value);
-  Object result2(&scope, runBuiltin(SetBuiltins::isDisjoint, set, other));
+  Object result2(&scope, runBuiltin(SetBuiltins::isdisjoint, set, other));
   ASSERT_TRUE(result2.isBool());
   EXPECT_EQ(*result2, Bool::falseObj());
 
@@ -401,12 +401,12 @@ TEST_F(SetBuiltinsTest, SetIsDisjointWithSetArg) {
   other = runtime_.newSet();
   value = SmallInt::fromWord(1);
   setHashAndAdd(thread, other, value);
-  Object result3(&scope, runBuiltin(SetBuiltins::isDisjoint, set, other));
+  Object result3(&scope, runBuiltin(SetBuiltins::isdisjoint, set, other));
   ASSERT_TRUE(result3.isBool());
   EXPECT_EQ(*result3, Bool::trueObj());
 }
 
-TEST_F(SetBuiltinsTest, SetIsDisjointWithIterableArg) {
+TEST_F(SetBuiltinsTest, IsdisjointWithIterableArg) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
@@ -415,19 +415,19 @@ TEST_F(SetBuiltinsTest, SetIsDisjointWithIterableArg) {
   Object value(&scope, NoneType::object());
 
   // set().isdisjoint([])
-  Object result(&scope, runBuiltin(SetBuiltins::isDisjoint, set, other));
+  Object result(&scope, runBuiltin(SetBuiltins::isdisjoint, set, other));
   ASSERT_TRUE(result.isBool());
   EXPECT_EQ(*result, Bool::trueObj());
 
   // set().isdisjoint([None])
   runtime_.listAdd(thread, other, value);
-  Object result1(&scope, runBuiltin(SetBuiltins::isDisjoint, set, other));
+  Object result1(&scope, runBuiltin(SetBuiltins::isdisjoint, set, other));
   ASSERT_TRUE(result1.isBool());
   EXPECT_EQ(*result1, Bool::trueObj());
 
   // {None}.isdisjoint([None])
   setHashAndAdd(thread, set, value);
-  Object result2(&scope, runBuiltin(SetBuiltins::isDisjoint, set, other));
+  Object result2(&scope, runBuiltin(SetBuiltins::isdisjoint, set, other));
   ASSERT_TRUE(result2.isBool());
   EXPECT_EQ(*result2, Bool::falseObj());
 
@@ -435,7 +435,7 @@ TEST_F(SetBuiltinsTest, SetIsDisjointWithIterableArg) {
   other = runtime_.newList();
   value = SmallInt::fromWord(1);
   runtime_.listAdd(thread, other, value);
-  Object result3(&scope, runBuiltin(SetBuiltins::isDisjoint, set, other));
+  Object result3(&scope, runBuiltin(SetBuiltins::isdisjoint, set, other));
   ASSERT_TRUE(result3.isBool());
   EXPECT_EQ(*result3, Bool::trueObj());
 }

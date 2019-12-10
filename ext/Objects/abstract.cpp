@@ -929,7 +929,7 @@ PY_EXPORT int PyObject_IsInstance(PyObject* instance, PyObject* cls) {
   Object object(&scope, ApiHandle::fromPyObject(instance)->asObject());
   Object classinfo(&scope, ApiHandle::fromPyObject(cls)->asObject());
   Object result(&scope, thread->invokeFunction2(SymbolId::kBuiltins,
-                                                SymbolId::kIsInstance, object,
+                                                SymbolId::kIsinstance, object,
                                                 classinfo));
   return result.isError() ? -1 : Bool::cast(*result).value();
 }
@@ -940,7 +940,7 @@ PY_EXPORT int PyObject_IsSubclass(PyObject* derived, PyObject* cls) {
   Object subclass(&scope, ApiHandle::fromPyObject(derived)->asObject());
   Object classinfo(&scope, ApiHandle::fromPyObject(cls)->asObject());
   Object result(&scope, thread->invokeFunction2(SymbolId::kBuiltins,
-                                                SymbolId::kIsSubclass, subclass,
+                                                SymbolId::kIssubclass, subclass,
                                                 classinfo));
   return result.isError() ? -1 : Bool::cast(*result).value();
 }

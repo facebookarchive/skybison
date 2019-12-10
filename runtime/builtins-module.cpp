@@ -209,7 +209,7 @@ const char* const BuiltinsModule::kFrozenData = kBuiltinsModuleData;
 const SymbolId BuiltinsModule::kIntrinsicIds[] = {
     SymbolId::kUnderIndex,      SymbolId::kUnderNumberCheck,
     SymbolId::kUnderSliceIndex, SymbolId::kUnderSliceIndexNotNone,
-    SymbolId::kIsInstance,      SymbolId::kLen,
+    SymbolId::kIsinstance,      SymbolId::kLen,
     SymbolId::kSentinelId,
 };
 

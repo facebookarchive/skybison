@@ -68,7 +68,7 @@ class SetBaseBuiltins {
   static RawObject dunderLt(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNe(Thread* thread, Frame* frame, word nargs);
   static RawObject intersection(Thread* thread, Frame* frame, word nargs);
-  static RawObject isDisjoint(Thread* thread, Frame* frame, word nargs);
+  static RawObject isdisjoint(Thread* thread, Frame* frame, word nargs);
 };
 
 class SetBuiltins

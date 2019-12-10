@@ -985,14 +985,14 @@ static RawObject memberGetter(Thread* thread, PyMemberDef& member) {
                                      SymbolId::kUnderNewMemberGetChar, offset);
     case T_OBJECT:
       return thread->invokeFunction1(
-          SymbolId::kBuiltins, SymbolId::kUnderNewMemberGetPyObject, offset);
+          SymbolId::kBuiltins, SymbolId::kUnderNewMemberGetPyobject, offset);
     case T_OBJECT_EX:
       return thread->invokeFunction2(SymbolId::kBuiltins,
-                                     SymbolId::kUnderNewMemberGetPyObject,
+                                     SymbolId::kUnderNewMemberGetPyobject,
                                      offset, name);
     case T_NONE:
       return thread->invokeFunction1(
-          SymbolId::kBuiltins, SymbolId::kUnderNewMemberGetPyObject, offset);
+          SymbolId::kBuiltins, SymbolId::kUnderNewMemberGetPyobject, offset);
     default:
       return thread->raiseWithFmt(LayoutId::kSystemError,
                                   "bad member name type");
@@ -1152,14 +1152,14 @@ static RawObject memberSetter(Thread* thread, PyMemberDef& member) {
     case T_OBJECT: {
       Function setter(
           &scope, thread->invokeFunction1(SymbolId::kBuiltins,
-                                          SymbolId::kUnderNewMemberSetPyObject,
+                                          SymbolId::kUnderNewMemberSetPyobject,
                                           offset));
       return *setter;
     }
     case T_OBJECT_EX: {
       Function setter(
           &scope, thread->invokeFunction1(SymbolId::kBuiltins,
-                                          SymbolId::kUnderNewMemberSetPyObject,
+                                          SymbolId::kUnderNewMemberSetPyobject,
                                           offset));
       return *setter;
     }

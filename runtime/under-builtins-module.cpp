@@ -114,7 +114,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderByteslikeRfindInt, underByteslikeRfindInt},
     {SymbolId::kUnderByteslikeStartswith, underByteslikeStartswith},
     {SymbolId::kUnderClassmethod, underClassmethod},
-    {SymbolId::kUnderClassmethodIsAbstract, underClassmethodIsAbstract},
+    {SymbolId::kUnderClassmethodIsabstract, underClassmethodIsabstract},
     {SymbolId::kUnderCodeCheck, underCodeCheck},
     {SymbolId::kUnderCodeGuard, underCodeGuard},
     {SymbolId::kUnderComplexCheck, underComplexCheck},
@@ -159,7 +159,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderGetMemberFloat, underGetMemberFloat},
     {SymbolId::kUnderGetMemberInt, underGetMemberInt},
     {SymbolId::kUnderGetMemberLong, underGetMemberLong},
-    {SymbolId::kUnderGetMemberPyObject, underGetMemberPyObject},
+    {SymbolId::kUnderGetMemberPyobject, underGetMemberPyobject},
     {SymbolId::kUnderGetMemberShort, underGetMemberShort},
     {SymbolId::kUnderGetMemberString, underGetMemberString},
     {SymbolId::kUnderGetMemberUbyte, underGetMemberUbyte},
@@ -211,12 +211,12 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderModuleProxySetitem, underModuleProxySetitem},
     {SymbolId::kUnderModuleProxyValues, underModuleProxyValues},
     {SymbolId::kUnderObjectKeys, underObjectKeys},
-    {SymbolId::kUnderObjectTypeGetattr, underObjectTypeGetAttr},
+    {SymbolId::kUnderObjectTypeGetattr, underObjectTypeGetattr},
     {SymbolId::kUnderObjectTypeHasattr, underObjectTypeHasattr},
     {SymbolId::kUnderOsWrite, underOsWrite},
     {SymbolId::kUnderProperty, underProperty},
-    {SymbolId::kUnderPropertyIsAbstract, underPropertyIsAbstract},
-    {SymbolId::kUnderPyObjectOffset, underPyObjectOffset},
+    {SymbolId::kUnderPropertyIsabstract, underPropertyIsabstract},
+    {SymbolId::kUnderPyobjectOffset, underPyobjectOffset},
     {SymbolId::kUnderRangeCheck, underRangeCheck},
     {SymbolId::kUnderRangeGuard, underRangeGuard},
     {SymbolId::kUnderRangeLen, underRangeLen},
@@ -232,7 +232,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderSetMemberDouble, underSetMemberDouble},
     {SymbolId::kUnderSetMemberFloat, underSetMemberFloat},
     {SymbolId::kUnderSetMemberIntegral, underSetMemberIntegral},
-    {SymbolId::kUnderSetMemberPyObject, underSetMemberPyObject},
+    {SymbolId::kUnderSetMemberPyobject, underSetMemberPyobject},
     {SymbolId::kUnderSliceCheck, underSliceCheck},
     {SymbolId::kUnderSliceGuard, underSliceGuard},
     {SymbolId::kUnderSliceStart, underSliceStart},
@@ -241,7 +241,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderSliceStepLong, underSliceStepLong},
     {SymbolId::kUnderSliceStop, underSliceStop},
     {SymbolId::kUnderSliceStopLong, underSliceStopLong},
-    {SymbolId::kUnderStaticmethodIsAbstract, underStaticmethodIsAbstract},
+    {SymbolId::kUnderStaticmethodIsabstract, underStaticmethodIsabstract},
     {SymbolId::kUnderStopIterationCtor, underStopIterationCtor},
     {SymbolId::kUnderStrarrayClear, underStrarrayClear},
     {SymbolId::kUnderStrarrayCtor, underStrarrayCtor},
@@ -259,7 +259,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrGetitem, underStrGetitem},
     {SymbolId::kUnderStrGetslice, underStrGetslice},
     {SymbolId::kUnderStrGuard, underStrGuard},
-    {SymbolId::kUnderStrIsChr, underStrIsChr},
+    {SymbolId::kUnderStrIschr, underStrIschr},
     {SymbolId::kUnderStrJoin, underStrJoin},
     {SymbolId::kUnderStrLen, underStrLen},
     {SymbolId::kUnderStrPartition, underStrPartition},
@@ -277,9 +277,9 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderTupleLen, underTupleLen},
     {SymbolId::kUnderTupleNew, underTupleNew},
     {SymbolId::kUnderType, underType},
-    {SymbolId::kUnderTypeAbstractMethodsDel, underTypeAbstractMethodsDel},
-    {SymbolId::kUnderTypeAbstractMethodsGet, underTypeAbstractMethodsGet},
-    {SymbolId::kUnderTypeAbstractMethodsSet, underTypeAbstractMethodsSet},
+    {SymbolId::kUnderTypeAbstractmethodsDel, underTypeAbstractmethodsDel},
+    {SymbolId::kUnderTypeAbstractmethodsGet, underTypeAbstractmethodsGet},
+    {SymbolId::kUnderTypeAbstractmethodsSet, underTypeAbstractmethodsSet},
     {SymbolId::kUnderTypeBasesDel, underTypeBasesDel},
     {SymbolId::kUnderTypeBasesGet, underTypeBasesGet},
     {SymbolId::kUnderTypeBasesSet, underTypeBasesSet},
@@ -288,7 +288,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderTypeDunderCall, underTypeDunderCall},
     {SymbolId::kUnderTypeGuard, underTypeGuard},
     {SymbolId::kUnderTypeInit, underTypeInit},
-    {SymbolId::kUnderTypeIsSubclass, underTypeIsSubclass},
+    {SymbolId::kUnderTypeIssubclass, underTypeIssubclass},
     {SymbolId::kUnderTypeSubclassGuard, underTypeSubclassGuard},
     {SymbolId::kUnderTypeNew, underTypeNew},
     {SymbolId::kUnderTypeProxy, underTypeProxy},
@@ -1490,7 +1490,7 @@ static RawObject isAbstract(Thread* thread, const Object& obj) {
   Runtime* runtime = thread->runtime();
   // TODO(T47800709): make this lookup more efficient
   Object abstract(&scope, runtime->attributeAtById(
-                              thread, obj, SymbolId::kDunderIsAbstractMethod));
+                              thread, obj, SymbolId::kDunderIsabstractMethod));
   if (abstract.isError()) {
     Object given(&scope, thread->pendingExceptionType());
     Object exc(&scope, runtime->typeAt(LayoutId::kAttributeError));
@@ -1503,7 +1503,7 @@ static RawObject isAbstract(Thread* thread, const Object& obj) {
   return Interpreter::isTrue(thread, *abstract);
 }
 
-RawObject UnderBuiltinsModule::underClassmethodIsAbstract(Thread* thread,
+RawObject UnderBuiltinsModule::underClassmethodIsabstract(Thread* thread,
                                                           Frame* frame,
                                                           word nargs) {
   HandleScope scope(thread);
@@ -2180,7 +2180,7 @@ RawObject UnderBuiltinsModule::underGetMemberLong(Thread* thread, Frame* frame,
   return thread->runtime()->newInt(value);
 }
 
-RawObject UnderBuiltinsModule::underGetMemberPyObject(Thread* thread,
+RawObject UnderBuiltinsModule::underGetMemberPyobject(Thread* thread,
                                                       Frame* frame,
                                                       word nargs) {
   Arguments args(frame, nargs);
@@ -3083,7 +3083,7 @@ RawObject UnderBuiltinsModule::underObjectKeys(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underObjectTypeGetAttr(Thread* thread,
+RawObject UnderBuiltinsModule::underObjectTypeGetattr(Thread* thread,
                                                       Frame* frame,
                                                       word nargs) {
   Arguments args(frame, nargs);
@@ -3188,7 +3188,7 @@ RawObject UnderBuiltinsModule::underProperty(Thread* thread, Frame* frame,
   return thread->runtime()->newProperty(getter, setter, deleter);
 }
 
-RawObject UnderBuiltinsModule::underPropertyIsAbstract(Thread* thread,
+RawObject UnderBuiltinsModule::underPropertyIsabstract(Thread* thread,
                                                        Frame* frame,
                                                        word nargs) {
   HandleScope scope(thread);
@@ -3207,7 +3207,7 @@ RawObject UnderBuiltinsModule::underPropertyIsAbstract(Thread* thread,
   return isAbstract(thread, deleter);
 }
 
-RawObject UnderBuiltinsModule::underPyObjectOffset(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underPyobjectOffset(Thread* thread, Frame* frame,
                                                    word nargs) {
   Arguments args(frame, nargs);
   auto addr =
@@ -3346,7 +3346,7 @@ RawObject UnderBuiltinsModule::underSetMemberIntegral(Thread*, Frame* frame,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underSetMemberPyObject(Thread* thread,
+RawObject UnderBuiltinsModule::underSetMemberPyobject(Thread* thread,
                                                       Frame* frame,
                                                       word nargs) {
   Arguments args(frame, nargs);
@@ -3524,7 +3524,7 @@ RawObject UnderBuiltinsModule::underSliceStopLong(Thread* thread, Frame* frame,
   return *stop;
 }
 
-RawObject UnderBuiltinsModule::underStaticmethodIsAbstract(Thread* thread,
+RawObject UnderBuiltinsModule::underStaticmethodIsabstract(Thread* thread,
                                                            Frame* frame,
                                                            word nargs) {
   HandleScope scope(thread);
@@ -3842,7 +3842,7 @@ RawObject UnderBuiltinsModule::underStrGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kStr);
 }
 
-RawObject UnderBuiltinsModule::underStrIsChr(Thread*, Frame* frame,
+RawObject UnderBuiltinsModule::underStrIschr(Thread*, Frame* frame,
                                              word nargs) {
   Arguments args(frame, nargs);
   RawStr str = strUnderlying(args.get(0));
@@ -4217,7 +4217,7 @@ RawObject UnderBuiltinsModule::underType(Thread* thread, Frame* frame,
   return thread->runtime()->typeOf(args.get(0));
 }
 
-RawObject UnderBuiltinsModule::underTypeAbstractMethodsDel(Thread* thread,
+RawObject UnderBuiltinsModule::underTypeAbstractmethodsDel(Thread* thread,
                                                            Frame* frame,
                                                            word nargs) {
   HandleScope scope(thread);
@@ -4225,7 +4225,7 @@ RawObject UnderBuiltinsModule::underTypeAbstractMethodsDel(Thread* thread,
   Type type(&scope, args.get(0));
   if (type.abstractMethods().isUnbound()) {
     return thread->raiseWithId(LayoutId::kAttributeError,
-                               SymbolId::kDunderAbstractMethods);
+                               SymbolId::kDunderAbstractmethods);
   }
   type.setAbstractMethods(Unbound::object());
   type.setFlagsAndBuiltinBase(
@@ -4234,7 +4234,7 @@ RawObject UnderBuiltinsModule::underTypeAbstractMethodsDel(Thread* thread,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underTypeAbstractMethodsGet(Thread* thread,
+RawObject UnderBuiltinsModule::underTypeAbstractmethodsGet(Thread* thread,
                                                            Frame* frame,
                                                            word nargs) {
   HandleScope scope(thread);
@@ -4245,10 +4245,10 @@ RawObject UnderBuiltinsModule::underTypeAbstractMethodsGet(Thread* thread,
     return *methods;
   }
   return thread->raiseWithId(LayoutId::kAttributeError,
-                             SymbolId::kDunderAbstractMethods);
+                             SymbolId::kDunderAbstractmethods);
 }
 
-RawObject UnderBuiltinsModule::underTypeAbstractMethodsSet(Thread* thread,
+RawObject UnderBuiltinsModule::underTypeAbstractmethodsSet(Thread* thread,
                                                            Frame* frame,
                                                            word nargs) {
   HandleScope scope(thread);
@@ -4409,7 +4409,7 @@ RawObject UnderBuiltinsModule::underTypeGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kType);
 }
 
-RawObject UnderBuiltinsModule::underTypeIsSubclass(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underTypeIssubclass(Thread* thread, Frame* frame,
                                                    word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
