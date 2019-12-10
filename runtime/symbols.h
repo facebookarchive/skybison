@@ -257,10 +257,10 @@ class Runtime;
   V(UnderGetMemberPyObject, "_get_member_pyobject")                            \
   V(UnderGetMemberShort, "_get_member_short")                                  \
   V(UnderGetMemberString, "_get_member_string")                                \
-  V(UnderGetMemberUByte, "_get_member_ubyte")                                  \
-  V(UnderGetMemberUInt, "_get_member_uint")                                    \
-  V(UnderGetMemberULong, "_get_member_ulong")                                  \
-  V(UnderGetMemberUShort, "_get_member_ushort")                                \
+  V(UnderGetMemberUbyte, "_get_member_ubyte")                                  \
+  V(UnderGetMemberUint, "_get_member_uint")                                    \
+  V(UnderGetMemberUlong, "_get_member_ulong")                                  \
+  V(UnderGetMemberUshort, "_get_member_ushort")                                \
   V(UnderHasRead1, "_has_read1")                                               \
   V(UnderHashInfo, "_HashInfo")                                                \
   V(UnderImp, "_imp")                                                          \
@@ -331,10 +331,10 @@ class Runtime;
   V(UnderNewMemberGetPyObject, "_new_member_get_pyobject")                     \
   V(UnderNewMemberGetShort, "_new_member_get_short")                           \
   V(UnderNewMemberGetString, "_new_member_get_string")                         \
-  V(UnderNewMemberGetUByte, "_new_member_get_ubyte")                           \
-  V(UnderNewMemberGetUInt, "_new_member_get_uint")                             \
-  V(UnderNewMemberGetULong, "_new_member_get_ulong")                           \
-  V(UnderNewMemberGetUShort, "_new_member_get_ushort")                         \
+  V(UnderNewMemberGetUbyte, "_new_member_get_ubyte")                           \
+  V(UnderNewMemberGetUint, "_new_member_get_uint")                             \
+  V(UnderNewMemberGetUlong, "_new_member_get_ulong")                           \
+  V(UnderNewMemberGetUshort, "_new_member_get_ushort")                         \
   V(UnderNewMemberSetBool, "_new_member_set_bool")                             \
   V(UnderNewMemberSetChar, "_new_member_set_char")                             \
   V(UnderNewMemberSetDouble, "_new_member_set_double")                         \

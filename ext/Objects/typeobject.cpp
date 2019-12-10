@@ -940,28 +940,28 @@ static RawObject memberGetter(Thread* thread, PyMemberDef& member) {
                                      SymbolId::kUnderNewMemberGetByte, offset);
     case T_UBYTE:
       return thread->invokeFunction1(SymbolId::kBuiltins,
-                                     SymbolId::kUnderNewMemberGetUByte, offset);
+                                     SymbolId::kUnderNewMemberGetUbyte, offset);
     case T_SHORT:
       return thread->invokeFunction1(SymbolId::kBuiltins,
                                      SymbolId::kUnderNewMemberGetShort, offset);
     case T_USHORT:
       return thread->invokeFunction1(
-          SymbolId::kBuiltins, SymbolId::kUnderNewMemberGetUShort, offset);
+          SymbolId::kBuiltins, SymbolId::kUnderNewMemberGetUshort, offset);
     case T_INT:
       return thread->invokeFunction1(SymbolId::kBuiltins,
                                      SymbolId::kUnderNewMemberGetInt, offset);
     case T_UINT:
       return thread->invokeFunction1(SymbolId::kBuiltins,
-                                     SymbolId::kUnderNewMemberGetUInt, offset);
+                                     SymbolId::kUnderNewMemberGetUint, offset);
     case T_LONG:
       return thread->invokeFunction1(SymbolId::kBuiltins,
                                      SymbolId::kUnderNewMemberGetLong, offset);
     case T_ULONG:
       return thread->invokeFunction1(SymbolId::kBuiltins,
-                                     SymbolId::kUnderNewMemberGetULong, offset);
+                                     SymbolId::kUnderNewMemberGetUlong, offset);
     case T_PYSSIZET:
       return thread->invokeFunction1(SymbolId::kBuiltins,
-                                     SymbolId::kUnderNewMemberGetULong, offset);
+                                     SymbolId::kUnderNewMemberGetUlong, offset);
     case T_FLOAT:
       return thread->invokeFunction1(SymbolId::kBuiltins,
                                      SymbolId::kUnderNewMemberGetFloat, offset);
@@ -973,7 +973,7 @@ static RawObject memberGetter(Thread* thread, PyMemberDef& member) {
                                      SymbolId::kUnderNewMemberGetLong, offset);
     case T_ULONGLONG:
       return thread->invokeFunction1(SymbolId::kBuiltins,
-                                     SymbolId::kUnderNewMemberGetULong, offset);
+                                     SymbolId::kUnderNewMemberGetUlong, offset);
     case T_STRING:
       return thread->invokeFunction1(
           SymbolId::kBuiltins, SymbolId::kUnderNewMemberGetString, offset);

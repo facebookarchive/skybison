@@ -147,12 +147,12 @@ class UnderBuiltinsModule {
                                        word nargs);
   static RawObject underGetMemberString(Thread* thread, Frame* frame,
                                         word nargs);
-  static RawObject underGetMemberUByte(Thread* thread, Frame* frame,
+  static RawObject underGetMemberUbyte(Thread* thread, Frame* frame,
                                        word nargs);
-  static RawObject underGetMemberUInt(Thread* thread, Frame* frame, word nargs);
-  static RawObject underGetMemberULong(Thread* thread, Frame* frame,
+  static RawObject underGetMemberUint(Thread* thread, Frame* frame, word nargs);
+  static RawObject underGetMemberUlong(Thread* thread, Frame* frame,
                                        word nargs);
-  static RawObject underGetMemberUShort(Thread* thread, Frame* frame,
+  static RawObject underGetMemberUshort(Thread* thread, Frame* frame,
                                         word nargs);
   static RawObject underInstanceDelattr(Thread* thread, Frame* frame,
                                         word nargs);

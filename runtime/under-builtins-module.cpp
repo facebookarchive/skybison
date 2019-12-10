@@ -162,10 +162,10 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderGetMemberPyObject, underGetMemberPyObject},
     {SymbolId::kUnderGetMemberShort, underGetMemberShort},
     {SymbolId::kUnderGetMemberString, underGetMemberString},
-    {SymbolId::kUnderGetMemberUByte, underGetMemberUByte},
-    {SymbolId::kUnderGetMemberUInt, underGetMemberUInt},
-    {SymbolId::kUnderGetMemberULong, underGetMemberULong},
-    {SymbolId::kUnderGetMemberUShort, underGetMemberUShort},
+    {SymbolId::kUnderGetMemberUbyte, underGetMemberUbyte},
+    {SymbolId::kUnderGetMemberUint, underGetMemberUint},
+    {SymbolId::kUnderGetMemberUlong, underGetMemberUlong},
+    {SymbolId::kUnderGetMemberUshort, underGetMemberUshort},
     {SymbolId::kUnderInstanceDelattr, underInstanceDelattr},
     {SymbolId::kUnderInstanceGetattr, underInstanceGetattr},
     {SymbolId::kUnderInstanceGuard, underInstanceGuard},
@@ -2212,7 +2212,7 @@ RawObject UnderBuiltinsModule::underGetMemberString(Thread* thread,
   return thread->runtime()->newStrFromCStr(*reinterpret_cast<char**>(addr));
 }
 
-RawObject UnderBuiltinsModule::underGetMemberUByte(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underGetMemberUbyte(Thread* thread, Frame* frame,
                                                    word nargs) {
   Arguments args(frame, nargs);
   auto addr = Int::cast(args.get(0)).asCPtr();
@@ -2221,7 +2221,7 @@ RawObject UnderBuiltinsModule::underGetMemberUByte(Thread* thread, Frame* frame,
   return thread->runtime()->newIntFromUnsigned(value);
 }
 
-RawObject UnderBuiltinsModule::underGetMemberUInt(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underGetMemberUint(Thread* thread, Frame* frame,
                                                   word nargs) {
   Arguments args(frame, nargs);
   auto addr = Int::cast(args.get(0)).asCPtr();
@@ -2230,7 +2230,7 @@ RawObject UnderBuiltinsModule::underGetMemberUInt(Thread* thread, Frame* frame,
   return thread->runtime()->newIntFromUnsigned(value);
 }
 
-RawObject UnderBuiltinsModule::underGetMemberULong(Thread* thread, Frame* frame,
+RawObject UnderBuiltinsModule::underGetMemberUlong(Thread* thread, Frame* frame,
                                                    word nargs) {
   Arguments args(frame, nargs);
   auto addr = Int::cast(args.get(0)).asCPtr();
@@ -2239,7 +2239,7 @@ RawObject UnderBuiltinsModule::underGetMemberULong(Thread* thread, Frame* frame,
   return thread->runtime()->newIntFromUnsigned(value);
 }
 
-RawObject UnderBuiltinsModule::underGetMemberUShort(Thread* thread,
+RawObject UnderBuiltinsModule::underGetMemberUshort(Thread* thread,
                                                     Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   auto addr = Int::cast(args.get(0)).asCPtr();
