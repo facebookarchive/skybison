@@ -815,6 +815,7 @@ class Runtime;
   V(Stdout, "stdout")                                                          \
   V(Step, "step")                                                              \
   V(Stop, "stop")                                                              \
+  V(StringIO, "StringIO")                                                      \
   V(StopAsyncIteration, "StopAsyncIteration")                                  \
   V(StopIteration, "StopIteration")                                            \
   V(Str, "str")                                                                \

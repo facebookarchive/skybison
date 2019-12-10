@@ -1731,6 +1731,8 @@ void Runtime::initializeHeapTypes() {
   UnderTextIOBaseBuiltins::initialize(this);
   // TextIOWrapper is a subclass of _TextIOBase
   TextIOWrapperBuiltins::initialize(this);
+  // StringIO is a subclass of _TextIOBase
+  StringIOBuiltins::initialize(this);
 }
 
 void Runtime::initializeExceptionTypes() {

@@ -84,6 +84,7 @@ class Handle;
   V(Slice)                                                                     \
   V(StaticMethod)                                                              \
   V(StrArray)                                                                  \
+  V(StringIO)                                                                  \
   V(StrIterator)                                                               \
   V(Super)                                                                     \
   V(TextIOWrapper)                                                             \
@@ -347,6 +348,7 @@ class RawObject {
   bool isStaticMethod() const;
   bool isStopIteration() const;
   bool isStrArray() const;
+  bool isStringIO() const;
   bool isStrIterator() const;
   bool isSuper() const;
   bool isSyntaxError() const;
@@ -3457,6 +3459,78 @@ class RawTextIOWrapper : public RawUnderTextIOBase {
   RAW_OBJECT_COMMON_NO_CAST(TextIOWrapper);
 };
 
+// RawStringIO
+
+class RawStringIO : public RawUnderTextIOBase {
+ public:
+  // TODO(T58766302): The following getters and setters were copied from
+  // TextIOWrapper and should be specialized for StringIO
+  RawObject b2cratio() const;
+  void setB2cratio(RawObject b2cratio) const;
+  RawObject buffer() const;
+  void setBuffer(RawObject buffer) const;
+  RawObject decodedChars() const;
+  void setDecodedChars(RawObject decoded_chars) const;
+  RawObject decodedCharsUsed() const;
+  void setDecodedCharsUsed(RawObject decoded_chars_used) const;
+  RawObject decoder() const;
+  void setDecoder(RawObject decoder) const;
+  RawObject encoder() const;
+  void setEncoder(RawObject encoder) const;
+  RawObject encoding() const;
+  void setEncoding(RawObject encoding) const;
+  RawObject errors() const;
+  void setErrors(RawObject errors) const;
+  RawObject hasRead1() const;
+  void setHasRead1(RawObject has_read1) const;
+  RawObject lineBuffering() const;
+  void setLineBuffering(RawObject line_buffering) const;
+  RawObject readnl() const;
+  void setReadnl(RawObject readnl) const;
+  RawObject readtranslate() const;
+  void setReadtranslate(RawObject readtranslate) const;
+  RawObject readuniversal() const;
+  void setReaduniversal(RawObject readuniversal) const;
+  RawObject seekable() const;
+  void setSeekable(RawObject seekable) const;
+  RawObject snapshot() const;
+  void setSnapshot(RawObject snapshot) const;
+  RawObject telling() const;
+  void setTelling(RawObject telling) const;
+  RawObject writenl() const;
+  void setWritenl(RawObject writenl) const;
+  RawObject writetranslate() const;
+  void setWritetranslate(RawObject writetranslate) const;
+
+  // Overflow dict
+  RawObject dict() const;
+  void setDict(RawObject dict) const;
+
+  // Layout
+  static const int kB2cratioOffset = RawUnderTextIOBase::kSize;
+  static const int kBufferOffset = kB2cratioOffset + kPointerSize;
+  static const int kDecodedCharsOffset = kBufferOffset + kPointerSize;
+  static const int kDecodedCharsUsedOffset = kDecodedCharsOffset + kPointerSize;
+  static const int kDecoderOffset = kDecodedCharsUsedOffset + kPointerSize;
+  static const int kEncoderOffset = kDecoderOffset + kPointerSize;
+  static const int kEncodingOffset = kEncoderOffset + kPointerSize;
+  static const int kErrorsOffset = kEncodingOffset + kPointerSize;
+  static const int kHasRead1Offset = kErrorsOffset + kPointerSize;
+  static const int kLineBufferingOffset = kHasRead1Offset + kPointerSize;
+  static const int kReadnlOffset = kLineBufferingOffset + kPointerSize;
+  static const int kReadtranslateOffset = kReadnlOffset + kPointerSize;
+  static const int kReaduniversalOffset = kReadtranslateOffset + kPointerSize;
+  static const int kSeekableOffset = kReaduniversalOffset + kPointerSize;
+  static const int kSnapshotOffset = kSeekableOffset + kPointerSize;
+  static const int kTellingOffset = kSnapshotOffset + kPointerSize;
+  static const int kWritenlOffset = kTellingOffset + kPointerSize;
+  static const int kWritetranslateOffset = kWritenlOffset + kPointerSize;
+  static const int kDictOffset = kWritetranslateOffset + kPointerSize;
+  static const int kSize = kDictOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON_NO_CAST(StringIO);
+};
+
 // RawObject
 
 inline bool isInstanceLayout(LayoutId id) {
@@ -3811,6 +3885,10 @@ inline bool RawObject::isStopIteration() const {
 
 inline bool RawObject::isStrArray() const {
   return isHeapObjectWithLayout(LayoutId::kStrArray);
+}
+
+inline bool RawObject::isStringIO() const {
+  return isHeapObjectWithLayout(LayoutId::kStringIO);
 }
 
 inline bool RawObject::isStrIterator() const {
@@ -6708,6 +6786,161 @@ inline RawObject RawFileIO::shouldCloseFd() const {
 
 inline void RawFileIO::setShouldCloseFd(RawObject value) const {
   instanceVariableAtPut(kCloseFdOffset, value);
+}
+
+// RawStringIO
+
+inline RawObject RawStringIO::b2cratio() const {
+  return instanceVariableAt(kB2cratioOffset);
+}
+
+inline void RawStringIO::setB2cratio(RawObject b2cratio) const {
+  instanceVariableAtPut(kB2cratioOffset, b2cratio);
+}
+
+inline RawObject RawStringIO::buffer() const {
+  return instanceVariableAt(kBufferOffset);
+}
+
+inline void RawStringIO::setBuffer(RawObject buffer) const {
+  instanceVariableAtPut(kBufferOffset, buffer);
+}
+
+inline RawObject RawStringIO::decodedChars() const {
+  return instanceVariableAt(kDecodedCharsOffset);
+}
+
+inline void RawStringIO::setDecodedChars(RawObject decoded_chars) const {
+  instanceVariableAtPut(kDecodedCharsOffset, decoded_chars);
+}
+
+inline RawObject RawStringIO::decodedCharsUsed() const {
+  return instanceVariableAt(kDecodedCharsUsedOffset);
+}
+
+inline void RawStringIO::setDecodedCharsUsed(
+    RawObject decoded_chars_used) const {
+  instanceVariableAtPut(kDecodedCharsUsedOffset, decoded_chars_used);
+}
+
+inline RawObject RawStringIO::decoder() const {
+  return instanceVariableAt(kDecoderOffset);
+}
+
+inline void RawStringIO::setDecoder(RawObject decoder) const {
+  instanceVariableAtPut(kDecoderOffset, decoder);
+}
+
+inline RawObject RawStringIO::dict() const {
+  return instanceVariableAt(kDictOffset);
+}
+
+inline void RawStringIO::setDict(RawObject dict) const {
+  instanceVariableAtPut(kDictOffset, dict);
+}
+
+inline RawObject RawStringIO::encoder() const {
+  return instanceVariableAt(kEncoderOffset);
+}
+
+inline void RawStringIO::setEncoder(RawObject encoder) const {
+  instanceVariableAtPut(kEncoderOffset, encoder);
+}
+
+inline RawObject RawStringIO::encoding() const {
+  return instanceVariableAt(kEncodingOffset);
+}
+
+inline void RawStringIO::setEncoding(RawObject encoding) const {
+  instanceVariableAtPut(kEncodingOffset, encoding);
+}
+
+inline RawObject RawStringIO::errors() const {
+  return instanceVariableAt(kErrorsOffset);
+}
+
+inline void RawStringIO::setErrors(RawObject errors) const {
+  instanceVariableAtPut(kErrorsOffset, errors);
+}
+
+inline RawObject RawStringIO::hasRead1() const {
+  return instanceVariableAt(kHasRead1Offset);
+}
+
+inline void RawStringIO::setHasRead1(RawObject has_read1) const {
+  instanceVariableAtPut(kHasRead1Offset, has_read1);
+}
+
+inline RawObject RawStringIO::lineBuffering() const {
+  return instanceVariableAt(kLineBufferingOffset);
+}
+
+inline void RawStringIO::setLineBuffering(RawObject line_buffering) const {
+  instanceVariableAtPut(kLineBufferingOffset, line_buffering);
+}
+
+inline RawObject RawStringIO::readnl() const {
+  return instanceVariableAt(kReadnlOffset);
+}
+
+inline void RawStringIO::setReadnl(RawObject readnl) const {
+  instanceVariableAtPut(kReadnlOffset, readnl);
+}
+
+inline RawObject RawStringIO::readtranslate() const {
+  return instanceVariableAt(kReadtranslateOffset);
+}
+
+inline void RawStringIO::setReadtranslate(RawObject readtranslate) const {
+  instanceVariableAtPut(kReadtranslateOffset, readtranslate);
+}
+
+inline RawObject RawStringIO::readuniversal() const {
+  return instanceVariableAt(kReaduniversalOffset);
+}
+
+inline void RawStringIO::setReaduniversal(RawObject readuniversal) const {
+  instanceVariableAtPut(kReaduniversalOffset, readuniversal);
+}
+
+inline RawObject RawStringIO::seekable() const {
+  return instanceVariableAt(kSeekableOffset);
+}
+
+inline void RawStringIO::setSeekable(RawObject seekable) const {
+  instanceVariableAtPut(kSeekableOffset, seekable);
+}
+
+inline RawObject RawStringIO::snapshot() const {
+  return instanceVariableAt(kSnapshotOffset);
+}
+
+inline void RawStringIO::setSnapshot(RawObject snapshot) const {
+  instanceVariableAtPut(kSnapshotOffset, snapshot);
+}
+
+inline RawObject RawStringIO::telling() const {
+  return instanceVariableAt(kTellingOffset);
+}
+
+inline void RawStringIO::setTelling(RawObject telling) const {
+  instanceVariableAtPut(kTellingOffset, telling);
+}
+
+inline RawObject RawStringIO::writenl() const {
+  return instanceVariableAt(kWritenlOffset);
+}
+
+inline void RawStringIO::setWritenl(RawObject writenl) const {
+  instanceVariableAtPut(kWritenlOffset, writenl);
+}
+
+inline RawObject RawStringIO::writetranslate() const {
+  return instanceVariableAt(kWritetranslateOffset);
+}
+
+inline void RawStringIO::setWritetranslate(RawObject writetranslate) const {
+  instanceVariableAtPut(kWritetranslateOffset, writetranslate);
 }
 
 // RawIncrementalNewlineDecoder

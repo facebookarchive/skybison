@@ -102,4 +102,11 @@ class TextIOWrapperBuiltins
   static const BuiltinAttribute kAttributes[];
 };
 
+class StringIOBuiltins
+    : public Builtins<StringIOBuiltins, SymbolId::kStringIO,
+                      LayoutId::kStringIO, LayoutId::kUnderTextIOBase> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+};
+
 }  // namespace py

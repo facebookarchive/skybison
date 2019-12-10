@@ -76,6 +76,7 @@ class Handle;
   V(StaticMethod)                                                              \
   V(Str)                                                                       \
   V(StrArray)                                                                  \
+  V(StringIO)                                                                  \
   V(StrIterator)                                                               \
   V(Super)                                                                     \
   V(TextIOWrapper)                                                             \

@@ -17,6 +17,7 @@ const BuiltinType UnderIoModule::kBuiltinTypes[] = {
     {SymbolId::kBufferedWriter, LayoutId::kBufferedWriter},
     {SymbolId::kBytesIO, LayoutId::kBytesIO},
     {SymbolId::kFileIO, LayoutId::kFileIO},
+    {SymbolId::kStringIO, LayoutId::kStringIO},
     {SymbolId::kIncrementalNewlineDecoder,
      LayoutId::kIncrementalNewlineDecoder},
     {SymbolId::kTextIOWrapper, LayoutId::kTextIOWrapper},
@@ -106,6 +107,28 @@ const BuiltinAttribute FileIOBuiltins::kAttributes[] = {
     {SymbolId::kUnderAppending, FileIO::kAppendingOffset},
     {SymbolId::kUnderSeekable, FileIO::kSeekableOffset},
     {SymbolId::kUnderCloseFd, FileIO::kCloseFdOffset},
+    {SymbolId::kSentinelId, 0},
+};
+
+const BuiltinAttribute StringIOBuiltins::kAttributes[] = {
+    {SymbolId::kUnderB2cratio, StringIO::kB2cratioOffset},
+    {SymbolId::kUnderBuffer, StringIO::kBufferOffset},
+    {SymbolId::kUnderDecodedChars, StringIO::kDecodedCharsOffset},
+    {SymbolId::kUnderDecodedCharsUsed, StringIO::kDecodedCharsUsedOffset},
+    {SymbolId::kUnderDecoder, StringIO::kDecoderOffset},
+    {SymbolId::kUnderEncoder, StringIO::kEncoderOffset},
+    {SymbolId::kUnderEncoding, StringIO::kEncodingOffset},
+    {SymbolId::kUnderErrors, StringIO::kErrorsOffset},
+    {SymbolId::kUnderHasRead1, StringIO::kHasRead1Offset},
+    {SymbolId::kUnderLineBuffering, StringIO::kLineBufferingOffset},
+    {SymbolId::kUnderReadnl, StringIO::kReadnlOffset},
+    {SymbolId::kUnderReadtranslate, StringIO::kReadtranslateOffset},
+    {SymbolId::kUnderReaduniversal, StringIO::kReaduniversalOffset},
+    {SymbolId::kUnderSeekable, StringIO::kSeekableOffset},
+    {SymbolId::kUnderSnapshot, StringIO::kSnapshotOffset},
+    {SymbolId::kUnderTelling, StringIO::kTellingOffset},
+    {SymbolId::kUnderWritenl, StringIO::kWritenlOffset},
+    {SymbolId::kUnderWritetranslate, StringIO::kWritetranslateOffset},
     {SymbolId::kSentinelId, 0},
 };
 
