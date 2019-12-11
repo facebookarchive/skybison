@@ -708,6 +708,8 @@ int32_t RawStrArray::codePointAt(word index, word* char_length) const {
 
 static void enqueueReference(RawObject reference, RawObject* tail,
                              word link_offset) {
+  DCHECK(Instance::cast(reference).instanceVariableAt(link_offset).isNoneType(),
+         "Attempting to enqueue object that's already in queue");
   if (*tail == RawNoneType::object()) {
     Instance::cast(reference).instanceVariableAtPut(link_offset, reference);
   } else {

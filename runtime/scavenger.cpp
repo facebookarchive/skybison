@@ -33,8 +33,10 @@ RawObject Scavenger::scavenge() {
   processGrayObjects();
   processApiHandles();
   processFinalizableReferences();
+  processGrayObjects();
   processDelayedReferences();
   runtime_->heap()->setSpace(to_);
+  DCHECK(runtime_->heap()->verify(), "Heap failed to verify after GC");
   delete from_;
   return delayed_callbacks_;
 }
