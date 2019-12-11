@@ -2215,7 +2215,6 @@ class StringIO(_TextIOBase):
             self.seek(0)
 
     def __next__(self):
-        self._checkAttached()
         self._telling = False
         line = self.readline()
         if not _str_check(line):
@@ -2264,12 +2263,6 @@ class StringIO(_TextIOBase):
     def writable(self):
         self._checkClosed()
         return True
-
-    def _checkAttached(self, msg=None):
-        if self._buffer is None:
-            raise ValueError(
-                "underlying buffer has been detached" if msg is None else msg
-            )
 
     def _get_decoded_chars(self, n=None):
         offset = self._decoded_chars_used
@@ -2374,7 +2367,6 @@ class StringIO(_TextIOBase):
         return self._buffer
 
     def close(self):
-        self._checkAttached()
         if not self.closed:
             try:
                 self.flush()
@@ -2383,21 +2375,17 @@ class StringIO(_TextIOBase):
 
     @property
     def closed(self):
-        self._checkAttached()
         return self._buffer.closed
 
     def fileno(self):
-        self._checkAttached()
         return self._buffer.fileno()
 
     def flush(self):
-        self._checkAttached()
         self._checkClosed()
         self.buffer.flush()
         self._telling = self._seekable
 
     def isatty(self):
-        self._checkAttached()
         return self.buffer.isatty()
 
     @property
@@ -2406,12 +2394,10 @@ class StringIO(_TextIOBase):
 
     @property
     def name(self):
-        self._checkAttached()
         return self._buffer.name
 
     @property
     def newlines(self):
-        self._checkAttached()
         if self._decoder is None:
             return None
         try:
@@ -2424,7 +2410,6 @@ class StringIO(_TextIOBase):
             size = -1
         elif not _int_check(size):
             raise TypeError(f"integer argument expected, got '{_type(size).__name__}'")
-        self._checkAttached()
         self._checkClosed()
         self._checkReadable("not readable")
         decoder = self._decoder
@@ -2455,7 +2440,6 @@ class StringIO(_TextIOBase):
         elif not _int_check(size):
             size = _index(size)
 
-        self._checkAttached()
         self._checkClosed()
 
         # Grab all the decoded text (we will rewind any extra bits later).
@@ -2545,7 +2529,6 @@ class StringIO(_TextIOBase):
             raise TypeError(
                 f"an integer is required (got type {_type(whence).__name__})"
             )
-        self._checkAttached()
         self._checkClosed()
         self._checkSeekable("underlying stream is not seekable")
 
@@ -2605,7 +2588,6 @@ class StringIO(_TextIOBase):
         return cookie
 
     def tell(self):  # noqa: C901
-        self._checkAttached()
         self._checkClosed()
         self._checkSeekable("underlying stream is not seekable")
         if not self._telling:
@@ -2706,14 +2688,12 @@ class StringIO(_TextIOBase):
             decoder.setstate(saved_state)
 
     def truncate(self, pos=None):
-        self._checkAttached()
         self.flush()
         return self.buffer.truncate(pos)
 
     def write(self, text):
         if not _str_check(text):
             raise TypeError(f"write() argument must be str, not {_type(text).__name__}")
-        self._checkAttached()
         self._checkClosed()
         length = _str_len(text)
         haslf = (self._writetranslate or self._line_buffering) and "\n" in text
