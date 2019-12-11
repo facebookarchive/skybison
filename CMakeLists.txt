@@ -104,88 +104,21 @@ set(
   -fno-rtti
 )
 
-# Define the `cpython` target
 set(
-  CPYTHON_MODIFIED_SOURCES
-  ${EXTENSION_API_HEADERS}
-  ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/Python-ast.h
-  ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/asdl.h
-  ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/ast.h
-  ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/compile.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/compile.h
-  ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/module.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/node.h
-  ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/opcode.h
-  ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/peephole.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/symtable.h
-  ${CMAKE_SOURCE_DIR}/ext/Modules/_compile/wordcode_helpers.h
-  ${CMAKE_SOURCE_DIR}/ext/Modules/gcmodule.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Modules/signalmodule.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/abstract.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/boolobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/bytearrayobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/bytesobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/classobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/codeobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/complexobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/descrobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/dictobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/exceptions.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/fileobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/floatobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/frameobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/funcobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/function-utils.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/function-utils.h
-  ${CMAKE_SOURCE_DIR}/ext/Objects/genobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/iterobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/listobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/longobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/memoryobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/methodobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/moduleobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/namespaceobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/object.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/obmalloc.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/odictobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/setobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/sliceobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/structseq.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/tupleobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/typeobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/unicodeobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/weakrefobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/_warnings.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/ceval.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/codecs.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/compile.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/errors.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/getargs.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/getcompiler.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/getcopyright.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/getplatform.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/getversion.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/import.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/modsupport-internal.h
-  ${CMAKE_SOURCE_DIR}/ext/Python/modsupport.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/mysnprintf.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/pathconfig.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/pylifecycle.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/pystate.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/pythonrun.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/random.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/sysmodule.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/thread.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/traceback.cpp
-)
-include(CPythonBuild.cmake)
+  PYRO_PUBLIC_HEADERS_SOURCES
+  ${CMAKE_SOURCE_DIR}/capi/cpython-data.h
+  ${CMAKE_SOURCE_DIR}/capi/cpython-func.h
+  ${CMAKE_SOURCE_DIR}/capi/cpython-types.h
+  ${CMAKE_SOURCE_DIR}/ext/Include/Python.h
+  ${CMAKE_SOURCE_DIR}/ext/config/pyconfig-linux.h
+  ${CMAKE_SOURCE_DIR}/ext/config/pyconfig-osx.h
+  ${CMAKE_SOURCE_DIR}/ext/config/pyconfig.h)
 
 add_library(capi-headers INTERFACE)
 target_sources(
   capi-headers
   INTERFACE
-  ${CPYTHON_MODIFIED_HEADERS}
-)
+  ${PYRO_PUBLIC_HEADERS_SOURCES})
 target_include_directories(
   capi-headers
   INTERFACE
@@ -418,10 +351,81 @@ target_link_libraries(
 # TODO(T42692043): This awkwardness should go away once we freeze the stdlib.
 target_compile_definitions(runtime PRIVATE PYRO_BASEDIR="${CMAKE_SOURCE_DIR}")
 
+# Define `cpython` target
+include(CPythonBuild.cmake)
+
 add_library(
   extension
   STATIC
-  ${CPYTHON_MODIFIED_SOURCES})
+  ext/Modules/_compile/Python-ast.h
+  ext/Modules/_compile/asdl.h
+  ext/Modules/_compile/ast.h
+  ext/Modules/_compile/compile.cpp
+  ext/Modules/_compile/compile.h
+  ext/Modules/_compile/module.cpp
+  ext/Modules/_compile/node.h
+  ext/Modules/_compile/opcode.h
+  ext/Modules/_compile/peephole.cpp
+  ext/Modules/_compile/symtable.h
+  ext/Modules/_compile/wordcode_helpers.h
+  ext/Modules/gcmodule.cpp
+  ext/Modules/signalmodule.cpp
+  ext/Objects/abstract.cpp
+  ext/Objects/boolobject.cpp
+  ext/Objects/bytearrayobject.cpp
+  ext/Objects/bytesobject.cpp
+  ext/Objects/classobject.cpp
+  ext/Objects/codeobject.cpp
+  ext/Objects/complexobject.cpp
+  ext/Objects/descrobject.cpp
+  ext/Objects/dictobject.cpp
+  ext/Objects/exceptions.cpp
+  ext/Objects/fileobject.cpp
+  ext/Objects/floatobject.cpp
+  ext/Objects/frameobject.cpp
+  ext/Objects/funcobject.cpp
+  ext/Objects/function-utils.cpp
+  ext/Objects/function-utils.h
+  ext/Objects/genobject.cpp
+  ext/Objects/iterobject.cpp
+  ext/Objects/listobject.cpp
+  ext/Objects/longobject.cpp
+  ext/Objects/memoryobject.cpp
+  ext/Objects/methodobject.cpp
+  ext/Objects/moduleobject.cpp
+  ext/Objects/namespaceobject.cpp
+  ext/Objects/object.cpp
+  ext/Objects/obmalloc.cpp
+  ext/Objects/odictobject.cpp
+  ext/Objects/setobject.cpp
+  ext/Objects/sliceobject.cpp
+  ext/Objects/structseq.cpp
+  ext/Objects/tupleobject.cpp
+  ext/Objects/typeobject.cpp
+  ext/Objects/unicodeobject.cpp
+  ext/Objects/weakrefobject.cpp
+  ext/Python/_warnings.cpp
+  ext/Python/ceval.cpp
+  ext/Python/codecs.cpp
+  ext/Python/compile.cpp
+  ext/Python/errors.cpp
+  ext/Python/getargs.cpp
+  ext/Python/getcompiler.cpp
+  ext/Python/getcopyright.cpp
+  ext/Python/getplatform.cpp
+  ext/Python/getversion.cpp
+  ext/Python/import.cpp
+  ext/Python/modsupport-internal.h
+  ext/Python/modsupport.cpp
+  ext/Python/mysnprintf.cpp
+  ext/Python/pathconfig.cpp
+  ext/Python/pylifecycle.cpp
+  ext/Python/pystate.cpp
+  ext/Python/pythonrun.cpp
+  ext/Python/random.cpp
+  ext/Python/sysmodule.cpp
+  ext/Python/thread.cpp
+  ext/Python/traceback.cpp)
 target_compile_options(
   extension
   PUBLIC
