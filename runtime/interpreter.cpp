@@ -1027,15 +1027,36 @@ RawObject Interpreter::sequenceContains(Thread* thread, Frame* frame,
 
 HANDLER_INLINE USED RawObject Interpreter::isTrue(Thread* thread,
                                                   RawObject value_obj) {
+  // In Django100, these are the most common immediate cases (bool is 90%,
+  // smallint is 2%, NoneType is 2%, smallstr is 1%) and they are cheap to
+  // check since they are pointer comparisons against constants.
+  // The ordering of these cases is subject to change once we are measuring
+  // against a different benchmrak with a potentially different type profile.
   if (value_obj == Bool::trueObj()) return Bool::trueObj();
   if (value_obj == Bool::falseObj()) return Bool::falseObj();
-  if (value_obj.isNoneType()) return Bool::falseObj();
+  if (value_obj == SmallInt::fromWord(0)) return Bool::falseObj();
+  if (value_obj == NoneType::object()) return Bool::falseObj();
+  if (value_obj == Str::empty()) return Bool::falseObj();
+  if (value_obj == Bytes::empty()) return Bool::falseObj();
   return isTrueSlowPath(thread, value_obj);
 }
 
 RawObject Interpreter::isTrueSlowPath(Thread* thread, RawObject value_obj) {
-  if (value_obj.isSmallInt()) {
-    return Bool::fromBool(SmallInt::cast(value_obj).value());
+  if (value_obj.isSmallInt() || value_obj.isSmallStr() ||
+      value_obj.isSmallBytes()) {
+    // Non-zero smallints, non-empty smallstrs, and non-empty smallbytes are
+    // truthy
+    return Bool::trueObj();
+  }
+  if (value_obj.isLargeStr() || value_obj.isLargeBytes()) {
+    // largestr and largebytes imply non-empty, so they are truthy
+    return Bool::trueObj();
+  }
+  if (value_obj.isTuple()) {
+    return Bool::fromBool(Tuple::cast(value_obj).length());
+  }
+  if (value_obj.isList()) {
+    return Bool::fromBool(List::cast(value_obj).numItems());
   }
   HandleScope scope(thread);
   Object value(&scope, value_obj);
