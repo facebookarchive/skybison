@@ -42,11 +42,13 @@ class Event:
     def set(self):
         self._flag = True
 
-    def wait(self, timeout):
-        if not self._flag:
+    def wait(self, timeout=None):
+        signaled = self._flag
+        if not signaled:
             # Not much of a point waiting for someone to set the flag in a
             # single-threaded setting, let's abort...
             _unimplemented()
+        return signaled
 
 
 def RLock(*args, **kwargs):

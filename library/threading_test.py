@@ -21,11 +21,12 @@ class EventTests(unittest.TestCase):
         e.set()
         self.assertTrue(e.is_set())
 
-    def wait_on_set_flag_returns(self):
+    def test_wait_on_set_flag_returns(self):
         e = Event()
         e.set()
         e.wait()
-        e.wait()
+        val = e.wait(5)
+        self.assertTrue(val)
 
 
 if __name__ == "__main__":
