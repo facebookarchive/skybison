@@ -6664,6 +6664,15 @@ class ObjectTests(unittest.TestCase):
         self.assertIs(d["foo"], value)
         self.assertIs(instance.foo, value)
 
+    def test_dunder_str_with_none_repr_raises_type_error(self):
+        class C:
+            __repr__ = None
+
+        c = C()
+        with self.assertRaises(TypeError) as context:
+            str(c)
+        self.assertEqual(str(context.exception), "'NoneType' object is not callable")
+
     def test_ge_returns_not_implemented(self):
         self.assertIs(object().__ge__(object()), NotImplemented)
 
@@ -7869,6 +7878,32 @@ class SetTests(unittest.TestCase):
         self.assertFalse({1, 2}.issuperset(frozenset({1, 2, 3})))
         self.assertFalse({1, 2}.issuperset([1, 2, 3]))
         self.assertFalse({1, 2}.issuperset(range(1, 4)))
+
+
+class SliceTest(unittest.TestCase):
+    def test_dunder_repr_with_nones_returns_str(self):
+        s = slice(None)
+        self.assertEqual(repr(s), "slice(None, None, None)")
+
+    def test_dunder_repr_with_stop_returns_str(self):
+        s = slice(5)
+        self.assertEqual(repr(s), "slice(None, 5, None)")
+
+    def test_dunder_repr_with_values_returns_str(self):
+        s = slice(1, 5, 2)
+        self.assertEqual(repr(s), "slice(1, 5, 2)")
+
+    def test_dunder_repr_calls_dunder_repr(self):
+        class C:
+            def __repr__(self):
+                return "repr"
+
+            def __str__(self):
+                return "str"
+
+        c = C()
+        s = slice(c, c, c)
+        self.assertEqual(repr(s), "slice(repr, repr, repr)")
 
 
 class StaticMethodTests(unittest.TestCase):

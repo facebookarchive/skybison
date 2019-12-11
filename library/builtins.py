@@ -459,7 +459,10 @@ class object(bootstrap=True):  # noqa: E999
         pass
 
     def __str__(self):
-        return _type(self).__repr__(self)
+        dunder_repr = _object_type_getattr(self, "__repr__")
+        if dunder_repr is not _Unbound:
+            return dunder_repr()
+        return object.__repr__(self)
 
     @classmethod
     def __subclasshook__(cls, *args):
@@ -4819,7 +4822,7 @@ class slice(bootstrap=True):
         _unimplemented()
 
     def __repr__(self):
-        _unimplemented()
+        return f"slice({self.start!r}, {self.stop!r}, {self.step!r})"
 
     def indices(self, length) -> tuple:  # noqa: C901
         _slice_guard(self)
