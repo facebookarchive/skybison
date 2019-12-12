@@ -4991,8 +4991,7 @@ struct assembler {
     int a_offset;                   /* offset into bytecode */
     int a_nblocks;                  /* number of reachable blocks */
     basicblock **a_postorder;       /* list of blocks in dfs postorder */
-    _PyBytesWriter a_lnotab;        /* lnotab writer */
-    void *a_lnotab_str;             /* string tracking the lnotab writing */
+    PyObject* a_lnotab;             /* lnotab buffer (bytearray) */
     int a_lnotab_off;               /* offset into lnotab */
     int a_lineno;                   /* last lineno of emitted instruction */
     int a_lineno_off;               /* bytecode offset of last lineno */
@@ -5095,11 +5094,12 @@ assemble_init(struct assembler *a, int nblocks, int firstlineno)
     a->a_bytecode_str = _PyBytesWriter_Alloc(&a->a_bytecode, 0);
     if (!a->a_bytecode_str)
         return 0;
-    _PyBytesWriter_Init(&a->a_lnotab);
-    a->a_lnotab.overallocate = 1;
-    a->a_lnotab_str = _PyBytesWriter_Alloc(&a->a_lnotab, 0);
-    if (!a->a_lnotab_str)
+    a->a_lnotab = PyByteArray_FromStringAndSize(nullptr, 0);
+    if (!a->a_lnotab) {
+        PyErr_NoMemory();
         return 0;
+    }
+    a->a_lnotab_off = 0;
     if ((size_t)nblocks > SIZE_MAX / sizeof(basicblock *)) {
         PyErr_NoMemory();
         return 0;
@@ -5117,7 +5117,7 @@ static void
 assemble_free(struct assembler *a)
 {
     _PyBytesWriter_Dealloc(&a->a_bytecode);
-    _PyBytesWriter_Dealloc(&a->a_lnotab);
+    Py_DECREF(a->a_lnotab);
     if (a->a_postorder)
         PyObject_Free(a->a_postorder);
 }
@@ -5134,10 +5134,10 @@ blocksize(basicblock *b)
 }
 
 static void lnotab_write_byte(struct assembler *a, unsigned char entry) {
-    a->a_lnotab_str = _PyBytesWriter_WriteBytes(&a->a_lnotab,
-                                                a->a_lnotab_str,
-                                                &entry,
-                                                sizeof(entry));
+    Py_ssize_t new_capacity = a->a_lnotab_off + sizeof(entry);
+    PyByteArray_Resize(a->a_lnotab, new_capacity);
+    PySequence_SetItem(a->a_lnotab, a->a_lnotab_off, PyLong_FromLong(entry));
+    a->a_lnotab_off = new_capacity;
 }
 
 /* Appends a pair to the end of the line number table, a_lnotab, representing
@@ -5164,7 +5164,6 @@ assemble_lnotab(struct assembler *a, struct instr *i)
             lnotab_write_byte(a, 0);
         }
         d_bytecode -= ncodes * 255;
-        a->a_lnotab_off += ncodes * 2;
     }
     assert(0 <= d_bytecode && d_bytecode <= 255);
 
@@ -5188,11 +5187,9 @@ assemble_lnotab(struct assembler *a, struct instr *i)
             lnotab_write_byte(a, 0);
             lnotab_write_byte(a, k);
         }
-        a->a_lnotab_off += ncodes * 2;
     }
     assert(-128 <= d_lineno && d_lineno <= 127);
 
-    a->a_lnotab_off += 2;
     if (d_bytecode) {
         lnotab_write_byte(a, d_bytecode);
         lnotab_write_byte(a, d_lineno);
@@ -5423,10 +5420,10 @@ makecode(struct compiler *c, struct assembler *a)
         goto error;
 
     bytecode = _PyBytesWriter_Finish(&a->a_bytecode, a->a_bytecode_str);
-    lnotab = _PyBytesWriter_Finish(&a->a_lnotab, a->a_lnotab_str);
-    bytecode_opt = PyCode_Optimize(bytecode, consts, names, lnotab);
+    bytecode_opt = PyCode_Optimize(bytecode, consts, names, a->a_lnotab);
     if (!bytecode_opt)
         goto error;
+    lnotab = PyBytes_FromObject(a->a_lnotab);
 
     tmp = PyList_AsTuple(consts); /* PyCode_New requires a tuple */
     if (!tmp)

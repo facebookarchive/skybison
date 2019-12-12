@@ -555,6 +555,24 @@ markblocks(_Py_CODEUNIT *code, Py_ssize_t len)
     return blocks;
 }
 
+static int lnotab_find_byte(PyObject *lnotab, unsigned char value) {
+    PyObject *pylong = PyLong_FromLong(value);
+    int result = PySequence_Contains(lnotab, pylong);
+    Py_DECREF(pylong);
+    return result;
+}
+
+static unsigned char lnotab_get_byte(PyObject *lnotab, Py_ssize_t idx) {
+    PyObject *item = PySequence_GetItem(lnotab, idx);
+    unsigned char result = PyLong_AsLong(item);
+    Py_DECREF(item);
+    return result;
+}
+
+static void lnotab_set_byte(PyObject *lnotab, Py_ssize_t idx, unsigned char entry) {
+    PySequence_SetItem(lnotab, idx, PyLong_FromLong(entry));
+}
+
 /* Perform basic peephole optimizations to components of a code object.
    The consts object should still be in list form to allow new constants
    to be appended.
@@ -570,13 +588,12 @@ markblocks(_Py_CODEUNIT *code, Py_ssize_t len)
 
 PyObject *
 PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *,
-                PyObject *lnotab_obj)
+                PyObject *lnotab)
 {
     Py_ssize_t h, i, nexti, op_start, codelen, tgt;
     unsigned int j, nops;
     unsigned char opcode, nextop;
     _Py_CODEUNIT *codestr = NULL;
-    unsigned char *lnotab;
     unsigned int cum_orig_offset, last_offset;
     Py_ssize_t tabsiz;
     PyObject **const_stack = NULL;
@@ -590,10 +607,9 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *,
         goto exitError;
 
     /* Bypass optimization when the lnotab table is too complex */
-    assert(PyBytes_Check(lnotab_obj));
-    lnotab = (unsigned char*)PyBytes_AS_STRING(lnotab_obj);
-    tabsiz = PyBytes_GET_SIZE(lnotab_obj);
-    if (memchr(lnotab, 255, tabsiz) != NULL) {
+    assert(PyByteArray_Check(lnotab));
+    tabsiz = PyByteArray_GET_SIZE(lnotab);
+    if (lnotab_find_byte(lnotab, 255) == 1) {
         /* 255 value are used for multibyte bytecode instructions */
         goto exitUnchanged;
     }
@@ -873,13 +889,13 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *,
     last_offset = 0;
     for (i=0 ; i < tabsiz ; i+=2) {
         unsigned int offset_delta, new_offset;
-        cum_orig_offset += lnotab[i];
+        cum_orig_offset += lnotab_get_byte(lnotab, i);
         assert(cum_orig_offset % sizeof(_Py_CODEUNIT) == 0);
         new_offset = blocks[cum_orig_offset / sizeof(_Py_CODEUNIT)] *
                 sizeof(_Py_CODEUNIT);
         offset_delta = new_offset - last_offset;
         assert(offset_delta <= 255);
-        lnotab[i] = (unsigned char)offset_delta;
+        lnotab_set_byte(lnotab, i, (unsigned char)offset_delta);
         last_offset = new_offset;
     }
 
