@@ -163,6 +163,7 @@ class Runtime;
   V(UnderBytearraySetslice, "_bytearray_setslice")                             \
   V(UnderBytearrayStringAppend, "_bytearray_string_append")                    \
   V(UnderBytesCheck, "_bytes_check")                                           \
+  V(UnderBytesContains, "_bytes_contains")                                     \
   V(UnderBytesDecode, "_bytes_decode")                                         \
   V(UnderBytesDecodeASCII, "_bytes_decode_ascii")                              \
   V(UnderBytesDecodeUTF8, "_bytes_decode_utf_8")                               \

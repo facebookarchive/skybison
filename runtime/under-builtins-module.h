@@ -40,6 +40,7 @@ class UnderBuiltinsModule {
   static RawObject underBytearraySetslice(Thread* thread, Frame* frame,
                                           word nargs);
   static RawObject underBytesCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underBytesContains(Thread* thread, Frame* frame, word nargs);
   static RawObject underBytesDecode(Thread* thread, Frame* frame, word nargs);
   static RawObject underBytesDecodeASCII(Thread* thread, Frame* frame,
                                          word nargs);

@@ -1200,6 +1200,42 @@ class BytesTests(unittest.TestCase):
             b"".__add__(2)
         self.assertEqual(str(context.exception), "can't concat int to bytes")
 
+    def test_dunder_contains_with_non_bytes_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            bytes.__contains__("not_bytes", 123)
+
+    def test_dunder_contains_with_element_in_bytes_returns_true(self):
+        self.assertTrue(b"abc".__contains__(ord("a")))
+
+    def test_dunder_contains_with_element_not_in_bytes_returns_false(self):
+        self.assertFalse(b"abc".__contains__(ord("z")))
+
+    def test_dunder_contains_calls_dunder_index(self):
+        class C:
+            __index__ = Mock(name="__index__", return_value=ord("a"))
+
+        c = C()
+        self.assertTrue(b"abc".__contains__(c))
+        c.__index__.assert_called_once()
+
+    def test_dunder_contains_calls_dunder_index_before_checking_byteslike(self):
+        class C(bytearray):
+            __index__ = Mock(name="__index__", return_value=ord("a"))
+
+        c = C(b"q")
+        self.assertTrue(b"abc".__contains__(c))
+        c.__index__.assert_called_once()
+
+    def test_dunder_contains_ignores_errors_from_dunder_index(self):
+        class C:
+            __index__ = Mock(name="__index__", side_effect=MemoryError("foo"))
+
+        c = C()
+        container = b"abc"
+        with self.assertRaises(TypeError):
+            container.__contains__(c)
+        c.__index__.assert_called_once()
+
     def test_dunder_iter_returns_iterator(self):
         b = b"123"
         it = b.__iter__()

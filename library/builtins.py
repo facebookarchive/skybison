@@ -22,6 +22,7 @@ _bytearray_len = _bytearray_len  # noqa: F821
 _bytearray_setitem = _bytearray_setitem  # noqa: F821
 _bytearray_setslice = _bytearray_setslice  # noqa: F821
 _bytes_check = _bytes_check  # noqa: F821
+_bytes_contains = _bytes_contains  # noqa: F821
 _bytes_decode = _bytes_decode  # noqa: F821
 _bytes_decode_utf_8 = _bytes_decode_utf_8  # noqa: F821
 _bytes_from_bytes = _bytes_from_bytes  # noqa: F821
@@ -1868,6 +1869,15 @@ class bytes(bootstrap=True):
         pass
 
     def __contains__(self, key):
+        result = _bytes_contains(self, key)
+        if result is not _Unbound:
+            return result
+        try:
+            return _bytes_contains(self, _index(key))
+        except BaseException:
+            pass
+        _byteslike_guard(key)
+        # TODO(T59053238): Add support for bytes.__contains__(byteslike)
         _unimplemented()
 
     def __eq__(self, other):

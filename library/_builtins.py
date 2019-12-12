@@ -88,6 +88,11 @@ def _bytes_check(obj):
 
 
 @_patch
+def _bytes_contains(obj, key):
+    pass
+
+
+@_patch
 def _bytes_decode(obj, encoding):
     pass
 

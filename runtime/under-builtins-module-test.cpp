@@ -355,6 +355,39 @@ TEST_F(UnderBuiltinsModuleTest,
 }
 
 TEST_F(UnderBuiltinsModuleTest,
+       UnderBytesContainsWithIntBiggerThanCharRaisesValueError) {
+  HandleScope scope(thread_);
+  const byte contents[] = {'1', '2', '3'};
+  Bytes bytes(&scope, runtime_.newBytesWithAll(contents));
+  ASSERT_EQ(bytes.length(), 3);
+  Object key(&scope, SmallInt::fromWord(256));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(UnderBuiltinsModule::underBytesContains, bytes, key),
+      LayoutId::kValueError, "byte must be in range(0, 256)"));
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderBytesContainsWithByteInBytesReturnsTrue) {
+  HandleScope scope(thread_);
+  const byte contents[] = {'1', '2', '3'};
+  Bytes bytes(&scope, runtime_.newBytesWithAll(contents));
+  ASSERT_EQ(bytes.length(), 3);
+  Object key(&scope, SmallInt::fromWord('2'));
+  EXPECT_EQ(runBuiltin(UnderBuiltinsModule::underBytesContains, bytes, key),
+            Bool::trueObj());
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderBytesContainsWithByteNotInBytesReturnsFalse) {
+  HandleScope scope(thread_);
+  const byte contents[] = {'1', '2', '3'};
+  Bytes bytes(&scope, runtime_.newBytesWithAll(contents));
+  ASSERT_EQ(bytes.length(), 3);
+  Object key(&scope, SmallInt::fromWord('x'));
+  EXPECT_EQ(runBuiltin(UnderBuiltinsModule::underBytesContains, bytes, key),
+            Bool::falseObj());
+}
+
+TEST_F(UnderBuiltinsModuleTest,
        UnderBytesJoinWithEmptyIterableReturnsEmptyByteArray) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
