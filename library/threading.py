@@ -23,7 +23,29 @@ class BrokenBarrierError(RuntimeError):
 
 
 class Condition:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, lock=None):
+        if lock is None:
+            lock = RLock()
+        self._lock = lock
+        self.acquire = lock.acquire
+        self.release = lock.release
+
+    def __enter__(self):
+        return self._lock.__enter__()
+
+    def __exit__(self, *args):
+        return self._lock.__exit__(*args)
+
+    def notify(self, n=1):
+        pass
+
+    def notify_all(self):
+        pass
+
+    def wait(self, timeout=None):
+        _unimplemented()
+
+    def wait_for(self, predicate, timeout=None):
         _unimplemented()
 
 
