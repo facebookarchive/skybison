@@ -1473,4 +1473,31 @@ res1 = abs(Foo())
                             "bad operand type for abs(): 'Foo'"));
 }
 
+TEST_F(BuiltinsModuleTest,
+       UnderPositionalOnlyDecoratorRestrictsKeywordArguments) {
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime_, R"(
+@_positional_only(1)
+def update(self): pass
+update(self = 'hello')
+)"),
+      LayoutId::kTypeError,
+      "keyword argument specified for positional-only argument 'self'"));
+}
+
+TEST_F(BuiltinsModuleTest,
+       UnderPositionalOnlyAllowsCallWithOverloadedKeywordArguments) {
+  ASSERT_FALSE(raisedWithStr(runFromCStr(&runtime_, R"(
+@_positional_only(1)
+def update(self, **kwargs):
+  global res1, res2
+  res1 = self
+  res2 = kwargs['self']
+update(2, self = 3)
+)"),
+                             LayoutId::kTypeError, ""));
+  EXPECT_EQ(mainModuleAt(&runtime_, "res1"), SmallInt::fromWord(2));
+  EXPECT_EQ(mainModuleAt(&runtime_, "res2"), SmallInt::fromWord(3));
+}
+
 }  // namespace py

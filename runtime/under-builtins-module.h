@@ -85,6 +85,8 @@ class UnderBuiltinsModule {
                                               word nargs);
   static RawObject underCodeCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underCodeGuard(Thread* thread, Frame* frame, word nargs);
+  static RawObject underCodeSetPosonlyargcount(Thread* thread, Frame* frame,
+                                               word nargs);
   static RawObject underComplexCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underComplexImag(Thread* thread, Frame* frame, word nargs);
   static RawObject underComplexReal(Thread* thread, Frame* frame, word nargs);

@@ -119,6 +119,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderClassmethodIsabstract, underClassmethodIsabstract},
     {SymbolId::kUnderCodeCheck, underCodeCheck},
     {SymbolId::kUnderCodeGuard, underCodeGuard},
+    {SymbolId::kUnderCodeSetPosonlyargcount, underCodeSetPosonlyargcount},
     {SymbolId::kUnderComplexCheck, underComplexCheck},
     {SymbolId::kUnderComplexImag, underComplexImag},
     {SymbolId::kUnderComplexReal, underComplexReal},
@@ -1574,6 +1575,22 @@ RawObject UnderBuiltinsModule::underCodeGuard(Thread* thread, Frame* frame,
     return NoneType::object();
   }
   return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kCode);
+}
+
+RawObject UnderBuiltinsModule::underCodeSetPosonlyargcount(Thread* thread,
+                                                           Frame* frame,
+                                                           word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object code_obj(&scope, args.get(0));
+  CHECK(code_obj.isCode(), "Expected code to be a Code");
+  Code code(&scope, *code_obj);
+  Object posonlyargcount_obj(&scope, args.get(1));
+  CHECK(posonlyargcount_obj.isSmallInt(), "Expected value to be a SmallInt");
+  word posonlyargcount = SmallInt::cast(*posonlyargcount_obj).value();
+  CHECK_BOUND(posonlyargcount, code.argcount());
+  code.setPosonlyargcount(posonlyargcount);
+  return NoneType::object();
 }
 
 RawObject UnderBuiltinsModule::underComplexCheck(Thread* thread, Frame* frame,

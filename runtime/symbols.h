@@ -196,6 +196,7 @@ class Runtime;
   V(UnderCloseFd, "_closefd")                                                  \
   V(UnderCodeCheck, "_code_check")                                             \
   V(UnderCodeGuard, "_code_guard")                                             \
+  V(UnderCodeSetPosonlyargcount, "_code_set_posonlyargcount")                  \
   V(UnderCodecs, "_codecs")                                                    \
   V(UnderCompileFlagsMask, "_compile_flags_mask")                              \
   V(UnderComplexCheck, "_complex_check")                                       \

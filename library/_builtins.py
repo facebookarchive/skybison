@@ -233,6 +233,11 @@ def _code_guard(c):
 
 
 @_patch
+def _code_set_posonlyargcount(code, value):
+    pass
+
+
+@_patch
 def _complex_check(c):
     pass
 

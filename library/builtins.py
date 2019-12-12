@@ -49,6 +49,7 @@ _classmethod = _classmethod  # noqa: F821
 _classmethod_isabstract = _classmethod_isabstract  # noqa: F821
 _code_check = _code_check  # noqa: F821
 _code_guard = _code_guard  # noqa: F821
+_code_set_posonlyargcount = _code_set_posonlyargcount  # noqa: F821
 _compile_flags_mask = _compile_flags_mask  # noqa: F821
 _complex_check = _complex_check  # noqa: F821
 _complex_imag = _complex_imag  # noqa: F821
@@ -239,6 +240,15 @@ def _init():
 
     global _sys
     import sys as _sys
+
+
+# TODO(T59042197): Remove in favor of Python 3.8 parameter syntax
+def _positional_only(value):
+    def _positional_only_decorator(func):
+        _code_set_posonlyargcount(func.__code__, value)
+        return func
+
+    return _positional_only_decorator
 
 
 @_patch
