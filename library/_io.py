@@ -2194,12 +2194,10 @@ class StringIO(_TextIOBase):
         self._decoded_chars = ""  # buffer for text returned from decoder
         self._decoded_chars_used = 0  # offset into _decoded_chars for read()
         self._snapshot = None  # info for reconstructing decoder state
-        self._seekable = self._telling = buffer.seekable()
-        self._has_read1 = hasattr(buffer, "read1")
         self._b2cratio = 0.0
 
-        if self._seekable and self._encoder:
-            position = self.buffer.tell()
+        if self._encoder:
+            position = self._buffer.tell()
             if position != 0:
                 self._encoder.setstate(0)
 
@@ -2215,7 +2213,6 @@ class StringIO(_TextIOBase):
             self.seek(0)
 
     def __next__(self):
-        self._telling = False
         line = self.readline()
         if not _str_check(line):
             raise IOError(
@@ -2224,15 +2221,11 @@ class StringIO(_TextIOBase):
             )
         if not line:
             self._snapshot = None
-            self._telling = self._seekable
             raise StopIteration
         return line
 
     def __repr__(self):
         return f"<_io.StringIO object at {_address(self):#x}>"
-
-    def detach(self):
-        self._unsupported("detach")
 
     @property
     def encoding(self):
@@ -2243,12 +2236,11 @@ class StringIO(_TextIOBase):
         return None
 
     def getvalue(self):
-        self.flush()
         decoder = self._decoder or self._get_decoder()
         old_state = decoder.getstate()
         decoder.reset()
         try:
-            return decoder.decode(self.buffer.getvalue(), final=True)
+            return decoder.decode(self._buffer.getvalue(), final=True)
         finally:
             decoder.setstate(old_state)
 
@@ -2310,24 +2302,20 @@ class StringIO(_TextIOBase):
         if self._decoder is None:
             raise UnsupportedOperation("not readable")
 
-        if self._telling:
-            # To prepare for tell(), we need to snapshot a point in the
-            # file where the decoder's input buffer is empty.
+        # To prepare for tell(), we need to snapshot a point in the
+        # file where the decoder's input buffer is empty.
 
-            dec_buffer, dec_flags = self._decoder.getstate()
-            # Given this, we know there was a valid snapshot point
-            # len(dec_buffer) bytes ago with decoder state (b'', dec_flags).
-            if not _bytes_check(dec_buffer):
-                raise TypeError(
-                    "illegal decoder state: the first item should be a bytes "
-                    f"object, not '{_type(dec_buffer).__name__}'"
-                )
+        dec_buffer, dec_flags = self._decoder.getstate()
+        # Given this, we know there was a valid snapshot point
+        # len(dec_buffer) bytes ago with decoder state (b'', dec_flags).
+        if not _bytes_check(dec_buffer):
+            raise TypeError(
+                "illegal decoder state: the first item should be a bytes "
+                f"object, not '{_type(dec_buffer).__name__}'"
+            )
 
         # Read a chunk, decode it, and put the result in self._decoded_chars.
-        if self._has_read1:
-            input_chunk = self.buffer.read1(self._CHUNK_SIZE)
-        else:
-            input_chunk = self.buffer.read(self._CHUNK_SIZE)
+        input_chunk = self._buffer.read1(self._CHUNK_SIZE)
         eof = not input_chunk
         decoded_chars = self._decoder.decode(input_chunk, eof)
         self._set_decoded_chars(decoded_chars)
@@ -2336,10 +2324,9 @@ class StringIO(_TextIOBase):
         else:
             self._b2cratio = 0.0
 
-        if self._telling:
-            # At the snapshot point, len(dec_buffer) bytes before the read,
-            # the next input to be decoded is dec_buffer + input_chunk.
-            self._snapshot = (dec_flags, dec_buffer + input_chunk)
+        # At the snapshot point, len(dec_buffer) bytes before the read,
+        # the next input to be decoded is dec_buffer + input_chunk.
+        self._snapshot = (dec_flags, dec_buffer + input_chunk)
 
         return not eof
 
@@ -2362,39 +2349,17 @@ class StringIO(_TextIOBase):
         need_eof, chars_to_skip = divmod(rest, 1 << 64)
         return position, dec_flags, bytes_to_feed, need_eof, chars_to_skip
 
-    @property
-    def buffer(self):
-        return self._buffer
-
     def close(self):
         if not self.closed:
-            try:
-                self.flush()
-            finally:
-                self._buffer.close()
+            self._buffer.close()
 
     @property
     def closed(self):
         return self._buffer.closed
 
-    def fileno(self):
-        return self._buffer.fileno()
-
-    def flush(self):
-        self._checkClosed()
-        self.buffer.flush()
-        self._telling = self._seekable
-
-    def isatty(self):
-        return self.buffer.isatty()
-
     @property
     def line_buffering(self):
         return self._line_buffering
-
-    @property
-    def name(self):
-        return self._buffer.name
 
     @property
     def newlines(self):
@@ -2530,7 +2495,6 @@ class StringIO(_TextIOBase):
                 f"an integer is required (got type {_type(whence).__name__})"
             )
         self._checkClosed()
-        self._checkSeekable("underlying stream is not seekable")
 
         if whence == 1:  # seek relative to current position
             if cookie != 0:
@@ -2542,8 +2506,7 @@ class StringIO(_TextIOBase):
         elif whence == 2:  # seek relative to end of file
             if cookie != 0:
                 raise UnsupportedOperation("can't do nonzero end-relative seeks")
-            self.flush()
-            position = self.buffer.seek(0, 2)
+            position = self._buffer.seek(0, 2)
             self._set_decoded_chars("")
             self._snapshot = None
             if self._decoder:
@@ -2554,14 +2517,13 @@ class StringIO(_TextIOBase):
             raise ValueError(f"invalid whence ({whence}, should be 0, 1 or 2)")
         if cookie < 0:
             raise ValueError(f"negative seek position {cookie!r}")
-        self.flush()
 
         # The strategy of seek() is to go back to the safe start point
         # and replay the effect of read(chars_to_skip) from there.
         unpacked = self._unpack_cookie(cookie)
         start_pos, dec_flags, bytes_to_feed, need_eof, chars_to_skip = unpacked
         # Seek back to the safe start point.
-        self.buffer.seek(start_pos)
+        self._buffer.seek(start_pos)
         self._set_decoded_chars("")
         self._snapshot = None
 
@@ -2575,7 +2537,7 @@ class StringIO(_TextIOBase):
 
         if chars_to_skip:
             # Just like _read_chunk, feed the decoder and save a snapshot.
-            input_chunk = self.buffer.read(bytes_to_feed)
+            input_chunk = self._buffer.read(bytes_to_feed)
             self._set_decoded_chars(self._decoder.decode(input_chunk, need_eof))
             self._snapshot = (dec_flags, input_chunk)
 
@@ -2589,11 +2551,7 @@ class StringIO(_TextIOBase):
 
     def tell(self):  # noqa: C901
         self._checkClosed()
-        self._checkSeekable("underlying stream is not seekable")
-        if not self._telling:
-            raise OSError("telling position disabled by next() call")
-        self.flush()
-        position = self.buffer.tell()
+        position = self._buffer.tell()
         decoder = self._decoder
         if decoder is None or self._snapshot is None:
             if self._decoded_chars:
@@ -2688,8 +2646,7 @@ class StringIO(_TextIOBase):
             decoder.setstate(saved_state)
 
     def truncate(self, pos=None):
-        self.flush()
-        return self.buffer.truncate(pos)
+        return self._buffer.truncate(pos)
 
     def write(self, text):
         if not _str_check(text):
@@ -2701,9 +2658,7 @@ class StringIO(_TextIOBase):
             text = text.replace("\n", self._writenl)
         encoder = self._encoder
         b = encoder.encode(text)
-        self.buffer.write(b)
-        if self._line_buffering and (haslf or "\r" in text):
-            self.flush()
+        self._buffer.write(b)
         self._set_decoded_chars("")
         self._snapshot = None
         if self._decoder:

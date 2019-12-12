@@ -3481,8 +3481,6 @@ class RawStringIO : public RawUnderTextIOBase {
   void setEncoding(RawObject encoding) const;
   RawObject errors() const;
   void setErrors(RawObject errors) const;
-  RawObject hasRead1() const;
-  void setHasRead1(RawObject has_read1) const;
   RawObject lineBuffering() const;
   void setLineBuffering(RawObject line_buffering) const;
   RawObject readnl() const;
@@ -3491,12 +3489,8 @@ class RawStringIO : public RawUnderTextIOBase {
   void setReadtranslate(RawObject readtranslate) const;
   RawObject readuniversal() const;
   void setReaduniversal(RawObject readuniversal) const;
-  RawObject seekable() const;
-  void setSeekable(RawObject seekable) const;
   RawObject snapshot() const;
   void setSnapshot(RawObject snapshot) const;
-  RawObject telling() const;
-  void setTelling(RawObject telling) const;
   RawObject writenl() const;
   void setWritenl(RawObject writenl) const;
   RawObject writetranslate() const;
@@ -3515,15 +3509,12 @@ class RawStringIO : public RawUnderTextIOBase {
   static const int kEncoderOffset = kDecoderOffset + kPointerSize;
   static const int kEncodingOffset = kEncoderOffset + kPointerSize;
   static const int kErrorsOffset = kEncodingOffset + kPointerSize;
-  static const int kHasRead1Offset = kErrorsOffset + kPointerSize;
-  static const int kLineBufferingOffset = kHasRead1Offset + kPointerSize;
+  static const int kLineBufferingOffset = kErrorsOffset + kPointerSize;
   static const int kReadnlOffset = kLineBufferingOffset + kPointerSize;
   static const int kReadtranslateOffset = kReadnlOffset + kPointerSize;
   static const int kReaduniversalOffset = kReadtranslateOffset + kPointerSize;
-  static const int kSeekableOffset = kReaduniversalOffset + kPointerSize;
-  static const int kSnapshotOffset = kSeekableOffset + kPointerSize;
-  static const int kTellingOffset = kSnapshotOffset + kPointerSize;
-  static const int kWritenlOffset = kTellingOffset + kPointerSize;
+  static const int kSnapshotOffset = kReaduniversalOffset + kPointerSize;
+  static const int kWritenlOffset = kSnapshotOffset + kPointerSize;
   static const int kWritetranslateOffset = kWritenlOffset + kPointerSize;
   static const int kDictOffset = kWritetranslateOffset + kPointerSize;
   static const int kSize = kDictOffset + kPointerSize;
@@ -6863,14 +6854,6 @@ inline void RawStringIO::setErrors(RawObject errors) const {
   instanceVariableAtPut(kErrorsOffset, errors);
 }
 
-inline RawObject RawStringIO::hasRead1() const {
-  return instanceVariableAt(kHasRead1Offset);
-}
-
-inline void RawStringIO::setHasRead1(RawObject has_read1) const {
-  instanceVariableAtPut(kHasRead1Offset, has_read1);
-}
-
 inline RawObject RawStringIO::lineBuffering() const {
   return instanceVariableAt(kLineBufferingOffset);
 }
@@ -6903,28 +6886,12 @@ inline void RawStringIO::setReaduniversal(RawObject readuniversal) const {
   instanceVariableAtPut(kReaduniversalOffset, readuniversal);
 }
 
-inline RawObject RawStringIO::seekable() const {
-  return instanceVariableAt(kSeekableOffset);
-}
-
-inline void RawStringIO::setSeekable(RawObject seekable) const {
-  instanceVariableAtPut(kSeekableOffset, seekable);
-}
-
 inline RawObject RawStringIO::snapshot() const {
   return instanceVariableAt(kSnapshotOffset);
 }
 
 inline void RawStringIO::setSnapshot(RawObject snapshot) const {
   instanceVariableAtPut(kSnapshotOffset, snapshot);
-}
-
-inline RawObject RawStringIO::telling() const {
-  return instanceVariableAt(kTellingOffset);
-}
-
-inline void RawStringIO::setTelling(RawObject telling) const {
-  instanceVariableAtPut(kTellingOffset, telling);
 }
 
 inline RawObject RawStringIO::writenl() const {
