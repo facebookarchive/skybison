@@ -1027,36 +1027,41 @@ RawObject Interpreter::sequenceContains(Thread* thread, Frame* frame,
 
 HANDLER_INLINE USED RawObject Interpreter::isTrue(Thread* thread,
                                                   RawObject value_obj) {
-  // In Django100, these are the most common immediate cases (bool is 90%,
-  // smallint is 2%, NoneType is 2%, smallstr is 1%) and they are cheap to
-  // check since they are pointer comparisons against constants.
-  // The ordering of these cases is subject to change once we are measuring
-  // against a different benchmrak with a potentially different type profile.
   if (value_obj == Bool::trueObj()) return Bool::trueObj();
   if (value_obj == Bool::falseObj()) return Bool::falseObj();
-  if (value_obj == SmallInt::fromWord(0)) return Bool::falseObj();
-  if (value_obj == NoneType::object()) return Bool::falseObj();
-  if (value_obj == Str::empty()) return Bool::falseObj();
-  if (value_obj == Bytes::empty()) return Bool::falseObj();
   return isTrueSlowPath(thread, value_obj);
 }
 
 RawObject Interpreter::isTrueSlowPath(Thread* thread, RawObject value_obj) {
-  if (value_obj.isSmallInt() || value_obj.isSmallStr() ||
-      value_obj.isSmallBytes()) {
-    // Non-zero smallints, non-empty smallstrs, and non-empty smallbytes are
-    // truthy
-    return Bool::trueObj();
-  }
-  if (value_obj.isLargeStr() || value_obj.isLargeBytes()) {
-    // largestr and largebytes imply non-empty, so they are truthy
-    return Bool::trueObj();
-  }
-  if (value_obj.isTuple()) {
-    return Bool::fromBool(Tuple::cast(value_obj).length());
-  }
-  if (value_obj.isList()) {
-    return Bool::fromBool(List::cast(value_obj).numItems());
+  switch (value_obj.layoutId()) {
+    case LayoutId::kNoneType:
+      return Bool::falseObj();
+    case LayoutId::kEllipsis:
+    case LayoutId::kFunction:
+    case LayoutId::kLargeBytes:
+    case LayoutId::kLargeInt:
+    case LayoutId::kLargeStr:
+    case LayoutId::kModule:
+    case LayoutId::kNotImplementedType:
+    case LayoutId::kType:
+      return Bool::trueObj();
+    case LayoutId::kDict:
+      return Bool::fromBool(Dict::cast(value_obj).numItems() > 0);
+    case LayoutId::kList:
+      return Bool::fromBool(List::cast(value_obj).numItems() > 0);
+    case LayoutId::kSet:
+    case LayoutId::kFrozenSet:
+      return Bool::fromBool(RawSetBase::cast(value_obj).numItems() > 0);
+    case LayoutId::kSmallBytes:
+      return Bool::fromBool(value_obj != Bytes::empty());
+    case LayoutId::kSmallInt:
+      return Bool::fromBool(value_obj != SmallInt::fromWord(0));
+    case LayoutId::kSmallStr:
+      return Bool::fromBool(value_obj != Str::empty());
+    case LayoutId::kTuple:
+      return Bool::fromBool(Tuple::cast(value_obj).length() > 0);
+    default:
+      break;
   }
   HandleScope scope(thread);
   Object value(&scope, value_obj);
