@@ -149,6 +149,42 @@ class BoundMethodTests(unittest.TestCase):
 
 
 class ByteArrayTests(unittest.TestCase):
+    def test_dunder_contains_with_non_bytearray_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            bytearray.__contains__("not_bytearray", 123)
+
+    def test_dunder_contains_with_element_in_bytearray_returns_true(self):
+        self.assertTrue(bytearray(b"abc").__contains__(ord("a")))
+
+    def test_dunder_contains_with_element_not_in_bytearray_returns_false(self):
+        self.assertFalse(bytearray(b"abc").__contains__(ord("z")))
+
+    def test_dunder_contains_calls_dunder_index(self):
+        class C:
+            __index__ = Mock(name="__index__", return_value=ord("a"))
+
+        c = C()
+        self.assertTrue(bytearray(b"abc").__contains__(c))
+        c.__index__.assert_called_once()
+
+    def test_dunder_contains_calls_dunder_index_before_checking_byteslike(self):
+        class C(bytes):
+            __index__ = Mock(name="__index__", return_value=ord("a"))
+
+        c = C(b"q")
+        self.assertTrue(bytearray(b"abc").__contains__(c))
+        c.__index__.assert_called_once()
+
+    def test_dunder_contains_ignores_errors_from_dunder_index(self):
+        class C:
+            __index__ = Mock(name="__index__", side_effect=MemoryError("foo"))
+
+        c = C()
+        container = bytearray(b"abc")
+        with self.assertRaises(TypeError):
+            container.__contains__(c)
+        c.__index__.assert_called_once()
+
     def test_delitem_with_out_of_bounds_index_raises_index_error(self):
         result = bytearray(b"")
         with self.assertRaises(IndexError) as context:

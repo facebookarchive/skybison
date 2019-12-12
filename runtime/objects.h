@@ -470,6 +470,10 @@ class RawBytes : public RawObject {
   // Does not guarantee to return -1, 0, or 1.
   word compare(RawBytes that) const;
 
+  // Returns the index at which value is found in this[start:start+length] (not
+  // including end), or -1 if not found.
+  word findByte(byte value, word start, word length) const;
+
   RAW_OBJECT_COMMON(Bytes);
 };
 
@@ -687,6 +691,10 @@ class RawSmallBytes : public RawObject {
   uint32_t uint32At(word index) const;
   // Rewrite the tag byte to make UTF-8 conformant bytes look like a Str
   RawObject becomeStr() const;
+
+  // Returns the index at which value is found in this[start:start+length] (not
+  // including end), or -1 if not found.
+  word findByte(byte value, word start, word length) const;
 
   word hash() const;
 
@@ -1324,6 +1332,10 @@ class RawLargeBytes : public RawArrayBase {
 
   // Rewrite the header to make UTF-8 conformant bytes look like a Str
   RawObject becomeStr() const;
+
+  // Returns the index at which value is found in this[start:start+length] (not
+  // including end), or -1 if not found.
+  word findByte(byte value, word start, word length) const;
 
   RAW_OBJECT_COMMON(LargeBytes);
 
@@ -3987,6 +3999,13 @@ T RawObject::rawCast() const {
 }
 
 // RawBytes
+
+inline word RawBytes::findByte(byte value, word start, word length) const {
+  if (isSmallBytes()) {
+    return RawSmallBytes::cast(*this).findByte(value, start, length);
+  }
+  return RawLargeBytes::cast(*this).findByte(value, start, length);
+}
 
 inline RawBytes RawBytes::empty() {
   return RawSmallBytes::empty().rawCast<RawBytes>();

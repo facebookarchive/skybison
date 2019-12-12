@@ -21,6 +21,8 @@ class UnderBuiltinsModule {
                                        word nargs);
   static RawObject underBytearrayClear(Thread* thread, Frame* frame,
                                        word nargs);
+  static RawObject underBytearrayContains(Thread* thread, Frame* frame,
+                                          word nargs);
   static RawObject underBytearrayDelitem(Thread* thread, Frame* frame,
                                          word nargs);
   static RawObject underBytearrayDelslice(Thread* thread, Frame* frame,

@@ -116,6 +116,14 @@ word Utils::memoryFind(byte* haystack, word haystack_len, byte* needle,
   return reinterpret_cast<byte*>(result) - haystack;
 }
 
+word Utils::memoryFindChar(byte* haystack, byte needle, word length) {
+  DCHECK(haystack != nullptr, "haystack cannot be null");
+  DCHECK(length >= 0, "haystack length must be nonnegative");
+  byte* result = reinterpret_cast<byte*>(::memchr(haystack, needle, length));
+  if (result == nullptr) return -1;
+  return result - haystack;
+}
+
 word Utils::memoryFindCharReverse(byte* haystack, byte needle, word length) {
   DCHECK(haystack != nullptr, "haystack cannot be null");
   DCHECK(length >= 0, "haystack length must be nonnegative");

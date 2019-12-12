@@ -151,6 +151,7 @@ class Runtime;
   V(UnderBuiltins, "_builtins")                                                \
   V(UnderBytearrayCheck, "_bytearray_check")                                   \
   V(UnderBytearrayClear, "_bytearray_clear")                                   \
+  V(UnderBytearrayContains, "_bytearray_contains")                             \
   V(UnderBytearrayDelitem, "_bytearray_delitem")                               \
   V(UnderBytearrayDelslice, "_bytearray_delslice")                             \
   V(UnderBytearrayGetitem, "_bytearray_getitem")                               \

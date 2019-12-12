@@ -50,6 +50,62 @@ TEST_F(SmallBytesTest, CopyToStartAtCopiesToDestinationStartingAtIndex) {
   EXPECT_STREQ(reinterpret_cast<char*>(result), "ello");
 }
 
+TEST_F(SmallBytesTest, FindByteWithZeroLengthReturnsNegativeOne) {
+  byte src_bytes[] = "hello";
+  HandleScope scope(thread_);
+  SmallBytes bytes(&scope, runtime_.newBytesWithAll(src_bytes));
+  EXPECT_EQ(bytes.findByte('h', 0, 0), -1);
+}
+
+TEST_F(SmallBytesTest, FindByteWithEndBeforeByteReturnsNegativeOne) {
+  byte src_bytes[] = "hello";
+  HandleScope scope(thread_);
+  SmallBytes bytes(&scope, runtime_.newBytesWithAll(src_bytes));
+  EXPECT_EQ(bytes.findByte('o', 1, 2), -1);
+}
+
+TEST_F(SmallBytesTest, FindByteWithByteNotInBytesReturnsNegativeOne) {
+  byte src_bytes[] = "hello";
+  HandleScope scope(thread_);
+  SmallBytes bytes(&scope, runtime_.newBytesWithAll(src_bytes));
+  EXPECT_EQ(bytes.findByte('x', 0, bytes.length()), -1);
+}
+
+TEST_F(SmallBytesTest, FindByteWithByteInBytesReturnsIndex) {
+  byte src_bytes[] = "hello";
+  HandleScope scope(thread_);
+  SmallBytes bytes(&scope, runtime_.newBytesWithAll(src_bytes));
+  EXPECT_EQ(bytes.findByte('o', 0, bytes.length()), 4);
+}
+
+TEST_F(LargeBytesTest, FindByteWithZerolengthReturnsNegativeOne) {
+  byte src_bytes[] = "hello world this is patrick";
+  HandleScope scope(thread_);
+  LargeBytes bytes(&scope, runtime_.newBytesWithAll(src_bytes));
+  EXPECT_EQ(bytes.findByte('h', 0, 0), -1);
+}
+
+TEST_F(LargeBytesTest, FindByteWithEndBeforeByteReturnsNegativeOne) {
+  byte src_bytes[] = "hello world";
+  HandleScope scope(thread_);
+  LargeBytes bytes(&scope, runtime_.newBytesWithAll(src_bytes));
+  EXPECT_EQ(bytes.findByte('d', 3, 5), -1);
+}
+
+TEST_F(LargeBytesTest, FindByteWithByteNotInBytesReturnsNegativeOne) {
+  byte src_bytes[] = "hello world";
+  HandleScope scope(thread_);
+  LargeBytes bytes(&scope, runtime_.newBytesWithAll(src_bytes));
+  EXPECT_EQ(bytes.findByte('x', 0, bytes.length()), -1);
+}
+
+TEST_F(LargeBytesTest, FindByteWithByteInBytesReturnsIndex) {
+  byte src_bytes[] = "hello world";
+  HandleScope scope(thread_);
+  LargeBytes bytes(&scope, runtime_.newBytesWithAll(src_bytes));
+  EXPECT_EQ(bytes.findByte('o', 0, bytes.length()), 4);
+}
+
 TEST_F(LargeBytesTest, CopyToStartAtCopiesToDestinationStartingAtIndex) {
   byte src_bytes[] = "hello world this is patrick";
   HandleScope scope(thread_);

@@ -85,6 +85,53 @@ TEST_F(UnderBuiltinsModuleTest, UnderBytearrayClearSetsLengthToZero) {
   EXPECT_EQ(array.numItems(), 0);
 }
 
+TEST_F(UnderBuiltinsModuleTest,
+       UnderBytearrayContainsWithEmptyBytearrayReturnsFalse) {
+  HandleScope scope(thread_);
+  ByteArray array(&scope, runtime_.newByteArray());
+  ASSERT_EQ(array.numItems(), 0);
+  Object key(&scope, SmallInt::fromWord('a'));
+  EXPECT_EQ(runBuiltin(UnderBuiltinsModule::underBytearrayContains, array, key),
+            Bool::falseObj());
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderBytearrayContainsWithIntBiggerThanCharRaisesValueError) {
+  HandleScope scope(thread_);
+  ByteArray array(&scope, runtime_.newByteArray());
+  const byte byte_array[] = {'1', '2', '3'};
+  runtime_.byteArrayExtend(thread_, array, byte_array);
+  ASSERT_EQ(array.numItems(), 3);
+  Object key(&scope, SmallInt::fromWord(256));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(UnderBuiltinsModule::underBytearrayContains, array, key),
+      LayoutId::kValueError, "byte must be in range(0, 256)"));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderBytearrayContainsWithByteInBytearrayReturnsTrue) {
+  HandleScope scope(thread_);
+  ByteArray array(&scope, runtime_.newByteArray());
+  const byte byte_array[] = {'1', '2', '3'};
+  runtime_.byteArrayExtend(thread_, array, byte_array);
+  ASSERT_EQ(array.numItems(), 3);
+  Object key(&scope, SmallInt::fromWord('2'));
+  EXPECT_EQ(runBuiltin(UnderBuiltinsModule::underBytearrayContains, array, key),
+            Bool::trueObj());
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderBytearrayContainsWithByteNotInBytearrayReturnsFalse) {
+  HandleScope scope(thread_);
+  ByteArray array(&scope, runtime_.newByteArray());
+  const byte byte_array[] = {'1', '2', '3'};
+  runtime_.byteArrayExtend(thread_, array, byte_array);
+  ASSERT_EQ(array.numItems(), 3);
+  Object key(&scope, SmallInt::fromWord('x'));
+  EXPECT_EQ(runBuiltin(UnderBuiltinsModule::underBytearrayContains, array, key),
+            Bool::falseObj());
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderBytearrayDelitemDeletesItemAtIndex) {
   HandleScope scope(thread_);
   ByteArray self(&scope, runtime_.newByteArray());

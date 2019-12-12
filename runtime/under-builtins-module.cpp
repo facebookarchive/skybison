@@ -79,6 +79,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderBoolCheck, underBoolCheck},
     {SymbolId::kUnderBytearrayCheck, underBytearrayCheck},
     {SymbolId::kUnderBytearrayClear, underBytearrayClear},
+    {SymbolId::kUnderBytearrayContains, underBytearrayContains},
     {SymbolId::kUnderBytearrayDelitem, underBytearrayDelitem},
     {SymbolId::kUnderBytearrayDelslice, underBytearrayDelslice},
     {SymbolId::kUnderBytearrayGetitem, underBytearrayGetitem},
@@ -426,6 +427,30 @@ RawObject UnderBuiltinsModule::underBytearrayClear(Thread* thread, Frame* frame,
   ByteArray self(&scope, args.get(0));
   self.downsize(0);
   return NoneType::object();
+}
+
+RawObject UnderBuiltinsModule::underBytearrayContains(Thread* thread,
+                                                      Frame* frame,
+                                                      word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kBytearray);
+  }
+  Object key_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfInt(*key_obj)) {
+    return Unbound::object();
+  }
+  OptInt<byte> key_opt = intUnderlying(*key_obj).asInt<byte>();
+  if (key_opt.error != CastError::None) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "byte must be in range(0, 256)");
+  }
+  ByteArray self(&scope, *self_obj);
+  MutableBytes bytes(&scope, self.bytes());
+  return Bool::fromBool(bytes.findByte(key_opt.value, 0, self.numItems()) >= 0);
 }
 
 RawObject UnderBuiltinsModule::underBytearrayCheck(Thread* thread, Frame* frame,

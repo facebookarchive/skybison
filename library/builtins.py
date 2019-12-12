@@ -11,6 +11,7 @@ _bool_check = _bool_check  # noqa: F821
 _bound_method = _bound_method  # noqa: F821
 _bytearray_check = _bytearray_check  # noqa: F821
 _bytearray_clear = _bytearray_clear  # noqa: F821
+_bytearray_contains = _bytearray_contains  # noqa: F821
 _bytearray_delitem = _bytearray_delitem  # noqa: F821
 _bytearray_delslice = _bytearray_delslice  # noqa: F821
 _bytearray_getitem = _bytearray_getitem  # noqa: F821
@@ -1467,6 +1468,15 @@ class bytearray(bootstrap=True):
         _unimplemented()
 
     def __contains__(self, key):
+        result = _bytearray_contains(self, key)
+        if result is not _Unbound:
+            return result
+        try:
+            return _bytearray_contains(self, _index(key))
+        except BaseException:
+            pass
+        _byteslike_guard(key)
+        # TODO(T59013969): Add support for bytearray.__contains__(byteslike)
         _unimplemented()
 
     def __delitem__(self, key):

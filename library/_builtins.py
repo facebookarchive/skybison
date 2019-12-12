@@ -33,6 +33,11 @@ def _bytearray_clear(obj):
 
 
 @_patch
+def _bytearray_contains(obj, key):
+    pass
+
+
+@_patch
 def _bytearray_delitem(self, key):
     pass
 

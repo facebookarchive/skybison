@@ -66,6 +66,25 @@ TEST(UtilsTestNoFixture, MemoryFindWithNeedleNotInHaystackReturnsNegativeOne) {
   EXPECT_EQ(Utils::memoryFind(haystack, 5, needle, 2), -1);
 }
 
+TEST(UtilsTestNoFixture, MemoryFindCharWithEmptyHaystackReturnsNegativeOne) {
+  byte haystack[] = "hello";
+  int needle = 'h';
+  EXPECT_EQ(Utils::memoryFindChar(haystack, needle, 0), -1);
+}
+
+TEST(UtilsTestNoFixture, MemoryFindCharWithNeedleInHaystackReturnsLocation) {
+  byte haystack[] = "hello";
+  int needle = 'h';
+  EXPECT_EQ(Utils::memoryFindChar(haystack, needle, 5), 0);
+}
+
+TEST(UtilsTestNoFixture,
+     MemoryFindCharWithNeedleInHaystackReturnsLeftmostLocation) {
+  byte haystack[] = "helloh";
+  int needle = 'h';
+  EXPECT_EQ(Utils::memoryFindChar(haystack, needle, 6), 0);
+}
+
 TEST(UtilsTestNoFixture,
      MemoryFindCharReverseWithEmptyHaystackReturnsNegativeOne) {
   byte haystack[] = "hello";

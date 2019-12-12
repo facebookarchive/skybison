@@ -15,6 +15,15 @@ RawObject RawSmallBytes::becomeStr() const {
   return RawObject{raw() ^ kSmallBytesTag ^ kSmallStrTag};
 }
 
+word RawSmallBytes::findByte(byte value, word start, word length) const {
+  DCHECK_BOUND(start, this->length());
+  DCHECK_BOUND(start + length, this->length());
+  for (word i = 0; i < length; i++) {
+    if (byteAt(start + i) == value) return start + i;
+  }
+  return -1;
+}
+
 RawSmallBytes RawSmallBytes::fromBytes(View<byte> data) {
   word length = data.length();
   DCHECK_BOUND(length, kMaxLength);
@@ -205,6 +214,13 @@ RawObject RawLargeBytes::becomeStr() const {
   DCHECK(bytesIsValidStr(RawBytes::cast(*this)), "must contain valid utf-8");
   setHeader(header().withLayoutId(LayoutId::kLargeStr));
   return *this;
+}
+
+word RawLargeBytes::findByte(byte value, word start, word length) const {
+  DCHECK_BOUND(start, this->length());
+  DCHECK_BOUND(start + length, this->length());
+  return Utils::memoryFindChar(reinterpret_cast<byte*>(address() + start),
+                               value, length);
 }
 
 bool RawLargeBytes::isASCII() const {
