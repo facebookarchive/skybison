@@ -4319,24 +4319,28 @@ class module_proxy(bootstrap=True):
             return default
         return value
 
-    def update(self, other=_Unbound):
+    @_positional_only(2)
+    def update(self, other=_Unbound, **kwargs):
         _module_proxy_guard(self)
-        if other is _Unbound:
-            return
-        if hasattr(other, "keys"):
+        if _dict_check_exact(other):
+            for key, value in other.items():
+                _module_proxy_setitem(self, key, value)
+        elif hasattr(other, "keys"):
             for key in other.keys():
                 _module_proxy_setitem(self, key, other[key])
-            return
-        num_items = 0
-        for x in other:
-            item = tuple(x)
-            if _tuple_len(item) != 2:
-                raise ValueError(
-                    f"dictionary update sequence element #{num_items} has length "
-                    f"{_tuple_len(item)}; 2 is required"
-                )
-            _module_proxy_setitem(self, *item)
-            num_items += 1
+        elif other is not _Unbound:
+            num_items = 0
+            for x in other:
+                item = tuple(x)
+                if _tuple_len(item) != 2:
+                    raise ValueError(
+                        f"dictionary update sequence element #{num_items} has "
+                        f"length {_tuple_len(item)}; 2 is required"
+                    )
+                _module_proxy_setitem(self, *item)
+                num_items += 1
+        for key, value in kwargs.items():
+            _module_proxy_setitem(self, key, value)
 
     def values(self):
         _module_proxy_guard(self)

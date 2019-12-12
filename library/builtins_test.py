@@ -6294,6 +6294,10 @@ def foo():
         with self.assertRaises(TypeError):
             type(self.module_proxy).update(None)
 
+    def test_update_with_multiple_positional_arguments_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            self.module_proxy.update({"x": 40}, {"y": 50})
+
     def test_update_with_dict_updates_module_proxy_and_module(self):
         d = {"x": 40, "y": 50}
         self.assertIsNone(self.module_proxy.update(d))
@@ -6326,6 +6330,36 @@ def foo():
             "dictionary update sequence element #1 has length 3; 2 is required",
             str(context.exception),
         )
+
+    def test_update_with_kwargs_updates_module_proxy_and_module(self):
+        self.assertNotIn("x", self.module_proxy)
+        self.assertNotIn("y", self.module_proxy)
+        self.assertIsNone(self.module_proxy.update(y=50, x=40))
+        self.assertEqual(self.module_proxy.get("x"), 40)
+        self.assertEqual(self.module_proxy.get("y"), 50)
+        self.assertEqual(self.module.x, 40)
+        self.assertEqual(self.module.y, 50)
+
+    def test_update_with_dict_and_kwargs_updates_module_proxy_and_module(self):
+        self.assertNotIn("x", self.module_proxy)
+        self.assertNotIn("y", self.module_proxy)
+        self.assertIsNone(self.module_proxy.update({"y": 50}, x=40))
+        self.assertEqual(self.module_proxy.get("x"), 40)
+        self.assertEqual(self.module_proxy.get("y"), 50)
+        self.assertEqual(self.module.x, 40)
+        self.assertEqual(self.module.y, 50)
+
+    def test_update_with_dict_and_kwargs_gives_kwargs_precedence(self):
+        self.assertNotIn("y", self.module_proxy)
+        self.assertIsNone(self.module_proxy.update({"y": 50}, y=60))
+        self.assertEqual(self.module_proxy.get("y"), 60)
+        self.assertEqual(self.module.y, 60)
+
+    def test_update_with_self_in_kwargs_puts_self_in_attributes(self):
+        self.assertNotIn("self", self.module_proxy)
+        self.assertIsNone(self.module_proxy.update(self=60))
+        self.assertEqual(self.module_proxy.get("self"), 60)
+        self.assertEqual(self.module.self, 60)
 
     def test_values_with_non_module_proxy_raises_type_error(self):
         with self.assertRaises(TypeError):
