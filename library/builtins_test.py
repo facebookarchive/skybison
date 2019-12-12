@@ -7996,6 +7996,35 @@ class StrTests(unittest.TestCase):
         self.assertEqual(s[-20:5], "hello")
         self.assertEqual(s[6:42], "world")
 
+    def test_title_with_non_str_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            str.title(123)
+
+    def test_title_with_empty_string_returns_itself(self):
+        a = ""
+        self.assertIs(a.title(), "")
+
+    def test_title_with_non_empty_string_returns_new_string(self):
+        a = "Hello World"
+        result = a.title()
+        self.assertEqual(a, result)
+        self.assertIsNot(a, result)
+
+    def test_title_with_single_lowercase_word_returns_titlecased(self):
+        self.assertEqual("abc".title(), "Abc")
+
+    def test_title_with_single_uppercase_word_returns_titlecased(self):
+        self.assertEqual("ABC".title(), "Abc")
+
+    def test_title_with_multiple_words_returns_titlecased(self):
+        self.assertEqual("foo bar baz".title(), "Foo Bar Baz")
+
+    def test_title_with_words_with_special_chars_eturns_titlecased(self):
+        self.assertEqual(
+            "they're bill's friends from the UK".title(),
+            "They'Re Bill'S Friends From The Uk",
+        )
+
     def test_translate_without_dict(self):
         with self.assertRaises(TypeError):
             "abc".translate(123)

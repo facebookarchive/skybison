@@ -836,6 +836,7 @@ class Runtime;
   V(Throw, "throw")                                                            \
   V(Time, "time")                                                              \
   V(TimeoutError, "TimeoutError")                                              \
+  V(Title, "title")                                                            \
   V(ToBytes, "to_bytes")                                                       \
   V(Traceback, "traceback")                                                    \
   V(Translate, "translate")                                                    \

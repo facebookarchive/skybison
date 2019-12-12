@@ -5283,7 +5283,7 @@ class str(bootstrap=True):
         _unimplemented()
 
     def title(self):
-        _unimplemented()
+        pass
 
     def translate(self, table):
         _dict_guard(table)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "globals.h"
+#include "utils.h"
 
 namespace py {
 
@@ -53,6 +54,8 @@ inline bool isSpace(int32_t cp) {
   }
 }
 
+inline bool isASCII(byte b) { return b <= kMaxASCII; }
+
 inline bool isDigitASCII(byte b) { return '0' <= b && b <= '9'; }
 
 inline bool isDecimalASCII(byte b) { return isDigitASCII(b); }
@@ -85,6 +88,30 @@ inline bool isPrintableUnicode(int32_t cp) {
 
 inline bool isUTF8Continuation(byte b) {
   return (b & 0xC0) == 0x80;  // Test for 0b10xxxxxx
+}
+
+inline bool isAlpha(byte b) {
+  if (isASCII(b)) return isAlphaASCII(b);
+  // TODO(T57791326) support non-ASCII
+  UNIMPLEMENTED("non-ASCII characters");
+}
+
+inline int32_t toLowercase(int32_t ch) {
+  if (isASCII(ch)) {
+    if (isUpperASCII(ch)) ch -= ('A' - 'a');
+    return ch;
+  }
+  // TODO(T57791326) support non-ASCII
+  UNIMPLEMENTED("non-ASCII characters");
+}
+
+inline int32_t toTitlecase(int32_t ch) {
+  if (isASCII(ch)) {
+    if (isLowerASCII(ch)) ch += ('A' - 'a');
+    return ch;
+  }
+  // TODO(T57791326) support non-ASCII
+  UNIMPLEMENTED("non-ASCII characters");
 }
 
 }  // namespace py

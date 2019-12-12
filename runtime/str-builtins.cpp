@@ -412,6 +412,7 @@ const BuiltinMethod StrBuiltins::kBuiltinMethods[] = {
     {SymbolId::kIsupper, isupper},
     {SymbolId::kLStrip, lstrip},
     {SymbolId::kLower, lower},
+    {SymbolId::kTitle, title},
     {SymbolId::kRStrip, rstrip},
     {SymbolId::kStrip, strip},
     {SymbolId::kUpper, upper},
@@ -804,6 +805,33 @@ RawObject StrBuiltins::lower(Thread* thread, Frame* frame, word nargs) {
       c -= 'A' - 'a';
     }
     result.byteAtPut(i, c);
+  }
+  return result.becomeStr();
+}
+
+RawObject StrBuiltins::title(Thread* thread, Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+  }
+  Str self(&scope, strUnderlying(*self_obj));
+  word length = self.charLength();
+  bool is_previous_mapped = false;
+  MutableBytes result(&scope, runtime->newMutableBytesUninitialized(length));
+  for (word i = 0; i < length; i++) {
+    byte ch = self.charAt(i);
+    byte mapped;
+    if (is_previous_mapped) {
+      mapped = toLowercase(ch);
+    } else {
+      mapped = toTitlecase(ch);
+    }
+    // TODO(...): use the Unicode database case mapping
+    is_previous_mapped = isAlpha(ch);
+    result.byteAtPut(i, mapped);
   }
   return result.becomeStr();
 }

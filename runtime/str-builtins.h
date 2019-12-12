@@ -147,6 +147,7 @@ class StrBuiltins
   static RawObject lstrip(Thread* thread, Frame* frame, word nargs);
   static RawObject rstrip(Thread* thread, Frame* frame, word nargs);
   static RawObject strip(Thread* thread, Frame* frame, word nargs);
+  static RawObject title(Thread* thread, Frame* frame, word nargs);
   static RawObject upper(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinAttribute kAttributes[];
