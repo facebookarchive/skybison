@@ -8,11 +8,13 @@
 # ``cpython``
 #   The CPython library with the modified symbols.
 
-set(CPYTHON_DIR ${CMAKE_SOURCE_DIR}/third-party/cpython)
-set(CPYTHON_GEN_DIR ${CMAKE_BINARY_DIR}/cpython)
+# Prepare build dir with CPython's directories
+file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/Modules")
+file(WRITE "${CMAKE_BINARY_DIR}/Modules/Setup.local" "Pretend Setup exists")
 
+set(CPYTHON_DIR ${CMAKE_SOURCE_DIR}/third-party/cpython)
 set(
-  CPYTHON_PUBLIC_HEADERS_SOURCES
+  CPYTHON_HEADERS_INPUT
   ${CPYTHON_DIR}/Include/Python-ast.h
   ${CPYTHON_DIR}/Include/abstract.h
   ${CPYTHON_DIR}/Include/accu.h
@@ -112,21 +114,21 @@ set(
   ${CPYTHON_DIR}/Include/weakrefobject.h)
 string(
   REGEX
-  REPLACE "(${CMAKE_SOURCE_DIR}\/)" "${CPYTHON_GEN_DIR}/"
-  CPYTHON_PUBLIC_HEADERS_OUTPUT "${CPYTHON_PUBLIC_HEADERS_SOURCES}")
+  REPLACE "(${CPYTHON_DIR}/Include\/)" "${BINARY_DIR_HEADERS}/"
+  CPYTHON_HEADERS_OUTPUT "${CPYTHON_HEADERS_INPUT}")
 add_custom_command(
   OUTPUT
-    ${CPYTHON_PUBLIC_HEADERS_OUTPUT}
+    ${CPYTHON_HEADERS_OUTPUT}
   COMMAND
     python3 util/generate_cpython_sources.py
-    -sources ${CPYTHON_PUBLIC_HEADERS_SOURCES}
-    -modified ${PYRO_PUBLIC_HEADERS_SOURCES}
+    -sources ${CPYTHON_HEADERS_INPUT}
+    -modified ${C_API_HEADERS_INPUT}
     -output_dir ${CMAKE_BINARY_DIR}
   WORKING_DIRECTORY
     ${CMAKE_SOURCE_DIR}
   DEPENDS
-    ${CPYTHON_PUBLIC_HEADERS_SOURCES}
-    ${PYRO_PUBLIC_HEADERS_SOURCES}
+    ${CPYTHON_HEADERS_INPUT}
+    ${C_API_HEADERS_INPUT}
     util/generate_cpython_sources.py
   COMMENT "Generating CPython Headers")
 
@@ -287,24 +289,23 @@ set_property(
 add_custom_target(
   cpython-sources
   DEPENDS
-  ${CPYTHON_PUBLIC_HEADERS_OUTPUT}
+  ${CPYTHON_HEADERS_OUTPUT}
   ${CPYTHON_SOURCES})
 
 find_package(Threads)
 add_library(
   cpython
   STATIC
-  ${CPYTHON_PUBLIC_HEADERS_OUTPUT}
-  ${CPYTHON_SOURCES})
+  ${CPYTHON_HEADERS_OUTPUT}
+  ${CPYTHON_SOURCES}
+  ${C_API_HEADERS_OUTPUT})
 add_dependencies(cpython cpython-sources)
 target_include_directories(
   cpython
   PUBLIC
-  ext/Include
-  ext/config
+  ${BINARY_DIR_HEADERS}
   ${CPYTHON_DIR}/Modules
   ${CPYTHON_DIR}/Modules/zlib
-  ${CPYTHON_GEN_DIR}/Include
   ${OPENSSL_INCLUDE_DIR})
 target_compile_options(
   cpython

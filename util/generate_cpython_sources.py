@@ -214,7 +214,7 @@ def output_files_to_directory(output_directory, output_file_dict):
                 continue
             output_file_path = file_path.split("ext")[-1]
 
-        output_gen_path = f"{output_directory}/cpython{output_file_path}"
+        output_gen_path = f"{output_directory}/{output_file_path}"
         if not os.path.exists(os.path.dirname(output_gen_path)):
             os.makedirs(os.path.dirname(output_gen_path))
 

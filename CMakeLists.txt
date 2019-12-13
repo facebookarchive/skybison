@@ -104,8 +104,10 @@ set(
   -fno-rtti
 )
 
+set(BINARY_DIR_HEADERS "${CMAKE_BINARY_DIR}/Include")
+file(MAKE_DIRECTORY "${BINARY_DIR_HEADERS}")
 set(
-  PYRO_PUBLIC_HEADERS_SOURCES
+  C_API_HEADERS_INPUT
   ${CMAKE_SOURCE_DIR}/capi/cpython-data.h
   ${CMAKE_SOURCE_DIR}/capi/cpython-func.h
   ${CMAKE_SOURCE_DIR}/capi/cpython-types.h
@@ -113,12 +115,23 @@ set(
   ${CMAKE_SOURCE_DIR}/ext/config/pyconfig-linux.h
   ${CMAKE_SOURCE_DIR}/ext/config/pyconfig-osx.h
   ${CMAKE_SOURCE_DIR}/ext/config/pyconfig.h)
+string(
+  REGEX
+  REPLACE "(${CMAKE_SOURCE_DIR}\/)" "${CMAKE_BINARY_DIR}/"
+  C_API_HEADERS_OUTPUT "${C_API_HEADERS_INPUT}")
+add_custom_command(
+  OUTPUT ${C_API_HEADERS_OUTPUT}
+  COMMAND
+  cmake -E copy_if_different ${C_API_HEADERS_INPUT} ${BINARY_DIR_HEADERS}
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  DEPENDS ${C_API_HEADERS_INPUT}
+  COMMENT "Generating Pyro Headers")
 
 add_library(capi-headers INTERFACE)
 target_sources(
   capi-headers
   INTERFACE
-  ${PYRO_PUBLIC_HEADERS_SOURCES})
+  ${C_API_HEADERS_OUTPUT})
 target_include_directories(
   capi-headers
   INTERFACE
