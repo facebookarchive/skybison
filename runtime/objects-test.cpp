@@ -12,7 +12,6 @@ using namespace testing;
 
 using ByteArrayTest = RuntimeFixture;
 using LargeBytesTest = RuntimeFixture;
-using MutableBytesTest = RuntimeFixture;
 using SmallBytesTest = RuntimeFixture;
 using CodeTest = RuntimeFixture;
 using ComplexTest = RuntimeFixture;
@@ -125,8 +124,9 @@ TEST_F(LargeBytesTest, CopyToStartAtCopiesToDestinationStartingAtIndex) {
 TEST_F(MutableBytesTest, ReplaceFromWithStartAtSelfNoop) {
   HandleScope scope(thread_);
   const byte src_bytes[] = "patrick";
-  MutableBytes src(&scope, runtime_.newMutableBytesUninitialized(8));
-  for (word i = 0; i < 8; i++) {
+  word src_length = ARRAYSIZE(src_bytes);
+  MutableBytes src(&scope, runtime_.newMutableBytesUninitialized(src_length));
+  for (word i = 0; i < src_length; i++) {
     src.byteAtPut(i, src_bytes[i]);
   }
   ASSERT_TRUE(isMutableBytesEqualsBytes(src, src_bytes));
@@ -137,8 +137,9 @@ TEST_F(MutableBytesTest, ReplaceFromWithStartAtSelfNoop) {
 TEST_F(MutableBytesTest, ReplaceFromWithStartAtSelfBackward) {
   HandleScope scope(thread_);
   const byte src_bytes[] = "patrick";
-  MutableBytes src(&scope, runtime_.newMutableBytesUninitialized(8));
-  for (word i = 0; i < 8; i++) {
+  word src_length = ARRAYSIZE(src_bytes);
+  MutableBytes src(&scope, runtime_.newMutableBytesUninitialized(src_length));
+  for (word i = 0; i < src_length; i++) {
     src.byteAtPut(i, src_bytes[i]);
   }
   ASSERT_TRUE(isMutableBytesEqualsBytes(src, src_bytes));
@@ -150,8 +151,9 @@ TEST_F(MutableBytesTest, ReplaceFromWithStartAtSelfBackward) {
 TEST_F(MutableBytesTest, ReplaceFromWithStartAtSelfForward) {
   HandleScope scope(thread_);
   const byte src_bytes[] = "patrick";
-  MutableBytes src(&scope, runtime_.newMutableBytesUninitialized(8));
-  for (word i = 0; i < 8; i++) {
+  word src_length = ARRAYSIZE(src_bytes);
+  MutableBytes src(&scope, runtime_.newMutableBytesUninitialized(src_length));
+  for (word i = 0; i < src_length; i++) {
     src.byteAtPut(i, src_bytes[i]);
   }
   ASSERT_TRUE(isMutableBytesEqualsBytes(src, src_bytes));

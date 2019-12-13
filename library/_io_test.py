@@ -355,7 +355,7 @@ class BufferedRWPairTests(unittest.TestCase):
                 pass
         with self.assertRaises(ValueError) as context:
             buffer.readable()
-        self.assertEqual(str(context.exception), "I/O operation on closed file.")
+        self.assertIn("closed file", str(context.exception))
 
     def test_readable_calls_reader_readable(self):
         class Reader(_io.BytesIO):
@@ -377,7 +377,7 @@ class BufferedRWPairTests(unittest.TestCase):
                 pass
         with self.assertRaises(ValueError) as context:
             buffer.writable()
-        self.assertEqual(str(context.exception), "I/O operation on closed file.")
+        self.assertIn("closed file", str(context.exception))
 
     def test_writable_calls_reader_writable(self):
         class Reader(_io.BytesIO):
@@ -465,7 +465,7 @@ class BufferedRandomTests(unittest.TestCase):
         bytes_io = _io.BytesIO(b"hello")
         buffered = _io.BufferedRandom(bytes_io)
         bytes_io.close()
-        self.assertRaisesRegex(ValueError, "read of closed file", buffered.read)
+        self.assertRaisesRegex(ValueError, "closed file", buffered.read)
 
     def test_read_with_negative_size_raises_value_error(self):
         with _io.BytesIO() as bytes_io:
@@ -504,15 +504,16 @@ class BufferedRandomTests(unittest.TestCase):
 
     def test_read1_calls_read(self):
         with _io.BytesIO(b"hello") as bytes_io:
-            buffered = _io.BufferedRandom(bytes_io, buffer_size=1)
+            buffered = _io.BufferedRandom(bytes_io, buffer_size=10)
             result = buffered.read1(3)
             self.assertEqual(result, b"hel")
 
     def test_read1_reads_from_buffer(self):
         with _io.BytesIO(b"hello") as bytes_io:
-            buffered = _io.BufferedRandom(bytes_io, buffer_size=10)
-            result = buffered.read1(1)
-            self.assertEqual(result, b"h")
+            buffered = _io.BufferedRandom(bytes_io, buffer_size=4)
+            buffered.read(1)
+            result = buffered.read1(10)
+            self.assertEqual(result, b"ell")
 
     def test_readable_calls_raw_readable(self):
         class C(_io.BytesIO):
@@ -1989,7 +1990,7 @@ class BufferedReaderTests(unittest.TestCase):
         file_reader.close()
         with self.assertRaises(ValueError) as context:
             buffered.read()
-        self.assertEqual(str(context.exception), "read of closed file")
+        self.assertIn("closed file", str(context.exception))
 
     def test_read_with_negative_size_raises_value_error(self):
         with _io.FileIO(_getfd(), mode="r") as file_reader:
@@ -2023,15 +2024,16 @@ class BufferedReaderTests(unittest.TestCase):
 
     def test_read1_calls_read(self):
         with _io.BytesIO(b"hello") as bytes_io:
-            buffered = _io.BufferedReader(bytes_io, buffer_size=1)
+            buffered = _io.BufferedReader(bytes_io, buffer_size=10)
             result = buffered.read1(3)
             self.assertEqual(result, b"hel")
 
     def test_read1_reads_from_buffer(self):
         with _io.BytesIO(b"hello") as bytes_io:
-            buffered = _io.BufferedReader(bytes_io, buffer_size=10)
-            result = buffered.read1(1)
-            self.assertEqual(result, b"h")
+            buffered = _io.BufferedReader(bytes_io, buffer_size=4)
+            buffered.read(1)
+            result = buffered.read1(10)
+            self.assertEqual(result, b"ell")
 
     def test_readable_calls_raw_readable(self):
         readable_calls = 0

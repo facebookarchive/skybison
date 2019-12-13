@@ -9,6 +9,18 @@ namespace py {
 
 class UnderIoModule : public ModuleBase<UnderIoModule, SymbolId::kUnderIo> {
  public:
+  static RawObject underBufferedReaderClearBuffer(Thread* thread, Frame* frame,
+                                                  word nargs);
+  static RawObject underBufferedReaderInit(Thread* thread, Frame* frame,
+                                           word nargs);
+  static RawObject underBufferedReaderPeek(Thread* thread, Frame* frame,
+                                           word nargs);
+  static RawObject underBufferedReaderRead(Thread* thread, Frame* frame,
+                                           word nargs);
+  static RawObject underBufferedReaderReadline(Thread* thread, Frame* frame,
+                                               word nargs);
+
+  static const BuiltinMethod kBuiltinMethods[];
   static const BuiltinType kBuiltinTypes[];
   static const char* const kFrozenData;
 };

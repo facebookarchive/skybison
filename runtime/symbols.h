@@ -146,8 +146,15 @@ class Runtime;
   V(UnderBootstrap, "_bootstrap")                                              \
   V(UnderBoundMethod, "_bound_method")                                         \
   V(UnderBuffer, "_buffer")                                                    \
+  V(UnderBufferSize, "_buffer_size")                                           \
+  V(UnderBufferNumBytes, "_buffer_num_bytes")                                  \
   V(UnderBufferedIOBase, "_BufferedIOBase")                                    \
   V(UnderBufferedIOMixin, "_BufferedIOMixin")                                  \
+  V(UnderBufferedReaderClearBuffer, "_buffered_reader_clear_buffer")           \
+  V(UnderBufferedReaderInit, "_buffered_reader_init")                          \
+  V(UnderBufferedReaderPeek, "_buffered_reader_peek")                          \
+  V(UnderBufferedReaderRead, "_buffered_reader_read")                          \
+  V(UnderBufferedReaderReadline, "_buffered_reader_readline")                  \
   V(UnderBuiltins, "_builtins")                                                \
   V(UnderBytearrayCheck, "_bytearray_check")                                   \
   V(UnderBytearrayClear, "_bytearray_clear")                                   \
@@ -370,6 +377,7 @@ class Runtime;
   V(UnderReadNull, "_read_null")                                               \
   V(UnderReadPos, "_read_pos")                                                 \
   V(UnderReadable, "_readable")                                                \
+  V(UnderReader, "_reader")                                                    \
   V(UnderReadnl, "_readnl")                                                    \
   V(UnderReadtranslate, "_readtranslate")                                      \
   V(UnderReaduniversal, "_readuniversal")                                      \
@@ -782,6 +790,8 @@ class Runtime;
   V(Range, "range")                                                            \
   V(RangeIterator, "range_iterator")                                           \
   V(Read, "read")                                                              \
+  V(Readall, "readall")                                                        \
+  V(Readline, "readline")                                                      \
   V(Readonly, "readonly")                                                      \
   V(Reason, "reason")                                                          \
   V(RecursionError, "RecursionError")                                          \
