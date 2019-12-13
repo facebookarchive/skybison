@@ -2343,6 +2343,17 @@ class DictTests(unittest.TestCase):
         {}.update(c)
         c.keys.assert_called_once()
 
+    def test_update_with_raising_keys_method_propagates_exception(self):
+        class C:
+            keys = Mock(name="keys", side_effect=Exception("foo"))
+            __getitem__ = Mock(name="__getitem__")
+
+        c = C()
+        with self.assertRaisesRegex(Exception, "foo"):
+            {}.update(c)
+        c.keys.assert_called_once()
+        c.__getitem__.assert_not_called()
+
     def test_update_with_keys_instance_attribute_calls_keys(self):
         class C:
             pass
