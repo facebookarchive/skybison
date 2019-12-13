@@ -1951,4 +1951,84 @@ TEST_F(IcTest, IcIteratorIteratesOverInplaceOpCaches) {
   EXPECT_FALSE(it.hasNext());
 }
 
+TEST_F(IcTest, IcRemoveDeadWeakLinksRemoveRemovesDeadHead) {
+  HandleScope scope(thread_);
+  ValueCell value_cell(&scope, runtime_.newValueCell());
+  Object dependent1(&scope, runtime_.newTuple(1));
+  Object dependent2(&scope, runtime_.newTuple(2));
+  Object dependent3(&scope, runtime_.newTuple(3));
+  icInsertDependentToValueCellDependencyLink(thread_, dependent1, value_cell);
+  icInsertDependentToValueCellDependencyLink(thread_, dependent2, value_cell);
+  icInsertDependentToValueCellDependencyLink(thread_, dependent3, value_cell);
+  // The dependenty link looks like dependent3 -> dependent2 -> dependent1.
+  // Kill dependent3.
+  WeakLink head(&scope, value_cell.dependencyLink());
+  head.setReferent(NoneType::object());
+
+  icRemoveDeadWeakLinks(*value_cell);
+
+  ASSERT_TRUE(value_cell.dependencyLink().isWeakLink());
+  WeakLink new_head(&scope, value_cell.dependencyLink());
+  EXPECT_EQ(new_head.referent(), *dependent2);
+  EXPECT_TRUE(new_head.prev().isNoneType());
+  WeakLink new_next(&scope, new_head.next());
+  EXPECT_EQ(new_next.referent(), *dependent1);
+  EXPECT_EQ(new_next.prev(), *new_head);
+  EXPECT_TRUE(new_next.next().isNoneType());
+}
+
+TEST_F(IcTest, IcRemoveDeadWeakLinksRemoveRemovesDeadMiddleNode) {
+  HandleScope scope(thread_);
+  ValueCell value_cell(&scope, runtime_.newValueCell());
+  Object dependent1(&scope, runtime_.newTuple(1));
+  Object dependent2(&scope, runtime_.newTuple(2));
+  Object dependent3(&scope, runtime_.newTuple(3));
+  icInsertDependentToValueCellDependencyLink(thread_, dependent1, value_cell);
+  icInsertDependentToValueCellDependencyLink(thread_, dependent2, value_cell);
+  icInsertDependentToValueCellDependencyLink(thread_, dependent3, value_cell);
+  // The dependenty link looks like dependent3 -> dependent2 -> dependent1.
+  WeakLink head(&scope, value_cell.dependencyLink());
+  // Kill dependent2.
+  WeakLink next(&scope, head.next());
+  next.setReferent(NoneType::object());
+
+  icRemoveDeadWeakLinks(*value_cell);
+
+  ASSERT_TRUE(value_cell.dependencyLink().isWeakLink());
+  WeakLink new_head(&scope, value_cell.dependencyLink());
+  EXPECT_EQ(new_head.referent(), *dependent3);
+  EXPECT_TRUE(new_head.prev().isNoneType());
+  WeakLink new_next(&scope, new_head.next());
+  EXPECT_EQ(new_next.referent(), *dependent1);
+  EXPECT_EQ(new_next.prev(), *new_head);
+  EXPECT_TRUE(new_next.next().isNoneType());
+}
+
+TEST_F(IcTest, IcRemoveDeadWeakLinksRemoveRemovesDeadTailNode) {
+  HandleScope scope(thread_);
+  ValueCell value_cell(&scope, runtime_.newValueCell());
+  Object dependent1(&scope, runtime_.newTuple(1));
+  Object dependent2(&scope, runtime_.newTuple(2));
+  Object dependent3(&scope, runtime_.newTuple(3));
+  icInsertDependentToValueCellDependencyLink(thread_, dependent1, value_cell);
+  icInsertDependentToValueCellDependencyLink(thread_, dependent2, value_cell);
+  icInsertDependentToValueCellDependencyLink(thread_, dependent3, value_cell);
+  // The dependenty link looks like dependent3 -> dependent2 -> dependent1.
+  WeakLink head(&scope, value_cell.dependencyLink());
+  // Kill dependent1.
+  WeakLink next_next(&scope, WeakLink::cast(head.next()).next());
+  next_next.setReferent(NoneType::object());
+
+  icRemoveDeadWeakLinks(*value_cell);
+
+  ASSERT_TRUE(value_cell.dependencyLink().isWeakLink());
+  WeakLink new_head(&scope, value_cell.dependencyLink());
+  EXPECT_EQ(new_head.referent(), *dependent3);
+  EXPECT_TRUE(new_head.prev().isNoneType());
+  WeakLink new_next(&scope, new_head.next());
+  EXPECT_EQ(new_next.referent(), *dependent2);
+  EXPECT_EQ(new_next.prev(), *new_head);
+  EXPECT_TRUE(new_next.next().isNoneType());
+}
+
 }  // namespace py

@@ -102,25 +102,22 @@ void icUpdateAttrType(Thread* thread, const Tuple& caches, word index,
   }
 }
 
-static void removeDeadWeakLinks(RawValueCell cell) {
-  RawObject head = cell.dependencyLink();
-  DCHECK(!head.isNoneType(), "unlink should not be called with an empty list");
+void icRemoveDeadWeakLinks(RawValueCell cell) {
+  DCHECK(!cell.dependencyLink().isNoneType(),
+         "unlink should not be called with an empty list");
   for (RawObject curr = cell.dependencyLink(); !curr.isNoneType();
        curr = WeakLink::cast(curr).next()) {
     if (!WeakLink::cast(curr).referent().isNoneType()) {
       continue;
     }
-    if (curr == head) {
-      // Special case: unlinking the head
-      RawObject new_head = WeakLink::cast(curr).next();
-      WeakLink::cast(new_head).setPrev(NoneType::object());
-      cell.setDependencyLink(new_head);
-      head = new_head;
-    }
     RawObject prev = WeakLink::cast(curr).prev();
-    DCHECK(!prev.isNoneType(), "link should not be the head");
     RawObject next = WeakLink::cast(curr).next();
-    WeakLink::cast(prev).setNext(next);
+    if (prev.isNoneType()) {
+      // Special case: unlinking the head.
+      cell.setDependencyLink(next);
+    } else {
+      WeakLink::cast(prev).setNext(next);
+    }
     if (!next.isNoneType()) {
       WeakLink::cast(next).setPrev(prev);
     }
@@ -137,7 +134,7 @@ bool icInsertDependentToValueCellDependencyLink(Thread* thread,
     RawObject referent = WeakLink::cast(curr).referent();
     if (referent == *dependent) {
       // The dependent is already in the list. Don't add it again.
-      if (has_dead_links) removeDeadWeakLinks(*value_cell);
+      if (has_dead_links) icRemoveDeadWeakLinks(*value_cell);
       return false;
     }
     if (referent.isNoneType()) {
@@ -154,7 +151,7 @@ bool icInsertDependentToValueCellDependencyLink(Thread* thread,
   if (!empty_link.isNoneType()) {
     // We did not find dependent and we have a space for it, so fill the space
     WeakLink::cast(empty_link).setReferent(*dependent);
-    if (has_dead_links) removeDeadWeakLinks(*value_cell);
+    if (has_dead_links) icRemoveDeadWeakLinks(*value_cell);
     return true;
   }
   // We did not find the dependent and we do not have space for it, so allocate

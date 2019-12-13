@@ -23,6 +23,9 @@ RawObject icLookupBinaryOp(RawTuple caches, word index, LayoutId left_layout_id,
 // Returns the NoneType object otherwise.
 RawObject icLookupGlobalVar(RawTuple caches, word index);
 
+// Internal only: remove deallocated nodes from cell.dependencyLink.
+void icRemoveDeadWeakLinks(RawValueCell cell);
+
 // Sets a cache entry for an attribute to the given `layout_id` as key and
 // `value` as value.
 void icUpdateAttr(Thread* thread, const Tuple& caches, word index,
