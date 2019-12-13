@@ -106,6 +106,13 @@ TEST_F(LargeBytesTest, FindByteWithByteInBytesReturnsIndex) {
   EXPECT_EQ(bytes.findByte('o', 0, bytes.length()), 4);
 }
 
+TEST_F(LargeBytesTest, FindByteNonZeroStartReturnsIndex) {
+  byte src_bytes[] = "hello world";
+  HandleScope scope(thread_);
+  LargeBytes bytes(&scope, runtime_.newBytesWithAll(src_bytes));
+  EXPECT_EQ(bytes.findByte('o', 5, bytes.length() - 5), 7);
+}
+
 TEST_F(LargeBytesTest, CopyToStartAtCopiesToDestinationStartingAtIndex) {
   byte src_bytes[] = "hello world this is patrick";
   HandleScope scope(thread_);
