@@ -6,11 +6,23 @@
 # knowledge about its definition and will complain without this gross circular
 # helper here.
 _patch = _patch  # noqa: F821
+_str_guard = _str_guard  # noqa: F821
 
 
 @_patch
 def create_builtin(spec):
     pass
+
+
+@_patch
+def _create_dynamic(name, path):
+    pass
+
+
+def create_dynamic(spec):
+    _str_guard(spec.name)
+    _str_guard(spec.origin)
+    return _create_dynamic(spec.name, spec.origin)
 
 
 @_patch
@@ -23,8 +35,8 @@ def acquire_lock():
     pass
 
 
-@_patch
 def exec_dynamic(mod):
+    # TODO(T39542987): Enable multi-phase module initialization
     pass
 
 

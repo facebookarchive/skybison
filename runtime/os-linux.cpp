@@ -2,6 +2,7 @@
 
 #include <unistd.h>
 
+#include <dlfcn.h>
 #include <cstdlib>
 
 #include "utils.h"
@@ -23,6 +24,18 @@ char* OS::executablePath() {
     }
   }
   return buffer;
+}
+
+void* OS::openSharedObject(const char* filename, const char** error_msg) {
+  void* result = ::dlopen(filename, RTLD_NOW);
+  if (result == nullptr) {
+    *error_msg = ::dlerror();
+  }
+  return result;
+}
+
+void* OS::sharedObjectSymbolAddress(void* handle, const char* symbol) {
+  return ::dlsym(handle, symbol);
 }
 
 }  // namespace py

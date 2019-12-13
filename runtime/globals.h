@@ -107,7 +107,7 @@ inline D bit_cast(const S& src) {
   TypeName() = delete;                                                         \
   DISALLOW_COPY_AND_ASSIGN(TypeName)
 
-#define PY_EXPORT extern "C"
+#define PY_EXPORT extern "C" __attribute__((visibility("default")))
 
 // FORMAT_ATTRIBUTE allows typechecking by the compiler.
 // string_index: The function argument index where the format index is.

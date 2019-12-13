@@ -202,6 +202,7 @@ class Runtime;
   V(UnderComplexCheck, "_complex_check")                                       \
   V(UnderComplexImag, "_complex_imag")                                         \
   V(UnderComplexReal, "_complex_real")                                         \
+  V(UnderCreateDynamic, "_create_dynamic")                                     \
   V(UnderCreated, "_created")                                                  \
   V(UnderDecodedChars, "_decoded_chars")                                       \
   V(UnderDecodedCharsUsed, "_decoded_chars_used")                              \

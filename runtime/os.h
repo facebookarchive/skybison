@@ -39,6 +39,10 @@ class OS {
 
   static double currentTime();
 
+  static void* openSharedObject(const char* filename, const char** error_msg);
+
+  static void* sharedObjectSymbolAddress(void* handle, const char* symbol);
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(OS);
 };

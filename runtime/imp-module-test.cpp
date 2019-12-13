@@ -157,12 +157,15 @@ TEST_F(ImportBuiltinsTest, ExecBuiltinWithSingleSlotExecutesCorrectly) {
   EXPECT_TRUE(mod_name.equalsCStr("testing"));
 }
 
-TEST_F(ImportBuiltinsDeathTest, ExecDynamic) {
-  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime_, R"(
+TEST_F(ImportBuiltinsTest, ExecDynamic) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 import _imp
-_imp.exec_dynamic("foo")
-  )")),
-               "unimplemented: exec_dynamic");
+mod = _imp.exec_dynamic("foo")
+  )")
+                   .isError());
+  HandleScope scope(thread_);
+  Object mod(&scope, mainModuleAt(&runtime_, "mod"));
+  ASSERT_TRUE(mod.isNoneType());
 }
 
 TEST_F(ImportBuiltinsTest, ExtensionSuffixesReturnsList) {

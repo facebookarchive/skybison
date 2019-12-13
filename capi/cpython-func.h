@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-#define PyAPI_FUNC(RTYPE) RTYPE
+#define PyAPI_FUNC(RTYPE) __attribute__((visibility("default"))) RTYPE
 
 #ifdef __cplusplus
 #define PyMODINIT_FUNC extern "C" PyObject*

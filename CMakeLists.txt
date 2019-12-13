@@ -55,10 +55,12 @@ endif()
 find_package(OpenSSL REQUIRED)
 
 set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_VISIBILITY_PRESET hidden)
 
 set(CMAKE_CXX_EXTENSIONS NO)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
 # DebugOpt build type: debug assertions/checks with -Os. Runs tests much more
 # quickly than Debug, but isn't as debuggable as a Debug build in gdb or lldb.
@@ -491,6 +493,11 @@ target_link_libraries(
   runtime
   modules
   ${PYRO_STATIC_LINKING})
+set_target_properties(
+  python
+  PROPERTIES
+  ENABLE_EXPORTS 1
+)
 
 add_executable(
   test_lldb_support

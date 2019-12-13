@@ -23,6 +23,7 @@ class UnderImpModule : public ModuleBase<UnderImpModule, SymbolId::kUnderImp> {
   static RawObject isFrozen(Thread* thread, Frame* frame, word nargs);
   static RawObject isFrozenPackage(Thread* thread, Frame* frame, word nargs);
   static RawObject releaseLock(Thread* thread, Frame* frame, word nargs);
+  static RawObject underCreateDynamic(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];
   static const char* const kFrozenData;

@@ -2,6 +2,7 @@
 
 #include <mach-o/dyld.h>
 
+#include <dlfcn.h>
 #include <cstdint>
 #include <cstdlib>
 
@@ -22,6 +23,18 @@ char* OS::executablePath() {
   // TODO(matthiasb): The executable or parts of its path may be a symlink
   // that should be resolved.
   return path;
+}
+
+void* OS::openSharedObject(const char* filename, const char** error_msg) {
+  void* result = ::dlopen(filename, RTLD_NOW);
+  if (result == nullptr) {
+    *error_msg = ::dlerror();
+  }
+  return result;
+}
+
+void* OS::sharedObjectSymbolAddress(void* handle, const char* symbol) {
+  return ::dlsym(handle, symbol);
 }
 
 }  // namespace py
