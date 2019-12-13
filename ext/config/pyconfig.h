@@ -1,8 +1,8 @@
-#if defined(OS_LINUX)
+#if defined(__linux__)
 
 #include "pyconfig-linux.h"
 
-#elif defined(OS_OSX)
+#elif defined(__APPLE__)
 
 #include "pyconfig-osx.h"
 

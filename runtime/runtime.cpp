@@ -4067,6 +4067,20 @@ void Runtime::freeApiHandles() {
   }
   collectGarbage();
 
+  // TODO(T57057349): Temporary hack to deallocate `_struct.Struct` instances
+  for (ListEntry *entry = trackedNativeObjects(), *next; entry != nullptr;
+       entry = next) {
+    next = entry->next;
+    ApiHandle* native_instance = reinterpret_cast<ApiHandle*>(entry + 1);
+    RawType type = Type::cast(typeOf(native_instance->asObject()));
+    RawStr type_name = Str::cast(type.name());
+    if (type_name.equalsCStr("Struct")) {
+      auto func = reinterpret_cast<destructor>(
+          Int::cast(type.slot(Type::Slot::kDealloc)).asWord());
+      (*func)(native_instance);
+    }
+  }
+
   // Finally, skip trying to cleanly deallocate the object. Just free the
   // memory without calling the deallocation functions.
   Dict handles(&scope, apiHandles());
