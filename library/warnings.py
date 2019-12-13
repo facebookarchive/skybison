@@ -167,9 +167,9 @@ def filterwarnings(
     assert isinstance(lineno, int) and lineno >= 0, "lineno must be an int >= 0"
     _add_filter(
         action,
-        message,  # TODO(T43452449): Replace with re.compile(message, re.I),
+        re.compile(message, re.I),
         category,
-        module,  # TODO(T43452449): Replace with re.compile(module),
+        re.compile(module),
         lineno,
         append=append,
     )
@@ -399,11 +399,9 @@ def warn_explicit(  # noqa: C901
     for item in filters:
         action, msg, cat, mod, ln = item
         if (
-            # TODO(T43452449): Replace msg == text with msg.match(text)
-            (msg is None or msg == text)
+            (msg is None or msg.match(text))
             and issubclass(category, cat)
-            # TODO(T43452449): Replace mod == module with mod.match(module)
-            and (mod is None or mod == module)
+            and (mod is None or mod.match(module))
             and (ln == 0 or lineno == ln)
         ):
             break
