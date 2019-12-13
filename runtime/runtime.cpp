@@ -4334,7 +4334,6 @@ static void halvesNegate(halfuword* halves, word num_halves) {
     halves[i] = half;
     carry &= (half == 0);
   }
-  DCHECK(carry == 0, "overflow");
 }
 
 static halfuword halvesAdd(halfuword* dest, const halfuword* src,

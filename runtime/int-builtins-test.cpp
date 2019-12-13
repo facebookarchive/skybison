@@ -1936,6 +1936,21 @@ TEST_F(IntBuiltinsTest,
   EXPECT_TRUE(isIntEqualsWord(result.at(1), -3));
 }
 
+TEST_F(IntBuiltinsTest, DunderDivmodReturnsMinWordPlusOneModulo) {
+  HandleScope scope(thread_);
+  const uword left_digits[] = {1, 1};
+  Object left(&scope, newIntWithDigits(&runtime_, left_digits));
+  const uword right_digits[] = {static_cast<uword>(kMinWord)};
+  Object right(&scope, newIntWithDigits(&runtime_, right_digits));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), -3));
+  const uword expected_digits[] = {static_cast<uword>(kMinWord) + 1};
+  EXPECT_TRUE(isIntEqualsDigits(result.at(1), expected_digits));
+}
+
 TEST_F(IntBuiltinsTest, DunderDivmodWithZeroRaisesZeroDivisionError) {
   HandleScope scope(thread_);
   Object left(&scope, runtime_.newInt(2));
