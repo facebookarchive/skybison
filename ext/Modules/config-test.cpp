@@ -88,6 +88,14 @@ TEST_F(ConfigExtensionApiTest, ImportUnderSslReturnsModule) {
   EXPECT_TRUE(PyModule_Check(module));
 }
 
+TEST_F(ConfigExtensionApiTest, ImportUnderSslModuleMethods) {
+  PyRun_SimpleString(R"(
+import ssl 
+ssl.create_default_context()
+)");
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(ConfigExtensionApiTest, ImportUnderStatReturnsModule) {
   PyObjectPtr module(PyImport_ImportModule("_stat"));
   ASSERT_NE(module, nullptr);

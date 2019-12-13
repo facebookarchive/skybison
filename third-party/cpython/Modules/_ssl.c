@@ -2798,8 +2798,9 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
         return NULL;
     }
 
-    assert(type != NULL && type->tp_alloc != NULL);
-    self = (PySSLContext *) type->tp_alloc(type, 0);
+    allocfunc alloc_func = PyType_GetSlot(type, Py_tp_alloc);
+    assert(type != NULL && alloc_func != NULL);
+    self = (PySSLContext *) alloc_func(type, 0);
     if (self == NULL) {
         SSL_CTX_free(ctx);
         return NULL;
@@ -2952,8 +2953,7 @@ context_dealloc(PySSLContext *self)
 #if HAVE_ALPN
     PyMem_FREE(self->alpn_protocols);
 #endif
-    freefunc context_free = PyType_GetSlot(tp, Py_tp_free);
-    context_free(self);
+    PyObject_GC_Del(self);
     Py_DECREF(tp);
 }
 
@@ -4287,8 +4287,9 @@ _ssl_MemoryBIO_impl(PyTypeObject *type)
     BIO_set_retry_read(bio);
     BIO_set_mem_eof_return(bio, -1);
 
-    assert(type != NULL && type->tp_alloc != NULL);
-    self = (PySSLMemoryBIO *) type->tp_alloc(type, 0);
+    allocfunc alloc_func = PyType_GetSlot(type, Py_tp_alloc);
+    assert(type != NULL && alloc_func != NULL);
+    self = (PySSLMemoryBIO *) alloc_func(type, 0);
     if (self == NULL) {
         BIO_free(bio);
         return NULL;
@@ -4304,8 +4305,7 @@ memory_bio_dealloc(PySSLMemoryBIO *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     BIO_free(self->bio);
-    freefunc memory_bio_free = PyType_GetSlot(tp, Py_tp_free);
-    memory_bio_free(self);
+    PyObject_Del(self);
     Py_DECREF(tp);
 }
 
@@ -5357,9 +5357,15 @@ PyInit__ssl(void)
     struct py_ssl_error_code *errcode;
     struct py_ssl_library_code *libcode;
 
+    m = PyState_FindModule(&_sslmodule);
+    if (m != NULL) {
+        Py_INCREF(m);
+        return m;
+    }
     m = PyModule_Create(&_sslmodule);
-    if (m == NULL)
+    if (m == NULL) {
         return NULL;
+    }
 
     PyObject *PySSLContext_Type = PyType_FromSpec(&PySSLContext_Type_spec);
     if (PySSLContext_Type == NULL) {
@@ -5759,5 +5765,6 @@ PyInit__ssl(void)
     if (_sslmodulestate(m)->library == NULL)
         return NULL;
 
+    PyState_AddModule(m, &_sslmodule);
     return m;
 }
