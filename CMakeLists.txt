@@ -974,6 +974,9 @@ target_compile_options(
   ${PYRO_COMPILE_OPTIONS})
 target_include_directories(
   extension-tests
+  PUBLIC
+  ext/Include
+  ext/config
   PRIVATE
   ext/test)
 target_link_libraries(
