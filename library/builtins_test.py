@@ -3544,6 +3544,10 @@ class FloatTests(unittest.TestCase):
 
 
 class FrozensetTests(unittest.TestCase):
+    def test_dunder_and_with_non_frozenset_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            frozenset.__and__(set(), frozenset())
+
     def test_dunder_hash_returns_int(self):
         self.assertEqual(frozenset.__hash__(frozenset()), 133146708735736)
         self.assertEqual(frozenset.__hash__(frozenset((1, 2, 3))), -272375401224217160)
@@ -7721,6 +7725,10 @@ class SetTests(unittest.TestCase):
         c = {1, 3}
         a.difference_update(b, c)
         self.assertEqual(len(a), 0)
+
+    def test_dunder_and_with_non_set_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            set.__and__(frozenset(), set())
 
     def test_set_subclass_difference_removes_elements(self):
         class SubSet(set):

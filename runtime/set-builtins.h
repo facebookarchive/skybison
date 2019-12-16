@@ -57,7 +57,6 @@ RawSmallInt frozensetHash(Thread* thread, const Object& frozenset);
 
 class SetBaseBuiltins {
  public:
-  static RawObject dunderAnd(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderContains(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGe(Thread* thread, Frame* frame, word nargs);
@@ -78,6 +77,7 @@ class SetBuiltins
   static RawObject clear(Thread* thread, Frame* frame, word nargs);
   static RawObject copy(Thread* thread, Frame* frame, word nargs);
   static RawObject discard(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderAnd(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderIand(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
@@ -99,6 +99,7 @@ class FrozenSetBuiltins
                       LayoutId::kFrozenSet> {
  public:
   static RawObject copy(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderAnd(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderHash(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
 

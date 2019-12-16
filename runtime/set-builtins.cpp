@@ -446,24 +446,6 @@ RawObject SetBaseBuiltins::isdisjoint(Thread* thread, Frame* frame,
   return Bool::trueObj();
 }
 
-RawObject SetBaseBuiltins::dunderAnd(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Object self(&scope, args.get(0));
-  Object other(&scope, args.get(1));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfSetBase(*self)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "__and__() requires a 'set' object");
-  }
-  if (!runtime->isInstanceOfSetBase(*other)) {
-    return NotImplementedType::object();
-  }
-  SetBase set(&scope, *self);
-  SetBase other_set(&scope, *other);
-  return setIntersection(thread, set, other_set);
-}
-
 RawObject SetBaseBuiltins::intersection(Thread* thread, Frame* frame,
                                         word nargs) {
   HandleScope scope(thread);
@@ -654,6 +636,24 @@ RawObject FrozenSetBuiltins::copy(Thread* thread, Frame* frame, word nargs) {
     return *set;
   }
   return setCopy(thread, set);
+}
+
+RawObject FrozenSetBuiltins::dunderAnd(Thread* thread, Frame* frame,
+                                       word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  Object other(&scope, args.get(1));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfFrozenSet(*self)) {
+    return thread->raiseRequiresType(self, SymbolId::kFrozenset);
+  }
+  if (!runtime->isInstanceOfSetBase(*other)) {
+    return NotImplementedType::object();
+  }
+  FrozenSet set(&scope, *self);
+  SetBase other_set(&scope, *other);
+  return setIntersection(thread, set, other_set);
 }
 
 RawObject FrozenSetBuiltins::dunderHash(Thread* thread, Frame* frame,
@@ -904,6 +904,23 @@ RawObject SetBuiltins::discard(Thread* thread, Frame* frame, word nargs) {
   word hash = SmallInt::cast(*hash_obj).value();
   setRemove(thread, self, key, hash);
   return NoneType::object();
+}
+
+RawObject SetBuiltins::dunderAnd(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  Object other(&scope, args.get(1));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfSet(*self)) {
+    return thread->raiseRequiresType(self, SymbolId::kSet);
+  }
+  if (!runtime->isInstanceOfSetBase(*other)) {
+    return NotImplementedType::object();
+  }
+  Set set(&scope, *self);
+  SetBase other_set(&scope, *other);
+  return setIntersection(thread, set, other_set);
 }
 
 RawObject SetBuiltins::dunderIand(Thread* thread, Frame* frame, word nargs) {

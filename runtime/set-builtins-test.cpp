@@ -280,7 +280,8 @@ TEST_F(SetBuiltinsTest, FrozenSetAndWithSetReturnsFrozenSet) {
   HandleScope scope(thread);
   FrozenSet frozen_set(&scope, runtime_.emptyFrozenSet());
   Set set(&scope, runtime_.newSet());
-  Object result(&scope, runBuiltin(SetBuiltins::dunderAnd, frozen_set, set));
+  Object result(&scope,
+                runBuiltin(FrozenSetBuiltins::dunderAnd, frozen_set, set));
   ASSERT_TRUE(result.isFrozenSet());
 }
 
