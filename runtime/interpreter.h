@@ -444,7 +444,7 @@ class Interpreter {
   // Call an interpreted function (this captures the part of the CALL_FUNCTION
   // process after intrinsics are processed and it has been determined that the
   // callable is an interpreted function).
-  static Continue callInterpreted(Thread* thread, word argc, Frame* frame,
+  static Continue callInterpreted(Thread* thread, word nargs, Frame* frame,
                                   RawFunction function,
                                   RawObject* post_call_sp);
 
@@ -516,13 +516,13 @@ class Interpreter {
 
   // Perform a positional or keyword call. Used by doCallFunction() and
   // doCallFunctionKw().
-  static Continue handleCall(Thread* thread, word argc, word callable_idx,
+  static Continue handleCall(Thread* thread, word nargs, word callable_idx,
                              word num_extra_pop, PrepareCallFunc prepare_args,
                              Function::Entry (RawFunction::*get_entry)() const);
 
   // Call a function through its trampoline, pushing the result on the stack.
   static Continue callTrampoline(Thread* thread, Function::Entry entry,
-                                 word argc, RawObject* post_call_sp);
+                                 word nargs, RawObject* post_call_sp);
 
   // Resolve a callable object to a function (resolving `__call__` descriptors
   // as necessary).

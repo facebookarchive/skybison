@@ -1353,12 +1353,12 @@ TEST_F(TrampolinesTest,
 }
 
 static PyObject* pyCFunctionFastFunc(PyObject*, PyObject** args,
-                                     Py_ssize_t argc, PyObject*) {
+                                     Py_ssize_t nargs, PyObject*) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Tuple tuple(&scope, thread->runtime()->newTuple(2));
   tuple.atPut(0, ApiHandle::fromPyObject(*args)->asObject());
-  tuple.atPut(1, SmallInt::fromWord(argc));
+  tuple.atPut(1, SmallInt::fromWord(nargs));
   return ApiHandle::newReference(thread, *tuple);
 }
 
@@ -2442,12 +2442,12 @@ TEST_F(TrampolinesTest, MethodTrampolineKeywordsEx) {
 }
 
 static PyObject* capiFunctionFastCallNullKwnames(PyObject* self,
-                                                 PyObject** args, word num_args,
+                                                 PyObject** args, word nargs,
                                                  PyObject* kwnames) {
   Thread* thread = Thread::current();
   thread->runtime()->collectGarbage();
   EXPECT_TRUE(ApiHandle::hasExtensionReference(self));
-  for (word i = 0; i < num_args; i++) {
+  for (word i = 0; i < nargs; i++) {
     EXPECT_TRUE(ApiHandle::hasExtensionReference(args[i]))
         << "Expected fastcall arg #" << i << " to be owned by the trampoline";
   }
@@ -2471,13 +2471,13 @@ TEST_F(TrampolinesTest, MethodTrampolineFastCall) {
 }
 
 static PyObject* capiFunctionFastCall(PyObject* self, PyObject** args,
-                                      word num_args, PyObject* kwnames) {
+                                      word nargs, PyObject* kwnames) {
   Thread* thread = Thread::current();
   thread->runtime()->collectGarbage();
   EXPECT_TRUE(ApiHandle::hasExtensionReference(self));
   word num_keywords =
       Tuple::cast(ApiHandle::fromPyObject(kwnames)->asObject()).length();
-  for (word i = 0; i < num_args + num_keywords; i++) {
+  for (word i = 0; i < nargs + num_keywords; i++) {
     EXPECT_TRUE(ApiHandle::hasExtensionReference(args[i]))
         << "Expected fastcall arg #" << i << " to be owned by the trampoline";
   }

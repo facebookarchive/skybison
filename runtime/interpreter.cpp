@@ -3466,9 +3466,9 @@ HANDLER_INLINE Continue Interpreter::doRaiseVarargs(Thread* thread, word arg) {
 
 HANDLER_INLINE
 Continue Interpreter::callTrampoline(Thread* thread, Function::Entry entry,
-                                     word argc, RawObject* post_call_sp) {
+                                     word nargs, RawObject* post_call_sp) {
   Frame* frame = thread->currentFrame();
-  RawObject result = entry(thread, frame, argc);
+  RawObject result = entry(thread, frame, nargs);
   if (result.isErrorException()) return Continue::UNWIND;
   frame->setValueStackTop(post_call_sp);
   frame->pushValue(result);
@@ -3476,7 +3476,7 @@ Continue Interpreter::callTrampoline(Thread* thread, Function::Entry entry,
 }
 
 static HANDLER_INLINE Continue callInterpretedImpl(
-    Thread* thread, word argc, Frame* caller_frame, RawFunction function,
+    Thread* thread, word nargs, Frame* caller_frame, RawFunction function,
     RawObject* post_call_sp, PrepareCallFunc prepare_args) {
   // Warning: This code is using `RawXXX` variables for performance! This is
   // despite the fact that we call functions that do potentially perform memory
@@ -3485,7 +3485,7 @@ static HANDLER_INLINE Continue callInterpretedImpl(
   // produce before a call after that call. Be careful not to break this
   // invariant if you change the code!
 
-  RawObject result = prepare_args(thread, function, caller_frame, argc);
+  RawObject result = prepare_args(thread, function, caller_frame, nargs);
   if (result.isErrorException()) return Continue::UNWIND;
   function = RawFunction::cast(result);
 
@@ -3501,15 +3501,15 @@ static HANDLER_INLINE Continue callInterpretedImpl(
   return Continue::NEXT;
 }
 
-Continue Interpreter::callInterpreted(Thread* thread, word argc, Frame* frame,
+Continue Interpreter::callInterpreted(Thread* thread, word nargs, Frame* frame,
                                       RawFunction function,
                                       RawObject* post_call_sp) {
-  return callInterpretedImpl(thread, argc, frame, function, post_call_sp,
+  return callInterpretedImpl(thread, nargs, frame, function, post_call_sp,
                              preparePositionalCall);
 }
 
 HANDLER_INLINE Continue
-Interpreter::handleCall(Thread* thread, word argc, word callable_idx,
+Interpreter::handleCall(Thread* thread, word nargs, word callable_idx,
                         word num_extra_pop, PrepareCallFunc prepare_args,
                         Function::Entry (RawFunction::*get_entry)() const) {
   // Warning: This code is using `RawXXX` variables for performance! This is
@@ -3523,7 +3523,7 @@ Interpreter::handleCall(Thread* thread, word argc, word callable_idx,
   RawObject* post_call_sp =
       caller_frame->valueStackTop() + callable_idx + 1 + num_extra_pop;
   RawObject callable =
-      prepareCallableCall(thread, caller_frame, callable_idx, &argc);
+      prepareCallableCall(thread, caller_frame, callable_idx, &nargs);
   if (callable.isErrorException()) return Continue::UNWIND;
   RawFunction function = RawFunction::cast(callable);
 
@@ -3533,11 +3533,11 @@ Interpreter::handleCall(Thread* thread, word argc, word callable_idx,
   }
 
   if (!function.isInterpreted()) {
-    return callTrampoline(thread, (function.*get_entry)(), argc, post_call_sp);
+    return callTrampoline(thread, (function.*get_entry)(), nargs, post_call_sp);
   }
 
-  return callInterpretedImpl(thread, argc, caller_frame, function, post_call_sp,
-                             prepare_args);
+  return callInterpretedImpl(thread, nargs, caller_frame, function,
+                             post_call_sp, prepare_args);
 }
 
 HANDLER_INLINE Continue Interpreter::doCallFunction(Thread* thread, word arg) {

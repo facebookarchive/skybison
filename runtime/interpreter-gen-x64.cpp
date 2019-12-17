@@ -680,7 +680,7 @@ void emitCallFunctionHandler(EmitEnv* env) {
   __ bind(&next_opcode);
   emitNextOpcode(env);
 
-  // Function::cast(callable).entry()(thread, frame, argc);
+  // Function::cast(callable).entry()(thread, frame, nargs);
   __ bind(&call_trampoline);
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
   __ movq(r_saved_post_call_sp, r_post_call_sp);
@@ -700,7 +700,7 @@ void emitCallFunctionHandler(EmitEnv* env) {
   __ pushq(kReturnRegs[0]);
   emitNextOpcode(env);
 
-  // Interpreter::callInterpreted(thread, argc, frame, function, post_call_sp)
+  // Interpreter::callInterpreted(thread, nargs, frame, function, post_call_sp)
   __ bind(&call_interpreted_slow_path);
   __ movq(kArgRegs[3], r_callable);
   __ movq(kArgRegs[0], kThreadReg);

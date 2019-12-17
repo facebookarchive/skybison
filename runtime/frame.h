@@ -286,19 +286,19 @@ class Arguments {
  public:
   Arguments(Frame* frame, word nargs) {
     frame_ = frame;
-    num_args_ = nargs;
+    nargs_ = nargs;
   }
 
   RawObject get(word n) const {
-    DCHECK(n < num_args_, "index out of range");
-    return frame_->localWithReverseIndex(num_args_ - n - 1);
+    DCHECK(n < nargs_, "index out of range");
+    return frame_->localWithReverseIndex(nargs_ - n - 1);
   }
 
-  word numArgs() const { return num_args_; }
+  word numArgs() const { return nargs_; }
 
  protected:
   Frame* frame_;
-  word num_args_;
+  word nargs_;
 };
 
 RawObject frameLocals(Thread* thread, Frame* frame);
