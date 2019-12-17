@@ -155,6 +155,11 @@ class Interpreter {
                                const Object& arg1, const Object& arg2,
                                const Object& arg3);
 
+  struct PrepareCallableResult {
+    RawObject function;
+    word nargs;
+  };
+
   // Prepare the stack to for a positional or keyword call by normalizing the
   // callable object using prepareCallableObject().
   //
@@ -162,8 +167,9 @@ class Interpreter {
   // self object was unpacked from the callable and inserted into the stack.
   //
   // Not intended for public use; only here for testing purposes.
-  static RawObject prepareCallableCall(Thread* thread, Frame* frame,
-                                       word callable_idx, word* nargs);
+  static PrepareCallableResult prepareCallableCall(Thread* thread, Frame* frame,
+                                                   word nargs,
+                                                   word callable_idx);
 
   static RawObject unaryOperation(Thread* thread, const Object& self,
                                   SymbolId selector);
@@ -526,13 +532,14 @@ class Interpreter {
 
   // Resolve a callable object to a function (resolving `__call__` descriptors
   // as necessary).
-  // This is only a helper for the `prepareCallableCall` implementation:
-  // `prepareCallableCall` starts out with shortcuts with the common cases and
-  // only calls this function for the remaining rare cases with the expectation
-  // that this function is not inlined.
-  static RawObject prepareCallableCallDunderCall(Thread* thread, Frame* frame,
-                                                 word callable_idx,
-                                                 word* nargs);
+  // This is a helper for `prepareCallableCall`: `prepareCallableCall` starts
+  // out with shortcuts with the common cases and only calls this function for
+  // the remaining rare cases with the expectation that this function is not
+  // inlined.
+  static PrepareCallableResult prepareCallableCallDunderCall(Thread* thread,
+                                                             Frame* frame,
+                                                             word nargs,
+                                                             word callable_idx);
 
   static Continue retryLoadAttrCached(Thread* thread, word arg);
   static Continue loadAttrUpdateCache(Thread* thread, word arg);

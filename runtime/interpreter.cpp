@@ -103,11 +103,12 @@ RawObject Interpreter::prepareCallable(Thread* thread, Frame* frame,
   }
 }
 
-HANDLER_INLINE USED RawObject Interpreter::prepareCallableCall(
-    Thread* thread, Frame* frame, word callable_idx, word* nargs) {
+HANDLER_INLINE USED Interpreter::PrepareCallableResult
+Interpreter::prepareCallableCall(Thread* thread, Frame* frame, word nargs,
+                                 word callable_idx) {
   RawObject callable = frame->peek(callable_idx);
   if (callable.isFunction()) {
-    return callable;
+    return {callable, nargs};
   }
 
   if (callable.isBoundMethod()) {
@@ -115,24 +116,23 @@ HANDLER_INLINE USED RawObject Interpreter::prepareCallableCall(
     RawObject method_function = method.function();
     frame->setValueAt(method_function, callable_idx);
     frame->insertValueAt(method.self(), callable_idx);
-    *nargs += 1;
-    return method_function;
+    return {method_function, nargs + 1};
   }
-  return prepareCallableCallDunderCall(thread, frame, callable_idx, nargs);
+  return prepareCallableCallDunderCall(thread, frame, nargs, callable_idx);
 }
 
 NEVER_INLINE
-RawObject Interpreter::prepareCallableCallDunderCall(Thread* thread,
-                                                     Frame* frame,
-                                                     word callable_idx,
-                                                     word* nargs) {
+Interpreter::PrepareCallableResult Interpreter::prepareCallableCallDunderCall(
+    Thread* thread, Frame* frame, word nargs, word callable_idx) {
   HandleScope scope(thread);
   Object callable(&scope, frame->peek(callable_idx));
   Object self(&scope, NoneType::object());
-  RawObject result = prepareCallable(thread, frame, &callable, &self);
-  if (result.isErrorException()) return result;
+  RawObject prepare_result = prepareCallable(thread, frame, &callable, &self);
+  if (prepare_result.isErrorException()) {
+    return {prepare_result, 0};
+  }
   frame->setValueAt(*callable, callable_idx);
-  if (result == Bool::trueObj()) {
+  if (prepare_result == Bool::trueObj()) {
     // Shift all arguments on the stack down by 1 and use the unpacked
     // BoundMethod.
     //
@@ -152,21 +152,23 @@ RawObject Interpreter::prepareCallableCallDunderCall(Thread* thread,
     // Our contention is that uses of this pattern are not performance
     // sensitive.
     frame->insertValueAt(*self, callable_idx);
-    *nargs += 1;
+    return {*callable, nargs + 1};
   }
-  return *callable;
+  return {*callable, nargs};
 }
 
 RawObject Interpreter::call(Thread* thread, Frame* frame, word nargs) {
   DCHECK(!thread->hasPendingException(), "unhandled exception lingering");
   RawObject* sp = frame->valueStackTop() + nargs + 1;
-  RawObject callable = frame->peek(nargs);
-  callable = prepareCallableCall(thread, frame, nargs, &nargs);
-  if (callable.isErrorException()) {
+  PrepareCallableResult prepare_result =
+      prepareCallableCall(thread, frame, nargs, nargs);
+  RawObject function = prepare_result.function;
+  nargs = prepare_result.nargs;
+  if (function.isErrorException()) {
     frame->setValueStackTop(sp);
-    return callable;
+    return function;
   }
-  RawObject result = Function::cast(callable).entry()(thread, frame, nargs);
+  RawObject result = Function::cast(function).entry()(thread, frame, nargs);
   // Clear the stack of the function object and return.
   frame->setValueStackTop(sp);
   return result;
@@ -176,13 +178,15 @@ RawObject Interpreter::callKw(Thread* thread, Frame* frame, word nargs) {
   // Top of stack is a tuple of keyword argument names in the order they
   // appear on the stack.
   RawObject* sp = frame->valueStackTop() + nargs + 2;
-  RawObject callable = frame->peek(nargs + 1);
-  callable = prepareCallableCall(thread, frame, nargs + 1, &nargs);
-  if (callable.isErrorException()) {
+  PrepareCallableResult prepare_result =
+      prepareCallableCall(thread, frame, nargs, nargs + 1);
+  RawObject function = prepare_result.function;
+  nargs = prepare_result.nargs;
+  if (function.isErrorException()) {
     frame->setValueStackTop(sp);
-    return callable;
+    return function;
   }
-  RawObject result = Function::cast(callable).entryKw()(thread, frame, nargs);
+  RawObject result = Function::cast(function).entryKw()(thread, frame, nargs);
   frame->setValueStackTop(sp);
   return result;
 }
@@ -3522,10 +3526,11 @@ Interpreter::handleCall(Thread* thread, word nargs, word callable_idx,
   Frame* caller_frame = thread->currentFrame();
   RawObject* post_call_sp =
       caller_frame->valueStackTop() + callable_idx + 1 + num_extra_pop;
-  RawObject callable =
-      prepareCallableCall(thread, caller_frame, callable_idx, &nargs);
-  if (callable.isErrorException()) return Continue::UNWIND;
-  RawFunction function = RawFunction::cast(callable);
+  PrepareCallableResult prepare_result =
+      prepareCallableCall(thread, caller_frame, nargs, callable_idx);
+  if (prepare_result.function.isErrorException()) return Continue::UNWIND;
+  RawFunction function = RawFunction::cast(prepare_result.function);
+  nargs = prepare_result.nargs;
 
   SymbolId name = static_cast<SymbolId>(function.intrinsicId());
   if (name != SymbolId::kInvalid && doIntrinsic(thread, caller_frame, name)) {

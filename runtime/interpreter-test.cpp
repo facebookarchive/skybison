@@ -1932,14 +1932,14 @@ meth = C().foo
   frame->pushValue(SmallInt::fromWord(1234));
   ASSERT_EQ(frame->valueStackSize(), 2);
   word nargs = 1;
-  Object callable(
-      &scope, Interpreter::prepareCallableCall(thread_, frame, nargs, &nargs));
-  ASSERT_TRUE(callable.isFunction());
-  ASSERT_EQ(nargs, 2);
+  Interpreter::PrepareCallableResult result =
+      Interpreter::prepareCallableCall(thread_, frame, nargs, nargs);
+  ASSERT_TRUE(result.function.isFunction());
+  ASSERT_EQ(result.nargs, 2);
   ASSERT_EQ(frame->valueStackSize(), 3);
   EXPECT_TRUE(isIntEqualsWord(frame->peek(0), 1234));
   EXPECT_TRUE(frame->peek(1).isInstance());
-  EXPECT_EQ(frame->peek(2), *callable);
+  EXPECT_EQ(frame->peek(2), result.function);
 }
 
 TEST_F(InterpreterTest, CallExWithListSubclassCallsDunderIter) {
