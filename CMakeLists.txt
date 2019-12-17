@@ -491,6 +491,39 @@ add_custom_command(
     util/generate_cpython_sources.py
   COMMENT "Generating CPython Headers")
 
+add_library(
+  cpython-parser
+  ${CPYTHON_HEADERS_OUTPUT}
+  ${CPYTHON_DIR}/Parser/acceler.c
+  ${CPYTHON_DIR}/Parser/bitset.c
+  ${CPYTHON_DIR}/Parser/firstsets.c
+  ${CPYTHON_DIR}/Parser/grammar.c
+  ${CPYTHON_DIR}/Parser/grammar1.c
+  ${CPYTHON_DIR}/Parser/listnode.c
+  ${CPYTHON_DIR}/Parser/metagrammar.c
+  ${CPYTHON_DIR}/Parser/myreadline.c
+  ${CPYTHON_DIR}/Parser/node.c
+  ${CPYTHON_DIR}/Parser/parser.c
+  ${CPYTHON_DIR}/Parser/parser.h
+  ${CPYTHON_DIR}/Parser/parsetok.c
+  ${CPYTHON_DIR}/Parser/pgen.c
+  ${CPYTHON_DIR}/Parser/printgrammar.c
+  ${CPYTHON_DIR}/Parser/tokenizer.c
+  ${CPYTHON_DIR}/Parser/tokenizer.h
+  ${CPYTHON_DIR}/Python/ast.c
+  ${CPYTHON_DIR}/Python/future.c
+  ${CPYTHON_DIR}/Python/graminit.c
+  ${CPYTHON_DIR}/Python/mystrtoul.c
+  ${CPYTHON_DIR}/Python/pystrtod.c)
+target_include_directories(
+  cpython-parser
+  PUBLIC
+  ${BINARY_DIR_HEADERS})
+target_link_libraries(
+  cpython-parser
+  PUBLIC
+  capi-headers)
+
 set(
   CPYTHON_SOURCES
   ${CPYTHON_DIR}/Modules/_asynciomodule.c
@@ -596,38 +629,16 @@ set(
   ${CPYTHON_DIR}/Objects/capsule.c
   ${CPYTHON_DIR}/Objects/unicodectype.c
   ${CPYTHON_DIR}/Objects/unicodetype_db.h
-  ${CPYTHON_DIR}/Parser/acceler.c
-  ${CPYTHON_DIR}/Parser/bitset.c
-  ${CPYTHON_DIR}/Parser/firstsets.c
-  ${CPYTHON_DIR}/Parser/grammar.c
-  ${CPYTHON_DIR}/Parser/grammar1.c
-  ${CPYTHON_DIR}/Parser/listnode.c
-  ${CPYTHON_DIR}/Parser/metagrammar.c
-  ${CPYTHON_DIR}/Parser/myreadline.c
-  ${CPYTHON_DIR}/Parser/node.c
-  ${CPYTHON_DIR}/Parser/parser.c
-  ${CPYTHON_DIR}/Parser/parser.h
-  ${CPYTHON_DIR}/Parser/parsetok.c
-  ${CPYTHON_DIR}/Parser/parsetok_pgen.c
-  ${CPYTHON_DIR}/Parser/pgen.c
-  ${CPYTHON_DIR}/Parser/printgrammar.c
-  ${CPYTHON_DIR}/Parser/tokenizer.c
-  ${CPYTHON_DIR}/Parser/tokenizer.h
-  ${CPYTHON_DIR}/Parser/tokenizer_pgen.c
   ${CPYTHON_DIR}/Python/Python-ast.c
   ${CPYTHON_DIR}/Python/asdl.c
   ${CPYTHON_DIR}/Python/ast.c
   ${CPYTHON_DIR}/Python/dtoa.c
   ${CPYTHON_DIR}/Python/fileutils.c
-  ${CPYTHON_DIR}/Python/future.c
-  ${CPYTHON_DIR}/Python/graminit.c
-  ${CPYTHON_DIR}/Python/mystrtoul.c
   ${CPYTHON_DIR}/Python/pyarena.c
   ${CPYTHON_DIR}/Python/pyctype.c
   ${CPYTHON_DIR}/Python/pyhash.c
   ${CPYTHON_DIR}/Python/pystrcmp.c
   ${CPYTHON_DIR}/Python/pystrhex.c
-  ${CPYTHON_DIR}/Python/pystrtod.c
   ${CPYTHON_DIR}/Python/pytime.c
   ${CPYTHON_DIR}/Python/symtable.c
   ${CPYTHON_DIR}/Python/wordcode_helpers.h)
@@ -655,9 +666,7 @@ find_package(Threads)
 add_library(
   extension-modules
   STATIC
-  ${CPYTHON_HEADERS_OUTPUT}
-  ${CPYTHON_SOURCES}
-  ${PYRO_PUBLIC_HEADERS_OUTPUT})
+  ${CPYTHON_SOURCES})
 add_dependencies(extension-modules cpython-sources)
 target_include_directories(
   extension-modules
@@ -678,9 +687,11 @@ target_compile_options(
 target_link_libraries(
   extension-modules
   PUBLIC
-  util
-  extension
   capi-headers
+  PRIVATE
+  util
+  cpython-parser
+  extension
   Threads::Threads
   OpenSSL::Crypto
   OpenSSL::SSL)
@@ -766,13 +777,13 @@ target_compile_options(
 target_include_directories(
   extension
   PRIVATE
-  runtime)
+  runtime
+  ${BINARY_DIR_HEADERS})
 target_link_libraries(
   extension
-  PUBLIC
-  runtime
   PRIVATE
-  extension-modules)
+  cpython-parser
+  runtime)
 
 add_library(
   modules
