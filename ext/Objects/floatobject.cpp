@@ -3,9 +3,10 @@
 #include <cfloat>
 #include <cmath>
 
-#include "capi-handles.h"
 #include "cpython-data.h"
 #include "cpython-func.h"
+
+#include "capi-handles.h"
 #include "float-builtins.h"
 #include "objects.h"
 #include "runtime.h"

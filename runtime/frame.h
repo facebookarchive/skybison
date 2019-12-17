@@ -1,10 +1,10 @@
 #pragma once
 
+#include <cstring>
+
 #include "globals.h"
 #include "handles.h"
 #include "objects.h"
-
-#include <cstring>
 
 namespace py {
 

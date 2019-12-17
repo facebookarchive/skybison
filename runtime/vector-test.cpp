@@ -1,6 +1,6 @@
-#include "gtest/gtest.h"
-
 #include "vector.h"
+
+#include "gtest/gtest.h"
 
 namespace py {
 

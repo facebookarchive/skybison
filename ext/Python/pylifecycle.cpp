@@ -1,8 +1,10 @@
 #include <unistd.h>
+
 #include <cstdio>
 
-#include "capi-handles.h"
 #include "cpython-func.h"
+
+#include "capi-handles.h"
 #include "exception-builtins.h"
 #include "runtime.h"
 

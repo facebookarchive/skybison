@@ -1,6 +1,7 @@
+#include "descriptor-builtins.h"
+
 #include "gtest/gtest.h"
 
-#include "descriptor-builtins.h"
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"

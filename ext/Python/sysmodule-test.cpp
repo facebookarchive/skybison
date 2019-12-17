@@ -1,11 +1,11 @@
-#include "gtest/gtest.h"
-
 #include <unistd.h>
 
 #include <cstdlib>
 #include <string>
 
 #include "Python.h"
+#include "gtest/gtest.h"
+
 #include "capi-fixture.h"
 #include "capi-testing.h"
 

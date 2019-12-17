@@ -1,9 +1,9 @@
-#include "gtest/gtest.h"
-
 #include <cerrno>
 #include <cmath>
 
 #include "Python.h"
+#include "gtest/gtest.h"
+
 #include "capi-fixture.h"
 #include "capi-testing.h"
 

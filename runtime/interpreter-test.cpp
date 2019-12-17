@@ -1,6 +1,8 @@
-#include "gtest/gtest.h"
+#include "interpreter.h"
 
 #include <memory>
+
+#include "gtest/gtest.h"
 
 #include "builtins-module.h"
 #include "bytecode.h"
@@ -8,15 +10,13 @@
 #include "frame.h"
 #include "handles.h"
 #include "ic.h"
-#include "interpreter.h"
 #include "intrinsic.h"
 #include "module-builtins.h"
 #include "objects.h"
 #include "runtime.h"
+#include "test-utils.h"
 #include "trampolines.h"
 #include "type-builtins.h"
-
-#include "test-utils.h"
 
 namespace py {
 using namespace testing;

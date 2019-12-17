@@ -1,10 +1,11 @@
-#include "gtest/gtest.h"
+#include "capi-testing.h"
 
 #include <limits>
 
 #include "Python.h"
+#include "gtest/gtest.h"
+
 #include "capi-fixture.h"
-#include "capi-testing.h"
 
 namespace py {
 

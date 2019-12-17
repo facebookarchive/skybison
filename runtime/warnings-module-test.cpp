@@ -1,8 +1,9 @@
+#include "warnings-module.h"
+
 #include "gtest/gtest.h"
 
 #include "runtime.h"
 #include "test-utils.h"
-#include "warnings-module.h"
 
 namespace py {
 using namespace testing;

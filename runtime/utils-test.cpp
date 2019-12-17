@@ -1,13 +1,15 @@
-#include "gtest/gtest.h"
+#include "utils.h"
 
 #include <dlfcn.h>
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <sstream>
 
+#include "gtest/gtest.h"
+
 #include "test-utils.h"
-#include "utils.h"
 
 namespace py {
 

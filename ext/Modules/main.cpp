@@ -1,12 +1,14 @@
 #include <getopt.h>
+
 #include <cstdio>
 #include <cstdlib>
 #include <cwchar>
 #include <memory>
 
-#include "builtins-module.h"
 #include "cpython-data.h"
 #include "cpython-func.h"
+
+#include "builtins-module.h"
 #include "exception-builtins.h"
 #include "marshal.h"
 #include "os.h"

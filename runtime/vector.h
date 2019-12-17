@@ -1,14 +1,14 @@
 #pragma once
 
-#include "globals.h"
-#include "utils.h"
-
 #include <algorithm>
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
 #include <type_traits>
 #include <utility>
+
+#include "globals.h"
+#include "utils.h"
 
 namespace py {
 

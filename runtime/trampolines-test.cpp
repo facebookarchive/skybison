@@ -1,6 +1,6 @@
-#include "gtest/gtest.h"
-
 #include <memory>
+
+#include "gtest/gtest.h"
 
 #include "capi-handles.h"
 #include "dict-builtins.h"

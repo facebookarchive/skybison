@@ -1,6 +1,6 @@
-#include "gtest/gtest.h"
-
 #include "type-builtins.h"
+
+#include "gtest/gtest.h"
 
 #include "dict-builtins.h"
 #include "handles.h"

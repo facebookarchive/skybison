@@ -677,13 +677,9 @@ static bool dumpSimple(std::ostream& os, RawObject value) {
   }
 }
 
-USED void dump(RawObject object) {
-  dumpExtended(std::cerr, object);
-}
+USED void dump(RawObject object) { dumpExtended(std::cerr, object); }
 
-USED void dump(const Object& object) {
-  dumpExtended(std::cerr, *object);
-}
+USED void dump(const Object& object) { dumpExtended(std::cerr, *object); }
 
 USED void dump(Frame* frame) { std::cerr << frame; }
 

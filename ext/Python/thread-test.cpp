@@ -1,10 +1,9 @@
-#include "gtest/gtest.h"
-
 #include "Python.h"
-#include "pythread.h"
+#include "gtest/gtest.h"
 
 #include "capi-fixture.h"
 #include "capi-testing.h"
+#include "pythread.h"
 
 namespace py {
 

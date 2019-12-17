@@ -1,5 +1,6 @@
-#include "capi-handles.h"
 #include "cpython-func.h"
+
+#include "capi-handles.h"
 #include "runtime.h"
 
 const char* Py_hexdigits = "0123456789abcdef";

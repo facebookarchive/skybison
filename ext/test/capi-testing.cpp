@@ -1,9 +1,10 @@
-#include "gtest/gtest.h"
+#include "capi-testing.h"
 
 #include <cstring>
+#include <memory>
 
 #include "Python.h"
-#include "capi-testing.h"
+#include "gtest/gtest.h"
 
 namespace py {
 namespace testing {

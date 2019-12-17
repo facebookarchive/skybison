@@ -1,6 +1,6 @@
-#include "gtest/gtest.h"
-
 #include "space.h"
+
+#include "gtest/gtest.h"
 
 namespace py {
 

@@ -1,6 +1,6 @@
-#include "gtest/gtest.h"
-
 #include <cstdint>
+
+#include "gtest/gtest.h"
 
 #include "runtime.h"
 #include "str-builtins.h"

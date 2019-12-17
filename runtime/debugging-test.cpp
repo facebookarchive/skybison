@@ -1,11 +1,11 @@
-#include "gtest/gtest.h"
-
-#include "gmock/gmock-matchers.h"
+#include "debugging.h"
 
 #include <iostream>
 
+#include "gmock/gmock-matchers.h"
+#include "gtest/gtest.h"
+
 #include "bytecode.h"
-#include "debugging.h"
 #include "dict-builtins.h"
 #include "test-utils.h"
 

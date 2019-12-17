@@ -1,6 +1,6 @@
-#include "gtest/gtest.h"
-
 #include "ic.h"
+
+#include "gtest/gtest.h"
 
 #include "dict-builtins.h"
 #include "str-builtins.h"

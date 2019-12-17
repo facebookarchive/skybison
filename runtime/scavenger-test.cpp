@@ -1,7 +1,8 @@
+#include "scavenger.h"
+
 #include "gtest/gtest.h"
 
 #include "builtins-module.h"
-#include "scavenger.h"
 #include "test-utils.h"
 #include "trampolines.h"
 

@@ -1,7 +1,9 @@
-#include "gtest/gtest.h"
+#include "runtime.h"
 
 #include <cstdlib>
 #include <memory>
+
+#include "gtest/gtest.h"
 
 #include "bytecode.h"
 #include "dict-builtins.h"
@@ -10,7 +12,6 @@
 #include "layout.h"
 #include "module-builtins.h"
 #include "object-builtins.h"
-#include "runtime.h"
 #include "set-builtins.h"
 #include "str-builtins.h"
 #include "symbols.h"

@@ -3,11 +3,11 @@
 #include <functional>
 #include <string>
 
+#include "gtest/gtest.h"
+
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"
-
-#include "gtest/gtest.h"
 
 // Define EXPECT_DEBUG_ONLY_DEATH, which is like gtest's
 // EXPECT_DEBUG_DEATH, except that it does not execute the given statment

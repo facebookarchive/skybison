@@ -1,13 +1,14 @@
-#include "gtest/gtest.h"
+#include "sys-module.h"
 
 #include <sys/utsname.h>
 
 #include <cstdio>
 #include <cstdlib>
 
+#include "gtest/gtest.h"
+
 #include "runtime.h"
 #include "str-builtins.h"
-#include "sys-module.h"
 #include "test-utils.h"
 #include "under-builtins-module.h"
 

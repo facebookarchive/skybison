@@ -1,6 +1,7 @@
+#include "bytes-builtins.h"
+
 #include "gtest/gtest.h"
 
-#include "bytes-builtins.h"
 #include "test-utils.h"
 
 namespace py {

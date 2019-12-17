@@ -1,6 +1,6 @@
+#include "Python.h"
 #include "gtest/gtest.h"
 
-#include "Python.h"
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
@@ -557,7 +557,7 @@ TEST_F(ModuleExtensionApiTest, ExecDefRunsMultipleSlotsInOrderPyro) {
 // TODO(T37048769): Replace _Create with _FromDefAndSpec and run with CPython
 TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotHasErrorButReturnsZeroPyro) {
   slot_func mod_exec_fail_silently = [](PyObject* module) {
-    testing::PyObjectPtr attr(PyObject_GetAttrString(module, "non-existant"));
+    testing::PyObjectPtr attr(PyObject_GetAttrString(module, "non-existent"));
     static_cast<void>(attr);
     return 0;
   };
@@ -583,7 +583,7 @@ TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotHasErrorButReturnsZeroPyro) {
 // TODO(T37048769): Replace _Create with _FromDefAndSpec and run with CPython
 TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotFailsButDoesntSetErrorPyro) {
   slot_func mod_exec_fail_no_error = [](PyObject* module) {
-    testing::PyObjectPtr attr(PyObject_GetAttrString(module, "non-existant"));
+    testing::PyObjectPtr attr(PyObject_GetAttrString(module, "non-existent"));
     static_cast<void>(attr);
     PyErr_Clear();
     return -1;
@@ -610,7 +610,7 @@ TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotFailsButDoesntSetErrorPyro) {
 // TODO(T37048769): Replace _Create with _FromDefAndSpec and run with CPython
 TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotFailsAndPropogatesErrorPyro) {
   slot_func mod_exec_fail = [](PyObject* module) {
-    testing::PyObjectPtr attr(PyObject_GetAttrString(module, "non-existant"));
+    testing::PyObjectPtr attr(PyObject_GetAttrString(module, "non-existent"));
     static_cast<void>(attr);
     return -1;
   };

@@ -1,9 +1,10 @@
+#include "str-builtins.h"
+
 #include "gtest/gtest.h"
 
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"
-#include "str-builtins.h"
 #include "test-utils.h"
 
 namespace py {

@@ -1,10 +1,9 @@
 #include <cerrno>
 
+#include "Python.h"
+#include "gmock/gmock-matchers.h"
 #include "gtest/gtest.h"
 
-#include "gmock/gmock-matchers.h"
-
-#include "Python.h"
 #include "capi-fixture.h"
 #include "capi-testing.h"
 

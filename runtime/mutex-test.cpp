@@ -1,6 +1,6 @@
-#include "gtest/gtest.h"
-
 #include "mutex.h"
+
+#include "gtest/gtest.h"
 
 namespace py {
 

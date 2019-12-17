@@ -1,7 +1,8 @@
+#include "set-builtins.h"
+
 #include "gtest/gtest.h"
 
 #include "runtime.h"
-#include "set-builtins.h"
 #include "test-utils.h"
 
 namespace py {

@@ -1,6 +1,6 @@
-#include "gtest/gtest.h"
-
 #include "memory-region.h"
+
+#include "gtest/gtest.h"
 
 namespace py {
 namespace testing {

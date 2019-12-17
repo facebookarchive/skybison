@@ -1,7 +1,8 @@
+#include "marshal-module.h"
+
 #include "gtest/gtest.h"
 
 #include "bytes-builtins.h"
-#include "marshal-module.h"
 #include "os.h"
 #include "runtime.h"
 #include "test-utils.h"

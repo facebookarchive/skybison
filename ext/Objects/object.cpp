@@ -1,10 +1,11 @@
 // object.c implementation
 
+#include "cpython-data.h"
+#include "cpython-func.h"
+
 #include "builtins-module.h"
 #include "bytes-builtins.h"
 #include "capi-handles.h"
-#include "cpython-data.h"
-#include "cpython-func.h"
 #include "dict-builtins.h"
 #include "object-builtins.h"
 #include "runtime.h"

@@ -1,9 +1,9 @@
 #include "generator-builtins.h"
 
+#include <string>
+
 #include "exception-builtins.h"
 #include "frame.h"
-
-#include <string>
 
 namespace py {
 

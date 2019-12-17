@@ -9,11 +9,11 @@
 #undef Set
 #undef Assert
 
-#include "capi-fixture.h"
-#include "capi-testing.h"
+#include "gmock/gmock-matchers.h"
 #include "gtest/gtest.h"
 
-#include "gmock/gmock-matchers.h"
+#include "capi-fixture.h"
+#include "capi-testing.h"
 
 namespace py {
 

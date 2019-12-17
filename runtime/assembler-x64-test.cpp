@@ -1,6 +1,7 @@
+#include "assembler-x64.h"
+
 #include "gtest/gtest.h"
 
-#include "assembler-x64.h"
 #include "memory-region.h"
 
 namespace py {

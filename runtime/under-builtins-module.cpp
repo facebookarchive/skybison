@@ -1,9 +1,9 @@
 #include "under-builtins-module.h"
 
+#include <unistd.h>
+
 #include <cerrno>
 #include <cmath>
-
-#include <unistd.h>
 
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"

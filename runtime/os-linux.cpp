@@ -1,8 +1,8 @@
 #include "os.h"
 
+#include <dlfcn.h>
 #include <unistd.h>
 
-#include <dlfcn.h>
 #include <cstdlib>
 
 #include "utils.h"

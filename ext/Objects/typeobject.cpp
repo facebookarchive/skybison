@@ -1,10 +1,10 @@
 // typeobject.c implementation
 
+#include <cinttypes>
+
 #include "cpython-data.h"
 #include "cpython-func.h"
 #include "cpython-types.h"
-
-#include <cinttypes>
 
 #include "builtins-module.h"
 #include "capi-handles.h"

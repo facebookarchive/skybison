@@ -1,7 +1,8 @@
 #include <cstdarg>
 
-#include "capi-handles.h"
 #include "cpython-data.h"
+
+#include "capi-handles.h"
 #include "module-builtins.h"
 #include "runtime.h"
 #include "str-builtins.h"

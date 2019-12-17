@@ -1,7 +1,8 @@
+#include "codecs-module.h"
+
 #include "gtest/gtest.h"
 
 #include "bytearray-builtins.h"
-#include "codecs-module.h"
 #include "runtime.h"
 #include "test-utils.h"
 

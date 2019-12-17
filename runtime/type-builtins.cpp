@@ -1,8 +1,9 @@
 #include "type-builtins.h"
 
+#include "cpython-data.h"
+
 #include "bytecode.h"
 #include "capi-handles.h"
-#include "cpython-data.h"
 #include "dict-builtins.h"
 #include "frame.h"
 #include "globals.h"

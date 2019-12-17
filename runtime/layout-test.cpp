@@ -1,6 +1,7 @@
+#include "layout.h"
+
 #include "gtest/gtest.h"
 
-#include "layout.h"
 #include "objects.h"
 #include "runtime.h"
 #include "test-utils.h"

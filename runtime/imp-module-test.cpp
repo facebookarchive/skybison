@@ -1,7 +1,8 @@
+#include "imp-module.h"
+
 #include "gtest/gtest.h"
 
 #include "capi-handles.h"
-#include "imp-module.h"
 #include "runtime.h"
 #include "test-utils.h"
 

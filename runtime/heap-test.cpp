@@ -1,7 +1,8 @@
+#include "heap.h"
+
 #include "gtest/gtest.h"
 
 #include "globals.h"
-#include "heap.h"
 #include "os.h"
 #include "runtime.h"
 #include "test-utils.h"

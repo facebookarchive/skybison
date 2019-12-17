@@ -1,9 +1,9 @@
+#include "Python.h"
 #include "gtest/gtest.h"
 
-#include "Python.h"
-#include "frameobject.h"  // for PyFrame_ClearFreeList
-
 #include "capi-fixture.h"
+
+extern "C" PyAPI_FUNC(int) PyFrame_ClearFreeList(void);
 
 namespace py {
 

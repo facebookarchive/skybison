@@ -1,9 +1,10 @@
 #include <cstdarg>
 
 #include "../Python/modsupport-internal.h"
-#include "capi-handles.h"
 #include "cpython-data.h"
 #include "cpython-func.h"
+
+#include "capi-handles.h"
 #include "exception-builtins.h"
 #include "frame.h"
 #include "int-builtins.h"

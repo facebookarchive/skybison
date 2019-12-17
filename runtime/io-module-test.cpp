@@ -1,6 +1,7 @@
+#include "io-module.h"
+
 #include "gtest/gtest.h"
 
-#include "io-module.h"
 #include "os.h"
 #include "runtime.h"
 #include "test-utils.h"

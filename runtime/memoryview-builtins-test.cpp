@@ -1,7 +1,8 @@
+#include "memoryview-builtins.h"
+
 #include "gtest/gtest.h"
 
 #include "handles.h"
-#include "memoryview-builtins.h"
 #include "test-utils.h"
 
 namespace py {

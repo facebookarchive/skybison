@@ -1,11 +1,12 @@
-#include "benchmark/benchmark.h"
-#include "gtest/gtest.h"
+#include "float-conversion.h"
 
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
 
-#include "float-conversion.h"
+#include "benchmark/benchmark.h"
+#include "gtest/gtest.h"
+
 #include "globals.h"
 #include "runtime.h"
 #include "test-utils.h"

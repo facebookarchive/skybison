@@ -1,5 +1,6 @@
-#include "capi-handles.h"
 #include "cpython-func.h"
+
+#include "capi-handles.h"
 #include "module-builtins.h"
 #include "runtime.h"
 

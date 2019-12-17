@@ -1,10 +1,11 @@
-#include "gtest/gtest.h"
+#include "marshal.h"
 
 #include <cmath>
 #include <cstdint>
 
+#include "gtest/gtest.h"
+
 #include "globals.h"
-#include "marshal.h"
 #include "runtime.h"
 #include "test-utils.h"
 

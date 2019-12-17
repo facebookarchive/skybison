@@ -1,6 +1,7 @@
+#include "bytearray-builtins.h"
+
 #include "gtest/gtest.h"
 
-#include "bytearray-builtins.h"
 #include "test-utils.h"
 
 namespace py {

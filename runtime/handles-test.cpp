@@ -1,9 +1,10 @@
-#include "benchmark/benchmark.h"
-#include "gtest/gtest.h"
+#include "handles.h"
 
 #include <vector>
 
-#include "handles.h"
+#include "benchmark/benchmark.h"
+#include "gtest/gtest.h"
+
 #include "objects.h"
 #include "runtime.h"
 #include "test-utils.h"

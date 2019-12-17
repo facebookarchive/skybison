@@ -1,7 +1,8 @@
 // dictobject.c implementation
 
-#include "capi-handles.h"
 #include "cpython-func.h"
+
+#include "capi-handles.h"
 #include "dict-builtins.h"
 #include "handles.h"
 #include "int-builtins.h"

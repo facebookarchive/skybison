@@ -4,12 +4,13 @@
 #include <cstring>
 #include <cwchar>
 
+#include "cpython-data.h"
+#include "cpython-func.h"
+
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
 #include "capi-handles.h"
 #include "codecs-module.h"
-#include "cpython-data.h"
-#include "cpython-func.h"
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"

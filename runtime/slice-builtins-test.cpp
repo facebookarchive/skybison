@@ -1,7 +1,8 @@
+#include "slice-builtins.h"
+
 #include "gtest/gtest.h"
 
 #include "runtime.h"
-#include "slice-builtins.h"
 #include "test-utils.h"
 
 namespace py {

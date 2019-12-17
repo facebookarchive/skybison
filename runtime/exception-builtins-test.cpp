@@ -1,6 +1,7 @@
+#include "exception-builtins.h"
+
 #include "gtest/gtest.h"
 
-#include "exception-builtins.h"
 #include "runtime.h"
 #include "test-utils.h"
 

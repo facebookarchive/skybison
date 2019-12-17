@@ -1,8 +1,9 @@
+#include "object-builtins.h"
+
 #include "gtest/gtest.h"
 
 #include "frame.h"
 #include "ic.h"
-#include "object-builtins.h"
 #include "runtime.h"
 #include "str-builtins.h"
 #include "test-utils.h"

@@ -1,6 +1,8 @@
-#include "gtest/gtest.h"
+#include "under-builtins-module.h"
 
 #include <cmath>
+
+#include "gtest/gtest.h"
 
 #include "builtins-module.h"
 #include "bytearray-builtins.h"
@@ -10,7 +12,6 @@
 #include "runtime.h"
 #include "test-utils.h"
 #include "trampolines.h"
-#include "under-builtins-module.h"
 
 namespace py {
 

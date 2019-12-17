@@ -1,5 +1,4 @@
 #include "Python.h"
-
 #include "gmock/gmock-matchers.h"
 
 #include "capi-fixture.h"

@@ -1,6 +1,7 @@
+#include "mro.h"
+
 #include "gtest/gtest.h"
 
-#include "mro.h"
 #include "test-utils.h"
 
 namespace py {

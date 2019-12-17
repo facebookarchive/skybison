@@ -1,6 +1,7 @@
+#include "mutex.h"
+
 #include <pthread.h>
 
-#include "mutex.h"
 #include "utils.h"
 
 namespace py {

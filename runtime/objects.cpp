@@ -1,11 +1,11 @@
 #include "objects.h"
 
+#include <cstring>
+
 #include "bytes-builtins.h"
 #include "frame.h"
 #include "runtime.h"
 #include "thread.h"
-
-#include <cstring>
 
 namespace py {
 

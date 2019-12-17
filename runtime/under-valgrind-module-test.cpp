@@ -1,9 +1,10 @@
-#include "gtest/gtest.h"
+#include "under-valgrind-module.h"
 
 #include <cmath>
 
+#include "gtest/gtest.h"
+
 #include "test-utils.h"
-#include "under-valgrind-module.h"
 
 namespace py {
 

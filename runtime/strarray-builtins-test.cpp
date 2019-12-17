@@ -1,6 +1,7 @@
+#include "strarray-builtins.h"
+
 #include "gtest/gtest.h"
 
-#include "strarray-builtins.h"
 #include "test-utils.h"
 
 namespace py {

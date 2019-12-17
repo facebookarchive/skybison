@@ -1,7 +1,8 @@
+#include "dict-builtins.h"
+
 #include "gtest/gtest.h"
 
 #include "builtins-module.h"
-#include "dict-builtins.h"
 #include "int-builtins.h"
 #include "runtime.h"
 #include "str-builtins.h"

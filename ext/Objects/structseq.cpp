@@ -1,6 +1,7 @@
+#include "cpython-func.h"
+
 #include "builtins-module.h"
 #include "capi-handles.h"
-#include "cpython-func.h"
 #include "dict-builtins.h"
 #include "module-builtins.h"
 #include "object-builtins.h"

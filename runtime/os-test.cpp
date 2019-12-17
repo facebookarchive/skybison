@@ -1,8 +1,8 @@
-#include "gtest/gtest.h"
+#include "os.h"
 
 #include <cstring>
 
-#include "os.h"
+#include "gtest/gtest.h"
 
 namespace py {
 

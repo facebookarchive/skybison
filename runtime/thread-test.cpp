@@ -1,6 +1,8 @@
-#include "gtest/gtest.h"
+#include "thread.h"
 
 #include <memory>
+
+#include "gtest/gtest.h"
 
 #include "builtins-module.h"
 #include "bytecode.h"
@@ -12,7 +14,6 @@
 #include "module-builtins.h"
 #include "runtime.h"
 #include "test-utils.h"
-#include "thread.h"
 #include "type-builtins.h"
 
 namespace py {

@@ -1,6 +1,6 @@
+#include "Python.h"
 #include "gtest/gtest.h"
 
-#include "Python.h"
 #include "capi-fixture.h"
 #include "capi-testing.h"
 

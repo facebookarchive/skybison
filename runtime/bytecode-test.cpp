@@ -1,6 +1,7 @@
+#include "bytecode.h"
+
 #include "gtest/gtest.h"
 
-#include "bytecode.h"
 #include "ic.h"
 #include "test-utils.h"
 

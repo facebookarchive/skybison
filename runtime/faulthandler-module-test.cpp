@@ -1,9 +1,10 @@
-#include "gtest/gtest.h"
+#include "faulthandler-module.h"
 
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "faulthandler-module.h"
+#include "gtest/gtest.h"
+
 #include "os.h"
 #include "runtime.h"
 #include "test-utils.h"

@@ -1,8 +1,9 @@
+#include "test-utils.h"
+
 #include "gtest/gtest.h"
 
 #include "objects.h"
 #include "runtime.h"
-#include "test-utils.h"
 
 namespace py {
 
