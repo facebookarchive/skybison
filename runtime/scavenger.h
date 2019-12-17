@@ -49,11 +49,14 @@ class Scavenger {
 
   void processRoots();
 
+  void processLayouts();
+
   ScavengeVisitor visitor_;
   Runtime* runtime_;
   Space* from_;
   Space* to_;
   uword scan_;
+  RawMutableTuple layouts_;
   RawObject delayed_references_;
   RawObject delayed_callbacks_;
 

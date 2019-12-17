@@ -19,6 +19,7 @@ Scavenger::Scavenger(Runtime* runtime)
       runtime_(runtime),
       from_(runtime->heap()->space()),
       to_(nullptr),
+      layouts_(MutableTuple::cast(runtime->layouts())),
       delayed_references_(NoneType::object()),
       delayed_callbacks_(NoneType::object()) {}
 
@@ -35,6 +36,7 @@ RawObject Scavenger::scavenge() {
   processFinalizableReferences();
   processGrayObjects();
   processDelayedReferences();
+  processLayouts();
   runtime_->heap()->setSpace(to_);
   DCHECK(runtime_->heap()->verify(), "Heap failed to verify after GC");
   delete from_;
@@ -92,6 +94,30 @@ void Scavenger::processGrayObjects() {
     }
   }
   scan_ = scan;
+}
+
+// Do a final pass through the Layouts Tuple, treating all non-builtin entries
+// as weak roots.
+void Scavenger::processLayouts() {
+  for (word i = static_cast<word>(LayoutId::kLastBuiltinId) + 1,
+            end = layouts_.length();
+       i < end; ++i) {
+    RawObject layout = layouts_.at(i);
+    if (layout.isNoneType()) continue;
+    RawHeapObject heap_obj = HeapObject::cast(layout);
+    if (to_->contains(heap_obj.address())) continue;
+
+    if (heap_obj.isForwarding()) {
+      DCHECK(heap_obj.forward().isLayout(), "Bad Layout forwarded value");
+      layouts_.atPut(i, heap_obj.forward());
+    } else {
+      layouts_.atPut(i, NoneType::object());
+    }
+  }
+
+  // TODO(T59281894): We can skip this step if the Layouts table doesn't live
+  // in the managed heap.
+  runtime_->setLayouts(transport(layouts_));
 }
 
 void Scavenger::processApiHandles() {
@@ -189,6 +215,12 @@ RawObject Scavenger::transport(RawObject old_object) {
   word offset = from_object.address() - from_object.baseAddress();
   RawHeapObject to_object = HeapObject::fromAddress(address + offset);
   from_object.forwardTo(to_object);
+
+  LayoutId layout_id = to_object.layoutId();
+  auto layout_ptr = reinterpret_cast<RawObject*>(
+      layouts_.address() + static_cast<word>(layout_id) * kPointerSize);
+  scavengePointer(layout_ptr);
+
   return to_object;
 }
 

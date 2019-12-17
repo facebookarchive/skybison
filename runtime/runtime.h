@@ -378,6 +378,10 @@ class Runtime {
   // is for debug dumpers. Do not use for other purposes!
   RawObject layoutAtSafe(LayoutId layout_id);
 
+  // Raw access to the MutableTuple of Layouts. Intended only for use by the GC.
+  RawObject layouts() { return layouts_; }
+  void setLayouts(RawObject layouts) { layouts_ = layouts; }
+
   // Bootstrapping primitive for creating a built-in class that has built-in
   // attributes and/or methods.
   RawObject addEmptyBuiltinType(SymbolId name, LayoutId subclass_id,

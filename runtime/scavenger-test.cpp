@@ -378,4 +378,61 @@ class C:
   EXPECT_TRUE(isIntEqualsWord(thread_->pendingExceptionValue(), 99));
 }
 
+TEST_F(ScavengerTest, CollectGarbageCollectsDeadLayout) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C:
+  pass
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  LayoutId c_layout_id;
+  {
+    Type c(&scope, mainModuleAt(&runtime_, "C"));
+    Layout c_layout(&scope, c.instanceLayout());
+    c_layout_id = c_layout.id();
+    ASSERT_EQ(runtime_.layoutAt(c_layout_id), *c_layout);
+  }
+
+  ASSERT_FALSE(runFromCStr(&runtime_, "del C").isError());
+  // This collection should kill C.
+  runtime_.collectGarbage();
+  EXPECT_TRUE(runtime_.layoutAt(c_layout_id).isNoneType());
+}
+
+TEST_F(ScavengerTest, CollectGarbagePreservesTypeWithoutNormalReferences) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C:
+  pass
+c = C()
+del C
+)")
+                   .isError());
+
+  runtime_.collectGarbage();
+  HandleScope scope(thread_);
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
+  EXPECT_TRUE(runtime_.typeOf(*c).isType());
+}
+
+TEST_F(ScavengerTest, CollectGarbagePreservesLayoutWithNoLiveObjects) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C:
+  pass
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Type c(&scope, mainModuleAt(&runtime_, "C"));
+  LayoutId c_layout_id;
+  {
+    Layout c_layout(&scope, c.instanceLayout());
+    c_layout_id = c_layout.id();
+    ASSERT_EQ(runtime_.layoutAt(c_layout_id), *c_layout);
+  }
+
+  runtime_.collectGarbage();
+  EXPECT_EQ(c.instanceLayout(), runtime_.layoutAt(c_layout_id));
+}
+
 }  // namespace py
