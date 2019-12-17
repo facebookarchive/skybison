@@ -22,6 +22,15 @@ def run(cmd, **kwargs):
     return subprocess.run(cmd, encoding="UTF-8", env=env, check=True, **kwargs)
 
 
+def create_taskset_command(isolated_cpus):
+    if isolated_cpus == "":
+        return []
+    # If it ever matters in the future, this only pulls out the first integer
+    # encountered in the list of isolated cpus
+    isolated_cpus = re.findall(r"\d+", isolated_cpus)[0]
+    return ["taskset", "--cpu-list", isolated_cpus]
+
+
 def pin_to_cpus():
     if not os.path.exists("/sys/devices/system/cpu/isolated"):
         return []
@@ -29,9 +38,7 @@ def pin_to_cpus():
         ["cat", "/sys/devices/system/cpu/isolated"], stdout=subprocess.PIPE
     )
     isolated_cpus = completed_process.stdout.strip()
-    if isolated_cpus == "":
-        return []
-    return ["taskset", "--cpu-list", isolated_cpus]
+    return create_taskset_command(isolated_cpus)
 
 
 class PerformanceTool(ABC):
