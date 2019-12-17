@@ -441,6 +441,13 @@ class Interpreter {
   static Continue doStoreGlobalCached(Thread* thread, word arg);
   static Continue doStoreName(Thread* thread, word arg);
 
+  // Call an interpreted function (this captures the part of the CALL_FUNCTION
+  // process after intrinsics are processed and it has been determined that the
+  // callable is an interpreted function).
+  static Continue callInterpreted(Thread* thread, word argc, Frame* frame,
+                                  RawFunction function,
+                                  RawObject* post_call_sp);
+
  private:
   // Common functionality for opcode handlers that dispatch to binary and
   // inplace operations

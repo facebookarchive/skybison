@@ -274,6 +274,8 @@ class Thread {
 
   static int runtimeOffset() { return offsetof(Thread, runtime_); }
 
+  static int startOffset() { return offsetof(Thread, start_); }
+
  private:
   Frame* pushInitialFrame();
   Frame* openAndLinkFrame(word size, word total_locals);

@@ -3475,6 +3475,39 @@ Continue Interpreter::callTrampoline(Thread* thread, Function::Entry entry,
   return Continue::NEXT;
 }
 
+static HANDLER_INLINE Continue callInterpretedImpl(
+    Thread* thread, word argc, Frame* caller_frame, RawFunction function,
+    RawObject* post_call_sp, PrepareCallFunc prepare_args) {
+  // Warning: This code is using `RawXXX` variables for performance! This is
+  // despite the fact that we call functions that do potentially perform memory
+  // allocations. This is legal here because we always rely on the functions
+  // returning an up-to-date address and we make sure to never access any value
+  // produce before a call after that call. Be careful not to break this
+  // invariant if you change the code!
+
+  RawObject result = prepare_args(thread, function, caller_frame, argc);
+  if (result.isErrorException()) return Continue::UNWIND;
+  function = RawFunction::cast(result);
+
+  bool has_freevars_or_cellvars = function.hasFreevarsOrCellvars();
+  Frame* callee_frame = thread->pushCallFrame(function);
+  if (UNLIKELY(callee_frame == nullptr)) {
+    return Continue::UNWIND;
+  }
+  caller_frame->setValueStackTop(post_call_sp);
+  if (has_freevars_or_cellvars) {
+    processFreevarsAndCellvars(thread, callee_frame);
+  }
+  return Continue::NEXT;
+}
+
+Continue Interpreter::callInterpreted(Thread* thread, word argc, Frame* frame,
+                                      RawFunction function,
+                                      RawObject* post_call_sp) {
+  return callInterpretedImpl(thread, argc, frame, function, post_call_sp,
+                             preparePositionalCall);
+}
+
 HANDLER_INLINE Continue
 Interpreter::handleCall(Thread* thread, word argc, word callable_idx,
                         word num_extra_pop, PrepareCallFunc prepare_args,
@@ -3503,20 +3536,8 @@ Interpreter::handleCall(Thread* thread, word argc, word callable_idx,
     return callTrampoline(thread, (function.*get_entry)(), argc, post_call_sp);
   }
 
-  RawObject result = prepare_args(thread, function, caller_frame, argc);
-  if (result.isErrorException()) return Continue::UNWIND;
-  function = RawFunction::cast(result);
-
-  bool has_freevars_or_cellvars = function.hasFreevarsOrCellvars();
-  Frame* callee_frame = thread->pushCallFrame(function);
-  if (UNLIKELY(callee_frame == nullptr)) {
-    return Continue::UNWIND;
-  }
-  caller_frame->setValueStackTop(post_call_sp);
-  if (has_freevars_or_cellvars) {
-    processFreevarsAndCellvars(thread, callee_frame);
-  }
-  return Continue::NEXT;
+  return callInterpretedImpl(thread, argc, caller_frame, function, post_call_sp,
+                             prepare_args);
 }
 
 HANDLER_INLINE Continue Interpreter::doCallFunction(Thread* thread, word arg) {

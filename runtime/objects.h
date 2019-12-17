@@ -2216,16 +2216,16 @@ class RawFunction : public RawInstance {
   static const int kDictOffset = kOriginalArgumentsOffset + kPointerSize;
   static const int kSize = kDictOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(Function);
-
- private:
-  void setFlagsAndIntrinsicId(word flags, word id) const;
-
   // The intrinsic ID is stored in the high flag bits.
   static const int kFlagsBits = 31;
   static const int kIntrinsicIdOffset = kFlagsBits;
   static const word kFlagsMask = (word{1} << kFlagsBits) - 1;
   static_assert(Flags::kLast < kFlagsMask, "flags overflow");
+
+  RAW_OBJECT_COMMON(Function);
+
+ private:
+  void setFlagsAndIntrinsicId(word flags, word id) const;
 };
 
 class RawMappingProxy : public RawInstance {

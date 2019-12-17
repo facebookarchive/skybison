@@ -9,6 +9,7 @@
 #include "frame.h"
 #include "ic.h"
 #include "interpreter.h"
+#include "intrinsic.h"
 #include "memory-region.h"
 #include "os.h"
 #include "runtime.h"
@@ -32,9 +33,9 @@ using namespace x64;
 
 // Abbreviated x86-64 ABI:
 constexpr Register kArgRegs[] = {RDI, RSI, RDX, RCX, R8, R9};
+constexpr Register kReturnRegs[] = {RAX, RDX};
 
 // Currently unused in code, but kept around for reference:
-// return registers: {RAX, RDX}
 // callee-saved registers: {RSP, RBP, RBX, R12, R13, R14, R15}
 // caller-saved registers: {RAX, RCX, RDX, RDI, RSI, R8, R9, R10, R11}
 
@@ -68,7 +69,7 @@ const Register kHandlersBaseReg = R13;
 // | entry_frame |
 // | padding     | <- native %rsp, when materialized for a C++ call
 // +-------------+
-constexpr Register kUsedCalleeSavedRegs[] = {RBX, R12, R13, R14};
+constexpr Register kUsedCalleeSavedRegs[] = {RBX, R12, R13, R14, R15};
 const word kNumCalleeSavedRegs = ARRAYSIZE(kUsedCalleeSavedRegs);
 const word kEntryFrameOffset = -(kNumCalleeSavedRegs + 1) * kPointerSize;
 const word kPaddingBytes = (kEntryFrameOffset % 16) == 0 ? 0 : kPointerSize;
@@ -112,6 +113,8 @@ struct EmitEnv {
   Bytecode current_op;
   const char* current_handler;
   Label call_handlers[kNumBytecodes];
+  Label call_function_handler_impl;
+  Label unwind_handler;
 };
 
 // This macro helps instruction-emitting code stand out while staying compact.
@@ -231,6 +234,26 @@ void emitCall(EmitEnv* env, word function_addr) {
   __ call(RAX);
 }
 
+void emitHandleContinue(EmitEnv* env, bool may_change_frame_pc) {
+  Register r_result = kReturnRegs[0];
+
+  Label handle_flow;
+  static_assert(static_cast<int>(Interpreter::Continue::NEXT) == 0,
+                "NEXT must be 0");
+  __ testl(r_result, r_result);
+  __ jcc(NOT_ZERO, &handle_flow, Assembler::kNearJump);
+
+  emitRestoreInterpreterState(
+      env, may_change_frame_pc ? kAllState : (kVMStack | kBytecode));
+  emitNextOpcode(env);
+
+  __ bind(&handle_flow);
+  __ shll(r_result, Immediate(kHandlerSizeShift));
+  __ leaq(r_result, Address(kHandlersBaseReg, r_result, TIMES_1,
+                            -Interpreter::kNumContinues * kHandlerSize));
+  __ jmp(r_result);
+}
+
 // Emit a call to the C++ implementation of the given Bytecode, saving and
 // restoring appropriate interpreter state before and after the call. This code
 // is emitted as a series of stubs after the main set of handlers; it's used
@@ -244,21 +267,7 @@ void emitGenericHandler(EmitEnv* env, Bytecode bc) {
 
   emitCall(env, reinterpret_cast<word>(kCppHandlers[bc]));
 
-  Label handle_flow;
-  static_assert(static_cast<int>(Interpreter::Continue::NEXT) == 0,
-                "NEXT must be 0");
-  __ testl(RAX, RAX);
-  __ jcc(NOT_ZERO, &handle_flow, Assembler::kNearJump);
-
-  emitRestoreInterpreterState(
-      env, mayChangeFramePC(bc) ? kAllState : (kVMStack | kBytecode));
-  emitNextOpcode(env);
-
-  __ bind(&handle_flow);
-  __ shll(RAX, Immediate(kHandlerSizeShift));
-  __ leaq(RAX, Address(kHandlersBaseReg, RAX, TIMES_1,
-                       -Interpreter::kNumContinues * kHandlerSize));
-  __ jmp(RAX);
+  emitHandleContinue(env, mayChangeFramePC(bc));
 }
 
 Label* genericHandlerLabel(EmitEnv* env) {
@@ -519,6 +528,194 @@ void emitHandler<STORE_ATTR_CACHED>(EmitEnv* env) {
   __ bind(&slow_path);
   __ pushq(r_base);
   emitJumpToGenericHandler(env);
+}
+
+static void emitPushCallFrame(EmitEnv* env, Register r_callable,
+                              Register r_post_call_sp, Label* stack_overflow) {
+  Register r_total_vars = RSI;
+  Register r_initial_size = R9;
+  Register r_max_size = RAX;
+
+  __ movq(r_total_vars,
+          Address(r_callable, heapObjectDisp(Function::kTotalVarsOffset)));
+  static_assert(kPointerSize == 8, "unexpected size");
+  static_assert(Object::kSmallIntTag == 0 && Object::kSmallIntTagBits == 1,
+                "unexpected tag");
+  // Note: SmallInt::cast(r_total_vars).value() * kPointerSize
+  //    <=> r_total_vars * 4!
+  __ leaq(r_initial_size, Address(r_total_vars, TIMES_4, Frame::kSize));
+  __ movq(r_max_size,
+          Address(r_callable, heapObjectDisp(Function::kStacksizeOffset)));
+  // Same reasoning as above.
+  __ leaq(r_max_size, Address(r_initial_size, r_max_size, TIMES_4, 0));
+
+  // if (sp - max_size >= thread->start_) { goto stack_overflow; }
+  Register r_scratch = r_max_size;
+  __ negq(r_scratch);
+  __ addq(r_scratch, RSP);
+  __ cmpq(r_scratch, Address(kThreadReg, Thread::startOffset()));
+  __ jcc(BELOW, stack_overflow, Assembler::kFarJump);
+
+  __ subq(RSP, r_initial_size);
+
+  // Setup the new frame:
+
+  // total_locals = total_vars - total_args
+  // Note that the involved registers contain smallints.
+  Register r_total_locals = r_total_vars;
+  __ movq(r_scratch,
+          Address(r_callable, heapObjectDisp(Function::kTotalArgsOffset)));
+  __ addq(r_total_locals, r_scratch);
+  // new_frame.setLocalsOffset(sp + kSize + (total_locals - 1) * kPointerSize)
+  __ leaq(r_scratch,
+          Address(RSP, r_total_locals, TIMES_4, Frame::kSize - kPointerSize));
+  __ movq(Address(RSP, Frame::kLocalsOffset), r_scratch);
+  // new_frame.blockStack()->setDepth(0)
+  __ movq(Address(RSP, Frame::kBlockStackOffset + BlockStack::kDepthOffset),
+          Immediate(0));
+  // new_frame.setPreviousFrame(kFrameReg)
+  __ movq(Address(RSP, Frame::kPreviousFrameOffset), kFrameReg);
+  // kBCReg = callable.rewritteBytecode(); new_frame.setBytecode(kBCReg);
+  __ movq(kBCReg, Address(r_callable,
+                          heapObjectDisp(Function::kRewrittenBytecodeOffset)));
+  __ movq(Address(RSP, Frame::kBytecodeOffset), kBCReg);
+  // new_frame.setCaches(callable.caches())
+  __ movq(r_scratch,
+          Address(r_callable, heapObjectDisp(Function::kCachesOffset)));
+  __ movq(Address(RSP, Frame::kCachesOffset), r_scratch);
+  // caller_frame.setVirtualPC(kPCReg); kPCReg = 0
+  emitSaveInterpreterState(env, SaveRestoreFlags::kVMPC);
+  __ xorl(kPCReg, kPCReg);
+
+  // caller_frame.setStack(r_post_call_sp)
+  __ movq(Address(kFrameReg, Frame::kValueStackTopOffset), r_post_call_sp);
+
+  // kFrameReg = new_frame
+  __ movq(kFrameReg, RSP);
+}
+
+void emitPrepareCallable(EmitEnv* env, Register r_callable, Label* slow_path) {
+  Register r_scratch = RAX;
+
+  // Check whether callable is a heap object.
+  static_assert(Object::kHeapObjectTag == 1, "unexpected tag");
+  __ movl(r_scratch, r_callable);
+  __ andl(r_scratch, Immediate(Object::kPrimaryTagMask));
+  __ cmpl(r_scratch, Immediate(Object::kHeapObjectTag));
+  __ jcc(NOT_EQUAL, slow_path, Assembler::kFarJump);
+
+  // Check whether callable is a function.
+  __ movq(r_scratch,
+          Address(r_callable, heapObjectDisp(HeapObject::kHeaderOffset)));
+  __ andl(r_scratch,
+          Immediate(Header::kLayoutIdMask << Header::kLayoutIdOffset));
+  static_assert(Header::kLayoutIdMask <= kMaxInt32, "big layout id mask");
+  __ cmpl(r_scratch, Immediate(static_cast<word>(LayoutId::kFunction)
+                               << Header::kLayoutIdOffset));
+  __ jcc(NOT_EQUAL, slow_path, Assembler::kFarJump);
+}
+
+void emitCallFunctionHandler(EmitEnv* env) {
+  const Register r_scratch = RAX;
+  const Register r_callable = RDI;
+  const Register r_intrinsic_id = RDX;
+  const Register r_flags = RDX;
+  const Register r_post_call_sp = R8;
+  const Register r_saved_post_call_sp = R15;
+
+  __ movq(r_callable, Address(RSP, kOpargReg, TIMES_8, 0));
+  emitPrepareCallable(env, r_callable, &env->call_handlers[CALL_FUNCTION]);
+
+  // Check whether we have intrinsic code for the function.
+  static_assert(Function::kIntrinsicIdOffset + SmallInt::kSmallIntTagBits == 32,
+                "unexpected intrinsic id offset");
+  __ movl(r_intrinsic_id,
+          Address(r_callable, heapObjectDisp(Function::kFlagsOffset) + 4));
+  __ cmpl(r_intrinsic_id, Immediate(static_cast<word>(SymbolId::kInvalid)));
+  Label no_intrinsic;
+  __ jcc(EQUAL, &no_intrinsic, Assembler::kNearJump);
+
+  // if (doIntrinsic(thread, frame, id)) return Continue::NEXT;
+  emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
+  __ pushq(r_callable);
+  __ pushq(kOpargReg);
+  __ movq(kArgRegs[0], kThreadReg);
+  __ movq(kArgRegs[1], kFrameReg);
+  static_assert(kArgRegs[2] == r_intrinsic_id, "reg mismatch");
+  emitCall(env, reinterpret_cast<int64_t>(doIntrinsic));
+  __ popq(kOpargReg);
+  __ popq(r_callable);
+  emitRestoreInterpreterState(env, kVMStack | kBytecode);
+  __ testb(kReturnRegs[0], kReturnRegs[0]);
+  Label next_opcode;
+  __ jcc(NOT_ZERO, &next_opcode, Assembler::kFarJump);
+
+  __ bind(&no_intrinsic);
+
+  __ leaq(r_post_call_sp, Address(RSP, kOpargReg, TIMES_8, kPointerSize));
+
+  // Check whether the call is interpreted.
+  __ movl(r_flags, Address(r_callable, heapObjectDisp(Function::kFlagsOffset)));
+  __ testl(r_flags, smallIntImmediate(Function::Flags::kInterpreted));
+  Label call_trampoline;
+  __ jcc(ZERO, &call_trampoline, Assembler::kFarJump);
+
+  // We do not support freevar/cellvar setup in the assembly interpreter.
+  __ testl(r_flags, smallIntImmediate(Function::Flags::kNofree));
+  Label call_interpreted_slow_path;
+  __ jcc(ZERO, &call_interpreted_slow_path, Assembler::kFarJump);
+
+  // prepareDefaultArgs.
+  __ movl(r_scratch,
+          Address(r_callable, heapObjectDisp(Function::kArgcountOffset)));
+  __ shrl(r_scratch, Immediate(SmallInt::kSmallIntTagBits));
+  __ cmpl(r_scratch, kOpargReg);
+  __ jcc(NOT_EQUAL, &call_interpreted_slow_path, Assembler::kFarJump);
+  __ testl(r_flags, smallIntImmediate(Function::Flags::kSimpleCall));
+  __ jcc(ZERO, &call_interpreted_slow_path, Assembler::kFarJump);
+
+  emitPushCallFrame(env, r_callable, r_post_call_sp,
+                    &call_interpreted_slow_path);
+
+  __ bind(&next_opcode);
+  emitNextOpcode(env);
+
+  // Function::cast(callable).entry()(thread, frame, argc);
+  __ bind(&call_trampoline);
+  emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
+  __ movq(r_saved_post_call_sp, r_post_call_sp);
+  __ movq(r_scratch,
+          Address(r_callable, heapObjectDisp(Function::kEntryOffset)));
+  __ movq(kArgRegs[0], kThreadReg);
+  __ movq(kArgRegs[2], kOpargReg);
+  __ movq(kArgRegs[1], kFrameReg);
+  __ call(r_scratch);
+  // if (kReturnRegs[0].isErrorException()) return UNWIND;
+  static_assert(Object::kImmediateTagBits + Error::kKindBits <= 8,
+                "tag should fit a byte for cmpb");
+  __ cmpb(kReturnRegs[0], Immediate(Error::exception().raw()));
+  __ jcc(EQUAL, &env->unwind_handler, Assembler::kFarJump);
+  __ movq(RSP, r_saved_post_call_sp);
+  emitRestoreInterpreterState(env, kBytecode);
+  __ pushq(kReturnRegs[0]);
+  emitNextOpcode(env);
+
+  // Interpreter::callInterpreted(thread, argc, frame, function, post_call_sp)
+  __ bind(&call_interpreted_slow_path);
+  __ movq(kArgRegs[3], r_callable);
+  __ movq(kArgRegs[0], kThreadReg);
+  static_assert(kArgRegs[1] == kOpargReg, "reg mismatch");
+  __ movq(kArgRegs[2], kFrameReg);
+  static_assert(kArgRegs[4] == r_post_call_sp, "reg mismatch");
+  emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
+  emitCall(env, reinterpret_cast<int64_t>(Interpreter::callInterpreted));
+  emitHandleContinue(env, /*may_change_frame_pc=*/true);
+}
+
+template <>
+void emitHandler<CALL_FUNCTION>(EmitEnv* env) {
+  // The CALL_FUNCTION handler is generated out-of-line after the handler table.
+  __ jmp(&env->call_function_handler_impl, Assembler::kFarJump);
 }
 
 template <>
@@ -785,6 +982,7 @@ void emitInterpreter(EmitEnv* env) {
   {
     env->current_handler = "UNWIND pseudo-handler";
     HandlerSizer sizer(env, kHandlerSize);
+    __ bind(&env->unwind_handler);
     __ movq(kArgRegs[0], kThreadReg);
     __ movq(kArgRegs[1], Address(RBP, kEntryFrameOffset));
 
@@ -849,6 +1047,9 @@ void emitInterpreter(EmitEnv* env) {
   }
   FOREACH_BYTECODE(BC)
 #undef BC
+
+  __ bind(&env->call_function_handler_impl);
+  emitCallFunctionHandler(env);
 
   // Emit the generic handler stubs at the end, out of the way of the
   // interesting code.
