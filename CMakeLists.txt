@@ -84,12 +84,13 @@ mark_as_advanced(
     CMAKE_EXE_LINKER_FLAGS_DEBUGOPT
     CMAKE_SHARED_LINKER_FLAGS_DEBUGOPT
 )
+set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+  "Debug" "DebugOpt" "Release" "RelWithDebInfo" "MinSizeRel")
 
-# Update the documentation string of CMAKE_BUILD_TYPE for GUIs
-SET(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING
-    "Choose the type of build, options are: \
-None Debug DebugOpt Release RelWithDebInfo MinSizeRel."
-    FORCE)
+# Set a default for CMAKE_BUILD_TYPE.
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY VALUE "Debug")
+endif()
 
 set(
   PYRO_COMPILE_OPTIONS
