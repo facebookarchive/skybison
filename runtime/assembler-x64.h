@@ -61,6 +61,12 @@ enum RexBits {
   REX_PREFIX = 1 << 6
 };
 
+enum Prefix {
+  LOCK = 0xf0,
+  REPNZ = 0xf2,
+  REP = 0xf3,
+};
+
 enum Condition {
   // This weird name avoids conflicts with the OVERFLOW macro in math.h on some
   // platforms.
@@ -381,8 +387,6 @@ class Assembler {
   F(sahf, 0x9e)                                                                \
   F(cdq, 0x99)                                                                 \
   F(fwait, 0x9b)                                                               \
-  F(movsb, 0xa4)                                                               \
-  F(movsl, 0xa5)                                                               \
   F(cmpsb, 0xa6)                                                               \
   F(cmpsl, 0xa7)
 
@@ -510,8 +514,6 @@ class Assembler {
   SIMPLE(fcos, 0xd9, 0xff)
   SIMPLE(fincstp, 0xd9, 0xf7)
   SIMPLE(fsin, 0xd9, 0xfe)
-  SIMPLE(lock, 0xf0)
-  SIMPLE(rep_movsb, 0xf3, 0xa4)
 #undef SIMPLE
 // XmmRegister operations with another register or an address.
 #define XX(width, name, ...)                                                   \
@@ -634,6 +636,19 @@ class Assembler {
     emitL(dst, src, 0x50, 0x0f, 0x66);
   }
   void movmskps(Register dst, XmmRegister src) { emitL(dst, src, 0x50, 0x0f); }
+
+  void movsb();
+  void movsl();
+  void movsq();
+  void movsw();
+  void repMovsb();
+  void repMovsl();
+  void repMovsq();
+  void repMovsw();
+  void repnzMovsb();
+  void repnzMovsl();
+  void repnzMovsq();
+  void repnzMovsw();
 
   void btl(Register dst, Register src) { emitL(src, dst, 0xa3, 0x0f); }
   void btq(Register dst, Register src) { emitQ(src, dst, 0xa3, 0x0f); }
@@ -761,12 +776,12 @@ class Assembler {
   void jmp(Label* label, bool near);
 
   void lockCmpxchgq(Address address, Register reg) {
-    lock();
+    emitUint8(LOCK);
     cmpxchgq(address, reg);
   }
 
   void lockCmpxchgl(Address address, Register reg) {
-    lock();
+    emitUint8(LOCK);
     cmpxchgl(address, reg);
   }
 

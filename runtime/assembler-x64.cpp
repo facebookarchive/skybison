@@ -183,6 +183,80 @@ void Assembler::movq(Address dst, Immediate imm) {
   emitImmediate(imm);
 }
 
+void Assembler::movsb() {
+  AssemblerBuffer::EnsureCapacity ensured(&buffer_);
+  emitUint8(0xa4);
+}
+
+void Assembler::movsw() {
+  AssemblerBuffer::EnsureCapacity ensured(&buffer_);
+  emitOperandSizeOverride();
+  emitUint8(0xa5);
+}
+
+void Assembler::movsl() {
+  AssemblerBuffer::EnsureCapacity ensured(&buffer_);
+  emitUint8(0xa5);
+}
+
+void Assembler::movsq() {
+  AssemblerBuffer::EnsureCapacity ensured(&buffer_);
+  emitUint8(REX_PREFIX | REX_W);
+  emitUint8(0xa5);
+}
+
+void Assembler::repMovsb() {
+  AssemblerBuffer::EnsureCapacity ensured(&buffer_);
+  emitUint8(REP);
+  emitUint8(0xa4);
+}
+
+void Assembler::repMovsw() {
+  AssemblerBuffer::EnsureCapacity ensured(&buffer_);
+  emitUint8(REP);
+  emitOperandSizeOverride();
+  emitUint8(0xa5);
+}
+
+void Assembler::repMovsl() {
+  AssemblerBuffer::EnsureCapacity ensured(&buffer_);
+  emitUint8(REP);
+  emitUint8(0xa5);
+}
+
+void Assembler::repMovsq() {
+  AssemblerBuffer::EnsureCapacity ensured(&buffer_);
+  emitUint8(REP);
+  emitUint8(REX_PREFIX | REX_W);
+  emitUint8(0xa5);
+}
+
+void Assembler::repnzMovsb() {
+  AssemblerBuffer::EnsureCapacity ensured(&buffer_);
+  emitUint8(REPNZ);
+  emitUint8(0xa4);
+}
+
+void Assembler::repnzMovsw() {
+  AssemblerBuffer::EnsureCapacity ensured(&buffer_);
+  emitUint8(REPNZ);
+  emitOperandSizeOverride();
+  emitUint8(0xa5);
+}
+
+void Assembler::repnzMovsl() {
+  AssemblerBuffer::EnsureCapacity ensured(&buffer_);
+  emitUint8(REPNZ);
+  emitUint8(0xa5);
+}
+
+void Assembler::repnzMovsq() {
+  AssemblerBuffer::EnsureCapacity ensured(&buffer_);
+  emitUint8(REPNZ);
+  emitUint8(REX_PREFIX | REX_W);
+  emitUint8(0xa5);
+}
+
 void Assembler::emitSimple(int opcode, int opcode2) {
   AssemblerBuffer::EnsureCapacity ensured(&buffer_);
   emitUint8(opcode);

@@ -119,6 +119,38 @@ TEST(AssemblerTest, MovqAddressImmediate) {
   EXPECT_TRUE(assemblerContainsBytes(&as, expected));
 }
 
+TEST(AssemblerTest, MovsX) {
+  const byte expected[] = {
+      0xa4,              // movsb
+      0x66, 0xa5,        // movsw
+      0xa5,              // movsl
+      0x48, 0xa5,        // movsq
+      0xf3, 0xa4,        // rep movsb
+      0xf3, 0x66, 0xa5,  // rep movsw
+      0xf3, 0xa5,        // rep movsl
+      0xf3, 0x48, 0xa5,  // rep movsq
+      0xf2, 0xa4,        // repnz movsb
+      0xf2, 0x66, 0xa5,  // repnz movsw
+      0xf2, 0xa5,        // repnz movsl
+      0xf2, 0x48, 0xa5,  // repnz movsq
+  };
+
+  Assembler as;
+  as.movsb();
+  as.movsw();
+  as.movsl();
+  as.movsq();
+  as.repMovsb();
+  as.repMovsw();
+  as.repMovsl();
+  as.repMovsq();
+  as.repnzMovsb();
+  as.repnzMovsw();
+  as.repnzMovsl();
+  as.repnzMovsq();
+  EXPECT_TRUE(assemblerContainsBytes(&as, expected));
+}
+
 TEST(AssemblerTest, TestbWithRexPrefix) {
   // 40 84 3e        testb   %dil, (%rsi)
   // 41 84 2c 1a     testb   %bpl, (%r10,%rbx)
