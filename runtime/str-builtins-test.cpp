@@ -576,7 +576,7 @@ TEST_F(StrBuiltinsTest,
   bool some_interned = false;
   for (word idx = Set::Bucket::kFirst; Set::Bucket::nextItem(*data, &idx);) {
     Str obj(&scope, Set::Bucket::value(*data, idx));
-    bool interned = runtime_.isInternedStr(thread_, obj);
+    bool interned = Runtime::isInternedStr(thread_, obj);
     all_interned &= interned;
     some_interned |= interned;
   }

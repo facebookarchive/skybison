@@ -88,10 +88,8 @@ std::ostream& dumpExtendedCode(std::ostream& os, RawCode value,
 }
 
 static std::ostream& operator<<(std::ostream& os, SymbolId value) {
-  os << (value == SymbolId::kInvalid
-             ? "<invalid>"
-             : Thread::current()->runtime()->symbols()->predefinedSymbolAt(
-                   value));
+  os << (value == SymbolId::kInvalid ? "<invalid>"
+                                     : Symbols::predefinedSymbolAt(value));
   return os;
 }
 
