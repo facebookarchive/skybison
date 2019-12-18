@@ -2338,6 +2338,7 @@ class DictTests(unittest.TestCase):
     def test_update_with_keys_attribute_calls_keys_method(self):
         class C:
             keys = Mock(name="keys", return_value=())
+            __getitem__ = Mock(name="__getitem__")
 
         c = C()
         {}.update(c)
@@ -2361,6 +2362,7 @@ class DictTests(unittest.TestCase):
         d = {}
         c = C()
         c.keys = Mock(name="keys", return_value=())
+        c.__getitem__ = Mock(name="__getitem__")
         d.update(c)
         c.keys.assert_called_once()
 
@@ -2372,6 +2374,7 @@ class DictTests(unittest.TestCase):
 
         class C:
             keys = Mock(name="keys", return_value=iterable)
+            __getitem__ = Mock(name="__getitem__")
 
         c = C()
         {}.update(c)
@@ -2390,6 +2393,24 @@ class DictTests(unittest.TestCase):
         self.assertEqual(c.__getitem__.call_count, 2)
         self.assertEqual(d["foo"], "baz")
         self.assertEqual(d["bar"], "baz")
+
+    def test_update_with_kwargs_returns_updated_dict(self):
+        d1 = {"a": 1, "b": 2}
+        d1.update(y=25)
+        self.assertEqual(d1["y"], 25)
+
+    def test_update_with_dict_and_kwargs_returns_updated_dict(self):
+        d1 = {"a": 1, "b": 2}
+        d2 = {"a": 10, "b": 11}
+        d1.update(d2, b=20)
+        self.assertEqual(d1["a"], 10)
+        self.assertEqual(d1["b"], 20)
+
+    def test_update_with_self_and_other_kwargs_adds_to_dict(self):
+        d1 = {}
+        d1.update(self="hello", seq="world")
+        self.assertEqual(d1["self"], "hello")
+        self.assertEqual(d1["seq"], "world")
 
     def test_dunder_delitem_with_none_dunder_hash(self):
         class C:

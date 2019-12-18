@@ -321,7 +321,7 @@ def _dict_setitem(self, key, value):
 
 # TODO(T56301601): Move this into a type-specific file.
 @_patch
-def _dict_update(self, other):
+def _dict_update(self, other, kwargs):
     pass
 
 

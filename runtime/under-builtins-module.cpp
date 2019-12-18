@@ -1874,22 +1874,22 @@ RawObject UnderBuiltinsModule::underDictUpdate(Thread* thread, Frame* frame,
     return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kDict);
   }
   Dict self(&scope, *self_obj);
-  Object other_obj(&scope, args.get(1));
-  if (!other_obj.isDict()) return Unbound::object();
-  if (*other_obj != *self) {
-    Object key(&scope, NoneType::object());
-    Object value(&scope, NoneType::object());
-    Dict other(&scope, *other_obj);
-    Tuple other_data(&scope, other.data());
-    for (word i = Dict::Bucket::kFirst;
-         Dict::Bucket::nextItem(*other_data, &i);) {
-      key = Dict::Bucket::key(*other_data, i);
-      value = Dict::Bucket::value(*other_data, i);
-      word hash = Dict::Bucket::hash(*other_data, i);
-      dictAtPut(thread, self, key, hash, value);
+  Object other(&scope, args.get(1));
+
+  if (!other.isUnbound()) {
+    RawObject result = dictMergeOverride(thread, self, other);
+    if (result.isError()) {
+      if (thread->pendingExceptionMatches(LayoutId::kAttributeError)) {
+        // no `keys` attribute, bail out to managed code to try tuple unpacking
+        thread->clearPendingException();
+        return Unbound::object();
+      }
+      return result;
     }
   }
-  return NoneType::object();
+
+  Object kwargs(&scope, args.get(2));
+  return dictMergeOverride(thread, self, kwargs);
 }
 
 RawObject UnderBuiltinsModule::underDivmod(Thread* thread, Frame* frame,

@@ -2597,8 +2597,7 @@ class Foo:
 
 d = {**Foo(), 'd': 4}
   )"),
-                            LayoutId::kTypeError,
-                            "object is not subscriptable"));
+                            LayoutId::kTypeError, "object is not a mapping"));
 }
 
 TEST_F(InterpreterTest, BuildMapUnpackWithNonIterableKeys) {
@@ -3125,8 +3124,7 @@ def foo(**kwargs):
 
 foo(**{'a': 1, 'b': 2}, **Foo())
   )"),
-                            LayoutId::kTypeError,
-                            "object is not subscriptable"));
+                            LayoutId::kTypeError, "object is not a mapping"));
 }
 
 TEST_F(InterpreterTest, BuildMapUnpackWithCallListKeysNonStrKey) {

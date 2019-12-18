@@ -2542,17 +2542,14 @@ class dict(bootstrap=True):
             return default
         return value
 
-    def update(self, seq=_Unbound):
-        if _dict_update(self, seq) is not _Unbound:
+    @_positional_only(2)
+    def update(self, iterable=_Unbound, **kwargs):
+        if _dict_update(self, iterable, kwargs) is not _Unbound:
             return
-        if seq is _Unbound:
-            return
-        if hasattr(seq, "keys"):
-            for key in seq.keys():
-                _dict_setitem(self, key, seq[key])
-            return None
+
+        # iterable should be an iterable of pairs
         num_items = 0
-        for x in iter(seq):
+        for x in iter(iterable):
             item = tuple(x)
             if _tuple_len(item) != 2:
                 raise ValueError(
@@ -2561,6 +2558,9 @@ class dict(bootstrap=True):
                 )
             _dict_setitem(self, *item)
             num_items += 1
+
+        for key, value in kwargs.items():
+            _dict_setitem(self, key, value)
 
     def values(self):
         pass

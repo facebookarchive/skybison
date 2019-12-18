@@ -329,20 +329,18 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
   Object hash_obj(&scope, NoneType::object());
   Object value(&scope, NoneType::object());
   Frame* frame = thread->currentFrame();
-  Object keys_method(&scope, Interpreter::lookupMethod(thread, frame, mapping,
-                                                       SymbolId::kKeys));
+  Object keys_method(
+      &scope, runtime->attributeAtById(thread, mapping, SymbolId::kKeys));
   if (keys_method.isError()) {
-    return thread->raiseWithFmt(LayoutId::kAttributeError,
-                                "object has no 'keys' attribute");
+    return *keys_method;
   }
 
   // Generic mapping, use keys() and __getitem__()
-  Object subscr_method(&scope,
-                       Interpreter::lookupMethod(thread, frame, mapping,
-                                                 SymbolId::kDunderGetitem));
+  Object subscr_method(&scope, runtime->attributeAtById(
+                                   thread, mapping, SymbolId::kDunderGetitem));
+
   if (subscr_method.isError()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "object is not subscriptable");
+    return *subscr_method;
   }
   Object keys(&scope,
               Interpreter::callMethod1(thread, frame, keys_method, mapping));
