@@ -2467,12 +2467,9 @@ class dict(bootstrap=True):
 
     __hash__ = None
 
-    def __init__(self, *args, **kwargs):
-        if len(args) > 1:
-            raise TypeError("dict expected at most 1 positional argument, got 2")
-        if len(args) == 1:
-            dict.update(self, args[0])
-        dict.update(self, kwargs)
+    @_positional_only(2)
+    def __init__(self, other=_Unbound, **kwargs):
+        dict.update(self, other, **kwargs)
 
     def __iter__(self):
         pass
