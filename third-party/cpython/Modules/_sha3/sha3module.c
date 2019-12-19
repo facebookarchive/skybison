@@ -459,7 +459,7 @@ SHA3_get_name(SHA3object *self, void *closure)
 #endif
     } else if (type == state->SHAKE128type) {
         return PyUnicode_FromString("shake_128");
-    } else if (type == _SHA3modulestate_global->SHAKE256type) {
+    } else if (type == state->SHAKE256type) {
         return PyUnicode_FromString("shake_256");
     } else {
         PyErr_BadInternalCall();
