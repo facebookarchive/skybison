@@ -75,6 +75,34 @@ PY_EXPORT PyCodeObject* PyCode_New(int argcount, int kwonlyargcount,
       firstlineno, lnotab);
 }
 
+PY_EXPORT PyCodeObject* PyCode_NewEmpty(const char* filename,
+                                        const char* funcname, int firstlineno) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object empty_bytes(&scope, Bytes::empty());
+  Object empty_tuple(&scope, runtime->emptyTuple());
+  Object filename_obj(&scope, Runtime::internStrFromCStr(thread, filename));
+  Object name_obj(&scope, Runtime::internStrFromCStr(thread, funcname));
+  return reinterpret_cast<PyCodeObject*>(ApiHandle::newReference(
+      thread, runtime->newCode(/*argcount=*/0,
+                               /*posonlyargcount=*/0,
+                               /*kwonlyargcount=*/0,
+                               /*nlocals=*/0,
+                               /*stacksize=*/0,
+                               /*flags=*/0,
+                               /*code=*/empty_bytes,
+                               /*consts=*/empty_tuple,
+                               /*names=*/empty_tuple,
+                               /*varnames=*/empty_tuple,
+                               /*freevars=*/empty_tuple,
+                               /*cellvars=*/empty_tuple,
+                               /*filename=*/filename_obj,
+                               /*name=*/name_obj,
+                               /*firstlineno=*/firstlineno,
+                               /*lnotab=*/empty_bytes)));
+}
+
 PY_EXPORT Py_ssize_t PyCode_GetNumFree_Func(PyObject* code) {
   DCHECK(code != nullptr, "code must not be null");
   Thread* thread = Thread::current();

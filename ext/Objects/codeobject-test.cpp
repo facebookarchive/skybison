@@ -275,6 +275,15 @@ TEST_F(CodeExtensionApiTest, GetNumFreeReturnsNumberOfFreevars) {
   Py_DECREF(code);
 }
 
+TEST_F(CodeExtensionApiTest, NewEmptyReturnsCodeObject) {
+  PyCodeObject* code = PyCode_NewEmpty("my filename", "my funcname", 123);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(code, nullptr);
+  EXPECT_TRUE(PyCode_Check(code));
+  EXPECT_EQ(PyCode_GetNumFree(code), 0);
+  Py_DECREF(code);
+}
+
 TEST_F(CodeExtensionApiTest, NewWithValidArgsReturnsCodeObject) {
   int argcount = 3;
   int kwargcount = 0;
