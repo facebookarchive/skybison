@@ -2379,6 +2379,97 @@ class StringIOTests(unittest.TestCase):
             string_io.write("bar")
             self.assertEqual(string_io.getvalue(), "barbaz")
 
+    def test_newline_default(self):
+        strio = _io.StringIO("a\nb\r\nc\rd")
+        self.assertEqual(list(strio), ["a\n", "b\r\n", "c\rd"])
+        self.assertEqual(strio.getvalue(), "a\nb\r\nc\rd")
+
+        strio = _io.StringIO()
+        self.assertEqual(strio.write("a\nb\r\nc\rd"), 8)
+        strio.seek(0)
+        self.assertEqual(list(strio), ["a\n", "b\r\n", "c\rd"])
+        self.assertEqual(strio.getvalue(), "a\nb\r\nc\rd")
+
+    def test_newline_none(self):
+        strio = _io.StringIO("a\nb\r\nc\rd", newline=None)
+        self.assertEqual(list(strio), ["a\n", "b\n", "c\n", "d"])
+        strio.seek(0)
+        self.assertEqual(strio.read(1), "a")
+        self.assertEqual(strio.read(2), "\nb")
+        self.assertEqual(strio.read(2), "\nc")
+        self.assertEqual(strio.read(1), "\n")
+        self.assertEqual(strio.getvalue(), "a\nb\nc\nd")
+
+        strio = _io.StringIO(newline=None)
+        self.assertEqual(2, strio.write("a\n"))
+        self.assertEqual(3, strio.write("b\r\n"))
+        self.assertEqual(3, strio.write("c\rd"))
+        strio.seek(0)
+        self.assertEqual(strio.read(), "a\nb\nc\nd")
+        self.assertEqual(strio.getvalue(), "a\nb\nc\nd")
+
+        strio = _io.StringIO("a\r\nb", newline=None)
+        self.assertEqual(strio.read(3), "a\nb")
+
+    def test_newline_empty(self):
+        strio = _io.StringIO("a\nb\r\nc\rd", newline="")
+        self.assertEqual(list(strio), ["a\n", "b\r\n", "c\r", "d"])
+        strio.seek(0)
+        self.assertEqual(strio.read(4), "a\nb\r")
+        self.assertEqual(strio.read(2), "\nc")
+        self.assertEqual(strio.read(1), "\r")
+        self.assertEqual(strio.getvalue(), "a\nb\r\nc\rd")
+
+        strio = _io.StringIO(newline="")
+        self.assertEqual(2, strio.write("a\n"))
+        self.assertEqual(2, strio.write("b\r"))
+        self.assertEqual(2, strio.write("\nc"))
+        self.assertEqual(2, strio.write("\rd"))
+        strio.seek(0)
+        self.assertEqual(list(strio), ["a\n", "b\r\n", "c\r", "d"])
+        self.assertEqual(strio.getvalue(), "a\nb\r\nc\rd")
+
+    def test_newline_lf(self):
+        strio = _io.StringIO("a\nb\r\nc\rd", newline="\n")
+        self.assertEqual(list(strio), ["a\n", "b\r\n", "c\rd"])
+        self.assertEqual(strio.getvalue(), "a\nb\r\nc\rd")
+
+        strio = _io.StringIO(newline="\n")
+        self.assertEqual(strio.write("a\nb\r\nc\rd"), 8)
+        strio.seek(0)
+        self.assertEqual(list(strio), ["a\n", "b\r\n", "c\rd"])
+        self.assertEqual(strio.getvalue(), "a\nb\r\nc\rd")
+
+    def test_newline_cr(self):
+        strio = _io.StringIO("a\nb\r\nc\rd", newline="\r")
+        self.assertEqual(strio.read(), "a\rb\r\rc\rd")
+        strio.seek(0)
+        self.assertEqual(list(strio), ["a\r", "b\r", "\r", "c\r", "d"])
+        self.assertEqual(strio.getvalue(), "a\rb\r\rc\rd")
+
+        strio = _io.StringIO(newline="\r")
+        self.assertEqual(strio.write("a\nb\r\nc\rd"), 8)
+        strio.seek(0)
+        self.assertEqual(list(strio), ["a\r", "b\r", "\r", "c\r", "d"])
+        strio.seek(0)
+        self.assertEqual(strio.readlines(), ["a\r", "b\r", "\r", "c\r", "d"])
+        self.assertEqual(strio.getvalue(), "a\rb\r\rc\rd")
+
+    def test_newline_crlf(self):
+        strio = _io.StringIO("a\nb\r\nc\rd", newline="\r\n")
+        self.assertEqual(strio.read(), "a\r\nb\r\r\nc\rd")
+        strio.seek(0)
+        self.assertEqual(list(strio), ["a\r\n", "b\r\r\n", "c\rd"])
+        strio.seek(0)
+        self.assertEqual(strio.readlines(), ["a\r\n", "b\r\r\n", "c\rd"])
+        self.assertEqual(strio.getvalue(), "a\r\nb\r\r\nc\rd")
+
+        strio = _io.StringIO(newline="\r\n")
+        self.assertEqual(strio.write("a\nb\r\nc\rd"), 8)
+        strio.seek(0)
+        self.assertEqual(list(strio), ["a\r\n", "b\r\r\n", "c\rd"])
+        self.assertEqual(strio.getvalue(), "a\r\nb\r\r\nc\rd")
+
     def test_subclass_with_closed_attribute_is_not_closed_for_StringIO(self):
         class Closed(_io.StringIO):
             closed = True

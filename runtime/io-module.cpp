@@ -706,8 +706,6 @@ const BuiltinAttribute StringIOBuiltins::kAttributes[] = {
     {SymbolId::kUnderDecodedChars, StringIO::kDecodedCharsOffset},
     {SymbolId::kUnderDecodedCharsUsed, StringIO::kDecodedCharsUsedOffset},
     {SymbolId::kUnderDecoder, StringIO::kDecoderOffset},
-    {SymbolId::kUnderEncoding, StringIO::kEncodingOffset},
-    {SymbolId::kUnderErrors, StringIO::kErrorsOffset},
     {SymbolId::kUnderLineBuffering, StringIO::kLineBufferingOffset},
     {SymbolId::kUnderReadnl, StringIO::kReadnlOffset},
     {SymbolId::kUnderReadtranslate, StringIO::kReadtranslateOffset},

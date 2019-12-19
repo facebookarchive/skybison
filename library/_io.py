@@ -2092,14 +2092,15 @@ class StringIO(_TextIOBase, bootstrap=True):
         self._buffer = buffer
         self._closed = False
         self._line_buffering = False
-        self._encoding = "ascii"
-        self._errors = "surrogatepass"
-        self._readuniversal = not newline
         self._readtranslate = newline is None
+        if not newline:
+            self._readuniversal = True
+            self._decoder = IncrementalNewlineDecoder(None, self._readtranslate)
+        else:
+            self._readuniversal = False
         self._readnl = newline
         self._writetranslate = newline != ""
         self._writenl = newline or _os_linesep
-        self._decoder = self._get_decoder() if buffer.readable() else None
         self._decoded_chars = ""  # buffer for text returned from decoder
         self._decoded_chars_used = 0  # offset into _decoded_chars for read()
         self._snapshot = None  # info for reconstructing decoder state
@@ -2140,13 +2141,11 @@ class StringIO(_TextIOBase, bootstrap=True):
         return None
 
     def getvalue(self):
-        decoder = self._decoder or self._get_decoder()
-        old_state = decoder.getstate()
-        decoder.reset()
-        try:
-            return decoder.decode(self._buffer.getvalue(), final=True)
-        finally:
-            decoder.setstate(old_state)
+        nl_decoder = self._decoder
+        if nl_decoder:
+            return nl_decoder.decode(self._buffer.getvalue().decode(), final=True)
+        else:
+            return self._buffer.getvalue().decode()
 
     def readable(self):
         _StringIO_closed_guard(self)
@@ -2168,13 +2167,6 @@ class StringIO(_TextIOBase, bootstrap=True):
             chars = self._decoded_chars[offset : offset + n]
         self._decoded_chars_used += len(chars)
         return chars
-
-    def _get_decoder(self):
-        make_decoder = _codecs_getincrementaldecoder(self._encoding)
-        decoder = make_decoder(self._errors)
-        if self._readuniversal:
-            return IncrementalNewlineDecoder(decoder, self._readtranslate)
-        return decoder
 
     def _pack_cookie(
         self, position, dec_flags=0, bytes_to_feed=0, need_eof=0, chars_to_skip=0
@@ -2199,25 +2191,24 @@ class StringIO(_TextIOBase, bootstrap=True):
         # some of it may remain buffered in the decoder, yet to be
         # converted.
 
-        if self._decoder is None:
-            raise UnsupportedOperation("not readable")
-
         # To prepare for tell(), we need to snapshot a point in the
         # file where the decoder's input buffer is empty.
 
-        dec_buffer, dec_flags = self._decoder.getstate()
+        nl_decoder = self._decoder
+        if nl_decoder:
+            dec_buffer, dec_flags = nl_decoder.getstate()
+        else:
+            dec_buffer, dec_flags = b"", 0
         # Given this, we know there was a valid snapshot point
         # len(dec_buffer) bytes ago with decoder state (b'', dec_flags).
-        if not _bytes_check(dec_buffer):
-            raise TypeError(
-                "illegal decoder state: the first item should be a bytes "
-                f"object, not '{_type(dec_buffer).__name__}'"
-            )
 
         # Read a chunk, decode it, and put the result in self._decoded_chars.
         input_chunk = self._buffer.read1(self._CHUNK_SIZE)
         eof = not input_chunk
-        decoded_chars = self._decoder.decode(input_chunk, eof)
+        if nl_decoder:
+            decoded_chars = nl_decoder.decode(input_chunk.decode(), eof)
+        else:
+            decoded_chars = input_chunk.decode()
         self._set_decoded_chars(decoded_chars)
         if decoded_chars:
             self._b2cratio = len(input_chunk) / len(self._decoded_chars)
@@ -2262,10 +2253,11 @@ class StringIO(_TextIOBase, bootstrap=True):
 
     @property
     def newlines(self):
-        if self._decoder is None:
+        nl_decoder = self._decoder
+        if nl_decoder is None:
             return None
         try:
-            return self._decoder.newlines
+            return nl_decoder.newlines
         except AttributeError:
             return None
 
@@ -2283,9 +2275,12 @@ class StringIO(_TextIOBase, bootstrap=True):
             raise TypeError("an integer is required") from err
         if size < 0:
             # Read everything.
-            result = self._get_decoded_chars() + decoder.decode(
-                self._buffer.read(), final=True
-            )
+            if decoder is not None:
+                result = self._get_decoded_chars() + decoder.decode(
+                    self._buffer.read().decode(), final=True
+                )
+            else:
+                result = self._get_decoded_chars() + self._buffer.read().decode()
             self._set_decoded_chars("")
             self._snapshot = None
             return result
@@ -2401,8 +2396,6 @@ class StringIO(_TextIOBase, bootstrap=True):
             position = self._buffer.seek(0, 2)
             self._set_decoded_chars("")
             self._snapshot = None
-            if self._decoder:
-                self._decoder.reset()
             return position
         elif whence != 0:
             raise ValueError(f"invalid whence ({whence}, should be 0, 1 or 2)")
@@ -2419,17 +2412,22 @@ class StringIO(_TextIOBase, bootstrap=True):
         self._snapshot = None
 
         # Restore the decoder to its state from the safe start point.
-        if cookie == 0 and self._decoder:
-            self._decoder.reset()
-        elif self._decoder or dec_flags or chars_to_skip:
-            self._decoder = self._decoder
-            self._decoder.setstate((b"", dec_flags))
+        nl_decoder = self._decoder
+        if cookie == 0 and nl_decoder:
+            nl_decoder.reset()
+        elif nl_decoder or dec_flags or chars_to_skip:
+            nl_decoder.setstate((b"", dec_flags))
             self._snapshot = (dec_flags, b"")
 
         if chars_to_skip:
             # Just like _read_chunk, feed the decoder and save a snapshot.
             input_chunk = self._buffer.read(bytes_to_feed)
-            self._set_decoded_chars(self._decoder.decode(input_chunk, need_eof))
+            if nl_decoder:
+                self._set_decoded_chars(
+                    nl_decoder.decode(input_chunk.decode(), need_eof)
+                )
+            else:
+                self._set_decoded_chars(input_chunk.decode(), need_eof)
             self._snapshot = (dec_flags, input_chunk)
 
             # Skip chars_to_skip of the decoded characters.
@@ -2443,10 +2441,7 @@ class StringIO(_TextIOBase, bootstrap=True):
         _StringIO_closed_guard(self)
         position = self._buffer.tell()
         decoder = self._decoder
-        if decoder is None or self._snapshot is None:
-            if self._decoded_chars:
-                # This should never happen.
-                raise AssertionError("pending decoded text")
+        if not decoder or self._snapshot is None:
             return position
 
         # Skip backward to the snapshot point (see _read_chunk).
@@ -2476,7 +2471,7 @@ class StringIO(_TextIOBase, bootstrap=True):
             while skip_bytes > 0:
                 decoder.setstate((b"", dec_flags))
                 # Decode up to temptative start point
-                n = len(decoder.decode(next_input[:skip_bytes]))
+                n = len(decoder.decode(next_input[:skip_bytes].decode()))
                 if n <= chars_to_skip:
                     b, d = decoder.getstate()
                     if not b:
@@ -2512,7 +2507,7 @@ class StringIO(_TextIOBase, bootstrap=True):
             chars_decoded = 0
             for i in range(skip_bytes, len(next_input)):
                 bytes_fed += 1
-                chars_decoded += len(decoder.decode(next_input[i : i + 1]))
+                chars_decoded += len(decoder.decode(next_input[i : i + 1].decode()))
                 dec_buffer, dec_flags = decoder.getstate()
                 if not dec_buffer and chars_decoded <= chars_to_skip:
                     # Decoder buffer is empty, so this is a safe start point.
@@ -2549,8 +2544,6 @@ class StringIO(_TextIOBase, bootstrap=True):
         self._buffer.write(text.encode(errors="surrogatepass"))
         self._set_decoded_chars("")
         self._snapshot = None
-        if self._decoder:
-            self._decoder.reset()
         return length
 
 
