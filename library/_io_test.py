@@ -2379,6 +2379,27 @@ class StringIOTests(unittest.TestCase):
             string_io.write("bar")
             self.assertEqual(string_io.getvalue(), "barbaz")
 
+    def test_subclass_with_closed_attribute_is_not_closed_for_StringIO(self):
+        class Closed(_io.StringIO):
+            closed = True
+
+        c = Closed()
+        self.assertEqual(c.write("foobar"), 6)
+        self.assertEqual(c.seek(0), 0)
+        with self.assertRaises(ValueError) as context:
+            # Since readlines is inherited from `_IOBase which checks for the
+            # closed property, this method call should raise a ValueError
+            c.readlines()
+        self.assertRegex(str(context.exception), "I/O operation on closed file")
+
+    def test_write_when_closed_raises_value_error(self):
+        strio = _io.StringIO()
+        self.assertEqual(strio.write("foobar"), 6)
+        strio.close()
+        with self.assertRaises(ValueError) as context:
+            strio.write("foo")
+        self.assertRegex(str(context.exception), "I/O operation on closed file")
+
     def test_write_with_newline_uses_stored_newline(self):
         with _io.StringIO(initial_value="foobar", newline="\r\n") as string_io:
             string_io.write("hi\n")

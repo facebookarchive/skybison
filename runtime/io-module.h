@@ -19,6 +19,8 @@ class UnderIoModule : public ModuleBase<UnderIoModule, SymbolId::kUnderIo> {
                                            word nargs);
   static RawObject underBufferedReaderReadline(Thread* thread, Frame* frame,
                                                word nargs);
+  static RawObject underStringIOClosedGuard(Thread* thread, Frame* frame,
+                                            word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];
   static const BuiltinType kBuiltinTypes[];

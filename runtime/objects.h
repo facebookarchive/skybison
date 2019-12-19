@@ -3525,7 +3525,7 @@ class RawStringIO : public RawUnderTextIOBase {
   static const int kDictOffset = kWritetranslateOffset + kPointerSize;
   static const int kSize = kDictOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON_NO_CAST(StringIO);
+  RAW_OBJECT_COMMON(StringIO);
 };
 
 // RawObject

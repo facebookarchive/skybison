@@ -431,6 +431,7 @@ class Runtime;
   V(UnderStrGetitem, "_str_getitem")                                           \
   V(UnderStrGetslice, "_str_getslice")                                         \
   V(UnderStrGuard, "_str_guard")                                               \
+  V(UnderStringIOClosedGuard, "_StringIO_closed_guard")                        \
   V(UnderStrIschr, "_str_ischr")                                               \
   V(UnderStrJoin, "_str_join")                                                 \
   V(UnderStrLen, "_str_len")                                                   \

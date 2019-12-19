@@ -39,6 +39,7 @@ const BuiltinMethod UnderIoModule::kBuiltinMethods[] = {
     {SymbolId::kUnderBufferedReaderPeek, underBufferedReaderPeek},
     {SymbolId::kUnderBufferedReaderRead, underBufferedReaderRead},
     {SymbolId::kUnderBufferedReaderReadline, underBufferedReaderReadline},
+    {SymbolId::kUnderStringIOClosedGuard, underStringIOClosedGuard},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -600,6 +601,23 @@ RawObject UnderIoModule::underBufferedReaderReadline(Thread* thread,
   self.setReadPos(line_end);
   self.setBufferNumBytes(buffer_num_bytes);
   return result.becomeImmutable();
+}
+
+RawObject UnderIoModule::underStringIOClosedGuard(Thread* thread, Frame* frame,
+                                                  word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfStringIO(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStringIO);
+  }
+  StringIO self(&scope, *self_obj);
+  if (self.closed()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "I/O operation on closed file.");
+  }
+  return NoneType::object();
 }
 
 const BuiltinAttribute UnderIOBaseBuiltins::kAttributes[] = {

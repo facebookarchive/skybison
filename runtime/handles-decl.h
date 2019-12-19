@@ -76,7 +76,6 @@ class Handle;
   V(StaticMethod)                                                              \
   V(Str)                                                                       \
   V(StrArray)                                                                  \
-  V(StringIO)                                                                  \
   V(StrIterator)                                                               \
   V(Super)                                                                     \
   V(TextIOWrapper)                                                             \
@@ -104,6 +103,7 @@ class Handle;
   V(Set)                                                                       \
   V(SetBase)                                                                   \
   V(StopIteration)                                                             \
+  V(StringIO)                                                                  \
   V(SystemExit)                                                                \
   V(Type)                                                                      \
   V(UnicodeDecodeError)                                                        \

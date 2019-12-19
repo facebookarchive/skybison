@@ -107,6 +107,11 @@ def _detached_guard(self):
         raise ValueError("raw stream has been detached")
 
 
+@_patch
+def _StringIO_closed_guard(obj):
+    pass
+
+
 def _whence_guard(whence):
     if whence == 0 or whence == 1 or whence == 2:
         return
@@ -2070,7 +2075,7 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
 
 # TODO(T58766302): These methods were copied from TextIOWrapper and should
 # be specialized for StringIO
-class StringIO(_TextIOBase):
+class StringIO(_TextIOBase, bootstrap=True):
     _CHUNK_SIZE = 2048
 
     def __init__(self, initial_value="", newline="\n"):
@@ -2085,6 +2090,7 @@ class StringIO(_TextIOBase):
             raise ValueError(f"illegal newline value: {newline}")
 
         self._buffer = buffer
+        self._closed = False
         self._line_buffering = False
         self._encoding = "ascii"
         self._errors = "surrogatepass"
@@ -2149,15 +2155,15 @@ class StringIO(_TextIOBase):
             decoder.setstate(old_state)
 
     def readable(self):
-        self._checkClosed()
+        _StringIO_closed_guard(self)
         return True
 
     def seekable(self):
-        self._checkClosed()
+        _StringIO_closed_guard(self)
         return True
 
     def writable(self):
-        self._checkClosed()
+        _StringIO_closed_guard(self)
         return True
 
     def _get_decoded_chars(self, n=None):
@@ -2254,12 +2260,11 @@ class StringIO(_TextIOBase):
         return position, dec_flags, bytes_to_feed, need_eof, chars_to_skip
 
     def close(self):
-        if not self.closed:
-            self._buffer.close()
+        self._closed = True
 
     @property
     def closed(self):
-        return self._buffer.closed
+        return self._closed
 
     @property
     def line_buffering(self):
@@ -2279,7 +2284,7 @@ class StringIO(_TextIOBase):
             size = -1
         elif not _int_check(size):
             raise TypeError(f"integer argument expected, got '{_type(size).__name__}'")
-        self._checkClosed()
+        _StringIO_closed_guard(self)
         self._checkReadable("not readable")
         decoder = self._decoder
         try:
@@ -2309,7 +2314,7 @@ class StringIO(_TextIOBase):
         elif not _int_check(size):
             size = _index(size)
 
-        self._checkClosed()
+        _StringIO_closed_guard(self)
 
         # Grab all the decoded text (we will rewind any extra bits later).
         line = self._get_decoded_chars()
@@ -2398,7 +2403,7 @@ class StringIO(_TextIOBase):
             raise TypeError(
                 f"an integer is required (got type {_type(whence).__name__})"
             )
-        self._checkClosed()
+        _StringIO_closed_guard(self)
 
         if whence == 1:  # seek relative to current position
             if cookie != 0:
@@ -2454,7 +2459,7 @@ class StringIO(_TextIOBase):
         return cookie
 
     def tell(self):  # noqa: C901
-        self._checkClosed()
+        _StringIO_closed_guard(self)
         position = self._buffer.tell()
         decoder = self._decoder
         if decoder is None or self._snapshot is None:
@@ -2555,7 +2560,7 @@ class StringIO(_TextIOBase):
     def write(self, text):
         if not _str_check(text):
             raise TypeError(f"write() argument must be str, not {_type(text).__name__}")
-        self._checkClosed()
+        _StringIO_closed_guard(self)
         length = _str_len(text)
         haslf = (self._writetranslate or self._line_buffering) and "\n" in text
         if haslf and self._writetranslate and self._writenl != "\n":
