@@ -543,6 +543,7 @@ set(
   ${CPYTHON_DIR}/Modules/_operator.c
   ${CPYTHON_DIR}/Modules/_posixsubprocess.c
   ${CPYTHON_DIR}/Modules/_randommodule.c
+  ${CPYTHON_DIR}/Modules/_sha3/sha3module.c
   ${CPYTHON_DIR}/Modules/_sre.c
   ${CPYTHON_DIR}/Modules/_ssl.c
   ${CPYTHON_DIR}/Modules/_ssl_data.h
@@ -673,6 +674,7 @@ target_include_directories(
   PUBLIC
   ${BINARY_DIR_HEADERS}
   ${CPYTHON_DIR}/Modules
+  ${CPYTHON_DIR}/Modules/_sha3
   ${CPYTHON_DIR}/Modules/zlib
   ${OPENSSL_INCLUDE_DIR})
 target_compile_options(

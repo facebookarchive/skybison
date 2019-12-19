@@ -9,6 +9,7 @@ extern "C" PyObject* PyInit__myreadline();
 extern "C" PyObject* PyInit__posixsubprocess();
 extern "C" PyObject* PyInit__random();
 extern "C" PyObject* PyInit__socket();
+extern "C" PyObject* PyInit__sha3();
 extern "C" PyObject* PyInit__sre();
 extern "C" PyObject* PyInit__ssl();
 extern "C" PyObject* PyInit__stat();
@@ -47,6 +48,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_posixsubprocess", PyInit__posixsubprocess},
     {"_random", PyInit__random},
     {"_socket", PyInit__socket},
+    {"_sha3", PyInit__sha3},
     {"_sre", PyInit__sre},
     {"_ssl", PyInit__ssl},
     {"_stat", PyInit__stat},
