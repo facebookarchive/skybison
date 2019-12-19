@@ -3481,8 +3481,6 @@ class RawStringIO : public RawUnderTextIOBase {
   void setDecodedCharsUsed(RawObject decoded_chars_used) const;
   RawObject decoder() const;
   void setDecoder(RawObject decoder) const;
-  RawObject encoder() const;
-  void setEncoder(RawObject encoder) const;
   RawObject encoding() const;
   void setEncoding(RawObject encoding) const;
   RawObject errors() const;
@@ -3512,8 +3510,7 @@ class RawStringIO : public RawUnderTextIOBase {
   static const int kDecodedCharsOffset = kBufferOffset + kPointerSize;
   static const int kDecodedCharsUsedOffset = kDecodedCharsOffset + kPointerSize;
   static const int kDecoderOffset = kDecodedCharsUsedOffset + kPointerSize;
-  static const int kEncoderOffset = kDecoderOffset + kPointerSize;
-  static const int kEncodingOffset = kEncoderOffset + kPointerSize;
+  static const int kEncodingOffset = kDecoderOffset + kPointerSize;
   static const int kErrorsOffset = kEncodingOffset + kPointerSize;
   static const int kLineBufferingOffset = kErrorsOffset + kPointerSize;
   static const int kReadnlOffset = kLineBufferingOffset + kPointerSize;
@@ -6826,14 +6823,6 @@ inline RawObject RawStringIO::dict() const {
 
 inline void RawStringIO::setDict(RawObject dict) const {
   instanceVariableAtPut(kDictOffset, dict);
-}
-
-inline RawObject RawStringIO::encoder() const {
-  return instanceVariableAt(kEncoderOffset);
-}
-
-inline void RawStringIO::setEncoder(RawObject encoder) const {
-  instanceVariableAtPut(kEncoderOffset, encoder);
 }
 
 inline RawObject RawStringIO::encoding() const {

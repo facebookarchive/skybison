@@ -2100,16 +2100,10 @@ class StringIO(_TextIOBase, bootstrap=True):
         self._writetranslate = newline != ""
         self._writenl = newline or _os_linesep
         self._decoder = self._get_decoder() if buffer.readable() else None
-        self._encoder = self._get_encoder() if buffer.writable() else None
         self._decoded_chars = ""  # buffer for text returned from decoder
         self._decoded_chars_used = 0  # offset into _decoded_chars for read()
         self._snapshot = None  # info for reconstructing decoder state
         self._b2cratio = 0.0
-
-        if self._encoder:
-            position = self._buffer.tell()
-            if position != 0:
-                self._encoder.setstate(0)
 
         if newline is None:
             self._writetranslate = False
@@ -2181,10 +2175,6 @@ class StringIO(_TextIOBase, bootstrap=True):
         if self._readuniversal:
             return IncrementalNewlineDecoder(decoder, self._readtranslate)
         return decoder
-
-    def _get_encoder(self):
-        make_encoder = _codecs_getincrementalencoder(self._encoding)
-        return make_encoder(self._errors)
 
     def _pack_cookie(
         self, position, dec_flags=0, bytes_to_feed=0, need_eof=0, chars_to_skip=0
@@ -2391,13 +2381,6 @@ class StringIO(_TextIOBase, bootstrap=True):
         self._rewind_decoded_chars(len(line) - endpos)
         return line[:endpos]
 
-    def _reset_encoder(self, position):
-        if self._encoder:
-            if position != 0:
-                self._encoder.setstate(0)
-            else:
-                self._encoder.reset()
-
     def seek(self, cookie, whence=0):  # noqa: C901
         if not _int_check(whence):
             raise TypeError(
@@ -2420,7 +2403,6 @@ class StringIO(_TextIOBase, bootstrap=True):
             self._snapshot = None
             if self._decoder:
                 self._decoder.reset()
-            self._reset_encoder(position)
             return position
         elif whence != 0:
             raise ValueError(f"invalid whence ({whence}, should be 0, 1 or 2)")
@@ -2455,7 +2437,6 @@ class StringIO(_TextIOBase, bootstrap=True):
                 raise OSError("can't restore logical file position")
             self._decoded_chars_used = chars_to_skip
 
-        self._reset_encoder(cookie)
         return cookie
 
     def tell(self):  # noqa: C901
@@ -2565,9 +2546,7 @@ class StringIO(_TextIOBase, bootstrap=True):
         haslf = (self._writetranslate or self._line_buffering) and "\n" in text
         if haslf and self._writetranslate and self._writenl != "\n":
             text = text.replace("\n", self._writenl)
-        encoder = self._encoder
-        b = encoder.encode(text)
-        self._buffer.write(b)
+        self._buffer.write(text.encode(errors="surrogatepass"))
         self._set_decoded_chars("")
         self._snapshot = None
         if self._decoder:
