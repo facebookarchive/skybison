@@ -141,7 +141,7 @@ TEST_F(DebuggingTests, DumpExtendedFunction) {
        4 RETURN_VALUE 0
   Rewritten bytecode:
      0 LOAD_CONST 0
-     2 LOAD_ATTR_CACHED 1
+     2 LOAD_ATTR_ANAMORPHIC 1
      4 RETURN_VALUE 0
 )");
 }

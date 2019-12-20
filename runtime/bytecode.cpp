@@ -44,7 +44,7 @@ static void rewriteZeroArgMethodCallsUsingLoadMethodAnamorphic(
   word prev_index = 0;
   for (word i = 0; i < bytecode_length;) {
     BytecodeOp op = nextBytecodeOp(bytecode, &i);
-    if (prev == LOAD_ATTR_CACHED && op.bc == CALL_FUNCTION && op.arg == 0) {
+    if (prev == LOAD_ATTR_ANAMORPHIC && op.bc == CALL_FUNCTION && op.arg == 0) {
       bytecode.byteAtPut(prev_index, LOAD_METHOD_ANAMORPHIC);
       bytecode.byteAtPut(i - kCodeUnitSize, CALL_METHOD);
     }
@@ -133,7 +133,7 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op) {
     case INPLACE_XOR:
       return cached_inplace(Interpreter::BinaryOp::XOR);
     case LOAD_ATTR:
-      return RewrittenOp{LOAD_ATTR_CACHED, op.arg, true};
+      return RewrittenOp{LOAD_ATTR_ANAMORPHIC, op.arg, true};
     case LOAD_FAST: {
       CHECK(op.arg < Code::cast(function.code()).nlocals(),
             "unexpected local number");
@@ -169,7 +169,7 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op) {
     case COMPARE_OP_CACHED:
     case FOR_ITER_CACHED:
     case INPLACE_OP_CACHED:
-    case LOAD_ATTR_CACHED:
+    case LOAD_ATTR_ANAMORPHIC:
     case LOAD_FAST_REVERSE:
     case LOAD_METHOD_ANAMORPHIC:
     case STORE_ATTR_CACHED:

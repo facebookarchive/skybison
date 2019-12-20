@@ -372,11 +372,14 @@ class Interpreter {
   static Continue doInplaceXor(Thread* thread, word arg);
   static Continue doInvalidBytecode(Thread* thread, word arg);
   static Continue doLoadAttr(Thread* thread, word arg);
-  static Continue doLoadAttrCached(Thread* thread, word arg);
+  static Continue doLoadAttrAnamorphic(Thread* thread, word arg);
+  static Continue doLoadAttrInstance(Thread* thread, word arg);
+  static Continue doLoadAttrInstanceTypeBoundMethod(Thread* thread, word arg);
   static Continue doLoadAttrInstanceProperty(Thread* thread, word arg);
   static Continue doLoadAttrInstanceType(Thread* thread, word arg);
   static Continue doLoadAttrInstanceTypeDescr(Thread* thread, word arg);
   static Continue doLoadAttrModule(Thread* thread, word arg);
+  static Continue doLoadAttrPolymorphic(Thread* thread, word arg);
   static Continue doLoadAttrType(Thread* thread, word arg);
   static Continue doLoadDeref(Thread* thread, word arg);
   static Continue doLoadFast(Thread* thread, word arg);
@@ -550,7 +553,8 @@ class Interpreter {
                                                              word callable_idx);
 
   static Continue retryLoadAttrCached(Thread* thread, word arg);
-  static Continue loadAttrUpdateCache(Thread* thread, word arg);
+  static Continue loadAttrUpdateCache(Thread* thread, word arg,
+                                      ICState ic_state);
   static Continue storeAttrUpdateCache(Thread* thread, word arg);
   static Continue storeSubscrUpdateCache(Thread* thread, word arg);
 

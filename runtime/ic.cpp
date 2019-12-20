@@ -76,8 +76,8 @@ void icUpdateAttrModule(Thread* thread, const Tuple& caches, word index,
   RawMutableBytes bytecode =
       RawMutableBytes::cast(dependent.rewrittenBytecode());
   word pc = thread->currentFrame()->virtualPC() - kCodeUnitSize;
-  DCHECK(bytecode.byteAt(pc) == LOAD_ATTR_CACHED,
-         "current opcode must be LOAD_ATTR_CACHED");
+  DCHECK(bytecode.byteAt(pc) == LOAD_ATTR_ANAMORPHIC,
+         "current opcode must be LOAD_ATTR_ANAMORPHIC");
   bytecode.byteAtPut(pc, LOAD_ATTR_MODULE);
   icInsertDependentToValueCellDependencyLink(thread, dependent, value_cell);
 }
@@ -92,8 +92,8 @@ void icUpdateAttrType(Thread* thread, const Tuple& caches, word index,
   RawMutableBytes bytecode =
       RawMutableBytes::cast(dependent.rewrittenBytecode());
   word pc = thread->currentFrame()->virtualPC() - kCodeUnitSize;
-  DCHECK(bytecode.byteAt(pc) == LOAD_ATTR_CACHED,
-         "current opcode must be LOAD_ATTR_CACHED");
+  DCHECK(bytecode.byteAt(pc) == LOAD_ATTR_ANAMORPHIC,
+         "current opcode must be LOAD_ATTR_ANAMORPHIC");
   bytecode.byteAtPut(pc, LOAD_ATTR_TYPE);
   HandleScope scope(thread);
   Type type(&scope, *receiver);
@@ -711,7 +711,7 @@ void icInvalidateGlobalVar(Thread* thread, const ValueCell& value_cell) {
       Bytecode original_bc = op.bc;
       switch (op.bc) {
         case LOAD_ATTR_MODULE: {
-          original_bc = LOAD_ATTR_CACHED;
+          original_bc = LOAD_ATTR_ANAMORPHIC;
           word index = op.arg * kIcPointersPerCache;
           if (caches.at(index + kIcEntryValueOffset) == *value_cell) {
             caches.atPut(index + kIcEntryKeyOffset, NoneType::object());

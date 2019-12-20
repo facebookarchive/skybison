@@ -4799,7 +4799,7 @@ c = C()
                    .isError());
   Function test_function(&scope, mainModuleAt(&runtime_, "test"));
   MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
-  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_CACHED);
+  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_ANAMORPHIC);
   ASSERT_EQ(bytecode.byteAt(8), CALL_FUNCTION);
   bytecode.byteAtPut(2, LOAD_METHOD);
   bytecode.byteAtPut(8, CALL_METHOD);
@@ -4826,7 +4826,7 @@ def test():
                    .isError());
   Function test_function(&scope, mainModuleAt(&runtime_, "test"));
   MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
-  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_CACHED);
+  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_ANAMORPHIC);
   ASSERT_EQ(bytecode.byteAt(8), CALL_FUNCTION);
   bytecode.byteAtPut(2, LOAD_METHOD_ANAMORPHIC);
   bytecode.byteAtPut(8, CALL_METHOD);
@@ -4865,7 +4865,7 @@ c = C()
                    .isError());
   Function test_function(&scope, mainModuleAt(&runtime_, "test"));
   MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
-  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_CACHED);
+  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_ANAMORPHIC);
   ASSERT_EQ(bytecode.byteAt(8), CALL_FUNCTION);
   bytecode.byteAtPut(2, LOAD_METHOD_ANAMORPHIC);
   bytecode.byteAtPut(8, CALL_METHOD);

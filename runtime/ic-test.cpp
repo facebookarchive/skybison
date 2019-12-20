@@ -697,7 +697,7 @@ static RawObject testingFunctionCachingAttributes(
   Code code(&scope, newEmptyCode());
   MutableBytes rewritten_bytecode(&scope,
                                   runtime->newMutableBytesUninitialized(8));
-  rewritten_bytecode.byteAtPut(0, LOAD_ATTR_CACHED);
+  rewritten_bytecode.byteAtPut(0, LOAD_ATTR_ANAMORPHIC);
   rewritten_bytecode.byteAtPut(1, 1);
 
   Module module(&scope, runtime->findOrCreateMainModule());
@@ -1644,7 +1644,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   MutableBytes bytecode(&scope, runtime_.newMutableBytesUninitialized(20));
   bytecode.byteAtPut(0, LOAD_GLOBAL);
   bytecode.byteAtPut(1, 100);
-  bytecode.byteAtPut(2, LOAD_ATTR_CACHED);
+  bytecode.byteAtPut(2, LOAD_ATTR_ANAMORPHIC);
   bytecode.byteAtPut(3, 0);
   bytecode.byteAtPut(4, LOAD_GLOBAL);
   bytecode.byteAtPut(5, 100);
@@ -1652,7 +1652,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   bytecode.byteAtPut(7, 1);
   bytecode.byteAtPut(8, LOAD_GLOBAL);
   bytecode.byteAtPut(9, 100);
-  bytecode.byteAtPut(10, LOAD_ATTR_CACHED);
+  bytecode.byteAtPut(10, LOAD_ATTR_ANAMORPHIC);
   bytecode.byteAtPut(11, 2);
   bytecode.byteAtPut(12, STORE_ATTR_CACHED);
   bytecode.byteAtPut(13, 3);
@@ -1683,7 +1683,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
       3, Runtime::internStrFromCStr(thread_, "store_attr_cached_attr_name"));
 
   Tuple caches(&scope, runtime_.newTuple(num_caches * kIcPointersPerCache));
-  // Caches for LOAD_ATTR_CACHED at 2.
+  // Caches for LOAD_ATTR_ANAMORPHIC at 2.
   word load_attr_cached_cache_index0 =
       0 * kIcPointersPerCache + 1 * kIcPointersPerEntry;
   word load_attr_cached_cache_index1 =
@@ -1705,7 +1705,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   caches.atPut(load_method_cached_index + kIcEntryValueOffset,
                SmallInt::fromWord(30));
 
-  // Caches are empty for LOAD_ATTR_CACHED at 10.
+  // Caches are empty for LOAD_ATTR_ANAMORPHIC at 10.
 
   // Caches for STORE_ATTR_CACHED at 12.
   word store_attr_cached_index =

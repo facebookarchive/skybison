@@ -289,11 +289,13 @@ class IcIterator {
     switch (bytecode_op_.bc) {
       case BINARY_SUBSCR_CACHED:
       case FOR_ITER_CACHED:
-      case LOAD_ATTR_CACHED:
+      case LOAD_ATTR_INSTANCE:
       case LOAD_ATTR_INSTANCE_PROPERTY:
       case LOAD_ATTR_INSTANCE_TYPE:
+      case LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD:
       case LOAD_ATTR_INSTANCE_TYPE_DESCR:
       case LOAD_ATTR_TYPE:
+      case LOAD_ATTR_ANAMORPHIC:
       case LOAD_METHOD_ANAMORPHIC:
       case LOAD_METHOD_INSTANCE_FUNCTION:
       case LOAD_METHOD_POLYMORPHIC:

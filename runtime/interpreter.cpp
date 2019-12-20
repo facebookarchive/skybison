@@ -2832,7 +2832,8 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread,
   return thread->runtime()->attributeAt(thread, receiver, name);
 }
 
-Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
+Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg,
+                                          ICState ic_state) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   word original_arg = originalArg(frame->function(), arg);
@@ -2854,46 +2855,63 @@ Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
   Tuple caches(&scope, frame->caches());
   Function dependent(&scope, frame->function());
   LayoutId receiver_layout_id = receiver.layoutId();
-  if (kind == LoadAttrKind::kInstanceOffset ||
-      kind == LoadAttrKind::kInstanceFunction) {
-    // The current polymorphic cache opcode can handle these two kinds.
-    icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
-                 dependent);
-  } else {
-    word pc = frame->virtualPC() - kCodeUnitSize;
-    RawMutableBytes bytecode = frame->bytecode();
-    DCHECK(bytecode.byteAt(pc) == LOAD_ATTR_CACHED, "unexpected opcode");
-    if (icIsCacheEmpty(caches, arg)) {
-      // Only monomorphic caching opcodes can support all other kinds
-      switch (kind) {
-        case LoadAttrKind::kInstanceProperty:
-          bytecode.byteAtPut(pc, LOAD_ATTR_INSTANCE_PROPERTY);
-          icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
-                       dependent);
-          break;
-        case LoadAttrKind::kInstanceType:
-          bytecode.byteAtPut(pc, LOAD_ATTR_INSTANCE_TYPE);
-          icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
-                       dependent);
-          break;
-        case LoadAttrKind::kInstanceTypeDescr:
-          bytecode.byteAtPut(pc, LOAD_ATTR_INSTANCE_TYPE_DESCR);
-          icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
-                       dependent);
-          break;
-        case LoadAttrKind::kModule: {
-          ValueCell value_cell(&scope, *location);
-          DCHECK(location.isValueCell(), "location must be ValueCell");
-          icUpdateAttrModule(thread, caches, arg, receiver, value_cell,
-                             dependent);
-        } break;
-        case LoadAttrKind::kType:
-          icUpdateAttrType(thread, caches, arg, receiver, name, location,
+  word pc = frame->currentPC();
+  RawMutableBytes bytecode = frame->bytecode();
+
+  if (ic_state == ICState::kAnamorphic) {
+    switch (kind) {
+      case LoadAttrKind::kInstanceOffset:
+        bytecode.byteAtPut(pc, LOAD_ATTR_INSTANCE);
+        icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
+                     dependent);
+        break;
+      case LoadAttrKind::kInstanceFunction:
+        bytecode.byteAtPut(pc, LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD);
+        icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
+                     dependent);
+        break;
+      case LoadAttrKind::kInstanceProperty:
+        bytecode.byteAtPut(pc, LOAD_ATTR_INSTANCE_PROPERTY);
+        icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
+                     dependent);
+        break;
+      case LoadAttrKind::kInstanceType:
+        bytecode.byteAtPut(pc, LOAD_ATTR_INSTANCE_TYPE);
+        icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
+                     dependent);
+        break;
+      case LoadAttrKind::kInstanceTypeDescr:
+        bytecode.byteAtPut(pc, LOAD_ATTR_INSTANCE_TYPE_DESCR);
+        icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
+                     dependent);
+        break;
+      case LoadAttrKind::kModule: {
+        ValueCell value_cell(&scope, *location);
+        DCHECK(location.isValueCell(), "location must be ValueCell");
+        icUpdateAttrModule(thread, caches, arg, receiver, value_cell,
                            dependent);
-          break;
-        default:
-          UNREACHABLE("kinds should have been handled before");
-      }
+      } break;
+      case LoadAttrKind::kType:
+        icUpdateAttrType(thread, caches, arg, receiver, name, location,
+                         dependent);
+        break;
+      default:
+        UNREACHABLE("kinds should have been handled before");
+    }
+  } else {
+    DCHECK(bytecode.byteAt(pc) == LOAD_ATTR_INSTANCE ||
+               bytecode.byteAt(pc) == LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD ||
+               bytecode.byteAt(pc) == LOAD_ATTR_POLYMORPHIC,
+           "unexpected opcode");
+    switch (kind) {
+      case LoadAttrKind::kInstanceOffset:
+      case LoadAttrKind::kInstanceFunction:
+        bytecode.byteAtPut(pc, LOAD_ATTR_POLYMORPHIC);
+        icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
+                     dependent);
+        break;
+      default:
+        break;
     }
   }
   frame->setTopValue(*result);
@@ -2924,17 +2942,42 @@ HANDLER_INLINE USED RawObject Interpreter::loadAttrWithLocation(
   return overflow.at(-offset - 1);
 }
 
-HANDLER_INLINE Continue Interpreter::doLoadAttrCached(Thread* thread,
-                                                      word arg) {
+HANDLER_INLINE Continue Interpreter::doLoadAttrAnamorphic(Thread* thread,
+                                                          word arg) {
+  return loadAttrUpdateCache(thread, arg, ICState::kAnamorphic);
+}
+
+HANDLER_INLINE Continue Interpreter::doLoadAttrInstance(Thread* thread,
+                                                        word arg) {
   Frame* frame = thread->currentFrame();
   RawObject receiver = frame->topValue();
-  LayoutId layout_id = receiver.layoutId();
-  RawObject cached = icLookupAttr(frame->caches(), arg, layout_id);
-  if (cached.isErrorNotFound()) {
-    return loadAttrUpdateCache(thread, arg);
+  RawTuple caches = frame->caches();
+  word index = arg * kIcPointersPerCache;
+  if (SmallInt::fromWord(static_cast<word>(receiver.layoutId())) !=
+      caches.at(index + kIcEntryKeyOffset)) {
+    return Interpreter::loadAttrUpdateCache(thread, arg, ICState::kMonomorphic);
   }
+  RawObject cached = caches.at(index + kIcEntryValueOffset);
   RawObject result = loadAttrWithLocation(thread, receiver, cached);
   frame->setTopValue(result);
+  return Continue::NEXT;
+}
+
+HANDLER_INLINE Continue
+Interpreter::doLoadAttrInstanceTypeBoundMethod(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject receiver = frame->topValue();
+  RawTuple caches = frame->caches();
+  word index = arg * kIcPointersPerCache;
+  if (SmallInt::fromWord(static_cast<word>(receiver.layoutId())) !=
+      caches.at(index + kIcEntryKeyOffset)) {
+    return Interpreter::loadAttrUpdateCache(thread, arg, ICState::kMonomorphic);
+  }
+  RawObject cached = caches.at(index + kIcEntryValueOffset);
+  HandleScope scope(thread);
+  Object self(&scope, receiver);
+  Object function(&scope, cached);
+  frame->setTopValue(thread->runtime()->newBoundMethod(function, self));
   return Continue::NEXT;
 }
 
@@ -2951,10 +2994,10 @@ NEVER_INLINE Continue Interpreter::retryLoadAttrCached(Thread* thread,
   word pc = frame->virtualPC() - kCodeUnitSize;
   word index = arg * kIcPointersPerCache;
   RawMutableBytes bytecode = frame->bytecode();
-  bytecode.byteAtPut(pc, LOAD_ATTR_CACHED);
+  bytecode.byteAtPut(pc, LOAD_ATTR_ANAMORPHIC);
   caches.atPut(index + kIcEntryKeyOffset, NoneType::object());
   caches.atPut(index + kIcEntryValueOffset, NoneType::object());
-  return Interpreter::loadAttrUpdateCache(thread, arg);
+  return Interpreter::loadAttrUpdateCache(thread, arg, ICState::kAnamorphic);
 }
 
 HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceProperty(Thread* thread,
@@ -3028,6 +3071,20 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrModule(Thread* thread,
     return Continue::NEXT;
   }
   return retryLoadAttrCached(thread, arg);
+}
+
+HANDLER_INLINE Continue Interpreter::doLoadAttrPolymorphic(Thread* thread,
+                                                           word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject receiver = frame->topValue();
+  LayoutId layout_id = receiver.layoutId();
+  RawObject cached = icLookupAttr(frame->caches(), arg, layout_id);
+  if (cached.isErrorNotFound()) {
+    return loadAttrUpdateCache(thread, arg, ICState::kPolymorphic);
+  }
+  RawObject result = loadAttrWithLocation(thread, receiver, cached);
+  frame->setTopValue(result);
+  return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doLoadAttrType(Thread* thread, word arg) {

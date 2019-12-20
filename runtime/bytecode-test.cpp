@@ -74,7 +74,7 @@ TEST_F(BytecodeTest, RewriteBytecodeWithMoreThanCacheLimitCapsRewriting) {
 
   byte expected[514];
   for (int i = 0; i < 257; i++) {
-    expected[i * 2] = LOAD_ATTR_CACHED;
+    expected[i * 2] = LOAD_ATTR_ANAMORPHIC;
     expected[(i * 2) + 1] = i;
   }
 
@@ -102,9 +102,9 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadAttrOperations) {
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {
-      NOP,          99,        EXTENDED_ARG,     0, LOAD_ATTR_CACHED, 0,
-      NOP,          LOAD_ATTR, EXTENDED_ARG,     0, EXTENDED_ARG,     0,
-      EXTENDED_ARG, 0,         LOAD_ATTR_CACHED, 1, LOAD_ATTR_CACHED, 2,
+      NOP,          99,        EXTENDED_ARG,         0, LOAD_ATTR_ANAMORPHIC, 0,
+      NOP,          LOAD_ATTR, EXTENDED_ARG,         0, EXTENDED_ARG,         0,
+      EXTENDED_ARG, 0,         LOAD_ATTR_ANAMORPHIC, 1, LOAD_ATTR_ANAMORPHIC, 2,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
@@ -139,7 +139,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesZeroArgMethodCalls) {
                      99,
                      EXTENDED_ARG,
                      0,
-                     LOAD_ATTR_CACHED,
+                     LOAD_ATTR_ANAMORPHIC,
                      0,
                      NOP,
                      LOAD_ATTR,
@@ -149,7 +149,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesZeroArgMethodCalls) {
                      0,
                      EXTENDED_ARG,
                      0,
-                     LOAD_ATTR_CACHED,
+                     LOAD_ATTR_ANAMORPHIC,
                      1,
                      CALL_FUNCTION,
                      1,
@@ -496,7 +496,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesReservesCachesForGlobalVariables) {
       1,
       // Note that LOAD_ATTR's cache index starts at 2 to reserve the first 2
       // cache lines for 12 global variables.
-      LOAD_ATTR_CACHED,
+      LOAD_ATTR_ANAMORPHIC,
       2,
       DELETE_GLOBAL,
       2,
@@ -504,7 +504,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesReservesCachesForGlobalVariables) {
       3,
       DELETE_NAME,
       4,
-      LOAD_ATTR_CACHED,
+      LOAD_ATTR_ANAMORPHIC,
       3,
       LOAD_NAME,
       5,

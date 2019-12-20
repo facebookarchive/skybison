@@ -245,9 +245,10 @@ namespace py {
   V(UNUSED_BYTECODE_226, 226, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_227, 227, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_228, 228, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_229, 229, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_230, 230, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_231, 231, doInvalidBytecode)                               \
+  V(LOAD_ATTR_POLYMORPHIC, 229, doLoadAttrPolymorphic)                         \
+  V(LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD, 230,                                 \
+    doLoadAttrInstanceTypeBoundMethod)                                         \
+  V(LOAD_ATTR_INSTANCE, 231, doLoadAttrInstance)                               \
   V(LOAD_METHOD_POLYMORPHIC, 232, doLoadMethodPolymorphic)                     \
   V(LOAD_METHOD_INSTANCE_FUNCTION, 233, doLoadMethodInstanceFunction)          \
   V(STORE_SUBSCR_CACHED, 234, doStoreSubscrCached)                             \
@@ -271,7 +272,7 @@ namespace py {
   V(BINARY_OP_CACHED, 252, doBinaryOpCached)                                   \
   V(BINARY_SUBSCR_CACHED, 253, doBinarySubscrCached)                           \
   V(STORE_ATTR_CACHED, 254, doStoreAttrCached)                                 \
-  V(LOAD_ATTR_CACHED, 255, doLoadAttrCached)
+  V(LOAD_ATTR_ANAMORPHIC, 255, doLoadAttrAnamorphic)
 
 const word kNumBytecodes = 256;
 
@@ -340,12 +341,14 @@ inline bool isByteCodeWithCache(const Bytecode bc) {
     case COMPARE_OP_CACHED:
     case FOR_ITER_CACHED:
     case INPLACE_OP_CACHED:
-    case LOAD_ATTR_CACHED:
+    case LOAD_ATTR_INSTANCE:
     case LOAD_ATTR_INSTANCE_PROPERTY:
     case LOAD_ATTR_INSTANCE_TYPE:
+    case LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD:
     case LOAD_ATTR_INSTANCE_TYPE_DESCR:
     case LOAD_ATTR_MODULE:
     case LOAD_ATTR_TYPE:
+    case LOAD_ATTR_ANAMORPHIC:
     case LOAD_METHOD_ANAMORPHIC:
     case LOAD_METHOD_INSTANCE_FUNCTION:
     case LOAD_METHOD_POLYMORPHIC:

@@ -218,7 +218,9 @@ bool mayChangeFramePC(Bytecode bc) {
   // finished). This lets us avoid reloading the frame after calling their C++
   // implementations.
   switch (bc) {
-    case LOAD_ATTR_CACHED:
+    case LOAD_ATTR_INSTANCE:
+    case LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD:
+    case LOAD_ATTR_POLYMORPHIC:
     case STORE_ATTR_CACHED:
     case LOAD_METHOD_INSTANCE_FUNCTION:
     case LOAD_METHOD_POLYMORPHIC:
@@ -458,8 +460,53 @@ void emitAttrWithOffset(EmitEnv* env, void (Assembler::*asm_op)(Address),
   __ jmp(next, Assembler::kNearJump);
 }
 
+// TODO(T59397957): Split this into two opcodes.
 template <>
-void emitHandler<LOAD_ATTR_CACHED>(EmitEnv* env) {
+void emitHandler<LOAD_ATTR_INSTANCE>(EmitEnv* env) {
+  Register r_base = RAX;
+  Register r_layout_id = R8;
+  Register r_scratch = RDI;
+  Register r_scratch2 = R9;
+  Register r_caches = RDX;
+  Label slow_path;
+  __ popq(r_base);
+  emitGetLayoutId(env, r_layout_id, r_base);
+  __ movq(r_caches, Address(kFrameReg, Frame::kCachesOffset));
+  emitIcLookupMonomorphic(env, &slow_path, r_scratch, r_layout_id, r_caches,
+                          kOpargReg, r_scratch2);
+
+  Label next;
+  emitAttrWithOffset(env, &Assembler::pushq, &next, r_base, r_scratch,
+                     r_layout_id, r_scratch2);
+
+  __ bind(&slow_path);
+  __ pushq(r_base);
+  emitJumpToGenericHandler(env);
+}
+
+template <>
+void emitHandler<LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD>(EmitEnv* env) {
+  Register r_base = RAX;
+  Register r_layout_id = R8;
+  Register r_scratch = RDI;
+  Register r_scratch2 = R9;
+  Register r_caches = RDX;
+  Label slow_path;
+  __ popq(r_base);
+  emitGetLayoutId(env, r_layout_id, r_base);
+  __ movq(r_caches, Address(kFrameReg, Frame::kCachesOffset));
+  emitIcLookupMonomorphic(env, &slow_path, r_scratch, r_layout_id, r_caches,
+                          kOpargReg, r_scratch2);
+  emitPushBoundMethod(env, &slow_path, r_base, r_scratch, r_caches, R8);
+  emitNextOpcode(env);
+
+  __ bind(&slow_path);
+  __ pushq(r_base);
+  emitJumpToGenericHandler(env);
+}
+
+template <>
+void emitHandler<LOAD_ATTR_POLYMORPHIC>(EmitEnv* env) {
   Register r_base = RAX;
   Register r_layout_id = R8;
   Register r_scratch = RDI;
