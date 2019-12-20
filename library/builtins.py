@@ -4654,7 +4654,11 @@ class set(bootstrap=True):
         pass
 
     def __isub__(self, other):
-        _unimplemented()
+        _set_guard(self)
+        if not _set_check(other):
+            return NotImplemented
+        set.difference_update(self, other)
+        return self
 
     def __iter__(self):
         pass

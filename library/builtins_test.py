@@ -7927,6 +7927,59 @@ class SetTests(unittest.TestCase):
     def test_sub_with_non_set_other_returns_not_implemented(self):
         self.assertEqual(set.__sub__(set(), "not a set"), NotImplemented)
 
+    def test_isub_returns_difference(self):
+        x1 = {1, 2}
+        y1 = set()
+        self.assertIs(set.__isub__(x1, y1), x1)
+        self.assertEqual(x1, {1, 2})
+
+        x2 = {1, 2}
+        y2 = {1}
+        self.assertIs(set.__isub__(x2, y2), x2)
+        self.assertEqual(x2, {2})
+
+        x3 = {1, 2}
+        y3 = {1, 2}
+        self.assertIs(set.__isub__(x3, y3), x3)
+        self.assertEqual(x3, set())
+
+    def test_isub_operator_returns_difference(self):
+        x1 = {1, 2}
+        y1 = set()
+        x1 -= y1
+        self.assertEqual(x1, {1, 2})
+
+        x2 = {1, 2}
+        y2 = {1}
+        x2 -= y2
+        self.assertEqual(x2, {2})
+
+        x3 = {1, 2}
+        y3 = {1, 2}
+        x3 -= y3
+        self.assertEqual(x3, set())
+
+    def test_isub_with_non_set_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            set.__isub__("not a set", set())
+        with self.assertRaises(TypeError):
+            set.__isub__("not a set", "also not a set")
+        with self.assertRaises(TypeError):
+            set.__isub__(frozenset(), set())
+
+    def test_isub_with_non_set_other_returns_not_implemented(self):
+        self.assertEqual(set.__isub__(set(), "not a set"), NotImplemented)
+
+    def test_set_ignores_subclass_isub_update(self):
+        class SubSet(set):
+            def __isub__(self, other):
+                pass
+
+        a = SubSet([1, 2, 3])
+        b = {2, 3}
+        self.assertIs(set.__isub__(a, b), a)
+        self.assertEqual(a, {1})
+
     def test_union_with_non_set_as_self_raises_type_error(self):
         with self.assertRaises(TypeError):
             set.union(frozenset(), set())
