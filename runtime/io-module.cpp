@@ -701,16 +701,12 @@ const BuiltinAttribute FileIOBuiltins::kAttributes[] = {
 };
 
 const BuiltinAttribute StringIOBuiltins::kAttributes[] = {
-    {SymbolId::kUnderB2cratio, StringIO::kB2cratioOffset},
     {SymbolId::kUnderBuffer, StringIO::kBufferOffset},
-    {SymbolId::kUnderDecodedChars, StringIO::kDecodedCharsOffset},
-    {SymbolId::kUnderDecodedCharsUsed, StringIO::kDecodedCharsUsedOffset},
     {SymbolId::kUnderDecoder, StringIO::kDecoderOffset},
     {SymbolId::kUnderLineBuffering, StringIO::kLineBufferingOffset},
     {SymbolId::kUnderReadnl, StringIO::kReadnlOffset},
     {SymbolId::kUnderReadtranslate, StringIO::kReadtranslateOffset},
     {SymbolId::kUnderReaduniversal, StringIO::kReaduniversalOffset},
-    {SymbolId::kUnderSnapshot, StringIO::kSnapshotOffset},
     {SymbolId::kUnderWritenl, StringIO::kWritenlOffset},
     {SymbolId::kUnderWritetranslate, StringIO::kWritetranslateOffset},
     {SymbolId::kSentinelId, 0},

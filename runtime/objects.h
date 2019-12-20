@@ -3471,16 +3471,8 @@ class RawTextIOWrapper : public RawUnderTextIOBase {
 
 class RawStringIO : public RawUnderTextIOBase {
  public:
-  // TODO(T58766302): The following getters and setters were copied from
-  // TextIOWrapper and should be specialized for StringIO
-  RawObject b2cratio() const;
-  void setB2cratio(RawObject b2cratio) const;
   RawObject buffer() const;
   void setBuffer(RawObject buffer) const;
-  RawObject decodedChars() const;
-  void setDecodedChars(RawObject decoded_chars) const;
-  RawObject decodedCharsUsed() const;
-  void setDecodedCharsUsed(RawObject decoded_chars_used) const;
   RawObject decoder() const;
   void setDecoder(RawObject decoder) const;
   RawObject lineBuffering() const;
@@ -3491,8 +3483,6 @@ class RawStringIO : public RawUnderTextIOBase {
   void setReadtranslate(RawObject readtranslate) const;
   RawObject readuniversal() const;
   void setReaduniversal(RawObject readuniversal) const;
-  RawObject snapshot() const;
-  void setSnapshot(RawObject snapshot) const;
   RawObject writenl() const;
   void setWritenl(RawObject writenl) const;
   RawObject writetranslate() const;
@@ -3503,17 +3493,13 @@ class RawStringIO : public RawUnderTextIOBase {
   void setDict(RawObject dict) const;
 
   // Layout
-  static const int kB2cratioOffset = RawUnderTextIOBase::kSize;
-  static const int kBufferOffset = kB2cratioOffset + kPointerSize;
-  static const int kDecodedCharsOffset = kBufferOffset + kPointerSize;
-  static const int kDecodedCharsUsedOffset = kDecodedCharsOffset + kPointerSize;
-  static const int kDecoderOffset = kDecodedCharsUsedOffset + kPointerSize;
+  static const int kBufferOffset = RawUnderTextIOBase::kSize;
+  static const int kDecoderOffset = kBufferOffset + kPointerSize;
   static const int kLineBufferingOffset = kDecoderOffset + kPointerSize;
   static const int kReadnlOffset = kLineBufferingOffset + kPointerSize;
   static const int kReadtranslateOffset = kReadnlOffset + kPointerSize;
   static const int kReaduniversalOffset = kReadtranslateOffset + kPointerSize;
-  static const int kSnapshotOffset = kReaduniversalOffset + kPointerSize;
-  static const int kWritenlOffset = kSnapshotOffset + kPointerSize;
+  static const int kWritenlOffset = kReaduniversalOffset + kPointerSize;
   static const int kWritetranslateOffset = kWritenlOffset + kPointerSize;
   static const int kDictOffset = kWritetranslateOffset + kPointerSize;
   static const int kSize = kDictOffset + kPointerSize;
@@ -6776,37 +6762,12 @@ inline void RawFileIO::setShouldCloseFd(RawObject value) const {
 
 // RawStringIO
 
-inline RawObject RawStringIO::b2cratio() const {
-  return instanceVariableAt(kB2cratioOffset);
-}
-
-inline void RawStringIO::setB2cratio(RawObject b2cratio) const {
-  instanceVariableAtPut(kB2cratioOffset, b2cratio);
-}
-
 inline RawObject RawStringIO::buffer() const {
   return instanceVariableAt(kBufferOffset);
 }
 
 inline void RawStringIO::setBuffer(RawObject buffer) const {
   instanceVariableAtPut(kBufferOffset, buffer);
-}
-
-inline RawObject RawStringIO::decodedChars() const {
-  return instanceVariableAt(kDecodedCharsOffset);
-}
-
-inline void RawStringIO::setDecodedChars(RawObject decoded_chars) const {
-  instanceVariableAtPut(kDecodedCharsOffset, decoded_chars);
-}
-
-inline RawObject RawStringIO::decodedCharsUsed() const {
-  return instanceVariableAt(kDecodedCharsUsedOffset);
-}
-
-inline void RawStringIO::setDecodedCharsUsed(
-    RawObject decoded_chars_used) const {
-  instanceVariableAtPut(kDecodedCharsUsedOffset, decoded_chars_used);
 }
 
 inline RawObject RawStringIO::decoder() const {
@@ -6855,14 +6816,6 @@ inline RawObject RawStringIO::readuniversal() const {
 
 inline void RawStringIO::setReaduniversal(RawObject readuniversal) const {
   instanceVariableAtPut(kReaduniversalOffset, readuniversal);
-}
-
-inline RawObject RawStringIO::snapshot() const {
-  return instanceVariableAt(kSnapshotOffset);
-}
-
-inline void RawStringIO::setSnapshot(RawObject snapshot) const {
-  instanceVariableAtPut(kSnapshotOffset, snapshot);
 }
 
 inline RawObject RawStringIO::writenl() const {
