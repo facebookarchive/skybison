@@ -37,7 +37,7 @@ struct RewrittenOp {
   bool needs_inline_cache;
 };
 
-static void rewriteZeroArgMethodCallsUsingLoadMethodCached(
+static void rewriteZeroArgMethodCallsUsingLoadMethodAnamorphic(
     const MutableBytes& bytecode) {
   word bytecode_length = bytecode.length();
   Bytecode prev = UNUSED_BYTECODE_0;
@@ -45,7 +45,7 @@ static void rewriteZeroArgMethodCallsUsingLoadMethodCached(
   for (word i = 0; i < bytecode_length;) {
     BytecodeOp op = nextBytecodeOp(bytecode, &i);
     if (prev == LOAD_ATTR_CACHED && op.bc == CALL_FUNCTION && op.arg == 0) {
-      bytecode.byteAtPut(prev_index, LOAD_METHOD_CACHED);
+      bytecode.byteAtPut(prev_index, LOAD_METHOD_ANAMORPHIC);
       bytecode.byteAtPut(i - kCodeUnitSize, CALL_METHOD);
     }
     prev = op.bc;
@@ -142,7 +142,7 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op) {
       return RewrittenOp{LOAD_FAST_REVERSE, reverse_arg, false};
     }
     case LOAD_METHOD:
-      return RewrittenOp{LOAD_METHOD_CACHED, op.arg, true};
+      return RewrittenOp{LOAD_METHOD_ANAMORPHIC, op.arg, true};
     case STORE_ATTR:
       return RewrittenOp{STORE_ATTR_CACHED, op.arg, true};
     case STORE_FAST: {
@@ -171,7 +171,7 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op) {
     case INPLACE_OP_CACHED:
     case LOAD_ATTR_CACHED:
     case LOAD_FAST_REVERSE:
-    case LOAD_METHOD_CACHED:
+    case LOAD_METHOD_ANAMORPHIC:
     case STORE_ATTR_CACHED:
     case STORE_FAST_REVERSE:
       UNREACHABLE("should not have cached opcode in input");
@@ -246,7 +246,7 @@ void rewriteBytecode(Thread* thread, const Function& function) {
   }
 
   // TODO(T45428069): Remove this once the compiler starts emitting the opcodes.
-  rewriteZeroArgMethodCallsUsingLoadMethodCached(bytecode);
+  rewriteZeroArgMethodCallsUsingLoadMethodAnamorphic(bytecode);
   function.setCaches(runtime->newTuple(num_caches * kIcPointersPerCache));
   function.setOriginalArguments(*original_arguments);
 }

@@ -2862,8 +2862,8 @@ Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
   } else {
     word pc = frame->virtualPC() - kCodeUnitSize;
     RawMutableBytes bytecode = frame->bytecode();
-    if (bytecode.byteAt(pc) == LOAD_ATTR_CACHED &&
-        icIsCacheEmpty(caches, arg)) {
+    DCHECK(bytecode.byteAt(pc) == LOAD_ATTR_CACHED, "unexpected opcode");
+    if (icIsCacheEmpty(caches, arg)) {
       // Only monomorphic caching opcodes can support all other kinds
       switch (kind) {
         case LoadAttrKind::kInstanceProperty:
@@ -4041,7 +4041,7 @@ HANDLER_INLINE Continue Interpreter::doBuildString(Thread* thread, word arg) {
 
 // LOAD_METHOD shapes the stack as follows:
 //
-//     Unbound
+//     receiver or unbound
 //     callable <- Top of stack / lower memory addresses
 //
 // LOAD_METHOD is paired with a CALL_METHOD, and the matching CALL_METHOD
@@ -4052,39 +4052,81 @@ HANDLER_INLINE Continue Interpreter::doLoadMethod(Thread* thread, word arg) {
   return doLoadAttr(thread, arg);
 }
 
-// LOAD_METHOD_CACHED shapes the stack in case of cache hit as follows:
-//
-//     Function
-//     Receiver <- Top of stack / lower memory addresses
-//
-// LOAD_METHOD_CACHED is paired with a CALL_METHOD, and the matching CALL_METHOD
-// bind Receiver to the self parameter to call Function to avoid creating
-// a BoundMethod object.
-//
-// In case of cache miss, LOAD_METHOD_CACHED shapes the stack in the same way as
-// LOAD_METHOD.
-HANDLER_INLINE Continue Interpreter::doLoadMethodCached(Thread* thread,
-                                                        word arg) {
+Continue Interpreter::loadMethodUpdateCache(Thread* thread, word arg,
+                                            ICState ic_state) {
+  HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  RawObject receiver = frame->topValue();
-  LayoutId layout_id = receiver.layoutId();
-  RawObject cached = icLookupAttr(frame->caches(), arg, layout_id);
-  // A function object is cached only when LOAD_ATTR_CACHED is guaranteed to
-  // push a BoundMethod with the function via objectGetAttributeSetLocation().
-  // Otherwise, LOAD_ATTR_CACHED caches only attribute's offsets.
-  // Therefore, it's safe to push function/receiver pair to avoid BoundMethod
-  // creation.
-  if (cached.isFunction()) {
-    frame->insertValueAt(cached, 1);
+  word original_arg = originalArg(frame->function(), arg);
+  Object receiver(&scope, frame->topValue());
+  Str name(&scope,
+           Tuple::cast(Code::cast(frame->code()).names()).at(original_arg));
+
+  Object location(&scope, NoneType::object());
+  LoadAttrKind kind;
+  Object result(&scope,
+                loadAttrSetLocation(thread, receiver, name, &kind, &location));
+  if (result.isErrorException()) return Continue::UNWIND;
+  if (kind != LoadAttrKind::kInstanceFunction) {
+    frame->pushValue(*result);
+    frame->setValueAt(Unbound::object(), 1);
     return Continue::NEXT;
   }
 
-  frame->insertValueAt(Unbound::object(), 1);
-  if (cached.isErrorNotFound()) {
-    return loadAttrUpdateCache(thread, arg);
+  // Cache the attribute load.
+  Tuple caches(&scope, frame->caches());
+  Function dependent(&scope, frame->function());
+  icUpdateAttr(thread, caches, arg, receiver.layoutId(), location, name,
+               dependent);
+
+  word pc = frame->currentPC();
+  RawMutableBytes bytecode = frame->bytecode();
+  switch (ic_state) {
+    case ICState::kAnamorphic:
+      bytecode.byteAtPut(pc, LOAD_METHOD_INSTANCE_FUNCTION);
+      break;
+    case ICState::kMonomorphic:
+      bytecode.byteAtPut(pc, LOAD_METHOD_POLYMORPHIC);
+      break;
+    case ICState::kPolymorphic:
+      DCHECK(bytecode.byteAt(pc) == LOAD_METHOD_POLYMORPHIC,
+             "unexpected bytecode");
+      break;
   }
-  RawObject result = loadAttrWithLocation(thread, receiver, cached);
-  frame->setTopValue(result);
+  frame->insertValueAt(*location, 1);
+  return Continue::NEXT;
+}
+
+HANDLER_INLINE Continue Interpreter::doLoadMethodAnamorphic(Thread* thread,
+                                                            word arg) {
+  return loadMethodUpdateCache(thread, arg, ICState::kAnamorphic);
+}
+
+HANDLER_INLINE Continue
+Interpreter::doLoadMethodInstanceFunction(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject receiver = frame->topValue();
+  RawTuple caches = frame->caches();
+  word index = arg * kIcPointersPerCache;
+  if (SmallInt::fromWord(static_cast<word>(receiver.layoutId())) !=
+      caches.at(index + kIcEntryKeyOffset)) {
+    return loadMethodUpdateCache(thread, arg, ICState::kMonomorphic);
+  }
+  RawObject cached = caches.at(index + kIcEntryValueOffset);
+  DCHECK(cached.isFunction(), "cached is expected to be a function");
+  frame->insertValueAt(cached, 1);
+  return Continue::NEXT;
+}
+
+HANDLER_INLINE Continue Interpreter::doLoadMethodPolymorphic(Thread* thread,
+                                                             word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject receiver = frame->topValue();
+  RawObject cached = icLookupAttr(frame->caches(), arg, receiver.layoutId());
+  if (cached.isErrorNotFound()) {
+    return loadMethodUpdateCache(thread, arg, ICState::kPolymorphic);
+  }
+  DCHECK(cached.isFunction(), "cached is expected to be a function");
+  frame->insertValueAt(cached, 1);
   return Continue::NEXT;
 }
 

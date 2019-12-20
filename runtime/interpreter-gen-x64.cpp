@@ -220,7 +220,8 @@ bool mayChangeFramePC(Bytecode bc) {
   switch (bc) {
     case LOAD_ATTR_CACHED:
     case STORE_ATTR_CACHED:
-    case LOAD_METHOD_CACHED:
+    case LOAD_METHOD_INSTANCE_FUNCTION:
+    case LOAD_METHOD_POLYMORPHIC:
       return false;
     default:
       return true;
@@ -356,6 +357,20 @@ void emitIcLookup(EmitEnv* env, Label* not_found, Register r_dst,
   __ bind(&done);
 }
 
+void emitIcLookupMonomorphic(EmitEnv* env, Label* not_found, Register r_dst,
+                             Register r_layout_id, Register r_caches,
+                             Register r_index, Register r_scratch) {
+  // Set r_caches = r_caches + r_index * kPointerSize * kPointersPerCache,
+  // without modifying r_index.
+  static_assert(kIcPointersPerCache * kPointerSize == 64,
+                "Unexpected kIcPointersPerCache");
+  __ leaq(r_scratch, Address(r_index, TIMES_8, 0));
+  __ leaq(r_caches, Address(r_caches, r_scratch, TIMES_8, heapObjectDisp(0)));
+  __ cmpl(Address(r_caches, kIcEntryKeyOffset * kPointerSize), r_layout_id);
+  __ jcc(NOT_EQUAL, not_found, Assembler::kNearJump);
+  __ movq(r_dst, Address(r_caches, kIcEntryValueOffset * kPointerSize));
+}
+
 // Allocate and push a BoundMethod on the stack. If the heap is full and a GC
 // is needed, jump to slow_path instead. r_self and r_function will be used to
 // populate the BoundMethod. r_space and r_scratch are used as scratch
@@ -474,7 +489,31 @@ void emitHandler<LOAD_ATTR_CACHED>(EmitEnv* env) {
 }
 
 template <>
-void emitHandler<LOAD_METHOD_CACHED>(EmitEnv* env) {
+void emitHandler<LOAD_METHOD_INSTANCE_FUNCTION>(EmitEnv* env) {
+  Register r_base = RAX;
+  Register r_layout_id = R8;
+  Register r_scratch = RDI;
+  Register r_scratch2 = R9;
+  Register r_caches = RDX;
+  Label slow_path;
+  __ popq(r_base);
+  emitGetLayoutId(env, r_layout_id, r_base);
+  __ movq(r_caches, Address(kFrameReg, Frame::kCachesOffset));
+  emitIcLookupMonomorphic(env, &slow_path, r_scratch, r_layout_id, r_caches,
+                          kOpargReg, r_scratch2);
+
+  // Only functions are cached.
+  __ pushq(r_scratch);
+  __ pushq(r_base);
+  emitNextOpcode(env);
+
+  __ bind(&slow_path);
+  __ pushq(r_base);
+  emitJumpToGenericHandler(env);
+}
+
+template <>
+void emitHandler<LOAD_METHOD_POLYMORPHIC>(EmitEnv* env) {
   Register r_base = RAX;
   Register r_layout_id = R8;
   Register r_scratch = RDI;

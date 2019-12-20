@@ -248,8 +248,8 @@ namespace py {
   V(UNUSED_BYTECODE_229, 229, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_230, 230, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_231, 231, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_232, 232, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_233, 233, doInvalidBytecode)                               \
+  V(LOAD_METHOD_POLYMORPHIC, 232, doLoadMethodPolymorphic)                     \
+  V(LOAD_METHOD_INSTANCE_FUNCTION, 233, doLoadMethodInstanceFunction)          \
   V(STORE_SUBSCR_CACHED, 234, doStoreSubscrCached)                             \
   V(LOAD_ATTR_INSTANCE_TYPE, 235, doLoadAttrInstanceType)                      \
   V(LOAD_ATTR_INSTANCE_TYPE_DESCR, 236, doLoadAttrInstanceTypeDescr)           \
@@ -262,7 +262,7 @@ namespace py {
   V(LOAD_IMMEDIATE, 243, doLoadImmediate)                                      \
   V(STORE_FAST_REVERSE, 244, doStoreFastReverse)                               \
   V(LOAD_FAST_REVERSE, 245, doLoadFastReverse)                                 \
-  V(LOAD_METHOD_CACHED, 246, doLoadMethodCached)                               \
+  V(LOAD_METHOD_ANAMORPHIC, 246, doLoadMethodAnamorphic)                       \
   V(STORE_GLOBAL_CACHED, 247, doStoreGlobalCached)                             \
   V(LOAD_GLOBAL_CACHED, 248, doLoadGlobalCached)                               \
   V(FOR_ITER_CACHED, 249, doForIterCached)                                     \
@@ -346,7 +346,9 @@ inline bool isByteCodeWithCache(const Bytecode bc) {
     case LOAD_ATTR_INSTANCE_TYPE_DESCR:
     case LOAD_ATTR_MODULE:
     case LOAD_ATTR_TYPE:
-    case LOAD_METHOD_CACHED:
+    case LOAD_METHOD_ANAMORPHIC:
+    case LOAD_METHOD_INSTANCE_FUNCTION:
+    case LOAD_METHOD_POLYMORPHIC:
     case STORE_ATTR_CACHED:
     case STORE_ATTR_INSTANCE_UPDATE:
     case STORE_SUBSCR_CACHED:

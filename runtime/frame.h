@@ -2,6 +2,7 @@
 
 #include <cstring>
 
+#include "bytecode.h"
 #include "globals.h"
 #include "handles.h"
 #include "objects.h"
@@ -178,6 +179,9 @@ class Frame {
   word virtualPC();
   void setVirtualPC(word pc);
 
+  // Index in the bytecode array of the instruction currently being executed.
+  word currentPC();
+
   // The implicit globals namespace (a Dict). This is only available when the
   // code does not have OPTIMIZED and NEWLOCALS flags set.
   RawObject implicitGlobals();
@@ -336,6 +340,11 @@ inline void Frame::setVirtualPC(word pc) {
   // We re-interpret the PC value as a small int. This works because it must
   // be an even number and naturally has the lowest bit cleared.
   atPut(kVirtualPCOffset, SmallInt::fromReinterpretedWord(pc));
+}
+
+inline word Frame::currentPC() {
+  return SmallInt::cast(at(kVirtualPCOffset)).asReinterpretedWord() -
+         kCodeUnitSize;
 }
 
 inline RawObject Frame::implicitGlobals() {

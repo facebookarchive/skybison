@@ -153,7 +153,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesZeroArgMethodCalls) {
                      1,
                      CALL_FUNCTION,
                      1,
-                     LOAD_METHOD_CACHED,
+                     LOAD_METHOD_ANAMORPHIC,
                      2,
                      CALL_METHOD,
                      0};
@@ -228,9 +228,24 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadMethodOperations) {
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {
-      NOP,          99,          EXTENDED_ARG,       0, LOAD_METHOD_CACHED, 0,
-      NOP,          LOAD_METHOD, EXTENDED_ARG,       0, EXTENDED_ARG,       0,
-      EXTENDED_ARG, 0,           LOAD_METHOD_CACHED, 1, LOAD_METHOD_CACHED, 2,
+      NOP,
+      99,
+      EXTENDED_ARG,
+      0,
+      LOAD_METHOD_ANAMORPHIC,
+      0,
+      NOP,
+      LOAD_METHOD,
+      EXTENDED_ARG,
+      0,
+      EXTENDED_ARG,
+      0,
+      EXTENDED_ARG,
+      0,
+      LOAD_METHOD_ANAMORPHIC,
+      1,
+      LOAD_METHOD_ANAMORPHIC,
+      2,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));

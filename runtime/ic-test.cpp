@@ -1648,7 +1648,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   bytecode.byteAtPut(3, 0);
   bytecode.byteAtPut(4, LOAD_GLOBAL);
   bytecode.byteAtPut(5, 100);
-  bytecode.byteAtPut(6, LOAD_METHOD_CACHED);
+  bytecode.byteAtPut(6, LOAD_METHOD_ANAMORPHIC);
   bytecode.byteAtPut(7, 1);
   bytecode.byteAtPut(8, LOAD_GLOBAL);
   bytecode.byteAtPut(9, 100);
@@ -1697,7 +1697,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   caches.atPut(load_attr_cached_cache_index1 + kIcEntryValueOffset,
                SmallInt::fromWord(20));
 
-  // Caches for LOAD_METHOD_CACHED at 6.
+  // Caches for LOAD_METHOD_ANAMORPHIC at 6.
   word load_method_cached_index =
       1 * kIcPointersPerCache + 0 * kIcPointersPerEntry;
   caches.atPut(load_method_cached_index + kIcEntryKeyOffset,

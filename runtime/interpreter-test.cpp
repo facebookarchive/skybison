@@ -4810,8 +4810,7 @@ c = C()
                       70));
 }
 
-TEST_F(InterpreterTest,
-       LoadMethodCachedCachingNonFunctionFollowedByCallMethod) {
+TEST_F(InterpreterTest, LoadMethodInitDoesNotCacheInstanceAttributes) {
   HandleScope scope(thread_);
   EXPECT_FALSE(runFromCStr(&runtime_, R"(
 class C:
@@ -4829,7 +4828,7 @@ def test():
   MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
   ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_CACHED);
   ASSERT_EQ(bytecode.byteAt(8), CALL_FUNCTION);
-  bytecode.byteAtPut(2, LOAD_METHOD_CACHED);
+  bytecode.byteAtPut(2, LOAD_METHOD_ANAMORPHIC);
   bytecode.byteAtPut(8, CALL_METHOD);
 
   Object c(&scope, mainModuleAt(&runtime_, "c"));
@@ -4843,13 +4842,9 @@ def test():
                           thread_, thread_->currentFrame(), test_function),
                       30));
 
-  // Cache hit.
+  // Still cache miss.
   ASSERT_TRUE(
-      icLookupAttr(*caches, bytecode.byteAt(3), layout_id).isSmallInt());
-  EXPECT_TRUE(
-      isIntEqualsWord(Interpreter::callFunction0(
-                          thread_, thread_->currentFrame(), test_function),
-                      30));
+      icLookupAttr(*caches, bytecode.byteAt(3), layout_id).isErrorNotFound());
 }
 
 TEST_F(InterpreterTest, LoadMethodCachedCachingFunctionFollowedByCallMethod) {
@@ -4872,7 +4867,7 @@ c = C()
   MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
   ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_CACHED);
   ASSERT_EQ(bytecode.byteAt(8), CALL_FUNCTION);
-  bytecode.byteAtPut(2, LOAD_METHOD_CACHED);
+  bytecode.byteAtPut(2, LOAD_METHOD_ANAMORPHIC);
   bytecode.byteAtPut(8, CALL_METHOD);
 
   // Cache miss.
@@ -4911,11 +4906,47 @@ call_foo(c)
                    .isError());
   Function call_foo(&scope, mainModuleAt(&runtime_, "call_foo"));
   MutableBytes bytecode(&scope, call_foo.rewrittenBytecode());
-  ASSERT_EQ(bytecode.byteAt(2), LOAD_METHOD_CACHED);
+  ASSERT_EQ(bytecode.byteAt(2), LOAD_METHOD_ANAMORPHIC);
   ASSERT_EQ(bytecode.byteAt(4), CALL_METHOD);
 
   Tuple caches(&scope, call_foo.caches());
   EXPECT_TRUE(icIsCacheEmpty(caches, bytecode.byteAt(3)));
+}
+
+TEST_F(InterpreterTest, LoadMethodUpdatesOpcodeWithCaching) {
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
+class C:
+  def foo(self):
+    return 4
+
+class D:
+  def foo(self):
+    return -4
+
+def test(c):
+  return c.foo()
+
+c = C()
+d = D()
+)")
+                   .isError());
+  Function test_function(&scope, mainModuleAt(&runtime_, "test"));
+  Object c(&scope, mainModuleAt(&runtime_, "c"));
+  Object d(&scope, mainModuleAt(&runtime_, "d"));
+  MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
+  ASSERT_EQ(bytecode.byteAt(2), LOAD_METHOD_ANAMORPHIC);
+  ASSERT_TRUE(
+      isIntEqualsWord(Interpreter::callFunction1(
+                          thread_, thread_->currentFrame(), test_function, c),
+                      4));
+  EXPECT_EQ(bytecode.byteAt(2), LOAD_METHOD_INSTANCE_FUNCTION);
+
+  ASSERT_TRUE(
+      isIntEqualsWord(Interpreter::callFunction1(
+                          thread_, thread_->currentFrame(), test_function, d),
+                      -4));
+  EXPECT_EQ(bytecode.byteAt(2), LOAD_METHOD_POLYMORPHIC);
 }
 
 TEST_F(InterpreterTest, DoLoadImmediate) {

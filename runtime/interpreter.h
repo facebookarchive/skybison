@@ -39,6 +39,12 @@ enum class LoadAttrKind {
   kUnknown,
 };
 
+enum class ICState {
+  kAnamorphic,
+  kMonomorphic,
+  kPolymorphic,
+};
+
 class Interpreter {
  public:
   enum class BinaryOp {
@@ -376,7 +382,9 @@ class Interpreter {
   static Continue doLoadFast(Thread* thread, word arg);
   static Continue doLoadFastReverse(Thread* thread, word arg);
   static Continue doLoadMethod(Thread* thread, word arg);
-  static Continue doLoadMethodCached(Thread* thread, word arg);
+  static Continue doLoadMethodAnamorphic(Thread* thread, word arg);
+  static Continue doLoadMethodInstanceFunction(Thread* thread, word arg);
+  static Continue doLoadMethodPolymorphic(Thread* thread, word arg);
   static Continue doLoadName(Thread* thread, word arg);
   static Continue doPopExcept(Thread* thread, word arg);
   static Continue doRaiseVarargs(Thread* thread, word arg);
@@ -545,6 +553,9 @@ class Interpreter {
   static Continue loadAttrUpdateCache(Thread* thread, word arg);
   static Continue storeAttrUpdateCache(Thread* thread, word arg);
   static Continue storeSubscrUpdateCache(Thread* thread, word arg);
+
+  static Continue loadMethodUpdateCache(Thread* thread, word arg,
+                                        ICState ic_state);
 
   using BinaryOpFallbackHandler = Continue (*)(Thread* thread, word arg,
                                                BinaryOpFlags flags);
