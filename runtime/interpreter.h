@@ -324,7 +324,9 @@ class Interpreter {
   static Continue doBinaryPower(Thread* thread, word arg);
   static Continue doBinaryRshift(Thread* thread, word arg);
   static Continue doBinarySubscr(Thread* thread, word arg);
-  static Continue doBinarySubscrCached(Thread* thread, word arg);
+  static Continue doBinarySubscrMonomorphic(Thread* thread, word arg);
+  static Continue doBinarySubscrPolymorphic(Thread* thread, word arg);
+  static Continue doBinarySubscrAnamorphic(Thread* thread, word arg);
   static Continue doBinarySubtract(Thread* thread, word arg);
   static Continue doBinaryTrueDivide(Thread* thread, word arg);
   static Continue doBinaryXor(Thread* thread, word arg);
@@ -479,7 +481,8 @@ class Interpreter {
   // Slow path for the BINARY_SUBSCR opcode that updates the cache at the given
   // index when appropriate. May also be used as a non-caching slow path by
   // passing a negative index.
-  static Continue binarySubscrUpdateCache(Thread* thread, word index);
+  static Continue binarySubscrUpdateCache(Thread* thread, word index,
+                                          ICState ic_state);
 
   // Slow path for the FOR_ITER opcode that updates the cache at the given index
   // when appropriate. May also be used as a non-caching slow path by passing a

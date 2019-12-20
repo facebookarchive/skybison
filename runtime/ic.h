@@ -287,7 +287,9 @@ class IcIterator {
 
   bool isAttrCache() const {
     switch (bytecode_op_.bc) {
-      case BINARY_SUBSCR_CACHED:
+      case BINARY_SUBSCR_ANAMORPHIC:
+      case BINARY_SUBSCR_MONOMORPHIC:
+      case BINARY_SUBSCR_POLYMORPHIC:
       case FOR_ITER_CACHED:
       case LOAD_ATTR_INSTANCE:
       case LOAD_ATTR_INSTANCE_PROPERTY:

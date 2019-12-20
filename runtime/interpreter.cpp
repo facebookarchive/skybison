@@ -1429,7 +1429,8 @@ HANDLER_INLINE Continue Interpreter::doBinarySubtract(Thread* thread, word) {
   return doBinaryOperation(BinaryOp::SUB, thread);
 }
 
-Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
+Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index,
+                                              ICState ic_state) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
   Object container(&scope, frame->peek(1));
@@ -1449,6 +1450,11 @@ Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
     Function dependent(&scope, frame->function());
     icUpdateAttr(thread, caches, index, container.layoutId(), getitem,
                  get_item_name, dependent);
+    word pc = frame->currentPC();
+    RawMutableBytes bytecode = frame->bytecode();
+    bytecode.byteAtPut(pc, ic_state == ICState::kAnamorphic
+                               ? BINARY_SUBSCR_MONOMORPHIC
+                               : BINARY_SUBSCR_POLYMORPHIC);
   }
 
   getitem = resolveDescriptorGet(thread, getitem, container, type);
@@ -1459,22 +1465,41 @@ Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
 }
 
 HANDLER_INLINE Continue Interpreter::doBinarySubscr(Thread* thread, word) {
-  return binarySubscrUpdateCache(thread, -1);
+  return binarySubscrUpdateCache(thread, -1, ICState::kAnamorphic);
 }
 
-HANDLER_INLINE Continue Interpreter::doBinarySubscrCached(Thread* thread,
-                                                          word arg) {
+HANDLER_INLINE Continue Interpreter::doBinarySubscrMonomorphic(Thread* thread,
+                                                               word arg) {
+  Frame* frame = thread->currentFrame();
+  RawTuple caches = frame->caches();
+  LayoutId container_layout_id = frame->peek(1).layoutId();
+  word index = arg * kIcPointersPerCache;
+  RawObject cache_key = caches.at(index + kIcEntryKeyOffset);
+  if (SmallInt::fromWord(static_cast<word>(container_layout_id)) == cache_key) {
+    RawObject cached = caches.at(index + kIcEntryValueOffset);
+    DCHECK(cached.isFunction(), "expected function");
+    frame->insertValueAt(cached, 2);
+    return doCallFunction(thread, 2);
+  }
+  return binarySubscrUpdateCache(thread, arg, ICState::kMonomorphic);
+}
+
+HANDLER_INLINE Continue Interpreter::doBinarySubscrPolymorphic(Thread* thread,
+                                                               word arg) {
   Frame* frame = thread->currentFrame();
   LayoutId container_layout_id = frame->peek(1).layoutId();
   RawObject cached = icLookupAttr(frame->caches(), arg, container_layout_id);
-  if (cached.isErrorNotFound()) {
-    return binarySubscrUpdateCache(thread, arg);
+  if (!cached.isErrorNotFound()) {
+    DCHECK(cached.isFunction(), "expected function");
+    frame->insertValueAt(cached, 2);
+    return doCallFunction(thread, 2);
   }
+  return binarySubscrUpdateCache(thread, arg, ICState::kPolymorphic);
+}
 
-  DCHECK(cached.isFunction(), "Unexpected cached value");
-  // Tail-call cached(container, key)
-  frame->insertValueAt(cached, 2);
-  return doCallFunction(thread, 2);
+HANDLER_INLINE Continue Interpreter::doBinarySubscrAnamorphic(Thread* thread,
+                                                              word arg) {
+  return binarySubscrUpdateCache(thread, arg, ICState::kAnamorphic);
 }
 
 HANDLER_INLINE Continue Interpreter::doBinaryFloorDivide(Thread* thread, word) {

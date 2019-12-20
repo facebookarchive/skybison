@@ -82,7 +82,7 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op) {
     case BINARY_RSHIFT:
       return cached_binop(Interpreter::BinaryOp::RSHIFT);
     case BINARY_SUBSCR:
-      return RewrittenOp{BINARY_SUBSCR_CACHED, op.arg, true};
+      return RewrittenOp{BINARY_SUBSCR_ANAMORPHIC, op.arg, true};
     case BINARY_SUBTRACT:
       return cached_binop(Interpreter::BinaryOp::SUB);
     case BINARY_TRUE_DIVIDE:

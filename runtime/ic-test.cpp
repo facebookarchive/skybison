@@ -1658,7 +1658,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   bytecode.byteAtPut(13, 3);
   bytecode.byteAtPut(14, FOR_ITER_CACHED);
   bytecode.byteAtPut(15, 4);
-  bytecode.byteAtPut(16, BINARY_SUBSCR_CACHED);
+  bytecode.byteAtPut(16, BINARY_SUBSCR_ANAMORPHIC);
   bytecode.byteAtPut(17, 5);
   bytecode.byteAtPut(18, LOAD_GLOBAL);
   bytecode.byteAtPut(19, 100);
@@ -1723,7 +1723,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   caches.atPut(for_iter_cached_index + kIcEntryValueOffset,
                SmallInt::fromWord(50));
 
-  // Caches for BINARY_SUBSCR_CACHED at 16.
+  // Caches for BINARY_SUBSCR_ANAMORPHIC at 16.
   word binary_subscr_cached_index =
       5 * kIcPointersPerCache + 3 * kIcPointersPerEntry;
   caches.atPut(binary_subscr_cached_index + kIcEntryKeyOffset,

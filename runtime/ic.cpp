@@ -745,7 +745,9 @@ bool IcIterator::isAttrNameEqualTo(const Object& attr_name) const {
   switch (bytecode_op_.bc) {
     case FOR_ITER_CACHED:
       return attr_name == runtime_->symbols()->at(SymbolId::kDunderNext);
-    case BINARY_SUBSCR_CACHED:
+    case BINARY_SUBSCR_ANAMORPHIC:
+    case BINARY_SUBSCR_MONOMORPHIC:
+    case BINARY_SUBSCR_POLYMORPHIC:
       return attr_name == runtime_->symbols()->at(SymbolId::kDunderGetitem);
     case STORE_SUBSCR_CACHED:
       return attr_name == runtime_->symbols()->at(SymbolId::kDunderSetitem);
