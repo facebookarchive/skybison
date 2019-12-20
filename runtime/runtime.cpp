@@ -2359,7 +2359,7 @@ RawObject Runtime::lookupNameInModule(Thread* thread, SymbolId module_name,
 }
 
 template <SymbolId Name, const char* Data>
-static void initializeManagedModule(Thread* thread) {
+static void initializeFrozenModule(Thread* thread) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object name_obj(&scope, runtime->symbols()->at(Name));
@@ -2377,19 +2377,19 @@ const ModuleInitializer Runtime::kBuiltinModules[] = {
     {SymbolId::kUnderOs, &UnderOsModule::initialize},
     {SymbolId::kUnderWeakref, &UnderWeakrefModule::initialize},
     {SymbolId::kUnderThread,
-     &initializeManagedModule<SymbolId::kUnderThread, kUnderThreadModuleData>},
+     &initializeFrozenModule<SymbolId::kUnderThread, kUnderThreadModuleData>},
     {SymbolId::kUnderIo, &UnderIoModule::initialize},
     {SymbolId::kUnderStrMod,
-     &initializeManagedModule<SymbolId::kUnderStrMod,
-                              kUnderStrUnderModModuleData>},
+     &initializeFrozenModule<SymbolId::kUnderStrMod,
+                             kUnderStrUnderModModuleData>},
     {SymbolId::kUnderValgrind, &UnderValgrindModule::initialize},
     {SymbolId::kFaulthandler, &FaulthandlerModule::initialize},
     {SymbolId::kMarshal, &MarshalModule::initialize},
     {SymbolId::kUnderWarnings, &UnderWarningsModule::initialize},
     {SymbolId::kOperator,
-     &initializeManagedModule<SymbolId::kOperator, kOperatorModuleData>},
+     &initializeFrozenModule<SymbolId::kOperator, kOperatorModuleData>},
     {SymbolId::kWarnings,
-     &initializeManagedModule<SymbolId::kWarnings, kWarningsModuleData>},
+     &initializeFrozenModule<SymbolId::kWarnings, kWarningsModuleData>},
     {SymbolId::kSentinelId, nullptr},
 };
 
