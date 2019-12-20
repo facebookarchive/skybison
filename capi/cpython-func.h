@@ -676,6 +676,7 @@ PyAPI_FUNC(PyThreadState*) PyThreadState_Swap(PyThreadState*);
 PyAPI_FUNC(int) _PyThreadState_GetRecursionDepth(PyThreadState*);
 PyAPI_FUNC(int) PyTraceBack_Here(PyFrameObject*);
 PyAPI_FUNC(int) PyTraceBack_Print(PyObject*, PyObject*);
+PyAPI_FUNC(void) _PyTraceback_Add(const char*, const char*, int);
 PyAPI_FUNC(void) _PyTrash_deposit_object(PyObject*);
 PyAPI_FUNC(void) _PyTrash_destroy_chain();
 PyAPI_FUNC(void) _PyTrash_thread_deposit_object(PyObject*);

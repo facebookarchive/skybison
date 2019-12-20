@@ -16,4 +16,9 @@ PY_EXPORT int PyTraceBack_Print(PyObject* /* v */, PyObject* /* f */) {
   UNIMPLEMENTED("PyTraceBack_Print");
 }
 
+PY_EXPORT void _PyTraceback_Add(const char* /* funcname */,
+                                const char* /* filename */, int /* lineno */) {
+  UNIMPLEMENTED("_PyTraceback_Add");
+}
+
 }  // namespace py
