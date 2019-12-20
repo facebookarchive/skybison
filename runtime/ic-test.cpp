@@ -1654,7 +1654,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   bytecode.byteAtPut(9, 100);
   bytecode.byteAtPut(10, LOAD_ATTR_ANAMORPHIC);
   bytecode.byteAtPut(11, 2);
-  bytecode.byteAtPut(12, STORE_ATTR_CACHED);
+  bytecode.byteAtPut(12, STORE_ATTR_ANAMORPHIC);
   bytecode.byteAtPut(13, 3);
   bytecode.byteAtPut(14, FOR_ITER_CACHED);
   bytecode.byteAtPut(15, 4);
@@ -1707,7 +1707,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
 
   // Caches are empty for LOAD_ATTR_ANAMORPHIC at 10.
 
-  // Caches for STORE_ATTR_CACHED at 12.
+  // Caches for STORE_ATTR_ANAMORPHIC at 12.
   word store_attr_cached_index =
       3 * kIcPointersPerCache + 3 * kIcPointersPerEntry;
   caches.atPut(store_attr_cached_index + kIcEntryKeyOffset,

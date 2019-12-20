@@ -2472,7 +2472,8 @@ RawObject Interpreter::storeAttrSetLocation(Thread* thread,
   return *result;
 }
 
-Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg) {
+Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg,
+                                           ICState ic_state) {
   Frame* frame = thread->currentFrame();
   word original_arg = originalArg(frame->function(), arg);
   HandleScope scope(thread);
@@ -2486,44 +2487,65 @@ Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg) {
   Object result(&scope,
                 storeAttrSetLocation(thread, receiver, name, value, &location));
   if (result.isErrorException()) return Continue::UNWIND;
-  if (!location.isNoneType()) {
-    Tuple caches(&scope, frame->caches());
-    Function dependent(&scope, frame->function());
-    if (saved_layout_id == receiver.layoutId()) {
+  if (location.isNoneType()) return Continue::NEXT;
+  DCHECK(location.isSmallInt(), "unexpected location");
+  bool is_in_object = SmallInt::cast(*location).value() >= 0;
+
+  Tuple caches(&scope, frame->caches());
+  Function dependent(&scope, frame->function());
+  LayoutId receiver_layout_id = receiver.layoutId();
+  word pc = frame->currentPC();
+  RawMutableBytes bytecode = frame->bytecode();
+  // TODO(T59400994): Clean up when storeAttrSetLocation can return a
+  // StoreAttrKind.
+  if (ic_state == ICState::kAnamorphic) {
+    if (saved_layout_id == receiver_layout_id) {
+      // No layout transition.
+      if (is_in_object) {
+        bytecode.byteAtPut(pc, STORE_ATTR_INSTANCE);
+        icUpdateAttr(thread, caches, arg, saved_layout_id, location, name,
+                     dependent);
+      } else {
+        bytecode.byteAtPut(pc, STORE_ATTR_INSTANCE_OVERFLOW);
+        icUpdateAttr(thread, caches, arg, saved_layout_id, location, name,
+                     dependent);
+      }
+    } else {
+      // Layout transition.
+      word offset = SmallInt::cast(*location).value();
+      if (offset < 0) offset = -offset - 1;
+      DCHECK(offset < (1 << Header::kLayoutIdBits), "offset doesn't fit");
+      word new_layout_id = static_cast<word>(receiver_layout_id);
+      SmallInt layout_offset(
+          &scope,
+          SmallInt::fromWord(offset << Header::kLayoutIdBits | new_layout_id));
+      if (is_in_object) {
+        bytecode.byteAtPut(pc, STORE_ATTR_INSTANCE_UPDATE);
+        icUpdateAttr(thread, caches, arg, saved_layout_id, layout_offset, name,
+                     dependent);
+      } else {
+        bytecode.byteAtPut(pc, STORE_ATTR_INSTANCE_OVERFLOW_UPDATE);
+        icUpdateAttr(thread, caches, arg, saved_layout_id, layout_offset, name,
+                     dependent);
+      }
+    }
+  } else {
+    DCHECK(bytecode.byteAt(pc) == STORE_ATTR_INSTANCE ||
+               bytecode.byteAt(pc) == STORE_ATTR_INSTANCE_OVERFLOW ||
+               bytecode.byteAt(pc) == STORE_ATTR_POLYMORPHIC,
+           "unexpected opcode");
+    if (saved_layout_id == receiver_layout_id) {
+      bytecode.byteAtPut(pc, STORE_ATTR_POLYMORPHIC);
       icUpdateAttr(thread, caches, arg, saved_layout_id, location, name,
                    dependent);
-    } else if (location.isSmallInt() &&
-               SmallInt::cast(*location).value() >= 0 &&
-               icIsCacheEmpty(caches, arg)) {
-      icUpdateAttr(thread, caches, arg, saved_layout_id, location, name,
-                   dependent);
-      // Rewrite opcode to STORE_ATTR_INSTANCE_UPDATE to support layout
-      // transition.
-      word pc = frame->virtualPC() - kCodeUnitSize;
-      RawMutableBytes bytecode = frame->bytecode();
-      bytecode.byteAtPut(pc, STORE_ATTR_INSTANCE_UPDATE);
-      // Store new layout ID in the next cache entry.
-      word index = arg * kIcPointersPerCache + kIcPointersPerEntry;
-      caches.atPut(index + kIcEntryValueOffset,
-                   SmallInt::fromWord(static_cast<word>(receiver.layoutId())));
     }
   }
   return Continue::NEXT;
 }
 
-HANDLER_INLINE Continue Interpreter::doStoreAttrCached(Thread* thread,
-                                                       word arg) {
-  Frame* frame = thread->currentFrame();
-  RawObject receiver_raw = frame->topValue();
-  LayoutId layout_id = receiver_raw.layoutId();
-  RawObject cached = icLookupAttr(frame->caches(), arg, layout_id);
-  if (cached.isErrorNotFound()) {
-    return storeAttrUpdateCache(thread, arg);
-  }
-  RawObject value_raw = frame->peek(1);
-  frame->dropValues(2);
-  storeAttrWithLocation(thread, receiver_raw, cached, value_raw);
-  return Continue::NEXT;
+HANDLER_INLINE Continue Interpreter::doStoreAttrAnamorphic(Thread* thread,
+                                                           word arg) {
+  return storeAttrUpdateCache(thread, arg, ICState::kAnamorphic);
 }
 
 // This code cleans-up a monomorphic cache and prepares it for its potential
@@ -2538,12 +2560,82 @@ static Continue retryStoreAttrCached(Thread* thread, word arg) {
   word pc = frame->virtualPC() - kCodeUnitSize;
   word index = arg * kIcPointersPerCache;
   RawMutableBytes bytecode = frame->bytecode();
-  bytecode.byteAtPut(pc, STORE_ATTR_CACHED);
+  bytecode.byteAtPut(pc, STORE_ATTR_ANAMORPHIC);
   caches.atPut(index + kIcEntryKeyOffset, NoneType::object());
   caches.atPut(index + kIcEntryValueOffset, NoneType::object());
-  caches.atPut(index + kIcPointersPerEntry + kIcEntryValueOffset,
-               NoneType::object());
-  return Interpreter::doStoreAttrCached(thread, arg);
+  return Interpreter::doStoreAttrAnamorphic(thread, arg);
+}
+
+HANDLER_INLINE Continue Interpreter::doStoreAttrInstance(Thread* thread,
+                                                         word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject receiver = frame->topValue();
+  RawTuple caches = frame->caches();
+  word index = arg * kIcPointersPerCache;
+  if (SmallInt::fromWord(static_cast<word>(receiver.layoutId())) !=
+      caches.at(index + kIcEntryKeyOffset)) {
+    return storeAttrUpdateCache(thread, arg, ICState::kMonomorphic);
+  }
+  word offset = SmallInt::cast(caches.at(index + kIcEntryValueOffset)).value();
+  DCHECK(offset >= 0, "unexpected offset");
+  RawInstance instance = Instance::cast(receiver);
+  instance.instanceVariableAtPut(offset, frame->peek(1));
+  frame->dropValues(2);
+  return Continue::NEXT;
+}
+
+HANDLER_INLINE Continue Interpreter::doStoreAttrInstanceOverflow(Thread* thread,
+                                                                 word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject receiver = frame->topValue();
+  RawTuple caches = frame->caches();
+  word index = arg * kIcPointersPerCache;
+  if (SmallInt::fromWord(static_cast<word>(receiver.layoutId())) !=
+      caches.at(index + kIcEntryKeyOffset)) {
+    return storeAttrUpdateCache(thread, arg, ICState::kMonomorphic);
+  }
+  word offset = SmallInt::cast(caches.at(index + kIcEntryValueOffset)).value();
+  DCHECK(offset < 0, "unexpected offset");
+  RawInstance instance = Instance::cast(receiver);
+  RawLayout layout =
+      Layout::cast(thread->runtime()->layoutAt(receiver.layoutId()));
+  RawTuple overflow =
+      Tuple::cast(instance.instanceVariableAt(layout.overflowOffset()));
+  overflow.atPut(-offset - 1, frame->peek(1));
+  frame->dropValues(2);
+  return Continue::NEXT;
+}
+
+HANDLER_INLINE Continue
+Interpreter::doStoreAttrInstanceOverflowUpdate(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject receiver = frame->topValue();
+  RawTuple caches = frame->caches();
+  word index = arg * kIcPointersPerCache;
+  if (SmallInt::fromWord(static_cast<word>(receiver.layoutId())) !=
+      caches.at(index + kIcEntryKeyOffset)) {
+    return retryStoreAttrCached(thread, arg);
+  }
+  // Set the value in an overflow tuple that needs expansion.
+  word offset_and_new_offset_id =
+      SmallInt::cast(caches.at(index + kIcEntryValueOffset)).value();
+  LayoutId new_layout_id =
+      static_cast<LayoutId>(offset_and_new_offset_id & Header::kLayoutIdMask);
+  word offset = offset_and_new_offset_id >> Header::kLayoutIdBits;
+
+  HandleScope scope(thread);
+  Instance instance(&scope, receiver);
+  Layout layout(&scope, thread->runtime()->layoutAt(receiver.layoutId()));
+  Tuple overflow(&scope, instance.instanceVariableAt(layout.overflowOffset()));
+  Object value(&scope, frame->peek(1));
+  if (offset >= overflow.length()) {
+    instanceGrowOverflow(thread, instance, offset + 1);
+    overflow = instance.instanceVariableAt(layout.overflowOffset());
+  }
+  instance.setLayoutId(new_layout_id);
+  overflow.atPut(offset, *value);
+  frame->dropValues(2);
+  return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doStoreAttrInstanceUpdate(Thread* thread,
@@ -2552,23 +2644,37 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrInstanceUpdate(Thread* thread,
   RawObject receiver = frame->topValue();
   RawTuple caches = frame->caches();
   word index = arg * kIcPointersPerCache;
-  if (receiver.layoutId() !=
-      static_cast<LayoutId>(
-          SmallInt::cast(caches.at(index + kIcEntryKeyOffset)).value())) {
+  if (SmallInt::fromWord(static_cast<word>(receiver.layoutId())) !=
+      caches.at(index + kIcEntryKeyOffset)) {
     return retryStoreAttrCached(thread, arg);
   }
   // Set the value in object at offset.
-  RawInstance instance = Instance::cast(receiver);
-  word offset = SmallInt::cast(caches.at(index + kIcEntryValueOffset)).value();
+  // TODO(T59462341): Encapsulate this in a function.
+  word offset_and_new_offset_id =
+      SmallInt::cast(caches.at(index + kIcEntryValueOffset)).value();
+  LayoutId new_layout_id =
+      static_cast<LayoutId>(offset_and_new_offset_id & Header::kLayoutIdMask);
+  word offset = offset_and_new_offset_id >> Header::kLayoutIdBits;
   DCHECK(offset >= 0, "unexpected offset");
+  RawInstance instance = Instance::cast(receiver);
   instance.instanceVariableAtPut(offset, frame->peek(1));
-  // Update the layout ID.
-  LayoutId new_layout_id = static_cast<LayoutId>(
-      SmallInt::cast(
-          caches.at(index + kIcPointersPerEntry + kIcEntryValueOffset))
-          .value());
-  instance.setHeader(instance.header().withLayoutId(new_layout_id));
+  instance.setLayoutId(new_layout_id);
   frame->dropValues(2);
+  return Continue::NEXT;
+}
+
+HANDLER_INLINE Continue Interpreter::doStoreAttrPolymorphic(Thread* thread,
+                                                            word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject receiver = frame->topValue();
+  LayoutId layout_id = receiver.layoutId();
+  RawObject cached = icLookupAttr(frame->caches(), arg, layout_id);
+  if (cached.isErrorNotFound()) {
+    return storeAttrUpdateCache(thread, arg, ICState::kPolymorphic);
+  }
+  RawObject value = frame->peek(1);
+  frame->dropValues(2);
+  storeAttrWithLocation(thread, receiver, cached, value);
   return Continue::NEXT;
 }
 

@@ -16,6 +16,9 @@ RawObject instanceGetAttributeSetLocation(Thread* thread,
                                           const Object& name_interned,
                                           Object* location_out);
 
+void instanceGrowOverflow(Thread* thread, const Instance& instance,
+                          word length);
+
 RawObject instanceSetAttr(Thread* thread, const Instance& instance,
                           const Object& name, const Object& value);
 

@@ -144,7 +144,7 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op) {
     case LOAD_METHOD:
       return RewrittenOp{LOAD_METHOD_ANAMORPHIC, op.arg, true};
     case STORE_ATTR:
-      return RewrittenOp{STORE_ATTR_CACHED, op.arg, true};
+      return RewrittenOp{STORE_ATTR_ANAMORPHIC, op.arg, true};
     case STORE_FAST: {
       CHECK(op.arg < Code::cast(function.code()).nlocals(),
             "unexpected local number");
@@ -172,7 +172,7 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op) {
     case LOAD_ATTR_ANAMORPHIC:
     case LOAD_FAST_REVERSE:
     case LOAD_METHOD_ANAMORPHIC:
-    case STORE_ATTR_CACHED:
+    case STORE_ATTR_ANAMORPHIC:
     case STORE_FAST_REVERSE:
       UNREACHABLE("should not have cached opcode in input");
     default:

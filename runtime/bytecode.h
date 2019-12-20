@@ -241,10 +241,11 @@ namespace py {
   V(UNUSED_BYTECODE_222, 222, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_223, 223, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_224, 224, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_225, 225, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_226, 226, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_227, 227, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_228, 228, doInvalidBytecode)                               \
+  V(STORE_ATTR_INSTANCE_OVERFLOW_UPDATE, 225,                                  \
+    doStoreAttrInstanceOverflowUpdate)                                         \
+  V(STORE_ATTR_INSTANCE_OVERFLOW, 226, doStoreAttrInstanceOverflow)            \
+  V(STORE_ATTR_INSTANCE, 227, doStoreAttrInstance)                             \
+  V(STORE_ATTR_POLYMORPHIC, 228, doStoreAttrPolymorphic)                       \
   V(LOAD_ATTR_POLYMORPHIC, 229, doLoadAttrPolymorphic)                         \
   V(LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD, 230,                                 \
     doLoadAttrInstanceTypeBoundMethod)                                         \
@@ -271,7 +272,7 @@ namespace py {
   V(INPLACE_OP_CACHED, 251, doInplaceOpCached)                                 \
   V(BINARY_OP_CACHED, 252, doBinaryOpCached)                                   \
   V(BINARY_SUBSCR_CACHED, 253, doBinarySubscrCached)                           \
-  V(STORE_ATTR_CACHED, 254, doStoreAttrCached)                                 \
+  V(STORE_ATTR_ANAMORPHIC, 254, doStoreAttrAnamorphic)                         \
   V(LOAD_ATTR_ANAMORPHIC, 255, doLoadAttrAnamorphic)
 
 const word kNumBytecodes = 256;
@@ -352,8 +353,12 @@ inline bool isByteCodeWithCache(const Bytecode bc) {
     case LOAD_METHOD_ANAMORPHIC:
     case LOAD_METHOD_INSTANCE_FUNCTION:
     case LOAD_METHOD_POLYMORPHIC:
-    case STORE_ATTR_CACHED:
+    case STORE_ATTR_INSTANCE:
+    case STORE_ATTR_INSTANCE_OVERFLOW:
+    case STORE_ATTR_INSTANCE_OVERFLOW_UPDATE:
     case STORE_ATTR_INSTANCE_UPDATE:
+    case STORE_ATTR_POLYMORPHIC:
+    case STORE_ATTR_ANAMORPHIC:
     case STORE_SUBSCR_CACHED:
       return true;
     default:

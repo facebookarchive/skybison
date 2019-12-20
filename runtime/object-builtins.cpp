@@ -103,6 +103,18 @@ RawObject instanceGetAttribute(Thread* thread, const Instance& instance,
   return instanceGetAttributeSetLocation(thread, instance, name, nullptr);
 }
 
+void instanceGrowOverflow(Thread* thread, const Instance& instance,
+                          word length) {
+  HandleScope scope(thread);
+  Layout layout(&scope, thread->runtime()->layoutAt(instance.layoutId()));
+  Tuple overflow(&scope, instance.instanceVariableAt(layout.overflowOffset()));
+  DCHECK(overflow.length() < length, "unexpected overflow");
+  MutableTuple new_overflow(&scope, thread->runtime()->newMutableTuple(length));
+  new_overflow.replaceFromWith(0, *overflow, overflow.length());
+  instance.instanceVariableAtPut(layout.overflowOffset(),
+                                 new_overflow.becomeImmutable());
+}
+
 static RawObject instanceSetAttrSetLocation(Thread* thread,
                                             const Instance& instance,
                                             const Object& name,
@@ -111,7 +123,6 @@ static RawObject instanceSetAttrSetLocation(Thread* thread,
   HandleScope scope(thread);
 
   // If the attribute doesn't exist we'll need to transition the layout
-  bool has_new_layout_id = false;
   Runtime* runtime = thread->runtime();
   Layout layout(&scope, runtime->layoutAt(instance.layoutId()));
   AttributeInfo info;
@@ -134,15 +145,23 @@ static RawObject instanceSetAttrSetLocation(Thread* thread,
             "Cannot set attribute '%S' on sealed class '%T'", &name, &instance);
       }
     }
-    // Transition the layout
-    layout = runtime->layoutAddAttribute(thread, layout, name, 0, &info);
-    has_new_layout_id = true;
+    // Transition the layout.
+
+    Layout new_layout(
+        &scope, runtime->layoutAddAttribute(thread, layout, name, 0, &info));
+    if (info.isOverflow() &&
+        info.offset() >=
+            Tuple::cast(instance.instanceVariableAt(layout.overflowOffset()))
+                .length()) {
+      instanceGrowOverflow(thread, instance, info.offset() + 1);
+    }
+    instance.setLayoutId(new_layout.id());
+    layout = *new_layout;
   } else if (info.isReadOnly()) {
     return thread->raiseWithFmt(LayoutId::kAttributeError,
                                 "'%T.%S' attribute is read-only", &instance,
                                 &name);
   }
-
   DCHECK(!thread->runtime()->isInstanceOfType(*instance),
          "must not cache type attributes");
   // Store the attribute
@@ -152,29 +171,12 @@ static RawObject instanceSetAttrSetLocation(Thread* thread,
       *location_out = SmallInt::fromWord(info.offset());
     }
   } else {
-    // Build the new overflow array
-    Tuple overflow(&scope,
-                   instance.instanceVariableAt(layout.overflowOffset()));
-    word len = overflow.length();
-    if (info.offset() < len) {
-      overflow.atPut(info.offset(), *value);
-    } else {
-      MutableTuple new_overflow(&scope,
-                                runtime->newMutableTuple(info.offset() + 1));
-      new_overflow.replaceFromWith(0, *overflow, len);
-      new_overflow.atPut(info.offset(), *value);
-      instance.instanceVariableAtPut(layout.overflowOffset(),
-                                     new_overflow.becomeImmutable());
-    }
+    Tuple::cast(instance.instanceVariableAt(layout.overflowOffset()))
+        .atPut(info.offset(), *value);
     if (location_out != nullptr) {
       *location_out = SmallInt::fromWord(-info.offset() - 1);
     }
   }
-
-  if (has_new_layout_id) {
-    instance.setHeader(instance.header().withLayoutId(layout.id()));
-  }
-
   return NoneType::object();
 }
 

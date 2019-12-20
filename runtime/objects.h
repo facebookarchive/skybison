@@ -906,6 +906,8 @@ class RawInstance : public RawHeapObject {
   RawObject instanceVariableAt(word offset) const;
   void instanceVariableAtPut(word offset, RawObject value) const;
 
+  void setLayoutId(LayoutId layout_id) const;
+
   RAW_OBJECT_COMMON(Instance);
 
  private:
@@ -4573,6 +4575,10 @@ inline RawObject RawInstance::instanceVariableAt(word offset) const {
 inline void RawInstance::instanceVariableAtPut(word offset,
                                                RawObject value) const {
   *reinterpret_cast<RawObject*>(address() + offset) = value;
+}
+
+inline void RawInstance::setLayoutId(LayoutId layout_id) const {
+  setHeader(header().withLayoutId(layout_id));
 }
 
 // RawBaseException

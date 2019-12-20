@@ -299,8 +299,12 @@ class IcIterator {
       case LOAD_METHOD_ANAMORPHIC:
       case LOAD_METHOD_INSTANCE_FUNCTION:
       case LOAD_METHOD_POLYMORPHIC:
-      case STORE_ATTR_CACHED:
+      case STORE_ATTR_INSTANCE:
+      case STORE_ATTR_INSTANCE_OVERFLOW:
+      case STORE_ATTR_INSTANCE_OVERFLOW_UPDATE:
       case STORE_ATTR_INSTANCE_UPDATE:
+      case STORE_ATTR_POLYMORPHIC:
+      case STORE_ATTR_ANAMORPHIC:
       case STORE_SUBSCR_CACHED:
         return true;
       default:

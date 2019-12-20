@@ -394,8 +394,12 @@ class Interpreter {
   static Continue doReturnValue(Thread* thread, word arg);
   static Continue doSetupWith(Thread* thread, word arg);
   static Continue doStoreAttr(Thread* thread, word arg);
-  static Continue doStoreAttrCached(Thread* thread, word arg);
+  static Continue doStoreAttrInstance(Thread* thread, word arg);
+  static Continue doStoreAttrInstanceOverflow(Thread* thread, word arg);
+  static Continue doStoreAttrInstanceOverflowUpdate(Thread* thread, word arg);
   static Continue doStoreAttrInstanceUpdate(Thread* thread, word arg);
+  static Continue doStoreAttrPolymorphic(Thread* thread, word arg);
+  static Continue doStoreAttrAnamorphic(Thread* thread, word arg);
   static Continue doStoreSubscr(Thread* thread, word arg);
   static Continue doStoreSubscrCached(Thread* thread, word arg);
   static Continue doUnaryInvert(Thread* thread, word arg);
@@ -555,7 +559,8 @@ class Interpreter {
   static Continue retryLoadAttrCached(Thread* thread, word arg);
   static Continue loadAttrUpdateCache(Thread* thread, word arg,
                                       ICState ic_state);
-  static Continue storeAttrUpdateCache(Thread* thread, word arg);
+  static Continue storeAttrUpdateCache(Thread* thread, word arg,
+                                       ICState ic_state);
   static Continue storeSubscrUpdateCache(Thread* thread, word arg);
 
   static Continue loadMethodUpdateCache(Thread* thread, word arg,

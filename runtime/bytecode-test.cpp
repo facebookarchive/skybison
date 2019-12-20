@@ -273,7 +273,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesStoreAttr) {
                     runtime_.newFunctionWithCode(thread_, name, code, module));
   // newFunctionWithCode() calls rewriteBytecode().
 
-  byte expected[] = {STORE_ATTR_CACHED, 0};
+  byte expected[] = {STORE_ATTR_ANAMORPHIC, 0};
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
 

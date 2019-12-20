@@ -221,7 +221,9 @@ bool mayChangeFramePC(Bytecode bc) {
     case LOAD_ATTR_INSTANCE:
     case LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD:
     case LOAD_ATTR_POLYMORPHIC:
-    case STORE_ATTR_CACHED:
+    case STORE_ATTR_INSTANCE:
+    case STORE_ATTR_INSTANCE_OVERFLOW:
+    case STORE_ATTR_POLYMORPHIC:
     case LOAD_METHOD_INSTANCE_FUNCTION:
     case LOAD_METHOD_POLYMORPHIC:
       return false;
@@ -593,7 +595,54 @@ void emitHandler<LOAD_METHOD_POLYMORPHIC>(EmitEnv* env) {
 }
 
 template <>
-void emitHandler<STORE_ATTR_CACHED>(EmitEnv* env) {
+void emitHandler<STORE_ATTR_INSTANCE>(EmitEnv* env) {
+  Register r_base = RAX;
+  Register r_layout_id = R8;
+  Register r_cache_value = RDI;
+  Register r_scratch = R9;
+  Register r_caches = RDX;
+  Label slow_path;
+  __ popq(r_base);
+  emitGetLayoutId(env, r_layout_id, r_base);
+  __ movq(r_caches, Address(kFrameReg, Frame::kCachesOffset));
+  emitIcLookupMonomorphic(env, &slow_path, r_cache_value, r_layout_id, r_caches,
+                          kOpargReg, r_scratch);
+  emitConvertFromSmallInt(env, r_cache_value);
+  __ popq(Address(r_base, r_cache_value, TIMES_1, heapObjectDisp(0)));
+  emitNextOpcode(env);
+
+  __ bind(&slow_path);
+  __ pushq(r_base);
+  emitJumpToGenericHandler(env);
+}
+
+template <>
+void emitHandler<STORE_ATTR_INSTANCE_OVERFLOW>(EmitEnv* env) {
+  Register r_base = RAX;
+  Register r_layout_id = R8;
+  Register r_cache_value = RDI;
+  Register r_scratch = R9;
+  Register r_caches = RDX;
+  Label slow_path;
+  __ popq(r_base);
+  emitGetLayoutId(env, r_layout_id, r_base);
+  __ movq(r_caches, Address(kFrameReg, Frame::kCachesOffset));
+  emitIcLookupMonomorphic(env, &slow_path, r_cache_value, r_layout_id, r_caches,
+                          kOpargReg, r_scratch);
+  emitConvertFromSmallInt(env, r_cache_value);
+  emitLoadOverflowTuple(env, r_scratch, r_layout_id, r_base);
+  // The real tuple index is -offset - 1, which is the same as ~offset.
+  __ notq(r_cache_value);
+  __ popq(Address(r_scratch, r_cache_value, TIMES_8, heapObjectDisp(0)));
+  emitNextOpcode(env);
+
+  __ bind(&slow_path);
+  __ pushq(r_base);
+  emitJumpToGenericHandler(env);
+}
+
+template <>
+void emitHandler<STORE_ATTR_POLYMORPHIC>(EmitEnv* env) {
   Register r_base = RAX;
   Register r_layout_id = R8;
   Register r_scratch = RDI;
