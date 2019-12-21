@@ -18,6 +18,12 @@ RawObject icLookupAttr(RawTuple caches, word index, LayoutId layout_id);
 RawObject icLookupBinaryOp(RawTuple caches, word index, LayoutId left_layout_id,
                            LayoutId right_layout_id, BinaryOpFlags* flags_out);
 
+// Same as icLookupBinaryOp, but looks at only one entry pointed by index.
+RawObject icLookupBinOpMonomorphic(RawTuple caches, word index,
+                                   LayoutId left_layout_id,
+                                   LayoutId right_layout_id,
+                                   BinaryOpFlags* flags_out);
+
 // Looks for a cache entry for a global variable.
 // Returns a ValueCell in case of cache hit.
 // Returns the NoneType object otherwise.
@@ -25,6 +31,9 @@ RawObject icLookupGlobalVar(RawTuple caches, word index);
 
 // Internal only: remove deallocated nodes from cell.dependencyLink.
 void icRemoveDeadWeakLinks(RawValueCell cell);
+
+RawSmallInt encodeBinaryOpKey(LayoutId left_layout_id, LayoutId right_layout_id,
+                              BinaryOpFlags flags);
 
 // Sets a cache entry for an attribute to the given `layout_id` as key and
 // `value` as value.
@@ -320,7 +329,9 @@ class IcIterator {
 
   bool isBinaryOpCache() const {
     switch (bytecode_op_.bc) {
-      case BINARY_OP_CACHED:
+      case BINARY_OP_MONOMORPHIC:
+      case BINARY_OP_POLYMORPHIC:
+      case BINARY_OP_ANAMORPHIC:
       case COMPARE_OP_CACHED:
         return true;
       default:
@@ -434,6 +445,29 @@ inline RawObject icLookupBinaryOp(RawTuple caches, word index,
       *flags_out = static_cast<BinaryOpFlags>(entry_key_value & 0xff);
       return caches.at(i + kIcEntryValueOffset);
     }
+  }
+  return Error::notFound();
+}
+
+inline RawObject icLookupBinOpMonomorphic(RawTuple caches, word index,
+                                          LayoutId left_layout_id,
+                                          LayoutId right_layout_id,
+                                          BinaryOpFlags* flags_out) {
+  static_assert(Header::kLayoutIdBits * 2 + kBitsPerByte <= SmallInt::kBits,
+                "Two layout ids and flags overflow a SmallInt");
+  word key_high_bits = static_cast<word>(left_layout_id)
+                           << Header::kLayoutIdBits |
+                       static_cast<word>(right_layout_id);
+  word i = index * kIcPointersPerCache;
+  RawObject entry_key = caches.at(i + kIcEntryKeyOffset);
+  // Stop the search if we found an empty entry.
+  if (entry_key.isNoneType()) {
+    return Error::notFound();
+  }
+  word entry_key_value = SmallInt::cast(entry_key).value();
+  if (entry_key_value >> 8 == key_high_bits) {
+    *flags_out = static_cast<BinaryOpFlags>(entry_key_value & 0xff);
+    return caches.at(i + kIcEntryValueOffset);
   }
   return Error::notFound();
 }

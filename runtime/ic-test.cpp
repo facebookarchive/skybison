@@ -1815,7 +1815,7 @@ TEST_F(IcTest, IcIteratorIteratesOverBinaryOpCaches) {
   bytecode.byteAtPut(1, 100);
   bytecode.byteAtPut(2, COMPARE_OP_CACHED);
   bytecode.byteAtPut(3, 0);
-  bytecode.byteAtPut(4, BINARY_OP_CACHED);
+  bytecode.byteAtPut(4, BINARY_OP_ANAMORPHIC);
   bytecode.byteAtPut(5, 1);
   bytecode.byteAtPut(6, LOAD_GLOBAL);
   bytecode.byteAtPut(7, 100);
@@ -1841,7 +1841,7 @@ TEST_F(IcTest, IcIteratorIteratesOverBinaryOpCaches) {
   caches.atPut(compare_op_cached_index + kIcEntryValueOffset,
                SmallInt::fromWord(50));
 
-  // Caches for BINARY_OP_CACHED at 4.
+  // Caches for BINARY_OP_ANAMORPHIC at 4.
   word binary_op_cached_index =
       1 * kIcPointersPerCache + 0 * kIcPointersPerEntry;
   word binary_op_key_high_bits =
@@ -1910,7 +1910,7 @@ TEST_F(IcTest, IcIteratorIteratesOverInplaceOpCaches) {
 
   Tuple caches(&scope, runtime_.newTuple(num_caches * kIcPointersPerCache));
 
-  // Caches for BINARY_OP_CACHED at 2.
+  // Caches for BINARY_OP_ANAMORPHIC at 2.
   word inplace_op_cached_index =
       0 * kIcPointersPerCache + 0 * kIcPointersPerEntry;
   word inplace_op_key_high_bits =
@@ -2029,6 +2029,25 @@ TEST_F(IcTest, IcRemoveDeadWeakLinksRemoveRemovesDeadTailNode) {
   EXPECT_EQ(new_next.referent(), *dependent2);
   EXPECT_EQ(new_next.prev(), *new_head);
   EXPECT_TRUE(new_next.next().isNoneType());
+}
+
+TEST_F(IcTest,
+       EncodeBinaryOpKeyEntryReturnsKeyAccessedByLookupBinOpMonomorphic) {
+  HandleScope scope(thread_);
+  SmallInt entry_key(&scope, encodeBinaryOpKey(LayoutId::kStr, LayoutId::kInt,
+                                               kBinaryOpReflected));
+  Object entry_value(&scope, runtime_.newStrFromCStr("value"));
+  Tuple caches(&scope, runtime_.newTuple(kIcPointersPerEntry));
+  caches.atPut(kIcEntryKeyOffset, *entry_key);
+  caches.atPut(kIcEntryValueOffset, *entry_value);
+
+  BinaryOpFlags flags_out;
+  Object result(&scope, icLookupBinOpMonomorphic(*caches, 0, LayoutId::kStr,
+                                                 LayoutId::kInt, &flags_out));
+  EXPECT_EQ(result, entry_value);
+  EXPECT_TRUE(icLookupBinOpMonomorphic(*caches, 0, LayoutId::kInt,
+                                       LayoutId::kStr, &flags_out)
+                  .isErrorNotFound());
 }
 
 }  // namespace py

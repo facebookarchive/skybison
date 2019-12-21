@@ -887,6 +887,7 @@ HANDLER_INLINE USED RawObject Interpreter::binaryOperationWithMethod(
     frame->pushValue(left);
     frame->pushValue(right);
   }
+  // TODO(T59474005): Skip call.
   return call(thread, frame, 2);
 }
 
@@ -4530,7 +4531,8 @@ Continue Interpreter::doInplaceOpCached(Thread* thread, word arg) {
                             inplaceOpFallback);
 }
 
-Continue Interpreter::binaryOpUpdateCache(Thread* thread, word arg) {
+Continue Interpreter::binaryOpUpdateCache(Thread* thread, word arg,
+                                          ICState ic_state) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object right(&scope, frame->popValue());
@@ -4548,6 +4550,11 @@ Continue Interpreter::binaryOpUpdateCache(Thread* thread, word arg) {
                      *method, flags);
     icInsertBinaryOpDependencies(thread, function, left_layout_id,
                                  right_layout_id, op);
+    word pc = frame->currentPC();
+    RawMutableBytes bytecode = frame->bytecode();
+    bytecode.byteAtPut(pc, ic_state == ICState::kAnamorphic
+                               ? BINARY_OP_MONOMORPHIC
+                               : BINARY_OP_POLYMORPHIC);
   }
   if (result.isErrorException()) return Continue::UNWIND;
   frame->pushValue(*result);
@@ -4570,9 +4577,58 @@ Continue Interpreter::binaryOpFallback(Thread* thread, word arg,
   return Continue::NEXT;
 }
 
+ALWAYS_INLINE Continue Interpreter::binaryOp(Thread* thread, word arg,
+                                             RawObject method,
+                                             BinaryOpFlags flags,
+                                             RawObject left, RawObject right) {
+  DCHECK(method.isFunction(), "method is expected to be a function");
+  Frame* frame = thread->currentFrame();
+  RawObject result =
+      binaryOperationWithMethod(thread, frame, method, flags, left, right);
+  if (result.isErrorException()) return Continue::UNWIND;
+  if (!result.isNotImplementedType()) {
+    frame->dropValues(1);
+    frame->setTopValue(result);
+    return Continue::NEXT;
+  }
+  return binaryOpFallback(thread, arg, flags);
+}
+
 HANDLER_INLINE
-Continue Interpreter::doBinaryOpCached(Thread* thread, word arg) {
-  return cachedBinaryOpImpl(thread, arg, binaryOpUpdateCache, binaryOpFallback);
+Continue Interpreter::doBinaryOpMonomorphic(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject left_raw = frame->peek(1);
+  RawObject right_raw = frame->peek(0);
+  LayoutId left_layout_id = left_raw.layoutId();
+  LayoutId right_layout_id = right_raw.layoutId();
+  BinaryOpFlags flags = kBinaryOpNone;
+  RawObject method = icLookupBinOpMonomorphic(
+      frame->caches(), arg, left_layout_id, right_layout_id, &flags);
+  if (method.isErrorNotFound()) {
+    return binaryOpUpdateCache(thread, arg, ICState::kMonomorphic);
+  }
+  return binaryOp(thread, arg, method, flags, left_raw, right_raw);
+}
+
+HANDLER_INLINE
+Continue Interpreter::doBinaryOpPolymorphic(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject left_raw = frame->peek(1);
+  RawObject right_raw = frame->peek(0);
+  LayoutId left_layout_id = left_raw.layoutId();
+  LayoutId right_layout_id = right_raw.layoutId();
+  BinaryOpFlags flags = kBinaryOpNone;
+  RawObject method = icLookupBinaryOp(frame->caches(), arg, left_layout_id,
+                                      right_layout_id, &flags);
+  if (method.isErrorNotFound()) {
+    return binaryOpUpdateCache(thread, arg, ICState::kPolymorphic);
+  }
+  return binaryOp(thread, arg, method, flags, left_raw, right_raw);
+}
+
+HANDLER_INLINE
+Continue Interpreter::doBinaryOpAnamorphic(Thread* thread, word arg) {
+  return binaryOpUpdateCache(thread, arg, ICState::kAnamorphic);
 }
 
 RawObject Interpreter::execute(Thread* thread) {

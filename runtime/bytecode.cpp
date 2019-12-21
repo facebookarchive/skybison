@@ -55,7 +55,8 @@ static void rewriteZeroArgMethodCallsUsingLoadMethodAnamorphic(
 
 static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op) {
   auto cached_binop = [](Interpreter::BinaryOp bin_op) {
-    return RewrittenOp{BINARY_OP_CACHED, static_cast<int32_t>(bin_op), true};
+    return RewrittenOp{BINARY_OP_ANAMORPHIC, static_cast<int32_t>(bin_op),
+                       true};
   };
   auto cached_inplace = [](Interpreter::BinaryOp bin_op) {
     return RewrittenOp{INPLACE_OP_CACHED, static_cast<int32_t>(bin_op), true};
@@ -165,7 +166,7 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op) {
         return RewrittenOp{LOAD_IMMEDIATE, opargFromObject(arg_obj), false};
       }
     } break;
-    case BINARY_OP_CACHED:
+    case BINARY_OP_ANAMORPHIC:
     case COMPARE_OP_CACHED:
     case FOR_ITER_ANAMORPHIC:
     case INPLACE_OP_CACHED:

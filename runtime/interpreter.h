@@ -319,7 +319,9 @@ class Interpreter {
   static Continue doBinaryMatrixMultiply(Thread* thread, word arg);
   static Continue doBinaryModulo(Thread* thread, word arg);
   static Continue doBinaryMultiply(Thread* thread, word arg);
-  static Continue doBinaryOpCached(Thread* thread, word arg);
+  static Continue doBinaryOpMonomorphic(Thread* thread, word arg);
+  static Continue doBinaryOpPolymorphic(Thread* thread, word arg);
+  static Continue doBinaryOpAnamorphic(Thread* thread, word arg);
   static Continue doBinaryOr(Thread* thread, word arg);
   static Continue doBinaryPower(Thread* thread, word arg);
   static Continue doBinaryRshift(Thread* thread, word arg);
@@ -583,7 +585,11 @@ class Interpreter {
                                      OpcodeHandler update_cache,
                                      BinaryOpFallbackHandler fallback);
 
-  static Continue binaryOpUpdateCache(Thread* thread, word arg);
+  static Continue binaryOpUpdateCache(Thread* thread, word arg,
+                                      ICState ic_state);
+  static Continue binaryOp(Thread* thread, word arg, RawObject method,
+                           BinaryOpFlags flags, RawObject left,
+                           RawObject right);
   static Continue binaryOpFallback(Thread* thread, word arg,
                                    BinaryOpFlags flags);
   static Continue compareOpUpdateCache(Thread* thread, word arg);

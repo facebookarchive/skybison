@@ -319,11 +319,13 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesBinaryOpcodes) {
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {
-      BINARY_OP_CACHED, 0,  BINARY_OP_CACHED, 1,  BINARY_OP_CACHED, 2,
-      BINARY_OP_CACHED, 3,  BINARY_OP_CACHED, 4,  BINARY_OP_CACHED, 5,
-      BINARY_OP_CACHED, 6,  BINARY_OP_CACHED, 7,  BINARY_OP_CACHED, 8,
-      BINARY_OP_CACHED, 9,  BINARY_OP_CACHED, 10, BINARY_OP_CACHED, 11,
-      BINARY_OP_CACHED, 12,
+      BINARY_OP_ANAMORPHIC, 0,  BINARY_OP_ANAMORPHIC, 1,
+      BINARY_OP_ANAMORPHIC, 2,  BINARY_OP_ANAMORPHIC, 3,
+      BINARY_OP_ANAMORPHIC, 4,  BINARY_OP_ANAMORPHIC, 5,
+      BINARY_OP_ANAMORPHIC, 6,  BINARY_OP_ANAMORPHIC, 7,
+      BINARY_OP_ANAMORPHIC, 8,  BINARY_OP_ANAMORPHIC, 9,
+      BINARY_OP_ANAMORPHIC, 10, BINARY_OP_ANAMORPHIC, 11,
+      BINARY_OP_ANAMORPHIC, 12,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));

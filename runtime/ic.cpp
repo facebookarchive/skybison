@@ -618,6 +618,15 @@ void icInvalidateAttr(Thread* thread, const Type& type, const Object& attr_name,
          "dependencyLink must be None if is_data_descriptor is true");
 }
 
+RawSmallInt encodeBinaryOpKey(LayoutId left_layout_id, LayoutId right_layout_id,
+                              BinaryOpFlags flags) {
+  word key_high_bits = static_cast<word>(left_layout_id)
+                           << Header::kLayoutIdBits |
+                       static_cast<word>(right_layout_id);
+  return SmallInt::fromWord(key_high_bits << kBitsPerByte |
+                            static_cast<word>(flags));
+}
+
 void icUpdateBinaryOp(RawTuple caches, word index, LayoutId left_layout_id,
                       LayoutId right_layout_id, RawObject value,
                       BinaryOpFlags flags) {
@@ -631,8 +640,7 @@ void icUpdateBinaryOp(RawTuple caches, word index, LayoutId left_layout_id,
     if (entry_key.isNoneType() ||
         SmallInt::cast(entry_key).value() >> kBitsPerByte == key_high_bits) {
       caches.atPut(i + kIcEntryKeyOffset,
-                   SmallInt::fromWord(key_high_bits << kBitsPerByte |
-                                      static_cast<word>(flags)));
+                   encodeBinaryOpKey(left_layout_id, right_layout_id, flags));
       caches.atPut(i + kIcEntryValueOffset, value);
       return;
     }
@@ -763,14 +771,17 @@ RawObject IcIterator::leftMethodName() const {
          "should be only called for binop or inplace-ops");
   int32_t arg = originalArg(*function_, bytecode_op_.arg);
   SymbolId method;
-  if (bytecode_op_.bc == BINARY_OP_CACHED ||
+  if (bytecode_op_.bc == BINARY_OP_MONOMORPHIC ||
+      bytecode_op_.bc == BINARY_OP_POLYMORPHIC ||
+      bytecode_op_.bc == BINARY_OP_ANAMORPHIC ||
       bytecode_op_.bc == INPLACE_OP_CACHED) {
     Interpreter::BinaryOp binary_op = static_cast<Interpreter::BinaryOp>(arg);
     method = runtime_->binaryOperationSelector(binary_op);
   } else {
-    DCHECK(bytecode_op_.bc == COMPARE_OP_CACHED,
-           "binop cache must be for BINARY_OP_CACHED, INPLACE_OP_CACHED, or "
-           "COMPARE_OP_CACHED");
+    DCHECK(
+        bytecode_op_.bc == COMPARE_OP_CACHED,
+        "binop cache must be for BINARY_OP_ANAMORPHIC, INPLACE_OP_CACHED, or "
+        "COMPARE_OP_CACHED");
     CompareOp compare_op = static_cast<CompareOp>(arg);
     method = runtime_->comparisonSelector(compare_op);
   }
@@ -782,14 +793,16 @@ RawObject IcIterator::rightMethodName() const {
          "should be only called for binop or inplace-ops");
   int32_t arg = originalArg(*function_, bytecode_op_.arg);
   SymbolId method;
-  if (bytecode_op_.bc == BINARY_OP_CACHED ||
+  if (bytecode_op_.bc == BINARY_OP_MONOMORPHIC ||
+      bytecode_op_.bc == BINARY_OP_POLYMORPHIC ||
+      bytecode_op_.bc == BINARY_OP_ANAMORPHIC ||
       bytecode_op_.bc == INPLACE_OP_CACHED) {
     Interpreter::BinaryOp binary_op = static_cast<Interpreter::BinaryOp>(arg);
     method = runtime_->swappedBinaryOperationSelector(binary_op);
   } else {
-    DCHECK(
-        bytecode_op_.bc == COMPARE_OP_CACHED,
-        "binop cache must be either for BINARY_OP_CACHED or COMPARE_OP_CACHED");
+    DCHECK(bytecode_op_.bc == COMPARE_OP_CACHED,
+           "binop cache must be either for BINARY_OP_ANAMORPHIC or "
+           "COMPARE_OP_CACHED");
     CompareOp compare_op = static_cast<CompareOp>(arg);
     method = runtime_->swappedComparisonSelector(compare_op);
   }
