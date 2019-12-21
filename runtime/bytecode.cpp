@@ -105,7 +105,7 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op) {
       }
       break;
     case FOR_ITER:
-      return RewrittenOp{FOR_ITER_CACHED, op.arg, true};
+      return RewrittenOp{FOR_ITER_ANAMORPHIC, op.arg, true};
     case INPLACE_ADD:
       return cached_inplace(Interpreter::BinaryOp::ADD);
     case INPLACE_AND:
@@ -167,7 +167,7 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op) {
     } break;
     case BINARY_OP_CACHED:
     case COMPARE_OP_CACHED:
-    case FOR_ITER_CACHED:
+    case FOR_ITER_ANAMORPHIC:
     case INPLACE_OP_CACHED:
     case LOAD_ATTR_ANAMORPHIC:
     case LOAD_FAST_REVERSE:

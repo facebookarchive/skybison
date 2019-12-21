@@ -743,7 +743,9 @@ void icInvalidateGlobalVar(Thread* thread, const ValueCell& value_cell) {
 bool IcIterator::isAttrNameEqualTo(const Object& attr_name) const {
   DCHECK(isAttrCache(), "should be only called for attribute caches");
   switch (bytecode_op_.bc) {
-    case FOR_ITER_CACHED:
+    case FOR_ITER_MONOMORPHIC:
+    case FOR_ITER_POLYMORPHIC:
+    case FOR_ITER_ANAMORPHIC:
       return attr_name == runtime_->symbols()->at(SymbolId::kDunderNext);
     case BINARY_SUBSCR_ANAMORPHIC:
     case BINARY_SUBSCR_MONOMORPHIC:

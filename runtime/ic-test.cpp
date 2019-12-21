@@ -1656,7 +1656,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   bytecode.byteAtPut(11, 2);
   bytecode.byteAtPut(12, STORE_ATTR_ANAMORPHIC);
   bytecode.byteAtPut(13, 3);
-  bytecode.byteAtPut(14, FOR_ITER_CACHED);
+  bytecode.byteAtPut(14, FOR_ITER_ANAMORPHIC);
   bytecode.byteAtPut(15, 4);
   bytecode.byteAtPut(16, BINARY_SUBSCR_ANAMORPHIC);
   bytecode.byteAtPut(17, 5);
@@ -1715,7 +1715,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   caches.atPut(store_attr_cached_index + kIcEntryValueOffset,
                SmallInt::fromWord(40));
 
-  // Caches for FOR_ITER_CACHED at 14.
+  // Caches for FOR_ITER_ANAMORPHIC at 14.
   word for_iter_cached_index =
       4 * kIcPointersPerCache + 3 * kIcPointersPerEntry;
   caches.atPut(for_iter_cached_index + kIcEntryKeyOffset,

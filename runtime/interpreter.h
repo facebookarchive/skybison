@@ -349,7 +349,9 @@ class Interpreter {
   static Continue doDeleteSubscr(Thread* thread, word arg);
   static Continue doEndFinally(Thread* thread, word arg);
   static Continue doForIter(Thread* thread, word arg);
-  static Continue doForIterCached(Thread* thread, word arg);
+  static Continue doForIterMonomorphic(Thread* thread, word arg);
+  static Continue doForIterPolymorphic(Thread* thread, word arg);
+  static Continue doForIterAnamorphic(Thread* thread, word arg);
   static Continue doFormatValue(Thread* thread, word arg);
   static Continue doGetAiter(Thread* thread, word arg);
   static Continue doGetAnext(Thread* thread, word arg);
@@ -487,7 +489,9 @@ class Interpreter {
   // Slow path for the FOR_ITER opcode that updates the cache at the given index
   // when appropriate. May also be used as a non-caching slow path by passing a
   // negative index.
-  static bool forIterUpdateCache(Thread* thread, word arg, word index);
+  static Continue forIterUpdateCache(Thread* thread, word arg, word index,
+                                     ICState ic_state);
+  static Continue forIter(Thread* thread, RawObject next_method, word arg);
 
   // Look up the value of ValueCell associcate with `name` first in module_dict
   // and then in module_dict["__builtins__"] if `name` is not found in

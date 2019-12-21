@@ -2269,11 +2269,11 @@ HANDLER_INLINE Continue Interpreter::doUnpackSequence(Thread* thread,
 }
 
 HANDLER_INLINE Continue Interpreter::doForIter(Thread* thread, word arg) {
-  return forIterUpdateCache(thread, arg, -1) ? Continue::UNWIND
-                                             : Continue::NEXT;
+  return forIterUpdateCache(thread, arg, -1, ICState::kAnamorphic);
 }
 
-bool Interpreter::forIterUpdateCache(Thread* thread, word arg, word index) {
+Continue Interpreter::forIterUpdateCache(Thread* thread, word arg, word index,
+                                         ICState ic_state) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
   Object iter(&scope, frame->topValue());
@@ -2281,7 +2281,7 @@ bool Interpreter::forIterUpdateCache(Thread* thread, word arg, word index) {
   Object next(&scope, typeLookupInMroById(thread, type, SymbolId::kDunderNext));
   if (next.isErrorNotFound()) {
     thread->raiseWithFmt(LayoutId::kTypeError, "iter() returned non-iterator");
-    return true;
+    return Continue::UNWIND;
   }
 
   if (index >= 0 && next.isFunction()) {
@@ -2291,21 +2291,26 @@ bool Interpreter::forIterUpdateCache(Thread* thread, word arg, word index) {
     Function dependent(&scope, frame->function());
     icUpdateAttr(thread, caches, index, iter.layoutId(), next, next_name,
                  dependent);
+    word pc = frame->currentPC();
+    RawMutableBytes bytecode = frame->bytecode();
+    bytecode.byteAtPut(pc, ic_state == ICState::kAnamorphic
+                               ? FOR_ITER_MONOMORPHIC
+                               : FOR_ITER_POLYMORPHIC);
   }
 
   next = resolveDescriptorGet(thread, next, iter, type);
-  if (next.isErrorException()) return true;
+  if (next.isErrorException()) return Continue::UNWIND;
   Object result(&scope, callFunction0(thread, frame, next));
   if (result.isErrorException()) {
     if (thread->clearPendingStopIteration()) {
       frame->popValue();
       frame->setVirtualPC(frame->virtualPC() + arg);
-      return false;
+      return Continue::NEXT;
     }
-    return true;
+    return Continue::UNWIND;
   }
   frame->pushValue(*result);
-  return false;
+  return Continue::NEXT;
 }
 
 static RawObject builtinsModule(Thread* thread, const Module& module) {
@@ -2355,21 +2360,17 @@ void Interpreter::globalsAtPut(Thread* thread, const Module& module,
   icUpdateGlobalVar(thread, function, cache_index, module_result);
 }
 
-HANDLER_INLINE Continue Interpreter::doForIterCached(Thread* thread, word arg) {
+ALWAYS_INLINE Continue Interpreter::forIter(Thread* thread,
+                                            RawObject next_method, word arg) {
+  DCHECK(next_method.isFunction(), "Unexpected next_method value");
   Frame* frame = thread->currentFrame();
   RawObject iter = frame->topValue();
-  LayoutId iter_layout_id = iter.layoutId();
-  RawObject cached = icLookupAttr(frame->caches(), arg, iter_layout_id);
-  if (cached.isErrorNotFound()) {
-    return forIterUpdateCache(thread, originalArg(frame->function(), arg), arg)
-               ? Continue::UNWIND
-               : Continue::NEXT;
-  }
-
-  DCHECK(cached.isFunction(), "Unexpected cached value");
-  frame->pushValue(cached);
+  RawObject* sp = frame->valueStackTop();
+  frame->pushValue(next_method);
   frame->pushValue(iter);
-  RawObject result = call(thread, frame, 1);
+  RawObject result =
+      Function::cast(Function::cast(next_method)).entry()(thread, frame, 1);
+  frame->setValueStackTop(sp);
   if (result.isErrorException()) {
     if (thread->clearPendingStopIteration()) {
       frame->popValue();
@@ -2383,6 +2384,41 @@ HANDLER_INLINE Continue Interpreter::doForIterCached(Thread* thread, word arg) {
   }
   frame->pushValue(result);
   return Continue::NEXT;
+}
+
+HANDLER_INLINE Continue Interpreter::doForIterMonomorphic(Thread* thread,
+                                                          word arg) {
+  Frame* frame = thread->currentFrame();
+  RawTuple caches = frame->caches();
+  RawObject iter = frame->topValue();
+  LayoutId iter_layout_id = iter.layoutId();
+  word index = arg * kIcPointersPerCache;
+  RawObject cache_key = caches.at(index + kIcEntryKeyOffset);
+  if (SmallInt::fromWord(static_cast<word>(iter_layout_id)) != cache_key) {
+    return forIterUpdateCache(thread, originalArg(frame->function(), arg), arg,
+                              ICState::kAnamorphic);
+  }
+  return forIter(thread, caches.at(index + kIcEntryValueOffset), arg);
+}
+
+HANDLER_INLINE Continue Interpreter::doForIterPolymorphic(Thread* thread,
+                                                          word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject iter = frame->topValue();
+  LayoutId iter_layout_id = iter.layoutId();
+  RawObject cached = icLookupAttr(frame->caches(), arg, iter_layout_id);
+  if (cached.isErrorNotFound()) {
+    return forIterUpdateCache(thread, originalArg(frame->function(), arg), arg,
+                              ICState::kPolymorphic);
+  }
+  return forIter(thread, cached, arg);
+}
+
+HANDLER_INLINE Continue Interpreter::doForIterAnamorphic(Thread* thread,
+                                                         word arg) {
+  Frame* frame = thread->currentFrame();
+  return forIterUpdateCache(thread, originalArg(frame->function(), arg), arg,
+                            ICState::kAnamorphic);
 }
 
 HANDLER_INLINE Continue Interpreter::doUnpackEx(Thread* thread, word arg) {

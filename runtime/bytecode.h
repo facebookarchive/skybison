@@ -237,8 +237,8 @@ namespace py {
   V(UNUSED_BYTECODE_218, 218, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_219, 219, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_220, 220, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_221, 221, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_222, 222, doInvalidBytecode)                               \
+  V(FOR_ITER_POLYMORPHIC, 221, doForIterPolymorphic)                           \
+  V(FOR_ITER_MONOMORPHIC, 222, doForIterMonomorphic)                           \
   V(BINARY_SUBSCR_POLYMORPHIC, 223, doBinarySubscrPolymorphic)                 \
   V(BINARY_SUBSCR_MONOMORPHIC, 224, doBinarySubscrMonomorphic)                 \
   V(STORE_ATTR_INSTANCE_OVERFLOW_UPDATE, 225,                                  \
@@ -267,7 +267,7 @@ namespace py {
   V(LOAD_METHOD_ANAMORPHIC, 246, doLoadMethodAnamorphic)                       \
   V(STORE_GLOBAL_CACHED, 247, doStoreGlobalCached)                             \
   V(LOAD_GLOBAL_CACHED, 248, doLoadGlobalCached)                               \
-  V(FOR_ITER_CACHED, 249, doForIterCached)                                     \
+  V(FOR_ITER_ANAMORPHIC, 249, doForIterAnamorphic)                             \
   V(COMPARE_OP_CACHED, 250, doCompareOpCached)                                 \
   V(INPLACE_OP_CACHED, 251, doInplaceOpCached)                                 \
   V(BINARY_OP_CACHED, 252, doBinaryOpCached)                                   \
@@ -342,7 +342,9 @@ inline bool isByteCodeWithCache(const Bytecode bc) {
     case BINARY_SUBSCR_MONOMORPHIC:
     case BINARY_SUBSCR_POLYMORPHIC:
     case COMPARE_OP_CACHED:
-    case FOR_ITER_CACHED:
+    case FOR_ITER_MONOMORPHIC:
+    case FOR_ITER_POLYMORPHIC:
+    case FOR_ITER_ANAMORPHIC:
     case INPLACE_OP_CACHED:
     case LOAD_ATTR_INSTANCE:
     case LOAD_ATTR_INSTANCE_PROPERTY:
