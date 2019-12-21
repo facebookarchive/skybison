@@ -1898,7 +1898,7 @@ TEST_F(IcTest, IcIteratorIteratesOverInplaceOpCaches) {
   MutableBytes bytecode(&scope, runtime_.newMutableBytesUninitialized(8));
   bytecode.byteAtPut(0, LOAD_GLOBAL);
   bytecode.byteAtPut(1, 100);
-  bytecode.byteAtPut(2, INPLACE_OP_CACHED);
+  bytecode.byteAtPut(2, INPLACE_OP_ANAMORPHIC);
   bytecode.byteAtPut(3, 0);
   bytecode.byteAtPut(4, LOAD_GLOBAL);
   bytecode.byteAtPut(5, 100);

@@ -341,7 +341,16 @@ class IcIterator {
     }
   }
 
-  bool isInplaceOpCache() const { return bytecode_op_.bc == INPLACE_OP_CACHED; }
+  bool isInplaceOpCache() const {
+    switch (bytecode_op_.bc) {
+      case INPLACE_OP_MONOMORPHIC:
+      case INPLACE_OP_POLYMORPHIC:
+      case INPLACE_OP_ANAMORPHIC:
+        return true;
+      default:
+        return false;
+    }
+  }
 
   LayoutId layoutId() const {
     DCHECK(isAttrCache(), "should be only called for attribute caches");

@@ -371,7 +371,9 @@ class Interpreter {
   static Continue doInplaceMatrixMultiply(Thread* thread, word arg);
   static Continue doInplaceModulo(Thread* thread, word arg);
   static Continue doInplaceMultiply(Thread* thread, word arg);
-  static Continue doInplaceOpCached(Thread* thread, word arg);
+  static Continue doInplaceOpMonomorphic(Thread* thread, word arg);
+  static Continue doInplaceOpPolymorphic(Thread* thread, word arg);
+  static Continue doInplaceOpAnamorphic(Thread* thread, word arg);
   static Continue doInplaceOr(Thread* thread, word arg);
   static Continue doInplacePower(Thread* thread, word arg);
   static Continue doInplaceRshift(Thread* thread, word arg);
@@ -598,7 +600,8 @@ class Interpreter {
                                        ICState ic_state);
   static Continue compareOpFallback(Thread* thread, word arg,
                                     BinaryOpFlags flags);
-  static Continue inplaceOpUpdateCache(Thread* thread, word arg);
+  static Continue inplaceOpUpdateCache(Thread* thread, word arg,
+                                       ICState ic_state);
   static Continue inplaceOpFallback(Thread* thread, word arg,
                                     BinaryOpFlags flags);
 };

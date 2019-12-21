@@ -59,7 +59,8 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op) {
                        true};
   };
   auto cached_inplace = [](Interpreter::BinaryOp bin_op) {
-    return RewrittenOp{INPLACE_OP_CACHED, static_cast<int32_t>(bin_op), true};
+    return RewrittenOp{INPLACE_OP_ANAMORPHIC, static_cast<int32_t>(bin_op),
+                       true};
   };
   switch (op.bc) {
     case BINARY_ADD:
@@ -169,7 +170,7 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op) {
     case BINARY_OP_ANAMORPHIC:
     case COMPARE_OP_ANAMORPHIC:
     case FOR_ITER_ANAMORPHIC:
-    case INPLACE_OP_CACHED:
+    case INPLACE_OP_ANAMORPHIC:
     case LOAD_ATTR_ANAMORPHIC:
     case LOAD_FAST_REVERSE:
     case LOAD_METHOD_ANAMORPHIC:

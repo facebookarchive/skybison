@@ -766,15 +766,26 @@ bool IcIterator::isAttrNameEqualTo(const Object& attr_name) const {
   }
 }
 
+static bool isBinaryOpOrInplaceOp(Bytecode bc) {
+  switch (bc) {
+    case BINARY_OP_MONOMORPHIC:
+    case BINARY_OP_POLYMORPHIC:
+    case BINARY_OP_ANAMORPHIC:
+    case INPLACE_OP_MONOMORPHIC:
+    case INPLACE_OP_POLYMORPHIC:
+    case INPLACE_OP_ANAMORPHIC:
+      return true;
+    default:
+      return false;
+  }
+}
+
 RawObject IcIterator::leftMethodName() const {
   DCHECK(isBinaryOpCache() || isInplaceOpCache(),
          "should be only called for binop or inplace-ops");
   int32_t arg = originalArg(*function_, bytecode_op_.arg);
   SymbolId method;
-  if (bytecode_op_.bc == BINARY_OP_MONOMORPHIC ||
-      bytecode_op_.bc == BINARY_OP_POLYMORPHIC ||
-      bytecode_op_.bc == BINARY_OP_ANAMORPHIC ||
-      bytecode_op_.bc == INPLACE_OP_CACHED) {
+  if (isBinaryOpOrInplaceOp(bytecode_op_.bc)) {
     Interpreter::BinaryOp binary_op = static_cast<Interpreter::BinaryOp>(arg);
     method = runtime_->binaryOperationSelector(binary_op);
   } else {
@@ -794,10 +805,7 @@ RawObject IcIterator::rightMethodName() const {
          "should be only called for binop or inplace-ops");
   int32_t arg = originalArg(*function_, bytecode_op_.arg);
   SymbolId method;
-  if (bytecode_op_.bc == BINARY_OP_MONOMORPHIC ||
-      bytecode_op_.bc == BINARY_OP_POLYMORPHIC ||
-      bytecode_op_.bc == BINARY_OP_ANAMORPHIC ||
-      bytecode_op_.bc == INPLACE_OP_CACHED) {
+  if (isBinaryOpOrInplaceOp(bytecode_op_.bc)) {
     Interpreter::BinaryOp binary_op = static_cast<Interpreter::BinaryOp>(arg);
     method = runtime_->swappedBinaryOperationSelector(binary_op);
   } else {
@@ -813,8 +821,10 @@ RawObject IcIterator::rightMethodName() const {
 }
 
 RawObject IcIterator::inplaceMethodName() const {
-  DCHECK(bytecode_op_.bc == INPLACE_OP_CACHED,
-         "should only be called for INPLACE_OP_CACHED");
+  DCHECK(bytecode_op_.bc == INPLACE_OP_MONOMORPHIC ||
+             bytecode_op_.bc == INPLACE_OP_POLYMORPHIC ||
+             bytecode_op_.bc == INPLACE_OP_ANAMORPHIC,
+         "should only be called for INPLACE_OP_*");
   int32_t arg = originalArg(*function_, bytecode_op_.arg);
   Interpreter::BinaryOp binary_op = static_cast<Interpreter::BinaryOp>(arg);
   SymbolId method = runtime_->inplaceOperationSelector(binary_op);
