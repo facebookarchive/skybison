@@ -17,41 +17,15 @@ static RawObject layoutIdAsSmallInt(LayoutId id) {
   return SmallInt::fromWord(static_cast<word>(id));
 }
 
-TEST_F(IcTest, IcLookupReturnsFirstCachedValue) {
+TEST_F(
+    IcTest,
+    icLookupMonomorphicWithEmptyCacheReturnsErrorNotFoundAndSetIsFoundToFalse) {
   HandleScope scope(thread_);
-
-  Tuple caches(&scope, runtime_.newTuple(1 * kIcPointersPerCache));
-  caches.atPut(kIcEntryKeyOffset, layoutIdAsSmallInt(LayoutId::kSmallInt));
-  caches.atPut(kIcEntryValueOffset, runtime_.newInt(44));
-  EXPECT_TRUE(
-      isIntEqualsWord(icLookupAttr(*caches, 0, LayoutId::kSmallInt), 44));
-}
-
-TEST_F(IcTest, IcLookupReturnsFourthCachedValue) {
-  HandleScope scope(thread_);
-
   Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerCache));
-  caches.atPut(kIcEntryKeyOffset, layoutIdAsSmallInt(LayoutId::kSmallInt));
-  word cache_offset = kIcPointersPerCache;
-  caches.atPut(cache_offset + 0 * kIcPointersPerEntry + kIcEntryKeyOffset,
-               layoutIdAsSmallInt(LayoutId::kSmallStr));
-  caches.atPut(cache_offset + 1 * kIcPointersPerEntry + kIcEntryKeyOffset,
-               layoutIdAsSmallInt(LayoutId::kStopIteration));
-  caches.atPut(cache_offset + 2 * kIcPointersPerEntry + kIcEntryKeyOffset,
-               layoutIdAsSmallInt(LayoutId::kLargeStr));
-  caches.atPut(cache_offset + 3 * kIcPointersPerEntry + kIcEntryKeyOffset,
-               layoutIdAsSmallInt(LayoutId::kSmallInt));
-  caches.atPut(cache_offset + 3 * kIcPointersPerEntry + kIcEntryValueOffset,
-               runtime_.newInt(7));
-  EXPECT_TRUE(
-      isIntEqualsWord(icLookupAttr(*caches, 1, LayoutId::kSmallInt), 7));
-}
-
-TEST_F(IcTest, IcLookupWithoutMatchReturnsErrorNotFound) {
-  HandleScope scope(thread_);
-
-  Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerCache));
-  EXPECT_TRUE(icLookupAttr(*caches, 1, LayoutId::kSmallInt).isErrorNotFound());
+  bool is_found;
+  EXPECT_TRUE(icLookupMonomorphic(*caches, 1, LayoutId::kSmallInt, &is_found)
+                  .isErrorNotFound());
+  EXPECT_FALSE(is_found);
 }
 
 static RawObject binaryOpKey(LayoutId left, LayoutId right,
@@ -107,42 +81,94 @@ TEST_F(IcTest, IcLookupGlobalVar) {
   EXPECT_TRUE(icLookupGlobalVar(*caches, 1).isNoneType());
 }
 
-TEST_F(IcTest, IcUpdateAttrSetsEmptyEntry) {
+TEST_F(IcTest, IcUpdateAttrSetsMonomorphicEntry) {
   HandleScope scope(thread_);
-
   Tuple caches(&scope, runtime_.newTuple(1 * kIcPointersPerCache));
   Object value(&scope, runtime_.newInt(88));
   Object name(&scope, Str::empty());
   Function dependent(&scope, newEmptyFunction());
-  icUpdateAttr(thread_, caches, 0, LayoutId::kSmallInt, value, name, dependent);
-  EXPECT_TRUE(isIntEqualsWord(caches.at(kIcEntryKeyOffset),
-                              static_cast<word>(LayoutId::kSmallInt)));
-  EXPECT_TRUE(isIntEqualsWord(caches.at(kIcEntryValueOffset), 88));
+  EXPECT_EQ(icUpdateAttr(thread_, caches, 0, LayoutId::kSmallInt, value, name,
+                         dependent),
+            ICState::kMonomorphic);
+
+  bool is_found;
+  EXPECT_EQ(icLookupMonomorphic(*caches, 0, LayoutId::kSmallInt, &is_found),
+            *value);
 }
 
-TEST_F(IcTest, IcUpdateAttrUpdatesExistingEntry) {
+TEST_F(IcTest, IcUpdateAttrUpdatesExistingMonomorphicEntry) {
   HandleScope scope(thread_);
-
-  Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerCache));
-  word cache_offset = kIcPointersPerCache;
-  caches.atPut(cache_offset + 0 * kIcPointersPerEntry + kIcEntryKeyOffset,
-               layoutIdAsSmallInt(LayoutId::kSmallInt));
-  caches.atPut(cache_offset + 1 * kIcPointersPerEntry + kIcEntryKeyOffset,
-               layoutIdAsSmallInt(LayoutId::kSmallBytes));
-  caches.atPut(cache_offset + 2 * kIcPointersPerEntry + kIcEntryKeyOffset,
-               layoutIdAsSmallInt(LayoutId::kSmallStr));
-  caches.atPut(cache_offset + 3 * kIcPointersPerEntry + kIcEntryKeyOffset,
-               layoutIdAsSmallInt(LayoutId::kBytes));
-  Object value(&scope, runtime_.newStrFromCStr("test"));
+  Tuple caches(&scope, runtime_.newTuple(1 * kIcPointersPerCache));
+  Object value(&scope, runtime_.newInt(88));
   Object name(&scope, Str::empty());
   Function dependent(&scope, newEmptyFunction());
-  icUpdateAttr(thread_, caches, 1, LayoutId::kSmallStr, value, name, dependent);
-  EXPECT_TRUE(isIntEqualsWord(
-      caches.at(cache_offset + 2 * kIcPointersPerEntry + kIcEntryKeyOffset),
-      static_cast<word>(LayoutId::kSmallStr)));
-  EXPECT_TRUE(isStrEqualsCStr(
-      caches.at(cache_offset + 2 * kIcPointersPerEntry + kIcEntryValueOffset),
-      "test"));
+  ASSERT_EQ(icUpdateAttr(thread_, caches, 0, LayoutId::kSmallInt, value, name,
+                         dependent),
+            ICState::kMonomorphic);
+  bool is_found;
+  EXPECT_EQ(icLookupMonomorphic(*caches, 0, LayoutId::kSmallInt, &is_found),
+            *value);
+  EXPECT_TRUE(is_found);
+
+  Object new_value(&scope, runtime_.newInt(99));
+  EXPECT_EQ(icUpdateAttr(thread_, caches, 0, LayoutId::kSmallInt, new_value,
+                         name, dependent),
+            ICState::kMonomorphic);
+  EXPECT_EQ(icLookupMonomorphic(*caches, 0, LayoutId::kSmallInt, &is_found),
+            *new_value);
+  EXPECT_TRUE(is_found);
+}
+
+TEST_F(IcTest, IcUpdateAttrSetsPolymorphicEntry) {
+  HandleScope scope(thread_);
+  Tuple caches(&scope, runtime_.newTuple(1 * kIcPointersPerCache));
+  Object int_value(&scope, runtime_.newInt(88));
+  Object str_value(&scope, runtime_.newInt(99));
+  Object name(&scope, Str::empty());
+  Function dependent(&scope, newEmptyFunction());
+  ASSERT_EQ(icUpdateAttr(thread_, caches, 0, LayoutId::kSmallInt, int_value,
+                         name, dependent),
+            ICState::kMonomorphic);
+  EXPECT_EQ(icUpdateAttr(thread_, caches, 0, LayoutId::kSmallStr, str_value,
+                         name, dependent),
+            ICState::kPolymorphic);
+  bool is_found;
+  EXPECT_EQ(icLookupPolymorphic(*caches, 0, LayoutId::kSmallInt, &is_found),
+            *int_value);
+  EXPECT_TRUE(is_found);
+  EXPECT_EQ(icLookupPolymorphic(*caches, 0, LayoutId::kSmallStr, &is_found),
+            *str_value);
+  EXPECT_TRUE(is_found);
+}
+
+TEST_F(IcTest, IcUpdateAttrUpdatesPolymorphicEntry) {
+  HandleScope scope(thread_);
+  Tuple caches(&scope, runtime_.newTuple(1 * kIcPointersPerCache));
+  Object int_value(&scope, runtime_.newInt(88));
+  Object str_value(&scope, runtime_.newInt(99));
+  Object name(&scope, Str::empty());
+  Function dependent(&scope, newEmptyFunction());
+  ASSERT_EQ(icUpdateAttr(thread_, caches, 0, LayoutId::kSmallInt, int_value,
+                         name, dependent),
+            ICState::kMonomorphic);
+  ASSERT_EQ(icUpdateAttr(thread_, caches, 0, LayoutId::kSmallStr, str_value,
+                         name, dependent),
+            ICState::kPolymorphic);
+  bool is_found;
+  ASSERT_EQ(icLookupPolymorphic(*caches, 0, LayoutId::kSmallInt, &is_found),
+            *int_value);
+  ASSERT_TRUE(is_found);
+  ASSERT_EQ(icLookupPolymorphic(*caches, 0, LayoutId::kSmallStr, &is_found),
+            *str_value);
+  ASSERT_TRUE(is_found);
+
+  Object new_value(&scope, runtime_.newInt(101));
+  EXPECT_EQ(icUpdateAttr(thread_, caches, 0, LayoutId::kSmallStr, new_value,
+                         name, dependent),
+            ICState::kPolymorphic);
+  EXPECT_EQ(icLookupPolymorphic(*caches, 0, LayoutId::kSmallStr, &is_found),
+            *new_value);
+  EXPECT_TRUE(is_found);
 }
 
 TEST_F(IcTest, IcUpdateAttrInsertsDependencyUpToDefiningType) {

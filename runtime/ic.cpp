@@ -12,10 +12,13 @@ namespace py {
 
 // Perform the same lookup operation as typeLookupNameInMro as we're inserting
 // dependent into the ValueCell in each visited type dictionary.
-static void insertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
+static void insertDependencyForTypeLookupInMro(Thread* thread,
+                                               LayoutId layout_id,
                                                const Object& name,
                                                const Object& dependent) {
   HandleScope scope(thread);
+  Type type(&scope, thread->runtime()->typeAt(layout_id));
+  if (type.isSealed()) return;
   Tuple mro(&scope, type.mro());
   Type mro_type(&scope, *type);
   for (word i = 0; i < mro.length(); i++) {
@@ -31,44 +34,54 @@ static void insertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
   }
 }
 
-void icUpdateAttr(Thread* thread, const Tuple& caches, word index,
-                  LayoutId layout_id, const Object& value, const Object& name,
-                  const Function& dependent) {
+ICState icUpdateAttr(Thread* thread, const Tuple& caches, word index,
+                     LayoutId layout_id, const Object& value,
+                     const Object& name, const Function& dependent) {
+  Runtime* runtime = thread->runtime();
   RawSmallInt key = SmallInt::fromWord(static_cast<word>(layout_id));
-  RawObject entry_key = NoneType::object();
-  for (word i = index * kIcPointersPerCache, end = i + kIcPointersPerCache;
-       i < end; i += kIcPointersPerEntry) {
-    entry_key = caches.at(i + kIcEntryKeyOffset);
+  word i = index * kIcPointersPerCache;
+  RawObject entry_key = caches.at(i + kIcEntryKeyOffset);
+  if (entry_key.isNoneType() || entry_key == key) {
+    caches.atPut(i + kIcEntryKeyOffset, key);
+    caches.atPut(i + kIcEntryValueOffset, *value);
+    insertDependencyForTypeLookupInMro(thread, layout_id, name, dependent);
+    return ICState::kMonomorphic;
+  }
+  if (!caches.at(i + kIcEntryKeyOffset).isUnbound()) {
+    // This is currently not a polymorphic cache.
+    HandleScope scope(thread);
+    Tuple polymorphic_cache(&scope, runtime->newTuple(kIcPointersPerPolyCache));
+    polymorphic_cache.atPut(kIcEntryKeyOffset,
+                            caches.at(i + kIcEntryKeyOffset));
+    polymorphic_cache.atPut(kIcEntryValueOffset,
+                            caches.at(i + kIcEntryValueOffset));
+    // Mark this entry as a polymorphic cache.
+    caches.atPut(i + kIcEntryKeyOffset, Unbound::object());
+    caches.atPut(i + kIcEntryValueOffset, *polymorphic_cache);
+  }
+  RawTuple polymorphic_cache = Tuple::cast(caches.at(i + kIcEntryValueOffset));
+  for (word j = 0; j < kIcPointersPerPolyCache; j += kIcPointersPerEntry) {
+    entry_key = polymorphic_cache.at(j + kIcEntryKeyOffset);
     if (entry_key.isNoneType() || entry_key == key) {
-      caches.atPut(i + kIcEntryKeyOffset, key);
-      caches.atPut(i + kIcEntryValueOffset, *value);
-      // We do not need to tell an unmodifable type about this cache entry
-      // since it will never be invalidated.
-      HandleScope scope(thread);
-      Type type(&scope, thread->runtime()->typeAt(layout_id));
-      if (!type.isSealed()) {
-        insertDependencyForTypeLookupInMro(thread, type, name, dependent);
-      }
-      return;
+      polymorphic_cache.atPut(j + kIcEntryKeyOffset, key);
+      polymorphic_cache.atPut(j + kIcEntryValueOffset, *value);
+      insertDependencyForTypeLookupInMro(thread, layout_id, name, dependent);
+      break;
     }
   }
+  return ICState::kPolymorphic;
 }
 
 bool icIsCacheEmpty(const Tuple& caches, word index) {
-  for (word i = index * kIcPointersPerCache, end = i + kIcPointersPerCache;
-       i < end; i += kIcPointersPerEntry) {
-    if (!caches.at(i + kIcEntryKeyOffset).isNoneType()) {
-      return false;
-    }
-  }
-  return true;
+  word i = index * kIcPointersPerCache;
+  return caches.at(i + kIcEntryKeyOffset).isNoneType();
 }
 
 void icUpdateAttrModule(Thread* thread, const Tuple& caches, word index,
                         const Object& receiver, const ValueCell& value_cell,
                         const Function& dependent) {
-  HandleScope scope(thread);
   DCHECK(icIsCacheEmpty(caches, index), "cache must be empty\n");
+  HandleScope scope(thread);
   word i = index * kIcPointersPerCache;
   Module module(&scope, *receiver);
   caches.atPut(i + kIcEntryKeyOffset, SmallInt::fromWord(module.id()));
@@ -95,11 +108,9 @@ void icUpdateAttrType(Thread* thread, const Tuple& caches, word index,
   DCHECK(bytecode.byteAt(pc) == LOAD_ATTR_ANAMORPHIC,
          "current opcode must be LOAD_ATTR_ANAMORPHIC");
   bytecode.byteAtPut(pc, LOAD_ATTR_TYPE);
-  HandleScope scope(thread);
-  Type type(&scope, *receiver);
-  if (!type.isSealed()) {
-    insertDependencyForTypeLookupInMro(thread, type, selector, dependent);
-  }
+  LayoutId layout_id =
+      Layout::cast(receiver.rawCast<RawType>().instanceLayout()).id();
+  insertDependencyForTypeLookupInMro(thread, layout_id, selector, dependent);
 }
 
 void icRemoveDeadWeakLinks(RawValueCell cell) {
@@ -177,13 +188,11 @@ static void insertBinaryOpDependencies(Thread* thread,
                                        const SymbolId right_operator_id) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Type left_type(&scope, runtime->typeAt(left_layout_id));
   Object left_op_name(&scope, runtime->symbols()->at(left_operator_id));
-  insertDependencyForTypeLookupInMro(thread, left_type, left_op_name,
+  insertDependencyForTypeLookupInMro(thread, left_layout_id, left_op_name,
                                      dependent);
-  Type right_type(&scope, runtime->typeAt(right_layout_id));
   Object right_op_name(&scope, runtime->symbols()->at(right_operator_id));
-  insertDependencyForTypeLookupInMro(thread, right_type, right_op_name,
+  insertDependencyForTypeLookupInMro(thread, right_layout_id, right_op_name,
                                      dependent);
 }
 
@@ -216,10 +225,9 @@ void icInsertInplaceOpDependencies(Thread* thread, const Function& dependent,
                                    Interpreter::BinaryOp op) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Type left_type(&scope, runtime->typeAt(left_layout_id));
   Object inplace_op_name(
       &scope, runtime->symbols()->at(runtime->inplaceOperationSelector(op)));
-  insertDependencyForTypeLookupInMro(thread, left_type, inplace_op_name,
+  insertDependencyForTypeLookupInMro(thread, left_layout_id, inplace_op_name,
                                      dependent);
   SymbolId left_operator_id = runtime->binaryOperationSelector(op);
   SymbolId right_operator_id = runtime->swappedBinaryOperationSelector(op);

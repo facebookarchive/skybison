@@ -16,6 +16,7 @@
 #include "exception-builtins.h"
 #include "frame.h"
 #include "handles.h"
+#include "ic.h"
 #include "int-builtins.h"
 #include "module-builtins.h"
 #include "os.h"
@@ -411,6 +412,15 @@ RawObject listFromRange(word start, word stop) {
     thread->runtime()->listAdd(thread, result, value);
   }
   return *result;
+}
+
+RawObject icLookupAttr(RawTuple caches, word index, LayoutId layout_id) {
+  word i = index * kIcPointersPerCache;
+  bool is_found = false;
+  if (caches.at(i + kIcEntryValueOffset).isTuple()) {
+    return icLookupPolymorphic(caches, index, layout_id, &is_found);
+  }
+  return icLookupMonomorphic(caches, index, layout_id, &is_found);
 }
 
 ::testing::AssertionResult isByteArrayEqualsBytes(const Object& result,

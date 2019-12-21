@@ -188,6 +188,8 @@ using unique_file_ptr = std::unique_ptr<char, FileDeleter>;
 
 RawObject listFromRange(word start, word stop);
 
+RawObject icLookupAttr(RawTuple caches, word index, LayoutId layout_id);
+
 ::testing::AssertionResult isByteArrayEqualsBytes(const Object& result,
                                                   View<byte> expected);
 

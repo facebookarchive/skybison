@@ -334,18 +334,22 @@ void emitConvertFromSmallInt(EmitEnv* env, Register reg) {
 //
 // Writes to r_dst, r_layout_id (to turn it into a SmallInt), r_caches, and
 // r_scratch.
-void emitIcLookup(EmitEnv* env, Label* not_found, Register r_dst,
-                  Register r_layout_id, Register r_caches, Register r_index,
-                  Register r_scratch) {
+void emitIcLookupPolymorphic(EmitEnv* env, Label* not_found, Register r_dst,
+                             Register r_layout_id, Register r_caches,
+                             Register r_index, Register r_scratch) {
   // Set r_caches = r_caches + r_index * kPointerSize * kPointersPerCache,
   // without modifying r_index.
   static_assert(kIcPointersPerCache * kPointerSize == 64,
                 "Unexpected kIcPointersPerCache");
+  // Read the first value as the polymorphic cache.
   __ leaq(r_scratch, Address(r_index, TIMES_8, 0));
-  __ leaq(r_caches, Address(r_caches, r_scratch, TIMES_8, heapObjectDisp(0)));
+  __ movq(r_caches,
+          Address(r_caches, r_scratch, TIMES_8,
+                  heapObjectDisp(0) + kIcEntryValueOffset * kPointerSize));
+  __ leaq(r_caches, Address(r_caches, heapObjectDisp(0)));
   Label done;
-  for (int i = 0; i < kIcPointersPerCache; i += kIcPointersPerEntry) {
-    bool is_last = i + kIcPointersPerEntry == kIcPointersPerCache;
+  for (int i = 0; i < kIcPointersPerPolyCache; i += kIcPointersPerEntry) {
+    bool is_last = i + kIcPointersPerEntry == kIcPointersPerPolyCache;
     __ cmpl(Address(r_caches, (i + kIcEntryKeyOffset) * kPointerSize),
             r_layout_id);
     if (is_last) {
@@ -518,8 +522,8 @@ void emitHandler<LOAD_ATTR_POLYMORPHIC>(EmitEnv* env) {
   __ popq(r_base);
   emitGetLayoutId(env, r_layout_id, r_base);
   __ movq(r_caches, Address(kFrameReg, Frame::kCachesOffset));
-  emitIcLookup(env, &slow_path, r_scratch, r_layout_id, r_caches, kOpargReg,
-               r_scratch2);
+  emitIcLookupPolymorphic(env, &slow_path, r_scratch, r_layout_id, r_caches,
+                          kOpargReg, r_scratch2);
 
   Label is_function;
   Label next;
@@ -572,22 +576,13 @@ void emitHandler<LOAD_METHOD_POLYMORPHIC>(EmitEnv* env) {
   __ popq(r_base);
   emitGetLayoutId(env, r_layout_id, r_base);
   __ movq(r_caches, Address(kFrameReg, Frame::kCachesOffset));
-  emitIcLookup(env, &slow_path, r_scratch, r_layout_id, r_caches, kOpargReg,
-               r_scratch2);
+  emitIcLookupPolymorphic(env, &slow_path, r_scratch, r_layout_id, r_caches,
+                          kOpargReg, r_scratch2);
 
-  Label is_smallint;
-  Label next;
-  // r_scratch contains either a SmallInt or a Function.
-  __ testq(r_scratch, Immediate(Object::kSmallIntTagMask));
-  __ jcc(ZERO, &is_smallint, Assembler::kNearJump);
+  // Only functions are cached.
   __ pushq(r_scratch);
   __ pushq(r_base);
-  __ jmp(&next, Assembler::kNearJump);
-
-  __ bind(&is_smallint);
-  __ pushq(Immediate(Unbound::object().raw()));
-  emitAttrWithOffset(env, &Assembler::pushq, &next, r_base, r_scratch,
-                     r_layout_id, r_scratch2);
+  emitNextOpcode(env);
 
   __ bind(&slow_path);
   __ pushq(r_base);
@@ -652,8 +647,8 @@ void emitHandler<STORE_ATTR_POLYMORPHIC>(EmitEnv* env) {
   __ popq(r_base);
   emitGetLayoutId(env, r_layout_id, r_base);
   __ movq(r_caches, Address(kFrameReg, Frame::kCachesOffset));
-  emitIcLookup(env, &slow_path, r_scratch, r_layout_id, r_caches, kOpargReg,
-               r_scratch2);
+  emitIcLookupPolymorphic(env, &slow_path, r_scratch, r_layout_id, r_caches,
+                          kOpargReg, r_scratch2);
 
   Label next;
   // We only cache SmallInt values for STORE_ATTR.

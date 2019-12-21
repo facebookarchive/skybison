@@ -491,14 +491,12 @@ class Interpreter {
   // Slow path for the BINARY_SUBSCR opcode that updates the cache at the given
   // index when appropriate. May also be used as a non-caching slow path by
   // passing a negative index.
-  static Continue binarySubscrUpdateCache(Thread* thread, word index,
-                                          ICState ic_state);
+  static Continue binarySubscrUpdateCache(Thread* thread, word index);
 
   // Slow path for the FOR_ITER opcode that updates the cache at the given index
   // when appropriate. May also be used as a non-caching slow path by passing a
   // negative index.
-  static Continue forIterUpdateCache(Thread* thread, word arg, word index,
-                                     ICState ic_state);
+  static Continue forIterUpdateCache(Thread* thread, word arg, word index);
   static Continue forIter(Thread* thread, RawObject next_method, word arg);
 
   // Look up the value of ValueCell associcate with `name` first in module_dict
@@ -576,12 +574,10 @@ class Interpreter {
                                       ICState ic_state);
   static Continue storeAttrUpdateCache(Thread* thread, word arg,
                                        ICState ic_state);
-  static Continue storeSubscrUpdateCache(Thread* thread, word arg,
-                                         ICState ic_state);
+  static Continue storeSubscrUpdateCache(Thread* thread, word arg);
   static Continue storeSubscr(Thread* thread, RawObject set_item_method);
 
-  static Continue loadMethodUpdateCache(Thread* thread, word arg,
-                                        ICState ic_state);
+  static Continue loadMethodUpdateCache(Thread* thread, word arg);
 
   using BinaryOpFallbackHandler = Continue (*)(Thread* thread, word arg,
                                                BinaryOpFlags flags);

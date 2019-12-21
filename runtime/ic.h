@@ -8,9 +8,19 @@
 
 namespace py {
 
-// Looks for a cache entry for an attribute with a `layout_id` key.
+// Returns true if function is found on a value cell's dependency list.
+bool icDependentIncluded(RawObject dependent, RawObject link);
+
+// Looks for a cache entry for an attribute with a `layout_id` key in the
+// polymorphic cache at `index`.
 // Returns the cached value. Returns `ErrorNotFound` if none was found.
-RawObject icLookupAttr(RawTuple caches, word index, LayoutId layout_id);
+RawObject icLookupPolymorphic(RawTuple caches, word index, LayoutId layout_id,
+                              bool* is_found);
+
+// Returns the cached value in the monomorphic cache at `index`.
+// Returns `ErrorNotFound` if none was found, and set *is_found to false.
+RawObject icLookupMonomorphic(RawTuple caches, word index, LayoutId layout_id,
+                              bool* is_found);
 
 // Looks for a cache entry with `left_layout_id` and `right_layout_id` as key.
 // Returns the cached value comprising of an object reference and flags. Returns
@@ -37,9 +47,9 @@ RawSmallInt encodeBinaryOpKey(LayoutId left_layout_id, LayoutId right_layout_id,
 
 // Sets a cache entry for an attribute to the given `layout_id` as key and
 // `value` as value.
-void icUpdateAttr(Thread* thread, const Tuple& caches, word index,
-                  LayoutId layout_id, const Object& value, const Object& name,
-                  const Function& dependent);
+ICState icUpdateAttr(Thread* thread, const Tuple& caches, word index,
+                     LayoutId layout_id, const Object& value,
+                     const Object& name, const Function& dependent);
 
 bool icIsCacheEmpty(const Tuple& caches, word index);
 
@@ -232,17 +242,11 @@ void icInvalidateGlobalVar(Thread* thread, const ValueCell& value_cell);
 //  | k - 1: global variable cache k - 1 where k == code.names.length()
 //  +-Method Cache Section -----------------------------------------------------
 //  | k: cache 0  (used by the first opcode using an inline cache)
-//  |   - 0: entry0 layout_id: layout id to match as SmallInt
-//  |   - 1: entry0 target: cached value
-//  |   - 2: entry1 layout_id
-//  |   - 3: entry1 target
-//  |   - 4: entry2 layout_id
-//  |   - 5: entry2 target
-//  |   - 6: entry3 layout_id
-//  |   - 7: entry3 target
-//  | k + 8: cache 1  (used by the second opcode using an inline cache)
-//  |   - 8: entry0 layout_id
-//  |   - 9: entry0 target
+//  |   - 0: layout_id: layout id to match as SmallInt
+//  |   - 1: target: cached value
+//  | k: cache 1  (used by the second opcode)
+//  |   - 0: Unbound
+//  |   - 1: pointer to a data sturcutre for the polymorphic cache
 //  |     ...
 //  | k + n * kIcPointersPerCache: cache n
 //  |
@@ -250,6 +254,10 @@ void icInvalidateGlobalVar(Thread* thread, const ValueCell& value_cell);
 const int kIcPointersPerEntry = 2;
 const int kIcEntriesPerCache = 4;
 const int kIcPointersPerCache = kIcEntriesPerCache * kIcPointersPerEntry;
+
+const int kIcEntriesPerPolyCache = 4;
+const int kIcPointersPerPolyCache =
+    kIcEntriesPerPolyCache * kIcPointersPerEntry;
 
 const int kIcEntryKeyOffset = 0;
 const int kIcEntryValueOffset = 1;
@@ -265,13 +273,29 @@ class IcIterator {
         names_(scope, Code::cast(function.code()).names()),
         bytecode_index_(0),
         cache_index_(0),
-        end_cache_index_(0) {
+        end_cache_index_(0),
+        polymorphic_cache_index_(-1) {
     next();
   }
 
   bool hasNext() { return cache_index_ >= 0; }
 
   void next() {
+    if (polymorphic_cache_index_ >= 0) {
+      // We're currently iterating through a polymorphic cache.
+      RawTuple polymorphic_cache =
+          Tuple::cast(caches_.at(cache_index_ + kIcEntryValueOffset));
+      polymorphic_cache_index_ += kIcPointersPerEntry;
+      for (; polymorphic_cache_index_ < kIcPointersPerPolyCache;
+           polymorphic_cache_index_ += kIcPointersPerEntry) {
+        if (!polymorphic_cache.at(polymorphic_cache_index_ + kIcEntryKeyOffset)
+                 .isNoneType()) {
+          return;
+        }
+      }
+      polymorphic_cache_index_ = -1;
+    }
+
     cache_index_ = findNextFilledCacheIndex(
         caches_, cache_index_ + kIcPointersPerEntry, end_cache_index_);
     if (cache_index_ >= 0) {
@@ -289,6 +313,9 @@ class IcIterator {
       cache_index_ =
           findNextFilledCacheIndex(caches_, cache_index_, end_cache_index_);
       if (cache_index_ >= 0) {
+        if (caches_.at(cache_index_ + kIcEntryKeyOffset).isUnbound()) {
+          polymorphic_cache_index_ = 0;
+        }
         return;
       }
     }
@@ -365,8 +392,7 @@ class IcIterator {
 
   bool isInstanceAttr() const {
     DCHECK(isAttrCache(), "should be only called for attribute caches");
-    RawObject value = caches_.at(cache_index_ + kIcEntryValueOffset);
-    return value.isSmallInt();
+    return value().isSmallInt();
   }
 
   LayoutId leftLayoutId() const {
@@ -391,8 +417,17 @@ class IcIterator {
   RawObject inplaceMethodName() const;
 
   void evict() const {
-    caches_.atPut(cache_index_ + kIcEntryKeyOffset, NoneType::object());
-    caches_.atPut(cache_index_ + kIcEntryValueOffset, NoneType::object());
+    if (polymorphic_cache_index_ < 0) {
+      caches_.atPut(cache_index_ + kIcEntryKeyOffset, NoneType::object());
+      caches_.atPut(cache_index_ + kIcEntryValueOffset, NoneType::object());
+      return;
+    }
+    RawTuple polymorphic_cache =
+        Tuple::cast(caches_.at(cache_index_ + kIcEntryValueOffset));
+    polymorphic_cache.atPut(polymorphic_cache_index_ + kIcEntryKeyOffset,
+                            NoneType::object());
+    polymorphic_cache.atPut(polymorphic_cache_index_ + kIcEntryValueOffset,
+                            NoneType::object());
   }
 
  private:
@@ -406,7 +441,23 @@ class IcIterator {
     return -1;
   }
 
-  RawObject key() const { return caches_.at(cache_index_ + kIcEntryKeyOffset); }
+  RawObject key() const {
+    if (polymorphic_cache_index_ < 0) {
+      return caches_.at(cache_index_ + kIcEntryKeyOffset);
+    }
+    RawTuple polymorphic_cache =
+        Tuple::cast(caches_.at(cache_index_ + kIcEntryValueOffset));
+    return polymorphic_cache.at(polymorphic_cache_index_ + kIcEntryKeyOffset);
+  }
+
+  RawObject value() const {
+    if (polymorphic_cache_index_ < 0) {
+      return caches_.at(cache_index_ + kIcEntryValueOffset);
+    }
+    RawTuple polymorphic_cache =
+        Tuple::cast(caches_.at(cache_index_ + kIcEntryValueOffset));
+    return polymorphic_cache.at(polymorphic_cache_index_ + kIcEntryValueOffset);
+  }
 
   Runtime* runtime_;
   MutableBytes bytecode_;
@@ -418,20 +469,40 @@ class IcIterator {
   BytecodeOp bytecode_op_;
   word cache_index_;
   word end_cache_index_;
+  word polymorphic_cache_index_;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(IcIterator);
   DISALLOW_HEAP_ALLOCATION();
 };
 
-inline RawObject icLookupAttr(RawTuple caches, word index, LayoutId layout_id) {
+inline RawObject icLookupPolymorphic(RawTuple caches, word index,
+                                     LayoutId layout_id, bool* is_found) {
+  word i = index * kIcPointersPerCache;
+  DCHECK(caches.at(i + kIcEntryKeyOffset).isUnbound(),
+         "cache.at(index) is expected to be polymorphic");
   RawSmallInt key = SmallInt::fromWord(static_cast<word>(layout_id));
-  for (word i = index * kIcPointersPerCache, end = i + kIcPointersPerCache;
-       i < end; i += kIcPointersPerEntry) {
-    RawObject entry_key = caches.at(i + kIcEntryKeyOffset);
-    if (entry_key == key) {
-      return caches.at(i + kIcEntryValueOffset);
+  caches = Tuple::cast(caches.at(i + kIcEntryValueOffset));
+  for (word j = 0; j < kIcPointersPerPolyCache; j += kIcPointersPerEntry) {
+    if (caches.at(j + kIcEntryKeyOffset) == key) {
+      *is_found = true;
+      return caches.at(j + kIcEntryValueOffset);
     }
   }
+  *is_found = false;
+  return Error::notFound();
+}
+
+inline RawObject icLookupMonomorphic(RawTuple caches, word index,
+                                     LayoutId layout_id, bool* is_found) {
+  word i = index * kIcPointersPerCache;
+  DCHECK(!caches.at(i + kIcEntryKeyOffset).isUnbound(),
+         "cache.at(index) is expected to be monomorphic");
+  RawSmallInt key = SmallInt::fromWord(static_cast<word>(layout_id));
+  if (caches.at(i + kIcEntryKeyOffset) == key) {
+    *is_found = true;
+    return caches.at(i + kIcEntryValueOffset);
+  }
+  *is_found = false;
   return Error::notFound();
 }
 
