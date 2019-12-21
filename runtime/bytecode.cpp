@@ -98,7 +98,7 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op) {
         case CompareOp::NE:
         case CompareOp::GT:
         case CompareOp::GE:
-          return RewrittenOp{COMPARE_OP_CACHED, op.arg, true};
+          return RewrittenOp{COMPARE_OP_ANAMORPHIC, op.arg, true};
         case CompareOp::IS:
           return RewrittenOp{COMPARE_IS, 0, false};
         case CompareOp::IS_NOT:
@@ -167,7 +167,7 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op) {
       }
     } break;
     case BINARY_OP_ANAMORPHIC:
-    case COMPARE_OP_CACHED:
+    case COMPARE_OP_ANAMORPHIC:
     case FOR_ITER_ANAMORPHIC:
     case INPLACE_OP_CACHED:
     case LOAD_ATTR_ANAMORPHIC:

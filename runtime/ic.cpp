@@ -778,10 +778,11 @@ RawObject IcIterator::leftMethodName() const {
     Interpreter::BinaryOp binary_op = static_cast<Interpreter::BinaryOp>(arg);
     method = runtime_->binaryOperationSelector(binary_op);
   } else {
-    DCHECK(
-        bytecode_op_.bc == COMPARE_OP_CACHED,
-        "binop cache must be for BINARY_OP_ANAMORPHIC, INPLACE_OP_CACHED, or "
-        "COMPARE_OP_CACHED");
+    DCHECK(bytecode_op_.bc == COMPARE_OP_MONOMORPHIC ||
+               bytecode_op_.bc == COMPARE_OP_POLYMORPHIC ||
+               bytecode_op_.bc == COMPARE_OP_ANAMORPHIC,
+           "binop cache must be for BINARY_OP_*, INPLACE_OP_*, or "
+           "COMPARE_OP_*");
     CompareOp compare_op = static_cast<CompareOp>(arg);
     method = runtime_->comparisonSelector(compare_op);
   }
@@ -800,9 +801,11 @@ RawObject IcIterator::rightMethodName() const {
     Interpreter::BinaryOp binary_op = static_cast<Interpreter::BinaryOp>(arg);
     method = runtime_->swappedBinaryOperationSelector(binary_op);
   } else {
-    DCHECK(bytecode_op_.bc == COMPARE_OP_CACHED,
-           "binop cache must be either for BINARY_OP_ANAMORPHIC or "
-           "COMPARE_OP_CACHED");
+    DCHECK(bytecode_op_.bc == COMPARE_OP_MONOMORPHIC ||
+               bytecode_op_.bc == COMPARE_OP_POLYMORPHIC ||
+               bytecode_op_.bc == COMPARE_OP_ANAMORPHIC,
+           "binop cache must be for BINARY_OP_*, INPLACE_OP_*, or "
+           "COMPARE_OP_*");
     CompareOp compare_op = static_cast<CompareOp>(arg);
     method = runtime_->swappedComparisonSelector(compare_op);
   }

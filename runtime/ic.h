@@ -332,7 +332,9 @@ class IcIterator {
       case BINARY_OP_MONOMORPHIC:
       case BINARY_OP_POLYMORPHIC:
       case BINARY_OP_ANAMORPHIC:
-      case COMPARE_OP_CACHED:
+      case COMPARE_OP_MONOMORPHIC:
+      case COMPARE_OP_POLYMORPHIC:
+      case COMPARE_OP_ANAMORPHIC:
         return true;
       default:
         return false;

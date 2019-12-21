@@ -1813,7 +1813,7 @@ TEST_F(IcTest, IcIteratorIteratesOverBinaryOpCaches) {
   MutableBytes bytecode(&scope, runtime_.newMutableBytesUninitialized(8));
   bytecode.byteAtPut(0, LOAD_GLOBAL);
   bytecode.byteAtPut(1, 100);
-  bytecode.byteAtPut(2, COMPARE_OP_CACHED);
+  bytecode.byteAtPut(2, COMPARE_OP_ANAMORPHIC);
   bytecode.byteAtPut(3, 0);
   bytecode.byteAtPut(4, BINARY_OP_ANAMORPHIC);
   bytecode.byteAtPut(5, 1);
@@ -1828,7 +1828,7 @@ TEST_F(IcTest, IcIteratorIteratesOverBinaryOpCaches) {
 
   Tuple caches(&scope, runtime_.newTuple(num_caches * kIcPointersPerCache));
 
-  // Caches for COMPARE_OP_CACHED at 2.
+  // Caches for COMPARE_OP_ANAMORPHIC at 2.
   word compare_op_cached_index =
       0 * kIcPointersPerCache + 0 * kIcPointersPerEntry;
   word compare_op_key_high_bits =

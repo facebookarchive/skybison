@@ -346,7 +346,9 @@ class Interpreter {
   static Continue doCompareIs(Thread* thread, word arg);
   static Continue doCompareIsNot(Thread* thread, word arg);
   static Continue doCompareOp(Thread* thread, word arg);
-  static Continue doCompareOpCached(Thread* thread, word arg);
+  static Continue doCompareOpMonomorphic(Thread* thread, word arg);
+  static Continue doCompareOpPolymorphic(Thread* thread, word arg);
+  static Continue doCompareOpAnamorphic(Thread* thread, word arg);
   static Continue doDeleteAttr(Thread* thread, word arg);
   static Continue doDeleteSubscr(Thread* thread, word arg);
   static Continue doEndFinally(Thread* thread, word arg);
@@ -588,11 +590,12 @@ class Interpreter {
   static Continue binaryOpUpdateCache(Thread* thread, word arg,
                                       ICState ic_state);
   static Continue binaryOp(Thread* thread, word arg, RawObject method,
-                           BinaryOpFlags flags, RawObject left,
-                           RawObject right);
+                           BinaryOpFlags flags, RawObject left, RawObject right,
+                           BinaryOpFallbackHandler fallback);
   static Continue binaryOpFallback(Thread* thread, word arg,
                                    BinaryOpFlags flags);
-  static Continue compareOpUpdateCache(Thread* thread, word arg);
+  static Continue compareOpUpdateCache(Thread* thread, word arg,
+                                       ICState ic_state);
   static Continue compareOpFallback(Thread* thread, word arg,
                                     BinaryOpFlags flags);
   static Continue inplaceOpUpdateCache(Thread* thread, word arg);
