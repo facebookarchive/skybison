@@ -235,8 +235,8 @@ namespace py {
   V(UNUSED_BYTECODE_216, 216, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_217, 217, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_218, 218, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_219, 219, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_220, 220, doInvalidBytecode)                               \
+  V(STORE_SUBSCR_POLYMORPHIC, 219, doStoreSubscrPolymorphic)                   \
+  V(STORE_SUBSCR_MONOMORPHIC, 220, doStoreSubscrMonomorphic)                   \
   V(FOR_ITER_POLYMORPHIC, 221, doForIterPolymorphic)                           \
   V(FOR_ITER_MONOMORPHIC, 222, doForIterMonomorphic)                           \
   V(BINARY_SUBSCR_POLYMORPHIC, 223, doBinarySubscrPolymorphic)                 \
@@ -252,7 +252,7 @@ namespace py {
   V(LOAD_ATTR_INSTANCE, 231, doLoadAttrInstance)                               \
   V(LOAD_METHOD_POLYMORPHIC, 232, doLoadMethodPolymorphic)                     \
   V(LOAD_METHOD_INSTANCE_FUNCTION, 233, doLoadMethodInstanceFunction)          \
-  V(STORE_SUBSCR_CACHED, 234, doStoreSubscrCached)                             \
+  V(STORE_SUBSCR_ANAMORPHIC, 234, doStoreSubscrAnamorphic)                     \
   V(LOAD_ATTR_INSTANCE_TYPE, 235, doLoadAttrInstanceType)                      \
   V(LOAD_ATTR_INSTANCE_TYPE_DESCR, 236, doLoadAttrInstanceTypeDescr)           \
   V(LOAD_ATTR_INSTANCE_PROPERTY, 237, doLoadAttrInstanceProperty)              \
@@ -363,7 +363,7 @@ inline bool isByteCodeWithCache(const Bytecode bc) {
     case STORE_ATTR_INSTANCE_UPDATE:
     case STORE_ATTR_POLYMORPHIC:
     case STORE_ATTR_ANAMORPHIC:
-    case STORE_SUBSCR_CACHED:
+    case STORE_SUBSCR_ANAMORPHIC:
       return true;
     default:
       return false;

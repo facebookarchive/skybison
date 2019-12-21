@@ -751,7 +751,7 @@ bool IcIterator::isAttrNameEqualTo(const Object& attr_name) const {
     case BINARY_SUBSCR_MONOMORPHIC:
     case BINARY_SUBSCR_POLYMORPHIC:
       return attr_name == runtime_->symbols()->at(SymbolId::kDunderGetitem);
-    case STORE_SUBSCR_CACHED:
+    case STORE_SUBSCR_ANAMORPHIC:
       return attr_name == runtime_->symbols()->at(SymbolId::kDunderSetitem);
     default:
       return attr_name == names_.at(originalArg(*function_, bytecode_op_.arg));

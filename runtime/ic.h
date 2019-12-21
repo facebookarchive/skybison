@@ -309,7 +309,7 @@ class IcIterator {
       case STORE_ATTR_INSTANCE_UPDATE:
       case STORE_ATTR_POLYMORPHIC:
       case STORE_ATTR_ANAMORPHIC:
-      case STORE_SUBSCR_CACHED:
+      case STORE_SUBSCR_ANAMORPHIC:
         return true;
       default:
         return false;

@@ -1646,7 +1646,8 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscr(Thread* thread, word) {
 }
 
 NEVER_INLINE Continue Interpreter::storeSubscrUpdateCache(Thread* thread,
-                                                          word arg) {
+                                                          word arg,
+                                                          ICState ic_state) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object key(&scope, frame->popValue());
@@ -1671,6 +1672,11 @@ NEVER_INLINE Continue Interpreter::storeSubscrUpdateCache(Thread* thread,
     Function dependent(&scope, frame->function());
     icUpdateAttr(thread, caches, arg, container.layoutId(), setitem,
                  set_item_name, dependent);
+    word pc = frame->currentPC();
+    RawMutableBytes bytecode = frame->bytecode();
+    bytecode.byteAtPut(pc, ic_state == ICState::kAnamorphic
+                               ? STORE_SUBSCR_MONOMORPHIC
+                               : STORE_SUBSCR_POLYMORPHIC);
   }
   Object value(&scope, frame->popValue());
   if (callMethod3(thread, frame, setitem, container, key, value)
@@ -1680,16 +1686,10 @@ NEVER_INLINE Continue Interpreter::storeSubscrUpdateCache(Thread* thread,
   return Continue::NEXT;
 }
 
-HANDLER_INLINE Continue Interpreter::doStoreSubscrCached(Thread* thread,
-                                                         word arg) {
+ALWAYS_INLINE Continue Interpreter::storeSubscr(Thread* thread,
+                                                RawObject set_item_method) {
+  DCHECK(set_item_method.isFunction(), "cached should be a function");
   Frame* frame = thread->currentFrame();
-  RawObject container_raw = frame->peek(1);
-  LayoutId container_layout_id = container_raw.layoutId();
-  RawObject cached = icLookupAttr(frame->caches(), arg, container_layout_id);
-  if (cached.isErrorNotFound()) {
-    return storeSubscrUpdateCache(thread, arg);
-  }
-  DCHECK(cached.isFunction(), "cached should be a function");
   // The shape of the frame before STORE_SUBSCR:
   //   2: value
   //   1: container
@@ -1701,18 +1701,50 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscrCached(Thread* thread,
   //   1: key
   //   0: value
   RawObject value_raw = frame->peek(2);
-  frame->setValueAt(cached, 2);
+  frame->setValueAt(set_item_method, 2);
   frame->pushValue(value_raw);
 
   word nargs = 3;
   RawObject* sp = frame->valueStackTop() + nargs + 1;
-  RawObject result = Function::cast(cached).entry()(thread, frame, nargs);
+  RawObject result =
+      Function::cast(set_item_method).entry()(thread, frame, nargs);
   // Clear the stack of the function object and return.
   frame->setValueStackTop(sp);
   if (result.isErrorException()) {
     return Continue::UNWIND;
   }
   return Continue::NEXT;
+}
+
+HANDLER_INLINE Continue Interpreter::doStoreSubscrMonomorphic(Thread* thread,
+                                                              word arg) {
+  Frame* frame = thread->currentFrame();
+  RawTuple caches = frame->caches();
+  RawObject container_raw = frame->peek(1);
+  LayoutId container_layout_id = container_raw.layoutId();
+  word index = arg * kIcPointersPerCache;
+  RawObject cache_key = caches.at(index + kIcEntryKeyOffset);
+  if (SmallInt::fromWord(static_cast<word>(container_layout_id)) != cache_key) {
+    return storeSubscrUpdateCache(thread, arg, ICState::kMonomorphic);
+  }
+  return storeSubscr(thread, caches.at(index + kIcEntryValueOffset));
+}
+
+HANDLER_INLINE Continue Interpreter::doStoreSubscrPolymorphic(Thread* thread,
+                                                              word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject container_raw = frame->peek(1);
+  LayoutId container_layout_id = container_raw.layoutId();
+  RawObject cached = icLookupAttr(frame->caches(), arg, container_layout_id);
+  if (cached.isErrorNotFound()) {
+    return storeSubscrUpdateCache(thread, arg, ICState::kPolymorphic);
+  }
+  return storeSubscr(thread, cached);
+}
+
+HANDLER_INLINE Continue Interpreter::doStoreSubscrAnamorphic(Thread* thread,
+                                                             word arg) {
+  return storeSubscrUpdateCache(thread, arg, ICState::kAnamorphic);
 }
 
 HANDLER_INLINE Continue Interpreter::doDeleteSubscr(Thread* thread, word) {

@@ -405,7 +405,9 @@ class Interpreter {
   static Continue doStoreAttrPolymorphic(Thread* thread, word arg);
   static Continue doStoreAttrAnamorphic(Thread* thread, word arg);
   static Continue doStoreSubscr(Thread* thread, word arg);
-  static Continue doStoreSubscrCached(Thread* thread, word arg);
+  static Continue doStoreSubscrMonomorphic(Thread* thread, word arg);
+  static Continue doStoreSubscrPolymorphic(Thread* thread, word arg);
+  static Continue doStoreSubscrAnamorphic(Thread* thread, word arg);
   static Continue doUnaryInvert(Thread* thread, word arg);
   static Continue doUnaryNegative(Thread* thread, word arg);
   static Continue doUnaryNot(Thread* thread, word arg);
@@ -568,7 +570,9 @@ class Interpreter {
                                       ICState ic_state);
   static Continue storeAttrUpdateCache(Thread* thread, word arg,
                                        ICState ic_state);
-  static Continue storeSubscrUpdateCache(Thread* thread, word arg);
+  static Continue storeSubscrUpdateCache(Thread* thread, word arg,
+                                         ICState ic_state);
+  static Continue storeSubscr(Thread* thread, RawObject set_item_method);
 
   static Continue loadMethodUpdateCache(Thread* thread, word arg,
                                         ICState ic_state);
