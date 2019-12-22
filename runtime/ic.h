@@ -25,8 +25,10 @@ RawObject icLookupMonomorphic(RawTuple caches, word index, LayoutId layout_id,
 // Looks for a cache entry with `left_layout_id` and `right_layout_id` as key.
 // Returns the cached value comprising of an object reference and flags. Returns
 // `ErrorNotFound` if none was found.
-RawObject icLookupBinaryOp(RawTuple caches, word index, LayoutId left_layout_id,
-                           LayoutId right_layout_id, BinaryOpFlags* flags_out);
+RawObject icLookupBinOpPolymorphic(RawTuple caches, word index,
+                                   LayoutId left_layout_id,
+                                   LayoutId right_layout_id,
+                                   BinaryOpFlags* flags_out);
 
 // Same as icLookupBinaryOp, but looks at only one entry pointed by index.
 RawObject icLookupBinOpMonomorphic(RawTuple caches, word index,
@@ -221,9 +223,9 @@ void icInvalidateAttr(Thread* thread, const Type& type, const Object& attr_name,
 
 // Sets a cache entry to a `left_layout_id` and `right_layout_id` key with
 // the given `value` and `flags` as value.
-void icUpdateBinaryOp(RawTuple caches, word index, LayoutId left_layout_id,
-                      LayoutId right_layout_id, RawObject value,
-                      BinaryOpFlags flags);
+ICState icUpdateBinOp(Thread* thread, const Tuple& caches, word index,
+                      LayoutId left_layout_id, LayoutId right_layout_id,
+                      const Object& value, BinaryOpFlags flags);
 
 // Sets a cache entry for a global variable.
 void icUpdateGlobalVar(Thread* thread, const Function& function, word index,
@@ -506,26 +508,29 @@ inline RawObject icLookupMonomorphic(RawTuple caches, word index,
   return Error::notFound();
 }
 
-inline RawObject icLookupBinaryOp(RawTuple caches, word index,
-                                  LayoutId left_layout_id,
-                                  LayoutId right_layout_id,
-                                  BinaryOpFlags* flags_out) {
+inline RawObject icLookupBinOpPolymorphic(RawTuple caches, word index,
+                                          LayoutId left_layout_id,
+                                          LayoutId right_layout_id,
+                                          BinaryOpFlags* flags_out) {
   static_assert(Header::kLayoutIdBits * 2 + kBitsPerByte <= SmallInt::kBits,
                 "Two layout ids and flags overflow a SmallInt");
+  word i = index * kIcPointersPerCache;
+  DCHECK(caches.at(i + kIcEntryKeyOffset).isUnbound(),
+         "cache.at(index) is expected to be polymorphic");
   word key_high_bits = static_cast<word>(left_layout_id)
                            << Header::kLayoutIdBits |
                        static_cast<word>(right_layout_id);
-  for (word i = index * kIcPointersPerCache, end = i + kIcPointersPerCache;
-       i < end; i += kIcPointersPerEntry) {
-    RawObject entry_key = caches.at(i + kIcEntryKeyOffset);
+  caches = Tuple::cast(caches.at(i + kIcEntryValueOffset));
+  for (word j = 0; j < kIcPointersPerPolyCache; j += kIcPointersPerEntry) {
+    RawObject entry_key = caches.at(j + kIcEntryKeyOffset);
     // Stop the search if we found an empty entry.
     if (entry_key.isNoneType()) {
       break;
     }
     word entry_key_value = SmallInt::cast(entry_key).value();
-    if (entry_key_value >> 8 == key_high_bits) {
+    if (entry_key_value >> kBitsPerByte == key_high_bits) {
       *flags_out = static_cast<BinaryOpFlags>(entry_key_value & 0xff);
-      return caches.at(i + kIcEntryValueOffset);
+      return caches.at(j + kIcEntryValueOffset);
     }
   }
   return Error::notFound();
@@ -541,13 +546,15 @@ inline RawObject icLookupBinOpMonomorphic(RawTuple caches, word index,
                            << Header::kLayoutIdBits |
                        static_cast<word>(right_layout_id);
   word i = index * kIcPointersPerCache;
+  DCHECK(!caches.at(i + kIcEntryKeyOffset).isUnbound(),
+         "cache.at(index) is expected to be monomorphic");
   RawObject entry_key = caches.at(i + kIcEntryKeyOffset);
   // Stop the search if we found an empty entry.
   if (entry_key.isNoneType()) {
     return Error::notFound();
   }
   word entry_key_value = SmallInt::cast(entry_key).value();
-  if (entry_key_value >> 8 == key_high_bits) {
+  if (entry_key_value >> kBitsPerByte == key_high_bits) {
     *flags_out = static_cast<BinaryOpFlags>(entry_key_value & 0xff);
     return caches.at(i + kIcEntryValueOffset);
   }

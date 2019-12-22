@@ -423,6 +423,17 @@ RawObject icLookupAttr(RawTuple caches, word index, LayoutId layout_id) {
   return icLookupMonomorphic(caches, index, layout_id, &is_found);
 }
 
+RawObject icLookupBinaryOp(RawTuple caches, word index, LayoutId left_layout_id,
+                           LayoutId right_layout_id, BinaryOpFlags* flags_out) {
+  word i = index * kIcPointersPerCache;
+  if (caches.at(i + kIcEntryValueOffset).isTuple()) {
+    return icLookupBinOpPolymorphic(caches, index, left_layout_id,
+                                    right_layout_id, flags_out);
+  }
+  return icLookupBinOpMonomorphic(caches, index, left_layout_id,
+                                  right_layout_id, flags_out);
+}
+
 ::testing::AssertionResult isByteArrayEqualsBytes(const Object& result,
                                                   View<byte> expected) {
   Thread* thread = Thread::current();

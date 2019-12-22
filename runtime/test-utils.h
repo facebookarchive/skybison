@@ -190,6 +190,9 @@ RawObject listFromRange(word start, word stop);
 
 RawObject icLookupAttr(RawTuple caches, word index, LayoutId layout_id);
 
+RawObject icLookupBinaryOp(RawTuple caches, word index, LayoutId left_layout_id,
+                           LayoutId right_layout_id, BinaryOpFlags* flags_out);
+
 ::testing::AssertionResult isByteArrayEqualsBytes(const Object& result,
                                                   View<byte> expected);
 

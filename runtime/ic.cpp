@@ -635,24 +635,49 @@ RawSmallInt encodeBinaryOpKey(LayoutId left_layout_id, LayoutId right_layout_id,
                             static_cast<word>(flags));
 }
 
-void icUpdateBinaryOp(RawTuple caches, word index, LayoutId left_layout_id,
-                      LayoutId right_layout_id, RawObject value,
-                      BinaryOpFlags flags) {
+ICState icUpdateBinOp(Thread* thread, const Tuple& caches, word index,
+                      LayoutId left_layout_id, LayoutId right_layout_id,
+                      const Object& value, BinaryOpFlags flags) {
+  static_assert(Header::kLayoutIdBits * 2 + kBitsPerByte <= SmallInt::kBits,
+                "Two layout ids and flags overflow a SmallInt");
   word key_high_bits = static_cast<word>(left_layout_id)
                            << Header::kLayoutIdBits |
                        static_cast<word>(right_layout_id);
-  RawObject entry_key = NoneType::object();
-  for (word i = index * kIcPointersPerCache, end = i + kIcPointersPerCache;
-       i < end; i += kIcPointersPerEntry) {
-    entry_key = caches.at(i + kIcEntryKeyOffset);
+  word i = index * kIcPointersPerCache;
+  RawObject new_key = encodeBinaryOpKey(left_layout_id, right_layout_id, flags);
+  RawObject entry_key = caches.at(i + kIcEntryKeyOffset);
+  if (entry_key.isNoneType() ||
+      (entry_key.isSmallInt() &&
+       SmallInt::cast(entry_key).value() >> kBitsPerByte == key_high_bits)) {
+    caches.atPut(i + kIcEntryKeyOffset, new_key);
+    caches.atPut(i + kIcEntryValueOffset, *value);
+    return ICState::kMonomorphic;
+  }
+
+  if (!caches.at(i + kIcEntryKeyOffset).isUnbound()) {
+    // Upgrade this cache to a polymorphic cache.
+    HandleScope scope(thread);
+    Tuple polymorphic_cache(
+        &scope, thread->runtime()->newTuple(kIcPointersPerPolyCache));
+    polymorphic_cache.atPut(kIcEntryKeyOffset,
+                            caches.at(i + kIcEntryKeyOffset));
+    polymorphic_cache.atPut(kIcEntryValueOffset,
+                            caches.at(i + kIcEntryValueOffset));
+    // Mark this entry as a polymorphic cache.
+    caches.atPut(i + kIcEntryKeyOffset, Unbound::object());
+    caches.atPut(i + kIcEntryValueOffset, *polymorphic_cache);
+  }
+  RawTuple polymorphic_cache = Tuple::cast(caches.at(i + kIcEntryValueOffset));
+  for (word j = 0; j < kIcPointersPerPolyCache; j += kIcPointersPerEntry) {
+    entry_key = polymorphic_cache.at(j + kIcEntryKeyOffset);
     if (entry_key.isNoneType() ||
         SmallInt::cast(entry_key).value() >> kBitsPerByte == key_high_bits) {
-      caches.atPut(i + kIcEntryKeyOffset,
-                   encodeBinaryOpKey(left_layout_id, right_layout_id, flags));
-      caches.atPut(i + kIcEntryValueOffset, value);
-      return;
+      polymorphic_cache.atPut(j + kIcEntryKeyOffset, new_key);
+      polymorphic_cache.atPut(j + kIcEntryValueOffset, *value);
+      break;
     }
   }
+  return ICState::kPolymorphic;
 }
 
 void icUpdateGlobalVar(Thread* thread, const Function& function, word index,

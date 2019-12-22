@@ -585,19 +585,18 @@ class Interpreter {
                                      OpcodeHandler update_cache,
                                      BinaryOpFallbackHandler fallback);
 
-  static Continue binaryOpUpdateCache(Thread* thread, word arg,
-                                      ICState ic_state);
+  static Continue binaryOpUpdateCache(Thread* thread, word arg);
   static Continue binaryOp(Thread* thread, word arg, RawObject method,
                            BinaryOpFlags flags, RawObject left, RawObject right,
                            BinaryOpFallbackHandler fallback);
   static Continue binaryOpFallback(Thread* thread, word arg,
                                    BinaryOpFlags flags);
-  static Continue compareOpUpdateCache(Thread* thread, word arg,
-                                       ICState ic_state);
+
+  static Continue compareOpUpdateCache(Thread* thread, word arg);
   static Continue compareOpFallback(Thread* thread, word arg,
                                     BinaryOpFlags flags);
-  static Continue inplaceOpUpdateCache(Thread* thread, word arg,
-                                       ICState ic_state);
+
+  static Continue inplaceOpUpdateCache(Thread* thread, word arg);
   static Continue inplaceOpFallback(Thread* thread, word arg,
                                     BinaryOpFlags flags);
 };

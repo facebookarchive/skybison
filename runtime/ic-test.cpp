@@ -36,30 +36,6 @@ static RawObject binaryOpKey(LayoutId left, LayoutId right,
                             static_cast<word>(flags));
 }
 
-TEST_F(IcTest, IcLookupBinaryOpReturnsCachedValue) {
-  HandleScope scope(thread_);
-
-  Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerCache));
-  word cache_offset = kIcPointersPerCache;
-  caches.atPut(
-      cache_offset + 0 * kIcPointersPerEntry + kIcEntryKeyOffset,
-      binaryOpKey(LayoutId::kSmallInt, LayoutId::kNoneType, kBinaryOpNone));
-  caches.atPut(
-      cache_offset + 1 * kIcPointersPerEntry + kIcEntryKeyOffset,
-      binaryOpKey(LayoutId::kNoneType, LayoutId::kBytes, kBinaryOpReflected));
-  caches.atPut(
-      cache_offset + 2 * kIcPointersPerEntry + kIcEntryKeyOffset,
-      binaryOpKey(LayoutId::kSmallInt, LayoutId::kBytes, kBinaryOpReflected));
-  caches.atPut(cache_offset + 2 * kIcPointersPerEntry + kIcEntryValueOffset,
-               runtime_.newStrFromCStr("xy"));
-
-  BinaryOpFlags flags;
-  EXPECT_TRUE(isStrEqualsCStr(icLookupBinaryOp(*caches, 1, LayoutId::kSmallInt,
-                                               LayoutId::kBytes, &flags),
-                              "xy"));
-  EXPECT_EQ(flags, kBinaryOpReflected);
-}
-
 TEST_F(IcTest, IcLookupBinaryOpReturnsErrorNotFound) {
   HandleScope scope(thread_);
 
@@ -1260,8 +1236,9 @@ TEST_F(IcTest, IcUpdateBinaryOpSetsEmptyEntry) {
                SmallInt::fromWord(-10));
 
   Object value(&scope, runtime_.newInt(-44));
-  icUpdateBinaryOp(*caches, 0, LayoutId::kSmallStr, LayoutId::kLargeBytes,
-                   *value, kBinaryOpReflected);
+  EXPECT_EQ(icUpdateBinOp(thread_, caches, 0, LayoutId::kSmallStr,
+                          LayoutId::kLargeBytes, value, kBinaryOpReflected),
+            ICState::kMonomorphic);
   EXPECT_EQ(caches.at(kIcEntryKeyOffset),
             binaryOpKey(LayoutId::kSmallStr, LayoutId::kLargeBytes,
                         kBinaryOpReflected));
@@ -1274,29 +1251,51 @@ TEST_F(IcTest, IcUpdateBinaryOpSetsEmptyEntry) {
       caches.at(1 * kIcPointersPerEntry + kIcEntryValueOffset), -10));
 }
 
-TEST_F(IcTest, IcUpdateBinaryOpSetsExistingEntry) {
+TEST_F(IcTest, IcUpdateBinaryOpSetsExistingMonomorphicEntry) {
   HandleScope scope(thread_);
 
   Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerCache));
-  word cache_offset = kIcPointersPerCache;
-  caches.atPut(
-      cache_offset + 0 * kIcPointersPerEntry + kIcEntryKeyOffset,
-      binaryOpKey(LayoutId::kSmallInt, LayoutId::kLargeInt, kBinaryOpNone));
-  caches.atPut(cache_offset + 1 * kIcPointersPerEntry + kIcEntryKeyOffset,
-               binaryOpKey(LayoutId::kLargeInt, LayoutId::kSmallInt,
-                           kBinaryOpReflected));
-  Object value(&scope, runtime_.newStrFromCStr("yyy"));
-  icUpdateBinaryOp(*caches, 1, LayoutId::kLargeInt, LayoutId::kSmallInt, *value,
-                   kBinaryOpNone);
-  EXPECT_TRUE(
-      caches.at(cache_offset + 0 * kIcPointersPerEntry + kIcEntryValueOffset)
-          .isNoneType());
-  EXPECT_EQ(
-      caches.at(cache_offset + 1 * kIcPointersPerEntry + kIcEntryKeyOffset),
-      binaryOpKey(LayoutId::kLargeInt, LayoutId::kSmallInt, kBinaryOpNone));
-  EXPECT_TRUE(isStrEqualsCStr(
-      caches.at(cache_offset + 1 * kIcPointersPerEntry + kIcEntryValueOffset),
-      "yyy"));
+  Object value(&scope, runtime_.newStrFromCStr("xxx"));
+  ASSERT_EQ(icUpdateBinOp(thread_, caches, 1, LayoutId::kLargeInt,
+                          LayoutId::kSmallInt, value, kBinaryOpNone),
+            ICState::kMonomorphic);
+  Object new_value(&scope, runtime_.newStrFromCStr("yyy"));
+  EXPECT_EQ(icUpdateBinOp(thread_, caches, 1, LayoutId::kLargeInt,
+                          LayoutId::kSmallInt, new_value, kBinaryOpNone),
+            ICState::kMonomorphic);
+  BinaryOpFlags flags;
+  EXPECT_EQ(icLookupBinOpMonomorphic(*caches, 1, LayoutId::kLargeInt,
+                                     LayoutId::kSmallInt, &flags),
+            *new_value);
+}
+
+TEST_F(IcTest, IcUpdateBinaryOpSetsExistingPolymorphicEntry) {
+  HandleScope scope(thread_);
+
+  Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerCache));
+  Object value(&scope, runtime_.newStrFromCStr("xxx"));
+  ASSERT_EQ(icUpdateBinOp(thread_, caches, 1, LayoutId::kLargeInt,
+                          LayoutId::kSmallInt, value, kBinaryOpNone),
+            ICState::kMonomorphic);
+  BinaryOpFlags flags;
+  ASSERT_EQ(icLookupBinOpMonomorphic(*caches, 1, LayoutId::kLargeInt,
+                                     LayoutId::kSmallInt, &flags),
+            *value);
+
+  ASSERT_EQ(icUpdateBinOp(thread_, caches, 1, LayoutId::kSmallInt,
+                          LayoutId::kLargeInt, value, kBinaryOpNone),
+            ICState::kPolymorphic);
+  ASSERT_EQ(icLookupBinOpPolymorphic(*caches, 1, LayoutId::kSmallInt,
+                                     LayoutId::kLargeInt, &flags),
+            *value);
+
+  Object new_value(&scope, runtime_.newStrFromCStr("yyy"));
+  EXPECT_EQ(icUpdateBinOp(thread_, caches, 1, LayoutId::kLargeInt,
+                          LayoutId::kSmallInt, new_value, kBinaryOpNone),
+            ICState::kPolymorphic);
+  EXPECT_EQ(icLookupBinOpPolymorphic(*caches, 1, LayoutId::kLargeInt,
+                                     LayoutId::kSmallInt, &flags),
+            *new_value);
 }
 
 TEST_F(IcTest, ForIterUpdateCacheWithFunctionUpdatesCache) {

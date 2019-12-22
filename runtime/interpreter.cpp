@@ -4422,8 +4422,8 @@ HANDLER_INLINE Continue Interpreter::cachedBinaryOpImpl(
   LayoutId left_layout_id = left_raw.layoutId();
   LayoutId right_layout_id = right_raw.layoutId();
   BinaryOpFlags flags = kBinaryOpNone;
-  RawObject method = icLookupBinaryOp(frame->caches(), arg, left_layout_id,
-                                      right_layout_id, &flags);
+  RawObject method = icLookupBinOpPolymorphic(
+      frame->caches(), arg, left_layout_id, right_layout_id, &flags);
   if (method.isErrorNotFound()) {
     return update_cache(thread, arg);
   }
@@ -4441,8 +4441,7 @@ HANDLER_INLINE Continue Interpreter::cachedBinaryOpImpl(
   return fallback(thread, arg, flags);
 }
 
-Continue Interpreter::compareOpUpdateCache(Thread* thread, word arg,
-                                           ICState ic_state) {
+Continue Interpreter::compareOpUpdateCache(Thread* thread, word arg) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object right(&scope, frame->popValue());
@@ -4455,15 +4454,16 @@ Continue Interpreter::compareOpUpdateCache(Thread* thread, word arg,
                                                &method, &flags);
   if (result.isErrorException()) return Continue::UNWIND;
   if (!method.isNoneType()) {
+    Tuple caches(&scope, frame->caches());
     LayoutId left_layout_id = left.layoutId();
     LayoutId right_layout_id = right.layoutId();
-    icUpdateBinaryOp(frame->caches(), arg, left_layout_id, right_layout_id,
-                     *method, flags);
+    ICState next_cache_state = icUpdateBinOp(
+        thread, caches, arg, left_layout_id, right_layout_id, method, flags);
     icInsertCompareOpDependencies(thread, function, left_layout_id,
                                   right_layout_id, op);
     word pc = frame->currentPC();
     RawMutableBytes bytecode = frame->bytecode();
-    bytecode.byteAtPut(pc, ic_state == ICState::kAnamorphic
+    bytecode.byteAtPut(pc, next_cache_state == ICState::kMonomorphic
                                ? COMPARE_OP_MONOMORPHIC
                                : COMPARE_OP_POLYMORPHIC);
   }
@@ -4498,7 +4498,7 @@ Continue Interpreter::doCompareOpMonomorphic(Thread* thread, word arg) {
   RawObject method = icLookupBinOpMonomorphic(
       frame->caches(), arg, left_layout_id, right_layout_id, &flags);
   if (method.isErrorNotFound()) {
-    return compareOpUpdateCache(thread, arg, ICState::kMonomorphic);
+    return compareOpUpdateCache(thread, arg);
   }
   return binaryOp(thread, arg, method, flags, left_raw, right_raw,
                   compareOpFallback);
@@ -4512,10 +4512,10 @@ Continue Interpreter::doCompareOpPolymorphic(Thread* thread, word arg) {
   LayoutId left_layout_id = left_raw.layoutId();
   LayoutId right_layout_id = right_raw.layoutId();
   BinaryOpFlags flags = kBinaryOpNone;
-  RawObject method = icLookupBinaryOp(frame->caches(), arg, left_layout_id,
-                                      right_layout_id, &flags);
+  RawObject method = icLookupBinOpPolymorphic(
+      frame->caches(), arg, left_layout_id, right_layout_id, &flags);
   if (method.isErrorNotFound()) {
-    return compareOpUpdateCache(thread, arg, ICState::kMonomorphic);
+    return compareOpUpdateCache(thread, arg);
   }
   return binaryOp(thread, arg, method, flags, left_raw, right_raw,
                   compareOpFallback);
@@ -4523,11 +4523,10 @@ Continue Interpreter::doCompareOpPolymorphic(Thread* thread, word arg) {
 
 HANDLER_INLINE
 Continue Interpreter::doCompareOpAnamorphic(Thread* thread, word arg) {
-  return compareOpUpdateCache(thread, arg, ICState::kAnamorphic);
+  return compareOpUpdateCache(thread, arg);
 }
 
-Continue Interpreter::inplaceOpUpdateCache(Thread* thread, word arg,
-                                           ICState ic_state) {
+Continue Interpreter::inplaceOpUpdateCache(Thread* thread, word arg) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object right(&scope, frame->popValue());
@@ -4539,15 +4538,16 @@ Continue Interpreter::inplaceOpUpdateCache(Thread* thread, word arg,
   RawObject result = inplaceOperationSetMethod(thread, frame, op, left, right,
                                                &method, &flags);
   if (!method.isNoneType()) {
+    Tuple caches(&scope, frame->caches());
     LayoutId left_layout_id = left.layoutId();
     LayoutId right_layout_id = right.layoutId();
-    icUpdateBinaryOp(frame->caches(), arg, left_layout_id, right_layout_id,
-                     *method, flags);
+    ICState next_cache_state = icUpdateBinOp(
+        thread, caches, arg, left_layout_id, right_layout_id, method, flags);
     icInsertInplaceOpDependencies(thread, function, left_layout_id,
                                   right_layout_id, op);
     word pc = frame->currentPC();
     RawMutableBytes bytecode = frame->bytecode();
-    bytecode.byteAtPut(pc, ic_state == ICState::kAnamorphic
+    bytecode.byteAtPut(pc, next_cache_state == ICState::kMonomorphic
                                ? INPLACE_OP_MONOMORPHIC
                                : INPLACE_OP_POLYMORPHIC);
   }
@@ -4591,7 +4591,7 @@ Continue Interpreter::doInplaceOpMonomorphic(Thread* thread, word arg) {
   RawObject method = icLookupBinOpMonomorphic(
       frame->caches(), arg, left_layout_id, right_layout_id, &flags);
   if (method.isErrorNotFound()) {
-    return inplaceOpUpdateCache(thread, arg, ICState::kMonomorphic);
+    return inplaceOpUpdateCache(thread, arg);
   }
   return binaryOp(thread, arg, method, flags, left_raw, right_raw,
                   inplaceOpFallback);
@@ -4605,10 +4605,10 @@ Continue Interpreter::doInplaceOpPolymorphic(Thread* thread, word arg) {
   LayoutId left_layout_id = left_raw.layoutId();
   LayoutId right_layout_id = right_raw.layoutId();
   BinaryOpFlags flags = kBinaryOpNone;
-  RawObject method = icLookupBinaryOp(frame->caches(), arg, left_layout_id,
-                                      right_layout_id, &flags);
+  RawObject method = icLookupBinOpPolymorphic(
+      frame->caches(), arg, left_layout_id, right_layout_id, &flags);
   if (method.isErrorNotFound()) {
-    return inplaceOpUpdateCache(thread, arg, ICState::kPolymorphic);
+    return inplaceOpUpdateCache(thread, arg);
   }
   return binaryOp(thread, arg, method, flags, left_raw, right_raw,
                   inplaceOpFallback);
@@ -4616,11 +4616,10 @@ Continue Interpreter::doInplaceOpPolymorphic(Thread* thread, word arg) {
 
 HANDLER_INLINE
 Continue Interpreter::doInplaceOpAnamorphic(Thread* thread, word arg) {
-  return inplaceOpUpdateCache(thread, arg, ICState::kAnamorphic);
+  return inplaceOpUpdateCache(thread, arg);
 }
 
-Continue Interpreter::binaryOpUpdateCache(Thread* thread, word arg,
-                                          ICState ic_state) {
+Continue Interpreter::binaryOpUpdateCache(Thread* thread, word arg) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object right(&scope, frame->popValue());
@@ -4632,15 +4631,16 @@ Continue Interpreter::binaryOpUpdateCache(Thread* thread, word arg,
   Object result(&scope, binaryOperationSetMethod(thread, frame, op, left, right,
                                                  &method, &flags));
   if (!method.isNoneType()) {
+    Tuple caches(&scope, frame->caches());
     LayoutId left_layout_id = left.layoutId();
     LayoutId right_layout_id = right.layoutId();
-    icUpdateBinaryOp(frame->caches(), arg, left_layout_id, right_layout_id,
-                     *method, flags);
+    ICState next_cache_state = icUpdateBinOp(
+        thread, caches, arg, left_layout_id, right_layout_id, method, flags);
     icInsertBinaryOpDependencies(thread, function, left_layout_id,
                                  right_layout_id, op);
     word pc = frame->currentPC();
     RawMutableBytes bytecode = frame->bytecode();
-    bytecode.byteAtPut(pc, ic_state == ICState::kAnamorphic
+    bytecode.byteAtPut(pc, next_cache_state == ICState::kMonomorphic
                                ? BINARY_OP_MONOMORPHIC
                                : BINARY_OP_POLYMORPHIC);
   }
@@ -4694,7 +4694,7 @@ Continue Interpreter::doBinaryOpMonomorphic(Thread* thread, word arg) {
   RawObject method = icLookupBinOpMonomorphic(
       frame->caches(), arg, left_layout_id, right_layout_id, &flags);
   if (method.isErrorNotFound()) {
-    return binaryOpUpdateCache(thread, arg, ICState::kMonomorphic);
+    return binaryOpUpdateCache(thread, arg);
   }
   return binaryOp(thread, arg, method, flags, left_raw, right_raw,
                   binaryOpFallback);
@@ -4708,10 +4708,10 @@ Continue Interpreter::doBinaryOpPolymorphic(Thread* thread, word arg) {
   LayoutId left_layout_id = left_raw.layoutId();
   LayoutId right_layout_id = right_raw.layoutId();
   BinaryOpFlags flags = kBinaryOpNone;
-  RawObject method = icLookupBinaryOp(frame->caches(), arg, left_layout_id,
-                                      right_layout_id, &flags);
+  RawObject method = icLookupBinOpPolymorphic(
+      frame->caches(), arg, left_layout_id, right_layout_id, &flags);
   if (method.isErrorNotFound()) {
-    return binaryOpUpdateCache(thread, arg, ICState::kPolymorphic);
+    return binaryOpUpdateCache(thread, arg);
   }
   return binaryOp(thread, arg, method, flags, left_raw, right_raw,
                   binaryOpFallback);
@@ -4719,7 +4719,7 @@ Continue Interpreter::doBinaryOpPolymorphic(Thread* thread, word arg) {
 
 HANDLER_INLINE
 Continue Interpreter::doBinaryOpAnamorphic(Thread* thread, word arg) {
-  return binaryOpUpdateCache(thread, arg, ICState::kAnamorphic);
+  return binaryOpUpdateCache(thread, arg);
 }
 
 RawObject Interpreter::execute(Thread* thread) {
