@@ -415,7 +415,7 @@ RawObject listFromRange(word start, word stop) {
 }
 
 RawObject icLookupAttr(RawTuple caches, word index, LayoutId layout_id) {
-  word i = index * kIcPointersPerCache;
+  word i = index * kIcPointersPerEntry;
   bool is_found = false;
   if (caches.at(i + kIcEntryValueOffset).isTuple()) {
     return icLookupPolymorphic(caches, index, layout_id, &is_found);
@@ -425,7 +425,7 @@ RawObject icLookupAttr(RawTuple caches, word index, LayoutId layout_id) {
 
 RawObject icLookupBinaryOp(RawTuple caches, word index, LayoutId left_layout_id,
                            LayoutId right_layout_id, BinaryOpFlags* flags_out) {
-  word i = index * kIcPointersPerCache;
+  word i = index * kIcPointersPerEntry;
   if (caches.at(i + kIcEntryValueOffset).isTuple()) {
     return icLookupBinOpPolymorphic(caches, index, left_layout_id,
                                     right_layout_id, flags_out);

@@ -4983,7 +4983,7 @@ c = C()
   Object c(&scope, mainModuleAt(&runtime_, "c"));
   Function cache_attribute(&scope, mainModuleAt(&runtime_, "cache_attribute"));
   Tuple caches(&scope, cache_attribute.caches());
-  ASSERT_EQ(caches.length(), 2 * kIcPointersPerCache);
+  ASSERT_EQ(caches.length(), 2 * kIcPointersPerEntry);
 
   // Load the cache.
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
@@ -5018,7 +5018,7 @@ c = C()
   Object c(&scope, mainModuleAt(&runtime_, "c"));
   Function cache_attribute(&scope, mainModuleAt(&runtime_, "cache_attribute"));
   Tuple caches(&scope, cache_attribute.caches());
-  ASSERT_EQ(caches.length(), 2 * kIcPointersPerCache);
+  ASSERT_EQ(caches.length(), 2 * kIcPointersPerEntry);
 
   // Load the cache.
   ASSERT_TRUE(icLookupAttr(*caches, 1, c.layoutId()).isErrorNotFound());
@@ -5083,7 +5083,7 @@ function_that_caches_attr_lookup(a, b, c)
   // 5, binary op cache
   Function a_foo(&scope, mainModuleAt(&runtime_, "a_foo"));
   Function b_foo(&scope, mainModuleAt(&runtime_, "b_foo"));
-  ASSERT_EQ(caches.length(), 6 * kIcPointersPerCache);
+  ASSERT_EQ(caches.length(), 6 * kIcPointersPerEntry);
   ASSERT_EQ(icLookupAttr(*caches, 1, a.layoutId()), *a_foo);
   ASSERT_EQ(icLookupAttr(*caches, 2, b.layoutId()), *b_foo);
   ASSERT_EQ(icLookupAttr(*caches, 4, c.layoutId()), *b_foo);

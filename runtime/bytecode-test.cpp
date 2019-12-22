@@ -111,7 +111,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadAttrOperations) {
 
   ASSERT_TRUE(function.caches().isTuple());
   Tuple caches(&scope, function.caches());
-  EXPECT_EQ(caches.length(), 3 * kIcPointersPerCache);
+  EXPECT_EQ(caches.length(), 3 * kIcPointersPerEntry);
   for (word i = 0, length = caches.length(); i < length; i++) {
     EXPECT_TRUE(caches.at(i).isNoneType()) << "index " << i;
   }
@@ -162,7 +162,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesZeroArgMethodCalls) {
 
   ASSERT_TRUE(function.caches().isTuple());
   Tuple caches(&scope, function.caches());
-  EXPECT_EQ(caches.length(), 3 * kIcPointersPerCache);
+  EXPECT_EQ(caches.length(), 3 * kIcPointersPerEntry);
   for (word i = 0, length = caches.length(); i < length; i++) {
     EXPECT_TRUE(caches.at(i).isNoneType()) << "index " << i;
   }
@@ -252,7 +252,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadMethodOperations) {
 
   ASSERT_TRUE(function.caches().isTuple());
   Tuple caches(&scope, function.caches());
-  EXPECT_EQ(caches.length(), 3 * kIcPointersPerCache);
+  EXPECT_EQ(caches.length(), 3 * kIcPointersPerEntry);
   for (word i = 0, length = caches.length(); i < length; i++) {
     EXPECT_TRUE(caches.at(i).isNoneType()) << "index " << i;
   }
@@ -509,10 +509,10 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesReservesCachesForGlobalVariables) {
       0,
       STORE_GLOBAL,
       1,
-      // Note that LOAD_ATTR's cache index starts at 2 to reserve the first 2
+      // Note that LOAD_ATTR's cache index starts at 6 to reserve the first 6
       // cache lines for 12 global variables.
       LOAD_ATTR_ANAMORPHIC,
-      2,
+      6,
       DELETE_GLOBAL,
       2,
       STORE_NAME,
@@ -520,7 +520,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesReservesCachesForGlobalVariables) {
       DELETE_NAME,
       4,
       LOAD_ATTR_ANAMORPHIC,
-      3,
+      7,
       LOAD_NAME,
       5,
   };
@@ -528,8 +528,9 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesReservesCachesForGlobalVariables) {
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
 
   Tuple caches(&scope, function.caches());
-  // 12 for global names is round to 2 cache lines each of which is 8 entries.
-  EXPECT_EQ(caches.length(), (2 + 2) * kIcPointersPerCache);
+  word num_global = 6;
+  word num_attr = 2;
+  EXPECT_EQ(caches.length(), (num_global + num_attr) * kIcPointersPerEntry);
 }
 
 TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadFastAndStoreFastOpcodes) {

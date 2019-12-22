@@ -192,10 +192,10 @@ void rewriteBytecode(Thread* thread, const Function& function) {
   // globals, some are used for attributes.  This is good enough for
   // now.
   word names_length = Tuple::cast(Code::cast(function.code()).names()).length();
-  word num_global_caches = Utils::roundUpDiv(names_length, kIcPointersPerCache);
+  word num_global_caches = Utils::roundUpDiv(names_length, kIcPointersPerEntry);
   if (!function.hasOptimizedOrNewlocals()) {
     function.setCaches(
-        runtime->newTuple(num_global_caches * kIcPointersPerCache));
+        runtime->newTuple(num_global_caches * kIcPointersPerEntry));
     function.setOriginalArguments(runtime->emptyTuple());
     return;
   }
@@ -249,7 +249,7 @@ void rewriteBytecode(Thread* thread, const Function& function) {
 
   // TODO(T45428069): Remove this once the compiler starts emitting the opcodes.
   rewriteZeroArgMethodCallsUsingLoadMethodAnamorphic(bytecode);
-  function.setCaches(runtime->newTuple(num_caches * kIcPointersPerCache));
+  function.setCaches(runtime->newTuple(num_caches * kIcPointersPerEntry));
   function.setOriginalArguments(*original_arguments);
 }
 

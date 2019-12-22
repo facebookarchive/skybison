@@ -337,12 +337,11 @@ void emitConvertFromSmallInt(EmitEnv* env, Register reg) {
 void emitIcLookupPolymorphic(EmitEnv* env, Label* not_found, Register r_dst,
                              Register r_layout_id, Register r_caches,
                              Register r_index, Register r_scratch) {
-  // Set r_caches = r_caches + r_index * kPointerSize * kPointersPerCache,
+  // Set r_caches = r_caches + r_index * kPointerSize * kPointersPerEntry,
   // without modifying r_index.
-  static_assert(kIcPointersPerCache * kPointerSize == 64,
-                "Unexpected kIcPointersPerCache");
+  static_assert(kIcPointersPerEntry == 2, "Unexpected kIcPointersPerEntry");
   // Read the first value as the polymorphic cache.
-  __ leaq(r_scratch, Address(r_index, TIMES_8, 0));
+  __ leaq(r_scratch, Address(r_index, TIMES_2, 0));
   __ movq(r_caches,
           Address(r_caches, r_scratch, TIMES_8,
                   heapObjectDisp(0) + kIcEntryValueOffset * kPointerSize));
@@ -368,11 +367,10 @@ void emitIcLookupPolymorphic(EmitEnv* env, Label* not_found, Register r_dst,
 void emitIcLookupMonomorphic(EmitEnv* env, Label* not_found, Register r_dst,
                              Register r_layout_id, Register r_caches,
                              Register r_index, Register r_scratch) {
-  // Set r_caches = r_caches + r_index * kPointerSize * kPointersPerCache,
+  // Set r_caches = r_caches + r_index * kPointerSize * kPointersPerEntry,
   // without modifying r_index.
-  static_assert(kIcPointersPerCache * kPointerSize == 64,
-                "Unexpected kIcPointersPerCache");
-  __ leaq(r_scratch, Address(r_index, TIMES_8, 0));
+  static_assert(kIcPointersPerEntry == 2, "Unexpected kIcPointersPerEntry");
+  __ leaq(r_scratch, Address(r_index, TIMES_2, 0));
   __ leaq(r_caches, Address(r_caches, r_scratch, TIMES_8, heapObjectDisp(0)));
   __ cmpl(Address(r_caches, kIcEntryKeyOffset * kPointerSize), r_layout_id);
   __ jcc(NOT_EQUAL, not_found, Assembler::kNearJump);

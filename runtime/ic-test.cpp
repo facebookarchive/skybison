@@ -13,33 +13,21 @@ using namespace testing;
 
 using IcTest = RuntimeFixture;
 
-static RawObject layoutIdAsSmallInt(LayoutId id) {
-  return SmallInt::fromWord(static_cast<word>(id));
-}
-
 TEST_F(
     IcTest,
     icLookupMonomorphicWithEmptyCacheReturnsErrorNotFoundAndSetIsFoundToFalse) {
   HandleScope scope(thread_);
-  Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerCache));
+  Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerEntry));
   bool is_found;
   EXPECT_TRUE(icLookupMonomorphic(*caches, 1, LayoutId::kSmallInt, &is_found)
                   .isErrorNotFound());
   EXPECT_FALSE(is_found);
 }
 
-static RawObject binaryOpKey(LayoutId left, LayoutId right,
-                             BinaryOpFlags flags) {
-  return SmallInt::fromWord((static_cast<word>(left) << Header::kLayoutIdBits |
-                             static_cast<word>(right))
-                                << kBitsPerByte |
-                            static_cast<word>(flags));
-}
-
 TEST_F(IcTest, IcLookupBinaryOpReturnsErrorNotFound) {
   HandleScope scope(thread_);
 
-  Tuple caches(&scope, runtime_.newTuple(kIcPointersPerCache));
+  Tuple caches(&scope, runtime_.newTuple(kIcPointersPerEntry));
   BinaryOpFlags flags;
   EXPECT_TRUE(icLookupBinaryOp(*caches, 0, LayoutId::kSmallInt,
                                LayoutId::kSmallInt, &flags)
@@ -59,7 +47,7 @@ TEST_F(IcTest, IcLookupGlobalVar) {
 
 TEST_F(IcTest, IcUpdateAttrSetsMonomorphicEntry) {
   HandleScope scope(thread_);
-  Tuple caches(&scope, runtime_.newTuple(1 * kIcPointersPerCache));
+  Tuple caches(&scope, runtime_.newTuple(1 * kIcPointersPerEntry));
   Object value(&scope, runtime_.newInt(88));
   Object name(&scope, Str::empty());
   Function dependent(&scope, newEmptyFunction());
@@ -74,7 +62,7 @@ TEST_F(IcTest, IcUpdateAttrSetsMonomorphicEntry) {
 
 TEST_F(IcTest, IcUpdateAttrUpdatesExistingMonomorphicEntry) {
   HandleScope scope(thread_);
-  Tuple caches(&scope, runtime_.newTuple(1 * kIcPointersPerCache));
+  Tuple caches(&scope, runtime_.newTuple(1 * kIcPointersPerEntry));
   Object value(&scope, runtime_.newInt(88));
   Object name(&scope, Str::empty());
   Function dependent(&scope, newEmptyFunction());
@@ -97,7 +85,7 @@ TEST_F(IcTest, IcUpdateAttrUpdatesExistingMonomorphicEntry) {
 
 TEST_F(IcTest, IcUpdateAttrSetsPolymorphicEntry) {
   HandleScope scope(thread_);
-  Tuple caches(&scope, runtime_.newTuple(1 * kIcPointersPerCache));
+  Tuple caches(&scope, runtime_.newTuple(1 * kIcPointersPerEntry));
   Object int_value(&scope, runtime_.newInt(88));
   Object str_value(&scope, runtime_.newInt(99));
   Object name(&scope, Str::empty());
@@ -119,7 +107,7 @@ TEST_F(IcTest, IcUpdateAttrSetsPolymorphicEntry) {
 
 TEST_F(IcTest, IcUpdateAttrUpdatesPolymorphicEntry) {
   HandleScope scope(thread_);
-  Tuple caches(&scope, runtime_.newTuple(1 * kIcPointersPerCache));
+  Tuple caches(&scope, runtime_.newTuple(1 * kIcPointersPerEntry));
   Object int_value(&scope, runtime_.newInt(88));
   Object str_value(&scope, runtime_.newInt(99));
   Object name(&scope, Str::empty());
@@ -632,8 +620,8 @@ cache_foo(b)
   Tuple caches(&scope, cache_foo.caches());
   ASSERT_EQ(icLookupAttr(*caches, 1, b_obj.layoutId()), *a_foo);
   // Manually delete the cache for B.foo in cache_foo.
-  caches.atPut(1 * kIcPointersPerCache + kIcEntryKeyOffset, NoneType::object());
-  caches.atPut(1 * kIcPointersPerCache + kIcEntryValueOffset,
+  caches.atPut(1 * kIcPointersPerEntry + kIcEntryKeyOffset, NoneType::object());
+  caches.atPut(1 * kIcPointersPerEntry + kIcEntryValueOffset,
                NoneType::object());
   ASSERT_TRUE(icLookupAttr(*caches, 1, b_obj.layoutId()).isErrorNotFound());
 
@@ -715,7 +703,7 @@ static RawObject testingFunctionCachingAttributes(
   names.atPut(0, *attribute_name);
   code.setNames(*names);
 
-  Tuple caches(&scope, runtime->newTuple(2 * kIcPointersPerCache));
+  Tuple caches(&scope, runtime->newTuple(2 * kIcPointersPerEntry));
   function.setCaches(*caches);
 
   return *function;
@@ -1173,7 +1161,7 @@ result = f(container, 0)
   Function f(&scope, mainModuleAt(&runtime_, "f"));
   Tuple caches(&scope, f.caches());
   // Expect that BINARY_SUBSCR is the only cached opcode in f().
-  ASSERT_EQ(caches.length(), 1 * kIcPointersPerCache);
+  ASSERT_EQ(caches.length(), 1 * kIcPointersPerEntry);
   EXPECT_EQ(icLookupAttr(*caches, 0, container.layoutId()), *getitem);
 
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
@@ -1212,7 +1200,7 @@ result = f(container, "hi")
   Function f(&scope, mainModuleAt(&runtime_, "f"));
   Tuple caches(&scope, f.caches());
   // Expect that BINARY_SUBSCR is the only cached opcode in f().
-  ASSERT_EQ(caches.length(), 1 * kIcPointersPerCache);
+  ASSERT_EQ(caches.length(), 1 * kIcPointersPerEntry);
   EXPECT_TRUE(icLookupAttr(*caches, 0, container.layoutId()).isErrorNotFound());
 
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
@@ -1228,33 +1216,21 @@ result2 = f(container, "hello there!")
 
 TEST_F(IcTest, IcUpdateBinaryOpSetsEmptyEntry) {
   HandleScope scope(thread_);
-
-  Tuple caches(&scope, runtime_.newTuple(kIcPointersPerCache));
-  caches.atPut(1 * kIcPointersPerEntry + kIcEntryKeyOffset,
-               SmallInt::fromWord(10));
-  caches.atPut(1 * kIcPointersPerEntry + kIcEntryValueOffset,
-               SmallInt::fromWord(-10));
-
-  Object value(&scope, runtime_.newInt(-44));
-  EXPECT_EQ(icUpdateBinOp(thread_, caches, 0, LayoutId::kSmallStr,
-                          LayoutId::kLargeBytes, value, kBinaryOpReflected),
+  Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerEntry));
+  Object value(&scope, runtime_.newStrFromCStr("this is a random value"));
+  EXPECT_EQ(icUpdateBinOp(thread_, caches, 1, LayoutId::kLargeInt,
+                          LayoutId::kSmallInt, value, kBinaryOpNone),
             ICState::kMonomorphic);
-  EXPECT_EQ(caches.at(kIcEntryKeyOffset),
-            binaryOpKey(LayoutId::kSmallStr, LayoutId::kLargeBytes,
-                        kBinaryOpReflected));
-  EXPECT_TRUE(isIntEqualsWord(caches.at(kIcEntryValueOffset), -44));
-
-  // Filling an empty entry doesn't overwrite others.
-  EXPECT_TRUE(isIntEqualsWord(
-      caches.at(1 * kIcPointersPerEntry + kIcEntryKeyOffset), 10));
-  EXPECT_TRUE(isIntEqualsWord(
-      caches.at(1 * kIcPointersPerEntry + kIcEntryValueOffset), -10));
+  BinaryOpFlags flags;
+  EXPECT_EQ(icLookupBinOpMonomorphic(*caches, 1, LayoutId::kLargeInt,
+                                     LayoutId::kSmallInt, &flags),
+            *value);
 }
 
 TEST_F(IcTest, IcUpdateBinaryOpSetsExistingMonomorphicEntry) {
   HandleScope scope(thread_);
 
-  Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerCache));
+  Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerEntry));
   Object value(&scope, runtime_.newStrFromCStr("xxx"));
   ASSERT_EQ(icUpdateBinOp(thread_, caches, 1, LayoutId::kLargeInt,
                           LayoutId::kSmallInt, value, kBinaryOpNone),
@@ -1272,7 +1248,7 @@ TEST_F(IcTest, IcUpdateBinaryOpSetsExistingMonomorphicEntry) {
 TEST_F(IcTest, IcUpdateBinaryOpSetsExistingPolymorphicEntry) {
   HandleScope scope(thread_);
 
-  Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerCache));
+  Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerEntry));
   Object value(&scope, runtime_.newStrFromCStr("xxx"));
   ASSERT_EQ(icUpdateBinOp(thread_, caches, 1, LayoutId::kLargeInt,
                           LayoutId::kSmallInt, value, kBinaryOpNone),
@@ -1320,7 +1296,7 @@ result = f(container)
   Function f(&scope, mainModuleAt(&runtime_, "f"));
   Tuple caches(&scope, f.caches());
   // Expect that FOR_ITER is the only cached opcode in f().
-  ASSERT_EQ(caches.length(), 1 * kIcPointersPerCache);
+  ASSERT_EQ(caches.length(), 1 * kIcPointersPerEntry);
   EXPECT_EQ(icLookupAttr(*caches, 0, iterator.layoutId()), *iter_next);
 }
 
@@ -1355,7 +1331,7 @@ result = f(container)
   Function f(&scope, mainModuleAt(&runtime_, "f"));
   Tuple caches(&scope, f.caches());
   // Expect that FOR_ITER is the only cached opcode in f().
-  ASSERT_EQ(caches.length(), 1 * kIcPointersPerCache);
+  ASSERT_EQ(caches.length(), 1 * kIcPointersPerEntry);
   EXPECT_TRUE(icLookupAttr(*caches, 0, iterator.layoutId()).isErrorNotFound());
 }
 
@@ -1645,10 +1621,6 @@ TEST_F(IcTest, IcInvalidateGlobalVarRevertsOpCodeToOriginalOnes) {
   EXPECT_TRUE(isMutableBytesEqualsBytes(bytecode, invalidated_expected));
 }
 
-static RawObject layoutIdOfObjectAsSmallInt(RawObject object) {
-  return layoutIdAsSmallInt(object.layoutId());
-}
-
 TEST_F(IcTest, IcIteratorSkipsNotCachingOpcodes) {
   HandleScope scope(thread_);
   MutableBytes bytecode(&scope, runtime_.newMutableBytesUninitialized(4));
@@ -1707,54 +1679,33 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   names.atPut(
       3, Runtime::internStrFromCStr(thread_, "store_attr_cached_attr_name"));
 
-  Tuple caches(&scope, runtime_.newTuple(num_caches * kIcPointersPerCache));
-  // Caches for LOAD_ATTR_ANAMORPHIC at 2.
-  word load_attr_cached_cache_index0 =
-      0 * kIcPointersPerCache + 1 * kIcPointersPerEntry;
-  word load_attr_cached_cache_index1 =
-      0 * kIcPointersPerCache + 3 * kIcPointersPerEntry;
-  caches.atPut(load_attr_cached_cache_index0 + kIcEntryKeyOffset,
-               layoutIdOfObjectAsSmallInt(Bool::trueObj()));
-  caches.atPut(load_attr_cached_cache_index0 + kIcEntryValueOffset,
-               SmallInt::fromWord(10));
-  caches.atPut(load_attr_cached_cache_index1 + kIcEntryKeyOffset,
-               layoutIdOfObjectAsSmallInt(Bool::falseObj()));
-  caches.atPut(load_attr_cached_cache_index1 + kIcEntryValueOffset,
-               SmallInt::fromWord(20));
+  Object name(&scope, runtime_.newStrFromCStr("name"));
+  Function dependent(&scope, newEmptyFunction());
+  Object value(&scope, NoneType::object());
+  Tuple caches(&scope, runtime_.newTuple(num_caches * kIcPointersPerEntry));
+  // Caches for LOAD_ATTR_ANAMORPHIC at PC 2.
+  value = SmallInt::fromWord(10);
+  icUpdateAttr(thread_, caches, 0, LayoutId::kBool, value, name, dependent);
+  value = SmallInt::fromWord(20);
+  icUpdateAttr(thread_, caches, 0, LayoutId::kSmallInt, value, name, dependent);
 
-  // Caches for LOAD_METHOD_ANAMORPHIC at 6.
-  word load_method_cached_index =
-      1 * kIcPointersPerCache + 0 * kIcPointersPerEntry;
-  caches.atPut(load_method_cached_index + kIcEntryKeyOffset,
-               layoutIdOfObjectAsSmallInt(SmallInt::fromWord(0)));
-  caches.atPut(load_method_cached_index + kIcEntryValueOffset,
-               SmallInt::fromWord(30));
+  // Caches for LOAD_METHOD_ANAMORPHIC at PC 6.
+  value = SmallInt::fromWord(30);
+  icUpdateAttr(thread_, caches, 1, LayoutId::kSmallInt, value, name, dependent);
 
-  // Caches are empty for LOAD_ATTR_ANAMORPHIC at 10.
+  // Caches are empty for LOAD_ATTR_ANAMORPHIC at PC 10.
 
-  // Caches for STORE_ATTR_ANAMORPHIC at 12.
-  word store_attr_cached_index =
-      3 * kIcPointersPerCache + 3 * kIcPointersPerEntry;
-  caches.atPut(store_attr_cached_index + kIcEntryKeyOffset,
-               layoutIdOfObjectAsSmallInt(NoneType::object()));
-  caches.atPut(store_attr_cached_index + kIcEntryValueOffset,
-               SmallInt::fromWord(40));
+  // Caches for STORE_ATTR_ANAMORPHIC at PC 12.
+  value = SmallInt::fromWord(40);
+  icUpdateAttr(thread_, caches, 3, LayoutId::kNoneType, value, name, dependent);
 
-  // Caches for FOR_ITER_ANAMORPHIC at 14.
-  word for_iter_cached_index =
-      4 * kIcPointersPerCache + 3 * kIcPointersPerEntry;
-  caches.atPut(for_iter_cached_index + kIcEntryKeyOffset,
-               layoutIdOfObjectAsSmallInt(Str::empty()));
-  caches.atPut(for_iter_cached_index + kIcEntryValueOffset,
-               SmallInt::fromWord(50));
+  // Caches for FOR_ITER_ANAMORPHIC at PC 14.
+  value = SmallInt::fromWord(50);
+  icUpdateAttr(thread_, caches, 4, LayoutId::kStr, value, name, dependent);
 
-  // Caches for BINARY_SUBSCR_ANAMORPHIC at 16.
-  word binary_subscr_cached_index =
-      5 * kIcPointersPerCache + 3 * kIcPointersPerEntry;
-  caches.atPut(binary_subscr_cached_index + kIcEntryKeyOffset,
-               layoutIdOfObjectAsSmallInt(runtime_.emptyTuple()));
-  caches.atPut(binary_subscr_cached_index + kIcEntryValueOffset,
-               SmallInt::fromWord(60));
+  // Caches for BINARY_SUBSCR_ANAMORPHIC at PC 16.
+  value = SmallInt::fromWord(60);
+  icUpdateAttr(thread_, caches, 5, LayoutId::kTuple, value, name, dependent);
 
   Function function(&scope, newEmptyFunction());
   function.setRewrittenBytecode(*bytecode);
@@ -1770,7 +1721,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
       &scope,
       Runtime::internStrFromCStr(thread_, "load_attr_cached_attr_name"));
   EXPECT_TRUE(it.isAttrNameEqualTo(load_attr_cached_attr_name));
-  EXPECT_EQ(it.layoutId(), Bool::trueObj().layoutId());
+  EXPECT_EQ(it.layoutId(), LayoutId::kBool);
   EXPECT_TRUE(it.isInstanceAttr());
 
   it.next();
@@ -1778,7 +1729,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   ASSERT_TRUE(it.isAttrCache());
   EXPECT_FALSE(it.isBinaryOpCache());
   EXPECT_TRUE(it.isAttrNameEqualTo(load_attr_cached_attr_name));
-  EXPECT_EQ(it.layoutId(), Bool::falseObj().layoutId());
+  EXPECT_EQ(it.layoutId(), LayoutId::kSmallInt);
   EXPECT_TRUE(it.isInstanceAttr());
 
   it.next();
@@ -1803,11 +1754,18 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   EXPECT_EQ(it.layoutId(), NoneType::object().layoutId());
   EXPECT_TRUE(it.isInstanceAttr());
 
+  ASSERT_EQ(
+      caches.at(3 * kIcPointersPerEntry + kIcEntryKeyOffset),
+      SmallInt::fromWord(static_cast<word>(NoneType::object().layoutId())));
+  ASSERT_FALSE(
+      caches.at(3 * kIcPointersPerEntry + kIcEntryValueOffset).isNoneType());
+
   it.evict();
+
   EXPECT_TRUE(
-      caches.at(store_attr_cached_index + kIcEntryKeyOffset).isNoneType());
+      caches.at(3 * kIcPointersPerEntry + kIcEntryKeyOffset).isNoneType());
   EXPECT_TRUE(
-      caches.at(store_attr_cached_index + kIcEntryValueOffset).isNoneType());
+      caches.at(3 * kIcPointersPerEntry + kIcEntryValueOffset).isNoneType());
 
   it.next();
   ASSERT_TRUE(it.hasNext());
@@ -1816,7 +1774,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   Object for_iter_cached_attr_name(
       &scope, Runtime::internStrFromCStr(thread_, "__next__"));
   EXPECT_TRUE(it.isAttrNameEqualTo(for_iter_cached_attr_name));
-  EXPECT_EQ(it.layoutId(), Str::empty().layoutId());
+  EXPECT_EQ(it.layoutId(), LayoutId::kStr);
   EXPECT_TRUE(it.isInstanceAttr());
 
   it.next();
@@ -1826,7 +1784,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   Object binary_subscr_cached_attr_name(
       &scope, Runtime::internStrFromCStr(thread_, "__getitem__"));
   EXPECT_TRUE(it.isAttrNameEqualTo(binary_subscr_cached_attr_name));
-  EXPECT_EQ(it.layoutId(), runtime_.emptyTuple().layoutId());
+  EXPECT_EQ(it.layoutId(), LayoutId::kTuple);
   EXPECT_TRUE(it.isInstanceAttr());
 
   it.next();
@@ -1851,11 +1809,11 @@ TEST_F(IcTest, IcIteratorIteratesOverBinaryOpCaches) {
   original_args.atPut(
       1, SmallInt::fromWord(static_cast<word>(Interpreter::BinaryOp::ADD)));
 
-  Tuple caches(&scope, runtime_.newTuple(num_caches * kIcPointersPerCache));
+  Tuple caches(&scope, runtime_.newTuple(num_caches * kIcPointersPerEntry));
 
   // Caches for COMPARE_OP_ANAMORPHIC at 2.
   word compare_op_cached_index =
-      0 * kIcPointersPerCache + 0 * kIcPointersPerEntry;
+      0 * kIcPointersPerEntry + 0 * kIcPointersPerEntry;
   word compare_op_key_high_bits =
       static_cast<word>(SmallInt::fromWord(0).layoutId())
           << Header::kLayoutIdBits |
@@ -1868,7 +1826,7 @@ TEST_F(IcTest, IcIteratorIteratesOverBinaryOpCaches) {
 
   // Caches for BINARY_OP_ANAMORPHIC at 4.
   word binary_op_cached_index =
-      1 * kIcPointersPerCache + 0 * kIcPointersPerEntry;
+      1 * kIcPointersPerEntry + 0 * kIcPointersPerEntry;
   word binary_op_key_high_bits =
       static_cast<word>(SmallStr::fromCStr("").layoutId())
           << Header::kLayoutIdBits |
@@ -1933,11 +1891,11 @@ TEST_F(IcTest, IcIteratorIteratesOverInplaceOpCaches) {
   original_args.atPut(
       0, SmallInt::fromWord(static_cast<word>(Interpreter::BinaryOp::MUL)));
 
-  Tuple caches(&scope, runtime_.newTuple(num_caches * kIcPointersPerCache));
+  Tuple caches(&scope, runtime_.newTuple(num_caches * kIcPointersPerEntry));
 
   // Caches for BINARY_OP_ANAMORPHIC at 2.
   word inplace_op_cached_index =
-      0 * kIcPointersPerCache + 0 * kIcPointersPerEntry;
+      0 * kIcPointersPerEntry + 0 * kIcPointersPerEntry;
   word inplace_op_key_high_bits =
       static_cast<word>(SmallStr::fromCStr("a").layoutId())
           << Header::kLayoutIdBits |

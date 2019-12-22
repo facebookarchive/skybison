@@ -39,7 +39,7 @@ ICState icUpdateAttr(Thread* thread, const Tuple& caches, word index,
                      const Object& name, const Function& dependent) {
   Runtime* runtime = thread->runtime();
   RawSmallInt key = SmallInt::fromWord(static_cast<word>(layout_id));
-  word i = index * kIcPointersPerCache;
+  word i = index * kIcPointersPerEntry;
   RawObject entry_key = caches.at(i + kIcEntryKeyOffset);
   if (entry_key.isNoneType() || entry_key == key) {
     caches.atPut(i + kIcEntryKeyOffset, key);
@@ -73,7 +73,7 @@ ICState icUpdateAttr(Thread* thread, const Tuple& caches, word index,
 }
 
 bool icIsCacheEmpty(const Tuple& caches, word index) {
-  word i = index * kIcPointersPerCache;
+  word i = index * kIcPointersPerEntry;
   return caches.at(i + kIcEntryKeyOffset).isNoneType();
 }
 
@@ -82,7 +82,7 @@ void icUpdateAttrModule(Thread* thread, const Tuple& caches, word index,
                         const Function& dependent) {
   DCHECK(icIsCacheEmpty(caches, index), "cache must be empty\n");
   HandleScope scope(thread);
-  word i = index * kIcPointersPerCache;
+  word i = index * kIcPointersPerEntry;
   Module module(&scope, *receiver);
   caches.atPut(i + kIcEntryKeyOffset, SmallInt::fromWord(module.id()));
   caches.atPut(i + kIcEntryValueOffset, *value_cell);
@@ -99,7 +99,7 @@ void icUpdateAttrType(Thread* thread, const Tuple& caches, word index,
                       const Object& receiver, const Object& selector,
                       const Object& value, const Function& dependent) {
   DCHECK(icIsCacheEmpty(caches, index), "cache must be empty\n");
-  word i = index * kIcPointersPerCache;
+  word i = index * kIcPointersPerEntry;
   caches.atPut(i + kIcEntryKeyOffset, *receiver);
   caches.atPut(i + kIcEntryValueOffset, *value);
   RawMutableBytes bytecode =
@@ -643,7 +643,7 @@ ICState icUpdateBinOp(Thread* thread, const Tuple& caches, word index,
   word key_high_bits = static_cast<word>(left_layout_id)
                            << Header::kLayoutIdBits |
                        static_cast<word>(right_layout_id);
-  word i = index * kIcPointersPerCache;
+  word i = index * kIcPointersPerEntry;
   RawObject new_key = encodeBinaryOpKey(left_layout_id, right_layout_id, flags);
   RawObject entry_key = caches.at(i + kIcEntryKeyOffset);
   if (entry_key.isNoneType() ||
@@ -753,7 +753,7 @@ void icInvalidateGlobalVar(Thread* thread, const ValueCell& value_cell) {
       switch (op.bc) {
         case LOAD_ATTR_MODULE: {
           original_bc = LOAD_ATTR_ANAMORPHIC;
-          word index = op.arg * kIcPointersPerCache;
+          word index = op.arg * kIcPointersPerEntry;
           if (caches.at(index + kIcEntryValueOffset) == *value_cell) {
             caches.atPut(index + kIcEntryKeyOffset, NoneType::object());
             caches.atPut(index + kIcEntryValueOffset, NoneType::object());

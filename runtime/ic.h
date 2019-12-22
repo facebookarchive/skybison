@@ -250,12 +250,10 @@ void icInvalidateGlobalVar(Thread* thread, const ValueCell& value_cell);
 //  |   - 0: Unbound
 //  |   - 1: pointer to a data sturcutre for the polymorphic cache
 //  |     ...
-//  | k + n * kIcPointersPerCache: cache n
+//  | k + n * kIcPointersPerEntry: cache n
 //  |
 //  +--------------------------------------------------------------------------
 const int kIcPointersPerEntry = 2;
-const int kIcEntriesPerCache = 4;
-const int kIcPointersPerCache = kIcEntriesPerCache * kIcPointersPerEntry;
 
 const int kIcEntriesPerPolyCache = 4;
 const int kIcPointersPerPolyCache =
@@ -310,8 +308,8 @@ class IcIterator {
       BytecodeOp op = nextBytecodeOp(bytecode_, &bytecode_index_);
       if (!isByteCodeWithCache(op.bc)) continue;
       bytecode_op_ = op;
-      cache_index_ = bytecode_op_.arg * kIcPointersPerCache;
-      end_cache_index_ = cache_index_ + kIcPointersPerCache;
+      cache_index_ = bytecode_op_.arg * kIcPointersPerEntry;
+      end_cache_index_ = cache_index_ + kIcPointersPerEntry;
       cache_index_ =
           findNextFilledCacheIndex(caches_, cache_index_, end_cache_index_);
       if (cache_index_ >= 0) {
@@ -479,7 +477,7 @@ class IcIterator {
 
 inline RawObject icLookupPolymorphic(RawTuple caches, word index,
                                      LayoutId layout_id, bool* is_found) {
-  word i = index * kIcPointersPerCache;
+  word i = index * kIcPointersPerEntry;
   DCHECK(caches.at(i + kIcEntryKeyOffset).isUnbound(),
          "cache.at(index) is expected to be polymorphic");
   RawSmallInt key = SmallInt::fromWord(static_cast<word>(layout_id));
@@ -496,7 +494,7 @@ inline RawObject icLookupPolymorphic(RawTuple caches, word index,
 
 inline RawObject icLookupMonomorphic(RawTuple caches, word index,
                                      LayoutId layout_id, bool* is_found) {
-  word i = index * kIcPointersPerCache;
+  word i = index * kIcPointersPerEntry;
   DCHECK(!caches.at(i + kIcEntryKeyOffset).isUnbound(),
          "cache.at(index) is expected to be monomorphic");
   RawSmallInt key = SmallInt::fromWord(static_cast<word>(layout_id));
@@ -514,7 +512,7 @@ inline RawObject icLookupBinOpPolymorphic(RawTuple caches, word index,
                                           BinaryOpFlags* flags_out) {
   static_assert(Header::kLayoutIdBits * 2 + kBitsPerByte <= SmallInt::kBits,
                 "Two layout ids and flags overflow a SmallInt");
-  word i = index * kIcPointersPerCache;
+  word i = index * kIcPointersPerEntry;
   DCHECK(caches.at(i + kIcEntryKeyOffset).isUnbound(),
          "cache.at(index) is expected to be polymorphic");
   word key_high_bits = static_cast<word>(left_layout_id)
@@ -545,7 +543,7 @@ inline RawObject icLookupBinOpMonomorphic(RawTuple caches, word index,
   word key_high_bits = static_cast<word>(left_layout_id)
                            << Header::kLayoutIdBits |
                        static_cast<word>(right_layout_id);
-  word i = index * kIcPointersPerCache;
+  word i = index * kIcPointersPerEntry;
   DCHECK(!caches.at(i + kIcEntryKeyOffset).isUnbound(),
          "cache.at(index) is expected to be monomorphic");
   RawObject entry_key = caches.at(i + kIcEntryKeyOffset);

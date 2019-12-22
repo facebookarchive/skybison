@@ -2654,7 +2654,7 @@ static Continue retryStoreAttrCached(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawTuple caches = frame->caches();
   word pc = frame->virtualPC() - kCodeUnitSize;
-  word index = arg * kIcPointersPerCache;
+  word index = arg * kIcPointersPerEntry;
   RawMutableBytes bytecode = frame->bytecode();
   bytecode.byteAtPut(pc, STORE_ATTR_ANAMORPHIC);
   caches.atPut(index + kIcEntryKeyOffset, NoneType::object());
@@ -3197,7 +3197,7 @@ NEVER_INLINE Continue Interpreter::retryLoadAttrCached(Thread* thread,
   Frame* frame = thread->currentFrame();
   RawTuple caches = frame->caches();
   word pc = frame->virtualPC() - kCodeUnitSize;
-  word index = arg * kIcPointersPerCache;
+  word index = arg * kIcPointersPerEntry;
   RawMutableBytes bytecode = frame->bytecode();
   bytecode.byteAtPut(pc, LOAD_ATTR_ANAMORPHIC);
   caches.atPut(index + kIcEntryKeyOffset, NoneType::object());
@@ -3264,7 +3264,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrModule(Thread* thread,
   Frame* frame = thread->currentFrame();
   RawObject receiver = frame->topValue();
   RawTuple caches = frame->caches();
-  word index = arg * kIcPointersPerCache;
+  word index = arg * kIcPointersPerEntry;
   RawObject cache_key = caches.at(index + kIcEntryKeyOffset);
   // isInstanceOfModule() should be just as fast as isModule() in the common
   // case. If code size or quality is an issue we can adjust this as needed
@@ -3301,7 +3301,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrType(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawObject receiver = frame->topValue();
   RawTuple caches = frame->caches();
-  word index = arg * kIcPointersPerCache;
+  word index = arg * kIcPointersPerEntry;
   RawObject type = caches.at(index + kIcEntryKeyOffset);
   if (receiver == type) {
     RawObject result = caches.at(index + kIcEntryValueOffset);
