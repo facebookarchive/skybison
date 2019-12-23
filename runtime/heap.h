@@ -3,6 +3,7 @@
 #include "globals.h"
 #include "objects.h"
 #include "space.h"
+#include "visitor.h"
 
 namespace py {
 
@@ -50,6 +51,8 @@ class Heap {
   RawObject createRange();
 
   static int spaceOffset() { return offsetof(Heap, space_); };
+
+  void visitAllObjects(HeapObjectVisitor* visitor);
 
  private:
   Space* space_;

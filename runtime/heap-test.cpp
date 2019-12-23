@@ -74,4 +74,43 @@ TEST_F(HeapTest, AllocateMutableBytes) {
   EXPECT_EQ(MutableBytes::cast(*result).length(), 15);
 }
 
+class DummyVisitor : public HeapObjectVisitor {
+ public:
+  explicit DummyVisitor() : count_(0) {}
+
+  void visitHeapObject(RawHeapObject obj) {
+    visited_.push_back(obj);
+    count_++;
+  }
+
+  word count() { return count_; }
+
+  bool visited(RawObject obj) {
+    for (word i = 0; i < visited_.size(); i++) {
+      if (visited_[i] == obj) return true;
+    }
+    return false;
+  }
+
+ private:
+  Vector<RawObject> visited_;
+  word count_;
+};
+
+TEST(HeapTestNoFixture, VisitAllObjectsVisitsAllObjects) {
+  Heap heap(OS::kPageSize * 4);
+  DummyVisitor visitor;
+  EXPECT_EQ(visitor.count(), 0);
+  heap.visitAllObjects(&visitor);
+  EXPECT_EQ(visitor.count(), 0);
+  RawObject obj1 = heap.createLargeStr(10);
+  RawObject obj2 = heap.createLargeStr(10);
+  RawObject obj3 = heap.createLargeStr(10);
+  heap.visitAllObjects(&visitor);
+  EXPECT_TRUE(visitor.visited(obj1));
+  EXPECT_TRUE(visitor.visited(obj2));
+  EXPECT_TRUE(visitor.visited(obj3));
+  EXPECT_EQ(visitor.count(), 3);
+}
+
 }  // namespace py

@@ -214,4 +214,18 @@ RawObject Heap::createTuple(word length) {
   return Tuple::cast(result);
 }
 
+void Heap::visitAllObjects(HeapObjectVisitor* visitor) {
+  uword scan = space_->start();
+  while (scan < space_->fill()) {
+    if (!(*reinterpret_cast<RawObject*>(scan)).isHeader()) {
+      // Skip immediate values for alignment padding or header overflow.
+      scan += kPointerSize;
+      continue;
+    }
+    RawHeapObject object = HeapObject::fromAddress(scan + RawHeader::kSize);
+    visitor->visitHeapObject(object);
+    scan = object.baseAddress() + object.size();
+  }
+}
+
 }  // namespace py
