@@ -220,6 +220,8 @@ add_library(
   runtime/assembler-utils.h
   runtime/assembler-x64.cpp
   runtime/assembler-x64.h
+  runtime/asserts.h
+  runtime/asserts.cpp
   runtime/builtins-module.cpp
   runtime/builtins-module.h
   runtime/bytearray-builtins.cpp

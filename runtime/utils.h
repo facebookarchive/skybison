@@ -1,90 +1,11 @@
 #pragma once
 
-#include <climits>
-#include <cstdio>
-#include <cstdlib>
-#include <iosfwd>
+#include <cstring>
 #include <memory>
 #include <type_traits>
 
+#include "asserts.h"
 #include "globals.h"
-
-#if defined(NDEBUG) && !defined(DCHECK_ALWAYS_ON)
-#define DCHECK_IS_ON() 0
-#else
-#define DCHECK_IS_ON() 1
-#endif
-
-#define CHECK(expr, ...)                                                       \
-  do {                                                                         \
-    if (!(expr)) {                                                             \
-      fprintf(stderr, "%s:%d %s: assertion '%s' failed: ", __FILE__, __LINE__, \
-              __func__, #expr);                                                \
-      fprintf(stderr, __VA_ARGS__);                                            \
-      fputc('\n', stderr);                                                     \
-      py::Utils::printDebugInfoAndAbort();                                     \
-    }                                                                          \
-  } while (0)
-
-#define CHECK_INDEX(index, high)                                               \
-  do {                                                                         \
-    if (!((index >= 0) && (index < high))) {                                   \
-      fprintf(stderr,                                                          \
-              "%s:%d %s: index out of range, %ld not in 0..%ld : ", __FILE__,  \
-              __LINE__, __func__, static_cast<word>(index),                    \
-              static_cast<word>(high) - 1);                                    \
-      fputc('\n', stderr);                                                     \
-      py::Utils::printDebugInfoAndAbort();                                     \
-    }                                                                          \
-  } while (0)
-
-#define CHECK_BOUND(val, high)                                                 \
-  do {                                                                         \
-    if (!((val >= 0) && (val <= high))) {                                      \
-      fprintf(stderr,                                                          \
-              "%s:%d %s: bounds violation, %ld not in 0..%ld : ", __FILE__,    \
-              __LINE__, __func__, static_cast<word>(val),                      \
-              static_cast<word>(high));                                        \
-      fputc('\n', stderr);                                                     \
-      py::Utils::printDebugInfoAndAbort();                                     \
-    }                                                                          \
-  } while (0)
-
-#if DCHECK_IS_ON()
-#define DCHECK(...) CHECK(__VA_ARGS__)
-#define DCHECK_BOUND(val, high) CHECK_BOUND(val, high)
-#define DCHECK_INDEX(index, high) CHECK_INDEX(index, high)
-#else
-#define DCHECK(...)                                                            \
-  if (false) {                                                                 \
-    CHECK(__VA_ARGS__);                                                        \
-  }
-#define DCHECK_BOUND(val, high)                                                \
-  if (false) {                                                                 \
-    CHECK_BOUND(val, high);                                                    \
-  }
-#define DCHECK_INDEX(index, high)                                              \
-  if (false) {                                                                 \
-    CHECK_INDEX(index, high);                                                  \
-  }
-#endif
-
-#define UNIMPLEMENTED(...)                                                     \
-  do {                                                                         \
-    fprintf(stderr, "%s:%d %s: unimplemented: ", __FILE__, __LINE__,           \
-            __func__);                                                         \
-    fprintf(stderr, __VA_ARGS__);                                              \
-    fputc('\n', stderr);                                                       \
-    py::Utils::printDebugInfoAndAbort();                                       \
-  } while (0)
-
-#define UNREACHABLE(...)                                                       \
-  do {                                                                         \
-    fprintf(stderr, "%s:%d %s: unreachable: ", __FILE__, __LINE__, __func__);  \
-    fprintf(stderr, __VA_ARGS__);                                              \
-    fputc('\n', stderr);                                                       \
-    py::Utils::printDebugInfoAndAbort();                                       \
-  } while (0)
 
 namespace py {
 
