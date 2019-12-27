@@ -81,6 +81,7 @@ _frozenset_check = _frozenset_check  # noqa: F821
 _frozenset_guard = _frozenset_guard  # noqa: F821
 _function_globals = _function_globals  # noqa: F821
 _function_guard = _function_guard  # noqa: F821
+_gc = _gc  # noqa: F821
 _getframe_function = _getframe_function  # noqa: F821
 _getframe_locals = _getframe_locals  # noqa: F821
 _get_member_byte = _get_member_byte  # noqa: F821
