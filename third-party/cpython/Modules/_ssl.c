@@ -2218,7 +2218,6 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
                           Py_buffer *buffer)
 /*[clinic end generated code: output=00097776cec2a0af input=ff157eb918d0905b]*/
 {
-    PyObject *dest = NULL;
     char *mem;
     int count;
     int sockstate;
@@ -2226,6 +2225,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
     int nonblocking;
     PySocketSockObject *sock = GET_SOCKET(self);
     _PyTime_t timeout, deadline = 0;
+    _PyBytesWriter writer;
     int has_timeout;
 
     if (!group_right_1 && len < 0) {
@@ -2243,14 +2243,14 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
     }
 
     if (!group_right_1) {
-        dest = PyBytes_FromStringAndSize(NULL, len);
-        if (dest == NULL)
+        _PyBytesWriter_Init(&writer);
+        mem = _PyBytesWriter_Alloc(&writer, len);
+        if (mem == NULL)
             goto error;
         if (len == 0) {
             Py_XDECREF(sock);
-            return dest;
+            return _PyBytesWriter_Finish(&writer, mem);
         }
-        mem = PyBytes_AS_STRING(dest);
     }
     else {
         mem = buffer->buf;
@@ -2324,8 +2324,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
 done:
     Py_XDECREF(sock);
     if (!group_right_1) {
-        _PyBytes_Resize(&dest, count);
-        return dest;
+        return _PyBytesWriter_Finish(&writer, mem + count);
     }
     else {
         return PyLong_FromLong(count);
@@ -2334,7 +2333,7 @@ done:
 error:
     Py_XDECREF(sock);
     if (!group_right_1)
-        Py_XDECREF(dest);
+        _PyBytesWriter_Dealloc(&writer);
     return NULL;
 }
 
@@ -4346,29 +4345,25 @@ _ssl_MemoryBIO_read_impl(PySSLMemoryBIO *self, int len)
 /*[clinic end generated code: output=a657aa1e79cd01b3 input=574d7be06a902366]*/
 {
     int avail, nbytes;
-    PyObject *result;
+    char *result;
+    _PyBytesWriter writer;
 
     avail = BIO_ctrl_pending(self->bio);
     if ((len < 0) || (len > avail))
         len = avail;
 
-    result = PyBytes_FromStringAndSize(NULL, len);
+    _PyBytesWriter_Init(&writer);
+    result = _PyBytesWriter_Alloc(&writer, len);
     if ((result == NULL) || (len == 0))
-        return result;
+        return _PyBytesWriter_Finish(&writer, result);
 
-    nbytes = BIO_read(self->bio, PyBytes_AS_STRING(result), len);
+    nbytes = BIO_read(self->bio, result, len);
     if (nbytes < 0) {
-        Py_DECREF(result);
+        _PyBytesWriter_Dealloc(&writer);
         _setSSLError(NULL, 0, __FILE__, __LINE__);
         return NULL;
     }
-
-    /* There should never be any short reads but check anyway. */
-    if (nbytes < len) {
-        _PyBytes_Resize(&result, nbytes);
-    }
-
-    return result;
+    return _PyBytesWriter_Finish(&writer, result + nbytes);
 }
 
 /*[clinic input]
@@ -4680,7 +4675,8 @@ static PyObject *
 PySSL_RAND(int len, int pseudo)
 {
     int ok;
-    PyObject *bytes;
+    char *bytes;
+    _PyBytesWriter writer;
     unsigned long err;
     const char *errstr;
     PyObject *v;
@@ -4690,21 +4686,23 @@ PySSL_RAND(int len, int pseudo)
         return NULL;
     }
 
-    bytes = PyBytes_FromStringAndSize(NULL, len);
+    _PyBytesWriter_Init(&writer);
+    bytes = _PyBytesWriter_Alloc(&writer, len);
     if (bytes == NULL)
         return NULL;
     if (pseudo) {
-        ok = RAND_pseudo_bytes((unsigned char*)PyBytes_AS_STRING(bytes), len);
+        ok = RAND_pseudo_bytes((unsigned char*)bytes, len);
         if (ok == 0 || ok == 1)
-            return Py_BuildValue("NO", bytes, ok == 1 ? Py_True : Py_False);
+            return Py_BuildValue("NO", _PyBytesWriter_Finish(&writer, bytes + len), 
+                                 ok == 1 ? Py_True : Py_False);
     }
     else {
-        ok = RAND_bytes((unsigned char*)PyBytes_AS_STRING(bytes), len);
+        ok = RAND_bytes((unsigned char*)bytes, len);
         if (ok == 1)
-            return bytes;
+            return _PyBytesWriter_Finish(&writer, bytes + len);
     }
-    Py_DECREF(bytes);
 
+    _PyBytesWriter_Dealloc(&writer);
     err = ERR_get_error();
     errstr = ERR_reason_error_string(err);
     v = Py_BuildValue("(ks)", err, errstr);
