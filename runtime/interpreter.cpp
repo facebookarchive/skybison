@@ -3366,7 +3366,8 @@ HANDLER_INLINE Continue Interpreter::doCompareOp(Thread* thread, word arg) {
   } else if (op == IN) {
     result = sequenceContains(thread, frame, left, right);
   } else if (op == NOT_IN) {
-    result = Bool::negate(sequenceContains(thread, frame, left, right));
+    result = sequenceContains(thread, frame, left, right);
+    if (result.isBool()) result = Bool::negate(result);
   } else if (op == EXC_MATCH) {
     result = excMatch(thread, left, right);
   } else {

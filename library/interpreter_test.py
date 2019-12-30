@@ -3,6 +3,26 @@ import unittest
 
 
 class IntepreterTest(unittest.TestCase):
+    def test_compare_op_in_propagetes_exception(self):
+        class C:
+            def __contains__(self, value):
+                raise UserWarning("C.__contains__")
+
+        c = C()
+        with self.assertRaises(UserWarning) as context:
+            1 in c
+        self.assertEqual(str(context.exception), "C.__contains__")
+
+    def test_compare_op_not_in_propagetes_exception(self):
+        class C:
+            def __contains__(self, value):
+                raise UserWarning("C.__contains__")
+
+        c = C()
+        with self.assertRaises(UserWarning) as context:
+            1 not in c
+        self.assertEqual(str(context.exception), "C.__contains__")
+
     def test_store_name_calls_dunder_setitem(self):
         class C(dict):
             def __setitem__(self, key, value):
