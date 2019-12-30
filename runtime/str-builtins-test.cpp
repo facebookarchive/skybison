@@ -1628,6 +1628,14 @@ TEST_F(StrBuiltinsTest, CountWithUnicodeNeedleReturnsCount) {
   EXPECT_TRUE(isIntEqualsWord(strCount(haystack, needle, 0, kMaxWord), 2));
 }
 
+TEST_F(StrBuiltinsTest, CountWithNonNormalizedUTF8StringFindsChar) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, runtime_.newStrFromCStr(u8"\u0061\u0308\u0304"));
+  fprintf(stderr, "'%s'\n", unique_c_ptr<char>(haystack.toCStr()).get());
+  Str needle(&scope, runtime_.newStrFromCStr("a"));
+  EXPECT_TRUE(isIntEqualsWord(strCount(haystack, needle, 0, kMaxWord), 1));
+}
+
 TEST_F(StrBuiltinsTest, FindFirstNonWhitespaceWithEmptyStringReturnsZero) {
   HandleScope scope(thread_);
   Str str(&scope, Str::empty());

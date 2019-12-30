@@ -36,6 +36,23 @@ RawObject newStrFromWideCharWithLength(Thread* thread, const wchar_t* wc_str,
       View<int32_t>(reinterpret_cast<const int32_t*>(wc_str), length));
 }
 
+static word strCountCharFromTo(const Str& haystack, byte needle, word start,
+                               word end) {
+  word result = 0;
+  if (haystack.isSmallStr()) {
+    RawSmallStr small = SmallStr::cast(*haystack);
+    for (word i = start; i < end; i++) {
+      if (small.charAt(i) == needle) result++;
+    }
+    return result;
+  }
+  byte* ptr = reinterpret_cast<byte*>(LargeStr::cast(*haystack).address());
+  for (word i = start; i < end; i++) {
+    if (ptr[i] == needle) result++;
+  }
+  return result;
+}
+
 RawObject strCount(const Str& haystack, const Str& needle, word start,
                    word end) {
   if (end < 0 || start < 0) {
@@ -61,6 +78,11 @@ RawObject strCount(const Str& haystack, const Str& needle, word start,
       start_index > end_index) {
     // Haystack is too small; fast early return
     return SmallInt::fromWord(0);
+  }
+
+  if (needle.charLength() == 1) {
+    return SmallInt::fromWord(strCountCharFromTo(
+        haystack, SmallStr::cast(*needle).charAt(0), start_index, end_index));
   }
 
   // TODO(T41400083): Use a different search algorithm
