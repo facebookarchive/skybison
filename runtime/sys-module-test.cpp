@@ -131,7 +131,7 @@ TEST_F(SysModuleTest, ExecutableIsValid) {
   ASSERT_TRUE(executable.charLength() > 0);
   EXPECT_TRUE(executable.charAt(0) == '/');
   Str test_executable_name(&scope, runtime_.newStrFromCStr("python-tests"));
-  word result = strFind(executable, test_executable_name, 0, kMaxWord);
+  word result = strFind(executable, test_executable_name);
   EXPECT_GE(result, 0);
 }
 

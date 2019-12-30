@@ -654,7 +654,29 @@ bool strInternConstants(Thread* thread, const Object& items) {
   return modified;
 }
 
-word strFind(const Str& haystack, const Str& needle, word start, word end) {
+word strFind(const Str& haystack, const Str& needle) {
+  word haystack_len = haystack.charLength();
+  word needle_len = needle.charLength();
+  if (needle_len > haystack_len) {
+    return -1;
+  }
+  if (needle_len == 0) {
+    return 0;
+  }
+  // Loop is in byte space, not code point space
+  word result = 0;
+  // TODO(T41400083): Use a different search algorithm
+  for (word i = 0; i <= haystack_len - needle_len; result++) {
+    if (strHasPrefix(haystack, needle, i)) {
+      return result;
+    }
+    i = haystack.offsetByCodePoints(i, 1);
+  }
+  return -1;
+}
+
+word strFindWithRange(const Str& haystack, const Str& needle, word start,
+                      word end) {
   if (end < 0 || start < 0) {
     Slice::adjustSearchIndices(&start, &end, haystack.codePointLength());
   }

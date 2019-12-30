@@ -3815,6 +3815,10 @@ RawObject UnderBuiltinsModule::underStrFind(Thread* thread, Frame* frame,
   Str needle(&scope, args.get(1));
   Object start_obj(&scope, args.get(2));
   Object end_obj(&scope, args.get(3));
+  if ((start_obj.isNoneType() || start_obj == SmallInt::fromWord(0)) &&
+      end_obj.isNoneType()) {
+    return SmallInt::fromWord(strFind(haystack, needle));
+  }
   word start = 0;
   if (!start_obj.isNoneType()) {
     start = intUnderlying(*start_obj).asWordSaturated();
@@ -3823,7 +3827,7 @@ RawObject UnderBuiltinsModule::underStrFind(Thread* thread, Frame* frame,
   if (!end_obj.isNoneType()) {
     end = intUnderlying(*end_obj).asWordSaturated();
   }
-  word result = strFind(haystack, needle, start, end);
+  word result = strFindWithRange(haystack, needle, start, end);
   return SmallInt::fromWord(result);
 }
 

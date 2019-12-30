@@ -1636,6 +1636,42 @@ TEST_F(StrBuiltinsTest, CountWithNonNormalizedUTF8StringFindsChar) {
   EXPECT_TRUE(isIntEqualsWord(strCount(haystack, needle, 0, kMaxWord), 1));
 }
 
+TEST_F(StrBuiltinsTest, FindWithEmptyHaystackAndEmptyNeedleReturnsZero) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, Str::empty());
+  Str needle(&scope, Str::empty());
+  EXPECT_EQ(strFind(haystack, needle), 0);
+}
+
+TEST_F(StrBuiltinsTest,
+       FindWithEmptyHaystackAndNonEmptyNeedleReturnsNegativeOne) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, Str::empty());
+  Str needle(&scope, runtime_.newStrFromCStr("hello"));
+  EXPECT_EQ(strFind(haystack, needle), -1);
+}
+
+TEST_F(StrBuiltinsTest, FindWithNonEmptyHaystackAndEmptyNeedleReturnsZero) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, runtime_.newStrFromCStr("hello"));
+  Str needle(&scope, Str::empty());
+  EXPECT_EQ(strFind(haystack, needle), 0);
+}
+
+TEST_F(StrBuiltinsTest, FindWithNonExistentNeedleReturnsNegativeOne) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, runtime_.newStrFromCStr("hello"));
+  Str needle(&scope, runtime_.newStrFromCStr("a"));
+  EXPECT_EQ(strFind(haystack, needle), -1);
+}
+
+TEST_F(StrBuiltinsTest, FindReturnsIndexOfFirstOccurrence) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, runtime_.newStrFromCStr("helloworldhelloworld"));
+  Str needle(&scope, runtime_.newStrFromCStr("world"));
+  EXPECT_EQ(strFind(haystack, needle), 5);
+}
+
 TEST_F(StrBuiltinsTest, FindFirstNonWhitespaceWithEmptyStringReturnsZero) {
   HandleScope scope(thread_);
   Str str(&scope, Str::empty());

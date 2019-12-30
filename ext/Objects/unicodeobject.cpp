@@ -1559,7 +1559,7 @@ PY_EXPORT Py_ssize_t PyUnicode_Find(PyObject* str, PyObject* substr,
     return -2;
   }
   Str needle(&scope, strUnderlying(*needle_obj));
-  if (direction == 1) return strFind(haystack, needle, start, end);
+  if (direction == 1) return strFindWithRange(haystack, needle, start, end);
   return strRFind(haystack, needle, start, end);
 }
 
@@ -1580,7 +1580,7 @@ PY_EXPORT Py_ssize_t PyUnicode_FindChar(PyObject* str, Py_UCS4 ch,
          "PyUnicode_FindChar requires a 'str' instance");
   Str haystack(&scope, strUnderlying(*haystack_obj));
   Str needle(&scope, SmallStr::fromCodePoint(ch));
-  if (direction == 1) return strFind(haystack, needle, start, end);
+  if (direction == 1) return strFindWithRange(haystack, needle, start, end);
   return strRFind(haystack, needle, start, end);
 }
 

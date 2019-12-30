@@ -30,10 +30,15 @@ RawObject strEncodeASCII(Thread* thread, const Str& str);
 
 RawObject strEscapeNonASCII(Thread* thread, const Object& str_obj);
 
+// Look for needle in haystack. Return the first index found in that range, or
+// -1 if needle was not found.
+word strFind(const Str& haystack, const Str& needle);
+
 // Look for needle in haystack in the range [start, end]. Return the first
 // index found in that range, or -1 if needle was not found. Note that start
 // and end are code point offsets, not byte offsets.
-word strFind(const Str& haystack, const Str& needle, word start, word end);
+word strFindWithRange(const Str& haystack, const Str& needle, word start,
+                      word end);
 
 word strFindAsciiChar(const Str& haystack, byte needle);
 
