@@ -98,7 +98,7 @@ std::ostream& dumpExtendedFunction(std::ostream& os, RawFunction value) {
   Function function(&scope, value);
   os << "function " << function.name() << ":\n"
      << "  qualname: " << function.qualname() << '\n'
-     << "  module: " << function.module() << '\n'
+     << "  module: " << function.moduleName() << '\n'
      << "  annotations: " << function.annotations() << '\n'
      << "  closure: " << function.closure() << '\n'
      << "  defaults: " << function.defaults() << '\n'

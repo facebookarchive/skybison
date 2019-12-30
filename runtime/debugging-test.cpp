@@ -71,7 +71,7 @@ static RawObject makeTestFunction(Thread* thread) {
   defaults.atPut(0, runtime->newInt(-9));
   func.setDefaults(*defaults);
   func.setIntrinsicId(static_cast<word>(SymbolId::kList));
-  func.setModule(runtime->newStrFromCStr("barmodule"));
+  func.setModuleName(runtime->newStrFromCStr("barmodule"));
   func.setName(runtime->newStrFromCStr("baz"));
   Dict attrs(&scope, runtime->newDict());
   Str attr_name(&scope, runtime->newStrFromCStr("funcattr0"));

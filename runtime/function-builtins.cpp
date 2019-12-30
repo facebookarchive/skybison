@@ -129,7 +129,7 @@ const BuiltinAttribute FunctionBuiltins::kAttributes[] = {
     {SymbolId::kDunderCode, RawFunction::kCodeOffset,
      AttributeFlags::kReadOnly},
     {SymbolId::kDunderDoc, RawFunction::kDocOffset},
-    {SymbolId::kDunderModule, RawFunction::kModuleOffset},
+    {SymbolId::kDunderModule, RawFunction::kModuleNameOffset},
     {SymbolId::kDunderModuleObject, RawFunction::kModuleObjectOffset},
     {SymbolId::kDunderName, RawFunction::kNameOffset},
     {SymbolId::kDunderQualname, RawFunction::kQualnameOffset},

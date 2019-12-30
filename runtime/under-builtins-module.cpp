@@ -3225,7 +3225,7 @@ RawObject UnderBuiltinsModule::underPatch(Thread* thread, Frame* frame,
   Function patch_fn(&scope, *patch_fn_obj);
   Object fn_name(&scope, patch_fn.name());
   Runtime* runtime = thread->runtime();
-  Object module_name(&scope, patch_fn.module());
+  Object module_name(&scope, patch_fn.moduleName());
   Module module(&scope, runtime->findModule(module_name));
   Object base_fn_obj(&scope, moduleAt(thread, module, fn_name));
   if (!base_fn_obj.isFunction()) {

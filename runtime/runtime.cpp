@@ -717,7 +717,7 @@ RawObject Runtime::newFunctionWithCode(Thread* thread, const Object& qualname,
     Object module_name(&scope,
                        moduleAtById(thread, module, SymbolId::kDunderName));
     if (!module_name.isErrorNotFound()) {
-      function.setModule(*module_name);
+      function.setModuleName(*module_name);
     }
   } else {
     DCHECK(code.isNative(), "Only native code may have no globals");

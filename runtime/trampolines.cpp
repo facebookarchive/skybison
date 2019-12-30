@@ -1111,7 +1111,7 @@ RawObject moduleTrampolineNoArgs(Thread* thread, Frame* frame, word nargs) {
   }
   HandleScope scope(thread);
   Function function(&scope, frame->peek(0));
-  Object module(&scope, function.module());
+  Object module(&scope, function.moduleObject());
   return callMethNoArgs(thread, function, module);
 }
 
@@ -1122,7 +1122,7 @@ RawObject moduleTrampolineNoArgsKw(Thread* thread, Frame* frame, word nargs) {
   }
   HandleScope scope(thread);
   Function function(&scope, frame->peek(1));
-  Object module(&scope, function.module());
+  Object module(&scope, function.moduleObject());
   return callMethNoArgs(thread, function, module);
 }
 
@@ -1143,7 +1143,7 @@ RawObject moduleTrampolineNoArgsEx(Thread* thread, Frame* frame, word flags) {
     }
   }
   Function function(&scope, frame->peek(has_varkeywords + 1));
-  Object module(&scope, function.module());
+  Object module(&scope, function.moduleObject());
   return callMethNoArgs(thread, function, module);
 }
 
@@ -1155,7 +1155,7 @@ RawObject moduleTrampolineOneArg(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object arg(&scope, frame->peek(0));
   Function function(&scope, frame->peek(1));
-  Object module(&scope, function.module());
+  Object module(&scope, function.moduleObject());
   return callMethOneArg(thread, function, module, arg);
 }
 
@@ -1172,7 +1172,7 @@ RawObject moduleTrampolineOneArgKw(Thread* thread, Frame* frame, word nargs) {
   }
   Object arg(&scope, frame->peek(1));
   Function function(&scope, frame->peek(2));
-  Object module(&scope, function.module());
+  Object module(&scope, function.moduleObject());
   return callMethOneArg(thread, function, module, arg);
 }
 
@@ -1194,14 +1194,14 @@ RawObject moduleTrampolineOneArgEx(Thread* thread, Frame* frame, word flags) {
   }
   Object arg(&scope, varargs.at(0));
   Function function(&scope, frame->peek(has_varkeywords + 1));
-  Object module(&scope, function.module());
+  Object module(&scope, function.moduleObject());
   return callMethOneArg(thread, function, module, arg);
 }
 
 RawObject moduleTrampolineVarArgs(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Function function(&scope, frame->peek(nargs));
-  Object module(&scope, function.module());
+  Object module(&scope, function.moduleObject());
   Tuple varargs(&scope, thread->runtime()->newTuple(nargs));
   for (word i = 0; i < nargs; i++) {
     varargs.atPut(nargs - i - 1, frame->peek(i));
@@ -1217,7 +1217,7 @@ RawObject moduleTrampolineVarArgsKw(Thread* thread, Frame* frame, word nargs) {
                                 "function takes no keyword arguments");
   }
   Function function(&scope, frame->peek(nargs + 1));
-  Object module(&scope, function.module());
+  Object module(&scope, function.moduleObject());
   Tuple varargs(&scope, thread->runtime()->newTuple(nargs));
   for (word i = 0; i < nargs; i++) {
     varargs.atPut(nargs - i - 1, frame->peek(i + 1));
@@ -1237,7 +1237,7 @@ RawObject moduleTrampolineVarArgsEx(Thread* thread, Frame* frame, word flags) {
     }
   }
   Function function(&scope, frame->peek(has_varkeywords + 1));
-  Object module(&scope, function.module());
+  Object module(&scope, function.moduleObject());
   Object args(&scope, frame->peek(has_varkeywords));
   return callMethVarArgs(thread, function, module, args);
 }
@@ -1246,7 +1246,7 @@ RawObject moduleTrampolineKeywords(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Function function(&scope, frame->peek(nargs));
-  Object module(&scope, function.module());
+  Object module(&scope, function.moduleObject());
   Tuple args(&scope, runtime->newTuple(nargs));
   for (word i = 0; i < nargs; i++) {
     args.atPut(nargs - i - 1, frame->peek(i));
@@ -1276,7 +1276,7 @@ RawObject moduleTrampolineKeywordsKw(Thread* thread, Frame* frame, word nargs) {
     args.atPut(i, frame->peek(nargs - i));
   }
   Function function(&scope, frame->peek(nargs + 1));
-  Object module(&scope, function.module());
+  Object module(&scope, function.moduleObject());
   return callMethKeywords(thread, function, module, args, kwargs);
 }
 
@@ -1290,14 +1290,14 @@ RawObject moduleTrampolineKeywordsEx(Thread* thread, Frame* frame, word flags) {
     if (!kwargs.isDict()) UNIMPLEMENTED("mapping kwargs");
   }
   Function function(&scope, frame->peek(has_varkeywords + 1));
-  Object module(&scope, function.module());
+  Object module(&scope, function.moduleObject());
   return callMethKeywords(thread, function, module, varargs, kwargs);
 }
 
 RawObject moduleTrampolineFastCall(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Function function(&scope, frame->peek(nargs));
-  Object module(&scope, function.module());
+  Object module(&scope, function.moduleObject());
 
   std::unique_ptr<PyObject*[]> fastcall_args(new PyObject*[nargs]);
   for (word i = 0; i < nargs; i++) {
@@ -1316,7 +1316,7 @@ RawObject moduleTrampolineFastCall(Thread* thread, Frame* frame, word nargs) {
 RawObject moduleTrampolineFastCallKw(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Function function(&scope, frame->peek(nargs + 1));
-  Object module(&scope, function.module());
+  Object module(&scope, function.moduleObject());
 
   std::unique_ptr<PyObject*[]> fastcall_args(new PyObject*[nargs]);
   for (word i = 0; i < nargs; i++) {
@@ -1373,7 +1373,7 @@ RawObject moduleTrampolineFastCallEx(Thread* thread, Frame* frame, word flags) {
   }
 
   Function function(&scope, frame->peek(has_varkeywords + 1));
-  Object module(&scope, function.module());
+  Object module(&scope, function.moduleObject());
 
   Object result(&scope, NoneType::object());
   if (!has_varkeywords) {

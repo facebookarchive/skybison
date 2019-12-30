@@ -51,7 +51,8 @@ PY_EXPORT PyObject* PyModule_Create2(PyModuleDef* def, int) {
                       thread, fdef->ml_name, bit_cast<void*>(fdef->ml_meth),
                       fdef->ml_doc, methodTypeFromMethodFlags(fdef->ml_flags)));
 
-      function.setModule(*module);
+      function.setModuleName(module.name());
+      function.setModuleObject(*module);
       Str function_name(&scope, function.name());
       moduleAtPut(thread, module, function_name, function);
     }

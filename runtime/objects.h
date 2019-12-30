@@ -2143,8 +2143,8 @@ class RawFunction : public RawInstance {
   void setKwDefaults(RawObject kw_defaults) const;
 
   // The name of the module the function was defined in
-  RawObject module() const;
-  void setModule(RawObject module) const;
+  RawObject moduleName() const;
+  void setModuleName(RawObject module_name) const;
 
   // The module where this function was defined
   RawObject moduleObject() const;
@@ -2203,8 +2203,8 @@ class RawFunction : public RawInstance {
   static const int kDocOffset = kStacksizeOffset + kPointerSize;
   static const int kNameOffset = kDocOffset + kPointerSize;
   static const int kQualnameOffset = kNameOffset + kPointerSize;
-  static const int kModuleOffset = kQualnameOffset + kPointerSize;
-  static const int kModuleObjectOffset = kModuleOffset + kPointerSize;
+  static const int kModuleNameOffset = kQualnameOffset + kPointerSize;
+  static const int kModuleObjectOffset = kModuleNameOffset + kPointerSize;
   static const int kDefaultsOffset = kModuleObjectOffset + kPointerSize;
   static const int kAnnotationsOffset = kDefaultsOffset + kPointerSize;
   static const int kKwDefaultsOffset = kAnnotationsOffset + kPointerSize;
@@ -5784,12 +5784,13 @@ inline void RawFunction::setKwDefaults(RawObject kw_defaults) const {
   instanceVariableAtPut(kKwDefaultsOffset, kw_defaults);
 }
 
-inline RawObject RawFunction::module() const {
-  return instanceVariableAt(kModuleOffset);
+inline RawObject RawFunction::moduleName() const {
+  return instanceVariableAt(kModuleNameOffset);
 }
 
-inline void RawFunction::setModule(RawObject module) const {
-  instanceVariableAtPut(kModuleOffset, module);
+inline void RawFunction::setModuleName(RawObject module_name) const {
+  DCHECK(module_name.isStr(), "module_name is expected to be a Str");
+  instanceVariableAtPut(kModuleNameOffset, module_name);
 }
 
 inline RawObject RawFunction::moduleObject() const {
