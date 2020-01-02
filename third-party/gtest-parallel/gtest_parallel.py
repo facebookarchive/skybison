@@ -11,9 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import cPickle
 import errno
+from functools import total_ordering
 import gzip
+import io
 import json
 import multiprocessing
 import optparse
@@ -24,9 +25,18 @@ import signal
 import subprocess
 import sys
 import tempfile
-import thread
 import threading
 import time
+
+if sys.version_info.major >= 3:
+    long = int
+    import _pickle as cPickle
+    import _thread as thread
+else:
+    import cPickle
+    import thread
+
+from pickle import HIGHEST_PROTOCOL as PICKLE_HIGHEST_PROTOCOL
 
 if sys.platform == 'win32':
   import msvcrt
@@ -140,6 +150,7 @@ def get_save_file_path():
     return os.path.join(os.path.expanduser('~'), '.gtest-parallel-times')
 
 
+@total_ordering
 class Task(object):
   """Stores information about a task (single execution of a test).
 
@@ -175,8 +186,14 @@ class Task(object):
     return (1 if self.last_execution_time is None else 0,
             self.last_execution_time)
 
-  def __cmp__(self, other):
-    return cmp(self.__sorting_key(), other.__sorting_key())
+  def __eq__(self, other):
+      return self.__sorting_key() == other.__sorting_key()
+
+  def __ne__(self, other):
+      return not (self == other)
+
+  def __lt__(self, other):
+      return self.__sorting_key() < other.__sorting_key()
 
   @staticmethod
   def _normalize(string):
@@ -286,7 +303,14 @@ class FilterFormat(object):
   def __init__(self, output_dir):
     if sys.stdout.isatty():
       # stdout needs to be unbuffered since the output is interactive.
-      sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+      if isinstance(sys.stdout, io.TextIOWrapper):
+        # workaround for https://bugs.python.org/issue17404
+        sys.stdout = io.TextIOWrapper(sys.stdout.detach(),
+                                      line_buffering=True,
+                                      write_through=True,
+                                      newline='\n')
+      else:
+        sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
     self.output_dir = output_dir
 
@@ -374,10 +398,12 @@ class FilterFormat(object):
     for task_key in sorted(stats, key=stats.__getitem__):
       (num_passed, num_failed, num_interrupted, _) = stats[task_key]
       (test_binary, task_name) = task_key
+      total_runs = num_passed + num_failed + num_interrupted
+      if num_passed == total_runs:
+        continue
       self.out.permanent_line(
           "  %s %s passed %d / %d times%s." %
-              (test_binary, task_name, num_passed,
-               num_passed + num_failed + num_interrupted,
+              (test_binary, task_name, num_passed, total_runs,
                "" if num_interrupted == 0 else (" (%d interrupted)" % num_interrupted)))
 
   def flush(self):
@@ -522,7 +548,7 @@ class TestTimes(object):
         fd.seek(0)
         fd.truncate()
         with gzip.GzipFile(fileobj=fd, mode='wb') as gzf:
-          cPickle.dump(times, gzf, cPickle.HIGHEST_PROTOCOL)
+          cPickle.dump(times, gzf, PICKLE_HIGHEST_PROTOCOL)
     except IOError:
       pass  # ignore errors---saving the times isn't that important
 
@@ -555,12 +581,18 @@ def find_tests(binaries, additional_args, options, times):
       test_list = subprocess.check_output(list_command,
                                           stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
-      sys.exit("%s: %s" % (test_binary, str(e)))
+      sys.exit("%s: %s\n%s" % (test_binary, str(e), e.output))
+
+    try:
+        test_list = test_list.split('\n')
+    except TypeError:
+        # subprocess.check_output() returns bytes in python3
+        test_list = test_list.decode(sys.stdout.encoding).split('\n')
 
     command += additional_args + ['--gtest_color=' + options.gtest_color]
 
     test_group = ''
-    for line in test_list.split('\n'):
+    for line in test_list:
       if not line.strip():
         continue
       if line[0] != " ":
