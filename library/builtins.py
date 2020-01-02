@@ -119,6 +119,7 @@ _list_getitem = _list_getitem  # noqa: F821
 _list_getslice = _list_getslice  # noqa: F821
 _list_guard = _list_guard  # noqa: F821
 _list_len = _list_len  # noqa: F821
+_list_new = _list_new  # noqa: F821
 _list_sort = _list_sort  # noqa: F821
 _list_swap = _list_swap  # noqa: F821
 _mappingproxy_guard = _mappingproxy_guard  # noqa: F821
@@ -5661,7 +5662,7 @@ class zip:
     def __next__(self):
         iterators = self._iterators
         length = _list_len(iterators)
-        result = [None] * length
+        result = _list_new(length)
         i = 0
         while i < length:
             result[i] = next(iterators[i])

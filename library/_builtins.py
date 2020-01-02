@@ -603,6 +603,11 @@ def _list_len(self):
 
 
 @_patch
+def _list_new(size, fill=None):
+    pass
+
+
+@_patch
 def _list_sort(list):
     pass
 

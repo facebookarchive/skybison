@@ -149,6 +149,15 @@ class UnderBuiltinsTests(unittest.TestCase):
             _builtins._getframe_locals(100)
         self.assertIn("call stack is not deep enough", str(context.exception))
 
+    def test_list_new_default_fill_returns_list(self):
+        self.assertListEqual(_builtins._list_new(-1), [])
+        self.assertListEqual(_builtins._list_new(0), [])
+        self.assertListEqual(_builtins._list_new(3), [None, None, None])
+
+    def test_list_new_default_fill_returns_list(self):
+        self.assertListEqual(_builtins._list_new(0, 1), [])
+        self.assertListEqual(_builtins._list_new(3, 1), [1, 1, 1])
+
 
 if __name__ == "__main__":
     unittest.main()

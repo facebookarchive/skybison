@@ -192,6 +192,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderListGetslice, underListGetslice},
     {SymbolId::kUnderListGuard, underListGuard},
     {SymbolId::kUnderListLen, underListLen},
+    {SymbolId::kUnderListNew, underListNew},
     {SymbolId::kUnderListSort, underListSort},
     {SymbolId::kUnderListSwap, underListSwap},
     {SymbolId::kUnderMappingproxyGuard, underMappingproxyGuard},
@@ -2845,6 +2846,25 @@ RawObject UnderBuiltinsModule::underListLen(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   List self(&scope, args.get(0));
   return SmallInt::fromWord(self.numItems());
+}
+
+RawObject UnderBuiltinsModule::underListNew(Thread* thread, Frame* frame,
+                                            word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  word size = SmallInt::cast(args.get(0)).value();
+  Runtime* runtime = thread->runtime();
+  List result(&scope, runtime->newList());
+  if (size > 0) {
+    MutableTuple items(&scope, runtime->newMutableTuple(size));
+    result.setItems(*items);
+    result.setNumItems(size);
+    Object value(&scope, args.get(1));
+    if (!value.isNoneType()) {
+      items.fill(*value);
+    }
+  }
+  return *result;
 }
 
 RawObject UnderBuiltinsModule::underListSort(Thread* thread, Frame* frame,

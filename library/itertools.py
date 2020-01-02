@@ -8,6 +8,7 @@ _Unbound = _Unbound  # noqa: F821
 _int_check = _int_check  # noqa: F821
 _int_guard = _int_guard  # noqa: F821
 _list_len = _list_len  # noqa: F821
+_list_new = _list_new  # noqa: F821
 _number_check = _number_check  # noqa: F821
 _object_type_hasattr = _object_type_hasattr  # noqa: F821
 _tuple_len = _tuple_len  # noqa: F821
@@ -167,7 +168,7 @@ class combinations_with_replacement:
             return result
 
         result._seq = seq
-        result._indices = [0] * r
+        result._indices = _list_new(r, 0)
         result._r = r
         result._max_index = _tuple_len(seq) - 1
         return result
@@ -540,7 +541,7 @@ class product:
             raise TypeError
         length = _tuple_len(iterables) if repeat else 0
         i = 0
-        repeated = [None] * length
+        repeated = _list_new(length)
         result = object.__new__(cls)
         while i < length:
             item = tuple(iterables[i])
@@ -551,7 +552,7 @@ class product:
             i += 1
         repeated *= repeat
         result._iterables = repeated
-        result._digits = [0] * (length * repeat)
+        result._digits = _list_new(length * repeat, 0)
         return result
 
     def __next__(self):
@@ -560,7 +561,7 @@ class product:
             raise StopIteration
         digits = self._digits
         length = _list_len(iterables)
-        result = [None] * length
+        result = _list_new(length)
         i = length - 1
         carry = 1
         while i >= 0:
@@ -768,7 +769,7 @@ class zip_longest:
         if not self._num_active:
             raise StopIteration
         fillvalue = self._fillvalue
-        values = [fillvalue] * self._num_iters
+        values = _list_new(self._num_iters, fillvalue)
         for i, it in enumerate(iters):
             try:
                 values[i] = next(it)
