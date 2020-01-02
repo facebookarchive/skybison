@@ -120,7 +120,19 @@ class StringIOBuiltins
     : public Builtins<StringIOBuiltins, SymbolId::kStringIO,
                       LayoutId::kStringIO, LayoutId::kUnderTextIOBase> {
  public:
+  static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
+  static RawObject getvalue(Thread* thread, Frame* frame, word nargs);
+  static RawObject read(Thread* thread, Frame* frame, word nargs);
+  static RawObject readline(Thread* thread, Frame* frame, word nargs);
+  static RawObject truncate(Thread* thread, Frame* frame, word nargs);
+  static RawObject write(Thread* thread, Frame* frame, word nargs);
+
   static const BuiltinAttribute kAttributes[];
+  static const BuiltinMethod kBuiltinMethods[];
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(StringIOBuiltins);
 };
 
 }  // namespace py

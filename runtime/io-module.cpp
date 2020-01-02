@@ -9,6 +9,7 @@
 #include "objects.h"
 #include "os.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "thread.h"
 
 namespace py {
@@ -702,14 +703,440 @@ const BuiltinAttribute FileIOBuiltins::kAttributes[] = {
 
 const BuiltinAttribute StringIOBuiltins::kAttributes[] = {
     {SymbolId::kUnderBuffer, StringIO::kBufferOffset},
-    {SymbolId::kUnderDecoder, StringIO::kDecoderOffset},
-    {SymbolId::kUnderLineBuffering, StringIO::kLineBufferingOffset},
+    {SymbolId::kUnderPos, StringIO::kPosOffset},
     {SymbolId::kUnderReadnl, StringIO::kReadnlOffset},
     {SymbolId::kUnderReadtranslate, StringIO::kReadtranslateOffset},
     {SymbolId::kUnderReaduniversal, StringIO::kReaduniversalOffset},
+    {SymbolId::kUnderSeennl, StringIO::kSeennlOffset},
     {SymbolId::kUnderWritenl, StringIO::kWritenlOffset},
     {SymbolId::kUnderWritetranslate, StringIO::kWritetranslateOffset},
+    {SymbolId::kInvalid, RawFunction::kDictOffset},
     {SymbolId::kSentinelId, 0},
+};
+
+enum NewlineFound { kLF = 0x1, kCR = 0x2, kCRLF = 0x4 };
+
+static RawObject stringIOWrite(Thread* thread, const StringIO& string_io,
+                               const Str& value) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  if (*value == Str::empty()) {
+    return runtime->newInt(0);
+  }
+
+  Str writenl(&scope, string_io.writenl());
+  bool long_writenl = writenl.charLength() == 2;
+  byte first_writenl_char = writenl.charAt(0);
+  bool has_write_translate =
+      string_io.hasWritetranslate() && first_writenl_char != '\n';
+  word original_val_len = value.charLength();
+  word val_len = original_val_len;
+
+  // TODO(T59696801): use a more efficient counting method.
+  // If write_translate is true, read_translate is false
+  // Contrapositively, if read_translate is true, write_translate is false
+  // Therefore we don't have to worry about their interactions with each other
+  if (has_write_translate && long_writenl) {
+    for (word i = 0; i < original_val_len; i++) {
+      byte current_char = value.charAt(i);
+      if (current_char == '\n') {
+        val_len++;
+      }
+    }
+  }
+
+  // TODO(T59696801): use a more efficient counting method.
+  word start = string_io.pos();
+  word new_len = start + val_len;
+  bool has_read_translate = string_io.hasReadtranslate();
+  if (has_read_translate) {
+    for (word i = 0; i < val_len - 1; i++) {
+      if (value.charAt(i) == '\r' && value.charAt(i + 1) == '\n') {
+        new_len--;
+        i++;
+      }
+    }
+  }
+
+  // TODO(T59697431): use a more efficient growing operation.
+  MutableBytes buffer(&scope, string_io.buffer());
+  if (buffer.length() < new_len) {
+    MutableBytes new_buffer(&scope,
+                            runtime->newMutableBytesUninitialized(new_len));
+    new_buffer.replaceFromWith(0, RawBytes::cast(buffer.becomeImmutable()),
+                               buffer.length());
+    if (buffer.length() < start) {
+      for (word i = buffer.length(); i < start; i++) {
+        buffer.byteAtPut(i, 0);
+      }
+    }
+    string_io.setBuffer(*new_buffer);
+    buffer = *new_buffer;
+  }
+
+  if (has_read_translate) {
+    word new_seen_nl = Int::cast(string_io.seennl()).asWord();
+    for (word str_i = 0, byte_i = start; str_i < val_len; ++str_i, ++byte_i) {
+      byte ch = value.charAt(str_i);
+      if (ch == '\r') {
+        if (val_len > str_i + 1 && value.charAt(str_i + 1) == '\n') {
+          new_seen_nl |= NewlineFound::kCRLF;
+          buffer.byteAtPut(byte_i, '\n');
+          str_i++;
+          continue;
+        }
+        new_seen_nl |= NewlineFound::kCR;
+        buffer.byteAtPut(byte_i, '\n');
+        continue;
+      }
+      if (ch == '\n') {
+        new_seen_nl |= NewlineFound::kLF;
+      }
+      buffer.byteAtPut(byte_i, ch);
+    }
+    string_io.setSeennl(SmallInt::fromWord(new_seen_nl));
+  } else if (has_write_translate) {
+    for (word str_i = 0, byte_i = start; str_i < original_val_len;
+         ++str_i, ++byte_i) {
+      byte ch = value.charAt(str_i);
+      if (ch == '\n') {
+        buffer.byteAtPut(byte_i, first_writenl_char);
+        if (long_writenl) {
+          buffer.byteAtPut(++byte_i, writenl.charAt(1));
+        }
+        continue;
+      }
+      buffer.byteAtPut(byte_i, ch);
+    }
+  } else {
+    buffer.replaceFromWithStr(start, *value, val_len);
+  }
+  string_io.setPos(new_len);
+  return runtime->newInt(original_val_len);
+}
+
+static bool isValidStringIONewline(const Object& newline) {
+  if (newline == SmallStr::empty()) return true;
+  if (newline == SmallStr::fromCodePoint('\n')) return true;
+  if (newline == SmallStr::fromCodePoint('\r')) return true;
+  return newline == SmallStr::fromCStr("\r\n");
+}
+
+RawObject StringIOBuiltins::dunderInit(Thread* thread, Frame* frame,
+                                       word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStringIO(*self)) {
+    return thread->raiseRequiresType(self, SymbolId::kStringIO);
+  }
+  Object newline(&scope, args.get(2));
+  Runtime* runtime = thread->runtime();
+  if (newline != NoneType::object()) {
+    if (!runtime->isInstanceOfStr(*newline)) {
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "newline must be str or None, not %T",
+                                  &newline);
+    }
+    newline = strUnderlying(*newline);
+    if (!isValidStringIONewline(newline)) {
+      return thread->raiseWithFmt(LayoutId::kValueError,
+                                  "illegal newline value: %S", &newline);
+    }
+  }
+  StringIO string_io(&scope, *self);
+  string_io.setBuffer(runtime->emptyMutableBytes());
+  string_io.setClosed(false);
+  string_io.setPos(0);
+  string_io.setReadnl(*newline);
+  string_io.setSeennl(runtime->newInt(0));
+  if (newline == NoneType::object()) {
+    string_io.setReadtranslate(true);
+    string_io.setReaduniversal(true);
+    string_io.setWritetranslate(false);
+    string_io.setWritenl(SmallStr::fromCodePoint('\n'));
+  } else if (newline == Str::empty()) {
+    string_io.setReadtranslate(false);
+    string_io.setReaduniversal(true);
+    string_io.setWritetranslate(false);
+    string_io.setWritenl(SmallStr::fromCodePoint('\n'));
+  } else {
+    string_io.setReadtranslate(false);
+    string_io.setReaduniversal(false);
+    string_io.setWritetranslate(true);
+    string_io.setWritenl(*newline);
+  }
+
+  Object initial_value_obj(&scope, args.get(1));
+  if (initial_value_obj != NoneType::object()) {
+    if (!runtime->isInstanceOfStr(*initial_value_obj)) {
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "initial_value must be str or None, not %T",
+                                  &initial_value_obj);
+    }
+    Str initial_value(&scope, strUnderlying(*initial_value_obj));
+    stringIOWrite(thread, string_io, initial_value);
+    string_io.setPos(0);
+  }
+  return NoneType::object();
+}
+
+static word stringIOReadline(Thread* thread, const StringIO& string_io,
+                             word size) {
+  HandleScope scope(thread);
+  MutableBytes buffer(&scope, string_io.buffer());
+  word buf_len = buffer.length();
+  word start = string_io.pos();
+  if (start >= buf_len) {
+    return -1;
+  }
+  bool has_read_universal = string_io.hasReaduniversal();
+  bool has_read_translate = string_io.hasReadtranslate();
+  Object newline_obj(&scope, string_io.readnl());
+  if (has_read_translate) {
+    newline_obj = SmallStr::fromCodePoint('\n');
+  }
+  Str newline(&scope, *newline_obj);
+  if (size == -1 || (size + start) > buf_len) {
+    size = buf_len - start;
+  }
+  word i = start;
+
+  // TODO(T59800533): use a more efficient character scanning method similar to
+  // strchr, strcspn, or strstr.
+  if (has_read_universal) {
+    while (i < start + size) {
+      byte ch = buffer.byteAt(i++);
+      if (ch == '\n') break;
+      if (ch == '\r') {
+        if (buf_len > i && buffer.byteAt(i) == '\n') {
+          i++;
+        }
+        break;
+      }
+    }
+  } else {
+    byte first_nl_byte = newline.charAt(0);
+    while (i < start + size) {
+      word index = buffer.findByte(first_nl_byte, i, (size + start - i));
+      if (index == -1) {
+        i += (size + start - i);
+        break;
+      }
+      i = index + 1;
+      if (buf_len >= (i + newline.charLength() - 1)) {
+        bool match = true;
+        for (int j = 1; j < newline.charLength(); j++) {
+          if (buffer.byteAt(i + j - 1) != newline.charAt(j)) {
+            match = false;
+          }
+        }
+        if (match) {
+          i += (newline.charLength() - 1);
+          break;
+        }
+      }
+    }
+  }
+  string_io.setPos(i);
+  return i;
+}
+
+RawObject StringIOBuiltins::dunderNext(Thread* thread, Frame* frame,
+                                       word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStringIO(*self)) {
+    return thread->raiseRequiresType(self, SymbolId::kStringIO);
+  }
+  StringIO string_io(&scope, *self);
+  if (string_io.closed()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "I/O operation on closed file.");
+  }
+  word start = string_io.pos();
+  word end = stringIOReadline(thread, string_io, -1);
+  if (end == -1) {
+    return thread->raise(LayoutId::kStopIteration, NoneType::object());
+  }
+  Bytes result(&scope, string_io.buffer());
+  result = thread->runtime()->bytesSubseq(thread, result, start, end - start);
+  return result.becomeStr();
+}
+
+RawObject StringIOBuiltins::getvalue(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object self(&scope, args.get(0));
+  if (!runtime->isInstanceOfStringIO(*self)) {
+    return thread->raiseRequiresType(self, SymbolId::kStringIO);
+  }
+  StringIO string_io(&scope, *self);
+  if (string_io.closed()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "I/O operation on closed file.");
+  }
+  Bytes buffer(&scope, string_io.buffer());
+  buffer = runtime->bytesCopy(thread, buffer);
+  return buffer.becomeStr();
+}
+
+RawObject StringIOBuiltins::read(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStringIO(*self)) {
+    return thread->raiseRequiresType(self, SymbolId::kStringIO);
+  }
+  StringIO string_io(&scope, *self);
+  if (string_io.closed()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "I/O operation on closed file.");
+  }
+  Object size_obj(&scope, args.get(1));
+  Runtime* runtime = thread->runtime();
+  word size;
+  if (size_obj.isNoneType()) {
+    size = -1;
+  } else {
+    size_obj = intFromIndex(thread, size_obj);
+    if (size_obj.isError()) return *size_obj;
+    // TODO(T55084422): have a better abstraction for int to word conversion
+    if (!size_obj.isSmallInt() && !size_obj.isBool()) {
+      return thread->raiseWithFmt(
+          LayoutId::kOverflowError,
+          "cannot fit value into an index-sized integer");
+    }
+    size = Int::cast(*size_obj).asWord();
+  }
+  Bytes result(&scope, string_io.buffer());
+  word start = string_io.pos();
+  word end = result.length();
+  if (start > end) {
+    return Str::empty();
+  }
+  if (size < 0) {
+    string_io.setPos(end);
+    result = runtime->bytesSubseq(thread, result, start, end - start);
+    return result.becomeStr();
+  }
+  word new_pos = Utils::minimum(end, start + size);
+  string_io.setPos(new_pos);
+  result = runtime->bytesSubseq(thread, result, start, new_pos - start);
+  return result.becomeStr();
+}
+
+RawObject StringIOBuiltins::readline(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStringIO(*self)) {
+    return thread->raiseRequiresType(self, SymbolId::kStringIO);
+  }
+  StringIO string_io(&scope, *self);
+  if (string_io.closed()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "I/O operation on closed file.");
+  }
+  Object size_obj(&scope, args.get(1));
+  Runtime* runtime = thread->runtime();
+  word size;
+  if (size_obj.isNoneType()) {
+    size = -1;
+  } else {
+    size_obj = intFromIndex(thread, size_obj);
+    if (size_obj.isError()) return *size_obj;
+    // TODO(T55084422): have a better abstraction for int to word conversion
+    if (!size_obj.isSmallInt() && !size_obj.isBool()) {
+      return thread->raiseWithFmt(
+          LayoutId::kOverflowError,
+          "cannot fit value into an index-sized integer");
+    }
+    size = Int::cast(*size_obj).asWord();
+  }
+  word start = string_io.pos();
+  word end = stringIOReadline(thread, string_io, size);
+  if (end == -1) {
+    return Str::empty();
+  }
+  Bytes result(&scope, string_io.buffer());
+  result = runtime->bytesSubseq(thread, result, start, end - start);
+  return result.becomeStr();
+}
+
+RawObject StringIOBuiltins::truncate(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStringIO(*self)) {
+    return thread->raiseRequiresType(self, SymbolId::kStringIO);
+  }
+  StringIO string_io(&scope, *self);
+  if (string_io.closed()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "I/O operation on closed file.");
+  }
+  Object size_obj(&scope, args.get(1));
+  Runtime* runtime = thread->runtime();
+  word size;
+  if (size_obj.isNoneType()) {
+    size = string_io.pos();
+  } else {
+    size_obj = intFromIndex(thread, size_obj);
+    if (size_obj.isError()) return *size_obj;
+    // TODO(T55084422): have a better abstraction for int to word conversion
+    if (!size_obj.isSmallInt() && !size_obj.isBool()) {
+      return thread->raiseWithFmt(
+          LayoutId::kOverflowError,
+          "cannot fit value into an index-sized integer");
+    }
+    size = Int::cast(*size_obj).asWord();
+    if (size < 0) {
+      return thread->raiseWithFmt(LayoutId::kValueError,
+                                  "negative truncate position %d", size);
+    }
+  }
+  Bytes buffer(&scope, string_io.buffer());
+  if (size < buffer.length()) {
+    MutableBytes new_buffer(
+        &scope, thread->runtime()->newMutableBytesUninitialized(size));
+    new_buffer.replaceFromWith(0, *buffer, size);
+    string_io.setBuffer(*new_buffer);
+  }
+  return runtime->newInt(size);
+}
+
+RawObject StringIOBuiltins::write(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStringIO(*self)) {
+    return thread->raiseRequiresType(self, SymbolId::kStringIO);
+  }
+  StringIO string_io(&scope, *self);
+  if (string_io.closed()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "I/O operation on closed file.");
+  }
+  Object value(&scope, args.get(1));
+  if (!thread->runtime()->isInstanceOfStr(*value)) {
+    return thread->raiseRequiresType(value, SymbolId::kStr);
+  }
+  Str str(&scope, strUnderlying(*value));
+  return stringIOWrite(thread, string_io, str);
+}
+
+const BuiltinMethod StringIOBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kGetvalue, StringIOBuiltins::getvalue},
+    {SymbolId::kDunderInit, StringIOBuiltins::dunderInit},
+    {SymbolId::kDunderNext, StringIOBuiltins::dunderNext},
+    {SymbolId::kRead, StringIOBuiltins::read},
+    {SymbolId::kReadline, StringIOBuiltins::readline},
+    {SymbolId::kTruncate, StringIOBuiltins::truncate},
+    {SymbolId::kWrite, StringIOBuiltins::write},
+    {SymbolId::kSentinelId, nullptr},
 };
 
 const BuiltinAttribute TextIOWrapperBuiltins::kAttributes[] = {

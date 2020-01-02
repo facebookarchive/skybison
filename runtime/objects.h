@@ -3473,33 +3473,48 @@ class RawStringIO : public RawUnderTextIOBase {
  public:
   RawObject buffer() const;
   void setBuffer(RawObject buffer) const;
-  RawObject decoder() const;
-  void setDecoder(RawObject decoder) const;
-  RawObject lineBuffering() const;
-  void setLineBuffering(RawObject line_buffering) const;
+
+  word pos() const;
+  void setPos(word new_pos) const;
+
+  // TODO(T59697642): don't use a whole attribute, just read and write a bit in
+  // a bitfield.
   RawObject readnl() const;
   void setReadnl(RawObject readnl) const;
-  RawObject readtranslate() const;
-  void setReadtranslate(RawObject readtranslate) const;
-  RawObject readuniversal() const;
-  void setReaduniversal(RawObject readuniversal) const;
+
+  // TODO(T59697642): don't use a whole attribute, just read and write a bit in
+  // a bitfield.
+  bool hasReadtranslate() const;
+  void setReadtranslate(bool readtranslate) const;
+
+  // TODO(T59697642): don't use a whole attribute, just read and write a bit in
+  // a bitfield.
+  bool hasReaduniversal() const;
+  void setReaduniversal(bool readuniversal) const;
+
+  // TODO(T59697642): don't use a whole attribute, just read and write bits in a
+  // bitfield.
+  RawObject seennl() const;
+  void setSeennl(RawObject seennl) const;
+
+  // TODO(T59697642): don't use a whole attribute, just read and write a bit in
+  // a bitfield.
   RawObject writenl() const;
   void setWritenl(RawObject writenl) const;
-  RawObject writetranslate() const;
-  void setWritetranslate(RawObject writetranslate) const;
 
-  // Overflow dict
-  RawObject dict() const;
-  void setDict(RawObject dict) const;
+  // TODO(T59697642): don't use a whole attribute, just read and write a bit in
+  // a bitfield.
+  bool hasWritetranslate() const;
+  void setWritetranslate(bool writetranslate) const;
 
   // Layout
   static const int kBufferOffset = RawUnderTextIOBase::kSize;
-  static const int kDecoderOffset = kBufferOffset + kPointerSize;
-  static const int kLineBufferingOffset = kDecoderOffset + kPointerSize;
-  static const int kReadnlOffset = kLineBufferingOffset + kPointerSize;
+  static const int kPosOffset = kBufferOffset + kPointerSize;
+  static const int kReadnlOffset = kPosOffset + kPointerSize;
   static const int kReadtranslateOffset = kReadnlOffset + kPointerSize;
   static const int kReaduniversalOffset = kReadtranslateOffset + kPointerSize;
-  static const int kWritenlOffset = kReaduniversalOffset + kPointerSize;
+  static const int kSeennlOffset = kReaduniversalOffset + kPointerSize;
+  static const int kWritenlOffset = kSeennlOffset + kPointerSize;
   static const int kWritetranslateOffset = kWritenlOffset + kPointerSize;
   static const int kDictOffset = kWritetranslateOffset + kPointerSize;
   static const int kSize = kDictOffset + kPointerSize;
@@ -6771,28 +6786,12 @@ inline void RawStringIO::setBuffer(RawObject buffer) const {
   instanceVariableAtPut(kBufferOffset, buffer);
 }
 
-inline RawObject RawStringIO::decoder() const {
-  return instanceVariableAt(kDecoderOffset);
+inline word RawStringIO::pos() const {
+  return RawSmallInt::cast(instanceVariableAt(kPosOffset)).value();
 }
 
-inline void RawStringIO::setDecoder(RawObject decoder) const {
-  instanceVariableAtPut(kDecoderOffset, decoder);
-}
-
-inline RawObject RawStringIO::dict() const {
-  return instanceVariableAt(kDictOffset);
-}
-
-inline void RawStringIO::setDict(RawObject dict) const {
-  instanceVariableAtPut(kDictOffset, dict);
-}
-
-inline RawObject RawStringIO::lineBuffering() const {
-  return instanceVariableAt(kLineBufferingOffset);
-}
-
-inline void RawStringIO::setLineBuffering(RawObject line_buffering) const {
-  instanceVariableAtPut(kLineBufferingOffset, line_buffering);
+inline void RawStringIO::setPos(word new_pos) const {
+  instanceVariableAtPut(kPosOffset, RawSmallInt::fromWord(new_pos));
 }
 
 inline RawObject RawStringIO::readnl() const {
@@ -6803,20 +6802,28 @@ inline void RawStringIO::setReadnl(RawObject readnl) const {
   instanceVariableAtPut(kReadnlOffset, readnl);
 }
 
-inline RawObject RawStringIO::readtranslate() const {
-  return instanceVariableAt(kReadtranslateOffset);
+inline bool RawStringIO::hasReadtranslate() const {
+  return RawBool::cast(instanceVariableAt(kReadtranslateOffset)).value();
 }
 
-inline void RawStringIO::setReadtranslate(RawObject readtranslate) const {
-  instanceVariableAtPut(kReadtranslateOffset, readtranslate);
+inline void RawStringIO::setReadtranslate(bool readtranslate) const {
+  instanceVariableAtPut(kReadtranslateOffset, RawBool::fromBool(readtranslate));
 }
 
-inline RawObject RawStringIO::readuniversal() const {
-  return instanceVariableAt(kReaduniversalOffset);
+inline bool RawStringIO::hasReaduniversal() const {
+  return RawBool::cast(instanceVariableAt(kReaduniversalOffset)).value();
 }
 
-inline void RawStringIO::setReaduniversal(RawObject readuniversal) const {
-  instanceVariableAtPut(kReaduniversalOffset, readuniversal);
+inline void RawStringIO::setReaduniversal(bool readuniversal) const {
+  instanceVariableAtPut(kReaduniversalOffset, RawBool::fromBool(readuniversal));
+}
+
+inline RawObject RawStringIO::seennl() const {
+  return instanceVariableAt(kSeennlOffset);
+}
+
+inline void RawStringIO::setSeennl(RawObject seennl) const {
+  instanceVariableAtPut(kSeennlOffset, seennl);
 }
 
 inline RawObject RawStringIO::writenl() const {
@@ -6827,12 +6834,13 @@ inline void RawStringIO::setWritenl(RawObject writenl) const {
   instanceVariableAtPut(kWritenlOffset, writenl);
 }
 
-inline RawObject RawStringIO::writetranslate() const {
-  return instanceVariableAt(kWritetranslateOffset);
+inline bool RawStringIO::hasWritetranslate() const {
+  return RawBool::cast(instanceVariableAt(kWritetranslateOffset)).value();
 }
 
-inline void RawStringIO::setWritetranslate(RawObject writetranslate) const {
-  instanceVariableAtPut(kWritetranslateOffset, writetranslate);
+inline void RawStringIO::setWritetranslate(bool writetranslate) const {
+  instanceVariableAtPut(kWritetranslateOffset,
+                        RawBool::fromBool(writetranslate));
 }
 
 // RawIncrementalNewlineDecoder

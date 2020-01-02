@@ -440,6 +440,9 @@ class Runtime {
   // Returns a new Bytes containing the elements of self and then other.
   RawObject bytesConcat(Thread* thread, const Bytes& self, const Bytes& other);
 
+  // Returns a copy of a bytes object
+  RawObject bytesCopy(Thread* thread, const Bytes& src);
+
   // Makes a new copy of the `original` bytes with the specified `size`.
   // If the new length is less than the old length, truncate the bytes to fit.
   // If the new length is greater than the old length, pad with trailing zeros.

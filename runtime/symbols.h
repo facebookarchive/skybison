@@ -644,6 +644,7 @@ class Runtime;
   V(GetSizeOf, "getsizeof")                                                    \
   V(Getattr, "getattr")                                                        \
   V(Getter, "getter")                                                          \
+  V(Getvalue, "getvalue")                                                      \
   V(GiRunning, "gi_running")                                                   \
   V(Hasattr, "hasattr")                                                        \
   V(Hash, "hash")                                                              \
@@ -857,6 +858,7 @@ class Runtime;
   V(Translate, "translate")                                                    \
   V(True, "True")                                                              \
   V(Truediv, "truediv")                                                        \
+  V(Truncate, "truncate")                                                      \
   V(Tuple, "tuple")                                                            \
   V(TupleIterator, "tuple_iterator")                                           \
   V(Type, "type")                                                              \

@@ -38,12 +38,14 @@ _byteslike_guard = _byteslike_guard  # noqa: F821
 _float_check = _float_check  # noqa: F821
 _index = _index  # noqa: F821
 _int_check = _int_check  # noqa: F821
+_int_guard = _int_guard  # noqa: F821
 _memoryview_check = _memoryview_check  # noqa: F821
 _object_type_hasattr = _object_type_hasattr  # noqa: F821
 _object_type_getattr = _object_type_getattr  # noqa: F821
 _os_write = _os_write  # noqa: F821
 _patch = _patch  # noqa: F821
 _str_check = _str_check  # noqa: F821
+_str_guard = _str_guard  # noqa: F821
 _str_len = _str_len  # noqa: F821
 _type = _type  # noqa: F821
 _type_name = _type_name  # noqa: F821
@@ -78,6 +80,11 @@ from _thread import Lock as _thread_Lock
 
 
 @_patch
+def _StringIO_closed_guard(obj):
+    pass
+
+
+@_patch
 def _buffered_reader_clear_buffer(self):
     pass
 
@@ -105,11 +112,6 @@ def _buffered_reader_readline(self, size=None):
 def _detached_guard(self):
     if self.raw is None:
         raise ValueError("raw stream has been detached")
-
-
-@_patch
-def _StringIO_closed_guard(obj):
-    pass
 
 
 def _whence_guard(whence):
@@ -2073,56 +2075,12 @@ class TextIOWrapper(_TextIOBase, bootstrap=True):
         return length
 
 
-# TODO(T58766302): These methods were copied from TextIOWrapper and should
-# be specialized for StringIO
 class StringIO(_TextIOBase, bootstrap=True):
-    _CHUNK_SIZE = 2048
-
     def __init__(self, initial_value="", newline="\n"):
-        # TODO(T53865493): Set encoding to UTF-8 instead of ASCII
-        buffer = BytesIO()
-        if newline is not None and not _str_check(newline):
-            raise TypeError(
-                "TextIOWrapper() argument 4 must be str or None, not "
-                f"{_type(newline).__name__}"
-            )
-        if newline not in (None, "", "\n", "\r", "\r\n"):
-            raise ValueError(f"illegal newline value: {newline}")
-
-        self._buffer = buffer
-        self._closed = False
-        self._line_buffering = False
-        self._readtranslate = newline is None
-        if not newline:
-            self._readuniversal = True
-            self._decoder = IncrementalNewlineDecoder(None, self._readtranslate)
-        else:
-            self._readuniversal = False
-        self._readnl = newline
-        self._writetranslate = newline != ""
-        self._writenl = newline or _os_linesep
-
-        if newline is None:
-            self._writetranslate = False
-        if initial_value is not None:
-            if not _str_check(initial_value):
-                raise TypeError(
-                    "initial_value must be str or None, not "
-                    f"{_type(initial_value).__name__}"
-                )
-            self.write(initial_value)
-            self._buffer.seek(0)
+        pass
 
     def __next__(self):
-        line = self.readline()
-        if not _str_check(line):
-            raise IOError(
-                "readline() should have returned a str object, not "
-                f"'{_type(line).__name__}'"
-            )
-        if not line:
-            raise StopIteration
-        return line
+        pass
 
     def __repr__(self):
         return f"<_io.StringIO object at {_address(self):#x}>"
@@ -2136,12 +2094,7 @@ class StringIO(_TextIOBase, bootstrap=True):
         return None
 
     def getvalue(self):
-        _StringIO_closed_guard(self)
-        nl_decoder = self._decoder
-        if nl_decoder:
-            return nl_decoder.decode(self._buffer.getvalue().decode(), final=True)
-        else:
-            return self._buffer.getvalue().decode()
+        pass
 
     def readable(self):
         _StringIO_closed_guard(self)
@@ -2164,138 +2117,65 @@ class StringIO(_TextIOBase, bootstrap=True):
 
     @property
     def line_buffering(self):
-        return self._line_buffering
+        return False
 
     @property
     def newlines(self):
-        nl_decoder = self._decoder
-        if nl_decoder is None:
+        if self._readtranslate is None:
             return None
-        try:
-            return nl_decoder.newlines
-        except AttributeError:
-            return None
+        return (
+            None,
+            "\n",
+            "\r",
+            ("\r", "\n"),
+            "\r\n",
+            ("\n", "\r\n"),
+            ("\r", "\r\n"),
+            ("\r", "\n", "\r\n"),
+        )[self._seennl]
 
     def read(self, size=None):
-        if size is None:
-            size = -1
-        elif not _int_check(size):
-            raise TypeError(f"integer argument expected, got '{_type(size).__name__}'")
-        _StringIO_closed_guard(self)
-        try:
-            size.__index__
-        except AttributeError as err:
-            raise TypeError("an integer is required") from err
+        pass
 
-        buf_bytes = self._buffer.read(size)
-        if not self._decoder:
-            return buf_bytes.decode(errors="surrogatepass")
+    def readline(self, size=None):
+        pass
 
-        return self._decoder.decode(
-            buf_bytes.decode(errors="surrogatepass"), final=True
-        )
-
-    def readline(self, size=None):  # noqa: C901
-        if size is None:
-            size = -1
-        elif not _int_check(size):
-            size = _index(size)
-
-        _StringIO_closed_guard(self)
-
-        # Grab all the decoded text (we will rewind any extra bits later).
-        buf_bytes = self._buffer.read(size)
-        size_buf_bytes = len(buf_bytes)
-        line = buf_bytes.decode(errors="surrogatepass")
-        if self._decoder:
-            line = self._decoder.decode(line, final=True)
-
-        pos = endpos = None
-        if self._readtranslate:
-            # Newlines are already translated, only search for \n
-            pos = line.find("\n")
-            if pos >= 0:
-                pos += 1
-                self._buffer.seek(pos - size_buf_bytes, 1)
-                return line[:pos]
-            return line
-
-        if self._readuniversal:
-            # Universal newline search. Find any of \r, \r\n, \n
-            # The decoder ensures that \r\n are not split in two pieces
-            nlpos = line.find("\n")
-            crpos = line.find("\r")
-            if crpos == -1:
-                if nlpos != -1:
-                    # Found \n
-                    endpos = nlpos + 1
-            elif nlpos == -1:
-                # Found lone \r
-                endpos = crpos + 1
-            elif nlpos < crpos:
-                # Found \n
-                endpos = nlpos + 1
-            elif nlpos == crpos + 1:
-                # Found \r\n
-                endpos = crpos + 2
-            else:
-                # Found \r
-                endpos = crpos + 1
-            if endpos is not None:
-                self._buffer.seek(endpos - size_buf_bytes, 1)
-                return line[:endpos]
-            return line
-
-        # non-universal
-        pos = line.find(self._readnl)
-        if pos >= 0:
-            endpos = pos + len(self._readnl)
-            self._buffer.seek(endpos - size_buf_bytes, 1)
-            return line[:endpos]
-        return line
-
+    # TODO(T59698607): implement this in native code.
     def seek(self, cookie, whence=0):  # noqa: C901
-        if not _int_check(whence):
-            raise TypeError(
-                f"an integer is required (got type {_type(whence).__name__})"
-            )
         _StringIO_closed_guard(self)
+        _int_guard(whence)
+        if not _int_check(cookie):
+            try:
+                cookie = _index(cookie)
+            except AttributeError as err:
+                raise TypeError("an integer is required") from err
 
-        if whence == 1:  # seek relative to current position
+        if whence == 0:
+            if cookie < 0:
+                raise ValueError(f"negative seek position {cookie!r}")
+            self._pos = cookie
+            return cookie
+        elif whence == 1:  # seek relative to current position
             if cookie != 0:
                 raise UnsupportedOperation("can't do nonzero cur-relative seeks")
+            return self._pos
         elif whence == 2:  # seek relative to end of file
             if cookie != 0:
                 raise UnsupportedOperation("can't do nonzero end-relative seeks")
-        elif whence != 0:
+            self._pos = _bytes_len(self._buffer)
+            return self._pos
+        else:
             raise ValueError(f"invalid whence ({whence}, should be 0, 1 or 2)")
-        if cookie < 0:
-            raise ValueError(f"negative seek position {cookie!r}")
-        return self._buffer.seek(cookie, whence)
 
     def tell(self):  # noqa: C901
         _StringIO_closed_guard(self)
-        return self._buffer.tell()
+        return self._pos
 
-    def truncate(self, pos=None):
-        _StringIO_closed_guard(self)
-        return self._buffer.truncate(pos)
+    def truncate(self, size=None):
+        pass
 
-    def write(self, text):
-        if not _str_check(text):
-            raise TypeError(f"write() argument must be str, not {_type(text).__name__}")
-        _StringIO_closed_guard(self)
-        length = _str_len(text)
-        haslf = (self._writetranslate or self._line_buffering) and "\n" in text
-        if haslf and self._writetranslate and self._writenl != "\n":
-            text = text.replace("\n", self._writenl)
-        if self._decoder:
-            self._buffer.write(
-                self._decoder.decode(text, final=False).encode(errors="surrogatepass")
-            )
-        else:
-            self._buffer.write(text.encode(errors="surrogatepass"))
-        return length
+    def write(self, value):
+        pass
 
 
 def _fspath(obj):

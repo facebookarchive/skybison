@@ -2958,6 +2958,11 @@ RawObject Runtime::bytesConcat(Thread* thread, const Bytes& self,
   return result.becomeImmutable();
 }
 
+RawObject Runtime::bytesCopy(Thread* thread, const Bytes& src) {
+  if (src.isSmallBytes()) return *src;
+  return bytesSubseq(thread, src, 0, src.length());
+}
+
 RawObject Runtime::bytesCopyWithSize(Thread* thread, const Bytes& original,
                                      word new_length) {
   DCHECK(new_length > 0, "length must be positive");

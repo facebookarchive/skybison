@@ -2470,6 +2470,28 @@ class StringIOTests(unittest.TestCase):
         self.assertEqual(list(strio), ["a\r\n", "b\r\r\n", "c\rd"])
         self.assertEqual(strio.getvalue(), "a\r\nb\r\r\nc\rd")
 
+    def test_readable_with_open_StringIO_returns_true(self):
+        string_io = _io.StringIO()
+        self.assertTrue(string_io.readable())
+
+    def test_readable_with_closed_StringIO_raises_value_error(self):
+        string_io = _io.StringIO()
+        string_io.close()
+        with self.assertRaises(ValueError) as context:
+            string_io.readable()
+        self.assertRegex(str(context.exception), "I/O operation on closed file")
+
+    def test_seekable_with_open_StringIO_returns_true(self):
+        string_io = _io.StringIO()
+        self.assertTrue(string_io.seekable())
+
+    def test_seekable_with_closed_StringIO_raises_value_error(self):
+        string_io = _io.StringIO()
+        string_io.close()
+        with self.assertRaises(ValueError) as context:
+            string_io.seekable()
+        self.assertRegex(str(context.exception), "I/O operation on closed file")
+
     def test_subclass_with_closed_attribute_is_not_closed_for_StringIO(self):
         class Closed(_io.StringIO):
             closed = True
@@ -2495,6 +2517,17 @@ class StringIOTests(unittest.TestCase):
         with _io.StringIO(initial_value="foobar", newline="\r\n") as string_io:
             string_io.write("hi\n")
             self.assertEqual(string_io.getvalue(), "hi\r\nar")
+
+    def test_writable_with_open_StringIO_returns_true(self):
+        string_io = _io.StringIO()
+        self.assertTrue(string_io.writable())
+
+    def test_writable_with_closed_StringIO_raises_value_error(self):
+        string_io = _io.StringIO()
+        string_io.close()
+        with self.assertRaises(ValueError) as context:
+            string_io.writable()
+        self.assertRegex(str(context.exception), "I/O operation on closed file")
 
 
 if __name__ == "__main__":
