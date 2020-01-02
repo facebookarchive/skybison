@@ -701,6 +701,7 @@ add_library(
   ext/Modules/_compile/symtable.h
   ext/Modules/_compile/wordcode_helpers.h
   ext/Modules/gcmodule.cpp
+  ext/Modules/main.cpp
   ext/Modules/signalmodule.cpp
   ext/Objects/abstract.cpp
   ext/Objects/boolobject.cpp
@@ -1466,12 +1467,9 @@ target_link_libraries(
   PRIVATE
   extension-modules)
 
-# TODO(T58756349): Move ext/Modules/main.cpp to extension once circular
-# dependencies no longer exist with CPython.
 add_executable(
   python
-  main.cpp
-  ext/Modules/main.cpp)
+  main.cpp)
 target_compile_options(
   python
   PRIVATE
@@ -1485,6 +1483,7 @@ target_include_directories(
 target_link_libraries(
   python
   PRIVATE
+  extension
   runtime
   modules
   ${PYRO_STATIC_LINKING})
