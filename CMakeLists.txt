@@ -365,6 +365,7 @@ target_link_libraries(
   PRIVATE
   frozen-modules
   dl
+  modules
   siphash
   valgrind)
 # TODO(T42692043): This awkwardness should go away once we freeze the stdlib.
@@ -513,11 +514,22 @@ add_library(
   ${CPYTHON_DIR}/Parser/printgrammar.c
   ${CPYTHON_DIR}/Parser/tokenizer.c
   ${CPYTHON_DIR}/Parser/tokenizer.h
+  ${CPYTHON_DIR}/Python/Python-ast.c
+  ${CPYTHON_DIR}/Python/asdl.c
   ${CPYTHON_DIR}/Python/ast.c
+  ${CPYTHON_DIR}/Python/dtoa.c
   ${CPYTHON_DIR}/Python/future.c
   ${CPYTHON_DIR}/Python/graminit.c
   ${CPYTHON_DIR}/Python/mystrtoul.c
-  ${CPYTHON_DIR}/Python/pystrtod.c)
+  ${CPYTHON_DIR}/Python/pyarena.c
+  ${CPYTHON_DIR}/Python/pyctype.c
+  ${CPYTHON_DIR}/Python/pyhash.c
+  ${CPYTHON_DIR}/Python/pystrcmp.c
+  ${CPYTHON_DIR}/Python/pystrhex.c
+  ${CPYTHON_DIR}/Python/pystrtod.c
+  ${CPYTHON_DIR}/Python/pytime.c
+  ${CPYTHON_DIR}/Python/symtable.c
+  ${CPYTHON_DIR}/Python/wordcode_helpers.h)
 target_include_directories(
   cpython-parser
   PUBLIC
@@ -633,19 +645,7 @@ set(
   ${CPYTHON_DIR}/Objects/capsule.c
   ${CPYTHON_DIR}/Objects/unicodectype.c
   ${CPYTHON_DIR}/Objects/unicodetype_db.h
-  ${CPYTHON_DIR}/Python/Python-ast.c
-  ${CPYTHON_DIR}/Python/asdl.c
-  ${CPYTHON_DIR}/Python/ast.c
-  ${CPYTHON_DIR}/Python/dtoa.c
-  ${CPYTHON_DIR}/Python/fileutils.c
-  ${CPYTHON_DIR}/Python/pyarena.c
-  ${CPYTHON_DIR}/Python/pyctype.c
-  ${CPYTHON_DIR}/Python/pyhash.c
-  ${CPYTHON_DIR}/Python/pystrcmp.c
-  ${CPYTHON_DIR}/Python/pystrhex.c
-  ${CPYTHON_DIR}/Python/pytime.c
-  ${CPYTHON_DIR}/Python/symtable.c
-  ${CPYTHON_DIR}/Python/wordcode_helpers.h)
+  ${CPYTHON_DIR}/Python/fileutils.c)
 set_property(
   SOURCE ${CPYTHON_DIR}/Python/dynload_shlib.c
   PROPERTY COMPILE_DEFINITIONS SOABI="3.6.5")
@@ -695,7 +695,6 @@ target_link_libraries(
   capi-headers
   PRIVATE
   util
-  cpython-parser
   extension
   Threads::Threads
   OpenSSL::Crypto
@@ -788,7 +787,7 @@ target_include_directories(
 target_link_libraries(
   extension
   PRIVATE
-  cpython-parser
+  ${WHOLE_ARCHIVE} cpython-parser ${NO_WHOLE_ARCHIVE}
   runtime)
 
 set(BINARY_DIR_LIB "${CMAKE_BINARY_DIR}/Lib")
@@ -1596,8 +1595,7 @@ target_link_libraries(
   benchmark
   gmock
   gtest
-  runtime
-  modules)
+  runtime)
 
 set(
   EXTENSION_TESTS
@@ -1667,18 +1665,15 @@ target_compile_options(
   ${PYRO_COMPILE_OPTIONS})
 target_include_directories(
   extension-tests
-  PUBLIC
-  ext/Include
-  ext/config
   PRIVATE
-  ext/test)
+  ext/test
+  ${BINARY_DIR_HEADERS})
 target_link_libraries(
   extension-tests
   PRIVATE
   benchmark
   gmock
   gtest
-  extension-modules
   modules)
 
 add_executable(
@@ -1694,9 +1689,7 @@ target_link_libraries(
   benchmark
   gtest
   ${WHOLE_ARCHIVE} runtime-tests ${NO_WHOLE_ARCHIVE}
-  ${WHOLE_ARCHIVE} extension-tests ${NO_WHOLE_ARCHIVE}
-  runtime
-  modules)
+  ${WHOLE_ARCHIVE} extension-tests ${NO_WHOLE_ARCHIVE})
 
 # Extension tests with CPython
 set(CPYTHON_ASSERTIONS_FLAG "")
