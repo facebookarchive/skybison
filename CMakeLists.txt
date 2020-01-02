@@ -147,6 +147,7 @@ set(
   library/_imp.py
   library/_io.py
   library/_os.py
+  library/_signal.py
   library/_str_mod.py
   library/_thread.py
   library/_valgrind.py
@@ -1417,7 +1418,6 @@ set(
   ${UNFROZEN_LIBRARY_DIR}/logging/__init__.py
   ${UNFROZEN_LIBRARY_DIR}/logging/config.py
   ${UNFROZEN_LIBRARY_DIR}/logging/handlers.py
-  ${UNFROZEN_LIBRARY_DIR}/signal.py
   ${UNFROZEN_LIBRARY_DIR}/socket.py
   ${UNFROZEN_LIBRARY_DIR}/threading.py
   ${UNFROZEN_LIBRARY_DIR}/types.py

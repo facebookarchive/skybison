@@ -19,6 +19,10 @@ def getitimer(which):
     _unimplemented()
 
 
+def getsignal(signalnum):
+    _unimplemented()
+
+
 def pause():
     _unimplemented()
 
