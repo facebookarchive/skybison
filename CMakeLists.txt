@@ -41,12 +41,10 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
   set(WHOLE_ARCHIVE -Wl,-force_load)
   set(NO_WHOLE_ARCHIVE)
   set(OPENSSL_ROOT_DIR /opt/homebrew)
-  set(UTIL_LIB)
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   set(OS_DEFINE "-DOS_LINUX")
   set(WHOLE_ARCHIVE -Wl,--whole-archive)
   set(NO_WHOLE_ARCHIVE -Wl,--no-whole-archive)
-  set(UTIL_LIB "util")
   # This is the path to OpenSSL on machines with gvfs. On other Linux systems,
   # CMake should automatically fall back to the system OpenSSL.
   set(OPENSSL_ROOT_DIR /mnt/gvfs/third-party2/openssl/08b454ad6354c8144da2168f7a333624e85bb30b/1.1.0/platform007/ca4da3d)
@@ -196,14 +194,14 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
   set(
     RUNTIME_OS_SOURCES
     runtime/file-darwin.cpp
-    runtime/os-darwin.cpp)
-  set(MUTEX_OS_SOURCES runtime/mutex-darwin.cpp)
+    runtime/os-darwin.cpp
+    runtime/mutex-darwin.cpp)
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   set(
     RUNTIME_OS_SOURCES
     runtime/file-linux.cpp
-    runtime/os-linux.cpp)
-  set(MUTEX_OS_SOURCES runtime/mutex-darwin.cpp)
+    runtime/os-linux.cpp
+    runtime/mutex-linux.cpp)
 endif()
 
 if ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
@@ -214,12 +212,6 @@ if ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
 else()
   message(FATAL_ERROR "Unsupported architecture ${CMAKE_SYSTEM_PROCESSOR}")
 endif()
-
-add_library(
-  mutex
-  STATIC
-  runtime/mutex.h
-  ${MUTEX_OS_SOURCES})
 
 add_library(
   runtime
@@ -303,6 +295,7 @@ add_library(
   runtime/module-builtins.h
   runtime/module-proxy-builtins.cpp
   runtime/module-proxy-builtins.h
+  runtime/mutex.h
   runtime/mro.cpp
   runtime/mro.h
   runtime/object-builtins.cpp
@@ -371,7 +364,6 @@ target_link_libraries(
   PRIVATE
   frozen-modules
   dl
-  mutex
   siphash
   valgrind)
 # TODO(T42692043): This awkwardness should go away once we freeze the stdlib.
@@ -536,7 +528,14 @@ target_link_libraries(
 
 set(
   CPYTHON_SOURCES
+  ${CPYTHON_DIR}/Modules/_asynciomodule.c
+  ${CPYTHON_DIR}/Modules/_bisectmodule.c
+  ${CPYTHON_DIR}/Modules/_codecsmodule.c
+  ${CPYTHON_DIR}/Modules/_collectionsmodule.c
+  ${CPYTHON_DIR}/Modules/_cryptmodule.c
   ${CPYTHON_DIR}/Modules/_csv.c
+  ${CPYTHON_DIR}/Modules/_datetimemodule.c
+  ${CPYTHON_DIR}/Modules/_functoolsmodule.c
   ${CPYTHON_DIR}/Modules/_hashopenssl.c
   ${CPYTHON_DIR}/Modules/_heapqmodule.c
   ${CPYTHON_DIR}/Modules/_localemodule.c
@@ -553,14 +552,23 @@ set(
   ${CPYTHON_DIR}/Modules/_stat.c
   ${CPYTHON_DIR}/Modules/_struct.c
   ${CPYTHON_DIR}/Modules/_testimportmultiple.c
+  ${CPYTHON_DIR}/Modules/_testmultiphase.c
+  ${CPYTHON_DIR}/Modules/_weakref.c
   ${CPYTHON_DIR}/Modules/addrinfo.h
   ${CPYTHON_DIR}/Modules/atexitmodule.c
+  ${CPYTHON_DIR}/Modules/audioop.c
   ${CPYTHON_DIR}/Modules/binascii.c
+  ${CPYTHON_DIR}/Modules/clinic/_asynciomodule.c.h
+  ${CPYTHON_DIR}/Modules/clinic/_codecsmodule.c.h
+  ${CPYTHON_DIR}/Modules/clinic/_cryptmodule.c.h
+  ${CPYTHON_DIR}/Modules/clinic/_datetimemodule.c.h
   ${CPYTHON_DIR}/Modules/clinic/_hashopenssl.c.h
   ${CPYTHON_DIR}/Modules/clinic/_opcode.c.h
   ${CPYTHON_DIR}/Modules/clinic/_sre.c.h
   ${CPYTHON_DIR}/Modules/clinic/_ssl.c.h
+  ${CPYTHON_DIR}/Modules/clinic/_weakref.c.h
   ${CPYTHON_DIR}/Modules/clinic/arraymodule.c.h
+  ${CPYTHON_DIR}/Modules/clinic/audioop.c.h
   ${CPYTHON_DIR}/Modules/clinic/binascii.c.h
   ${CPYTHON_DIR}/Modules/clinic/cmathmodule.c.h
   ${CPYTHON_DIR}/Modules/clinic/fcntlmodule.c.h
@@ -585,9 +593,11 @@ set(
   ${CPYTHON_DIR}/Modules/hashtable.c
   ${CPYTHON_DIR}/Modules/hashtable.h
   ${CPYTHON_DIR}/Modules/mathmodule.c
+  ${CPYTHON_DIR}/Modules/mmapmodule.c
   ${CPYTHON_DIR}/Modules/posixmodule.c
   ${CPYTHON_DIR}/Modules/posixmodule.h
   ${CPYTHON_DIR}/Modules/pwdmodule.c
+  ${CPYTHON_DIR}/Modules/resource.c
   ${CPYTHON_DIR}/Modules/rotatingtree.c
   ${CPYTHON_DIR}/Modules/rotatingtree.h
   ${CPYTHON_DIR}/Modules/selectmodule.c
@@ -596,6 +606,7 @@ set(
   ${CPYTHON_DIR}/Modules/sre.h
   ${CPYTHON_DIR}/Modules/sre_constants.h
   ${CPYTHON_DIR}/Modules/sre_lib.h
+  ${CPYTHON_DIR}/Modules/symtablemodule.c
   ${CPYTHON_DIR}/Modules/syslogmodule.c
   ${CPYTHON_DIR}/Modules/termios.c
   ${CPYTHON_DIR}/Modules/testcapi_long.h
@@ -603,6 +614,9 @@ set(
   ${CPYTHON_DIR}/Modules/unicodedata.c
   ${CPYTHON_DIR}/Modules/unicodedata_db.h
   ${CPYTHON_DIR}/Modules/unicodename_db.h
+  ${CPYTHON_DIR}/Modules/xxlimited.c
+  ${CPYTHON_DIR}/Modules/xxmodule.c
+  ${CPYTHON_DIR}/Modules/xxsubtype.c
   ${CPYTHON_DIR}/Modules/zlib/adler32.c
   ${CPYTHON_DIR}/Modules/zlib/crc32.c
   ${CPYTHON_DIR}/Modules/zlib/deflate.c
@@ -677,11 +691,11 @@ target_compile_options(
 target_link_libraries(
   extension-modules
   PUBLIC
-  ${UTIL_LIB}
   capi-headers
   PRIVATE
+  util
   cpython-parser
-  ${WHOLE_ARCHIVE} extension ${NO_WHOLE_ARCHIVE}
+  extension
   Threads::Threads
   OpenSSL::Crypto
   OpenSSL::SSL)
@@ -774,7 +788,7 @@ target_link_libraries(
   extension
   PRIVATE
   cpython-parser
-  mutex)
+  runtime)
 
 set(BINARY_DIR_LIB "${CMAKE_BINARY_DIR}/Lib")
 set(CPYTHON_LIBRARY_DIR "${CMAKE_SOURCE_DIR}/third-party/cpython/Lib")
