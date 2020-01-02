@@ -787,7 +787,7 @@ target_include_directories(
 target_link_libraries(
   extension
   PRIVATE
-  ${WHOLE_ARCHIVE} cpython-parser ${NO_WHOLE_ARCHIVE}
+  cpython-parser
   runtime)
 
 set(BINARY_DIR_LIB "${CMAKE_BINARY_DIR}/Lib")
@@ -1496,7 +1496,7 @@ target_include_directories(
 target_link_libraries(
   python
   PRIVATE
-  extension
+  ${WHOLE_ARCHIVE} extension ${NO_WHOLE_ARCHIVE}
   runtime
   modules
   ${PYRO_STATIC_LINKING})
