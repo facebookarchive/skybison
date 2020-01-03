@@ -2419,6 +2419,57 @@ class StringIOTests(unittest.TestCase):
         closed = Closed("foobar")
         self.assertEqual(closed.getvalue(), "foobar")
 
+    def test_iter_with_open_returns_self(self):
+        string_io = _io.StringIO()
+        self.assertEqual(string_io, string_io.__iter__())
+
+    def test_iter_with_closed_raises_value_error(self):
+        string_io = _io.StringIO()
+        string_io.close()
+        with self.assertRaises(ValueError) as context:
+            string_io.__iter__()
+        self.assertRegex(str(context.exception), "I/O operation on closed file")
+
+    def test_iter_subclass_and_closed_attr_raises_value_error(self):
+        class Closed(_io.StringIO):
+            closed = True
+
+        closed = Closed()
+        with self.assertRaises(ValueError) as context:
+            closed.__iter__()
+        self.assertRegex(str(context.exception), "I/O operation on closed file")
+
+    def test_next_with_non_stringio_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            _io.StringIO.__next__(1)
+        self.assertRegex(
+            str(context.exception), r"'__next__' requires a '(_io\.)?StringIO' object"
+        )
+
+    def test_next_with_open_reads_line(self):
+        string_io = _io.StringIO("foo\nbar")
+        self.assertEqual(string_io.__next__(), "foo\n")
+        self.assertEqual(string_io.__next__(), "bar")
+        with self.assertRaises(StopIteration):
+            string_io.__next__()
+
+    def test_next_with_closed_raises_value_error(self):
+        string_io = _io.StringIO()
+        string_io.close()
+        with self.assertRaises(ValueError) as context:
+            string_io.__next__()
+        self.assertRegex(str(context.exception), "I/O operation on closed file")
+
+    def test_next_subclass_and_closed_attr_reads_line(self):
+        class Closed(_io.StringIO):
+            closed = True
+
+        closed = Closed("foo\nbar")
+        self.assertEqual(closed.__next__(), "foo\n")
+        self.assertEqual(closed.__next__(), "bar")
+        with self.assertRaises(StopIteration):
+            closed.__next__()
+
     def test_newline_default(self):
         strio = _io.StringIO("a\nb\r\nc\rd")
         self.assertEqual(list(strio), ["a\n", "b\r\n", "c\rd"])
