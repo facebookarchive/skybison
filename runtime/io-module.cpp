@@ -897,7 +897,7 @@ static word stringIOReadline(Thread* thread, const StringIO& string_io,
     newline_obj = SmallStr::fromCodePoint('\n');
   }
   Str newline(&scope, *newline_obj);
-  if (size == -1 || (size + start) > buf_len) {
+  if (size < 0 || (size + start) > buf_len) {
     size = buf_len - start;
   }
   word i = start;
