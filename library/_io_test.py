@@ -2390,10 +2390,34 @@ class StringIOTests(unittest.TestCase):
             string_io.line_buffering
         self.assertRegex(str(context.exception), "I/O operation on closed file")
 
-    def test_getvalue_returns_value(self):
-        with _io.StringIO(initial_value="foobaz") as string_io:
-            string_io.write("bar")
-            self.assertEqual(string_io.getvalue(), "barbaz")
+    def test_getvalue_with_non_stringio_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            _io.StringIO.getvalue(1)
+        self.assertRegex(
+            str(context.exception), r"'getvalue' requires a '(_io\.)?StringIO' object"
+        )
+
+    def test_getvalue_with_open_returns_copy_of_value(self):
+        strio = _io.StringIO("foobarbaz")
+        first_value = strio.getvalue()
+        strio.write("temp")
+        second_value = strio.getvalue()
+        self.assertEqual(first_value, "foobarbaz")
+        self.assertEqual(second_value, "temparbaz")
+
+    def test_getvalue_with_closed_raises_value_error(self):
+        string_io = _io.StringIO()
+        string_io.close()
+        with self.assertRaises(ValueError) as context:
+            string_io.getvalue()
+        self.assertRegex(str(context.exception), "I/O operation on closed file")
+
+    def test_getvalue_subclass_and_closed_attr_returns_value(self):
+        class Closed(_io.StringIO):
+            closed = True
+
+        closed = Closed("foobar")
+        self.assertEqual(closed.getvalue(), "foobar")
 
     def test_newline_default(self):
         strio = _io.StringIO("a\nb\r\nc\rd")
