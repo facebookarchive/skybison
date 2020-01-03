@@ -2353,6 +2353,11 @@ class StringIOTests(unittest.TestCase):
         with _io.StringIO(initial_value="foo") as string_io:
             self.assertEqual(string_io.getvalue(), "foo")
 
+    def test_dunder_init_with_non_str_or_none_newline_raises_value_error(self):
+        with self.assertRaises(TypeError) as context:
+            _io.StringIO(newline=1)
+        self.assertRegex(str(context.exception), "newline must be str or None, not int")
+
     def test_dunder_init_with_illegal_newline_raises_value_error(self):
         with self.assertRaises(ValueError) as context:
             _io.StringIO(newline="n")
@@ -2373,6 +2378,17 @@ class StringIOTests(unittest.TestCase):
     def test_errors_always_returns_none(self):
         with _io.StringIO() as string_io:
             self.assertIsNone(string_io.errors)
+
+    def test_line_buffering_with_open_returns_false(self):
+        with _io.StringIO() as string_io:
+            self.assertFalse(string_io.line_buffering)
+
+    def test_line_buffering_with_closed_returns_raises_value_error(self):
+        string_io = _io.StringIO()
+        string_io.close()
+        with self.assertRaises(ValueError) as context:
+            string_io.line_buffering
+        self.assertRegex(str(context.exception), "I/O operation on closed file")
 
     def test_getvalue_returns_value(self):
         with _io.StringIO(initial_value="foobaz") as string_io:

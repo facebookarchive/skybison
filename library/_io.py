@@ -2117,6 +2117,7 @@ class StringIO(_TextIOBase, bootstrap=True):
 
     @property
     def line_buffering(self):
+        _StringIO_closed_guard(self)
         return False
 
     @property
