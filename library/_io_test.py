@@ -2705,6 +2705,97 @@ class StringIOTests(unittest.TestCase):
             string_io.readable()
         self.assertRegex(str(context.exception), "I/O operation on closed file")
 
+    def test_seek_with_open_sets_position(self):
+        string_io = _io.StringIO("foo\n")
+        self.assertEqual(string_io.seek(2), 2)
+        self.assertEqual(string_io.tell(), 2)
+
+    def test_seek_with_closed_raises_value_error(self):
+        string_io = _io.StringIO()
+        string_io.close()
+        with self.assertRaises(ValueError) as context:
+            string_io.seek(0)
+        self.assertRegex(str(context.exception), "I/O operation on closed file")
+
+    def test_seek_with_subclass_and_closed_attr_sets_position(self):
+        class Closed(_io.StringIO):
+            closed = True
+
+        closed = Closed("foo\n")
+        self.assertEqual(closed.seek(2), 2)
+        self.assertEqual(closed.tell(), 2)
+
+    def test_seek_with_non_int_cookie_raises_type_error(self):
+        string_io = _io.StringIO("hello world")
+        with self.assertRaises(TypeError):
+            string_io.seek("not-int", 0)
+
+    def test_seek_with_intlike_cookie_calls_dunder_index(self):
+        class IntLike:
+            def __index__(self):
+                return 5
+
+        string_io = _io.StringIO("hello world")
+        self.assertEqual(string_io.seek(IntLike()), 5)
+        self.assertEqual(string_io.tell(), 5)
+
+    def test_seek_with_non_int_whence_raises_type_error(self):
+        string_io = _io.StringIO("hello world")
+        with self.assertRaises(TypeError):
+            string_io.seek(0, "not-int")
+
+    def test_seek_with_intlike_whence_raises_type_error(self):
+        class IntLike:
+            def __index__(self):
+                return 5
+
+        string_io = _io.StringIO("hello world")
+        with self.assertRaises(TypeError):
+            string_io.seek(0, IntLike())
+
+    def test_seek_can_overseek(self):
+        string_io = _io.StringIO("foo\n")
+        self.assertEqual(string_io.seek(10), 10)
+        self.assertEqual(string_io.tell(), 10)
+
+    def test_seek_with_whence_zero_and_negative_cookie_raises_value_error(self):
+        string_io = _io.StringIO("foo\n")
+        with self.assertRaises(ValueError) as context:
+            string_io.seek(-10)
+        self.assertRegex(str(context.exception), "Negative seek position -10")
+
+    def test_seek_with_whence_one_and_non_zero_cookie_raises_os_error(self):
+        string_io = _io.StringIO("foo\n")
+        with self.assertRaises(OSError) as context:
+            string_io.seek(1, 1)
+        self.assertRegex(str(context.exception), "Can't do nonzero cur-relative seeks")
+
+    def test_seek_with_whence_one_doesnt_change_pos(self):
+        string_io = _io.StringIO("foo\n")
+        self.assertEqual(string_io.seek(2), 2)
+        self.assertEqual(string_io.seek(0, 1), 2)
+        self.assertEqual(string_io.tell(), 2)
+
+    def test_seek_with_whence_two_and_non_zero_cookie_raises_os_error(self):
+        string_io = _io.StringIO("foo\n")
+        with self.assertRaises(OSError) as context:
+            string_io.seek(1, 1)
+        self.assertRegex(str(context.exception), "Can't do nonzero cur-relative seeks")
+
+    def test_seek_with_whence_two_sets_pos_to_end(self):
+        string_io = _io.StringIO("foo\n")
+        self.assertEqual(string_io.seek(2), 2)
+        self.assertEqual(string_io.seek(0, 2), 4)
+        self.assertEqual(string_io.tell(), 4)
+
+    def test_seek_with_invalid_whence_raises_value_error(self):
+        string_io = _io.StringIO("foo\n")
+        with self.assertRaises(ValueError) as context:
+            string_io.seek(1, 3)
+        self.assertEqual(
+            str(context.exception), "Invalid whence (3, should be 0, 1 or 2)"
+        )
+
     def test_seekable_with_open_StringIO_returns_true(self):
         string_io = _io.StringIO()
         self.assertTrue(string_io.seekable())

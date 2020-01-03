@@ -2153,20 +2153,20 @@ class StringIO(_TextIOBase, bootstrap=True):
 
         if whence == 0:
             if cookie < 0:
-                raise ValueError(f"negative seek position {cookie!r}")
+                raise ValueError(f"Negative seek position {cookie!r}")
             self._pos = cookie
             return cookie
         elif whence == 1:  # seek relative to current position
             if cookie != 0:
-                raise UnsupportedOperation("can't do nonzero cur-relative seeks")
+                raise OSError("Can't do nonzero cur-relative seeks")
             return self._pos
         elif whence == 2:  # seek relative to end of file
             if cookie != 0:
-                raise UnsupportedOperation("can't do nonzero end-relative seeks")
+                raise OSError("Can't do nonzero end-relative seeks")
             self._pos = _bytes_len(self._buffer)
             return self._pos
         else:
-            raise ValueError(f"invalid whence ({whence}, should be 0, 1 or 2)")
+            raise ValueError(f"Invalid whence ({whence}, should be 0, 1 or 2)")
 
     def tell(self):  # noqa: C901
         _StringIO_closed_guard(self)
