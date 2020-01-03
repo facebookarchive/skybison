@@ -2820,6 +2820,25 @@ class StringIOTests(unittest.TestCase):
             c.readlines()
         self.assertRegex(str(context.exception), "I/O operation on closed file")
 
+    def test_tell_with_open_returns_position(self):
+        string_io = _io.StringIO()
+        self.assertEqual(string_io.seek(2), 2)
+        self.assertEqual(string_io.tell(), 2)
+
+    def test_tell_with_closed_raises_value_error(self):
+        string_io = _io.StringIO()
+        string_io.close()
+        with self.assertRaises(ValueError) as context:
+            string_io.tell()
+        self.assertRegex(str(context.exception), "I/O operation on closed file")
+
+    def test_tell_with_subclass_and_closed_attr_returns_string(self):
+        class Closed(_io.StringIO):
+            closed = True
+
+        closed = Closed("foo\nbar")
+        self.assertEqual(closed.tell(), 0)
+
     def test_write_when_closed_raises_value_error(self):
         strio = _io.StringIO()
         self.assertEqual(strio.write("foobar"), 6)
