@@ -18,6 +18,11 @@ def _bool_check(self):
 
 
 @_patch
+def _bool_guard(self):
+    pass
+
+
+@_patch
 def _bound_method(fn, owner):
     pass
 

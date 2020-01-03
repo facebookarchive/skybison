@@ -9,6 +9,15 @@ static bool underBoolCheck(Frame* frame) {
   return true;
 }
 
+static bool underBoolGuard(Frame* frame) {
+  if (frame->topValue().isBool()) {
+    frame->popValue();
+    frame->setTopValue(NoneType::object());
+    return true;
+  }
+  return false;
+}
+
 static bool underBytearrayCheck(Thread* thread, Frame* frame) {
   frame->setTopValue(Bool::fromBool(
       thread->runtime()->isInstanceOfByteArray(frame->popValue())));
@@ -533,6 +542,8 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
   switch (name) {
     case SymbolId::kUnderBoolCheck:
       return underBoolCheck(frame);
+    case SymbolId::kUnderBoolGuard:
+      return underBoolGuard(frame);
     case SymbolId::kUnderBytearrayCheck:
       return underBytearrayCheck(thread, frame);
     case SymbolId::kUnderBytearrayGuard:

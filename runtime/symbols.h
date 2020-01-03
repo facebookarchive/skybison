@@ -143,6 +143,7 @@ class Runtime;
   V(UnderB2cratio, "_b2cratio")                                                \
   V(UnderBaseDir, "_base_dir")                                                 \
   V(UnderBoolCheck, "_bool_check")                                             \
+  V(UnderBoolGuard, "_bool_guard")                                             \
   V(UnderBootstrap, "_bootstrap")                                              \
   V(UnderBoundMethod, "_bound_method")                                         \
   V(UnderBuffer, "_buffer")                                                    \

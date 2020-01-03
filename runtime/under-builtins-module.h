@@ -16,6 +16,7 @@ class UnderBuiltinsModule {
  public:
   static RawObject underAddress(Thread* thread, Frame* frame, word nargs);
   static RawObject underBoolCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underBoolGuard(Thread* thread, Frame* frame, word nargs);
   static RawObject underBoundMethod(Thread* thread, Frame* frame, word nargs);
   static RawObject underBytearrayCheck(Thread* thread, Frame* frame,
                                        word nargs);
