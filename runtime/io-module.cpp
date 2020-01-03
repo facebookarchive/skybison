@@ -767,7 +767,7 @@ static RawObject stringIOWrite(Thread* thread, const StringIO& string_io,
                                buffer.length());
     if (buffer.length() < start) {
       for (word i = buffer.length(); i < start; i++) {
-        buffer.byteAtPut(i, 0);
+        new_buffer.byteAtPut(i, 0);
       }
     }
     string_io.setBuffer(*new_buffer);

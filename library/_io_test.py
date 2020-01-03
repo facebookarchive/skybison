@@ -2889,7 +2889,12 @@ class StringIOTests(unittest.TestCase):
         self.assertEqual(string_io.truncate(10), 10)
         self.assertEqual(string_io.getvalue(), "hello")
 
-    def test_write_when_closed_raises_value_error(self):
+    def test_write_with_open_writes_to_object(self):
+        string_io = _io.StringIO()
+        self.assertEqual(string_io.write("foobar"), 6)
+        self.assertEqual(string_io.getvalue(), "foobar")
+
+    def test_write_with_closed_raises_value_error(self):
         strio = _io.StringIO()
         self.assertEqual(strio.write("foobar"), 6)
         strio.close()
@@ -2897,10 +2902,78 @@ class StringIOTests(unittest.TestCase):
             strio.write("foo")
         self.assertRegex(str(context.exception), "I/O operation on closed file")
 
-    def test_write_with_newline_uses_stored_newline(self):
-        with _io.StringIO(initial_value="foobar", newline="\r\n") as string_io:
-            string_io.write("hi\n")
-            self.assertEqual(string_io.getvalue(), "hi\r\nar")
+    def test_write_with_subclass_and_closed_attr_sets_position(self):
+        class Closed(_io.StringIO):
+            closed = True
+
+        closed = Closed()
+        self.assertEqual(closed.write("foobar"), 6)
+        self.assertEqual(closed.getvalue(), "foobar")
+
+    def test_write_with_non_string_raises_type_error(self):
+        strio = _io.StringIO()
+        with self.assertRaises(TypeError):
+            strio.write(1)
+
+    def test_write_starts_writing_at_current_position(self):
+        string_io = _io.StringIO("hello world")
+        string_io.seek(5)
+        self.assertEqual(string_io.write("\n"), 1)
+        self.assertEqual(string_io.getvalue(), "hello\nworld")
+
+    def test_write_with_empty_string_does_nothing(self):
+        string_io = _io.StringIO("hello world")
+        string_io.seek(5)
+        self.assertEqual(string_io.write(""), 0)
+        self.assertEqual(string_io.getvalue(), "hello world")
+
+    def test_write_with_larger_string_than_buffer_extends_buffer(self):
+        string_io = _io.StringIO("hello")
+        self.assertEqual(string_io.write("hello world"), 11)
+        self.assertEqual(string_io.getvalue(), "hello world")
+
+    def test_write_with_overseek_pads_end_of_buffer_to_position_with_zeros(self):
+        string_io = _io.StringIO("hello")
+        string_io.seek(7)
+        self.assertEqual(string_io.write("world"), 5)
+        self.assertEqual(string_io.getvalue(), "hello\0\0world")
+
+    def test_write_with_write_translate_returns_original_size_of_string(self):
+        string_io = _io.StringIO(newline=None)
+        self.assertEqual(string_io.write("baz\r\n"), 5)
+        self.assertEqual(string_io.getvalue(), "baz\n")
+
+    def test_write_with_newline_none_translates_newlines_to_line_feed(self):
+        string_io = _io.StringIO(newline=None)
+        self.assertEqual(string_io.write("foo\n"), 4)
+        self.assertEqual(string_io.write("bar\r"), 4)
+        self.assertEqual(string_io.write("baz\r\n"), 5)
+        self.assertEqual(string_io.getvalue(), "foo\nbar\nbaz\n")
+
+    def test_write_with_newline_empty_doesnt_do_any_translations(self):
+        string_io = _io.StringIO(newline="")
+        self.assertEqual(string_io.write("foo\n"), 4)
+        self.assertEqual(string_io.write("bar\r"), 4)
+        self.assertEqual(string_io.write("baz\r\n"), 5)
+        self.assertEqual(string_io.getvalue(), "foo\nbar\rbaz\r\n")
+
+    def test_write_with_string_newline_translates_line_feed_to_string(self):
+        string_io = _io.StringIO(newline="\r\n")
+        self.assertEqual(string_io.write("foo\n"), 4)
+        self.assertEqual(string_io.write("bar\r"), 4)
+        self.assertEqual(string_io.write("baz\r\n"), 5)
+        self.assertEqual(string_io.getvalue(), "foo\r\nbar\rbaz\r\r\n")
+
+    def test_write_with_newline_none_stores_seen_newlines(self):
+        string_io = _io.StringIO(newline=None)
+        self.assertEqual(string_io.newlines, None)
+        self.assertEqual(string_io.write("foo\n"), 4)
+        self.assertEqual(string_io.newlines, "\n")
+        self.assertEqual(string_io.write("bar\r"), 4)
+        self.assertEqual(string_io.newlines, ("\r", "\n"))
+        self.assertEqual(string_io.write("baz\r\n"), 5)
+        self.assertEqual(string_io.newlines, ("\r", "\n", "\r\n"))
+        self.assertEqual(string_io.getvalue(), "foo\nbar\nbaz\n")
 
     def test_writable_with_open_StringIO_returns_true(self):
         string_io = _io.StringIO()
