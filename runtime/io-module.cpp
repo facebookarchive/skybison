@@ -1095,7 +1095,7 @@ RawObject StringIOBuiltins::truncate(Thread* thread, Frame* frame, word nargs) {
     size = Int::cast(*size_obj).asWord();
     if (size < 0) {
       return thread->raiseWithFmt(LayoutId::kValueError,
-                                  "negative truncate position %d", size);
+                                  "Negative size value %d", size);
     }
   }
   Bytes buffer(&scope, string_io.buffer());

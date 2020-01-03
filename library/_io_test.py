@@ -2839,6 +2839,56 @@ class StringIOTests(unittest.TestCase):
         closed = Closed("foo\nbar")
         self.assertEqual(closed.tell(), 0)
 
+    def test_truncate_with_open_truncates_from_pos(self):
+        string_io = _io.StringIO("hello world")
+        string_io.seek(5)
+        self.assertEqual(string_io.truncate(), 5)
+        self.assertEqual(string_io.getvalue(), "hello")
+
+    def test_truncate_with_closed_raises_value_error(self):
+        string_io = _io.StringIO()
+        string_io.close()
+        with self.assertRaises(ValueError) as context:
+            string_io.truncate()
+        self.assertRegex(str(context.exception), "I/O operation on closed file")
+
+    def test_truncate_with_subclass_and_closed_attr_returns_string(self):
+        class Closed(_io.StringIO):
+            closed = True
+
+        closed = Closed("hello world")
+        closed.seek(5)
+        self.assertEqual(closed.truncate(), 5)
+        self.assertEqual(closed.getvalue(), "hello")
+
+    def test_truncate_with_non_int_raises_type_error(self):
+        string_io = _io.StringIO("hello world")
+        with self.assertRaises(TypeError):
+            string_io.truncate("not-int")
+
+    # CPython 3.6 does not do the __index__ call, whereas >= 3.7 does. Since we've
+    # already implemented this functionality, we should test it.
+    @pyro_only
+    def test_truncate_with_intlike_calls_dunder_index(self):
+        class IntLike:
+            def __index__(self):
+                return 5
+
+        string_io = _io.StringIO("hello world")
+        self.assertEqual(string_io.truncate(IntLike()), 5)
+        self.assertEqual(string_io.getvalue(), "hello")
+
+    def test_truncate_with_negative_int_raises_value_error(self):
+        string_io = _io.StringIO("hello world")
+        with self.assertRaises(ValueError) as context:
+            string_io.truncate(-1)
+        self.assertRegex(str(context.exception), "Negative size value -1")
+
+    def test_truncate_with_size_past_end_of_buffer_returns_size(self):
+        string_io = _io.StringIO("hello")
+        self.assertEqual(string_io.truncate(10), 10)
+        self.assertEqual(string_io.getvalue(), "hello")
+
     def test_write_when_closed_raises_value_error(self):
         strio = _io.StringIO()
         self.assertEqual(strio.write("foobar"), 6)
