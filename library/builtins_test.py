@@ -94,6 +94,34 @@ class BoolTests(unittest.TestCase):
         self.assertEqual(bool.__hash__(False), int.__hash__(0))
         self.assertEqual(bool.__hash__(True), int.__hash__(1))
 
+    def test_dunder_and_success(self):
+        self.assertEqual(bool.__and__(True, True), True)
+        self.assertEqual(bool.__and__(True, False), False)
+        self.assertEqual(bool.__and__(True, 1024 - 1), 1)
+        self.assertEqual(bool.__and__(True, 1024), 0)
+        self.assertEqual(bool.__and__(False, True), False)
+        self.assertEqual(bool.__and__(False, False), False)
+        self.assertEqual(bool.__and__(False, 1), 0)
+        self.assertEqual(bool.__and__(False, 0), 0)
+
+    def test_dunder_and_not_implemented(self):
+        self.assertIs(bool.__and__(True, "string"), NotImplemented)
+        self.assertIs(bool.__and__(True, 1.8), NotImplemented)
+
+    def test_dunder_rand_success(self):
+        self.assertEqual(bool.__rand__(True, True), True)
+        self.assertEqual(bool.__rand__(False, True), False)
+        self.assertEqual(bool.__rand__(True, 1024 - 1), 1)
+        self.assertEqual(bool.__rand__(True, 1024), 0)
+        self.assertEqual(bool.__rand__(True, False), False)
+        self.assertEqual(bool.__rand__(False, False), False)
+        self.assertEqual(bool.__rand__(False, 1), 0)
+        self.assertEqual(bool.__rand__(False, 0), 0)
+
+    def test_dunder_rand_not_implemented(self):
+        self.assertIs(bool.__rand__(True, "string"), NotImplemented)
+        self.assertIs(bool.__rand__(True, 1.8), NotImplemented)
+
 
 class BoundMethodTests(unittest.TestCase):
     def test_bound_method_dunder_func(self):

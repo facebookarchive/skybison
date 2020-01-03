@@ -8,6 +8,7 @@
 # their definitions and will complain without these circular assignments.
 _address = _address  # noqa: F821
 _bool_check = _bool_check  # noqa: F821
+_bool_guard = _bool_guard  # noqa: F821
 _bound_method = _bound_method  # noqa: F821
 _bytearray_check = _bytearray_check  # noqa: F821
 _bytearray_clear = _bytearray_clear  # noqa: F821
@@ -1446,7 +1447,12 @@ def bin(number) -> str:
 
 class bool(int, bootstrap=True):
     def __and__(self, other):
-        _unimplemented()
+        _bool_guard(self)
+        if _bool_check(other):
+            return self and other
+        if _int_check(other):
+            return int.__and__(other, self)
+        return NotImplemented
 
     def __new__(cls, val=False):
         pass
@@ -1455,7 +1461,7 @@ class bool(int, bootstrap=True):
         _unimplemented()
 
     def __rand__(self, other):
-        _unimplemented()
+        return bool.__and__(self, other)
 
     def __repr__(self):
         return "True" if self else "False"
