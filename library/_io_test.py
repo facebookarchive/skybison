@@ -2561,6 +2561,70 @@ class StringIOTests(unittest.TestCase):
         self.assertEqual(list(strio), ["a\r\n", "b\r\r\n", "c\rd"])
         self.assertEqual(strio.getvalue(), "a\r\nb\r\r\nc\rd")
 
+    def test_read_with_open_returns_string(self):
+        string_io = _io.StringIO("foo\n")
+        self.assertEqual(string_io.read(), "foo\n")
+
+    def test_read_with_closed_raises_value_error(self):
+        string_io = _io.StringIO()
+        string_io.close()
+        with self.assertRaises(ValueError) as context:
+            string_io.read()
+        self.assertRegex(str(context.exception), "I/O operation on closed file")
+
+    def test_read_with_subclass_and_closed_attr_returns_string(self):
+        class Closed(_io.StringIO):
+            closed = True
+
+        closed = Closed("foo\n")
+        self.assertEqual(closed.read(), "foo\n")
+
+    def test_read_with_non_int_raises_type_error(self):
+        string_io = _io.StringIO("hello world")
+        with self.assertRaises(TypeError):
+            string_io.read("not-int")
+
+    # CPython 3.6 does not do the __index__ call, whereas >= 3.7 does. Since we've
+    # already implemented this functionality, we should test it.
+    @pyro_only
+    def test_read_with_intlike_calls_dunder_index(self):
+        class IntLike:
+            def __index__(self):
+                return 5
+
+        string_io = _io.StringIO("hello world")
+        self.assertEqual(string_io.read(IntLike()), "hello")
+
+    def test_read_starts_at_internal_pos(self):
+        string_io = _io.StringIO("hello world")
+        string_io.seek(6)
+        self.assertEqual(string_io.read(), "world")
+
+    def test_read_stops_after_passed_in_number_of_bytes(self):
+        string_io = _io.StringIO("hello world")
+        self.assertEqual(string_io.read(5), "hello")
+
+    def test_read_with_negative_size_returns_remaining_string(self):
+        string_io = _io.StringIO("hello world")
+        self.assertEqual(string_io.read(-5), "hello world")
+
+    def test_read_with_overseek_returns_empty_string(self):
+        string_io = _io.StringIO("hello world")
+        string_io.seek(20)
+        self.assertEqual(string_io.read(), "")
+
+    def test_read_translates_all_newlines_if_newline_is_none(self):
+        string_io = _io.StringIO("foo\nbar\rbaz\r\n", None)
+        self.assertEqual(string_io.read(), "foo\nbar\nbaz\n")
+
+    def test_read_doesnt_translate_if_newline_is_empty(self):
+        string_io = _io.StringIO("foo\nbar\rbaz\r\n", "")
+        self.assertEqual(string_io.read(), "foo\nbar\rbaz\r\n")
+
+    def test_read_translates_line_feeds_if_newline_is_string(self):
+        string_io = _io.StringIO("foo\nbar\rbaz\r\n", "\r\n")
+        self.assertEqual(string_io.read(), "foo\r\nbar\rbaz\r\r\n")
+
     def test_readable_with_open_StringIO_returns_true(self):
         string_io = _io.StringIO()
         self.assertTrue(string_io.readable())
