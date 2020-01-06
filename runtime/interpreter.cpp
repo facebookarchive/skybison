@@ -565,7 +565,7 @@ Continue Interpreter::tailcallMethod1(Thread* thread, RawObject method,
     frame->pushValue(self);
     nargs++;
   }
-  return doCallFunction(thread, nargs);
+  return tailcallfunction(thread, nargs);
 }
 
 HANDLER_INLINE
@@ -579,7 +579,13 @@ Continue Interpreter::tailcallMethod2(Thread* thread, RawObject method,
     nargs++;
   }
   frame->pushValue(arg1);
-  return doCallFunction(thread, nargs);
+  return tailcallfunction(thread, nargs);
+}
+
+HANDLER_INLINE Continue Interpreter::tailcallfunction(Thread* thread,
+                                                      word arg) {
+  return handleCall(thread, arg, arg, 0, preparePositionalCall,
+                    &Function::entry);
 }
 
 static RawObject raiseUnaryOpTypeError(Thread* thread, const Object& object,
@@ -1462,7 +1468,7 @@ Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
   if (getitem.isErrorException()) return Continue::UNWIND;
   // Tail-call getitem(key)
   frame->setValueAt(*getitem, 1);
-  return doCallFunction(thread, 1);
+  return tailcallfunction(thread, 1);
 }
 
 HANDLER_INLINE Continue Interpreter::doBinarySubscr(Thread* thread, word) {
@@ -1482,7 +1488,7 @@ HANDLER_INLINE Continue Interpreter::doBinarySubscrMonomorphic(Thread* thread,
   }
   DCHECK(cached.isFunction(), "expected function");
   frame->insertValueAt(cached, 2);
-  return doCallFunction(thread, 2);
+  return tailcallfunction(thread, 2);
 }
 
 HANDLER_INLINE Continue Interpreter::doBinarySubscrPolymorphic(Thread* thread,
@@ -1497,7 +1503,7 @@ HANDLER_INLINE Continue Interpreter::doBinarySubscrPolymorphic(Thread* thread,
   }
   DCHECK(cached.isFunction(), "expected function");
   frame->insertValueAt(cached, 2);
-  return doCallFunction(thread, 2);
+  return tailcallfunction(thread, 2);
 }
 
 HANDLER_INLINE Continue Interpreter::doBinarySubscrAnamorphic(Thread* thread,
@@ -2022,7 +2028,7 @@ HANDLER_INLINE Continue Interpreter::doWithCleanupStart(Thread* thread, word) {
   frame->pushValue(*exc);
   frame->pushValue(*value);
   frame->pushValue(*traceback);
-  return doCallFunction(thread, 3);
+  return tailcallfunction(thread, 3);
 }
 
 HANDLER_INLINE Continue Interpreter::doWithCleanupFinish(Thread* thread, word) {
@@ -3218,7 +3224,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceProperty(Thread* thread,
   }
   frame->pushValue(receiver);
   frame->setValueAt(cached, 1);
-  return doCallFunction(thread, 1);
+  return tailcallfunction(thread, 1);
 }
 
 HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceTypeDescr(Thread* thread,
@@ -3405,7 +3411,7 @@ HANDLER_INLINE Continue Interpreter::doImportName(Thread* thread, word arg) {
   frame->pushValue(*locals);
   frame->pushValue(*fromlist);
   frame->pushValue(*level);
-  return doCallFunction(thread, 5);
+  return tailcallfunction(thread, 5);
 }
 
 static RawObject tryImportFromSysModules(Thread* thread, const Object& from,

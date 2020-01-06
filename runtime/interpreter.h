@@ -529,6 +529,10 @@ class Interpreter {
   static Continue tailcallMethod2(Thread* thread, RawObject method,
                                   RawObject self, RawObject arg1);
 
+  // Call function with `arg` parameters at the end of an opcode handler. Use
+  // this when the number of parameters is more than 2.
+  static Continue tailcallfunction(Thread* thread, word arg);
+
   // Given a non-Function object in `callable`, attempt to normalize it to a
   // Function by either unpacking a BoundMethod or looking up the object's
   // __call__ method, iterating multiple times if necessary.
