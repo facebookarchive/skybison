@@ -191,6 +191,8 @@ class UnderBuiltinsModule {
   static RawObject underListGuard(Thread* thread, Frame* frame, word nargs);
   static RawObject underListLen(Thread* thread, Frame* frame, word nargs);
   static RawObject underListNew(Thread* thread, Frame* frame, word nargs);
+  static RawObject underListSetItem(Thread* thread, Frame* frame, word nargs);
+  static RawObject underListSetSlice(Thread* thread, Frame* frame, word nargs);
   static RawObject underListSort(Thread* thread, Frame* frame, word nargs);
   static RawObject underListSwap(Thread* thread, Frame* frame, word nargs);
   static RawObject underMappingproxyGuard(Thread* thread, Frame* frame,

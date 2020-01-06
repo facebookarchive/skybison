@@ -121,6 +121,8 @@ _list_getslice = _list_getslice  # noqa: F821
 _list_guard = _list_guard  # noqa: F821
 _list_len = _list_len  # noqa: F821
 _list_new = _list_new  # noqa: F821
+_list_setitem = _list_setitem  # noqa: F821
+_list_setslice = _list_setslice  # noqa: F821
 _list_sort = _list_sort  # noqa: F821
 _list_swap = _list_swap  # noqa: F821
 _mappingproxy_guard = _mappingproxy_guard  # noqa: F821
@@ -3822,7 +3824,27 @@ class list(bootstrap=True):
         _unimplemented()
 
     def __setitem__(self, key, value):
-        pass
+        result = _list_setitem(self, key, value)
+        if result is not _Unbound:
+            return result
+        if _slice_check(key):
+            step = _slice_step(_slice_index(key.step))
+            length = _list_len(self)
+            start = _slice_start(_slice_index(key.start), step, length)
+            stop = _slice_stop(_slice_index(key.stop), step, length)
+            result = _list_setslice(self, start, stop, step, value)
+            if result is not _Unbound:
+                return result
+            try:
+                value = (*value,)
+            except TypeError:
+                raise TypeError("can only assign an iterable")
+            return _list_setslice(self, start, stop, step, value)
+        if _object_type_hasattr(key, "__index__"):
+            return _list_setitem(self, _index(key), value)
+        raise TypeError(
+            f"list indices must be integers or slices, not {_type(key).__name__}"
+        )
 
     def append(self, other):
         pass

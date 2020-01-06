@@ -310,6 +310,8 @@ class Runtime;
   V(UnderListGuard, "_list_guard")                                             \
   V(UnderListLen, "_list_len")                                                 \
   V(UnderListNew, "_list_new")                                                 \
+  V(UnderListSetitem, "_list_setitem")                                         \
+  V(UnderListSetslice, "_list_setslice")                                       \
   V(UnderListSort, "_list_sort")                                               \
   V(UnderListSwap, "_list_swap")                                               \
   V(UnderLookupText, "_lookup_text")                                           \

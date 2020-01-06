@@ -194,6 +194,8 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderListGuard, underListGuard},
     {SymbolId::kUnderListLen, underListLen},
     {SymbolId::kUnderListNew, underListNew},
+    {SymbolId::kUnderListSetitem, underListSetItem},
+    {SymbolId::kUnderListSetslice, underListSetSlice},
     {SymbolId::kUnderListSort, underListSort},
     {SymbolId::kUnderListSwap, underListSwap},
     {SymbolId::kUnderMappingproxyGuard, underMappingproxyGuard},
@@ -344,6 +346,7 @@ const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
     SymbolId::kUnderListGetitem,
     SymbolId::kUnderListGuard,
     SymbolId::kUnderListLen,
+    SymbolId::kUnderListSetitem,
     SymbolId::kUnderMemoryviewGuard,
     SymbolId::kUnderRangeCheck,
     SymbolId::kUnderRangeGuard,
@@ -2886,6 +2889,160 @@ RawObject UnderBuiltinsModule::underListSort(Thread* thread, Frame* frame,
         "Unsupported argument type for 'ls'");
   List list(&scope, args.get(0));
   return listSort(thread, list);
+}
+
+static RawObject listSetSlice(Thread* thread, const List& self, word start,
+                              word stop, word step, const Tuple& src,
+                              word src_length) {
+  // Make sure that the degenerate case of a slice assignment where start is
+  // greater than stop inserts before the start and not the stop. For example,
+  // b[5:2] = ... should inserts before 5, not before 2.
+  if ((step < 0 && start < stop) || (step > 0 && start > stop)) {
+    stop = start;
+  }
+
+  if (step == 1) {
+    word growth = src_length - (stop - start);
+    word new_length = self.numItems() + growth;
+    if (growth == 0) {
+      // Assignment does not change the length of the list. Do nothing.
+    } else if (growth > 0) {
+      // Assignment grows the length of the list. Ensure there is enough free
+      // space in the underlying tuple for the new items and move stuff out of
+      // the way.
+      thread->runtime()->listEnsureCapacity(thread, self, new_length);
+      // Make the free space part of the list. Must happen before shifting so
+      // we can index into the free space.
+      self.setNumItems(new_length);
+      // Shift some items to the right.
+      self.replaceFromWithStartAt(start + growth, *self,
+                                  new_length - growth - start, start);
+    } else {
+      // Growth is negative so assignment shrinks the length of the list.
+      // Shift some items to the left.
+      self.replaceFromWithStartAt(start, *self, new_length - start,
+                                  start - growth);
+      // Do not retain references in the unused part of the list.
+      self.clearFrom(new_length);
+      // Remove the free space from the length of the list. Must happen after
+      // shifting and clearing so we can index into the free space.
+      self.setNumItems(new_length);
+    }
+
+    // Copy new elements into the middle
+    if (new_length > 0) {
+      MutableTuple::cast(self.items()).replaceFromWith(start, *src, src_length);
+    }
+    return NoneType::object();
+  }
+
+  word slice_length = Slice::length(start, stop, step);
+  if (slice_length != src_length) {
+    return thread->raiseWithFmt(
+        LayoutId::kValueError,
+        "attempt to assign sequence of size %w to extended slice of size "
+        "%w",
+        src_length, slice_length);
+  }
+  HandleScope scope(thread);
+  Tuple dst_items(&scope, self.items());
+  for (word dst_idx = start, src_idx = 0; src_idx < src_length;
+       dst_idx += step, src_idx++) {
+    dst_items.atPut(dst_idx, src.at(src_idx));
+  }
+  return NoneType::object();
+}
+
+RawObject UnderBuiltinsModule::underListSetItem(Thread* thread, Frame* frame,
+                                                word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfList(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kList);
+  }
+  Object key(&scope, args.get(1));
+  if (runtime->isInstanceOfInt(*key)) {
+    word index = intUnderlying(*key).asWordSaturated();
+    if (!SmallInt::isValid(index)) {
+      return thread->raiseWithFmt(LayoutId::kIndexError,
+                                  "cannot fit '%T' into an index-sized integer",
+                                  &key);
+    }
+
+    List self(&scope, *self_obj);
+    word length = self.numItems();
+    if (index < 0) {
+      index += length;
+    }
+    if (index < 0 || index >= length) {
+      return thread->raiseWithFmt(LayoutId::kIndexError,
+                                  "list assignment index out of range");
+    }
+
+    self.atPut(index, args.get(2));
+    return NoneType::object();
+  }
+
+  word start, stop;
+  if (!trySlice(key, &start, &stop)) {
+    return Unbound::object();
+  }
+
+  Object src(&scope, args.get(2));
+  Tuple src_tuple(&scope, runtime->emptyTuple());
+  word src_length;
+  if (src.isList()) {
+    if (self_obj == src) {
+      return Unbound::object();
+    }
+    RawList src_list = List::cast(*src);
+    src_tuple = src_list.items();
+    src_length = src_list.numItems();
+  } else if (src.isTuple()) {
+    src_tuple = *src;
+    src_length = src_tuple.length();
+  } else {
+    return Unbound::object();
+  }
+
+  List self(&scope, *self_obj);
+  Slice::adjustIndices(self.numItems(), &start, &stop, 1);
+  return listSetSlice(thread, self, start, stop, 1, src_tuple, src_length);
+}
+
+RawObject UnderBuiltinsModule::underListSetSlice(Thread* thread, Frame* frame,
+                                                 word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+
+  List self(&scope, args.get(0));
+  Object src(&scope, args.get(4));
+  Tuple src_tuple(&scope, runtime->emptyTuple());
+  word src_length;
+  if (src.isList()) {
+    RawList src_list = List::cast(*src);
+    src_tuple = src_list.items();
+    src_length = src_list.numItems();
+    if (self == src) {
+      // This copy avoids complicated indexing logic in a rare case of
+      // replacing lhs with elements of rhs when lhs == rhs. It can likely be
+      // re-written to avoid allocation if necessary.
+      src_tuple = runtime->tupleSubseq(thread, src_tuple, 0, src_length);
+    }
+  } else if (src.isTuple()) {
+    src_tuple = *src;
+    src_length = src_tuple.length();
+  } else {
+    return Unbound::object();
+  }
+
+  word start = SmallInt::cast(args.get(1)).value();
+  word stop = SmallInt::cast(args.get(2)).value();
+  word step = SmallInt::cast(args.get(3)).value();
+  return listSetSlice(thread, self, start, stop, step, src_tuple, src_length);
 }
 
 RawObject UnderBuiltinsModule::underListSwap(Thread* thread, Frame* frame,

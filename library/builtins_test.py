@@ -4989,6 +4989,118 @@ class ListTests(unittest.TestCase):
         self.assertIs(result, orig)
         self.assertEqual(result, [1, 2, 3, 1, 2, 3])
 
+    def test_dunder_setitem_with_int_sets_value_at_index(self):
+        orig = [1, 2, 3]
+        orig[1] = 4
+        self.assertEqual(orig, [1, 4, 3])
+
+    def test_dunder_setitem_with_negative_int_sets_value_at_adjusted_index(self):
+        orig = [1, 2, 3]
+        orig[-1] = 4
+        self.assertEqual(orig, [1, 2, 4])
+
+    def test_dunder_setitem_with_str_raises_type_error(self):
+        orig = []
+        with self.assertRaises(TypeError) as context:
+            orig["not an index"] = "element"
+        self.assertEqual(
+            str(context.exception), "list indices must be integers or slices, not str"
+        )
+
+    def test_dunder_setitem_with_large_int_raises_index_error(self):
+        orig = [1, 2, 3]
+        with self.assertRaises(IndexError) as context:
+            orig[2 ** 63] = 4
+        self.assertEqual(
+            str(context.exception), "cannot fit 'int' into an index-sized integer"
+        )
+
+    def test_dunder_setitem_with_positive_out_of_bounds_raises_index_error(self):
+        orig = [1, 2, 3]
+        with self.assertRaises(IndexError) as context:
+            orig[3] = 4
+        self.assertEqual(str(context.exception), "list assignment index out of range")
+
+    def test_dunder_setitem_with_negative_out_of_bounds_raises_index_error(self):
+        orig = [1, 2, 3]
+        with self.assertRaises(IndexError) as context:
+            orig[-4] = 4
+        self.assertEqual(str(context.exception), "list assignment index out of range")
+
+    def test_dunder_setitem_slice_with_empty_slice_clears_list(self):
+        orig = [1, 2, 3]
+        orig[:] = ()
+        self.assertEqual(orig, [])
+
+    def test_dunder_setitem_slice_with_same_size(self):
+        orig = [1, 2, 3, 4, 5]
+        orig[1:4] = ["B", "C", "D"]
+        self.assertEqual(orig, [1, "B", "C", "D", 5])
+
+    def test_dunder_setitem_slice_with_short_stop_grows(self):
+        orig = [1, 2, 3, 4, 5]
+        orig[:1] = "abc"
+        self.assertEqual(orig, ["a", "b", "c", 2, 3, 4, 5])
+
+    def test_dunder_setitem_slice_with_larger_slice_grows(self):
+        orig = [1, 2, 3, 4, 5]
+        orig[1:4] = ["B", "C", "D", "MORE", "ELEMENTS"]
+        self.assertEqual(orig, [1, "B", "C", "D", "MORE", "ELEMENTS", 5])
+
+    def test_dunder_setitem_slice_with_smaller_slice_shrinks(self):
+        orig = [1, 2, 3, 4, 5]
+        orig[1:4] = ["FEWER", "ELEMENTS"]
+        self.assertEqual(orig, [1, "FEWER", "ELEMENTS", 5])
+
+    def test_dunder_setitem_slice_with_tuple_sets_slice(self):
+        orig = [1, 2, 3, 4, 5]
+        orig[1:4] = ("a", 6, None)
+        self.assertEqual(orig, [1, "a", 6, None, 5])
+
+    def test_dunder_setitem_slice_with_self_copies(self):
+        orig = [1, 2, 3, 4, 5]
+        orig[1:4] = orig
+        self.assertEqual(orig, [1, 1, 2, 3, 4, 5, 5])
+
+    def test_dunder_setitem_slice_with_reversed_bounds_inserts_at_start(self):
+        orig = [1, 2, 3, 4, 5]
+        orig[3:2] = "ab"
+        self.assertEqual(orig, [1, 2, 3, "a", "b", 4, 5])
+
+    def test_dunder_setitem_slice_with_step_assigns_slice(self):
+        orig = [1, 2, 3, 4, 5, 6]
+        orig[::2] = "abc"
+        self.assertEqual(orig, ["a", 2, "b", 4, "c", 6])
+
+    def test_dunder_setitem_slice_with_negative_step_assigns_backwards(self):
+        orig = [1, 2, 3, 4, 5, 6]
+        orig[::-2] = "abc"
+        self.assertEqual(orig, [1, "c", 3, "b", 5, "a"])
+
+    def test_dunder_setitem_slice_extended_short_raises_value_error(self):
+        orig = [1, 2, 3, 4, 5]
+        with self.assertRaises(ValueError) as context:
+            orig[::2] = ()
+        self.assertEqual(
+            str(context.exception),
+            "attempt to assign sequence of size 0 to extended slice of size 3",
+        )
+
+    def test_dunder_setitem_slice_extended_long_raises_value_error(self):
+        orig = [1, 2, 3, 4, 5]
+        with self.assertRaises(ValueError) as context:
+            orig[::2] = (1, 2, 3, 4)
+        self.assertEqual(
+            str(context.exception),
+            "attempt to assign sequence of size 4 to extended slice of size 3",
+        )
+
+    def test_dunder_setitem_slice_with_non_iterable_raises_type_error(self):
+        orig = []
+        with self.assertRaises(TypeError) as context:
+            orig[:] = 1
+        self.assertEqual(str(context.exception), "can only assign an iterable")
+
     def test_clear_with_empty_list_does_nothing(self):
         ls = []
         self.assertIsNone(ls.clear())

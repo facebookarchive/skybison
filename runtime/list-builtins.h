@@ -50,7 +50,6 @@ class ListBuiltins
   static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderMul(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderSetitem(Thread* thread, Frame* frame, word nargs);
   static RawObject insert(Thread* thread, Frame* frame, word nargs);
   static RawObject pop(Thread* thread, Frame* frame, word nargs);
   static RawObject remove(Thread* thread, Frame* frame, word nargs);

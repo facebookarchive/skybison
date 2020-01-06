@@ -613,6 +613,16 @@ def _list_new(size, fill=None):
 
 
 @_patch
+def _list_setitem(self, key, value):
+    pass
+
+
+@_patch
+def _list_setslice(self, start, stop, step, value):
+    pass
+
+
+@_patch
 def _list_sort(list):
     pass
 

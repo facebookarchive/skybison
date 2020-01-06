@@ -246,6 +246,30 @@ static bool underListLen(Frame* frame) {
   return false;
 }
 
+static bool underListSetitem(Frame* frame) {
+  RawObject arg0 = frame->peek(2);
+  if (!arg0.isList()) {
+    return false;
+  }
+  RawObject arg1 = frame->peek(1);
+  word idx;
+  if (arg1.isSmallInt()) {
+    idx = SmallInt::cast(arg1).value();
+  } else if (arg1.isBool()) {
+    idx = Bool::cast(arg1).value();
+  } else {
+    return false;
+  }
+  RawList self = List::cast(arg0);
+  if (idx < 0 || idx >= self.numItems()) {
+    return false;
+  }
+  self.atPut(idx, frame->peek(0));
+  frame->dropValues(3);
+  frame->setTopValue(NoneType::object());
+  return true;
+}
+
 static bool underMemoryviewGuard(Frame* frame) {
   if (frame->topValue().isMemoryView()) {
     frame->popValue();
@@ -600,6 +624,8 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
       return underListGuard(thread, frame);
     case SymbolId::kUnderListLen:
       return underListLen(frame);
+    case SymbolId::kUnderListSetitem:
+      return underListSetitem(frame);
     case SymbolId::kUnderMemoryviewGuard:
       return underMemoryviewGuard(frame);
     case SymbolId::kUnderNumberCheck:

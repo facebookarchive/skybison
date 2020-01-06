@@ -576,55 +576,10 @@ TEST_F(ListBuiltinsTest, IdenticalSliceIsCopy) {
   ASSERT_NE(*test, *list1);
 }
 
-TEST_F(ListBuiltinsTest, Setitem) {
-  HandleScope scope(thread_);
-
-  List list(&scope, listFromRange(1, 5));
-  Object zero(&scope, SmallInt::fromWord(0));
-  Object num(&scope, SmallInt::fromWord(2));
-
-  EXPECT_TRUE(isIntEqualsWord(list.at(0), 1));
-  Object result(&scope,
-                runBuiltin(ListBuiltins::dunderSetitem, list, zero, num));
-  EXPECT_TRUE(result.isNoneType());
-  EXPECT_TRUE(isIntEqualsWord(list.at(0), 2));
-
-  // Negative index
-  Object minus_one(&scope, SmallInt::fromWord(-1));
-  EXPECT_TRUE(isIntEqualsWord(list.at(3), 4));
-  Object result1(&scope,
-                 runBuiltin(ListBuiltins::dunderSetitem, list, minus_one, num));
-  EXPECT_TRUE(result1.isNoneType());
-  EXPECT_TRUE(isIntEqualsWord(list.at(3), 2));
-}
-
-TEST_F(ListBuiltinsTest, SetitemWithNegativeIndex) {
-  HandleScope scope(thread_);
-  List list(&scope, listFromRange(1, 4));
-  Object idx(&scope, SmallInt::fromWord(-3));
-  Object num(&scope, SmallInt::fromWord(0));
-  Object result(&scope,
-                runBuiltin(ListBuiltins::dunderSetitem, list, idx, num));
-  ASSERT_TRUE(result.isNoneType());
-  ASSERT_EQ(list.numItems(), 3);
-  EXPECT_TRUE(isIntEqualsWord(list.at(0), 0));
-  EXPECT_TRUE(isIntEqualsWord(list.at(1), 2));
-  EXPECT_TRUE(isIntEqualsWord(list.at(2), 3));
-}
-
 TEST_F(ListBuiltinsTest, DelitemWithInvalidNegativeIndexRaisesIndexError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 l = [1, 2, 3]
 del l[-4]
-)"),
-                            LayoutId::kIndexError,
-                            "list assignment index out of range"));
-}
-
-TEST_F(ListBuiltinsTest, SetitemWithInvalidNegativeIndexRaisesIndexError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
-l = [1, 2, 3]
-l[-4] = 0
 )"),
                             LayoutId::kIndexError,
                             "list assignment index out of range"));
@@ -639,208 +594,6 @@ del l[5]
                             "list assignment index out of range"));
 }
 
-TEST_F(ListBuiltinsTest, SetitemWithInvalidIndexRaisesIndexError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
-l = [1, 2, 3]
-l[5] = 4
-)"),
-                            LayoutId::kIndexError,
-                            "list assignment index out of range"));
-}
-
-TEST_F(ListBuiltinsTest, SliceAssignmentToEmptyList) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-x = []
-x[:] = ()
-)")
-                   .isError());
-  Object result(&scope, mainModuleAt(&runtime_, "x"));
-  EXPECT_PYLIST_EQ(result, {});
-}
-
-TEST_F(ListBuiltinsTest, SetitemSliceBasic) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
-letters[2:5] = ['C', 'D', 'E']
-result = letters
-)")
-                   .isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
-  EXPECT_PYLIST_EQ(result, {"a", "b", "C", "D", "E", "f", "g"});
-}
-
-TEST_F(ListBuiltinsTest, SetitemSliceGrow) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
-letters[2:5] = ['C', 'D', 'E','X','Y','Z']
-result = letters
-)")
-                   .isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
-  EXPECT_PYLIST_EQ(result, {"a", "b", "C", "D", "E", "X", "Y", "Z", "f", "g"});
-}
-
-TEST_F(ListBuiltinsTest, SetitemSliceShrink) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
-letters[2:6] = ['C', 'D']
-result = letters
-)")
-                   .isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
-  EXPECT_PYLIST_EQ(result, {"a", "b", "C", "D", "g"});
-}
-
-TEST_F(ListBuiltinsTest, SetitemSliceIterable) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
-letters[2:6] = ('x', 'y', 12)
-result = letters
-)")
-                   .isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
-  EXPECT_PYLIST_EQ(result, {"a", "b", "x", "y", 12, "g"});
-}
-
-TEST_F(ListBuiltinsTest, SetitemSliceSelf) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
-letters[2:5] = letters
-result = letters
-)")
-                   .isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
-  EXPECT_PYLIST_EQ(result,
-                   {"a", "b", "a", "b", "c", "d", "e", "f", "g", "f", "g"});
-}
-
-// Reverse ordered bounds, but step still +1:
-TEST_F(ListBuiltinsTest, SetitemSliceRevBounds) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = list(range(20))
-a[5:2] = ['a','b','c','d','e']
-result = a
-)")
-                   .isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
-  EXPECT_PYLIST_EQ(result, {0, 1, 2,  3,  4,  "a", "b", "c", "d", "e", 5,  6, 7,
-                            8, 9, 10, 11, 12, 13,  14,  15,  16,  17,  18, 19});
-}
-
-TEST_F(ListBuiltinsTest, SetitemSliceStep) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = list(range(20))
-a[2:10:3] = ['a', 'b', 'c']
-result = a
-)")
-                   .isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
-  EXPECT_PYLIST_EQ(result, {0,  1,  "a", 3,  4,  "b", 6,  7,  "c", 9,
-                            10, 11, 12,  13, 14, 15,  16, 17, 18,  19});
-}
-
-TEST_F(ListBuiltinsTest, SetitemSliceStepNeg) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = list(range(20))
-a[10:2:-3] = ['a', 'b', 'c']
-result = a
-)")
-                   .isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
-  EXPECT_PYLIST_EQ(result, {0,   1,  2,  3,  "c", 5,  6,  "b", 8,  9,
-                            "a", 11, 12, 13, 14,  15, 16, 17,  18, 19});
-}
-
-TEST_F(ListBuiltinsTest, SetitemSliceStepSizeErr) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, R"(
-a = list(range(20))
-a[2:10:3] = ['a', 'b', 'c', 'd']
-)"),
-      LayoutId::kValueError,
-      "attempt to assign sequence of size 4 to extended slice of size 3"));
-}
-
-TEST_F(ListBuiltinsTest, SetitemSliceScalarErr) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
-letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
-letters[2:6] = 5
-)"),
-                            LayoutId::kTypeError,
-                            "'int' object is not iterable"));
-}
-
-TEST_F(ListBuiltinsTest, SetitemSliceStepTuple) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = list(range(20))
-a[2:10:3] = ('a', 'b', 'c')
-result = a
-)")
-                   .isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
-  EXPECT_PYLIST_EQ(result, {0,  1,  "a", 3,  4,  "b", 6,  7,  "c", 9,
-                            10, 11, 12,  13, 14, 15,  16, 17, 18,  19});
-}
-
-TEST_F(ListBuiltinsTest, SetitemSliceShortValue) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, R"(
-a = [1,2,3,4,5,6,7,8,9,10]
-b = [0,0,0]
-a[:8:2] = b
-)"),
-      LayoutId::kValueError,
-      "attempt to assign sequence of size 3 to extended slice of size 4"));
-}
-TEST_F(ListBuiltinsTest, SetitemSliceShortStop) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = [1,2,3,4,5,6,7,8,9,10]
-b = [0,0,0]
-a[:1] = b
-result = a
-)")
-                   .isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
-  EXPECT_PYLIST_EQ(result, {0, 0, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-}
-
-TEST_F(ListBuiltinsTest, SetitemSliceLongStop) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = [1,1,1]
-b = [0,0,0,0,0]
-a[:1] = b
-result = a
-)")
-                   .isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
-  EXPECT_PYLIST_EQ(result, {0, 0, 0, 0, 0, 1, 1});
-}
-
-TEST_F(ListBuiltinsTest, SetitemSliceShortStep) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = [1,2,3,4,5,6,7,8,9,10]
-b = [0,0,0]
-a[::1] = b
-result = a
-)")
-                   .isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
-  EXPECT_PYLIST_EQ(result, {0, 0, 0});
-}
-
 TEST_F(ListBuiltinsTest, DelitemWithTooFewArgumentsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime_, R"(
@@ -848,15 +601,6 @@ TEST_F(ListBuiltinsTest, DelitemWithTooFewArgumentsRaisesTypeError) {
 )"),
       LayoutId::kTypeError,
       "'list.__delitem__' takes min 2 positional arguments but 1 given"));
-}
-
-TEST_F(ListBuiltinsTest, SetitemWithTooFewArgumentsRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, R"(
-[].__setitem__(1)
-)"),
-      LayoutId::kTypeError,
-      "'list.__setitem__' takes min 3 positional arguments but 2 given"));
 }
 
 TEST_F(ListBuiltinsTest, DelitemWithTooManyArgumentsRaisesTypeError) {
@@ -868,26 +612,9 @@ TEST_F(ListBuiltinsTest, DelitemWithTooManyArgumentsRaisesTypeError) {
       "'list.__delitem__' takes max 2 positional arguments but 3 given"));
 }
 
-TEST_F(ListBuiltinsTest, SetitemWithTooManyArgumentsRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, R"(
-[].__setitem__(1, 2, 3)
-)"),
-      LayoutId::kTypeError,
-      "'list.__setitem__' takes max 3 positional arguments but 4 given"));
-}
-
 TEST_F(ListBuiltinsTest, DelitemWithNonIntegralIndexRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 [].__delitem__("test")
-)"),
-                            LayoutId::kTypeError,
-                            "list indices must be integers or slices"));
-}
-
-TEST_F(ListBuiltinsTest, SetitemWithNonIntegralIndexRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
-[].__setitem__("test", 1)
 )"),
                             LayoutId::kTypeError,
                             "list indices must be integers or slices"));
