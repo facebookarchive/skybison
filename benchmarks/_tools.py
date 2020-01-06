@@ -15,9 +15,11 @@ from multiprocessing.pool import ThreadPool
 log = logging.getLogger(__name__)
 
 
-def run(cmd, **kwargs):
+def run(cmd, interpreter=None, **kwargs):
     env = dict(os.environ)
     env["PYTHONHASHSEED"] = "0"
+    if interpreter is not None:
+        env["PYTHONPATH"] = interpreter.library_path
     log.info(f">>> {' '.join(cmd)}")
     return subprocess.run(cmd, encoding="UTF-8", env=env, check=True, **kwargs)
 
@@ -86,12 +88,14 @@ class TimeTool(SequentialPerformanceTool):
         command = pin_to_cpus()
         command.extend(
             [
-                interpreter.binary,
+                interpreter.binary_path,
                 f"{os.path.dirname(os.path.abspath(__file__))}/_time_tool.py",
                 benchmark.filepath(),
             ]
         )
-        completed_process = run(command, stdout=subprocess.PIPE)
+        completed_process = run(
+            command, interpreter=interpreter, stdout=subprocess.PIPE
+        )
         time_output = completed_process.stdout.strip()
         events = [event.split(" , ") for event in time_output.split("\n")]
         result = {event[0]: event[1] for event in events}
@@ -144,8 +148,10 @@ class PerfStat(SequentialPerformanceTool):
             full_command = command + ["--event", events.pop(0)]
             if events:
                 full_command += ["--event", events.pop(0)]
-            full_command += [interpreter.binary, benchmark.filepath()]
-            completed_process = run(full_command, stderr=subprocess.PIPE)
+            full_command += [interpreter.binary_path, benchmark.filepath()]
+            completed_process = run(
+                full_command, interpreter=interpreter, stderr=subprocess.PIPE
+            )
             perfstat_output = completed_process.stderr.strip()
             results.update(self.parse_perfstat(perfstat_output))
         return results
@@ -193,12 +199,14 @@ class Callgrind(ParallelPerformanceTool):
                 "valgrind",
                 "--quiet",
                 "--tool=callgrind",
+                "--trace-children=yes",
                 f"--callgrind-out-file={temp_file.name}",
-                interpreter.binary,
+                interpreter.binary_path,
                 benchmark.filepath(),
             ]
-            run(command)
+            run(command, interpreter=interpreter)
 
+            instructions = 1
             with open(temp_file.name) as fd:
                 r = re.compile(r"summary:\s*(.*)")
                 for line in fd:

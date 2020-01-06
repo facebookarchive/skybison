@@ -13,14 +13,11 @@ thrift_library(
 )
 
 python_library(
-    name = "blob_storage",
+    name = "fbpkg_handler",
     srcs = [
-        "blob_storage.py",
+        "fbpkg_handler.py",
     ],
-    py_version = "3.6",
-    deps = [
-        "//everstore/client/py:everstore_client",
-    ],
+    py_version = ">=3",
 )
 
 python_library(
@@ -28,26 +25,12 @@ python_library(
     srcs = [
         "server_handler.py",
     ],
-    py_version = "3.6",
+    py_version = ">=3",
     deps = [
-        ":blob_storage",
+        ":fbpkg_handler",
         ":rpc-py3-services",
         "//common/fb303/py3:fb303",
     ],
-)
-
-python_library(
-    name = "benchmarks",
-    srcs = [
-        "benchmarks/bench_base64.py",
-        "benchmarks/deltablue.py",
-        "benchmarks/fannkuch.py",
-        "benchmarks/nbody.py",
-        "benchmarks/nqueens.py",
-        "benchmarks/pystone.py",
-        "benchmarks/richards.py",
-    ],
-    py_version = "3.6",
 )
 
 python_library(
@@ -58,10 +41,7 @@ python_library(
         "_tools.py",
         "run.py",
     ],
-    py_version = "3.6",
-    deps = [
-        ":benchmarks",
-    ],
+    py_version = ">=3",
 )
 
 python_binary(
@@ -71,7 +51,7 @@ python_binary(
     ],
     main_module = "pyro.benchmarks.server",
     par_style = "xar",
-    py_version = "3.6",
+    py_version = ">=3",
     deps = [
         ":run",
         ":server_handler",
@@ -87,9 +67,9 @@ python_binary(
     ],
     main_module = "pyro.benchmarks.client",
     par_style = "xar",
-    py_version = "3.6",
+    py_version = ">=3",
     deps = [
-        ":blob_storage",
+        ":fbpkg_handler",
         ":rpc-py3-clients",
         ":run",
         "//ci_experiences/signalhub/if:signal_hub_thrift-py3-types",
@@ -107,7 +87,7 @@ python_unittest(
     srcs = [
         "test_server.py",
     ],
-    py_version = "3.6",
+    py_version = ">=3",
     deps = [
         ":server_handler",
         "//ame/py3:base_server",
