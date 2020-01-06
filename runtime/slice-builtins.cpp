@@ -7,83 +7,10 @@
 
 namespace py {
 
-static ALWAYS_INLINE RawObject sliceIndex(Thread* thread, const Object& obj) {
-  if (obj.isInt()) return *obj;
-  if (thread->runtime()->isInstanceOfInt(*obj)) {
-    return intUnderlying(*obj);
-  }
-  return thread->invokeFunction1(SymbolId::kBuiltins,
-                                 SymbolId::kUnderSliceIndex, obj);
-}
-
-RawObject sliceUnpack(Thread* thread, const Slice& slice, word* start,
-                      word* stop, word* step) {
-  HandleScope scope(thread);
-  Object step_obj(&scope, slice.step());
-  if (step_obj.isNoneType()) {
-    *step = 1;
-  } else {
-    step_obj = sliceIndex(thread, step_obj);
-    if (step_obj.isError()) return *step_obj;
-    word step_word = intUnderlying(*step_obj).asWordSaturated();
-    if (step_word == 0) {
-      return thread->raiseWithFmt(LayoutId::kValueError,
-                                  "slice step cannot be zero");
-    }
-    if (step_word > SmallInt::kMaxValue) {
-      *step = SmallInt::kMaxValue;
-    } else if (step_word <= SmallInt::kMinValue) {
-      // Here *step might be -SmallInt::kMaxValue - 1.
-      // In that case, we replace it with -SmallInt::kMaxValue.
-      // This doesn't affect the semantics,
-      // and it guards against later undefined behaviour resulting from
-      // code that does "step = -step" as part of a slice reversal.
-      *step = -SmallInt::kMaxValue;
-    } else {
-      *step = step_word;
-    }
-  }
-
-  Object start_obj(&scope, slice.start());
-  if (start_obj.isNoneType()) {
-    *start = (*step < 0) ? SmallInt::kMaxValue : 0;
-  } else {
-    start_obj = sliceIndex(thread, start_obj);
-    if (start_obj.isError()) return *start_obj;
-    word start_word = intUnderlying(*start_obj).asWordSaturated();
-    if (start_word > SmallInt::kMaxValue) {
-      *start = SmallInt::kMaxValue;
-    } else if (start_word < SmallInt::kMinValue) {
-      *start = SmallInt::kMinValue;
-    } else {
-      *start = start_word;
-    }
-  }
-
-  Object stop_obj(&scope, slice.stop());
-  if (stop_obj.isNoneType()) {
-    *stop = (*step < 0) ? SmallInt::kMinValue : SmallInt::kMaxValue;
-  } else {
-    stop_obj = sliceIndex(thread, stop_obj);
-    if (stop_obj.isError()) return *stop_obj;
-    word stop_word = intUnderlying(*stop_obj).asWordSaturated();
-    if (stop_word > SmallInt::kMaxValue) {
-      *stop = SmallInt::kMaxValue;
-    } else if (stop_word < SmallInt::kMinValue) {
-      *stop = SmallInt::kMinValue;
-    } else {
-      *stop = stop_word;
-    }
-  }
-
-  return NoneType::object();
-}
-
-// TODO(T39495507): make these attributes readonly
 const BuiltinAttribute SliceBuiltins::kAttributes[] = {
-    {SymbolId::kStart, RawSlice::kStartOffset, AttributeFlags::kReadOnly},
-    {SymbolId::kStop, RawSlice::kStopOffset, AttributeFlags::kReadOnly},
-    {SymbolId::kStep, RawSlice::kStepOffset, AttributeFlags::kReadOnly},
+    {SymbolId::kStart, Slice::kStartOffset, AttributeFlags::kReadOnly},
+    {SymbolId::kStop, Slice::kStopOffset, AttributeFlags::kReadOnly},
+    {SymbolId::kStep, Slice::kStepOffset, AttributeFlags::kReadOnly},
     {SymbolId::kSentinelId, -1},
 };
 
