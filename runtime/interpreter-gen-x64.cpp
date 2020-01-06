@@ -114,6 +114,7 @@ struct EmitEnv {
   const char* current_handler;
   Label call_handlers[kNumBytecodes];
   Label call_function_handler_impl;
+  Label call_function_pop_word_handler_impl;
   Label unwind_handler;
 };
 
@@ -777,7 +778,7 @@ void emitPrepareCallable(EmitEnv* env, Register r_callable,
   __ jmp(prepared, Assembler::kFarJump);
 }
 
-void emitCallFunctionHandler(EmitEnv* env) {
+void emitCallFunctionHandlerImpl(EmitEnv* env, word extra_pop) {
   const Register r_scratch = RAX;
   const Register r_callable = RDI;
   const Register r_intrinsic_id = RDX;
@@ -834,7 +835,8 @@ void emitCallFunctionHandler(EmitEnv* env) {
 
   __ bind(&no_intrinsic);
 
-  __ leaq(r_post_call_sp, Address(RSP, kOpargReg, TIMES_8, kPointerSize));
+  __ leaq(r_post_call_sp,
+          Address(RSP, kOpargReg, TIMES_8, kPointerSize + extra_pop));
 
   // Check whether the call is interpreted.
   __ movl(r_flags, Address(r_callable, heapObjectDisp(Function::kFlagsOffset)));
@@ -901,6 +903,20 @@ void emitCallFunctionHandler(EmitEnv* env) {
 template <>
 void emitHandler<CALL_FUNCTION>(EmitEnv* env) {
   // The CALL_FUNCTION handler is generated out-of-line after the handler table.
+  __ jmp(&env->call_function_handler_impl, Assembler::kFarJump);
+}
+
+template <>
+void emitHandler<CALL_METHOD>(EmitEnv* env) {
+  Register r_scratch = RAX;
+
+  // if (frame->peek(arg + 1).isUnbound()) goto call_function_pop_word;
+  __ movl(r_scratch, Address(RSP, kOpargReg, TIMES_8, kPointerSize));
+  __ cmpl(r_scratch, Immediate(Unbound::object().raw()));
+  __ jcc(EQUAL, &env->call_function_pop_word_handler_impl, Assembler::kFarJump);
+
+  // Increment argument count by 1 and jump into CALL_FUNCTION handler.
+  __ incl(kOpargReg);
   __ jmp(&env->call_function_handler_impl, Assembler::kFarJump);
 }
 
@@ -1235,7 +1251,10 @@ void emitInterpreter(EmitEnv* env) {
 #undef BC
 
   __ bind(&env->call_function_handler_impl);
-  emitCallFunctionHandler(env);
+  emitCallFunctionHandlerImpl(env, 0);
+
+  __ bind(&env->call_function_pop_word_handler_impl);
+  emitCallFunctionHandlerImpl(env, /*extra_pop=*/kPointerSize);
 
   // Emit the generic handler stubs at the end, out of the way of the
   // interesting code.
