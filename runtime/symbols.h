@@ -241,6 +241,7 @@ class Runtime;
   V(UnderExceptionNew, "_exception_new")                                       \
   V(UnderExec, "_exec")                                                        \
   V(UnderFd, "_fd")                                                            \
+  V(UnderFloat, "_float")                                                      \
   V(UnderFloatCheck, "_float_check")                                           \
   V(UnderFloatCheckExact, "_float_check_exact")                                \
   V(UnderFloatDivmod, "_float_divmod")                                         \

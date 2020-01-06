@@ -14,35 +14,6 @@
 
 namespace py {
 
-RawObject asFloatObject(Thread* thread, const Object& obj) {
-  // Object is float
-  if (obj.isFloat()) return *obj;
-
-  // Object is subclass of float
-  Runtime* runtime = thread->runtime();
-  if (runtime->isInstanceOfFloat(*obj)) {
-    return floatUnderlying(*obj);
-  }
-
-  // Try calling __float__
-  HandleScope scope(thread);
-  Object flt_obj(&scope, thread->invokeMethod1(obj, SymbolId::kDunderFloat));
-  if (flt_obj.isError()) {
-    if (flt_obj.isErrorNotFound()) {
-      return thread->raiseWithFmt(LayoutId::kTypeError,
-                                  "must be a real number");
-    }
-    return *flt_obj;
-  }
-  if (flt_obj.isFloat()) return *flt_obj;
-  if (!runtime->isInstanceOfFloat(*flt_obj)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "%T.__float__ returned non-float (type %T)",
-                                &obj, &flt_obj);
-  }
-  return floatUnderlying(*flt_obj);
-}
-
 // Convert `object` to double.
 // Returns a NoneType and sets `value` if the conversion was successful.
 // Returns an error or unimplemented otherwise. This does specifically not
