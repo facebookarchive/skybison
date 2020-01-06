@@ -481,6 +481,17 @@ class Interpreter {
                                   RawFunction function,
                                   RawObject* post_call_sp);
 
+  // Resolve a callable object to a function (resolving `__call__` descriptors
+  // as necessary).
+  // This is a helper for `prepareCallableCall`: `prepareCallableCall` starts
+  // out with shortcuts with the common cases and only calls this function for
+  // the remaining rare cases with the expectation that this function is not
+  // inlined.
+  static PrepareCallableResult prepareCallableCallDunderCall(Thread* thread,
+                                                             Frame* frame,
+                                                             word nargs,
+                                                             word callable_idx);
+
  private:
   // Common functionality for opcode handlers that dispatch to binary and
   // inplace operations
@@ -561,17 +572,6 @@ class Interpreter {
   // Call a function through its trampoline, pushing the result on the stack.
   static Continue callTrampoline(Thread* thread, Function::Entry entry,
                                  word nargs, RawObject* post_call_sp);
-
-  // Resolve a callable object to a function (resolving `__call__` descriptors
-  // as necessary).
-  // This is a helper for `prepareCallableCall`: `prepareCallableCall` starts
-  // out with shortcuts with the common cases and only calls this function for
-  // the remaining rare cases with the expectation that this function is not
-  // inlined.
-  static PrepareCallableResult prepareCallableCallDunderCall(Thread* thread,
-                                                             Frame* frame,
-                                                             word nargs,
-                                                             word callable_idx);
 
   static Continue retryLoadAttrCached(Thread* thread, word arg);
   static Continue loadAttrUpdateCache(Thread* thread, word arg,

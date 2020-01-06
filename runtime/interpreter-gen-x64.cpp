@@ -722,25 +722,59 @@ static void emitPushCallFrame(EmitEnv* env, Register r_callable,
   __ movq(kFrameReg, RSP);
 }
 
-void emitPrepareCallable(EmitEnv* env, Register r_callable, Label* slow_path) {
+void emitPrepareCallable(EmitEnv* env, Register r_callable,
+                         Register r_layout_id,
+                         Label* prepare_callable_immediate, Label* prepared) {
   Register r_scratch = RAX;
 
-  // Check whether callable is a heap object.
-  static_assert(Object::kHeapObjectTag == 1, "unexpected tag");
-  __ movl(r_scratch, r_callable);
-  __ andl(r_scratch, Immediate(Object::kPrimaryTagMask));
-  __ cmpl(r_scratch, Immediate(Object::kHeapObjectTag));
-  __ jcc(NOT_EQUAL, slow_path, Assembler::kFarJump);
+  __ cmpl(r_layout_id, Immediate(static_cast<word>(LayoutId::kBoundMethod)
+                                 << Header::kLayoutIdOffset));
+  Label slow_path;
+  __ jcc(NOT_EQUAL, &slow_path, Assembler::kFarJump);
 
-  // Check whether callable is a function.
+  // RCX = callable_idx = kOpArgReg
+  // frame->insertValueAt(callable_idx, BoundMethod::cast(callable).function());
+  Register r_oparg_saved = R8;
+  Register r_saved_callable = R9;
+  __ movl(r_oparg_saved, kOpargReg);
+  __ movq(r_saved_callable, r_callable);
+  // Use `rep movsq` to copy RCX words from RSI to RDI.
+  __ movl(RCX, kOpargReg);
+  __ movq(RSI, RSP);
+  __ subq(RSP, Immediate(kPointerSize));
+  __ movq(RDI, RSP);
+  __ repMovsq();
+  // restore and increment kOparg.
+  __ leaq(kOpargReg, Address(r_oparg_saved, 1));
+  // Insert bound_method.function() and bound_method.self().
   __ movq(r_scratch,
-          Address(r_callable, heapObjectDisp(HeapObject::kHeaderOffset)));
-  __ andl(r_scratch,
-          Immediate(Header::kLayoutIdMask << Header::kLayoutIdOffset));
-  static_assert(Header::kLayoutIdMask <= kMaxInt32, "big layout id mask");
-  __ cmpl(r_scratch, Immediate(static_cast<word>(LayoutId::kFunction)
-                               << Header::kLayoutIdOffset));
-  __ jcc(NOT_EQUAL, slow_path, Assembler::kFarJump);
+          Address(r_saved_callable, heapObjectDisp(BoundMethod::kSelfOffset)));
+  __ movq(Address(RSP, kOpargReg, TIMES_8, -kPointerSize), r_scratch);
+  __ movq(r_callable, Address(r_saved_callable,
+                              heapObjectDisp(BoundMethod::kFunctionOffset)));
+  __ movq(Address(RSP, kOpargReg, TIMES_8, 0), r_callable);
+  __ jmp(prepared, Assembler::kFarJump);
+
+  // res = Interpreter::prepareCallableDunderCall(thread, frame, nargs, nargs)
+  // callable = res.function
+  // nargs = res.nargs
+  __ bind(prepare_callable_immediate);
+  __ bind(&slow_path);
+  emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
+  __ movq(kArgRegs[0], kThreadReg);
+  __ movq(kArgRegs[2], kOpargReg);
+  __ movq(kArgRegs[3], kOpargReg);
+  __ movq(kArgRegs[1], kFrameReg);
+  emitCall(env,
+           reinterpret_cast<word>(Interpreter::prepareCallableCallDunderCall));
+  static_assert(Object::kImmediateTagBits + Error::kKindBits <= 8,
+                "tag should fit a byte for cmpb");
+  __ cmpb(kReturnRegs[0], Immediate(Error::exception().raw()));
+  __ jcc(EQUAL, &env->unwind_handler, Assembler::kFarJump);
+  emitRestoreInterpreterState(env, kVMStack | kBytecode);
+  __ movq(r_callable, kReturnRegs[0]);
+  __ movq(kOpargReg, kReturnRegs[1]);
+  __ jmp(prepared, Assembler::kFarJump);
 }
 
 void emitCallFunctionHandler(EmitEnv* env) {
@@ -751,8 +785,28 @@ void emitCallFunctionHandler(EmitEnv* env) {
   const Register r_post_call_sp = R8;
   const Register r_saved_post_call_sp = R15;
 
+  // Check callable.
   __ movq(r_callable, Address(RSP, kOpargReg, TIMES_8, 0));
-  emitPrepareCallable(env, r_callable, &env->call_handlers[CALL_FUNCTION]);
+  // Check whether callable is a heap object.
+  static_assert(Object::kHeapObjectTag == 1, "unexpected tag");
+  Register r_layout_id = RAX;
+  __ movl(r_layout_id, r_callable);
+  __ andl(r_layout_id, Immediate(Object::kPrimaryTagMask));
+  __ cmpl(r_layout_id, Immediate(Object::kHeapObjectTag));
+  Label prepare_callable_immediate;
+  __ jcc(NOT_EQUAL, &prepare_callable_immediate, Assembler::kFarJump);
+  // Check whether callable is a function.
+  static_assert(Header::kLayoutIdMask <= kMaxInt32, "big layout id mask");
+  __ movl(r_layout_id,
+          Address(r_callable, heapObjectDisp(HeapObject::kHeaderOffset)));
+  __ andl(r_layout_id,
+          Immediate(Header::kLayoutIdMask << Header::kLayoutIdOffset));
+  __ cmpl(r_layout_id, Immediate(static_cast<word>(LayoutId::kFunction)
+                                 << Header::kLayoutIdOffset));
+  Label prepare_callable_generic;
+  __ jcc(NOT_EQUAL, &prepare_callable_generic, Assembler::kFarJump);
+  Label prepared;
+  __ bind(&prepared);
 
   // Check whether we have intrinsic code for the function.
   static_assert(Function::kIntrinsicIdOffset + SmallInt::kSmallIntTagBits == 32,
@@ -807,6 +861,10 @@ void emitCallFunctionHandler(EmitEnv* env) {
 
   __ bind(&next_opcode);
   emitNextOpcode(env);
+
+  __ bind(&prepare_callable_generic);
+  emitPrepareCallable(env, r_callable, r_layout_id, &prepare_callable_immediate,
+                      &prepared);
 
   // Function::cast(callable).entry()(thread, frame, nargs);
   __ bind(&call_trampoline);
