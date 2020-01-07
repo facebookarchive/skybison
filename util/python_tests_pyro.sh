@@ -28,7 +28,31 @@ fi
 PYRO_TEST_FILTER="*_test.py"
 TEST_RUNNING_FILTER="*test*.py"
 CPYTHON_TESTS=(
+  test_augassign.py
+  test_binop.py
+  test_colorsys.py
+  test_decorators.py
+  test_dictcomps.py
+  test_dummy_thread.py
+  test_dynamic.py
+  test_dynamicclassattribute.py
+  test_eof.py
   test_errno.py
+  test_exception_variations.py
+  test_filecmp.py
+  test_flufl.py
+  test_fnmatch.py
+  test_future3.py
+  test_future4.py
+  test_future5.py
+  test_html.py
+  test_int_literal.py
+  test_longexp.py
+  test_macurl2path.py
+  test_netrc.py
+  test_strftime.py
+  test_typechecks.py
+  test_webbrowser.py
 )
 
 if [[ -n $1 ]]; then
