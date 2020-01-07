@@ -31,6 +31,8 @@ namespace {
 
 using namespace x64;
 
+const word kInstructionCacheLineSize = 64;
+
 // Abbreviated x86-64 ABI:
 constexpr Register kArgRegs[] = {RDI, RSI, RDX, RCX, R8, R9};
 constexpr Register kReturnRegs[] = {RAX, RDX};
@@ -1188,6 +1190,8 @@ void emitInterpreter(EmitEnv* env) {
   }
   __ popq(RBP);
   __ ret();
+
+  __ align(kInstructionCacheLineSize);
 
   // UNWIND pseudo-handler
   static_assert(static_cast<int>(Interpreter::Continue::UNWIND) == 1,
