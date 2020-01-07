@@ -295,24 +295,33 @@ void emitHandler(EmitEnv* env) {
 //
 // Writes to r_dst.
 void emitGetLayoutId(EmitEnv* env, Register r_dst, Register r_obj) {
-  Label done;
-  Label immediate;
+  // Adding `(-kHeapObjectTag) & kPrimaryTagMask` will set the lowest
+  // `kPrimaryTagBits` bits to zero iff the object had a `kHeapObjectTag`.
+  __ leal(r_dst,
+          Address(r_obj, (-Object::kHeapObjectTag) & Object::kPrimaryTagMask));
+  __ testl(r_dst, Immediate(Object::kPrimaryTagMask));
+  Label not_heap_object;
+  __ jcc(NOT_ZERO, &not_heap_object, Assembler::kNearJump);
 
+  // It is a HeapObject.
+  static_assert(Header::kLayoutIdOffset + Header::kLayoutIdBits <= 32,
+                "expected layout id in lower 32 bits");
+  __ movl(r_dst, Address(r_obj, heapObjectDisp(HeapObject::kHeaderOffset)));
+  __ shrl(r_dst, Immediate(Header::kLayoutIdOffset - Object::kSmallIntTagBits));
+  __ andl(r_dst, Immediate(Header::kLayoutIdMask << Object::kSmallIntTagBits));
+  Label done;
+  __ jmp(&done, Assembler::kNearJump);
+
+  __ bind(&not_heap_object);
   static_assert(static_cast<int>(LayoutId::kSmallInt) == 0,
                 "Expected SmallInt LayoutId to be 0");
   __ xorl(r_dst, r_dst);
-  __ testq(r_obj, Immediate(Object::kSmallIntTagMask));
+  static_assert(Object::kSmallIntTagBits == 1 && Object::kSmallIntTag == 0,
+                "unexpected SmallInt tag");
+  __ testl(r_obj, Immediate(Object::kSmallIntTagMask));
   __ jcc(ZERO, &done, Assembler::kNearJump);
 
-  __ testq(r_obj,
-           Immediate(Object::kPrimaryTagMask & ~Object::kSmallIntTagMask));
-  __ jcc(NOT_ZERO, &immediate, Assembler::kNearJump);
-  __ movq(r_dst, Address(r_obj, heapObjectDisp(HeapObject::kHeaderOffset)));
-  __ shrl(r_dst, Immediate(Header::kLayoutIdOffset - Object::kSmallIntTagBits));
-  __ andl(r_dst, Immediate(Header::kLayoutIdMask << Object::kSmallIntTagBits));
-  __ jmp(&done, Assembler::kNearJump);
-
-  __ bind(&immediate);
+  // Immediate.
   __ movl(r_dst, r_obj);
   __ andl(r_dst, Immediate(Object::kImmediateTagMask));
   static_assert(Object::kSmallIntTag == 0, "Unexpected SmallInt tag");
@@ -976,23 +985,25 @@ template <>
 void emitHandler<UNARY_NOT>(EmitEnv* env) {
   Label slow_path;
   Register r_scratch = RAX;
+  Register r_scratch2 = RDX;
 
   // Handle RawBools directly; fall back to C++ for other types
   __ popq(r_scratch);
-  __ movq(RDX, r_scratch);
-  // We only care about the bottom bits anyway, so andl is equivalent to andq
-  // for our purposes.
-  __ andb(r_scratch, Immediate(RawObject::kImmediateTagMask));
-  // If it's a boolean, negate and push.
-  __ cmpb(r_scratch, Immediate(RawObject::kBoolTag));
-  __ jcc(NOT_EQUAL, &slow_path, Assembler::kNearJump);
-  __ xorb(RDX, Immediate(RawBool::trueObj().raw() - RawBool::falseObj().raw()));
-  __ pushq(RDX);
+  // Add (-kBoolTag) & kImmediateTagMask. This will set the lowest
+  // kImmediateTagBits to 0 iff they were kBoolTag before.
+  __ leal(r_scratch2, Address(r_scratch, (-RawObject::kBoolTag) &
+                                             (RawObject::kImmediateTagMask)));
+  __ testl(r_scratch2, Immediate(RawObject::kImmediateTagMask));
+  // If it had kBoolTag, then negate and push.
+  __ jcc(NOT_ZERO, &slow_path, Assembler::kNearJump);
+  __ xorl(r_scratch,
+          Immediate(RawBool::trueObj().raw() ^ RawBool::falseObj().raw()));
+  __ pushq(r_scratch);
   emitNextOpcode(env);
 
   // Fall back to Interpreter::isTrue
   __ bind(&slow_path);
-  __ pushq(RDX);
+  __ pushq(r_scratch);
   emitGenericHandler(env, UNARY_NOT);
 }
 
