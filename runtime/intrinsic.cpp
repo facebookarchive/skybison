@@ -496,6 +496,17 @@ static bool underTypeGuard(Thread* thread, Frame* frame) {
   return false;
 }
 
+static bool underTypeSubclassGuard(Frame* frame) {
+  RawObject subclass = frame->peek(0);
+  RawObject superclass = frame->peek(1);
+  if (subclass == superclass && subclass.isType()) {
+    frame->dropValues(2);
+    frame->setTopValue(NoneType::object());
+    return true;
+  }
+  return false;
+}
+
 static bool underWeakrefCheck(Thread* thread, Frame* frame) {
   frame->setTopValue(Bool::fromBool(
       thread->runtime()->isInstanceOfWeakRef(frame->popValue())));
@@ -682,6 +693,8 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
       return underTypeCheckExact(frame);
     case SymbolId::kUnderTypeGuard:
       return underTypeGuard(thread, frame);
+    case SymbolId::kUnderTypeSubclassGuard:
+      return underTypeSubclassGuard(frame);
     case SymbolId::kUnderWeakrefCheck:
       return underWeakrefCheck(thread, frame);
     case SymbolId::kUnderWeakrefGuard:

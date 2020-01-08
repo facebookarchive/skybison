@@ -368,6 +368,7 @@ const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
     SymbolId::kUnderTypeCheck,
     SymbolId::kUnderTypeCheckExact,
     SymbolId::kUnderTypeGuard,
+    SymbolId::kUnderTypeSubclassGuard,
     SymbolId::kSentinelId,
 };
 // clang-format on
