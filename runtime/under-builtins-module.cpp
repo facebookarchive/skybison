@@ -1623,7 +1623,7 @@ RawObject UnderBuiltinsModule::underComplexImag(Thread* thread, Frame* frame,
   if (!runtime->isInstanceOfComplex(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kComplex);
   }
-  Complex self(&scope, *self_obj);
+  Complex self(&scope, complexUnderlying(*self_obj));
   return runtime->newFloat(self.imag());
 }
 
@@ -1636,7 +1636,7 @@ RawObject UnderBuiltinsModule::underComplexReal(Thread* thread, Frame* frame,
   if (!runtime->isInstanceOfComplex(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kComplex);
   }
-  Complex self(&scope, *self_obj);
+  Complex self(&scope, complexUnderlying(*self_obj));
   return runtime->newFloat(self.real());
 }
 

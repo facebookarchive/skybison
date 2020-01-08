@@ -75,8 +75,7 @@ PY_EXPORT Py_complex PyComplex_AsCComplex(PyObject* pycomplex) {
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pycomplex)->asObject());
   if (runtime->isInstanceOfComplex(*obj)) {
-    // TODO(T36619862): strict subclass of complex
-    Complex comp(&scope, *obj);
+    Complex comp(&scope, complexUnderlying(*obj));
     return {comp.real(), comp.imag()};
   }
 
@@ -88,8 +87,7 @@ PY_EXPORT Py_complex PyComplex_AsCComplex(PyObject* pycomplex) {
                            "__complex__ should returns a complex object");
       return {-1.0, 0.0};
     }
-    // TODO(T36619862): strict subclass of complex
-    Complex comp(&scope, *result);
+    Complex comp(&scope, complexUnderlying(*result));
     return {comp.real(), comp.imag()};
   }
   // If __complex__ is not defined, call __float__
@@ -118,8 +116,7 @@ PY_EXPORT double PyComplex_ImagAsDouble(PyObject* pycomplex) {
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pycomplex)->asObject());
   if (!runtime->isInstanceOfComplex(*obj)) return 0.0;
-  // TODO(T36619862): strict subclass of complex
-  Complex comp(&scope, *obj);
+  Complex comp(&scope, complexUnderlying(*obj));
   return comp.imag();
 }
 
@@ -129,8 +126,7 @@ PY_EXPORT double PyComplex_RealAsDouble(PyObject* pycomplex) {
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pycomplex)->asObject());
   if (runtime->isInstanceOfComplex(*obj)) {
-    // TODO(T36619862): strict subclass of complex
-    Complex comp(&scope, *obj);
+    Complex comp(&scope, complexUnderlying(*obj));
     return comp.real();
   }
   if (!runtime->isInstanceOfFloat(*obj)) {
