@@ -112,6 +112,7 @@ class Handle;
   V(UnicodeErrorBase)                                                          \
   V(UnicodeTranslateError)                                                     \
   V(UserBytesBase)                                                             \
+  V(UserComplexBase)                                                           \
   V(UserFloatBase)                                                             \
   V(UserIntBase)                                                               \
   V(UserStrBase)                                                               \

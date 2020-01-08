@@ -1547,6 +1547,21 @@ class RawUserBytesBase : public RawInstance {
 
 RawBytes bytesUnderlying(RawObject object);
 
+class RawUserComplexBase : public RawInstance {
+ public:
+  // Getters and setters.
+  RawObject value() const;
+  void setValue(RawObject value) const;
+
+  // RawLayout
+  static const int kValueOffset = RawHeapObject::kSize;
+  static const int kSize = kValueOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON_NO_CAST(UserComplexBase);
+};
+
+RawComplex complexUnderlying(RawObject object);
+
 class RawUserFloatBase : public RawInstance {
  public:
   // Getters and setters.
@@ -5319,6 +5334,24 @@ inline RawBytes bytesUnderlying(RawObject object) {
     return RawBytes::cast(object);
   }
   return RawBytes::cast(object.rawCast<RawUserBytesBase>().value());
+}
+
+// RawUserComplexBase
+
+inline RawObject RawUserComplexBase::value() const {
+  return instanceVariableAt(kValueOffset);
+}
+
+inline void RawUserComplexBase::setValue(RawObject value) const {
+  DCHECK(value.isComplex(), "Only complex type is permitted as a value.");
+  instanceVariableAtPut(kValueOffset, value);
+}
+
+inline RawComplex complexUnderlying(RawObject object) {
+  if (object.isComplex()) {
+    return RawComplex::cast(object);
+  }
+  return RawComplex::cast(object.rawCast<RawUserComplexBase>().value());
 }
 
 // RawUserFloatBase

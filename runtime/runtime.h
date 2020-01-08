@@ -617,6 +617,7 @@ class Runtime {
            typeOf(obj).rawCast<RawType>().builtinBase() == LayoutId::k##ty;    \
   }
   DEFINE_IS_USER_INSTANCE(Bytes)
+  DEFINE_IS_USER_INSTANCE(Complex)
   DEFINE_IS_USER_INSTANCE(Float)
   DEFINE_IS_USER_INSTANCE(Int)
   DEFINE_IS_USER_INSTANCE(Str)

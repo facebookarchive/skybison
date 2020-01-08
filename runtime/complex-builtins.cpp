@@ -40,10 +40,8 @@ RawObject ComplexBuiltins::dunderHash(Thread* thread, Frame* frame,
   if (!thread->runtime()->isInstanceOfComplex(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kComplex);
   }
-  if (!self_obj.isComplex()) {
-    UNIMPLEMENTED("Subclasses of complex");
-  }
-  return SmallInt::fromWord(complexHash(*self_obj));
+  Complex self(&scope, complexUnderlying(*self_obj));
+  return SmallInt::fromWord(complexHash(*self));
 }
 
 RawObject ComplexBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
@@ -106,10 +104,7 @@ RawObject ComplexBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfComplex(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kComplex);
   }
-  if (!self_obj.isComplex()) {
-    UNIMPLEMENTED("Subclasses of complex");
-  }
-  Complex self(&scope, *self_obj);
+  Complex self(&scope, complexUnderlying(*self_obj));
   Object other_obj(&scope, args.get(1));
   double other_real, other_imag;
   if (runtime->isInstanceOfInt(*other_obj)) {
