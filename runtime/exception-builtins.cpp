@@ -4,6 +4,8 @@
 
 #include <cinttypes>
 
+#include "cpython-func.h"
+
 #include "builtins-module.h"
 #include "frame.h"
 #include "module-builtins.h"
@@ -469,10 +471,7 @@ RawObject displayException(Thread* thread, const Object& value,
 void handleSystemExit(Thread* thread) {
   auto do_exit = [thread](int exit_code) {
     thread->clearPendingException();
-    Runtime* runtime = thread->runtime();
-    runtime->atExit();
-    runtime->freeApiHandles();
-    std::exit(exit_code);
+    Py_Exit(exit_code);
   };
 
   Runtime* runtime = thread->runtime();

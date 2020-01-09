@@ -1,6 +1,7 @@
 #include <unistd.h>
 
 #include <cstdio>
+#include <cstdlib>
 
 #include "cpython-func.h"
 
@@ -45,7 +46,13 @@ PY_EXPORT void Py_EndInterpreter(PyThreadState* /* e */) {
   UNIMPLEMENTED("Py_EndInterpreter");
 }
 
-PY_EXPORT void Py_Exit(int /* s */) { UNIMPLEMENTED("Py_Exit"); }
+PY_EXPORT void Py_Exit(int status_code) {
+  if (Py_FinalizeEx() < 0) {
+    status_code = 120;
+  }
+
+  std::exit(status_code);
+}
 
 PY_EXPORT void Py_FatalError(const char* msg) {
   // TODO(T39151288): Correctly print exceptions when the current thread holds
