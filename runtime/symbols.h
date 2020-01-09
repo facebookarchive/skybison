@@ -234,7 +234,6 @@ class Runtime;
   V(UnderDivmod, "_divmod")                                                    \
   V(UnderEncoder, "_encoder")                                                  \
   V(UnderEncoding, "_encoding")                                                \
-  V(UnderEq, "_eq")                                                            \
   V(UnderErrors, "_errors")                                                    \
   V(UnderEscapeDecode, "_escape_decode")                                       \
   V(UnderEscapeDecodeStateful, "_escape_decode_stateful")                      \

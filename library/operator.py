@@ -13,7 +13,7 @@ The Pyro runtime and C-API can delegate to this module to do some heavy lifting.
 """
 
 
-from _builtins import _eq as eq, _lt as lt
+from _builtins import _lt as lt
 
 
 # These values are injected by our boot process. flake8 has no knowledge about
@@ -84,6 +84,11 @@ __all__ = [
 
 
 # Comparison Operations *******************************************************#
+
+
+def eq(a, b):
+    "Same as a == b."
+    return a == b
 
 
 def le(a, b):

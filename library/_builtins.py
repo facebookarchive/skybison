@@ -335,11 +335,6 @@ def _divmod(number, divisor):
     pass
 
 
-def _eq(obj, other):
-    "Same as obj == other."
-    return obj == other
-
-
 @_patch
 def _exec(code, module, implicit_globals):
     pass

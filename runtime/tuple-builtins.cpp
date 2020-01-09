@@ -122,22 +122,10 @@ RawObject TupleBuiltins::dunderContains(Thread* thread, Frame* frame,
 
   Tuple self(&scope, tupleUnderlying(*self_obj));
   Object value(&scope, args.get(1));
-  Object item(&scope, NoneType::object());
-  Object comp_result(&scope, NoneType::object());
-  Object found(&scope, NoneType::object());
   for (word i = 0, num_items = self.length(); i < num_items; ++i) {
-    item = self.at(i);
-    if (*value == *item) {
-      return Bool::trueObj();
-    }
-    comp_result = thread->invokeFunction2(SymbolId::kUnderBuiltins,
-                                          SymbolId::kUnderEq, value, item);
-    if (comp_result.isError()) return *comp_result;
-    found = Interpreter::isTrue(thread, *comp_result);
-    if (found.isError()) return *found;
-    if (found == Bool::trueObj()) {
-      return *found;
-    }
+    RawObject eq = Runtime::objectEquals(thread, *value, self.at(i));
+    if (eq == Bool::trueObj()) return Bool::trueObj();
+    if (eq.isErrorException()) return eq;
   }
   return Bool::falseObj();
 }

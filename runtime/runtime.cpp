@@ -3320,12 +3320,12 @@ RawObject Runtime::objectEquals(Thread* thread, RawObject o0, RawObject o1) {
     if (!o1.isHeapObject()) {
       if (o0.layoutId() != o1.layoutId()) {
         if (o0.isBool() && o1.isSmallInt()) {
-          return Bool::fromBool(
-              Bool::cast(o0).value() ? 1 : 0 == SmallInt::cast(o1).value());
+          return Bool::fromBool((Bool::cast(o0).value() ? 1 : 0) ==
+                                SmallInt::cast(o1).value());
         }
         if (o0.isSmallInt() && o1.isBool()) {
-          return Bool::fromBool(
-              SmallInt::cast(o0).value() == Bool::cast(o1).value() ? 1 : 0);
+          return Bool::fromBool(SmallInt::cast(o0).value() ==
+                                (Bool::cast(o1).value() ? 1 : 0));
         }
       }
       return Bool::falseObj();

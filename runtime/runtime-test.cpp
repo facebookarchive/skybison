@@ -2808,6 +2808,48 @@ i = C()
   EXPECT_EQ(Runtime::objectEquals(thread_, *i, *i), Bool::trueObj());
 }
 
+TEST_F(RuntimeTest, ObjectEqualsWithBoolAndSmallInt) {
+  EXPECT_EQ(
+      Runtime::objectEquals(thread_, Bool::trueObj(), SmallInt::fromWord(1)),
+      Bool::trueObj());
+  EXPECT_EQ(
+      Runtime::objectEquals(thread_, Bool::trueObj(), SmallInt::fromWord(0)),
+      Bool::falseObj());
+  EXPECT_EQ(
+      Runtime::objectEquals(thread_, Bool::trueObj(), SmallInt::fromWord(100)),
+      Bool::falseObj());
+  EXPECT_EQ(
+      Runtime::objectEquals(thread_, Bool::falseObj(), SmallInt::fromWord(0)),
+      Bool::trueObj());
+  EXPECT_EQ(
+      Runtime::objectEquals(thread_, Bool::falseObj(), SmallInt::fromWord(1)),
+      Bool::falseObj());
+  EXPECT_EQ(
+      Runtime::objectEquals(thread_, Bool::falseObj(), SmallInt::fromWord(100)),
+      Bool::falseObj());
+}
+
+TEST_F(RuntimeTest, ObjectEqualsWithSmallIntAndBool) {
+  EXPECT_EQ(
+      Runtime::objectEquals(thread_, SmallInt::fromWord(1), Bool::trueObj()),
+      Bool::trueObj());
+  EXPECT_EQ(
+      Runtime::objectEquals(thread_, SmallInt::fromWord(0), Bool::trueObj()),
+      Bool::falseObj());
+  EXPECT_EQ(
+      Runtime::objectEquals(thread_, SmallInt::fromWord(100), Bool::trueObj()),
+      Bool::falseObj());
+  EXPECT_EQ(
+      Runtime::objectEquals(thread_, SmallInt::fromWord(0), Bool::falseObj()),
+      Bool::trueObj());
+  EXPECT_EQ(
+      Runtime::objectEquals(thread_, SmallInt::fromWord(1), Bool::falseObj()),
+      Bool::falseObj());
+  EXPECT_EQ(
+      Runtime::objectEquals(thread_, SmallInt::fromWord(100), Bool::falseObj()),
+      Bool::falseObj());
+}
+
 TEST_F(RuntimeTest, ObjectEqualsCallsDunderEq) {
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
