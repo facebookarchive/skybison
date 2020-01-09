@@ -235,10 +235,11 @@ bool mayChangeFramePC(Bytecode bc) {
   }
 }
 
-void emitCall(EmitEnv* env, word function_addr) {
+template <typename FPtr>
+void emitCall(EmitEnv* env, FPtr function) {
   // TODO(bsimmers): Augment Assembler so we can use the 0xe8 call opcode when
   // possible (this will also have implications on our allocation strategy).
-  __ movq(RAX, Immediate(function_addr));
+  __ movq(RAX, Immediate(reinterpret_cast<int64_t>(function)));
   __ call(RAX);
 }
 
@@ -273,7 +274,7 @@ void emitGenericHandler(EmitEnv* env, Bytecode bc) {
   // Sync VM state to memory and restore native stack pointer.
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
 
-  emitCall(env, reinterpret_cast<word>(kCppHandlers[bc]));
+  emitCall<Interpreter::Continue (*)(Thread*, word)>(env, kCppHandlers[bc]);
 
   emitHandleContinue(env, mayChangeFramePC(bc));
 }
@@ -777,8 +778,8 @@ void emitPrepareCallable(EmitEnv* env, Register r_callable,
   __ movq(kArgRegs[2], kOpargReg);
   __ movq(kArgRegs[3], kOpargReg);
   __ movq(kArgRegs[1], kFrameReg);
-  emitCall(env,
-           reinterpret_cast<word>(Interpreter::prepareCallableCallDunderCall));
+  emitCall<Interpreter::PrepareCallableResult (*)(Thread*, Frame*, word, word)>(
+      env, Interpreter::prepareCallableCallDunderCall);
   static_assert(Object::kImmediateTagBits + Error::kKindBits <= 8,
                 "tag should fit a byte for cmpb");
   __ cmpb(kReturnRegs[0], Immediate(Error::exception().raw()));
@@ -836,7 +837,7 @@ void emitCallFunctionHandlerImpl(EmitEnv* env, word extra_pop) {
   __ movq(kArgRegs[0], kThreadReg);
   __ movq(kArgRegs[1], kFrameReg);
   static_assert(kArgRegs[2] == r_intrinsic_id, "reg mismatch");
-  emitCall(env, reinterpret_cast<int64_t>(doIntrinsic));
+  emitCall<bool (*)(Thread*, Frame*, SymbolId)>(env, doIntrinsic);
   __ popq(kOpargReg);
   __ popq(r_callable);
   emitRestoreInterpreterState(env, kVMStack | kBytecode);
@@ -1203,7 +1204,7 @@ void emitInterpreter(EmitEnv* env) {
     __ movq(kArgRegs[0], kThreadReg);
     __ movq(kArgRegs[1], Address(RBP, kEntryFrameOffset));
 
-    emitCall(env, reinterpret_cast<word>(Interpreter::unwind));
+    emitCall<bool (*)(Thread*, Frame*)>(env, Interpreter::unwind);
     __ testb(RAX, RAX);
     __ jcc(NOT_ZERO, &return_with_error_exception, Assembler::kFarJump);
     emitRestoreInterpreterState(env, kAllState);
@@ -1218,7 +1219,7 @@ void emitInterpreter(EmitEnv* env) {
     HandlerSizer sizer(env, kHandlerSize);
     __ movq(kArgRegs[0], kThreadReg);
     __ movq(kArgRegs[1], Address(RBP, kEntryFrameOffset));
-    emitCall(env, reinterpret_cast<word>(Interpreter::handleReturn));
+    emitCall<RawObject (*)(Thread*, Frame*)>(env, Interpreter::handleReturn);
     // Check RAX.isErrorError()
     static_assert(Object::kImmediateTagBits + Error::kKindBits <= 8,
                   "tag should fit a byte for cmpb");
