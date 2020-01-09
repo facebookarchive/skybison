@@ -663,6 +663,7 @@ set_property(
 add_custom_target(
   cpython-sources
   DEPENDS
+  ${C_API_HEADERS_OUTPUT}
   ${CPYTHON_HEADERS_OUTPUT}
   ${CPYTHON_SOURCES})
 
