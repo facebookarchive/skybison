@@ -339,6 +339,8 @@ add_library(
   runtime/under-builtins-module.h
   runtime/under-os-module.cpp
   runtime/under-os-module.h
+  runtime/under-signal-module.cpp
+  runtime/under-signal-module.h
   runtime/under-valgrind-module.cpp
   runtime/under-valgrind-module.h
   runtime/unicode.h

@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-"""Temporary stub functions until we have a working _signal module."""
-
 
 # These values are injected by our boot process. flake8 has no knowledge about
 # their definitions and will complain without this circular helper here.

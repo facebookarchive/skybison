@@ -402,6 +402,7 @@ class Runtime;
   V(UnderSetMemberPyobject, "_set_member_pyobject")                            \
   V(UnderSigabrt, "_sigabrt")                                                  \
   V(UnderSigfpe, "_sigfpe")                                                    \
+  V(UnderSignal, "_signal")                                                    \
   V(UnderSigsegv, "_sigsegv")                                                  \
   V(UnderSliceCheck, "_slice_check")                                           \
   V(UnderSliceGuard, "_slice_guard")                                           \

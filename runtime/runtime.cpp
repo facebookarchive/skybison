@@ -2375,6 +2375,8 @@ const ModuleInitializer Runtime::kBuiltinModules[] = {
     {SymbolId::kUnderCodecs, &UnderCodecsModule::initialize},
     {SymbolId::kUnderImp, &UnderImpModule::initialize},
     {SymbolId::kUnderOs, &UnderOsModule::initialize},
+    {SymbolId::kUnderSignal,
+     &initializeFrozenModule<SymbolId::kUnderSignal, kUnderSignalModuleData>},
     {SymbolId::kUnderWeakref, &UnderWeakrefModule::initialize},
     {SymbolId::kUnderThread,
      &initializeFrozenModule<SymbolId::kUnderThread, kUnderThreadModuleData>},
