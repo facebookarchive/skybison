@@ -14,7 +14,7 @@ using namespace testing;
 using DescriptorBuiltinsTest = RuntimeFixture;
 
 TEST_F(DescriptorBuiltinsTest, Classmethod) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class Foo():
   a = 1
   @classmethod
@@ -25,12 +25,12 @@ Foo.a = 2
 class_a = Foo.bar()
 )")
                    .isError());
-  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "instance_a"), 1));
-  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "class_a"), 2));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(runtime_, "instance_a"), 1));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(runtime_, "class_a"), 2));
 }
 
 TEST_F(DescriptorBuiltinsTest, StaticmethodObjAccess) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class E:
     @staticmethod
     def f(x):
@@ -39,11 +39,11 @@ class E:
 result = E().f(5)
 )")
                    .isError());
-  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result"), 6));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(runtime_, "result"), 6));
 }
 
 TEST_F(DescriptorBuiltinsTest, StaticmethodClsAccess) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class E():
     @staticmethod
     def f(x, y):
@@ -52,14 +52,14 @@ class E():
 result = E.f(1,2)
 )")
                    .isError());
-  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result"), 3));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(runtime_, "result"), 3));
 }
 
 TEST_F(DescriptorBuiltinsTest,
        PropertyCreateEmptyGetterSetterDeleterReturnsNone) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, "x = property()").isError());
-  Object x(&scope, mainModuleAt(&runtime_, "x"));
+  ASSERT_FALSE(runFromCStr(runtime_, "x = property()").isError());
+  Object x(&scope, mainModuleAt(runtime_, "x"));
   ASSERT_TRUE(x.isProperty());
   Property prop(&scope, *x);
   ASSERT_TRUE(prop.getter().isNoneType());
@@ -69,7 +69,7 @@ TEST_F(DescriptorBuiltinsTest,
 
 TEST_F(DescriptorBuiltinsTest, PropertyCreateWithGetterSetterReturnsArgs) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def get_foo():
   pass
 def set_foo():
@@ -77,7 +77,7 @@ def set_foo():
 x = property(get_foo, set_foo)
 )")
                    .isError());
-  Object x(&scope, mainModuleAt(&runtime_, "x"));
+  Object x(&scope, mainModuleAt(runtime_, "x"));
   ASSERT_TRUE(x.isProperty());
   Property prop(&scope, *x);
   ASSERT_TRUE(prop.getter().isFunction());
@@ -87,7 +87,7 @@ x = property(get_foo, set_foo)
 
 TEST_F(DescriptorBuiltinsTest, PropertyModifyViaGetterReturnsGetter) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def get_foo():
   pass
 def set_foo():
@@ -96,14 +96,14 @@ x = property(None, set_foo)
 y = x.getter(get_foo)
 )")
                    .isError());
-  Object x(&scope, mainModuleAt(&runtime_, "x"));
+  Object x(&scope, mainModuleAt(runtime_, "x"));
   ASSERT_TRUE(x.isProperty());
   Property x_prop(&scope, *x);
   ASSERT_TRUE(x_prop.getter().isNoneType());
   ASSERT_TRUE(x_prop.setter().isFunction());
   ASSERT_TRUE(x_prop.deleter().isNoneType());
 
-  Object y(&scope, mainModuleAt(&runtime_, "y"));
+  Object y(&scope, mainModuleAt(runtime_, "y"));
   ASSERT_TRUE(y.isProperty());
   Property y_prop(&scope, *y);
   ASSERT_TRUE(y_prop.getter().isFunction());
@@ -113,7 +113,7 @@ y = x.getter(get_foo)
 
 TEST_F(DescriptorBuiltinsTest, PropertyModifyViaSetterReturnsSetter) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def get_foo():
   pass
 def set_foo():
@@ -122,14 +122,14 @@ x = property(get_foo)
 y = x.setter(set_foo)
 )")
                    .isError());
-  Object x(&scope, mainModuleAt(&runtime_, "x"));
+  Object x(&scope, mainModuleAt(runtime_, "x"));
   ASSERT_TRUE(x.isProperty());
   Property x_prop(&scope, *x);
   ASSERT_TRUE(x_prop.getter().isFunction());
   ASSERT_TRUE(x_prop.setter().isNoneType());
   ASSERT_TRUE(x_prop.deleter().isNoneType());
 
-  Object y(&scope, mainModuleAt(&runtime_, "y"));
+  Object y(&scope, mainModuleAt(runtime_, "y"));
   ASSERT_TRUE(y.isProperty());
   Property y_prop(&scope, *y);
   ASSERT_TRUE(y_prop.getter().isFunction());
@@ -138,7 +138,7 @@ y = x.setter(set_foo)
 }
 
 TEST_F(DescriptorBuiltinsTest, PropertyAddedViaClassAccessibleViaInstance) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
   def __init__(self, x):
       self.__x = x
@@ -154,8 +154,8 @@ result0 = c1.x
 result1 = c2.x
 )")
                    .isError());
-  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result0"), 24));
-  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result1"), 42));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(runtime_, "result0"), 24));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(runtime_, "result1"), 42));
 }
 
 TEST_F(DescriptorBuiltinsTest, PropertyNoDeleterRaisesAttributeError) {
@@ -176,7 +176,7 @@ c1 = C(24)
 del c1.x
 )";
 
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, src),
+  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, src),
                             LayoutId::kAttributeError,
                             "can't delete attribute"));
 }
@@ -196,7 +196,7 @@ c1 = C(24)
 c1.x
 )";
 
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, src),
+  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, src),
                             LayoutId::kAttributeError, "unreadable attribute"));
 }
 
@@ -216,13 +216,13 @@ c1 = C(24)
 c1.x = 42
 )";
 
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, src),
+  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, src),
                             LayoutId::kAttributeError, "can't set attribute"));
 }
 
 TEST_F(DescriptorBuiltinsTest, PropertyAddedViaClassAccessibleViaClass) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
   def __init__(self, x):
       self.__x = x
@@ -236,13 +236,13 @@ x = C.x
 )")
                    .isError());
 
-  Object x(&scope, mainModuleAt(&runtime_, "x"));
+  Object x(&scope, mainModuleAt(runtime_, "x"));
   ASSERT_TRUE(x.isProperty());
 }
 
 TEST_F(DescriptorBuiltinsTest, PropertyAddedViaClassModifiedViaSetter) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
   def __init__(self, x):
       self.__x = x
@@ -262,15 +262,15 @@ x2 = c1.x
 )")
                    .isError());
 
-  Object x1(&scope, mainModuleAt(&runtime_, "x1"));
+  Object x1(&scope, mainModuleAt(runtime_, "x1"));
   EXPECT_TRUE(isIntEqualsWord(*x1, 24));
-  Object x2(&scope, mainModuleAt(&runtime_, "x2"));
+  Object x2(&scope, mainModuleAt(runtime_, "x2"));
   EXPECT_TRUE(isIntEqualsWord(*x2, 42));
 }
 
 TEST_F(DescriptorBuiltinsTest, PropertyAddedViaDecoratorSanityCheck) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
   def __init__(self, x):
       self.__x = x
@@ -289,12 +289,12 @@ x = c1.x
 )")
                    .isError());
 
-  Object x(&scope, mainModuleAt(&runtime_, "x"));
+  Object x(&scope, mainModuleAt(runtime_, "x"));
   EXPECT_TRUE(isIntEqualsWord(*x, 42));
 }
 
 TEST_F(DescriptorBuiltinsTest, PropertyWithCallableDeleterDeletesValue) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
 def deleter(obj):
     del obj.y
 
@@ -312,7 +312,7 @@ foo.y
 
 TEST_F(DescriptorBuiltinsTest, PropertyWithCallableGetterReturnsValue) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class Getter:
     def __call__(self, obj):
         return 123
@@ -323,13 +323,13 @@ class Foo:
 result = Foo().x
 )")
                    .isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 123));
 }
 
 TEST_F(DescriptorBuiltinsTest, PropertyWithCallableSetterSetsValue) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class Setter:
     def __call__(self, obj, value):
         obj.y = value
@@ -342,7 +342,7 @@ foo.x = 123
 result = foo.y
 )")
                    .isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 123));
 }
 

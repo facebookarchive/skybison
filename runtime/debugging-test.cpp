@@ -148,7 +148,7 @@ TEST_F(DebuggingTests, DumpExtendedFunction) {
 
 TEST_F(DebuggingTests, DumpExtendedInstance) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
   def __init__(self):
     self.foo = 5
@@ -157,7 +157,7 @@ i = C()
 i.baz = ()
 )")
                    .isError());
-  Object i(&scope, mainModuleAt(&runtime_, "i"));
+  Object i(&scope, mainModuleAt(runtime_, "i"));
   ASSERT_TRUE(i.isInstance());
   std::stringstream ss;
   dumpExtended(ss, *i);
@@ -193,7 +193,7 @@ TEST_F(DebuggingTests, DumpExtendedInstanceWithOverflowDict) {
 
 TEST_F(DebuggingTests, DumpExtendedInstanceWithInvalidLayout) {
   HandleScope scope(thread_);
-  Instance instance(&scope, runtime_.newList());
+  Instance instance(&scope, runtime_->newList());
   LayoutId old_id = instance.layoutId();
   // Temporarily set an invalid layout id...
   instance.setHeader(
@@ -206,8 +206,8 @@ TEST_F(DebuggingTests, DumpExtendedInstanceWithInvalidLayout) {
 
 TEST_F(DebuggingTests, DumpExtendedInstanceWithLayoutWithoutType) {
   HandleScope scope(thread_);
-  Instance instance(&scope, runtime_.newList());
-  Layout layout(&scope, runtime_.layoutAt(instance.layoutId()));
+  Instance instance(&scope, runtime_->newList());
+  Layout layout(&scope, runtime_->layoutAt(instance.layoutId()));
   Object old_type(&scope, layout.describedType());
   // Temporarily set an invalid type...
   layout.setDescribedType(NoneType::object());
@@ -223,13 +223,13 @@ TEST_F(DebuggingTests, DumpExtendedInstanceWithLayoutWithoutType) {
 TEST_F(DebuggingTests, DumpExtendedLayout) {
   HandleScope scope(thread_);
   // Create a new layout with several overflow attributes
-  Object attr(&scope, runtime_.newStrFromCStr("myattr"));
-  Object attr2(&scope, runtime_.newStrFromCStr("myattr2"));
-  Object attr3(&scope, runtime_.newStrFromCStr("myattr3"));
-  Tuple overflow(&scope, runtime_.newTuple(3));
+  Object attr(&scope, runtime_->newStrFromCStr("myattr"));
+  Object attr2(&scope, runtime_->newStrFromCStr("myattr2"));
+  Object attr3(&scope, runtime_->newStrFromCStr("myattr3"));
+  Tuple overflow(&scope, runtime_->newTuple(3));
   Object* overflow_names[] = {&attr, &attr2, &attr3};
   for (word i = 0; i < overflow.length(); i++) {
-    Tuple entry(&scope, runtime_.newTuple(2));
+    Tuple entry(&scope, runtime_->newTuple(2));
     entry.atPut(0, **overflow_names[i]);
     entry.atPut(1, AttributeInfo(i, 0).asSmallInt());
     overflow.atPut(i, *entry);
@@ -238,12 +238,12 @@ TEST_F(DebuggingTests, DumpExtendedLayout) {
   layout.setOverflowAttributes(*overflow);
 
   // Set some in-object attributes
-  Object inobj1(&scope, runtime_.newStrFromCStr("foo"));
-  Object inobj2(&scope, runtime_.newStrFromCStr("bar"));
-  Tuple inobj(&scope, runtime_.newTuple(2));
+  Object inobj1(&scope, runtime_->newStrFromCStr("foo"));
+  Object inobj2(&scope, runtime_->newStrFromCStr("bar"));
+  Tuple inobj(&scope, runtime_->newTuple(2));
   Object* inobj_names[] = {&inobj1, &inobj2};
   for (word i = 0; i < inobj.length(); i++) {
-    Tuple entry(&scope, runtime_.newTuple(2));
+    Tuple entry(&scope, runtime_->newTuple(2));
     entry.atPut(0, **inobj_names[i]);
     entry.atPut(1, AttributeInfo(i, 0).asSmallInt());
     inobj.atPut(i, *entry);
@@ -252,7 +252,7 @@ TEST_F(DebuggingTests, DumpExtendedLayout) {
   layout.setNumInObjectAttributes(9);
   layout.setId(static_cast<LayoutId>(103));
 
-  Type type(&scope, runtime_.typeAt(LayoutId::kObject));
+  Type type(&scope, runtime_->typeAt(LayoutId::kObject));
   layout.setDescribedType(*type);
 
   std::stringstream ss;
@@ -274,12 +274,12 @@ TEST_F(DebuggingTests, DumpExtendedLayoutWithSealedLayout) {
   Layout layout(&scope, layoutCreateEmpty(thread_));
   layout.setOverflowAttributes(NoneType::object());
   // Set some in-object attributes
-  Object inobj1(&scope, runtime_.newStrFromCStr("foo"));
-  Object inobj2(&scope, runtime_.newStrFromCStr("bar"));
-  Tuple inobj(&scope, runtime_.newTuple(2));
+  Object inobj1(&scope, runtime_->newStrFromCStr("foo"));
+  Object inobj2(&scope, runtime_->newStrFromCStr("bar"));
+  Tuple inobj(&scope, runtime_->newTuple(2));
   Object* inobj_names[] = {&inobj1, &inobj2};
   for (word i = 0; i < inobj.length(); i++) {
-    Tuple entry(&scope, runtime_.newTuple(2));
+    Tuple entry(&scope, runtime_->newTuple(2));
     entry.atPut(0, **inobj_names[i]);
     entry.atPut(1, AttributeInfo(i, 0).asSmallInt());
     inobj.atPut(i, *entry);
@@ -303,7 +303,7 @@ TEST_F(DebuggingTests, DumpExtendedLayoutWithDictOverflow) {
   HandleScope scope(thread_);
   Layout layout(&scope, layoutCreateEmpty(thread_));
   layout.setOverflowAttributes(SmallInt::fromWord(654321));
-  layout.setInObjectAttributes(runtime_.emptyTuple());
+  layout.setInObjectAttributes(runtime_->emptyTuple());
   layout.setNumInObjectAttributes(0);
   layout.setId(static_cast<LayoutId>(1234));
 
@@ -318,7 +318,7 @@ TEST_F(DebuggingTests, DumpExtendedLayoutWithDictOverflow) {
 
 TEST_F(DebuggingTests, DumpExtendedType) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   pass
 class B(bytes):
@@ -329,7 +329,7 @@ class C(A, B):
     self.y = 1
 )")
                    .isError());
-  Object c(&scope, mainModuleAt(&runtime_, "C"));
+  Object c(&scope, mainModuleAt(runtime_, "C"));
   ASSERT_TRUE(c.isType());
 
   std::stringstream ss;
@@ -356,7 +356,7 @@ class C(A, B):
 TEST_F(DebuggingTests,
        DumpExtendedPrefersSimpleDumperOverDumpExtendedInstance) {
   HandleScope scope(thread_);
-  List list(&scope, runtime_.newList());
+  List list(&scope, runtime_->newList());
   std::stringstream ss;
   dumpExtended(ss, *list);
   EXPECT_EQ(ss.str(), "[]\n");
@@ -370,14 +370,14 @@ TEST_F(DebuggingTests, FormatBool) {
 
 TEST_F(DebuggingTests, FormatBoundMethod) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
   def foo():
     pass
 bound_method = C().foo
 )")
                    .isError());
-  Object bound_method(&scope, mainModuleAt(&runtime_, "bound_method"));
+  Object bound_method(&scope, mainModuleAt(runtime_, "bound_method"));
   ASSERT_TRUE(bound_method.isBoundMethod());
   std::stringstream ss;
   ss << bound_method;
@@ -385,9 +385,9 @@ bound_method = C().foo
 }
 
 TEST_F(DebuggingTests, FormatByteArray) {
-  ASSERT_FALSE(runFromCStr(&runtime_, "ba = bytearray(b\"foo'\")").isError());
+  ASSERT_FALSE(runFromCStr(runtime_, "ba = bytearray(b\"foo'\")").isError());
   HandleScope scope(thread_);
-  Object bytearray(&scope, mainModuleAt(&runtime_, "ba"));
+  Object bytearray(&scope, mainModuleAt(runtime_, "ba"));
   ASSERT_TRUE(bytearray.isByteArray());
   std::stringstream ss;
   ss << bytearray;
@@ -397,7 +397,7 @@ TEST_F(DebuggingTests, FormatByteArray) {
 TEST_F(DebuggingTests, FormatCode) {
   HandleScope scope(thread_);
   Code code(&scope, newEmptyCode());
-  code.setName(runtime_.newStrFromCStr("foobar"));
+  code.setName(runtime_->newStrFromCStr("foobar"));
   std::stringstream ss;
   ss << code;
   EXPECT_EQ(ss.str(), "<code \"foobar\">");
@@ -405,14 +405,14 @@ TEST_F(DebuggingTests, FormatCode) {
 
 TEST_F(DebuggingTests, FormatDict) {
   HandleScope scope(thread_);
-  Dict dict(&scope, runtime_.newDict());
-  Str key0(&scope, runtime_.newStrFromCStr("hello"));
+  Dict dict(&scope, runtime_->newDict());
+  Str key0(&scope, runtime_->newStrFromCStr("hello"));
   Object key1(&scope, NoneType::object());
   Object hash_obj(&scope, Interpreter::hash(thread_, key1));
   ASSERT_FALSE(hash_obj.isErrorException());
   word hash = SmallInt::cast(*hash_obj).value();
-  Object value0(&scope, runtime_.newInt(88));
-  Object value1(&scope, runtime_.emptyTuple());
+  Object value0(&scope, runtime_->newInt(88));
+  Object value1(&scope, runtime_->emptyTuple());
   dictAtPutByStr(thread_, dict, key0, value0);
   dictAtPut(thread_, dict, key1, hash, value1);
   std::stringstream ss;
@@ -449,14 +449,14 @@ TEST_F(DebuggingTests, FormatError) {
 
 TEST_F(DebuggingTests, FormatFloat) {
   std::stringstream ss;
-  ss << runtime_.newFloat(42.42);
+  ss << runtime_->newFloat(42.42);
   EXPECT_EQ(ss.str(), "0x1.535c28f5c28f6p+5");
 }
 
 TEST_F(DebuggingTests, FormatFunction) {
   HandleScope scope(thread_);
   std::stringstream ss;
-  Object function(&scope, moduleAtByCStr(&runtime_, "builtins", "callable"));
+  Object function(&scope, moduleAtByCStr(runtime_, "builtins", "callable"));
   ASSERT_TRUE(function.isFunction());
   ss << function;
   EXPECT_EQ(ss.str(), R"(<function "callable">)");
@@ -465,14 +465,14 @@ TEST_F(DebuggingTests, FormatFunction) {
 TEST_F(DebuggingTests, FormatLargeInt) {
   std::stringstream ss;
   const uword digits[] = {0x12345, kMaxUword};
-  ss << runtime_.newIntWithDigits(digits);
+  ss << runtime_->newIntWithDigits(digits);
   EXPECT_EQ(ss.str(), "largeint([0x0000000000012345, 0xffffffffffffffff])");
 }
 
 TEST_F(DebuggingTests, FormatLargeStr) {
   HandleScope scope(thread_);
   std::stringstream ss;
-  Object str(&scope, runtime_.newStrFromCStr("hello world"));
+  Object str(&scope, runtime_->newStrFromCStr("hello world"));
   EXPECT_TRUE(str.isLargeStr());
   ss << str;
   EXPECT_EQ(ss.str(), "\"hello world\"");
@@ -482,7 +482,7 @@ TEST_F(DebuggingTests, FormatLayout) {
   HandleScope scope(thread_);
   Layout layout(&scope, layoutCreateEmpty(thread_));
   layout.setId(static_cast<LayoutId>(101));
-  Type type(&scope, runtime_.typeAt(LayoutId::kFloat));
+  Type type(&scope, runtime_->typeAt(LayoutId::kFloat));
   layout.setDescribedType(*type);
 
   std::stringstream ss;
@@ -492,11 +492,11 @@ TEST_F(DebuggingTests, FormatLayout) {
 
 TEST_F(DebuggingTests, FormatList) {
   HandleScope scope(thread_);
-  List list(&scope, runtime_.newList());
+  List list(&scope, runtime_->newList());
   Object o0(&scope, NoneType::object());
-  Object o1(&scope, runtime_.newInt(17));
-  runtime_.listAdd(thread_, list, o0);
-  runtime_.listAdd(thread_, list, o1);
+  Object o1(&scope, runtime_->newInt(17));
+  runtime_->listAdd(thread_, list, o0);
+  runtime_->listAdd(thread_, list, o1);
   std::stringstream ss;
   ss << list;
   EXPECT_EQ(ss.str(), "[None, 17]");
@@ -504,8 +504,8 @@ TEST_F(DebuggingTests, FormatList) {
 
 TEST_F(DebuggingTests, FormatModule) {
   HandleScope scope(thread_);
-  Object name(&scope, runtime_.newStrFromCStr("foomodule"));
-  Object module(&scope, runtime_.newModule(name));
+  Object name(&scope, runtime_->newStrFromCStr("foomodule"));
+  Object module(&scope, runtime_->newModule(name));
   std::stringstream ss;
   ss << module;
   EXPECT_EQ(ss.str(), R"(<module "foomodule">)");
@@ -525,13 +525,13 @@ TEST_F(DebuggingTests, FormatObjectWithBuiltinClass) {
 
 TEST_F(DebuggingTests, FormatObjectWithUserDefinedClass) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class Foo:
   pass
 foo = Foo()
 )")
                    .isError());
-  Object foo(&scope, mainModuleAt(&runtime_, "foo"));
+  Object foo(&scope, mainModuleAt(runtime_, "foo"));
   std::stringstream ss;
   ss << foo;
   EXPECT_EQ(ss.str(), R"(<"Foo" object>)");
@@ -541,7 +541,7 @@ TEST_F(DebuggingTests, FormatObjectWithTypeWithoutName) {
   HandleScope scope(thread_);
   Object obj(&scope, NotImplementedType::object());
   // Phabricate a nameless type...
-  Type::cast(runtime_.typeOf(*obj)).setName(NoneType::object());
+  Type::cast(runtime_->typeOf(*obj)).setName(NoneType::object());
 
   std::stringstream ss;
   std::stringstream expected;
@@ -553,7 +553,7 @@ TEST_F(DebuggingTests, FormatObjectWithTypeWithoutName) {
 
 TEST_F(DebuggingTests, FormatObjectWithInvalidLayoutId) {
   HandleScope scope(thread_);
-  Object object(&scope, runtime_.newList());
+  Object object(&scope, runtime_->newList());
   LayoutId old_id = object.layoutId();
   // Temporary set an invalid layout id.
   HeapObject::cast(*object).setHeader(
@@ -568,8 +568,8 @@ TEST_F(DebuggingTests, FormatObjectWithInvalidLayoutId) {
 
 TEST_F(DebuggingTests, FormatObjectWithLayoutWithInvalidType) {
   HandleScope scope(thread_);
-  Layout layout(&scope, runtime_.layoutAt(LayoutId::kObject));
-  Object object(&scope, runtime_.newInstance(layout));
+  Layout layout(&scope, runtime_->layoutAt(LayoutId::kObject));
+  Object object(&scope, runtime_->newInstance(layout));
   Object old_type(&scope, layout.describedType());
   // Temporary set an invalid layout id.
   layout.setDescribedType(NoneType::object());
@@ -596,7 +596,7 @@ TEST_F(DebuggingTests, FormatSmallInt) {
 TEST_F(DebuggingTests, FormatSmallStr) {
   HandleScope scope(thread_);
   std::stringstream ss;
-  Object str(&scope, runtime_.newStrFromCStr("aa"));
+  Object str(&scope, runtime_->newStrFromCStr("aa"));
   EXPECT_TRUE(str.isSmallStr());
   ss << str;
   EXPECT_EQ(ss.str(), "\"aa\"");
@@ -604,9 +604,9 @@ TEST_F(DebuggingTests, FormatSmallStr) {
 
 TEST_F(DebuggingTests, FormatTuple) {
   HandleScope scope(thread_);
-  Tuple tuple(&scope, runtime_.newTuple(2));
+  Tuple tuple(&scope, runtime_->newTuple(2));
   tuple.atPut(0, Bool::trueObj());
-  tuple.atPut(1, runtime_.newStrFromCStr("hey"));
+  tuple.atPut(1, runtime_->newStrFromCStr("hey"));
   std::stringstream ss;
   ss << tuple;
   EXPECT_EQ(ss.str(), R"((True, "hey"))");
@@ -614,14 +614,14 @@ TEST_F(DebuggingTests, FormatTuple) {
 
 TEST_F(DebuggingTests, FormatTupleWithoutElements) {
   std::stringstream ss;
-  ss << runtime_.emptyTuple();
+  ss << runtime_->emptyTuple();
   EXPECT_EQ(ss.str(), "()");
 }
 
 TEST_F(DebuggingTests, FormatTupleWithOneElement) {
   HandleScope scope(thread_);
-  Tuple tuple(&scope, runtime_.newTuple(1));
-  tuple.atPut(0, runtime_.newInt(77));
+  Tuple tuple(&scope, runtime_->newTuple(1));
+  tuple.atPut(0, runtime_->newInt(77));
   std::stringstream ss;
   ss << tuple;
   EXPECT_EQ(ss.str(), "(77,)");
@@ -629,12 +629,12 @@ TEST_F(DebuggingTests, FormatTupleWithOneElement) {
 
 TEST_F(DebuggingTests, FormatType) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class MyClass:
   pass
 )")
                    .isError());
-  Object my_class(&scope, mainModuleAt(&runtime_, "MyClass"));
+  Object my_class(&scope, mainModuleAt(runtime_, "MyClass"));
   std::stringstream ss;
   ss << my_class;
   EXPECT_EQ(ss.str(), "<type \"MyClass\">");
@@ -642,15 +642,15 @@ class MyClass:
 
 TEST_F(DebuggingTests, FormatForwardedObjects) {
   HandleScope scope(thread_);
-  Tuple tuple(&scope, runtime_.newTuple(1));
-  List list1(&scope, runtime_.newList());
-  Int i(&scope, runtime_.newInt(1234));
-  runtime_.listAdd(thread_, list1, i);
+  Tuple tuple(&scope, runtime_->newTuple(1));
+  List list1(&scope, runtime_->newList());
+  Int i(&scope, runtime_->newInt(1234));
+  runtime_->listAdd(thread_, list1, i);
   tuple.atPut(0, *list1);
 
-  i = runtime_.newInt(5678);
-  List list2(&scope, runtime_.newList());
-  runtime_.listAdd(thread_, list2, i);
+  i = runtime_->newInt(5678);
+  List list2(&scope, runtime_->newList());
+  runtime_->listAdd(thread_, list2, i);
   list1.forwardTo(*list2);
   std::ostringstream ss;
   ss << tuple;
@@ -663,25 +663,25 @@ TEST_F(DebuggingTests, FormatForwardedObjects) {
 
 TEST_F(DebuggingTests, FormatFrame) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def func(arg0, arg1):
   hello = "world"
   return arg0 + arg1
 )")
                    .isError());
-  Function func(&scope, mainModuleAt(&runtime_, "func"));
+  Function func(&scope, mainModuleAt(runtime_, "func"));
 
-  Object empty_tuple(&scope, runtime_.emptyTuple());
-  Str name(&scope, runtime_.newStrFromCStr("_bytearray_check"));
+  Object empty_tuple(&scope, runtime_->emptyTuple());
+  Str name(&scope, runtime_->newStrFromCStr("_bytearray_check"));
   Code code(&scope,
-            runtime_.newBuiltinCode(/*argcount=*/0, /*posonlyargcount=*/0,
-                                    /*kwonlyargcount=*/0,
-                                    /*flags=*/0, /*entry=*/nullptr,
-                                    /*parameter_names=*/empty_tuple, name));
-  Str qualname(&scope, runtime_.newStrFromCStr("test._bytearray_check"));
-  Module module(&scope, runtime_.findOrCreateMainModule());
+            runtime_->newBuiltinCode(/*argcount=*/0, /*posonlyargcount=*/0,
+                                     /*kwonlyargcount=*/0,
+                                     /*flags=*/0, /*entry=*/nullptr,
+                                     /*parameter_names=*/empty_tuple, name));
+  Str qualname(&scope, runtime_->newStrFromCStr("test._bytearray_check"));
+  Module module(&scope, runtime_->findOrCreateMainModule());
   Function builtin(
-      &scope, runtime_.newFunctionWithCode(thread_, qualname, code, module));
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
 
   Frame* root = thread_->currentFrame();
   ASSERT_TRUE(root->isSentinel());
@@ -692,21 +692,21 @@ def func(arg0, arg1):
 
   Function function(&scope, makeTestFunction(thread_));
   frame0->pushValue(*function);
-  frame0->pushValue(runtime_.newStrFromCStr("foo bar"));
-  frame0->pushValue(runtime_.emptyTuple());
-  frame0->pushValue(runtime_.newDict());
+  frame0->pushValue(runtime_->newStrFromCStr("foo bar"));
+  frame0->pushValue(runtime_->emptyTuple());
+  frame0->pushValue(runtime_->newDict());
 
   Frame* frame1 = thread_->pushCallFrame(*function);
   frame1->setVirtualPC(42);
-  frame1->setLocal(3, runtime_.newStrFromCStr("bar foo"));
-  frame1->setLocal(4, runtime_.newInt(88));
-  frame1->setLocal(5, runtime_.newInt(-99));
+  frame1->setLocal(3, runtime_->newStrFromCStr("bar foo"));
+  frame1->setLocal(4, runtime_->newInt(88));
+  frame1->setLocal(5, runtime_->newInt(-99));
   frame1->pushValue(*func);
-  frame1->pushValue(runtime_.newInt(-9));
-  frame1->pushValue(runtime_.newInt(17));
+  frame1->pushValue(runtime_->newInt(-9));
+  frame1->pushValue(runtime_->newInt(17));
   Frame* frame2 = thread_->pushCallFrame(*func);
   frame2->setVirtualPC(4);
-  frame2->setLocal(2, runtime_.newStrFromCStr("world"));
+  frame2->setLocal(2, runtime_->newStrFromCStr("world"));
 
   std::stringstream ss;
   ss << thread_->currentFrame();
@@ -755,8 +755,8 @@ TEST_F(DebuggingTests, FormatFrameNullptr) {
 
 TEST_F(DebuggingTests, FormatValueCellWithValue) {
   HandleScope scope(thread_);
-  Object value(&scope, runtime_.newInt(42));
-  Object value_cell(&scope, runtime_.newValueCell());
+  Object value(&scope, runtime_->newInt(42));
+  Object value_cell(&scope, runtime_->newValueCell());
   ValueCell::cast(*value_cell).setValue(*value);
   std::stringstream ss;
   ss << value_cell;
@@ -765,7 +765,7 @@ TEST_F(DebuggingTests, FormatValueCellWithValue) {
 
 TEST_F(DebuggingTests, FormatValueCellPlaceHolder) {
   HandleScope scope(thread_);
-  Object value_cell(&scope, runtime_.newValueCell());
+  Object value_cell(&scope, runtime_->newValueCell());
   ValueCell::cast(*value_cell).makePlaceholder();
   std::stringstream ss;
   ss << value_cell;

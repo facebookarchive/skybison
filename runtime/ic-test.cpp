@@ -17,7 +17,7 @@ TEST_F(
     IcTest,
     icLookupMonomorphicWithEmptyCacheReturnsErrorNotFoundAndSetIsFoundToFalse) {
   HandleScope scope(thread_);
-  Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerEntry));
+  Tuple caches(&scope, runtime_->newTuple(2 * kIcPointersPerEntry));
   bool is_found;
   EXPECT_TRUE(icLookupMonomorphic(*caches, 1, LayoutId::kSmallInt, &is_found)
                   .isErrorNotFound());
@@ -27,7 +27,7 @@ TEST_F(
 TEST_F(IcTest, IcLookupBinaryOpReturnsErrorNotFound) {
   HandleScope scope(thread_);
 
-  Tuple caches(&scope, runtime_.newTuple(kIcPointersPerEntry));
+  Tuple caches(&scope, runtime_->newTuple(kIcPointersPerEntry));
   BinaryOpFlags flags;
   EXPECT_TRUE(icLookupBinaryOp(*caches, 0, LayoutId::kSmallInt,
                                LayoutId::kSmallInt, &flags)
@@ -36,8 +36,8 @@ TEST_F(IcTest, IcLookupBinaryOpReturnsErrorNotFound) {
 
 TEST_F(IcTest, IcLookupGlobalVar) {
   HandleScope scope(thread_);
-  Tuple caches(&scope, runtime_.newTuple(2));
-  ValueCell cache(&scope, runtime_.newValueCell());
+  Tuple caches(&scope, runtime_->newTuple(2));
+  ValueCell cache(&scope, runtime_->newValueCell());
   cache.setValue(SmallInt::fromWord(99));
   caches.atPut(0, *cache);
   EXPECT_TRUE(
@@ -47,8 +47,8 @@ TEST_F(IcTest, IcLookupGlobalVar) {
 
 TEST_F(IcTest, IcUpdateAttrSetsMonomorphicEntry) {
   HandleScope scope(thread_);
-  Tuple caches(&scope, runtime_.newTuple(1 * kIcPointersPerEntry));
-  Object value(&scope, runtime_.newInt(88));
+  Tuple caches(&scope, runtime_->newTuple(1 * kIcPointersPerEntry));
+  Object value(&scope, runtime_->newInt(88));
   Object name(&scope, Str::empty());
   Function dependent(&scope, newEmptyFunction());
   EXPECT_EQ(icUpdateAttr(thread_, caches, 0, LayoutId::kSmallInt, value, name,
@@ -62,8 +62,8 @@ TEST_F(IcTest, IcUpdateAttrSetsMonomorphicEntry) {
 
 TEST_F(IcTest, IcUpdateAttrUpdatesExistingMonomorphicEntry) {
   HandleScope scope(thread_);
-  Tuple caches(&scope, runtime_.newTuple(1 * kIcPointersPerEntry));
-  Object value(&scope, runtime_.newInt(88));
+  Tuple caches(&scope, runtime_->newTuple(1 * kIcPointersPerEntry));
+  Object value(&scope, runtime_->newInt(88));
   Object name(&scope, Str::empty());
   Function dependent(&scope, newEmptyFunction());
   ASSERT_EQ(icUpdateAttr(thread_, caches, 0, LayoutId::kSmallInt, value, name,
@@ -74,7 +74,7 @@ TEST_F(IcTest, IcUpdateAttrUpdatesExistingMonomorphicEntry) {
             *value);
   EXPECT_TRUE(is_found);
 
-  Object new_value(&scope, runtime_.newInt(99));
+  Object new_value(&scope, runtime_->newInt(99));
   EXPECT_EQ(icUpdateAttr(thread_, caches, 0, LayoutId::kSmallInt, new_value,
                          name, dependent),
             ICState::kMonomorphic);
@@ -85,9 +85,9 @@ TEST_F(IcTest, IcUpdateAttrUpdatesExistingMonomorphicEntry) {
 
 TEST_F(IcTest, IcUpdateAttrSetsPolymorphicEntry) {
   HandleScope scope(thread_);
-  Tuple caches(&scope, runtime_.newTuple(1 * kIcPointersPerEntry));
-  Object int_value(&scope, runtime_.newInt(88));
-  Object str_value(&scope, runtime_.newInt(99));
+  Tuple caches(&scope, runtime_->newTuple(1 * kIcPointersPerEntry));
+  Object int_value(&scope, runtime_->newInt(88));
+  Object str_value(&scope, runtime_->newInt(99));
   Object name(&scope, Str::empty());
   Function dependent(&scope, newEmptyFunction());
   ASSERT_EQ(icUpdateAttr(thread_, caches, 0, LayoutId::kSmallInt, int_value,
@@ -107,9 +107,9 @@ TEST_F(IcTest, IcUpdateAttrSetsPolymorphicEntry) {
 
 TEST_F(IcTest, IcUpdateAttrUpdatesPolymorphicEntry) {
   HandleScope scope(thread_);
-  Tuple caches(&scope, runtime_.newTuple(1 * kIcPointersPerEntry));
-  Object int_value(&scope, runtime_.newInt(88));
-  Object str_value(&scope, runtime_.newInt(99));
+  Tuple caches(&scope, runtime_->newTuple(1 * kIcPointersPerEntry));
+  Object int_value(&scope, runtime_->newInt(88));
+  Object str_value(&scope, runtime_->newInt(99));
   Object name(&scope, Str::empty());
   Function dependent(&scope, newEmptyFunction());
   ASSERT_EQ(icUpdateAttr(thread_, caches, 0, LayoutId::kSmallInt, int_value,
@@ -126,7 +126,7 @@ TEST_F(IcTest, IcUpdateAttrUpdatesPolymorphicEntry) {
             *str_value);
   ASSERT_TRUE(is_found);
 
-  Object new_value(&scope, runtime_.newInt(101));
+  Object new_value(&scope, runtime_->newInt(101));
   EXPECT_EQ(icUpdateAttr(thread_, caches, 0, LayoutId::kSmallStr, new_value,
                          name, dependent),
             ICState::kPolymorphic);
@@ -137,7 +137,7 @@ TEST_F(IcTest, IcUpdateAttrUpdatesPolymorphicEntry) {
 
 TEST_F(IcTest, IcUpdateAttrInsertsDependencyUpToDefiningType) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   pass
 
@@ -153,24 +153,24 @@ c = C()
   // Inserting dependent adds dependent to a new Placeholder in C for 'foo', and
   // to the existing ValueCell in B. A won't be affected since it's not visited
   // during MRO traversal.
-  Tuple caches(&scope, runtime_.newTuple(4));
-  Object c(&scope, mainModuleAt(&runtime_, "c"));
+  Tuple caches(&scope, runtime_->newTuple(4));
+  Object c(&scope, mainModuleAt(runtime_, "c"));
   Object value(&scope, SmallInt::fromWord(1234));
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Function dependent(&scope, newEmptyFunction());
   icUpdateAttr(thread_, caches, 0, c.layoutId(), value, foo, dependent);
 
-  Type type_a(&scope, mainModuleAt(&runtime_, "A"));
+  Type type_a(&scope, mainModuleAt(runtime_, "A"));
   EXPECT_TRUE(typeValueCellAt(type_a, foo).isErrorNotFound());
 
-  Type type_b(&scope, mainModuleAt(&runtime_, "B"));
+  Type type_b(&scope, mainModuleAt(runtime_, "B"));
   ValueCell b_entry(&scope, typeValueCellAt(type_b, foo));
   EXPECT_FALSE(b_entry.isPlaceholder());
   WeakLink b_link(&scope, b_entry.dependencyLink());
   EXPECT_EQ(b_link.referent(), dependent);
   EXPECT_TRUE(b_link.next().isNoneType());
 
-  Type type_c(&scope, mainModuleAt(&runtime_, "C"));
+  Type type_c(&scope, mainModuleAt(runtime_, "C"));
   ValueCell c_entry(&scope, typeValueCellAt(type_c, foo));
   EXPECT_TRUE(c_entry.isPlaceholder());
   WeakLink c_link(&scope, c_entry.dependencyLink());
@@ -180,15 +180,15 @@ c = C()
 
 TEST_F(IcTest, IcUpdateAttrDoesNotInsertsDependencyToSealedType) {
   HandleScope scope(thread_);
-  Str instance(&scope, runtime_.newStrFromCStr("str instance"));
-  Tuple caches(&scope, runtime_.newTuple(4));
+  Str instance(&scope, runtime_->newStrFromCStr("str instance"));
+  Tuple caches(&scope, runtime_->newTuple(4));
   Object value(&scope, SmallInt::fromWord(1234));
-  Object dunder_add(&scope, runtime_.symbols()->at(SymbolId::kDunderAdd));
+  Object dunder_add(&scope, runtime_->symbols()->at(SymbolId::kDunderAdd));
   Function dependent(&scope, newEmptyFunction());
   icUpdateAttr(thread_, caches, 0, instance.layoutId(), value, dunder_add,
                dependent);
 
-  Type type_str(&scope, runtime_.typeAt(LayoutId::kStr));
+  Type type_str(&scope, runtime_->typeAt(LayoutId::kStr));
   ValueCell dunder_add_entry(&scope, typeValueCellAt(type_str, dunder_add));
   EXPECT_TRUE(dunder_add_entry.dependencyLink().isNoneType());
 }
@@ -212,7 +212,7 @@ bool icDependentIncluded(RawObject dependent, RawObject link) {
 }
 
 TEST_F(IcTest, IcEvictAttr) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   def __init__(self):
     self.foo = 4
@@ -229,10 +229,10 @@ class B:
                    .isError());
 
   HandleScope scope(thread_);
-  Type type_a(&scope, mainModuleAt(&runtime_, "A"));
-  Function cache_a_foo(&scope, mainModuleAt(&runtime_, "cache_a_foo"));
+  Type type_a(&scope, mainModuleAt(runtime_, "A"));
+  Function cache_a_foo(&scope, mainModuleAt(runtime_, "cache_a_foo"));
   Tuple caches(&scope, cache_a_foo.caches());
-  Object cached_object(&scope, mainModuleAt(&runtime_, "a"));
+  Object cached_object(&scope, mainModuleAt(runtime_, "a"));
   // Precondition check that the A.foo attribute lookup has been cached.
   ASSERT_FALSE(
       icLookupAttr(*caches, 1, cached_object.layoutId()).isErrorNotFound());
@@ -242,8 +242,8 @@ class B:
 
   // Try evicting caches with an attribute name that is not in the cache.  This
   // should have no effect.
-  Type cached_type(&scope, mainModuleAt(&runtime_, "A"));
-  IcIterator it(&scope, &runtime_, *cache_a_foo);
+  Type cached_type(&scope, mainModuleAt(runtime_, "A"));
+  IcIterator it(&scope, runtime_, *cache_a_foo);
   Object not_cached_attr_name(&scope,
                               Runtime::internStrFromCStr(thread_, "random"));
   icEvictAttr(thread_, it, cached_type, not_cached_attr_name,
@@ -268,7 +268,7 @@ class B:
 
   // Try evicting caches with a type that is not being cached.  This should have
   // no effect.
-  Type not_cached_type(&scope, mainModuleAt(&runtime_, "B"));
+  Type not_cached_type(&scope, mainModuleAt(runtime_, "B"));
   icEvictAttr(thread_, it, not_cached_type, foo, AttributeKind::kDataDescriptor,
               cache_a_foo);
   EXPECT_FALSE(
@@ -289,7 +289,7 @@ class B:
 }
 
 TEST_F(IcTest, IcEvictBinaryOpEvictsCacheForUpdateToLeftOperandType) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   def __ge__(self, other):
     return True
@@ -308,18 +308,18 @@ cache_binop(a, b)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Function cache_binop(&scope, mainModuleAt(&runtime_, "cache_binop"));
+  Function cache_binop(&scope, mainModuleAt(runtime_, "cache_binop"));
   Tuple caches(&scope, cache_binop.caches());
-  Object left_operand(&scope, mainModuleAt(&runtime_, "a"));
-  Object right_operand(&scope, mainModuleAt(&runtime_, "b"));
-  Type left_operand_type(&scope, mainModuleAt(&runtime_, "A"));
+  Object left_operand(&scope, mainModuleAt(runtime_, "a"));
+  Object right_operand(&scope, mainModuleAt(runtime_, "b"));
+  Type left_operand_type(&scope, mainModuleAt(runtime_, "A"));
   BinaryOpFlags flags_out;
   // Precondition check that the A.__ge__ attribute lookup has been cached.
   ASSERT_FALSE(icLookupBinaryOp(*caches, 0, left_operand.layoutId(),
                                 right_operand.layoutId(), &flags_out)
                    .isErrorNotFound());
 
-  IcIterator it(&scope, &runtime_, *cache_binop);
+  IcIterator it(&scope, runtime_, *cache_binop);
 
   // An update to A.__ge__ invalidates the binop cache for a >= b.
   Object dunder_ge(&scope, Runtime::internStrFromCStr(thread_, "__ge__"));
@@ -330,7 +330,7 @@ cache_binop(a, b)
 }
 
 TEST_F(IcTest, IcEvictBinaryOpEvictsCacheForUpdateToRightOperand) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   def __ge__(self, other):
     return True
@@ -349,18 +349,18 @@ cache_binop(a, b)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Function cache_binop(&scope, mainModuleAt(&runtime_, "cache_binop"));
+  Function cache_binop(&scope, mainModuleAt(runtime_, "cache_binop"));
   Tuple caches(&scope, cache_binop.caches());
-  Object left_operand(&scope, mainModuleAt(&runtime_, "a"));
-  Object right_operand(&scope, mainModuleAt(&runtime_, "b"));
-  Type right_operand_type(&scope, mainModuleAt(&runtime_, "B"));
+  Object left_operand(&scope, mainModuleAt(runtime_, "a"));
+  Object right_operand(&scope, mainModuleAt(runtime_, "b"));
+  Type right_operand_type(&scope, mainModuleAt(runtime_, "B"));
   BinaryOpFlags flags_out;
   // Precondition check that the A.__ge__ attribute lookup has been cached.
   ASSERT_FALSE(icLookupBinaryOp(*caches, 0, left_operand.layoutId(),
                                 right_operand.layoutId(), &flags_out)
                    .isErrorNotFound());
 
-  IcIterator it(&scope, &runtime_, *cache_binop);
+  IcIterator it(&scope, runtime_, *cache_binop);
   Object dunder_le(&scope, Runtime::internStrFromCStr(thread_, "__le__"));
   // An update to B.__le__ invalidates the binop cache for a >= b.
   icEvictBinaryOp(thread_, it, right_operand_type, dunder_le, cache_binop);
@@ -370,7 +370,7 @@ cache_binop(a, b)
 }
 
 TEST_F(IcTest, IcEvictBinaryOpDoesnNotDeleteDependenciesFromCachedTypes) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   def __ge__(self, other): return True
 
@@ -391,13 +391,12 @@ B__le__ = B.__le__
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object a(&scope, mainModuleAt(&runtime_, "a"));
-  Object b(&scope, mainModuleAt(&runtime_, "b"));
+  Object a(&scope, mainModuleAt(runtime_, "a"));
+  Object b(&scope, mainModuleAt(runtime_, "b"));
 
-  Object type_a_dunder_ge(&scope, mainModuleAt(&runtime_, "A__ge__"));
-  Object type_b_dunder_le(&scope, mainModuleAt(&runtime_, "B__le__"));
-  Function cache_compare_op(&scope,
-                            mainModuleAt(&runtime_, "cache_compare_op"));
+  Object type_a_dunder_ge(&scope, mainModuleAt(runtime_, "A__ge__"));
+  Object type_b_dunder_le(&scope, mainModuleAt(runtime_, "B__le__"));
+  Function cache_compare_op(&scope, mainModuleAt(runtime_, "cache_compare_op"));
   Tuple caches(&scope, cache_compare_op.caches());
   BinaryOpFlags flags_out;
   // Ensure that A.__ge__ is cached for t0 = a >= b.
@@ -409,12 +408,12 @@ B__le__ = B.__le__
                              SmallInt::fromWord(0).layoutId(), &flags_out),
             *type_b_dunder_le);
 
-  Type type_a(&scope, mainModuleAt(&runtime_, "A"));
+  Type type_a(&scope, mainModuleAt(runtime_, "A"));
   // Ensure cache_compare_op is a dependent of A.__ge__.
   ASSERT_TRUE(icDependentIncluded(
       *cache_compare_op, dependencyLinkOfTypeAttr(thread_, type_a, "__ge__")));
 
-  Type type_b(&scope, mainModuleAt(&runtime_, "B"));
+  Type type_b(&scope, mainModuleAt(runtime_, "B"));
   // Ensure cache_compare_op is a dependent of B.__le__.
   ASSERT_TRUE(icDependentIncluded(
       *cache_compare_op, dependencyLinkOfTypeAttr(thread_, type_b, "__le__")));
@@ -433,11 +432,11 @@ B__le__ = B.__le__
 
 TEST_F(IcTest, IcDeleteDependentInValueCellDependencyLinkDeletesDependent) {
   HandleScope scope(thread_);
-  ValueCell value_cell(&scope, runtime_.newValueCell());
-  Object dependent0(&scope, runtime_.newTuple(4));
-  Object dependent1(&scope, runtime_.newTuple(5));
-  Object dependent2(&scope, runtime_.newTuple(6));
-  Object dependent3(&scope, runtime_.newTuple(7));
+  ValueCell value_cell(&scope, runtime_->newValueCell());
+  Object dependent0(&scope, runtime_->newTuple(4));
+  Object dependent1(&scope, runtime_->newTuple(5));
+  Object dependent2(&scope, runtime_->newTuple(6));
+  Object dependent3(&scope, runtime_->newTuple(7));
   icInsertDependentToValueCellDependencyLink(thread_, dependent3, value_cell);
   icInsertDependentToValueCellDependencyLink(thread_, dependent2, value_cell);
   icInsertDependentToValueCellDependencyLink(thread_, dependent1, value_cell);
@@ -475,7 +474,7 @@ TEST_F(IcTest, IcDeleteDependentInValueCellDependencyLinkDeletesDependent) {
 TEST_F(
     IcTest,
     IcDeleteDependentFromCachedAttributeDeletesDependentUnderAttributeNameInMro) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   def foo(self): return 1
   def bar(self): return 1
@@ -494,11 +493,11 @@ y(a)
                    .isError());
 
   HandleScope scope(thread_);
-  Type type_a(&scope, mainModuleAt(&runtime_, "A"));
+  Type type_a(&scope, mainModuleAt(runtime_, "A"));
   Object foo_name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object bar_name(&scope, Runtime::internStrFromCStr(thread_, "bar"));
-  Function dependent_x(&scope, mainModuleAt(&runtime_, "x"));
-  Function dependent_y(&scope, mainModuleAt(&runtime_, "y"));
+  Function dependent_x(&scope, mainModuleAt(runtime_, "x"));
+  Function dependent_y(&scope, mainModuleAt(runtime_, "y"));
 
   // A.foo -> x
   ValueCell foo_in_a(&scope, typeValueCellAt(type_a, foo_name));
@@ -535,7 +534,7 @@ y(a)
 
 TEST_F(IcTest,
        IcDeleteDependentFromCachedAttributeDeletesDependentUpToUpdatedType) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   def foo(self): return 1
 
@@ -557,10 +556,10 @@ x(a)
                    .isError());
 
   HandleScope scope(thread_);
-  Type a(&scope, mainModuleAt(&runtime_, "A"));
-  Type b(&scope, mainModuleAt(&runtime_, "B"));
-  Type c(&scope, mainModuleAt(&runtime_, "C"));
-  Object dependent_x(&scope, mainModuleAt(&runtime_, "x"));
+  Type a(&scope, mainModuleAt(runtime_, "A"));
+  Type b(&scope, mainModuleAt(runtime_, "B"));
+  Type c(&scope, mainModuleAt(runtime_, "C"));
+  Object dependent_x(&scope, mainModuleAt(runtime_, "x"));
   Object foo_name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
 
   // A.foo -> x
@@ -579,7 +578,7 @@ x(a)
   ASSERT_TRUE(foo_in_c.isPlaceholder());
   ASSERT_EQ(WeakLink::cast(foo_in_c.dependencyLink()).referent(), *dependent_x);
 
-  Object c_obj(&scope, mainModuleAt(&runtime_, "c"));
+  Object c_obj(&scope, mainModuleAt(runtime_, "c"));
   // Delete dependent_x for an update to B.foo.
   icDeleteDependentFromInheritingTypes(thread_, c_obj.layoutId(), foo_name, b,
                                        dependent_x);
@@ -596,7 +595,7 @@ x(a)
 TEST_F(
     IcTest,
     IcHighestSuperTypeNotInMroOfOtherCachedTypesReturnsHighestNotCachedSuperType) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   def foo(self):
     return 4
@@ -613,10 +612,10 @@ cache_foo(b)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Function cache_foo(&scope, mainModuleAt(&runtime_, "cache_foo"));
-  Object a_foo(&scope, mainModuleAt(&runtime_, "a_foo"));
-  Object b_obj(&scope, mainModuleAt(&runtime_, "b"));
-  Type a_type(&scope, mainModuleAt(&runtime_, "A"));
+  Function cache_foo(&scope, mainModuleAt(runtime_, "cache_foo"));
+  Object a_foo(&scope, mainModuleAt(runtime_, "a_foo"));
+  Object b_obj(&scope, mainModuleAt(runtime_, "b"));
+  Type a_type(&scope, mainModuleAt(runtime_, "A"));
   Tuple caches(&scope, cache_foo.caches());
   ASSERT_EQ(icLookupAttr(*caches, 1, b_obj.layoutId()), *a_foo);
   // Manually delete the cache for B.foo in cache_foo.
@@ -634,7 +633,7 @@ cache_foo(b)
 }
 
 TEST_F(IcTest, IcIsCachedAttributeAffectedByUpdatedType) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   def foo(self): return 1
 
@@ -653,9 +652,9 @@ x(c)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Type type_a(&scope, mainModuleAt(&runtime_, "A"));
-  Type type_b(&scope, mainModuleAt(&runtime_, "B"));
-  Type type_c(&scope, mainModuleAt(&runtime_, "C"));
+  Type type_a(&scope, mainModuleAt(runtime_, "A"));
+  Type type_b(&scope, mainModuleAt(runtime_, "B"));
+  Type type_c(&scope, mainModuleAt(runtime_, "C"));
   Object foo_name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
 
   LayoutId type_c_instance_layout_id =
@@ -710,14 +709,14 @@ static RawObject testingFunctionCachingAttributes(
 }
 
 TEST_F(IcTest, IcEvictCacheEvictsCachesForMatchingAttributeName) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C: pass
 
 c = C()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Type type(&scope, mainModuleAt(&runtime_, "C"));
+  Type type(&scope, mainModuleAt(runtime_, "C"));
   Object foo_name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object bar_name(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   Function dependent(&scope,
@@ -729,7 +728,7 @@ c = C()
       icInsertDependentToValueCellDependencyLink(thread_, dependent, foo));
 
   // Create an attribute cache for an instance of C, under name "foo".
-  Object instance(&scope, mainModuleAt(&runtime_, "c"));
+  Object instance(&scope, mainModuleAt(runtime_, "c"));
   Tuple caches(&scope, dependent.caches());
   Object value(&scope, SmallInt::fromWord(1234));
   Object name(&scope, Str::empty());
@@ -751,14 +750,14 @@ c = C()
 
 TEST_F(IcTest,
        IcEvictCacheEvictsCachesForInstanceOffsetOnlyWhenDataDesciptorIsTrue) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C: pass
 
 c = C()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Type type(&scope, mainModuleAt(&runtime_, "C"));
+  Type type(&scope, mainModuleAt(runtime_, "C"));
   Object foo_name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Function dependent(&scope,
                      testingFunctionCachingAttributes(thread_, foo_name));
@@ -769,7 +768,7 @@ c = C()
       icInsertDependentToValueCellDependencyLink(thread_, dependent, foo));
 
   // Create an instance offset cache for an instance of C, under name "foo".
-  Object instance(&scope, mainModuleAt(&runtime_, "c"));
+  Object instance(&scope, mainModuleAt(runtime_, "c"));
   Tuple caches(&scope, dependent.caches());
   Object value(&scope, SmallInt::fromWord(1234));
   Object name(&scope, Str::empty());
@@ -791,7 +790,7 @@ c = C()
 }
 
 TEST_F(IcTest, IcEvictCacheEvictsOnlyAffectedCaches) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   def foo(self): return  1
 
@@ -806,9 +805,9 @@ c = C()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Type a_type(&scope, mainModuleAt(&runtime_, "A"));
-  Type b_type(&scope, mainModuleAt(&runtime_, "B"));
-  Type c_type(&scope, mainModuleAt(&runtime_, "C"));
+  Type a_type(&scope, mainModuleAt(runtime_, "A"));
+  Type b_type(&scope, mainModuleAt(runtime_, "B"));
+  Type c_type(&scope, mainModuleAt(runtime_, "C"));
   Object foo_name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Function dependent(&scope,
                      testingFunctionCachingAttributes(thread_, foo_name));
@@ -830,19 +829,19 @@ c = C()
       icInsertDependentToValueCellDependencyLink(thread_, dependent, c_foo));
 
   // Create a cache for a.foo in dependent.
-  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object a(&scope, mainModuleAt(runtime_, "a"));
   Tuple caches(&scope, dependent.caches());
   Object value_100(&scope, SmallInt::fromWord(100));
   Object name(&scope, Str::empty());
   icUpdateAttr(thread_, caches, 1, a.layoutId(), value_100, name, dependent);
   ASSERT_EQ(icLookupAttr(*caches, 1, a.layoutId()), SmallInt::fromWord(100));
   // Create a cache for b.foo in dependent.
-  Object b(&scope, mainModuleAt(&runtime_, "b"));
+  Object b(&scope, mainModuleAt(runtime_, "b"));
   Object value_200(&scope, SmallInt::fromWord(200));
   icUpdateAttr(thread_, caches, 1, b.layoutId(), value_200, name, dependent);
   ASSERT_EQ(icLookupAttr(*caches, 1, b.layoutId()), SmallInt::fromWord(200));
   // Create a cache for c.foo in dependent.
-  Object c(&scope, mainModuleAt(&runtime_, "c"));
+  Object c(&scope, mainModuleAt(runtime_, "c"));
   Object value_300(&scope, SmallInt::fromWord(300));
   icUpdateAttr(thread_, caches, 1, c.layoutId(), value_300, name, dependent);
   ASSERT_EQ(icLookupAttr(*caches, 1, c.layoutId()), SmallInt::fromWord(300));
@@ -869,14 +868,14 @@ c = C()
 // Verify if IcInvalidateCachesForTypeAttr calls
 // DeleteCachesForTypeAttrInDependent with all dependents.
 TEST_F(IcTest, IcInvalidateCachesForTypeAttrProcessesAllDependents) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C: pass
 
 c = C()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Type type(&scope, mainModuleAt(&runtime_, "C"));
+  Type type(&scope, mainModuleAt(runtime_, "C"));
   Object foo_name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object bar_name(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   Function dependent0(&scope,
@@ -886,7 +885,7 @@ c = C()
 
   // Create a property so these value cells look like data descriptor attributes
   Object none(&scope, NoneType::object());
-  Object data_descriptor(&scope, runtime_.newProperty(none, none, none));
+  Object data_descriptor(&scope, runtime_->newProperty(none, none, none));
 
   // foo -> dependent0.
   ValueCell foo(&scope, typeValueCellAtPut(thread_, type, foo_name));
@@ -902,7 +901,7 @@ c = C()
       icInsertDependentToValueCellDependencyLink(thread_, dependent1, bar));
 
   Tuple dependent0_caches(&scope, dependent0.caches());
-  Object instance(&scope, mainModuleAt(&runtime_, "c"));
+  Object instance(&scope, mainModuleAt(runtime_, "c"));
   {
     // Create an attribute cache for an instance of C, under name "foo" in
     // dependent0.
@@ -941,7 +940,7 @@ c = C()
 
 TEST_F(IcTest,
        BinarySubscrUpdateCacheWithRaisingDescriptorPropagatesException) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
 class Desc:
   def __get__(self, instance, type):
     raise UserWarning("foo")
@@ -956,7 +955,7 @@ result = container[0]
 }
 
 TEST_F(IcTest, IcIsAttrCachedInDependentReturnsTrueForAttrCaches) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class X:
   def foo(self): return 4
 
@@ -976,13 +975,13 @@ cache_Y_foo()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Type type_a(&scope, mainModuleAt(&runtime_, "A"));
-  Type type_b(&scope, mainModuleAt(&runtime_, "B"));
-  Type type_x(&scope, mainModuleAt(&runtime_, "X"));
-  Type type_y(&scope, mainModuleAt(&runtime_, "Y"));
+  Type type_a(&scope, mainModuleAt(runtime_, "A"));
+  Type type_b(&scope, mainModuleAt(runtime_, "B"));
+  Type type_x(&scope, mainModuleAt(runtime_, "X"));
+  Type type_y(&scope, mainModuleAt(runtime_, "Y"));
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
-  Function cache_y_foo(&scope, mainModuleAt(&runtime_, "cache_Y_foo"));
+  Function cache_y_foo(&scope, mainModuleAt(runtime_, "cache_Y_foo"));
 
   // Note that cache_y_foo depends both on X.foo and Y.foo since an
   // update to either one of them flows to Y().foo().
@@ -994,7 +993,7 @@ cache_Y_foo()
 }
 
 TEST_F(IcTest, IcIsAttrCachedInDependentReturnsTrueForBinaryOpCaches) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class X:
   def __ge__(self, other): return 5
 
@@ -1014,13 +1013,13 @@ cache_Y_ge()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Type type_x(&scope, mainModuleAt(&runtime_, "X"));
-  Type type_y(&scope, mainModuleAt(&runtime_, "Y"));
-  Type type_a(&scope, mainModuleAt(&runtime_, "A"));
-  Type type_b(&scope, mainModuleAt(&runtime_, "B"));
+  Type type_x(&scope, mainModuleAt(runtime_, "X"));
+  Type type_y(&scope, mainModuleAt(runtime_, "Y"));
+  Type type_a(&scope, mainModuleAt(runtime_, "A"));
+  Type type_b(&scope, mainModuleAt(runtime_, "B"));
   Object dunder_ge(&scope, Runtime::internStrFromCStr(thread_, "__ge__"));
   Object dunder_le(&scope, Runtime::internStrFromCStr(thread_, "__le__"));
-  Function cache_ge(&scope, mainModuleAt(&runtime_, "cache_Y_ge"));
+  Function cache_ge(&scope, mainModuleAt(runtime_, "cache_Y_ge"));
 
   // Note that cache_ge indirectly depends on X, but directly on Y since both
   // X.__ge__ and Y.__ge__ affect Y() >= sth.
@@ -1048,9 +1047,9 @@ TEST_F(IcTest, IcDependentIncludedWithDependentInChainReturnsTrue) {
   Object two(&scope, SmallInt::fromWord(2));
   Object three(&scope, SmallInt::fromWord(3));
   // Set up None <- link0 <-> link1 <-> link2 -> None
-  WeakLink link0(&scope, runtime_.newWeakLink(thread_, one, none, none));
-  WeakLink link1(&scope, runtime_.newWeakLink(thread_, two, link0, none));
-  WeakLink link2(&scope, runtime_.newWeakLink(thread_, three, link1, none));
+  WeakLink link0(&scope, runtime_->newWeakLink(thread_, one, none, none));
+  WeakLink link1(&scope, runtime_->newWeakLink(thread_, two, link0, none));
+  WeakLink link2(&scope, runtime_->newWeakLink(thread_, three, link1, none));
   link0.setNext(*link1);
   link1.setNext(*link2);
   EXPECT_TRUE(icDependentIncluded(*one, *link0));
@@ -1071,7 +1070,7 @@ TEST_F(IcTest, IcDependentIncludedWithDependentInChainReturnsTrue) {
 }
 
 TEST_F(IcTest, IcEvictCacheEvictsCompareOpCaches) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   def __ge__(self, other): return True
 
@@ -1088,24 +1087,23 @@ cache_compare_op(a, b)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object a(&scope, mainModuleAt(&runtime_, "a"));
-  Object b(&scope, mainModuleAt(&runtime_, "b"));
-  Object type_a_dunder_ge(&scope, mainModuleAt(&runtime_, "A__ge__"));
-  Function cache_compare_op(&scope,
-                            mainModuleAt(&runtime_, "cache_compare_op"));
+  Object a(&scope, mainModuleAt(runtime_, "a"));
+  Object b(&scope, mainModuleAt(runtime_, "b"));
+  Object type_a_dunder_ge(&scope, mainModuleAt(runtime_, "A__ge__"));
+  Function cache_compare_op(&scope, mainModuleAt(runtime_, "cache_compare_op"));
   Tuple caches(&scope, cache_compare_op.caches());
   BinaryOpFlags flags_out;
   Object cached(&scope, icLookupBinaryOp(*caches, 0, a.layoutId(), b.layoutId(),
                                          &flags_out));
   // Precondition check that the A.__ge__ lookup has been cached.
   ASSERT_EQ(*cached, *type_a_dunder_ge);
-  Type type_a(&scope, mainModuleAt(&runtime_, "A"));
+  Type type_a(&scope, mainModuleAt(runtime_, "A"));
   Object dunder_ge_name(&scope, Runtime::internStrFromCStr(thread_, "__ge__"));
   ValueCell dunder_ge(&scope, typeValueCellAt(type_a, dunder_ge_name));
   WeakLink dunder_ge_link(&scope, dunder_ge.dependencyLink());
   // Precondition check that cache_compare_op is a dependent of A.__ge__.
   ASSERT_EQ(dunder_ge_link.referent(), *cache_compare_op);
-  Type type_b(&scope, mainModuleAt(&runtime_, "B"));
+  Type type_b(&scope, mainModuleAt(runtime_, "B"));
   Object dunder_le_name(&scope, Runtime::internStrFromCStr(thread_, "__le__"));
   ValueCell dunder_le(&scope, typeValueCellAt(type_b, dunder_le_name));
   WeakLink dunder_le_link(&scope, dunder_le.dependencyLink());
@@ -1125,7 +1123,7 @@ cache_compare_op(a, b)
 
 TEST_F(IcTest,
        ForIterUpdateCacheWithRaisingDescriptorDunderNextPropagatesException) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
 class Desc:
   def __get__(self, instance, type):
     raise UserWarning("foo")
@@ -1142,7 +1140,7 @@ result = [x for x in container]
 }
 
 TEST_F(IcTest, BinarySubscrUpdateCacheWithFunctionUpdatesCache) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def f(c, k):
   return c[k]
 
@@ -1153,30 +1151,30 @@ result = f(container, 0)
                    .isError());
 
   HandleScope scope;
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 
-  Object container(&scope, mainModuleAt(&runtime_, "container"));
-  Object getitem(&scope, mainModuleAt(&runtime_, "getitem"));
-  Function f(&scope, mainModuleAt(&runtime_, "f"));
+  Object container(&scope, mainModuleAt(runtime_, "container"));
+  Object getitem(&scope, mainModuleAt(runtime_, "getitem"));
+  Function f(&scope, mainModuleAt(runtime_, "f"));
   Tuple caches(&scope, f.caches());
   // Expect that BINARY_SUBSCR is the only cached opcode in f().
   ASSERT_EQ(caches.length(), 1 * kIcPointersPerEntry);
   EXPECT_EQ(icLookupAttr(*caches, 0, container.layoutId()), *getitem);
 
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 container2 = [4, 5, 6]
 result2 = f(container2, 1)
 )")
                    .isError());
-  Object container2(&scope, mainModuleAt(&runtime_, "container2"));
-  Object result2(&scope, mainModuleAt(&runtime_, "result2"));
+  Object container2(&scope, mainModuleAt(runtime_, "container2"));
+  Object result2(&scope, mainModuleAt(runtime_, "result2"));
   EXPECT_EQ(container2.layoutId(), container.layoutId());
   EXPECT_TRUE(isIntEqualsWord(*result2, 5));
 }
 
 TEST_F(IcTest, BinarySubscrUpdateCacheWithNonFunctionDoesntUpdateCache) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def f(c, k):
   return c[k]
 class Container:
@@ -1193,31 +1191,31 @@ result = f(container, "hi")
                    .isError());
 
   HandleScope scope;
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "hi"));
 
-  Object container(&scope, mainModuleAt(&runtime_, "container"));
-  Function f(&scope, mainModuleAt(&runtime_, "f"));
+  Object container(&scope, mainModuleAt(runtime_, "container"));
+  Function f(&scope, mainModuleAt(runtime_, "f"));
   Tuple caches(&scope, f.caches());
   // Expect that BINARY_SUBSCR is the only cached opcode in f().
   ASSERT_EQ(caches.length(), 1 * kIcPointersPerEntry);
   EXPECT_TRUE(icLookupAttr(*caches, 0, container.layoutId()).isErrorNotFound());
 
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 container2 = Container()
 result2 = f(container, "hello there!")
 )")
                    .isError());
-  Object container2(&scope, mainModuleAt(&runtime_, "container2"));
-  Object result2(&scope, mainModuleAt(&runtime_, "result2"));
+  Object container2(&scope, mainModuleAt(runtime_, "container2"));
+  Object result2(&scope, mainModuleAt(runtime_, "result2"));
   ASSERT_EQ(container2.layoutId(), container.layoutId());
   EXPECT_TRUE(isStrEqualsCStr(*result2, "hello there!"));
 }
 
 TEST_F(IcTest, IcUpdateBinaryOpSetsEmptyEntry) {
   HandleScope scope(thread_);
-  Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerEntry));
-  Object value(&scope, runtime_.newStrFromCStr("this is a random value"));
+  Tuple caches(&scope, runtime_->newTuple(2 * kIcPointersPerEntry));
+  Object value(&scope, runtime_->newStrFromCStr("this is a random value"));
   EXPECT_EQ(icUpdateBinOp(thread_, caches, 1, LayoutId::kLargeInt,
                           LayoutId::kSmallInt, value, kBinaryOpNone),
             ICState::kMonomorphic);
@@ -1230,12 +1228,12 @@ TEST_F(IcTest, IcUpdateBinaryOpSetsEmptyEntry) {
 TEST_F(IcTest, IcUpdateBinaryOpSetsExistingMonomorphicEntry) {
   HandleScope scope(thread_);
 
-  Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerEntry));
-  Object value(&scope, runtime_.newStrFromCStr("xxx"));
+  Tuple caches(&scope, runtime_->newTuple(2 * kIcPointersPerEntry));
+  Object value(&scope, runtime_->newStrFromCStr("xxx"));
   ASSERT_EQ(icUpdateBinOp(thread_, caches, 1, LayoutId::kLargeInt,
                           LayoutId::kSmallInt, value, kBinaryOpNone),
             ICState::kMonomorphic);
-  Object new_value(&scope, runtime_.newStrFromCStr("yyy"));
+  Object new_value(&scope, runtime_->newStrFromCStr("yyy"));
   EXPECT_EQ(icUpdateBinOp(thread_, caches, 1, LayoutId::kLargeInt,
                           LayoutId::kSmallInt, new_value, kBinaryOpNone),
             ICState::kMonomorphic);
@@ -1248,8 +1246,8 @@ TEST_F(IcTest, IcUpdateBinaryOpSetsExistingMonomorphicEntry) {
 TEST_F(IcTest, IcUpdateBinaryOpSetsExistingPolymorphicEntry) {
   HandleScope scope(thread_);
 
-  Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerEntry));
-  Object value(&scope, runtime_.newStrFromCStr("xxx"));
+  Tuple caches(&scope, runtime_->newTuple(2 * kIcPointersPerEntry));
+  Object value(&scope, runtime_->newStrFromCStr("xxx"));
   ASSERT_EQ(icUpdateBinOp(thread_, caches, 1, LayoutId::kLargeInt,
                           LayoutId::kSmallInt, value, kBinaryOpNone),
             ICState::kMonomorphic);
@@ -1265,7 +1263,7 @@ TEST_F(IcTest, IcUpdateBinaryOpSetsExistingPolymorphicEntry) {
                                      LayoutId::kLargeInt, &flags),
             *value);
 
-  Object new_value(&scope, runtime_.newStrFromCStr("yyy"));
+  Object new_value(&scope, runtime_->newStrFromCStr("yyy"));
   EXPECT_EQ(icUpdateBinOp(thread_, caches, 1, LayoutId::kLargeInt,
                           LayoutId::kSmallInt, new_value, kBinaryOpNone),
             ICState::kPolymorphic);
@@ -1275,7 +1273,7 @@ TEST_F(IcTest, IcUpdateBinaryOpSetsExistingPolymorphicEntry) {
 }
 
 TEST_F(IcTest, ForIterUpdateCacheWithFunctionUpdatesCache) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def f(container):
   for i in container:
     return i
@@ -1288,12 +1286,12 @@ result = f(container)
                    .isError());
 
   HandleScope scope;
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 
-  Object iterator(&scope, mainModuleAt(&runtime_, "iterator"));
-  Object iter_next(&scope, mainModuleAt(&runtime_, "iter_next"));
-  Function f(&scope, mainModuleAt(&runtime_, "f"));
+  Object iterator(&scope, mainModuleAt(runtime_, "iterator"));
+  Object iter_next(&scope, mainModuleAt(runtime_, "iter_next"));
+  Function f(&scope, mainModuleAt(runtime_, "f"));
   Tuple caches(&scope, f.caches());
   // Expect that FOR_ITER is the only cached opcode in f().
   ASSERT_EQ(caches.length(), 1 * kIcPointersPerEntry);
@@ -1301,7 +1299,7 @@ result = f(container)
 }
 
 TEST_F(IcTest, ForIterUpdateCacheWithNonFunctionDoesntUpdateCache) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def f(container):
   for i in container:
     return i
@@ -1324,11 +1322,11 @@ result = f(container)
                    .isError());
 
   HandleScope scope;
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 123));
 
-  Object iterator(&scope, mainModuleAt(&runtime_, "iterator"));
-  Function f(&scope, mainModuleAt(&runtime_, "f"));
+  Object iterator(&scope, mainModuleAt(runtime_, "iterator"));
+  Function f(&scope, mainModuleAt(runtime_, "f"));
   Tuple caches(&scope, f.caches());
   // Expect that FOR_ITER is the only cached opcode in f().
   ASSERT_EQ(caches.length(), 1 * kIcPointersPerEntry);
@@ -1368,7 +1366,7 @@ TEST_F(IcTest,
   Function function0(&scope, testingFunction(thread_));
   Function function1(&scope, testingFunction(thread_));
 
-  ValueCell cache(&scope, runtime_.newValueCell());
+  ValueCell cache(&scope, runtime_->newValueCell());
   ASSERT_TRUE(cache.dependencyLink().isNoneType());
 
   EXPECT_TRUE(
@@ -1393,7 +1391,7 @@ TEST_F(
   Function function0(&scope, testingFunction(thread_));
   Function function1(&scope, testingFunction(thread_));
 
-  ValueCell cache(&scope, runtime_.newValueCell());
+  ValueCell cache(&scope, runtime_->newValueCell());
   EXPECT_TRUE(
       icInsertDependentToValueCellDependencyLink(thread_, function0, cache));
   EXPECT_TRUE(
@@ -1414,9 +1412,9 @@ TEST_F(IcTest, IcUpdateGlobalVarFillsCacheLineAndReplaceOpcode) {
   Tuple caches(&scope, function.caches());
   MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
 
-  ValueCell cache(&scope, runtime_.newValueCell());
+  ValueCell cache(&scope, runtime_->newValueCell());
   cache.setValue(SmallInt::fromWord(99));
-  ValueCell another_cache(&scope, runtime_.newValueCell());
+  ValueCell another_cache(&scope, runtime_->newValueCell());
   another_cache.setValue(SmallInt::fromWord(123));
 
   icUpdateGlobalVar(thread_, function, 0, cache);
@@ -1438,7 +1436,7 @@ TEST_F(IcTest, IcUpdateGlobalVarFillsCacheLineAndReplaceOpcodeWithExtendedArg) {
   Tuple caches(&scope, function.caches());
 
   MutableBytes rewritten_bytecode(&scope,
-                                  runtime_.newMutableBytesUninitialized(8));
+                                  runtime_->newMutableBytesUninitialized(8));
   // TODO(T45440363): Replace the argument of EXTENDED_ARG for a non-zero value.
   rewritten_bytecode.byteAtPut(0, EXTENDED_ARG);
   rewritten_bytecode.byteAtPut(1, 0);
@@ -1450,9 +1448,9 @@ TEST_F(IcTest, IcUpdateGlobalVarFillsCacheLineAndReplaceOpcodeWithExtendedArg) {
   rewritten_bytecode.byteAtPut(7, 1);
   function.setRewrittenBytecode(*rewritten_bytecode);
 
-  ValueCell cache(&scope, runtime_.newValueCell());
+  ValueCell cache(&scope, runtime_->newValueCell());
   cache.setValue(SmallInt::fromWord(99));
-  ValueCell another_cache(&scope, runtime_.newValueCell());
+  ValueCell another_cache(&scope, runtime_->newValueCell());
   another_cache.setValue(SmallInt::fromWord(123));
 
   icUpdateGlobalVar(thread_, function, 0, cache);
@@ -1471,7 +1469,7 @@ TEST_F(IcTest, IcUpdateGlobalVarFillsCacheLineAndReplaceOpcodeWithExtendedArg) {
 TEST_F(IcTest, IcUpdateGlobalVarCreatesDependencyLink) {
   HandleScope scope(thread_);
   Function function(&scope, testingFunction(thread_));
-  ValueCell cache(&scope, runtime_.newValueCell());
+  ValueCell cache(&scope, runtime_->newValueCell());
   cache.setValue(SmallInt::fromWord(99));
   icUpdateGlobalVar(thread_, function, 0, cache);
 
@@ -1488,7 +1486,7 @@ TEST_F(IcTest, IcUpdateGlobalVarInsertsHeadOfDependencyLink) {
   Function function1(&scope, testingFunction(thread_));
 
   // Adds cache into function0's caches first, then to function1's.
-  ValueCell cache(&scope, runtime_.newValueCell());
+  ValueCell cache(&scope, runtime_->newValueCell());
   cache.setValue(SmallInt::fromWord(99));
   icUpdateGlobalVar(thread_, function0, 0, cache);
   icUpdateGlobalVar(thread_, function1, 0, cache);
@@ -1513,9 +1511,9 @@ TEST_F(IcTest,
   Tuple caches1(&scope, function1.caches());
 
   // Both caches of Function0 & 1 caches the same cache value.
-  ValueCell cache(&scope, runtime_.newValueCell());
+  ValueCell cache(&scope, runtime_->newValueCell());
   cache.setValue(SmallInt::fromWord(99));
-  ValueCell another_cache(&scope, runtime_.newValueCell());
+  ValueCell another_cache(&scope, runtime_->newValueCell());
   another_cache.setValue(SmallInt::fromWord(123));
 
   icUpdateGlobalVar(thread_, function0, 0, cache);
@@ -1553,9 +1551,9 @@ TEST_F(IcTest, IcInvalidateGlobalVarDoNotDeferenceDeallocatedReferent) {
   Tuple caches1(&scope, function1.caches());
 
   // Both caches of Function0 & 1 caches the same cache value.
-  ValueCell cache(&scope, runtime_.newValueCell());
+  ValueCell cache(&scope, runtime_->newValueCell());
   cache.setValue(SmallInt::fromWord(99));
-  ValueCell another_cache(&scope, runtime_.newValueCell());
+  ValueCell another_cache(&scope, runtime_->newValueCell());
   another_cache.setValue(SmallInt::fromWord(123));
 
   icUpdateGlobalVar(thread_, function0, 0, cache);
@@ -1594,9 +1592,9 @@ TEST_F(IcTest, IcInvalidateGlobalVarRevertsOpCodeToOriginalOnes) {
   HandleScope scope(thread_);
   Function function(&scope, testingFunction(thread_));
   MutableBytes bytecode(&scope, function.rewrittenBytecode());
-  ValueCell cache(&scope, runtime_.newValueCell());
+  ValueCell cache(&scope, runtime_->newValueCell());
   cache.setValue(SmallInt::fromWord(99));
-  ValueCell another_cache(&scope, runtime_.newValueCell());
+  ValueCell another_cache(&scope, runtime_->newValueCell());
   another_cache.setValue(SmallInt::fromWord(123));
 
   byte original_expected[] = {LOAD_GLOBAL, 0, STORE_GLOBAL, 1,
@@ -1623,7 +1621,7 @@ TEST_F(IcTest, IcInvalidateGlobalVarRevertsOpCodeToOriginalOnes) {
 
 TEST_F(IcTest, IcIteratorSkipsNotCachingOpcodes) {
   HandleScope scope(thread_);
-  MutableBytes bytecode(&scope, runtime_.newMutableBytesUninitialized(4));
+  MutableBytes bytecode(&scope, runtime_->newMutableBytesUninitialized(4));
   bytecode.byteAtPut(0, LOAD_GLOBAL);
   bytecode.byteAtPut(1, 100);
   bytecode.byteAtPut(2, LOAD_ATTR);
@@ -1632,13 +1630,13 @@ TEST_F(IcTest, IcIteratorSkipsNotCachingOpcodes) {
   Function function(&scope, newEmptyFunction());
   function.setRewrittenBytecode(*bytecode);
 
-  IcIterator it(&scope, &runtime_, *function);
+  IcIterator it(&scope, runtime_, *function);
   ASSERT_FALSE(it.hasNext());
 }
 
 TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   HandleScope scope(thread_);
-  MutableBytes bytecode(&scope, runtime_.newMutableBytesUninitialized(20));
+  MutableBytes bytecode(&scope, runtime_->newMutableBytesUninitialized(20));
   bytecode.byteAtPut(0, LOAD_GLOBAL);
   bytecode.byteAtPut(1, 100);
   bytecode.byteAtPut(2, LOAD_ATTR_ANAMORPHIC);
@@ -1661,7 +1659,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   bytecode.byteAtPut(19, 100);
 
   word num_caches = 6;
-  Tuple original_args(&scope, runtime_.newTuple(num_caches));
+  Tuple original_args(&scope, runtime_->newTuple(num_caches));
   original_args.atPut(0, SmallInt::fromWord(0));
   original_args.atPut(1, SmallInt::fromWord(1));
   original_args.atPut(2, SmallInt::fromWord(2));
@@ -1669,7 +1667,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   original_args.atPut(4, SmallInt::fromWord(-1));
   original_args.atPut(5, SmallInt::fromWord(-1));
 
-  Tuple names(&scope, runtime_.newTuple(4));
+  Tuple names(&scope, runtime_->newTuple(4));
   names.atPut(
       0, Runtime::internStrFromCStr(thread_, "load_attr_cached_attr_name"));
   names.atPut(
@@ -1679,10 +1677,10 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   names.atPut(
       3, Runtime::internStrFromCStr(thread_, "store_attr_cached_attr_name"));
 
-  Object name(&scope, runtime_.newStrFromCStr("name"));
+  Object name(&scope, runtime_->newStrFromCStr("name"));
   Function dependent(&scope, newEmptyFunction());
   Object value(&scope, NoneType::object());
-  Tuple caches(&scope, runtime_.newTuple(num_caches * kIcPointersPerEntry));
+  Tuple caches(&scope, runtime_->newTuple(num_caches * kIcPointersPerEntry));
   // Caches for LOAD_ATTR_ANAMORPHIC at PC 2.
   value = SmallInt::fromWord(10);
   icUpdateAttr(thread_, caches, 0, LayoutId::kBool, value, name, dependent);
@@ -1713,7 +1711,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   Code::cast(function.code()).setNames(*names);
   function.setOriginalArguments(*original_args);
 
-  IcIterator it(&scope, &runtime_, *function);
+  IcIterator it(&scope, runtime_, *function);
   ASSERT_TRUE(it.hasNext());
   ASSERT_TRUE(it.isAttrCache());
   EXPECT_FALSE(it.isBinaryOpCache());
@@ -1793,7 +1791,7 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
 
 TEST_F(IcTest, IcIteratorIteratesOverBinaryOpCaches) {
   HandleScope scope(thread_);
-  MutableBytes bytecode(&scope, runtime_.newMutableBytesUninitialized(8));
+  MutableBytes bytecode(&scope, runtime_->newMutableBytesUninitialized(8));
   bytecode.byteAtPut(0, LOAD_GLOBAL);
   bytecode.byteAtPut(1, 100);
   bytecode.byteAtPut(2, COMPARE_OP_ANAMORPHIC);
@@ -1804,12 +1802,12 @@ TEST_F(IcTest, IcIteratorIteratesOverBinaryOpCaches) {
   bytecode.byteAtPut(7, 100);
 
   word num_caches = 2;
-  Tuple original_args(&scope, runtime_.newTuple(num_caches));
+  Tuple original_args(&scope, runtime_->newTuple(num_caches));
   original_args.atPut(0, SmallInt::fromWord(CompareOp::GE));
   original_args.atPut(
       1, SmallInt::fromWord(static_cast<word>(Interpreter::BinaryOp::ADD)));
 
-  Tuple caches(&scope, runtime_.newTuple(num_caches * kIcPointersPerEntry));
+  Tuple caches(&scope, runtime_->newTuple(num_caches * kIcPointersPerEntry));
 
   // Caches for COMPARE_OP_ANAMORPHIC at 2.
   word compare_op_cached_index =
@@ -1842,7 +1840,7 @@ TEST_F(IcTest, IcIteratorIteratesOverBinaryOpCaches) {
   function.setCaches(*caches);
   function.setOriginalArguments(*original_args);
 
-  IcIterator it(&scope, &runtime_, *function);
+  IcIterator it(&scope, runtime_, *function);
   ASSERT_TRUE(it.hasNext());
   ASSERT_TRUE(it.isBinaryOpCache());
   EXPECT_FALSE(it.isAttrCache());
@@ -1878,7 +1876,7 @@ TEST_F(IcTest, IcIteratorIteratesOverBinaryOpCaches) {
 
 TEST_F(IcTest, IcIteratorIteratesOverInplaceOpCaches) {
   HandleScope scope(thread_);
-  MutableBytes bytecode(&scope, runtime_.newMutableBytesUninitialized(8));
+  MutableBytes bytecode(&scope, runtime_->newMutableBytesUninitialized(8));
   bytecode.byteAtPut(0, LOAD_GLOBAL);
   bytecode.byteAtPut(1, 100);
   bytecode.byteAtPut(2, INPLACE_OP_ANAMORPHIC);
@@ -1887,11 +1885,11 @@ TEST_F(IcTest, IcIteratorIteratesOverInplaceOpCaches) {
   bytecode.byteAtPut(5, 100);
 
   word num_caches = 1;
-  Tuple original_args(&scope, runtime_.newTuple(num_caches));
+  Tuple original_args(&scope, runtime_->newTuple(num_caches));
   original_args.atPut(
       0, SmallInt::fromWord(static_cast<word>(Interpreter::BinaryOp::MUL)));
 
-  Tuple caches(&scope, runtime_.newTuple(num_caches * kIcPointersPerEntry));
+  Tuple caches(&scope, runtime_->newTuple(num_caches * kIcPointersPerEntry));
 
   // Caches for BINARY_OP_ANAMORPHIC at 2.
   word inplace_op_cached_index =
@@ -1911,7 +1909,7 @@ TEST_F(IcTest, IcIteratorIteratesOverInplaceOpCaches) {
   function.setCaches(*caches);
   function.setOriginalArguments(*original_args);
 
-  IcIterator it(&scope, &runtime_, *function);
+  IcIterator it(&scope, runtime_, *function);
   ASSERT_TRUE(it.hasNext());
   ASSERT_TRUE(it.isInplaceOpCache());
   EXPECT_FALSE(it.isBinaryOpCache());
@@ -1936,10 +1934,10 @@ TEST_F(IcTest, IcIteratorIteratesOverInplaceOpCaches) {
 
 TEST_F(IcTest, IcRemoveDeadWeakLinksRemoveRemovesDeadHead) {
   HandleScope scope(thread_);
-  ValueCell value_cell(&scope, runtime_.newValueCell());
-  Object dependent1(&scope, runtime_.newTuple(1));
-  Object dependent2(&scope, runtime_.newTuple(2));
-  Object dependent3(&scope, runtime_.newTuple(3));
+  ValueCell value_cell(&scope, runtime_->newValueCell());
+  Object dependent1(&scope, runtime_->newTuple(1));
+  Object dependent2(&scope, runtime_->newTuple(2));
+  Object dependent3(&scope, runtime_->newTuple(3));
   icInsertDependentToValueCellDependencyLink(thread_, dependent1, value_cell);
   icInsertDependentToValueCellDependencyLink(thread_, dependent2, value_cell);
   icInsertDependentToValueCellDependencyLink(thread_, dependent3, value_cell);
@@ -1962,10 +1960,10 @@ TEST_F(IcTest, IcRemoveDeadWeakLinksRemoveRemovesDeadHead) {
 
 TEST_F(IcTest, IcRemoveDeadWeakLinksRemoveRemovesDeadMiddleNode) {
   HandleScope scope(thread_);
-  ValueCell value_cell(&scope, runtime_.newValueCell());
-  Object dependent1(&scope, runtime_.newTuple(1));
-  Object dependent2(&scope, runtime_.newTuple(2));
-  Object dependent3(&scope, runtime_.newTuple(3));
+  ValueCell value_cell(&scope, runtime_->newValueCell());
+  Object dependent1(&scope, runtime_->newTuple(1));
+  Object dependent2(&scope, runtime_->newTuple(2));
+  Object dependent3(&scope, runtime_->newTuple(3));
   icInsertDependentToValueCellDependencyLink(thread_, dependent1, value_cell);
   icInsertDependentToValueCellDependencyLink(thread_, dependent2, value_cell);
   icInsertDependentToValueCellDependencyLink(thread_, dependent3, value_cell);
@@ -1989,10 +1987,10 @@ TEST_F(IcTest, IcRemoveDeadWeakLinksRemoveRemovesDeadMiddleNode) {
 
 TEST_F(IcTest, IcRemoveDeadWeakLinksRemoveRemovesDeadTailNode) {
   HandleScope scope(thread_);
-  ValueCell value_cell(&scope, runtime_.newValueCell());
-  Object dependent1(&scope, runtime_.newTuple(1));
-  Object dependent2(&scope, runtime_.newTuple(2));
-  Object dependent3(&scope, runtime_.newTuple(3));
+  ValueCell value_cell(&scope, runtime_->newValueCell());
+  Object dependent1(&scope, runtime_->newTuple(1));
+  Object dependent2(&scope, runtime_->newTuple(2));
+  Object dependent3(&scope, runtime_->newTuple(3));
   icInsertDependentToValueCellDependencyLink(thread_, dependent1, value_cell);
   icInsertDependentToValueCellDependencyLink(thread_, dependent2, value_cell);
   icInsertDependentToValueCellDependencyLink(thread_, dependent3, value_cell);
@@ -2019,8 +2017,8 @@ TEST_F(IcTest,
   HandleScope scope(thread_);
   SmallInt entry_key(&scope, encodeBinaryOpKey(LayoutId::kStr, LayoutId::kInt,
                                                kBinaryOpReflected));
-  Object entry_value(&scope, runtime_.newStrFromCStr("value"));
-  Tuple caches(&scope, runtime_.newTuple(kIcPointersPerEntry));
+  Object entry_value(&scope, runtime_->newStrFromCStr("value"));
+  Tuple caches(&scope, runtime_->newTuple(kIcPointersPerEntry));
   caches.atPut(kIcEntryKeyOffset, *entry_key);
   caches.atPut(kIcEntryValueOffset, *entry_value);
 

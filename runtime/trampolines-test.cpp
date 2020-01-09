@@ -18,7 +18,7 @@ using TrampolinesTest = RuntimeFixture;
 
 TEST_F(CallTest, CallBoundMethod) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def func(self):
   return self
 
@@ -27,13 +27,13 @@ def test(callable):
 )")
                    .isError());
 
-  Object function(&scope, mainModuleAt(&runtime_, "func"));
+  Object function(&scope, mainModuleAt(runtime_, "func"));
   ASSERT_TRUE(function.isFunction());
 
   Object self(&scope, SmallInt::fromWord(1111));
-  BoundMethod method(&scope, runtime_.newBoundMethod(function, self));
+  BoundMethod method(&scope, runtime_->newBoundMethod(function, self));
 
-  Object test(&scope, mainModuleAt(&runtime_, "test"));
+  Object test(&scope, mainModuleAt(runtime_, "test"));
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
 
@@ -44,7 +44,7 @@ def test(callable):
 
 TEST_F(CallTest, CallBoundMethodWithArgs) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def func(self, a, b):
   return [self, a, b]
 
@@ -53,13 +53,13 @@ def test(callable):
 )")
                    .isError());
 
-  Object function(&scope, mainModuleAt(&runtime_, "func"));
+  Object function(&scope, mainModuleAt(runtime_, "func"));
   ASSERT_TRUE(function.isFunction());
 
   Object self(&scope, SmallInt::fromWord(1111));
-  BoundMethod method(&scope, runtime_.newBoundMethod(function, self));
+  BoundMethod method(&scope, runtime_->newBoundMethod(function, self));
 
-  Object test(&scope, mainModuleAt(&runtime_, "test"));
+  Object test(&scope, mainModuleAt(runtime_, "test"));
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
 
@@ -70,7 +70,7 @@ def test(callable):
 
 TEST_F(CallTest, CallBoundMethodKw) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 result_self = None
 result_a = None
 result_b = None
@@ -86,32 +86,32 @@ def test(callable):
 )")
                    .isError());
 
-  Object function(&scope, mainModuleAt(&runtime_, "func"));
+  Object function(&scope, mainModuleAt(runtime_, "func"));
   ASSERT_TRUE(function.isFunction());
 
   Object self(&scope, SmallInt::fromWord(1111));
-  BoundMethod method(&scope, runtime_.newBoundMethod(function, self));
+  BoundMethod method(&scope, runtime_->newBoundMethod(function, self));
 
-  Object test(&scope, mainModuleAt(&runtime_, "test"));
+  Object test(&scope, mainModuleAt(runtime_, "test"));
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
-  Tuple args(&scope, runtime_.newTuple(1));
+  Tuple args(&scope, runtime_->newTuple(1));
   args.atPut(0, *method);
   callFunction(func, args);
 
-  Object result_self(&scope, mainModuleAt(&runtime_, "result_self"));
+  Object result_self(&scope, mainModuleAt(runtime_, "result_self"));
   EXPECT_TRUE(isIntEqualsWord(*result_self, 1111));
 
-  Object result_a(&scope, mainModuleAt(&runtime_, "result_a"));
+  Object result_a(&scope, mainModuleAt(runtime_, "result_a"));
   EXPECT_TRUE(isIntEqualsWord(*result_a, 2222));
 
-  Object result_b(&scope, mainModuleAt(&runtime_, "result_b"));
+  Object result_b(&scope, mainModuleAt(runtime_, "result_b"));
   EXPECT_TRUE(isIntEqualsWord(*result_b, 3333));
 }
 
 TEST_F(CallTest, CallBoundMethodExArgs) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 result_self = None
 result_a = None
 result_b = None
@@ -128,32 +128,32 @@ def test(callable):
 )")
                    .isError());
 
-  Object function(&scope, mainModuleAt(&runtime_, "func"));
+  Object function(&scope, mainModuleAt(runtime_, "func"));
   ASSERT_TRUE(function.isFunction());
 
   Object self(&scope, SmallInt::fromWord(1111));
-  BoundMethod method(&scope, runtime_.newBoundMethod(function, self));
+  BoundMethod method(&scope, runtime_->newBoundMethod(function, self));
 
-  Object test(&scope, mainModuleAt(&runtime_, "test"));
+  Object test(&scope, mainModuleAt(runtime_, "test"));
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
-  Tuple args(&scope, runtime_.newTuple(1));
+  Tuple args(&scope, runtime_->newTuple(1));
   args.atPut(0, *method);
   callFunction(func, args);
 
-  Object result_self(&scope, mainModuleAt(&runtime_, "result_self"));
+  Object result_self(&scope, mainModuleAt(runtime_, "result_self"));
   EXPECT_TRUE(isIntEqualsWord(*result_self, 1111));
 
-  Object result_a(&scope, mainModuleAt(&runtime_, "result_a"));
+  Object result_a(&scope, mainModuleAt(runtime_, "result_a"));
   EXPECT_TRUE(isIntEqualsWord(*result_a, 2222));
 
-  Object result_b(&scope, mainModuleAt(&runtime_, "result_b"));
+  Object result_b(&scope, mainModuleAt(runtime_, "result_b"));
   EXPECT_TRUE(isIntEqualsWord(*result_b, 3333));
 }
 
 TEST_F(CallTest, CallBoundMethodExKwargs) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 result_self = None
 result_a = None
 result_b = None
@@ -170,32 +170,32 @@ def test(callable):
 )")
                    .isError());
 
-  Object function(&scope, mainModuleAt(&runtime_, "func"));
+  Object function(&scope, mainModuleAt(runtime_, "func"));
   ASSERT_TRUE(function.isFunction());
 
   Object self(&scope, SmallInt::fromWord(1111));
-  BoundMethod method(&scope, runtime_.newBoundMethod(function, self));
+  BoundMethod method(&scope, runtime_->newBoundMethod(function, self));
 
-  Object test(&scope, mainModuleAt(&runtime_, "test"));
+  Object test(&scope, mainModuleAt(runtime_, "test"));
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
-  Tuple args(&scope, runtime_.newTuple(1));
+  Tuple args(&scope, runtime_->newTuple(1));
   args.atPut(0, *method);
   callFunction(func, args);
 
-  Object result_self(&scope, mainModuleAt(&runtime_, "result_self"));
+  Object result_self(&scope, mainModuleAt(runtime_, "result_self"));
   EXPECT_TRUE(isIntEqualsWord(*result_self, 1111));
 
-  Object result_a(&scope, mainModuleAt(&runtime_, "result_a"));
+  Object result_a(&scope, mainModuleAt(runtime_, "result_a"));
   EXPECT_TRUE(isIntEqualsWord(*result_a, 2222));
 
-  Object result_b(&scope, mainModuleAt(&runtime_, "result_b"));
+  Object result_b(&scope, mainModuleAt(runtime_, "result_b"));
   EXPECT_TRUE(isIntEqualsWord(*result_b, 3333));
 }
 
 TEST_F(CallTest, CallBoundMethodExArgsAndKwargs) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 result_self = None
 result_a = None
 result_b = None
@@ -213,31 +213,31 @@ def test(callable):
 )")
                    .isError());
 
-  Object function(&scope, mainModuleAt(&runtime_, "func"));
+  Object function(&scope, mainModuleAt(runtime_, "func"));
   ASSERT_TRUE(function.isFunction());
 
   Object self(&scope, SmallInt::fromWord(1111));
-  BoundMethod method(&scope, runtime_.newBoundMethod(function, self));
+  BoundMethod method(&scope, runtime_->newBoundMethod(function, self));
 
-  Object test(&scope, mainModuleAt(&runtime_, "test"));
+  Object test(&scope, mainModuleAt(runtime_, "test"));
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
-  Tuple args(&scope, runtime_.newTuple(1));
+  Tuple args(&scope, runtime_->newTuple(1));
   args.atPut(0, *method);
   callFunction(func, args);
 
-  Object result_self(&scope, mainModuleAt(&runtime_, "result_self"));
+  Object result_self(&scope, mainModuleAt(runtime_, "result_self"));
   EXPECT_TRUE(isIntEqualsWord(*result_self, 1111));
 
-  Object result_a(&scope, mainModuleAt(&runtime_, "result_a"));
+  Object result_a(&scope, mainModuleAt(runtime_, "result_a"));
   EXPECT_TRUE(isIntEqualsWord(*result_a, 2222));
 
-  Object result_b(&scope, mainModuleAt(&runtime_, "result_b"));
+  Object result_b(&scope, mainModuleAt(runtime_, "result_b"));
   EXPECT_TRUE(isIntEqualsWord(*result_b, 3333));
 }
 
 TEST_F(CallTest, CallDefaultArgs) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foo(a=1, b=2, c=3):
   return [a, b, c]
 
@@ -249,32 +249,32 @@ result4 = foo(1001, 1002, 1003)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result0(&scope, mainModuleAt(&runtime_, "result0"));
+  Object result0(&scope, mainModuleAt(runtime_, "result0"));
   EXPECT_PYLIST_EQ(result0, {33, 22, 11});
-  Object result1(&scope, mainModuleAt(&runtime_, "result1"));
+  Object result1(&scope, mainModuleAt(runtime_, "result1"));
   EXPECT_PYLIST_EQ(result1, {1, 2, 3});
-  Object result2(&scope, mainModuleAt(&runtime_, "result2"));
+  Object result2(&scope, mainModuleAt(runtime_, "result2"));
   EXPECT_PYLIST_EQ(result2, {1001, 2, 3});
-  Object result3(&scope, mainModuleAt(&runtime_, "result3"));
+  Object result3(&scope, mainModuleAt(runtime_, "result3"));
   EXPECT_PYLIST_EQ(result3, {1001, 1002, 3});
-  Object result4(&scope, mainModuleAt(&runtime_, "result4"));
+  Object result4(&scope, mainModuleAt(runtime_, "result4"));
   EXPECT_PYLIST_EQ(result4, {1001, 1002, 1003});
 }
 
 TEST_F(CallTest, CallMethodMixPosDefaultArgs) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foo(a, b=2):
   return [a, b]
 result = foo(1)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {1, 2});
 }
 
 TEST_F(CallTest, CallBoundMethodMixed) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class R:
   def m(self, a, b=2):
     return [a, b]
@@ -283,113 +283,113 @@ result = r.m(9)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {9, 2});
 }
 
 TEST_F(CallTest, SingleKW) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foo(bar):
    return bar
 result = foo(bar=2)
 )")
                    .isError());
-  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result"), 2));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(runtime_, "result"), 2));
 }
 
 TEST_F(CallTest, MixedKW) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foo(a, b, c):
    return [a, b, c]
 result = foo(1, b = 2, c = 3)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
 TEST_F(CallTest, FullKW) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foo(a, b, c):
    return [a, b, c]
 result = foo(a = 1, b = 2, c = 3)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
 TEST_F(CallTest, KWOutOfOrder1) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foo(a, b, c):
    return [a, b, c]
 result = foo(c = 3, a = 1, b = 2)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
 TEST_F(CallTest, KWOutOfOrder2) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foo(a, b, c):
    return [a, b, c]
 result = foo(1, c = 3, b = 2)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
 TEST_F(CallTest, KeywordOnly1) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foo(a,b, *, c):
   return [a,b,c]
 result = foo(1, 2, c = 3)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
 TEST_F(CallTest, KeywordOnly2) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foo(a,b, *, c):
   return [a,b,c]
 result = foo(1, b = 2, c = 3)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
 TEST_F(CallTest, KeyWordDefaults) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foo(a, b = 22, c = 33):
   return [a,b,c]
 result = foo(11, c = 3)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {11, 22, 3});
 }
 
 TEST_F(CallTest, VarArgsWithExcess) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foo(a, b, *c):
   return [a,b,c]
 result = foo(1,2,3,4,5,6)
 )")
                    .isError());
   HandleScope scope(thread_);
-  List result(&scope, mainModuleAt(&runtime_, "result"));
+  List result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
   Tuple tuple(&scope, result.at(2));
@@ -401,14 +401,14 @@ result = foo(1,2,3,4,5,6)
 }
 
 TEST_F(CallTest, VarArgsEmpty) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foo(a, b, *c):
   return [a,b,c]
 result = foo(1,2)
 )")
                    .isError());
   HandleScope scope(thread_);
-  List result(&scope, mainModuleAt(&runtime_, "result"));
+  List result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
   Tuple tuple(&scope, result.at(2));
@@ -416,36 +416,36 @@ result = foo(1,2)
 }
 
 TEST_F(CallTest, CallWithKeywordsCalleeWithVarkeyword) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foo(a,b,c,**d):
     return [a,b,c,d]
 result = foo(1,2,c=3,g=4,h=5,j="bar")
 )")
                    .isError());
   HandleScope scope(thread_);
-  List result(&scope, testing::mainModuleAt(&runtime_, "result"));
+  List result(&scope, testing::mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
   EXPECT_TRUE(isIntEqualsWord(result.at(2), 3));
 
   Dict dict(&scope, result.at(3));
-  Str name_g(&scope, runtime_.newStrFromCStr("g"));
+  Str name_g(&scope, runtime_->newStrFromCStr("g"));
   EXPECT_TRUE(isIntEqualsWord(dictAtByStr(thread_, dict, name_g), 4));
-  Str name_h(&scope, runtime_.newStrFromCStr("h"));
+  Str name_h(&scope, runtime_->newStrFromCStr("h"));
   EXPECT_TRUE(isIntEqualsWord(dictAtByStr(thread_, dict, name_h), 5));
-  Str name_j(&scope, runtime_.newStrFromCStr("j"));
+  Str name_j(&scope, runtime_->newStrFromCStr("j"));
   EXPECT_TRUE(isStrEqualsCStr(dictAtByStr(thread_, dict, name_j), "bar"));
 }
 
 TEST_F(CallTest, CallWithNoArgsCalleeDefaultArgsVarargsVarkeyargs) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def bar(a=1, b=2, *c, **d):
     return [a,b,c,d]
 result = bar()
 )")
                    .isError());
   HandleScope scope(thread_);
-  List result(&scope, testing::mainModuleAt(&runtime_, "result"));
+  List result(&scope, testing::mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
   Tuple tuple(&scope, result.at(2));
@@ -455,14 +455,14 @@ result = bar()
 }
 
 TEST_F(CallTest, CallPositionalCalleeVargsEmptyVarkeyargs) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def bar(a=1, b=2, *c, **d):
     return [a,b,c,d]
 result = bar(1,2,3,4,5,6,7)
 )")
                    .isError());
   HandleScope scope(thread_);
-  List result(&scope, testing::mainModuleAt(&runtime_, "result"));
+  List result(&scope, testing::mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
   Tuple tuple(&scope, result.at(2));
@@ -477,14 +477,14 @@ result = bar(1,2,3,4,5,6,7)
 }
 
 TEST_F(CallTest, CallWithKeywordsCalleeEmptyVarargsFullVarkeyargs) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def bar(a=1, b=2, *c, **d):
     return [a,b,c,d]
 result = bar(a1=11, a2=12, a3=13)
 )")
                    .isError());
   HandleScope scope(thread_);
-  List result(&scope, testing::mainModuleAt(&runtime_, "result"));
+  List result(&scope, testing::mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
 
@@ -494,23 +494,23 @@ result = bar(a1=11, a2=12, a3=13)
   EXPECT_EQ(tuple.length(), 0);
 
   Dict dict(&scope, result.at(3));
-  Str name0(&scope, runtime_.newStrFromCStr("a3"));
+  Str name0(&scope, runtime_->newStrFromCStr("a3"));
   EXPECT_TRUE(isIntEqualsWord(dictAtByStr(thread_, dict, name0), 13));
-  Str name1(&scope, runtime_.newStrFromCStr("a1"));
+  Str name1(&scope, runtime_->newStrFromCStr("a1"));
   EXPECT_TRUE(isIntEqualsWord(dictAtByStr(thread_, dict, name1), 11));
-  Str name2(&scope, runtime_.newStrFromCStr("a2"));
+  Str name2(&scope, runtime_->newStrFromCStr("a2"));
   EXPECT_TRUE(isIntEqualsWord(dictAtByStr(thread_, dict, name2), 12));
 }
 
 TEST_F(CallTest, CallWithKeywordsCalleeFullVarargsFullVarkeyargs) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def bar(a=1, b=2, *c, **d):
     return [a,b,c,d]
 result = bar(1,2,3,4,5,6,7,a9=9)
 )")
                    .isError());
   HandleScope scope(thread_);
-  List result(&scope, testing::mainModuleAt(&runtime_, "result"));
+  List result(&scope, testing::mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
 
@@ -522,31 +522,31 @@ result = bar(1,2,3,4,5,6,7,a9=9)
   EXPECT_TRUE(isIntEqualsWord(tuple.at(4), 7));
 
   Dict dict(&scope, result.at(3));
-  Str name_g(&scope, runtime_.newStrFromCStr("a9"));
+  Str name_g(&scope, runtime_->newStrFromCStr("a9"));
   EXPECT_TRUE(isIntEqualsWord(dictAtByStr(thread_, dict, name_g), 9));
 }
 
 TEST_F(CallTest, CallWithOutOfOrderKeywords) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foobar(a,b,*,c):
     return [a,b,c]
 result = foobar(c=3,a=1,b=2)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
 TEST_F(CallTest, CallWithKeywordsCalleeVarargsKeywordOnly) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foobar1(a,b,*c,d):
     return [a,b,c,d]
 result = foobar1(1,2,3,4,5,d=9)
 )")
                    .isError());
   HandleScope scope(thread_);
-  List result(&scope, mainModuleAt(&runtime_, "result"));
+  List result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
   Tuple tuple(&scope, result.at(2));
@@ -558,28 +558,28 @@ result = foobar1(1,2,3,4,5,d=9)
 }
 
 TEST_F(CallTest, CallWithKeywordsCalleeVarargsVarkeyargsKeywordOnly) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foobar2(a,b,*c, e, **d):
     return [a,b,c,d,e]
 result = foobar2(1,e=9,b=2,f1="a",f11=12)
 )")
                    .isError());
   HandleScope scope(thread_);
-  List result(&scope, mainModuleAt(&runtime_, "result"));
+  List result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
   Tuple tuple(&scope, result.at(2));
   ASSERT_EQ(tuple.length(), 0);
   Dict dict(&scope, result.at(3));
-  Str f1(&scope, runtime_.newStrFromCStr("f1"));
+  Str f1(&scope, runtime_->newStrFromCStr("f1"));
   EXPECT_TRUE(isStrEqualsCStr(dictAtByStr(thread_, dict, f1), "a"));
-  Str f11(&scope, runtime_.newStrFromCStr("f11"));
+  Str f11(&scope, runtime_->newStrFromCStr("f11"));
   EXPECT_TRUE(isIntEqualsWord(dictAtByStr(thread_, dict, f11), 12));
   EXPECT_TRUE(isIntEqualsWord(result.at(4), 9));
 }
 
 TEST_F(CallTest, CallEx) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foo(a,b,c,d):
     return [a,b,c,d]
 a = (1,2,3,4)
@@ -587,12 +587,12 @@ result = foo(*a)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {1, 2, 3, 4});
 }
 
 TEST_F(CallTest, CallExBuildTupleUnpackWithCall) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foo(a,b,c,d):
     return [a,b,c,d]
 a = (3,4)
@@ -600,12 +600,12 @@ result = foo(1,2,*a)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {1, 2, 3, 4});
 }
 
 TEST_F(CallTest, CallExKw) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foo(a,b,c,d):
     return [a,b,c,d]
 a = {'d': 4, 'b': 2, 'a': 1, 'c': 3}
@@ -613,7 +613,7 @@ result = foo(**a)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {1, 2, 3, 4});
 }
 
@@ -623,7 +623,7 @@ def foo(a,b, *, c):
   print(a,b,c)
 foo(1, 2, 3);
 )";
-  EXPECT_TRUE(raised(runFromCStr(&runtime_, src), LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runFromCStr(runtime_, src), LayoutId::kTypeError));
 }
 
 TEST_F(CallTest, MissingKeyword) {
@@ -632,7 +632,7 @@ def foo(a,b, *, c):
   print(a,b,c)
 foo(1, 2);
 )";
-  EXPECT_TRUE(raised(runFromCStr(&runtime_, src), LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runFromCStr(runtime_, src), LayoutId::kTypeError));
 }
 
 TEST_F(CallTest, ArgNameMismatch) {
@@ -641,7 +641,7 @@ def foo(a,b, *, c):
   print(a,b,c)
 foo(1, d = 2, c = 3);
 )";
-  EXPECT_TRUE(raised(runFromCStr(&runtime_, src), LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runFromCStr(runtime_, src), LayoutId::kTypeError));
 }
 
 TEST_F(CallTest, TooManyKWArgs) {
@@ -650,7 +650,7 @@ def foo(a,b, *, c):
   print(a,b,c)
 foo(1, 2, 4, c = 3);
 )";
-  EXPECT_TRUE(raised(runFromCStr(&runtime_, src), LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runFromCStr(runtime_, src), LayoutId::kTypeError));
 }
 
 TEST_F(CallTest, TooManyArgs) {
@@ -659,7 +659,7 @@ def foo(a,b, c):
   print(a,b,c)
 foo(1, 2, 3, 4);
 )";
-  EXPECT_TRUE(raised(runFromCStr(&runtime_, src), LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runFromCStr(runtime_, src), LayoutId::kTypeError));
 }
 
 TEST_F(CallTest, TooFewArgs) {
@@ -668,7 +668,7 @@ def foo(a,b, c):
   print(a,b,c)
 foo(3, 4);
 )";
-  EXPECT_TRUE(raised(runFromCStr(&runtime_, src), LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runFromCStr(runtime_, src), LayoutId::kTypeError));
 }
 
 static RawObject builtinReturnSecondArg(Thread* /* thread */, Frame* frame,
@@ -694,18 +694,17 @@ def dummy(first, second):
 
 TEST_F(TrampolinesTest, BuiltinTrampolineKwPassesKwargs) {
   HandleScope scope(thread_);
-  createAndPatchBuiltinReturnSecondArg(&runtime_);
-  ASSERT_FALSE(
-      runFromCStr(&runtime_, "result = dummy(second=12345, first=None)")
-          .isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  createAndPatchBuiltinReturnSecondArg(runtime_);
+  ASSERT_FALSE(runFromCStr(runtime_, "result = dummy(second=12345, first=None)")
+                   .isError());
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 12345));
 }
 
 TEST_F(TrampolinesTest, BuiltinTrampolineKwWithInvalidArgRaisesTypeError) {
-  createAndPatchBuiltinReturnSecondArg(&runtime_);
+  createAndPatchBuiltinReturnSecondArg(runtime_);
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, "dummy(third=3, first=1)"), LayoutId::kTypeError,
+      runFromCStr(runtime_, "dummy(third=3, first=1)"), LayoutId::kTypeError,
       "dummy() got an unexpected keyword argument 'third'"));
 }
 
@@ -714,36 +713,36 @@ TEST_F(TrampolinesTest, InterpreterClosureUsesArgOverCellValue) {
 
   // Create code object
   word nlocals = 1;
-  Tuple varnames(&scope, runtime_.newTuple(nlocals));
-  Tuple cellvars(&scope, runtime_.newTuple(1));
+  Tuple varnames(&scope, runtime_->newTuple(nlocals));
+  Tuple cellvars(&scope, runtime_->newTuple(1));
   Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   varnames.atPut(0, *bar);
   cellvars.atPut(0, *bar);
   const byte bytecode[] = {LOAD_CLOSURE, 0, LOAD_DEREF, 0, RETURN_VALUE, 0};
-  Bytes bc(&scope, runtime_.newBytesWithAll(bytecode));
-  Tuple empty_tuple(&scope, runtime_.emptyTuple());
+  Bytes bc(&scope, runtime_->newBytesWithAll(bytecode));
+  Tuple empty_tuple(&scope, runtime_->emptyTuple());
   Object empty_str(&scope, Str::empty());
   Object empty_bytes(&scope, Bytes::empty());
   word flags = Code::Flags::kOptimized | Code::Flags::kNewlocals;
   Code code(&scope,
-            runtime_.newCode(/*argcount=*/1, /*posonlyargcount=*/0,
-                             /*kwonlyargcount=*/0, nlocals, /*stacksize=*/0,
-                             flags, /*code=*/bc, /*consts=*/empty_tuple,
-                             /*names=*/empty_tuple, varnames,
-                             /*freevars=*/empty_tuple, cellvars,
-                             /*filename=*/empty_str, /*name=*/empty_str,
-                             /*firstlineno=*/0, /*lnotab=*/empty_bytes));
+            runtime_->newCode(/*argcount=*/1, /*posonlyargcount=*/0,
+                              /*kwonlyargcount=*/0, nlocals, /*stacksize=*/0,
+                              flags, /*code=*/bc, /*consts=*/empty_tuple,
+                              /*names=*/empty_tuple, varnames,
+                              /*freevars=*/empty_tuple, cellvars,
+                              /*filename=*/empty_str, /*name=*/empty_str,
+                              /*firstlineno=*/0, /*lnotab=*/empty_bytes));
   ASSERT_TRUE(!code.cell2arg().isNoneType());
 
-  Object qualname(&scope, runtime_.newStrFromCStr("foo"));
-  Module module(&scope, runtime_.findOrCreateMainModule());
+  Object qualname(&scope, runtime_->newStrFromCStr("foo"));
+  Module module(&scope, runtime_->findOrCreateMainModule());
   Function foo(&scope,
-               runtime_.newFunctionWithCode(thread_, qualname, code, module));
-  Tuple closure_tuple(&scope, runtime_.newTuple(1));
-  closure_tuple.atPut(0, runtime_.newInt(99));
+               runtime_->newFunctionWithCode(thread_, qualname, code, module));
+  Tuple closure_tuple(&scope, runtime_->newTuple(1));
+  closure_tuple.atPut(0, runtime_->newInt(99));
   foo.setClosure(*closure_tuple);
 
-  Object argument(&scope, runtime_.newInt(3));
+  Object argument(&scope, runtime_->newInt(3));
   EXPECT_TRUE(
       isIntEqualsWord(Interpreter::callFunction1(
                           thread_, thread_->currentFrame(), foo, argument),
@@ -752,7 +751,7 @@ TEST_F(TrampolinesTest, InterpreterClosureUsesArgOverCellValue) {
 
 TEST_F(TrampolinesTest, InterpreterClosureUsesCellValue) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foo(arg):
   def bar():
     return arg * 3
@@ -762,14 +761,14 @@ def foo(arg):
 result = foo(-2)
 )")
                    .isError());
-  Function foo(&scope, mainModuleAt(&runtime_, "foo"));
+  Function foo(&scope, mainModuleAt(runtime_, "foo"));
   ASSERT_EQ(foo.entry(), &interpreterClosureTrampoline);
   // Ensure that cellvar was populated.
   Code code(&scope, foo.code());
   ASSERT_TRUE(!code.cell2arg().isNoneType());
   Tuple cellvars(&scope, code.cellvars());
   ASSERT_EQ(cellvars.length(), 1);
-  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result"), 15));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(runtime_, "result"), 15));
 }
 
 static RawObject makeFunctionWithPosOnlyArg(Thread* thread) {
@@ -810,9 +809,9 @@ TEST_F(TrampolinesTest, KeywordCallRejectsPositionalOnlyArgumentNames) {
   // `foo(a=2, b=4)`
   Frame* frame = thread_->currentFrame();
   frame->pushValue(*function);
-  frame->pushValue(runtime_.newInt(2));
-  frame->pushValue(runtime_.newInt(4));
-  Tuple keywords(&scope, runtime_.newTuple(2));
+  frame->pushValue(runtime_->newInt(2));
+  frame->pushValue(runtime_->newInt(4));
+  Tuple keywords(&scope, runtime_->newTuple(2));
   keywords.atPut(0, Runtime::internStrFromCStr(thread_, "a"));
   keywords.atPut(1, Runtime::internStrFromCStr(thread_, "b"));
   frame->pushValue(*keywords);
@@ -829,9 +828,9 @@ TEST_F(TrampolinesTest, KeywordCallAcceptsNonPositionalOnlyArgumentNames) {
   // `foo(2, b=9)`
   Frame* frame = thread_->currentFrame();
   frame->pushValue(*function);
-  frame->pushValue(runtime_.newInt(2));
-  frame->pushValue(runtime_.newInt(9));
-  Tuple keywords(&scope, runtime_.newTuple(1));
+  frame->pushValue(runtime_->newInt(2));
+  frame->pushValue(runtime_->newInt(9));
+  Tuple keywords(&scope, runtime_->newTuple(1));
   keywords.atPut(0, Runtime::internStrFromCStr(thread_, "b"));
   frame->pushValue(*keywords);
   Object result_obj(&scope, Interpreter::callKw(thread_, frame, 2));
@@ -851,42 +850,42 @@ TEST_F(TrampolinesTest, KeywordCallWithPositionalOnlyArgumentsAndVarKeyArgs) {
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   const byte bytecode[] = {LOAD_FAST, 0, LOAD_FAST,   1, LOAD_FAST,    2,
                            LOAD_FAST, 3, BUILD_TUPLE, 4, RETURN_VALUE, 0};
-  Tuple varnames(&scope, runtime_.newTuple(4));
+  Tuple varnames(&scope, runtime_->newTuple(4));
   varnames.atPut(0, Runtime::internStrFromCStr(thread_, "a"));
   varnames.atPut(1, Runtime::internStrFromCStr(thread_, "b"));
   varnames.atPut(2, Runtime::internStrFromCStr(thread_, "c"));
   varnames.atPut(3, Runtime::internStrFromCStr(thread_, "kwargs"));
-  Bytes bc(&scope, runtime_.newBytesWithAll(bytecode));
-  Object empty_tuple(&scope, runtime_.emptyTuple());
+  Bytes bc(&scope, runtime_->newBytesWithAll(bytecode));
+  Object empty_tuple(&scope, runtime_->emptyTuple());
   Object empty_str(&scope, Str::empty());
   Object empty_bytes(&scope, Bytes::empty());
-  Code code(&scope,
-            runtime_.newCode(/*argcount=*/3, /*posonlyargcount=*/2,
-                             /*kwonlyargcount=*/0, /*nlocals=*/4,
-                             /*stacksize=*/4,
-                             Code::Flags::kNewlocals | Code::Flags::kOptimized |
-                                 Code::Flags::kVarkeyargs,
-                             bc,
-                             /*consts=*/empty_tuple,
-                             /*names=*/empty_tuple, varnames,
-                             /*freevars=*/empty_tuple,
-                             /*cellvars=*/empty_tuple,
-                             /*filename=*/empty_str, name,
-                             /*firstlineno=*/0, /*lnotab=*/empty_bytes));
-  Module module(&scope, runtime_.findOrCreateMainModule());
+  Code code(&scope, runtime_->newCode(
+                        /*argcount=*/3, /*posonlyargcount=*/2,
+                        /*kwonlyargcount=*/0, /*nlocals=*/4,
+                        /*stacksize=*/4,
+                        Code::Flags::kNewlocals | Code::Flags::kOptimized |
+                            Code::Flags::kVarkeyargs,
+                        bc,
+                        /*consts=*/empty_tuple,
+                        /*names=*/empty_tuple, varnames,
+                        /*freevars=*/empty_tuple,
+                        /*cellvars=*/empty_tuple,
+                        /*filename=*/empty_str, name,
+                        /*firstlineno=*/0, /*lnotab=*/empty_bytes));
+  Module module(&scope, runtime_->findOrCreateMainModule());
   Function foo(&scope,
-               runtime_.newFunctionWithCode(thread_, name, code, module));
-  Tuple defaults(&scope, runtime_.newTuple(2));
-  defaults.atPut(0, runtime_.newInt(7));
-  defaults.atPut(1, runtime_.newInt(10));
+               runtime_->newFunctionWithCode(thread_, name, code, module));
+  Tuple defaults(&scope, runtime_->newTuple(2));
+  defaults.atPut(0, runtime_->newInt(7));
+  defaults.atPut(1, runtime_->newInt(10));
   foo.setDefaults(*defaults);
   // Call foo(1, c=13, b=5).
   Frame* frame = thread_->currentFrame();
   frame->pushValue(*foo);
-  frame->pushValue(runtime_.newInt(1));
-  frame->pushValue(runtime_.newInt(13));
-  frame->pushValue(runtime_.newInt(5));
-  Tuple keywords(&scope, runtime_.newTuple(2));
+  frame->pushValue(runtime_->newInt(1));
+  frame->pushValue(runtime_->newInt(13));
+  frame->pushValue(runtime_->newInt(5));
+  Tuple keywords(&scope, runtime_->newTuple(2));
   keywords.atPut(0, Runtime::internStrFromCStr(thread_, "c"));
   keywords.atPut(1, Runtime::internStrFromCStr(thread_, "b"));
   frame->pushValue(*keywords);
@@ -907,7 +906,7 @@ TEST_F(TrampolinesTest, KeywordCallWithPositionalOnlyArgumentsAndVarKeyArgs) {
 }
 
 TEST_F(TrampolinesTest, ExplodeCallWithBadKeywordFails) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
 def take_kwargs(a): pass
 
 kwargs = {12: 34}
@@ -917,13 +916,13 @@ take_kwargs(**kwargs)
 }
 
 TEST_F(TrampolinesTest, ExplodeCallWithZeroKeywords) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foo(a=10): return a
 result = foo(**{})
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_EQ(result, SmallInt::fromWord(10));
 }
 
@@ -940,11 +939,11 @@ TEST_F(TrampolinesTest, ExtensionModuleNoArgReceivesNoArgsReturns) {
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(1));
+  Tuple consts(&scope, runtime_->newTuple(1));
   consts.atPut(0, *callee);
   code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, CALL_FUNCTION, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
@@ -961,13 +960,13 @@ TEST_F(TrampolinesTest, ExtensionModuleNoArgReceivesArgsRaisesTypeError) {
 
   // Set up a code object that calls the function with a single argument.
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(2));
+  Tuple consts(&scope, runtime_->newTuple(2));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(1111));
   code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST,    0, LOAD_CONST,   1,
                            CALL_FUNCTION, 1, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
@@ -989,11 +988,11 @@ TEST_F(TrampolinesTest, ExtensionModuleNoArgReturnsNullRaisesSystemError) {
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(1));
+  Tuple consts(&scope, runtime_->newTuple(1));
   consts.atPut(0, *callee);
   code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, CALL_FUNCTION, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
@@ -1010,18 +1009,18 @@ TEST_F(TrampolinesTest, ExtensionModuleNoArgReceivesKwArgsRaisesTypeError) {
 
   // Set up a code object that calls the builtin with (foo='bar')
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(3));
+  Tuple consts(&scope, runtime_->newTuple(3));
   consts.atPut(0, *callee);
-  consts.atPut(1, runtime_.newStrFromCStr("bar"));
-  Tuple kw_tuple(&scope, runtime_.newTuple(1));
-  kw_tuple.atPut(0, runtime_.newStrFromCStr("foo"));
+  consts.atPut(1, runtime_->newStrFromCStr("bar"));
+  Tuple kw_tuple(&scope, runtime_->newTuple(1));
+  kw_tuple.atPut(0, runtime_->newStrFromCStr("foo"));
   consts.atPut(2, *kw_tuple);
   code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1, LOAD_CONST, 2,
                            CALL_FUNCTION_KW, 1, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
@@ -1037,16 +1036,16 @@ TEST_F(TrampolinesTest, ExtensionModuleNoArgReceivesZeroKwArgsReturns) {
 
   // Set up a code object that calls the builtin with (foo='bar')
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(2));
+  Tuple consts(&scope, runtime_->newTuple(2));
   consts.atPut(0, *callee);
-  Tuple kw_tuple(&scope, runtime_.emptyTuple());
+  Tuple kw_tuple(&scope, runtime_->emptyTuple());
   consts.atPut(1, *kw_tuple);
   code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1,
                            CALL_FUNCTION_KW, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
@@ -1064,9 +1063,9 @@ TEST_F(TrampolinesTest,
 
   // Set up a code object that calls with (*(10))
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(2));
+  Tuple consts(&scope, runtime_->newTuple(2));
   consts.atPut(0, *callee);
-  Tuple arg_tuple(&scope, runtime_.newTuple(1));
+  Tuple arg_tuple(&scope, runtime_->newTuple(1));
   arg_tuple.atPut(0, SmallInt::fromWord(10));
   consts.atPut(1, *arg_tuple);
   code.setConsts(*consts);
@@ -1074,7 +1073,7 @@ TEST_F(TrampolinesTest,
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1,
                            CALL_FUNCTION_EX, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
@@ -1090,16 +1089,16 @@ TEST_F(TrampolinesTest, ExtensionModuleNoArgReceivesVariableArgsReturns) {
 
   // Set up a code object that calls with (*())
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(2));
+  Tuple consts(&scope, runtime_->newTuple(2));
   consts.atPut(0, *callee);
-  Tuple arg_tuple(&scope, runtime_.emptyTuple());
+  Tuple arg_tuple(&scope, runtime_->emptyTuple());
   consts.atPut(1, *arg_tuple);
   code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1,
                            CALL_FUNCTION_EX, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
@@ -1116,11 +1115,11 @@ TEST_F(TrampolinesTest, ExtensionModuleOneArgReceivesNoArgsRaisesTypeError) {
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(1));
+  Tuple consts(&scope, runtime_->newTuple(1));
   consts.atPut(0, *callee);
   code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, CALL_FUNCTION, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
@@ -1142,13 +1141,13 @@ TEST_F(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgReturns) {
 
   // Set up a code object that calls the function with a single argument.
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(2));
+  Tuple consts(&scope, runtime_->newTuple(2));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(1111));
   code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST,    0, LOAD_CONST,   1,
                            CALL_FUNCTION, 1, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
@@ -1166,14 +1165,14 @@ TEST_F(TrampolinesTest,
 
   // Set up a code object that calls the function with (123, 456)
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(3));
+  Tuple consts(&scope, runtime_->newTuple(3));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(123));
   consts.atPut(2, SmallInt::fromWord(456));
   code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST,    0, LOAD_CONST,   1, LOAD_CONST, 2,
                            CALL_FUNCTION, 2, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
@@ -1191,13 +1190,13 @@ TEST_F(TrampolinesTest, ExtensionModuleOneArgReturnsNullRaisesSystemError) {
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(2));
+  Tuple consts(&scope, runtime_->newTuple(2));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(1111));
   code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST,    0, LOAD_CONST,   1,
                            CALL_FUNCTION, 1, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
@@ -1215,17 +1214,17 @@ TEST_F(TrampolinesTest,
 
   // Set up a code object that calls the builtin with (1111, {})
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(3));
+  Tuple consts(&scope, runtime_->newTuple(3));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(1111));
-  Tuple kw_tuple(&scope, runtime_.emptyTuple());
+  Tuple kw_tuple(&scope, runtime_->emptyTuple());
   consts.atPut(2, *kw_tuple);
   code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1, LOAD_CONST, 2,
                            CALL_FUNCTION_KW, 1, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
@@ -1242,19 +1241,19 @@ TEST_F(TrampolinesTest, ExtensionModuleOneArgReceivesKwArgsRaisesTypeError) {
 
   // Set up a code object that calls the builtin with (1111, foo='bar')
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(4));
+  Tuple consts(&scope, runtime_->newTuple(4));
   consts.atPut(0, *callee);
-  Tuple kw_tuple(&scope, runtime_.newTuple(1));
+  Tuple kw_tuple(&scope, runtime_->newTuple(1));
   consts.atPut(1, SmallInt::fromWord(1111));
-  consts.atPut(2, runtime_.newStrFromCStr("bar"));
-  kw_tuple.atPut(0, runtime_.newStrFromCStr("foo"));
+  consts.atPut(2, runtime_->newStrFromCStr("bar"));
+  kw_tuple.atPut(0, runtime_->newStrFromCStr("foo"));
   consts.atPut(3, *kw_tuple);
   code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST,       1, LOAD_CONST,   2,
                            LOAD_CONST, 3, CALL_FUNCTION_KW, 2, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(4);
 
   // Execute the code and make sure we get back the result we expect
@@ -1271,9 +1270,9 @@ TEST_F(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgExReturns) {
 
   // Set up a code object that calls with (*(10))
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(2));
+  Tuple consts(&scope, runtime_->newTuple(2));
   consts.atPut(0, *callee);
-  Tuple arg_tuple(&scope, runtime_.newTuple(1));
+  Tuple arg_tuple(&scope, runtime_->newTuple(1));
   arg_tuple.atPut(0, SmallInt::fromWord(1111));
   consts.atPut(1, *arg_tuple);
   code.setConsts(*consts);
@@ -1281,7 +1280,7 @@ TEST_F(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgExReturns) {
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1,
                            CALL_FUNCTION_EX, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
@@ -1298,19 +1297,19 @@ TEST_F(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndEmptyKwReturns) {
 
   // Set up a code object that calls with (*(10), {})
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(3));
+  Tuple consts(&scope, runtime_->newTuple(3));
   consts.atPut(0, *callee);
-  Tuple arg_tuple(&scope, runtime_.newTuple(1));
+  Tuple arg_tuple(&scope, runtime_->newTuple(1));
   arg_tuple.atPut(0, SmallInt::fromWord(1111));
   consts.atPut(1, *arg_tuple);
-  Dict kw_dict(&scope, runtime_.newDict());
+  Dict kw_dict(&scope, runtime_->newDict());
   consts.atPut(2, *kw_dict);
   code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1, LOAD_CONST, 2,
                            CALL_FUNCTION_EX, 1, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
@@ -1328,12 +1327,12 @@ TEST_F(TrampolinesTest,
 
   // Set up a code object that calls with (*(10), {2:3})
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(3));
+  Tuple consts(&scope, runtime_->newTuple(3));
   consts.atPut(0, *callee);
-  Tuple arg_tuple(&scope, runtime_.newTuple(1));
+  Tuple arg_tuple(&scope, runtime_->newTuple(1));
   arg_tuple.atPut(0, SmallInt::fromWord(1111));
   consts.atPut(1, *arg_tuple);
-  Dict kw_dict(&scope, runtime_.newDict());
+  Dict kw_dict(&scope, runtime_->newDict());
   Object key(&scope, SmallInt::fromWord(2));
   word hash = intHash(*key);
   Object value(&scope, SmallInt::fromWord(3));
@@ -1344,7 +1343,7 @@ TEST_F(TrampolinesTest,
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1, LOAD_CONST, 2,
                            CALL_FUNCTION_EX, 1, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
@@ -1371,13 +1370,13 @@ TEST_F(TrampolinesTest, ExtensionModuleFastCallReceivesArgsReturns) {
 
   // Set up a code object that calls the function with a single argument.
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(2));
+  Tuple consts(&scope, runtime_->newTuple(2));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(1111));
   code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST,    0, LOAD_CONST,   1,
                            CALL_FUNCTION, 1, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
@@ -1398,11 +1397,11 @@ TEST_F(TrampolinesTest, ExtensionModuleFastCallReturnsNullRaisesSystemError) {
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(1));
+  Tuple consts(&scope, runtime_->newTuple(1));
   consts.atPut(0, *callee);
   code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, CALL_FUNCTION, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
@@ -1419,19 +1418,19 @@ TEST_F(TrampolinesTest, ExtensionModuleFastcallReceivesKwArgsReturns) {
 
   // Set up a code object that calls the builtin with ("bar", foo=1111)
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(4));
+  Tuple consts(&scope, runtime_->newTuple(4));
   consts.atPut(0, *callee);
-  consts.atPut(1, runtime_.newStrFromCStr("bar"));
+  consts.atPut(1, runtime_->newStrFromCStr("bar"));
   consts.atPut(2, SmallInt::fromWord(1111));
-  Tuple kw_tuple(&scope, runtime_.newTuple(1));
-  kw_tuple.atPut(0, runtime_.newStrFromCStr("foo"));
+  Tuple kw_tuple(&scope, runtime_->newTuple(1));
+  kw_tuple.atPut(0, runtime_->newStrFromCStr("foo"));
   consts.atPut(3, *kw_tuple);
   code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST,       1, LOAD_CONST,   2,
                            LOAD_CONST, 3, CALL_FUNCTION_KW, 2, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(4);
 
   // Execute the code and make sure we get back the result we expect
@@ -1450,9 +1449,9 @@ TEST_F(TrampolinesTest, ExtensionModuleFastCallReceivesVariableArgsReturns) {
 
   // Set up a code object that calls with (*(10))
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(2));
+  Tuple consts(&scope, runtime_->newTuple(2));
   consts.atPut(0, *callee);
-  Tuple arg_tuple(&scope, runtime_.newTuple(1));
+  Tuple arg_tuple(&scope, runtime_->newTuple(1));
   arg_tuple.atPut(0, SmallInt::fromWord(10));
   consts.atPut(1, *arg_tuple);
   code.setConsts(*consts);
@@ -1460,7 +1459,7 @@ TEST_F(TrampolinesTest, ExtensionModuleFastCallReceivesVariableArgsReturns) {
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1,
                            CALL_FUNCTION_EX, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
@@ -1479,13 +1478,13 @@ TEST_F(TrampolinesTest, ExtensionModuleFastCallReceivesVariableKwArgsReturns) {
 
   // Set up a code object that calls with (*(10), **{"foo":1111})
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(3));
+  Tuple consts(&scope, runtime_->newTuple(3));
   consts.atPut(0, *callee);
-  Tuple arg_tuple(&scope, runtime_.newTuple(1));
+  Tuple arg_tuple(&scope, runtime_->newTuple(1));
   arg_tuple.atPut(0, SmallInt::fromWord(10));
   consts.atPut(1, *arg_tuple);
-  Dict kw_dict(&scope, runtime_.newDict());
-  Str name(&scope, runtime_.newStrFromCStr("foo"));
+  Dict kw_dict(&scope, runtime_->newDict());
+  Str name(&scope, runtime_->newStrFromCStr("foo"));
   Object value(&scope, SmallInt::fromWord(1111));
   dictAtPutByStr(thread_, kw_dict, name, value);
   consts.atPut(2, *kw_dict);
@@ -1494,7 +1493,7 @@ TEST_F(TrampolinesTest, ExtensionModuleFastCallReceivesVariableKwArgsReturns) {
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1, LOAD_CONST, 2,
                            CALL_FUNCTION_EX, 1, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
@@ -1513,11 +1512,11 @@ TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesNoArgsReturns) {
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(1));
+  Tuple consts(&scope, runtime_->newTuple(1));
   consts.atPut(0, *callee);
   code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, CALL_FUNCTION, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
@@ -1541,13 +1540,13 @@ TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesArgsReturns) {
 
   // Set up a code object that calls the function with a single argument.
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(2));
+  Tuple consts(&scope, runtime_->newTuple(2));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(1111));
   code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST,    0, LOAD_CONST,   1,
                            CALL_FUNCTION, 1, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
@@ -1565,11 +1564,11 @@ TEST_F(TrampolinesTest, ExtensionModuleVarArgReturnsNullRaisesSystemError) {
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(1));
+  Tuple consts(&scope, runtime_->newTuple(1));
   consts.atPut(0, *callee);
   code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, CALL_FUNCTION, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
@@ -1586,17 +1585,17 @@ TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesZeroKwArgsReturns) {
 
   // Set up a code object that calls the builtin with (1111, {})
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(3));
+  Tuple consts(&scope, runtime_->newTuple(3));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(1111));
-  Tuple kw_tuple(&scope, runtime_.emptyTuple());
+  Tuple kw_tuple(&scope, runtime_->emptyTuple());
   consts.atPut(2, *kw_tuple);
   code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1, LOAD_CONST, 2,
                            CALL_FUNCTION_KW, 1, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
@@ -1613,19 +1612,19 @@ TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesKwArgsRaisesTypeError) {
 
   // Set up a code object that calls the builtin with (1111, foo='bar')
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(4));
+  Tuple consts(&scope, runtime_->newTuple(4));
   consts.atPut(0, *callee);
-  Tuple kw_tuple(&scope, runtime_.newTuple(1));
+  Tuple kw_tuple(&scope, runtime_->newTuple(1));
   consts.atPut(1, SmallInt::fromWord(1111));
-  consts.atPut(2, runtime_.newStrFromCStr("bar"));
-  kw_tuple.atPut(0, runtime_.newStrFromCStr("foo"));
+  consts.atPut(2, runtime_->newStrFromCStr("bar"));
+  kw_tuple.atPut(0, runtime_->newStrFromCStr("foo"));
   consts.atPut(3, *kw_tuple);
   code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST,       1, LOAD_CONST,   2,
                            LOAD_CONST, 3, CALL_FUNCTION_KW, 2, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(4);
 
   // Execute the code and make sure we get back the result we expect
@@ -1642,9 +1641,9 @@ TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsReturns) {
 
   // Set up a code object that calls with (*(10))
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(2));
+  Tuple consts(&scope, runtime_->newTuple(2));
   consts.atPut(0, *callee);
-  Tuple arg_tuple(&scope, runtime_.newTuple(1));
+  Tuple arg_tuple(&scope, runtime_->newTuple(1));
   arg_tuple.atPut(0, SmallInt::fromWord(1111));
   consts.atPut(1, *arg_tuple);
   code.setConsts(*consts);
@@ -1652,7 +1651,7 @@ TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsReturns) {
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1,
                            CALL_FUNCTION_EX, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
@@ -1669,19 +1668,19 @@ TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsAndEmptyKwReturns) {
 
   // Set up a code object that calls with (*(10), {})
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(3));
+  Tuple consts(&scope, runtime_->newTuple(3));
   consts.atPut(0, *callee);
-  Tuple arg_tuple(&scope, runtime_.newTuple(1));
+  Tuple arg_tuple(&scope, runtime_->newTuple(1));
   arg_tuple.atPut(0, SmallInt::fromWord(1111));
   consts.atPut(1, *arg_tuple);
-  Dict kw_dict(&scope, runtime_.newDict());
+  Dict kw_dict(&scope, runtime_->newDict());
   consts.atPut(2, *kw_dict);
   code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1, LOAD_CONST, 2,
                            CALL_FUNCTION_EX, 1, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
@@ -1699,12 +1698,12 @@ TEST_F(TrampolinesTest,
 
   // Set up a code object that calls with (*(10), {})
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(3));
+  Tuple consts(&scope, runtime_->newTuple(3));
   consts.atPut(0, *callee);
-  Tuple arg_tuple(&scope, runtime_.newTuple(1));
+  Tuple arg_tuple(&scope, runtime_->newTuple(1));
   arg_tuple.atPut(0, SmallInt::fromWord(1111));
   consts.atPut(1, *arg_tuple);
-  Dict kw_dict(&scope, runtime_.newDict());
+  Dict kw_dict(&scope, runtime_->newDict());
   Object key(&scope, SmallInt::fromWord(2));
   word hash = intHash(*key);
   Object value(&scope, SmallInt::fromWord(3));
@@ -1715,7 +1714,7 @@ TEST_F(TrampolinesTest,
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1, LOAD_CONST, 2,
                            CALL_FUNCTION_EX, 1, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
@@ -1736,11 +1735,11 @@ TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesNoArgsReturns) {
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(1));
+  Tuple consts(&scope, runtime_->newTuple(1));
   consts.atPut(0, *callee);
   code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, CALL_FUNCTION, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
@@ -1766,13 +1765,13 @@ TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesArgsReturns) {
 
   // Set up a code object that calls the function with a single argument.
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(2));
+  Tuple consts(&scope, runtime_->newTuple(2));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(1111));
   code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST,    0, LOAD_CONST,   1,
                            CALL_FUNCTION, 1, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
@@ -1795,11 +1794,11 @@ TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReturnsNullRaisesSystemError) {
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(1));
+  Tuple consts(&scope, runtime_->newTuple(1));
   consts.atPut(0, *callee);
   code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, CALL_FUNCTION, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
@@ -1828,19 +1827,19 @@ TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesKwArgsReturns) {
 
   // Set up a code object that calls the builtin with ("bar", foo=1111)
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(4));
+  Tuple consts(&scope, runtime_->newTuple(4));
   consts.atPut(0, *callee);
-  consts.atPut(1, runtime_.newStrFromCStr("bar"));
+  consts.atPut(1, runtime_->newStrFromCStr("bar"));
   consts.atPut(2, SmallInt::fromWord(1111));
-  Tuple kw_tuple(&scope, runtime_.newTuple(1));
-  kw_tuple.atPut(0, runtime_.newStrFromCStr("foo"));
+  Tuple kw_tuple(&scope, runtime_->newTuple(1));
+  kw_tuple.atPut(0, runtime_->newStrFromCStr("foo"));
   consts.atPut(3, *kw_tuple);
   code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST,       1, LOAD_CONST,   2,
                            LOAD_CONST, 3, CALL_FUNCTION_KW, 2, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(4);
 
   // Execute the code and make sure we get back the result we expect
@@ -1858,13 +1857,13 @@ TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesMultipleArgsReturns) {
 
   // Set up a code object that calls the builtin with (123, 456, foo=789)
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(5));
+  Tuple consts(&scope, runtime_->newTuple(5));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(456));
   consts.atPut(2, SmallInt::fromWord(123));
   consts.atPut(3, SmallInt::fromWord(789));
-  Tuple kw_tuple(&scope, runtime_.newTuple(1));
-  kw_tuple.atPut(0, runtime_.newStrFromCStr("foo"));
+  Tuple kw_tuple(&scope, runtime_->newTuple(1));
+  kw_tuple.atPut(0, runtime_->newStrFromCStr("foo"));
   consts.atPut(4, *kw_tuple);
   code.setConsts(*consts);
 
@@ -1872,7 +1871,7 @@ TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesMultipleArgsReturns) {
   const byte bytecode[] = {LOAD_CONST,   0, LOAD_CONST, 1, LOAD_CONST,       2,
                            LOAD_CONST,   3, LOAD_CONST, 4, CALL_FUNCTION_KW, 3,
                            RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(5);
 
   // Execute the code and make sure we get back the result we expect
@@ -1891,20 +1890,20 @@ TEST_F(TrampolinesTest,
 
   // Set up a code object that calls the builtin with ("foo"=1234, "bar"=5678)
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(4));
+  Tuple consts(&scope, runtime_->newTuple(4));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(1234));
   consts.atPut(2, SmallInt::fromWord(5678));
-  Tuple kw_tuple(&scope, runtime_.newTuple(2));
-  kw_tuple.atPut(0, runtime_.newStrFromCStr("foo"));
-  kw_tuple.atPut(1, runtime_.newStrFromCStr("bar"));
+  Tuple kw_tuple(&scope, runtime_->newTuple(2));
+  kw_tuple.atPut(0, runtime_->newStrFromCStr("foo"));
+  kw_tuple.atPut(1, runtime_->newStrFromCStr("bar"));
   consts.atPut(3, *kw_tuple);
   code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST,       1, LOAD_CONST,   2,
                            LOAD_CONST, 3, CALL_FUNCTION_KW, 2, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(4);
 
   // Execute the code and make sure we get back the result we expect
@@ -1922,9 +1921,9 @@ TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesVariableArgsReturns) {
 
   // Set up a code object that calls with (*(10))
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(2));
+  Tuple consts(&scope, runtime_->newTuple(2));
   consts.atPut(0, *callee);
-  Tuple arg_tuple(&scope, runtime_.newTuple(1));
+  Tuple arg_tuple(&scope, runtime_->newTuple(1));
   arg_tuple.atPut(0, SmallInt::fromWord(10));
   consts.atPut(1, *arg_tuple);
   code.setConsts(*consts);
@@ -1932,7 +1931,7 @@ TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesVariableArgsReturns) {
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1,
                            CALL_FUNCTION_EX, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
@@ -1951,13 +1950,13 @@ TEST_F(TrampolinesTest,
 
   // Set up a code object that calls with (*(10), **{"foo":1111})
   Code code(&scope, newEmptyCode());
-  Tuple consts(&scope, runtime_.newTuple(3));
+  Tuple consts(&scope, runtime_->newTuple(3));
   consts.atPut(0, *callee);
-  Tuple arg_tuple(&scope, runtime_.newTuple(1));
+  Tuple arg_tuple(&scope, runtime_->newTuple(1));
   arg_tuple.atPut(0, SmallInt::fromWord(10));
   consts.atPut(1, *arg_tuple);
-  Dict kw_dict(&scope, runtime_.newDict());
-  Str name(&scope, runtime_.newStrFromCStr("foo"));
+  Dict kw_dict(&scope, runtime_->newDict());
+  Str name(&scope, runtime_->newStrFromCStr("foo"));
   Object value(&scope, SmallInt::fromWord(1111));
   dictAtPutByStr(thread_, kw_dict, name, value);
   consts.atPut(2, *kw_dict);
@@ -1966,7 +1965,7 @@ TEST_F(TrampolinesTest,
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1, LOAD_CONST, 2,
                            CALL_FUNCTION_EX, 1, RETURN_VALUE, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
@@ -1993,18 +1992,18 @@ def dummy(first, second):
 }
 
 TEST_F(TrampolinesTest, BuiltinTrampolineExReceivesExArgs) {
-  createAndPatchBuiltinNumArgs(&runtime_);
+  createAndPatchBuiltinNumArgs(runtime_);
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, "result = dummy(*(1,2))").isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  ASSERT_FALSE(runFromCStr(runtime_, "result = dummy(*(1,2))").isError());
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
 
 TEST_F(TrampolinesTest, BuiltinTrampolineExReceivesMixOfPositionalAndExArgs1) {
-  createAndPatchBuiltinNumArgs(&runtime_);
+  createAndPatchBuiltinNumArgs(runtime_);
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, "result = dummy(1, *(2,))").isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  ASSERT_FALSE(runFromCStr(runtime_, "result = dummy(1, *(2,))").isError());
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
 
@@ -2024,10 +2023,10 @@ def dummy(*args):
 
 TEST_F(TrampolinesTest,
        BuiltinTrampolineExReceivesOnePositionalArgAndTwoVariableArgs) {
-  createAndPatchBuiltinNumArgsVariadic(&runtime_);
+  createAndPatchBuiltinNumArgsVariadic(runtime_);
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, "result = dummy(1, *(2, 3))").isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  ASSERT_FALSE(runFromCStr(runtime_, "result = dummy(1, *(2, 3))").isError());
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
 
@@ -2047,41 +2046,41 @@ def dummy(*args, **kwargs):
 
 TEST_F(TrampolinesTest,
        BuiltinTrampolineExReceivesTwoPositionalOneVariableAndTwoKwArgs) {
-  createAndPatchBuiltinNumArgsArgsKwargs(&runtime_);
+  createAndPatchBuiltinNumArgsArgsKwargs(runtime_);
   HandleScope scope(thread_);
   ASSERT_FALSE(
-      runFromCStr(&runtime_,
+      runFromCStr(runtime_,
                   "result = dummy(1, 2, *(3,), **{'foo': 1, 'bar': 2})")
           .isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
 
 TEST_F(TrampolinesTest, BuiltinTrampolineExReceivesVarArgs) {
-  createAndPatchBuiltinNumArgs(&runtime_);
+  createAndPatchBuiltinNumArgs(runtime_);
   HandleScope scope(thread_);
   ASSERT_FALSE(
-      runFromCStr(&runtime_, "result = dummy(*(1,), second=5)").isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+      runFromCStr(runtime_, "result = dummy(*(1,), second=5)").isError());
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
 
 TEST_F(TrampolinesTest, BuiltinTrampolineExWithTooFewArgsRaisesTypeError) {
-  createAndPatchBuiltinNumArgs(&runtime_);
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, "dummy(*(1,))"), LayoutId::kTypeError,
-      "'dummy' takes min 2 positional arguments but 1 given"));
+  createAndPatchBuiltinNumArgs(runtime_);
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(runtime_, "dummy(*(1,))"), LayoutId::kTypeError,
+                    "'dummy' takes min 2 positional arguments but 1 given"));
 }
 
 TEST_F(TrampolinesTest, BuiltinTrampolineExWithTooManyArgsRaisesTypeError) {
-  createAndPatchBuiltinNumArgs(&runtime_);
+  createAndPatchBuiltinNumArgs(runtime_);
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, "dummy(*(1,2,3,4,5))"), LayoutId::kTypeError,
+      runFromCStr(runtime_, "dummy(*(1,2,3,4,5))"), LayoutId::kTypeError,
       "'dummy' takes max 2 positional arguments but 5 given"));
 }
 
 TEST_F(TrampolinesTest, CallFunctionExWithNamedArgAndExplodeKwargs) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def f(description, conflict_handler):
     return [description, conflict_handler]
 
@@ -2089,12 +2088,12 @@ result = f(description="foo", **{"conflict_handler": "conflict_handler value"})
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_PYLIST_EQ(result, {"foo", "conflict_handler value"});
 }
 
 TEST_F(TrampolinesTest, CallFunctionExWithExplodeKwargsStrSubclassAlwaysEq) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C(str):
     def __eq__(self, other):
         return True
@@ -2107,12 +2106,12 @@ actual = C("foo")
 result = f(**{actual: 5})
 )")
                    .isError());
-  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result"), 5));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(runtime_, "result"), 5));
 }
 
 TEST_F(TrampolinesTest,
        CallFunctionExWithExplodeKwargsStrSubclassReturnNonBool) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
 class D:
     def __bool__(self):
         raise UserWarning('foo')
@@ -2133,7 +2132,7 @@ result = f(**{actual: 5})
 
 TEST_F(TrampolinesTest,
        CallFunctionExWithExplodeKwargsStrSubclassRaiseException) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
 class C(str):
     def __eq__(self, other):
         raise UserWarning('foo')
@@ -2149,7 +2148,7 @@ result = f(**{actual: 5})
 }
 
 TEST_F(TrampolinesTest, CallFunctionExWithExplodeKwargsStrSubclassNotEq) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
 class C(str):
     __hash__ = str.__hash__
 
@@ -2164,7 +2163,7 @@ result = f(**{actual: 5})
 }
 
 TEST_F(TrampolinesTest, CallFunctionExWithExplodeKwargsStrSubclassNeverEq) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
 class C(str):
     def __eq__(self, other):
         return False
@@ -2181,7 +2180,7 @@ result = f(**{actual: 5})
 }
 
 TEST_F(TrampolinesTest, CallFunctionWithParameterInVarnames) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
 def add_argument(*args, **kwargs):
     action = action_class(**kwargs)
 
@@ -2195,25 +2194,25 @@ init()
 }
 
 TEST_F(TrampolinesTest, CallFunctionWithParameterInVarargname) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def test(*args, **kwargs):
     return kwargs['args']
 
 result = test(args=5)
 )")
                    .isError());
-  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result"), 5));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(runtime_, "result"), 5));
 }
 
 TEST_F(TrampolinesTest, CallFunctionWithPositionalArgAndParameterInVarargname) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def test(pos, *args, **kwargs):
     return kwargs['args']
 
 result = test(1, args=5)
 )")
                    .isError());
-  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result"), 5));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(runtime_, "result"), 5));
 }
 
 static PyObject* capiFunctionNoArgs(PyObject* self, PyObject* args) {
@@ -2229,9 +2228,9 @@ TEST_F(TrampolinesTest, MethodTrampolineNoArgs) {
   Frame* frame = thread_->currentFrame();
   Function function(&scope, newEmptyFunction());
   function.setCode(
-      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionNoArgs)));
+      runtime_->newIntFromCPtr(reinterpret_cast<void*>(capiFunctionNoArgs)));
   frame->pushValue(*function);
-  Object self(&scope, runtime_.newTuple(1));
+  Object self(&scope, runtime_->newTuple(1));
   frame->pushValue(*self);
   Object result(&scope, methodTrampolineNoArgs(thread_, frame, 1));
   EXPECT_TRUE(isIntEqualsWord(*result, 1234));
@@ -2242,9 +2241,9 @@ TEST_F(TrampolinesTest, MethodTrampolineNoArgsKw) {
   Frame* frame = thread_->currentFrame();
   Function function(&scope, newEmptyFunction());
   function.setCode(
-      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionNoArgs)));
+      runtime_->newIntFromCPtr(reinterpret_cast<void*>(capiFunctionNoArgs)));
   frame->pushValue(*function);
-  Object self(&scope, runtime_.newTuple(1));
+  Object self(&scope, runtime_->newTuple(1));
   frame->pushValue(*self);
   Object result(&scope, methodTrampolineNoArgsKw(thread_, frame, 0));
   EXPECT_TRUE(isIntEqualsWord(*result, 1234));
@@ -2255,10 +2254,10 @@ TEST_F(TrampolinesTest, MethodTrampolineNoArgsEx) {
   Frame* frame = thread_->currentFrame();
   Function function(&scope, newEmptyFunction());
   function.setCode(
-      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionNoArgs)));
+      runtime_->newIntFromCPtr(reinterpret_cast<void*>(capiFunctionNoArgs)));
   frame->pushValue(*function);
-  Tuple varargs(&scope, runtime_.newTuple(1));
-  varargs.atPut(0, runtime_.newTuple(1));  // self
+  Tuple varargs(&scope, runtime_->newTuple(1));
+  varargs.atPut(0, runtime_->newTuple(1));  // self
   frame->pushValue(*varargs);
   Object result(&scope, methodTrampolineNoArgsEx(thread_, frame, 0));
   EXPECT_TRUE(isIntEqualsWord(*result, 1234));
@@ -2277,11 +2276,11 @@ TEST_F(TrampolinesTest, MethodTrampolineOneArg) {
   Frame* frame = thread_->currentFrame();
   Function function(&scope, newEmptyFunction());
   function.setCode(
-      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionOneArg)));
+      runtime_->newIntFromCPtr(reinterpret_cast<void*>(capiFunctionOneArg)));
   frame->pushValue(*function);
-  Object self(&scope, runtime_.newTuple(1));
+  Object self(&scope, runtime_->newTuple(1));
   frame->pushValue(*self);
-  Object args(&scope, runtime_.newTuple(1));
+  Object args(&scope, runtime_->newTuple(1));
   frame->pushValue(*args);
   Object result(&scope, methodTrampolineOneArg(thread_, frame, 2));
   EXPECT_TRUE(isIntEqualsWord(*result, 1234));
@@ -2292,13 +2291,13 @@ TEST_F(TrampolinesTest, MethodTrampolineOneArgKw) {
   Frame* frame = thread_->currentFrame();
   Function function(&scope, newEmptyFunction());
   function.setCode(
-      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionOneArg)));
+      runtime_->newIntFromCPtr(reinterpret_cast<void*>(capiFunctionOneArg)));
   frame->pushValue(*function);
-  Object arg(&scope, runtime_.newTuple(1));
+  Object arg(&scope, runtime_->newTuple(1));
   frame->pushValue(*arg);
-  Object self(&scope, runtime_.newTuple(1));
+  Object self(&scope, runtime_->newTuple(1));
   frame->pushValue(*self);
-  Tuple kwargs(&scope, runtime_.newTuple(0));
+  Tuple kwargs(&scope, runtime_->newTuple(0));
   frame->pushValue(*kwargs);
   Object result(&scope, methodTrampolineOneArgKw(thread_, frame, 2));
   EXPECT_TRUE(isIntEqualsWord(*result, 1234));
@@ -2309,11 +2308,11 @@ TEST_F(TrampolinesTest, MethodTrampolineOneArgEx) {
   Frame* frame = thread_->currentFrame();
   Function function(&scope, newEmptyFunction());
   function.setCode(
-      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionOneArg)));
+      runtime_->newIntFromCPtr(reinterpret_cast<void*>(capiFunctionOneArg)));
   frame->pushValue(*function);
-  Tuple varargs(&scope, runtime_.newTuple(2));
-  varargs.atPut(0, runtime_.newTuple(1));  // self
-  varargs.atPut(1, runtime_.newTuple(1));  // arg
+  Tuple varargs(&scope, runtime_->newTuple(2));
+  varargs.atPut(0, runtime_->newTuple(1));  // self
+  varargs.atPut(1, runtime_->newTuple(1));  // arg
   frame->pushValue(*varargs);
   Object result(&scope, methodTrampolineOneArgEx(thread_, frame, 0));
   EXPECT_TRUE(isIntEqualsWord(*result, 1234));
@@ -2332,11 +2331,11 @@ TEST_F(TrampolinesTest, MethodTrampolineVarArgs) {
   Frame* frame = thread_->currentFrame();
   Function function(&scope, newEmptyFunction());
   function.setCode(
-      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionVarArgs)));
+      runtime_->newIntFromCPtr(reinterpret_cast<void*>(capiFunctionVarArgs)));
   frame->pushValue(*function);
-  Object self(&scope, runtime_.newTuple(1));
+  Object self(&scope, runtime_->newTuple(1));
   frame->pushValue(*self);
-  Object arg(&scope, runtime_.newTuple(1));
+  Object arg(&scope, runtime_->newTuple(1));
   frame->pushValue(*arg);
   Object result(&scope, methodTrampolineVarArgs(thread_, frame, 2));
   EXPECT_TRUE(isIntEqualsWord(*result, 1234));
@@ -2347,15 +2346,15 @@ TEST_F(TrampolinesTest, MethodTrampolineVarArgsKw) {
   Frame* frame = thread_->currentFrame();
   Function function(&scope, newEmptyFunction());
   function.setCode(
-      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionVarArgs)));
+      runtime_->newIntFromCPtr(reinterpret_cast<void*>(capiFunctionVarArgs)));
   frame->pushValue(*function);
-  Object self(&scope, runtime_.newTuple(1));
+  Object self(&scope, runtime_->newTuple(1));
   frame->pushValue(*self);
-  Object arg0(&scope, runtime_.newTuple(1));
+  Object arg0(&scope, runtime_->newTuple(1));
   frame->pushValue(*arg0);
-  Object arg1(&scope, runtime_.newTuple(1));
+  Object arg1(&scope, runtime_->newTuple(1));
   frame->pushValue(*arg1);
-  Object kwargs(&scope, runtime_.newTuple(0));
+  Object kwargs(&scope, runtime_->newTuple(0));
   frame->pushValue(*kwargs);
   Object result(&scope, methodTrampolineVarArgsKw(thread_, frame, 3));
   EXPECT_TRUE(isIntEqualsWord(*result, 1234));
@@ -2366,10 +2365,10 @@ TEST_F(TrampolinesTest, MethodTrampolineVarArgsEx) {
   Frame* frame = thread_->currentFrame();
   Function function(&scope, newEmptyFunction());
   function.setCode(
-      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionVarArgs)));
+      runtime_->newIntFromCPtr(reinterpret_cast<void*>(capiFunctionVarArgs)));
   frame->pushValue(*function);
-  Tuple varargs(&scope, runtime_.newTuple(1));
-  Object self(&scope, runtime_.newTuple(1));
+  Tuple varargs(&scope, runtime_->newTuple(1));
+  Object self(&scope, runtime_->newTuple(1));
   varargs.atPut(0, *self);
   frame->pushValue(*varargs);
   Object result(&scope, methodTrampolineVarArgsEx(thread_, frame, 0));
@@ -2390,10 +2389,10 @@ TEST_F(TrampolinesTest, MethodTrampolineKeywords) {
   HandleScope scope(thread_);
   Frame* frame = thread_->currentFrame();
   Function function(&scope, newEmptyFunction());
-  function.setCode(runtime_.newIntFromCPtr(
+  function.setCode(runtime_->newIntFromCPtr(
       reinterpret_cast<void*>(capiFunctionKeywordsNullKwargs)));
   frame->pushValue(*function);
-  Object self(&scope, runtime_.newTuple(1));
+  Object self(&scope, runtime_->newTuple(1));
   frame->pushValue(*self);
   Object result(&scope, methodTrampolineKeywords(thread_, frame, 1));
   EXPECT_TRUE(isIntEqualsWord(*result, 1234));
@@ -2414,12 +2413,12 @@ TEST_F(TrampolinesTest, MethodTrampolineKeywordsKw) {
   Frame* frame = thread_->currentFrame();
   Function function(&scope, newEmptyFunction());
   function.setCode(
-      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionKeywords)));
+      runtime_->newIntFromCPtr(reinterpret_cast<void*>(capiFunctionKeywords)));
   frame->pushValue(*function);
-  Object self(&scope, runtime_.newTuple(1));
+  Object self(&scope, runtime_->newTuple(1));
   frame->pushValue(*self);
   frame->pushValue(SmallStr::fromCStr("bar"));
-  Tuple kwnames(&scope, runtime_.newTuple(1));
+  Tuple kwnames(&scope, runtime_->newTuple(1));
   kwnames.atPut(0, SmallStr::fromCStr("foo"));
   frame->pushValue(*kwnames);
   Object result(&scope, methodTrampolineKeywordsKw(thread_, frame, 2));
@@ -2430,11 +2429,11 @@ TEST_F(TrampolinesTest, MethodTrampolineKeywordsEx) {
   HandleScope scope(thread_);
   Frame* frame = thread_->currentFrame();
   Function function(&scope, newEmptyFunction());
-  function.setCode(runtime_.newIntFromCPtr(
+  function.setCode(runtime_->newIntFromCPtr(
       reinterpret_cast<void*>(capiFunctionKeywordsNullKwargs)));
   frame->pushValue(*function);
-  Tuple varargs(&scope, runtime_.newTuple(1));
-  Object self(&scope, runtime_.newTuple(1));
+  Tuple varargs(&scope, runtime_->newTuple(1));
+  Object self(&scope, runtime_->newTuple(1));
   varargs.atPut(0, *self);
   frame->pushValue(*varargs);
   Object result(&scope, methodTrampolineKeywordsEx(thread_, frame, 0));
@@ -2459,12 +2458,12 @@ TEST_F(TrampolinesTest, MethodTrampolineFastCall) {
   HandleScope scope(thread_);
   Frame* frame = thread_->currentFrame();
   Function function(&scope, newEmptyFunction());
-  function.setCode(runtime_.newIntFromCPtr(
+  function.setCode(runtime_->newIntFromCPtr(
       reinterpret_cast<void*>(capiFunctionFastCallNullKwnames)));
   frame->pushValue(*function);
-  Object self(&scope, runtime_.newTuple(1));
+  Object self(&scope, runtime_->newTuple(1));
   frame->pushValue(*self);
-  Object arg0(&scope, runtime_.newTuple(1));
+  Object arg0(&scope, runtime_->newTuple(1));
   frame->pushValue(*arg0);
   Object result(&scope, methodTrampolineFastCall(thread_, frame, 2));
   EXPECT_TRUE(isIntEqualsWord(*result, 1234));
@@ -2490,13 +2489,13 @@ TEST_F(TrampolinesTest, MethodTrampolineFastCallKw) {
   Frame* frame = thread_->currentFrame();
   Function function(&scope, newEmptyFunction());
   function.setCode(
-      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionFastCall)));
+      runtime_->newIntFromCPtr(reinterpret_cast<void*>(capiFunctionFastCall)));
   frame->pushValue(*function);
-  Object self(&scope, runtime_.newTuple(1));
+  Object self(&scope, runtime_->newTuple(1));
   frame->pushValue(*self);
-  Object kwarg0(&scope, runtime_.newTuple(1));
+  Object kwarg0(&scope, runtime_->newTuple(1));
   frame->pushValue(*kwarg0);
-  Tuple kwnames(&scope, runtime_.newTuple(1));
+  Tuple kwnames(&scope, runtime_->newTuple(1));
   kwnames.atPut(0, SmallStr::fromCStr("foo"));
   frame->pushValue(*kwnames);
   Object result(&scope, methodTrampolineFastCallKw(thread_, frame, 2));
@@ -2508,16 +2507,16 @@ TEST_F(TrampolinesTest, MethodTrampolineFastCallEx) {
   Frame* frame = thread_->currentFrame();
   Function function(&scope, newEmptyFunction());
   function.setCode(
-      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionFastCall)));
+      runtime_->newIntFromCPtr(reinterpret_cast<void*>(capiFunctionFastCall)));
   frame->pushValue(*function);
-  Tuple varargs(&scope, runtime_.newTuple(2));
-  Object self(&scope, runtime_.newTuple(1));
+  Tuple varargs(&scope, runtime_->newTuple(2));
+  Object self(&scope, runtime_->newTuple(1));
   varargs.atPut(0, *self);
   varargs.atPut(1, SmallStr::fromCStr("bar"));
   frame->pushValue(*varargs);
-  Dict varkeywords(&scope, runtime_.newDict());
+  Dict varkeywords(&scope, runtime_->newDict());
   Str key(&scope, SmallStr::fromCStr("baz"));
-  Object value(&scope, runtime_.newTuple(1));
+  Object value(&scope, runtime_->newTuple(1));
   dictAtPutByStr(thread_, varkeywords, key, value);
   frame->pushValue(*varkeywords);
   Object result(&scope, methodTrampolineFastCallEx(
@@ -2529,10 +2528,10 @@ TEST_F(TrampolinesTest, ModuleTrampolineFastCall) {
   HandleScope scope(thread_);
   Frame* frame = thread_->currentFrame();
   Function function(&scope, newEmptyFunction());
-  function.setCode(runtime_.newIntFromCPtr(
+  function.setCode(runtime_->newIntFromCPtr(
       reinterpret_cast<void*>(capiFunctionFastCallNullKwnames)));
   frame->pushValue(*function);
-  Object arg0(&scope, runtime_.newTuple(1));
+  Object arg0(&scope, runtime_->newTuple(1));
   frame->pushValue(*arg0);
   Object result(&scope, moduleTrampolineFastCall(thread_, frame, 1));
   EXPECT_TRUE(isIntEqualsWord(*result, 1234));
@@ -2543,11 +2542,11 @@ TEST_F(TrampolinesTest, ModuleTrampolineFastCallKw) {
   Frame* frame = thread_->currentFrame();
   Function function(&scope, newEmptyFunction());
   function.setCode(
-      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionFastCall)));
+      runtime_->newIntFromCPtr(reinterpret_cast<void*>(capiFunctionFastCall)));
   frame->pushValue(*function);
-  Object arg0(&scope, runtime_.newTuple(1));
+  Object arg0(&scope, runtime_->newTuple(1));
   frame->pushValue(*arg0);
-  Tuple kwnames(&scope, runtime_.newTuple(1));
+  Tuple kwnames(&scope, runtime_->newTuple(1));
   kwnames.atPut(0, SmallStr::fromCStr("foo"));
   frame->pushValue(*kwnames);
   Object result(&scope, moduleTrampolineFastCallKw(thread_, frame, 1));
@@ -2559,14 +2558,14 @@ TEST_F(TrampolinesTest, ModuleTrampolineFastCallEx) {
   Frame* frame = thread_->currentFrame();
   Function function(&scope, newEmptyFunction());
   function.setCode(
-      runtime_.newIntFromCPtr(reinterpret_cast<void*>(capiFunctionFastCall)));
+      runtime_->newIntFromCPtr(reinterpret_cast<void*>(capiFunctionFastCall)));
   frame->pushValue(*function);
-  Tuple varargs(&scope, runtime_.newTuple(1));
+  Tuple varargs(&scope, runtime_->newTuple(1));
   varargs.atPut(0, SmallStr::fromCStr("bar"));
   frame->pushValue(*varargs);
-  Dict varkeywords(&scope, runtime_.newDict());
+  Dict varkeywords(&scope, runtime_->newDict());
   Str key(&scope, SmallStr::fromCStr("baz"));
-  Object value(&scope, runtime_.newTuple(1));
+  Object value(&scope, runtime_->newTuple(1));
   dictAtPutByStr(thread_, varkeywords, key, value);
   frame->pushValue(*varkeywords);
   Object result(&scope, moduleTrampolineFastCallEx(

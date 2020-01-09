@@ -29,7 +29,7 @@ TEST(HeapTestNoFixture, AllocateObjects) {
 
 TEST_F(HeapTest, AllocateFails) {
   HandleScope scope(thread_);
-  Heap* heap = runtime_.heap();
+  Heap* heap = runtime_->heap();
   word free_space = heap->space()->end() - heap->space()->fill();
 
   // Allocate the first half of the heap. Use a handle to prevent gc
@@ -54,7 +54,7 @@ TEST_F(HeapTest, AllocateFails) {
 
 TEST_F(HeapTest, AllocateBigLargeInt) {
   HandleScope scope(thread_);
-  Object result(&scope, runtime_.heap()->createLargeInt(100000));
+  Object result(&scope, runtime_->heap()->createLargeInt(100000));
   ASSERT_TRUE(result.isLargeInt());
   EXPECT_EQ(LargeInt::cast(*result).numDigits(), 100000);
 }
@@ -62,14 +62,14 @@ TEST_F(HeapTest, AllocateBigLargeInt) {
 TEST_F(HeapTest, AllocateBigInstance) {
   HandleScope scope(thread_);
   Layout layout(&scope, testing::layoutCreateEmpty(thread_));
-  Object result(&scope, runtime_.heap()->createInstance(layout.id(), 100000));
+  Object result(&scope, runtime_->heap()->createInstance(layout.id(), 100000));
   ASSERT_TRUE(result.isInstance());
   EXPECT_EQ(Instance::cast(*result).headerCountOrOverflow(), 100000);
 }
 
 TEST_F(HeapTest, AllocateMutableBytes) {
   HandleScope scope(thread_);
-  Object result(&scope, runtime_.heap()->createMutableBytes(15));
+  Object result(&scope, runtime_->heap()->createMutableBytes(15));
   ASSERT_TRUE(result.isMutableBytes());
   EXPECT_EQ(MutableBytes::cast(*result).length(), 15);
 }

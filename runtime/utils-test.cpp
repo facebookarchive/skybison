@@ -238,15 +238,15 @@ TEST_F(UtilsTest, PrintTracebackPrintsTraceback) {
   HandleScope scope(thread_);
 
   // Create main module.
-  ASSERT_FALSE(runFromCStr(&runtime_, "").isError());
-  Object main_obj(&scope, runtime_.findModuleById(SymbolId::kDunderMain));
+  ASSERT_FALSE(runFromCStr(runtime_, "").isError());
+  Object main_obj(&scope, runtime_->findModuleById(SymbolId::kDunderMain));
   ASSERT_TRUE(main_obj.isModule());
   Module main(&scope, *main_obj);
 
-  runtime_.moduleAddBuiltinFunction(main, SymbolId::kTraceback,
-                                    testPrintStacktrace);
+  runtime_->moduleAddBuiltinFunction(main, SymbolId::kTraceback,
+                                     testPrintStacktrace);
 
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(@_patch
+  ASSERT_FALSE(runFromCStr(runtime_, R"(@_patch
 def traceback():
   pass
 def foo(x, y):
@@ -277,7 +277,7 @@ result = foo('a', 99)
   }
   expected << ")>\n";
 
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, expected.str().c_str()));
 }
 

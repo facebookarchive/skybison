@@ -13,8 +13,8 @@ using SliceBuiltinsTest = RuntimeFixture;
 
 TEST_F(SliceBuiltinsTest, SliceHasStartAttribute) {
   HandleScope scope(thread_);
-  Layout layout(&scope, runtime_.layoutAt(LayoutId::kSlice));
-  Str name(&scope, runtime_.newStrFromCStr("start"));
+  Layout layout(&scope, runtime_->layoutAt(LayoutId::kSlice));
+  Str name(&scope, runtime_->newStrFromCStr("start"));
   AttributeInfo info;
   ASSERT_TRUE(Runtime::layoutFindAttribute(*layout, name, &info));
   EXPECT_TRUE(info.isInObject());
@@ -23,8 +23,8 @@ TEST_F(SliceBuiltinsTest, SliceHasStartAttribute) {
 
 TEST_F(SliceBuiltinsTest, SliceHasStopAttribute) {
   HandleScope scope(thread_);
-  Layout layout(&scope, runtime_.layoutAt(LayoutId::kSlice));
-  Str name(&scope, runtime_.newStrFromCStr("stop"));
+  Layout layout(&scope, runtime_->layoutAt(LayoutId::kSlice));
+  Str name(&scope, runtime_->newStrFromCStr("stop"));
   AttributeInfo info;
   ASSERT_TRUE(Runtime::layoutFindAttribute(*layout, name, &info));
   EXPECT_TRUE(info.isInObject());
@@ -33,8 +33,8 @@ TEST_F(SliceBuiltinsTest, SliceHasStopAttribute) {
 
 TEST_F(SliceBuiltinsTest, SliceHasStepAttribute) {
   HandleScope scope(thread_);
-  Layout layout(&scope, runtime_.layoutAt(LayoutId::kSlice));
-  Str name(&scope, runtime_.newStrFromCStr("step"));
+  Layout layout(&scope, runtime_->layoutAt(LayoutId::kSlice));
+  Str name(&scope, runtime_->newStrFromCStr("step"));
   AttributeInfo info;
   ASSERT_TRUE(Runtime::layoutFindAttribute(*layout, name, &info));
   EXPECT_TRUE(info.isInObject());
@@ -50,15 +50,15 @@ TEST_F(SliceBuiltinsTest, DunderNewWithNonTypeRaisesTypeError) {
 
 TEST_F(SliceBuiltinsTest, DunderNewWithNonSliceTypeRaisesTypeError) {
   HandleScope scope(thread_);
-  Object type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Object type(&scope, runtime_->typeAt(LayoutId::kInt));
   Object result(&scope, runBuiltin(SliceBuiltins::dunderNew, type));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST_F(SliceBuiltinsTest, DunderNewWithOneArgSetsStop) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, "result = slice(0)").isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  ASSERT_FALSE(runFromCStr(runtime_, "result = slice(0)").isError());
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   ASSERT_TRUE(result.isSlice());
   Slice slice(&scope, *result);
   EXPECT_EQ(slice.start(), NoneType::object());
@@ -68,8 +68,8 @@ TEST_F(SliceBuiltinsTest, DunderNewWithOneArgSetsStop) {
 
 TEST_F(SliceBuiltinsTest, DunderNewWithTwoArgsSetsStartAndStop) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, "result = slice(0, 1)").isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  ASSERT_FALSE(runFromCStr(runtime_, "result = slice(0, 1)").isError());
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   ASSERT_TRUE(result.isSlice());
   Slice slice(&scope, *result);
   EXPECT_EQ(slice.start(), SmallInt::fromWord(0));
@@ -79,8 +79,8 @@ TEST_F(SliceBuiltinsTest, DunderNewWithTwoArgsSetsStartAndStop) {
 
 TEST_F(SliceBuiltinsTest, DunderNewWithThreeArgsSetsAllIndices) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, "result = slice(0, 1, 2)").isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  ASSERT_FALSE(runFromCStr(runtime_, "result = slice(0, 1, 2)").isError());
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   ASSERT_TRUE(result.isSlice());
   Slice slice(&scope, *result);
   EXPECT_EQ(slice.start(), SmallInt::fromWord(0));
@@ -90,43 +90,43 @@ TEST_F(SliceBuiltinsTest, DunderNewWithThreeArgsSetsAllIndices) {
 
 TEST_F(SliceBuiltinsTest, IndicesWithNonSliceRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, "slice.indices([], 1)"), LayoutId::kTypeError,
+      runFromCStr(runtime_, "slice.indices([], 1)"), LayoutId::kTypeError,
       "'indices' requires a 'slice' object but received a 'list'"));
 }
 
 TEST_F(SliceBuiltinsTest, IndicesWithNonIntRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, "slice(1).indices([])"), LayoutId::kTypeError,
+      runFromCStr(runtime_, "slice(1).indices([])"), LayoutId::kTypeError,
       "'list' object cannot be interpreted as an integer"));
 }
 
 TEST_F(SliceBuiltinsTest, IndicesWithNegativeLengthRaisesValueError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "slice(1).indices(-1)"),
+  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, "slice(1).indices(-1)"),
                             LayoutId::kValueError,
                             "length should not be negative"));
 }
 
 TEST_F(SliceBuiltinsTest, IndicesWithZeroStepRaisesValueError) {
-  EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime_, "slice(1, 1, 0).indices(10)"),
-                    LayoutId::kValueError, "slice step cannot be zero"));
+  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, "slice(1, 1, 0).indices(10)"),
+                            LayoutId::kValueError,
+                            "slice step cannot be zero"));
 }
 
 TEST_F(SliceBuiltinsTest, IndicesWithNonIntStartRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, "slice('').indices(10)"), LayoutId::kTypeError,
+      runFromCStr(runtime_, "slice('').indices(10)"), LayoutId::kTypeError,
       "slice indices must be integers or None or have an __index__ method"));
 }
 
 TEST_F(SliceBuiltinsTest, IndicesWithNonIntStopRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, "slice(1, '').indices(10)"), LayoutId::kTypeError,
+      runFromCStr(runtime_, "slice(1, '').indices(10)"), LayoutId::kTypeError,
       "slice indices must be integers or None or have an __index__ method"));
 }
 
 TEST_F(SliceBuiltinsTest, IndicesWithNonIntStepRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, "slice(1, 6, '').indices(10)"),
+      runFromCStr(runtime_, "slice(1, 6, '').indices(10)"),
       LayoutId::kTypeError,
       "slice indices must be integers or None or have an __index__ method"));
 }
@@ -134,8 +134,8 @@ TEST_F(SliceBuiltinsTest, IndicesWithNonIntStepRaisesTypeError) {
 TEST_F(SliceBuiltinsTest, IndicesWithNoneReturnsDefaults) {
   HandleScope scope(thread_);
   ASSERT_FALSE(
-      runFromCStr(&runtime_, "result = slice(None).indices(10)").isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+      runFromCStr(runtime_, "result = slice(None).indices(10)").isError());
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   ASSERT_TRUE(result.isTuple());
   Tuple indices(&scope, *result);
   ASSERT_EQ(indices.length(), 3);
@@ -147,9 +147,9 @@ TEST_F(SliceBuiltinsTest, IndicesWithNoneReturnsDefaults) {
 TEST_F(SliceBuiltinsTest, IndicesWithNoneAndNegativeReturnsDefaults) {
   HandleScope scope(thread_);
   ASSERT_FALSE(
-      runFromCStr(&runtime_, "result = slice(None, None, -1).indices(10)")
+      runFromCStr(runtime_, "result = slice(None, None, -1).indices(10)")
           .isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   ASSERT_TRUE(result.isTuple());
   Tuple indices(&scope, *result);
   ASSERT_EQ(indices.length(), 3);
@@ -160,7 +160,7 @@ TEST_F(SliceBuiltinsTest, IndicesWithNoneAndNegativeReturnsDefaults) {
 
 TEST_F(SliceBuiltinsTest, IndicesCallsDunderIndex) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class Idx:
   def __init__(self):
     self.count = 0
@@ -171,7 +171,7 @@ idx = Idx()
 result = slice(idx, idx, idx).indices(10)
 )")
                    .isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   ASSERT_TRUE(result.isTuple());
   Tuple indices(&scope, *result);
   ASSERT_EQ(indices.length(), 3);
@@ -183,8 +183,8 @@ result = slice(idx, idx, idx).indices(10)
 TEST_F(SliceBuiltinsTest, IndicesTruncatesToLength) {
   HandleScope scope(thread_);
   ASSERT_FALSE(
-      runFromCStr(&runtime_, "result = slice(-4, 10, 2).indices(5)").isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+      runFromCStr(runtime_, "result = slice(-4, 10, 2).indices(5)").isError());
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   ASSERT_TRUE(result.isTuple());
   Tuple indices(&scope, *result);
   ASSERT_EQ(indices.length(), 3);

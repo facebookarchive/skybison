@@ -60,8 +60,8 @@ TEST_F(HandlesTest, IllegalCastRunTimeTest) {
 TEST_F(HandlesTest, ThreadSubclassTest) {
   HandleScope scope(thread_);
 
-  Layout layout(&scope, runtime_.layoutAt(LayoutId::kStopIteration));
-  BaseException exn(&scope, runtime_.newInstance(layout));
+  Layout layout(&scope, runtime_->layoutAt(LayoutId::kStopIteration));
+  BaseException exn(&scope, runtime_->newInstance(layout));
   EXPECT_TRUE(exn.isStopIteration());
 }
 

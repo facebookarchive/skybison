@@ -16,9 +16,9 @@ TEST_F(BytecodeTest, NextBytecodeOpReturnsNextBytecodeOpPair) {
   byte bytecode_raw[] = {
       NOP,          99, EXTENDED_ARG, 0xca, LOAD_ATTR,    0xfe, LOAD_GLOBAL, 10,
       EXTENDED_ARG, 1,  EXTENDED_ARG, 2,    EXTENDED_ARG, 3,    LOAD_ATTR,   4};
-  Bytes original_bytecode(&scope, runtime_.newBytesWithAll(bytecode_raw));
+  Bytes original_bytecode(&scope, runtime_->newBytesWithAll(bytecode_raw));
   MutableBytes bytecode(
-      &scope, runtime_.mutableBytesFromBytes(thread_, original_bytecode));
+      &scope, runtime_->mutableBytesFromBytes(thread_, original_bytecode));
   word index = 0;
   BytecodeOp bc = nextBytecodeOp(bytecode, &index);
   EXPECT_EQ(bc.bc, NOP);
@@ -66,10 +66,10 @@ TEST_F(BytecodeTest, RewriteBytecodeWithMoreThanCacheLimitCapsRewriting) {
     bytecode[i * 2] = LOAD_ATTR;
     bytecode[(i * 2) + 1] = i * 3;
   }
-  code.setCode(runtime_.newBytesWithAll(bytecode));
-  Module module(&scope, runtime_.findOrCreateMainModule());
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Module module(&scope, runtime_->findOrCreateMainModule());
   Function function(&scope,
-                    runtime_.newFunctionWithCode(thread_, name, code, module));
+                    runtime_->newFunctionWithCode(thread_, name, code, module));
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[514];
@@ -95,10 +95,10 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadAttrOperations) {
       NOP,          LOAD_ATTR, EXTENDED_ARG, 1,    EXTENDED_ARG, 2,
       EXTENDED_ARG, 3,         LOAD_ATTR,    4,    LOAD_ATTR,    77,
   };
-  code.setCode(runtime_.newBytesWithAll(bytecode));
-  Module module(&scope, runtime_.findOrCreateMainModule());
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Module module(&scope, runtime_->findOrCreateMainModule());
   Function function(&scope,
-                    runtime_.newFunctionWithCode(thread_, name, code, module));
+                    runtime_->newFunctionWithCode(thread_, name, code, module));
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {
@@ -130,10 +130,10 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesZeroArgMethodCalls) {
       NOP,          LOAD_ATTR, EXTENDED_ARG,  1,    EXTENDED_ARG,  2,
       EXTENDED_ARG, 3,         LOAD_ATTR,     4,    CALL_FUNCTION, 1,
       LOAD_ATTR,    4,         CALL_FUNCTION, 0};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
-  Module module(&scope, runtime_.findOrCreateMainModule());
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Module module(&scope, runtime_->findOrCreateMainModule());
   Function function(&scope,
-                    runtime_.newFunctionWithCode(thread_, name, code, module));
+                    runtime_->newFunctionWithCode(thread_, name, code, module));
 
   byte expected[] = {NOP,
                      99,
@@ -180,9 +180,9 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadConstOperations) {
       LOAD_CONST, 0, LOAD_CONST, 1, LOAD_CONST, 2, LOAD_CONST, 3,
       LOAD_CONST, 4, LOAD_CONST, 5, LOAD_CONST, 6,
   };
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
 
-  Tuple consts(&scope, runtime_.newTuple(10));
+  Tuple consts(&scope, runtime_->newTuple(10));
   // Immediate objects.
   consts.atPut(0, NoneType::object());
   consts.atPut(1, Bool::trueObj());
@@ -192,12 +192,12 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadConstOperations) {
   // Not immediate since it doesn't fit in byte.
   consts.atPut(5, SmallInt::fromWord(64));
   // Not immediate since it's a heap object.
-  consts.atPut(6, runtime_.newTuple(4));
+  consts.atPut(6, runtime_->newTuple(4));
   code.setConsts(*consts);
 
-  Module module(&scope, runtime_.findOrCreateMainModule());
+  Module module(&scope, runtime_->findOrCreateMainModule());
   Function function(&scope,
-                    runtime_.newFunctionWithCode(thread_, name, code, module));
+                    runtime_->newFunctionWithCode(thread_, name, code, module));
 
   byte expected[] = {
       LOAD_IMMEDIATE, static_cast<byte>(opargFromObject(NoneType::object())),
@@ -221,10 +221,10 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadMethodOperations) {
       NOP,          LOAD_METHOD, EXTENDED_ARG, 1,    EXTENDED_ARG, 2,
       EXTENDED_ARG, 3,           LOAD_METHOD,  4,    LOAD_METHOD,  77,
   };
-  code.setCode(runtime_.newBytesWithAll(bytecode));
-  Module module(&scope, runtime_.findOrCreateMainModule());
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Module module(&scope, runtime_->findOrCreateMainModule());
   Function function(&scope,
-                    runtime_.newFunctionWithCode(thread_, name, code, module));
+                    runtime_->newFunctionWithCode(thread_, name, code, module));
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {
@@ -267,10 +267,10 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesStoreAttr) {
   Object name(&scope, Str::empty());
   Code code(&scope, newEmptyCode());
   byte bytecode[] = {STORE_ATTR, 48};
-  code.setCode(runtime_.newBytesWithAll(bytecode));
-  Module module(&scope, runtime_.findOrCreateMainModule());
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Module module(&scope, runtime_->findOrCreateMainModule());
   Function function(&scope,
-                    runtime_.newFunctionWithCode(thread_, name, code, module));
+                    runtime_->newFunctionWithCode(thread_, name, code, module));
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {STORE_ATTR_ANAMORPHIC, 0};
@@ -312,10 +312,10 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesBinaryOpcodes) {
       BINARY_OR,
       0,
   };
-  code.setCode(runtime_.newBytesWithAll(bytecode));
-  Module module(&scope, runtime_.findOrCreateMainModule());
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Module module(&scope, runtime_->findOrCreateMainModule());
   Function function(&scope,
-                    runtime_.newFunctionWithCode(thread_, name, code, module));
+                    runtime_->newFunctionWithCode(thread_, name, code, module));
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {
@@ -390,10 +390,10 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesInplaceOpcodes) {
       INPLACE_OR,
       0,
   };
-  code.setCode(runtime_.newBytesWithAll(bytecode));
-  Module module(&scope, runtime_.findOrCreateMainModule());
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Module module(&scope, runtime_->findOrCreateMainModule());
   Function function(&scope,
-                    runtime_.newFunctionWithCode(thread_, name, code, module));
+                    runtime_->newFunctionWithCode(thread_, name, code, module));
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {
@@ -448,10 +448,10 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesCompareOpOpcodes) {
       COMPARE_OP, CompareOp::IS,        COMPARE_OP, CompareOp::IS_NOT,
       COMPARE_OP, CompareOp::EXC_MATCH,
   };
-  code.setCode(runtime_.newBytesWithAll(bytecode));
-  Module module(&scope, runtime_.findOrCreateMainModule());
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Module module(&scope, runtime_->findOrCreateMainModule());
   Function function(&scope,
-                    runtime_.newFunctionWithCode(thread_, name, code, module));
+                    runtime_->newFunctionWithCode(thread_, name, code, module));
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {
@@ -497,11 +497,11 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesReservesCachesForGlobalVariables) {
       LOAD_GLOBAL, 0, STORE_GLOBAL, 1, LOAD_ATTR, 9, DELETE_GLOBAL, 2,
       STORE_NAME,  3, DELETE_NAME,  4, LOAD_ATTR, 9, LOAD_NAME,     5,
   };
-  code.setCode(runtime_.newBytesWithAll(bytecode));
-  code.setNames(runtime_.newTuple(12));
-  Module module(&scope, runtime_.findOrCreateMainModule());
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+  code.setNames(runtime_->newTuple(12));
+  Module module(&scope, runtime_->findOrCreateMainModule());
   Function function(&scope,
-                    runtime_.newFunctionWithCode(thread_, name, code, module));
+                    runtime_->newFunctionWithCode(thread_, name, code, module));
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {
@@ -535,13 +535,13 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesReservesCachesForGlobalVariables) {
 
 TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadFastAndStoreFastOpcodes) {
   HandleScope scope(thread_);
-  Tuple varnames(&scope, runtime_.newTuple(3));
+  Tuple varnames(&scope, runtime_->newTuple(3));
   varnames.atPut(0, Runtime::internStrFromCStr(thread_, "arg0"));
   varnames.atPut(1, Runtime::internStrFromCStr(thread_, "var0"));
   varnames.atPut(2, Runtime::internStrFromCStr(thread_, "var1"));
-  Tuple freevars(&scope, runtime_.newTuple(1));
+  Tuple freevars(&scope, runtime_->newTuple(1));
   freevars.atPut(0, Runtime::internStrFromCStr(thread_, "freevar0"));
-  Tuple cellvars(&scope, runtime_.newTuple(1));
+  Tuple cellvars(&scope, runtime_->newTuple(1));
   cellvars.atPut(0, Runtime::internStrFromCStr(thread_, "cellvar0"));
   word argcount = 1;
   word nlocals = 3;
@@ -549,23 +549,23 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadFastAndStoreFastOpcodes) {
       LOAD_FAST,  2, LOAD_FAST,  1, LOAD_FAST,  0,
       STORE_FAST, 2, STORE_FAST, 1, STORE_FAST, 0,
   };
-  Bytes code_code(&scope, runtime_.newBytesWithAll(bytecode));
-  Object empty_tuple(&scope, runtime_.emptyTuple());
+  Bytes code_code(&scope, runtime_->newBytesWithAll(bytecode));
+  Object empty_tuple(&scope, runtime_->emptyTuple());
   Object empty_string(&scope, Str::empty());
   Object lnotab(&scope, Bytes::empty());
   Code code(&scope,
-            runtime_.newCode(argcount, /*posonlyargcount=*/0,
-                             /*kwonlyargcount=*/0, nlocals,
-                             /*stacksize=*/0, /*flags=*/0, code_code,
-                             /*consts=*/empty_tuple, /*names=*/empty_tuple,
-                             varnames, freevars, cellvars,
-                             /*filename=*/empty_string, /*name=*/empty_string,
-                             /*firstlineno=*/0, lnotab));
+            runtime_->newCode(argcount, /*posonlyargcount=*/0,
+                              /*kwonlyargcount=*/0, nlocals,
+                              /*stacksize=*/0, /*flags=*/0, code_code,
+                              /*consts=*/empty_tuple, /*names=*/empty_tuple,
+                              varnames, freevars, cellvars,
+                              /*filename=*/empty_string, /*name=*/empty_string,
+                              /*firstlineno=*/0, lnotab));
   code.setFlags(code.flags() | Code::Flags::kOptimized);
 
-  Module module(&scope, runtime_.findOrCreateMainModule());
-  Function function(&scope, runtime_.newFunctionWithCode(thread_, empty_string,
-                                                         code, module));
+  Module module(&scope, runtime_->findOrCreateMainModule());
+  Function function(&scope, runtime_->newFunctionWithCode(thread_, empty_string,
+                                                          code, module));
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {
@@ -588,12 +588,12 @@ TEST_F(BytecodeTest,
       NOP,          LOAD_ATTR, EXTENDED_ARG, 1,    EXTENDED_ARG, 2,
       EXTENDED_ARG, 3,         LOAD_ATTR,    4,    LOAD_ATTR,    77,
   };
-  code.setCode(runtime_.newBytesWithAll(bytecode));
+  code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setFlags(code.flags() & ~Code::Flags::kOptimized &
                 ~Code::Flags::kNewlocals);
-  Module module(&scope, runtime_.findOrCreateMainModule());
+  Module module(&scope, runtime_->findOrCreateMainModule());
   Function function(&scope,
-                    runtime_.newFunctionWithCode(thread_, name, code, module));
+                    runtime_->newFunctionWithCode(thread_, name, code, module));
 
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, bytecode));

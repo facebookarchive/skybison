@@ -17,42 +17,42 @@ using ModuleBuiltinsDeathTest = RuntimeFixture;
 using ModuleBuiltinsTest = RuntimeFixture;
 
 TEST_F(ModuleBuiltinsTest, DunderName) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 import sys
 a = sys.__name__
 )")
                    .isError());
   HandleScope scope(thread_);
-  Str a(&scope, mainModuleAt(&runtime_, "a"));
+  Str a(&scope, mainModuleAt(runtime_, "a"));
   EXPECT_TRUE(a.equalsCStr("sys"));
 }
 
 TEST_F(ModuleBuiltinsTest, DunderNameOverwritesDoesNotAffectModuleNameField) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 import sys
 sys.__name__ = "ysy"
 )")
                    .isError());
   HandleScope scope(thread_);
-  Module sys_module(&scope, mainModuleAt(&runtime_, "sys"));
+  Module sys_module(&scope, mainModuleAt(runtime_, "sys"));
   EXPECT_TRUE(isStrEqualsCStr(sys_module.name(), "sys"));
 }
 
 // TODO(T39575976): Add tests verifying internal names's hiding.
 TEST_F(ModuleBuiltinsTest, DunderGetattributeReturnsAttribute) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, "foo = -6").isError());
-  Module module(&scope, runtime_.findModuleById(SymbolId::kDunderMain));
-  Object name(&scope, runtime_.newStrFromCStr("foo"));
+  ASSERT_FALSE(runFromCStr(runtime_, "foo = -6").isError());
+  Module module(&scope, runtime_->findModuleById(SymbolId::kDunderMain));
+  Object name(&scope, runtime_->newStrFromCStr("foo"));
   EXPECT_TRUE(isIntEqualsWord(
       runBuiltin(ModuleBuiltins::dunderGetattribute, module, name), -6));
 }
 
 TEST_F(ModuleBuiltinsTest, DunderGetattributeWithNonStringNameRaisesTypeError) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, "").isError());
-  Module module(&scope, runtime_.findModuleById(SymbolId::kDunderMain));
-  Object name(&scope, runtime_.newInt(0));
+  ASSERT_FALSE(runFromCStr(runtime_, "").isError());
+  Module module(&scope, runtime_->findModuleById(SymbolId::kDunderMain));
+  Object name(&scope, runtime_->newInt(0));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(ModuleBuiltins::dunderGetattribute, module, name),
       LayoutId::kTypeError, "attribute name must be string, not 'int'"));
@@ -61,9 +61,9 @@ TEST_F(ModuleBuiltinsTest, DunderGetattributeWithNonStringNameRaisesTypeError) {
 TEST_F(ModuleBuiltinsTest,
        DunderGetattributeWithMissingAttributeRaisesAttributeError) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, "").isError());
-  Module module(&scope, runtime_.findModuleById(SymbolId::kDunderMain));
-  Object name(&scope, runtime_.newStrFromCStr("xxx"));
+  ASSERT_FALSE(runFromCStr(runtime_, "").isError());
+  Module module(&scope, runtime_->findModuleById(SymbolId::kDunderMain));
+  Object name(&scope, runtime_->newStrFromCStr("xxx"));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(ModuleBuiltins::dunderGetattribute, module, name),
       LayoutId::kAttributeError, "module '__main__' has no attribute 'xxx'"));
@@ -71,10 +71,10 @@ TEST_F(ModuleBuiltinsTest,
 
 TEST_F(ModuleBuiltinsTest, DunderSetattrSetsAttribute) {
   HandleScope scope(thread_);
-  Object module_name(&scope, runtime_.newStrFromCStr("foo"));
-  Module module(&scope, runtime_.newModule(module_name));
+  Object module_name(&scope, runtime_->newStrFromCStr("foo"));
+  Module module(&scope, runtime_->newModule(module_name));
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foobarbaz"));
-  Object value(&scope, runtime_.newInt(0xf00d));
+  Object value(&scope, runtime_->newInt(0xf00d));
   EXPECT_TRUE(runBuiltin(ModuleBuiltins::dunderSetattr, module, name, value)
                   .isNoneType());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(thread_, module, name), 0xf00d));
@@ -82,23 +82,23 @@ TEST_F(ModuleBuiltinsTest, DunderSetattrSetsAttribute) {
 
 TEST_F(ModuleBuiltinsTest, DunderSetattrWithNonStrNameRaisesTypeError) {
   HandleScope scope(thread_);
-  Object module_name(&scope, runtime_.newStrFromCStr("foo"));
-  Object module(&scope, runtime_.newModule(module_name));
-  Object name(&scope, runtime_.newFloat(4.4));
-  Object value(&scope, runtime_.newInt(0));
+  Object module_name(&scope, runtime_->newStrFromCStr("foo"));
+  Object module(&scope, runtime_->newModule(module_name));
+  Object name(&scope, runtime_->newFloat(4.4));
+  Object value(&scope, runtime_->newInt(0));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(ModuleBuiltins::dunderSetattr, module, name, value),
       LayoutId::kTypeError, "attribute name must be string, not 'float'"));
 }
 
 TEST_F(ModuleBuiltinsTest, DunderDict) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 import sys
 result = sys.__dict__
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(result.isModuleProxy());
 }
 
@@ -131,7 +131,7 @@ TEST_F(ModuleBuiltinsTest, ModuleAtIgnoresBuiltinsEntry) {
                   moduleAtById(thread_, module, SymbolId::kDunderBuiltins));
 
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  Str foo_in_builtins(&scope, runtime_.newStrFromCStr("foo_in_builtins"));
+  Str foo_in_builtins(&scope, runtime_->newStrFromCStr("foo_in_builtins"));
   moduleAtPut(thread_, builtins, foo, foo_in_builtins);
   EXPECT_TRUE(moduleAt(thread_, module, foo).isErrorNotFound());
 }
@@ -140,7 +140,7 @@ TEST_F(ModuleBuiltinsTest, ModuleAtReturnsValuePutByModuleAtPut) {
   HandleScope scope(thread_);
   Module module(&scope, createTestingModule(thread_));
   Object name(&scope, Runtime::internStrFromCStr(thread_, "a"));
-  Object value(&scope, runtime_.newStrFromCStr("a's value"));
+  Object value(&scope, runtime_->newStrFromCStr("a's value"));
   moduleAtPut(thread_, module, name, value);
   EXPECT_EQ(moduleAt(thread_, module, name), *value);
 }
@@ -149,7 +149,7 @@ TEST_F(ModuleBuiltinsTest, ModuleAtReturnsErrorNotFoundForPlaceholder) {
   HandleScope scope(thread_);
   Module module(&scope, createTestingModule(thread_));
   Object name(&scope, Runtime::internStrFromCStr(thread_, "a"));
-  Object value(&scope, runtime_.newStrFromCStr("a's value"));
+  Object value(&scope, runtime_->newStrFromCStr("a's value"));
   moduleAtPut(thread_, module, name, value);
 
   Dict module_dict(&scope, module.dict());
@@ -161,7 +161,7 @@ TEST_F(ModuleBuiltinsTest, ModuleAtReturnsErrorNotFoundForPlaceholder) {
 TEST_F(ModuleBuiltinsTest, ModuleAtByIdReturnsValuePutByModuleAtPutById) {
   HandleScope scope(thread_);
   Module module(&scope, createTestingModule(thread_));
-  Object value(&scope, runtime_.newStrFromCStr("a's value"));
+  Object value(&scope, runtime_->newStrFromCStr("a's value"));
   moduleAtPutById(thread_, module, SymbolId::kNotImplemented, value);
   EXPECT_EQ(moduleAtById(thread_, module, SymbolId::kNotImplemented), *value);
 }
@@ -169,7 +169,7 @@ TEST_F(ModuleBuiltinsTest, ModuleAtByIdReturnsValuePutByModuleAtPutById) {
 TEST_F(ModuleBuiltinsTest,
        ModuleAtPutDoesNotInvalidateCachedModuleDictValueCell) {
   HandleScope scope(thread_);
-  EXPECT_FALSE(runFromCStr(&runtime_, R"(
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
 a = 4
 
 def foo():
@@ -178,17 +178,17 @@ def foo():
 foo()
 )")
                    .isError());
-  Module module(&scope, findMainModule(&runtime_));
+  Module module(&scope, findMainModule(runtime_));
   Object a(&scope, Runtime::internStrFromCStr(thread_, "a"));
   ValueCell value_cell_a(&scope, moduleValueCellAt(thread_, module, a));
 
   // The looked up module entry got cached in function foo().
-  Function function_foo(&scope, mainModuleAt(&runtime_, "foo"));
+  Function function_foo(&scope, mainModuleAt(runtime_, "foo"));
   Tuple caches(&scope, function_foo.caches());
   ASSERT_EQ(icLookupGlobalVar(*caches, 0), *value_cell_a);
 
   // Updating global variable a does not invalidate the cache.
-  Str new_value(&scope, runtime_.newStrFromCStr("value"));
+  Str new_value(&scope, runtime_->newStrFromCStr("value"));
   moduleAtPut(thread_, module, a, new_value);
   EXPECT_EQ(icLookupGlobalVar(*caches, 0), *value_cell_a);
   EXPECT_EQ(value_cell_a.value(), *new_value);
@@ -196,7 +196,7 @@ foo()
 
 TEST_F(ModuleBuiltinsTest, ModuleAtPutInvalidatesCachedBuiltinsValueCell) {
   HandleScope scope(thread_);
-  EXPECT_FALSE(runFromCStr(&runtime_, R"(
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
 __builtins__.a = 4
 
 def foo():
@@ -205,19 +205,19 @@ def foo():
 foo()
 )")
                    .isError());
-  Module module(&scope, findMainModule(&runtime_));
+  Module module(&scope, findMainModule(runtime_));
   Module builtins(&scope,
                   moduleAtById(thread_, module, SymbolId::kDunderBuiltins));
   Object a(&scope, Runtime::internStrFromCStr(thread_, "a"));
-  Str new_value(&scope, runtime_.newStrFromCStr("value"));
+  Str new_value(&scope, runtime_->newStrFromCStr("value"));
   ValueCell value_cell_a(&scope, moduleValueCellAt(thread_, builtins, a));
 
   // The looked up module entry got cached in function foo().
-  Function function_foo(&scope, mainModuleAt(&runtime_, "foo"));
+  Function function_foo(&scope, mainModuleAt(runtime_, "foo"));
   Tuple caches(&scope, function_foo.caches());
   ASSERT_EQ(icLookupGlobalVar(*caches, 0), *value_cell_a);
 
-  ASSERT_FALSE(mainModuleAt(&runtime_, "__builtins__").isErrorNotFound());
+  ASSERT_FALSE(mainModuleAt(runtime_, "__builtins__").isErrorNotFound());
 
   // Updating global variable a does invalidate the cache since it shadows
   // __builtins__.a.
@@ -228,14 +228,14 @@ foo()
 TEST_F(ModuleBuiltinsTest, ModuleKeysFiltersOutPlaceholders) {
   HandleScope scope(thread_);
   Str name(&scope, Str::empty());
-  Module module(&scope, runtime_.newModule(name));
-  Dict module_dict(&scope, runtime_.newDict());
+  Module module(&scope, runtime_->newModule(name));
+  Dict module_dict(&scope, runtime_->newDict());
   module.setDict(*module_dict);
 
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   Object baz(&scope, Runtime::internStrFromCStr(thread_, "baz"));
-  Str value(&scope, runtime_.newStrFromCStr("value"));
+  Str value(&scope, runtime_->newStrFromCStr("value"));
 
   moduleAtPut(thread_, module, foo, value);
   moduleAtPut(thread_, module, bar, value);
@@ -252,12 +252,12 @@ TEST_F(ModuleBuiltinsTest, ModuleKeysFiltersOutPlaceholders) {
 TEST_F(ModuleBuiltinsTest, ModuleLenReturnsItemCountExcludingPlaceholders) {
   HandleScope scope(thread_);
   Object module_name(&scope, Runtime::internStrFromCStr(thread_, "mymodule"));
-  Module module(&scope, runtime_.newModule(module_name));
+  Module module(&scope, runtime_->newModule(module_name));
 
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   Object baz(&scope, Runtime::internStrFromCStr(thread_, "baz"));
-  Str value(&scope, runtime_.newStrFromCStr("value"));
+  Str value(&scope, runtime_->newStrFromCStr("value"));
 
   moduleAtPut(thread_, module, foo, value);
   moduleAtPut(thread_, module, bar, value);
@@ -275,7 +275,7 @@ TEST_F(ModuleBuiltinsTest, ModuleLenReturnsItemCountExcludingPlaceholders) {
 
 TEST_F(ModuleBuiltinsTest, ModuleRemoveInvalidatesCachedModuleDictValueCell) {
   HandleScope scope(thread_);
-  EXPECT_FALSE(runFromCStr(&runtime_, R"(
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
 a = 4
 
 def foo():
@@ -286,11 +286,11 @@ foo()
                    .isError());
 
   // The looked up module entry got cached in function foo().
-  Function function_foo(&scope, mainModuleAt(&runtime_, "foo"));
+  Function function_foo(&scope, mainModuleAt(runtime_, "foo"));
   Tuple caches(&scope, function_foo.caches());
 
-  Module module(&scope, findMainModule(&runtime_));
-  Str a(&scope, runtime_.newStrFromCStr("a"));
+  Module module(&scope, findMainModule(runtime_));
+  Str a(&scope, runtime_->newStrFromCStr("a"));
   ASSERT_EQ(icLookupGlobalVar(*caches, 0),
             moduleValueCellAt(thread_, module, a));
 
@@ -301,15 +301,15 @@ foo()
 
 TEST_F(ModuleBuiltinsTest, ModuleValuesFiltersOutPlaceholders) {
   HandleScope scope(thread_);
-  Str module_name(&scope, runtime_.newStrFromCStr("mymodule"));
-  Module module(&scope, runtime_.newModule(module_name));
+  Str module_name(&scope, runtime_->newStrFromCStr("mymodule"));
+  Module module(&scope, runtime_->newModule(module_name));
 
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  Str foo_value(&scope, runtime_.newStrFromCStr("foo_value"));
+  Str foo_value(&scope, runtime_->newStrFromCStr("foo_value"));
   Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
-  Str bar_value(&scope, runtime_.newStrFromCStr("bar_value"));
+  Str bar_value(&scope, runtime_->newStrFromCStr("bar_value"));
   Object baz(&scope, Runtime::internStrFromCStr(thread_, "baz"));
-  Str baz_value(&scope, runtime_.newStrFromCStr("baz_value"));
+  Str baz_value(&scope, runtime_->newStrFromCStr("baz_value"));
 
   moduleAtPut(thread_, module, foo, foo_value);
   moduleAtPut(thread_, module, bar, bar_value);
@@ -326,16 +326,16 @@ TEST_F(ModuleBuiltinsTest, ModuleValuesFiltersOutPlaceholders) {
 
 TEST_F(ModuleBuiltinsTest, ModuleGetAttributeReturnsInstanceValue) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, "x = 42").isError());
-  Module module(&scope, runtime_.findModuleById(SymbolId::kDunderMain));
+  ASSERT_FALSE(runFromCStr(runtime_, "x = 42").isError());
+  Module module(&scope, runtime_->findModuleById(SymbolId::kDunderMain));
   Object name(&scope, Runtime::internStrFromCStr(thread_, "x"));
   EXPECT_TRUE(isIntEqualsWord(moduleGetAttribute(thread_, module, name), 42));
 }
 
 TEST_F(ModuleBuiltinsTest, ModuleGetAttributeWithNonExistentNameReturnsError) {
   HandleScope scope(thread_);
-  Object module_name(&scope, runtime_.newStrFromCStr(""));
-  Module module(&scope, runtime_.newModule(module_name));
+  Object module_name(&scope, runtime_->newStrFromCStr(""));
+  Module module(&scope, runtime_->newModule(module_name));
   Object name(&scope, Runtime::internStrFromCStr(thread_, "xxx"));
   EXPECT_TRUE(moduleGetAttribute(thread_, module, name).isError());
   EXPECT_FALSE(thread_->hasPendingException());
@@ -343,18 +343,18 @@ TEST_F(ModuleBuiltinsTest, ModuleGetAttributeWithNonExistentNameReturnsError) {
 
 TEST_F(ModuleBuiltinsTest, ModuleSetAttrSetsAttribute) {
   HandleScope scope(thread_);
-  Object module_name(&scope, runtime_.newStrFromCStr("foo"));
-  Module module(&scope, runtime_.newModule(module_name));
+  Object module_name(&scope, runtime_->newStrFromCStr("foo"));
+  Module module(&scope, runtime_->newModule(module_name));
   Object name(&scope, Runtime::internStrFromCStr(thread_, "bar"));
-  Object value(&scope, runtime_.newInt(-543));
+  Object value(&scope, runtime_->newInt(-543));
   EXPECT_TRUE(moduleSetAttr(thread_, module, name, value).isNoneType());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(thread_, module, name), -543));
 }
 
 TEST_F(ModuleBuiltinsTest, NewModuleDunderReprReturnsString) {
   HandleScope scope(thread_);
-  Object name(&scope, runtime_.newStrFromCStr("hello"));
-  Object module(&scope, runtime_.newModule(name));
+  Object name(&scope, runtime_->newStrFromCStr("hello"));
+  Object module(&scope, runtime_->newModule(name));
   Object result(
       &scope, Thread::current()->invokeMethod1(module, SymbolId::kDunderRepr));
   EXPECT_TRUE(isStrEqualsCStr(*result, "<module 'hello'>"));
@@ -363,15 +363,15 @@ TEST_F(ModuleBuiltinsTest, NewModuleDunderReprReturnsString) {
 TEST_F(ModuleBuiltinsTest, NextModuleDictItemReturnsNextNonPlaceholder) {
   HandleScope scope(thread_);
   Str name(&scope, Str::empty());
-  Module module(&scope, runtime_.newModule(name));
-  Dict module_dict(&scope, runtime_.newDict());
+  Module module(&scope, runtime_->newModule(name));
+  Dict module_dict(&scope, runtime_->newDict());
   module.setDict(*module_dict);
 
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   Object baz(&scope, Runtime::internStrFromCStr(thread_, "baz"));
   Object qux(&scope, Runtime::internStrFromCStr(thread_, "qux"));
-  Str value(&scope, runtime_.newStrFromCStr("value"));
+  Str value(&scope, runtime_->newStrFromCStr("value"));
 
   // Only baz is not Placeholder.
   ValueCell::cast(moduleAtPut(thread_, module, foo, value)).makePlaceholder();
@@ -387,13 +387,13 @@ TEST_F(ModuleBuiltinsTest, NextModuleDictItemReturnsNextNonPlaceholder) {
 }
 
 TEST_F(ModuleBuiltinsTest, BuiltinModuleDunderReprReturnsString) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 import sys
 result = sys.__repr__()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "<module 'sys' (built-in)>"));
 }
 

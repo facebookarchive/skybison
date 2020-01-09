@@ -11,29 +11,29 @@ using namespace testing;
 using WarningsModuleTest = RuntimeFixture;
 
 TEST_F(WarningsModuleTest, ModuleImporting) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 import _warnings
   )")
                    .isError());
-  RawObject warnings = mainModuleAt(&runtime_, "_warnings");
+  RawObject warnings = mainModuleAt(runtime_, "_warnings");
   EXPECT_TRUE(warnings.isModule());
 }
 
 TEST_F(WarningsModuleTest, WarnDoesNothing) {
   // TODO(T39431178): _warnings.warn() should actually do things.
   HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 import _warnings
 result = _warnings.warn("something went wrong")
 )")
                    .isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(result.isNoneType());
 }
 
 TEST_F(WarningsModuleTest, WarnWithNoArgsRaisesTypeError) {
   EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime_, R"(
+      raisedWithStr(runFromCStr(runtime_, R"(
 import _warnings
 _warnings.warn()
 )"),
@@ -42,7 +42,7 @@ _warnings.warn()
 }
 
 TEST_F(WarningsModuleTest, WarnWithInvalidCategoryRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
 import _warnings
 _warnings.warn("warning!", 1234)
 )"),
@@ -51,7 +51,7 @@ _warnings.warn("warning!", 1234)
 }
 
 TEST_F(WarningsModuleTest, WarnWithLargeStacklevelRaisesOverflowError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
 import _warnings
 _warnings.warn("hello", stacklevel=1180591620717411303424)  # 2 ** 70
 )"),
@@ -61,7 +61,7 @@ _warnings.warn("hello", stacklevel=1180591620717411303424)  # 2 ** 70
 
 TEST_F(WarningsModuleTest, WarnWithInvalidKwRaisesTypeError) {
   EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime_, R"(
+      raisedWithStr(runFromCStr(runtime_, R"(
 import _warnings
 _warnings.warn("hello", stack_level=3)
   )"),

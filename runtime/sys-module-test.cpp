@@ -20,13 +20,13 @@ using SysModuleTest = RuntimeFixture;
 
 TEST_F(SysModuleTest,
        ExcInfoWhileExceptionNotBeingHandledReturnsTupleOfThreeNone) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 import sys
 result = sys.exc_info()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result_obj(&scope, mainModuleAt(&runtime_, "result"));
+  Object result_obj(&scope, mainModuleAt(runtime_, "result"));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -39,7 +39,7 @@ result = sys.exc_info()
 TEST_F(
     SysModuleTest,
     ExcInfoWhileExceptionNotBeingHandledAfterExceptionIsRaisedReturnsTupleOfThreeNone) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 import sys
 try:
   raise IndexError(3)
@@ -49,7 +49,7 @@ result = sys.exc_info()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result_obj(&scope, mainModuleAt(&runtime_, "result"));
+  Object result_obj(&scope, mainModuleAt(runtime_, "result"));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -61,7 +61,7 @@ result = sys.exc_info()
 
 TEST_F(SysModuleTest,
        ExcInfoWhileExceptionBeingHandledReturnsTupleOfTypeValueTraceback) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 import sys
 try:
   raise IndexError(4)
@@ -70,13 +70,13 @@ except:
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result_obj(&scope, mainModuleAt(&runtime_, "result"));
+  Object result_obj(&scope, mainModuleAt(runtime_, "result"));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 3);
 
-  Type expected_type(&scope, runtime_.typeAt(LayoutId::kIndexError));
+  Type expected_type(&scope, runtime_->typeAt(LayoutId::kIndexError));
   EXPECT_EQ(result.at(0), expected_type);
 
   ASSERT_TRUE(result.at(1).isIndexError());
@@ -91,7 +91,7 @@ except:
 }
 
 TEST_F(SysModuleTest, ExcInfoReturnsInfoOfExceptionCurrentlyBeingHandled) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 import sys
 try:
   raise IndexError(4)
@@ -103,13 +103,13 @@ except:
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result_obj(&scope, mainModuleAt(&runtime_, "result"));
+  Object result_obj(&scope, mainModuleAt(runtime_, "result"));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 3);
 
-  Type expected_type(&scope, runtime_.typeAt(LayoutId::kIndexError));
+  Type expected_type(&scope, runtime_->typeAt(LayoutId::kIndexError));
   EXPECT_EQ(result.at(0), expected_type);
 
   ASSERT_TRUE(result.at(1).isIndexError());
@@ -125,12 +125,12 @@ except:
 
 TEST_F(SysModuleTest, ExecutableIsValid) {
   HandleScope scope(thread_);
-  Object executable_obj(&scope, moduleAtByCStr(&runtime_, "sys", "executable"));
+  Object executable_obj(&scope, moduleAtByCStr(runtime_, "sys", "executable"));
   ASSERT_TRUE(executable_obj.isStr());
   Str executable(&scope, *executable_obj);
   ASSERT_TRUE(executable.charLength() > 0);
   EXPECT_TRUE(executable.charAt(0) == '/');
-  Str test_executable_name(&scope, runtime_.newStrFromCStr("python-tests"));
+  Str test_executable_name(&scope, runtime_->newStrFromCStr("python-tests"));
   word result = strFind(executable, test_executable_name);
   EXPECT_GE(result, 0);
 }
@@ -140,7 +140,7 @@ TEST_F(SysModuleTest, SysExit) {
 import sys
 sys.exit()
 )";
-  ASSERT_EXIT(static_cast<void>(runFromCStr(&runtime_, src)),
+  ASSERT_EXIT(static_cast<void>(runFromCStr(runtime_, src)),
               ::testing::ExitedWithCode(0), "");
 }
 
@@ -149,7 +149,7 @@ TEST_F(SysModuleTest, SysExitCode) {  // pystone dependency
 import sys
 sys.exit(100)
 )";
-  ASSERT_EXIT(static_cast<void>(runFromCStr(&runtime_, src)),
+  ASSERT_EXIT(static_cast<void>(runFromCStr(runtime_, src)),
               ::testing::ExitedWithCode(100), "");
 }
 
@@ -158,7 +158,7 @@ TEST_F(SysModuleTest, SysExitWithNonCodeReturnsOne) {  // pystone dependency
 import sys
 sys.exit("barf")
 )";
-  ASSERT_EXIT(static_cast<void>(runFromCStr(&runtime_, src)),
+  ASSERT_EXIT(static_cast<void>(runFromCStr(runtime_, src)),
               ::testing::ExitedWithCode(1), "barf");
 }
 
@@ -167,18 +167,18 @@ TEST_F(SysModuleTest, SysExitWithFalseReturnsZero) {
 import sys
 sys.exit(False)
 )";
-  ASSERT_EXIT(static_cast<void>(runFromCStr(&runtime_, src)),
+  ASSERT_EXIT(static_cast<void>(runFromCStr(runtime_, src)),
               ::testing::ExitedWithCode(0), "");
 }
 
 TEST_F(SysModuleTest, Platform) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 import sys
 sysname = sys.platform
 )")
                    .isError());
-  Object sysname(&scope, mainModuleAt(&runtime_, "sysname"));
+  Object sysname(&scope, mainModuleAt(runtime_, "sysname"));
   ASSERT_TRUE(sysname.isStr());
   struct utsname name;
   ASSERT_EQ(uname(&name), 0);
@@ -195,23 +195,23 @@ sysname = sys.platform
 
 TEST_F(SysModuleTest, PathImporterCache) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 import sys
 result = sys.path_importer_cache
 )")
                    .isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(result.isDict());
 }
 
 TEST_F(SysModuleTest, BuiltinModuleNames) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 import sys
 builtin_names = sys.builtin_module_names
 )")
                    .isError());
-  Object builtins(&scope, mainModuleAt(&runtime_, "builtin_names"));
+  Object builtins(&scope, mainModuleAt(runtime_, "builtin_names"));
   ASSERT_TRUE(builtins.isTuple());
 
   // Test that builtin list is greater than 0
@@ -231,24 +231,24 @@ builtin_names = sys.builtin_module_names
 
 TEST_F(SysModuleTest, FlagsVerbose) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 import sys
 result = sys.flags.verbose
 )")
                    .isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 
 TEST_F(SysModuleTest, MaxsizeIsMaxWord) {
   HandleScope scope(thread_);
-  Object maxsize(&scope, moduleAtByCStr(&runtime_, "sys", "maxsize"));
+  Object maxsize(&scope, moduleAtByCStr(runtime_, "sys", "maxsize"));
   EXPECT_TRUE(isIntEqualsWord(*maxsize, kMaxWord));
 }
 
 TEST_F(SysModuleTest, ByteorderIsCorrectString) {
   HandleScope scope(thread_);
-  Object byteorder(&scope, moduleAtByCStr(&runtime_, "sys", "byteorder"));
+  Object byteorder(&scope, moduleAtByCStr(runtime_, "sys", "byteorder"));
   EXPECT_TRUE(isStrEqualsCStr(
       *byteorder, endian::native == endian::little ? "little" : "big"));
 }

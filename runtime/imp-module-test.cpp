@@ -14,11 +14,11 @@ using ImportBuiltinsDeathTest = RuntimeFixture;
 using ImportBuiltinsTest = RuntimeFixture;
 
 TEST_F(ImpModuleTest, ModuleImporting) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 import _imp
   )")
                    .isError());
-  RawObject imp = mainModuleAt(&runtime_, "_imp");
+  RawObject imp = mainModuleAt(runtime_, "_imp");
   EXPECT_TRUE(imp.isModule());
 }
 
@@ -28,7 +28,7 @@ TEST_F(ImportBuiltinsTest, AcquireLockAndReleaseLockWorks) {
 }
 
 TEST_F(ImportBuiltinsTest, CreateBuiltinWithoutArgsRaisesTypeError) {
-  EXPECT_TRUE(raised(runFromCStr(&runtime_, R"(
+  EXPECT_TRUE(raised(runFromCStr(runtime_, R"(
 import _imp
 _imp.create_builtin()
 )"),
@@ -36,7 +36,7 @@ _imp.create_builtin()
 }
 
 TEST_F(ImportBuiltinsTest, CreateBuiltinWithoutSpecNameRaisesTypeError) {
-  EXPECT_TRUE(raised(runFromCStr(&runtime_, R"(
+  EXPECT_TRUE(raised(runFromCStr(runtime_, R"(
 import _imp
 _imp.create_builtin(123)
 )"),
@@ -45,7 +45,7 @@ _imp.create_builtin(123)
 
 TEST_F(ImportBuiltinsTest, CreateBuiltinWithNonStrSpecNameRaisesTypeError) {
   // Mock of importlib._bootstrap.ModuleSpec
-  EXPECT_TRUE(raised(runFromCStr(&runtime_, R"(
+  EXPECT_TRUE(raised(runFromCStr(runtime_, R"(
 import _imp
 class DummyModuleSpec:
   def __init__(self, name):
@@ -58,7 +58,7 @@ _imp.create_builtin(spec)
 
 TEST_F(ImportBuiltinsTest, CreateBuiltinWithNonExistentModuleReturnsNone) {
   // Mock of importlib._bootstrap.ModuleSpec
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 import _imp
 class DummyModuleSpec:
   def __init__(self, name):
@@ -68,13 +68,13 @@ result = _imp.create_builtin(spec)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(result.isNoneType());
 }
 
 TEST_F(ImportBuiltinsTest, CreateBuiltinReturnsModule) {
   // Mock of importlib._bootstrap.ModuleSpec
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 import _imp
 class DummyModuleSpec:
   def __init__(self, name):
@@ -84,14 +84,14 @@ result = _imp.create_builtin(spec)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   ASSERT_TRUE(result.isModule());
   EXPECT_TRUE(isStrEqualsCStr(Module::cast(*result).name(), "errno"));
 }
 
 TEST_F(ImportBuiltinsTest, CreateBuiltinWithExArgsReturnsModule) {
   // Mock of importlib._bootstrap.ModuleSpec
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 import _imp
 class DummyModuleSpec:
   def __init__(self, name):
@@ -101,20 +101,20 @@ result = _imp.create_builtin(*spec)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   ASSERT_TRUE(result.isModule());
   EXPECT_TRUE(isStrEqualsCStr(Module::cast(*result).name(), "errno"));
 }
 
 TEST_F(ImportBuiltinsTest, ExecBuiltinWithNonModuleReturnsZero) {
   HandleScope scope(thread_);
-  Int not_mod(&scope, runtime_.newInt(1));
+  Int not_mod(&scope, runtime_->newInt(1));
   Object a(&scope, runBuiltin(UnderImpModule::execBuiltin, not_mod));
   EXPECT_TRUE(isIntEqualsWord(*a, 0));
 }
 
 TEST_F(ImportBuiltinsTest, ExecBuiltinWithModuleWithNoDefReturnsZero) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class DummyModuleSpec():
   def __init__(self, name):
     self.name = name
@@ -122,7 +122,7 @@ spec = DummyModuleSpec("errno")
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object spec(&scope, mainModuleAt(&runtime_, "spec"));
+  Object spec(&scope, mainModuleAt(runtime_, "spec"));
   Object module(&scope, runBuiltin(UnderImpModule::createBuiltin, spec));
   ASSERT_TRUE(module.isModule());
 
@@ -147,9 +147,9 @@ TEST_F(ImportBuiltinsTest, ExecBuiltinWithSingleSlotExecutesCorrectly) {
   };
 
   HandleScope scope(thread_);
-  Str name(&scope, runtime_.newStrFromCStr("mymodule"));
-  Module module(&scope, runtime_.newModule(name));
-  module.setDef(runtime_.newIntFromCPtr(&def));
+  Str name(&scope, runtime_->newStrFromCStr("mymodule"));
+  Module module(&scope, runtime_->newModule(name));
+  module.setDef(runtime_->newIntFromCPtr(&def));
 
   Object a(&scope, runBuiltin(UnderImpModule::execBuiltin, module));
   EXPECT_TRUE(isIntEqualsWord(*a, 0));
@@ -159,13 +159,13 @@ TEST_F(ImportBuiltinsTest, ExecBuiltinWithSingleSlotExecutesCorrectly) {
 }
 
 TEST_F(ImportBuiltinsTest, ExecDynamic) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 import _imp
 mod = _imp.exec_dynamic("foo")
   )")
                    .isError());
   HandleScope scope(thread_);
-  Object mod(&scope, mainModuleAt(&runtime_, "mod"));
+  Object mod(&scope, mainModuleAt(runtime_, "mod"));
   ASSERT_TRUE(mod.isNoneType());
 }
 
@@ -177,7 +177,7 @@ TEST_F(ImportBuiltinsTest, ExtensionSuffixesReturnsList) {
 }
 
 TEST_F(ImportBuiltinsDeathTest, FixCoFilename) {
-  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime_, R"(
+  ASSERT_DEATH(static_cast<void>(runFromCStr(runtime_, R"(
 import _imp
 code = None
 source_path = None
@@ -187,7 +187,7 @@ _imp._fix_co_filename(code, source_path)
 }
 
 TEST_F(ImportBuiltinsDeathTest, GetFrozenObject) {
-  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime_, R"(
+  ASSERT_DEATH(static_cast<void>(runFromCStr(runtime_, R"(
 import _imp
 _imp.get_frozen_object("foo")
   )")),
@@ -196,35 +196,35 @@ _imp.get_frozen_object("foo")
 
 TEST_F(ImportBuiltinsTest, IsBuiltinReturnsZero) {
   HandleScope scope(thread_);
-  Object module_name(&scope, runtime_.newStrFromCStr("foo"));
+  Object module_name(&scope, runtime_->newStrFromCStr("foo"));
   Object result(&scope, runBuiltin(UnderImpModule::isBuiltin, module_name));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 
 TEST_F(ImportBuiltinsTest, IsBuiltinReturnsNegativeOne) {
   HandleScope scope(thread_);
-  Object module_name(&scope, runtime_.newStrFromCStr("sys"));
+  Object module_name(&scope, runtime_->newStrFromCStr("sys"));
   Object result(&scope, runBuiltin(UnderImpModule::isBuiltin, module_name));
   EXPECT_TRUE(isIntEqualsWord(*result, -1));
 }
 
 TEST_F(ImportBuiltinsTest, IsBuiltinReturnsOne) {
   HandleScope scope(thread_);
-  Object module_name(&scope, runtime_.newStrFromCStr("errno"));
+  Object module_name(&scope, runtime_->newStrFromCStr("errno"));
   Object result(&scope, runBuiltin(UnderImpModule::isBuiltin, module_name));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
 
 TEST_F(ImportBuiltinsTest, IsFrozenReturnsFalse) {
   HandleScope scope(thread_);
-  Object module_name(&scope, runtime_.newStrFromCStr("foo"));
+  Object module_name(&scope, runtime_->newStrFromCStr("foo"));
   Object result(&scope, runBuiltin(UnderImpModule::isFrozen, module_name));
   ASSERT_TRUE(result.isBool());
   EXPECT_FALSE(Bool::cast(*result).value());
 }
 
 TEST_F(ImportBuiltinsDeathTest, IsFrozenPackage) {
-  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime_, R"(
+  ASSERT_DEATH(static_cast<void>(runFromCStr(runtime_, R"(
 import _imp
 _imp.is_frozen_package("foo")
   )")),
@@ -250,7 +250,7 @@ TEST_F(ImportBuiltinsTest, AcquireLockCheckRecursiveCallsWorks) {
 
 TEST_F(ImportBuiltinsTest, CreateExistingBuiltinDoesNotOverride) {
   // Mock of importlib._bootstrap.ModuleSpec
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 import _imp
 class DummyModuleSpec:
   def __init__(self, name):
@@ -261,10 +261,10 @@ result2 = _imp.create_builtin(*spec)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result1(&scope, mainModuleAt(&runtime_, "result1"));
+  Object result1(&scope, mainModuleAt(runtime_, "result1"));
   ASSERT_TRUE(result1.isModule());
   EXPECT_TRUE(isStrEqualsCStr(Module::cast(*result1).name(), "errno"));
-  Object result2(&scope, mainModuleAt(&runtime_, "result2"));
+  Object result2(&scope, mainModuleAt(runtime_, "result2"));
   ASSERT_TRUE(result2.isModule());
   EXPECT_TRUE(isStrEqualsCStr(Module::cast(*result2).name(), "errno"));
   EXPECT_EQ(*result1, *result2);

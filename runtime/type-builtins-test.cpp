@@ -19,7 +19,7 @@ using TypeBuiltinsTest = RuntimeFixture;
 
 TEST_F(TypeBuiltinsTest, TypeAtReturnsNoPlaceholderValue) {
   HandleScope scope(thread_);
-  Type type(&scope, runtime_.newType());
+  Type type(&scope, runtime_->newType());
   Object name(&scope, Runtime::internStrFromCStr(thread_, "__eq__"));
   Object value(&scope, Runtime::internStrFromCStr(thread_, "__eq__'s value"));
   typeAtPut(thread_, type, name, value);
@@ -29,7 +29,7 @@ TEST_F(TypeBuiltinsTest, TypeAtReturnsNoPlaceholderValue) {
 
 TEST_F(TypeBuiltinsTest, TypeAtReturnsErrorNotFoundForPlaceholder) {
   HandleScope scope(thread_);
-  Type type(&scope, runtime_.newType());
+  Type type(&scope, runtime_->newType());
   Object name(&scope, Runtime::internStrFromCStr(thread_, "__eq__"));
   Object value(&scope, Runtime::internStrFromCStr(thread_, "__eq__'s value"));
   ValueCell value_cell(&scope, typeAtPut(thread_, type, name, value));
@@ -40,7 +40,7 @@ TEST_F(TypeBuiltinsTest, TypeAtReturnsErrorNotFoundForPlaceholder) {
 
 TEST_F(TypeBuiltinsTest, TypeAtPutPutsValueInValueCell) {
   HandleScope scope(thread_);
-  Type type(&scope, runtime_.newType());
+  Type type(&scope, runtime_->newType());
   Object name(&scope, Runtime::internStrFromCStr(thread_, "__eq__"));
   Object value(&scope, Runtime::internStrFromCStr(thread_, "__eq__'s value"));
 
@@ -55,7 +55,7 @@ TEST_F(TypeBuiltinsTest, TypeAtPutPutsValueInValueCell) {
 }
 
 TEST_F(TypeBuiltinsTest, TypeAtPutByStrInvalidatesCache) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   def foo(self): return 4
 
@@ -67,12 +67,12 @@ cache_a_foo(a)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Function cache_a_foo(&scope, mainModuleAt(&runtime_, "cache_a_foo"));
+  Function cache_a_foo(&scope, mainModuleAt(runtime_, "cache_a_foo"));
   Tuple caches(&scope, cache_a_foo.caches());
-  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object a(&scope, mainModuleAt(runtime_, "a"));
   ASSERT_FALSE(icLookupAttr(*caches, 1, a.layoutId()).isErrorNotFound());
 
-  Type type_a(&scope, mainModuleAt(&runtime_, "A"));
+  Type type_a(&scope, mainModuleAt(runtime_, "A"));
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object none(&scope, NoneType::object());
   typeAtPut(thread_, type_a, foo, none);
@@ -80,7 +80,7 @@ cache_a_foo(a)
 }
 
 TEST_F(TypeBuiltinsTest, TypeAtPutByIdInvalidatesCache) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   def __eq__(self, other): return True
 
@@ -92,12 +92,12 @@ cache_a_eq(a)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Function cache_a_eq(&scope, mainModuleAt(&runtime_, "cache_a_eq"));
+  Function cache_a_eq(&scope, mainModuleAt(runtime_, "cache_a_eq"));
   Tuple caches(&scope, cache_a_eq.caches());
-  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object a(&scope, mainModuleAt(runtime_, "a"));
   ASSERT_FALSE(icLookupAttr(*caches, 1, a.layoutId()).isErrorNotFound());
 
-  Type type_a(&scope, mainModuleAt(&runtime_, "A"));
+  Type type_a(&scope, mainModuleAt(runtime_, "A"));
   Object none(&scope, NoneType::object());
   typeAtPutById(thread_, type_a, SymbolId::kDunderEq, none);
   EXPECT_TRUE(icLookupAttr(*caches, 1, a.layoutId()).isErrorNotFound());
@@ -105,13 +105,13 @@ cache_a_eq(a)
 
 TEST_F(TypeBuiltinsTest, TypeAtPutDoesNotGrowOnTombstones) {
   HandleScope scope(thread_);
-  Type type(&scope, runtime_.newType());
+  Type type(&scope, runtime_->newType());
   ASSERT_TRUE(type.attributes().isTuple());
   word initial_capacity = Tuple::cast(type.attributes()).length();
   // Insert and remove symbols to fill the dictionary with tombstones.
   Object name(&scope, NoneType::object());
   for (word i = 0; i < static_cast<word>(SymbolId::kMaxId); i++) {
-    name = runtime_.symbols()->at(static_cast<SymbolId>(i));
+    name = runtime_->symbols()->at(static_cast<SymbolId>(i));
     typeValueCellAtPut(thread_, type, name);
     typeRemove(thread_, type, name);
   }
@@ -119,25 +119,25 @@ TEST_F(TypeBuiltinsTest, TypeAtPutDoesNotGrowOnTombstones) {
 }
 
 TEST_F(TypeBuiltinsTest, TypeRemoveForNonExistingEntryReturnsErrorNotFound) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   def __eq__(self, other): return True
 )")
                    .isError());
   HandleScope scope(thread_);
-  Type type(&scope, mainModuleAt(&runtime_, "A"));
-  Str dunder_gt(&scope, runtime_.newStrFromCStr("__gt__"));
+  Type type(&scope, mainModuleAt(runtime_, "A"));
+  Str dunder_gt(&scope, runtime_->newStrFromCStr("__gt__"));
   EXPECT_TRUE(typeRemove(thread_, type, dunder_gt).isErrorNotFound());
 }
 
 TEST_F(TypeBuiltinsTest, TypeRemoveRemovesAssociatedEntry) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   def __eq__(self, other): return True
 )")
                    .isError());
   HandleScope scope(thread_);
-  Type type(&scope, mainModuleAt(&runtime_, "A"));
+  Type type(&scope, mainModuleAt(runtime_, "A"));
   Object dunder_eq(&scope, Runtime::internStrFromCStr(thread_, "__eq__"));
   ASSERT_FALSE(typeAt(type, dunder_eq).isErrorNotFound());
   ASSERT_FALSE(typeRemove(thread_, type, dunder_eq).isErrorNotFound());
@@ -145,7 +145,7 @@ class A:
 }
 
 TEST_F(TypeBuiltinsTest, TypeRemoveInvalidatesCache) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   def __eq__(self, other): return True
 
@@ -157,25 +157,25 @@ cache_a_eq(a)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Function cache_a_eq(&scope, mainModuleAt(&runtime_, "cache_a_eq"));
+  Function cache_a_eq(&scope, mainModuleAt(runtime_, "cache_a_eq"));
   Tuple caches(&scope, cache_a_eq.caches());
-  Object a(&scope, mainModuleAt(&runtime_, "a"));
+  Object a(&scope, mainModuleAt(runtime_, "a"));
   ASSERT_FALSE(icLookupAttr(*caches, 1, a.layoutId()).isErrorNotFound());
 
-  Type type_a(&scope, mainModuleAt(&runtime_, "A"));
-  Str dunder_eq(&scope, runtime_.newStrFromCStr("__eq__"));
+  Type type_a(&scope, mainModuleAt(runtime_, "A"));
+  Str dunder_eq(&scope, runtime_->newStrFromCStr("__eq__"));
   ASSERT_FALSE(typeRemove(thread_, type_a, dunder_eq).isErrorNotFound());
   EXPECT_TRUE(icLookupAttr(*caches, 1, a.layoutId()).isErrorNotFound());
 }
 
 TEST_F(TypeBuiltinsTest, TypeKeysFiltersOutPlaceholders) {
   HandleScope scope(thread_);
-  Type type(&scope, runtime_.newType());
+  Type type(&scope, runtime_->newType());
 
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   Object baz(&scope, Runtime::internStrFromCStr(thread_, "baz"));
-  Str value(&scope, runtime_.newStrFromCStr("value"));
+  Str value(&scope, runtime_->newStrFromCStr("value"));
 
   typeAtPut(thread_, type, foo, value);
   typeAtPut(thread_, type, bar, value);
@@ -191,12 +191,12 @@ TEST_F(TypeBuiltinsTest, TypeKeysFiltersOutPlaceholders) {
 
 TEST_F(TypeBuiltinsTest, TypeLenReturnsItemCountExcludingPlaceholders) {
   HandleScope scope(thread_);
-  Type type(&scope, runtime_.newType());
+  Type type(&scope, runtime_->newType());
 
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
   Object baz(&scope, Runtime::internStrFromCStr(thread_, "baz"));
-  Str value(&scope, runtime_.newStrFromCStr("value"));
+  Str value(&scope, runtime_->newStrFromCStr("value"));
 
   typeAtPut(thread_, type, foo, value);
   typeAtPut(thread_, type, bar, value);
@@ -212,14 +212,14 @@ TEST_F(TypeBuiltinsTest, TypeLenReturnsItemCountExcludingPlaceholders) {
 
 TEST_F(TypeBuiltinsTest, TypeValuesFiltersOutPlaceholders) {
   HandleScope scope(thread_);
-  Type type(&scope, runtime_.newType());
+  Type type(&scope, runtime_->newType());
 
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  Object foo_value(&scope, runtime_.newStrFromCStr("foo_value"));
+  Object foo_value(&scope, runtime_->newStrFromCStr("foo_value"));
   Object bar(&scope, Runtime::internStrFromCStr(thread_, "bar"));
-  Object bar_value(&scope, runtime_.newStrFromCStr("bar_value"));
+  Object bar_value(&scope, runtime_->newStrFromCStr("bar_value"));
   Object baz(&scope, Runtime::internStrFromCStr(thread_, "baz"));
-  Object baz_value(&scope, runtime_.newStrFromCStr("baz_value"));
+  Object baz_value(&scope, runtime_->newStrFromCStr("baz_value"));
 
   typeAtPut(thread_, type, foo, foo_value);
   typeAtPut(thread_, type, bar, bar_value);
@@ -235,17 +235,17 @@ TEST_F(TypeBuiltinsTest, TypeValuesFiltersOutPlaceholders) {
 
 TEST_F(TypeBuiltinsTest, DunderBasesReturnsTuple) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A: pass
 class B: pass
 class C(A, B): pass
 )")
                    .isError());
-  Object a(&scope, mainModuleAt(&runtime_, "A"));
-  Object b(&scope, mainModuleAt(&runtime_, "B"));
-  Object c(&scope, mainModuleAt(&runtime_, "C"));
+  Object a(&scope, mainModuleAt(runtime_, "A"));
+  Object b(&scope, mainModuleAt(runtime_, "B"));
+  Object c(&scope, mainModuleAt(runtime_, "C"));
   Object result_obj(
-      &scope, runtime_.attributeAtById(thread_, c, SymbolId::kDunderBases));
+      &scope, runtime_->attributeAtById(thread_, c, SymbolId::kDunderBases));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -255,38 +255,38 @@ class C(A, B): pass
 
 TEST_F(TypeBuiltinsTest, DunderBasesOnObjectReturnsEmptyTuple) {
   HandleScope scope(thread_);
-  Object type(&scope, runtime_.typeAt(LayoutId::kObject));
+  Object type(&scope, runtime_->typeAt(LayoutId::kObject));
   Object result_obj(
-      &scope, runtime_.attributeAtById(thread_, type, SymbolId::kDunderBases));
+      &scope, runtime_->attributeAtById(thread_, type, SymbolId::kDunderBases));
   ASSERT_TRUE(result_obj.isTuple());
   EXPECT_EQ(Tuple::cast(*result_obj).length(), 0);
 }
 
 TEST_F(TypeBuiltinsTest, DunderBasesOnBuiltinTypeReturnsTuple) {
   HandleScope scope(thread_);
-  Object type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Object type(&scope, runtime_->typeAt(LayoutId::kInt));
   Object result_obj(
-      &scope, runtime_.attributeAtById(thread_, type, SymbolId::kDunderBases));
+      &scope, runtime_->attributeAtById(thread_, type, SymbolId::kDunderBases));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 1);
-  EXPECT_EQ(result.at(0), runtime_.typeAt(LayoutId::kObject));
+  EXPECT_EQ(result.at(0), runtime_->typeAt(LayoutId::kObject));
 }
 
 TEST_F(TypeBuiltinsTest, DunderCallType) {
   HandleScope scope;
 
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C: pass
 c = C()
 )")
                    .isError());
 
-  Type type(&scope, mainModuleAt(&runtime_, "C"));
+  Type type(&scope, mainModuleAt(runtime_, "C"));
   ASSERT_FALSE(type.isError());
-  Object instance(&scope, mainModuleAt(&runtime_, "c"));
+  Object instance(&scope, mainModuleAt(runtime_, "c"));
   ASSERT_FALSE(instance.isError());
-  Object instance_type(&scope, runtime_.typeOf(*instance));
+  Object instance_type(&scope, runtime_->typeOf(*instance));
   ASSERT_FALSE(instance_type.isError());
 
   EXPECT_EQ(*type, *instance_type);
@@ -295,7 +295,7 @@ c = C()
 TEST_F(TypeBuiltinsTest, DunderCallTypeWithInit) {
   HandleScope scope;
 
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
   def __init__(self):
     global g
@@ -306,7 +306,7 @@ C()
 )")
                    .isError());
 
-  Object global(&scope, mainModuleAt(&runtime_, "g"));
+  Object global(&scope, mainModuleAt(runtime_, "g"));
   ASSERT_FALSE(global.isError());
   EXPECT_TRUE(isIntEqualsWord(*global, 2));
 }
@@ -314,7 +314,7 @@ C()
 TEST_F(TypeBuiltinsTest, DunderCallTypeWithInitAndArgs) {
   HandleScope scope;
 
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
   def __init__(self, x):
     global g
@@ -325,20 +325,20 @@ C(9)
 )")
                    .isError());
 
-  Object global(&scope, mainModuleAt(&runtime_, "g"));
+  Object global(&scope, mainModuleAt(runtime_, "g"));
   ASSERT_FALSE(global.isError());
   EXPECT_TRUE(isIntEqualsWord(*global, 9));
 }
 
 TEST_F(TypeBuiltinsTest, DunderCallWithNonTypeRaisesTypeError) {
   ASSERT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, "type.__call__(5)"), LayoutId::kTypeError,
+      runFromCStr(runtime_, "type.__call__(5)"), LayoutId::kTypeError,
       "'__call__' requires a 'type' object but got 'int'"));
 }
 
 TEST_F(TypeBuiltinsTest, DunderCallCallsDunderInit) {
   HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class Callable:
   def __call__(self, obj):
     obj.x = 42
@@ -347,16 +347,16 @@ class C:
 c = C()
 )")
                    .isError());
-  Object c(&scope, mainModuleAt(&runtime_, "c"));
+  Object c(&scope, mainModuleAt(runtime_, "c"));
   Object x(&scope, Runtime::internStrFromCStr(thread_, "x"));
-  RawObject attr = runtime_.attributeAt(thread_, c, x);
+  RawObject attr = runtime_->attributeAt(thread_, c, x);
   EXPECT_TRUE(isIntEqualsWord(attr, 42));
 }
 
 TEST_F(TypeBuiltinsTest,
        DunderCallWithNonTypeDudnerNewResultReturnsWithoutCallingDunderInit) {
   HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
   def __new__(self, *args):
     return 17
@@ -365,13 +365,13 @@ class C:
 result = type.__call__(C, "C", (), {})
 )")
                    .isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 17));
 }
 
 TEST_F(TypeBuiltinsTest, DunderDirReturnsList) {
   HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   x = 42
   def foo(): pass
@@ -380,7 +380,7 @@ class B(A):
 dir = type.__dir__(B)
 )")
                    .isError());
-  Object dir(&scope, mainModuleAt(&runtime_, "dir"));
+  Object dir(&scope, mainModuleAt(runtime_, "dir"));
   Object x(&scope, Runtime::internStrFromCStr(thread_, "x"));
   EXPECT_TRUE(listContains(dir, x));
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
@@ -391,35 +391,35 @@ dir = type.__dir__(B)
 
 TEST_F(TypeBuiltinsTest, DunderDocOnEmptyTypeReturnsNone) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, "class C: pass").isError());
-  Object c(&scope, mainModuleAt(&runtime_, "C"));
+  ASSERT_FALSE(runFromCStr(runtime_, "class C: pass").isError());
+  Object c(&scope, mainModuleAt(runtime_, "C"));
   Object doc(&scope,
-             runtime_.attributeAtById(thread_, c, SymbolId::kDunderDoc));
+             runtime_->attributeAtById(thread_, c, SymbolId::kDunderDoc));
   EXPECT_EQ(doc, NoneType::object());
 }
 
 TEST_F(TypeBuiltinsTest, DunderDocReturnsDocumentationString) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
   """hello documentation"""
   pass
 )")
                    .isError());
-  Object c(&scope, mainModuleAt(&runtime_, "C"));
+  Object c(&scope, mainModuleAt(runtime_, "C"));
   Object doc(&scope,
-             runtime_.attributeAtById(thread_, c, SymbolId::kDunderDoc));
+             runtime_->attributeAtById(thread_, c, SymbolId::kDunderDoc));
   EXPECT_TRUE(isStrEqualsCStr(*doc, "hello documentation"));
 }
 
 TEST_F(TypeBuiltinsTest, DunderGetattributeReturnsAttribute) {
   HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
   foo = -13
 )")
                    .isError());
-  Object c(&scope, mainModuleAt(&runtime_, "C"));
+  Object c(&scope, mainModuleAt(runtime_, "C"));
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   EXPECT_TRUE(isIntEqualsWord(
       runBuiltin(TypeBuiltins::dunderGetattribute, c, name), -13));
@@ -427,13 +427,13 @@ class C:
 
 TEST_F(TypeBuiltinsTest, DunderGetattributeWithNonStringNameRaisesTypeError) {
   HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
   pass
 )")
                    .isError());
-  Object c(&scope, mainModuleAt(&runtime_, "C"));
-  Object name(&scope, runtime_.newInt(0));
+  Object c(&scope, mainModuleAt(runtime_, "C"));
+  Object name(&scope, runtime_->newInt(0));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(TypeBuiltins::dunderGetattribute, c, name),
       LayoutId::kTypeError, "attribute name must be string, not 'int'"));
@@ -442,12 +442,12 @@ class C:
 TEST_F(TypeBuiltinsTest,
        DunderGetattributeWithMissingAttributeRaisesAttributeError) {
   HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
   pass
 )")
                    .isError());
-  Object c(&scope, mainModuleAt(&runtime_, "C"));
+  Object c(&scope, mainModuleAt(runtime_, "C"));
   Object name(&scope, Runtime::internStrFromCStr(thread_, "xxx"));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(TypeBuiltins::dunderGetattribute, c, name),
@@ -456,13 +456,13 @@ class C:
 
 TEST_F(TypeBuiltinsTest, DunderReprForBuiltinReturnsStr) {
   ASSERT_FALSE(
-      runFromCStr(&runtime_, "result = type.__repr__(object)").isError());
+      runFromCStr(runtime_, "result = type.__repr__(object)").isError());
   EXPECT_TRUE(
-      isStrEqualsCStr(mainModuleAt(&runtime_, "result"), "<class 'object'>"));
+      isStrEqualsCStr(mainModuleAt(runtime_, "result"), "<class 'object'>"));
 }
 
 TEST_F(TypeBuiltinsTest, DunderReprForUserDefinedTypeReturnsStr) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class Foo:
   pass
 result = type.__repr__(Foo)
@@ -471,18 +471,18 @@ result = type.__repr__(Foo)
   // TODO(T32810595): Once module names are supported, this should become
   // "<class '__main__.Foo'>".
   EXPECT_TRUE(
-      isStrEqualsCStr(mainModuleAt(&runtime_, "result"), "<class 'Foo'>"));
+      isStrEqualsCStr(mainModuleAt(runtime_, "result"), "<class 'Foo'>"));
 }
 
 TEST_F(TypeBuiltinsTest, DunderNewWithOneArgReturnsTypeOfArg) {
   HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 a = type.__new__(type, 1);
 b = type.__new__(type, "hello");
 )")
                    .isError());
-  Type a(&scope, mainModuleAt(&runtime_, "a"));
-  Type b(&scope, mainModuleAt(&runtime_, "b"));
+  Type a(&scope, mainModuleAt(runtime_, "a"));
+  Type b(&scope, mainModuleAt(runtime_, "b"));
 
   EXPECT_EQ(Layout::cast(a.instanceLayout()).id(), LayoutId::kInt);
   EXPECT_EQ(Layout::cast(b.instanceLayout()).id(), LayoutId::kStr);
@@ -490,24 +490,24 @@ b = type.__new__(type, "hello");
 
 TEST_F(TypeBuiltinsTest, DunderNewWithOneMetaclassArgReturnsType) {
   HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class Foo(type):
   pass
 a = type.__new__(type, Foo);
 )")
                    .isError());
-  Type a(&scope, mainModuleAt(&runtime_, "a"));
+  Type a(&scope, mainModuleAt(runtime_, "a"));
   EXPECT_EQ(Layout::cast(a.instanceLayout()).id(), LayoutId::kType);
 }
 
 TEST_F(TypeBuiltinsTest, DunderSetattrSetsAttribute) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, "class C: pass").isError());
-  Object c_obj(&scope, mainModuleAt(&runtime_, "C"));
+  ASSERT_FALSE(runFromCStr(runtime_, "class C: pass").isError());
+  Object c_obj(&scope, mainModuleAt(runtime_, "C"));
   ASSERT_TRUE(c_obj.isType());
   Type c(&scope, *c_obj);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  Object value(&scope, runtime_.newInt(-7331));
+  Object value(&scope, runtime_->newInt(-7331));
   EXPECT_TRUE(
       runBuiltin(TypeBuiltins::dunderSetattr, c, name, value).isNoneType());
   EXPECT_TRUE(isIntEqualsWord(typeAt(c, name), -7331));
@@ -515,12 +515,12 @@ TEST_F(TypeBuiltinsTest, DunderSetattrSetsAttribute) {
 
 TEST_F(TypeBuiltinsTest, DunderSetattrWithNonStrNameRaisesTypeError) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, "class C: pass").isError());
-  Object c_obj(&scope, mainModuleAt(&runtime_, "C"));
+  ASSERT_FALSE(runFromCStr(runtime_, "class C: pass").isError());
+  Object c_obj(&scope, mainModuleAt(runtime_, "C"));
   ASSERT_TRUE(c_obj.isType());
   Type c(&scope, *c_obj);
   Object name(&scope, NoneType::object());
-  Object value(&scope, runtime_.newInt(1));
+  Object value(&scope, runtime_->newInt(1));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(TypeBuiltins::dunderSetattr, c, name, value),
       LayoutId::kTypeError, "attribute name must be string, not 'NoneType'"));
@@ -529,16 +529,16 @@ TEST_F(TypeBuiltinsTest, DunderSetattrWithNonStrNameRaisesTypeError) {
 TEST_F(TypeBuiltinsTest, TypeHasDunderMroAttribute) {
   HandleScope scope;
   ASSERT_FALSE(
-      runFromCStr(&runtime_, "result = str.__class__.__mro__").isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+      runFromCStr(runtime_, "result = str.__class__.__mro__").isError());
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   ASSERT_TRUE(result.isTuple());
 }
 
 TEST_F(TypeBuiltinsTest, TypeHasDunderNameAttribute) {
   HandleScope scope;
   ASSERT_FALSE(
-      runFromCStr(&runtime_, "result = str.__class__.__name__").isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+      runFromCStr(runtime_, "result = str.__class__.__name__").isError());
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   ASSERT_TRUE(result.isStr());
   EXPECT_TRUE(isStrEqualsCStr(Str::cast(*result), "type"));
 }
@@ -546,28 +546,28 @@ TEST_F(TypeBuiltinsTest, TypeHasDunderNameAttribute) {
 TEST_F(TypeBuiltinsTest, TypeHasDunderFlagsAttribute) {
   HandleScope scope;
   ASSERT_FALSE(
-      runFromCStr(&runtime_, "result = str.__class__.__flags__").isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+      runFromCStr(runtime_, "result = str.__class__.__flags__").isError());
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   ASSERT_TRUE(result.isInt());
 }
 
 TEST_F(TypeBuiltinsTest, TypeHasDunderDictAttribute) {
   HandleScope scope;
   ASSERT_FALSE(
-      runFromCStr(&runtime_, "result = str.__class__.__dict__").isError());
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+      runFromCStr(runtime_, "result = str.__class__.__dict__").isError());
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(result.isMappingProxy());
 }
 
 TEST_F(TypeBuiltinsTest, TypeLookupNameInMroReturnsValue) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   foo = 2
 )")
                    .isError());
-  Object a_obj(&scope, mainModuleAt(&runtime_, "A"));
-  ASSERT_TRUE(runtime_.isInstanceOfType(*a_obj));
+  Object a_obj(&scope, mainModuleAt(runtime_, "A"));
+  ASSERT_TRUE(runtime_->isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   EXPECT_TRUE(isIntEqualsWord(typeLookupInMro(thread_, a, foo), 2));
@@ -575,14 +575,14 @@ class A:
 
 TEST_F(TypeBuiltinsTest, TypeLookupNameInMroReturnsParentValue) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   foo = 2
 class B(A):
   bar = 4
 )")
                    .isError());
-  Object b_obj(&scope, mainModuleAt(&runtime_, "B"));
+  Object b_obj(&scope, mainModuleAt(runtime_, "B"));
   ASSERT_TRUE(b_obj.isType());
   Type b(&scope, *b_obj);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
@@ -591,14 +591,14 @@ class B(A):
 
 TEST_F(TypeBuiltinsTest, TypeLookupNameInMroReturnsOverriddenValue) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   foo = 2
 class B(A):
   foo = 4
 )")
                    .isError());
-  Object b_obj(&scope, mainModuleAt(&runtime_, "B"));
+  Object b_obj(&scope, mainModuleAt(runtime_, "B"));
   ASSERT_TRUE(b_obj.isType());
   Type b(&scope, *b_obj);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
@@ -607,13 +607,13 @@ class B(A):
 
 TEST_F(TypeBuiltinsTest, TypeLookupNameInMroWithNonExistentNameReturnsError) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   bar = 2
 )")
                    .isError());
-  Object a_obj(&scope, mainModuleAt(&runtime_, "A"));
-  ASSERT_TRUE(runtime_.isInstanceOfType(*a_obj));
+  Object a_obj(&scope, mainModuleAt(runtime_, "A"));
+  ASSERT_TRUE(runtime_->isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   EXPECT_TRUE(typeLookupInMro(thread_, a, name).isError());
@@ -622,20 +622,20 @@ class A:
 
 TEST_F(TypeBuiltinsTest, TypeLookupSymbolInMroReturnsValue) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   __add__ = 3
 )")
                    .isError());
-  Object a_obj(&scope, mainModuleAt(&runtime_, "A"));
-  ASSERT_TRUE(runtime_.isInstanceOfType(*a_obj));
+  Object a_obj(&scope, mainModuleAt(runtime_, "A"));
+  ASSERT_TRUE(runtime_->isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
   EXPECT_TRUE(isIntEqualsWord(
       typeLookupInMroById(thread_, a, SymbolId::kDunderAdd), 3));
 }
 
 TEST_F(TypeBuiltinsTest, DunderCallReceivesExArgs) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
   def __init__(self, *args):
     self.args = args
@@ -647,12 +647,12 @@ result = C(*(1,2,3)).num_args()
 )")
                    .isError());
   HandleScope scope;
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_EQ(*result, RawSmallInt::fromWord(3));
 }
 
 TEST_F(TypeBuiltinsTest, TypeNewWithNonStrKeyInDictRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
 ty = type.__new__(type, *("foo", (object,), {4: 1}))
 name = ty.__name__N
 )"),
@@ -661,7 +661,7 @@ name = ty.__name__N
 }
 
 TEST_F(TypeBuiltinsTest, ClassMethodDunderCallReceivesExArgs) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class Foo:
   @classmethod
   def foo(cls, *args):
@@ -671,34 +671,34 @@ result = Foo.foo(*(1,2,3))
 )")
                    .isError());
   HandleScope scope;
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_EQ(*result, RawSmallInt::fromWord(3));
 }
 
 TEST_F(TypeBuiltinsTest, TypeNewReceivesExArgs) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 ty = type.__new__(type, *("foo", (object,), {'a': 1}))
 name = ty.__name__
 )")
                    .isError());
   HandleScope scope;
-  Object name(&scope, mainModuleAt(&runtime_, "name"));
+  Object name(&scope, mainModuleAt(runtime_, "name"));
   EXPECT_TRUE(isStrEqualsCStr(*name, "foo"));
 }
 
 TEST_F(TypeBuiltinsTest, TypeNewAddsToBaseSubclasses) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A: pass
 class B: pass
 class C(A, B): pass
 class D(A): pass
 )")
                    .isError());
-  Type a(&scope, mainModuleAt(&runtime_, "A"));
-  Type b(&scope, mainModuleAt(&runtime_, "B"));
-  Type c(&scope, mainModuleAt(&runtime_, "C"));
-  Type d(&scope, mainModuleAt(&runtime_, "D"));
+  Type a(&scope, mainModuleAt(runtime_, "A"));
+  Type b(&scope, mainModuleAt(runtime_, "B"));
+  Type c(&scope, mainModuleAt(runtime_, "C"));
+  Type d(&scope, mainModuleAt(runtime_, "D"));
 
   ASSERT_TRUE(a.subclasses().isDict());
   Dict a_subclasses(&scope, a.subclasses());
@@ -713,7 +713,7 @@ class D(A): pass
 }
 
 TEST_F(TypeBuiltinsTest, TypeCallWithInitReturningNonNoneRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
 class C:
   def __init__(self, *args, **kwargs):
     return 5
@@ -724,23 +724,23 @@ C()
 }
 
 TEST_F(TypeBuiltinsTest, MroReturnsList) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
   pass
 result = C.mro()
 )")
                    .isError());
   HandleScope scope;
-  Object ctype(&scope, mainModuleAt(&runtime_, "C"));
-  Object result_obj(&scope, mainModuleAt(&runtime_, "result"));
+  Object ctype(&scope, mainModuleAt(runtime_, "C"));
+  Object result_obj(&scope, mainModuleAt(runtime_, "result"));
   ASSERT_TRUE(result_obj.isList());
   List result(&scope, *result_obj);
   EXPECT_EQ(result.at(0), *ctype);
-  EXPECT_EQ(result.at(1), runtime_.typeAt(LayoutId::kObject));
+  EXPECT_EQ(result.at(1), runtime_->typeAt(LayoutId::kObject));
 }
 
 TEST_F(TypeBuiltinsTest, MroWithMultipleInheritanceReturnsLinearization) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   pass
 class B:
@@ -750,24 +750,24 @@ class C(A, B):
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object atype(&scope, mainModuleAt(&runtime_, "A"));
-  Object btype(&scope, mainModuleAt(&runtime_, "B"));
-  Object ctype(&scope, mainModuleAt(&runtime_, "C"));
+  Object atype(&scope, mainModuleAt(runtime_, "A"));
+  Object btype(&scope, mainModuleAt(runtime_, "B"));
+  Object ctype(&scope, mainModuleAt(runtime_, "C"));
   Object result_obj(&scope, runBuiltin(TypeBuiltins::mro, ctype));
   ASSERT_TRUE(result_obj.isList());
   List result(&scope, *result_obj);
   EXPECT_EQ(result.at(0), *ctype);
   EXPECT_EQ(result.at(1), *atype);
   EXPECT_EQ(result.at(2), *btype);
-  EXPECT_EQ(result.at(3), runtime_.typeAt(LayoutId::kObject));
+  EXPECT_EQ(result.at(3), runtime_->typeAt(LayoutId::kObject));
 }
 
 TEST_F(TypeBuiltinsTest, MroWithInvalidLinearizationRaisesTypeError) {
   HandleScope scope(thread_);
-  Type type(&scope, runtime_.newType());
-  Tuple bases(&scope, runtime_.newTuple(2));
-  bases.atPut(0, runtime_.typeAt(LayoutId::kObject));
-  bases.atPut(1, runtime_.typeAt(LayoutId::kInt));
+  Type type(&scope, runtime_->newType());
+  Tuple bases(&scope, runtime_->newTuple(2));
+  bases.atPut(0, runtime_->typeAt(LayoutId::kObject));
+  bases.atPut(1, runtime_->typeAt(LayoutId::kInt));
   type.setBases(*bases);
   EXPECT_TRUE(raisedWithStr(runBuiltin(TypeBuiltins::mro, type),
                             LayoutId::kTypeError,
@@ -777,13 +777,13 @@ TEST_F(TypeBuiltinsTest, MroWithInvalidLinearizationRaisesTypeError) {
 
 TEST_F(TypeBuiltinsTest, TypeGetAttributeReturnsAttributeValue) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
   x = 42
 )")
                    .isError());
-  Object c_obj(&scope, mainModuleAt(&runtime_, "C"));
-  ASSERT_TRUE(runtime_.isInstanceOfType(*c_obj));
+  Object c_obj(&scope, mainModuleAt(runtime_, "C"));
+  ASSERT_TRUE(runtime_->isInstanceOfType(*c_obj));
   Type c(&scope, *c_obj);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "x"));
   EXPECT_TRUE(isIntEqualsWord(typeGetAttribute(thread_, c, name), 42));
@@ -791,14 +791,14 @@ class C:
 
 TEST_F(TypeBuiltinsTest, TypeGetAttributeReturnsMetaclassAttributeValue) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class M(type):
   x = 77
 class C(metaclass=M): pass
 )")
                    .isError());
-  Object c_obj(&scope, mainModuleAt(&runtime_, "C"));
-  ASSERT_TRUE(runtime_.isInstanceOfType(*c_obj));
+  Object c_obj(&scope, mainModuleAt(runtime_, "C"));
+  ASSERT_TRUE(runtime_->isInstanceOfType(*c_obj));
   Type c(&scope, *c_obj);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "x"));
   EXPECT_TRUE(isIntEqualsWord(typeGetAttribute(thread_, c, name), 77));
@@ -806,9 +806,9 @@ class C(metaclass=M): pass
 
 TEST_F(TypeBuiltinsTest, TypeGetAttributeWithMissingAttributeReturnsError) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, "class C: pass").isError());
-  Object c_obj(&scope, mainModuleAt(&runtime_, "C"));
-  ASSERT_TRUE(runtime_.isInstanceOfType(*c_obj));
+  ASSERT_FALSE(runFromCStr(runtime_, "class C: pass").isError());
+  Object c_obj(&scope, mainModuleAt(runtime_, "C"));
+  ASSERT_TRUE(runtime_->isInstanceOfType(*c_obj));
   Type c(&scope, *c_obj);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "xxx"));
   EXPECT_TRUE(typeGetAttribute(thread_, c, name).isError());
@@ -817,7 +817,7 @@ TEST_F(TypeBuiltinsTest, TypeGetAttributeWithMissingAttributeReturnsError) {
 
 TEST_F(TypeBuiltinsTest, TypeGetAttributeCallsDunderGetOnDataDescriptor) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class D:
   def __set__(self, instance, value): pass
   def __get__(self, instance, owner): return (self, instance, owner)
@@ -826,19 +826,19 @@ class M(type):
 class A(metaclass=M): pass
 )")
                    .isError());
-  Object d_obj(&scope, mainModuleAt(&runtime_, "D"));
+  Object d_obj(&scope, mainModuleAt(runtime_, "D"));
   ASSERT_TRUE(d_obj.isType());
   Type d(&scope, *d_obj);
-  Object m(&scope, mainModuleAt(&runtime_, "M"));
-  Object a_obj(&scope, mainModuleAt(&runtime_, "A"));
-  ASSERT_TRUE(runtime_.isInstanceOfType(*a_obj));
+  Object m(&scope, mainModuleAt(runtime_, "M"));
+  Object a_obj(&scope, mainModuleAt(runtime_, "A"));
+  ASSERT_TRUE(runtime_->isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object result_obj(&scope, typeGetAttribute(thread_, a, name));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 3);
-  Type result_0_type(&scope, runtime_.typeOf(result.at(0)));
+  Type result_0_type(&scope, runtime_->typeOf(result.at(0)));
   EXPECT_TRUE(typeIsSubclass(result_0_type, d));
   EXPECT_EQ(result.at(1), a);
   EXPECT_EQ(result.at(2), m);
@@ -846,7 +846,7 @@ class A(metaclass=M): pass
 
 TEST_F(TypeBuiltinsTest, TypeGetAttributeCallsDunderGetOnNonDataDescriptor) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class D:
   def __get__(self, instance, owner): return 42
 class M(type):
@@ -854,8 +854,8 @@ class M(type):
 class A(metaclass=M): pass
 )")
                    .isError());
-  Object a_obj(&scope, mainModuleAt(&runtime_, "A"));
-  ASSERT_TRUE(runtime_.isInstanceOfType(*a_obj));
+  Object a_obj(&scope, mainModuleAt(runtime_, "A"));
+  ASSERT_TRUE(runtime_->isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   EXPECT_TRUE(isIntEqualsWord(typeGetAttribute(thread_, a, name), 42));
@@ -863,7 +863,7 @@ class A(metaclass=M): pass
 
 TEST_F(TypeBuiltinsTest, TypeGetAttributePrefersDataDescriptorOverTypeAttr) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class D:
   def __set__(self, instance, value): pass
   def __get__(self, instance, owner): return 42
@@ -873,8 +873,8 @@ class A(metaclass=M):
   foo = 12
 )")
                    .isError());
-  Object a_obj(&scope, mainModuleAt(&runtime_, "A"));
-  ASSERT_TRUE(runtime_.isInstanceOfType(*a_obj));
+  Object a_obj(&scope, mainModuleAt(runtime_, "A"));
+  ASSERT_TRUE(runtime_->isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   EXPECT_TRUE(isIntEqualsWord(typeGetAttribute(thread_, a, name), 42));
@@ -882,7 +882,7 @@ class A(metaclass=M):
 
 TEST_F(TypeBuiltinsTest, TypeGetAttributePrefersFieldOverNonDataDescriptor) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class D:
   def __get__(self, instance, owner): return 42
 class M(type):
@@ -891,8 +891,8 @@ class A(metaclass=M):
   foo = 12
 )")
                    .isError());
-  Object a_obj(&scope, mainModuleAt(&runtime_, "A"));
-  ASSERT_TRUE(runtime_.isInstanceOfType(*a_obj));
+  Object a_obj(&scope, mainModuleAt(runtime_, "A"));
+  ASSERT_TRUE(runtime_->isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   EXPECT_TRUE(isIntEqualsWord(typeGetAttribute(thread_, a, name), 12));
@@ -900,7 +900,7 @@ class A(metaclass=M):
 
 TEST_F(TypeBuiltinsTest, TypeGetAttributePropagatesDunderGetException) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class D:
   def __set__(self, instance, value): pass
   def __get__(self, instance, owner): raise UserWarning()
@@ -909,8 +909,8 @@ class M(type):
 class A(metaclass=M): pass
 )")
                    .isError());
-  Object a_obj(&scope, mainModuleAt(&runtime_, "A"));
-  ASSERT_TRUE(runtime_.isInstanceOfType(*a_obj));
+  Object a_obj(&scope, mainModuleAt(runtime_, "A"));
+  ASSERT_TRUE(runtime_->isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   EXPECT_TRUE(
@@ -919,26 +919,26 @@ class A(metaclass=M): pass
 
 TEST_F(TypeBuiltinsTest, TypeGetAttributeOnNoneTypeReturnsFunction) {
   HandleScope scope(thread_);
-  Type none_type(&scope, runtime_.typeAt(LayoutId::kNoneType));
+  Type none_type(&scope, runtime_->typeAt(LayoutId::kNoneType));
   Object name(&scope, Runtime::internStrFromCStr(thread_, "__repr__"));
   EXPECT_TRUE(typeGetAttribute(thread_, none_type, name).isFunction());
 }
 
 TEST_F(TypeBuiltinsTest, TypeSetAttrSetsAttribute) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, "class C: pass").isError());
-  Object c_obj(&scope, mainModuleAt(&runtime_, "C"));
-  ASSERT_TRUE(runtime_.isInstanceOfType(*c_obj));
+  ASSERT_FALSE(runFromCStr(runtime_, "class C: pass").isError());
+  Object c_obj(&scope, mainModuleAt(runtime_, "C"));
+  ASSERT_TRUE(runtime_->isInstanceOfType(*c_obj));
   Type c(&scope, *c_obj);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foobarbaz"));
-  Object value(&scope, runtime_.newInt(-444));
+  Object value(&scope, runtime_->newInt(-444));
   EXPECT_TRUE(typeSetAttr(thread_, c, name, value).isNoneType());
   EXPECT_TRUE(isIntEqualsWord(typeAt(c, name), -444));
 }
 
 TEST_F(TypeBuiltinsTest, TypeSetAttrCallsDunderSetOnDataDescriptor) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class D:
   def __get__(self, instance, owner): pass
   def __set__(self, instance, value):
@@ -952,14 +952,14 @@ class A(metaclass=M):
   foo = "hidden by data descriptor"
 )")
                    .isError());
-  Object foo(&scope, mainModuleAt(&runtime_, "foo"));
-  Object a_obj(&scope, mainModuleAt(&runtime_, "A"));
-  ASSERT_TRUE(runtime_.isInstanceOfType(*a_obj));
+  Object foo(&scope, mainModuleAt(runtime_, "foo"));
+  Object a_obj(&scope, mainModuleAt(runtime_, "A"));
+  ASSERT_TRUE(runtime_->isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  Object value(&scope, runtime_.newInt(77));
+  Object value(&scope, runtime_->newInt(77));
   EXPECT_TRUE(typeSetAttr(thread_, a, name, value).isNoneType());
-  Object set_args_obj(&scope, mainModuleAt(&runtime_, "set_args"));
+  Object set_args_obj(&scope, mainModuleAt(runtime_, "set_args"));
   ASSERT_TRUE(set_args_obj.isTuple());
   Tuple set_args(&scope, *set_args_obj);
   ASSERT_EQ(set_args.length(), 3);
@@ -970,7 +970,7 @@ class A(metaclass=M):
 
 TEST_F(TypeBuiltinsTest, TypeSetAttrPropagatesDunderSetException) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class D:
   def __get__(self, instance, owner): pass
   def __set__(self, instance, value): raise UserWarning()
@@ -980,18 +980,18 @@ class A(metaclass=M):
   pass
 )")
                    .isError());
-  Object a_obj(&scope, mainModuleAt(&runtime_, "A"));
-  ASSERT_TRUE(runtime_.isInstanceOfType(*a_obj));
+  Object a_obj(&scope, mainModuleAt(runtime_, "A"));
+  ASSERT_TRUE(runtime_->isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  Object value(&scope, runtime_.newInt(1));
+  Object value(&scope, runtime_->newInt(1));
   EXPECT_TRUE(
       raised(typeSetAttr(thread_, a, name, value), LayoutId::kUserWarning));
 }
 
 TEST_F(TypeBuiltinsTest, TypeSetAttrOnBuiltinTypeRaisesTypeError) {
   HandleScope scope(thread_);
-  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object value(&scope, NoneType::object());
   EXPECT_TRUE(raisedWithStr(
@@ -1000,51 +1000,51 @@ TEST_F(TypeBuiltinsTest, TypeSetAttrOnBuiltinTypeRaisesTypeError) {
 }
 
 TEST_F(TypeBuiltinsTest, TypeofSmallStrReturnsStr) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 result = type('a')
 )")
                    .isError());
-  EXPECT_EQ(mainModuleAt(&runtime_, "result"), runtime_.typeAt(LayoutId::kStr));
+  EXPECT_EQ(mainModuleAt(runtime_, "result"), runtime_->typeAt(LayoutId::kStr));
 }
 
 TEST_F(TypeBuiltinsTest, TypeofLargeStrReturnsStr) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 result = type('aaaaaaaaaaaaaaaaaaaaaaa')
 )")
                    .isError());
-  EXPECT_EQ(mainModuleAt(&runtime_, "result"), runtime_.typeAt(LayoutId::kStr));
+  EXPECT_EQ(mainModuleAt(runtime_, "result"), runtime_->typeAt(LayoutId::kStr));
 }
 
 TEST_F(TypeBuiltinsTest, TypeofSmallIntReturnsInt) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 result = type(5)
 )")
                    .isError());
-  EXPECT_EQ(mainModuleAt(&runtime_, "result"), runtime_.typeAt(LayoutId::kInt));
+  EXPECT_EQ(mainModuleAt(runtime_, "result"), runtime_->typeAt(LayoutId::kInt));
 }
 
 TEST_F(TypeBuiltinsTest, TypeofLargeIntReturnsInt) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 result = type(99999999999999999999999999999999999999999)
 )")
                    .isError());
-  EXPECT_EQ(mainModuleAt(&runtime_, "result"), runtime_.typeAt(LayoutId::kInt));
+  EXPECT_EQ(mainModuleAt(runtime_, "result"), runtime_->typeAt(LayoutId::kInt));
 }
 
 TEST_F(TypeBuiltinsTest, ResolveDescriptorGetReturnsNonDescriptor) {
   HandleScope scope(thread_);
 
-  Object instance(&scope, runtime_.newInt(123));
+  Object instance(&scope, runtime_->newInt(123));
   Object owner(&scope, NoneType::object());
-  Object descr(&scope, runtime_.newInt(456));
+  Object descr(&scope, runtime_->newInt(456));
   EXPECT_EQ(resolveDescriptorGet(thread_, descr, instance, owner), *descr);
 }
 
 TEST_F(TypeBuiltinsTest, ResolveDescriptorGetCallsDescriptorDunderGet) {
   HandleScope scope(thread_);
 
-  Object instance(&scope, runtime_.newInt(123));
-  Type owner(&scope, runtime_.typeOf(*instance));
+  Object instance(&scope, runtime_->newInt(123));
+  Type owner(&scope, runtime_->typeOf(*instance));
   Object descr(&scope,
                typeLookupInMroById(thread_, owner, SymbolId::kDunderAdd));
   ASSERT_TRUE(descr.isFunction());
@@ -1072,7 +1072,7 @@ TEST_F(TypeBuiltinsDeathTest,
 TEST_F(
     TypeBuiltinsDeathTest,
     DunderSetAttrWithUnimplementedCacheInvalidationTerminatesPyroWhenCacheIsEnabled) {
-  EXPECT_FALSE(runFromCStr(&runtime_, R"(
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
 class C: pass
 
 C.__len__ = lambda self: 4
@@ -1080,14 +1080,14 @@ C.__len__ = lambda self: 4
                    .isError());
 
   ASSERT_DEATH(
-      static_cast<void>(runFromCStr(&runtime_, R"(
+      static_cast<void>(runFromCStr(runtime_, R"(
 class C: pass
 
 C.__getattribute__ = lambda self, key: 5
 )")),
       "unimplemented cache invalidation for type.__getattribute__ update");
 
-  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime_, R"(
+  ASSERT_DEATH(static_cast<void>(runFromCStr(runtime_, R"(
 class C: pass
 
 C.__setattr__ = lambda self, key: 5

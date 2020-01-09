@@ -13,7 +13,7 @@ using namespace testing;
 using SuperBuiltinsTest = RuntimeFixture;
 
 TEST_F(SuperBuiltinsTest, DunderInitWithMetaclassInstanceReturnsSuper) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class M(type):
   def get_super(self):
     return super()
@@ -22,9 +22,9 @@ s = C.get_super()
 )")
                    .isError());
   HandleScope scope;
-  Object s_obj(&scope, mainModuleAt(&runtime_, "s"));
-  Object m(&scope, mainModuleAt(&runtime_, "M"));
-  Object c(&scope, mainModuleAt(&runtime_, "C"));
+  Object s_obj(&scope, mainModuleAt(runtime_, "s"));
+  Object m(&scope, mainModuleAt(runtime_, "M"));
+  Object c(&scope, mainModuleAt(runtime_, "C"));
   ASSERT_TRUE(s_obj.isSuper());
   Super s(&scope, *s_obj);
   EXPECT_EQ(s.type(), m);
@@ -34,7 +34,7 @@ s = C.get_super()
 
 TEST_F(SuperBuiltinsTest, DunderInitWithNonDefaultMetaclassReturnsSuper) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class M(type): pass
 class C(metaclass=M):
   def __new__(cls):
@@ -43,9 +43,9 @@ class D(C): pass
 s = D()
 )")
                    .isError());
-  Object c(&scope, mainModuleAt(&runtime_, "C"));
-  Object d(&scope, mainModuleAt(&runtime_, "D"));
-  Object s_obj(&scope, mainModuleAt(&runtime_, "s"));
+  Object c(&scope, mainModuleAt(runtime_, "C"));
+  Object d(&scope, mainModuleAt(runtime_, "D"));
+  Object s_obj(&scope, mainModuleAt(runtime_, "s"));
   ASSERT_TRUE(s_obj.isSuper());
   Super s(&scope, *s_obj);
   EXPECT_EQ(s.type(), c);
@@ -54,7 +54,7 @@ s = D()
 }
 
 TEST_F(SuperBuiltinsTest, DunderCallWorksInTypesWithNonDefaultMetaclass) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class M(type): pass
 class A(metaclass=M):
     x = 2
@@ -66,13 +66,13 @@ result = B().getsuper().x
 )")
                    .isError());
   HandleScope scope;
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
 
 TEST_F(SuperBuiltinsTest, DunderGetattributeReturnsAttribute) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   foo = 8
 class B(A):
@@ -82,15 +82,15 @@ class B(A):
 s = B().getsuper()
 )")
                    .isError());
-  Object s(&scope, mainModuleAt(&runtime_, "s"));
-  Object name(&scope, runtime_.newStrFromCStr("foo"));
+  Object s(&scope, mainModuleAt(runtime_, "s"));
+  Object name(&scope, runtime_->newStrFromCStr("foo"));
   EXPECT_TRUE(isIntEqualsWord(
       runBuiltin(SuperBuiltins::dunderGetattribute, s, name), 8));
 }
 
 TEST_F(SuperBuiltinsTest, DunderGetattributeWithNonStringNameRaisesTypeError) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A: pass
 class B(A):
   def getsuper(self):
@@ -98,8 +98,8 @@ class B(A):
 s = B().getsuper()
 )")
                    .isError());
-  Object s(&scope, mainModuleAt(&runtime_, "s"));
-  Object name(&scope, runtime_.newInt(0));
+  Object s(&scope, mainModuleAt(runtime_, "s"));
+  Object name(&scope, runtime_->newInt(0));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(SuperBuiltins::dunderGetattribute, s, name),
       LayoutId::kTypeError, "attribute name must be string, not 'int'"));
@@ -108,7 +108,7 @@ s = B().getsuper()
 TEST_F(SuperBuiltinsTest,
        DunderGetattributeWithMissingAttributeRaisesAttributeError) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A: pass
 class B(A):
   def getsuper(self):
@@ -116,15 +116,15 @@ class B(A):
 s = B().getsuper()
 )")
                    .isError());
-  Object s(&scope, mainModuleAt(&runtime_, "s"));
-  Object name(&scope, runtime_.newStrFromCStr("xxx"));
+  Object s(&scope, mainModuleAt(runtime_, "s"));
+  Object name(&scope, runtime_->newStrFromCStr("xxx"));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(SuperBuiltins::dunderGetattribute, s, name),
       LayoutId::kAttributeError, "super object has no attribute 'xxx'"));
 }
 
 TEST_F(SuperBuiltinsTest, SuperTest1) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
     def f(self):
         return 1
@@ -158,16 +158,16 @@ result4 = F().f()
 result5 = F.f(F())
 )")
                    .isError());
-  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result0"), 10));
-  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result1"), 10));
-  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result2"), 10));
-  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result3"), 10));
-  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result4"), 10));
-  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(&runtime_, "result5"), 10));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(runtime_, "result0"), 10));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(runtime_, "result1"), 10));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(runtime_, "result2"), 10));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(runtime_, "result3"), 10));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(runtime_, "result4"), 10));
+  EXPECT_TRUE(isIntEqualsWord(mainModuleAt(runtime_, "result5"), 10));
 }
 
 TEST_F(SuperBuiltinsTest, SuperTest2) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
     @classmethod
     def cm(cls):
@@ -203,16 +203,16 @@ e = E()
 result5 = e.cm() == (e, (E, (E, (E, 1), 2), 3), 4)
 )")
                    .isError());
-  EXPECT_EQ(mainModuleAt(&runtime_, "result0"), Bool::trueObj());
-  EXPECT_EQ(mainModuleAt(&runtime_, "result1"), Bool::trueObj());
-  EXPECT_EQ(mainModuleAt(&runtime_, "result2"), Bool::trueObj());
-  EXPECT_EQ(mainModuleAt(&runtime_, "result3"), Bool::trueObj());
-  EXPECT_EQ(mainModuleAt(&runtime_, "result4"), Bool::trueObj());
-  EXPECT_EQ(mainModuleAt(&runtime_, "result5"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(runtime_, "result0"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(runtime_, "result1"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(runtime_, "result2"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(runtime_, "result3"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(runtime_, "result4"), Bool::trueObj());
+  EXPECT_EQ(mainModuleAt(runtime_, "result5"), Bool::trueObj());
 }
 
 TEST_F(SuperBuiltinsTest, SuperTestNoArgument) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
     @classmethod
     def cm(cls):
@@ -252,10 +252,10 @@ e = d.cm() == (d, (D, (D, (D, 1), 2), 3), 4)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object a(&scope, mainModuleAt(&runtime_, "a"));
-  Object b(&scope, mainModuleAt(&runtime_, "b"));
-  Bool c(&scope, mainModuleAt(&runtime_, "c"));
-  Bool e(&scope, mainModuleAt(&runtime_, "e"));
+  Object a(&scope, mainModuleAt(runtime_, "a"));
+  Object b(&scope, mainModuleAt(runtime_, "b"));
+  Bool c(&scope, mainModuleAt(runtime_, "c"));
+  Bool e(&scope, mainModuleAt(runtime_, "e"));
   EXPECT_TRUE(isIntEqualsWord(*a, 3));
   EXPECT_TRUE(isIntEqualsWord(*b, 10));
   EXPECT_EQ(*c, Bool::trueObj());
@@ -264,7 +264,7 @@ e = d.cm() == (d, (D, (D, (D, 1), 2), 3), 4)
 
 TEST_F(SuperBuiltinsTest,
        SuperCalledFromFunctionWithCellVarReturnsSuperInstance) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class MetaA(type):
     x = 42
 class MetaB(MetaA):
@@ -278,16 +278,16 @@ result = type(C()).x
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 42));
 }
 
 TEST_F(SuperBuiltinsTest, NoArgumentRaisesRuntimeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "super()"),
+  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, "super()"),
                             LayoutId::kRuntimeError, "super(): no arguments"));
   Thread::current()->clearPendingException();
 
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
 def f(a):
     super()
 f(1)
@@ -298,7 +298,7 @@ f(1)
 
 TEST_F(SuperBuiltinsTest, SuperGetAttributeReturnsAttributeInSuperClass) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A:
   x = 13
 class B(A):
@@ -308,7 +308,7 @@ class B(A):
 s = B().getsuper()
 )")
                    .isError());
-  Object s_obj(&scope, mainModuleAt(&runtime_, "s"));
+  Object s_obj(&scope, mainModuleAt(runtime_, "s"));
   ASSERT_TRUE(s_obj.isSuper());
   Super s(&scope, *s_obj);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "x"));
@@ -317,7 +317,7 @@ s = B().getsuper()
 
 TEST_F(SuperBuiltinsTest, SuperGetAttributeWithMissingAttributeReturnsError) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class A: pass
 class B(A):
   x = 42
@@ -326,7 +326,7 @@ class B(A):
 s = B().getsuper()
 )")
                    .isError());
-  Object s_obj(&scope, mainModuleAt(&runtime_, "s"));
+  Object s_obj(&scope, mainModuleAt(runtime_, "s"));
   ASSERT_TRUE(s_obj.isSuper());
   Super s(&scope, *s_obj);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "x"));
@@ -336,7 +336,7 @@ s = B().getsuper()
 
 TEST_F(SuperBuiltinsTest, SuperGetAttributeCallsDunderGetOnDataDescriptor) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class D:
   def __set__(self, instance, value): pass
   def __get__(self, instance, owner): return (self, instance, owner)
@@ -351,10 +351,10 @@ i = B()
 s = i.getsuper()
 )")
                    .isError());
-  Object d(&scope, mainModuleAt(&runtime_, "d"));
-  Object b(&scope, mainModuleAt(&runtime_, "B"));
-  Object i(&scope, mainModuleAt(&runtime_, "i"));
-  Object s_obj(&scope, mainModuleAt(&runtime_, "s"));
+  Object d(&scope, mainModuleAt(runtime_, "d"));
+  Object b(&scope, mainModuleAt(runtime_, "B"));
+  Object i(&scope, mainModuleAt(runtime_, "i"));
+  Object s_obj(&scope, mainModuleAt(runtime_, "s"));
   ASSERT_TRUE(s_obj.isSuper());
   Super s(&scope, *s_obj);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "x"));
@@ -369,7 +369,7 @@ s = i.getsuper()
 
 TEST_F(SuperBuiltinsTest, SuperGetAttributeCallsDunderGetOnNonDataDescriptor) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class D:
   def __get__(self, instance, owner): return (self, instance, owner)
 d = D()
@@ -383,10 +383,10 @@ i = B()
 s = i.getsuper()
 )")
                    .isError());
-  Object d(&scope, mainModuleAt(&runtime_, "d"));
-  Object b(&scope, mainModuleAt(&runtime_, "B"));
-  Object i(&scope, mainModuleAt(&runtime_, "i"));
-  Object s_obj(&scope, mainModuleAt(&runtime_, "s"));
+  Object d(&scope, mainModuleAt(runtime_, "d"));
+  Object b(&scope, mainModuleAt(runtime_, "B"));
+  Object i(&scope, mainModuleAt(runtime_, "i"));
+  Object s_obj(&scope, mainModuleAt(runtime_, "s"));
   ASSERT_TRUE(s_obj.isSuper());
   Super s(&scope, *s_obj);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "x"));
@@ -401,18 +401,18 @@ s = i.getsuper()
 
 TEST_F(SuperBuiltinsTest, SuperGetAttributeDunderClassReturnsSuper) {
   HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C:
   def foo(self):
     return super()
 s = C().foo()
 )")
                    .isError());
-  Object s_obj(&scope, mainModuleAt(&runtime_, "s"));
+  Object s_obj(&scope, mainModuleAt(runtime_, "s"));
   ASSERT_TRUE(s_obj.isSuper());
   Super s(&scope, *s_obj);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "__class__"));
-  Type super_type(&scope, runtime_.typeAt(LayoutId::kSuper));
+  Type super_type(&scope, runtime_->typeAt(LayoutId::kSuper));
   EXPECT_EQ(superGetAttribute(thread_, s, name), super_type);
 }
 

@@ -30,9 +30,9 @@ using WeakRefTest = RuntimeFixture;
 
 TEST_F(ByteArrayTest, DownsizeMaintainsCapacity) {
   HandleScope scope(thread_);
-  ByteArray array(&scope, runtime_.newByteArray());
+  ByteArray array(&scope, runtime_->newByteArray());
   const byte byte_array[] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
-  runtime_.byteArrayExtend(thread_, array, byte_array);
+  runtime_->byteArrayExtend(thread_, array, byte_array);
   ASSERT_EQ(array.numItems(), 9);
   word capacity = array.capacity();
   array.downsize(5);
@@ -43,7 +43,7 @@ TEST_F(ByteArrayTest, DownsizeMaintainsCapacity) {
 TEST_F(SmallBytesTest, CopyToStartAtCopiesToDestinationStartingAtIndex) {
   byte src_bytes[] = "hello";
   HandleScope scope(thread_);
-  Bytes src(&scope, runtime_.newBytesWithAll(src_bytes));
+  Bytes src(&scope, runtime_->newBytesWithAll(src_bytes));
   byte result[5] = {0};
   src.copyToStartAt(result, 4, 1);
   EXPECT_STREQ(reinterpret_cast<char*>(result), "ello");
@@ -52,70 +52,70 @@ TEST_F(SmallBytesTest, CopyToStartAtCopiesToDestinationStartingAtIndex) {
 TEST_F(SmallBytesTest, FindByteWithZeroLengthReturnsNegativeOne) {
   byte src_bytes[] = "hello";
   HandleScope scope(thread_);
-  SmallBytes bytes(&scope, runtime_.newBytesWithAll(src_bytes));
+  SmallBytes bytes(&scope, runtime_->newBytesWithAll(src_bytes));
   EXPECT_EQ(bytes.findByte('h', 0, 0), -1);
 }
 
 TEST_F(SmallBytesTest, FindByteWithEndBeforeByteReturnsNegativeOne) {
   byte src_bytes[] = "hello";
   HandleScope scope(thread_);
-  SmallBytes bytes(&scope, runtime_.newBytesWithAll(src_bytes));
+  SmallBytes bytes(&scope, runtime_->newBytesWithAll(src_bytes));
   EXPECT_EQ(bytes.findByte('o', 1, 2), -1);
 }
 
 TEST_F(SmallBytesTest, FindByteWithByteNotInBytesReturnsNegativeOne) {
   byte src_bytes[] = "hello";
   HandleScope scope(thread_);
-  SmallBytes bytes(&scope, runtime_.newBytesWithAll(src_bytes));
+  SmallBytes bytes(&scope, runtime_->newBytesWithAll(src_bytes));
   EXPECT_EQ(bytes.findByte('x', 0, bytes.length()), -1);
 }
 
 TEST_F(SmallBytesTest, FindByteWithByteInBytesReturnsIndex) {
   byte src_bytes[] = "hello";
   HandleScope scope(thread_);
-  SmallBytes bytes(&scope, runtime_.newBytesWithAll(src_bytes));
+  SmallBytes bytes(&scope, runtime_->newBytesWithAll(src_bytes));
   EXPECT_EQ(bytes.findByte('o', 0, bytes.length()), 4);
 }
 
 TEST_F(LargeBytesTest, FindByteWithZerolengthReturnsNegativeOne) {
   byte src_bytes[] = "hello world this is patrick";
   HandleScope scope(thread_);
-  LargeBytes bytes(&scope, runtime_.newBytesWithAll(src_bytes));
+  LargeBytes bytes(&scope, runtime_->newBytesWithAll(src_bytes));
   EXPECT_EQ(bytes.findByte('h', 0, 0), -1);
 }
 
 TEST_F(LargeBytesTest, FindByteWithEndBeforeByteReturnsNegativeOne) {
   byte src_bytes[] = "hello world";
   HandleScope scope(thread_);
-  LargeBytes bytes(&scope, runtime_.newBytesWithAll(src_bytes));
+  LargeBytes bytes(&scope, runtime_->newBytesWithAll(src_bytes));
   EXPECT_EQ(bytes.findByte('d', 3, 5), -1);
 }
 
 TEST_F(LargeBytesTest, FindByteWithByteNotInBytesReturnsNegativeOne) {
   byte src_bytes[] = "hello world";
   HandleScope scope(thread_);
-  LargeBytes bytes(&scope, runtime_.newBytesWithAll(src_bytes));
+  LargeBytes bytes(&scope, runtime_->newBytesWithAll(src_bytes));
   EXPECT_EQ(bytes.findByte('x', 0, bytes.length()), -1);
 }
 
 TEST_F(LargeBytesTest, FindByteWithByteInBytesReturnsIndex) {
   byte src_bytes[] = "hello world";
   HandleScope scope(thread_);
-  LargeBytes bytes(&scope, runtime_.newBytesWithAll(src_bytes));
+  LargeBytes bytes(&scope, runtime_->newBytesWithAll(src_bytes));
   EXPECT_EQ(bytes.findByte('o', 0, bytes.length()), 4);
 }
 
 TEST_F(LargeBytesTest, FindByteNonZeroStartReturnsIndex) {
   byte src_bytes[] = "hello world";
   HandleScope scope(thread_);
-  LargeBytes bytes(&scope, runtime_.newBytesWithAll(src_bytes));
+  LargeBytes bytes(&scope, runtime_->newBytesWithAll(src_bytes));
   EXPECT_EQ(bytes.findByte('o', 5, bytes.length() - 5), 7);
 }
 
 TEST_F(LargeBytesTest, CopyToStartAtCopiesToDestinationStartingAtIndex) {
   byte src_bytes[] = "hello world this is patrick";
   HandleScope scope(thread_);
-  Bytes src(&scope, runtime_.newBytesWithAll(src_bytes));
+  Bytes src(&scope, runtime_->newBytesWithAll(src_bytes));
   byte result[8] = {0};
   src.copyToStartAt(result, 7, 20);
   EXPECT_STREQ(reinterpret_cast<char*>(result), "patrick");
@@ -125,7 +125,7 @@ TEST_F(MutableBytesTest, ReplaceFromWithStartAtSelfNoop) {
   HandleScope scope(thread_);
   const byte src_bytes[] = "patrick";
   word src_length = ARRAYSIZE(src_bytes);
-  MutableBytes src(&scope, runtime_.newMutableBytesUninitialized(src_length));
+  MutableBytes src(&scope, runtime_->newMutableBytesUninitialized(src_length));
   for (word i = 0; i < src_length; i++) {
     src.byteAtPut(i, src_bytes[i]);
   }
@@ -138,7 +138,7 @@ TEST_F(MutableBytesTest, ReplaceFromWithStartAtSelfBackward) {
   HandleScope scope(thread_);
   const byte src_bytes[] = "patrick";
   word src_length = ARRAYSIZE(src_bytes);
-  MutableBytes src(&scope, runtime_.newMutableBytesUninitialized(src_length));
+  MutableBytes src(&scope, runtime_->newMutableBytesUninitialized(src_length));
   for (word i = 0; i < src_length; i++) {
     src.byteAtPut(i, src_bytes[i]);
   }
@@ -152,7 +152,7 @@ TEST_F(MutableBytesTest, ReplaceFromWithStartAtSelfForward) {
   HandleScope scope(thread_);
   const byte src_bytes[] = "patrick";
   word src_length = ARRAYSIZE(src_bytes);
-  MutableBytes src(&scope, runtime_.newMutableBytesUninitialized(src_length));
+  MutableBytes src(&scope, runtime_->newMutableBytesUninitialized(src_length));
   for (word i = 0; i < src_length; i++) {
     src.byteAtPut(i, src_bytes[i]);
   }
@@ -165,8 +165,8 @@ TEST_F(MutableBytesTest, ReplaceFromWithStartAtSelfForward) {
 TEST_F(MutableBytesTest, ReplaceFromWithStartAtReplacesStartingAtSrcIndex) {
   byte src_bytes[] = "hello world this is patrick";
   HandleScope scope(thread_);
-  Bytes src(&scope, runtime_.newBytesWithAll(src_bytes));
-  MutableBytes dst(&scope, runtime_.newMutableBytesUninitialized(8));
+  Bytes src(&scope, runtime_->newBytesWithAll(src_bytes));
+  MutableBytes dst(&scope, runtime_->newMutableBytesUninitialized(8));
   dst.replaceFromWithStartAt(0, *src, 7, 20);
   const byte expected[] = "patrick";
   EXPECT_TRUE(isMutableBytesEqualsBytes(dst, expected));
@@ -179,7 +179,7 @@ def func():
   b = 2
   print(a, b)
 )";
-  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  ASSERT_FALSE(runFromCStr(runtime_, src).isError());
   HandleScope scope(thread_);
 
   // The bytecode for func is roughly:
@@ -194,7 +194,7 @@ def func():
   // LOAD_FAST
   // CALL_FUNCTION
 
-  Function func(&scope, mainModuleAt(&runtime_, "func"));
+  Function func(&scope, mainModuleAt(runtime_, "func"));
   Code code(&scope, func.code());
   ASSERT_EQ(code.firstlineno(), 2);
 
@@ -213,14 +213,14 @@ def func():
 }
 
 TEST_F(DoubleTest, DoubleTest) {
-  RawObject o = runtime_.newFloat(3.14);
+  RawObject o = runtime_->newFloat(3.14);
   ASSERT_TRUE(o.isFloat());
   RawFloat d = Float::cast(o);
   EXPECT_EQ(d.value(), 3.14);
 }
 
 TEST_F(ComplexTest, ComplexTest) {
-  RawObject o = runtime_.newComplex(1.0, 2.0);
+  RawObject o = runtime_->newComplex(1.0, 2.0);
   ASSERT_TRUE(o.isComplex());
   RawComplex c = Complex::cast(o);
   EXPECT_EQ(c.real(), 1.0);
@@ -230,26 +230,26 @@ TEST_F(ComplexTest, ComplexTest) {
 TEST_F(IntTest, IntTest) {
   HandleScope scope(thread_);
 
-  Object o1(&scope, runtime_.newInt(42));
+  Object o1(&scope, runtime_->newInt(42));
   EXPECT_TRUE(isIntEqualsWord(*o1, 42));
 
-  Object o2(&scope, runtime_.newInt(9223372036854775807L));
+  Object o2(&scope, runtime_->newInt(9223372036854775807L));
   EXPECT_TRUE(isIntEqualsWord(*o2, 9223372036854775807L));
 
   int stack_val = 123;
-  Int o3(&scope, runtime_.newIntFromCPtr(&stack_val));
+  Int o3(&scope, runtime_->newIntFromCPtr(&stack_val));
   EXPECT_EQ(*static_cast<int*>(o3.asCPtr()), 123);
 
-  Object o4(&scope, runtime_.newInt(kMinWord));
+  Object o4(&scope, runtime_->newInt(kMinWord));
   EXPECT_TRUE(isIntEqualsWord(*o4, kMinWord));
 
   uword digits[] = {kMaxUword, 0};
-  Int o5(&scope, runtime_.newIntWithDigits(digits));
+  Int o5(&scope, runtime_->newIntWithDigits(digits));
   EXPECT_TRUE(o5.isLargeInt());
   EXPECT_EQ(o5.bitLength(), kBitsPerWord);
 
   uword digits2[] = {kMaxUword, 1};
-  Int o6(&scope, runtime_.newIntWithDigits(digits2));
+  Int o6(&scope, runtime_->newIntWithDigits(digits2));
   EXPECT_TRUE(o6.isLargeInt());
   EXPECT_EQ(o6.bitLength(), kBitsPerWord + 1);
 }
@@ -257,7 +257,7 @@ TEST_F(IntTest, IntTest) {
 TEST_F(IntTest, LargeIntValid) {
   HandleScope scope(thread_);
 
-  LargeInt i(&scope, runtime_.heap()->createLargeInt(2));
+  LargeInt i(&scope, runtime_->heap()->createLargeInt(2));
   i.digitAtPut(0, -1234);
   i.digitAtPut(1, -1);
   // Redundant sign-extension
@@ -278,99 +278,99 @@ TEST_F(IntTest, LargeIntValid) {
 TEST_F(IntTest, IsPositive) {
   HandleScope scope(thread_);
 
-  Int zero(&scope, runtime_.newInt(0));
+  Int zero(&scope, runtime_->newInt(0));
   EXPECT_FALSE(zero.isPositive());
 
-  Int one(&scope, runtime_.newInt(1));
+  Int one(&scope, runtime_->newInt(1));
   EXPECT_TRUE(one.isPositive());
 
-  Int neg_one(&scope, runtime_.newInt(-1));
+  Int neg_one(&scope, runtime_->newInt(-1));
   EXPECT_FALSE(neg_one.isPositive());
 
-  Int max_small_int(&scope, runtime_.newInt(RawSmallInt::kMaxValue));
+  Int max_small_int(&scope, runtime_->newInt(RawSmallInt::kMaxValue));
   EXPECT_TRUE(max_small_int.isPositive());
 
-  Int min_small_int(&scope, runtime_.newInt(RawSmallInt::kMinValue));
+  Int min_small_int(&scope, runtime_->newInt(RawSmallInt::kMinValue));
   EXPECT_FALSE(min_small_int.isPositive());
 
-  Int max_word(&scope, runtime_.newInt(kMaxWord));
+  Int max_word(&scope, runtime_->newInt(kMaxWord));
   EXPECT_TRUE(max_word.isPositive());
 
-  Int min_word(&scope, runtime_.newInt(kMinWord));
+  Int min_word(&scope, runtime_->newInt(kMinWord));
   EXPECT_FALSE(min_word.isPositive());
 }
 
 TEST_F(IntTest, IsNegative) {
   HandleScope scope(thread_);
 
-  Int zero(&scope, runtime_.newInt(0));
+  Int zero(&scope, runtime_->newInt(0));
   EXPECT_FALSE(zero.isNegative());
 
-  Int one(&scope, runtime_.newInt(1));
+  Int one(&scope, runtime_->newInt(1));
   EXPECT_FALSE(one.isNegative());
 
-  Int neg_one(&scope, runtime_.newInt(-1));
+  Int neg_one(&scope, runtime_->newInt(-1));
   EXPECT_TRUE(neg_one.isNegative());
 
-  Int max_small_int(&scope, runtime_.newInt(RawSmallInt::kMaxValue));
+  Int max_small_int(&scope, runtime_->newInt(RawSmallInt::kMaxValue));
   EXPECT_FALSE(max_small_int.isNegative());
 
-  Int min_small_int(&scope, runtime_.newInt(RawSmallInt::kMinValue));
+  Int min_small_int(&scope, runtime_->newInt(RawSmallInt::kMinValue));
   EXPECT_TRUE(min_small_int.isNegative());
 
-  Int max_word(&scope, runtime_.newInt(kMaxWord));
+  Int max_word(&scope, runtime_->newInt(kMaxWord));
   EXPECT_FALSE(max_word.isNegative());
 
-  Int min_word(&scope, runtime_.newInt(kMinWord));
+  Int min_word(&scope, runtime_->newInt(kMinWord));
   EXPECT_TRUE(min_word.isNegative());
 }
 
 TEST_F(IntTest, IsZero) {
   HandleScope scope(thread_);
 
-  Int zero(&scope, runtime_.newInt(0));
+  Int zero(&scope, runtime_->newInt(0));
   EXPECT_TRUE(zero.isZero());
 
-  Int one(&scope, runtime_.newInt(1));
+  Int one(&scope, runtime_->newInt(1));
   EXPECT_FALSE(one.isZero());
 
-  Int neg_one(&scope, runtime_.newInt(-1));
+  Int neg_one(&scope, runtime_->newInt(-1));
   EXPECT_FALSE(neg_one.isZero());
 
-  Int max_small_int(&scope, runtime_.newInt(RawSmallInt::kMaxValue));
+  Int max_small_int(&scope, runtime_->newInt(RawSmallInt::kMaxValue));
   EXPECT_FALSE(max_small_int.isZero());
 
-  Int min_small_int(&scope, runtime_.newInt(RawSmallInt::kMinValue));
+  Int min_small_int(&scope, runtime_->newInt(RawSmallInt::kMinValue));
   EXPECT_FALSE(min_small_int.isZero());
 
-  Int max_word(&scope, runtime_.newInt(kMaxWord));
+  Int max_word(&scope, runtime_->newInt(kMaxWord));
   EXPECT_FALSE(max_word.isZero());
 
-  Int min_word(&scope, runtime_.newInt(kMinWord));
+  Int min_word(&scope, runtime_->newInt(kMinWord));
   EXPECT_FALSE(min_word.isZero());
 }
 
 TEST_F(IntTest, Compare) {
   HandleScope scope(thread_);
 
-  Int zero(&scope, runtime_.newInt(0));
-  Int one(&scope, runtime_.newInt(1));
-  Int neg_one(&scope, runtime_.newInt(-1));
+  Int zero(&scope, runtime_->newInt(0));
+  Int one(&scope, runtime_->newInt(1));
+  Int neg_one(&scope, runtime_->newInt(-1));
 
   EXPECT_EQ(zero.compare(*zero), 0);
   EXPECT_GE(one.compare(*neg_one), 1);
   EXPECT_LE(neg_one.compare(*one), -1);
 
-  Int min_small_int(&scope, runtime_.newInt(RawSmallInt::kMinValue));
-  Int max_small_int(&scope, runtime_.newInt(RawSmallInt::kMaxValue));
+  Int min_small_int(&scope, runtime_->newInt(RawSmallInt::kMinValue));
+  Int max_small_int(&scope, runtime_->newInt(RawSmallInt::kMaxValue));
 
   EXPECT_GE(max_small_int.compare(*min_small_int), 1);
   EXPECT_LE(min_small_int.compare(*max_small_int), -1);
   EXPECT_EQ(min_small_int.compare(*min_small_int), 0);
   EXPECT_EQ(max_small_int.compare(*max_small_int), 0);
 
-  Int min_word(&scope, runtime_.newInt(kMinWord));
-  Int max_word(&scope, runtime_.newInt(kMaxWord));
+  Int min_word(&scope, runtime_->newInt(kMinWord));
+  Int max_word(&scope, runtime_->newInt(kMaxWord));
 
   EXPECT_GE(max_word.compare(*min_word), 1);
   EXPECT_LE(min_word.compare(*max_word), -1);
@@ -384,30 +384,30 @@ TEST_F(IntTest, Compare) {
 TEST_F(IntTest, LargeIntCompare) {
   HandleScope scope(thread_);
   const uword digits_great[] = {1, 1};
-  Int great(&scope, newIntWithDigits(&runtime_, digits_great));
+  Int great(&scope, newIntWithDigits(runtime_, digits_great));
   const uword digits_small[] = {0, 0, kMaxUword};
-  Int small(&scope, newIntWithDigits(&runtime_, digits_small));
+  Int small(&scope, newIntWithDigits(runtime_, digits_small));
   EXPECT_EQ(great.compare(*small), 1);
   EXPECT_EQ(small.compare(*great), -1);
 
   const uword digits_great2[] = {1, 1, 1};
   const uword digits_small2[] = {1, 1};
-  great = newIntWithDigits(&runtime_, digits_great2);
-  small = newIntWithDigits(&runtime_, digits_small2);
+  great = newIntWithDigits(runtime_, digits_great2);
+  small = newIntWithDigits(runtime_, digits_small2);
   EXPECT_EQ(great.compare(*small), 1);
   EXPECT_EQ(small.compare(*great), -1);
 
   const uword digits_great3[] = {kMaxUword - 1, 1};
   const uword digits_small3[] = {2, 1};
-  great = newIntWithDigits(&runtime_, digits_great3);
-  small = newIntWithDigits(&runtime_, digits_small3);
+  great = newIntWithDigits(runtime_, digits_great3);
+  small = newIntWithDigits(runtime_, digits_small3);
   EXPECT_EQ(great.compare(*small), 1);
   EXPECT_EQ(small.compare(*great), -1);
 
   const uword digits_great4[] = {kMaxUword - 1, kMaxUword - 1};
   const uword digits_small4[] = {2, kMaxUword - 1};
-  great = newIntWithDigits(&runtime_, digits_great4);
-  small = newIntWithDigits(&runtime_, digits_small4);
+  great = newIntWithDigits(runtime_, digits_great4);
+  small = newIntWithDigits(runtime_, digits_small4);
   EXPECT_EQ(great.compare(*small), 1);
   EXPECT_EQ(small.compare(*great), -1);
 }
@@ -421,7 +421,7 @@ TEST_F(IntTest, LargeIntCompare) {
 
 TEST_F(IntTest, AsIntWithZeroReturnsZero) {
   HandleScope scope(thread_);
-  Int zero(&scope, runtime_.newInt(0));
+  Int zero(&scope, runtime_->newInt(0));
   EXPECT_VALID(zero.asInt<int>(), 0);
   EXPECT_VALID(zero.asInt<unsigned>(), 0U);
   EXPECT_VALID(zero.asInt<unsigned long>(), 0UL);
@@ -430,7 +430,7 @@ TEST_F(IntTest, AsIntWithZeroReturnsZero) {
 
 TEST_F(IntTest, AsIntReturnsInt) {
   HandleScope scope(thread_);
-  Int num(&scope, runtime_.newInt(1234));
+  Int num(&scope, runtime_->newInt(1234));
   EXPECT_VALID(num.asInt<int>(), 1234);
   EXPECT_VALID(num.asInt<long>(), 1234);
   EXPECT_VALID(num.asInt<unsigned>(), 1234U);
@@ -439,65 +439,65 @@ TEST_F(IntTest, AsIntReturnsInt) {
 
 TEST_F(IntTest, AsIntReturnsOverflow) {
   HandleScope scope(thread_);
-  Int num(&scope, runtime_.newInt(1234));
+  Int num(&scope, runtime_->newInt(1234));
   EXPECT_EQ(num.asInt<byte>().error, CastError::Overflow);
   EXPECT_EQ(num.asInt<int8_t>().error, CastError::Overflow);
-  Int word_max(&scope, runtime_.newInt(kMaxWord));
+  Int word_max(&scope, runtime_->newInt(kMaxWord));
   EXPECT_EQ(word_max.asInt<int32_t>().error, CastError::Overflow);
-  Int word_min(&scope, runtime_.newInt(kMinWord));
+  Int word_min(&scope, runtime_->newInt(kMinWord));
   EXPECT_EQ(word_min.asInt<int32_t>().error, CastError::Overflow);
 }
 
 TEST_F(IntTest, AsIntWithNegativeIntReturnsInt) {
   HandleScope scope(thread_);
-  Int neg_num(&scope, runtime_.newInt(-4567));
+  Int neg_num(&scope, runtime_->newInt(-4567));
   EXPECT_VALID(neg_num.asInt<int16_t>(), -4567);
-  Int neg_one(&scope, runtime_.newInt(-1));
+  Int neg_one(&scope, runtime_->newInt(-1));
   EXPECT_VALID(neg_one.asInt<int>(), -1);
 }
 
 TEST_F(IntTest, AsIntReturnsUnderflow) {
   HandleScope scope(thread_);
-  Int neg_num(&scope, runtime_.newInt(-4567));
+  Int neg_num(&scope, runtime_->newInt(-4567));
   EXPECT_EQ(neg_num.asInt<unsigned>().error, CastError::Underflow);
   EXPECT_EQ(neg_num.asInt<int8_t>().error, CastError::Underflow);
-  Int neg_one(&scope, runtime_.newInt(-1));
+  Int neg_one(&scope, runtime_->newInt(-1));
   EXPECT_EQ(neg_one.asInt<unsigned>().error, CastError::Underflow);
-  Int word_min(&scope, runtime_.newInt(kMinWord));
+  Int word_min(&scope, runtime_->newInt(kMinWord));
   EXPECT_EQ(word_min.asInt<uword>().error, CastError::Underflow);
 }
 
 TEST_F(IntTest, AsIntWithMaxInt32ReturnsInt) {
   HandleScope scope(thread_);
-  Int int32_max(&scope, runtime_.newInt(kMaxInt32));
+  Int int32_max(&scope, runtime_->newInt(kMaxInt32));
   EXPECT_VALID(int32_max.asInt<int32_t>(), kMaxInt32);
   EXPECT_EQ(int32_max.asInt<int16_t>().error, CastError::Overflow);
 }
 
 TEST_F(IntTest, AsIntWithMaxUwordReturnsInt) {
   HandleScope scope(thread_);
-  Int uword_max(&scope, runtime_.newIntFromUnsigned(kMaxUword));
+  Int uword_max(&scope, runtime_->newIntFromUnsigned(kMaxUword));
   EXPECT_VALID(uword_max.asInt<uword>(), kMaxUword);
   EXPECT_EQ(uword_max.asInt<word>().error, CastError::Overflow);
 }
 
 TEST_F(IntTest, AsIntWithMaxWordReturnsInt) {
   HandleScope scope(thread_);
-  Int word_max(&scope, runtime_.newInt(kMaxWord));
+  Int word_max(&scope, runtime_->newInt(kMaxWord));
   EXPECT_VALID(word_max.asInt<word>(), kMaxWord);
   EXPECT_VALID(word_max.asInt<uword>(), uword{kMaxWord});
 }
 
 TEST_F(IntTest, AsIntWithMinWordReturnsInt) {
   HandleScope scope(thread_);
-  Int word_min(&scope, runtime_.newInt(kMinWord));
+  Int word_min(&scope, runtime_->newInt(kMinWord));
   EXPECT_VALID(word_min.asInt<word>(), kMinWord);
 }
 
 TEST_F(IntTest, AsIntWithNegativeLargeIntReturnsUnderflow) {
   HandleScope scope(thread_);
   uword digits[] = {0, kMaxUword};
-  Int negative(&scope, runtime_.newIntWithDigits(digits));
+  Int negative(&scope, runtime_->newIntWithDigits(digits));
   EXPECT_EQ(negative.asInt<word>().error, CastError::Underflow);
   EXPECT_EQ(negative.asInt<uword>().error, CastError::Underflow);
 }
@@ -524,24 +524,24 @@ TEST_F(IntTest, SmallIntFromWordTruncatedWithSmallNegativeNumberReturnsSelf) {
 
 TEST_F(ModulesTest, TestCreate) {
   HandleScope scope(thread_);
-  Object name(&scope, runtime_.newStrFromCStr("mymodule"));
-  Module module(&scope, runtime_.newModule(name));
+  Object name(&scope, runtime_->newStrFromCStr("mymodule"));
+  Module module(&scope, runtime_->newModule(name));
   EXPECT_EQ(module.name(), *name);
   EXPECT_TRUE(module.dict().isDict());
 }
 
 TEST_F(MutableBytesTest, BecomeStrTurnsObjectIntoSmallStr) {
   HandleScope scope(thread_);
-  Object test_0(&scope, runtime_.emptyMutableBytes());
+  Object test_0(&scope, runtime_->emptyMutableBytes());
   ASSERT_TRUE(test_0.isMutableBytes());
   Object as_str_0(&scope, MutableBytes::cast(*test_0).becomeStr());
   EXPECT_TRUE(test_0.isMutableBytes());
   EXPECT_TRUE(as_str_0.isSmallStr());
   EXPECT_TRUE(isStrEqualsCStr(*as_str_0, ""));
 
-  Str str(&scope, runtime_.newStrFromCStr("abcdefghi"));
+  Str str(&scope, runtime_->newStrFromCStr("abcdefghi"));
 
-  Object test_1(&scope, runtime_.newMutableBytesUninitialized(1));
+  Object test_1(&scope, runtime_->newMutableBytesUninitialized(1));
   ASSERT_TRUE(test_1.isMutableBytes());
   MutableBytes::cast(*test_1).replaceFromWithStr(0, *str, 1);
   Object as_str_1(&scope, MutableBytes::cast(*test_1).becomeStr());
@@ -550,7 +550,7 @@ TEST_F(MutableBytesTest, BecomeStrTurnsObjectIntoSmallStr) {
   EXPECT_TRUE(isStrEqualsCStr(*as_str_1, "a"));
 
   Object test_m(&scope,
-                runtime_.newMutableBytesUninitialized(SmallStr::kMaxLength));
+                runtime_->newMutableBytesUninitialized(SmallStr::kMaxLength));
   ASSERT_TRUE(test_m.isMutableBytes());
   MutableBytes::cast(*test_m).replaceFromWithStr(0, *str, SmallStr::kMaxLength);
   Object as_str_m(&scope, MutableBytes::cast(*test_m).becomeStr());
@@ -561,9 +561,9 @@ TEST_F(MutableBytesTest, BecomeStrTurnsObjectIntoSmallStr) {
 
 TEST_F(MutableBytesTest, BecomeStrTurnsObjectIntoLargeStr) {
   HandleScope scope(thread_);
-  Str str(&scope, runtime_.newStrFromCStr("hello world!"));
+  Str str(&scope, runtime_->newStrFromCStr("hello world!"));
 
-  Object test(&scope, runtime_.newMutableBytesUninitialized(str.charLength()));
+  Object test(&scope, runtime_->newMutableBytesUninitialized(str.charLength()));
   ASSERT_TRUE(test.isMutableBytes());
   MutableBytes::cast(*test).replaceFromWithStr(0, *str, str.charLength());
   MutableBytes::cast(*test).becomeStr();
@@ -705,7 +705,7 @@ TEST_F(SliceTest, LengthWithPositiveStepAndStartEqualsStopReturnsZero) {
 }
 
 TEST_F(LargeStrTest, CopyTo) {
-  RawObject obj = runtime_.newStrFromCStr("hello world!");
+  RawObject obj = runtime_->newStrFromCStr("hello world!");
   ASSERT_TRUE(obj.isLargeStr());
   RawStr str = Str::cast(obj);
 
@@ -738,7 +738,7 @@ TEST_F(LargeStrTest, CopyTo) {
 TEST_F(StringTest, CompareSmallStrCStrASCII) {
   HandleScope scope(thread_);
 
-  Str small_ascii(&scope, runtime_.newStrFromCStr("sm"));
+  Str small_ascii(&scope, runtime_->newStrFromCStr("sm"));
   ASSERT_TRUE(small_ascii.isSmallStr());
 
   // Equal
@@ -757,7 +757,7 @@ TEST_F(StringTest, CompareSmallStrWithNulCStrASCII) {
   HandleScope scope(thread_);
 
   const byte data[] = {'s', '\0', 'm'};
-  Str small_ascii(&scope, runtime_.newStrWithAll(data));
+  Str small_ascii(&scope, runtime_->newStrWithAll(data));
   ASSERT_TRUE(small_ascii.isSmallStr());
 
   // Less
@@ -772,7 +772,7 @@ TEST_F(StringTest, CompareLargeStrWithNulCStrASCII) {
   HandleScope scope(thread_);
 
   const byte data[] = {'l', 'a', 'r', 'g', 'e', '\0', 's', 't'};
-  Str large_ascii(&scope, runtime_.newStrWithAll(data));
+  Str large_ascii(&scope, runtime_->newStrWithAll(data));
   ASSERT_TRUE(large_ascii.isLargeStr());
 
   // Less
@@ -786,7 +786,7 @@ TEST_F(StringTest, CompareLargeStrWithNulCStrASCII) {
 TEST_F(StringTest, CompareLargeStrCStrASCII) {
   HandleScope scope(thread_);
 
-  Str large_ascii(&scope, runtime_.newStrFromCStr("large string"));
+  Str large_ascii(&scope, runtime_->newStrFromCStr("large string"));
   ASSERT_TRUE(large_ascii.isLargeStr());
 
   // Equal
@@ -804,7 +804,7 @@ TEST_F(StringTest, CompareLargeStrCStrASCII) {
 TEST_F(StringTest, CompareSmallStrCStrUTF8) {
   HandleScope scope(thread_);
 
-  Str small_utf8(&scope, runtime_.newStrFromCStr("\xC3\x87"));
+  Str small_utf8(&scope, runtime_->newStrFromCStr("\xC3\x87"));
   ASSERT_TRUE(small_utf8.isSmallStr());
 
   // Equal
@@ -824,7 +824,7 @@ TEST_F(StringTest, CompareSmallStrCStrUTF8) {
 TEST_F(StringTest, CompareLargeStrCStrUTF8) {
   HandleScope scope(thread_);
 
-  Str large_utf8(&scope, runtime_.newStrFromCStr("\xC3\x87 large"));
+  Str large_utf8(&scope, runtime_->newStrFromCStr("\xC3\x87 large"));
   ASSERT_TRUE(large_utf8.isLargeStr());
 
   // Equal
@@ -844,7 +844,7 @@ TEST_F(StringTest, CompareLargeStrCStrUTF8) {
 TEST_F(StringTest, CompareSmallStrCStrLatin1) {
   HandleScope scope(thread_);
 
-  Str small_latin1(&scope, runtime_.newStrFromCStr("\xDC"));
+  Str small_latin1(&scope, runtime_->newStrFromCStr("\xDC"));
   ASSERT_TRUE(small_latin1.isSmallStr());
 
   // Equal
@@ -864,7 +864,7 @@ TEST_F(StringTest, CompareSmallStrCStrLatin1) {
 TEST_F(StringTest, CompareLargeStrCStrLatin1) {
   HandleScope scope(thread_);
 
-  Str large_latin1(&scope, runtime_.newStrFromCStr("\xDClarge str"));
+  Str large_latin1(&scope, runtime_->newStrFromCStr("\xDClarge str"));
   ASSERT_TRUE(large_latin1.isLargeStr());
 
   // Equal
@@ -883,7 +883,7 @@ TEST_F(StringTest, CompareLargeStrCStrLatin1) {
 
 TEST_F(StringTest, CopyToStartAtWithLargeStrCopiesBytes) {
   HandleScope scope(thread_);
-  Str str(&scope, runtime_.newStrFromCStr("Hello world!"));
+  Str str(&scope, runtime_->newStrFromCStr("Hello world!"));
 
   byte actual0[5];
   str.copyToStartAt(actual0, 5, 3);
@@ -1083,7 +1083,7 @@ TEST_F(StrTest, OffsetByCodePoints) {
   EXPECT_EQ(empty.offsetByCodePoints(2, 0), 0);
   EXPECT_EQ(empty.offsetByCodePoints(2, 1), 0);
 
-  Str ascii(&scope, runtime_.newStrFromCStr("abcd"));
+  Str ascii(&scope, runtime_->newStrFromCStr("abcd"));
   EXPECT_EQ(ascii.charLength(), 4);
   EXPECT_EQ(ascii.codePointLength(), 4);
 
@@ -1108,7 +1108,7 @@ TEST_F(StrTest, OffsetByCodePoints) {
   EXPECT_EQ(ascii.offsetByCodePoints(6, 0), 4);
 
   Str unicode(&scope,
-              runtime_.newStrFromCStr("\xd7\x90pq\xd7\x91\xd7\x92-\xd7\x93"));
+              runtime_->newStrFromCStr("\xd7\x90pq\xd7\x91\xd7\x92-\xd7\x93"));
   EXPECT_EQ(unicode.charLength(), 11);
   EXPECT_EQ(unicode.codePointLength(), 7);
 
@@ -1146,7 +1146,7 @@ TEST_F(LargeStrTest, CodePointLengthAscii) {
 
   const char* code_units = "01234567012345670";
 
-  Str str(&scope, runtime_.newStrFromCStr(code_units));
+  Str str(&scope, runtime_->newStrFromCStr(code_units));
   EXPECT_TRUE(str.isLargeStr());
   EXPECT_EQ(str.charLength(), std::strlen(code_units));
   EXPECT_EQ(str.codePointLength(), 17);
@@ -1160,7 +1160,7 @@ TEST_F(LargeStrTest, CodePointLength) {
       "\xd7\x90\xd7\x95\xd7\xaa\xd7\x99\xd7\x95\xd7\xaa "
       "\xd7\xa2\xd7\x9b\xd7\xa9\xd7\x99\xd7\x95";
 
-  Str str(&scope, runtime_.newStrFromCStr(code_units));
+  Str str(&scope, runtime_->newStrFromCStr(code_units));
   EXPECT_TRUE(str.isLargeStr());
   EXPECT_EQ(str.charLength(), std::strlen(code_units));
   EXPECT_EQ(str.codePointLength(), 23);
@@ -1169,11 +1169,11 @@ TEST_F(LargeStrTest, CodePointLength) {
 TEST_F(LargeStrTest, IsASCIIReturnsTrueIfAndOnlyIfAllASCII) {
   HandleScope scope(thread_);
 
-  Str ascii(&scope, runtime_.newStrFromCStr("01234567012345670"));
+  Str ascii(&scope, runtime_->newStrFromCStr("01234567012345670"));
   EXPECT_TRUE(ascii.isLargeStr());
   EXPECT_TRUE(ascii.isASCII());
 
-  Str unicode(&scope, runtime_.newStrFromCStr("ascii \xd7\x99\xd7\xa9 pad"));
+  Str unicode(&scope, runtime_->newStrFromCStr("ascii \xd7\x99\xd7\xa9 pad"));
   EXPECT_TRUE(unicode.isLargeStr());
   EXPECT_FALSE(unicode.isASCII());
 }
@@ -1191,7 +1191,7 @@ TEST_F(StringTest, ReverseOffsetByCodePointsEmptyString) {
 TEST_F(StringTest, ReverseOffsetByCodePointsStringLength1) {
   HandleScope scope(thread_);
 
-  Str str1(&scope, runtime_.newStrFromCStr("1"));
+  Str str1(&scope, runtime_->newStrFromCStr("1"));
   word len = str1.charLength();
   ASSERT_EQ(1, len);
 
@@ -1203,7 +1203,7 @@ TEST_F(StringTest, ReverseOffsetByCodePointsStringLength1) {
 TEST_F(StringTest, ReverseOffsetByCodePointsStringLength3) {
   HandleScope scope(thread_);
 
-  Str str3(&scope, runtime_.newStrFromCStr("123"));
+  Str str3(&scope, runtime_->newStrFromCStr("123"));
   word len = str3.charLength();
   ASSERT_EQ(3, len);
 
@@ -1226,7 +1226,7 @@ TEST_F(StringTest, ReverseOffsetByCodePointsStringLength3) {
 TEST_F(StringTest, ReverseOffsetByCodePointsUnicodeStringLength5) {
   HandleScope scope(thread_);
 
-  Str str5(&scope, runtime_.newStrFromCStr("\x41\xD7\x91\xD7\x92"));
+  Str str5(&scope, runtime_->newStrFromCStr("\x41\xD7\x91\xD7\x92"));
   word len = str5.charLength();
   ASSERT_EQ(5, len);
 
@@ -1255,25 +1255,25 @@ TEST_F(StringTest, ToCString) {
   EXPECT_STREQ(c_empty, "");
   std::free(c_empty);
 
-  Str length1(&scope, runtime_.newStrFromCStr("a"));
+  Str length1(&scope, runtime_->newStrFromCStr("a"));
   char* c_length1 = length1.toCStr();
   ASSERT_NE(c_length1, nullptr);
   EXPECT_STREQ(c_length1, "a");
   std::free(c_length1);
 
-  Str length2(&scope, runtime_.newStrFromCStr("ab"));
+  Str length2(&scope, runtime_->newStrFromCStr("ab"));
   char* c_length2 = length2.toCStr();
   ASSERT_NE(c_length2, nullptr);
   EXPECT_STREQ(c_length2, "ab");
   std::free(c_length2);
 
-  Str length10(&scope, runtime_.newStrFromCStr("1234567890"));
+  Str length10(&scope, runtime_->newStrFromCStr("1234567890"));
   char* c_length10 = length10.toCStr();
   ASSERT_NE(c_length10, nullptr);
   EXPECT_STREQ(c_length10, "1234567890");
   std::free(c_length10);
 
-  Str nulchar(&scope, runtime_.newStrFromCStr("wx\0yz"));
+  Str nulchar(&scope, runtime_->newStrFromCStr("wx\0yz"));
   char* c_nulchar = nulchar.toCStr();
   ASSERT_NE(c_nulchar, nullptr);
   EXPECT_STREQ(c_nulchar, "wx");
@@ -1283,7 +1283,7 @@ TEST_F(StringTest, ToCString) {
 TEST_F(StringTest, CompareSmallStr) {
   HandleScope scope(thread_);
 
-  Str small(&scope, runtime_.newStrFromCStr("foo"));
+  Str small(&scope, runtime_->newStrFromCStr("foo"));
   EXPECT_TRUE(small.isSmallStr());
 
   EXPECT_TRUE(small.equalsCStr("foo"));
@@ -1295,13 +1295,13 @@ TEST_F(StringTest, CompareSmallStr) {
 
 TEST_F(StringTest, CompareWithUnicode) {
   HandleScope scope(thread_);
-  Str small(&scope, runtime_.newStrFromCStr(u8"hello\u2028"));
+  Str small(&scope, runtime_->newStrFromCStr(u8"hello\u2028"));
   EXPECT_TRUE(small.equalsCStr("hello\u2028"));
 }
 
 TEST_F(ValueCellTest, SetPlaceholderRendersIsPlaceholderToReturnTrue) {
   HandleScope scope(thread_);
-  ValueCell value_cell(&scope, runtime_.newValueCell());
+  ValueCell value_cell(&scope, runtime_->newValueCell());
   ASSERT_FALSE(value_cell.isPlaceholder());
   value_cell.makePlaceholder();
   EXPECT_TRUE(value_cell.isPlaceholder());
@@ -1313,7 +1313,7 @@ TEST_F(WeakRefTest, EnqueueAndDequeue) {
   for (int i = 0; i < 3; i++) {
     Object obj(&scope, SmallInt::fromWord(i));
     Object none(&scope, NoneType::object());
-    WeakRef weak(&scope, runtime_.newWeakRef(thread_, obj, none));
+    WeakRef weak(&scope, runtime_->newWeakRef(thread_, obj, none));
     WeakRef::enqueue(*weak, &list);
   }
   WeakRef weak(&scope, WeakRef::dequeue(&list));
@@ -1335,19 +1335,19 @@ TEST_F(WeakRefTest, SpliceQueue) {
   EXPECT_EQ(WeakRef::spliceQueue(list1, list2), NoneType::object());
 
   Object none(&scope, NoneType::object());
-  RawObject list3 = runtime_.newWeakRef(thread_, none, none);
+  RawObject list3 = runtime_->newWeakRef(thread_, none, none);
   WeakRef::cast(list3).setLink(list3);
   EXPECT_EQ(WeakRef::spliceQueue(list1, list3), list3);
   EXPECT_EQ(WeakRef::spliceQueue(list3, list2), list3);
 
   for (int i = 0; i < 2; i++) {
     Object obj1(&scope, SmallInt::fromWord(i));
-    WeakRef weak1(&scope, runtime_.newWeakRef(thread_, obj1, none));
+    WeakRef weak1(&scope, runtime_->newWeakRef(thread_, obj1, none));
     weak1.setReferent(SmallInt::fromWord(i));
     WeakRef::enqueue(*weak1, &list1);
 
     Object obj2(&scope, SmallInt::fromWord(i + 2));
-    WeakRef weak2(&scope, runtime_.newWeakRef(thread_, obj2, none));
+    WeakRef weak2(&scope, runtime_->newWeakRef(thread_, obj2, none));
     WeakRef::enqueue(*weak2, &list2);
   }
   RawObject list = WeakRef::spliceQueue(list1, list2);
@@ -1368,8 +1368,8 @@ TEST_F(WeakRefTest, SpliceQueue) {
 
 TEST_F(ListTest, ReplaceFromWithReplacesElementsStartingAtZero) {
   HandleScope scope(thread_);
-  List dst(&scope, runtime_.newList());
-  Tuple dst_tuple(&scope, runtime_.newMutableTuple(5));
+  List dst(&scope, runtime_->newList());
+  Tuple dst_tuple(&scope, runtime_->newMutableTuple(5));
   dst.setItems(*dst_tuple);
   dst.setNumItems(5);
   List src(&scope, listFromRange(0, 5));
@@ -1379,8 +1379,8 @@ TEST_F(ListTest, ReplaceFromWithReplacesElementsStartingAtZero) {
 
 TEST_F(ListTest, ReplaceFromWithReplacesElementsStartingInMiddle) {
   HandleScope scope(thread_);
-  List dst(&scope, runtime_.newList());
-  Tuple dst_tuple(&scope, runtime_.newMutableTuple(5));
+  List dst(&scope, runtime_->newList());
+  Tuple dst_tuple(&scope, runtime_->newMutableTuple(5));
   dst.setItems(*dst_tuple);
   dst.setNumItems(5);
   List src(&scope, listFromRange(0, 5));
@@ -1390,8 +1390,8 @@ TEST_F(ListTest, ReplaceFromWithReplacesElementsStartingInMiddle) {
 
 TEST_F(ListTest, ReplaceFromWithCopiesZeroElements) {
   HandleScope scope(thread_);
-  List dst(&scope, runtime_.newList());
-  Tuple dst_tuple(&scope, runtime_.newMutableTuple(5));
+  List dst(&scope, runtime_->newList());
+  Tuple dst_tuple(&scope, runtime_->newMutableTuple(5));
   dst.setItems(*dst_tuple);
   dst.setNumItems(5);
   List src(&scope, listFromRange(0, 5));
@@ -1402,8 +1402,8 @@ TEST_F(ListTest, ReplaceFromWithCopiesZeroElements) {
 
 TEST_F(ListTest, ReplaceFromWithCopiesEveryElementFromSrc) {
   HandleScope scope(thread_);
-  List dst(&scope, runtime_.newList());
-  Tuple dst_tuple(&scope, runtime_.newMutableTuple(5));
+  List dst(&scope, runtime_->newList());
+  Tuple dst_tuple(&scope, runtime_->newMutableTuple(5));
   dst.setItems(*dst_tuple);
   dst.setNumItems(5);
   List src(&scope, listFromRange(0, 5));
@@ -1413,8 +1413,8 @@ TEST_F(ListTest, ReplaceFromWithCopiesEveryElementFromSrc) {
 
 TEST_F(ListTest, ReplaceFromWithStartAtReplacesElementsStartingAtSrcStart) {
   HandleScope scope(thread_);
-  List dst(&scope, runtime_.newList());
-  Tuple dst_tuple(&scope, runtime_.newMutableTuple(5));
+  List dst(&scope, runtime_->newList());
+  Tuple dst_tuple(&scope, runtime_->newMutableTuple(5));
   dst.setItems(*dst_tuple);
   dst.setNumItems(5);
   List src(&scope, listFromRange(0, 5));
@@ -1445,7 +1445,7 @@ TEST_F(ListTest, ReplaceFromWithStartAtWithSelfForward) {
 
 TEST_F(MutableTupleTest, NoneFillTupleFillsTupleWithNone) {
   HandleScope scope(thread_);
-  MutableTuple tuple(&scope, runtime_.newMutableTuple(3));
+  MutableTuple tuple(&scope, runtime_->newMutableTuple(3));
   tuple.atPut(0, SmallInt::fromWord(0));
   tuple.atPut(1, SmallInt::fromWord(1));
   tuple.atPut(2, SmallInt::fromWord(2));
@@ -1457,7 +1457,7 @@ TEST_F(MutableTupleTest, NoneFillTupleFillsTupleWithNone) {
 
 TEST_F(MutableTupleTest, ReplaceFromWithReplacesElementsStartingAtZero) {
   HandleScope scope(thread_);
-  MutableTuple dst(&scope, runtime_.newMutableTuple(5));
+  MutableTuple dst(&scope, runtime_->newMutableTuple(5));
   List src(&scope, listFromRange(0, 5));
   Tuple src_items(&scope, src.items());
   dst.replaceFromWith(0, *src_items, 2);
@@ -1470,7 +1470,7 @@ TEST_F(MutableTupleTest, ReplaceFromWithReplacesElementsStartingAtZero) {
 
 TEST_F(MutableTupleTest, ReplaceFromWithReplacesElementsStartingInMiddle) {
   HandleScope scope(thread_);
-  MutableTuple dst(&scope, runtime_.newMutableTuple(5));
+  MutableTuple dst(&scope, runtime_->newMutableTuple(5));
   List src(&scope, listFromRange(0, 5));
   Tuple src_items(&scope, src.items());
   dst.replaceFromWith(1, *src_items, 2);
@@ -1483,7 +1483,7 @@ TEST_F(MutableTupleTest, ReplaceFromWithReplacesElementsStartingInMiddle) {
 
 TEST_F(MutableTupleTest, ReplaceFromWithCopiesZeroElements) {
   HandleScope scope(thread_);
-  MutableTuple dst(&scope, runtime_.newMutableTuple(5));
+  MutableTuple dst(&scope, runtime_->newMutableTuple(5));
   List src(&scope, listFromRange(0, 5));
   Tuple src_items(&scope, src.items());
   dst.replaceFromWith(0, *src_items, 0);
@@ -1496,7 +1496,7 @@ TEST_F(MutableTupleTest, ReplaceFromWithCopiesZeroElements) {
 
 TEST_F(MutableTupleTest, ReplaceFromWithCopiesEveryElementFromSrc) {
   HandleScope scope(thread_);
-  MutableTuple dst(&scope, runtime_.newMutableTuple(5));
+  MutableTuple dst(&scope, runtime_->newMutableTuple(5));
   List src(&scope, listFromRange(0, 5));
   Tuple src_items(&scope, src.items());
   dst.replaceFromWith(0, *src_items, 5);
@@ -1534,7 +1534,7 @@ TEST_F(MutableTupleTest, ReplaceFromWithStartAtWithSelfForward) {
 TEST_F(MutableTupleTest,
        ReplaceFromWithStartAtReplacesElementsStartingAtSrcStart) {
   HandleScope scope(thread_);
-  MutableTuple dst(&scope, runtime_.newMutableTuple(5));
+  MutableTuple dst(&scope, runtime_->newMutableTuple(5));
   List src_list(&scope, listFromRange(0, 5));
   Tuple src(&scope, src_list.items());
   dst.replaceFromWithStartAt(0, *src, 2, 2);

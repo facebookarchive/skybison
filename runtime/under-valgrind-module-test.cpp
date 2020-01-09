@@ -20,12 +20,12 @@ TEST_F(UnderValgrindModuleTest, UnderCallgrindDumpStatsWithNoneDoesNothing) {
 
 TEST_F(UnderValgrindModuleTest, UnderCallgrindDumpStatsWithStringDoesNothing) {
   HandleScope scope(thread_);
-  Object string(&scope, runtime_.newStrFromCStr("service_load"));
+  Object string(&scope, runtime_->newStrFromCStr("service_load"));
   runBuiltin(UnderValgrindModule::callgrindDumpStats, string);
 }
 
 TEST_F(UnderValgrindModuleTest, UnderCallgrindStartInstrumentationDoesNothing) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 import _valgrind
 _valgrind.callgrind_start_instrumentation()
 )")
@@ -33,7 +33,7 @@ _valgrind.callgrind_start_instrumentation()
 }
 
 TEST_F(UnderValgrindModuleTest, UnderCallgrindStopInstrumentationDoesNothing) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 import _valgrind
 _valgrind.callgrind_stop_instrumentation()
 )")
@@ -41,7 +41,7 @@ _valgrind.callgrind_stop_instrumentation()
 }
 
 TEST_F(UnderValgrindModuleTest, UnderCallgrindZeroStatsDoesNothing) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 import _valgrind
 _valgrind.callgrind_zero_stats()
 )")

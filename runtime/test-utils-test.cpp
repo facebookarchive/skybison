@@ -15,14 +15,14 @@ TEST_F(TestUtils, IsByteArrayEquals) {
   HandleScope scope(thread_);
 
   const byte view[] = {'f', 'o', 'o'};
-  Object bytes(&scope, runtime_.newBytesWithAll(view));
+  Object bytes(&scope, runtime_->newBytesWithAll(view));
   auto const type_err = isByteArrayEqualsBytes(bytes, view);
   EXPECT_FALSE(type_err);
   const char* type_msg = "is a 'bytes'";
   EXPECT_STREQ(type_err.message(), type_msg);
 
-  ByteArray array(&scope, runtime_.newByteArray());
-  runtime_.byteArrayExtend(thread_, array, view);
+  ByteArray array(&scope, runtime_->newByteArray());
+  runtime_->byteArrayExtend(thread_, array, view);
   auto const ok = isByteArrayEqualsBytes(array, view);
   EXPECT_TRUE(ok);
 
@@ -49,16 +49,16 @@ TEST_F(TestUtils, IsBytesEquals) {
   HandleScope scope(thread_);
 
   const byte view[] = {'f', 'o', 'o'};
-  Object bytes(&scope, runtime_.newBytesWithAll(view));
+  Object bytes(&scope, runtime_->newBytesWithAll(view));
   auto const ok = isBytesEqualsBytes(bytes, view);
   EXPECT_TRUE(ok);
 
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 class Foo(bytes): pass
 foo = Foo(b"foo")
 )")
                    .isError());
-  Object foo(&scope, mainModuleAt(&runtime_, "foo"));
+  Object foo(&scope, mainModuleAt(runtime_, "foo"));
   auto const subclass_ok = isBytesEqualsBytes(foo, view);
   EXPECT_TRUE(subclass_ok);
 
@@ -67,7 +67,7 @@ foo = Foo(b"foo")
   const char* ne_msg = "b'foo' is not equal to b'bar'";
   EXPECT_STREQ(not_equal.message(), ne_msg);
 
-  Object str(&scope, runtime_.newStrWithAll(view));
+  Object str(&scope, runtime_->newStrWithAll(view));
   auto const type_err = isBytesEqualsBytes(str, view);
   EXPECT_FALSE(type_err);
   const char* type_msg = "is a 'str'";
@@ -105,13 +105,13 @@ TEST_F(TestUtils, IsSymbolIdEquals) {
 TEST_F(TestUtils, PyListEqual) {
   HandleScope scope(thread_);
 
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 l = [None, False, 100, 200.5, 'hello']
 i = 123456
 )")
                    .isError());
-  Object list(&scope, mainModuleAt(&runtime_, "l"));
-  Object not_list(&scope, mainModuleAt(&runtime_, "i"));
+  Object list(&scope, mainModuleAt(runtime_, "l"));
+  Object not_list(&scope, mainModuleAt(runtime_, "i"));
 
   auto const ok = AssertPyListEqual(
       "", "", list, {Value::none(), false, 100, 200.5, "hello"});

@@ -160,7 +160,7 @@ TEST_F(UnderOsModuleTest, LseekChangesPosition) {
 
 TEST_F(UnderOsModuleTest, OpenWithNonExistentFileRaisesOSError) {
   HandleScope scope(thread_);
-  Str path(&scope, runtime_.newStrFromCStr("/i-should-not-exist"));
+  Str path(&scope, runtime_->newStrFromCStr("/i-should-not-exist"));
   Object flags(&scope, SmallInt::fromWord(0));
   Object mode(&scope, SmallInt::fromWord(0));
   Object dir_fd(&scope, NoneType::object());
@@ -172,7 +172,7 @@ TEST_F(UnderOsModuleTest, OpenReturnsInt) {
   HandleScope scope(thread_);
   TemporaryDirectory directory;
   std::string path = directory.path + "test.txt";
-  Str path_obj(&scope, runtime_.newStrFromCStr(path.c_str()));
+  Str path_obj(&scope, runtime_->newStrFromCStr(path.c_str()));
   Object flags_obj(&scope, SmallInt::fromWord(O_RDWR | O_CREAT));
   Object mode_obj(&scope, SmallInt::fromWord(0755));
   Object dir_fd(&scope, NoneType::object());
@@ -203,7 +203,7 @@ TEST_F(UnderOsModuleTest, OpenReturnsInt) {
 
 TEST_F(UnderOsModuleTest, ParseModeWithXSetsExclAndCreat) {
   HandleScope scope(thread_);
-  Object mode(&scope, runtime_.newStrFromCStr("x"));
+  Object mode(&scope, runtime_->newStrFromCStr("x"));
   EXPECT_TRUE(
       isIntEqualsWord(runBuiltin(UnderOsModule::parseMode, mode),
                       O_EXCL | O_CREAT | File::kNoInheritFlag | O_WRONLY));
@@ -211,14 +211,14 @@ TEST_F(UnderOsModuleTest, ParseModeWithXSetsExclAndCreat) {
 
 TEST_F(UnderOsModuleTest, ParseModeWithRSetsRdonly) {
   HandleScope scope(thread_);
-  Object mode(&scope, runtime_.newStrFromCStr("r"));
+  Object mode(&scope, runtime_->newStrFromCStr("r"));
   EXPECT_TRUE(isIntEqualsWord(runBuiltin(UnderOsModule::parseMode, mode),
                               File::kNoInheritFlag | O_RDONLY));
 }
 
 TEST_F(UnderOsModuleTest, ParseModeWithASetsAppendAndCreat) {
   HandleScope scope(thread_);
-  Object mode(&scope, runtime_.newStrFromCStr("a"));
+  Object mode(&scope, runtime_->newStrFromCStr("a"));
   EXPECT_TRUE(
       isIntEqualsWord(runBuiltin(UnderOsModule::parseMode, mode),
                       O_APPEND | O_CREAT | File::kNoInheritFlag | O_WRONLY));
@@ -226,14 +226,14 @@ TEST_F(UnderOsModuleTest, ParseModeWithASetsAppendAndCreat) {
 
 TEST_F(UnderOsModuleTest, ParseModeWithRPlusSetsRdWr) {
   HandleScope scope(thread_);
-  Object mode(&scope, runtime_.newStrFromCStr("r+"));
+  Object mode(&scope, runtime_->newStrFromCStr("r+"));
   EXPECT_TRUE(isIntEqualsWord(runBuiltin(UnderOsModule::parseMode, mode),
                               File::kNoInheritFlag | O_RDWR));
 }
 
 TEST_F(UnderOsModuleTest, ParseModeWithWPlusSetsRdWr) {
   HandleScope scope(thread_);
-  Object mode(&scope, runtime_.newStrFromCStr("w+"));
+  Object mode(&scope, runtime_->newStrFromCStr("w+"));
   EXPECT_TRUE(
       isIntEqualsWord(runBuiltin(UnderOsModule::parseMode, mode),
                       O_CREAT | O_TRUNC | File::kNoInheritFlag | O_RDWR));
@@ -241,7 +241,7 @@ TEST_F(UnderOsModuleTest, ParseModeWithWPlusSetsRdWr) {
 
 TEST_F(UnderOsModuleTest, ParseModeWithAPlusSetsRdWr) {
   HandleScope scope(thread_);
-  Object mode(&scope, runtime_.newStrFromCStr("a+"));
+  Object mode(&scope, runtime_->newStrFromCStr("a+"));
   EXPECT_TRUE(
       isIntEqualsWord(runBuiltin(UnderOsModule::parseMode, mode),
                       O_APPEND | O_CREAT | File::kNoInheritFlag | O_RDWR));

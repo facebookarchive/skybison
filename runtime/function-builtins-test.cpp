@@ -14,20 +14,20 @@ namespace testing {
 using FunctionBuiltinsTest = RuntimeFixture;
 
 TEST_F(FunctionBuiltinsTest, ManagedFunctionObjectsExposeDunderCode) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def foo(x):
   return x + 1
 code = foo.__code__
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object code(&scope, mainModuleAt(&runtime_, "code"));
+  Object code(&scope, mainModuleAt(runtime_, "code"));
   ASSERT_TRUE(code.isCode());
 }
 
 TEST_F(FunctionBuiltinsTest,
        ChangingCodeOfFunctionObjectChangesFunctionBehavior) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
 def foo(x):
   return x + 1
 def bar(x):
@@ -46,7 +46,7 @@ TEST_F(FunctionBuiltinsTest, DunderGetWithNonFunctionSelfRaisesTypeError) {
       runBuiltin(FunctionBuiltins::dunderGet, none, none, none).isError());
   Thread* thread = Thread::current();
   EXPECT_EQ(thread->pendingExceptionType(),
-            runtime_.typeAt(LayoutId::kTypeError));
+            runtime_->typeAt(LayoutId::kTypeError));
   EXPECT_TRUE(thread->pendingExceptionValue().isStr());
 }
 
@@ -54,7 +54,7 @@ TEST_F(FunctionBuiltinsTest, DunderGetWithNonNoneInstanceReturnsBoundMethod) {
   HandleScope scope(thread_);
   Object func(&scope, newEmptyFunction());
   Object not_none(&scope, SmallInt::fromWord(1));
-  Object not_none_type(&scope, runtime_.typeOf(*not_none));
+  Object not_none_type(&scope, runtime_->typeOf(*not_none));
   Object result(&scope, runBuiltin(FunctionBuiltins::dunderGet, func, not_none,
                                    not_none_type));
   ASSERT_TRUE(result.isBoundMethod());
@@ -67,7 +67,7 @@ TEST_F(FunctionBuiltinsTest,
   HandleScope scope(thread_);
   Object func(&scope, newEmptyFunction());
   Object none(&scope, NoneType::object());
-  Type none_type(&scope, runtime_.typeOf(*none));
+  Type none_type(&scope, runtime_->typeOf(*none));
   Object result(&scope,
                 runBuiltin(FunctionBuiltins::dunderGet, func, none, none_type));
   ASSERT_TRUE(result.isBoundMethod());
@@ -79,55 +79,55 @@ TEST_F(FunctionBuiltinsTest, DunderGetWithNoneInstanceReturnsSelf) {
   HandleScope scope(thread_);
   Object func(&scope, newEmptyFunction());
   Object none(&scope, NoneType::object());
-  Type some_type(&scope, runtime_.typeOf(*func));
+  Type some_type(&scope, runtime_->typeOf(*func));
   Object result(&scope,
                 runBuiltin(FunctionBuiltins::dunderGet, func, none, some_type));
   EXPECT_EQ(result, func);
 }
 
 TEST_F(FunctionBuiltinsTest, ReprHandlesNormalFunctions) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def f(): pass
 result = repr(f)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   ASSERT_TRUE(result.isStr());
   unique_c_ptr<char> result_str(Str::cast(*result).toCStr());
   EXPECT_TRUE(std::strstr(result_str.get(), "<function f at 0x"));
 }
 
 TEST_F(FunctionBuiltinsTest, ReprHandlesLambda) {
-  ASSERT_FALSE(runFromCStr(&runtime_, "result = repr(lambda x: x)").isError());
+  ASSERT_FALSE(runFromCStr(runtime_, "result = repr(lambda x: x)").isError());
   HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   ASSERT_TRUE(result.isStr());
   unique_c_ptr<char> result_str(Str::cast(*result).toCStr());
   EXPECT_TRUE(std::strstr(result_str.get(), "<function <lambda> at 0x"));
 }
 
 TEST_F(FunctionBuiltinsTest, DunderCallCallsFunction) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def f(a):
   return a
 result = f.__call__(3)
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 3));
 }
 
 TEST_F(FunctionBuiltinsTest, DunderGlobalsIsModuleProxy) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
 def f(a):
   return a
 result = f.__globals__
 )")
                    .isError());
   HandleScope scope(thread_);
-  Object result(&scope, mainModuleAt(&runtime_, "result"));
+  Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(result.isModuleProxy());
 }
 
