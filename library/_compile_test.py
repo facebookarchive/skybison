@@ -170,6 +170,12 @@ class PrintfTransformTests(unittest.TestCase):
             str.__mod__("%s %% foo %r bar %a %s", (1, 2, 3, 4)),
         )
 
+    def test_with_invalid_ast_raises_type_error(self):
+        import ast
+
+        with self.assertRaises(TypeError):
+            _compile.compile(ast.Module(), "test", "exec")
+
     def test_without_tuple(self):
         code = _compile.compile("'%s' % 5.5", "", "eval")
         self.assertEqual(

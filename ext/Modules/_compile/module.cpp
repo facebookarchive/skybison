@@ -124,10 +124,7 @@ static PyObject* _compile_compile_impl(PyObject*, PyObject* source,
         return nullptr;
       }
       mod = PyAST_obj2mod(source, arena, compile_mode);
-      if (mod == nullptr) {
-        PyArena_Free(arena);
-      }
-      if (!PyAST_Validate(mod)) {
+      if (mod == nullptr || !PyAST_Validate(mod)) {
         PyArena_Free(arena);
         Py_DECREF(filename);
         return nullptr;
