@@ -699,9 +699,6 @@ class Runtime {
   // Return whether object's class provides a __getitem__ method
   bool isMapping(Thread* thread, const Object& obj);
 
-  // Clear the allocated memory from all extension related objects
-  void freeApiHandles();
-
   // Import all the public module's symbols to the given dict
   void moduleImportAllFrom(const Dict& dict, const Module& module);
 
@@ -893,6 +890,12 @@ class Runtime {
   word numTrackedNativeObjects() { return num_tracked_native_objects_; }
 
   word numTrackedNativeGcObjects() { return num_tracked_native_gc_objects_; }
+
+  // Clear all active handle scopes
+  void clearHandleScopes();
+
+  // Clear the allocated memory from all extension related objects
+  void freeApiHandles();
 
   // The size newCapacity grows to if array is empty. Must be large enough to
   // guarantee a LargeBytes/LargeStr for ByteArray/StrArray.

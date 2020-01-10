@@ -139,6 +139,7 @@ Runtime::~Runtime() {
   if (parser_grammar_free_func_ != nullptr) {
     (*parser_grammar_free_func_)(parserGrammar());
   }
+  clearHandleScopes();
   freeApiHandles();
   for (Thread* thread = threads_; thread != nullptr;) {
     if (thread == Thread::current()) {
@@ -4036,6 +4037,17 @@ RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
   layoutAddEdge(thread, this, edges, name, new_layout);
 
   return *new_layout;
+}
+
+void Runtime::clearHandleScopes() {
+  for (Thread* thread = threads_; thread != nullptr; thread = thread->next()) {
+    Handles* handles = thread->handles();
+    Object* handle = handles->head();
+    while (handle != nullptr) {
+      handle = handle->nextHandle();
+      handles->pop(handle);
+    }
+  }
 }
 
 void Runtime::freeApiHandles() {
