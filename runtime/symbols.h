@@ -389,6 +389,7 @@ class Runtime;
   V(UnderReaduniversal, "_readuniversal")                                      \
   V(UnderReprEnter, "_repr_enter")                                             \
   V(UnderReprLeave, "_repr_leave")                                             \
+  V(UnderRunModuleAsMain, "_run_module_as_main")                               \
   V(UnderSeekable, "_seekable")                                                \
   V(UnderSeennl, "_seennl")                                                    \
   V(UnderSeqIndex, "_seq_index")                                               \
@@ -812,6 +813,7 @@ class Runtime;
   V(Repr, "repr")                                                              \
   V(ResourceWarning, "ResourceWarning")                                        \
   V(Rshift, "rshift")                                                          \
+  V(Runpy, "runpy")                                                            \
   V(RuntimeError, "RuntimeError")                                              \
   V(RuntimeWarning, "RuntimeWarning")                                          \
   V(Self, "self")                                                              \

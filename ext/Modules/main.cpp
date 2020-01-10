@@ -68,6 +68,33 @@ static void runInteractiveHook() {
   }
 }
 
+static int runModule(const char* modname_cstr, bool set_argv0) {
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  Str runpy(&scope, runtime->symbols()->at(SymbolId::kRunpy));
+  Object result(&scope,
+                thread->invokeFunction1(SymbolId::kBuiltins,
+                                        SymbolId::kDunderImport, runpy));
+  if (result.isError()) {
+    std::fprintf(stderr, "Could not import runpy module\n");
+    printPendingException(thread);
+    return -1;
+  }
+
+  runtime->findOrCreateMainModule();
+  Str modname(&scope, runtime->newStrFromCStr(modname_cstr));
+  Bool alter_argv(&scope, Bool::fromBool(set_argv0));
+  result = thread->invokeFunction2(
+      SymbolId::kRunpy, SymbolId::kUnderRunModuleAsMain, modname, alter_argv);
+  if (result.isError()) {
+    printPendingException(thread);
+    return -1;
+  }
+  return 0;
+}
+
 static void runStartupFile(PyCompilerFlags* cf) {
   const char* startupfile = std::getenv("PYTHONSTARTUP");
   if (startupfile == nullptr || startupfile[0] == '\0') return;
@@ -89,6 +116,7 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
   bool print_version = false;
   bool print_help = false;
   const char* command = nullptr;
+  const char* module = nullptr;
 
   int option;
   while ((option = getopt_long(argc, argv, kSupportedOpts, kSupportedLongOpts,
@@ -100,7 +128,7 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
       break;
     }
     if (option == 'm') {
-      UNIMPLEMENTED("Run library module as a script");
+      module = optarg;
       break;
     }
 
@@ -194,7 +222,7 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
   }
 
   char* filename = nullptr;
-  if (command == nullptr && optind < argc &&
+  if (command == nullptr && module == nullptr && optind < argc &&
       std::strcmp(argv[optind], "-") != 0) {
     filename = argv[optind];
   }
@@ -204,8 +232,8 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
   Py_Initialize();
 
   if (!Py_QuietFlag &&
-      (Py_VerboseFlag ||
-       (command == nullptr && filename == nullptr && is_interactive))) {
+      (Py_VerboseFlag || (command == nullptr && filename == nullptr &&
+                          module == nullptr && is_interactive))) {
     std::fprintf(stderr, "Python %s on %s\n", Py_GetVersion(),
                  Py_GetPlatform());
     if (!Py_NoSiteFlag) {
@@ -215,12 +243,12 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
 
   int wargc;
   wchar_t** wargv;
-  if (command != nullptr) {
-    // Start arg list with "-c", omit command but keep all other args
+  if (command != nullptr || module != nullptr) {
+    // Start arg list with "-c" or "-m" and omit command/module arg
     wargc = argc - optind + 1;
     const char** argv_copy =
         static_cast<const char**>(PyMem_RawCalloc(wargc, sizeof(*argv_copy)));
-    argv_copy[0] = "-c";
+    argv_copy[0] = command != nullptr ? "-c" : "-m";
     for (int i = optind; i < argc; i++) {
       argv_copy[i - optind + 1] = argv[i];
     }
@@ -246,6 +274,8 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
 
   if (command != nullptr) {
     returncode = PyRun_SimpleStringFlags(command, &flags) != 0;
+  } else if (module != nullptr) {
+    returncode = runModule(module, true) != 0;
   } else {
     if (filename == nullptr && is_interactive) {
       Py_InspectFlag = 0;  // do exit on SystemExit
