@@ -71,6 +71,7 @@ class Runtime;
   V(DunderIndex, "__index__")                                                  \
   V(DunderInit, "__init__")                                                    \
   V(DunderInt, "__int__")                                                      \
+  V(DunderInteractiveHook, "__interactivehook__")                              \
   V(DunderInvert, "__invert__")                                                \
   V(DunderIor, "__ior__")                                                      \
   V(DunderIpow, "__ipow__")                                                    \

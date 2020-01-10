@@ -57,6 +57,34 @@ static int runFile(FILE* fp, const char* filename, PyCompilerFlags* flags) {
   return PyRun_AnyFileExFlags(fp, file_or_stdin, !is_stdin, flags) != 0;
 }
 
+static void runInteractiveHook() {
+  Thread* thread = Thread::current();
+  RawObject result =
+      thread->invokeFunction0(SymbolId::kSys, SymbolId::kDunderInteractiveHook);
+  if (result.isErrorException()) {
+    std::fprintf(stderr, "Failed calling sys.__interactivehook__\n");
+    printPendingExceptionWithSysLastVars(thread);
+    thread->clearPendingException();
+  }
+}
+
+static void runStartupFile(PyCompilerFlags* cf) {
+  const char* startupfile = std::getenv("PYTHONSTARTUP");
+  if (startupfile == nullptr || startupfile[0] == '\0') return;
+  FILE* fp = std::fopen(startupfile, "r");
+  if (fp != nullptr) {
+    PyRun_SimpleFileExFlags(fp, startupfile, 0, cf);
+    std::fclose(fp);
+  } else {
+    int saved_errno = errno;
+    PySys_WriteStderr("Could not open PYTHONSTARTUP\n");
+    errno = saved_errno;
+    PyErr_SetFromErrnoWithFilename(PyExc_IOError, startupfile);
+    PyErr_Print();
+  }
+  PyErr_Clear();
+}
+
 PY_EXPORT int Py_BytesMain(int argc, char** argv) {
   bool print_version = false;
   bool print_help = false;
@@ -219,6 +247,12 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
   if (command != nullptr) {
     returncode = PyRun_SimpleStringFlags(command, &flags) != 0;
   } else {
+    if (filename == nullptr && is_interactive) {
+      Py_InspectFlag = 0;  // do exit on SystemExit
+      runStartupFile(&flags);
+      runInteractiveHook();
+    }
+
     FILE* fp = stdin;
     if (filename != nullptr) {
       fp = std::fopen(filename, "r");
