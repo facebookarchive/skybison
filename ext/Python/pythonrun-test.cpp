@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <cstring>
 
 #include "Python.h"
 
@@ -368,8 +369,8 @@ TEST_F(PythonrunExtensionApiTest, PyParserFromStringReturnsModuleNode) {
 
 TEST_F(PythonrunExtensionApiTest, PyParserFromFileReturnsModuleNode) {
   const char* buffer = "a = 123";
-  FILE* fp = fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
-                      sizeof(buffer), "r");
+  FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
+                        std::strlen(buffer), "r");
   const char* enc = nullptr;
   const char* ps1 = nullptr;
   const char* ps2 = nullptr;
@@ -391,6 +392,67 @@ TEST_F(PythonrunExtensionApiTest,
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_NE(node, nullptr);
   PyNode_Free(node);
+}
+
+TEST_F(PythonrunExtensionApiTest, SimpleFileExFlagsWithPyFileReturnsZero) {
+  CaptureStdStreams streams;
+  const char* buffer = R"(print("pyhello"))";
+  FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
+                        std::strlen(buffer), "r");
+  PyCompilerFlags flags;
+  flags.cf_flags = 0;
+  int returncode = PyRun_SimpleFileExFlags(fp, "test.py", 1, &flags);
+  EXPECT_EQ(returncode, 0);
+  EXPECT_EQ(streams.out(), "pyhello\n");
+}
+
+TEST_F(PythonrunExtensionApiTest, SimpleFileExFlagsSetsAndUnsetsDunderFile) {
+  CaptureStdStreams streams;
+  const char* buffer = R"(print(__file__))";
+  FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
+                        std::strlen(buffer), "r");
+  PyCompilerFlags flags;
+  flags.cf_flags = 0;
+  int returncode = PyRun_SimpleFileExFlags(fp, "test.py", 1, &flags);
+  EXPECT_EQ(returncode, 0);
+  EXPECT_EQ(streams.out(), "test.py\n");
+  PyObject* mods = PyImport_GetModuleDict();
+  PyObject* dunder_main = PyUnicode_FromString("__main__");
+  PyObject* main_mod = PyDict_GetItem(mods, dunder_main);
+  PyObject* dunder_file = PyUnicode_FromString("__file__");
+  EXPECT_FALSE(PyObject_HasAttr(main_mod, dunder_file));
+}
+
+TEST_F(PythonrunExtensionApiTest, SimpleFileExFlagsPrintsSyntaxError) {
+  CaptureStdStreams streams;
+  const char* buffer = ",,,";
+  FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
+                        std::strlen(buffer), "r");
+  PyCompilerFlags flags;
+  flags.cf_flags = 0;
+  int returncode = PyRun_SimpleFileExFlags(fp, "test.py", 1, &flags);
+  EXPECT_EQ(returncode, -1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_NE(streams.err().find(R"(  File "test.py", line 1
+    ,,,
+    ^
+SyntaxError: invalid syntax
+)"),
+            std::string::npos);
+}
+
+TEST_F(PythonrunExtensionApiTest, SimpleFileExFlagsPrintsUncaughtException) {
+  CaptureStdStreams streams;
+  const char* buffer = "raise RuntimeError('boom')";
+  FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
+                        std::strlen(buffer), "r");
+  PyCompilerFlags flags;
+  flags.cf_flags = 0;
+  int returncode = PyRun_SimpleFileExFlags(fp, "test.py", 1, &flags);
+  EXPECT_EQ(returncode, -1);
+  EXPECT_EQ(streams.out(), "");
+  // TODO(T39919701): Check the whole string once we have tracebacks.
+  EXPECT_NE(streams.err().find("RuntimeError: boom\n"), std::string::npos);
 }
 
 }  // namespace py

@@ -91,24 +91,19 @@ bool OS::secureRandom(byte* ptr, word size) {
   return size == 0;
 }
 
-char* OS::readFile(const char* filename, word* len_out) {
-  ScopedFd fd(::open(filename, O_RDONLY));
-  if (fd.get() == -1) {
-    fprintf(stderr, "open error: %s %s\n", filename, std::strerror(errno));
-    return nullptr;
-  }
-  CHECK(fd.get() != -1, "get failure");
-  word length = ::lseek(fd.get(), 0, SEEK_END);
-  CHECK(length != -1, "lseek failure");
-  ::lseek(fd.get(), 0, SEEK_SET);
+char* OS::readFile(FILE* fp, word* len_out) {
+  std::fseek(fp, 0, SEEK_END);
+  word length = std::ftell(fp);
+  CHECK(length != -1, "fseek failure");
+  std::fseek(fp, 0, SEEK_SET);
   std::unique_ptr<char[]> buffer(new char[length]);
   {
     word result;
     do {
-      result = ::read(fd.get(), buffer.get(), length);
-    } while (result == -1 && errno == EINTR);
-    if (result == -1) {
-      fprintf(stderr, "read error: %s %s\n", filename, std::strerror(errno));
+      result = std::fread(buffer.get(), 1, length, fp);
+    } while (result == EOF && errno == EINTR);
+    if (result != length) {
+      fprintf(stderr, "file read error: %s\n", std::strerror(errno));
       return nullptr;
     }
   }

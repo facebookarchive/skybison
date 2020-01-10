@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdio>
+
 #include "globals.h"
 #include "mutex.h"
 
@@ -25,7 +27,7 @@ class OS {
 
   static bool secureRandom(byte* ptr, word size);
 
-  static char* readFile(const char* filename, word* len_out);
+  static char* readFile(FILE* fp, word* len_out);
 
   static char* temporaryDirectory(const char* prefix);
 

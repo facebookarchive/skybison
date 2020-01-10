@@ -1,5 +1,6 @@
 #include <getopt.h>
 
+#include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cwchar>
@@ -50,41 +51,10 @@ static void encodeWargv(int argc, const wchar_t* const* wargv, char** argv) {
   }
 }
 
-// TODO(T39499894): Rewrite this whole function to use the C-API.
-static RawObject runFile(Thread* thread, const char* filename) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-
-  // TODO(T58704877): Don't read the whole file into memory all at once
-  word file_len;
-  std::unique_ptr<char[]> buffer(OS::readFile(filename, &file_len));
-  if (buffer == nullptr) {
-    std::fprintf(stderr, "Could not read file '%s'\n", filename);
-    std::exit(EXIT_FAILURE);
-  }
-
-  Object code_obj(&scope, NoneType::object());
-  const char* delim = std::strrchr(filename, '.');
-  View<byte> data(reinterpret_cast<byte*>(buffer.get()), file_len);
-  Str filename_str(&scope, runtime->newStrFromCStr(filename));
-  if (delim && std::strcmp(delim, ".pyc") != 0) {
-    // Interpret as .py and compile
-    Object source(&scope, runtime->newStrWithAll(data));
-    code_obj = compile(thread, source, filename_str, SymbolId::kExec,
-                       /*flags=*/0, /*optimize=*/-1);
-  } else {
-    // Interpret as .pyc and unmarshal
-    Marshal::Reader reader(&scope, runtime, data);
-    if (reader.readPycHeader(filename_str).isErrorException()) {
-      return Error::exception();
-    }
-    code_obj = reader.readObject();
-  }
-  if (code_obj.isErrorException()) return *code_obj;
-
-  Code code(&scope, *code_obj);
-  Module main_module(&scope, runtime->findOrCreateMainModule());
-  return runtime->executeModule(code, main_module);
+static int runFile(FILE* fp, const char* filename, PyCompilerFlags* flags) {
+  bool is_stdin = filename == nullptr;
+  const char* file_or_stdin = is_stdin ? "<stdin>" : filename;
+  return PyRun_AnyFileExFlags(fp, file_or_stdin, !is_stdin, flags) != 0;
 }
 
 PY_EXPORT int Py_BytesMain(int argc, char** argv) {
@@ -248,17 +218,18 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
 
   if (command != nullptr) {
     returncode = PyRun_SimpleStringFlags(command, &flags) != 0;
-  } else if (filename == nullptr) {
-    returncode = PyRun_AnyFileExFlags(stdin, "<stdin>", /*closeit=*/0, &flags);
   } else {
-    // TODO(T39499894): Rewrite this to use the C-API.
-    Thread* thread = Thread::current();
-    HandleScope scope(thread);
-    Object result(&scope, runFile(thread, filename));
-    if (result.isErrorException()) {
-      printPendingException(thread);
-      returncode = EXIT_FAILURE;
+    FILE* fp = stdin;
+    if (filename != nullptr) {
+      fp = std::fopen(filename, "r");
+      if (fp == nullptr) {
+        std::fprintf(stderr, "%s: can't open file '%s': [Errno %d] %s\n",
+                     argv[0], filename, errno, std::strerror(errno));
+        return 2;
+      }
     }
+
+    returncode = runFile(fp, filename, &flags);
   }
 
   Py_Finalize();

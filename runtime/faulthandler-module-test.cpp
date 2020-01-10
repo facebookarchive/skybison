@@ -50,7 +50,8 @@ TEST_F(FaulthandlerModuleTest, DumpTracebackWritesToFileDescriptor) {
   ASSERT_TRUE(result.isNoneType());
 
   word length;
-  std::unique_ptr<char[]> actual(OS::readFile(name.get(), &length));
+  FILE* fp = std::fopen(name.get(), "r");
+  std::unique_ptr<char[]> actual(OS::readFile(fp, &length));
   char expected[] = R"(Stack (most recent call first):
   File "", line ??? in <anonymous>
 )";
@@ -59,7 +60,7 @@ TEST_F(FaulthandlerModuleTest, DumpTracebackWritesToFileDescriptor) {
   ASSERT_EQ(length, expected_length);
   EXPECT_EQ(std::memcmp(actual.get(), expected, expected_length), 0);
 
-  close(fd);
+  std::fclose(fp);
   unlink(name.get());
 }
 

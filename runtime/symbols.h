@@ -24,6 +24,7 @@ class Runtime;
   V(DunderBuildClass, "__build_class__")                                       \
   V(DunderBuiltins, "__builtins__")                                            \
   V(DunderBytes, "__bytes__")                                                  \
+  V(DunderCached, "__cached__")                                                \
   V(DunderCall, "__call__")                                                    \
   V(DunderCause, "__cause__")                                                  \
   V(DunderCeil, "__ceil__")                                                    \
@@ -828,6 +829,8 @@ class Runtime;
   V(SmallInt, "smallint")                                                      \
   V(SmallStr, "smallstr")                                                      \
   V(Sorted, "sorted")                                                          \
+  V(SourceFileLoader, "SourceFileLoader")                                      \
+  V(SourcelessFileLoader, "SourcelessFileLoader")                              \
   V(Split, "split")                                                            \
   V(Start, "start")                                                            \
   V(Staticmethod, "staticmethod")                                              \
