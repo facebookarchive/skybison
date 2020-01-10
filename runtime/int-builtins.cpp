@@ -678,8 +678,32 @@ RawObject BoolBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::isTrue(thread, args.get(1));
 }
 
+RawObject BoolBuiltins::dunderOr(Thread* thread, Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isBool()) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kBool);
+  }
+  Bool self(&scope, *self_obj);
+  Object other_obj(&scope, args.get(1));
+  if (other_obj.isBool()) {
+    return Bool::fromBool(self.value() || Bool::cast(*other_obj).value());
+  }
+  if (runtime->isInstanceOfInt(*other_obj)) {
+    return intBinaryOp(thread, frame, nargs,
+                       [](Thread* t, const Int& left, const Int& right) {
+                         return t->runtime()->intBinaryOr(t, left, right);
+                       });
+  }
+  return NotImplementedType::object();
+}
+
 const BuiltinMethod BoolBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kDunderOr, dunderOr},
+    {SymbolId::kDunderRor, dunderOr},
     {SymbolId::kSentinelId, nullptr},
 };
 

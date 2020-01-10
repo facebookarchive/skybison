@@ -1460,7 +1460,7 @@ class bool(int, bootstrap=True):
         pass
 
     def __or__(self, other):
-        _unimplemented()
+        pass
 
     def __rand__(self, other):
         return bool.__and__(self, other)
@@ -1469,7 +1469,7 @@ class bool(int, bootstrap=True):
         return "True" if self else "False"
 
     def __ror__(self, other):
-        _unimplemented()
+        pass
 
     def __rxor__(self, other):
         _unimplemented()

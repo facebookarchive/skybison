@@ -122,6 +122,52 @@ class BoolTests(unittest.TestCase):
         self.assertIs(bool.__rand__(True, "string"), NotImplemented)
         self.assertIs(bool.__rand__(True, 1.8), NotImplemented)
 
+    def test_dunder_or_with_non_bool_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__or__' requires a 'bool' object but .* 'int'",
+            bool.__or__,
+            1,
+            1,
+        )
+
+    def test_dunder_or_success(self):
+        self.assertEqual(bool.__or__(True, True), True)
+        self.assertEqual(bool.__or__(True, False), True)
+        self.assertEqual(bool.__or__(True, 1024 - 1), 1023)
+        self.assertEqual(bool.__or__(True, 1024), 1025)
+        self.assertEqual(bool.__or__(False, True), True)
+        self.assertEqual(bool.__or__(False, False), False)
+        self.assertEqual(bool.__or__(False, 1), 1)
+        self.assertEqual(bool.__or__(False, 0), 0)
+
+    def test_dunder_or_not_implemented(self):
+        self.assertIs(bool.__or__(True, "string"), NotImplemented)
+        self.assertIs(bool.__or__(True, 1.8), NotImplemented)
+
+    def test_dunder_or_with_non_bool_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__ror__' requires a 'bool' object but .* 'int'",
+            bool.__ror__,
+            1,
+            1,
+        )
+
+    def test_dunder_ror_success(self):
+        self.assertEqual(bool.__ror__(True, True), True)
+        self.assertEqual(bool.__ror__(False, True), True)
+        self.assertEqual(bool.__ror__(True, 1024 - 1), 1023)
+        self.assertEqual(bool.__ror__(True, 1024), 1025)
+        self.assertEqual(bool.__ror__(True, False), True)
+        self.assertEqual(bool.__ror__(False, False), False)
+        self.assertEqual(bool.__ror__(False, 1), 1)
+        self.assertEqual(bool.__ror__(False, 0), 0)
+
+    def test_dunder_ror_not_implemented(self):
+        self.assertIs(bool.__ror__(True, "string"), NotImplemented)
+        self.assertIs(bool.__ror__(True, 1.8), NotImplemented)
+
 
 class BoundMethodTests(unittest.TestCase):
     def test_bound_method_dunder_func(self):

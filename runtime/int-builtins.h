@@ -101,6 +101,7 @@ class BoolBuiltins : public Builtins<BoolBuiltins, SymbolId::kBool,
   }
 
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderOr(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];
 
