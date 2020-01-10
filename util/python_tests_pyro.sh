@@ -50,6 +50,7 @@ CPYTHON_TESTS=(
   test_longexp.py
   test_macurl2path.py
   test_netrc.py
+  test_osx_env.py
   test_strftime.py
   test_typechecks.py
   test_webbrowser.py
