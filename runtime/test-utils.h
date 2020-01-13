@@ -3,7 +3,6 @@
 #include <functional>
 #include <string>
 
-#include "cpython-func.h"
 #include "gtest/gtest.h"
 
 #include "handles.h"
@@ -34,12 +33,11 @@ namespace testing {
 class RuntimeFixture : public ::testing::Test {
  protected:
   void SetUp() override {
-    Py_Initialize();
+    runtime_ = new Runtime();
     thread_ = Thread::current();
-    runtime_ = thread_->runtime();
   }
 
-  void TearDown() override { Py_Finalize(); }
+  void TearDown() override { delete runtime_; }
 
   Runtime* runtime_;
   Thread* thread_;
