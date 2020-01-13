@@ -122,7 +122,10 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderCodeGuard, underCodeGuard},
     {SymbolId::kUnderCodeSetPosonlyargcount, underCodeSetPosonlyargcount},
     {SymbolId::kUnderComplexCheck, underComplexCheck},
+    {SymbolId::kUnderComplexCheckexact, underComplexCheckexact},
     {SymbolId::kUnderComplexImag, underComplexImag},
+    {SymbolId::kUnderComplexNew, underComplexNew},
+    {SymbolId::kUnderComplexNewFromStr, underComplexNewFromStr},
     {SymbolId::kUnderComplexReal, underComplexReal},
     {SymbolId::kUnderDictBucketInsert, underDictBucketInsert},
     {SymbolId::kUnderDictBucketKey, underDictBucketKey},
@@ -1615,6 +1618,12 @@ RawObject UnderBuiltinsModule::underComplexCheck(Thread* thread, Frame* frame,
   return Bool::fromBool(thread->runtime()->isInstanceOfComplex(args.get(0)));
 }
 
+RawObject UnderBuiltinsModule::underComplexCheckexact(Thread*, Frame* frame,
+                                                      word nargs) {
+  Arguments args(frame, nargs);
+  return Bool::fromBool(args.get(0).isComplex());
+}
+
 RawObject UnderBuiltinsModule::underComplexImag(Thread* thread, Frame* frame,
                                                 word nargs) {
   Arguments args(frame, nargs);
@@ -1626,6 +1635,69 @@ RawObject UnderBuiltinsModule::underComplexImag(Thread* thread, Frame* frame,
   }
   Complex self(&scope, complexUnderlying(*self_obj));
   return runtime->newFloat(self.imag());
+}
+
+static bool unpackNumeric(const Object& val, double* real, double* imag) {
+  switch (val.layoutId()) {
+    case LayoutId::kBool:
+      *real = Bool::cast(*val).value();
+      *imag = 0.0;
+      return true;
+    case LayoutId::kComplex:
+      *real = Complex::cast(*val).real();
+      *imag = Complex::cast(*val).imag();
+      return true;
+    case LayoutId::kFloat:
+      *real = Float::cast(*val).value();
+      *imag = 0.0;
+      return true;
+    case LayoutId::kSmallInt:
+      *real = SmallInt::cast(*val).value();
+      *imag = 0.0;
+      return true;
+    case LayoutId::kUnbound:
+      *real = 0.0;
+      *imag = 0.0;
+      return true;
+    default:
+      return false;
+  }
+}
+
+RawObject UnderBuiltinsModule::underComplexNew(Thread* thread, Frame* frame,
+                                               word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Type cls(&scope, args.get(0));
+  DCHECK(cls.builtinBase() == LayoutId::kComplex, "cls must subclass complex");
+  Object real_obj(&scope, args.get(1));
+  Object imag_obj(&scope, args.get(2));
+  if (real_obj.isComplex() && imag_obj.isUnbound() && cls.isBuiltin()) {
+    return *real_obj;
+  }
+
+  double real1, imag1, real2, imag2;
+  if (!unpackNumeric(real_obj, &real1, &imag1) ||
+      !unpackNumeric(imag_obj, &real2, &imag2)) {
+    return Unbound::object();
+  }
+
+  double real = real1 - imag2;
+  double imag = imag1 + real2;
+
+  Runtime* runtime = thread->runtime();
+  if (cls.isBuiltin()) {
+    return runtime->newComplex(real, imag);
+  }
+
+  Layout layout(&scope, cls.instanceLayout());
+  UserComplexBase result(&scope, runtime->newInstance(layout));
+  result.setValue(runtime->newComplex(real, imag));
+  return *result;
+}
+
+RawObject UnderBuiltinsModule::underComplexNewFromStr(Thread*, Frame*, word) {
+  UNIMPLEMENTED("complex(str)");
 }
 
 RawObject UnderBuiltinsModule::underComplexReal(Thread* thread, Frame* frame,

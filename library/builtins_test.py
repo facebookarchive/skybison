@@ -2296,6 +2296,112 @@ class ComplexTests(unittest.TestCase):
         self.assertIs(complex(3.2, 0).__eq__([3.2, 0]), NotImplemented)
         self.assertIs(complex(1, 1).__eq__("(1+1j)"), NotImplemented)
 
+    def test_dunder_new_with_no_args_returns_complex_zero(self):
+        c = complex()
+        self.assertIsInstance(c, complex)
+        self.assertEqual(c, 0)
+
+    def test_dunder_new_with_int_returns_complex(self):
+        c = complex(1)
+        self.assertIsInstance(c, complex)
+        self.assertEqual(c, 1)
+
+    def test_dunder_new_with_float_returns_complex(self):
+        c = complex(1.0)
+        self.assertIsInstance(c, complex)
+        self.assertEqual(c, 1.0)
+
+    def test_dunder_new_with_complex_returns_same_complex(self):
+        c1 = 1 + 2j
+        c2 = complex(c1)
+        self.assertIs(c1, c2)
+
+    def test_dunder_new_with_subtype_returns_instance(self):
+        class C(complex):
+            pass
+
+        c = C()
+        self.assertIsInstance(c, complex)
+        self.assertIs(type(c), C)
+
+    def test_dunder_new_with_real_numbers_returns_complex(self):
+        c = complex(1, 2.0)
+        self.assertIsInstance(c, complex)
+        self.assertEqual(c, 1 + 2j)
+
+    def test_dunder_new_with_complex_numbers_returns_complex(self):
+        c = complex(4 + 4j, 1 + 2j)
+        self.assertIsInstance(c, complex)
+        self.assertEqual(c, 2 + 5j)
+
+    def test_dunder_new_with_string_real_and_imag_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            complex("foo", 1)
+        self.assertEqual(
+            str(context.exception),
+            "complex() can't take second arg if first is a string",
+        )
+
+    def test_dunder_new_with_string_imag_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            complex(1, "foo")
+        self.assertEqual(
+            str(context.exception), "complex() second arg can't be a string"
+        )
+
+    def test_dunder_new_calls_dunder_complex(self):
+        class C(int):
+            def __complex__(self):
+                return 1 + 0j
+
+        c = complex(C())
+        self.assertEqual(c, 1 + 0j)
+
+    def test_dunder_new_with_non_complex_dunder_complex(self):
+        class C:
+            def __complex__(self):
+                return 1
+
+        with self.assertRaises(TypeError) as context:
+            complex(C())
+        self.assertEqual(
+            str(context.exception), "__complex__ should return a complex object"
+        )
+
+    def test_dunder_new_with_bytes_real_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            complex(b"")
+        self.assertEqual(
+            str(context.exception),
+            "complex() first argument must be a string or a number, not 'bytes'",
+        )
+
+    def test_dunder_new_with_bytes_imag_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            complex(1, b"")
+        self.assertEqual(
+            str(context.exception),
+            "complex() second argument must be a number, not 'bytes'",
+        )
+
+    def test_imag_with_subclass_returns_float(self):
+        class C(complex):
+            pass
+
+        c = C(1 + 2j)
+        i = c.imag
+        self.assertIsInstance(i, float)
+        self.assertEqual(i, 2.0)
+
+    def test_real_with_subclass_returns_float(self):
+        class C(complex):
+            pass
+
+        c = C(1 + 2j)
+        r = c.real
+        self.assertIsInstance(r, float)
+        self.assertEqual(r, 1.0)
+
 
 class DelattrTests(unittest.TestCase):
     def test_non_str_as_name_raises_type_error(self):

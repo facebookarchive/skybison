@@ -89,7 +89,12 @@ class UnderBuiltinsModule {
   static RawObject underCodeSetPosonlyargcount(Thread* thread, Frame* frame,
                                                word nargs);
   static RawObject underComplexCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underComplexCheckexact(Thread* thread, Frame* frame,
+                                          word nargs);
   static RawObject underComplexImag(Thread* thread, Frame* frame, word nargs);
+  static RawObject underComplexNew(Thread* thread, Frame* frame, word nargs);
+  static RawObject underComplexNewFromStr(Thread* thread, Frame* frame,
+                                          word nargs);
   static RawObject underComplexReal(Thread* thread, Frame* frame, word nargs);
   static RawObject underDictBucketInsert(Thread* thread, Frame* frame,
                                          word nargs);

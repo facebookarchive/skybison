@@ -243,12 +243,27 @@ def _code_set_posonlyargcount(code, value):
 
 
 @_patch
-def _complex_check(c):
+def _complex_check(obj):
+    pass
+
+
+@_patch
+def _complex_checkexact(obj):
     pass
 
 
 @_patch
 def _complex_imag(c):
+    pass
+
+
+@_patch
+def _complex_new(cls, imag, real):
+    pass
+
+
+@_patch
+def _complex_new_from_str(cls, str):
     pass
 
 

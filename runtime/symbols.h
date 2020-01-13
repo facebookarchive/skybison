@@ -210,7 +210,10 @@ class Runtime;
   V(UnderCodecs, "_codecs")                                                    \
   V(UnderCompileFlagsMask, "_compile_flags_mask")                              \
   V(UnderComplexCheck, "_complex_check")                                       \
+  V(UnderComplexCheckexact, "_complex_checkexact")                             \
   V(UnderComplexImag, "_complex_imag")                                         \
+  V(UnderComplexNew, "_complex_new")                                           \
+  V(UnderComplexNewFromStr, "_complex_new_from_str")                           \
   V(UnderComplexReal, "_complex_real")                                         \
   V(UnderCreateDynamic, "_create_dynamic")                                     \
   V(UnderCreated, "_created")                                                  \

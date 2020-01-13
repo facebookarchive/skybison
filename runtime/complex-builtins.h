@@ -13,7 +13,6 @@ class ComplexBuiltins
 
   static RawObject dunderAdd(Thread*, Frame*, word);
   static RawObject dunderHash(Thread*, Frame*, word);
-  static RawObject dunderNew(Thread*, Frame*, word);
 
   static const BuiltinMethod kBuiltinMethods[];
 

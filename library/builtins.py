@@ -53,7 +53,10 @@ _code_guard = _code_guard  # noqa: F821
 _code_set_posonlyargcount = _code_set_posonlyargcount  # noqa: F821
 _compile_flags_mask = _compile_flags_mask  # noqa: F821
 _complex_check = _complex_check  # noqa: F821
+_complex_checkexact = _complex_checkexact  # noqa: F821
 _complex_imag = _complex_imag  # noqa: F821
+_complex_new = _complex_new  # noqa: F821
+_complex_new_from_str = _complex_new_from_str  # noqa: F821
 _complex_real = _complex_real  # noqa: F821
 _dict_bucket_insert = _dict_bucket_insert  # noqa: F821
 _dict_bucket_key = _dict_bucket_key  # noqa: F821
@@ -2370,8 +2373,45 @@ class complex(bootstrap=True):
     def __neg__(self):
         _unimplemented()
 
-    def __new__(cls, real=0.0, imag=0.0):
-        pass
+    def __new__(cls, real=0.0, imag=_Unbound):  # noqa: C901
+        _type_subclass_guard(cls, complex)
+        result = _complex_new(cls, real, imag)
+        if result is not _Unbound:
+            return result
+        if _str_check(real):
+            if imag is _Unbound:
+                return _complex_new_from_str(cls, real)
+            raise TypeError("complex() can't take second arg if first is a string")
+        if _str_check(imag):
+            raise TypeError("complex() second arg can't be a string")
+        dunder_complex = _object_type_getattr(real, "__complex__")
+        if dunder_complex is not _Unbound:
+            real = dunder_complex()
+            if not _complex_check(real):
+                raise TypeError("__complex__ should return a complex object")
+            elif not _complex_checkexact(real):
+                # NOTE: type(real) could a subclass of complex, so coerce it here
+                real = _complex_new(complex, real.real, real.imag)
+        if not _object_type_hasattr(real, "__float__"):
+            raise TypeError(
+                "complex() first argument must be a string or a number, "
+                f"not '{_type(real).__name__}'"
+            )
+        if imag is not _Unbound and not _object_type_hasattr(imag, "__float__"):
+            raise TypeError(
+                "complex() second argument must be a number, "
+                f"not '{_type(imag).__name__}'"
+            )
+        if not _complex_check(real) and not _float_check_exact(real):
+            real = float(real)
+        if (
+            imag is not _Unbound
+            and not _complex_check(imag)
+            and not _float_check_exact(imag)
+        ):
+            imag = float(imag)
+
+        return _complex_new(cls, real, imag)
 
     def __pos__(self):
         _unimplemented()
