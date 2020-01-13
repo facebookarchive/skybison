@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import unittest
+from unittest.mock import Mock
 
 
 class IntepreterTest(unittest.TestCase):
@@ -197,6 +198,68 @@ class IntepreterTest(unittest.TestCase):
             del sys.modules["test_import_performs_secondary_lookup_fake"]
             del sys.modules["test_import_performs_secondary_lookup_fake_too.foo"]
         self.assertEqual(foo, 42)
+
+    def test_call_ex_kw_with_class_with_iterable_raises_type_error(self):
+        def foo(a):
+            return a
+
+        mapping = [("hello", "world")]
+        with self.assertRaisesRegex(TypeError, "must be a mapping, not list"):
+            foo(**mapping)
+
+    def test_call_ex_kw_with_class_without_keys_method_raises_type_error(self):
+        class C:
+            __getitem__ = Mock(name="__getitem__", return_value="mock")
+
+        def foo(a):
+            return a
+
+        mapping = C()
+        with self.assertRaisesRegex(TypeError, "must be a mapping, not C"):
+            foo(**mapping)
+
+    def test_call_ex_kw_with_dict_subclass_does_not_call_keys_or_dunder_getitem(self):
+        class C(dict):
+            __getitem__ = Mock(name="__getitem__", return_value="mock")
+            keys = Mock(name="keys", return_value=("a",))
+
+        def foo(a):
+            return a
+
+        mapping = C({"a": "foo"})
+        result = foo(**mapping)
+        self.assertEqual(result, "foo")
+        C.keys.assert_not_called()
+        C.__getitem__.assert_not_called()
+
+    def test_call_ex_kw_with_non_dict_calls_keys_and_dunder_getitem(self):
+        class C:
+            __getitem__ = Mock(name="__getitem__", return_value="mock")
+            keys = Mock(name="keys", return_value=("a",))
+
+        def foo(a):
+            return a
+
+        mapping = C()
+        result = foo(**mapping)
+        self.assertEqual(result, "mock")
+        C.keys.assert_called_once()
+        C.__getitem__.assert_called_once()
+
+    def test_call_ex_kw_with_non_dict_passes_dict_as_kwargs(self):
+        class C:
+            __getitem__ = Mock(name="__getitem__", return_value="mock")
+            keys = Mock(name="keys", return_value=("hello", "world"))
+
+        def foo(**kwargs):
+            self.assertIs(type(kwargs), dict)
+            self.assertIn("hello", kwargs)
+            self.assertIn("world", kwargs)
+
+        mapping = C()
+        foo(**mapping)
+        C.keys.assert_called_once()
+        self.assertEqual(C.__getitem__.call_count, 2)
 
 
 if __name__ == "__main__":

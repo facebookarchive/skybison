@@ -426,9 +426,9 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
 static RawObject processExplodeArguments(Thread* thread, Frame* frame,
                                          word flags) {
   HandleScope scope(thread);
-  Object kw_dict(&scope, NoneType::object());
+  Object kw_mapping(&scope, NoneType::object());
   if (flags & CallFunctionExFlag::VAR_KEYWORDS) {
-    kw_dict = frame->topValue();
+    kw_mapping = frame->topValue();
     frame->popValue();
   }
   Tuple positional_args(&scope, frame->popValue());
@@ -438,7 +438,24 @@ static RawObject processExplodeArguments(Thread* thread, Frame* frame,
   }
   Runtime* runtime = thread->runtime();
   if (flags & CallFunctionExFlag::VAR_KEYWORDS) {
-    Dict dict(&scope, *kw_dict);
+    if (!kw_mapping.isDict()) {
+      DCHECK(runtime->isMapping(thread, kw_mapping),
+             "kw_mapping must have __getitem__");
+      Dict dict(&scope, runtime->newDict());
+      Object result(&scope, dictMergeIgnore(thread, dict, kw_mapping));
+      if (result.isError()) {
+        if (thread->pendingExceptionType() ==
+            runtime->typeAt(LayoutId::kAttributeError)) {
+          thread->clearPendingException();
+          return thread->raiseWithFmt(LayoutId::kTypeError,
+                                      "argument must be a mapping, not %T\n",
+                                      &kw_mapping);
+        }
+        return *result;
+      }
+      kw_mapping = *dict;
+    }
+    Dict dict(&scope, *kw_mapping);
     word len = dict.numItems();
     if (len == 0) {
       frame->pushValue(runtime->emptyTuple());
