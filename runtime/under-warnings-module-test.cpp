@@ -1,4 +1,4 @@
-#include "warnings-module.h"
+#include "under-warnings-module.h"
 
 #include "gtest/gtest.h"
 
@@ -8,9 +8,9 @@
 namespace py {
 using namespace testing;
 
-using WarningsModuleTest = RuntimeFixture;
+using UnderWarningsModuleTest = RuntimeFixture;
 
-TEST_F(WarningsModuleTest, ModuleImporting) {
+TEST_F(UnderWarningsModuleTest, ModuleImporting) {
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 import _warnings
   )")
@@ -19,7 +19,7 @@ import _warnings
   EXPECT_TRUE(warnings.isModule());
 }
 
-TEST_F(WarningsModuleTest, WarnDoesNothing) {
+TEST_F(UnderWarningsModuleTest, WarnDoesNothing) {
   // TODO(T39431178): _warnings.warn() should actually do things.
   HandleScope scope;
   ASSERT_FALSE(runFromCStr(runtime_, R"(
@@ -31,7 +31,7 @@ result = _warnings.warn("something went wrong")
   EXPECT_TRUE(result.isNoneType());
 }
 
-TEST_F(WarningsModuleTest, WarnWithNoArgsRaisesTypeError) {
+TEST_F(UnderWarningsModuleTest, WarnWithNoArgsRaisesTypeError) {
   EXPECT_TRUE(
       raisedWithStr(runFromCStr(runtime_, R"(
 import _warnings
@@ -41,7 +41,7 @@ _warnings.warn()
                     "'warn' takes min 1 positional arguments but 0 given"));
 }
 
-TEST_F(WarningsModuleTest, WarnWithInvalidCategoryRaisesTypeError) {
+TEST_F(UnderWarningsModuleTest, WarnWithInvalidCategoryRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
 import _warnings
 _warnings.warn("warning!", 1234)
@@ -50,7 +50,7 @@ _warnings.warn("warning!", 1234)
                             "category must be a Warning subclass"));
 }
 
-TEST_F(WarningsModuleTest, WarnWithLargeStacklevelRaisesOverflowError) {
+TEST_F(UnderWarningsModuleTest, WarnWithLargeStacklevelRaisesOverflowError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
 import _warnings
 _warnings.warn("hello", stacklevel=1180591620717411303424)  # 2 ** 70
@@ -59,7 +59,7 @@ _warnings.warn("hello", stacklevel=1180591620717411303424)  # 2 ** 70
                             "Python int too large to convert to C ssize_t"));
 }
 
-TEST_F(WarningsModuleTest, WarnWithInvalidKwRaisesTypeError) {
+TEST_F(UnderWarningsModuleTest, WarnWithInvalidKwRaisesTypeError) {
   EXPECT_TRUE(
       raisedWithStr(runFromCStr(runtime_, R"(
 import _warnings

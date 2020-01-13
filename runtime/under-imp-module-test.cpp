@@ -1,4 +1,4 @@
-#include "imp-module.h"
+#include "under-imp-module.h"
 
 #include "gtest/gtest.h"
 
@@ -9,11 +9,11 @@
 namespace py {
 using namespace testing;
 
-using ImpModuleTest = RuntimeFixture;
+using UnderImpModuleTest = RuntimeFixture;
 using ImportBuiltinsDeathTest = RuntimeFixture;
 using ImportBuiltinsTest = RuntimeFixture;
 
-TEST_F(ImpModuleTest, ModuleImporting) {
+TEST_F(UnderImpModuleTest, ModuleImporting) {
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 import _imp
   )")

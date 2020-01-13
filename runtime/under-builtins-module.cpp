@@ -24,9 +24,9 @@
 #include "strarray-builtins.h"
 #include "tuple-builtins.h"
 #include "type-builtins.h"
+#include "under-warnings-module.h"
 #include "unicode.h"
 #include "vector.h"
-#include "warnings-module.h"
 
 namespace py {
 

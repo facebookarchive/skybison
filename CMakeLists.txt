@@ -236,8 +236,6 @@ add_library(
   runtime/capi-handles.h
   runtime/code-builtins.cpp
   runtime/code-builtins.h
-  runtime/codecs-module.cpp
-  runtime/codecs-module.h
   runtime/complex-builtins.cpp
   runtime/complex-builtins.h
   runtime/debugging.cpp
@@ -268,8 +266,6 @@ add_library(
   runtime/heap.h
   runtime/ic.cpp
   runtime/ic.h
-  runtime/imp-module.cpp
-  runtime/imp-module.h
   runtime/int-builtins.cpp
   runtime/int-builtins.h
   runtime/interpreter-gen.h
@@ -337,20 +333,24 @@ add_library(
   runtime/type-builtins.cpp
   runtime/under-builtins-module.cpp
   runtime/under-builtins-module.h
+  runtime/under-codecs-module.cpp
+  runtime/under-codecs-module.h
+  runtime/under-imp-module.cpp
+  runtime/under-imp-module.h
   runtime/under-os-module.cpp
   runtime/under-os-module.h
   runtime/under-signal-module.cpp
   runtime/under-signal-module.h
   runtime/under-valgrind-module.cpp
   runtime/under-valgrind-module.h
+  runtime/under-warnings-module.cpp
+  runtime/under-warnings-module.h
   runtime/unicode.h
   runtime/utils.cpp
   runtime/utils.h
   runtime/vector.h
   runtime/view.h
   runtime/visitor.h
-  runtime/warnings-module.cpp
-  runtime/warnings-module.h
   runtime/weakref-module.cpp
   runtime/weakref-module.h
   ${RUNTIME_OS_SOURCES}
@@ -1535,7 +1535,6 @@ add_library(
   runtime/bytes-builtins-test.cpp
   runtime/capi-handles-test.cpp
   runtime/code-builtins-test.cpp
-  runtime/codecs-module-test.cpp
   runtime/complex-builtins-test.cpp
   runtime/debugging-test.cpp
   runtime/descriptor-builtins-test.cpp
@@ -1549,7 +1548,6 @@ add_library(
   runtime/handles-test.cpp
   runtime/heap-test.cpp
   runtime/ic-test.cpp
-  runtime/imp-module-test.cpp
   runtime/importlib-test.cpp
   runtime/int-builtins-test.cpp
   runtime/interpreter-test.cpp
@@ -1585,11 +1583,14 @@ add_library(
   runtime/tuple-builtins-test.cpp
   runtime/type-builtins-test.cpp
   runtime/under-builtins-module-test.cpp
+  runtime/under-codecs-module-test.cpp
+  runtime/under-imp-module-test.cpp
   runtime/under-os-module-test.cpp
   runtime/under-valgrind-module-test.cpp
+  runtime/under-warnings-module-test.cpp
   runtime/utils-test.cpp
   runtime/vector-test.cpp
-  runtime/warnings-module-test.cpp)
+)
 target_compile_options(
   runtime-tests
   PRIVATE

@@ -10,11 +10,11 @@
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
 #include "capi-handles.h"
-#include "codecs-module.h"
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"
 #include "str-builtins.h"
+#include "under-codecs-module.h"
 #include "utils.h"
 
 const char* Py_FileSystemDefaultEncodeErrors = "surrogateescape";

@@ -2,10 +2,10 @@
 
 #include "capi-handles.h"
 #include "dict-builtins.h"
-#include "imp-module.h"
 #include "int-builtins.h"
 #include "module-builtins.h"
 #include "runtime.h"
+#include "under-imp-module.h"
 
 namespace py {
 
