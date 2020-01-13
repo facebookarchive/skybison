@@ -677,12 +677,13 @@ static RawObject builtinReturnSecondArg(Thread* /* thread */, Frame* frame,
   return args.get(1);
 }
 
-static void createAndPatchBuiltinReturnSecondArg(Runtime* runtime) {
-  HandleScope scope(Thread::current());
+static void createAndPatchBuiltinReturnSecondArg(Thread* thread,
+                                                 Runtime* runtime) {
+  HandleScope scope(thread);
   // Ensure we have a __main__ module.
   ASSERT_FALSE(runFromCStr(runtime, "").isError());
   Module main(&scope, findMainModule(runtime));
-  runtime->moduleAddBuiltinFunction(main, SymbolId::kDummy,
+  runtime->moduleAddBuiltinFunction(thread, main, SymbolId::kDummy,
                                     builtinReturnSecondArg);
   ASSERT_FALSE(runFromCStr(runtime, R"(
 @_patch
@@ -694,7 +695,7 @@ def dummy(first, second):
 
 TEST_F(TrampolinesTest, BuiltinTrampolineKwPassesKwargs) {
   HandleScope scope(thread_);
-  createAndPatchBuiltinReturnSecondArg(runtime_);
+  createAndPatchBuiltinReturnSecondArg(thread_, runtime_);
   ASSERT_FALSE(runFromCStr(runtime_, "result = dummy(second=12345, first=None)")
                    .isError());
   Object result(&scope, mainModuleAt(runtime_, "result"));
@@ -702,7 +703,7 @@ TEST_F(TrampolinesTest, BuiltinTrampolineKwPassesKwargs) {
 }
 
 TEST_F(TrampolinesTest, BuiltinTrampolineKwWithInvalidArgRaisesTypeError) {
-  createAndPatchBuiltinReturnSecondArg(runtime_);
+  createAndPatchBuiltinReturnSecondArg(thread_, runtime_);
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(runtime_, "dummy(third=3, first=1)"), LayoutId::kTypeError,
       "dummy() got an unexpected keyword argument 'third'"));
@@ -1977,12 +1978,12 @@ static RawObject numArgs(Thread*, Frame*, word nargs) {
   return SmallInt::fromWord(nargs);
 }
 
-static void createAndPatchBuiltinNumArgs(Runtime* runtime) {
+static void createAndPatchBuiltinNumArgs(Thread* thread, Runtime* runtime) {
   // Ensure we have a __main__ module.
   ASSERT_FALSE(runFromCStr(runtime, "").isError());
   HandleScope scope;
   Module main(&scope, findMainModule(runtime));
-  runtime->moduleAddBuiltinFunction(main, SymbolId::kDummy, numArgs);
+  runtime->moduleAddBuiltinFunction(thread, main, SymbolId::kDummy, numArgs);
   ASSERT_FALSE(runFromCStr(runtime, R"(
 @_patch
 def dummy(first, second):
@@ -1992,7 +1993,7 @@ def dummy(first, second):
 }
 
 TEST_F(TrampolinesTest, BuiltinTrampolineExReceivesExArgs) {
-  createAndPatchBuiltinNumArgs(runtime_);
+  createAndPatchBuiltinNumArgs(thread_, runtime_);
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, "result = dummy(*(1,2))").isError());
   Object result(&scope, mainModuleAt(runtime_, "result"));
@@ -2000,19 +2001,20 @@ TEST_F(TrampolinesTest, BuiltinTrampolineExReceivesExArgs) {
 }
 
 TEST_F(TrampolinesTest, BuiltinTrampolineExReceivesMixOfPositionalAndExArgs1) {
-  createAndPatchBuiltinNumArgs(runtime_);
+  createAndPatchBuiltinNumArgs(thread_, runtime_);
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, "result = dummy(1, *(2,))").isError());
   Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
 
-static void createAndPatchBuiltinNumArgsVariadic(Runtime* runtime) {
+static void createAndPatchBuiltinNumArgsVariadic(Thread* thread,
+                                                 Runtime* runtime) {
   // Ensure we have a __main__ module.
   ASSERT_FALSE(runFromCStr(runtime, "").isError());
   HandleScope scope;
   Module main(&scope, findMainModule(runtime));
-  runtime->moduleAddBuiltinFunction(main, SymbolId::kDummy, numArgs);
+  runtime->moduleAddBuiltinFunction(thread, main, SymbolId::kDummy, numArgs);
   ASSERT_FALSE(runFromCStr(runtime, R"(
 @_patch
 def dummy(*args):
@@ -2023,19 +2025,20 @@ def dummy(*args):
 
 TEST_F(TrampolinesTest,
        BuiltinTrampolineExReceivesOnePositionalArgAndTwoVariableArgs) {
-  createAndPatchBuiltinNumArgsVariadic(runtime_);
+  createAndPatchBuiltinNumArgsVariadic(thread_, runtime_);
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, "result = dummy(1, *(2, 3))").isError());
   Object result(&scope, mainModuleAt(runtime_, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
 
-static void createAndPatchBuiltinNumArgsArgsKwargs(Runtime* runtime) {
+static void createAndPatchBuiltinNumArgsArgsKwargs(Thread* thread,
+                                                   Runtime* runtime) {
   // Ensure we have a __main__ module.
   ASSERT_FALSE(runFromCStr(runtime, "").isError());
   HandleScope scope;
   Module main(&scope, findMainModule(runtime));
-  runtime->moduleAddBuiltinFunction(main, SymbolId::kDummy, numArgs);
+  runtime->moduleAddBuiltinFunction(thread, main, SymbolId::kDummy, numArgs);
   ASSERT_FALSE(runFromCStr(runtime, R"(
 @_patch
 def dummy(*args, **kwargs):
@@ -2046,7 +2049,7 @@ def dummy(*args, **kwargs):
 
 TEST_F(TrampolinesTest,
        BuiltinTrampolineExReceivesTwoPositionalOneVariableAndTwoKwArgs) {
-  createAndPatchBuiltinNumArgsArgsKwargs(runtime_);
+  createAndPatchBuiltinNumArgsArgsKwargs(thread_, runtime_);
   HandleScope scope(thread_);
   ASSERT_FALSE(
       runFromCStr(runtime_,
@@ -2057,7 +2060,7 @@ TEST_F(TrampolinesTest,
 }
 
 TEST_F(TrampolinesTest, BuiltinTrampolineExReceivesVarArgs) {
-  createAndPatchBuiltinNumArgs(runtime_);
+  createAndPatchBuiltinNumArgs(thread_, runtime_);
   HandleScope scope(thread_);
   ASSERT_FALSE(
       runFromCStr(runtime_, "result = dummy(*(1,), second=5)").isError());
@@ -2066,14 +2069,14 @@ TEST_F(TrampolinesTest, BuiltinTrampolineExReceivesVarArgs) {
 }
 
 TEST_F(TrampolinesTest, BuiltinTrampolineExWithTooFewArgsRaisesTypeError) {
-  createAndPatchBuiltinNumArgs(runtime_);
+  createAndPatchBuiltinNumArgs(thread_, runtime_);
   EXPECT_TRUE(
       raisedWithStr(runFromCStr(runtime_, "dummy(*(1,))"), LayoutId::kTypeError,
                     "'dummy' takes min 2 positional arguments but 1 given"));
 }
 
 TEST_F(TrampolinesTest, BuiltinTrampolineExWithTooManyArgsRaisesTypeError) {
-  createAndPatchBuiltinNumArgs(runtime_);
+  createAndPatchBuiltinNumArgs(thread_, runtime_);
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(runtime_, "dummy(*(1,2,3,4,5))"), LayoutId::kTypeError,
       "'dummy' takes max 2 positional arguments but 5 given"));

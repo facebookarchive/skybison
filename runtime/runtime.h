@@ -328,8 +328,10 @@ class Runtime {
   void addModule(const Module& module);
   bool moduleListAtPut(Thread* thread, const Module& module, word index);
 
-  RawObject moduleAddBuiltinFunction(const Module& module, SymbolId name,
-                                     Function::Entry entry);
+  void moduleAddBuiltinFunction(Thread* thread, const Module& module,
+                                SymbolId name, Function::Entry entry);
+  void moduleAddBuiltinType(Thread* thread, const Module& module, SymbolId name,
+                            LayoutId layout_id);
 
   RawObject findModule(const Object& name);
   RawObject findModuleById(SymbolId name);
@@ -852,10 +854,6 @@ class Runtime {
   NODISCARD RawObject moduleDelAttr(Thread* thread, const Object& receiver,
                                     const Object& name);
 
-  // helper function add builtin types
-  void moduleAddBuiltinType(const Module& module, SymbolId name,
-                            LayoutId layout_id);
-
   // Creates a layout that is a subclass of a built-in class and zero or more
   // additional built-in attributes.
   RawObject layoutCreateSubclassWithBuiltins(LayoutId subclass_id,
@@ -996,9 +994,6 @@ class Runtime {
   static word next_module_index_;
 
   friend class ApiHandle;
-  // ModuleBase uses moduleAddBuiltinType
-  template <typename T, SymbolId id>
-  friend class ModuleBase;
 
   DISALLOW_COPY_AND_ASSIGN(Runtime);
 };
@@ -1058,11 +1053,12 @@ class ModuleBase : public ModuleBaseBase {
     Object name_obj(&scope, runtime->symbols()->at(name));
     Module module(&scope, runtime->newModule(name_obj));
     for (word i = 0; T::kBuiltinMethods[i].name != SymbolId::kSentinelId; i++) {
-      runtime->moduleAddBuiltinFunction(module, T::kBuiltinMethods[i].name,
+      runtime->moduleAddBuiltinFunction(thread, module,
+                                        T::kBuiltinMethods[i].name,
                                         T::kBuiltinMethods[i].address);
     }
     for (word i = 0; T::kBuiltinTypes[i].name != SymbolId::kSentinelId; i++) {
-      runtime->moduleAddBuiltinType(module, T::kBuiltinTypes[i].name,
+      runtime->moduleAddBuiltinType(thread, module, T::kBuiltinTypes[i].name,
                                     T::kBuiltinTypes[i].type);
     }
     runtime->addModule(module);

@@ -243,7 +243,7 @@ TEST_F(UtilsTest, PrintTracebackPrintsTraceback) {
   ASSERT_TRUE(main_obj.isModule());
   Module main(&scope, *main_obj);
 
-  runtime_->moduleAddBuiltinFunction(main, SymbolId::kTraceback,
+  runtime_->moduleAddBuiltinFunction(thread_, main, SymbolId::kTraceback,
                                      testPrintStacktrace);
 
   ASSERT_FALSE(runFromCStr(runtime_, R"(@_patch
