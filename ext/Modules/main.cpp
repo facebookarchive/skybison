@@ -260,8 +260,7 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
     wargv = static_cast<wchar_t**>(PyMem_RawCalloc(wargc, sizeof(*wargv)));
     decodeArgv(wargc, argv + optind, wargv);
   }
-  // TODO(T58637222): Use PySys_SetArgv once pyro is packaged with library
-  PySys_SetArgvEx(wargc, wargv, 0);
+  PySys_SetArgv(wargc, wargv);
   for (int i = 0; i < wargc; i++) {
     PyMem_RawFree(wargv[i]);
   }

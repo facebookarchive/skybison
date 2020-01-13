@@ -163,6 +163,23 @@ bool OS::fileExists(const char* file) {
   return false;
 }
 
+char* OS::readLink(const char* path) {
+  char* buffer = nullptr;
+  for (ssize_t size = 64;; size *= 2) {
+    buffer = reinterpret_cast<char*>(std::realloc(buffer, size));
+    CHECK(buffer != nullptr, "out of memory");
+    ssize_t res = ::readlink(path, buffer, size);
+    if (res == -1) {
+      std::free(buffer);
+      return nullptr;
+    }
+    if (res < size - 1) {
+      buffer[res] = '\0';
+      return buffer;
+    }
+  }
+}
+
 double OS::currentTime() {
   timespec ts;
   int err = clock_gettime(CLOCK_REALTIME, &ts);

@@ -12,17 +12,8 @@ namespace py {
 const char* OS::name() { return "linux"; }
 
 char* OS::executablePath() {
-  char* buffer = nullptr;
-  for (ssize_t size = 64;; size *= 2) {
-    buffer = reinterpret_cast<char*>(std::realloc(buffer, size));
-    CHECK(buffer != nullptr, "out of memory");
-    ssize_t res = readlink("/proc/self/exe", buffer, size);
-    CHECK(res >= 0, "failed to determine executable path");
-    if (res < size - 1) {
-      buffer[res] = '\0';
-      break;
-    }
-  }
+  char* buffer = readLink("/proc/self/exe");
+  CHECK(buffer != nullptr, "failed to determine executable path");
   return buffer;
 }
 

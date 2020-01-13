@@ -178,7 +178,7 @@ TEST_F(SysModuleExtensionApiTest,
 }
 
 TEST_F(SysModuleExtensionApiTest,
-       SetArgvWithScriptArgInsertsEmptyStringIntoSysPath) {
+       SetArgvWithCommandArgInsertsEmptyStringIntoSysPath) {
   wchar_t arg0[] = L"-c";
   wchar_t* wargv[] = {arg0};
   PySys_SetArgv(1, wargv);

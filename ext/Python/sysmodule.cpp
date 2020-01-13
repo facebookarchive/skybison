@@ -3,7 +3,9 @@
 #include "cpython-data.h"
 
 #include "capi-handles.h"
+#include "list-builtins.h"
 #include "module-builtins.h"
+#include "os.h"
 #include "runtime.h"
 #include "str-builtins.h"
 #include "sys-module.h"
@@ -66,6 +68,76 @@ PY_EXPORT void PySys_ResetWarnOptions() {
   UNIMPLEMENTED("PySys_ResetWarnOptions");
 }
 
+static void sysUpdatePath(Thread* thread, const Str& arg0) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  List path(&scope, runtime->lookupNameInModule(thread, SymbolId::kSys,
+                                                SymbolId::kPath));
+
+  char* arg0_cstr = arg0.toCStr();
+  char* script_path = arg0_cstr;
+
+  if (std::strcmp(script_path, "-c") == 0 ||
+      std::strcmp(script_path, "-m") == 0) {
+    Str empty(&scope, Str::empty());
+    listInsert(thread, path, empty, 0);
+    std::free(arg0_cstr);
+    return;
+  }
+
+  char* buf = nullptr;
+  // Follow symlink, if it exists
+  char* link = OS::readLink(script_path);
+  if (link != nullptr) {
+    // It's a symlink
+    if (link[0] == '/') {
+      script_path = link;  // Link to absolute path
+    } else if (std::strchr(link, '/') == nullptr) {
+      ;  // Link without path
+    } else {
+      // Link has partial path, must join(dirname(script_path), link)
+      char* last_sep = std::strrchr(script_path, '/');
+      if (last_sep == nullptr) {
+        script_path = link;  // script_path has no path
+      } else {
+        // Must make a copy
+        int dir_len = last_sep - script_path + 1;
+        int link_len = std::strlen(link);
+        buf = static_cast<char*>(std::malloc(dir_len + link_len + 1));
+        std::strncpy(buf, script_path, dir_len);
+        last_sep = buf + (last_sep - script_path);
+        std::strncpy(last_sep + 1, link, link_len + 1);
+        script_path = buf;
+      }
+    }
+  }
+
+  // Resolve the real path. Allow realpath to allocate to avoid PATH_MAX issues
+  char* fullpath = ::realpath(script_path, nullptr);
+  if (fullpath != nullptr) {
+    script_path = fullpath;
+  }
+
+  char* last_sep = std::strrchr(script_path, '/');
+  word path_len = 0;
+  if (last_sep != nullptr) {
+    path_len = last_sep - script_path + 1;
+    if (path_len > 1) {
+      path_len--;  // Drop trailing separator
+    }
+  }
+
+  auto script_path_data = reinterpret_cast<const byte*>(script_path);
+  View<byte> script_path_view(script_path_data, path_len);
+  Object path_element(&scope, runtime->newStrWithAll(script_path_view));
+  listInsert(thread, path, path_element, 0);
+
+  std::free(fullpath);
+  std::free(link);
+  std::free(buf);
+  std::free(arg0_cstr);
+}
+
 PY_EXPORT void PySys_SetArgv(int argc, wchar_t** argv) {
   PySys_SetArgvEx(argc, argv, Py_IsolatedFlag == 0);
 }
@@ -80,7 +152,8 @@ PY_EXPORT void PySys_SetArgvEx(int argc, wchar_t** argv, int updatepath) {
 
   Str arg(&scope, Str::empty());
   if (argc == 0 || argv == nullptr) {
-    // Ensure at least one (empty) argument is seen
+    // Ensure at least one (empty) argument is given in sys.argv
+    // This will also ensure the first element of sys.path is an empty string
     runtime->listAdd(thread, args, arg);
   } else {
     for (int i = 0; i < argc; i++) {
@@ -98,9 +171,7 @@ PY_EXPORT void PySys_SetArgvEx(int argc, wchar_t** argv, int updatepath) {
   }
 
   arg = args.at(0);
-  Object result(&scope, thread->invokeFunction1(
-                            SymbolId::kSys, SymbolId::kUnderUpdatePath, arg));
-  CHECK(!result.isError(), "Error updating sys.path from argv[0]");
+  sysUpdatePath(thread, arg);
 }
 
 PY_EXPORT int PySys_SetObject(const char* /* e */, PyObject* /* v */) {

@@ -80,19 +80,6 @@ class _VersionInfo(tuple):
     serial = _structseq_field("serial", 4)
 
 
-def _updatepath(arg0):
-    import os.path
-
-    if arg0 == "" or arg0 == "-c" or arg0 == "-m":
-        path.insert(0, "")
-        return
-
-    fullpath = os.path.realpath(arg0)
-    dirname = os.path.dirname(fullpath)
-
-    path.insert(0, dirname)
-
-
 abiflags = ""
 
 
@@ -188,12 +175,7 @@ meta_path = []
 
 
 # TODO(T42692043) Put the standard library into the python binary instead.
-path = [
-    "",
-    *_python_path,
-    _base_dir + "/library",
-    _base_dir + "/third-party/cpython/Lib",
-]
+path = [*_python_path, _base_dir + "/library", _base_dir + "/third-party/cpython/Lib"]
 
 
 path_hooks = []

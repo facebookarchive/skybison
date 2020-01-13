@@ -38,6 +38,11 @@ class OS {
 
   static bool fileExists(const char* file);
 
+  // Read value of symbolic link and return a null-terminated string. Returns
+  // nullptr if path is not a link or cannot be read. Caller is responsible for
+  // freeing the return value with free().
+  static char* readLink(const char* path);
+
   static double currentTime();
 
   static void* openSharedObject(const char* filename, const char** error_msg);
