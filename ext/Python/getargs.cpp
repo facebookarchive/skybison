@@ -51,7 +51,7 @@ static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,
                                      va_list* p_va, int flags);
 static bool parserInit(struct _PyArg_Parser* parser, int* keyword_count);
 static PyObject* findKeyword(PyObject* kwnames, PyObject** kwstack,
-                             PyObject* key);
+                             const char* key);
 static const char* skipitem(const char**, va_list*, int);
 
 PY_EXPORT int PyArg_Parse(PyObject* args, const char* format, ...) {
@@ -1302,6 +1302,17 @@ PY_EXPORT int _PyArg_ParseStack_SizeT(PyObject** args, Py_ssize_t nargs,
 
 #define IS_END_OF_FORMAT(c) (c == '\0' || c == ';' || c == ':')
 
+static bool isValidKeyword(struct _PyArg_Parser* parser,
+                           Py_ssize_t num_keywords, PyObject* key) {
+  word start = parser->pos;
+  for (word i = 0; i < num_keywords; i++) {
+    if (_PyUnicode_EqualToASCIIString(key, parser->keywords[i + start])) {
+      return true;
+    }
+  }
+  return false;
+}
+
 static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,
                                      PyObject* keywords, PyObject* kwnames,
                                      struct _PyArg_Parser* parser,
@@ -1326,32 +1337,13 @@ static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,
     return false;
   }
 
-  // Init local kwtuple
-  // TODO(T54190943) - remove the usage of kwtuple and instead do a direct
-  // string comparison
-  PyObject* kwtuple = PyTuple_New(keyword_count);
-  if (kwtuple == nullptr) {
-    return false;
-  }
-  const char* const* keywords_collection = parser->keywords + parser->pos;
-  for (int i = 0; i < keyword_count; i++) {
-    PyObject* str = PyUnicode_FromString(keywords_collection[i]);
-    if (str == nullptr) {
-      Py_DECREF(kwtuple);
-      return false;
-    }
-    PyUnicode_InternInPlace(&str);
-    PyTuple_SET_ITEM(kwtuple, i, str);
-  }
-
   int pos = parser->pos;
-  int len = pos + PyTuple_GET_SIZE(kwtuple);
+  int len = pos + keyword_count;
 
   if (len > STATIC_FREELIST_ENTRIES) {
     freelist.entries = PyMem_NEW(freelistentry_t, len);
     if (freelist.entries == nullptr) {
       PyErr_NoMemory();
-      Py_DECREF(kwtuple);
       return 0;
     }
     freelist.entries_malloced = 1;
@@ -1372,14 +1364,12 @@ static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,
                  (parser->fname == nullptr) ? "function" : parser->fname,
                  (parser->fname == nullptr) ? "" : "()", len,
                  (len == 1) ? "" : "s", nargs + num_keywords);
-    Py_DECREF(kwtuple);
     return cleanreturn(0, &freelist);
   }
   if (parser->max < nargs) {
     PyErr_Format(
         PyExc_TypeError, "Function takes %s %d positional arguments (%d given)",
         (parser->min != INT_MAX) ? "at most" : "exactly", parser->max, nargs);
-    Py_DECREF(kwtuple);
     return cleanreturn(0, &freelist);
   }
 
@@ -1387,8 +1377,7 @@ static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,
   // process
   const char* format = parser->format;
   for (int i = 0; i < len; i++) {
-    PyObject* keyword =
-        (i >= pos) ? PyTuple_GET_ITEM(kwtuple, i - pos) : nullptr;
+    const char* keyword = i >= pos ? parser->keywords[i] : nullptr;
     if (*format == '|') {
       format++;
     }
@@ -1400,9 +1389,8 @@ static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,
     PyObject* current_arg = nullptr;
     if (num_keywords && i >= pos) {
       if (keywords != nullptr) {
-        current_arg = PyDict_GetItem(keywords, keyword);
+        current_arg = PyDict_GetItemString(keywords, keyword);
         if (current_arg == nullptr && PyErr_Occurred()) {
-          Py_DECREF(kwtuple);
           return cleanreturn(0, &freelist);
         }
       } else {
@@ -1414,10 +1402,9 @@ static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,
       if (i < nargs) {
         // arg present in tuple and in dict
         PyErr_Format(PyExc_TypeError,
-                     "Argument given by name ('%U') "
+                     "Argument given by name ('%s') "
                      "and position (%d)",
                      keyword, i + 1);
-        Py_DECREF(kwtuple);
         return cleanreturn(0, &freelist);
       }
     } else if (i < nargs) {
@@ -1431,7 +1418,6 @@ static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,
                                     msgbuf, sizeof(msgbuf), &freelist);
       if (msg) {
         seterror(i + 1, msg, levels, parser->fname, parser->custom_msg);
-        Py_DECREF(kwtuple);
         return cleanreturn(0, &freelist);
       }
       continue;
@@ -1449,16 +1435,14 @@ static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,
       } else {
         PyErr_Format(PyExc_TypeError,
                      "Required argument "
-                     "'%U' (pos %d) not found",
+                     "'%s' (pos %d) not found",
                      keyword, i + 1);
       }
-      Py_DECREF(kwtuple);
       return cleanreturn(0, &freelist);
     }
     // current code reports success when all required args fulfilled and no
     // keyword args left, with no further validation.
     if (!num_keywords) {
-      Py_DECREF(kwtuple);
       return cleanreturn(1, &freelist);
     }
 
@@ -1478,18 +1462,13 @@ static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,
       while (PyDict_Next(keywords, &pos1, &key, &value)) {
         if (!PyUnicode_Check(key)) {
           PyErr_SetString(PyExc_TypeError, "keywords must be strings");
-          Py_DECREF(kwtuple);
           return cleanreturn(0, &freelist);
         }
-        int match = PySequence_Contains(kwtuple, key);
-        if (match <= 0) {
-          if (match == 0) {
-            PyErr_Format(PyExc_TypeError,
-                         "'%U' is an invalid keyword "
-                         "argument for this function",
-                         key);
-          }
-          Py_DECREF(kwtuple);
+        if (!isValidKeyword(parser, keyword_count, key)) {
+          PyErr_Format(PyExc_TypeError,
+                       "'%s' is an invalid keyword "
+                       "argument for this function",
+                       key);
           return cleanreturn(0, &freelist);
         }
       }
@@ -1497,28 +1476,20 @@ static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,
       Py_ssize_t num_kwargs = PyTuple_GET_SIZE(kwnames);
       for (Py_ssize_t j = 0; j < num_kwargs; j++) {
         PyObject* key = PyTuple_GET_ITEM(kwnames, j);
-
         if (!PyUnicode_Check(key)) {
           PyErr_SetString(PyExc_TypeError, "keywords must be strings");
-          Py_DECREF(kwtuple);
           return cleanreturn(0, &freelist);
         }
-
-        int match = PySequence_Contains(kwtuple, key);
-        if (match <= 0) {
-          if (match == 0) {
-            PyErr_Format(PyExc_TypeError,
-                         "'%U' is an invalid keyword "
-                         "argument for this function",
-                         key);
-          }
-          Py_DECREF(kwtuple);
+        if (!isValidKeyword(parser, keyword_count, key)) {
+          PyErr_Format(PyExc_TypeError,
+                       "'%U' is an invalid keyword "
+                       "argument for this function",
+                       key);
           return cleanreturn(0, &freelist);
         }
       }
     }
   }
-  Py_DECREF(kwtuple);
   return cleanreturn(1, &freelist);
 }
 
@@ -1848,21 +1819,16 @@ static bool parserInit(struct _PyArg_Parser* parser, int* keyword_count) {
 }
 
 static PyObject* findKeyword(PyObject* kwnames, PyObject** kwstack,
-                             PyObject* key) {
+                             const char* key) {
   Py_ssize_t num_kwargs = PyTuple_GET_SIZE(kwnames);
   for (Py_ssize_t i = 0; i < num_kwargs; i++) {
     PyObject* kwname = PyTuple_GET_ITEM(kwnames, i);
 
-    // ptr==ptr should match in most cases since keyword keys should be interned
-    // strings
-    if (kwname == key) {
-      return kwstack[i];
-    }
     if (!PyUnicode_Check(kwname)) {
       // ignore non-string keyword keys: an error will be raised above
       continue;
     }
-    if (_PyUnicode_EQ(kwname, key)) {
+    if (_PyUnicode_EqualToASCIIString(kwname, key)) {
       return kwstack[i];
     }
   }
