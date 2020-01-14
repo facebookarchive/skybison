@@ -1165,6 +1165,31 @@ void emitHandler<RETURN_VALUE>(EmitEnv* env) {
   __ jmp(RAX);
 }
 
+template <>
+void emitHandler<POP_BLOCK>(EmitEnv* env) {
+  Register r_depth = RAX;
+  Register r_block = R9;
+
+  // frame->blockstack()->pop()
+  __ movl(r_depth, Address(kFrameReg, Frame::kBlockStackOffset +
+                                          BlockStack::kDepthOffset));
+  __ subl(r_depth, Immediate(2));
+  __ movq(r_block,
+          Address(kFrameReg, r_depth, TIMES_4,
+                  Frame::kBlockStackOffset + BlockStack::kStackOffset));
+  __ movl(
+      Address(kFrameReg, Frame::kBlockStackOffset + BlockStack::kDepthOffset),
+      r_depth);
+
+  // frame->setValueStackTop(frame->valueStackBase() - block.level());
+  // =>   RSP = kFrameReg - (block.level() * kPointerSize)
+  __ shrq(r_block, Immediate(TryBlock::kLevelOffset));
+  __ andl(r_block, Immediate(TryBlock::kLevelMask));
+  __ negq(r_block);
+  __ leaq(RSP, Address(kFrameReg, r_block, TIMES_8, 0));
+  emitNextOpcode(env);
+}
+
 template <typename T>
 void writeBytes(void* addr, T value) {
   std::memcpy(addr, &value, sizeof(value));

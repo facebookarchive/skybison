@@ -62,9 +62,6 @@ class TryBlock {
 
   word level() const;
 
- private:
-  uword value_;
-
   static const int kKindOffset = RawObject::kSmallIntTagBits;
   static const int kKindSize = 2;
   static const uword kKindMask = (1 << kKindSize) - 1;
@@ -81,6 +78,9 @@ class TryBlock {
 
   static_assert(kSize <= kBitsPerByte * sizeof(uword),
                 "TryBlock must fit into a uword");
+
+ private:
+  uword value_;
 };
 
 // TODO(mpage): Determine maximum block stack depth when the code object is
