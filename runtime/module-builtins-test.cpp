@@ -107,8 +107,7 @@ static RawModule createTestingModule(Thread* thread) {
   Runtime* runtime = thread->runtime();
 
   // Create a builtins module.
-  Object builtins_name(&scope, runtime->symbols()->Builtins());
-  Module builtins_module(&scope, runtime->newModule(builtins_name));
+  Module builtins_module(&scope, runtime->newModuleById(SymbolId::kBuiltins));
   Dict builtins_dict(&scope, runtime->newDict());
   builtins_module.setDict(*builtins_dict);
 
@@ -118,8 +117,7 @@ static RawModule createTestingModule(Thread* thread) {
   dictAtPutInValueCellByStr(thread, module_dict, dunder_builtins_name,
                             builtins_module);
 
-  Str module_name(&scope, runtime->newStrFromCStr("__main__"));
-  Module module(&scope, runtime->newModule(module_name));
+  Module module(&scope, runtime->newModuleById(SymbolId::kDunderMain));
   module.setDict(*module_dict);
   return *module;
 }

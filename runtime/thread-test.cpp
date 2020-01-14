@@ -600,8 +600,7 @@ TEST_F(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
   code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setFlags(Code::Flags::kNofree);
 
-  Object module_name(&scope, runtime_->symbols()->Builtins());
-  Module builtins(&scope, runtime_->newModule(module_name));
+  Module builtins(&scope, runtime_->newModuleById(SymbolId::kBuiltins));
   Module module(&scope, runtime_->findOrCreateMainModule());
   moduleAtPutById(thread_, module, SymbolId::kDunderBuiltins, builtins);
   Object value(&scope, runtime_->newInt(123));

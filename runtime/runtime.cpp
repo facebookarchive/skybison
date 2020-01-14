@@ -859,6 +859,19 @@ RawObject Runtime::newModule(const Object& name) {
   return *result;
 }
 
+RawObject Runtime::newModuleById(SymbolId name) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Module result(&scope, heap()->create<RawModule>());
+  result.setDict(newDict());
+  result.setDef(newIntFromCPtr(nullptr));
+  result.setId(reserveModuleId());
+  Object name_obj(&scope, symbols()->at(name));
+  Object init_result(&scope, moduleInit(thread, result, name_obj));
+  if (init_result.isErrorException()) return *init_result;
+  return *result;
+}
+
 RawObject Runtime::newModuleProxy(const Module& module) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -2363,11 +2376,11 @@ template <SymbolId Name, const char* Data>
 static void initializeFrozenModule(Thread* thread) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Object name_obj(&scope, runtime->symbols()->at(Name));
-  Module module(&scope, runtime->newModule(name_obj));
+  Module module(&scope, runtime->newModuleById(Name));
   runtime->addModule(module);
   CHECK(!runtime->executeFrozenModule(Data, module).isError(),
-        "Failed to initialize %s module", Str::cast(*name_obj).toCStr());
+        "Failed to initialize %s module",
+        runtime->symbols()->predefinedSymbolAt(Name));
 }
 
 // TODO(emacs): Move these names into the modules themselves, so there is only
@@ -2670,9 +2683,7 @@ void Runtime::createBuiltinsModule(Thread* thread) {
 
 void Runtime::createEmptyBuiltinsModule(Thread* thread) {
   HandleScope scope(thread);
-
-  Object name(&scope, symbols()->Builtins());
-  Module builtins(&scope, newModule(name));
+  Module builtins(&scope, newModuleById(SymbolId::kBuiltins));
   addModule(builtins);
 }
 
@@ -2685,16 +2696,14 @@ void Runtime::createImportlibModule(Thread* thread) {
   // This replicates that mapping for compatibility
 
   // Run _bootstrap.py
-  Object importlib_name(&scope, symbols()->UnderFrozenImportlib());
-  Module importlib(&scope, newModule(importlib_name));
+  Module importlib(&scope, newModuleById(SymbolId::kUnderFrozenImportlib));
   CHECK(!executeFrozenModule(kUnderBootstrapModuleData, importlib).isError(),
         "Failed to initialize _bootstrap module");
   addModule(importlib);
 
   // Run _bootstrap_external.py
-  Str importlib_external_name(&scope,
-                              symbols()->UnderFrozenImportlibExternal());
-  Module importlib_external(&scope, newModule(importlib_external_name));
+  Module importlib_external(
+      &scope, newModuleById(SymbolId::kUnderFrozenImportlibExternal));
   moduleAtPutById(thread, importlib_external, SymbolId::kUnderBootstrap,
                   importlib);
   CHECK(!executeFrozenModule(kUnderBootstrapUnderExternalModuleData,
@@ -2715,8 +2724,7 @@ void Runtime::createImportlibModule(Thread* thread) {
 
 void Runtime::createSysModule(Thread* thread) {
   HandleScope scope(thread);
-  Object name(&scope, symbols()->Sys());
-  Module module(&scope, newModule(name));
+  Module module(&scope, newModuleById(SymbolId::kSys));
   for (word i = 0; SysModule::kBuiltinMethods[i].name != SymbolId::kSentinelId;
        i++) {
     moduleAddBuiltinFunction(thread, module, SysModule::kBuiltinMethods[i].name,
@@ -2830,8 +2838,7 @@ void Runtime::createSysModule(Thread* thread) {
 
 void Runtime::createUnderBuiltinsModule(Thread* thread) {
   HandleScope scope(thread);
-  Object module_name(&scope, symbols()->UnderBuiltins());
-  Module module(&scope, newModule(module_name));
+  Module module(&scope, newModuleById(SymbolId::kUnderBuiltins));
   for (word i = 0;
        UnderBuiltinsModule::kBuiltinMethods[i].name != SymbolId::kSentinelId;
        i++) {
@@ -2878,8 +2885,7 @@ void Runtime::createUnderBuiltinsModule(Thread* thread) {
 
 RawObject Runtime::createMainModule() {
   HandleScope scope;
-  Object name(&scope, symbols()->DunderMain());
-  Module module(&scope, newModule(name));
+  Module module(&scope, newModuleById(SymbolId::kDunderMain));
 
   // Fill in __main__...
 

@@ -173,6 +173,7 @@ class Runtime {
                                   ReadOnly read_only);
 
   RawObject newModule(const Object& name);
+  RawObject newModuleById(SymbolId name);
 
   RawObject newModuleProxy(const Module& module);
 
@@ -1050,8 +1051,7 @@ class ModuleBase : public ModuleBaseBase {
   static void initialize(Thread* thread) {
     HandleScope scope(thread);
     Runtime* runtime = thread->runtime();
-    Object name_obj(&scope, runtime->symbols()->at(name));
-    Module module(&scope, runtime->newModule(name_obj));
+    Module module(&scope, runtime->newModuleById(name));
     for (word i = 0; T::kBuiltinMethods[i].name != SymbolId::kSentinelId; i++) {
       runtime->moduleAddBuiltinFunction(thread, module,
                                         T::kBuiltinMethods[i].name,
@@ -1063,7 +1063,8 @@ class ModuleBase : public ModuleBaseBase {
     }
     runtime->addModule(module);
     CHECK(!runtime->executeFrozenModule(T::kFrozenData, module).isError(),
-          "Failed to initialize %s module", Str::cast(*name_obj).toCStr());
+          "Failed to initialize %s module",
+          runtime->symbols()->predefinedSymbolAt(name));
   }
 };
 
