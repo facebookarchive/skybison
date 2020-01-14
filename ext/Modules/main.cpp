@@ -156,7 +156,6 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
       case 'i':
         Py_InspectFlag++;
         Py_InteractiveFlag++;
-        UNIMPLEMENTED("Inspect Interactively Flag");
         break;
       case 'I':
         Py_IsolatedFlag++;
@@ -304,6 +303,13 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
     }
 
     returncode = runFile(fp, filename, &flags);
+  }
+
+  if (Py_InspectFlag && is_interactive &&
+      (filename != nullptr || command != nullptr || module != nullptr)) {
+    Py_InspectFlag = 0;
+    runInteractiveHook();
+    returncode = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &flags) != 0;
   }
 
   Py_Finalize();
