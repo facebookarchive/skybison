@@ -1094,171 +1094,154 @@ RawObject Runtime::strFromStrArray(const StrArray& array) {
   return *result;
 }
 
-RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
-                             const Str& fmt, va_list args) {
-  word dst_idx = 0;
-  word len = 0;
+static word strFormat(Thread* thread, const MutableBytes& dst,
+                      bool determine_size, const char* fmt, va_list args) {
   HandleScope scope(thread);
-  DCHECK((dst == nullptr) == (size == 0), "dst must be null when size is 0");
-  for (word fmt_idx = 0; fmt_idx < fmt.charLength(); fmt_idx++) {
-    if (fmt.charAt(fmt_idx) != '%') {
-      if (dst == nullptr) {
-        len++;
-      } else {
-        dst[dst_idx++] = fmt.charAt(fmt_idx);
-      }
+  word fragment_begin = 0;
+  word fmt_index = 0;
+  word dst_index = 0;
+  word size = determine_size ? -1 : dst.length();
+  for (; fmt[fmt_index] != '\0'; fmt_index++) {
+    if (fmt[fmt_index] != '%') {
       continue;
     }
-    if (++fmt_idx >= fmt.charLength()) {
-      return thread->raiseWithFmt(LayoutId::kValueError, "Incomplete format");
+    word fragment_length = fmt_index - fragment_begin;
+    if (!determine_size) {
+      std::memcpy(reinterpret_cast<void*>(dst.address() + dst_index),
+                  fmt + fragment_begin, fragment_length);
     }
-    switch (fmt.charAt(fmt_idx)) {
+    dst_index += fragment_length;
+    fmt_index++;
+    fragment_begin = fmt_index + 1;
+    switch (fmt[fmt_index]) {
       case 'c': {
-        int value = va_arg(args, int);  // Note that C promotes char to int.
-        if (value < 0 || value > kMaxASCII) {
+        int value_int = va_arg(args, int);  // Note that C promotes char to int.
+        if (value_int < 0 || value_int > kMaxASCII) {
           // Replace non-ASCII characters.
-          RawSmallStr value_str =
-              SmallStr::fromCodePoint(kReplacementCharacter);
-          word length = value_str.charLength();
-          if (dst == nullptr) {
-            len += length;
-          } else {
-            value_str.copyTo(reinterpret_cast<byte*>(&dst[dst_idx]), length);
-            dst_idx += length;
+          RawSmallStr value = SmallStr::fromCodePoint(kReplacementCharacter);
+          word length = value.charLength();
+          if (!determine_size) {
+            dst.replaceFromWithStr(dst_index, Str::cast(value), length);
           }
+          dst_index += length;
           break;
         }
-        if (dst == nullptr) {
-          len++;
-        } else {
-          dst[dst_idx++] = static_cast<char>(value);
+        if (!determine_size) {
+          dst.byteAtPut(dst_index, static_cast<char>(value_int));
         }
+        dst_index++;
       } break;
       case 'd': {
         int value = va_arg(args, int);
-        if (dst == nullptr) {
-          len += snprintf(nullptr, 0, "%d", value);
-        } else {
-          dst_idx +=
-              std::snprintf(&dst[dst_idx], size - dst_idx + 1, "%d", value);
-        }
+        char* print_dst =
+            determine_size ? nullptr
+                           : reinterpret_cast<char*>(dst.address() + dst_index);
+        size_t print_len = determine_size ? 0 : size - dst_index + 1;
+        dst_index += std::snprintf(print_dst, print_len, "%d", value);
       } break;
       case 'g': {
         double value = va_arg(args, double);
-        if (dst == nullptr) {
-          len += std::snprintf(nullptr, 0, "%g", value);
-        } else {
-          dst_idx +=
-              std::snprintf(&dst[dst_idx], size - dst_idx + 1, "%g", value);
-        }
+        char* print_dst =
+            determine_size ? nullptr
+                           : reinterpret_cast<char*>(dst.address() + dst_index);
+        size_t print_len = determine_size ? 0 : size - dst_index + 1;
+        dst_index += std::snprintf(print_dst, print_len, "%g", value);
       } break;
       case 's': {
         const char* value = va_arg(args, char*);
-        if (dst == nullptr) {
-          len += std::strlen(value);
-        } else {
-          word length = std::strlen(value);
-          std::memcpy(reinterpret_cast<byte*>(&dst[dst_idx]), value, length);
-          dst_idx += length;
+        word length = std::strlen(value);
+        if (!determine_size) {
+          std::memcpy(reinterpret_cast<byte*>(dst.address() + dst_index), value,
+                      length);
         }
+        dst_index += length;
       } break;
       case 'w': {
         word value = va_arg(args, word);
-        if (dst == nullptr) {
-          len += std::snprintf(nullptr, 0, "%" PRIdPTR, value);
-        } else {
-          dst_idx += std::snprintf(&dst[dst_idx], size - dst_idx + 1,
-                                   "%" PRIdPTR, value);
-        }
+        char* print_dst =
+            determine_size ? nullptr
+                           : reinterpret_cast<char*>(dst.address() + dst_index);
+        size_t print_len = determine_size ? 0 : size - dst_index + 1;
+        dst_index += std::snprintf(print_dst, print_len, "%" PRIdPTR, value);
       } break;
       case 'x': {
         unsigned value = va_arg(args, unsigned);
-        if (dst == nullptr) {
-          len += std::snprintf(nullptr, 0, "%x", value);
-        } else {
-          dst_idx +=
-              std::snprintf(&dst[dst_idx], size - dst_idx + 1, "%x", value);
-        }
+        char* print_dst =
+            determine_size ? nullptr
+                           : reinterpret_cast<char*>(dst.address() + dst_index);
+        size_t print_len = determine_size ? 0 : size - dst_index + 1;
+        dst_index += std::snprintf(print_dst, print_len, "%x", value);
       } break;
       case 'C': {
-        int32_t value = va_arg(args, int32_t);
-        if (value < 0 || value > kMaxUnicode) {
-          value = kReplacementCharacter;
+        int32_t value_int = va_arg(args, int32_t);
+        if (value_int < 0 || value_int > kMaxUnicode) {
+          value_int = kReplacementCharacter;
         }
-        RawSmallStr value_str = SmallStr::fromCodePoint(value);
-        word length = value_str.charLength();
-        if (dst == nullptr) {
-          len += length;
-        } else {
-          value_str.copyTo(reinterpret_cast<byte*>(&dst[dst_idx]), length);
-          dst_idx += length;
+        RawSmallStr value = SmallStr::fromCodePoint(value_int);
+        word length = value.charLength();
+        if (!determine_size) {
+          dst.replaceFromWithStr(dst_index, Str::cast(value), length);
         }
+        dst_index += length;
       } break;
       case 'S': {
         Object value_obj(&scope, **va_arg(args, Object*));
         Str value(&scope, strUnderlying(*value_obj));
         word length = value.charLength();
-        if (dst == nullptr) {
-          len += length;
-        } else {
-          value.copyTo(reinterpret_cast<byte*>(&dst[dst_idx]), length);
-          dst_idx += length;
+        if (!determine_size) {
+          dst.replaceFromWithStr(dst_index, *value, length);
         }
+        dst_index += length;
       } break;
       case 'F': {
         Object obj(&scope, **va_arg(args, Object*));
         Function function(&scope, *obj);
         Str value(&scope, function.qualname());
         word length = value.charLength();
-        if (dst == nullptr) {
-          len += length;
-        } else {
-          value.copyTo(reinterpret_cast<byte*>(&dst[dst_idx]), length);
-          dst_idx += length;
+        if (!determine_size) {
+          dst.replaceFromWithStr(dst_index, *value, length);
         }
+        dst_index += length;
       } break;
       case 'T': {
         Object obj(&scope, **va_arg(args, Object*));
-        Type type(&scope, typeOf(*obj));
+        Type type(&scope, thread->runtime()->typeOf(*obj));
         Str value(&scope, type.name());
         word length = value.charLength();
-        if (dst == nullptr) {
-          len += length;
-        } else {
-          value.copyTo(reinterpret_cast<byte*>(&dst[dst_idx]), length);
-          dst_idx += length;
+        if (!determine_size) {
+          dst.replaceFromWithStr(dst_index, *value, length);
         }
+        dst_index += length;
       } break;
       case 'Y': {
-        SymbolId value = va_arg(args, SymbolId);
-        Str value_str(&scope, symbols()->at(value));
-        word length = value_str.charLength();
-        if (dst == nullptr) {
-          len += length;
-        } else {
-          value_str.copyTo(reinterpret_cast<byte*>(&dst[dst_idx]), length);
-          dst_idx += length;
+        SymbolId symbol = va_arg(args, SymbolId);
+        RawStr value = Str::cast(thread->runtime()->symbols()->at(symbol));
+        word length = value.charLength();
+        if (!determine_size) {
+          dst.replaceFromWithStr(dst_index, value, length);
         }
+        dst_index += length;
       } break;
       case '%':
-        if (dst == nullptr) {
-          len++;
-        } else {
-          dst[dst_idx++] = '%';
+        if (!determine_size) {
+          dst.byteAtPut(dst_index, '%');
         }
+        dst_index++;
         break;
       default:
         UNIMPLEMENTED("Unsupported format specifier");
     }
+    DCHECK(determine_size || dst_index <= size, "dst buffer overflow");
   }
-  if (dst != nullptr) {
-    dst[size] = '\0';
+
+  word fragment_length = fmt_index - fragment_begin;
+  if (!determine_size) {
+    std::memcpy(reinterpret_cast<void*>(dst.address() + dst_index),
+                fmt + fragment_begin, fragment_length);
   }
-  if (!SmallInt::isValid(len)) {
-    return thread->raiseWithFmt(LayoutId::kOverflowError,
-                                "Output of format string is too long");
-  }
-  return SmallInt::fromWord(len);
+  dst_index += fragment_length;
+  DCHECK(determine_size || dst_index == size, "dst buffer underflow");
+  return dst_index;
 }
 
 RawObject Runtime::newStrFromFmtV(Thread* thread, const char* fmt,
@@ -1266,16 +1249,12 @@ RawObject Runtime::newStrFromFmtV(Thread* thread, const char* fmt,
   va_list args_copy;
   va_copy(args_copy, args);
   HandleScope scope(thread);
-  Str fmt_str(&scope, newStrFromCStr(fmt));
-  Object out_len(&scope, strFormat(thread, nullptr, 0, fmt_str, args));
-  if (out_len.isError()) return *out_len;
-  word len = SmallInt::cast(*out_len).value();
-  unique_c_ptr<char> dst(static_cast<char*>(std::malloc(len + 1)));
-  CHECK(dst != nullptr, "Buffer allocation failure");
-  out_len = strFormat(thread, dst.get(), len, fmt_str, args_copy);
-  DCHECK(!out_len.isError(), "strFormat with format string should not fail");
+  MutableBytes result(&scope, emptyMutableBytes());
+  word length = strFormat(thread, result, /*determine_size=*/true, fmt, args);
+  result = newMutableBytesUninitialized(length);
+  strFormat(thread, result, /*determine_size=*/false, fmt, args_copy);
   va_end(args_copy);
-  return newStrFromCStr(dst.get());
+  return result.becomeStr();
 }
 
 RawObject Runtime::newStrFromFmt(const char* fmt, ...) {

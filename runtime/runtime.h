@@ -221,8 +221,6 @@ class Runtime {
   RawObject newStrFromCStr(const char* c_str);
   RawObject strFromStrArray(const StrArray& array);
 
-  NODISCARD RawObject strFormat(Thread* thread, char* dst, word size,
-                                const Str& fmt, va_list args);
   // Creates a new string constructed from a format and a list of arguments,
   // similar to sprintf.
   // %c formats an ASCII character
