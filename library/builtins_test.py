@@ -2254,6 +2254,24 @@ class CompileTests(unittest.TestCase):
 
 
 class ComplexTests(unittest.TestCase):
+    def test_dunder_add_with_non_complex_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            complex.__add__(1, 2)
+
+    def test_dunder_add_with_non_number_type_returns_not_implemented(self):
+        self.assertIs(complex(3.2, 0).__add__("not-num"), NotImplemented)
+
+    def test_dunder_add_adds_numbers_together(self):
+        self.assertEqual(complex(1.0, 1.0).__add__(0), complex(1, 1))
+        self.assertEqual(complex(1.0, 1.0).__add__(1.0), complex(2, 1))
+        self.assertEqual(complex(1.0, 1.0).__add__(complex(2, 2)), complex(3, 3))
+
+    def test_dunder_add_with_int_subclass_returns_complex(self):
+        class A(int):
+            pass
+
+        self.assertEqual(complex(1.0, 1.0).__add__(A(3)), complex(4, 1))
+
     def test_dunder_hash_with_0_image_returns_float_hash(self):
         self.assertEqual(complex.__hash__(complex(0.0)), float.__hash__(0.0))
         self.assertEqual(complex.__hash__(complex(-0.0)), float.__hash__(-0.0))

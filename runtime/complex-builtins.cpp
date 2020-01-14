@@ -62,15 +62,11 @@ RawObject ComplexBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, SymbolId::kComplex);
   }
   Complex self(&scope, complexUnderlying(*self_obj));
-  Object other_obj(&scope, args.get(1));
   double other_real, other_imag;
-  if (runtime->isInstanceOfInt(*other_obj)) {
-    Int other_int(&scope, intUnderlying(*other_obj));
-    Object result(&scope, convertIntToDouble(thread, other_int, &other_real));
-    if (result.isError()) return *result;
-    other_imag = 0.0;
-  } else {
-    UNIMPLEMENTED("complex.__add__(non-int)");
+  Object other(&scope, args.get(1));
+  other = unpackNumber(thread, other, &other_real, &other_imag);
+  if (!other.isNoneType()) {
+    return *other;
   }
   return runtime->newComplex(self.real() + other_real,
                              self.imag() + other_imag);
