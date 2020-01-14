@@ -49,6 +49,14 @@ extern "C" {
     BLAKE2B_PERSONALBYTES = 16
   };
 
+  typedef struct {
+      PyObject *PyBlake2_BLAKE2bType;
+      PyObject *PyBlake2_BLAKE2sType;
+  } blake2_modulestate;
+
+#define blake2_modulestate(o) ((blake2_modulestate *)PyModule_GetState(o))
+#define blake2_modulestate_global blake2_modulestate(PyState_FindModule(&blake2_module))
+
   typedef struct __blake2s_state
   {
     uint32_t h[8];

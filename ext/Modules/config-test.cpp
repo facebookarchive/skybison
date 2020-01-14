@@ -32,6 +32,13 @@ a = ast.dump(b)
       "args=[Str(s='hello')], keywords=[]))])"));
 }
 
+TEST_F(ConfigExtensionApiTest, ImportUnderBlake2ReturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("_blake2"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
 TEST_F(ConfigExtensionApiTest, ImportUnderCapsuleReturnsModule) {
   PyObjectPtr module(PyImport_ImportModule("_capsule"));
   ASSERT_NE(module, nullptr);

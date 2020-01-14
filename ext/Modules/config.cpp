@@ -2,6 +2,7 @@
 #include "cpython-types.h"
 
 extern "C" PyObject* PyInit__ast();
+extern "C" PyObject* PyInit__blake2();
 extern "C" PyObject* PyInit__capsule();
 extern "C" PyObject* PyInit__compile();
 extern "C" PyObject* PyInit__hashlib();
@@ -40,6 +41,7 @@ PyObject* PyInit__empty() {
 // clang-format off
 struct _inittab _PyImport_Inittab[] = {
     {"_ast", PyInit__ast},
+    {"_blake2", PyInit__blake2},
     {"_capsule", PyInit__capsule},
     {"_compile", PyInit__compile},
     {"_empty", PyInit__empty},

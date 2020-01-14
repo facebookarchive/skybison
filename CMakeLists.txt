@@ -573,6 +573,11 @@ set(
   ${CPYTHON_DIR}/Modules/atexitmodule.c
   ${CPYTHON_DIR}/Modules/audioop.c
   ${CPYTHON_DIR}/Modules/binascii.c
+  ${CPYTHON_DIR}/Modules/_blake2/blake2module.c
+  ${CPYTHON_DIR}/Modules/_blake2/blake2b_impl.c
+  ${CPYTHON_DIR}/Modules/_blake2/blake2s_impl.c
+  ${CPYTHON_DIR}/Modules/_blake2/clinic/blake2b_impl.c.h
+  ${CPYTHON_DIR}/Modules/_blake2/clinic/blake2s_impl.c.h
   ${CPYTHON_DIR}/Modules/clinic/_asynciomodule.c.h
   ${CPYTHON_DIR}/Modules/clinic/_codecsmodule.c.h
   ${CPYTHON_DIR}/Modules/clinic/_cryptmodule.c.h

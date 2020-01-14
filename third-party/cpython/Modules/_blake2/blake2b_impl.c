@@ -34,8 +34,8 @@
 #include "impl/blake2b-ref.c"
 #endif
 
-
-extern PyTypeObject PyBlake2_BLAKE2bType;
+extern PyType_Spec PyBlake2_BLAKE2bType_spec;
+extern struct PyModuleDef blake2_module;
 
 typedef struct {
     PyObject_HEAD
@@ -50,16 +50,17 @@ typedef struct {
 
 /*[clinic input]
 module _blake2
-class _blake2.blake2b "BLAKE2bObject *" "&PyBlake2_BLAKE2bType"
+class _blake2.blake2b "BLAKE2bObject *" "(PyTypeObject *)blake2_modulestate_global->PyBlake2_BLAKE2bType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=d47b0527b39c673f]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=9d44b835c774f678]*/
 
 
 static BLAKE2bObject *
 new_BLAKE2bObject(PyTypeObject *type)
 {
     BLAKE2bObject *self;
-    self = (BLAKE2bObject *)type->tp_alloc(type, 0);
+    allocfunc alloc_func = PyType_GetSlot(type, Py_tp_alloc);
+    self = (BLAKE2bObject *)alloc_func(type, 0);
 #ifdef WITH_THREAD
     if (self != NULL) {
         self->lock = NULL;
@@ -406,6 +407,7 @@ static PyGetSetDef py_blake2b_getsetters[] = {
 static void
 py_blake2b_dealloc(PyObject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     BLAKE2bObject *obj = (BLAKE2bObject *)self;
 
     /* Try not to leave state in memory. */
@@ -418,46 +420,23 @@ py_blake2b_dealloc(PyObject *self)
     }
 #endif
     PyObject_Del(self);
+    Py_DECREF(tp);
 }
 
 
-PyTypeObject PyBlake2_BLAKE2bType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_blake2.blake2b",        /* tp_name            */
-    sizeof(BLAKE2bObject),    /* tp_basicsize       */
-    0,                        /* tp_itemsize        */
-    py_blake2b_dealloc,       /* tp_dealloc         */
-    0,                        /* tp_print           */
-    0,                        /* tp_getattr         */
-    0,                        /* tp_setattr         */
-    0,                        /* tp_compare         */
-    0,                        /* tp_repr            */
-    0,                        /* tp_as_number       */
-    0,                        /* tp_as_sequence     */
-    0,                        /* tp_as_mapping      */
-    0,                        /* tp_hash            */
-    0,                        /* tp_call            */
-    0,                        /* tp_str             */
-    0,                        /* tp_getattro        */
-    0,                        /* tp_setattro        */
-    0,                        /* tp_as_buffer       */
-    Py_TPFLAGS_DEFAULT,       /* tp_flags           */
-    py_blake2b_new__doc__,    /* tp_doc             */
-    0,                        /* tp_traverse        */
-    0,                        /* tp_clear           */
-    0,                        /* tp_richcompare     */
-    0,                        /* tp_weaklistoffset  */
-    0,                        /* tp_iter            */
-    0,                        /* tp_iternext        */
-    py_blake2b_methods,       /* tp_methods         */
-    0,                        /* tp_members         */
-    py_blake2b_getsetters,    /* tp_getset          */
-    0,                        /* tp_base            */
-    0,                        /* tp_dict            */
-    0,                        /* tp_descr_get       */
-    0,                        /* tp_descr_set       */
-    0,                        /* tp_dictoffset      */
-    0,                        /* tp_init            */
-    0,                        /* tp_alloc           */
-    py_blake2b_new,           /* tp_new             */
+static PyType_Slot PyBlake2_BLAKE2bType_slots[] = {
+    {Py_tp_dealloc, py_blake2b_dealloc},
+    {Py_tp_doc, py_blake2b_new__doc__},
+    {Py_tp_methods, py_blake2b_methods},
+    {Py_tp_getset, py_blake2b_getsetters},
+    {Py_tp_new, py_blake2b_new},
+    {0, 0},
+};
+
+PyType_Spec PyBlake2_BLAKE2bType_spec = {
+    "_blake2.blake2b",
+    sizeof(BLAKE2bObject),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    PyBlake2_BLAKE2bType_slots
 };
