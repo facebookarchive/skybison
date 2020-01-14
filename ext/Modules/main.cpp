@@ -43,11 +43,22 @@ static void decodeArgv(int argc, const char* const* argv, wchar_t** wargv) {
 }
 
 static void encodeWargv(int argc, const wchar_t* const* wargv, char** argv) {
+  // TODO(T57811636): Support UTF-8 arguments on macOS.
+  // We don't have UTF-8 decoding machinery that is decoupled from the
+  // runtime. That's why we can't use Py_EncodeLocale() here.
   for (int i = 0; i < argc; i++) {
-    argv[i] = Py_EncodeLocale(wargv[i], nullptr);
-    if (argv[i] == nullptr) {
-      failArgConversion("unable to encode the command line argument", i + 1);
+    const wchar_t* wc_str = wargv[i];
+    size_t size = std::wcslen(wc_str);
+    char* c_str = static_cast<char*>(PyMem_Malloc((size + 1) * sizeof(char)));
+    for (size_t p = 0; p < size; p++) {
+      wchar_t ch = wc_str[p];
+      if (ch & 0x80) {
+        UNIMPLEMENTED("UTF-8 argument support unimplemented");
+      }
+      c_str[p] = static_cast<char>(ch);
     }
+    c_str[size] = '\0';
+    argv[i] = c_str;
   }
 }
 

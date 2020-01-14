@@ -2127,10 +2127,12 @@ PY_EXPORT wchar_t* _Py_DecodeUTF8_surrogateescape(const char* c_str,
       static_cast<wchar_t*>(PyMem_RawMalloc((size + 1) * sizeof(wchar_t)));
   for (Py_ssize_t i = 0; i < size; i++) {
     char ch = c_str[i];
-    // TODO(T57811636): Support UTF-8 arguments on macOS (not a priority right
-    // now). We don't have UTF-8 decoding machinery that is decoupled from the
+    // TODO(T57811636): Support UTF-8 arguments on macOS.
+    // We don't have UTF-8 decoding machinery that is decoupled from the
     // runtime
-    CHECK(!(ch & 0x80), "UTF-8 argument support unimplemented");
+    if (ch & 0x80) {
+      UNIMPLEMENTED("UTF-8 argument support unimplemented");
+    }
     wc_str[i] = static_cast<wchar_t>(ch);
   }
   wc_str[size] = '\0';
