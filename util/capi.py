@@ -18,10 +18,6 @@ from capi_util import cmd_output
 
 CAPI_BLACKLIST = {
     "PyStructSequence_InitType2",  # Non-opaque PyTypeObject is unsupported
-    "_PyArg_ParseStack",  # METH_FASTCALL is unsupported
-    "_PyArg_ParseStack_SizeT",  # METH_FASTCALL is unsupported
-    "_PyArg_ParseTupleAndKeywordsFast",  # METH_FASTCALL is unsupported
-    "_PyArg_ParseTupleAndKeywordsFast_SizeT",  # METH_FASTCALL is unsupported
     "_PyLong_One",  # a const
     "_PyLong_Zero",  # a const
     "_Py_FalseStruct",  # expansion of Py_False

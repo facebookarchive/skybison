@@ -45,6 +45,9 @@ static int getbuffer(PyObject*, Py_buffer*, const char**);
 
 static int vgetargskeywords(PyObject*, PyObject*, const char*, char**, va_list*,
                             int);
+
+static bool vGetArgsKeywordsFast(PyObject*, PyObject*, struct _PyArg_Parser*,
+                                 va_list*, int);
 static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,
                                      PyObject* keywords, PyObject* kwnames,
                                      struct _PyArg_Parser* parser,
@@ -1268,6 +1271,37 @@ PY_EXPORT int _PyArg_VaParseTupleAndKeywords_SizeT(PyObject* args,
   return retval;
 }
 
+PY_EXPORT int _PyArg_ParseTupleAndKeywordsFast(PyObject* args,
+                                               PyObject* keywords,
+                                               struct _PyArg_Parser* parser,
+                                               ...) {
+  if ((args == nullptr || !PyTuple_Check(args)) ||
+      (keywords != nullptr && !PyDict_Check(keywords)) || parser == nullptr) {
+    PyErr_BadInternalCall();
+    return 0;
+  }
+  va_list va;
+  va_start(va, parser);
+  int retval = vGetArgsKeywordsFast(args, keywords, parser, &va, 0);
+  va_end(va);
+  return retval;
+}
+
+int _PyArg_ParseTupleAndKeywordsFast_SizeT(PyObject* args, PyObject* keywords,
+                                           struct _PyArg_Parser* parser, ...) {
+  if ((args == nullptr || !PyTuple_Check(args)) ||
+      (keywords != nullptr && !PyDict_Check(keywords)) || parser == nullptr) {
+    PyErr_BadInternalCall();
+    return 0;
+  }
+
+  va_list va;
+  va_start(va, parser);
+  int retval = vGetArgsKeywordsFast(args, keywords, parser, &va, FLAG_SIZE_T);
+  va_end(va);
+  return retval;
+}
+
 PY_EXPORT int _PyArg_ParseStack(PyObject** args, Py_ssize_t nargs,
                                 PyObject* kwnames, struct _PyArg_Parser* parser,
                                 ...) {
@@ -1311,6 +1345,17 @@ static bool isValidKeyword(struct _PyArg_Parser* parser,
     }
   }
   return false;
+}
+
+static bool vGetArgsKeywordsFast(PyObject* args, PyObject* keywords,
+                                 struct _PyArg_Parser* parser, va_list* p_va,
+                                 int flags) {
+  DCHECK(args != nullptr && PyTuple_Check(args),
+         "args must be a non-null tuple");
+  PyObject* stack = PyTuple_GET_ITEM(args, 0);
+  Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+  return vGetArgsKeywordsFastImpl(&stack, nargs, keywords, nullptr, parser,
+                                  p_va, flags);
 }
 
 static bool vGetArgsKeywordsFastImpl(PyObject** args, Py_ssize_t nargs,

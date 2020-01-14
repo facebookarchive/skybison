@@ -9,6 +9,71 @@ using namespace testing;
 
 using GetArgsExtensionApiTest = ExtensionApi;
 
+TEST_F(GetArgsExtensionApiTest, ParseTupleAndKeywordsFastFromDict) {
+  PyObjectPtr args(PyTuple_New(0));
+  PyObjectPtr kwargs(PyDict_New());
+  PyObjectPtr key(PyUnicode_FromString("first"));
+  PyObjectPtr value(PyLong_FromLong(42));
+  ASSERT_EQ(PyDict_SetItem(kwargs, key, value), 0);
+
+  const char* const keywords[] = {"first", nullptr};
+  static _PyArg_Parser parser = {"O:ParseTupleAndKeywordsFastFromDict",
+                                 keywords};
+  PyObject* out = Py_None;
+
+  EXPECT_EQ(_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &parser, &out), 1);
+  EXPECT_EQ(PyLong_AsLong(out), 42);
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseTupleAndKeywordsFastFromTuple) {
+  PyObjectPtr args(PyTuple_New(1));
+  ASSERT_NE(-1, PyTuple_SetItem(args, 0, PyLong_FromLong(43)));
+  PyObjectPtr kwargs(PyDict_New());
+
+  const char* const keywords[] = {"first", nullptr};
+  static _PyArg_Parser parser = {"O:ParseTupleAndKeywordsFastFromTuple",
+                                 keywords};
+  PyObject* out = Py_None;
+
+  EXPECT_EQ(_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &parser, &out), 1);
+  EXPECT_EQ(PyLong_AsLong(out), 43);
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseTupleAndKeywordsFastFromTupleAndDict) {
+  PyObjectPtr args(PyTuple_New(1));
+  ASSERT_NE(-1, PyTuple_SetItem(args, 0, PyLong_FromLong(44)));
+  PyObjectPtr kwargs(PyDict_New());
+  PyObjectPtr key(PyUnicode_FromString("second"));
+  PyObjectPtr value(PyLong_FromLong(45));
+  ASSERT_EQ(PyDict_SetItem(kwargs, key, value), 0);
+
+  const char* const keywords[] = {"first", "second", nullptr};
+  static _PyArg_Parser parser = {"ii:ParseTupleAndKeywordsFastFromTupleAndDict",
+                                 keywords};
+  int out1 = -1, out2 = -1;
+  EXPECT_EQ(
+      _PyArg_ParseTupleAndKeywordsFast(args, kwargs, &parser, &out1, &out2), 1);
+  EXPECT_EQ(out1, 44);
+  EXPECT_EQ(out2, 45);
+}
+
+TEST_F(GetArgsExtensionApiTest, ParseTupleAndKeywordsFastWithOptionals) {
+  PyObjectPtr args(PyTuple_New(0));
+  PyObjectPtr kwargs(PyDict_New());
+  PyObjectPtr key(PyUnicode_FromString("second"));
+  PyObjectPtr value(PyLong_FromLong(42));
+  ASSERT_EQ(PyDict_SetItem(kwargs, key, value), 0);
+
+  const char* const keywords[] = {"first", "second", nullptr};
+  static _PyArg_Parser parser = {"|ii:ParseTupleAndKeywordsFastWithOptionals",
+                                 keywords};
+  int out1 = -1, out2 = -1;
+  EXPECT_EQ(
+      _PyArg_ParseTupleAndKeywordsFast(args, kwargs, &parser, &out1, &out2), 1);
+  EXPECT_EQ(out1, -1);
+  EXPECT_EQ(out2, 42);
+}
+
 TEST_F(GetArgsExtensionApiTest, ParseStackOneObject) {
   PyObjectPtr long10(PyLong_FromLong(10));
   PyObject* args[] = {long10};

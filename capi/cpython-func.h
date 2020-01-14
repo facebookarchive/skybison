@@ -99,6 +99,8 @@ PyAPI_FUNC(int)
     PyArg_UnpackTuple(PyObject*, const char*, Py_ssize_t, Py_ssize_t, ...);
 PyAPI_FUNC(int) _PyArg_ParseStack(PyObject**, Py_ssize_t, PyObject*,
                                   struct _PyArg_Parser*, ...);
+PyAPI_FUNC(int) _PyArg_ParseTupleAndKeywordsFast(PyObject*, PyObject*,
+                                                 struct _PyArg_Parser*, ...);
 PyAPI_FUNC(int) PyArg_VaParse(PyObject*, const char*, va_list);
 PyAPI_FUNC(int) PyArg_VaParseTupleAndKeywords(PyObject*, PyObject*, const char*,
                                               char**, va_list);

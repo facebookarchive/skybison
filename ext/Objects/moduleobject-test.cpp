@@ -873,6 +873,40 @@ x = foo.varargs(10)
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(ModuleExtensionApiTest,
+       MethodTupleAndKeywordsFastWithKeywordArgReturnsArg) {
+  ternaryfunc foo_func = [](PyObject*, PyObject* args, PyObject* kwargs) {
+    int value;
+    static const char* const keywords[] = {"value", nullptr};
+    static _PyArg_Parser parser = {"i:fastcall", keywords};
+    EXPECT_EQ(_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &parser, &value),
+              1);
+    return PyLong_FromLong(value);
+  };
+  PyMethodDef foo_methods[] = {
+      {"kwArgs",
+       reinterpret_cast<binaryfunc>(reinterpret_cast<void*>(foo_func)),
+       METH_VARARGS | METH_KEYWORDS},
+      {nullptr}};
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT, "foo", nullptr, 0, foo_methods,
+  };
+  PyObjectPtr module(PyModule_Create(&def));
+  moduleSet("__main__", "foo", module);
+  ASSERT_TRUE(PyModule_CheckExact(module));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+
+  PyRun_SimpleString(R"(
+x = foo.kwArgs(value=40)
+)");
+
+  PyObjectPtr x(moduleGet("__main__", "x"));
+  long result = PyLong_AsLong(x);
+  ASSERT_EQ(result, 40);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(ModuleExtensionApiTest, MethodWithKeywordArgReturnsArg) {
   ternaryfunc foo_func = [](PyObject*, PyObject* args, PyObject* kwargs) {
     int value;
