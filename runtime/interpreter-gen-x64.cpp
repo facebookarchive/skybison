@@ -553,6 +553,19 @@ void emitHandler<LOAD_ATTR_POLYMORPHIC>(EmitEnv* env) {
 }
 
 template <>
+void emitHandler<LOAD_CONST>(EmitEnv* env) {
+  Register r_scratch = RAX;
+  __ movq(r_scratch, Address(kFrameReg, Frame::kLocalsOffset));
+  __ movq(r_scratch,
+          Address(r_scratch, Frame::kFunctionOffsetFromLocals * kPointerSize));
+  __ movq(r_scratch, Address(r_scratch, heapObjectDisp(Function::kCodeOffset)));
+  __ movq(r_scratch, Address(r_scratch, heapObjectDisp(Code::kConstsOffset)));
+  __ movq(r_scratch, Address(r_scratch, kOpargReg, TIMES_8, heapObjectDisp(0)));
+  __ pushq(r_scratch);
+  emitNextOpcode(env);
+}
+
+template <>
 void emitHandler<LOAD_METHOD_INSTANCE_FUNCTION>(EmitEnv* env) {
   Register r_base = RAX;
   Register r_layout_id = R8;
