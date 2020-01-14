@@ -2440,7 +2440,7 @@ class complex(bootstrap=True):
         _unimplemented()
 
     def __rsub__(self, other):
-        _unimplemented()
+        pass
 
     def __rtruediv__(self, other):
         _unimplemented()
@@ -2449,7 +2449,7 @@ class complex(bootstrap=True):
         _unimplemented()
 
     def __sub__(self, other):
-        _unimplemented()
+        pass
 
     def __truediv__(self, other):
         _unimplemented()

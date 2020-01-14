@@ -2384,6 +2384,42 @@ class ComplexTests(unittest.TestCase):
             "complex() second argument must be a number, not 'bytes'",
         )
 
+    def test_dunder_rsub_with_non_complex_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            complex.__rsub__(1, 2)
+
+    def test_dunder_rsub_with_non_number_type_returns_not_implemented(self):
+        self.assertIs(complex(3.2, 0).__rsub__("not-num"), NotImplemented)
+
+    def test_dunder_rsub_subtracts_first_number_from_second_number(self):
+        self.assertEqual(complex(1.0, 1.0).__rsub__(0), complex(-1, -1))
+        self.assertEqual(complex(1.0, 1.0).__rsub__(1.0), complex(0, -1))
+        self.assertEqual(complex(1.0, 1.0).__rsub__(complex(2, 2)), complex(1, 1))
+
+    def test_dunder_rsub_with_int_subclass_returns_complex(self):
+        class A(int):
+            pass
+
+        self.assertEqual(complex(1.0, 1.0).__rsub__(A(3)), complex(2, -1))
+
+    def test_dunder_sub_with_non_complex_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            complex.__sub__(1, 2)
+
+    def test_dunder_sub_with_non_number_type_returns_not_implemented(self):
+        self.assertIs(complex(3.2, 0).__sub__("not-num"), NotImplemented)
+
+    def test_dunder_sub_subtracts_first_number_from_second_number(self):
+        self.assertEqual(complex(1.0, 1.0).__sub__(0), complex(1, 1))
+        self.assertEqual(complex(1.0, 1.0).__sub__(1.0), complex(0, 1))
+        self.assertEqual(complex(1.0, 1.0).__sub__(complex(2, 2)), complex(-1, -1))
+
+    def test_dunder_sub_with_int_subclass_returns_complex(self):
+        class A(int):
+            pass
+
+        self.assertEqual(complex(1.0, 1.0).__sub__(A(3)), complex(-2, 1))
+
     def test_imag_with_subclass_returns_float(self):
         class C(complex):
             pass
