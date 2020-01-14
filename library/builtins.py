@@ -2371,7 +2371,7 @@ class complex(bootstrap=True):
         _unimplemented()
 
     def __neg__(self):
-        _unimplemented()
+        pass
 
     def __new__(cls, real=0.0, imag=_Unbound):  # noqa: C901
         _type_subclass_guard(cls, complex)
@@ -2414,7 +2414,7 @@ class complex(bootstrap=True):
         return _complex_new(cls, real, imag)
 
     def __pos__(self):
-        _unimplemented()
+        pass
 
     def __pow__(self, other):
         _unimplemented()

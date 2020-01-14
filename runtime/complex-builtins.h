@@ -13,6 +13,8 @@ class ComplexBuiltins
 
   static RawObject dunderAdd(Thread*, Frame*, word);
   static RawObject dunderHash(Thread*, Frame*, word);
+  static RawObject dunderNeg(Thread*, Frame*, word);
+  static RawObject dunderPos(Thread*, Frame*, word);
   static RawObject dunderRsub(Thread*, Frame*, word);
   static RawObject dunderSub(Thread*, Frame*, word);
 

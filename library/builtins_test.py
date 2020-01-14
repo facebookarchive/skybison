@@ -2402,6 +2402,40 @@ class ComplexTests(unittest.TestCase):
             "complex() second argument must be a number, not 'bytes'",
         )
 
+    def test_dunder_neg_with_non_complex_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            complex.__neg__(1.0)
+
+    def test_dunder_neg_negates_both_fields_in_complex(self):
+        self.assertEqual(complex(0, 0).__neg__(), complex(0, 0))
+        self.assertEqual(complex(1, 2.2).__neg__(), complex(-1, -2.2))
+        self.assertEqual(complex(-3.4, -5.6).__neg__(), complex(3.4, 5.6))
+
+    def test_dunder_neg_with_complex_subclass_returns_complex(self):
+        class A(complex):
+            pass
+
+        neg_complex_subclass = A(1.2, -2.1).__neg__()
+        self.assertEqual(type(neg_complex_subclass), complex)
+        self.assertEqual(neg_complex_subclass, complex(-1.2, 2.1))
+
+    def test_dunder_pos_with_non_complex_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            complex.__pos__(1.0)
+
+    def test_dunder_pos_returns_unmodified_complex(self):
+        self.assertEqual(complex(0, 0).__pos__(), complex(0, 0))
+        self.assertEqual(complex(1, 2.2).__pos__(), complex(1, 2.2))
+        self.assertEqual(complex(-3.4, -5.6).__pos__(), complex(-3.4, -5.6))
+
+    def test_dunder_pos_with_complex_subclass_returns_complex(self):
+        class A(complex):
+            pass
+
+        pos_complex_subclass = A(1, -2).__pos__()
+        self.assertEqual(type(pos_complex_subclass), complex)
+        self.assertEqual(pos_complex_subclass, complex(1, -2))
+
     def test_dunder_rsub_with_non_complex_self_raises_type_error(self):
         with self.assertRaises(TypeError):
             complex.__rsub__(1, 2)
