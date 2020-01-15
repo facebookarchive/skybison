@@ -70,4 +70,30 @@ result = f(C)
   EXPECT_TRUE(isLongEqualsLong(result, 1234));
 }
 
+TEST_F(MethodExtensionApiTest, CheckWithNonCFunctionReturnsFalse) {
+  PyObjectPtr pylong(PyLong_FromLong(10));
+  EXPECT_EQ(PyCFunction_Check(pylong), 0);
+}
+
+TEST_F(MethodExtensionApiTest, CheckWithFunctionReturnsTrue) {
+  PyObjectPtr module(PyModule_New("mod"));
+  ASSERT_NE(module, nullptr);
+  binaryfunc meth = [](PyObject*, PyObject*) { return PyLong_FromLong(1234); };
+  static PyMethodDef foo_func = {"foo", meth, METH_NOARGS};
+  PyObjectPtr func(PyCFunction_NewEx(&foo_func, nullptr, module));
+  EXPECT_EQ(PyCFunction_Check(func), 1);
+}
+
+TEST_F(MethodExtensionApiTest, CheckWithBoundMethodReturnsTrue) {
+  PyRun_SimpleString(R"(
+class Bar: pass
+)");
+  PyObjectPtr type(moduleGet("__main__", "Bar"));
+  ASSERT_NE(type, nullptr);
+  binaryfunc meth = [](PyObject*, PyObject*) { return PyLong_FromLong(1234); };
+  static PyMethodDef foo_func = {"foo", meth, METH_NOARGS};
+  PyObjectPtr func(PyCFunction_NewEx(&foo_func, type, nullptr));
+  EXPECT_EQ(PyCFunction_Check(func), 1);
+}
+
 }  // namespace py

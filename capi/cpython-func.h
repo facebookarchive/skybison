@@ -986,6 +986,7 @@ PyAPI_FUNC(int) PyByteArray_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyByteArray_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyBytes_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyBytes_Check_Func(PyObject*);
+PyAPI_FUNC(int) PyCFunction_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyCode_Check_Func(PyObject*);
 PyAPI_FUNC(Py_ssize_t) PyCode_GetNumFree_Func(PyObject*);
 PyAPI_FUNC(PyObject*) PyCode_GetName_Func(PyObject*);
@@ -1064,6 +1065,7 @@ PyAPI_FUNC(PyObject*) PySequence_ITEM_Func(PyObject*, Py_ssize_t);
   (PyByteArray_CheckExact_Func((PyObject*)(op)))
 #define PyBytes_Check(op) (PyBytes_Check_Func((PyObject*)(op)))
 #define PyBytes_CheckExact(op) (PyBytes_CheckExact_Func((PyObject*)(op)))
+#define PyCFunction_Check(op) (PyCFunction_Check_Func((PyObject*)(op)))
 #define PyCode_Check(op) (PyCode_Check_Func((PyObject*)(op)))
 #define PyCode_GetNumFree(op) PyCode_GetNumFree_Func((PyObject*)op)
 #define PyCode_GetName(op) PyCode_GetName_Func(op)
