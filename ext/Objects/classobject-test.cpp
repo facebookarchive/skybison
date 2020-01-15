@@ -40,4 +40,20 @@ def foo(x):
   EXPECT_EQ(result, integer);
 }
 
+TEST_F(ClassExtensionApiTest, CheckWithNonMethodReturnsFalse) {
+  PyObjectPtr pylong(PyLong_FromLong(10));
+  EXPECT_EQ(PyMethod_Check(pylong.get()), 0);
+}
+
+TEST_F(ClassExtensionApiTest, CheckWithMethodReturnsTrue) {
+  PyRun_SimpleString(R"(
+def foo(x):
+  return x
+)");
+  PyObjectPtr foo_func(moduleGet("__main__", "foo"));
+  PyObjectPtr integer(PyLong_FromLong(123));
+  PyObjectPtr func(PyMethod_New(foo_func, integer));
+  EXPECT_EQ(PyMethod_Check(func.get()), 1);
+}
+
 }  // namespace py

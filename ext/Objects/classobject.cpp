@@ -3,6 +3,10 @@
 
 namespace py {
 
+PY_EXPORT int PyMethod_Check_Func(PyObject* obj) {
+  return ApiHandle::fromPyObject(obj)->asObject().isBoundMethod();
+}
+
 PY_EXPORT PyObject* PyInstanceMethod_New(PyObject* /* c */) {
   UNIMPLEMENTED("PyInstanceMethod_New");
 }
