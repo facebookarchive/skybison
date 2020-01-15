@@ -8575,6 +8575,26 @@ class StrTests(unittest.TestCase):
         self.assertEqual(s[-20:5], "hello")
         self.assertEqual(s[6:42], "world")
 
+    def test_expandtabs_with_non_int_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            "expand\tme".expandtabs("not-int")
+
+    def test_expandtabs_with_no_args_expands_to_eight_spaces(self):
+        s = "expand\tme"
+        self.assertEqual(s.expandtabs(), "expand  me")
+
+    def test_expandtabs_with_zero_deletes_tabs(self):
+        s = "expand\tme"
+        self.assertEqual(s.expandtabs(0), "expandme")
+
+    def test_expandtabs_expands_column_to_given_number_of_spaces(self):
+        s = "expand\tme"
+        self.assertEqual(s.expandtabs(3), "expand   me")
+
+    def test_expandtabs_with_newlines_resets_col_position(self):
+        s = "123\t12345\t\n1234\t1\r12\t1234\t123\t1"
+        self.assertEqual(s.expandtabs(6), "123   12345 \n1234  1\r12    1234  123   1")
+
     def test_title_with_non_str_raises_type_error(self):
         with self.assertRaises(TypeError):
             str.title(123)

@@ -5162,7 +5162,31 @@ class str(bootstrap=True):
         )
 
     def expandtabs(self, tabsize=8):
-        _unimplemented()
+        _str_guard(self)
+        _int_guard(tabsize)
+        if tabsize == 0:
+            return str.replace(self, "\t", "")
+        chars_seen = 0
+        col_pos = 0
+        substr_start = 0
+        result = _strarray()
+        for char in self:
+            if char == "\n" or char == "\r":
+                chars_seen += 1
+                col_pos = 0
+                continue
+            if char == "\t":
+                _strarray_iadd(result, self[substr_start : substr_start + chars_seen])
+                _strarray_iadd(result, " " * (tabsize - (col_pos % tabsize)))
+                substr_start += chars_seen + 1
+                chars_seen = 0
+                col_pos = 0
+                continue
+            chars_seen += 1
+            col_pos += 1
+        if chars_seen != 0:
+            _strarray_iadd(result, self[substr_start : substr_start + chars_seen + 1])
+        return str(result)
 
     def find(self, sub, start=None, end=None):
         _str_guard(self)
