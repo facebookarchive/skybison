@@ -6086,7 +6086,6 @@ inline byte RawStr::charAt(word index) const {
   if (isSmallStr()) {
     return RawSmallStr::cast(*this).charAt(index);
   }
-  DCHECK(isLargeStr(), "unexpected type");
   return RawLargeStr::cast(*this).charAt(index);
 }
 
@@ -6094,7 +6093,6 @@ inline word RawStr::charLength() const {
   if (isSmallStr()) {
     return RawSmallStr::cast(*this).charLength();
   }
-  DCHECK(isLargeStr(), "unexpected type");
   return RawLargeStr::cast(*this).charLength();
 }
 
@@ -6123,7 +6121,6 @@ inline void RawStr::copyTo(byte* dst, word length) const {
     RawSmallStr::cast(*this).copyTo(dst, length);
     return;
   }
-  DCHECK(isLargeStr(), "unexpected type");
   return RawLargeStr::cast(*this).copyTo(dst, length);
 }
 
@@ -6133,7 +6130,6 @@ inline void RawStr::copyToStartAt(byte* dst, word char_length,
     RawSmallStr::cast(*this).copyToStartAt(dst, char_length, char_start);
     return;
   }
-  DCHECK(isLargeStr(), "unexpected type");
   return RawLargeStr::cast(*this).copyToStartAt(dst, char_length, char_start);
 }
 
@@ -6147,7 +6143,6 @@ inline char* RawStr::toCStr() const {
   if (isSmallStr()) {
     return RawSmallStr::cast(*this).toCStr();
   }
-  DCHECK(isLargeStr(), "unexpected type");
   return RawLargeStr::cast(*this).toCStr();
 }
 
@@ -6155,7 +6150,6 @@ inline word RawStr::codePointLength() const {
   if (isSmallStr()) {
     return RawSmallStr::cast(*this).codePointLength();
   }
-  DCHECK(isLargeStr(), "unexpected type");
   return RawLargeStr::cast(*this).codePointLength();
 }
 
@@ -6163,7 +6157,6 @@ inline bool RawStr::isASCII() const {
   if (isSmallStr()) {
     return RawSmallStr::cast(*this).isASCII();
   }
-  DCHECK(isLargeStr(), "unexpected type");
   return RawLargeStr::cast(*this).isASCII();
 }
 
