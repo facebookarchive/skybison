@@ -3784,4 +3784,35 @@ itr = f.__iter__()
   EXPECT_EQ(f, itr);
 }
 
+TEST_F(TypeExtensionApiTest, TypeCheckWithSameTypeReturnsTrue) {
+  PyObjectPtr pylong(PyLong_FromLong(10));
+  PyObjectPtr pylong_type(PyObject_Type(pylong));
+  EXPECT_EQ(PyObject_TypeCheck(
+                pylong, reinterpret_cast<PyTypeObject*>(pylong_type.get())),
+            1);
+}
+
+TEST_F(TypeExtensionApiTest, TypeCheckWithSubtypeReturnsTrue) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+class MyFloat(float): pass
+myflt = MyFloat(1.23)
+)"),
+            0);
+  PyObjectPtr myfloat(moduleGet("__main__", "myflt"));
+  PyObjectPtr pyfloat(PyFloat_FromDouble(3.21));
+  PyObjectPtr pyfloat_type(PyObject_Type(pyfloat));
+  EXPECT_EQ(PyObject_TypeCheck(
+                myfloat, reinterpret_cast<PyTypeObject*>(pyfloat_type.get())),
+            1);
+}
+
+TEST_F(TypeExtensionApiTest, TypeCheckWithDifferentTypesReturnsFalse) {
+  PyObjectPtr pylong(PyLong_FromLong(10));
+  PyObjectPtr pyuni(PyUnicode_FromString("string"));
+  PyObjectPtr pyuni_type(PyObject_Type(pyuni));
+  EXPECT_EQ(PyObject_TypeCheck(
+                pylong, reinterpret_cast<PyTypeObject*>(pyuni_type.get())),
+            0);
+}
+
 }  // namespace py

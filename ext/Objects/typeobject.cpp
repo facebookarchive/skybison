@@ -1578,6 +1578,13 @@ PY_EXPORT PyObject* PyType_GenericNew(PyTypeObject* type, PyObject*,
   return alloc_func(type, 0);
 }
 
+PY_EXPORT int PyObject_TypeCheck_Func(PyObject* obj, PyTypeObject* type) {
+  PyTypeObject* obj_type = reinterpret_cast<PyTypeObject*>(PyObject_Type(obj));
+  int res = PyType_IsSubtype(obj_type, type);
+  Py_DECREF(obj_type);
+  return res;
+}
+
 PY_EXPORT int PyType_IsSubtype(PyTypeObject* a, PyTypeObject* b) {
   if (a == b) return 1;
   Thread* thread = Thread::current();
