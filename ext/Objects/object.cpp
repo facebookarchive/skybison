@@ -153,8 +153,23 @@ PY_EXPORT int PyObject_CallFinalizerFromDealloc(PyObject* self) {
   return -1;
 }
 
-PY_EXPORT PyObject* PyObject_Dir(PyObject* /* j */) {
-  UNIMPLEMENTED("PyObject_Dir");
+PY_EXPORT PyObject* PyObject_Dir(PyObject* pyobj) {
+  Thread* thread = Thread::current();
+  if (pyobj == nullptr && thread->currentFrame()->isSentinel()) {
+    return nullptr;
+  }
+  HandleScope scope(thread);
+  Object result(&scope, NoneType::object());
+  if (pyobj == nullptr) {
+    result = thread->invokeFunction0(SymbolId::kBuiltins, SymbolId::kDir);
+  } else {
+    Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+    result = thread->invokeFunction1(SymbolId::kBuiltins, SymbolId::kDir, obj);
+  }
+  if (result.isError()) {
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT PyObject* PyObject_GenericGetAttr(PyObject* obj, PyObject* name) {

@@ -1083,4 +1083,62 @@ TEST_F(ObjectExtensionApiTest, PyEllipsisIdentityIsEqual) {
   EXPECT_EQ(ellipsis1, ellipsis2);
 }
 
+TEST_F(ObjectExtensionApiTest, DirWithoutExecutionFrameReturnsNull) {
+  EXPECT_EQ(PyObject_Dir(nullptr), nullptr);
+}
+
+TEST_F(ObjectExtensionApiTest, DirReturnsLocals) {
+  PyRun_SimpleString(R"(
+class C: pass
+)");
+  PyObjectPtr c_type(moduleGet("__main__", "C"));
+  binaryfunc meth = [](PyObject*, PyObject*) { return PyObject_Dir(nullptr); };
+  static PyMethodDef foo_func = {"foo", meth, METH_NOARGS};
+  PyObjectPtr func(PyCFunction_NewEx(&foo_func, c_type, nullptr));
+  ASSERT_NE(func, nullptr);
+  PyObject_SetAttrString(c_type, "foo", func);
+
+  PyRun_SimpleString(R"(
+foo = 123
+c = C()
+obj = c.foo()
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  ASSERT_EQ(PyList_Check(obj), 1);
+  PyObjectPtr foo(PyUnicode_FromString("foo"));
+  EXPECT_EQ(PySequence_Contains(obj, foo), 1);
+}
+
+TEST_F(ObjectExtensionApiTest, DirOnInstanceReturnsListOfAttributes) {
+  PyRun_SimpleString(R"(
+class C:
+  def __init__(self):
+    self.foo = 123
+obj = C()
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr result(PyObject_Dir(obj));
+  ASSERT_EQ(PyList_Check(result), 1);
+  PyObjectPtr foo(PyUnicode_FromString("foo"));
+  EXPECT_EQ(PySequence_Contains(result, foo), 1);
+}
+
+TEST_F(ObjectExtensionApiTest, DirOnInstanceWithDunderDirRaisingReturnsNull) {
+  PyRun_SimpleString(R"(
+class C:
+  def __init__(self):
+    self.foo = 123
+  def __dir__(self):
+      raise TypeError("no dir on this type")
+obj = C()
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr result(PyObject_Dir(obj));
+  ASSERT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
 }  // namespace py

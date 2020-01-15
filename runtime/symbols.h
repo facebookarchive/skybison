@@ -607,6 +607,7 @@ class Runtime;
   V(DictKeys, "dict_keys")                                                     \
   V(DictValueIterator, "dict_valueiterator")                                   \
   V(DictValues, "dict_values")                                                 \
+  V(Dir, "dir")                                                                \
   V(Disable, "disable")                                                        \
   V(Discard, "discard")                                                        \
   V(Displayhook, "displayhook")                                                \
