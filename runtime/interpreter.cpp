@@ -1448,7 +1448,13 @@ Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
                          "object does not support indexing");
     return Continue::UNWIND;
   }
-  if (index >= 0 && getitem.isFunction()) {
+  if (!getitem.isFunction()) {
+    getitem = resolveDescriptorGet(thread, getitem, container, type);
+    if (getitem.isErrorException()) return Continue::UNWIND;
+    frame->setValueAt(*getitem, 1);
+    return tailcallfunction(thread, 1);
+  }
+  if (index >= 0) {
     // TODO(T55274956): Make this into a separate function to be shared.
     Tuple caches(&scope, frame->caches());
     Str get_item_name(
@@ -1463,12 +1469,9 @@ Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
                                ? BINARY_SUBSCR_MONOMORPHIC
                                : BINARY_SUBSCR_POLYMORPHIC);
   }
-
-  getitem = resolveDescriptorGet(thread, getitem, container, type);
-  if (getitem.isErrorException()) return Continue::UNWIND;
-  // Tail-call getitem(key)
   frame->setValueAt(*getitem, 1);
-  return tailcallfunction(thread, 1);
+  frame->insertValueAt(*container, 1);
+  return tailcallfunction(thread, 2);
 }
 
 HANDLER_INLINE Continue Interpreter::doBinarySubscr(Thread* thread, word) {
@@ -2390,23 +2393,28 @@ Continue Interpreter::forIterUpdateCache(Thread* thread, word arg, word index) {
     return Continue::UNWIND;
   }
 
-  if (index >= 0 && next.isFunction()) {
-    Tuple caches(&scope, frame->caches());
-    Str next_name(&scope,
-                  thread->runtime()->symbols()->at(SymbolId::kDunderNext));
-    Function dependent(&scope, frame->function());
-    ICState next_cache_state = icUpdateAttr(
-        thread, caches, index, iter.layoutId(), next, next_name, dependent);
-    word pc = frame->currentPC();
-    RawMutableBytes bytecode = frame->bytecode();
-    bytecode.byteAtPut(pc, next_cache_state == ICState::kMonomorphic
-                               ? FOR_ITER_MONOMORPHIC
-                               : FOR_ITER_POLYMORPHIC);
+  Object result(&scope, NoneType::object());
+  if (next.isFunction()) {
+    if (index >= 0) {
+      Tuple caches(&scope, frame->caches());
+      Str next_name(&scope,
+                    thread->runtime()->symbols()->at(SymbolId::kDunderNext));
+      Function dependent(&scope, frame->function());
+      ICState next_cache_state = icUpdateAttr(
+          thread, caches, index, iter.layoutId(), next, next_name, dependent);
+      word pc = frame->currentPC();
+      RawMutableBytes bytecode = frame->bytecode();
+      bytecode.byteAtPut(pc, next_cache_state == ICState::kMonomorphic
+                                 ? FOR_ITER_MONOMORPHIC
+                                 : FOR_ITER_POLYMORPHIC);
+    }
+    result = Interpreter::callMethod1(thread, frame, next, iter);
+  } else {
+    next = resolveDescriptorGet(thread, next, iter, type);
+    if (next.isErrorException()) return Continue::UNWIND;
+    result = callFunction0(thread, frame, next);
   }
 
-  next = resolveDescriptorGet(thread, next, iter, type);
-  if (next.isErrorException()) return Continue::UNWIND;
-  Object result(&scope, callFunction0(thread, frame, next));
   if (result.isErrorException()) {
     if (thread->clearPendingStopIteration()) {
       frame->popValue();
