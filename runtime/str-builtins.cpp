@@ -663,6 +663,9 @@ word strFind(const Str& haystack, const Str& needle) {
   if (needle_len == 0) {
     return 0;
   }
+  if (needle_len == 1 && haystack.isASCII()) {
+    return strFindAsciiChar(haystack, needle.charAt(0));
+  }
   // Loop is in byte space, not code point space
   word result = 0;
   // TODO(T41400083): Use a different search algorithm
