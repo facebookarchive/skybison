@@ -3424,6 +3424,9 @@ RawObject UnderBuiltinsModule::underObjectTypeGetattr(Thread* thread,
   if (attr.isErrorNotFound()) {
     return Unbound::object();
   }
+  if (attr.isFunction()) {
+    return thread->runtime()->newBoundMethod(attr, instance);
+  }
   return resolveDescriptorGet(thread, attr, instance, type);
 }
 
