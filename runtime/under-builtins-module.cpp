@@ -272,6 +272,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrIschr, underStrIschr},
     {SymbolId::kUnderStrJoin, underStrJoin},
     {SymbolId::kUnderStrLen, underStrLen},
+    {SymbolId::kUnderStrModFastPath, underStrModFastPath},
     {SymbolId::kUnderStrPartition, underStrPartition},
     {SymbolId::kUnderStrReplace, underStrReplace},
     {SymbolId::kUnderStrRfind, underStrRfind},
@@ -4202,6 +4203,80 @@ RawObject UnderBuiltinsModule::underStrLen(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Str self(&scope, strUnderlying(args.get(0)));
   return SmallInt::fromWord(self.codePointLength());
+}
+
+RawObject UnderBuiltinsModule::underStrModFastPath(Thread* thread, Frame* frame,
+                                                   word nargs) {
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfStr(args.get(0)) ||
+      !runtime->isInstanceOfTuple(args.get(1))) {
+    return Unbound::object();
+  }
+  HandleScope scope(thread);
+  Str str(&scope, strUnderlying(args.get(0)));
+  Tuple args_tuple(&scope, tupleUnderlying(args.get(1)));
+  const word max_args = 16;
+  word num_args = args_tuple.length();
+  if (num_args > max_args) {
+    return Unbound::object();
+  }
+
+  // Scan format string for occurences of %s and remember their indexes. Also
+  // check that the corresponding arguments are strings.
+  word arg_indexes[max_args];
+  word arg_idx = 0;
+  word result_length = 0;
+  Object arg(&scope, Unbound::object());
+  word fmt_length = str.charLength();
+  for (word i = 0; i < fmt_length; i++) {
+    if (str.charAt(i) != '%') {
+      result_length++;
+      continue;
+    }
+    i++;
+    if (i >= fmt_length || str.charAt(i) != 's' || arg_idx >= num_args) {
+      return Unbound::object();
+    }
+    arg = args_tuple.at(arg_idx);
+    if (!arg.isStr()) {
+      return Unbound::object();
+    }
+    result_length += Str::cast(*arg).charLength();
+    arg_indexes[arg_idx] = i - 1;
+    arg_idx++;
+  }
+  if (arg_idx < num_args) {
+    return Unbound::object();
+  }
+
+  // Construct resulting string.
+  if (arg_idx == 0) {
+    return *str;
+  }
+  MutableBytes result(&scope,
+                      runtime->newMutableBytesUninitialized(result_length));
+  word result_idx = 0;
+  word fmt_idx = 0;
+  Str arg_str(&scope, Str::empty());
+  for (word a = 0; a < num_args; a++) {
+    word fragment_begin = fmt_idx;
+    word fragment_length = arg_indexes[a] - fragment_begin;
+    result.replaceFromWithStrStartAt(result_idx, *str, fragment_length,
+                                     fragment_begin);
+    result_idx += fragment_length;
+    fmt_idx += fragment_length + 2;
+
+    arg_str = args_tuple.at(a);
+    word arg_length = arg_str.charLength();
+    result.replaceFromWithStr(result_idx, *arg_str, arg_length);
+    result_idx += arg_length;
+  }
+  word fragment_begin = fmt_idx;
+  word fragment_length = fmt_length - fmt_idx;
+  result.replaceFromWithStrStartAt(result_idx, *str, fragment_length,
+                                   fragment_begin);
+  return result.becomeStr();
 }
 
 static word strScan(const Str& haystack, word haystack_len, const Str& needle,

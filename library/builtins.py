@@ -193,6 +193,7 @@ _str_guard = _str_guard  # noqa: F821
 _str_ischr = _str_ischr  # noqa: F821
 _str_join = _str_join  # noqa: F821
 _str_len = _str_len  # noqa: F821
+_str_mod_fast_path = _str_mod_fast_path  # noqa: F821
 _str_partition = _str_partition  # noqa: F821
 _str_replace = _str_replace  # noqa: F821
 _str_rfind = _str_rfind  # noqa: F821
@@ -243,8 +244,8 @@ def _init():
     global _codecs
     import _codecs
 
-    global _str_mod
-    import _str_mod
+    global _str_mod_format
+    from _str_mod import format as _str_mod_format
 
     global _sys
     import sys as _sys
@@ -5011,12 +5012,16 @@ class str(bootstrap=True):
         pass
 
     def __mod__(self, other):
+        result = _str_mod_fast_path(self, other)
+        if result is not _Unbound:
+            return result
+
         if not _str_check(self):
             raise TypeError(
                 f"'__mod__' requires a 'str' object "
                 f"but received a '{_type(self).__name__}'"
             )
-        return _str_mod.format(self, other)
+        return _str_mod_format(self, other)
 
     def __mul__(self, n: int) -> str:
         pass

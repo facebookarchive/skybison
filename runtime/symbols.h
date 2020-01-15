@@ -447,6 +447,7 @@ class Runtime;
   V(UnderStrJoin, "_str_join")                                                 \
   V(UnderStrLen, "_str_len")                                                   \
   V(UnderStrMod, "_str_mod")                                                   \
+  V(UnderStrModFastPath, "_str_mod_fast_path")                                 \
   V(UnderStrPartition, "_str_partition")                                       \
   V(UnderStrReplace, "_str_replace")                                           \
   V(UnderStrRfind, "_str_rfind")                                               \

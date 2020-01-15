@@ -304,6 +304,8 @@ class UnderBuiltinsModule {
   static RawObject underStrIschr(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrJoin(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrLen(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrModFastPath(Thread* thread, Frame* frame,
+                                       word nargs);
   static RawObject underStrPartition(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrReplace(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrRfind(Thread* thread, Frame* frame, word nargs);

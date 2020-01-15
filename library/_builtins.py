@@ -999,6 +999,11 @@ def _str_len(self):
 
 
 @_patch
+def _str_mod_fast_path(self, other):
+    pass
+
+
+@_patch
 def _str_partition(self, sep):
     pass
 
