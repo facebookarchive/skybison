@@ -1,9 +1,14 @@
+#include <signal.h>
+
 #include "Python.h"
 #include "gtest/gtest.h"
 
 #include "capi-fixture.h"
+#include "capi-testing.h"
 
 namespace py {
+
+using namespace testing;
 
 using PylifecycleExtensionApiTest = ExtensionApi;
 
@@ -22,6 +27,30 @@ atexit.register(cleanup)
 raise SystemExit(123)
 )"),
               ::testing::ExitedWithCode(123), "foo");
+}
+
+TEST_F(PylifecycleExtensionApiTest, GetsigGetsCurrentSignalHandler) {
+  PyOS_sighandler_t handler = [](int) {};
+  PyOS_sighandler_t saved = PyOS_setsig(SIGABRT, handler);
+
+  EXPECT_EQ(PyOS_getsig(SIGABRT), handler);
+
+  PyOS_setsig(SIGABRT, saved);
+}
+
+TEST_F(PylifecycleExtensionApiTest, SetsigSetsSignalHandler) {
+  PyOS_sighandler_t saved = PyOS_getsig(SIGUSR1);
+  PyOS_sighandler_t handler = [](int) { PyRun_SimpleString("handled = True"); };
+
+  PyOS_sighandler_t old_handler = PyOS_setsig(SIGUSR1, handler);
+  EXPECT_EQ(old_handler, saved);
+  EXPECT_EQ(PyOS_getsig(SIGUSR1), handler);
+
+  ::raise(SIGUSR1);
+  PyObjectPtr handled(moduleGet("__main__", "handled"));
+  EXPECT_EQ(handled, Py_True);
+
+  PyOS_setsig(SIGUSR1, saved);
 }
 
 }  // namespace py

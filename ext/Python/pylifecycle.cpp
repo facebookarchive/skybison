@@ -1,3 +1,4 @@
+#include <signal.h>
 #include <unistd.h>
 
 #include <cstdio>
@@ -29,13 +30,23 @@ int Py_VerboseFlag = 0;
 
 namespace py {
 
-PY_EXPORT PyOS_sighandler_t PyOS_getsig(int /* g */) {
-  UNIMPLEMENTED("PyOS_getsig");
+PY_EXPORT PyOS_sighandler_t PyOS_getsig(int signum) {
+  struct sigaction context;
+  if (::sigaction(signum, nullptr, &context) == -1) {
+    return SIG_ERR;
+  }
+  return context.sa_handler;
 }
 
-PY_EXPORT PyOS_sighandler_t PyOS_setsig(int /* g */,
-                                        PyOS_sighandler_t /* r */) {
-  UNIMPLEMENTED("PyOS_setsig");
+PY_EXPORT PyOS_sighandler_t PyOS_setsig(int signum, PyOS_sighandler_t handler) {
+  struct sigaction context, old_context;
+  context.sa_handler = handler;
+  sigemptyset(&context.sa_mask);
+  context.sa_flags = 0;
+  if (::sigaction(signum, &context, &old_context) == -1) {
+    return SIG_ERR;
+  }
+  return old_context.sa_handler;
 }
 
 PY_EXPORT int Py_AtExit(void (*/* func */)(void)) {
