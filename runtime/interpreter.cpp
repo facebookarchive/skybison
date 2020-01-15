@@ -1808,11 +1808,75 @@ HANDLER_INLINE Continue Interpreter::doInplacePower(Thread* thread, word) {
 
 HANDLER_INLINE Continue Interpreter::doGetIter(Thread* thread, word) {
   HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
   Frame* frame = thread->currentFrame();
   Object iterable(&scope, frame->popValue());
+  Object iterator(&scope, NoneType::object());
+  switch (iterable.layoutId()) {
+    case LayoutId::kList:
+      iterator = runtime->newListIterator(iterable);
+      break;
+    case LayoutId::kDict: {
+      Dict dict(&scope, *iterable);
+      iterator = runtime->newDictKeyIterator(thread, dict);
+      break;
+    }
+    case LayoutId::kTuple: {
+      Tuple tuple(&scope, *iterable);
+      iterator = runtime->newTupleIterator(tuple, tuple.length());
+      break;
+    }
+    case LayoutId::kRange: {
+      Range range(&scope, *iterable);
+      Int start_int(&scope, intUnderlying(range.start()));
+      Int stop_int(&scope, intUnderlying(range.stop()));
+      Int step_int(&scope, intUnderlying(range.step()));
+      if (start_int.isLargeInt() || stop_int.isLargeInt() ||
+          step_int.isLargeInt()) {
+        iterator = runtime->newLongRangeIterator(start_int, stop_int, step_int);
+        break;
+      }
+      word start = SmallInt::cast(range.start()).value();
+      word stop = SmallInt::cast(range.stop()).value();
+      word step = SmallInt::cast(range.step()).value();
+      word length = Slice::length(start, stop, step);
+      if (SmallInt::isValid(length)) {
+        iterator = runtime->newRangeIterator(start, step, length);
+        break;
+      }
+      iterator = runtime->newLongRangeIterator(start_int, stop_int, step_int);
+      break;
+    }
+    case LayoutId::kStr: {
+      Str str(&scope, *iterable);
+      iterator = runtime->newStrIterator(str);
+      break;
+    }
+    case LayoutId::kByteArray: {
+      ByteArray byte_array(&scope, *iterable);
+      iterator = runtime->newByteArrayIterator(thread, byte_array);
+      break;
+    }
+    case LayoutId::kBytes: {
+      Bytes bytes(&scope, *iterable);
+      iterator = runtime->newBytesIterator(thread, bytes);
+      break;
+    }
+    case LayoutId::kSet: {
+      Set set(&scope, *iterable);
+      iterator = thread->runtime()->newSetIterator(set);
+      break;
+    }
+    default:
+      break;
+  }
+  if (!iterator.isNoneType()) {
+    frame->pushValue(*iterator);
+    return Continue::NEXT;
+  }
   // TODO(T44729606): Add caching, and turn into a simpler call for builtin
   // types with known iterator creating functions
-  Object iterator(&scope, createIterator(thread, frame, iterable));
+  iterator = createIterator(thread, frame, iterable);
   if (iterator.isErrorException()) return Continue::UNWIND;
   frame->pushValue(*iterator);
   return Continue::NEXT;
