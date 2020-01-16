@@ -10,6 +10,7 @@
 #include "int-builtins.h"
 #include "marshal.h"
 #include "module-builtins.h"
+#include "modules.h"
 #include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"

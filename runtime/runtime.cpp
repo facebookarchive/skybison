@@ -22,7 +22,6 @@
 #include "descriptor-builtins.h"
 #include "dict-builtins.h"
 #include "exception-builtins.h"
-#include "faulthandler-module.h"
 #include "file.h"
 #include "float-builtins.h"
 #include "frame.h"
@@ -38,11 +37,11 @@
 #include "iterator-builtins.h"
 #include "layout.h"
 #include "list-builtins.h"
-#include "marshal-module.h"
 #include "marshal.h"
 #include "memoryview-builtins.h"
 #include "module-builtins.h"
 #include "module-proxy-builtins.h"
+#include "modules.h"
 #include "object-builtins.h"
 #include "os.h"
 #include "range-builtins.h"
@@ -59,14 +58,8 @@
 #include "tuple-builtins.h"
 #include "type-builtins.h"
 #include "under-builtins-module.h"
-#include "under-codecs-module.h"
-#include "under-imp-module.h"
-#include "under-os-module.h"
-#include "under-valgrind-module.h"
-#include "under-warnings-module.h"
 #include "utils.h"
 #include "visitor.h"
-#include "weakref-module.h"
 
 namespace py {
 
@@ -2350,43 +2343,6 @@ RawObject Runtime::lookupNameInModule(Thread* thread, SymbolId module_name,
   Module module(&scope, *module_obj);
   return moduleAtById(thread, module, name);
 }
-
-template <SymbolId Name, const char* Data>
-static void initializeFrozenModule(Thread* thread) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Module module(&scope, runtime->newModuleById(Name));
-  runtime->addModule(module);
-  CHECK(!runtime->executeFrozenModule(Data, module).isError(),
-        "Failed to initialize %s module",
-        runtime->symbols()->predefinedSymbolAt(Name));
-}
-
-// TODO(emacs): Move these names into the modules themselves, so there is only
-// once source of truth.
-const ModuleInitializer Runtime::kBuiltinModules[] = {
-    {SymbolId::kUnderCodecs, &UnderCodecsModule::initialize},
-    {SymbolId::kUnderImp, &UnderImpModule::initialize},
-    {SymbolId::kUnderOs, &UnderOsModule::initialize},
-    {SymbolId::kUnderSignal,
-     &initializeFrozenModule<SymbolId::kUnderSignal, kUnderSignalModuleData>},
-    {SymbolId::kUnderWeakref, &UnderWeakrefModule::initialize},
-    {SymbolId::kUnderThread,
-     &initializeFrozenModule<SymbolId::kUnderThread, kUnderThreadModuleData>},
-    {SymbolId::kUnderIo, &UnderIoModule::initialize},
-    {SymbolId::kUnderStrMod,
-     &initializeFrozenModule<SymbolId::kUnderStrMod,
-                             kUnderStrUnderModModuleData>},
-    {SymbolId::kUnderValgrind, &UnderValgrindModule::initialize},
-    {SymbolId::kFaulthandler, &FaulthandlerModule::initialize},
-    {SymbolId::kMarshal, &MarshalModule::initialize},
-    {SymbolId::kUnderWarnings, &UnderWarningsModule::initialize},
-    {SymbolId::kOperator,
-     &initializeFrozenModule<SymbolId::kOperator, kOperatorModuleData>},
-    {SymbolId::kWarnings,
-     &initializeFrozenModule<SymbolId::kWarnings, kWarningsModuleData>},
-    {SymbolId::kSentinelId, nullptr},
-};
 
 void Runtime::initializeModules() {
   Thread* thread = Thread::current();
@@ -5212,13 +5168,6 @@ const BuiltinAttribute BuiltinsBase::kAttributes[] = {
 };
 const BuiltinMethod BuiltinsBase::kBuiltinMethods[] = {
     {SymbolId::kSentinelId, nullptr},
-};
-
-const BuiltinMethod ModuleBaseBase::kBuiltinMethods[] = {
-    {SymbolId::kSentinelId, nullptr},
-};
-const BuiltinType ModuleBaseBase::kBuiltinTypes[] = {
-    {SymbolId::kSentinelId, LayoutId::kSentinelId},
 };
 
 }  // namespace py

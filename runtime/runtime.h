@@ -42,19 +42,9 @@ struct BuiltinMethod {
   NativeMethodType address;
 };
 
-struct BuiltinType {
-  SymbolId name;
-  LayoutId type;
-};
-
 enum class ReadOnly : bool {
   ReadWrite,
   ReadOnly,
-};
-
-struct ModuleInitializer {
-  SymbolId name;
-  void (*create_module)(Thread*);
 };
 
 class Runtime {
@@ -900,8 +890,6 @@ class Runtime {
   static_assert(kInitialEnsuredCapacity > SmallStr::kMaxLength,
                 "array must be backed by a heap type");
 
-  static const ModuleInitializer kBuiltinModules[];
-
   Heap heap_;
 
   std::unique_ptr<Interpreter> interpreter_;
@@ -1034,36 +1022,6 @@ class Builtins : public BuiltinsBase {
   static const SymbolId kName = name;
   static const LayoutId kType = type;
   static const LayoutId kSuperType = supertype;
-};
-
-class ModuleBaseBase {
- public:
-  static const BuiltinMethod kBuiltinMethods[];
-  static const BuiltinType kBuiltinTypes[];
-  static const char kFrozenData[];
-};
-
-template <typename T, SymbolId name>
-class ModuleBase : public ModuleBaseBase {
- public:
-  static void initialize(Thread* thread) {
-    HandleScope scope(thread);
-    Runtime* runtime = thread->runtime();
-    Module module(&scope, runtime->newModuleById(name));
-    for (word i = 0; T::kBuiltinMethods[i].name != SymbolId::kSentinelId; i++) {
-      runtime->moduleAddBuiltinFunction(thread, module,
-                                        T::kBuiltinMethods[i].name,
-                                        T::kBuiltinMethods[i].address);
-    }
-    for (word i = 0; T::kBuiltinTypes[i].name != SymbolId::kSentinelId; i++) {
-      runtime->moduleAddBuiltinType(thread, module, T::kBuiltinTypes[i].name,
-                                    T::kBuiltinTypes[i].type);
-    }
-    runtime->addModule(module);
-    CHECK(!runtime->executeFrozenModule(T::kFrozenData, module).isError(),
-          "Failed to initialize %s module",
-          runtime->symbols()->predefinedSymbolAt(name));
-  }
 };
 
 }  // namespace py

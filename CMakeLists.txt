@@ -288,6 +288,8 @@ add_library(
   runtime/memory-region.h
   runtime/memoryview-builtins.cpp
   runtime/memoryview-builtins.h
+  runtime/modules.cpp
+  runtime/modules.h
   runtime/module-builtins.cpp
   runtime/module-builtins.h
   runtime/module-proxy-builtins.cpp

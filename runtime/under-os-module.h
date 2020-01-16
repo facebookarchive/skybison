@@ -1,6 +1,7 @@
 #pragma once
 
 #include "frame.h"
+#include "modules.h"
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
