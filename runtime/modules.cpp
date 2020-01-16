@@ -27,7 +27,7 @@ static void initializeFrozenModule(Thread* thread) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Module module(&scope, runtime->createModule(thread, Name));
-  CHECK(!runtime->executeFrozenModule(Data, module).isError(),
+  CHECK(!runtime->executeFrozenModule(thread, Data, module).isError(),
         "Failed to initialize %s module",
         runtime->symbols()->predefinedSymbolAt(Name));
 }

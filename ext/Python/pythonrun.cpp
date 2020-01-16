@@ -85,7 +85,7 @@ static PyObject* runPycFile(FILE* fp, const char* filename, Module& module,
   std::fclose(fp);
 
   Code code(&scope, *code_obj);
-  RawObject result = runtime->executeModule(code, module);
+  RawObject result = runtime->executeModule(thread, code, module);
   if (!result.isError() && flags) {
     flags->cf_flags |= (code.flags() & PyCF_MASK);
   }

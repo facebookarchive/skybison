@@ -1214,7 +1214,7 @@ result = hello.say_hello()
   Code code(&scope,
             compile(thread_, module_src, filename, SymbolId::kExec, 0, -1));
   Object name(&scope, runtime_->newStrFromCStr("hello"));
-  ASSERT_FALSE(runtime_->importModuleFromCode(code, name).isError());
+  ASSERT_FALSE(runtime_->importModuleFromCode(thread_, code, name).isError());
   ASSERT_FALSE(runFromCStr(runtime_, main_src).isError());
   EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(runtime_, "result"), "hello"));
 }
@@ -1246,7 +1246,7 @@ hello.foo()
   Code code(&scope,
             compile(thread_, module_src, filename, SymbolId::kExec, 0, -1));
   Object name(&scope, runtime_->newStrFromCStr("hello"));
-  ASSERT_FALSE(runtime_->importModuleFromCode(code, name).isError());
+  ASSERT_FALSE(runtime_->importModuleFromCode(thread_, code, name).isError());
 
   EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, main_src),
                             LayoutId::kAttributeError,
@@ -1272,7 +1272,7 @@ result = hello.say_hello()
   Code code(&scope,
             compile(thread_, module_src, filename, SymbolId::kExec, 0, -1));
   Object name(&scope, runtime_->newStrFromCStr("hello"));
-  ASSERT_FALSE(runtime_->importModuleFromCode(code, name).isError());
+  ASSERT_FALSE(runtime_->importModuleFromCode(thread_, code, name).isError());
   ASSERT_FALSE(runFromCStr(runtime_, main_src).isError());
   EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(runtime_, "result"), "goodbye"));
 }

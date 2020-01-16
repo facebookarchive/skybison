@@ -1990,9 +1990,9 @@ static void checkBuiltinTypeDeclarations(Thread* thread, const Module& module) {
   }
 }
 
-RawObject Runtime::executeFrozenModule(const char* buffer,
+RawObject Runtime::executeFrozenModule(Thread* thread, const char* buffer,
                                        const Module& module) {
-  HandleScope scope;
+  HandleScope scope(thread);
   // TODO(matthiasb): 12 is a minimum, we should be using the actual
   // length here!
   word length = 12;
@@ -2003,19 +2003,20 @@ RawObject Runtime::executeFrozenModule(const char* buffer,
     return Error::exception();
   }
   Code code(&scope, reader.readObject());
-  Object result(&scope, executeModule(code, module));
+  Object result(&scope, executeModule(thread, code, module));
   if (result.isErrorException()) return *result;
   if (DCHECK_IS_ON()) {
-    checkBuiltinTypeDeclarations(Thread::current(), module);
+    checkBuiltinTypeDeclarations(thread, module);
   }
   return NoneType::object();
 }
 
-RawObject Runtime::executeModule(const Code& code, const Module& module) {
-  HandleScope scope;
+RawObject Runtime::executeModule(Thread* thread, const Code& code,
+                                 const Module& module) {
+  HandleScope scope(thread);
   DCHECK(code.argcount() == 0, "invalid argcount %ld", code.argcount());
   Object none(&scope, NoneType::object());
-  return Thread::current()->exec(code, module, none);
+  return thread->exec(code, module, none);
 }
 
 static void writeCStr(word fd, const char* str) {
@@ -2100,8 +2101,9 @@ RawObject Runtime::printTraceback(Thread* thread, word fd) {
   return NoneType::object();
 }
 
-RawObject Runtime::importModuleFromCode(const Code& code, const Object& name) {
-  HandleScope scope;
+RawObject Runtime::importModuleFromCode(Thread* thread, const Code& code,
+                                        const Object& name) {
+  HandleScope scope(thread);
   Object cached_module(&scope, findModule(name));
   if (!cached_module.isNoneType()) {
     return *cached_module;
@@ -2109,7 +2111,7 @@ RawObject Runtime::importModuleFromCode(const Code& code, const Object& name) {
 
   Module module(&scope, newModule(name));
   addModule(module);
-  Object result(&scope, executeModule(code, module));
+  Object result(&scope, executeModule(thread, code, module));
   if (result.isError()) return *result;
   return *module;
 }
@@ -2553,7 +2555,8 @@ void Runtime::createBuiltinsModule(Thread* thread) {
   }
 
   // Add and execute builtins module.
-  CHECK(!executeFrozenModule(BuiltinsModule::kFrozenData, module).isError(),
+  CHECK(!executeFrozenModule(thread, BuiltinsModule::kFrozenData, module)
+             .isError(),
         "Failed to initialize builtins module");
 
   // TODO(T39575976): Create a consistent way to hide internal names
@@ -2626,7 +2629,8 @@ void Runtime::createImportlibModule(Thread* thread) {
   // Run _bootstrap.py
   Module importlib(&scope,
                    createModule(thread, SymbolId::kUnderFrozenImportlib));
-  CHECK(!executeFrozenModule(kUnderBootstrapModuleData, importlib).isError(),
+  CHECK(!executeFrozenModule(thread, kUnderBootstrapModuleData, importlib)
+             .isError(),
         "Failed to initialize _bootstrap module");
 
   // Run _bootstrap_external.py
@@ -2634,7 +2638,7 @@ void Runtime::createImportlibModule(Thread* thread) {
       &scope, createModule(thread, SymbolId::kUnderFrozenImportlibExternal));
   moduleAtPutById(thread, importlib_external, SymbolId::kUnderBootstrap,
                   importlib);
-  CHECK(!executeFrozenModule(kUnderBootstrapUnderExternalModuleData,
+  CHECK(!executeFrozenModule(thread, kUnderBootstrapUnderExternalModuleData,
                              importlib_external)
              .isError(),
         "Failed to initialize _bootstrap_external module");
@@ -2735,7 +2739,7 @@ void Runtime::createSysModule(Thread* thread) {
   Object builtins(&scope, *builtins_tuple);
   moduleAtPutById(thread, module, SymbolId::kBuiltinModuleNames, builtins);
   // Add and execute sys module.
-  CHECK(!executeFrozenModule(SysModule::kFrozenData, module).isError(),
+  CHECK(!executeFrozenModule(thread, SysModule::kFrozenData, module).isError(),
         "Failed to initialize sys module");
 
   // Fill in hash_info.
@@ -2803,9 +2807,9 @@ void Runtime::createUnderBuiltinsModule(Thread* thread) {
   }
 
   // Execute _builtins.py
-  CHECK(
-      !executeFrozenModule(UnderBuiltinsModule::kFrozenData, module).isError(),
-      "Failed to initialize _builtins module");
+  CHECK(!executeFrozenModule(thread, UnderBuiltinsModule::kFrozenData, module)
+             .isError(),
+        "Failed to initialize _builtins module");
 }
 
 word Runtime::newCapacity(word curr_capacity, word min_capacity) {
