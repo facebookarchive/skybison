@@ -1056,6 +1056,25 @@ TEST_F(UnicodeExtensionApiTest, FromWideCharWithBufferAndZeroSizeReturnsEmpty) {
   EXPECT_EQ(PyUnicode_GetSize(empty), 0);
 }
 
+TEST_F(UnicodeExtensionApiTest, DecodeWithNullEncodingReturnsUTF8) {
+  const char* str = "utf-8 \xc3\xa8";
+  PyObjectPtr uni(PyUnicode_Decode(str, 8, nullptr, nullptr));
+  ASSERT_TRUE(PyUnicode_CheckExact(uni));
+  EXPECT_STREQ(PyUnicode_AsUTF8(uni), str);
+}
+
+TEST_F(UnicodeExtensionApiTest, DecodeASCIIUsesErrorHandler) {
+  PyObjectPtr uni(PyUnicode_Decode("non\xc3\xa8-ascii", 11, "ascii", "ignore"));
+  ASSERT_TRUE(PyUnicode_CheckExact(uni));
+  EXPECT_STREQ(PyUnicode_AsUTF8(uni), "non-ascii");
+}
+
+TEST_F(UnicodeExtensionApiTest, DecodeLatin1ReturnsLatin1) {
+  PyObjectPtr uni(PyUnicode_Decode("latin-1 \xe8", 9, "latin-1", nullptr));
+  ASSERT_TRUE(PyUnicode_CheckExact(uni));
+  EXPECT_STREQ(PyUnicode_AsUTF8(uni), "latin-1 \xc3\xa8");
+}
+
 TEST_F(UnicodeExtensionApiTest, DecodeFSDefaultCreatesString) {
   PyObjectPtr unicode(PyUnicode_DecodeFSDefault("hello"));
   EXPECT_TRUE(isUnicodeEqualsCStr(unicode, "hello"));

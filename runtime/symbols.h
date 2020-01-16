@@ -597,6 +597,7 @@ class Runtime;
   V(CountOf, "countOf")                                                        \
   V(CrRunning, "cr_running")                                                   \
   V(CreateBuiltin, "create_builtin")                                           \
+  V(Decode, "decode")                                                          \
   V(Delattr, "delattr")                                                        \
   V(Deleter, "deleter")                                                        \
   V(DeprecationWarning, "DeprecationWarning")                                  \

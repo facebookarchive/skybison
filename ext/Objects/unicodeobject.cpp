@@ -1037,9 +1037,27 @@ PY_EXPORT Py_ssize_t PyUnicode_Count(PyObject* /* r */, PyObject* /* r */,
   UNIMPLEMENTED("PyUnicode_Count");
 }
 
-PY_EXPORT PyObject* PyUnicode_Decode(const char* /* s */, Py_ssize_t /* e */,
-                                     const char* /* g */, const char* /* s */) {
-  UNIMPLEMENTED("PyUnicode_Decode");
+PY_EXPORT PyObject* PyUnicode_Decode(const char* c_str, Py_ssize_t size,
+                                     const char* encoding, const char* errors) {
+  DCHECK(c_str != nullptr, "c_str cannot be null");
+  if (encoding == nullptr) {
+    return PyUnicode_DecodeUTF8Stateful(c_str, size, errors, nullptr);
+  }
+
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Bytes bytes(&scope, runtime->newBytesWithAll(View<byte>(
+                          reinterpret_cast<const byte*>(c_str), size)));
+  Object errors_obj(&scope, symbolFromError(thread, errors));
+  Object encoding_obj(&scope, runtime->newStrFromCStr(encoding));
+  Object result(
+      &scope, thread->invokeFunction3(SymbolId::kUnderCodecs, SymbolId::kDecode,
+                                      bytes, encoding_obj, errors_obj));
+  if (result.isError()) {
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT PyObject* PyUnicode_DecodeASCII(const char* c_str, Py_ssize_t size,
