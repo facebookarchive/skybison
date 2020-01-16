@@ -4,11 +4,6 @@
 
 namespace py {
 
-PY_EXPORT int PyCFunction_Check_Func(PyObject* pyobj) {
-  RawObject obj = ApiHandle::fromPyObject(pyobj)->asObject();
-  return obj.isFunction() || obj.isBoundMethod();
-}
-
 PY_EXPORT int PyCFunction_ClearFreeList() { return 0; }
 
 PY_EXPORT PyObject* PyCFunction_NewEx(PyMethodDef* method, PyObject* self,
