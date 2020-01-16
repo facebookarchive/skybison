@@ -852,19 +852,6 @@ RawObject Runtime::newModule(const Object& name) {
   return *result;
 }
 
-RawObject Runtime::newModuleById(SymbolId name) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Module result(&scope, heap()->create<RawModule>());
-  result.setDict(newDict());
-  result.setDef(newIntFromCPtr(nullptr));
-  result.setId(reserveModuleId());
-  Object name_obj(&scope, symbols()->at(name));
-  Object init_result(&scope, moduleInit(thread, result, name_obj));
-  if (init_result.isErrorException()) return *init_result;
-  return *result;
-}
-
 RawObject Runtime::newModuleProxy(const Module& module) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -1947,6 +1934,14 @@ void Runtime::processFinalizers() {
   thread->setPendingExceptionTraceback(*saved_traceback);
 }
 
+RawObject Runtime::createModule(Thread* thread, SymbolId name) {
+  HandleScope scope(thread);
+  Object name_str(&scope, symbols()->at(name));
+  Module module(&scope, newModule(name_str));
+  addModule(module);
+  return *module;
+}
+
 RawObject Runtime::findOrCreateImportlibModule(Thread* thread) {
   HandleScope scope(thread);
   Object importlib_obj(&scope, findModuleById(SymbolId::kUnderFrozenImportlib));
@@ -1959,11 +1954,15 @@ RawObject Runtime::findOrCreateImportlibModule(Thread* thread) {
 }
 
 RawObject Runtime::findOrCreateMainModule() {
-  HandleScope scope;
-  Object main(&scope, findModuleById(SymbolId::kDunderMain));
-  if (main.isNoneType()) {
-    main = createMainModule();
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object maybe_main(&scope, findModuleById(SymbolId::kDunderMain));
+  if (!maybe_main.isNoneType()) {
+    return *maybe_main;
   }
+
+  Module main(&scope, createModule(thread, SymbolId::kDunderMain));
+  // Fill in __main__...
   return *main;
 }
 
@@ -2348,7 +2347,7 @@ void Runtime::initializeModules() {
   Thread* thread = Thread::current();
   modules_ = newDict();
   modules_by_index_ = newList();
-  createEmptyBuiltinsModule(thread);
+  createModule(thread, SymbolId::kBuiltins);
   createUnderBuiltinsModule(thread);
   createBuiltinsModule(thread);
   createSysModule(thread);
@@ -2616,12 +2615,6 @@ void Runtime::createBuiltinsModule(Thread* thread) {
   }
 }
 
-void Runtime::createEmptyBuiltinsModule(Thread* thread) {
-  HandleScope scope(thread);
-  Module builtins(&scope, newModuleById(SymbolId::kBuiltins));
-  addModule(builtins);
-}
-
 void Runtime::createImportlibModule(Thread* thread) {
   HandleScope scope(thread);
 
@@ -2631,21 +2624,20 @@ void Runtime::createImportlibModule(Thread* thread) {
   // This replicates that mapping for compatibility
 
   // Run _bootstrap.py
-  Module importlib(&scope, newModuleById(SymbolId::kUnderFrozenImportlib));
+  Module importlib(&scope,
+                   createModule(thread, SymbolId::kUnderFrozenImportlib));
   CHECK(!executeFrozenModule(kUnderBootstrapModuleData, importlib).isError(),
         "Failed to initialize _bootstrap module");
-  addModule(importlib);
 
   // Run _bootstrap_external.py
   Module importlib_external(
-      &scope, newModuleById(SymbolId::kUnderFrozenImportlibExternal));
+      &scope, createModule(thread, SymbolId::kUnderFrozenImportlibExternal));
   moduleAtPutById(thread, importlib_external, SymbolId::kUnderBootstrap,
                   importlib);
   CHECK(!executeFrozenModule(kUnderBootstrapUnderExternalModuleData,
                              importlib_external)
              .isError(),
         "Failed to initialize _bootstrap_external module");
-  addModule(importlib_external);
 
   // Run _bootstrap._install(sys, _imp)
   Module sys_module(&scope, findModuleById(SymbolId::kSys));
@@ -2659,7 +2651,7 @@ void Runtime::createImportlibModule(Thread* thread) {
 
 void Runtime::createSysModule(Thread* thread) {
   HandleScope scope(thread);
-  Module module(&scope, newModuleById(SymbolId::kSys));
+  Module module(&scope, createModule(thread, SymbolId::kSys));
   for (word i = 0; SysModule::kBuiltinMethods[i].name != SymbolId::kSentinelId;
        i++) {
     moduleAddBuiltinFunction(thread, module, SysModule::kBuiltinMethods[i].name,
@@ -2743,7 +2735,6 @@ void Runtime::createSysModule(Thread* thread) {
   Object builtins(&scope, *builtins_tuple);
   moduleAtPutById(thread, module, SymbolId::kBuiltinModuleNames, builtins);
   // Add and execute sys module.
-  addModule(module);
   CHECK(!executeFrozenModule(SysModule::kFrozenData, module).isError(),
         "Failed to initialize sys module");
 
@@ -2773,7 +2764,7 @@ void Runtime::createSysModule(Thread* thread) {
 
 void Runtime::createUnderBuiltinsModule(Thread* thread) {
   HandleScope scope(thread);
-  Module module(&scope, newModuleById(SymbolId::kUnderBuiltins));
+  Module module(&scope, createModule(thread, SymbolId::kUnderBuiltins));
   for (word i = 0;
        UnderBuiltinsModule::kBuiltinMethods[i].name != SymbolId::kSentinelId;
        i++) {
@@ -2811,22 +2802,10 @@ void Runtime::createUnderBuiltinsModule(Thread* thread) {
         .setIntrinsicId(static_cast<word>(intrinsic_id));
   }
 
-  // Add _builtins module.
-  addModule(module);
+  // Execute _builtins.py
   CHECK(
       !executeFrozenModule(UnderBuiltinsModule::kFrozenData, module).isError(),
       "Failed to initialize _builtins module");
-}
-
-RawObject Runtime::createMainModule() {
-  HandleScope scope;
-  Module module(&scope, newModuleById(SymbolId::kDunderMain));
-
-  // Fill in __main__...
-
-  addModule(module);
-
-  return *module;
 }
 
 word Runtime::newCapacity(word curr_capacity, word min_capacity) {

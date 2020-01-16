@@ -26,8 +26,7 @@ template <SymbolId Name, const char* Data>
 static void initializeFrozenModule(Thread* thread) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Module module(&scope, runtime->newModuleById(Name));
-  runtime->addModule(module);
+  Module module(&scope, runtime->createModule(thread, Name));
   CHECK(!runtime->executeFrozenModule(Data, module).isError(),
         "Failed to initialize %s module",
         runtime->symbols()->predefinedSymbolAt(Name));

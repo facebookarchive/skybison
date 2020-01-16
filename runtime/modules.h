@@ -32,7 +32,7 @@ class ModuleBase : public ModuleBaseBase {
   static void initialize(Thread* thread) {
     HandleScope scope(thread);
     Runtime* runtime = thread->runtime();
-    Module module(&scope, runtime->newModuleById(name));
+    Module module(&scope, runtime->createModule(thread, name));
     for (word i = 0; T::kBuiltinMethods[i].name != SymbolId::kSentinelId; i++) {
       runtime->moduleAddBuiltinFunction(thread, module,
                                         T::kBuiltinMethods[i].name,
@@ -42,7 +42,6 @@ class ModuleBase : public ModuleBaseBase {
       runtime->moduleAddBuiltinType(thread, module, T::kBuiltinTypes[i].name,
                                     T::kBuiltinTypes[i].type);
     }
-    runtime->addModule(module);
     CHECK(!runtime->executeFrozenModule(T::kFrozenData, module).isError(),
           "Failed to initialize %s module",
           runtime->symbols()->predefinedSymbolAt(name));

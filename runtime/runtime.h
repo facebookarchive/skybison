@@ -163,7 +163,6 @@ class Runtime {
                                   ReadOnly read_only);
 
   RawObject newModule(const Object& name);
-  RawObject newModuleById(SymbolId name);
 
   RawObject newModuleProxy(const Module& module);
 
@@ -267,7 +266,7 @@ class Runtime {
   RawObject typeDunderGetattribute() { return type_dunder_getattribute_; }
 
   void createBuiltinsModule(Thread* thread);
-  void createEmptyBuiltinsModule(Thread* thread);
+  void createImportlibModule(Thread* thread);
   void createSysModule(Thread* thread);
   void createUnderBuiltinsModule(Thread* thread);
 
@@ -765,6 +764,9 @@ class Runtime {
 
   static word nextModuleIndex();
 
+  // Create and return the specified module.
+  RawObject createModule(Thread* thread, SymbolId name);
+
   // If the importlib module has already been initialized and added, return it.
   // Else, create and add it to the runtime.
   NODISCARD RawObject findOrCreateImportlibModule(Thread* thread);
@@ -809,9 +811,6 @@ class Runtime {
   void initializeSymbols();
   void initializeThreads();
   void initializeTypes();
-
-  void createImportlibModule(Thread* thread);
-  RawObject createMainModule();
 
   void visitRuntimeRoots(PointerVisitor* visitor);
   void visitThreadRoots(PointerVisitor* visitor);
