@@ -1310,6 +1310,22 @@ class BytesTests(unittest.TestCase):
             container.__contains__(c)
         c.__index__.assert_called_once()
 
+    def test_dunder_contains_with_single_byte_byteslike_returns_true(self):
+        self.assertTrue(b"abc".__contains__(b"a"))
+        self.assertTrue(b"abc".__contains__(bytearray(b"a")))
+
+    def test_dunder_contains_with_single_byte_byteslike_returns_false(self):
+        self.assertFalse(b"abc".__contains__(b"z"))
+        self.assertFalse(b"abc".__contains__(bytearray(b"z")))
+
+    def test_dunder_contains_with_byteslike_returns_true(self):
+        self.assertTrue(b"foobar".__contains__(b"foo"))
+        self.assertTrue(b"foobar".__contains__(bytearray(b"bar")))
+
+    def test_dunder_contains_with_byteslike_returns_false(self):
+        self.assertFalse(b"foobar".__contains__(b"baz"))
+        self.assertFalse(b"foobar".__contains__(bytearray(b"baz")))
+
     def test_dunder_iter_returns_iterator(self):
         b = b"123"
         it = b.__iter__()

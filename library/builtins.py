@@ -1901,8 +1901,7 @@ class bytes(bootstrap=True):
         except BaseException:
             pass
         _byteslike_guard(key)
-        # TODO(T59053238): Add support for bytes.__contains__(byteslike)
-        _unimplemented()
+        return _byteslike_find_byteslike(self, key, 0, _bytes_len(self)) != -1
 
     def __eq__(self, other):
         pass
