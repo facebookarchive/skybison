@@ -4567,6 +4567,96 @@ Continue Interpreter::compareOpFallback(Thread* thread, word arg,
 }
 
 HANDLER_INLINE
+Continue Interpreter::doCompareEqSmallInt(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject left = frame->peek(1);
+  RawObject right = frame->peek(0);
+  if (left.isSmallInt() && right.isSmallInt()) {
+    word left_value = SmallInt::cast(left).value();
+    word right_value = SmallInt::cast(right).value();
+    frame->dropValues(1);
+    frame->setTopValue(Bool::fromBool(left_value == right_value));
+    return Continue::NEXT;
+  }
+  return compareOpUpdateCache(thread, arg);
+}
+
+HANDLER_INLINE
+Continue Interpreter::doCompareGtSmallInt(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject left = frame->peek(1);
+  RawObject right = frame->peek(0);
+  if (left.isSmallInt() && right.isSmallInt()) {
+    word left_value = SmallInt::cast(left).value();
+    word right_value = SmallInt::cast(right).value();
+    frame->dropValues(1);
+    frame->setTopValue(Bool::fromBool(left_value > right_value));
+    return Continue::NEXT;
+  }
+  return compareOpUpdateCache(thread, arg);
+}
+
+HANDLER_INLINE
+Continue Interpreter::doCompareLtSmallInt(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject left = frame->peek(1);
+  RawObject right = frame->peek(0);
+  if (left.isSmallInt() && right.isSmallInt()) {
+    word left_value = SmallInt::cast(left).value();
+    word right_value = SmallInt::cast(right).value();
+    frame->dropValues(1);
+    frame->setTopValue(Bool::fromBool(left_value < right_value));
+    return Continue::NEXT;
+  }
+  return compareOpUpdateCache(thread, arg);
+}
+
+HANDLER_INLINE
+Continue Interpreter::doCompareGeSmallInt(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject left = frame->peek(1);
+  RawObject right = frame->peek(0);
+  if (left.isSmallInt() && right.isSmallInt()) {
+    word left_value = SmallInt::cast(left).value();
+    word right_value = SmallInt::cast(right).value();
+    frame->dropValues(1);
+    frame->setTopValue(Bool::fromBool(left_value >= right_value));
+    return Continue::NEXT;
+  }
+  return compareOpUpdateCache(thread, arg);
+}
+
+HANDLER_INLINE
+Continue Interpreter::doCompareNeSmallInt(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject left = frame->peek(1);
+  RawObject right = frame->peek(0);
+  if (left.isSmallInt() && right.isSmallInt()) {
+    word left_value = SmallInt::cast(left).value();
+    word right_value = SmallInt::cast(right).value();
+    frame->dropValues(1);
+    frame->setTopValue(Bool::fromBool(left_value != right_value));
+    return Continue::NEXT;
+  }
+  return compareOpUpdateCache(thread, arg);
+}
+
+HANDLER_INLINE
+Continue Interpreter::doCompareLeSmallInt(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject left = frame->peek(1);
+  RawObject right = frame->peek(0);
+  if (left.isSmallInt() && right.isSmallInt()) {
+    word left_value = SmallInt::cast(left).value();
+    word right_value = SmallInt::cast(right).value();
+    frame->dropValues(1);
+    frame->setTopValue(Bool::fromBool(left_value <= right_value));
+    return Continue::NEXT;
+  }
+  return compareOpUpdateCache(thread, arg);
+}
+
+HANDLER_INLINE
 Continue Interpreter::doCompareOpMonomorphic(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawObject left_raw = frame->peek(1);
@@ -4602,6 +4692,33 @@ Continue Interpreter::doCompareOpPolymorphic(Thread* thread, word arg) {
 
 HANDLER_INLINE
 Continue Interpreter::doCompareOpAnamorphic(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  if (frame->peek(0).isSmallInt() && frame->peek(1).isSmallInt()) {
+    word pc = frame->currentPC();
+    RawMutableBytes bytecode = frame->bytecode();
+    switch (static_cast<CompareOp>(originalArg(frame->function(), arg))) {
+      case CompareOp::EQ:
+        bytecode.byteAtPut(pc, COMPARE_EQ_SMALLINT);
+        return doCompareEqSmallInt(thread, arg);
+      case CompareOp::GT:
+        bytecode.byteAtPut(pc, COMPARE_GT_SMALLINT);
+        return doCompareGtSmallInt(thread, arg);
+      case CompareOp::LT:
+        bytecode.byteAtPut(pc, COMPARE_LT_SMALLINT);
+        return doCompareLtSmallInt(thread, arg);
+      case CompareOp::GE:
+        bytecode.byteAtPut(pc, COMPARE_GE_SMALLINT);
+        return doCompareGeSmallInt(thread, arg);
+      case CompareOp::NE:
+        bytecode.byteAtPut(pc, COMPARE_NE_SMALLINT);
+        return doCompareNeSmallInt(thread, arg);
+      case CompareOp::LE:
+        bytecode.byteAtPut(pc, COMPARE_LE_SMALLINT);
+        return doCompareLeSmallInt(thread, arg);
+      default:
+        return compareOpUpdateCache(thread, arg);
+    }
+  }
   return compareOpUpdateCache(thread, arg);
 }
 
@@ -4797,7 +4914,79 @@ Continue Interpreter::doBinaryOpPolymorphic(Thread* thread, word arg) {
 }
 
 HANDLER_INLINE
+Continue Interpreter::doBinaryAddSmallInt(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject left = frame->peek(1);
+  RawObject right = frame->peek(0);
+  if (left.isSmallInt() && right.isSmallInt()) {
+    word left_value = SmallInt::cast(left).value();
+    word right_value = SmallInt::cast(right).value();
+    word result_value = left_value + right_value;
+    if (SmallInt::isValid(result_value)) {
+      frame->dropValues(1);
+      frame->setTopValue(SmallInt::fromWord(result_value));
+      return Continue::NEXT;
+    }
+  }
+  return binaryOpUpdateCache(thread, arg);
+}
+
+HANDLER_INLINE
+Continue Interpreter::doBinarySubSmallInt(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject left = frame->peek(1);
+  RawObject right = frame->peek(0);
+  if (left.isSmallInt() && right.isSmallInt()) {
+    word left_value = SmallInt::cast(left).value();
+    word right_value = SmallInt::cast(right).value();
+    word result_value = left_value - right_value;
+    if (SmallInt::isValid(result_value)) {
+      frame->dropValues(1);
+      frame->setTopValue(SmallInt::fromWord(result_value));
+      return Continue::NEXT;
+    }
+  }
+  return binaryOpUpdateCache(thread, arg);
+}
+
+HANDLER_INLINE
+Continue Interpreter::doBinaryOrSmallInt(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject left = frame->peek(1);
+  RawObject right = frame->peek(0);
+  if (left.isSmallInt() && right.isSmallInt()) {
+    word left_value = SmallInt::cast(left).value();
+    word right_value = SmallInt::cast(right).value();
+    word result_value = left_value | right_value;
+    if (SmallInt::isValid(result_value)) {
+      frame->dropValues(1);
+      frame->setTopValue(SmallInt::fromWord(result_value));
+      return Continue::NEXT;
+    }
+  }
+  return binaryOpUpdateCache(thread, arg);
+}
+
+HANDLER_INLINE
 Continue Interpreter::doBinaryOpAnamorphic(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  if (frame->peek(0).isSmallInt() && frame->peek(1).isSmallInt()) {
+    word pc = frame->currentPC();
+    RawMutableBytes bytecode = frame->bytecode();
+    switch (static_cast<BinaryOp>(originalArg(frame->function(), arg))) {
+      case BinaryOp::ADD:
+        bytecode.byteAtPut(pc, BINARY_ADD_SMALLINT);
+        return doBinaryAddSmallInt(thread, arg);
+      case BinaryOp::SUB:
+        bytecode.byteAtPut(pc, BINARY_SUB_SMALLINT);
+        return doBinarySubSmallInt(thread, arg);
+      case BinaryOp::OR:
+        bytecode.byteAtPut(pc, BINARY_OR_SMALLINT);
+        return doBinaryOrSmallInt(thread, arg);
+      default:
+        return binaryOpUpdateCache(thread, arg);
+    }
+  }
   return binaryOpUpdateCache(thread, arg);
 }
 

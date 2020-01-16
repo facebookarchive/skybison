@@ -182,6 +182,7 @@ class Interpreter {
 
   static RawObject binaryOperation(Thread* thread, Frame* frame, BinaryOp op,
                                    const Object& left, const Object& right);
+  static Continue binaryOpUpdateCache(Thread* thread, word arg);
 
   // Lookup and invoke a binary operation (like `__add__`, `__sub__`, ...).
   // Sets `method_out` and `flags_out` to the lookup result if it is possible
@@ -235,6 +236,7 @@ class Interpreter {
 
   static RawObject compareOperation(Thread* thread, Frame* frame, CompareOp op,
                                     const Object& left, const Object& right);
+  static Continue compareOpUpdateCache(Thread* thread, word arg);
 
   static RawObject createIterator(Thread* thread, Frame* frame,
                                   const Object& iterable);
@@ -321,6 +323,9 @@ class Interpreter {
   static Continue doBinaryMultiply(Thread* thread, word arg);
   static Continue doBinaryOpMonomorphic(Thread* thread, word arg);
   static Continue doBinaryOpPolymorphic(Thread* thread, word arg);
+  static Continue doBinaryAddSmallInt(Thread* thread, word arg);
+  static Continue doBinarySubSmallInt(Thread* thread, word arg);
+  static Continue doBinaryOrSmallInt(Thread* thread, word arg);
   static Continue doBinaryOpAnamorphic(Thread* thread, word arg);
   static Continue doBinaryOr(Thread* thread, word arg);
   static Continue doBinaryPower(Thread* thread, word arg);
@@ -348,6 +353,12 @@ class Interpreter {
   static Continue doCompareOp(Thread* thread, word arg);
   static Continue doCompareOpMonomorphic(Thread* thread, word arg);
   static Continue doCompareOpPolymorphic(Thread* thread, word arg);
+  static Continue doCompareEqSmallInt(Thread* thread, word arg);
+  static Continue doCompareGtSmallInt(Thread* thread, word arg);
+  static Continue doCompareLtSmallInt(Thread* thread, word arg);
+  static Continue doCompareGeSmallInt(Thread* thread, word arg);
+  static Continue doCompareNeSmallInt(Thread* thread, word arg);
+  static Continue doCompareLeSmallInt(Thread* thread, word arg);
   static Continue doCompareOpAnamorphic(Thread* thread, word arg);
   static Continue doDeleteAttr(Thread* thread, word arg);
   static Continue doDeleteSubscr(Thread* thread, word arg);
@@ -589,14 +600,12 @@ class Interpreter {
                                      OpcodeHandler update_cache,
                                      BinaryOpFallbackHandler fallback);
 
-  static Continue binaryOpUpdateCache(Thread* thread, word arg);
   static Continue binaryOp(Thread* thread, word arg, RawObject method,
                            BinaryOpFlags flags, RawObject left, RawObject right,
                            BinaryOpFallbackHandler fallback);
   static Continue binaryOpFallback(Thread* thread, word arg,
                                    BinaryOpFlags flags);
 
-  static Continue compareOpUpdateCache(Thread* thread, word arg);
   static Continue compareOpFallback(Thread* thread, word arg,
                                     BinaryOpFlags flags);
 

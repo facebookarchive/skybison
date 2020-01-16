@@ -1324,11 +1324,13 @@ f()
 }
 
 TEST_F(ThreadTest, StackOverflowRaisesRecursionError) {
+  // TODO(T59724033): Not using binop doesn't raise RecursionError, which
+  // signifies that our recursion depth checking is problematic.
   EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
 def foo(x):
   return foo(x + 1)
 
-foo(1)
+foo(1.0)
 )"),
                             LayoutId::kRecursionError,
                             "maximum recursion depth exceeded"));

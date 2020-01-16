@@ -221,6 +221,15 @@ bool mayChangeFramePC(Bytecode bc) {
   // finished). This lets us avoid reloading the frame after calling their C++
   // implementations.
   switch (bc) {
+    case BINARY_ADD_SMALLINT:
+    case BINARY_SUB_SMALLINT:
+    case BINARY_OR_SMALLINT:
+    case COMPARE_EQ_SMALLINT:
+    case COMPARE_LE_SMALLINT:
+    case COMPARE_NE_SMALLINT:
+    case COMPARE_GE_SMALLINT:
+    case COMPARE_LT_SMALLINT:
+    case COMPARE_GT_SMALLINT:
     case LOAD_ATTR_INSTANCE:
     case LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD:
     case LOAD_ATTR_POLYMORPHIC:
@@ -475,6 +484,92 @@ void emitAttrWithOffset(EmitEnv* env, void (Assembler::*asm_op)(Address),
   __ notq(r_offset);
   (env->as.*asm_op)(Address(r_scratch, r_offset, TIMES_8, heapObjectDisp(0)));
   __ jmp(next, Assembler::kNearJump);
+}
+
+static void emitSmallIntChecks(EmitEnv* env, Label* slow_path, Register r_left,
+                               Register r_right) {
+  static_assert(Object::kSmallIntTag == 0, "unexpeted tag for SmallInt");
+  __ testl(r_right, Immediate(Object::kSmallIntTagMask));
+  __ jcc(NOT_ZERO, slow_path, Assembler::kNearJump);
+  __ testl(r_left, Immediate(Object::kSmallIntTagMask));
+  __ jcc(NOT_ZERO, slow_path, Assembler::kNearJump);
+}
+
+template <>
+void emitHandler<BINARY_ADD_SMALLINT>(EmitEnv* env) {
+  Register r_right = RAX;
+  Register r_left = RDX;
+  Register r_result = RDI;
+  Label slow_path;
+  __ popq(r_right);
+  __ popq(r_left);
+  emitSmallIntChecks(env, &slow_path, r_left, r_right);
+  // Preserve argument values in case of overflow.
+  __ movq(r_result, r_left);
+  __ addq(r_result, r_right);
+  __ jcc(YES_OVERFLOW, &slow_path, Assembler::kNearJump);
+  __ pushq(r_result);
+  emitNextOpcode(env);
+
+  __ bind(&slow_path);
+  __ pushq(r_left);
+  __ pushq(r_right);
+  __ movq(kArgRegs[0], kThreadReg);
+  static_assert(kOpargReg == kArgRegs[1], "oparg expect to be in rsi");
+  emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
+  emitCall<Interpreter::Continue (*)(Thread*, word)>(
+      env, Interpreter::binaryOpUpdateCache);
+  emitHandleContinue(env, /*may_change_frame_pc=*/true);
+}
+
+template <>
+void emitHandler<BINARY_SUB_SMALLINT>(EmitEnv* env) {
+  Register r_right = RAX;
+  Register r_left = R8;
+  Register r_result = RDI;
+  Label slow_path;
+  __ popq(r_right);
+  __ popq(r_left);
+  emitSmallIntChecks(env, &slow_path, r_left, r_right);
+  // Preserve argument values in case of overflow.
+  __ movq(r_result, r_left);
+  __ subq(r_result, r_right);
+  __ jcc(YES_OVERFLOW, &slow_path, Assembler::kNearJump);
+  __ pushq(r_result);
+  emitNextOpcode(env);
+
+  __ bind(&slow_path);
+  __ pushq(r_left);
+  __ pushq(r_right);
+  __ movq(kArgRegs[0], kThreadReg);
+  static_assert(kOpargReg == kArgRegs[1], "oparg expect to be in rsi");
+  emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
+  emitCall<Interpreter::Continue (*)(Thread*, word)>(
+      env, Interpreter::binaryOpUpdateCache);
+  emitHandleContinue(env, /*may_change_frame_pc=*/true);
+}
+
+template <>
+void emitHandler<BINARY_OR_SMALLINT>(EmitEnv* env) {
+  Register r_right = RAX;
+  Register r_left = R8;
+  Label slow_path;
+  __ popq(r_right);
+  __ popq(r_left);
+  emitSmallIntChecks(env, &slow_path, r_left, r_right);
+  __ orq(r_right, r_left);
+  __ pushq(r_right);
+  emitNextOpcode(env);
+
+  __ bind(&slow_path);
+  __ pushq(r_left);
+  __ pushq(r_right);
+  __ movq(kArgRegs[0], kThreadReg);
+  static_assert(kOpargReg == kArgRegs[1], "oparg expect to be in rsi");
+  emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
+  emitCall<Interpreter::Continue (*)(Thread*, word)>(
+      env, Interpreter::binaryOpUpdateCache);
+  emitHandleContinue(env, /*may_change_frame_pc=*/true);
 }
 
 // TODO(T59397957): Split this into two opcodes.
@@ -1120,6 +1215,85 @@ void emitCompareIs(EmitEnv* env, bool eq_value) {
   __ cmovnel(RAX, RDI);
   __ pushq(RAX);
   emitNextOpcode(env);
+}
+
+static void emitCompareOpSmallIntHandler(EmitEnv* env, Condition cond) {
+  Register r_right = RAX;
+  Register r_left = RDI;
+  Register r_true = RDX;
+  Register r_result = R8;
+  Label slow_path;
+  __ popq(r_right);
+  __ popq(r_left);
+  // Use the fast path only when both arguments are SmallInt.
+  emitSmallIntChecks(env, &slow_path, r_left, r_right);
+  __ movq(r_true, boolImmediate(true));
+  __ movq(r_result, boolImmediate(false));
+  __ cmpq(r_left, r_right);
+  switch (cond) {
+    case EQUAL:
+      __ cmoveq(r_result, r_true);
+      break;
+    case NOT_EQUAL:
+      __ cmovneq(r_result, r_true);
+      break;
+    case GREATER:
+      __ cmovgq(r_result, r_true);
+      break;
+    case GREATER_EQUAL:
+      __ cmovgeq(r_result, r_true);
+      break;
+    case LESS:
+      __ cmovlq(r_result, r_true);
+      break;
+    case LESS_EQUAL:
+      __ cmovleq(r_result, r_true);
+      break;
+    default:
+      UNREACHABLE("unhandled cond");
+  }
+  __ pushq(r_result);
+  emitNextOpcode(env);
+
+  __ bind(&slow_path);
+  __ pushq(r_left);
+  __ pushq(r_right);
+  __ movq(kArgRegs[0], kThreadReg);
+  static_assert(kOpargReg == kArgRegs[1], "oparg expect to be in rsi");
+  emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
+  emitCall<Interpreter::Continue (*)(Thread*, word)>(
+      env, Interpreter::compareOpUpdateCache);
+  emitHandleContinue(env, /*may_change_frame_pc=*/true);
+}
+
+template <>
+void emitHandler<COMPARE_EQ_SMALLINT>(EmitEnv* env) {
+  emitCompareOpSmallIntHandler(env, EQUAL);
+}
+
+template <>
+void emitHandler<COMPARE_NE_SMALLINT>(EmitEnv* env) {
+  emitCompareOpSmallIntHandler(env, NOT_EQUAL);
+}
+
+template <>
+void emitHandler<COMPARE_GT_SMALLINT>(EmitEnv* env) {
+  emitCompareOpSmallIntHandler(env, GREATER);
+}
+
+template <>
+void emitHandler<COMPARE_GE_SMALLINT>(EmitEnv* env) {
+  emitCompareOpSmallIntHandler(env, GREATER_EQUAL);
+}
+
+template <>
+void emitHandler<COMPARE_LT_SMALLINT>(EmitEnv* env) {
+  emitCompareOpSmallIntHandler(env, LESS);
+}
+
+template <>
+void emitHandler<COMPARE_LE_SMALLINT>(EmitEnv* env) {
+  emitCompareOpSmallIntHandler(env, LESS_EQUAL);
 }
 
 template <>

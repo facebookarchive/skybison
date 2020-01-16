@@ -591,10 +591,12 @@ v3 = B(1)
 TEST_F(InterpreterTest, DoBinaryOpWithCacheHitCallsCachedMethod) {
   HandleScope scope(thread_);
 
+  word left = SmallInt::kMaxValue + 1;
+  word right = -13;
   Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime_->newTuple(2));
-  consts.atPut(0, runtime_->newInt(7));
-  consts.atPut(1, runtime_->newInt(-13));
+  consts.atPut(0, runtime_->newInt(left));
+  consts.atPut(1, runtime_->newInt(right));
   code.setConsts(*consts);
   const byte bytecode[] = {
       LOAD_CONST, 0, LOAD_CONST, 1, BINARY_SUBTRACT, 0, RETURN_VALUE, 0,
@@ -609,18 +611,19 @@ TEST_F(InterpreterTest, DoBinaryOpWithCacheHitCallsCachedMethod) {
   // Update inline cache.
   EXPECT_TRUE(isIntEqualsWord(
       Interpreter::callFunction0(thread_, thread_->currentFrame(), function),
-      20));
+      left - right));
 
   ASSERT_TRUE(function.caches().isTuple());
   Tuple caches(&scope, function.caches());
   BinaryOpFlags dummy;
-  ASSERT_FALSE(icLookupBinaryOp(*caches, 0, LayoutId::kSmallInt,
+  ASSERT_FALSE(icLookupBinaryOp(*caches, 0, LayoutId::kLargeInt,
                                 LayoutId::kSmallInt, &dummy)
                    .isErrorNotFound());
+
   // Call from inline cache.
   EXPECT_TRUE(isIntEqualsWord(
       Interpreter::callFunction0(thread_, thread_->currentFrame(), function),
-      20));
+      left - right));
 }
 
 TEST_F(InterpreterTest, DoBinaryOpWithCacheHitCallsRetry) {
@@ -669,6 +672,129 @@ v1 = 7
   EXPECT_TRUE(isIntEqualsWord(
       Interpreter::callFunction0(thread_, thread_->currentFrame(), function),
       -4));
+}
+
+TEST_F(InterpreterTest, DoBinaryOpWithSmallIntsRewritesOpcode) {
+  HandleScope scope(thread_);
+
+  word left = 7;
+  word right = -13;
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime_->newTuple(2));
+  consts.atPut(0, runtime_->newInt(left));
+  consts.atPut(1, runtime_->newInt(right));
+  code.setConsts(*consts);
+  const byte bytecode[] = {
+      LOAD_CONST, 0, LOAD_CONST, 1, BINARY_SUBTRACT, 0, RETURN_VALUE, 0,
+  };
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+
+  Object qualname(&scope, Str::empty());
+  Module module(&scope, runtime_->findOrCreateMainModule());
+  Function function(
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
+
+  // Update the opcode.
+  ASSERT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction0(thread_, thread_->currentFrame(), function),
+      left - right));
+
+  MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
+  EXPECT_EQ(rewritten_bytecode.byteAt(4), BINARY_SUB_SMALLINT);
+
+  // Updated opcode returns the same value.
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction0(thread_, thread_->currentFrame(), function),
+      left - right));
+}
+
+TEST_F(InterpreterTest, BinaryOpWithSmallInts) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def foo(a, b):
+    return a + b
+)")
+                   .isError());
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  MutableBytes rewritten(&scope, function.rewrittenBytecode());
+  ASSERT_EQ(rewritten.byteAt(4), BINARY_OP_ANAMORPHIC);
+
+  SmallInt left(&scope, SmallInt::fromWord(7));
+  SmallInt right(&scope, SmallInt::fromWord(-13));
+
+  rewritten.byteAtPut(4, BINARY_ADD_SMALLINT);
+  left = SmallInt::fromWord(7);
+  right = SmallInt::fromWord(-13);
+  // 7 + (-13)
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction2(thread_, thread_->currentFrame(), function,
+                                 left, right),
+      -6));
+  // 7 + 7
+  left = SmallInt::fromWord(7);
+  right = SmallInt::fromWord(7);
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction2(thread_, thread_->currentFrame(), function,
+                                 left, right),
+      14));
+  EXPECT_EQ(rewritten.byteAt(4), BINARY_ADD_SMALLINT);
+
+  rewritten.byteAtPut(4, BINARY_SUB_SMALLINT);
+  left = SmallInt::fromWord(7);
+  right = SmallInt::fromWord(-13);
+  // 7 - (-13)
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction2(thread_, thread_->currentFrame(), function,
+                                 left, right),
+      20));
+  // 7 - 7
+  left = SmallInt::fromWord(7);
+  right = SmallInt::fromWord(7);
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction2(thread_, thread_->currentFrame(), function,
+                                 left, right),
+      0));
+  EXPECT_EQ(rewritten.byteAt(4), BINARY_SUB_SMALLINT);
+
+  rewritten.byteAtPut(4, BINARY_OR_SMALLINT);
+  left = SmallInt::fromWord(7);
+  right = SmallInt::fromWord(-13);
+  // 7 | (-13)
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction2(thread_, thread_->currentFrame(), function,
+                                 left, right),
+      7 | -13));
+  // 7 | 8
+  left = SmallInt::fromWord(7);
+  right = SmallInt::fromWord(8);
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction2(thread_, thread_->currentFrame(), function,
+                                 left, right),
+      7 | 8));
+  EXPECT_EQ(rewritten.byteAt(4), BINARY_OR_SMALLINT);
+}
+
+TEST_F(InterpreterTest, BinaryOpWithSmallIntsRevertsBackToBinaryOp) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def foo(a, b):
+    return a + b
+)")
+                   .isError());
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  MutableBytes rewritten(&scope, function.rewrittenBytecode());
+  ASSERT_EQ(rewritten.byteAt(4), BINARY_OP_ANAMORPHIC);
+
+  LargeInt left(&scope, runtime_->newInt(SmallInt::kMaxValue + 1));
+  SmallInt right(&scope, SmallInt::fromWord(13));
+
+  rewritten.byteAtPut(4, BINARY_ADD_SMALLINT);
+  // LARGE_SMALL_INT + SMALL_INT
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction2(thread_, thread_->currentFrame(), function,
+                                 left, right),
+      SmallInt::kMaxValue + 1 + 13));
+  EXPECT_EQ(rewritten.byteAt(4), BINARY_OP_MONOMORPHIC);
 }
 
 TEST_F(InterpreterTest, InplaceOpCachedInsertsDependencyForThreeAttributes) {
@@ -1122,6 +1248,182 @@ c = C()
   EXPECT_EQ(a_eq_c, Bool::trueObj());
   called = mainModuleAt(runtime_, "called");
   EXPECT_TRUE(isStrEqualsCStr(*called, "C"));
+}
+
+TEST_F(InterpreterTest, CompareOpSmallIntsRewritesOpcode) {
+  HandleScope scope(thread_);
+
+  word left = 7;
+  word right = -13;
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime_->newTuple(2));
+  consts.atPut(0, runtime_->newInt(left));
+  consts.atPut(1, runtime_->newInt(right));
+  code.setConsts(*consts);
+  const byte bytecode[] = {
+      LOAD_CONST,   0,
+      LOAD_CONST,   1,
+      COMPARE_OP,   static_cast<byte>(CompareOp::LT),
+      RETURN_VALUE, 0,
+  };
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+
+  Object qualname(&scope, Str::empty());
+  Module module(&scope, runtime_->findOrCreateMainModule());
+  Function function(
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
+
+  // Update the opcode.
+  ASSERT_EQ(
+      Interpreter::callFunction0(thread_, thread_->currentFrame(), function),
+      Bool::falseObj());
+
+  MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
+  EXPECT_EQ(rewritten_bytecode.byteAt(4), COMPARE_LT_SMALLINT);
+
+  // Updated opcode returns the same value.
+  ASSERT_EQ(
+      Interpreter::callFunction0(thread_, thread_->currentFrame(), function),
+      Bool::falseObj());
+}
+
+TEST_F(InterpreterTest, CompareOpWithSmallInts) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def foo(a, b):
+    return a == b
+)")
+                   .isError());
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  MutableBytes rewritten(&scope, function.rewrittenBytecode());
+  ASSERT_EQ(rewritten.byteAt(4), COMPARE_OP_ANAMORPHIC);
+
+  SmallInt left(&scope, SmallInt::fromWord(7));
+  SmallInt right(&scope, SmallInt::fromWord(-13));
+
+  rewritten.byteAtPut(4, COMPARE_EQ_SMALLINT);
+  left = SmallInt::fromWord(7);
+  right = SmallInt::fromWord(-13);
+  // 7 == -13
+  EXPECT_EQ(Interpreter::callFunction2(thread_, thread_->currentFrame(),
+                                       function, left, right),
+            Bool::falseObj());
+  // 7 == 7
+  left = SmallInt::fromWord(7);
+  right = SmallInt::fromWord(7);
+  EXPECT_EQ(Interpreter::callFunction2(thread_, thread_->currentFrame(),
+                                       function, left, right),
+            Bool::trueObj());
+  EXPECT_EQ(rewritten.byteAt(4), COMPARE_EQ_SMALLINT);
+
+  rewritten.byteAtPut(4, COMPARE_NE_SMALLINT);
+  left = SmallInt::fromWord(7);
+  right = SmallInt::fromWord(7);
+  // 7 != 7
+  EXPECT_EQ(Interpreter::callFunction2(thread_, thread_->currentFrame(),
+                                       function, left, right),
+            Bool::falseObj());
+  left = SmallInt::fromWord(7);
+  right = SmallInt::fromWord(-13);
+  // 7 != -13
+  EXPECT_EQ(Interpreter::callFunction2(thread_, thread_->currentFrame(),
+                                       function, left, right),
+            Bool::trueObj());
+  EXPECT_EQ(rewritten.byteAt(4), COMPARE_NE_SMALLINT);
+
+  rewritten.byteAtPut(4, COMPARE_GT_SMALLINT);
+  left = SmallInt::fromWord(10);
+  right = SmallInt::fromWord(10);
+  // 10 > 10
+  EXPECT_EQ(Interpreter::callFunction2(thread_, thread_->currentFrame(),
+                                       function, left, right),
+            Bool::falseObj());
+  left = SmallInt::fromWord(10);
+  right = SmallInt::fromWord(-10);
+  // 10 > -10
+  EXPECT_EQ(Interpreter::callFunction2(thread_, thread_->currentFrame(),
+                                       function, left, right),
+            Bool::trueObj());
+  EXPECT_EQ(rewritten.byteAt(4), COMPARE_GT_SMALLINT);
+
+  rewritten.byteAtPut(4, COMPARE_GE_SMALLINT);
+  left = SmallInt::fromWord(-10);
+  right = SmallInt::fromWord(10);
+  // -10 >= 10
+  EXPECT_EQ(Interpreter::callFunction2(thread_, thread_->currentFrame(),
+                                       function, left, right),
+            Bool::falseObj());
+  left = SmallInt::fromWord(10);
+  right = SmallInt::fromWord(10);
+  // 10 >= 10
+  EXPECT_EQ(Interpreter::callFunction2(thread_, thread_->currentFrame(),
+                                       function, left, right),
+            Bool::trueObj());
+  left = SmallInt::fromWord(11);
+  right = SmallInt::fromWord(10);
+  // 11 > = 10
+  EXPECT_EQ(Interpreter::callFunction2(thread_, thread_->currentFrame(),
+                                       function, left, right),
+            Bool::trueObj());
+  EXPECT_EQ(rewritten.byteAt(4), COMPARE_GE_SMALLINT);
+
+  rewritten.byteAtPut(4, COMPARE_LT_SMALLINT);
+  left = SmallInt::fromWord(10);
+  right = SmallInt::fromWord(-10);
+  // 10 < -10
+  EXPECT_EQ(Interpreter::callFunction2(thread_, thread_->currentFrame(),
+                                       function, left, right),
+            Bool::falseObj());
+  left = SmallInt::fromWord(-10);
+  right = SmallInt::fromWord(10);
+  // -10 < 10
+  EXPECT_EQ(Interpreter::callFunction2(thread_, thread_->currentFrame(),
+                                       function, left, right),
+            Bool::trueObj());
+  EXPECT_EQ(rewritten.byteAt(4), COMPARE_LT_SMALLINT);
+
+  rewritten.byteAtPut(4, COMPARE_LE_SMALLINT);
+  left = SmallInt::fromWord(10);
+  right = SmallInt::fromWord(-10);
+  // 10 <= -10
+  EXPECT_EQ(Interpreter::callFunction2(thread_, thread_->currentFrame(),
+                                       function, left, right),
+            Bool::falseObj());
+  left = SmallInt::fromWord(10);
+  right = SmallInt::fromWord(10);
+  // 10 <= 10
+  EXPECT_EQ(Interpreter::callFunction2(thread_, thread_->currentFrame(),
+                                       function, left, right),
+            Bool::trueObj());
+  left = SmallInt::fromWord(9);
+  right = SmallInt::fromWord(10);
+  // 9 <= 10
+  EXPECT_EQ(Interpreter::callFunction2(thread_, thread_->currentFrame(),
+                                       function, left, right),
+            Bool::trueObj());
+  EXPECT_EQ(rewritten.byteAt(4), COMPARE_LE_SMALLINT);
+}
+
+TEST_F(InterpreterTest, CompareOpWithSmallIntsRevertsBackToCompareOp) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def foo(a, b):
+    return a == b
+)")
+                   .isError());
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  MutableBytes rewritten(&scope, function.rewrittenBytecode());
+  ASSERT_EQ(rewritten.byteAt(4), COMPARE_OP_ANAMORPHIC);
+
+  LargeInt left(&scope, runtime_->newInt(SmallInt::kMaxValue + 1));
+  LargeInt right(&scope, runtime_->newInt(SmallInt::kMaxValue + 1));
+
+  rewritten.byteAtPut(4, COMPARE_EQ_SMALLINT);
+  // LARGE_SMALL_INT == SMALL_INT
+  EXPECT_EQ(Interpreter::callFunction2(thread_, thread_->currentFrame(),
+                                       function, left, right),
+            Bool::trueObj());
+  EXPECT_EQ(rewritten.byteAt(4), COMPARE_OP_MONOMORPHIC);
 }
 
 TEST_F(InterpreterTest, CompareOpSetMethodSetsMethod) {

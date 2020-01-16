@@ -220,15 +220,15 @@ namespace py {
   V(UNUSED_BYTECODE_201, 201, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_202, 202, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_203, 203, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_204, 204, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_205, 205, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_206, 206, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_207, 207, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_208, 208, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_209, 209, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_210, 210, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_211, 211, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_212, 212, doInvalidBytecode)                               \
+  V(COMPARE_LE_SMALLINT, 204, doCompareLeSmallInt)                             \
+  V(COMPARE_NE_SMALLINT, 205, doCompareNeSmallInt)                             \
+  V(COMPARE_GE_SMALLINT, 206, doCompareGeSmallInt)                             \
+  V(COMPARE_LT_SMALLINT, 207, doCompareLtSmallInt)                             \
+  V(COMPARE_GT_SMALLINT, 208, doCompareGtSmallInt)                             \
+  V(COMPARE_EQ_SMALLINT, 209, doCompareEqSmallInt)                             \
+  V(BINARY_OR_SMALLINT, 210, doBinaryOrSmallInt)                               \
+  V(BINARY_SUB_SMALLINT, 211, doBinarySubSmallInt)                             \
+  V(BINARY_ADD_SMALLINT, 212, doBinaryAddSmallInt)                             \
   V(INPLACE_OP_POLYMORPHIC, 213, doInplaceOpPolymorphic)                       \
   V(INPLACE_OP_MONOMORPHIC, 214, doInplaceOpMonomorphic)                       \
   V(COMPARE_OP_POLYMORPHIC, 215, doCompareOpPolymorphic)                       \
