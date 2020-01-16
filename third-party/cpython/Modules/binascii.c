@@ -269,11 +269,12 @@ binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
     int leftbits = 0;
     unsigned char this_ch;
     unsigned int leftchar = 0;
-    PyObject *rv;
     Py_ssize_t ascii_len, bin_len;
+    _PyBytesWriter writer;
 
     ascii_data = data->buf;
     ascii_len = data->len;
+    _PyBytesWriter_Init(&writer);
 
     assert(ascii_len >= 0);
 
@@ -282,9 +283,9 @@ binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
     ascii_len--;
 
     /* Allocate the buffer */
-    if ( (rv=PyBytes_FromStringAndSize(NULL, bin_len)) == NULL )
+    bin_data = _PyBytesWriter_Alloc(&writer, bin_len);
+    if (bin_data == NULL)
         return NULL;
-    bin_data = (unsigned char *)PyBytes_AS_STRING(rv);
 
     for( ; bin_len > 0 ; ascii_len--, ascii_data++ ) {
         /* XXX is it really best to add NULs if there's no more data */
@@ -303,7 +304,7 @@ binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
             */
             if ( this_ch < ' ' || this_ch > (' ' + 64)) {
                 PyErr_SetString(binasciimodulestate_global->Error, "Illegal char");
-                Py_DECREF(rv);
+                _PyBytesWriter_Dealloc(&writer);
                 return NULL;
             }
             this_ch = (this_ch - ' ') & 077;
@@ -331,11 +332,11 @@ binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
         if ( this_ch != ' ' && this_ch != ' '+64 &&
              this_ch != '\n' && this_ch != '\r' ) {
             PyErr_SetString(binasciimodulestate_global->Error, "Trailing garbage");
-            Py_DECREF(rv);
+            _PyBytesWriter_Dealloc(&writer);
             return NULL;
         }
     }
-    return rv;
+    return _PyBytesWriter_Finish(&writer, bin_data);
 }
 
 /*[clinic input]
@@ -1162,12 +1163,13 @@ binascii_a2b_hex_impl(PyObject *module, Py_buffer *hexstr)
 {
     const char* argbuf;
     Py_ssize_t arglen;
-    PyObject *retval;
     char* retbuf;
-    Py_ssize_t i, j;
+    Py_ssize_t i;
+    _PyBytesWriter writer;
 
     argbuf = hexstr->buf;
     arglen = hexstr->len;
+    _PyBytesWriter_Init(&writer);
 
     assert(arglen >= 0);
 
@@ -1180,12 +1182,11 @@ binascii_a2b_hex_impl(PyObject *module, Py_buffer *hexstr)
         return NULL;
     }
 
-    retval = PyBytes_FromStringAndSize(NULL, (arglen/2));
-    if (!retval)
+    retbuf = _PyBytesWriter_Alloc(&writer, (arglen/2));
+    if (retbuf == NULL)
         return NULL;
-    retbuf = PyBytes_AS_STRING(retval);
 
-    for (i=j=0; i < arglen; i += 2) {
+    for (i=0; i < arglen; i += 2) {
         int top = to_int(Py_CHARMASK(argbuf[i]));
         int bot = to_int(Py_CHARMASK(argbuf[i+1]));
         if (top == -1 || bot == -1) {
@@ -1193,12 +1194,12 @@ binascii_a2b_hex_impl(PyObject *module, Py_buffer *hexstr)
                             "Non-hexadecimal digit found");
             goto finally;
         }
-        retbuf[j++] = (top << 4) + bot;
+        *retbuf++ = (top << 4) + bot;
     }
-    return retval;
+    return _PyBytesWriter_Finish(&writer, retbuf);
 
   finally:
-    Py_DECREF(retval);
+    _PyBytesWriter_Dealloc(&writer);
     return NULL;
 }
 
