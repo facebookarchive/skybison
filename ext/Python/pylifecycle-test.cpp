@@ -53,4 +53,23 @@ TEST_F(PylifecycleExtensionApiTest, SetsigSetsSignalHandler) {
   PyOS_setsig(SIGUSR1, saved);
 }
 
+TEST_F(PylifecycleExtensionApiTest, RestoreSignalRestoresToDefault) {
+  PyOS_sighandler_t handler = [](int) {};
+  EXPECT_NE(handler, SIG_DFL);
+
+  PyOS_setsig(SIGUSR1, handler);
+  PyOS_setsig(SIGPIPE, handler);
+  PyOS_setsig(SIGXFSZ, handler);
+
+  EXPECT_EQ(PyOS_getsig(SIGUSR1), handler);
+  EXPECT_EQ(PyOS_getsig(SIGPIPE), handler);
+  EXPECT_EQ(PyOS_getsig(SIGXFSZ), handler);
+
+  _Py_RestoreSignals();
+
+  EXPECT_EQ(PyOS_getsig(SIGUSR1), handler);
+  EXPECT_EQ(PyOS_getsig(SIGPIPE), SIG_DFL);
+  EXPECT_EQ(PyOS_getsig(SIGXFSZ), SIG_DFL);
+}
+
 }  // namespace py

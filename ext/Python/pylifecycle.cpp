@@ -134,6 +134,9 @@ PY_EXPORT void _Py_PyAtExit(void (*func)(void)) {
   Thread::current()->runtime()->setAtExit(func);
 }
 
-PY_EXPORT void _Py_RestoreSignals() { UNIMPLEMENTED("_Py_RestoreSignals"); }
+PY_EXPORT void _Py_RestoreSignals() {
+  PyOS_setsig(SIGPIPE, SIG_DFL);
+  PyOS_setsig(SIGXFSZ, SIG_DFL);
+}
 
 }  // namespace py
