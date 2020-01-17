@@ -33,7 +33,6 @@
 #include "heap.h"
 #include "int-builtins.h"
 #include "interpreter.h"
-#include "io-module.h"
 #include "iterator-builtins.h"
 #include "layout.h"
 #include "list-builtins.h"
@@ -58,6 +57,7 @@
 #include "tuple-builtins.h"
 #include "type-builtins.h"
 #include "under-builtins-module.h"
+#include "under-io-module.h"
 #include "utils.h"
 #include "visitor.h"
 

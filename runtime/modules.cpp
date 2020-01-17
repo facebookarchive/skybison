@@ -3,15 +3,15 @@
 #include "faulthandler-module.h"
 #include "frozen-modules.h"
 #include "globals.h"
-#include "io-module.h"
 #include "marshal-module.h"
 #include "runtime.h"
 #include "under-codecs-module.h"
 #include "under-imp-module.h"
+#include "under-io-module.h"
 #include "under-os-module.h"
 #include "under-valgrind-module.h"
 #include "under-warnings-module.h"
-#include "weakref-module.h"
+#include "under-weakref-module.h"
 
 namespace py {
 

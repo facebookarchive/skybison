@@ -275,8 +275,6 @@ add_library(
   runtime/intrinsic.h
   runtime/iterator-builtins.cpp
   runtime/iterator-builtins.h
-  runtime/io-module.cpp
-  runtime/io-module.h
   runtime/layout.h
   runtime/list-builtins.cpp
   runtime/list-builtins.h
@@ -339,6 +337,8 @@ add_library(
   runtime/under-codecs-module.h
   runtime/under-imp-module.cpp
   runtime/under-imp-module.h
+  runtime/under-io-module.cpp
+  runtime/under-io-module.h
   runtime/under-os-module.cpp
   runtime/under-os-module.h
   runtime/under-signal-module.cpp
@@ -347,14 +347,14 @@ add_library(
   runtime/under-valgrind-module.h
   runtime/under-warnings-module.cpp
   runtime/under-warnings-module.h
+  runtime/under-weakref-module.cpp
+  runtime/under-weakref-module.h
   runtime/unicode.h
   runtime/utils.cpp
   runtime/utils.h
   runtime/vector.h
   runtime/view.h
   runtime/visitor.h
-  runtime/weakref-module.cpp
-  runtime/weakref-module.h
   ${RUNTIME_OS_SOURCES}
   ${RUNTIME_ARCH_SOURCES})
 target_compile_options(
@@ -1558,7 +1558,6 @@ add_library(
   runtime/importlib-test.cpp
   runtime/int-builtins-test.cpp
   runtime/interpreter-test.cpp
-  runtime/io-module-test.cpp
   runtime/layout-test.cpp
   runtime/list-builtins-test.cpp
   runtime/marshal-module-test.cpp
@@ -1592,6 +1591,7 @@ add_library(
   runtime/under-builtins-module-test.cpp
   runtime/under-codecs-module-test.cpp
   runtime/under-imp-module-test.cpp
+  runtime/under-io-module-test.cpp
   runtime/under-os-module-test.cpp
   runtime/under-valgrind-module-test.cpp
   runtime/under-warnings-module-test.cpp
