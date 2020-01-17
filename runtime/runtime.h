@@ -316,11 +316,6 @@ class Runtime {
   void addModule(const Module& module);
   bool moduleListAtPut(Thread* thread, const Module& module, word index);
 
-  void moduleAddBuiltinFunction(Thread* thread, const Module& module,
-                                SymbolId name, Function::Entry entry);
-  void moduleAddBuiltinType(Thread* thread, const Module& module, SymbolId name,
-                            LayoutId layout_id);
-
   RawObject findModule(const Object& name);
   RawObject findModuleById(SymbolId name);
   RawObject moduleListAt(Thread* thread, word index);

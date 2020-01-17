@@ -9,6 +9,7 @@
 
 #include "gtest/gtest.h"
 
+#include "modules.h"
 #include "test-utils.h"
 
 namespace py {
@@ -243,8 +244,12 @@ TEST_F(UtilsTest, PrintTracebackPrintsTraceback) {
   ASSERT_TRUE(main_obj.isModule());
   Module main(&scope, *main_obj);
 
-  runtime_->moduleAddBuiltinFunction(thread_, main, SymbolId::kTraceback,
-                                     testPrintStacktrace);
+  BuiltinMethod functions[] = {
+      {SymbolId::kTraceback, testPrintStacktrace},
+      {SymbolId::kSentinelId, nullptr},
+  };
+
+  moduleAddBuiltinFunctions(thread_, main, functions);
 
   ASSERT_FALSE(runFromCStr(runtime_, R"(@_patch
 def traceback():

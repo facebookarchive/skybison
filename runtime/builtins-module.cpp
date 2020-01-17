@@ -69,6 +69,7 @@ RawObject setAttribute(Thread* thread, const Object& self,
 
 // clang-format off
 const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
+    {SymbolId::kDunderBuildClass, dunderBuildClass},
     {SymbolId::kBin, bin},
     {SymbolId::kCallable, callable},
     {SymbolId::kChr, chr},

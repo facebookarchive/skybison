@@ -2454,28 +2454,6 @@ SymbolId Runtime::swappedComparisonSelector(CompareOp op) {
   return comparisonSelector(swapped_op);
 }
 
-void Runtime::moduleAddBuiltinFunction(Thread* thread, const Module& module,
-                                       SymbolId name, Function::Entry entry) {
-  HandleScope scope(thread);
-  Object name_obj(&scope, symbols()->at(name));
-  Tuple empty_tuple(&scope, emptyTuple());
-  Code code(&scope, newBuiltinCode(/*argcount=*/0, /*posonlyargcount=*/0,
-                                   /*kwonlyargcount=*/0,
-                                   /*flags=*/0, entry,
-                                   /*parameter_names=*/empty_tuple, name_obj));
-  Object globals(&scope, NoneType::object());
-  Function function(&scope,
-                    newFunctionWithCode(thread, name_obj, code, globals));
-  moduleAtPut(thread, module, name_obj, function);
-}
-
-void Runtime::moduleAddBuiltinType(Thread* thread, const Module& module,
-                                   SymbolId name, LayoutId layout_id) {
-  HandleScope scope(thread);
-  Object value(&scope, typeAt(layout_id));
-  moduleAtPutById(thread, module, name, value);
-}
-
 void Runtime::moduleImportAllFrom(const Dict& dict, const Module& module) {
   Thread* thread = Thread::current();
   HandleScope scope;
@@ -2497,20 +2475,10 @@ void Runtime::createBuiltinsModule(Thread* thread) {
   HandleScope scope(thread);
   // Find the module object created by Runtime::createEmptyBuiltinsModule()
   Module module(&scope, findModuleById(SymbolId::kBuiltins));
-  for (word i = 0;
-       BuiltinsModule::kBuiltinMethods[i].name != SymbolId::kSentinelId; i++) {
-    moduleAddBuiltinFunction(thread, module,
-                             BuiltinsModule::kBuiltinMethods[i].name,
-                             BuiltinsModule::kBuiltinMethods[i].address);
-  }
-  for (word i = 0;
-       BuiltinsModule::kBuiltinTypes[i].name != SymbolId::kSentinelId; i++) {
-    moduleAddBuiltinType(thread, module, BuiltinsModule::kBuiltinTypes[i].name,
-                         BuiltinsModule::kBuiltinTypes[i].type);
-  }
 
-  moduleAddBuiltinFunction(thread, module, SymbolId::kDunderBuildClass,
-                           BuiltinsModule::dunderBuildClass);
+  moduleAddBuiltinFunctions(thread, module, BuiltinsModule::kBuiltinMethods);
+  moduleAddBuiltinTypes(thread, module, BuiltinsModule::kBuiltinTypes);
+
   build_class_ =
       moduleValueCellAtById(thread, module, SymbolId::kDunderBuildClass);
   CHECK(!build_class_.isErrorNotFound(), "__build_class__ not found");
@@ -2648,11 +2616,7 @@ void Runtime::createImportlibModule(Thread* thread) {
 void Runtime::createSysModule(Thread* thread) {
   HandleScope scope(thread);
   Module module(&scope, createModule(thread, SymbolId::kSys));
-  for (word i = 0; SysModule::kBuiltinMethods[i].name != SymbolId::kSentinelId;
-       i++) {
-    moduleAddBuiltinFunction(thread, module, SysModule::kBuiltinMethods[i].name,
-                             SysModule::kBuiltinMethods[i].address);
-  }
+  moduleAddBuiltinFunctions(thread, module, SysModule::kBuiltinMethods);
 
   Object modules(&scope, modules_);
   moduleAtPutById(thread, module, SymbolId::kModules, modules);
@@ -2760,13 +2724,8 @@ void Runtime::createSysModule(Thread* thread) {
 void Runtime::createUnderBuiltinsModule(Thread* thread) {
   HandleScope scope(thread);
   Module module(&scope, createModule(thread, SymbolId::kUnderBuiltins));
-  for (word i = 0;
-       UnderBuiltinsModule::kBuiltinMethods[i].name != SymbolId::kSentinelId;
-       i++) {
-    moduleAddBuiltinFunction(thread, module,
-                             UnderBuiltinsModule::kBuiltinMethods[i].name,
-                             UnderBuiltinsModule::kBuiltinMethods[i].address);
-  }
+  moduleAddBuiltinFunctions(thread, module,
+                            UnderBuiltinsModule::kBuiltinMethods);
 
   // We have to patch _patch manually.
   {

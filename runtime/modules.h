@@ -26,6 +26,11 @@ class ModuleBaseBase {
   static const char kFrozenData[];
 };
 
+void moduleAddBuiltinFunctions(Thread* thread, const Module& module,
+                               const BuiltinMethod* functions);
+void moduleAddBuiltinTypes(Thread* thread, const Module& module,
+                           const BuiltinType* types);
+
 template <typename T, SymbolId name>
 class ModuleBase : public ModuleBaseBase {
  public:
@@ -33,15 +38,8 @@ class ModuleBase : public ModuleBaseBase {
     HandleScope scope(thread);
     Runtime* runtime = thread->runtime();
     Module module(&scope, runtime->createModule(thread, name));
-    for (word i = 0; T::kBuiltinMethods[i].name != SymbolId::kSentinelId; i++) {
-      runtime->moduleAddBuiltinFunction(thread, module,
-                                        T::kBuiltinMethods[i].name,
-                                        T::kBuiltinMethods[i].address);
-    }
-    for (word i = 0; T::kBuiltinTypes[i].name != SymbolId::kSentinelId; i++) {
-      runtime->moduleAddBuiltinType(thread, module, T::kBuiltinTypes[i].name,
-                                    T::kBuiltinTypes[i].type);
-    }
+    moduleAddBuiltinFunctions(thread, module, T::kBuiltinMethods);
+    moduleAddBuiltinTypes(thread, module, T::kBuiltinTypes);
     runtime->executeFrozenModule(thread, T::kFrozenData, module);
   }
 };

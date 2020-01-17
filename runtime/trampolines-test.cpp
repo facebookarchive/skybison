@@ -7,6 +7,7 @@
 #include "frame.h"
 #include "function-builtins.h"
 #include "int-builtins.h"
+#include "modules.h"
 #include "runtime.h"
 #include "test-utils.h"
 
@@ -683,8 +684,11 @@ static void createAndPatchBuiltinReturnSecondArg(Thread* thread,
   // Ensure we have a __main__ module.
   ASSERT_FALSE(runFromCStr(runtime, "").isError());
   Module main(&scope, findMainModule(runtime));
-  runtime->moduleAddBuiltinFunction(thread, main, SymbolId::kDummy,
-                                    builtinReturnSecondArg);
+  BuiltinMethod functions[] = {
+      {SymbolId::kDummy, builtinReturnSecondArg},
+      {SymbolId::kSentinelId, nullptr},
+  };
+  moduleAddBuiltinFunctions(thread, main, functions);
   ASSERT_FALSE(runFromCStr(runtime, R"(
 @_patch
 def dummy(first, second):
@@ -1983,7 +1987,11 @@ static void createAndPatchBuiltinNumArgs(Thread* thread, Runtime* runtime) {
   ASSERT_FALSE(runFromCStr(runtime, "").isError());
   HandleScope scope;
   Module main(&scope, findMainModule(runtime));
-  runtime->moduleAddBuiltinFunction(thread, main, SymbolId::kDummy, numArgs);
+  BuiltinMethod functions[] = {
+      {SymbolId::kDummy, numArgs},
+      {SymbolId::kSentinelId, nullptr},
+  };
+  moduleAddBuiltinFunctions(thread, main, functions);
   ASSERT_FALSE(runFromCStr(runtime, R"(
 @_patch
 def dummy(first, second):
@@ -2014,7 +2022,11 @@ static void createAndPatchBuiltinNumArgsVariadic(Thread* thread,
   ASSERT_FALSE(runFromCStr(runtime, "").isError());
   HandleScope scope;
   Module main(&scope, findMainModule(runtime));
-  runtime->moduleAddBuiltinFunction(thread, main, SymbolId::kDummy, numArgs);
+  BuiltinMethod functions[] = {
+      {SymbolId::kDummy, numArgs},
+      {SymbolId::kSentinelId, nullptr},
+  };
+  moduleAddBuiltinFunctions(thread, main, functions);
   ASSERT_FALSE(runFromCStr(runtime, R"(
 @_patch
 def dummy(*args):
@@ -2038,7 +2050,11 @@ static void createAndPatchBuiltinNumArgsArgsKwargs(Thread* thread,
   ASSERT_FALSE(runFromCStr(runtime, "").isError());
   HandleScope scope;
   Module main(&scope, findMainModule(runtime));
-  runtime->moduleAddBuiltinFunction(thread, main, SymbolId::kDummy, numArgs);
+  BuiltinMethod functions[] = {
+      {SymbolId::kDummy, numArgs},
+      {SymbolId::kSentinelId, nullptr},
+  };
+  moduleAddBuiltinFunctions(thread, main, functions);
   ASSERT_FALSE(runFromCStr(runtime, R"(
 @_patch
 def dummy(*args, **kwargs):
