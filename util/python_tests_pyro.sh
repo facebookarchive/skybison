@@ -31,11 +31,13 @@ CPYTHON_TESTS=(
   test_augassign.py
   test_binop.py
   test_colorsys.py
+  test_crashers.py
   test_decorators.py
   test_dictcomps.py
   test_dummy_thread.py
   test_dynamic.py
   test_dynamicclassattribute.py
+  test_ensurepip.py
   test_eof.py
   test_errno.py
   test_exception_variations.py
