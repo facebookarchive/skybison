@@ -1141,4 +1141,42 @@ obj = C()
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
+TEST_F(ObjectExtensionApiTest,
+       DirOnInstanceWithNonIterableDunderDirReturnsNull) {
+  PyRun_SimpleString(R"(
+class C:
+  def __init__(self):
+    self.foo = 123
+  def __dir__(self):
+      return 123
+obj = C()
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr result(PyObject_Dir(obj));
+  ASSERT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ObjectExtensionApiTest, DirOnInstanceIgnoresInstanceDictionary) {
+  PyRun_SimpleString(R"(
+class C:
+  def __init__(self):
+    self.foo = 123
+
+def new_dir(self):
+    return ("bar")
+
+obj = C()
+obj.__dir__ = new_dir.__get__(obj, C)
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr result(PyObject_Dir(obj));
+  ASSERT_EQ(PyList_Check(result), 1);
+  PyObjectPtr foo(PyUnicode_FromString("foo"));
+  EXPECT_EQ(PySequence_Contains(result, foo), 1);
+}
+
 }  // namespace py

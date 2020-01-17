@@ -7,6 +7,9 @@
 #include "bytes-builtins.h"
 #include "capi-handles.h"
 #include "dict-builtins.h"
+#include "frame.h"
+#include "list-builtins.h"
+#include "module-builtins.h"
 #include "object-builtins.h"
 #include "runtime.h"
 #include "str-builtins.h"
@@ -153,23 +156,58 @@ PY_EXPORT int PyObject_CallFinalizerFromDealloc(PyObject* self) {
   return -1;
 }
 
-PY_EXPORT PyObject* PyObject_Dir(PyObject* pyobj) {
+PY_EXPORT PyObject* PyObject_Dir(PyObject* obj) {
   Thread* thread = Thread::current();
-  if (pyobj == nullptr && thread->currentFrame()->isSentinel()) {
+  Frame* frame = thread->currentFrame();
+  if (obj == nullptr && frame->isSentinel()) {
     return nullptr;
   }
   HandleScope scope(thread);
-  Object result(&scope, NoneType::object());
-  if (pyobj == nullptr) {
-    result = thread->invokeFunction0(SymbolId::kBuiltins, SymbolId::kDir);
-  } else {
-    Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
-    result = thread->invokeFunction1(SymbolId::kBuiltins, SymbolId::kDir, obj);
+  if (obj == nullptr) {
+    Object locals(&scope, frameLocals(thread, frame));
+    Object list_obj(&scope, NoneType::object());
+    if (locals.isDict()) {
+      Dict locals_dict(&scope, *locals);
+      list_obj = dictKeys(thread, locals_dict);
+    } else if (locals.isModuleProxy()) {
+      ModuleProxy module_proxy(&scope, *locals);
+      Module module(&scope, module_proxy.module());
+      list_obj = moduleKeys(thread, module);
+    } else {
+      return nullptr;
+    }
+    List list(&scope, *list_obj);
+    listSort(thread, list);
+    return ApiHandle::newReference(thread, *list);
   }
+
+  Runtime* runtime = thread->runtime();
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Type type(&scope, runtime->typeOf(*object));
+  Object name(&scope, runtime->symbols()->DunderDir());
+  Object func(&scope, typeLookupInMro(thread, type, name));
+  if (func.isError() || !func.isFunction()) {
+    return nullptr;
+  }
+  Object sequence(&scope,
+                  Interpreter::callFunction1(thread, frame, func, object));
+  if (sequence.isError()) {
+    return nullptr;
+  }
+  if (sequence.isList()) {
+    List list(&scope, *sequence);
+    listSort(thread, list);
+    return ApiHandle::newReference(thread, *list);
+  }
+  List list(&scope, runtime->newList());
+  Object result(&scope,
+                thread->invokeMethodStatic2(LayoutId::kList, SymbolId::kExtend,
+                                            list, sequence));
   if (result.isError()) {
     return nullptr;
   }
-  return ApiHandle::newReference(thread, *result);
+  listSort(thread, list);
+  return ApiHandle::newReference(thread, *list);
 }
 
 PY_EXPORT PyObject* PyObject_GenericGetAttr(PyObject* obj, PyObject* name) {
