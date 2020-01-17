@@ -1990,8 +1990,8 @@ static void checkBuiltinTypeDeclarations(Thread* thread, const Module& module) {
   }
 }
 
-RawObject Runtime::executeFrozenModule(Thread* thread, const char* buffer,
-                                       const Module& module) {
+void Runtime::executeFrozenModule(Thread* thread, const char* buffer,
+                                  const Module& module) {
   HandleScope scope(thread);
   // TODO(matthiasb): 12 is a minimum, we should be using the actual
   // length here!
@@ -1999,16 +1999,15 @@ RawObject Runtime::executeFrozenModule(Thread* thread, const char* buffer,
   View<byte> data(reinterpret_cast<const byte*>(buffer), length);
   Marshal::Reader reader(&scope, this, data);
   Str filename(&scope, module.name());
-  if (reader.readPycHeader(filename).isErrorException()) {
-    return Error::exception();
-  }
+  CHECK(!reader.readPycHeader(filename).isErrorException(),
+        "Failed to read %s module data", filename.toCStr());
   Code code(&scope, reader.readObject());
   Object result(&scope, executeModule(thread, code, module));
-  if (result.isErrorException()) return *result;
+  CHECK(!result.isErrorException(), "Failed to execute %s module",
+        filename.toCStr());
   if (DCHECK_IS_ON()) {
     checkBuiltinTypeDeclarations(thread, module);
   }
-  return NoneType::object();
 }
 
 RawObject Runtime::executeModule(Thread* thread, const Code& code,
@@ -2554,10 +2553,7 @@ void Runtime::createBuiltinsModule(Thread* thread) {
     moduleAtPutById(thread, module, SymbolId::kUnderCompileFlagsMask, value);
   }
 
-  // Add and execute builtins module.
-  CHECK(!executeFrozenModule(thread, BuiltinsModule::kFrozenData, module)
-             .isError(),
-        "Failed to initialize builtins module");
+  executeFrozenModule(thread, BuiltinsModule::kFrozenData, module);
 
   // TODO(T39575976): Create a consistent way to hide internal names
   // such as "module" or "function"
@@ -2629,19 +2625,15 @@ void Runtime::createImportlibModule(Thread* thread) {
   // Run _bootstrap.py
   Module importlib(&scope,
                    createModule(thread, SymbolId::kUnderFrozenImportlib));
-  CHECK(!executeFrozenModule(thread, kUnderBootstrapModuleData, importlib)
-             .isError(),
-        "Failed to initialize _bootstrap module");
+  executeFrozenModule(thread, kUnderBootstrapModuleData, importlib);
 
   // Run _bootstrap_external.py
   Module importlib_external(
       &scope, createModule(thread, SymbolId::kUnderFrozenImportlibExternal));
   moduleAtPutById(thread, importlib_external, SymbolId::kUnderBootstrap,
                   importlib);
-  CHECK(!executeFrozenModule(thread, kUnderBootstrapUnderExternalModuleData,
-                             importlib_external)
-             .isError(),
-        "Failed to initialize _bootstrap_external module");
+  executeFrozenModule(thread, kUnderBootstrapUnderExternalModuleData,
+                      importlib_external);
 
   // Run _bootstrap._install(sys, _imp)
   Module sys_module(&scope, findModuleById(SymbolId::kSys));
@@ -2738,9 +2730,8 @@ void Runtime::createSysModule(Thread* thread) {
   // Create builtin_module_names tuple
   Object builtins(&scope, *builtins_tuple);
   moduleAtPutById(thread, module, SymbolId::kBuiltinModuleNames, builtins);
-  // Add and execute sys module.
-  CHECK(!executeFrozenModule(thread, SysModule::kFrozenData, module).isError(),
-        "Failed to initialize sys module");
+
+  executeFrozenModule(thread, SysModule::kFrozenData, module);
 
   // Fill in hash_info.
   Tuple hash_info_data(&scope, newMutableTuple(9));
@@ -2806,10 +2797,7 @@ void Runtime::createUnderBuiltinsModule(Thread* thread) {
         .setIntrinsicId(static_cast<word>(intrinsic_id));
   }
 
-  // Execute _builtins.py
-  CHECK(!executeFrozenModule(thread, UnderBuiltinsModule::kFrozenData, module)
-             .isError(),
-        "Failed to initialize _builtins module");
+  executeFrozenModule(thread, UnderBuiltinsModule::kFrozenData, module);
 }
 
 word Runtime::newCapacity(word curr_capacity, word min_capacity) {

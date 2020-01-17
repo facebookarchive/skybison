@@ -27,9 +27,7 @@ static void initializeFrozenModule(Thread* thread) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Module module(&scope, runtime->createModule(thread, Name));
-  CHECK(!runtime->executeFrozenModule(thread, Data, module).isError(),
-        "Failed to initialize %s module",
-        runtime->symbols()->predefinedSymbolAt(Name));
+  runtime->executeFrozenModule(thread, Data, module);
 }
 
 const ModuleInitializer kBuiltinModules[] = {

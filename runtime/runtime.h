@@ -781,9 +781,9 @@ class Runtime {
                                     const Module& module);
 
   // Execute a frozen module by marshalling it into a code object and then
-  // executing it.
-  RawObject executeFrozenModule(Thread* thread, const char* buffer,
-                                const Module& module);
+  // executing it. Aborts if module execution is unsuccessful.
+  void executeFrozenModule(Thread* thread, const char* buffer,
+                           const Module& module);
 
   static int heapOffset() { return OFFSETOF(Runtime, heap_); }
 

@@ -42,10 +42,7 @@ class ModuleBase : public ModuleBaseBase {
       runtime->moduleAddBuiltinType(thread, module, T::kBuiltinTypes[i].name,
                                     T::kBuiltinTypes[i].type);
     }
-    CHECK(
-        !runtime->executeFrozenModule(thread, T::kFrozenData, module).isError(),
-        "Failed to initialize %s module",
-        runtime->symbols()->predefinedSymbolAt(name));
+    runtime->executeFrozenModule(thread, T::kFrozenData, module);
   }
 };
 
