@@ -7,6 +7,7 @@
 #include "fileutils.h"
 #include "marshal.h"
 #include "module-builtins.h"
+#include "modules.h"
 #include "os.h"
 #include "runtime.h"
 
@@ -85,7 +86,7 @@ static PyObject* runPycFile(FILE* fp, const char* filename, Module& module,
   std::fclose(fp);
 
   Code code(&scope, *code_obj);
-  RawObject result = runtime->executeModule(thread, code, module);
+  RawObject result = executeModule(thread, code, module);
   if (!result.isError() && flags) {
     flags->cf_flags |= (code.flags() & PyCF_MASK);
   }

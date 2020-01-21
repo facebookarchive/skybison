@@ -326,11 +326,6 @@ class Runtime {
   // Else, return Error.
   RawObject printTraceback(Thread* thread, word fd);
 
-  // importModuleFromCode is exposed for use by the tests. We may be able to
-  // remove this later.
-  NODISCARD RawObject importModuleFromCode(Thread* thread, const Code& code,
-                                           const Object& name);
-
   // Stores the implicit bases for a new class.
   RawObject implicitBases() { return implicit_bases_; }
   void initializeImplicitBases();
@@ -769,16 +764,6 @@ class Runtime {
   // If the main module has already been initialized and added, return it.
   // Else, create and add it to the runtime.
   RawObject findOrCreateMainModule();
-
-  // Execute the code object that represents the code for the top-level module
-  // (eg the result of compiling some_file.py). Return the result.
-  NODISCARD RawObject executeModule(Thread* thread, const Code& code,
-                                    const Module& module);
-
-  // Execute a frozen module by marshalling it into a code object and then
-  // executing it. Aborts if module execution is unsuccessful.
-  void executeFrozenModule(Thread* thread, const char* buffer,
-                           const Module& module);
 
   static int heapOffset() { return OFFSETOF(Runtime, heap_); }
 

@@ -4,9 +4,11 @@
 #include "frozen-modules.h"
 #include "globals.h"
 #include "marshal-module.h"
+#include "marshal.h"
 #include "module-builtins.h"
 #include "runtime.h"
 #include "symbols.h"
+#include "type-builtins.h"
 #include "under-codecs-module.h"
 #include "under-imp-module.h"
 #include "under-io-module.h"
@@ -29,7 +31,7 @@ static void initializeFrozenModule(Thread* thread) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Module module(&scope, runtime->createModule(thread, Name));
-  runtime->executeFrozenModule(thread, Data, module);
+  executeFrozenModule(thread, Data, module);
 }
 
 const ModuleInitializer kBuiltinModules[] = {
@@ -55,6 +57,69 @@ const ModuleInitializer kBuiltinModules[] = {
      &initializeFrozenModule<SymbolId::kWarnings, kWarningsModuleData>},
     {SymbolId::kSentinelId, nullptr},
 };
+
+static void checkBuiltinTypeDeclarations(Thread* thread, const Module& module) {
+  // Ensure builtin types have been declared.
+  HandleScope scope(thread);
+  List values(&scope, moduleValues(thread, module));
+  Object value(&scope, NoneType::object());
+  Runtime* runtime = thread->runtime();
+  for (word i = 0, num_items = values.numItems(); i < num_items; i++) {
+    value = values.at(i);
+    if (!runtime->isInstanceOfType(*value)) continue;
+    Type type(&scope, *value);
+    if (!type.isBuiltin()) continue;
+    // Check whether __doc__ exists as a signal that the type was declared.
+    if (!typeAtById(thread, type, SymbolId::kDunderDoc).isErrorNotFound()) {
+      continue;
+    }
+    Str name(&scope, type.name());
+    unique_c_ptr<char> name_cstr(name.toCStr());
+    Str module_name(&scope, module.name());
+    unique_c_ptr<char> module_name_cstr(module_name.toCStr());
+    DCHECK(false, "Builtin type %s.%s not defined", module_name_cstr.get(),
+           name_cstr.get());
+  }
+}
+
+void executeFrozenModule(Thread* thread, const char* buffer,
+                         const Module& module) {
+  HandleScope scope(thread);
+  // TODO(matthiasb): 12 is a minimum, we should be using the actual
+  // length here!
+  word length = 12;
+  View<byte> data(reinterpret_cast<const byte*>(buffer), length);
+  Marshal::Reader reader(&scope, thread->runtime(), data);
+  Str filename(&scope, module.name());
+  CHECK(!reader.readPycHeader(filename).isErrorException(),
+        "Failed to read %s module data", filename.toCStr());
+  Code code(&scope, reader.readObject());
+  Object result(&scope, executeModule(thread, code, module));
+  CHECK(!result.isErrorException(), "Failed to execute %s module",
+        filename.toCStr());
+  if (DCHECK_IS_ON()) {
+    checkBuiltinTypeDeclarations(thread, module);
+  }
+}
+
+RawObject executeModule(Thread* thread, const Code& code,
+                        const Module& module) {
+  HandleScope scope(thread);
+  DCHECK(code.argcount() == 0, "invalid argcount %ld", code.argcount());
+  Object none(&scope, NoneType::object());
+  return thread->exec(code, module, none);
+}
+
+RawObject executeModuleFromCode(Thread* thread, const Code& code,
+                                const Object& name) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Module module(&scope, runtime->newModule(name));
+  runtime->addModule(module);
+  Object result(&scope, executeModule(thread, code, module));
+  if (result.isError()) return *result;
+  return *module;
+}
 
 void moduleAddBuiltinFunctions(Thread* thread, const Module& module,
                                const BuiltinMethod* functions) {

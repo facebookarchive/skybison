@@ -36,7 +36,6 @@
 #include "iterator-builtins.h"
 #include "layout.h"
 #include "list-builtins.h"
-#include "marshal.h"
 #include "memoryview-builtins.h"
 #include "module-builtins.h"
 #include "module-proxy-builtins.h"
@@ -1966,58 +1965,6 @@ RawObject Runtime::findOrCreateMainModule() {
   return *main;
 }
 
-static void checkBuiltinTypeDeclarations(Thread* thread, const Module& module) {
-  // Ensure builtin types have been declared.
-  HandleScope scope(thread);
-  List values(&scope, moduleValues(thread, module));
-  Object value(&scope, NoneType::object());
-  Runtime* runtime = thread->runtime();
-  for (word i = 0, num_items = values.numItems(); i < num_items; i++) {
-    value = values.at(i);
-    if (!runtime->isInstanceOfType(*value)) continue;
-    Type type(&scope, *value);
-    if (!type.isBuiltin()) continue;
-    // Check whether __doc__ exists as a signal that the type was declared.
-    if (!typeAtById(thread, type, SymbolId::kDunderDoc).isErrorNotFound()) {
-      continue;
-    }
-    Str name(&scope, type.name());
-    unique_c_ptr<char> name_cstr(name.toCStr());
-    Str module_name(&scope, module.name());
-    unique_c_ptr<char> module_name_cstr(module_name.toCStr());
-    DCHECK(false, "Builtin type %s.%s not defined", module_name_cstr.get(),
-           name_cstr.get());
-  }
-}
-
-void Runtime::executeFrozenModule(Thread* thread, const char* buffer,
-                                  const Module& module) {
-  HandleScope scope(thread);
-  // TODO(matthiasb): 12 is a minimum, we should be using the actual
-  // length here!
-  word length = 12;
-  View<byte> data(reinterpret_cast<const byte*>(buffer), length);
-  Marshal::Reader reader(&scope, this, data);
-  Str filename(&scope, module.name());
-  CHECK(!reader.readPycHeader(filename).isErrorException(),
-        "Failed to read %s module data", filename.toCStr());
-  Code code(&scope, reader.readObject());
-  Object result(&scope, executeModule(thread, code, module));
-  CHECK(!result.isErrorException(), "Failed to execute %s module",
-        filename.toCStr());
-  if (DCHECK_IS_ON()) {
-    checkBuiltinTypeDeclarations(thread, module);
-  }
-}
-
-RawObject Runtime::executeModule(Thread* thread, const Code& code,
-                                 const Module& module) {
-  HandleScope scope(thread);
-  DCHECK(code.argcount() == 0, "invalid argcount %ld", code.argcount());
-  Object none(&scope, NoneType::object());
-  return thread->exec(code, module, none);
-}
-
 static void writeCStr(word fd, const char* str) {
   File::write(fd, str, std::strlen(str));
 }
@@ -2098,21 +2045,6 @@ RawObject Runtime::printTraceback(Thread* thread, word fd) {
   }
 
   return NoneType::object();
-}
-
-RawObject Runtime::importModuleFromCode(Thread* thread, const Code& code,
-                                        const Object& name) {
-  HandleScope scope(thread);
-  Object cached_module(&scope, findModule(name));
-  if (!cached_module.isNoneType()) {
-    return *cached_module;
-  }
-
-  Module module(&scope, newModule(name));
-  addModule(module);
-  Object result(&scope, executeModule(thread, code, module));
-  if (result.isError()) return *result;
-  return *module;
 }
 
 void Runtime::initializeInterpreter() {

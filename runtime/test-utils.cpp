@@ -19,6 +19,7 @@
 #include "ic.h"
 #include "int-builtins.h"
 #include "module-builtins.h"
+#include "modules.h"
 #include "os.h"
 #include "runtime.h"
 #include "set-builtins.h"
@@ -389,7 +390,7 @@ RawObject runFromCStr(Runtime* runtime, const char* c_str) {
   Code code(&scope, compile(thread, str, filename, SymbolId::kExec, /*flags=*/0,
                             /*optimize=*/-1));
   Module main_module(&scope, runtime->findOrCreateMainModule());
-  Object result(&scope, runtime->executeModule(thread, code, main_module));
+  Object result(&scope, executeModule(thread, code, main_module));
 
   // Barebones emulation of the top-level SystemExit handling, to allow for
   // testing of handleSystemExit().

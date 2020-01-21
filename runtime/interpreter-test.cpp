@@ -3037,7 +3037,7 @@ def public_symbol2():
   Object name(&scope, runtime_->newStrFromCStr("test_module"));
   Code code(&scope,
             compile(thread_, module_src, filename, SymbolId::kExec, 0, -1));
-  ASSERT_FALSE(runtime_->importModuleFromCode(thread_, code, name).isError());
+  ASSERT_FALSE(executeModuleFromCode(thread_, code, name).isError());
 
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 from test_module import *
@@ -3066,7 +3066,7 @@ def _private_symbol():
   Object name(&scope, runtime_->newStrFromCStr("test_module"));
   Code code(&scope,
             compile(thread_, module_src, filename, SymbolId::kExec, 0, -1));
-  ASSERT_FALSE(runtime_->importModuleFromCode(thread_, code, name).isError());
+  ASSERT_FALSE(executeModuleFromCode(thread_, code, name).isError());
 
   const char* main_src = R"(
 from test_module import *
@@ -3707,8 +3707,7 @@ def bar(): pass
   Object filename(&scope, runtime_->newStrFromCStr("<test string>"));
   Code code(&scope,
             compile(thread_, module_src, filename, SymbolId::kExec, 0, -1));
-  ASSERT_FALSE(
-      runtime_->importModuleFromCode(thread_, code, module_name).isError());
+  ASSERT_FALSE(executeModuleFromCode(thread_, code, module_name).isError());
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 import foo
 def baz(): pass
