@@ -2325,7 +2325,6 @@ void Runtime::initializeModules() {
 
   HandleScope scope(thread);
   Module module(&scope, createModule(thread, SymbolId::kBuiltins));
-  createUnderBuiltinsModule(thread);
   for (word i = 0; kBuiltinModules[i].name != SymbolId::kSentinelId; i++) {
     if (UNLIKELY(kBuiltinModules[i].name == SymbolId::kBuiltins)) {
       module = findModuleById(SymbolId::kBuiltins);
@@ -2480,44 +2479,6 @@ void Runtime::createImportlibModule(Thread* thread) {
                                SymbolId::kUnderInstall, sys_module, imp_module)
              .isError(),
         "Failed to run _bootstrap._install");
-}
-
-void Runtime::createUnderBuiltinsModule(Thread* thread) {
-  HandleScope scope(thread);
-  Module module(&scope, createModule(thread, SymbolId::kUnderBuiltins));
-  moduleAddBuiltinFunctions(thread, module,
-                            UnderBuiltinsModule::kBuiltinMethods);
-
-  // We have to patch _patch manually.
-  {
-    Tuple parameters(&scope, newTuple(1));
-    parameters.atPut(0, newStrFromCStr("function"));
-    Object name(&scope, symbols()->UnderPatch());
-    Code code(&scope, newBuiltinCode(/*argcount=*/1, /*posonlyargcount=*/0,
-                                     /*kwonlyargcount=*/0, /*flags=*/0,
-                                     UnderBuiltinsModule::underPatch,
-                                     parameters, name));
-    Function under_patch(&scope,
-                         newFunctionWithCode(thread, name, code, module));
-    moduleAtPut(thread, module, name, under_patch);
-  }
-
-  Object unbound_value(&scope, Unbound::object());
-  moduleAtPutById(thread, module, SymbolId::kUnderUnbound, unbound_value);
-
-  Object compile_flags_mask(&scope, newInt(Code::kCompileFlagsMask));
-  moduleAtPutById(thread, module, SymbolId::kUnderCompileFlagsMask,
-                  compile_flags_mask);
-
-  // Mark functions that have an intrinsic implementation.
-  for (word i = 0;
-       UnderBuiltinsModule::kIntrinsicIds[i] != SymbolId::kSentinelId; i++) {
-    SymbolId intrinsic_id = UnderBuiltinsModule::kIntrinsicIds[i];
-    Function::cast(moduleAtById(thread, module, intrinsic_id))
-        .setIntrinsicId(static_cast<word>(intrinsic_id));
-  }
-
-  executeFrozenModule(thread, UnderBuiltinsModule::kFrozenData, module);
 }
 
 word Runtime::newCapacity(word curr_capacity, word min_capacity) {

@@ -318,8 +318,6 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kSentinelId, nullptr},
 };
 
-const char* const UnderBuiltinsModule::kFrozenData = kUnderBuiltinsModuleData;
-
 // clang-format off
 const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
     SymbolId::kUnderBoolCheck,
@@ -376,6 +374,43 @@ const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
     SymbolId::kSentinelId,
 };
 // clang-format on
+
+void UnderBuiltinsModule::initialize(Thread* thread, const Module& module) {
+  moduleAddBuiltinFunctions(thread, module, kBuiltinMethods);
+
+  // We have to patch _patch manually.
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  {
+    Tuple parameters(&scope, runtime->newTuple(1));
+    parameters.atPut(0, runtime->newStrFromCStr("function"));
+    Object name(&scope, runtime->symbols()->UnderPatch());
+    Code code(&scope,
+              runtime->newBuiltinCode(/*argcount=*/1, /*posonlyargcount=*/0,
+                                      /*kwonlyargcount=*/0, /*flags=*/0,
+                                      underPatch, parameters, name));
+    Function under_patch(
+        &scope, runtime->newFunctionWithCode(thread, name, code, module));
+    moduleAtPut(thread, module, name, under_patch);
+  }
+
+  Object unbound_value(&scope, Unbound::object());
+  moduleAtPutById(thread, module, SymbolId::kUnderUnbound, unbound_value);
+
+  Object compile_flags_mask(&scope,
+                            SmallInt::fromWord(Code::kCompileFlagsMask));
+  moduleAtPutById(thread, module, SymbolId::kUnderCompileFlagsMask,
+                  compile_flags_mask);
+
+  // Mark functions that have an intrinsic implementation.
+  for (word i = 0; kIntrinsicIds[i] != SymbolId::kSentinelId; i++) {
+    SymbolId intrinsic_id = kIntrinsicIds[i];
+    Function::cast(moduleAtById(thread, module, intrinsic_id))
+        .setIntrinsicId(static_cast<word>(intrinsic_id));
+  }
+
+  executeFrozenModule(thread, kUnderBuiltinsModuleData, module);
+}
 
 // Attempts to unpack a possibly-slice key. Returns true and sets start, stop if
 // key is a slice with None step and None/SmallInt start and stop. The start and

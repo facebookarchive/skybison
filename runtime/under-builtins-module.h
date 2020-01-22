@@ -14,6 +14,8 @@ void copyFunctionEntries(Thread* thread, const Function& base,
 
 class UnderBuiltinsModule {
  public:
+  static void initialize(Thread* thread, const Module& module);
+
   static RawObject underAddress(Thread* thread, Frame* frame, word nargs);
   static RawObject underBoolCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underBoolGuard(Thread* thread, Frame* frame, word nargs);
@@ -363,7 +365,8 @@ class UnderBuiltinsModule {
                                         word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];
-  static const char* const kFrozenData;
+
+ private:
   static const SymbolId kIntrinsicIds[];
 };
 

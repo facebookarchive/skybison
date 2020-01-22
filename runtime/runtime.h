@@ -270,7 +270,6 @@ class Runtime {
   void cacheSysInstances(Thread* thread, const Module& sys);
 
   void createImportlibModule(Thread* thread);
-  void createUnderBuiltinsModule(Thread* thread);
 
   static RawObject internStr(Thread* thread, const Object& str);
   static RawObject internStrFromAll(Thread* thread, View<byte> bytes);
