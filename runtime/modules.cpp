@@ -8,6 +8,7 @@
 #include "module-builtins.h"
 #include "runtime.h"
 #include "symbols.h"
+#include "sys-module.h"
 #include "type-builtins.h"
 #include "under-codecs-module.h"
 #include "under-imp-module.h"
@@ -32,6 +33,7 @@ static void initializeFrozenModule(Thread* thread, const Module& module) {
 }
 
 const ModuleInitializer kBuiltinModules[] = {
+    {SymbolId::kSys, &SysModule::initialize},
     {SymbolId::kUnderCodecs, &UnderCodecsModule::initialize},
     {SymbolId::kUnderImp, &UnderImpModule::initialize},
     {SymbolId::kUnderOs, &UnderOsModule::initialize},

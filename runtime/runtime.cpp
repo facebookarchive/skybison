@@ -62,8 +62,6 @@
 
 namespace py {
 
-extern "C" struct _inittab _PyImport_Inittab[];
-
 static const SymbolId kBinaryOperationSelector[] = {
     SymbolId::kDunderAdd,     SymbolId::kDunderSub,
     SymbolId::kDunderMul,     SymbolId::kDunderMatmul,
@@ -2133,6 +2131,15 @@ void Runtime::initializeSymbols() {
   }
 }
 
+void Runtime::cacheSysInstances(Thread* thread, const Module& sys) {
+  sys_stderr_ = moduleValueCellAtById(thread, sys, SymbolId::kStderr);
+  CHECK(!sys_stderr_.isErrorNotFound(), "sys.stderr not found");
+  sys_stdout_ = moduleValueCellAtById(thread, sys, SymbolId::kStdout);
+  CHECK(!sys_stdout_.isErrorNotFound(), "sys.stdout not found");
+  display_hook_ = moduleValueCellAtById(thread, sys, SymbolId::kDisplayhook);
+  CHECK(!display_hook_.isErrorNotFound(), "sys.displayhook not found");
+}
+
 void Runtime::visitRoots(PointerVisitor* visitor) {
   visitRuntimeRoots(visitor);
   visitThreadRoots(visitor);
@@ -2285,7 +2292,6 @@ void Runtime::initializeModules() {
   Module module(&scope, createModule(thread, SymbolId::kBuiltins));
   createUnderBuiltinsModule(thread);
   createBuiltinsModule(thread);
-  createSysModule(thread);
   for (word i = 0; kBuiltinModules[i].name != SymbolId::kSentinelId; i++) {
     module = createModule(thread, kBuiltinModules[i].name);
     kBuiltinModules[i].init(thread, module);
@@ -2547,114 +2553,6 @@ void Runtime::createImportlibModule(Thread* thread) {
                                SymbolId::kUnderInstall, sys_module, imp_module)
              .isError(),
         "Failed to run _bootstrap._install");
-}
-
-void Runtime::createSysModule(Thread* thread) {
-  HandleScope scope(thread);
-  Module module(&scope, createModule(thread, SymbolId::kSys));
-  moduleAddBuiltinFunctions(thread, module, SysModule::kBuiltinMethods);
-
-  Object modules(&scope, modules_);
-  moduleAtPutById(thread, module, SymbolId::kModules, modules);
-
-  // Fill in sys...
-  Object platform(&scope, newStrFromCStr(OS::name()));
-  moduleAtPutById(thread, module, SymbolId::kPlatform, platform);
-
-  Object stderr_fd_val(&scope, SmallInt::fromWord(kStderrFd));
-  moduleAtPutById(thread, module, SymbolId::kUnderStderrFd, stderr_fd_val);
-  Object stdout_fd_val(&scope, SmallInt::fromWord(kStdoutFd));
-  moduleAtPutById(thread, module, SymbolId::kUnderStdoutFd, stdout_fd_val);
-
-  // TODO(T42692043): This awkwardness should go away once we freeze the
-  // standard library into the binary and/or support PYTHONPATH.
-  Object base_dir(&scope, newStrFromCStr(PYRO_BASEDIR));
-  moduleAtPutById(thread, module, SymbolId::kUnderBaseDir, base_dir);
-
-  // TODO(T58291784): Make getenv system agnostic
-  const char* python_path_cstr = std::getenv("PYTHONPATH");
-  List python_path(&scope, newList());
-  if (python_path_cstr != nullptr) {
-    Str python_path_str(&scope, newStrFromCStr(python_path_cstr));
-    Str sep(&scope, newStrFromCStr(":"));
-    python_path = strSplit(thread, python_path_str, sep, kMaxWord);
-    CHECK(!python_path.isError(), "Failed to calculate PYTHONPATH");
-  }
-  moduleAtPutById(thread, module, SymbolId::kUnderPythonPath, python_path);
-
-  Object byteorder(
-      &scope,
-      newStrFromCStr(endian::native == endian::little ? "little" : "big"));
-  moduleAtPutById(thread, module, SymbolId::kByteorder, byteorder);
-
-  unique_c_ptr<char> executable_path(OS::executablePath());
-  Object executable(&scope, newStrFromCStr(executable_path.get()));
-  moduleAtPutById(thread, module, SymbolId::kExecutable, executable);
-
-  // maxsize is defined as the largest supported length of containers which
-  // would be `SmallInt::kMaxValue`. However in practice it is used to
-  // determine the size of a machine word which is kMaxWord.
-  Object maxsize(&scope, newInt(kMaxWord));
-  moduleAtPutById(thread, module, SymbolId::kMaxsize, maxsize);
-
-  Object maxunicode(&scope, newInt(kMaxUnicode));
-  moduleAtPutById(thread, module, SymbolId::kMaxunicode, maxunicode);
-
-  // Count the number of modules and create a tuple
-  uword num_external_modules = 0;
-  while (_PyImport_Inittab[num_external_modules].name != nullptr) {
-    num_external_modules++;
-  }
-  uword num_builtin_modules = 2;
-  for (int i = 0; kBuiltinModules[i].name != SymbolId::kSentinelId; i++) {
-    num_builtin_modules++;
-  }
-
-  uword num_modules = num_builtin_modules + num_external_modules;
-  Tuple builtins_tuple(&scope, newTuple(num_modules));
-
-  // Add all the available builtin modules
-  builtins_tuple.atPut(0, symbols()->Builtins());
-  builtins_tuple.atPut(1, symbols()->Sys());
-  for (uword i = 2; i < num_builtin_modules; i++) {
-    Object module_name(&scope, symbols()->at(kBuiltinModules[i - 2].name));
-    builtins_tuple.atPut(i, *module_name);
-  }
-
-  // Add all the available extension builtin modules
-  for (int i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
-    Object module_name(&scope, newStrFromCStr(_PyImport_Inittab[i].name));
-    builtins_tuple.atPut(num_builtin_modules + i, *module_name);
-  }
-
-  // Create builtin_module_names tuple
-  Object builtins(&scope, *builtins_tuple);
-  moduleAtPutById(thread, module, SymbolId::kBuiltinModuleNames, builtins);
-
-  executeFrozenModule(thread, SysModule::kFrozenData, module);
-
-  // Fill in hash_info.
-  Tuple hash_info_data(&scope, newMutableTuple(9));
-  hash_info_data.atPut(0, newInt(SmallInt::kBits));
-  hash_info_data.atPut(1, newInt(kArithmeticHashModulus));
-  hash_info_data.atPut(2, newInt(kHashInf));
-  hash_info_data.atPut(3, newInt(kHashNan));
-  hash_info_data.atPut(4, newInt(kHashImag));
-  hash_info_data.atPut(5, symbols()->Siphash24());
-  hash_info_data.atPut(6, newInt(64));
-  hash_info_data.atPut(7, newInt(128));
-  hash_info_data.atPut(8, newInt(SmallStr::kMaxLength));
-  Object hash_info(
-      &scope, thread->invokeFunction1(SymbolId::kSys, SymbolId::kUnderHashInfo,
-                                      hash_info_data));
-  moduleAtPutById(thread, module, SymbolId::kHashInfo, hash_info);
-
-  sys_stderr_ = moduleValueCellAtById(thread, module, SymbolId::kStderr);
-  CHECK(!sys_stderr_.isErrorNotFound(), "sys.stderr not found");
-  sys_stdout_ = moduleValueCellAtById(thread, module, SymbolId::kStdout);
-  CHECK(!sys_stdout_.isErrorNotFound(), "sys.stdout not found");
-  display_hook_ = moduleValueCellAtById(thread, module, SymbolId::kDisplayhook);
-  CHECK(!display_hook_.isErrorNotFound(), "sys.displayhook not found");
 }
 
 void Runtime::createUnderBuiltinsModule(Thread* thread) {

@@ -16,14 +16,126 @@
 #include "handles.h"
 #include "int-builtins.h"
 #include "module-builtins.h"
+#include "modules.h"
 #include "objects.h"
 #include "os.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "thread.h"
 
 namespace py {
 
-const char* const SysModule::kFrozenData = kSysModuleData;
+extern "C" struct _inittab _PyImport_Inittab[];
+
+const BuiltinMethod SysModule::kBuiltinMethods[] = {
+    {SymbolId::kExcInfo, excInfo},
+    {SymbolId::kExcepthook, excepthook},
+    {SymbolId::kSentinelId, nullptr},
+};
+
+void SysModule::initialize(Thread* thread, const Module& module) {
+  moduleAddBuiltinFunctions(thread, module, kBuiltinMethods);
+
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object modules(&scope, runtime->modules());
+  moduleAtPutById(thread, module, SymbolId::kModules, modules);
+
+  // Fill in sys...
+  Object platform(&scope, runtime->newStrFromCStr(OS::name()));
+  moduleAtPutById(thread, module, SymbolId::kPlatform, platform);
+
+  Object stderr_fd_val(&scope, SmallInt::fromWord(kStderrFd));
+  moduleAtPutById(thread, module, SymbolId::kUnderStderrFd, stderr_fd_val);
+  Object stdout_fd_val(&scope, SmallInt::fromWord(kStdoutFd));
+  moduleAtPutById(thread, module, SymbolId::kUnderStdoutFd, stdout_fd_val);
+
+  // TODO(T42692043): This awkwardness should go away once we freeze the
+  // standard library into the binary and/or support PYTHONPATH.
+  Object base_dir(&scope, runtime->newStrFromCStr(PYRO_BASEDIR));
+  moduleAtPutById(thread, module, SymbolId::kUnderBaseDir, base_dir);
+
+  // TODO(T58291784): Make getenv system agnostic
+  const char* python_path_cstr = std::getenv("PYTHONPATH");
+  Object python_path(&scope, NoneType::object());
+  if (python_path_cstr != nullptr) {
+    Str python_path_str(&scope, runtime->newStrFromCStr(python_path_cstr));
+    Str sep(&scope, SmallStr::fromCStr(":"));
+    python_path = strSplit(thread, python_path_str, sep, kMaxWord);
+    CHECK(!python_path.isError(), "Failed to calculate PYTHONPATH");
+  } else {
+    python_path = runtime->newList();
+  }
+  moduleAtPutById(thread, module, SymbolId::kUnderPythonPath, python_path);
+
+  Object byteorder(
+      &scope,
+      SmallStr::fromCStr(endian::native == endian::little ? "little" : "big"));
+  moduleAtPutById(thread, module, SymbolId::kByteorder, byteorder);
+
+  unique_c_ptr<char> executable_path(OS::executablePath());
+  Object executable(&scope, runtime->newStrFromCStr(executable_path.get()));
+  moduleAtPutById(thread, module, SymbolId::kExecutable, executable);
+
+  // maxsize is defined as the largest supported length of containers which
+  // would be `SmallInt::kMaxValue`. However in practice it is used to
+  // determine the size of a machine word which is kMaxWord.
+  Object maxsize(&scope, runtime->newInt(kMaxWord));
+  moduleAtPutById(thread, module, SymbolId::kMaxsize, maxsize);
+
+  Object maxunicode(&scope, SmallInt::fromWord(kMaxUnicode));
+  moduleAtPutById(thread, module, SymbolId::kMaxunicode, maxunicode);
+
+  // Count the number of modules and create a tuple
+  uword num_external_modules = 0;
+  while (_PyImport_Inittab[num_external_modules].name != nullptr) {
+    num_external_modules++;
+  }
+  uword num_builtin_modules = 1;
+  while (kBuiltinModules[num_builtin_modules].name != SymbolId::kSentinelId) {
+    num_builtin_modules++;
+  }
+
+  uword num_modules = num_builtin_modules + num_external_modules;
+  MutableTuple builtins_tuple(&scope, runtime->newMutableTuple(num_modules));
+
+  // Add all the available builtin modules
+  Symbols* symbols = runtime->symbols();
+  builtins_tuple.atPut(0, symbols->Builtins());
+  for (uword i = 1; i < num_builtin_modules; i++) {
+    builtins_tuple.atPut(i, symbols->at(kBuiltinModules[i - 1].name));
+  }
+
+  // Add all the available extension builtin modules
+  for (int i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
+    builtins_tuple.atPut(num_builtin_modules + i,
+                         runtime->newStrFromCStr(_PyImport_Inittab[i].name));
+  }
+
+  // Create builtin_module_names tuple
+  Object builtins(&scope, builtins_tuple.becomeImmutable());
+  moduleAtPutById(thread, module, SymbolId::kBuiltinModuleNames, builtins);
+
+  executeFrozenModule(thread, kSysModuleData, module);
+
+  // Fill in hash_info.
+  Tuple hash_info_data(&scope, runtime->newMutableTuple(9));
+  hash_info_data.atPut(0, SmallInt::fromWord(SmallInt::kBits));
+  hash_info_data.atPut(1, SmallInt::fromWord(kArithmeticHashModulus));
+  hash_info_data.atPut(2, SmallInt::fromWord(kHashInf));
+  hash_info_data.atPut(3, SmallInt::fromWord(kHashNan));
+  hash_info_data.atPut(4, SmallInt::fromWord(kHashImag));
+  hash_info_data.atPut(5, symbols->Siphash24());
+  hash_info_data.atPut(6, SmallInt::fromWord(64));
+  hash_info_data.atPut(7, SmallInt::fromWord(128));
+  hash_info_data.atPut(8, SmallInt::fromWord(SmallStr::kMaxLength));
+  Object hash_info(
+      &scope, thread->invokeFunction1(SymbolId::kSys, SymbolId::kUnderHashInfo,
+                                      hash_info_data));
+  moduleAtPutById(thread, module, SymbolId::kHashInfo, hash_info);
+
+  runtime->cacheSysInstances(thread, module);
+}
 
 static void writeImpl(Thread* thread, const Object& file, FILE* fallback_fp,
                       const char* format, va_list va) {
@@ -88,12 +200,6 @@ void writeStderrV(Thread* thread, const char* format, va_list va) {
   }
   writeImpl(thread, sys_stderr, stderr, format, va);
 }
-
-const BuiltinMethod SysModule::kBuiltinMethods[] = {
-    {SymbolId::kExcInfo, excInfo},
-    {SymbolId::kExcepthook, excepthook},
-    {SymbolId::kSentinelId, nullptr},
-};
 
 RawObject SysModule::excepthook(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);

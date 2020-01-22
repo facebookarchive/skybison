@@ -265,9 +265,10 @@ class Runtime {
   RawValueCell sysStdout() { return ValueCell::cast(sys_stdout_); }
   RawObject typeDunderGetattribute() { return type_dunder_getattribute_; }
 
+  void cacheSysInstances(Thread* thread, const Module& sys);
+
   void createBuiltinsModule(Thread* thread);
   void createImportlibModule(Thread* thread);
-  void createSysModule(Thread* thread);
   void createUnderBuiltinsModule(Thread* thread);
 
   static RawObject internStr(Thread* thread, const Object& str);

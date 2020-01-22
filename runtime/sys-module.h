@@ -30,11 +30,13 @@ RawObject initialSysPath(Thread* thread);
 
 class SysModule {
  public:
+  static void initialize(Thread* thread, const Module& module);
+
   static RawObject excInfo(Thread* thread, Frame* frame, word nargs);
   static RawObject excepthook(Thread* thread, Frame* frame, word nargs);
 
+ private:
   static const BuiltinMethod kBuiltinMethods[];
-  static const char* const kFrozenData;
 };
 
 }  // namespace py
