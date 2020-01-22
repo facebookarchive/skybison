@@ -76,8 +76,9 @@ python_binary(
         "//ci_experiences/signalhub/utils:signal_hub_service_util",
         "//everstore/client/py:everstore_client",
         "//libfb/py/pyinit:pyinit",
-        "//nodeapi/projects/phabricator_py:phabricator",
-        "//nodeapi/py:base",
+        "//phabricator:new_phabricator_graphql_helpers",
+        "//phabricator:phabricator_authentication",
+        "//phabricator:phabricator_graphql_client",
         "//servicerouter/client/py3:get_client",
     ],
 )
