@@ -26,35 +26,27 @@ const BuiltinType ModuleBaseBase::kBuiltinTypes[] = {
     {SymbolId::kSentinelId, LayoutId::kSentinelId},
 };
 
-template <SymbolId Name, const char* Data>
-static void initializeFrozenModule(Thread* thread) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Module module(&scope, runtime->createModule(thread, Name));
-  executeFrozenModule(thread, Data, module);
+template <const char* data>
+static void initializeFrozenModule(Thread* thread, const Module& module) {
+  executeFrozenModule(thread, data, module);
 }
 
 const ModuleInitializer kBuiltinModules[] = {
     {SymbolId::kUnderCodecs, &UnderCodecsModule::initialize},
     {SymbolId::kUnderImp, &UnderImpModule::initialize},
     {SymbolId::kUnderOs, &UnderOsModule::initialize},
-    {SymbolId::kUnderSignal,
-     &initializeFrozenModule<SymbolId::kUnderSignal, kUnderSignalModuleData>},
+    {SymbolId::kUnderSignal, &initializeFrozenModule<kUnderSignalModuleData>},
     {SymbolId::kUnderWeakref, &UnderWeakrefModule::initialize},
-    {SymbolId::kUnderThread,
-     &initializeFrozenModule<SymbolId::kUnderThread, kUnderThreadModuleData>},
+    {SymbolId::kUnderThread, &initializeFrozenModule<kUnderThreadModuleData>},
     {SymbolId::kUnderIo, &UnderIoModule::initialize},
     {SymbolId::kUnderStrMod,
-     &initializeFrozenModule<SymbolId::kUnderStrMod,
-                             kUnderStrUnderModModuleData>},
+     &initializeFrozenModule<kUnderStrUnderModModuleData>},
     {SymbolId::kUnderValgrind, &UnderValgrindModule::initialize},
     {SymbolId::kFaulthandler, &FaulthandlerModule::initialize},
     {SymbolId::kMarshal, &MarshalModule::initialize},
     {SymbolId::kUnderWarnings, &UnderWarningsModule::initialize},
-    {SymbolId::kOperator,
-     &initializeFrozenModule<SymbolId::kOperator, kOperatorModuleData>},
-    {SymbolId::kWarnings,
-     &initializeFrozenModule<SymbolId::kWarnings, kWarningsModuleData>},
+    {SymbolId::kOperator, &initializeFrozenModule<kOperatorModuleData>},
+    {SymbolId::kWarnings, &initializeFrozenModule<kWarningsModuleData>},
     {SymbolId::kSentinelId, nullptr},
 };
 

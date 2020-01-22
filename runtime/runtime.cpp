@@ -2280,13 +2280,17 @@ void Runtime::initializeModules() {
   Thread* thread = Thread::current();
   modules_ = newDict();
   modules_by_index_ = newList();
-  createModule(thread, SymbolId::kBuiltins);
+
+  HandleScope scope(thread);
+  Module module(&scope, createModule(thread, SymbolId::kBuiltins));
   createUnderBuiltinsModule(thread);
   createBuiltinsModule(thread);
   createSysModule(thread);
   for (word i = 0; kBuiltinModules[i].name != SymbolId::kSentinelId; i++) {
-    kBuiltinModules[i].create_module(thread);
+    module = createModule(thread, kBuiltinModules[i].name);
+    kBuiltinModules[i].init(thread, module);
   }
+
   // Run builtins._init to import modules required in builtins.
   CHECK(!thread->invokeFunction0(SymbolId::kBuiltins, SymbolId::kUnderInit)
              .isError(),

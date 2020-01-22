@@ -16,7 +16,7 @@ struct BuiltinType {
 
 struct ModuleInitializer {
   SymbolId name;
-  void (*create_module)(Thread*);
+  void (*init)(Thread*, const Module&);
 };
 
 class ModuleBaseBase {
@@ -48,10 +48,7 @@ void moduleAddBuiltinTypes(Thread* thread, const Module& module,
 template <typename T, SymbolId name>
 class ModuleBase : public ModuleBaseBase {
  public:
-  static void initialize(Thread* thread) {
-    HandleScope scope(thread);
-    Runtime* runtime = thread->runtime();
-    Module module(&scope, runtime->createModule(thread, name));
+  static void initialize(Thread* thread, const Module& module) {
     moduleAddBuiltinFunctions(thread, module, T::kBuiltinMethods);
     moduleAddBuiltinTypes(thread, module, T::kBuiltinTypes);
     executeFrozenModule(thread, T::kFrozenData, module);
