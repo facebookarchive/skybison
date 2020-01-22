@@ -1,5 +1,6 @@
 #include "modules.h"
 
+#include "builtins-module.h"
 #include "faulthandler-module.h"
 #include "frozen-modules.h"
 #include "globals.h"
@@ -33,6 +34,7 @@ static void initializeFrozenModule(Thread* thread, const Module& module) {
 }
 
 const ModuleInitializer kBuiltinModules[] = {
+    {SymbolId::kBuiltins, &BuiltinsModule::initialize},
     {SymbolId::kSys, &SysModule::initialize},
     {SymbolId::kUnderCodecs, &UnderCodecsModule::initialize},
     {SymbolId::kUnderImp, &UnderImpModule::initialize},

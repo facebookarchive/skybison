@@ -206,14 +206,86 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
     {SymbolId::kSentinelId, LayoutId::kSentinelId},
 };
 
-const char* const BuiltinsModule::kFrozenData = kBuiltinsModuleData;
-
 const SymbolId BuiltinsModule::kIntrinsicIds[] = {
     SymbolId::kUnderIndex,      SymbolId::kUnderNumberCheck,
     SymbolId::kUnderSliceIndex, SymbolId::kUnderSliceIndexNotNone,
     SymbolId::kIsinstance,      SymbolId::kLen,
     SymbolId::kSentinelId,
 };
+
+void BuiltinsModule::initialize(Thread* thread, const Module& module) {
+  moduleAddBuiltinFunctions(thread, module, kBuiltinMethods);
+  moduleAddBuiltinTypes(thread, module, kBuiltinTypes);
+
+  Runtime* runtime = thread->runtime();
+  runtime->cacheBuildClass(thread, module);
+  HandleScope scope(thread);
+
+  // Add module variables
+  {
+    Object dunder_debug(&scope, Bool::falseObj());
+    moduleAtPutById(thread, module, SymbolId::kDunderDebug, dunder_debug);
+
+    Object false_obj(&scope, Bool::falseObj());
+    moduleAtPutById(thread, module, SymbolId::kFalse, false_obj);
+
+    Object none(&scope, NoneType::object());
+    moduleAtPutById(thread, module, SymbolId::kNone, none);
+
+    Object not_implemented(&scope, NotImplementedType::object());
+    moduleAtPutById(thread, module, SymbolId::kNotImplemented, not_implemented);
+
+    Object true_obj(&scope, Bool::trueObj());
+    moduleAtPutById(thread, module, SymbolId::kTrue, true_obj);
+  }
+
+  // Manually import all of the functions and types in the _builtins module.
+  {
+    Module under_builtins(&scope,
+                          runtime->findModuleById(SymbolId::kUnderBuiltins));
+    Object value(&scope, Unbound::object());
+    for (word i = 0;
+         UnderBuiltinsModule::kBuiltinMethods[i].name != SymbolId::kSentinelId;
+         i++) {
+      SymbolId id = UnderBuiltinsModule::kBuiltinMethods[i].name;
+      value = moduleAtById(thread, under_builtins, id);
+      moduleAtPutById(thread, module, id, value);
+    }
+    value = moduleAtById(thread, under_builtins, SymbolId::kUnderPatch);
+    moduleAtPutById(thread, module, SymbolId::kUnderPatch, value);
+    value = moduleAtById(thread, under_builtins, SymbolId::kUnderUnbound);
+    moduleAtPutById(thread, module, SymbolId::kUnderUnbound, value);
+    value =
+        moduleAtById(thread, under_builtins, SymbolId::kUnderCompileFlagsMask);
+    moduleAtPutById(thread, module, SymbolId::kUnderCompileFlagsMask, value);
+  }
+
+  executeFrozenModule(thread, kBuiltinsModuleData, module);
+  runtime->cacheBuiltinsInstances(thread, module);
+
+  // Populate some builtin types with shortcut constructors.
+  {
+    Module under_builtins(&scope,
+                          runtime->findModuleById(SymbolId::kUnderBuiltins));
+    Type stop_iteration_type(&scope, runtime->typeAt(LayoutId::kStopIteration));
+    Object ctor(&scope, moduleAtById(thread, under_builtins,
+                                     SymbolId::kUnderStopIterationCtor));
+    CHECK(ctor.isFunction(), "_stop_iteration_ctor should be a function");
+    stop_iteration_type.setCtor(*ctor);
+
+    Type strarray_type(&scope, runtime->typeAt(LayoutId::kStrArray));
+    ctor = moduleAtById(thread, under_builtins, SymbolId::kUnderStrarrayCtor);
+    CHECK(ctor.isFunction(), "_strarray_ctor should be a function");
+    strarray_type.setCtor(*ctor);
+  }
+
+  // Mark functions that have an intrinsic implementation.
+  for (word i = 0; kIntrinsicIds[i] != SymbolId::kSentinelId; i++) {
+    SymbolId intrinsic_id = kIntrinsicIds[i];
+    Function::cast(moduleAtById(thread, module, intrinsic_id))
+        .setIntrinsicId(static_cast<word>(intrinsic_id));
+  }
+}
 
 static void patchTypeDict(Thread* thread, const Type& base_type,
                           const Dict& patch) {

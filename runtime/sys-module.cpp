@@ -91,7 +91,7 @@ void SysModule::initialize(Thread* thread, const Module& module) {
   while (_PyImport_Inittab[num_external_modules].name != nullptr) {
     num_external_modules++;
   }
-  uword num_builtin_modules = 1;
+  uword num_builtin_modules = 0;
   while (kBuiltinModules[num_builtin_modules].name != SymbolId::kSentinelId) {
     num_builtin_modules++;
   }
@@ -101,9 +101,8 @@ void SysModule::initialize(Thread* thread, const Module& module) {
 
   // Add all the available builtin modules
   Symbols* symbols = runtime->symbols();
-  builtins_tuple.atPut(0, symbols->Builtins());
-  for (uword i = 1; i < num_builtin_modules; i++) {
-    builtins_tuple.atPut(i, symbols->at(kBuiltinModules[i - 1].name));
+  for (uword i = 0; i < num_builtin_modules; i++) {
+    builtins_tuple.atPut(i, symbols->at(kBuiltinModules[i].name));
   }
 
   // Add all the available extension builtin modules

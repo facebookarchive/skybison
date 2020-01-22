@@ -2131,6 +2131,41 @@ void Runtime::initializeSymbols() {
   }
 }
 
+void Runtime::cacheBuildClass(Thread* thread, const Module& builtins) {
+  build_class_ =
+      moduleValueCellAtById(thread, builtins, SymbolId::kDunderBuildClass);
+  CHECK(!build_class_.isErrorNotFound(), "__build_class__ not found");
+}
+
+void Runtime::cacheBuiltinsInstances(Thread* thread, const Module& builtins) {
+  // TODO(T39575976): Create a consistent way to hide internal names
+  // such as "module" or "function"
+  dunder_import_ =
+      moduleValueCellAtById(thread, builtins, SymbolId::kDunderImport);
+  CHECK(!dunder_import_.isErrorNotFound(), "__import__ not found");
+
+  HandleScope scope(thread);
+  Type object_type(&scope, typeAt(LayoutId::kObject));
+  object_dunder_getattribute_ =
+      typeAtById(thread, object_type, SymbolId::kDunderGetattribute);
+  object_dunder_init_ = typeAtById(thread, object_type, SymbolId::kDunderInit);
+  object_dunder_new_ = typeAtById(thread, object_type, SymbolId::kDunderNew);
+  object_dunder_setattr_ =
+      typeAtById(thread, object_type, SymbolId::kDunderSetattr);
+
+  Type module_type(&scope, typeAt(LayoutId::kModule));
+  module_dunder_getattribute_ =
+      typeAtById(thread, module_type, SymbolId::kDunderGetattribute);
+
+  Type str_type(&scope, typeAt(LayoutId::kStr));
+  str_dunder_eq_ = typeAtById(thread, str_type, SymbolId::kDunderEq);
+  str_dunder_hash_ = typeAtById(thread, str_type, SymbolId::kDunderHash);
+
+  Type type_type(&scope, typeAt(LayoutId::kType));
+  type_dunder_getattribute_ =
+      typeAtById(thread, type_type, SymbolId::kDunderGetattribute);
+}
+
 void Runtime::cacheSysInstances(Thread* thread, const Module& sys) {
   sys_stderr_ = moduleValueCellAtById(thread, sys, SymbolId::kStderr);
   CHECK(!sys_stderr_.isErrorNotFound(), "sys.stderr not found");
@@ -2291,9 +2326,12 @@ void Runtime::initializeModules() {
   HandleScope scope(thread);
   Module module(&scope, createModule(thread, SymbolId::kBuiltins));
   createUnderBuiltinsModule(thread);
-  createBuiltinsModule(thread);
   for (word i = 0; kBuiltinModules[i].name != SymbolId::kSentinelId; i++) {
-    module = createModule(thread, kBuiltinModules[i].name);
+    if (UNLIKELY(kBuiltinModules[i].name == SymbolId::kBuiltins)) {
+      module = findModuleById(SymbolId::kBuiltins);
+    } else {
+      module = createModule(thread, kBuiltinModules[i].name);
+    }
     kBuiltinModules[i].init(thread, module);
   }
 
@@ -2410,117 +2448,6 @@ void Runtime::moduleImportAllFrom(const Dict& dict, const Module& module) {
       DCHECK(!value.isErrorNotFound(), "value must not be ErrorNotFound");
       dictAtPutInValueCellByStr(thread, dict, symbol_name, value);
     }
-  }
-}
-
-void Runtime::createBuiltinsModule(Thread* thread) {
-  HandleScope scope(thread);
-  // Find the module object created by Runtime::createEmptyBuiltinsModule()
-  Module module(&scope, findModuleById(SymbolId::kBuiltins));
-
-  moduleAddBuiltinFunctions(thread, module, BuiltinsModule::kBuiltinMethods);
-  moduleAddBuiltinTypes(thread, module, BuiltinsModule::kBuiltinTypes);
-
-  build_class_ =
-      moduleValueCellAtById(thread, module, SymbolId::kDunderBuildClass);
-  CHECK(!build_class_.isErrorNotFound(), "__build_class__ not found");
-
-  // Add module variables
-  {
-    Object dunder_debug(&scope, Bool::falseObj());
-    moduleAtPutById(thread, module, SymbolId::kDunderDebug, dunder_debug);
-
-    Object false_obj(&scope, Bool::falseObj());
-    moduleAtPutById(thread, module, SymbolId::kFalse, false_obj);
-
-    Object none(&scope, NoneType::object());
-    moduleAtPutById(thread, module, SymbolId::kNone, none);
-
-    Object not_implemented(&scope, NotImplementedType::object());
-    moduleAtPutById(thread, module, SymbolId::kNotImplemented, not_implemented);
-
-    Object true_obj(&scope, Bool::trueObj());
-    moduleAtPutById(thread, module, SymbolId::kTrue, true_obj);
-  }
-
-  {
-    // Manually import all of the functions and types in the _builtins module.
-    Module under_builtins(&scope, findModuleById(SymbolId::kUnderBuiltins));
-    Object value(&scope, Unbound::object());
-    for (word i = 0;
-         UnderBuiltinsModule::kBuiltinMethods[i].name != SymbolId::kSentinelId;
-         i++) {
-      SymbolId id = UnderBuiltinsModule::kBuiltinMethods[i].name;
-      value = moduleAtById(thread, under_builtins, id);
-      moduleAtPutById(thread, module, id, value);
-    }
-    value = moduleAtById(thread, under_builtins, SymbolId::kUnderPatch);
-    moduleAtPutById(thread, module, SymbolId::kUnderPatch, value);
-    value = moduleAtById(thread, under_builtins, SymbolId::kUnderUnbound);
-    moduleAtPutById(thread, module, SymbolId::kUnderUnbound, value);
-    value =
-        moduleAtById(thread, under_builtins, SymbolId::kUnderCompileFlagsMask);
-    moduleAtPutById(thread, module, SymbolId::kUnderCompileFlagsMask, value);
-  }
-
-  executeFrozenModule(thread, BuiltinsModule::kFrozenData, module);
-
-  // TODO(T39575976): Create a consistent way to hide internal names
-  // such as "module" or "function"
-  dunder_import_ =
-      moduleValueCellAtById(thread, module, SymbolId::kDunderImport);
-  CHECK(!dunder_import_.isErrorNotFound(), "__import__ not found");
-
-  {
-    Type object_type(&scope, typeAt(LayoutId::kObject));
-    object_dunder_getattribute_ =
-        typeAtById(thread, object_type, SymbolId::kDunderGetattribute);
-    object_dunder_init_ =
-        typeAtById(thread, object_type, SymbolId::kDunderInit);
-    object_dunder_new_ = typeAtById(thread, object_type, SymbolId::kDunderNew);
-    object_dunder_setattr_ =
-        typeAtById(thread, object_type, SymbolId::kDunderSetattr);
-  }
-
-  {
-    Type module_type(&scope, typeAt(LayoutId::kModule));
-    module_dunder_getattribute_ =
-        typeAtById(thread, module_type, SymbolId::kDunderGetattribute);
-  }
-
-  {
-    Type str_type(&scope, typeAt(LayoutId::kStr));
-    str_dunder_eq_ = typeAtById(thread, str_type, SymbolId::kDunderEq);
-    str_dunder_hash_ = typeAtById(thread, str_type, SymbolId::kDunderHash);
-  }
-
-  {
-    Type type_type(&scope, typeAt(LayoutId::kType));
-    type_dunder_getattribute_ =
-        typeAtById(thread, type_type, SymbolId::kDunderGetattribute);
-  }
-
-  // Populate some builtin types with shortcut constructors.
-  {
-    Module under_builtins(&scope, findModuleById(SymbolId::kUnderBuiltins));
-    Type stop_iteration_type(&scope, typeAt(LayoutId::kStopIteration));
-    Object ctor(&scope, moduleAtById(thread, under_builtins,
-                                     SymbolId::kUnderStopIterationCtor));
-    CHECK(ctor.isFunction(), "_stop_iteration_ctor should be a function");
-    stop_iteration_type.setCtor(*ctor);
-
-    Type strarray_type(&scope, typeAt(LayoutId::kStrArray));
-    ctor = moduleAtById(thread, under_builtins, SymbolId::kUnderStrarrayCtor);
-    CHECK(ctor.isFunction(), "_strarray_ctor should be a function");
-    strarray_type.setCtor(*ctor);
-  }
-
-  // Mark functions that have an intrinsic implementation.
-  for (word i = 0; BuiltinsModule::kIntrinsicIds[i] != SymbolId::kSentinelId;
-       i++) {
-    SymbolId intrinsic_id = BuiltinsModule::kIntrinsicIds[i];
-    Function::cast(moduleAtById(thread, module, intrinsic_id))
-        .setIntrinsicId(static_cast<word>(intrinsic_id));
   }
 }
 

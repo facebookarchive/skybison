@@ -19,6 +19,8 @@ RawObject compile(Thread* thread, const Object& source, const Object& filename,
 
 class BuiltinsModule {
  public:
+  static void initialize(Thread* thread, const Module& module);
+
   static RawObject bin(Thread* thread, Frame* frame, word nargs);
   static RawObject callable(Thread* thread, Frame* frame, word nargs);
   static RawObject chr(Thread* thread, Frame* frame, word nargs);
@@ -34,9 +36,9 @@ class BuiltinsModule {
   static RawObject ord(Thread* thread, Frame* frame, word nargs);
   static RawObject setattr(Thread* thread, Frame* frame, word nargs);
 
+ private:
   static const BuiltinMethod kBuiltinMethods[];
   static const BuiltinType kBuiltinTypes[];
-  static const char* const kFrozenData;
   static const SymbolId kIntrinsicIds[];
 };
 
