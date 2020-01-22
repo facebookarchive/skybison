@@ -1287,8 +1287,8 @@ PY_EXPORT int _PyArg_ParseTupleAndKeywordsFast(PyObject* args,
   return retval;
 }
 
-int _PyArg_ParseTupleAndKeywordsFast_SizeT(PyObject* args, PyObject* keywords,
-                                           struct _PyArg_Parser* parser, ...) {
+PY_EXPORT int _PyArg_ParseTupleAndKeywordsFast_SizeT(
+    PyObject* args, PyObject* keywords, struct _PyArg_Parser* parser, ...) {
   if ((args == nullptr || !PyTuple_Check(args)) ||
       (keywords != nullptr && !PyDict_Check(keywords)) || parser == nullptr) {
     PyErr_BadInternalCall();
