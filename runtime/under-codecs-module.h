@@ -8,9 +8,10 @@
 
 namespace py {
 
-class UnderCodecsModule
-    : public ModuleBase<UnderCodecsModule, SymbolId::kUnderCodecs> {
+class UnderCodecsModule {
  public:
+  static void initialize(Thread* thread, const Module& module);
+
   static RawObject underAsciiDecode(Thread* thread, Frame* frame, word nargs);
   static RawObject underAsciiEncode(Thread* thread, Frame* frame, word nargs);
   static RawObject underEscapeDecode(Thread* thread, Frame* frame, word nargs);
@@ -27,8 +28,8 @@ class UnderCodecsModule
   static RawObject underBytearrayStringAppend(Thread* thread, Frame* frame,
                                               word nargs);
 
+ private:
   static const BuiltinFunction kBuiltinFunctions[];
-  static const char* const kFrozenData;
 };
 
 }  // namespace py

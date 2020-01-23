@@ -11,6 +11,4 @@ const BuiltinFunction UnderSignalModule::kBuiltinFunctions[] = {
     {SymbolId::kSentinelId, nullptr},
 };
 
-const char* const UnderSignalModule::kFrozenData = kUnderSignalModuleData;
-
 }  // namespace py

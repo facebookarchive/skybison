@@ -8,9 +8,10 @@
 
 namespace py {
 
-class UnderValgrindModule
-    : public ModuleBase<UnderValgrindModule, SymbolId::kUnderValgrind> {
+class UnderValgrindModule {
  public:
+  static void initialize(Thread* thread, const Module& module);
+
   static RawObject callgrindDumpStats(Thread* thread, Frame* frame, word nargs);
   static RawObject callgrindStartInstrumentation(Thread* thread, Frame* frame,
                                                  word nargs);
@@ -18,8 +19,8 @@ class UnderValgrindModule
                                                 word nargs);
   static RawObject callgrindZeroStats(Thread* thread, Frame* frame, word nargs);
 
+ private:
   static const BuiltinFunction kBuiltinFunctions[];
-  static const char* const kFrozenData;
 };
 
 }  // namespace py

@@ -8,8 +8,10 @@
 
 namespace py {
 
-class UnderOsModule : public ModuleBase<UnderOsModule, SymbolId::kUnderOs> {
+class UnderOsModule {
  public:
+  static void initialize(Thread* thread, const Module& module);
+
   static RawObject close(Thread* thread, Frame* frame, word nargs);
   static RawObject fstatSize(Thread* thread, Frame* frame, word nargs);
   static RawObject ftruncate(Thread* thread, Frame* frame, word nargs);
@@ -21,8 +23,8 @@ class UnderOsModule : public ModuleBase<UnderOsModule, SymbolId::kUnderOs> {
   static RawObject read(Thread* thread, Frame* frame, word nargs);
   static RawObject setNoinheritable(Thread* thread, Frame* frame, word nargs);
 
+ private:
   static const BuiltinFunction kBuiltinFunctions[];
-  static const char* const kFrozenData;
 };
 
 }  // namespace py

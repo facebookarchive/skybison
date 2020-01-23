@@ -11,8 +11,10 @@ namespace py {
 void importAcquireLock(Thread* thread);
 bool importReleaseLock(Thread* thread);
 
-class UnderImpModule : public ModuleBase<UnderImpModule, SymbolId::kUnderImp> {
+class UnderImpModule {
  public:
+  static void initialize(Thread* thread, const Module& module);
+
   static RawObject acquireLock(Thread* thread, Frame* frame, word nargs);
   static RawObject createBuiltin(Thread* thread, Frame* frame, word nargs);
   static RawObject execBuiltin(Thread* thread, Frame* frame, word nargs);
@@ -26,8 +28,8 @@ class UnderImpModule : public ModuleBase<UnderImpModule, SymbolId::kUnderImp> {
   static RawObject releaseLock(Thread* thread, Frame* frame, word nargs);
   static RawObject underCreateDynamic(Thread* thread, Frame* frame, word nargs);
 
+ private:
   static const BuiltinFunction kBuiltinFunctions[];
-  static const char* const kFrozenData;
 };
 
 }  // namespace py

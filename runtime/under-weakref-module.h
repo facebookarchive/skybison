@@ -5,11 +5,12 @@
 
 namespace py {
 
-class UnderWeakrefModule
-    : public ModuleBase<UnderWeakrefModule, SymbolId::kUnderWeakref> {
+class UnderWeakrefModule {
  public:
+  static void initialize(Thread* thread, const Module& module);
+
+ private:
   static const BuiltinType kBuiltinTypes[];
-  static const char* const kFrozenData;
 };
 
 }  // namespace py

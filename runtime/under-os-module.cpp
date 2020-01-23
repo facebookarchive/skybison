@@ -29,6 +29,11 @@ const BuiltinFunction UnderOsModule::kBuiltinFunctions[] = {
     {SymbolId::kSentinelId, nullptr},
 };
 
+void UnderOsModule::initialize(Thread* thread, const Module& module) {
+  moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
+  executeFrozenModule(thread, kUnderOsModuleData, module);
+}
+
 RawObject UnderOsModule::close(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   CHECK(args.get(0).isSmallInt(), "fd must be small int");
@@ -180,7 +185,5 @@ RawObject UnderOsModule::setNoinheritable(Thread* thread, Frame* frame,
   if (result < 0) return thread->raiseOSErrorFromErrno(-result);
   return NoneType::object();
 }
-
-const char* const UnderOsModule::kFrozenData = kUnderOsModuleData;
 
 }  // namespace py

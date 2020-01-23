@@ -8,13 +8,14 @@
 
 namespace py {
 
-class UnderWarningsModule
-    : public ModuleBase<UnderWarningsModule, SymbolId::kUnderWarnings> {
+class UnderWarningsModule {
  public:
+  static void initialize(Thread* thread, const Module& module);
+
   static RawObject warn(Thread* thread, Frame* frame, word nargs);
 
+ private:
   static const BuiltinFunction kBuiltinFunctions[];
-  static const char* const kFrozenData;
 };
 
 }  // namespace py

@@ -17,7 +17,10 @@ const BuiltinFunction MarshalModule::kBuiltinFunctions[] = {
     {SymbolId::kSentinelId, nullptr},
 };
 
-const char* const MarshalModule::kFrozenData = kMarshalModuleData;
+void MarshalModule::initialize(Thread* thread, const Module& module) {
+  moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
+  executeFrozenModule(thread, kMarshalModuleData, module);
+}
 
 RawObject MarshalModule::loads(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);

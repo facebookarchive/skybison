@@ -14,6 +14,26 @@ extern "C" unsigned int _Py_ctype_table[];      // from Include/pyctype.h
 
 namespace py {
 
+const BuiltinFunction UnderCodecsModule::kBuiltinFunctions[] = {
+    {SymbolId::kUnderAsciiDecode, underAsciiDecode},
+    {SymbolId::kUnderAsciiEncode, underAsciiEncode},
+    {SymbolId::kUnderBytearrayStringAppend, underBytearrayStringAppend},
+    {SymbolId::kUnderEscapeDecode, underEscapeDecode},
+    {SymbolId::kUnderLatin1Decode, underLatin1Decode},
+    {SymbolId::kUnderLatin1Encode, underLatin1Encode},
+    {SymbolId::kUnderUnicodeEscapeDecode, underUnicodeEscapeDecode},
+    {SymbolId::kUnderUtf16Encode, underUtf16Encode},
+    {SymbolId::kUnderUtf32Encode, underUtf32Encode},
+    {SymbolId::kUnderUtf8Decode, underUtf8Decode},
+    {SymbolId::kUnderUtf8Encode, underUtf8Encode},
+    {SymbolId::kSentinelId, nullptr},
+};
+
+void UnderCodecsModule::initialize(Thread* thread, const Module& module) {
+  moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
+  executeFrozenModule(thread, kUnderCodecsModuleData, module);
+}
+
 const int32_t kLowSurrogateStart = 0xDC00;
 const int32_t kHighSurrogateStart = 0xD800;
 const char kASCIIReplacement = '?';
@@ -47,23 +67,6 @@ static int asciiDecode(Thread* thread, const StrArray& dst, const Bytes& src,
   }
   return index;
 }
-
-const BuiltinFunction UnderCodecsModule::kBuiltinFunctions[] = {
-    {SymbolId::kUnderAsciiDecode, underAsciiDecode},
-    {SymbolId::kUnderAsciiEncode, underAsciiEncode},
-    {SymbolId::kUnderBytearrayStringAppend, underBytearrayStringAppend},
-    {SymbolId::kUnderEscapeDecode, underEscapeDecode},
-    {SymbolId::kUnderLatin1Decode, underLatin1Decode},
-    {SymbolId::kUnderLatin1Encode, underLatin1Encode},
-    {SymbolId::kUnderUnicodeEscapeDecode, underUnicodeEscapeDecode},
-    {SymbolId::kUnderUtf16Encode, underUtf16Encode},
-    {SymbolId::kUnderUtf32Encode, underUtf32Encode},
-    {SymbolId::kUnderUtf8Decode, underUtf8Decode},
-    {SymbolId::kUnderUtf8Encode, underUtf8Encode},
-    {SymbolId::kSentinelId, nullptr},
-};
-
-const char* const UnderCodecsModule::kFrozenData = kUnderCodecsModuleData;
 
 RawObject UnderCodecsModule::underAsciiDecode(Thread* thread, Frame* frame,
                                               word nargs) {

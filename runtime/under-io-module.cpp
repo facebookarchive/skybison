@@ -43,7 +43,11 @@ const BuiltinType UnderIoModule::kBuiltinTypes[] = {
     {SymbolId::kSentinelId, LayoutId::kSentinelId},
 };
 
-const char* const UnderIoModule::kFrozenData = kUnderIoModuleData;
+void UnderIoModule::initialize(Thread* thread, const Module& module) {
+  moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
+  moduleAddBuiltinTypes(thread, module, kBuiltinTypes);
+  executeFrozenModule(thread, kUnderIoModuleData, module);
+}
 
 static RawObject initReadBuf(Thread* thread,
                              const BufferedReader& buffered_reader) {

@@ -3,6 +3,7 @@
 #include "frame.h"
 #include "frozen-modules.h"
 #include "globals.h"
+#include "modules.h"
 #include "objects.h"
 
 namespace py {
@@ -12,6 +13,9 @@ const BuiltinType UnderWeakrefModule::kBuiltinTypes[] = {
     {SymbolId::kSentinelId, LayoutId::kSentinelId},
 };
 
-const char* const UnderWeakrefModule::kFrozenData = kUnderWeakrefModuleData;
+void UnderWeakrefModule::initialize(Thread* thread, const Module& module) {
+  moduleAddBuiltinTypes(thread, module, kBuiltinTypes);
+  executeFrozenModule(thread, kUnderWeakrefModuleData, module);
+}
 
 }  // namespace py

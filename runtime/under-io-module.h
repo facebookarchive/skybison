@@ -8,8 +8,10 @@
 
 namespace py {
 
-class UnderIoModule : public ModuleBase<UnderIoModule, SymbolId::kUnderIo> {
+class UnderIoModule {
  public:
+  static void initialize(Thread* thread, const Module& module);
+
   static RawObject underBufferedReaderClearBuffer(Thread* thread, Frame* frame,
                                                   word nargs);
   static RawObject underBufferedReaderInit(Thread* thread, Frame* frame,
@@ -23,9 +25,9 @@ class UnderIoModule : public ModuleBase<UnderIoModule, SymbolId::kUnderIo> {
   static RawObject underStringIOClosedGuard(Thread* thread, Frame* frame,
                                             word nargs);
 
+ private:
   static const BuiltinFunction kBuiltinFunctions[];
   static const BuiltinType kBuiltinTypes[];
-  static const char* const kFrozenData;
 };
 
 class UnderIOBaseBuiltins

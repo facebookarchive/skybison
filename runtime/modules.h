@@ -24,13 +24,6 @@ struct ModuleInitializer {
   void (*init)(Thread*, const Module&);
 };
 
-class ModuleBaseBase {
- public:
-  static const BuiltinFunction kBuiltinFunctions[];
-  static const BuiltinType kBuiltinTypes[];
-  static const char kFrozenData[];
-};
-
 // Execute a frozen module by marshalling it into a code object and then
 // executing it. Aborts if module execution is unsuccessful.
 void executeFrozenModule(Thread* thread, const char* buffer,
@@ -49,16 +42,6 @@ void moduleAddBuiltinFunctions(Thread* thread, const Module& module,
                                const BuiltinFunction* functions);
 void moduleAddBuiltinTypes(Thread* thread, const Module& module,
                            const BuiltinType* types);
-
-template <typename T, SymbolId name>
-class ModuleBase : public ModuleBaseBase {
- public:
-  static void initialize(Thread* thread, const Module& module) {
-    moduleAddBuiltinFunctions(thread, module, T::kBuiltinFunctions);
-    moduleAddBuiltinTypes(thread, module, T::kBuiltinTypes);
-    executeFrozenModule(thread, T::kFrozenData, module);
-  }
-};
 
 extern const ModuleInitializer kBuiltinModules[];
 

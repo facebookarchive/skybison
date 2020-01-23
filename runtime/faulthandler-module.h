@@ -8,9 +8,10 @@
 
 namespace py {
 
-class FaulthandlerModule
-    : public ModuleBase<FaulthandlerModule, SymbolId::kFaulthandler> {
+class FaulthandlerModule {
  public:
+  static void initialize(Thread* thread, const Module& module);
+
   static RawObject underReadNull(Thread* thread, Frame* frame, word nargs);
   static RawObject underSigabrt(Thread* thread, Frame* frame, word nargs);
   static RawObject underSigfpe(Thread* thread, Frame* frame, word nargs);
@@ -20,8 +21,8 @@ class FaulthandlerModule
   static RawObject enable(Thread* thread, Frame* frame, word nargs);
   static RawObject isEnabled(Thread* thread, Frame* frame, word nargs);
 
+ private:
   static const BuiltinFunction kBuiltinFunctions[];
-  static const char* const kFrozenData;
 };
 
 }  // namespace py

@@ -19,7 +19,10 @@ const BuiltinFunction UnderValgrindModule::kBuiltinFunctions[] = {
     {SymbolId::kSentinelId, nullptr},
 };
 
-const char* const UnderValgrindModule::kFrozenData = kUnderValgrindModuleData;
+void UnderValgrindModule::initialize(Thread* thread, const Module& module) {
+  moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
+  executeFrozenModule(thread, kUnderValgrindModuleData, module);
+}
 
 RawObject UnderValgrindModule::callgrindDumpStats(Thread* thread, Frame* frame,
                                                   word nargs) {

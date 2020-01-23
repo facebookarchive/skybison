@@ -13,6 +13,27 @@
 
 namespace py {
 
+const BuiltinFunction UnderImpModule::kBuiltinFunctions[] = {
+    {SymbolId::kAcquireLock, acquireLock},
+    {SymbolId::kCreateBuiltin, createBuiltin},
+    {SymbolId::kExecBuiltin, execBuiltin},
+    {SymbolId::kExecDynamic, execDynamic},
+    {SymbolId::kExtensionSuffixes, extensionSuffixes},
+    {SymbolId::kFixCoFilename, fixCoFilename},
+    {SymbolId::kGetFrozenObject, getFrozenObject},
+    {SymbolId::kIsBuiltin, isBuiltin},
+    {SymbolId::kIsFrozen, isFrozen},
+    {SymbolId::kIsFrozenPackage, isFrozenPackage},
+    {SymbolId::kReleaseLock, releaseLock},
+    {SymbolId::kUnderCreateDynamic, underCreateDynamic},
+    {SymbolId::kSentinelId, nullptr},
+};
+
+void UnderImpModule::initialize(Thread* thread, const Module& module) {
+  moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
+  executeFrozenModule(thread, kUnderImpModuleData, module);
+}
+
 extern "C" struct _inittab _PyImport_Inittab[];
 
 static Thread* import_lock_holder;
@@ -41,24 +62,6 @@ bool importReleaseLock(Thread* thread) {
   }
   return true;
 }
-
-const BuiltinFunction UnderImpModule::kBuiltinFunctions[] = {
-    {SymbolId::kAcquireLock, acquireLock},
-    {SymbolId::kCreateBuiltin, createBuiltin},
-    {SymbolId::kExecBuiltin, execBuiltin},
-    {SymbolId::kExecDynamic, execDynamic},
-    {SymbolId::kExtensionSuffixes, extensionSuffixes},
-    {SymbolId::kFixCoFilename, fixCoFilename},
-    {SymbolId::kGetFrozenObject, getFrozenObject},
-    {SymbolId::kIsBuiltin, isBuiltin},
-    {SymbolId::kIsFrozen, isFrozen},
-    {SymbolId::kIsFrozenPackage, isFrozenPackage},
-    {SymbolId::kReleaseLock, releaseLock},
-    {SymbolId::kUnderCreateDynamic, underCreateDynamic},
-    {SymbolId::kSentinelId, nullptr},
-};
-
-const char* const UnderImpModule::kFrozenData = kUnderImpModuleData;
 
 RawObject UnderImpModule::acquireLock(Thread* thread, Frame*, word) {
   importAcquireLock(thread);

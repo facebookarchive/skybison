@@ -22,13 +22,6 @@
 
 namespace py {
 
-const BuiltinFunction ModuleBaseBase::kBuiltinFunctions[] = {
-    {SymbolId::kSentinelId, nullptr},
-};
-const BuiltinType ModuleBaseBase::kBuiltinTypes[] = {
-    {SymbolId::kSentinelId, LayoutId::kSentinelId},
-};
-
 template <const char* data>
 static void initializeFrozenModule(Thread* thread, const Module& module) {
   executeFrozenModule(thread, data, module);

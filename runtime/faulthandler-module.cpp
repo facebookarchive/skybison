@@ -16,6 +16,23 @@
 
 namespace py {
 
+const BuiltinFunction FaulthandlerModule::kBuiltinFunctions[] = {
+    {SymbolId::kUnderReadNull, underReadNull},
+    {SymbolId::kUnderSigabrt, underSigabrt},
+    {SymbolId::kUnderSigfpe, underSigfpe},
+    {SymbolId::kUnderSigsegv, underSigsegv},
+    {SymbolId::kDisable, disable},
+    {SymbolId::kDumpTraceback, dumpTraceback},
+    {SymbolId::kEnable, enable},
+    {SymbolId::kIsEnabled, isEnabled},
+    {SymbolId::kSentinelId, nullptr},
+};
+
+void FaulthandlerModule::initialize(Thread* thread, const Module& module) {
+  moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
+  executeFrozenModule(thread, kFaulthandlerModuleData, module);
+}
+
 struct FaultHandler {
   int signum;
   const char* msg;
@@ -35,20 +52,6 @@ static FaultHandler handler_sigbus = {SIGBUS, "Bus error"};
 static FaultHandler handler_sigfpe = {SIGFPE, "Floating point exception"};
 static FaultHandler handler_sigill = {SIGILL, "Illegal instruction"};
 static FaultHandler handler_sigsegv = {SIGSEGV, "Segmentation fault"};
-
-const char* const FaulthandlerModule::kFrozenData = kFaulthandlerModuleData;
-
-const BuiltinFunction FaulthandlerModule::kBuiltinFunctions[] = {
-    {SymbolId::kUnderReadNull, underReadNull},
-    {SymbolId::kUnderSigabrt, underSigabrt},
-    {SymbolId::kUnderSigfpe, underSigfpe},
-    {SymbolId::kUnderSigsegv, underSigsegv},
-    {SymbolId::kDisable, disable},
-    {SymbolId::kDumpTraceback, dumpTraceback},
-    {SymbolId::kEnable, enable},
-    {SymbolId::kIsEnabled, isEnabled},
-    {SymbolId::kSentinelId, nullptr},
-};
 
 static void disableFatalHandler(FaultHandler* handler) {
   if (!handler->enabled) return;

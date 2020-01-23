@@ -10,6 +10,16 @@
 
 namespace py {
 
+const BuiltinFunction UnderWarningsModule::kBuiltinFunctions[] = {
+    {SymbolId::kWarn, warn},
+    {SymbolId::kSentinelId, nullptr},
+};
+
+void UnderWarningsModule::initialize(Thread* thread, const Module& module) {
+  moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
+  executeFrozenModule(thread, kUnderWarningsModuleData, module);
+}
+
 namespace {
 RawObject getCategory(Thread* thread, const Object& message,
                       const Object& category) {
@@ -34,13 +44,6 @@ RawObject getCategory(Thread* thread, const Object& message,
   return *result;
 }
 }  // namespace
-
-const BuiltinFunction UnderWarningsModule::kBuiltinFunctions[] = {
-    {SymbolId::kWarn, warn},
-    {SymbolId::kSentinelId, nullptr},
-};
-
-const char* const UnderWarningsModule::kFrozenData = kUnderWarningsModuleData;
 
 RawObject UnderWarningsModule::warn(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
