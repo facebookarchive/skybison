@@ -1218,6 +1218,18 @@ TEST_F(UnderBuiltinsModuleTest,
       LayoutId::kValueError, "invalid literal for int() with base 4: '305'"));
 }
 
+TEST_F(UnderBuiltinsModuleTest,
+       UnderIntNewFromStrWithInvalidLiteralRaisesValueErrorBaseSixteen) {
+  HandleScope scope(thread_);
+  const char* src = "g";
+  Type type(&scope, runtime_->typeAt(LayoutId::kInt));
+  Str str(&scope, runtime_->newStrFromCStr(src));
+  Int base(&scope, SmallInt::fromWord(16));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      LayoutId::kValueError, "invalid literal for int() with base 16: 'g'"));
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromStrWithLargeInt) {
   HandleScope scope(thread_);
   const char* src = "1844674407370955161500";

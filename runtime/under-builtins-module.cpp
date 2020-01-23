@@ -2557,8 +2557,8 @@ static word digitValue(byte digit, word base) {
   // Bases 2-10 are limited to numerals, but all greater bases can use letters
   // too.
   if (base <= 10) return -1;
-  if ('a' <= digit && digit < 'a' + base) return digit - 'a' + 10;
-  if ('A' <= digit && digit < 'A' + base) return digit - 'A' + 10;
+  if ('a' <= digit && digit < 'a' + base - 10) return digit - 'a' + 10;
+  if ('A' <= digit && digit < 'A' + base - 10) return digit - 'A' + 10;
   return -1;
 }
 
