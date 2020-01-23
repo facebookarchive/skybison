@@ -365,9 +365,15 @@ class Interpreter {
   static Continue doDeleteSubscr(Thread* thread, word arg);
   static Continue doEndFinally(Thread* thread, word arg);
   static Continue doForIter(Thread* thread, word arg);
+  static Continue doForIterAnamorphic(Thread* thread, word arg);
+  static Continue doForIterDict(Thread* thread, word arg);
+  static Continue doForIterList(Thread* thread, word arg);
   static Continue doForIterMonomorphic(Thread* thread, word arg);
   static Continue doForIterPolymorphic(Thread* thread, word arg);
-  static Continue doForIterAnamorphic(Thread* thread, word arg);
+  static Continue doForIterRange(Thread* thread, word arg);
+  static Continue doForIterStr(Thread* thread, word arg);
+  static Continue doForIterTuple(Thread* thread, word arg);
+  static Continue doForIterUncached(Thread* thread, word arg);
   static Continue doFormatValue(Thread* thread, word arg);
   static Continue doGetAiter(Thread* thread, word arg);
   static Continue doGetAnext(Thread* thread, word arg);

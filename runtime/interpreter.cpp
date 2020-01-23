@@ -2500,6 +2500,132 @@ ALWAYS_INLINE Continue Interpreter::forIter(Thread* thread,
   return Continue::NEXT;
 }
 
+static Continue retryForIterAnamorphic(Thread* thread, word arg) {
+  // Revert the opcode, and retry FOR_ITER_CACHED.
+  Frame* frame = thread->currentFrame();
+  word pc = frame->currentPC();
+  RawMutableBytes bytecode = frame->bytecode();
+  bytecode.byteAtPut(pc, FOR_ITER_ANAMORPHIC);
+  return Interpreter::doForIterAnamorphic(thread, arg);
+}
+
+HANDLER_INLINE Continue Interpreter::doForIterList(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject iter_obj = frame->topValue();
+  if (!iter_obj.isListIterator()) {
+    return retryForIterAnamorphic(thread, arg);
+  }
+  // NOTE: This should be synced with listIteratorNext in list-builtins.cpp.
+  RawListIterator iter = ListIterator::cast(iter_obj);
+  word idx = iter.index();
+  RawList underlying = iter.iterable().rawCast<RawList>();
+  if (idx >= underlying.numItems()) {
+    frame->popValue();
+    frame->setVirtualPC(frame->virtualPC() +
+                        originalArg(frame->function(), arg));
+  } else {
+    frame->pushValue(underlying.at(idx));
+    iter.setIndex(idx + 1);
+  }
+  return Continue::NEXT;
+}
+
+HANDLER_INLINE Continue Interpreter::doForIterDict(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject iter_obj = frame->topValue();
+  if (!iter_obj.isDictKeyIterator()) {
+    return retryForIterAnamorphic(thread, arg);
+  }
+  // NOTE: This should be synced with dictKeyIteratorNext in dict-builtins.cpp.
+  RawDictKeyIterator iter = DictKeyIterator::cast(iter_obj);
+  RawDict dict = iter.iterable().rawCast<RawDict>();
+  RawTuple buckets = Tuple::cast(dict.data());
+  word i = iter.index();
+  if (Dict::Bucket::nextItem(buckets, &i)) {
+    // At this point, we have found a valid index in the buckets.
+    iter.setIndex(i);
+    iter.setNumFound(iter.numFound() + 1);
+    frame->pushValue(Dict::Bucket::key(buckets, i));
+  } else {
+    // We hit the end.
+    iter.setIndex(i);
+    frame->popValue();
+    frame->setVirtualPC(frame->virtualPC() +
+                        originalArg(frame->function(), arg));
+  }
+  return Continue::NEXT;
+}
+
+HANDLER_INLINE Continue Interpreter::doForIterTuple(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject iter_obj = frame->topValue();
+  if (!iter_obj.isTupleIterator()) {
+    return retryForIterAnamorphic(thread, arg);
+  }
+  // NOTE: This should be synced with tupleIteratorNext in tuple-builtins.cpp.
+  RawTupleIterator iter = TupleIterator::cast(iter_obj);
+  word idx = iter.index();
+  if (idx == iter.tupleLength()) {
+    frame->popValue();
+    frame->setVirtualPC(frame->virtualPC() +
+                        originalArg(frame->function(), arg));
+  } else {
+    RawTuple underlying = iter.iterable().rawCast<RawTuple>();
+    RawObject item = underlying.at(idx);
+    iter.setIndex(idx + 1);
+    frame->pushValue(item);
+  }
+  return Continue::NEXT;
+}
+
+HANDLER_INLINE Continue Interpreter::doForIterRange(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject iter_obj = frame->topValue();
+  if (!iter_obj.isRangeIterator()) {
+    return retryForIterAnamorphic(thread, arg);
+  }
+  // NOTE: This should be synced with rangeIteratorNext in range-builtins.cpp.
+  RawRangeIterator iter = RangeIterator::cast(iter_obj);
+  word length = iter.length();
+  if (length == 0) {
+    frame->popValue();
+    frame->setVirtualPC(frame->virtualPC() +
+                        originalArg(frame->function(), arg));
+  } else {
+    iter.setLength(length - 1);
+    word next = iter.next();
+    if (length > 1) {
+      word step = iter.step();
+      iter.setNext(next + step);
+    }
+    frame->pushValue(SmallInt::fromWord(next));
+  }
+  return Continue::NEXT;
+}
+
+HANDLER_INLINE Continue Interpreter::doForIterStr(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject iter_obj = frame->topValue();
+  if (!iter_obj.isStrIterator()) {
+    return retryForIterAnamorphic(thread, arg);
+  }
+  // NOTE: This should be synced with strIteratorNext in str-builtins.cpp.
+  RawStrIterator iter = StrIterator::cast(iter_obj);
+  word byte_offset = iter.index();
+  RawStr underlying = iter.iterable().rawCast<RawStr>();
+  if (byte_offset == underlying.charLength()) {
+    frame->popValue();
+    frame->setVirtualPC(frame->virtualPC() +
+                        originalArg(frame->function(), arg));
+  } else {
+    word num_bytes = 0;
+    word code_point = underlying.codePointAt(byte_offset, &num_bytes);
+    iter.setIndex(byte_offset + num_bytes);
+    frame->pushValue(RawSmallStr::fromCodePoint(code_point));
+  }
+  return Continue::NEXT;
+}
+
 HANDLER_INLINE Continue Interpreter::doForIterMonomorphic(Thread* thread,
                                                           word arg) {
   Frame* frame = thread->currentFrame();
@@ -2531,6 +2657,29 @@ HANDLER_INLINE Continue Interpreter::doForIterPolymorphic(Thread* thread,
 HANDLER_INLINE Continue Interpreter::doForIterAnamorphic(Thread* thread,
                                                          word arg) {
   Frame* frame = thread->currentFrame();
+  RawObject iter = frame->topValue();
+  LayoutId iter_layout_id = iter.layoutId();
+  word pc = frame->virtualPC() - kCodeUnitSize;
+  RawMutableBytes bytecode = frame->bytecode();
+  switch (iter_layout_id) {
+    case LayoutId::kListIterator:
+      bytecode.byteAtPut(pc, FOR_ITER_LIST);
+      return doForIterList(thread, arg);
+    case LayoutId::kDictKeyIterator:
+      bytecode.byteAtPut(pc, FOR_ITER_DICT);
+      return doForIterDict(thread, arg);
+    case LayoutId::kTupleIterator:
+      bytecode.byteAtPut(pc, FOR_ITER_TUPLE);
+      return doForIterTuple(thread, arg);
+    case LayoutId::kRangeIterator:
+      bytecode.byteAtPut(pc, FOR_ITER_RANGE);
+      return doForIterRange(thread, arg);
+    case LayoutId::kStrIterator:
+      bytecode.byteAtPut(pc, FOR_ITER_STR);
+      return doForIterStr(thread, arg);
+    default:
+      break;
+  }
   return forIterUpdateCache(thread, originalArg(frame->function(), arg), arg);
 }
 

@@ -1179,11 +1179,11 @@ TEST_F(InterpreterDeathTest, InvalidOpcode) {
   HandleScope scope(thread_);
 
   Code code(&scope, newEmptyCode());
-  const byte bytecode[] = {NOP, 0, NOP, 0, UNUSED_BYTECODE_202, 17, NOP, 7};
+  const byte bytecode[] = {NOP, 0, NOP, 0, UNUSED_BYTECODE_6, 17, NOP, 7};
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
   ASSERT_DEATH(static_cast<void>(runCode(code)),
-               "bytecode 'UNUSED_BYTECODE_202'");
+               "bytecode 'UNUSED_BYTECODE_6'");
 }
 
 // To a rich comparison on two instances of the same type.  In each case, the
@@ -4324,6 +4324,80 @@ result = f(*gen())
   Tuple result(&scope, *result_obj);
   EXPECT_TRUE(isIntEqualsWord(result.at(0), 2));
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 1));
+}
+
+TEST_F(InterpreterTest, ForIterAnamorphicWithBuiltinIterRewritesOpcode) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def foo(i, s=0):
+  for a in i:
+    s += a
+  return s
+
+list_obj = [4,5]
+dict_obj = {4: "a", 5: "b"}
+tuple_obj = (4,5)
+range_obj = range(4,6)
+str_obj = "45"
+
+class C:
+  def __iter__(self):
+    return D()
+
+class D:
+  def __init__(self):
+    self.used = False
+
+  def __next__(self):
+    if self.used:
+      raise StopIteration
+    self.used = True
+    return 400
+
+user_obj = C()
+)")
+                   .isError());
+  Function foo(&scope, mainModuleAt(runtime_, "foo"));
+  MutableBytes bytecode(&scope, foo.rewrittenBytecode());
+  ASSERT_EQ(bytecode.byteAt(6), FOR_ITER_ANAMORPHIC);
+
+  Object arg(&scope, mainModuleAt(runtime_, "list_obj"));
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction1(thread_, thread_->currentFrame(), foo, arg),
+      9));
+  EXPECT_EQ(bytecode.byteAt(6), FOR_ITER_LIST);
+
+  arg = mainModuleAt(runtime_, "dict_obj");
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction1(thread_, thread_->currentFrame(), foo, arg),
+      9));
+  EXPECT_EQ(bytecode.byteAt(6), FOR_ITER_DICT);
+
+  arg = mainModuleAt(runtime_, "tuple_obj");
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction1(thread_, thread_->currentFrame(), foo, arg),
+      9));
+  EXPECT_EQ(bytecode.byteAt(6), FOR_ITER_TUPLE);
+
+  arg = mainModuleAt(runtime_, "range_obj");
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction1(thread_, thread_->currentFrame(), foo, arg),
+      9));
+  EXPECT_EQ(bytecode.byteAt(6), FOR_ITER_RANGE);
+
+  arg = mainModuleAt(runtime_, "str_obj");
+  Str s(&scope, runtime_->newStrFromCStr(""));
+  EXPECT_TRUE(isStrEqualsCStr(
+      Interpreter::callFunction2(thread_, thread_->currentFrame(), foo, arg, s),
+      "45"));
+  EXPECT_EQ(bytecode.byteAt(6), FOR_ITER_STR);
+
+  // Resetting the opcode.
+  arg = mainModuleAt(runtime_, "user_obj");
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction1(thread_, thread_->currentFrame(), foo, arg),
+      400));
+  EXPECT_EQ(bytecode.byteAt(6), FOR_ITER_MONOMORPHIC);
 }
 
 TEST_F(InterpreterTest, FormatValueCallsDunderStr) {

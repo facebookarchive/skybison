@@ -1278,9 +1278,22 @@ def f(container):
   for i in container:
     return i
 
-container = [1, 2, 3]
+class C:
+  def __iter__(self):
+    return Iterator()
+
+class Iterator:
+  def __init__(self):
+    self.next_called = False
+
+  def __next__(self):
+    if self.next_called:
+      raise StopIteration
+    return 1
+
+container = C()
 iterator = iter(container)
-iter_next = type(iterator).__next__
+iter_next = Iterator.__next__
 result = f(container)
 )")
                    .isError());

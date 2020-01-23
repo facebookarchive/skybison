@@ -214,11 +214,11 @@ namespace py {
   V(UNUSED_BYTECODE_195, 195, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_196, 196, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_197, 197, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_198, 198, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_199, 199, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_200, 200, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_201, 201, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_202, 202, doInvalidBytecode)                               \
+  V(FOR_ITER_STR, 198, doForIterStr)                                           \
+  V(FOR_ITER_RANGE, 199, doForIterRange)                                       \
+  V(FOR_ITER_TUPLE, 200, doForIterTuple)                                       \
+  V(FOR_ITER_DICT, 201, doForIterDict)                                         \
+  V(FOR_ITER_LIST, 202, doForIterList)                                         \
   V(INPLACE_ADD_SMALLINT, 203, doInplaceAddSmallInt)                           \
   V(COMPARE_LE_SMALLINT, 204, doCompareLeSmallInt)                             \
   V(COMPARE_NE_SMALLINT, 205, doCompareNeSmallInt)                             \
