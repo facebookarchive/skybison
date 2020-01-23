@@ -4806,6 +4806,19 @@ Continue Interpreter::doCompareLeSmallInt(Thread* thread, word arg) {
 }
 
 HANDLER_INLINE
+Continue Interpreter::doCompareEqStr(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject left = frame->peek(1);
+  RawObject right = frame->peek(0);
+  if (left.isStr() && right.isStr()) {
+    frame->dropValues(1);
+    frame->setTopValue(Bool::fromBool(Str::cast(left).equals(right)));
+    return Continue::NEXT;
+  }
+  return compareOpUpdateCache(thread, arg);
+}
+
+HANDLER_INLINE
 Continue Interpreter::doCompareOpMonomorphic(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawObject left_raw = frame->peek(1);
@@ -4842,7 +4855,9 @@ Continue Interpreter::doCompareOpPolymorphic(Thread* thread, word arg) {
 HANDLER_INLINE
 Continue Interpreter::doCompareOpAnamorphic(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  if (frame->peek(0).isSmallInt() && frame->peek(1).isSmallInt()) {
+  RawObject left = frame->peek(1);
+  RawObject right = frame->peek(0);
+  if (left.isSmallInt() && right.isSmallInt()) {
     word pc = frame->currentPC();
     RawMutableBytes bytecode = frame->bytecode();
     switch (static_cast<CompareOp>(originalArg(frame->function(), arg))) {
@@ -4867,6 +4882,14 @@ Continue Interpreter::doCompareOpAnamorphic(Thread* thread, word arg) {
       default:
         return compareOpUpdateCache(thread, arg);
     }
+  }
+  if (left.isStr() && right.isStr() &&
+      static_cast<CompareOp>(originalArg(frame->function(), arg)) ==
+          CompareOp::EQ) {
+    word pc = frame->currentPC();
+    RawMutableBytes bytecode = frame->bytecode();
+    bytecode.byteAtPut(pc, COMPARE_EQ_STR);
+    return doCompareEqStr(thread, arg);
   }
   return compareOpUpdateCache(thread, arg);
 }

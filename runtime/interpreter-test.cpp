@@ -1333,6 +1333,41 @@ c = C()
   EXPECT_TRUE(isStrEqualsCStr(*called, "C"));
 }
 
+TEST_F(InterpreterTest, CompareOpWithStrsRewritesOpcode) {
+  HandleScope scope(thread_);
+
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime_->newTuple(2));
+  consts.atPut(0, runtime_->newStrFromCStr("abc"));
+  consts.atPut(1, runtime_->newStrFromCStr("def"));
+  code.setConsts(*consts);
+  const byte bytecode[] = {
+      LOAD_CONST,   0,
+      LOAD_CONST,   1,
+      COMPARE_OP,   static_cast<byte>(CompareOp::EQ),
+      RETURN_VALUE, 0,
+  };
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+
+  Object qualname(&scope, Str::empty());
+  Module module(&scope, runtime_->findOrCreateMainModule());
+  Function function(
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
+
+  // Update the opcode.
+  ASSERT_EQ(
+      Interpreter::callFunction0(thread_, thread_->currentFrame(), function),
+      Bool::falseObj());
+
+  MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
+  EXPECT_EQ(rewritten_bytecode.byteAt(4), COMPARE_EQ_STR);
+
+  // Updated opcode returns the same value.
+  ASSERT_EQ(
+      Interpreter::callFunction0(thread_, thread_->currentFrame(), function),
+      Bool::falseObj());
+}
+
 TEST_F(InterpreterTest, CompareOpSmallIntsRewritesOpcode) {
   HandleScope scope(thread_);
 
