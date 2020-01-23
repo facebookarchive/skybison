@@ -22,7 +22,7 @@
 
 namespace py {
 
-const BuiltinMethod ModuleBaseBase::kBuiltinMethods[] = {
+const BuiltinFunction ModuleBaseBase::kBuiltinFunctions[] = {
     {SymbolId::kSentinelId, nullptr},
 };
 const BuiltinType ModuleBaseBase::kBuiltinTypes[] = {
@@ -120,7 +120,7 @@ RawObject executeModuleFromCode(Thread* thread, const Code& code,
 }
 
 void moduleAddBuiltinFunctions(Thread* thread, const Module& module,
-                               const BuiltinMethod* functions) {
+                               const BuiltinFunction* functions) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object parameter_names(&scope, runtime->emptyTuple());

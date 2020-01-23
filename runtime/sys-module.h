@@ -4,6 +4,7 @@
 
 #include "frame.h"
 #include "globals.h"
+#include "modules.h"
 #include "objects.h"
 #include "runtime.h"
 
@@ -36,7 +37,7 @@ class SysModule {
   static RawObject excepthook(Thread* thread, Frame* frame, word nargs);
 
  private:
-  static const BuiltinMethod kBuiltinMethods[];
+  static const BuiltinFunction kBuiltinFunctions[];
 };
 
 }  // namespace py

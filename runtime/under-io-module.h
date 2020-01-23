@@ -23,7 +23,7 @@ class UnderIoModule : public ModuleBase<UnderIoModule, SymbolId::kUnderIo> {
   static RawObject underStringIOClosedGuard(Thread* thread, Frame* frame,
                                             word nargs);
 
-  static const BuiltinMethod kBuiltinMethods[];
+  static const BuiltinFunction kBuiltinFunctions[];
   static const BuiltinType kBuiltinTypes[];
   static const char* const kFrozenData;
 };

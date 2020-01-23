@@ -5,13 +5,14 @@
 #include "frozen-modules.h"
 #include "globals.h"
 #include "marshal.h"
+#include "modules.h"
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
 
 namespace py {
 
-const BuiltinMethod MarshalModule::kBuiltinMethods[] = {
+const BuiltinFunction MarshalModule::kBuiltinFunctions[] = {
     {SymbolId::kLoads, loads},
     {SymbolId::kSentinelId, nullptr},
 };

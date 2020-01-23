@@ -68,7 +68,7 @@ RawObject setAttribute(Thread* thread, const Object& self,
 }
 
 // clang-format off
-const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
+const BuiltinFunction BuiltinsModule::kBuiltinFunctions[] = {
     {SymbolId::kDunderBuildClass, dunderBuildClass},
     {SymbolId::kBin, bin},
     {SymbolId::kCallable, callable},
@@ -214,7 +214,7 @@ const SymbolId BuiltinsModule::kIntrinsicIds[] = {
 };
 
 void BuiltinsModule::initialize(Thread* thread, const Module& module) {
-  moduleAddBuiltinFunctions(thread, module, kBuiltinMethods);
+  moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
   moduleAddBuiltinTypes(thread, module, kBuiltinTypes);
 
   Runtime* runtime = thread->runtime();
@@ -244,10 +244,10 @@ void BuiltinsModule::initialize(Thread* thread, const Module& module) {
     Module under_builtins(&scope,
                           runtime->findModuleById(SymbolId::kUnderBuiltins));
     Object value(&scope, Unbound::object());
-    for (word i = 0;
-         UnderBuiltinsModule::kBuiltinMethods[i].name != SymbolId::kSentinelId;
+    for (word i = 0; UnderBuiltinsModule::kBuiltinFunctions[i].name !=
+                     SymbolId::kSentinelId;
          i++) {
-      SymbolId id = UnderBuiltinsModule::kBuiltinMethods[i].name;
+      SymbolId id = UnderBuiltinsModule::kBuiltinFunctions[i].name;
       value = moduleAtById(thread, under_builtins, id);
       moduleAtPutById(thread, module, id, value);
     }

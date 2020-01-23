@@ -5,12 +5,13 @@
 #include "frame.h"
 #include "frozen-modules.h"
 #include "handles.h"
+#include "modules.h"
 #include "runtime.h"
 #include "thread.h"
 
 namespace py {
 
-const BuiltinMethod UnderValgrindModule::kBuiltinMethods[] = {
+const BuiltinFunction UnderValgrindModule::kBuiltinFunctions[] = {
     {SymbolId::kCallgrindDumpStats, callgrindDumpStats},
     {SymbolId::kCallgrindStartInstrumentation, callgrindStartInstrumentation},
     {SymbolId::kCallgrindStopInstrumentation, callgrindStopInstrumentation},

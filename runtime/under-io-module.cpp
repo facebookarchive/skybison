@@ -5,6 +5,7 @@
 #include "frozen-modules.h"
 #include "globals.h"
 #include "int-builtins.h"
+#include "modules.h"
 #include "object-builtins.h"
 #include "objects.h"
 #include "os.h"
@@ -13,6 +14,16 @@
 #include "thread.h"
 
 namespace py {
+
+const BuiltinFunction UnderIoModule::kBuiltinFunctions[] = {
+    {SymbolId::kUnderBufferedReaderClearBuffer, underBufferedReaderClearBuffer},
+    {SymbolId::kUnderBufferedReaderInit, underBufferedReaderInit},
+    {SymbolId::kUnderBufferedReaderPeek, underBufferedReaderPeek},
+    {SymbolId::kUnderBufferedReaderRead, underBufferedReaderRead},
+    {SymbolId::kUnderBufferedReaderReadline, underBufferedReaderReadline},
+    {SymbolId::kUnderStringIOClosedGuard, underStringIOClosedGuard},
+    {SymbolId::kSentinelId, nullptr},
+};
 
 const BuiltinType UnderIoModule::kBuiltinTypes[] = {
     {SymbolId::kBufferedRandom, LayoutId::kBufferedRandom},
@@ -33,16 +44,6 @@ const BuiltinType UnderIoModule::kBuiltinTypes[] = {
 };
 
 const char* const UnderIoModule::kFrozenData = kUnderIoModuleData;
-
-const BuiltinMethod UnderIoModule::kBuiltinMethods[] = {
-    {SymbolId::kUnderBufferedReaderClearBuffer, underBufferedReaderClearBuffer},
-    {SymbolId::kUnderBufferedReaderInit, underBufferedReaderInit},
-    {SymbolId::kUnderBufferedReaderPeek, underBufferedReaderPeek},
-    {SymbolId::kUnderBufferedReaderRead, underBufferedReaderRead},
-    {SymbolId::kUnderBufferedReaderReadline, underBufferedReaderReadline},
-    {SymbolId::kUnderStringIOClosedGuard, underStringIOClosedGuard},
-    {SymbolId::kSentinelId, nullptr},
-};
 
 static RawObject initReadBuf(Thread* thread,
                              const BufferedReader& buffered_reader) {

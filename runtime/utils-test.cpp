@@ -244,7 +244,7 @@ TEST_F(UtilsTest, PrintTracebackPrintsTraceback) {
   ASSERT_TRUE(main_obj.isModule());
   Module main(&scope, *main_obj);
 
-  BuiltinMethod functions[] = {
+  BuiltinFunction functions[] = {
       {SymbolId::kTraceback, testPrintStacktrace},
       {SymbolId::kSentinelId, nullptr},
   };

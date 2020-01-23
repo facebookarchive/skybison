@@ -10,6 +10,7 @@
 #include "file.h"
 #include "frozen-modules.h"
 #include "int-builtins.h"
+#include "modules.h"
 #include "runtime.h"
 #include "sys-module.h"
 
@@ -37,7 +38,7 @@ static FaultHandler handler_sigsegv = {SIGSEGV, "Segmentation fault"};
 
 const char* const FaulthandlerModule::kFrozenData = kFaulthandlerModuleData;
 
-const BuiltinMethod FaulthandlerModule::kBuiltinMethods[] = {
+const BuiltinFunction FaulthandlerModule::kBuiltinFunctions[] = {
     {SymbolId::kUnderReadNull, underReadNull},
     {SymbolId::kUnderSigabrt, underSigabrt},
     {SymbolId::kUnderSigfpe, underSigfpe},

@@ -9,6 +9,11 @@
 
 namespace py {
 
+struct BuiltinFunction {
+  SymbolId name;
+  NativeMethodType address;
+};
+
 struct BuiltinType {
   SymbolId name;
   LayoutId type;
@@ -21,7 +26,7 @@ struct ModuleInitializer {
 
 class ModuleBaseBase {
  public:
-  static const BuiltinMethod kBuiltinMethods[];
+  static const BuiltinFunction kBuiltinFunctions[];
   static const BuiltinType kBuiltinTypes[];
   static const char kFrozenData[];
 };
@@ -41,7 +46,7 @@ NODISCARD RawObject executeModuleFromCode(Thread* thread, const Code& code,
                                           const Object& name);
 
 void moduleAddBuiltinFunctions(Thread* thread, const Module& module,
-                               const BuiltinMethod* functions);
+                               const BuiltinFunction* functions);
 void moduleAddBuiltinTypes(Thread* thread, const Module& module,
                            const BuiltinType* types);
 
@@ -49,7 +54,7 @@ template <typename T, SymbolId name>
 class ModuleBase : public ModuleBaseBase {
  public:
   static void initialize(Thread* thread, const Module& module) {
-    moduleAddBuiltinFunctions(thread, module, T::kBuiltinMethods);
+    moduleAddBuiltinFunctions(thread, module, T::kBuiltinFunctions);
     moduleAddBuiltinTypes(thread, module, T::kBuiltinTypes);
     executeFrozenModule(thread, T::kFrozenData, module);
   }

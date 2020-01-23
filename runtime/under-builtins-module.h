@@ -3,6 +3,7 @@
 #include "frame.h"
 #include "globals.h"
 #include "handles.h"
+#include "modules.h"
 #include "objects.h"
 #include "runtime.h"
 
@@ -364,7 +365,7 @@ class UnderBuiltinsModule {
   static RawObject underWeakrefReferent(Thread* thread, Frame* frame,
                                         word nargs);
 
-  static const BuiltinMethod kBuiltinMethods[];
+  static const BuiltinFunction kBuiltinFunctions[];
 
  private:
   static const SymbolId kIntrinsicIds[];

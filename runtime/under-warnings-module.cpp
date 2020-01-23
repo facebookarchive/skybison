@@ -3,6 +3,7 @@
 #include "frame.h"
 #include "frozen-modules.h"
 #include "handles.h"
+#include "modules.h"
 #include "runtime.h"
 #include "thread.h"
 #include "type-builtins.h"
@@ -34,7 +35,7 @@ RawObject getCategory(Thread* thread, const Object& message,
 }
 }  // namespace
 
-const BuiltinMethod UnderWarningsModule::kBuiltinMethods[] = {
+const BuiltinFunction UnderWarningsModule::kBuiltinFunctions[] = {
     {SymbolId::kWarn, warn},
     {SymbolId::kSentinelId, nullptr},
 };

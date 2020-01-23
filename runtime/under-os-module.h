@@ -21,7 +21,7 @@ class UnderOsModule : public ModuleBase<UnderOsModule, SymbolId::kUnderOs> {
   static RawObject read(Thread* thread, Frame* frame, word nargs);
   static RawObject setNoinheritable(Thread* thread, Frame* frame, word nargs);
 
-  static const BuiltinMethod kBuiltinMethods[];
+  static const BuiltinFunction kBuiltinFunctions[];
   static const char* const kFrozenData;
 };
 

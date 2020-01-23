@@ -5,6 +5,7 @@
 #include "frame.h"
 #include "frozen-modules.h"
 #include "int-builtins.h"
+#include "modules.h"
 #include "runtime.h"
 #include "str-builtins.h"
 
@@ -47,7 +48,7 @@ static int asciiDecode(Thread* thread, const StrArray& dst, const Bytes& src,
   return index;
 }
 
-const BuiltinMethod UnderCodecsModule::kBuiltinMethods[] = {
+const BuiltinFunction UnderCodecsModule::kBuiltinFunctions[] = {
     {SymbolId::kUnderAsciiDecode, underAsciiDecode},
     {SymbolId::kUnderAsciiEncode, underAsciiEncode},
     {SymbolId::kUnderBytearrayStringAppend, underBytearrayStringAppend},

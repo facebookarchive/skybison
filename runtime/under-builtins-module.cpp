@@ -17,6 +17,7 @@
 #include "list-builtins.h"
 #include "memoryview-builtins.h"
 #include "module-builtins.h"
+#include "modules.h"
 #include "mro.h"
 #include "object-builtins.h"
 #include "range-builtins.h"
@@ -73,7 +74,7 @@ static RawObject raiseRequiresFromCaller(Thread* thread, Frame* frame,
                               &function_name, expected_type, &obj);
 }
 
-const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
+const BuiltinFunction UnderBuiltinsModule::kBuiltinFunctions[] = {
     {SymbolId::kUnderAddress, underAddress},
     {SymbolId::kUnderBoundMethod, underBoundMethod},
     {SymbolId::kUnderBoolCheck, underBoolCheck},
@@ -376,7 +377,7 @@ const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
 // clang-format on
 
 void UnderBuiltinsModule::initialize(Thread* thread, const Module& module) {
-  moduleAddBuiltinFunctions(thread, module, kBuiltinMethods);
+  moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
 
   // We have to patch _patch manually.
   HandleScope scope(thread);

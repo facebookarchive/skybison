@@ -684,7 +684,7 @@ static void createAndPatchBuiltinReturnSecondArg(Thread* thread,
   // Ensure we have a __main__ module.
   ASSERT_FALSE(runFromCStr(runtime, "").isError());
   Module main(&scope, findMainModule(runtime));
-  BuiltinMethod functions[] = {
+  BuiltinFunction functions[] = {
       {SymbolId::kDummy, builtinReturnSecondArg},
       {SymbolId::kSentinelId, nullptr},
   };
@@ -1987,7 +1987,7 @@ static void createAndPatchBuiltinNumArgs(Thread* thread, Runtime* runtime) {
   ASSERT_FALSE(runFromCStr(runtime, "").isError());
   HandleScope scope;
   Module main(&scope, findMainModule(runtime));
-  BuiltinMethod functions[] = {
+  BuiltinFunction functions[] = {
       {SymbolId::kDummy, numArgs},
       {SymbolId::kSentinelId, nullptr},
   };
@@ -2022,7 +2022,7 @@ static void createAndPatchBuiltinNumArgsVariadic(Thread* thread,
   ASSERT_FALSE(runFromCStr(runtime, "").isError());
   HandleScope scope;
   Module main(&scope, findMainModule(runtime));
-  BuiltinMethod functions[] = {
+  BuiltinFunction functions[] = {
       {SymbolId::kDummy, numArgs},
       {SymbolId::kSentinelId, nullptr},
   };
@@ -2050,7 +2050,7 @@ static void createAndPatchBuiltinNumArgsArgsKwargs(Thread* thread,
   ASSERT_FALSE(runFromCStr(runtime, "").isError());
   HandleScope scope;
   Module main(&scope, findMainModule(runtime));
-  BuiltinMethod functions[] = {
+  BuiltinFunction functions[] = {
       {SymbolId::kDummy, numArgs},
       {SymbolId::kSentinelId, nullptr},
   };

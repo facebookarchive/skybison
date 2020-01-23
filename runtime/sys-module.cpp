@@ -27,14 +27,14 @@ namespace py {
 
 extern "C" struct _inittab _PyImport_Inittab[];
 
-const BuiltinMethod SysModule::kBuiltinMethods[] = {
+const BuiltinFunction SysModule::kBuiltinFunctions[] = {
     {SymbolId::kExcInfo, excInfo},
     {SymbolId::kExcepthook, excepthook},
     {SymbolId::kSentinelId, nullptr},
 };
 
 void SysModule::initialize(Thread* thread, const Module& module) {
-  moduleAddBuiltinFunctions(thread, module, kBuiltinMethods);
+  moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
 
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();

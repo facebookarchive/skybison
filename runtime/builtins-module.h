@@ -37,7 +37,7 @@ class BuiltinsModule {
   static RawObject setattr(Thread* thread, Frame* frame, word nargs);
 
  private:
-  static const BuiltinMethod kBuiltinMethods[];
+  static const BuiltinFunction kBuiltinFunctions[];
   static const BuiltinType kBuiltinTypes[];
   static const SymbolId kIntrinsicIds[];
 };

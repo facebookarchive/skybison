@@ -6,6 +6,7 @@
 #include "frozen-modules.h"
 #include "globals.h"
 #include "module-builtins.h"
+#include "modules.h"
 #include "objects.h"
 #include "os.h"
 #include "runtime.h"
@@ -41,7 +42,7 @@ bool importReleaseLock(Thread* thread) {
   return true;
 }
 
-const BuiltinMethod UnderImpModule::kBuiltinMethods[] = {
+const BuiltinFunction UnderImpModule::kBuiltinFunctions[] = {
     {SymbolId::kAcquireLock, acquireLock},
     {SymbolId::kCreateBuiltin, createBuiltin},
     {SymbolId::kExecBuiltin, execBuiltin},

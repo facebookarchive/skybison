@@ -9,12 +9,13 @@
 #include "file.h"
 #include "frozen-modules.h"
 #include "module-builtins.h"
+#include "modules.h"
 #include "runtime.h"
 #include "symbols.h"
 
 namespace py {
 
-const BuiltinMethod UnderOsModule::kBuiltinMethods[] = {
+const BuiltinFunction UnderOsModule::kBuiltinFunctions[] = {
     {SymbolId::kClose, close},
     {SymbolId::kFstatSize, fstatSize},
     {SymbolId::kFtruncate, ftruncate},

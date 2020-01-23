@@ -1,12 +1,13 @@
 #include "under-signal-module.h"
 
 #include "frozen-modules.h"
+#include "modules.h"
 #include "runtime.h"
 #include "symbols.h"
 
 namespace py {
 
-const BuiltinMethod UnderSignalModule::kBuiltinMethods[] = {
+const BuiltinFunction UnderSignalModule::kBuiltinFunctions[] = {
     {SymbolId::kSentinelId, nullptr},
 };
 
