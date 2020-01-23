@@ -409,6 +409,7 @@ const BuiltinAttribute StrBuiltins::kAttributes[] = {
 const BuiltinMethod StrBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderAdd, dunderAdd},
     {SymbolId::kDunderBool, dunderBool},
+    {SymbolId::kDunderContains, dunderContains},
     {SymbolId::kDunderEq, dunderEq},
     {SymbolId::kDunderFormat, dunderFormat},
     {SymbolId::kDunderGe, dunderGe},
@@ -471,6 +472,24 @@ RawObject StrBuiltins::dunderBool(Thread* thread, Frame* frame, word nargs) {
   }
   Str self(&scope, strUnderlying(*self_obj));
   return Bool::fromBool(*self != Str::empty());
+}
+
+RawObject StrBuiltins::dunderContains(Thread* thread, Frame* frame,
+                                      word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+  }
+  Object other_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfStr(*other_obj)) {
+    return thread->raiseRequiresType(other_obj, SymbolId::kStr);
+  }
+  Str self(&scope, strUnderlying(*self_obj));
+  Str other(&scope, strUnderlying(*other_obj));
+  return Bool::fromBool(strFind(self, other) != -1);
 }
 
 RawObject StrBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {

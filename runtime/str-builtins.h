@@ -123,6 +123,7 @@ class StrBuiltins
 
   static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderBool(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderContains(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderFormat(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGe(Thread* thread, Frame* frame, word nargs);

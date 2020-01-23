@@ -4969,13 +4969,7 @@ class str(bootstrap=True):
         pass
 
     def __contains__(self, other):
-        _str_guard(self)
-        if not _str_check(other):
-            raise TypeError(
-                "'in <string>' requires string as left operand, not "
-                f"{_type(other).__name__}"
-            )
-        return _str_find(self, other, None, None) != -1
+        pass
 
     def __eq__(self, other):
         pass
