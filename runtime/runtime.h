@@ -266,7 +266,8 @@ class Runtime {
   RawObject typeDunderGetattribute() { return type_dunder_getattribute_; }
 
   void cacheBuildClass(Thread* thread, const Module& builtins);
-  void cacheBuiltinsInstances(Thread* thread, const Module& builtins);
+  void cacheDunderImport(Thread* thread, const Module& builtins);
+  void cacheBuiltinsInstances(Thread* thread);
   void cacheSysInstances(Thread* thread, const Module& sys);
 
   static RawObject internStr(Thread* thread, const Object& str);

@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 
+from _builtins import _int_check, _os_write, _patch, _Unbound
+
 
 # These values are all injected by our boot process. flake8 has no knowledge
 # about their definitions and will complain without these lines.
-_Unbound = _Unbound  # noqa: F821
 _base_dir = _base_dir  # noqa: F821
-_int_check = _int_check  # noqa: F821
-_os_write = _os_write  # noqa: F821
-_patch = _patch  # noqa: F821
 _python_path = _python_path  # noqa: F821
 _stderr_fd = _stderr_fd  # noqa: F821
 _stdout_fd = _stdout_fd  # noqa: F821

@@ -1,25 +1,29 @@
 #!/usr/bin/env python3
 """This is an internal module implementing "str.__mod__" formatting."""
 
-_float = _float  # noqa: F821
-_float_check = _float_check  # noqa: F821
-_float_format = _float_format  # noqa: F821
-_float_signbit = _float_signbit  # noqa: F821
-_index = _index  # noqa: F821
-_int_check = _int_check  # noqa: F821
-_int_format_hexadecimal = _int_format_hexadecimal  # noqa: F821
-_int_format_hexadecimal_upcase = _int_format_hexadecimal_upcase  # noqa: F821
-_int_format_octal = _int_format_octal  # noqa: F821
-_mapping_check = _mapping_check  # noqa: F821
-_number_check = _number_check  # noqa: F821
-_str_check = _str_check  # noqa: F821
-_str_len = _str_len  # noqa: F821
-_strarray = _strarray  # noqa: F821
-_strarray_iadd = _strarray_iadd  # noqa: F821
-_tuple_check = _tuple_check  # noqa: F821
-_tuple_getitem = _tuple_getitem  # noqa: F821
-_tuple_len = _tuple_len  # noqa: F821
-_type = _type  # noqa: F821
+from builtins import (
+    _float,
+    _index,
+    _int_format_hexadecimal,
+    _int_format_hexadecimal_upcase,
+    _int_format_octal,
+    _mapping_check,
+    _number_check,
+    _strarray,
+)
+
+from _builtins import (
+    _float_format,
+    _float_signbit,
+    _int_check,
+    _str_check,
+    _str_len,
+    _strarray_iadd,
+    _tuple_check,
+    _tuple_getitem,
+    _tuple_len,
+    _type,
+)
 
 
 _FLAG_LJUST = 1 << 0

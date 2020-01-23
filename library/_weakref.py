@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 """Weak-reference support module."""
-_Unbound = _Unbound  # noqa: F821
-_index = _index  # noqa: F821
-_property = _property  # noqa: F821
-_unimplemented = _unimplemented  # noqa: F821
-_weakref_callback = _weakref_callback  # noqa: F821
-_weakref_check = _weakref_check  # noqa: F821
-_weakref_guard = _weakref_guard  # noqa: F821
-_weakref_referent = _weakref_referent  # noqa: F821
+
+from builtins import _index
+
+from _builtins import (
+    _property,
+    _unimplemented,
+    _weakref_callback,
+    _weakref_check,
+    _weakref_guard,
+    _weakref_referent,
+)
+
 
 __all__ = ["CallableProxyType", "ProxyType", "ReferenceType", "ref", "proxy"]
 

@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 """Functional tools for creating and using iterators."""
-import operator
-
-
 # TODO(T42113424) Replace stubs with an actual implementation
-_Unbound = _Unbound  # noqa: F821
-_int_check = _int_check  # noqa: F821
-_int_guard = _int_guard  # noqa: F821
-_list_len = _list_len  # noqa: F821
-_list_new = _list_new  # noqa: F821
-_number_check = _number_check  # noqa: F821
-_object_type_hasattr = _object_type_hasattr  # noqa: F821
-_tuple_len = _tuple_len  # noqa: F821
-_unimplemented = _unimplemented  # noqa: F821
+
+import operator
+from builtins import _number_check
+
+from _builtins import (
+    _int_check,
+    _int_guard,
+    _list_len,
+    _list_new,
+    _tuple_len,
+    _Unbound,
+    _unimplemented,
+)
 
 
 class accumulate:

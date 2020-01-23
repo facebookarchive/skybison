@@ -2,9 +2,7 @@
 
 import sys
 
-
-_patch = _patch  # noqa: F821
-_unimplemented = _unimplemented  # noqa: F821
+from _builtins import _patch, _unimplemented
 
 
 def _fatal_error(message):

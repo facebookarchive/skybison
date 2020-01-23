@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 
-# This is the patch decorator, injected by our boot process. flake8 has no
-# knowledge about its definition and will complain without this gross circular
-# helper here.
-_unimplemented = _unimplemented  # noqa: F821
+from _builtins import _unimplemented
 
 
 # TODO(T53322979): Re-write to be thread-safe

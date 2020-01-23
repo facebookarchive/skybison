@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-_unimplemented = _unimplemented  # noqa: F821
+from _builtins import _unimplemented
 
 
 def disable():

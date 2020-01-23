@@ -12,17 +12,9 @@ This is the pure Python implementation of the module.
 The Pyro runtime and C-API can delegate to this module to do some heavy lifting.
 """
 
+from builtins import _sequence_repr, _type_name
 
-from _builtins import _lt as lt
-
-
-# These values are injected by our boot process. flake8 has no knowledge about
-# their definitions.
-_divmod = _divmod  # noqa: F821
-_int_check = _int_check  # noqa: F821
-_sequence_repr = _sequence_repr  # noqa: F821
-_str_check = _str_check  # noqa: F821
-_type_name = _type_name  # noqa: F821
+from _builtins import _divmod, _int_check, _lt as lt, _str_check
 
 
 __all__ = [

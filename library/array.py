@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Array.array module TODO(T55711876): provide an implemenation"""
 
-_unimplemented = _unimplemented  # noqa: F821
+from _builtins import _unimplemented
 
 
 class array:

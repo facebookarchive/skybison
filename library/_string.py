@@ -1,12 +1,6 @@
 #!/usr/bin/env python3
 
-
-# These values are injected by our boot process. flake8 has no knowledge about
-# their definitions and will complain without this circular helper here.
-_str_from_str = _str_from_str  # noqa: F821
-_str_guard = _str_guard  # noqa: F821
-_str_len = _str_len  # noqa: F821
-_unimplemented = _unimplemented  # noqa: F821
+from _builtins import _str_from_str, _str_guard, _str_len, _unimplemented
 
 
 _empty_iterator = iter(())

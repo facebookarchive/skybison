@@ -220,6 +220,7 @@ void BuiltinsModule::initialize(Thread* thread, const Module& module) {
 
   Runtime* runtime = thread->runtime();
   runtime->cacheBuildClass(thread, module);
+  runtime->cacheDunderImport(thread, module);
   HandleScope scope(thread);
 
   // Add module variables
@@ -240,29 +241,17 @@ void BuiltinsModule::initialize(Thread* thread, const Module& module) {
     moduleAtPutById(thread, module, SymbolId::kTrue, true_obj);
   }
 
-  // Manually import all of the functions and types in the _builtins module.
+  // Copy `_builtins._patch` to `builtins._patch`.
   {
     Module under_builtins(&scope,
                           runtime->findModuleById(SymbolId::kUnderBuiltins));
-    Object value(&scope, Unbound::object());
-    for (word i = 0; UnderBuiltinsModule::kBuiltinFunctions[i].name !=
-                     SymbolId::kSentinelId;
-         i++) {
-      SymbolId id = UnderBuiltinsModule::kBuiltinFunctions[i].name;
-      value = moduleAtById(thread, under_builtins, id);
-      moduleAtPutById(thread, module, id, value);
-    }
-    value = moduleAtById(thread, under_builtins, SymbolId::kUnderPatch);
+    Object value(&scope,
+                 moduleAtById(thread, under_builtins, SymbolId::kUnderPatch));
     moduleAtPutById(thread, module, SymbolId::kUnderPatch, value);
-    value = moduleAtById(thread, under_builtins, SymbolId::kUnderUnbound);
-    moduleAtPutById(thread, module, SymbolId::kUnderUnbound, value);
-    value =
-        moduleAtById(thread, under_builtins, SymbolId::kUnderCompileFlagsMask);
-    moduleAtPutById(thread, module, SymbolId::kUnderCompileFlagsMask, value);
   }
 
   executeFrozenModule(thread, kBuiltinsModuleData, module);
-  runtime->cacheBuiltinsInstances(thread, module);
+  runtime->cacheBuiltinsInstances(thread);
 
   // Populate some builtin types with shortcut constructors.
   {

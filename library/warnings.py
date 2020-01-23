@@ -3,9 +3,7 @@
 
 import sys
 
-
-_getframe_function = _getframe_function  # noqa: F821
-_getframe_lineno = _getframe_lineno  # noqa: F821
+from _builtins import _getframe_function, _getframe_lineno
 
 
 __all__ = [

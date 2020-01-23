@@ -2126,12 +2126,15 @@ void Runtime::cacheBuildClass(Thread* thread, const Module& builtins) {
   CHECK(!build_class_.isErrorNotFound(), "__build_class__ not found");
 }
 
-void Runtime::cacheBuiltinsInstances(Thread* thread, const Module& builtins) {
-  // TODO(T39575976): Create a consistent way to hide internal names
-  // such as "module" or "function"
+void Runtime::cacheDunderImport(Thread* thread, const Module& builtins) {
   dunder_import_ =
       moduleValueCellAtById(thread, builtins, SymbolId::kDunderImport);
   CHECK(!dunder_import_.isErrorNotFound(), "__import__ not found");
+}
+
+void Runtime::cacheBuiltinsInstances(Thread* thread) {
+  // TODO(T39575976): Create a consistent way to hide internal names
+  // such as "module" or "function"
 
   HandleScope scope(thread);
   Type object_type(&scope, typeAt(LayoutId::kObject));

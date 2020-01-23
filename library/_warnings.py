@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """_warnings provides basic warning filtering support."""
 
+from _builtins import _patch
 
-@_patch  # noqa: F821
+
+@_patch
 def warn(message, category=None, stacklevel=1, source=None):
     pass
 

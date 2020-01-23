@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
 
-
+from _builtins import _Unbound, _unimplemented
 from _thread import Lock  # noqa: F401
-
-
-_Unbound = _Unbound  # noqa: F821
-_unimplemented = _unimplemented  # noqa: F821
 
 
 class Barrier:

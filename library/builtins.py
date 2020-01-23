@@ -1,239 +1,259 @@
 #!/usr/bin/env python3
-"""Built-in classes, functions, and constants."""
+"""Built-in classes, functions, and constants.
+isort:skip_file"""
 
 
-# These values, which live in the _builtins module, are injected by our boot
-# process. The runtime imports them manually because __import__ has not been
-# defined yet in the execution of this module. flake8 has no knowledge about
-# their definitions and will complain without these circular assignments.
-_address = _address  # noqa: F821
-_bool_check = _bool_check  # noqa: F821
-_bool_guard = _bool_guard  # noqa: F821
-_bound_method = _bound_method  # noqa: F821
-_bytearray_check = _bytearray_check  # noqa: F821
-_bytearray_clear = _bytearray_clear  # noqa: F821
-_bytearray_contains = _bytearray_contains  # noqa: F821
-_bytearray_delitem = _bytearray_delitem  # noqa: F821
-_bytearray_delslice = _bytearray_delslice  # noqa: F821
-_bytearray_getitem = _bytearray_getitem  # noqa: F821
-_bytearray_getslice = _bytearray_getslice  # noqa: F821
-_bytearray_guard = _bytearray_guard  # noqa: F821
-_bytearray_join = _bytearray_join  # noqa: F821
-_bytearray_len = _bytearray_len  # noqa: F821
-_bytearray_setitem = _bytearray_setitem  # noqa: F821
-_bytearray_setslice = _bytearray_setslice  # noqa: F821
-_bytes_check = _bytes_check  # noqa: F821
-_bytes_contains = _bytes_contains  # noqa: F821
-_bytes_decode = _bytes_decode  # noqa: F821
-_bytes_decode_utf_8 = _bytes_decode_utf_8  # noqa: F821
-_bytes_from_bytes = _bytes_from_bytes  # noqa: F821
-_bytes_from_ints = _bytes_from_ints  # noqa: F821
-_bytes_getitem = _bytes_getitem  # noqa: F821
-_bytes_getslice = _bytes_getslice  # noqa: F821
-_bytes_guard = _bytes_guard  # noqa: F821
-_bytes_join = _bytes_join  # noqa: F821
-_bytes_len = _bytes_len  # noqa: F821
-_bytes_maketrans = _bytes_maketrans  # noqa: F821
-_bytes_repeat = _bytes_repeat  # noqa: F821
-_bytes_split = _bytes_split  # noqa: F821
-_bytes_split_whitespace = _bytes_split_whitespace  # noqa: F821
-_byteslike_check = _byteslike_check  # noqa: F821
-_byteslike_count = _byteslike_count  # noqa: F821
-_byteslike_endswith = _byteslike_endswith  # noqa: F821
-_byteslike_find_byteslike = _byteslike_find_byteslike  # noqa: F821
-_byteslike_find_int = _byteslike_find_int  # noqa: F821
-_byteslike_guard = _byteslike_guard  # noqa: F821
-_byteslike_rfind_byteslike = _byteslike_rfind_byteslike  # noqa: F821
-_byteslike_rfind_int = _byteslike_rfind_int  # noqa: F821
-_byteslike_startswith = _byteslike_startswith  # noqa: F821
-_classmethod = _classmethod  # noqa: F821
-_classmethod_isabstract = _classmethod_isabstract  # noqa: F821
-_code_check = _code_check  # noqa: F821
-_code_guard = _code_guard  # noqa: F821
-_code_set_posonlyargcount = _code_set_posonlyargcount  # noqa: F821
-_compile_flags_mask = _compile_flags_mask  # noqa: F821
-_complex_check = _complex_check  # noqa: F821
-_complex_checkexact = _complex_checkexact  # noqa: F821
-_complex_imag = _complex_imag  # noqa: F821
-_complex_new = _complex_new  # noqa: F821
-_complex_new_from_str = _complex_new_from_str  # noqa: F821
-_complex_real = _complex_real  # noqa: F821
-_dict_bucket_insert = _dict_bucket_insert  # noqa: F821
-_dict_bucket_key = _dict_bucket_key  # noqa: F821
-_dict_bucket_set_value = _dict_bucket_set_value  # noqa: F821
-_dict_bucket_value = _dict_bucket_value  # noqa: F821
-_dict_check = _dict_check  # noqa: F821
-_dict_check_exact = _dict_check_exact  # noqa: F821
-_dict_get = _dict_get  # noqa: F821
-_dict_guard = _dict_guard  # noqa: F821
-_dict_lookup = _dict_lookup  # noqa: F821
-_dict_lookup_next = _dict_lookup_next  # noqa: F821
-_dict_popitem = _dict_popitem  # noqa: F821
-_dict_setitem = _dict_setitem  # noqa: F821
-_dict_update = _dict_update  # noqa: F821
-_divmod = _divmod  # noqa: F821
-_exec = _exec  # noqa: F821
-_float_check = _float_check  # noqa: F821
-_float_check_exact = _float_check_exact  # noqa: F821
-_float_divmod = _float_divmod  # noqa: F821
-_float_format = _float_format  # noqa: F821
-_float_guard = _float_guard  # noqa: F821
-_float_new_from_byteslike = _float_new_from_byteslike  # noqa: F821
-_float_new_from_float = _float_new_from_float  # noqa: F821
-_float_new_from_str = _float_new_from_str  # noqa: F821
-_frozenset_check = _frozenset_check  # noqa: F821
-_frozenset_guard = _frozenset_guard  # noqa: F821
-_function_globals = _function_globals  # noqa: F821
-_function_guard = _function_guard  # noqa: F821
-_gc = _gc  # noqa: F821
-_getframe_function = _getframe_function  # noqa: F821
-_getframe_locals = _getframe_locals  # noqa: F821
-_get_member_byte = _get_member_byte  # noqa: F821
-_get_member_char = _get_member_char  # noqa: F821
-_get_member_double = _get_member_double  # noqa: F821
-_get_member_float = _get_member_float  # noqa: F821
-_get_member_int = _get_member_int  # noqa: F821
-_get_member_long = _get_member_long  # noqa: F821
-_get_member_pyobject = _get_member_pyobject  # noqa: F821
-_get_member_short = _get_member_short  # noqa: F821
-_get_member_string = _get_member_string  # noqa: F821
-_get_member_ubyte = _get_member_ubyte  # noqa: F821
-_get_member_uint = _get_member_uint  # noqa: F821
-_get_member_ulong = _get_member_ulong  # noqa: F821
-_get_member_ushort = _get_member_ushort  # noqa: F821
-_instance_delattr = _instance_delattr  # noqa: F821
-_instance_getattr = _instance_getattr  # noqa: F821
-_instance_guard = _instance_guard  # noqa: F821
-_instance_overflow_dict = _instance_overflow_dict  # noqa: F821
-_instance_setattr = _instance_setattr  # noqa: F821
-_int_check = _int_check  # noqa: F821
-_int_check_exact = _int_check_exact  # noqa: F821
-_int_from_bytes = _int_from_bytes  # noqa: F821
-_int_guard = _int_guard  # noqa: F821
-_int_new_from_bytearray = _int_new_from_bytearray  # noqa: F821
-_int_new_from_bytes = _int_new_from_bytes  # noqa: F821
-_int_new_from_int = _int_new_from_int  # noqa: F821
-_int_new_from_str = _int_new_from_str  # noqa: F821
-_list_check = _list_check  # noqa: F821
-_list_check_exact = _list_check_exact  # noqa: F821
-_list_delitem = _list_delitem  # noqa: F821
-_list_delslice = _list_delslice  # noqa: F821
-_list_extend = _list_extend  # noqa: F821
-_list_getitem = _list_getitem  # noqa: F821
-_list_getslice = _list_getslice  # noqa: F821
-_list_guard = _list_guard  # noqa: F821
-_list_len = _list_len  # noqa: F821
-_list_new = _list_new  # noqa: F821
-_list_setitem = _list_setitem  # noqa: F821
-_list_setslice = _list_setslice  # noqa: F821
-_list_sort = _list_sort  # noqa: F821
-_list_swap = _list_swap  # noqa: F821
-_mappingproxy_guard = _mappingproxy_guard  # noqa: F821
-_mappingproxy_mapping = _mappingproxy_mapping  # noqa: F821
-_mappingproxy_set_mapping = _mappingproxy_set_mapping  # noqa: F821
-_memoryview_guard = _memoryview_guard  # noqa: F821
-_memoryview_itemsize = _memoryview_itemsize  # noqa: F821
-_memoryview_nbytes = _memoryview_nbytes  # noqa: F821
-_memoryview_setitem = _memoryview_setitem  # noqa: F821
-_memoryview_setslice = _memoryview_setslice  # noqa: F821
-_module_dir = _module_dir  # noqa: F821
-_module_proxy = _module_proxy  # noqa: F821
-_module_proxy_check = _module_proxy_check  # noqa: F821
-_module_proxy_delitem = _module_proxy_delitem  # noqa: F821
-_module_proxy_get = _module_proxy_get  # noqa: F821
-_module_proxy_guard = _module_proxy_guard  # noqa: F821
-_module_proxy_keys = _module_proxy_keys  # noqa: F821
-_module_proxy_len = _module_proxy_len  # noqa: F821
-_module_proxy_setitem = _module_proxy_setitem  # noqa: F821
-_module_proxy_values = _module_proxy_values  # noqa: F821
-_iter = _iter  # noqa: F821
-_object_keys = _object_keys  # noqa: F821
-_object_type_getattr = _object_type_getattr  # noqa: F821
-_object_type_hasattr = _object_type_hasattr  # noqa: F821
+# Indicate to the linter that `_patch` is indeed defined at this point.
 _patch = _patch  # noqa: F821
-_property = _property  # noqa: F821
-_property_isabstract = _property_isabstract  # noqa: F821
-_pyobject_offset = _pyobject_offset  # noqa: F821
-_range_check = _range_check  # noqa: F821
-_range_guard = _range_guard  # noqa: F821
-_range_len = _range_len  # noqa: F821
-_repr_enter = _repr_enter  # noqa: F821
-_repr_leave = _repr_leave  # noqa: F821
-_seq_index = _seq_index  # noqa: F821
-_seq_iterable = _seq_iterable  # noqa: F821
-_seq_set_index = _seq_set_index  # noqa: F821
-_seq_set_iterable = _seq_set_iterable  # noqa: F821
-_set_check = _set_check  # noqa: F821
-_set_guard = _set_guard  # noqa: F821
-_set_len = _set_len  # noqa: F821
-_set_member_double = _set_member_double  # noqa: F821
-_set_member_float = _set_member_float  # noqa: F821
-_set_member_integral = _set_member_integral  # noqa: F821
-_set_member_pyobject = _set_member_pyobject  # noqa: F821
-_slice_check = _slice_check  # noqa: F821
-_slice_guard = _slice_guard  # noqa: F821
-_slice_start = _slice_start  # noqa: F821
-_slice_start_long = _slice_start_long  # noqa: F821
-_slice_step = _slice_step  # noqa: F821
-_slice_step_long = _slice_step_long  # noqa: F821
-_slice_stop = _slice_stop  # noqa: F821
-_slice_stop_long = _slice_stop_long  # noqa: F821
-_staticmethod_isabstract = _staticmethod_isabstract  # noqa: F821
-_str_check = _str_check  # noqa: F821
-_str_check_exact = _str_check_exact  # noqa: F821
-_str_count = _str_count  # noqa: F821
-_str_encode = _str_encode  # noqa: F821
-_str_endswith = _str_endswith  # noqa: F821
-_str_escape_non_ascii = _str_escape_non_ascii  # noqa: F821
-_str_find = _str_find  # noqa: F821
-_str_from_str = _str_from_str  # noqa: F821
-_str_getitem = _str_getitem  # noqa: F821
-_str_getslice = _str_getslice  # noqa: F821
-_str_guard = _str_guard  # noqa: F821
-_str_ischr = _str_ischr  # noqa: F821
-_str_join = _str_join  # noqa: F821
-_str_len = _str_len  # noqa: F821
-_str_mod_fast_path = _str_mod_fast_path  # noqa: F821
-_str_partition = _str_partition  # noqa: F821
-_str_replace = _str_replace  # noqa: F821
-_str_rfind = _str_rfind  # noqa: F821
-_str_rpartition = _str_rpartition  # noqa: F821
-_str_split = _str_split  # noqa: F821
-_str_splitlines = _str_splitlines  # noqa: F821
-_str_startswith = _str_startswith  # noqa: F821
-_strarray_iadd = _strarray_iadd  # noqa: F821
-_tuple_check = _tuple_check  # noqa: F821
-_tuple_check_exact = _tuple_check_exact  # noqa: F821
-_tuple_getitem = _tuple_getitem  # noqa: F821
-_tuple_getslice = _tuple_getslice  # noqa: F821
-_tuple_guard = _tuple_guard  # noqa: F821
-_tuple_len = _tuple_len  # noqa: F821
-_tuple_new = _tuple_new  # noqa: F821
-_type = _type  # noqa: F821
-_type_abstractmethods_del = _type_abstractmethods_del  # noqa: F821
-_type_abstractmethods_get = _type_abstractmethods_get  # noqa: F821
-_type_abstractmethods_set = _type_abstractmethods_set  # noqa: F821
-_type_bases_del = _type_bases_del  # noqa: F821
-_type_bases_get = _type_bases_get  # noqa: F821
-_type_bases_set = _type_bases_set  # noqa: F821
-_type_check = _type_check  # noqa: F821
-_type_check_exact = _type_check_exact  # noqa: F821
-_type_dunder_call = _type_dunder_call  # noqa: F821
-_type_guard = _type_guard  # noqa: F821
-_type_init = _type_init  # noqa: F821
-_type_issubclass = _type_issubclass  # noqa: F821
-_type_new = _type_new  # noqa: F821
-_type_proxy = _type_proxy  # noqa: F821
-_type_proxy_check = _type_proxy_check  # noqa: F821
-_type_proxy_get = _type_proxy_get  # noqa: F821
-_type_proxy_guard = _type_proxy_guard  # noqa: F821
-_type_proxy_keys = _type_proxy_keys  # noqa: F821
-_type_proxy_len = _type_proxy_len  # noqa: F821
-_type_proxy_values = _type_proxy_values  # noqa: F821
-_type_subclass_guard = _type_subclass_guard  # noqa: F821
-_Unbound = _Unbound  # noqa: F821
-_unimplemented = _unimplemented  # noqa: F821
-_warn = _warn  # noqa: F821
+
+
+@_patch
+def __import__(name, globals=None, locals=None, fromlist=(), level=0):
+    """This function is used for builtins.__import__ during early bootstrap
+    until importlib is fully initialized."""
+    pass
+
+
+# TODO(T61007763): We currently have to split the `from import` statement into
+# multiple chunks or the peephole optimizer bails out because
+# "the lnotab table is too complex".
+from _builtins import (
+    _address,
+    _bool_check,
+    _bool_guard,
+    _bound_method,
+    _bytearray_check,
+    _bytearray_clear,
+    _bytearray_contains,
+    _bytearray_delitem,
+    _bytearray_delslice,
+    _bytearray_getitem,
+    _bytearray_getslice,
+    _bytearray_guard,
+    _bytearray_join,
+    _bytearray_len,
+    _bytearray_setitem,
+    _bytearray_setslice,
+    _bytes_check,
+    _bytes_contains,
+    _bytes_decode,
+    _bytes_decode_utf_8,
+    _bytes_from_bytes,
+    _bytes_from_ints,
+    _bytes_getitem,
+    _bytes_getslice,
+    _bytes_guard,
+    _bytes_join,
+    _bytes_len,
+    _bytes_maketrans,
+    _bytes_repeat,
+    _bytes_split,
+    _bytes_split_whitespace,
+    _byteslike_check,
+    _byteslike_count,
+    _byteslike_endswith,
+    _byteslike_find_byteslike,
+    _byteslike_find_int,
+    _byteslike_guard,
+    _byteslike_rfind_byteslike,
+    _byteslike_rfind_int,
+    _byteslike_startswith,
+)
+from _builtins import (
+    _classmethod,
+    _classmethod_isabstract,
+    _code_check,
+    _code_guard,
+    _code_set_posonlyargcount,
+    _compile_flags_mask,
+    _complex_check,
+    _complex_checkexact,
+    _complex_imag,
+    _complex_new,
+    _complex_new_from_str,
+    _complex_real,
+    _dict_bucket_insert,
+    _dict_bucket_key,
+    _dict_bucket_set_value,
+    _dict_bucket_value,
+    _dict_check,
+    _dict_check_exact,
+    _dict_get,
+    _dict_guard,
+    _dict_lookup,
+    _dict_lookup_next,
+    _dict_popitem,
+    _dict_setitem,
+    _dict_update,
+    _divmod,
+    _exec,
+    _float_check,
+    _float_check_exact,
+    _float_divmod,
+    _float_format,
+    _float_guard,
+    _float_new_from_byteslike,
+    _float_new_from_float,
+    _float_new_from_str,
+    _frozenset_check,
+    _frozenset_guard,
+    _function_globals,
+    _function_guard,
+    _get_member_byte,
+    _get_member_char,
+    _get_member_double,
+    _get_member_float,
+    _get_member_int,
+    _get_member_long,
+    _get_member_pyobject,
+    _get_member_short,
+    _get_member_string,
+    _get_member_ubyte,
+    _get_member_uint,
+    _get_member_ulong,
+    _get_member_ushort,
+    _getframe_function,
+    _getframe_locals,
+)
+from _builtins import (
+    _instance_delattr,
+    _instance_getattr,
+    _instance_guard,
+    _instance_overflow_dict,
+    _instance_setattr,
+    _int_check,
+    _int_check_exact,
+    _int_from_bytes,
+    _int_guard,
+    _int_new_from_bytearray,
+    _int_new_from_bytes,
+    _int_new_from_int,
+    _int_new_from_str,
+    _iter,
+    _list_check,
+    _list_check_exact,
+    _list_delitem,
+    _list_delslice,
+    _list_extend,
+    _list_getitem,
+    _list_getslice,
+    _list_guard,
+    _list_len,
+    _list_new,
+    _list_setitem,
+    _list_setslice,
+    _list_sort,
+    _list_swap,
+    _mappingproxy_guard,
+    _mappingproxy_mapping,
+    _mappingproxy_set_mapping,
+    _memoryview_guard,
+    _memoryview_itemsize,
+    _memoryview_nbytes,
+    _memoryview_setitem,
+    _memoryview_setslice,
+    _module_dir,
+    _module_proxy,
+    _module_proxy_check,
+    _module_proxy_delitem,
+    _module_proxy_get,
+    _module_proxy_guard,
+    _module_proxy_keys,
+    _module_proxy_len,
+    _module_proxy_setitem,
+    _module_proxy_values,
+    _object_keys,
+    _object_type_getattr,
+    _object_type_hasattr,
+    _patch,
+    _property,
+    _property_isabstract,
+    _pyobject_offset,
+)
+from _builtins import (
+    _range_check,
+    _range_guard,
+    _range_len,
+    _repr_enter,
+    _repr_leave,
+    _seq_index,
+    _seq_iterable,
+    _seq_set_index,
+    _seq_set_iterable,
+    _set_check,
+    _set_guard,
+    _set_len,
+    _set_member_double,
+    _set_member_float,
+    _set_member_integral,
+    _set_member_pyobject,
+    _slice_check,
+    _slice_guard,
+    _slice_start,
+    _slice_start_long,
+    _slice_step,
+    _slice_step_long,
+    _slice_stop,
+    _slice_stop_long,
+    _staticmethod_isabstract,
+    _str_check,
+    _str_check_exact,
+    _str_count,
+    _str_encode,
+    _str_endswith,
+    _str_escape_non_ascii,
+    _str_find,
+    _str_from_str,
+    _str_getitem,
+    _str_getslice,
+    _str_guard,
+    _str_ischr,
+    _str_join,
+    _str_len,
+    _str_mod_fast_path,
+    _str_partition,
+    _str_replace,
+    _str_rfind,
+    _str_rpartition,
+    _str_split,
+    _str_splitlines,
+    _str_startswith,
+    _strarray_iadd,
+)
+from _builtins import (
+    _tuple_check,
+    _tuple_check_exact,
+    _tuple_getitem,
+    _tuple_getslice,
+    _tuple_guard,
+    _tuple_len,
+    _tuple_new,
+    _type,
+    _type_abstractmethods_del,
+    _type_abstractmethods_get,
+    _type_abstractmethods_set,
+    _type_bases_del,
+    _type_bases_get,
+    _type_bases_set,
+    _type_check,
+    _type_check_exact,
+    _type_dunder_call,
+    _type_guard,
+    _type_init,
+    _type_issubclass,
+    _type_new,
+    _type_proxy,
+    _type_proxy_check,
+    _type_proxy_get,
+    _type_proxy_guard,
+    _type_proxy_keys,
+    _type_proxy_len,
+    _type_proxy_values,
+    _type_subclass_guard,
+    _Unbound,
+    _unimplemented,
+    _warn,
+)
 
 
 # Begin: Early definitions that are necessary to process the rest of the file:
@@ -920,11 +940,6 @@ class Warning(Exception, bootstrap=True):
 
 
 class ZeroDivisionError(ArithmeticError, bootstrap=True):
-    pass
-
-
-@_patch
-def __import__(name, globals=None, locals=None, fromlist=(), level=0):
     pass
 
 

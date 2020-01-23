@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 """The internal _namedtuple module, used in the Pyro port of the collections
 module."""
+
+from builtins import _structseq_field
 from keyword import iskeyword as _iskeyword
 
-
-# flake8 has no knowledge about these functions' definitions and will complain
-# without this gross circular helper here.
-_instance_setattr = _instance_setattr  # noqa: F821
-_str_check = _str_check  # noqa: F821
-_structseq_field = _structseq_field  # noqa: F821
+from _builtins import _instance_setattr, _str_check
 
 
 def _namedtuple_new(cls, *sequence, **kwargs):  # noqa B006

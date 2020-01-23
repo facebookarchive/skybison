@@ -1,29 +1,28 @@
 #!/usr/bin/env python3
 
-# These values are injected by our boot process. flake8 has no knowledge about
-# their definitions and will complain without this gross circular helper here.
-_bytearray_check = _bytearray_check  # noqa: F821
-_bytes_check = _bytes_check  # noqa: F821
-_bytes_decode = _bytes_decode  # noqa: F821
-_bytes_decode_ascii = _bytes_decode_ascii  # noqa: F821
-_bytes_decode_utf_8 = _bytes_decode_utf_8  # noqa: F821
-_bytes_len = _bytes_len  # noqa: F821
-_byteslike_guard = _byteslike_guard  # noqa: F821
-_index = _index  # noqa: F821
-_int_check = _int_check  # noqa: F821
-_object_type_hasattr = _object_type_hasattr  # noqa: F821
-_patch = _patch  # noqa: F821
-_str_check = _str_check  # noqa: F821
-_str_encode = _str_encode  # noqa: F821
-_str_encode_ascii = _str_encode_ascii  # noqa: F821
-_str_len = _str_len  # noqa: F821
-_strarray = _strarray  # noqa: F821
-_strarray_iadd = _strarray_iadd  # noqa: F821
-_tuple_check = _tuple_check  # noqa: F821
-_tuple_len = _tuple_len  # noqa: F821
-_type = _type  # noqa: F821
-_Unbound = _Unbound  # noqa: F821
-_unimplemented = _unimplemented  # noqa: F821
+from builtins import _index, _strarray
+
+from _builtins import (
+    _bytes_check,
+    _bytes_decode,
+    _bytes_decode_ascii,
+    _bytes_decode_utf_8,
+    _bytes_len,
+    _byteslike_guard,
+    _int_check,
+    _object_type_hasattr,
+    _patch,
+    _str_check,
+    _str_encode,
+    _str_encode_ascii,
+    _str_len,
+    _strarray_iadd,
+    _tuple_check,
+    _tuple_len,
+    _type,
+    _Unbound,
+    _unimplemented,
+)
 
 
 codec_search_path = []

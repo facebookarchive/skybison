@@ -25,40 +25,32 @@ is an in-memory stream for text.
 Argument names are not part of the specification, and only the arguments
 of open() are intended to be used as keyword arguments."""
 
-# This is the patch decorator, injected by our boot process. flake8 has no
-# knowledge about its definition and will complain without this gross circular
-# helper here.
-_Unbound = _Unbound  # noqa: F821
-_address = _address  # noqa: F821
-_bytearray_len = _bytearray_len  # noqa: F821
-_bytes_check = _bytes_check  # noqa: F821
-_bytes_len = _bytes_len  # noqa: F821
-_byteslike_check = _byteslike_check  # noqa: F821
-_byteslike_guard = _byteslike_guard  # noqa: F821
-_float_check = _float_check  # noqa: F821
-_index = _index  # noqa: F821
-_int_check = _int_check  # noqa: F821
-_int_guard = _int_guard  # noqa: F821
-_memoryview_check = _memoryview_check  # noqa: F821
-_object_type_hasattr = _object_type_hasattr  # noqa: F821
-_object_type_getattr = _object_type_getattr  # noqa: F821
-_os_write = _os_write  # noqa: F821
-_patch = _patch  # noqa: F821
-_str_check = _str_check  # noqa: F821
-_str_guard = _str_guard  # noqa: F821
-_str_len = _str_len  # noqa: F821
-_type = _type  # noqa: F821
-_type_name = _type_name  # noqa: F821
-_unimplemented = _unimplemented  # noqa: F821
-_warn = _warn  # noqa: F821
-
-
-DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
-
-
 import builtins
+from builtins import BlockingIOError, _index, _type_name
 from errno import EAGAIN as errno_EAGAIN, EISDIR as errno_EISDIR
 
+from _builtins import (
+    _address,
+    _bytearray_len,
+    _bytes_check,
+    _bytes_len,
+    _byteslike_check,
+    _byteslike_guard,
+    _float_check,
+    _int_check,
+    _int_guard,
+    _memoryview_check,
+    _object_type_getattr,
+    _object_type_hasattr,
+    _os_write,
+    _patch,
+    _str_check,
+    _str_len,
+    _type,
+    _Unbound,
+    _unimplemented,
+    _warn,
+)
 from _codecs import (
     getincrementaldecoder as _codecs_getincrementaldecoder,
     getincrementalencoder as _codecs_getincrementalencoder,
@@ -77,6 +69,9 @@ from _os import (
     set_noinheritable as _os_set_noinheritable,
 )
 from _thread import Lock as _thread_Lock
+
+
+DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
 
 
 @_patch
@@ -118,9 +113,6 @@ def _whence_guard(whence):
     if whence == 0 or whence == 1 or whence == 2:
         return
     raise ValueError("invalid whence value")
-
-
-BlockingIOError = builtins.BlockingIOError
 
 
 class IncrementalNewlineDecoder(bootstrap=True):
