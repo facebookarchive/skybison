@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Core implementation of import.
 
 This module is NOT meant to be directly imported! It has been designed such
@@ -22,13 +23,13 @@ work. One should use importlib as the public-facing version of this module.
 
 # Bootstrap-related code ######################################################
 
-# Avoid lint warnings. These values are inserted directly into the namespace
-# @lint-ignore-every PYTHON3COMPATIMPORTS
-_io = None
-_os = None
-_thread = None
-_warnings = None
-_weakref = None
+import sys
+
+import _imp
+import _thread
+import _warnings
+import _weakref
+
 
 _bootstrap_external = None
 
@@ -1132,18 +1133,7 @@ def _builtin_from_name(name):
     return _load_unlocked(spec)
 
 
-def _setup(sys_module, _imp_module):
-    """Setup importlib by importing needed built-in modules and injecting them
-    into the global namespace.
-
-    As sys is needed for sys.modules access and _imp is needed to load built-in
-    modules, those two modules must be explicitly passed in.
-
-    """
-    global _imp, sys
-    _imp = _imp_module
-    sys = sys_module
-
+def _setup():
     # Set up the spec for existing builtin/frozen modules.
     module_type = type(sys)
     for name, module in sys.modules.items():
@@ -1157,34 +1147,9 @@ def _setup(sys_module, _imp_module):
             spec = _spec_from_module(module, loader)
             _init_module_attrs(spec, module)
 
-    # Directly load built-in modules needed during bootstrap.
-    self_module = sys.modules[__name__]
-    # This is what CPython currently does. See bpo-31370
-    for builtin_name in ("_warnings", "_weakref"):
-        if builtin_name not in sys.modules:
-            builtin_module = _builtin_from_name(builtin_name)
-        else:
-            builtin_module = sys.modules[builtin_name]
-        setattr(self_module, builtin_name, builtin_module)
 
-    # Directly load the _thread module (needed during bootstrap).
-    try:
-        thread_module = _builtin_from_name("_thread")
-    except ImportError:
-        # Python was built without threads
-        thread_module = None
-    self_module._thread = thread_module
+_setup()
+sys.meta_path.append(BuiltinImporter)
+sys.meta_path.append(FrozenImporter)
 
-
-def _install(sys_module, _imp_module):
-    """Install importlib as the implementation of import."""
-    _setup(sys_module, _imp_module)
-
-    sys.meta_path.append(BuiltinImporter)
-    sys.meta_path.append(FrozenImporter)
-
-    global _bootstrap_external
-    import _frozen_importlib_external
-
-    _bootstrap_external = _frozen_importlib_external
-    _frozen_importlib_external._install(sys.modules[__name__])
+__builtins__.__import__ = __import__

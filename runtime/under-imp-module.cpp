@@ -63,6 +63,30 @@ bool importReleaseLock(Thread* thread) {
   return true;
 }
 
+RawObject createExtensionModule(Thread* thread, const Str& name) {
+  for (int i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
+    if (!name.equalsCStr(_PyImport_Inittab[i].name)) continue;
+
+    HandleScope scope(thread);
+    PyObject* pymodule = (*_PyImport_Inittab[i].initfunc)();
+    if (pymodule == nullptr) {
+      if (thread->hasPendingException()) return Error::exception();
+      return thread->raiseWithFmt(LayoutId::kSystemError,
+                                  "NULL return without exception set");
+    };
+    Runtime* runtime = thread->runtime();
+    Object module_obj(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
+    if (!runtime->isInstanceOfModule(*module_obj)) {
+      // TODO(T39542987): Enable multi-phase module initialization
+      UNIMPLEMENTED("Multi-phase module initialization");
+    }
+    Module module(&scope, *module_obj);
+    runtime->addModule(module);
+    return *module;
+  }
+  return NoneType::object();
+}
+
 RawObject UnderImpModule::acquireLock(Thread* thread, Frame*, word) {
   importAcquireLock(thread);
   return NoneType::object();
@@ -86,31 +110,13 @@ RawObject UnderImpModule::createBuiltin(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "spec name must be an instance of str");
   }
-  Str name(&scope, *name_obj);
-  Object existing_module(&scope, runtime->findModule(name));
+  Object existing_module(&scope, runtime->findModule(name_obj));
   if (!existing_module.isNoneType()) {
     return *existing_module;
   }
 
-  for (int i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
-    if (name.equalsCStr(_PyImport_Inittab[i].name)) {
-      PyObject* pymodule = (*_PyImport_Inittab[i].initfunc)();
-      if (pymodule == nullptr) {
-        if (thread->hasPendingException()) return Error::exception();
-        return thread->raiseWithFmt(LayoutId::kSystemError,
-                                    "NULL return without exception set");
-      };
-      Object module_obj(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
-      if (!runtime->isInstanceOfModule(*module_obj)) {
-        // TODO(T39542987): Enable multi-phase module initialization
-        UNIMPLEMENTED("Multi-phase module initialization");
-      }
-      Module module(&scope, *module_obj);
-      runtime->addModule(module);
-      return *module;
-    }
-  }
-  return NoneType::object();
+  Str name(&scope, strUnderlying(*name_obj));
+  return createExtensionModule(thread, name);
 }
 
 RawObject UnderImpModule::execBuiltin(Thread* thread, Frame* frame,

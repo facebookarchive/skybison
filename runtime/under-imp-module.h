@@ -10,6 +10,7 @@ namespace py {
 
 void importAcquireLock(Thread* thread);
 bool importReleaseLock(Thread* thread);
+RawObject createExtensionModule(Thread* thread, const Str& name);
 
 class UnderImpModule {
  public:

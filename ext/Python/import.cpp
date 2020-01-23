@@ -20,11 +20,6 @@ PY_EXPORT PyObject* PyImport_ImportModuleLevelObject(PyObject* name,
                                                      PyObject* fromlist,
                                                      int level) {
   Thread* thread = Thread::current();
-  Runtime* runtime = thread->runtime();
-  CHECK(!runtime->findOrCreateImportlibModule(thread).isNoneType(),
-        "failed to initialize importlib");
-  HandleScope scope(thread);
-
   if (name == nullptr) {
     thread->raiseWithFmt(LayoutId::kValueError, "Empty module name");
     return nullptr;
@@ -37,8 +32,10 @@ PY_EXPORT PyObject* PyImport_ImportModuleLevelObject(PyObject* name,
     thread->raiseWithFmt(LayoutId::kKeyError, "'__name__' not in globals");
     return nullptr;
   }
+  HandleScope scope(thread);
   Object globals_obj(&scope, ApiHandle::fromPyObject(globals)->asObject());
-  if (!thread->runtime()->isInstanceOfDict(*globals_obj)) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(*globals_obj)) {
     thread->raiseWithFmt(LayoutId::kTypeError, "globals must be a dict");
     return nullptr;
   }

@@ -269,8 +269,6 @@ class Runtime {
   void cacheBuiltinsInstances(Thread* thread, const Module& builtins);
   void cacheSysInstances(Thread* thread, const Module& sys);
 
-  void createImportlibModule(Thread* thread);
-
   static RawObject internStr(Thread* thread, const Object& str);
   static RawObject internStrFromAll(Thread* thread, View<byte> bytes);
   static RawObject internStrFromCStr(Thread* thread, const char* c_str);
@@ -757,10 +755,6 @@ class Runtime {
 
   // Create and return the specified module.
   RawObject createModule(Thread* thread, SymbolId name);
-
-  // If the importlib module has already been initialized and added, return it.
-  // Else, create and add it to the runtime.
-  NODISCARD RawObject findOrCreateImportlibModule(Thread* thread);
 
   // If the main module has already been initialized and added, return it.
   // Else, create and add it to the runtime.

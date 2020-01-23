@@ -1,10 +1,10 @@
+#!/usr/bin/env python3
 """Core implementation of path-based import.
 
 This module is NOT meant to be directly imported! It has been designed such
 that it can be bootstrapped into Python as the implementation of import. As
 such it requires the injection of specific modules and attributes in order to
 work. One should use importlib as the public-facing version of this module.
-
 """
 #
 # IMPORTANT: Whenever making changes to this module, be sure to run
@@ -22,19 +22,31 @@ work. One should use importlib as the public-facing version of this module.
 
 # Bootstrap-related code ######################################################
 
-# Avoid lint warnings. These values are inserted directly into the namespace
-# @lint-ignore-every PYTHON3COMPATIMPORTS
-# flake8: noqa
-# fmt: off
-_io = None
-_os = None
-_relax_case = None
-_thread = None
-_warnings = None
-_winreg = None
-marshal = None
-path_sep = None
-path_separators = None
+import marshal
+import sys
+
+import _frozen_importlib as _bootstrap
+import _imp
+import _io
+import _warnings
+
+
+try:
+    import posix as _os
+
+    _builtin_os = "posix"
+    path_separators = "/"
+    path_sep = "/"
+except ImportError:
+    try:
+        import nt as _os
+        import _winreg
+
+        _builtin_os = "nt"
+        path_separators = "\\/"
+        path_sep = "\\"
+    except ImportError:
+        raise ImportError("importlib requires posix or nt")
 
 _CASE_INSENSITIVE_PLATFORMS_STR_KEY = ("win",)
 _CASE_INSENSITIVE_PLATFORMS_BYTES_KEY = "cygwin", "darwin"
@@ -65,19 +77,19 @@ def _make_relax_case():
 
 def _pack_uint32(x):
     """Convert a 32-bit integer to little-endian."""
-    return (int(x) & 0xFFFFFFFF).to_bytes(4, 'little')
+    return (int(x) & 0xFFFFFFFF).to_bytes(4, "little")
 
 
 def _unpack_uint32(data):
     """Convert 4 bytes in little-endian to an integer."""
     assert len(data) == 4
-    return int.from_bytes(data, 'little')
+    return int.from_bytes(data, "little")
 
 
 def _unpack_uint16(data):
     """Convert 2 bytes in little-endian to an integer."""
     assert len(data) == 2
-    return int.from_bytes(data, 'little')
+    return int.from_bytes(data, "little")
 
 
 def _path_join(*path_parts):
@@ -935,8 +947,12 @@ class SourcelessFileLoader(FileLoader, _LoaderBasics):
         return None
 
 
-# Filled in by _setup().
-EXTENSION_SUFFIXES = []
+EXTENSION_SUFFIXES = _imp.extension_suffixes()
+
+if _builtin_os == "nt":
+    SOURCE_SUFFIXES.append(".pyw")
+    if "_d.pyd" in EXTENSION_SUFFIXES:
+        WindowsRegistryFinder.DEBUG_BUILD = True
 
 
 class ExtensionFileLoader(FileLoader, _LoaderBasics):
@@ -1418,77 +1434,14 @@ def _get_supported_file_loaders():
     return [extensions, source, bytecode]
 
 
-def _setup(_bootstrap_module):
-    """Setup the path-based importers for importlib by importing needed
-    built-in modules and injecting them into the global namespace.
-
-    Other components are extracted from the core bootstrap module.
-
-    """
-    global sys, _imp, _bootstrap
-    _bootstrap = _bootstrap_module
-    sys = _bootstrap.sys
-    _imp = _bootstrap._imp
-
-    # Directly load built-in modules needed during bootstrap.
-    self_module = sys.modules[__name__]
-    for builtin_name in ("_io", "_warnings", "builtins", "marshal"):
-        if builtin_name not in sys.modules:
-            builtin_module = _bootstrap._builtin_from_name(builtin_name)
-        else:
-            builtin_module = sys.modules[builtin_name]
-        setattr(self_module, builtin_name, builtin_module)
-
-    # Directly load the os module (needed during bootstrap).
-    os_details = ("posix", ["/"]), ("nt", ["\\", "/"])
-    for builtin_os, path_separators in os_details:
-        # Assumption made in _path_join()
-        assert all(len(sep) == 1 for sep in path_separators)
-        path_sep = path_separators[0]
-        if builtin_os in sys.modules:
-            os_module = sys.modules[builtin_os]
-            break
-        else:
-            try:
-                os_module = _bootstrap._builtin_from_name(builtin_os)
-                break
-            except ImportError:
-                continue
-    else:
-        raise ImportError("importlib requires posix or nt")
-    setattr(self_module, "_os", os_module)
-    setattr(self_module, "path_sep", path_sep)
-    setattr(self_module, "path_separators", "".join(path_separators))
-
-    # Directly load the _thread module (needed during bootstrap).
-    try:
-        thread_module = _bootstrap._builtin_from_name("_thread")
-    except ImportError:
-        # Python was built without threads
-        thread_module = None
-    setattr(self_module, "_thread", thread_module)
-
-    # Directly load the _weakref module (needed during bootstrap).
-    weakref_module = sys.modules["_weakref"]
-    setattr(self_module, "_weakref", weakref_module)
-
-    # Directly load the winreg module (needed during bootstrap).
-    if builtin_os == "nt":
-        winreg_module = _bootstrap._builtin_from_name("winreg")
-        setattr(self_module, "_winreg", winreg_module)
-
-    # Constants
-    setattr(self_module, "_relax_case", _make_relax_case())
-    EXTENSION_SUFFIXES.extend(_imp.extension_suffixes())
-    if builtin_os == "nt":
-        SOURCE_SUFFIXES.append(".pyw")
-        if "_d.pyd" in EXTENSION_SUFFIXES:
-            WindowsRegistryFinder.DEBUG_BUILD = True
-
-
-def _install(_bootstrap_module):
+def _setup():
     """Install the path-based import components."""
-    _setup(_bootstrap_module)
     supported_loaders = _get_supported_file_loaders()
     sys.path_hooks.extend([FileFinder.path_hook(*supported_loaders)])
     sys.meta_path.append(PathFinder)
+
+
+_relax_case = _make_relax_case()
+_setup()
+
+_bootstrap._bootstrap_external = sys.modules[__name__]

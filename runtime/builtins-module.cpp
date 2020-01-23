@@ -17,6 +17,7 @@
 #include "str-builtins.h"
 #include "type-builtins.h"
 #include "under-builtins-module.h"
+#include "under-imp-module.h"
 
 namespace py {
 
@@ -597,18 +598,29 @@ RawObject BuiltinsModule::ord(Thread* thread, Frame* frame, word nargs) {
 
 RawObject BuiltinsModule::dunderImport(Thread* thread, Frame* frame,
                                        word nargs) {
-  CHECK(!thread->runtime()->findOrCreateImportlibModule(thread).isNoneType(),
-        "failed to initialize importlib");
+  // Note that this is a simplified __import__ implementation that is used
+  // during early bootstrap; it is replaced by importlib.__import__ once
+  // import lib is fully initialized.
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object name(&scope, args.get(0));
-  Object globals(&scope, args.get(1));
-  Object locals(&scope, args.get(2));
-  Object fromlist(&scope, args.get(3));
-  Object level(&scope, args.get(4));
-  return thread->invokeFunction5(SymbolId::kUnderFrozenImportlib,
-                                 SymbolId::kDunderImport, name, globals, locals,
-                                 fromlist, level);
+  Str name(&scope, args.get(0));
+  // We ignore arg1, arg2, arg3.
+  DCHECK(args.get(4) == SmallInt::fromWord(0), "only supports level=0");
+  Runtime* runtime = thread->runtime();
+  Object module(&scope, runtime->findModule(name));
+  if (runtime->isInstanceOfModule(*module) || module.isErrorException()) {
+    return *module;
+  }
+  DCHECK(module.isNoneType(), "expected module, ErrorException or None");
+  // Try extension modules.
+  module = createExtensionModule(thread, name);
+  if (runtime->isInstanceOfModule(*module) || module.isErrorException()) {
+    return *module;
+  }
+  DCHECK(module.isNoneType(), "expected module, ErrorException or None");
+  return thread->raiseWithFmt(LayoutId::kImportError,
+                              "failed to import %S (bootstrap importer)",
+                              &name);
 }
 
 // TODO(T39322942): Turn this into the Range constructor (__init__ or __new__)

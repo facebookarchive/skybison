@@ -1939,17 +1939,6 @@ RawObject Runtime::createModule(Thread* thread, SymbolId name) {
   return *module;
 }
 
-RawObject Runtime::findOrCreateImportlibModule(Thread* thread) {
-  HandleScope scope(thread);
-  Object importlib_obj(&scope, findModuleById(SymbolId::kUnderFrozenImportlib));
-  // We may need to load and create `_frozen_importlib` if it doesn't exist.
-  if (importlib_obj.isNoneType()) {
-    createImportlibModule(thread);
-    importlib_obj = findModuleById(SymbolId::kUnderFrozenImportlib);
-  }
-  return *importlib_obj;
-}
-
 RawObject Runtime::findOrCreateMainModule() {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -2448,37 +2437,6 @@ void Runtime::moduleImportAllFrom(const Dict& dict, const Module& module) {
       dictAtPutInValueCellByStr(thread, dict, symbol_name, value);
     }
   }
-}
-
-void Runtime::createImportlibModule(Thread* thread) {
-  HandleScope scope(thread);
-
-  // CPython's freezing tool creates the following mapping:
-  // `_frozen_importlib`: importlib/_bootstrap.py frozen bytes
-  // `_frozen_importlib_external`: importlib/_external_bootstrap.py frozen bytes
-  // This replicates that mapping for compatibility
-
-  // Run _bootstrap.py
-  Module importlib(&scope,
-                   createModule(thread, SymbolId::kUnderFrozenImportlib));
-  executeFrozenModule(thread, kUnderBootstrapModuleData, importlib);
-
-  // Run _bootstrap_external.py
-  Module importlib_external(
-      &scope, createModule(thread, SymbolId::kUnderFrozenImportlibExternal));
-  moduleAtPutById(thread, importlib_external, SymbolId::kUnderBootstrap,
-                  importlib);
-  executeFrozenModule(thread, kUnderBootstrapUnderExternalModuleData,
-                      importlib_external);
-
-  // Run _bootstrap._install(sys, _imp)
-  Module sys_module(&scope, findModuleById(SymbolId::kSys));
-  Module imp_module(&scope, findModuleById(SymbolId::kUnderImp));
-  CHECK(!thread
-             ->invokeFunction2(SymbolId::kUnderFrozenImportlib,
-                               SymbolId::kUnderInstall, sys_module, imp_module)
-             .isError(),
-        "Failed to run _bootstrap._install");
 }
 
 word Runtime::newCapacity(word curr_capacity, word min_capacity) {
