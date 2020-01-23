@@ -1593,6 +1593,7 @@ add_library(
   runtime/under-imp-module-test.cpp
   runtime/under-io-module-test.cpp
   runtime/under-os-module-test.cpp
+  runtime/under-signal-module-test.cpp
   runtime/under-valgrind-module-test.cpp
   runtime/under-warnings-module-test.cpp
   runtime/utils-test.cpp

@@ -16,6 +16,7 @@
 #include "under-imp-module.h"
 #include "under-io-module.h"
 #include "under-os-module.h"
+#include "under-signal-module.h"
 #include "under-valgrind-module.h"
 #include "under-warnings-module.h"
 #include "under-weakref-module.h"
@@ -34,7 +35,7 @@ const ModuleInitializer kBuiltinModules[] = {
     {SymbolId::kUnderCodecs, &UnderCodecsModule::initialize},
     {SymbolId::kUnderImp, &UnderImpModule::initialize},
     {SymbolId::kUnderOs, &UnderOsModule::initialize},
-    {SymbolId::kUnderSignal, &initializeFrozenModule<kUnderSignalModuleData>},
+    {SymbolId::kUnderSignal, &UnderSignalModule::initialize},
     {SymbolId::kUnderWeakref, &UnderWeakrefModule::initialize},
     {SymbolId::kUnderThread, &initializeFrozenModule<kUnderThreadModuleData>},
     {SymbolId::kUnderIo, &UnderIoModule::initialize},

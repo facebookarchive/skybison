@@ -831,6 +831,8 @@ class Runtime;
   V(SetNoinheritable, "set_noinheritable")                                     \
   V(Setattr, "setattr")                                                        \
   V(Setter, "setter")                                                          \
+  V(SigDfl, "SIG_DFL")                                                         \
+  V(SigIgn, "SIG_IGN")                                                         \
   V(SimpleNamespace, "SimpleNamespace")                                        \
   V(Single, "single")                                                          \
   V(Siphash24, "siphash24")                                                    \
