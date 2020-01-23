@@ -219,7 +219,7 @@ namespace py {
   V(UNUSED_BYTECODE_200, 200, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_201, 201, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_202, 202, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_203, 203, doInvalidBytecode)                               \
+  V(INPLACE_ADD_SMALLINT, 203, doInplaceAddSmallInt)                           \
   V(COMPARE_LE_SMALLINT, 204, doCompareLeSmallInt)                             \
   V(COMPARE_NE_SMALLINT, 205, doCompareNeSmallInt)                             \
   V(COMPARE_GE_SMALLINT, 206, doCompareGeSmallInt)                             \

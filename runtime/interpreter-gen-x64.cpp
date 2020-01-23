@@ -230,6 +230,7 @@ bool mayChangeFramePC(Bytecode bc) {
     case COMPARE_GE_SMALLINT:
     case COMPARE_LT_SMALLINT:
     case COMPARE_GT_SMALLINT:
+    case INPLACE_ADD_SMALLINT:
     case LOAD_ATTR_INSTANCE:
     case LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD:
     case LOAD_ATTR_POLYMORPHIC:
@@ -1304,6 +1305,33 @@ void emitHandler<COMPARE_IS>(EmitEnv* env) {
 template <>
 void emitHandler<COMPARE_IS_NOT>(EmitEnv* env) {
   emitCompareIs(env, false);
+}
+
+template <>
+void emitHandler<INPLACE_ADD_SMALLINT>(EmitEnv* env) {
+  Register r_right = RAX;
+  Register r_left = RDX;
+  Register r_result = RDI;
+  Label slow_path;
+  __ popq(r_right);
+  __ popq(r_left);
+  emitSmallIntChecks(env, &slow_path, r_left, r_right);
+  // Preserve argument values in case of overflow.
+  __ movq(r_result, r_left);
+  __ addq(r_result, r_right);
+  __ jcc(YES_OVERFLOW, &slow_path, Assembler::kNearJump);
+  __ pushq(r_result);
+  emitNextOpcode(env);
+
+  __ bind(&slow_path);
+  __ pushq(r_left);
+  __ pushq(r_right);
+  __ movq(kArgRegs[0], kThreadReg);
+  static_assert(kOpargReg == kArgRegs[1], "oparg expect to be in rsi");
+  emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
+  emitCall<Interpreter::Continue (*)(Thread*, word)>(
+      env, Interpreter::inplaceOpUpdateCache);
+  emitHandleContinue(env, /*may_change_frame_pc=*/true);
 }
 
 template <>

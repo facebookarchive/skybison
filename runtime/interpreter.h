@@ -216,6 +216,7 @@ class Interpreter {
 
   static RawObject inplaceOperation(Thread* thread, Frame* frame, BinaryOp op,
                                     const Object& left, const Object& right);
+  static Continue inplaceOpUpdateCache(Thread* thread, word arg);
 
   static RawObject inplaceOperationSetMethod(Thread* thread, Frame* frame,
                                              BinaryOp op, const Object& left,
@@ -376,6 +377,7 @@ class Interpreter {
   static Continue doImportFrom(Thread* thread, word arg);
   static Continue doImportName(Thread* thread, word arg);
   static Continue doInplaceAdd(Thread* thread, word arg);
+  static Continue doInplaceAddSmallInt(Thread* thread, word arg);
   static Continue doInplaceAnd(Thread* thread, word arg);
   static Continue doInplaceFloorDivide(Thread* thread, word arg);
   static Continue doInplaceLshift(Thread* thread, word arg);
@@ -609,7 +611,6 @@ class Interpreter {
   static Continue compareOpFallback(Thread* thread, word arg,
                                     BinaryOpFlags flags);
 
-  static Continue inplaceOpUpdateCache(Thread* thread, word arg);
   static Continue inplaceOpFallback(Thread* thread, word arg,
                                     BinaryOpFlags flags);
 };
