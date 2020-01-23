@@ -12,6 +12,8 @@ class OS {
 
   enum Protection { kNoAccess, kReadWrite, kReadExecute };
 
+  static const word kNumSignals;
+
   // Allocate a page-sized chunk of memory. If allocated_size is not nullptr,
   // the rounded-up size will be written to it.
   static byte* allocateMemory(word size, word* allocated_size = nullptr);

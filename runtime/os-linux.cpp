@@ -1,6 +1,7 @@
 #include "os.h"
 
 #include <dlfcn.h>
+#include <signal.h>
 #include <unistd.h>
 
 #include <cstdlib>
@@ -8,6 +9,8 @@
 #include "utils.h"
 
 namespace py {
+
+const word OS::kNumSignals = _NSIG;
 
 const char* OS::name() { return "linux"; }
 

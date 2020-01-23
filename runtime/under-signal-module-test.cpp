@@ -4,6 +4,7 @@
 
 #include "gtest/gtest.h"
 
+#include "os.h"
 #include "runtime.h"
 #include "test-utils.h"
 
@@ -12,6 +13,13 @@ namespace py {
 using namespace testing;
 
 using UnderSignalModuleTest = RuntimeFixture;
+
+TEST_F(UnderSignalModuleTest, TestNsigMatchesOS) {
+  HandleScope scope(thread_);
+  Object nsig(&scope, moduleAtByCStr(runtime_, "_signal", "NSIG"));
+  ASSERT_TRUE(nsig.isSmallInt());
+  ASSERT_EQ(SmallInt::cast(*nsig).value(), OS::kNumSignals);
+}
 
 TEST_F(UnderSignalModuleTest, TestSigDflExists) {
   HandleScope scope(thread_);

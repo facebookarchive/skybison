@@ -777,6 +777,7 @@ class Runtime;
   V(NotImplemented, "NotImplemented")                                          \
   V(NotImplementedError, "NotImplementedError")                                \
   V(NotImplementedType, "NotImplementedType")                                  \
+  V(Nsig, "NSIG")                                                              \
   V(NullArgumentToInternalRoutine, "null argument to internal routine")        \
   V(OSError, "OSError")                                                        \
   V(ObjectTypename, "object")                                                  \

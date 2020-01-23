@@ -2,6 +2,7 @@
 
 #include <dlfcn.h>
 #include <mach-o/dyld.h>
+#include <signal.h>
 
 #include <cstdint>
 #include <cstdlib>
@@ -9,6 +10,8 @@
 #include "utils.h"
 
 namespace py {
+
+const word OS::kNumSignals = NSIG;
 
 const char* OS::name() { return "darwin"; }
 
