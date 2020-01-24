@@ -75,8 +75,9 @@ class IntBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(IntBuiltins);
 };
 
-class SmallIntBuiltins : public Builtins<SmallIntBuiltins, SymbolId::kSmallInt,
-                                         LayoutId::kSmallInt, LayoutId::kInt> {
+class SmallIntBuiltins
+    : public ImmediateBuiltins<SmallIntBuiltins, SymbolId::kSmallInt,
+                               LayoutId::kSmallInt, LayoutId::kInt> {
  public:
   static void postInitialize(Runtime* runtime, const Type& new_type);
 
@@ -93,13 +94,9 @@ class LargeIntBuiltins : public Builtins<LargeIntBuiltins, SymbolId::kLargeInt,
   DISALLOW_IMPLICIT_CONSTRUCTORS(LargeIntBuiltins);
 };
 
-class BoolBuiltins : public Builtins<BoolBuiltins, SymbolId::kBool,
-                                     LayoutId::kBool, LayoutId::kInt> {
+class BoolBuiltins : public ImmediateBuiltins<BoolBuiltins, SymbolId::kBool,
+                                              LayoutId::kBool, LayoutId::kInt> {
  public:
-  static void postInitialize(Runtime*, const Type& new_type) {
-    new_type.setBuiltinBase(kSuperType);
-  }
-
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderOr(Thread* thread, Frame* frame, word nargs);
 

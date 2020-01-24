@@ -22,6 +22,121 @@ TEST(AttributeInfoTest, WithFlags) {
   EXPECT_TRUE(info.isInObject());
 }
 
+TEST_F(LayoutTest, SmallIntHasEmptyInObjectAttributes) {
+  RawLayout layout = Layout::cast(runtime_->layoutAt(LayoutId::kSmallInt));
+  EXPECT_EQ(Tuple::cast(layout.inObjectAttributes()).length(), 0);
+}
+
+TEST_F(LayoutTest, SmallStrHasEmptyInObjectAttributes) {
+  RawLayout layout = Layout::cast(runtime_->layoutAt(LayoutId::kSmallStr));
+  EXPECT_EQ(Tuple::cast(layout.inObjectAttributes()).length(), 0);
+}
+
+TEST_F(LayoutTest, SmallBytesHasEmptyInObjectAttributes) {
+  RawLayout layout = Layout::cast(runtime_->layoutAt(LayoutId::kSmallBytes));
+  EXPECT_EQ(Tuple::cast(layout.inObjectAttributes()).length(), 0);
+}
+
+TEST_F(LayoutTest, BoolHasEmptyInObjectAttributes) {
+  RawLayout layout = Layout::cast(runtime_->layoutAt(LayoutId::kBool));
+  EXPECT_EQ(Tuple::cast(layout.inObjectAttributes()).length(), 0);
+}
+
+TEST_F(LayoutTest, NoneTypeHasEmptyInObjectAttributes) {
+  RawLayout layout = Layout::cast(runtime_->layoutAt(LayoutId::kNoneType));
+  EXPECT_EQ(Tuple::cast(layout.inObjectAttributes()).length(), 0);
+}
+
+TEST_F(LayoutTest, NotImplementedTypeHasEmptyInObjectAttributes) {
+  RawLayout layout =
+      Layout::cast(runtime_->layoutAt(LayoutId::kNotImplementedType));
+  EXPECT_EQ(Tuple::cast(layout.inObjectAttributes()).length(), 0);
+}
+
+TEST_F(LayoutTest, UnboundHasEmptyInObjectAttributes) {
+  RawLayout layout = Layout::cast(runtime_->layoutAt(LayoutId::kUnbound));
+  EXPECT_EQ(Tuple::cast(layout.inObjectAttributes()).length(), 0);
+}
+
+TEST_F(LayoutTest, SmallIntHasZeroInObjectAttributes) {
+  EXPECT_EQ(Layout::cast(runtime_->layoutAt(LayoutId::kSmallInt))
+                .numInObjectAttributes(),
+            0);
+}
+
+TEST_F(LayoutTest, SmallStrHasZeroInObjectAttributes) {
+  EXPECT_EQ(Layout::cast(runtime_->layoutAt(LayoutId::kSmallStr))
+                .numInObjectAttributes(),
+            0);
+}
+
+TEST_F(LayoutTest, SmallBytesHasZeroInObjectAttributes) {
+  EXPECT_EQ(Layout::cast(runtime_->layoutAt(LayoutId::kSmallBytes))
+                .numInObjectAttributes(),
+            0);
+}
+
+TEST_F(LayoutTest, BoolHasZeroInObjectAttributes) {
+  EXPECT_EQ(
+      Layout::cast(runtime_->layoutAt(LayoutId::kBool)).numInObjectAttributes(),
+      0);
+}
+
+TEST_F(LayoutTest, NoneTypeHasZeroInObjectAttributes) {
+  EXPECT_EQ(Layout::cast(runtime_->layoutAt(LayoutId::kNoneType))
+                .numInObjectAttributes(),
+            0);
+}
+
+TEST_F(LayoutTest, NotImplementedTypeHasZeroInObjectAttributes) {
+  EXPECT_EQ(Layout::cast(runtime_->layoutAt(LayoutId::kNotImplementedType))
+                .numInObjectAttributes(),
+            0);
+}
+
+TEST_F(LayoutTest, UnboundHasZeroInObjectAttributes) {
+  EXPECT_EQ(Layout::cast(runtime_->layoutAt(LayoutId::kUnbound))
+                .numInObjectAttributes(),
+            0);
+}
+
+TEST_F(LayoutTest, SmallIntHasZeroInstanceSize) {
+  EXPECT_EQ(
+      Layout::cast(runtime_->layoutAt(LayoutId::kSmallInt)).instanceSize(), 0);
+}
+
+TEST_F(LayoutTest, SmallStrHasZeroInstanceSize) {
+  EXPECT_EQ(
+      Layout::cast(runtime_->layoutAt(LayoutId::kSmallStr)).instanceSize(), 0);
+}
+
+TEST_F(LayoutTest, SmallBytesHasZeroInstanceSize) {
+  EXPECT_EQ(
+      Layout::cast(runtime_->layoutAt(LayoutId::kSmallBytes)).instanceSize(),
+      0);
+}
+
+TEST_F(LayoutTest, BoolHasZeroInstanceSize) {
+  EXPECT_EQ(Layout::cast(runtime_->layoutAt(LayoutId::kBool)).instanceSize(),
+            0);
+}
+
+TEST_F(LayoutTest, NoneTypeHasZeroInstanceSize) {
+  EXPECT_EQ(
+      Layout::cast(runtime_->layoutAt(LayoutId::kNoneType)).instanceSize(), 0);
+}
+
+TEST_F(LayoutTest, NotImplementedTypeHasZeroInstanceSize) {
+  EXPECT_EQ(Layout::cast(runtime_->layoutAt(LayoutId::kNotImplementedType))
+                .instanceSize(),
+            0);
+}
+
+TEST_F(LayoutTest, UnboundHasZeroInstanceSize) {
+  EXPECT_EQ(Layout::cast(runtime_->layoutAt(LayoutId::kUnbound)).instanceSize(),
+            0);
+}
+
 TEST_F(LayoutTest, FindAttribute) {
   HandleScope scope(thread_);
   Layout layout(&scope, testing::layoutCreateEmpty(thread_));

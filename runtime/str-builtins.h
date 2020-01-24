@@ -98,8 +98,9 @@ word strRSpan(const Str& src, const Str& str, word rend);
 // Return the next item from the iterator, or Error if there are no items left.
 RawObject strIteratorNext(Thread* thread, const StrIterator& iter);
 
-class SmallStrBuiltins : public Builtins<SmallStrBuiltins, SymbolId::kSmallStr,
-                                         LayoutId::kSmallStr, LayoutId::kStr> {
+class SmallStrBuiltins
+    : public ImmediateBuiltins<SmallStrBuiltins, SymbolId::kSmallStr,
+                               LayoutId::kSmallStr, LayoutId::kStr> {
  public:
   static void postInitialize(Runtime* runtime, const Type& new_type);
 

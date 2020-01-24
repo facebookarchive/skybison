@@ -217,7 +217,7 @@ static const LayoutId kBuiltinHeapTypeIds[] = {
 INSTANTIATE_TEST_CASE_P(BuiltinTypeIdsParameters, BuiltinTypeIdsTest,
                         ::testing::ValuesIn(kBuiltinHeapTypeIds), );
 
-TEST_F(RuntimeTest, ConcreteTypeBaseIsUserType) {
+TEST_F(RuntimeTest, ConcreteIntTypeBaseIsUserType) {
   HandleScope scope(thread_);
   Object smallint(&scope, SmallInt::fromWord(42));
   Object largeint(&scope, runtime_->newIntFromUnsigned(kMaxUword));
@@ -229,6 +229,36 @@ TEST_F(RuntimeTest, ConcreteTypeBaseIsUserType) {
             runtime_->layoutAt(LayoutId::kLargeInt));
   EXPECT_EQ(smallint_type.builtinBase(), LayoutId::kInt);
   EXPECT_EQ(largeint_type.builtinBase(), LayoutId::kInt);
+}
+
+TEST_F(RuntimeTest, ConcreteBytesTypeBaseIsUserType) {
+  HandleScope scope(thread_);
+  byte small_src[] = "42";
+  byte large_src[] = "my long bytes";
+  Object smallbytes(&scope, SmallBytes::fromBytes(small_src));
+  Object largebytes(&scope, runtime_->newBytesWithAll(large_src));
+  Type smallbytes_type(&scope, runtime_->concreteTypeOf(*smallbytes));
+  Type largebytes_type(&scope, runtime_->concreteTypeOf(*largebytes));
+  EXPECT_EQ(smallbytes_type.instanceLayout(),
+            runtime_->layoutAt(LayoutId::kSmallBytes));
+  EXPECT_EQ(largebytes_type.instanceLayout(),
+            runtime_->layoutAt(LayoutId::kLargeBytes));
+  EXPECT_EQ(smallbytes_type.builtinBase(), LayoutId::kBytes);
+  EXPECT_EQ(largebytes_type.builtinBase(), LayoutId::kBytes);
+}
+
+TEST_F(RuntimeTest, ConcreteStrTypeBaseIsUserType) {
+  HandleScope scope(thread_);
+  Object smallstr(&scope, SmallStr::fromCStr("42"));
+  Object largestr(&scope, runtime_->newStrFromCStr("my long str"));
+  Type smallstr_type(&scope, runtime_->concreteTypeOf(*smallstr));
+  Type largestr_type(&scope, runtime_->concreteTypeOf(*largestr));
+  EXPECT_EQ(smallstr_type.instanceLayout(),
+            runtime_->layoutAt(LayoutId::kSmallStr));
+  EXPECT_EQ(largestr_type.instanceLayout(),
+            runtime_->layoutAt(LayoutId::kLargeStr));
+  EXPECT_EQ(smallstr_type.builtinBase(), LayoutId::kStr);
+  EXPECT_EQ(largestr_type.builtinBase(), LayoutId::kStr);
 }
 
 TEST_F(RuntimeByteArrayTest, EnsureCapacity) {

@@ -251,23 +251,16 @@ RawObject Runtime::addEmptyBuiltinType(SymbolId name, LayoutId subclass_id,
                         BuiltinsBase::kBuiltinMethods);
 }
 
-RawObject Runtime::addBuiltinType(SymbolId name, LayoutId subclass_id,
-                                  LayoutId superclass_id,
-                                  const BuiltinAttribute attrs[],
-                                  const BuiltinMethod builtins[]) {
+RawObject Runtime::addBuiltinTypeWithLayout(const Layout& layout, SymbolId name,
+                                            LayoutId builtin_base,
+                                            LayoutId subclass_id,
+                                            LayoutId superclass_id,
+                                            const BuiltinMethod builtins[]) {
   HandleScope scope;
 
   // Create a class object for the subclass
   Type subclass(&scope, newType());
   subclass.setName(symbols()->at(name));
-
-  word attrs_len = 0;
-  for (word i = 0; attrs[i].name != SymbolId::kSentinelId; i++) {
-    attrs_len++;
-  }
-  View<BuiltinAttribute> attrs_view(attrs, attrs_len);
-  Layout layout(&scope, layoutCreateSubclassWithBuiltins(
-                            subclass_id, superclass_id, attrs_view));
 
   // Assign the layout to the class
   layout.setDescribedType(*subclass);
@@ -278,7 +271,6 @@ RawObject Runtime::addBuiltinType(SymbolId name, LayoutId subclass_id,
   subclass.setMro(*mro);
   subclass.setInstanceLayout(*layout);
   Type superclass(&scope, typeAt(superclass_id));
-  LayoutId builtin_base = attrs_len == 0 ? superclass_id : subclass_id;
   Type::Flag flags =
       static_cast<Type::Flag>(superclass.flags() & ~Type::Flag::kIsAbstract);
   subclass.setFlagsAndBuiltinBase(flags, builtin_base);
@@ -298,6 +290,23 @@ RawObject Runtime::addBuiltinType(SymbolId name, LayoutId subclass_id,
 
   // return the class
   return *subclass;
+}
+
+RawObject Runtime::addBuiltinType(SymbolId name, LayoutId subclass_id,
+                                  LayoutId superclass_id,
+                                  const BuiltinAttribute attrs[],
+                                  const BuiltinMethod builtins[]) {
+  HandleScope scope;
+  word attrs_len = 0;
+  for (word i = 0; attrs[i].name != SymbolId::kSentinelId; i++) {
+    attrs_len++;
+  }
+  View<BuiltinAttribute> attrs_view(attrs, attrs_len);
+  Layout layout(&scope, layoutCreateSubclassWithBuiltins(
+                            subclass_id, superclass_id, attrs_view));
+  LayoutId builtin_base = attrs_len == 0 ? superclass_id : subclass_id;
+  return addBuiltinTypeWithLayout(layout, name, builtin_base, subclass_id,
+                                  superclass_id, builtins);
 }
 
 RawObject Runtime::newByteArray() {
@@ -1652,12 +1661,10 @@ void Runtime::initializeHeapTypes() {
   MemoryViewBuiltins::initialize(this);
   ModuleBuiltins::initialize(this);
   ModuleProxyBuiltins::initialize(this);
-  addEmptyBuiltinType(SymbolId::kNotImplementedType,
-                      LayoutId::kNotImplementedType, LayoutId::kObject);
+  NotImplementedBuiltins::initialize(this);
   TupleBuiltins::initialize(this);
   TupleIteratorBuiltins::initialize(this);
-  addEmptyBuiltinType(SymbolId::kUnderUnbound, LayoutId::kUnbound,
-                      LayoutId::kObject);
+  UnboundBuiltins::initialize(this);
   PropertyBuiltins::initialize(this);
   RangeBuiltins::initialize(this);
   RangeIteratorBuiltins::initialize(this);

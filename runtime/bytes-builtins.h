@@ -56,8 +56,8 @@ bool bytesIsValidStr(RawBytes bytes);
 RawObject bytesUnderlying(Thread* thread, const Object& obj);
 
 class SmallBytesBuiltins
-    : public Builtins<SmallBytesBuiltins, SymbolId::kSmallBytes,
-                      LayoutId::kSmallBytes, LayoutId::kBytes> {
+    : public ImmediateBuiltins<SmallBytesBuiltins, SymbolId::kSmallBytes,
+                               LayoutId::kSmallBytes, LayoutId::kBytes> {
  public:
   static void postInitialize(Runtime* runtime, const Type& new_type);
 

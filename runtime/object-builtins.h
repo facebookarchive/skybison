@@ -74,10 +74,9 @@ class ObjectBuiltins {
 };
 
 class NoneBuiltins
-    : public Builtins<NoneBuiltins, SymbolId::kNoneType, LayoutId::kNoneType> {
+    : public ImmediateBuiltins<NoneBuiltins, SymbolId::kNoneType,
+                               LayoutId::kNoneType, LayoutId::kObject> {
  public:
-  static void postInitialize(Runtime*, const Type& new_type);
-
   static RawObject dunderNew(Thread*, Frame*, word);
   static RawObject dunderRepr(Thread*, Frame*, word);
 
@@ -85,6 +84,21 @@ class NoneBuiltins
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(NoneBuiltins);
+};
+
+class NotImplementedBuiltins
+    : public ImmediateBuiltins<
+          NotImplementedBuiltins, SymbolId::kNotImplementedType,
+          LayoutId::kNotImplementedType, LayoutId::kObject> {
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(NotImplementedBuiltins);
+};
+
+class UnboundBuiltins
+    : public ImmediateBuiltins<UnboundBuiltins, SymbolId::kUnderUnbound,
+                               LayoutId::kUnbound, LayoutId::kObject> {
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(UnboundBuiltins);
 };
 
 }  // namespace py

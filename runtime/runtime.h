@@ -370,6 +370,11 @@ class Runtime {
                            LayoutId superclass_id,
                            const BuiltinAttribute attrs[],
                            const BuiltinMethod builtins[]);
+  RawObject addBuiltinTypeWithLayout(const Layout& layout, SymbolId name,
+                                     LayoutId builtin_base,
+                                     LayoutId subclass_id,
+                                     LayoutId superclass_id,
+                                     const BuiltinMethod builtins[]);
 
   LayoutId reserveLayoutId(Thread* thread);
 
@@ -991,6 +996,32 @@ class Builtins : public BuiltinsBase {
     Type new_type(&scope,
                   runtime->addBuiltinType(T::kName, T::kType, T::kSuperType,
                                           T::kAttributes, T::kBuiltinMethods));
+    new_type.sealAttributes();
+    T::postInitialize(runtime, new_type);
+  }
+
+ protected:
+  static const SymbolId kName = name;
+  static const LayoutId kType = type;
+  static const LayoutId kSuperType = supertype;
+};
+
+template <class T, SymbolId name, LayoutId type, LayoutId supertype>
+class ImmediateBuiltins : public BuiltinsBase {
+ public:
+  static void initialize(Runtime* runtime) {
+    HandleScope scope;
+    Layout layout(&scope, runtime->newLayout());
+    layout.setId(T::kType);
+    Type new_type(&scope,
+                  runtime->addBuiltinTypeWithLayout(
+                      /*layout=*/layout, /*name=*/T::kName,
+                      /*builtin_base=*/T::kSuperType,
+                      /*subclass_id=*/T::kType, /*superclass_id=*/T::kSuperType,
+                      /*builtins=*/T::kBuiltinMethods));
+    if (T::kSuperType == LayoutId::kObject) {
+      new_type.setBuiltinBase(T::kType);
+    }
     new_type.sealAttributes();
     T::postInitialize(runtime, new_type);
   }

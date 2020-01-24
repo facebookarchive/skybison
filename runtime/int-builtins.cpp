@@ -19,7 +19,6 @@ void IntBuiltins::postInitialize(Runtime*, const Type& new_type) {
 }
 
 void SmallIntBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
-  new_type.setBuiltinBase(kSuperType);
   runtime->setSmallIntType(new_type);
   Layout::cast(new_type.instanceLayout())
       .setDescribedType(runtime->typeAt(kSuperType));

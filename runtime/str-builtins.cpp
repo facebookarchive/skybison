@@ -388,7 +388,6 @@ RawObject strIteratorNext(Thread* thread, const StrIterator& iter) {
 }
 
 void SmallStrBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
-  new_type.setBuiltinBase(kSuperType);
   runtime->setSmallStrType(new_type);
   Layout::cast(new_type.instanceLayout())
       .setDescribedType(runtime->typeAt(kSuperType));
