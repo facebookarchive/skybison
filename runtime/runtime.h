@@ -146,7 +146,7 @@ class Runtime {
   // listed on the LargeInt class.
   RawObject newIntWithDigits(View<uword> digits);
 
-  RawObject newLayout();
+  RawObject newLayout(LayoutId id);
 
   RawObject newList();
 
@@ -1011,8 +1011,7 @@ class ImmediateBuiltins : public BuiltinsBase {
  public:
   static void initialize(Runtime* runtime) {
     HandleScope scope;
-    Layout layout(&scope, runtime->newLayout());
-    layout.setId(T::kType);
+    Layout layout(&scope, runtime->newLayout(T::kType));
     Type new_type(&scope,
                   runtime->addBuiltinTypeWithLayout(
                       /*layout=*/layout, /*name=*/T::kName,

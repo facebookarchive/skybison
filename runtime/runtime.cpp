@@ -153,9 +153,10 @@ RawObject Runtime::newBoundMethod(const Object& function, const Object& self) {
   return *bound_method;
 }
 
-RawObject Runtime::newLayout() {
+RawObject Runtime::newLayout(LayoutId id) {
   HandleScope scope;
   Layout layout(&scope, heap()->createLayout(LayoutId::kError));
+  layout.setId(id);
   layout.setInObjectAttributes(empty_tuple_);
   layout.setOverflowAttributes(empty_tuple_);
   layout.setAdditions(newList());
@@ -195,8 +196,7 @@ RawObject Runtime::layoutCreateSubclassWithBuiltins(
   }
 
   // Create an empty layout for the subclass
-  Layout result(&scope, newLayout());
-  result.setId(subclass_id);
+  Layout result(&scope, newLayout(subclass_id));
 
   // Copy down all of the superclass attributes into the subclass layout
   word super_attributes_len = super_attributes.length();
@@ -3473,13 +3473,13 @@ bool Runtime::layoutFindAttribute(RawLayout layout, const Object& name,
 
 RawObject Runtime::layoutCreateChild(Thread* thread, const Layout& layout) {
   HandleScope scope(thread);
-  Layout new_layout(&scope, newLayout());
-  new_layout.setId(reserveLayoutId(thread));
+  LayoutId id = reserveLayoutId(thread);
+  Layout new_layout(&scope, newLayout(id));
   new_layout.setDescribedType(layout.describedType());
   new_layout.setNumInObjectAttributes(layout.numInObjectAttributes());
   new_layout.setInObjectAttributes(layout.inObjectAttributes());
   new_layout.setOverflowAttributes(layout.overflowAttributes());
-  layoutAtPut(new_layout.id(), *new_layout);
+  layoutAtPut(id, *new_layout);
   return *new_layout;
 }
 

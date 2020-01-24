@@ -380,8 +380,7 @@ const BuiltinMethod ObjectBuiltins::kBuiltinMethods[] = {
 void ObjectBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
 
-  Layout layout(&scope, runtime->newLayout());
-  layout.setId(LayoutId::kObject);
+  Layout layout(&scope, runtime->newLayout(LayoutId::kObject));
   Type object_type(&scope, runtime->newType());
   layout.setDescribedType(*object_type);
   object_type.setName(runtime->symbols()->ObjectTypename());

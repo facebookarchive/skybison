@@ -623,9 +623,9 @@ RawObject icLookupBinaryOp(RawTuple caches, word index, LayoutId left_layout_id,
 RawObject layoutCreateEmpty(Thread* thread) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Layout result(&scope, runtime->newLayout());
-  result.setId(runtime->reserveLayoutId(thread));
-  runtime->layoutAtPut(result.id(), *result);
+  LayoutId id = runtime->reserveLayoutId(thread);
+  Layout result(&scope, runtime->newLayout(id));
+  runtime->layoutAtPut(id, *result);
   return *result;
 }
 

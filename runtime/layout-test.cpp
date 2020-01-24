@@ -393,7 +393,7 @@ TEST_F(LayoutTest, DeleteAndAddInObjectAttribute) {
 
 TEST_F(LayoutTest, VerifyChildLayout) {
   HandleScope scope(thread_);
-  Layout parent(&scope, runtime_->newLayout());
+  Layout parent(&scope, testing::layoutCreateEmpty(thread_));
   Object attr(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   AttributeInfo info;
   Layout child(&scope,
