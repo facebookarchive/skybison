@@ -47,6 +47,16 @@ RawObject RawSmallStr::becomeBytes() const {
   return RawObject{raw() ^ kSmallStrTag ^ kSmallBytesTag};
 }
 
+word RawSmallStr::codePointLength() const {
+  uword block = raw() >> kBitsPerByte;
+  uword mask_0 = ~uword{0} / 0xFF;  // 0x010101...
+  uword mask_7 = mask_0 << 7;       // 0x808080...
+  block = ((block & mask_7) >> 7) & ((~block) >> 6);
+  // TODO(cshapiro): evaluate using popcount instead of multiplication
+  word num_trailing = (block * mask_0) >> ((kWordSize - 1) * kBitsPerByte);
+  return charLength() - num_trailing;
+}
+
 word RawSmallStr::compare(RawObject that) const {
   word length = charLength();
   for (word i = 0; i < length; i++) {
@@ -54,6 +64,17 @@ word RawSmallStr::compare(RawObject that) const {
     if (result != 0) return result;
   }
   return -1;
+}
+
+RawSmallStr RawSmallStr::fromBytes(View<byte> data) {
+  word length = data.length();
+  DCHECK_BOUND(length, kMaxLength);
+  uword result = 0;
+  for (word i = length - 1; i >= 0; i--) {
+    result = (result << kBitsPerByte) | data.get(i);
+  }
+  return RawSmallStr(result << kBitsPerByte | length << kImmediateTagBits |
+                     kSmallStrTag);
 }
 
 RawSmallStr RawSmallStr::fromCodePoint(int32_t code_point) {
@@ -99,17 +120,6 @@ RawSmallStr RawSmallStr::fromCStr(const char* value) {
   return fromBytes(View<byte>(reinterpret_cast<const byte*>(value), len));
 }
 
-RawSmallStr RawSmallStr::fromBytes(View<byte> data) {
-  word length = data.length();
-  DCHECK_BOUND(length, kMaxLength);
-  uword result = 0;
-  for (word i = length - 1; i >= 0; i--) {
-    result = (result << kBitsPerByte) | data.get(i);
-  }
-  return RawSmallStr(result << kBitsPerByte | length << kImmediateTagBits |
-                     kSmallStrTag);
-}
-
 bool RawSmallStr::isASCII() const {
   uword block = raw() >> kBitsPerByte;
   uword non_ascii_mask = (~uword{0} / 0xFF) << (kBitsPerByte - 1);
@@ -123,16 +133,6 @@ char* RawSmallStr::toCStr() const {
   copyTo(result, length);
   result[length] = '\0';
   return reinterpret_cast<char*>(result);
-}
-
-word RawSmallStr::codePointLength() const {
-  uword block = raw() >> kBitsPerByte;
-  uword mask_0 = ~uword{0} / 0xFF;  // 0x010101...
-  uword mask_7 = mask_0 << 7;       // 0x808080...
-  block = ((block & mask_7) >> 7) & ((~block) >> 6);
-  // TODO(cshapiro): evaluate using popcount instead of multiplication
-  word num_trailing = (block * mask_0) >> ((kWordSize - 1) * kBitsPerByte);
-  return charLength() - num_trailing;
 }
 
 // RawSmallInt
@@ -241,60 +241,6 @@ bool RawLargeBytes::isASCII() const {
 
 // RawLargeStr
 
-word RawLargeStr::compare(RawObject that) const {
-  word this_length = charLength();
-  word that_length = RawLargeStr::cast(that).charLength();
-  word length = Utils::minimum(this_length, that_length);
-  auto s1 = reinterpret_cast<void*>(address());
-  auto s2 = reinterpret_cast<void*>(RawLargeStr::cast(that).address());
-  word result = std::memcmp(s1, s2, length);
-  return result != 0 ? result : this_length - that_length;
-}
-
-bool RawLargeStr::equals(RawObject that) const {
-  if (!that.isLargeStr()) {
-    return false;
-  }
-  auto that_str = RawLargeStr::cast(that);
-  if (length() != that_str.length()) {
-    return false;
-  }
-  auto s1 = reinterpret_cast<void*>(address());
-  auto s2 = reinterpret_cast<void*>(that_str.address());
-  return std::memcmp(s1, s2, length()) == 0;
-}
-
-bool RawLargeStr::equalsBytes(View<byte> bytes) const {
-  word length = this->length();
-  if (bytes.length() != length) {
-    return false;
-  }
-  const void* chars = reinterpret_cast<const void*>(address());
-  return std::memcmp(chars, bytes.data(), length) == 0;
-}
-
-void RawLargeStr::copyTo(byte* dst, word length) const {
-  DCHECK_BOUND(length, this->length());
-  std::memcpy(dst, reinterpret_cast<const byte*>(address()), length);
-}
-
-void RawLargeStr::copyToStartAt(byte* dst, word char_length,
-                                word char_start) const {
-  DCHECK_BOUND(char_start, charLength());
-  DCHECK_BOUND(char_start + char_length, charLength());
-  std::memcpy(dst, reinterpret_cast<const byte*>(address() + char_start),
-              char_length);
-}
-
-char* RawLargeStr::toCStr() const {
-  word length = this->length();
-  byte* result = static_cast<byte*>(std::malloc(length + 1));
-  CHECK(result != nullptr, "out of memory");
-  copyTo(result, length);
-  result[length] = '\0';
-  return reinterpret_cast<char*>(result);
-}
-
 word RawLargeStr::codePointLength() const {
   // This is a vectorized loop for processing code units in groups the size of a
   // machine word.  The garbage collector ensures the following invariants that
@@ -335,6 +281,51 @@ word RawLargeStr::codePointLength() const {
   return result;
 }
 
+word RawLargeStr::compare(RawObject that) const {
+  word this_length = charLength();
+  word that_length = RawLargeStr::cast(that).charLength();
+  word length = Utils::minimum(this_length, that_length);
+  auto s1 = reinterpret_cast<void*>(address());
+  auto s2 = reinterpret_cast<void*>(RawLargeStr::cast(that).address());
+  word result = std::memcmp(s1, s2, length);
+  return result != 0 ? result : this_length - that_length;
+}
+
+void RawLargeStr::copyTo(byte* dst, word length) const {
+  DCHECK_BOUND(length, this->length());
+  std::memcpy(dst, reinterpret_cast<const byte*>(address()), length);
+}
+
+void RawLargeStr::copyToStartAt(byte* dst, word char_length,
+                                word char_start) const {
+  DCHECK_BOUND(char_start, charLength());
+  DCHECK_BOUND(char_start + char_length, charLength());
+  std::memcpy(dst, reinterpret_cast<const byte*>(address() + char_start),
+              char_length);
+}
+
+bool RawLargeStr::equals(RawObject that) const {
+  if (!that.isLargeStr()) {
+    return false;
+  }
+  auto that_str = RawLargeStr::cast(that);
+  if (length() != that_str.length()) {
+    return false;
+  }
+  auto s1 = reinterpret_cast<void*>(address());
+  auto s2 = reinterpret_cast<void*>(that_str.address());
+  return std::memcmp(s1, s2, length()) == 0;
+}
+
+bool RawLargeStr::equalsBytes(View<byte> bytes) const {
+  word length = this->length();
+  if (bytes.length() != length) {
+    return false;
+  }
+  const void* chars = reinterpret_cast<const void*>(address());
+  return std::memcmp(chars, bytes.data(), length) == 0;
+}
+
 bool RawLargeStr::isASCII() const {
   // Depends on invariants specified in RawLargeStr::codePointLength
   word length = this->length();
@@ -347,6 +338,15 @@ bool RawLargeStr::isASCII() const {
     if ((block & non_ascii_mask) != 0) return false;
   }
   return true;
+}
+
+char* RawLargeStr::toCStr() const {
+  word length = this->length();
+  byte* result = static_cast<byte*>(std::malloc(length + 1));
+  CHECK(result != nullptr, "out of memory");
+  copyTo(result, length);
+  result[length] = '\0';
+  return reinterpret_cast<char*>(result);
 }
 
 // RawList
@@ -639,18 +639,6 @@ word RawStr::compareCStr(const char* c_str) const {
   return (diff > 0) ? 1 : ((diff < 0) ? -1 : 0);
 }
 
-bool RawStr::equalsCStr(const char* c_str) const {
-  const char* cp = c_str;
-  const word len = charLength();
-  for (word i = 0; i < len; i++, cp++) {
-    byte ch = static_cast<byte>(*cp);
-    if (ch == '\0' || ch != charAt(i)) {
-      return false;
-    }
-  }
-  return *cp == '\0';
-}
-
 template <typename T, typename F>
 static inline int32_t decodeCodePoint(T src, F at, word src_length, word index,
                                       word* char_length) {
@@ -686,6 +674,18 @@ static inline int32_t decodeCodePoint(T src, F at, word src_length, word index,
 int32_t RawStr::codePointAt(word index, word* char_length) const {
   return decodeCodePoint(this, &RawStr::charAt, charLength(), index,
                          char_length);
+}
+
+bool RawStr::equalsCStr(const char* c_str) const {
+  const char* cp = c_str;
+  const word len = charLength();
+  for (word i = 0; i < len; i++, cp++) {
+    byte ch = static_cast<byte>(*cp);
+    if (ch == '\0' || ch != charAt(i)) {
+      return false;
+    }
+  }
+  return *cp == '\0';
 }
 
 word RawStr::offsetByCodePoints(word index, word count) const {

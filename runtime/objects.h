@@ -4381,8 +4381,6 @@ inline word RawSmallBytes::hash() const {
 
 inline RawSmallStr::RawSmallStr(uword raw) : RawObject(raw) {}
 
-inline RawSmallStr RawSmallStr::empty() { return RawSmallStr(kSmallStrTag); }
-
 inline word RawSmallStr::charLength() const {
   return (raw() >> kImmediateTagBits) & kMaxLength;
 }
@@ -4408,6 +4406,8 @@ inline void RawSmallStr::copyToStartAt(byte* dst, word char_length,
     *dst++ = charAt(i);
   }
 }
+
+inline RawSmallStr RawSmallStr::empty() { return RawSmallStr(kSmallStrTag); }
 
 inline word RawSmallStr::hash() const {
   return static_cast<word>(raw() >> RawObject::kImmediateTagBits);
@@ -6080,8 +6080,6 @@ inline void RawModuleProxy::setModule(RawObject module) const {
 
 // RawStr
 
-inline RawStr RawStr::empty() { return RawSmallStr::empty().rawCast<RawStr>(); }
-
 inline byte RawStr::charAt(word index) const {
   if (isSmallStr()) {
     return RawSmallStr::cast(*this).charAt(index);
@@ -6133,19 +6131,6 @@ inline void RawStr::copyToStartAt(byte* dst, word char_length,
   return RawLargeStr::cast(*this).copyToStartAt(dst, char_length, char_start);
 }
 
-inline bool RawStr::equals(RawObject that) const {
-  if (*this == that) return true;
-  if (isSmallStr()) return false;
-  return RawLargeStr::cast(*this).equals(that);
-}
-
-inline char* RawStr::toCStr() const {
-  if (isSmallStr()) {
-    return RawSmallStr::cast(*this).toCStr();
-  }
-  return RawLargeStr::cast(*this).toCStr();
-}
-
 inline word RawStr::codePointLength() const {
   if (isSmallStr()) {
     return RawSmallStr::cast(*this).codePointLength();
@@ -6153,11 +6138,26 @@ inline word RawStr::codePointLength() const {
   return RawLargeStr::cast(*this).codePointLength();
 }
 
+inline RawStr RawStr::empty() { return RawSmallStr::empty().rawCast<RawStr>(); }
+
+inline bool RawStr::equals(RawObject that) const {
+  if (*this == that) return true;
+  if (isSmallStr()) return false;
+  return RawLargeStr::cast(*this).equals(that);
+}
+
 inline bool RawStr::isASCII() const {
   if (isSmallStr()) {
     return RawSmallStr::cast(*this).isASCII();
   }
   return RawLargeStr::cast(*this).isASCII();
+}
+
+inline char* RawStr::toCStr() const {
+  if (isSmallStr()) {
+    return RawSmallStr::cast(*this).toCStr();
+  }
+  return RawLargeStr::cast(*this).toCStr();
 }
 
 // RawLargeStr
