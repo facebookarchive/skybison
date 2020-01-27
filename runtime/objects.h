@@ -282,6 +282,7 @@ class RawObject {
   bool isSmallInt() const;
   bool isSmallStr() const;
   bool isUnbound() const;
+  bool isImmediateObjectNotSmallInt() const;
 
   // Heap objects
   bool isHeapObject() const;
@@ -3628,6 +3629,15 @@ inline bool RawObject::isHeapObjectWithLayout(LayoutId layout_id) const {
          RawHeapObject::cast(*this).header().layoutId() == layout_id;
 }
 
+inline bool RawObject::isImmediateObjectNotSmallInt() const {
+  // Test whether object is not a heap object when it is known that it is not a
+  // SmallInt (the lowest bit is guaranteed to be one so we don't need to
+  // re-test that).
+  static_assert((kHeapObjectTag & ~kSmallIntTagMask) == 0,
+                "assumed heapobject tag bits outside smallint bit are 0");
+  return (raw() & (kPrimaryTagMask & ~kSmallIntTagMask)) != 0;
+}
+
 inline bool RawObject::isInstance() const {
   return isHeapObject() && (RawHeapObject::cast(*this).header().layoutId() >
                             LayoutId::kLastNonInstance);
@@ -4004,7 +4014,7 @@ T RawObject::rawCast() const {
 // RawBytes
 
 inline word RawBytes::findByte(byte value, word start, word length) const {
-  if (isSmallBytes()) {
+  if (isImmediateObjectNotSmallInt()) {
     return RawSmallBytes::cast(*this).findByte(value, start, length);
   }
   return RawLargeBytes::cast(*this).findByte(value, start, length);
@@ -4015,28 +4025,28 @@ inline RawBytes RawBytes::empty() {
 }
 
 inline word RawBytes::length() const {
-  if (isSmallBytes()) {
+  if (isImmediateObjectNotSmallInt()) {
     return RawSmallBytes::cast(*this).length();
   }
   return RawLargeBytes::cast(*this).length();
 }
 
 ALWAYS_INLINE byte RawBytes::byteAt(word index) const {
-  if (isSmallBytes()) {
+  if (isImmediateObjectNotSmallInt()) {
     return RawSmallBytes::cast(*this).byteAt(index);
   }
   return RawLargeBytes::cast(*this).byteAt(index);
 }
 
 inline RawObject RawBytes::becomeStr() const {
-  if (isSmallBytes()) {
+  if (isImmediateObjectNotSmallInt()) {
     return RawSmallBytes::cast(*this).becomeStr();
   }
   return RawLargeBytes::cast(*this).becomeStr();
 }
 
 inline void RawBytes::copyTo(byte* dst, word length) const {
-  if (isSmallBytes()) {
+  if (isImmediateObjectNotSmallInt()) {
     RawSmallBytes::cast(*this).copyTo(dst, length);
     return;
   }
@@ -4044,7 +4054,7 @@ inline void RawBytes::copyTo(byte* dst, word length) const {
 }
 
 inline void RawBytes::copyToStartAt(byte* dst, word length, word index) const {
-  if (isSmallBytes()) {
+  if (isImmediateObjectNotSmallInt()) {
     RawSmallBytes::cast(*this).copyToStartAt(dst, length, index);
     return;
   }
@@ -4052,21 +4062,21 @@ inline void RawBytes::copyToStartAt(byte* dst, word length, word index) const {
 }
 
 inline bool RawBytes::isASCII() const {
-  if (isSmallBytes()) {
+  if (isImmediateObjectNotSmallInt()) {
     return RawSmallBytes::cast(*this).isASCII();
   }
   return RawLargeBytes::cast(*this).isASCII();
 }
 
 inline uint16_t RawBytes::uint16At(word index) const {
-  if (isSmallBytes()) {
+  if (isImmediateObjectNotSmallInt()) {
     return RawSmallBytes::cast(*this).uint16At(index);
   }
   return RawLargeBytes::cast(*this).uint16At(index);
 }
 
 inline uint32_t RawBytes::uint32At(word index) const {
-  if (isSmallBytes()) {
+  if (isImmediateObjectNotSmallInt()) {
     return RawSmallBytes::cast(*this).uint32At(index);
   }
   return RawLargeBytes::cast(*this).uint32At(index);
@@ -6081,14 +6091,14 @@ inline void RawModuleProxy::setModule(RawObject module) const {
 // RawStr
 
 inline byte RawStr::charAt(word index) const {
-  if (isSmallStr()) {
+  if (isImmediateObjectNotSmallInt()) {
     return RawSmallStr::cast(*this).charAt(index);
   }
   return RawLargeStr::cast(*this).charAt(index);
 }
 
 inline word RawStr::charLength() const {
-  if (isSmallStr()) {
+  if (isImmediateObjectNotSmallInt()) {
     return RawSmallStr::cast(*this).charLength();
   }
   return RawLargeStr::cast(*this).charLength();
@@ -6098,7 +6108,7 @@ inline word RawStr::compare(RawObject that) const {
   if (*this == that) {
     return 0;
   }
-  if (isSmallStr()) {
+  if (isImmediateObjectNotSmallInt()) {
     if (that.isSmallStr()) {
       word result = __builtin_bswap64(this->raw() & ~uword{0xFF}) -
                     __builtin_bswap64(that.raw() & ~uword{0xFF});
@@ -6115,7 +6125,7 @@ inline word RawStr::compare(RawObject that) const {
 }
 
 inline void RawStr::copyTo(byte* dst, word length) const {
-  if (isSmallStr()) {
+  if (isImmediateObjectNotSmallInt()) {
     RawSmallStr::cast(*this).copyTo(dst, length);
     return;
   }
@@ -6124,7 +6134,7 @@ inline void RawStr::copyTo(byte* dst, word length) const {
 
 inline void RawStr::copyToStartAt(byte* dst, word char_length,
                                   word char_start) const {
-  if (isSmallStr()) {
+  if (isImmediateObjectNotSmallInt()) {
     RawSmallStr::cast(*this).copyToStartAt(dst, char_length, char_start);
     return;
   }
@@ -6132,7 +6142,7 @@ inline void RawStr::copyToStartAt(byte* dst, word char_length,
 }
 
 inline word RawStr::codePointLength() const {
-  if (isSmallStr()) {
+  if (isImmediateObjectNotSmallInt()) {
     return RawSmallStr::cast(*this).codePointLength();
   }
   return RawLargeStr::cast(*this).codePointLength();
@@ -6142,19 +6152,19 @@ inline RawStr RawStr::empty() { return RawSmallStr::empty().rawCast<RawStr>(); }
 
 inline bool RawStr::equals(RawObject that) const {
   if (*this == that) return true;
-  if (isSmallStr()) return false;
+  if (isImmediateObjectNotSmallInt()) return false;
   return RawLargeStr::cast(*this).equals(that);
 }
 
 inline bool RawStr::isASCII() const {
-  if (isSmallStr()) {
+  if (isImmediateObjectNotSmallInt()) {
     return RawSmallStr::cast(*this).isASCII();
   }
   return RawLargeStr::cast(*this).isASCII();
 }
 
 inline char* RawStr::toCStr() const {
-  if (isSmallStr()) {
+  if (isImmediateObjectNotSmallInt()) {
     return RawSmallStr::cast(*this).toCStr();
   }
   return RawLargeStr::cast(*this).toCStr();
