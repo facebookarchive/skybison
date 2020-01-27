@@ -2712,7 +2712,7 @@ TEST_F(RuntimeTest, InstanceAtPutWithReadOnlyAttributeRaisesAttributeError) {
   BuiltinMethod builtins[] = {
       {SymbolId::kSentinelId, nullptr},
   };
-  LayoutId layout_id = runtime_->reserveLayoutId(thread_);
+  LayoutId layout_id = LayoutId::kLastBuiltinId;
   Type type(&scope,
             runtime_->addBuiltinType(SymbolId::kVersion, layout_id,
                                      LayoutId::kObject, attrs, builtins));
@@ -3161,7 +3161,7 @@ TEST_F(RuntimeTest, BuiltinBaseOfNonEmptyTypeIsTypeItself) {
   BuiltinMethod builtins[] = {
       {SymbolId::kSentinelId, nullptr},
   };
-  LayoutId layout_id = runtime_->reserveLayoutId(thread_);
+  LayoutId layout_id = LayoutId::kLastBuiltinId;
   Type type(&scope,
             runtime_->addBuiltinType(SymbolId::kVersion, layout_id,
                                      LayoutId::kObject, attrs, builtins));
@@ -3177,7 +3177,7 @@ TEST_F(RuntimeTest, BuiltinBaseOfEmptyTypeIsSuperclass) {
   BuiltinMethod builtins[] = {
       {SymbolId::kSentinelId, nullptr},
   };
-  LayoutId layout_id = runtime_->reserveLayoutId(thread_);
+  LayoutId layout_id = LayoutId::kLastBuiltinId;
   Type type(&scope,
             runtime_->addBuiltinType(SymbolId::kVersion, layout_id,
                                      LayoutId::kObject, attrs, builtins));
