@@ -207,7 +207,7 @@ TEST_F(DebuggingTests, DumpExtendedInstanceWithInvalidLayout) {
 TEST_F(DebuggingTests, DumpExtendedInstanceWithLayoutWithoutType) {
   HandleScope scope(thread_);
   Instance instance(&scope, runtime_->newList());
-  Layout layout(&scope, runtime_->layoutAt(instance.layoutId()));
+  Layout layout(&scope, runtime_->layoutOf(*instance));
   Object old_type(&scope, layout.describedType());
   // Temporarily set an invalid type...
   layout.setDescribedType(NoneType::object());

@@ -712,7 +712,7 @@ def instance():
   Object instance_obj(&scope, mainModuleAt(runtime_, "instance"));
   ASSERT_TRUE(instance_obj.isHeapObject());
   Instance instance(&scope, *instance_obj);
-  Layout layout(&scope, runtime_->layoutAt(instance.layoutId()));
+  Layout layout(&scope, runtime_->layoutOf(*instance));
   ASSERT_TRUE(layout.hasDictOverflow());
   word offset = layout.dictOverflowOffset();
   ASSERT_TRUE(instance.instanceVariableAt(offset).isNoneType());

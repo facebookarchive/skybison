@@ -345,7 +345,7 @@ class Runtime {
   void setSmallStrType(const Type& type);
 
   RawObject typeOf(RawObject object) {
-    return Layout::cast(layoutAt(object.layoutId())).describedType();
+    return Layout::cast(layoutOf(object)).describedType();
   }
 
   RawObject typeAt(LayoutId layout_id);
@@ -357,6 +357,13 @@ class Runtime {
   // Get layout for `layout_id` and attempt not to crash for invalid ids. This
   // is for debug dumpers. Do not use for other purposes!
   RawObject layoutAtSafe(LayoutId layout_id);
+  RawObject layoutOf(RawObject obj) {
+    if (obj.isHeapObject()) {
+      return layoutAt(RawHeapObject::cast(obj).header().layoutId());
+    }
+    return layoutAt(
+        static_cast<LayoutId>(obj.raw() & Object::kImmediateTagMask));
+  }
 
   // Raw access to the MutableTuple of Layouts. Intended only for use by the GC.
   RawObject layouts() { return layouts_; }

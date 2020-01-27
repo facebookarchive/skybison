@@ -2477,7 +2477,7 @@ RawObject UnderBuiltinsModule::underInstanceOverflowDict(Thread* thread,
   Arguments args(frame, nargs);
   Object object(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
-  Layout layout(&scope, runtime->layoutAt(object.layoutId()));
+  Layout layout(&scope, runtime->layoutOf(*object));
   CHECK(layout.hasDictOverflow(), "expected dict overflow layout");
   word offset = layout.dictOverflowOffset();
   Instance instance(&scope, *object);
@@ -3414,7 +3414,7 @@ RawObject UnderBuiltinsModule::underObjectKeys(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object object(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
-  Layout layout(&scope, runtime->layoutAt(object.layoutId()));
+  Layout layout(&scope, runtime->layoutOf(*object));
   List result(&scope, runtime->newList());
   // Add in-object attributes
   Tuple in_object(&scope, layout.inObjectAttributes());

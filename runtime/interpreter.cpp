@@ -2770,8 +2770,7 @@ void Interpreter::storeAttrWithLocation(Thread* thread, RawObject receiver,
     return;
   }
 
-  RawLayout layout =
-      Layout::cast(thread->runtime()->layoutAt(receiver.layoutId()));
+  RawLayout layout = Layout::cast(thread->runtime()->layoutOf(receiver));
   RawTuple overflow =
       Tuple::cast(instance.instanceVariableAt(layout.overflowOffset()));
   overflow.atPut(-offset - 1, value);
@@ -2922,8 +2921,7 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrInstanceOverflow(Thread* thread,
   word offset = SmallInt::cast(cached).value();
   DCHECK(offset < 0, "unexpected offset");
   RawInstance instance = Instance::cast(receiver);
-  RawLayout layout =
-      Layout::cast(thread->runtime()->layoutAt(receiver.layoutId()));
+  RawLayout layout = Layout::cast(thread->runtime()->layoutOf(receiver));
   RawTuple overflow =
       Tuple::cast(instance.instanceVariableAt(layout.overflowOffset()));
   overflow.atPut(-offset - 1, frame->peek(1));
@@ -2950,7 +2948,7 @@ Interpreter::doStoreAttrInstanceOverflowUpdate(Thread* thread, word arg) {
 
   HandleScope scope(thread);
   Instance instance(&scope, receiver);
-  Layout layout(&scope, thread->runtime()->layoutAt(receiver.layoutId()));
+  Layout layout(&scope, thread->runtime()->layoutOf(receiver));
   Tuple overflow(&scope, instance.instanceVariableAt(layout.overflowOffset()));
   Object value(&scope, frame->peek(1));
   if (offset >= overflow.length()) {
@@ -3367,8 +3365,7 @@ HANDLER_INLINE USED RawObject Interpreter::loadAttrWithLocation(
     return instance.instanceVariableAt(offset);
   }
 
-  RawLayout layout =
-      Layout::cast(thread->runtime()->layoutAt(receiver.layoutId()));
+  RawLayout layout = Layout::cast(thread->runtime()->layoutOf(receiver));
   RawTuple overflow =
       Tuple::cast(instance.instanceVariableAt(layout.overflowOffset()));
   return overflow.at(-offset - 1);

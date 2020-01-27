@@ -20,15 +20,15 @@ void IntBuiltins::postInitialize(Runtime*, const Type& new_type) {
 
 void SmallIntBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
   runtime->setSmallIntType(new_type);
-  Layout::cast(new_type.instanceLayout())
-      .setDescribedType(runtime->typeAt(kSuperType));
+  RawObject layout = new_type.instanceLayout();
+  Layout::cast(layout).setDescribedType(runtime->typeAt(kSuperType));
   // We want to lookup the class of an immediate type by using the 5-bit tag
-  // value as an index into the class table.  Replicate the class object for
+  // value as an index into the class table.  Replicate the layout object for
   // SmallInt to all locations that decode to a SmallInt tag.
   for (word i = 2; i < (1 << Object::kImmediateTagBits); i += 2) {
     DCHECK(runtime->layoutAt(static_cast<LayoutId>(i)) == NoneType::object(),
            "list collision");
-    runtime->layoutAtPut(static_cast<LayoutId>(i), *new_type);
+    runtime->layoutAtPut(static_cast<LayoutId>(i), layout);
   }
 }
 

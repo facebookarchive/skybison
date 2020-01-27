@@ -27,7 +27,7 @@ RawObject instanceDelAttr(Thread* thread, const Instance& instance,
 
   // Remove the reference to the attribute value from the instance
   Runtime* runtime = thread->runtime();
-  Layout layout(&scope, runtime->layoutAt(instance.layoutId()));
+  Layout layout(&scope, runtime->layoutOf(*instance));
   AttributeInfo info;
   if (!Runtime::layoutFindAttribute(*layout, name, &info)) {
     if (layout.hasDictOverflow()) {
@@ -71,7 +71,7 @@ RawObject instanceGetAttributeSetLocation(Thread* thread,
                                           Object* location_out) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Layout layout(&scope, runtime->layoutAt(instance.layoutId()));
+  Layout layout(&scope, runtime->layoutOf(*instance));
   AttributeInfo info;
   if (Runtime::layoutFindAttribute(*layout, name, &info)) {
     if (info.isInObject()) {
@@ -106,7 +106,7 @@ RawObject instanceGetAttribute(Thread* thread, const Instance& instance,
 void instanceGrowOverflow(Thread* thread, const Instance& instance,
                           word length) {
   HandleScope scope(thread);
-  Layout layout(&scope, thread->runtime()->layoutAt(instance.layoutId()));
+  Layout layout(&scope, thread->runtime()->layoutOf(*instance));
   Tuple overflow(&scope, instance.instanceVariableAt(layout.overflowOffset()));
   DCHECK(overflow.length() < length, "unexpected overflow");
   MutableTuple new_overflow(&scope, thread->runtime()->newMutableTuple(length));
@@ -124,7 +124,7 @@ static RawObject instanceSetAttrSetLocation(Thread* thread,
 
   // If the attribute doesn't exist we'll need to transition the layout
   Runtime* runtime = thread->runtime();
-  Layout layout(&scope, runtime->layoutAt(instance.layoutId()));
+  Layout layout(&scope, runtime->layoutOf(*instance));
   AttributeInfo info;
   if (!Runtime::layoutFindAttribute(*layout, name, &info)) {
     if (!layout.hasTupleOverflow()) {
