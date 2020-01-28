@@ -181,6 +181,25 @@ class IntepreterTest(unittest.TestCase):
         self.assertEqual(d.result[0], locals)
         self.assertEqual(d.result[1], C)
 
+    def test_get_iter_with_range_with_bool(self):
+        result = None
+        for i in range(True):
+            if result is None:
+                result = i
+            else:
+                result += i
+        self.assertEqual(result, 0)
+
+        result = 0
+        for i in range(True, 4):
+            result += i
+        self.assertEqual(result, 6)
+
+        result = 0
+        for i in range(0, 4, True):
+            result += i
+        self.assertEqual(result, 6)
+
     def test_import_performs_secondary_lookup(self):
         import sys
 

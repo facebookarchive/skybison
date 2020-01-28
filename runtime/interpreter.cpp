@@ -1839,9 +1839,9 @@ HANDLER_INLINE Continue Interpreter::doGetIter(Thread* thread, word) {
         iterator = runtime->newLongRangeIterator(start_int, stop_int, step_int);
         break;
       }
-      word start = SmallInt::cast(range.start()).value();
-      word stop = SmallInt::cast(range.stop()).value();
-      word step = SmallInt::cast(range.step()).value();
+      word start = start_int.asWord();
+      word stop = stop_int.asWord();
+      word step = step_int.asWord();
       word length = Slice::length(start, stop, step);
       if (SmallInt::isValid(length)) {
         iterator = runtime->newRangeIterator(start, step, length);
