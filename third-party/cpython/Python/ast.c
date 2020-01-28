@@ -4190,19 +4190,15 @@ decode_unicode_with_escapes(struct compiling *c, const node *n, const char *s,
         }
         if (*s & 0x80) { /* XXX inefficient */
             PyObject *w;
-            int kind;
-            void *data;
             Py_ssize_t len, i;
             w = decode_utf8(c, &s, end);
             if (w == NULL) {
                 _PyBytesWriter_Dealloc(&writer);
                 return NULL;
             }
-            kind = PyUnicode_KIND(w);
-            data = PyUnicode_DATA(w);
             len = PyUnicode_GET_LENGTH(w);
             for (i = 0; i < len; i++) {
-                Py_UCS4 chr = PyUnicode_READ(kind, data, i);
+                Py_UCS4 chr = PyUnicode_READ_CHAR(w, i);
                 sprintf(p, "\\U%08x", chr);
                 p += 10;
             }
