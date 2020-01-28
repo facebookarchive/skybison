@@ -1677,6 +1677,60 @@ class BytesTests(unittest.TestCase):
             str(context.exception), "a bytes-like object is required, not 'Idx'"
         )
 
+    def test_fromhex_returns_bytes_instance(self):
+        self.assertEqual(bytes.fromhex("1234 ab AB"), b"\x124\xab\xab")
+
+    def test_fromhex_ignores_spaces(self):
+        self.assertEqual(bytes.fromhex("ab cc deff"), b"\xab\xcc\xde\xff")
+
+    def test_fromhex_with_trailing_spaces_returns_bytes(self):
+        self.assertEqual(bytes.fromhex("ABCD  "), b"\xab\xcd")
+
+    def test_fromhex_with_number_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            bytes.fromhex(1234)
+
+    def test_fromhex_with_bad_byte_groupings_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            bytes.fromhex("abc d")
+        self.assertEqual(
+            str(context.exception),
+            "non-hexadecimal number found in fromhex() arg at position 3",
+        )
+
+    def test_fromhex_with_dangling_nibble_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            bytes.fromhex("AB AB C")
+        self.assertEqual(
+            str(context.exception),
+            "non-hexadecimal number found in fromhex() arg at position 7",
+        )
+
+    def test_fromhex_with_non_ascii_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            bytes.fromhex("édcb")
+        self.assertEqual(
+            str(context.exception),
+            "non-hexadecimal number found in fromhex() arg at position 0",
+        )
+
+    def test_fromhex_with_non_hex_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            bytes.fromhex("0123abcdefgh")
+        self.assertEqual(
+            str(context.exception),
+            "non-hexadecimal number found in fromhex() arg at position 10",
+        )
+
+    def test_fromhex_with_bytes_subclass_returns_subclass_instance(self):
+        class C(bytes):
+            __init__ = Mock(name="__init__", return_value=None)
+
+        c = C.fromhex("1111")
+        self.assertIs(c.__class__, C)
+        c.__init__.assert_called_once()
+        self.assertEqual(c, b"\x11\x11")
+
     def test_index_with_bytearray_self_raises_type_error(self):
         with self.assertRaises(TypeError):
             bytes.index(bytearray(), b"")

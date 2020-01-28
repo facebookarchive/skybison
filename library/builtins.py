@@ -2103,7 +2103,31 @@ class bytes(bootstrap=True):
 
     @classmethod
     def fromhex(cls, string):
-        _unimplemented()
+        _str_guard(string)
+        fromhex_error = "non-hexadecimal number found in fromhex() arg at position "
+        result = bytearray()
+        length = _str_len(string)
+        i = 0
+        while i < length:
+            top_cp = string[i]
+            if top_cp == " ":
+                i += 1
+                continue
+            try:
+                top_digit = _int_new_from_str(int, top_cp, 16)
+            except ValueError:
+                raise ValueError(fromhex_error + str(i))
+            i += 1
+            if i == length:
+                raise ValueError(fromhex_error + str(i))
+            bottom_cp = string[i]
+            try:
+                bottom_digit = _int_new_from_str(int, bottom_cp, 16)
+            except ValueError:
+                raise ValueError(fromhex_error + str(i))
+            _bytearray_append(result, top_digit << 4 | bottom_digit)
+            i += 1
+        return cls(result)
 
     def hex(self) -> str:
         pass
