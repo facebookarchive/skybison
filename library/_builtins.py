@@ -28,6 +28,11 @@ def _bound_method(fn, owner):
 
 
 @_patch
+def _bytearray_append(obj, item):
+    pass
+
+
+@_patch
 def _bytearray_check(obj):
     pass
 

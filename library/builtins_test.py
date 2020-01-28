@@ -621,6 +621,40 @@ class ByteArrayTests(unittest.TestCase):
             "can assign only bytes, buffers, or iterables of ints in range(0, 256)",
         )
 
+    def test_append_appends_item_to_bytearray(self):
+        result = bytearray()
+        result.append(ord("a"))
+        self.assertEqual(result, bytearray(b"a"))
+
+    def test_append_with_index_calls_dunder_index(self):
+        class Idx:
+            def __index__(self):
+                return ord("q")
+
+        result = bytearray()
+        result.append(Idx())
+        self.assertEqual(result, bytearray(b"q"))
+
+    def test_append_with_string_raises_type_error(self):
+        result = bytearray()
+        with self.assertRaises(TypeError) as context:
+            result.append("a")
+        self.assertEqual(
+            "'str' object cannot be interpreted as an integer", str(context.exception)
+        )
+
+    def test_append_with_large_int_raises_value_error(self):
+        result = bytearray()
+        with self.assertRaises(ValueError) as context:
+            result.append(256)
+        self.assertEqual("byte must be in range(0, 256)", str(context.exception))
+
+    def test_append_with_negative_int_raises_value_error(self):
+        result = bytearray()
+        with self.assertRaises(ValueError) as context:
+            result.append(-10)
+        self.assertEqual("byte must be in range(0, 256)", str(context.exception))
+
     def test_clear_with_non_bytearray_self_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             bytearray.clear(b"")

@@ -22,6 +22,7 @@ from _builtins import (
     _bool_check,
     _bool_guard,
     _bound_method,
+    _bytearray_append,
     _bytearray_check,
     _bytearray_clear,
     _bytearray_contains,
@@ -1654,7 +1655,10 @@ class bytearray(bootstrap=True):
         raise TypeError("bytearray indices must be integers or slices")
 
     def append(self, item):
-        _unimplemented()
+        result = _bytearray_append(self, item)
+        if result is not _Unbound:
+            return
+        _bytearray_append(self, _index(item))
 
     def capitalize(self):
         _unimplemented()

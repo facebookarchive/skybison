@@ -21,6 +21,8 @@ class UnderBuiltinsModule {
   static RawObject underBoolCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underBoolGuard(Thread* thread, Frame* frame, word nargs);
   static RawObject underBoundMethod(Thread* thread, Frame* frame, word nargs);
+  static RawObject underBytearrayAppend(Thread* thread, Frame* frame,
+                                        word nargs);
   static RawObject underBytearrayCheck(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underBytearrayClear(Thread* thread, Frame* frame,

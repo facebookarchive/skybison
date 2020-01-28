@@ -79,6 +79,7 @@ const BuiltinFunction UnderBuiltinsModule::kBuiltinFunctions[] = {
     {SymbolId::kUnderBoundMethod, underBoundMethod},
     {SymbolId::kUnderBoolCheck, underBoolCheck},
     {SymbolId::kUnderBoolGuard, underBoolGuard},
+    {SymbolId::kUnderBytearrayAppend, underBytearrayAppend},
     {SymbolId::kUnderBytearrayCheck, underBytearrayCheck},
     {SymbolId::kUnderBytearrayClear, underBytearrayClear},
     {SymbolId::kUnderBytearrayContains, underBytearrayContains},
@@ -476,6 +477,29 @@ RawObject UnderBuiltinsModule::underBoundMethod(Thread* thread, Frame* frame,
   Object function(&scope, args.get(0));
   Object owner(&scope, args.get(1));
   return thread->runtime()->newBoundMethod(function, owner);
+}
+
+RawObject UnderBuiltinsModule::underBytearrayAppend(Thread* thread,
+                                                    Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kBytearray);
+  }
+  ByteArray self(&scope, *self_obj);
+  Object item_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfInt(*item_obj)) {
+    return Unbound::object();
+  }
+  OptInt<byte> item_opt = intUnderlying(*item_obj).asInt<byte>();
+  if (item_opt.error != CastError::None) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "byte must be in range(0, 256)");
+  }
+  byteArrayAdd(thread, runtime, self, item_opt.value);
+  return NoneType::object();
 }
 
 RawObject UnderBuiltinsModule::underBytearrayClear(Thread* thread, Frame* frame,

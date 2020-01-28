@@ -160,6 +160,7 @@ class Runtime;
   V(UnderBufferedReaderRead, "_buffered_reader_read")                          \
   V(UnderBufferedReaderReadline, "_buffered_reader_readline")                  \
   V(UnderBuiltins, "_builtins")                                                \
+  V(UnderBytearrayAppend, "_bytearray_append")                                 \
   V(UnderBytearrayCheck, "_bytearray_check")                                   \
   V(UnderBytearrayClear, "_bytearray_clear")                                   \
   V(UnderBytearrayContains, "_bytearray_contains")                             \
