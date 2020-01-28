@@ -41,6 +41,10 @@ def lookup(encoding):
     cached = codec_search_cache.get(encoding)
     if cached is not None:
         return cached
+    # Make sure that we loaded the standard codecs.
+    if not codec_search_path:
+        import encodings  # noqa: F401
+
     normalized_encoding = encoding.lower().replace(" ", "-")
     result = None
     for search_func in codec_search_path:

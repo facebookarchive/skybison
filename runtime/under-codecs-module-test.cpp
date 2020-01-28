@@ -1442,4 +1442,15 @@ TEST_F(CodecsModuleTest,
   EXPECT_TRUE(isBytesEqualsBytes(bytes, expected));
 }
 
+TEST_F(CodecsModuleTest, LookupRareCodecReturnsCodecInfo) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+import _codecs
+codec = _codecs.lookup("iso_ir_6")
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object codec(&scope, mainModuleAt(runtime_, "codec"));
+  EXPECT_TRUE(codec.isHeapObject());
+}
+
 }  // namespace py
