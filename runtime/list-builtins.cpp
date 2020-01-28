@@ -236,8 +236,7 @@ RawObject ListBuiltins::dunderContains(Thread* thread, Frame* frame,
   Object value(&scope, args.get(1));
   for (word i = 0, num_items = self.numItems(); i < num_items; ++i) {
     RawObject eq = Runtime::objectEquals(thread, *value, self.at(i));
-    if (eq == Bool::trueObj()) return Bool::trueObj();
-    if (eq.isErrorException()) return eq;
+    if (eq != Bool::falseObj()) return eq;
   }
   return Bool::falseObj();
 }
