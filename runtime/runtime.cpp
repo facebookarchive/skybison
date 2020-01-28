@@ -2176,6 +2176,8 @@ void Runtime::cacheBuiltinsInstances(Thread* thread) {
 void Runtime::cacheSysInstances(Thread* thread, const Module& sys) {
   sys_stderr_ = moduleValueCellAtById(thread, sys, SymbolId::kStderr);
   CHECK(!sys_stderr_.isErrorNotFound(), "sys.stderr not found");
+  sys_stdin_ = moduleValueCellAtById(thread, sys, SymbolId::kStdin);
+  CHECK(!sys_stdin_.isErrorNotFound(), "sys.stdin not found");
   sys_stdout_ = moduleValueCellAtById(thread, sys, SymbolId::kStdout);
   CHECK(!sys_stdout_.isErrorNotFound(), "sys.stdout not found");
   display_hook_ = moduleValueCellAtById(thread, sys, SymbolId::kDisplayhook);
@@ -2219,6 +2221,7 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&str_dunder_eq_);
   visitor->visitPointer(&str_dunder_hash_);
   visitor->visitPointer(&sys_stderr_);
+  visitor->visitPointer(&sys_stdin_);
   visitor->visitPointer(&sys_stdout_);
   visitor->visitPointer(&type_dunder_getattribute_);
 

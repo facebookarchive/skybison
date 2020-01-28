@@ -425,6 +425,7 @@ class Runtime;
   V(UnderSnapshot, "_snapshot")                                                \
   V(UnderStaticmethodIsabstract, "_staticmethod_isabstract")                   \
   V(UnderStderrFd, "_stderr_fd")                                               \
+  V(UnderStdinFd, "_stdin_fd")                                                 \
   V(UnderStdoutFd, "_stdout_fd")                                               \
   V(UnderStopIterationCtor, "_stop_iteration_ctor")                            \
   V(UnderStrarray, "_strarray")                                                \
@@ -849,6 +850,7 @@ class Runtime;
   V(Start, "start")                                                            \
   V(Staticmethod, "staticmethod")                                              \
   V(Stderr, "stderr")                                                          \
+  V(Stdin, "stdin")                                                            \
   V(Stdout, "stdout")                                                          \
   V(Step, "step")                                                              \
   V(Stop, "stop")                                                              \

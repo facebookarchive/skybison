@@ -262,6 +262,7 @@ class Runtime {
   RawObject strDunderEq() { return str_dunder_eq_; }
   RawObject strDunderHash() { return str_dunder_hash_; }
   RawValueCell sysStderr() { return ValueCell::cast(sys_stderr_); }
+  RawValueCell sysStdin() { return ValueCell::cast(sys_stdin_); }
   RawValueCell sysStdout() { return ValueCell::cast(sys_stdout_); }
   RawObject typeDunderGetattribute() { return type_dunder_getattribute_; }
 
@@ -930,6 +931,7 @@ class Runtime {
   RawObject str_dunder_eq_ = NoneType::object();
   RawObject str_dunder_hash_ = NoneType::object();
   RawObject sys_stderr_ = NoneType::object();
+  RawObject sys_stdin_ = NoneType::object();
   RawObject sys_stdout_ = NoneType::object();
   RawObject type_dunder_getattribute_ = NoneType::object();
 

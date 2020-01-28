@@ -47,6 +47,8 @@ void SysModule::initialize(Thread* thread, const Module& module) {
 
   Object stderr_fd_val(&scope, SmallInt::fromWord(kStderrFd));
   moduleAtPutById(thread, module, SymbolId::kUnderStderrFd, stderr_fd_val);
+  Object stdin_fd_val(&scope, SmallInt::fromWord(kStdinFd));
+  moduleAtPutById(thread, module, SymbolId::kUnderStdinFd, stdin_fd_val);
   Object stdout_fd_val(&scope, SmallInt::fromWord(kStdoutFd));
   moduleAtPutById(thread, module, SymbolId::kUnderStdoutFd, stdout_fd_val);
 

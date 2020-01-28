@@ -8,6 +8,7 @@ from _builtins import _int_check, _os_write, _patch, _Unbound
 _base_dir = _base_dir  # noqa: F821
 _python_path = _python_path  # noqa: F821
 _stderr_fd = _stderr_fd  # noqa: F821
+_stdin_fd = _stdin_fd  # noqa: F821
 _stdout_fd = _stdout_fd  # noqa: F821
 _structseq_field = _structseq_field  # noqa: F821
 executable = executable  # noqa: F821
@@ -192,6 +193,9 @@ ps2 = "... "
 
 
 stderr = _IOStream(_stderr_fd)
+
+
+stdin = _IOStream(_stdin_fd)
 
 
 stdout = _IOStream(_stdout_fd)
