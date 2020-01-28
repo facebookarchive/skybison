@@ -236,7 +236,7 @@ RawObject Thread::exec(const Code& code, const Module& module,
       &scope, moduleAtById(this, module, SymbolId::kDunderBuiltins));
   if (builtins_module_obj.isErrorNotFound()) {
     builtins_module_obj = runtime->findModuleById(SymbolId::kBuiltins);
-    DCHECK(!builtins_module_obj.isNoneType(), "invalid builtins module");
+    DCHECK(!builtins_module_obj.isErrorNotFound(), "invalid builtins module");
     moduleAtPutById(this, module, SymbolId::kDunderBuiltins,
                     builtins_module_obj);
   }

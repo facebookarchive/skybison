@@ -411,6 +411,10 @@ void UnderBuiltinsModule::initialize(Thread* thread, const Module& module) {
         .setIntrinsicId(static_cast<word>(intrinsic_id));
   }
 
+  // We did not initialize the `builtins` module yet, so we point
+  // `__builtins__` to this module instead.
+  moduleAtPutById(thread, module, SymbolId::kDunderBuiltins, module);
+
   executeFrozenModule(thread, kUnderBuiltinsModuleData, module);
 }
 

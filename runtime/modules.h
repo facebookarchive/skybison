@@ -24,6 +24,10 @@ struct ModuleInitializer {
   void (*init)(Thread*, const Module&);
 };
 
+RawObject ensureBuiltinModule(Thread* thread, const Str& name);
+
+RawObject ensureBuiltinModuleById(Thread* thread, SymbolId id);
+
 // Execute a frozen module by marshalling it into a code object and then
 // executing it. Aborts if module execution is unsuccessful.
 void executeFrozenModule(Thread* thread, const char* buffer,
@@ -37,6 +41,8 @@ NODISCARD RawObject executeModule(Thread* thread, const Code& code,
 // Exposed for use by the tests. We may be able to remove this later.
 NODISCARD RawObject executeModuleFromCode(Thread* thread, const Code& code,
                                           const Object& name);
+
+bool isBuiltinModule(Thread* thread, const Str& name);
 
 void moduleAddBuiltinFunctions(Thread* thread, const Module& module,
                                const BuiltinFunction* functions);

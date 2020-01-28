@@ -62,6 +62,14 @@
 
 namespace py {
 
+static const SymbolId kRequiredModules[] = {
+    SymbolId::kUnderBuiltins,
+    SymbolId::kBuiltins,
+    SymbolId::kOperator,
+    SymbolId::kUnderCodecs,
+    SymbolId::kUnderFrozenImportlibExternal,
+};
+
 static const SymbolId kBinaryOperationSelector[] = {
     SymbolId::kDunderAdd,     SymbolId::kDunderSub,
     SymbolId::kDunderMul,     SymbolId::kDunderMatmul,
@@ -1950,7 +1958,7 @@ RawObject Runtime::findOrCreateMainModule() {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object maybe_main(&scope, findModuleById(SymbolId::kDunderMain));
-  if (!maybe_main.isNoneType()) {
+  if (!maybe_main.isErrorNotFound()) {
     return *maybe_main;
   }
 
@@ -2293,11 +2301,7 @@ RawObject Runtime::findModule(const Object& name) {
   HandleScope scope(thread);
   Dict dict(&scope, modules());
   Str name_str(&scope, *name);
-  RawObject value = dictAtByStr(thread, dict, name_str);
-  if (value.isError()) {
-    return NoneType::object();
-  }
-  return value;
+  return dictAtByStr(thread, dict, name_str);
 }
 
 RawObject Runtime::findModuleById(SymbolId name) {
@@ -2321,18 +2325,11 @@ void Runtime::initializeModules() {
   Thread* thread = Thread::current();
   modules_ = newDict();
   modules_by_index_ = newList();
-
-  HandleScope scope(thread);
-  Module module(&scope, createModule(thread, SymbolId::kBuiltins));
-  for (word i = 0; kBuiltinModules[i].name != SymbolId::kSentinelId; i++) {
-    if (UNLIKELY(kBuiltinModules[i].name == SymbolId::kBuiltins)) {
-      module = findModuleById(SymbolId::kBuiltins);
-    } else {
-      module = createModule(thread, kBuiltinModules[i].name);
-    }
-    kBuiltinModules[i].init(thread, module);
+  for (SymbolId id : kRequiredModules) {
+    CHECK(!ensureBuiltinModuleById(thread, id).isErrorException(),
+          "failed to initialize built-in module %s",
+          symbols()->predefinedSymbolAt(id));
   }
-
   // Run builtins._init to import modules required in builtins.
   CHECK(!thread->invokeFunction0(SymbolId::kBuiltins, SymbolId::kUnderInit)
              .isError(),

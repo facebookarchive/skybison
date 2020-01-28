@@ -771,17 +771,20 @@ PY_EXPORT PyObject* PyUnicode_AsEncodedString(PyObject* unicode,
   }
   if (runtime->isInstanceOfByteArray(*result)) {
     // Equivalent to calling PyErr_WarnFormat
-    Object category(&scope, runtime->typeAt(LayoutId::kRuntimeWarning));
-    Object message(&scope,
-                   runtime->newStrFromFmt(
-                       "encoder %s returned bytearray instead of bytes; "
-                       "use codecs.encode() to encode to arbitrary types",
-                       encoding));
-    Object stack_level(&scope, runtime->newInt(1));
-    Object source(&scope, NoneType::object());
-    thread->invokeFunction4(SymbolId::kWarnings, SymbolId::kWarn, message,
-                            category, stack_level, source);
-    thread->clearPendingException();
+    if (!ensureBuiltinModuleById(thread, SymbolId::kWarnings)
+             .isErrorException()) {
+      Object category(&scope, runtime->typeAt(LayoutId::kRuntimeWarning));
+      Object message(&scope,
+                     runtime->newStrFromFmt(
+                         "encoder %s returned bytearray instead of bytes; "
+                         "use codecs.encode() to encode to arbitrary types",
+                         encoding));
+      Object stack_level(&scope, runtime->newInt(1));
+      Object source(&scope, NoneType::object());
+      thread->invokeFunction4(SymbolId::kWarnings, SymbolId::kWarn, message,
+                              category, stack_level, source);
+      thread->clearPendingException();
+    }
     ByteArray result_bytearray(&scope, *result);
     return ApiHandle::newReference(
         thread, byteArrayAsBytes(thread, runtime, result_bytearray));

@@ -201,13 +201,6 @@ TEST_F(ImportBuiltinsTest, IsBuiltinReturnsZero) {
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 
-TEST_F(ImportBuiltinsTest, IsBuiltinReturnsNegativeOne) {
-  HandleScope scope(thread_);
-  Object module_name(&scope, runtime_->newStrFromCStr("sys"));
-  Object result(&scope, runBuiltin(UnderImpModule::isBuiltin, module_name));
-  EXPECT_TRUE(isIntEqualsWord(*result, -1));
-}
-
 TEST_F(ImportBuiltinsTest, IsBuiltinReturnsOne) {
   HandleScope scope(thread_);
   Object module_name(&scope, runtime_->newStrFromCStr("errno"));

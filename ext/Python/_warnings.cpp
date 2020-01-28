@@ -6,6 +6,7 @@
 #include "cpython-types.h"
 
 #include "capi-handles.h"
+#include "modules.h"
 #include "runtime.h"
 #include "utils.h"
 
@@ -26,6 +27,9 @@ static int callWarn(PyObject* category, PyObject* message,
   Object message_obj(&scope, ApiHandle::fromPyObject(message)->asObject());
   Int stack_level_obj(&scope, thread->runtime()->newInt(stack_level));
   Object source_obj(&scope, ApiHandle::fromPyObject(source)->asObject());
+  if (ensureBuiltinModuleById(thread, SymbolId::kWarnings).isErrorException()) {
+    return -1;
+  }
   if (thread
           ->invokeFunction4(SymbolId::kWarnings, SymbolId::kWarn, message_obj,
                             category_obj, stack_level_obj, source_obj)
@@ -107,6 +111,9 @@ PY_EXPORT int PyErr_WarnExplicitObject(PyObject* category, PyObject* message,
                       registry == nullptr
                           ? NoneType::object()
                           : ApiHandle::fromPyObject(registry)->asObject());
+  if (ensureBuiltinModuleById(thread, SymbolId::kWarnings).isErrorException()) {
+    return -1;
+  }
   if (thread
           ->invokeFunction6(SymbolId::kWarnings, SymbolId::kWarnExplicit,
                             message_obj, category_obj, filename_obj, lineno_obj,

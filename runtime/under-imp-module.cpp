@@ -34,8 +34,6 @@ void UnderImpModule::initialize(Thread* thread, const Module& module) {
   executeFrozenModule(thread, kUnderImpModuleData, module);
 }
 
-extern "C" struct _inittab _PyImport_Inittab[];
-
 static Thread* import_lock_holder;
 static word import_lock_count;
 
@@ -63,30 +61,6 @@ bool importReleaseLock(Thread* thread) {
   return true;
 }
 
-RawObject createExtensionModule(Thread* thread, const Str& name) {
-  for (int i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
-    if (!name.equalsCStr(_PyImport_Inittab[i].name)) continue;
-
-    HandleScope scope(thread);
-    PyObject* pymodule = (*_PyImport_Inittab[i].initfunc)();
-    if (pymodule == nullptr) {
-      if (thread->hasPendingException()) return Error::exception();
-      return thread->raiseWithFmt(LayoutId::kSystemError,
-                                  "NULL return without exception set");
-    };
-    Runtime* runtime = thread->runtime();
-    Object module_obj(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
-    if (!runtime->isInstanceOfModule(*module_obj)) {
-      // TODO(T39542987): Enable multi-phase module initialization
-      UNIMPLEMENTED("Multi-phase module initialization");
-    }
-    Module module(&scope, *module_obj);
-    runtime->addModule(module);
-    return *module;
-  }
-  return NoneType::object();
-}
-
 RawObject UnderImpModule::acquireLock(Thread* thread, Frame*, word) {
   importAcquireLock(thread);
   return NoneType::object();
@@ -110,13 +84,11 @@ RawObject UnderImpModule::createBuiltin(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "spec name must be an instance of str");
   }
-  Object existing_module(&scope, runtime->findModule(name_obj));
-  if (!existing_module.isNoneType()) {
-    return *existing_module;
-  }
-
   Str name(&scope, strUnderlying(*name_obj));
-  return createExtensionModule(thread, name);
+  name = Runtime::internStr(thread, name);
+  Object result(&scope, ensureBuiltinModule(thread, name));
+  if (result.isErrorNotFound()) return NoneType::object();
+  return *result;
 }
 
 RawObject UnderImpModule::execBuiltin(Thread* thread, Frame* frame,
@@ -179,27 +151,11 @@ RawObject UnderImpModule::isBuiltin(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Object name_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*name_obj)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "is_builtin requires a str object");
+    return thread->raiseRequiresType(name_obj, SymbolId::kStr);
   }
-  Str name(&scope, *name_obj);
-
-  // Special case internal runtime modules
-  Symbols* symbols = runtime->symbols();
-  if (name.equals(symbols->Builtins()) || name.equals(symbols->UnderThread()) ||
-      name.equals(symbols->Sys()) || name.equals(symbols->UnderWeakref()) ||
-      name.equals(symbols->UnderWarnings()) ||
-      name.equals(symbols->Marshal())) {
-    return RawSmallInt::fromWord(-1);
-  }
-
-  // Iterate the list of runtime and extension builtin modules
-  for (int i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
-    if (name.equalsCStr(_PyImport_Inittab[i].name)) {
-      return RawSmallInt::fromWord(1);
-    }
-  }
-  return RawSmallInt::fromWord(0);
+  Str name(&scope, strUnderlying(*name_obj));
+  name = Runtime::internStr(thread, name);
+  return SmallInt::fromWord(isBuiltinModule(thread, name) ? 1 : 0);
 }
 
 RawObject UnderImpModule::isFrozen(Thread* thread, Frame* frame, word nargs) {

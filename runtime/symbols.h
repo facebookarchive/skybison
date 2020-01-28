@@ -247,6 +247,7 @@ class Runtime;
   V(UnderExceptionNew, "_exception_new")                                       \
   V(UnderExec, "_exec")                                                        \
   V(UnderFd, "_fd")                                                            \
+  V(UnderFinishSetup, "_finish_setup")                                         \
   V(UnderFloat, "_float")                                                      \
   V(UnderFloatCheck, "_float_check")                                           \
   V(UnderFloatCheckExact, "_float_check_exact")                                \
@@ -285,7 +286,6 @@ class Runtime;
   V(UnderImp, "_imp")                                                          \
   V(UnderInit, "_init")                                                        \
   V(UnderIndex, "_index")                                                      \
-  V(UnderInstall, "_install")                                                  \
   V(UnderInstanceDelattr, "_instance_delattr")                                 \
   V(UnderInstanceGetattr, "_instance_getattr")                                 \
   V(UnderInstanceGuard, "_instance_guard")                                     \

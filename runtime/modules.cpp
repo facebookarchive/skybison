@@ -1,6 +1,7 @@
 #include "modules.h"
 
 #include "builtins-module.h"
+#include "capi-handles.h"
 #include "faulthandler-module.h"
 #include "frozen-modules.h"
 #include "globals.h"
@@ -23,6 +24,8 @@
 
 namespace py {
 
+extern "C" struct _inittab _PyImport_Inittab[];
+
 template <const char* data>
 static void initializeFrozenModule(Thread* thread, const Module& module) {
   executeFrozenModule(thread, data, module);
@@ -30,26 +33,26 @@ static void initializeFrozenModule(Thread* thread, const Module& module) {
 
 const ModuleInitializer kBuiltinModules[] = {
     {SymbolId::kUnderBuiltins, &UnderBuiltinsModule::initialize},
-    {SymbolId::kBuiltins, &BuiltinsModule::initialize},
-    {SymbolId::kSys, &SysModule::initialize},
     {SymbolId::kUnderCodecs, &UnderCodecsModule::initialize},
-    {SymbolId::kUnderImp, &UnderImpModule::initialize},
-    {SymbolId::kUnderOs, &UnderOsModule::initialize},
-    {SymbolId::kUnderSignal, &UnderSignalModule::initialize},
-    {SymbolId::kUnderWeakref, &UnderWeakrefModule::initialize},
-    {SymbolId::kUnderThread, &initializeFrozenModule<kUnderThreadModuleData>},
-    {SymbolId::kMarshal, &MarshalModule::initialize},
-    {SymbolId::kUnderIo, &UnderIoModule::initialize},
-    {SymbolId::kUnderWarnings, &UnderWarningsModule::initialize},
     {SymbolId::kUnderFrozenImportlib,
      &initializeFrozenModule<kUnderBootstrapModuleData>},
     {SymbolId::kUnderFrozenImportlibExternal,
      &initializeFrozenModule<kUnderBootstrapUnderExternalModuleData>},
+    {SymbolId::kUnderImp, &UnderImpModule::initialize},
+    {SymbolId::kUnderIo, &UnderIoModule::initialize},
+    {SymbolId::kUnderOs, &UnderOsModule::initialize},
+    {SymbolId::kUnderSignal, &UnderSignalModule::initialize},
     {SymbolId::kUnderStrMod,
      &initializeFrozenModule<kUnderStrUnderModModuleData>},
+    {SymbolId::kUnderThread, &initializeFrozenModule<kUnderThreadModuleData>},
     {SymbolId::kUnderValgrind, &UnderValgrindModule::initialize},
+    {SymbolId::kUnderWarnings, &UnderWarningsModule::initialize},
+    {SymbolId::kUnderWeakref, &UnderWeakrefModule::initialize},
+    {SymbolId::kBuiltins, &BuiltinsModule::initialize},
     {SymbolId::kFaulthandler, &FaulthandlerModule::initialize},
+    {SymbolId::kMarshal, &MarshalModule::initialize},
     {SymbolId::kOperator, &initializeFrozenModule<kOperatorModuleData>},
+    {SymbolId::kSys, &SysModule::initialize},
     {SymbolId::kWarnings, &initializeFrozenModule<kWarningsModuleData>},
     {SymbolId::kSentinelId, nullptr},
 };
@@ -76,6 +79,76 @@ static void checkBuiltinTypeDeclarations(Thread* thread, const Module& module) {
     DCHECK(false, "Builtin type %s.%s not defined", module_name_cstr.get(),
            name_cstr.get());
   }
+}
+
+static word extensionModuleIndex(const Str& name) {
+  for (word i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
+    if (name.equalsCStr(_PyImport_Inittab[i].name)) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+static word builtinModuleIndex(Thread* thread, const Str& name) {
+  DCHECK(Runtime::isInternedStr(thread, name), "expected interned str");
+  Runtime* runtime = thread->runtime();
+  for (word i = 0; kBuiltinModules[i].name != SymbolId::kSentinelId; i++) {
+    if (runtime->symbols()->at(kBuiltinModules[i].name) == name) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+static RawObject createBuiltinModule(Thread* thread, const Str& name) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  word builtin_index = builtinModuleIndex(thread, name);
+  if (builtin_index >= 0) {
+    SymbolId id = kBuiltinModules[builtin_index].name;
+    Module module(&scope, runtime->createModule(thread, id));
+    kBuiltinModules[builtin_index].init(thread, module);
+    return *module;
+  }
+
+  word extension_index = extensionModuleIndex(name);
+  if (extension_index >= 0) {
+    PyObject* pymodule = (*_PyImport_Inittab[extension_index].initfunc)();
+    if (pymodule == nullptr) {
+      if (thread->hasPendingException()) return Error::exception();
+      return thread->raiseWithFmt(LayoutId::kSystemError,
+                                  "NULL return without exception set");
+    };
+    Object module_obj(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
+    if (!runtime->isInstanceOfModule(*module_obj)) {
+      // TODO(T39542987): Enable multi-phase module initialization
+      UNIMPLEMENTED("Multi-phase module initialization");
+    }
+    Module module(&scope, *module_obj);
+    runtime->addModule(module);
+    return *module;
+  }
+
+  return Error::notFound();
+}
+
+RawObject ensureBuiltinModule(Thread* thread, const Str& name) {
+  DCHECK(Runtime::isInternedStr(thread, name), "expected interned str");
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object result(&scope, runtime->findModule(name));
+  if (!result.isErrorNotFound()) return *result;
+  return createBuiltinModule(thread, name);
+}
+
+RawObject ensureBuiltinModuleById(Thread* thread, SymbolId id) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object result(&scope, runtime->findModuleById(id));
+  if (!result.isErrorNotFound()) return *result;
+  Str name(&scope, runtime->symbols()->at(id));
+  return createBuiltinModule(thread, name);
 }
 
 void executeFrozenModule(Thread* thread, const char* buffer,
@@ -115,6 +188,11 @@ RawObject executeModuleFromCode(Thread* thread, const Code& code,
   Object result(&scope, executeModule(thread, code, module));
   if (result.isError()) return *result;
   return *module;
+}
+
+bool isBuiltinModule(Thread* thread, const Str& name) {
+  return builtinModuleIndex(thread, name) >= 0 ||
+         extensionModuleIndex(name) >= 0;
 }
 
 void moduleAddBuiltinFunctions(Thread* thread, const Module& module,

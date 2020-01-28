@@ -17,7 +17,6 @@
 #include "str-builtins.h"
 #include "type-builtins.h"
 #include "under-builtins-module.h"
-#include "under-imp-module.h"
 
 namespace py {
 
@@ -593,23 +592,17 @@ RawObject BuiltinsModule::dunderImport(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Str name(&scope, args.get(0));
+  name = Runtime::internStr(thread, name);
   // We ignore arg1, arg2, arg3.
   DCHECK(args.get(4) == SmallInt::fromWord(0), "only supports level=0");
   Runtime* runtime = thread->runtime();
-  Object module(&scope, runtime->findModule(name));
-  if (runtime->isInstanceOfModule(*module) || module.isErrorException()) {
-    return *module;
+  Object module(&scope, ensureBuiltinModule(thread, name));
+  if (module.isErrorNotFound() || !runtime->isInstanceOfModule(*module)) {
+    return thread->raiseWithFmt(LayoutId::kImportError,
+                                "failed to import %S (bootstrap importer)",
+                                &name);
   }
-  DCHECK(module.isNoneType(), "expected module, ErrorException or None");
-  // Try extension modules.
-  module = createExtensionModule(thread, name);
-  if (runtime->isInstanceOfModule(*module) || module.isErrorException()) {
-    return *module;
-  }
-  DCHECK(module.isNoneType(), "expected module, ErrorException or None");
-  return thread->raiseWithFmt(LayoutId::kImportError,
-                              "failed to import %S (bootstrap importer)",
-                              &name);
+  return *module;
 }
 
 // TODO(T39322942): Turn this into the Range constructor (__init__ or __new__)
