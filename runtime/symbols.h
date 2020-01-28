@@ -780,7 +780,7 @@ class Runtime;
   V(Nsig, "NSIG")                                                              \
   V(NullArgumentToInternalRoutine, "null argument to internal routine")        \
   V(OSError, "OSError")                                                        \
-  V(ObjectTypename, "object")                                                  \
+  V(Object, "object")                                                          \
   V(Oct, "oct")                                                                \
   V(Offset, "offset")                                                          \
   V(Open, "open")                                                              \

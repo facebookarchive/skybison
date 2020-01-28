@@ -383,7 +383,7 @@ void ObjectBuiltins::initialize(Runtime* runtime) {
   Layout layout(&scope, runtime->newLayout(LayoutId::kObject));
   Type object_type(&scope, runtime->newType());
   layout.setDescribedType(*object_type);
-  object_type.setName(runtime->symbols()->ObjectTypename());
+  object_type.setName(runtime->symbols()->Object());
   Tuple mro(&scope, runtime->newTuple(1));
   mro.atPut(0, *object_type);
   object_type.setMro(*mro);

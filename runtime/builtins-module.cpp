@@ -157,7 +157,7 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
     {SymbolId::kNotImplementedError, LayoutId::kNotImplementedError},
     {SymbolId::kNotImplementedType, LayoutId::kNotImplementedType},
     {SymbolId::kOSError, LayoutId::kOSError},
-    {SymbolId::kObjectTypename, LayoutId::kObject},
+    {SymbolId::kObject, LayoutId::kObject},
     {SymbolId::kOverflowError, LayoutId::kOverflowError},
     {SymbolId::kPendingDeprecationWarning,
      LayoutId::kPendingDeprecationWarning},
@@ -376,7 +376,7 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
           Str::cast(*name).toCStr());
     Type type(&scope, *type_obj);
 
-    if (bases.length() == 0 && name != runtime->symbols()->ObjectTypename()) {
+    if (bases.length() == 0 && name != runtime->symbols()->Object()) {
       bases = runtime->implicitBases();
     }
     Tuple builtin_bases(&scope, type.bases());

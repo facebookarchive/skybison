@@ -629,7 +629,7 @@ const BuiltinAttribute ImportErrorBuiltins::kAttributes[] = {
 
 static const BuiltinAttribute kUnicodeErrorBaseAttributes[] = {
     {SymbolId::kEncoding, RawUnicodeErrorBase::kEncodingOffset},
-    {SymbolId::kObjectTypename, RawUnicodeErrorBase::kObjectOffset},
+    {SymbolId::kObject, RawUnicodeErrorBase::kObjectOffset},
     {SymbolId::kStart, RawUnicodeErrorBase::kStartOffset},
     {SymbolId::kEnd, RawUnicodeErrorBase::kEndOffset},
     {SymbolId::kReason, RawUnicodeErrorBase::kReasonOffset},
