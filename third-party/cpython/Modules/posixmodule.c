@@ -11390,8 +11390,7 @@ DirEntry_dealloc(DirEntry *entry)
     Py_XDECREF(entry->path);
     Py_XDECREF(entry->stat);
     Py_XDECREF(entry->lstat);
-    freefunc entry_free = PyType_GetSlot(Py_TYPE(entry), Py_tp_free);
-    entry_free((PyObject *)entry);
+    PyObject_Del(entry);
     Py_DECREF(tp);
 }
 
@@ -12078,9 +12077,7 @@ ScandirIterator_dealloc(ScandirIterator *iterator)
     PyTypeObject *tp = Py_TYPE(iterator);
     if (PyObject_CallFinalizerFromDealloc((PyObject *)iterator) < 0)
         return;
-
-    freefunc iterator_free = PyType_GetSlot(Py_TYPE(iterator), Py_tp_free);
-    iterator_free((PyObject *)iterator);
+    PyObject_Del(iterator);
     Py_DECREF(tp);
 }
 
