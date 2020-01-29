@@ -2238,6 +2238,18 @@ count = result.count(result)
   EXPECT_TRUE(isIntEqualsWord(*count, 1));
 }
 
+TEST_F(UnderBuiltinsModuleTest, UnderStrGetitemWithSubClassTypeReturnsSubstr) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class Sub(str): pass
+result = Sub("value")
+result = result[:2]
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object result(&scope, mainModuleAt(runtime_, "result"));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "va"));
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderStrarrayClearSetsNumItemsToZero) {
   HandleScope scope(thread_);
   StrArray self(&scope, runtime_->newStrArray());

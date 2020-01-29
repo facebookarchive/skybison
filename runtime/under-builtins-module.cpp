@@ -4211,7 +4211,7 @@ RawObject UnderBuiltinsModule::underStrGetitem(Thread* thread, Frame* frame,
     return Unbound::object();
   }
 
-  Str self(&scope, *self_obj);
+  Str self(&scope, strUnderlying(*self_obj));
   word length = self.codePointLength();
   word result_len = Slice::adjustIndices(length, &start, &stop, 1);
   if (result_len == length) {
