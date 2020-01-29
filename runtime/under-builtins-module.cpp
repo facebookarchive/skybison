@@ -4069,8 +4069,8 @@ RawObject UnderBuiltinsModule::underStrCount(Thread* thread, Frame* frame,
   DCHECK(runtime->isInstanceOfStr(args.get(1)),
          "_str_count requires 'str' instance");
   HandleScope scope(thread);
-  Str haystack(&scope, args.get(0));
-  Str needle(&scope, args.get(1));
+  Str haystack(&scope, strUnderlying(args.get(0)));
+  Str needle(&scope, strUnderlying(args.get(1)));
   Object start_obj(&scope, args.get(2));
   Object end_obj(&scope, args.get(3));
   word start = 0;

@@ -2212,6 +2212,32 @@ result = _str_from_str(Sub, 'value')
   EXPECT_TRUE(isStrEqualsCStr(*result, "value"));
 }
 
+TEST_F(UnderBuiltinsModuleTest,
+       UnderStrCountWithStrNeedleSubClassTypeReturnsSubstr) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class Sub(str): pass
+result = Sub("value u")
+count = result.count('u')
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object count(&scope, mainModuleAt(runtime_, "count"));
+  EXPECT_TRUE(isIntEqualsWord(*count, 2));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderStrCountWithSubNeedleSubClassTypeReturnsSubstr) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class Sub(str): pass
+result = Sub("value")
+count = result.count(result)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object count(&scope, mainModuleAt(runtime_, "count"));
+  EXPECT_TRUE(isIntEqualsWord(*count, 1));
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderStrarrayClearSetsNumItemsToZero) {
   HandleScope scope(thread_);
   StrArray self(&scope, runtime_->newStrArray());
