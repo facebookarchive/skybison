@@ -230,12 +230,12 @@ def _call_with_frames_removed(f, *args, **kwds):
     return f(*args, **kwds)
 
 
-def _verbose_message(message, verbosity=1):
+def _verbose_message(message, *args, verbosity=1):
     """Print the message to stderr if -v/PYTHONVERBOSE is turned on."""
     if sys.flags.verbose >= verbosity:
         if not message.startswith(("#", "import ")):
             message = "# " + message
-        print(message, file=sys.stderr)
+        print(message, str(args), file=sys.stderr)
 
 
 def _requires_builtin(fxn):
