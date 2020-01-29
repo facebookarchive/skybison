@@ -15,6 +15,7 @@
 #include "os.h"
 #include "runtime.h"
 #include "thread.h"
+#include "version.h"
 #include "view.h"
 
 namespace py {
@@ -124,7 +125,7 @@ static void runStartupFile(PyCompilerFlags* cf) {
 }
 
 PY_EXPORT int Py_BytesMain(int argc, char** argv) {
-  bool print_version = false;
+  int print_version = 0;
   bool print_help = false;
   const char* command = nullptr;
   const char* module = nullptr;
@@ -201,7 +202,7 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
         UNIMPLEMENTED("Help for invalid option");
         break;
       case 'V':
-        print_version = true;
+        print_version++;
         break;
       case 'W':
         UNIMPLEMENTED("Warning options");
@@ -226,8 +227,7 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
   }
 
   if (print_version) {
-    // TODO(T58173807): Version reporting which is decoupled from runtime init
-    std::printf("Python 3.6.8+\n");
+    std::printf("Python %s\n", print_version >= 2 ? Py_GetVersion() : kVersion);
     return 0;
   }
 

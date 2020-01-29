@@ -507,6 +507,7 @@ class Runtime;
   V(UnderUtf8Decode, "_utf_8_decode")                                          \
   V(UnderUtf8Encode, "_utf_8_encode")                                          \
   V(UnderValgrind, "_valgrind")                                                \
+  V(UnderVersionInfo, "_VersionInfo")                                          \
   V(UnderWarn, "_warn")                                                        \
   V(UnderWarnings, "_warnings")                                                \
   V(UnderWeakLink, "_weaklink")                                                \
@@ -906,6 +907,7 @@ class Runtime;
   V(ValueError, "ValueError")                                                  \
   V(Values, "values")                                                          \
   V(Version, "version")                                                        \
+  V(VersionInfo, "version_info")                                               \
   V(Warn, "warn")                                                              \
   V(WarnExplicit, "warn_explicit")                                             \
   V(Warning, "Warning")                                                        \

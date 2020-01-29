@@ -22,6 +22,7 @@
 #include "runtime.h"
 #include "str-builtins.h"
 #include "thread.h"
+#include "version.h"
 
 namespace py {
 
@@ -134,6 +135,21 @@ void SysModule::initialize(Thread* thread, const Module& module) {
       &scope, thread->invokeFunction1(SymbolId::kSys, SymbolId::kUnderHashInfo,
                                       hash_info_data));
   moduleAtPutById(thread, module, SymbolId::kHashInfo, hash_info);
+
+  // Fill in version-related fields
+  Str version(&scope, runtime->newStrFromCStr(versionInfo()));
+  moduleAtPutById(thread, module, SymbolId::kVersion, version);
+
+  MutableTuple version_info_data(&scope, runtime->newMutableTuple(5));
+  version_info_data.atPut(0, SmallInt::fromWord(kVersionMajor));
+  version_info_data.atPut(1, SmallInt::fromWord(kVersionMinor));
+  version_info_data.atPut(2, SmallInt::fromWord(kVersionMicro));
+  version_info_data.atPut(3, runtime->newStrFromCStr(kReleaseLevel));
+  version_info_data.atPut(4, SmallInt::fromWord(kReleaseSerial));
+  Object version_info(&scope, thread->invokeFunction1(
+                                  SymbolId::kSys, SymbolId::kUnderVersionInfo,
+                                  version_info_data));
+  moduleAtPutById(thread, module, SymbolId::kVersionInfo, version_info);
 
   runtime->cacheSysInstances(thread, module);
 }

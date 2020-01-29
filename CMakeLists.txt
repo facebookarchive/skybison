@@ -353,6 +353,8 @@ add_library(
   runtime/utils.cpp
   runtime/utils.h
   runtime/vector.h
+  runtime/version.cpp
+  runtime/version.h
   runtime/view.h
   runtime/visitor.h
   ${RUNTIME_OS_SOURCES}
@@ -1615,6 +1617,7 @@ set(
   EXTENSION_TESTS
   ext/Modules/config-test.cpp
   ext/Modules/gcmodule-test.cpp
+  ext/Modules/getbuildinfo-test.cpp
   ext/Modules/main-test.cpp
   ext/Modules/posixmodule-test.cpp
   ext/Objects/abstract-test.cpp
@@ -1654,6 +1657,7 @@ set(
   ext/Python/errors-test.cpp
   ext/Python/getargs-ssizet-test.cpp
   ext/Python/getargs-test.cpp
+  ext/Python/getcompiler-test.cpp
   ext/Python/getplatform-test.cpp
   ext/Python/getversion-test.cpp
   ext/Python/import-test.cpp

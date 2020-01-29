@@ -1,17 +1,12 @@
+#include <cstdio>
+
 #include "cpython-func.h"
 
-#include "capi-handles.h"
-#include "runtime.h"
+#include "globals.h"
+#include "version.h"
 
 namespace py {
 
-PY_EXPORT const char* Py_GetVersion() {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Str version(&scope, runtime->lookupNameInModule(thread, SymbolId::kSys,
-                                                  SymbolId::kVersion));
-  return PyUnicode_AsUTF8(ApiHandle::borrowedReference(thread, *version));
-}
+PY_EXPORT const char* Py_GetVersion() { return versionInfo(); }
 
 }  // namespace py

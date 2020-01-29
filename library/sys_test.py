@@ -150,6 +150,10 @@ class SysTests(unittest.TestCase):
         self.assertEqual(hash_info.hash_bits, 64)
         self.assertEqual(hash_info.seed_bits, 128)
 
+    def test_version(self):
+        self.assertTrue(sys.version)
+        self.assertEqual(len(sys.version_info), 5)
+
 
 if __name__ == "__main__":
     unittest.main()

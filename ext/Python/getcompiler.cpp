@@ -1,7 +1,10 @@
-#include "runtime.h"
+#include "cpython-func.h"
+
+#include "globals.h"
+#include "version.h"
 
 namespace py {
 
-PY_EXPORT const char* Py_GetCompiler() { UNIMPLEMENTED("Py_GetCompiler"); }
+PY_EXPORT const char* Py_GetCompiler() { return compilerInfo(); }
 
 }  // namespace py

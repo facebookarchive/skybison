@@ -201,11 +201,4 @@ stdin = _IOStream(_stdin_fd)
 stdout = _IOStream(_stdout_fd)
 
 
-# TODO(T53705923): Automatically populate version string with meaningful values
-version = "3.6.8+ (master, January 1 1970, 00:00:00) [clang]"
-
-
 warnoptions = []
-
-
-version_info = _VersionInfo((3, 6, 8, "final", 0))
