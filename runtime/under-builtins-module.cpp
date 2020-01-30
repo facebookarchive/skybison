@@ -1001,22 +1001,39 @@ RawObject UnderBuiltinsModule::underBytesGetitem(Thread* thread, Frame* frame,
                                                  word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Bytes self(&scope, bytesUnderlying(args.get(0)));
-  word index = intUnderlying(args.get(1)).asWordSaturated();
-  if (!SmallInt::isValid(index)) {
-    Object key_obj(&scope, args.get(1));
-    return thread->raiseWithFmt(LayoutId::kIndexError,
-                                "cannot fit '%T' into an index-sized integer",
-                                &key_obj);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfBytes(*self_obj)) {
+    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kBytes);
   }
-  word length = self.length();
-  if (index < 0) {
-    index += length;
+
+  Object key(&scope, args.get(1));
+  if (runtime->isInstanceOfInt(*key)) {
+    word index = intUnderlying(args.get(1)).asWordSaturated();
+    if (!SmallInt::isValid(index)) {
+      return thread->raiseWithFmt(LayoutId::kIndexError,
+                                  "cannot fit '%T' into an index-sized integer",
+                                  &key);
+    }
+    Bytes self(&scope, bytesUnderlying(*self_obj));
+    word length = self.length();
+    if (index < 0) {
+      index += length;
+    }
+    if (index < 0 || index >= length) {
+      return thread->raiseWithFmt(LayoutId::kIndexError, "index out of range");
+    }
+    return SmallInt::fromWord(self.byteAt(index));
   }
-  if (index < 0 || index >= length) {
-    return thread->raiseWithFmt(LayoutId::kIndexError, "index out of range");
+
+  word start, stop;
+  if (!trySlice(key, &start, &stop)) {
+    return Unbound::object();
   }
-  return SmallInt::fromWord(self.byteAt(index));
+
+  Bytes self(&scope, bytesUnderlying(*self_obj));
+  word result_len = Slice::adjustIndices(self.length(), &start, &stop, 1);
+  return runtime->bytesSubseq(thread, self, start, result_len);
 }
 
 RawObject UnderBuiltinsModule::underBytesGetslice(Thread* thread, Frame* frame,
