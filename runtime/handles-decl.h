@@ -11,6 +11,7 @@ class Handle;
 // in-progress migration.
 #define HANDLE_TYPES(V)                                                        \
   V(Object)                                                                    \
+  V(Array)                                                                     \
   V(Bool)                                                                      \
   V(BoundMethod)                                                               \
   V(BufferedRandom)                                                            \

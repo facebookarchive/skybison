@@ -1,5 +1,6 @@
 #include "modules.h"
 
+#include "array-module.h"
 #include "builtins-module.h"
 #include "capi-handles.h"
 #include "faulthandler-module.h"
@@ -48,6 +49,7 @@ const ModuleInitializer kBuiltinModules[] = {
     {SymbolId::kUnderValgrind, &UnderValgrindModule::initialize},
     {SymbolId::kUnderWarnings, &UnderWarningsModule::initialize},
     {SymbolId::kUnderWeakref, &UnderWeakrefModule::initialize},
+    {SymbolId::kArray, &ArrayModule::initialize},
     {SymbolId::kBuiltins, &BuiltinsModule::initialize},
     {SymbolId::kFaulthandler, &FaulthandlerModule::initialize},
     {SymbolId::kMarshal, &MarshalModule::initialize},

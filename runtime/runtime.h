@@ -576,6 +576,7 @@ class Runtime {
     if (obj.is##ty()) return true;                                             \
     return typeOf(obj).rawCast<RawType>().builtinBase() == LayoutId::k##ty;    \
   }
+  DEFINE_IS_INSTANCE(Array)
   DEFINE_IS_INSTANCE(BufferedReader)
   DEFINE_IS_INSTANCE(ByteArray)
   DEFINE_IS_INSTANCE(Bytes)

@@ -153,6 +153,7 @@ set(
   library/_valgrind.py
   library/_warnings.py
   library/_weakref.py
+  library/array.py
   library/builtins.py
   library/faulthandler.py
   library/importlib/_bootstrap.py
@@ -217,6 +218,8 @@ endif()
 add_library(
   runtime
   STATIC
+  runtime/array-module.cpp
+  runtime/array-module.h
   runtime/assembler-utils.cpp
   runtime/assembler-utils.h
   runtime/assembler-x64.cpp

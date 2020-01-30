@@ -484,6 +484,7 @@ class Runtime;
   V(UnderTypeBasesSet, "_type_bases_set")                                      \
   V(UnderTypeCheck, "_type_check")                                             \
   V(UnderTypeCheckExact, "_type_check_exact")                                  \
+  V(UnderTypecode, "_typecode")                                                \
   V(UnderTypeDunderCall, "_type_dunder_call")                                  \
   V(UnderTypeGuard, "_type_guard")                                             \
   V(UnderTypeInit, "_type_init")                                               \
@@ -529,6 +530,7 @@ class Runtime;
   V(Args, "args")                                                              \
   V(Argv, "argv")                                                              \
   V(ArithmeticError, "ArithmeticError")                                        \
+  V(Array, "array")                                                            \
   V(Ascii, "ascii")                                                            \
   V(AsciiDecode, "ascii_decode")                                               \
   V(AsciiEncode, "ascii_encode")                                               \

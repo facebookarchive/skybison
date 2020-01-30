@@ -11,6 +11,7 @@
 #include <fstream>
 #include <memory>
 
+#include "array-module.h"
 #include "builtins-module.h"
 #include "bytearray-builtins.h"
 #include "bytecode.h"
@@ -1633,6 +1634,7 @@ void Runtime::initializeHeapTypes() {
   initializeExceptionTypes();
 
   // Concrete classes.
+  ArrayBuiltins::initialize(this);
   AsyncGeneratorBuiltins::initialize(this);
   ByteArrayBuiltins::initialize(this);
   ByteArrayIteratorBuiltins::initialize(this);

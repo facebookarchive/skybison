@@ -40,6 +40,7 @@ class Handle;
   V(Tuple)
 
 #define INSTANCE_CLASS_NAMES(V)                                                \
+  V(Array)                                                                     \
   V(AsyncGenerator)                                                            \
   V(BoundMethod)                                                               \
   V(BufferedRandom)                                                            \
@@ -288,6 +289,7 @@ class RawObject {
   bool isHeapObject() const;
   bool isHeapObjectWithLayout(LayoutId layout_id) const;
   bool isInstance() const;
+  bool isArray() const;
   bool isAsyncGenerator() const;
   bool isBaseException() const;
   bool isBoundMethod() const;
@@ -1371,6 +1373,36 @@ class RawMutableBytes : public RawLargeBytes {
   RawObject becomeStr() const;
 
   RAW_OBJECT_COMMON(MutableBytes);
+};
+
+/**
+ * A mutable array, for the array module
+ *
+ * RawLayout:
+ *   [Header  ]
+ *   [Buffer  ] - Pointer to a RawMutableBytes with the underlying data.
+ *   [Length  ] - Number of bytes currently in the array.
+ *   [Typecode] - Typecode of the array
+ */
+class RawArray : public RawInstance {
+ public:
+  // Getters and setters
+  RawObject buffer() const;
+  void setBuffer(RawObject new_buffer) const;
+
+  word length() const;
+  void setLength(word new_length) const;
+
+  RawObject typecode() const;
+  void setTypecode(RawObject new_typecode) const;
+
+  // Layout
+  static const int kBufferOffset = RawHeapObject::kSize;
+  static const int kLengthOffset = kBufferOffset + kPointerSize;
+  static const int kTypecodeOffset = kLengthOffset + kPointerSize;
+  static const int kSize = kTypecodeOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(Array);
 };
 
 class RawTuple : public RawArrayBase {
@@ -3643,6 +3675,10 @@ inline bool RawObject::isInstance() const {
                             LayoutId::kLastNonInstance);
 }
 
+inline bool RawObject::isArray() const {
+  return isHeapObjectWithLayout(LayoutId::kArray);
+}
+
 inline bool RawObject::isAsyncGenerator() const {
   return isHeapObjectWithLayout(LayoutId::kAsyncGenerator);
 }
@@ -4947,6 +4983,33 @@ inline uint64_t RawLargeBytes::uint64At(word index) const {
 inline void RawMutableBytes::byteAtPut(word index, byte value) const {
   DCHECK_INDEX(index, length());
   *reinterpret_cast<byte*>(address() + index) = value;
+}
+
+// RawArray
+
+inline RawObject RawArray::buffer() const {
+  return instanceVariableAt(kBufferOffset);
+}
+
+inline void RawArray::setBuffer(RawObject new_buffer) const {
+  DCHECK(new_buffer.isMutableBytes(), "Array must be backed by MutableBytes");
+  instanceVariableAtPut(kBufferOffset, new_buffer);
+}
+
+inline word RawArray::length() const {
+  return RawSmallInt::cast(instanceVariableAt(kLengthOffset)).value();
+}
+
+inline void RawArray::setLength(word new_length) const {
+  instanceVariableAtPut(kLengthOffset, RawSmallInt::fromWord(new_length));
+}
+
+inline RawObject RawArray::typecode() const {
+  return RawSmallInt::cast(instanceVariableAt(kTypecodeOffset));
+}
+
+inline void RawArray::setTypecode(RawObject new_typecode) const {
+  instanceVariableAtPut(kTypecodeOffset, new_typecode);
 }
 
 // RawMutableTuple
