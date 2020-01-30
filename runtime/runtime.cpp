@@ -2321,7 +2321,7 @@ RawObject Runtime::lookupNameInModule(Thread* thread, SymbolId module_name,
   Object module_obj(&scope, findModuleById(module_name));
   DCHECK(!module_obj.isNoneType(),
          "The given module '%s' doesn't exist in modules dict",
-         symbols()->predefinedSymbolAt(module_name));
+         Symbols::predefinedSymbolAt(module_name));
   Module module(&scope, *module_obj);
   return moduleAtById(thread, module, name);
 }
@@ -2333,7 +2333,7 @@ void Runtime::initializeModules() {
   for (SymbolId id : kRequiredModules) {
     CHECK(!ensureBuiltinModuleById(thread, id).isErrorException(),
           "failed to initialize built-in module %s",
-          symbols()->predefinedSymbolAt(id));
+          Symbols::predefinedSymbolAt(id));
   }
   // Run builtins._init to import modules required in builtins.
   CHECK(!thread->invokeFunction0(SymbolId::kBuiltins, SymbolId::kUnderInit)
