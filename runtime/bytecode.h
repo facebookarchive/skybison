@@ -211,8 +211,8 @@ namespace py {
   V(UNUSED_BYTECODE_192, 192, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_193, 193, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_194, 194, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_195, 195, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_196, 196, doInvalidBytecode)                               \
+  V(BINARY_FLOORDIV_SMALLINT, 195, doBinaryFloordivSmallInt)                   \
+  V(BINARY_AND_SMALLINT, 196, doBinaryAndSmallInt)                             \
   V(FOR_ITER_STR, 197, doForIterStr)                                           \
   V(FOR_ITER_RANGE, 198, doForIterRange)                                       \
   V(FOR_ITER_TUPLE, 199, doForIterTuple)                                       \

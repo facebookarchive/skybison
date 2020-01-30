@@ -222,6 +222,8 @@ bool mayChangeFramePC(Bytecode bc) {
   // implementations.
   switch (bc) {
     case BINARY_ADD_SMALLINT:
+    case BINARY_AND_SMALLINT:
+    case BINARY_FLOORDIV_SMALLINT:
     case BINARY_SUB_SMALLINT:
     case BINARY_OR_SMALLINT:
     case COMPARE_EQ_SMALLINT:
@@ -509,6 +511,31 @@ void emitHandler<BINARY_ADD_SMALLINT>(EmitEnv* env) {
   __ movq(r_result, r_left);
   __ addq(r_result, r_right);
   __ jcc(YES_OVERFLOW, &slow_path, Assembler::kNearJump);
+  __ pushq(r_result);
+  emitNextOpcode(env);
+
+  __ bind(&slow_path);
+  __ pushq(r_left);
+  __ pushq(r_right);
+  __ movq(kArgRegs[0], kThreadReg);
+  static_assert(kOpargReg == kArgRegs[1], "oparg expect to be in rsi");
+  emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
+  emitCall<Interpreter::Continue (*)(Thread*, word)>(
+      env, Interpreter::binaryOpUpdateCache);
+  emitHandleContinue(env, /*may_change_frame_pc=*/true);
+}
+
+template <>
+void emitHandler<BINARY_AND_SMALLINT>(EmitEnv* env) {
+  Register r_right = RAX;
+  Register r_left = RDX;
+  Register r_result = RDI;
+  Label slow_path;
+  __ popq(r_right);
+  __ popq(r_left);
+  emitSmallIntChecks(env, &slow_path, r_left, r_right);
+  __ movq(r_result, r_left);
+  __ andq(r_result, r_right);
   __ pushq(r_result);
   emitNextOpcode(env);
 

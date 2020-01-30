@@ -5131,6 +5131,45 @@ Continue Interpreter::doBinaryAddSmallInt(Thread* thread, word arg) {
 }
 
 HANDLER_INLINE
+Continue Interpreter::doBinaryAndSmallInt(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject left = frame->peek(1);
+  RawObject right = frame->peek(0);
+  if (left.isSmallInt() && right.isSmallInt()) {
+    word left_value = SmallInt::cast(left).value();
+    word right_value = SmallInt::cast(right).value();
+    word result_value = left_value & right_value;
+    DCHECK(SmallInt::isValid(result_value), "result should be a SmallInt");
+    frame->dropValues(1);
+    frame->setTopValue(SmallInt::fromWord(result_value));
+    return Continue::NEXT;
+  }
+  return binaryOpUpdateCache(thread, arg);
+}
+
+HANDLER_INLINE
+Continue Interpreter::doBinaryFloordivSmallInt(Thread* thread, word arg) {
+  Frame* frame = thread->currentFrame();
+  RawObject left = frame->peek(1);
+  RawObject right = frame->peek(0);
+  if (left.isSmallInt() && right.isSmallInt()) {
+    word left_value = SmallInt::cast(left).value();
+    word right_value = SmallInt::cast(right).value();
+    if (right_value == 0) {
+      thread->raiseWithFmt(LayoutId::kZeroDivisionError,
+                           "integer division or modulo by zero");
+      return Continue::UNWIND;
+    }
+    word result_value = left_value / right_value;
+    DCHECK(SmallInt::isValid(result_value), "result should be a SmallInt");
+    frame->dropValues(1);
+    frame->setTopValue(SmallInt::fromWord(result_value));
+    return Continue::NEXT;
+  }
+  return binaryOpUpdateCache(thread, arg);
+}
+
+HANDLER_INLINE
 Continue Interpreter::doBinarySubSmallInt(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawObject left = frame->peek(1);
@@ -5176,6 +5215,12 @@ Continue Interpreter::doBinaryOpAnamorphic(Thread* thread, word arg) {
       case BinaryOp::ADD:
         bytecode.byteAtPut(pc, BINARY_ADD_SMALLINT);
         return doBinaryAddSmallInt(thread, arg);
+      case BinaryOp::AND:
+        bytecode.byteAtPut(pc, BINARY_AND_SMALLINT);
+        return doBinaryAndSmallInt(thread, arg);
+      case BinaryOp::FLOORDIV:
+        bytecode.byteAtPut(pc, BINARY_FLOORDIV_SMALLINT);
+        return doBinaryFloordivSmallInt(thread, arg);
       case BinaryOp::SUB:
         bytecode.byteAtPut(pc, BINARY_SUB_SMALLINT);
         return doBinarySubSmallInt(thread, arg);
