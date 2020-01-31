@@ -240,12 +240,12 @@ TEST_F(UtilsTest, PrintTracebackPrintsTraceback) {
 
   // Create main module.
   ASSERT_FALSE(runFromCStr(runtime_, "").isError());
-  Object main_obj(&scope, runtime_->findModuleById(SymbolId::kDunderMain));
+  Object main_obj(&scope, runtime_->findModuleById(ID(__main__)));
   ASSERT_TRUE(main_obj.isModule());
   Module main(&scope, *main_obj);
 
   BuiltinFunction functions[] = {
-      {SymbolId::kTraceback, testPrintStacktrace},
+      {ID(traceback), testPrintStacktrace},
       {SymbolId::kSentinelId, nullptr},
   };
 

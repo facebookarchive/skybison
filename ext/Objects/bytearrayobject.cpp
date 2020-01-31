@@ -46,11 +46,9 @@ PY_EXPORT PyObject* PyByteArray_Concat(PyObject* a, PyObject* b) {
     return nullptr;
   }
   Object result(&scope, runtime->newByteArray());
-  result = thread->invokeFunction2(SymbolId::kOperator, SymbolId::kIconcat,
-                                   result, left);
+  result = thread->invokeFunction2(ID(operator), ID(iconcat), result, left);
   if (result.isError()) return nullptr;
-  result = thread->invokeFunction2(SymbolId::kOperator, SymbolId::kIconcat,
-                                   result, right);
+  result = thread->invokeFunction2(ID(operator), ID(iconcat), result, right);
   if (result.isError()) return nullptr;
   return ApiHandle::newReference(thread, *result);
 }
@@ -87,8 +85,8 @@ PY_EXPORT PyObject* PyByteArray_FromObject(PyObject* obj) {
   }
   HandleScope scope(thread);
   Object src(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  Object result(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
-                                                SymbolId::kBytearray, src));
+  Object result(&scope,
+                thread->invokeFunction1(ID(builtins), ID(bytearray), src));
   return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
 }
 

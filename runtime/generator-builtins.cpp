@@ -91,8 +91,7 @@ static RawObject genThrowYieldFrom(Thread* thread, const GeneratorBase& gen,
   // TODO(bsimmers): If exc == GeneratorExit, close the subiterator. See
   // _gen_throw() in CPython.
 
-  Object throw_obj(&scope,
-                   runtime->attributeAtById(thread, yf, SymbolId::kThrow));
+  Object throw_obj(&scope, runtime->attributeAtById(thread, yf, ID(throw)));
   if (throw_obj.isError()) {
     // If the call failed with an AttributeError, ignore it and proceed with
     // the throw. Otherwise, forward the exception.
@@ -179,18 +178,17 @@ RawObject GeneratorBaseBuiltins<T, name, type>::genThrow(Thread* thread,
 
 const BuiltinMethod GeneratorBuiltins::kBuiltinMethods[] = {
     // clang-format off
-    {SymbolId::kDunderIter, dunderIter},
-    {SymbolId::kDunderNext, dunderNext},
-    {SymbolId::kSend, Base::send},
-    {SymbolId::kThrow, Base::genThrow},
+    {ID(__iter__), dunderIter},
+    {ID(__next__), dunderNext},
+    {ID(send), Base::send},
+    {ID(throw), Base::genThrow},
     {SymbolId::kSentinelId, nullptr},
     // clang-format on
 };
 
 const BuiltinAttribute GeneratorBuiltins::kAttributes[] = {
-    {SymbolId::kDunderQualname, RawGeneratorBase::kQualnameOffset},
-    {SymbolId::kGiRunning, RawGenerator::kRunningOffset,
-     AttributeFlags::kReadOnly},
+    {ID(__qualname__), RawGeneratorBase::kQualnameOffset},
+    {ID(gi_running), RawGenerator::kRunningOffset, AttributeFlags::kReadOnly},
     {SymbolId::kSentinelId, -1},
 };
 
@@ -214,7 +212,7 @@ RawObject GeneratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isGenerator()) {
-    return thread->raiseRequiresType(self, SymbolId::kGenerator);
+    return thread->raiseRequiresType(self, ID(generator));
   }
   Generator gen(&scope, *self);
   Object value(&scope, NoneType::object());
@@ -222,14 +220,13 @@ RawObject GeneratorBuiltins::dunderNext(Thread* thread, Frame* frame,
 }
 
 const BuiltinMethod CoroutineBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kSend, Base::send},
+    {ID(send), Base::send},
     {SymbolId::kSentinelId, nullptr},
 };
 
 const BuiltinAttribute CoroutineBuiltins::kAttributes[] = {
-    {SymbolId::kDunderQualname, RawGeneratorBase::kQualnameOffset},
-    {SymbolId::kCrRunning, RawCoroutine::kRunningOffset,
-     AttributeFlags::kReadOnly},
+    {ID(__qualname__), RawGeneratorBase::kQualnameOffset},
+    {ID(cr_running), RawCoroutine::kRunningOffset, AttributeFlags::kReadOnly},
     {SymbolId::kSentinelId, -1},
 };
 

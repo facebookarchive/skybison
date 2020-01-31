@@ -114,13 +114,13 @@ PY_EXPORT PyCodeObject* PyAST_CompileObject(_mod* mod, PyObject* pyfilename,
   SymbolId mode_id;
   switch (mod->kind) {
     case Module_kind:
-      mode_id = SymbolId::kExec;
+      mode_id = ID(exec);
       break;
     case Interactive_kind:
-      mode_id = SymbolId::kSingle;
+      mode_id = ID(single);
       break;
     case Expression_kind:
-      mode_id = SymbolId::kEval;
+      mode_id = ID(eval);
       break;
     default:
       UNREACHABLE("Unknown module kind");

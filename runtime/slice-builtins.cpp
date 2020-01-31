@@ -8,14 +8,14 @@
 namespace py {
 
 const BuiltinAttribute SliceBuiltins::kAttributes[] = {
-    {SymbolId::kStart, Slice::kStartOffset, AttributeFlags::kReadOnly},
-    {SymbolId::kStop, Slice::kStopOffset, AttributeFlags::kReadOnly},
-    {SymbolId::kStep, Slice::kStepOffset, AttributeFlags::kReadOnly},
+    {ID(start), Slice::kStartOffset, AttributeFlags::kReadOnly},
+    {ID(stop), Slice::kStopOffset, AttributeFlags::kReadOnly},
+    {ID(step), Slice::kStepOffset, AttributeFlags::kReadOnly},
     {SymbolId::kSentinelId, -1},
 };
 
 const BuiltinMethod SliceBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderNew, dunderNew},
+    {ID(__new__), dunderNew},
     {SymbolId::kSentinelId, nullptr},
 };
 

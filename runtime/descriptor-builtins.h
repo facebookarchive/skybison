@@ -9,7 +9,7 @@
 namespace py {
 
 class ClassMethodBuiltins
-    : public Builtins<ClassMethodBuiltins, SymbolId::kClassmethod,
+    : public Builtins<ClassMethodBuiltins, ID(classmethod),
                       LayoutId::kClassMethod> {
  public:
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
@@ -20,7 +20,7 @@ class ClassMethodBuiltins
 };
 
 class StaticMethodBuiltins
-    : public Builtins<StaticMethodBuiltins, SymbolId::kStaticmethod,
+    : public Builtins<StaticMethodBuiltins, ID(staticmethod),
                       LayoutId::kStaticMethod> {
  public:
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
@@ -30,8 +30,8 @@ class StaticMethodBuiltins
   static const BuiltinMethod kBuiltinMethods[];
 };
 
-class PropertyBuiltins : public Builtins<PropertyBuiltins, SymbolId::kProperty,
-                                         LayoutId::kProperty> {
+class PropertyBuiltins
+    : public Builtins<PropertyBuiltins, ID(property), LayoutId::kProperty> {
  public:
   static RawObject dunderDelete(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGet(Thread* thread, Frame* frame, word nargs);

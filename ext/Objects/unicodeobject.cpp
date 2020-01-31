@@ -64,13 +64,13 @@ static RawObject symbolFromError(Thread* thread, const char* error) {
   Runtime* runtime = thread->runtime();
   Symbols* symbols = runtime->symbols();
   if (error == nullptr || std::strcmp(error, "strict") == 0) {
-    return symbols->at(SymbolId::kStrict);
+    return symbols->at(ID(strict));
   }
   if (std::strcmp(error, "ignore") == 0) {
-    return symbols->at(SymbolId::kIgnore);
+    return symbols->at(ID(ignore));
   }
   if (std::strcmp(error, "replace") == 0) {
-    return symbols->at(SymbolId::kReplace);
+    return symbols->at(ID(replace));
   }
   return Runtime::internStrFromCStr(thread, error);
 }
@@ -704,9 +704,8 @@ PY_EXPORT PyObject* _PyUnicode_AsASCIIString(PyObject* unicode,
     return nullptr;
   }
   Object errors_obj(&scope, symbolFromError(thread, errors));
-  Object tuple_obj(
-      &scope, thread->invokeFunction2(SymbolId::kUnderCodecs,
-                                      SymbolId::kAsciiEncode, str, errors_obj));
+  Object tuple_obj(&scope, thread->invokeFunction2(
+                               ID(_codecs), ID(ascii_encode), str, errors_obj));
   if (tuple_obj.isError()) {
     return nullptr;
   }
@@ -760,9 +759,8 @@ PY_EXPORT PyObject* PyUnicode_AsEncodedString(PyObject* unicode,
   Object errors_obj(&scope, errors == nullptr
                                 ? Unbound::object()
                                 : symbolFromError(thread, errors));
-  Object result(
-      &scope, thread->invokeFunction3(SymbolId::kUnderCodecs, SymbolId::kEncode,
-                                      str, encoding_obj, errors_obj));
+  Object result(&scope, thread->invokeFunction3(ID(_codecs), ID(encode), str,
+                                                encoding_obj, errors_obj));
   if (result.isError()) {
     return nullptr;
   }
@@ -771,8 +769,7 @@ PY_EXPORT PyObject* PyUnicode_AsEncodedString(PyObject* unicode,
   }
   if (runtime->isInstanceOfByteArray(*result)) {
     // Equivalent to calling PyErr_WarnFormat
-    if (!ensureBuiltinModuleById(thread, SymbolId::kWarnings)
-             .isErrorException()) {
+    if (!ensureBuiltinModuleById(thread, ID(warnings)).isErrorException()) {
       Object category(&scope, runtime->typeAt(LayoutId::kRuntimeWarning));
       Object message(&scope,
                      runtime->newStrFromFmt(
@@ -781,8 +778,8 @@ PY_EXPORT PyObject* PyUnicode_AsEncodedString(PyObject* unicode,
                          encoding));
       Object stack_level(&scope, runtime->newInt(1));
       Object source(&scope, NoneType::object());
-      thread->invokeFunction4(SymbolId::kWarnings, SymbolId::kWarn, message,
-                              category, stack_level, source);
+      thread->invokeFunction4(ID(warnings), ID(warn), message, category,
+                              stack_level, source);
       thread->clearPendingException();
     }
     ByteArray result_bytearray(&scope, *result);
@@ -814,9 +811,9 @@ PY_EXPORT PyObject* _PyUnicode_AsLatin1String(PyObject* unicode,
     return nullptr;
   }
   Object errors_obj(&scope, symbolFromError(thread, errors));
-  Object tuple_obj(&scope, thread->invokeFunction2(SymbolId::kUnderCodecs,
-                                                   SymbolId::kLatin1Encode, str,
-                                                   errors_obj));
+  Object tuple_obj(&scope,
+                   thread->invokeFunction2(ID(_codecs), ID(latin_1_encode), str,
+                                           errors_obj));
   if (tuple_obj.isError()) {
     return nullptr;
   }
@@ -1016,9 +1013,9 @@ PY_EXPORT int PyUnicode_Contains(PyObject* str, PyObject* substr) {
   HandleScope scope(thread);
   Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
   Object substr_obj(&scope, ApiHandle::fromPyObject(substr)->asObject());
-  Object result(&scope, thread->invokeMethodStatic2(LayoutId::kStr,
-                                                    SymbolId::kDunderContains,
-                                                    str_obj, substr_obj));
+  Object result(&scope,
+                thread->invokeMethodStatic2(LayoutId::kStr, ID(__contains__),
+                                            str_obj, substr_obj));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
       thread->raiseWithFmt(LayoutId::kTypeError,
@@ -1054,9 +1051,8 @@ PY_EXPORT PyObject* PyUnicode_Decode(const char* c_str, Py_ssize_t size,
                           reinterpret_cast<const byte*>(c_str), size)));
   Object errors_obj(&scope, symbolFromError(thread, errors));
   Object encoding_obj(&scope, runtime->newStrFromCStr(encoding));
-  Object result(
-      &scope, thread->invokeFunction3(SymbolId::kUnderCodecs, SymbolId::kDecode,
-                                      bytes, encoding_obj, errors_obj));
+  Object result(&scope, thread->invokeFunction3(ID(_codecs), ID(decode), bytes,
+                                                encoding_obj, errors_obj));
   if (result.isError()) {
     return nullptr;
   }
@@ -1071,9 +1067,9 @@ PY_EXPORT PyObject* PyUnicode_DecodeASCII(const char* c_str, Py_ssize_t size,
   Bytes bytes(&scope, runtime->newBytesWithAll(View<byte>(
                           reinterpret_cast<const byte*>(c_str), size)));
   Str errors_obj(&scope, symbolFromError(thread, errors));
-  Object result_obj(&scope, thread->invokeFunction2(SymbolId::kUnderCodecs,
-                                                    SymbolId::kAsciiDecode,
-                                                    bytes, errors_obj));
+  Object result_obj(
+      &scope, thread->invokeFunction2(ID(_codecs), ID(ascii_decode), bytes,
+                                      errors_obj));
   if (result_obj.isError()) {
     if (result_obj.isErrorNotFound()) {
       thread->raiseWithFmt(LayoutId::kSystemError,
@@ -1120,9 +1116,8 @@ PY_EXPORT PyObject* PyUnicode_DecodeLatin1(const char* c_str, Py_ssize_t size,
   HandleScope scope(thread);
   Bytes bytes(&scope, runtime->newBytesWithAll(View<byte>(
                           reinterpret_cast<const byte*>(c_str), size)));
-  Object result_obj(&scope,
-                    thread->invokeFunction1(SymbolId::kUnderCodecs,
-                                            SymbolId::kLatin1Decode, bytes));
+  Object result_obj(
+      &scope, thread->invokeFunction1(ID(_codecs), ID(latin_1_decode), bytes));
   if (result_obj.isError()) {
     if (result_obj.isErrorNotFound()) {
       thread->raiseWithFmt(LayoutId::kSystemError,
@@ -1316,9 +1311,9 @@ PY_EXPORT PyObject* PyUnicode_DecodeUTF8Stateful(const char* c_str,
   Object bytes(&scope, runtime->newBytesWithAll(View<byte>({byte_str, size})));
   Object errors_obj(&scope, symbolFromError(thread, errors));
   Object is_final(&scope, Bool::fromBool(consumed == nullptr));
-  Object result_obj(&scope, thread->invokeFunction3(
-                                SymbolId::kUnderCodecs, SymbolId::kUtf8Decode,
-                                bytes, errors_obj, is_final));
+  Object result_obj(
+      &scope, thread->invokeFunction3(ID(_codecs), ID(utf_8_decode), bytes,
+                                      errors_obj, is_final));
   if (result_obj.isError()) {
     if (result_obj.isErrorNotFound()) {
       thread->raiseWithFmt(LayoutId::kSystemError,
@@ -1369,10 +1364,10 @@ PY_EXPORT PyObject* _PyUnicode_DecodeUnicodeEscape(
   Object bytes(&scope, thread->runtime()->newBytesWithAll(View<byte>(
                            reinterpret_cast<const byte*>(c_str), size)));
   Object errors_obj(&scope, symbolFromError(thread, errors));
-  Object result_obj(&scope, thread->invokeFunction2(
-                                SymbolId::kUnderCodecs,
-                                SymbolId::kUnderUnicodeEscapeDecodeStateful,
-                                bytes, errors_obj));
+  Object result_obj(
+      &scope,
+      thread->invokeFunction2(ID(_codecs), ID(_unicode_escape_decode_stateful),
+                              bytes, errors_obj));
   if (result_obj.isError()) {
     if (result_obj.isErrorNotFound()) {
       thread->raiseWithFmt(LayoutId::kSystemError,
@@ -1412,9 +1407,9 @@ PY_EXPORT PyObject* _PyUnicode_EncodeUTF16(PyObject* unicode,
   }
   Object errors_obj(&scope, symbolFromError(thread, errors));
   Object byteorder_obj(&scope, runtime->newInt(byteorder));
-  Object tuple_obj(&scope, thread->invokeFunction3(SymbolId::kUnderCodecs,
-                                                   SymbolId::kUtf16Encode, str,
-                                                   errors_obj, byteorder_obj));
+  Object tuple_obj(&scope,
+                   thread->invokeFunction3(ID(_codecs), ID(utf_16_encode), str,
+                                           errors_obj, byteorder_obj));
   if (tuple_obj.isError()) {
     return nullptr;
   }
@@ -1445,9 +1440,9 @@ PY_EXPORT PyObject* _PyUnicode_EncodeUTF32(PyObject* unicode,
   }
   Object errors_obj(&scope, symbolFromError(thread, errors));
   Object byteorder_obj(&scope, runtime->newInt(byteorder));
-  Object tuple_obj(&scope, thread->invokeFunction3(SymbolId::kUnderCodecs,
-                                                   SymbolId::kUtf32Encode, str,
-                                                   errors_obj, byteorder_obj));
+  Object tuple_obj(&scope,
+                   thread->invokeFunction3(ID(_codecs), ID(utf_32_encode), str,
+                                           errors_obj, byteorder_obj));
   if (tuple_obj.isError()) {
     return nullptr;
   }
@@ -1766,8 +1761,8 @@ PY_EXPORT int PyUnicode_IsIdentifier(PyObject* str) {
   if (str_obj == Str::empty()) {
     return false;
   }
-  Object result(&scope, thread->invokeMethodStatic1(
-                            LayoutId::kStr, SymbolId::kIsidentifier, str_obj));
+  Object result(&scope, thread->invokeMethodStatic1(LayoutId::kStr,
+                                                    ID(isidentifier), str_obj));
   DCHECK(!result.isErrorNotFound(), "could not call str.isidentifier");
   CHECK(!result.isError(), "this function should not error");
   return Bool::cast(*result).value();
@@ -1780,8 +1775,8 @@ PY_EXPORT PyObject* PyUnicode_Join(PyObject* sep, PyObject* seq) {
   HandleScope scope(thread);
   Object sep_obj(&scope, ApiHandle::fromPyObject(sep)->asObject());
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
-  Object result(&scope, thread->invokeMethodStatic2(
-                            LayoutId::kStr, SymbolId::kJoin, sep_obj, seq_obj));
+  Object result(&scope, thread->invokeMethodStatic2(LayoutId::kStr, ID(join),
+                                                    sep_obj, seq_obj));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
       thread->raiseWithFmt(LayoutId::kTypeError, "could not call str.join");
@@ -1798,9 +1793,8 @@ PY_EXPORT PyObject* PyUnicode_Partition(PyObject* str, PyObject* sep) {
   HandleScope scope(thread);
   Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
   Object sep_obj(&scope, ApiHandle::fromPyObject(sep)->asObject());
-  Object result(
-      &scope, thread->invokeMethodStatic2(LayoutId::kStr, SymbolId::kPartition,
-                                          str_obj, sep_obj));
+  Object result(&scope, thread->invokeMethodStatic2(
+                            LayoutId::kStr, ID(partition), str_obj, sep_obj));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
       thread->raiseWithFmt(LayoutId::kTypeError,
@@ -1818,9 +1812,8 @@ PY_EXPORT PyObject* PyUnicode_RPartition(PyObject* str, PyObject* sep) {
   HandleScope scope(thread);
   Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
   Object sep_obj(&scope, ApiHandle::fromPyObject(sep)->asObject());
-  Object result(
-      &scope, thread->invokeMethodStatic2(LayoutId::kStr, SymbolId::kRpartition,
-                                          str_obj, sep_obj));
+  Object result(&scope, thread->invokeMethodStatic2(
+                            LayoutId::kStr, ID(rpartition), str_obj, sep_obj));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
       thread->raiseWithFmt(LayoutId::kTypeError,
@@ -1841,8 +1834,8 @@ PY_EXPORT PyObject* PyUnicode_RSplit(PyObject* str, PyObject* sep,
   Object sep_obj(&scope, ApiHandle::fromPyObject(sep)->asObject());
   Object maxsplit_obj(&scope, thread->runtime()->newInt(maxsplit));
   Object result(&scope,
-                thread->invokeMethodStatic3(LayoutId::kStr, SymbolId::kRSplit,
-                                            str_obj, sep_obj, maxsplit_obj));
+                thread->invokeMethodStatic3(LayoutId::kStr, ID(rsplit), str_obj,
+                                            sep_obj, maxsplit_obj));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
       thread->raiseWithFmt(LayoutId::kTypeError, "could not call str.rsplit");
@@ -1909,8 +1902,8 @@ PY_EXPORT PyObject* PyUnicode_Split(PyObject* str, PyObject* sep,
   Object sep_obj(&scope, ApiHandle::fromPyObject(sep)->asObject());
   Object maxsplit_obj(&scope, thread->runtime()->newInt(maxsplit));
   Object result(&scope,
-                thread->invokeMethodStatic3(LayoutId::kStr, SymbolId::kSplit,
-                                            str_obj, sep_obj, maxsplit_obj));
+                thread->invokeMethodStatic3(LayoutId::kStr, ID(split), str_obj,
+                                            sep_obj, maxsplit_obj));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
       thread->raiseWithFmt(LayoutId::kTypeError, "could not call str.split");
@@ -2131,9 +2124,8 @@ PY_EXPORT PyObject* _PyUnicode_AsUTF8String(PyObject* unicode,
     return nullptr;
   }
   Object errors_obj(&scope, symbolFromError(thread, errors));
-  Object tuple_obj(
-      &scope, thread->invokeFunction2(SymbolId::kUnderCodecs,
-                                      SymbolId::kUtf8Encode, str, errors_obj));
+  Object tuple_obj(&scope, thread->invokeFunction2(
+                               ID(_codecs), ID(utf_8_encode), str, errors_obj));
   if (tuple_obj.isError()) {
     return nullptr;
   }

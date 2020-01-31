@@ -68,15 +68,17 @@ const BuiltinAttribute TupleBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
+// clang-format off
 const BuiltinMethod TupleBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderAdd, dunderAdd},
-    {SymbolId::kDunderContains, dunderContains},
-    {SymbolId::kDunderHash, dunderHash},
-    {SymbolId::kDunderIter, dunderIter},
-    {SymbolId::kDunderLen, dunderLen},
-    {SymbolId::kDunderMul, dunderMul},
+    {ID(__add__), dunderAdd},
+    {ID(__contains__), dunderContains},
+    {ID(__hash__), dunderHash},
+    {ID(__iter__), dunderIter},
+    {ID(__len__), dunderLen},
+    {ID(__mul__), dunderMul},
     {SymbolId::kSentinelId, nullptr},
 };
+// clang-format on
 
 RawObject TupleBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
@@ -84,7 +86,7 @@ RawObject TupleBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object lhs(&scope, args.get(0));
   if (!runtime->isInstanceOfTuple(*lhs)) {
-    return thread->raiseRequiresType(lhs, SymbolId::kTuple);
+    return thread->raiseRequiresType(lhs, ID(tuple));
   }
   Tuple left(&scope, tupleUnderlying(*lhs));
   Object rhs(&scope, args.get(1));
@@ -117,7 +119,7 @@ RawObject TupleBuiltins::dunderContains(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfTuple(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kTuple);
+    return thread->raiseRequiresType(self_obj, ID(tuple));
   }
 
   Tuple self(&scope, tupleUnderlying(*self_obj));
@@ -135,7 +137,7 @@ RawObject TupleBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfTuple(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kTuple);
+    return thread->raiseRequiresType(self_obj, ID(tuple));
   }
   Tuple self(&scope, tupleUnderlying(*self_obj));
   return tupleHash(thread, self);
@@ -147,7 +149,7 @@ RawObject TupleBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   Object obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfTuple(*obj)) {
-    return thread->raiseRequiresType(obj, SymbolId::kTuple);
+    return thread->raiseRequiresType(obj, ID(tuple));
   }
   Tuple self(&scope, tupleUnderlying(*obj));
   return runtime->newInt(self.length());
@@ -159,7 +161,7 @@ RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfTuple(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kTuple);
+    return thread->raiseRequiresType(self_obj, ID(tuple));
   }
   Tuple self(&scope, tupleUnderlying(*self_obj));
   Object rhs(&scope, args.get(1));
@@ -205,16 +207,16 @@ RawObject TupleBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfTuple(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kTuple);
+    return thread->raiseRequiresType(self, ID(tuple));
   }
   Tuple tuple(&scope, tupleUnderlying(*self));
   return runtime->newTupleIterator(tuple, tuple.length());
 }
 
 const BuiltinMethod TupleIteratorBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderIter, dunderIter},
-    {SymbolId::kDunderLengthHint, dunderLengthHint},
-    {SymbolId::kDunderNext, dunderNext},
+    {ID(__iter__), dunderIter},
+    {ID(__length_hint__), dunderLengthHint},
+    {ID(__next__), dunderNext},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -224,7 +226,7 @@ RawObject TupleIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isTupleIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kTupleIterator);
+    return thread->raiseRequiresType(self, ID(tuple_iterator));
   }
   return *self;
 }
@@ -235,7 +237,7 @@ RawObject TupleIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isTupleIterator()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kTupleIterator);
+    return thread->raiseRequiresType(self_obj, ID(tuple_iterator));
   }
   TupleIterator self(&scope, *self_obj);
   Object value(&scope, tupleIteratorNext(thread, self));
@@ -251,7 +253,7 @@ RawObject TupleIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isTupleIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kTupleIterator);
+    return thread->raiseRequiresType(self, ID(tuple_iterator));
   }
   TupleIterator tuple_iterator(&scope, *self);
   Tuple tuple(&scope, tuple_iterator.iterable());

@@ -50,10 +50,9 @@ PY_EXPORT PyObject* PyImport_ImportModuleLevelObject(PyObject* name,
   Object locals_obj(&scope, locals == nullptr
                                 ? NoneType::object()
                                 : ApiHandle::fromPyObject(locals)->asObject());
-  Object result(
-      &scope, thread->invokeFunction5(
-                  SymbolId::kUnderFrozenImportlib, SymbolId::kDunderImport,
-                  name_obj, globals_obj, locals_obj, fromlist_obj, level_obj));
+  Object result(&scope, thread->invokeFunction5(
+                            ID(_frozen_importlib), ID(__import__), name_obj,
+                            globals_obj, locals_obj, fromlist_obj, level_obj));
   if (result.isError()) return nullptr;
   return ApiHandle::newReference(thread, *result);
 }
@@ -149,10 +148,9 @@ PY_EXPORT PyObject* PyImport_Import(PyObject* module_name) {
   }
   Object fromlist_obj(&scope, runtime->emptyTuple());
   Object level_obj(&scope, SmallInt::fromWord(0));
-  Object result(&scope,
-                thread->invokeFunction5(
-                    SymbolId::kBuiltins, SymbolId::kDunderImport, name_obj,
-                    globals_obj, globals_obj, fromlist_obj, level_obj));
+  Object result(&scope, thread->invokeFunction5(
+                            ID(builtins), ID(__import__), name_obj, globals_obj,
+                            globals_obj, fromlist_obj, level_obj));
   if (result.isError()) return nullptr;
   return ApiHandle::newReference(thread, *result);
 }

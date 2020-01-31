@@ -20,8 +20,7 @@ PY_EXPORT PyObject* PyDescr_NewClassMethod(PyTypeObject* type,
                                   def->ml_flags & ~METH_CLASS & ~METH_STATIC)));
   DCHECK(!function.isError(), "should have ignored METH_CLASS and METH_STATIC");
   Object result(&scope,
-                thread->invokeFunction2(SymbolId::kBuiltins,
-                                        SymbolId::kUnderDescrclassmethod,
+                thread->invokeFunction2(ID(builtins), ID(_descrclassmethod),
                                         type_obj, function));
   return ApiHandle::newReference(thread, *result);
 }
@@ -30,9 +29,8 @@ PY_EXPORT PyObject* PyDictProxy_New(PyObject* mapping) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object mapping_obj(&scope, ApiHandle::fromPyObject(mapping)->asObject());
-  Object result(&scope,
-                thread->invokeFunction1(SymbolId::kBuiltins,
-                                        SymbolId::kMappingproxy, mapping_obj));
+  Object result(&scope, thread->invokeFunction1(ID(builtins), ID(mappingproxy),
+                                                mapping_obj));
   if (result.isError()) return nullptr;
   return ApiHandle::newReference(thread, *result);
 }

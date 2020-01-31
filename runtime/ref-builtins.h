@@ -8,8 +8,7 @@
 
 namespace py {
 
-class RefBuiltins
-    : public Builtins<RefBuiltins, SymbolId::kRef, LayoutId::kWeakRef> {
+class RefBuiltins : public Builtins<RefBuiltins, ID(ref), LayoutId::kWeakRef> {
  public:
   static RawObject dunderCall(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);

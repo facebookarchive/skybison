@@ -99,7 +99,7 @@ word strRSpan(const Str& src, const Str& str, word rend);
 RawObject strIteratorNext(Thread* thread, const StrIterator& iter);
 
 class SmallStrBuiltins
-    : public ImmediateBuiltins<SmallStrBuiltins, SymbolId::kSmallStr,
+    : public ImmediateBuiltins<SmallStrBuiltins, ID(smallstr),
                                LayoutId::kSmallStr, LayoutId::kStr> {
  public:
   static void postInitialize(Runtime* runtime, const Type& new_type);
@@ -108,7 +108,7 @@ class SmallStrBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(SmallStrBuiltins);
 };
 
-class LargeStrBuiltins : public Builtins<LargeStrBuiltins, SymbolId::kLargeStr,
+class LargeStrBuiltins : public Builtins<LargeStrBuiltins, ID(largestr),
                                          LayoutId::kLargeStr, LayoutId::kStr> {
  public:
   static void postInitialize(Runtime* runtime, const Type& new_type);
@@ -117,8 +117,7 @@ class LargeStrBuiltins : public Builtins<LargeStrBuiltins, SymbolId::kLargeStr,
   DISALLOW_IMPLICIT_CONSTRUCTORS(LargeStrBuiltins);
 };
 
-class StrBuiltins
-    : public Builtins<StrBuiltins, SymbolId::kStr, LayoutId::kStr> {
+class StrBuiltins : public Builtins<StrBuiltins, ID(str), LayoutId::kStr> {
  public:
   static void postInitialize(Runtime*, const Type& new_type);
 
@@ -165,7 +164,7 @@ class StrBuiltins
 };
 
 class StrIteratorBuiltins
-    : public Builtins<StrIteratorBuiltins, SymbolId::kStrIterator,
+    : public Builtins<StrIteratorBuiltins, ID(str_iterator),
                       LayoutId::kStrIterator> {
  public:
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);

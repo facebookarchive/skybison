@@ -32,8 +32,7 @@ PY_EXPORT double PyFloat_AsDouble(PyObject* op) {
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(op)->asObject());
   if (!thread->runtime()->isInstanceOfFloat(*obj)) {
-    obj = thread->invokeFunction1(SymbolId::kBuiltins, SymbolId::kUnderFloat,
-                                  obj);
+    obj = thread->invokeFunction1(ID(builtins), ID(_float), obj);
     if (obj.isError()) return -1;
   }
   return floatUnderlying(*obj).value();

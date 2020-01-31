@@ -71,8 +71,7 @@ PY_EXPORT PyObject* PyObject_ASCII(PyObject* pyobj) {
   }
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
-  Object result(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
-                                                SymbolId::kAscii, obj));
+  Object result(&scope, thread->invokeFunction1(ID(builtins), ID(ascii), obj));
   if (result.isError()) {
     return nullptr;
   }
@@ -95,12 +94,11 @@ PY_EXPORT PyObject* PyObject_Bytes(PyObject* pyobj) {
     return pyobj;
   }
 
-  Object result(&scope, thread->invokeMethod1(obj, SymbolId::kDunderBytes));
+  Object result(&scope, thread->invokeMethod1(obj, ID(__bytes__)));
   if (result.isError()) {
     if (result.isErrorException()) return nullptr;
     // Attribute lookup failed
-    result = thread->invokeFunction1(SymbolId::kBuiltins,
-                                     SymbolId::kUnderBytesNew, obj);
+    result = thread->invokeFunction1(ID(builtins), ID(_bytes_new), obj);
     if (result.isErrorException()) return nullptr;
     DCHECK(!result.isError(), "Couldn't call builtins._bytes_new");
   } else if (!runtime->isInstanceOfBytes(*result)) {
@@ -184,7 +182,7 @@ PY_EXPORT PyObject* PyObject_Dir(PyObject* obj) {
   Runtime* runtime = thread->runtime();
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Type type(&scope, runtime->typeOf(*object));
-  Object name(&scope, runtime->symbols()->at(SymbolId::kDunderDir));
+  Object name(&scope, runtime->symbols()->at(ID(__dir__)));
   Object func(&scope, typeLookupInMro(thread, type, name));
   if (func.isError() || !func.isFunction()) {
     return nullptr;
@@ -200,9 +198,8 @@ PY_EXPORT PyObject* PyObject_Dir(PyObject* obj) {
     return ApiHandle::newReference(thread, *list);
   }
   List list(&scope, runtime->newList());
-  Object result(&scope,
-                thread->invokeMethodStatic2(LayoutId::kList, SymbolId::kExtend,
-                                            list, sequence));
+  Object result(&scope, thread->invokeMethodStatic2(LayoutId::kList, ID(extend),
+                                                    list, sequence));
   if (result.isError()) {
     return nullptr;
   }
@@ -401,7 +398,7 @@ PY_EXPORT PyObject* PyObject_Repr(PyObject* obj) {
   }
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  Object result(&scope, thread->invokeMethod1(object, SymbolId::kDunderRepr));
+  Object result(&scope, thread->invokeMethod1(object, ID(__repr__)));
   if (result.isError()) {
     return nullptr;
   }
@@ -494,7 +491,7 @@ PY_EXPORT PyObject* PyObject_Str(PyObject* obj) {
   }
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  Object result(&scope, thread->invokeMethod1(object, SymbolId::kDunderStr));
+  Object result(&scope, thread->invokeMethod1(object, ID(__str__)));
   if (result.isError()) {
     return nullptr;
   }

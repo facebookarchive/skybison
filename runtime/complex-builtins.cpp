@@ -43,12 +43,17 @@ static RawObject unpackNumber(Thread* thread, const Object& obj, double* real,
   return NotImplementedType::object();
 }
 
+// clang-format off
 const BuiltinMethod ComplexBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderAdd, dunderAdd},   {SymbolId::kDunderHash, dunderHash},
-    {SymbolId::kDunderNeg, dunderNeg},   {SymbolId::kDunderPos, dunderPos},
-    {SymbolId::kDunderRsub, dunderRsub}, {SymbolId::kDunderSub, dunderSub},
+    {ID(__add__), dunderAdd},
+    {ID(__hash__), dunderHash},
+    {ID(__neg__), dunderNeg},
+    {ID(__pos__), dunderPos},
+    {ID(__rsub__), dunderRsub},
+    {ID(__sub__), dunderSub},
     {SymbolId::kSentinelId, nullptr},
 };
+// clang-format on
 
 void ComplexBuiltins::postInitialize(Runtime*, const Type& new_type) {
   new_type.setBuiltinBase(LayoutId::kComplex);
@@ -60,7 +65,7 @@ RawObject ComplexBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfComplex(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kComplex);
+    return thread->raiseRequiresType(self_obj, ID(complex));
   }
   Complex self(&scope, complexUnderlying(*self_obj));
   double other_real, other_imag;
@@ -80,7 +85,7 @@ RawObject ComplexBuiltins::dunderHash(Thread* thread, Frame* frame,
 
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfComplex(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kComplex);
+    return thread->raiseRequiresType(self_obj, ID(complex));
   }
   Complex self(&scope, complexUnderlying(*self_obj));
   return SmallInt::fromWord(complexHash(*self));
@@ -93,7 +98,7 @@ RawObject ComplexBuiltins::dunderNeg(Thread* thread, Frame* frame, word nargs) {
 
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfComplex(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kComplex);
+    return thread->raiseRequiresType(self_obj, ID(complex));
   }
   Complex self(&scope, complexUnderlying(*self_obj));
   return runtime->newComplex(-self.real(), -self.imag());
@@ -105,7 +110,7 @@ RawObject ComplexBuiltins::dunderPos(Thread* thread, Frame* frame, word nargs) {
 
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfComplex(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kComplex);
+    return thread->raiseRequiresType(self_obj, ID(complex));
   }
   return complexUnderlying(*self_obj);
 }
@@ -117,7 +122,7 @@ RawObject ComplexBuiltins::dunderRsub(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfComplex(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kComplex);
+    return thread->raiseRequiresType(self_obj, ID(complex));
   }
   Complex self(&scope, complexUnderlying(*self_obj));
   double other_real, other_imag;
@@ -136,7 +141,7 @@ RawObject ComplexBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfComplex(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kComplex);
+    return thread->raiseRequiresType(self_obj, ID(complex));
   }
   Complex self(&scope, complexUnderlying(*self_obj));
   double other_real, other_imag;

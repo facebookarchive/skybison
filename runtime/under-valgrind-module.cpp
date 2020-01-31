@@ -12,10 +12,10 @@
 namespace py {
 
 const BuiltinFunction UnderValgrindModule::kBuiltinFunctions[] = {
-    {SymbolId::kCallgrindDumpStats, callgrindDumpStats},
-    {SymbolId::kCallgrindStartInstrumentation, callgrindStartInstrumentation},
-    {SymbolId::kCallgrindStopInstrumentation, callgrindStopInstrumentation},
-    {SymbolId::kCallgrindZeroStats, callgrindZeroStats},
+    {ID(callgrind_dump_stats), callgrindDumpStats},
+    {ID(callgrind_start_instrumentation), callgrindStartInstrumentation},
+    {ID(callgrind_stop_instrumentation), callgrindStopInstrumentation},
+    {ID(callgrind_zero_stats), callgrindZeroStats},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -34,7 +34,7 @@ RawObject UnderValgrindModule::callgrindDumpStats(Thread* thread, Frame* frame,
     return NoneType::object();
   }
   if (!thread->runtime()->isInstanceOfStr(*description)) {
-    return thread->raiseRequiresType(description, SymbolId::kStr);
+    return thread->raiseRequiresType(description, ID(str));
   }
   Str description_str(&scope, strUnderlying(*description));
   unique_c_ptr<char> description_cstr(description_str.toCStr());

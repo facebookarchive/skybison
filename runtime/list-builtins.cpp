@@ -126,8 +126,8 @@ RawObject listSort(Thread* thread, const List& list) {
     word j = i - 1;
     for (; j >= 0; j--) {
       list_j = list.at(j);
-      compare_result = thread->invokeFunction2(
-          SymbolId::kUnderBuiltins, SymbolId::kUnderLt, list_i, list_j);
+      compare_result =
+          thread->invokeFunction2(ID(_builtins), ID(_lt), list_i, list_j);
       if (compare_result.isError()) {
         return *compare_result;
       }
@@ -164,18 +164,18 @@ const BuiltinAttribute ListBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod ListBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderNew, dunderNew},
-    {SymbolId::kDunderAdd, dunderAdd},
-    {SymbolId::kDunderContains, dunderContains},
-    {SymbolId::kDunderImul, dunderImul},
-    {SymbolId::kDunderIter, dunderIter},
-    {SymbolId::kDunderLen, dunderLen},
-    {SymbolId::kDunderMul, dunderMul},
-    {SymbolId::kAppend, append},
-    {SymbolId::kClear, clear},
-    {SymbolId::kInsert, insert},
-    {SymbolId::kPop, pop},
-    {SymbolId::kRemove, remove},
+    {ID(__new__), dunderNew},
+    {ID(__add__), dunderAdd},
+    {ID(__contains__), dunderContains},
+    {ID(__imul__), dunderImul},
+    {ID(__iter__), dunderIter},
+    {ID(__len__), dunderLen},
+    {ID(__mul__), dunderMul},
+    {ID(append), append},
+    {ID(clear), clear},
+    {ID(insert), insert},
+    {ID(pop), pop},
+    {ID(remove), remove},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -204,7 +204,7 @@ RawObject ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfList(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kList);
+    return thread->raiseRequiresType(self_obj, ID(list));
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfList(*other_obj)) {
@@ -229,7 +229,7 @@ RawObject ListBuiltins::dunderContains(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kList);
+    return thread->raiseRequiresType(self_obj, ID(list));
   }
 
   List self(&scope, *self_obj);
@@ -246,7 +246,7 @@ RawObject ListBuiltins::clear(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kList);
+    return thread->raiseRequiresType(self, ID(list));
   }
   List list(&scope, *self);
   list.clearFrom(0);
@@ -258,7 +258,7 @@ RawObject ListBuiltins::append(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kList);
+    return thread->raiseRequiresType(self, ID(list));
   }
   List list(&scope, *self);
   Object value(&scope, args.get(1));
@@ -271,7 +271,7 @@ RawObject ListBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kList);
+    return thread->raiseRequiresType(self, ID(list));
   }
   List list(&scope, *self);
   return SmallInt::fromWord(list.numItems());
@@ -282,7 +282,7 @@ RawObject ListBuiltins::insert(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kList);
+    return thread->raiseRequiresType(self, ID(list));
   }
   List list(&scope, *self);
   Object index_obj(&scope, args.get(1));
@@ -306,7 +306,7 @@ RawObject ListBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfList(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kList);
+    return thread->raiseRequiresType(self, ID(list));
   }
   if (other.isSmallInt()) {
     word ntimes = SmallInt::cast(other).value();
@@ -329,7 +329,7 @@ RawObject ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kList);
+    return thread->raiseRequiresType(self, ID(list));
   }
   List list(&scope, *self);
   word length = list.numItems();
@@ -354,7 +354,7 @@ RawObject ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kList);
+    return thread->raiseRequiresType(self_obj, ID(list));
   }
   Object value(&scope, args.get(1));
   List self(&scope, *self_obj);
@@ -388,7 +388,7 @@ RawObject ListBuiltins::dunderImul(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfList(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kList);
+    return thread->raiseRequiresType(self, ID(list));
   }
   Object count_index(&scope, args.get(1));
   Object count_obj(&scope, intFromIndex(thread, count_index));
@@ -430,15 +430,15 @@ RawObject ListBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kList);
+    return thread->raiseRequiresType(self, ID(list));
   }
   return thread->runtime()->newListIterator(self);
 }
 
 const BuiltinMethod ListIteratorBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderIter, dunderIter},
-    {SymbolId::kDunderLengthHint, dunderLengthHint},
-    {SymbolId::kDunderNext, dunderNext},
+    {ID(__iter__), dunderIter},
+    {ID(__length_hint__), dunderLengthHint},
+    {ID(__next__), dunderNext},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -448,7 +448,7 @@ RawObject ListIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isListIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kListIterator);
+    return thread->raiseRequiresType(self, ID(list_iterator));
   }
   return *self;
 }
@@ -459,7 +459,7 @@ RawObject ListIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isListIterator()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kListIterator);
+    return thread->raiseRequiresType(self_obj, ID(list_iterator));
   }
   ListIterator self(&scope, *self_obj);
   Object value(&scope, listIteratorNext(thread, self));
@@ -475,7 +475,7 @@ RawObject ListIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isListIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kListIterator);
+    return thread->raiseRequiresType(self, ID(list_iterator));
   }
   ListIterator list_iterator(&scope, *self);
   List list(&scope, list_iterator.iterable());

@@ -18,7 +18,7 @@ RawObject tupleSlice(Thread* thread, const Tuple& tuple, word start, word stop,
 RawObject tupleHash(Thread* thread, const Tuple& tuple);
 
 class TupleBuiltins
-    : public Builtins<TupleBuiltins, SymbolId::kTuple, LayoutId::kTuple> {
+    : public Builtins<TupleBuiltins, ID(tuple), LayoutId::kTuple> {
  public:
   static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderContains(Thread* thread, Frame* frame, word nargs);
@@ -35,7 +35,7 @@ class TupleBuiltins
 };
 
 class TupleIteratorBuiltins
-    : public Builtins<TupleIteratorBuiltins, SymbolId::kTupleIterator,
+    : public Builtins<TupleIteratorBuiltins, ID(tuple_iterator),
                       LayoutId::kTupleIterator> {
  public:
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);

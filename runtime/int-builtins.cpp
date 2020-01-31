@@ -152,46 +152,48 @@ const BuiltinAttribute IntBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, 0},
 };
 
+// clang-format off
 const BuiltinMethod IntBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kBitLength, bitLength},
-    {SymbolId::kConjugate, dunderInt},
-    {SymbolId::kDunderAbs, dunderAbs},
-    {SymbolId::kDunderAdd, dunderAdd},
-    {SymbolId::kDunderAnd, dunderAnd},
-    {SymbolId::kDunderBool, dunderBool},
-    {SymbolId::kDunderCeil, dunderInt},
-    {SymbolId::kDunderDivmod, dunderDivmod},
-    {SymbolId::kDunderEq, dunderEq},
-    {SymbolId::kDunderFloat, dunderFloat},
-    {SymbolId::kDunderFloor, dunderInt},
-    {SymbolId::kDunderFloordiv, dunderFloordiv},
-    {SymbolId::kDunderFormat, dunderFormat},
-    {SymbolId::kDunderGe, dunderGe},
-    {SymbolId::kDunderGt, dunderGt},
-    {SymbolId::kDunderHash, dunderHash},
-    {SymbolId::kDunderIndex, dunderInt},
-    {SymbolId::kDunderInt, dunderInt},
-    {SymbolId::kDunderInvert, dunderInvert},
-    {SymbolId::kDunderLe, dunderLe},
-    {SymbolId::kDunderLshift, dunderLshift},
-    {SymbolId::kDunderLt, dunderLt},
-    {SymbolId::kDunderMod, dunderMod},
-    {SymbolId::kDunderMul, dunderMul},
-    {SymbolId::kDunderNe, dunderNe},
-    {SymbolId::kDunderNeg, dunderNeg},
-    {SymbolId::kDunderOr, dunderOr},
-    {SymbolId::kDunderPos, dunderInt},
-    {SymbolId::kDunderRepr, dunderRepr},
-    {SymbolId::kDunderRound, dunderInt},
-    {SymbolId::kDunderRshift, dunderRshift},
-    {SymbolId::kDunderStr, dunderRepr},
-    {SymbolId::kDunderSub, dunderSub},
-    {SymbolId::kDunderTruediv, dunderTrueDiv},
-    {SymbolId::kDunderTrunc, dunderInt},
-    {SymbolId::kDunderXor, dunderXor},
-    {SymbolId::kToBytes, toBytes},
+    {ID(bit_length), bitLength},
+    {ID(conjugate), dunderInt},
+    {ID(__abs__), dunderAbs},
+    {ID(__add__), dunderAdd},
+    {ID(__and__), dunderAnd},
+    {ID(__bool__), dunderBool},
+    {ID(__ceil__), dunderInt},
+    {ID(__divmod__), dunderDivmod},
+    {ID(__eq__), dunderEq},
+    {ID(__float__), dunderFloat},
+    {ID(__floor__), dunderInt},
+    {ID(__floordiv__), dunderFloordiv},
+    {ID(__format__), dunderFormat},
+    {ID(__ge__), dunderGe},
+    {ID(__gt__), dunderGt},
+    {ID(__hash__), dunderHash},
+    {ID(__index__), dunderInt},
+    {ID(__int__), dunderInt},
+    {ID(__invert__), dunderInvert},
+    {ID(__le__), dunderLe},
+    {ID(__lshift__), dunderLshift},
+    {ID(__lt__), dunderLt},
+    {ID(__mod__), dunderMod},
+    {ID(__mul__), dunderMul},
+    {ID(__ne__), dunderNe},
+    {ID(__neg__), dunderNeg},
+    {ID(__or__), dunderOr},
+    {ID(__pos__), dunderInt},
+    {ID(__repr__), dunderRepr},
+    {ID(__round__), dunderInt},
+    {ID(__rshift__), dunderRshift},
+    {ID(__str__), dunderRepr},
+    {ID(__sub__), dunderSub},
+    {ID(__truediv__), dunderTrueDiv},
+    {ID(__trunc__), dunderInt},
+    {ID(__xor__), dunderXor},
+    {ID(to_bytes), toBytes},
     {SymbolId::kSentinelId, nullptr},
 };
+// clang-format on
 
 RawObject convertBoolToInt(RawObject object) {
   DCHECK(object.isBool(), "conversion from bool to int requires a bool object");
@@ -207,7 +209,7 @@ static RawObject intBinaryOpSubclass(Thread* thread, Frame* frame, word nargs,
   Object other_obj(&scope, args.get(1));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfInt(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kInt);
+    return thread->raiseRequiresType(self_obj, ID(int));
   }
   if (!runtime->isInstanceOfInt(*other_obj)) {
     return NotImplementedType::object();
@@ -236,7 +238,7 @@ static RawObject intUnaryOp(Thread* thread, Frame* frame, word nargs,
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfInt(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kInt);
+    return thread->raiseRequiresType(self_obj, ID(int));
   }
   Int self(&scope, intUnderlying(*self_obj));
   return op(thread, self);
@@ -392,7 +394,7 @@ RawObject IntBuiltins::dunderFormat(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfInt(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kInt);
+    return thread->raiseRequiresType(self_obj, ID(int));
   }
   Int self(&scope, intUnderlying(*self_obj));
 
@@ -468,7 +470,7 @@ static RawObject toBytesImpl(Thread* thread, const Object& self_obj,
   HandleScope scope;
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfInt(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kInt);
+    return thread->raiseRequiresType(self_obj, ID(int));
   }
   Int self(&scope, intUnderlying(*self_obj));
   if (!runtime->isInstanceOfInt(*length_obj)) {
@@ -494,9 +496,9 @@ static RawObject toBytesImpl(Thread* thread, const Object& self_obj,
   }
   Str byteorder(&scope, *byteorder_obj);
   endian endianness;
-  if (byteorder.equals(runtime->symbols()->at(SymbolId::kLittle))) {
+  if (byteorder.equals(runtime->symbols()->at(ID(little)))) {
     endianness = endian::little;
-  } else if (byteorder.equals(runtime->symbols()->at(SymbolId::kBig))) {
+  } else if (byteorder.equals(runtime->symbols()->at(ID(big)))) {
     endianness = endian::big;
   } else {
     return thread->raiseWithFmt(LayoutId::kValueError,
@@ -683,7 +685,7 @@ RawObject BoolBuiltins::dunderOr(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isBool()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kBool);
+    return thread->raiseRequiresType(self_obj, ID(bool));
   }
   Bool self(&scope, *self_obj);
   Object other_obj(&scope, args.get(1));
@@ -700,9 +702,9 @@ RawObject BoolBuiltins::dunderOr(Thread* thread, Frame* frame, word nargs) {
 }
 
 const BuiltinMethod BoolBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderNew, dunderNew},
-    {SymbolId::kDunderOr, dunderOr},
-    {SymbolId::kDunderRor, dunderOr},
+    {ID(__new__), dunderNew},
+    {ID(__or__), dunderOr},
+    {ID(__ror__), dunderOr},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -919,7 +921,7 @@ RawObject intFromIndex(Thread* thread, const Object& obj) {
     return *obj;
   }
   HandleScope scope(thread);
-  Object result(&scope, thread->invokeMethod1(obj, SymbolId::kDunderIndex));
+  Object result(&scope, thread->invokeMethod1(obj, ID(__index__)));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
       return thread->raiseWithFmt(

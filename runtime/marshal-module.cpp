@@ -13,7 +13,7 @@
 namespace py {
 
 const BuiltinFunction MarshalModule::kBuiltinFunctions[] = {
-    {SymbolId::kLoads, loads},
+    {ID(loads), loads},
     {SymbolId::kSentinelId, nullptr},
 };
 

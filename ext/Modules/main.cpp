@@ -71,8 +71,7 @@ static int runFile(FILE* fp, const char* filename, PyCompilerFlags* flags) {
 
 static void runInteractiveHook() {
   Thread* thread = Thread::current();
-  RawObject result =
-      thread->invokeFunction0(SymbolId::kSys, SymbolId::kDunderInteractiveHook);
+  RawObject result = thread->invokeFunction0(ID(sys), ID(__interactivehook__));
   if (result.isErrorException()) {
     std::fprintf(stderr, "Failed calling sys.__interactivehook__\n");
     printPendingExceptionWithSysLastVars(thread);
@@ -85,10 +84,9 @@ static int runModule(const char* modname_cstr, bool set_argv0) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  Str runpy(&scope, runtime->symbols()->at(SymbolId::kRunpy));
+  Str runpy(&scope, runtime->symbols()->at(ID(runpy)));
   Object result(&scope,
-                thread->invokeFunction1(SymbolId::kBuiltins,
-                                        SymbolId::kDunderImport, runpy));
+                thread->invokeFunction1(ID(builtins), ID(__import__), runpy));
   if (result.isError()) {
     std::fprintf(stderr, "Could not import runpy module\n");
     printPendingException(thread);
@@ -98,8 +96,8 @@ static int runModule(const char* modname_cstr, bool set_argv0) {
   runtime->findOrCreateMainModule();
   Str modname(&scope, runtime->newStrFromCStr(modname_cstr));
   Bool alter_argv(&scope, Bool::fromBool(set_argv0));
-  result = thread->invokeFunction2(
-      SymbolId::kRunpy, SymbolId::kUnderRunModuleAsMain, modname, alter_argv);
+  result = thread->invokeFunction2(ID(runpy), ID(_run_module_as_main), modname,
+                                   alter_argv);
   if (result.isError()) {
     printPendingException(thread);
     return -1;

@@ -32,8 +32,7 @@ word largeIntHash(RawLargeInt value);
 
 word intHash(RawObject value);
 
-class IntBuiltins
-    : public Builtins<IntBuiltins, SymbolId::kInt, LayoutId::kInt> {
+class IntBuiltins : public Builtins<IntBuiltins, ID(int), LayoutId::kInt> {
  public:
   static void postInitialize(Runtime* runtime, const Type& new_type);
 
@@ -76,7 +75,7 @@ class IntBuiltins
 };
 
 class SmallIntBuiltins
-    : public ImmediateBuiltins<SmallIntBuiltins, SymbolId::kSmallInt,
+    : public ImmediateBuiltins<SmallIntBuiltins, ID(smallint),
                                LayoutId::kSmallInt, LayoutId::kInt> {
  public:
   static void postInitialize(Runtime* runtime, const Type& new_type);
@@ -85,7 +84,7 @@ class SmallIntBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(SmallIntBuiltins);
 };
 
-class LargeIntBuiltins : public Builtins<LargeIntBuiltins, SymbolId::kLargeInt,
+class LargeIntBuiltins : public Builtins<LargeIntBuiltins, ID(largeint),
                                          LayoutId::kLargeInt, LayoutId::kInt> {
  public:
   static void postInitialize(Runtime* runtime, const Type& new_type);
@@ -94,7 +93,7 @@ class LargeIntBuiltins : public Builtins<LargeIntBuiltins, SymbolId::kLargeInt,
   DISALLOW_IMPLICIT_CONSTRUCTORS(LargeIntBuiltins);
 };
 
-class BoolBuiltins : public ImmediateBuiltins<BoolBuiltins, SymbolId::kBool,
+class BoolBuiltins : public ImmediateBuiltins<BoolBuiltins, ID(bool),
                                               LayoutId::kBool, LayoutId::kInt> {
  public:
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);

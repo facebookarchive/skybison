@@ -9,910 +9,910 @@ class Runtime;
 
 // List of predefined symbols, one per line
 #define FOREACH_SYMBOL(V)                                                      \
-  V(DunderAbs, "__abs__")                                                      \
-  V(DunderAbstractmethods, "__abstractmethods__")                              \
-  V(DunderAdd, "__add__")                                                      \
-  V(DunderAenter, "__aenter__")                                                \
-  V(DunderAexit, "__aexit__")                                                  \
-  V(DunderAiter, "__aiter__")                                                  \
-  V(DunderAnd, "__and__")                                                      \
-  V(DunderAnext, "__anext__")                                                  \
-  V(DunderAnnotations, "__annotations__")                                      \
-  V(DunderAwait, "__await__")                                                  \
-  V(DunderBases, "__bases__")                                                  \
-  V(DunderBool, "__bool__")                                                    \
-  V(DunderBuildClass, "__build_class__")                                       \
-  V(DunderBuiltins, "__builtins__")                                            \
-  V(DunderBytes, "__bytes__")                                                  \
-  V(DunderCached, "__cached__")                                                \
-  V(DunderCall, "__call__")                                                    \
-  V(DunderCause, "__cause__")                                                  \
-  V(DunderCeil, "__ceil__")                                                    \
-  V(DunderClass, "__class__")                                                  \
-  V(DunderClassCell, "__classcell__")                                          \
-  V(DunderCode, "__code__")                                                    \
-  V(DunderComplex, "__complex__")                                              \
-  V(DunderContains, "__contains__")                                            \
-  V(DunderContext, "__context__")                                              \
-  V(DunderDebug, "__debug__")                                                  \
-  V(DunderDel, "__del__")                                                      \
-  V(DunderDelattr, "__delattr__")                                              \
-  V(DunderDelete, "__delete__")                                                \
-  V(DunderDelitem, "__delitem__")                                              \
-  V(DunderDict, "__dict__")                                                    \
-  V(DunderDir, "__dir__")                                                      \
-  V(DunderDivmod, "__divmod__")                                                \
-  V(DunderDoc, "__doc__")                                                      \
-  V(DunderEnter, "__enter__")                                                  \
-  V(DunderEq, "__eq__")                                                        \
-  V(DunderExit, "__exit__")                                                    \
-  V(DunderFile, "__file__")                                                    \
-  V(DunderFlags, "__flags__")                                                  \
-  V(DunderFloat, "__float__")                                                  \
-  V(DunderFloor, "__floor__")                                                  \
-  V(DunderFloordiv, "__floordiv__")                                            \
-  V(DunderFormat, "__format__")                                                \
-  V(DunderFunc, "__func__")                                                    \
-  V(DunderGe, "__ge__")                                                        \
-  V(DunderGet, "__get__")                                                      \
-  V(DunderGetattr, "__getattr__")                                              \
-  V(DunderGetattribute, "__getattribute__")                                    \
-  V(DunderGetitem, "__getitem__")                                              \
-  V(DunderGlobals, "__globals__")                                              \
-  V(DunderGt, "__gt__")                                                        \
-  V(DunderHash, "__hash__")                                                    \
-  V(DunderIadd, "__iadd__")                                                    \
-  V(DunderIand, "__iand__")                                                    \
-  V(DunderIfloordiv, "__ifloordiv__")                                          \
-  V(DunderIlshift, "__ilshift__")                                              \
-  V(DunderImatmul, "__imatmul__")                                              \
-  V(DunderImod, "__imod__")                                                    \
-  V(DunderImport, "__import__")                                                \
-  V(DunderImul, "__imul__")                                                    \
-  V(DunderIndex, "__index__")                                                  \
-  V(DunderInit, "__init__")                                                    \
-  V(DunderInt, "__int__")                                                      \
-  V(DunderInteractiveHook, "__interactivehook__")                              \
-  V(DunderInvert, "__invert__")                                                \
-  V(DunderIor, "__ior__")                                                      \
-  V(DunderIpow, "__ipow__")                                                    \
-  V(DunderIrshift, "__irshift__")                                              \
-  V(DunderIsabstractMethod, "__isabstractmethod__")                            \
-  V(DunderIsub, "__isub__")                                                    \
-  V(DunderIter, "__iter__")                                                    \
-  V(DunderItruediv, "__itruediv__")                                            \
-  V(DunderIxor, "__ixor__")                                                    \
-  V(DunderLe, "__le__")                                                        \
-  V(DunderLen, "__len__")                                                      \
-  V(DunderLengthHint, "__length_hint__")                                       \
-  V(DunderLoader, "__loader__")                                                \
-  V(DunderLshift, "__lshift__")                                                \
-  V(DunderLt, "__lt__")                                                        \
-  V(DunderMain, "__main__")                                                    \
-  V(DunderMatmul, "__matmul__")                                                \
-  V(DunderMod, "__mod__")                                                      \
-  V(DunderModule, "__module__")                                                \
-  V(DunderModuleObject, "__module_object__")                                   \
-  V(DunderMro, "__mro__")                                                      \
-  V(DunderMul, "__mul__")                                                      \
-  V(DunderName, "__name__")                                                    \
-  V(DunderNe, "__ne__")                                                        \
-  V(DunderNeg, "__neg__")                                                      \
-  V(DunderNew, "__new__")                                                      \
-  V(DunderNext, "__next__")                                                    \
-  V(DunderOr, "__or__")                                                        \
-  V(DunderPackage, "__package__")                                              \
-  V(DunderPos, "__pos__")                                                      \
-  V(DunderPow, "__pow__")                                                      \
-  V(DunderPrepare, "__prepare__")                                              \
-  V(DunderQualname, "__qualname__")                                            \
-  V(DunderRadd, "__radd__")                                                    \
-  V(DunderRand, "__rand__")                                                    \
-  V(DunderRdivmod, "__rdivmod__")                                              \
-  V(DunderRepr, "__repr__")                                                    \
-  V(DunderRfloordiv, "__rfloordiv__")                                          \
-  V(DunderRlshift, "__rlshift__")                                              \
-  V(DunderRmatmul, "__rmatmul__")                                              \
-  V(DunderRmod, "__rmod__")                                                    \
-  V(DunderRmul, "__rmul__")                                                    \
-  V(DunderRor, "__ror__")                                                      \
-  V(DunderRound, "__round__")                                                  \
-  V(DunderRpow, "__rpow__")                                                    \
-  V(DunderRrshift, "__rrshift__")                                              \
-  V(DunderRshift, "__rshift__")                                                \
-  V(DunderRsub, "__rsub__")                                                    \
-  V(DunderRtruediv, "__rtruediv__")                                            \
-  V(DunderRxor, "__rxor__")                                                    \
-  V(DunderSelf, "__self__")                                                    \
-  V(DunderSelfClass, "__self_class__")                                         \
-  V(DunderSet, "__set__")                                                      \
-  V(DunderSetattr, "__setattr__")                                              \
-  V(DunderSetitem, "__setitem__")                                              \
-  V(DunderSizeof, "__sizeof__")                                                \
-  V(DunderSpec, "__spec__")                                                    \
-  V(DunderStr, "__str__")                                                      \
-  V(DunderSub, "__sub__")                                                      \
-  V(DunderSubclasses, "__subclasses__")                                        \
-  V(DunderSuppressContext, "__suppress_context__")                             \
-  V(DunderThisclass, "__thisclass__")                                          \
-  V(DunderTraceback, "__traceback__")                                          \
-  V(DunderTruediv, "__truediv__")                                              \
-  V(DunderTrunc, "__trunc__")                                                  \
-  V(DunderXor, "__xor__")                                                      \
-  V(UnderAddress, "_address")                                                  \
-  V(UnderAppending, "_appending")                                              \
-  V(UnderAsciiDecode, "_ascii_decode")                                         \
-  V(UnderAsciiEncode, "_ascii_encode")                                         \
-  V(UnderB2cratio, "_b2cratio")                                                \
-  V(UnderBaseDir, "_base_dir")                                                 \
-  V(UnderBoolCheck, "_bool_check")                                             \
-  V(UnderBoolGuard, "_bool_guard")                                             \
-  V(UnderBootstrap, "_bootstrap")                                              \
-  V(UnderBoundMethod, "_bound_method")                                         \
-  V(UnderBuffer, "_buffer")                                                    \
-  V(UnderBufferSize, "_buffer_size")                                           \
-  V(UnderBufferNumBytes, "_buffer_num_bytes")                                  \
-  V(UnderBufferedIOBase, "_BufferedIOBase")                                    \
-  V(UnderBufferedIOMixin, "_BufferedIOMixin")                                  \
-  V(UnderBufferedReaderClearBuffer, "_buffered_reader_clear_buffer")           \
-  V(UnderBufferedReaderInit, "_buffered_reader_init")                          \
-  V(UnderBufferedReaderPeek, "_buffered_reader_peek")                          \
-  V(UnderBufferedReaderRead, "_buffered_reader_read")                          \
-  V(UnderBufferedReaderReadline, "_buffered_reader_readline")                  \
-  V(UnderBuiltins, "_builtins")                                                \
-  V(UnderBytearrayAppend, "_bytearray_append")                                 \
-  V(UnderBytearrayCheck, "_bytearray_check")                                   \
-  V(UnderBytearrayClear, "_bytearray_clear")                                   \
-  V(UnderBytearrayContains, "_bytearray_contains")                             \
-  V(UnderBytearrayDelitem, "_bytearray_delitem")                               \
-  V(UnderBytearrayDelslice, "_bytearray_delslice")                             \
-  V(UnderBytearrayGetitem, "_bytearray_getitem")                               \
-  V(UnderBytearrayGetslice, "_bytearray_getslice")                             \
-  V(UnderBytearrayGuard, "_bytearray_guard")                                   \
-  V(UnderBytearrayJoin, "_bytearray_join")                                     \
-  V(UnderBytearrayLen, "_bytearray_len")                                       \
-  V(UnderBytearraySetitem, "_bytearray_setitem")                               \
-  V(UnderBytearraySetslice, "_bytearray_setslice")                             \
-  V(UnderBytearrayStringAppend, "_bytearray_string_append")                    \
-  V(UnderBytesCheck, "_bytes_check")                                           \
-  V(UnderBytesContains, "_bytes_contains")                                     \
-  V(UnderBytesDecode, "_bytes_decode")                                         \
-  V(UnderBytesDecodeASCII, "_bytes_decode_ascii")                              \
-  V(UnderBytesDecodeUTF8, "_bytes_decode_utf_8")                               \
-  V(UnderBytesFromBytes, "_bytes_from_bytes")                                  \
-  V(UnderBytesFromInts, "_bytes_from_ints")                                    \
-  V(UnderBytesGetitem, "_bytes_getitem")                                       \
-  V(UnderBytesGetslice, "_bytes_getslice")                                     \
-  V(UnderBytesGuard, "_bytes_guard")                                           \
-  V(UnderBytesJoin, "_bytes_join")                                             \
-  V(UnderBytesLen, "_bytes_len")                                               \
-  V(UnderBytesMaketrans, "_bytes_maketrans")                                   \
-  V(UnderBytesNew, "_bytes_new")                                               \
-  V(UnderBytesRepeat, "_bytes_repeat")                                         \
-  V(UnderBytesSplit, "_bytes_split")                                           \
-  V(UnderBytesSplitWhitespace, "_bytes_split_whitespace")                      \
-  V(UnderByteslikeCheck, "_byteslike_check")                                   \
-  V(UnderByteslikeCompareDigest, "_byteslike_compare_digest")                  \
-  V(UnderByteslikeCount, "_byteslike_count")                                   \
-  V(UnderByteslikeEndswith, "_byteslike_endswith")                             \
-  V(UnderByteslikeFindByteslike, "_byteslike_find_byteslike")                  \
-  V(UnderByteslikeFindInt, "_byteslike_find_int")                              \
-  V(UnderByteslikeGuard, "_byteslike_guard")                                   \
-  V(UnderByteslikeRfindByteslike, "_byteslike_rfind_byteslike")                \
-  V(UnderByteslikeRfindInt, "_byteslike_rfind_int")                            \
-  V(UnderByteslikeStartswith, "_byteslike_startswith")                         \
-  V(UnderCapiDictSetitem, "_capi_dict_setitem")                                \
-  V(UnderClassmethod, "_classmethod")                                          \
-  V(UnderClassmethodIsabstract, "_classmethod_isabstract")                     \
-  V(UnderClosed, "_closed")                                                    \
-  V(UnderCloseFd, "_closefd")                                                  \
-  V(UnderCodeCheck, "_code_check")                                             \
-  V(UnderCodeGuard, "_code_guard")                                             \
-  V(UnderCodeSetPosonlyargcount, "_code_set_posonlyargcount")                  \
-  V(UnderCodecs, "_codecs")                                                    \
-  V(UnderCompileFlagsMask, "_compile_flags_mask")                              \
-  V(UnderComplexCheck, "_complex_check")                                       \
-  V(UnderComplexCheckexact, "_complex_checkexact")                             \
-  V(UnderComplexImag, "_complex_imag")                                         \
-  V(UnderComplexNew, "_complex_new")                                           \
-  V(UnderComplexNewFromStr, "_complex_new_from_str")                           \
-  V(UnderComplexReal, "_complex_real")                                         \
-  V(UnderCreateDynamic, "_create_dynamic")                                     \
-  V(UnderCreated, "_created")                                                  \
-  V(UnderDecodedChars, "_decoded_chars")                                       \
-  V(UnderDecodedCharsUsed, "_decoded_chars_used")                              \
-  V(UnderDecoder, "_decoder")                                                  \
-  V(UnderDescrclassmethod, "_descrclassmethod")                                \
-  V(UnderDictBucketInsert, "_dict_bucket_insert")                              \
-  V(UnderDictBucketKey, "_dict_bucket_key")                                    \
-  V(UnderDictBucketSetValue, "_dict_bucket_set_value")                         \
-  V(UnderDictBucketValue, "_dict_bucket_value")                                \
-  V(UnderDictCheck, "_dict_check")                                             \
-  V(UnderDictCheckExact, "_dict_check_exact")                                  \
-  V(UnderDictGet, "_dict_get")                                                 \
-  V(UnderDictGetitem, "_dict_getitem")                                         \
-  V(UnderDictGuard, "_dict_guard")                                             \
-  V(UnderDictLen, "_dict_len")                                                 \
-  V(UnderDictLookup, "_dict_lookup")                                           \
-  V(UnderDictLookupNext, "_dict_lookup_next")                                  \
-  V(UnderDictPopitem, "_dict_popitem")                                         \
-  V(UnderDictSetitem, "_dict_setitem")                                         \
-  V(UnderDictUpdate, "_dict_update")                                           \
-  V(UnderDivmod, "_divmod")                                                    \
-  V(UnderEncoder, "_encoder")                                                  \
-  V(UnderEncoding, "_encoding")                                                \
-  V(UnderErrors, "_errors")                                                    \
-  V(UnderEscapeDecode, "_escape_decode")                                       \
-  V(UnderEscapeDecodeStateful, "_escape_decode_stateful")                      \
-  V(UnderExceptionNew, "_exception_new")                                       \
-  V(UnderExec, "_exec")                                                        \
-  V(UnderFd, "_fd")                                                            \
-  V(UnderFinishSetup, "_finish_setup")                                         \
-  V(UnderFloat, "_float")                                                      \
-  V(UnderFloatCheck, "_float_check")                                           \
-  V(UnderFloatCheckExact, "_float_check_exact")                                \
-  V(UnderFloatDivmod, "_float_divmod")                                         \
-  V(UnderFloatFormat, "_float_format")                                         \
-  V(UnderFloatGuard, "_float_guard")                                           \
-  V(UnderFloatNewFromByteslike, "_float_new_from_byteslike")                   \
-  V(UnderFloatNewFromFloat, "_float_new_from_float")                           \
-  V(UnderFloatNewFromStr, "_float_new_from_str")                               \
-  V(UnderFloatSignbit, "_float_signbit")                                       \
-  V(UnderFrozenImportlib, "_frozen_importlib")                                 \
-  V(UnderFrozenImportlibExternal, "_frozen_importlib_external")                \
-  V(UnderFrozensetCheck, "_frozenset_check")                                   \
-  V(UnderFrozensetGuard, "_frozenset_guard")                                   \
-  V(UnderFunctionGlobals, "_function_globals")                                 \
-  V(UnderFunctionGuard, "_function_guard")                                     \
-  V(UnderGc, "_gc")                                                            \
-  V(UnderGetframeFunction, "_getframe_function")                               \
-  V(UnderGetframeLineno, "_getframe_lineno")                                   \
-  V(UnderGetframeLocals, "_getframe_locals")                                   \
-  V(UnderGetMemberByte, "_get_member_byte")                                    \
-  V(UnderGetMemberChar, "_get_member_char")                                    \
-  V(UnderGetMemberDouble, "_get_member_double")                                \
-  V(UnderGetMemberFloat, "_get_member_float")                                  \
-  V(UnderGetMemberInt, "_get_member_int")                                      \
-  V(UnderGetMemberLong, "_get_member_long")                                    \
-  V(UnderGetMemberPyobject, "_get_member_pyobject")                            \
-  V(UnderGetMemberShort, "_get_member_short")                                  \
-  V(UnderGetMemberString, "_get_member_string")                                \
-  V(UnderGetMemberUbyte, "_get_member_ubyte")                                  \
-  V(UnderGetMemberUint, "_get_member_uint")                                    \
-  V(UnderGetMemberUlong, "_get_member_ulong")                                  \
-  V(UnderGetMemberUshort, "_get_member_ushort")                                \
-  V(UnderHasRead1, "_has_read1")                                               \
-  V(UnderHashInfo, "_HashInfo")                                                \
-  V(UnderImp, "_imp")                                                          \
-  V(UnderInit, "_init")                                                        \
-  V(UnderIndex, "_index")                                                      \
-  V(UnderInstanceDelattr, "_instance_delattr")                                 \
-  V(UnderInstanceGetattr, "_instance_getattr")                                 \
-  V(UnderInstanceGuard, "_instance_guard")                                     \
-  V(UnderInstanceOverflowDict, "_instance_overflow_dict")                      \
-  V(UnderInstanceSetattr, "_instance_setattr")                                 \
-  V(UnderInt, "_int")                                                          \
-  V(UnderIntCheck, "_int_check")                                               \
-  V(UnderIntCheckExact, "_int_check_exact")                                    \
-  V(UnderIntFromBytes, "_int_from_bytes")                                      \
-  V(UnderIntGuard, "_int_guard")                                               \
-  V(UnderIntNewFromBytearray, "_int_new_from_bytearray")                       \
-  V(UnderIntNewFromBytes, "_int_new_from_bytes")                               \
-  V(UnderIntNewFromInt, "_int_new_from_int")                                   \
-  V(UnderIntNewFromStr, "_int_new_from_str")                                   \
-  V(UnderIOBase, "_IOBase")                                                    \
-  V(UnderIo, "_io")                                                            \
-  V(UnderIter, "_iter")                                                        \
-  V(UnderLatin1Decode, "_latin_1_decode")                                      \
-  V(UnderLatin1Encode, "_latin_1_encode")                                      \
-  V(UnderLineBuffering, "_line_buffering")                                     \
-  V(UnderListCheck, "_list_check")                                             \
-  V(UnderListCheckExact, "_list_check_exact")                                  \
-  V(UnderListDelitem, "_list_delitem")                                         \
-  V(UnderListDelslice, "_list_delslice")                                       \
-  V(UnderListExtend, "_list_extend")                                           \
-  V(UnderListGetitem, "_list_getitem")                                         \
-  V(UnderListGetslice, "_list_getslice")                                       \
-  V(UnderListGuard, "_list_guard")                                             \
-  V(UnderListLen, "_list_len")                                                 \
-  V(UnderListNew, "_list_new")                                                 \
-  V(UnderListSetitem, "_list_setitem")                                         \
-  V(UnderListSetslice, "_list_setslice")                                       \
-  V(UnderListSort, "_list_sort")                                               \
-  V(UnderListSwap, "_list_swap")                                               \
-  V(UnderLookupText, "_lookup_text")                                           \
-  V(UnderLt, "_lt")                                                            \
-  V(UnderMappingproxyGuard, "_mappingproxy_guard")                             \
-  V(UnderMappingproxyMapping, "_mappingproxy_mapping")                         \
-  V(UnderMappingproxySetMapping, "_mappingproxy_set_mapping")                  \
-  V(UnderMemoryviewCheck, "_memoryview_check")                                 \
-  V(UnderMemoryviewGuard, "_memoryview_guard")                                 \
-  V(UnderMemoryviewItemsize, "_memoryview_itemsize")                           \
-  V(UnderMemoryviewNbytes, "_memoryview_nbytes")                               \
-  V(UnderMemoryviewSetitem, "_memoryview_setitem")                             \
-  V(UnderMemoryviewSetslice, "_memoryview_setslice")                           \
-  V(UnderModuleDir, "_module_dir")                                             \
-  V(UnderModuleProxy, "_module_proxy")                                         \
-  V(UnderModuleProxyCheck, "_module_proxy_check")                              \
-  V(UnderModuleProxyDelitem, "_module_proxy_delitem")                          \
-  V(UnderModuleProxyGet, "_module_proxy_get")                                  \
-  V(UnderModuleProxyGuard, "_module_proxy_guard")                              \
-  V(UnderModuleProxyKeys, "_module_proxy_keys")                                \
-  V(UnderModuleProxyLen, "_module_proxy_len")                                  \
-  V(UnderModuleProxySetitem, "_module_proxy_setitem")                          \
-  V(UnderModuleProxyValues, "_module_proxy_values")                            \
-  V(UnderMutableBytes, "_mutablebytes")                                        \
-  V(UnderMutableTuple, "_mutabletuple")                                        \
-  V(UnderNewMemberGetBool, "_new_member_get_bool")                             \
-  V(UnderNewMemberGetByte, "_new_member_get_byte")                             \
-  V(UnderNewMemberGetChar, "_new_member_get_char")                             \
-  V(UnderNewMemberGetDouble, "_new_member_get_double")                         \
-  V(UnderNewMemberGetFloat, "_new_member_get_float")                           \
-  V(UnderNewMemberGetInt, "_new_member_get_int")                               \
-  V(UnderNewMemberGetLong, "_new_member_get_long")                             \
-  V(UnderNewMemberGetPyobject, "_new_member_get_pyobject")                     \
-  V(UnderNewMemberGetShort, "_new_member_get_short")                           \
-  V(UnderNewMemberGetString, "_new_member_get_string")                         \
-  V(UnderNewMemberGetUbyte, "_new_member_get_ubyte")                           \
-  V(UnderNewMemberGetUint, "_new_member_get_uint")                             \
-  V(UnderNewMemberGetUlong, "_new_member_get_ulong")                           \
-  V(UnderNewMemberGetUshort, "_new_member_get_ushort")                         \
-  V(UnderNewMemberSetBool, "_new_member_set_bool")                             \
-  V(UnderNewMemberSetChar, "_new_member_set_char")                             \
-  V(UnderNewMemberSetDouble, "_new_member_set_double")                         \
-  V(UnderNewMemberSetFloat, "_new_member_set_float")                           \
-  V(UnderNewMemberSetIntegral, "_new_member_set_integral")                     \
-  V(UnderNewMemberSetPyobject, "_new_member_set_pyobject")                     \
-  V(UnderNewMemberSetReadonly, "_new_member_set_readonly")                     \
-  V(UnderNewMemberSetReadonlyStrings, "_new_member_set_readonly_strings")      \
-  V(UnderNumberCheck, "_number_check")                                         \
-  V(UnderObjectKeys, "_object_keys")                                           \
-  V(UnderObjectTypeGetattr, "_object_type_getattr")                            \
-  V(UnderObjectTypeHasattr, "_object_type_hasattr")                            \
-  V(UnderOs, "_os")                                                            \
-  V(UnderOsWrite, "_os_write")                                                 \
-  V(UnderPatch, "_patch")                                                      \
-  V(UnderPendingcr, "_pendingcr")                                              \
-  V(UnderPos, "_pos")                                                          \
-  V(UnderProperty, "_property")                                                \
-  V(UnderPropertyIsabstract, "_property_isabstract")                           \
-  V(UnderPyobjectOffset, "_pyobject_offset")                                   \
-  V(UnderPythonPath, "_python_path")                                           \
-  V(UnderRangeCheck, "_range_check")                                           \
-  V(UnderRangeGuard, "_range_guard")                                           \
-  V(UnderRangeLen, "_range_len")                                               \
-  V(UnderRaw, "_raw")                                                          \
-  V(UnderRawIOBase, "_RawIOBase")                                              \
-  V(UnderReadBuf, "_read_buf")                                                 \
-  V(UnderReadLock, "_read_lock")                                               \
-  V(UnderReadNull, "_read_null")                                               \
-  V(UnderReadPos, "_read_pos")                                                 \
-  V(UnderReadable, "_readable")                                                \
-  V(UnderReader, "_reader")                                                    \
-  V(UnderReadnl, "_readnl")                                                    \
-  V(UnderReadtranslate, "_readtranslate")                                      \
-  V(UnderReaduniversal, "_readuniversal")                                      \
-  V(UnderReprEnter, "_repr_enter")                                             \
-  V(UnderReprLeave, "_repr_leave")                                             \
-  V(UnderRunModuleAsMain, "_run_module_as_main")                               \
-  V(UnderSeekable, "_seekable")                                                \
-  V(UnderSeennl, "_seennl")                                                    \
-  V(UnderSeqIndex, "_seq_index")                                               \
-  V(UnderSeqIterable, "_seq_iterable")                                         \
-  V(UnderSeqSetIndex, "_seq_set_index")                                        \
-  V(UnderSeqSetIterable, "_seq_set_iterable")                                  \
-  V(UnderSetCheck, "_set_check")                                               \
-  V(UnderSetGuard, "_set_guard")                                               \
-  V(UnderSetLen, "_set_len")                                                   \
-  V(UnderSetMemberDouble, "_set_member_double")                                \
-  V(UnderSetMemberFloat, "_set_member_float")                                  \
-  V(UnderSetMemberIntegral, "_set_member_integral")                            \
-  V(UnderSetMemberPyobject, "_set_member_pyobject")                            \
-  V(UnderSigabrt, "_sigabrt")                                                  \
-  V(UnderSigfpe, "_sigfpe")                                                    \
-  V(UnderSignal, "_signal")                                                    \
-  V(UnderSigsegv, "_sigsegv")                                                  \
-  V(UnderSliceCheck, "_slice_check")                                           \
-  V(UnderSliceGuard, "_slice_guard")                                           \
-  V(UnderSliceIndex, "_slice_index")                                           \
-  V(UnderSliceIndexNotNone, "_slice_index_not_none")                           \
-  V(UnderSliceStart, "_slice_start")                                           \
-  V(UnderSliceStartLong, "_slice_start_long")                                  \
-  V(UnderSliceStep, "_slice_step")                                             \
-  V(UnderSliceStepLong, "_slice_step_long")                                    \
-  V(UnderSliceStop, "_slice_stop")                                             \
-  V(UnderSliceStopLong, "_slice_stop_long")                                    \
-  V(UnderSnapshot, "_snapshot")                                                \
-  V(UnderStaticmethodIsabstract, "_staticmethod_isabstract")                   \
-  V(UnderStderrFd, "_stderr_fd")                                               \
-  V(UnderStdinFd, "_stdin_fd")                                                 \
-  V(UnderStdoutFd, "_stdout_fd")                                               \
-  V(UnderStopIterationCtor, "_stop_iteration_ctor")                            \
-  V(UnderStrarray, "_strarray")                                                \
-  V(UnderStrarrayClear, "_strarray_clear")                                     \
-  V(UnderStrarrayCtor, "_strarray_ctor")                                       \
-  V(UnderStrarrayIadd, "_strarray_iadd")                                       \
-  V(UnderStrCheck, "_str_check")                                               \
-  V(UnderStrCheckExact, "_str_check_exact")                                    \
-  V(UnderStrCompareDigest, "_str_compare_digest")                              \
-  V(UnderStrCount, "_str_count")                                               \
-  V(UnderStrEncode, "_str_encode")                                             \
-  V(UnderStrEncodeASCII, "_str_encode_ascii")                                  \
-  V(UnderStrEndswith, "_str_endswith")                                         \
-  V(UnderStrEscapeNonAscii, "_str_escape_non_ascii")                           \
-  V(UnderStrFind, "_str_find")                                                 \
-  V(UnderStrFromStr, "_str_from_str")                                          \
-  V(UnderStrGetitem, "_str_getitem")                                           \
-  V(UnderStrGetslice, "_str_getslice")                                         \
-  V(UnderStrGuard, "_str_guard")                                               \
-  V(UnderStringIOClosedGuard, "_StringIO_closed_guard")                        \
-  V(UnderStrIschr, "_str_ischr")                                               \
-  V(UnderStrJoin, "_str_join")                                                 \
-  V(UnderStrLen, "_str_len")                                                   \
-  V(UnderStrMod, "_str_mod")                                                   \
-  V(UnderStrModFastPath, "_str_mod_fast_path")                                 \
-  V(UnderStrPartition, "_str_partition")                                       \
-  V(UnderStrReplace, "_str_replace")                                           \
-  V(UnderStrRfind, "_str_rfind")                                               \
-  V(UnderStrRpartition, "_str_rpartition")                                     \
-  V(UnderStrSplit, "_str_split")                                               \
-  V(UnderStrSplitlines, "_str_splitlines")                                     \
-  V(UnderStrStartswith, "_str_startswith")                                     \
-  V(UnderStructseqField, "_structseq_field")                                   \
-  V(UnderStructseqFieldNames, "_structseq_field_names")                        \
-  V(UnderStructseqGetitem, "_structseq_getitem")                               \
-  V(UnderStructseqNew, "_structseq_new")                                       \
-  V(UnderStructseqRepr, "_structseq_repr")                                     \
-  V(UnderTelling, "_telling")                                                  \
-  V(UnderTextIOBase, "_TextIOBase")                                            \
-  V(UnderThread, "_thread")                                                    \
-  V(UnderTupleCheck, "_tuple_check")                                           \
-  V(UnderTupleCheckExact, "_tuple_check_exact")                                \
-  V(UnderTupleGetitem, "_tuple_getitem")                                       \
-  V(UnderTupleGetslice, "_tuple_getslice")                                     \
-  V(UnderTupleGuard, "_tuple_guard")                                           \
-  V(UnderTupleLen, "_tuple_len")                                               \
-  V(UnderTupleNew, "_tuple_new")                                               \
-  V(UnderTraceback, "_traceback")                                              \
-  V(UnderTranslate, "_translate")                                              \
-  V(UnderType, "_type")                                                        \
-  V(UnderTypeAbstractmethodsDel, "_type_abstractmethods_del")                  \
-  V(UnderTypeAbstractmethodsGet, "_type_abstractmethods_get")                  \
-  V(UnderTypeAbstractmethodsSet, "_type_abstractmethods_set")                  \
-  V(UnderTypeBasesDel, "_type_bases_del")                                      \
-  V(UnderTypeBasesGet, "_type_bases_get")                                      \
-  V(UnderTypeBasesSet, "_type_bases_set")                                      \
-  V(UnderTypeCheck, "_type_check")                                             \
-  V(UnderTypeCheckExact, "_type_check_exact")                                  \
-  V(UnderTypecode, "_typecode")                                                \
-  V(UnderTypeDunderCall, "_type_dunder_call")                                  \
-  V(UnderTypeGuard, "_type_guard")                                             \
-  V(UnderTypeInit, "_type_init")                                               \
-  V(UnderTypeIssubclass, "_type_issubclass")                                   \
-  V(UnderTypeNew, "_type_new")                                                 \
-  V(UnderTypeProxy, "_type_proxy")                                             \
-  V(UnderTypeProxyCheck, "_type_proxy_check")                                  \
-  V(UnderTypeProxyGet, "_type_proxy_get")                                      \
-  V(UnderTypeProxyGuard, "_type_proxy_guard")                                  \
-  V(UnderTypeProxyKeys, "_type_proxy_keys")                                    \
-  V(UnderTypeProxyLen, "_type_proxy_len")                                      \
-  V(UnderTypeProxyValues, "_type_proxy_values")                                \
-  V(UnderTypeSubclassGuard, "_type_subclass_guard")                            \
-  V(UnderUnbound, "_Unbound")                                                  \
-  V(UnderUnicodeEscapeDecode, "_unicode_escape_decode")                        \
-  V(UnderUnicodeEscapeDecodeStateful, "_unicode_escape_decode_stateful")       \
-  V(UnderUnimplemented, "_unimplemented")                                      \
-  V(UnderUpdatePath, "_updatepath")                                            \
-  V(UnderUtf16Encode, "_utf_16_encode")                                        \
-  V(UnderUtf32Encode, "_utf_32_encode")                                        \
-  V(UnderUtf8Decode, "_utf_8_decode")                                          \
-  V(UnderUtf8Encode, "_utf_8_encode")                                          \
-  V(UnderValgrind, "_valgrind")                                                \
-  V(UnderVersionInfo, "_VersionInfo")                                          \
-  V(UnderWarn, "_warn")                                                        \
-  V(UnderWarnings, "_warnings")                                                \
-  V(UnderWeakLink, "_weaklink")                                                \
-  V(UnderWeakref, "_weakref")                                                  \
-  V(UnderWeakrefCallback, "_weakref_callback")                                 \
-  V(UnderWeakrefCheck, "_weakref_check")                                       \
-  V(UnderWeakrefGuard, "_weakref_guard")                                       \
-  V(UnderWeakrefReferent, "_weakref_referent")                                 \
-  V(UnderWritable, "_writable")                                                \
-  V(UnderWriteBuf, "_write_buf")                                               \
-  V(UnderWriteLock, "_write_lock")                                             \
-  V(UnderWritenl, "_writenl")                                                  \
-  V(UnderWritetranslate, "_writetranslate")                                    \
-  V(Abs, "abs")                                                                \
-  V(AcquireLock, "acquire_lock")                                               \
-  V(Add, "add")                                                                \
-  V(AndUnder, "and_")                                                          \
-  V(Append, "append")                                                          \
-  V(Args, "args")                                                              \
-  V(Argv, "argv")                                                              \
-  V(ArithmeticError, "ArithmeticError")                                        \
-  V(Array, "array")                                                            \
-  V(Ascii, "ascii")                                                            \
-  V(AsciiDecode, "ascii_decode")                                               \
-  V(AsciiEncode, "ascii_encode")                                               \
-  V(AssertionError, "AssertionError")                                          \
-  V(AsyncGenerator, "async_generator")                                         \
-  V(AttributeError, "AttributeError")                                          \
-  V(BaseException, "BaseException")                                            \
-  V(Big, "big")                                                                \
-  V(Bin, "bin")                                                                \
-  V(BitLength, "bit_length")                                                   \
-  V(BlockingIOError, "BlockingIOError")                                        \
-  V(Bool, "bool")                                                              \
-  V(BrokenPipeError, "BrokenPipeError")                                        \
-  V(BufferError, "BufferError")                                                \
-  V(BufferSize, "buffer_size")                                                 \
-  V(BufferedRandom, "BufferedRandom")                                          \
-  V(BufferedReader, "BufferedReader")                                          \
-  V(BufferedWriter, "BufferedWriter")                                          \
-  V(BuiltinModuleNames, "builtin_module_names")                                \
-  V(Builtins, "builtins")                                                      \
-  V(Bytearray, "bytearray")                                                    \
-  V(BytearrayIterator, "bytearray_iterator")                                   \
-  V(Byteorder, "byteorder")                                                    \
-  V(Bytes, "bytes")                                                            \
-  V(BytesIO, "BytesIO")                                                        \
-  V(BytesIterator, "bytes_iterator")                                           \
-  V(BytesWarning, "BytesWarning")                                              \
-  V(Callable, "callable")                                                      \
-  V(CallableIterator, "callable_iterator")                                     \
-  V(CallgrindDumpStats, "callgrind_dump_stats")                                \
-  V(CallgrindStartInstrumentation, "callgrind_start_instrumentation")          \
-  V(CallgrindStopInstrumentation, "callgrind_stop_instrumentation")            \
-  V(CallgrindZeroStats, "callgrind_zero_stats")                                \
-  V(Cast, "cast")                                                              \
-  V(ChildProcessError, "ChildProcessError")                                    \
-  V(Chr, "chr")                                                                \
-  V(Classmethod, "classmethod")                                                \
-  V(Clear, "clear")                                                            \
-  V(Close, "close")                                                            \
-  V(CoArgcount, "co_argcount")                                                 \
-  V(CoCellvars, "co_cellvars")                                                 \
-  V(CoCode, "co_code")                                                         \
-  V(CoConsts, "co_consts")                                                     \
-  V(CoFilename, "co_filename")                                                 \
-  V(CoFirstlineno, "co_firstlineno")                                           \
-  V(CoFlags, "co_flags")                                                       \
-  V(CoFreevars, "co_freevars")                                                 \
-  V(CoKwonlyargcount, "co_kwonlyargcount")                                     \
-  V(CoLnotab, "co_lnotab")                                                     \
-  V(CoName, "co_name")                                                         \
-  V(CoNames, "co_names")                                                       \
-  V(CoNlocals, "co_nlocals")                                                   \
-  V(CoPosonlyargcount, "co_posonlyargcount")                                   \
-  V(CoStacksize, "co_stacksize")                                               \
-  V(CoVarnames, "co_varnames")                                                 \
-  V(Code, "code")                                                              \
-  V(Compile, "compile")                                                        \
-  V(Complex, "complex")                                                        \
-  V(Conjugate, "conjugate")                                                    \
-  V(ConnectionAbortedError, "ConnectionAbortedError")                          \
-  V(ConnectionError, "ConnectionError")                                        \
-  V(ConnectionRefusedError, "ConnectionRefusedError")                          \
-  V(ConnectionResetError, "ConnectionResetError")                              \
-  V(Contains, "contains")                                                      \
-  V(Copy, "copy")                                                              \
-  V(Coroutine, "coroutine")                                                    \
-  V(CountOf, "countOf")                                                        \
-  V(CrRunning, "cr_running")                                                   \
-  V(CreateBuiltin, "create_builtin")                                           \
-  V(Decode, "decode")                                                          \
-  V(Delattr, "delattr")                                                        \
-  V(Deleter, "deleter")                                                        \
-  V(DeprecationWarning, "DeprecationWarning")                                  \
-  V(Dict, "dict")                                                              \
-  V(DictItemIterator, "dict_itemiterator")                                     \
-  V(DictItems, "dict_items")                                                   \
-  V(DictKeyIterator, "dict_keyiterator")                                       \
-  V(DictKeys, "dict_keys")                                                     \
-  V(DictValueIterator, "dict_valueiterator")                                   \
-  V(DictValues, "dict_values")                                                 \
-  V(Dir, "dir")                                                                \
-  V(Disable, "disable")                                                        \
-  V(Discard, "discard")                                                        \
-  V(Displayhook, "displayhook")                                                \
-  V(Divmod, "divmod")                                                          \
-  V(Dummy, "dummy")                                                            \
-  V(DumpTraceback, "dump_traceback")                                           \
-  V(EOFError, "EOFError")                                                      \
-  V(Ellipsis, "ellipsis")                                                      \
-  V(Enable, "enable")                                                          \
-  V(Encode, "encode")                                                          \
-  V(Encoding, "encoding")                                                      \
-  V(End, "end")                                                                \
-  V(Eval, "eval")                                                              \
-  V(ExcInfo, "exc_info")                                                       \
-  V(Excepthook, "excepthook")                                                  \
-  V(Exception, "Exception")                                                    \
-  V(ExceptionState, "ExceptionState")                                          \
-  V(Exec, "exec")                                                              \
-  V(ExecBuiltin, "exec_builtin")                                               \
-  V(ExecDynamic, "exec_dynamic")                                               \
-  V(Executable, "executable")                                                  \
-  V(Extend, "extend")                                                          \
-  V(ExtensionSuffixes, "extension_suffixes")                                   \
-  V(False, "False")                                                            \
-  V(Faulthandler, "faulthandler")                                              \
-  V(FileIO, "FileIO")                                                          \
-  V(FileExistsError, "FileExistsError")                                        \
-  V(FileNotFoundError, "FileNotFoundError")                                    \
-  V(Filename, "filename")                                                      \
-  V(Fileno, "fileno")                                                          \
-  V(FixCoFilename, "_fix_co_filename")                                         \
-  V(Float, "float")                                                            \
-  V(FloatingPointError, "FloatingPointError")                                  \
-  V(Floordiv, "floordiv")                                                      \
-  V(Flush, "flush")                                                            \
-  V(Format, "format")                                                          \
-  V(Frame, "frame")                                                            \
-  V(Frozenset, "frozenset")                                                    \
-  V(FstatSize, "fstat_size")                                                   \
-  V(Ftruncate, "ftruncate")                                                    \
-  V(Function, "function")                                                      \
-  V(FutureWarning, "FutureWarning")                                            \
-  V(Generator, "generator")                                                    \
-  V(GeneratorExit, "GeneratorExit")                                            \
-  V(GetFrozenObject, "get_frozen_object")                                      \
-  V(GetSizeOf, "getsizeof")                                                    \
-  V(Getattr, "getattr")                                                        \
-  V(Getter, "getter")                                                          \
-  V(Getvalue, "getvalue")                                                      \
-  V(GiRunning, "gi_running")                                                   \
-  V(Hasattr, "hasattr")                                                        \
-  V(Hash, "hash")                                                              \
-  V(HashInfo, "hash_info")                                                     \
-  V(Hex, "hex")                                                                \
-  V(Iadd, "iadd")                                                              \
-  V(Iand, "iand")                                                              \
-  V(Iconcat, "iconcat")                                                        \
-  V(Id, "id")                                                                  \
-  V(Ifloordiv, "ifloordiv")                                                    \
-  V(Ignore, "ignore")                                                          \
-  V(Ilshift, "ilshift")                                                        \
-  V(Imatmul, "imatmul")                                                        \
-  V(Imod, "imod")                                                              \
-  V(ImportError, "ImportError")                                                \
-  V(ImportWarning, "ImportWarning")                                            \
-  V(Imul, "imul")                                                              \
-  V(IncrementalNewlineDecoder, "IncrementalNewlineDecoder")                    \
-  V(IndentationError, "IndentationError")                                      \
-  V(IndexError, "IndexError")                                                  \
-  V(IndexOf, "indexOf")                                                        \
-  V(Insert, "insert")                                                          \
-  V(Instance, "instance")                                                      \
-  V(InstanceProxy, "instance_proxy")                                           \
-  V(Int, "int")                                                                \
-  V(InterruptedError, "InterruptedError")                                      \
-  V(Intersection, "intersection")                                              \
-  V(Invert, "invert")                                                          \
-  V(Ior, "ior")                                                                \
-  V(Ipow, "ipow")                                                              \
-  V(Irepeat, "irepeat")                                                        \
-  V(Irshift, "irshift")                                                        \
-  V(IsADirectoryError, "IsADirectoryError")                                    \
-  V(IsBuiltin, "is_builtin")                                                   \
-  V(Isdir, "isdir")                                                            \
-  V(Isdisjoint, "isdisjoint")                                                  \
-  V(IsEnabled, "is_enabled")                                                   \
-  V(IsFrozen, "is_frozen")                                                     \
-  V(IsFrozenPackage, "is_frozen_package")                                      \
-  V(Isinstance, "isinstance")                                                  \
-  V(Issubclass, "issubclass")                                                  \
-  V(Isalnum, "isalnum")                                                        \
-  V(Isalpha, "isalpha")                                                        \
-  V(Isatty, "isatty")                                                          \
-  V(Isdecimal, "isdecimal")                                                    \
-  V(Isdigit, "isdigit")                                                        \
-  V(Isidentifier, "isidentifier")                                              \
-  V(Islower, "islower")                                                        \
-  V(Isnumeric, "isnumeric")                                                    \
-  V(Isprintable, "isprintable")                                                \
-  V(Isspace, "isspace")                                                        \
-  V(Istitle, "istitle")                                                        \
-  V(Isupper, "isupper")                                                        \
-  V(Isub, "isub")                                                              \
-  V(Items, "items")                                                            \
-  V(Itruediv, "itruediv")                                                      \
-  V(Ixor, "ixor")                                                              \
-  V(Join, "join")                                                              \
-  V(Key, "key")                                                                \
-  V(KeyError, "KeyError")                                                      \
-  V(KeyboardInterrupt, "KeyboardInterrupt")                                    \
-  V(Keys, "keys")                                                              \
-  V(Kwargs, "kwargs")                                                          \
-  V(LStrip, "lstrip")                                                          \
-  V(LargeBytes, "largebytes")                                                  \
-  V(LargeInt, "largeint")                                                      \
-  V(LargeStr, "largestr")                                                      \
-  V(LastTraceback, "last_traceback")                                           \
-  V(LastType, "last_type")                                                     \
-  V(LastValue, "last_value")                                                   \
-  V(Latin1Decode, "latin_1_decode")                                            \
-  V(Latin1Encode, "latin_1_encode")                                            \
-  V(Layout, "layout")                                                          \
-  V(Len, "len")                                                                \
-  V(Lineno, "lineno")                                                          \
-  V(List, "list")                                                              \
-  V(ListIterator, "list_iterator")                                             \
-  V(Little, "little")                                                          \
-  V(Loads, "loads")                                                            \
-  V(LongRangeIterator, "longrange_iterator")                                   \
-  V(LookupError, "LookupError")                                                \
-  V(Lower, "lower")                                                            \
-  V(Lseek, "lseek")                                                            \
-  V(Lshift, "lshift")                                                          \
-  V(Marshal, "marshal")                                                        \
-  V(Matmul, "matmul")                                                          \
-  V(Maxsize, "maxsize")                                                        \
-  V(Maxunicode, "maxunicode")                                                  \
-  V(MemoryError, "MemoryError")                                                \
-  V(Mappingproxy, "mappingproxy")                                              \
-  V(MemoryView, "memoryview")                                                  \
-  V(Method, "method")                                                          \
-  V(Mod, "mod")                                                                \
-  V(Mode, "mode")                                                              \
-  V(Module, "module")                                                          \
-  V(ModuleProxy, "module_proxy")                                               \
-  V(ModuleNotFoundError, "ModuleNotFoundError")                                \
-  V(Modules, "modules")                                                        \
-  V(Mro, "mro")                                                                \
-  V(Msg, "msg")                                                                \
-  V(Mul, "mul")                                                                \
-  V(NFields, "n_fields")                                                       \
-  V(NSequenceFields, "n_sequence_fields")                                      \
-  V(NUnnamedFields, "n_unnamed_fields")                                        \
-  V(Name, "name")                                                              \
-  V(NameError, "NameError")                                                    \
-  V(Neg, "neg")                                                                \
-  V(None, "None")                                                              \
-  V(NoneType, "NoneType")                                                      \
-  V(NotADirectoryError, "NotADirectoryError")                                  \
-  V(NotImplemented, "NotImplemented")                                          \
-  V(NotImplementedError, "NotImplementedError")                                \
-  V(NotImplementedType, "NotImplementedType")                                  \
-  V(Nsig, "NSIG")                                                              \
-  V(OSError, "OSError")                                                        \
-  V(Object, "object")                                                          \
-  V(Oct, "oct")                                                                \
-  V(Offset, "offset")                                                          \
-  V(Open, "open")                                                              \
-  V(Operator, "operator")                                                      \
-  V(OrUnder, "or_")                                                            \
-  V(Ord, "ord")                                                                \
-  V(OverflowError, "OverflowError")                                            \
-  V(Owner, "owner")                                                            \
-  V(ParseMode, "parse_mode")                                                   \
-  V(Partition, "partition")                                                    \
-  V(Path, "path")                                                              \
-  V(PendingDeprecationWarning, "PendingDeprecationWarning")                    \
-  V(PermissionError, "PermissionError")                                        \
-  V(Platform, "platform")                                                      \
-  V(Pop, "pop")                                                                \
-  V(Pos, "pos")                                                                \
-  V(Pow, "pow")                                                                \
-  V(PrintFileAndLine, "print_file_and_line")                                   \
-  V(ProcessLookupError, "ProcessLookupError")                                  \
-  V(Property, "property")                                                      \
-  V(Proxy, "proxy")                                                            \
-  V(Rpartition, "rpartition")                                                  \
-  V(RSplit, "rsplit")                                                          \
-  V(RStrip, "rstrip")                                                          \
-  V(Range, "range")                                                            \
-  V(RangeIterator, "range_iterator")                                           \
-  V(Read, "read")                                                              \
-  V(Readall, "readall")                                                        \
-  V(Readline, "readline")                                                      \
-  V(Readonly, "readonly")                                                      \
-  V(Reason, "reason")                                                          \
-  V(RecursionError, "RecursionError")                                          \
-  V(Ref, "ref")                                                                \
-  V(ReferenceError, "ReferenceError")                                          \
-  V(ReleaseLock, "release_lock")                                               \
-  V(Remove, "remove")                                                          \
-  V(Replace, "replace")                                                        \
-  V(Repr, "repr")                                                              \
-  V(ResourceWarning, "ResourceWarning")                                        \
-  V(Rshift, "rshift")                                                          \
-  V(Runpy, "runpy")                                                            \
-  V(RuntimeError, "RuntimeError")                                              \
-  V(RuntimeWarning, "RuntimeWarning")                                          \
-  V(Self, "self")                                                              \
-  V(Send, "send")                                                              \
-  V(SeqIterator, "iterator")                                                   \
-  V(Set, "set")                                                                \
-  V(SetIterator, "set_iterator")                                               \
-  V(SetNoinheritable, "set_noinheritable")                                     \
-  V(Setattr, "setattr")                                                        \
-  V(Setter, "setter")                                                          \
-  V(SigDfl, "SIG_DFL")                                                         \
-  V(SigIgn, "SIG_IGN")                                                         \
-  V(SimpleNamespace, "SimpleNamespace")                                        \
-  V(Single, "single")                                                          \
-  V(Siphash24, "siphash24")                                                    \
-  V(Slice, "slice")                                                            \
-  V(SmallBytes, "smallbytes")                                                  \
-  V(SmallInt, "smallint")                                                      \
-  V(SmallStr, "smallstr")                                                      \
-  V(Sorted, "sorted")                                                          \
-  V(SourceFileLoader, "SourceFileLoader")                                      \
-  V(SourcelessFileLoader, "SourcelessFileLoader")                              \
-  V(Split, "split")                                                            \
-  V(Start, "start")                                                            \
-  V(Staticmethod, "staticmethod")                                              \
-  V(Stderr, "stderr")                                                          \
-  V(Stdin, "stdin")                                                            \
-  V(Stdout, "stdout")                                                          \
-  V(Step, "step")                                                              \
-  V(Stop, "stop")                                                              \
-  V(StringIO, "StringIO")                                                      \
-  V(StopAsyncIteration, "StopAsyncIteration")                                  \
-  V(StopIteration, "StopIteration")                                            \
-  V(Str, "str")                                                                \
-  V(StrIterator, "str_iterator")                                               \
-  V(Strict, "strict")                                                          \
-  V(StrictErrors, "strict_errors")                                             \
-  V(Strip, "strip")                                                            \
-  V(Sub, "sub")                                                                \
-  V(Super, "super")                                                            \
-  V(Surrogateescape, "surrogateescape")                                        \
-  V(SyntaxError, "SyntaxError")                                                \
-  V(SyntaxWarning, "SyntaxWarning")                                            \
-  V(Sys, "sys")                                                                \
-  V(SystemError, "SystemError")                                                \
-  V(SystemExit, "SystemExit")                                                  \
-  V(TabError, "TabError")                                                      \
-  V(Text, "text")                                                              \
-  V(TextIOWrapper, "TextIOWrapper")                                            \
-  V(Throw, "throw")                                                            \
-  V(Time, "time")                                                              \
-  V(TimeoutError, "TimeoutError")                                              \
-  V(Title, "title")                                                            \
-  V(ToBytes, "to_bytes")                                                       \
-  V(Traceback, "traceback")                                                    \
-  V(Translate, "translate")                                                    \
-  V(True, "True")                                                              \
-  V(Truediv, "truediv")                                                        \
-  V(Truncate, "truncate")                                                      \
-  V(Tuple, "tuple")                                                            \
-  V(TupleIterator, "tuple_iterator")                                           \
-  V(Type, "type")                                                              \
-  V(TypeError, "TypeError")                                                    \
-  V(TypeProxy, "type_proxy")                                                   \
-  V(UnboundLocalError, "UnboundLocalError")                                    \
-  V(UnicodeDecodeError, "UnicodeDecodeError")                                  \
-  V(UnicodeEncodeError, "UnicodeEncodeError")                                  \
-  V(UnicodeError, "UnicodeError")                                              \
-  V(UnicodeTranslateError, "UnicodeTranslateError")                            \
-  V(UnicodeWarning, "UnicodeWarning")                                          \
-  V(Update, "update")                                                          \
-  V(Upper, "upper")                                                            \
-  V(UserWarning, "UserWarning")                                                \
-  V(Utf16Encode, "utf_16_encode")                                              \
-  V(Utf32Encode, "utf_32_encode")                                              \
-  V(Utf8Decode, "utf_8_decode")                                                \
-  V(Utf8Encode, "utf_8_encode")                                                \
-  V(Value, "value")                                                            \
-  V(ValueCell, "valuecell")                                                    \
-  V(ValueError, "ValueError")                                                  \
-  V(Values, "values")                                                          \
-  V(Version, "version")                                                        \
-  V(VersionInfo, "version_info")                                               \
-  V(Warn, "warn")                                                              \
-  V(WarnExplicit, "warn_explicit")                                             \
-  V(Warning, "Warning")                                                        \
-  V(Warnings, "warnings")                                                      \
-  V(Write, "write")                                                            \
-  V(Xor, "xor")                                                                \
-  V(ZeroDivisionError, "ZeroDivisionError")
+  V(ArithmeticError)                                                           \
+  V(AssertionError)                                                            \
+  V(AttributeError)                                                            \
+  V(BaseException)                                                             \
+  V(BlockingIOError)                                                           \
+  V(BrokenPipeError)                                                           \
+  V(BufferError)                                                               \
+  V(BufferedRandom)                                                            \
+  V(BufferedReader)                                                            \
+  V(BufferedWriter)                                                            \
+  V(BytesIO)                                                                   \
+  V(BytesWarning)                                                              \
+  V(ChildProcessError)                                                         \
+  V(ConnectionAbortedError)                                                    \
+  V(ConnectionError)                                                           \
+  V(ConnectionRefusedError)                                                    \
+  V(ConnectionResetError)                                                      \
+  V(DeprecationWarning)                                                        \
+  V(EOFError)                                                                  \
+  V(Exception)                                                                 \
+  V(ExceptionState)                                                            \
+  V(False)                                                                     \
+  V(FileExistsError)                                                           \
+  V(FileIO)                                                                    \
+  V(FileNotFoundError)                                                         \
+  V(FloatingPointError)                                                        \
+  V(FutureWarning)                                                             \
+  V(GeneratorExit)                                                             \
+  V(ImportError)                                                               \
+  V(ImportWarning)                                                             \
+  V(IncrementalNewlineDecoder)                                                 \
+  V(IndentationError)                                                          \
+  V(IndexError)                                                                \
+  V(InterruptedError)                                                          \
+  V(IsADirectoryError)                                                         \
+  V(KeyError)                                                                  \
+  V(KeyboardInterrupt)                                                         \
+  V(LookupError)                                                               \
+  V(MemoryError)                                                               \
+  V(ModuleNotFoundError)                                                       \
+  V(NSIG)                                                                      \
+  V(NameError)                                                                 \
+  V(None)                                                                      \
+  V(NoneType)                                                                  \
+  V(NotADirectoryError)                                                        \
+  V(NotImplemented)                                                            \
+  V(NotImplementedError)                                                       \
+  V(NotImplementedType)                                                        \
+  V(OSError)                                                                   \
+  V(OverflowError)                                                             \
+  V(PendingDeprecationWarning)                                                 \
+  V(PermissionError)                                                           \
+  V(ProcessLookupError)                                                        \
+  V(RecursionError)                                                            \
+  V(ReferenceError)                                                            \
+  V(ResourceWarning)                                                           \
+  V(RuntimeError)                                                              \
+  V(RuntimeWarning)                                                            \
+  V(SIG_DFL)                                                                   \
+  V(SIG_IGN)                                                                   \
+  V(SimpleNamespace)                                                           \
+  V(SourceFileLoader)                                                          \
+  V(SourcelessFileLoader)                                                      \
+  V(StopAsyncIteration)                                                        \
+  V(StopIteration)                                                             \
+  V(StringIO)                                                                  \
+  V(SyntaxError)                                                               \
+  V(SyntaxWarning)                                                             \
+  V(SystemError)                                                               \
+  V(SystemExit)                                                                \
+  V(TabError)                                                                  \
+  V(TextIOWrapper)                                                             \
+  V(TimeoutError)                                                              \
+  V(True)                                                                      \
+  V(TypeError)                                                                 \
+  V(UnboundLocalError)                                                         \
+  V(UnicodeDecodeError)                                                        \
+  V(UnicodeEncodeError)                                                        \
+  V(UnicodeError)                                                              \
+  V(UnicodeTranslateError)                                                     \
+  V(UnicodeWarning)                                                            \
+  V(UserWarning)                                                               \
+  V(ValueError)                                                                \
+  V(Warning)                                                                   \
+  V(ZeroDivisionError)                                                         \
+  V(_BufferedIOBase)                                                           \
+  V(_BufferedIOMixin)                                                          \
+  V(_HashInfo)                                                                 \
+  V(_IOBase)                                                                   \
+  V(_RawIOBase)                                                                \
+  V(_StringIO_closed_guard)                                                    \
+  V(_TextIOBase)                                                               \
+  V(_Unbound)                                                                  \
+  V(_VersionInfo)                                                              \
+  V(__abs__)                                                                   \
+  V(__abstractmethods__)                                                       \
+  V(__add__)                                                                   \
+  V(__aenter__)                                                                \
+  V(__aexit__)                                                                 \
+  V(__aiter__)                                                                 \
+  V(__and__)                                                                   \
+  V(__anext__)                                                                 \
+  V(__annotations__)                                                           \
+  V(__await__)                                                                 \
+  V(__bases__)                                                                 \
+  V(__bool__)                                                                  \
+  V(__build_class__)                                                           \
+  V(__builtins__)                                                              \
+  V(__bytes__)                                                                 \
+  V(__cached__)                                                                \
+  V(__call__)                                                                  \
+  V(__cause__)                                                                 \
+  V(__ceil__)                                                                  \
+  V(__class__)                                                                 \
+  V(__classcell__)                                                             \
+  V(__code__)                                                                  \
+  V(__complex__)                                                               \
+  V(__contains__)                                                              \
+  V(__context__)                                                               \
+  V(__debug__)                                                                 \
+  V(__del__)                                                                   \
+  V(__delattr__)                                                               \
+  V(__delete__)                                                                \
+  V(__delitem__)                                                               \
+  V(__dict__)                                                                  \
+  V(__dir__)                                                                   \
+  V(__divmod__)                                                                \
+  V(__doc__)                                                                   \
+  V(__enter__)                                                                 \
+  V(__eq__)                                                                    \
+  V(__exit__)                                                                  \
+  V(__file__)                                                                  \
+  V(__flags__)                                                                 \
+  V(__float__)                                                                 \
+  V(__floor__)                                                                 \
+  V(__floordiv__)                                                              \
+  V(__format__)                                                                \
+  V(__func__)                                                                  \
+  V(__ge__)                                                                    \
+  V(__get__)                                                                   \
+  V(__getattr__)                                                               \
+  V(__getattribute__)                                                          \
+  V(__getitem__)                                                               \
+  V(__globals__)                                                               \
+  V(__gt__)                                                                    \
+  V(__hash__)                                                                  \
+  V(__iadd__)                                                                  \
+  V(__iand__)                                                                  \
+  V(__ifloordiv__)                                                             \
+  V(__ilshift__)                                                               \
+  V(__imatmul__)                                                               \
+  V(__imod__)                                                                  \
+  V(__import__)                                                                \
+  V(__imul__)                                                                  \
+  V(__index__)                                                                 \
+  V(__init__)                                                                  \
+  V(__int__)                                                                   \
+  V(__interactivehook__)                                                       \
+  V(__invert__)                                                                \
+  V(__ior__)                                                                   \
+  V(__ipow__)                                                                  \
+  V(__irshift__)                                                               \
+  V(__isabstractmethod__)                                                      \
+  V(__isub__)                                                                  \
+  V(__iter__)                                                                  \
+  V(__itruediv__)                                                              \
+  V(__ixor__)                                                                  \
+  V(__le__)                                                                    \
+  V(__len__)                                                                   \
+  V(__length_hint__)                                                           \
+  V(__loader__)                                                                \
+  V(__lshift__)                                                                \
+  V(__lt__)                                                                    \
+  V(__main__)                                                                  \
+  V(__matmul__)                                                                \
+  V(__mod__)                                                                   \
+  V(__module__)                                                                \
+  V(__module_object__)                                                         \
+  V(__mro__)                                                                   \
+  V(__mul__)                                                                   \
+  V(__name__)                                                                  \
+  V(__ne__)                                                                    \
+  V(__neg__)                                                                   \
+  V(__new__)                                                                   \
+  V(__next__)                                                                  \
+  V(__or__)                                                                    \
+  V(__package__)                                                               \
+  V(__pos__)                                                                   \
+  V(__pow__)                                                                   \
+  V(__prepare__)                                                               \
+  V(__qualname__)                                                              \
+  V(__radd__)                                                                  \
+  V(__rand__)                                                                  \
+  V(__rdivmod__)                                                               \
+  V(__repr__)                                                                  \
+  V(__rfloordiv__)                                                             \
+  V(__rlshift__)                                                               \
+  V(__rmatmul__)                                                               \
+  V(__rmod__)                                                                  \
+  V(__rmul__)                                                                  \
+  V(__ror__)                                                                   \
+  V(__round__)                                                                 \
+  V(__rpow__)                                                                  \
+  V(__rrshift__)                                                               \
+  V(__rshift__)                                                                \
+  V(__rsub__)                                                                  \
+  V(__rtruediv__)                                                              \
+  V(__rxor__)                                                                  \
+  V(__self__)                                                                  \
+  V(__self_class__)                                                            \
+  V(__set__)                                                                   \
+  V(__setattr__)                                                               \
+  V(__setitem__)                                                               \
+  V(__sizeof__)                                                                \
+  V(__spec__)                                                                  \
+  V(__str__)                                                                   \
+  V(__sub__)                                                                   \
+  V(__subclasses__)                                                            \
+  V(__suppress_context__)                                                      \
+  V(__thisclass__)                                                             \
+  V(__traceback__)                                                             \
+  V(__truediv__)                                                               \
+  V(__trunc__)                                                                 \
+  V(__xor__)                                                                   \
+  V(_address)                                                                  \
+  V(_appending)                                                                \
+  V(_ascii_decode)                                                             \
+  V(_ascii_encode)                                                             \
+  V(_b2cratio)                                                                 \
+  V(_base_dir)                                                                 \
+  V(_bool_check)                                                               \
+  V(_bool_guard)                                                               \
+  V(_bootstrap)                                                                \
+  V(_bound_method)                                                             \
+  V(_buffer)                                                                   \
+  V(_buffer_num_bytes)                                                         \
+  V(_buffer_size)                                                              \
+  V(_buffered_reader_clear_buffer)                                             \
+  V(_buffered_reader_init)                                                     \
+  V(_buffered_reader_peek)                                                     \
+  V(_buffered_reader_read)                                                     \
+  V(_buffered_reader_readline)                                                 \
+  V(_builtins)                                                                 \
+  V(_bytearray_append)                                                         \
+  V(_bytearray_check)                                                          \
+  V(_bytearray_clear)                                                          \
+  V(_bytearray_contains)                                                       \
+  V(_bytearray_delitem)                                                        \
+  V(_bytearray_delslice)                                                       \
+  V(_bytearray_getitem)                                                        \
+  V(_bytearray_getslice)                                                       \
+  V(_bytearray_guard)                                                          \
+  V(_bytearray_join)                                                           \
+  V(_bytearray_len)                                                            \
+  V(_bytearray_setitem)                                                        \
+  V(_bytearray_setslice)                                                       \
+  V(_bytearray_string_append)                                                  \
+  V(_bytes_check)                                                              \
+  V(_bytes_contains)                                                           \
+  V(_bytes_decode)                                                             \
+  V(_bytes_decode_ascii)                                                       \
+  V(_bytes_decode_utf_8)                                                       \
+  V(_bytes_from_bytes)                                                         \
+  V(_bytes_from_ints)                                                          \
+  V(_bytes_getitem)                                                            \
+  V(_bytes_getslice)                                                           \
+  V(_bytes_guard)                                                              \
+  V(_bytes_join)                                                               \
+  V(_bytes_len)                                                                \
+  V(_bytes_maketrans)                                                          \
+  V(_bytes_new)                                                                \
+  V(_bytes_repeat)                                                             \
+  V(_bytes_split)                                                              \
+  V(_bytes_split_whitespace)                                                   \
+  V(_byteslike_check)                                                          \
+  V(_byteslike_compare_digest)                                                 \
+  V(_byteslike_count)                                                          \
+  V(_byteslike_endswith)                                                       \
+  V(_byteslike_find_byteslike)                                                 \
+  V(_byteslike_find_int)                                                       \
+  V(_byteslike_guard)                                                          \
+  V(_byteslike_rfind_byteslike)                                                \
+  V(_byteslike_rfind_int)                                                      \
+  V(_byteslike_startswith)                                                     \
+  V(_capi_dict_setitem)                                                        \
+  V(_classmethod)                                                              \
+  V(_classmethod_isabstract)                                                   \
+  V(_closed)                                                                   \
+  V(_closefd)                                                                  \
+  V(_code_check)                                                               \
+  V(_code_guard)                                                               \
+  V(_code_set_posonlyargcount)                                                 \
+  V(_codecs)                                                                   \
+  V(_compile_flags_mask)                                                       \
+  V(_complex_check)                                                            \
+  V(_complex_checkexact)                                                       \
+  V(_complex_imag)                                                             \
+  V(_complex_new)                                                              \
+  V(_complex_new_from_str)                                                     \
+  V(_complex_real)                                                             \
+  V(_create_dynamic)                                                           \
+  V(_created)                                                                  \
+  V(_decoded_chars)                                                            \
+  V(_decoded_chars_used)                                                       \
+  V(_decoder)                                                                  \
+  V(_descrclassmethod)                                                         \
+  V(_dict_bucket_insert)                                                       \
+  V(_dict_bucket_key)                                                          \
+  V(_dict_bucket_set_value)                                                    \
+  V(_dict_bucket_value)                                                        \
+  V(_dict_check)                                                               \
+  V(_dict_check_exact)                                                         \
+  V(_dict_get)                                                                 \
+  V(_dict_getitem)                                                             \
+  V(_dict_guard)                                                               \
+  V(_dict_len)                                                                 \
+  V(_dict_lookup)                                                              \
+  V(_dict_lookup_next)                                                         \
+  V(_dict_popitem)                                                             \
+  V(_dict_setitem)                                                             \
+  V(_dict_update)                                                              \
+  V(_divmod)                                                                   \
+  V(_encoder)                                                                  \
+  V(_encoding)                                                                 \
+  V(_errors)                                                                   \
+  V(_escape_decode)                                                            \
+  V(_escape_decode_stateful)                                                   \
+  V(_exception_new)                                                            \
+  V(_exec)                                                                     \
+  V(_fd)                                                                       \
+  V(_finish_setup)                                                             \
+  V(_fix_co_filename)                                                          \
+  V(_float)                                                                    \
+  V(_float_check)                                                              \
+  V(_float_check_exact)                                                        \
+  V(_float_divmod)                                                             \
+  V(_float_format)                                                             \
+  V(_float_guard)                                                              \
+  V(_float_new_from_byteslike)                                                 \
+  V(_float_new_from_float)                                                     \
+  V(_float_new_from_str)                                                       \
+  V(_float_signbit)                                                            \
+  V(_frozen_importlib)                                                         \
+  V(_frozen_importlib_external)                                                \
+  V(_frozenset_check)                                                          \
+  V(_frozenset_guard)                                                          \
+  V(_function_globals)                                                         \
+  V(_function_guard)                                                           \
+  V(_gc)                                                                       \
+  V(_get_member_byte)                                                          \
+  V(_get_member_char)                                                          \
+  V(_get_member_double)                                                        \
+  V(_get_member_float)                                                         \
+  V(_get_member_int)                                                           \
+  V(_get_member_long)                                                          \
+  V(_get_member_pyobject)                                                      \
+  V(_get_member_short)                                                         \
+  V(_get_member_string)                                                        \
+  V(_get_member_ubyte)                                                         \
+  V(_get_member_uint)                                                          \
+  V(_get_member_ulong)                                                         \
+  V(_get_member_ushort)                                                        \
+  V(_getframe_function)                                                        \
+  V(_getframe_lineno)                                                          \
+  V(_getframe_locals)                                                          \
+  V(_has_read1)                                                                \
+  V(_imp)                                                                      \
+  V(_index)                                                                    \
+  V(_init)                                                                     \
+  V(_instance_delattr)                                                         \
+  V(_instance_getattr)                                                         \
+  V(_instance_guard)                                                           \
+  V(_instance_overflow_dict)                                                   \
+  V(_instance_setattr)                                                         \
+  V(_int)                                                                      \
+  V(_int_check)                                                                \
+  V(_int_check_exact)                                                          \
+  V(_int_from_bytes)                                                           \
+  V(_int_guard)                                                                \
+  V(_int_new_from_bytearray)                                                   \
+  V(_int_new_from_bytes)                                                       \
+  V(_int_new_from_int)                                                         \
+  V(_int_new_from_str)                                                         \
+  V(_io)                                                                       \
+  V(_iter)                                                                     \
+  V(_latin_1_decode)                                                           \
+  V(_latin_1_encode)                                                           \
+  V(_line_buffering)                                                           \
+  V(_list_check)                                                               \
+  V(_list_check_exact)                                                         \
+  V(_list_delitem)                                                             \
+  V(_list_delslice)                                                            \
+  V(_list_extend)                                                              \
+  V(_list_getitem)                                                             \
+  V(_list_getslice)                                                            \
+  V(_list_guard)                                                               \
+  V(_list_len)                                                                 \
+  V(_list_new)                                                                 \
+  V(_list_setitem)                                                             \
+  V(_list_setslice)                                                            \
+  V(_list_sort)                                                                \
+  V(_list_swap)                                                                \
+  V(_lookup_text)                                                              \
+  V(_lt)                                                                       \
+  V(_mappingproxy_guard)                                                       \
+  V(_mappingproxy_mapping)                                                     \
+  V(_mappingproxy_set_mapping)                                                 \
+  V(_memoryview_check)                                                         \
+  V(_memoryview_guard)                                                         \
+  V(_memoryview_itemsize)                                                      \
+  V(_memoryview_nbytes)                                                        \
+  V(_memoryview_setitem)                                                       \
+  V(_memoryview_setslice)                                                      \
+  V(_module_dir)                                                               \
+  V(_module_proxy)                                                             \
+  V(_module_proxy_check)                                                       \
+  V(_module_proxy_delitem)                                                     \
+  V(_module_proxy_get)                                                         \
+  V(_module_proxy_guard)                                                       \
+  V(_module_proxy_keys)                                                        \
+  V(_module_proxy_len)                                                         \
+  V(_module_proxy_setitem)                                                     \
+  V(_module_proxy_values)                                                      \
+  V(_mutablebytes)                                                             \
+  V(_mutabletuple)                                                             \
+  V(_new_member_get_bool)                                                      \
+  V(_new_member_get_byte)                                                      \
+  V(_new_member_get_char)                                                      \
+  V(_new_member_get_double)                                                    \
+  V(_new_member_get_float)                                                     \
+  V(_new_member_get_int)                                                       \
+  V(_new_member_get_long)                                                      \
+  V(_new_member_get_pyobject)                                                  \
+  V(_new_member_get_short)                                                     \
+  V(_new_member_get_string)                                                    \
+  V(_new_member_get_ubyte)                                                     \
+  V(_new_member_get_uint)                                                      \
+  V(_new_member_get_ulong)                                                     \
+  V(_new_member_get_ushort)                                                    \
+  V(_new_member_set_bool)                                                      \
+  V(_new_member_set_char)                                                      \
+  V(_new_member_set_double)                                                    \
+  V(_new_member_set_float)                                                     \
+  V(_new_member_set_integral)                                                  \
+  V(_new_member_set_pyobject)                                                  \
+  V(_new_member_set_readonly)                                                  \
+  V(_new_member_set_readonly_strings)                                          \
+  V(_number_check)                                                             \
+  V(_object_keys)                                                              \
+  V(_object_type_getattr)                                                      \
+  V(_object_type_hasattr)                                                      \
+  V(_os)                                                                       \
+  V(_os_write)                                                                 \
+  V(_patch)                                                                    \
+  V(_pendingcr)                                                                \
+  V(_pos)                                                                      \
+  V(_property)                                                                 \
+  V(_property_isabstract)                                                      \
+  V(_pyobject_offset)                                                          \
+  V(_python_path)                                                              \
+  V(_range_check)                                                              \
+  V(_range_guard)                                                              \
+  V(_range_len)                                                                \
+  V(_raw)                                                                      \
+  V(_read_buf)                                                                 \
+  V(_read_lock)                                                                \
+  V(_read_null)                                                                \
+  V(_read_pos)                                                                 \
+  V(_readable)                                                                 \
+  V(_reader)                                                                   \
+  V(_readnl)                                                                   \
+  V(_readtranslate)                                                            \
+  V(_readuniversal)                                                            \
+  V(_repr_enter)                                                               \
+  V(_repr_leave)                                                               \
+  V(_run_module_as_main)                                                       \
+  V(_seekable)                                                                 \
+  V(_seennl)                                                                   \
+  V(_seq_index)                                                                \
+  V(_seq_iterable)                                                             \
+  V(_seq_set_index)                                                            \
+  V(_seq_set_iterable)                                                         \
+  V(_set_check)                                                                \
+  V(_set_guard)                                                                \
+  V(_set_len)                                                                  \
+  V(_set_member_double)                                                        \
+  V(_set_member_float)                                                         \
+  V(_set_member_integral)                                                      \
+  V(_set_member_pyobject)                                                      \
+  V(_sigabrt)                                                                  \
+  V(_sigfpe)                                                                   \
+  V(_signal)                                                                   \
+  V(_sigsegv)                                                                  \
+  V(_slice_check)                                                              \
+  V(_slice_guard)                                                              \
+  V(_slice_index)                                                              \
+  V(_slice_index_not_none)                                                     \
+  V(_slice_start)                                                              \
+  V(_slice_start_long)                                                         \
+  V(_slice_step)                                                               \
+  V(_slice_step_long)                                                          \
+  V(_slice_stop)                                                               \
+  V(_slice_stop_long)                                                          \
+  V(_snapshot)                                                                 \
+  V(_staticmethod_isabstract)                                                  \
+  V(_stderr_fd)                                                                \
+  V(_stdin_fd)                                                                 \
+  V(_stdout_fd)                                                                \
+  V(_stop_iteration_ctor)                                                      \
+  V(_str_check)                                                                \
+  V(_str_check_exact)                                                          \
+  V(_str_compare_digest)                                                       \
+  V(_str_count)                                                                \
+  V(_str_encode)                                                               \
+  V(_str_encode_ascii)                                                         \
+  V(_str_endswith)                                                             \
+  V(_str_escape_non_ascii)                                                     \
+  V(_str_find)                                                                 \
+  V(_str_from_str)                                                             \
+  V(_str_getitem)                                                              \
+  V(_str_getslice)                                                             \
+  V(_str_guard)                                                                \
+  V(_str_ischr)                                                                \
+  V(_str_join)                                                                 \
+  V(_str_len)                                                                  \
+  V(_str_mod)                                                                  \
+  V(_str_mod_fast_path)                                                        \
+  V(_str_partition)                                                            \
+  V(_str_replace)                                                              \
+  V(_str_rfind)                                                                \
+  V(_str_rpartition)                                                           \
+  V(_str_split)                                                                \
+  V(_str_splitlines)                                                           \
+  V(_str_startswith)                                                           \
+  V(_strarray)                                                                 \
+  V(_strarray_clear)                                                           \
+  V(_strarray_ctor)                                                            \
+  V(_strarray_iadd)                                                            \
+  V(_structseq_field)                                                          \
+  V(_structseq_field_names)                                                    \
+  V(_structseq_getitem)                                                        \
+  V(_structseq_new)                                                            \
+  V(_structseq_repr)                                                           \
+  V(_telling)                                                                  \
+  V(_thread)                                                                   \
+  V(_traceback)                                                                \
+  V(_translate)                                                                \
+  V(_tuple_check)                                                              \
+  V(_tuple_check_exact)                                                        \
+  V(_tuple_getitem)                                                            \
+  V(_tuple_getslice)                                                           \
+  V(_tuple_guard)                                                              \
+  V(_tuple_len)                                                                \
+  V(_tuple_new)                                                                \
+  V(_type)                                                                     \
+  V(_typecode)                                                                 \
+  V(_type_abstractmethods_del)                                                 \
+  V(_type_abstractmethods_get)                                                 \
+  V(_type_abstractmethods_set)                                                 \
+  V(_type_bases_del)                                                           \
+  V(_type_bases_get)                                                           \
+  V(_type_bases_set)                                                           \
+  V(_type_check)                                                               \
+  V(_type_check_exact)                                                         \
+  V(_type_dunder_call)                                                         \
+  V(_type_guard)                                                               \
+  V(_type_init)                                                                \
+  V(_type_issubclass)                                                          \
+  V(_type_new)                                                                 \
+  V(_type_proxy)                                                               \
+  V(_type_proxy_check)                                                         \
+  V(_type_proxy_get)                                                           \
+  V(_type_proxy_guard)                                                         \
+  V(_type_proxy_keys)                                                          \
+  V(_type_proxy_len)                                                           \
+  V(_type_proxy_values)                                                        \
+  V(_type_subclass_guard)                                                      \
+  V(_unicode_escape_decode)                                                    \
+  V(_unicode_escape_decode_stateful)                                           \
+  V(_unimplemented)                                                            \
+  V(_updatepath)                                                               \
+  V(_utf_16_encode)                                                            \
+  V(_utf_32_encode)                                                            \
+  V(_utf_8_decode)                                                             \
+  V(_utf_8_encode)                                                             \
+  V(_valgrind)                                                                 \
+  V(_warn)                                                                     \
+  V(_warnings)                                                                 \
+  V(_weaklink)                                                                 \
+  V(_weakref)                                                                  \
+  V(_weakref_callback)                                                         \
+  V(_weakref_check)                                                            \
+  V(_weakref_guard)                                                            \
+  V(_weakref_referent)                                                         \
+  V(_writable)                                                                 \
+  V(_write_buf)                                                                \
+  V(_write_lock)                                                               \
+  V(_writenl)                                                                  \
+  V(_writetranslate)                                                           \
+  V(abs)                                                                       \
+  V(acquire_lock)                                                              \
+  V(add)                                                                       \
+  V(and_)                                                                      \
+  V(append)                                                                    \
+  V(args)                                                                      \
+  V(argv)                                                                      \
+  V(array)                                                                     \
+  V(ascii)                                                                     \
+  V(ascii_decode)                                                              \
+  V(ascii_encode)                                                              \
+  V(async_generator)                                                           \
+  V(big)                                                                       \
+  V(bin)                                                                       \
+  V(bit_length)                                                                \
+  V(bool)                                                                      \
+  V(buffer_size)                                                               \
+  V(builtin_module_names)                                                      \
+  V(builtins)                                                                  \
+  V(bytearray)                                                                 \
+  V(bytearray_iterator)                                                        \
+  V(byteorder)                                                                 \
+  V(bytes)                                                                     \
+  V(bytes_iterator)                                                            \
+  V(callable)                                                                  \
+  V(callable_iterator)                                                         \
+  V(callgrind_dump_stats)                                                      \
+  V(callgrind_start_instrumentation)                                           \
+  V(callgrind_stop_instrumentation)                                            \
+  V(callgrind_zero_stats)                                                      \
+  V(cast)                                                                      \
+  V(chr)                                                                       \
+  V(classmethod)                                                               \
+  V(clear)                                                                     \
+  V(close)                                                                     \
+  V(co_argcount)                                                               \
+  V(co_cellvars)                                                               \
+  V(co_code)                                                                   \
+  V(co_consts)                                                                 \
+  V(co_filename)                                                               \
+  V(co_firstlineno)                                                            \
+  V(co_flags)                                                                  \
+  V(co_freevars)                                                               \
+  V(co_kwonlyargcount)                                                         \
+  V(co_lnotab)                                                                 \
+  V(co_name)                                                                   \
+  V(co_names)                                                                  \
+  V(co_nlocals)                                                                \
+  V(co_posonlyargcount)                                                        \
+  V(co_stacksize)                                                              \
+  V(co_varnames)                                                               \
+  V(code)                                                                      \
+  V(compile)                                                                   \
+  V(complex)                                                                   \
+  V(conjugate)                                                                 \
+  V(contains)                                                                  \
+  V(copy)                                                                      \
+  V(coroutine)                                                                 \
+  V(countOf)                                                                   \
+  V(cr_running)                                                                \
+  V(create_builtin)                                                            \
+  V(decode)                                                                    \
+  V(delattr)                                                                   \
+  V(deleter)                                                                   \
+  V(dict)                                                                      \
+  V(dict_itemiterator)                                                         \
+  V(dict_items)                                                                \
+  V(dict_keyiterator)                                                          \
+  V(dict_keys)                                                                 \
+  V(dict_valueiterator)                                                        \
+  V(dict_values)                                                               \
+  V(dir)                                                                       \
+  V(disable)                                                                   \
+  V(discard)                                                                   \
+  V(displayhook)                                                               \
+  V(divmod)                                                                    \
+  V(dummy)                                                                     \
+  V(dump_traceback)                                                            \
+  V(ellipsis)                                                                  \
+  V(enable)                                                                    \
+  V(encode)                                                                    \
+  V(encoding)                                                                  \
+  V(end)                                                                       \
+  V(eval)                                                                      \
+  V(exc_info)                                                                  \
+  V(excepthook)                                                                \
+  V(exec)                                                                      \
+  V(exec_builtin)                                                              \
+  V(exec_dynamic)                                                              \
+  V(executable)                                                                \
+  V(extend)                                                                    \
+  V(extension_suffixes)                                                        \
+  V(faulthandler)                                                              \
+  V(filename)                                                                  \
+  V(fileno)                                                                    \
+  V(float)                                                                     \
+  V(floordiv)                                                                  \
+  V(flush)                                                                     \
+  V(format)                                                                    \
+  V(frame)                                                                     \
+  V(frozenset)                                                                 \
+  V(fstat_size)                                                                \
+  V(ftruncate)                                                                 \
+  V(function)                                                                  \
+  V(generator)                                                                 \
+  V(get_frozen_object)                                                         \
+  V(getattr)                                                                   \
+  V(getsizeof)                                                                 \
+  V(getter)                                                                    \
+  V(getvalue)                                                                  \
+  V(gi_running)                                                                \
+  V(hasattr)                                                                   \
+  V(hash)                                                                      \
+  V(hash_info)                                                                 \
+  V(hex)                                                                       \
+  V(iadd)                                                                      \
+  V(iand)                                                                      \
+  V(iconcat)                                                                   \
+  V(id)                                                                        \
+  V(ifloordiv)                                                                 \
+  V(ignore)                                                                    \
+  V(ilshift)                                                                   \
+  V(imatmul)                                                                   \
+  V(imod)                                                                      \
+  V(imul)                                                                      \
+  V(indexOf)                                                                   \
+  V(insert)                                                                    \
+  V(instance)                                                                  \
+  V(instance_proxy)                                                            \
+  V(int)                                                                       \
+  V(intersection)                                                              \
+  V(invert)                                                                    \
+  V(ior)                                                                       \
+  V(ipow)                                                                      \
+  V(irepeat)                                                                   \
+  V(irshift)                                                                   \
+  V(is_builtin)                                                                \
+  V(is_enabled)                                                                \
+  V(is_frozen)                                                                 \
+  V(is_frozen_package)                                                         \
+  V(isalnum)                                                                   \
+  V(isalpha)                                                                   \
+  V(isatty)                                                                    \
+  V(isdecimal)                                                                 \
+  V(isdigit)                                                                   \
+  V(isdir)                                                                     \
+  V(isdisjoint)                                                                \
+  V(isidentifier)                                                              \
+  V(isinstance)                                                                \
+  V(islower)                                                                   \
+  V(isnumeric)                                                                 \
+  V(isprintable)                                                               \
+  V(isspace)                                                                   \
+  V(issubclass)                                                                \
+  V(istitle)                                                                   \
+  V(isub)                                                                      \
+  V(isupper)                                                                   \
+  V(items)                                                                     \
+  V(iterator)                                                                  \
+  V(itruediv)                                                                  \
+  V(ixor)                                                                      \
+  V(join)                                                                      \
+  V(key)                                                                       \
+  V(keys)                                                                      \
+  V(kwargs)                                                                    \
+  V(largebytes)                                                                \
+  V(largeint)                                                                  \
+  V(largestr)                                                                  \
+  V(last_traceback)                                                            \
+  V(last_type)                                                                 \
+  V(last_value)                                                                \
+  V(latin_1_decode)                                                            \
+  V(latin_1_encode)                                                            \
+  V(layout)                                                                    \
+  V(len)                                                                       \
+  V(lineno)                                                                    \
+  V(list)                                                                      \
+  V(list_iterator)                                                             \
+  V(little)                                                                    \
+  V(loads)                                                                     \
+  V(longrange_iterator)                                                        \
+  V(lower)                                                                     \
+  V(lseek)                                                                     \
+  V(lshift)                                                                    \
+  V(lstrip)                                                                    \
+  V(mappingproxy)                                                              \
+  V(marshal)                                                                   \
+  V(matmul)                                                                    \
+  V(maxsize)                                                                   \
+  V(maxunicode)                                                                \
+  V(memoryview)                                                                \
+  V(method)                                                                    \
+  V(mod)                                                                       \
+  V(mode)                                                                      \
+  V(module)                                                                    \
+  V(module_proxy)                                                              \
+  V(modules)                                                                   \
+  V(mro)                                                                       \
+  V(msg)                                                                       \
+  V(mul)                                                                       \
+  V(n_fields)                                                                  \
+  V(n_sequence_fields)                                                         \
+  V(n_unnamed_fields)                                                          \
+  V(name)                                                                      \
+  V(neg)                                                                       \
+  V(object)                                                                    \
+  V(oct)                                                                       \
+  V(offset)                                                                    \
+  V(open)                                                                      \
+  V(operator)                                                                  \
+  V(or_)                                                                       \
+  V(ord)                                                                       \
+  V(owner)                                                                     \
+  V(parse_mode)                                                                \
+  V(partition)                                                                 \
+  V(path)                                                                      \
+  V(platform)                                                                  \
+  V(pop)                                                                       \
+  V(pos)                                                                       \
+  V(pow)                                                                       \
+  V(print_file_and_line)                                                       \
+  V(property)                                                                  \
+  V(proxy)                                                                     \
+  V(range)                                                                     \
+  V(range_iterator)                                                            \
+  V(read)                                                                      \
+  V(readall)                                                                   \
+  V(readline)                                                                  \
+  V(readonly)                                                                  \
+  V(reason)                                                                    \
+  V(ref)                                                                       \
+  V(release_lock)                                                              \
+  V(remove)                                                                    \
+  V(replace)                                                                   \
+  V(repr)                                                                      \
+  V(rpartition)                                                                \
+  V(rshift)                                                                    \
+  V(rsplit)                                                                    \
+  V(rstrip)                                                                    \
+  V(runpy)                                                                     \
+  V(self)                                                                      \
+  V(send)                                                                      \
+  V(set)                                                                       \
+  V(set_iterator)                                                              \
+  V(set_noinheritable)                                                         \
+  V(setattr)                                                                   \
+  V(setter)                                                                    \
+  V(single)                                                                    \
+  V(siphash24)                                                                 \
+  V(slice)                                                                     \
+  V(smallbytes)                                                                \
+  V(smallint)                                                                  \
+  V(smallstr)                                                                  \
+  V(sorted)                                                                    \
+  V(split)                                                                     \
+  V(start)                                                                     \
+  V(staticmethod)                                                              \
+  V(stderr)                                                                    \
+  V(stdin)                                                                     \
+  V(stdout)                                                                    \
+  V(step)                                                                      \
+  V(stop)                                                                      \
+  V(str)                                                                       \
+  V(str_iterator)                                                              \
+  V(strict)                                                                    \
+  V(strict_errors)                                                             \
+  V(strip)                                                                     \
+  V(sub)                                                                       \
+  V(super)                                                                     \
+  V(surrogateescape)                                                           \
+  V(sys)                                                                       \
+  V(text)                                                                      \
+  V(throw)                                                                     \
+  V(time)                                                                      \
+  V(title)                                                                     \
+  V(to_bytes)                                                                  \
+  V(traceback)                                                                 \
+  V(translate)                                                                 \
+  V(truediv)                                                                   \
+  V(truncate)                                                                  \
+  V(tuple)                                                                     \
+  V(tuple_iterator)                                                            \
+  V(type)                                                                      \
+  V(type_proxy)                                                                \
+  V(update)                                                                    \
+  V(upper)                                                                     \
+  V(utf_16_encode)                                                             \
+  V(utf_32_encode)                                                             \
+  V(utf_8_decode)                                                              \
+  V(utf_8_encode)                                                              \
+  V(value)                                                                     \
+  V(valuecell)                                                                 \
+  V(values)                                                                    \
+  V(version)                                                                   \
+  V(version_info)                                                              \
+  V(warn)                                                                      \
+  V(warn_explicit)                                                             \
+  V(warnings)                                                                  \
+  V(write)                                                                     \
+  V(xor)
 
 // clang-format off
 enum class SymbolId {
   kInvalid = -1,
-#define DEFINE_SYMBOL_INDEX(symbol, value) k##symbol,
+#define DEFINE_SYMBOL_INDEX(symbol) k_##symbol,
   FOREACH_SYMBOL(DEFINE_SYMBOL_INDEX)
 #undef DEFINE_SYMBOL_INDEX
   kMaxId,
@@ -940,5 +940,7 @@ class Symbols {
   // TODO(T25010996) - Benchmark whether this is faster than an Tuple
   RawObject* symbols_;
 };
+
+#define ID(x) SymbolId::k_##x
 
 }  // namespace py

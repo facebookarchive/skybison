@@ -329,15 +329,15 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
   Object hash_obj(&scope, NoneType::object());
   Object value(&scope, NoneType::object());
   Frame* frame = thread->currentFrame();
-  Object keys_method(
-      &scope, runtime->attributeAtById(thread, mapping, SymbolId::kKeys));
+  Object keys_method(&scope,
+                     runtime->attributeAtById(thread, mapping, ID(keys)));
   if (keys_method.isError()) {
     return *keys_method;
   }
 
   // Generic mapping, use keys() and __getitem__()
-  Object subscr_method(&scope, runtime->attributeAtById(
-                                   thread, mapping, SymbolId::kDunderGetitem));
+  Object subscr_method(
+      &scope, runtime->attributeAtById(thread, mapping, ID(__getitem__)));
 
   if (subscr_method.isError()) {
     return *subscr_method;
@@ -389,7 +389,7 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
   // keys is probably an iterator
   Object iter_method(
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), keys,
-                                        SymbolId::kDunderIter));
+                                        ID(__iter__)));
   if (iter_method.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "keys() is not iterable");
   }
@@ -400,9 +400,9 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
   if (iterator.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "keys() is not iterable");
   }
-  Object next_method(
-      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
-                                        iterator, SymbolId::kDunderNext));
+  Object next_method(&scope,
+                     Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                               iterator, ID(__next__)));
   if (next_method.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "keys() is not iterable");
   }
@@ -511,25 +511,27 @@ const BuiltinAttribute DictBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
+// clang-format off
 const BuiltinMethod DictBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kClear, clear},
-    {SymbolId::kDunderDelitem, dunderDelitem},
-    {SymbolId::kDunderEq, dunderEq},
-    {SymbolId::kDunderIter, dunderIter},
-    {SymbolId::kDunderLen, dunderLen},
-    {SymbolId::kDunderNew, dunderNew},
-    {SymbolId::kItems, items},
-    {SymbolId::kKeys, keys},
-    {SymbolId::kValues, values},
+    {ID(clear), clear},
+    {ID(__delitem__), dunderDelitem},
+    {ID(__eq__), dunderEq},   
+    {ID(__iter__), dunderIter},
+    {ID(__len__), dunderLen}, 
+    {ID(__new__), dunderNew},
+    {ID(items), items},       
+    {ID(keys), keys},
+    {ID(values), values},     
     {SymbolId::kSentinelId, nullptr},
 };
+// clang-format on
 
 RawObject DictBuiltins::clear(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfDict(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kDict);
+    return thread->raiseRequiresType(self, ID(dict));
   }
   Dict dict(&scope, *self);
   dictClear(thread, dict);
@@ -544,7 +546,7 @@ RawObject DictBuiltins::dunderDelitem(Thread* thread, Frame* frame,
   Object key(&scope, args.get(1));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfDict(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kDict);
+    return thread->raiseRequiresType(self, ID(dict));
   }
   Dict dict(&scope, *self);
   Object hash_obj(&scope, Interpreter::hash(thread, key));
@@ -563,7 +565,7 @@ RawObject DictBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfDict(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kDict);
+    return thread->raiseRequiresType(self_obj, ID(dict));
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfDict(*other_obj)) {
@@ -611,7 +613,7 @@ RawObject DictBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfDict(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kDict);
+    return thread->raiseRequiresType(self, ID(dict));
   }
   Dict dict(&scope, *self);
   return SmallInt::fromWord(dict.numItems());
@@ -623,7 +625,7 @@ RawObject DictBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfDict(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kDict);
+    return thread->raiseRequiresType(self, ID(dict));
   }
   Dict dict(&scope, *self);
   // .iter() on a dict returns a keys iterator
@@ -636,7 +638,7 @@ RawObject DictBuiltins::items(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfDict(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kDict);
+    return thread->raiseRequiresType(self, ID(dict));
   }
   Dict dict(&scope, *self);
   return runtime->newDictItems(thread, dict);
@@ -648,7 +650,7 @@ RawObject DictBuiltins::keys(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfDict(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kDict);
+    return thread->raiseRequiresType(self, ID(dict));
   }
   Dict dict(&scope, *self);
   return runtime->newDictKeys(thread, dict);
@@ -660,7 +662,7 @@ RawObject DictBuiltins::values(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfDict(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kDict);
+    return thread->raiseRequiresType(self, ID(dict));
   }
   Dict dict(&scope, *self);
   return runtime->newDictValues(thread, dict);
@@ -690,9 +692,9 @@ RawObject DictBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 // helper function that takes a member function (type check) and string for the
 // Python symbol name
 const BuiltinMethod DictItemIteratorBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderIter, dunderIter},
-    {SymbolId::kDunderLengthHint, dunderLengthHint},
-    {SymbolId::kDunderNext, dunderNext},
+    {ID(__iter__), dunderIter},
+    {ID(__length_hint__), dunderLengthHint},
+    {ID(__next__), dunderNext},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -702,7 +704,7 @@ RawObject DictItemIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictItemIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kDictItemIterator);
+    return thread->raiseRequiresType(self, ID(dict_itemiterator));
   }
   return *self;
 }
@@ -713,7 +715,7 @@ RawObject DictItemIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictItemIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kDictItemIterator);
+    return thread->raiseRequiresType(self, ID(dict_itemiterator));
   }
   DictItemIterator iter(&scope, *self);
   Object value(&scope, dictItemIteratorNext(thread, iter));
@@ -729,7 +731,7 @@ RawObject DictItemIteratorBuiltins::dunderLengthHint(Thread* thread,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictItemIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kDictItemIterator);
+    return thread->raiseRequiresType(self, ID(dict_itemiterator));
   }
   DictItemIterator iter(&scope, *self);
   Dict dict(&scope, iter.iterable());
@@ -737,7 +739,7 @@ RawObject DictItemIteratorBuiltins::dunderLengthHint(Thread* thread,
 }
 
 const BuiltinMethod DictItemsBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderIter, dunderIter},
+    {ID(__iter__), dunderIter},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -747,7 +749,7 @@ RawObject DictItemsBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictItems()) {
-    return thread->raiseRequiresType(self, SymbolId::kDictItems);
+    return thread->raiseRequiresType(self, ID(dict_items));
   }
 
   Dict dict(&scope, DictItems::cast(*self).dict());
@@ -755,9 +757,9 @@ RawObject DictItemsBuiltins::dunderIter(Thread* thread, Frame* frame,
 }
 
 const BuiltinMethod DictKeyIteratorBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderIter, dunderIter},
-    {SymbolId::kDunderLengthHint, dunderLengthHint},
-    {SymbolId::kDunderNext, dunderNext},
+    {ID(__iter__), dunderIter},
+    {ID(__length_hint__), dunderLengthHint},
+    {ID(__next__), dunderNext},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -767,7 +769,7 @@ RawObject DictKeyIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictKeyIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kDictKeyIterator);
+    return thread->raiseRequiresType(self, ID(dict_keyiterator));
   }
   return *self;
 }
@@ -778,7 +780,7 @@ RawObject DictKeyIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictKeyIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kDictKeyIterator);
+    return thread->raiseRequiresType(self, ID(dict_keyiterator));
   }
   DictKeyIterator iter(&scope, *self);
   Object value(&scope, dictKeyIteratorNext(thread, iter));
@@ -794,7 +796,7 @@ RawObject DictKeyIteratorBuiltins::dunderLengthHint(Thread* thread,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictKeyIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kDictKeyIterator);
+    return thread->raiseRequiresType(self, ID(dict_keyiterator));
   }
   DictKeyIterator iter(&scope, *self);
   Dict dict(&scope, iter.iterable());
@@ -802,7 +804,7 @@ RawObject DictKeyIteratorBuiltins::dunderLengthHint(Thread* thread,
 }
 
 const BuiltinMethod DictKeysBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderIter, dunderIter},
+    {ID(__iter__), dunderIter},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -812,7 +814,7 @@ RawObject DictKeysBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictKeys()) {
-    return thread->raiseRequiresType(self, SymbolId::kDictKeys);
+    return thread->raiseRequiresType(self, ID(dict_keys));
   }
 
   Dict dict(&scope, DictKeys::cast(*self).dict());
@@ -820,9 +822,9 @@ RawObject DictKeysBuiltins::dunderIter(Thread* thread, Frame* frame,
 }
 
 const BuiltinMethod DictValueIteratorBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderIter, dunderIter},
-    {SymbolId::kDunderLengthHint, dunderLengthHint},
-    {SymbolId::kDunderNext, dunderNext},
+    {ID(__iter__), dunderIter},
+    {ID(__length_hint__), dunderLengthHint},
+    {ID(__next__), dunderNext},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -832,7 +834,7 @@ RawObject DictValueIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictValueIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kDictValueIterator);
+    return thread->raiseRequiresType(self, ID(dict_valueiterator));
   }
   return *self;
 }
@@ -843,7 +845,7 @@ RawObject DictValueIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictValueIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kDictValueIterator);
+    return thread->raiseRequiresType(self, ID(dict_valueiterator));
   }
   DictValueIterator iter(&scope, *self);
   Object value(&scope, dictValueIteratorNext(thread, iter));
@@ -860,7 +862,7 @@ RawObject DictValueIteratorBuiltins::dunderLengthHint(Thread* thread,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictValueIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kDictValueIterator);
+    return thread->raiseRequiresType(self, ID(dict_valueiterator));
   }
   DictValueIterator iter(&scope, *self);
   Dict dict(&scope, iter.iterable());
@@ -868,7 +870,7 @@ RawObject DictValueIteratorBuiltins::dunderLengthHint(Thread* thread,
 }
 
 const BuiltinMethod DictValuesBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderIter, dunderIter},
+    {ID(__iter__), dunderIter},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -878,7 +880,7 @@ RawObject DictValuesBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictValues()) {
-    return thread->raiseRequiresType(self, SymbolId::kDictValues);
+    return thread->raiseRequiresType(self, ID(dict_values));
   }
 
   Dict dict(&scope, DictValues::cast(*self).dict());

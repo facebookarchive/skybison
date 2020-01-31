@@ -136,15 +136,14 @@ PY_EXPORT PyObject* _PyBytes_DecodeEscape(const char* c_str, Py_ssize_t size,
   Object errors_obj(&scope, Str::empty());
   Symbols* symbols = runtime->symbols();
   if (errors == nullptr || std::strcmp(errors, "strict") == 0) {
-    errors_obj = symbols->at(SymbolId::kStrict);
+    errors_obj = symbols->at(ID(strict));
   } else if (std::strcmp(errors, "ignore") == 0) {
-    errors_obj = symbols->at(SymbolId::kIgnore);
+    errors_obj = symbols->at(ID(ignore));
   } else if (std::strcmp(errors, "replace") == 0) {
-    errors_obj = symbols->at(SymbolId::kReplace);
+    errors_obj = symbols->at(ID(replace));
   }
   Object result_obj(
-      &scope, thread->invokeFunction3(SymbolId::kUnderCodecs,
-                                      SymbolId::kUnderEscapeDecodeStateful,
+      &scope, thread->invokeFunction3(ID(_codecs), ID(_escape_decode_stateful),
                                       bytes, errors_obj, recode_obj));
   if (result_obj.isError()) {
     if (result_obj.isErrorNotFound()) {
@@ -332,8 +331,8 @@ PY_EXPORT PyObject* PyBytes_FromObject(PyObject* pyobj) {
     return pyobj;
   }
 
-  Object result(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
-                                                SymbolId::kUnderBytesNew, obj));
+  Object result(&scope,
+                thread->invokeFunction1(ID(builtins), ID(_bytes_new), obj));
   if (result.isError()) return nullptr;
   return ApiHandle::newReference(thread, *result);
 }
@@ -405,8 +404,8 @@ PY_EXPORT PyObject* _PyBytes_Join(PyObject* sep, PyObject* iter) {
   DCHECK(runtime->isInstanceOfBytes(*obj),
          "non-bytes argument to _PyBytes_Join");
   Object iterable(&scope, ApiHandle::fromPyObject(iter)->asObject());
-  Object result(&scope, thread->invokeMethodStatic2(
-                            LayoutId::kBytes, SymbolId::kJoin, obj, iterable));
+  Object result(&scope, thread->invokeMethodStatic2(LayoutId::kBytes, ID(join),
+                                                    obj, iterable));
   return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
 }
 

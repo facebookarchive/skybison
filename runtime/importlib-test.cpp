@@ -34,11 +34,11 @@ import bar
   Module foo(&scope, *foo_obj);
   EXPECT_TRUE(isStrEqualsCStr(foo.name(), "foo"));
 
-  Object name(&scope, moduleAtById(thread_, foo, SymbolId::kDunderName));
+  Object name(&scope, moduleAtById(thread_, foo, ID(__name__)));
   EXPECT_TRUE(isStrEqualsCStr(*name, "foo"));
-  Object package(&scope, moduleAtById(thread_, foo, SymbolId::kDunderPackage));
+  Object package(&scope, moduleAtById(thread_, foo, ID(__package__)));
   EXPECT_TRUE(isStrEqualsCStr(*package, ""));
-  Object doc(&scope, moduleAtById(thread_, foo, SymbolId::kDunderDoc));
+  Object doc(&scope, moduleAtById(thread_, foo, ID(__doc__)));
   EXPECT_TRUE(doc.isNoneType());
   Str str_x(&scope, runtime_->newStrFromCStr("x"));
   Object x(&scope, moduleAt(thread_, foo, str_x));
@@ -161,9 +161,9 @@ TEST_F(ImportlibTest, BuiltinsDunderImportWithSubmoduleReturnsToplevelModule) {
   Object locals(&scope, NoneType::object());
   Object fromlist(&scope, runtime_->emptyTuple());
   Object level(&scope, runtime_->newInt(0));
-  Object m0(&scope, thread_->invokeFunction5(SymbolId::kBuiltins,
-                                             SymbolId::kDunderImport, subname,
-                                             globals, locals, fromlist, level));
+  Object m0(&scope,
+            thread_->invokeFunction5(ID(builtins), ID(__import__), subname,
+                                     globals, locals, fromlist, level));
   ASSERT_TRUE(m0.isModule());
   EXPECT_TRUE(isStrEqualsCStr(Module::cast(*m0).name(), "top"));
 
@@ -172,19 +172,19 @@ TEST_F(ImportlibTest, BuiltinsDunderImportWithSubmoduleReturnsToplevelModule) {
   EXPECT_EQ(initialized, Bool::trueObj());
 
   Object topname(&scope, runtime_->newStrFromCStr("top"));
-  Object m1(&scope, thread_->invokeFunction5(SymbolId::kBuiltins,
-                                             SymbolId::kDunderImport, topname,
-                                             globals, locals, fromlist, level));
+  Object m1(&scope,
+            thread_->invokeFunction5(ID(builtins), ID(__import__), topname,
+                                     globals, locals, fromlist, level));
   EXPECT_EQ(m0, m1);
 
   // Import a 2nd time so we hit the cache.
-  Object m2(&scope, thread_->invokeFunction5(SymbolId::kBuiltins,
-                                             SymbolId::kDunderImport, subname,
-                                             globals, locals, fromlist, level));
+  Object m2(&scope,
+            thread_->invokeFunction5(ID(builtins), ID(__import__), subname,
+                                     globals, locals, fromlist, level));
   EXPECT_EQ(m0, m2);
-  Object m3(&scope, thread_->invokeFunction5(SymbolId::kBuiltins,
-                                             SymbolId::kDunderImport, topname,
-                                             globals, locals, fromlist, level));
+  Object m3(&scope,
+            thread_->invokeFunction5(ID(builtins), ID(__import__), topname,
+                                     globals, locals, fromlist, level));
   EXPECT_EQ(m0, m3);
 }
 

@@ -11,7 +11,7 @@
 namespace py {
 
 const BuiltinType ArrayModule::kBuiltinTypes[] = {
-    {SymbolId::kArray, LayoutId::kArray},
+    {ID(array), LayoutId::kArray},
     {SymbolId::kSentinelId, LayoutId::kSentinelId},
 };
 
@@ -21,8 +21,7 @@ void ArrayModule::initialize(Thread* thread, const Module& module) {
 }
 
 const BuiltinAttribute ArrayBuiltins::kAttributes[] = {
-    {SymbolId::kUnderTypecode, Array::kTypecodeOffset,
-     AttributeFlags::kReadOnly},
+    {ID(_typecode), Array::kTypecodeOffset, AttributeFlags::kReadOnly},
     {SymbolId::kSentinelId, -1},
 };
 

@@ -387,7 +387,7 @@ RawObject runFromCStr(Runtime* runtime, const char* c_str) {
   HandleScope scope(thread);
   Object str(&scope, runtime->newStrFromCStr(c_str));
   Object filename(&scope, runtime->newStrFromCStr("<test string>"));
-  Code code(&scope, compile(thread, str, filename, SymbolId::kExec, /*flags=*/0,
+  Code code(&scope, compile(thread, str, filename, ID(exec), /*flags=*/0,
                             /*optimize=*/-1));
   Module main_module(&scope, runtime->findOrCreateMainModule());
   Object result(&scope, executeModule(thread, code, main_module));

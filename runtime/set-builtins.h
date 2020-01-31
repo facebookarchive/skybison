@@ -70,9 +70,8 @@ class SetBaseBuiltins {
   static RawObject isdisjoint(Thread* thread, Frame* frame, word nargs);
 };
 
-class SetBuiltins
-    : public SetBaseBuiltins,
-      public Builtins<SetBuiltins, SymbolId::kSet, LayoutId::kSet> {
+class SetBuiltins : public SetBaseBuiltins,
+                    public Builtins<SetBuiltins, ID(set), LayoutId::kSet> {
  public:
   static RawObject clear(Thread* thread, Frame* frame, word nargs);
   static RawObject copy(Thread* thread, Frame* frame, word nargs);
@@ -95,8 +94,7 @@ class SetBuiltins
 
 class FrozenSetBuiltins
     : public SetBaseBuiltins,
-      public Builtins<FrozenSetBuiltins, SymbolId::kFrozenset,
-                      LayoutId::kFrozenSet> {
+      public Builtins<FrozenSetBuiltins, ID(frozenset), LayoutId::kFrozenSet> {
  public:
   static RawObject copy(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderAnd(Thread* thread, Frame* frame, word nargs);
@@ -111,7 +109,7 @@ class FrozenSetBuiltins
 };
 
 class SetIteratorBuiltins
-    : public Builtins<SetIteratorBuiltins, SymbolId::kSetIterator,
+    : public Builtins<SetIteratorBuiltins, ID(set_iterator),
                       LayoutId::kSetIterator> {
  public:
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);

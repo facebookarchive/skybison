@@ -69,8 +69,8 @@ static RawObject moduleValueCellAtPut(Thread* thread, const Module& module,
   if (module_result.isValueCell() &&
       ValueCell::cast(*module_result).isPlaceholder()) {
     // A builtin entry is cached under the same name, so invalidate its caches.
-    Module builtins_module(
-        &scope, moduleAtById(thread, module, SymbolId::kDunderBuiltins));
+    Module builtins_module(&scope,
+                           moduleAtById(thread, module, ID(__builtins__)));
     Dict builtins_dict(&scope, builtins_module.dict());
     Object builtins_result(&scope, filterPlaceholderValueCell(dictAtByStr(
                                        thread, builtins_dict, name)));
@@ -211,7 +211,7 @@ bool nextModuleDictItem(RawTuple data, word* idx) {
 int execDef(Thread* thread, const Module& module, PyModuleDef* def) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Object name_obj(&scope, moduleAtById(thread, module, SymbolId::kDunderName));
+  Object name_obj(&scope, moduleAtById(thread, module, ID(__name__)));
   if (!runtime->isInstanceOfStr(*name_obj)) {
     thread->raiseWithFmt(LayoutId::kSystemError, "nameless module");
     return -1;
@@ -279,13 +279,13 @@ RawObject moduleInit(Thread* thread, const Module& module, const Object& name) {
     module.setName(*name);
   }
   module.setDef(runtime->newIntFromCPtr(nullptr));
-  moduleAtPutById(thread, module, SymbolId::kDunderName, name);
+  moduleAtPutById(thread, module, ID(__name__), name);
 
   Object none(&scope, NoneType::object());
-  moduleAtPutById(thread, module, SymbolId::kDunderDoc, none);
-  moduleAtPutById(thread, module, SymbolId::kDunderPackage, none);
-  moduleAtPutById(thread, module, SymbolId::kDunderLoader, none);
-  moduleAtPutById(thread, module, SymbolId::kDunderSpec, none);
+  moduleAtPutById(thread, module, ID(__doc__), none);
+  moduleAtPutById(thread, module, ID(__package__), none);
+  moduleAtPutById(thread, module, ID(__loader__), none);
+  moduleAtPutById(thread, module, ID(__spec__), none);
   return NoneType::object();
 }
 
@@ -298,10 +298,10 @@ const BuiltinAttribute ModuleBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod ModuleBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderGetattribute, dunderGetattribute},
-    {SymbolId::kDunderInit, dunderInit},
-    {SymbolId::kDunderNew, dunderNew},
-    {SymbolId::kDunderSetattr, dunderSetattr},
+    {ID(__getattribute__), dunderGetattribute},
+    {ID(__init__), dunderInit},
+    {ID(__new__), dunderNew},
+    {ID(__setattr__), dunderSetattr},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -312,7 +312,7 @@ RawObject ModuleBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfModule(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kModule);
+    return thread->raiseRequiresType(self_obj, ID(module));
   }
   Module self(&scope, *self_obj);
   Object name(&scope, args.get(1));
@@ -361,7 +361,7 @@ RawObject ModuleBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfModule(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kModule);
+    return thread->raiseRequiresType(self_obj, ID(module));
   }
   Module self(&scope, *self_obj);
   Object name(&scope, args.get(1));
@@ -380,7 +380,7 @@ RawObject ModuleBuiltins::dunderSetattr(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfModule(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kModule);
+    return thread->raiseRequiresType(self_obj, ID(module));
   }
   Module self(&scope, *self_obj);
   Object name(&scope, args.get(1));

@@ -235,12 +235,12 @@ PY_EXPORT int PyList_SetSlice(PyObject* list, Py_ssize_t low, Py_ssize_t high,
   Object result(&scope, NoneType::object());
   if (items == nullptr) {
     // Equivalent to deleting slice
-    result = thread->invokeMethodStatic2(
-        LayoutId::kList, SymbolId::kDunderDelitem, list_obj, slice);
+    result = thread->invokeMethodStatic2(LayoutId::kList, ID(__delitem__),
+                                         list_obj, slice);
   } else {
     Object items_obj(&scope, ApiHandle::fromPyObject(items)->asObject());
-    result = thread->invokeMethodStatic3(
-        LayoutId::kList, SymbolId::kDunderSetitem, list_obj, slice, items_obj);
+    result = thread->invokeMethodStatic3(LayoutId::kList, ID(__setitem__),
+                                         list_obj, slice, items_obj);
   }
   return result.isError() ? -1 : 0;
 }

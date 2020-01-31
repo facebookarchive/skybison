@@ -232,13 +232,12 @@ RawObject Thread::exec(const Code& code, const Module& module,
   }
 
   Runtime* runtime = this->runtime();
-  Object builtins_module_obj(
-      &scope, moduleAtById(this, module, SymbolId::kDunderBuiltins));
+  Object builtins_module_obj(&scope,
+                             moduleAtById(this, module, ID(__builtins__)));
   if (builtins_module_obj.isErrorNotFound()) {
-    builtins_module_obj = runtime->findModuleById(SymbolId::kBuiltins);
+    builtins_module_obj = runtime->findModuleById(ID(builtins));
     DCHECK(!builtins_module_obj.isErrorNotFound(), "invalid builtins module");
-    moduleAtPutById(this, module, SymbolId::kDunderBuiltins,
-                    builtins_module_obj);
+    moduleAtPutById(this, module, ID(__builtins__), builtins_module_obj);
   }
   Function function(&scope,
                     runtime->newFunctionWithCode(this, qualname, code, module));

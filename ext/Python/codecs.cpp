@@ -78,8 +78,7 @@ PY_EXPORT PyObject* _PyCodec_LookupTextEncoding(const char* encoding,
   HandleScope scope(thread);
   Str encoding_str(&scope, runtime->newStrFromCStr(encoding));
   Str alt_command(&scope, runtime->newStrFromCStr(alternate_command));
-  Object result(&scope, thread->invokeFunction2(SymbolId::kUnderCodecs,
-                                                SymbolId::kUnderLookupText,
+  Object result(&scope, thread->invokeFunction2(ID(_codecs), ID(_lookup_text),
                                                 encoding_str, alt_command));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
@@ -126,9 +125,8 @@ PY_EXPORT PyObject* PyCodec_StrictErrors(PyObject* exc) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object exc_obj(&scope, ApiHandle::fromPyObject(exc)->asObject());
-  Object result(&scope,
-                thread->invokeFunction1(SymbolId::kUnderCodecs,
-                                        SymbolId::kStrictErrors, exc_obj));
+  Object result(
+      &scope, thread->invokeFunction1(ID(_codecs), ID(strict_errors), exc_obj));
   if (result.isErrorNotFound()) {
     thread->raiseWithFmt(LayoutId::kTypeError,
                          "could not call _codecs.strict_errors");

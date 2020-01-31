@@ -27,12 +27,12 @@ static int callWarn(PyObject* category, PyObject* message,
   Object message_obj(&scope, ApiHandle::fromPyObject(message)->asObject());
   Int stack_level_obj(&scope, thread->runtime()->newInt(stack_level));
   Object source_obj(&scope, ApiHandle::fromPyObject(source)->asObject());
-  if (ensureBuiltinModuleById(thread, SymbolId::kWarnings).isErrorException()) {
+  if (ensureBuiltinModuleById(thread, ID(warnings)).isErrorException()) {
     return -1;
   }
   if (thread
-          ->invokeFunction4(SymbolId::kWarnings, SymbolId::kWarn, message_obj,
-                            category_obj, stack_level_obj, source_obj)
+          ->invokeFunction4(ID(warnings), ID(warn), message_obj, category_obj,
+                            stack_level_obj, source_obj)
           .isErrorException()) {
     return -1;
   }
@@ -111,13 +111,13 @@ PY_EXPORT int PyErr_WarnExplicitObject(PyObject* category, PyObject* message,
                       registry == nullptr
                           ? NoneType::object()
                           : ApiHandle::fromPyObject(registry)->asObject());
-  if (ensureBuiltinModuleById(thread, SymbolId::kWarnings).isErrorException()) {
+  if (ensureBuiltinModuleById(thread, ID(warnings)).isErrorException()) {
     return -1;
   }
   if (thread
-          ->invokeFunction6(SymbolId::kWarnings, SymbolId::kWarnExplicit,
-                            message_obj, category_obj, filename_obj, lineno_obj,
-                            module_obj, registry_obj)
+          ->invokeFunction6(ID(warnings), ID(warn_explicit), message_obj,
+                            category_obj, filename_obj, lineno_obj, module_obj,
+                            registry_obj)
           .isError()) {
     return -1;
   }

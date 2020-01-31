@@ -56,7 +56,7 @@ bool bytesIsValidStr(RawBytes bytes);
 RawObject bytesUnderlying(Thread* thread, const Object& obj);
 
 class SmallBytesBuiltins
-    : public ImmediateBuiltins<SmallBytesBuiltins, SymbolId::kSmallBytes,
+    : public ImmediateBuiltins<SmallBytesBuiltins, ID(smallbytes),
                                LayoutId::kSmallBytes, LayoutId::kBytes> {
  public:
   static void postInitialize(Runtime* runtime, const Type& new_type);
@@ -66,8 +66,8 @@ class SmallBytesBuiltins
 };
 
 class LargeBytesBuiltins
-    : public Builtins<LargeBytesBuiltins, SymbolId::kLargeBytes,
-                      LayoutId::kLargeBytes, LayoutId::kBytes> {
+    : public Builtins<LargeBytesBuiltins, ID(largebytes), LayoutId::kLargeBytes,
+                      LayoutId::kBytes> {
  public:
   static void postInitialize(Runtime* runtime, const Type& new_type);
 
@@ -76,7 +76,7 @@ class LargeBytesBuiltins
 };
 
 class BytesBuiltins
-    : public Builtins<BytesBuiltins, SymbolId::kBytes, LayoutId::kBytes> {
+    : public Builtins<BytesBuiltins, ID(bytes), LayoutId::kBytes> {
  public:
   static void postInitialize(Runtime*, const Type& new_type);
 
@@ -108,7 +108,7 @@ class BytesBuiltins
 };
 
 class BytesIteratorBuiltins
-    : public Builtins<BytesIteratorBuiltins, SymbolId::kBytesIterator,
+    : public Builtins<BytesIteratorBuiltins, ID(bytes_iterator),
                       LayoutId::kBytesIterator> {
  public:
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);

@@ -575,133 +575,133 @@ static bool len(Frame* frame) {
 
 bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
   switch (name) {
-    case SymbolId::kUnderBoolCheck:
+    case ID(_bool_check):
       return underBoolCheck(frame);
-    case SymbolId::kUnderBoolGuard:
+    case ID(_bool_guard):
       return underBoolGuard(frame);
-    case SymbolId::kUnderBytearrayCheck:
+    case ID(_bytearray_check):
       return underBytearrayCheck(thread, frame);
-    case SymbolId::kUnderBytearrayGuard:
+    case ID(_bytearray_guard):
       return underBytearrayGuard(thread, frame);
-    case SymbolId::kUnderBytearrayLen:
+    case ID(_bytearray_len):
       return underBytearrayLen(frame);
-    case SymbolId::kUnderBytesCheck:
+    case ID(_bytes_check):
       return underBytesCheck(thread, frame);
-    case SymbolId::kUnderBytesGuard:
+    case ID(_bytes_guard):
       return underBytesGuard(thread, frame);
-    case SymbolId::kUnderBytesLen:
+    case ID(_bytes_len):
       return underBytesLen(frame);
-    case SymbolId::kUnderByteslikeCheck:
+    case ID(_byteslike_check):
       return underByteslikeCheck(thread, frame);
-    case SymbolId::kUnderByteslikeGuard:
+    case ID(_byteslike_guard):
       return underByteslikeGuard(thread, frame);
-    case SymbolId::kUnderComplexCheck:
+    case ID(_complex_check):
       return underComplexCheck(thread, frame);
-    case SymbolId::kUnderDictCheck:
+    case ID(_dict_check):
       return underDictCheck(thread, frame);
-    case SymbolId::kUnderDictCheckExact:
+    case ID(_dict_check_exact):
       return underDictCheckExact(frame);
-    case SymbolId::kUnderDictGuard:
+    case ID(_dict_guard):
       return underDictGuard(thread, frame);
-    case SymbolId::kUnderDictLen:
+    case ID(_dict_len):
       return underDictLen(frame);
-    case SymbolId::kUnderFloatCheck:
+    case ID(_float_check):
       return underFloatCheck(thread, frame);
-    case SymbolId::kUnderFloatCheckExact:
+    case ID(_float_check_exact):
       return underFloatCheckExact(frame);
-    case SymbolId::kUnderFloatGuard:
+    case ID(_float_guard):
       return underFloatGuard(thread, frame);
-    case SymbolId::kUnderFrozensetCheck:
+    case ID(_frozenset_check):
       return underFrozensetCheck(thread, frame);
-    case SymbolId::kUnderFrozensetGuard:
+    case ID(_frozenset_guard):
       return underFrozensetGuard(thread, frame);
-    case SymbolId::kUnderFunctionGuard:
+    case ID(_function_guard):
       return underFunctionGuard(thread, frame);
-    case SymbolId::kUnderIndex:
+    case ID(_index):
       return underIndex(thread, frame);
-    case SymbolId::kUnderIntCheck:
+    case ID(_int_check):
       return underIntCheck(thread, frame);
-    case SymbolId::kUnderIntCheckExact:
+    case ID(_int_check_exact):
       return underIntCheckExact(frame);
-    case SymbolId::kUnderIntGuard:
+    case ID(_int_guard):
       return underIntGuard(thread, frame);
-    case SymbolId::kUnderListCheck:
+    case ID(_list_check):
       return underListCheck(thread, frame);
-    case SymbolId::kUnderListCheckExact:
+    case ID(_list_check_exact):
       return underListCheckExact(frame);
-    case SymbolId::kUnderListGetitem:
+    case ID(_list_getitem):
       return underListGetitem(frame);
-    case SymbolId::kUnderListGuard:
+    case ID(_list_guard):
       return underListGuard(thread, frame);
-    case SymbolId::kUnderListLen:
+    case ID(_list_len):
       return underListLen(frame);
-    case SymbolId::kUnderListSetitem:
+    case ID(_list_setitem):
       return underListSetitem(frame);
-    case SymbolId::kUnderMemoryviewGuard:
+    case ID(_memoryview_guard):
       return underMemoryviewGuard(frame);
-    case SymbolId::kUnderNumberCheck:
+    case ID(_number_check):
       return underNumberCheck(thread, frame);
-    case SymbolId::kUnderRangeCheck:
+    case ID(_range_check):
       return underRangeCheck(frame);
-    case SymbolId::kUnderRangeGuard:
+    case ID(_range_guard):
       return underRangeGuard(frame);
-    case SymbolId::kUnderSeqIndex:
+    case ID(_seq_index):
       return underSeqIndex(frame);
-    case SymbolId::kUnderSeqIterable:
+    case ID(_seq_iterable):
       return underSeqIterable(frame);
-    case SymbolId::kUnderSeqSetIndex:
+    case ID(_seq_set_index):
       return underSeqSetIndex(frame);
-    case SymbolId::kUnderSeqSetIterable:
+    case ID(_seq_set_iterable):
       return underSeqSetIterable(frame);
-    case SymbolId::kUnderSetCheck:
+    case ID(_set_check):
       return underSetCheck(thread, frame);
-    case SymbolId::kUnderSetGuard:
+    case ID(_set_guard):
       return underSetGuard(thread, frame);
-    case SymbolId::kUnderSetLen:
+    case ID(_set_len):
       return underSetLen(frame);
-    case SymbolId::kUnderSliceCheck:
+    case ID(_slice_check):
       return underSliceCheck(frame);
-    case SymbolId::kUnderSliceGuard:
+    case ID(_slice_guard):
       return underSliceGuard(frame);
-    case SymbolId::kUnderSliceIndex:
+    case ID(_slice_index):
       return underSliceIndex(thread, frame);
-    case SymbolId::kUnderSliceIndexNotNone:
+    case ID(_slice_index_not_none):
       return underSliceIndexNotNone(thread, frame);
-    case SymbolId::kUnderStrCheck:
+    case ID(_str_check):
       return underStrCheck(thread, frame);
-    case SymbolId::kUnderStrCheckExact:
+    case ID(_str_check_exact):
       return underStrCheckExact(frame);
-    case SymbolId::kUnderStrGuard:
+    case ID(_str_guard):
       return underStrGuard(thread, frame);
-    case SymbolId::kUnderStrLen:
+    case ID(_str_len):
       return underStrLen(frame);
-    case SymbolId::kUnderTupleCheck:
+    case ID(_tuple_check):
       return underTupleCheck(thread, frame);
-    case SymbolId::kUnderTupleCheckExact:
+    case ID(_tuple_check_exact):
       return underTupleCheckExact(frame);
-    case SymbolId::kUnderTupleGetitem:
+    case ID(_tuple_getitem):
       return underTupleGetitem(frame);
-    case SymbolId::kUnderTupleGuard:
+    case ID(_tuple_guard):
       return underTupleGuard(thread, frame);
-    case SymbolId::kUnderTupleLen:
+    case ID(_tuple_len):
       return underTupleLen(frame);
-    case SymbolId::kUnderType:
+    case ID(_type):
       return underType(thread, frame);
-    case SymbolId::kUnderTypeCheck:
+    case ID(_type_check):
       return underTypeCheck(thread, frame);
-    case SymbolId::kUnderTypeCheckExact:
+    case ID(_type_check_exact):
       return underTypeCheckExact(frame);
-    case SymbolId::kUnderTypeGuard:
+    case ID(_type_guard):
       return underTypeGuard(thread, frame);
-    case SymbolId::kUnderTypeSubclassGuard:
+    case ID(_type_subclass_guard):
       return underTypeSubclassGuard(frame);
-    case SymbolId::kUnderWeakrefCheck:
+    case ID(_weakref_check):
       return underWeakrefCheck(thread, frame);
-    case SymbolId::kUnderWeakrefGuard:
+    case ID(_weakref_guard):
       return underWeakrefGuard(thread, frame);
-    case SymbolId::kIsinstance:
+    case ID(isinstance):
       return isinstance(thread, frame);
-    case SymbolId::kLen:
+    case ID(len):
       return len(frame);
     default:
       UNREACHABLE("function %s does not have an intrinsic implementation",

@@ -24,9 +24,9 @@ static RawObject createDummyBuiltinFunction(Thread* thread) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Function::Entry entry = UnderBuiltinsModule::underIntCheck;
-  Object name(&scope, runtime->symbols()->at(SymbolId::kUnderIntCheck));
+  Object name(&scope, runtime->symbols()->at(ID(_int_check)));
   Tuple parameter_names(&scope, runtime->newTuple(1));
-  parameter_names.atPut(0, runtime->symbols()->at(SymbolId::kSelf));
+  parameter_names.atPut(0, runtime->symbols()->at(ID(self)));
   Code code(&scope,
             runtime->newBuiltinCode(/*argcount=*/1, /*posonlyargcount=*/0,
                                     /*kwonlyargcount=*/0,
@@ -34,7 +34,7 @@ static RawObject createDummyBuiltinFunction(Thread* thread) {
   Object module(&scope, NoneType::object());
   Function function(&scope,
                     runtime->newFunctionWithCode(thread, name, code, module));
-  function.setIntrinsicId(static_cast<word>(SymbolId::kUnderIntCheck));
+  function.setIntrinsicId(static_cast<word>(ID(_int_check)));
   return *function;
 }
 
@@ -57,7 +57,7 @@ def _int_check(self):
   EXPECT_EQ(python_func.entryKw(), &builtinTrampolineKw);
   EXPECT_EQ(python_func.entryEx(), &builtinTrampolineEx);
   EXPECT_TRUE(isSymbolIdEquals(static_cast<SymbolId>(python_func.intrinsicId()),
-                               SymbolId::kUnderIntCheck));
+                               ID(_int_check)));
 }
 
 TEST_F(UnderBuiltinsModuleDeathTest, CopyFunctionEntriesRedefinitionDies) {

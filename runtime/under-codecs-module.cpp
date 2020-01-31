@@ -15,17 +15,17 @@ extern "C" unsigned int _Py_ctype_table[];      // from Include/pyctype.h
 namespace py {
 
 const BuiltinFunction UnderCodecsModule::kBuiltinFunctions[] = {
-    {SymbolId::kUnderAsciiDecode, underAsciiDecode},
-    {SymbolId::kUnderAsciiEncode, underAsciiEncode},
-    {SymbolId::kUnderBytearrayStringAppend, underBytearrayStringAppend},
-    {SymbolId::kUnderEscapeDecode, underEscapeDecode},
-    {SymbolId::kUnderLatin1Decode, underLatin1Decode},
-    {SymbolId::kUnderLatin1Encode, underLatin1Encode},
-    {SymbolId::kUnderUnicodeEscapeDecode, underUnicodeEscapeDecode},
-    {SymbolId::kUnderUtf16Encode, underUtf16Encode},
-    {SymbolId::kUnderUtf32Encode, underUtf32Encode},
-    {SymbolId::kUnderUtf8Decode, underUtf8Decode},
-    {SymbolId::kUnderUtf8Encode, underUtf8Encode},
+    {ID(_ascii_decode), underAsciiDecode},
+    {ID(_ascii_encode), underAsciiEncode},
+    {ID(_bytearray_string_append), underBytearrayStringAppend},
+    {ID(_escape_decode), underEscapeDecode},
+    {ID(_latin_1_decode), underLatin1Decode},
+    {ID(_latin_1_encode), underLatin1Encode},
+    {ID(_unicode_escape_decode), underUnicodeEscapeDecode},
+    {ID(_utf_16_encode), underUtf16Encode},
+    {ID(_utf_32_encode), underUtf32Encode},
+    {ID(_utf_8_decode), underUtf8Decode},
+    {ID(_utf_8_encode), underUtf8Encode},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -40,16 +40,16 @@ const char kASCIIReplacement = '?';
 
 static SymbolId lookupSymbolForErrorHandler(const Str& error) {
   if (error.equalsCStr("strict")) {
-    return SymbolId::kStrict;
+    return ID(strict);
   }
   if (error.equalsCStr("ignore")) {
-    return SymbolId::kIgnore;
+    return ID(ignore);
   }
   if (error.equalsCStr("replace")) {
-    return SymbolId::kReplace;
+    return ID(replace);
   }
   if (error.equalsCStr("surrogateescape")) {
-    return SymbolId::kSurrogateescape;
+    return ID(surrogateescape);
   }
   return SymbolId::kInvalid;
 }
@@ -97,19 +97,19 @@ RawObject UnderCodecsModule::underAsciiDecode(Thread* thread, Frame* frame,
       continue;
     }
     switch (error_id) {
-      case SymbolId::kReplace: {
+      case ID(replace): {
         Str temp(&scope, SmallStr::fromCodePoint(0xFFFD));
         runtime->strArrayAddStr(thread, dst, temp);
         ++outpos;
         break;
       }
-      case SymbolId::kSurrogateescape: {
+      case ID(surrogateescape): {
         Str temp(&scope, SmallStr::fromCodePoint(kLowSurrogateStart + c));
         runtime->strArrayAddStr(thread, dst, temp);
         ++outpos;
         break;
       }
-      case SymbolId::kIgnore:
+      case ID(ignore):
         ++outpos;
         break;
       default:
@@ -160,12 +160,12 @@ RawObject UnderCodecsModule::underAsciiEncode(Thread* thread, Frame* frame,
       byteArrayAdd(thread, runtime, output, codepoint);
     } else {
       switch (error_symbol) {
-        case SymbolId::kIgnore:
+        case ID(ignore):
           continue;
-        case SymbolId::kReplace:
+        case ID(replace):
           byteArrayAdd(thread, runtime, output, kASCIIReplacement);
           continue;
-        case SymbolId::kSurrogateescape:
+        case ID(surrogateescape):
           if (isEscapedLatin1Surrogate(codepoint)) {
             byteArrayAdd(thread, runtime, output,
                          codepoint - kLowSurrogateStart);
@@ -324,14 +324,14 @@ RawObject UnderCodecsModule::underEscapeDecode(Thread* thread, Frame* frame,
     }
     SymbolId error_id = lookupSymbolForErrorHandler(errors);
     switch (error_id) {
-      case SymbolId::kStrict:
+      case ID(strict):
         return runtime->newStrFromFmt("invalid \\x escape at position %d",
                                       i - 2);
-      case SymbolId::kReplace: {
+      case ID(replace): {
         byteArrayAdd(thread, runtime, dst, '?');
         break;
       }
-      case SymbolId::kIgnore:
+      case ID(ignore):
         break;
       default:
         return runtime->newStrFromFmt(
@@ -403,12 +403,12 @@ RawObject UnderCodecsModule::underLatin1Encode(Thread* thread, Frame* frame,
       byteArrayAdd(thread, runtime, output, codepoint);
     } else {
       switch (error_symbol) {
-        case SymbolId::kIgnore:
+        case ID(ignore):
           continue;
-        case SymbolId::kReplace:
+        case ID(replace):
           byteArrayAdd(thread, runtime, output, kASCIIReplacement);
           continue;
-        case SymbolId::kSurrogateescape:
+        case ID(surrogateescape):
           if (isEscapedLatin1Surrogate(codepoint)) {
             byteArrayAdd(thread, runtime, output,
                          codepoint - kLowSurrogateStart);
@@ -625,12 +625,12 @@ RawObject UnderCodecsModule::underUnicodeEscapeDecode(Thread* thread,
     if (message != nullptr) {
       SymbolId error_id = lookupSymbolForErrorHandler(errors);
       switch (error_id) {
-        case SymbolId::kReplace: {
+        case ID(replace): {
           Str temp(&scope, SmallStr::fromCodePoint(0xFFFD));
           runtime->strArrayAddStr(thread, dst, temp);
           break;
         }
-        case SymbolId::kIgnore:
+        case ID(ignore):
           break;
         default:
           result.atPut(0, runtime->newInt(start_pos));
@@ -837,13 +837,13 @@ RawObject UnderCodecsModule::underUtf8Decode(Thread* thread, Frame* frame,
             "valid utf-8 codepoints should have been decoded by this point");
     }
     switch (error_id) {
-      case SymbolId::kReplace: {
+      case ID(replace): {
         Str temp(&scope, SmallStr::fromCodePoint(kReplacementCharacter));
         runtime->strArrayAddStr(thread, dst, temp);
         i = error_end;
         break;
       }
-      case SymbolId::kSurrogateescape: {
+      case ID(surrogateescape): {
         for (; i < error_end; ++i) {
           Str temp(&scope, SmallStr::fromCodePoint(kLowSurrogateStart +
                                                    bytes.byteAt(i)));
@@ -851,7 +851,7 @@ RawObject UnderCodecsModule::underUtf8Decode(Thread* thread, Frame* frame,
         }
         break;
       }
-      case SymbolId::kIgnore:
+      case ID(ignore):
         i = error_end;
         break;
       default:
@@ -893,12 +893,12 @@ RawObject UnderCodecsModule::underUtf8Encode(Thread* thread, Frame* frame,
       }
     } else {
       switch (error_symbol) {
-        case SymbolId::kIgnore:
+        case ID(ignore):
           continue;
-        case SymbolId::kReplace:
+        case ID(replace):
           byteArrayAdd(thread, runtime, output, kASCIIReplacement);
           continue;
-        case SymbolId::kSurrogateescape:
+        case ID(surrogateescape):
           if (isEscapedLatin1Surrogate(codepoint)) {
             byteArrayAdd(thread, runtime, output,
                          codepoint - kLowSurrogateStart);
@@ -980,13 +980,13 @@ RawObject UnderCodecsModule::underUtf16Encode(Thread* thread, Frame* frame,
       }
     } else {
       switch (error_id) {
-        case SymbolId::kIgnore:
+        case ID(ignore):
           continue;
-        case SymbolId::kReplace:
+        case ID(replace):
           appendUtf16ToByteArray(thread, runtime, output, kASCIIReplacement,
                                  endianness);
           continue;
-        case SymbolId::kSurrogateescape:
+        case ID(surrogateescape):
           if (isEscapedLatin1Surrogate(codepoint)) {
             appendUtf16ToByteArray(thread, runtime, output,
                                    codepoint - kLowSurrogateStart, endianness);
@@ -1057,13 +1057,13 @@ RawObject UnderCodecsModule::underUtf32Encode(Thread* thread, Frame* frame,
       appendUtf32ToByteArray(thread, runtime, output, codepoint, endianness);
     } else {
       switch (error_id) {
-        case SymbolId::kIgnore:
+        case ID(ignore):
           continue;
-        case SymbolId::kReplace:
+        case ID(replace):
           appendUtf32ToByteArray(thread, runtime, output, kASCIIReplacement,
                                  endianness);
           continue;
-        case SymbolId::kSurrogateescape:
+        case ID(surrogateescape):
           if (isEscapedLatin1Surrogate(codepoint)) {
             appendUtf32ToByteArray(thread, runtime, output,
                                    codepoint - kLowSurrogateStart, endianness);

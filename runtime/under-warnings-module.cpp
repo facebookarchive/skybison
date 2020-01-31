@@ -11,7 +11,7 @@
 namespace py {
 
 const BuiltinFunction UnderWarningsModule::kBuiltinFunctions[] = {
-    {SymbolId::kWarn, warn},
+    {ID(warn), warn},
     {SymbolId::kSentinelId, nullptr},
 };
 

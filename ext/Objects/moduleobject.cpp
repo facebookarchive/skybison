@@ -60,7 +60,7 @@ PY_EXPORT PyObject* PyModule_Create2(PyModuleDef* def, int) {
 
   if (def->m_doc != nullptr) {
     Object doc(&scope, runtime->newStrFromCStr(def->m_doc));
-    moduleAtPutById(thread, module, SymbolId::kDunderDoc, doc);
+    moduleAtPutById(thread, module, ID(__doc__), doc);
   }
 
   Py_ssize_t m_size = def->m_size;
@@ -121,7 +121,7 @@ PY_EXPORT PyObject* PyModule_GetNameObject(PyObject* mod) {
     return nullptr;
   }
   Module module(&scope, *module_obj);
-  Object name(&scope, moduleAtById(thread, module, SymbolId::kDunderName));
+  Object name(&scope, moduleAtById(thread, module, ID(__name__)));
   if (!runtime->isInstanceOfStr(*name)) {
     thread->raiseWithFmt(LayoutId::kSystemError, "nameless module");
     return nullptr;
@@ -182,7 +182,7 @@ PY_EXPORT PyObject* PyModule_GetFilenameObject(PyObject* pymodule) {
     return nullptr;
   }
   Module module(&scope, *module_obj);
-  Object filename(&scope, moduleAtById(thread, module, SymbolId::kDunderFile));
+  Object filename(&scope, moduleAtById(thread, module, ID(__file__)));
   if (!runtime->isInstanceOfStr(*filename)) {
     thread->raiseWithFmt(LayoutId::kSystemError, "module filename missing");
     return nullptr;
@@ -224,8 +224,8 @@ PY_EXPORT int PyModule_SetDocString(PyObject* m, const char* doc) {
   if (!uni.isStr()) {
     return -1;
   }
-  Object name(&scope, runtime->symbols()->at(SymbolId::kDunderDoc));
-  if (thread->invokeMethod3(module, SymbolId::kDunderSetattr, name, uni)
+  Object name(&scope, runtime->symbols()->at(ID(__doc__)));
+  if (thread->invokeMethod3(module, ID(__setattr__), name, uni)
           .isErrorException()) {
     return -1;
   }

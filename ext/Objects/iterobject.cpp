@@ -20,9 +20,9 @@ PY_EXPORT PyObject* PyCallIter_New(PyObject* pycallable, PyObject* pysentinel) {
   HandleScope scope(thread);
   Object callable(&scope, ApiHandle::fromPyObject(pycallable)->asObject());
   Object sentinel(&scope, ApiHandle::fromPyObject(pysentinel)->asObject());
-  Object result(&scope, thread->invokeFunction2(SymbolId::kBuiltins,
-                                                SymbolId::kCallableIterator,
-                                                callable, sentinel));
+  Object result(&scope,
+                thread->invokeFunction2(ID(builtins), ID(callable_iterator),
+                                        callable, sentinel));
   if (result.isErrorException()) return nullptr;
   return ApiHandle::newReference(thread, *result);
 }

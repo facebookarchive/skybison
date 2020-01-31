@@ -413,7 +413,7 @@ TEST_F(ObjectBuiltinsTest,
        InstanceDelAttrWithReadonlyAttributeRaisesAttributeError) {
   HandleScope scope(thread_);
   BuiltinAttribute attrs[] = {
-      {SymbolId::kDunderGlobals, 0, AttributeFlags::kReadOnly},
+      {ID(__globals__), 0, AttributeFlags::kReadOnly},
       {SymbolId::kSentinelId, -1},
   };
   BuiltinMethod builtins[] = {
@@ -421,8 +421,8 @@ TEST_F(ObjectBuiltinsTest,
   };
   LayoutId layout_id = LayoutId::kLastBuiltinId;
   Type type(&scope,
-            runtime_->addBuiltinType(SymbolId::kVersion, layout_id,
-                                     LayoutId::kObject, attrs, builtins));
+            runtime_->addBuiltinType(ID(version), layout_id, LayoutId::kObject,
+                                     attrs, builtins));
   Layout layout(&scope, type.instanceLayout());
   runtime_->layoutAtPut(layout_id, *layout);
   Instance instance(&scope, runtime_->newInstance(layout));

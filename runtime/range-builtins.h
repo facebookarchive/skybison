@@ -10,7 +10,7 @@ RawObject rangeLen(Thread* thread, const Object& start_obj,
                    const Object& stop_obj, const Object& step_obj);
 
 class LongRangeIteratorBuiltins
-    : public Builtins<LongRangeIteratorBuiltins, SymbolId::kLongRangeIterator,
+    : public Builtins<LongRangeIteratorBuiltins, ID(longrange_iterator),
                       LayoutId::kLongRangeIterator> {
  public:
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
@@ -24,7 +24,7 @@ class LongRangeIteratorBuiltins
 };
 
 class RangeBuiltins
-    : public Builtins<RangeBuiltins, SymbolId::kRange, LayoutId::kRange> {
+    : public Builtins<RangeBuiltins, ID(range), LayoutId::kRange> {
  public:
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
@@ -38,7 +38,7 @@ class RangeBuiltins
 };
 
 class RangeIteratorBuiltins
-    : public Builtins<RangeIteratorBuiltins, SymbolId::kRangeIterator,
+    : public Builtins<RangeIteratorBuiltins, ID(range_iterator),
                       LayoutId::kRangeIterator> {
  public:
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);

@@ -74,8 +74,8 @@ class ObjectBuiltins {
 };
 
 class NoneBuiltins
-    : public ImmediateBuiltins<NoneBuiltins, SymbolId::kNoneType,
-                               LayoutId::kNoneType, LayoutId::kObject> {
+    : public ImmediateBuiltins<NoneBuiltins, ID(NoneType), LayoutId::kNoneType,
+                               LayoutId::kObject> {
  public:
   static RawObject dunderNew(Thread*, Frame*, word);
   static RawObject dunderRepr(Thread*, Frame*, word);
@@ -87,15 +87,15 @@ class NoneBuiltins
 };
 
 class NotImplementedBuiltins
-    : public ImmediateBuiltins<
-          NotImplementedBuiltins, SymbolId::kNotImplementedType,
-          LayoutId::kNotImplementedType, LayoutId::kObject> {
+    : public ImmediateBuiltins<NotImplementedBuiltins, ID(NotImplementedType),
+                               LayoutId::kNotImplementedType,
+                               LayoutId::kObject> {
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(NotImplementedBuiltins);
 };
 
 class UnboundBuiltins
-    : public ImmediateBuiltins<UnboundBuiltins, SymbolId::kUnderUnbound,
+    : public ImmediateBuiltins<UnboundBuiltins, ID(_Unbound),
                                LayoutId::kUnbound, LayoutId::kObject> {
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(UnboundBuiltins);

@@ -1287,7 +1287,7 @@ it = iter(ba)
   ByteArray ba(&scope, mainModuleAt(runtime_, "ba"));
   ByteArrayIterator it(&scope, mainModuleAt(runtime_, "it"));
   ba.setNumItems(0);
-  EXPECT_TRUE(raised(thread_->invokeMethod1(it, SymbolId::kDunderNext),
+  EXPECT_TRUE(raised(thread_->invokeMethod1(it, ID(__next__)),
                      LayoutId::kStopIteration));
 }
 

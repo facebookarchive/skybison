@@ -75,8 +75,7 @@ RawObject Interpreter::prepareCallable(Thread* thread, Frame* frame,
     }
     // TODO(T44238481): Look into using lookupMethod() once it's fixed.
     Type type(&scope, runtime->typeOf(**callable));
-    Object dunder_call(
-        &scope, typeLookupInMroById(thread, type, SymbolId::kDunderCall));
+    Object dunder_call(&scope, typeLookupInMroById(thread, type, ID(__call__)));
     if (!dunder_call.isErrorNotFound()) {
       if (dunder_call.isFunction()) {
         // Avoid calling function.__get__ and creating a short-lived BoundMethod
@@ -220,8 +219,7 @@ RawObject Interpreter::prepareCallableEx(Thread* thread, Frame* frame,
       args_obj = thread->runtime()->tupleSubseq(thread, list_items, 0,
                                                 list.numItems());
     }
-    args_obj = thread->invokeFunction1(SymbolId::kBuiltins, SymbolId::kTuple,
-                                       args_obj);
+    args_obj = thread->invokeFunction1(ID(builtins), ID(tuple), args_obj);
     if (args_obj.isErrorException()) return *args_obj;
     frame->setValueAt(*args_obj, args_idx);
   }
@@ -249,8 +247,8 @@ static RawObject callDunderHash(Thread* thread, const Object& value) {
   Frame* frame = thread->currentFrame();
   // TODO(T52406106): This lookup is unfortunately not inline-cached but should
   // eventually be called less and less as code moves to managed.
-  Object dunder_hash(&scope, Interpreter::lookupMethod(thread, frame, value,
-                                                       SymbolId::kDunderHash));
+  Object dunder_hash(
+      &scope, Interpreter::lookupMethod(thread, frame, value, ID(__hash__)));
   if (dunder_hash.isNoneType() || dunder_hash.isError()) {
     if (dunder_hash.isErrorException()) {
       thread->clearPendingException();
@@ -373,8 +371,8 @@ RawObject Interpreter::callDescriptorGet(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type descriptor_type(&scope, runtime->typeOf(*descriptor));
-  Object method(&scope, typeLookupInMroById(thread, descriptor_type,
-                                            SymbolId::kDunderGet));
+  Object method(&scope,
+                typeLookupInMroById(thread, descriptor_type, ID(__get__)));
   DCHECK(!method.isErrorNotFound(), "no __get__ method found");
   return callMethod3(thread, frame, method, descriptor, receiver,
                      receiver_type);
@@ -387,8 +385,8 @@ RawObject Interpreter::callDescriptorSet(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type descriptor_type(&scope, runtime->typeOf(*descriptor));
-  Object method(&scope, typeLookupInMroById(thread, descriptor_type,
-                                            SymbolId::kDunderSet));
+  Object method(&scope,
+                typeLookupInMroById(thread, descriptor_type, ID(__set__)));
   DCHECK(!method.isErrorNotFound(), "no __set__ method found");
   return callMethod3(thread, frame, method, descriptor, receiver, value);
 }
@@ -399,8 +397,8 @@ RawObject Interpreter::callDescriptorDelete(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type descriptor_type(&scope, runtime->typeOf(*descriptor));
-  Object method(&scope, typeLookupInMroById(thread, descriptor_type,
-                                            SymbolId::kDunderDelete));
+  Object method(&scope,
+                typeLookupInMroById(thread, descriptor_type, ID(__delete__)));
   DCHECK(!method.isErrorNotFound(), "no __delete__ method found");
   return callMethod2(thread, frame, method, descriptor, receiver);
 }
@@ -947,8 +945,8 @@ RawObject Interpreter::createIterator(Thread* thread, Frame* frame,
                                       const Object& iterable) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Object dunder_iter(
-      &scope, lookupMethod(thread, frame, iterable, SymbolId::kDunderIter));
+  Object dunder_iter(&scope,
+                     lookupMethod(thread, frame, iterable, ID(__iter__)));
   if (dunder_iter.isError() || dunder_iter.isNoneType()) {
     if (dunder_iter.isErrorNotFound() &&
         runtime->isSequence(thread, iterable)) {
@@ -976,8 +974,7 @@ RawObject Interpreter::sequenceIterSearch(Thread* thread, Frame* frame,
   if (iter.isErrorException()) {
     return *iter;
   }
-  Object dunder_next(&scope,
-                     lookupMethod(thread, frame, iter, SymbolId::kDunderNext));
+  Object dunder_next(&scope, lookupMethod(thread, frame, iter, ID(__next__)));
   if (dunder_next.isError()) {
     if (dunder_next.isErrorException()) {
       thread->clearPendingException();
@@ -1018,8 +1015,8 @@ RawObject Interpreter::sequenceContains(Thread* thread, Frame* frame,
                                         const Object& value,
                                         const Object& container) {
   HandleScope scope(thread);
-  Object method(&scope, lookupMethod(thread, frame, container,
-                                     SymbolId::kDunderContains));
+  Object method(&scope,
+                lookupMethod(thread, frame, container, ID(__contains__)));
   if (!method.isError()) {
     Object result(&scope, callMethod2(thread, frame, method, container, value));
     if (result.isErrorException()) {
@@ -1076,7 +1073,7 @@ RawObject Interpreter::isTrueSlowPath(Thread* thread, RawObject value_obj) {
   }
   HandleScope scope(thread);
   Object value(&scope, value_obj);
-  Object result(&scope, thread->invokeMethod1(value, SymbolId::kDunderBool));
+  Object result(&scope, thread->invokeMethod1(value, ID(__bool__)));
   if (!result.isError()) {
     if (result.isBool()) return *result;
     return thread->raiseWithFmt(LayoutId::kTypeError,
@@ -1087,7 +1084,7 @@ RawObject Interpreter::isTrueSlowPath(Thread* thread, RawObject value_obj) {
   }
   DCHECK(result.isErrorNotFound(), "expected error not found");
 
-  result = thread->invokeMethod1(value, SymbolId::kDunderLen);
+  result = thread->invokeMethod1(value, ID(__len__));
   if (!result.isError()) {
     if (thread->runtime()->isInstanceOfInt(*result)) {
       Int integer(&scope, intUnderlying(*result));
@@ -1384,11 +1381,11 @@ HANDLER_INLINE Continue Interpreter::doNop(Thread*, word) {
 }
 
 HANDLER_INLINE Continue Interpreter::doUnaryPositive(Thread* thread, word) {
-  return doUnaryOperation(SymbolId::kDunderPos, thread);
+  return doUnaryOperation(ID(__pos__), thread);
 }
 
 HANDLER_INLINE Continue Interpreter::doUnaryNegative(Thread* thread, word) {
-  return doUnaryOperation(SymbolId::kDunderNeg, thread);
+  return doUnaryOperation(ID(__neg__), thread);
 }
 
 HANDLER_INLINE Continue Interpreter::doUnaryNot(Thread* thread, word) {
@@ -1403,7 +1400,7 @@ HANDLER_INLINE Continue Interpreter::doUnaryNot(Thread* thread, word) {
 }
 
 HANDLER_INLINE Continue Interpreter::doUnaryInvert(Thread* thread, word) {
-  return doUnaryOperation(SymbolId::kDunderInvert, thread);
+  return doUnaryOperation(ID(__invert__), thread);
 }
 
 HANDLER_INLINE Continue Interpreter::doBinaryMatrixMultiply(Thread* thread,
@@ -1441,8 +1438,7 @@ Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
   HandleScope scope(thread);
   Object container(&scope, frame->peek(1));
   Type type(&scope, thread->runtime()->typeOf(*container));
-  Object getitem(&scope,
-                 typeLookupInMroById(thread, type, SymbolId::kDunderGetitem));
+  Object getitem(&scope, typeLookupInMroById(thread, type, ID(__getitem__)));
   if (getitem.isErrorNotFound()) {
     thread->raiseWithFmt(LayoutId::kTypeError,
                          "object does not support indexing");
@@ -1457,8 +1453,8 @@ Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
   if (index >= 0) {
     // TODO(T55274956): Make this into a separate function to be shared.
     Tuple caches(&scope, frame->caches());
-    Str get_item_name(
-        &scope, thread->runtime()->symbols()->at(SymbolId::kDunderGetitem));
+    Str get_item_name(&scope,
+                      thread->runtime()->symbols()->at(ID(__getitem__)));
     Function dependent(&scope, frame->function());
     ICState next_cache_state =
         icUpdateAttr(thread, caches, index, container.layoutId(), getitem,
@@ -1535,8 +1531,7 @@ HANDLER_INLINE Continue Interpreter::doGetAiter(Thread* thread, word) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object obj(&scope, frame->popValue());
-  Object method(&scope,
-                lookupMethod(thread, frame, obj, SymbolId::kDunderAiter));
+  Object method(&scope, lookupMethod(thread, frame, obj, ID(__aiter__)));
   if (method.isError()) {
     if (method.isErrorException()) {
       thread->clearPendingException();
@@ -1556,8 +1551,7 @@ HANDLER_INLINE Continue Interpreter::doGetAnext(Thread* thread, word) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object obj(&scope, frame->popValue());
-  Object anext(&scope,
-               lookupMethod(thread, frame, obj, SymbolId::kDunderAnext));
+  Object anext(&scope, lookupMethod(thread, frame, obj, ID(__anext__)));
   if (anext.isError()) {
     if (anext.isErrorException()) {
       thread->clearPendingException();
@@ -1575,8 +1569,7 @@ HANDLER_INLINE Continue Interpreter::doGetAnext(Thread* thread, word) {
 
   // TODO(T33628943): Check if `awaitable` is a native or generator-based
   // coroutine and if it is, no need to call __await__
-  Object await(&scope,
-               lookupMethod(thread, frame, obj, SymbolId::kDunderAwait));
+  Object await(&scope, lookupMethod(thread, frame, obj, ID(__await__)));
   if (await.isError()) {
     if (await.isErrorException()) {
       thread->clearPendingException();
@@ -1599,16 +1592,14 @@ HANDLER_INLINE Continue Interpreter::doBeforeAsyncWith(Thread* thread, word) {
 
   // resolve __aexit__ an push it
   Runtime* runtime = thread->runtime();
-  Object exit(&scope, runtime->attributeAtById(thread, manager,
-                                               SymbolId::kDunderAexit));
+  Object exit(&scope, runtime->attributeAtById(thread, manager, ID(__aexit__)));
   if (exit.isErrorException()) {
     UNIMPLEMENTED("throw TypeError");
   }
   frame->pushValue(*exit);
 
   // resolve __aenter__ call it and push the return value
-  Object enter(&scope,
-               lookupMethod(thread, frame, manager, SymbolId::kDunderAenter));
+  Object enter(&scope, lookupMethod(thread, frame, manager, ID(__aenter__)));
   if (enter.isError()) {
     UNIMPLEMENTED("throw TypeError");
   }
@@ -1636,8 +1627,8 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscr(Thread* thread, word) {
   Frame* frame = thread->currentFrame();
   Object key(&scope, frame->popValue());
   Object container(&scope, frame->popValue());
-  Object setitem(
-      &scope, lookupMethod(thread, frame, container, SymbolId::kDunderSetitem));
+  Object setitem(&scope,
+                 lookupMethod(thread, frame, container, ID(__setitem__)));
   if (setitem.isError()) {
     if (setitem.isErrorNotFound()) {
       thread->raiseWithFmt(LayoutId::kTypeError,
@@ -1663,8 +1654,8 @@ NEVER_INLINE Continue Interpreter::storeSubscrUpdateCache(Thread* thread,
   Frame* frame = thread->currentFrame();
   Object key(&scope, frame->popValue());
   Object container(&scope, frame->popValue());
-  Object setitem(
-      &scope, lookupMethod(thread, frame, container, SymbolId::kDunderSetitem));
+  Object setitem(&scope,
+                 lookupMethod(thread, frame, container, ID(__setitem__)));
   if (setitem.isError()) {
     if (setitem.isErrorNotFound()) {
       thread->raiseWithFmt(LayoutId::kTypeError,
@@ -1678,8 +1669,8 @@ NEVER_INLINE Continue Interpreter::storeSubscrUpdateCache(Thread* thread,
   }
   if (setitem.isFunction()) {
     Tuple caches(&scope, frame->caches());
-    Str set_item_name(
-        &scope, thread->runtime()->symbols()->at(SymbolId::kDunderSetitem));
+    Str set_item_name(&scope,
+                      thread->runtime()->symbols()->at(ID(__setitem__)));
     Function dependent(&scope, frame->function());
     ICState next_cache_state =
         icUpdateAttr(thread, caches, arg, container.layoutId(), setitem,
@@ -1766,8 +1757,8 @@ HANDLER_INLINE Continue Interpreter::doDeleteSubscr(Thread* thread, word) {
   Frame* frame = thread->currentFrame();
   Object key(&scope, frame->popValue());
   Object container(&scope, frame->popValue());
-  Object delitem(
-      &scope, lookupMethod(thread, frame, container, SymbolId::kDunderDelitem));
+  Object delitem(&scope,
+                 lookupMethod(thread, frame, container, ID(__delitem__)));
   if (delitem.isError()) {
     if (delitem.isErrorNotFound()) {
       thread->raiseWithFmt(LayoutId::kTypeError,
@@ -1943,8 +1934,8 @@ HANDLER_INLINE Continue Interpreter::doYieldFrom(Thread* thread, word) {
   Object iterator(&scope, frame->topValue());
   Object result(&scope, NoneType::object());
   if (value.isNoneType()) {
-    Object next_method(
-        &scope, lookupMethod(thread, frame, iterator, SymbolId::kDunderNext));
+    Object next_method(&scope,
+                       lookupMethod(thread, frame, iterator, ID(__next__)));
     if (next_method.isError()) {
       if (next_method.isErrorException()) {
         thread->clearPendingException();
@@ -1958,8 +1949,7 @@ HANDLER_INLINE Continue Interpreter::doYieldFrom(Thread* thread, word) {
     }
     result = callMethod1(thread, frame, next_method, iterator);
   } else {
-    Object send_method(&scope,
-                       lookupMethod(thread, frame, iterator, SymbolId::kSend));
+    Object send_method(&scope, lookupMethod(thread, frame, iterator, ID(send)));
     if (send_method.isError()) {
       if (send_method.isErrorException()) {
         thread->clearPendingException();
@@ -1995,8 +1985,7 @@ HANDLER_INLINE Continue Interpreter::doGetAwaitable(Thread* thread, word) {
 
   // TODO(T33628943): Check if `obj` is a native or generator-based
   // coroutine and if it is, no need to call __await__
-  Object await(&scope,
-               lookupMethod(thread, frame, obj, SymbolId::kDunderAwait));
+  Object await(&scope, lookupMethod(thread, frame, obj, ID(__await__)));
   if (await.isError()) {
     if (await.isErrorException()) {
       thread->clearPendingException();
@@ -2123,8 +2112,7 @@ HANDLER_INLINE Continue Interpreter::doSetupAnnotations(Thread* thread, word) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Frame* frame = thread->currentFrame();
-  Str dunder_annotations(&scope,
-                         runtime->symbols()->at(SymbolId::kDunderAnnotations));
+  Str dunder_annotations(&scope, runtime->symbols()->at(ID(__annotations__)));
   if (frame->implicitGlobals().isNoneType()) {
     // Module body
     Module module(&scope, frame->function().moduleObject());
@@ -2335,8 +2323,8 @@ HANDLER_INLINE Continue Interpreter::doUnpackSequence(Thread* thread,
   Object iterator(&scope, createIterator(thread, frame, iterable));
   if (iterator.isErrorException()) return Continue::UNWIND;
 
-  Object next_method(
-      &scope, lookupMethod(thread, frame, iterator, SymbolId::kDunderNext));
+  Object next_method(&scope,
+                     lookupMethod(thread, frame, iterator, ID(__next__)));
   if (next_method.isError()) {
     if (next_method.isErrorException()) {
       thread->clearPendingException();
@@ -2387,7 +2375,7 @@ Continue Interpreter::forIterUpdateCache(Thread* thread, word arg, word index) {
   HandleScope scope(thread);
   Object iter(&scope, frame->topValue());
   Type type(&scope, thread->runtime()->typeOf(*iter));
-  Object next(&scope, typeLookupInMroById(thread, type, SymbolId::kDunderNext));
+  Object next(&scope, typeLookupInMroById(thread, type, ID(__next__)));
   if (next.isErrorNotFound()) {
     thread->raiseWithFmt(LayoutId::kTypeError, "iter() returned non-iterator");
     return Continue::UNWIND;
@@ -2397,8 +2385,7 @@ Continue Interpreter::forIterUpdateCache(Thread* thread, word arg, word index) {
   if (next.isFunction()) {
     if (index >= 0) {
       Tuple caches(&scope, frame->caches());
-      Str next_name(&scope,
-                    thread->runtime()->symbols()->at(SymbolId::kDunderNext));
+      Str next_name(&scope, thread->runtime()->symbols()->at(ID(__next__)));
       Function dependent(&scope, frame->function());
       ICState next_cache_state = icUpdateAttr(
           thread, caches, index, iter.layoutId(), next, next_name, dependent);
@@ -2429,8 +2416,7 @@ Continue Interpreter::forIterUpdateCache(Thread* thread, word arg, word index) {
 
 static RawObject builtinsModule(Thread* thread, const Module& module) {
   HandleScope scope(thread);
-  Object builtins_obj(&scope,
-                      moduleAtById(thread, module, SymbolId::kDunderBuiltins));
+  Object builtins_obj(&scope, moduleAtById(thread, module, ID(__builtins__)));
   if (builtins_obj.isErrorNotFound()) {
     return Error::notFound();
   }
@@ -2691,8 +2677,8 @@ HANDLER_INLINE Continue Interpreter::doUnpackEx(Thread* thread, word arg) {
   Object iterator(&scope, createIterator(thread, frame, iterable));
   if (iterator.isErrorException()) return Continue::UNWIND;
 
-  Object next_method(
-      &scope, lookupMethod(thread, frame, iterator, SymbolId::kDunderNext));
+  Object next_method(&scope,
+                     lookupMethod(thread, frame, iterator, ID(__next__)));
   if (next_method.isError()) {
     if (next_method.isErrorException()) {
       thread->clearPendingException();
@@ -2784,13 +2770,13 @@ RawObject Interpreter::storeAttrSetLocation(Thread* thread,
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Type type(&scope, runtime->typeOf(*object));
-  Object dunder_setattr(
-      &scope, typeLookupInMroById(thread, type, SymbolId::kDunderSetattr));
+  Object dunder_setattr(&scope,
+                        typeLookupInMroById(thread, type, ID(__setattr__)));
   if (dunder_setattr == runtime->objectDunderSetattr()) {
     return objectSetAttrSetLocation(thread, object, name, value, location_out);
   }
-  Object result(&scope, thread->invokeMethod3(object, SymbolId::kDunderSetattr,
-                                              name, value));
+  Object result(&scope,
+                thread->invokeMethod3(object, ID(__setattr__), name, value));
   return *result;
 }
 
@@ -3010,7 +2996,7 @@ HANDLER_INLINE Continue Interpreter::doStoreAttr(Thread* thread, word arg) {
   Tuple names(&scope, Code::cast(frame->code()).names());
   Str name(&scope, names.at(arg));
   Object value(&scope, frame->popValue());
-  if (thread->invokeMethod3(receiver, SymbolId::kDunderSetattr, name, value)
+  if (thread->invokeMethod3(receiver, ID(__setattr__), name, value)
           .isErrorException()) {
     return Continue::UNWIND;
   }
@@ -3211,13 +3197,13 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread,
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->typeOf(*receiver));
   Object dunder_getattribute(
-      &scope, typeLookupInMroById(thread, type, SymbolId::kDunderGetattribute));
+      &scope, typeLookupInMroById(thread, type, ID(__getattribute__)));
   *kind = LoadAttrKind::kUnknown;
   if (dunder_getattribute == runtime->objectDunderGetattribute()) {
     Object result(&scope, objectGetAttributeSetLocation(thread, receiver, name,
                                                         location_out, kind));
     if (result.isErrorNotFound()) {
-      result = thread->invokeMethod2(receiver, SymbolId::kDunderGetattr, name);
+      result = thread->invokeMethod2(receiver, ID(__getattr__), name);
       if (result.isErrorNotFound()) {
         return objectRaiseAttributeError(thread, receiver, name);
       }
@@ -3234,7 +3220,7 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread,
       *kind = LoadAttrKind::kModule;
     } else {
       // Try again
-      result = thread->invokeMethod2(receiver, SymbolId::kDunderGetattr, name);
+      result = thread->invokeMethod2(receiver, ID(__getattr__), name);
       if (result.isErrorNotFound()) {
         return moduleRaiseAttributeError(thread, module, name);
       }
@@ -3253,7 +3239,7 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread,
       }
     } else {
       // Try again
-      result = thread->invokeMethod2(receiver, SymbolId::kDunderGetattr, name);
+      result = thread->invokeMethod2(receiver, ID(__getattr__), name);
       if (result.isErrorNotFound()) {
         return objectRaiseAttributeError(thread, receiver, name);
       }
@@ -3637,7 +3623,7 @@ static RawObject tryImportFromSysModules(Thread* thread, const Object& from,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object fully_qualified_name(
-      &scope, runtime->attributeAtById(thread, from, SymbolId::kDunderName));
+      &scope, runtime->attributeAtById(thread, from, ID(__name__)));
   if (fully_qualified_name.isErrorException() ||
       !runtime->isInstanceOfStr(*fully_qualified_name)) {
     thread->clearPendingException();
@@ -3906,8 +3892,8 @@ HANDLER_INLINE Continue Interpreter::doStoreAnnotation(Thread* thread,
   Object value(&scope, frame->popValue());
   Str name(&scope, Tuple::cast(*names).at(arg));
   Object annotations(&scope, NoneType::object());
-  Object dunder_annotations(
-      &scope, runtime->symbols()->at(SymbolId::kDunderAnnotations));
+  Object dunder_annotations(&scope,
+                            runtime->symbols()->at(ID(__annotations__)));
   if (frame->implicitGlobals().isNoneType()) {
     // Module body
     Module module(&scope, frame->function().moduleObject());
@@ -4190,23 +4176,22 @@ HANDLER_INLINE Continue Interpreter::doSetupWith(Thread* thread, word arg) {
   Runtime* runtime = thread->runtime();
   Frame* frame = thread->currentFrame();
   Object mgr(&scope, frame->topValue());
-  Object enter(&scope,
-               lookupMethod(thread, frame, mgr, SymbolId::kDunderEnter));
+  Object enter(&scope, lookupMethod(thread, frame, mgr, ID(__enter__)));
   if (enter.isError()) {
     if (enter.isErrorNotFound()) {
       thread->raise(LayoutId::kAttributeError,
-                    runtime->symbols()->at(SymbolId::kDunderEnter));
+                    runtime->symbols()->at(ID(__enter__)));
     } else {
       DCHECK(enter.isErrorException(),
              "expected Error::exception() or Error::notFound()");
     }
     return Continue::UNWIND;
   }
-  Object exit(&scope, lookupMethod(thread, frame, mgr, SymbolId::kDunderExit));
+  Object exit(&scope, lookupMethod(thread, frame, mgr, ID(__exit__)));
   if (exit.isError()) {
     if (exit.isErrorNotFound()) {
       thread->raise(LayoutId::kAttributeError,
-                    runtime->symbols()->at(SymbolId::kDunderExit));
+                    runtime->symbols()->at(ID(__exit__)));
     } else {
       DCHECK(exit.isErrorException(),
              "expected Error::exception() or Error::notFound()");
@@ -4313,8 +4298,8 @@ HANDLER_INLINE Continue Interpreter::doBuildListUnpack(Thread* thread,
   Object obj(&scope, NoneType::object());
   for (word i = arg - 1; i >= 0; i--) {
     obj = frame->peek(i);
-    RawObject result = thread->invokeMethodStatic2(
-        LayoutId::kList, SymbolId::kExtend, list, obj);
+    RawObject result =
+        thread->invokeMethodStatic2(LayoutId::kList, ID(extend), list, obj);
     if (result.isErrorException()) return Continue::UNWIND;
   }
   frame->dropValues(arg - 1);
@@ -4391,8 +4376,8 @@ HANDLER_INLINE Continue Interpreter::doBuildTupleUnpack(Thread* thread,
   Object obj(&scope, NoneType::object());
   for (word i = arg - 1; i >= 0; i--) {
     obj = frame->peek(i);
-    RawObject result = thread->invokeMethodStatic2(
-        LayoutId::kList, SymbolId::kExtend, list, obj);
+    RawObject result =
+        thread->invokeMethodStatic2(LayoutId::kList, ID(extend), list, obj);
     if (result.isErrorException()) return Continue::UNWIND;
   }
   Tuple items(&scope, list.items());
@@ -4443,7 +4428,7 @@ HANDLER_INLINE Continue Interpreter::doFormatValue(Thread* thread, word arg) {
   switch (static_cast<FormatValueConv>(arg & kFormatValueConvMask)) {
     case FormatValueConv::kStr: {
       if (!value.isStr()) {
-        value = thread->invokeMethod1(value, SymbolId::kDunderStr);
+        value = thread->invokeMethod1(value, ID(__str__));
         DCHECK(!value.isErrorNotFound(), "`__str__` should always exist");
         if (value.isErrorException()) return Continue::UNWIND;
         if (!runtime->isInstanceOfStr(*value)) {
@@ -4455,7 +4440,7 @@ HANDLER_INLINE Continue Interpreter::doFormatValue(Thread* thread, word arg) {
       break;
     }
     case FormatValueConv::kRepr: {
-      value = thread->invokeMethod1(value, SymbolId::kDunderRepr);
+      value = thread->invokeMethod1(value, ID(__repr__));
       DCHECK(!value.isErrorNotFound(), "`__repr__` should always exist");
       if (value.isErrorException()) return Continue::UNWIND;
       if (!runtime->isInstanceOfStr(*value)) {
@@ -4466,7 +4451,7 @@ HANDLER_INLINE Continue Interpreter::doFormatValue(Thread* thread, word arg) {
       break;
     }
     case FormatValueConv::kAscii: {
-      value = thread->invokeMethod1(value, SymbolId::kDunderRepr);
+      value = thread->invokeMethod1(value, ID(__repr__));
       DCHECK(!value.isErrorNotFound(), "`__repr__` should always exist");
       if (value.isErrorException()) return Continue::UNWIND;
       if (!runtime->isInstanceOfStr(*value)) {
@@ -4482,7 +4467,7 @@ HANDLER_INLINE Continue Interpreter::doFormatValue(Thread* thread, word arg) {
   }
 
   if (fmt_spec != Str::empty() || !value.isStr()) {
-    value = thread->invokeMethod2(value, SymbolId::kDunderFormat, fmt_spec);
+    value = thread->invokeMethod2(value, ID(__format__), fmt_spec);
     if (value.isErrorException()) return Continue::UNWIND;
     if (!runtime->isInstanceOfStr(*value)) {
       thread->raiseWithFmt(LayoutId::kTypeError,

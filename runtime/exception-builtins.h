@@ -47,7 +47,7 @@ RawObject displayException(Thread* thread, const Object& value,
 void handleSystemExit(Thread* thread);
 
 class BaseExceptionBuiltins
-    : public Builtins<BaseExceptionBuiltins, SymbolId::kBaseException,
+    : public Builtins<BaseExceptionBuiltins, ID(BaseException),
                       LayoutId::kBaseException> {
  public:
   static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
@@ -60,7 +60,7 @@ class BaseExceptionBuiltins
 };
 
 class StopIterationBuiltins
-    : public Builtins<StopIterationBuiltins, SymbolId::kStopIteration,
+    : public Builtins<StopIterationBuiltins, ID(StopIteration),
                       LayoutId::kStopIteration, LayoutId::kException> {
  public:
   static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
@@ -73,7 +73,7 @@ class StopIterationBuiltins
 };
 
 class SyntaxErrorBuiltins
-    : public Builtins<SyntaxErrorBuiltins, SymbolId::kSyntaxError,
+    : public Builtins<SyntaxErrorBuiltins, ID(SyntaxError),
                       LayoutId::kSyntaxError, LayoutId::kException> {
  public:
   static const BuiltinAttribute kAttributes[];
@@ -83,8 +83,8 @@ class SyntaxErrorBuiltins
 };
 
 class SystemExitBuiltins
-    : public Builtins<SystemExitBuiltins, SymbolId::kSystemExit,
-                      LayoutId::kSystemExit, LayoutId::kBaseException> {
+    : public Builtins<SystemExitBuiltins, ID(SystemExit), LayoutId::kSystemExit,
+                      LayoutId::kBaseException> {
  public:
   static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
 
@@ -96,7 +96,7 @@ class SystemExitBuiltins
 };
 
 class ImportErrorBuiltins
-    : public Builtins<ImportErrorBuiltins, SymbolId::kImportError,
+    : public Builtins<ImportErrorBuiltins, ID(ImportError),
                       LayoutId::kImportError, LayoutId::kException> {
  public:
   static const BuiltinAttribute kAttributes[];
@@ -106,14 +106,14 @@ class ImportErrorBuiltins
 };
 
 class UnicodeErrorBuiltins
-    : public Builtins<UnicodeErrorBuiltins, SymbolId::kUnicodeError,
+    : public Builtins<UnicodeErrorBuiltins, ID(UnicodeError),
                       LayoutId::kUnicodeError, LayoutId::kValueError> {
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(UnicodeErrorBuiltins);
 };
 
 class UnicodeDecodeErrorBuiltins
-    : public Builtins<UnicodeDecodeErrorBuiltins, SymbolId::kUnicodeDecodeError,
+    : public Builtins<UnicodeDecodeErrorBuiltins, ID(UnicodeDecodeError),
                       LayoutId::kUnicodeDecodeError, LayoutId::kUnicodeError> {
  public:
   static const BuiltinAttribute* const kAttributes;
@@ -123,7 +123,7 @@ class UnicodeDecodeErrorBuiltins
 };
 
 class UnicodeEncodeErrorBuiltins
-    : public Builtins<UnicodeEncodeErrorBuiltins, SymbolId::kUnicodeEncodeError,
+    : public Builtins<UnicodeEncodeErrorBuiltins, ID(UnicodeEncodeError),
                       LayoutId::kUnicodeEncodeError, LayoutId::kUnicodeError> {
  public:
   static const BuiltinAttribute* const kAttributes;
@@ -133,9 +133,9 @@ class UnicodeEncodeErrorBuiltins
 };
 
 class UnicodeTranslateErrorBuiltins
-    : public Builtins<
-          UnicodeTranslateErrorBuiltins, SymbolId::kUnicodeTranslateError,
-          LayoutId::kUnicodeTranslateError, LayoutId::kUnicodeError> {
+    : public Builtins<UnicodeTranslateErrorBuiltins, ID(UnicodeTranslateError),
+                      LayoutId::kUnicodeTranslateError,
+                      LayoutId::kUnicodeError> {
  public:
   static const BuiltinAttribute* const kAttributes;
 

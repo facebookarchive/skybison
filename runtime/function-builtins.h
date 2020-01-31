@@ -46,8 +46,8 @@ RawObject functionFromModuleMethodDef(Thread* thread, const char* c_name,
                                       void* meth, const char* c_doc,
                                       ExtensionMethodType type);
 
-class FunctionBuiltins : public Builtins<FunctionBuiltins, SymbolId::kFunction,
-                                         LayoutId::kFunction> {
+class FunctionBuiltins
+    : public Builtins<FunctionBuiltins, ID(function), LayoutId::kFunction> {
  public:
   static void postInitialize(Runtime* runtime, const Type& new_type);
 
@@ -61,8 +61,7 @@ class FunctionBuiltins : public Builtins<FunctionBuiltins, SymbolId::kFunction,
 };
 
 class BoundMethodBuiltins
-    : public Builtins<BoundMethodBuiltins, SymbolId::kMethod,
-                      LayoutId::kBoundMethod> {
+    : public Builtins<BoundMethodBuiltins, ID(method), LayoutId::kBoundMethod> {
  public:
   static const BuiltinAttribute kAttributes[];
 

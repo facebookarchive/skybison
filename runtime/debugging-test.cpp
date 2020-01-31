@@ -70,7 +70,7 @@ static RawObject makeTestFunction(Thread* thread) {
   Tuple defaults(&scope, runtime->newTuple(1));
   defaults.atPut(0, runtime->newInt(-9));
   func.setDefaults(*defaults);
-  func.setIntrinsicId(static_cast<word>(SymbolId::kList));
+  func.setIntrinsicId(static_cast<word>(ID(list)));
   func.setModuleName(runtime->newStrFromCStr("barmodule"));
   func.setName(runtime->newStrFromCStr("baz"));
   Dict attrs(&scope, runtime->newDict());

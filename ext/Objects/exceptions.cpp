@@ -371,10 +371,9 @@ PY_EXPORT PyObject* PyUnicodeDecodeError_Create(
   Int start_obj(&scope, SmallInt::fromWord(start));
   Int end_obj(&scope, SmallInt::fromWord(end));
   Str reason_obj(&scope, runtime->newStrFromCStr(reason));
-  Object result(&scope,
-                thread->invokeFunction5(
-                    SymbolId::kBuiltins, SymbolId::kUnicodeDecodeError,
-                    encoding_obj, object_obj, start_obj, end_obj, reason_obj));
+  Object result(&scope, thread->invokeFunction5(
+                            ID(builtins), ID(UnicodeDecodeError), encoding_obj,
+                            object_obj, start_obj, end_obj, reason_obj));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
       thread->raiseWithFmt(LayoutId::kRuntimeError,

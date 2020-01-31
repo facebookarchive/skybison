@@ -118,8 +118,7 @@ RawObject dictKeyIteratorNext(Thread* thread, const DictKeyIterator& iter);
 // Returns Error::object() if there are no more objects
 RawObject dictValueIteratorNext(Thread* thread, const DictValueIterator& iter);
 
-class DictBuiltins
-    : public Builtins<DictBuiltins, SymbolId::kDict, LayoutId::kDict> {
+class DictBuiltins : public Builtins<DictBuiltins, ID(dict), LayoutId::kDict> {
  public:
   static RawObject clear(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderDelitem(Thread* thread, Frame* frame, word nargs);
@@ -140,7 +139,7 @@ class DictBuiltins
 };
 
 class DictItemIteratorBuiltins
-    : public Builtins<DictItemIteratorBuiltins, SymbolId::kDictItemIterator,
+    : public Builtins<DictItemIteratorBuiltins, ID(dict_itemiterator),
                       LayoutId::kDictItemIterator> {
  public:
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
@@ -154,8 +153,7 @@ class DictItemIteratorBuiltins
 };
 
 class DictItemsBuiltins
-    : public Builtins<DictItemsBuiltins, SymbolId::kDictItems,
-                      LayoutId::kDictItems> {
+    : public Builtins<DictItemsBuiltins, ID(dict_items), LayoutId::kDictItems> {
  public:
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
 
@@ -166,7 +164,7 @@ class DictItemsBuiltins
 };
 
 class DictKeyIteratorBuiltins
-    : public Builtins<DictKeyIteratorBuiltins, SymbolId::kDictKeyIterator,
+    : public Builtins<DictKeyIteratorBuiltins, ID(dict_keyiterator),
                       LayoutId::kDictKeyIterator> {
  public:
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
@@ -179,8 +177,8 @@ class DictKeyIteratorBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictKeyIteratorBuiltins);
 };
 
-class DictKeysBuiltins : public Builtins<DictKeysBuiltins, SymbolId::kDictKeys,
-                                         LayoutId::kDictKeys> {
+class DictKeysBuiltins
+    : public Builtins<DictKeysBuiltins, ID(dict_keys), LayoutId::kDictKeys> {
  public:
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
 
@@ -191,7 +189,7 @@ class DictKeysBuiltins : public Builtins<DictKeysBuiltins, SymbolId::kDictKeys,
 };
 
 class DictValueIteratorBuiltins
-    : public Builtins<DictValueIteratorBuiltins, SymbolId::kDictValueIterator,
+    : public Builtins<DictValueIteratorBuiltins, ID(dict_valueiterator),
                       LayoutId::kDictValueIterator> {
  public:
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
@@ -204,9 +202,8 @@ class DictValueIteratorBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictValueIteratorBuiltins);
 };
 
-class DictValuesBuiltins
-    : public Builtins<DictValuesBuiltins, SymbolId::kDictValues,
-                      LayoutId::kDictValues> {
+class DictValuesBuiltins : public Builtins<DictValuesBuiltins, ID(dict_values),
+                                           LayoutId::kDictValues> {
  public:
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
 

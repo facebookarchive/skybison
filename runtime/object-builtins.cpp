@@ -285,10 +285,10 @@ RawObject objectNew(Thread* thread, const Type& type) {
   Object name(&scope, type.name());
   Object comma(&scope, SmallStr::fromCStr(", "));
   Object methods(&scope, type.abstractMethods());
-  Object sorted(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
-                                                SymbolId::kSorted, methods));
+  Object sorted(&scope,
+                thread->invokeFunction1(ID(builtins), ID(sorted), methods));
   if (sorted.isError()) return *sorted;
-  Object joined(&scope, thread->invokeMethod2(comma, SymbolId::kJoin, sorted));
+  Object joined(&scope, thread->invokeMethod2(comma, ID(join), sorted));
   if (joined.isError()) return *joined;
   return thread->raiseWithFmt(
       LayoutId::kTypeError,
@@ -333,8 +333,7 @@ RawObject objectSetAttr(Thread* thread, const Object& object,
 RawObject objectDelItem(Thread* thread, const Object& object,
                         const Object& key) {
   HandleScope scope(thread);
-  Object result(&scope,
-                thread->invokeMethod2(object, SymbolId::kDunderDelitem, key));
+  Object result(&scope, thread->invokeMethod2(object, ID(__delitem__), key));
   if (result.isErrorNotFound()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "'%T' object does not support item deletion",
@@ -346,8 +345,7 @@ RawObject objectDelItem(Thread* thread, const Object& object,
 RawObject objectGetItem(Thread* thread, const Object& object,
                         const Object& key) {
   HandleScope scope(thread);
-  Object result(&scope,
-                thread->invokeMethod2(object, SymbolId::kDunderGetitem, key));
+  Object result(&scope, thread->invokeMethod2(object, ID(__getitem__), key));
   if (result.isErrorNotFound()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "'%T' object is not subscriptable", &object);
@@ -358,8 +356,8 @@ RawObject objectGetItem(Thread* thread, const Object& object,
 RawObject objectSetItem(Thread* thread, const Object& object, const Object& key,
                         const Object& value) {
   HandleScope scope(thread);
-  Object result(&scope, thread->invokeMethod3(object, SymbolId::kDunderSetitem,
-                                              key, value));
+  Object result(&scope,
+                thread->invokeMethod3(object, ID(__setitem__), key, value));
   if (result.isErrorNotFound()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "'%T' object does not support item assignment",
@@ -368,14 +366,16 @@ RawObject objectSetItem(Thread* thread, const Object& object, const Object& key,
   return *result;
 }
 
+// clang-format off
 const BuiltinMethod ObjectBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderHash, dunderHash},
-    {SymbolId::kDunderInit, dunderInit},
-    {SymbolId::kDunderNew, dunderNew},
-    {SymbolId::kDunderSetattr, dunderSetattr},
-    {SymbolId::kDunderSizeof, dunderSizeof},
+    {ID(__hash__), dunderHash},
+    {ID(__init__), dunderInit},
+    {ID(__new__), dunderNew},
+    {ID(__setattr__), dunderSetattr},
+    {ID(__sizeof__), dunderSizeof},
     // no sentinel needed because the iteration below is manual
 };
+// clang-format on
 
 void ObjectBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
@@ -383,7 +383,7 @@ void ObjectBuiltins::initialize(Runtime* runtime) {
   Layout layout(&scope, runtime->newLayout(LayoutId::kObject));
   Type object_type(&scope, runtime->newType());
   layout.setDescribedType(*object_type);
-  object_type.setName(runtime->symbols()->at(SymbolId::kObject));
+  object_type.setName(runtime->symbols()->at(ID(object)));
   Tuple mro(&scope, runtime->newTuple(1));
   mro.atPut(0, *object_type);
   object_type.setMro(*mro);
@@ -411,9 +411,9 @@ void ObjectBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
   HandleScope scope(thread);
 
   Tuple parameter_names(&scope, runtime->newTuple(2));
-  parameter_names.atPut(0, runtime->symbols()->at(SymbolId::kSelf));
-  parameter_names.atPut(1, runtime->symbols()->at(SymbolId::kName));
-  Object name(&scope, runtime->symbols()->at(SymbolId::kDunderGetattribute));
+  parameter_names.atPut(0, runtime->symbols()->at(ID(self)));
+  parameter_names.atPut(1, runtime->symbols()->at(ID(name)));
+  Object name(&scope, runtime->symbols()->at(ID(__getattribute__)));
   Code code(&scope,
             runtime->newBuiltinCode(
                 /*argcount=*/2, /*posonlyargcount=*/2, /*kwonlyargcount=*/0,
@@ -424,8 +424,7 @@ void ObjectBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
   Function dunder_getattribute(
       &scope, runtime->newFunctionWithCode(thread, qualname, code, module_obj));
 
-  typeAtPutById(thread, new_type, SymbolId::kDunderGetattribute,
-                dunder_getattribute);
+  typeAtPutById(thread, new_type, ID(__getattribute__), dunder_getattribute);
 }
 
 RawObject ObjectBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
@@ -465,9 +464,9 @@ RawObject ObjectBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
     return NoneType::object();
   }
   Type type(&scope, runtime->typeOf(*self));
-  if ((typeLookupInMroById(thread, type, SymbolId::kDunderNew) ==
+  if ((typeLookupInMroById(thread, type, ID(__new__)) ==
        runtime->objectDunderNew()) ||
-      (typeLookupInMroById(thread, type, SymbolId::kDunderInit) !=
+      (typeLookupInMroById(thread, type, ID(__init__)) !=
        runtime->objectDunderInit())) {
     // Throw a TypeError if extra arguments were passed, and __new__ was not
     // overwritten by self, or __init__ was overloaded by self.
@@ -483,7 +482,7 @@ RawObject ObjectBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object type_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfType(*type_obj)) {
-    return thread->raiseRequiresType(type_obj, SymbolId::kType);
+    return thread->raiseRequiresType(type_obj, ID(type));
   }
   Type type(&scope, args.get(0));
   return objectNew(thread, type);
@@ -514,8 +513,8 @@ RawObject ObjectBuiltins::dunderSizeof(Thread* thread, Frame* frame,
 }
 
 const BuiltinMethod NoneBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderNew, dunderNew},
-    {SymbolId::kDunderRepr, dunderRepr},
+    {ID(__new__), dunderNew},
+    {ID(__repr__), dunderRepr},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -529,7 +528,7 @@ RawObject NoneBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "__repr__ expects None as first argument");
   }
-  return thread->runtime()->symbols()->at(SymbolId::kNone);
+  return thread->runtime()->symbols()->at(ID(None));
 }
 
 }  // namespace py

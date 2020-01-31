@@ -12,7 +12,7 @@ word doubleHash(double value);
 word floatHash(RawObject value);
 
 class FloatBuiltins
-    : public Builtins<FloatBuiltins, SymbolId::kFloat, LayoutId::kFloat> {
+    : public Builtins<FloatBuiltins, ID(float), LayoutId::kFloat> {
  public:
   static RawObject dunderAbs(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);

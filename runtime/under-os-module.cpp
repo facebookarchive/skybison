@@ -16,16 +16,16 @@
 namespace py {
 
 const BuiltinFunction UnderOsModule::kBuiltinFunctions[] = {
-    {SymbolId::kClose, close},
-    {SymbolId::kFstatSize, fstatSize},
-    {SymbolId::kFtruncate, ftruncate},
-    {SymbolId::kIsatty, isatty},
-    {SymbolId::kIsdir, isdir},
-    {SymbolId::kLseek, lseek},
-    {SymbolId::kOpen, open},
-    {SymbolId::kParseMode, parseMode},
-    {SymbolId::kRead, read},
-    {SymbolId::kSetNoinheritable, setNoinheritable},
+    {ID(close), close},
+    {ID(fstat_size), fstatSize},
+    {ID(ftruncate), ftruncate},
+    {ID(isatty), isatty},
+    {ID(isdir), isdir},
+    {ID(lseek), lseek},
+    {ID(open), open},
+    {ID(parse_mode), parseMode},
+    {ID(read), read},
+    {ID(set_noinheritable), setNoinheritable},
     {SymbolId::kSentinelId, nullptr},
 };
 

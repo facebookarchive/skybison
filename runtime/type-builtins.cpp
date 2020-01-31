@@ -42,9 +42,8 @@ RawObject attributeName(Thread* thread, const Object& name_obj) {
   }
   HandleScope scope(thread);
   Type type(&scope, runtime->typeOf(*name_obj));
-  if (typeLookupInMroById(thread, type, SymbolId::kDunderEq) !=
-          runtime->strDunderEq() ||
-      typeLookupInMroById(thread, type, SymbolId::kDunderHash) !=
+  if (typeLookupInMroById(thread, type, ID(__eq__)) != runtime->strDunderEq() ||
+      typeLookupInMroById(thread, type, ID(__hash__)) !=
           runtime->strDunderHash()) {
     UNIMPLEMENTED(
         "str subclasses with __eq__ or __hash__ not supported as attribute "
@@ -68,9 +67,8 @@ RawObject attributeNameNoException(Thread* thread, const Object& name_obj) {
   }
   HandleScope scope(thread);
   Type type(&scope, runtime->typeOf(*name_obj));
-  if (typeLookupInMroById(thread, type, SymbolId::kDunderEq) !=
-          runtime->strDunderEq() ||
-      typeLookupInMroById(thread, type, SymbolId::kDunderHash) !=
+  if (typeLookupInMroById(thread, type, ID(__eq__)) != runtime->strDunderEq() ||
+      typeLookupInMroById(thread, type, ID(__hash__)) !=
           runtime->strDunderHash()) {
     UNIMPLEMENTED(
         "str subclasses with __eq__ or __hash__ not supported as attribute "
@@ -499,7 +497,7 @@ bool typeIsDataDescriptor(Thread* thread, const Type& type) {
     return Layout::cast(type.instanceLayout()).id() == LayoutId::kProperty;
   }
   // TODO(T25692962): Track "descriptorness" through a bit on the class
-  return !typeLookupInMroById(thread, type, SymbolId::kDunderSet).isError();
+  return !typeLookupInMroById(thread, type, ID(__set__)).isError();
 }
 
 bool typeIsNonDataDescriptor(Thread* thread, const Type& type) {
@@ -515,7 +513,7 @@ bool typeIsNonDataDescriptor(Thread* thread, const Type& type) {
     }
   }
   // TODO(T25692962): Track "descriptorness" through a bit on the class
-  return !typeLookupInMroById(thread, type, SymbolId::kDunderGet).isError();
+  return !typeLookupInMroById(thread, type, ID(__get__)).isError();
 }
 
 RawObject resolveDescriptorGet(Thread* thread, const Object& descr,
@@ -949,10 +947,10 @@ static void addSubclass(Thread* thread, const Type& base, const Type& type) {
 void typeAddDocstring(Thread* thread, const Type& type) {
   // If the type dictionary doesn't contain a __doc__, set it from the doc
   // slot
-  if (typeAtById(thread, type, SymbolId::kDunderDoc).isErrorNotFound()) {
+  if (typeAtById(thread, type, ID(__doc__)).isErrorNotFound()) {
     HandleScope scope(thread);
     Object doc(&scope, type.doc());
-    typeAtPutById(thread, type, SymbolId::kDunderDoc, doc);
+    typeAtPutById(thread, type, ID(__doc__), doc);
   }
 }
 
@@ -1012,13 +1010,11 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     }
   }
 
-  Object class_cell(&scope,
-                    typeAtById(thread, type, SymbolId::kDunderClassCell));
+  Object class_cell(&scope, typeAtById(thread, type, ID(__classcell__)));
   if (!class_cell.isErrorNotFound()) {
     DCHECK(class_cell.isValueCell(), "class cell must be a value cell");
     ValueCell::cast(*class_cell).setValue(*type);
-    Object class_cell_name(&scope,
-                           runtime->symbols()->at(SymbolId::kDunderClassCell));
+    Object class_cell_name(&scope, runtime->symbols()->at(ID(__classcell__)));
     typeRemove(thread, type, class_cell_name);
   }
   // TODO(T53997177): Centralize type initialization
@@ -1054,14 +1050,13 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   type.setFlagsAndBuiltinBase(static_cast<Type::Flag>(flags), builtin_base);
 
   if (type.hasFlag(Type::Flag::kHasDunderDict) &&
-      typeLookupInMroById(thread, type, SymbolId::kDunderDict)
-          .isErrorNotFound()) {
-    Module builtins(&scope, runtime->findModuleById(SymbolId::kBuiltins));
-    Object instance_proxy(
-        &scope, moduleAtById(thread, builtins, SymbolId::kInstanceProxy));
+      typeLookupInMroById(thread, type, ID(__dict__)).isErrorNotFound()) {
+    Module builtins(&scope, runtime->findModuleById(ID(builtins)));
+    Object instance_proxy(&scope,
+                          moduleAtById(thread, builtins, ID(instance_proxy)));
     Object none(&scope, NoneType::object());
     Object property(&scope, runtime->newProperty(instance_proxy, none, none));
-    typeAtPutById(thread, type, SymbolId::kDunderDict, property);
+    typeAtPutById(thread, type, ID(__dict__), property);
   }
 
   // TODO(T54448451): Decide whether type needs to become a builtin base
@@ -1076,9 +1071,9 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     type.setInstanceLayout(*layout);
   }
 
-  Function type_dunder_call(
-      &scope, runtime->lookupNameInModule(thread, SymbolId::kUnderBuiltins,
-                                          SymbolId::kUnderTypeDunderCall));
+  Function type_dunder_call(&scope,
+                            runtime->lookupNameInModule(thread, ID(_builtins),
+                                                        ID(_type_dunder_call)));
   type.setCtor(*type_dunder_call);
   return *type;
 }
@@ -1107,9 +1102,9 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
 // rewriteOperation.
 static const SymbolId kUnimplementedTypeAttrUpdates[] = {
     // LOAD_ATTR, LOAD_METHOD
-    SymbolId::kDunderGetattribute,
+    ID(__getattribute__),
     // STORE_ATTR
-    SymbolId::kDunderSetattr};
+    ID(__setattr__)};
 
 void terminateIfUnimplementedTypeAttrCacheInvalidation(
     Thread* thread, const Object& attr_name) {
@@ -1158,10 +1153,10 @@ RawObject typeSetAttr(Thread* thread, const Type& type, const Object& name,
 }
 
 const BuiltinAttribute TypeBuiltins::kAttributes[] = {
-    {SymbolId::kDunderDoc, RawType::kDocOffset},
-    {SymbolId::kDunderFlags, RawType::kFlagsOffset, AttributeFlags::kReadOnly},
-    {SymbolId::kDunderMro, RawType::kMroOffset, AttributeFlags::kReadOnly},
-    {SymbolId::kDunderName, RawType::kNameOffset},
+    {ID(__doc__), RawType::kDocOffset},
+    {ID(__flags__), RawType::kFlagsOffset, AttributeFlags::kReadOnly},
+    {ID(__mro__), RawType::kMroOffset, AttributeFlags::kReadOnly},
+    {ID(__name__), RawType::kNameOffset},
     {SymbolId::kInvalid, RawType::kAbstractMethodsOffset},
     {SymbolId::kInvalid, RawType::kAttributesOffset},
     {SymbolId::kInvalid, RawType::kAttributesRemainingOffset},
@@ -1174,10 +1169,10 @@ const BuiltinAttribute TypeBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod TypeBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderGetattribute, dunderGetattribute},
-    {SymbolId::kDunderSetattr, dunderSetattr},
-    {SymbolId::kDunderSubclasses, dunderSubclasses},
-    {SymbolId::kMro, mro},
+    {ID(__getattribute__), dunderGetattribute},
+    {ID(__setattr__), dunderSetattr},
+    {ID(__subclasses__), dunderSubclasses},
+    {ID(mro), mro},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -1188,7 +1183,7 @@ RawObject TypeBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfType(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kType);
+    return thread->raiseRequiresType(self_obj, ID(type));
   }
   Type self(&scope, *self_obj);
   Object name(&scope, args.get(1));
@@ -1211,7 +1206,7 @@ RawObject TypeBuiltins::dunderSetattr(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfType(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kType);
+    return thread->raiseRequiresType(self_obj, ID(type));
   }
   Type self(&scope, *self_obj);
   if (self.isBuiltin()) {
@@ -1234,7 +1229,7 @@ RawObject TypeBuiltins::dunderSubclasses(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfType(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kType);
+    return thread->raiseRequiresType(self_obj, ID(type));
   }
   Type self(&scope, *self_obj);
   Object subclasses_obj(&scope, self.subclasses());
@@ -1263,7 +1258,7 @@ RawObject TypeBuiltins::mro(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfType(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kType);
+    return thread->raiseRequiresType(self, ID(type));
   }
   Type type(&scope, *self);
   Object mro(&scope, computeMro(thread, type));

@@ -4,9 +4,8 @@
 
 namespace py {
 
-class SeqIteratorBuiltins
-    : public Builtins<SeqIteratorBuiltins, SymbolId::kSeqIterator,
-                      LayoutId::kSeqIterator> {
+class SeqIteratorBuiltins : public Builtins<SeqIteratorBuiltins, ID(iterator),
+                                            LayoutId::kSeqIterator> {
  public:
   static const BuiltinAttribute kAttributes[];
 

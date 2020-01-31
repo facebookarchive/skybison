@@ -33,29 +33,27 @@ static void initializeFrozenModule(Thread* thread, const Module& module) {
 }
 
 const ModuleInitializer kBuiltinModules[] = {
-    {SymbolId::kUnderBuiltins, &UnderBuiltinsModule::initialize},
-    {SymbolId::kUnderCodecs, &UnderCodecsModule::initialize},
-    {SymbolId::kUnderFrozenImportlib,
-     &initializeFrozenModule<kUnderBootstrapModuleData>},
-    {SymbolId::kUnderFrozenImportlibExternal,
+    {ID(_builtins), &UnderBuiltinsModule::initialize},
+    {ID(_codecs), &UnderCodecsModule::initialize},
+    {ID(_frozen_importlib), &initializeFrozenModule<kUnderBootstrapModuleData>},
+    {ID(_frozen_importlib_external),
      &initializeFrozenModule<kUnderBootstrapUnderExternalModuleData>},
-    {SymbolId::kUnderImp, &UnderImpModule::initialize},
-    {SymbolId::kUnderIo, &UnderIoModule::initialize},
-    {SymbolId::kUnderOs, &UnderOsModule::initialize},
-    {SymbolId::kUnderSignal, &UnderSignalModule::initialize},
-    {SymbolId::kUnderStrMod,
-     &initializeFrozenModule<kUnderStrUnderModModuleData>},
-    {SymbolId::kUnderThread, &initializeFrozenModule<kUnderThreadModuleData>},
-    {SymbolId::kUnderValgrind, &UnderValgrindModule::initialize},
-    {SymbolId::kUnderWarnings, &UnderWarningsModule::initialize},
-    {SymbolId::kUnderWeakref, &UnderWeakrefModule::initialize},
-    {SymbolId::kArray, &ArrayModule::initialize},
-    {SymbolId::kBuiltins, &BuiltinsModule::initialize},
-    {SymbolId::kFaulthandler, &FaulthandlerModule::initialize},
-    {SymbolId::kMarshal, &MarshalModule::initialize},
-    {SymbolId::kOperator, &initializeFrozenModule<kOperatorModuleData>},
-    {SymbolId::kSys, &SysModule::initialize},
-    {SymbolId::kWarnings, &initializeFrozenModule<kWarningsModuleData>},
+    {ID(_imp), &UnderImpModule::initialize},
+    {ID(_io), &UnderIoModule::initialize},
+    {ID(_os), &UnderOsModule::initialize},
+    {ID(_signal), &UnderSignalModule::initialize},
+    {ID(_str_mod), &initializeFrozenModule<kUnderStrUnderModModuleData>},
+    {ID(_thread), &initializeFrozenModule<kUnderThreadModuleData>},
+    {ID(_valgrind), &UnderValgrindModule::initialize},
+    {ID(_warnings), &UnderWarningsModule::initialize},
+    {ID(_weakref), &UnderWeakrefModule::initialize},
+    {ID(array), &ArrayModule::initialize},
+    {ID(builtins), &BuiltinsModule::initialize},
+    {ID(faulthandler), &FaulthandlerModule::initialize},
+    {ID(marshal), &MarshalModule::initialize},
+    {ID(operator), &initializeFrozenModule<kOperatorModuleData>},
+    {ID(sys), &SysModule::initialize},
+    {ID(warnings), &initializeFrozenModule<kWarningsModuleData>},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -71,7 +69,7 @@ static void checkBuiltinTypeDeclarations(Thread* thread, const Module& module) {
     Type type(&scope, *value);
     if (!type.isBuiltin()) continue;
     // Check whether __doc__ exists as a signal that the type was declared.
-    if (!typeAtById(thread, type, SymbolId::kDunderDoc).isErrorNotFound()) {
+    if (!typeAtById(thread, type, ID(__doc__)).isErrorNotFound()) {
       continue;
     }
     Str name(&scope, type.name());

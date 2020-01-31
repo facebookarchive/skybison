@@ -618,7 +618,7 @@ TEST_F(RuntimeStrTest, NewStrFromFmtFormatsTypeName) {
 
 TEST_F(RuntimeStrTest, NewStrFromFmtFormatsSymbolid) {
   HandleScope scope(thread_);
-  Object str(&scope, runtime_->newStrFromFmt("hello %Y", SymbolId::kDict));
+  Object str(&scope, runtime_->newStrFromFmt("hello %Y", ID(dict)));
   EXPECT_TRUE(isStrEqualsCStr(*str, "hello dict"));
 }
 
@@ -1082,7 +1082,7 @@ TEST_F(RuntimeTest, GetTypeConstructor) {
   EXPECT_TRUE(runtime_->classConstructor(type).isErrorNotFound());
 
   Object func(&scope, makeTestFunction());
-  typeAtPutById(thread_, type, SymbolId::kDunderInit, func);
+  typeAtPutById(thread_, type, ID(__init__), func);
 
   EXPECT_EQ(runtime_->classConstructor(type), *func);
 }
@@ -1791,8 +1791,7 @@ Foo()
 TEST_F(RuntimeAttributeTest, NoInstanceDictReturnsClassAttribute) {
   HandleScope scope(thread_);
   Object immediate(&scope, SmallInt::fromWord(-1));
-  RawObject attr =
-      runtime_->attributeAtById(thread_, immediate, SymbolId::kDunderNeg);
+  RawObject attr = runtime_->attributeAtById(thread_, immediate, ID(__neg__));
   ASSERT_TRUE(attr.isBoundMethod());
 }
 
@@ -2706,7 +2705,7 @@ TEST_F(RuntimeTest, InstanceAtPutWithReadOnlyAttributeRaisesAttributeError) {
   HandleScope scope(thread_);
 
   BuiltinAttribute attrs[] = {
-      {SymbolId::kDunderGlobals, 0, AttributeFlags::kReadOnly},
+      {ID(__globals__), 0, AttributeFlags::kReadOnly},
       {SymbolId::kSentinelId, -1},
   };
   BuiltinMethod builtins[] = {
@@ -2714,8 +2713,8 @@ TEST_F(RuntimeTest, InstanceAtPutWithReadOnlyAttributeRaisesAttributeError) {
   };
   LayoutId layout_id = LayoutId::kLastBuiltinId;
   Type type(&scope,
-            runtime_->addBuiltinType(SymbolId::kVersion, layout_id,
-                                     LayoutId::kObject, attrs, builtins));
+            runtime_->addBuiltinType(ID(version), layout_id, LayoutId::kObject,
+                                     attrs, builtins));
   Layout layout(&scope, type.instanceLayout());
   runtime_->layoutAtPut(layout_id, *layout);
   Instance instance(&scope, runtime_->newInstance(layout));
@@ -3155,7 +3154,7 @@ TEST_F(RuntimeTest, BuiltinBaseOfNonEmptyTypeIsTypeItself) {
   HandleScope scope(thread_);
 
   BuiltinAttribute attrs[] = {
-      {SymbolId::kDunderGlobals, 0, AttributeFlags::kReadOnly},
+      {ID(__globals__), 0, AttributeFlags::kReadOnly},
       {SymbolId::kSentinelId, -1},
   };
   BuiltinMethod builtins[] = {
@@ -3163,8 +3162,8 @@ TEST_F(RuntimeTest, BuiltinBaseOfNonEmptyTypeIsTypeItself) {
   };
   LayoutId layout_id = LayoutId::kLastBuiltinId;
   Type type(&scope,
-            runtime_->addBuiltinType(SymbolId::kVersion, layout_id,
-                                     LayoutId::kObject, attrs, builtins));
+            runtime_->addBuiltinType(ID(version), layout_id, LayoutId::kObject,
+                                     attrs, builtins));
   EXPECT_EQ(type.builtinBase(), layout_id);
 }
 
@@ -3179,8 +3178,8 @@ TEST_F(RuntimeTest, BuiltinBaseOfEmptyTypeIsSuperclass) {
   };
   LayoutId layout_id = LayoutId::kLastBuiltinId;
   Type type(&scope,
-            runtime_->addBuiltinType(SymbolId::kVersion, layout_id,
-                                     LayoutId::kObject, attrs, builtins));
+            runtime_->addBuiltinType(ID(version), layout_id, LayoutId::kObject,
+                                     attrs, builtins));
   EXPECT_EQ(type.builtinBase(), LayoutId::kObject);
 }
 

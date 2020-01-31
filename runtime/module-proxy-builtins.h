@@ -5,7 +5,7 @@
 namespace py {
 
 class ModuleProxyBuiltins
-    : public Builtins<ModuleProxyBuiltins, SymbolId::kModuleProxy,
+    : public Builtins<ModuleProxyBuiltins, ID(module_proxy),
                       LayoutId::kModuleProxy> {
  public:
   static const BuiltinAttribute kAttributes[];

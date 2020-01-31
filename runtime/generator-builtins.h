@@ -25,7 +25,7 @@ class GeneratorBaseBuiltins : public Builtins<T, name, type> {
 };
 
 class GeneratorBuiltins
-    : public GeneratorBaseBuiltins<GeneratorBuiltins, SymbolId::kGenerator,
+    : public GeneratorBaseBuiltins<GeneratorBuiltins, ID(generator),
                                    LayoutId::kGenerator> {
  public:
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
@@ -39,7 +39,7 @@ class GeneratorBuiltins
 };
 
 class CoroutineBuiltins
-    : public GeneratorBaseBuiltins<CoroutineBuiltins, SymbolId::kCoroutine,
+    : public GeneratorBaseBuiltins<CoroutineBuiltins, ID(coroutine),
                                    LayoutId::kCoroutine> {
  public:
   static const BuiltinMethod kBuiltinMethods[];
@@ -50,8 +50,7 @@ class CoroutineBuiltins
 };
 
 class AsyncGeneratorBuiltins
-    : public GeneratorBaseBuiltins<AsyncGeneratorBuiltins,
-                                   SymbolId::kAsyncGenerator,
+    : public GeneratorBaseBuiltins<AsyncGeneratorBuiltins, ID(async_generator),
                                    LayoutId::kAsyncGenerator> {
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(AsyncGeneratorBuiltins);

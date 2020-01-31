@@ -48,9 +48,9 @@ RawObject rangeLen(Thread* thread, const Object& start_obj,
 }
 
 const BuiltinMethod LongRangeIteratorBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderIter, dunderIter},
-    {SymbolId::kDunderLengthHint, dunderLengthHint},
-    {SymbolId::kDunderNext, dunderNext},
+    {ID(__iter__), dunderIter},
+    {ID(__length_hint__), dunderLengthHint},
+    {ID(__next__), dunderNext},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -60,7 +60,7 @@ RawObject LongRangeIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isLongRangeIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kLongRangeIterator);
+    return thread->raiseRequiresType(self, ID(longrange_iterator));
   }
   return *self;
 }
@@ -72,7 +72,7 @@ RawObject LongRangeIteratorBuiltins::dunderLengthHint(Thread* thread,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isLongRangeIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kLongRangeIterator);
+    return thread->raiseRequiresType(self, ID(longrange_iterator));
   }
   LongRangeIterator iter(&scope, *self);
   Object next(&scope, iter.next());
@@ -87,7 +87,7 @@ RawObject LongRangeIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isLongRangeIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kLongRangeIterator);
+    return thread->raiseRequiresType(self, ID(longrange_iterator));
   }
   LongRangeIterator iter(&scope, *self);
   Int next(&scope, iter.next());
@@ -102,16 +102,16 @@ RawObject LongRangeIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
 }
 
 const BuiltinAttribute RangeBuiltins::kAttributes[] = {
-    {SymbolId::kStart, Range::kStartOffset, AttributeFlags::kReadOnly},
-    {SymbolId::kStep, Range::kStepOffset, AttributeFlags::kReadOnly},
-    {SymbolId::kStop, Range::kStopOffset, AttributeFlags::kReadOnly},
+    {ID(start), Range::kStartOffset, AttributeFlags::kReadOnly},
+    {ID(step), Range::kStepOffset, AttributeFlags::kReadOnly},
+    {ID(stop), Range::kStopOffset, AttributeFlags::kReadOnly},
     {SymbolId::kSentinelId, -1},
 };
 
 const BuiltinMethod RangeBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderIter, dunderIter},
-    {SymbolId::kDunderLen, dunderLen},
-    {SymbolId::kDunderNew, dunderNew},
+    {ID(__iter__), dunderIter},
+    {ID(__len__), dunderLen},
+    {ID(__new__), dunderNew},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -120,7 +120,7 @@ RawObject RangeBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isRange()) {
-    return thread->raiseRequiresType(self, SymbolId::kRange);
+    return thread->raiseRequiresType(self, ID(range));
   }
   Range range(&scope, *self);
   Object start_obj(&scope, range.start());
@@ -149,7 +149,7 @@ RawObject RangeBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isRange()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kRange);
+    return thread->raiseRequiresType(self_obj, ID(range));
   }
   Range self(&scope, *self_obj);
   Object start(&scope, self.start());
@@ -219,9 +219,9 @@ RawObject RangeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 }
 
 const BuiltinMethod RangeIteratorBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderIter, dunderIter},
-    {SymbolId::kDunderLengthHint, dunderLengthHint},
-    {SymbolId::kDunderNext, dunderNext},
+    {ID(__iter__), dunderIter},
+    {ID(__length_hint__), dunderLengthHint},
+    {ID(__next__), dunderNext},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -231,7 +231,7 @@ RawObject RangeIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isRangeIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kRangeIterator);
+    return thread->raiseRequiresType(self, ID(range_iterator));
   }
   return *self;
 }
@@ -242,7 +242,7 @@ RawObject RangeIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isRangeIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kRangeIterator);
+    return thread->raiseRequiresType(self, ID(range_iterator));
   }
   RangeIterator iter(&scope, *self);
   return SmallInt::fromWord(iter.length());
@@ -254,7 +254,7 @@ RawObject RangeIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isRangeIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kRangeIterator);
+    return thread->raiseRequiresType(self, ID(range_iterator));
   }
   RangeIterator iter(&scope, *self);
   word length = iter.length();

@@ -119,16 +119,16 @@ TEST_F(InterpreterTest, IsTrueDunderLen) {
 TEST_F(InterpreterTest, UnaryOperationWithIntReturnsInt) {
   HandleScope scope(thread_);
   Object value(&scope, runtime_->newInt(23));
-  Object result(&scope, Interpreter::unaryOperation(thread_, value,
-                                                    SymbolId::kDunderPos));
+  Object result(&scope,
+                Interpreter::unaryOperation(thread_, value, ID(__pos__)));
   EXPECT_TRUE(isIntEqualsWord(*result, 23));
 }
 
 TEST_F(InterpreterTest, UnaryOperationWithBadTypeRaisesTypeError) {
   HandleScope scope(thread_);
   Object value(&scope, NoneType::object());
-  Object result(&scope, Interpreter::unaryOperation(thread_, value,
-                                                    SymbolId::kDunderInvert));
+  Object result(&scope,
+                Interpreter::unaryOperation(thread_, value, ID(__invert__)));
   EXPECT_TRUE(
       raisedWithStr(*result, LayoutId::kTypeError,
                     "bad operand type for unary '__invert__': 'NoneType'"));
@@ -144,8 +144,8 @@ c = C()
 )")
                    .isError());
   Object c(&scope, mainModuleAt(runtime_, "c"));
-  Object result(
-      &scope, Interpreter::unaryOperation(thread_, c, SymbolId::kDunderInvert));
+  Object result(&scope,
+                Interpreter::unaryOperation(thread_, c, ID(__invert__)));
   EXPECT_TRUE(isStrEqualsCStr(*result, "custom invert"));
 }
 
@@ -159,8 +159,7 @@ c = C()
 )")
                    .isError());
   Object c(&scope, mainModuleAt(runtime_, "c"));
-  Object result(&scope,
-                Interpreter::unaryOperation(thread_, c, SymbolId::kDunderNeg));
+  Object result(&scope, Interpreter::unaryOperation(thread_, c, ID(__neg__)));
   EXPECT_TRUE(raised(*result, LayoutId::kUserWarning));
 }
 
@@ -208,7 +207,7 @@ result = cache_binary_op(a, b)
             mainModuleAt(runtime_, "A__add__"));
 
   // Verify that A.__add__ has the dependent.
-  Object left_op_name(&scope, runtime_->symbols()->at(SymbolId::kDunderAdd));
+  Object left_op_name(&scope, runtime_->symbols()->at(ID(__add__)));
   Object type_a_attr(&scope, typeValueCellAt(type_a, left_op_name));
   ASSERT_TRUE(type_a_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*type_a_attr).dependencyLink().isWeakLink());
@@ -217,7 +216,7 @@ result = cache_binary_op(a, b)
       *cache_binary_op);
 
   // Verify that B.__radd__ has the dependent.
-  Object right_op_name(&scope, runtime_->symbols()->at(SymbolId::kDunderRadd));
+  Object right_op_name(&scope, runtime_->symbols()->at(ID(__radd__)));
   Object type_b_attr(&scope, typeValueCellAt(type_b, right_op_name));
   ASSERT_TRUE(type_b_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*type_b_attr).dependencyLink().isWeakLink());
@@ -827,8 +826,7 @@ cache_inplace_op(a, b)
             mainModuleAt(runtime_, "A__imul__"));
 
   // Verify that A.__imul__ has the dependent.
-  Object inplace_op_name(&scope,
-                         runtime_->symbols()->at(SymbolId::kDunderImul));
+  Object inplace_op_name(&scope, runtime_->symbols()->at(ID(__imul__)));
   Object inplace_attr(&scope, typeValueCellAt(type_a, inplace_op_name));
   ASSERT_TRUE(inplace_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*inplace_attr).dependencyLink().isWeakLink());
@@ -837,7 +835,7 @@ cache_inplace_op(a, b)
             *cache_inplace_op);
 
   // Verify that A.__mul__ has the dependent.
-  Object left_op_name(&scope, runtime_->symbols()->at(SymbolId::kDunderMul));
+  Object left_op_name(&scope, runtime_->symbols()->at(ID(__mul__)));
   Object type_a_attr(&scope, typeValueCellAt(type_a, left_op_name));
   ASSERT_TRUE(type_a_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*type_a_attr).dependencyLink().isWeakLink());
@@ -846,7 +844,7 @@ cache_inplace_op(a, b)
       *cache_inplace_op);
 
   // Verify that B.__rmul__ has the dependent.
-  Object right_op_name(&scope, runtime_->symbols()->at(SymbolId::kDunderRmul));
+  Object right_op_name(&scope, runtime_->symbols()->at(ID(__rmul__)));
   Object type_b_attr(&scope, typeValueCellAt(type_b, right_op_name));
   ASSERT_TRUE(type_b_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*type_b_attr).dependencyLink().isWeakLink());
@@ -1723,7 +1721,7 @@ result = cache_compare_op(a, b)
 
   // Verify that A.__ge__ has the dependent.
   Type a_type(&scope, mainModuleAt(runtime_, "A"));
-  Object left_op_name(&scope, runtime_->symbols()->at(SymbolId::kDunderGe));
+  Object left_op_name(&scope, runtime_->symbols()->at(ID(__ge__)));
   Object a_type_attr(&scope, typeValueCellAt(a_type, left_op_name));
   ASSERT_TRUE(a_type_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*a_type_attr).dependencyLink().isWeakLink());
@@ -1733,7 +1731,7 @@ result = cache_compare_op(a, b)
 
   // Verify that B.__le__ has the dependent.
   Type b_type(&scope, mainModuleAt(runtime_, "B"));
-  Object right_op_name(&scope, runtime_->symbols()->at(SymbolId::kDunderLe));
+  Object right_op_name(&scope, runtime_->symbols()->at(ID(__le__)));
   Object b_type_attr(&scope, typeValueCellAt(b_type, right_op_name));
   ASSERT_TRUE(b_type_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*b_type_attr).dependencyLink().isWeakLink());
@@ -2329,8 +2327,8 @@ c = C()
   ASSERT_TRUE(frame->isSentinel());
   Object c(&scope, mainModuleAt(runtime_, "c"));
   Object f(&scope, mainModuleAt(runtime_, "f"));
-  Object method(&scope, Interpreter::lookupMethod(thread_, frame, c,
-                                                  SymbolId::kDunderCall));
+  Object method(&scope,
+                Interpreter::lookupMethod(thread_, frame, c, ID(__call__)));
   EXPECT_EQ(*f, *method);
 }
 
@@ -3153,8 +3151,7 @@ def public_symbol2():
 
   // Preload the module
   Object name(&scope, runtime_->newStrFromCStr("test_module"));
-  Code code(&scope,
-            compile(thread_, module_src, filename, SymbolId::kExec, 0, -1));
+  Code code(&scope, compile(thread_, module_src, filename, ID(exec), 0, -1));
   ASSERT_FALSE(executeModuleFromCode(thread_, code, name).isError());
 
   ASSERT_FALSE(runFromCStr(runtime_, R"(
@@ -3182,8 +3179,7 @@ def _private_symbol():
 
   // Preload the module
   Object name(&scope, runtime_->newStrFromCStr("test_module"));
-  Code code(&scope,
-            compile(thread_, module_src, filename, SymbolId::kExec, 0, -1));
+  Code code(&scope, compile(thread_, module_src, filename, ID(exec), 0, -1));
   ASSERT_FALSE(executeModuleFromCode(thread_, code, name).isError());
 
   const char* main_src = R"(
@@ -3823,8 +3819,7 @@ TEST_F(InterpreterTest, MakeFunctionSetsDunderModule) {
 def bar(): pass
 )"));
   Object filename(&scope, runtime_->newStrFromCStr("<test string>"));
-  Code code(&scope,
-            compile(thread_, module_src, filename, SymbolId::kExec, 0, -1));
+  Code code(&scope, compile(thread_, module_src, filename, ID(exec), 0, -1));
   ASSERT_FALSE(executeModuleFromCode(thread_, code, module_name).isError());
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 import foo
@@ -5112,7 +5107,7 @@ cache_A_add(a, b)
 
   // Ensure that cache_a_add is being tracked as a dependent from A.__add__.
   Type type_a(&scope, mainModuleAt(runtime_, "A"));
-  Str dunder_add(&scope, runtime_->symbols()->at(SymbolId::kDunderAdd));
+  Str dunder_add(&scope, runtime_->symbols()->at(ID(__add__)));
   ValueCell a_add_value_cell(&scope, typeValueCellAt(type_a, dunder_add));
   ASSERT_FALSE(a_add_value_cell.isPlaceholder());
   EXPECT_EQ(WeakLink::cast(a_add_value_cell.dependencyLink()).referent(),
@@ -5120,7 +5115,7 @@ cache_A_add(a, b)
 
   // Ensure that cache_a_add is being tracked as a dependent from B.__radd__.
   Type type_b(&scope, mainModuleAt(runtime_, "B"));
-  Str dunder_radd(&scope, runtime_->symbols()->at(SymbolId::kDunderRadd));
+  Str dunder_radd(&scope, runtime_->symbols()->at(ID(__radd__)));
   ValueCell b_radd_value_cell(&scope, typeValueCellAt(type_b, dunder_radd));
   ASSERT_TRUE(b_radd_value_cell.isPlaceholder());
   EXPECT_EQ(WeakLink::cast(b_radd_value_cell.dependencyLink()).referent(),
@@ -5238,13 +5233,13 @@ cache_A_iadd(a, b)
 
   // Ensure that cache_a_iadd is being tracked as a dependent from A.__iadd__.
   Type type_a(&scope, mainModuleAt(runtime_, "A"));
-  Str dunder_iadd(&scope, runtime_->symbols()->at(SymbolId::kDunderIadd));
+  Str dunder_iadd(&scope, runtime_->symbols()->at(ID(__iadd__)));
   ValueCell a_iadd_value_cell(&scope, typeValueCellAt(type_a, dunder_iadd));
   ASSERT_FALSE(a_iadd_value_cell.isPlaceholder());
   EXPECT_EQ(WeakLink::cast(a_iadd_value_cell.dependencyLink()).referent(),
             *cache_a_iadd);
 
-  Str dunder_add(&scope, runtime_->symbols()->at(SymbolId::kDunderAdd));
+  Str dunder_add(&scope, runtime_->symbols()->at(ID(__add__)));
   ValueCell a_add_value_cell(&scope, typeValueCellAt(type_a, dunder_add));
   ASSERT_TRUE(a_add_value_cell.isPlaceholder());
   EXPECT_EQ(WeakLink::cast(a_add_value_cell.dependencyLink()).referent(),
@@ -5252,7 +5247,7 @@ cache_A_iadd(a, b)
 
   // Ensure that cache_a_iadd is being tracked as a dependent from B.__riadd__.
   Type type_b(&scope, mainModuleAt(runtime_, "B"));
-  Str dunder_radd(&scope, runtime_->symbols()->at(SymbolId::kDunderRadd));
+  Str dunder_radd(&scope, runtime_->symbols()->at(ID(__radd__)));
   ValueCell b_radd_value_cell(&scope, typeValueCellAt(type_b, dunder_radd));
   ASSERT_TRUE(b_radd_value_cell.isPlaceholder());
   EXPECT_EQ(WeakLink::cast(b_radd_value_cell.dependencyLink()).referent(),
@@ -5643,7 +5638,7 @@ TEST_F(InterpreterTest, DoIntrinsicWithSlowPathDoesNotAlterStack) {
   Object obj(&scope, runtime_->newList());
   Frame* frame = thread_->currentFrame();
   frame->pushValue(*obj);
-  ASSERT_FALSE(doIntrinsic(thread_, frame, SymbolId::kUnderTupleLen));
+  ASSERT_FALSE(doIntrinsic(thread_, frame, ID(_tuple_len)));
   EXPECT_EQ(frame->peek(0), *obj);
 }
 

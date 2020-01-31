@@ -17,14 +17,14 @@
 namespace py {
 
 const BuiltinFunction FaulthandlerModule::kBuiltinFunctions[] = {
-    {SymbolId::kUnderReadNull, underReadNull},
-    {SymbolId::kUnderSigabrt, underSigabrt},
-    {SymbolId::kUnderSigfpe, underSigfpe},
-    {SymbolId::kUnderSigsegv, underSigsegv},
-    {SymbolId::kDisable, disable},
-    {SymbolId::kDumpTraceback, dumpTraceback},
-    {SymbolId::kEnable, enable},
-    {SymbolId::kIsEnabled, isEnabled},
+    {ID(_read_null), underReadNull},
+    {ID(_sigabrt), underSigabrt},
+    {ID(_sigfpe), underSigfpe},
+    {ID(_sigsegv), underSigsegv},
+    {ID(disable), disable},
+    {ID(dump_traceback), dumpTraceback},
+    {ID(enable), enable},
+    {ID(is_enabled), isEnabled},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -76,7 +76,7 @@ static RawObject getFileno(Thread* thread, const Object& file) {
   }
 
   HandleScope scope(thread);
-  Object fileno(&scope, thread->invokeMethod1(file, SymbolId::kFileno));
+  Object fileno(&scope, thread->invokeMethod1(file, ID(fileno)));
   if (fileno.isError()) {
     if (fileno.isErrorNotFound()) {
       return thread->raiseWithFmt(LayoutId::kAttributeError,
@@ -96,7 +96,7 @@ static RawObject getFileno(Thread* thread, const Object& file) {
                                 "file.fileno() is not a valid file descriptor");
   }
 
-  Object flush_result(&scope, thread->invokeMethod1(file, SymbolId::kFlush));
+  Object flush_result(&scope, thread->invokeMethod1(file, ID(flush)));
   if (flush_result.isErrorException()) {
     thread->clearPendingException();
   }
@@ -208,7 +208,7 @@ RawObject FaulthandlerModule::dumpTraceback(Thread* thread, Frame* frame,
 
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfInt(*all_threads)) {
-    return thread->raiseRequiresType(all_threads, SymbolId::kInt);
+    return thread->raiseRequiresType(all_threads, ID(int));
   }
 
   Object fileno(&scope, getFileno(thread, file));
@@ -247,7 +247,7 @@ RawObject FaulthandlerModule::enable(Thread* thread, Frame* frame, word nargs) {
   Object all_threads(&scope, args.get(1));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfInt(*all_threads)) {
-    return thread->raiseRequiresType(all_threads, SymbolId::kInt);
+    return thread->raiseRequiresType(all_threads, ID(int));
   }
 
   Object fileno(&scope, getFileno(thread, file));

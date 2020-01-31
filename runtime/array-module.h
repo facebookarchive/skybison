@@ -17,7 +17,7 @@ class ArrayModule {
 };
 
 class ArrayBuiltins
-    : public Builtins<ArrayBuiltins, SymbolId::kArray, LayoutId::kArray> {
+    : public Builtins<ArrayBuiltins, ID(array), LayoutId::kArray> {
  public:
   static const BuiltinAttribute kAttributes[];
 

@@ -16,30 +16,29 @@
 namespace py {
 
 const BuiltinFunction UnderIoModule::kBuiltinFunctions[] = {
-    {SymbolId::kUnderBufferedReaderClearBuffer, underBufferedReaderClearBuffer},
-    {SymbolId::kUnderBufferedReaderInit, underBufferedReaderInit},
-    {SymbolId::kUnderBufferedReaderPeek, underBufferedReaderPeek},
-    {SymbolId::kUnderBufferedReaderRead, underBufferedReaderRead},
-    {SymbolId::kUnderBufferedReaderReadline, underBufferedReaderReadline},
-    {SymbolId::kUnderStringIOClosedGuard, underStringIOClosedGuard},
+    {ID(_buffered_reader_clear_buffer), underBufferedReaderClearBuffer},
+    {ID(_buffered_reader_init), underBufferedReaderInit},
+    {ID(_buffered_reader_peek), underBufferedReaderPeek},
+    {ID(_buffered_reader_read), underBufferedReaderRead},
+    {ID(_buffered_reader_readline), underBufferedReaderReadline},
+    {ID(_StringIO_closed_guard), underStringIOClosedGuard},
     {SymbolId::kSentinelId, nullptr},
 };
 
 const BuiltinType UnderIoModule::kBuiltinTypes[] = {
-    {SymbolId::kBufferedRandom, LayoutId::kBufferedRandom},
-    {SymbolId::kBufferedReader, LayoutId::kBufferedReader},
-    {SymbolId::kBufferedWriter, LayoutId::kBufferedWriter},
-    {SymbolId::kBytesIO, LayoutId::kBytesIO},
-    {SymbolId::kFileIO, LayoutId::kFileIO},
-    {SymbolId::kStringIO, LayoutId::kStringIO},
-    {SymbolId::kIncrementalNewlineDecoder,
-     LayoutId::kIncrementalNewlineDecoder},
-    {SymbolId::kTextIOWrapper, LayoutId::kTextIOWrapper},
-    {SymbolId::kUnderBufferedIOBase, LayoutId::kUnderBufferedIOBase},
-    {SymbolId::kUnderBufferedIOMixin, LayoutId::kUnderBufferedIOMixin},
-    {SymbolId::kUnderIOBase, LayoutId::kUnderIOBase},
-    {SymbolId::kUnderRawIOBase, LayoutId::kUnderRawIOBase},
-    {SymbolId::kUnderTextIOBase, LayoutId::kUnderTextIOBase},
+    {ID(BufferedRandom), LayoutId::kBufferedRandom},
+    {ID(BufferedReader), LayoutId::kBufferedReader},
+    {ID(BufferedWriter), LayoutId::kBufferedWriter},
+    {ID(BytesIO), LayoutId::kBytesIO},
+    {ID(FileIO), LayoutId::kFileIO},
+    {ID(StringIO), LayoutId::kStringIO},
+    {ID(IncrementalNewlineDecoder), LayoutId::kIncrementalNewlineDecoder},
+    {ID(TextIOWrapper), LayoutId::kTextIOWrapper},
+    {ID(_BufferedIOBase), LayoutId::kUnderBufferedIOBase},
+    {ID(_BufferedIOMixin), LayoutId::kUnderBufferedIOMixin},
+    {ID(_IOBase), LayoutId::kUnderIOBase},
+    {ID(_RawIOBase), LayoutId::kUnderRawIOBase},
+    {ID(_TextIOBase), LayoutId::kUnderTextIOBase},
     {SymbolId::kSentinelId, LayoutId::kSentinelId},
 };
 
@@ -91,8 +90,8 @@ static RawObject fillBuffer(Thread* thread, const Object& raw_file,
   word buffer_size = buffer.length();
   word wanted = buffer_size - *buffer_num_bytes;
   Object wanted_int(&scope, SmallInt::fromWord(wanted));
-  Object result_obj(
-      &scope, thread->invokeMethod2(raw_file, SymbolId::kRead, wanted_int));
+  Object result_obj(&scope,
+                    thread->invokeMethod2(raw_file, ID(read), wanted_int));
   if (result_obj.isError()) {
     if (result_obj.isErrorException()) return *result_obj;
     if (result_obj.isErrorNotFound()) {
@@ -100,7 +99,7 @@ static RawObject fillBuffer(Thread* thread, const Object& raw_file,
         return thread->raiseWithFmt(LayoutId::kValueError,
                                     "raw stream has been detached");
       }
-      Object name(&scope, thread->runtime()->symbols()->at(SymbolId::kRead));
+      Object name(&scope, thread->runtime()->symbols()->at(ID(read)));
       return objectRaiseAttributeError(thread, raw_file, name);
     }
   }
@@ -153,8 +152,8 @@ static RawObject readBig(Thread* thread, const BufferedReader& buffered_reader,
   for (;;) {
     word wanted = (num_bytes == kMaxWord) ? 32 * kKiB : num_bytes - available;
     Object wanted_int(&scope, SmallInt::fromWord(wanted));
-    Object result_obj(
-        &scope, thread->invokeMethod2(raw_file, SymbolId::kRead, wanted_int));
+    Object result_obj(&scope,
+                      thread->invokeMethod2(raw_file, ID(read), wanted_int));
     if (result_obj.isError()) {
       if (result_obj.isErrorException()) return *result_obj;
       if (result_obj.isErrorNotFound()) {
@@ -162,7 +161,7 @@ static RawObject readBig(Thread* thread, const BufferedReader& buffered_reader,
           return thread->raiseWithFmt(LayoutId::kValueError,
                                       "raw stream has been detached");
         }
-        Object name(&scope, thread->runtime()->symbols()->at(SymbolId::kRead));
+        Object name(&scope, thread->runtime()->symbols()->at(ID(read)));
         return objectRaiseAttributeError(thread, raw_file, name);
       }
     }
@@ -247,7 +246,7 @@ RawObject UnderIoModule::underBufferedReaderClearBuffer(Thread* thread,
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBufferedReader(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kBufferedReader);
+    return thread->raiseRequiresType(self_obj, ID(BufferedReader));
   }
   BufferedReader self(&scope, *self_obj);
   self.setReadPos(0);
@@ -262,7 +261,7 @@ RawObject UnderIoModule::underBufferedReaderInit(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBufferedReader(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kBufferedReader);
+    return thread->raiseRequiresType(self_obj, ID(BufferedReader));
   }
   BufferedReader self(&scope, *self_obj);
 
@@ -299,7 +298,7 @@ RawObject UnderIoModule::underBufferedReaderPeek(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBufferedReader(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kBufferedReader);
+    return thread->raiseRequiresType(self_obj, ID(BufferedReader));
   }
   BufferedReader self(&scope, *self_obj);
 
@@ -353,7 +352,7 @@ RawObject UnderIoModule::underBufferedReaderRead(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBufferedReader(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kBufferedReader);
+    return thread->raiseRequiresType(self_obj, ID(BufferedReader));
   }
   BufferedReader self(&scope, *self_obj);
 
@@ -394,8 +393,7 @@ RawObject UnderIoModule::underBufferedReaderRead(Thread* thread, Frame* frame,
 
   Object raw_file(&scope, self.underlying());
   if (num_bytes == kMaxWord) {
-    Object readall_result(&scope,
-                          thread->invokeMethod1(raw_file, SymbolId::kReadall));
+    Object readall_result(&scope, thread->invokeMethod1(raw_file, ID(readall)));
     if (readall_result.isErrorException()) return *readall_result;
     if (!readall_result.isErrorNotFound()) {
       Bytes bytes(&scope, Bytes::empty());
@@ -475,7 +473,7 @@ RawObject UnderIoModule::underBufferedReaderReadline(Thread* thread,
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBufferedReader(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kBufferedReader);
+    return thread->raiseRequiresType(self_obj, ID(BufferedReader));
   }
   BufferedReader self(&scope, *self_obj);
 
@@ -616,7 +614,7 @@ RawObject UnderIoModule::underStringIOClosedGuard(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfStringIO(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStringIO);
+    return thread->raiseRequiresType(self_obj, ID(StringIO));
   }
   StringIO self(&scope, *self_obj);
   if (self.closed()) {
@@ -627,16 +625,16 @@ RawObject UnderIoModule::underStringIOClosedGuard(Thread* thread, Frame* frame,
 }
 
 const BuiltinAttribute UnderIOBaseBuiltins::kAttributes[] = {
-    {SymbolId::kUnderClosed, UnderIOBase::kClosedOffset},
+    {ID(_closed), UnderIOBase::kClosedOffset},
     {SymbolId::kSentinelId, 0},
 };
 
 const BuiltinAttribute IncrementalNewlineDecoderBuiltins::kAttributes[] = {
-    {SymbolId::kUnderErrors, IncrementalNewlineDecoder::kErrorsOffset},
-    {SymbolId::kUnderTranslate, IncrementalNewlineDecoder::kTranslateOffset},
-    {SymbolId::kUnderDecoder, IncrementalNewlineDecoder::kDecoderOffset},
-    {SymbolId::kUnderSeennl, IncrementalNewlineDecoder::kSeennlOffset},
-    {SymbolId::kUnderPendingcr, IncrementalNewlineDecoder::kPendingcrOffset},
+    {ID(_errors), IncrementalNewlineDecoder::kErrorsOffset},
+    {ID(_translate), IncrementalNewlineDecoder::kTranslateOffset},
+    {ID(_decoder), IncrementalNewlineDecoder::kDecoderOffset},
+    {ID(_seennl), IncrementalNewlineDecoder::kSeennlOffset},
+    {ID(_pendingcr), IncrementalNewlineDecoder::kPendingcrOffset},
     {SymbolId::kSentinelId, 0},
 };
 
@@ -650,43 +648,42 @@ void UnderBufferedIOBaseBuiltins::postInitialize(Runtime*,
 }
 
 const BuiltinAttribute UnderBufferedIOMixinBuiltins::kAttributes[] = {
-    {SymbolId::kUnderRaw, UnderBufferedIOMixin::kUnderlyingOffset},
+    {ID(_raw), UnderBufferedIOMixin::kUnderlyingOffset},
     {SymbolId::kSentinelId, 0},
 };
 
 const BuiltinAttribute BufferedRandomBuiltins::kAttributes[] = {
-    {SymbolId::kUnderRaw, BufferedRandom::kUnderlyingOffset},
-    {SymbolId::kUnderReader, BufferedRandom::kReaderOffset},
-    {SymbolId::kUnderWriteBuf, BufferedRandom::kWriteBufOffset},
-    {SymbolId::kUnderWriteLock, BufferedRandom::kWriteLockOffset},
-    {SymbolId::kBufferSize, BufferedRandom::kBufferSizeOffset},
+    {ID(_raw), BufferedRandom::kUnderlyingOffset},
+    {ID(_reader), BufferedRandom::kReaderOffset},
+    {ID(_write_buf), BufferedRandom::kWriteBufOffset},
+    {ID(_write_lock), BufferedRandom::kWriteLockOffset},
+    {ID(buffer_size), BufferedRandom::kBufferSizeOffset},
     {SymbolId::kSentinelId, 0},
 };
 
 const BuiltinAttribute BufferedReaderBuiltins::kAttributes[] = {
-    {SymbolId::kUnderRaw, BufferedReader::kUnderlyingOffset},
-    {SymbolId::kUnderBufferSize, BufferedReader::kBufferSizeOffset,
+    {ID(_raw), BufferedReader::kUnderlyingOffset},
+    {ID(_buffer_size), BufferedReader::kBufferSizeOffset,
      AttributeFlags::kReadOnly},
     {SymbolId::kInvalid, BufferedReader::kReadBufOffset},
-    {SymbolId::kUnderReadPos, BufferedReader::kReadPosOffset,
-     AttributeFlags::kReadOnly},
-    {SymbolId::kUnderBufferNumBytes, BufferedReader::kBufferNumBytesOffset,
+    {ID(_read_pos), BufferedReader::kReadPosOffset, AttributeFlags::kReadOnly},
+    {ID(_buffer_num_bytes), BufferedReader::kBufferNumBytesOffset,
      AttributeFlags::kReadOnly},
     {SymbolId::kSentinelId, 0},
 };
 
 const BuiltinAttribute BufferedWriterBuiltins::kAttributes[] = {
-    {SymbolId::kUnderRaw, BufferedWriter::kUnderlyingOffset},
-    {SymbolId::kUnderWriteBuf, BufferedWriter::kWriteBufOffset},
-    {SymbolId::kUnderWriteLock, BufferedWriter::kWriteLockOffset},
-    {SymbolId::kBufferSize, BufferedWriter::kBufferSizeOffset},
+    {ID(_raw), BufferedWriter::kUnderlyingOffset},
+    {ID(_write_buf), BufferedWriter::kWriteBufOffset},
+    {ID(_write_lock), BufferedWriter::kWriteLockOffset},
+    {ID(buffer_size), BufferedWriter::kBufferSizeOffset},
     {SymbolId::kSentinelId, 0},
 };
 
 const BuiltinAttribute BytesIOBuiltins::kAttributes[] = {
-    {SymbolId::kDunderDict, BytesIO::kDictOffset},
-    {SymbolId::kUnderBuffer, BytesIO::kBufferOffset},
-    {SymbolId::kUnderPos, BytesIO::kPosOffset},
+    {ID(__dict__), BytesIO::kDictOffset},
+    {ID(_buffer), BytesIO::kBufferOffset},
+    {ID(_pos), BytesIO::kPosOffset},
     {SymbolId::kSentinelId, 0},
 };
 
@@ -695,26 +692,26 @@ void BytesIOBuiltins::postInitialize(Runtime*, const Type& new_type) {
 }
 
 const BuiltinAttribute FileIOBuiltins::kAttributes[] = {
-    {SymbolId::kUnderFd, FileIO::kFdOffset},
-    {SymbolId::kName, FileIO::kNameOffset},
-    {SymbolId::kUnderCreated, FileIO::kCreatedOffset},
-    {SymbolId::kUnderReadable, FileIO::kReadableOffset},
-    {SymbolId::kUnderWritable, FileIO::kWritableOffset},
-    {SymbolId::kUnderAppending, FileIO::kAppendingOffset},
-    {SymbolId::kUnderSeekable, FileIO::kSeekableOffset},
-    {SymbolId::kUnderCloseFd, FileIO::kCloseFdOffset},
+    {ID(_fd), FileIO::kFdOffset},
+    {ID(name), FileIO::kNameOffset},
+    {ID(_created), FileIO::kCreatedOffset},
+    {ID(_readable), FileIO::kReadableOffset},
+    {ID(_writable), FileIO::kWritableOffset},
+    {ID(_appending), FileIO::kAppendingOffset},
+    {ID(_seekable), FileIO::kSeekableOffset},
+    {ID(_closefd), FileIO::kCloseFdOffset},
     {SymbolId::kSentinelId, 0},
 };
 
 const BuiltinAttribute StringIOBuiltins::kAttributes[] = {
-    {SymbolId::kUnderBuffer, StringIO::kBufferOffset},
-    {SymbolId::kUnderPos, StringIO::kPosOffset},
-    {SymbolId::kUnderReadnl, StringIO::kReadnlOffset},
-    {SymbolId::kUnderReadtranslate, StringIO::kReadtranslateOffset},
-    {SymbolId::kUnderReaduniversal, StringIO::kReaduniversalOffset},
-    {SymbolId::kUnderSeennl, StringIO::kSeennlOffset},
-    {SymbolId::kUnderWritenl, StringIO::kWritenlOffset},
-    {SymbolId::kUnderWritetranslate, StringIO::kWritetranslateOffset},
+    {ID(_buffer), StringIO::kBufferOffset},
+    {ID(_pos), StringIO::kPosOffset},
+    {ID(_readnl), StringIO::kReadnlOffset},
+    {ID(_readtranslate), StringIO::kReadtranslateOffset},
+    {ID(_readuniversal), StringIO::kReaduniversalOffset},
+    {ID(_seennl), StringIO::kSeennlOffset},
+    {ID(_writenl), StringIO::kWritenlOffset},
+    {ID(_writetranslate), StringIO::kWritetranslateOffset},
     {SymbolId::kInvalid, RawFunction::kDictOffset},
     {SymbolId::kSentinelId, 0},
 };
@@ -833,7 +830,7 @@ RawObject StringIOBuiltins::dunderInit(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStringIO(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kStringIO);
+    return thread->raiseRequiresType(self, ID(StringIO));
   }
   Object newline(&scope, args.get(2));
   Runtime* runtime = thread->runtime();
@@ -953,7 +950,7 @@ RawObject StringIOBuiltins::dunderNext(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStringIO(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kStringIO);
+    return thread->raiseRequiresType(self, ID(StringIO));
   }
   StringIO string_io(&scope, *self);
   if (string_io.closed()) {
@@ -976,7 +973,7 @@ RawObject StringIOBuiltins::getvalue(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Object self(&scope, args.get(0));
   if (!runtime->isInstanceOfStringIO(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kStringIO);
+    return thread->raiseRequiresType(self, ID(StringIO));
   }
   StringIO string_io(&scope, *self);
   if (string_io.closed()) {
@@ -993,7 +990,7 @@ RawObject StringIOBuiltins::read(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStringIO(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kStringIO);
+    return thread->raiseRequiresType(self, ID(StringIO));
   }
   StringIO string_io(&scope, *self);
   if (string_io.closed()) {
@@ -1038,7 +1035,7 @@ RawObject StringIOBuiltins::readline(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStringIO(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kStringIO);
+    return thread->raiseRequiresType(self, ID(StringIO));
   }
   StringIO string_io(&scope, *self);
   if (string_io.closed()) {
@@ -1076,7 +1073,7 @@ RawObject StringIOBuiltins::truncate(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStringIO(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kStringIO);
+    return thread->raiseRequiresType(self, ID(StringIO));
   }
   StringIO string_io(&scope, *self);
   if (string_io.closed()) {
@@ -1118,7 +1115,7 @@ RawObject StringIOBuiltins::write(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStringIO(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kStringIO);
+    return thread->raiseRequiresType(self, ID(StringIO));
   }
   StringIO string_io(&scope, *self);
   if (string_io.closed()) {
@@ -1127,43 +1124,43 @@ RawObject StringIOBuiltins::write(Thread* thread, Frame* frame, word nargs) {
   }
   Object value(&scope, args.get(1));
   if (!thread->runtime()->isInstanceOfStr(*value)) {
-    return thread->raiseRequiresType(value, SymbolId::kStr);
+    return thread->raiseRequiresType(value, ID(str));
   }
   Str str(&scope, strUnderlying(*value));
   return stringIOWrite(thread, string_io, str);
 }
 
 const BuiltinMethod StringIOBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kGetvalue, StringIOBuiltins::getvalue},
-    {SymbolId::kDunderInit, StringIOBuiltins::dunderInit},
-    {SymbolId::kDunderNext, StringIOBuiltins::dunderNext},
-    {SymbolId::kRead, StringIOBuiltins::read},
-    {SymbolId::kReadline, StringIOBuiltins::readline},
-    {SymbolId::kTruncate, StringIOBuiltins::truncate},
-    {SymbolId::kWrite, StringIOBuiltins::write},
+    {ID(getvalue), StringIOBuiltins::getvalue},
+    {ID(__init__), StringIOBuiltins::dunderInit},
+    {ID(__next__), StringIOBuiltins::dunderNext},
+    {ID(read), StringIOBuiltins::read},
+    {ID(readline), StringIOBuiltins::readline},
+    {ID(truncate), StringIOBuiltins::truncate},
+    {ID(write), StringIOBuiltins::write},
     {SymbolId::kSentinelId, nullptr},
 };
 
 const BuiltinAttribute TextIOWrapperBuiltins::kAttributes[] = {
-    {SymbolId::kUnderB2cratio, TextIOWrapper::kB2cratioOffset},
-    {SymbolId::kUnderBuffer, TextIOWrapper::kBufferOffset},
-    {SymbolId::kUnderDecodedChars, TextIOWrapper::kDecodedCharsOffset},
-    {SymbolId::kUnderDecodedCharsUsed, TextIOWrapper::kDecodedCharsUsedOffset},
-    {SymbolId::kUnderDecoder, TextIOWrapper::kDecoderOffset},
-    {SymbolId::kUnderEncoder, TextIOWrapper::kEncoderOffset},
-    {SymbolId::kUnderEncoding, TextIOWrapper::kEncodingOffset},
-    {SymbolId::kUnderErrors, TextIOWrapper::kErrorsOffset},
-    {SymbolId::kUnderHasRead1, TextIOWrapper::kHasRead1Offset},
-    {SymbolId::kUnderLineBuffering, TextIOWrapper::kLineBufferingOffset},
-    {SymbolId::kUnderReadnl, TextIOWrapper::kReadnlOffset},
-    {SymbolId::kUnderReadtranslate, TextIOWrapper::kReadtranslateOffset},
-    {SymbolId::kUnderReaduniversal, TextIOWrapper::kReaduniversalOffset},
-    {SymbolId::kUnderSeekable, TextIOWrapper::kSeekableOffset},
-    {SymbolId::kUnderSnapshot, TextIOWrapper::kSnapshotOffset},
-    {SymbolId::kUnderTelling, TextIOWrapper::kTellingOffset},
-    {SymbolId::kUnderWritenl, TextIOWrapper::kWritenlOffset},
-    {SymbolId::kUnderWritetranslate, TextIOWrapper::kWritetranslateOffset},
-    {SymbolId::kMode, TextIOWrapper::kModeOffset},  // TODO(T54575279): remove
+    {ID(_b2cratio), TextIOWrapper::kB2cratioOffset},
+    {ID(_buffer), TextIOWrapper::kBufferOffset},
+    {ID(_decoded_chars), TextIOWrapper::kDecodedCharsOffset},
+    {ID(_decoded_chars_used), TextIOWrapper::kDecodedCharsUsedOffset},
+    {ID(_decoder), TextIOWrapper::kDecoderOffset},
+    {ID(_encoder), TextIOWrapper::kEncoderOffset},
+    {ID(_encoding), TextIOWrapper::kEncodingOffset},
+    {ID(_errors), TextIOWrapper::kErrorsOffset},
+    {ID(_has_read1), TextIOWrapper::kHasRead1Offset},
+    {ID(_line_buffering), TextIOWrapper::kLineBufferingOffset},
+    {ID(_readnl), TextIOWrapper::kReadnlOffset},
+    {ID(_readtranslate), TextIOWrapper::kReadtranslateOffset},
+    {ID(_readuniversal), TextIOWrapper::kReaduniversalOffset},
+    {ID(_seekable), TextIOWrapper::kSeekableOffset},
+    {ID(_snapshot), TextIOWrapper::kSnapshotOffset},
+    {ID(_telling), TextIOWrapper::kTellingOffset},
+    {ID(_writenl), TextIOWrapper::kWritenlOffset},
+    {ID(_writetranslate), TextIOWrapper::kWritetranslateOffset},
+    {ID(mode), TextIOWrapper::kModeOffset},  // TODO(T54575279): remove
     {SymbolId::kSentinelId, 0},
 };
 

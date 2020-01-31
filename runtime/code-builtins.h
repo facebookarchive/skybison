@@ -4,8 +4,7 @@
 
 namespace py {
 
-class CodeBuiltins
-    : public Builtins<CodeBuiltins, SymbolId::kCode, LayoutId::kCode> {
+class CodeBuiltins : public Builtins<CodeBuiltins, ID(code), LayoutId::kCode> {
  public:
   static const BuiltinAttribute kAttributes[];
 

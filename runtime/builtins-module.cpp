@@ -61,155 +61,157 @@ RawObject setAttribute(Thread* thread, const Object& self,
   Object name(&scope, attributeName(thread, name_obj));
   if (name.isErrorException()) return *name;
 
-  Object result(&scope, thread->invokeMethod3(self, SymbolId::kDunderSetattr,
-                                              name, value));
+  Object result(&scope,
+                thread->invokeMethod3(self, ID(__setattr__), name, value));
   if (result.isErrorException()) return *result;
   return NoneType::object();
 }
 
 // clang-format off
 const BuiltinFunction BuiltinsModule::kBuiltinFunctions[] = {
-    {SymbolId::kDunderBuildClass, dunderBuildClass},
-    {SymbolId::kBin, bin},
-    {SymbolId::kCallable, callable},
-    {SymbolId::kChr, chr},
-    {SymbolId::kDelattr, delattr},
-    {SymbolId::kDunderImport, dunderImport},
-    {SymbolId::kGetattr, getattr},
-    {SymbolId::kHasattr, hasattr},
-    {SymbolId::kHash, hash},
-    {SymbolId::kHex, hex},
-    {SymbolId::kId, id},
-    {SymbolId::kOct, oct},
-    {SymbolId::kOrd, ord},
-    {SymbolId::kSetattr, setattr},
+    {ID(__build_class__), dunderBuildClass},
+    {ID(bin), bin},
+    {ID(callable), callable},
+    {ID(chr), chr},
+    {ID(delattr), delattr},
+    {ID(__import__), dunderImport},
+    {ID(getattr), getattr},
+    {ID(hasattr), hasattr},
+    {ID(hash), hash},
+    {ID(hex), hex},
+    {ID(id), id},
+    {ID(oct), oct},
+    {ID(ord), ord},
+    {ID(setattr), setattr},
     {SymbolId::kSentinelId, nullptr},
 };
 // clang-format on
 
 const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
-    {SymbolId::kArithmeticError, LayoutId::kArithmeticError},
-    {SymbolId::kAssertionError, LayoutId::kAssertionError},
-    {SymbolId::kAttributeError, LayoutId::kAttributeError},
-    {SymbolId::kBaseException, LayoutId::kBaseException},
-    {SymbolId::kBlockingIOError, LayoutId::kBlockingIOError},
-    {SymbolId::kBool, LayoutId::kBool},
-    {SymbolId::kBrokenPipeError, LayoutId::kBrokenPipeError},
-    {SymbolId::kBufferError, LayoutId::kBufferError},
-    {SymbolId::kBytearray, LayoutId::kByteArray},
-    {SymbolId::kBytearrayIterator, LayoutId::kByteArrayIterator},
-    {SymbolId::kBytes, LayoutId::kBytes},
-    {SymbolId::kBytesIterator, LayoutId::kBytesIterator},
-    {SymbolId::kBytesWarning, LayoutId::kBytesWarning},
-    {SymbolId::kChildProcessError, LayoutId::kChildProcessError},
-    {SymbolId::kClassmethod, LayoutId::kClassMethod},
-    {SymbolId::kCode, LayoutId::kCode},
-    {SymbolId::kComplex, LayoutId::kComplex},
-    {SymbolId::kConnectionAbortedError, LayoutId::kConnectionAbortedError},
-    {SymbolId::kConnectionError, LayoutId::kConnectionError},
-    {SymbolId::kConnectionRefusedError, LayoutId::kConnectionRefusedError},
-    {SymbolId::kConnectionResetError, LayoutId::kConnectionResetError},
-    {SymbolId::kCoroutine, LayoutId::kCoroutine},
-    {SymbolId::kDeprecationWarning, LayoutId::kDeprecationWarning},
-    {SymbolId::kDict, LayoutId::kDict},
-    {SymbolId::kDictItemIterator, LayoutId::kDictItemIterator},
-    {SymbolId::kDictItems, LayoutId::kDictItems},
-    {SymbolId::kDictKeyIterator, LayoutId::kDictKeyIterator},
-    {SymbolId::kDictKeys, LayoutId::kDictKeys},
-    {SymbolId::kDictValueIterator, LayoutId::kDictValueIterator},
-    {SymbolId::kDictValues, LayoutId::kDictValues},
-    {SymbolId::kEOFError, LayoutId::kEOFError},
-    {SymbolId::kEllipsis, LayoutId::kEllipsis},
-    {SymbolId::kException, LayoutId::kException},
-    {SymbolId::kFileExistsError, LayoutId::kFileExistsError},
-    {SymbolId::kFileNotFoundError, LayoutId::kFileNotFoundError},
-    {SymbolId::kFloat, LayoutId::kFloat},
-    {SymbolId::kFloatingPointError, LayoutId::kFloatingPointError},
-    {SymbolId::kFrozenset, LayoutId::kFrozenSet},
-    {SymbolId::kFunction, LayoutId::kFunction},
-    {SymbolId::kFutureWarning, LayoutId::kFutureWarning},
-    {SymbolId::kGenerator, LayoutId::kGenerator},
-    {SymbolId::kGeneratorExit, LayoutId::kGeneratorExit},
-    {SymbolId::kImportError, LayoutId::kImportError},
-    {SymbolId::kImportWarning, LayoutId::kImportWarning},
-    {SymbolId::kIndentationError, LayoutId::kIndentationError},
-    {SymbolId::kIndexError, LayoutId::kIndexError},
-    {SymbolId::kInt, LayoutId::kInt},
-    {SymbolId::kInterruptedError, LayoutId::kInterruptedError},
-    {SymbolId::kIsADirectoryError, LayoutId::kIsADirectoryError},
-    {SymbolId::kKeyError, LayoutId::kKeyError},
-    {SymbolId::kKeyboardInterrupt, LayoutId::kKeyboardInterrupt},
-    {SymbolId::kList, LayoutId::kList},
-    {SymbolId::kListIterator, LayoutId::kListIterator},
-    {SymbolId::kLongRangeIterator, LayoutId::kLongRangeIterator},
-    {SymbolId::kLookupError, LayoutId::kLookupError},
-    {SymbolId::kMappingproxy, LayoutId::kMappingProxy},
-    {SymbolId::kMemoryError, LayoutId::kMemoryError},
-    {SymbolId::kMemoryView, LayoutId::kMemoryView},
-    {SymbolId::kMethod, LayoutId::kBoundMethod},
-    {SymbolId::kModule, LayoutId::kModule},
-    {SymbolId::kModuleProxy, LayoutId::kModuleProxy},
-    {SymbolId::kModuleNotFoundError, LayoutId::kModuleNotFoundError},
-    {SymbolId::kNameError, LayoutId::kNameError},
-    {SymbolId::kNoneType, LayoutId::kNoneType},
-    {SymbolId::kNotADirectoryError, LayoutId::kNotADirectoryError},
-    {SymbolId::kNotImplementedError, LayoutId::kNotImplementedError},
-    {SymbolId::kNotImplementedType, LayoutId::kNotImplementedType},
-    {SymbolId::kOSError, LayoutId::kOSError},
-    {SymbolId::kObject, LayoutId::kObject},
-    {SymbolId::kOverflowError, LayoutId::kOverflowError},
-    {SymbolId::kPendingDeprecationWarning,
-     LayoutId::kPendingDeprecationWarning},
-    {SymbolId::kPermissionError, LayoutId::kPermissionError},
-    {SymbolId::kProcessLookupError, LayoutId::kProcessLookupError},
-    {SymbolId::kProperty, LayoutId::kProperty},
-    {SymbolId::kRange, LayoutId::kRange},
-    {SymbolId::kRangeIterator, LayoutId::kRangeIterator},
-    {SymbolId::kRecursionError, LayoutId::kRecursionError},
-    {SymbolId::kReferenceError, LayoutId::kReferenceError},
-    {SymbolId::kResourceWarning, LayoutId::kResourceWarning},
-    {SymbolId::kRuntimeError, LayoutId::kRuntimeError},
-    {SymbolId::kRuntimeWarning, LayoutId::kRuntimeWarning},
-    {SymbolId::kSet, LayoutId::kSet},
-    {SymbolId::kSetIterator, LayoutId::kSetIterator},
-    {SymbolId::kSeqIterator, LayoutId::kSeqIterator},
-    {SymbolId::kSlice, LayoutId::kSlice},
-    {SymbolId::kStaticmethod, LayoutId::kStaticMethod},
-    {SymbolId::kStopAsyncIteration, LayoutId::kStopAsyncIteration},
-    {SymbolId::kStopIteration, LayoutId::kStopIteration},
-    {SymbolId::kStr, LayoutId::kStr},
-    {SymbolId::kStrIterator, LayoutId::kStrIterator},
-    {SymbolId::kSuper, LayoutId::kSuper},
-    {SymbolId::kSyntaxError, LayoutId::kSyntaxError},
-    {SymbolId::kSyntaxWarning, LayoutId::kSyntaxWarning},
-    {SymbolId::kSystemError, LayoutId::kSystemError},
-    {SymbolId::kSystemExit, LayoutId::kSystemExit},
-    {SymbolId::kTabError, LayoutId::kTabError},
-    {SymbolId::kTimeoutError, LayoutId::kTimeoutError},
-    {SymbolId::kTuple, LayoutId::kTuple},
-    {SymbolId::kTupleIterator, LayoutId::kTupleIterator},
-    {SymbolId::kType, LayoutId::kType},
-    {SymbolId::kTypeError, LayoutId::kTypeError},
-    {SymbolId::kTypeProxy, LayoutId::kTypeProxy},
-    {SymbolId::kUnboundLocalError, LayoutId::kUnboundLocalError},
-    {SymbolId::kUnderStrarray, LayoutId::kStrArray},
-    {SymbolId::kUnderTraceback, LayoutId::kTraceback},
-    {SymbolId::kUnicodeDecodeError, LayoutId::kUnicodeDecodeError},
-    {SymbolId::kUnicodeEncodeError, LayoutId::kUnicodeEncodeError},
-    {SymbolId::kUnicodeError, LayoutId::kUnicodeError},
-    {SymbolId::kUnicodeTranslateError, LayoutId::kUnicodeTranslateError},
-    {SymbolId::kUnicodeWarning, LayoutId::kUnicodeWarning},
-    {SymbolId::kUserWarning, LayoutId::kUserWarning},
-    {SymbolId::kValueError, LayoutId::kValueError},
-    {SymbolId::kWarning, LayoutId::kWarning},
-    {SymbolId::kZeroDivisionError, LayoutId::kZeroDivisionError},
+    {ID(ArithmeticError), LayoutId::kArithmeticError},
+    {ID(AssertionError), LayoutId::kAssertionError},
+    {ID(AttributeError), LayoutId::kAttributeError},
+    {ID(BaseException), LayoutId::kBaseException},
+    {ID(BlockingIOError), LayoutId::kBlockingIOError},
+    {ID(bool), LayoutId::kBool},
+    {ID(BrokenPipeError), LayoutId::kBrokenPipeError},
+    {ID(BufferError), LayoutId::kBufferError},
+    {ID(bytearray), LayoutId::kByteArray},
+    {ID(bytearray_iterator), LayoutId::kByteArrayIterator},
+    {ID(bytes), LayoutId::kBytes},
+    {ID(bytes_iterator), LayoutId::kBytesIterator},
+    {ID(BytesWarning), LayoutId::kBytesWarning},
+    {ID(ChildProcessError), LayoutId::kChildProcessError},
+    {ID(classmethod), LayoutId::kClassMethod},
+    {ID(code), LayoutId::kCode},
+    {ID(complex), LayoutId::kComplex},
+    {ID(ConnectionAbortedError), LayoutId::kConnectionAbortedError},
+    {ID(ConnectionError), LayoutId::kConnectionError},
+    {ID(ConnectionRefusedError), LayoutId::kConnectionRefusedError},
+    {ID(ConnectionResetError), LayoutId::kConnectionResetError},
+    {ID(coroutine), LayoutId::kCoroutine},
+    {ID(DeprecationWarning), LayoutId::kDeprecationWarning},
+    {ID(dict), LayoutId::kDict},
+    {ID(dict_itemiterator), LayoutId::kDictItemIterator},
+    {ID(dict_items), LayoutId::kDictItems},
+    {ID(dict_keyiterator), LayoutId::kDictKeyIterator},
+    {ID(dict_keys), LayoutId::kDictKeys},
+    {ID(dict_valueiterator), LayoutId::kDictValueIterator},
+    {ID(dict_values), LayoutId::kDictValues},
+    {ID(EOFError), LayoutId::kEOFError},
+    {ID(ellipsis), LayoutId::kEllipsis},
+    {ID(Exception), LayoutId::kException},
+    {ID(FileExistsError), LayoutId::kFileExistsError},
+    {ID(FileNotFoundError), LayoutId::kFileNotFoundError},
+    {ID(float), LayoutId::kFloat},
+    {ID(FloatingPointError), LayoutId::kFloatingPointError},
+    {ID(frozenset), LayoutId::kFrozenSet},
+    {ID(function), LayoutId::kFunction},
+    {ID(FutureWarning), LayoutId::kFutureWarning},
+    {ID(generator), LayoutId::kGenerator},
+    {ID(GeneratorExit), LayoutId::kGeneratorExit},
+    {ID(ImportError), LayoutId::kImportError},
+    {ID(ImportWarning), LayoutId::kImportWarning},
+    {ID(IndentationError), LayoutId::kIndentationError},
+    {ID(IndexError), LayoutId::kIndexError},
+    {ID(int), LayoutId::kInt},
+    {ID(InterruptedError), LayoutId::kInterruptedError},
+    {ID(IsADirectoryError), LayoutId::kIsADirectoryError},
+    {ID(KeyError), LayoutId::kKeyError},
+    {ID(KeyboardInterrupt), LayoutId::kKeyboardInterrupt},
+    {ID(list), LayoutId::kList},
+    {ID(list_iterator), LayoutId::kListIterator},
+    {ID(longrange_iterator), LayoutId::kLongRangeIterator},
+    {ID(LookupError), LayoutId::kLookupError},
+    {ID(mappingproxy), LayoutId::kMappingProxy},
+    {ID(MemoryError), LayoutId::kMemoryError},
+    {ID(memoryview), LayoutId::kMemoryView},
+    {ID(method), LayoutId::kBoundMethod},
+    {ID(module), LayoutId::kModule},
+    {ID(module_proxy), LayoutId::kModuleProxy},
+    {ID(ModuleNotFoundError), LayoutId::kModuleNotFoundError},
+    {ID(NameError), LayoutId::kNameError},
+    {ID(NoneType), LayoutId::kNoneType},
+    {ID(NotADirectoryError), LayoutId::kNotADirectoryError},
+    {ID(NotImplementedError), LayoutId::kNotImplementedError},
+    {ID(NotImplementedType), LayoutId::kNotImplementedType},
+    {ID(OSError), LayoutId::kOSError},
+    {ID(object), LayoutId::kObject},
+    {ID(OverflowError), LayoutId::kOverflowError},
+    {ID(PendingDeprecationWarning), LayoutId::kPendingDeprecationWarning},
+    {ID(PermissionError), LayoutId::kPermissionError},
+    {ID(ProcessLookupError), LayoutId::kProcessLookupError},
+    {ID(property), LayoutId::kProperty},
+    {ID(range), LayoutId::kRange},
+    {ID(range_iterator), LayoutId::kRangeIterator},
+    {ID(RecursionError), LayoutId::kRecursionError},
+    {ID(ReferenceError), LayoutId::kReferenceError},
+    {ID(ResourceWarning), LayoutId::kResourceWarning},
+    {ID(RuntimeError), LayoutId::kRuntimeError},
+    {ID(RuntimeWarning), LayoutId::kRuntimeWarning},
+    {ID(set), LayoutId::kSet},
+    {ID(set_iterator), LayoutId::kSetIterator},
+    {ID(iterator), LayoutId::kSeqIterator},
+    {ID(slice), LayoutId::kSlice},
+    {ID(staticmethod), LayoutId::kStaticMethod},
+    {ID(StopAsyncIteration), LayoutId::kStopAsyncIteration},
+    {ID(StopIteration), LayoutId::kStopIteration},
+    {ID(str), LayoutId::kStr},
+    {ID(str_iterator), LayoutId::kStrIterator},
+    {ID(super), LayoutId::kSuper},
+    {ID(SyntaxError), LayoutId::kSyntaxError},
+    {ID(SyntaxWarning), LayoutId::kSyntaxWarning},
+    {ID(SystemError), LayoutId::kSystemError},
+    {ID(SystemExit), LayoutId::kSystemExit},
+    {ID(TabError), LayoutId::kTabError},
+    {ID(TimeoutError), LayoutId::kTimeoutError},
+    {ID(tuple), LayoutId::kTuple},
+    {ID(tuple_iterator), LayoutId::kTupleIterator},
+    {ID(type), LayoutId::kType},
+    {ID(TypeError), LayoutId::kTypeError},
+    {ID(type_proxy), LayoutId::kTypeProxy},
+    {ID(UnboundLocalError), LayoutId::kUnboundLocalError},
+    {ID(_strarray), LayoutId::kStrArray},
+    {ID(_traceback), LayoutId::kTraceback},
+    {ID(UnicodeDecodeError), LayoutId::kUnicodeDecodeError},
+    {ID(UnicodeEncodeError), LayoutId::kUnicodeEncodeError},
+    {ID(UnicodeError), LayoutId::kUnicodeError},
+    {ID(UnicodeTranslateError), LayoutId::kUnicodeTranslateError},
+    {ID(UnicodeWarning), LayoutId::kUnicodeWarning},
+    {ID(UserWarning), LayoutId::kUserWarning},
+    {ID(ValueError), LayoutId::kValueError},
+    {ID(Warning), LayoutId::kWarning},
+    {ID(ZeroDivisionError), LayoutId::kZeroDivisionError},
     {SymbolId::kSentinelId, LayoutId::kSentinelId},
 };
 
 const SymbolId BuiltinsModule::kIntrinsicIds[] = {
-    SymbolId::kUnderIndex,      SymbolId::kUnderNumberCheck,
-    SymbolId::kUnderSliceIndex, SymbolId::kUnderSliceIndexNotNone,
-    SymbolId::kIsinstance,      SymbolId::kLen,
+    ID(_index),
+    ID(_number_check),
+    ID(_slice_index),
+    ID(_slice_index_not_none),
+    ID(isinstance),
+    ID(len),
     SymbolId::kSentinelId,
 };
 
@@ -225,28 +227,26 @@ void BuiltinsModule::initialize(Thread* thread, const Module& module) {
   // Add module variables
   {
     Object dunder_debug(&scope, Bool::falseObj());
-    moduleAtPutById(thread, module, SymbolId::kDunderDebug, dunder_debug);
+    moduleAtPutById(thread, module, ID(__debug__), dunder_debug);
 
     Object false_obj(&scope, Bool::falseObj());
-    moduleAtPutById(thread, module, SymbolId::kFalse, false_obj);
+    moduleAtPutById(thread, module, ID(False), false_obj);
 
     Object none(&scope, NoneType::object());
-    moduleAtPutById(thread, module, SymbolId::kNone, none);
+    moduleAtPutById(thread, module, ID(None), none);
 
     Object not_implemented(&scope, NotImplementedType::object());
-    moduleAtPutById(thread, module, SymbolId::kNotImplemented, not_implemented);
+    moduleAtPutById(thread, module, ID(NotImplemented), not_implemented);
 
     Object true_obj(&scope, Bool::trueObj());
-    moduleAtPutById(thread, module, SymbolId::kTrue, true_obj);
+    moduleAtPutById(thread, module, ID(True), true_obj);
   }
 
   // Copy `_builtins._patch` to `builtins._patch`.
   {
-    Module under_builtins(&scope,
-                          runtime->findModuleById(SymbolId::kUnderBuiltins));
-    Object value(&scope,
-                 moduleAtById(thread, under_builtins, SymbolId::kUnderPatch));
-    moduleAtPutById(thread, module, SymbolId::kUnderPatch, value);
+    Module under_builtins(&scope, runtime->findModuleById(ID(_builtins)));
+    Object value(&scope, moduleAtById(thread, under_builtins, ID(_patch)));
+    moduleAtPutById(thread, module, ID(_patch), value);
   }
 
   executeFrozenModule(thread, kBuiltinsModuleData, module);
@@ -254,16 +254,15 @@ void BuiltinsModule::initialize(Thread* thread, const Module& module) {
 
   // Populate some builtin types with shortcut constructors.
   {
-    Module under_builtins(&scope,
-                          runtime->findModuleById(SymbolId::kUnderBuiltins));
+    Module under_builtins(&scope, runtime->findModuleById(ID(_builtins)));
     Type stop_iteration_type(&scope, runtime->typeAt(LayoutId::kStopIteration));
-    Object ctor(&scope, moduleAtById(thread, under_builtins,
-                                     SymbolId::kUnderStopIterationCtor));
+    Object ctor(&scope,
+                moduleAtById(thread, under_builtins, ID(_stop_iteration_ctor)));
     CHECK(ctor.isFunction(), "_stop_iteration_ctor should be a function");
     stop_iteration_type.setCtor(*ctor);
 
     Type strarray_type(&scope, runtime->typeAt(LayoutId::kStrArray));
-    ctor = moduleAtById(thread, under_builtins, SymbolId::kUnderStrarrayCtor);
+    ctor = moduleAtById(thread, under_builtins, ID(_strarray_ctor));
     CHECK(ctor.isFunction(), "_strarray_ctor should be a function");
     strarray_type.setCtor(*ctor);
   }
@@ -375,8 +374,7 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
           Str::cast(*name).toCStr());
     Type type(&scope, *type_obj);
 
-    if (bases.length() == 0 &&
-        name != runtime->symbols()->at(SymbolId::kObject)) {
+    if (bases.length() == 0 && name != runtime->symbols()->at(ID(object))) {
       bases = runtime->implicitBases();
     }
     Tuple builtin_bases(&scope, type.bases());
@@ -399,15 +397,15 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
     Object ctor(&scope, NoneType::object());
     // Use __new__ as _ctor if __init__ is undefined.
     if (type.isBuiltin() &&
-        typeAtById(thread, type, SymbolId::kDunderInit).isErrorNotFound()) {
-      Object dunder_new(&scope, typeAtById(thread, type, SymbolId::kDunderNew));
+        typeAtById(thread, type, ID(__init__)).isErrorNotFound()) {
+      Object dunder_new(&scope, typeAtById(thread, type, ID(__new__)));
       if (!dunder_new.isErrorNotFound()) {
         ctor = *dunder_new;
       }
     }
     if (ctor.isNoneType()) {
-      ctor = runtime->lookupNameInModule(thread, SymbolId::kUnderBuiltins,
-                                         SymbolId::kUnderTypeDunderCall);
+      ctor = runtime->lookupNameInModule(thread, ID(_builtins),
+                                         ID(_type_dunder_call));
     }
     CHECK(ctor.isFunction(), "ctor is expected to be a function");
     type.setCtor(*ctor);
@@ -434,8 +432,7 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
 
   Object dict_obj(&scope, NoneType::object());
   Object prepare_method(
-      &scope,
-      runtime->attributeAtById(thread, metaclass, SymbolId::kDunderPrepare));
+      &scope, runtime->attributeAtById(thread, metaclass, ID(__prepare__)));
   if (prepare_method.isError()) {
     Object given(&scope, thread->pendingExceptionType());
     Object exc(&scope, runtime->typeAt(LayoutId::kAttributeError));
@@ -524,9 +521,9 @@ RawObject compile(Thread* thread, const Object& source, const Object& filename,
   Object flags_int(&scope, runtime->newInt(flags));
   Object dont_inherit(&scope, Bool::trueObj());
   Object optimize_int(&scope, SmallInt::fromWord(optimize));
-  return thread->invokeFunction6(SymbolId::kBuiltins, SymbolId::kCompile,
-                                 source, filename, mode_str, flags_int,
-                                 dont_inherit, optimize_int);
+  return thread->invokeFunction6(ID(builtins), ID(compile), source, filename,
+                                 mode_str, flags_int, dont_inherit,
+                                 optimize_int);
 }
 
 RawObject BuiltinsModule::id(Thread* thread, Frame* frame, word nargs) {

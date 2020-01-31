@@ -29,8 +29,8 @@ namespace py {
 extern "C" struct _inittab _PyImport_Inittab[];
 
 const BuiltinFunction SysModule::kBuiltinFunctions[] = {
-    {SymbolId::kExcInfo, excInfo},
-    {SymbolId::kExcepthook, excepthook},
+    {ID(exc_info), excInfo},
+    {ID(excepthook), excepthook},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -40,23 +40,23 @@ void SysModule::initialize(Thread* thread, const Module& module) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object modules(&scope, runtime->modules());
-  moduleAtPutById(thread, module, SymbolId::kModules, modules);
+  moduleAtPutById(thread, module, ID(modules), modules);
 
   // Fill in sys...
   Object platform(&scope, runtime->newStrFromCStr(OS::name()));
-  moduleAtPutById(thread, module, SymbolId::kPlatform, platform);
+  moduleAtPutById(thread, module, ID(platform), platform);
 
   Object stderr_fd_val(&scope, SmallInt::fromWord(kStderrFd));
-  moduleAtPutById(thread, module, SymbolId::kUnderStderrFd, stderr_fd_val);
+  moduleAtPutById(thread, module, ID(_stderr_fd), stderr_fd_val);
   Object stdin_fd_val(&scope, SmallInt::fromWord(kStdinFd));
-  moduleAtPutById(thread, module, SymbolId::kUnderStdinFd, stdin_fd_val);
+  moduleAtPutById(thread, module, ID(_stdin_fd), stdin_fd_val);
   Object stdout_fd_val(&scope, SmallInt::fromWord(kStdoutFd));
-  moduleAtPutById(thread, module, SymbolId::kUnderStdoutFd, stdout_fd_val);
+  moduleAtPutById(thread, module, ID(_stdout_fd), stdout_fd_val);
 
   // TODO(T42692043): This awkwardness should go away once we freeze the
   // standard library into the binary and/or support PYTHONPATH.
   Object base_dir(&scope, runtime->newStrFromCStr(PYRO_BASEDIR));
-  moduleAtPutById(thread, module, SymbolId::kUnderBaseDir, base_dir);
+  moduleAtPutById(thread, module, ID(_base_dir), base_dir);
 
   // TODO(T58291784): Make getenv system agnostic
   const char* python_path_cstr = std::getenv("PYTHONPATH");
@@ -69,25 +69,25 @@ void SysModule::initialize(Thread* thread, const Module& module) {
   } else {
     python_path = runtime->newList();
   }
-  moduleAtPutById(thread, module, SymbolId::kUnderPythonPath, python_path);
+  moduleAtPutById(thread, module, ID(_python_path), python_path);
 
   Object byteorder(
       &scope,
       SmallStr::fromCStr(endian::native == endian::little ? "little" : "big"));
-  moduleAtPutById(thread, module, SymbolId::kByteorder, byteorder);
+  moduleAtPutById(thread, module, ID(byteorder), byteorder);
 
   unique_c_ptr<char> executable_path(OS::executablePath());
   Object executable(&scope, runtime->newStrFromCStr(executable_path.get()));
-  moduleAtPutById(thread, module, SymbolId::kExecutable, executable);
+  moduleAtPutById(thread, module, ID(executable), executable);
 
   // maxsize is defined as the largest supported length of containers which
   // would be `SmallInt::kMaxValue`. However in practice it is used to
   // determine the size of a machine word which is kMaxWord.
   Object maxsize(&scope, runtime->newInt(kMaxWord));
-  moduleAtPutById(thread, module, SymbolId::kMaxsize, maxsize);
+  moduleAtPutById(thread, module, ID(maxsize), maxsize);
 
   Object maxunicode(&scope, SmallInt::fromWord(kMaxUnicode));
-  moduleAtPutById(thread, module, SymbolId::kMaxunicode, maxunicode);
+  moduleAtPutById(thread, module, ID(maxunicode), maxunicode);
 
   // Count the number of modules and create a tuple
   uword num_external_modules = 0;
@@ -116,7 +116,7 @@ void SysModule::initialize(Thread* thread, const Module& module) {
 
   // Create builtin_module_names tuple
   Object builtins(&scope, builtins_tuple.becomeImmutable());
-  moduleAtPutById(thread, module, SymbolId::kBuiltinModuleNames, builtins);
+  moduleAtPutById(thread, module, ID(builtin_module_names), builtins);
 
   executeFrozenModule(thread, kSysModuleData, module);
 
@@ -127,18 +127,17 @@ void SysModule::initialize(Thread* thread, const Module& module) {
   hash_info_data.atPut(2, SmallInt::fromWord(kHashInf));
   hash_info_data.atPut(3, SmallInt::fromWord(kHashNan));
   hash_info_data.atPut(4, SmallInt::fromWord(kHashImag));
-  hash_info_data.atPut(5, symbols->at(SymbolId::kSiphash24));
+  hash_info_data.atPut(5, symbols->at(ID(siphash24)));
   hash_info_data.atPut(6, SmallInt::fromWord(64));
   hash_info_data.atPut(7, SmallInt::fromWord(128));
   hash_info_data.atPut(8, SmallInt::fromWord(SmallStr::kMaxLength));
   Object hash_info(
-      &scope, thread->invokeFunction1(SymbolId::kSys, SymbolId::kUnderHashInfo,
-                                      hash_info_data));
-  moduleAtPutById(thread, module, SymbolId::kHashInfo, hash_info);
+      &scope, thread->invokeFunction1(ID(sys), ID(_HashInfo), hash_info_data));
+  moduleAtPutById(thread, module, ID(hash_info), hash_info);
 
   // Fill in version-related fields
   Str version(&scope, runtime->newStrFromCStr(versionInfo()));
-  moduleAtPutById(thread, module, SymbolId::kVersion, version);
+  moduleAtPutById(thread, module, ID(version), version);
 
   MutableTuple version_info_data(&scope, runtime->newMutableTuple(5));
   version_info_data.atPut(0, SmallInt::fromWord(kVersionMajor));
@@ -146,10 +145,9 @@ void SysModule::initialize(Thread* thread, const Module& module) {
   version_info_data.atPut(2, SmallInt::fromWord(kVersionMicro));
   version_info_data.atPut(3, runtime->newStrFromCStr(kReleaseLevel));
   version_info_data.atPut(4, SmallInt::fromWord(kReleaseSerial));
-  Object version_info(&scope, thread->invokeFunction1(
-                                  SymbolId::kSys, SymbolId::kUnderVersionInfo,
-                                  version_info_data));
-  moduleAtPutById(thread, module, SymbolId::kVersionInfo, version_info);
+  Object version_info(&scope, thread->invokeFunction1(ID(sys), ID(_VersionInfo),
+                                                      version_info_data));
+  moduleAtPutById(thread, module, ID(version_info), version_info);
 
   runtime->cacheSysInstances(thread, module);
 }
@@ -174,7 +172,7 @@ static void writeImpl(Thread* thread, const Object& file, FILE* fallback_fp,
   Str str(&scope, thread->runtime()->newStrWithAll(
                       View<byte>(reinterpret_cast<byte*>(buffer), written)));
   if (file.isNoneType() ||
-      thread->invokeMethod2(file, SymbolId::kWrite, str).isError()) {
+      thread->invokeMethod2(file, ID(write), str).isError()) {
     fwrite(buffer, 1, written, fallback_fp);
   }
 

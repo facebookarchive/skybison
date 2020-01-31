@@ -120,19 +120,18 @@ RawObject functionFromModuleMethodDef(Thread* thread, const char* c_name,
 }
 
 const BuiltinMethod FunctionBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderGet, dunderGet},
+    {ID(__get__), dunderGet},
     {SymbolId::kSentinelId, nullptr},
 };
 
 const BuiltinAttribute FunctionBuiltins::kAttributes[] = {
     // TODO(T44845145) Support assignment to __code__.
-    {SymbolId::kDunderCode, RawFunction::kCodeOffset,
-     AttributeFlags::kReadOnly},
-    {SymbolId::kDunderDoc, RawFunction::kDocOffset},
-    {SymbolId::kDunderModule, RawFunction::kModuleNameOffset},
-    {SymbolId::kDunderModuleObject, RawFunction::kModuleObjectOffset},
-    {SymbolId::kDunderName, RawFunction::kNameOffset},
-    {SymbolId::kDunderQualname, RawFunction::kQualnameOffset},
+    {ID(__code__), RawFunction::kCodeOffset, AttributeFlags::kReadOnly},
+    {ID(__doc__), RawFunction::kDocOffset},
+    {ID(__module__), RawFunction::kModuleNameOffset},
+    {ID(__module_object__), RawFunction::kModuleObjectOffset},
+    {ID(__name__), RawFunction::kNameOffset},
+    {ID(__qualname__), RawFunction::kQualnameOffset},
     {SymbolId::kInvalid, RawFunction::kDictOffset},
     {SymbolId::kSentinelId, -1},
 };
@@ -149,7 +148,7 @@ RawObject FunctionBuiltins::dunderGet(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!self.isFunction()) {
-    return thread->raiseRequiresType(self, SymbolId::kFunction);
+    return thread->raiseRequiresType(self, ID(function));
   }
   Object instance(&scope, args.get(1));
   // When `instance is None` return the plain function because we are doing a
@@ -168,10 +167,8 @@ RawObject FunctionBuiltins::dunderGet(Thread* thread, Frame* frame,
 }
 
 const BuiltinAttribute BoundMethodBuiltins::kAttributes[] = {
-    {SymbolId::kDunderFunc, RawBoundMethod::kFunctionOffset,
-     AttributeFlags::kReadOnly},
-    {SymbolId::kDunderSelf, RawBoundMethod::kSelfOffset,
-     AttributeFlags::kReadOnly},
+    {ID(__func__), RawBoundMethod::kFunctionOffset, AttributeFlags::kReadOnly},
+    {ID(__self__), RawBoundMethod::kSelfOffset, AttributeFlags::kReadOnly},
     {SymbolId::kSentinelId, 0},
 };
 

@@ -104,8 +104,7 @@ static T asInt(PyObject* pylong, const char* type_name, int* overflow) {
   HandleScope scope(thread);
   Object long_obj(&scope, ApiHandle::fromPyObject(pylong)->asObject());
   if (!thread->runtime()->isInstanceOfInt(*long_obj)) {
-    long_obj = thread->invokeFunction1(SymbolId::kBuiltins, SymbolId::kUnderInt,
-                                       long_obj);
+    long_obj = thread->invokeFunction1(ID(builtins), ID(_int), long_obj);
     if (long_obj.isError()) {
       return -1;
     }
@@ -142,8 +141,7 @@ static T asIntWithoutOverflowCheck(PyObject* pylong) {
   HandleScope scope(thread);
   Object long_obj(&scope, ApiHandle::fromPyObject(pylong)->asObject());
   if (!thread->runtime()->isInstanceOfInt(*long_obj)) {
-    long_obj = thread->invokeFunction1(SymbolId::kBuiltins, SymbolId::kUnderInt,
-                                       long_obj);
+    long_obj = thread->invokeFunction1(ID(builtins), ID(_int), long_obj);
     if (long_obj.isError()) {
       return -1;
     }
@@ -210,7 +208,7 @@ PY_EXPORT PyObject* PyLong_FromDouble(double value) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object float_obj(&scope, runtime->newFloat(value));
-  Object result(&scope, thread->invokeMethod1(float_obj, SymbolId::kDunderInt));
+  Object result(&scope, thread->invokeMethod1(float_obj, ID(__int__)));
   if (result.isError()) {
     DCHECK(!result.isErrorNotFound(), "could not call float.__int__");
     return nullptr;
@@ -228,9 +226,9 @@ PY_EXPORT PyObject* PyLong_FromString(const char* str, char** pend, int base) {
   Str str_obj(&scope, runtime->newStrFromCStr(str));
   Int base_obj(&scope, runtime->newInt(base));
   Type int_cls(&scope, runtime->typeAt(LayoutId::kInt));
-  Object result(&scope, thread->invokeFunction3(SymbolId::kBuiltins,
-                                                SymbolId::kUnderIntNewFromStr,
-                                                int_cls, str_obj, base_obj));
+  Object result(&scope,
+                thread->invokeFunction3(ID(builtins), ID(_int_new_from_str),
+                                        int_cls, str_obj, base_obj));
   if (result.isError()) {
     DCHECK(!result.isErrorNotFound(), "could not call _int_new_from_str");
     return nullptr;

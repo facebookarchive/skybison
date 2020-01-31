@@ -183,7 +183,7 @@ TEST_F(IcTest, IcUpdateAttrDoesNotInsertsDependencyToSealedType) {
   Str instance(&scope, runtime_->newStrFromCStr("str instance"));
   Tuple caches(&scope, runtime_->newTuple(4));
   Object value(&scope, SmallInt::fromWord(1234));
-  Object dunder_add(&scope, runtime_->symbols()->at(SymbolId::kDunderAdd));
+  Object dunder_add(&scope, runtime_->symbols()->at(ID(__add__)));
   Function dependent(&scope, newEmptyFunction());
   icUpdateAttr(thread_, caches, 0, instance.layoutId(), value, dunder_add,
                dependent);

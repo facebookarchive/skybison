@@ -140,14 +140,14 @@ static void printPendingExceptionImpl(Thread* thread, bool set_sys_last_vars) {
   exc.setTraceback(*tb);
 
   if (set_sys_last_vars) {
-    Module sys(&scope, runtime->findModuleById(SymbolId::kSys));
-    moduleAtPutById(thread, sys, SymbolId::kLastType, type);
-    moduleAtPutById(thread, sys, SymbolId::kLastValue, value);
-    moduleAtPutById(thread, sys, SymbolId::kLastTraceback, tb);
+    Module sys(&scope, runtime->findModuleById(ID(sys)));
+    moduleAtPutById(thread, sys, ID(last_type), type);
+    moduleAtPutById(thread, sys, ID(last_value), value);
+    moduleAtPutById(thread, sys, ID(last_traceback), tb);
   }
 
-  Object hook(&scope, runtime->lookupNameInModule(thread, SymbolId::kSys,
-                                                  SymbolId::kExcepthook));
+  Object hook(&scope,
+              runtime->lookupNameInModule(thread, ID(sys), ID(excepthook)));
   if (hook.isError()) {
     writeStderr(thread, "sys.excepthook is missing\n");
     if (displayException(thread, value, tb).isError()) {
@@ -200,12 +200,11 @@ static bool parseSyntaxError(Thread* thread, const Object& value,
 
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Object result(&scope,
-                runtime->attributeAtById(thread, value, SymbolId::kMsg));
+  Object result(&scope, runtime->attributeAtById(thread, value, ID(msg)));
   if (result.isError()) return fail();
   *message = *result;
 
-  result = runtime->attributeAtById(thread, value, SymbolId::kFilename);
+  result = runtime->attributeAtById(thread, value, ID(filename));
   if (result.isError()) return fail();
   if (result.isNoneType()) {
     *filename = runtime->newStrFromCStr("<string>");
@@ -215,7 +214,7 @@ static bool parseSyntaxError(Thread* thread, const Object& value,
     return false;
   }
 
-  result = runtime->attributeAtById(thread, value, SymbolId::kLineno);
+  result = runtime->attributeAtById(thread, value, ID(lineno));
   if (result.isError()) return fail();
   if (runtime->isInstanceOfInt(*result)) {
     Int ival(&scope, intUnderlying(*result));
@@ -225,7 +224,7 @@ static bool parseSyntaxError(Thread* thread, const Object& value,
     return false;
   }
 
-  result = runtime->attributeAtById(thread, value, SymbolId::kOffset);
+  result = runtime->attributeAtById(thread, value, ID(offset));
   if (result.isError()) return fail();
   if (result.isNoneType()) {
     *offset = -1;
@@ -237,7 +236,7 @@ static bool parseSyntaxError(Thread* thread, const Object& value,
     return false;
   }
 
-  result = runtime->attributeAtById(thread, value, SymbolId::kText);
+  result = runtime->attributeAtById(thread, value, ID(text));
   if (result.isError()) return fail();
   if (result.isNoneType() || runtime->isInstanceOfStr(*result)) {
     *text = *result;
@@ -252,12 +251,12 @@ static RawObject fileWriteString(Thread* thread, const Object& file,
                                  const char* c_str) {
   HandleScope scope(thread);
   Str str(&scope, thread->runtime()->newStrFromCStr(c_str));
-  return thread->invokeMethod2(file, SymbolId::kWrite, str);
+  return thread->invokeMethod2(file, ID(write), str);
 }
 
 static RawObject fileWriteObjectStr(Thread* thread, const Object& file,
                                     const Object& str) {
-  return thread->invokeMethod2(file, SymbolId::kWrite, str);
+  return thread->invokeMethod2(file, ID(write), str);
 }
 
 // Used to wrap an expression that may return an Error that should be forwarded,
@@ -346,7 +345,7 @@ static RawObject printSingleException(Thread* thread, const Object& file,
     MAY_RAISE(fileWriteString(thread, file, "<traceback>\n"));
   }
 
-  if (runtime->attributeAtById(thread, value, SymbolId::kPrintFileAndLine)
+  if (runtime->attributeAtById(thread, value, ID(print_file_and_line))
           .isError()) {
     // Ignore the AttributeError or whatever else went wrong during lookup.
     thread->clearPendingException();
@@ -369,14 +368,13 @@ static RawObject printSingleException(Thread* thread, const Object& file,
     }
   }
 
-  Object module(
-      &scope, runtime->attributeAtById(thread, type, SymbolId::kDunderModule));
+  Object module(&scope, runtime->attributeAtById(thread, type, ID(__module__)));
   if (module.isError() || !runtime->isInstanceOfStr(*module)) {
     if (module.isError()) thread->clearPendingException();
     MAY_RAISE(fileWriteString(thread, file, "<unknown>"));
   } else {
     Str module_str(&scope, *module);
-    if (!module_str.equals(runtime->symbols()->at(SymbolId::kBuiltins))) {
+    if (!module_str.equals(runtime->symbols()->at(ID(builtins)))) {
       MAY_RAISE(fileWriteObjectStr(thread, file, module_str));
       MAY_RAISE(fileWriteString(thread, file, "."));
     }
@@ -384,8 +382,7 @@ static RawObject printSingleException(Thread* thread, const Object& file,
 
   MAY_RAISE(fileWriteObjectStr(thread, file, type_name));
   MAY_RAISE(fileWriteString(thread, file, ": "));
-  Object str_obj(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
-                                                 SymbolId::kStr, value));
+  Object str_obj(&scope, thread->invokeFunction1(ID(builtins), ID(str), value));
   if (str_obj.isError()) {
     thread->clearPendingException();
     MAY_RAISE(fileWriteString(thread, file, "<exception str() failed>"));
@@ -494,7 +491,7 @@ void handleSystemExit(Thread* thread) {
   // The calls below can't have an exception pending
   thread->clearPendingException();
 
-  Object result(&scope, thread->invokeMethod1(arg, SymbolId::kDunderRepr));
+  Object result(&scope, thread->invokeMethod1(arg, ID(__repr__)));
   if (!runtime->isInstanceOfStr(*result)) {
     // The calls below can't have an exception pending
     thread->clearPendingException();
@@ -518,17 +515,16 @@ void handleSystemExit(Thread* thread) {
 }
 
 const BuiltinAttribute BaseExceptionBuiltins::kAttributes[] = {
-    {SymbolId::kArgs, RawBaseException::kArgsOffset},
-    {SymbolId::kDunderTraceback, RawBaseException::kTracebackOffset},
-    {SymbolId::kDunderContext, RawBaseException::kContextOffset},
-    {SymbolId::kDunderCause, RawBaseException::kCauseOffset},
-    {SymbolId::kDunderSuppressContext,
-     RawBaseException::kSuppressContextOffset},
+    {ID(args), RawBaseException::kArgsOffset},
+    {ID(__traceback__), RawBaseException::kTracebackOffset},
+    {ID(__context__), RawBaseException::kContextOffset},
+    {ID(__cause__), RawBaseException::kCauseOffset},
+    {ID(__suppress_context__), RawBaseException::kSuppressContextOffset},
     {SymbolId::kSentinelId, -1},
 };
 
 const BuiltinMethod BaseExceptionBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderInit, dunderInit},
+    {ID(__init__), dunderInit},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -538,7 +534,7 @@ RawObject BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfBaseException(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kBaseException);
+    return thread->raiseRequiresType(self_obj, ID(BaseException));
   }
   BaseException self(&scope, *self_obj);
   Object args_obj(&scope, args.get(1));
@@ -551,12 +547,12 @@ RawObject BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
 }
 
 const BuiltinAttribute StopIterationBuiltins::kAttributes[] = {
-    {SymbolId::kValue, RawStopIteration::kValueOffset},
+    {ID(value), RawStopIteration::kValueOffset},
     {SymbolId::kSentinelId, -1},
 };
 
 const BuiltinMethod StopIterationBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderInit, dunderInit},
+    {ID(__init__), dunderInit},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -566,7 +562,7 @@ RawObject StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStopIteration(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStopIteration);
+    return thread->raiseRequiresType(self_obj, ID(StopIteration));
   }
   StopIteration self(&scope, *self_obj);
   Object args_obj(&scope, args.get(1));
@@ -581,22 +577,22 @@ RawObject StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
 }
 
 const BuiltinAttribute SystemExitBuiltins::kAttributes[] = {
-    {SymbolId::kValue, RawSystemExit::kCodeOffset},
+    {ID(value), RawSystemExit::kCodeOffset},
     {SymbolId::kSentinelId, -1},
 };
 
 const BuiltinMethod SystemExitBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderInit, dunderInit},
+    {ID(__init__), dunderInit},
     {SymbolId::kSentinelId, nullptr},
 };
 
 const BuiltinAttribute SyntaxErrorBuiltins::kAttributes[] = {
-    {SymbolId::kFilename, RawSyntaxError::kFilenameOffset},
-    {SymbolId::kLineno, RawSyntaxError::kLinenoOffset},
-    {SymbolId::kMsg, RawSyntaxError::kMsgOffset},
-    {SymbolId::kOffset, RawSyntaxError::kOffsetOffset},
-    {SymbolId::kPrintFileAndLine, RawSyntaxError::kPrintFileAndLineOffset},
-    {SymbolId::kText, RawSyntaxError::kTextOffset},
+    {ID(filename), RawSyntaxError::kFilenameOffset},
+    {ID(lineno), RawSyntaxError::kLinenoOffset},
+    {ID(msg), RawSyntaxError::kMsgOffset},
+    {ID(offset), RawSyntaxError::kOffsetOffset},
+    {ID(print_file_and_line), RawSyntaxError::kPrintFileAndLineOffset},
+    {ID(text), RawSyntaxError::kTextOffset},
     {SymbolId::kSentinelId, -1},
 };
 
@@ -606,7 +602,7 @@ RawObject SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfSystemExit(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kSystemExit);
+    return thread->raiseRequiresType(self_obj, ID(SystemExit));
   }
   SystemExit self(&scope, *self_obj);
   RawObject result = BaseExceptionBuiltins::dunderInit(thread, frame, nargs);
@@ -621,18 +617,18 @@ RawObject SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
 }
 
 const BuiltinAttribute ImportErrorBuiltins::kAttributes[] = {
-    {SymbolId::kMsg, RawImportError::kMsgOffset},
-    {SymbolId::kName, RawImportError::kNameOffset},
-    {SymbolId::kPath, RawImportError::kPathOffset},
+    {ID(msg), RawImportError::kMsgOffset},
+    {ID(name), RawImportError::kNameOffset},
+    {ID(path), RawImportError::kPathOffset},
     {SymbolId::kSentinelId, -1},
 };
 
 static const BuiltinAttribute kUnicodeErrorBaseAttributes[] = {
-    {SymbolId::kEncoding, RawUnicodeErrorBase::kEncodingOffset},
-    {SymbolId::kObject, RawUnicodeErrorBase::kObjectOffset},
-    {SymbolId::kStart, RawUnicodeErrorBase::kStartOffset},
-    {SymbolId::kEnd, RawUnicodeErrorBase::kEndOffset},
-    {SymbolId::kReason, RawUnicodeErrorBase::kReasonOffset},
+    {ID(encoding), RawUnicodeErrorBase::kEncodingOffset},
+    {ID(object), RawUnicodeErrorBase::kObjectOffset},
+    {ID(start), RawUnicodeErrorBase::kStartOffset},
+    {ID(end), RawUnicodeErrorBase::kEndOffset},
+    {ID(reason), RawUnicodeErrorBase::kReasonOffset},
     {SymbolId::kSentinelId, -1},
 };
 

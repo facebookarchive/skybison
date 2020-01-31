@@ -7,7 +7,7 @@ namespace py {
 
 // clang-format off
 static const char* kPredefinedSymbols[] = {
-#define DEFINE_SYMBOL(symbol, value) value,
+#define DEFINE_SYMBOL(symbol) #symbol,
   FOREACH_SYMBOL(DEFINE_SYMBOL)
 #undef DEFINE_SYMBOL
 };
@@ -19,13 +19,8 @@ Symbols::Symbols(Runtime* runtime) {
   symbols_ = static_cast<RawObject*>(std::calloc(num_symbols, symbol_size));
   CHECK(symbols_ != nullptr, "could not allocate memory for symbol table");
   for (uword i = 0; i < num_symbols; i++) {
-    symbols_[i] = NoneType::object();
+    symbols_[i] = runtime->newStrFromCStr(kPredefinedSymbols[i]);
   }
-#define ADD_SYMBOL(symbol, value)                                              \
-  symbols_[static_cast<int>(SymbolId::k##symbol)] =                            \
-      runtime->newStrFromCStr(value);
-  FOREACH_SYMBOL(ADD_SYMBOL)
-#undef ADD_SYMBOL
 }
 
 Symbols::~Symbols() { std::free(symbols_); }

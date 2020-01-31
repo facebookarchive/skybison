@@ -104,18 +104,16 @@ static void flushIO(void) {
   thread->clearPendingException();
 
   Runtime* runtime = thread->runtime();
-  Module sys(&scope, runtime->findModuleById(SymbolId::kSys));
-  Object stderr_obj(&scope, moduleAtById(thread, sys, SymbolId::kStderr));
+  Module sys(&scope, runtime->findModuleById(ID(sys)));
+  Object stderr_obj(&scope, moduleAtById(thread, sys, ID(stderr)));
   if (!stderr_obj.isErrorNotFound()) {
-    if (thread->invokeMethod1(stderr_obj, SymbolId::kFlush)
-            .isErrorException()) {
+    if (thread->invokeMethod1(stderr_obj, ID(flush)).isErrorException()) {
       thread->clearPendingException();
     }
   }
-  Object stdout_obj(&scope, moduleAtById(thread, sys, SymbolId::kStdout));
+  Object stdout_obj(&scope, moduleAtById(thread, sys, ID(stdout)));
   if (!stdout_obj.isErrorNotFound()) {
-    if (thread->invokeMethod1(stdout_obj, SymbolId::kFlush)
-            .isErrorException()) {
+    if (thread->invokeMethod1(stdout_obj, ID(flush)).isErrorException()) {
       thread->clearPendingException();
     }
   }
@@ -250,13 +248,13 @@ static void setMainLoader(Thread* thread, Module& module, const char* filename,
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Str filename_str(&scope, runtime->newStrFromCStr(filename));
-  Str dunder_main_str(&scope, runtime->symbols()->at(SymbolId::kDunderMain));
+  Str dunder_main_str(&scope, runtime->symbols()->at(ID(__main__)));
   RawObject loader_obj =
-      thread->invokeFunction2(SymbolId::kUnderFrozenImportlibExternal,
-                              loader_name, dunder_main_str, filename_str);
+      thread->invokeFunction2(ID(_frozen_importlib_external), loader_name,
+                              dunder_main_str, filename_str);
   DCHECK(!loader_obj.isError(), "Unable to call file loader");
   Object loader(&scope, loader_obj);
-  moduleAtPutById(thread, module, SymbolId::kDunderLoader, loader);
+  moduleAtPutById(thread, module, ID(__loader__), loader);
 }
 
 PY_EXPORT int PyRun_SimpleFileExFlags(FILE* fp, const char* filename,
@@ -266,24 +264,24 @@ PY_EXPORT int PyRun_SimpleFileExFlags(FILE* fp, const char* filename,
   HandleScope scope(thread);
 
   Module module(&scope, runtime->findOrCreateMainModule());
-  RawObject dunder_file = moduleAtById(thread, module, SymbolId::kDunderFile);
+  RawObject dunder_file = moduleAtById(thread, module, ID(__file__));
   if (dunder_file.isErrorNotFound()) {
     Str filename_str(&scope, runtime->newStrFromCStr(filename));
     Object cached_obj(&scope, NoneType::object());
-    moduleAtPutById(thread, module, SymbolId::kDunderFile, filename_str);
-    moduleAtPutById(thread, module, SymbolId::kDunderCached, cached_obj);
+    moduleAtPutById(thread, module, ID(__file__), filename_str);
+    moduleAtPutById(thread, module, ID(__cached__), cached_obj);
   }
 
   PyObject* result;
   const char* extension = std::strrchr(filename, '.');
   if (extension != nullptr && std::strcmp(extension, ".pyc") == 0) {
     // Try to run a pyc file
-    setMainLoader(thread, module, filename, SymbolId::kSourcelessFileLoader);
+    setMainLoader(thread, module, filename, ID(SourcelessFileLoader));
     result = runPycFile(fp, filename, module, flags);
   } else {
     // When running from stdin, leave __main__.__loader__ alone
     if (std::strcmp(filename, "<stdin>") != 0) {
-      setMainLoader(thread, module, filename, SymbolId::kSourceFileLoader);
+      setMainLoader(thread, module, filename, ID(SourceFileLoader));
     }
     PyObject* module_proxy =
         ApiHandle::borrowedReference(thread, module.moduleProxy());
@@ -301,7 +299,7 @@ PY_EXPORT int PyRun_SimpleFileExFlags(FILE* fp, const char* filename,
     returncode = 0;
   }
 
-  Str dunder_file_name(&scope, runtime->symbols()->at(SymbolId::kDunderFile));
+  Str dunder_file_name(&scope, runtime->symbols()->at(ID(__file__)));
   RawObject del_result =
       runtime->attributeDel(thread, module, dunder_file_name);
   if (del_result.isError()) {
@@ -545,7 +543,7 @@ PY_EXPORT PyObject* PyRun_FileExFlags(FILE* fp, const char* filename_cstr,
   Str filename(&scope, runtime->newStrFromCStr(filename_cstr));
   CHECK(start == Py_file_input, "Start token should be Py_file_input");
   RawObject code =
-      compile(thread, source, filename, SymbolId::kExec, flags->cf_flags, -1);
+      compile(thread, source, filename, ID(exec), flags->cf_flags, -1);
   if (code.isError()) {
     return nullptr;
   }

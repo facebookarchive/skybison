@@ -24,7 +24,7 @@ TEST_F(TypeBuiltinsTest, TypeAtReturnsNoPlaceholderValue) {
   Object value(&scope, Runtime::internStrFromCStr(thread_, "__eq__'s value"));
   typeAtPut(thread_, type, name, value);
   EXPECT_EQ(typeAt(type, name), *value);
-  EXPECT_EQ(typeAtById(thread_, type, SymbolId::kDunderEq), *value);
+  EXPECT_EQ(typeAtById(thread_, type, ID(__eq__)), *value);
 }
 
 TEST_F(TypeBuiltinsTest, TypeAtReturnsErrorNotFoundForPlaceholder) {
@@ -35,7 +35,7 @@ TEST_F(TypeBuiltinsTest, TypeAtReturnsErrorNotFoundForPlaceholder) {
   ValueCell value_cell(&scope, typeAtPut(thread_, type, name, value));
   value_cell.makePlaceholder();
   EXPECT_TRUE(typeAt(type, name).isErrorNotFound());
-  EXPECT_TRUE(typeAtById(thread_, type, SymbolId::kDunderEq).isErrorNotFound());
+  EXPECT_TRUE(typeAtById(thread_, type, ID(__eq__)).isErrorNotFound());
 }
 
 TEST_F(TypeBuiltinsTest, TypeAtPutPutsValueInValueCell) {
@@ -49,9 +49,9 @@ TEST_F(TypeBuiltinsTest, TypeAtPutPutsValueInValueCell) {
   EXPECT_EQ(typeAt(type, name), *value);
   result.setValue(NoneType::object());
 
-  result = typeAtPutById(thread_, type, SymbolId::kDunderEq, value);
+  result = typeAtPutById(thread_, type, ID(__eq__), value);
   ASSERT_EQ(result.value(), *value);
-  EXPECT_EQ(typeAtById(thread_, type, SymbolId::kDunderEq), *value);
+  EXPECT_EQ(typeAtById(thread_, type, ID(__eq__)), *value);
 }
 
 TEST_F(TypeBuiltinsTest, TypeAtPutByStrInvalidatesCache) {
@@ -99,7 +99,7 @@ cache_a_eq(a)
 
   Type type_a(&scope, mainModuleAt(runtime_, "A"));
   Object none(&scope, NoneType::object());
-  typeAtPutById(thread_, type_a, SymbolId::kDunderEq, none);
+  typeAtPutById(thread_, type_a, ID(__eq__), none);
   EXPECT_TRUE(icLookupAttr(*caches, 1, a.layoutId()).isErrorNotFound());
 }
 
@@ -244,8 +244,8 @@ class C(A, B): pass
   Object a(&scope, mainModuleAt(runtime_, "A"));
   Object b(&scope, mainModuleAt(runtime_, "B"));
   Object c(&scope, mainModuleAt(runtime_, "C"));
-  Object result_obj(
-      &scope, runtime_->attributeAtById(thread_, c, SymbolId::kDunderBases));
+  Object result_obj(&scope,
+                    runtime_->attributeAtById(thread_, c, ID(__bases__)));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -256,8 +256,8 @@ class C(A, B): pass
 TEST_F(TypeBuiltinsTest, DunderBasesOnObjectReturnsEmptyTuple) {
   HandleScope scope(thread_);
   Object type(&scope, runtime_->typeAt(LayoutId::kObject));
-  Object result_obj(
-      &scope, runtime_->attributeAtById(thread_, type, SymbolId::kDunderBases));
+  Object result_obj(&scope,
+                    runtime_->attributeAtById(thread_, type, ID(__bases__)));
   ASSERT_TRUE(result_obj.isTuple());
   EXPECT_EQ(Tuple::cast(*result_obj).length(), 0);
 }
@@ -265,8 +265,8 @@ TEST_F(TypeBuiltinsTest, DunderBasesOnObjectReturnsEmptyTuple) {
 TEST_F(TypeBuiltinsTest, DunderBasesOnBuiltinTypeReturnsTuple) {
   HandleScope scope(thread_);
   Object type(&scope, runtime_->typeAt(LayoutId::kInt));
-  Object result_obj(
-      &scope, runtime_->attributeAtById(thread_, type, SymbolId::kDunderBases));
+  Object result_obj(&scope,
+                    runtime_->attributeAtById(thread_, type, ID(__bases__)));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 1);
@@ -393,8 +393,7 @@ TEST_F(TypeBuiltinsTest, DunderDocOnEmptyTypeReturnsNone) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, "class C: pass").isError());
   Object c(&scope, mainModuleAt(runtime_, "C"));
-  Object doc(&scope,
-             runtime_->attributeAtById(thread_, c, SymbolId::kDunderDoc));
+  Object doc(&scope, runtime_->attributeAtById(thread_, c, ID(__doc__)));
   EXPECT_EQ(doc, NoneType::object());
 }
 
@@ -407,8 +406,7 @@ class C:
 )")
                    .isError());
   Object c(&scope, mainModuleAt(runtime_, "C"));
-  Object doc(&scope,
-             runtime_->attributeAtById(thread_, c, SymbolId::kDunderDoc));
+  Object doc(&scope, runtime_->attributeAtById(thread_, c, ID(__doc__)));
   EXPECT_TRUE(isStrEqualsCStr(*doc, "hello documentation"));
 }
 
@@ -630,8 +628,7 @@ class A:
   Object a_obj(&scope, mainModuleAt(runtime_, "A"));
   ASSERT_TRUE(runtime_->isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
-  EXPECT_TRUE(isIntEqualsWord(
-      typeLookupInMroById(thread_, a, SymbolId::kDunderAdd), 3));
+  EXPECT_TRUE(isIntEqualsWord(typeLookupInMroById(thread_, a, ID(__add__)), 3));
 }
 
 TEST_F(TypeBuiltinsTest, DunderCallReceivesExArgs) {
@@ -1045,8 +1042,7 @@ TEST_F(TypeBuiltinsTest, ResolveDescriptorGetCallsDescriptorDunderGet) {
 
   Object instance(&scope, runtime_->newInt(123));
   Type owner(&scope, runtime_->typeOf(*instance));
-  Object descr(&scope,
-               typeLookupInMroById(thread_, owner, SymbolId::kDunderAdd));
+  Object descr(&scope, typeLookupInMroById(thread_, owner, ID(__add__)));
   ASSERT_TRUE(descr.isFunction());
   EXPECT_TRUE(
       resolveDescriptorGet(thread_, descr, instance, owner).isBoundMethod());

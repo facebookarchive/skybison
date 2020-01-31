@@ -75,304 +75,304 @@ static RawObject raiseRequiresFromCaller(Thread* thread, Frame* frame,
 }
 
 const BuiltinFunction UnderBuiltinsModule::kBuiltinFunctions[] = {
-    {SymbolId::kUnderAddress, underAddress},
-    {SymbolId::kUnderBoundMethod, underBoundMethod},
-    {SymbolId::kUnderBoolCheck, underBoolCheck},
-    {SymbolId::kUnderBoolGuard, underBoolGuard},
-    {SymbolId::kUnderBytearrayAppend, underBytearrayAppend},
-    {SymbolId::kUnderBytearrayCheck, underBytearrayCheck},
-    {SymbolId::kUnderBytearrayClear, underBytearrayClear},
-    {SymbolId::kUnderBytearrayContains, underBytearrayContains},
-    {SymbolId::kUnderBytearrayDelitem, underBytearrayDelitem},
-    {SymbolId::kUnderBytearrayDelslice, underBytearrayDelslice},
-    {SymbolId::kUnderBytearrayGetitem, underBytearrayGetitem},
-    {SymbolId::kUnderBytearrayGetslice, underBytearrayGetslice},
-    {SymbolId::kUnderBytearrayGuard, underBytearrayGuard},
-    {SymbolId::kUnderBytearrayJoin, underBytearrayJoin},
-    {SymbolId::kUnderBytearrayLen, underBytearrayLen},
-    {SymbolId::kUnderBytearraySetitem, underBytearraySetitem},
-    {SymbolId::kUnderBytearraySetslice, underBytearraySetslice},
-    {SymbolId::kUnderBytesCheck, underBytesCheck},
-    {SymbolId::kUnderBytesContains, underBytesContains},
-    {SymbolId::kUnderBytesDecode, underBytesDecode},
-    {SymbolId::kUnderBytesDecodeASCII, underBytesDecodeASCII},
-    {SymbolId::kUnderBytesDecodeUTF8, underBytesDecodeUTF8},
-    {SymbolId::kUnderBytesFromBytes, underBytesFromBytes},
-    {SymbolId::kUnderBytesFromInts, underBytesFromInts},
-    {SymbolId::kUnderBytesGetitem, underBytesGetitem},
-    {SymbolId::kUnderBytesGetslice, underBytesGetslice},
-    {SymbolId::kUnderBytesGuard, underBytesGuard},
-    {SymbolId::kUnderBytesJoin, underBytesJoin},
-    {SymbolId::kUnderBytesLen, underBytesLen},
-    {SymbolId::kUnderBytesMaketrans, underBytesMaketrans},
-    {SymbolId::kUnderBytesRepeat, underBytesRepeat},
-    {SymbolId::kUnderBytesSplit, underBytesSplit},
-    {SymbolId::kUnderBytesSplitWhitespace, underBytesSplitWhitespace},
-    {SymbolId::kUnderByteslikeCheck, underByteslikeCheck},
-    {SymbolId::kUnderByteslikeCompareDigest, underByteslikeCompareDigest},
-    {SymbolId::kUnderByteslikeCount, underByteslikeCount},
-    {SymbolId::kUnderByteslikeEndswith, underByteslikeEndswith},
-    {SymbolId::kUnderByteslikeFindByteslike, underByteslikeFindByteslike},
-    {SymbolId::kUnderByteslikeFindInt, underByteslikeFindInt},
-    {SymbolId::kUnderByteslikeGuard, underByteslikeGuard},
-    {SymbolId::kUnderByteslikeRfindByteslike, underByteslikeRfindByteslike},
-    {SymbolId::kUnderByteslikeRfindInt, underByteslikeRfindInt},
-    {SymbolId::kUnderByteslikeStartswith, underByteslikeStartswith},
-    {SymbolId::kUnderClassmethod, underClassmethod},
-    {SymbolId::kUnderClassmethodIsabstract, underClassmethodIsabstract},
-    {SymbolId::kUnderCodeCheck, underCodeCheck},
-    {SymbolId::kUnderCodeGuard, underCodeGuard},
-    {SymbolId::kUnderCodeSetPosonlyargcount, underCodeSetPosonlyargcount},
-    {SymbolId::kUnderComplexCheck, underComplexCheck},
-    {SymbolId::kUnderComplexCheckexact, underComplexCheckexact},
-    {SymbolId::kUnderComplexImag, underComplexImag},
-    {SymbolId::kUnderComplexNew, underComplexNew},
-    {SymbolId::kUnderComplexNewFromStr, underComplexNewFromStr},
-    {SymbolId::kUnderComplexReal, underComplexReal},
-    {SymbolId::kUnderDictBucketInsert, underDictBucketInsert},
-    {SymbolId::kUnderDictBucketKey, underDictBucketKey},
-    {SymbolId::kUnderDictBucketSetValue, underDictBucketSetValue},
-    {SymbolId::kUnderDictBucketValue, underDictBucketValue},
-    {SymbolId::kUnderDictCheck, underDictCheck},
-    {SymbolId::kUnderDictCheckExact, underDictCheckExact},
-    {SymbolId::kUnderDictGet, underDictGet},
-    {SymbolId::kUnderDictGuard, underDictGuard},
-    {SymbolId::kUnderDictLen, underDictLen},
-    {SymbolId::kUnderDictLookup, underDictLookup},
-    {SymbolId::kUnderDictLookupNext, underDictLookupNext},
-    {SymbolId::kUnderDictPopitem, underDictPopitem},
-    {SymbolId::kUnderDictSetitem, underDictSetitem},
-    {SymbolId::kUnderDictUpdate, underDictUpdate},
-    {SymbolId::kUnderDivmod, underDivmod},
-    {SymbolId::kUnderExec, underExec},
-    {SymbolId::kUnderFloatCheck, underFloatCheck},
-    {SymbolId::kUnderFloatCheckExact, underFloatCheckExact},
-    {SymbolId::kUnderFloatDivmod, underFloatDivmod},
-    {SymbolId::kUnderFloatFormat, underFloatFormat},
-    {SymbolId::kUnderFloatGuard, underFloatGuard},
-    {SymbolId::kUnderFloatNewFromByteslike, underFloatNewFromByteslike},
-    {SymbolId::kUnderFloatNewFromFloat, underFloatNewFromFloat},
-    {SymbolId::kUnderFloatNewFromStr, underFloatNewFromStr},
-    {SymbolId::kUnderFloatSignbit, underFloatSignbit},
-    {SymbolId::kUnderFrozensetCheck, underFrozensetCheck},
-    {SymbolId::kUnderFrozensetGuard, underFrozensetGuard},
-    {SymbolId::kUnderFunctionGlobals, underFunctionGlobals},
-    {SymbolId::kUnderFunctionGuard, underFunctionGuard},
-    {SymbolId::kUnderGc, underGc},
-    {SymbolId::kUnderGetframeFunction, underGetframeFunction},
-    {SymbolId::kUnderGetframeLineno, underGetframeLineno},
-    {SymbolId::kUnderGetframeLocals, underGetframeLocals},
-    {SymbolId::kUnderGetMemberByte, underGetMemberByte},
-    {SymbolId::kUnderGetMemberChar, underGetMemberChar},
-    {SymbolId::kUnderGetMemberDouble, underGetMemberDouble},
-    {SymbolId::kUnderGetMemberFloat, underGetMemberFloat},
-    {SymbolId::kUnderGetMemberInt, underGetMemberInt},
-    {SymbolId::kUnderGetMemberLong, underGetMemberLong},
-    {SymbolId::kUnderGetMemberPyobject, underGetMemberPyobject},
-    {SymbolId::kUnderGetMemberShort, underGetMemberShort},
-    {SymbolId::kUnderGetMemberString, underGetMemberString},
-    {SymbolId::kUnderGetMemberUbyte, underGetMemberUbyte},
-    {SymbolId::kUnderGetMemberUint, underGetMemberUint},
-    {SymbolId::kUnderGetMemberUlong, underGetMemberUlong},
-    {SymbolId::kUnderGetMemberUshort, underGetMemberUshort},
-    {SymbolId::kUnderInstanceDelattr, underInstanceDelattr},
-    {SymbolId::kUnderInstanceGetattr, underInstanceGetattr},
-    {SymbolId::kUnderInstanceGuard, underInstanceGuard},
-    {SymbolId::kUnderInstanceOverflowDict, underInstanceOverflowDict},
-    {SymbolId::kUnderInstanceSetattr, underInstanceSetattr},
-    {SymbolId::kUnderIntCheck, underIntCheck},
-    {SymbolId::kUnderIntCheckExact, underIntCheckExact},
-    {SymbolId::kUnderIntFromBytes, underIntFromBytes},
-    {SymbolId::kUnderIntGuard, underIntGuard},
-    {SymbolId::kUnderIntNewFromBytearray, underIntNewFromBytearray},
-    {SymbolId::kUnderIntNewFromBytes, underIntNewFromBytes},
-    {SymbolId::kUnderIntNewFromInt, underIntNewFromInt},
-    {SymbolId::kUnderIntNewFromStr, underIntNewFromStr},
-    {SymbolId::kUnderIter, underIter},
-    {SymbolId::kUnderListCheck, underListCheck},
-    {SymbolId::kUnderListCheckExact, underListCheckExact},
-    {SymbolId::kUnderListDelitem, underListDelitem},
-    {SymbolId::kUnderListDelslice, underListDelslice},
-    {SymbolId::kUnderListExtend, underListExtend},
-    {SymbolId::kUnderListGetitem, underListGetitem},
-    {SymbolId::kUnderListGetslice, underListGetslice},
-    {SymbolId::kUnderListGuard, underListGuard},
-    {SymbolId::kUnderListLen, underListLen},
-    {SymbolId::kUnderListNew, underListNew},
-    {SymbolId::kUnderListSetitem, underListSetItem},
-    {SymbolId::kUnderListSetslice, underListSetSlice},
-    {SymbolId::kUnderListSort, underListSort},
-    {SymbolId::kUnderListSwap, underListSwap},
-    {SymbolId::kUnderMappingproxyGuard, underMappingproxyGuard},
-    {SymbolId::kUnderMappingproxyMapping, underMappingproxyMapping},
-    {SymbolId::kUnderMappingproxySetMapping, underMappingproxySetMapping},
-    {SymbolId::kUnderMemoryviewCheck, underMemoryviewCheck},
-    {SymbolId::kUnderMemoryviewGuard, underMemoryviewGuard},
-    {SymbolId::kUnderMemoryviewItemsize, underMemoryviewItemsize},
-    {SymbolId::kUnderMemoryviewNbytes, underMemoryviewNbytes},
-    {SymbolId::kUnderMemoryviewSetitem, underMemoryviewSetitem},
-    {SymbolId::kUnderMemoryviewSetslice, underMemoryviewSetslice},
-    {SymbolId::kUnderModuleDir, underModuleDir},
-    {SymbolId::kUnderModuleProxy, underModuleProxy},
-    {SymbolId::kUnderModuleProxyCheck, underModuleProxyCheck},
-    {SymbolId::kUnderModuleProxyDelitem, underModuleProxyDelitem},
-    {SymbolId::kUnderModuleProxyGet, underModuleProxyGet},
-    {SymbolId::kUnderModuleProxyGuard, underModuleProxyGuard},
-    {SymbolId::kUnderModuleProxyKeys, underModuleProxyKeys},
-    {SymbolId::kUnderModuleProxyLen, underModuleProxyLen},
-    {SymbolId::kUnderModuleProxySetitem, underModuleProxySetitem},
-    {SymbolId::kUnderModuleProxyValues, underModuleProxyValues},
-    {SymbolId::kUnderObjectKeys, underObjectKeys},
-    {SymbolId::kUnderObjectTypeGetattr, underObjectTypeGetattr},
-    {SymbolId::kUnderObjectTypeHasattr, underObjectTypeHasattr},
-    {SymbolId::kUnderOsWrite, underOsWrite},
-    {SymbolId::kUnderProperty, underProperty},
-    {SymbolId::kUnderPropertyIsabstract, underPropertyIsabstract},
-    {SymbolId::kUnderPyobjectOffset, underPyobjectOffset},
-    {SymbolId::kUnderRangeCheck, underRangeCheck},
-    {SymbolId::kUnderRangeGuard, underRangeGuard},
-    {SymbolId::kUnderRangeLen, underRangeLen},
-    {SymbolId::kUnderReprEnter, underReprEnter},
-    {SymbolId::kUnderReprLeave, underReprLeave},
-    {SymbolId::kUnderSeqIndex, underSeqIndex},
-    {SymbolId::kUnderSeqIterable, underSeqIterable},
-    {SymbolId::kUnderSeqSetIndex, underSeqSetIndex},
-    {SymbolId::kUnderSeqSetIterable, underSeqSetIterable},
-    {SymbolId::kUnderSetCheck, underSetCheck},
-    {SymbolId::kUnderSetGuard, underSetGuard},
-    {SymbolId::kUnderSetLen, underSetLen},
-    {SymbolId::kUnderSetMemberDouble, underSetMemberDouble},
-    {SymbolId::kUnderSetMemberFloat, underSetMemberFloat},
-    {SymbolId::kUnderSetMemberIntegral, underSetMemberIntegral},
-    {SymbolId::kUnderSetMemberPyobject, underSetMemberPyobject},
-    {SymbolId::kUnderSliceCheck, underSliceCheck},
-    {SymbolId::kUnderSliceGuard, underSliceGuard},
-    {SymbolId::kUnderSliceStart, underSliceStart},
-    {SymbolId::kUnderSliceStartLong, underSliceStartLong},
-    {SymbolId::kUnderSliceStep, underSliceStep},
-    {SymbolId::kUnderSliceStepLong, underSliceStepLong},
-    {SymbolId::kUnderSliceStop, underSliceStop},
-    {SymbolId::kUnderSliceStopLong, underSliceStopLong},
-    {SymbolId::kUnderStaticmethodIsabstract, underStaticmethodIsabstract},
-    {SymbolId::kUnderStopIterationCtor, underStopIterationCtor},
-    {SymbolId::kUnderStrarrayClear, underStrarrayClear},
-    {SymbolId::kUnderStrarrayCtor, underStrarrayCtor},
-    {SymbolId::kUnderStrarrayIadd, underStrarrayIadd},
-    {SymbolId::kUnderStrCheck, underStrCheck},
-    {SymbolId::kUnderStrCheckExact, underStrCheckExact},
-    {SymbolId::kUnderStrCompareDigest, underStrCompareDigest},
-    {SymbolId::kUnderStrCount, underStrCount},
-    {SymbolId::kUnderStrEncode, underStrEncode},
-    {SymbolId::kUnderStrEncodeASCII, underStrEncodeASCII},
-    {SymbolId::kUnderStrEndswith, underStrEndswith},
-    {SymbolId::kUnderStrEscapeNonAscii, underStrEscapeNonAscii},
-    {SymbolId::kUnderStrFind, underStrFind},
-    {SymbolId::kUnderStrFromStr, underStrFromStr},
-    {SymbolId::kUnderStrGetitem, underStrGetitem},
-    {SymbolId::kUnderStrGetslice, underStrGetslice},
-    {SymbolId::kUnderStrGuard, underStrGuard},
-    {SymbolId::kUnderStrIschr, underStrIschr},
-    {SymbolId::kUnderStrJoin, underStrJoin},
-    {SymbolId::kUnderStrLen, underStrLen},
-    {SymbolId::kUnderStrModFastPath, underStrModFastPath},
-    {SymbolId::kUnderStrPartition, underStrPartition},
-    {SymbolId::kUnderStrReplace, underStrReplace},
-    {SymbolId::kUnderStrRfind, underStrRfind},
-    {SymbolId::kUnderStrRpartition, underStrRpartition},
-    {SymbolId::kUnderStrSplit, underStrSplit},
-    {SymbolId::kUnderStrSplitlines, underStrSplitlines},
-    {SymbolId::kUnderStrStartswith, underStrStartswith},
-    {SymbolId::kUnderTupleCheck, underTupleCheck},
-    {SymbolId::kUnderTupleCheckExact, underTupleCheckExact},
-    {SymbolId::kUnderTupleGetitem, underTupleGetitem},
-    {SymbolId::kUnderTupleGetslice, underTupleGetslice},
-    {SymbolId::kUnderTupleGuard, underTupleGuard},
-    {SymbolId::kUnderTupleLen, underTupleLen},
-    {SymbolId::kUnderTupleNew, underTupleNew},
-    {SymbolId::kUnderType, underType},
-    {SymbolId::kUnderTypeAbstractmethodsDel, underTypeAbstractmethodsDel},
-    {SymbolId::kUnderTypeAbstractmethodsGet, underTypeAbstractmethodsGet},
-    {SymbolId::kUnderTypeAbstractmethodsSet, underTypeAbstractmethodsSet},
-    {SymbolId::kUnderTypeBasesDel, underTypeBasesDel},
-    {SymbolId::kUnderTypeBasesGet, underTypeBasesGet},
-    {SymbolId::kUnderTypeBasesSet, underTypeBasesSet},
-    {SymbolId::kUnderTypeCheck, underTypeCheck},
-    {SymbolId::kUnderTypeCheckExact, underTypeCheckExact},
-    {SymbolId::kUnderTypeDunderCall, underTypeDunderCall},
-    {SymbolId::kUnderTypeGuard, underTypeGuard},
-    {SymbolId::kUnderTypeInit, underTypeInit},
-    {SymbolId::kUnderTypeIssubclass, underTypeIssubclass},
-    {SymbolId::kUnderTypeSubclassGuard, underTypeSubclassGuard},
-    {SymbolId::kUnderTypeNew, underTypeNew},
-    {SymbolId::kUnderTypeProxy, underTypeProxy},
-    {SymbolId::kUnderTypeProxyCheck, underTypeProxyCheck},
-    {SymbolId::kUnderTypeProxyGet, underTypeProxyGet},
-    {SymbolId::kUnderTypeProxyGuard, underTypeProxyGuard},
-    {SymbolId::kUnderTypeProxyKeys, underTypeProxyKeys},
-    {SymbolId::kUnderTypeProxyLen, underTypeProxyLen},
-    {SymbolId::kUnderTypeProxyValues, underTypeProxyValues},
-    {SymbolId::kUnderUnimplemented, underUnimplemented},
-    {SymbolId::kUnderWarn, underWarn},
-    {SymbolId::kUnderWeakrefCallback, underWeakrefCallback},
-    {SymbolId::kUnderWeakrefCheck, underWeakrefCheck},
-    {SymbolId::kUnderWeakrefGuard, underWeakrefGuard},
-    {SymbolId::kUnderWeakrefReferent, underWeakrefReferent},
+    {ID(_address), underAddress},
+    {ID(_bound_method), underBoundMethod},
+    {ID(_bool_check), underBoolCheck},
+    {ID(_bool_guard), underBoolGuard},
+    {ID(_bytearray_append), underBytearrayAppend},
+    {ID(_bytearray_check), underBytearrayCheck},
+    {ID(_bytearray_clear), underBytearrayClear},
+    {ID(_bytearray_contains), underBytearrayContains},
+    {ID(_bytearray_delitem), underBytearrayDelitem},
+    {ID(_bytearray_delslice), underBytearrayDelslice},
+    {ID(_bytearray_getitem), underBytearrayGetitem},
+    {ID(_bytearray_getslice), underBytearrayGetslice},
+    {ID(_bytearray_guard), underBytearrayGuard},
+    {ID(_bytearray_join), underBytearrayJoin},
+    {ID(_bytearray_len), underBytearrayLen},
+    {ID(_bytearray_setitem), underBytearraySetitem},
+    {ID(_bytearray_setslice), underBytearraySetslice},
+    {ID(_bytes_check), underBytesCheck},
+    {ID(_bytes_contains), underBytesContains},
+    {ID(_bytes_decode), underBytesDecode},
+    {ID(_bytes_decode_ascii), underBytesDecodeASCII},
+    {ID(_bytes_decode_utf_8), underBytesDecodeUTF8},
+    {ID(_bytes_from_bytes), underBytesFromBytes},
+    {ID(_bytes_from_ints), underBytesFromInts},
+    {ID(_bytes_getitem), underBytesGetitem},
+    {ID(_bytes_getslice), underBytesGetslice},
+    {ID(_bytes_guard), underBytesGuard},
+    {ID(_bytes_join), underBytesJoin},
+    {ID(_bytes_len), underBytesLen},
+    {ID(_bytes_maketrans), underBytesMaketrans},
+    {ID(_bytes_repeat), underBytesRepeat},
+    {ID(_bytes_split), underBytesSplit},
+    {ID(_bytes_split_whitespace), underBytesSplitWhitespace},
+    {ID(_byteslike_check), underByteslikeCheck},
+    {ID(_byteslike_compare_digest), underByteslikeCompareDigest},
+    {ID(_byteslike_count), underByteslikeCount},
+    {ID(_byteslike_endswith), underByteslikeEndswith},
+    {ID(_byteslike_find_byteslike), underByteslikeFindByteslike},
+    {ID(_byteslike_find_int), underByteslikeFindInt},
+    {ID(_byteslike_guard), underByteslikeGuard},
+    {ID(_byteslike_rfind_byteslike), underByteslikeRfindByteslike},
+    {ID(_byteslike_rfind_int), underByteslikeRfindInt},
+    {ID(_byteslike_startswith), underByteslikeStartswith},
+    {ID(_classmethod), underClassmethod},
+    {ID(_classmethod_isabstract), underClassmethodIsabstract},
+    {ID(_code_check), underCodeCheck},
+    {ID(_code_guard), underCodeGuard},
+    {ID(_code_set_posonlyargcount), underCodeSetPosonlyargcount},
+    {ID(_complex_check), underComplexCheck},
+    {ID(_complex_checkexact), underComplexCheckexact},
+    {ID(_complex_imag), underComplexImag},
+    {ID(_complex_new), underComplexNew},
+    {ID(_complex_new_from_str), underComplexNewFromStr},
+    {ID(_complex_real), underComplexReal},
+    {ID(_dict_bucket_insert), underDictBucketInsert},
+    {ID(_dict_bucket_key), underDictBucketKey},
+    {ID(_dict_bucket_set_value), underDictBucketSetValue},
+    {ID(_dict_bucket_value), underDictBucketValue},
+    {ID(_dict_check), underDictCheck},
+    {ID(_dict_check_exact), underDictCheckExact},
+    {ID(_dict_get), underDictGet},
+    {ID(_dict_guard), underDictGuard},
+    {ID(_dict_len), underDictLen},
+    {ID(_dict_lookup), underDictLookup},
+    {ID(_dict_lookup_next), underDictLookupNext},
+    {ID(_dict_popitem), underDictPopitem},
+    {ID(_dict_setitem), underDictSetitem},
+    {ID(_dict_update), underDictUpdate},
+    {ID(_divmod), underDivmod},
+    {ID(_exec), underExec},
+    {ID(_float_check), underFloatCheck},
+    {ID(_float_check_exact), underFloatCheckExact},
+    {ID(_float_divmod), underFloatDivmod},
+    {ID(_float_format), underFloatFormat},
+    {ID(_float_guard), underFloatGuard},
+    {ID(_float_new_from_byteslike), underFloatNewFromByteslike},
+    {ID(_float_new_from_float), underFloatNewFromFloat},
+    {ID(_float_new_from_str), underFloatNewFromStr},
+    {ID(_float_signbit), underFloatSignbit},
+    {ID(_frozenset_check), underFrozensetCheck},
+    {ID(_frozenset_guard), underFrozensetGuard},
+    {ID(_function_globals), underFunctionGlobals},
+    {ID(_function_guard), underFunctionGuard},
+    {ID(_gc), underGc},
+    {ID(_getframe_function), underGetframeFunction},
+    {ID(_getframe_lineno), underGetframeLineno},
+    {ID(_getframe_locals), underGetframeLocals},
+    {ID(_get_member_byte), underGetMemberByte},
+    {ID(_get_member_char), underGetMemberChar},
+    {ID(_get_member_double), underGetMemberDouble},
+    {ID(_get_member_float), underGetMemberFloat},
+    {ID(_get_member_int), underGetMemberInt},
+    {ID(_get_member_long), underGetMemberLong},
+    {ID(_get_member_pyobject), underGetMemberPyobject},
+    {ID(_get_member_short), underGetMemberShort},
+    {ID(_get_member_string), underGetMemberString},
+    {ID(_get_member_ubyte), underGetMemberUbyte},
+    {ID(_get_member_uint), underGetMemberUint},
+    {ID(_get_member_ulong), underGetMemberUlong},
+    {ID(_get_member_ushort), underGetMemberUshort},
+    {ID(_instance_delattr), underInstanceDelattr},
+    {ID(_instance_getattr), underInstanceGetattr},
+    {ID(_instance_guard), underInstanceGuard},
+    {ID(_instance_overflow_dict), underInstanceOverflowDict},
+    {ID(_instance_setattr), underInstanceSetattr},
+    {ID(_int_check), underIntCheck},
+    {ID(_int_check_exact), underIntCheckExact},
+    {ID(_int_from_bytes), underIntFromBytes},
+    {ID(_int_guard), underIntGuard},
+    {ID(_int_new_from_bytearray), underIntNewFromBytearray},
+    {ID(_int_new_from_bytes), underIntNewFromBytes},
+    {ID(_int_new_from_int), underIntNewFromInt},
+    {ID(_int_new_from_str), underIntNewFromStr},
+    {ID(_iter), underIter},
+    {ID(_list_check), underListCheck},
+    {ID(_list_check_exact), underListCheckExact},
+    {ID(_list_delitem), underListDelitem},
+    {ID(_list_delslice), underListDelslice},
+    {ID(_list_extend), underListExtend},
+    {ID(_list_getitem), underListGetitem},
+    {ID(_list_getslice), underListGetslice},
+    {ID(_list_guard), underListGuard},
+    {ID(_list_len), underListLen},
+    {ID(_list_new), underListNew},
+    {ID(_list_setitem), underListSetItem},
+    {ID(_list_setslice), underListSetSlice},
+    {ID(_list_sort), underListSort},
+    {ID(_list_swap), underListSwap},
+    {ID(_mappingproxy_guard), underMappingproxyGuard},
+    {ID(_mappingproxy_mapping), underMappingproxyMapping},
+    {ID(_mappingproxy_set_mapping), underMappingproxySetMapping},
+    {ID(_memoryview_check), underMemoryviewCheck},
+    {ID(_memoryview_guard), underMemoryviewGuard},
+    {ID(_memoryview_itemsize), underMemoryviewItemsize},
+    {ID(_memoryview_nbytes), underMemoryviewNbytes},
+    {ID(_memoryview_setitem), underMemoryviewSetitem},
+    {ID(_memoryview_setslice), underMemoryviewSetslice},
+    {ID(_module_dir), underModuleDir},
+    {ID(_module_proxy), underModuleProxy},
+    {ID(_module_proxy_check), underModuleProxyCheck},
+    {ID(_module_proxy_delitem), underModuleProxyDelitem},
+    {ID(_module_proxy_get), underModuleProxyGet},
+    {ID(_module_proxy_guard), underModuleProxyGuard},
+    {ID(_module_proxy_keys), underModuleProxyKeys},
+    {ID(_module_proxy_len), underModuleProxyLen},
+    {ID(_module_proxy_setitem), underModuleProxySetitem},
+    {ID(_module_proxy_values), underModuleProxyValues},
+    {ID(_object_keys), underObjectKeys},
+    {ID(_object_type_getattr), underObjectTypeGetattr},
+    {ID(_object_type_hasattr), underObjectTypeHasattr},
+    {ID(_os_write), underOsWrite},
+    {ID(_property), underProperty},
+    {ID(_property_isabstract), underPropertyIsabstract},
+    {ID(_pyobject_offset), underPyobjectOffset},
+    {ID(_range_check), underRangeCheck},
+    {ID(_range_guard), underRangeGuard},
+    {ID(_range_len), underRangeLen},
+    {ID(_repr_enter), underReprEnter},
+    {ID(_repr_leave), underReprLeave},
+    {ID(_seq_index), underSeqIndex},
+    {ID(_seq_iterable), underSeqIterable},
+    {ID(_seq_set_index), underSeqSetIndex},
+    {ID(_seq_set_iterable), underSeqSetIterable},
+    {ID(_set_check), underSetCheck},
+    {ID(_set_guard), underSetGuard},
+    {ID(_set_len), underSetLen},
+    {ID(_set_member_double), underSetMemberDouble},
+    {ID(_set_member_float), underSetMemberFloat},
+    {ID(_set_member_integral), underSetMemberIntegral},
+    {ID(_set_member_pyobject), underSetMemberPyobject},
+    {ID(_slice_check), underSliceCheck},
+    {ID(_slice_guard), underSliceGuard},
+    {ID(_slice_start), underSliceStart},
+    {ID(_slice_start_long), underSliceStartLong},
+    {ID(_slice_step), underSliceStep},
+    {ID(_slice_step_long), underSliceStepLong},
+    {ID(_slice_stop), underSliceStop},
+    {ID(_slice_stop_long), underSliceStopLong},
+    {ID(_staticmethod_isabstract), underStaticmethodIsabstract},
+    {ID(_stop_iteration_ctor), underStopIterationCtor},
+    {ID(_strarray_clear), underStrarrayClear},
+    {ID(_strarray_ctor), underStrarrayCtor},
+    {ID(_strarray_iadd), underStrarrayIadd},
+    {ID(_str_check), underStrCheck},
+    {ID(_str_check_exact), underStrCheckExact},
+    {ID(_str_compare_digest), underStrCompareDigest},
+    {ID(_str_count), underStrCount},
+    {ID(_str_encode), underStrEncode},
+    {ID(_str_encode_ascii), underStrEncodeASCII},
+    {ID(_str_endswith), underStrEndswith},
+    {ID(_str_escape_non_ascii), underStrEscapeNonAscii},
+    {ID(_str_find), underStrFind},
+    {ID(_str_from_str), underStrFromStr},
+    {ID(_str_getitem), underStrGetitem},
+    {ID(_str_getslice), underStrGetslice},
+    {ID(_str_guard), underStrGuard},
+    {ID(_str_ischr), underStrIschr},
+    {ID(_str_join), underStrJoin},
+    {ID(_str_len), underStrLen},
+    {ID(_str_mod_fast_path), underStrModFastPath},
+    {ID(_str_partition), underStrPartition},
+    {ID(_str_replace), underStrReplace},
+    {ID(_str_rfind), underStrRfind},
+    {ID(_str_rpartition), underStrRpartition},
+    {ID(_str_split), underStrSplit},
+    {ID(_str_splitlines), underStrSplitlines},
+    {ID(_str_startswith), underStrStartswith},
+    {ID(_tuple_check), underTupleCheck},
+    {ID(_tuple_check_exact), underTupleCheckExact},
+    {ID(_tuple_getitem), underTupleGetitem},
+    {ID(_tuple_getslice), underTupleGetslice},
+    {ID(_tuple_guard), underTupleGuard},
+    {ID(_tuple_len), underTupleLen},
+    {ID(_tuple_new), underTupleNew},
+    {ID(_type), underType},
+    {ID(_type_abstractmethods_del), underTypeAbstractmethodsDel},
+    {ID(_type_abstractmethods_get), underTypeAbstractmethodsGet},
+    {ID(_type_abstractmethods_set), underTypeAbstractmethodsSet},
+    {ID(_type_bases_del), underTypeBasesDel},
+    {ID(_type_bases_get), underTypeBasesGet},
+    {ID(_type_bases_set), underTypeBasesSet},
+    {ID(_type_check), underTypeCheck},
+    {ID(_type_check_exact), underTypeCheckExact},
+    {ID(_type_dunder_call), underTypeDunderCall},
+    {ID(_type_guard), underTypeGuard},
+    {ID(_type_init), underTypeInit},
+    {ID(_type_issubclass), underTypeIssubclass},
+    {ID(_type_subclass_guard), underTypeSubclassGuard},
+    {ID(_type_new), underTypeNew},
+    {ID(_type_proxy), underTypeProxy},
+    {ID(_type_proxy_check), underTypeProxyCheck},
+    {ID(_type_proxy_get), underTypeProxyGet},
+    {ID(_type_proxy_guard), underTypeProxyGuard},
+    {ID(_type_proxy_keys), underTypeProxyKeys},
+    {ID(_type_proxy_len), underTypeProxyLen},
+    {ID(_type_proxy_values), underTypeProxyValues},
+    {ID(_unimplemented), underUnimplemented},
+    {ID(_warn), underWarn},
+    {ID(_weakref_callback), underWeakrefCallback},
+    {ID(_weakref_check), underWeakrefCheck},
+    {ID(_weakref_guard), underWeakrefGuard},
+    {ID(_weakref_referent), underWeakrefReferent},
     {SymbolId::kSentinelId, nullptr},
 };
 
 // clang-format off
 const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
-    SymbolId::kUnderBoolCheck,
-    SymbolId::kUnderBoolGuard,
-    SymbolId::kUnderBytearrayCheck,
-    SymbolId::kUnderBytearrayGuard,
-    SymbolId::kUnderBytearrayLen,
-    SymbolId::kUnderBytesCheck,
-    SymbolId::kUnderBytesGuard,
-    SymbolId::kUnderBytesLen,
-    SymbolId::kUnderByteslikeCheck,
-    SymbolId::kUnderByteslikeGuard,
-    SymbolId::kUnderComplexCheck,
-    SymbolId::kUnderDictCheck,
-    SymbolId::kUnderDictCheckExact,
-    SymbolId::kUnderDictGuard,
-    SymbolId::kUnderDictLen,
-    SymbolId::kUnderFloatCheck,
-    SymbolId::kUnderFloatCheckExact,
-    SymbolId::kUnderFloatGuard,
-    SymbolId::kUnderFrozensetCheck,
-    SymbolId::kUnderFrozensetGuard,
-    SymbolId::kUnderIntCheck,
-    SymbolId::kUnderIntCheckExact,
-    SymbolId::kUnderIntGuard,
-    SymbolId::kUnderListCheck,
-    SymbolId::kUnderListCheckExact,
-    SymbolId::kUnderListGetitem,
-    SymbolId::kUnderListGuard,
-    SymbolId::kUnderListLen,
-    SymbolId::kUnderListSetitem,
-    SymbolId::kUnderMemoryviewGuard,
-    SymbolId::kUnderRangeCheck,
-    SymbolId::kUnderRangeGuard,
-    SymbolId::kUnderSetCheck,
-    SymbolId::kUnderSetGuard,
-    SymbolId::kUnderSetLen,
-    SymbolId::kUnderSliceCheck,
-    SymbolId::kUnderSliceGuard,
-    SymbolId::kUnderStrCheck,
-    SymbolId::kUnderStrCheckExact,
-    SymbolId::kUnderStrGuard,
-    SymbolId::kUnderStrLen,
-    SymbolId::kUnderTupleCheck,
-    SymbolId::kUnderTupleCheckExact,
-    SymbolId::kUnderTupleGetitem,
-    SymbolId::kUnderTupleGuard,
-    SymbolId::kUnderTupleLen,
-    SymbolId::kUnderType,
-    SymbolId::kUnderTypeCheck,
-    SymbolId::kUnderTypeCheckExact,
-    SymbolId::kUnderTypeGuard,
-    SymbolId::kUnderTypeSubclassGuard,
+    ID(_bool_check),
+    ID(_bool_guard),
+    ID(_bytearray_check),
+    ID(_bytearray_guard),
+    ID(_bytearray_len),
+    ID(_bytes_check),
+    ID(_bytes_guard),
+    ID(_bytes_len),
+    ID(_byteslike_check),
+    ID(_byteslike_guard),
+    ID(_complex_check),
+    ID(_dict_check),
+    ID(_dict_check_exact),
+    ID(_dict_guard),
+    ID(_dict_len),
+    ID(_float_check),
+    ID(_float_check_exact),
+    ID(_float_guard),
+    ID(_frozenset_check),
+    ID(_frozenset_guard),
+    ID(_int_check),
+    ID(_int_check_exact),
+    ID(_int_guard),
+    ID(_list_check),
+    ID(_list_check_exact),
+    ID(_list_getitem),
+    ID(_list_guard),
+    ID(_list_len),
+    ID(_list_setitem),
+    ID(_memoryview_guard),
+    ID(_range_check),
+    ID(_range_guard),
+    ID(_set_check),
+    ID(_set_guard),
+    ID(_set_len),
+    ID(_slice_check),
+    ID(_slice_guard),
+    ID(_str_check),
+    ID(_str_check_exact),
+    ID(_str_guard),
+    ID(_str_len),
+    ID(_tuple_check),
+    ID(_tuple_check_exact),
+    ID(_tuple_getitem),
+    ID(_tuple_guard),
+    ID(_tuple_len),
+    ID(_type),
+    ID(_type_check),
+    ID(_type_check_exact),
+    ID(_type_guard),
+    ID(_type_subclass_guard),
     SymbolId::kSentinelId,
 };
 // clang-format on
@@ -386,7 +386,7 @@ void UnderBuiltinsModule::initialize(Thread* thread, const Module& module) {
   {
     Tuple parameters(&scope, runtime->newTuple(1));
     parameters.atPut(0, runtime->newStrFromCStr("function"));
-    Object name(&scope, runtime->symbols()->at(SymbolId::kUnderPatch));
+    Object name(&scope, runtime->symbols()->at(ID(_patch)));
     Code code(&scope,
               runtime->newBuiltinCode(/*argcount=*/1, /*posonlyargcount=*/0,
                                       /*kwonlyargcount=*/0, /*flags=*/0,
@@ -397,12 +397,11 @@ void UnderBuiltinsModule::initialize(Thread* thread, const Module& module) {
   }
 
   Object unbound_value(&scope, Unbound::object());
-  moduleAtPutById(thread, module, SymbolId::kUnderUnbound, unbound_value);
+  moduleAtPutById(thread, module, ID(_Unbound), unbound_value);
 
   Object compile_flags_mask(&scope,
                             SmallInt::fromWord(Code::kCompileFlagsMask));
-  moduleAtPutById(thread, module, SymbolId::kUnderCompileFlagsMask,
-                  compile_flags_mask);
+  moduleAtPutById(thread, module, ID(_compile_flags_mask), compile_flags_mask);
 
   // Mark functions that have an intrinsic implementation.
   for (word i = 0; kIntrinsicIds[i] != SymbolId::kSentinelId; i++) {
@@ -413,7 +412,7 @@ void UnderBuiltinsModule::initialize(Thread* thread, const Module& module) {
 
   // We did not initialize the `builtins` module yet, so we point
   // `__builtins__` to this module instead.
-  moduleAtPutById(thread, module, SymbolId::kDunderBuiltins, module);
+  moduleAtPutById(thread, module, ID(__builtins__), module);
 
   executeFrozenModule(thread, kUnderBuiltinsModuleData, module);
 }
@@ -471,7 +470,7 @@ RawObject UnderBuiltinsModule::underBoolGuard(Thread* thread, Frame* frame,
   if (args.get(0).isBool()) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kBool);
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(bool));
 }
 
 RawObject UnderBuiltinsModule::underBoundMethod(Thread* thread, Frame* frame,
@@ -490,7 +489,7 @@ RawObject UnderBuiltinsModule::underBytearrayAppend(Thread* thread,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kBytearray);
+    return raiseRequiresFromCaller(thread, frame, nargs, ID(bytearray));
   }
   ByteArray self(&scope, *self_obj);
   Object item_obj(&scope, args.get(1));
@@ -523,7 +522,7 @@ RawObject UnderBuiltinsModule::underBytearrayContains(Thread* thread,
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kBytearray);
+    return raiseRequiresFromCaller(thread, frame, nargs, ID(bytearray));
   }
   Object key_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfInt(*key_obj)) {
@@ -551,7 +550,7 @@ RawObject UnderBuiltinsModule::underBytearrayGuard(Thread* thread, Frame* frame,
   if (thread->runtime()->isInstanceOfByteArray(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kBytearray);
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(bytearray));
 }
 
 RawObject UnderBuiltinsModule::underBytearrayDelitem(Thread* thread,
@@ -642,7 +641,7 @@ RawObject UnderBuiltinsModule::underBytearrayGetitem(Thread* thread,
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kBytearray);
+    return raiseRequiresFromCaller(thread, frame, nargs, ID(bytearray));
   }
   Object key(&scope, args.get(1));
   if (runtime->isInstanceOfInt(*key)) {
@@ -833,7 +832,7 @@ RawObject UnderBuiltinsModule::underBytesContains(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kBytes);
+    return raiseRequiresFromCaller(thread, frame, nargs, ID(bytes));
   }
   Object key_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfInt(*key_obj)) {
@@ -898,7 +897,7 @@ RawObject UnderBuiltinsModule::underBytesGuard(Thread* thread, Frame* frame,
   if (thread->runtime()->isInstanceOfBytes(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kBytes);
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(bytes));
 }
 
 RawObject UnderBuiltinsModule::underBytearrayJoin(Thread* thread, Frame* frame,
@@ -908,7 +907,7 @@ RawObject UnderBuiltinsModule::underBytearrayJoin(Thread* thread, Frame* frame,
   Object sep_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfByteArray(*sep_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kBytearray);
+    return raiseRequiresFromCaller(thread, frame, nargs, ID(bytearray));
   }
   ByteArray sep(&scope, args.get(0));
   Bytes sep_bytes(&scope, sep.bytes());
@@ -1004,7 +1003,7 @@ RawObject UnderBuiltinsModule::underBytesGetitem(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kBytes);
+    return raiseRequiresFromCaller(thread, frame, nargs, ID(bytes));
   }
 
   Object key(&scope, args.get(1));
@@ -1054,7 +1053,7 @@ RawObject UnderBuiltinsModule::underBytesJoin(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kBytes);
+    return raiseRequiresFromCaller(thread, frame, nargs, ID(bytes));
   }
   Bytes self(&scope, bytesUnderlying(*self_obj));
   Object iterable(&scope, args.get(1));
@@ -1639,8 +1638,8 @@ static RawObject isAbstract(Thread* thread, const Object& obj) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   // TODO(T47800709): make this lookup more efficient
-  Object abstract(&scope, runtime->attributeAtById(
-                              thread, obj, SymbolId::kDunderIsabstractMethod));
+  Object abstract(
+      &scope, runtime->attributeAtById(thread, obj, ID(__isabstractmethod__)));
   if (abstract.isError()) {
     Object given(&scope, thread->pendingExceptionType());
     Object exc(&scope, runtime->typeAt(LayoutId::kAttributeError));
@@ -1675,7 +1674,7 @@ RawObject UnderBuiltinsModule::underCodeGuard(Thread* thread, Frame* frame,
   if (args.get(0).isCode()) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kCode);
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(code));
 }
 
 RawObject UnderBuiltinsModule::underCodeSetPosonlyargcount(Thread* thread,
@@ -1713,7 +1712,7 @@ RawObject UnderBuiltinsModule::underComplexImag(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfComplex(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kComplex);
+    return thread->raiseRequiresType(self_obj, ID(complex));
   }
   Complex self(&scope, complexUnderlying(*self_obj));
   return runtime->newFloat(self.imag());
@@ -1789,7 +1788,7 @@ RawObject UnderBuiltinsModule::underComplexReal(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfComplex(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kComplex);
+    return thread->raiseRequiresType(self_obj, ID(complex));
   }
   Complex self(&scope, complexUnderlying(*self_obj));
   return runtime->newFloat(self.real());
@@ -1870,7 +1869,7 @@ RawObject UnderBuiltinsModule::underDictGet(Thread* thread, Frame* frame,
   Object default_obj(&scope, args.get(2));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfDict(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kDict);
+    return thread->raiseRequiresType(self, ID(dict));
   }
   Dict dict(&scope, *self);
 
@@ -1889,7 +1888,7 @@ RawObject UnderBuiltinsModule::underDictGuard(Thread* thread, Frame* frame,
   if (thread->runtime()->isInstanceOfDict(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kDict);
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(dict));
 }
 
 RawObject UnderBuiltinsModule::underDictLen(Thread* thread, Frame* frame,
@@ -2024,7 +2023,7 @@ RawObject UnderBuiltinsModule::underDictSetitem(Thread* thread, Frame* frame,
   Object value(&scope, args.get(2));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfDict(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kDict);
+    return thread->raiseRequiresType(self, ID(dict));
   }
   Dict dict(&scope, *self);
   Object hash_obj(&scope, Interpreter::hash(thread, key));
@@ -2041,7 +2040,7 @@ RawObject UnderBuiltinsModule::underDictUpdate(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfDict(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kDict);
+    return raiseRequiresFromCaller(thread, frame, nargs, ID(dict));
   }
   Dict self(&scope, *self_obj);
   Object other(&scope, args.get(1));
@@ -2170,7 +2169,7 @@ RawObject UnderBuiltinsModule::underFloatGuard(Thread* thread, Frame* frame,
   if (thread->runtime()->isInstanceOfFloat(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kFloat);
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(float));
 }
 
 static RawObject floatNew(Thread* thread, const Type& type, RawObject flt) {
@@ -2252,7 +2251,7 @@ RawObject UnderBuiltinsModule::underFrozensetGuard(Thread* thread, Frame* frame,
   if (thread->runtime()->isInstanceOfFrozenSet(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kFrozenset);
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(frozenset));
 }
 
 RawObject UnderBuiltinsModule::underFunctionGlobals(Thread* thread,
@@ -2261,7 +2260,7 @@ RawObject UnderBuiltinsModule::underFunctionGlobals(Thread* thread,
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!self.isFunction()) {
-    return thread->raiseRequiresType(self, SymbolId::kFunction);
+    return thread->raiseRequiresType(self, ID(function));
   }
   Function function(&scope, *self);
   Module module(&scope, function.moduleObject());
@@ -2274,7 +2273,7 @@ RawObject UnderBuiltinsModule::underFunctionGuard(Thread* thread, Frame* frame,
   if (args.get(0).isFunction()) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kFunction);
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(function));
 }
 
 RawObject UnderBuiltinsModule::underGc(Thread* thread, Frame* /* frame */,
@@ -2512,7 +2511,7 @@ RawObject UnderBuiltinsModule::underInstanceGuard(Thread* thread, Frame* frame,
   if (args.get(0).isInstance()) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kInstance);
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(instance));
 }
 
 RawObject UnderBuiltinsModule::underInstanceOverflowDict(Thread* thread,
@@ -2594,7 +2593,7 @@ RawObject UnderBuiltinsModule::underIntGuard(Thread* thread, Frame* frame,
   if (thread->runtime()->isInstanceOfInt(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kInt);
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(int));
 }
 
 static word digitValue(byte digit, word base) {
@@ -2825,7 +2824,7 @@ RawObject UnderBuiltinsModule::underIntNewFromStr(Thread* thread, Frame* frame,
   word base = intUnderlying(args.get(2)).asWord();
   Object result(&scope, intFromStr(thread, str, base));
   if (result.isError()) {
-    Str repr(&scope, thread->invokeMethod1(str, SymbolId::kDunderRepr));
+    Str repr(&scope, thread->invokeMethod1(str, ID(__repr__)));
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "invalid literal for int() with base %w: %S",
                                 base == 0 ? 10 : base, &repr);
@@ -2948,7 +2947,7 @@ RawObject UnderBuiltinsModule::underListGetitem(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfList(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kList);
+    return raiseRequiresFromCaller(thread, frame, nargs, ID(list));
   }
   Object key(&scope, args.get(1));
   if (runtime->isInstanceOfInt(*key)) {
@@ -3006,7 +3005,7 @@ RawObject UnderBuiltinsModule::underListGuard(Thread* thread, Frame* frame,
   if (thread->runtime()->isInstanceOfList(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kList);
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(list));
 }
 
 RawObject UnderBuiltinsModule::underListLen(Thread* thread, Frame* frame,
@@ -3115,7 +3114,7 @@ RawObject UnderBuiltinsModule::underListSetItem(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfList(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kList);
+    return thread->raiseRequiresType(self_obj, ID(list));
   }
   Object key(&scope, args.get(1));
   if (runtime->isInstanceOfInt(*key)) {
@@ -3220,7 +3219,7 @@ RawObject UnderBuiltinsModule::underMappingproxyGuard(Thread* thread,
   if (args.get(0).isMappingProxy()) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kMappingproxy);
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(mappingproxy));
 }
 
 RawObject UnderBuiltinsModule::underMappingproxyMapping(Thread* thread,
@@ -3254,7 +3253,7 @@ RawObject UnderBuiltinsModule::underMemoryviewGuard(Thread* thread,
   if (args.get(0).isMemoryView()) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kMemoryView);
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(memoryview));
 }
 
 RawObject UnderBuiltinsModule::underMemoryviewItemsize(Thread* thread,
@@ -3264,7 +3263,7 @@ RawObject UnderBuiltinsModule::underMemoryviewItemsize(Thread* thread,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isMemoryView()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kMemoryView);
+    return thread->raiseRequiresType(self_obj, ID(memoryview));
   }
   MemoryView self(&scope, *self_obj);
   return memoryviewItemsize(thread, self);
@@ -3276,7 +3275,7 @@ RawObject UnderBuiltinsModule::underMemoryviewNbytes(Thread* thread,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isMemoryView()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kMemoryView);
+    return thread->raiseRequiresType(self_obj, ID(memoryview));
   }
   MemoryView self(&scope, *self_obj);
   return SmallInt::fromWord(self.length());
@@ -3289,7 +3288,7 @@ RawObject UnderBuiltinsModule::underMemoryviewSetitem(Thread* thread,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isMemoryView()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kMemoryView);
+    return thread->raiseRequiresType(self_obj, ID(memoryview));
   }
   MemoryView self(&scope, *self_obj);
   if (self.readOnly()) {
@@ -3321,7 +3320,7 @@ RawObject UnderBuiltinsModule::underMemoryviewSetslice(Thread* thread,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isMemoryView()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kMemoryView);
+    return thread->raiseRequiresType(self_obj, ID(memoryview));
   }
   MemoryView self(&scope, *self_obj);
   if (self.readOnly()) {
@@ -3404,7 +3403,7 @@ RawObject UnderBuiltinsModule::underModuleProxyGuard(Thread* thread,
   if (args.get(0).isModuleProxy()) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kModuleProxy);
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(module_proxy));
 }
 
 RawObject UnderBuiltinsModule::underModuleProxyKeys(Thread* thread,
@@ -3639,7 +3638,7 @@ RawObject UnderBuiltinsModule::underRangeGuard(Thread* thread, Frame* frame,
   if (args.get(0).isRange()) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kRange);
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(range));
 }
 
 RawObject UnderBuiltinsModule::underRangeLen(Thread* thread, Frame* frame,
@@ -3718,7 +3717,7 @@ RawObject UnderBuiltinsModule::underSetGuard(Thread* thread, Frame* frame,
   if (thread->runtime()->isInstanceOfSet(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kSet);
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(set));
 }
 
 RawObject UnderBuiltinsModule::underSetLen(Thread* thread, Frame* frame,
@@ -3781,7 +3780,7 @@ RawObject UnderBuiltinsModule::underSliceGuard(Thread* thread, Frame* frame,
   if (args.get(0).isSlice()) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kSlice);
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(slice));
 }
 
 RawObject UnderBuiltinsModule::underSliceStart(Thread*, Frame* frame,
@@ -4198,7 +4197,7 @@ RawObject UnderBuiltinsModule::underStrGetitem(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kStr);
+    return raiseRequiresFromCaller(thread, frame, nargs, ID(str));
   }
   Object key(&scope, args.get(1));
   if (runtime->isInstanceOfInt(*key)) {
@@ -4254,7 +4253,7 @@ RawObject UnderBuiltinsModule::underStrGuard(Thread* thread, Frame* frame,
   if (thread->runtime()->isInstanceOfStr(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kStr);
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(str));
 }
 
 RawObject UnderBuiltinsModule::underStrIschr(Thread*, Frame* frame,
@@ -4624,7 +4623,7 @@ RawObject UnderBuiltinsModule::underTupleGetitem(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfTuple(*self_obj)) {
-    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kTuple);
+    return raiseRequiresFromCaller(thread, frame, nargs, ID(tuple));
   }
   Object key(&scope, args.get(1));
   if (runtime->isInstanceOfInt(*key)) {
@@ -4677,7 +4676,7 @@ RawObject UnderBuiltinsModule::underTupleGuard(Thread* thread, Frame* frame,
   if (thread->runtime()->isInstanceOfTuple(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kTuple);
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(tuple));
 }
 
 RawObject UnderBuiltinsModule::underTupleLen(Thread*, Frame* frame,
@@ -4713,8 +4712,8 @@ RawObject UnderBuiltinsModule::underTypeAbstractmethodsDel(Thread* thread,
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
   if (type.abstractMethods().isUnbound()) {
-    Object name(&scope, thread->runtime()->symbols()->at(
-                            SymbolId::kDunderAbstractmethods));
+    Object name(&scope,
+                thread->runtime()->symbols()->at(ID(__abstractmethods__)));
     return thread->raise(LayoutId::kAttributeError, *name);
   }
   type.setAbstractMethods(Unbound::object());
@@ -4734,8 +4733,8 @@ RawObject UnderBuiltinsModule::underTypeAbstractmethodsGet(Thread* thread,
   if (!methods.isUnbound()) {
     return *methods;
   }
-  Object name(&scope, thread->runtime()->symbols()->at(
-                          SymbolId::kDunderAbstractmethods));
+  Object name(&scope,
+              thread->runtime()->symbols()->at(ID(__abstractmethods__)));
   return thread->raise(LayoutId::kAttributeError, *name);
 }
 
@@ -4808,12 +4807,12 @@ RawObject UnderBuiltinsModule::underTypeDunderCall(Thread* thread, Frame* frame,
   if (!runtime->isInstanceOfType(*self_obj)) {
     return thread->raiseWithFmt(
         LayoutId::kTypeError, "'__call__' requires a '%Y' object but got '%T'",
-        SymbolId::kType, &self_obj);
+        ID(type), &self_obj);
   }
   Type self(&scope, *self_obj);
 
   // `instance = self.__new__(...)`
-  Object dunder_new_name(&scope, runtime->symbols()->at(SymbolId::kDunderNew));
+  Object dunder_new_name(&scope, runtime->symbols()->at(ID(__new__)));
   Object dunder_new(&scope, typeGetAttribute(thread, self, dunder_new_name));
   Object instance(&scope, NoneType::object());
   Object call_args_obj(&scope, NoneType::object());
@@ -4849,8 +4848,7 @@ RawObject UnderBuiltinsModule::underTypeDunderCall(Thread* thread, Frame* frame,
   }
 
   // instance.__init__(...)
-  Object dunder_init_name(&scope,
-                          runtime->symbols()->at(SymbolId::kDunderInit));
+  Object dunder_init_name(&scope, runtime->symbols()->at(ID(__init__)));
   Object dunder_init(&scope, typeGetAttribute(thread, self, dunder_init_name));
   // `object.__init__` does nothing, we may be able to just skip things.
   // The exception to the rule being `object.__init__` raising errors when
@@ -4898,7 +4896,7 @@ RawObject UnderBuiltinsModule::underTypeGuard(Thread* thread, Frame* frame,
   if (thread->runtime()->isInstanceOfType(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kType);
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(type));
 }
 
 RawObject UnderBuiltinsModule::underTypeIssubclass(Thread* thread, Frame* frame,
@@ -4920,9 +4918,9 @@ RawObject UnderBuiltinsModule::underTypeNew(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->newTypeWithMetaclass(metaclass_id));
   type.setBases(bases.length() > 0 ? *bases : runtime->implicitBases());
-  Function type_dunder_call(
-      &scope, runtime->lookupNameInModule(thread, SymbolId::kUnderBuiltins,
-                                          SymbolId::kUnderTypeDunderCall));
+  Function type_dunder_call(&scope,
+                            runtime->lookupNameInModule(thread, ID(_builtins),
+                                                        ID(_type_dunder_call)));
   type.setCtor(*type_dunder_call);
   return *type;
 }
@@ -4967,7 +4965,7 @@ RawObject UnderBuiltinsModule::underTypeProxyGuard(Thread* thread, Frame* frame,
   if (args.get(0).isTypeProxy()) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kTypeProxy);
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(type_proxy));
 }
 
 RawObject UnderBuiltinsModule::underTypeProxyKeys(Thread* thread, Frame* frame,
@@ -5021,7 +5019,7 @@ RawObject UnderBuiltinsModule::underTypeSubclassGuard(Thread* thread,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   if (!thread->runtime()->isInstanceOfType(args.get(0))) {
-    return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kType);
+    return raiseRequiresFromCaller(thread, frame, nargs, ID(type));
   }
   Type subclass(&scope, args.get(0));
   Type superclass(&scope, args.get(1));
@@ -5065,8 +5063,8 @@ RawObject UnderBuiltinsModule::underWarn(Thread* thread, Frame* frame,
   Object category(&scope, args.get(1));
   Object stacklevel(&scope, args.get(2));
   Object source(&scope, args.get(3));
-  return thread->invokeFunction4(SymbolId::kWarnings, SymbolId::kWarn, message,
-                                 category, stacklevel, source);
+  return thread->invokeFunction4(ID(warnings), ID(warn), message, category,
+                                 stacklevel, source);
 }
 
 RawObject UnderBuiltinsModule::underWeakrefCallback(Thread* thread,
@@ -5076,7 +5074,7 @@ RawObject UnderBuiltinsModule::underWeakrefCallback(Thread* thread,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfWeakRef(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kRef);
+    return thread->raiseRequiresType(self_obj, ID(ref));
   }
   WeakRef self(&scope, *self_obj);
   return self.callback();
@@ -5094,7 +5092,7 @@ RawObject UnderBuiltinsModule::underWeakrefGuard(Thread* thread, Frame* frame,
   if (thread->runtime()->isInstanceOfWeakRef(args.get(0))) {
     return NoneType::object();
   }
-  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kRef);
+  return raiseRequiresFromCaller(thread, frame, nargs, ID(ref));
 }
 
 RawObject UnderBuiltinsModule::underWeakrefReferent(Thread* thread,
@@ -5104,7 +5102,7 @@ RawObject UnderBuiltinsModule::underWeakrefReferent(Thread* thread,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfWeakRef(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kRef);
+    return thread->raiseRequiresType(self_obj, ID(ref));
   }
   WeakRef self(&scope, *self_obj);
   return self.referent();

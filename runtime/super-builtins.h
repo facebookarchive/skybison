@@ -12,7 +12,7 @@ RawObject superGetAttribute(Thread* thread, const Super& super,
                             const Object& name);
 
 class SuperBuiltins
-    : public Builtins<SuperBuiltins, SymbolId::kSuper, LayoutId::kSuper> {
+    : public Builtins<SuperBuiltins, ID(super), LayoutId::kSuper> {
  public:
   static RawObject dunderGetattribute(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);

@@ -378,23 +378,23 @@ const BuiltinAttribute BytesBuiltins::kAttributes[] = {
 
 // clang-format off
 const BuiltinMethod BytesBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderAdd, dunderAdd},
-    {SymbolId::kDunderEq, dunderEq},
-    {SymbolId::kDunderGe, dunderGe},
-    {SymbolId::kDunderGt, dunderGt},
-    {SymbolId::kDunderHash, dunderHash},
-    {SymbolId::kDunderIter, dunderIter},
-    {SymbolId::kDunderLe, dunderLe},
-    {SymbolId::kDunderLen, dunderLen},
-    {SymbolId::kDunderLt, dunderLt},
-    {SymbolId::kDunderMul, dunderMul},
-    {SymbolId::kDunderNe, dunderNe},
-    {SymbolId::kDunderRepr, dunderRepr},
-    {SymbolId::kHex, hex},
-    {SymbolId::kLStrip, lstrip},
-    {SymbolId::kRStrip, rstrip},
-    {SymbolId::kStrip, strip},
-    {SymbolId::kTranslate, translate},
+    {ID(__add__), dunderAdd},
+    {ID(__eq__), dunderEq},
+    {ID(__ge__), dunderGe},
+    {ID(__gt__), dunderGt},
+    {ID(__hash__), dunderHash},
+    {ID(__iter__), dunderIter},
+    {ID(__le__), dunderLe},
+    {ID(__len__), dunderLen},
+    {ID(__lt__), dunderLt},
+    {ID(__mul__), dunderMul},
+    {ID(__ne__), dunderNe},
+    {ID(__repr__), dunderRepr},
+    {ID(hex), hex},
+    {ID(lstrip), lstrip},
+    {ID(rstrip), rstrip},
+    {ID(strip), strip},
+    {ID(translate), translate},
     {SymbolId::kSentinelId, nullptr},
 };
 // clang-format on
@@ -409,7 +409,7 @@ RawObject BytesBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
+    return thread->raiseRequiresType(self_obj, ID(bytes));
   }
   Bytes self(&scope, bytesUnderlying(thread, self_obj));
   Object other_obj(&scope, args.get(1));
@@ -433,7 +433,7 @@ RawObject BytesBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
+    return thread->raiseRequiresType(self_obj, ID(bytes));
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfBytes(*other_obj)) {
@@ -450,7 +450,7 @@ RawObject BytesBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
+    return thread->raiseRequiresType(self_obj, ID(bytes));
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfBytes(*other_obj)) {
@@ -467,7 +467,7 @@ RawObject BytesBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
+    return thread->raiseRequiresType(self_obj, ID(bytes));
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfBytes(*other_obj)) {
@@ -483,7 +483,7 @@ RawObject BytesBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
+    return thread->raiseRequiresType(self_obj, ID(bytes));
   }
   Bytes self(&scope, bytesUnderlying(thread, self_obj));
   return SmallInt::fromWord(bytesHash(thread, *self));
@@ -495,7 +495,7 @@ RawObject BytesBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
+    return thread->raiseRequiresType(self_obj, ID(bytes));
   }
   Bytes self(&scope, bytesUnderlying(thread, self_obj));
   return runtime->newBytesIterator(thread, self);
@@ -507,7 +507,7 @@ RawObject BytesBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
+    return thread->raiseRequiresType(self_obj, ID(bytes));
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfBytes(*other_obj)) {
@@ -524,7 +524,7 @@ RawObject BytesBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
+    return thread->raiseRequiresType(self_obj, ID(bytes));
   }
 
   Bytes self(&scope, bytesUnderlying(thread, self_obj));
@@ -537,7 +537,7 @@ RawObject BytesBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
+    return thread->raiseRequiresType(self_obj, ID(bytes));
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfBytes(*other_obj)) {
@@ -554,7 +554,7 @@ RawObject BytesBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
+    return thread->raiseRequiresType(self_obj, ID(bytes));
   }
   Object count_index(&scope, args.get(1));
   Object count_obj(&scope, intFromIndex(thread, count_index));
@@ -588,7 +588,7 @@ RawObject BytesBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
+    return thread->raiseRequiresType(self_obj, ID(bytes));
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfBytes(*other_obj)) {
@@ -605,7 +605,7 @@ RawObject BytesBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
+    return thread->raiseRequiresType(self_obj, ID(bytes));
   }
   Bytes self(&scope, bytesUnderlying(thread, self_obj));
   return bytesReprSmartQuotes(thread, self);
@@ -616,7 +616,7 @@ RawObject BytesBuiltins::hex(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfBytes(*obj)) {
-    return thread->raiseRequiresType(obj, SymbolId::kBytes);
+    return thread->raiseRequiresType(obj, ID(bytes));
   }
   Bytes self(&scope, bytesUnderlying(thread, obj));
   return bytesHex(thread, self, self.length());
@@ -628,7 +628,7 @@ RawObject BytesBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
+    return thread->raiseRequiresType(self_obj, ID(bytes));
   }
   Bytes self(&scope, bytesUnderlying(thread, self_obj));
   Object chars_obj(&scope, args.get(1));
@@ -657,7 +657,7 @@ RawObject BytesBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
+    return thread->raiseRequiresType(self_obj, ID(bytes));
   }
   Bytes self(&scope, bytesUnderlying(thread, self_obj));
   Object chars_obj(&scope, args.get(1));
@@ -686,7 +686,7 @@ RawObject BytesBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
+    return thread->raiseRequiresType(self_obj, ID(bytes));
   }
   Bytes self(&scope, bytesUnderlying(thread, self_obj));
   Object chars_obj(&scope, args.get(1));
@@ -715,7 +715,7 @@ RawObject BytesBuiltins::translate(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
+    return thread->raiseRequiresType(self_obj, ID(bytes));
   }
   Bytes self(&scope, bytesUnderlying(thread, self_obj));
   Object table_obj(&scope, args.get(1));
@@ -761,9 +761,9 @@ RawObject BytesBuiltins::translate(Thread* thread, Frame* frame, word nargs) {
 }
 
 const BuiltinMethod BytesIteratorBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderIter, dunderIter},
-    {SymbolId::kDunderLengthHint, dunderLengthHint},
-    {SymbolId::kDunderNext, dunderNext},
+    {ID(__iter__), dunderIter},
+    {ID(__length_hint__), dunderLengthHint},
+    {ID(__next__), dunderNext},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -773,7 +773,7 @@ RawObject BytesIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isBytesIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kBytesIterator);
+    return thread->raiseRequiresType(self, ID(bytes_iterator));
   }
   return *self;
 }
@@ -784,7 +784,7 @@ RawObject BytesIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isBytesIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kBytesIterator);
+    return thread->raiseRequiresType(self, ID(bytes_iterator));
   }
   BytesIterator iter(&scope, *self);
   Bytes underlying(&scope, iter.iterable());
@@ -802,7 +802,7 @@ RawObject BytesIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isBytesIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kBytesIterator);
+    return thread->raiseRequiresType(self, ID(bytes_iterator));
   }
   BytesIterator iter(&scope, *self);
   Bytes underlying(&scope, iter.iterable());

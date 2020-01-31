@@ -28,8 +28,8 @@ PY_EXPORT PyObject* PyMemoryView_FromObject(PyObject* obj) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  Object result(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
-                                                SymbolId::kMemoryView, object));
+  Object result(&scope,
+                thread->invokeFunction1(ID(builtins), ID(memoryview), object));
   if (result.isError()) {
     return nullptr;
   }

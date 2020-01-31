@@ -5,7 +5,7 @@
 namespace py {
 
 class SliceBuiltins
-    : public Builtins<SliceBuiltins, SymbolId::kSlice, LayoutId::kSlice> {
+    : public Builtins<SliceBuiltins, ID(slice), LayoutId::kSlice> {
  public:
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
 

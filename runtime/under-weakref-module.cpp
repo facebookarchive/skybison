@@ -9,7 +9,7 @@
 namespace py {
 
 const BuiltinType UnderWeakrefModule::kBuiltinTypes[] = {
-    {SymbolId::kRef, LayoutId::kWeakRef},
+    {ID(ref), LayoutId::kWeakRef},
     {SymbolId::kSentinelId, LayoutId::kSentinelId},
 };
 

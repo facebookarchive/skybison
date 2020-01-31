@@ -54,7 +54,7 @@ PY_EXPORT int PyState_AddModule(PyObject* module, PyModuleDef* def) {
   Object doc_value(&scope, def->m_doc == nullptr
                                ? NoneType::object()
                                : runtime->newStrFromCStr(def->m_doc));
-  moduleAtPutById(thread, module_obj, SymbolId::kDunderDoc, doc_value);
+  moduleAtPutById(thread, module_obj, ID(__doc__), doc_value);
   if (!runtime->moduleListAtPut(thread, module_obj, def->m_base.m_index)) {
     Py_FatalError("PyState_AddModule: Module already added!");
     return -1;

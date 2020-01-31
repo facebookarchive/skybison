@@ -11,9 +11,9 @@ namespace py {
 // classmethod
 
 const BuiltinMethod ClassMethodBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderGet, dunderGet},
-    {SymbolId::kDunderInit, dunderInit},
-    {SymbolId::kDunderNew, dunderNew},
+    {ID(__get__), dunderGet},
+    {ID(__init__), dunderInit},
+    {ID(__new__), dunderNew},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -45,9 +45,9 @@ RawObject ClassMethodBuiltins::dunderGet(Thread* thread, Frame* frame,
 // staticmethod
 
 const BuiltinMethod StaticMethodBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderGet, dunderGet},
-    {SymbolId::kDunderInit, dunderInit},
-    {SymbolId::kDunderNew, dunderNew},
+    {ID(__get__), dunderGet},
+    {ID(__init__), dunderInit},
+    {ID(__new__), dunderNew},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -78,14 +78,14 @@ RawObject StaticMethodBuiltins::dunderInit(Thread* thread, Frame* frame,
 
 // clang-format off
 const BuiltinMethod PropertyBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderDelete, dunderDelete},
-    {SymbolId::kDunderGet, dunderGet},
-    {SymbolId::kDunderInit, dunderInit},
-    {SymbolId::kDunderNew, dunderNew},
-    {SymbolId::kDunderSet, dunderSet},
-    {SymbolId::kDeleter, deleter},
-    {SymbolId::kGetter, getter},
-    {SymbolId::kSetter, setter},
+    {ID(__delete__), dunderDelete},
+    {ID(__get__), dunderGet},
+    {ID(__init__), dunderInit},
+    {ID(__new__), dunderNew},
+    {ID(__set__), dunderSet},
+    {ID(deleter), deleter},
+    {ID(getter), getter},
+    {ID(setter), setter},
     {SymbolId::kSentinelId, nullptr},
 };
 // clang-format on
@@ -96,7 +96,7 @@ RawObject PropertyBuiltins::dunderDelete(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isProperty()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kProperty);
+    return thread->raiseRequiresType(self_obj, ID(property));
   }
   Property self(&scope, *self_obj);
   Object deleter(&scope, self.deleter());
@@ -114,7 +114,7 @@ RawObject PropertyBuiltins::dunderGet(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isProperty()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kProperty);
+    return thread->raiseRequiresType(self_obj, ID(property));
   }
   Property self(&scope, *self_obj);
   Object getter(&scope, self.getter());
@@ -135,7 +135,7 @@ RawObject PropertyBuiltins::dunderInit(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isProperty()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kProperty);
+    return thread->raiseRequiresType(self_obj, ID(property));
   }
   Property self(&scope, *self_obj);
   self.setGetter(args.get(1));
@@ -157,7 +157,7 @@ RawObject PropertyBuiltins::dunderSet(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isProperty()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kProperty);
+    return thread->raiseRequiresType(self_obj, ID(property));
   }
   Property self(&scope, *self_obj);
   Object setter(&scope, self.setter());
@@ -175,7 +175,7 @@ RawObject PropertyBuiltins::deleter(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isProperty()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kProperty);
+    return thread->raiseRequiresType(self_obj, ID(property));
   }
   Property self(&scope, *self_obj);
   Object getter(&scope, self.getter());
@@ -189,7 +189,7 @@ RawObject PropertyBuiltins::getter(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isProperty()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kProperty);
+    return thread->raiseRequiresType(self_obj, ID(property));
   }
   Property self(&scope, *self_obj);
   Object getter(&scope, args.get(1));
@@ -203,7 +203,7 @@ RawObject PropertyBuiltins::setter(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isProperty()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kProperty);
+    return thread->raiseRequiresType(self_obj, ID(property));
   }
   Property self(&scope, *self_obj);
   Object getter(&scope, self.getter());

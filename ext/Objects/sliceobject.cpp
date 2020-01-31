@@ -81,8 +81,8 @@ PY_EXPORT int PySlice_Unpack(PyObject* pyobj, Py_ssize_t* start_ptr,
   Object step_obj(&scope, slice.step());
   if (!step_obj.isNoneType()) {
     if (!runtime->isInstanceOfInt(*step_obj)) {
-      step_obj = thread->invokeFunction1(SymbolId::kBuiltins,
-                                         SymbolId::kUnderSliceIndex, step_obj);
+      step_obj =
+          thread->invokeFunction1(ID(builtins), ID(_slice_index), step_obj);
       if (step_obj.isError()) return -1;
     }
     step = intUnderlying(*step_obj).asWordSaturated();
@@ -107,8 +107,8 @@ PY_EXPORT int PySlice_Unpack(PyObject* pyobj, Py_ssize_t* start_ptr,
     start = step < 0 ? SmallInt::kMaxValue : 0;
   } else {
     if (!runtime->isInstanceOfInt(*start_obj)) {
-      start_obj = thread->invokeFunction1(
-          SymbolId::kBuiltins, SymbolId::kUnderSliceIndex, start_obj);
+      start_obj =
+          thread->invokeFunction1(ID(builtins), ID(_slice_index), start_obj);
       if (start_obj.isError()) return -1;
     }
     start = intUnderlying(*start_obj).asWordSaturated();
@@ -125,8 +125,8 @@ PY_EXPORT int PySlice_Unpack(PyObject* pyobj, Py_ssize_t* start_ptr,
     stop = step < 0 ? SmallInt::kMinValue : SmallInt::kMaxValue;
   } else {
     if (!runtime->isInstanceOfInt(*stop_obj)) {
-      stop_obj = thread->invokeFunction1(SymbolId::kBuiltins,
-                                         SymbolId::kUnderSliceIndex, stop_obj);
+      stop_obj =
+          thread->invokeFunction1(ID(builtins), ID(_slice_index), stop_obj);
       if (stop_obj.isError()) return -1;
     }
     stop = intUnderlying(*stop_obj).asWordSaturated();

@@ -7,18 +7,16 @@
 namespace py {
 
 const BuiltinAttribute MemoryViewBuiltins::kAttributes[] = {
-    {SymbolId::kFormat, RawMemoryView::kFormatOffset,
-     AttributeFlags::kReadOnly},
-    {SymbolId::kReadonly, RawMemoryView::kReadOnlyOffset,
-     AttributeFlags::kReadOnly},
+    {ID(format), RawMemoryView::kFormatOffset, AttributeFlags::kReadOnly},
+    {ID(readonly), RawMemoryView::kReadOnlyOffset, AttributeFlags::kReadOnly},
     {SymbolId::kSentinelId, -1},
 };
 
 const BuiltinMethod MemoryViewBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kCast, cast},
-    {SymbolId::kDunderGetitem, dunderGetitem},
-    {SymbolId::kDunderLen, dunderLen},
-    {SymbolId::kDunderNew, dunderNew},
+    {ID(cast), cast},
+    {ID(__getitem__), dunderGetitem},
+    {ID(__len__), dunderLen},
+    {ID(__new__), dunderNew},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -445,7 +443,7 @@ RawObject MemoryViewBuiltins::cast(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isMemoryView()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kMemoryView);
+    return thread->raiseRequiresType(self_obj, ID(memoryview));
   }
   MemoryView self(&scope, *self_obj);
 
@@ -486,7 +484,7 @@ RawObject MemoryViewBuiltins::dunderGetitem(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isMemoryView()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kMemoryView);
+    return thread->raiseRequiresType(self_obj, ID(memoryview));
   }
   MemoryView self(&scope, *self_obj);
 
@@ -544,7 +542,7 @@ RawObject MemoryViewBuiltins::dunderLen(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isMemoryView()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kMemoryView);
+    return thread->raiseRequiresType(self_obj, ID(memoryview));
   }
   MemoryView self(&scope, *self_obj);
   // TODO(T36619828) support str subclasses

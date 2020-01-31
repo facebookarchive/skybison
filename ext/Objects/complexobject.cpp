@@ -80,7 +80,7 @@ PY_EXPORT Py_complex PyComplex_AsCComplex(PyObject* pycomplex) {
   }
 
   // Try calling __complex__
-  Object result(&scope, thread->invokeMethod1(obj, SymbolId::kDunderComplex));
+  Object result(&scope, thread->invokeMethod1(obj, ID(__complex__)));
   if (!result.isError()) {
     if (!runtime->isInstanceOfComplex(*result)) {
       thread->raiseWithFmt(LayoutId::kTypeError,
@@ -94,8 +94,7 @@ PY_EXPORT Py_complex PyComplex_AsCComplex(PyObject* pycomplex) {
   if (result.isErrorNotFound()) {
     // Use __float__ for the real part and set the imaginary part to 0
     if (!runtime->isInstanceOfFloat(*obj)) {
-      obj = thread->invokeFunction1(SymbolId::kBuiltins, SymbolId::kUnderFloat,
-                                    obj);
+      obj = thread->invokeFunction1(ID(builtins), ID(_float), obj);
       if (obj.isError()) return {-1.0, 0.0};
     }
     return {floatUnderlying(*obj).value(), 0.0};
@@ -130,8 +129,7 @@ PY_EXPORT double PyComplex_RealAsDouble(PyObject* pycomplex) {
     return comp.real();
   }
   if (!runtime->isInstanceOfFloat(*obj)) {
-    obj = thread->invokeFunction1(SymbolId::kBuiltins, SymbolId::kUnderFloat,
-                                  obj);
+    obj = thread->invokeFunction1(ID(builtins), ID(_float), obj);
     if (obj.isError()) return -1;
   }
   return floatUnderlying(*obj).value();

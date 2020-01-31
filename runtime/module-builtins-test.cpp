@@ -42,7 +42,7 @@ sys.__name__ = "ysy"
 TEST_F(ModuleBuiltinsTest, DunderGetattributeReturnsAttribute) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, "foo = -6").isError());
-  Module module(&scope, runtime_->findModuleById(SymbolId::kDunderMain));
+  Module module(&scope, runtime_->findModuleById(ID(__main__)));
   Object name(&scope, runtime_->newStrFromCStr("foo"));
   EXPECT_TRUE(isIntEqualsWord(
       runBuiltin(ModuleBuiltins::dunderGetattribute, module, name), -6));
@@ -51,7 +51,7 @@ TEST_F(ModuleBuiltinsTest, DunderGetattributeReturnsAttribute) {
 TEST_F(ModuleBuiltinsTest, DunderGetattributeWithNonStringNameRaisesTypeError) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, "").isError());
-  Module module(&scope, runtime_->findModuleById(SymbolId::kDunderMain));
+  Module module(&scope, runtime_->findModuleById(ID(__main__)));
   Object name(&scope, runtime_->newInt(0));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(ModuleBuiltins::dunderGetattribute, module, name),
@@ -62,7 +62,7 @@ TEST_F(ModuleBuiltinsTest,
        DunderGetattributeWithMissingAttributeRaisesAttributeError) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, "").isError());
-  Module module(&scope, runtime_->findModuleById(SymbolId::kDunderMain));
+  Module module(&scope, runtime_->findModuleById(ID(__main__)));
   Object name(&scope, runtime_->newStrFromCStr("xxx"));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(ModuleBuiltins::dunderGetattribute, module, name),
@@ -107,15 +107,13 @@ static RawModule createTestingModule(Thread* thread) {
   Runtime* runtime = thread->runtime();
 
   // Create a builtins module.
-  Module builtins_module(&scope,
-                         runtime->createModule(thread, SymbolId::kBuiltins));
+  Module builtins_module(&scope, runtime->createModule(thread, ID(builtins)));
   Dict builtins_dict(&scope, runtime->newDict());
   builtins_module.setDict(*builtins_dict);
 
   // Create a module dict with builtins in it.
   Dict module_dict(&scope, runtime->newDict());
-  Object dunder_builtins_name(
-      &scope, runtime->symbols()->at(SymbolId::kDunderBuiltins));
+  Object dunder_builtins_name(&scope, runtime->symbols()->at(ID(__builtins__)));
   dictAtPutInValueCellByStr(thread, module_dict, dunder_builtins_name,
                             builtins_module);
 
@@ -127,8 +125,7 @@ static RawModule createTestingModule(Thread* thread) {
 TEST_F(ModuleBuiltinsTest, ModuleAtIgnoresBuiltinsEntry) {
   HandleScope scope(thread_);
   Module module(&scope, createTestingModule(thread_));
-  Module builtins(&scope,
-                  moduleAtById(thread_, module, SymbolId::kDunderBuiltins));
+  Module builtins(&scope, moduleAtById(thread_, module, ID(__builtins__)));
 
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Str foo_in_builtins(&scope, runtime_->newStrFromCStr("foo_in_builtins"));
@@ -162,8 +159,8 @@ TEST_F(ModuleBuiltinsTest, ModuleAtByIdReturnsValuePutByModuleAtPutById) {
   HandleScope scope(thread_);
   Module module(&scope, createTestingModule(thread_));
   Object value(&scope, runtime_->newStrFromCStr("a's value"));
-  moduleAtPutById(thread_, module, SymbolId::kNotImplemented, value);
-  EXPECT_EQ(moduleAtById(thread_, module, SymbolId::kNotImplemented), *value);
+  moduleAtPutById(thread_, module, ID(NotImplemented), value);
+  EXPECT_EQ(moduleAtById(thread_, module, ID(NotImplemented)), *value);
 }
 
 TEST_F(ModuleBuiltinsTest,
@@ -206,8 +203,7 @@ foo()
 )")
                    .isError());
   Module module(&scope, findMainModule(runtime_));
-  Module builtins(&scope,
-                  moduleAtById(thread_, module, SymbolId::kDunderBuiltins));
+  Module builtins(&scope, moduleAtById(thread_, module, ID(__builtins__)));
   Object a(&scope, Runtime::internStrFromCStr(thread_, "a"));
   Str new_value(&scope, runtime_->newStrFromCStr("value"));
   ValueCell value_cell_a(&scope, moduleValueCellAt(thread_, builtins, a));
@@ -327,7 +323,7 @@ TEST_F(ModuleBuiltinsTest, ModuleValuesFiltersOutPlaceholders) {
 TEST_F(ModuleBuiltinsTest, ModuleGetAttributeReturnsInstanceValue) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, "x = 42").isError());
-  Module module(&scope, runtime_->findModuleById(SymbolId::kDunderMain));
+  Module module(&scope, runtime_->findModuleById(ID(__main__)));
   Object name(&scope, Runtime::internStrFromCStr(thread_, "x"));
   EXPECT_TRUE(isIntEqualsWord(moduleGetAttribute(thread_, module, name), 42));
 }
@@ -355,8 +351,7 @@ TEST_F(ModuleBuiltinsTest, NewModuleDunderReprReturnsString) {
   HandleScope scope(thread_);
   Object name(&scope, runtime_->newStrFromCStr("hello"));
   Object module(&scope, runtime_->newModule(name));
-  Object result(
-      &scope, Thread::current()->invokeMethod1(module, SymbolId::kDunderRepr));
+  Object result(&scope, Thread::current()->invokeMethod1(module, ID(__repr__)));
   EXPECT_TRUE(isStrEqualsCStr(*result, "<module 'hello'>"));
 }
 

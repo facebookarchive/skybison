@@ -787,13 +787,13 @@ bool IcIterator::isAttrNameEqualTo(const Object& attr_name) const {
     case FOR_ITER_MONOMORPHIC:
     case FOR_ITER_POLYMORPHIC:
     case FOR_ITER_ANAMORPHIC:
-      return attr_name == runtime_->symbols()->at(SymbolId::kDunderNext);
+      return attr_name == runtime_->symbols()->at(ID(__next__));
     case BINARY_SUBSCR_ANAMORPHIC:
     case BINARY_SUBSCR_MONOMORPHIC:
     case BINARY_SUBSCR_POLYMORPHIC:
-      return attr_name == runtime_->symbols()->at(SymbolId::kDunderGetitem);
+      return attr_name == runtime_->symbols()->at(ID(__getitem__));
     case STORE_SUBSCR_ANAMORPHIC:
-      return attr_name == runtime_->symbols()->at(SymbolId::kDunderSetitem);
+      return attr_name == runtime_->symbols()->at(ID(__setitem__));
     default:
       return attr_name == names_.at(originalArg(*function_, bytecode_op_.arg));
   }

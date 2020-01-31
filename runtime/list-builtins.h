@@ -38,8 +38,7 @@ RawObject listSort(Thread* thread, const List& list);
 // Return the next item from the iterator, or Error if there are no items left.
 RawObject listIteratorNext(Thread* thread, const ListIterator& iter);
 
-class ListBuiltins
-    : public Builtins<ListBuiltins, SymbolId::kList, LayoutId::kList> {
+class ListBuiltins : public Builtins<ListBuiltins, ID(list), LayoutId::kList> {
  public:
   static RawObject append(Thread* thread, Frame* frame, word nargs);
   static RawObject clear(Thread* thread, Frame* frame, word nargs);
@@ -63,7 +62,7 @@ class ListBuiltins
 };
 
 class ListIteratorBuiltins
-    : public Builtins<ListIteratorBuiltins, SymbolId::kListIterator,
+    : public Builtins<ListIteratorBuiltins, ID(list_iterator),
                       LayoutId::kListIterator> {
  public:
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);

@@ -31,8 +31,7 @@ static PyObject* doUnaryOp(SymbolId op, PyObject* obj) {
 
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  Object result(&scope,
-                thread->invokeFunction1(SymbolId::kOperator, op, object));
+  Object result(&scope, thread->invokeFunction1(ID(operator), op, object));
   return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
 }
 
@@ -43,8 +42,8 @@ static PyObject* doBinaryOp(SymbolId op, PyObject* left, PyObject* right) {
   HandleScope scope(thread);
   Object left_obj(&scope, ApiHandle::fromPyObject(left)->asObject());
   Object right_obj(&scope, ApiHandle::fromPyObject(right)->asObject());
-  Object result(&scope, thread->invokeFunction2(SymbolId::kOperator, op,
-                                                left_obj, right_obj));
+  Object result(&scope,
+                thread->invokeFunction2(ID(operator), op, left_obj, right_obj));
   return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
 }
 
@@ -57,7 +56,7 @@ static Py_ssize_t objectLength(PyObject* pyobj) {
 
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
-  Object len_index(&scope, thread->invokeMethod1(obj, SymbolId::kDunderLen));
+  Object len_index(&scope, thread->invokeMethod1(obj, ID(__len__)));
   if (len_index.isError()) {
     if (len_index.isErrorNotFound()) {
       thread->raiseWithFmt(LayoutId::kTypeError, "object has no len()");
@@ -202,8 +201,7 @@ PY_EXPORT int PyIndex_Check_Func(PyObject* obj) {
   HandleScope scope(thread);
   Object num(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Type type(&scope, thread->runtime()->typeOf(*num));
-  return !typeLookupInMroById(thread, type, SymbolId::kDunderIndex)
-              .isErrorNotFound();
+  return !typeLookupInMroById(thread, type, ID(__index__)).isErrorNotFound();
 }
 
 // PyIter_Next
@@ -212,7 +210,7 @@ PY_EXPORT PyObject* PyIter_Next(PyObject* iter) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object iter_obj(&scope, ApiHandle::fromPyObject(iter)->asObject());
-  Object next(&scope, thread->invokeMethod1(iter_obj, SymbolId::kDunderNext));
+  Object next(&scope, thread->invokeMethod1(iter_obj, ID(__next__)));
   if (thread->clearPendingStopIteration()) {
     // End of iterable
     return nullptr;
@@ -332,15 +330,15 @@ PY_EXPORT PyObject* PyMapping_Values(PyObject* mapping) {
 // Number Protocol
 
 PY_EXPORT PyObject* PyNumber_Absolute(PyObject* obj) {
-  return doUnaryOp(SymbolId::kAbs, obj);
+  return doUnaryOp(ID(abs), obj);
 }
 
 PY_EXPORT PyObject* PyNumber_Add(PyObject* left, PyObject* right) {
-  return doBinaryOp(SymbolId::kAdd, left, right);
+  return doBinaryOp(ID(add), left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_And(PyObject* left, PyObject* right) {
-  return doBinaryOp(SymbolId::kAndUnder, left, right);
+  return doBinaryOp(ID(and_), left, right);
 }
 
 PY_EXPORT Py_ssize_t PyNumber_AsSsize_t(PyObject* obj, PyObject* overflow_err) {
@@ -375,19 +373,17 @@ PY_EXPORT int PyNumber_Check(PyObject* obj) {
   HandleScope scope(thread);
   Object num(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Type type(&scope, thread->runtime()->typeOf(*num));
-  if (!typeLookupInMroById(thread, type, SymbolId::kDunderInt)
-           .isErrorNotFound()) {
+  if (!typeLookupInMroById(thread, type, ID(__int__)).isErrorNotFound()) {
     return true;
   }
-  if (!typeLookupInMroById(thread, type, SymbolId::kDunderFloat)
-           .isErrorNotFound()) {
+  if (!typeLookupInMroById(thread, type, ID(__float__)).isErrorNotFound()) {
     return true;
   }
   return false;
 }
 
 PY_EXPORT PyObject* PyNumber_Divmod(PyObject* left, PyObject* right) {
-  return doBinaryOp(SymbolId::kDivmod, left, right);
+  return doBinaryOp(ID(divmod), left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_Float(PyObject* obj) {
@@ -397,13 +393,12 @@ PY_EXPORT PyObject* PyNumber_Float(PyObject* obj) {
   }
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  Object flt(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
-                                             SymbolId::kFloat, object));
+  Object flt(&scope, thread->invokeFunction1(ID(builtins), ID(float), object));
   return flt.isError() ? nullptr : ApiHandle::newReference(thread, *flt);
 }
 
 PY_EXPORT PyObject* PyNumber_FloorDivide(PyObject* left, PyObject* right) {
-  return doBinaryOp(SymbolId::kFloordiv, left, right);
+  return doBinaryOp(ID(floordiv), left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_Index(PyObject* item) {
@@ -419,66 +414,66 @@ PY_EXPORT PyObject* PyNumber_Index(PyObject* item) {
 }
 
 PY_EXPORT PyObject* PyNumber_InPlaceAdd(PyObject* left, PyObject* right) {
-  return doBinaryOp(SymbolId::kIadd, left, right);
+  return doBinaryOp(ID(iadd), left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_InPlaceAnd(PyObject* left, PyObject* right) {
-  return doBinaryOp(SymbolId::kIand, left, right);
+  return doBinaryOp(ID(iand), left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_InPlaceFloorDivide(PyObject* left,
                                                 PyObject* right) {
-  return doBinaryOp(SymbolId::kIfloordiv, left, right);
+  return doBinaryOp(ID(ifloordiv), left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_InPlaceLshift(PyObject* left, PyObject* right) {
-  return doBinaryOp(SymbolId::kIlshift, left, right);
+  return doBinaryOp(ID(ilshift), left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_InPlaceMatrixMultiply(PyObject* left,
                                                    PyObject* right) {
-  return doBinaryOp(SymbolId::kImatmul, left, right);
+  return doBinaryOp(ID(imatmul), left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_InPlaceMultiply(PyObject* left, PyObject* right) {
-  return doBinaryOp(SymbolId::kImul, left, right);
+  return doBinaryOp(ID(imul), left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_InPlaceOr(PyObject* left, PyObject* right) {
-  return doBinaryOp(SymbolId::kIor, left, right);
+  return doBinaryOp(ID(ior), left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_InPlacePower(PyObject* base, PyObject* exponent,
                                           PyObject* divisor) {
   if (divisor == Py_None) {
-    return doBinaryOp(SymbolId::kIpow, base, exponent);
+    return doBinaryOp(ID(ipow), base, exponent);
   }
   UNIMPLEMENTED("ipow(base, exponent, divisor)");
 }
 
 PY_EXPORT PyObject* PyNumber_InPlaceRemainder(PyObject* left, PyObject* right) {
-  return doBinaryOp(SymbolId::kImod, left, right);
+  return doBinaryOp(ID(imod), left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_InPlaceRshift(PyObject* left, PyObject* right) {
-  return doBinaryOp(SymbolId::kIrshift, left, right);
+  return doBinaryOp(ID(irshift), left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_InPlaceSubtract(PyObject* left, PyObject* right) {
-  return doBinaryOp(SymbolId::kIsub, left, right);
+  return doBinaryOp(ID(isub), left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_InPlaceTrueDivide(PyObject* left,
                                                PyObject* right) {
-  return doBinaryOp(SymbolId::kItruediv, left, right);
+  return doBinaryOp(ID(itruediv), left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_InPlaceXor(PyObject* left, PyObject* right) {
-  return doBinaryOp(SymbolId::kIxor, left, right);
+  return doBinaryOp(ID(ixor), left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_Invert(PyObject* pyobj) {
-  return doUnaryOp(SymbolId::kInvert, pyobj);
+  return doUnaryOp(ID(invert), pyobj);
 }
 
 PY_EXPORT PyObject* PyNumber_Long(PyObject* obj) {
@@ -488,8 +483,7 @@ PY_EXPORT PyObject* PyNumber_Long(PyObject* obj) {
   }
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  Object result(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
-                                                SymbolId::kInt, object));
+  Object result(&scope, thread->invokeFunction1(ID(builtins), ID(int), object));
   if (result.isError()) {
     return nullptr;
   }
@@ -497,47 +491,47 @@ PY_EXPORT PyObject* PyNumber_Long(PyObject* obj) {
 }
 
 PY_EXPORT PyObject* PyNumber_Lshift(PyObject* left, PyObject* right) {
-  return doBinaryOp(SymbolId::kLshift, left, right);
+  return doBinaryOp(ID(lshift), left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_MatrixMultiply(PyObject* left, PyObject* right) {
-  return doBinaryOp(SymbolId::kMatmul, left, right);
+  return doBinaryOp(ID(matmul), left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_Multiply(PyObject* left, PyObject* right) {
-  return doBinaryOp(SymbolId::kMul, left, right);
+  return doBinaryOp(ID(mul), left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_Negative(PyObject* pyobj) {
-  return doUnaryOp(SymbolId::kNeg, pyobj);
+  return doUnaryOp(ID(neg), pyobj);
 }
 
 PY_EXPORT PyObject* PyNumber_Or(PyObject* left, PyObject* right) {
-  return doBinaryOp(SymbolId::kOrUnder, left, right);
+  return doBinaryOp(ID(or_), left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_Positive(PyObject* pyobj) {
-  return doUnaryOp(SymbolId::kPos, pyobj);
+  return doUnaryOp(ID(pos), pyobj);
 }
 
 PY_EXPORT PyObject* PyNumber_Power(PyObject* base, PyObject* exponent,
                                    PyObject* divisor) {
   if (divisor == Py_None) {
-    return doBinaryOp(SymbolId::kPow, base, exponent);
+    return doBinaryOp(ID(pow), base, exponent);
   }
   UNIMPLEMENTED("pow(base, exponent, divisor)");
 }
 
 PY_EXPORT PyObject* PyNumber_Remainder(PyObject* left, PyObject* right) {
-  return doBinaryOp(SymbolId::kMod, left, right);
+  return doBinaryOp(ID(mod), left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_Rshift(PyObject* left, PyObject* right) {
-  return doBinaryOp(SymbolId::kRshift, left, right);
+  return doBinaryOp(ID(rshift), left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_Subtract(PyObject* left, PyObject* right) {
-  return doBinaryOp(SymbolId::kSub, left, right);
+  return doBinaryOp(ID(sub), left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_ToBase(PyObject* /* n */, int /* e */) {
@@ -545,11 +539,11 @@ PY_EXPORT PyObject* PyNumber_ToBase(PyObject* /* n */, int /* e */) {
 }
 
 PY_EXPORT PyObject* PyNumber_TrueDivide(PyObject* left, PyObject* right) {
-  return doBinaryOp(SymbolId::kTruediv, left, right);
+  return doBinaryOp(ID(truediv), left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_Xor(PyObject* left, PyObject* right) {
-  return doBinaryOp(SymbolId::kXor, left, right);
+  return doBinaryOp(ID(xor), left, right);
 }
 
 // Object Protocol
@@ -859,9 +853,8 @@ PY_EXPORT PyObject* PyObject_Format(PyObject* obj, PyObject* format_spec) {
                          format_spec == nullptr
                              ? Str::empty()
                              : ApiHandle::fromPyObject(obj)->asObject());
-  Object result(&scope,
-                thread->invokeFunction2(SymbolId::kBuiltins, SymbolId::kFormat,
-                                        object, format_spec_obj));
+  Object result(&scope, thread->invokeFunction2(ID(builtins), ID(format),
+                                                object, format_spec_obj));
   if (result.isError()) {
     return nullptr;
   }
@@ -929,9 +922,8 @@ PY_EXPORT int PyObject_IsInstance(PyObject* instance, PyObject* cls) {
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(instance)->asObject());
   Object classinfo(&scope, ApiHandle::fromPyObject(cls)->asObject());
-  Object result(&scope, thread->invokeFunction2(SymbolId::kBuiltins,
-                                                SymbolId::kIsinstance, object,
-                                                classinfo));
+  Object result(&scope, thread->invokeFunction2(ID(builtins), ID(isinstance),
+                                                object, classinfo));
   return result.isError() ? -1 : Bool::cast(*result).value();
 }
 
@@ -940,9 +932,8 @@ PY_EXPORT int PyObject_IsSubclass(PyObject* derived, PyObject* cls) {
   HandleScope scope(thread);
   Object subclass(&scope, ApiHandle::fromPyObject(derived)->asObject());
   Object classinfo(&scope, ApiHandle::fromPyObject(cls)->asObject());
-  Object result(&scope, thread->invokeFunction2(SymbolId::kBuiltins,
-                                                SymbolId::kIssubclass, subclass,
-                                                classinfo));
+  Object result(&scope, thread->invokeFunction2(ID(builtins), ID(issubclass),
+                                                subclass, classinfo));
   return result.isError() ? -1 : Bool::cast(*result).value();
 }
 
@@ -969,8 +960,8 @@ PY_EXPORT Py_ssize_t PyObject_LengthHint(PyObject* obj,
   }
 
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  Object length_hint(
-      &scope, thread->invokeMethod1(object, SymbolId::kDunderLengthHint));
+  Object length_hint(&scope,
+                     thread->invokeMethod1(object, ID(__length_hint__)));
   if (length_hint.isErrorNotFound() || length_hint.isNotImplementedType()) {
     return default_value;
   }
@@ -1131,9 +1122,8 @@ PY_EXPORT int PySequence_Contains(PyObject* seq, PyObject* obj) {
   HandleScope scope(thread);
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  Object result(
-      &scope, thread->invokeFunction2(SymbolId::kOperator, SymbolId::kContains,
-                                      seq_obj, object));
+  Object result(&scope, thread->invokeFunction2(ID(operator), ID(contains),
+                                                seq_obj, object));
   if (result.isError()) {
     return -1;
   }
@@ -1149,9 +1139,8 @@ PY_EXPORT Py_ssize_t PySequence_Count(PyObject* seq, PyObject* obj) {
   HandleScope scope(thread);
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  Object result(&scope,
-                thread->invokeFunction2(SymbolId::kOperator, SymbolId::kCountOf,
-                                        seq_obj, object));
+  Object result(&scope, thread->invokeFunction2(ID(operator), ID(countOf),
+                                                seq_obj, object));
   if (result.isError()) {
     return -1;
   }
@@ -1166,8 +1155,8 @@ PY_EXPORT int PySequence_DelItem(PyObject* seq, Py_ssize_t idx) {
   HandleScope scope(thread);
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
   Object idx_obj(&scope, thread->runtime()->newInt(idx));
-  Object result(&scope, thread->invokeMethod2(seq_obj, SymbolId::kDunderDelitem,
-                                              idx_obj));
+  Object result(&scope,
+                thread->invokeMethod2(seq_obj, ID(__delitem__), idx_obj));
   if (result.isError()) {
     return -1;
   }
@@ -1193,8 +1182,7 @@ PY_EXPORT int PySequence_DelSlice(PyObject* seq, Py_ssize_t low,
   HandleScope scope(thread);
   Object slice(&scope, makeSlice(thread, low, high));
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
-  Object result(
-      &scope, thread->invokeMethod2(seq_obj, SymbolId::kDunderDelitem, slice));
+  Object result(&scope, thread->invokeMethod2(seq_obj, ID(__delitem__), slice));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
       thread->raiseWithFmt(LayoutId::kTypeError,
@@ -1228,8 +1216,8 @@ PY_EXPORT PyObject* PySequence_Fast(PyObject* seq, const char* msg) {
     return nullptr;
   }
 
-  Object result(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
-                                                SymbolId::kList, seq_obj));
+  Object result(&scope,
+                thread->invokeFunction1(ID(builtins), ID(list), seq_obj));
   if (result.isError()) {
     return nullptr;
   }
@@ -1244,8 +1232,8 @@ PY_EXPORT PyObject* PySequence_GetItem(PyObject* seq, Py_ssize_t idx) {
   HandleScope scope(thread);
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
   Object idx_obj(&scope, thread->runtime()->newInt(idx));
-  Object result(&scope, thread->invokeMethod2(seq_obj, SymbolId::kDunderGetitem,
-                                              idx_obj));
+  Object result(&scope,
+                thread->invokeMethod2(seq_obj, ID(__getitem__), idx_obj));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
       thread->raiseWithFmt(LayoutId::kTypeError, "could not call __getitem__");
@@ -1264,8 +1252,7 @@ PY_EXPORT PyObject* PySequence_ITEM_Func(PyObject* seq, Py_ssize_t i) {
   DCHECK(thread->runtime()->isSequence(thread, seq_obj),
          "seq must be a sequence");
   Object idx(&scope, thread->runtime()->newInt(i));
-  Object result(&scope,
-                thread->invokeMethod2(seq_obj, SymbolId::kDunderGetitem, idx));
+  Object result(&scope, thread->invokeMethod2(seq_obj, ID(__getitem__), idx));
   if (result.isError()) return nullptr;
   return ApiHandle::newReference(thread, *result);
 }
@@ -1279,8 +1266,7 @@ PY_EXPORT PyObject* PySequence_GetSlice(PyObject* seq, Py_ssize_t low,
   HandleScope scope(thread);
   Object slice(&scope, makeSlice(thread, low, high));
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
-  Object result(
-      &scope, thread->invokeMethod2(seq_obj, SymbolId::kDunderGetitem, slice));
+  Object result(&scope, thread->invokeMethod2(seq_obj, ID(__getitem__), slice));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
       thread->raiseWithFmt(LayoutId::kTypeError, "could not call __getitem__");
@@ -1303,9 +1289,8 @@ PY_EXPORT Py_ssize_t PySequence_Index(PyObject* seq, PyObject* obj) {
   HandleScope scope(thread);
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  Object result(&scope,
-                thread->invokeFunction2(SymbolId::kOperator, SymbolId::kIndexOf,
-                                        seq_obj, object));
+  Object result(&scope, thread->invokeFunction2(ID(operator), ID(indexOf),
+                                                seq_obj, object));
   if (result.isError()) {
     return -1;
   }
@@ -1320,9 +1305,8 @@ PY_EXPORT PyObject* PySequence_InPlaceConcat(PyObject* left, PyObject* right) {
   HandleScope scope(thread);
   Object left_obj(&scope, ApiHandle::fromPyObject(left)->asObject());
   Object right_obj(&scope, ApiHandle::fromPyObject(right)->asObject());
-  Object result(&scope,
-                thread->invokeFunction2(SymbolId::kOperator, SymbolId::kIconcat,
-                                        left_obj, right_obj));
+  Object result(&scope, thread->invokeFunction2(ID(operator), ID(iconcat),
+                                                left_obj, right_obj));
   return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
 }
 
@@ -1334,9 +1318,8 @@ PY_EXPORT PyObject* PySequence_InPlaceRepeat(PyObject* seq, Py_ssize_t count) {
   HandleScope scope(thread);
   Object sequence(&scope, ApiHandle::fromPyObject(seq)->asObject());
   Object count_obj(&scope, thread->runtime()->newInt(count));
-  Object result(&scope,
-                thread->invokeFunction2(SymbolId::kOperator, SymbolId::kIrepeat,
-                                        sequence, count_obj));
+  Object result(&scope, thread->invokeFunction2(ID(operator), ID(irepeat),
+                                                sequence, count_obj));
   return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
 }
 
@@ -1351,8 +1334,7 @@ PY_EXPORT PyObject* PySequence_List(PyObject* seq) {
   }
   HandleScope scope(thread);
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
-  RawObject result =
-      thread->invokeFunction1(SymbolId::kBuiltins, SymbolId::kList, seq_obj);
+  RawObject result = thread->invokeFunction1(ID(builtins), ID(list), seq_obj);
   return result.isError() ? nullptr : ApiHandle::newReference(thread, result);
 }
 
@@ -1383,11 +1365,10 @@ PY_EXPORT int PySequence_SetItem(PyObject* seq, Py_ssize_t idx, PyObject* obj) {
   Object result(&scope, NoneType::object());
   if (obj == nullptr) {
     // Equivalent to PySequence_DelItem
-    result = thread->invokeMethod2(seq_obj, SymbolId::kDunderDelitem, idx_obj);
+    result = thread->invokeMethod2(seq_obj, ID(__delitem__), idx_obj);
   } else {
     Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-    result = thread->invokeMethod3(seq_obj, SymbolId::kDunderSetitem, idx_obj,
-                                   object);
+    result = thread->invokeMethod3(seq_obj, ID(__setitem__), idx_obj, object);
   }
   if (result.isError()) {
     if (result.isErrorNotFound()) {
@@ -1410,11 +1391,10 @@ PY_EXPORT int PySequence_SetSlice(PyObject* seq, Py_ssize_t low,
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
   Object result(&scope, NoneType::object());
   if (obj == nullptr) {
-    result = thread->invokeMethod2(seq_obj, SymbolId::kDunderDelitem, slice);
+    result = thread->invokeMethod2(seq_obj, ID(__delitem__), slice);
   } else {
     Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-    result =
-        thread->invokeMethod3(seq_obj, SymbolId::kDunderSetitem, slice, object);
+    result = thread->invokeMethod3(seq_obj, ID(__setitem__), slice, object);
   }
   if (result.isError()) {
     if (result.isErrorNotFound()) {
@@ -1440,8 +1420,8 @@ PY_EXPORT PyObject* PySequence_Tuple(PyObject* seq) {
   if (seq_obj.isTuple()) {
     return ApiHandle::newReference(thread, *seq_obj);
   }
-  Object result(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
-                                                SymbolId::kTuple, seq_obj));
+  Object result(&scope,
+                thread->invokeFunction1(ID(builtins), ID(tuple), seq_obj));
   if (result.isError()) {
     return nullptr;
   }

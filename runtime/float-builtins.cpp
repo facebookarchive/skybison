@@ -34,28 +34,30 @@ static RawObject convertToDouble(Thread* thread, const Object& object,
   return NotImplementedType::object();
 }
 
+// clang-format off
 const BuiltinMethod FloatBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderAbs, dunderAbs},
-    {SymbolId::kDunderAdd, dunderAdd},
-    {SymbolId::kDunderBool, dunderBool},
-    {SymbolId::kDunderEq, dunderEq},
-    {SymbolId::kDunderFloat, dunderFloat},
-    {SymbolId::kDunderGe, dunderGe},
-    {SymbolId::kDunderGt, dunderGt},
-    {SymbolId::kDunderHash, dunderHash},
-    {SymbolId::kDunderInt, dunderInt},
-    {SymbolId::kDunderLe, dunderLe},
-    {SymbolId::kDunderLt, dunderLt},
-    {SymbolId::kDunderMul, dunderMul},
-    {SymbolId::kDunderNeg, dunderNeg},
-    {SymbolId::kDunderPow, dunderPow},
-    {SymbolId::kDunderRound, dunderRound},
-    {SymbolId::kDunderRtruediv, dunderRtrueDiv},
-    {SymbolId::kDunderSub, dunderSub},
-    {SymbolId::kDunderTruediv, dunderTrueDiv},
-    {SymbolId::kDunderTrunc, dunderTrunc},
+    {ID(__abs__), dunderAbs},
+    {ID(__add__), dunderAdd},
+    {ID(__bool__), dunderBool},
+    {ID(__eq__), dunderEq},
+    {ID(__float__), dunderFloat},
+    {ID(__ge__), dunderGe},
+    {ID(__gt__), dunderGt},
+    {ID(__hash__), dunderHash},
+    {ID(__int__), dunderInt},
+    {ID(__le__), dunderLe},
+    {ID(__lt__), dunderLt},
+    {ID(__mul__), dunderMul},
+    {ID(__neg__), dunderNeg},
+    {ID(__pow__), dunderPow},
+    {ID(__round__), dunderRound},
+    {ID(__rtruediv__), dunderRtrueDiv},
+    {ID(__sub__), dunderSub},
+    {ID(__truediv__), dunderTrueDiv},
+    {ID(__trunc__), dunderTrunc},
     {SymbolId::kSentinelId, nullptr},
 };
+// clang-format on
 
 const BuiltinAttribute FloatBuiltins::kAttributes[] = {
     {SymbolId::kInvalid, UserFloatBase::kValueOffset},
@@ -68,7 +70,7 @@ RawObject FloatBuiltins::dunderAbs(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfFloat(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
+    return thread->raiseRequiresType(self_obj, ID(float));
   }
   double self = floatUnderlying(*self_obj).value();
   return runtime->newFloat(std::fabs(self));
@@ -80,7 +82,7 @@ RawObject FloatBuiltins::dunderBool(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfFloat(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
+    return thread->raiseRequiresType(self_obj, ID(float));
   }
   double self = floatUnderlying(*self_obj).value();
   return Bool::fromBool(self != 0.0);
@@ -92,7 +94,7 @@ RawObject FloatBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kFloat);
+    return thread->raiseRequiresType(self, ID(float));
   }
   double left = floatUnderlying(*self).value();
 
@@ -114,7 +116,7 @@ RawObject FloatBuiltins::dunderFloat(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfFloat(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kFloat);
+    return thread->raiseRequiresType(self, ID(float));
   }
   return floatUnderlying(*self);
 }
@@ -125,7 +127,7 @@ RawObject FloatBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kFloat);
+    return thread->raiseRequiresType(self, ID(float));
   }
   double left = floatUnderlying(*self).value();
 
@@ -148,7 +150,7 @@ RawObject FloatBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kFloat);
+    return thread->raiseRequiresType(self, ID(float));
   }
   double left = floatUnderlying(*self).value();
 
@@ -303,7 +305,7 @@ RawObject FloatBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfFloat(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
+    return thread->raiseRequiresType(self_obj, ID(float));
   }
   double self = floatUnderlying(*self_obj).value();
   return SmallInt::fromWord(doubleHash(self));
@@ -314,7 +316,7 @@ RawObject FloatBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfFloat(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
+    return thread->raiseRequiresType(self_obj, ID(float));
   }
   double self = floatUnderlying(*self_obj).value();
   return intFromDouble(thread, self);
@@ -326,7 +328,7 @@ RawObject FloatBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kFloat);
+    return thread->raiseRequiresType(self, ID(float));
   }
   double left = floatUnderlying(*self).value();
 
@@ -349,7 +351,7 @@ RawObject FloatBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kFloat);
+    return thread->raiseRequiresType(self, ID(float));
   }
   double left = floatUnderlying(*self).value();
 
@@ -372,7 +374,7 @@ RawObject FloatBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
+    return thread->raiseRequiresType(self_obj, ID(float));
   }
   double left = floatUnderlying(*self_obj).value();
 
@@ -391,7 +393,7 @@ RawObject FloatBuiltins::dunderNeg(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfFloat(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
+    return thread->raiseRequiresType(self_obj, ID(float));
   }
   double self = floatUnderlying(*self_obj).value();
   return runtime->newFloat(-self);
@@ -403,7 +405,7 @@ RawObject FloatBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Object self(&scope, args.get(0));
   if (!runtime->isInstanceOfFloat(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kFloat);
+    return thread->raiseRequiresType(self, ID(float));
   }
   double left = floatUnderlying(*self).value();
 
@@ -424,7 +426,7 @@ RawObject FloatBuiltins::dunderTrueDiv(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
+    return thread->raiseRequiresType(self_obj, ID(float));
   }
   double left = floatUnderlying(*self_obj).value();
 
@@ -447,7 +449,7 @@ RawObject FloatBuiltins::dunderRound(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
+    return thread->raiseRequiresType(self_obj, ID(float));
   }
   Float value_float(&scope, floatUnderlying(*self_obj));
   double value = value_float.value();
@@ -512,7 +514,7 @@ RawObject FloatBuiltins::dunderRtrueDiv(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
+    return thread->raiseRequiresType(self_obj, ID(float));
   }
   double right = floatUnderlying(*self_obj).value();
 
@@ -535,7 +537,7 @@ RawObject FloatBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kFloat);
+    return thread->raiseRequiresType(self, ID(float));
   }
   double left = floatUnderlying(*self).value();
 
@@ -553,7 +555,7 @@ RawObject FloatBuiltins::dunderTrunc(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfFloat(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
+    return thread->raiseRequiresType(self_obj, ID(float));
   }
   double self = floatUnderlying(*self_obj).value();
   double integral_part;
@@ -567,7 +569,7 @@ RawObject FloatBuiltins::dunderPow(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kFloat);
+    return thread->raiseRequiresType(self, ID(float));
   }
   if (!args.get(2).isNoneType()) {
     return thread->raiseWithFmt(

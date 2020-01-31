@@ -600,9 +600,9 @@ TEST_F(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
   code.setCode(runtime_->newBytesWithAll(bytecode));
   code.setFlags(Code::Flags::kNofree);
 
-  Module builtins(&scope, runtime_->createModule(thread_, SymbolId::kBuiltins));
+  Module builtins(&scope, runtime_->createModule(thread_, ID(builtins)));
   Module module(&scope, runtime_->findOrCreateMainModule());
-  moduleAtPutById(thread_, module, SymbolId::kDunderBuiltins, builtins);
+  moduleAtPutById(thread_, module, ID(__builtins__), builtins);
   Object value(&scope, runtime_->newInt(123));
   moduleAtPut(thread_, builtins, name, value);
   Dict locals(&scope, runtime_->newDict());
@@ -795,7 +795,7 @@ static RawObject inspect_block(Thread*, Frame* frame, word) {
 TEST_F(ThreadTest, SetupLoopAndPopBlock) {
   HandleScope scope(thread_);
 
-  Object name(&scope, runtime_->symbols()->at(SymbolId::kDummy));
+  Object name(&scope, runtime_->symbols()->at(ID(dummy)));
   Object empty_tuple(&scope, runtime_->emptyTuple());
   Code inspect_code(
       &scope, runtime_->newBuiltinCode(/*argcount=*/0, /*posonlyargcount=*/0,
@@ -1002,7 +1002,7 @@ class C:
   EXPECT_EQ(cls.name(), SmallStr::fromCStr("C"));
 
   // Check for the __init__ method name in the dict
-  value = typeAtById(thread_, cls, SymbolId::kDunderInit);
+  value = typeAtById(thread_, cls, ID(__init__));
   ASSERT_FALSE(value.isError());
   EXPECT_TRUE(value.isFunction());
 }
@@ -1211,8 +1211,7 @@ result = hello.say_hello()
 )";
 
   // Pre-load the hello module so is cached.
-  Code code(&scope,
-            compile(thread_, module_src, filename, SymbolId::kExec, 0, -1));
+  Code code(&scope, compile(thread_, module_src, filename, ID(exec), 0, -1));
   Object name(&scope, runtime_->newStrFromCStr("hello"));
   ASSERT_FALSE(executeModuleFromCode(thread_, code, name).isError());
   ASSERT_FALSE(runFromCStr(runtime_, main_src).isError());
@@ -1243,8 +1242,7 @@ hello.foo()
 )";
 
   // Pre-load the hello module so is cached.
-  Code code(&scope,
-            compile(thread_, module_src, filename, SymbolId::kExec, 0, -1));
+  Code code(&scope, compile(thread_, module_src, filename, ID(exec), 0, -1));
   Object name(&scope, runtime_->newStrFromCStr("hello"));
   ASSERT_FALSE(executeModuleFromCode(thread_, code, name).isError());
 
@@ -1269,8 +1267,7 @@ result = hello.say_hello()
 )";
 
   // Pre-load the hello module so is cached.
-  Code code(&scope,
-            compile(thread_, module_src, filename, SymbolId::kExec, 0, -1));
+  Code code(&scope, compile(thread_, module_src, filename, ID(exec), 0, -1));
   Object name(&scope, runtime_->newStrFromCStr("hello"));
   ASSERT_FALSE(executeModuleFromCode(thread_, code, name).isError());
   ASSERT_FALSE(runFromCStr(runtime_, main_src).isError());
@@ -2184,9 +2181,8 @@ TEST_F(ThreadTest, ExecSetsMissingDunderBuiltins) {
 
   thread_->exec(code, module, none);
 
-  Object builtins_module(&scope, runtime_->findModuleById(SymbolId::kBuiltins));
-  EXPECT_EQ(moduleAtById(thread_, module, SymbolId::kDunderBuiltins),
-            builtins_module);
+  Object builtins_module(&scope, runtime_->findModuleById(ID(builtins)));
+  EXPECT_EQ(moduleAtById(thread_, module, ID(__builtins__)), builtins_module);
 }
 
 TEST_F(ThreadTest, CallFunctionInDifferentModule) {
@@ -2207,7 +2203,7 @@ result0 = a()()
 
 TEST_F(ThreadTest, RaiseWithFmtFormatsString) {
   EXPECT_TRUE(raisedWithStr(
-      thread_->raiseWithFmt(LayoutId::kTypeError, "hello %Y", SymbolId::kDict),
+      thread_->raiseWithFmt(LayoutId::kTypeError, "hello %Y", ID(dict)),
       LayoutId::kTypeError, "hello dict"));
 }
 

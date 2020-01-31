@@ -22,8 +22,7 @@ RawObject byteArrayRepr(Thread* thread, const ByteArray& self);
 void writeByteAsHexDigits(Thread* thread, const ByteArray& array, byte value);
 
 class ByteArrayBuiltins
-    : public Builtins<ByteArrayBuiltins, SymbolId::kBytearray,
-                      LayoutId::kByteArray> {
+    : public Builtins<ByteArrayBuiltins, ID(bytearray), LayoutId::kByteArray> {
  public:
   static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
@@ -54,7 +53,7 @@ class ByteArrayBuiltins
 };
 
 class ByteArrayIteratorBuiltins
-    : public Builtins<ByteArrayIteratorBuiltins, SymbolId::kBytearrayIterator,
+    : public Builtins<ByteArrayIteratorBuiltins, ID(bytearray_iterator),
                       LayoutId::kByteArrayIterator> {
  public:
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);

@@ -15,9 +15,8 @@ PY_EXPORT PyObject* _PyNamespace_New(PyObject* kwds) {
       return nullptr;
     }
   }
-  Object result(&scope,
-                thread->invokeFunction1(SymbolId::kBuiltins,
-                                        SymbolId::kSimpleNamespace, dict_obj));
+  Object result(&scope, thread->invokeFunction1(ID(builtins),
+                                                ID(SimpleNamespace), dict_obj));
   if (result.isError()) {
     return nullptr;
   }

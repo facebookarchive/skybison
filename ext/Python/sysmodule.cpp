@@ -16,8 +16,8 @@ PY_EXPORT size_t _PySys_GetSizeOf(PyObject* o) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(o)->asObject());
-  Object result_obj(&scope, thread->invokeFunction1(SymbolId::kSys,
-                                                    SymbolId::kGetSizeOf, obj));
+  Object result_obj(&scope,
+                    thread->invokeFunction1(ID(sys), ID(getsizeof), obj));
   if (result_obj.isError()) {
     // Pass through a pending exception if any exists.
     return static_cast<size_t>(-1);
@@ -33,7 +33,7 @@ PY_EXPORT PyObject* PySys_GetObject(const char* name) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Module module(&scope, runtime->findModuleById(SymbolId::kSys));
+  Module module(&scope, runtime->findModuleById(ID(sys)));
   Object name_obj(&scope, Runtime::internStrFromCStr(thread, name));
   Object result(&scope, moduleAt(thread, module, name_obj));
   if (result.isErrorNotFound()) return nullptr;
@@ -71,8 +71,7 @@ PY_EXPORT void PySys_ResetWarnOptions() {
 static void sysUpdatePath(Thread* thread, const Str& arg0) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  List path(&scope, runtime->lookupNameInModule(thread, SymbolId::kSys,
-                                                SymbolId::kPath));
+  List path(&scope, runtime->lookupNameInModule(thread, ID(sys), ID(path)));
 
   char* arg0_cstr = arg0.toCStr();
   char* script_path = arg0_cstr;
@@ -163,8 +162,8 @@ PY_EXPORT void PySys_SetArgvEx(int argc, wchar_t** argv, int updatepath) {
       runtime->listAdd(thread, args, arg);
     }
   }
-  Module sys_module(&scope, runtime->findModuleById(SymbolId::kSys));
-  moduleAtPutById(thread, sys_module, SymbolId::kArgv, args);
+  Module sys_module(&scope, runtime->findModuleById(ID(sys)));
+  moduleAtPutById(thread, sys_module, ID(argv), args);
 
   if (updatepath == 0) {
     return;

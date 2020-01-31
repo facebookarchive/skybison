@@ -48,9 +48,9 @@ PY_EXPORT int PyDict_SetItem(PyObject* pydict, PyObject* key, PyObject* value) {
   }
   Object keyobj(&scope, ApiHandle::fromPyObject(key)->asObject());
   Object valueobj(&scope, ApiHandle::fromPyObject(value)->asObject());
-  Object result(&scope, thread->invokeFunction3(SymbolId::kBuiltins,
-                                                SymbolId::kUnderCapiDictSetitem,
-                                                dictobj, keyobj, valueobj));
+  Object result(&scope,
+                thread->invokeFunction3(ID(builtins), ID(_capi_dict_setitem),
+                                        dictobj, keyobj, valueobj));
   return result.isError() ? -1 : 0;
 }
 
@@ -61,9 +61,9 @@ PY_EXPORT int PyDict_SetItemString(PyObject* pydict, const char* key,
   Object dictobj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
   Object keyobj(&scope, thread->runtime()->newStrFromCStr(key));
   Object valueobj(&scope, ApiHandle::fromPyObject(value)->asObject());
-  Object result(&scope, thread->invokeFunction3(SymbolId::kBuiltins,
-                                                SymbolId::kUnderCapiDictSetitem,
-                                                dictobj, keyobj, valueobj));
+  Object result(&scope,
+                thread->invokeFunction3(ID(builtins), ID(_capi_dict_setitem),
+                                        dictobj, keyobj, valueobj));
   return result.isError() ? -1 : 0;
 }
 
@@ -79,9 +79,8 @@ PY_EXPORT PyObject* PyDict_New() {
 static PyObject* getItem(Thread* thread, const Object& dict,
                          const Object& key) {
   HandleScope scope(thread);
-  Object result(
-      &scope, thread->invokeFunction2(SymbolId::kBuiltins,
-                                      SymbolId::kUnderDictGetitem, dict, key));
+  Object result(&scope, thread->invokeFunction2(ID(builtins), ID(_dict_getitem),
+                                                dict, key));
   // For historical reasons, PyDict_GetItem supresses all errors that may occur
   if (result.isError()) {
     thread->clearPendingException();

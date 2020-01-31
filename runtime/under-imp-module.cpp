@@ -14,18 +14,18 @@
 namespace py {
 
 const BuiltinFunction UnderImpModule::kBuiltinFunctions[] = {
-    {SymbolId::kAcquireLock, acquireLock},
-    {SymbolId::kCreateBuiltin, createBuiltin},
-    {SymbolId::kExecBuiltin, execBuiltin},
-    {SymbolId::kExecDynamic, execDynamic},
-    {SymbolId::kExtensionSuffixes, extensionSuffixes},
-    {SymbolId::kFixCoFilename, fixCoFilename},
-    {SymbolId::kGetFrozenObject, getFrozenObject},
-    {SymbolId::kIsBuiltin, isBuiltin},
-    {SymbolId::kIsFrozen, isFrozen},
-    {SymbolId::kIsFrozenPackage, isFrozenPackage},
-    {SymbolId::kReleaseLock, releaseLock},
-    {SymbolId::kUnderCreateDynamic, underCreateDynamic},
+    {ID(acquire_lock), acquireLock},
+    {ID(create_builtin), createBuiltin},
+    {ID(exec_builtin), execBuiltin},
+    {ID(exec_dynamic), execDynamic},
+    {ID(extension_suffixes), extensionSuffixes},
+    {ID(_fix_co_filename), fixCoFilename},
+    {ID(get_frozen_object), getFrozenObject},
+    {ID(is_builtin), isBuiltin},
+    {ID(is_frozen), isFrozen},
+    {ID(is_frozen_package), isFrozenPackage},
+    {ID(release_lock), releaseLock},
+    {ID(_create_dynamic), underCreateDynamic},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -72,7 +72,7 @@ RawObject UnderImpModule::createBuiltin(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object spec(&scope, args.get(0));
-  Object key(&scope, runtime->symbols()->at(SymbolId::kName));
+  Object key(&scope, runtime->symbols()->at(ID(name)));
   Object name_obj(&scope, getAttribute(thread, spec, key));
   DCHECK(thread->isErrorValueOk(*name_obj), "error/exception mismatch");
   if (name_obj.isError()) {
@@ -151,7 +151,7 @@ RawObject UnderImpModule::isBuiltin(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Object name_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*name_obj)) {
-    return thread->raiseRequiresType(name_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(name_obj, ID(str));
   }
   Str name(&scope, strUnderlying(*name_obj));
   name = Runtime::internStr(thread, name);

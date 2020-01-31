@@ -180,8 +180,7 @@ PY_EXPORT PyObject* PyErr_NewException(const char* name, PyObject* base_or_null,
   Object dict(&scope, dict_or_null == nullptr
                           ? runtime->newDict()
                           : ApiHandle::fromPyObject(dict_or_null)->asObject());
-  Object type(&scope, thread->invokeFunction4(SymbolId::kBuiltins,
-                                              SymbolId::kUnderExceptionNew,
+  Object type(&scope, thread->invokeFunction4(ID(builtins), ID(_exception_new),
                                               mod_name, exc_name, base, dict));
   if (type.isError()) {
     DCHECK(!type.isErrorNotFound(), "missing _exception_new");
@@ -207,7 +206,7 @@ PY_EXPORT PyObject* PyErr_NewExceptionWithDoc(const char* name, const char* doc,
     }
     Dict dict(&scope, *dict_obj);
     Object doc_str(&scope, runtime->newStrFromCStr(doc));
-    dictAtPutById(thread, dict, SymbolId::kDunderDoc, doc_str);
+    dictAtPutById(thread, dict, ID(__doc__), doc_str);
   }
 
   const char* dot = std::strrchr(name, '.');
@@ -225,9 +224,9 @@ PY_EXPORT PyObject* PyErr_NewExceptionWithDoc(const char* name, const char* doc,
   Object base(&scope, base_or_null == nullptr
                           ? runtime->typeAt(LayoutId::kException)
                           : ApiHandle::fromPyObject(base_or_null)->asObject());
-  Object type(&scope, thread->invokeFunction4(
-                          SymbolId::kBuiltins, SymbolId::kUnderExceptionNew,
-                          mod_name, exc_name, base, dict_obj));
+  Object type(&scope,
+              thread->invokeFunction4(ID(builtins), ID(_exception_new),
+                                      mod_name, exc_name, base, dict_obj));
   if (type.isError()) {
     DCHECK(!type.isErrorNotFound(), "missing _exception_new");
     return nullptr;
@@ -402,8 +401,8 @@ PY_EXPORT void PyErr_SetObject(PyObject* exc, PyObject* val) {
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfType(*exc_obj) ||
       !Type(&scope, *exc_obj).isBaseExceptionSubclass()) {
-    Object exc_repr(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
-                                                    SymbolId::kRepr, exc_obj));
+    Object exc_repr(&scope,
+                    thread->invokeFunction1(ID(builtins), ID(repr), exc_obj));
     if (exc_repr.isErrorException()) return;
     thread->raiseWithFmt(LayoutId::kSystemError,
                          "exception %S not a BaseException subclass",
@@ -502,13 +501,12 @@ static RawObject fileWriteObjectStrUnraisable(Thread* thread,
                                               const Object& file,
                                               const Object& obj) {
   HandleScope scope(thread);
-  Object obj_str(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
-                                                 SymbolId::kStr, obj));
+  Object obj_str(&scope, thread->invokeFunction1(ID(builtins), ID(str), obj));
   if (obj_str.isError()) {
     thread->clearPendingException();
     return *obj_str;
   }
-  RawObject result = thread->invokeMethod2(file, SymbolId::kWrite, obj_str);
+  RawObject result = thread->invokeMethod2(file, ID(write), obj_str);
   thread->clearPendingException();
   return result;
 }
@@ -517,13 +515,12 @@ static RawObject fileWriteObjectReprUnraisable(Thread* thread,
                                                const Object& file,
                                                const Object& obj) {
   HandleScope scope(thread);
-  Object obj_repr(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
-                                                  SymbolId::kRepr, obj));
+  Object obj_repr(&scope, thread->invokeFunction1(ID(builtins), ID(repr), obj));
   if (obj_repr.isError()) {
     thread->clearPendingException();
     return *obj_repr;
   }
-  RawObject result = thread->invokeMethod2(file, SymbolId::kWrite, obj_repr);
+  RawObject result = thread->invokeMethod2(file, ID(write), obj_repr);
   thread->clearPendingException();
   return result;
 }
@@ -532,7 +529,7 @@ static RawObject fileWriteCStrUnraisable(Thread* thread, const Object& file,
                                          const char* c_str) {
   HandleScope scope(thread);
   Object str(&scope, thread->runtime()->newStrFromFmt(c_str));
-  RawObject result = thread->invokeMethod2(file, SymbolId::kWrite, str);
+  RawObject result = thread->invokeMethod2(file, ID(write), str);
   thread->clearPendingException();
   return result;
 }
@@ -545,8 +542,8 @@ PY_EXPORT void PyErr_WriteUnraisable(PyObject* obj) {
   thread->clearPendingException();
 
   Runtime* runtime = thread->runtime();
-  Object sys_stderr(&scope, runtime->lookupNameInModule(thread, SymbolId::kSys,
-                                                        SymbolId::kStderr));
+  Object sys_stderr(&scope,
+                    runtime->lookupNameInModule(thread, ID(sys), ID(stderr)));
   if (obj != nullptr) {
     if (fileWriteCStrUnraisable(thread, sys_stderr, "Exception ignored in: ")
             .isError()) {
@@ -582,8 +579,7 @@ PY_EXPORT void PyErr_WriteUnraisable(PyObject* obj) {
   // name, eg A.B.C => C
 
   Object module_name_obj(
-      &scope,
-      runtime->attributeAtById(thread, exc_type, SymbolId::kDunderModule));
+      &scope, runtime->attributeAtById(thread, exc_type, ID(__module__)));
   if (!runtime->isInstanceOfStr(*module_name_obj)) {
     thread->clearPendingException();
     if (fileWriteCStrUnraisable(thread, sys_stderr, "<unknown>").isError()) {

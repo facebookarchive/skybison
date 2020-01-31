@@ -358,8 +358,7 @@ static RawObject normalizeIndex(Thread* thread, const Object& self,
   if (i >= 0) {
     return *index;
   }
-  Object len(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
-                                             SymbolId::kLen, self));
+  Object len(&scope, thread->invokeFunction1(ID(builtins), ID(len), self));
   if (len.isError()) return *len;
   len = makeIndex(thread, len);
   if (len.isError()) return *len;
@@ -434,26 +433,22 @@ struct SlotDef {
   const char* doc;
 };
 
-static const SymbolId kParamsSelfArgsKwargs[] = {
-    SymbolId::kSelf, SymbolId::kArgs, SymbolId::kKwargs};
-static const SymbolId kParamsSelfInstanceOwner[] = {
-    SymbolId::kSelf, SymbolId::kInstance, SymbolId::kOwner};
-static const SymbolId kParamsSelfInstanceValue[] = {
-    SymbolId::kSelf, SymbolId::kInstance, SymbolId::kValue};
-static const SymbolId kParamsSelfInstance[] = {SymbolId::kSelf,
-                                               SymbolId::kInstance};
-static const SymbolId kParamsSelfKeyValue[] = {SymbolId::kSelf, SymbolId::kKey,
-                                               SymbolId::kValue};
-static const SymbolId kParamsSelfKey[] = {SymbolId::kSelf, SymbolId::kKey};
-static const SymbolId kParamsSelfNameValue[] = {
-    SymbolId::kSelf, SymbolId::kName, SymbolId::kValue};
-static const SymbolId kParamsSelfName[] = {SymbolId::kSelf, SymbolId::kName};
-static const SymbolId kParamsSelfValueMod[] = {
-    SymbolId::kSelf, SymbolId::kValue, SymbolId::kMod};
-static const SymbolId kParamsSelfValue[] = {SymbolId::kSelf, SymbolId::kValue};
-static const SymbolId kParamsSelf[] = {SymbolId::kSelf};
-static const SymbolId kParamsTypeArgsKwargs[] = {
-    SymbolId::kType, SymbolId::kArgs, SymbolId::kKwargs};
+static const SymbolId kParamsSelfArgsKwargs[] = {ID(self), ID(args),
+                                                 ID(kwargs)};
+static const SymbolId kParamsSelfInstanceOwner[] = {ID(self), ID(instance),
+                                                    ID(owner)};
+static const SymbolId kParamsSelfInstanceValue[] = {ID(self), ID(instance),
+                                                    ID(value)};
+static const SymbolId kParamsSelfInstance[] = {ID(self), ID(instance)};
+static const SymbolId kParamsSelfKeyValue[] = {ID(self), ID(key), ID(value)};
+static const SymbolId kParamsSelfKey[] = {ID(self), ID(key)};
+static const SymbolId kParamsSelfNameValue[] = {ID(self), ID(name), ID(value)};
+static const SymbolId kParamsSelfName[] = {ID(self), ID(name)};
+static const SymbolId kParamsSelfValueMod[] = {ID(self), ID(value), ID(mod)};
+static const SymbolId kParamsSelfValue[] = {ID(self), ID(value)};
+static const SymbolId kParamsSelf[] = {ID(self)};
+static const SymbolId kParamsTypeArgsKwargs[] = {ID(type), ID(args),
+                                                 ID(kwargs)};
 
 // These macros currently ignore the FUNCTION argument, which is still the
 // function name inherited from CPython. This will be cleaned up when we add
@@ -487,232 +482,218 @@ static const SymbolId kParamsTypeArgsKwargs[] = {
          C_NAME "($self, value, /)\n--\n\n" DOC)
 
 static const SlotDef kSlotdefs[] = {
-    TPSLOT(SymbolId::kDunderGetattribute, kGetattr, kParamsSelfName, nullptr,
+    TPSLOT(ID(__getattribute__), kGetattr, kParamsSelfName, nullptr,
            bit_cast<Function::Entry>(nullptr), ""),
-    TPSLOT(SymbolId::kDunderGetattr, kGetattr, kParamsSelfName, nullptr,
-           nullptr, ""),
-    TPSLOT(SymbolId::kDunderSetattr, kSetattr, kParamsSelfNameValue, nullptr,
-           nullptr, ""),
-    TPSLOT(SymbolId::kDunderDelattr, kSetattr, kParamsSelfName, nullptr,
-           nullptr, ""),
-    TPSLOT(SymbolId::kDunderRepr, kRepr, kParamsSelf, slot_tp_repr,
-           wrapUnaryfunc, "__repr__($self, /)\n--\n\nReturn repr(self)."),
-    TPSLOT(SymbolId::kDunderHash, kHash, kParamsSelf, slot_tp_hash,
-           wrapHashfunc, "__hash__($self, /)\n--\n\nReturn hash(self)."),
+    TPSLOT(ID(__getattr__), kGetattr, kParamsSelfName, nullptr, nullptr, ""),
+    TPSLOT(ID(__setattr__), kSetattr, kParamsSelfNameValue, nullptr, nullptr,
+           ""),
+    TPSLOT(ID(__delattr__), kSetattr, kParamsSelfName, nullptr, nullptr, ""),
+    TPSLOT(ID(__repr__), kRepr, kParamsSelf, slot_tp_repr, wrapUnaryfunc,
+           "__repr__($self, /)\n--\n\nReturn repr(self)."),
+    TPSLOT(ID(__hash__), kHash, kParamsSelf, slot_tp_hash, wrapHashfunc,
+           "__hash__($self, /)\n--\n\nReturn hash(self)."),
     KWSLOT(
-        SymbolId::kDunderCall, kCall, kParamsSelfArgsKwargs, slot_tp_call,
+        ID(__call__), kCall, kParamsSelfArgsKwargs, slot_tp_call,
         wrapVarkwTernaryfunc,
         "__call__($self, /, *args, **kwargs)\n--\n\nCall self as a function."),
-    TPSLOT(SymbolId::kDunderStr, kStr, kParamsSelfArgsKwargs, slot_tp_str,
-           wrapUnaryfunc, "__str__($self, /)\n--\n\nReturn str(self)."),
-    TPSLOT(SymbolId::kDunderGetattribute, kGetattro, kParamsSelfName,
+    TPSLOT(ID(__str__), kStr, kParamsSelfArgsKwargs, slot_tp_str, wrapUnaryfunc,
+           "__str__($self, /)\n--\n\nReturn str(self)."),
+    TPSLOT(ID(__getattribute__), kGetattro, kParamsSelfName,
            slot_tp_getattr_hook, wrapBinaryfunc,
            "__getattribute__($self, name, /)\n--\n\nReturn getattr(self, "
            "name)."),
-    TPSLOT(SymbolId::kDunderGetattr, kGetattro, kParamsSelfName,
-           slot_tp_getattr_hook, nullptr, ""),
-    TPSLOT(SymbolId::kDunderSetattr, kSetattro, kParamsSelfNameValue,
-           slot_tp_setattro, wrapSetattr,
+    TPSLOT(ID(__getattr__), kGetattro, kParamsSelfName, slot_tp_getattr_hook,
+           nullptr, ""),
+    TPSLOT(ID(__setattr__), kSetattro, kParamsSelfNameValue, slot_tp_setattro,
+           wrapSetattr,
            "__setattr__($self, name, value, /)\n--\n\nImplement setattr(self, "
            "name, value)."),
-    TPSLOT(SymbolId::kDunderDelattr, kSetattro, kParamsSelfName,
-           slot_tp_setattro, wrapDelattr,
+    TPSLOT(ID(__delattr__), kSetattro, kParamsSelfName, slot_tp_setattro,
+           wrapDelattr,
            "__delattr__($self, name, /)\n--\n\nImplement delattr(self, name)."),
-    TPSLOT(SymbolId::kDunderLt, kRichcompare, kParamsSelfValue,
-           slot_tp_richcompare, wrapRichcompare<LT>,
+    TPSLOT(ID(__lt__), kRichcompare, kParamsSelfValue, slot_tp_richcompare,
+           wrapRichcompare<LT>,
            "__lt__($self, value, /)\n--\n\nReturn self<value."),
-    TPSLOT(SymbolId::kDunderLe, kRichcompare, kParamsSelfValue,
-           slot_tp_richcompare, wrapRichcompare<LE>,
+    TPSLOT(ID(__le__), kRichcompare, kParamsSelfValue, slot_tp_richcompare,
+           wrapRichcompare<LE>,
            "__le__($self, value, /)\n--\n\nReturn self<=value."),
-    TPSLOT(SymbolId::kDunderEq, kRichcompare, kParamsSelfValue,
-           slot_tp_richcompare, wrapRichcompare<EQ>,
+    TPSLOT(ID(__eq__), kRichcompare, kParamsSelfValue, slot_tp_richcompare,
+           wrapRichcompare<EQ>,
            "__eq__($self, value, /)\n--\n\nReturn self==value."),
-    TPSLOT(SymbolId::kDunderNe, kRichcompare, kParamsSelfValue,
-           slot_tp_richcompare, wrapRichcompare<NE>,
+    TPSLOT(ID(__ne__), kRichcompare, kParamsSelfValue, slot_tp_richcompare,
+           wrapRichcompare<NE>,
            "__ne__($self, value, /)\n--\n\nReturn self!=value."),
-    TPSLOT(SymbolId::kDunderGt, kRichcompare, kParamsSelfValue,
-           slot_tp_richcompare, wrapRichcompare<GT>,
+    TPSLOT(ID(__gt__), kRichcompare, kParamsSelfValue, slot_tp_richcompare,
+           wrapRichcompare<GT>,
            "__gt__($self, value, /)\n--\n\nReturn self>value."),
-    TPSLOT(SymbolId::kDunderGe, kRichcompare, kParamsSelfValue,
-           slot_tp_richcompare, wrapRichcompare<GE>,
+    TPSLOT(ID(__ge__), kRichcompare, kParamsSelfValue, slot_tp_richcompare,
+           wrapRichcompare<GE>,
            "__ge__($self, value, /)\n--\n\nReturn self>=value."),
-    TPSLOT(SymbolId::kDunderIter, kIter, kParamsSelf, slot_tp_iter,
-           wrapUnaryfunc, "__iter__($self, /)\n--\n\nImplement iter(self)."),
-    TPSLOT(SymbolId::kDunderNext, kIternext, kParamsSelf, slot_tp_iternext,
-           wrapNext, "__next__($self, /)\n--\n\nImplement next(self)."),
-    TPSLOT(SymbolId::kDunderGet, kDescrGet, kParamsSelfInstanceOwner,
-           slot_tp_descr_get, wrapDescrGet,
+    TPSLOT(ID(__iter__), kIter, kParamsSelf, slot_tp_iter, wrapUnaryfunc,
+           "__iter__($self, /)\n--\n\nImplement iter(self)."),
+    TPSLOT(ID(__next__), kIternext, kParamsSelf, slot_tp_iternext, wrapNext,
+           "__next__($self, /)\n--\n\nImplement next(self)."),
+    TPSLOT(ID(__get__), kDescrGet, kParamsSelfInstanceOwner, slot_tp_descr_get,
+           wrapDescrGet,
            "__get__($self, instance, owner, /)\n--\n\nReturn an attribute of "
            "instance, which is of type owner."),
-    TPSLOT(SymbolId::kDunderSet, kDescrSet, kParamsSelfInstanceValue,
-           slot_tp_descr_set, wrapDescrSet,
+    TPSLOT(ID(__set__), kDescrSet, kParamsSelfInstanceValue, slot_tp_descr_set,
+           wrapDescrSet,
            "__set__($self, instance, value, /)\n--\n\nSet an attribute of "
            "instance to value."),
-    TPSLOT(SymbolId::kDunderDelete, kDescrSet, kParamsSelfInstance,
-           slot_tp_descr_set, wrapDescrDelete,
+    TPSLOT(ID(__delete__), kDescrSet, kParamsSelfInstance, slot_tp_descr_set,
+           wrapDescrDelete,
            "__delete__($self, instance, /)\n--\n\nDelete an attribute of "
            "instance."),
-    KWSLOT(SymbolId::kDunderInit, kInit, kParamsSelfArgsKwargs, slot_tp_init,
-           wrapInit,
+    KWSLOT(ID(__init__), kInit, kParamsSelfArgsKwargs, slot_tp_init, wrapInit,
            "__init__($self, /, *args, **kwargs)\n--\n\nInitialize self.  See "
            "help(type(self)) for accurate signature."),
-    KWSLOT(SymbolId::kDunderNew, kNew, kParamsTypeArgsKwargs, slot_tp_new,
+    KWSLOT(ID(__new__), kNew, kParamsTypeArgsKwargs, slot_tp_new,
            wrapVarkwTernaryfunc,
            "__new__(type, /, *args, **kwargs)\n--\n\n"
            "Create and return new object.  See help(type) for accurate "
            "signature."),
-    TPSLOT(SymbolId::kDunderDel, kFinalize, kParamsSelf, slot_tp_finalize,
-           wrapDel, ""),
-    TPSLOT(SymbolId::kDunderAwait, kAsyncAwait, kParamsSelf, slot_am_await,
+    TPSLOT(ID(__del__), kFinalize, kParamsSelf, slot_tp_finalize, wrapDel, ""),
+    TPSLOT(ID(__await__), kAsyncAwait, kParamsSelf, slot_am_await,
            wrapUnaryfunc,
            "__await__($self, /)\n--\n\nReturn an iterator to be used in await "
            "expression."),
-    TPSLOT(SymbolId::kDunderAiter, kAsyncAiter, kParamsSelf, slot_am_aiter,
+    TPSLOT(ID(__aiter__), kAsyncAiter, kParamsSelf, slot_am_aiter,
            wrapUnaryfunc,
            "__aiter__($self, /)\n--\n\nReturn an awaitable, that resolves in "
            "asynchronous iterator."),
-    TPSLOT(SymbolId::kDunderAnext, kAsyncAnext, kParamsSelf, slot_am_anext,
+    TPSLOT(ID(__anext__), kAsyncAnext, kParamsSelf, slot_am_anext,
            wrapUnaryfunc,
            "__anext__($self, /)\n--\n\nReturn a value or raise "
            "StopAsyncIteration."),
-    BINSLOT(SymbolId::kDunderAdd, "__add__", kNumberAdd, slot_nb_add, "+"),
-    RBINSLOT(SymbolId::kDunderRadd, "__radd__", kNumberAdd, slot_nb_add, "+"),
-    BINSLOT(SymbolId::kDunderSub, "__sub__", kNumberSubtract, slot_nb_subtract,
-            "-"),
-    RBINSLOT(SymbolId::kDunderRsub, "__rsub__", kNumberSubtract,
-             slot_nb_subtract, "-"),
-    BINSLOT(SymbolId::kDunderMul, "__mul__", kNumberMultiply, slot_nb_multiply,
-            "*"),
-    RBINSLOT(SymbolId::kDunderRmul, "__rmul__", kNumberMultiply,
-             slot_nb_multiply, "*"),
-    BINSLOT(SymbolId::kDunderMod, "__mod__", kNumberRemainder,
-            slot_nb_remainder, "%"),
-    RBINSLOT(SymbolId::kDunderRmod, "__rmod__", kNumberRemainder,
-             slot_nb_remainder, "%"),
-    BINSLOTNOTINFIX(SymbolId::kDunderDivmod, "__divmod__", kNumberDivmod,
-                    slot_nb_divmod, "Return divmod(self, value)."),
-    RBINSLOTNOTINFIX(SymbolId::kDunderRdivmod, "__rdivmod__", kNumberDivmod,
+    BINSLOT(ID(__add__), "__add__", kNumberAdd, slot_nb_add, "+"),
+    RBINSLOT(ID(__radd__), "__radd__", kNumberAdd, slot_nb_add, "+"),
+    BINSLOT(ID(__sub__), "__sub__", kNumberSubtract, slot_nb_subtract, "-"),
+    RBINSLOT(ID(__rsub__), "__rsub__", kNumberSubtract, slot_nb_subtract, "-"),
+    BINSLOT(ID(__mul__), "__mul__", kNumberMultiply, slot_nb_multiply, "*"),
+    RBINSLOT(ID(__rmul__), "__rmul__", kNumberMultiply, slot_nb_multiply, "*"),
+    BINSLOT(ID(__mod__), "__mod__", kNumberRemainder, slot_nb_remainder, "%"),
+    RBINSLOT(ID(__rmod__), "__rmod__", kNumberRemainder, slot_nb_remainder,
+             "%"),
+    BINSLOTNOTINFIX(ID(__divmod__), "__divmod__", kNumberDivmod, slot_nb_divmod,
+                    "Return divmod(self, value)."),
+    RBINSLOTNOTINFIX(ID(__rdivmod__), "__rdivmod__", kNumberDivmod,
                      slot_nb_divmod, "Return divmod(value, self)."),
-    TPSLOT(SymbolId::kDunderPow, kNumberPower, kParamsSelfValueMod,
-           slot_nb_power, wrapTernaryfunc,
+    TPSLOT(ID(__pow__), kNumberPower, kParamsSelfValueMod, slot_nb_power,
+           wrapTernaryfunc,
            "__pow__($self, value, mod=None, /)\n--\n\nReturn pow(self, value, "
            "mod)."),
-    TPSLOT(SymbolId::kDunderRpow, kNumberPower, kParamsSelfValueMod,
-           slot_nb_power, wrapTernaryfuncSwapped,
+    TPSLOT(ID(__rpow__), kNumberPower, kParamsSelfValueMod, slot_nb_power,
+           wrapTernaryfuncSwapped,
            "__rpow__($self, value, mod=None, /)\n--\n\nReturn pow(value, self, "
            "mod)."),
-    UNSLOT(SymbolId::kDunderNeg, "__neg__", kNumberNegative, slot_nb_negative,
+    UNSLOT(ID(__neg__), "__neg__", kNumberNegative, slot_nb_negative,
            wrapUnaryfunc, "-self"),
-    UNSLOT(SymbolId::kDunderPos, "__pos__", kNumberPositive, slot_nb_positive,
+    UNSLOT(ID(__pos__), "__pos__", kNumberPositive, slot_nb_positive,
            wrapUnaryfunc, "+self"),
-    UNSLOT(SymbolId::kDunderAbs, "__abs__", kNumberAbsolute, slot_nb_absolute,
+    UNSLOT(ID(__abs__), "__abs__", kNumberAbsolute, slot_nb_absolute,
            wrapUnaryfunc, "abs(self)"),
-    UNSLOT(SymbolId::kDunderBool, "__bool__", kNumberBool, slot_nb_bool,
-           wrapInquirypred, "self != 0"),
-    UNSLOT(SymbolId::kDunderInvert, "__invert__", kNumberInvert, slot_nb_invert,
+    UNSLOT(ID(__bool__), "__bool__", kNumberBool, slot_nb_bool, wrapInquirypred,
+           "self != 0"),
+    UNSLOT(ID(__invert__), "__invert__", kNumberInvert, slot_nb_invert,
            wrapUnaryfunc, "~self"),
-    BINSLOT(SymbolId::kDunderLshift, "__lshift__", kNumberLshift,
-            slot_nb_lshift, "<<"),
-    RBINSLOT(SymbolId::kDunderRlshift, "__rlshift__", kNumberLshift,
-             slot_nb_lshift, "<<"),
-    BINSLOT(SymbolId::kDunderRshift, "__rshift__", kNumberRshift,
-            slot_nb_rshift, ">>"),
-    RBINSLOT(SymbolId::kDunderRrshift, "__rrshift__", kNumberRshift,
-             slot_nb_rshift, ">>"),
-    BINSLOT(SymbolId::kDunderAnd, "__and__", kNumberAnd, slot_nb_and, "&"),
-    RBINSLOT(SymbolId::kDunderRand, "__rand__", kNumberAnd, slot_nb_and, "&"),
-    BINSLOT(SymbolId::kDunderXor, "__xor__", kNumberXor, slot_nb_xor, "^"),
-    RBINSLOT(SymbolId::kDunderRxor, "__rxor__", kNumberXor, slot_nb_xor, "^"),
-    BINSLOT(SymbolId::kDunderOr, "__or__", kNumberOr, slot_nb_or, "|"),
-    RBINSLOT(SymbolId::kDunderRor, "__ror__", kNumberOr, slot_nb_or, "|"),
-    UNSLOT(SymbolId::kDunderInt, "__int__", kNumberInt, slot_nb_int,
-           wrapUnaryfunc, "int(self)"),
-    UNSLOT(SymbolId::kDunderFloat, "__float__", kNumberFloat, slot_nb_float,
+    BINSLOT(ID(__lshift__), "__lshift__", kNumberLshift, slot_nb_lshift, "<<"),
+    RBINSLOT(ID(__rlshift__), "__rlshift__", kNumberLshift, slot_nb_lshift,
+             "<<"),
+    BINSLOT(ID(__rshift__), "__rshift__", kNumberRshift, slot_nb_rshift, ">>"),
+    RBINSLOT(ID(__rrshift__), "__rrshift__", kNumberRshift, slot_nb_rshift,
+             ">>"),
+    BINSLOT(ID(__and__), "__and__", kNumberAnd, slot_nb_and, "&"),
+    RBINSLOT(ID(__rand__), "__rand__", kNumberAnd, slot_nb_and, "&"),
+    BINSLOT(ID(__xor__), "__xor__", kNumberXor, slot_nb_xor, "^"),
+    RBINSLOT(ID(__rxor__), "__rxor__", kNumberXor, slot_nb_xor, "^"),
+    BINSLOT(ID(__or__), "__or__", kNumberOr, slot_nb_or, "|"),
+    RBINSLOT(ID(__ror__), "__ror__", kNumberOr, slot_nb_or, "|"),
+    UNSLOT(ID(__int__), "__int__", kNumberInt, slot_nb_int, wrapUnaryfunc,
+           "int(self)"),
+    UNSLOT(ID(__float__), "__float__", kNumberFloat, slot_nb_float,
            wrapUnaryfunc, "float(self)"),
-    IBSLOT(SymbolId::kDunderIadd, "__iadd__", kNumberInplaceAdd,
-           slot_nb_inplace_add, wrapBinaryfunc, "+="),
-    IBSLOT(SymbolId::kDunderIsub, "__isub__", kNumberInplaceSubtract,
+    IBSLOT(ID(__iadd__), "__iadd__", kNumberInplaceAdd, slot_nb_inplace_add,
+           wrapBinaryfunc, "+="),
+    IBSLOT(ID(__isub__), "__isub__", kNumberInplaceSubtract,
            slot_nb_inplace_subtract, wrapBinaryfunc, "-="),
-    IBSLOT(SymbolId::kDunderImul, "__imul__", kNumberInplaceMultiply,
+    IBSLOT(ID(__imul__), "__imul__", kNumberInplaceMultiply,
            slot_nb_inplace_multiply, wrapBinaryfunc, "*="),
-    IBSLOT(SymbolId::kDunderImod, "__imod__", kNumberInplaceRemainder,
+    IBSLOT(ID(__imod__), "__imod__", kNumberInplaceRemainder,
            slot_nb_inplace_remainder, wrapBinaryfunc, "%="),
-    IBSLOT(SymbolId::kDunderIpow, "__ipow__", kNumberInplacePower,
-           slot_nb_inplace_power, wrapBinaryfunc, "**="),
-    IBSLOT(SymbolId::kDunderIlshift, "__ilshift__", kNumberInplaceLshift,
+    IBSLOT(ID(__ipow__), "__ipow__", kNumberInplacePower, slot_nb_inplace_power,
+           wrapBinaryfunc, "**="),
+    IBSLOT(ID(__ilshift__), "__ilshift__", kNumberInplaceLshift,
            slot_nb_inplace_lshift, wrapBinaryfunc, "<<="),
-    IBSLOT(SymbolId::kDunderIrshift, "__irshift__", kNumberInplaceRshift,
+    IBSLOT(ID(__irshift__), "__irshift__", kNumberInplaceRshift,
            slot_nb_inplace_rshift, wrapBinaryfunc, ">>="),
-    IBSLOT(SymbolId::kDunderIand, "__iand__", kNumberInplaceAnd,
-           slot_nb_inplace_and, wrapBinaryfunc, "&="),
-    IBSLOT(SymbolId::kDunderIxor, "__ixor__", kNumberInplaceXor,
-           slot_nb_inplace_xor, wrapBinaryfunc, "^="),
-    IBSLOT(SymbolId::kDunderIor, "__ior__", kNumberInplaceOr,
-           slot_nb_inplace_or, wrapBinaryfunc, "|="),
-    BINSLOT(SymbolId::kDunderFloordiv, "__floordiv__", kNumberFloorDivide,
+    IBSLOT(ID(__iand__), "__iand__", kNumberInplaceAnd, slot_nb_inplace_and,
+           wrapBinaryfunc, "&="),
+    IBSLOT(ID(__ixor__), "__ixor__", kNumberInplaceXor, slot_nb_inplace_xor,
+           wrapBinaryfunc, "^="),
+    IBSLOT(ID(__ior__), "__ior__", kNumberInplaceOr, slot_nb_inplace_or,
+           wrapBinaryfunc, "|="),
+    BINSLOT(ID(__floordiv__), "__floordiv__", kNumberFloorDivide,
             slot_nb_floor_divide, "//"),
-    RBINSLOT(SymbolId::kDunderRfloordiv, "__rfloordiv__", kNumberFloorDivide,
+    RBINSLOT(ID(__rfloordiv__), "__rfloordiv__", kNumberFloorDivide,
              slot_nb_floor_divide, "//"),
-    BINSLOT(SymbolId::kDunderTruediv, "__truediv__", kNumberTrueDivide,
+    BINSLOT(ID(__truediv__), "__truediv__", kNumberTrueDivide,
             slot_nb_true_divide, "/"),
-    RBINSLOT(SymbolId::kDunderRtruediv, "__rtruediv__", kNumberTrueDivide,
+    RBINSLOT(ID(__rtruediv__), "__rtruediv__", kNumberTrueDivide,
              slot_nb_true_divide, "/"),
-    IBSLOT(SymbolId::kDunderIfloordiv, "__ifloordiv__",
-           kNumberInplaceFloorDivide, slot_nb_inplace_floor_divide,
-           wrapBinaryfunc, "//="),
-    IBSLOT(SymbolId::kDunderItruediv, "__itruediv__", kNumberInplaceTrueDivide,
+    IBSLOT(ID(__ifloordiv__), "__ifloordiv__", kNumberInplaceFloorDivide,
+           slot_nb_inplace_floor_divide, wrapBinaryfunc, "//="),
+    IBSLOT(ID(__itruediv__), "__itruediv__", kNumberInplaceTrueDivide,
            slot_nb_inplace_true_divide, wrapBinaryfunc, "/="),
-    TPSLOT(SymbolId::kDunderIndex, kNumberIndex, kParamsSelf, slot_nb_index,
+    TPSLOT(ID(__index__), kNumberIndex, kParamsSelf, slot_nb_index,
            wrapUnaryfunc,
            "__index__($self, /)\n--\n\n"
            "Return self converted to an integer, if self is suitable "
            "for use as an index into a list."),
-    BINSLOT(SymbolId::kDunderMatmul, "__matmul__", kNumberMatrixMultiply,
+    BINSLOT(ID(__matmul__), "__matmul__", kNumberMatrixMultiply,
             slot_nb_matrix_multiply, "@"),
-    RBINSLOT(SymbolId::kDunderRmatmul, "__rmatmul__", kNumberMatrixMultiply,
+    RBINSLOT(ID(__rmatmul__), "__rmatmul__", kNumberMatrixMultiply,
              slot_nb_matrix_multiply, "@"),
-    IBSLOT(SymbolId::kDunderImatmul, "__imatmul__",
-           kNumberInplaceMatrixMultiply, slot_nb_inplace_matrix_multiply,
-           wrapBinaryfunc, "@="),
-    TPSLOT(SymbolId::kDunderLen, kMapLength, kParamsSelf, slot_mp_length,
-           wrapLenfunc, "__len__($self, /)\n--\n\nReturn len(self)."),
-    TPSLOT(SymbolId::kDunderGetitem, kMapSubscript, kParamsSelfKey,
-           slot_mp_subscript, wrapBinaryfunc,
+    IBSLOT(ID(__imatmul__), "__imatmul__", kNumberInplaceMatrixMultiply,
+           slot_nb_inplace_matrix_multiply, wrapBinaryfunc, "@="),
+    TPSLOT(ID(__len__), kMapLength, kParamsSelf, slot_mp_length, wrapLenfunc,
+           "__len__($self, /)\n--\n\nReturn len(self)."),
+    TPSLOT(ID(__getitem__), kMapSubscript, kParamsSelfKey, slot_mp_subscript,
+           wrapBinaryfunc,
            "__getitem__($self, key, /)\n--\n\nReturn self[key]."),
-    TPSLOT(SymbolId::kDunderSetitem, kMapAssSubscript, kParamsSelfKeyValue,
+    TPSLOT(ID(__setitem__), kMapAssSubscript, kParamsSelfKeyValue,
            slot_mp_ass_subscript, wrapObjobjargproc,
            "__setitem__($self, key, value, /)\n--\n\nSet self[key] to value."),
-    TPSLOT(SymbolId::kDunderDelitem, kMapAssSubscript, kParamsSelfKey,
+    TPSLOT(ID(__delitem__), kMapAssSubscript, kParamsSelfKey,
            slot_mp_ass_subscript, wrapDelitem,
            "__delitem__($self, key, /)\n--\n\nDelete self[key]."),
-    TPSLOT(SymbolId::kDunderLen, kSequenceLength, kParamsSelf, slot_sq_length,
+    TPSLOT(ID(__len__), kSequenceLength, kParamsSelf, slot_sq_length,
            wrapLenfunc, "__len__($self, /)\n--\n\nReturn len(self)."),
-    TPSLOT(SymbolId::kDunderAdd, kSequenceConcat, kParamsSelfValue, nullptr,
+    TPSLOT(ID(__add__), kSequenceConcat, kParamsSelfValue, nullptr,
            wrapBinaryfunc,
            "__add__($self, value, /)\n--\n\nReturn self+value."),
-    TPSLOT(SymbolId::kDunderMul, kSequenceRepeat, kParamsSelfValue, nullptr,
+    TPSLOT(ID(__mul__), kSequenceRepeat, kParamsSelfValue, nullptr,
            wrapIndexargfunc,
            "__mul__($self, value, /)\n--\n\nReturn self*value."),
-    TPSLOT(SymbolId::kDunderRmul, kSequenceRepeat, kParamsSelfValue, nullptr,
+    TPSLOT(ID(__rmul__), kSequenceRepeat, kParamsSelfValue, nullptr,
            wrapIndexargfunc,
            "__rmul__($self, value, /)\n--\n\nReturn value*self."),
-    TPSLOT(SymbolId::kDunderGetitem, kSequenceItem, kParamsSelfKey,
-           slot_sq_item, wrapSqItem,
-           "__getitem__($self, key, /)\n--\n\nReturn self[key]."),
-    TPSLOT(SymbolId::kDunderSetitem, kSequenceAssItem, kParamsSelfKeyValue,
+    TPSLOT(ID(__getitem__), kSequenceItem, kParamsSelfKey, slot_sq_item,
+           wrapSqItem, "__getitem__($self, key, /)\n--\n\nReturn self[key]."),
+    TPSLOT(ID(__setitem__), kSequenceAssItem, kParamsSelfKeyValue,
            slot_sq_ass_item, wrapSqSetitem,
            "__setitem__($self, key, value, /)\n--\n\nSet self[key] to value."),
-    TPSLOT(SymbolId::kDunderDelitem, kSequenceAssItem, kParamsSelfKey,
-           slot_sq_ass_item, wrapSqDelitem,
+    TPSLOT(ID(__delitem__), kSequenceAssItem, kParamsSelfKey, slot_sq_ass_item,
+           wrapSqDelitem,
            "__delitem__($self, key, /)\n--\n\nDelete self[key]."),
-    TPSLOT(SymbolId::kDunderContains, kSequenceContains, kParamsSelfKey,
+    TPSLOT(ID(__contains__), kSequenceContains, kParamsSelfKey,
            slot_sq_contains, wrapObjobjproc,
            "__contains__($self, key, /)\n--\n\nReturn key in self."),
-    TPSLOT(SymbolId::kDunderIadd, kSequenceInplaceConcat, kParamsSelfValue,
-           nullptr, wrapBinaryfunc,
+    TPSLOT(ID(__iadd__), kSequenceInplaceConcat, kParamsSelfValue, nullptr,
+           wrapBinaryfunc,
            "__iadd__($self, value, /)\n--\n\nImplement self+=value."),
-    TPSLOT(SymbolId::kDunderImul, kSequenceInplaceRepeat, kParamsSelfValue,
-           nullptr, wrapIndexargfunc,
+    TPSLOT(ID(__imul__), kSequenceInplaceRepeat, kParamsSelfValue, nullptr,
+           wrapIndexargfunc,
            "__imul__($self, value, /)\n--\n\nImplement self*=value."),
 };
 
@@ -804,8 +785,8 @@ RawObject addOperators(Thread* thread, const Type& type) {
       // appropriately.
       func_obj = *func;
       if (slot.id == Type::Slot::kNew) {
-        func_obj = thread->invokeFunction1(SymbolId::kBuiltins,
-                                           SymbolId::kStaticmethod, func);
+        func_obj =
+            thread->invokeFunction1(ID(builtins), ID(staticmethod), func);
         if (func_obj.isError()) return *func_obj;
       }
     }
@@ -840,8 +821,8 @@ PyObject* slotTpNew(PyObject* type, PyObject* args, PyObject* kwargs) {
   new_args.replaceFromWith(1, *args_tuple, args_tuple.length());
 
   // Call type.__new__(type, *args, **kwargs)
-  Object dunder_new(
-      &scope, runtime->attributeAtById(thread, type_obj, SymbolId::kDunderNew));
+  Object dunder_new(&scope,
+                    runtime->attributeAtById(thread, type_obj, ID(__new__)));
   if (dunder_new.isError()) return nullptr;
   Frame* frame = thread->currentFrame();
   frame->pushValue(*dunder_new);
@@ -933,66 +914,65 @@ static RawObject memberGetter(Thread* thread, PyMemberDef& member) {
   Int offset(&scope, runtime->newInt(member.offset));
   switch (member.type) {
     case T_BOOL:
-      return thread->invokeFunction1(SymbolId::kBuiltins,
-                                     SymbolId::kUnderNewMemberGetBool, offset);
+      return thread->invokeFunction1(ID(builtins), ID(_new_member_get_bool),
+                                     offset);
     case T_BYTE:
-      return thread->invokeFunction1(SymbolId::kBuiltins,
-                                     SymbolId::kUnderNewMemberGetByte, offset);
+      return thread->invokeFunction1(ID(builtins), ID(_new_member_get_byte),
+                                     offset);
     case T_UBYTE:
-      return thread->invokeFunction1(SymbolId::kBuiltins,
-                                     SymbolId::kUnderNewMemberGetUbyte, offset);
+      return thread->invokeFunction1(ID(builtins), ID(_new_member_get_ubyte),
+                                     offset);
     case T_SHORT:
-      return thread->invokeFunction1(SymbolId::kBuiltins,
-                                     SymbolId::kUnderNewMemberGetShort, offset);
+      return thread->invokeFunction1(ID(builtins), ID(_new_member_get_short),
+                                     offset);
     case T_USHORT:
-      return thread->invokeFunction1(
-          SymbolId::kBuiltins, SymbolId::kUnderNewMemberGetUshort, offset);
+      return thread->invokeFunction1(ID(builtins), ID(_new_member_get_ushort),
+                                     offset);
     case T_INT:
-      return thread->invokeFunction1(SymbolId::kBuiltins,
-                                     SymbolId::kUnderNewMemberGetInt, offset);
+      return thread->invokeFunction1(ID(builtins), ID(_new_member_get_int),
+                                     offset);
     case T_UINT:
-      return thread->invokeFunction1(SymbolId::kBuiltins,
-                                     SymbolId::kUnderNewMemberGetUint, offset);
+      return thread->invokeFunction1(ID(builtins), ID(_new_member_get_uint),
+                                     offset);
     case T_LONG:
-      return thread->invokeFunction1(SymbolId::kBuiltins,
-                                     SymbolId::kUnderNewMemberGetLong, offset);
+      return thread->invokeFunction1(ID(builtins), ID(_new_member_get_long),
+                                     offset);
     case T_ULONG:
-      return thread->invokeFunction1(SymbolId::kBuiltins,
-                                     SymbolId::kUnderNewMemberGetUlong, offset);
+      return thread->invokeFunction1(ID(builtins), ID(_new_member_get_ulong),
+                                     offset);
     case T_PYSSIZET:
-      return thread->invokeFunction1(SymbolId::kBuiltins,
-                                     SymbolId::kUnderNewMemberGetUlong, offset);
+      return thread->invokeFunction1(ID(builtins), ID(_new_member_get_ulong),
+                                     offset);
     case T_FLOAT:
-      return thread->invokeFunction1(SymbolId::kBuiltins,
-                                     SymbolId::kUnderNewMemberGetFloat, offset);
+      return thread->invokeFunction1(ID(builtins), ID(_new_member_get_float),
+                                     offset);
     case T_DOUBLE:
-      return thread->invokeFunction1(
-          SymbolId::kBuiltins, SymbolId::kUnderNewMemberGetDouble, offset);
+      return thread->invokeFunction1(ID(builtins), ID(_new_member_get_double),
+                                     offset);
     case T_LONGLONG:
-      return thread->invokeFunction1(SymbolId::kBuiltins,
-                                     SymbolId::kUnderNewMemberGetLong, offset);
+      return thread->invokeFunction1(ID(builtins), ID(_new_member_get_long),
+                                     offset);
     case T_ULONGLONG:
-      return thread->invokeFunction1(SymbolId::kBuiltins,
-                                     SymbolId::kUnderNewMemberGetUlong, offset);
+      return thread->invokeFunction1(ID(builtins), ID(_new_member_get_ulong),
+                                     offset);
     case T_STRING:
-      return thread->invokeFunction1(
-          SymbolId::kBuiltins, SymbolId::kUnderNewMemberGetString, offset);
+      return thread->invokeFunction1(ID(builtins), ID(_new_member_get_string),
+                                     offset);
     case T_STRING_INPLACE:
-      return thread->invokeFunction1(
-          SymbolId::kBuiltins, SymbolId::kUnderNewMemberGetString, offset);
+      return thread->invokeFunction1(ID(builtins), ID(_new_member_get_string),
+                                     offset);
     case T_CHAR:
-      return thread->invokeFunction1(SymbolId::kBuiltins,
-                                     SymbolId::kUnderNewMemberGetChar, offset);
+      return thread->invokeFunction1(ID(builtins), ID(_new_member_get_char),
+                                     offset);
     case T_OBJECT:
-      return thread->invokeFunction1(
-          SymbolId::kBuiltins, SymbolId::kUnderNewMemberGetPyobject, offset);
+      return thread->invokeFunction1(ID(builtins), ID(_new_member_get_pyobject),
+                                     offset);
     case T_OBJECT_EX:
-      return thread->invokeFunction2(SymbolId::kBuiltins,
-                                     SymbolId::kUnderNewMemberGetPyobject,
+      return thread->invokeFunction2(ID(builtins), ID(_new_member_get_pyobject),
                                      offset, name);
     case T_NONE:
-      return thread->invokeFunction1(
-          SymbolId::kBuiltins, SymbolId::kUnderNewMemberGetPyobject, offset);
+      return thread->invokeFunction1(ID(builtins), ID(_new_member_get_pyobject),
+                                     offset);
     default:
       return thread->raiseWithFmt(LayoutId::kSystemError,
                                   "bad member name type");
@@ -1004,26 +984,26 @@ static RawObject memberSetter(Thread* thread, PyMemberDef& member) {
   Runtime* runtime = thread->runtime();
   if (member.flags & READONLY) {
     Object name(&scope, runtime->newStrFromCStr(member.name));
-    Function setter(&scope, thread->invokeFunction1(
-                                SymbolId::kBuiltins,
-                                SymbolId::kUnderNewMemberSetReadonly, name));
+    Function setter(
+        &scope, thread->invokeFunction1(ID(builtins),
+                                        ID(_new_member_set_readonly), name));
     return *setter;
   }
 
   Int offset(&scope, runtime->newInt(member.offset));
   switch (member.type) {
     case T_BOOL:
-      return thread->invokeFunction1(SymbolId::kBuiltins,
-                                     SymbolId::kUnderNewMemberSetBool, offset);
+      return thread->invokeFunction1(ID(builtins), ID(_new_member_set_bool),
+                                     offset);
     case T_BYTE: {
       Int num_bytes(&scope, runtime->newInt(1));
       Int min_value(&scope, runtime->newInt(std::numeric_limits<char>::min()));
       Int max_value(&scope, runtime->newInt(std::numeric_limits<char>::max()));
       Str primitive_type(&scope, runtime->newStrFromCStr("char"));
-      Function setter(
-          &scope, thread->invokeFunction5(
-                      SymbolId::kBuiltins, SymbolId::kUnderNewMemberSetIntegral,
-                      offset, num_bytes, min_value, max_value, primitive_type));
+      Function setter(&scope,
+                      thread->invokeFunction5(
+                          ID(builtins), ID(_new_member_set_integral), offset,
+                          num_bytes, min_value, max_value, primitive_type));
       return *setter;
     }
     case T_UBYTE: {
@@ -1032,10 +1012,10 @@ static RawObject memberSetter(Thread* thread, PyMemberDef& member) {
       Int max_value(&scope, runtime->newIntFromUnsigned(
                                 std::numeric_limits<unsigned char>::max()));
       Str primitive_type(&scope, runtime->newStrFromCStr("unsigned char"));
-      Function setter(
-          &scope, thread->invokeFunction5(
-                      SymbolId::kBuiltins, SymbolId::kUnderNewMemberSetIntegral,
-                      offset, num_bytes, min_value, max_value, primitive_type));
+      Function setter(&scope,
+                      thread->invokeFunction5(
+                          ID(builtins), ID(_new_member_set_integral), offset,
+                          num_bytes, min_value, max_value, primitive_type));
       return *setter;
     }
     case T_SHORT: {
@@ -1043,10 +1023,10 @@ static RawObject memberSetter(Thread* thread, PyMemberDef& member) {
       Int min_value(&scope, runtime->newInt(std::numeric_limits<short>::min()));
       Int max_value(&scope, runtime->newInt(std::numeric_limits<short>::max()));
       Str primitive_type(&scope, runtime->newStrFromCStr("short"));
-      Function setter(
-          &scope, thread->invokeFunction5(
-                      SymbolId::kBuiltins, SymbolId::kUnderNewMemberSetIntegral,
-                      offset, num_bytes, min_value, max_value, primitive_type));
+      Function setter(&scope,
+                      thread->invokeFunction5(
+                          ID(builtins), ID(_new_member_set_integral), offset,
+                          num_bytes, min_value, max_value, primitive_type));
       return *setter;
     }
     case T_USHORT: {
@@ -1055,10 +1035,10 @@ static RawObject memberSetter(Thread* thread, PyMemberDef& member) {
       Int max_value(&scope, runtime->newIntFromUnsigned(
                                 std::numeric_limits<unsigned short>::max()));
       Str primitive_type(&scope, runtime->newStrFromCStr("unsigned short"));
-      Function setter(
-          &scope, thread->invokeFunction5(
-                      SymbolId::kBuiltins, SymbolId::kUnderNewMemberSetIntegral,
-                      offset, num_bytes, min_value, max_value, primitive_type));
+      Function setter(&scope,
+                      thread->invokeFunction5(
+                          ID(builtins), ID(_new_member_set_integral), offset,
+                          num_bytes, min_value, max_value, primitive_type));
       return *setter;
     }
     case T_INT: {
@@ -1066,10 +1046,10 @@ static RawObject memberSetter(Thread* thread, PyMemberDef& member) {
       Int min_value(&scope, runtime->newInt(std::numeric_limits<int>::min()));
       Int max_value(&scope, runtime->newInt(std::numeric_limits<int>::max()));
       Str primitive_type(&scope, runtime->newStrFromCStr("int"));
-      Function setter(
-          &scope, thread->invokeFunction5(
-                      SymbolId::kBuiltins, SymbolId::kUnderNewMemberSetIntegral,
-                      offset, num_bytes, min_value, max_value, primitive_type));
+      Function setter(&scope,
+                      thread->invokeFunction5(
+                          ID(builtins), ID(_new_member_set_integral), offset,
+                          num_bytes, min_value, max_value, primitive_type));
       return *setter;
     }
     case T_UINT: {
@@ -1078,10 +1058,10 @@ static RawObject memberSetter(Thread* thread, PyMemberDef& member) {
       Int max_value(&scope, runtime->newIntFromUnsigned(
                                 std::numeric_limits<unsigned int>::max()));
       Str primitive_type(&scope, runtime->newStrFromCStr("unsigned int"));
-      Function setter(
-          &scope, thread->invokeFunction5(
-                      SymbolId::kBuiltins, SymbolId::kUnderNewMemberSetIntegral,
-                      offset, num_bytes, min_value, max_value, primitive_type));
+      Function setter(&scope,
+                      thread->invokeFunction5(
+                          ID(builtins), ID(_new_member_set_integral), offset,
+                          num_bytes, min_value, max_value, primitive_type));
       return *setter;
     }
     case T_LONG: {
@@ -1089,10 +1069,10 @@ static RawObject memberSetter(Thread* thread, PyMemberDef& member) {
       Int min_value(&scope, runtime->newInt(std::numeric_limits<long>::min()));
       Int max_value(&scope, runtime->newInt(std::numeric_limits<long>::max()));
       Str primitive_type(&scope, runtime->newStrFromCStr("long"));
-      Function setter(
-          &scope, thread->invokeFunction5(
-                      SymbolId::kBuiltins, SymbolId::kUnderNewMemberSetIntegral,
-                      offset, num_bytes, min_value, max_value, primitive_type));
+      Function setter(&scope,
+                      thread->invokeFunction5(
+                          ID(builtins), ID(_new_member_set_integral), offset,
+                          num_bytes, min_value, max_value, primitive_type));
       return *setter;
     }
     case T_ULONG: {
@@ -1101,10 +1081,10 @@ static RawObject memberSetter(Thread* thread, PyMemberDef& member) {
       Int max_value(&scope, runtime->newIntFromUnsigned(
                                 std::numeric_limits<unsigned long>::max()));
       Str primitive_type(&scope, runtime->newStrFromCStr("unsigned long"));
-      Function setter(
-          &scope, thread->invokeFunction5(
-                      SymbolId::kBuiltins, SymbolId::kUnderNewMemberSetIntegral,
-                      offset, num_bytes, min_value, max_value, primitive_type));
+      Function setter(&scope,
+                      thread->invokeFunction5(
+                          ID(builtins), ID(_new_member_set_integral), offset,
+                          num_bytes, min_value, max_value, primitive_type));
       return *setter;
     }
     case T_PYSSIZET: {
@@ -1113,54 +1093,50 @@ static RawObject memberSetter(Thread* thread, PyMemberDef& member) {
       Int max_value(&scope,
                     runtime->newInt(std::numeric_limits<Py_ssize_t>::max()));
       Str primitive_type(&scope, runtime->newStrFromCStr("Py_ssize_t"));
-      Function setter(
-          &scope, thread->invokeFunction5(
-                      SymbolId::kBuiltins, SymbolId::kUnderNewMemberSetIntegral,
-                      offset, num_bytes, min_value, max_value, primitive_type));
+      Function setter(&scope,
+                      thread->invokeFunction5(
+                          ID(builtins), ID(_new_member_set_integral), offset,
+                          num_bytes, min_value, max_value, primitive_type));
       return *setter;
     }
     case T_FLOAT: {
-      return thread->invokeFunction1(SymbolId::kBuiltins,
-                                     SymbolId::kUnderNewMemberSetFloat, offset);
+      return thread->invokeFunction1(ID(builtins), ID(_new_member_set_float),
+                                     offset);
     }
     case T_DOUBLE: {
-      return thread->invokeFunction1(
-          SymbolId::kBuiltins, SymbolId::kUnderNewMemberSetDouble, offset);
+      return thread->invokeFunction1(ID(builtins), ID(_new_member_set_double),
+                                     offset);
     }
     case T_STRING: {
       Object name(&scope, runtime->newStrFromCStr(member.name));
-      Function setter(&scope,
-                      thread->invokeFunction1(
-                          SymbolId::kBuiltins,
-                          SymbolId::kUnderNewMemberSetReadonlyStrings, name));
+      Function setter(&scope, thread->invokeFunction1(
+                                  ID(builtins),
+                                  ID(_new_member_set_readonly_strings), name));
       return *setter;
     }
     case T_STRING_INPLACE: {
       Object name(&scope, runtime->newStrFromCStr(member.name));
-      Function setter(&scope,
-                      thread->invokeFunction1(
-                          SymbolId::kBuiltins,
-                          SymbolId::kUnderNewMemberSetReadonlyStrings, name));
+      Function setter(&scope, thread->invokeFunction1(
+                                  ID(builtins),
+                                  ID(_new_member_set_readonly_strings), name));
       return *setter;
     }
     case T_CHAR: {
-      Function setter(&scope, thread->invokeFunction1(
-                                  SymbolId::kBuiltins,
-                                  SymbolId::kUnderNewMemberSetChar, offset));
+      Function setter(
+          &scope, thread->invokeFunction1(ID(builtins),
+                                          ID(_new_member_set_char), offset));
       return *setter;
     }
     case T_OBJECT: {
-      Function setter(
-          &scope, thread->invokeFunction1(SymbolId::kBuiltins,
-                                          SymbolId::kUnderNewMemberSetPyobject,
-                                          offset));
+      Function setter(&scope,
+                      thread->invokeFunction1(
+                          ID(builtins), ID(_new_member_set_pyobject), offset));
       return *setter;
     }
     case T_OBJECT_EX: {
-      Function setter(
-          &scope, thread->invokeFunction1(SymbolId::kBuiltins,
-                                          SymbolId::kUnderNewMemberSetPyobject,
-                                          offset));
+      Function setter(&scope,
+                      thread->invokeFunction1(
+                          ID(builtins), ID(_new_member_set_pyobject), offset));
       return *setter;
     }
     case T_LONGLONG: {
@@ -1170,10 +1146,10 @@ static RawObject memberSetter(Thread* thread, PyMemberDef& member) {
       Int max_value(&scope,
                     runtime->newInt(std::numeric_limits<long long>::max()));
       Str primitive_type(&scope, runtime->newStrFromCStr("long long"));
-      Function setter(
-          &scope, thread->invokeFunction5(
-                      SymbolId::kBuiltins, SymbolId::kUnderNewMemberSetIntegral,
-                      offset, num_bytes, min_value, max_value, primitive_type));
+      Function setter(&scope,
+                      thread->invokeFunction5(
+                          ID(builtins), ID(_new_member_set_integral), offset,
+                          num_bytes, min_value, max_value, primitive_type));
       return *setter;
     }
     case T_ULONGLONG: {
@@ -1183,10 +1159,10 @@ static RawObject memberSetter(Thread* thread, PyMemberDef& member) {
                     runtime->newIntFromUnsigned(
                         std::numeric_limits<unsigned long long>::max()));
       Str primitive_type(&scope, runtime->newStrFromCStr("unsigned long long"));
-      Function setter(
-          &scope, thread->invokeFunction5(
-                      SymbolId::kBuiltins, SymbolId::kUnderNewMemberSetIntegral,
-                      offset, num_bytes, min_value, max_value, primitive_type));
+      Function setter(&scope,
+                      thread->invokeFunction5(
+                          ID(builtins), ID(_new_member_set_integral), offset,
+                          num_bytes, min_value, max_value, primitive_type));
       return *setter;
     }
     default:
@@ -1382,7 +1358,7 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
     Object default_new(
         &scope, runtime->newIntFromCPtr(bit_cast<void*>(&PyType_GenericNew)));
     type.setSlot(Type::Slot::kNew, *default_new);
-    Str dunder_new_name(&scope, runtime->symbols()->at(SymbolId::kDunderNew));
+    Str dunder_new_name(&scope, runtime->symbols()->at(ID(__new__)));
     Str qualname(&scope,
                  runtime->newStrFromFmt("%S.%S", &type_name, &dunder_new_name));
     Code code(&scope,
@@ -1393,11 +1369,10 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type) {
     Object globals(&scope, NoneType::object());
     Function func(
         &scope, runtime->newFunctionWithCode(thread, qualname, code, globals));
-    Object func_obj(&scope,
-                    thread->invokeFunction1(SymbolId::kBuiltins,
-                                            SymbolId::kStaticmethod, func));
+    Object func_obj(
+        &scope, thread->invokeFunction1(ID(builtins), ID(staticmethod), func));
     if (func_obj.isError()) return *func;
-    typeAtPutById(thread, type, SymbolId::kDunderNew, func_obj);
+    typeAtPutById(thread, type, ID(__new__), func_obj);
   }
 
   // tp_alloc -> PyType_GenericAlloc

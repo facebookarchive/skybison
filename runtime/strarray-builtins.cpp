@@ -5,9 +5,9 @@
 namespace py {
 
 const BuiltinMethod StrArrayBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderInit, dunderInit},
-    {SymbolId::kDunderNew, dunderNew},
-    {SymbolId::kDunderStr, dunderStr},
+    {ID(__init__), dunderInit},
+    {ID(__new__), dunderNew},
+    {ID(__str__), dunderStr},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -17,7 +17,7 @@ RawObject StrArrayBuiltins::dunderInit(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isStrArray()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kUnderStrarray);
+    return thread->raiseRequiresType(self_obj, ID(_strarray));
   }
   StrArray self(&scope, *self_obj);
   self.setNumItems(0);
@@ -50,7 +50,7 @@ RawObject StrArrayBuiltins::dunderStr(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isStrArray()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kUnderStrarray);
+    return thread->raiseRequiresType(self_obj, ID(_strarray));
   }
   StrArray self(&scope, *self_obj);
   return thread->runtime()->strFromStrArray(self);

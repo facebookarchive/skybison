@@ -64,43 +64,33 @@
 namespace py {
 
 static const SymbolId kRequiredModules[] = {
-    SymbolId::kUnderBuiltins,
-    SymbolId::kBuiltins,
-    SymbolId::kOperator,
-    SymbolId::kUnderCodecs,
-    SymbolId::kUnderFrozenImportlibExternal,
+    ID(_builtins),
+    ID(builtins),
+    ID(operator),
+    ID(_codecs),
+    ID(_frozen_importlib_external),
 };
 
 static const SymbolId kBinaryOperationSelector[] = {
-    SymbolId::kDunderAdd,     SymbolId::kDunderSub,
-    SymbolId::kDunderMul,     SymbolId::kDunderMatmul,
-    SymbolId::kDunderTruediv, SymbolId::kDunderFloordiv,
-    SymbolId::kDunderMod,     SymbolId::kDunderDivmod,
-    SymbolId::kDunderPow,     SymbolId::kDunderLshift,
-    SymbolId::kDunderRshift,  SymbolId::kDunderAnd,
-    SymbolId::kDunderXor,     SymbolId::kDunderOr};
+    ID(__add__),     ID(__sub__),      ID(__mul__),    ID(__matmul__),
+    ID(__truediv__), ID(__floordiv__), ID(__mod__),    ID(__divmod__),
+    ID(__pow__),     ID(__lshift__),   ID(__rshift__), ID(__and__),
+    ID(__xor__),     ID(__or__)};
 
 static const SymbolId kSwappedBinaryOperationSelector[] = {
-    SymbolId::kDunderRadd,     SymbolId::kDunderRsub,
-    SymbolId::kDunderRmul,     SymbolId::kDunderRmatmul,
-    SymbolId::kDunderRtruediv, SymbolId::kDunderRfloordiv,
-    SymbolId::kDunderRmod,     SymbolId::kDunderRdivmod,
-    SymbolId::kDunderRpow,     SymbolId::kDunderRlshift,
-    SymbolId::kDunderRrshift,  SymbolId::kDunderRand,
-    SymbolId::kDunderRxor,     SymbolId::kDunderRor};
+    ID(__radd__),     ID(__rsub__),      ID(__rmul__),    ID(__rmatmul__),
+    ID(__rtruediv__), ID(__rfloordiv__), ID(__rmod__),    ID(__rdivmod__),
+    ID(__rpow__),     ID(__rlshift__),   ID(__rrshift__), ID(__rand__),
+    ID(__rxor__),     ID(__ror__)};
 
 static const SymbolId kInplaceOperationSelector[] = {
-    SymbolId::kDunderIadd,     SymbolId::kDunderIsub,
-    SymbolId::kDunderImul,     SymbolId::kDunderImatmul,
-    SymbolId::kDunderItruediv, SymbolId::kDunderIfloordiv,
-    SymbolId::kDunderImod,     SymbolId::kMaxId,
-    SymbolId::kDunderIpow,     SymbolId::kDunderIlshift,
-    SymbolId::kDunderIrshift,  SymbolId::kDunderIand,
-    SymbolId::kDunderIxor,     SymbolId::kDunderIor};
+    ID(__iadd__),     ID(__isub__),      ID(__imul__),    ID(__imatmul__),
+    ID(__itruediv__), ID(__ifloordiv__), ID(__imod__),    SymbolId::kMaxId,
+    ID(__ipow__),     ID(__ilshift__),   ID(__irshift__), ID(__iand__),
+    ID(__ixor__),     ID(__ior__)};
 
 static const SymbolId kComparisonSelector[] = {
-    SymbolId::kDunderLt, SymbolId::kDunderLe, SymbolId::kDunderEq,
-    SymbolId::kDunderNe, SymbolId::kDunderGt, SymbolId::kDunderGe};
+    ID(__lt__), ID(__le__), ID(__eq__), ID(__ne__), ID(__gt__), ID(__ge__)};
 
 word Runtime::next_module_index_ = 0;
 
@@ -491,27 +481,27 @@ bool Runtime::isCallable(Thread* thread, const Object& obj) {
     return true;
   }
   Type type(&scope, typeOf(*obj));
-  return !typeLookupInMroById(thread, type, SymbolId::kDunderCall).isError();
+  return !typeLookupInMroById(thread, type, ID(__call__)).isError();
 }
 
 bool Runtime::isDeleteDescriptor(Thread* thread, const Object& object) {
   // TODO(T25692962): Track "descriptorness" through a bit on the class
   HandleScope scope(thread);
   Type type(&scope, typeOf(*object));
-  return !typeLookupInMroById(thread, type, SymbolId::kDunderDelete).isError();
+  return !typeLookupInMroById(thread, type, ID(__delete__)).isError();
 }
 
 bool Runtime::isIterator(Thread* thread, const Object& obj) {
   HandleScope scope(thread);
   Type type(&scope, typeOf(*obj));
-  return !typeLookupInMroById(thread, type, SymbolId::kDunderNext).isError();
+  return !typeLookupInMroById(thread, type, ID(__next__)).isError();
 }
 
 bool Runtime::isMapping(Thread* thread, const Object& obj) {
   if (obj.isDict()) return true;
   HandleScope scope(thread);
   Type type(&scope, typeOf(*obj));
-  return !typeLookupInMroById(thread, type, SymbolId::kDunderGetitem).isError();
+  return !typeLookupInMroById(thread, type, ID(__getitem__)).isError();
 }
 
 bool Runtime::isSequence(Thread* thread, const Object& obj) {
@@ -520,7 +510,7 @@ bool Runtime::isSequence(Thread* thread, const Object& obj) {
   }
   HandleScope scope(thread);
   Type type(&scope, typeOf(*obj));
-  return !typeLookupInMroById(thread, type, SymbolId::kDunderGetitem).isError();
+  return !typeLookupInMroById(thread, type, ID(__getitem__)).isError();
 }
 
 RawObject Runtime::newCode(word argcount, word posonlyargcount,
@@ -723,8 +713,7 @@ RawObject Runtime::newFunctionWithCode(Thread* thread, const Object& qualname,
   if (!module_obj.isNoneType()) {
     Module module(&scope, *module_obj);
     function.setModuleObject(*module_obj);
-    Object module_name(&scope,
-                       moduleAtById(thread, module, SymbolId::kDunderName));
+    Object module_name(&scope, moduleAtById(thread, module, ID(__name__)));
     if (!module_name.isErrorNotFound()) {
       function.setModuleName(*module_name);
     }
@@ -1615,14 +1604,13 @@ void Runtime::initializeHeapTypes() {
   ObjectBuiltins::initialize(this);
 
   // Runtime-internal classes.
-  addEmptyBuiltinType(SymbolId::kExceptionState, LayoutId::kExceptionState,
+  addEmptyBuiltinType(ID(ExceptionState), LayoutId::kExceptionState,
                       LayoutId::kObject);
-  addEmptyBuiltinType(SymbolId::kUnderMutableBytes, LayoutId::kMutableBytes,
+  addEmptyBuiltinType(ID(_mutablebytes), LayoutId::kMutableBytes,
                       LayoutId::kObject);
-  addEmptyBuiltinType(SymbolId::kUnderMutableTuple, LayoutId::kMutableTuple,
+  addEmptyBuiltinType(ID(_mutabletuple), LayoutId::kMutableTuple,
                       LayoutId::kObject);
-  addEmptyBuiltinType(SymbolId::kUnderWeakLink, LayoutId::kWeakLink,
-                      LayoutId::kObject);
+  addEmptyBuiltinType(ID(_weaklink), LayoutId::kWeakLink, LayoutId::kObject);
   StrArrayBuiltins::initialize(this);
 
   // Abstract classes.
@@ -1650,15 +1638,13 @@ void Runtime::initializeHeapTypes() {
   DictKeyIteratorBuiltins::initialize(this);
   DictValuesBuiltins::initialize(this);
   DictValueIteratorBuiltins::initialize(this);
-  addEmptyBuiltinType(SymbolId::kEllipsis, LayoutId::kEllipsis,
-                      LayoutId::kObject);
+  addEmptyBuiltinType(ID(ellipsis), LayoutId::kEllipsis, LayoutId::kObject);
   FloatBuiltins::initialize(this);
-  addEmptyBuiltinType(SymbolId::kFrame, LayoutId::kHeapFrame,
-                      LayoutId::kObject);
+  addEmptyBuiltinType(ID(frame), LayoutId::kHeapFrame, LayoutId::kObject);
   FrozenSetBuiltins::initialize(this);
   FunctionBuiltins::initialize(this);
   GeneratorBuiltins::initialize(this);
-  addEmptyBuiltinType(SymbolId::kLayout, LayoutId::kLayout, LayoutId::kObject);
+  addEmptyBuiltinType(ID(layout), LayoutId::kLayout, LayoutId::kObject);
   LargeBytesBuiltins::initialize(this);
   LargeIntBuiltins::initialize(this);
   LargeStrBuiltins::initialize(this);
@@ -1666,7 +1652,7 @@ void Runtime::initializeHeapTypes() {
   ListIteratorBuiltins::initialize(this);
   LongRangeIteratorBuiltins::initialize(this);
   BoundMethodBuiltins::initialize(this);
-  addEmptyBuiltinType(SymbolId::kMappingproxy, LayoutId::kMappingProxy,
+  addEmptyBuiltinType(ID(mappingproxy), LayoutId::kMappingProxy,
                       LayoutId::kObject);
   MemoryViewBuiltins::initialize(this);
   ModuleBuiltins::initialize(this);
@@ -1686,12 +1672,10 @@ void Runtime::initializeHeapTypes() {
   StrIteratorBuiltins::initialize(this);
   StaticMethodBuiltins::initialize(this);
   SuperBuiltins::initialize(this);
-  addEmptyBuiltinType(SymbolId::kTraceback, LayoutId::kTraceback,
-                      LayoutId::kObject);
+  addEmptyBuiltinType(ID(traceback), LayoutId::kTraceback, LayoutId::kObject);
   TypeBuiltins::initialize(this);
   TypeProxyBuiltins::initialize(this);
-  addEmptyBuiltinType(SymbolId::kValueCell, LayoutId::kValueCell,
-                      LayoutId::kObject);
+  addEmptyBuiltinType(ID(valuecell), LayoutId::kValueCell, LayoutId::kObject);
 
   // IO types
   UnderIOBaseBuiltins::initialize(this);
@@ -1724,123 +1708,118 @@ void Runtime::initializeExceptionTypes() {
   BaseExceptionBuiltins::initialize(this);
 
   // BaseException subclasses
-  addEmptyBuiltinType(SymbolId::kException, LayoutId::kException,
+  addEmptyBuiltinType(ID(Exception), LayoutId::kException,
                       LayoutId::kBaseException);
-  addEmptyBuiltinType(SymbolId::kKeyboardInterrupt,
-                      LayoutId::kKeyboardInterrupt, LayoutId::kBaseException);
-  addEmptyBuiltinType(SymbolId::kGeneratorExit, LayoutId::kGeneratorExit,
+  addEmptyBuiltinType(ID(KeyboardInterrupt), LayoutId::kKeyboardInterrupt,
+                      LayoutId::kBaseException);
+  addEmptyBuiltinType(ID(GeneratorExit), LayoutId::kGeneratorExit,
                       LayoutId::kBaseException);
   SystemExitBuiltins::initialize(this);
 
   // Exception subclasses
-  addEmptyBuiltinType(SymbolId::kArithmeticError, LayoutId::kArithmeticError,
+  addEmptyBuiltinType(ID(ArithmeticError), LayoutId::kArithmeticError,
                       LayoutId::kException);
-  addEmptyBuiltinType(SymbolId::kAssertionError, LayoutId::kAssertionError,
+  addEmptyBuiltinType(ID(AssertionError), LayoutId::kAssertionError,
                       LayoutId::kException);
-  addEmptyBuiltinType(SymbolId::kAttributeError, LayoutId::kAttributeError,
+  addEmptyBuiltinType(ID(AttributeError), LayoutId::kAttributeError,
                       LayoutId::kException);
-  addEmptyBuiltinType(SymbolId::kBufferError, LayoutId::kBufferError,
+  addEmptyBuiltinType(ID(BufferError), LayoutId::kBufferError,
                       LayoutId::kException);
-  addEmptyBuiltinType(SymbolId::kEOFError, LayoutId::kEOFError,
-                      LayoutId::kException);
+  addEmptyBuiltinType(ID(EOFError), LayoutId::kEOFError, LayoutId::kException);
   ImportErrorBuiltins::initialize(this);
-  addEmptyBuiltinType(SymbolId::kLookupError, LayoutId::kLookupError,
+  addEmptyBuiltinType(ID(LookupError), LayoutId::kLookupError,
                       LayoutId::kException);
-  addEmptyBuiltinType(SymbolId::kMemoryError, LayoutId::kMemoryError,
+  addEmptyBuiltinType(ID(MemoryError), LayoutId::kMemoryError,
                       LayoutId::kException);
-  addEmptyBuiltinType(SymbolId::kNameError, LayoutId::kNameError,
+  addEmptyBuiltinType(ID(NameError), LayoutId::kNameError,
                       LayoutId::kException);
-  addEmptyBuiltinType(SymbolId::kOSError, LayoutId::kOSError,
+  addEmptyBuiltinType(ID(OSError), LayoutId::kOSError, LayoutId::kException);
+  addEmptyBuiltinType(ID(ReferenceError), LayoutId::kReferenceError,
                       LayoutId::kException);
-  addEmptyBuiltinType(SymbolId::kReferenceError, LayoutId::kReferenceError,
-                      LayoutId::kException);
-  addEmptyBuiltinType(SymbolId::kRuntimeError, LayoutId::kRuntimeError,
+  addEmptyBuiltinType(ID(RuntimeError), LayoutId::kRuntimeError,
                       LayoutId::kException);
   StopIterationBuiltins::initialize(this);
-  addEmptyBuiltinType(SymbolId::kStopAsyncIteration,
-                      LayoutId::kStopAsyncIteration, LayoutId::kException);
+  addEmptyBuiltinType(ID(StopAsyncIteration), LayoutId::kStopAsyncIteration,
+                      LayoutId::kException);
   SyntaxErrorBuiltins::initialize(this);
-  addEmptyBuiltinType(SymbolId::kSystemError, LayoutId::kSystemError,
+  addEmptyBuiltinType(ID(SystemError), LayoutId::kSystemError,
                       LayoutId::kException);
-  addEmptyBuiltinType(SymbolId::kTypeError, LayoutId::kTypeError,
+  addEmptyBuiltinType(ID(TypeError), LayoutId::kTypeError,
                       LayoutId::kException);
-  addEmptyBuiltinType(SymbolId::kValueError, LayoutId::kValueError,
+  addEmptyBuiltinType(ID(ValueError), LayoutId::kValueError,
                       LayoutId::kException);
-  addEmptyBuiltinType(SymbolId::kWarning, LayoutId::kWarning,
-                      LayoutId::kException);
+  addEmptyBuiltinType(ID(Warning), LayoutId::kWarning, LayoutId::kException);
 
   // ArithmeticError subclasses
-  addEmptyBuiltinType(SymbolId::kFloatingPointError,
-                      LayoutId::kFloatingPointError,
+  addEmptyBuiltinType(ID(FloatingPointError), LayoutId::kFloatingPointError,
                       LayoutId::kArithmeticError);
-  addEmptyBuiltinType(SymbolId::kOverflowError, LayoutId::kOverflowError,
+  addEmptyBuiltinType(ID(OverflowError), LayoutId::kOverflowError,
                       LayoutId::kArithmeticError);
-  addEmptyBuiltinType(SymbolId::kZeroDivisionError,
-                      LayoutId::kZeroDivisionError, LayoutId::kArithmeticError);
+  addEmptyBuiltinType(ID(ZeroDivisionError), LayoutId::kZeroDivisionError,
+                      LayoutId::kArithmeticError);
 
   // ImportError subclasses
-  addEmptyBuiltinType(SymbolId::kModuleNotFoundError,
-                      LayoutId::kModuleNotFoundError, LayoutId::kImportError);
+  addEmptyBuiltinType(ID(ModuleNotFoundError), LayoutId::kModuleNotFoundError,
+                      LayoutId::kImportError);
 
   // LookupError subclasses
-  addEmptyBuiltinType(SymbolId::kIndexError, LayoutId::kIndexError,
+  addEmptyBuiltinType(ID(IndexError), LayoutId::kIndexError,
                       LayoutId::kLookupError);
-  addEmptyBuiltinType(SymbolId::kKeyError, LayoutId::kKeyError,
+  addEmptyBuiltinType(ID(KeyError), LayoutId::kKeyError,
                       LayoutId::kLookupError);
 
   // NameError subclasses
-  addEmptyBuiltinType(SymbolId::kUnboundLocalError,
-                      LayoutId::kUnboundLocalError, LayoutId::kNameError);
+  addEmptyBuiltinType(ID(UnboundLocalError), LayoutId::kUnboundLocalError,
+                      LayoutId::kNameError);
 
   // OSError subclasses
-  addEmptyBuiltinType(SymbolId::kBlockingIOError, LayoutId::kBlockingIOError,
+  addEmptyBuiltinType(ID(BlockingIOError), LayoutId::kBlockingIOError,
                       LayoutId::kOSError);
-  addEmptyBuiltinType(SymbolId::kChildProcessError,
-                      LayoutId::kChildProcessError, LayoutId::kOSError);
-  addEmptyBuiltinType(SymbolId::kConnectionError, LayoutId::kConnectionError,
+  addEmptyBuiltinType(ID(ChildProcessError), LayoutId::kChildProcessError,
                       LayoutId::kOSError);
-  addEmptyBuiltinType(SymbolId::kFileExistsError, LayoutId::kFileExistsError,
+  addEmptyBuiltinType(ID(ConnectionError), LayoutId::kConnectionError,
                       LayoutId::kOSError);
-  addEmptyBuiltinType(SymbolId::kFileNotFoundError,
-                      LayoutId::kFileNotFoundError, LayoutId::kOSError);
-  addEmptyBuiltinType(SymbolId::kInterruptedError, LayoutId::kInterruptedError,
+  addEmptyBuiltinType(ID(FileExistsError), LayoutId::kFileExistsError,
                       LayoutId::kOSError);
-  addEmptyBuiltinType(SymbolId::kIsADirectoryError,
-                      LayoutId::kIsADirectoryError, LayoutId::kOSError);
-  addEmptyBuiltinType(SymbolId::kNotADirectoryError,
-                      LayoutId::kNotADirectoryError, LayoutId::kOSError);
-  addEmptyBuiltinType(SymbolId::kPermissionError, LayoutId::kPermissionError,
+  addEmptyBuiltinType(ID(FileNotFoundError), LayoutId::kFileNotFoundError,
                       LayoutId::kOSError);
-  addEmptyBuiltinType(SymbolId::kProcessLookupError,
-                      LayoutId::kProcessLookupError, LayoutId::kOSError);
-  addEmptyBuiltinType(SymbolId::kTimeoutError, LayoutId::kTimeoutError,
+  addEmptyBuiltinType(ID(InterruptedError), LayoutId::kInterruptedError,
+                      LayoutId::kOSError);
+  addEmptyBuiltinType(ID(IsADirectoryError), LayoutId::kIsADirectoryError,
+                      LayoutId::kOSError);
+  addEmptyBuiltinType(ID(NotADirectoryError), LayoutId::kNotADirectoryError,
+                      LayoutId::kOSError);
+  addEmptyBuiltinType(ID(PermissionError), LayoutId::kPermissionError,
+                      LayoutId::kOSError);
+  addEmptyBuiltinType(ID(ProcessLookupError), LayoutId::kProcessLookupError,
+                      LayoutId::kOSError);
+  addEmptyBuiltinType(ID(TimeoutError), LayoutId::kTimeoutError,
                       LayoutId::kOSError);
 
   // ConnectionError subclasses
-  addEmptyBuiltinType(SymbolId::kBrokenPipeError, LayoutId::kBrokenPipeError,
+  addEmptyBuiltinType(ID(BrokenPipeError), LayoutId::kBrokenPipeError,
                       LayoutId::kConnectionError);
-  addEmptyBuiltinType(SymbolId::kConnectionAbortedError,
+  addEmptyBuiltinType(ID(ConnectionAbortedError),
                       LayoutId::kConnectionAbortedError,
                       LayoutId::kConnectionError);
-  addEmptyBuiltinType(SymbolId::kConnectionRefusedError,
+  addEmptyBuiltinType(ID(ConnectionRefusedError),
                       LayoutId::kConnectionRefusedError,
                       LayoutId::kConnectionError);
-  addEmptyBuiltinType(SymbolId::kConnectionResetError,
-                      LayoutId::kConnectionResetError,
+  addEmptyBuiltinType(ID(ConnectionResetError), LayoutId::kConnectionResetError,
                       LayoutId::kConnectionError);
 
   // RuntimeError subclasses
-  addEmptyBuiltinType(SymbolId::kNotImplementedError,
-                      LayoutId::kNotImplementedError, LayoutId::kRuntimeError);
-  addEmptyBuiltinType(SymbolId::kRecursionError, LayoutId::kRecursionError,
+  addEmptyBuiltinType(ID(NotImplementedError), LayoutId::kNotImplementedError,
+                      LayoutId::kRuntimeError);
+  addEmptyBuiltinType(ID(RecursionError), LayoutId::kRecursionError,
                       LayoutId::kRuntimeError);
 
   // SyntaxError subclasses
-  addEmptyBuiltinType(SymbolId::kIndentationError, LayoutId::kIndentationError,
+  addEmptyBuiltinType(ID(IndentationError), LayoutId::kIndentationError,
                       LayoutId::kSyntaxError);
 
   // IndentationError subclasses
-  addEmptyBuiltinType(SymbolId::kTabError, LayoutId::kTabError,
+  addEmptyBuiltinType(ID(TabError), LayoutId::kTabError,
                       LayoutId::kIndentationError);
 
   // ValueError subclasses
@@ -1852,25 +1831,25 @@ void Runtime::initializeExceptionTypes() {
   UnicodeTranslateErrorBuiltins::initialize(this);
 
   // Warning subclasses
-  addEmptyBuiltinType(SymbolId::kUserWarning, LayoutId::kUserWarning,
+  addEmptyBuiltinType(ID(UserWarning), LayoutId::kUserWarning,
                       LayoutId::kWarning);
-  addEmptyBuiltinType(SymbolId::kDeprecationWarning,
-                      LayoutId::kDeprecationWarning, LayoutId::kWarning);
-  addEmptyBuiltinType(SymbolId::kPendingDeprecationWarning,
+  addEmptyBuiltinType(ID(DeprecationWarning), LayoutId::kDeprecationWarning,
+                      LayoutId::kWarning);
+  addEmptyBuiltinType(ID(PendingDeprecationWarning),
                       LayoutId::kPendingDeprecationWarning, LayoutId::kWarning);
-  addEmptyBuiltinType(SymbolId::kSyntaxWarning, LayoutId::kSyntaxWarning,
+  addEmptyBuiltinType(ID(SyntaxWarning), LayoutId::kSyntaxWarning,
                       LayoutId::kWarning);
-  addEmptyBuiltinType(SymbolId::kRuntimeWarning, LayoutId::kRuntimeWarning,
+  addEmptyBuiltinType(ID(RuntimeWarning), LayoutId::kRuntimeWarning,
                       LayoutId::kWarning);
-  addEmptyBuiltinType(SymbolId::kFutureWarning, LayoutId::kFutureWarning,
+  addEmptyBuiltinType(ID(FutureWarning), LayoutId::kFutureWarning,
                       LayoutId::kWarning);
-  addEmptyBuiltinType(SymbolId::kImportWarning, LayoutId::kImportWarning,
+  addEmptyBuiltinType(ID(ImportWarning), LayoutId::kImportWarning,
                       LayoutId::kWarning);
-  addEmptyBuiltinType(SymbolId::kUnicodeWarning, LayoutId::kUnicodeWarning,
+  addEmptyBuiltinType(ID(UnicodeWarning), LayoutId::kUnicodeWarning,
                       LayoutId::kWarning);
-  addEmptyBuiltinType(SymbolId::kBytesWarning, LayoutId::kBytesWarning,
+  addEmptyBuiltinType(ID(BytesWarning), LayoutId::kBytesWarning,
                       LayoutId::kWarning);
-  addEmptyBuiltinType(SymbolId::kResourceWarning, LayoutId::kResourceWarning,
+  addEmptyBuiltinType(ID(ResourceWarning), LayoutId::kResourceWarning,
                       LayoutId::kWarning);
 }
 
@@ -1959,12 +1938,12 @@ RawObject Runtime::createModule(Thread* thread, SymbolId name) {
 RawObject Runtime::findOrCreateMainModule() {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object maybe_main(&scope, findModuleById(SymbolId::kDunderMain));
+  Object maybe_main(&scope, findModuleById(ID(__main__)));
   if (!maybe_main.isErrorNotFound()) {
     return *maybe_main;
   }
 
-  Module main(&scope, createModule(thread, SymbolId::kDunderMain));
+  Module main(&scope, createModule(thread, ID(__main__)));
   // Fill in __main__...
   return *main;
 }
@@ -2138,14 +2117,12 @@ void Runtime::initializeSymbols() {
 }
 
 void Runtime::cacheBuildClass(Thread* thread, const Module& builtins) {
-  build_class_ =
-      moduleValueCellAtById(thread, builtins, SymbolId::kDunderBuildClass);
+  build_class_ = moduleValueCellAtById(thread, builtins, ID(__build_class__));
   CHECK(!build_class_.isErrorNotFound(), "__build_class__ not found");
 }
 
 void Runtime::cacheDunderImport(Thread* thread, const Module& builtins) {
-  dunder_import_ =
-      moduleValueCellAtById(thread, builtins, SymbolId::kDunderImport);
+  dunder_import_ = moduleValueCellAtById(thread, builtins, ID(__import__));
   CHECK(!dunder_import_.isErrorNotFound(), "__import__ not found");
 }
 
@@ -2156,33 +2133,32 @@ void Runtime::cacheBuiltinsInstances(Thread* thread) {
   HandleScope scope(thread);
   Type object_type(&scope, typeAt(LayoutId::kObject));
   object_dunder_getattribute_ =
-      typeAtById(thread, object_type, SymbolId::kDunderGetattribute);
-  object_dunder_init_ = typeAtById(thread, object_type, SymbolId::kDunderInit);
-  object_dunder_new_ = typeAtById(thread, object_type, SymbolId::kDunderNew);
-  object_dunder_setattr_ =
-      typeAtById(thread, object_type, SymbolId::kDunderSetattr);
+      typeAtById(thread, object_type, ID(__getattribute__));
+  object_dunder_init_ = typeAtById(thread, object_type, ID(__init__));
+  object_dunder_new_ = typeAtById(thread, object_type, ID(__new__));
+  object_dunder_setattr_ = typeAtById(thread, object_type, ID(__setattr__));
 
   Type module_type(&scope, typeAt(LayoutId::kModule));
   module_dunder_getattribute_ =
-      typeAtById(thread, module_type, SymbolId::kDunderGetattribute);
+      typeAtById(thread, module_type, ID(__getattribute__));
 
   Type str_type(&scope, typeAt(LayoutId::kStr));
-  str_dunder_eq_ = typeAtById(thread, str_type, SymbolId::kDunderEq);
-  str_dunder_hash_ = typeAtById(thread, str_type, SymbolId::kDunderHash);
+  str_dunder_eq_ = typeAtById(thread, str_type, ID(__eq__));
+  str_dunder_hash_ = typeAtById(thread, str_type, ID(__hash__));
 
   Type type_type(&scope, typeAt(LayoutId::kType));
   type_dunder_getattribute_ =
-      typeAtById(thread, type_type, SymbolId::kDunderGetattribute);
+      typeAtById(thread, type_type, ID(__getattribute__));
 }
 
 void Runtime::cacheSysInstances(Thread* thread, const Module& sys) {
-  sys_stderr_ = moduleValueCellAtById(thread, sys, SymbolId::kStderr);
+  sys_stderr_ = moduleValueCellAtById(thread, sys, ID(stderr));
   CHECK(!sys_stderr_.isErrorNotFound(), "sys.stderr not found");
-  sys_stdin_ = moduleValueCellAtById(thread, sys, SymbolId::kStdin);
+  sys_stdin_ = moduleValueCellAtById(thread, sys, ID(stdin));
   CHECK(!sys_stdin_.isErrorNotFound(), "sys.stdin not found");
-  sys_stdout_ = moduleValueCellAtById(thread, sys, SymbolId::kStdout);
+  sys_stdout_ = moduleValueCellAtById(thread, sys, ID(stdout));
   CHECK(!sys_stdout_.isErrorNotFound(), "sys.stdout not found");
-  display_hook_ = moduleValueCellAtById(thread, sys, SymbolId::kDisplayhook);
+  display_hook_ = moduleValueCellAtById(thread, sys, ID(displayhook));
   CHECK(!display_hook_.isErrorNotFound(), "sys.displayhook not found");
 }
 
@@ -2336,8 +2312,7 @@ void Runtime::initializeModules() {
           Symbols::predefinedSymbolAt(id));
   }
   // Run builtins._init to import modules required in builtins.
-  CHECK(!thread->invokeFunction0(SymbolId::kBuiltins, SymbolId::kUnderInit)
-             .isError(),
+  CHECK(!thread->invokeFunction0(ID(builtins), ID(_init)).isError(),
         "Failed to run builtins._init");
 }
 
@@ -3049,7 +3024,7 @@ void Runtime::collectAttributes(const Code& code, const Dict& attributes) {
 
 RawObject Runtime::classConstructor(const Type& type) {
   Thread* thread = Thread::current();
-  return typeAtById(thread, type, SymbolId::kDunderInit);
+  return typeAtById(thread, type, ID(__init__));
 }
 
 RawObject Runtime::computeInitialLayout(Thread* thread, const Type& type,
@@ -3097,8 +3072,8 @@ RawObject Runtime::attributeAt(Thread* thread, const Object& object,
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object dunder_getattribute(
-      &scope, Interpreter::lookupMethod(thread, frame, object,
-                                        SymbolId::kDunderGetattribute));
+      &scope,
+      Interpreter::lookupMethod(thread, frame, object, ID(__getattribute__)));
   DCHECK(!dunder_getattribute.isErrorNotFound(),
          "__getattribute__ is expected to be found");
   Runtime* runtime = thread->runtime();
@@ -3107,7 +3082,7 @@ RawObject Runtime::attributeAt(Thread* thread, const Object& object,
     if (!result.isErrorNotFound()) {
       return *result;
     }
-    result = thread->invokeMethod2(object, SymbolId::kDunderGetattr, name);
+    result = thread->invokeMethod2(object, ID(__getattr__), name);
     if (!result.isErrorNotFound()) {
       return *result;
     }
@@ -3125,7 +3100,7 @@ RawObject Runtime::attributeAt(Thread* thread, const Object& object,
   Object saved_value(&scope, thread->pendingExceptionValue());
   Object saved_traceback(&scope, thread->pendingExceptionTraceback());
   thread->clearPendingException();
-  result = thread->invokeMethod2(object, SymbolId::kDunderGetattr, name);
+  result = thread->invokeMethod2(object, ID(__getattr__), name);
   if (result.isErrorNotFound()) {
     thread->setPendingExceptionType(*saved_type);
     thread->setPendingExceptionValue(*saved_value);
@@ -3154,8 +3129,8 @@ RawObject Runtime::attributeDel(Thread* thread, const Object& receiver,
   HandleScope scope(thread);
   // If present, __delattr__ overrides all attribute deletion logic.
   Type type(&scope, typeOf(*receiver));
-  Object dunder_delattr(
-      &scope, typeLookupInMroById(thread, type, SymbolId::kDunderDelattr));
+  Object dunder_delattr(&scope,
+                        typeLookupInMroById(thread, type, ID(__delattr__)));
   RawObject result = NoneType::object();
   if (!dunder_delattr.isError()) {
     result = Interpreter::callMethod2(thread, thread->currentFrame(),

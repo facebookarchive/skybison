@@ -15,7 +15,7 @@ RawObject superGetAttribute(Thread* thread, const Super& super,
                             const Object& name) {
   // This must return `super`.
   Runtime* runtime = thread->runtime();
-  if (name == runtime->symbols()->at(SymbolId::kDunderClass)) {
+  if (name == runtime->symbols()->at(ID(__class__))) {
     return runtime->typeOf(*super);
   }
 
@@ -62,17 +62,16 @@ RawObject superGetAttribute(Thread* thread, const Super& super,
 }
 
 const BuiltinMethod SuperBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderGetattribute, dunderGetattribute},
-    {SymbolId::kDunderInit, dunderInit},
-    {SymbolId::kDunderNew, dunderNew},
+    {ID(__getattribute__), dunderGetattribute},
+    {ID(__init__), dunderInit},
+    {ID(__new__), dunderNew},
     {SymbolId::kSentinelId, nullptr},
 };
 
 const BuiltinAttribute SuperBuiltins::kAttributes[] = {
-    {SymbolId::kDunderThisclass, RawSuper::kTypeOffset,
-     AttributeFlags::kReadOnly},
-    {SymbolId::kDunderSelf, RawSuper::kObjectOffset, AttributeFlags::kReadOnly},
-    {SymbolId::kDunderSelfClass, RawSuper::kObjectTypeOffset,
+    {ID(__thisclass__), RawSuper::kTypeOffset, AttributeFlags::kReadOnly},
+    {ID(__self__), RawSuper::kObjectOffset, AttributeFlags::kReadOnly},
+    {ID(__self_class__), RawSuper::kObjectTypeOffset,
      AttributeFlags::kReadOnly},
     {SymbolId::kSentinelId, -1},
 };
@@ -83,7 +82,7 @@ RawObject SuperBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isSuper()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kSuper);
+    return thread->raiseRequiresType(self_obj, ID(super));
   }
   Super self(&scope, *self_obj);
   Object name(&scope, args.get(1));
@@ -110,7 +109,7 @@ RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isSuper()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kSuper);
+    return thread->raiseRequiresType(self_obj, ID(super));
   }
   Super super(&scope, *self_obj);
   Object type_obj(&scope, NoneType::object());
@@ -141,7 +140,7 @@ RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
     Tuple free_vars(&scope, code.freevars());
     RawObject cell = Error::notFound();
     for (word i = 0, length = free_vars.length(); i < length; i++) {
-      if (free_vars.at(i) == runtime->symbols()->at(SymbolId::kDunderClass)) {
+      if (free_vars.at(i) == runtime->symbols()->at(ID(__class__))) {
         cell = caller_frame->local(code.nlocals() + code.numCellvars() + i);
         break;
       }

@@ -7,7 +7,7 @@ namespace py {
 word complexHash(RawObject value);
 
 class ComplexBuiltins
-    : public Builtins<ComplexBuiltins, SymbolId::kComplex, LayoutId::kComplex> {
+    : public Builtins<ComplexBuiltins, ID(complex), LayoutId::kComplex> {
  public:
   static void postInitialize(Runtime*, const Type& new_type);
 

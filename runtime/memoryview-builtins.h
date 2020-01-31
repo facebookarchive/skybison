@@ -12,9 +12,8 @@ RawObject memoryviewSetslice(Thread* thread, const MemoryView& view, word start,
                              word stop, word step, word slice_len,
                              const Object& value);
 
-class MemoryViewBuiltins
-    : public Builtins<MemoryViewBuiltins, SymbolId::kMemoryView,
-                      LayoutId::kMemoryView> {
+class MemoryViewBuiltins : public Builtins<MemoryViewBuiltins, ID(memoryview),
+                                           LayoutId::kMemoryView> {
  public:
   static RawObject cast(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGetitem(Thread* thread, Frame* frame, word nargs);

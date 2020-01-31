@@ -5,8 +5,7 @@
 namespace py {
 
 class StrArrayBuiltins
-    : public Builtins<StrArrayBuiltins, SymbolId::kUnderStrarray,
-                      LayoutId::kStrArray> {
+    : public Builtins<StrArrayBuiltins, ID(_strarray), LayoutId::kStrArray> {
  public:
   static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);

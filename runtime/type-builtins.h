@@ -108,8 +108,7 @@ RawObject typeValueCellAtWithHash(const Type& type, const Object& name,
 RawObject typeValueCellAtPut(Thread* thread, const Type& type,
                              const Object& name);
 
-class TypeBuiltins
-    : public Builtins<TypeBuiltins, SymbolId::kType, LayoutId::kType> {
+class TypeBuiltins : public Builtins<TypeBuiltins, ID(type), LayoutId::kType> {
  public:
   static RawObject dunderGetattribute(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderSetattr(Thread* thread, Frame* frame, word nargs);
@@ -124,8 +123,7 @@ class TypeBuiltins
 };
 
 class TypeProxyBuiltins
-    : public Builtins<TypeProxyBuiltins, SymbolId::kTypeProxy,
-                      LayoutId::kTypeProxy> {
+    : public Builtins<TypeProxyBuiltins, ID(type_proxy), LayoutId::kTypeProxy> {
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(TypeProxyBuiltins);
 };

@@ -143,9 +143,9 @@ RawObject setIntersection(Thread* thread, const SetBase& set,
     return *dst;
   }
   // Generic case
-  Object iter_method(
-      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
-                                        iterable, SymbolId::kDunderIter));
+  Object iter_method(&scope,
+                     Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                               iterable, ID(__iter__)));
   if (iter_method.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
   }
@@ -155,9 +155,9 @@ RawObject setIntersection(Thread* thread, const SetBase& set,
   if (iterator.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
   }
-  Object next_method(
-      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
-                                        iterator, SymbolId::kDunderNext));
+  Object next_method(&scope,
+                     Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                               iterator, ID(__next__)));
   if (next_method.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "iter() returned a non-iterator");
@@ -266,9 +266,9 @@ RawObject setUpdate(Thread* thread, const SetBase& dst,
     return *dst;
   }
   // Generic case
-  Object iter_method(
-      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
-                                        iterable, SymbolId::kDunderIter));
+  Object iter_method(&scope,
+                     Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                               iterable, ID(__iter__)));
   if (iter_method.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
   }
@@ -278,9 +278,9 @@ RawObject setUpdate(Thread* thread, const SetBase& dst,
   if (iterator.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
   }
-  Object next_method(
-      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
-                                        iterator, SymbolId::kDunderNext));
+  Object next_method(&scope,
+                     Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                               iterator, ID(__next__)));
   if (next_method.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "iter() returned a non-iterator");
@@ -411,7 +411,7 @@ RawObject SetBaseBuiltins::isdisjoint(Thread* thread, Frame* frame,
   // Generic iterator case
   Object iter_method(
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), other,
-                                        SymbolId::kDunderIter));
+                                        ID(__iter__)));
   if (iter_method.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
   }
@@ -421,9 +421,9 @@ RawObject SetBaseBuiltins::isdisjoint(Thread* thread, Frame* frame,
   if (iterator.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
   }
-  Object next_method(
-      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
-                                        iterator, SymbolId::kDunderNext));
+  Object next_method(&scope,
+                     Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                               iterator, ID(__next__)));
   if (next_method.isError()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "iter() returned a non-iterator");
@@ -606,21 +606,21 @@ const BuiltinAttribute FrozenSetBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod FrozenSetBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kCopy, copy},
-    {SymbolId::kDunderAnd, dunderAnd},
-    {SymbolId::kDunderContains, dunderContains},
-    {SymbolId::kDunderEq, dunderEq},
-    {SymbolId::kDunderGe, dunderGe},
-    {SymbolId::kDunderGt, dunderGt},
-    {SymbolId::kDunderHash, dunderHash},
-    {SymbolId::kDunderIter, dunderIter},
-    {SymbolId::kDunderLe, dunderLe},
-    {SymbolId::kDunderLen, dunderLen},
-    {SymbolId::kDunderLt, dunderLt},
-    {SymbolId::kDunderNe, dunderNe},
-    {SymbolId::kDunderNew, dunderNew},
-    {SymbolId::kIntersection, intersection},
-    {SymbolId::kIsdisjoint, isdisjoint},
+    {ID(copy), copy},
+    {ID(__and__), dunderAnd},
+    {ID(__contains__), dunderContains},
+    {ID(__eq__), dunderEq},
+    {ID(__ge__), dunderGe},
+    {ID(__gt__), dunderGt},
+    {ID(__hash__), dunderHash},
+    {ID(__iter__), dunderIter},
+    {ID(__le__), dunderLe},
+    {ID(__len__), dunderLen},
+    {ID(__lt__), dunderLt},
+    {ID(__ne__), dunderNe},
+    {ID(__new__), dunderNew},
+    {ID(intersection), intersection},
+    {ID(isdisjoint), isdisjoint},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -629,7 +629,7 @@ RawObject FrozenSetBuiltins::copy(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfFrozenSet(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kFrozenset);
+    return thread->raiseRequiresType(self, ID(frozenset));
   }
   FrozenSet set(&scope, *self);
   if (set.isFrozenSet()) {
@@ -646,7 +646,7 @@ RawObject FrozenSetBuiltins::dunderAnd(Thread* thread, Frame* frame,
   Object other(&scope, args.get(1));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFrozenSet(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kFrozenset);
+    return thread->raiseRequiresType(self, ID(frozenset));
   }
   if (!runtime->isInstanceOfSetBase(*other)) {
     return NotImplementedType::object();
@@ -662,7 +662,7 @@ RawObject FrozenSetBuiltins::dunderHash(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfFrozenSet(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kFrozenset);
+    return thread->raiseRequiresType(self, ID(frozenset));
   }
   FrozenSet set(&scope, *self);
   return frozensetHash(thread, set);
@@ -702,9 +702,9 @@ RawObject FrozenSetBuiltins::dunderNew(Thread* thread, Frame* frame,
   if (iterable.isFrozenSet()) {
     return *iterable;
   }
-  Object dunder_iter(
-      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
-                                        iterable, SymbolId::kDunderIter));
+  Object dunder_iter(&scope,
+                     Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                               iterable, ID(__iter__)));
   if (dunder_iter.isError()) {
     return thread->raiseWithFmt(
         LayoutId::kTypeError,
@@ -725,29 +725,29 @@ const BuiltinAttribute SetBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod SetBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kAdd, add},
-    {SymbolId::kClear, clear},
-    {SymbolId::kCopy, copy},
-    {SymbolId::kDiscard, discard},
-    {SymbolId::kDunderAnd, dunderAnd},
-    {SymbolId::kDunderContains, dunderContains},
-    {SymbolId::kDunderEq, dunderEq},
-    {SymbolId::kDunderGe, dunderGe},
-    {SymbolId::kDunderGt, dunderGt},
-    {SymbolId::kDunderIand, dunderIand},
-    {SymbolId::kDunderInit, dunderInit},
-    {SymbolId::kDunderNew, dunderNew},
-    {SymbolId::kDunderIter, dunderIter},
-    {SymbolId::kDunderLe, dunderLe},
-    {SymbolId::kDunderLen, dunderLen},
-    {SymbolId::kDunderLt, dunderLt},
-    {SymbolId::kDunderNe, dunderNe},
-    {SymbolId::kDunderNew, dunderNew},
-    {SymbolId::kIntersection, intersection},
-    {SymbolId::kIsdisjoint, isdisjoint},
-    {SymbolId::kPop, pop},
-    {SymbolId::kRemove, remove},
-    {SymbolId::kUpdate, update},
+    {ID(add), add},
+    {ID(clear), clear},
+    {ID(copy), copy},
+    {ID(discard), discard},
+    {ID(__and__), dunderAnd},
+    {ID(__contains__), dunderContains},
+    {ID(__eq__), dunderEq},
+    {ID(__ge__), dunderGe},
+    {ID(__gt__), dunderGt},
+    {ID(__iand__), dunderIand},
+    {ID(__init__), dunderInit},
+    {ID(__new__), dunderNew},
+    {ID(__iter__), dunderIter},
+    {ID(__le__), dunderLe},
+    {ID(__len__), dunderLen},
+    {ID(__lt__), dunderLt},
+    {ID(__ne__), dunderNe},
+    {ID(__new__), dunderNew},
+    {ID(intersection), intersection},
+    {ID(isdisjoint), isdisjoint},
+    {ID(pop), pop},
+    {ID(remove), remove},
+    {ID(update), update},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -866,7 +866,7 @@ RawObject SetBuiltins::clear(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfSet(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kSet);
+    return thread->raiseRequiresType(self, ID(set));
   }
   Set set(&scope, *self);
   if (set.numItems() == 0) {
@@ -883,7 +883,7 @@ RawObject SetBuiltins::copy(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfSet(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kSet);
+    return thread->raiseRequiresType(self, ID(set));
   }
   Set set(&scope, *self);
   return setCopy(thread, set);
@@ -895,7 +895,7 @@ RawObject SetBuiltins::discard(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfSet(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kSet);
+    return thread->raiseRequiresType(self_obj, ID(set));
   }
   Set self(&scope, *self_obj);
   Object key(&scope, args.get(1));
@@ -913,7 +913,7 @@ RawObject SetBuiltins::dunderAnd(Thread* thread, Frame* frame, word nargs) {
   Object other(&scope, args.get(1));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfSet(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kSet);
+    return thread->raiseRequiresType(self, ID(set));
   }
   if (!runtime->isInstanceOfSetBase(*other)) {
     return NotImplementedType::object();
@@ -930,7 +930,7 @@ RawObject SetBuiltins::dunderIand(Thread* thread, Frame* frame, word nargs) {
   Object other(&scope, args.get(1));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfSet(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kSet);
+    return thread->raiseRequiresType(self, ID(set));
   }
   if (!runtime->isInstanceOfSet(*other)) {
     return NotImplementedType::object();
@@ -952,7 +952,7 @@ RawObject SetBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!runtime->isInstanceOfSet(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kSet);
+    return thread->raiseRequiresType(self, ID(set));
   }
   Set set(&scope, *self);
   Object iterable(&scope, args.get(1));
@@ -968,7 +968,7 @@ RawObject SetBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfSet(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kSet);
+    return thread->raiseRequiresType(self, ID(set));
   }
   Set set(&scope, args.get(0));
   return setPop(thread, set);
@@ -980,7 +980,7 @@ RawObject SetBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfSet(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kSet);
+    return thread->raiseRequiresType(self, ID(set));
   }
   Set set(&scope, *self);
   Object key(&scope, args.get(1));
@@ -999,12 +999,12 @@ RawObject SetBuiltins::update(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfSet(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kSet);
+    return thread->raiseRequiresType(self_obj, ID(set));
   }
   Set self(&scope, *self_obj);
   Object starargs_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfTuple(*starargs_obj)) {
-    return thread->raiseRequiresType(starargs_obj, SymbolId::kTuple);
+    return thread->raiseRequiresType(starargs_obj, ID(tuple));
   }
   Tuple starargs(&scope, tupleUnderlying(*starargs_obj));
   Object result(&scope, NoneType::object());
@@ -1038,9 +1038,9 @@ RawObject SetBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 }
 
 const BuiltinMethod SetIteratorBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderIter, dunderIter},
-    {SymbolId::kDunderLengthHint, dunderLengthHint},
-    {SymbolId::kDunderNext, dunderNext},
+    {ID(__iter__), dunderIter},
+    {ID(__length_hint__), dunderLengthHint},
+    {ID(__next__), dunderNext},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -1050,7 +1050,7 @@ RawObject SetIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isSetIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kSetIterator);
+    return thread->raiseRequiresType(self, ID(set_iterator));
   }
   return *self;
 }
@@ -1061,7 +1061,7 @@ RawObject SetIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isSetIterator()) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kSetIterator);
+    return thread->raiseRequiresType(self_obj, ID(set_iterator));
   }
   SetIterator self(&scope, *self_obj);
   Object value(&scope, setIteratorNext(thread, self));
@@ -1077,7 +1077,7 @@ RawObject SetIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isSetIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kSetIterator);
+    return thread->raiseRequiresType(self, ID(set_iterator));
   }
   SetIterator set_iterator(&scope, *self);
   Set set(&scope, set_iterator.iterable());

@@ -406,38 +406,38 @@ const BuiltinAttribute StrBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod StrBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderAdd, dunderAdd},
-    {SymbolId::kDunderBool, dunderBool},
-    {SymbolId::kDunderContains, dunderContains},
-    {SymbolId::kDunderEq, dunderEq},
-    {SymbolId::kDunderFormat, dunderFormat},
-    {SymbolId::kDunderGe, dunderGe},
-    {SymbolId::kDunderGt, dunderGt},
-    {SymbolId::kDunderHash, dunderHash},
-    {SymbolId::kDunderIter, dunderIter},
-    {SymbolId::kDunderLe, dunderLe},
-    {SymbolId::kDunderLen, dunderLen},
-    {SymbolId::kDunderLt, dunderLt},
-    {SymbolId::kDunderMul, dunderMul},
-    {SymbolId::kDunderNe, dunderNe},
-    {SymbolId::kDunderRepr, dunderRepr},
-    {SymbolId::kIsalnum, isalnum},
-    {SymbolId::kIsalpha, isalpha},
-    {SymbolId::kIsdecimal, isdecimal},
-    {SymbolId::kIsdigit, isdigit},
-    {SymbolId::kIsidentifier, isidentifier},
-    {SymbolId::kIslower, islower},
-    {SymbolId::kIsnumeric, isnumeric},
-    {SymbolId::kIsprintable, isprintable},
-    {SymbolId::kIsspace, isspace},
-    {SymbolId::kIstitle, istitle},
-    {SymbolId::kIsupper, isupper},
-    {SymbolId::kLStrip, lstrip},
-    {SymbolId::kLower, lower},
-    {SymbolId::kTitle, title},
-    {SymbolId::kRStrip, rstrip},
-    {SymbolId::kStrip, strip},
-    {SymbolId::kUpper, upper},
+    {ID(__add__), dunderAdd},
+    {ID(__bool__), dunderBool},
+    {ID(__contains__), dunderContains},
+    {ID(__eq__), dunderEq},
+    {ID(__format__), dunderFormat},
+    {ID(__ge__), dunderGe},
+    {ID(__gt__), dunderGt},
+    {ID(__hash__), dunderHash},
+    {ID(__iter__), dunderIter},
+    {ID(__le__), dunderLe},
+    {ID(__len__), dunderLen},
+    {ID(__lt__), dunderLt},
+    {ID(__mul__), dunderMul},
+    {ID(__ne__), dunderNe},
+    {ID(__repr__), dunderRepr},
+    {ID(isalnum), isalnum},
+    {ID(isalpha), isalpha},
+    {ID(isdecimal), isdecimal},
+    {ID(isdigit), isdigit},
+    {ID(isidentifier), isidentifier},
+    {ID(islower), islower},
+    {ID(isnumeric), isnumeric},
+    {ID(isprintable), isprintable},
+    {ID(isspace), isspace},
+    {ID(istitle), istitle},
+    {ID(isupper), isupper},
+    {ID(lstrip), lstrip},
+    {ID(lower), lower},
+    {ID(title), title},
+    {ID(rstrip), rstrip},
+    {ID(strip), strip},
+    {ID(upper), upper},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -452,10 +452,10 @@ RawObject StrBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   if (!runtime->isInstanceOfStr(*other_obj)) {
-    return thread->raiseRequiresType(other_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(other_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
   Str other(&scope, strUnderlying(*other_obj));
@@ -467,7 +467,7 @@ RawObject StrBuiltins::dunderBool(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
   return Bool::fromBool(*self != Str::empty());
@@ -480,11 +480,11 @@ RawObject StrBuiltins::dunderContains(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfStr(*other_obj)) {
-    return thread->raiseRequiresType(other_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(other_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
   Str other(&scope, strUnderlying(*other_obj));
@@ -497,7 +497,7 @@ RawObject StrBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Object other_obj(&scope, args.get(1));
   if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   if (!thread->runtime()->isInstanceOfStr(*other_obj)) {
     return NotImplementedType::object();
@@ -513,7 +513,7 @@ RawObject StrBuiltins::dunderFormat(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
 
@@ -565,7 +565,7 @@ RawObject StrBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Object other_obj(&scope, args.get(1));
   if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   if (!thread->runtime()->isInstanceOfStr(*other_obj)) {
     return NotImplementedType::object();
@@ -581,7 +581,7 @@ RawObject StrBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Object other_obj(&scope, args.get(1));
   if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   if (!thread->runtime()->isInstanceOfStr(*other_obj)) {
     return NotImplementedType::object();
@@ -597,7 +597,7 @@ RawObject StrBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfStr(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kStr);
+    return thread->raiseRequiresType(self, ID(str));
   }
   Str self_str(&scope, strUnderlying(*self));
   return SmallInt::fromWord(strHash(thread, *self_str));
@@ -809,7 +809,7 @@ RawObject StrBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Object other_obj(&scope, args.get(1));
   if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   if (!thread->runtime()->isInstanceOfStr(*other_obj)) {
     return NotImplementedType::object();
@@ -824,7 +824,7 @@ RawObject StrBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
   return SmallInt::fromWord(self.codePointLength());
@@ -836,7 +836,7 @@ RawObject StrBuiltins::lower(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
   word length = self.charLength();
@@ -880,7 +880,7 @@ RawObject StrBuiltins::title(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
   word length = self.charLength();
@@ -907,7 +907,7 @@ RawObject StrBuiltins::upper(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
   word length = self.charLength();
@@ -951,7 +951,7 @@ RawObject StrBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Object other_obj(&scope, args.get(1));
   if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   if (!thread->runtime()->isInstanceOfStr(*other_obj)) {
     return NotImplementedType::object();
@@ -967,7 +967,7 @@ RawObject StrBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   Object count_index(&scope, args.get(1));
   Object count_obj(&scope, intFromIndex(thread, count_index));
@@ -998,7 +998,7 @@ RawObject StrBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Object other_obj(&scope, args.get(1));
   if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   if (!thread->runtime()->isInstanceOfStr(*other_obj)) {
     return NotImplementedType::object();
@@ -1014,7 +1014,7 @@ RawObject StrBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
   return runtime->newStrIterator(self);
@@ -1037,7 +1037,7 @@ RawObject StrBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
   const word self_len = self.charLength();
@@ -1149,7 +1149,7 @@ RawObject StrBuiltins::isalnum(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
   word char_length = self.charLength();
@@ -1174,7 +1174,7 @@ RawObject StrBuiltins::isalpha(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
   word char_length = self.charLength();
@@ -1199,7 +1199,7 @@ RawObject StrBuiltins::isdecimal(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
   word char_length = self.charLength();
@@ -1224,7 +1224,7 @@ RawObject StrBuiltins::isdigit(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
   word char_length = self.charLength();
@@ -1249,7 +1249,7 @@ RawObject StrBuiltins::isidentifier(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
   word char_length = self.charLength();
@@ -1280,7 +1280,7 @@ RawObject StrBuiltins::islower(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
   word char_length = self.charLength();
@@ -1305,7 +1305,7 @@ RawObject StrBuiltins::isnumeric(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
   word char_length = self.charLength();
@@ -1330,7 +1330,7 @@ RawObject StrBuiltins::isprintable(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
   for (word i = 0, char_length = self.charLength(); i < char_length; i++) {
@@ -1350,7 +1350,7 @@ RawObject StrBuiltins::isspace(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
   word char_length = self.charLength();
@@ -1377,7 +1377,7 @@ RawObject StrBuiltins::istitle(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
   bool cased = false;
@@ -1404,7 +1404,7 @@ RawObject StrBuiltins::isupper(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str self(&scope, strUnderlying(*self_obj));
   word char_length = self.charLength();
@@ -1430,7 +1430,7 @@ RawObject StrBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str str(&scope, strUnderlying(*self_obj));
   Object other_obj(&scope, args.get(1));
@@ -1451,7 +1451,7 @@ RawObject StrBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str str(&scope, strUnderlying(*self_obj));
   Object other_obj(&scope, args.get(1));
@@ -1472,7 +1472,7 @@ RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+    return thread->raiseRequiresType(self_obj, ID(str));
   }
   Str str(&scope, strUnderlying(*self_obj));
   Object other_obj(&scope, args.get(1));
@@ -1488,9 +1488,9 @@ RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
 }
 
 const BuiltinMethod StrIteratorBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderIter, dunderIter},
-    {SymbolId::kDunderLengthHint, dunderLengthHint},
-    {SymbolId::kDunderNext, dunderNext},
+    {ID(__iter__), dunderIter},
+    {ID(__length_hint__), dunderLengthHint},
+    {ID(__next__), dunderNext},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -1500,7 +1500,7 @@ RawObject StrIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isStrIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kStrIterator);
+    return thread->raiseRequiresType(self, ID(str_iterator));
   }
   return *self;
 }
@@ -1514,7 +1514,7 @@ RawObject StrIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isStrIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kStrIterator);
+    return thread->raiseRequiresType(self, ID(str_iterator));
   }
   StrIterator iter(&scope, *self);
   Object value(&scope, strIteratorNext(thread, iter));
@@ -1530,7 +1530,7 @@ RawObject StrIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isStrIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kStrIterator);
+    return thread->raiseRequiresType(self, ID(str_iterator));
   }
   StrIterator str_iterator(&scope, *self);
   Str str(&scope, str_iterator.iterable());
