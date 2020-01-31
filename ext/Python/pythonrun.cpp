@@ -250,7 +250,7 @@ static void setMainLoader(Thread* thread, Module& module, const char* filename,
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Str filename_str(&scope, runtime->newStrFromCStr(filename));
-  Str dunder_main_str(&scope, runtime->symbols()->DunderMain());
+  Str dunder_main_str(&scope, runtime->symbols()->at(SymbolId::kDunderMain));
   RawObject loader_obj =
       thread->invokeFunction2(SymbolId::kUnderFrozenImportlibExternal,
                               loader_name, dunder_main_str, filename_str);
@@ -301,7 +301,7 @@ PY_EXPORT int PyRun_SimpleFileExFlags(FILE* fp, const char* filename,
     returncode = 0;
   }
 
-  Str dunder_file_name(&scope, runtime->symbols()->DunderFile());
+  Str dunder_file_name(&scope, runtime->symbols()->at(SymbolId::kDunderFile));
   RawObject del_result =
       runtime->attributeDel(thread, module, dunder_file_name);
   if (del_result.isError()) {

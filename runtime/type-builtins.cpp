@@ -1017,7 +1017,8 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
   if (!class_cell.isErrorNotFound()) {
     DCHECK(class_cell.isValueCell(), "class cell must be a value cell");
     ValueCell::cast(*class_cell).setValue(*type);
-    Object class_cell_name(&scope, runtime->symbols()->DunderClassCell());
+    Object class_cell_name(&scope,
+                           runtime->symbols()->at(SymbolId::kDunderClassCell));
     typeRemove(thread, type, class_cell_name);
   }
   // TODO(T53997177): Centralize type initialization

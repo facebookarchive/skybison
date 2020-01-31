@@ -795,7 +795,7 @@ static RawObject inspect_block(Thread*, Frame* frame, word) {
 TEST_F(ThreadTest, SetupLoopAndPopBlock) {
   HandleScope scope(thread_);
 
-  Object name(&scope, runtime_->symbols()->Dummy());
+  Object name(&scope, runtime_->symbols()->at(SymbolId::kDummy));
   Object empty_tuple(&scope, runtime_->emptyTuple());
   Code inspect_code(
       &scope, runtime_->newBuiltinCode(/*argcount=*/0, /*posonlyargcount=*/0,

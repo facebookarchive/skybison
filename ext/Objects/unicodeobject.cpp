@@ -64,13 +64,13 @@ static RawObject symbolFromError(Thread* thread, const char* error) {
   Runtime* runtime = thread->runtime();
   Symbols* symbols = runtime->symbols();
   if (error == nullptr || std::strcmp(error, "strict") == 0) {
-    return symbols->Strict();
+    return symbols->at(SymbolId::kStrict);
   }
   if (std::strcmp(error, "ignore") == 0) {
-    return symbols->Ignore();
+    return symbols->at(SymbolId::kIgnore);
   }
   if (std::strcmp(error, "replace") == 0) {
-    return symbols->Replace();
+    return symbols->at(SymbolId::kReplace);
   }
   return Runtime::internStrFromCStr(thread, error);
 }

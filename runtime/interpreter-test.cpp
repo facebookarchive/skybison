@@ -5112,7 +5112,7 @@ cache_A_add(a, b)
 
   // Ensure that cache_a_add is being tracked as a dependent from A.__add__.
   Type type_a(&scope, mainModuleAt(runtime_, "A"));
-  Str dunder_add(&scope, runtime_->symbols()->DunderAdd());
+  Str dunder_add(&scope, runtime_->symbols()->at(SymbolId::kDunderAdd));
   ValueCell a_add_value_cell(&scope, typeValueCellAt(type_a, dunder_add));
   ASSERT_FALSE(a_add_value_cell.isPlaceholder());
   EXPECT_EQ(WeakLink::cast(a_add_value_cell.dependencyLink()).referent(),
@@ -5120,7 +5120,7 @@ cache_A_add(a, b)
 
   // Ensure that cache_a_add is being tracked as a dependent from B.__radd__.
   Type type_b(&scope, mainModuleAt(runtime_, "B"));
-  Str dunder_radd(&scope, runtime_->symbols()->DunderRadd());
+  Str dunder_radd(&scope, runtime_->symbols()->at(SymbolId::kDunderRadd));
   ValueCell b_radd_value_cell(&scope, typeValueCellAt(type_b, dunder_radd));
   ASSERT_TRUE(b_radd_value_cell.isPlaceholder());
   EXPECT_EQ(WeakLink::cast(b_radd_value_cell.dependencyLink()).referent(),
@@ -5238,13 +5238,13 @@ cache_A_iadd(a, b)
 
   // Ensure that cache_a_iadd is being tracked as a dependent from A.__iadd__.
   Type type_a(&scope, mainModuleAt(runtime_, "A"));
-  Str dunder_iadd(&scope, runtime_->symbols()->DunderIadd());
+  Str dunder_iadd(&scope, runtime_->symbols()->at(SymbolId::kDunderIadd));
   ValueCell a_iadd_value_cell(&scope, typeValueCellAt(type_a, dunder_iadd));
   ASSERT_FALSE(a_iadd_value_cell.isPlaceholder());
   EXPECT_EQ(WeakLink::cast(a_iadd_value_cell.dependencyLink()).referent(),
             *cache_a_iadd);
 
-  Str dunder_add(&scope, runtime_->symbols()->DunderAdd());
+  Str dunder_add(&scope, runtime_->symbols()->at(SymbolId::kDunderAdd));
   ValueCell a_add_value_cell(&scope, typeValueCellAt(type_a, dunder_add));
   ASSERT_TRUE(a_add_value_cell.isPlaceholder());
   EXPECT_EQ(WeakLink::cast(a_add_value_cell.dependencyLink()).referent(),
@@ -5252,7 +5252,7 @@ cache_A_iadd(a, b)
 
   // Ensure that cache_a_iadd is being tracked as a dependent from B.__riadd__.
   Type type_b(&scope, mainModuleAt(runtime_, "B"));
-  Str dunder_radd(&scope, runtime_->symbols()->DunderRadd());
+  Str dunder_radd(&scope, runtime_->symbols()->at(SymbolId::kDunderRadd));
   ValueCell b_radd_value_cell(&scope, typeValueCellAt(type_b, dunder_radd));
   ASSERT_TRUE(b_radd_value_cell.isPlaceholder());
   EXPECT_EQ(WeakLink::cast(b_radd_value_cell.dependencyLink()).referent(),

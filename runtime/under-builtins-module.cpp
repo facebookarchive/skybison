@@ -386,7 +386,7 @@ void UnderBuiltinsModule::initialize(Thread* thread, const Module& module) {
   {
     Tuple parameters(&scope, runtime->newTuple(1));
     parameters.atPut(0, runtime->newStrFromCStr("function"));
-    Object name(&scope, runtime->symbols()->UnderPatch());
+    Object name(&scope, runtime->symbols()->at(SymbolId::kUnderPatch));
     Code code(&scope,
               runtime->newBuiltinCode(/*argcount=*/1, /*posonlyargcount=*/0,
                                       /*kwonlyargcount=*/0, /*flags=*/0,
@@ -4813,7 +4813,7 @@ RawObject UnderBuiltinsModule::underTypeDunderCall(Thread* thread, Frame* frame,
   Type self(&scope, *self_obj);
 
   // `instance = self.__new__(...)`
-  Object dunder_new_name(&scope, runtime->symbols()->DunderNew());
+  Object dunder_new_name(&scope, runtime->symbols()->at(SymbolId::kDunderNew));
   Object dunder_new(&scope, typeGetAttribute(thread, self, dunder_new_name));
   Object instance(&scope, NoneType::object());
   Object call_args_obj(&scope, NoneType::object());
@@ -4849,7 +4849,8 @@ RawObject UnderBuiltinsModule::underTypeDunderCall(Thread* thread, Frame* frame,
   }
 
   // instance.__init__(...)
-  Object dunder_init_name(&scope, runtime->symbols()->DunderInit());
+  Object dunder_init_name(&scope,
+                          runtime->symbols()->at(SymbolId::kDunderInit));
   Object dunder_init(&scope, typeGetAttribute(thread, self, dunder_init_name));
   // `object.__init__` does nothing, we may be able to just skip things.
   // The exception to the rule being `object.__init__` raising errors when

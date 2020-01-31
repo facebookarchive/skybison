@@ -224,7 +224,7 @@ PY_EXPORT int PyModule_SetDocString(PyObject* m, const char* doc) {
   if (!uni.isStr()) {
     return -1;
   }
-  Object name(&scope, runtime->symbols()->DunderDoc());
+  Object name(&scope, runtime->symbols()->at(SymbolId::kDunderDoc));
   if (thread->invokeMethod3(module, SymbolId::kDunderSetattr, name, uni)
           .isErrorException()) {
     return -1;

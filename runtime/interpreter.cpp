@@ -3906,7 +3906,8 @@ HANDLER_INLINE Continue Interpreter::doStoreAnnotation(Thread* thread,
   Object value(&scope, frame->popValue());
   Str name(&scope, Tuple::cast(*names).at(arg));
   Object annotations(&scope, NoneType::object());
-  Object dunder_annotations(&scope, runtime->symbols()->DunderAnnotations());
+  Object dunder_annotations(
+      &scope, runtime->symbols()->at(SymbolId::kDunderAnnotations));
   if (frame->implicitGlobals().isNoneType()) {
     // Module body
     Module module(&scope, frame->function().moduleObject());

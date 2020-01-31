@@ -375,7 +375,8 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
           Str::cast(*name).toCStr());
     Type type(&scope, *type_obj);
 
-    if (bases.length() == 0 && name != runtime->symbols()->Object()) {
+    if (bases.length() == 0 &&
+        name != runtime->symbols()->at(SymbolId::kObject)) {
       bases = runtime->implicitBases();
     }
     Tuple builtin_bases(&scope, type.bases());

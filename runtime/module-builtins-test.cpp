@@ -114,7 +114,8 @@ static RawModule createTestingModule(Thread* thread) {
 
   // Create a module dict with builtins in it.
   Dict module_dict(&scope, runtime->newDict());
-  Object dunder_builtins_name(&scope, runtime->symbols()->DunderBuiltins());
+  Object dunder_builtins_name(
+      &scope, runtime->symbols()->at(SymbolId::kDunderBuiltins));
   dictAtPutInValueCellByStr(thread, module_dict, dunder_builtins_name,
                             builtins_module);
 

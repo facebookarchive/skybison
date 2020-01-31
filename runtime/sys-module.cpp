@@ -127,7 +127,7 @@ void SysModule::initialize(Thread* thread, const Module& module) {
   hash_info_data.atPut(2, SmallInt::fromWord(kHashInf));
   hash_info_data.atPut(3, SmallInt::fromWord(kHashNan));
   hash_info_data.atPut(4, SmallInt::fromWord(kHashImag));
-  hash_info_data.atPut(5, symbols->Siphash24());
+  hash_info_data.atPut(5, symbols->at(SymbolId::kSiphash24));
   hash_info_data.atPut(6, SmallInt::fromWord(64));
   hash_info_data.atPut(7, SmallInt::fromWord(128));
   hash_info_data.atPut(8, SmallInt::fromWord(SmallStr::kMaxLength));

@@ -72,7 +72,7 @@ RawObject UnderImpModule::createBuiltin(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object spec(&scope, args.get(0));
-  Object key(&scope, runtime->symbols()->Name());
+  Object key(&scope, runtime->symbols()->at(SymbolId::kName));
   Object name_obj(&scope, getAttribute(thread, spec, key));
   DCHECK(thread->isErrorValueOk(*name_obj), "error/exception mismatch");
   if (name_obj.isError()) {

@@ -136,11 +136,11 @@ PY_EXPORT PyObject* _PyBytes_DecodeEscape(const char* c_str, Py_ssize_t size,
   Object errors_obj(&scope, Str::empty());
   Symbols* symbols = runtime->symbols();
   if (errors == nullptr || std::strcmp(errors, "strict") == 0) {
-    errors_obj = symbols->Strict();
+    errors_obj = symbols->at(SymbolId::kStrict);
   } else if (std::strcmp(errors, "ignore") == 0) {
-    errors_obj = symbols->Ignore();
+    errors_obj = symbols->at(SymbolId::kIgnore);
   } else if (std::strcmp(errors, "replace") == 0) {
-    errors_obj = symbols->Replace();
+    errors_obj = symbols->at(SymbolId::kReplace);
   }
   Object result_obj(
       &scope, thread->invokeFunction3(SymbolId::kUnderCodecs,

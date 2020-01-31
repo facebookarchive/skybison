@@ -15,7 +15,7 @@ RawObject superGetAttribute(Thread* thread, const Super& super,
                             const Object& name) {
   // This must return `super`.
   Runtime* runtime = thread->runtime();
-  if (name == runtime->symbols()->DunderClass()) {
+  if (name == runtime->symbols()->at(SymbolId::kDunderClass)) {
     return runtime->typeOf(*super);
   }
 
@@ -141,7 +141,7 @@ RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
     Tuple free_vars(&scope, code.freevars());
     RawObject cell = Error::notFound();
     for (word i = 0, length = free_vars.length(); i < length; i++) {
-      if (free_vars.at(i) == runtime->symbols()->DunderClass()) {
+      if (free_vars.at(i) == runtime->symbols()->at(SymbolId::kDunderClass)) {
         cell = caller_frame->local(code.nlocals() + code.numCellvars() + i);
         break;
       }

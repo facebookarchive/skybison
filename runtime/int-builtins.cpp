@@ -494,9 +494,9 @@ static RawObject toBytesImpl(Thread* thread, const Object& self_obj,
   }
   Str byteorder(&scope, *byteorder_obj);
   endian endianness;
-  if (byteorder.equals(runtime->symbols()->Little())) {
+  if (byteorder.equals(runtime->symbols()->at(SymbolId::kLittle))) {
     endianness = endian::little;
-  } else if (byteorder.equals(runtime->symbols()->Big())) {
+  } else if (byteorder.equals(runtime->symbols()->at(SymbolId::kBig))) {
     endianness = endian::big;
   } else {
     return thread->raiseWithFmt(LayoutId::kValueError,

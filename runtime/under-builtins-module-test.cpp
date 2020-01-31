@@ -24,9 +24,9 @@ static RawObject createDummyBuiltinFunction(Thread* thread) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Function::Entry entry = UnderBuiltinsModule::underIntCheck;
-  Object name(&scope, runtime->symbols()->UnderIntCheck());
+  Object name(&scope, runtime->symbols()->at(SymbolId::kUnderIntCheck));
   Tuple parameter_names(&scope, runtime->newTuple(1));
-  parameter_names.atPut(0, runtime->symbols()->Self());
+  parameter_names.atPut(0, runtime->symbols()->at(SymbolId::kSelf));
   Code code(&scope,
             runtime->newBuiltinCode(/*argcount=*/1, /*posonlyargcount=*/0,
                                     /*kwonlyargcount=*/0,

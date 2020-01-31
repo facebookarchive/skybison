@@ -926,11 +926,6 @@ class Symbols {
   explicit Symbols(Runtime* runtime);
   ~Symbols();
 
-#define DEFINE_SYMBOL_ACCESSOR(symbol, value)                                  \
-  RawObject symbol() { return at(SymbolId::k##symbol); }
-  FOREACH_SYMBOL(DEFINE_SYMBOL_ACCESSOR)
-#undef DEFINE_SYMBOL_ACCESSOR
-
   void visit(PointerVisitor* visitor);
 
   RawObject at(SymbolId id) {

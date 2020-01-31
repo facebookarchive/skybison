@@ -376,7 +376,7 @@ static RawObject printSingleException(Thread* thread, const Object& file,
     MAY_RAISE(fileWriteString(thread, file, "<unknown>"));
   } else {
     Str module_str(&scope, *module);
-    if (!module_str.equals(runtime->symbols()->Builtins())) {
+    if (!module_str.equals(runtime->symbols()->at(SymbolId::kBuiltins))) {
       MAY_RAISE(fileWriteObjectStr(thread, file, module_str));
       MAY_RAISE(fileWriteString(thread, file, "."));
     }

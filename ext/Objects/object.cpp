@@ -184,7 +184,7 @@ PY_EXPORT PyObject* PyObject_Dir(PyObject* obj) {
   Runtime* runtime = thread->runtime();
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Type type(&scope, runtime->typeOf(*object));
-  Object name(&scope, runtime->symbols()->DunderDir());
+  Object name(&scope, runtime->symbols()->at(SymbolId::kDunderDir));
   Object func(&scope, typeLookupInMro(thread, type, name));
   if (func.isError() || !func.isFunction()) {
     return nullptr;

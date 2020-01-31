@@ -383,7 +383,7 @@ void ObjectBuiltins::initialize(Runtime* runtime) {
   Layout layout(&scope, runtime->newLayout(LayoutId::kObject));
   Type object_type(&scope, runtime->newType());
   layout.setDescribedType(*object_type);
-  object_type.setName(runtime->symbols()->Object());
+  object_type.setName(runtime->symbols()->at(SymbolId::kObject));
   Tuple mro(&scope, runtime->newTuple(1));
   mro.atPut(0, *object_type);
   object_type.setMro(*mro);
@@ -411,8 +411,8 @@ void ObjectBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
   HandleScope scope(thread);
 
   Tuple parameter_names(&scope, runtime->newTuple(2));
-  parameter_names.atPut(0, runtime->symbols()->Self());
-  parameter_names.atPut(1, runtime->symbols()->Name());
+  parameter_names.atPut(0, runtime->symbols()->at(SymbolId::kSelf));
+  parameter_names.atPut(1, runtime->symbols()->at(SymbolId::kName));
   Object name(&scope, runtime->symbols()->at(SymbolId::kDunderGetattribute));
   Code code(&scope,
             runtime->newBuiltinCode(
@@ -529,7 +529,7 @@ RawObject NoneBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "__repr__ expects None as first argument");
   }
-  return thread->runtime()->symbols()->None();
+  return thread->runtime()->symbols()->at(SymbolId::kNone);
 }
 
 }  // namespace py
