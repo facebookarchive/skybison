@@ -65,9 +65,9 @@ PY_EXPORT int PyCallable_Check(PyObject* obj) {
 
 PY_EXPORT PyObject* PyObject_ASCII(PyObject* pyobj) {
   Thread* thread = Thread::current();
-  Runtime* runtime = thread->runtime();
   if (pyobj == nullptr) {
-    return ApiHandle::newReference(thread, runtime->symbols()->LtNullGt());
+    return ApiHandle::newReference(
+        thread, Runtime::internStrFromCStr(thread, "<NULL>"));
   }
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
@@ -396,8 +396,8 @@ PY_EXPORT int PyObject_Print(PyObject* obj, FILE* fp, int flags) {
 PY_EXPORT PyObject* PyObject_Repr(PyObject* obj) {
   Thread* thread = Thread::current();
   if (obj == nullptr) {
-    return ApiHandle::newReference(thread,
-                                   thread->runtime()->symbols()->LtNullGt());
+    return ApiHandle::newReference(
+        thread, Runtime::internStrFromCStr(thread, "<NULL>"));
   }
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
@@ -489,8 +489,8 @@ PY_EXPORT int PyObject_SetAttrString(PyObject* v, const char* name,
 PY_EXPORT PyObject* PyObject_Str(PyObject* obj) {
   Thread* thread = Thread::current();
   if (obj == nullptr) {
-    return ApiHandle::newReference(thread,
-                                   thread->runtime()->symbols()->LtNullGt());
+    return ApiHandle::newReference(
+        thread, Runtime::internStrFromCStr(thread, "<NULL>"));
   }
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());

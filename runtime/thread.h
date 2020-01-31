@@ -138,7 +138,6 @@ class Thread {
   RawObject raise(LayoutId type, RawObject value);
   RawObject raiseWithType(RawObject type, RawObject value);
   RawObject raiseWithFmt(LayoutId type, const char* fmt, ...);
-  RawObject raiseWithId(LayoutId type, SymbolId msg);
 
   // Raises a TypeError exception for PyErr_BadArgument.
   void raiseBadArgument();

@@ -4713,8 +4713,9 @@ RawObject UnderBuiltinsModule::underTypeAbstractmethodsDel(Thread* thread,
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
   if (type.abstractMethods().isUnbound()) {
-    return thread->raiseWithId(LayoutId::kAttributeError,
-                               SymbolId::kDunderAbstractmethods);
+    Object name(&scope, thread->runtime()->symbols()->at(
+                            SymbolId::kDunderAbstractmethods));
+    return thread->raise(LayoutId::kAttributeError, *name);
   }
   type.setAbstractMethods(Unbound::object());
   type.setFlagsAndBuiltinBase(
@@ -4733,8 +4734,9 @@ RawObject UnderBuiltinsModule::underTypeAbstractmethodsGet(Thread* thread,
   if (!methods.isUnbound()) {
     return *methods;
   }
-  return thread->raiseWithId(LayoutId::kAttributeError,
-                             SymbolId::kDunderAbstractmethods);
+  Object name(&scope, thread->runtime()->symbols()->at(
+                          SymbolId::kDunderAbstractmethods));
+  return thread->raise(LayoutId::kAttributeError, *name);
 }
 
 RawObject UnderBuiltinsModule::underTypeAbstractmethodsSet(Thread* thread,

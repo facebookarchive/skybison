@@ -331,7 +331,7 @@ RawObject runBuiltinImpl(NativeMethodType method,
     parameter_names.atPut(i, runtime->newStrFromFmt("arg%w", i));
   }
 
-  Object name(&scope, runtime->symbols()->LtAnonymousGt());
+  Object name(&scope, Runtime::internStrFromCStr(thread, "<anonymous>"));
   Code code(&scope, runtime->newBuiltinCode(args_length, /*posonlyargcount=*/0,
                                             /*kwonlyargcount=*/0,
                                             /*flags=*/0, method,
@@ -358,7 +358,7 @@ RawObject runCode(const Code& code) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Module main(&scope, runtime->findOrCreateMainModule());
-  Object qualname(&scope, runtime->symbols()->LtAnonymousGt());
+  Object qualname(&scope, Runtime::internStrFromCStr(thread, "<anonymous>"));
   Function function(&scope,
                     runtime->newFunctionWithCode(thread, qualname, code, main));
   return Interpreter::callFunction0(thread, thread->currentFrame(), function);
@@ -369,7 +369,7 @@ RawObject runCodeNoBytecodeRewriting(const Code& code) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Module main(&scope, runtime->findOrCreateMainModule());
-  Object qualname(&scope, runtime->symbols()->LtAnonymousGt());
+  Object qualname(&scope, Runtime::internStrFromCStr(thread, "<anonymous>"));
   Bytes bytecode(&scope, code.code());
   code.setCode(runtime->newBytes(0, 0));
 

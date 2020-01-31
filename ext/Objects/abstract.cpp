@@ -17,8 +17,8 @@ namespace py {
 
 static PyObject* nullError(Thread* thread) {
   if (!thread->hasPendingException()) {
-    thread->raiseWithId(LayoutId::kSystemError,
-                        SymbolId::kNullArgumentToInternalRoutine);
+    thread->raiseWithFmt(LayoutId::kSystemError,
+                         "null argument to internal routine");
   }
   return nullptr;
 }

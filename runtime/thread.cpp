@@ -477,10 +477,6 @@ RawObject Thread::raiseWithFmt(LayoutId type, const char* fmt, ...) {
   return raise(type, *message);
 }
 
-RawObject Thread::raiseWithId(LayoutId type, SymbolId msg) {
-  return raise(type, runtime()->symbols()->at(msg));
-}
-
 // Convenience method for throwing a binary-operation-specific TypeError
 // exception with an error message.
 RawObject Thread::raiseUnsupportedBinaryOperation(
@@ -491,12 +487,12 @@ RawObject Thread::raiseUnsupportedBinaryOperation(
 }
 
 void Thread::raiseBadArgument() {
-  raiseWithId(LayoutId::kTypeError,
-              SymbolId::kBadArgumentTypeForBuiltinOperation);
+  raiseWithFmt(LayoutId::kTypeError,
+               "bad argument type for built-in operation");
 }
 
 void Thread::raiseBadInternalCall() {
-  raiseWithId(LayoutId::kSystemError, SymbolId::kBadArgumentToInternalFunction);
+  raiseWithFmt(LayoutId::kSystemError, "bad argument to internal function");
 }
 
 RawObject Thread::raiseMemoryError() {

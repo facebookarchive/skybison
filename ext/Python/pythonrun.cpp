@@ -571,7 +571,7 @@ PY_EXPORT PyObject* PyRun_StringFlags(const char* str, int start,
                                       PyCompilerFlags* flags) {
   Thread* thread = Thread::current();
   PyObject* filename = ApiHandle::borrowedReference(
-      thread, thread->runtime()->symbols()->LtStringGt());
+      thread, Runtime::internStrFromCStr(thread, "<string>"));
 
   PyArena* arena = PyArena_New();
   if (arena == nullptr) return nullptr;

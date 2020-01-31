@@ -129,7 +129,7 @@ RawObject UnderImpModule::extensionSuffixes(Thread* thread, Frame* /* frame */,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   List list(&scope, runtime->newList());
-  Object so(&scope, runtime->symbols()->DotSo());
+  Object so(&scope, Runtime::internStrFromCStr(thread, ".so"));
   runtime->listAdd(thread, list, so);
   return *list;
 }

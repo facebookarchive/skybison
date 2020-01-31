@@ -537,9 +537,6 @@ class Runtime;
   V(AssertionError, "AssertionError")                                          \
   V(AsyncGenerator, "async_generator")                                         \
   V(AttributeError, "AttributeError")                                          \
-  V(BadArgumentToInternalFunction, "bad argument to internal function")        \
-  V(BadArgumentTypeForBuiltinOperation,                                        \
-    "bad argument type for built-in operation")                                \
   V(BaseException, "BaseException")                                            \
   V(Big, "big")                                                                \
   V(Bin, "bin")                                                                \
@@ -619,7 +616,6 @@ class Runtime;
   V(Discard, "discard")                                                        \
   V(Displayhook, "displayhook")                                                \
   V(Divmod, "divmod")                                                          \
-  V(DotSo, ".so")                                                              \
   V(Dummy, "dummy")                                                            \
   V(DumpTraceback, "dump_traceback")                                           \
   V(EOFError, "EOFError")                                                      \
@@ -716,7 +712,6 @@ class Runtime;
   V(Isnumeric, "isnumeric")                                                    \
   V(Isprintable, "isprintable")                                                \
   V(Isspace, "isspace")                                                        \
-  V(Iso88591, "iso-8859-1")                                                    \
   V(Istitle, "istitle")                                                        \
   V(Isupper, "isupper")                                                        \
   V(Isub, "isub")                                                              \
@@ -750,9 +745,6 @@ class Runtime;
   V(Lower, "lower")                                                            \
   V(Lseek, "lseek")                                                            \
   V(Lshift, "lshift")                                                          \
-  V(LtAnonymousGt, "<anonymous>")                                              \
-  V(LtNullGt, "<NULL>")                                                        \
-  V(LtStringGt, "<string>")                                                    \
   V(Marshal, "marshal")                                                        \
   V(Matmul, "matmul")                                                          \
   V(Maxsize, "maxsize")                                                        \
@@ -783,7 +775,6 @@ class Runtime;
   V(NotImplementedError, "NotImplementedError")                                \
   V(NotImplementedType, "NotImplementedType")                                  \
   V(Nsig, "NSIG")                                                              \
-  V(NullArgumentToInternalRoutine, "null argument to internal routine")        \
   V(OSError, "OSError")                                                        \
   V(Object, "object")                                                          \
   V(Oct, "oct")                                                                \

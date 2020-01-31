@@ -32,7 +32,7 @@ PY_EXPORT int PyFile_WriteObject(PyObject* pyobj, PyObject* pyfile, int flags) {
     if (obj.isError()) return -1;
     DCHECK(runtime->isInstanceOfStr(*obj), "str() and repr() must return str");
   } else {
-    obj = thread->runtime()->symbols()->LtNullGt();
+    obj = Runtime::internStrFromCStr(thread, "<NULL>");
   }
 
   Object result(&scope, thread->invokeMethod2(file, SymbolId::kWrite, obj));
