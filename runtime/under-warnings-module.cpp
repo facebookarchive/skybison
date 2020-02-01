@@ -11,7 +11,7 @@
 namespace py {
 
 const BuiltinFunction UnderWarningsModule::kBuiltinFunctions[] = {
-    {ID(warn), warn},
+    {ID(warn), FUNC(_warnings, warn)},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -45,7 +45,7 @@ RawObject getCategory(Thread* thread, const Object& message,
 }
 }  // namespace
 
-RawObject UnderWarningsModule::warn(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_warnings, warn)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 

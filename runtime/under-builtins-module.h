@@ -13,359 +13,459 @@ namespace py {
 void copyFunctionEntries(Thread* thread, const Function& base,
                          const Function& patch);
 
+RawObject FUNC(_builtins, _address)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _bool_check)(Thread* thread, Frame* frame,
+                                       word nargs);
+RawObject FUNC(_builtins, _bool_guard)(Thread* thread, Frame* frame,
+                                       word nargs);
+RawObject FUNC(_builtins, _bound_method)(Thread* thread, Frame* frame,
+                                         word nargs);
+RawObject FUNC(_builtins, _bytearray_append)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _bytearray_check)(Thread* thread, Frame* frame,
+                                            word nargs);
+RawObject FUNC(_builtins, _bytearray_clear)(Thread* thread, Frame* frame,
+                                            word nargs);
+RawObject FUNC(_builtins, _bytearray_contains)(Thread* thread, Frame* frame,
+                                               word nargs);
+RawObject FUNC(_builtins, _bytearray_delitem)(Thread* thread, Frame* frame,
+                                              word nargs);
+RawObject FUNC(_builtins, _bytearray_delslice)(Thread* thread, Frame* frame,
+                                               word nargs);
+RawObject FUNC(_builtins, _bytearray_getitem)(Thread* thread, Frame* frame,
+                                              word nargs);
+RawObject FUNC(_builtins, _bytearray_getslice)(Thread* thread, Frame* frame,
+                                               word nargs);
+RawObject FUNC(_builtins, _bytearray_guard)(Thread* thread, Frame* frame,
+                                            word nargs);
+RawObject FUNC(_builtins, _bytearray_join)(Thread* thread, Frame* frame,
+                                           word nargs);
+RawObject FUNC(_builtins, _bytearray_len)(Thread* thread, Frame* frame,
+                                          word nargs);
+RawObject FUNC(_builtins, _bytearray_setitem)(Thread* thread, Frame* frame,
+                                              word nargs);
+RawObject FUNC(_builtins, _bytearray_setslice)(Thread* thread, Frame* frame,
+                                               word nargs);
+RawObject FUNC(_builtins, _bytes_check)(Thread* thread, Frame* frame,
+                                        word nargs);
+RawObject FUNC(_builtins, _bytes_contains)(Thread* thread, Frame* frame,
+                                           word nargs);
+RawObject FUNC(_builtins, _bytes_decode)(Thread* thread, Frame* frame,
+                                         word nargs);
+RawObject FUNC(_builtins, _bytes_decode_ascii)(Thread* thread, Frame* frame,
+                                               word nargs);
+RawObject FUNC(_builtins, _bytes_decode_utf_8)(Thread* thread, Frame* frame,
+                                               word nargs);
+RawObject FUNC(_builtins, _bytes_from_bytes)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _bytes_from_ints)(Thread* thread, Frame* frame,
+                                            word nargs);
+RawObject FUNC(_builtins, _bytes_getitem)(Thread* thread, Frame* frame,
+                                          word nargs);
+RawObject FUNC(_builtins, _bytes_getslice)(Thread* thread, Frame* frame,
+                                           word nargs);
+RawObject FUNC(_builtins, _bytes_guard)(Thread* thread, Frame* frame,
+                                        word nargs);
+RawObject FUNC(_builtins, _bytes_join)(Thread* thread, Frame* frame,
+                                       word nargs);
+RawObject FUNC(_builtins, _bytes_len)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _bytes_maketrans)(Thread* thread, Frame* frame,
+                                            word nargs);
+RawObject FUNC(_builtins, _bytes_repeat)(Thread* thread, Frame* frame,
+                                         word nargs);
+RawObject FUNC(_builtins, _bytes_split)(Thread* thread, Frame* frame,
+                                        word nargs);
+RawObject FUNC(_builtins, _bytes_split_whitespace)(Thread* thread, Frame* frame,
+                                                   word nargs);
+RawObject FUNC(_builtins, _byteslike_check)(Thread* thread, Frame* frame,
+                                            word nargs);
+RawObject FUNC(_builtins, _byteslike_compare_digest)(Thread* thread,
+                                                     Frame* frame, word nargs);
+RawObject FUNC(_builtins, _byteslike_count)(Thread* thread, Frame* frame,
+                                            word nargs);
+RawObject FUNC(_builtins, _byteslike_endswith)(Thread* thread, Frame* frame,
+                                               word nargs);
+RawObject FUNC(_builtins, _byteslike_find_byteslike)(Thread* thread,
+                                                     Frame* frame, word nargs);
+RawObject FUNC(_builtins, _byteslike_find_int)(Thread* thread, Frame* frame,
+                                               word nargs);
+RawObject FUNC(_builtins, _byteslike_guard)(Thread* thread, Frame* frame,
+                                            word nargs);
+RawObject FUNC(_builtins, _byteslike_rfind_byteslike)(Thread* thread,
+                                                      Frame* frame, word nargs);
+RawObject FUNC(_builtins, _byteslike_rfind_int)(Thread* thread, Frame* frame,
+                                                word nargs);
+RawObject FUNC(_builtins, _byteslike_startswith)(Thread* thread, Frame* frame,
+                                                 word nargs);
+RawObject FUNC(_builtins, _classmethod)(Thread* thread, Frame* frame,
+                                        word nargs);
+RawObject FUNC(_builtins, _classmethod_isabstract)(Thread* thread, Frame* frame,
+                                                   word nargs);
+RawObject FUNC(_builtins, _code_check)(Thread* thread, Frame* frame,
+                                       word nargs);
+RawObject FUNC(_builtins, _code_guard)(Thread* thread, Frame* frame,
+                                       word nargs);
+RawObject FUNC(_builtins, _code_set_posonlyargcount)(Thread* thread,
+                                                     Frame* frame, word nargs);
+RawObject FUNC(_builtins, _complex_check)(Thread* thread, Frame* frame,
+                                          word nargs);
+RawObject FUNC(_builtins, _complex_checkexact)(Thread* thread, Frame* frame,
+                                               word nargs);
+RawObject FUNC(_builtins, _complex_imag)(Thread* thread, Frame* frame,
+                                         word nargs);
+RawObject FUNC(_builtins, _complex_new)(Thread* thread, Frame* frame,
+                                        word nargs);
+RawObject FUNC(_builtins, _complex_new_from_str)(Thread* thread, Frame* frame,
+                                                 word nargs);
+RawObject FUNC(_builtins, _complex_real)(Thread* thread, Frame* frame,
+                                         word nargs);
+RawObject FUNC(_builtins, _dict_bucket_insert)(Thread* thread, Frame* frame,
+                                               word nargs);
+RawObject FUNC(_builtins, _dict_bucket_key)(Thread* thread, Frame* frame,
+                                            word nargs);
+RawObject FUNC(_builtins, _dict_bucket_set_value)(Thread* thread, Frame* frame,
+                                                  word nargs);
+RawObject FUNC(_builtins, _dict_bucket_value)(Thread* thread, Frame* frame,
+                                              word nargs);
+RawObject FUNC(_builtins, _dict_check)(Thread* thread, Frame* frame,
+                                       word nargs);
+RawObject FUNC(_builtins, _dict_check_exact)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _dict_get)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _dict_guard)(Thread* thread, Frame* frame,
+                                       word nargs);
+RawObject FUNC(_builtins, _dict_len)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _dict_lookup)(Thread* thread, Frame* frame,
+                                        word nargs);
+RawObject FUNC(_builtins, _dict_lookup_next)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _dict_update)(Thread* thread, Frame* frame,
+                                        word nargs);
+RawObject FUNC(_builtins, _dict_popitem)(Thread* thread, Frame* frame,
+                                         word nargs);
+RawObject FUNC(_builtins, _dict_setitem)(Thread* thread, Frame* frame,
+                                         word nargs);
+RawObject FUNC(_builtins, _divmod)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _exec)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _float_check)(Thread* thread, Frame* frame,
+                                        word nargs);
+RawObject FUNC(_builtins, _float_check_exact)(Thread* thread, Frame* frame,
+                                              word nargs);
+RawObject FUNC(_builtins, _float_divmod)(Thread* thread, Frame* frame,
+                                         word nargs);
+RawObject FUNC(_builtins, _float_format)(Thread* thread, Frame* frame,
+                                         word nargs);
+RawObject FUNC(_builtins, _float_guard)(Thread* thread, Frame* frame,
+                                        word nargs);
+RawObject FUNC(_builtins, _float_new_from_byteslike)(Thread* thread,
+                                                     Frame* frame, word nargs);
+RawObject FUNC(_builtins, _float_new_from_float)(Thread* thread, Frame* frame,
+                                                 word nargs);
+RawObject FUNC(_builtins, _float_new_from_str)(Thread* thread, Frame* frame,
+                                               word nargs);
+RawObject FUNC(_builtins, _float_signbit)(Thread* thread, Frame* frame,
+                                          word nargs);
+RawObject FUNC(_builtins, _frozenset_check)(Thread* thread, Frame* frame,
+                                            word nargs);
+RawObject FUNC(_builtins, _frozenset_guard)(Thread* thread, Frame* frame,
+                                            word nargs);
+RawObject FUNC(_builtins, _function_globals)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _function_guard)(Thread* thread, Frame* frame,
+                                           word nargs);
+RawObject FUNC(_builtins, _gc)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _getframe_function)(Thread* thread, Frame* frame,
+                                              word nargs);
+RawObject FUNC(_builtins, _getframe_lineno)(Thread* thread, Frame* frame,
+                                            word nargs);
+RawObject FUNC(_builtins, _getframe_locals)(Thread* thread, Frame* frame,
+                                            word nargs);
+RawObject FUNC(_builtins, _get_member_byte)(Thread* thread, Frame* frame,
+                                            word nargs);
+RawObject FUNC(_builtins, _get_member_char)(Thread* thread, Frame* frame,
+                                            word nargs);
+RawObject FUNC(_builtins, _get_member_double)(Thread* thread, Frame* frame,
+                                              word nargs);
+RawObject FUNC(_builtins, _get_member_float)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _get_member_int)(Thread* thread, Frame* frame,
+                                           word nargs);
+RawObject FUNC(_builtins, _get_member_long)(Thread* thread, Frame* frame,
+                                            word nargs);
+RawObject FUNC(_builtins, _get_member_pyobject)(Thread* thread, Frame* frame,
+                                                word nargs);
+RawObject FUNC(_builtins, _get_member_short)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _get_member_string)(Thread* thread, Frame* frame,
+                                              word nargs);
+RawObject FUNC(_builtins, _get_member_ubyte)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _get_member_uint)(Thread* thread, Frame* frame,
+                                            word nargs);
+RawObject FUNC(_builtins, _get_member_ulong)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _get_member_ushort)(Thread* thread, Frame* frame,
+                                              word nargs);
+RawObject FUNC(_builtins, _instance_delattr)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _instance_getattr)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _instance_guard)(Thread* thread, Frame* frame,
+                                           word nargs);
+RawObject FUNC(_builtins, _instance_overflow_dict)(Thread* thread, Frame* frame,
+                                                   word nargs);
+RawObject FUNC(_builtins, _instance_setattr)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _int_check)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _int_check_exact)(Thread* thread, Frame* frame,
+                                            word nargs);
+RawObject FUNC(_builtins, _int_from_bytes)(Thread* thread, Frame* frame,
+                                           word nargs);
+RawObject FUNC(_builtins, _int_guard)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _int_new_from_bytearray)(Thread* thread, Frame* frame,
+                                                   word nargs);
+RawObject FUNC(_builtins, _int_new_from_bytes)(Thread* thread, Frame* frame,
+                                               word nargs);
+RawObject FUNC(_builtins, _int_new_from_int)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _int_new_from_str)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _iter)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _list_check)(Thread* thread, Frame* frame,
+                                       word nargs);
+RawObject FUNC(_builtins, _list_check_exact)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _list_delitem)(Thread* thread, Frame* frame,
+                                         word nargs);
+RawObject FUNC(_builtins, _list_delslice)(Thread* thread, Frame* frame,
+                                          word nargs);
+RawObject FUNC(_builtins, _list_extend)(Thread* thread, Frame* frame,
+                                        word nargs);
+RawObject FUNC(_builtins, _list_getitem)(Thread* thread, Frame* frame,
+                                         word nargs);
+RawObject FUNC(_builtins, _list_getslice)(Thread* thread, Frame* frame,
+                                          word nargs);
+RawObject FUNC(_builtins, _list_guard)(Thread* thread, Frame* frame,
+                                       word nargs);
+RawObject FUNC(_builtins, _list_len)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _list_new)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _list_setitem)(Thread* thread, Frame* frame,
+                                         word nargs);
+RawObject FUNC(_builtins, _list_setslice)(Thread* thread, Frame* frame,
+                                          word nargs);
+RawObject FUNC(_builtins, _list_sort)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _list_swap)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _mappingproxy_guard)(Thread* thread, Frame* frame,
+                                               word nargs);
+RawObject FUNC(_builtins, _mappingproxy_mapping)(Thread* thread, Frame* frame,
+                                                 word nargs);
+RawObject FUNC(_builtins, _mappingproxy_set_mapping)(Thread* thread,
+                                                     Frame* frame, word nargs);
+RawObject FUNC(_builtins, _memoryview_check)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _memoryview_guard)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _memoryview_itemsize)(Thread* thread, Frame* frame,
+                                                word nargs);
+RawObject FUNC(_builtins, _memoryview_nbytes)(Thread* thread, Frame* frame,
+                                              word nargs);
+RawObject FUNC(_builtins, _memoryview_setitem)(Thread* thread, Frame* frame,
+                                               word nargs);
+RawObject FUNC(_builtins, _memoryview_setslice)(Thread* thread, Frame* frame,
+                                                word nargs);
+RawObject FUNC(_builtins, _module_dir)(Thread* thread, Frame* frame,
+                                       word nargs);
+RawObject FUNC(_builtins, _module_proxy)(Thread* thread, Frame* frame,
+                                         word nargs);
+RawObject FUNC(_builtins, _module_proxy_check)(Thread* thread, Frame* frame,
+                                               word nargs);
+RawObject FUNC(_builtins, _module_proxy_get)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _module_proxy_guard)(Thread* thread, Frame* frame,
+                                               word nargs);
+RawObject FUNC(_builtins, _module_proxy_keys)(Thread* thread, Frame* frame,
+                                              word nargs);
+RawObject FUNC(_builtins, _module_proxy_len)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _module_proxy_delitem)(Thread* thread, Frame* frame,
+                                                 word nargs);
+RawObject FUNC(_builtins, _module_proxy_setitem)(Thread* thread, Frame* frame,
+                                                 word nargs);
+RawObject FUNC(_builtins, _module_proxy_values)(Thread* thread, Frame* frame,
+                                                word nargs);
+RawObject FUNC(_builtins, _object_keys)(Thread* thread, Frame* frame,
+                                        word nargs);
+RawObject FUNC(_builtins, _object_type_getattr)(Thread* thread, Frame* frame,
+                                                word nargs);
+RawObject FUNC(_builtins, _object_type_hasattr)(Thread* thread, Frame* frame,
+                                                word nargs);
+RawObject FUNC(_builtins, _os_write)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _patch)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _property)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _property_isabstract)(Thread* thread, Frame* frame,
+                                                word nargs);
+RawObject FUNC(_builtins, _pyobject_offset)(Thread* thread, Frame* frame,
+                                            word nargs);
+RawObject FUNC(_builtins, _range_check)(Thread* thread, Frame* frame,
+                                        word nargs);
+RawObject FUNC(_builtins, _range_guard)(Thread* thread, Frame* frame,
+                                        word nargs);
+RawObject FUNC(_builtins, _range_len)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _repr_enter)(Thread* thread, Frame* frame,
+                                       word nargs);
+RawObject FUNC(_builtins, _repr_leave)(Thread* thread, Frame* frame,
+                                       word nargs);
+RawObject FUNC(_builtins, _seq_index)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _seq_iterable)(Thread* thread, Frame* frame,
+                                         word nargs);
+RawObject FUNC(_builtins, _seq_set_index)(Thread* thread, Frame* frame,
+                                          word nargs);
+RawObject FUNC(_builtins, _seq_set_iterable)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _set_check)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _set_guard)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _set_len)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _set_member_double)(Thread* thread, Frame* frame,
+                                              word nargs);
+RawObject FUNC(_builtins, _set_member_float)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _set_member_integral)(Thread* thread, Frame* frame,
+                                                word nargs);
+RawObject FUNC(_builtins, _set_member_pyobject)(Thread* thread, Frame* frame,
+                                                word nargs);
+RawObject FUNC(_builtins, _slice_check)(Thread* thread, Frame* frame,
+                                        word nargs);
+RawObject FUNC(_builtins, _slice_guard)(Thread* thread, Frame* frame,
+                                        word nargs);
+RawObject FUNC(_builtins, _slice_start)(Thread* thread, Frame* frame,
+                                        word nargs);
+RawObject FUNC(_builtins, _slice_start_long)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _slice_step)(Thread* thread, Frame* frame,
+                                       word nargs);
+RawObject FUNC(_builtins, _slice_step_long)(Thread* thread, Frame* frame,
+                                            word nargs);
+RawObject FUNC(_builtins, _slice_stop)(Thread* thread, Frame* frame,
+                                       word nargs);
+RawObject FUNC(_builtins, _slice_stop_long)(Thread* thread, Frame* frame,
+                                            word nargs);
+RawObject FUNC(_builtins, _staticmethod_isabstract)(Thread* thread,
+                                                    Frame* frame, word nargs);
+RawObject FUNC(_builtins, _stop_iteration_ctor)(Thread* thread, Frame* frame,
+                                                word nargs);
+RawObject FUNC(_builtins, _strarray_clear)(Thread* thread, Frame* frame,
+                                           word nargs);
+RawObject FUNC(_builtins, _strarray_ctor)(Thread* thread, Frame* frame,
+                                          word nargs);
+RawObject FUNC(_builtins, _strarray_iadd)(Thread* thread, Frame* frame,
+                                          word nargs);
+RawObject FUNC(_builtins, _str_check)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _str_check_exact)(Thread* thread, Frame* frame,
+                                            word nargs);
+RawObject FUNC(_builtins, _str_compare_digest)(Thread* thread, Frame* frame,
+                                               word nargs);
+RawObject FUNC(_builtins, _str_count)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _str_encode)(Thread* thread, Frame* frame,
+                                       word nargs);
+RawObject FUNC(_builtins, _str_encode_ascii)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _str_endswith)(Thread* thread, Frame* frame,
+                                         word nargs);
+RawObject FUNC(_builtins, _str_escape_non_ascii)(Thread* thread, Frame* frame,
+                                                 word nargs);
+RawObject FUNC(_builtins, _str_find)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _str_from_str)(Thread* thread, Frame* frame,
+                                         word nargs);
+RawObject FUNC(_builtins, _str_getitem)(Thread* thread, Frame* frame,
+                                        word nargs);
+RawObject FUNC(_builtins, _str_getslice)(Thread* thread, Frame* frame,
+                                         word nargs);
+RawObject FUNC(_builtins, _str_guard)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _str_ischr)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _str_join)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _str_len)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _str_mod_fast_path)(Thread* thread, Frame* frame,
+                                              word nargs);
+RawObject FUNC(_builtins, _str_partition)(Thread* thread, Frame* frame,
+                                          word nargs);
+RawObject FUNC(_builtins, _str_replace)(Thread* thread, Frame* frame,
+                                        word nargs);
+RawObject FUNC(_builtins, _str_rfind)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _str_rpartition)(Thread* thread, Frame* frame,
+                                           word nargs);
+RawObject FUNC(_builtins, _str_split)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _str_splitlines)(Thread* thread, Frame* frame,
+                                           word nargs);
+RawObject FUNC(_builtins, _str_startswith)(Thread* thread, Frame* frame,
+                                           word nargs);
+RawObject FUNC(_builtins, _tuple_check)(Thread* thread, Frame* frame,
+                                        word nargs);
+RawObject FUNC(_builtins, _tuple_check_exact)(Thread* thread, Frame* frame,
+                                              word nargs);
+RawObject FUNC(_builtins, _tuple_getitem)(Thread* thread, Frame* frame,
+                                          word nargs);
+RawObject FUNC(_builtins, _tuple_getslice)(Thread* thread, Frame* frame,
+                                           word nargs);
+RawObject FUNC(_builtins, _tuple_guard)(Thread* thread, Frame* frame,
+                                        word nargs);
+RawObject FUNC(_builtins, _tuple_len)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _tuple_new)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _type)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _type_abstractmethods_del)(Thread* thread,
+                                                     Frame* frame, word nargs);
+RawObject FUNC(_builtins, _type_abstractmethods_get)(Thread* thread,
+                                                     Frame* frame, word nargs);
+RawObject FUNC(_builtins, _type_abstractmethods_set)(Thread* thread,
+                                                     Frame* frame, word nargs);
+RawObject FUNC(_builtins, _type_bases_del)(Thread* thread, Frame* frame,
+                                           word nargs);
+RawObject FUNC(_builtins, _type_bases_get)(Thread* thread, Frame* frame,
+                                           word nargs);
+RawObject FUNC(_builtins, _type_bases_set)(Thread* thread, Frame* frame,
+                                           word nargs);
+RawObject FUNC(_builtins, _type_check)(Thread* thread, Frame* frame,
+                                       word nargs);
+RawObject FUNC(_builtins, _type_check_exact)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _type_dunder_call)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _type_guard)(Thread* thread, Frame* frame,
+                                       word nargs);
+RawObject FUNC(_builtins, _type_init)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _type_issubclass)(Thread* thread, Frame* frame,
+                                            word nargs);
+RawObject FUNC(_builtins, _type_new)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _type_proxy)(Thread* thread, Frame* frame,
+                                       word nargs);
+RawObject FUNC(_builtins, _type_proxy_check)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _type_proxy_get)(Thread* thread, Frame* frame,
+                                           word nargs);
+RawObject FUNC(_builtins, _type_proxy_guard)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _type_proxy_keys)(Thread* thread, Frame* frame,
+                                            word nargs);
+RawObject FUNC(_builtins, _type_proxy_len)(Thread* thread, Frame* frame,
+                                           word nargs);
+RawObject FUNC(_builtins, _type_proxy_values)(Thread* thread, Frame* frame,
+                                              word nargs);
+RawObject FUNC(_builtins, _type_subclass_guard)(Thread* thread, Frame* frame,
+                                                word nargs);
+RawObject FUNC(_builtins, _unimplemented)(Thread* thread, Frame* frame,
+                                          word nargs);
+RawObject FUNC(_builtins, _warn)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(_builtins, _weakref_callback)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(_builtins, _weakref_check)(Thread* thread, Frame* frame,
+                                          word nargs);
+RawObject FUNC(_builtins, _weakref_guard)(Thread* thread, Frame* frame,
+                                          word nargs);
+RawObject FUNC(_builtins, _weakref_referent)(Thread* thread, Frame* frame,
+                                             word nargs);
+
 class UnderBuiltinsModule {
  public:
   static void initialize(Thread* thread, const Module& module);
-
-  static RawObject underAddress(Thread* thread, Frame* frame, word nargs);
-  static RawObject underBoolCheck(Thread* thread, Frame* frame, word nargs);
-  static RawObject underBoolGuard(Thread* thread, Frame* frame, word nargs);
-  static RawObject underBoundMethod(Thread* thread, Frame* frame, word nargs);
-  static RawObject underBytearrayAppend(Thread* thread, Frame* frame,
-                                        word nargs);
-  static RawObject underBytearrayCheck(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underBytearrayClear(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underBytearrayContains(Thread* thread, Frame* frame,
-                                          word nargs);
-  static RawObject underBytearrayDelitem(Thread* thread, Frame* frame,
-                                         word nargs);
-  static RawObject underBytearrayDelslice(Thread* thread, Frame* frame,
-                                          word nargs);
-  static RawObject underBytearrayGetitem(Thread* thread, Frame* frame,
-                                         word nargs);
-  static RawObject underBytearrayGetslice(Thread* thread, Frame* frame,
-                                          word nargs);
-  static RawObject underBytearrayGuard(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underBytearrayJoin(Thread* thread, Frame* frame, word nargs);
-  static RawObject underBytearrayLen(Thread* thread, Frame* frame, word nargs);
-  static RawObject underBytearraySetitem(Thread* thread, Frame* frame,
-                                         word nargs);
-  static RawObject underBytearraySetslice(Thread* thread, Frame* frame,
-                                          word nargs);
-  static RawObject underBytesCheck(Thread* thread, Frame* frame, word nargs);
-  static RawObject underBytesContains(Thread* thread, Frame* frame, word nargs);
-  static RawObject underBytesDecode(Thread* thread, Frame* frame, word nargs);
-  static RawObject underBytesDecodeASCII(Thread* thread, Frame* frame,
-                                         word nargs);
-  static RawObject underBytesDecodeUTF8(Thread* thread, Frame* frame,
-                                        word nargs);
-  static RawObject underBytesFromBytes(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underBytesFromInts(Thread* thread, Frame* frame, word nargs);
-  static RawObject underBytesGetitem(Thread* thread, Frame* frame, word nargs);
-  static RawObject underBytesGetslice(Thread* thread, Frame* frame, word nargs);
-  static RawObject underBytesGuard(Thread* thread, Frame* frame, word nargs);
-  static RawObject underBytesJoin(Thread* thread, Frame* frame, word nargs);
-  static RawObject underBytesLen(Thread* thread, Frame* frame, word nargs);
-  static RawObject underBytesMaketrans(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underBytesRepeat(Thread* thread, Frame* frame, word nargs);
-  static RawObject underBytesSplit(Thread* thread, Frame* frame, word nargs);
-  static RawObject underBytesSplitWhitespace(Thread* thread, Frame* frame,
-                                             word nargs);
-  static RawObject underByteslikeCheck(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underByteslikeCompareDigest(Thread* thread, Frame* frame,
-                                               word nargs);
-  static RawObject underByteslikeCount(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underByteslikeEndswith(Thread* thread, Frame* frame,
-                                          word nargs);
-  static RawObject underByteslikeFindByteslike(Thread* thread, Frame* frame,
-                                               word nargs);
-  static RawObject underByteslikeFindInt(Thread* thread, Frame* frame,
-                                         word nargs);
-  static RawObject underByteslikeGuard(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underByteslikeRfindByteslike(Thread* thread, Frame* frame,
-                                                word nargs);
-  static RawObject underByteslikeRfindInt(Thread* thread, Frame* frame,
-                                          word nargs);
-  static RawObject underByteslikeStartswith(Thread* thread, Frame* frame,
-                                            word nargs);
-  static RawObject underClassmethod(Thread* thread, Frame* frame, word nargs);
-  static RawObject underClassmethodIsabstract(Thread* thread, Frame* frame,
-                                              word nargs);
-  static RawObject underCodeCheck(Thread* thread, Frame* frame, word nargs);
-  static RawObject underCodeGuard(Thread* thread, Frame* frame, word nargs);
-  static RawObject underCodeSetPosonlyargcount(Thread* thread, Frame* frame,
-                                               word nargs);
-  static RawObject underComplexCheck(Thread* thread, Frame* frame, word nargs);
-  static RawObject underComplexCheckexact(Thread* thread, Frame* frame,
-                                          word nargs);
-  static RawObject underComplexImag(Thread* thread, Frame* frame, word nargs);
-  static RawObject underComplexNew(Thread* thread, Frame* frame, word nargs);
-  static RawObject underComplexNewFromStr(Thread* thread, Frame* frame,
-                                          word nargs);
-  static RawObject underComplexReal(Thread* thread, Frame* frame, word nargs);
-  static RawObject underDictBucketInsert(Thread* thread, Frame* frame,
-                                         word nargs);
-  static RawObject underDictBucketKey(Thread* thread, Frame* frame, word nargs);
-  static RawObject underDictBucketSetValue(Thread* thread, Frame* frame,
-                                           word nargs);
-  static RawObject underDictBucketValue(Thread* thread, Frame* frame,
-                                        word nargs);
-  static RawObject underDictCheck(Thread* thread, Frame* frame, word nargs);
-  static RawObject underDictCheckExact(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underDictGet(Thread* thread, Frame* frame, word nargs);
-  static RawObject underDictGuard(Thread* thread, Frame* frame, word nargs);
-  static RawObject underDictLen(Thread* thread, Frame* frame, word nargs);
-  static RawObject underDictLookup(Thread* thread, Frame* frame, word nargs);
-  static RawObject underDictLookupNext(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underDictUpdate(Thread* thread, Frame* frame, word nargs);
-  static RawObject underDictPopitem(Thread* thread, Frame* frame, word nargs);
-  static RawObject underDictSetitem(Thread* thread, Frame* frame, word nargs);
-  static RawObject underDivmod(Thread* thread, Frame* frame, word nargs);
-  static RawObject underExec(Thread* thread, Frame* frame, word nargs);
-  static RawObject underFloatCheck(Thread* thread, Frame* frame, word nargs);
-  static RawObject underFloatCheckExact(Thread* thread, Frame* frame,
-                                        word nargs);
-  static RawObject underFloatDivmod(Thread* thread, Frame* frame, word nargs);
-  static RawObject underFloatFormat(Thread* thread, Frame* frame, word nargs);
-  static RawObject underFloatGuard(Thread* thread, Frame* frame, word nargs);
-  static RawObject underFloatNewFromByteslike(Thread* thread, Frame* frame,
-                                              word nargs);
-  static RawObject underFloatNewFromFloat(Thread* thread, Frame* frame,
-                                          word nargs);
-  static RawObject underFloatNewFromStr(Thread* thread, Frame* frame,
-                                        word nargs);
-  static RawObject underFloatSignbit(Thread* thread, Frame* frame, word nargs);
-  static RawObject underFrozensetCheck(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underFrozensetGuard(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underFunctionGlobals(Thread* thread, Frame* frame,
-                                        word nargs);
-  static RawObject underFunctionGuard(Thread* thread, Frame* frame, word nargs);
-  static RawObject underGc(Thread* thread, Frame* frame, word nargs);
-  static RawObject underGetframeFunction(Thread* thread, Frame* frame,
-                                         word nargs);
-  static RawObject underGetframeLineno(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underGetframeLocals(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underGetMemberByte(Thread* thread, Frame* frame, word nargs);
-  static RawObject underGetMemberChar(Thread* thread, Frame* frame, word nargs);
-  static RawObject underGetMemberDouble(Thread* thread, Frame* frame,
-                                        word nargs);
-  static RawObject underGetMemberFloat(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underGetMemberInt(Thread* thread, Frame* frame, word nargs);
-  static RawObject underGetMemberLong(Thread* thread, Frame* frame, word nargs);
-  static RawObject underGetMemberPyobject(Thread* thread, Frame* frame,
-                                          word nargs);
-  static RawObject underGetMemberShort(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underGetMemberString(Thread* thread, Frame* frame,
-                                        word nargs);
-  static RawObject underGetMemberUbyte(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underGetMemberUint(Thread* thread, Frame* frame, word nargs);
-  static RawObject underGetMemberUlong(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underGetMemberUshort(Thread* thread, Frame* frame,
-                                        word nargs);
-  static RawObject underInstanceDelattr(Thread* thread, Frame* frame,
-                                        word nargs);
-  static RawObject underInstanceGetattr(Thread* thread, Frame* frame,
-                                        word nargs);
-  static RawObject underInstanceGuard(Thread* thread, Frame* frame, word nargs);
-  static RawObject underInstanceOverflowDict(Thread* thread, Frame* frame,
-                                             word nargs);
-  static RawObject underInstanceSetattr(Thread* thread, Frame* frame,
-                                        word nargs);
-  static RawObject underIntCheck(Thread* thread, Frame* frame, word nargs);
-  static RawObject underIntCheckExact(Thread* thread, Frame* frame, word nargs);
-  static RawObject underIntFromBytes(Thread* thread, Frame* frame, word nargs);
-  static RawObject underIntGuard(Thread* thread, Frame* frame, word nargs);
-  static RawObject underIntNewFromBytearray(Thread* thread, Frame* frame,
-                                            word nargs);
-  static RawObject underIntNewFromBytes(Thread* thread, Frame* frame,
-                                        word nargs);
-  static RawObject underIntNewFromInt(Thread* thread, Frame* frame, word nargs);
-  static RawObject underIntNewFromStr(Thread* thread, Frame* frame, word nargs);
-  static RawObject underIter(Thread* thread, Frame* frame, word nargs);
-  static RawObject underListCheck(Thread* thread, Frame* frame, word nargs);
-  static RawObject underListCheckExact(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underListDelitem(Thread* thread, Frame* frame, word nargs);
-  static RawObject underListDelslice(Thread* thread, Frame* frame, word nargs);
-  static RawObject underListExtend(Thread* thread, Frame* frame, word nargs);
-  static RawObject underListGetitem(Thread* thread, Frame* frame, word nargs);
-  static RawObject underListGetslice(Thread* thread, Frame* frame, word nargs);
-  static RawObject underListGuard(Thread* thread, Frame* frame, word nargs);
-  static RawObject underListLen(Thread* thread, Frame* frame, word nargs);
-  static RawObject underListNew(Thread* thread, Frame* frame, word nargs);
-  static RawObject underListSetItem(Thread* thread, Frame* frame, word nargs);
-  static RawObject underListSetSlice(Thread* thread, Frame* frame, word nargs);
-  static RawObject underListSort(Thread* thread, Frame* frame, word nargs);
-  static RawObject underListSwap(Thread* thread, Frame* frame, word nargs);
-  static RawObject underMappingproxyGuard(Thread* thread, Frame* frame,
-                                          word nargs);
-  static RawObject underMappingproxyMapping(Thread* thread, Frame* frame,
-                                            word nargs);
-  static RawObject underMappingproxySetMapping(Thread* thread, Frame* frame,
-                                               word nargs);
-  static RawObject underMemoryviewCheck(Thread* thread, Frame* frame,
-                                        word nargs);
-  static RawObject underMemoryviewGuard(Thread* thread, Frame* frame,
-                                        word nargs);
-  static RawObject underMemoryviewItemsize(Thread* thread, Frame* frame,
-                                           word nargs);
-  static RawObject underMemoryviewNbytes(Thread* thread, Frame* frame,
-                                         word nargs);
-  static RawObject underMemoryviewSetitem(Thread* thread, Frame* frame,
-                                          word nargs);
-  static RawObject underMemoryviewSetslice(Thread* thread, Frame* frame,
-                                           word nargs);
-  static RawObject underModuleDir(Thread* thread, Frame* frame, word nargs);
-  static RawObject underModuleProxy(Thread* thread, Frame* frame, word nargs);
-  static RawObject underModuleProxyCheck(Thread* thread, Frame* frame,
-                                         word nargs);
-  static RawObject underModuleProxyGet(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underModuleProxyGuard(Thread* thread, Frame* frame,
-                                         word nargs);
-  static RawObject underModuleProxyKeys(Thread* thread, Frame* frame,
-                                        word nargs);
-  static RawObject underModuleProxyLen(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underModuleProxyDelitem(Thread* thread, Frame* frame,
-                                           word nargs);
-  static RawObject underModuleProxySetitem(Thread* thread, Frame* frame,
-                                           word nargs);
-  static RawObject underModuleProxyValues(Thread* thread, Frame* frame,
-                                          word nargs);
-  static RawObject underObjectKeys(Thread* thread, Frame* frame, word nargs);
-  static RawObject underObjectTypeGetattr(Thread* thread, Frame* frame,
-                                          word nargs);
-  static RawObject underObjectTypeHasattr(Thread* thread, Frame* frame,
-                                          word nargs);
-  static RawObject underOsWrite(Thread* thread, Frame* frame, word nargs);
-  static RawObject underPatch(Thread* thread, Frame* frame, word nargs);
-  static RawObject underProperty(Thread* thread, Frame* frame, word nargs);
-  static RawObject underPropertyIsabstract(Thread* thread, Frame* frame,
-                                           word nargs);
-  static RawObject underPyobjectOffset(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underRangeCheck(Thread* thread, Frame* frame, word nargs);
-  static RawObject underRangeGuard(Thread* thread, Frame* frame, word nargs);
-  static RawObject underRangeLen(Thread* thread, Frame* frame, word nargs);
-  static RawObject underReprEnter(Thread* thread, Frame* frame, word nargs);
-  static RawObject underReprLeave(Thread* thread, Frame* frame, word nargs);
-  static RawObject underSeqIndex(Thread* thread, Frame* frame, word nargs);
-  static RawObject underSeqIterable(Thread* thread, Frame* frame, word nargs);
-  static RawObject underSeqSetIndex(Thread* thread, Frame* frame, word nargs);
-  static RawObject underSeqSetIterable(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underSetCheck(Thread* thread, Frame* frame, word nargs);
-  static RawObject underSetGuard(Thread* thread, Frame* frame, word nargs);
-  static RawObject underSetLen(Thread* thread, Frame* frame, word nargs);
-  static RawObject underSetMemberDouble(Thread* thread, Frame* frame,
-                                        word nargs);
-  static RawObject underSetMemberFloat(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underSetMemberIntegral(Thread* thread, Frame* frame,
-                                          word nargs);
-  static RawObject underSetMemberPyobject(Thread* thread, Frame* frame,
-                                          word nargs);
-  static RawObject underSliceCheck(Thread* thread, Frame* frame, word nargs);
-  static RawObject underSliceGuard(Thread* thread, Frame* frame, word nargs);
-  static RawObject underSliceStart(Thread* thread, Frame* frame, word nargs);
-  static RawObject underSliceStartLong(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underSliceStep(Thread* thread, Frame* frame, word nargs);
-  static RawObject underSliceStepLong(Thread* thread, Frame* frame, word nargs);
-  static RawObject underSliceStop(Thread* thread, Frame* frame, word nargs);
-  static RawObject underSliceStopLong(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStaticmethodIsabstract(Thread* thread, Frame* frame,
-                                               word nargs);
-  static RawObject underStopIterationCtor(Thread* thread, Frame* frame,
-                                          word nargs);
-  static RawObject underStrarrayClear(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrarrayCtor(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrarrayIadd(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrCheck(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrCheckExact(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrCompareDigest(Thread* thread, Frame* frame,
-                                         word nargs);
-  static RawObject underStrCount(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrEncode(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrEncodeASCII(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underStrEndswith(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrEscapeNonAscii(Thread* thread, Frame* frame,
-                                          word nargs);
-  static RawObject underStrFind(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrFromStr(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrGetitem(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrGetslice(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrGuard(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrIschr(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrJoin(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrLen(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrModFastPath(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underStrPartition(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrReplace(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrRfind(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrRpartition(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrSplit(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrSplitlines(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrStartswith(Thread* thread, Frame* frame, word nargs);
-  static RawObject underTupleCheck(Thread* thread, Frame* frame, word nargs);
-  static RawObject underTupleCheckExact(Thread* thread, Frame* frame,
-                                        word nargs);
-  static RawObject underTupleGetitem(Thread* thread, Frame* frame, word nargs);
-  static RawObject underTupleGetslice(Thread* thread, Frame* frame, word nargs);
-  static RawObject underTupleGuard(Thread* thread, Frame* frame, word nargs);
-  static RawObject underTupleLen(Thread* thread, Frame* frame, word nargs);
-  static RawObject underTupleNew(Thread* thread, Frame* frame, word nargs);
-  static RawObject underType(Thread* thread, Frame* frame, word nargs);
-  static RawObject underTypeAbstractmethodsDel(Thread* thread, Frame* frame,
-                                               word nargs);
-  static RawObject underTypeAbstractmethodsGet(Thread* thread, Frame* frame,
-                                               word nargs);
-  static RawObject underTypeAbstractmethodsSet(Thread* thread, Frame* frame,
-                                               word nargs);
-  static RawObject underTypeBasesDel(Thread* thread, Frame* frame, word nargs);
-  static RawObject underTypeBasesGet(Thread* thread, Frame* frame, word nargs);
-  static RawObject underTypeBasesSet(Thread* thread, Frame* frame, word nargs);
-  static RawObject underTypeCheck(Thread* thread, Frame* frame, word nargs);
-  static RawObject underTypeCheckExact(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underTypeDunderCall(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underTypeGuard(Thread* thread, Frame* frame, word nargs);
-  static RawObject underTypeInit(Thread* thread, Frame* frame, word nargs);
-  static RawObject underTypeIssubclass(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underTypeNew(Thread* thread, Frame* frame, word nargs);
-  static RawObject underTypeProxy(Thread* thread, Frame* frame, word nargs);
-  static RawObject underTypeProxyCheck(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underTypeProxyGet(Thread* thread, Frame* frame, word nargs);
-  static RawObject underTypeProxyGuard(Thread* thread, Frame* frame,
-                                       word nargs);
-  static RawObject underTypeProxyKeys(Thread* thread, Frame* frame, word nargs);
-  static RawObject underTypeProxyLen(Thread* thread, Frame* frame, word nargs);
-  static RawObject underTypeProxyValues(Thread* thread, Frame* frame,
-                                        word nargs);
-  static RawObject underTypeSubclassGuard(Thread* thread, Frame* frame,
-                                          word nargs);
-  static RawObject underUnimplemented(Thread* thread, Frame* frame, word nargs);
-  static RawObject underWarn(Thread* thread, Frame* frame, word nargs);
-  static RawObject underWeakrefCallback(Thread* thread, Frame* frame,
-                                        word nargs);
-  static RawObject underWeakrefCheck(Thread* thread, Frame* frame, word nargs);
-  static RawObject underWeakrefGuard(Thread* thread, Frame* frame, word nargs);
-  static RawObject underWeakrefReferent(Thread* thread, Frame* frame,
-                                        word nargs);
 
   static const BuiltinFunction kBuiltinFunctions[];
 

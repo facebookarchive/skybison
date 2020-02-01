@@ -16,16 +16,16 @@
 namespace py {
 
 const BuiltinFunction UnderOsModule::kBuiltinFunctions[] = {
-    {ID(close), close},
-    {ID(fstat_size), fstatSize},
-    {ID(ftruncate), ftruncate},
-    {ID(isatty), isatty},
-    {ID(isdir), isdir},
-    {ID(lseek), lseek},
-    {ID(open), open},
-    {ID(parse_mode), parseMode},
-    {ID(read), read},
-    {ID(set_noinheritable), setNoinheritable},
+    {ID(close), FUNC(_os, close)},
+    {ID(fstat_size), FUNC(_os, fstat_size)},
+    {ID(ftruncate), FUNC(_os, ftruncate)},
+    {ID(isatty), FUNC(_os, isatty)},
+    {ID(isdir), FUNC(_os, isdir)},
+    {ID(lseek), FUNC(_os, lseek)},
+    {ID(open), FUNC(_os, open)},
+    {ID(parse_mode), FUNC(_os, parse_mode)},
+    {ID(read), FUNC(_os, read)},
+    {ID(set_noinheritable), FUNC(_os, set_noinheritable)},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -34,7 +34,7 @@ void UnderOsModule::initialize(Thread* thread, const Module& module) {
   executeFrozenModule(thread, kUnderOsModuleData, module);
 }
 
-RawObject UnderOsModule::close(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_os, close)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   CHECK(args.get(0).isSmallInt(), "fd must be small int");
   word fd = SmallInt::cast(args.get(0)).value();
@@ -43,7 +43,7 @@ RawObject UnderOsModule::close(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject UnderOsModule::fstatSize(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_os, fstat_size)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   CHECK(args.get(0).isSmallInt(), "fd must be small int");
   word fd = SmallInt::cast(args.get(0)).value();
@@ -52,7 +52,7 @@ RawObject UnderOsModule::fstatSize(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newInt(result);
 }
 
-RawObject UnderOsModule::ftruncate(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_os, ftruncate)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   CHECK(args.get(0).isSmallInt(), "fd must be small int");
   word fd = SmallInt::cast(args.get(0)).value();
@@ -63,7 +63,7 @@ RawObject UnderOsModule::ftruncate(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject UnderOsModule::isatty(Thread*, Frame* frame, word nargs) {
+RawObject FUNC(_os, isatty)(Thread*, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   CHECK(args.get(0).isSmallInt(), "fd must be small int");
   word fd = SmallInt::cast(args.get(0)).value();
@@ -71,7 +71,7 @@ RawObject UnderOsModule::isatty(Thread*, Frame* frame, word nargs) {
   return Bool::fromBool(result < 0 ? false : result);
 }
 
-RawObject UnderOsModule::isdir(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_os, isdir)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   CHECK(args.get(0).isSmallInt(), "fd must be small int");
   word fd = SmallInt::cast(args.get(0)).value();
@@ -80,7 +80,7 @@ RawObject UnderOsModule::isdir(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(result);
 }
 
-RawObject UnderOsModule::lseek(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_os, lseek)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   CHECK(args.get(0).isSmallInt(), "fd must be small int");
   word fd = SmallInt::cast(args.get(0)).value();
@@ -93,7 +93,7 @@ RawObject UnderOsModule::lseek(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newInt(result);
 }
 
-RawObject UnderOsModule::open(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_os, open)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object path_obj(&scope, args.get(0));
@@ -154,14 +154,14 @@ static word flagsFromMode(const Str& mode) {
   return flags;
 }
 
-RawObject UnderOsModule::parseMode(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_os, parse_mode)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Str mode(&scope, args.get(0));
   return thread->runtime()->newInt(flagsFromMode(mode));
 }
 
-RawObject UnderOsModule::read(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_os, read)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object fd_obj(&scope, args.get(0));
@@ -177,8 +177,8 @@ RawObject UnderOsModule::read(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newBytesWithAll(View<byte>(buffer.get(), result));
 }
 
-RawObject UnderOsModule::setNoinheritable(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject FUNC(_os, set_noinheritable)(Thread* thread, Frame* frame,
+                                       word nargs) {
   Arguments args(frame, nargs);
   int fd = SmallInt::cast(args.get(0)).value();
   int result = File::setNoInheritable(fd);

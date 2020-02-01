@@ -15,13 +15,13 @@ using UnderValgrindModuleTest = RuntimeFixture;
 TEST_F(UnderValgrindModuleTest, UnderCallgrindDumpStatsWithNoneDoesNothing) {
   HandleScope scope(thread_);
   Object none(&scope, NoneType::object());
-  runBuiltin(UnderValgrindModule::callgrindDumpStats, none);
+  runBuiltin(FUNC(_valgrind, callgrind_dump_stats), none);
 }
 
 TEST_F(UnderValgrindModuleTest, UnderCallgrindDumpStatsWithStringDoesNothing) {
   HandleScope scope(thread_);
   Object string(&scope, runtime_->newStrFromCStr("service_load"));
-  runBuiltin(UnderValgrindModule::callgrindDumpStats, string);
+  runBuiltin(FUNC(_valgrind, callgrind_dump_stats), string);
 }
 
 TEST_F(UnderValgrindModuleTest, UnderCallgrindStartInstrumentationDoesNothing) {

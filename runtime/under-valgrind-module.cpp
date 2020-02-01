@@ -12,10 +12,12 @@
 namespace py {
 
 const BuiltinFunction UnderValgrindModule::kBuiltinFunctions[] = {
-    {ID(callgrind_dump_stats), callgrindDumpStats},
-    {ID(callgrind_start_instrumentation), callgrindStartInstrumentation},
-    {ID(callgrind_stop_instrumentation), callgrindStopInstrumentation},
-    {ID(callgrind_zero_stats), callgrindZeroStats},
+    {ID(callgrind_dump_stats), FUNC(_valgrind, callgrind_dump_stats)},
+    {ID(callgrind_start_instrumentation),
+     FUNC(_valgrind, callgrind_start_instrumentation)},
+    {ID(callgrind_stop_instrumentation),
+     FUNC(_valgrind, callgrind_stop_instrumentation)},
+    {ID(callgrind_zero_stats), FUNC(_valgrind, callgrind_zero_stats)},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -24,8 +26,8 @@ void UnderValgrindModule::initialize(Thread* thread, const Module& module) {
   executeFrozenModule(thread, kUnderValgrindModuleData, module);
 }
 
-RawObject UnderValgrindModule::callgrindDumpStats(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_valgrind, callgrind_dump_stats)(Thread* thread, Frame* frame,
+                                                word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object description(&scope, args.get(0));
@@ -42,19 +44,19 @@ RawObject UnderValgrindModule::callgrindDumpStats(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject UnderValgrindModule::callgrindStartInstrumentation(Thread*, Frame*,
-                                                             word) {
+RawObject FUNC(_valgrind, callgrind_start_instrumentation)(Thread*, Frame*,
+                                                           word) {
   CALLGRIND_START_INSTRUMENTATION;
   return NoneType::object();
 }
 
-RawObject UnderValgrindModule::callgrindStopInstrumentation(Thread*, Frame*,
-                                                            word) {
+RawObject FUNC(_valgrind, callgrind_stop_instrumentation)(Thread*, Frame*,
+                                                          word) {
   CALLGRIND_STOP_INSTRUMENTATION;
   return NoneType::object();
 }
 
-RawObject UnderValgrindModule::callgrindZeroStats(Thread*, Frame*, word) {
+RawObject FUNC(_valgrind, callgrind_zero_stats)(Thread*, Frame*, word) {
   CALLGRIND_ZERO_STATS;
   return NoneType::object();
 }

@@ -8,22 +8,22 @@
 
 namespace py {
 
+RawObject FUNC(_io, _buffered_reader_clear_buffer)(Thread* thread, Frame* frame,
+                                                   word nargs);
+RawObject FUNC(_io, _buffered_reader_init)(Thread* thread, Frame* frame,
+                                           word nargs);
+RawObject FUNC(_io, _buffered_reader_peek)(Thread* thread, Frame* frame,
+                                           word nargs);
+RawObject FUNC(_io, _buffered_reader_read)(Thread* thread, Frame* frame,
+                                           word nargs);
+RawObject FUNC(_io, _buffered_reader_readline)(Thread* thread, Frame* frame,
+                                               word nargs);
+RawObject FUNC(_io, _StringIO_closed_guard)(Thread* thread, Frame* frame,
+                                            word nargs);
+
 class UnderIoModule {
  public:
   static void initialize(Thread* thread, const Module& module);
-
-  static RawObject underBufferedReaderClearBuffer(Thread* thread, Frame* frame,
-                                                  word nargs);
-  static RawObject underBufferedReaderInit(Thread* thread, Frame* frame,
-                                           word nargs);
-  static RawObject underBufferedReaderPeek(Thread* thread, Frame* frame,
-                                           word nargs);
-  static RawObject underBufferedReaderRead(Thread* thread, Frame* frame,
-                                           word nargs);
-  static RawObject underBufferedReaderReadline(Thread* thread, Frame* frame,
-                                               word nargs);
-  static RawObject underStringIOClosedGuard(Thread* thread, Frame* frame,
-                                            word nargs);
 
  private:
   static const BuiltinFunction kBuiltinFunctions[];

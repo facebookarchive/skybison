@@ -20,11 +20,11 @@ TEST_F(FaulthandlerModuleDeathTest, UnderSigabrtRaisesSIGABRT) {
   HandleScope scope(thread_);
   Object stderr(&scope, runtime_->sysStderr().value());
   Object false_obj(&scope, Bool::falseObj());
-  ASSERT_EQ(runBuiltin(FaulthandlerModule::enable, stderr, false_obj),
+  ASSERT_EQ(runBuiltin(FUNC(faulthandler, enable), stderr, false_obj),
             NoneType::object());
 
   const char* expected = "Fatal Python error: Aborted";
-  EXPECT_EXIT(runBuiltin(FaulthandlerModule::underSigabrt),
+  EXPECT_EXIT(runBuiltin(FUNC(faulthandler, _sigabrt)),
               ::testing::KilledBySignal(SIGABRT), expected);
 }
 
@@ -34,7 +34,7 @@ TEST_F(FaulthandlerModuleTest,
   Object fd(&scope, SmallInt::fromWord(2));
   Object all_threads(&scope, NoneType::object());
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(FaulthandlerModule::dumpTraceback, fd, all_threads),
+      runBuiltin(FUNC(faulthandler, dump_traceback), fd, all_threads),
       LayoutId::kTypeError,
       "'<anonymous>' requires a 'int' object but got 'NoneType'"));
 }
@@ -45,8 +45,8 @@ TEST_F(FaulthandlerModuleTest, DumpTracebackWritesToFileDescriptor) {
   std::unique_ptr<char[]> name(OS::temporaryFile("traceback", &fd));
   Object file(&scope, SmallInt::fromWord(fd));
   Object all_threads(&scope, Bool::falseObj());
-  Object result(
-      &scope, runBuiltin(FaulthandlerModule::dumpTraceback, file, all_threads));
+  Object result(&scope, runBuiltin(FUNC(faulthandler, dump_traceback), file,
+                                   all_threads));
   ASSERT_TRUE(result.isNoneType());
 
   word length;

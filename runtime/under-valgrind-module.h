@@ -8,16 +8,20 @@
 
 namespace py {
 
+RawObject FUNC(_valgrind, callgrind_dump_stats)(Thread* thread, Frame* frame,
+                                                word nargs);
+RawObject FUNC(_valgrind, callgrind_start_instrumentation)(Thread* thread,
+                                                           Frame* frame,
+                                                           word nargs);
+RawObject FUNC(_valgrind, callgrind_stop_instrumentation)(Thread* thread,
+                                                          Frame* frame,
+                                                          word nargs);
+RawObject FUNC(_valgrind, callgrind_zero_stats)(Thread* thread, Frame* frame,
+                                                word nargs);
+
 class UnderValgrindModule {
  public:
   static void initialize(Thread* thread, const Module& module);
-
-  static RawObject callgrindDumpStats(Thread* thread, Frame* frame, word nargs);
-  static RawObject callgrindStartInstrumentation(Thread* thread, Frame* frame,
-                                                 word nargs);
-  static RawObject callgrindStopInstrumentation(Thread* thread, Frame* frame,
-                                                word nargs);
-  static RawObject callgrindZeroStats(Thread* thread, Frame* frame, word nargs);
 
  private:
   static const BuiltinFunction kBuiltinFunctions[];

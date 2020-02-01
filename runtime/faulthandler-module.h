@@ -8,18 +8,23 @@
 
 namespace py {
 
+RawObject FUNC(faulthandler, _read_null)(Thread* thread, Frame* frame,
+                                         word nargs);
+RawObject FUNC(faulthandler, _sigabrt)(Thread* thread, Frame* frame,
+                                       word nargs);
+RawObject FUNC(faulthandler, _sigfpe)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(faulthandler, _sigsegv)(Thread* thread, Frame* frame,
+                                       word nargs);
+RawObject FUNC(faulthandler, disable)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(faulthandler, dump_traceback)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject FUNC(faulthandler, enable)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(faulthandler, is_enabled)(Thread* thread, Frame* frame,
+                                         word nargs);
+
 class FaulthandlerModule {
  public:
   static void initialize(Thread* thread, const Module& module);
-
-  static RawObject underReadNull(Thread* thread, Frame* frame, word nargs);
-  static RawObject underSigabrt(Thread* thread, Frame* frame, word nargs);
-  static RawObject underSigfpe(Thread* thread, Frame* frame, word nargs);
-  static RawObject underSigsegv(Thread* thread, Frame* frame, word nargs);
-  static RawObject disable(Thread* thread, Frame* frame, word nargs);
-  static RawObject dumpTraceback(Thread* thread, Frame* frame, word nargs);
-  static RawObject enable(Thread* thread, Frame* frame, word nargs);
-  static RawObject isEnabled(Thread* thread, Frame* frame, word nargs);
 
  private:
   static const BuiltinFunction kBuiltinFunctions[];

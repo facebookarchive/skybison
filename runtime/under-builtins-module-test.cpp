@@ -23,7 +23,7 @@ using UnderBuiltinsModuleDeathTest = RuntimeFixture;
 static RawObject createDummyBuiltinFunction(Thread* thread) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Function::Entry entry = UnderBuiltinsModule::underIntCheck;
+  Function::Entry entry = FUNC(_builtins, _int_check);
   Object name(&scope, runtime->symbols()->at(ID(_int_check)));
   Tuple parameter_names(&scope, runtime->newTuple(1));
   parameter_names.atPut(0, runtime->symbols()->at(ID(self)));
@@ -81,8 +81,7 @@ TEST_F(UnderBuiltinsModuleTest, UnderBytearrayClearSetsLengthToZero) {
   const byte byte_array[] = {'1', '2', '3'};
   runtime_->byteArrayExtend(thread_, array, byte_array);
   ASSERT_EQ(array.numItems(), 3);
-  ASSERT_FALSE(
-      runBuiltin(UnderBuiltinsModule::underBytearrayClear, array).isError());
+  ASSERT_FALSE(runBuiltin(FUNC(_builtins, _bytearray_clear), array).isError());
   EXPECT_EQ(array.numItems(), 0);
 }
 
@@ -92,7 +91,7 @@ TEST_F(UnderBuiltinsModuleTest,
   ByteArray array(&scope, runtime_->newByteArray());
   ASSERT_EQ(array.numItems(), 0);
   Object key(&scope, SmallInt::fromWord('a'));
-  EXPECT_EQ(runBuiltin(UnderBuiltinsModule::underBytearrayContains, array, key),
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _bytearray_contains), array, key),
             Bool::falseObj());
 }
 
@@ -105,7 +104,7 @@ TEST_F(UnderBuiltinsModuleTest,
   ASSERT_EQ(array.numItems(), 3);
   Object key(&scope, SmallInt::fromWord(256));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underBytearrayContains, array, key),
+      runBuiltin(FUNC(_builtins, _bytearray_contains), array, key),
       LayoutId::kValueError, "byte must be in range(0, 256)"));
 }
 
@@ -117,7 +116,7 @@ TEST_F(UnderBuiltinsModuleTest,
   runtime_->byteArrayExtend(thread_, array, byte_array);
   ASSERT_EQ(array.numItems(), 3);
   Object key(&scope, SmallInt::fromWord('2'));
-  EXPECT_EQ(runBuiltin(UnderBuiltinsModule::underBytearrayContains, array, key),
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _bytearray_contains), array, key),
             Bool::trueObj());
 }
 
@@ -129,7 +128,7 @@ TEST_F(UnderBuiltinsModuleTest,
   runtime_->byteArrayExtend(thread_, array, byte_array);
   ASSERT_EQ(array.numItems(), 3);
   Object key(&scope, SmallInt::fromWord('x'));
-  EXPECT_EQ(runBuiltin(UnderBuiltinsModule::underBytearrayContains, array, key),
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _bytearray_contains), array, key),
             Bool::falseObj());
 }
 
@@ -142,8 +141,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderBytearrayDelitemDeletesItemAtIndex) {
   byteArrayAdd(thread_, runtime_, self, 'd');
   byteArrayAdd(thread_, runtime_, self, 'e');
   Int idx(&scope, SmallInt::fromWord(2));
-  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underBytearrayDelitem, self, idx)
-                  .isNoneType());
+  EXPECT_TRUE(
+      runBuiltin(FUNC(_builtins, _bytearray_delitem), self, idx).isNoneType());
   EXPECT_TRUE(isByteArrayEqualsCStr(self, "abde"));
 }
 
@@ -159,9 +158,9 @@ TEST_F(UnderBuiltinsModuleTest,
   Int start(&scope, SmallInt::fromWord(0));
   Int stop(&scope, SmallInt::fromWord(3));
   Int step(&scope, SmallInt::fromWord(1));
-  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underBytearrayDelslice, self,
-                         start, stop, step)
-                  .isNoneType());
+  EXPECT_TRUE(
+      runBuiltin(FUNC(_builtins, _bytearray_delslice), self, start, stop, step)
+          .isNoneType());
   EXPECT_TRUE(isByteArrayEqualsCStr(self, "de"));
 }
 
@@ -177,9 +176,9 @@ TEST_F(UnderBuiltinsModuleTest,
   Int start(&scope, SmallInt::fromWord(0));
   Int stop(&scope, SmallInt::fromWord(3));
   Int step(&scope, SmallInt::fromWord(2));
-  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underBytearrayDelslice, self,
-                         start, stop, step)
-                  .isNoneType());
+  EXPECT_TRUE(
+      runBuiltin(FUNC(_builtins, _bytearray_delslice), self, start, stop, step)
+          .isNoneType());
   EXPECT_TRUE(isByteArrayEqualsCStr(self, "bde"));
 }
 
@@ -189,8 +188,8 @@ TEST_F(UnderBuiltinsModuleTest,
   ByteArray self(&scope, runtime_->newByteArray());
   byteArrayAdd(thread_, runtime_, self, 'a');
   Object iter(&scope, runtime_->emptyTuple());
-  Object result(
-      &scope, runBuiltin(UnderBuiltinsModule::underBytearrayJoin, self, iter));
+  Object result(&scope,
+                runBuiltin(FUNC(_builtins, _bytearray_join), self, iter));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, ""));
 }
 
@@ -202,8 +201,8 @@ TEST_F(UnderBuiltinsModuleTest,
   iter.atPut(0, runtime_->newBytes(1, 'A'));
   iter.atPut(1, runtime_->newBytes(2, 'B'));
   iter.atPut(2, runtime_->newBytes(1, 'A'));
-  Object result(
-      &scope, runBuiltin(UnderBuiltinsModule::underBytearrayJoin, self, iter));
+  Object result(&scope,
+                runBuiltin(FUNC(_builtins, _bytearray_join), self, iter));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "ABBA"));
 }
 
@@ -217,8 +216,8 @@ TEST_F(UnderBuiltinsModuleTest,
   runtime_->listAdd(thread_, iter, value);
   runtime_->listAdd(thread_, iter, value);
   runtime_->listAdd(thread_, iter, value);
-  Object result(
-      &scope, runBuiltin(UnderBuiltinsModule::underBytearrayJoin, self, iter));
+  Object result(&scope,
+                runBuiltin(FUNC(_builtins, _bytearray_join), self, iter));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "* * *"));
 }
 
@@ -229,7 +228,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Int key(&scope, runtime_->newInt(SmallInt::kMaxValue + 1));
   Int value(&scope, SmallInt::fromWord(0));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underBytearraySetitem, self, key, value),
+      runBuiltin(FUNC(_builtins, _bytearray_setitem), self, key, value),
       LayoutId::kIndexError, "cannot fit 'int' into an index-sized integer"));
 }
 
@@ -241,7 +240,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Int key(&scope, runtime_->newInt(self.numItems()));
   Int value(&scope, SmallInt::fromWord(0));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underBytearraySetitem, self, key, value),
+      runBuiltin(FUNC(_builtins, _bytearray_setitem), self, key, value),
       LayoutId::kIndexError, "index out of range"));
 }
 
@@ -253,7 +252,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Int key(&scope, runtime_->newInt(0));
   Int value(&scope, SmallInt::fromWord(-1));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underBytearraySetitem, self, key, value),
+      runBuiltin(FUNC(_builtins, _bytearray_setitem), self, key, value),
       LayoutId::kValueError, "byte must be in range(0, 256)"));
 }
 
@@ -266,7 +265,7 @@ TEST_F(
   Int key(&scope, runtime_->newInt(-self.numItems() - 1));
   Int value(&scope, SmallInt::fromWord(0));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underBytearraySetitem, self, key, value),
+      runBuiltin(FUNC(_builtins, _bytearray_setitem), self, key, value),
       LayoutId::kIndexError, "index out of range"));
 }
 
@@ -278,7 +277,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Int key(&scope, runtime_->newInt(0));
   Int value(&scope, SmallInt::fromWord(kMaxByte + 1));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underBytearraySetitem, self, key, value),
+      runBuiltin(FUNC(_builtins, _bytearray_setitem), self, key, value),
       LayoutId::kValueError, "byte must be in range(0, 256)"));
 }
 
@@ -291,9 +290,8 @@ TEST_F(UnderBuiltinsModuleTest,
   byteArrayAdd(thread_, runtime_, self, 'c');
   Int key(&scope, SmallInt::fromWord(-1));
   Int value(&scope, SmallInt::fromWord(1));
-  EXPECT_TRUE(
-      runBuiltin(UnderBuiltinsModule::underBytearraySetitem, self, key, value)
-          .isNoneType());
+  EXPECT_TRUE(runBuiltin(FUNC(_builtins, _bytearray_setitem), self, key, value)
+                  .isNoneType());
   EXPECT_TRUE(isByteArrayEqualsCStr(self, "ab\001"));
 }
 
@@ -306,9 +304,8 @@ TEST_F(UnderBuiltinsModuleTest,
   byteArrayAdd(thread_, runtime_, self, 'c');
   Int key(&scope, SmallInt::fromWord(1));
   Int value(&scope, SmallInt::fromWord(1));
-  EXPECT_TRUE(
-      runBuiltin(UnderBuiltinsModule::underBytearraySetitem, self, key, value)
-          .isNoneType());
+  EXPECT_TRUE(runBuiltin(FUNC(_builtins, _bytearray_setitem), self, key, value)
+                  .isNoneType());
   EXPECT_TRUE(isByteArrayEqualsCStr(self, "a\001c"));
 }
 
@@ -328,8 +325,8 @@ TEST_F(UnderBuiltinsModuleTest,
   byteArrayAdd(thread_, runtime_, value, 'A');
   byteArrayAdd(thread_, runtime_, value, 'B');
   byteArrayAdd(thread_, runtime_, value, 'C');
-  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underBytearraySetslice, self,
-                         start, stop, step, value)
+  EXPECT_TRUE(runBuiltin(FUNC(_builtins, _bytearray_setslice), self, start,
+                         stop, step, value)
                   .isNoneType());
   EXPECT_TRUE(isByteArrayEqualsCStr(self, "ABCde"));
 }
@@ -349,8 +346,8 @@ TEST_F(UnderBuiltinsModuleTest,
   ByteArray value(&scope, runtime_->newByteArray());
   byteArrayAdd(thread_, runtime_, value, 'A');
   byteArrayAdd(thread_, runtime_, value, 'B');
-  EXPECT_TRUE(runBuiltin(UnderBuiltinsModule::underBytearraySetslice, self,
-                         start, stop, step, value)
+  EXPECT_TRUE(runBuiltin(FUNC(_builtins, _bytearray_setslice), self, start,
+                         stop, step, value)
                   .isNoneType());
   EXPECT_TRUE(isByteArrayEqualsCStr(self, "AbBde"));
 }
@@ -362,9 +359,9 @@ TEST_F(UnderBuiltinsModuleTest,
   Bytes bytes(&scope, runtime_->newBytesWithAll(contents));
   ASSERT_EQ(bytes.length(), 3);
   Object key(&scope, SmallInt::fromWord(256));
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underBytesContains, bytes, key),
-      LayoutId::kValueError, "byte must be in range(0, 256)"));
+  EXPECT_TRUE(
+      raisedWithStr(runBuiltin(FUNC(_builtins, _bytes_contains), bytes, key),
+                    LayoutId::kValueError, "byte must be in range(0, 256)"));
 }
 
 TEST_F(UnderBuiltinsModuleTest, UnderBytesContainsWithByteInBytesReturnsTrue) {
@@ -373,7 +370,7 @@ TEST_F(UnderBuiltinsModuleTest, UnderBytesContainsWithByteInBytesReturnsTrue) {
   Bytes bytes(&scope, runtime_->newBytesWithAll(contents));
   ASSERT_EQ(bytes.length(), 3);
   Object key(&scope, SmallInt::fromWord('2'));
-  EXPECT_EQ(runBuiltin(UnderBuiltinsModule::underBytesContains, bytes, key),
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _bytes_contains), bytes, key),
             Bool::trueObj());
 }
 
@@ -384,7 +381,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Bytes bytes(&scope, runtime_->newBytesWithAll(contents));
   ASSERT_EQ(bytes.length(), 3);
   Object key(&scope, SmallInt::fromWord('x'));
-  EXPECT_EQ(runBuiltin(UnderBuiltinsModule::underBytesContains, bytes, key),
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _bytes_contains), bytes, key),
             Bool::falseObj());
 }
 
@@ -394,8 +391,7 @@ TEST_F(UnderBuiltinsModuleTest,
   HandleScope scope(thread);
   Bytes self(&scope, runtime_->newBytes(3, 'a'));
   Object iter(&scope, runtime_->emptyTuple());
-  Object result(&scope,
-                runBuiltin(UnderBuiltinsModule::underBytesJoin, self, iter));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _bytes_join), self, iter));
   EXPECT_TRUE(isBytesEqualsCStr(result, ""));
 }
 
@@ -407,8 +403,7 @@ TEST_F(UnderBuiltinsModuleTest, UnderBytesJoinWithEmptySeparatorReturnsBytes) {
   iter.atPut(0, runtime_->newBytes(1, 'A'));
   iter.atPut(1, runtime_->newBytes(2, 'B'));
   iter.atPut(2, runtime_->newBytes(1, 'A'));
-  Object result(&scope,
-                runBuiltin(UnderBuiltinsModule::underBytesJoin, self, iter));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _bytes_join), self, iter));
   EXPECT_TRUE(isBytesEqualsCStr(result, "ABBA"));
 }
 
@@ -421,8 +416,7 @@ TEST_F(UnderBuiltinsModuleTest, UnderBytesJoinWithNonEmptyListReturnsBytes) {
   runtime_->listAdd(thread, iter, value);
   runtime_->listAdd(thread, iter, value);
   runtime_->listAdd(thread, iter, value);
-  Object result(&scope,
-                runBuiltin(UnderBuiltinsModule::underBytesJoin, self, iter));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _bytes_join), self, iter));
   EXPECT_TRUE(isBytesEqualsCStr(result, "* * *"));
 }
 
@@ -442,8 +436,7 @@ dc = Foo(b"DC")
   Tuple iter(&scope, runtime_->newTuple(2));
   iter.atPut(0, mainModuleAt(runtime_, "ac"));
   iter.atPut(1, mainModuleAt(runtime_, "dc"));
-  Object result(&scope,
-                runBuiltin(UnderBuiltinsModule::underBytesJoin, self, iter));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _bytes_join), self, iter));
   EXPECT_TRUE(isBytesEqualsCStr(result, "AC-DC"));
 }
 
@@ -473,9 +466,9 @@ key = Foo()
   Dict dict(&scope, runtime_->newDict());
   Object key(&scope, mainModuleAt(runtime_, "key"));
   Object default_obj(&scope, NoneType::object());
-  ASSERT_TRUE(raised(
-      runBuiltin(UnderBuiltinsModule::underDictGet, dict, key, default_obj),
-      LayoutId::kTypeError));
+  ASSERT_TRUE(
+      raised(runBuiltin(FUNC(_builtins, _dict_get), dict, key, default_obj),
+             LayoutId::kTypeError));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
@@ -493,9 +486,8 @@ key = Foo()
   Dict dict(&scope, runtime_->newDict());
   Object key(&scope, mainModuleAt(runtime_, "key"));
   Object default_obj(&scope, runtime_->newInt(5));
-  EXPECT_EQ(
-      runBuiltin(UnderBuiltinsModule::underDictGet, dict, key, default_obj),
-      default_obj);
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _dict_get), dict, key, default_obj),
+            default_obj);
 }
 
 TEST_F(UnderBuiltinsModuleTest, UnderDictGetReturnsDefaultValue) {
@@ -518,7 +510,7 @@ TEST_F(UnderBuiltinsModuleTest, UnderDictGetReturnsValue) {
   dictAtPut(thread_, dict, key, hash, value);
   Object dflt(&scope, runtime_->newInt(789));
   Object result(&scope,
-                runBuiltin(UnderBuiltinsModule::underDictGet, dict, key, dflt));
+                runBuiltin(FUNC(_builtins, _dict_get), dict, key, dflt));
   EXPECT_TRUE(isIntEqualsWord(*result, 456));
 }
 
@@ -527,9 +519,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderDictGetWithNonDictRaisesTypeError) {
   Object foo(&scope, runtime_->newInt(123));
   Object bar(&scope, runtime_->newInt(456));
   Object baz(&scope, runtime_->newInt(789));
-  EXPECT_TRUE(
-      raised(runBuiltin(UnderBuiltinsModule::underDictGet, foo, bar, baz),
-             LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runBuiltin(FUNC(_builtins, _dict_get), foo, bar, baz),
+                     LayoutId::kTypeError));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
@@ -544,7 +535,7 @@ TEST_F(UnderBuiltinsModuleTest,
   dictAtPutByStr(thread_, dict, a, a_value);
   dictAtPutByStr(thread_, dict, b, b_value);
 
-  Tuple result(&scope, runBuiltin(UnderBuiltinsModule::underDictPopitem, dict));
+  Tuple result(&scope, runBuiltin(FUNC(_builtins, _dict_popitem), dict));
   ASSERT_EQ(result.length(), 2);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), "a"));
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 1));
@@ -558,8 +549,7 @@ TEST_F(UnderBuiltinsModuleTest,
   // Create {}.
   Dict dict(&scope, runtime_->newDict());
   ASSERT_EQ(dict.numItems(), 0);
-  EXPECT_TRUE(
-      runBuiltin(UnderBuiltinsModule::underDictPopitem, dict).isNoneType());
+  EXPECT_TRUE(runBuiltin(FUNC(_builtins, _dict_popitem), dict).isNoneType());
 }
 
 TEST_F(UnderBuiltinsModuleTest,
@@ -583,8 +573,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderDictSetitemWithExistingKey) {
   Object val2(&scope, runtime_->newInt(1));
   dictAtPutByStr(thread_, dict, key, val);
 
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underDictSetitem, dict,
-                                   key, val2));
+  Object result(&scope,
+                runBuiltin(FUNC(_builtins, _dict_setitem), dict, key, val2));
   ASSERT_TRUE(result.isNoneType());
   ASSERT_EQ(dict.numItems(), 1);
   ASSERT_EQ(dict.numUsableItems(), 5 - 1);
@@ -598,8 +588,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderDictSetitemWithNonExistentKey) {
   ASSERT_EQ(dict.numUsableItems(), 5);
   Str key(&scope, runtime_->newStrFromCStr("foo"));
   Object val(&scope, runtime_->newInt(0));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underDictSetitem, dict,
-                                   key, val));
+  Object result(&scope,
+                runBuiltin(FUNC(_builtins, _dict_setitem), dict, key, val));
   ASSERT_TRUE(result.isNoneType());
   ASSERT_EQ(dict.numItems(), 1);
   ASSERT_EQ(dict.numUsableItems(), 5 - 1);
@@ -617,8 +607,8 @@ d = foo()
   Dict dict(&scope, mainModuleAt(runtime_, "d"));
   Str key(&scope, runtime_->newStrFromCStr("a"));
   Str value(&scope, runtime_->newStrFromCStr("b"));
-  Object result1(&scope, runBuiltin(UnderBuiltinsModule::underDictSetitem, dict,
-                                    key, value));
+  Object result1(&scope,
+                 runBuiltin(FUNC(_builtins, _dict_setitem), dict, key, value));
   EXPECT_TRUE(result1.isNoneType());
   Object result2(&scope, dictAtByStr(thread_, dict, key));
   ASSERT_TRUE(result2.isStr());
@@ -629,8 +619,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderDivmodReturnsQuotientAndDividend) {
   HandleScope scope(thread_);
   Int number(&scope, SmallInt::fromWord(1234));
   Int divisor(&scope, SmallInt::fromWord(-5));
-  Object tuple_obj(
-      &scope, runBuiltin(UnderBuiltinsModule::underDivmod, number, divisor));
+  Object tuple_obj(&scope,
+                   runBuiltin(FUNC(_builtins, _divmod), number, divisor));
   ASSERT_TRUE(tuple_obj.isTuple());
   Tuple tuple(&scope, *tuple_obj);
   ASSERT_EQ(tuple.length(), 2);
@@ -651,8 +641,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderFloatDivmodReturnsQuotientAndRemainder) {
   HandleScope scope(thread_);
   Float number(&scope, runtime_->newFloat(3.25));
   Float divisor(&scope, runtime_->newFloat(1.0));
-  Tuple result(&scope, runBuiltin(UnderBuiltinsModule::underFloatDivmod, number,
-                                  divisor));
+  Tuple result(&scope,
+               runBuiltin(FUNC(_builtins, _float_divmod), number, divisor));
   ASSERT_EQ(result.length(), 2);
   Float quotient(&scope, result.at(0));
   Float remainder(&scope, result.at(1));
@@ -665,9 +655,9 @@ TEST_F(UnderBuiltinsModuleTest,
   HandleScope scope(thread_);
   Float number(&scope, runtime_->newFloat(3.25));
   Float divisor(&scope, runtime_->newFloat(0.0));
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underFloatDivmod, number, divisor),
-      LayoutId::kZeroDivisionError, "float divmod()"));
+  EXPECT_TRUE(
+      raisedWithStr(runBuiltin(FUNC(_builtins, _float_divmod), number, divisor),
+                    LayoutId::kZeroDivisionError, "float divmod()"));
 }
 
 TEST_F(UnderBuiltinsModuleTest, UnderFloatDivmodWithNanReturnsNan) {
@@ -676,8 +666,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderFloatDivmodWithNanReturnsNan) {
   double nan = std::numeric_limits<double>::quiet_NaN();
   ASSERT_TRUE(std::isnan(nan));
   Float divisor(&scope, runtime_->newFloat(nan));
-  Tuple result(&scope, runBuiltin(UnderBuiltinsModule::underFloatDivmod, number,
-                                  divisor));
+  Tuple result(&scope,
+               runBuiltin(FUNC(_builtins, _float_divmod), number, divisor));
   ASSERT_EQ(result.length(), 2);
   Float quotient(&scope, result.at(0));
   Float remainder(&scope, result.at(1));
@@ -697,7 +687,7 @@ i = C(False)
 )")
                    .isError());
   Object i(&scope, mainModuleAt(runtime_, "i"));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underObjectKeys, i));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _object_keys), i));
   ASSERT_TRUE(result.isList());
   EXPECT_EQ(List::cast(*result).numItems(), 0);
 }
@@ -718,16 +708,14 @@ def instance():
   ASSERT_TRUE(instance.instanceVariableAt(offset).isNoneType());
 
   Object result0(
-      &scope,
-      runBuiltin(UnderBuiltinsModule::underInstanceOverflowDict, instance));
+      &scope, runBuiltin(FUNC(_builtins, _instance_overflow_dict), instance));
   ASSERT_EQ(instance.layoutId(), layout.id());
   Object overflow_dict(&scope, instance.instanceVariableAt(offset));
   EXPECT_TRUE(result0.isDict());
   EXPECT_EQ(result0, overflow_dict);
 
   Object result1(
-      &scope,
-      runBuiltin(UnderBuiltinsModule::underInstanceOverflowDict, instance));
+      &scope, runBuiltin(FUNC(_builtins, _instance_overflow_dict), instance));
   EXPECT_EQ(result0, result1);
 }
 
@@ -740,8 +728,8 @@ TEST_F(UnderBuiltinsModuleTest,
   Bytes bytes(&scope, runtime_->newBytesWithAll(bytes_array));
   Bool byteorder_big(&scope, Bool::falseObj());
   Bool signed_arg(&scope, Bool::falseObj());
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntFromBytes,
-                                   int_type, bytes, byteorder_big, signed_arg));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _int_from_bytes), int_type,
+                                   bytes, byteorder_big, signed_arg));
   EXPECT_TRUE(isIntEqualsWord(*result, 0xfeca));
 }
 
@@ -755,8 +743,8 @@ TEST_F(UnderBuiltinsModuleTest,
   Bytes bytes(&scope, runtime_->newBytesWithAll(bytes_array));
   Bool byteorder_big(&scope, Bool::falseObj());
   Bool signed_arg(&scope, Bool::falseObj());
-  Int result(&scope, runBuiltin(UnderBuiltinsModule::underIntFromBytes,
-                                int_type, bytes, byteorder_big, signed_arg));
+  Int result(&scope, runBuiltin(FUNC(_builtins, _int_from_bytes), int_type,
+                                bytes, byteorder_big, signed_arg));
   ASSERT_EQ(result.numDigits(), 2);
   EXPECT_EQ(result.digitAt(0), 0x67452301bebafecaU);
   EXPECT_EQ(result.digitAt(1), 0xcdab89U);
@@ -770,8 +758,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderIntFromBytesWithBigEndianReturnsSmallInt) {
   Bytes bytes(&scope, runtime_->newBytesWithAll(bytes_array));
   Bool byteorder_big(&scope, Bool::trueObj());
   Bool signed_arg(&scope, Bool::falseObj());
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntFromBytes,
-                                   int_type, bytes, byteorder_big, signed_arg));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _int_from_bytes), int_type,
+                                   bytes, byteorder_big, signed_arg));
   EXPECT_TRUE(isIntEqualsWord(*result, 0xcafe));
 }
 
@@ -784,8 +772,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderIntFromBytesWithBigEndianReturnsLargeInt) {
   Bytes bytes(&scope, runtime_->newBytesWithAll(bytes_array));
   Bool byteorder_big(&scope, Bool::trueObj());
   Bool signed_arg(&scope, Bool::falseObj());
-  Int result(&scope, runBuiltin(UnderBuiltinsModule::underIntFromBytes,
-                                int_type, bytes, byteorder_big, signed_arg));
+  Int result(&scope, runBuiltin(FUNC(_builtins, _int_from_bytes), int_type,
+                                bytes, byteorder_big, signed_arg));
   ASSERT_EQ(result.numDigits(), 2);
   EXPECT_EQ(result.digitAt(0), 0xbe0123456789abcdU);
   EXPECT_EQ(result.digitAt(1), 0xcafebaU);
@@ -799,14 +787,14 @@ TEST_F(UnderBuiltinsModuleTest, UnderIntFromBytesWithEmptyBytes) {
   Bool bo_big_false(&scope, Bool::falseObj());
   Bool signed_arg(&scope, Bool::falseObj());
   Object result_little(
-      &scope, runBuiltin(UnderBuiltinsModule::underIntFromBytes, int_type,
-                         bytes, bo_big_false, signed_arg));
+      &scope, runBuiltin(FUNC(_builtins, _int_from_bytes), int_type, bytes,
+                         bo_big_false, signed_arg));
   EXPECT_TRUE(isIntEqualsWord(*result_little, 0));
 
   Bool bo_big_true(&scope, Bool::trueObj());
-  Object result_big(&scope,
-                    runBuiltin(UnderBuiltinsModule::underIntFromBytes, int_type,
-                               bytes, bo_big_true, signed_arg));
+  Object result_big(
+      &scope, runBuiltin(FUNC(_builtins, _int_from_bytes), int_type, bytes,
+                         bo_big_true, signed_arg));
   EXPECT_TRUE(isIntEqualsWord(*result_big, 0));
 }
 
@@ -820,8 +808,8 @@ TEST_F(UnderBuiltinsModuleTest,
   Bytes bytes(&scope, runtime_->newBytes(kWordSize, 0xff));
   Bool byteorder_big(&scope, Bool::falseObj());
   Bool signed_arg(&scope, Bool::falseObj());
-  Int result(&scope, runBuiltin(UnderBuiltinsModule::underIntFromBytes,
-                                int_type, bytes, byteorder_big, signed_arg));
+  Int result(&scope, runBuiltin(FUNC(_builtins, _int_from_bytes), int_type,
+                                bytes, byteorder_big, signed_arg));
   const uword expected_digits[] = {kMaxUword, 0};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -835,8 +823,8 @@ TEST_F(UnderBuiltinsModuleTest,
   Bytes bytes(&scope, runtime_->newBytesWithAll(bytes_array));
   Bool byteorder_big(&scope, Bool::falseObj());
   Bool signed_arg(&scope, Bool::trueObj());
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntFromBytes,
-                                   int_type, bytes, byteorder_big, signed_arg));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _int_from_bytes), int_type,
+                                   bytes, byteorder_big, signed_arg));
   EXPECT_TRUE(isIntEqualsWord(*result, -1));
 }
 
@@ -850,8 +838,8 @@ TEST_F(UnderBuiltinsModuleTest,
   Bytes bytes(&scope, runtime_->newBytesWithAll(bytes_array));
   Bool byteorder_big(&scope, Bool::trueObj());
   Bool signed_arg(&scope, Bool::trueObj());
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntFromBytes,
-                                   int_type, bytes, byteorder_big, signed_arg));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _int_from_bytes), int_type,
+                                   bytes, byteorder_big, signed_arg));
   const uword expected_digits[] = {0xbe0123456789abcd, 0xffffffffffcafeba};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -864,9 +852,8 @@ TEST_F(UnderBuiltinsModuleTest,
   ByteArray array(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, array, view);
   Int base(&scope, SmallInt::fromWord(0));
-  Object result(&scope,
-                runBuiltin(UnderBuiltinsModule::underIntNewFromBytearray, type,
-                           array, base));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _int_new_from_bytearray),
+                                   type, array, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 0xba5e));
 }
 
@@ -879,8 +866,7 @@ TEST_F(UnderBuiltinsModuleTest,
   runtime_->byteArrayExtend(thread_, array, view);
   Int base(&scope, SmallInt::fromWord(36));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromBytearray, type, array,
-                 base),
+      runBuiltin(FUNC(_builtins, _int_new_from_bytearray), type, array, base),
       LayoutId::kValueError, "invalid literal for int() with base 36: b'$'"));
 }
 
@@ -893,8 +879,7 @@ TEST_F(UnderBuiltinsModuleTest,
   runtime_->byteArrayExtend(thread_, array, view);
   Int base(&scope, SmallInt::fromWord(10));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromBytearray, type, array,
-                 base),
+      runBuiltin(FUNC(_builtins, _int_new_from_bytearray), type, array, base),
       LayoutId::kValueError, "invalid literal for int() with base 10: b'a'"));
 }
 
@@ -906,7 +891,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Bytes bytes(&scope, runtime_->newBytesWithAll(view));
   Int base(&scope, SmallInt::fromWord(36));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromBytes, type, bytes, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
       LayoutId::kValueError, "invalid literal for int() with base 36: b'$'"));
 }
 
@@ -918,7 +903,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Bytes bytes(&scope, runtime_->newBytesWithAll(view));
   Int base(&scope, SmallInt::fromWord(7));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromBytes, type, bytes, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
       LayoutId::kValueError, "invalid literal for int() with base 7: b'86'"));
 }
 
@@ -933,9 +918,8 @@ foo = Foo(b"42")
   Object type(&scope, runtime_->typeAt(LayoutId::kInt));
   Object bytes(&scope, mainModuleAt(runtime_, "foo"));
   Object base(&scope, SmallInt::fromWord(21));
-  EXPECT_EQ(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromBytes, type, bytes, base),
-      SmallInt::fromWord(86));
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
+            SmallInt::fromWord(86));
 }
 
 TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromBytesWithZero) {
@@ -944,8 +928,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromBytesWithZero) {
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll(src));
   Int base(&scope, SmallInt::fromWord(10));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromBytes,
-                                   type, bytes, base));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _int_new_from_bytes), type,
+                                   bytes, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 
@@ -955,8 +939,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromBytesWithLargeInt) {
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(10));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromBytes,
-                                   type, bytes, base));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _int_new_from_bytes), type,
+                                   bytes, base));
   ASSERT_FALSE(result.isError());
   EXPECT_TRUE(result.isInt());
   const uword digits[] = {0xffffffffffffff9c, 0x63};
@@ -969,8 +953,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromBytesWithLargeInt2) {
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(10));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromBytes,
-                                   type, bytes, base));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _int_new_from_bytes), type,
+                                   bytes, base));
   ASSERT_FALSE(result.isError());
   EXPECT_TRUE(result.isInt());
   const uword digits[] = {0x7ffffffffffffff6, 0x2};
@@ -985,7 +969,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(10));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromBytes, type, bytes, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
       LayoutId::kValueError,
       "invalid literal for int() with base 10: b'461168601$84273879030'"));
 }
@@ -996,7 +980,7 @@ TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromBytesWithLeadingPlusReturnsInt) {
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(10));
-  Int result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromBytes, type,
+  Int result(&scope, runBuiltin(FUNC(_builtins, _int_new_from_bytes), type,
                                 bytes, base));
   ASSERT_FALSE(result.isError());
   EXPECT_TRUE(result.isInt());
@@ -1012,7 +996,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(10));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromBytes, type, bytes, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
       LayoutId::kValueError, "invalid literal for int() with base 10: b'++1'"));
 }
 
@@ -1023,7 +1007,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(10));
-  Int result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromBytes, type,
+  Int result(&scope, runBuiltin(FUNC(_builtins, _int_new_from_bytes), type,
                                 bytes, base));
   ASSERT_FALSE(result.isError());
   EXPECT_TRUE(result.isInt());
@@ -1039,7 +1023,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(10));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromBytes, type, bytes, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
       LayoutId::kValueError, "invalid literal for int() with base 10: b'--1'"));
 }
 
@@ -1050,9 +1034,8 @@ TEST_F(UnderBuiltinsModuleTest,
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(0));
-  EXPECT_EQ(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromBytes, type, bytes, base),
-      SmallInt::fromWord(31));
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
+            SmallInt::fromWord(31));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
@@ -1062,9 +1045,8 @@ TEST_F(UnderBuiltinsModuleTest,
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(16));
-  EXPECT_EQ(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromBytes, type, bytes, base),
-      SmallInt::fromWord(31));
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
+            SmallInt::fromWord(31));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
@@ -1075,7 +1057,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(9));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromBytes, type, bytes, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
       LayoutId::kValueError, "invalid literal for int() with base 9: b'0x1f'"));
 }
 
@@ -1085,9 +1067,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromBytesWithBaseThreeReturnsInt) {
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(3));
-  EXPECT_EQ(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromBytes, type, bytes, base),
-      SmallInt::fromWord(25));
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
+            SmallInt::fromWord(25));
 }
 
 TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromBytesWithUnderscoreReturnsInt) {
@@ -1096,9 +1077,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromBytesWithUnderscoreReturnsInt) {
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(10));
-  EXPECT_EQ(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromBytes, type, bytes, base),
-      SmallInt::fromWord(1000000));
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
+            SmallInt::fromWord(1000000));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
@@ -1109,7 +1089,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(0));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromBytes, type, bytes, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
       LayoutId::kValueError, "invalid literal for int() with base 0: b'_1'"));
 }
 
@@ -1120,9 +1100,8 @@ TEST_F(UnderBuiltinsModuleTest,
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(2));
-  EXPECT_EQ(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromBytes, type, bytes, base),
-      SmallInt::fromWord(1));
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
+            SmallInt::fromWord(1));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
@@ -1133,7 +1112,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(0));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromBytes, type, bytes, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
       LayoutId::kValueError,
       "invalid literal for int() with base 0: b'1_000_'"));
 }
@@ -1146,7 +1125,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Bytes bytes(&scope, runtime_->newBytesWithAll({src, ARRAYSIZE(src) - 1}));
   Int base(&scope, SmallInt::fromWord(0));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromBytes, type, bytes, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_bytes), type, bytes, base),
       LayoutId::kValueError,
       "invalid literal for int() with base 0: b'1__000'"));
 }
@@ -1157,9 +1136,9 @@ TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromIntWithBoolReturnsSmallInt) {
   Object fls(&scope, Bool::falseObj());
   Object tru(&scope, Bool::trueObj());
   Object false_result(
-      &scope, runBuiltin(UnderBuiltinsModule::underIntNewFromInt, type, fls));
-  Object true_result(
-      &scope, runBuiltin(UnderBuiltinsModule::underIntNewFromInt, type, tru));
+      &scope, runBuiltin(FUNC(_builtins, _int_new_from_int), type, fls));
+  Object true_result(&scope,
+                     runBuiltin(FUNC(_builtins, _int_new_from_int), type, tru));
   EXPECT_EQ(false_result, SmallInt::fromWord(0));
   EXPECT_EQ(true_result, SmallInt::fromWord(1));
 }
@@ -1189,8 +1168,8 @@ TEST_F(UnderBuiltinsModuleTest,
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
-                                   type, str, base));
+  Object result(
+      &scope, runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 1985));
 }
 
@@ -1202,7 +1181,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(36));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base),
       LayoutId::kValueError, "invalid literal for int() with base 36: '$'"));
 }
 
@@ -1214,7 +1193,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(4));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base),
       LayoutId::kValueError, "invalid literal for int() with base 4: '305'"));
 }
 
@@ -1226,7 +1205,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(16));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base),
       LayoutId::kValueError, "invalid literal for int() with base 16: 'g'"));
 }
 
@@ -1236,8 +1215,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromStrWithLargeInt) {
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(10));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
-                                   type, str, base));
+  Object result(
+      &scope, runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base));
   ASSERT_FALSE(result.isError());
   EXPECT_TRUE(result.isInt());
   const uword digits[] = {0xffffffffffffff9c, 0x63};
@@ -1250,8 +1229,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromStrWithLargeInt2) {
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(10));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
-                                   type, str, base));
+  Object result(
+      &scope, runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base));
   ASSERT_FALSE(result.isError());
   EXPECT_TRUE(result.isInt());
   const uword digits[] = {0x7ffffffffffffff6, 0x2};
@@ -1266,7 +1245,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(10));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base),
       LayoutId::kValueError,
       "invalid literal for int() with base 10: '461168601$84273879030'"));
 }
@@ -1279,7 +1258,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(0));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base),
       LayoutId::kValueError, "invalid literal for int() with base 10: '-'"));
 }
 
@@ -1289,8 +1268,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromStrWithLengthOneInfersBase10) {
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
-                                   type, str, base));
+  Object result(
+      &scope, runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 8));
 }
 
@@ -1300,8 +1279,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromStrWithLengthOneBase10) {
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(10));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
-                                   type, str, base));
+  Object result(
+      &scope, runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 8));
 }
 
@@ -1311,8 +1290,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromStrWithLargeIntBaseTwo) {
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(2));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
-                                   type, str, base));
+  Object result(
+      &scope, runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 4));
 }
 
@@ -1322,8 +1301,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromStrWithLargeIntInfersBaseTen) {
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
-                                   type, str, base));
+  Object result(
+      &scope, runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 100));
 }
 
@@ -1334,8 +1313,8 @@ TEST_F(UnderBuiltinsModuleTest,
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
-                                   type, str, base));
+  Object result(
+      &scope, runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 100));
 }
 
@@ -1347,7 +1326,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(0));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base),
       LayoutId::kValueError, "invalid literal for int() with base 10: '    '"));
 }
 
@@ -1357,8 +1336,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromStrWithPlusReturnsPositiveInt) {
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
-                                   type, str, base));
+  Object result(
+      &scope, runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 100));
 }
 
@@ -1370,7 +1349,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(16));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base),
       LayoutId::kValueError,
       "invalid literal for int() with base 16: '++100'"));
 }
@@ -1381,8 +1360,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromStrWithLargeIntBaseEight) {
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(8));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
-                                   type, str, base));
+  Object result(
+      &scope, runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base));
   const uword digits[] = {0xa7ca7ca7ca7ca7ff, 0x7fca7c};
   EXPECT_TRUE(isIntEqualsDigits(*result, digits));
 }
@@ -1393,8 +1372,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromStrWithLargeIntInfersBaseEight) {
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
-                                   type, str, base));
+  Object result(
+      &scope, runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base));
   const uword digits[] = {0xa7ca7ca7ca7ca7ff, 0x7fca7c};
   EXPECT_TRUE(isIntEqualsDigits(*result, digits));
 }
@@ -1407,7 +1386,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(16));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base),
       LayoutId::kValueError, "invalid literal for int() with base 16: '0x'"));
 }
 
@@ -1419,7 +1398,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(16));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base),
       LayoutId::kValueError, "invalid literal for int() with base 16: '-0x'"));
 }
 
@@ -1431,7 +1410,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(16));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base),
       LayoutId::kValueError, "invalid literal for int() with base 16: '+0x'"));
 }
 
@@ -1443,7 +1422,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(16));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base),
       LayoutId::kValueError, "invalid literal for int() with base 16: '0x_'"));
 }
 
@@ -1454,8 +1433,8 @@ TEST_F(UnderBuiltinsModuleTest,
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
-                                   type, str, base));
+  Object result(
+      &scope, runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 0xdeadbeef));
 }
 
@@ -1466,8 +1445,8 @@ TEST_F(UnderBuiltinsModuleTest,
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
-                                   type, str, base));
+  Object result(
+      &scope, runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 0xdeadbeef));
 }
 
@@ -1478,8 +1457,8 @@ TEST_F(UnderBuiltinsModuleTest,
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
-                                   type, str, base));
+  Object result(
+      &scope, runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 100000000000));
 }
 
@@ -1491,7 +1470,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(10));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base),
       LayoutId::kValueError, "invalid literal for int() with base 10: '_100'"));
 }
 
@@ -1503,7 +1482,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(10));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base),
       LayoutId::kValueError, "invalid literal for int() with base 10: '100_'"));
 }
 
@@ -1515,7 +1494,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(10));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base),
       LayoutId::kValueError,
       "invalid literal for int() with base 10: '1__00'"));
 }
@@ -1528,7 +1507,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(16));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base),
       LayoutId::kValueError, "invalid literal for int() with base 16: '_abc'"));
 }
 
@@ -1538,8 +1517,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromStrWithNegativeZeroReturnsZero) {
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
-                                   type, str, base));
+  Object result(
+      &scope, runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 
@@ -1551,7 +1530,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(16));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base),
       LayoutId::kValueError,
       "invalid literal for int() with base 16: '--100'"));
 }
@@ -1562,8 +1541,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromStrWithPositiveZeroReturnsZero) {
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
-                                   type, str, base));
+  Object result(
+      &scope, runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 
@@ -1574,7 +1553,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, Str::empty());
   Int base(&scope, SmallInt::fromWord(0));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base),
       LayoutId::kValueError, "invalid literal for int() with base 10: ''"));
 }
 
@@ -1586,7 +1565,7 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(0));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base),
       LayoutId::kValueError, "invalid literal for int() with base 10: 'a'"));
 }
 
@@ -1596,8 +1575,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromStrWithLargeIntBaseSixteen) {
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(16));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
-                                   type, str, base));
+  Object result(
+      &scope, runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base));
   const uword digits[] = {0x8000000000000000, 0x0};
   EXPECT_TRUE(isIntEqualsDigits(*result, digits));
 }
@@ -1609,8 +1588,8 @@ TEST_F(UnderBuiltinsModuleTest,
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
-                                   type, str, base));
+  Object result(
+      &scope, runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base));
   const uword digits[] = {0x8000000000000000, 0x0};
   EXPECT_TRUE(isIntEqualsDigits(*result, digits));
 }
@@ -1622,8 +1601,8 @@ TEST_F(UnderBuiltinsModuleTest,
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(16));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
-                                   type, str, base));
+  Object result(
+      &scope, runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base));
   const uword digits[] = {0x80000000deadbeef, 0x0};
   EXPECT_TRUE(isIntEqualsDigits(*result, digits));
 }
@@ -1635,8 +1614,8 @@ TEST_F(UnderBuiltinsModuleTest,
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
-                                   type, str, base));
+  Object result(
+      &scope, runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base));
   const uword digits[] = {0x80000000deadbeef, 0x0};
   EXPECT_TRUE(isIntEqualsDigits(*result, digits));
 }
@@ -1648,8 +1627,8 @@ TEST_F(UnderBuiltinsModuleTest,
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
-                                   type, str, base));
+  Object result(
+      &scope, runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
 
@@ -1660,8 +1639,8 @@ TEST_F(UnderBuiltinsModuleTest,
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(2));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
-                                   type, str, base));
+  Object result(
+      &scope, runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
 
@@ -1673,8 +1652,8 @@ TEST_F(
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(16));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
-                                   type, str, base));
+  Object result(
+      &scope, runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 177));
 }
 
@@ -1685,8 +1664,8 @@ TEST_F(UnderBuiltinsModuleTest,
   Type type(&scope, runtime_->typeAt(LayoutId::kInt));
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(16));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
-                                   type, str, base));
+  Object result(
+      &scope, runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 11));
 }
 
@@ -1698,14 +1677,14 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_->newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(8));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      runBuiltin(FUNC(_builtins, _int_new_from_str), type, str, base),
       LayoutId::kValueError, "invalid literal for int() with base 8: '0b1'"));
 }
 
 TEST_F(UnderBuiltinsModuleTest, UnderListCheckExactWithExactListReturnsTrue) {
   HandleScope scope(thread_);
   Object obj(&scope, runtime_->newList());
-  EXPECT_EQ(runBuiltin(UnderBuiltinsModule::underListCheckExact, obj),
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _list_check_exact), obj),
             Bool::trueObj());
 }
 
@@ -1719,7 +1698,7 @@ obj = C()
                    .isError());
   HandleScope scope(thread_);
   Object obj(&scope, mainModuleAt(runtime_, "obj"));
-  EXPECT_EQ(runBuiltin(UnderBuiltinsModule::underListCheckExact, obj),
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _list_check_exact), obj),
             Bool::falseObj());
 }
 
@@ -1728,8 +1707,8 @@ TEST_F(UnderBuiltinsModuleTest,
   HandleScope scope(thread_);
   List list(&scope, listFromRange(1, 4));
   Object idx(&scope, SmallInt::fromWord(-3));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelitem, list, idx)
-                  .isNoneType());
+  ASSERT_TRUE(
+      runBuiltin(FUNC(_builtins, _list_delitem), list, idx).isNoneType());
   EXPECT_PYLIST_EQ(list, {2, 3});
 }
 
@@ -1737,8 +1716,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderListDelitemWithLastIndexRemovesLastItem) {
   HandleScope scope(thread_);
   List list(&scope, listFromRange(0, 2));
   Object idx(&scope, SmallInt::fromWord(1));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelitem, list, idx)
-                  .isNoneType());
+  ASSERT_TRUE(
+      runBuiltin(FUNC(_builtins, _list_delitem), list, idx).isNoneType());
   EXPECT_PYLIST_EQ(list, {0});
 }
 
@@ -1747,8 +1726,8 @@ TEST_F(UnderBuiltinsModuleTest,
   HandleScope scope(thread_);
   List list(&scope, listFromRange(0, 2));
   Object idx(&scope, SmallInt::fromWord(0));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelitem, list, idx)
-                  .isNoneType());
+  ASSERT_TRUE(
+      runBuiltin(FUNC(_builtins, _list_delitem), list, idx).isNoneType());
   EXPECT_PYLIST_EQ(list, {1});
 }
 
@@ -1757,8 +1736,8 @@ TEST_F(UnderBuiltinsModuleTest,
   HandleScope scope(thread_);
   List list(&scope, listFromRange(0, 2));
   Object idx(&scope, SmallInt::fromWord(-2));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelitem, list, idx)
-                  .isNoneType());
+  ASSERT_TRUE(
+      runBuiltin(FUNC(_builtins, _list_delitem), list, idx).isNoneType());
   EXPECT_PYLIST_EQ(list, {1});
 }
 
@@ -1767,8 +1746,8 @@ TEST_F(UnderBuiltinsModuleTest,
   HandleScope scope(thread_);
   List list(&scope, listFromRange(0, 2));
   Object idx(&scope, SmallInt::fromWord(-1));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelitem, list, idx)
-                  .isNoneType());
+  ASSERT_TRUE(
+      runBuiltin(FUNC(_builtins, _list_delitem), list, idx).isNoneType());
   EXPECT_PYLIST_EQ(list, {0});
 }
 
@@ -1777,9 +1756,8 @@ TEST_F(UnderBuiltinsModuleTest,
   HandleScope scope(thread_);
   List list(&scope, listFromRange(0, 2));
   Int big(&scope, runtime_->newInt(SmallInt::kMaxValue + 100));
-  EXPECT_TRUE(
-      raised(runBuiltin(UnderBuiltinsModule::underListDelitem, list, big),
-             LayoutId::kIndexError));
+  EXPECT_TRUE(raised(runBuiltin(FUNC(_builtins, _list_delitem), list, big),
+                     LayoutId::kIndexError));
   EXPECT_PYLIST_EQ(list, {0, 1});
 }
 
@@ -1789,9 +1767,9 @@ TEST_F(UnderBuiltinsModuleTest, UnderListDelsliceRemovesItems) {
   Int start(&scope, SmallInt::fromWord(0));
   Int stop(&scope, SmallInt::fromWord(1));
   Int step(&scope, SmallInt::fromWord(1));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelslice, list, start,
-                         stop, step)
-                  .isNoneType());
+  ASSERT_TRUE(
+      runBuiltin(FUNC(_builtins, _list_delslice), list, start, stop, step)
+          .isNoneType());
   EXPECT_PYLIST_EQ(list, {2, 3});
 }
 
@@ -1801,9 +1779,9 @@ TEST_F(UnderBuiltinsModuleTest, UnderListDelsliceRemovesFirstItem) {
   Int start(&scope, SmallInt::fromWord(0));
   Int stop(&scope, SmallInt::fromWord(1));
   Int step(&scope, SmallInt::fromWord(1));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelslice, list, start,
-                         stop, step)
-                  .isNoneType());
+  ASSERT_TRUE(
+      runBuiltin(FUNC(_builtins, _list_delslice), list, start, stop, step)
+          .isNoneType());
   EXPECT_PYLIST_EQ(list, {1});
 }
 
@@ -1813,9 +1791,9 @@ TEST_F(UnderBuiltinsModuleTest, UnderListDelsliceRemovesLastItem) {
   Int start(&scope, SmallInt::fromWord(1));
   Int stop(&scope, SmallInt::fromWord(2));
   Int step(&scope, SmallInt::fromWord(1));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelslice, list, start,
-                         stop, step)
-                  .isNoneType());
+  ASSERT_TRUE(
+      runBuiltin(FUNC(_builtins, _list_delslice), list, start, stop, step)
+          .isNoneType());
   EXPECT_PYLIST_EQ(list, {0});
 }
 
@@ -1826,9 +1804,9 @@ TEST_F(UnderBuiltinsModuleTest,
   Int start(&scope, SmallInt::fromWord(1));
   Int stop(&scope, SmallInt::fromWord(3));
   Int step(&scope, SmallInt::fromWord(1));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelslice, list, start,
-                         stop, step)
-                  .isNoneType());
+  ASSERT_TRUE(
+      runBuiltin(FUNC(_builtins, _list_delslice), list, start, stop, step)
+          .isNoneType());
   EXPECT_PYLIST_EQ(list, {1});
 }
 
@@ -1839,9 +1817,9 @@ TEST_F(UnderBuiltinsModuleTest,
   Int start(&scope, SmallInt::fromWord(0));
   Int stop(&scope, SmallInt::fromWord(1));
   Int step(&scope, SmallInt::fromWord(1));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelslice, list, start,
-                         stop, step)
-                  .isNoneType());
+  ASSERT_TRUE(
+      runBuiltin(FUNC(_builtins, _list_delslice), list, start, stop, step)
+          .isNoneType());
   EXPECT_PYLIST_EQ(list, {2, 3});
 }
 
@@ -1852,9 +1830,9 @@ TEST_F(UnderBuiltinsModuleTest,
   Int start(&scope, SmallInt::fromWord(0));
   Int stop(&scope, SmallInt::fromWord(3));
   Int step(&scope, SmallInt::fromWord(1));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelslice, list, start,
-                         stop, step)
-                  .isNoneType());
+  ASSERT_TRUE(
+      runBuiltin(FUNC(_builtins, _list_delslice), list, start, stop, step)
+          .isNoneType());
   EXPECT_EQ(list.numItems(), 0);
 }
 
@@ -1865,9 +1843,9 @@ TEST_F(UnderBuiltinsModuleTest,
   Int start(&scope, SmallInt::fromWord(0));
   Int stop(&scope, SmallInt::fromWord(5));
   Int step(&scope, SmallInt::fromWord(2));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelslice, list, start,
-                         stop, step)
-                  .isNoneType());
+  ASSERT_TRUE(
+      runBuiltin(FUNC(_builtins, _list_delslice), list, start, stop, step)
+          .isNoneType());
   EXPECT_PYLIST_EQ(list, {1, 3});
 }
 
@@ -1878,9 +1856,9 @@ TEST_F(UnderBuiltinsModuleTest,
   Int start(&scope, SmallInt::fromWord(1));
   Int stop(&scope, SmallInt::fromWord(5));
   Int step(&scope, SmallInt::fromWord(2));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelslice, list, start,
-                         stop, step)
-                  .isNoneType());
+  ASSERT_TRUE(
+      runBuiltin(FUNC(_builtins, _list_delslice), list, start, stop, step)
+          .isNoneType());
   EXPECT_PYLIST_EQ(list, {0, 2, 4});
 }
 
@@ -1891,9 +1869,9 @@ TEST_F(UnderBuiltinsModuleTest,
   Int start(&scope, SmallInt::fromWord(0));
   Int stop(&scope, SmallInt::fromWord(5));
   Int step(&scope, SmallInt::fromWord(1000));
-  ASSERT_TRUE(runBuiltin(UnderBuiltinsModule::underListDelslice, list, start,
-                         stop, step)
-                  .isNoneType());
+  ASSERT_TRUE(
+      runBuiltin(FUNC(_builtins, _list_delslice), list, start, stop, step)
+          .isNoneType());
   EXPECT_PYLIST_EQ(list, {1, 2, 3, 4});
 }
 
@@ -1901,8 +1879,7 @@ TEST_F(UnderBuiltinsModuleTest, UnderListGetitemWithNegativeIndex) {
   HandleScope scope(thread_);
   List list(&scope, listFromRange(1, 4));
   Object idx(&scope, SmallInt::fromWord(-3));
-  Object result(&scope,
-                runBuiltin(UnderBuiltinsModule::underListGetitem, list, idx));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _list_getitem), list, idx));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
 
@@ -1911,9 +1888,9 @@ TEST_F(UnderBuiltinsModuleTest,
   HandleScope scope(thread_);
   List list(&scope, listFromRange(1, 4));
   Object idx(&scope, SmallInt::fromWord(-4));
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underListGetitem, list, idx),
-      LayoutId::kIndexError, "list index out of range"));
+  EXPECT_TRUE(
+      raisedWithStr(runBuiltin(FUNC(_builtins, _list_getitem), list, idx),
+                    LayoutId::kIndexError, "list index out of range"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
@@ -1921,9 +1898,9 @@ TEST_F(UnderBuiltinsModuleTest,
   HandleScope scope(thread_);
   List list(&scope, listFromRange(1, 4));
   Object idx(&scope, SmallInt::fromWord(3));
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underListGetitem, list, idx),
-      LayoutId::kIndexError, "list index out of range"));
+  EXPECT_TRUE(
+      raisedWithStr(runBuiltin(FUNC(_builtins, _list_getitem), list, idx),
+                    LayoutId::kIndexError, "list index out of range"));
 }
 
 TEST_F(UnderBuiltinsModuleTest, UnderListSwapSwapsItemsAtIndices) {
@@ -1931,8 +1908,7 @@ TEST_F(UnderBuiltinsModuleTest, UnderListSwapSwapsItemsAtIndices) {
   List list(&scope, listFromRange(0, 4));
   Object i(&scope, SmallInt::fromWord(1));
   Object j(&scope, SmallInt::fromWord(2));
-  EXPECT_TRUE(
-      runBuiltin(UnderBuiltinsModule::underListSwap, list, i, j).isNoneType());
+  EXPECT_TRUE(runBuiltin(FUNC(_builtins, _list_swap), list, i, j).isNoneType());
   EXPECT_PYLIST_EQ(list, {0, 2, 1, 3});
 }
 
@@ -1941,7 +1917,7 @@ TEST_F(UnderBuiltinsModuleTest,
   HandleScope scope(thread_);
   Object not_memoryview(&scope, runtime_->newInt(12));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underMemoryviewItemsize, not_memoryview),
+      runBuiltin(FUNC(_builtins, _memoryview_itemsize), not_memoryview),
       LayoutId::kTypeError,
       "'<anonymous>' requires a 'memoryview' object but got 'int'"));
 }
@@ -1953,7 +1929,7 @@ TEST_F(UnderBuiltinsModuleTest,
   MemoryView view(
       &scope, runtime_->newMemoryView(thread_, bytes, 5, ReadOnly::ReadOnly));
   Object result(&scope,
-                runBuiltin(UnderBuiltinsModule::underMemoryviewItemsize, view));
+                runBuiltin(FUNC(_builtins, _memoryview_itemsize), view));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
 
@@ -1962,7 +1938,7 @@ TEST_F(UnderBuiltinsModuleTest,
   HandleScope scope(thread_);
   Object not_memoryview(&scope, runtime_->newInt(12));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underMemoryviewNbytes, not_memoryview),
+      runBuiltin(FUNC(_builtins, _memoryview_nbytes), not_memoryview),
       LayoutId::kTypeError,
       "'<anonymous>' requires a 'memoryview' object but got 'int'"));
 }
@@ -1972,8 +1948,7 @@ TEST_F(UnderBuiltinsModuleTest, UnderMemoryViewNbytesReturnsSizeOfMemoryView) {
   Bytes bytes(&scope, runtime_->newBytes(5, 'x'));
   MemoryView view(
       &scope, runtime_->newMemoryView(thread_, bytes, 5, ReadOnly::ReadOnly));
-  Object result(&scope,
-                runBuiltin(UnderBuiltinsModule::underMemoryviewNbytes, view));
+  Object result(&scope, runBuiltin(FUNC(_builtins, _memoryview_nbytes), view));
   EXPECT_TRUE(isIntEqualsWord(*result, 5));
 }
 
@@ -1994,7 +1969,7 @@ TEST_F(UnderBuiltinsModuleTest, UnderModuleDirListWithFilteredOutPlaceholders) {
 
   ValueCell::cast(moduleValueCellAt(thread_, module, bar)).makePlaceholder();
 
-  List keys(&scope, runBuiltin(UnderBuiltinsModule::underModuleDir, module));
+  List keys(&scope, runBuiltin(FUNC(_builtins, _module_dir), module));
   EXPECT_EQ(keys.numItems(), 2);
   EXPECT_EQ(keys.at(0), *foo);
   EXPECT_EQ(keys.at(1), *baz);
@@ -2005,8 +1980,8 @@ TEST_F(UnderBuiltinsModuleTest,
   HandleScope scope(thread_);
   Object obj(&scope, SmallInt::fromWord(0));
   Str name(&scope, runtime_->newStrFromCStr("__foo_bar_baz__"));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underObjectTypeHasattr,
-                                   obj, name));
+  Object result(&scope,
+                runBuiltin(FUNC(_builtins, _object_type_hasattr), obj, name));
   EXPECT_EQ(result, Bool::falseObj());
   EXPECT_FALSE(thread_->hasPendingException());
 }
@@ -2023,8 +1998,8 @@ obj = C()
                    .isError());
   Object obj(&scope, mainModuleAt(runtime_, "obj"));
   Str name(&scope, runtime_->newStrFromCStr("foobarbaz"));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underObjectTypeHasattr,
-                                   obj, name));
+  Object result(&scope,
+                runBuiltin(FUNC(_builtins, _object_type_hasattr), obj, name));
   EXPECT_EQ(result, Bool::falseObj());
   EXPECT_FALSE(thread_->hasPendingException());
 }
@@ -2040,8 +2015,8 @@ obj = C()
                    .isError());
   Object obj(&scope, mainModuleAt(runtime_, "obj"));
   Str name(&scope, runtime_->newStrFromCStr("foobarbaz"));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underObjectTypeHasattr,
-                                   obj, name));
+  Object result(&scope,
+                runBuiltin(FUNC(_builtins, _object_type_hasattr), obj, name));
   EXPECT_EQ(result, Bool::trueObj());
   EXPECT_FALSE(thread_->hasPendingException());
 }
@@ -2060,8 +2035,8 @@ obj = C()
                    .isError());
   Object obj(&scope, mainModuleAt(runtime_, "obj"));
   Str name(&scope, runtime_->newStrFromCStr("foobarbaz"));
-  Object result(&scope, runBuiltin(UnderBuiltinsModule::underObjectTypeHasattr,
-                                   obj, name));
+  Object result(&scope,
+                runBuiltin(FUNC(_builtins, _object_type_hasattr), obj, name));
   EXPECT_EQ(result, Bool::trueObj());
   EXPECT_FALSE(thread_->hasPendingException());
 }
@@ -2071,9 +2046,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderOsWriteWithBadFdRaisesOSError) {
   Int fd(&scope, SmallInt::fromWord(-1));
   const byte buf[] = {0x1, 0x2};
   Bytes bytes_buf(&scope, runtime_->newBytesWithAll(buf));
-  EXPECT_TRUE(
-      raised(runBuiltin(UnderBuiltinsModule::underOsWrite, fd, bytes_buf),
-             LayoutId::kOSError));
+  EXPECT_TRUE(raised(runBuiltin(FUNC(_builtins, _os_write), fd, bytes_buf),
+                     LayoutId::kOSError));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
@@ -2085,9 +2059,8 @@ TEST_F(UnderBuiltinsModuleTest,
   Int fd(&scope, SmallInt::fromWord(fds[0]));
   const byte buf[] = {0x1, 0x2};
   Bytes bytes_buf(&scope, runtime_->newBytesWithAll(buf));
-  EXPECT_TRUE(
-      raised(runBuiltin(UnderBuiltinsModule::underOsWrite, fd, bytes_buf),
-             LayoutId::kOSError));
+  EXPECT_TRUE(raised(runBuiltin(FUNC(_builtins, _os_write), fd, bytes_buf),
+                     LayoutId::kOSError));
   ::close(fds[0]);
   ::close(fds[1]);
 }
@@ -2102,8 +2075,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderOsWriteWritesSizeBytes) {
   word count = std::strlen(reinterpret_cast<char*>(to_write));
   Bytes bytes_buf(&scope,
                   runtime_->newBytesWithAll(View<byte>(to_write, count)));
-  Object result_obj(
-      &scope, runBuiltin(UnderBuiltinsModule::underOsWrite, fd, bytes_buf));
+  Object result_obj(&scope,
+                    runBuiltin(FUNC(_builtins, _os_write), fd, bytes_buf));
   EXPECT_TRUE(isIntEqualsWord(*result_obj, count));
   ::close(fds[1]);  // Send EOF
   std::unique_ptr<char[]> buf(new char[count + 1]{0});
@@ -2116,9 +2089,9 @@ TEST_F(UnderBuiltinsModuleTest, UnderOsWriteWritesSizeBytes) {
 TEST_F(UnderBuiltinsModuleTest, UnderPatchWithBadPatchFuncRaisesTypeError) {
   HandleScope scope(thread_);
   Object not_func(&scope, runtime_->newInt(12));
-  EXPECT_TRUE(
-      raisedWithStr(runBuiltin(UnderBuiltinsModule::underPatch, not_func),
-                    LayoutId::kTypeError, "_patch expects function argument"));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(FUNC(_builtins, _patch), not_func),
+                            LayoutId::kTypeError,
+                            "_patch expects function argument"));
 }
 
 TEST_F(UnderBuiltinsModuleTest, UnderPatchWithMissingFuncRaisesAttributeError) {
@@ -2134,9 +2107,9 @@ TEST_F(UnderBuiltinsModuleTest, UnderPatchWithMissingFuncRaisesAttributeError) {
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
 
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(UnderBuiltinsModule::underPatch, function),
-      LayoutId::kAttributeError, "function bar not found in module foo"));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(FUNC(_builtins, _patch), function),
+                            LayoutId::kAttributeError,
+                            "function bar not found in module foo"));
 }
 
 TEST_F(UnderBuiltinsModuleTest, UnderPatchWithBadBaseFuncRaisesTypeError) {
@@ -2158,9 +2131,9 @@ TEST_F(UnderBuiltinsModuleTest,
   Str needle(&scope, runtime_->newStrFromCStr("o"));
   Object start(&scope, SmallInt::fromWord(2));
   Object end(&scope, SmallInt::fromWord(4));
-  EXPECT_TRUE(isIntEqualsWord(runBuiltin(UnderBuiltinsModule::underStrCount,
-                                         haystack, needle, start, end),
-                              2));
+  EXPECT_TRUE(isIntEqualsWord(
+      runBuiltin(FUNC(_builtins, _str_count), haystack, needle, start, end),
+      2));
 }
 
 TEST_F(UnderBuiltinsModuleTest, UnderStrCountWithNoneStartStartsFromZero) {
@@ -2169,9 +2142,9 @@ TEST_F(UnderBuiltinsModuleTest, UnderStrCountWithNoneStartStartsFromZero) {
   Str needle(&scope, runtime_->newStrFromCStr("o"));
   Object start(&scope, NoneType::object());
   Object end(&scope, SmallInt::fromWord(haystack.codePointLength()));
-  EXPECT_TRUE(isIntEqualsWord(runBuiltin(UnderBuiltinsModule::underStrCount,
-                                         haystack, needle, start, end),
-                              2));
+  EXPECT_TRUE(isIntEqualsWord(
+      runBuiltin(FUNC(_builtins, _str_count), haystack, needle, start, end),
+      2));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
@@ -2181,9 +2154,9 @@ TEST_F(UnderBuiltinsModuleTest,
   Str needle(&scope, runtime_->newStrFromCStr("o"));
   Object start(&scope, SmallInt::fromWord(0));
   Object end(&scope, NoneType::object());
-  EXPECT_TRUE(isIntEqualsWord(runBuiltin(UnderBuiltinsModule::underStrCount,
-                                         haystack, needle, start, end),
-                              2));
+  EXPECT_TRUE(isIntEqualsWord(
+      runBuiltin(FUNC(_builtins, _str_count), haystack, needle, start, end),
+      2));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
@@ -2256,8 +2229,7 @@ TEST_F(UnderBuiltinsModuleTest, UnderStrarrayClearSetsNumItemsToZero) {
   Str other(&scope, runtime_->newStrFromCStr("hello"));
   runtime_->strArrayAddStr(thread_, self, other);
   ASSERT_EQ(self.numItems(), 5);
-  EXPECT_TRUE(
-      runBuiltin(UnderBuiltinsModule::underStrarrayClear, self).isNoneType());
+  EXPECT_TRUE(runBuiltin(FUNC(_builtins, _strarray_clear), self).isNoneType());
   EXPECT_EQ(self.numItems(), 0);
 
   // Make sure that str does not show up again
@@ -2271,8 +2243,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderStrarrayIaddWithStrReturnsStrArray) {
   StrArray self(&scope, runtime_->newStrArray());
   const char* test_str = "hello";
   Str other(&scope, runtime_->newStrFromCStr(test_str));
-  StrArray result(
-      &scope, runBuiltin(UnderBuiltinsModule::underStrarrayIadd, self, other));
+  StrArray result(&scope,
+                  runBuiltin(FUNC(_builtins, _strarray_iadd), self, other));
   EXPECT_TRUE(isStrEqualsCStr(runtime_->strFromStrArray(result), test_str));
   EXPECT_EQ(self, result);
 }
@@ -2281,8 +2253,7 @@ TEST_F(UnderBuiltinsModuleTest, PartitionOnSingleCharStr) {
   HandleScope scope(thread_);
   Str str(&scope, runtime_->newStrFromCStr("hello"));
   Str sep(&scope, runtime_->newStrFromCStr("l"));
-  Tuple result(&scope,
-               runBuiltin(UnderBuiltinsModule::underStrPartition, str, sep));
+  Tuple result(&scope, runBuiltin(FUNC(_builtins, _str_partition), str, sep));
   ASSERT_EQ(result.length(), 3);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), "he"));
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), "l"));
@@ -2293,8 +2264,7 @@ TEST_F(UnderBuiltinsModuleTest, PartitionOnMultiCharStr) {
   HandleScope scope(thread_);
   Str str(&scope, runtime_->newStrFromCStr("hello"));
   Str sep(&scope, runtime_->newStrFromCStr("ll"));
-  Tuple result(&scope,
-               runBuiltin(UnderBuiltinsModule::underStrPartition, str, sep));
+  Tuple result(&scope, runBuiltin(FUNC(_builtins, _str_partition), str, sep));
   ASSERT_EQ(result.length(), 3);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), "he"));
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), "ll"));
@@ -2305,8 +2275,7 @@ TEST_F(UnderBuiltinsModuleTest, PartitionOnExistingSuffix) {
   HandleScope scope(thread_);
   Str str(&scope, runtime_->newStrFromCStr("hello"));
   Str sep(&scope, runtime_->newStrFromCStr("lo"));
-  Tuple result(&scope,
-               runBuiltin(UnderBuiltinsModule::underStrPartition, str, sep));
+  Tuple result(&scope, runBuiltin(FUNC(_builtins, _str_partition), str, sep));
   ASSERT_EQ(result.length(), 3);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hel"));
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), "lo"));
@@ -2317,8 +2286,7 @@ TEST_F(UnderBuiltinsModuleTest, PartitionOnNonExistentSuffix) {
   HandleScope scope(thread_);
   Str str(&scope, runtime_->newStrFromCStr("hello"));
   Str sep(&scope, runtime_->newStrFromCStr("lop"));
-  Tuple result(&scope,
-               runBuiltin(UnderBuiltinsModule::underStrPartition, str, sep));
+  Tuple result(&scope, runBuiltin(FUNC(_builtins, _str_partition), str, sep));
   ASSERT_EQ(result.length(), 3);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hello"));
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
@@ -2329,8 +2297,7 @@ TEST_F(UnderBuiltinsModuleTest, PartitionOnExistingPrefix) {
   HandleScope scope(thread_);
   Str str(&scope, runtime_->newStrFromCStr("hello"));
   Str sep(&scope, runtime_->newStrFromCStr("he"));
-  Tuple result(&scope,
-               runBuiltin(UnderBuiltinsModule::underStrPartition, str, sep));
+  Tuple result(&scope, runBuiltin(FUNC(_builtins, _str_partition), str, sep));
   ASSERT_EQ(result.length(), 3);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), "he"));
@@ -2341,8 +2308,7 @@ TEST_F(UnderBuiltinsModuleTest, PartitionOnNonExistentPrefix) {
   HandleScope scope(thread_);
   Str str(&scope, runtime_->newStrFromCStr("hello"));
   Str sep(&scope, runtime_->newStrFromCStr("hex"));
-  Tuple result(&scope,
-               runBuiltin(UnderBuiltinsModule::underStrPartition, str, sep));
+  Tuple result(&scope, runBuiltin(FUNC(_builtins, _str_partition), str, sep));
   ASSERT_EQ(result.length(), 3);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hello"));
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
@@ -2353,8 +2319,7 @@ TEST_F(UnderBuiltinsModuleTest, PartitionLargerStr) {
   HandleScope scope(thread_);
   Str str(&scope, runtime_->newStrFromCStr("hello"));
   Str sep(&scope, runtime_->newStrFromCStr("abcdefghijk"));
-  Tuple result(&scope,
-               runBuiltin(UnderBuiltinsModule::underStrPartition, str, sep));
+  Tuple result(&scope, runBuiltin(FUNC(_builtins, _str_partition), str, sep));
   ASSERT_EQ(result.length(), 3);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hello"));
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
@@ -2365,8 +2330,7 @@ TEST_F(UnderBuiltinsModuleTest, PartitionEmptyStr) {
   HandleScope scope(thread_);
   Str str(&scope, Str::empty());
   Str sep(&scope, runtime_->newStrFromCStr("a"));
-  Tuple result(&scope,
-               runBuiltin(UnderBuiltinsModule::underStrPartition, str, sep));
+  Tuple result(&scope, runBuiltin(FUNC(_builtins, _str_partition), str, sep));
   ASSERT_EQ(result.length(), 3);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
@@ -2377,8 +2341,7 @@ TEST_F(UnderBuiltinsModuleTest, RpartitionOnSingleCharStrPartitionsCorrectly) {
   HandleScope scope(thread_);
   Str str(&scope, runtime_->newStrFromCStr("hello"));
   Str sep(&scope, runtime_->newStrFromCStr("l"));
-  Tuple result(&scope,
-               runBuiltin(UnderBuiltinsModule::underStrRpartition, str, sep));
+  Tuple result(&scope, runBuiltin(FUNC(_builtins, _str_rpartition), str, sep));
   ASSERT_EQ(result.length(), 3);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hel"));
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), "l"));
@@ -2389,8 +2352,7 @@ TEST_F(UnderBuiltinsModuleTest, RpartitionOnMultiCharStrPartitionsCorrectly) {
   HandleScope scope(thread_);
   Str str(&scope, runtime_->newStrFromCStr("hello"));
   Str sep(&scope, runtime_->newStrFromCStr("ll"));
-  Tuple result(&scope,
-               runBuiltin(UnderBuiltinsModule::underStrRpartition, str, sep));
+  Tuple result(&scope, runBuiltin(FUNC(_builtins, _str_rpartition), str, sep));
   ASSERT_EQ(result.length(), 3);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), "he"));
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), "ll"));
@@ -2401,8 +2363,7 @@ TEST_F(UnderBuiltinsModuleTest, RpartitionOnSuffixPutsEmptyStrAtEndOfResult) {
   HandleScope scope(thread_);
   Str str(&scope, runtime_->newStrFromCStr("hello"));
   Str sep(&scope, runtime_->newStrFromCStr("lo"));
-  Tuple result(&scope,
-               runBuiltin(UnderBuiltinsModule::underStrRpartition, str, sep));
+  Tuple result(&scope, runBuiltin(FUNC(_builtins, _str_rpartition), str, sep));
   ASSERT_EQ(result.length(), 3);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hel"));
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), "lo"));
@@ -2414,8 +2375,7 @@ TEST_F(UnderBuiltinsModuleTest,
   HandleScope scope(thread_);
   Str str(&scope, runtime_->newStrFromCStr("hello"));
   Str sep(&scope, runtime_->newStrFromCStr("lop"));
-  Tuple result(&scope,
-               runBuiltin(UnderBuiltinsModule::underStrRpartition, str, sep));
+  Tuple result(&scope, runBuiltin(FUNC(_builtins, _str_rpartition), str, sep));
   ASSERT_EQ(result.length(), 3);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
@@ -2427,8 +2387,7 @@ TEST_F(UnderBuiltinsModuleTest,
   HandleScope scope(thread_);
   Str str(&scope, runtime_->newStrFromCStr("hello"));
   Str sep(&scope, runtime_->newStrFromCStr("he"));
-  Tuple result(&scope,
-               runBuiltin(UnderBuiltinsModule::underStrRpartition, str, sep));
+  Tuple result(&scope, runBuiltin(FUNC(_builtins, _str_rpartition), str, sep));
   ASSERT_EQ(result.length(), 3);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), "he"));
@@ -2440,8 +2399,7 @@ TEST_F(UnderBuiltinsModuleTest,
   HandleScope scope(thread_);
   Str str(&scope, runtime_->newStrFromCStr("hello"));
   Str sep(&scope, runtime_->newStrFromCStr("hex"));
-  Tuple result(&scope,
-               runBuiltin(UnderBuiltinsModule::underStrRpartition, str, sep));
+  Tuple result(&scope, runBuiltin(FUNC(_builtins, _str_rpartition), str, sep));
   ASSERT_EQ(result.length(), 3);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
@@ -2452,8 +2410,7 @@ TEST_F(UnderBuiltinsModuleTest, RpartitionLargerStrPutsStrAtEndOfResult) {
   HandleScope scope(thread_);
   Str str(&scope, runtime_->newStrFromCStr("hello"));
   Str sep(&scope, runtime_->newStrFromCStr("foobarbaz"));
-  Tuple result(&scope,
-               runBuiltin(UnderBuiltinsModule::underStrRpartition, str, sep));
+  Tuple result(&scope, runBuiltin(FUNC(_builtins, _str_rpartition), str, sep));
   ASSERT_EQ(result.length(), 3);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
@@ -2464,8 +2421,7 @@ TEST_F(UnderBuiltinsModuleTest, RpartitionEmptyStrReturnsTupleOfEmptyStrings) {
   HandleScope scope(thread_);
   Str str(&scope, Str::empty());
   Str sep(&scope, runtime_->newStrFromCStr("a"));
-  Tuple result(&scope,
-               runBuiltin(UnderBuiltinsModule::underStrRpartition, str, sep));
+  Tuple result(&scope, runBuiltin(FUNC(_builtins, _str_rpartition), str, sep));
   ASSERT_EQ(result.length(), 3);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
@@ -2478,8 +2434,8 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_->newStrFromCStr("haystack"));
   Str sep(&scope, runtime_->newStrFromCStr("haystack"));
   Int maxsplit(&scope, SmallInt::fromWord(100));
-  List result(&scope, runBuiltin(UnderBuiltinsModule::underStrSplit, str, sep,
-                                 maxsplit));
+  List result(&scope,
+              runBuiltin(FUNC(_builtins, _str_split), str, sep, maxsplit));
   EXPECT_PYLIST_EQ(result, {"", ""});
 }
 
@@ -2488,8 +2444,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderStrSplitWithSepNotInStrReturnsListOfStr) {
   Str str(&scope, runtime_->newStrFromCStr("haystack"));
   Str sep(&scope, runtime_->newStrFromCStr("foobar"));
   Int maxsplit(&scope, SmallInt::fromWord(100));
-  List result(&scope, runBuiltin(UnderBuiltinsModule::underStrSplit, str, sep,
-                                 maxsplit));
+  List result(&scope,
+              runBuiltin(FUNC(_builtins, _str_split), str, sep, maxsplit));
   ASSERT_EQ(result.numItems(), 1);
   EXPECT_EQ(result.at(0), *str);
 }
@@ -2499,8 +2455,8 @@ TEST_F(UnderBuiltinsModuleTest, UnderStrSplitWithSepInUnderStrSplitsOnSep) {
   Str str(&scope, runtime_->newStrFromCStr("hello world hello world"));
   Str sep(&scope, runtime_->newStrFromCStr(" w"));
   Int maxsplit(&scope, SmallInt::fromWord(100));
-  List result(&scope, runBuiltin(UnderBuiltinsModule::underStrSplit, str, sep,
-                                 maxsplit));
+  List result(&scope,
+              runBuiltin(FUNC(_builtins, _str_split), str, sep, maxsplit));
   EXPECT_PYLIST_EQ(result, {"hello", "orld hello", "orld"});
 }
 
@@ -2510,8 +2466,8 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_->newStrFromCStr("a b c d e"));
   Str sep(&scope, runtime_->newStrFromCStr(" "));
   Int maxsplit(&scope, SmallInt::fromWord(2));
-  List result(&scope, runBuiltin(UnderBuiltinsModule::underStrSplit, str, sep,
-                                 maxsplit));
+  List result(&scope,
+              runBuiltin(FUNC(_builtins, _str_split), str, sep, maxsplit));
   EXPECT_PYLIST_EQ(result, {"a", "b", "c d e"});
 }
 
@@ -2521,8 +2477,8 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_->newStrFromCStr("a b c d e"));
   Str sep(&scope, runtime_->newStrFromCStr(" "));
   Int maxsplit(&scope, SmallInt::fromWord(0));
-  List result(&scope, runBuiltin(UnderBuiltinsModule::underStrSplit, str, sep,
-                                 maxsplit));
+  List result(&scope,
+              runBuiltin(FUNC(_builtins, _str_split), str, sep, maxsplit));
   EXPECT_PYLIST_EQ(result, {"a b c d e"});
 }
 
@@ -2532,8 +2488,8 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_->newStrFromCStr(u8"a  \u3000 \t  b\u205fc"));
   Object sep(&scope, NoneType::object());
   Int maxsplit(&scope, SmallInt::fromWord(100));
-  List result(&scope, runBuiltin(UnderBuiltinsModule::underStrSplit, str, sep,
-                                 maxsplit));
+  List result(&scope,
+              runBuiltin(FUNC(_builtins, _str_split), str, sep, maxsplit));
   EXPECT_PYLIST_EQ(result, {"a", "b", "c"});
 }
 
@@ -2543,15 +2499,15 @@ TEST_F(UnderBuiltinsModuleTest,
   Str str(&scope, runtime_->newStrFromCStr("a   \t  b c  "));
   Object sep(&scope, NoneType::object());
   Int maxsplit(&scope, SmallInt::fromWord(100));
-  List result(&scope, runBuiltin(UnderBuiltinsModule::underStrSplit, str, sep,
-                                 maxsplit));
+  List result(&scope,
+              runBuiltin(FUNC(_builtins, _str_split), str, sep, maxsplit));
   EXPECT_PYLIST_EQ(result, {"a", "b", "c"});
 }
 
 TEST_F(UnderBuiltinsModuleTest, UnderTupleCheckExactWithExactTupleReturnsTrue) {
   HandleScope scope(thread_);
   Object obj(&scope, runtime_->newTuple(0));
-  EXPECT_EQ(runBuiltin(UnderBuiltinsModule::underTupleCheckExact, obj),
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _tuple_check_exact), obj),
             Bool::trueObj());
 }
 
@@ -2565,7 +2521,7 @@ obj = C()
                    .isError());
   HandleScope scope(thread_);
   Object obj(&scope, mainModuleAt(runtime_, "obj"));
-  EXPECT_EQ(runBuiltin(UnderBuiltinsModule::underTupleCheckExact, obj),
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _tuple_check_exact), obj),
             Bool::falseObj());
 }
 

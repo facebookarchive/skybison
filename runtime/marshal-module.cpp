@@ -13,7 +13,7 @@
 namespace py {
 
 const BuiltinFunction MarshalModule::kBuiltinFunctions[] = {
-    {ID(loads), loads},
+    {ID(loads), FUNC(marshal, loads)},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -22,7 +22,7 @@ void MarshalModule::initialize(Thread* thread, const Module& module) {
   executeFrozenModule(thread, kMarshalModuleData, module);
 }
 
-RawObject MarshalModule::loads(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(marshal, loads)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object bytes_obj(&scope, args.get(0));

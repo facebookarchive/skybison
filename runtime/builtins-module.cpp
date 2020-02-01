@@ -69,20 +69,20 @@ RawObject setAttribute(Thread* thread, const Object& self,
 
 // clang-format off
 const BuiltinFunction BuiltinsModule::kBuiltinFunctions[] = {
-    {ID(__build_class__), dunderBuildClass},
-    {ID(__import__), dunderImport},
-    {ID(bin), bin},
-    {ID(callable), callable},
-    {ID(chr), chr},
-    {ID(delattr), delattr},
-    {ID(getattr), getattr},
-    {ID(hasattr), hasattr},
-    {ID(hash), hash},
-    {ID(hex), hex},
-    {ID(id), id},
-    {ID(oct), oct},
-    {ID(ord), ord},
-    {ID(setattr), setattr},
+    {ID(__build_class__), FUNC(builtins, __build_class__)},
+    {ID(__import__), FUNC(builtins, __import__)},
+    {ID(bin), FUNC(builtins, bin)},
+    {ID(callable), FUNC(builtins, callable)},
+    {ID(chr), FUNC(builtins, chr)},
+    {ID(delattr), FUNC(builtins, delattr)},
+    {ID(getattr), FUNC(builtins, getattr)},
+    {ID(hasattr), FUNC(builtins, hasattr)},
+    {ID(hash), FUNC(builtins, hash)},
+    {ID(hex), FUNC(builtins, hex)},
+    {ID(id), FUNC(builtins, id)},
+    {ID(oct), FUNC(builtins, oct)},
+    {ID(ord), FUNC(builtins, ord)},
+    {ID(setattr), FUNC(builtins, setattr)},
     {SymbolId::kSentinelId, nullptr},
 };
 // clang-format on
@@ -318,7 +318,7 @@ static RawObject calculateMetaclass(Thread* thread, const Type& metaclass_type,
   return *result;
 }
 
-RawObject BuiltinsModule::bin(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(builtins, bin)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object number(&scope, args.get(0));
@@ -330,7 +330,7 @@ RawObject BuiltinsModule::bin(Thread* thread, Frame* frame, word nargs) {
   return formatIntBinarySimple(thread, number_int);
 }
 
-RawObject BuiltinsModule::delattr(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(builtins, delattr)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -339,8 +339,8 @@ RawObject BuiltinsModule::delattr(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject FUNC(builtins, __build_class__)(Thread* thread, Frame* frame,
+                                          word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -484,14 +484,14 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
   return Interpreter::callEx(thread, frame, CallFunctionExFlag::VAR_KEYWORDS);
 }
 
-RawObject BuiltinsModule::callable(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(builtins, callable)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object arg(&scope, args.get(0));
   return Bool::fromBool(thread->runtime()->isCallable(thread, arg));
 }
 
-RawObject BuiltinsModule::chr(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(builtins, chr)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object arg(&scope, args.get(0));
@@ -526,7 +526,7 @@ RawObject compile(Thread* thread, const Object& source, const Object& filename,
                                  optimize_int);
 }
 
-RawObject BuiltinsModule::id(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(builtins, id)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   // NOTE: This pins a handle until the runtime exits.
   // TODO(emacs): Either determine that this function is used so little that it
@@ -536,7 +536,7 @@ RawObject BuiltinsModule::id(Thread* thread, Frame* frame, word nargs) {
       ApiHandle::newReference(thread, args.get(0)));
 }
 
-RawObject BuiltinsModule::oct(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(builtins, oct)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object number(&scope, args.get(0));
@@ -548,7 +548,7 @@ RawObject BuiltinsModule::oct(Thread* thread, Frame* frame, word nargs) {
   return formatIntOctalSimple(thread, number_int);
 }
 
-RawObject BuiltinsModule::ord(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(builtins, ord)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object obj(&scope, args.get(0));
@@ -582,8 +582,7 @@ RawObject BuiltinsModule::ord(Thread* thread, Frame* frame, word nargs) {
                               "Builtin 'ord' expects string of length 1");
 }
 
-RawObject BuiltinsModule::dunderImport(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject FUNC(builtins, __import__)(Thread* thread, Frame* frame, word nargs) {
   // Note that this is a simplified __import__ implementation that is used
   // during early bootstrap; it is replaced by importlib.__import__ once
   // import lib is fully initialized.
@@ -604,7 +603,7 @@ RawObject BuiltinsModule::dunderImport(Thread* thread, Frame* frame,
 }
 
 // TODO(T39322942): Turn this into the Range constructor (__init__ or __new__)
-RawObject BuiltinsModule::getattr(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(builtins, getattr)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -623,7 +622,7 @@ RawObject BuiltinsModule::getattr(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject BuiltinsModule::hasattr(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(builtins, hasattr)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -631,14 +630,14 @@ RawObject BuiltinsModule::hasattr(Thread* thread, Frame* frame, word nargs) {
   return hasAttribute(thread, self, name);
 }
 
-RawObject BuiltinsModule::hash(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(builtins, hash)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object object(&scope, args.get(0));
   return Interpreter::hash(thread, object);
 }
 
-RawObject BuiltinsModule::hex(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(builtins, hex)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object number(&scope, args.get(0));
@@ -650,7 +649,7 @@ RawObject BuiltinsModule::hex(Thread* thread, Frame* frame, word nargs) {
   return formatIntHexadecimalSimple(thread, number_int);
 }
 
-RawObject BuiltinsModule::setattr(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(builtins, setattr)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));

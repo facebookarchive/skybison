@@ -118,15 +118,15 @@ TEST_F(BuiltinsModuleTest, EllipsisMatchesEllipsis) {
 TEST_F(BuiltinsModuleTest, IdReturnsInt) {
   HandleScope scope(thread_);
   Object obj(&scope, runtime_->newInt(12345));
-  EXPECT_TRUE(runBuiltin(BuiltinsModule::id, obj).isInt());
+  EXPECT_TRUE(runBuiltin(FUNC(builtins, id), obj).isInt());
 }
 
 TEST_F(BuiltinsModuleTest, IdDoesNotChangeAfterGC) {
   HandleScope scope(thread_);
   Object obj(&scope, runtime_->newStrFromCStr("hello world foobar"));
-  Object id_before(&scope, runBuiltin(BuiltinsModule::id, obj));
+  Object id_before(&scope, runBuiltin(FUNC(builtins, id), obj));
   runtime_->collectGarbage();
-  Object id_after(&scope, runBuiltin(BuiltinsModule::id, obj));
+  Object id_after(&scope, runBuiltin(FUNC(builtins, id), obj));
   EXPECT_EQ(*id_before, *id_after);
 }
 
@@ -134,8 +134,8 @@ TEST_F(BuiltinsModuleTest, IdReturnsDifferentValueForDifferentObject) {
   HandleScope scope(thread_);
   Object obj1(&scope, runtime_->newStrFromCStr("hello world foobar"));
   Object obj2(&scope, runtime_->newStrFromCStr("hello world foobarbaz"));
-  EXPECT_NE(runBuiltin(BuiltinsModule::id, obj1),
-            runBuiltin(BuiltinsModule::id, obj2));
+  EXPECT_NE(runBuiltin(FUNC(builtins, id), obj1),
+            runBuiltin(FUNC(builtins, id), obj2));
 }
 
 TEST_F(BuiltinsModuleTest, BuiltinLenGetLenFromDict) {
@@ -190,9 +190,9 @@ len5 = len({1,2,3,4,5})
 TEST_F(BuiltinsModuleTest, BuiltinOrd) {
   HandleScope scope(thread_);
   Str str(&scope, runtime_->newStrFromCStr("A"));
-  EXPECT_TRUE(isIntEqualsWord(runBuiltin(BuiltinsModule::ord, str), 65));
+  EXPECT_TRUE(isIntEqualsWord(runBuiltin(FUNC(builtins, ord), str), 65));
   Int one(&scope, SmallInt::fromWord(1));
-  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::ord, one),
+  EXPECT_TRUE(raisedWithStr(runBuiltin(FUNC(builtins, ord), one),
                             LayoutId::kTypeError,
                             "Unsupported type in builtin 'ord'"));
 }
@@ -205,7 +205,7 @@ a_bytearray = bytearray(b'A')
   HandleScope scope(thread_);
   Object a_bytearray(&scope, mainModuleAt(runtime_, "a_bytearray"));
   EXPECT_TRUE(
-      isIntEqualsWord(runBuiltin(BuiltinsModule::ord, a_bytearray), 65));
+      isIntEqualsWord(runBuiltin(FUNC(builtins, ord), a_bytearray), 65));
 }
 
 TEST_F(BuiltinsModuleTest, BuiltinOrdWithEmptyByteArrayRaisesTypeError) {
@@ -215,7 +215,7 @@ a_bytearray = bytearray(b'')
                    .isError());
   HandleScope scope(thread_);
   Object empty(&scope, mainModuleAt(runtime_, "a_bytearray"));
-  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::ord, empty),
+  EXPECT_TRUE(raisedWithStr(runBuiltin(FUNC(builtins, ord), empty),
                             LayoutId::kTypeError,
                             "Builtin 'ord' expects string of length 1"));
 }
@@ -227,7 +227,7 @@ a_bytearray = bytearray(b'AB')
                    .isError());
   HandleScope scope(thread_);
   Object not_a_char(&scope, mainModuleAt(runtime_, "a_bytearray"));
-  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::ord, not_a_char),
+  EXPECT_TRUE(raisedWithStr(runBuiltin(FUNC(builtins, ord), not_a_char),
                             LayoutId::kTypeError,
                             "Builtin 'ord' expects string of length 1"));
 }
@@ -236,13 +236,13 @@ TEST_F(BuiltinsModuleTest, BuiltinOrdWithBytes) {
   unsigned char bytes[] = {'A'};
   HandleScope scope(thread_);
   Object a_bytes(&scope, runtime_->newBytesWithAll(bytes));
-  EXPECT_TRUE(isIntEqualsWord(runBuiltin(BuiltinsModule::ord, a_bytes), 65));
+  EXPECT_TRUE(isIntEqualsWord(runBuiltin(FUNC(builtins, ord), a_bytes), 65));
 }
 
 TEST_F(BuiltinsModuleTest, BuiltinOrdWithEmptyBytesRaisesTypeError) {
   HandleScope scope(thread_);
   Object empty(&scope, Bytes::empty());
-  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::ord, empty),
+  EXPECT_TRUE(raisedWithStr(runBuiltin(FUNC(builtins, ord), empty),
                             LayoutId::kTypeError,
                             "Builtin 'ord' expects string of length 1"));
 }
@@ -251,7 +251,7 @@ TEST_F(BuiltinsModuleTest, BuiltinOrdWithLongBytesRaisesTypeError) {
   unsigned char bytes[] = {'A', 'B'};
   HandleScope scope(thread_);
   Object too_many_bytes(&scope, runtime_->newBytesWithAll(bytes));
-  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::ord, too_many_bytes),
+  EXPECT_TRUE(raisedWithStr(runBuiltin(FUNC(builtins, ord), too_many_bytes),
                             LayoutId::kTypeError,
                             "Builtin 'ord' expects string of length 1"));
 }
@@ -264,28 +264,28 @@ a_str = MyStr("A")
                    .isError());
   HandleScope scope(thread_);
   Object a_str(&scope, mainModuleAt(runtime_, "a_str"));
-  EXPECT_TRUE(isIntEqualsWord(runBuiltin(BuiltinsModule::ord, a_str), 65));
+  EXPECT_TRUE(isIntEqualsWord(runBuiltin(FUNC(builtins, ord), a_str), 65));
 }
 
 TEST_F(BuiltinsModuleTest, BuiltinOrdSupportNonASCII) {
   HandleScope scope(thread_);
   Str two_bytes(&scope, runtime_->newStrFromCStr("\xC3\xA9"));
-  Object two_ord(&scope, runBuiltin(BuiltinsModule::ord, two_bytes));
+  Object two_ord(&scope, runBuiltin(FUNC(builtins, ord), two_bytes));
   EXPECT_TRUE(isIntEqualsWord(*two_ord, 0xE9));
 
   Str three_bytes(&scope, runtime_->newStrFromCStr("\xE2\xB3\x80"));
-  Object three_ord(&scope, runBuiltin(BuiltinsModule::ord, three_bytes));
+  Object three_ord(&scope, runBuiltin(FUNC(builtins, ord), three_bytes));
   EXPECT_TRUE(isIntEqualsWord(*three_ord, 0x2CC0));
 
   Str four_bytes(&scope, runtime_->newStrFromCStr("\xF0\x9F\x86\x92"));
-  Object four_ord(&scope, runBuiltin(BuiltinsModule::ord, four_bytes));
+  Object four_ord(&scope, runBuiltin(FUNC(builtins, ord), four_bytes));
   EXPECT_TRUE(isIntEqualsWord(*four_ord, 0x1F192));
 }
 
 TEST_F(BuiltinsModuleTest, BuiltinOrdWithEmptyStrRaisesTypeError) {
   HandleScope scope(thread_);
   Object empty(&scope, Str::empty());
-  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::ord, empty),
+  EXPECT_TRUE(raisedWithStr(runBuiltin(FUNC(builtins, ord), empty),
                             LayoutId::kTypeError,
                             "Builtin 'ord' expects string of length 1"));
 }
@@ -298,7 +298,7 @@ empty = MyStr("")
                    .isError());
   HandleScope scope(thread_);
   Object empty(&scope, mainModuleAt(runtime_, "empty"));
-  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::ord, empty),
+  EXPECT_TRUE(raisedWithStr(runBuiltin(FUNC(builtins, ord), empty),
                             LayoutId::kTypeError,
                             "Builtin 'ord' expects string of length 1"));
 }
@@ -306,7 +306,7 @@ empty = MyStr("")
 TEST_F(BuiltinsModuleTest, BuiltinOrdStrWithManyCodePointsRaisesTypeError) {
   HandleScope scope(thread_);
   Object two_chars(&scope, runtime_->newStrFromCStr("ab"));
-  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::ord, two_chars),
+  EXPECT_TRUE(raisedWithStr(runBuiltin(FUNC(builtins, ord), two_chars),
                             LayoutId::kTypeError,
                             "Builtin 'ord' expects string of length 1"));
 }
@@ -320,7 +320,7 @@ two_code_points = MyStr("ab")
                    .isError());
   HandleScope scope(thread_);
   Object two_code_points(&scope, mainModuleAt(runtime_, "two_code_points"));
-  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::ord, two_code_points),
+  EXPECT_TRUE(raisedWithStr(runBuiltin(FUNC(builtins, ord), two_code_points),
                             LayoutId::kTypeError,
                             "Builtin 'ord' expects string of length 1"));
 }
@@ -369,7 +369,7 @@ TEST_F(BuiltinsModuleTest, DunderBuildClassWithNonFunctionRaisesTypeError) {
   Object bases(&scope, runtime_->emptyTuple());
   Object kwargs(&scope, runtime_->newDict());
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(BuiltinsModule::dunderBuildClass, body, name, metaclass,
+      runBuiltin(FUNC(builtins, __build_class__), body, name, metaclass,
                  bootstrap, bases, kwargs),
       LayoutId::kTypeError, "__build_class__: func must be a function"));
 }
@@ -384,7 +384,7 @@ TEST_F(BuiltinsModuleTest, DunderBuildClassWithNonStringRaisesTypeError) {
   Object bases(&scope, runtime_->emptyTuple());
   Object kwargs(&scope, runtime_->newDict());
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(BuiltinsModule::dunderBuildClass, body, name, metaclass,
+      runBuiltin(FUNC(builtins, __build_class__), body, name, metaclass,
                  bootstrap, bases, kwargs),
       LayoutId::kTypeError, "__build_class__: name is not a string"));
 }
@@ -584,7 +584,7 @@ TEST_F(BuiltinsModuleTest, DunderImportWithBuiltinReturnsModule) {
   Object locals(&scope, NoneType::object());
   Object fromlist(&scope, runtime_->emptyTuple());
   Object level(&scope, runtime_->newInt(0));
-  Object result_obj(&scope, runBuiltin(BuiltinsModule::dunderImport, name,
+  Object result_obj(&scope, runBuiltin(FUNC(builtins, __import__), name,
                                        globals, locals, fromlist, level));
   ASSERT_TRUE(result_obj.isModule());
   Module result(&scope, *result_obj);
@@ -598,7 +598,7 @@ TEST_F(BuiltinsModuleTest, DunderImportWithExtensionModuleReturnsModule) {
   Object locals(&scope, NoneType::object());
   Object fromlist(&scope, runtime_->emptyTuple());
   Object level(&scope, runtime_->newInt(0));
-  Object result_obj(&scope, runBuiltin(BuiltinsModule::dunderImport, name,
+  Object result_obj(&scope, runBuiltin(FUNC(builtins, __import__), name,
                                        globals, locals, fromlist, level));
   ASSERT_TRUE(result_obj.isModule());
   Module result(&scope, *result_obj);
@@ -614,7 +614,7 @@ TEST_F(BuiltinsModuleTest, DunderImportRaisesImportError) {
   Object fromlist(&scope, runtime_->emptyTuple());
   Object level(&scope, runtime_->newInt(0));
   EXPECT_TRUE(
-      raisedWithStr(runBuiltin(BuiltinsModule::dunderImport, name, globals,
+      raisedWithStr(runBuiltin(FUNC(builtins, __import__), name, globals,
                                locals, fromlist, level),
                     LayoutId::kImportError,
                     "failed to import antigravity (bootstrap importer)"));

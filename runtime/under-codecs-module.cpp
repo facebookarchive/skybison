@@ -15,17 +15,17 @@ extern "C" unsigned int _Py_ctype_table[];      // from Include/pyctype.h
 namespace py {
 
 const BuiltinFunction UnderCodecsModule::kBuiltinFunctions[] = {
-    {ID(_ascii_decode), underAsciiDecode},
-    {ID(_ascii_encode), underAsciiEncode},
-    {ID(_bytearray_string_append), underBytearrayStringAppend},
-    {ID(_escape_decode), underEscapeDecode},
-    {ID(_latin_1_decode), underLatin1Decode},
-    {ID(_latin_1_encode), underLatin1Encode},
-    {ID(_unicode_escape_decode), underUnicodeEscapeDecode},
-    {ID(_utf_16_encode), underUtf16Encode},
-    {ID(_utf_32_encode), underUtf32Encode},
-    {ID(_utf_8_decode), underUtf8Decode},
-    {ID(_utf_8_encode), underUtf8Encode},
+    {ID(_ascii_decode), FUNC(_codecs, _ascii_decode)},
+    {ID(_ascii_encode), FUNC(_codecs, _ascii_encode)},
+    {ID(_bytearray_string_append), FUNC(_codecs, _bytearray_string_append)},
+    {ID(_escape_decode), FUNC(_codecs, _escape_decode)},
+    {ID(_latin_1_decode), FUNC(_codecs, _latin_1_decode)},
+    {ID(_latin_1_encode), FUNC(_codecs, _latin_1_encode)},
+    {ID(_unicode_escape_decode), FUNC(_codecs, _unicode_escape_decode)},
+    {ID(_utf_16_encode), FUNC(_codecs, _utf_16_encode)},
+    {ID(_utf_32_encode), FUNC(_codecs, _utf_32_encode)},
+    {ID(_utf_8_decode), FUNC(_codecs, _utf_8_decode)},
+    {ID(_utf_8_encode), FUNC(_codecs, _utf_8_encode)},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -68,8 +68,8 @@ static int asciiDecode(Thread* thread, const StrArray& dst, const Bytes& src,
   return index;
 }
 
-RawObject UnderCodecsModule::underAsciiDecode(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_codecs, _ascii_decode)(Thread* thread, Frame* frame,
+                                       word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -134,8 +134,8 @@ static bool isEscapedLatin1Surrogate(int32_t codepoint) {
          codepoint <= (kLowSurrogateStart + kMaxByte);
 }
 
-RawObject UnderCodecsModule::underAsciiEncode(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_codecs, _ascii_encode)(Thread* thread, Frame* frame,
+                                       word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -272,8 +272,8 @@ static int32_t decodeEscaped(const Bytes& bytes, word* i,
   }
 }
 
-RawObject UnderCodecsModule::underEscapeDecode(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_codecs, _escape_decode)(Thread* thread, Frame* frame,
+                                        word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object bytes_obj(&scope, args.get(0));
@@ -348,8 +348,8 @@ RawObject UnderCodecsModule::underEscapeDecode(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject UnderCodecsModule::underLatin1Decode(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_codecs, _latin_1_decode)(Thread* thread, Frame* frame,
+                                         word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -379,8 +379,8 @@ RawObject UnderCodecsModule::underLatin1Decode(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject UnderCodecsModule::underLatin1Encode(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_codecs, _latin_1_encode)(Thread* thread, Frame* frame,
+                                         word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -572,9 +572,8 @@ static int32_t decodeUnicodeEscaped(const Bytes& bytes, word* i,
   }
 }
 
-RawObject UnderCodecsModule::underUnicodeEscapeDecode(Thread* thread,
-                                                      Frame* frame,
-                                                      word nargs) {
+RawObject FUNC(_codecs, _unicode_escape_decode)(Thread* thread, Frame* frame,
+                                                word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
@@ -772,8 +771,8 @@ static Utf8DecoderResult isValidUtf8Codepoint(const Bytes& bytes, word index) {
   return kInvalidStart;
 }
 
-RawObject UnderCodecsModule::underUtf8Decode(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_codecs, _utf_8_decode)(Thread* thread, Frame* frame,
+                                       word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -867,8 +866,8 @@ RawObject UnderCodecsModule::underUtf8Decode(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject UnderCodecsModule::underUtf8Encode(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_codecs, _utf_8_encode)(Thread* thread, Frame* frame,
+                                       word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -943,8 +942,8 @@ static int32_t lowSurrogate(int32_t codepoint) {
   return kLowSurrogateStart + (codepoint & 0x3FF);
 }
 
-RawObject UnderCodecsModule::underUtf16Encode(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_codecs, _utf_16_encode)(Thread* thread, Frame* frame,
+                                        word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -1027,8 +1026,8 @@ static void appendUtf32ToByteArray(Thread* thread, Runtime* runtime,
   }
 }
 
-RawObject UnderCodecsModule::underUtf32Encode(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_codecs, _utf_32_encode)(Thread* thread, Frame* frame,
+                                        word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -1090,9 +1089,8 @@ RawObject UnderCodecsModule::underUtf32Encode(Thread* thread, Frame* frame,
 
 // Takes a ByteArray and a Str object, and appends each byte in the Str to the
 // ByteArray one by one
-RawObject UnderCodecsModule::underBytearrayStringAppend(Thread* thread,
-                                                        Frame* frame,
-                                                        word nargs) {
+RawObject FUNC(_codecs, _bytearray_string_append)(Thread* thread, Frame* frame,
+                                                  word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   ByteArray dst(&scope, args.get(0));

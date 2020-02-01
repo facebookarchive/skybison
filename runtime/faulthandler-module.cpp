@@ -17,14 +17,14 @@
 namespace py {
 
 const BuiltinFunction FaulthandlerModule::kBuiltinFunctions[] = {
-    {ID(_read_null), underReadNull},
-    {ID(_sigabrt), underSigabrt},
-    {ID(_sigfpe), underSigfpe},
-    {ID(_sigsegv), underSigsegv},
-    {ID(disable), disable},
-    {ID(dump_traceback), dumpTraceback},
-    {ID(enable), enable},
-    {ID(is_enabled), isEnabled},
+    {ID(_read_null), FUNC(faulthandler, _read_null)},
+    {ID(_sigabrt), FUNC(faulthandler, _sigabrt)},
+    {ID(_sigfpe), FUNC(faulthandler, _sigfpe)},
+    {ID(_sigsegv), FUNC(faulthandler, _sigsegv)},
+    {ID(disable), FUNC(faulthandler, disable)},
+    {ID(dump_traceback), FUNC(faulthandler, dump_traceback)},
+    {ID(enable), FUNC(faulthandler, enable)},
+    {ID(is_enabled), FUNC(faulthandler, is_enabled)},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -161,31 +161,31 @@ static void suppressCrashReport() {
   }
 }
 
-RawObject FaulthandlerModule::underReadNull(Thread*, Frame*, word) {
+RawObject FUNC(faulthandler, _read_null)(Thread*, Frame*, word) {
   suppressCrashReport();
   *static_cast<volatile word*>(nullptr);
   return NoneType::object();
 }
 
-RawObject FaulthandlerModule::underSigabrt(Thread*, Frame*, word) {
+RawObject FUNC(faulthandler, _sigabrt)(Thread*, Frame*, word) {
   suppressCrashReport();
   std::abort();
   return NoneType::object();
 }
 
-RawObject FaulthandlerModule::underSigfpe(Thread*, Frame*, word) {
+RawObject FUNC(faulthandler, _sigfpe)(Thread*, Frame*, word) {
   suppressCrashReport();
   std::raise(SIGFPE);
   return NoneType::object();
 }
 
-RawObject FaulthandlerModule::underSigsegv(Thread*, Frame*, word) {
+RawObject FUNC(faulthandler, _sigsegv)(Thread*, Frame*, word) {
   suppressCrashReport();
   std::raise(SIGSEGV);
   return NoneType::object();
 }
 
-RawObject FaulthandlerModule::disable(Thread*, Frame*, word) {
+RawObject FUNC(faulthandler, disable)(Thread*, Frame*, word) {
   if (!fatal_error.enabled) {
     return Bool::falseObj();
   }
@@ -199,8 +199,8 @@ RawObject FaulthandlerModule::disable(Thread*, Frame*, word) {
   return Bool::trueObj();
 }
 
-RawObject FaulthandlerModule::dumpTraceback(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject FUNC(faulthandler, dump_traceback)(Thread* thread, Frame* frame,
+                                             word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object file(&scope, args.get(0));
@@ -240,7 +240,7 @@ static bool enableHandler(FaultHandler* handler, void (*handler_func)(int)) {
   return true;
 }
 
-RawObject FaulthandlerModule::enable(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(faulthandler, enable)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object file(&scope, args.get(0));
@@ -277,7 +277,7 @@ RawObject FaulthandlerModule::enable(Thread* thread, Frame* frame, word nargs) {
   return thread->raise(LayoutId::kRuntimeError, val.becomeImmutable());
 }
 
-RawObject FaulthandlerModule::isEnabled(Thread*, Frame*, word) {
+RawObject FUNC(faulthandler, is_enabled)(Thread*, Frame*, word) {
   return Bool::fromBool(fatal_error.enabled);
 }
 

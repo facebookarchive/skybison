@@ -18,7 +18,7 @@ TEST_F(MarshalModuleTest, LoadsReadsSet) {
   // marshal.loads(set())
   const byte set_bytes[] = "\xbc\x00\x00\x00\x00";
   Bytes bytes(&scope, runtime_->newBytesWithAll(set_bytes));
-  Object obj(&scope, runBuiltin(MarshalModule::loads, bytes));
+  Object obj(&scope, runBuiltin(FUNC(marshal, loads), bytes));
   ASSERT_TRUE(obj.isSet());
   EXPECT_EQ(Set::cast(*obj).numItems(), 0);
 }
@@ -32,7 +32,7 @@ foo = Foo(b"\xbc\x00\x00\x00\x00")
 )")
                    .isError());
   Object bytes(&scope, mainModuleAt(runtime_, "foo"));
-  Object obj(&scope, runBuiltin(MarshalModule::loads, bytes));
+  Object obj(&scope, runBuiltin(FUNC(marshal, loads), bytes));
   ASSERT_TRUE(obj.isSet());
   EXPECT_EQ(Set::cast(*obj).numItems(), 0);
 }
@@ -42,7 +42,7 @@ TEST_F(MarshalModuleTest, LoadsIgnoresExtraBytesAtEnd) {
   // marshal.loads(set() + some extra bytes)
   const byte set_bytes[] = "\xbc\x00\x00\x00\x00\x00\x00\x00\xAA\xBB\xCC";
   Bytes bytes(&scope, runtime_->newBytesWithAll(set_bytes));
-  Object obj(&scope, runBuiltin(MarshalModule::loads, bytes));
+  Object obj(&scope, runBuiltin(FUNC(marshal, loads), bytes));
   ASSERT_TRUE(obj.isSet());
   EXPECT_EQ(Set::cast(*obj).numItems(), 0);
 }

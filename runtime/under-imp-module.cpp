@@ -14,14 +14,14 @@
 namespace py {
 
 const BuiltinFunction UnderImpModule::kBuiltinFunctions[] = {
-    {ID(_create_dynamic), underCreateDynamic},
-    {ID(acquire_lock), acquireLock},
-    {ID(create_builtin), createBuiltin},
-    {ID(exec_builtin), execBuiltin},
-    {ID(extension_suffixes), extensionSuffixes},
-    {ID(is_builtin), isBuiltin},
-    {ID(is_frozen), isFrozen},
-    {ID(release_lock), releaseLock},
+    {ID(_create_dynamic), FUNC(_imp, _create_dynamic)},
+    {ID(acquire_lock), FUNC(_imp, acquire_lock)},
+    {ID(create_builtin), FUNC(_imp, create_builtin)},
+    {ID(exec_builtin), FUNC(_imp, exec_builtin)},
+    {ID(extension_suffixes), FUNC(_imp, extension_suffixes)},
+    {ID(is_builtin), FUNC(_imp, is_builtin)},
+    {ID(is_frozen), FUNC(_imp, is_frozen)},
+    {ID(release_lock), FUNC(_imp, release_lock)},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -57,8 +57,8 @@ bool importReleaseLock(Thread* thread) {
   return true;
 }
 
-RawObject UnderImpModule::underCreateDynamic(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_imp, _create_dynamic)(Thread* thread, Frame* frame,
+                                      word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -112,13 +112,12 @@ RawObject UnderImpModule::underCreateDynamic(Thread* thread, Frame* frame,
   return module->asObject();
 }
 
-RawObject UnderImpModule::acquireLock(Thread* thread, Frame*, word) {
+RawObject FUNC(_imp, acquire_lock)(Thread* thread, Frame*, word) {
   importAcquireLock(thread);
   return NoneType::object();
 }
 
-RawObject UnderImpModule::createBuiltin(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject FUNC(_imp, create_builtin)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -142,8 +141,7 @@ RawObject UnderImpModule::createBuiltin(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject UnderImpModule::execBuiltin(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject FUNC(_imp, exec_builtin)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -170,8 +168,8 @@ RawObject UnderImpModule::execBuiltin(Thread* thread, Frame* frame,
   return runtime->newInt(execDef(thread, module, def));
 }
 
-RawObject UnderImpModule::extensionSuffixes(Thread* thread, Frame* /* frame */,
-                                            word /* nargs */) {
+RawObject FUNC(_imp, extension_suffixes)(Thread* thread, Frame* /* frame */,
+                                         word /* nargs */) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   List list(&scope, runtime->newList());
@@ -180,7 +178,7 @@ RawObject UnderImpModule::extensionSuffixes(Thread* thread, Frame* /* frame */,
   return *list;
 }
 
-RawObject UnderImpModule::isBuiltin(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_imp, is_builtin)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -193,7 +191,7 @@ RawObject UnderImpModule::isBuiltin(Thread* thread, Frame* frame, word nargs) {
   return SmallInt::fromWord(isBuiltinModule(thread, name) ? 1 : 0);
 }
 
-RawObject UnderImpModule::isFrozen(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(_imp, is_frozen)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object name(&scope, args.get(0));
@@ -205,7 +203,7 @@ RawObject UnderImpModule::isFrozen(Thread* thread, Frame* frame, word nargs) {
   return RawBool::falseObj();
 }
 
-RawObject UnderImpModule::releaseLock(Thread* thread, Frame*, word) {
+RawObject FUNC(_imp, release_lock)(Thread* thread, Frame*, word) {
   if (!importReleaseLock(thread)) {
     return thread->raiseWithFmt(LayoutId::kRuntimeError,
                                 "not holding the import lock");

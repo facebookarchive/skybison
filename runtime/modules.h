@@ -9,6 +9,8 @@
 
 namespace py {
 
+#define FUNC(module, name) module##_##name##_func
+
 struct BuiltinFunction {
   SymbolId name;
   NativeMethodType address;

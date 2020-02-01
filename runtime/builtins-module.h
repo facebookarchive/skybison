@@ -17,24 +17,25 @@ RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
 RawObject compile(Thread* thread, const Object& source, const Object& filename,
                   SymbolId mode, word flags, int optimize);
 
+RawObject FUNC(builtins, __build_class__)(Thread* thread, Frame* frame,
+                                          word nargs);
+RawObject FUNC(builtins, __import__)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(builtins, bin)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(builtins, callable)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(builtins, chr)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(builtins, delattr)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(builtins, getattr)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(builtins, hasattr)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(builtins, hash)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(builtins, hex)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(builtins, id)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(builtins, oct)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(builtins, ord)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(builtins, setattr)(Thread* thread, Frame* frame, word nargs);
+
 class BuiltinsModule {
  public:
   static void initialize(Thread* thread, const Module& module);
-
-  static RawObject dunderBuildClass(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderImport(Thread* thread, Frame* frame, word nargs);
-  static RawObject bin(Thread* thread, Frame* frame, word nargs);
-  static RawObject callable(Thread* thread, Frame* frame, word nargs);
-  static RawObject chr(Thread* thread, Frame* frame, word nargs);
-  static RawObject delattr(Thread* thread, Frame* frame, word nargs);
-  static RawObject getattr(Thread* thread, Frame* frame, word nargs);
-  static RawObject hasattr(Thread* thread, Frame* frame, word nargs);
-  static RawObject hash(Thread* thread, Frame* frame, word nargs);
-  static RawObject hex(Thread* thread, Frame* frame, word nargs);
-  static RawObject id(Thread* thread, Frame* frame, word nargs);
-  static RawObject oct(Thread* thread, Frame* frame, word nargs);
-  static RawObject ord(Thread* thread, Frame* frame, word nargs);
-  static RawObject setattr(Thread* thread, Frame* frame, word nargs);
 
  private:
   static const BuiltinFunction kBuiltinFunctions[];

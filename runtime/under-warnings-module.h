@@ -8,11 +8,11 @@
 
 namespace py {
 
+RawObject FUNC(_warnings, warn)(Thread* thread, Frame* frame, word nargs);
+
 class UnderWarningsModule {
  public:
   static void initialize(Thread* thread, const Module& module);
-
-  static RawObject warn(Thread* thread, Frame* frame, word nargs);
 
  private:
   static const BuiltinFunction kBuiltinFunctions[];

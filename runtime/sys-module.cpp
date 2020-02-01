@@ -29,8 +29,8 @@ namespace py {
 extern "C" struct _inittab _PyImport_Inittab[];
 
 const BuiltinFunction SysModule::kBuiltinFunctions[] = {
-    {ID(exc_info), excInfo},
-    {ID(excepthook), excepthook},
+    {ID(exc_info), FUNC(sys, exc_info)},
+    {ID(excepthook), FUNC(sys, excepthook)},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -216,7 +216,7 @@ void writeStderrV(Thread* thread, const char* format, va_list va) {
   writeImpl(thread, sys_stderr, stderr, format, va);
 }
 
-RawObject SysModule::excepthook(Thread* thread, Frame* frame, word nargs) {
+RawObject FUNC(sys, excepthook)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   // type argument is ignored
@@ -226,8 +226,8 @@ RawObject SysModule::excepthook(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject SysModule::excInfo(Thread* thread, Frame* /* frame */,
-                             word /* nargs */) {
+RawObject FUNC(sys, exc_info)(Thread* thread, Frame* /* frame */,
+                              word /* nargs */) {
   HandleScope scope(thread);
   Tuple result(&scope, thread->runtime()->newTuple(3));
   if (thread->hasCaughtException()) {

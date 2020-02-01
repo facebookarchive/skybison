@@ -75,248 +75,249 @@ static RawObject raiseRequiresFromCaller(Thread* thread, Frame* frame,
 }
 
 const BuiltinFunction UnderBuiltinsModule::kBuiltinFunctions[] = {
-    {ID(_address), underAddress},
-    {ID(_bound_method), underBoundMethod},
-    {ID(_bool_check), underBoolCheck},
-    {ID(_bool_guard), underBoolGuard},
-    {ID(_bytearray_append), underBytearrayAppend},
-    {ID(_bytearray_check), underBytearrayCheck},
-    {ID(_bytearray_clear), underBytearrayClear},
-    {ID(_bytearray_contains), underBytearrayContains},
-    {ID(_bytearray_delitem), underBytearrayDelitem},
-    {ID(_bytearray_delslice), underBytearrayDelslice},
-    {ID(_bytearray_getitem), underBytearrayGetitem},
-    {ID(_bytearray_getslice), underBytearrayGetslice},
-    {ID(_bytearray_guard), underBytearrayGuard},
-    {ID(_bytearray_join), underBytearrayJoin},
-    {ID(_bytearray_len), underBytearrayLen},
-    {ID(_bytearray_setitem), underBytearraySetitem},
-    {ID(_bytearray_setslice), underBytearraySetslice},
-    {ID(_bytes_check), underBytesCheck},
-    {ID(_bytes_contains), underBytesContains},
-    {ID(_bytes_decode), underBytesDecode},
-    {ID(_bytes_decode_ascii), underBytesDecodeASCII},
-    {ID(_bytes_decode_utf_8), underBytesDecodeUTF8},
-    {ID(_bytes_from_bytes), underBytesFromBytes},
-    {ID(_bytes_from_ints), underBytesFromInts},
-    {ID(_bytes_getitem), underBytesGetitem},
-    {ID(_bytes_getslice), underBytesGetslice},
-    {ID(_bytes_guard), underBytesGuard},
-    {ID(_bytes_join), underBytesJoin},
-    {ID(_bytes_len), underBytesLen},
-    {ID(_bytes_maketrans), underBytesMaketrans},
-    {ID(_bytes_repeat), underBytesRepeat},
-    {ID(_bytes_split), underBytesSplit},
-    {ID(_bytes_split_whitespace), underBytesSplitWhitespace},
-    {ID(_byteslike_check), underByteslikeCheck},
-    {ID(_byteslike_compare_digest), underByteslikeCompareDigest},
-    {ID(_byteslike_count), underByteslikeCount},
-    {ID(_byteslike_endswith), underByteslikeEndswith},
-    {ID(_byteslike_find_byteslike), underByteslikeFindByteslike},
-    {ID(_byteslike_find_int), underByteslikeFindInt},
-    {ID(_byteslike_guard), underByteslikeGuard},
-    {ID(_byteslike_rfind_byteslike), underByteslikeRfindByteslike},
-    {ID(_byteslike_rfind_int), underByteslikeRfindInt},
-    {ID(_byteslike_startswith), underByteslikeStartswith},
-    {ID(_classmethod), underClassmethod},
-    {ID(_classmethod_isabstract), underClassmethodIsabstract},
-    {ID(_code_check), underCodeCheck},
-    {ID(_code_guard), underCodeGuard},
-    {ID(_code_set_posonlyargcount), underCodeSetPosonlyargcount},
-    {ID(_complex_check), underComplexCheck},
-    {ID(_complex_checkexact), underComplexCheckexact},
-    {ID(_complex_imag), underComplexImag},
-    {ID(_complex_new), underComplexNew},
-    {ID(_complex_new_from_str), underComplexNewFromStr},
-    {ID(_complex_real), underComplexReal},
-    {ID(_dict_bucket_insert), underDictBucketInsert},
-    {ID(_dict_bucket_key), underDictBucketKey},
-    {ID(_dict_bucket_set_value), underDictBucketSetValue},
-    {ID(_dict_bucket_value), underDictBucketValue},
-    {ID(_dict_check), underDictCheck},
-    {ID(_dict_check_exact), underDictCheckExact},
-    {ID(_dict_get), underDictGet},
-    {ID(_dict_guard), underDictGuard},
-    {ID(_dict_len), underDictLen},
-    {ID(_dict_lookup), underDictLookup},
-    {ID(_dict_lookup_next), underDictLookupNext},
-    {ID(_dict_popitem), underDictPopitem},
-    {ID(_dict_setitem), underDictSetitem},
-    {ID(_dict_update), underDictUpdate},
-    {ID(_divmod), underDivmod},
-    {ID(_exec), underExec},
-    {ID(_float_check), underFloatCheck},
-    {ID(_float_check_exact), underFloatCheckExact},
-    {ID(_float_divmod), underFloatDivmod},
-    {ID(_float_format), underFloatFormat},
-    {ID(_float_guard), underFloatGuard},
-    {ID(_float_new_from_byteslike), underFloatNewFromByteslike},
-    {ID(_float_new_from_float), underFloatNewFromFloat},
-    {ID(_float_new_from_str), underFloatNewFromStr},
-    {ID(_float_signbit), underFloatSignbit},
-    {ID(_frozenset_check), underFrozensetCheck},
-    {ID(_frozenset_guard), underFrozensetGuard},
-    {ID(_function_globals), underFunctionGlobals},
-    {ID(_function_guard), underFunctionGuard},
-    {ID(_gc), underGc},
-    {ID(_getframe_function), underGetframeFunction},
-    {ID(_getframe_lineno), underGetframeLineno},
-    {ID(_getframe_locals), underGetframeLocals},
-    {ID(_get_member_byte), underGetMemberByte},
-    {ID(_get_member_char), underGetMemberChar},
-    {ID(_get_member_double), underGetMemberDouble},
-    {ID(_get_member_float), underGetMemberFloat},
-    {ID(_get_member_int), underGetMemberInt},
-    {ID(_get_member_long), underGetMemberLong},
-    {ID(_get_member_pyobject), underGetMemberPyobject},
-    {ID(_get_member_short), underGetMemberShort},
-    {ID(_get_member_string), underGetMemberString},
-    {ID(_get_member_ubyte), underGetMemberUbyte},
-    {ID(_get_member_uint), underGetMemberUint},
-    {ID(_get_member_ulong), underGetMemberUlong},
-    {ID(_get_member_ushort), underGetMemberUshort},
-    {ID(_instance_delattr), underInstanceDelattr},
-    {ID(_instance_getattr), underInstanceGetattr},
-    {ID(_instance_guard), underInstanceGuard},
-    {ID(_instance_overflow_dict), underInstanceOverflowDict},
-    {ID(_instance_setattr), underInstanceSetattr},
-    {ID(_int_check), underIntCheck},
-    {ID(_int_check_exact), underIntCheckExact},
-    {ID(_int_from_bytes), underIntFromBytes},
-    {ID(_int_guard), underIntGuard},
-    {ID(_int_new_from_bytearray), underIntNewFromBytearray},
-    {ID(_int_new_from_bytes), underIntNewFromBytes},
-    {ID(_int_new_from_int), underIntNewFromInt},
-    {ID(_int_new_from_str), underIntNewFromStr},
-    {ID(_iter), underIter},
-    {ID(_list_check), underListCheck},
-    {ID(_list_check_exact), underListCheckExact},
-    {ID(_list_delitem), underListDelitem},
-    {ID(_list_delslice), underListDelslice},
-    {ID(_list_extend), underListExtend},
-    {ID(_list_getitem), underListGetitem},
-    {ID(_list_getslice), underListGetslice},
-    {ID(_list_guard), underListGuard},
-    {ID(_list_len), underListLen},
-    {ID(_list_new), underListNew},
-    {ID(_list_setitem), underListSetItem},
-    {ID(_list_setslice), underListSetSlice},
-    {ID(_list_sort), underListSort},
-    {ID(_list_swap), underListSwap},
-    {ID(_mappingproxy_guard), underMappingproxyGuard},
-    {ID(_mappingproxy_mapping), underMappingproxyMapping},
-    {ID(_mappingproxy_set_mapping), underMappingproxySetMapping},
-    {ID(_memoryview_check), underMemoryviewCheck},
-    {ID(_memoryview_guard), underMemoryviewGuard},
-    {ID(_memoryview_itemsize), underMemoryviewItemsize},
-    {ID(_memoryview_nbytes), underMemoryviewNbytes},
-    {ID(_memoryview_setitem), underMemoryviewSetitem},
-    {ID(_memoryview_setslice), underMemoryviewSetslice},
-    {ID(_module_dir), underModuleDir},
-    {ID(_module_proxy), underModuleProxy},
-    {ID(_module_proxy_check), underModuleProxyCheck},
-    {ID(_module_proxy_delitem), underModuleProxyDelitem},
-    {ID(_module_proxy_get), underModuleProxyGet},
-    {ID(_module_proxy_guard), underModuleProxyGuard},
-    {ID(_module_proxy_keys), underModuleProxyKeys},
-    {ID(_module_proxy_len), underModuleProxyLen},
-    {ID(_module_proxy_setitem), underModuleProxySetitem},
-    {ID(_module_proxy_values), underModuleProxyValues},
-    {ID(_object_keys), underObjectKeys},
-    {ID(_object_type_getattr), underObjectTypeGetattr},
-    {ID(_object_type_hasattr), underObjectTypeHasattr},
-    {ID(_os_write), underOsWrite},
-    {ID(_property), underProperty},
-    {ID(_property_isabstract), underPropertyIsabstract},
-    {ID(_pyobject_offset), underPyobjectOffset},
-    {ID(_range_check), underRangeCheck},
-    {ID(_range_guard), underRangeGuard},
-    {ID(_range_len), underRangeLen},
-    {ID(_repr_enter), underReprEnter},
-    {ID(_repr_leave), underReprLeave},
-    {ID(_seq_index), underSeqIndex},
-    {ID(_seq_iterable), underSeqIterable},
-    {ID(_seq_set_index), underSeqSetIndex},
-    {ID(_seq_set_iterable), underSeqSetIterable},
-    {ID(_set_check), underSetCheck},
-    {ID(_set_guard), underSetGuard},
-    {ID(_set_len), underSetLen},
-    {ID(_set_member_double), underSetMemberDouble},
-    {ID(_set_member_float), underSetMemberFloat},
-    {ID(_set_member_integral), underSetMemberIntegral},
-    {ID(_set_member_pyobject), underSetMemberPyobject},
-    {ID(_slice_check), underSliceCheck},
-    {ID(_slice_guard), underSliceGuard},
-    {ID(_slice_start), underSliceStart},
-    {ID(_slice_start_long), underSliceStartLong},
-    {ID(_slice_step), underSliceStep},
-    {ID(_slice_step_long), underSliceStepLong},
-    {ID(_slice_stop), underSliceStop},
-    {ID(_slice_stop_long), underSliceStopLong},
-    {ID(_staticmethod_isabstract), underStaticmethodIsabstract},
-    {ID(_stop_iteration_ctor), underStopIterationCtor},
-    {ID(_strarray_clear), underStrarrayClear},
-    {ID(_strarray_ctor), underStrarrayCtor},
-    {ID(_strarray_iadd), underStrarrayIadd},
-    {ID(_str_check), underStrCheck},
-    {ID(_str_check_exact), underStrCheckExact},
-    {ID(_str_compare_digest), underStrCompareDigest},
-    {ID(_str_count), underStrCount},
-    {ID(_str_encode), underStrEncode},
-    {ID(_str_encode_ascii), underStrEncodeASCII},
-    {ID(_str_endswith), underStrEndswith},
-    {ID(_str_escape_non_ascii), underStrEscapeNonAscii},
-    {ID(_str_find), underStrFind},
-    {ID(_str_from_str), underStrFromStr},
-    {ID(_str_getitem), underStrGetitem},
-    {ID(_str_getslice), underStrGetslice},
-    {ID(_str_guard), underStrGuard},
-    {ID(_str_ischr), underStrIschr},
-    {ID(_str_join), underStrJoin},
-    {ID(_str_len), underStrLen},
-    {ID(_str_mod_fast_path), underStrModFastPath},
-    {ID(_str_partition), underStrPartition},
-    {ID(_str_replace), underStrReplace},
-    {ID(_str_rfind), underStrRfind},
-    {ID(_str_rpartition), underStrRpartition},
-    {ID(_str_split), underStrSplit},
-    {ID(_str_splitlines), underStrSplitlines},
-    {ID(_str_startswith), underStrStartswith},
-    {ID(_tuple_check), underTupleCheck},
-    {ID(_tuple_check_exact), underTupleCheckExact},
-    {ID(_tuple_getitem), underTupleGetitem},
-    {ID(_tuple_getslice), underTupleGetslice},
-    {ID(_tuple_guard), underTupleGuard},
-    {ID(_tuple_len), underTupleLen},
-    {ID(_tuple_new), underTupleNew},
-    {ID(_type), underType},
-    {ID(_type_abstractmethods_del), underTypeAbstractmethodsDel},
-    {ID(_type_abstractmethods_get), underTypeAbstractmethodsGet},
-    {ID(_type_abstractmethods_set), underTypeAbstractmethodsSet},
-    {ID(_type_bases_del), underTypeBasesDel},
-    {ID(_type_bases_get), underTypeBasesGet},
-    {ID(_type_bases_set), underTypeBasesSet},
-    {ID(_type_check), underTypeCheck},
-    {ID(_type_check_exact), underTypeCheckExact},
-    {ID(_type_dunder_call), underTypeDunderCall},
-    {ID(_type_guard), underTypeGuard},
-    {ID(_type_init), underTypeInit},
-    {ID(_type_issubclass), underTypeIssubclass},
-    {ID(_type_subclass_guard), underTypeSubclassGuard},
-    {ID(_type_new), underTypeNew},
-    {ID(_type_proxy), underTypeProxy},
-    {ID(_type_proxy_check), underTypeProxyCheck},
-    {ID(_type_proxy_get), underTypeProxyGet},
-    {ID(_type_proxy_guard), underTypeProxyGuard},
-    {ID(_type_proxy_keys), underTypeProxyKeys},
-    {ID(_type_proxy_len), underTypeProxyLen},
-    {ID(_type_proxy_values), underTypeProxyValues},
-    {ID(_unimplemented), underUnimplemented},
-    {ID(_warn), underWarn},
-    {ID(_weakref_callback), underWeakrefCallback},
-    {ID(_weakref_check), underWeakrefCheck},
-    {ID(_weakref_guard), underWeakrefGuard},
-    {ID(_weakref_referent), underWeakrefReferent},
+    {ID(_address), FUNC(_builtins, _address)},
+    {ID(_bound_method), FUNC(_builtins, _bound_method)},
+    {ID(_bool_check), FUNC(_builtins, _bool_check)},
+    {ID(_bool_guard), FUNC(_builtins, _bool_guard)},
+    {ID(_bytearray_append), FUNC(_builtins, _bytearray_append)},
+    {ID(_bytearray_check), FUNC(_builtins, _bytearray_check)},
+    {ID(_bytearray_clear), FUNC(_builtins, _bytearray_clear)},
+    {ID(_bytearray_contains), FUNC(_builtins, _bytearray_contains)},
+    {ID(_bytearray_delitem), FUNC(_builtins, _bytearray_delitem)},
+    {ID(_bytearray_delslice), FUNC(_builtins, _bytearray_delslice)},
+    {ID(_bytearray_getitem), FUNC(_builtins, _bytearray_getitem)},
+    {ID(_bytearray_getslice), FUNC(_builtins, _bytearray_getslice)},
+    {ID(_bytearray_guard), FUNC(_builtins, _bytearray_guard)},
+    {ID(_bytearray_join), FUNC(_builtins, _bytearray_join)},
+    {ID(_bytearray_len), FUNC(_builtins, _bytearray_len)},
+    {ID(_bytearray_setitem), FUNC(_builtins, _bytearray_setitem)},
+    {ID(_bytearray_setslice), FUNC(_builtins, _bytearray_setslice)},
+    {ID(_bytes_check), FUNC(_builtins, _bytes_check)},
+    {ID(_bytes_contains), FUNC(_builtins, _bytes_contains)},
+    {ID(_bytes_decode), FUNC(_builtins, _bytes_decode)},
+    {ID(_bytes_decode_ascii), FUNC(_builtins, _bytes_decode_ascii)},
+    {ID(_bytes_decode_utf_8), FUNC(_builtins, _bytes_decode_utf_8)},
+    {ID(_bytes_from_bytes), FUNC(_builtins, _bytes_from_bytes)},
+    {ID(_bytes_from_ints), FUNC(_builtins, _bytes_from_ints)},
+    {ID(_bytes_getitem), FUNC(_builtins, _bytes_getitem)},
+    {ID(_bytes_getslice), FUNC(_builtins, _bytes_getslice)},
+    {ID(_bytes_guard), FUNC(_builtins, _bytes_guard)},
+    {ID(_bytes_join), FUNC(_builtins, _bytes_join)},
+    {ID(_bytes_len), FUNC(_builtins, _bytes_len)},
+    {ID(_bytes_maketrans), FUNC(_builtins, _bytes_maketrans)},
+    {ID(_bytes_repeat), FUNC(_builtins, _bytes_repeat)},
+    {ID(_bytes_split), FUNC(_builtins, _bytes_split)},
+    {ID(_bytes_split_whitespace), FUNC(_builtins, _bytes_split_whitespace)},
+    {ID(_byteslike_check), FUNC(_builtins, _byteslike_check)},
+    {ID(_byteslike_compare_digest), FUNC(_builtins, _byteslike_compare_digest)},
+    {ID(_byteslike_count), FUNC(_builtins, _byteslike_count)},
+    {ID(_byteslike_endswith), FUNC(_builtins, _byteslike_endswith)},
+    {ID(_byteslike_find_byteslike), FUNC(_builtins, _byteslike_find_byteslike)},
+    {ID(_byteslike_find_int), FUNC(_builtins, _byteslike_find_int)},
+    {ID(_byteslike_guard), FUNC(_builtins, _byteslike_guard)},
+    {ID(_byteslike_rfind_byteslike),
+     FUNC(_builtins, _byteslike_rfind_byteslike)},
+    {ID(_byteslike_rfind_int), FUNC(_builtins, _byteslike_rfind_int)},
+    {ID(_byteslike_startswith), FUNC(_builtins, _byteslike_startswith)},
+    {ID(_classmethod), FUNC(_builtins, _classmethod)},
+    {ID(_classmethod_isabstract), FUNC(_builtins, _classmethod_isabstract)},
+    {ID(_code_check), FUNC(_builtins, _code_check)},
+    {ID(_code_guard), FUNC(_builtins, _code_guard)},
+    {ID(_code_set_posonlyargcount), FUNC(_builtins, _code_set_posonlyargcount)},
+    {ID(_complex_check), FUNC(_builtins, _complex_check)},
+    {ID(_complex_checkexact), FUNC(_builtins, _complex_checkexact)},
+    {ID(_complex_imag), FUNC(_builtins, _complex_imag)},
+    {ID(_complex_new), FUNC(_builtins, _complex_new)},
+    {ID(_complex_new_from_str), FUNC(_builtins, _complex_new_from_str)},
+    {ID(_complex_real), FUNC(_builtins, _complex_real)},
+    {ID(_dict_bucket_insert), FUNC(_builtins, _dict_bucket_insert)},
+    {ID(_dict_bucket_key), FUNC(_builtins, _dict_bucket_key)},
+    {ID(_dict_bucket_set_value), FUNC(_builtins, _dict_bucket_set_value)},
+    {ID(_dict_bucket_value), FUNC(_builtins, _dict_bucket_value)},
+    {ID(_dict_check), FUNC(_builtins, _dict_check)},
+    {ID(_dict_check_exact), FUNC(_builtins, _dict_check_exact)},
+    {ID(_dict_get), FUNC(_builtins, _dict_get)},
+    {ID(_dict_guard), FUNC(_builtins, _dict_guard)},
+    {ID(_dict_len), FUNC(_builtins, _dict_len)},
+    {ID(_dict_lookup), FUNC(_builtins, _dict_lookup)},
+    {ID(_dict_lookup_next), FUNC(_builtins, _dict_lookup_next)},
+    {ID(_dict_popitem), FUNC(_builtins, _dict_popitem)},
+    {ID(_dict_setitem), FUNC(_builtins, _dict_setitem)},
+    {ID(_dict_update), FUNC(_builtins, _dict_update)},
+    {ID(_divmod), FUNC(_builtins, _divmod)},
+    {ID(_exec), FUNC(_builtins, _exec)},
+    {ID(_float_check), FUNC(_builtins, _float_check)},
+    {ID(_float_check_exact), FUNC(_builtins, _float_check_exact)},
+    {ID(_float_divmod), FUNC(_builtins, _float_divmod)},
+    {ID(_float_format), FUNC(_builtins, _float_format)},
+    {ID(_float_guard), FUNC(_builtins, _float_guard)},
+    {ID(_float_new_from_byteslike), FUNC(_builtins, _float_new_from_byteslike)},
+    {ID(_float_new_from_float), FUNC(_builtins, _float_new_from_float)},
+    {ID(_float_new_from_str), FUNC(_builtins, _float_new_from_str)},
+    {ID(_float_signbit), FUNC(_builtins, _float_signbit)},
+    {ID(_frozenset_check), FUNC(_builtins, _frozenset_check)},
+    {ID(_frozenset_guard), FUNC(_builtins, _frozenset_guard)},
+    {ID(_function_globals), FUNC(_builtins, _function_globals)},
+    {ID(_function_guard), FUNC(_builtins, _function_guard)},
+    {ID(_gc), FUNC(_builtins, _gc)},
+    {ID(_getframe_function), FUNC(_builtins, _getframe_function)},
+    {ID(_getframe_lineno), FUNC(_builtins, _getframe_lineno)},
+    {ID(_getframe_locals), FUNC(_builtins, _getframe_locals)},
+    {ID(_get_member_byte), FUNC(_builtins, _get_member_byte)},
+    {ID(_get_member_char), FUNC(_builtins, _get_member_char)},
+    {ID(_get_member_double), FUNC(_builtins, _get_member_double)},
+    {ID(_get_member_float), FUNC(_builtins, _get_member_float)},
+    {ID(_get_member_int), FUNC(_builtins, _get_member_int)},
+    {ID(_get_member_long), FUNC(_builtins, _get_member_long)},
+    {ID(_get_member_pyobject), FUNC(_builtins, _get_member_pyobject)},
+    {ID(_get_member_short), FUNC(_builtins, _get_member_short)},
+    {ID(_get_member_string), FUNC(_builtins, _get_member_string)},
+    {ID(_get_member_ubyte), FUNC(_builtins, _get_member_ubyte)},
+    {ID(_get_member_uint), FUNC(_builtins, _get_member_uint)},
+    {ID(_get_member_ulong), FUNC(_builtins, _get_member_ulong)},
+    {ID(_get_member_ushort), FUNC(_builtins, _get_member_ushort)},
+    {ID(_instance_delattr), FUNC(_builtins, _instance_delattr)},
+    {ID(_instance_getattr), FUNC(_builtins, _instance_getattr)},
+    {ID(_instance_guard), FUNC(_builtins, _instance_guard)},
+    {ID(_instance_overflow_dict), FUNC(_builtins, _instance_overflow_dict)},
+    {ID(_instance_setattr), FUNC(_builtins, _instance_setattr)},
+    {ID(_int_check), FUNC(_builtins, _int_check)},
+    {ID(_int_check_exact), FUNC(_builtins, _int_check_exact)},
+    {ID(_int_from_bytes), FUNC(_builtins, _int_from_bytes)},
+    {ID(_int_guard), FUNC(_builtins, _int_guard)},
+    {ID(_int_new_from_bytearray), FUNC(_builtins, _int_new_from_bytearray)},
+    {ID(_int_new_from_bytes), FUNC(_builtins, _int_new_from_bytes)},
+    {ID(_int_new_from_int), FUNC(_builtins, _int_new_from_int)},
+    {ID(_int_new_from_str), FUNC(_builtins, _int_new_from_str)},
+    {ID(_iter), FUNC(_builtins, _iter)},
+    {ID(_list_check), FUNC(_builtins, _list_check)},
+    {ID(_list_check_exact), FUNC(_builtins, _list_check_exact)},
+    {ID(_list_delitem), FUNC(_builtins, _list_delitem)},
+    {ID(_list_delslice), FUNC(_builtins, _list_delslice)},
+    {ID(_list_extend), FUNC(_builtins, _list_extend)},
+    {ID(_list_getitem), FUNC(_builtins, _list_getitem)},
+    {ID(_list_getslice), FUNC(_builtins, _list_getslice)},
+    {ID(_list_guard), FUNC(_builtins, _list_guard)},
+    {ID(_list_len), FUNC(_builtins, _list_len)},
+    {ID(_list_new), FUNC(_builtins, _list_new)},
+    {ID(_list_setitem), FUNC(_builtins, _list_setitem)},
+    {ID(_list_setslice), FUNC(_builtins, _list_setslice)},
+    {ID(_list_sort), FUNC(_builtins, _list_sort)},
+    {ID(_list_swap), FUNC(_builtins, _list_swap)},
+    {ID(_mappingproxy_guard), FUNC(_builtins, _mappingproxy_guard)},
+    {ID(_mappingproxy_mapping), FUNC(_builtins, _mappingproxy_mapping)},
+    {ID(_mappingproxy_set_mapping), FUNC(_builtins, _mappingproxy_set_mapping)},
+    {ID(_memoryview_check), FUNC(_builtins, _memoryview_check)},
+    {ID(_memoryview_guard), FUNC(_builtins, _memoryview_guard)},
+    {ID(_memoryview_itemsize), FUNC(_builtins, _memoryview_itemsize)},
+    {ID(_memoryview_nbytes), FUNC(_builtins, _memoryview_nbytes)},
+    {ID(_memoryview_setitem), FUNC(_builtins, _memoryview_setitem)},
+    {ID(_memoryview_setslice), FUNC(_builtins, _memoryview_setslice)},
+    {ID(_module_dir), FUNC(_builtins, _module_dir)},
+    {ID(_module_proxy), FUNC(_builtins, _module_proxy)},
+    {ID(_module_proxy_check), FUNC(_builtins, _module_proxy_check)},
+    {ID(_module_proxy_delitem), FUNC(_builtins, _module_proxy_delitem)},
+    {ID(_module_proxy_get), FUNC(_builtins, _module_proxy_get)},
+    {ID(_module_proxy_guard), FUNC(_builtins, _module_proxy_guard)},
+    {ID(_module_proxy_keys), FUNC(_builtins, _module_proxy_keys)},
+    {ID(_module_proxy_len), FUNC(_builtins, _module_proxy_len)},
+    {ID(_module_proxy_setitem), FUNC(_builtins, _module_proxy_setitem)},
+    {ID(_module_proxy_values), FUNC(_builtins, _module_proxy_values)},
+    {ID(_object_keys), FUNC(_builtins, _object_keys)},
+    {ID(_object_type_getattr), FUNC(_builtins, _object_type_getattr)},
+    {ID(_object_type_hasattr), FUNC(_builtins, _object_type_hasattr)},
+    {ID(_os_write), FUNC(_builtins, _os_write)},
+    {ID(_property), FUNC(_builtins, _property)},
+    {ID(_property_isabstract), FUNC(_builtins, _property_isabstract)},
+    {ID(_pyobject_offset), FUNC(_builtins, _pyobject_offset)},
+    {ID(_range_check), FUNC(_builtins, _range_check)},
+    {ID(_range_guard), FUNC(_builtins, _range_guard)},
+    {ID(_range_len), FUNC(_builtins, _range_len)},
+    {ID(_repr_enter), FUNC(_builtins, _repr_enter)},
+    {ID(_repr_leave), FUNC(_builtins, _repr_leave)},
+    {ID(_seq_index), FUNC(_builtins, _seq_index)},
+    {ID(_seq_iterable), FUNC(_builtins, _seq_iterable)},
+    {ID(_seq_set_index), FUNC(_builtins, _seq_set_index)},
+    {ID(_seq_set_iterable), FUNC(_builtins, _seq_set_iterable)},
+    {ID(_set_check), FUNC(_builtins, _set_check)},
+    {ID(_set_guard), FUNC(_builtins, _set_guard)},
+    {ID(_set_len), FUNC(_builtins, _set_len)},
+    {ID(_set_member_double), FUNC(_builtins, _set_member_double)},
+    {ID(_set_member_float), FUNC(_builtins, _set_member_float)},
+    {ID(_set_member_integral), FUNC(_builtins, _set_member_integral)},
+    {ID(_set_member_pyobject), FUNC(_builtins, _set_member_pyobject)},
+    {ID(_slice_check), FUNC(_builtins, _slice_check)},
+    {ID(_slice_guard), FUNC(_builtins, _slice_guard)},
+    {ID(_slice_start), FUNC(_builtins, _slice_start)},
+    {ID(_slice_start_long), FUNC(_builtins, _slice_start_long)},
+    {ID(_slice_step), FUNC(_builtins, _slice_step)},
+    {ID(_slice_step_long), FUNC(_builtins, _slice_step_long)},
+    {ID(_slice_stop), FUNC(_builtins, _slice_stop)},
+    {ID(_slice_stop_long), FUNC(_builtins, _slice_stop_long)},
+    {ID(_staticmethod_isabstract), FUNC(_builtins, _staticmethod_isabstract)},
+    {ID(_stop_iteration_ctor), FUNC(_builtins, _stop_iteration_ctor)},
+    {ID(_strarray_clear), FUNC(_builtins, _strarray_clear)},
+    {ID(_strarray_ctor), FUNC(_builtins, _strarray_ctor)},
+    {ID(_strarray_iadd), FUNC(_builtins, _strarray_iadd)},
+    {ID(_str_check), FUNC(_builtins, _str_check)},
+    {ID(_str_check_exact), FUNC(_builtins, _str_check_exact)},
+    {ID(_str_compare_digest), FUNC(_builtins, _str_compare_digest)},
+    {ID(_str_count), FUNC(_builtins, _str_count)},
+    {ID(_str_encode), FUNC(_builtins, _str_encode)},
+    {ID(_str_encode_ascii), FUNC(_builtins, _str_encode_ascii)},
+    {ID(_str_endswith), FUNC(_builtins, _str_endswith)},
+    {ID(_str_escape_non_ascii), FUNC(_builtins, _str_escape_non_ascii)},
+    {ID(_str_find), FUNC(_builtins, _str_find)},
+    {ID(_str_from_str), FUNC(_builtins, _str_from_str)},
+    {ID(_str_getitem), FUNC(_builtins, _str_getitem)},
+    {ID(_str_getslice), FUNC(_builtins, _str_getslice)},
+    {ID(_str_guard), FUNC(_builtins, _str_guard)},
+    {ID(_str_ischr), FUNC(_builtins, _str_ischr)},
+    {ID(_str_join), FUNC(_builtins, _str_join)},
+    {ID(_str_len), FUNC(_builtins, _str_len)},
+    {ID(_str_mod_fast_path), FUNC(_builtins, _str_mod_fast_path)},
+    {ID(_str_partition), FUNC(_builtins, _str_partition)},
+    {ID(_str_replace), FUNC(_builtins, _str_replace)},
+    {ID(_str_rfind), FUNC(_builtins, _str_rfind)},
+    {ID(_str_rpartition), FUNC(_builtins, _str_rpartition)},
+    {ID(_str_split), FUNC(_builtins, _str_split)},
+    {ID(_str_splitlines), FUNC(_builtins, _str_splitlines)},
+    {ID(_str_startswith), FUNC(_builtins, _str_startswith)},
+    {ID(_tuple_check), FUNC(_builtins, _tuple_check)},
+    {ID(_tuple_check_exact), FUNC(_builtins, _tuple_check_exact)},
+    {ID(_tuple_getitem), FUNC(_builtins, _tuple_getitem)},
+    {ID(_tuple_getslice), FUNC(_builtins, _tuple_getslice)},
+    {ID(_tuple_guard), FUNC(_builtins, _tuple_guard)},
+    {ID(_tuple_len), FUNC(_builtins, _tuple_len)},
+    {ID(_tuple_new), FUNC(_builtins, _tuple_new)},
+    {ID(_type), FUNC(_builtins, _type)},
+    {ID(_type_abstractmethods_del), FUNC(_builtins, _type_abstractmethods_del)},
+    {ID(_type_abstractmethods_get), FUNC(_builtins, _type_abstractmethods_get)},
+    {ID(_type_abstractmethods_set), FUNC(_builtins, _type_abstractmethods_set)},
+    {ID(_type_bases_del), FUNC(_builtins, _type_bases_del)},
+    {ID(_type_bases_get), FUNC(_builtins, _type_bases_get)},
+    {ID(_type_bases_set), FUNC(_builtins, _type_bases_set)},
+    {ID(_type_check), FUNC(_builtins, _type_check)},
+    {ID(_type_check_exact), FUNC(_builtins, _type_check_exact)},
+    {ID(_type_dunder_call), FUNC(_builtins, _type_dunder_call)},
+    {ID(_type_guard), FUNC(_builtins, _type_guard)},
+    {ID(_type_init), FUNC(_builtins, _type_init)},
+    {ID(_type_issubclass), FUNC(_builtins, _type_issubclass)},
+    {ID(_type_subclass_guard), FUNC(_builtins, _type_subclass_guard)},
+    {ID(_type_new), FUNC(_builtins, _type_new)},
+    {ID(_type_proxy), FUNC(_builtins, _type_proxy)},
+    {ID(_type_proxy_check), FUNC(_builtins, _type_proxy_check)},
+    {ID(_type_proxy_get), FUNC(_builtins, _type_proxy_get)},
+    {ID(_type_proxy_guard), FUNC(_builtins, _type_proxy_guard)},
+    {ID(_type_proxy_keys), FUNC(_builtins, _type_proxy_keys)},
+    {ID(_type_proxy_len), FUNC(_builtins, _type_proxy_len)},
+    {ID(_type_proxy_values), FUNC(_builtins, _type_proxy_values)},
+    {ID(_unimplemented), FUNC(_builtins, _unimplemented)},
+    {ID(_warn), FUNC(_builtins, _warn)},
+    {ID(_weakref_callback), FUNC(_builtins, _weakref_callback)},
+    {ID(_weakref_check), FUNC(_builtins, _weakref_check)},
+    {ID(_weakref_guard), FUNC(_builtins, _weakref_guard)},
+    {ID(_weakref_referent), FUNC(_builtins, _weakref_referent)},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -387,10 +388,10 @@ void UnderBuiltinsModule::initialize(Thread* thread, const Module& module) {
     Tuple parameters(&scope, runtime->newTuple(1));
     parameters.atPut(0, runtime->newStrFromCStr("function"));
     Object name(&scope, runtime->symbols()->at(ID(_patch)));
-    Code code(&scope,
-              runtime->newBuiltinCode(/*argcount=*/1, /*posonlyargcount=*/0,
-                                      /*kwonlyargcount=*/0, /*flags=*/0,
-                                      underPatch, parameters, name));
+    Code code(&scope, runtime->newBuiltinCode(
+                          /*argcount=*/1, /*posonlyargcount=*/0,
+                          /*kwonlyargcount=*/0, /*flags=*/0,
+                          FUNC(_builtins, _patch), parameters, name));
     Function under_patch(
         &scope, runtime->newFunctionWithCode(thread, name, code, module));
     moduleAtPut(thread, module, name, under_patch);
@@ -452,20 +453,19 @@ static bool trySlice(const Object& key, word* start, word* stop) {
   return true;
 }
 
-RawObject UnderBuiltinsModule::underAddress(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject FUNC(_builtins, _address)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   return thread->runtime()->newInt(args.get(0).raw());
 }
 
-RawObject UnderBuiltinsModule::underBoolCheck(Thread* /* t */, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _bool_check)(Thread* /* t */, Frame* frame,
+                                       word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(args.get(0).isBool());
 }
 
-RawObject UnderBuiltinsModule::underBoolGuard(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _bool_guard)(Thread* thread, Frame* frame,
+                                       word nargs) {
   Arguments args(frame, nargs);
   if (args.get(0).isBool()) {
     return NoneType::object();
@@ -473,8 +473,8 @@ RawObject UnderBuiltinsModule::underBoolGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, ID(bool));
 }
 
-RawObject UnderBuiltinsModule::underBoundMethod(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _bound_method)(Thread* thread, Frame* frame,
+                                         word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object function(&scope, args.get(0));
@@ -482,8 +482,8 @@ RawObject UnderBuiltinsModule::underBoundMethod(Thread* thread, Frame* frame,
   return thread->runtime()->newBoundMethod(function, owner);
 }
 
-RawObject UnderBuiltinsModule::underBytearrayAppend(Thread* thread,
-                                                    Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _bytearray_append)(Thread* thread, Frame* frame,
+                                             word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -505,8 +505,8 @@ RawObject UnderBuiltinsModule::underBytearrayAppend(Thread* thread,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underBytearrayClear(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _bytearray_clear)(Thread* thread, Frame* frame,
+                                            word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   ByteArray self(&scope, args.get(0));
@@ -514,9 +514,8 @@ RawObject UnderBuiltinsModule::underBytearrayClear(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underBytearrayContains(Thread* thread,
-                                                      Frame* frame,
-                                                      word nargs) {
+RawObject FUNC(_builtins, _bytearray_contains)(Thread* thread, Frame* frame,
+                                               word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
@@ -538,14 +537,14 @@ RawObject UnderBuiltinsModule::underBytearrayContains(Thread* thread,
   return Bool::fromBool(bytes.findByte(key_opt.value, 0, self.numItems()) >= 0);
 }
 
-RawObject UnderBuiltinsModule::underBytearrayCheck(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _bytearray_check)(Thread* thread, Frame* frame,
+                                            word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfByteArray(args.get(0)));
 }
 
-RawObject UnderBuiltinsModule::underBytearrayGuard(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _bytearray_guard)(Thread* thread, Frame* frame,
+                                            word nargs) {
   Arguments args(frame, nargs);
   if (thread->runtime()->isInstanceOfByteArray(args.get(0))) {
     return NoneType::object();
@@ -553,8 +552,8 @@ RawObject UnderBuiltinsModule::underBytearrayGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, ID(bytearray));
 }
 
-RawObject UnderBuiltinsModule::underBytearrayDelitem(Thread* thread,
-                                                     Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _bytearray_delitem)(Thread* thread, Frame* frame,
+                                              word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   ByteArray self(&scope, args.get(0));
@@ -575,9 +574,8 @@ RawObject UnderBuiltinsModule::underBytearrayDelitem(Thread* thread,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underBytearrayDelslice(Thread* thread,
-                                                      Frame* frame,
-                                                      word nargs) {
+RawObject FUNC(_builtins, _bytearray_delslice)(Thread* thread, Frame* frame,
+                                               word nargs) {
   // This function deletes elements that are specified by a slice by copying.
   // It compacts to the left elements in the slice range and then copies
   // elements after the slice into the free area.  The self element count is
@@ -634,8 +632,8 @@ RawObject UnderBuiltinsModule::underBytearrayDelslice(Thread* thread,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underBytearrayGetitem(Thread* thread,
-                                                     Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _bytearray_getitem)(Thread* thread, Frame* frame,
+                                              word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
@@ -684,9 +682,8 @@ RawObject UnderBuiltinsModule::underBytearrayGetitem(Thread* thread,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underBytearrayGetslice(Thread* thread,
-                                                      Frame* frame,
-                                                      word nargs) {
+RawObject FUNC(_builtins, _bytearray_getslice)(Thread* thread, Frame* frame,
+                                               word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   ByteArray self(&scope, args.get(0));
@@ -704,8 +701,8 @@ RawObject UnderBuiltinsModule::underBytearrayGetslice(Thread* thread,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underBytearraySetitem(Thread* thread,
-                                                     Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _bytearray_setitem)(Thread* thread, Frame* frame,
+                                              word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   ByteArray self(&scope, args.get(0));
@@ -732,9 +729,8 @@ RawObject UnderBuiltinsModule::underBytearraySetitem(Thread* thread,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underBytearraySetslice(Thread* thread,
-                                                      Frame* frame,
-                                                      word nargs) {
+RawObject FUNC(_builtins, _bytearray_setslice)(Thread* thread, Frame* frame,
+                                               word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   ByteArray self(&scope, args.get(0));
@@ -819,14 +815,14 @@ RawObject UnderBuiltinsModule::underBytearraySetslice(Thread* thread,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underBytesCheck(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _bytes_check)(Thread* thread, Frame* frame,
+                                        word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfBytes(args.get(0)));
 }
 
-RawObject UnderBuiltinsModule::underBytesContains(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_builtins, _bytes_contains)(Thread* thread, Frame* frame,
+                                           word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
@@ -847,8 +843,8 @@ RawObject UnderBuiltinsModule::underBytesContains(Thread* thread, Frame* frame,
   return Bool::fromBool(self.findByte(key_opt.value, 0, self.length()) >= 0);
 }
 
-RawObject UnderBuiltinsModule::underBytesDecode(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _bytes_decode)(Thread* thread, Frame* frame,
+                                         word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object bytes_obj(&scope, args.get(0));
@@ -867,32 +863,32 @@ RawObject UnderBuiltinsModule::underBytesDecode(Thread* thread, Frame* frame,
   return bytesDecodeASCII(thread, bytes);
 }
 
-RawObject UnderBuiltinsModule::underBytesDecodeASCII(Thread* thread,
-                                                     Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object bytes_obj(&scope, args.get(0));
-  if (!bytes_obj.isBytes()) {
-    return Unbound::object();
-  }
-  Bytes bytes(&scope, *bytes_obj);
-  return bytesDecodeASCII(thread, bytes);
-}
-
-RawObject UnderBuiltinsModule::underBytesDecodeUTF8(Thread* thread,
-                                                    Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object bytes_obj(&scope, args.get(0));
-  if (!bytes_obj.isBytes()) {
-    return Unbound::object();
-  }
-  Bytes bytes(&scope, *bytes_obj);
-  return bytesDecodeASCII(thread, bytes);
-}
-
-RawObject UnderBuiltinsModule::underBytesGuard(Thread* thread, Frame* frame,
+RawObject FUNC(_builtins, _bytes_decode_ascii)(Thread* thread, Frame* frame,
                                                word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object bytes_obj(&scope, args.get(0));
+  if (!bytes_obj.isBytes()) {
+    return Unbound::object();
+  }
+  Bytes bytes(&scope, *bytes_obj);
+  return bytesDecodeASCII(thread, bytes);
+}
+
+RawObject FUNC(_builtins, _bytes_decode_utf_8)(Thread* thread, Frame* frame,
+                                               word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object bytes_obj(&scope, args.get(0));
+  if (!bytes_obj.isBytes()) {
+    return Unbound::object();
+  }
+  Bytes bytes(&scope, *bytes_obj);
+  return bytesDecodeASCII(thread, bytes);
+}
+
+RawObject FUNC(_builtins, _bytes_guard)(Thread* thread, Frame* frame,
+                                        word nargs) {
   Arguments args(frame, nargs);
   if (thread->runtime()->isInstanceOfBytes(args.get(0))) {
     return NoneType::object();
@@ -900,8 +896,8 @@ RawObject UnderBuiltinsModule::underBytesGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, ID(bytes));
 }
 
-RawObject UnderBuiltinsModule::underBytearrayJoin(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_builtins, _bytearray_join)(Thread* thread, Frame* frame,
+                                           word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object sep_obj(&scope, args.get(0));
@@ -943,16 +939,16 @@ RawObject UnderBuiltinsModule::underBytearrayJoin(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underBytearrayLen(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_builtins, _bytearray_len)(Thread* thread, Frame* frame,
+                                          word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   ByteArray self(&scope, args.get(0));
   return SmallInt::fromWord(self.numItems());
 }
 
-RawObject UnderBuiltinsModule::underBytesFromBytes(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _bytes_from_bytes)(Thread* thread, Frame* frame,
+                                             word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
@@ -965,8 +961,8 @@ RawObject UnderBuiltinsModule::underBytesFromBytes(Thread* thread, Frame* frame,
   return *instance;
 }
 
-RawObject UnderBuiltinsModule::underBytesFromInts(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_builtins, _bytes_from_ints)(Thread* thread, Frame* frame,
+                                            word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object src(&scope, args.get(0));
@@ -996,8 +992,8 @@ RawObject UnderBuiltinsModule::underBytesFromInts(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underBytesGetitem(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_builtins, _bytes_getitem)(Thread* thread, Frame* frame,
+                                          word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
@@ -1035,8 +1031,8 @@ RawObject UnderBuiltinsModule::underBytesGetitem(Thread* thread, Frame* frame,
   return runtime->bytesSubseq(thread, self, start, result_len);
 }
 
-RawObject UnderBuiltinsModule::underBytesGetslice(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_builtins, _bytes_getslice)(Thread* thread, Frame* frame,
+                                           word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Bytes self(&scope, bytesUnderlying(args.get(0)));
@@ -1046,8 +1042,8 @@ RawObject UnderBuiltinsModule::underBytesGetslice(Thread* thread, Frame* frame,
   return thread->runtime()->bytesSlice(thread, self, start, stop, step);
 }
 
-RawObject UnderBuiltinsModule::underBytesJoin(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _bytes_join)(Thread* thread, Frame* frame,
+                                       word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -1082,14 +1078,13 @@ RawObject UnderBuiltinsModule::underBytesJoin(Thread* thread, Frame* frame,
   return runtime->bytesJoin(thread, self, self.length(), tuple, length);
 }
 
-RawObject UnderBuiltinsModule::underBytesLen(Thread*, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _bytes_len)(Thread*, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   return SmallInt::fromWord(bytesUnderlying(args.get(0)).length());
 }
 
-RawObject UnderBuiltinsModule::underBytesMaketrans(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _bytes_maketrans)(Thread* thread, Frame* frame,
+                                            word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object from_obj(&scope, args.get(0));
@@ -1130,8 +1125,8 @@ RawObject UnderBuiltinsModule::underBytesMaketrans(Thread* thread, Frame* frame,
   return runtime->newBytesWithAll(table);
 }
 
-RawObject UnderBuiltinsModule::underBytesRepeat(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _bytes_repeat)(Thread* thread, Frame* frame,
+                                         word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Bytes self(&scope, bytesUnderlying(args.get(0)));
@@ -1150,8 +1145,8 @@ RawObject UnderBuiltinsModule::underBytesRepeat(Thread* thread, Frame* frame,
   return thread->runtime()->bytesRepeat(thread, self, self.length(), count);
 }
 
-RawObject UnderBuiltinsModule::underBytesSplit(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _bytes_split)(Thread* thread, Frame* frame,
+                                        word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Bytes self(&scope, bytesUnderlying(args.get(0)));
@@ -1215,9 +1210,8 @@ RawObject UnderBuiltinsModule::underBytesSplit(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underBytesSplitWhitespace(Thread* thread,
-                                                         Frame* frame,
-                                                         word nargs) {
+RawObject FUNC(_builtins, _bytes_split_whitespace)(Thread* thread, Frame* frame,
+                                                   word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Bytes self(&scope, bytesUnderlying(args.get(0)));
@@ -1280,15 +1274,14 @@ RawObject UnderBuiltinsModule::underBytesSplitWhitespace(Thread* thread,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underByteslikeCheck(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _byteslike_check)(Thread* thread, Frame* frame,
+                                            word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isByteslike(args.get(0)));
 }
 
-RawObject UnderBuiltinsModule::underByteslikeCompareDigest(Thread* thread,
-                                                           Frame* frame,
-                                                           word nargs) {
+RawObject FUNC(_builtins, _byteslike_compare_digest)(Thread* thread,
+                                                     Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -1329,8 +1322,8 @@ RawObject UnderBuiltinsModule::underByteslikeCompareDigest(Thread* thread,
   return Bool::fromBool(result == 0);
 }
 
-RawObject UnderBuiltinsModule::underByteslikeCount(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _byteslike_count)(Thread* thread, Frame* frame,
+                                            word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
@@ -1380,9 +1373,8 @@ RawObject UnderBuiltinsModule::underByteslikeCount(Thread* thread, Frame* frame,
       bytesCount(haystack, haystack_len, needle, needle_len, start, end));
 }
 
-RawObject UnderBuiltinsModule::underByteslikeEndswith(Thread* thread,
-                                                      Frame* frame,
-                                                      word nargs) {
+RawObject FUNC(_builtins, _byteslike_endswith)(Thread* thread, Frame* frame,
+                                               word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
@@ -1430,9 +1422,8 @@ RawObject UnderBuiltinsModule::underByteslikeEndswith(Thread* thread,
                                 start.asWordSaturated(), end.asWordSaturated());
 }
 
-RawObject UnderBuiltinsModule::underByteslikeFindByteslike(Thread* thread,
-                                                           Frame* frame,
-                                                           word nargs) {
+RawObject FUNC(_builtins, _byteslike_find_byteslike)(Thread* thread,
+                                                     Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
@@ -1470,8 +1461,8 @@ RawObject UnderBuiltinsModule::underByteslikeFindByteslike(Thread* thread,
       bytesFind(haystack, haystack_len, needle, needle_len, start, end));
 }
 
-RawObject UnderBuiltinsModule::underByteslikeFindInt(Thread* thread,
-                                                     Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _byteslike_find_int)(Thread* thread, Frame* frame,
+                                               word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
@@ -1498,8 +1489,8 @@ RawObject UnderBuiltinsModule::underByteslikeFindInt(Thread* thread,
   UNIMPLEMENTED("bytes-like other than bytes, bytearray");
 }
 
-RawObject UnderBuiltinsModule::underByteslikeGuard(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _byteslike_guard)(Thread* thread, Frame* frame,
+                                            word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object obj(&scope, args.get(0));
@@ -1510,9 +1501,9 @@ RawObject UnderBuiltinsModule::underByteslikeGuard(Thread* thread, Frame* frame,
       LayoutId::kTypeError, "a bytes-like object is required, not '%T'", &obj);
 }
 
-RawObject UnderBuiltinsModule::underByteslikeRfindByteslike(Thread* thread,
-                                                            Frame* frame,
-                                                            word nargs) {
+RawObject FUNC(_builtins, _byteslike_rfind_byteslike)(Thread* thread,
+                                                      Frame* frame,
+                                                      word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
@@ -1550,9 +1541,8 @@ RawObject UnderBuiltinsModule::underByteslikeRfindByteslike(Thread* thread,
       bytesRFind(haystack, haystack_len, needle, needle_len, start, end));
 }
 
-RawObject UnderBuiltinsModule::underByteslikeRfindInt(Thread* thread,
-                                                      Frame* frame,
-                                                      word nargs) {
+RawObject FUNC(_builtins, _byteslike_rfind_int)(Thread* thread, Frame* frame,
+                                                word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
@@ -1579,9 +1569,8 @@ RawObject UnderBuiltinsModule::underByteslikeRfindInt(Thread* thread,
   UNIMPLEMENTED("bytes-like other than bytes, bytearray");
 }
 
-RawObject UnderBuiltinsModule::underByteslikeStartswith(Thread* thread,
-                                                        Frame* frame,
-                                                        word nargs) {
+RawObject FUNC(_builtins, _byteslike_startswith)(Thread* thread, Frame* frame,
+                                                 word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
@@ -1625,8 +1614,8 @@ RawObject UnderBuiltinsModule::underByteslikeStartswith(Thread* thread,
                                   end);
 }
 
-RawObject UnderBuiltinsModule::underClassmethod(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _classmethod)(Thread* thread, Frame* frame,
+                                        word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   ClassMethod result(&scope, thread->runtime()->newClassMethod());
@@ -1652,9 +1641,8 @@ static RawObject isAbstract(Thread* thread, const Object& obj) {
   return Interpreter::isTrue(thread, *abstract);
 }
 
-RawObject UnderBuiltinsModule::underClassmethodIsabstract(Thread* thread,
-                                                          Frame* frame,
-                                                          word nargs) {
+RawObject FUNC(_builtins, _classmethod_isabstract)(Thread* thread, Frame* frame,
+                                                   word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   ClassMethod self(&scope, args.get(0));
@@ -1662,14 +1650,13 @@ RawObject UnderBuiltinsModule::underClassmethodIsabstract(Thread* thread,
   return isAbstract(thread, func);
 }
 
-RawObject UnderBuiltinsModule::underCodeCheck(Thread*, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _code_check)(Thread*, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(args.get(0).isCode());
 }
 
-RawObject UnderBuiltinsModule::underCodeGuard(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _code_guard)(Thread* thread, Frame* frame,
+                                       word nargs) {
   Arguments args(frame, nargs);
   if (args.get(0).isCode()) {
     return NoneType::object();
@@ -1677,9 +1664,8 @@ RawObject UnderBuiltinsModule::underCodeGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, ID(code));
 }
 
-RawObject UnderBuiltinsModule::underCodeSetPosonlyargcount(Thread* thread,
-                                                           Frame* frame,
-                                                           word nargs) {
+RawObject FUNC(_builtins, _code_set_posonlyargcount)(Thread* thread,
+                                                     Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object code_obj(&scope, args.get(0));
@@ -1693,20 +1679,20 @@ RawObject UnderBuiltinsModule::underCodeSetPosonlyargcount(Thread* thread,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underComplexCheck(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_builtins, _complex_check)(Thread* thread, Frame* frame,
+                                          word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfComplex(args.get(0)));
 }
 
-RawObject UnderBuiltinsModule::underComplexCheckexact(Thread*, Frame* frame,
-                                                      word nargs) {
+RawObject FUNC(_builtins, _complex_checkexact)(Thread*, Frame* frame,
+                                               word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(args.get(0).isComplex());
 }
 
-RawObject UnderBuiltinsModule::underComplexImag(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _complex_imag)(Thread* thread, Frame* frame,
+                                         word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -1745,8 +1731,8 @@ static bool unpackNumeric(const Object& val, double* real, double* imag) {
   }
 }
 
-RawObject UnderBuiltinsModule::underComplexNew(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _complex_new)(Thread* thread, Frame* frame,
+                                        word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Type cls(&scope, args.get(0));
@@ -1777,12 +1763,12 @@ RawObject UnderBuiltinsModule::underComplexNew(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underComplexNewFromStr(Thread*, Frame*, word) {
+RawObject FUNC(_builtins, _complex_new_from_str)(Thread*, Frame*, word) {
   UNIMPLEMENTED("complex(str)");
 }
 
-RawObject UnderBuiltinsModule::underComplexReal(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _complex_real)(Thread* thread, Frame* frame,
+                                         word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -1795,8 +1781,8 @@ RawObject UnderBuiltinsModule::underComplexReal(Thread* thread, Frame* frame,
 }
 
 // TODO(T46009010): Move this method body into the dictionary API
-RawObject UnderBuiltinsModule::underDictBucketInsert(Thread* thread,
-                                                     Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _dict_bucket_insert)(Thread* thread, Frame* frame,
+                                               word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Dict dict(&scope, args.get(0));
@@ -1815,8 +1801,8 @@ RawObject UnderBuiltinsModule::underDictBucketInsert(Thread* thread,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underDictBucketKey(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_builtins, _dict_bucket_key)(Thread* thread, Frame* frame,
+                                            word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Dict dict(&scope, args.get(0));
@@ -1825,8 +1811,8 @@ RawObject UnderBuiltinsModule::underDictBucketKey(Thread* thread, Frame* frame,
   return Dict::Bucket::key(*data, index);
 }
 
-RawObject UnderBuiltinsModule::underDictBucketValue(Thread* thread,
-                                                    Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _dict_bucket_value)(Thread* thread, Frame* frame,
+                                              word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Dict dict(&scope, args.get(0));
@@ -1835,9 +1821,8 @@ RawObject UnderBuiltinsModule::underDictBucketValue(Thread* thread,
   return Dict::Bucket::value(*data, index);
 }
 
-RawObject UnderBuiltinsModule::underDictBucketSetValue(Thread* thread,
-                                                       Frame* frame,
-                                                       word nargs) {
+RawObject FUNC(_builtins, _dict_bucket_set_value)(Thread* thread, Frame* frame,
+                                                  word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Dict dict(&scope, args.get(0));
@@ -1848,20 +1833,19 @@ RawObject UnderBuiltinsModule::underDictBucketSetValue(Thread* thread,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underDictCheck(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _dict_check)(Thread* thread, Frame* frame,
+                                       word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfDict(args.get(0)));
 }
 
-RawObject UnderBuiltinsModule::underDictCheckExact(Thread*, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _dict_check_exact)(Thread*, Frame* frame,
+                                             word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(args.get(0).isDict());
 }
 
-RawObject UnderBuiltinsModule::underDictGet(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject FUNC(_builtins, _dict_get)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -1882,8 +1866,8 @@ RawObject UnderBuiltinsModule::underDictGet(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underDictGuard(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _dict_guard)(Thread* thread, Frame* frame,
+                                       word nargs) {
   Arguments args(frame, nargs);
   if (thread->runtime()->isInstanceOfDict(args.get(0))) {
     return NoneType::object();
@@ -1891,16 +1875,15 @@ RawObject UnderBuiltinsModule::underDictGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, ID(dict));
 }
 
-RawObject UnderBuiltinsModule::underDictLen(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject FUNC(_builtins, _dict_len)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Dict self(&scope, args.get(0));
   return SmallInt::fromWord(self.numItems());
 }
 
-RawObject UnderBuiltinsModule::underDictLookup(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _dict_lookup)(Thread* thread, Frame* frame,
+                                        word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -1947,8 +1930,8 @@ RawObject UnderBuiltinsModule::underDictLookup(Thread* thread, Frame* frame,
   }
 }
 
-RawObject UnderBuiltinsModule::underDictLookupNext(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _dict_lookup_next)(Thread* thread, Frame* frame,
+                                             word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Dict dict(&scope, args.get(0));
@@ -1992,8 +1975,8 @@ RawObject UnderBuiltinsModule::underDictLookupNext(Thread* thread, Frame* frame,
   }
 }
 
-RawObject UnderBuiltinsModule::underDictPopitem(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _dict_popitem)(Thread* thread, Frame* frame,
+                                         word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Dict dict(&scope, args.get(0));
@@ -2014,8 +1997,8 @@ RawObject UnderBuiltinsModule::underDictPopitem(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underDictSetitem(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _dict_setitem)(Thread* thread, Frame* frame,
+                                         word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -2033,8 +2016,8 @@ RawObject UnderBuiltinsModule::underDictSetitem(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underDictUpdate(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _dict_update)(Thread* thread, Frame* frame,
+                                        word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -2061,8 +2044,7 @@ RawObject UnderBuiltinsModule::underDictUpdate(Thread* thread, Frame* frame,
   return dictMergeOverride(thread, self, kwargs);
 }
 
-RawObject UnderBuiltinsModule::underDivmod(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject FUNC(_builtins, _divmod)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object number(&scope, args.get(0));
@@ -2071,8 +2053,7 @@ RawObject UnderBuiltinsModule::underDivmod(Thread* thread, Frame* frame,
       thread, frame, Interpreter::BinaryOp::DIVMOD, number, divisor);
 }
 
-RawObject UnderBuiltinsModule::underExec(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject FUNC(_builtins, _exec)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Code code(&scope, args.get(0));
@@ -2081,14 +2062,14 @@ RawObject UnderBuiltinsModule::underExec(Thread* thread, Frame* frame,
   return thread->exec(code, module, implicit_globals);
 }
 
-RawObject UnderBuiltinsModule::underFloatCheck(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _float_check)(Thread* thread, Frame* frame,
+                                        word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfFloat(args.get(0)));
 }
 
-RawObject UnderBuiltinsModule::underFloatCheckExact(Thread*, Frame* frame,
-                                                    word nargs) {
+RawObject FUNC(_builtins, _float_check_exact)(Thread*, Frame* frame,
+                                              word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(args.get(0).isFloat());
 }
@@ -2120,8 +2101,8 @@ static double floatDivmod(double x, double y, double* remainder) {
   return floordiv;
 }
 
-RawObject UnderBuiltinsModule::underFloatDivmod(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _float_divmod)(Thread* thread, Frame* frame,
+                                         word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
 
@@ -2140,8 +2121,8 @@ RawObject UnderBuiltinsModule::underFloatDivmod(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underFloatFormat(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _float_format)(Thread* thread, Frame* frame,
+                                         word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   double value = floatUnderlying(args.get(0)).value();
@@ -2163,8 +2144,8 @@ RawObject UnderBuiltinsModule::underFloatFormat(Thread* thread, Frame* frame,
   return thread->runtime()->newStrFromCStr(c_str.get());
 }
 
-RawObject UnderBuiltinsModule::underFloatGuard(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _float_guard)(Thread* thread, Frame* frame,
+                                        word nargs) {
   Arguments args(frame, nargs);
   if (thread->runtime()->isInstanceOfFloat(args.get(0))) {
     return NoneType::object();
@@ -2182,24 +2163,23 @@ static RawObject floatNew(Thread* thread, const Type& type, RawObject flt) {
   return *instance;
 }
 
-RawObject UnderBuiltinsModule::underFloatNewFromByteslike(Thread* /* thread */,
-                                                          Frame* /* frame */,
-                                                          word /* nargs */) {
+RawObject FUNC(_builtins, _float_new_from_byteslike)(Thread* /* thread */,
+                                                     Frame* /* frame */,
+                                                     word /* nargs */) {
   // TODO(T57022841): follow full CPython conversion for bytes-like objects
   UNIMPLEMENTED("float.__new__ from byteslike");
 }
 
-RawObject UnderBuiltinsModule::underFloatNewFromFloat(Thread* thread,
-                                                      Frame* frame,
-                                                      word nargs) {
+RawObject FUNC(_builtins, _float_new_from_float)(Thread* thread, Frame* frame,
+                                                 word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
   return floatNew(thread, type, args.get(1));
 }
 
-RawObject UnderBuiltinsModule::underFloatNewFromStr(Thread* thread,
-                                                    Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _float_new_from_str)(Thread* thread, Frame* frame,
+                                               word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
@@ -2232,21 +2212,20 @@ RawObject UnderBuiltinsModule::underFloatNewFromStr(Thread* thread,
   return floatNew(thread, type, thread->runtime()->newFloat(result));
 }
 
-RawObject UnderBuiltinsModule::underFloatSignbit(Thread*, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_builtins, _float_signbit)(Thread*, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   double value = floatUnderlying(args.get(0)).value();
   return Bool::fromBool(std::signbit(value));
 }
 
-RawObject UnderBuiltinsModule::underFrozensetCheck(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _frozenset_check)(Thread* thread, Frame* frame,
+                                            word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfFrozenSet(args.get(0)));
 }
 
-RawObject UnderBuiltinsModule::underFrozensetGuard(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _frozenset_guard)(Thread* thread, Frame* frame,
+                                            word nargs) {
   Arguments args(frame, nargs);
   if (thread->runtime()->isInstanceOfFrozenSet(args.get(0))) {
     return NoneType::object();
@@ -2254,8 +2233,8 @@ RawObject UnderBuiltinsModule::underFrozensetGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, ID(frozenset));
 }
 
-RawObject UnderBuiltinsModule::underFunctionGlobals(Thread* thread,
-                                                    Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _function_globals)(Thread* thread, Frame* frame,
+                                             word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -2267,8 +2246,8 @@ RawObject UnderBuiltinsModule::underFunctionGlobals(Thread* thread,
   return module.moduleProxy();
 }
 
-RawObject UnderBuiltinsModule::underFunctionGuard(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_builtins, _function_guard)(Thread* thread, Frame* frame,
+                                           word nargs) {
   Arguments args(frame, nargs);
   if (args.get(0).isFunction()) {
     return NoneType::object();
@@ -2276,8 +2255,8 @@ RawObject UnderBuiltinsModule::underFunctionGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, ID(function));
 }
 
-RawObject UnderBuiltinsModule::underGc(Thread* thread, Frame* /* frame */,
-                                       word /* nargs */) {
+RawObject FUNC(_builtins, _gc)(Thread* thread, Frame* /* frame */,
+                               word /* nargs */) {
   thread->runtime()->collectGarbage();
   return NoneType::object();
 }
@@ -2313,8 +2292,8 @@ static Frame* frameAtDepth(Thread* thread, word depth) {
   return visitor.target();
 }
 
-RawObject UnderBuiltinsModule::underGetframeFunction(Thread* thread,
-                                                     Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _getframe_function)(Thread* thread, Frame* frame,
+                                              word nargs) {
   Arguments args(frame, nargs);
   word depth = intUnderlying(args.get(0)).asWordSaturated();
   if (depth < 0) {
@@ -2328,8 +2307,8 @@ RawObject UnderBuiltinsModule::underGetframeFunction(Thread* thread,
   return frame->function();
 }
 
-RawObject UnderBuiltinsModule::underGetframeLineno(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _getframe_lineno)(Thread* thread, Frame* frame,
+                                            word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   word depth = intUnderlying(args.get(0)).asWordSaturated();
@@ -2347,8 +2326,8 @@ RawObject UnderBuiltinsModule::underGetframeLineno(Thread* thread, Frame* frame,
   return SmallInt::fromWord(lineno);
 }
 
-RawObject UnderBuiltinsModule::underGetframeLocals(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _getframe_locals)(Thread* thread, Frame* frame,
+                                            word nargs) {
   Arguments args(frame, nargs);
   word depth = intUnderlying(args.get(0)).asWordSaturated();
   if (depth < 0) {
@@ -2362,8 +2341,8 @@ RawObject UnderBuiltinsModule::underGetframeLocals(Thread* thread, Frame* frame,
   return frameLocals(thread, frame);
 }
 
-RawObject UnderBuiltinsModule::underGetMemberByte(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_builtins, _get_member_byte)(Thread* thread, Frame* frame,
+                                            word nargs) {
   Arguments args(frame, nargs);
   auto addr = Int::cast(args.get(0)).asCPtr();
   char value = 0;
@@ -2371,15 +2350,14 @@ RawObject UnderBuiltinsModule::underGetMemberByte(Thread* thread, Frame* frame,
   return thread->runtime()->newInt(value);
 }
 
-RawObject UnderBuiltinsModule::underGetMemberChar(Thread*, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_builtins, _get_member_char)(Thread*, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   auto addr = Int::cast(args.get(0)).asCPtr();
   return SmallStr::fromCodePoint(*reinterpret_cast<byte*>(addr));
 }
 
-RawObject UnderBuiltinsModule::underGetMemberDouble(Thread* thread,
-                                                    Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _get_member_double)(Thread* thread, Frame* frame,
+                                              word nargs) {
   Arguments args(frame, nargs);
   auto addr = Int::cast(args.get(0)).asCPtr();
   double value = 0.0;
@@ -2387,8 +2365,8 @@ RawObject UnderBuiltinsModule::underGetMemberDouble(Thread* thread,
   return thread->runtime()->newFloat(value);
 }
 
-RawObject UnderBuiltinsModule::underGetMemberFloat(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _get_member_float)(Thread* thread, Frame* frame,
+                                             word nargs) {
   Arguments args(frame, nargs);
   auto addr = Int::cast(args.get(0)).asCPtr();
   float value = 0.0;
@@ -2396,8 +2374,8 @@ RawObject UnderBuiltinsModule::underGetMemberFloat(Thread* thread, Frame* frame,
   return thread->runtime()->newFloat(value);
 }
 
-RawObject UnderBuiltinsModule::underGetMemberInt(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_builtins, _get_member_int)(Thread* thread, Frame* frame,
+                                           word nargs) {
   Arguments args(frame, nargs);
   auto addr = Int::cast(args.get(0)).asCPtr();
   int value = 0;
@@ -2405,8 +2383,8 @@ RawObject UnderBuiltinsModule::underGetMemberInt(Thread* thread, Frame* frame,
   return thread->runtime()->newInt(value);
 }
 
-RawObject UnderBuiltinsModule::underGetMemberLong(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_builtins, _get_member_long)(Thread* thread, Frame* frame,
+                                            word nargs) {
   Arguments args(frame, nargs);
   auto addr = Int::cast(args.get(0)).asCPtr();
   long value = 0;
@@ -2414,9 +2392,8 @@ RawObject UnderBuiltinsModule::underGetMemberLong(Thread* thread, Frame* frame,
   return thread->runtime()->newInt(value);
 }
 
-RawObject UnderBuiltinsModule::underGetMemberPyobject(Thread* thread,
-                                                      Frame* frame,
-                                                      word nargs) {
+RawObject FUNC(_builtins, _get_member_pyobject)(Thread* thread, Frame* frame,
+                                                word nargs) {
   Arguments args(frame, nargs);
   ApiHandle* value =
       *reinterpret_cast<ApiHandle**>(Int::cast(args.get(0)).asCPtr());
@@ -2430,8 +2407,8 @@ RawObject UnderBuiltinsModule::underGetMemberPyobject(Thread* thread,
   return value->asObject();
 }
 
-RawObject UnderBuiltinsModule::underGetMemberShort(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _get_member_short)(Thread* thread, Frame* frame,
+                                             word nargs) {
   Arguments args(frame, nargs);
   auto addr = Int::cast(args.get(0)).asCPtr();
   short value = 0;
@@ -2439,15 +2416,15 @@ RawObject UnderBuiltinsModule::underGetMemberShort(Thread* thread, Frame* frame,
   return thread->runtime()->newInt(value);
 }
 
-RawObject UnderBuiltinsModule::underGetMemberString(Thread* thread,
-                                                    Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _get_member_string)(Thread* thread, Frame* frame,
+                                              word nargs) {
   Arguments args(frame, nargs);
   auto addr = Int::cast(args.get(0)).asCPtr();
   return thread->runtime()->newStrFromCStr(*reinterpret_cast<char**>(addr));
 }
 
-RawObject UnderBuiltinsModule::underGetMemberUbyte(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _get_member_ubyte)(Thread* thread, Frame* frame,
+                                             word nargs) {
   Arguments args(frame, nargs);
   auto addr = Int::cast(args.get(0)).asCPtr();
   unsigned char value = 0;
@@ -2455,8 +2432,8 @@ RawObject UnderBuiltinsModule::underGetMemberUbyte(Thread* thread, Frame* frame,
   return thread->runtime()->newIntFromUnsigned(value);
 }
 
-RawObject UnderBuiltinsModule::underGetMemberUint(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_builtins, _get_member_uint)(Thread* thread, Frame* frame,
+                                            word nargs) {
   Arguments args(frame, nargs);
   auto addr = Int::cast(args.get(0)).asCPtr();
   unsigned int value = 0;
@@ -2464,8 +2441,8 @@ RawObject UnderBuiltinsModule::underGetMemberUint(Thread* thread, Frame* frame,
   return thread->runtime()->newIntFromUnsigned(value);
 }
 
-RawObject UnderBuiltinsModule::underGetMemberUlong(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _get_member_ulong)(Thread* thread, Frame* frame,
+                                             word nargs) {
   Arguments args(frame, nargs);
   auto addr = Int::cast(args.get(0)).asCPtr();
   unsigned long value = 0;
@@ -2473,8 +2450,8 @@ RawObject UnderBuiltinsModule::underGetMemberUlong(Thread* thread, Frame* frame,
   return thread->runtime()->newIntFromUnsigned(value);
 }
 
-RawObject UnderBuiltinsModule::underGetMemberUshort(Thread* thread,
-                                                    Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _get_member_ushort)(Thread* thread, Frame* frame,
+                                              word nargs) {
   Arguments args(frame, nargs);
   auto addr = Int::cast(args.get(0)).asCPtr();
   unsigned short value = 0;
@@ -2482,8 +2459,8 @@ RawObject UnderBuiltinsModule::underGetMemberUshort(Thread* thread,
   return thread->runtime()->newIntFromUnsigned(value);
 }
 
-RawObject UnderBuiltinsModule::underInstanceDelattr(Thread* thread,
-                                                    Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _instance_delattr)(Thread* thread, Frame* frame,
+                                             word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Instance instance(&scope, args.get(0));
@@ -2493,8 +2470,8 @@ RawObject UnderBuiltinsModule::underInstanceDelattr(Thread* thread,
   return instanceDelAttr(thread, instance, name);
 }
 
-RawObject UnderBuiltinsModule::underInstanceGetattr(Thread* thread,
-                                                    Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _instance_getattr)(Thread* thread, Frame* frame,
+                                             word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Instance instance(&scope, args.get(0));
@@ -2505,8 +2482,8 @@ RawObject UnderBuiltinsModule::underInstanceGetattr(Thread* thread,
   return result.isErrorNotFound() ? Unbound::object() : *result;
 }
 
-RawObject UnderBuiltinsModule::underInstanceGuard(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_builtins, _instance_guard)(Thread* thread, Frame* frame,
+                                           word nargs) {
   Arguments args(frame, nargs);
   if (args.get(0).isInstance()) {
     return NoneType::object();
@@ -2514,9 +2491,8 @@ RawObject UnderBuiltinsModule::underInstanceGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, ID(instance));
 }
 
-RawObject UnderBuiltinsModule::underInstanceOverflowDict(Thread* thread,
-                                                         Frame* frame,
-                                                         word nargs) {
+RawObject FUNC(_builtins, _instance_overflow_dict)(Thread* thread, Frame* frame,
+                                                   word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object object(&scope, args.get(0));
@@ -2533,8 +2509,8 @@ RawObject UnderBuiltinsModule::underInstanceOverflowDict(Thread* thread,
   return *overflow_dict_obj;
 }
 
-RawObject UnderBuiltinsModule::underInstanceSetattr(Thread* thread,
-                                                    Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _instance_setattr)(Thread* thread, Frame* frame,
+                                             word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Instance instance(&scope, args.get(0));
@@ -2545,14 +2521,13 @@ RawObject UnderBuiltinsModule::underInstanceSetattr(Thread* thread,
   return instanceSetAttr(thread, instance, name, value);
 }
 
-RawObject UnderBuiltinsModule::underIntCheck(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _int_check)(Thread* thread, Frame* frame,
+                                      word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfInt(args.get(0)));
 }
 
-RawObject UnderBuiltinsModule::underIntCheckExact(Thread*, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_builtins, _int_check_exact)(Thread*, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   RawObject arg = args.get(0);
   return Bool::fromBool(arg.isSmallInt() || arg.isLargeInt());
@@ -2571,8 +2546,8 @@ static RawObject intOrUserSubclass(Thread* thread, const Type& type,
   return *instance;
 }
 
-RawObject UnderBuiltinsModule::underIntFromBytes(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_builtins, _int_from_bytes)(Thread* thread, Frame* frame,
+                                           word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
@@ -2587,8 +2562,8 @@ RawObject UnderBuiltinsModule::underIntFromBytes(Thread* thread, Frame* frame,
   return intOrUserSubclass(thread, type, value);
 }
 
-RawObject UnderBuiltinsModule::underIntGuard(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _int_guard)(Thread* thread, Frame* frame,
+                                      word nargs) {
   Arguments args(frame, nargs);
   if (thread->runtime()->isInstanceOfInt(args.get(0))) {
     return NoneType::object();
@@ -2686,9 +2661,8 @@ static RawObject intFromBytes(Thread* thread, const Bytes& bytes, word length,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underIntNewFromBytearray(Thread* thread,
-                                                        Frame* frame,
-                                                        word nargs) {
+RawObject FUNC(_builtins, _int_new_from_bytearray)(Thread* thread, Frame* frame,
+                                                   word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
@@ -2707,8 +2681,8 @@ RawObject UnderBuiltinsModule::underIntNewFromBytearray(Thread* thread,
   return intOrUserSubclass(thread, type, result);
 }
 
-RawObject UnderBuiltinsModule::underIntNewFromBytes(Thread* thread,
-                                                    Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _int_new_from_bytes)(Thread* thread, Frame* frame,
+                                               word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
@@ -2724,8 +2698,8 @@ RawObject UnderBuiltinsModule::underIntNewFromBytes(Thread* thread,
   return intOrUserSubclass(thread, type, result);
 }
 
-RawObject UnderBuiltinsModule::underIntNewFromInt(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_builtins, _int_new_from_int)(Thread* thread, Frame* frame,
+                                             word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
@@ -2815,8 +2789,8 @@ static RawObject intFromStr(Thread* thread, const Str& str, word base) {
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underIntNewFromStr(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_builtins, _int_new_from_str)(Thread* thread, Frame* frame,
+                                             word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
@@ -2832,28 +2806,27 @@ RawObject UnderBuiltinsModule::underIntNewFromStr(Thread* thread, Frame* frame,
   return intOrUserSubclass(thread, type, result);
 }
 
-RawObject UnderBuiltinsModule::underIter(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject FUNC(_builtins, _iter)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object object(&scope, args.get(0));
   return Interpreter::createIterator(thread, thread->currentFrame(), object);
 }
 
-RawObject UnderBuiltinsModule::underListCheck(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _list_check)(Thread* thread, Frame* frame,
+                                       word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfList(args.get(0)));
 }
 
-RawObject UnderBuiltinsModule::underListCheckExact(Thread*, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _list_check_exact)(Thread*, Frame* frame,
+                                             word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(args.get(0).isList());
 }
 
-RawObject UnderBuiltinsModule::underListDelitem(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _list_delitem)(Thread* thread, Frame* frame,
+                                         word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   List self(&scope, args.get(0));
@@ -2870,8 +2843,8 @@ RawObject UnderBuiltinsModule::underListDelitem(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underListDelslice(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_builtins, _list_delslice)(Thread* thread, Frame* frame,
+                                          word nargs) {
   // This function deletes elements that are specified by a slice by copying.
   // It compacts to the left elements in the slice range and then copies
   // elements after the slice into the free area.  The list element count is
@@ -2931,8 +2904,8 @@ RawObject UnderBuiltinsModule::underListDelslice(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underListExtend(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _list_extend)(Thread* thread, Frame* frame,
+                                        word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   List list(&scope, args.get(0));
@@ -2940,8 +2913,8 @@ RawObject UnderBuiltinsModule::underListExtend(Thread* thread, Frame* frame,
   return listExtend(thread, list, value);
 }
 
-RawObject UnderBuiltinsModule::underListGetitem(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _list_getitem)(Thread* thread, Frame* frame,
+                                         word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -2988,8 +2961,8 @@ RawObject UnderBuiltinsModule::underListGetitem(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underListGetslice(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_builtins, _list_getslice)(Thread* thread, Frame* frame,
+                                          word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   List self(&scope, args.get(0));
@@ -2999,8 +2972,8 @@ RawObject UnderBuiltinsModule::underListGetslice(Thread* thread, Frame* frame,
   return listSlice(thread, self, start, stop, step);
 }
 
-RawObject UnderBuiltinsModule::underListGuard(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _list_guard)(Thread* thread, Frame* frame,
+                                       word nargs) {
   Arguments args(frame, nargs);
   if (thread->runtime()->isInstanceOfList(args.get(0))) {
     return NoneType::object();
@@ -3008,16 +2981,14 @@ RawObject UnderBuiltinsModule::underListGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, ID(list));
 }
 
-RawObject UnderBuiltinsModule::underListLen(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject FUNC(_builtins, _list_len)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   List self(&scope, args.get(0));
   return SmallInt::fromWord(self.numItems());
 }
 
-RawObject UnderBuiltinsModule::underListNew(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject FUNC(_builtins, _list_new)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   word size = SmallInt::cast(args.get(0)).value();
@@ -3035,8 +3006,8 @@ RawObject UnderBuiltinsModule::underListNew(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underListSort(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _list_sort)(Thread* thread, Frame* frame,
+                                      word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   CHECK(thread->runtime()->isInstanceOfList(args.get(0)),
@@ -3107,8 +3078,8 @@ static RawObject listSetSlice(Thread* thread, const List& self, word start,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underListSetItem(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _list_setitem)(Thread* thread, Frame* frame,
+                                         word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
@@ -3166,8 +3137,8 @@ RawObject UnderBuiltinsModule::underListSetItem(Thread* thread, Frame* frame,
   return listSetSlice(thread, self, start, stop, 1, src_tuple, src_length);
 }
 
-RawObject UnderBuiltinsModule::underListSetSlice(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_builtins, _list_setslice)(Thread* thread, Frame* frame,
+                                          word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
@@ -3199,8 +3170,8 @@ RawObject UnderBuiltinsModule::underListSetSlice(Thread* thread, Frame* frame,
   return listSetSlice(thread, self, start, stop, step, src_tuple, src_length);
 }
 
-RawObject UnderBuiltinsModule::underListSwap(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _list_swap)(Thread* thread, Frame* frame,
+                                      word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   List list(&scope, args.get(0));
@@ -3212,9 +3183,8 @@ RawObject UnderBuiltinsModule::underListSwap(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underMappingproxyGuard(Thread* thread,
-                                                      Frame* frame,
-                                                      word nargs) {
+RawObject FUNC(_builtins, _mappingproxy_guard)(Thread* thread, Frame* frame,
+                                               word nargs) {
   Arguments args(frame, nargs);
   if (args.get(0).isMappingProxy()) {
     return NoneType::object();
@@ -3222,18 +3192,16 @@ RawObject UnderBuiltinsModule::underMappingproxyGuard(Thread* thread,
   return raiseRequiresFromCaller(thread, frame, nargs, ID(mappingproxy));
 }
 
-RawObject UnderBuiltinsModule::underMappingproxyMapping(Thread* thread,
-                                                        Frame* frame,
-                                                        word nargs) {
+RawObject FUNC(_builtins, _mappingproxy_mapping)(Thread* thread, Frame* frame,
+                                                 word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   MappingProxy mappingproxy(&scope, args.get(0));
   return mappingproxy.mapping();
 }
 
-RawObject UnderBuiltinsModule::underMappingproxySetMapping(Thread* thread,
-                                                           Frame* frame,
-                                                           word nargs) {
+RawObject FUNC(_builtins, _mappingproxy_set_mapping)(Thread* thread,
+                                                     Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   MappingProxy mappingproxy(&scope, args.get(0));
@@ -3241,14 +3209,14 @@ RawObject UnderBuiltinsModule::underMappingproxySetMapping(Thread* thread,
   return *mappingproxy;
 }
 
-RawObject UnderBuiltinsModule::underMemoryviewCheck(Thread*, Frame* frame,
-                                                    word nargs) {
+RawObject FUNC(_builtins, _memoryview_check)(Thread*, Frame* frame,
+                                             word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(args.get(0).isMemoryView());
 }
 
-RawObject UnderBuiltinsModule::underMemoryviewGuard(Thread* thread,
-                                                    Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _memoryview_guard)(Thread* thread, Frame* frame,
+                                             word nargs) {
   Arguments args(frame, nargs);
   if (args.get(0).isMemoryView()) {
     return NoneType::object();
@@ -3256,9 +3224,8 @@ RawObject UnderBuiltinsModule::underMemoryviewGuard(Thread* thread,
   return raiseRequiresFromCaller(thread, frame, nargs, ID(memoryview));
 }
 
-RawObject UnderBuiltinsModule::underMemoryviewItemsize(Thread* thread,
-                                                       Frame* frame,
-                                                       word nargs) {
+RawObject FUNC(_builtins, _memoryview_itemsize)(Thread* thread, Frame* frame,
+                                                word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -3269,8 +3236,8 @@ RawObject UnderBuiltinsModule::underMemoryviewItemsize(Thread* thread,
   return memoryviewItemsize(thread, self);
 }
 
-RawObject UnderBuiltinsModule::underMemoryviewNbytes(Thread* thread,
-                                                     Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _memoryview_nbytes)(Thread* thread, Frame* frame,
+                                              word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -3281,9 +3248,8 @@ RawObject UnderBuiltinsModule::underMemoryviewNbytes(Thread* thread,
   return SmallInt::fromWord(self.length());
 }
 
-RawObject UnderBuiltinsModule::underMemoryviewSetitem(Thread* thread,
-                                                      Frame* frame,
-                                                      word nargs) {
+RawObject FUNC(_builtins, _memoryview_setitem)(Thread* thread, Frame* frame,
+                                               word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -3313,9 +3279,8 @@ RawObject UnderBuiltinsModule::underMemoryviewSetitem(Thread* thread,
   return memoryviewSetitem(thread, self, bytes, value);
 }
 
-RawObject UnderBuiltinsModule::underMemoryviewSetslice(Thread* thread,
-                                                       Frame* frame,
-                                                       word nargs) {
+RawObject FUNC(_builtins, _memoryview_setslice)(Thread* thread, Frame* frame,
+                                                word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -3338,31 +3303,30 @@ RawObject UnderBuiltinsModule::underMemoryviewSetslice(Thread* thread,
   return memoryviewSetslice(thread, self, start, stop, step, slice_len, value);
 }
 
-RawObject UnderBuiltinsModule::underModuleDir(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _module_dir)(Thread* thread, Frame* frame,
+                                       word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Module self(&scope, args.get(0));
   return moduleKeys(thread, self);
 }
 
-RawObject UnderBuiltinsModule::underModuleProxy(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _module_proxy)(Thread* thread, Frame* frame,
+                                         word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Module module(&scope, args.get(0));
   return module.moduleProxy();
 }
 
-RawObject UnderBuiltinsModule::underModuleProxyCheck(Thread*, Frame* frame,
-                                                     word nargs) {
+RawObject FUNC(_builtins, _module_proxy_check)(Thread*, Frame* frame,
+                                               word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(args.get(0).isModuleProxy());
 }
 
-RawObject UnderBuiltinsModule::underModuleProxyDelitem(Thread* thread,
-                                                       Frame* frame,
-                                                       word nargs) {
+RawObject FUNC(_builtins, _module_proxy_delitem)(Thread* thread, Frame* frame,
+                                                 word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   ModuleProxy self(&scope, args.get(0));
@@ -3379,8 +3343,8 @@ RawObject UnderBuiltinsModule::underModuleProxyDelitem(Thread* thread,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underModuleProxyGet(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _module_proxy_get)(Thread* thread, Frame* frame,
+                                             word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   ModuleProxy self(&scope, args.get(0));
@@ -3397,8 +3361,8 @@ RawObject UnderBuiltinsModule::underModuleProxyGet(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underModuleProxyGuard(Thread* thread,
-                                                     Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _module_proxy_guard)(Thread* thread, Frame* frame,
+                                               word nargs) {
   Arguments args(frame, nargs);
   if (args.get(0).isModuleProxy()) {
     return NoneType::object();
@@ -3406,8 +3370,8 @@ RawObject UnderBuiltinsModule::underModuleProxyGuard(Thread* thread,
   return raiseRequiresFromCaller(thread, frame, nargs, ID(module_proxy));
 }
 
-RawObject UnderBuiltinsModule::underModuleProxyKeys(Thread* thread,
-                                                    Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _module_proxy_keys)(Thread* thread, Frame* frame,
+                                              word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   ModuleProxy self(&scope, args.get(0));
@@ -3416,8 +3380,8 @@ RawObject UnderBuiltinsModule::underModuleProxyKeys(Thread* thread,
   return moduleKeys(thread, module);
 }
 
-RawObject UnderBuiltinsModule::underModuleProxyLen(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _module_proxy_len)(Thread* thread, Frame* frame,
+                                             word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   ModuleProxy self(&scope, args.get(0));
@@ -3426,9 +3390,8 @@ RawObject UnderBuiltinsModule::underModuleProxyLen(Thread* thread, Frame* frame,
   return moduleLen(thread, module);
 }
 
-RawObject UnderBuiltinsModule::underModuleProxySetitem(Thread* thread,
-                                                       Frame* frame,
-                                                       word nargs) {
+RawObject FUNC(_builtins, _module_proxy_setitem)(Thread* thread, Frame* frame,
+                                                 word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   ModuleProxy self(&scope, args.get(0));
@@ -3441,9 +3404,8 @@ RawObject UnderBuiltinsModule::underModuleProxySetitem(Thread* thread,
   return moduleAtPut(thread, module, name, value);
 }
 
-RawObject UnderBuiltinsModule::underModuleProxyValues(Thread* thread,
-                                                      Frame* frame,
-                                                      word nargs) {
+RawObject FUNC(_builtins, _module_proxy_values)(Thread* thread, Frame* frame,
+                                                word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   ModuleProxy self(&scope, args.get(0));
@@ -3452,8 +3414,8 @@ RawObject UnderBuiltinsModule::underModuleProxyValues(Thread* thread,
   return moduleValues(thread, module);
 }
 
-RawObject UnderBuiltinsModule::underObjectKeys(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _object_keys)(Thread* thread, Frame* frame,
+                                        word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object object(&scope, args.get(0));
@@ -3490,9 +3452,8 @@ RawObject UnderBuiltinsModule::underObjectKeys(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underObjectTypeGetattr(Thread* thread,
-                                                      Frame* frame,
-                                                      word nargs) {
+RawObject FUNC(_builtins, _object_type_getattr)(Thread* thread, Frame* frame,
+                                                word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object instance(&scope, args.get(0));
@@ -3510,9 +3471,8 @@ RawObject UnderBuiltinsModule::underObjectTypeGetattr(Thread* thread,
   return resolveDescriptorGet(thread, attr, instance, type);
 }
 
-RawObject UnderBuiltinsModule::underObjectTypeHasattr(Thread* thread,
-                                                      Frame* frame,
-                                                      word nargs) {
+RawObject FUNC(_builtins, _object_type_hasattr)(Thread* thread, Frame* frame,
+                                                word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Type type(&scope, thread->runtime()->typeOf(args.get(0)));
@@ -3523,8 +3483,7 @@ RawObject UnderBuiltinsModule::underObjectTypeHasattr(Thread* thread,
   return Bool::fromBool(!result.isErrorNotFound());
 }
 
-RawObject UnderBuiltinsModule::underOsWrite(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject FUNC(_builtins, _os_write)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object fd_obj(&scope, args.get(0));
@@ -3557,8 +3516,7 @@ RawObject UnderBuiltinsModule::underOsWrite(Thread* thread, Frame* frame,
   return SmallInt::fromWord(result);
 }
 
-RawObject UnderBuiltinsModule::underPatch(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject FUNC(_builtins, _patch)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
 
@@ -3587,8 +3545,7 @@ RawObject UnderBuiltinsModule::underPatch(Thread* thread, Frame* frame,
   return *patch_fn;
 }
 
-RawObject UnderBuiltinsModule::underProperty(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _property)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object getter(&scope, args.get(0));
@@ -3598,9 +3555,8 @@ RawObject UnderBuiltinsModule::underProperty(Thread* thread, Frame* frame,
   return thread->runtime()->newProperty(getter, setter, deleter);
 }
 
-RawObject UnderBuiltinsModule::underPropertyIsabstract(Thread* thread,
-                                                       Frame* frame,
-                                                       word nargs) {
+RawObject FUNC(_builtins, _property_isabstract)(Thread* thread, Frame* frame,
+                                                word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Property self(&scope, args.get(0));
@@ -3617,8 +3573,8 @@ RawObject UnderBuiltinsModule::underPropertyIsabstract(Thread* thread,
   return isAbstract(thread, deleter);
 }
 
-RawObject UnderBuiltinsModule::underPyobjectOffset(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _pyobject_offset)(Thread* thread, Frame* frame,
+                                            word nargs) {
   Arguments args(frame, nargs);
   auto addr =
       reinterpret_cast<uword>(thread->runtime()->nativeProxyPtr(args.get(0)));
@@ -3626,14 +3582,13 @@ RawObject UnderBuiltinsModule::underPyobjectOffset(Thread* thread, Frame* frame,
   return thread->runtime()->newIntFromCPtr(bit_cast<void*>(addr));
 }
 
-RawObject UnderBuiltinsModule::underRangeCheck(Thread*, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _range_check)(Thread*, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(args.get(0).isRange());
 }
 
-RawObject UnderBuiltinsModule::underRangeGuard(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _range_guard)(Thread* thread, Frame* frame,
+                                        word nargs) {
   Arguments args(frame, nargs);
   if (args.get(0).isRange()) {
     return NoneType::object();
@@ -3641,8 +3596,8 @@ RawObject UnderBuiltinsModule::underRangeGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, ID(range));
 }
 
-RawObject UnderBuiltinsModule::underRangeLen(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _range_len)(Thread* thread, Frame* frame,
+                                      word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Range self(&scope, args.get(0));
@@ -3652,16 +3607,16 @@ RawObject UnderBuiltinsModule::underRangeLen(Thread* thread, Frame* frame,
   return rangeLen(thread, start, stop, step);
 }
 
-RawObject UnderBuiltinsModule::underReprEnter(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _repr_enter)(Thread* thread, Frame* frame,
+                                       word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object obj(&scope, args.get(0));
   return thread->reprEnter(obj);
 }
 
-RawObject UnderBuiltinsModule::underReprLeave(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _repr_leave)(Thread* thread, Frame* frame,
+                                       word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object obj(&scope, args.get(0));
@@ -3669,24 +3624,24 @@ RawObject UnderBuiltinsModule::underReprLeave(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underSeqIndex(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _seq_index)(Thread* thread, Frame* frame,
+                                      word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   SeqIterator self(&scope, args.get(0));
   return SmallInt::fromWord(self.index());
 }
 
-RawObject UnderBuiltinsModule::underSeqIterable(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _seq_iterable)(Thread* thread, Frame* frame,
+                                         word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   SeqIterator self(&scope, args.get(0));
   return self.iterable();
 }
 
-RawObject UnderBuiltinsModule::underSeqSetIndex(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _seq_set_index)(Thread* thread, Frame* frame,
+                                          word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   SeqIterator self(&scope, args.get(0));
@@ -3695,8 +3650,8 @@ RawObject UnderBuiltinsModule::underSeqSetIndex(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underSeqSetIterable(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _seq_set_iterable)(Thread* thread, Frame* frame,
+                                             word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   SeqIterator self(&scope, args.get(0));
@@ -3705,14 +3660,14 @@ RawObject UnderBuiltinsModule::underSeqSetIterable(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underSetCheck(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _set_check)(Thread* thread, Frame* frame,
+                                      word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfSet(args.get(0)));
 }
 
-RawObject UnderBuiltinsModule::underSetGuard(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _set_guard)(Thread* thread, Frame* frame,
+                                      word nargs) {
   Arguments args(frame, nargs);
   if (thread->runtime()->isInstanceOfSet(args.get(0))) {
     return NoneType::object();
@@ -3720,16 +3675,15 @@ RawObject UnderBuiltinsModule::underSetGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, ID(set));
 }
 
-RawObject UnderBuiltinsModule::underSetLen(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject FUNC(_builtins, _set_len)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Set self(&scope, args.get(0));
   return SmallInt::fromWord(self.numItems());
 }
 
-RawObject UnderBuiltinsModule::underSetMemberDouble(Thread*, Frame* frame,
-                                                    word nargs) {
+RawObject FUNC(_builtins, _set_member_double)(Thread*, Frame* frame,
+                                              word nargs) {
   Arguments args(frame, nargs);
   auto addr = Int::cast(args.get(0)).asCPtr();
   double value = Float::cast(args.get(1)).value();
@@ -3737,8 +3691,8 @@ RawObject UnderBuiltinsModule::underSetMemberDouble(Thread*, Frame* frame,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underSetMemberFloat(Thread*, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _set_member_float)(Thread*, Frame* frame,
+                                             word nargs) {
   Arguments args(frame, nargs);
   auto addr = Int::cast(args.get(0)).asCPtr();
   float value = Float::cast(args.get(1)).value();
@@ -3746,8 +3700,8 @@ RawObject UnderBuiltinsModule::underSetMemberFloat(Thread*, Frame* frame,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underSetMemberIntegral(Thread*, Frame* frame,
-                                                      word nargs) {
+RawObject FUNC(_builtins, _set_member_integral)(Thread*, Frame* frame,
+                                                word nargs) {
   Arguments args(frame, nargs);
   auto addr = Int::cast(args.get(0)).asCPtr();
   auto value = RawInt::cast(args.get(1)).asWord();
@@ -3756,9 +3710,8 @@ RawObject UnderBuiltinsModule::underSetMemberIntegral(Thread*, Frame* frame,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underSetMemberPyobject(Thread* thread,
-                                                      Frame* frame,
-                                                      word nargs) {
+RawObject FUNC(_builtins, _set_member_pyobject)(Thread* thread, Frame* frame,
+                                                word nargs) {
   Arguments args(frame, nargs);
   ApiHandle* newvalue = ApiHandle::newReference(thread, args.get(1));
   ApiHandle** oldvalue =
@@ -3768,14 +3721,13 @@ RawObject UnderBuiltinsModule::underSetMemberPyobject(Thread* thread,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underSliceCheck(Thread*, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _slice_check)(Thread*, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(args.get(0).isSlice());
 }
 
-RawObject UnderBuiltinsModule::underSliceGuard(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _slice_guard)(Thread* thread, Frame* frame,
+                                        word nargs) {
   Arguments args(frame, nargs);
   if (args.get(0).isSlice()) {
     return NoneType::object();
@@ -3783,8 +3735,7 @@ RawObject UnderBuiltinsModule::underSliceGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, ID(slice));
 }
 
-RawObject UnderBuiltinsModule::underSliceStart(Thread*, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _slice_start)(Thread*, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   RawObject start_obj = args.get(0);
   word step = SmallInt::cast(args.get(1)).value();
@@ -3811,8 +3762,8 @@ RawObject UnderBuiltinsModule::underSliceStart(Thread*, Frame* frame,
   return SmallInt::fromWord(start);
 }
 
-RawObject UnderBuiltinsModule::underSliceStartLong(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _slice_start_long)(Thread* thread, Frame* frame,
+                                             word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Int step(&scope, intUnderlying(args.get(1)));
@@ -3839,8 +3790,8 @@ RawObject UnderBuiltinsModule::underSliceStartLong(Thread* thread, Frame* frame,
   return *start;
 }
 
-RawObject UnderBuiltinsModule::underSliceStep(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _slice_step)(Thread* thread, Frame* frame,
+                                       word nargs) {
   Arguments args(frame, nargs);
   RawObject step_obj = args.get(0);
   if (step_obj.isNoneType()) return SmallInt::fromWord(1);
@@ -3859,8 +3810,8 @@ RawObject UnderBuiltinsModule::underSliceStep(Thread* thread, Frame* frame,
                                               : SmallInt::kMaxValue);
 }
 
-RawObject UnderBuiltinsModule::underSliceStepLong(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_builtins, _slice_step_long)(Thread* thread, Frame* frame,
+                                            word nargs) {
   Arguments args(frame, nargs);
   RawObject step_obj = args.get(0);
   if (step_obj.isNoneType()) return SmallInt::fromWord(1);
@@ -3878,8 +3829,7 @@ RawObject UnderBuiltinsModule::underSliceStepLong(Thread* thread, Frame* frame,
   return step;
 }
 
-RawObject UnderBuiltinsModule::underSliceStop(Thread*, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _slice_stop)(Thread*, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   RawObject stop_obj = args.get(0);
   word step = SmallInt::cast(args.get(1)).value();
@@ -3906,8 +3856,8 @@ RawObject UnderBuiltinsModule::underSliceStop(Thread*, Frame* frame,
   return SmallInt::fromWord(stop);
 }
 
-RawObject UnderBuiltinsModule::underSliceStopLong(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_builtins, _slice_stop_long)(Thread* thread, Frame* frame,
+                                            word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Int step(&scope, intUnderlying(args.get(1)));
@@ -3934,9 +3884,8 @@ RawObject UnderBuiltinsModule::underSliceStopLong(Thread* thread, Frame* frame,
   return *stop;
 }
 
-RawObject UnderBuiltinsModule::underStaticmethodIsabstract(Thread* thread,
-                                                           Frame* frame,
-                                                           word nargs) {
+RawObject FUNC(_builtins, _staticmethod_isabstract)(Thread* thread,
+                                                    Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   StaticMethod self(&scope, args.get(0));
@@ -3944,9 +3893,8 @@ RawObject UnderBuiltinsModule::underStaticmethodIsabstract(Thread* thread,
   return isAbstract(thread, func);
 }
 
-RawObject UnderBuiltinsModule::underStopIterationCtor(Thread* thread,
-                                                      Frame* frame,
-                                                      word nargs) {
+RawObject FUNC(_builtins, _stop_iteration_ctor)(Thread* thread, Frame* frame,
+                                                word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
@@ -3965,8 +3913,8 @@ RawObject UnderBuiltinsModule::underStopIterationCtor(Thread* thread,
   return *self;
 }
 
-RawObject UnderBuiltinsModule::underStrarrayClear(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_builtins, _strarray_clear)(Thread* thread, Frame* frame,
+                                           word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   StrArray self(&scope, args.get(0));
@@ -3974,8 +3922,8 @@ RawObject UnderBuiltinsModule::underStrarrayClear(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underStrarrayIadd(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_builtins, _strarray_iadd)(Thread* thread, Frame* frame,
+                                          word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   StrArray self(&scope, args.get(0));
@@ -3984,8 +3932,8 @@ RawObject UnderBuiltinsModule::underStrarrayIadd(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject UnderBuiltinsModule::underStrarrayCtor(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_builtins, _strarray_ctor)(Thread* thread, Frame* frame,
+                                          word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
@@ -4008,14 +3956,14 @@ RawObject UnderBuiltinsModule::underStrarrayCtor(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject UnderBuiltinsModule::underStrCheck(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _str_check)(Thread* thread, Frame* frame,
+                                      word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfStr(args.get(0)));
 }
 
-RawObject UnderBuiltinsModule::underStrEncode(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _str_encode)(Thread* thread, Frame* frame,
+                                       word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object str_obj(&scope, args.get(0));
@@ -4034,8 +3982,8 @@ RawObject UnderBuiltinsModule::underStrEncode(Thread* thread, Frame* frame,
   return strEncodeASCII(thread, str);
 }
 
-RawObject UnderBuiltinsModule::underStrEncodeASCII(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _str_encode_ascii)(Thread* thread, Frame* frame,
+                                             word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object str_obj(&scope, args.get(0));
@@ -4046,14 +3994,13 @@ RawObject UnderBuiltinsModule::underStrEncodeASCII(Thread* thread, Frame* frame,
   return strEncodeASCII(thread, str);
 }
 
-RawObject UnderBuiltinsModule::underStrCheckExact(Thread*, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_builtins, _str_check_exact)(Thread*, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(args.get(0).isStr());
 }
 
-RawObject UnderBuiltinsModule::underStrCompareDigest(Thread* thread,
-                                                     Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _str_compare_digest)(Thread* thread, Frame* frame,
+                                               word nargs) {
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -4076,8 +4023,8 @@ RawObject UnderBuiltinsModule::underStrCompareDigest(Thread* thread,
   return Bool::fromBool(result == 0);
 }
 
-RawObject UnderBuiltinsModule::underStrCount(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _str_count)(Thread* thread, Frame* frame,
+                                      word nargs) {
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
   DCHECK(runtime->isInstanceOfStr(args.get(0)),
@@ -4100,8 +4047,8 @@ RawObject UnderBuiltinsModule::underStrCount(Thread* thread, Frame* frame,
   return strCount(haystack, needle, start, end);
 }
 
-RawObject UnderBuiltinsModule::underStrEndswith(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _str_endswith)(Thread* thread, Frame* frame,
+                                         word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object start_obj(&scope, args.get(2));
@@ -4136,9 +4083,8 @@ RawObject UnderBuiltinsModule::underStrEndswith(Thread* thread, Frame* frame,
   return Bool::trueObj();
 }
 
-RawObject UnderBuiltinsModule::underStrEscapeNonAscii(Thread* thread,
-                                                      Frame* frame,
-                                                      word nargs) {
+RawObject FUNC(_builtins, _str_escape_non_ascii)(Thread* thread, Frame* frame,
+                                                 word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   CHECK(thread->runtime()->isInstanceOfStr(args.get(0)),
@@ -4147,8 +4093,7 @@ RawObject UnderBuiltinsModule::underStrEscapeNonAscii(Thread* thread,
   return strEscapeNonASCII(thread, obj);
 }
 
-RawObject UnderBuiltinsModule::underStrFind(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject FUNC(_builtins, _str_find)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
   DCHECK(runtime->isInstanceOfStr(args.get(0)),
@@ -4176,8 +4121,8 @@ RawObject UnderBuiltinsModule::underStrFind(Thread* thread, Frame* frame,
   return SmallInt::fromWord(result);
 }
 
-RawObject UnderBuiltinsModule::underStrFromStr(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _str_from_str)(Thread* thread, Frame* frame,
+                                         word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
@@ -4190,8 +4135,8 @@ RawObject UnderBuiltinsModule::underStrFromStr(Thread* thread, Frame* frame,
   return *instance;
 }
 
-RawObject UnderBuiltinsModule::underStrGetitem(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _str_getitem)(Thread* thread, Frame* frame,
+                                        word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
@@ -4236,8 +4181,8 @@ RawObject UnderBuiltinsModule::underStrGetitem(Thread* thread, Frame* frame,
   return runtime->strSubstr(thread, self, start, result_len);
 }
 
-RawObject UnderBuiltinsModule::underStrGetslice(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject FUNC(_builtins, _str_getslice)(Thread* thread, Frame* frame,
+                                         word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Str self(&scope, strUnderlying(args.get(0)));
@@ -4247,8 +4192,8 @@ RawObject UnderBuiltinsModule::underStrGetslice(Thread* thread, Frame* frame,
   return thread->runtime()->strSlice(thread, self, start, stop, step);
 }
 
-RawObject UnderBuiltinsModule::underStrGuard(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _str_guard)(Thread* thread, Frame* frame,
+                                      word nargs) {
   Arguments args(frame, nargs);
   if (thread->runtime()->isInstanceOfStr(args.get(0))) {
     return NoneType::object();
@@ -4256,15 +4201,13 @@ RawObject UnderBuiltinsModule::underStrGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, ID(str));
 }
 
-RawObject UnderBuiltinsModule::underStrIschr(Thread*, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _str_ischr)(Thread*, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   RawStr str = strUnderlying(args.get(0));
   return Bool::fromBool(str.isSmallStr() && str.codePointLength() == 1);
 }
 
-RawObject UnderBuiltinsModule::underStrJoin(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject FUNC(_builtins, _str_join)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -4280,16 +4223,15 @@ RawObject UnderBuiltinsModule::underStrJoin(Thread* thread, Frame* frame,
   return runtime->strJoin(thread, sep, tuple, list.numItems());
 }
 
-RawObject UnderBuiltinsModule::underStrLen(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject FUNC(_builtins, _str_len)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Str self(&scope, strUnderlying(args.get(0)));
   return SmallInt::fromWord(self.codePointLength());
 }
 
-RawObject UnderBuiltinsModule::underStrModFastPath(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _str_mod_fast_path)(Thread* thread, Frame* frame,
+                                              word nargs) {
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfStr(args.get(0)) ||
@@ -4389,8 +4331,8 @@ static word strScan(const Str& haystack, word haystack_len, const Str& needle,
 // * needle
 // * haystack after and not including needle
 // If needle is not found in haystack, return (haystack, "", "")
-RawObject UnderBuiltinsModule::underStrPartition(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_builtins, _str_partition)(Thread* thread, Frame* frame,
+                                          word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Str haystack(&scope, strUnderlying(args.get(0)));
@@ -4418,8 +4360,8 @@ RawObject UnderBuiltinsModule::underStrPartition(Thread* thread, Frame* frame,
   return result.becomeImmutable();
 }
 
-RawObject UnderBuiltinsModule::underStrReplace(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _str_replace)(Thread* thread, Frame* frame,
+                                        word nargs) {
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -4430,8 +4372,8 @@ RawObject UnderBuiltinsModule::underStrReplace(Thread* thread, Frame* frame,
   return runtime->strReplace(thread, self, oldstr, newstr, count);
 }
 
-RawObject UnderBuiltinsModule::underStrRfind(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _str_rfind)(Thread* thread, Frame* frame,
+                                      word nargs) {
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
   DCHECK(runtime->isInstanceOfStr(args.get(0)),
@@ -4462,8 +4404,8 @@ RawObject UnderBuiltinsModule::underStrRfind(Thread* thread, Frame* frame,
 // * needle
 // * haystack after and not including needle
 // If needle is not found in haystack, return ("", "", haystack)
-RawObject UnderBuiltinsModule::underStrRpartition(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_builtins, _str_rpartition)(Thread* thread, Frame* frame,
+                                           word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -4535,8 +4477,8 @@ static RawObject strSplitWhitespace(Thread* thread, const Str& self,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underStrSplit(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _str_split)(Thread* thread, Frame* frame,
+                                      word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Str self(&scope, strUnderlying(args.get(0)));
@@ -4555,8 +4497,8 @@ RawObject UnderBuiltinsModule::underStrSplit(Thread* thread, Frame* frame,
   return strSplit(thread, self, sep, maxsplit);
 }
 
-RawObject UnderBuiltinsModule::underStrSplitlines(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_builtins, _str_splitlines)(Thread* thread, Frame* frame,
+                                           word nargs) {
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
   DCHECK(runtime->isInstanceOfStr(args.get(0)),
@@ -4569,8 +4511,8 @@ RawObject UnderBuiltinsModule::underStrSplitlines(Thread* thread, Frame* frame,
   return strSplitlines(thread, self, keepends);
 }
 
-RawObject UnderBuiltinsModule::underStrStartswith(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_builtins, _str_startswith)(Thread* thread, Frame* frame,
+                                           word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object start_obj(&scope, args.get(2));
@@ -4604,20 +4546,20 @@ RawObject UnderBuiltinsModule::underStrStartswith(Thread* thread, Frame* frame,
   return Bool::trueObj();
 }
 
-RawObject UnderBuiltinsModule::underTupleCheck(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _tuple_check)(Thread* thread, Frame* frame,
+                                        word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfTuple(args.get(0)));
 }
 
-RawObject UnderBuiltinsModule::underTupleCheckExact(Thread*, Frame* frame,
-                                                    word nargs) {
+RawObject FUNC(_builtins, _tuple_check_exact)(Thread*, Frame* frame,
+                                              word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(args.get(0).isTuple());
 }
 
-RawObject UnderBuiltinsModule::underTupleGetitem(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_builtins, _tuple_getitem)(Thread* thread, Frame* frame,
+                                          word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -4659,8 +4601,8 @@ RawObject UnderBuiltinsModule::underTupleGetitem(Thread* thread, Frame* frame,
   return runtime->tupleSubseq(thread, self, start, result_len);
 }
 
-RawObject UnderBuiltinsModule::underTupleGetslice(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_builtins, _tuple_getslice)(Thread* thread, Frame* frame,
+                                           word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Tuple self(&scope, tupleUnderlying(args.get(0)));
@@ -4670,8 +4612,8 @@ RawObject UnderBuiltinsModule::underTupleGetslice(Thread* thread, Frame* frame,
   return tupleSlice(thread, self, start, stop, step);
 }
 
-RawObject UnderBuiltinsModule::underTupleGuard(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject FUNC(_builtins, _tuple_guard)(Thread* thread, Frame* frame,
+                                        word nargs) {
   Arguments args(frame, nargs);
   if (thread->runtime()->isInstanceOfTuple(args.get(0))) {
     return NoneType::object();
@@ -4679,14 +4621,13 @@ RawObject UnderBuiltinsModule::underTupleGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, ID(tuple));
 }
 
-RawObject UnderBuiltinsModule::underTupleLen(Thread*, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _tuple_len)(Thread*, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   return SmallInt::fromWord(tupleUnderlying(args.get(0)).length());
 }
 
-RawObject UnderBuiltinsModule::underTupleNew(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _tuple_new)(Thread* thread, Frame* frame,
+                                      word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
@@ -4699,15 +4640,13 @@ RawObject UnderBuiltinsModule::underTupleNew(Thread* thread, Frame* frame,
   return *instance;
 }
 
-RawObject UnderBuiltinsModule::underType(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject FUNC(_builtins, _type)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   return thread->runtime()->typeOf(args.get(0));
 }
 
-RawObject UnderBuiltinsModule::underTypeAbstractmethodsDel(Thread* thread,
-                                                           Frame* frame,
-                                                           word nargs) {
+RawObject FUNC(_builtins, _type_abstractmethods_del)(Thread* thread,
+                                                     Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
@@ -4723,9 +4662,8 @@ RawObject UnderBuiltinsModule::underTypeAbstractmethodsDel(Thread* thread,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underTypeAbstractmethodsGet(Thread* thread,
-                                                           Frame* frame,
-                                                           word nargs) {
+RawObject FUNC(_builtins, _type_abstractmethods_get)(Thread* thread,
+                                                     Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
@@ -4738,9 +4676,8 @@ RawObject UnderBuiltinsModule::underTypeAbstractmethodsGet(Thread* thread,
   return thread->raise(LayoutId::kAttributeError, *name);
 }
 
-RawObject UnderBuiltinsModule::underTypeAbstractmethodsSet(Thread* thread,
-                                                           Frame* frame,
-                                                           word nargs) {
+RawObject FUNC(_builtins, _type_abstractmethods_set)(Thread* thread,
+                                                     Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
@@ -4755,8 +4692,8 @@ RawObject UnderBuiltinsModule::underTypeAbstractmethodsSet(Thread* thread,
   return NoneType::object();
 }
 
-RawObject UnderBuiltinsModule::underTypeBasesDel(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_builtins, _type_bases_del)(Thread* thread, Frame* frame,
+                                           word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
@@ -4765,31 +4702,31 @@ RawObject UnderBuiltinsModule::underTypeBasesDel(Thread* thread, Frame* frame,
                               &name);
 }
 
-RawObject UnderBuiltinsModule::underTypeBasesGet(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_builtins, _type_bases_get)(Thread* thread, Frame* frame,
+                                           word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   return Type(&scope, args.get(0)).bases();
 }
 
-RawObject UnderBuiltinsModule::underTypeBasesSet(Thread*, Frame*, word) {
+RawObject FUNC(_builtins, _type_bases_set)(Thread*, Frame*, word) {
   UNIMPLEMENTED("type.__bases__ setter");
 }
 
-RawObject UnderBuiltinsModule::underTypeCheck(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _type_check)(Thread* thread, Frame* frame,
+                                       word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfType(args.get(0)));
 }
 
-RawObject UnderBuiltinsModule::underTypeCheckExact(Thread*, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _type_check_exact)(Thread*, Frame* frame,
+                                             word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(args.get(0).isType());
 }
 
-RawObject UnderBuiltinsModule::underTypeDunderCall(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _type_dunder_call)(Thread* thread, Frame* frame,
+                                             word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -4890,8 +4827,8 @@ RawObject UnderBuiltinsModule::underTypeDunderCall(Thread* thread, Frame* frame,
   return *instance;
 }
 
-RawObject UnderBuiltinsModule::underTypeGuard(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _type_guard)(Thread* thread, Frame* frame,
+                                       word nargs) {
   Arguments args(frame, nargs);
   if (thread->runtime()->isInstanceOfType(args.get(0))) {
     return NoneType::object();
@@ -4899,8 +4836,8 @@ RawObject UnderBuiltinsModule::underTypeGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, ID(type));
 }
 
-RawObject UnderBuiltinsModule::underTypeIssubclass(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _type_issubclass)(Thread* thread, Frame* frame,
+                                            word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type subclass(&scope, args.get(0));
@@ -4908,8 +4845,7 @@ RawObject UnderBuiltinsModule::underTypeIssubclass(Thread* thread, Frame* frame,
   return Bool::fromBool(typeIsSubclass(subclass, superclass));
 }
 
-RawObject UnderBuiltinsModule::underTypeNew(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject FUNC(_builtins, _type_new)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type metaclass(&scope, args.get(0));
@@ -4925,8 +4861,8 @@ RawObject UnderBuiltinsModule::underTypeNew(Thread* thread, Frame* frame,
   return *type;
 }
 
-RawObject UnderBuiltinsModule::underTypeProxy(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject FUNC(_builtins, _type_proxy)(Thread* thread, Frame* frame,
+                                       word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Type type(&scope, args.get(0));
@@ -4936,14 +4872,14 @@ RawObject UnderBuiltinsModule::underTypeProxy(Thread* thread, Frame* frame,
   return type.proxy();
 }
 
-RawObject UnderBuiltinsModule::underTypeProxyCheck(Thread*, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _type_proxy_check)(Thread*, Frame* frame,
+                                             word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(args.get(0).isTypeProxy());
 }
 
-RawObject UnderBuiltinsModule::underTypeProxyGet(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_builtins, _type_proxy_get)(Thread* thread, Frame* frame,
+                                           word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   TypeProxy self(&scope, args.get(0));
@@ -4959,8 +4895,8 @@ RawObject UnderBuiltinsModule::underTypeProxyGet(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject UnderBuiltinsModule::underTypeProxyGuard(Thread* thread, Frame* frame,
-                                                   word nargs) {
+RawObject FUNC(_builtins, _type_proxy_guard)(Thread* thread, Frame* frame,
+                                             word nargs) {
   Arguments args(frame, nargs);
   if (args.get(0).isTypeProxy()) {
     return NoneType::object();
@@ -4968,8 +4904,8 @@ RawObject UnderBuiltinsModule::underTypeProxyGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, ID(type_proxy));
 }
 
-RawObject UnderBuiltinsModule::underTypeProxyKeys(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_builtins, _type_proxy_keys)(Thread* thread, Frame* frame,
+                                            word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   TypeProxy self(&scope, args.get(0));
@@ -4977,8 +4913,8 @@ RawObject UnderBuiltinsModule::underTypeProxyKeys(Thread* thread, Frame* frame,
   return typeKeys(thread, type);
 }
 
-RawObject UnderBuiltinsModule::underTypeProxyLen(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_builtins, _type_proxy_len)(Thread* thread, Frame* frame,
+                                           word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   TypeProxy self(&scope, args.get(0));
@@ -4986,8 +4922,8 @@ RawObject UnderBuiltinsModule::underTypeProxyLen(Thread* thread, Frame* frame,
   return typeLen(thread, type);
 }
 
-RawObject UnderBuiltinsModule::underTypeProxyValues(Thread* thread,
-                                                    Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _type_proxy_values)(Thread* thread, Frame* frame,
+                                              word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   TypeProxy self(&scope, args.get(0));
@@ -4995,8 +4931,8 @@ RawObject UnderBuiltinsModule::underTypeProxyValues(Thread* thread,
   return typeValues(thread, type);
 }
 
-RawObject UnderBuiltinsModule::underTypeInit(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject FUNC(_builtins, _type_init)(Thread* thread, Frame* frame,
+                                      word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
@@ -5013,9 +4949,8 @@ RawObject UnderBuiltinsModule::underTypeInit(Thread* thread, Frame* frame,
   return typeInit(thread, type, name, dict, mro);
 }
 
-RawObject UnderBuiltinsModule::underTypeSubclassGuard(Thread* thread,
-                                                      Frame* frame,
-                                                      word nargs) {
+RawObject FUNC(_builtins, _type_subclass_guard)(Thread* thread, Frame* frame,
+                                                word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   if (!thread->runtime()->isInstanceOfType(args.get(0))) {
@@ -5035,8 +4970,7 @@ RawObject UnderBuiltinsModule::underTypeSubclassGuard(Thread* thread,
                               &function_name, &subclass_name, &superclass_name);
 }
 
-RawObject UnderBuiltinsModule::underUnimplemented(Thread* thread, Frame* frame,
-                                                  word) {
+RawObject FUNC(_builtins, _unimplemented)(Thread* thread, Frame* frame, word) {
   py::Utils::printTracebackToStderr();
 
   // Attempt to identify the calling function.
@@ -5055,8 +4989,7 @@ RawObject UnderBuiltinsModule::underUnimplemented(Thread* thread, Frame* frame,
   std::abort();
 }
 
-RawObject UnderBuiltinsModule::underWarn(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject FUNC(_builtins, _warn)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object message(&scope, args.get(0));
@@ -5067,8 +5000,8 @@ RawObject UnderBuiltinsModule::underWarn(Thread* thread, Frame* frame,
                                  stacklevel, source);
 }
 
-RawObject UnderBuiltinsModule::underWeakrefCallback(Thread* thread,
-                                                    Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _weakref_callback)(Thread* thread, Frame* frame,
+                                             word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -5080,14 +5013,14 @@ RawObject UnderBuiltinsModule::underWeakrefCallback(Thread* thread,
   return self.callback();
 }
 
-RawObject UnderBuiltinsModule::underWeakrefCheck(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_builtins, _weakref_check)(Thread* thread, Frame* frame,
+                                          word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfWeakRef(args.get(0)));
 }
 
-RawObject UnderBuiltinsModule::underWeakrefGuard(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_builtins, _weakref_guard)(Thread* thread, Frame* frame,
+                                          word nargs) {
   Arguments args(frame, nargs);
   if (thread->runtime()->isInstanceOfWeakRef(args.get(0))) {
     return NoneType::object();
@@ -5095,8 +5028,8 @@ RawObject UnderBuiltinsModule::underWeakrefGuard(Thread* thread, Frame* frame,
   return raiseRequiresFromCaller(thread, frame, nargs, ID(ref));
 }
 
-RawObject UnderBuiltinsModule::underWeakrefReferent(Thread* thread,
-                                                    Frame* frame, word nargs) {
+RawObject FUNC(_builtins, _weakref_referent)(Thread* thread, Frame* frame,
+                                             word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));

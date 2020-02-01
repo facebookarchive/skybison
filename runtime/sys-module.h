@@ -30,12 +30,12 @@ void writeStderrV(Thread* thread, const char* format, va_list va);
 
 RawObject initialSysPath(Thread* thread);
 
+RawObject FUNC(sys, exc_info)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(sys, excepthook)(Thread* thread, Frame* frame, word nargs);
+
 class SysModule {
  public:
   static void initialize(Thread* thread, const Module& module);
-
-  static RawObject excInfo(Thread* thread, Frame* frame, word nargs);
-  static RawObject excepthook(Thread* thread, Frame* frame, word nargs);
 
  private:
   static const BuiltinFunction kBuiltinFunctions[];

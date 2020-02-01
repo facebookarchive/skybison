@@ -16,12 +16,13 @@
 namespace py {
 
 const BuiltinFunction UnderIoModule::kBuiltinFunctions[] = {
-    {ID(_StringIO_closed_guard), underStringIOClosedGuard},
-    {ID(_buffered_reader_clear_buffer), underBufferedReaderClearBuffer},
-    {ID(_buffered_reader_init), underBufferedReaderInit},
-    {ID(_buffered_reader_peek), underBufferedReaderPeek},
-    {ID(_buffered_reader_read), underBufferedReaderRead},
-    {ID(_buffered_reader_readline), underBufferedReaderReadline},
+    {ID(_StringIO_closed_guard), FUNC(_io, _StringIO_closed_guard)},
+    {ID(_buffered_reader_clear_buffer),
+     FUNC(_io, _buffered_reader_clear_buffer)},
+    {ID(_buffered_reader_init), FUNC(_io, _buffered_reader_init)},
+    {ID(_buffered_reader_peek), FUNC(_io, _buffered_reader_peek)},
+    {ID(_buffered_reader_read), FUNC(_io, _buffered_reader_read)},
+    {ID(_buffered_reader_readline), FUNC(_io, _buffered_reader_readline)},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -48,8 +49,8 @@ void UnderIoModule::initialize(Thread* thread, const Module& module) {
   executeFrozenModule(thread, kUnderIoModuleData, module);
 }
 
-RawObject UnderIoModule::underStringIOClosedGuard(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject FUNC(_io, _StringIO_closed_guard)(Thread* thread, Frame* frame,
+                                            word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -255,9 +256,8 @@ static RawObject readBig(Thread* thread, const BufferedReader& buffered_reader,
   return result.becomeImmutable();
 }
 
-RawObject UnderIoModule::underBufferedReaderClearBuffer(Thread* thread,
-                                                        Frame* frame,
-                                                        word nargs) {
+RawObject FUNC(_io, _buffered_reader_clear_buffer)(Thread* thread, Frame* frame,
+                                                   word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
@@ -271,8 +271,8 @@ RawObject UnderIoModule::underBufferedReaderClearBuffer(Thread* thread,
   return NoneType::object();
 }
 
-RawObject UnderIoModule::underBufferedReaderInit(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_io, _buffered_reader_init)(Thread* thread, Frame* frame,
+                                           word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
@@ -305,8 +305,8 @@ RawObject UnderIoModule::underBufferedReaderInit(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject UnderIoModule::underBufferedReaderPeek(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_io, _buffered_reader_peek)(Thread* thread, Frame* frame,
+                                           word nargs) {
   // TODO(T58490915): Investigate what thread safety guarantees python has,
   // and add locking code as necessary.
 
@@ -359,8 +359,8 @@ RawObject UnderIoModule::underBufferedReaderPeek(Thread* thread, Frame* frame,
   return runtime->bytesSubseq(thread, read_buf, read_pos, available);
 }
 
-RawObject UnderIoModule::underBufferedReaderRead(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject FUNC(_io, _buffered_reader_read)(Thread* thread, Frame* frame,
+                                           word nargs) {
   // TODO(T58490915): Investigate what thread safety guarantees python has,
   // and add locking code as necessary.
 
@@ -480,8 +480,8 @@ RawObject UnderIoModule::underBufferedReaderRead(Thread* thread, Frame* frame,
   return runtime->bytesSubseq(thread, read_buf_bytes, 0, length);
 }
 
-RawObject UnderIoModule::underBufferedReaderReadline(Thread* thread,
-                                                     Frame* frame, word nargs) {
+RawObject FUNC(_io, _buffered_reader_readline)(Thread* thread, Frame* frame,
+                                               word nargs) {
   // TODO(T58490915): Investigate what thread safety guarantees Python has,
   // and add locking code as necessary.
 

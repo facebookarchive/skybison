@@ -19,8 +19,8 @@ TEST_F(CodecsModuleTest, DecodeASCIIWithWellFormedASCIIReturnsString) {
   Object errors(&scope, runtime_->newStrFromCStr("strict"));
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underAsciiDecode,
-                                       bytes, errors, index, strarray));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _ascii_decode), bytes,
+                                       errors, index, strarray));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -37,8 +37,8 @@ TEST_F(CodecsModuleTest, DecodeASCIIWithIgnoreErrorHandlerReturnsStr) {
   Object errors(&scope, runtime_->newStrFromCStr("ignore"));
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underAsciiDecode,
-                                       bytes, errors, index, strarray));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _ascii_decode), bytes,
+                                       errors, index, strarray));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -55,8 +55,8 @@ TEST_F(CodecsModuleTest, DecodeASCIIWithReplaceErrorHandlerReturnsStr) {
   Object errors(&scope, runtime_->newStrFromCStr("replace"));
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underAsciiDecode,
-                                       bytes, errors, index, strarray));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _ascii_decode), bytes,
+                                       errors, index, strarray));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -75,8 +75,8 @@ TEST_F(CodecsModuleTest,
   Object errors(&scope, runtime_->newStrFromCStr("surrogateescape"));
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underAsciiDecode,
-                                       bytes, errors, index, strarray));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _ascii_decode), bytes,
+                                       errors, index, strarray));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -98,8 +98,8 @@ encoded = Foo(b"hello")
   Object errors(&scope, runtime_->newStrFromCStr("strict"));
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underAsciiDecode,
-                                       bytes, errors, index, strarray));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _ascii_decode), bytes,
+                                       errors, index, strarray));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -118,9 +118,8 @@ TEST_F(CodecsModuleTest, DecodeUTF8WithWellFormedUTF8ReturnsString) {
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
   Object is_final(&scope, Bool::trueObj());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, is_final));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_8_decode), bytes,
+                                       errors, index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -138,9 +137,8 @@ TEST_F(CodecsModuleTest, DecodeUTF8WithIgnoreErrorHandlerReturnsStr) {
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
   Object is_final(&scope, Bool::trueObj());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, is_final));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_8_decode), bytes,
+                                       errors, index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -157,9 +155,8 @@ TEST_F(CodecsModuleTest, DecodeUTF8WithReplaceErrorHandlerReturnsStr) {
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
   Object is_final(&scope, Bool::trueObj());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, is_final));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_8_decode), bytes,
+                                       errors, index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -179,9 +176,8 @@ TEST_F(CodecsModuleTest, DecodeUTF8WithSurroogateescapeErrorHandlerReturnsStr) {
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
   Object is_final(&scope, Bool::trueObj());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, is_final));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_8_decode), bytes,
+                                       errors, index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -201,9 +197,8 @@ TEST_F(CodecsModuleTest, DecodeUTF8WithInvalidStartByteReturnsIndices) {
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
   Object is_final(&scope, Bool::trueObj());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, is_final));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_8_decode), bytes,
+                                       errors, index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -220,9 +215,8 @@ TEST_F(CodecsModuleTest, DecodeUTF8StatefulWithInvalidStartByteReturnsIndices) {
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
   Object is_final(&scope, Bool::falseObj());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, is_final));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_8_decode), bytes,
+                                       errors, index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -239,9 +233,8 @@ TEST_F(CodecsModuleTest, DecodeUTF8WithUnexpectedEndReturnsIndices) {
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
   Object is_final(&scope, Bool::trueObj());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, is_final));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_8_decode), bytes,
+                                       errors, index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -258,9 +251,8 @@ TEST_F(CodecsModuleTest, DecodeUTF8StatefulWithUnexpectedEndReturnsStr) {
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
   Object is_final(&scope, Bool::falseObj());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, is_final));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_8_decode), bytes,
+                                       errors, index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -277,9 +269,8 @@ TEST_F(CodecsModuleTest, DecodeUTF8WithInvalidFirstContReturnsIndices) {
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
   Object is_final(&scope, Bool::trueObj());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, is_final));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_8_decode), bytes,
+                                       errors, index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -296,9 +287,8 @@ TEST_F(CodecsModuleTest, DecodeUTF8StatefulWithInvalidFirstContReturnsStr) {
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
   Object is_final(&scope, Bool::falseObj());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, is_final));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_8_decode), bytes,
+                                       errors, index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -315,9 +305,8 @@ TEST_F(CodecsModuleTest, DecodeUTF8WithInvalidSecondContReturnsIndices) {
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
   Object is_final(&scope, Bool::trueObj());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, is_final));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_8_decode), bytes,
+                                       errors, index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -334,9 +323,8 @@ TEST_F(CodecsModuleTest, DecodeUTF8StatefulWithInvalidSecondContReturnsStr) {
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
   Object is_final(&scope, Bool::falseObj());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, is_final));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_8_decode), bytes,
+                                       errors, index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -353,9 +341,8 @@ TEST_F(CodecsModuleTest, DecodeUTF8WithInvalidThirdContReturnsIndices) {
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
   Object is_final(&scope, Bool::trueObj());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, is_final));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_8_decode), bytes,
+                                       errors, index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -372,9 +359,8 @@ TEST_F(CodecsModuleTest, DecodeUTF8StatefulWithInvalidThirdContReturnsStr) {
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
   Object is_final(&scope, Bool::falseObj());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, is_final));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_8_decode), bytes,
+                                       errors, index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -395,9 +381,8 @@ encoded = Foo(b"hello")
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
   Object is_final(&scope, Bool::trueObj());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUtf8Decode, bytes, errors,
-                         index, strarray, is_final));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_8_decode), bytes,
+                                       errors, index, strarray, is_final));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -412,8 +397,8 @@ TEST_F(CodecsModuleTest, DecodeEscapeWithWellFormedLatin1ReturnsString) {
   Object bytes(&scope, runtime_->newBytesWithAll(encoded));
   Object errors(&scope, runtime_->newStrFromCStr("strict"));
   Object encoding(&scope, runtime_->newStrFromCStr(""));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underEscapeDecode,
-                                       bytes, errors, encoding));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _escape_decode), bytes,
+                                       errors, encoding));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -429,8 +414,8 @@ TEST_F(CodecsModuleTest, DecodeEscapeWithIgnoreAndTrailingSlashReturnsStr) {
   Object bytes(&scope, runtime_->newBytesWithAll(encoded));
   Object errors(&scope, runtime_->newStrFromCStr("ignore"));
   Object encoding(&scope, runtime_->newStrFromCStr(""));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underEscapeDecode,
-                                       bytes, errors, encoding));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _escape_decode), bytes,
+                                       errors, encoding));
   ASSERT_TRUE(result_obj.isStr());
   EXPECT_TRUE(isStrEqualsCStr(*result_obj, "Trailing \\ in string"));
 }
@@ -441,8 +426,8 @@ TEST_F(CodecsModuleTest, DecodeEscapeWithIgnoreAndTruncatedHexIterates) {
   Object bytes(&scope, runtime_->newBytesWithAll(encoded));
   Object errors(&scope, runtime_->newStrFromCStr("ignore"));
   Object encoding(&scope, runtime_->newStrFromCStr(""));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underEscapeDecode,
-                                       bytes, errors, encoding));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _escape_decode), bytes,
+                                       errors, encoding));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -458,8 +443,8 @@ TEST_F(CodecsModuleTest, DecodeEscapeWithReplaceAndTruncatedHexIterates) {
   Object bytes(&scope, runtime_->newBytesWithAll(encoded));
   Object errors(&scope, runtime_->newStrFromCStr("replace"));
   Object encoding(&scope, runtime_->newStrFromCStr(""));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underEscapeDecode,
-                                       bytes, errors, encoding));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _escape_decode), bytes,
+                                       errors, encoding));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -475,8 +460,8 @@ TEST_F(CodecsModuleTest, DecodeEscapeWithStrictAndTruncatedHexReturnsMessage) {
   Object bytes(&scope, runtime_->newBytesWithAll(encoded));
   Object errors(&scope, runtime_->newStrFromCStr("strict"));
   Object encoding(&scope, runtime_->newStrFromCStr(""));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underEscapeDecode,
-                                       bytes, errors, encoding));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _escape_decode), bytes,
+                                       errors, encoding));
   ASSERT_TRUE(result_obj.isStr());
   EXPECT_TRUE(isStrEqualsCStr(*result_obj, "invalid \\x escape at position 5"));
 }
@@ -488,8 +473,8 @@ TEST_F(CodecsModuleTest,
   Object bytes(&scope, runtime_->newBytesWithAll(encoded));
   Object errors(&scope, runtime_->newStrFromCStr("surrogateescape"));
   Object encoding(&scope, runtime_->newStrFromCStr(""));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underEscapeDecode,
-                                       bytes, errors, encoding));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _escape_decode), bytes,
+                                       errors, encoding));
   ASSERT_TRUE(result_obj.isStr());
   EXPECT_TRUE(isStrEqualsCStr(
       *result_obj,
@@ -502,8 +487,8 @@ TEST_F(CodecsModuleTest, DecodeEscapeEscapesSingleOctals) {
   Object bytes(&scope, runtime_->newBytesWithAll(encoded));
   Object errors(&scope, runtime_->newStrFromCStr("strict"));
   Object encoding(&scope, runtime_->newStrFromCStr(""));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underEscapeDecode,
-                                       bytes, errors, encoding));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _escape_decode), bytes,
+                                       errors, encoding));
 
   Tuple result(&scope, *result_obj);
   Object decoded(&scope, result.at(0));
@@ -519,8 +504,8 @@ TEST_F(CodecsModuleTest, DecodeEscapeEscapesMidStringDoubleOctals) {
   Object bytes(&scope, runtime_->newBytesWithAll(encoded));
   Object errors(&scope, runtime_->newStrFromCStr("strict"));
   Object encoding(&scope, runtime_->newStrFromCStr(""));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underEscapeDecode,
-                                       bytes, errors, encoding));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _escape_decode), bytes,
+                                       errors, encoding));
 
   Tuple result(&scope, *result_obj);
   Object decoded(&scope, result.at(0));
@@ -535,8 +520,8 @@ TEST_F(CodecsModuleTest, DecodeEscapeEscapesEndStringDoubleOctals) {
   Object bytes(&scope, runtime_->newBytesWithAll(encoded));
   Object errors(&scope, runtime_->newStrFromCStr("strict"));
   Object encoding(&scope, runtime_->newStrFromCStr(""));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underEscapeDecode,
-                                       bytes, errors, encoding));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _escape_decode), bytes,
+                                       errors, encoding));
 
   Tuple result(&scope, *result_obj);
   Object decoded(&scope, result.at(0));
@@ -551,8 +536,8 @@ TEST_F(CodecsModuleTest, DecodeEscapeEscapesTripleOctals) {
   Object bytes(&scope, runtime_->newBytesWithAll(encoded));
   Object errors(&scope, runtime_->newStrFromCStr("strict"));
   Object encoding(&scope, runtime_->newStrFromCStr(""));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underEscapeDecode,
-                                       bytes, errors, encoding));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _escape_decode), bytes,
+                                       errors, encoding));
 
   Tuple result(&scope, *result_obj);
   Object decoded(&scope, result.at(0));
@@ -567,8 +552,8 @@ TEST_F(CodecsModuleTest, DecodeEscapeEscapesHex) {
   Object bytes(&scope, runtime_->newBytesWithAll(encoded));
   Object errors(&scope, runtime_->newStrFromCStr("strict"));
   Object encoding(&scope, runtime_->newStrFromCStr(""));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underEscapeDecode,
-                                       bytes, errors, encoding));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _escape_decode), bytes,
+                                       errors, encoding));
 
   Tuple result(&scope, *result_obj);
   Object decoded(&scope, result.at(0));
@@ -583,8 +568,8 @@ TEST_F(CodecsModuleTest, DecodeEscapeSetsFirstInvalidEscape) {
   Object bytes(&scope, runtime_->newBytesWithAll(encoded));
   Object errors(&scope, runtime_->newStrFromCStr("strict"));
   Object encoding(&scope, runtime_->newStrFromCStr(""));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underEscapeDecode,
-                                       bytes, errors, encoding));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _escape_decode), bytes,
+                                       errors, encoding));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -604,8 +589,8 @@ encoded = Foo(b"hello")
   Object bytes(&scope, mainModuleAt(runtime_, "encoded"));
   Object errors(&scope, runtime_->newStrFromCStr("strict"));
   Object encoding(&scope, runtime_->newStrFromCStr(""));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underEscapeDecode,
-                                       bytes, errors, encoding));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _escape_decode), bytes,
+                                       errors, encoding));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -622,9 +607,8 @@ TEST_F(CodecsModuleTest, DecodeUnicodeEscapeWithWellFormedLatin1ReturnsString) {
   Object errors(&scope, runtime_->newStrFromCStr("strict"));
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
-                         errors, index, strarray));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _unicode_escape_decode),
+                                       bytes, errors, index, strarray));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -643,9 +627,8 @@ TEST_F(CodecsModuleTest, DecodeUnicodeEscapeWithIgnoreErrorHandlerReturnsStr) {
   Object errors(&scope, runtime_->newStrFromCStr("ignore"));
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
-                         errors, index, strarray));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _unicode_escape_decode),
+                                       bytes, errors, index, strarray));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -664,9 +647,8 @@ TEST_F(CodecsModuleTest, DecodeUnicodeEscapeWithReplaceErrorHandlerReturnsStr) {
   Object errors(&scope, runtime_->newStrFromCStr("replace"));
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
-                         errors, index, strarray));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _unicode_escape_decode),
+                                       bytes, errors, index, strarray));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -687,9 +669,8 @@ TEST_F(CodecsModuleTest,
   Object errors(&scope, runtime_->newStrFromCStr("not-a-handler"));
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
-                         errors, index, strarray));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _unicode_escape_decode),
+                                       bytes, errors, index, strarray));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -706,9 +687,8 @@ TEST_F(CodecsModuleTest, DecodeUnicodeEscapeReturnsMessageOnTruncatedHex) {
   Object errors(&scope, runtime_->newStrFromCStr("not-a-handler"));
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
-                         errors, index, strarray));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _unicode_escape_decode),
+                                       bytes, errors, index, strarray));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -726,9 +706,8 @@ TEST_F(CodecsModuleTest,
   Object errors(&scope, runtime_->newStrFromCStr("not-a-handler"));
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
-                         errors, index, strarray));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _unicode_escape_decode),
+                                       bytes, errors, index, strarray));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -746,9 +725,8 @@ TEST_F(CodecsModuleTest,
   Object errors(&scope, runtime_->newStrFromCStr("not-a-handler"));
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
-                         errors, index, strarray));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _unicode_escape_decode),
+                                       bytes, errors, index, strarray));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -766,9 +744,8 @@ TEST_F(CodecsModuleTest, DecodeUnicodeEscapeReturnsMessageOnOversizedUnicode) {
   Object errors(&scope, runtime_->newStrFromCStr("not-a-handler"));
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
-                         errors, index, strarray));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _unicode_escape_decode),
+                                       bytes, errors, index, strarray));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -786,9 +763,8 @@ TEST_F(CodecsModuleTest, DecodeUnicodeEscapeWithTruncatedHexProperlyIterates) {
   Object errors(&scope, runtime_->newStrFromCStr("ignore"));
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
-                         errors, index, strarray));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _unicode_escape_decode),
+                                       bytes, errors, index, strarray));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -805,9 +781,8 @@ TEST_F(CodecsModuleTest, DecodeUnicodeEscapeProperlyEscapesSingleOctals) {
   Object errors(&scope, runtime_->newStrFromCStr("strict"));
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
-                         errors, index, strarray));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _unicode_escape_decode),
+                                       bytes, errors, index, strarray));
 
   Tuple result(&scope, *result_obj);
   byte escaped[] = {'h', 'e', 'l', 'l', 'o', 0x00, 'w'};
@@ -827,9 +802,8 @@ TEST_F(CodecsModuleTest,
   Object errors(&scope, runtime_->newStrFromCStr("strict"));
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
-                         errors, index, strarray));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _unicode_escape_decode),
+                                       bytes, errors, index, strarray));
 
   Tuple result(&scope, *result_obj);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hello w"));
@@ -846,9 +820,8 @@ TEST_F(CodecsModuleTest,
   Object errors(&scope, runtime_->newStrFromCStr("strict"));
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
-                         errors, index, strarray));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _unicode_escape_decode),
+                                       bytes, errors, index, strarray));
 
   Tuple result(&scope, *result_obj);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hello "));
@@ -864,9 +837,8 @@ TEST_F(CodecsModuleTest, DecodeUnicodeEscapeProperlyEscapesTripleOctals) {
   Object errors(&scope, runtime_->newStrFromCStr("strict"));
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
-                         errors, index, strarray));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _unicode_escape_decode),
+                                       bytes, errors, index, strarray));
 
   Tuple result(&scope, *result_obj);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hello\xC7\xBFw"));
@@ -882,9 +854,8 @@ TEST_F(CodecsModuleTest, DecodeUnicodeEscapeSetsFirstInvalidEscape) {
   Object errors(&scope, runtime_->newStrFromCStr("strict"));
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
-                         errors, index, strarray));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _unicode_escape_decode),
+                                       bytes, errors, index, strarray));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -905,9 +876,8 @@ encoded = Foo(b"hello")
   Object errors(&scope, runtime_->newStrFromCStr("strict"));
   Object index(&scope, runtime_->newInt(0));
   Object strarray(&scope, runtime_->newStrArray());
-  Object result_obj(
-      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
-                         errors, index, strarray));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _unicode_escape_decode),
+                                       bytes, errors, index, strarray));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -923,7 +893,7 @@ TEST_F(CodecsModuleTest, EncodeASCIIWithWellFormedASCIIReturnsString) {
   Object errors(&scope, runtime_->newStrFromCStr("strict"));
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underAsciiEncode, str,
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _ascii_encode), str,
                                        errors, index, bytearray));
   ASSERT_TRUE(result_obj.isTuple());
 
@@ -940,7 +910,7 @@ TEST_F(CodecsModuleTest, EncodeASCIIWithIgnoreErrorHandlerReturnsString) {
   Object errors(&scope, runtime_->newStrFromCStr("ignore"));
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underAsciiEncode, str,
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _ascii_encode), str,
                                        errors, index, bytearray));
   ASSERT_TRUE(result_obj.isTuple());
 
@@ -957,7 +927,7 @@ TEST_F(CodecsModuleTest, EncodeASCIIWithReplaceErrorHandlerReturnsString) {
   Object errors(&scope, runtime_->newStrFromCStr("replace"));
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underAsciiEncode, str,
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _ascii_encode), str,
                                        errors, index, bytearray));
   ASSERT_TRUE(result_obj.isTuple());
 
@@ -975,7 +945,7 @@ TEST_F(CodecsModuleTest,
   Object errors(&scope, runtime_->newStrFromCStr("surrogateescape"));
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underAsciiEncode, str,
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _ascii_encode), str,
                                        errors, index, bytearray));
   ASSERT_TRUE(result_obj.isTuple());
 
@@ -992,8 +962,8 @@ TEST_F(CodecsModuleTest, EncodeLatin1WithWellFormedLatin1ReturnsString) {
   Object errors(&scope, runtime_->newStrFromCStr("strict"));
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underLatin1Encode,
-                                       str, errors, index, bytearray));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _latin_1_encode), str,
+                                       errors, index, bytearray));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -1009,8 +979,8 @@ TEST_F(CodecsModuleTest, EncodeLatin1WithIgnoreErrorHandlerReturnsString) {
   Object errors(&scope, runtime_->newStrFromCStr("ignore"));
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underLatin1Encode,
-                                       str, errors, index, bytearray));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _latin_1_encode), str,
+                                       errors, index, bytearray));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -1026,8 +996,8 @@ TEST_F(CodecsModuleTest, EncodeLatin1WithReplaceErrorHandlerReturnsString) {
   Object errors(&scope, runtime_->newStrFromCStr("replace"));
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underLatin1Encode,
-                                       str, errors, index, bytearray));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _latin_1_encode), str,
+                                       errors, index, bytearray));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -1044,8 +1014,8 @@ TEST_F(CodecsModuleTest,
   Object errors(&scope, runtime_->newStrFromCStr("surrogateescape"));
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underLatin1Encode,
-                                       str, errors, index, bytearray));
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _latin_1_encode), str,
+                                       errors, index, bytearray));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -1061,7 +1031,7 @@ TEST_F(CodecsModuleTest, EncodeUTF8WithWellFormedASCIIReturnsString) {
   Object errors(&scope, runtime_->newStrFromCStr("strict"));
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf8Encode, str,
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_8_encode), str,
                                        errors, index, bytearray));
   ASSERT_TRUE(result_obj.isTuple());
 
@@ -1078,7 +1048,7 @@ TEST_F(CodecsModuleTest, EncodeUTF8WithIgnoreErrorHandlerReturnsStr) {
   Object errors(&scope, runtime_->newStrFromCStr("ignore"));
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf8Encode, str,
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_8_encode), str,
                                        errors, index, bytearray));
   ASSERT_TRUE(result_obj.isTuple());
 
@@ -1095,7 +1065,7 @@ TEST_F(CodecsModuleTest, EncodeUTF8WithReplaceErrorHandlerReturnsStr) {
   Object errors(&scope, runtime_->newStrFromCStr("replace"));
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf8Encode, str,
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_8_encode), str,
                                        errors, index, bytearray));
   ASSERT_TRUE(result_obj.isTuple());
 
@@ -1112,7 +1082,7 @@ TEST_F(CodecsModuleTest, EncodeUTF8WithSurroogateescapeErrorHandlerReturnsStr) {
   Object errors(&scope, runtime_->newStrFromCStr("surrogateescape"));
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf8Encode, str,
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_8_encode), str,
                                        errors, index, bytearray));
   ASSERT_TRUE(result_obj.isTuple());
 
@@ -1130,7 +1100,7 @@ TEST_F(CodecsModuleTest,
   Object errors(&scope, runtime_->newStrFromCStr("unknown"));
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf8Encode, str,
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_8_encode), str,
                                        errors, index, bytearray));
   ASSERT_TRUE(result_obj.isTuple());
 
@@ -1146,7 +1116,7 @@ TEST_F(CodecsModuleTest, EncodeUTF16WithWellFormedASCIIReturnsBytes) {
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
   Object byteorder(&scope, runtime_->newInt(0));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf16Encode, str,
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_16_encode), str,
                                        errors, index, bytearray, byteorder));
   ASSERT_TRUE(result_obj.isTuple());
 
@@ -1165,7 +1135,7 @@ TEST_F(CodecsModuleTest, EncodeUTF16WithLargeIntByteorderRaisesOverflowError) {
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
   Object byteorder(&scope, runtime_->newInt(kMaxWord));
-  EXPECT_TRUE(raisedWithStr(runBuiltin(UnderCodecsModule::underUtf16Encode, str,
+  EXPECT_TRUE(raisedWithStr(runBuiltin(FUNC(_codecs, _utf_16_encode), str,
                                        errors, index, bytearray, byteorder),
                             LayoutId::kOverflowError,
                             "Python int too large to convert to C int"));
@@ -1178,7 +1148,7 @@ TEST_F(CodecsModuleTest, EncodeUTF16WithIgnoreErrorHandlerReturnsStr) {
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
   Object byteorder(&scope, runtime_->newInt(0));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf16Encode, str,
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_16_encode), str,
                                        errors, index, bytearray, byteorder));
   ASSERT_TRUE(result_obj.isTuple());
 
@@ -1197,7 +1167,7 @@ TEST_F(CodecsModuleTest, EncodeUTF16WithReplaceErrorHandlerReturnsStr) {
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
   Object byteorder(&scope, runtime_->newInt(0));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf16Encode, str,
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_16_encode), str,
                                        errors, index, bytearray, byteorder));
   ASSERT_TRUE(result_obj.isTuple());
 
@@ -1217,7 +1187,7 @@ TEST_F(CodecsModuleTest,
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
   Object byteorder(&scope, runtime_->newInt(0));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf16Encode, str,
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_16_encode), str,
                                        errors, index, bytearray, byteorder));
   ASSERT_TRUE(result_obj.isTuple());
 
@@ -1236,7 +1206,7 @@ TEST_F(CodecsModuleTest, EncodeUTF16WithSupplementaryStringReturnsUTF16Bytes) {
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
   Object byteorder(&scope, runtime_->newInt(0));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf16Encode, str,
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_16_encode), str,
                                        errors, index, bytearray, byteorder));
   ASSERT_TRUE(result_obj.isTuple());
 
@@ -1256,7 +1226,7 @@ TEST_F(CodecsModuleTest,
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
   Object byteorder(&scope, runtime_->newInt(-1));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf16Encode, str,
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_16_encode), str,
                                        errors, index, bytearray, byteorder));
   ASSERT_TRUE(result_obj.isTuple());
 
@@ -1276,7 +1246,7 @@ TEST_F(CodecsModuleTest,
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
   Object byteorder(&scope, runtime_->newInt(1));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf16Encode, str,
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_16_encode), str,
                                        errors, index, bytearray, byteorder));
   ASSERT_TRUE(result_obj.isTuple());
 
@@ -1295,7 +1265,7 @@ TEST_F(CodecsModuleTest, EncodeUTF32WithWellFormedASCIIReturnsBytes) {
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
   Object byteorder(&scope, runtime_->newInt(0));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf32Encode, str,
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_32_encode), str,
                                        errors, index, bytearray, byteorder));
   ASSERT_TRUE(result_obj.isTuple());
 
@@ -1314,7 +1284,7 @@ TEST_F(CodecsModuleTest, EncodeUTF32WithLargeIntByteorderRaisesOverflowError) {
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
   Object byteorder(&scope, runtime_->newInt(kMaxWord));
-  EXPECT_TRUE(raisedWithStr(runBuiltin(UnderCodecsModule::underUtf32Encode, str,
+  EXPECT_TRUE(raisedWithStr(runBuiltin(FUNC(_codecs, _utf_32_encode), str,
                                        errors, index, bytearray, byteorder),
                             LayoutId::kOverflowError,
                             "Python int too large to convert to C int"));
@@ -1327,7 +1297,7 @@ TEST_F(CodecsModuleTest, EncodeUTF32WithIgnoreErrorHandlerReturnsStr) {
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
   Object byteorder(&scope, runtime_->newInt(0));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf32Encode, str,
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_32_encode), str,
                                        errors, index, bytearray, byteorder));
   ASSERT_TRUE(result_obj.isTuple());
 
@@ -1346,7 +1316,7 @@ TEST_F(CodecsModuleTest, EncodeUTF32WithReplaceErrorHandlerReturnsStr) {
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
   Object byteorder(&scope, runtime_->newInt(0));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf32Encode, str,
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_32_encode), str,
                                        errors, index, bytearray, byteorder));
   ASSERT_TRUE(result_obj.isTuple());
 
@@ -1367,7 +1337,7 @@ TEST_F(CodecsModuleTest,
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
   Object byteorder(&scope, runtime_->newInt(0));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf32Encode, str,
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_32_encode), str,
                                        errors, index, bytearray, byteorder));
   ASSERT_TRUE(result_obj.isTuple());
 
@@ -1387,7 +1357,7 @@ TEST_F(CodecsModuleTest, EncodeUTF32WithSupplementaryStringReturnsUTF32Bytes) {
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
   Object byteorder(&scope, runtime_->newInt(0));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf32Encode, str,
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_32_encode), str,
                                        errors, index, bytearray, byteorder));
   ASSERT_TRUE(result_obj.isTuple());
 
@@ -1408,7 +1378,7 @@ TEST_F(CodecsModuleTest,
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
   Object byteorder(&scope, runtime_->newInt(-1));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf32Encode, str,
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_32_encode), str,
                                        errors, index, bytearray, byteorder));
   ASSERT_TRUE(result_obj.isTuple());
 
@@ -1429,7 +1399,7 @@ TEST_F(CodecsModuleTest,
   Object index(&scope, runtime_->newInt(0));
   Object bytearray(&scope, runtime_->newByteArray());
   Object byteorder(&scope, runtime_->newInt(1));
-  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf32Encode, str,
+  Object result_obj(&scope, runBuiltin(FUNC(_codecs, _utf_32_encode), str,
                                        errors, index, bytearray, byteorder));
   ASSERT_TRUE(result_obj.isTuple());
 

@@ -10,11 +10,11 @@ namespace py {
 
 extern word marshalVersion;
 
+RawObject FUNC(marshal, loads)(Thread* thread, Frame* frame, word nargs);
+
 class MarshalModule {
  public:
   static void initialize(Thread* thread, const Module& module);
-
-  static RawObject loads(Thread* thread, Frame* frame, word nargs);
 
  private:
   static const BuiltinFunction kBuiltinFunctions[];

@@ -23,8 +23,8 @@ import _imp
 }
 
 TEST_F(ImportBuiltinsTest, AcquireLockAndReleaseLockWorks) {
-  runBuiltin(UnderImpModule::acquireLock);
-  runBuiltin(UnderImpModule::releaseLock);
+  runBuiltin(FUNC(_imp, acquire_lock));
+  runBuiltin(FUNC(_imp, release_lock));
 }
 
 TEST_F(ImportBuiltinsTest, CreateBuiltinWithoutArgsRaisesTypeError) {
@@ -109,7 +109,7 @@ result = _imp.create_builtin(*spec)
 TEST_F(ImportBuiltinsTest, ExecBuiltinWithNonModuleReturnsZero) {
   HandleScope scope(thread_);
   Int not_mod(&scope, runtime_->newInt(1));
-  Object a(&scope, runBuiltin(UnderImpModule::execBuiltin, not_mod));
+  Object a(&scope, runBuiltin(FUNC(_imp, exec_builtin), not_mod));
   EXPECT_TRUE(isIntEqualsWord(*a, 0));
 }
 
@@ -123,10 +123,10 @@ spec = DummyModuleSpec("errno")
                    .isError());
   HandleScope scope(thread_);
   Object spec(&scope, mainModuleAt(runtime_, "spec"));
-  Object module(&scope, runBuiltin(UnderImpModule::createBuiltin, spec));
+  Object module(&scope, runBuiltin(FUNC(_imp, create_builtin), spec));
   ASSERT_TRUE(module.isModule());
 
-  Object a(&scope, runBuiltin(UnderImpModule::execBuiltin, module));
+  Object a(&scope, runBuiltin(FUNC(_imp, exec_builtin), module));
   EXPECT_TRUE(isIntEqualsWord(*a, 0));
 }
 
@@ -151,7 +151,7 @@ TEST_F(ImportBuiltinsTest, ExecBuiltinWithSingleSlotExecutesCorrectly) {
   Module module(&scope, runtime_->newModule(name));
   module.setDef(runtime_->newIntFromCPtr(&def));
 
-  Object a(&scope, runBuiltin(UnderImpModule::execBuiltin, module));
+  Object a(&scope, runBuiltin(FUNC(_imp, exec_builtin), module));
   EXPECT_TRUE(isIntEqualsWord(*a, 0));
 
   Str mod_name(&scope, module.name());
@@ -171,7 +171,7 @@ mod = _imp.exec_dynamic("foo")
 
 TEST_F(ImportBuiltinsTest, ExtensionSuffixesReturnsList) {
   HandleScope scope(thread_);
-  Object result(&scope, runBuiltin(UnderImpModule::extensionSuffixes));
+  Object result(&scope, runBuiltin(FUNC(_imp, extension_suffixes)));
   ASSERT_TRUE(result.isList());
   EXPECT_PYLIST_EQ(result, {".so"});
 }
@@ -179,39 +179,39 @@ TEST_F(ImportBuiltinsTest, ExtensionSuffixesReturnsList) {
 TEST_F(ImportBuiltinsTest, IsBuiltinReturnsZero) {
   HandleScope scope(thread_);
   Object module_name(&scope, runtime_->newStrFromCStr("foo"));
-  Object result(&scope, runBuiltin(UnderImpModule::isBuiltin, module_name));
+  Object result(&scope, runBuiltin(FUNC(_imp, is_builtin), module_name));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 
 TEST_F(ImportBuiltinsTest, IsBuiltinReturnsOne) {
   HandleScope scope(thread_);
   Object module_name(&scope, runtime_->newStrFromCStr("errno"));
-  Object result(&scope, runBuiltin(UnderImpModule::isBuiltin, module_name));
+  Object result(&scope, runBuiltin(FUNC(_imp, is_builtin), module_name));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
 
 TEST_F(ImportBuiltinsTest, IsFrozenReturnsFalse) {
   HandleScope scope(thread_);
   Object module_name(&scope, runtime_->newStrFromCStr("foo"));
-  Object result(&scope, runBuiltin(UnderImpModule::isFrozen, module_name));
+  Object result(&scope, runBuiltin(FUNC(_imp, is_frozen), module_name));
   ASSERT_TRUE(result.isBool());
   EXPECT_FALSE(Bool::cast(*result).value());
 }
 
 TEST_F(ImportBuiltinsTest, ReleaseLockWithoutAcquireRaisesRuntimeError) {
   HandleScope scope(thread_);
-  Object result(&scope, runBuiltin(UnderImpModule::releaseLock));
+  Object result(&scope, runBuiltin(FUNC(_imp, release_lock)));
   EXPECT_TRUE(raised(*result, LayoutId::kRuntimeError));
 }
 
 TEST_F(ImportBuiltinsTest, AcquireLockCheckRecursiveCallsWorks) {
   HandleScope scope(thread_);
-  runBuiltin(UnderImpModule::acquireLock);
-  runBuiltin(UnderImpModule::acquireLock);
-  runBuiltin(UnderImpModule::releaseLock);
-  runBuiltin(UnderImpModule::releaseLock);
+  runBuiltin(FUNC(_imp, acquire_lock));
+  runBuiltin(FUNC(_imp, acquire_lock));
+  runBuiltin(FUNC(_imp, release_lock));
+  runBuiltin(FUNC(_imp, release_lock));
   // Make sure that additional releases raise.
-  Object result(&scope, runBuiltin(UnderImpModule::releaseLock));
+  Object result(&scope, runBuiltin(FUNC(_imp, release_lock)));
   EXPECT_TRUE(result.isError());
 }
 
