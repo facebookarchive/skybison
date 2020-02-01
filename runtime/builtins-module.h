@@ -21,12 +21,12 @@ class BuiltinsModule {
  public:
   static void initialize(Thread* thread, const Module& module);
 
+  static RawObject dunderBuildClass(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderImport(Thread* thread, Frame* frame, word nargs);
   static RawObject bin(Thread* thread, Frame* frame, word nargs);
   static RawObject callable(Thread* thread, Frame* frame, word nargs);
   static RawObject chr(Thread* thread, Frame* frame, word nargs);
   static RawObject delattr(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderBuildClass(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderImport(Thread* thread, Frame* frame, word nargs);
   static RawObject getattr(Thread* thread, Frame* frame, word nargs);
   static RawObject hasattr(Thread* thread, Frame* frame, word nargs);
   static RawObject hash(Thread* thread, Frame* frame, word nargs);

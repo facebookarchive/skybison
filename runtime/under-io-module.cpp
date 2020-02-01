@@ -16,12 +16,12 @@
 namespace py {
 
 const BuiltinFunction UnderIoModule::kBuiltinFunctions[] = {
+    {ID(_StringIO_closed_guard), underStringIOClosedGuard},
     {ID(_buffered_reader_clear_buffer), underBufferedReaderClearBuffer},
     {ID(_buffered_reader_init), underBufferedReaderInit},
     {ID(_buffered_reader_peek), underBufferedReaderPeek},
     {ID(_buffered_reader_read), underBufferedReaderRead},
     {ID(_buffered_reader_readline), underBufferedReaderReadline},
-    {ID(_StringIO_closed_guard), underStringIOClosedGuard},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -46,6 +46,23 @@ void UnderIoModule::initialize(Thread* thread, const Module& module) {
   moduleAddBuiltinFunctions(thread, module, kBuiltinFunctions);
   moduleAddBuiltinTypes(thread, module, kBuiltinTypes);
   executeFrozenModule(thread, kUnderIoModuleData, module);
+}
+
+RawObject UnderIoModule::underStringIOClosedGuard(Thread* thread, Frame* frame,
+                                                  word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfStringIO(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(StringIO));
+  }
+  StringIO self(&scope, *self_obj);
+  if (self.closed()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "I/O operation on closed file.");
+  }
+  return NoneType::object();
 }
 
 static RawObject initReadBuf(Thread* thread,
@@ -605,23 +622,6 @@ RawObject UnderIoModule::underBufferedReaderReadline(Thread* thread,
   self.setReadPos(line_end);
   self.setBufferNumBytes(buffer_num_bytes);
   return result.becomeImmutable();
-}
-
-RawObject UnderIoModule::underStringIOClosedGuard(Thread* thread, Frame* frame,
-                                                  word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Object self_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfStringIO(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, ID(StringIO));
-  }
-  StringIO self(&scope, *self_obj);
-  if (self.closed()) {
-    return thread->raiseWithFmt(LayoutId::kValueError,
-                                "I/O operation on closed file.");
-  }
-  return NoneType::object();
 }
 
 const BuiltinAttribute UnderIOBaseBuiltins::kAttributes[] = {

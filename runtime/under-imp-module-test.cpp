@@ -176,24 +176,6 @@ TEST_F(ImportBuiltinsTest, ExtensionSuffixesReturnsList) {
   EXPECT_PYLIST_EQ(result, {".so"});
 }
 
-TEST_F(ImportBuiltinsDeathTest, FixCoFilename) {
-  ASSERT_DEATH(static_cast<void>(runFromCStr(runtime_, R"(
-import _imp
-code = None
-source_path = None
-_imp._fix_co_filename(code, source_path)
-  )")),
-               "unimplemented: _fix_co_filename");
-}
-
-TEST_F(ImportBuiltinsDeathTest, GetFrozenObject) {
-  ASSERT_DEATH(static_cast<void>(runFromCStr(runtime_, R"(
-import _imp
-_imp.get_frozen_object("foo")
-  )")),
-               "unimplemented: get_frozen_object");
-}
-
 TEST_F(ImportBuiltinsTest, IsBuiltinReturnsZero) {
   HandleScope scope(thread_);
   Object module_name(&scope, runtime_->newStrFromCStr("foo"));
@@ -214,14 +196,6 @@ TEST_F(ImportBuiltinsTest, IsFrozenReturnsFalse) {
   Object result(&scope, runBuiltin(UnderImpModule::isFrozen, module_name));
   ASSERT_TRUE(result.isBool());
   EXPECT_FALSE(Bool::cast(*result).value());
-}
-
-TEST_F(ImportBuiltinsDeathTest, IsFrozenPackage) {
-  ASSERT_DEATH(static_cast<void>(runFromCStr(runtime_, R"(
-import _imp
-_imp.is_frozen_package("foo")
-  )")),
-               "unimplemented: is_frozen_package");
 }
 
 TEST_F(ImportBuiltinsTest, ReleaseLockWithoutAcquireRaisesRuntimeError) {

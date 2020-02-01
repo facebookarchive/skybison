@@ -14,6 +14,8 @@ class UnderCodecsModule {
 
   static RawObject underAsciiDecode(Thread* thread, Frame* frame, word nargs);
   static RawObject underAsciiEncode(Thread* thread, Frame* frame, word nargs);
+  static RawObject underBytearrayStringAppend(Thread* thread, Frame* frame,
+                                              word nargs);
   static RawObject underEscapeDecode(Thread* thread, Frame* frame, word nargs);
   static RawObject underLatin1Decode(Thread* thread, Frame* frame, word nargs);
   static RawObject underLatin1Encode(Thread* thread, Frame* frame, word nargs);
@@ -23,10 +25,6 @@ class UnderCodecsModule {
   static RawObject underUtf32Encode(Thread* thread, Frame* frame, word nargs);
   static RawObject underUtf8Decode(Thread* thread, Frame* frame, word nargs);
   static RawObject underUtf8Encode(Thread* thread, Frame* frame, word nargs);
-  static RawObject underBytearrayAsBytes(Thread* thread, Frame* frame,
-                                         word nargs);
-  static RawObject underBytearrayStringAppend(Thread* thread, Frame* frame,
-                                              word nargs);
 
  private:
   static const BuiltinFunction kBuiltinFunctions[];

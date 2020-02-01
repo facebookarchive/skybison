@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """_imp provides basic importlib support."""
 
-from _builtins import _patch, _str_guard
+from _builtins import _patch, _str_guard, _unimplemented
 
 
 @_patch
@@ -40,14 +40,12 @@ def extension_suffixes():
     pass
 
 
-@_patch
 def _fix_co_filename(code, path):
-    pass
+    _unimplemented()
 
 
-@_patch
 def get_frozen_object(name):
-    pass
+    _unimplemented()
 
 
 @_patch
@@ -60,9 +58,8 @@ def is_frozen(name):
     pass
 
 
-@_patch
 def is_frozen_package(name):
-    pass
+    _unimplemented()
 
 
 @_patch

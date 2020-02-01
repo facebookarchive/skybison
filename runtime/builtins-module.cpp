@@ -70,11 +70,11 @@ RawObject setAttribute(Thread* thread, const Object& self,
 // clang-format off
 const BuiltinFunction BuiltinsModule::kBuiltinFunctions[] = {
     {ID(__build_class__), dunderBuildClass},
+    {ID(__import__), dunderImport},
     {ID(bin), bin},
     {ID(callable), callable},
     {ID(chr), chr},
     {ID(delattr), delattr},
-    {ID(__import__), dunderImport},
     {ID(getattr), getattr},
     {ID(hasattr), hasattr},
     {ID(hash), hash},

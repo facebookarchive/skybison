@@ -14,18 +14,14 @@
 namespace py {
 
 const BuiltinFunction UnderImpModule::kBuiltinFunctions[] = {
+    {ID(_create_dynamic), underCreateDynamic},
     {ID(acquire_lock), acquireLock},
     {ID(create_builtin), createBuiltin},
     {ID(exec_builtin), execBuiltin},
-    {ID(exec_dynamic), execDynamic},
     {ID(extension_suffixes), extensionSuffixes},
-    {ID(_fix_co_filename), fixCoFilename},
-    {ID(get_frozen_object), getFrozenObject},
     {ID(is_builtin), isBuiltin},
     {ID(is_frozen), isFrozen},
-    {ID(is_frozen_package), isFrozenPackage},
     {ID(release_lock), releaseLock},
-    {ID(_create_dynamic), underCreateDynamic},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -59,6 +55,61 @@ bool importReleaseLock(Thread* thread) {
     import_lock_holder = nullptr;
   }
   return true;
+}
+
+RawObject UnderImpModule::underCreateDynamic(Thread* thread, Frame* frame,
+                                             word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object name_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfStr(*name_obj)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "create_dynamic requires a str object");
+  }
+  Str name(&scope, *name_obj);
+  Object path_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfStr(*path_obj)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "create_dynamic requires a str object");
+  }
+  Str path(&scope, *path_obj);
+
+  // Load shared object
+  const char* error_msg = nullptr;
+  unique_c_ptr<char> path_cstr(path.toCStr());
+  void* handle = OS::openSharedObject(path_cstr.get(), &error_msg);
+  if (handle == nullptr) {
+    return thread->raiseWithFmt(
+        LayoutId::kImportError, "dlerror: '%s' importing: '%S' from '%S'",
+        error_msg != nullptr ? error_msg : "", &name, &path);
+  }
+
+  // Load PyInit_module
+  const word funcname_len = 258;
+  char buffer[funcname_len] = {};
+  unique_c_ptr<char> name_cstr(name.toCStr());
+  std::snprintf(buffer, sizeof(buffer), "PyInit_%s", name_cstr.get());
+  auto init_func = reinterpret_cast<ApiHandle* (*)()>(
+      OS::sharedObjectSymbolAddress(handle, buffer));
+  if (init_func == nullptr) {
+    return thread->raiseWithFmt(LayoutId::kImportError,
+                                "dlsym error: dynamic module '%S' does not "
+                                "define export function: 'PyInit_%s'",
+                                &name, buffer);
+  }
+
+  // Call PyInit_module
+  ApiHandle* module = init_func();
+  if (module == nullptr) {
+    if (!thread->hasPendingException()) {
+      return thread->raiseWithFmt(
+          LayoutId::kSystemError,
+          "Initialization of 'PyInit_%s' failed without raising", buffer);
+    }
+    return Error::exception();
+  }
+  return module->asObject();
 }
 
 RawObject UnderImpModule::acquireLock(Thread* thread, Frame*, word) {
@@ -119,11 +170,6 @@ RawObject UnderImpModule::execBuiltin(Thread* thread, Frame* frame,
   return runtime->newInt(execDef(thread, module, def));
 }
 
-RawObject UnderImpModule::execDynamic(Thread* /* thread */, Frame* /* frame */,
-                                      word /* nargs */) {
-  UNIMPLEMENTED("exec_dynamic");
-}
-
 RawObject UnderImpModule::extensionSuffixes(Thread* thread, Frame* /* frame */,
                                             word /* nargs */) {
   HandleScope scope(thread);
@@ -132,17 +178,6 @@ RawObject UnderImpModule::extensionSuffixes(Thread* thread, Frame* /* frame */,
   Object so(&scope, Runtime::internStrFromCStr(thread, ".so"));
   runtime->listAdd(thread, list, so);
   return *list;
-}
-
-RawObject UnderImpModule::fixCoFilename(Thread* /* thread */,
-                                        Frame* /* frame */, word /* nargs */) {
-  UNIMPLEMENTED("_fix_co_filename");
-}
-
-RawObject UnderImpModule::getFrozenObject(Thread* /* thread */,
-                                          Frame* /* frame */,
-                                          word /* nargs */) {
-  UNIMPLEMENTED("get_frozen_object");
 }
 
 RawObject UnderImpModule::isBuiltin(Thread* thread, Frame* frame, word nargs) {
@@ -170,73 +205,12 @@ RawObject UnderImpModule::isFrozen(Thread* thread, Frame* frame, word nargs) {
   return RawBool::falseObj();
 }
 
-RawObject UnderImpModule::isFrozenPackage(Thread* /* thread */,
-                                          Frame* /* frame */,
-                                          word /* nargs */) {
-  UNIMPLEMENTED("is_frozen_package");
-}
-
 RawObject UnderImpModule::releaseLock(Thread* thread, Frame*, word) {
   if (!importReleaseLock(thread)) {
     return thread->raiseWithFmt(LayoutId::kRuntimeError,
                                 "not holding the import lock");
   }
   return RawNoneType::object();
-}
-
-RawObject UnderImpModule::underCreateDynamic(Thread* thread, Frame* frame,
-                                             word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Object name_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfStr(*name_obj)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "create_dynamic requires a str object");
-  }
-  Str name(&scope, *name_obj);
-  Object path_obj(&scope, args.get(1));
-  if (!runtime->isInstanceOfStr(*path_obj)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "create_dynamic requires a str object");
-  }
-  Str path(&scope, *path_obj);
-
-  // Load shared object
-  const char* error_msg = nullptr;
-  unique_c_ptr<char> path_cstr(path.toCStr());
-  void* handle = OS::openSharedObject(path_cstr.get(), &error_msg);
-  if (handle == nullptr) {
-    return thread->raiseWithFmt(
-        LayoutId::kImportError, "dlerror: '%s' importing: '%S' from '%S'",
-        error_msg != nullptr ? error_msg : "", &name, &path);
-  }
-
-  // Load PyInit_module
-  const word funcname_len = 258;
-  char buffer[funcname_len] = {};
-  unique_c_ptr<char> name_cstr(name.toCStr());
-  std::snprintf(buffer, sizeof(buffer), "PyInit_%s", name_cstr.get());
-  auto init_func = reinterpret_cast<ApiHandle* (*)()>(
-      OS::sharedObjectSymbolAddress(handle, buffer));
-  if (init_func == nullptr) {
-    return thread->raiseWithFmt(LayoutId::kImportError,
-                                "dlsym error: dynamic module '%S' does not "
-                                "define export function: 'PyInit_%s'",
-                                &name, buffer);
-  }
-
-  // Call PyInit_module
-  ApiHandle* module = init_func();
-  if (module == nullptr) {
-    if (!thread->hasPendingException()) {
-      return thread->raiseWithFmt(
-          LayoutId::kSystemError,
-          "Initialization of 'PyInit_%s' failed without raising", buffer);
-    }
-    return Error::exception();
-  }
-  return module->asObject();
 }
 
 }  // namespace py
