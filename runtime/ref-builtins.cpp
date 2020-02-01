@@ -16,12 +16,12 @@ const BuiltinAttribute RefBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod RefBuiltins::kBuiltinMethods[] = {
-    {ID(__new__), dunderNew},
-    {ID(__call__), dunderCall},
+    {ID(__new__), METH(ref, __new__)},
+    {ID(__call__), METH(ref, __call__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject RefBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(ref, __call__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -31,7 +31,7 @@ RawObject RefBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
   return WeakRef::cast(*self).referent();
 }
 
-RawObject RefBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(ref, __new__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object referent(&scope, args.get(1));

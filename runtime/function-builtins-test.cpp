@@ -42,8 +42,7 @@ a = foo(5)
 TEST_F(FunctionBuiltinsTest, DunderGetWithNonFunctionSelfRaisesTypeError) {
   HandleScope scope(thread_);
   Object none(&scope, NoneType::object());
-  ASSERT_TRUE(
-      runBuiltin(FunctionBuiltins::dunderGet, none, none, none).isError());
+  ASSERT_TRUE(runBuiltin(METH(function, __get__), none, none, none).isError());
   Thread* thread = Thread::current();
   EXPECT_EQ(thread->pendingExceptionType(),
             runtime_->typeAt(LayoutId::kTypeError));
@@ -55,7 +54,7 @@ TEST_F(FunctionBuiltinsTest, DunderGetWithNonNoneInstanceReturnsBoundMethod) {
   Object func(&scope, newEmptyFunction());
   Object not_none(&scope, SmallInt::fromWord(1));
   Object not_none_type(&scope, runtime_->typeOf(*not_none));
-  Object result(&scope, runBuiltin(FunctionBuiltins::dunderGet, func, not_none,
+  Object result(&scope, runBuiltin(METH(function, __get__), func, not_none,
                                    not_none_type));
   ASSERT_TRUE(result.isBoundMethod());
   EXPECT_EQ(BoundMethod::cast(*result).self(), *not_none);
@@ -69,7 +68,7 @@ TEST_F(FunctionBuiltinsTest,
   Object none(&scope, NoneType::object());
   Type none_type(&scope, runtime_->typeOf(*none));
   Object result(&scope,
-                runBuiltin(FunctionBuiltins::dunderGet, func, none, none_type));
+                runBuiltin(METH(function, __get__), func, none, none_type));
   ASSERT_TRUE(result.isBoundMethod());
   EXPECT_EQ(BoundMethod::cast(*result).self(), *none);
   EXPECT_EQ(BoundMethod::cast(*result).function(), *func);
@@ -81,7 +80,7 @@ TEST_F(FunctionBuiltinsTest, DunderGetWithNoneInstanceReturnsSelf) {
   Object none(&scope, NoneType::object());
   Type some_type(&scope, runtime_->typeOf(*func));
   Object result(&scope,
-                runBuiltin(FunctionBuiltins::dunderGet, func, none, some_type));
+                runBuiltin(METH(function, __get__), func, none, some_type));
   EXPECT_EQ(result, func);
 }
 

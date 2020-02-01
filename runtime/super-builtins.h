@@ -11,13 +11,14 @@ namespace py {
 RawObject superGetAttribute(Thread* thread, const Super& super,
                             const Object& name);
 
+RawObject METH(super, __getattribute__)(Thread* thread, Frame* frame,
+                                        word nargs);
+RawObject METH(super, __new__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(super, __init__)(Thread* thread, Frame* frame, word nargs);
+
 class SuperBuiltins
     : public Builtins<SuperBuiltins, ID(super), LayoutId::kSuper> {
  public:
-  static RawObject dunderGetattribute(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
-
   static const BuiltinMethod kBuiltinMethods[];
   static const BuiltinAttribute kAttributes[];
 };

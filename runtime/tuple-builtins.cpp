@@ -71,17 +71,17 @@ const BuiltinAttribute TupleBuiltins::kAttributes[] = {
 
 // clang-format off
 const BuiltinMethod TupleBuiltins::kBuiltinMethods[] = {
-    {ID(__add__), dunderAdd},
-    {ID(__contains__), dunderContains},
-    {ID(__hash__), dunderHash},
-    {ID(__iter__), dunderIter},
-    {ID(__len__), dunderLen},
-    {ID(__mul__), dunderMul},
+    {ID(__add__), METH(tuple, __add__)},
+    {ID(__contains__), METH(tuple, __contains__)},
+    {ID(__hash__), METH(tuple, __hash__)},
+    {ID(__iter__), METH(tuple, __iter__)},
+    {ID(__len__), METH(tuple, __len__)},
+    {ID(__mul__), METH(tuple, __mul__)},
     {SymbolId::kSentinelId, nullptr},
 };
 // clang-format on
 
-RawObject TupleBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(tuple, __add__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -114,8 +114,7 @@ RawObject TupleBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   return new_tuple.becomeImmutable();
 }
 
-RawObject TupleBuiltins::dunderContains(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject METH(tuple, __contains__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -132,7 +131,7 @@ RawObject TupleBuiltins::dunderContains(Thread* thread, Frame* frame,
   return Bool::falseObj();
 }
 
-RawObject TupleBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(tuple, __hash__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -144,7 +143,7 @@ RawObject TupleBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
   return tupleHash(thread, self);
 }
 
-RawObject TupleBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(tuple, __len__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object obj(&scope, args.get(0));
@@ -156,7 +155,7 @@ RawObject TupleBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   return runtime->newInt(self.length());
 }
 
-RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(tuple, __mul__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -202,7 +201,7 @@ RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   return new_tuple.becomeImmutable();
 }
 
-RawObject TupleBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(tuple, __iter__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -215,14 +214,14 @@ RawObject TupleBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
 }
 
 const BuiltinMethod TupleIteratorBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), dunderIter},
-    {ID(__length_hint__), dunderLengthHint},
-    {ID(__next__), dunderNext},
+    {ID(__iter__), METH(tuple_iterator, __iter__)},
+    {ID(__length_hint__), METH(tuple_iterator, __length_hint__)},
+    {ID(__next__), METH(tuple_iterator, __next__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject TupleIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject METH(tuple_iterator, __iter__)(Thread* thread, Frame* frame,
+                                         word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -232,8 +231,8 @@ RawObject TupleIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject TupleIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject METH(tuple_iterator, __next__)(Thread* thread, Frame* frame,
+                                         word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -248,8 +247,8 @@ RawObject TupleIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   return *value;
 }
 
-RawObject TupleIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject METH(tuple_iterator, __length_hint__)(Thread* thread, Frame* frame,
+                                                word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));

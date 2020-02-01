@@ -195,7 +195,7 @@ TEST_F(StrBuiltinsTest, DunderAddWithTwoStringsReturnsConcatenatedString) {
   HandleScope scope(thread_);
   Object str1(&scope, runtime_->newStrFromCStr("hello"));
   Object str2(&scope, runtime_->newStrFromCStr("world"));
-  Object result(&scope, runBuiltin(StrBuiltins::dunderAdd, str1, str2));
+  Object result(&scope, runBuiltin(METH(str, __add__), str1, str2));
   EXPECT_TRUE(isStrEqualsCStr(*result, "helloworld"));
 }
 
@@ -210,7 +210,7 @@ str2 = SubStr("world")
                    .isError());
   Object str1(&scope, mainModuleAt(runtime_, "str1"));
   Object str2(&scope, mainModuleAt(runtime_, "str2"));
-  Object result(&scope, runBuiltin(StrBuiltins::dunderAdd, str1, str2));
+  Object result(&scope, runBuiltin(METH(str, __add__), str1, str2));
   EXPECT_TRUE(isStrEqualsCStr(*result, "helloworld"));
 }
 
@@ -218,7 +218,7 @@ TEST_F(StrBuiltinsTest, DunderAddWithLeftEmptyAndReturnsRight) {
   HandleScope scope(thread_);
   Object str1(&scope, Str::empty());
   Object str2(&scope, runtime_->newStrFromCStr("world"));
-  Object result(&scope, runBuiltin(StrBuiltins::dunderAdd, str1, str2));
+  Object result(&scope, runBuiltin(METH(str, __add__), str1, str2));
   EXPECT_TRUE(isStrEqualsCStr(*result, "world"));
 }
 
@@ -226,7 +226,7 @@ TEST_F(StrBuiltinsTest, DunderAddWithRightEmptyAndReturnsRight) {
   HandleScope scope(thread_);
   Object str1(&scope, runtime_->newStrFromCStr("hello"));
   Object str2(&scope, Str::empty());
-  Object result(&scope, runBuiltin(StrBuiltins::dunderAdd, str1, str2));
+  Object result(&scope, runBuiltin(METH(str, __add__), str1, str2));
   EXPECT_TRUE(isStrEqualsCStr(*result, "hello"));
 }
 
@@ -249,13 +249,13 @@ d = a.__add__(b)
 TEST_F(StrBuiltinsTest, DunderBoolWithEmptyStringReturnsFalse) {
   HandleScope scope(thread_);
   Str str(&scope, Str::empty());
-  EXPECT_EQ(runBuiltin(StrBuiltins::dunderBool, str), Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(str, __bool__), str), Bool::falseObj());
 }
 
 TEST_F(StrBuiltinsTest, DunderBoolWithNonEmptyStringReturnsTrue) {
   HandleScope scope(thread_);
   Str str(&scope, runtime_->newStrFromCStr("hello"));
-  EXPECT_EQ(runBuiltin(StrBuiltins::dunderBool, str), Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(str, __bool__), str), Bool::trueObj());
 }
 
 TEST_F(StrBuiltinsTest, DunderBoolWithNonEmptyStringOfSubClassReturnsTrue) {
@@ -266,7 +266,7 @@ substr = SubStr("hello")
 )")
                    .isError());
   Object substr(&scope, mainModuleAt(runtime_, "substr"));
-  EXPECT_EQ(runBuiltin(StrBuiltins::dunderBool, substr), Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(str, __bool__), substr), Bool::trueObj());
 }
 
 TEST_F(StrBuiltinsTest, DunderLenReturnsLength) {
@@ -322,7 +322,7 @@ TEST_F(StrBuiltinsTest, DunderMulWithNonIntRaisesTypeError) {
   Object self(&scope, runtime_->newStrFromCStr("foo"));
   Object count(&scope, runtime_->newList());
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(StrBuiltins::dunderMul, self, count), LayoutId::kTypeError,
+      runBuiltin(METH(str, __mul__), self, count), LayoutId::kTypeError,
       "'list' object cannot be interpreted as an integer"));
 }
 
@@ -337,7 +337,7 @@ count = C()
 )")
                    .isError());
   Object count(&scope, mainModuleAt(runtime_, "count"));
-  Object result(&scope, runBuiltin(StrBuiltins::dunderMul, self, count));
+  Object result(&scope, runBuiltin(METH(str, __mul__), self, count));
   EXPECT_TRUE(isStrEqualsCStr(*result, "foofoo"));
 }
 
@@ -352,7 +352,7 @@ count = C()
 )")
                    .isError());
   Object count(&scope, mainModuleAt(runtime_, "count"));
-  EXPECT_TRUE(raisedWithStr(runBuiltin(StrBuiltins::dunderMul, self, count),
+  EXPECT_TRUE(raisedWithStr(runBuiltin(METH(str, __mul__), self, count),
                             LayoutId::kTypeError,
                             "__index__ returned non-int (type str)"));
 }
@@ -368,7 +368,7 @@ count = C()
 )")
                    .isError());
   Object count(&scope, mainModuleAt(runtime_, "count"));
-  EXPECT_TRUE(raisedWithStr(runBuiltin(StrBuiltins::dunderMul, self, count),
+  EXPECT_TRUE(raisedWithStr(runBuiltin(METH(str, __mul__), self, count),
                             LayoutId::kArithmeticError, "called __index__"));
 }
 
@@ -377,7 +377,7 @@ TEST_F(StrBuiltinsTest, DunderMulWithLargeIntRaisesOverflowError) {
   Object self(&scope, Str::empty());
   const uword digits[] = {1, 1};
   Object count(&scope, runtime_->newIntWithDigits(digits));
-  EXPECT_TRUE(raisedWithStr(runBuiltin(StrBuiltins::dunderMul, self, count),
+  EXPECT_TRUE(raisedWithStr(runBuiltin(METH(str, __mul__), self, count),
                             LayoutId::kOverflowError,
                             "cannot fit 'int' into an index-sized integer"));
 }
@@ -386,7 +386,7 @@ TEST_F(StrBuiltinsTest, DunderMulWithOverflowRaisesOverflowError) {
   HandleScope scope(thread_);
   Object self(&scope, runtime_->newStrFromCStr("foo"));
   Object count(&scope, SmallInt::fromWord(SmallInt::kMaxValue / 2));
-  EXPECT_TRUE(raisedWithStr(runBuiltin(StrBuiltins::dunderMul, self, count),
+  EXPECT_TRUE(raisedWithStr(runBuiltin(METH(str, __mul__), self, count),
                             LayoutId::kOverflowError,
                             "repeated string is too long"));
 }
@@ -395,7 +395,7 @@ TEST_F(StrBuiltinsTest, DunderMulWithEmptyBytesReturnsEmptyStr) {
   HandleScope scope(thread_);
   Object self(&scope, Str::empty());
   Object count(&scope, runtime_->newInt(10));
-  Object result(&scope, runBuiltin(StrBuiltins::dunderMul, self, count));
+  Object result(&scope, runBuiltin(METH(str, __mul__), self, count));
   EXPECT_TRUE(isStrEqualsCStr(*result, ""));
 }
 
@@ -403,7 +403,7 @@ TEST_F(StrBuiltinsTest, DunderMulWithNegativeReturnsEmptyStr) {
   HandleScope scope(thread_);
   Object self(&scope, runtime_->newStrFromCStr("foo"));
   Object count(&scope, SmallInt::fromWord(-5));
-  Object result(&scope, runBuiltin(StrBuiltins::dunderMul, self, count));
+  Object result(&scope, runBuiltin(METH(str, __mul__), self, count));
   EXPECT_TRUE(isStrEqualsCStr(*result, ""));
 }
 
@@ -411,7 +411,7 @@ TEST_F(StrBuiltinsTest, DunderMulWithZeroReturnsEmptyStr) {
   HandleScope scope(thread_);
   Object self(&scope, runtime_->newStrFromCStr("foo"));
   Object count(&scope, SmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(StrBuiltins::dunderMul, self, count));
+  Object result(&scope, runBuiltin(METH(str, __mul__), self, count));
   EXPECT_TRUE(isStrEqualsCStr(*result, ""));
 }
 
@@ -419,7 +419,7 @@ TEST_F(StrBuiltinsTest, DunderMulWithOneReturnsSamStr) {
   HandleScope scope(thread_);
   Object self(&scope, runtime_->newStrFromCStr("foo"));
   Object count(&scope, SmallInt::fromWord(1));
-  Object result(&scope, runBuiltin(StrBuiltins::dunderMul, self, count));
+  Object result(&scope, runBuiltin(METH(str, __mul__), self, count));
   EXPECT_TRUE(isStrEqualsCStr(*result, "foo"));
 }
 
@@ -427,7 +427,7 @@ TEST_F(StrBuiltinsTest, DunderMulWithSmallStrReturnsRepeatedSmallStr) {
   HandleScope scope(thread_);
   Object self(&scope, runtime_->newStrFromCStr("foo"));
   Object count(&scope, SmallInt::fromWord(2));
-  Object result(&scope, runBuiltin(StrBuiltins::dunderMul, self, count));
+  Object result(&scope, runBuiltin(METH(str, __mul__), self, count));
   EXPECT_TRUE(isStrEqualsCStr(*result, "foofoo"));
 }
 
@@ -435,7 +435,7 @@ TEST_F(StrBuiltinsTest, DunderMulWithSmallStrReturnsRepeatedLargeStr) {
   HandleScope scope(thread_);
   Object self(&scope, runtime_->newStrFromCStr("foo"));
   Object count(&scope, SmallInt::fromWord(3));
-  Object result(&scope, runBuiltin(StrBuiltins::dunderMul, self, count));
+  Object result(&scope, runBuiltin(METH(str, __mul__), self, count));
   EXPECT_TRUE(isStrEqualsCStr(*result, "foofoofoo"));
 }
 
@@ -443,7 +443,7 @@ TEST_F(StrBuiltinsTest, DunderMulWithLargeStrReturnsRepeatedLargeStr) {
   HandleScope scope(thread_);
   Object self(&scope, runtime_->newStrFromCStr("foobarbaz"));
   Object count(&scope, SmallInt::fromWord(2));
-  Object result(&scope, runBuiltin(StrBuiltins::dunderMul, self, count));
+  Object result(&scope, runBuiltin(METH(str, __mul__), self, count));
   EXPECT_TRUE(isStrEqualsCStr(*result, "foobarbazfoobarbaz"));
 }
 
@@ -586,7 +586,7 @@ TEST_F(StrBuiltinsTest,
 TEST_F(StrBuiltinsTest, DunderReprWithPrintableASCIIReturnsStr) {
   HandleScope scope(thread_);
   Object str(&scope, runtime_->newStrFromCStr("hello"));
-  Object repr(&scope, runBuiltin(StrBuiltins::dunderRepr, str));
+  Object repr(&scope, runBuiltin(METH(str, __repr__), str));
   EXPECT_TRUE(isStrEqualsCStr(*repr, "'hello'"));
 }
 
@@ -598,35 +598,35 @@ substr = SubStr("hello")
                    .isError());
   HandleScope scope(thread_);
   Object substr(&scope, mainModuleAt(runtime_, "substr"));
-  Object repr(&scope, runBuiltin(StrBuiltins::dunderRepr, substr));
+  Object repr(&scope, runBuiltin(METH(str, __repr__), substr));
   EXPECT_TRUE(isStrEqualsCStr(*repr, "'hello'"));
 }
 
 TEST_F(StrBuiltinsTest, DunderReprWithNonPrintableASCIIReturnsStr) {
   HandleScope scope(thread_);
   Object str(&scope, runtime_->newStrFromCStr("\x06"));  // ACK character
-  Object repr(&scope, runBuiltin(StrBuiltins::dunderRepr, str));
+  Object repr(&scope, runBuiltin(METH(str, __repr__), str));
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"('\x06')"));
 }
 
 TEST_F(StrBuiltinsTest, DunderReprWithDoubleQuotesReturnsStr) {
   HandleScope scope(thread_);
   Object str(&scope, runtime_->newStrFromCStr("hello \"world\""));
-  Object repr(&scope, runBuiltin(StrBuiltins::dunderRepr, str));
+  Object repr(&scope, runBuiltin(METH(str, __repr__), str));
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"('hello "world"')"));
 }
 
 TEST_F(StrBuiltinsTest, DunderReprWithSingleQuotesReturnsStr) {
   HandleScope scope(thread_);
   Object str(&scope, runtime_->newStrFromCStr("hello 'world'"));
-  Object repr(&scope, runBuiltin(StrBuiltins::dunderRepr, str));
+  Object repr(&scope, runBuiltin(METH(str, __repr__), str));
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"("hello 'world'")"));
 }
 
 TEST_F(StrBuiltinsTest, DunderReprWithBothQuotesReturnsStr) {
   HandleScope scope(thread_);
   Object str(&scope, runtime_->newStrFromCStr("'hello' \"world\""));
-  Object repr(&scope, runBuiltin(StrBuiltins::dunderRepr, str));
+  Object repr(&scope, runBuiltin(METH(str, __repr__), str));
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"('\'hello\' "world"')"));
 }
 
@@ -634,7 +634,7 @@ TEST_F(StrBuiltinsTest, DunderReprWithNestedQuotesReturnsStr) {
   HandleScope scope(thread_);
   Object str(&scope, runtime_->newStrFromCStr(
                          R"(hello 'world, "I am 'your "father"'"')"));
-  Object repr(&scope, runBuiltin(StrBuiltins::dunderRepr, str));
+  Object repr(&scope, runBuiltin(METH(str, __repr__), str));
   EXPECT_TRUE(
       isStrEqualsCStr(*repr, R"('hello \'world, "I am \'your "father"\'"\'')"));
 }
@@ -642,7 +642,7 @@ TEST_F(StrBuiltinsTest, DunderReprWithNestedQuotesReturnsStr) {
 TEST_F(StrBuiltinsTest, DunderReprOnCommonEscapeSequences) {
   HandleScope scope(thread_);
   Object str(&scope, runtime_->newStrFromCStr("\n \t \r \\"));
-  Object repr(&scope, runBuiltin(StrBuiltins::dunderRepr, str));
+  Object repr(&scope, runBuiltin(METH(str, __repr__), str));
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"('\n \t \r \\')"));
 }
 
@@ -650,7 +650,7 @@ TEST_F(StrBuiltinsTest, DunderReprWithUnicodeReturnsStr) {
   HandleScope scope(thread_);
   Object str(&scope,
              runtime_->newStrFromCStr("foo\U0001d4eb\U0001d4ea\U0001d4fb"));
-  Object repr(&scope, runBuiltin(StrBuiltins::dunderRepr, str));
+  Object repr(&scope, runBuiltin(METH(str, __repr__), str));
   EXPECT_TRUE(isStrEqualsCStr(*repr, "'foo\U0001d4eb\U0001d4ea\U0001d4fb'"));
 }
 
@@ -1116,7 +1116,7 @@ TEST_F(StrBuiltinsTest, StripWithNoneArgStripsBoth) {
   HandleScope scope(thread_);
   Object str(&scope, runtime_->newStrFromCStr(" Hello World "));
   Object none(&scope, NoneType::object());
-  Object result(&scope, runBuiltin(StrBuiltins::strip, str, none));
+  Object result(&scope, runBuiltin(METH(str, strip), str, none));
   EXPECT_TRUE(isStrEqualsCStr(*result, "Hello World"));
 }
 
@@ -1124,7 +1124,7 @@ TEST_F(StrBuiltinsTest, LStripWithNoneArgStripsLeft) {
   HandleScope scope(thread_);
   Object str(&scope, runtime_->newStrFromCStr(" Hello World "));
   Object none(&scope, NoneType::object());
-  Object result(&scope, runBuiltin(StrBuiltins::lstrip, str, none));
+  Object result(&scope, runBuiltin(METH(str, lstrip), str, none));
   EXPECT_TRUE(isStrEqualsCStr(*result, "Hello World "));
 }
 
@@ -1137,7 +1137,7 @@ substr = SubStr(" Hello World ")
                    .isError());
   Object str(&scope, mainModuleAt(runtime_, "substr"));
   Object none(&scope, NoneType::object());
-  Object result(&scope, runBuiltin(StrBuiltins::lstrip, str, none));
+  Object result(&scope, runBuiltin(METH(str, lstrip), str, none));
   EXPECT_TRUE(isStrEqualsCStr(*result, "Hello World "));
 }
 
@@ -1145,7 +1145,7 @@ TEST_F(StrBuiltinsTest, RStripWithNoneArgStripsRight) {
   HandleScope scope(thread_);
   Object str(&scope, runtime_->newStrFromCStr(" Hello World "));
   Object none(&scope, NoneType::object());
-  Object result(&scope, runBuiltin(StrBuiltins::rstrip, str, none));
+  Object result(&scope, runBuiltin(METH(str, rstrip), str, none));
   EXPECT_TRUE(isStrEqualsCStr(*result, " Hello World"));
 }
 
@@ -1158,7 +1158,7 @@ substr = SubStr(" Hello World ")
                    .isError());
   Object str(&scope, mainModuleAt(runtime_, "substr"));
   Object none(&scope, NoneType::object());
-  Object result(&scope, runBuiltin(StrBuiltins::rstrip, str, none));
+  Object result(&scope, runBuiltin(METH(str, rstrip), str, none));
   EXPECT_TRUE(isStrEqualsCStr(*result, " Hello World"));
 }
 
@@ -1166,7 +1166,7 @@ TEST_F(StrBuiltinsTest, StripWithoutArgsStripsBoth) {
   HandleScope scope(thread_);
   Object str(&scope, runtime_->newStrFromCStr(" \n\tHello World\n\t "));
   Object none(&scope, NoneType::object());
-  Object result(&scope, runBuiltin(StrBuiltins::strip, str, none));
+  Object result(&scope, runBuiltin(METH(str, strip), str, none));
   EXPECT_TRUE(isStrEqualsCStr(*result, "Hello World"));
 }
 
@@ -1179,7 +1179,7 @@ substr = SubStr(" \n\tHello World\n\t ")
                    .isError());
   Object str(&scope, mainModuleAt(runtime_, "substr"));
   Object none(&scope, NoneType::object());
-  Object result(&scope, runBuiltin(StrBuiltins::strip, str, none));
+  Object result(&scope, runBuiltin(METH(str, strip), str, none));
   EXPECT_TRUE(isStrEqualsCStr(*result, "Hello World"));
 }
 
@@ -1187,7 +1187,7 @@ TEST_F(StrBuiltinsTest, LStripWithoutArgsStripsLeft) {
   HandleScope scope(thread_);
   Object str(&scope, runtime_->newStrFromCStr(" \n\tHello World\n\t "));
   Object none(&scope, NoneType::object());
-  Object result(&scope, runBuiltin(StrBuiltins::lstrip, str, none));
+  Object result(&scope, runBuiltin(METH(str, lstrip), str, none));
   EXPECT_TRUE(isStrEqualsCStr(*result, "Hello World\n\t "));
 }
 
@@ -1195,7 +1195,7 @@ TEST_F(StrBuiltinsTest, RStripWithoutArgsStripsRight) {
   HandleScope scope(thread_);
   Object str(&scope, runtime_->newStrFromCStr(" \n\tHello World\n\t "));
   Object none(&scope, NoneType::object());
-  Object result(&scope, runBuiltin(StrBuiltins::rstrip, str, none));
+  Object result(&scope, runBuiltin(METH(str, rstrip), str, none));
   EXPECT_TRUE(isStrEqualsCStr(*result, " \n\tHello World"));
 }
 
@@ -1203,7 +1203,7 @@ TEST_F(StrBuiltinsTest, StripWithCharsStripsChars) {
   HandleScope scope(thread_);
   Object str(&scope, runtime_->newStrFromCStr("bcaHello Worldcab"));
   Object chars(&scope, runtime_->newStrFromCStr("abc"));
-  Object result(&scope, runBuiltin(StrBuiltins::strip, str, chars));
+  Object result(&scope, runBuiltin(METH(str, strip), str, chars));
   EXPECT_TRUE(isStrEqualsCStr(*result, "Hello World"));
 }
 
@@ -1211,7 +1211,7 @@ TEST_F(StrBuiltinsTest, LStripWithCharsStripsCharsToLeft) {
   HandleScope scope(thread_);
   Object str(&scope, runtime_->newStrFromCStr("bcaHello Worldcab"));
   Object chars(&scope, runtime_->newStrFromCStr("abc"));
-  Object result(&scope, runBuiltin(StrBuiltins::lstrip, str, chars));
+  Object result(&scope, runBuiltin(METH(str, lstrip), str, chars));
   EXPECT_TRUE(isStrEqualsCStr(*result, "Hello Worldcab"));
 }
 
@@ -1219,7 +1219,7 @@ TEST_F(StrBuiltinsTest, RStripWithCharsStripsCharsToRight) {
   HandleScope scope(thread_);
   Object str(&scope, runtime_->newStrFromCStr("bcaHello Worldcab"));
   Object chars(&scope, runtime_->newStrFromCStr("abc"));
-  Object result(&scope, runBuiltin(StrBuiltins::rstrip, str, chars));
+  Object result(&scope, runBuiltin(METH(str, rstrip), str, chars));
   EXPECT_TRUE(isStrEqualsCStr(*result, "bcaHello World"));
 }
 
@@ -1283,7 +1283,7 @@ TEST_F(StrBuiltinsTest, ReplaceWithNonIntCountRaisesTypeError) {
 TEST_F(StrBuiltinsTest, DunderIterReturnsStrIter) {
   HandleScope scope(thread_);
   Str empty_str(&scope, Str::empty());
-  Object iter(&scope, runBuiltin(StrBuiltins::dunderIter, empty_str));
+  Object iter(&scope, runBuiltin(METH(str, __iter__), empty_str));
   ASSERT_TRUE(iter.isStrIterator());
 }
 
@@ -1295,7 +1295,7 @@ substr = SubStr("")
 )")
                    .isError());
   Object empty_str(&scope, mainModuleAt(runtime_, "substr"));
-  Object iter(&scope, runBuiltin(StrBuiltins::dunderIter, empty_str));
+  Object iter(&scope, runBuiltin(METH(str, __iter__), empty_str));
   EXPECT_TRUE(iter.isStrIterator());
 }
 
@@ -1304,13 +1304,13 @@ TEST_F(StrIteratorBuiltinsTest,
   HandleScope scope(thread_);
   Str str(&scope, runtime_->newStrFromCStr("ab"));
 
-  Object iter(&scope, runBuiltin(StrBuiltins::dunderIter, str));
+  Object iter(&scope, runBuiltin(METH(str, __iter__), str));
   ASSERT_TRUE(iter.isStrIterator());
 
-  Object item0(&scope, runBuiltin(StrIteratorBuiltins::dunderNext, iter));
+  Object item0(&scope, runBuiltin(METH(str_iterator, __next__), iter));
   EXPECT_TRUE(isStrEqualsCStr(*item0, "a"));
 
-  Object item1(&scope, runBuiltin(StrIteratorBuiltins::dunderNext, iter));
+  Object item1(&scope, runBuiltin(METH(str_iterator, __next__), iter));
   EXPECT_TRUE(isStrEqualsCStr(*item1, "b"));
 }
 
@@ -1319,16 +1319,16 @@ TEST_F(StrIteratorBuiltinsTest,
   HandleScope scope(thread_);
   Str str(&scope, runtime_->newStrFromCStr(u8"a\u00E4b"));
 
-  Object iter(&scope, runBuiltin(StrBuiltins::dunderIter, str));
+  Object iter(&scope, runBuiltin(METH(str, __iter__), str));
   ASSERT_TRUE(iter.isStrIterator());
 
-  Object item0(&scope, runBuiltin(StrIteratorBuiltins::dunderNext, iter));
+  Object item0(&scope, runBuiltin(METH(str_iterator, __next__), iter));
   EXPECT_TRUE(isStrEqualsCStr(*item0, "a"));
 
-  Object item1(&scope, runBuiltin(StrIteratorBuiltins::dunderNext, iter));
+  Object item1(&scope, runBuiltin(METH(str_iterator, __next__), iter));
   EXPECT_EQ(*item1, SmallStr::fromCodePoint(0xe4));
 
-  Object item2(&scope, runBuiltin(StrIteratorBuiltins::dunderNext, iter));
+  Object item2(&scope, runBuiltin(METH(str_iterator, __next__), iter));
   EXPECT_TRUE(isStrEqualsCStr(*item2, "b"));
 }
 
@@ -1336,11 +1336,11 @@ TEST_F(StrIteratorBuiltinsTest, DunderIterReturnsSelf) {
   HandleScope scope(thread_);
   Str empty_str(&scope, Str::empty());
 
-  Object iter(&scope, runBuiltin(StrBuiltins::dunderIter, empty_str));
+  Object iter(&scope, runBuiltin(METH(str, __iter__), empty_str));
   ASSERT_TRUE(iter.isStrIterator());
 
   // Now call __iter__ on the iterator object
-  Object result(&scope, runBuiltin(StrIteratorBuiltins::dunderIter, iter));
+  Object result(&scope, runBuiltin(METH(str_iterator, __iter__), iter));
   ASSERT_EQ(*result, *iter);
 }
 
@@ -1348,11 +1348,11 @@ TEST_F(StrIteratorBuiltinsTest, DunderLengthHintOnEmptyStrIteratorReturnsZero) {
   HandleScope scope(thread_);
   Str empty_str(&scope, Str::empty());
 
-  Object iter(&scope, runBuiltin(StrBuiltins::dunderIter, empty_str));
+  Object iter(&scope, runBuiltin(METH(str, __iter__), empty_str));
   ASSERT_TRUE(iter.isStrIterator());
 
   Object length_hint(&scope,
-                     runBuiltin(StrIteratorBuiltins::dunderLengthHint, iter));
+                     runBuiltin(METH(str_iterator, __length_hint__), iter));
   EXPECT_TRUE(isIntEqualsWord(*length_hint, 0));
 }
 
@@ -1361,20 +1361,20 @@ TEST_F(StrIteratorBuiltinsTest,
   HandleScope scope(thread_);
   Str str(&scope, runtime_->newStrFromCStr("a"));
 
-  Object iter(&scope, runBuiltin(StrBuiltins::dunderIter, str));
+  Object iter(&scope, runBuiltin(METH(str, __iter__), str));
   ASSERT_TRUE(iter.isStrIterator());
 
   Object length_hint1(&scope,
-                      runBuiltin(StrIteratorBuiltins::dunderLengthHint, iter));
+                      runBuiltin(METH(str_iterator, __length_hint__), iter));
   EXPECT_TRUE(isIntEqualsWord(*length_hint1, 1));
 
   // Consume the iterator
-  Object item1(&scope, runBuiltin(StrIteratorBuiltins::dunderNext, iter));
+  Object item1(&scope, runBuiltin(METH(str_iterator, __next__), iter));
   ASSERT_TRUE(item1.isStr());
   ASSERT_EQ(item1, runtime_->newStrFromCStr("a"));
 
   Object length_hint2(&scope,
-                      runBuiltin(StrIteratorBuiltins::dunderLengthHint, iter));
+                      runBuiltin(METH(str_iterator, __length_hint__), iter));
   EXPECT_TRUE(isIntEqualsWord(*length_hint2, 0));
 }
 
@@ -2032,13 +2032,13 @@ TEST_F(StrBuiltinsTest, IndexWithMissingSubstringRaisesValueError) {
 TEST_F(StrBuiltinsTest, DunderHashReturnsSmallInt) {
   HandleScope scope(thread_);
   Str str(&scope, runtime_->newStrFromCStr("hello world"));
-  EXPECT_TRUE(runBuiltin(StrBuiltins::dunderHash, str).isSmallInt());
+  EXPECT_TRUE(runBuiltin(METH(str, __hash__), str).isSmallInt());
 }
 
 TEST_F(StrBuiltinsTest, DunderHashSmallStringReturnsSmallInt) {
   HandleScope scope(thread_);
   Str str(&scope, runtime_->newStrFromCStr("h"));
-  EXPECT_TRUE(runBuiltin(StrBuiltins::dunderHash, str).isSmallInt());
+  EXPECT_TRUE(runBuiltin(METH(str, __hash__), str).isSmallInt());
 }
 
 TEST_F(StrBuiltinsTest, DunderHashWithEquivalentStringsReturnsSameHash) {
@@ -2046,8 +2046,8 @@ TEST_F(StrBuiltinsTest, DunderHashWithEquivalentStringsReturnsSameHash) {
   Str str1(&scope, runtime_->newStrFromCStr("hello world foobar"));
   Str str2(&scope, runtime_->newStrFromCStr("hello world foobar"));
   EXPECT_NE(*str1, *str2);
-  Object result1(&scope, runBuiltin(StrBuiltins::dunderHash, str1));
-  Object result2(&scope, runBuiltin(StrBuiltins::dunderHash, str2));
+  Object result1(&scope, runBuiltin(METH(str, __hash__), str1));
+  Object result2(&scope, runBuiltin(METH(str, __hash__), str2));
   EXPECT_TRUE(result1.isSmallInt());
   EXPECT_TRUE(result2.isSmallInt());
   EXPECT_EQ(*result1, *result2);
@@ -2063,8 +2063,8 @@ i1 = "abc"
                    .isError());
   Object i0(&scope, mainModuleAt(runtime_, "i0"));
   Object i1(&scope, mainModuleAt(runtime_, "i1"));
-  Object result0(&scope, runBuiltin(StrBuiltins::dunderHash, i0));
-  Object result1(&scope, runBuiltin(StrBuiltins::dunderHash, i1));
+  Object result0(&scope, runBuiltin(METH(str, __hash__), i0));
+  Object result1(&scope, runBuiltin(METH(str, __hash__), i1));
   EXPECT_TRUE(result0.isSmallInt());
   EXPECT_TRUE(result1.isSmallInt());
   EXPECT_EQ(result0, result1);

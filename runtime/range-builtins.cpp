@@ -48,14 +48,14 @@ RawObject rangeLen(Thread* thread, const Object& start_obj,
 }
 
 const BuiltinMethod LongRangeIteratorBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), dunderIter},
-    {ID(__length_hint__), dunderLengthHint},
-    {ID(__next__), dunderNext},
+    {ID(__iter__), METH(longrange_iterator, __iter__)},
+    {ID(__length_hint__), METH(longrange_iterator, __length_hint__)},
+    {ID(__next__), METH(longrange_iterator, __next__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject LongRangeIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject METH(longrange_iterator, __iter__)(Thread* thread, Frame* frame,
+                                             word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -65,9 +65,8 @@ RawObject LongRangeIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject LongRangeIteratorBuiltins::dunderLengthHint(Thread* thread,
-                                                      Frame* frame,
-                                                      word nargs) {
+RawObject METH(longrange_iterator, __length_hint__)(Thread* thread,
+                                                    Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -81,8 +80,8 @@ RawObject LongRangeIteratorBuiltins::dunderLengthHint(Thread* thread,
   return rangeLen(thread, next, stop, step);
 }
 
-RawObject LongRangeIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject METH(longrange_iterator, __next__)(Thread* thread, Frame* frame,
+                                             word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -109,13 +108,13 @@ const BuiltinAttribute RangeBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod RangeBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), dunderIter},
-    {ID(__len__), dunderLen},
-    {ID(__new__), dunderNew},
+    {ID(__iter__), METH(range, __iter__)},
+    {ID(__len__), METH(range, __len__)},
+    {ID(__new__), METH(range, __new__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject RangeBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(range, __iter__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -144,7 +143,7 @@ RawObject RangeBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   return runtime->newLongRangeIterator(start_int, stop_int, step_int);
 }
 
-RawObject RangeBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(range, __len__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -164,7 +163,7 @@ RawObject RangeBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   return *len;
 }
 
-RawObject RangeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(range, __new__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object cls(&scope, args.get(0));
@@ -219,14 +218,14 @@ RawObject RangeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 }
 
 const BuiltinMethod RangeIteratorBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), dunderIter},
-    {ID(__length_hint__), dunderLengthHint},
-    {ID(__next__), dunderNext},
+    {ID(__iter__), METH(range_iterator, __iter__)},
+    {ID(__length_hint__), METH(range_iterator, __length_hint__)},
+    {ID(__next__), METH(range_iterator, __next__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject RangeIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject METH(range_iterator, __iter__)(Thread* thread, Frame* frame,
+                                         word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -236,8 +235,8 @@ RawObject RangeIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject RangeIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject METH(range_iterator, __length_hint__)(Thread* thread, Frame* frame,
+                                                word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -248,8 +247,8 @@ RawObject RangeIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   return SmallInt::fromWord(iter.length());
 }
 
-RawObject RangeIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject METH(range_iterator, __next__)(Thread* thread, Frame* frame,
+                                         word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));

@@ -38,22 +38,22 @@ RawObject listSort(Thread* thread, const List& list);
 // Return the next item from the iterator, or Error if there are no items left.
 RawObject listIteratorNext(Thread* thread, const ListIterator& iter);
 
+RawObject METH(list, append)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(list, clear)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(list, __add__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(list, __contains__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(list, __iter__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(list, __imul__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(list, __len__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(list, __mul__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(list, __new__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(list, insert)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(list, pop)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(list, remove)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(list, sort)(Thread* thread, Frame* frame, word nargs);
+
 class ListBuiltins : public Builtins<ListBuiltins, ID(list), LayoutId::kList> {
  public:
-  static RawObject append(Thread* thread, Frame* frame, word nargs);
-  static RawObject clear(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderContains(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderImul(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderMul(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
-  static RawObject insert(Thread* thread, Frame* frame, word nargs);
-  static RawObject pop(Thread* thread, Frame* frame, word nargs);
-  static RawObject remove(Thread* thread, Frame* frame, word nargs);
-  static RawObject sort(Thread* thread, Frame* frame, word nargs);
-
   static const BuiltinAttribute kAttributes[];
   static const BuiltinMethod kBuiltinMethods[];
 
@@ -61,14 +61,17 @@ class ListBuiltins : public Builtins<ListBuiltins, ID(list), LayoutId::kList> {
   DISALLOW_IMPLICIT_CONSTRUCTORS(ListBuiltins);
 };
 
+RawObject METH(list_iterator, __iter__)(Thread* thread, Frame* frame,
+                                        word nargs);
+RawObject METH(list_iterator, __length_hint__)(Thread* thread, Frame* frame,
+                                               word nargs);
+RawObject METH(list_iterator, __next__)(Thread* thread, Frame* frame,
+                                        word nargs);
+
 class ListIteratorBuiltins
     : public Builtins<ListIteratorBuiltins, ID(list_iterator),
                       LayoutId::kListIterator> {
  public:
-  static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
-
   static const BuiltinMethod kBuiltinMethods[];
 
  private:

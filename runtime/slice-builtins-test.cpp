@@ -44,14 +44,14 @@ TEST_F(SliceBuiltinsTest, SliceHasStepAttribute) {
 TEST_F(SliceBuiltinsTest, DunderNewWithNonTypeRaisesTypeError) {
   HandleScope scope(thread_);
   Object num(&scope, SmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(SliceBuiltins::dunderNew, num));
+  Object result(&scope, runBuiltin(METH(slice, __new__), num));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST_F(SliceBuiltinsTest, DunderNewWithNonSliceTypeRaisesTypeError) {
   HandleScope scope(thread_);
   Object type(&scope, runtime_->typeAt(LayoutId::kInt));
-  Object result(&scope, runBuiltin(SliceBuiltins::dunderNew, type));
+  Object result(&scope, runBuiltin(METH(slice, __new__), type));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 

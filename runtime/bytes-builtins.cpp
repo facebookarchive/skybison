@@ -379,23 +379,23 @@ const BuiltinAttribute BytesBuiltins::kAttributes[] = {
 
 // clang-format off
 const BuiltinMethod BytesBuiltins::kBuiltinMethods[] = {
-    {ID(__add__), dunderAdd},
-    {ID(__eq__), dunderEq},
-    {ID(__ge__), dunderGe},
-    {ID(__gt__), dunderGt},
-    {ID(__hash__), dunderHash},
-    {ID(__iter__), dunderIter},
-    {ID(__le__), dunderLe},
-    {ID(__len__), dunderLen},
-    {ID(__lt__), dunderLt},
-    {ID(__mul__), dunderMul},
-    {ID(__ne__), dunderNe},
-    {ID(__repr__), dunderRepr},
-    {ID(hex), hex},
-    {ID(lstrip), lstrip},
-    {ID(rstrip), rstrip},
-    {ID(strip), strip},
-    {ID(translate), translate},
+    {ID(__add__), METH(bytes, __add__)},
+    {ID(__eq__), METH(bytes, __eq__)},
+    {ID(__ge__), METH(bytes, __ge__)},
+    {ID(__gt__), METH(bytes, __gt__)},
+    {ID(__hash__), METH(bytes, __hash__)},
+    {ID(__iter__), METH(bytes, __iter__)},
+    {ID(__le__), METH(bytes, __le__)},
+    {ID(__len__), METH(bytes, __len__)},
+    {ID(__lt__), METH(bytes, __lt__)},
+    {ID(__mul__), METH(bytes, __mul__)},
+    {ID(__ne__), METH(bytes, __ne__)},
+    {ID(__repr__), METH(bytes, __repr__)},
+    {ID(hex), METH(bytes, hex)},
+    {ID(lstrip), METH(bytes, lstrip)},
+    {ID(rstrip), METH(bytes, rstrip)},
+    {ID(strip), METH(bytes, strip)},
+    {ID(translate), METH(bytes, translate)},
     {SymbolId::kSentinelId, nullptr},
 };
 // clang-format on
@@ -404,7 +404,7 @@ void BytesBuiltins::postInitialize(Runtime*, const Type& new_type) {
   new_type.setBuiltinBase(LayoutId::kBytes);
 }
 
-RawObject BytesBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, __add__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -428,7 +428,7 @@ RawObject BytesBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
                               &other_obj);
 }
 
-RawObject BytesBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, __eq__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -445,7 +445,7 @@ RawObject BytesBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(self.compare(*other) == 0);
 }
 
-RawObject BytesBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, __ge__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -462,7 +462,7 @@ RawObject BytesBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(self.compare(*other) >= 0);
 }
 
-RawObject BytesBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, __gt__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -479,7 +479,7 @@ RawObject BytesBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(self.compare(*other) > 0);
 }
 
-RawObject BytesBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, __hash__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -490,7 +490,7 @@ RawObject BytesBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
   return SmallInt::fromWord(bytesHash(thread, *self));
 }
 
-RawObject BytesBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, __iter__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -502,7 +502,7 @@ RawObject BytesBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   return runtime->newBytesIterator(thread, self);
 }
 
-RawObject BytesBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, __le__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -519,7 +519,7 @@ RawObject BytesBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(self.compare(*other) <= 0);
 }
 
-RawObject BytesBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, __len__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -532,7 +532,7 @@ RawObject BytesBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   return SmallInt::fromWord(self.length());
 }
 
-RawObject BytesBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, __lt__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -549,7 +549,7 @@ RawObject BytesBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(self.compare(*other) < 0);
 }
 
-RawObject BytesBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, __mul__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -583,7 +583,7 @@ RawObject BytesBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   return runtime->bytesRepeat(thread, self, length, count);
 }
 
-RawObject BytesBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, __ne__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -600,7 +600,7 @@ RawObject BytesBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(self.compare(*other) != 0);
 }
 
-RawObject BytesBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, __repr__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -612,7 +612,7 @@ RawObject BytesBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   return bytesReprSmartQuotes(thread, self);
 }
 
-RawObject BytesBuiltins::hex(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, hex)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object obj(&scope, args.get(0));
@@ -623,7 +623,7 @@ RawObject BytesBuiltins::hex(Thread* thread, Frame* frame, word nargs) {
   return bytesHex(thread, self, self.length());
 }
 
-RawObject BytesBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, lstrip)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -652,7 +652,7 @@ RawObject BytesBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
                               &chars_obj);
 }
 
-RawObject BytesBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, rstrip)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -681,7 +681,7 @@ RawObject BytesBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
                               &chars_obj);
 }
 
-RawObject BytesBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, strip)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -710,7 +710,7 @@ RawObject BytesBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
                               &chars_obj);
 }
 
-RawObject BytesBuiltins::translate(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytes, translate)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -722,7 +722,7 @@ RawObject BytesBuiltins::translate(Thread* thread, Frame* frame, word nargs) {
   Object table_obj(&scope, args.get(1));
   word table_length;
   if (table_obj.isNoneType()) {
-    table_length = kTranslationTableLength;
+    table_length = BytesBuiltins::kTranslationTableLength;
     table_obj = Bytes::empty();
   } else if (runtime->isInstanceOfBytes(*table_obj)) {
     Bytes bytes(&scope, bytesUnderlying(thread, table_obj));
@@ -738,10 +738,10 @@ RawObject BytesBuiltins::translate(Thread* thread, Frame* frame, word nargs) {
                                 "a bytes-like object is required, not '%T'",
                                 &table_obj);
   }
-  if (table_length != kTranslationTableLength) {
+  if (table_length != BytesBuiltins::kTranslationTableLength) {
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "translation table must be %w characters long",
-                                kTranslationTableLength);
+                                BytesBuiltins::kTranslationTableLength);
   }
   Bytes table(&scope, *table_obj);
   Object del(&scope, args.get(2));
@@ -762,14 +762,14 @@ RawObject BytesBuiltins::translate(Thread* thread, Frame* frame, word nargs) {
 }
 
 const BuiltinMethod BytesIteratorBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), dunderIter},
-    {ID(__length_hint__), dunderLengthHint},
-    {ID(__next__), dunderNext},
+    {ID(__iter__), METH(bytes_iterator, __iter__)},
+    {ID(__length_hint__), METH(bytes_iterator, __length_hint__)},
+    {ID(__next__), METH(bytes_iterator, __next__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject BytesIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject METH(bytes_iterator, __iter__)(Thread* thread, Frame* frame,
+                                         word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -779,8 +779,8 @@ RawObject BytesIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject BytesIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject METH(bytes_iterator, __next__)(Thread* thread, Frame* frame,
+                                         word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -797,8 +797,8 @@ RawObject BytesIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   return SmallInt::fromWord(underlying.byteAt(index));
 }
 
-RawObject BytesIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
-                                                  word nargs) {
+RawObject METH(bytes_iterator, __length_hint__)(Thread* thread, Frame* frame,
+                                                word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));

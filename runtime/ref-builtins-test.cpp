@@ -74,7 +74,7 @@ TEST_F(RefBuiltinsTest, DunderCallReturnsObject) {
   Object obj(&scope, Str::empty());
   Object callback(&scope, NoneType::object());
   WeakRef ref(&scope, runtime_->newWeakRef(thread_, obj, callback));
-  Object result(&scope, runBuiltin(RefBuiltins::dunderCall, ref));
+  Object result(&scope, runBuiltin(METH(ref, __call__), ref));
   EXPECT_EQ(result, obj);
 }
 

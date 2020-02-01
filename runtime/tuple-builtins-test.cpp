@@ -147,7 +147,7 @@ TEST_F(TupleBuiltinsTest, DunderMulWithOneElement) {
   Tuple tuple(&scope, runtime_->newTuple(1));
   tuple.atPut(0, SmallInt::fromWord(1));
   Int four(&scope, SmallInt::fromWord(4));
-  Object result_obj(&scope, runBuiltin(TupleBuiltins::dunderMul, tuple, four));
+  Object result_obj(&scope, runBuiltin(METH(tuple, __mul__), tuple, four));
   ASSERT_FALSE(result_obj.isError());
   Tuple result(&scope, *result_obj);
 
@@ -162,7 +162,7 @@ TEST_F(TupleBuiltinsTest, DunderMulWithLengthGreaterThanOneAndTimesIsOne) {
   HandleScope scope(thread_);
   Tuple tuple(&scope, tupleFromRange(0, 4));
   Int one(&scope, SmallInt::fromWord(1));
-  Object result_obj(&scope, runBuiltin(TupleBuiltins::dunderMul, tuple, one));
+  Object result_obj(&scope, runBuiltin(METH(tuple, __mul__), tuple, one));
   ASSERT_FALSE(result_obj.isError());
   Tuple result(&scope, *result_obj);
 
@@ -178,7 +178,7 @@ TEST_F(TupleBuiltinsTest,
   HandleScope scope(thread_);
   Tuple tuple(&scope, tupleFromRange(1, 4));
   Int two(&scope, SmallInt::fromWord(2));
-  Object result_obj(&scope, runBuiltin(TupleBuiltins::dunderMul, tuple, two));
+  Object result_obj(&scope, runBuiltin(METH(tuple, __mul__), tuple, two));
   ASSERT_FALSE(result_obj.isError());
   Tuple result(&scope, *result_obj);
 
@@ -195,7 +195,7 @@ TEST_F(TupleBuiltinsTest, DunderMulWithEmptyTuple) {
   HandleScope scope(thread_);
   Tuple tuple(&scope, runtime_->emptyTuple());
   Int five(&scope, SmallInt::fromWord(5));
-  Object result_obj(&scope, runBuiltin(TupleBuiltins::dunderMul, tuple, five));
+  Object result_obj(&scope, runBuiltin(METH(tuple, __mul__), tuple, five));
   ASSERT_FALSE(result_obj.isError());
   Tuple result(&scope, *result_obj);
   EXPECT_EQ(result.length(), 0);
@@ -205,8 +205,7 @@ TEST_F(TupleBuiltinsTest, DunderMulWithNegativeTimes) {
   HandleScope scope(thread_);
   Tuple tuple(&scope, tupleFromRange(1, 4));
   Int negative(&scope, SmallInt::fromWord(-2));
-  Object result_obj(&scope,
-                    runBuiltin(TupleBuiltins::dunderMul, tuple, negative));
+  Object result_obj(&scope, runBuiltin(METH(tuple, __mul__), tuple, negative));
   ASSERT_FALSE(result_obj.isError());
   Tuple result(&scope, *result_obj);
   EXPECT_EQ(result.length(), 0);
@@ -227,7 +226,7 @@ TEST_F(TupleBuiltinsTest, DunderAddWithNonTupleLeftHandSideReturnsError) {
   HandleScope scope(thread_);
   Tuple empty_tuple(&scope, tupleFromRange(0, 0));
   Int zero(&scope, runtime_->newInt(0));
-  Object error(&scope, runBuiltin(TupleBuiltins::dunderAdd, empty_tuple, zero));
+  Object error(&scope, runBuiltin(METH(tuple, __add__), empty_tuple, zero));
   ASSERT_TRUE(error.isError());
   EXPECT_EQ(Thread::current()->pendingExceptionType(),
             runtime_->typeAt(LayoutId::kTypeError));
@@ -237,7 +236,7 @@ TEST_F(TupleBuiltinsTest, DunderAddWithNonTupleRightHandSideReturnsError) {
   HandleScope scope(thread_);
   Tuple empty_tuple(&scope, tupleFromRange(0, 0));
   Int zero(&scope, runtime_->newInt(0));
-  Object error(&scope, runBuiltin(TupleBuiltins::dunderAdd, zero, empty_tuple));
+  Object error(&scope, runBuiltin(METH(tuple, __add__), zero, empty_tuple));
   ASSERT_TRUE(error.isError());
   EXPECT_EQ(Thread::current()->pendingExceptionType(),
             runtime_->typeAt(LayoutId::kTypeError));
@@ -246,17 +245,17 @@ TEST_F(TupleBuiltinsTest, DunderAddWithNonTupleRightHandSideReturnsError) {
 TEST_F(TupleBuiltinsTest, DunderAddWithEmptyTuplesReturnsEmptyTuple) {
   HandleScope scope(thread_);
   Tuple empty(&scope, thread_->runtime()->emptyTuple());
-  EXPECT_EQ(runBuiltin(TupleBuiltins::dunderAdd, empty, empty), *empty);
+  EXPECT_EQ(runBuiltin(METH(tuple, __add__), empty, empty), *empty);
 }
 
 TEST_F(TupleBuiltinsTest, DunderAddWithEmptyTupleReturnsTuple) {
   HandleScope scope(thread_);
   Tuple empty_tuple(&scope, tupleFromRange(0, 0));
   Tuple one_tuple(&scope, tupleFromRange(1, 2));
-  Object lhs_result(
-      &scope, runBuiltin(TupleBuiltins::dunderAdd, empty_tuple, one_tuple));
-  Object rhs_result(
-      &scope, runBuiltin(TupleBuiltins::dunderAdd, empty_tuple, one_tuple));
+  Object lhs_result(&scope,
+                    runBuiltin(METH(tuple, __add__), empty_tuple, one_tuple));
+  Object rhs_result(&scope,
+                    runBuiltin(METH(tuple, __add__), empty_tuple, one_tuple));
 
   ASSERT_TRUE(lhs_result.isTuple());
   Tuple lhs_tuple(&scope, *lhs_result);
@@ -273,7 +272,7 @@ TEST_F(TupleBuiltinsTest, DunderAddWithManyElementsReturnsTuple) {
   HandleScope scope(thread_);
   Tuple lhs(&scope, tupleFromRange(1, 4));
   Tuple rhs(&scope, tupleFromRange(4, 8));
-  Object result(&scope, runBuiltin(TupleBuiltins::dunderAdd, lhs, rhs));
+  Object result(&scope, runBuiltin(METH(tuple, __add__), lhs, rhs));
   ASSERT_TRUE(result.isTuple());
   Tuple a(&scope, *result);
 
@@ -307,7 +306,7 @@ a = Foo((1, 2)) + (3, 4)
 TEST_F(TupleBuiltinsTest, DunderIterReturnsTupleIter) {
   HandleScope scope(thread_);
   Tuple empty_tuple(&scope, tupleFromRange(0, 0));
-  Object iter(&scope, runBuiltin(TupleBuiltins::dunderIter, empty_tuple));
+  Object iter(&scope, runBuiltin(METH(tuple, __iter__), empty_tuple));
   ASSERT_TRUE(iter.isTupleIterator());
 }
 
@@ -319,31 +318,31 @@ a = Foo()
                    .isError());
   HandleScope scope(thread_);
   Object a(&scope, mainModuleAt(runtime_, "a"));
-  Object iter(&scope, runBuiltin(TupleBuiltins::dunderIter, a));
+  Object iter(&scope, runBuiltin(METH(tuple, __iter__), a));
   ASSERT_TRUE(iter.isTupleIterator());
 }
 
 TEST_F(TupleIteratorBuiltinsTest, CallDunderNext) {
   HandleScope scope(thread_);
   Tuple tuple(&scope, tupleFromRange(0, 2));
-  Object iter(&scope, runBuiltin(TupleBuiltins::dunderIter, tuple));
+  Object iter(&scope, runBuiltin(METH(tuple, __iter__), tuple));
   ASSERT_TRUE(iter.isTupleIterator());
 
-  Object item1(&scope, runBuiltin(TupleIteratorBuiltins::dunderNext, iter));
+  Object item1(&scope, runBuiltin(METH(tuple_iterator, __next__), iter));
   EXPECT_TRUE(isIntEqualsWord(*item1, 0));
 
-  Object item2(&scope, runBuiltin(TupleIteratorBuiltins::dunderNext, iter));
+  Object item2(&scope, runBuiltin(METH(tuple_iterator, __next__), iter));
   EXPECT_TRUE(isIntEqualsWord(*item2, 1));
 }
 
 TEST_F(TupleIteratorBuiltinsTest, DunderIterReturnsSelf) {
   HandleScope scope(thread_);
   Tuple empty_tuple(&scope, tupleFromRange(0, 0));
-  Object iter(&scope, runBuiltin(TupleBuiltins::dunderIter, empty_tuple));
+  Object iter(&scope, runBuiltin(METH(tuple, __iter__), empty_tuple));
   ASSERT_TRUE(iter.isTupleIterator());
 
   // Now call __iter__ on the iterator object
-  Object result(&scope, runBuiltin(TupleIteratorBuiltins::dunderIter, iter));
+  Object result(&scope, runBuiltin(METH(tuple_iterator, __iter__), iter));
   ASSERT_EQ(*result, *iter);
 }
 
@@ -351,28 +350,28 @@ TEST_F(TupleIteratorBuiltinsTest,
        DunderLengthHintOnEmptyTupleIteratorReturnsZero) {
   HandleScope scope(thread_);
   Tuple empty_tuple(&scope, tupleFromRange(0, 0));
-  Object iter(&scope, runBuiltin(TupleBuiltins::dunderIter, empty_tuple));
+  Object iter(&scope, runBuiltin(METH(tuple, __iter__), empty_tuple));
 
   Object length_hint(&scope,
-                     runBuiltin(TupleIteratorBuiltins::dunderLengthHint, iter));
+                     runBuiltin(METH(tuple_iterator, __length_hint__), iter));
   EXPECT_TRUE(isIntEqualsWord(*length_hint, 0));
 }
 
 TEST_F(TupleIteratorBuiltinsTest, DunderLengthHintOnConsumedTupleIterator) {
   HandleScope scope(thread_);
   Tuple tuple(&scope, tupleFromRange(0, 1));
-  Object iter(&scope, runBuiltin(TupleBuiltins::dunderIter, tuple));
+  Object iter(&scope, runBuiltin(METH(tuple, __iter__), tuple));
 
-  Object length_hint1(
-      &scope, runBuiltin(TupleIteratorBuiltins::dunderLengthHint, iter));
+  Object length_hint1(&scope,
+                      runBuiltin(METH(tuple_iterator, __length_hint__), iter));
   EXPECT_TRUE(isIntEqualsWord(*length_hint1, 1));
 
   // Consume the iterator
-  Object item1(&scope, runBuiltin(TupleIteratorBuiltins::dunderNext, iter));
+  Object item1(&scope, runBuiltin(METH(tuple_iterator, __next__), iter));
   EXPECT_TRUE(isIntEqualsWord(*item1, 0));
 
-  Object length_hint2(
-      &scope, runBuiltin(TupleIteratorBuiltins::dunderLengthHint, iter));
+  Object length_hint2(&scope,
+                      runBuiltin(METH(tuple_iterator, __length_hint__), iter));
   EXPECT_TRUE(isIntEqualsWord(*length_hint2, 0));
 }
 
@@ -399,11 +398,11 @@ TEST_F(TupleBuiltinsTest, DunderContainsWithContainedElementReturnsTrue) {
   tuple.atPut(0, *value0);
   tuple.atPut(1, *value1);
   tuple.atPut(2, *value2);
-  EXPECT_EQ(runBuiltin(TupleBuiltins::dunderContains, tuple, value0),
+  EXPECT_EQ(runBuiltin(METH(tuple, __contains__), tuple, value0),
             RawBool::trueObj());
-  EXPECT_EQ(runBuiltin(TupleBuiltins::dunderContains, tuple, value1),
+  EXPECT_EQ(runBuiltin(METH(tuple, __contains__), tuple, value1),
             RawBool::trueObj());
-  EXPECT_EQ(runBuiltin(TupleBuiltins::dunderContains, tuple, value2),
+  EXPECT_EQ(runBuiltin(METH(tuple, __contains__), tuple, value2),
             RawBool::trueObj());
 }
 
@@ -416,9 +415,9 @@ TEST_F(TupleBuiltinsTest, DunderContainsWithUncontainedElementReturnsFalse) {
   tuple.atPut(1, *value1);
   Int value2(&scope, runtime_->newInt(42));
   Bool value3(&scope, RawBool::trueObj());
-  EXPECT_EQ(runBuiltin(TupleBuiltins::dunderContains, tuple, value2),
+  EXPECT_EQ(runBuiltin(METH(tuple, __contains__), tuple, value2),
             RawBool::falseObj());
-  EXPECT_EQ(runBuiltin(TupleBuiltins::dunderContains, tuple, value3),
+  EXPECT_EQ(runBuiltin(METH(tuple, __contains__), tuple, value3),
             RawBool::falseObj());
 }
 
@@ -434,7 +433,7 @@ t = (value,)
                    .isError());
   Object value(&scope, mainModuleAt(runtime_, "value"));
   Tuple tuple(&scope, mainModuleAt(runtime_, "t"));
-  EXPECT_EQ(runBuiltin(TupleBuiltins::dunderContains, tuple, value),
+  EXPECT_EQ(runBuiltin(METH(tuple, __contains__), tuple, value),
             RawBool::trueObj());
 }
 
@@ -451,7 +450,7 @@ t = (None,)
                    .isError());
   Object value(&scope, mainModuleAt(runtime_, "value"));
   Tuple tuple(&scope, mainModuleAt(runtime_, "t"));
-  EXPECT_EQ(runBuiltin(TupleBuiltins::dunderContains, tuple, value),
+  EXPECT_EQ(runBuiltin(METH(tuple, __contains__), tuple, value),
             RawBool::trueObj());
 }
 
@@ -472,7 +471,7 @@ t = (value0,)
                    .isError());
   Object value1(&scope, mainModuleAt(runtime_, "value1"));
   Tuple tuple(&scope, mainModuleAt(runtime_, "t"));
-  EXPECT_EQ(runBuiltin(TupleBuiltins::dunderContains, tuple, value1),
+  EXPECT_EQ(runBuiltin(METH(tuple, __contains__), tuple, value1),
             RawBool::falseObj());
 }
 
@@ -488,7 +487,7 @@ t = (None,)
                    .isError());
   Object value(&scope, mainModuleAt(runtime_, "value"));
   Tuple tuple(&scope, mainModuleAt(runtime_, "t"));
-  EXPECT_TRUE(raised(runBuiltin(TupleBuiltins::dunderContains, tuple, value),
+  EXPECT_TRUE(raised(runBuiltin(METH(tuple, __contains__), tuple, value),
                      LayoutId::kUserWarning));
 }
 
@@ -508,14 +507,14 @@ t = (None,)
                    .isError());
   Object value(&scope, mainModuleAt(runtime_, "value"));
   Tuple tuple(&scope, mainModuleAt(runtime_, "t"));
-  EXPECT_TRUE(raised(runBuiltin(TupleBuiltins::dunderContains, tuple, value),
+  EXPECT_TRUE(raised(runBuiltin(METH(tuple, __contains__), tuple, value),
                      LayoutId::kUserWarning));
 }
 
 TEST_F(TupleBuiltinsTest, DunderContainsWithNonTupleSelfRaisesTypeError) {
   HandleScope scope(thread_);
   Int i(&scope, SmallInt::fromWord(3));
-  EXPECT_TRUE(raised(runBuiltin(TupleBuiltins::dunderContains, i, i),
+  EXPECT_TRUE(raised(runBuiltin(METH(tuple, __contains__), i, i),
                      LayoutId::kTypeError));
 }
 

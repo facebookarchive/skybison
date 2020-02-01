@@ -1041,4 +1041,6 @@ class ImmediateBuiltins : public BuiltinsBase {
   static const LayoutId kSuperType = supertype;
 };
 
+#define METH(type, name) type##_##name##_meth
+
 }  // namespace py

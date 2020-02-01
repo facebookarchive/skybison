@@ -118,19 +118,18 @@ RawObject dictKeyIteratorNext(Thread* thread, const DictKeyIterator& iter);
 // Returns Error::object() if there are no more objects
 RawObject dictValueIteratorNext(Thread* thread, const DictValueIterator& iter);
 
+RawObject METH(dict, clear)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(dict, __delitem__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(dict, __eq__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(dict, __len__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(dict, __iter__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(dict, __new__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(dict, items)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(dict, keys)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(dict, values)(Thread* thread, Frame* frame, word nargs);
+
 class DictBuiltins : public Builtins<DictBuiltins, ID(dict), LayoutId::kDict> {
  public:
-  static RawObject clear(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderDelitem(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
-
-  static RawObject items(Thread* thread, Frame* frame, word nargs);
-  static RawObject keys(Thread* thread, Frame* frame, word nargs);
-  static RawObject values(Thread* thread, Frame* frame, word nargs);
-
   static const BuiltinAttribute kAttributes[];
   static const BuiltinMethod kBuiltinMethods[];
 
@@ -138,75 +137,84 @@ class DictBuiltins : public Builtins<DictBuiltins, ID(dict), LayoutId::kDict> {
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictBuiltins);
 };
 
+RawObject METH(dict_itemiterator, __iter__)(Thread* thread, Frame* frame,
+                                            word nargs);
+RawObject METH(dict_itemiterator, __length_hint__)(Thread* thread, Frame* frame,
+                                                   word nargs);
+RawObject METH(dict_itemiterator, __next__)(Thread* thread, Frame* frame,
+                                            word nargs);
+
 class DictItemIteratorBuiltins
     : public Builtins<DictItemIteratorBuiltins, ID(dict_itemiterator),
                       LayoutId::kDictItemIterator> {
  public:
-  static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
-
   static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictItemIteratorBuiltins);
 };
 
+RawObject METH(dict_items, __iter__)(Thread* thread, Frame* frame, word nargs);
+
 class DictItemsBuiltins
     : public Builtins<DictItemsBuiltins, ID(dict_items), LayoutId::kDictItems> {
  public:
-  static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
-
   static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictItemsBuiltins);
 };
 
+RawObject METH(dict_keyiterator, __iter__)(Thread* thread, Frame* frame,
+                                           word nargs);
+RawObject METH(dict_keyiterator, __length_hint__)(Thread* thread, Frame* frame,
+                                                  word nargs);
+RawObject METH(dict_keyiterator, __next__)(Thread* thread, Frame* frame,
+                                           word nargs);
+
 class DictKeyIteratorBuiltins
     : public Builtins<DictKeyIteratorBuiltins, ID(dict_keyiterator),
                       LayoutId::kDictKeyIterator> {
  public:
-  static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
-
   static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictKeyIteratorBuiltins);
 };
 
+RawObject METH(dict_keys, __iter__)(Thread* thread, Frame* frame, word nargs);
+
 class DictKeysBuiltins
     : public Builtins<DictKeysBuiltins, ID(dict_keys), LayoutId::kDictKeys> {
  public:
-  static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
-
   static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictKeysBuiltins);
 };
 
+RawObject METH(dict_valueiterator, __iter__)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject METH(dict_valueiterator, __length_hint__)(Thread* thread,
+                                                    Frame* frame, word nargs);
+RawObject METH(dict_valueiterator, __next__)(Thread* thread, Frame* frame,
+                                             word nargs);
+
 class DictValueIteratorBuiltins
     : public Builtins<DictValueIteratorBuiltins, ID(dict_valueiterator),
                       LayoutId::kDictValueIterator> {
  public:
-  static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
-
   static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictValueIteratorBuiltins);
 };
 
+RawObject METH(dict_values, __iter__)(Thread* thread, Frame* frame, word nargs);
+
 class DictValuesBuiltins : public Builtins<DictValuesBuiltins, ID(dict_values),
                                            LayoutId::kDictValues> {
  public:
-  static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
-
   static const BuiltinMethod kBuiltinMethods[];
 
  private:

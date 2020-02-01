@@ -175,10 +175,10 @@ static RawObject genThrowImpl(Thread* thread, Frame* frame, word nargs) {
 
 const BuiltinMethod GeneratorBuiltins::kBuiltinMethods[] = {
     // clang-format off
-    {ID(__iter__), dunderIter},
-    {ID(__next__), dunderNext},
-    {ID(send), send},
-    {ID(throw), genThrow},
+    {ID(__iter__), METH(generator, __iter__)},
+    {ID(__next__), METH(generator, __next__)},
+    {ID(send), METH(generator, send)},
+    {ID(throw), METH(generator, throw)},
     {SymbolId::kSentinelId, nullptr},
     // clang-format on
 };
@@ -189,8 +189,7 @@ const BuiltinAttribute GeneratorBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
-RawObject GeneratorBuiltins::dunderIter(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject METH(generator, __iter__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -203,8 +202,7 @@ RawObject GeneratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject GeneratorBuiltins::dunderNext(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject METH(generator, __next__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -216,18 +214,17 @@ RawObject GeneratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   return Interpreter::resumeGenerator(thread, gen, value);
 }
 
-RawObject GeneratorBuiltins::send(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(generator, send)(Thread* thread, Frame* frame, word nargs) {
   return sendImpl<ID(generator), LayoutId::kGenerator>(thread, frame, nargs);
 }
 
-RawObject GeneratorBuiltins::genThrow(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject METH(generator, throw)(Thread* thread, Frame* frame, word nargs) {
   return genThrowImpl<ID(generator), LayoutId::kGenerator>(thread, frame,
                                                            nargs);
 }
 
 const BuiltinMethod CoroutineBuiltins::kBuiltinMethods[] = {
-    {ID(send), send},
+    {ID(send), METH(coroutine, send)},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -237,7 +234,7 @@ const BuiltinAttribute CoroutineBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
-RawObject CoroutineBuiltins::send(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(coroutine, send)(Thread* thread, Frame* frame, word nargs) {
   return sendImpl<ID(coroutine), LayoutId::kCoroutine>(thread, frame, nargs);
 }
 

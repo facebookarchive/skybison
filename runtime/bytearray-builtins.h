@@ -21,30 +21,29 @@ RawObject byteArrayRepr(Thread* thread, const ByteArray& self);
 // Writes the value to the array as two hex digits.
 void writeByteAsHexDigits(Thread* thread, const ByteArray& array, byte value);
 
+RawObject METH(bytearray, __add__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytearray, __eq__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytearray, __ge__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytearray, __gt__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytearray, __iadd__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytearray, __imul__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytearray, __iter__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytearray, __le__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytearray, __len__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytearray, __lt__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytearray, __mul__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytearray, __ne__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytearray, __new__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytearray, __repr__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytearray, hex)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytearray, lstrip)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytearray, rstrip)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytearray, strip)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytearray, translate)(Thread* thread, Frame* frame, word nargs);
+
 class ByteArrayBuiltins
     : public Builtins<ByteArrayBuiltins, ID(bytearray), LayoutId::kByteArray> {
  public:
-  static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderGe(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderGt(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderIadd(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderImul(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderLe(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderLt(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderMul(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderNe(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderRepr(Thread* thread, Frame* frame, word nargs);
-
-  static RawObject hex(Thread* thread, Frame* frame, word nargs);
-  static RawObject lstrip(Thread* thread, Frame* frame, word nargs);
-  static RawObject rstrip(Thread* thread, Frame* frame, word nargs);
-  static RawObject strip(Thread* thread, Frame* frame, word nargs);
-  static RawObject translate(Thread* thread, Frame* frame, word nargs);
-
   static const BuiltinAttribute kAttributes[];
   static const BuiltinMethod kBuiltinMethods[];
 
@@ -52,14 +51,17 @@ class ByteArrayBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(ByteArrayBuiltins);
 };
 
+RawObject METH(bytearray_iterator, __iter__)(Thread* thread, Frame* frame,
+                                             word nargs);
+RawObject METH(bytearray_iterator, __length_hint__)(Thread* thread,
+                                                    Frame* frame, word nargs);
+RawObject METH(bytearray_iterator, __next__)(Thread* thread, Frame* frame,
+                                             word nargs);
+
 class ByteArrayIteratorBuiltins
     : public Builtins<ByteArrayIteratorBuiltins, ID(bytearray_iterator),
                       LayoutId::kByteArrayIterator> {
  public:
-  static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
-
   static const BuiltinMethod kBuiltinMethods[];
 
  private:

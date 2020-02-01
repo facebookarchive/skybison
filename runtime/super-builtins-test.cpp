@@ -84,8 +84,8 @@ s = B().getsuper()
                    .isError());
   Object s(&scope, mainModuleAt(runtime_, "s"));
   Object name(&scope, runtime_->newStrFromCStr("foo"));
-  EXPECT_TRUE(isIntEqualsWord(
-      runBuiltin(SuperBuiltins::dunderGetattribute, s, name), 8));
+  EXPECT_TRUE(
+      isIntEqualsWord(runBuiltin(METH(super, __getattribute__), s, name), 8));
 }
 
 TEST_F(SuperBuiltinsTest, DunderGetattributeWithNonStringNameRaisesTypeError) {
@@ -100,9 +100,9 @@ s = B().getsuper()
                    .isError());
   Object s(&scope, mainModuleAt(runtime_, "s"));
   Object name(&scope, runtime_->newInt(0));
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(SuperBuiltins::dunderGetattribute, s, name),
-      LayoutId::kTypeError, "attribute name must be string, not 'int'"));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(METH(super, __getattribute__), s, name),
+                            LayoutId::kTypeError,
+                            "attribute name must be string, not 'int'"));
 }
 
 TEST_F(SuperBuiltinsTest,
@@ -118,9 +118,9 @@ s = B().getsuper()
                    .isError());
   Object s(&scope, mainModuleAt(runtime_, "s"));
   Object name(&scope, runtime_->newStrFromCStr("xxx"));
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(SuperBuiltins::dunderGetattribute, s, name),
-      LayoutId::kAttributeError, "super object has no attribute 'xxx'"));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(METH(super, __getattribute__), s, name),
+                            LayoutId::kAttributeError,
+                            "super object has no attribute 'xxx'"));
 }
 
 TEST_F(SuperBuiltinsTest, SuperTest1) {

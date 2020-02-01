@@ -68,7 +68,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderAddWithByteArrayOtherReturnsNewByteArray) {
   ByteArray other(&scope, runtime_->newByteArray());
   const byte byte_array[] = {'1', '2', '3'};
   runtime_->byteArrayExtend(thread_, other, byte_array);
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderAdd, self, other));
+  Object result(&scope, runBuiltin(METH(bytearray, __add__), self, other));
   EXPECT_TRUE(isByteArrayEqualsCStr(self, ""));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "123"));
 }
@@ -77,7 +77,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderAddWithBytesOtherReturnsNewByteArray) {
   HandleScope scope;
   ByteArray self(&scope, runtime_->newByteArray());
   Bytes other(&scope, runtime_->newBytes(4, '1'));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderAdd, self, other));
+  Object result(&scope, runBuiltin(METH(bytearray, __add__), self, other));
   EXPECT_TRUE(isByteArrayEqualsCStr(self, ""));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "1111"));
 }
@@ -92,7 +92,7 @@ other = Foo(b"1234")
   HandleScope scope;
   Object self(&scope, runtime_->newByteArray());
   Object other(&scope, mainModuleAt(runtime_, "other"));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderAdd, self, other));
+  Object result(&scope, runBuiltin(METH(bytearray, __add__), self, other));
   EXPECT_TRUE(isByteArrayEqualsCStr(self, ""));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "1234"));
 }
@@ -103,7 +103,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderAddReturnsConcatenatedByteArray) {
   const byte byte_array[] = {'f', 'o', 'o'};
   runtime_->byteArrayExtend(thread_, self, byte_array);
   Bytes other(&scope, runtime_->newBytes(1, 'd'));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderAdd, self, other));
+  Object result(&scope, runBuiltin(METH(bytearray, __add__), self, other));
   EXPECT_TRUE(isByteArrayEqualsCStr(self, "foo"));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "food"));
 }
@@ -119,7 +119,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderEqWithNonBytesOtherReturnsNotImplemented) {
   HandleScope scope;
   Object self(&scope, runtime_->newByteArray());
   Object other(&scope, SmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderEq, self, other));
+  Object result(&scope, runBuiltin(METH(bytearray, __eq__), self, other));
   EXPECT_TRUE(result.isNotImplementedType());
 }
 
@@ -127,8 +127,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderEqWithEmptyByteArraysReturnsTrue) {
   HandleScope scope;
   Object self(&scope, runtime_->newByteArray());
   Object other(&scope, runtime_->newByteArray());
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderEq, self, other),
-            Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __eq__), self, other), Bool::trueObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderEqWithEqualBytesReturnsTrue) {
@@ -137,8 +136,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderEqWithEqualBytesReturnsTrue) {
   ByteArray self(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   Object other(&scope, runtime_->newBytesWithAll(bytes));
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderEq, self, other),
-            Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __eq__), self, other), Bool::trueObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderEqWithEqualByteArrayReturnsTrue) {
@@ -148,8 +146,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderEqWithEqualByteArrayReturnsTrue) {
   ByteArray other(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   runtime_->byteArrayExtend(thread_, other, bytes);
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderEq, self, other),
-            Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __eq__), self, other), Bool::trueObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderEqWithDifferentLengthsReturnsFalse) {
@@ -159,8 +156,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderEqWithDifferentLengthsReturnsFalse) {
   ByteArray other(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   runtime_->byteArrayExtend(thread_, other, {bytes, 2});
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderEq, self, other),
-            Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __eq__), self, other), Bool::falseObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderEqWithDifferentContentsReturnsFalse) {
@@ -169,8 +165,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderEqWithDifferentContentsReturnsFalse) {
   ByteArray self(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   Object other(&scope, runtime_->newBytes(3, 'f'));
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderEq, self, other),
-            Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __eq__), self, other), Bool::falseObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderGeWithNonByteArraySelfRaisesTypeError) {
@@ -184,7 +179,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderGeWithNonBytesOtherReturnsNotImplemented) {
   HandleScope scope;
   Object self(&scope, runtime_->newByteArray());
   Object other(&scope, SmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderGe, self, other));
+  Object result(&scope, runBuiltin(METH(bytearray, __ge__), self, other));
   EXPECT_TRUE(result.isNotImplementedType());
 }
 
@@ -192,8 +187,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderGeWithEmptyByteArraysReturnsTrue) {
   HandleScope scope;
   Object self(&scope, runtime_->newByteArray());
   Object other(&scope, runtime_->newByteArray());
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGe, self, other),
-            Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __ge__), self, other), Bool::trueObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderGeithEqualBytesReturnsTrue) {
@@ -202,8 +196,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderGeithEqualBytesReturnsTrue) {
   ByteArray self(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   Object other(&scope, runtime_->newBytesWithAll(bytes));
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGe, self, other),
-            Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __ge__), self, other), Bool::trueObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderGeWithEqualByteArrayReturnsTrue) {
@@ -213,8 +206,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderGeWithEqualByteArrayReturnsTrue) {
   ByteArray other(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   runtime_->byteArrayExtend(thread_, other, bytes);
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGe, self, other),
-            Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __ge__), self, other), Bool::trueObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderGeWithLongerOtherReturnsFalse) {
@@ -224,8 +216,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderGeWithLongerOtherReturnsFalse) {
   ByteArray other(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, {bytes, 2});
   runtime_->byteArrayExtend(thread_, other, bytes);
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGe, self, other),
-            Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __ge__), self, other), Bool::falseObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderGeWithShorterOtherReturnsTrue) {
@@ -235,8 +226,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderGeWithShorterOtherReturnsTrue) {
   ByteArray other(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   runtime_->byteArrayExtend(thread_, other, {bytes, 2});
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGe, self, other),
-            Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __ge__), self, other), Bool::trueObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderGeWithEarlierOtherReturnsTrue) {
@@ -245,8 +235,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderGeWithEarlierOtherReturnsTrue) {
   ByteArray self(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   Object other(&scope, runtime_->newBytes(3, 'f'));
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGe, self, other),
-            Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __ge__), self, other), Bool::trueObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderGeWithLaterOtherReturnsFalse) {
@@ -255,8 +244,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderGeWithLaterOtherReturnsFalse) {
   ByteArray self(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   Object other(&scope, runtime_->newBytes(3, 'o'));
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGe, self, other),
-            Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __ge__), self, other), Bool::falseObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderGtWithNonByteArraySelfRaisesTypeError) {
@@ -270,7 +258,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderGtWithNonBytesOtherReturnsNotImplemented) {
   HandleScope scope;
   Object self(&scope, runtime_->newByteArray());
   Object other(&scope, SmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderGt, self, other));
+  Object result(&scope, runBuiltin(METH(bytearray, __gt__), self, other));
   EXPECT_TRUE(result.isNotImplementedType());
 }
 
@@ -278,8 +266,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderGtWithEmptyByteArraysReturnsFalse) {
   HandleScope scope;
   Object self(&scope, runtime_->newByteArray());
   Object other(&scope, runtime_->newByteArray());
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGt, self, other),
-            Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __gt__), self, other), Bool::falseObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderGtithEqualBytesReturnsFalse) {
@@ -288,8 +275,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderGtithEqualBytesReturnsFalse) {
   ByteArray self(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   Object other(&scope, runtime_->newBytesWithAll(bytes));
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGt, self, other),
-            Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __gt__), self, other), Bool::falseObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderGtWithEqualByteArrayReturnsFalse) {
@@ -299,8 +285,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderGtWithEqualByteArrayReturnsFalse) {
   ByteArray other(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   runtime_->byteArrayExtend(thread_, other, bytes);
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGt, self, other),
-            Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __gt__), self, other), Bool::falseObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderGtWithLongerOtherReturnsFalse) {
@@ -310,8 +295,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderGtWithLongerOtherReturnsFalse) {
   ByteArray other(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, {bytes, 2});
   runtime_->byteArrayExtend(thread_, other, bytes);
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGt, self, other),
-            Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __gt__), self, other), Bool::falseObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderGtWithShorterOtherReturnsTrue) {
@@ -321,8 +305,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderGtWithShorterOtherReturnsTrue) {
   ByteArray other(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   runtime_->byteArrayExtend(thread_, other, {bytes, 2});
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGt, self, other),
-            Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __gt__), self, other), Bool::trueObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderGtWithEarlierOtherReturnsTrue) {
@@ -331,8 +314,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderGtWithEarlierOtherReturnsTrue) {
   ByteArray self(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   Object other(&scope, runtime_->newBytes(3, 'f'));
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGt, self, other),
-            Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __gt__), self, other), Bool::trueObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderGtWithLaterOtherReturnsFalse) {
@@ -341,8 +323,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderGtWithLaterOtherReturnsFalse) {
   ByteArray self(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   Object other(&scope, runtime_->newBytes(3, 'o'));
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGt, self, other),
-            Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __gt__), self, other), Bool::falseObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderIaddWithNonByteArraySelfRaisesTypeError) {
@@ -368,7 +349,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderIaddWithByteArrayOtherConcatenatesToSelf) {
   ByteArray other(&scope, runtime_->newByteArray());
   const byte bytes[] = {'1', '2', '3'};
   runtime_->byteArrayExtend(thread_, other, bytes);
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderIadd, self, other));
+  Object result(&scope, runBuiltin(METH(bytearray, __iadd__), self, other));
   EXPECT_TRUE(isByteArrayEqualsBytes(self, bytes));
   EXPECT_TRUE(isByteArrayEqualsBytes(result, bytes));
 }
@@ -378,7 +359,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderIaddWithBytesOtherConcatenatesToSelf) {
   ByteArray self(&scope, runtime_->newByteArray());
   const byte bytes[] = {'1', '2', '3'};
   Bytes other(&scope, runtime_->newBytesWithAll(bytes));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderIadd, self, other));
+  Object result(&scope, runBuiltin(METH(bytearray, __iadd__), self, other));
   EXPECT_TRUE(isByteArrayEqualsBytes(self, bytes));
   EXPECT_TRUE(isByteArrayEqualsBytes(result, bytes));
 }
@@ -393,7 +374,7 @@ other = Foo(b"1234")
   HandleScope scope;
   Object self(&scope, runtime_->newByteArray());
   Object other(&scope, mainModuleAt(runtime_, "other"));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderIadd, self, other));
+  Object result(&scope, runBuiltin(METH(bytearray, __iadd__), self, other));
   const char* expected = "1234";
   EXPECT_TRUE(isByteArrayEqualsCStr(self, expected));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, expected));
@@ -409,10 +390,9 @@ TEST_F(ByteArrayBuiltinsTest, DunderImulWithNonIntRaisesTypeError) {
   HandleScope scope;
   Object self(&scope, runtime_->newByteArray());
   Object count(&scope, runtime_->newList());
-  EXPECT_TRUE(
-      raisedWithStr(runBuiltin(ByteArrayBuiltins::dunderImul, self, count),
-                    LayoutId::kTypeError,
-                    "'list' object cannot be interpreted as an integer"));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(METH(bytearray, __imul__), self, count), LayoutId::kTypeError,
+      "'list' object cannot be interpreted as an integer"));
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderImulWithIntSubclassReturnsRepeatedBytes) {
@@ -425,7 +405,7 @@ count = C(5)
 )")
                    .isError());
   Object count(&scope, mainModuleAt(runtime_, "count"));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderImul, self, count));
+  Object result(&scope, runBuiltin(METH(bytearray, __imul__), self, count));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "aaaaa"));
 }
 
@@ -441,7 +421,7 @@ count = C()
 )")
                    .isError());
   Object count(&scope, mainModuleAt(runtime_, "count"));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderImul, self, count));
+  Object result(&scope, runBuiltin(METH(bytearray, __imul__), self, count));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "aa"));
 }
 
@@ -456,9 +436,9 @@ count = C()
 )")
                    .isError());
   Object count(&scope, mainModuleAt(runtime_, "count"));
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(ByteArrayBuiltins::dunderImul, self, count),
-      LayoutId::kTypeError, "__index__ returned non-int (type str)"));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(METH(bytearray, __imul__), self, count),
+                            LayoutId::kTypeError,
+                            "__index__ returned non-int (type str)"));
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderImulPropagatesDunderIndexError) {
@@ -472,9 +452,8 @@ count = C()
 )")
                    .isError());
   Object count(&scope, mainModuleAt(runtime_, "count"));
-  EXPECT_TRUE(
-      raisedWithStr(runBuiltin(ByteArrayBuiltins::dunderImul, self, count),
-                    LayoutId::kArithmeticError, "called __index__"));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(METH(bytearray, __imul__), self, count),
+                            LayoutId::kArithmeticError, "called __index__"));
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderImulWithLargeIntRaisesOverflowError) {
@@ -482,10 +461,9 @@ TEST_F(ByteArrayBuiltinsTest, DunderImulWithLargeIntRaisesOverflowError) {
   ByteArray self(&scope, runtime_->newByteArray());
   const uword digits[] = {1, 1};
   Object count(&scope, runtime_->newIntWithDigits(digits));
-  EXPECT_TRUE(
-      raisedWithStr(runBuiltin(ByteArrayBuiltins::dunderImul, self, count),
-                    LayoutId::kOverflowError,
-                    "cannot fit 'int' into an index-sized integer"));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(METH(bytearray, __imul__), self, count),
+                            LayoutId::kOverflowError,
+                            "cannot fit 'int' into an index-sized integer"));
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderImulWithOverflowRaisesMemoryError) {
@@ -494,7 +472,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderImulWithOverflowRaisesMemoryError) {
   const byte bytes[] = {'a', 'b', 'c'};
   runtime_->byteArrayExtend(thread_, self, bytes);
   Object count(&scope, SmallInt::fromWord(SmallInt::kMaxValue / 2));
-  EXPECT_TRUE(raised(runBuiltin(ByteArrayBuiltins::dunderImul, self, count),
+  EXPECT_TRUE(raised(runBuiltin(METH(bytearray, __imul__), self, count),
                      LayoutId::kMemoryError));
 }
 
@@ -503,7 +481,7 @@ TEST_F(ByteArrayBuiltinsTest,
   HandleScope scope;
   Object self(&scope, runtime_->newByteArray());
   Object count(&scope, SmallInt::fromWord(5));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderImul, self, count));
+  Object result(&scope, runBuiltin(METH(bytearray, __imul__), self, count));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, ""));
 }
 
@@ -513,7 +491,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderImulWithNegativeReturnsEmptyByteArray) {
   self.setBytes(runtime_->mutableBytesWith(8, 'a'));
   self.setNumItems(8);
   Object count(&scope, SmallInt::fromWord(-5));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderImul, self, count));
+  Object result(&scope, runBuiltin(METH(bytearray, __imul__), self, count));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, ""));
 }
 
@@ -523,7 +501,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderImulWithZeroReturnsEmptyByteArray) {
   self.setBytes(runtime_->mutableBytesWith(8, 'a'));
   self.setNumItems(8);
   Object count(&scope, SmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderImul, self, count));
+  Object result(&scope, runBuiltin(METH(bytearray, __imul__), self, count));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, ""));
 }
 
@@ -533,7 +511,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderImulWithOneReturnsSameByteArray) {
   const byte bytes[] = {'a', 'b'};
   runtime_->byteArrayExtend(thread_, self, bytes);
   Object count(&scope, SmallInt::fromWord(1));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderImul, self, count));
+  Object result(&scope, runBuiltin(METH(bytearray, __imul__), self, count));
   EXPECT_TRUE(isByteArrayEqualsBytes(result, bytes));
 }
 
@@ -543,7 +521,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderImulReturnsRepeatedByteArray) {
   const byte bytes[] = {'a', 'b'};
   runtime_->byteArrayExtend(thread_, self, bytes);
   Object count(&scope, SmallInt::fromWord(3));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderImul, self, count));
+  Object result(&scope, runBuiltin(METH(bytearray, __imul__), self, count));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "ababab"));
 }
 
@@ -558,7 +536,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderLeWithNonBytesOtherReturnsNotImplemented) {
   HandleScope scope;
   Object self(&scope, runtime_->newByteArray());
   Object other(&scope, SmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderLe, self, other));
+  Object result(&scope, runBuiltin(METH(bytearray, __le__), self, other));
   EXPECT_TRUE(result.isNotImplementedType());
 }
 
@@ -566,8 +544,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderLeWithEmptyByteArraysReturnsTrue) {
   HandleScope scope;
   Object self(&scope, runtime_->newByteArray());
   Object other(&scope, runtime_->newByteArray());
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLe, self, other),
-            Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __le__), self, other), Bool::trueObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderLeithEqualBytesReturnsTrue) {
@@ -576,8 +553,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderLeithEqualBytesReturnsTrue) {
   ByteArray self(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   Object other(&scope, runtime_->newBytesWithAll(bytes));
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLe, self, other),
-            Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __le__), self, other), Bool::trueObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderLeWithEqualByteArrayReturnsTrue) {
@@ -587,8 +563,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderLeWithEqualByteArrayReturnsTrue) {
   ByteArray other(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   runtime_->byteArrayExtend(thread_, other, bytes);
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLe, self, other),
-            Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __le__), self, other), Bool::trueObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderLeWithLongerOtherReturnsTrue) {
@@ -598,8 +573,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderLeWithLongerOtherReturnsTrue) {
   ByteArray other(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, {bytes, 2});
   runtime_->byteArrayExtend(thread_, other, bytes);
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLe, self, other),
-            Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __le__), self, other), Bool::trueObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderLeWithShorterOtherReturnsFalse) {
@@ -609,8 +583,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderLeWithShorterOtherReturnsFalse) {
   ByteArray other(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   runtime_->byteArrayExtend(thread_, other, {bytes, 2});
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLe, self, other),
-            Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __le__), self, other), Bool::falseObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderLeWithEarlierOtherReturnsFalse) {
@@ -619,8 +592,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderLeWithEarlierOtherReturnsFalse) {
   ByteArray self(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   Object other(&scope, runtime_->newBytes(3, 'f'));
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLe, self, other),
-            Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __le__), self, other), Bool::falseObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderLeWithLaterOtherReturnsTrue) {
@@ -629,8 +601,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderLeWithLaterOtherReturnsTrue) {
   ByteArray self(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   Object other(&scope, runtime_->newBytes(3, 'o'));
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLe, self, other),
-            Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __le__), self, other), Bool::trueObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderLenWithNonByteArrayRaisesTypeError) {
@@ -642,7 +613,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderLenWithNonByteArrayRaisesTypeError) {
 TEST_F(ByteArrayBuiltinsTest, DunderLenWithEmptyByteArrayReturnsZero) {
   HandleScope scope;
   ByteArray self(&scope, runtime_->newByteArray());
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderLen, self));
+  Object result(&scope, runBuiltin(METH(bytearray, __len__), self));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 
@@ -651,12 +622,12 @@ TEST_F(ByteArrayBuiltinsTest, DunderLenWithNonEmptyByteArrayReturnsPositive) {
   ByteArray self(&scope, runtime_->newByteArray());
   const byte bytes[] = {1, 2, 3, 4, 5};
   runtime_->byteArrayExtend(thread_, self, bytes);
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderLen, self));
+  Object result(&scope, runBuiltin(METH(bytearray, __len__), self));
   EXPECT_TRUE(isIntEqualsWord(*result, 5));
 
   const byte bytes2[] = {6, 7};
   runtime_->byteArrayExtend(thread_, self, bytes2);
-  result = runBuiltin(ByteArrayBuiltins::dunderLen, self);
+  result = runBuiltin(METH(bytearray, __len__), self);
   EXPECT_TRUE(isIntEqualsWord(*result, 7));
 }
 
@@ -671,7 +642,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderLtWithNonBytesOtherReturnsNotImplemented) {
   HandleScope scope;
   Object self(&scope, runtime_->newByteArray());
   Object other(&scope, SmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderLt, self, other));
+  Object result(&scope, runBuiltin(METH(bytearray, __lt__), self, other));
   EXPECT_TRUE(result.isNotImplementedType());
 }
 
@@ -679,8 +650,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderLtWithEmptyByteArraysReturnsFalse) {
   HandleScope scope;
   Object self(&scope, runtime_->newByteArray());
   Object other(&scope, runtime_->newByteArray());
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLt, self, other),
-            Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __lt__), self, other), Bool::falseObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderLtithEqualBytesReturnsFalse) {
@@ -689,8 +659,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderLtithEqualBytesReturnsFalse) {
   ByteArray self(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   Object other(&scope, runtime_->newBytesWithAll(bytes));
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLt, self, other),
-            Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __lt__), self, other), Bool::falseObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderLtWithEqualByteArrayReturnsFalse) {
@@ -700,8 +669,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderLtWithEqualByteArrayReturnsFalse) {
   ByteArray other(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   runtime_->byteArrayExtend(thread_, other, bytes);
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLt, self, other),
-            Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __lt__), self, other), Bool::falseObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderLtWithLongerOtherReturnsTrue) {
@@ -711,8 +679,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderLtWithLongerOtherReturnsTrue) {
   ByteArray other(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, {bytes, 2});
   runtime_->byteArrayExtend(thread_, other, bytes);
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLt, self, other),
-            Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __lt__), self, other), Bool::trueObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderLtWithShorterOtherReturnsFalse) {
@@ -722,8 +689,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderLtWithShorterOtherReturnsFalse) {
   ByteArray other(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   runtime_->byteArrayExtend(thread_, other, {bytes, 2});
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLt, self, other),
-            Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __lt__), self, other), Bool::falseObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderLtWithEarlierOtherReturnsFalse) {
@@ -732,8 +698,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderLtWithEarlierOtherReturnsFalse) {
   ByteArray self(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   Object other(&scope, runtime_->newBytes(3, 'f'));
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLt, self, other),
-            Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __lt__), self, other), Bool::falseObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderLtWithLaterOtherReturnsTrue) {
@@ -742,8 +707,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderLtWithLaterOtherReturnsTrue) {
   ByteArray self(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   Object other(&scope, runtime_->newBytes(3, 'o'));
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLt, self, other),
-            Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __lt__), self, other), Bool::trueObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderMulWithNonByteArrayRaisesTypeError) {
@@ -756,10 +720,9 @@ TEST_F(ByteArrayBuiltinsTest, DunderMulWithNonIntRaisesTypeError) {
   HandleScope scope;
   Object self(&scope, runtime_->newByteArray());
   Object count(&scope, runtime_->newList());
-  EXPECT_TRUE(
-      raisedWithStr(runBuiltin(ByteArrayBuiltins::dunderMul, self, count),
-                    LayoutId::kTypeError,
-                    "'list' object cannot be interpreted as an integer"));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(METH(bytearray, __mul__), self, count), LayoutId::kTypeError,
+      "'list' object cannot be interpreted as an integer"));
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderMulWithIntSubclassReturnsRepeatedBytes) {
@@ -773,7 +736,7 @@ count = C(3)
 )")
                    .isError());
   Object count(&scope, mainModuleAt(runtime_, "count"));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderMul, self, count));
+  Object result(&scope, runBuiltin(METH(bytearray, __mul__), self, count));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "foofoofoo"));
 }
 
@@ -789,7 +752,7 @@ count = C()
 )")
                    .isError());
   Object count(&scope, mainModuleAt(runtime_, "count"));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderMul, self, count));
+  Object result(&scope, runBuiltin(METH(bytearray, __mul__), self, count));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "aa"));
 }
 
@@ -804,9 +767,9 @@ count = C()
 )")
                    .isError());
   Object count(&scope, mainModuleAt(runtime_, "count"));
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(ByteArrayBuiltins::dunderMul, self, count),
-      LayoutId::kTypeError, "__index__ returned non-int (type str)"));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(METH(bytearray, __mul__), self, count),
+                            LayoutId::kTypeError,
+                            "__index__ returned non-int (type str)"));
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderMulPropagatesDunderIndexError) {
@@ -820,9 +783,8 @@ count = C()
 )")
                    .isError());
   Object count(&scope, mainModuleAt(runtime_, "count"));
-  EXPECT_TRUE(
-      raisedWithStr(runBuiltin(ByteArrayBuiltins::dunderMul, self, count),
-                    LayoutId::kArithmeticError, "called __index__"));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(METH(bytearray, __mul__), self, count),
+                            LayoutId::kArithmeticError, "called __index__"));
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderMulWithLargeIntRaisesOverflowError) {
@@ -830,10 +792,9 @@ TEST_F(ByteArrayBuiltinsTest, DunderMulWithLargeIntRaisesOverflowError) {
   ByteArray self(&scope, runtime_->newByteArray());
   const uword digits[] = {1, 1};
   Object count(&scope, runtime_->newIntWithDigits(digits));
-  EXPECT_TRUE(
-      raisedWithStr(runBuiltin(ByteArrayBuiltins::dunderMul, self, count),
-                    LayoutId::kOverflowError,
-                    "cannot fit 'int' into an index-sized integer"));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(METH(bytearray, __mul__), self, count),
+                            LayoutId::kOverflowError,
+                            "cannot fit 'int' into an index-sized integer"));
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderMulWithOverflowRaisesMemoryError) {
@@ -842,7 +803,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderMulWithOverflowRaisesMemoryError) {
   const byte bytes[] = {'a', 'b', 'c'};
   runtime_->byteArrayExtend(thread_, self, bytes);
   Object count(&scope, SmallInt::fromWord(SmallInt::kMaxValue / 2));
-  EXPECT_TRUE(raised(runBuiltin(ByteArrayBuiltins::dunderMul, self, count),
+  EXPECT_TRUE(raised(runBuiltin(METH(bytearray, __mul__), self, count),
                      LayoutId::kMemoryError));
 }
 
@@ -851,7 +812,7 @@ TEST_F(ByteArrayBuiltinsTest,
   HandleScope scope;
   Object self(&scope, runtime_->newByteArray());
   Object count(&scope, SmallInt::fromWord(5));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderMul, self, count));
+  Object result(&scope, runBuiltin(METH(bytearray, __mul__), self, count));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, ""));
 }
 
@@ -861,7 +822,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderMulWithNegativeReturnsEmptyByteArray) {
   self.setBytes(runtime_->mutableBytesWith(8, 'a'));
   self.setNumItems(8);
   Object count(&scope, SmallInt::fromWord(-5));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderMul, self, count));
+  Object result(&scope, runBuiltin(METH(bytearray, __mul__), self, count));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, ""));
 }
 
@@ -871,7 +832,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderMulWithZeroReturnsEmptyByteArray) {
   self.setBytes(runtime_->mutableBytesWith(8, 'a'));
   self.setNumItems(8);
   Object count(&scope, SmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderMul, self, count));
+  Object result(&scope, runBuiltin(METH(bytearray, __mul__), self, count));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, ""));
 }
 
@@ -881,7 +842,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderMulWithOneReturnsSameByteArray) {
   const byte bytes[] = {'a', 'b'};
   runtime_->byteArrayExtend(thread_, self, bytes);
   Object count(&scope, SmallInt::fromWord(1));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderMul, self, count));
+  Object result(&scope, runBuiltin(METH(bytearray, __mul__), self, count));
   EXPECT_TRUE(isByteArrayEqualsBytes(result, bytes));
 }
 
@@ -891,7 +852,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderMulReturnsRepeatedByteArray) {
   const byte bytes[] = {'a', 'b'};
   runtime_->byteArrayExtend(thread_, self, bytes);
   Object count(&scope, SmallInt::fromWord(3));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderMul, self, count));
+  Object result(&scope, runBuiltin(METH(bytearray, __mul__), self, count));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "ababab"));
 }
 
@@ -906,7 +867,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderNeWithNonBytesOtherReturnsNotImplemented) {
   HandleScope scope;
   Object self(&scope, runtime_->newByteArray());
   Object other(&scope, SmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderNe, self, other));
+  Object result(&scope, runBuiltin(METH(bytearray, __ne__), self, other));
   EXPECT_TRUE(result.isNotImplementedType());
 }
 
@@ -914,8 +875,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderNeWithEmptyByteArraysReturnsFalse) {
   HandleScope scope;
   Object self(&scope, runtime_->newByteArray());
   Object other(&scope, runtime_->newByteArray());
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderNe, self, other),
-            Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __ne__), self, other), Bool::falseObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderNeWithEqualBytesReturnsFalse) {
@@ -924,8 +884,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderNeWithEqualBytesReturnsFalse) {
   ByteArray self(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   Object other(&scope, runtime_->newBytesWithAll(bytes));
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderNe, self, other),
-            Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __ne__), self, other), Bool::falseObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderNeWithEqualByteArrayReturnsFalse) {
@@ -935,8 +894,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderNeWithEqualByteArrayReturnsFalse) {
   ByteArray other(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   runtime_->byteArrayExtend(thread_, other, bytes);
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderNe, self, other),
-            Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __ne__), self, other), Bool::falseObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderNeWithDifferentLengthsReturnsTrue) {
@@ -946,8 +904,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderNeWithDifferentLengthsReturnsTrue) {
   ByteArray other(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   runtime_->byteArrayExtend(thread_, other, {bytes, 2});
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderNe, self, other),
-            Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __ne__), self, other), Bool::trueObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderNeWithDifferentContentsReturnsTrue) {
@@ -956,8 +913,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderNeWithDifferentContentsReturnsTrue) {
   ByteArray self(&scope, runtime_->newByteArray());
   runtime_->byteArrayExtend(thread_, self, bytes);
   Object other(&scope, runtime_->newBytes(3, 'f'));
-  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderNe, self, other),
-            Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(bytearray, __ne__), self, other), Bool::trueObj());
 }
 
 TEST_F(ByteArrayBuiltinsTest, DunderNewWithNonTypeRaisesTypeError) {
@@ -974,7 +930,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderNewWithNonByteArrayRaisesTypeError) {
 TEST_F(ByteArrayBuiltinsTest, DunderNewReturnsEmptyByteArray) {
   HandleScope scope;
   Type cls(&scope, runtime_->typeAt(LayoutId::kByteArray));
-  Object self(&scope, runBuiltin(ByteArrayBuiltins::dunderNew, cls));
+  Object self(&scope, runBuiltin(METH(bytearray, __new__), cls));
   EXPECT_TRUE(isByteArrayEqualsCStr(self, ""));
 }
 
@@ -995,7 +951,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderReprWithNonByteArrayRaisesTypeError) {
 TEST_F(ByteArrayBuiltinsTest, DunderReprWithEmptyByteArrayReturnsEmptyRepr) {
   HandleScope scope;
   ByteArray self(&scope, runtime_->newByteArray());
-  Object repr(&scope, runBuiltin(ByteArrayBuiltins::dunderRepr, self));
+  Object repr(&scope, runBuiltin(METH(bytearray, __repr__), self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, "bytearray(b'')"));
 }
 
@@ -1004,7 +960,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderReprWithSimpleByteArrayReturnsRepr) {
   ByteArray self(&scope, runtime_->newByteArray());
   const byte bytes[] = {'f', 'o', 'o'};
   runtime_->byteArrayExtend(thread_, self, bytes);
-  Object repr(&scope, runBuiltin(ByteArrayBuiltins::dunderRepr, self));
+  Object repr(&scope, runBuiltin(METH(bytearray, __repr__), self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, "bytearray(b'foo')"));
 }
 
@@ -1014,7 +970,7 @@ TEST_F(ByteArrayBuiltinsTest,
   ByteArray self(&scope, runtime_->newByteArray());
   const byte bytes[] = {'_', '"', '_'};
   runtime_->byteArrayExtend(thread_, self, bytes);
-  Object repr(&scope, runBuiltin(ByteArrayBuiltins::dunderRepr, self));
+  Object repr(&scope, runBuiltin(METH(bytearray, __repr__), self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"(bytearray(b'_"_'))"));
 }
 
@@ -1024,7 +980,7 @@ TEST_F(ByteArrayBuiltinsTest,
   ByteArray self(&scope, runtime_->newByteArray());
   const byte bytes[] = {'_', '\'', '_'};
   runtime_->byteArrayExtend(thread_, self, bytes);
-  Object repr(&scope, runBuiltin(ByteArrayBuiltins::dunderRepr, self));
+  Object repr(&scope, runBuiltin(METH(bytearray, __repr__), self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"(bytearray(b"_\'_"))"));
 }
 
@@ -1034,7 +990,7 @@ TEST_F(ByteArrayBuiltinsTest,
   ByteArray self(&scope, runtime_->newByteArray());
   const byte bytes[] = {'_', '"', '_', '\'', '_'};
   runtime_->byteArrayExtend(thread_, self, bytes);
-  Object repr(&scope, runBuiltin(ByteArrayBuiltins::dunderRepr, self));
+  Object repr(&scope, runBuiltin(METH(bytearray, __repr__), self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"(bytearray(b'_"_\'_'))"));
 }
 
@@ -1043,7 +999,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderReprWithSpeciaBytesUsesEscapeSequences) {
   ByteArray self(&scope, runtime_->newByteArray());
   const byte bytes[] = {'\\', '\t', '\n', '\r'};
   runtime_->byteArrayExtend(thread_, self, bytes);
-  Object repr(&scope, runBuiltin(ByteArrayBuiltins::dunderRepr, self));
+  Object repr(&scope, runBuiltin(METH(bytearray, __repr__), self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"(bytearray(b'\\\t\n\r'))"));
 }
 
@@ -1052,7 +1008,7 @@ TEST_F(ByteArrayBuiltinsTest, DunderReprWithSmallAndLargeBytesUsesHex) {
   ByteArray self(&scope, runtime_->newByteArray());
   const byte bytes[] = {0, 0x1f, 0x80, 0xff};
   runtime_->byteArrayExtend(thread_, self, bytes);
-  Object repr(&scope, runBuiltin(ByteArrayBuiltins::dunderRepr, self));
+  Object repr(&scope, runBuiltin(METH(bytearray, __repr__), self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"(bytearray(b'\x00\x1f\x80\xff'))"));
 }
 
@@ -1073,7 +1029,7 @@ TEST_F(ByteArrayBuiltinsTest, HexWithNonByteArrayRaisesTypeError) {
 TEST_F(ByteArrayBuiltinsTest, HexWithEmptyByteArrayReturnsEmptyString) {
   HandleScope scope;
   Object self(&scope, runtime_->newByteArray());
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::hex, self));
+  Object result(&scope, runBuiltin(METH(bytearray, hex), self));
   EXPECT_TRUE(isStrEqualsCStr(*result, ""));
 }
 
@@ -1082,7 +1038,7 @@ TEST_F(ByteArrayBuiltinsTest, HexWithNonEmptyBytesReturnsString) {
   ByteArray self(&scope, runtime_->newByteArray());
   const byte bytes[] = {0x60, 0xe, 0x18, 0x21};
   runtime_->byteArrayExtend(thread_, self, bytes);
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::hex, self));
+  Object result(&scope, runBuiltin(METH(bytearray, hex), self));
   EXPECT_TRUE(isStrEqualsCStr(*result, "600e1821"));
 }
 
@@ -1187,7 +1143,7 @@ TEST_F(ByteArrayBuiltinsTest, TranslateWithEmptyByteArrayReturnsNewByteArray) {
   Object table(&scope, NoneType::object());
   Object del(&scope, runtime_->newByteArray());
   Object result(&scope,
-                runBuiltin(ByteArrayBuiltins::translate, self, table, del));
+                runBuiltin(METH(bytearray, translate), self, table, del));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, ""));
   EXPECT_NE(result, self);
 }
@@ -1201,7 +1157,7 @@ TEST_F(ByteArrayBuiltinsTest, TranslateWithNonEmptySecondArgDeletesBytes) {
   Object table(&scope, NoneType::object());
   Object del(&scope, runtime_->newBytesWithAll(abc));
   Object result(&scope,
-                runBuiltin(ByteArrayBuiltins::translate, self, table, del));
+                runBuiltin(METH(bytearray, translate), self, table, del));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "Alm"));
 }
 
@@ -1215,7 +1171,7 @@ TEST_F(ByteArrayBuiltinsTest, TranslateWithTableTranslatesBytes) {
   Object table(&scope, mainModuleAt(runtime_, "table"));
   Object del(&scope, runtime_->newByteArray());
   Object result(&scope,
-                runBuiltin(ByteArrayBuiltins::translate, self, table, del));
+                runBuiltin(METH(bytearray, translate), self, table, del));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "1l2b2m2"));
 }
 
@@ -1231,7 +1187,7 @@ TEST_F(ByteArrayBuiltinsTest,
   Object table(&scope, mainModuleAt(runtime_, "table"));
   Object del(&scope, runtime_->newBytesWithAll(abc));
   Object result(&scope,
-                runBuiltin(ByteArrayBuiltins::translate, self, table, del));
+                runBuiltin(METH(bytearray, translate), self, table, del));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "1lm"));
 }
 
@@ -1244,7 +1200,7 @@ TEST_F(ByteArrayBuiltinsTest, TranslateDeletesAllBytes) {
   Object table(&scope, NoneType::object());
   Object del(&scope, runtime_->newBytesWithAll(abc));
   Object result(&scope,
-                runBuiltin(ByteArrayBuiltins::translate, self, table, del));
+                runBuiltin(METH(bytearray, translate), self, table, del));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, ""));
 }
 

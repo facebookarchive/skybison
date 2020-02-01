@@ -45,12 +45,12 @@ static RawObject unpackNumber(Thread* thread, const Object& obj, double* real,
 
 // clang-format off
 const BuiltinMethod ComplexBuiltins::kBuiltinMethods[] = {
-    {ID(__add__), dunderAdd},
-    {ID(__hash__), dunderHash},
-    {ID(__neg__), dunderNeg},
-    {ID(__pos__), dunderPos},
-    {ID(__rsub__), dunderRsub},
-    {ID(__sub__), dunderSub},
+    {ID(__add__), METH(complex, __add__)},
+    {ID(__hash__), METH(complex, __hash__)},
+    {ID(__neg__), METH(complex, __neg__)},
+    {ID(__pos__), METH(complex, __pos__)},
+    {ID(__rsub__), METH(complex, __rsub__)},
+    {ID(__sub__), METH(complex, __sub__)},
     {SymbolId::kSentinelId, nullptr},
 };
 // clang-format on
@@ -59,7 +59,7 @@ void ComplexBuiltins::postInitialize(Runtime*, const Type& new_type) {
   new_type.setBuiltinBase(LayoutId::kComplex);
 }
 
-RawObject ComplexBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(complex, __add__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -78,8 +78,7 @@ RawObject ComplexBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
                              self.imag() + other_imag);
 }
 
-RawObject ComplexBuiltins::dunderHash(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject METH(complex, __hash__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
 
@@ -91,7 +90,7 @@ RawObject ComplexBuiltins::dunderHash(Thread* thread, Frame* frame,
   return SmallInt::fromWord(complexHash(*self));
 }
 
-RawObject ComplexBuiltins::dunderNeg(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(complex, __neg__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
@@ -104,7 +103,7 @@ RawObject ComplexBuiltins::dunderNeg(Thread* thread, Frame* frame, word nargs) {
   return runtime->newComplex(-self.real(), -self.imag());
 }
 
-RawObject ComplexBuiltins::dunderPos(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(complex, __pos__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
 
@@ -115,8 +114,7 @@ RawObject ComplexBuiltins::dunderPos(Thread* thread, Frame* frame, word nargs) {
   return complexUnderlying(*self_obj);
 }
 
-RawObject ComplexBuiltins::dunderRsub(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject METH(complex, __rsub__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -135,7 +133,7 @@ RawObject ComplexBuiltins::dunderRsub(Thread* thread, Frame* frame,
                              other_imag - self.imag());
 }
 
-RawObject ComplexBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(complex, __sub__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();

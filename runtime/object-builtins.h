@@ -55,17 +55,19 @@ RawObject objectGetItem(Thread* thread, const Object& object,
 RawObject objectSetItem(Thread* thread, const Object& object, const Object& key,
                         const Object& value);
 
-class ObjectBuiltins {
+RawObject METH(object, __getattribute__)(Thread*, Frame*, word);
+RawObject METH(object, __hash__)(Thread*, Frame*, word);
+RawObject METH(object, __init__)(Thread*, Frame*, word);
+RawObject METH(object, __new__)(Thread*, Frame*, word);
+RawObject METH(object, __setattr__)(Thread*, Frame*, word);
+RawObject METH(object, __sizeof__)(Thread*, Frame*, word);
+
+class ObjectBuiltins
+    : public ImmediateBuiltins<ObjectBuiltins, ID(object), LayoutId::kObject,
+                               LayoutId::kObject> {
  public:
   static void initialize(Runtime* runtime);
   static void postInitialize(Runtime* runtime, const Type& new_type);
-
-  static RawObject dunderGetattribute(Thread*, Frame*, word);
-  static RawObject dunderHash(Thread*, Frame*, word);
-  static RawObject dunderInit(Thread*, Frame*, word);
-  static RawObject dunderNew(Thread*, Frame*, word);
-  static RawObject dunderSetattr(Thread*, Frame*, word);
-  static RawObject dunderSizeof(Thread*, Frame*, word);
 
  private:
   static const BuiltinMethod kBuiltinMethods[];
@@ -73,13 +75,13 @@ class ObjectBuiltins {
   DISALLOW_IMPLICIT_CONSTRUCTORS(ObjectBuiltins);
 };
 
+RawObject METH(NoneType, __new__)(Thread*, Frame*, word);
+RawObject METH(NoneType, __repr__)(Thread*, Frame*, word);
+
 class NoneBuiltins
     : public ImmediateBuiltins<NoneBuiltins, ID(NoneType), LayoutId::kNoneType,
                                LayoutId::kObject> {
  public:
-  static RawObject dunderNew(Thread*, Frame*, word);
-  static RawObject dunderRepr(Thread*, Frame*, word);
-
   static const BuiltinMethod kBuiltinMethods[];
 
  private:

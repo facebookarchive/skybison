@@ -75,29 +75,28 @@ class LargeBytesBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(LargeBytesBuiltins);
 };
 
+RawObject METH(bytes, __add__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytes, __eq__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytes, __ge__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytes, __gt__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytes, __hash__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytes, __iter__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytes, __le__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytes, __len__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytes, __lt__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytes, __mul__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytes, __ne__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytes, __repr__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytes, hex)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytes, lstrip)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytes, rstrip)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytes, strip)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bytes, translate)(Thread* thread, Frame* frame, word nargs);
+
 class BytesBuiltins
     : public Builtins<BytesBuiltins, ID(bytes), LayoutId::kBytes> {
  public:
   static void postInitialize(Runtime*, const Type& new_type);
-
-  static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderGe(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderGt(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderHash(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderLe(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderLt(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderMul(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderNe(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderRepr(Thread* thread, Frame* frame, word nargs);
-
-  static RawObject hex(Thread* thread, Frame* frame, word nargs);
-  static RawObject lstrip(Thread* thread, Frame* frame, word nargs);
-  static RawObject rstrip(Thread* thread, Frame* frame, word nargs);
-  static RawObject strip(Thread* thread, Frame* frame, word nargs);
-  static RawObject translate(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinAttribute kAttributes[];
   static const BuiltinMethod kBuiltinMethods[];
@@ -107,14 +106,17 @@ class BytesBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(BytesBuiltins);
 };
 
+RawObject METH(bytes_iterator, __iter__)(Thread* thread, Frame* frame,
+                                         word nargs);
+RawObject METH(bytes_iterator, __length_hint__)(Thread* thread, Frame* frame,
+                                                word nargs);
+RawObject METH(bytes_iterator, __next__)(Thread* thread, Frame* frame,
+                                         word nargs);
+
 class BytesIteratorBuiltins
     : public Builtins<BytesIteratorBuiltins, ID(bytes_iterator),
                       LayoutId::kBytesIterator> {
  public:
-  static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
-
   static const BuiltinMethod kBuiltinMethods[];
 
  private:

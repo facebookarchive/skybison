@@ -406,38 +406,38 @@ const BuiltinAttribute StrBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod StrBuiltins::kBuiltinMethods[] = {
-    {ID(__add__), dunderAdd},
-    {ID(__bool__), dunderBool},
-    {ID(__contains__), dunderContains},
-    {ID(__eq__), dunderEq},
-    {ID(__format__), dunderFormat},
-    {ID(__ge__), dunderGe},
-    {ID(__gt__), dunderGt},
-    {ID(__hash__), dunderHash},
-    {ID(__iter__), dunderIter},
-    {ID(__le__), dunderLe},
-    {ID(__len__), dunderLen},
-    {ID(__lt__), dunderLt},
-    {ID(__mul__), dunderMul},
-    {ID(__ne__), dunderNe},
-    {ID(__repr__), dunderRepr},
-    {ID(isalnum), isalnum},
-    {ID(isalpha), isalpha},
-    {ID(isdecimal), isdecimal},
-    {ID(isdigit), isdigit},
-    {ID(isidentifier), isidentifier},
-    {ID(islower), islower},
-    {ID(isnumeric), isnumeric},
-    {ID(isprintable), isprintable},
-    {ID(isspace), isspace},
-    {ID(istitle), istitle},
-    {ID(isupper), isupper},
-    {ID(lstrip), lstrip},
-    {ID(lower), lower},
-    {ID(title), title},
-    {ID(rstrip), rstrip},
-    {ID(strip), strip},
-    {ID(upper), upper},
+    {ID(__add__), METH(str, __add__)},
+    {ID(__bool__), METH(str, __bool__)},
+    {ID(__contains__), METH(str, __contains__)},
+    {ID(__eq__), METH(str, __eq__)},
+    {ID(__format__), METH(str, __format__)},
+    {ID(__ge__), METH(str, __ge__)},
+    {ID(__gt__), METH(str, __gt__)},
+    {ID(__hash__), METH(str, __hash__)},
+    {ID(__iter__), METH(str, __iter__)},
+    {ID(__le__), METH(str, __le__)},
+    {ID(__len__), METH(str, __len__)},
+    {ID(__lt__), METH(str, __lt__)},
+    {ID(__mul__), METH(str, __mul__)},
+    {ID(__ne__), METH(str, __ne__)},
+    {ID(__repr__), METH(str, __repr__)},
+    {ID(isalnum), METH(str, isalnum)},
+    {ID(isalpha), METH(str, isalpha)},
+    {ID(isdecimal), METH(str, isdecimal)},
+    {ID(isdigit), METH(str, isdigit)},
+    {ID(isidentifier), METH(str, isidentifier)},
+    {ID(islower), METH(str, islower)},
+    {ID(isnumeric), METH(str, isnumeric)},
+    {ID(isprintable), METH(str, isprintable)},
+    {ID(isspace), METH(str, isspace)},
+    {ID(istitle), METH(str, istitle)},
+    {ID(isupper), METH(str, isupper)},
+    {ID(lstrip), METH(str, lstrip)},
+    {ID(lower), METH(str, lower)},
+    {ID(title), METH(str, title)},
+    {ID(rstrip), METH(str, rstrip)},
+    {ID(strip), METH(str, strip)},
+    {ID(upper), METH(str, upper)},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -445,7 +445,7 @@ void StrBuiltins::postInitialize(Runtime*, const Type& new_type) {
   new_type.setBuiltinBase(LayoutId::kStr);
 }
 
-RawObject StrBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, __add__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -462,7 +462,7 @@ RawObject StrBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   return runtime->strConcat(thread, self, other);
 }
 
-RawObject StrBuiltins::dunderBool(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, __bool__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -473,8 +473,7 @@ RawObject StrBuiltins::dunderBool(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(*self != Str::empty());
 }
 
-RawObject StrBuiltins::dunderContains(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject METH(str, __contains__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -491,7 +490,7 @@ RawObject StrBuiltins::dunderContains(Thread* thread, Frame* frame,
   return Bool::fromBool(strFind(self, other) != -1);
 }
 
-RawObject StrBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, __eq__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -507,7 +506,7 @@ RawObject StrBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(self.equals(*other));
 }
 
-RawObject StrBuiltins::dunderFormat(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, __format__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -559,7 +558,7 @@ RawObject StrBuiltins::dunderFormat(Thread* thread, Frame* frame, word nargs) {
   return formatStr(thread, self, &format);
 }
 
-RawObject StrBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, __ge__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -575,7 +574,7 @@ RawObject StrBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(self.compare(*other) >= 0);
 }
 
-RawObject StrBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, __gt__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -591,7 +590,7 @@ RawObject StrBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(self.compare(*other) > 0);
 }
 
-RawObject StrBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, __hash__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -803,7 +802,7 @@ word strRFind(const Str& haystack, const Str& needle, word start, word end) {
   return -1;
 }
 
-RawObject StrBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, __le__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -819,7 +818,7 @@ RawObject StrBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(self.compare(*other) <= 0);
 }
 
-RawObject StrBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, __len__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -830,7 +829,7 @@ RawObject StrBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   return SmallInt::fromWord(self.codePointLength());
 }
 
-RawObject StrBuiltins::lower(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, lower)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -874,7 +873,7 @@ RawObject StrBuiltins::lower(Thread* thread, Frame* frame, word nargs) {
   return result.becomeStr();
 }
 
-RawObject StrBuiltins::title(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, title)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -901,7 +900,7 @@ RawObject StrBuiltins::title(Thread* thread, Frame* frame, word nargs) {
   return result.becomeStr();
 }
 
-RawObject StrBuiltins::upper(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, upper)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -945,7 +944,7 @@ RawObject StrBuiltins::upper(Thread* thread, Frame* frame, word nargs) {
   return result.becomeStr();
 }
 
-RawObject StrBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, __lt__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -961,7 +960,7 @@ RawObject StrBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(self.compare(*other) < 0);
 }
 
-RawObject StrBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, __mul__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -992,7 +991,7 @@ RawObject StrBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   return runtime->strRepeat(thread, self, count);
 }
 
-RawObject StrBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, __ne__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -1008,7 +1007,7 @@ RawObject StrBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(!self.equals(*other));
 }
 
-RawObject StrBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, __iter__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -1031,7 +1030,7 @@ static void byteToHex(const MutableBytes& buf, word index, byte convert) {
   buf.byteAtPut(index + 1, hexdigits[convert & 0x0f]);
 }
 
-RawObject StrBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, __repr__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -1144,7 +1143,7 @@ RawObject StrBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   return buf.becomeStr();
 }
 
-RawObject StrBuiltins::isalnum(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, isalnum)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -1169,7 +1168,7 @@ RawObject StrBuiltins::isalnum(Thread* thread, Frame* frame, word nargs) {
   return Bool::trueObj();
 }
 
-RawObject StrBuiltins::isalpha(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, isalpha)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -1194,7 +1193,7 @@ RawObject StrBuiltins::isalpha(Thread* thread, Frame* frame, word nargs) {
   return Bool::trueObj();
 }
 
-RawObject StrBuiltins::isdecimal(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, isdecimal)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -1219,7 +1218,7 @@ RawObject StrBuiltins::isdecimal(Thread* thread, Frame* frame, word nargs) {
   return Bool::trueObj();
 }
 
-RawObject StrBuiltins::isdigit(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, isdigit)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -1244,7 +1243,7 @@ RawObject StrBuiltins::isdigit(Thread* thread, Frame* frame, word nargs) {
   return Bool::trueObj();
 }
 
-RawObject StrBuiltins::isidentifier(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, isidentifier)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -1275,7 +1274,7 @@ RawObject StrBuiltins::isidentifier(Thread* thread, Frame* frame, word nargs) {
   return Bool::trueObj();
 }
 
-RawObject StrBuiltins::islower(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, islower)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -1300,7 +1299,7 @@ RawObject StrBuiltins::islower(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(cased);
 }
 
-RawObject StrBuiltins::isnumeric(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, isnumeric)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -1325,7 +1324,7 @@ RawObject StrBuiltins::isnumeric(Thread* thread, Frame* frame, word nargs) {
   return Bool::trueObj();
 }
 
-RawObject StrBuiltins::isprintable(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, isprintable)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -1345,7 +1344,7 @@ RawObject StrBuiltins::isprintable(Thread* thread, Frame* frame, word nargs) {
   return Bool::trueObj();
 }
 
-RawObject StrBuiltins::isspace(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, isspace)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -1372,7 +1371,7 @@ RawObject StrBuiltins::isspace(Thread* thread, Frame* frame, word nargs) {
   return Bool::trueObj();
 }
 
-RawObject StrBuiltins::istitle(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, istitle)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -1399,7 +1398,7 @@ RawObject StrBuiltins::istitle(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(cased);
 }
 
-RawObject StrBuiltins::isupper(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, isupper)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -1424,7 +1423,7 @@ RawObject StrBuiltins::isupper(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(cased);
 }
 
-RawObject StrBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, lstrip)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -1445,7 +1444,7 @@ RawObject StrBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
   return strStripLeft(thread, str, chars);
 }
 
-RawObject StrBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, rstrip)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -1466,7 +1465,7 @@ RawObject StrBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
   return strStripRight(thread, str, chars);
 }
 
-RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(str, strip)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -1488,14 +1487,14 @@ RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
 }
 
 const BuiltinMethod StrIteratorBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), dunderIter},
-    {ID(__length_hint__), dunderLengthHint},
-    {ID(__next__), dunderNext},
+    {ID(__iter__), METH(str_iterator, __iter__)},
+    {ID(__length_hint__), METH(str_iterator, __length_hint__)},
+    {ID(__next__), METH(str_iterator, __next__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject StrIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject METH(str_iterator, __iter__)(Thread* thread, Frame* frame,
+                                       word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -1508,8 +1507,8 @@ RawObject StrIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
 // TODO(T35578204) Implement this for UTF-8. This probably means keeping extra
 // state and logic so that __next__() will advance to the next codepoint.
 
-RawObject StrIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject METH(str_iterator, __next__)(Thread* thread, Frame* frame,
+                                       word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -1524,8 +1523,8 @@ RawObject StrIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   return *value;
 }
 
-RawObject StrIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject METH(str_iterator, __length_hint__)(Thread* thread, Frame* frame,
+                                              word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));

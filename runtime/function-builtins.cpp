@@ -120,7 +120,7 @@ RawObject functionFromModuleMethodDef(Thread* thread, const char* c_name,
 }
 
 const BuiltinMethod FunctionBuiltins::kBuiltinMethods[] = {
-    {ID(__get__), dunderGet},
+    {ID(__get__), METH(function, __get__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -142,8 +142,7 @@ void FunctionBuiltins::postInitialize(Runtime*, const Type& new_type) {
   layout.setDictOverflowOffset(RawFunction::kDictOffset);
 }
 
-RawObject FunctionBuiltins::dunderGet(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject METH(function, __get__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));

@@ -4,13 +4,13 @@
 
 namespace py {
 
+RawObject METH(_strarray, __init__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(_strarray, __new__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(_strarray, __str__)(Thread* thread, Frame* frame, word nargs);
+
 class StrArrayBuiltins
     : public Builtins<StrArrayBuiltins, ID(_strarray), LayoutId::kStrArray> {
  public:
-  static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderStr(Thread* thread, Frame* frame, word nargs);
-
   static const BuiltinMethod kBuiltinMethods[];
 
  private:

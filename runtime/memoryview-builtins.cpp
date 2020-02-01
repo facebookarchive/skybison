@@ -13,10 +13,10 @@ const BuiltinAttribute MemoryViewBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod MemoryViewBuiltins::kBuiltinMethods[] = {
-    {ID(cast), cast},
-    {ID(__getitem__), dunderGetitem},
-    {ID(__len__), dunderLen},
-    {ID(__new__), dunderNew},
+    {ID(cast), METH(memoryview, cast)},
+    {ID(__getitem__), METH(memoryview, __getitem__)},
+    {ID(__len__), METH(memoryview, __len__)},
+    {ID(__new__), METH(memoryview, __new__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -438,7 +438,7 @@ static word pow2_remainder(word dividend, word divisor) {
   return dividend & mask;
 }
 
-RawObject MemoryViewBuiltins::cast(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(memoryview, cast)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -478,8 +478,8 @@ RawObject MemoryViewBuiltins::cast(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject MemoryViewBuiltins::dunderGetitem(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject METH(memoryview, __getitem__)(Thread* thread, Frame* frame,
+                                        word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -536,8 +536,7 @@ RawObject MemoryViewBuiltins::dunderGetitem(Thread* thread, Frame* frame,
                       format_c, byte_index);
 }
 
-RawObject MemoryViewBuiltins::dunderLen(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject METH(memoryview, __len__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -554,8 +553,7 @@ RawObject MemoryViewBuiltins::dunderLen(Thread* thread, Frame* frame,
   return SmallInt::fromWord(self.length() / item_size);
 }
 
-RawObject MemoryViewBuiltins::dunderNew(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject METH(memoryview, __new__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();

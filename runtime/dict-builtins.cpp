@@ -514,20 +514,20 @@ const BuiltinAttribute DictBuiltins::kAttributes[] = {
 
 // clang-format off
 const BuiltinMethod DictBuiltins::kBuiltinMethods[] = {
-    {ID(clear), clear},
-    {ID(__delitem__), dunderDelitem},
-    {ID(__eq__), dunderEq},   
-    {ID(__iter__), dunderIter},
-    {ID(__len__), dunderLen}, 
-    {ID(__new__), dunderNew},
-    {ID(items), items},       
-    {ID(keys), keys},
-    {ID(values), values},     
+    {ID(clear), METH(dict, clear)},
+    {ID(__delitem__), METH(dict, __delitem__)},
+    {ID(__eq__), METH(dict, __eq__)},
+    {ID(__iter__), METH(dict, __iter__)},
+    {ID(__len__), METH(dict, __len__)},
+    {ID(__new__), METH(dict, __new__)},
+    {ID(items), METH(dict, items)},
+    {ID(keys), METH(dict, keys)},
+    {ID(values), METH(dict, values)},
     {SymbolId::kSentinelId, nullptr},
 };
 // clang-format on
 
-RawObject DictBuiltins::clear(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(dict, clear)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -539,8 +539,7 @@ RawObject DictBuiltins::clear(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject DictBuiltins::dunderDelitem(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject METH(dict, __delitem__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -560,7 +559,7 @@ RawObject DictBuiltins::dunderDelitem(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject DictBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(dict, __eq__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
@@ -609,7 +608,7 @@ RawObject DictBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   return Bool::trueObj();
 }
 
-RawObject DictBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(dict, __len__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -620,7 +619,7 @@ RawObject DictBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   return SmallInt::fromWord(dict.numItems());
 }
 
-RawObject DictBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(dict, __iter__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -633,7 +632,7 @@ RawObject DictBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   return runtime->newDictKeyIterator(thread, dict);
 }
 
-RawObject DictBuiltins::items(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(dict, items)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -645,7 +644,7 @@ RawObject DictBuiltins::items(Thread* thread, Frame* frame, word nargs) {
   return runtime->newDictItems(thread, dict);
 }
 
-RawObject DictBuiltins::keys(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(dict, keys)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -657,7 +656,7 @@ RawObject DictBuiltins::keys(Thread* thread, Frame* frame, word nargs) {
   return runtime->newDictKeys(thread, dict);
 }
 
-RawObject DictBuiltins::values(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(dict, values)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -669,7 +668,7 @@ RawObject DictBuiltins::values(Thread* thread, Frame* frame, word nargs) {
   return runtime->newDictValues(thread, dict);
 }
 
-RawObject DictBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(dict, __new__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object type_obj(&scope, args.get(0));
@@ -693,14 +692,14 @@ RawObject DictBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 // helper function that takes a member function (type check) and string for the
 // Python symbol name
 const BuiltinMethod DictItemIteratorBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), dunderIter},
-    {ID(__length_hint__), dunderLengthHint},
-    {ID(__next__), dunderNext},
+    {ID(__iter__), METH(dict_itemiterator, __iter__)},
+    {ID(__length_hint__), METH(dict_itemiterator, __length_hint__)},
+    {ID(__next__), METH(dict_itemiterator, __next__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject DictItemIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject METH(dict_itemiterator, __iter__)(Thread* thread, Frame* frame,
+                                            word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -710,8 +709,8 @@ RawObject DictItemIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject DictItemIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
-                                               word nargs) {
+RawObject METH(dict_itemiterator, __next__)(Thread* thread, Frame* frame,
+                                            word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -726,8 +725,8 @@ RawObject DictItemIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   return *value;
 }
 
-RawObject DictItemIteratorBuiltins::dunderLengthHint(Thread* thread,
-                                                     Frame* frame, word nargs) {
+RawObject METH(dict_itemiterator, __length_hint__)(Thread* thread, Frame* frame,
+                                                   word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -740,12 +739,11 @@ RawObject DictItemIteratorBuiltins::dunderLengthHint(Thread* thread,
 }
 
 const BuiltinMethod DictItemsBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), dunderIter},
+    {ID(__iter__), METH(dict_items, __iter__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject DictItemsBuiltins::dunderIter(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject METH(dict_items, __iter__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -758,14 +756,14 @@ RawObject DictItemsBuiltins::dunderIter(Thread* thread, Frame* frame,
 }
 
 const BuiltinMethod DictKeyIteratorBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), dunderIter},
-    {ID(__length_hint__), dunderLengthHint},
-    {ID(__next__), dunderNext},
+    {ID(__iter__), METH(dict_keyiterator, __iter__)},
+    {ID(__length_hint__), METH(dict_keyiterator, __length_hint__)},
+    {ID(__next__), METH(dict_keyiterator, __next__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject DictKeyIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject METH(dict_keyiterator, __iter__)(Thread* thread, Frame* frame,
+                                           word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -775,8 +773,8 @@ RawObject DictKeyIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject DictKeyIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
-                                              word nargs) {
+RawObject METH(dict_keyiterator, __next__)(Thread* thread, Frame* frame,
+                                           word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -791,8 +789,8 @@ RawObject DictKeyIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   return *value;
 }
 
-RawObject DictKeyIteratorBuiltins::dunderLengthHint(Thread* thread,
-                                                    Frame* frame, word nargs) {
+RawObject METH(dict_keyiterator, __length_hint__)(Thread* thread, Frame* frame,
+                                                  word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -805,12 +803,11 @@ RawObject DictKeyIteratorBuiltins::dunderLengthHint(Thread* thread,
 }
 
 const BuiltinMethod DictKeysBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), dunderIter},
+    {ID(__iter__), METH(dict_keys, __iter__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject DictKeysBuiltins::dunderIter(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject METH(dict_keys, __iter__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -823,14 +820,14 @@ RawObject DictKeysBuiltins::dunderIter(Thread* thread, Frame* frame,
 }
 
 const BuiltinMethod DictValueIteratorBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), dunderIter},
-    {ID(__length_hint__), dunderLengthHint},
-    {ID(__next__), dunderNext},
+    {ID(__iter__), METH(dict_valueiterator, __iter__)},
+    {ID(__length_hint__), METH(dict_valueiterator, __length_hint__)},
+    {ID(__next__), METH(dict_valueiterator, __next__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject DictValueIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject METH(dict_valueiterator, __iter__)(Thread* thread, Frame* frame,
+                                             word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -840,8 +837,8 @@ RawObject DictValueIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject DictValueIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject METH(dict_valueiterator, __next__)(Thread* thread, Frame* frame,
+                                             word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -856,9 +853,8 @@ RawObject DictValueIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   return *value;
 }
 
-RawObject DictValueIteratorBuiltins::dunderLengthHint(Thread* thread,
-                                                      Frame* frame,
-                                                      word nargs) {
+RawObject METH(dict_valueiterator, __length_hint__)(Thread* thread,
+                                                    Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -871,12 +867,12 @@ RawObject DictValueIteratorBuiltins::dunderLengthHint(Thread* thread,
 }
 
 const BuiltinMethod DictValuesBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), dunderIter},
+    {ID(__iter__), METH(dict_values, __iter__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject DictValuesBuiltins::dunderIter(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject METH(dict_values, __iter__)(Thread* thread, Frame* frame,
+                                      word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));

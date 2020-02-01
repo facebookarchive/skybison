@@ -8,40 +8,41 @@
 
 namespace py {
 
+RawObject METH(classmethod, __new__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(classmethod, __init__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(classmethod, __get__)(Thread* thread, Frame* frame, word nargs);
+
 class ClassMethodBuiltins
     : public Builtins<ClassMethodBuiltins, ID(classmethod),
                       LayoutId::kClassMethod> {
  public:
-  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderGet(Thread* thread, Frame* frame, word nargs);
-
   static const BuiltinMethod kBuiltinMethods[];
 };
+
+RawObject METH(staticmethod, __new__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(staticmethod, __init__)(Thread* thread, Frame* frame,
+                                       word nargs);
+RawObject METH(staticmethod, __get__)(Thread* thread, Frame* frame, word nargs);
 
 class StaticMethodBuiltins
     : public Builtins<StaticMethodBuiltins, ID(staticmethod),
                       LayoutId::kStaticMethod> {
  public:
-  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderGet(Thread* thread, Frame* frame, word nargs);
-
   static const BuiltinMethod kBuiltinMethods[];
 };
+
+RawObject METH(property, __delete__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(property, __get__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(property, __init__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(property, __new__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(property, __set__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(property, deleter)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(property, getter)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(property, setter)(Thread* thread, Frame* frame, word nargs);
 
 class PropertyBuiltins
     : public Builtins<PropertyBuiltins, ID(property), LayoutId::kProperty> {
  public:
-  static RawObject dunderDelete(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderGet(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderSet(Thread* thread, Frame* frame, word nargs);
-  static RawObject deleter(Thread* thread, Frame* frame, word nargs);
-  static RawObject getter(Thread* thread, Frame* frame, word nargs);
-  static RawObject setter(Thread* thread, Frame* frame, word nargs);
-
   static const BuiltinMethod kBuiltinMethods[];
 };
 

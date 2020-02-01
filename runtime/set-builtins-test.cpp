@@ -68,7 +68,7 @@ TEST_F(SetBuiltinsTest, DunderIterReturnsSetIterator) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set empty_set(&scope, runtime_->newSet());
-  Object iter(&scope, runBuiltin(SetBuiltins::dunderIter, empty_set));
+  Object iter(&scope, runBuiltin(METH(set, __iter__), empty_set));
   ASSERT_TRUE(iter.isSetIterator());
 }
 
@@ -78,7 +78,7 @@ TEST_F(SetBuiltinsTest, DunderAnd) {
 
   Set set1(&scope, runtime_->newSet());
   Set set2(&scope, runtime_->newSet());
-  Object result(&scope, runBuiltin(SetBuiltins::dunderAnd, set1, set2));
+  Object result(&scope, runBuiltin(METH(set, __and__), set1, set2));
   ASSERT_TRUE(result.isSet());
   EXPECT_EQ(Set::cast(*result).numItems(), 0);
 
@@ -86,13 +86,13 @@ TEST_F(SetBuiltinsTest, DunderAnd) {
   setHashAndAdd(thread, set1, key);
   key = SmallInt::fromWord(2);
   setHashAndAdd(thread, set1, key);
-  Object result1(&scope, runBuiltin(SetBuiltins::dunderAnd, set1, set2));
+  Object result1(&scope, runBuiltin(METH(set, __and__), set1, set2));
   ASSERT_TRUE(result1.isSet());
   EXPECT_EQ(Set::cast(*result1).numItems(), 0);
 
   key = SmallInt::fromWord(1);
   setHashAndAdd(thread, set2, key);
-  Object result2(&scope, runBuiltin(SetBuiltins::dunderAnd, set1, set2));
+  Object result2(&scope, runBuiltin(METH(set, __and__), set1, set2));
   ASSERT_TRUE(result2.isSet());
   Set set(&scope, *result2);
   EXPECT_EQ(set.numItems(), 1);
@@ -105,7 +105,7 @@ TEST_F(SetBuiltinsTest, DunderAndWithNonSet) {
 
   Object empty_set(&scope, runtime_->newSet());
   Object none(&scope, NoneType::object());
-  Object result(&scope, runBuiltin(SetBuiltins::dunderAnd, empty_set, none));
+  Object result(&scope, runBuiltin(METH(set, __and__), empty_set, none));
   ASSERT_TRUE(result.isNotImplementedType());
 }
 
@@ -116,7 +116,7 @@ TEST_F(SetBuiltinsTest, DunderIand) {
   Set set1(&scope, runtime_->newSet());
   Set set2(&scope, runtime_->newSet());
   Object key(&scope, NoneType::object());
-  Object result(&scope, runBuiltin(SetBuiltins::dunderIand, set1, set2));
+  Object result(&scope, runBuiltin(METH(set, __iand__), set1, set2));
   ASSERT_TRUE(result.isSet());
   EXPECT_EQ(*result, *set1);
   EXPECT_EQ(Set::cast(*result).numItems(), 0);
@@ -125,7 +125,7 @@ TEST_F(SetBuiltinsTest, DunderIand) {
   setHashAndAdd(thread, set1, key);
   key = SmallInt::fromWord(2);
   setHashAndAdd(thread, set1, key);
-  Object result1(&scope, runBuiltin(SetBuiltins::dunderIand, set1, set2));
+  Object result1(&scope, runBuiltin(METH(set, __iand__), set1, set2));
   ASSERT_TRUE(result1.isSet());
   EXPECT_EQ(*result1, *set1);
   EXPECT_EQ(Set::cast(*result1).numItems(), 0);
@@ -136,7 +136,7 @@ TEST_F(SetBuiltinsTest, DunderIand) {
   key = SmallInt::fromWord(2);
   setHashAndAdd(thread, set1, key);
   setHashAndAdd(thread, set2, key);
-  Object result2(&scope, runBuiltin(SetBuiltins::dunderIand, set1, set2));
+  Object result2(&scope, runBuiltin(METH(set, __iand__), set1, set2));
   ASSERT_TRUE(result2.isSet());
   EXPECT_EQ(*result2, *set1);
   Set set(&scope, *result2);
@@ -150,7 +150,7 @@ TEST_F(SetBuiltinsTest, DunderIandWithNonSet) {
 
   Object empty_set(&scope, runtime_->newSet());
   Object none(&scope, NoneType::object());
-  Object result(&scope, runBuiltin(SetBuiltins::dunderIand, empty_set, none));
+  Object result(&scope, runBuiltin(METH(set, __iand__), empty_set, none));
   ASSERT_TRUE(result.isNotImplementedType());
 }
 
@@ -159,7 +159,7 @@ TEST_F(SetBuiltinsTest, SetIntersectionWithNoArgsReturnsCopy) {
   HandleScope scope(thread);
   Set set(&scope, setFromRange(0, 3));
   // set.intersect() with no arguments
-  Object result(&scope, runBuiltin(SetBuiltins::intersection, set));
+  Object result(&scope, runBuiltin(METH(set, intersection), set));
   ASSERT_TRUE(result.isSet());
   EXPECT_NE(*result, *set);
   set = *result;
@@ -180,7 +180,7 @@ TEST_F(SetBuiltinsTest, SetIntersectionWithOneArgumentReturnsIntersection) {
   Set set1(&scope, setFromRange(0, 2));
 
   // set.intersect() with 1 argument
-  Object result(&scope, runBuiltin(SetBuiltins::intersection, set, set1));
+  Object result(&scope, runBuiltin(METH(set, intersection), set, set1));
   ASSERT_TRUE(result.isSet());
   EXPECT_NE(*result, *set);
   set = *result;
@@ -200,7 +200,7 @@ TEST_F(SetBuiltinsTest, SetIntersectionWithTwoArgumentsReturnsIntersection) {
   Set set2(&scope, setFromRange(0, 1));
 
   // set.intersect() with 2 arguments
-  Object result(&scope, runBuiltin(SetBuiltins::intersection, set, set1, set2));
+  Object result(&scope, runBuiltin(METH(set, intersection), set, set1, set2));
   ASSERT_TRUE(result.isSet());
   EXPECT_NE(*result, *set);
   set = *result;
@@ -218,7 +218,7 @@ TEST_F(SetBuiltinsTest, SetIntersectionWithEmptySetReturnsEmptySet) {
   Set set2(&scope, runtime_->newSet());
 
   // set.intersect() with 2 arguments
-  Object result(&scope, runBuiltin(SetBuiltins::intersection, set, set1, set2));
+  Object result(&scope, runBuiltin(METH(set, intersection), set, set1, set2));
   ASSERT_TRUE(result.isSet());
   EXPECT_NE(*result, *set);
   EXPECT_EQ(Set::cast(*result).numItems(), 0);
@@ -228,7 +228,7 @@ TEST_F(SetBuiltinsTest, SetIntersectionWithEmptyIterableReturnsEmptySet) {
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   List list(&scope, runtime_->newList());
-  Object result(&scope, runBuiltin(SetBuiltins::intersection, set, list));
+  Object result(&scope, runBuiltin(METH(set, intersection), set, list));
   ASSERT_TRUE(result.isSet());
   EXPECT_EQ(Set::cast(*result).numItems(), 0);
 }
@@ -242,7 +242,7 @@ TEST_F(SetBuiltinsTest, SetIntersectionWithIterableReturnsIntersection) {
   runtime_->listAdd(thread, list, key);
   key = SmallInt::fromWord(0);
   runtime_->listAdd(thread, list, key);
-  Object result(&scope, runBuiltin(SetBuiltins::intersection, set, list));
+  Object result(&scope, runBuiltin(METH(set, intersection), set, list));
   ASSERT_TRUE(result.isSet());
   EXPECT_EQ(Set::cast(*result).numItems(), 1);
   set = *result;
@@ -254,7 +254,7 @@ TEST_F(SetBuiltinsTest, SetIntersectionWithFrozenSetReturnsSet) {
   HandleScope scope(thread);
   Set set(&scope, runtime_->newSet());
   FrozenSet frozen_set(&scope, runtime_->emptyFrozenSet());
-  Object result(&scope, runBuiltin(SetBuiltins::intersection, set, frozen_set));
+  Object result(&scope, runBuiltin(METH(set, intersection), set, frozen_set));
   ASSERT_TRUE(result.isSet());
 }
 
@@ -263,7 +263,7 @@ TEST_F(SetBuiltinsTest, FrozenSetIntersectionWithSetReturnsFrozenSet) {
   HandleScope scope(thread);
   FrozenSet frozen_set(&scope, runtime_->emptyFrozenSet());
   Set set(&scope, runtime_->newSet());
-  Object result(&scope, runBuiltin(SetBuiltins::intersection, frozen_set, set));
+  Object result(&scope, runBuiltin(METH(set, intersection), frozen_set, set));
   ASSERT_TRUE(result.isFrozenSet());
 }
 
@@ -272,7 +272,7 @@ TEST_F(SetBuiltinsTest, SetAndWithFrozenSetReturnsSet) {
   HandleScope scope(thread);
   Set set(&scope, runtime_->newSet());
   FrozenSet frozen_set(&scope, runtime_->emptyFrozenSet());
-  Object result(&scope, runBuiltin(SetBuiltins::dunderAnd, set, frozen_set));
+  Object result(&scope, runBuiltin(METH(set, __and__), set, frozen_set));
   ASSERT_TRUE(result.isSet());
 }
 
@@ -281,8 +281,7 @@ TEST_F(SetBuiltinsTest, FrozenSetAndWithSetReturnsFrozenSet) {
   HandleScope scope(thread);
   FrozenSet frozen_set(&scope, runtime_->emptyFrozenSet());
   Set set(&scope, runtime_->newSet());
-  Object result(&scope,
-                runBuiltin(FrozenSetBuiltins::dunderAnd, frozen_set, set));
+  Object result(&scope, runBuiltin(METH(frozenset, __and__), frozen_set, set));
   ASSERT_TRUE(result.isFrozenSet());
 }
 
@@ -295,16 +294,16 @@ TEST_F(SetIteratorBuiltinsTest, CallDunderNext) {
   value = SmallInt::fromWord(1);
   setHashAndAdd(thread, set, value);
 
-  Object iter(&scope, runBuiltin(SetBuiltins::dunderIter, set));
+  Object iter(&scope, runBuiltin(METH(set, __iter__), set));
   ASSERT_TRUE(iter.isSetIterator());
 
-  Object item1(&scope, runBuiltin(SetIteratorBuiltins::dunderNext, iter));
+  Object item1(&scope, runBuiltin(METH(set_iterator, __next__), iter));
   EXPECT_TRUE(isIntEqualsWord(*item1, 0));
 
-  Object item2(&scope, runBuiltin(SetIteratorBuiltins::dunderNext, iter));
+  Object item2(&scope, runBuiltin(METH(set_iterator, __next__), iter));
   EXPECT_TRUE(isIntEqualsWord(*item2, 1));
 
-  Object item3(&scope, runBuiltin(SetIteratorBuiltins::dunderNext, iter));
+  Object item3(&scope, runBuiltin(METH(set_iterator, __next__), iter));
   ASSERT_TRUE(item3.isError());
 }
 
@@ -312,10 +311,10 @@ TEST_F(SetIteratorBuiltinsTest, CallDunderNextWithEmptySet) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, runtime_->newSet());
-  Object iter(&scope, runBuiltin(SetBuiltins::dunderIter, set));
+  Object iter(&scope, runBuiltin(METH(set, __iter__), set));
   ASSERT_TRUE(iter.isSetIterator());
 
-  Object result(&scope, runBuiltin(SetIteratorBuiltins::dunderNext, iter));
+  Object result(&scope, runBuiltin(METH(set_iterator, __next__), iter));
   ASSERT_TRUE(result.isError());
 }
 
@@ -323,11 +322,11 @@ TEST_F(SetIteratorBuiltinsTest, DunderIterReturnsSelf) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set empty_set(&scope, runtime_->newSet());
-  Object iter(&scope, runBuiltin(SetBuiltins::dunderIter, empty_set));
+  Object iter(&scope, runBuiltin(METH(set, __iter__), empty_set));
   ASSERT_TRUE(iter.isSetIterator());
 
   // Now call __iter__ on the iterator object
-  Object result(&scope, runBuiltin(SetIteratorBuiltins::dunderIter, iter));
+  Object result(&scope, runBuiltin(METH(set_iterator, __iter__), iter));
   ASSERT_EQ(*result, *iter);
 }
 
@@ -335,11 +334,11 @@ TEST_F(SetIteratorBuiltinsTest, DunderLengthHintOnEmptySetReturnsZero) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set empty_set(&scope, runtime_->newSet());
-  Object iter(&scope, runBuiltin(SetBuiltins::dunderIter, empty_set));
+  Object iter(&scope, runBuiltin(METH(set, __iter__), empty_set));
   ASSERT_TRUE(iter.isSetIterator());
 
   Object length_hint(&scope,
-                     runBuiltin(SetIteratorBuiltins::dunderLengthHint, iter));
+                     runBuiltin(METH(set_iterator, __length_hint__), iter));
   EXPECT_TRUE(isIntEqualsWord(*length_hint, 0));
 }
 
@@ -350,19 +349,19 @@ TEST_F(SetIteratorBuiltinsTest, DunderLengthHintOnConsumedSetReturnsZero) {
   Object zero(&scope, SmallInt::fromWord(0));
   setHashAndAdd(thread, one_element_set, zero);
 
-  Object iter(&scope, runBuiltin(SetBuiltins::dunderIter, one_element_set));
+  Object iter(&scope, runBuiltin(METH(set, __iter__), one_element_set));
   ASSERT_TRUE(iter.isSetIterator());
 
   Object length_hint1(&scope,
-                      runBuiltin(SetIteratorBuiltins::dunderLengthHint, iter));
+                      runBuiltin(METH(set_iterator, __length_hint__), iter));
   EXPECT_TRUE(isIntEqualsWord(*length_hint1, 1));
 
   // Consume the iterator
-  Object item1(&scope, runBuiltin(SetIteratorBuiltins::dunderNext, iter));
+  Object item1(&scope, runBuiltin(METH(set_iterator, __next__), iter));
   EXPECT_TRUE(isIntEqualsWord(*item1, 0));
 
   Object length_hint2(&scope,
-                      runBuiltin(SetIteratorBuiltins::dunderLengthHint, iter));
+                      runBuiltin(METH(set_iterator, __length_hint__), iter));
   EXPECT_TRUE(isIntEqualsWord(*length_hint2, 0));
 }
 
@@ -383,19 +382,19 @@ TEST_F(SetBuiltinsTest, IsdisjointWithSetArg) {
   Object value(&scope, NoneType::object());
 
   // set().isdisjoint(set())
-  Object result(&scope, runBuiltin(SetBuiltins::isdisjoint, set, other));
+  Object result(&scope, runBuiltin(METH(set, isdisjoint), set, other));
   ASSERT_TRUE(result.isBool());
   EXPECT_EQ(*result, Bool::trueObj());
 
   // set().isdisjoint({None})
   setHashAndAdd(thread, other, value);
-  Object result1(&scope, runBuiltin(SetBuiltins::isdisjoint, set, other));
+  Object result1(&scope, runBuiltin(METH(set, isdisjoint), set, other));
   ASSERT_TRUE(result1.isBool());
   EXPECT_EQ(*result1, Bool::trueObj());
 
   // {None}.isdisjoint({None})
   setHashAndAdd(thread, set, value);
-  Object result2(&scope, runBuiltin(SetBuiltins::isdisjoint, set, other));
+  Object result2(&scope, runBuiltin(METH(set, isdisjoint), set, other));
   ASSERT_TRUE(result2.isBool());
   EXPECT_EQ(*result2, Bool::falseObj());
 
@@ -403,7 +402,7 @@ TEST_F(SetBuiltinsTest, IsdisjointWithSetArg) {
   other = runtime_->newSet();
   value = SmallInt::fromWord(1);
   setHashAndAdd(thread, other, value);
-  Object result3(&scope, runBuiltin(SetBuiltins::isdisjoint, set, other));
+  Object result3(&scope, runBuiltin(METH(set, isdisjoint), set, other));
   ASSERT_TRUE(result3.isBool());
   EXPECT_EQ(*result3, Bool::trueObj());
 }
@@ -417,19 +416,19 @@ TEST_F(SetBuiltinsTest, IsdisjointWithIterableArg) {
   Object value(&scope, NoneType::object());
 
   // set().isdisjoint([])
-  Object result(&scope, runBuiltin(SetBuiltins::isdisjoint, set, other));
+  Object result(&scope, runBuiltin(METH(set, isdisjoint), set, other));
   ASSERT_TRUE(result.isBool());
   EXPECT_EQ(*result, Bool::trueObj());
 
   // set().isdisjoint([None])
   runtime_->listAdd(thread, other, value);
-  Object result1(&scope, runBuiltin(SetBuiltins::isdisjoint, set, other));
+  Object result1(&scope, runBuiltin(METH(set, isdisjoint), set, other));
   ASSERT_TRUE(result1.isBool());
   EXPECT_EQ(*result1, Bool::trueObj());
 
   // {None}.isdisjoint([None])
   setHashAndAdd(thread, set, value);
-  Object result2(&scope, runBuiltin(SetBuiltins::isdisjoint, set, other));
+  Object result2(&scope, runBuiltin(METH(set, isdisjoint), set, other));
   ASSERT_TRUE(result2.isBool());
   EXPECT_EQ(*result2, Bool::falseObj());
 
@@ -437,7 +436,7 @@ TEST_F(SetBuiltinsTest, IsdisjointWithIterableArg) {
   other = runtime_->newList();
   value = SmallInt::fromWord(1);
   runtime_->listAdd(thread, other, value);
-  Object result3(&scope, runBuiltin(SetBuiltins::isdisjoint, set, other));
+  Object result3(&scope, runBuiltin(METH(set, isdisjoint), set, other));
   ASSERT_TRUE(result3.isBool());
   EXPECT_EQ(*result3, Bool::trueObj());
 }
@@ -574,7 +573,7 @@ TEST_F(SetBuiltinsTest, DunderEqWithEmptySetsReturnsTrue) {
   HandleScope scope(thread);
   Set set(&scope, runtime_->newSet());
   Set set1(&scope, runtime_->newSet());
-  Object result(&scope, runBuiltin(SetBuiltins::dunderEq, set, set1));
+  Object result(&scope, runBuiltin(METH(set, __eq__), set, set1));
   ASSERT_EQ(*result, Bool::trueObj());
 }
 
@@ -582,7 +581,7 @@ TEST_F(SetBuiltinsTest, DunderEqWithSameSetReturnsTrue) {
   // s = {0, 1, 2}; (s == s) is True
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
-  Object result(&scope, runBuiltin(SetBuiltins::dunderEq, set, set));
+  Object result(&scope, runBuiltin(METH(set, __eq__), set, set));
   ASSERT_EQ(*result, Bool::trueObj());
 }
 
@@ -591,7 +590,7 @@ TEST_F(SetBuiltinsTest, DunderEqWithEqualSetsReturnsTrue) {
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(0, 3));
-  Object result(&scope, runBuiltin(SetBuiltins::dunderEq, set, set1));
+  Object result(&scope, runBuiltin(METH(set, __eq__), set, set1));
   ASSERT_EQ(*result, Bool::trueObj());
 }
 
@@ -600,7 +599,7 @@ TEST_F(SetBuiltinsTest, DunderEqWithUnequalSetsReturnsFalse) {
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(1, 4));
-  Object result(&scope, runBuiltin(SetBuiltins::dunderEq, set, set1));
+  Object result(&scope, runBuiltin(METH(set, __eq__), set, set1));
   ASSERT_EQ(*result, Bool::falseObj());
 }
 
@@ -610,7 +609,7 @@ TEST_F(SetBuiltinsTest, DunderNeWithEmptySetsReturnsFalse) {
   HandleScope scope(thread);
   Set set(&scope, runtime_->newSet());
   Set set1(&scope, runtime_->newSet());
-  Object result(&scope, runBuiltin(SetBuiltins::dunderNe, set, set1));
+  Object result(&scope, runBuiltin(METH(set, __ne__), set, set1));
   ASSERT_EQ(*result, Bool::falseObj());
 }
 
@@ -618,7 +617,7 @@ TEST_F(SetBuiltinsTest, DunderNeWithSameSetReturnsFalse) {
   // s = {0, 1, 2}; (s != s) is False
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
-  Object result(&scope, runBuiltin(SetBuiltins::dunderNe, set, set));
+  Object result(&scope, runBuiltin(METH(set, __ne__), set, set));
   ASSERT_EQ(*result, Bool::falseObj());
 }
 
@@ -627,7 +626,7 @@ TEST_F(SetBuiltinsTest, DunderNeWithEqualSetsReturnsFalse) {
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(0, 3));
-  Object result(&scope, runBuiltin(SetBuiltins::dunderNe, set, set1));
+  Object result(&scope, runBuiltin(METH(set, __ne__), set, set1));
   ASSERT_EQ(*result, Bool::falseObj());
 }
 
@@ -636,7 +635,7 @@ TEST_F(SetBuiltinsTest, DunderNeWithUnequalSetsReturnsTrue) {
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(1, 4));
-  Object result(&scope, runBuiltin(SetBuiltins::dunderNe, set, set1));
+  Object result(&scope, runBuiltin(METH(set, __ne__), set, set1));
   ASSERT_EQ(*result, Bool::trueObj());
 }
 
@@ -644,7 +643,7 @@ TEST_F(SetBuiltinsTest, DunderGeWithSameSetReturnsTrue) {
   // s = {0, 1, 2}; (s >= s) is True
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
-  Object result(&scope, runBuiltin(SetBuiltins::dunderGe, set, set));
+  Object result(&scope, runBuiltin(METH(set, __ge__), set, set));
   ASSERT_EQ(*result, Bool::trueObj());
 }
 
@@ -653,7 +652,7 @@ TEST_F(SetBuiltinsTest, DunderGeWithEqualSetsReturnsTrue) {
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(0, 3));
-  Object result(&scope, runBuiltin(SetBuiltins::dunderGe, set, set1));
+  Object result(&scope, runBuiltin(METH(set, __ge__), set, set1));
   ASSERT_EQ(*result, Bool::trueObj());
 }
 
@@ -662,7 +661,7 @@ TEST_F(SetBuiltinsTest, DunderGeWithSupersetReturnsFalse) {
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(0, 4));
-  Object result(&scope, runBuiltin(SetBuiltins::dunderGe, set, set1));
+  Object result(&scope, runBuiltin(METH(set, __ge__), set, set1));
   ASSERT_EQ(*result, Bool::falseObj());
 }
 
@@ -672,7 +671,7 @@ TEST_F(SetBuiltinsTest, DunderGeWithEmptySetReturnsTrue) {
   HandleScope scope(thread);
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, runtime_->newSet());
-  Object result(&scope, runBuiltin(SetBuiltins::dunderGe, set, set1));
+  Object result(&scope, runBuiltin(METH(set, __ge__), set, set1));
   ASSERT_EQ(*result, Bool::trueObj());
 }
 
@@ -682,7 +681,7 @@ TEST_F(SetBuiltinsTest, DunderLeWithEmptySetReturnsTrue) {
   HandleScope scope(thread);
   Set set(&scope, runtime_->newSet());
   Set set1(&scope, runtime_->newSet());
-  Object result(&scope, runBuiltin(SetBuiltins::dunderLe, set, set1));
+  Object result(&scope, runBuiltin(METH(set, __le__), set, set1));
   ASSERT_EQ(*result, Bool::trueObj());
 }
 
@@ -691,7 +690,7 @@ TEST_F(SetBuiltinsTest, DunderLeWithEqualSetsReturnsTrue) {
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(0, 3));
-  Object result(&scope, runBuiltin(SetBuiltins::dunderLe, set, set1));
+  Object result(&scope, runBuiltin(METH(set, __le__), set, set1));
   ASSERT_EQ(*result, Bool::trueObj());
 }
 
@@ -700,7 +699,7 @@ TEST_F(SetBuiltinsTest, DunderLeWithSubsetReturnsFalse) {
   HandleScope scope;
   Set set(&scope, setFromRange(0, 4));
   Set set1(&scope, setFromRange(0, 3));
-  Object result(&scope, runBuiltin(SetBuiltins::dunderLe, set, set1));
+  Object result(&scope, runBuiltin(METH(set, __le__), set, set1));
   ASSERT_EQ(*result, Bool::falseObj());
 }
 
@@ -710,7 +709,7 @@ TEST_F(SetBuiltinsTest, DunderLeWithEmptySetReturnsFalse) {
   HandleScope scope(thread);
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, runtime_->newSet());
-  Object result(&scope, runBuiltin(SetBuiltins::dunderLe, set, set1));
+  Object result(&scope, runBuiltin(METH(set, __le__), set, set1));
   ASSERT_EQ(*result, Bool::falseObj());
 }
 
@@ -719,7 +718,7 @@ TEST_F(SetBuiltinsTest, DunderGtWithEqualSetsReturnsFalse) {
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(0, 3));
-  Object result(&scope, runBuiltin(SetBuiltins::dunderGt, set, set1));
+  Object result(&scope, runBuiltin(METH(set, __gt__), set, set1));
   ASSERT_EQ(*result, Bool::falseObj());
 }
 
@@ -728,7 +727,7 @@ TEST_F(SetBuiltinsTest, DunderGtWithSubsetReturnsTrue) {
   HandleScope scope;
   Set set(&scope, setFromRange(0, 4));
   Set set1(&scope, setFromRange(0, 3));
-  Object result(&scope, runBuiltin(SetBuiltins::dunderGt, set, set1));
+  Object result(&scope, runBuiltin(METH(set, __gt__), set, set1));
   ASSERT_EQ(*result, Bool::trueObj());
 }
 
@@ -737,7 +736,7 @@ TEST_F(SetBuiltinsTest, DunderGtWithSupersetReturnsFalse) {
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(0, 4));
-  Object result(&scope, runBuiltin(SetBuiltins::dunderGt, set, set1));
+  Object result(&scope, runBuiltin(METH(set, __gt__), set, set1));
   ASSERT_EQ(*result, Bool::falseObj());
 }
 
@@ -746,7 +745,7 @@ TEST_F(SetBuiltinsTest, DunderLtWithEqualSetsReturnsFalse) {
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(0, 3));
-  Object result(&scope, runBuiltin(SetBuiltins::dunderLt, set, set1));
+  Object result(&scope, runBuiltin(METH(set, __lt__), set, set1));
   ASSERT_EQ(*result, Bool::falseObj());
 }
 
@@ -755,7 +754,7 @@ TEST_F(SetBuiltinsTest, DunderLtWithSupersetReturnsTrue) {
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(0, 4));
-  Object result(&scope, runBuiltin(SetBuiltins::dunderLt, set, set1));
+  Object result(&scope, runBuiltin(METH(set, __lt__), set, set1));
   ASSERT_EQ(*result, Bool::trueObj());
 }
 
@@ -764,7 +763,7 @@ TEST_F(SetBuiltinsTest, DunderLtWithSubsetReturnsFalse) {
   HandleScope scope;
   Set set(&scope, setFromRange(0, 4));
   Set set1(&scope, setFromRange(0, 3));
-  Object result(&scope, runBuiltin(SetBuiltins::dunderLt, set, set1));
+  Object result(&scope, runBuiltin(METH(set, __lt__), set, set1));
   ASSERT_EQ(*result, Bool::falseObj());
 }
 
@@ -773,7 +772,7 @@ TEST_F(SetBuiltinsTest, DunderEqWithNonSetSecondArgReturnsNotImplemented) {
   HandleScope scope(thread);
   Set set(&scope, runtime_->newSet());
   Object none(&scope, NoneType::object());
-  Object result(&scope, runBuiltin(SetBuiltins::dunderEq, set, none));
+  Object result(&scope, runBuiltin(METH(set, __eq__), set, none));
   ASSERT_EQ(*result, NotImplementedType::object());
 }
 
@@ -782,7 +781,7 @@ TEST_F(SetBuiltinsTest, DunderNeWithNonSetSecondArgReturnsNotImplemented) {
   HandleScope scope(thread);
   Set set(&scope, runtime_->newSet());
   Object none(&scope, NoneType::object());
-  Object result(&scope, runBuiltin(SetBuiltins::dunderNe, set, none));
+  Object result(&scope, runBuiltin(METH(set, __ne__), set, none));
   ASSERT_EQ(*result, NotImplementedType::object());
 }
 
@@ -791,7 +790,7 @@ TEST_F(SetBuiltinsTest, DunderGeWithNonSetSecondArgReturnsNotImplemented) {
   HandleScope scope(thread);
   Set set(&scope, runtime_->newSet());
   Object none(&scope, NoneType::object());
-  Object result(&scope, runBuiltin(SetBuiltins::dunderGe, set, none));
+  Object result(&scope, runBuiltin(METH(set, __ge__), set, none));
   ASSERT_EQ(*result, NotImplementedType::object());
 }
 
@@ -800,7 +799,7 @@ TEST_F(SetBuiltinsTest, DunderGtWithNonSetSecondArgReturnsNotImplemented) {
   HandleScope scope(thread);
   Set set(&scope, runtime_->newSet());
   Object none(&scope, NoneType::object());
-  Object result(&scope, runBuiltin(SetBuiltins::dunderGt, set, none));
+  Object result(&scope, runBuiltin(METH(set, __gt__), set, none));
   ASSERT_EQ(*result, NotImplementedType::object());
 }
 
@@ -809,7 +808,7 @@ TEST_F(SetBuiltinsTest, DunderLeWithNonSetSecondArgReturnsNotImplemented) {
   HandleScope scope(thread);
   Set set(&scope, runtime_->newSet());
   Object none(&scope, NoneType::object());
-  Object result(&scope, runBuiltin(SetBuiltins::dunderLe, set, none));
+  Object result(&scope, runBuiltin(METH(set, __le__), set, none));
   ASSERT_EQ(*result, NotImplementedType::object());
 }
 
@@ -818,7 +817,7 @@ TEST_F(SetBuiltinsTest, DunderLtWithNonSetSecondArgReturnsNotImplemented) {
   HandleScope scope(thread);
   Set set(&scope, runtime_->newSet());
   Object none(&scope, NoneType::object());
-  Object result(&scope, runBuiltin(SetBuiltins::dunderLt, set, none));
+  Object result(&scope, runBuiltin(METH(set, __lt__), set, none));
   ASSERT_EQ(*result, NotImplementedType::object());
 }
 
@@ -897,7 +896,7 @@ TEST_F(SetBuiltinsTest, DunderInitWithIteratorUpdatesSet) {
   HandleScope scope(thread);
   Set set(&scope, runtime_->newSet());
   Set set1(&scope, setFromRange(0, 3));
-  Object result(&scope, runBuiltin(SetBuiltins::dunderInit, set, set1));
+  Object result(&scope, runBuiltin(METH(set, __init__), set, set1));
   ASSERT_TRUE(result.isNoneType());
   EXPECT_EQ(set.numItems(), set1.numItems());
   Object key(&scope, SmallInt::fromWord(0));
@@ -939,7 +938,7 @@ s = Set([0, 1, 2])
   Object s(&scope, mainModuleAt(runtime_, "s"));
   ASSERT_TRUE(runtime_->isInstanceOfSet(*s));
 
-  Object result(&scope, runBuiltin(SetBuiltins::dunderLen, s));
+  Object result(&scope, runBuiltin(METH(set, __len__), s));
   EXPECT_TRUE(isIntEqualsWord(*result, 3));
 }
 
@@ -969,7 +968,7 @@ TEST_F(SetBuiltinsTest, FrozenSetDunderNewFromEmptyIterableReturnsSingleton) {
   Type type(&scope, runtime_->typeAt(LayoutId::kFrozenSet));
   List empty_iterable(&scope, runtime_->newList());
   Object result(&scope,
-                runBuiltin(FrozenSetBuiltins::dunderNew, type, empty_iterable));
+                runBuiltin(METH(frozenset, __new__), type, empty_iterable));
   EXPECT_EQ(*result, runtime_->emptyFrozenSet());
 }
 
@@ -980,8 +979,7 @@ TEST_F(SetBuiltinsTest, FrozenSetDunderNewFromFrozenSetIsIdempotent) {
   List nonempty_list(&scope, listFromRange(1, 5));
   FrozenSet frozenset(&scope, runtime_->newFrozenSet());
   frozenset = setUpdate(Thread::current(), frozenset, nonempty_list);
-  Object result(&scope,
-                runBuiltin(FrozenSetBuiltins::dunderNew, type, frozenset));
+  Object result(&scope, runBuiltin(METH(frozenset, __new__), type, frozenset));
   EXPECT_EQ(*result, *frozenset);
 }
 
@@ -991,8 +989,8 @@ TEST_F(SetBuiltinsTest,
   HandleScope scope(thread);
   Type type(&scope, runtime_->typeAt(LayoutId::kFrozenSet));
   List nonempty_list(&scope, listFromRange(1, 5));
-  Object result_obj(
-      &scope, runBuiltin(FrozenSetBuiltins::dunderNew, type, nonempty_list));
+  Object result_obj(&scope,
+                    runBuiltin(METH(frozenset, __new__), type, nonempty_list));
   ASSERT_TRUE(result_obj.isFrozenSet());
   FrozenSet result(&scope, *result_obj);
   EXPECT_EQ(result.numItems(), 4);
@@ -1011,10 +1009,10 @@ TEST_F(SetBuiltinsTest, FrozenSetFromIterableIsNotSingleton) {
   Type type(&scope, runtime_->typeAt(LayoutId::kFrozenSet));
   List nonempty_list(&scope, listFromRange(1, 5));
   Object result1(&scope,
-                 runBuiltin(FrozenSetBuiltins::dunderNew, type, nonempty_list));
+                 runBuiltin(METH(frozenset, __new__), type, nonempty_list));
   ASSERT_TRUE(result1.isFrozenSet());
   Object result2(&scope,
-                 runBuiltin(FrozenSetBuiltins::dunderNew, type, nonempty_list));
+                 runBuiltin(METH(frozenset, __new__), type, nonempty_list));
   ASSERT_TRUE(result2.isFrozenSet());
   ASSERT_NE(*result1, *result2);
 }
@@ -1023,7 +1021,7 @@ TEST_F(SetBuiltinsTest, FrozenSetDunderNewWithNonIterableRaisesTypeError) {
   HandleScope scope;
   Type type(&scope, runtime_->typeAt(LayoutId::kFrozenSet));
   Object none(&scope, NoneType::object());
-  Object result(&scope, runBuiltin(FrozenSetBuiltins::dunderNew, type, none));
+  Object result(&scope, runBuiltin(METH(frozenset, __new__), type, none));
   ASSERT_TRUE(result.isError());
 }
 
@@ -1173,7 +1171,7 @@ TEST_F(SetBuiltinsTest, CopyWithNonSetRaisesTypeError) {
   HandleScope scope;
   Object not_a_set(&scope, NoneType::object());
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(SetBuiltins::copy, not_a_set), LayoutId::kTypeError,
+      runBuiltin(METH(set, copy), not_a_set), LayoutId::kTypeError,
       "'<anonymous>' requires a 'set' object but got 'NoneType'"));
 }
 
@@ -1181,7 +1179,7 @@ TEST_F(SetBuiltinsTest, CopyReturnsNewObject) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, runtime_->newSet());
-  Object result(&scope, runBuiltin(SetBuiltins::copy, set));
+  Object result(&scope, runBuiltin(METH(set, copy), set));
   EXPECT_NE(*set, *result);
   EXPECT_TRUE(result.isSet());
 }
@@ -1191,7 +1189,7 @@ TEST_F(SetBuiltinsTest, CopyFrozenSetRaisesTypeError) {
   HandleScope scope(thread);
   FrozenSet set(&scope, runtime_->newFrozenSet());
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(SetBuiltins::copy, set), LayoutId::kTypeError,
+      runBuiltin(METH(set, copy), set), LayoutId::kTypeError,
       "'<anonymous>' requires a 'set' object but got 'frozenset'"));
 }
 
@@ -1201,7 +1199,7 @@ TEST_F(SetBuiltinsTest, CopyReturnsShallowCopy) {
   Set set(&scope, runtime_->newSet());
   Object obj(&scope, runtime_->newTuple(5));
   setHashAndAdd(thread, set, obj);
-  Set set2(&scope, runBuiltin(SetBuiltins::copy, set));
+  Set set2(&scope, runBuiltin(METH(set, copy), set));
   Tuple data(&scope, set2.data());
   bool has_object = false;
   for (word i = SetBase::Bucket::kFirst;
@@ -1218,7 +1216,7 @@ TEST_F(FrozenSetBuiltinsTest, CopyWithNonFrozenSetRaisesTypeError) {
   HandleScope scope;
   Object not_a_set(&scope, NoneType::object());
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(FrozenSetBuiltins::copy, not_a_set), LayoutId::kTypeError,
+      runBuiltin(METH(frozenset, copy), not_a_set), LayoutId::kTypeError,
       "'<anonymous>' requires a 'frozenset' object but got 'NoneType'"));
 }
 
@@ -1227,7 +1225,7 @@ TEST_F(FrozenSetBuiltinsTest, CopySetRaisesTypeError) {
   HandleScope scope(thread);
   Set set(&scope, runtime_->newSet());
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(FrozenSetBuiltins::copy, set), LayoutId::kTypeError,
+      runBuiltin(METH(frozenset, copy), set), LayoutId::kTypeError,
       "'<anonymous>' requires a 'frozenset' object but got 'set'"));
 }
 
@@ -1235,7 +1233,7 @@ TEST_F(FrozenSetBuiltinsTest, CopyFrozenSetReturnsSameObject) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   FrozenSet set(&scope, runtime_->newFrozenSet());
-  Object result(&scope, runBuiltin(FrozenSetBuiltins::copy, set));
+  Object result(&scope, runBuiltin(METH(frozenset, copy), set));
   EXPECT_EQ(*set, *result);
   EXPECT_TRUE(result.isFrozenSet());
 }
@@ -1264,7 +1262,7 @@ TEST_F(FrozenSetBuiltinsTest, CopyMakesShallowCopy) {
   FrozenSet set(&scope, runtime_->newFrozenSet());
   Object obj(&scope, runtime_->newTuple(5));
   setHashAndAdd(thread, set, obj);
-  FrozenSet set2(&scope, runBuiltin(FrozenSetBuiltins::copy, set));
+  FrozenSet set2(&scope, runBuiltin(METH(frozenset, copy), set));
   Tuple data(&scope, set2.data());
   bool has_object = false;
   for (word i = SetBase::Bucket::kFirst;
@@ -1282,7 +1280,7 @@ TEST_F(SetBuiltinsTest, UpdateWithNoArgsDoesNothing) {
   HandleScope scope(thread);
   Set set(&scope, runtime_->newSet());
   Tuple starargs(&scope, runtime_->emptyTuple());
-  Object result(&scope, runBuiltin(SetBuiltins::update, set, starargs));
+  Object result(&scope, runBuiltin(METH(set, update), set, starargs));
   EXPECT_TRUE(result.isNoneType());
   EXPECT_EQ(set.numItems(), 0);
 }

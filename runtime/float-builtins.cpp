@@ -36,25 +36,25 @@ static RawObject convertToDouble(Thread* thread, const Object& object,
 
 // clang-format off
 const BuiltinMethod FloatBuiltins::kBuiltinMethods[] = {
-    {ID(__abs__), dunderAbs},
-    {ID(__add__), dunderAdd},
-    {ID(__bool__), dunderBool},
-    {ID(__eq__), dunderEq},
-    {ID(__float__), dunderFloat},
-    {ID(__ge__), dunderGe},
-    {ID(__gt__), dunderGt},
-    {ID(__hash__), dunderHash},
-    {ID(__int__), dunderInt},
-    {ID(__le__), dunderLe},
-    {ID(__lt__), dunderLt},
-    {ID(__mul__), dunderMul},
-    {ID(__neg__), dunderNeg},
-    {ID(__pow__), dunderPow},
-    {ID(__round__), dunderRound},
-    {ID(__rtruediv__), dunderRtrueDiv},
-    {ID(__sub__), dunderSub},
-    {ID(__truediv__), dunderTrueDiv},
-    {ID(__trunc__), dunderTrunc},
+    {ID(__abs__), METH(float, __abs__)},
+    {ID(__add__), METH(float, __add__)},
+    {ID(__bool__), METH(float, __bool__)},
+    {ID(__eq__), METH(float, __eq__)},
+    {ID(__float__), METH(float, __float__)},
+    {ID(__ge__), METH(float, __ge__)},
+    {ID(__gt__), METH(float, __gt__)},
+    {ID(__hash__), METH(float, __hash__)},
+    {ID(__int__), METH(float, __int__)},
+    {ID(__le__), METH(float, __le__)},
+    {ID(__lt__), METH(float, __lt__)},
+    {ID(__mul__), METH(float, __mul__)},
+    {ID(__neg__), METH(float, __neg__)},
+    {ID(__pow__), METH(float, __pow__)},
+    {ID(__round__), METH(float, __round__)},
+    {ID(__rtruediv__), METH(float, __rtruediv__)},
+    {ID(__sub__), METH(float, __sub__)},
+    {ID(__truediv__), METH(float, __truediv__)},
+    {ID(__trunc__), METH(float, __trunc__)},
     {SymbolId::kSentinelId, nullptr},
 };
 // clang-format on
@@ -65,7 +65,7 @@ const BuiltinAttribute FloatBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, 0},
 };
 
-RawObject FloatBuiltins::dunderAbs(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __abs__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -77,7 +77,7 @@ RawObject FloatBuiltins::dunderAbs(Thread* thread, Frame* frame, word nargs) {
   return runtime->newFloat(std::fabs(self));
 }
 
-RawObject FloatBuiltins::dunderBool(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __bool__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -89,7 +89,7 @@ RawObject FloatBuiltins::dunderBool(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(self != 0.0);
 }
 
-RawObject FloatBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __eq__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -112,7 +112,7 @@ RawObject FloatBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(result);
 }
 
-RawObject FloatBuiltins::dunderFloat(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __float__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -122,7 +122,7 @@ RawObject FloatBuiltins::dunderFloat(Thread* thread, Frame* frame, word nargs) {
   return floatUnderlying(*self);
 }
 
-RawObject FloatBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __ge__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -145,7 +145,7 @@ RawObject FloatBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(result);
 }
 
-RawObject FloatBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __gt__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -301,7 +301,7 @@ word doubleHash(double value) {
   return static_cast<word>(result);
 }
 
-RawObject FloatBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __hash__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -312,7 +312,7 @@ RawObject FloatBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
   return SmallInt::fromWord(doubleHash(self));
 }
 
-RawObject FloatBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __int__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -323,7 +323,7 @@ RawObject FloatBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
   return intFromDouble(thread, self);
 }
 
-RawObject FloatBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __le__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -346,7 +346,7 @@ RawObject FloatBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(result);
 }
 
-RawObject FloatBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __lt__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -369,7 +369,7 @@ RawObject FloatBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(result);
 }
 
-RawObject FloatBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __mul__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -388,7 +388,7 @@ RawObject FloatBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   return runtime->newFloat(left * right);
 }
 
-RawObject FloatBuiltins::dunderNeg(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __neg__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -400,7 +400,7 @@ RawObject FloatBuiltins::dunderNeg(Thread* thread, Frame* frame, word nargs) {
   return runtime->newFloat(-self);
 }
 
-RawObject FloatBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __add__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -419,8 +419,7 @@ RawObject FloatBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   return runtime->newFloat(left + right);
 }
 
-RawObject FloatBuiltins::dunderTrueDiv(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject METH(float, __truediv__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
 
@@ -444,7 +443,7 @@ RawObject FloatBuiltins::dunderTrueDiv(Thread* thread, Frame* frame,
   return runtime->newFloat(left / right);
 }
 
-RawObject FloatBuiltins::dunderRound(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __round__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -507,8 +506,7 @@ RawObject FloatBuiltins::dunderRound(Thread* thread, Frame* frame, word nargs) {
   return runtime->newFloat(result);
 }
 
-RawObject FloatBuiltins::dunderRtrueDiv(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject METH(float, __rtruediv__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
 
@@ -532,7 +530,7 @@ RawObject FloatBuiltins::dunderRtrueDiv(Thread* thread, Frame* frame,
   return runtime->newFloat(left / right);
 }
 
-RawObject FloatBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __sub__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -551,7 +549,7 @@ RawObject FloatBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
   return runtime->newFloat(left - right);
 }
 
-RawObject FloatBuiltins::dunderTrunc(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __trunc__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -564,7 +562,7 @@ RawObject FloatBuiltins::dunderTrunc(Thread* thread, Frame* frame, word nargs) {
   return intFromDouble(thread, integral_part);
 }
 
-RawObject FloatBuiltins::dunderPow(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(float, __pow__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));

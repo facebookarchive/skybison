@@ -154,43 +154,43 @@ const BuiltinAttribute IntBuiltins::kAttributes[] = {
 
 // clang-format off
 const BuiltinMethod IntBuiltins::kBuiltinMethods[] = {
-    {ID(__abs__), dunderAbs},
-    {ID(__add__), dunderAdd},
-    {ID(__and__), dunderAnd},
-    {ID(__bool__), dunderBool},
-    {ID(__ceil__), dunderCeil},
-    {ID(__divmod__), dunderDivmod},
-    {ID(__eq__), dunderEq},
-    {ID(__float__), dunderFloat},
-    {ID(__floor__), dunderFloor},
-    {ID(__floordiv__), dunderFloordiv},
-    {ID(__format__), dunderFormat},
-    {ID(__ge__), dunderGe},
-    {ID(__gt__), dunderGt},
-    {ID(__hash__), dunderHash},
-    {ID(__index__), dunderIndex},
-    {ID(__int__), dunderInt},
-    {ID(__invert__), dunderInvert},
-    {ID(__le__), dunderLe},
-    {ID(__lshift__), dunderLshift},
-    {ID(__lt__), dunderLt},
-    {ID(__mod__), dunderMod},
-    {ID(__mul__), dunderMul},
-    {ID(__ne__), dunderNe},
-    {ID(__neg__), dunderNeg},
-    {ID(__or__), dunderOr},
-    {ID(__pos__), dunderPos},
-    {ID(__repr__), dunderRepr},
-    {ID(__round__), dunderRound},
-    {ID(__rshift__), dunderRshift},
-    {ID(__str__), dunderStr},
-    {ID(__sub__), dunderSub},
-    {ID(__truediv__), dunderTrueDiv},
-    {ID(__trunc__), dunderTrunc},
-    {ID(__xor__), dunderXor},
-    {ID(bit_length), bitLength},
-    {ID(conjugate), conjugate},
-    {ID(to_bytes), toBytes},
+    {ID(__abs__), METH(int, __abs__)},
+    {ID(__add__), METH(int, __add__)},
+    {ID(__and__), METH(int, __and__)},
+    {ID(__bool__), METH(int, __bool__)},
+    {ID(__ceil__), METH(int, __ceil__)},
+    {ID(__divmod__), METH(int, __divmod__)},
+    {ID(__eq__), METH(int, __eq__)},
+    {ID(__float__), METH(int, __float__)},
+    {ID(__floor__), METH(int, __floor__)},
+    {ID(__floordiv__), METH(int, __floordiv__)},
+    {ID(__format__), METH(int, __format__)},
+    {ID(__ge__), METH(int, __ge__)},
+    {ID(__gt__), METH(int, __gt__)},
+    {ID(__hash__), METH(int, __hash__)},
+    {ID(__index__), METH(int, __index__)},
+    {ID(__int__), METH(int, __int__)},
+    {ID(__invert__), METH(int, __invert__)},
+    {ID(__le__), METH(int, __le__)},
+    {ID(__lshift__), METH(int, __lshift__)},
+    {ID(__lt__), METH(int, __lt__)},
+    {ID(__mod__), METH(int, __mod__)},
+    {ID(__mul__), METH(int, __mul__)},
+    {ID(__ne__), METH(int, __ne__)},
+    {ID(__neg__), METH(int, __neg__)},
+    {ID(__or__), METH(int, __or__)},
+    {ID(__pos__), METH(int, __pos__)},
+    {ID(__repr__), METH(int, __repr__)},
+    {ID(__round__), METH(int, __round__)},
+    {ID(__rshift__), METH(int, __rshift__)},
+    {ID(__str__), METH(int, __str__)},
+    {ID(__sub__), METH(int, __sub__)},
+    {ID(__truediv__), METH(int, __truediv__)},
+    {ID(__trunc__), METH(int, __trunc__)},
+    {ID(__xor__), METH(int, __xor__)},
+    {ID(bit_length), METH(int, bit_length)},
+    {ID(conjugate), METH(int, conjugate)},
+    {ID(to_bytes), METH(int, to_bytes)},
     {SymbolId::kSentinelId, nullptr},
 };
 // clang-format on
@@ -260,7 +260,7 @@ static RawObject asStr(Thread* thread, Frame* frame, word nargs) {
   });
 }
 
-RawObject IntBuiltins::dunderAbs(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __abs__)(Thread* thread, Frame* frame, word nargs) {
   return intUnaryOp(thread, frame, nargs,
                     [](Thread* t, const Int& self) -> RawObject {
                       if (self.isNegative()) {
@@ -271,21 +271,21 @@ RawObject IntBuiltins::dunderAbs(Thread* thread, Frame* frame, word nargs) {
                     });
 }
 
-RawObject IntBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __add__)(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(thread, frame, nargs,
                      [](Thread* t, const Int& left, const Int& right) {
                        return t->runtime()->intAdd(t, left, right);
                      });
 }
 
-RawObject IntBuiltins::dunderAnd(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __and__)(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(thread, frame, nargs,
                      [](Thread* t, const Int& left, const Int& right) {
                        return t->runtime()->intBinaryAnd(t, left, right);
                      });
 }
 
-RawObject IntBuiltins::dunderBool(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __bool__)(Thread* thread, Frame* frame, word nargs) {
   return intUnaryOp(
       thread, frame, nargs, [](Thread*, const Int& self) -> RawObject {
         if (self.isBool()) return *self;
@@ -297,11 +297,11 @@ RawObject IntBuiltins::dunderBool(Thread* thread, Frame* frame, word nargs) {
       });
 }
 
-RawObject IntBuiltins::dunderCeil(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __ceil__)(Thread* thread, Frame* frame, word nargs) {
   return asInt(thread, frame, nargs);
 }
 
-RawObject IntBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __eq__)(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(
       thread, frame, nargs,
       [](Thread*, const Int& left, const Int& right) -> RawObject {
@@ -309,7 +309,7 @@ RawObject IntBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
       });
 }
 
-RawObject IntBuiltins::dunderDivmod(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __divmod__)(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(
       thread, frame, nargs,
       [](Thread* t, const Int& left, const Int& right) -> RawObject {
@@ -328,7 +328,7 @@ RawObject IntBuiltins::dunderDivmod(Thread* thread, Frame* frame, word nargs) {
       });
 }
 
-RawObject IntBuiltins::dunderFloat(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __float__)(Thread* thread, Frame* frame, word nargs) {
   return intUnaryOp(thread, frame, nargs, [](Thread* t, const Int& self) {
     HandleScope scope(t);
     double value = 0.0;
@@ -338,18 +338,17 @@ RawObject IntBuiltins::dunderFloat(Thread* thread, Frame* frame, word nargs) {
   });
 }
 
-RawObject IntBuiltins::dunderFloor(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __floor__)(Thread* thread, Frame* frame, word nargs) {
   return asInt(thread, frame, nargs);
 }
 
-RawObject IntBuiltins::dunderInvert(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __invert__)(Thread* thread, Frame* frame, word nargs) {
   return intUnaryOp(thread, frame, nargs, [](Thread* t, const Int& self) {
     return t->runtime()->intInvert(t, self);
   });
 }
 
-RawObject IntBuiltins::dunderFloordiv(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject METH(int, __floordiv__)(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(
       thread, frame, nargs, [](Thread* t, const Int& left, const Int& right) {
         HandleScope scope(t);
@@ -396,7 +395,7 @@ static RawObject formatIntCodePoint(Thread* thread, const Int& value,
   return formatStr(thread, code_point, format);
 }
 
-RawObject IntBuiltins::dunderFormat(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __format__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -457,22 +456,22 @@ RawObject IntBuiltins::dunderFormat(Thread* thread, Frame* frame, word nargs) {
   }
 }
 
-RawObject IntBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __hash__)(Thread* thread, Frame* frame, word nargs) {
   return intUnaryOp(thread, frame, nargs,
                     [](Thread*, const Int& self) -> RawObject {
                       return SmallInt::fromWord(intHash(*self));
                     });
 }
 
-RawObject IntBuiltins::dunderIndex(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __index__)(Thread* thread, Frame* frame, word nargs) {
   return asInt(thread, frame, nargs);
 }
 
-RawObject IntBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __int__)(Thread* thread, Frame* frame, word nargs) {
   return asInt(thread, frame, nargs);
 }
 
-RawObject IntBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __le__)(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(
       thread, frame, nargs,
       [](Thread*, const Int& left, const Int& right) -> RawObject {
@@ -480,7 +479,7 @@ RawObject IntBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
       });
 }
 
-RawObject IntBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __lt__)(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(
       thread, frame, nargs,
       [](Thread*, const Int& left, const Int& right) -> RawObject {
@@ -488,7 +487,7 @@ RawObject IntBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
       });
 }
 
-RawObject IntBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __ge__)(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(
       thread, frame, nargs,
       [](Thread*, const Int& left, const Int& right) -> RawObject {
@@ -496,7 +495,7 @@ RawObject IntBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
       });
 }
 
-RawObject IntBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __gt__)(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(
       thread, frame, nargs,
       [](Thread*, const Int& left, const Int& right) -> RawObject {
@@ -504,7 +503,7 @@ RawObject IntBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
       });
 }
 
-RawObject IntBuiltins::dunderMod(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __mod__)(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(
       thread, frame, nargs, [](Thread* t, const Int& left, const Int& right) {
         HandleScope scope(t);
@@ -518,14 +517,14 @@ RawObject IntBuiltins::dunderMod(Thread* thread, Frame* frame, word nargs) {
       });
 }
 
-RawObject IntBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __mul__)(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(thread, frame, nargs,
                      [](Thread* t, const Int& left, const Int& right) {
                        return t->runtime()->intMultiply(t, left, right);
                      });
 }
 
-RawObject IntBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __ne__)(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(
       thread, frame, nargs,
       [](Thread*, const Int& left, const Int& right) -> RawObject {
@@ -533,13 +532,13 @@ RawObject IntBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
       });
 }
 
-RawObject IntBuiltins::dunderNeg(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __neg__)(Thread* thread, Frame* frame, word nargs) {
   return intUnaryOp(thread, frame, nargs, [](Thread* t, const Int& self) {
     return t->runtime()->intNegate(t, self);
   });
 }
 
-RawObject IntBuiltins::dunderRshift(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __rshift__)(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(
       thread, frame, nargs, [](Thread* t, const Int& left, const Int& right) {
         if (right.isNegative()) {
@@ -549,18 +548,18 @@ RawObject IntBuiltins::dunderRshift(Thread* thread, Frame* frame, word nargs) {
       });
 }
 
-RawObject IntBuiltins::dunderStr(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __str__)(Thread* thread, Frame* frame, word nargs) {
   return asStr(thread, frame, nargs);
 }
 
-RawObject IntBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __sub__)(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(thread, frame, nargs,
                      [](Thread* t, const Int& left, const Int& right) {
                        return t->runtime()->intSubtract(t, left, right);
                      });
 }
 
-RawObject IntBuiltins::dunderTrueDiv(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __truediv__)(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(
       thread, frame, nargs, [](Thread* t, const Int& left, const Int& right) {
         if (right.isZero()) {
@@ -575,25 +574,25 @@ RawObject IntBuiltins::dunderTrueDiv(Thread* thread, Frame* frame, word nargs) {
       });
 }
 
-RawObject IntBuiltins::dunderTrunc(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __trunc__)(Thread* thread, Frame* frame, word nargs) {
   return asInt(thread, frame, nargs);
 }
 
-RawObject IntBuiltins::dunderXor(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __xor__)(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(thread, frame, nargs,
                      [](Thread* t, const Int& left, const Int& right) {
                        return t->runtime()->intBinaryXor(t, left, right);
                      });
 }
 
-RawObject IntBuiltins::dunderOr(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __or__)(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(thread, frame, nargs,
                      [](Thread* t, const Int& left, const Int& right) {
                        return t->runtime()->intBinaryOr(t, left, right);
                      });
 }
 
-RawObject IntBuiltins::dunderLshift(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __lshift__)(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(
       thread, frame, nargs, [](Thread* t, const Int& left, const Int& right) {
         if (right.isNegative()) {
@@ -603,25 +602,25 @@ RawObject IntBuiltins::dunderLshift(Thread* thread, Frame* frame, word nargs) {
       });
 }
 
-RawObject IntBuiltins::dunderPos(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __pos__)(Thread* thread, Frame* frame, word nargs) {
   return asInt(thread, frame, nargs);
 }
 
-RawObject IntBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __repr__)(Thread* thread, Frame* frame, word nargs) {
   return asStr(thread, frame, nargs);
 }
 
-RawObject IntBuiltins::dunderRound(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, __round__)(Thread* thread, Frame* frame, word nargs) {
   return asInt(thread, frame, nargs);
 }
 
-RawObject IntBuiltins::bitLength(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, bit_length)(Thread* thread, Frame* frame, word nargs) {
   return intUnaryOp(thread, frame, nargs, [](Thread* t, const Int& self) {
     return t->runtime()->newInt(self.bitLength());
   });
 }
 
-RawObject IntBuiltins::conjugate(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, conjugate)(Thread* thread, Frame* frame, word nargs) {
   return asInt(thread, frame, nargs);
 }
 
@@ -684,7 +683,7 @@ static RawObject toBytesImpl(Thread* thread, const Object& self_obj,
   return runtime->intToBytes(thread, self, length, endianness);
 }
 
-RawObject IntBuiltins::toBytes(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(int, to_bytes)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -698,13 +697,13 @@ RawObject IntBuiltins::toBytes(Thread* thread, Frame* frame, word nargs) {
 }
 
 const BuiltinMethod BoolBuiltins::kBuiltinMethods[] = {
-    {ID(__new__), dunderNew},
-    {ID(__or__), dunderOr},
-    {ID(__ror__), dunderRor},
+    {ID(__new__), METH(bool, __new__)},
+    {ID(__or__), METH(bool, __or__)},
+    {ID(__ror__), METH(bool, __ror__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject BoolBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bool, __new__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -748,11 +747,11 @@ static RawObject boolOrImpl(Thread* thread, Frame* frame, word nargs) {
   return NotImplementedType::object();
 }
 
-RawObject BoolBuiltins::dunderOr(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bool, __or__)(Thread* thread, Frame* frame, word nargs) {
   return boolOrImpl(thread, frame, nargs);
 }
 
-RawObject BoolBuiltins::dunderRor(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bool, __ror__)(Thread* thread, Frame* frame, word nargs) {
   return boolOrImpl(thread, frame, nargs);
 }
 

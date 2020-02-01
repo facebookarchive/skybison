@@ -5,14 +5,13 @@
 namespace py {
 
 const BuiltinMethod StrArrayBuiltins::kBuiltinMethods[] = {
-    {ID(__init__), dunderInit},
-    {ID(__new__), dunderNew},
-    {ID(__str__), dunderStr},
+    {ID(__init__), METH(_strarray, __init__)},
+    {ID(__new__), METH(_strarray, __new__)},
+    {ID(__str__), METH(_strarray, __str__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject StrArrayBuiltins::dunderInit(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject METH(_strarray, __init__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -35,8 +34,7 @@ RawObject StrArrayBuiltins::dunderInit(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject StrArrayBuiltins::dunderNew(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject METH(_strarray, __new__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   DCHECK(args.get(0) == runtime->typeAt(LayoutId::kStrArray),
@@ -44,8 +42,7 @@ RawObject StrArrayBuiltins::dunderNew(Thread* thread, Frame* frame,
   return runtime->newStrArray();
 }
 
-RawObject StrArrayBuiltins::dunderStr(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject METH(_strarray, __str__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));

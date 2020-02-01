@@ -419,8 +419,8 @@ class C:
                    .isError());
   Object c(&scope, mainModuleAt(runtime_, "C"));
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  EXPECT_TRUE(isIntEqualsWord(
-      runBuiltin(TypeBuiltins::dunderGetattribute, c, name), -13));
+  EXPECT_TRUE(
+      isIntEqualsWord(runBuiltin(METH(type, __getattribute__), c, name), -13));
 }
 
 TEST_F(TypeBuiltinsTest, DunderGetattributeWithNonStringNameRaisesTypeError) {
@@ -432,9 +432,9 @@ class C:
                    .isError());
   Object c(&scope, mainModuleAt(runtime_, "C"));
   Object name(&scope, runtime_->newInt(0));
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(TypeBuiltins::dunderGetattribute, c, name),
-      LayoutId::kTypeError, "attribute name must be string, not 'int'"));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(METH(type, __getattribute__), c, name),
+                            LayoutId::kTypeError,
+                            "attribute name must be string, not 'int'"));
 }
 
 TEST_F(TypeBuiltinsTest,
@@ -447,9 +447,9 @@ class C:
                    .isError());
   Object c(&scope, mainModuleAt(runtime_, "C"));
   Object name(&scope, Runtime::internStrFromCStr(thread_, "xxx"));
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(TypeBuiltins::dunderGetattribute, c, name),
-      LayoutId::kAttributeError, "type object 'C' has no attribute 'xxx'"));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(METH(type, __getattribute__), c, name),
+                            LayoutId::kAttributeError,
+                            "type object 'C' has no attribute 'xxx'"));
 }
 
 TEST_F(TypeBuiltinsTest, DunderReprForBuiltinReturnsStr) {
@@ -506,8 +506,7 @@ TEST_F(TypeBuiltinsTest, DunderSetattrSetsAttribute) {
   Type c(&scope, *c_obj);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object value(&scope, runtime_->newInt(-7331));
-  EXPECT_TRUE(
-      runBuiltin(TypeBuiltins::dunderSetattr, c, name, value).isNoneType());
+  EXPECT_TRUE(runBuiltin(METH(type, __setattr__), c, name, value).isNoneType());
   EXPECT_TRUE(isIntEqualsWord(typeAt(c, name), -7331));
 }
 
@@ -519,9 +518,9 @@ TEST_F(TypeBuiltinsTest, DunderSetattrWithNonStrNameRaisesTypeError) {
   Type c(&scope, *c_obj);
   Object name(&scope, NoneType::object());
   Object value(&scope, runtime_->newInt(1));
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(TypeBuiltins::dunderSetattr, c, name, value),
-      LayoutId::kTypeError, "attribute name must be string, not 'NoneType'"));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(METH(type, __setattr__), c, name, value),
+                            LayoutId::kTypeError,
+                            "attribute name must be string, not 'NoneType'"));
 }
 
 TEST_F(TypeBuiltinsTest, TypeHasDunderMroAttribute) {
@@ -750,7 +749,7 @@ class C(A, B):
   Object atype(&scope, mainModuleAt(runtime_, "A"));
   Object btype(&scope, mainModuleAt(runtime_, "B"));
   Object ctype(&scope, mainModuleAt(runtime_, "C"));
-  Object result_obj(&scope, runBuiltin(TypeBuiltins::mro, ctype));
+  Object result_obj(&scope, runBuiltin(METH(type, mro), ctype));
   ASSERT_TRUE(result_obj.isList());
   List result(&scope, *result_obj);
   EXPECT_EQ(result.at(0), *ctype);
@@ -766,7 +765,7 @@ TEST_F(TypeBuiltinsTest, MroWithInvalidLinearizationRaisesTypeError) {
   bases.atPut(0, runtime_->typeAt(LayoutId::kObject));
   bases.atPut(1, runtime_->typeAt(LayoutId::kInt));
   type.setBases(*bases);
-  EXPECT_TRUE(raisedWithStr(runBuiltin(TypeBuiltins::mro, type),
+  EXPECT_TRUE(raisedWithStr(runBuiltin(METH(type, mro), type),
                             LayoutId::kTypeError,
                             "Cannot create a consistent method resolution "
                             "order (MRO) for bases object, int"));

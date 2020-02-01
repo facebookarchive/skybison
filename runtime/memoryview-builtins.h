@@ -12,14 +12,15 @@ RawObject memoryviewSetslice(Thread* thread, const MemoryView& view, word start,
                              word stop, word step, word slice_len,
                              const Object& value);
 
+RawObject METH(memoryview, cast)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(memoryview, __getitem__)(Thread* thread, Frame* frame,
+                                        word nargs);
+RawObject METH(memoryview, __len__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(memoryview, __new__)(Thread* thread, Frame* frame, word nargs);
+
 class MemoryViewBuiltins : public Builtins<MemoryViewBuiltins, ID(memoryview),
                                            LayoutId::kMemoryView> {
  public:
-  static RawObject cast(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderGetitem(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
-
   static const BuiltinAttribute kAttributes[];
   static const BuiltinMethod kBuiltinMethods[];
 

@@ -46,7 +46,7 @@ TEST_F(StrArrayBuiltinsTest, DunderStrWithNonStrArrayRaisesTypeError) {
 TEST_F(StrArrayBuiltinsTest, DunderStrWithEmptyStrArrayReturnsEmptyStr) {
   HandleScope scope;
   StrArray self(&scope, runtime_->newStrArray());
-  Object repr(&scope, runBuiltin(StrArrayBuiltins::dunderStr, self));
+  Object repr(&scope, runBuiltin(METH(_strarray, __str__), self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, ""));
 }
 
@@ -56,7 +56,7 @@ TEST_F(StrArrayBuiltinsTest, DunderStrWithSimpleStrArrayReturnsStr) {
   const char* test_str = "foo";
   Str foo(&scope, runtime_->newStrFromCStr(test_str));
   runtime_->strArrayAddStr(thread_, self, foo);
-  Object repr(&scope, runBuiltin(StrArrayBuiltins::dunderStr, self));
+  Object repr(&scope, runBuiltin(METH(_strarray, __str__), self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, test_str));
 }
 

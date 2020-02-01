@@ -6,17 +6,17 @@ namespace py {
 
 word complexHash(RawObject value);
 
+RawObject METH(complex, __add__)(Thread*, Frame*, word);
+RawObject METH(complex, __hash__)(Thread*, Frame*, word);
+RawObject METH(complex, __neg__)(Thread*, Frame*, word);
+RawObject METH(complex, __pos__)(Thread*, Frame*, word);
+RawObject METH(complex, __rsub__)(Thread*, Frame*, word);
+RawObject METH(complex, __sub__)(Thread*, Frame*, word);
+
 class ComplexBuiltins
     : public Builtins<ComplexBuiltins, ID(complex), LayoutId::kComplex> {
  public:
   static void postInitialize(Runtime*, const Type& new_type);
-
-  static RawObject dunderAdd(Thread*, Frame*, word);
-  static RawObject dunderHash(Thread*, Frame*, word);
-  static RawObject dunderNeg(Thread*, Frame*, word);
-  static RawObject dunderPos(Thread*, Frame*, word);
-  static RawObject dunderRsub(Thread*, Frame*, word);
-  static RawObject dunderSub(Thread*, Frame*, word);
 
   static const BuiltinMethod kBuiltinMethods[];
 

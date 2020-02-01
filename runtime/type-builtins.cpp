@@ -898,7 +898,7 @@ RawObject typeGetAttributeSetLocation(Thread* thread, const Type& type,
       // To solve the ambiguity we add a special case for `type(None)` here.
       // Luckily it is impossible for the user to change the type so we can
       // special case the desired lookup behavior here.
-      // Also see `FunctionBuiltins::dunderGet` for the related special casing
+      // Also see `METH(function, __get__)` for the related special casing
       // of lookups on the `None` object.
       if (type.builtinBase() == LayoutId::kNoneType) {
         return *attr;
@@ -1174,15 +1174,15 @@ const BuiltinAttribute TypeBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod TypeBuiltins::kBuiltinMethods[] = {
-    {ID(__getattribute__), dunderGetattribute},
-    {ID(__setattr__), dunderSetattr},
-    {ID(__subclasses__), dunderSubclasses},
-    {ID(mro), mro},
+    {ID(__getattribute__), METH(type, __getattribute__)},
+    {ID(__setattr__), METH(type, __setattr__)},
+    {ID(__subclasses__), METH(type, __subclasses__)},
+    {ID(mro), METH(type, mro)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject TypeBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject METH(type, __getattribute__)(Thread* thread, Frame* frame,
+                                       word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -1204,8 +1204,7 @@ RawObject TypeBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject TypeBuiltins::dunderSetattr(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject METH(type, __setattr__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -1227,8 +1226,7 @@ RawObject TypeBuiltins::dunderSetattr(Thread* thread, Frame* frame,
   return typeSetAttr(thread, self, name, value);
 }
 
-RawObject TypeBuiltins::dunderSubclasses(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject METH(type, __subclasses__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -1257,7 +1255,7 @@ RawObject TypeBuiltins::dunderSubclasses(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject TypeBuiltins::mro(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(type, mro)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));

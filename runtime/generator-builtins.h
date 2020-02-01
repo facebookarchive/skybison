@@ -8,14 +8,14 @@ namespace py {
 // executing in a resumed GeneratorBase.
 RawGeneratorBase generatorFromStackFrame(Frame* frame);
 
+RawObject METH(generator, __next__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(generator, __iter__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(generator, send)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(generator, throw)(Thread* thread, Frame* frame, word nargs);
+
 class GeneratorBuiltins
     : public Builtins<GeneratorBuiltins, ID(generator), LayoutId::kGenerator> {
  public:
-  static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
-  static RawObject send(Thread* thread, Frame* frame, word nargs);
-  static RawObject genThrow(Thread* thread, Frame* frame, word nargs);
-
   static const BuiltinMethod kBuiltinMethods[];
   static const BuiltinAttribute kAttributes[];
 
@@ -23,11 +23,11 @@ class GeneratorBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(GeneratorBuiltins);
 };
 
+RawObject METH(coroutine, send)(Thread* thread, Frame* frame, word nargs);
+
 class CoroutineBuiltins
     : public Builtins<CoroutineBuiltins, ID(coroutine), LayoutId::kCoroutine> {
  public:
-  static RawObject send(Thread* thread, Frame* frame, word nargs);
-
   static const BuiltinMethod kBuiltinMethods[];
   static const BuiltinAttribute kAttributes[];
 

@@ -45,7 +45,7 @@ TEST_F(ModuleBuiltinsTest, DunderGetattributeReturnsAttribute) {
   Module module(&scope, runtime_->findModuleById(ID(__main__)));
   Object name(&scope, runtime_->newStrFromCStr("foo"));
   EXPECT_TRUE(isIntEqualsWord(
-      runBuiltin(ModuleBuiltins::dunderGetattribute, module, name), -6));
+      runBuiltin(METH(module, __getattribute__), module, name), -6));
 }
 
 TEST_F(ModuleBuiltinsTest, DunderGetattributeWithNonStringNameRaisesTypeError) {
@@ -54,7 +54,7 @@ TEST_F(ModuleBuiltinsTest, DunderGetattributeWithNonStringNameRaisesTypeError) {
   Module module(&scope, runtime_->findModuleById(ID(__main__)));
   Object name(&scope, runtime_->newInt(0));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(ModuleBuiltins::dunderGetattribute, module, name),
+      runBuiltin(METH(module, __getattribute__), module, name),
       LayoutId::kTypeError, "attribute name must be string, not 'int'"));
 }
 
@@ -65,7 +65,7 @@ TEST_F(ModuleBuiltinsTest,
   Module module(&scope, runtime_->findModuleById(ID(__main__)));
   Object name(&scope, runtime_->newStrFromCStr("xxx"));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(ModuleBuiltins::dunderGetattribute, module, name),
+      runBuiltin(METH(module, __getattribute__), module, name),
       LayoutId::kAttributeError, "module '__main__' has no attribute 'xxx'"));
 }
 
@@ -75,8 +75,8 @@ TEST_F(ModuleBuiltinsTest, DunderSetattrSetsAttribute) {
   Module module(&scope, runtime_->newModule(module_name));
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foobarbaz"));
   Object value(&scope, runtime_->newInt(0xf00d));
-  EXPECT_TRUE(runBuiltin(ModuleBuiltins::dunderSetattr, module, name, value)
-                  .isNoneType());
+  EXPECT_TRUE(
+      runBuiltin(METH(module, __setattr__), module, name, value).isNoneType());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(thread_, module, name), 0xf00d));
 }
 
@@ -87,7 +87,7 @@ TEST_F(ModuleBuiltinsTest, DunderSetattrWithNonStrNameRaisesTypeError) {
   Object name(&scope, runtime_->newFloat(4.4));
   Object value(&scope, runtime_->newInt(0));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(ModuleBuiltins::dunderSetattr, module, name, value),
+      runBuiltin(METH(module, __setattr__), module, name, value),
       LayoutId::kTypeError, "attribute name must be string, not 'float'"));
 }
 

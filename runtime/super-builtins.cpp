@@ -47,7 +47,7 @@ RawObject superGetAttribute(Thread* thread, const Super& super,
     }
     // TODO(T56507184): Remove this once super.__getattribute__ gets cached.
     if (value.isFunction()) {
-      // See FunctionBuiltins::dunderGet for details.
+      // See METH(function, __get__) for details.
       if (self.isNoneType() &&
           start_type.builtinBase() != LayoutId::kNoneType) {
         return *value;
@@ -62,9 +62,9 @@ RawObject superGetAttribute(Thread* thread, const Super& super,
 }
 
 const BuiltinMethod SuperBuiltins::kBuiltinMethods[] = {
-    {ID(__getattribute__), dunderGetattribute},
-    {ID(__init__), dunderInit},
-    {ID(__new__), dunderNew},
+    {ID(__getattribute__), METH(super, __getattribute__)},
+    {ID(__init__), METH(super, __init__)},
+    {ID(__new__), METH(super, __new__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -76,8 +76,8 @@ const BuiltinAttribute SuperBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
-RawObject SuperBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject METH(super, __getattribute__)(Thread* thread, Frame* frame,
+                                        word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -96,11 +96,11 @@ RawObject SuperBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject SuperBuiltins::dunderNew(Thread* thread, Frame*, word) {
+RawObject METH(super, __new__)(Thread* thread, Frame*, word) {
   return thread->runtime()->newSuper();
 }
 
-RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(super, __init__)(Thread* thread, Frame* frame, word nargs) {
   // only support idiomatic usage for now
   // super() -> same as super(__class__, <first argument>)
   // super(type, obj) -> bound super object; requires isinstance(obj, type)

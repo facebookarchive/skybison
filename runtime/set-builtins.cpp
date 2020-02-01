@@ -590,26 +590,25 @@ const BuiltinAttribute FrozenSetBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod FrozenSetBuiltins::kBuiltinMethods[] = {
-    {ID(__and__), dunderAnd},
-    {ID(__contains__), dunderContains},
-    {ID(__eq__), dunderEq},
-    {ID(__ge__), dunderGe},
-    {ID(__gt__), dunderGt},
-    {ID(__hash__), dunderHash},
-    {ID(__iter__), dunderIter},
-    {ID(__le__), dunderLe},
-    {ID(__len__), dunderLen},
-    {ID(__lt__), dunderLt},
-    {ID(__ne__), dunderNe},
-    {ID(__new__), dunderNew},
-    {ID(copy), copy},
-    {ID(intersection), intersection},
-    {ID(isdisjoint), isdisjoint},
+    {ID(__and__), METH(frozenset, __and__)},
+    {ID(__contains__), METH(frozenset, __contains__)},
+    {ID(__eq__), METH(frozenset, __eq__)},
+    {ID(__ge__), METH(frozenset, __ge__)},
+    {ID(__gt__), METH(frozenset, __gt__)},
+    {ID(__hash__), METH(frozenset, __hash__)},
+    {ID(__iter__), METH(frozenset, __iter__)},
+    {ID(__le__), METH(frozenset, __le__)},
+    {ID(__len__), METH(frozenset, __len__)},
+    {ID(__lt__), METH(frozenset, __lt__)},
+    {ID(__ne__), METH(frozenset, __ne__)},
+    {ID(__new__), METH(frozenset, __new__)},
+    {ID(copy), METH(frozenset, copy)},
+    {ID(intersection), METH(frozenset, intersection)},
+    {ID(isdisjoint), METH(frozenset, isdisjoint)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject FrozenSetBuiltins::dunderAnd(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject METH(frozenset, __and__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -626,28 +625,24 @@ RawObject FrozenSetBuiltins::dunderAnd(Thread* thread, Frame* frame,
   return setIntersection(thread, set, other_set);
 }
 
-RawObject FrozenSetBuiltins::dunderContains(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject METH(frozenset, __contains__)(Thread* thread, Frame* frame,
+                                        word nargs) {
   return dunderContainsImpl(thread, frame, nargs, ID(frozenset));
 }
 
-RawObject FrozenSetBuiltins::dunderEq(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject METH(frozenset, __eq__)(Thread* thread, Frame* frame, word nargs) {
   return dunderEqImpl(thread, frame, nargs, ID(frozenset));
 }
 
-RawObject FrozenSetBuiltins::dunderGe(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject METH(frozenset, __ge__)(Thread* thread, Frame* frame, word nargs) {
   return dunderGeImpl(thread, frame, nargs, ID(frozenset));
 }
 
-RawObject FrozenSetBuiltins::dunderGt(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject METH(frozenset, __gt__)(Thread* thread, Frame* frame, word nargs) {
   return dunderGtImpl(thread, frame, nargs, ID(frozenset));
 }
 
-RawObject FrozenSetBuiltins::dunderHash(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject METH(frozenset, __hash__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -658,33 +653,27 @@ RawObject FrozenSetBuiltins::dunderHash(Thread* thread, Frame* frame,
   return frozensetHash(thread, set);
 }
 
-RawObject FrozenSetBuiltins::dunderIter(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject METH(frozenset, __iter__)(Thread* thread, Frame* frame, word nargs) {
   return dunderIterImpl(thread, frame, nargs, ID(frozenset));
 }
 
-RawObject FrozenSetBuiltins::dunderLe(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject METH(frozenset, __le__)(Thread* thread, Frame* frame, word nargs) {
   return dunderLeImpl(thread, frame, nargs, ID(frozenset));
 }
 
-RawObject FrozenSetBuiltins::dunderLen(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject METH(frozenset, __len__)(Thread* thread, Frame* frame, word nargs) {
   return dunderLenImpl(thread, frame, nargs, ID(frozenset));
 }
 
-RawObject FrozenSetBuiltins::dunderLt(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject METH(frozenset, __lt__)(Thread* thread, Frame* frame, word nargs) {
   return dunderLtImpl(thread, frame, nargs, ID(frozenset));
 }
 
-RawObject FrozenSetBuiltins::dunderNe(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject METH(frozenset, __ne__)(Thread* thread, Frame* frame, word nargs) {
   return dunderNeImpl(thread, frame, nargs, ID(frozenset));
 }
 
-RawObject FrozenSetBuiltins::dunderNew(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject METH(frozenset, __new__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object type_obj(&scope, args.get(0));
@@ -733,7 +722,7 @@ RawObject FrozenSetBuiltins::dunderNew(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject FrozenSetBuiltins::copy(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(frozenset, copy)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -747,13 +736,13 @@ RawObject FrozenSetBuiltins::copy(Thread* thread, Frame* frame, word nargs) {
   return setCopy(thread, set);
 }
 
-RawObject FrozenSetBuiltins::intersection(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject METH(frozenset, intersection)(Thread* thread, Frame* frame,
+                                        word nargs) {
   return intersectionImpl(thread, frame, nargs, ID(frozenset));
 }
 
-RawObject FrozenSetBuiltins::isdisjoint(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject METH(frozenset, isdisjoint)(Thread* thread, Frame* frame,
+                                      word nargs) {
   return isdisjointImpl(thread, frame, nargs, ID(frozenset));
 }
 
@@ -764,28 +753,28 @@ const BuiltinAttribute SetBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod SetBuiltins::kBuiltinMethods[] = {
-    {ID(__and__), dunderAnd},
-    {ID(__contains__), dunderContains},
-    {ID(__eq__), dunderEq},
-    {ID(__ge__), dunderGe},
-    {ID(__gt__), dunderGt},
-    {ID(__iand__), dunderIand},
-    {ID(__init__), dunderInit},
-    {ID(__iter__), dunderIter},
-    {ID(__le__), dunderLe},
-    {ID(__len__), dunderLen},
-    {ID(__lt__), dunderLt},
-    {ID(__ne__), dunderNe},
-    {ID(__new__), dunderNew},
-    {ID(add), add},
-    {ID(clear), clear},
-    {ID(copy), copy},
-    {ID(discard), discard},
-    {ID(intersection), intersection},
-    {ID(isdisjoint), isdisjoint},
-    {ID(pop), pop},
-    {ID(remove), remove},
-    {ID(update), update},
+    {ID(__and__), METH(set, __and__)},
+    {ID(__contains__), METH(set, __contains__)},
+    {ID(__eq__), METH(set, __eq__)},
+    {ID(__ge__), METH(set, __ge__)},
+    {ID(__gt__), METH(set, __gt__)},
+    {ID(__iand__), METH(set, __iand__)},
+    {ID(__init__), METH(set, __init__)},
+    {ID(__iter__), METH(set, __iter__)},
+    {ID(__le__), METH(set, __le__)},
+    {ID(__len__), METH(set, __len__)},
+    {ID(__lt__), METH(set, __lt__)},
+    {ID(__ne__), METH(set, __ne__)},
+    {ID(__new__), METH(set, __new__)},
+    {ID(add), METH(set, add)},
+    {ID(clear), METH(set, clear)},
+    {ID(copy), METH(set, copy)},
+    {ID(discard), METH(set, discard)},
+    {ID(intersection), METH(set, intersection)},
+    {ID(isdisjoint), METH(set, isdisjoint)},
+    {ID(pop), METH(set, pop)},
+    {ID(remove), METH(set, remove)},
+    {ID(update), METH(set, update)},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -879,7 +868,7 @@ RawObject setIteratorNext(Thread* thread, const SetIterator& iter) {
   return RawSet::Bucket::value(*data, idx);
 }
 
-RawObject SetBuiltins::dunderAnd(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, __and__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -896,24 +885,23 @@ RawObject SetBuiltins::dunderAnd(Thread* thread, Frame* frame, word nargs) {
   return setIntersection(thread, set, other_set);
 }
 
-RawObject SetBuiltins::dunderContains(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject METH(set, __contains__)(Thread* thread, Frame* frame, word nargs) {
   return dunderContainsImpl(thread, frame, nargs, ID(set));
 }
 
-RawObject SetBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, __eq__)(Thread* thread, Frame* frame, word nargs) {
   return dunderEqImpl(thread, frame, nargs, ID(set));
 }
 
-RawObject SetBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, __ge__)(Thread* thread, Frame* frame, word nargs) {
   return dunderGeImpl(thread, frame, nargs, ID(set));
 }
 
-RawObject SetBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, __gt__)(Thread* thread, Frame* frame, word nargs) {
   return dunderGtImpl(thread, frame, nargs, ID(set));
 }
 
-RawObject SetBuiltins::dunderIand(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, __iand__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -936,7 +924,7 @@ RawObject SetBuiltins::dunderIand(Thread* thread, Frame* frame, word nargs) {
   return *set;
 }
 
-RawObject SetBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, __init__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -953,27 +941,27 @@ RawObject SetBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject SetBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, __iter__)(Thread* thread, Frame* frame, word nargs) {
   return dunderIterImpl(thread, frame, nargs, ID(set));
 }
 
-RawObject SetBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, __le__)(Thread* thread, Frame* frame, word nargs) {
   return dunderLeImpl(thread, frame, nargs, ID(set));
 }
 
-RawObject SetBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, __len__)(Thread* thread, Frame* frame, word nargs) {
   return dunderLenImpl(thread, frame, nargs, ID(set));
 }
 
-RawObject SetBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, __lt__)(Thread* thread, Frame* frame, word nargs) {
   return dunderLtImpl(thread, frame, nargs, ID(set));
 }
 
-RawObject SetBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, __ne__)(Thread* thread, Frame* frame, word nargs) {
   return dunderNeImpl(thread, frame, nargs, ID(set));
 }
 
-RawObject SetBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, __new__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -992,7 +980,7 @@ RawObject SetBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, add)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -1011,7 +999,7 @@ RawObject SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject SetBuiltins::clear(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, clear)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -1028,7 +1016,7 @@ RawObject SetBuiltins::clear(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject SetBuiltins::copy(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, copy)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -1039,7 +1027,7 @@ RawObject SetBuiltins::copy(Thread* thread, Frame* frame, word nargs) {
   return setCopy(thread, set);
 }
 
-RawObject SetBuiltins::discard(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, discard)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -1056,15 +1044,15 @@ RawObject SetBuiltins::discard(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject SetBuiltins::intersection(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, intersection)(Thread* thread, Frame* frame, word nargs) {
   return intersectionImpl(thread, frame, nargs, ID(set));
 }
 
-RawObject SetBuiltins::isdisjoint(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, isdisjoint)(Thread* thread, Frame* frame, word nargs) {
   return isdisjointImpl(thread, frame, nargs, ID(set));
 }
 
-RawObject SetBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, pop)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -1075,7 +1063,7 @@ RawObject SetBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
   return setPop(thread, set);
 }
 
-RawObject SetBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, remove)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -1094,7 +1082,7 @@ RawObject SetBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject SetBuiltins::update(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(set, update)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
@@ -1120,14 +1108,14 @@ RawObject SetBuiltins::update(Thread* thread, Frame* frame, word nargs) {
 }
 
 const BuiltinMethod SetIteratorBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), dunderIter},
-    {ID(__length_hint__), dunderLengthHint},
-    {ID(__next__), dunderNext},
+    {ID(__iter__), METH(set_iterator, __iter__)},
+    {ID(__length_hint__), METH(set_iterator, __length_hint__)},
+    {ID(__next__), METH(set_iterator, __next__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject SetIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject METH(set_iterator, __iter__)(Thread* thread, Frame* frame,
+                                       word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -1137,8 +1125,8 @@ RawObject SetIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject SetIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject METH(set_iterator, __next__)(Thread* thread, Frame* frame,
+                                       word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -1153,8 +1141,8 @@ RawObject SetIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   return *value;
 }
 
-RawObject SetIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject METH(set_iterator, __length_hint__)(Thread* thread, Frame* frame,
+                                              word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));

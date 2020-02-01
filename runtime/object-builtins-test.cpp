@@ -71,8 +71,8 @@ i.foo = 79
                    .isError());
   Object i(&scope, mainModuleAt(runtime_, "i"));
   Object name(&scope, runtime_->newStrFromCStr("foo"));
-  EXPECT_TRUE(isIntEqualsWord(
-      runBuiltin(ObjectBuiltins::dunderGetattribute, i, name), 79));
+  EXPECT_TRUE(
+      isIntEqualsWord(runBuiltin(METH(object, __getattribute__), i, name), 79));
 }
 
 TEST_F(ObjectBuiltinsTest, DunderGetattributeWithNonStringNameRaisesTypeError) {
@@ -80,7 +80,7 @@ TEST_F(ObjectBuiltinsTest, DunderGetattributeWithNonStringNameRaisesTypeError) {
   Object object(&scope, NoneType::object());
   Object name(&scope, runtime_->newInt(0));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(ObjectBuiltins::dunderGetattribute, object, name),
+      runBuiltin(METH(object, __getattribute__), object, name),
       LayoutId::kTypeError, "attribute name must be string, not 'int'"));
 }
 
@@ -90,7 +90,7 @@ TEST_F(ObjectBuiltinsTest,
   Object object(&scope, NoneType::object());
   Object name(&scope, runtime_->newStrFromCStr("xxx"));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(ObjectBuiltins::dunderGetattribute, object, name),
+      runBuiltin(METH(object, __getattribute__), object, name),
       LayoutId::kAttributeError, "'NoneType' object has no attribute 'xxx'"));
 }
 
@@ -105,7 +105,7 @@ i = C()
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Object value(&scope, runtime_->newInt(42));
   EXPECT_TRUE(
-      runBuiltin(ObjectBuiltins::dunderSetattr, i, name, value).isNoneType());
+      runBuiltin(METH(object, __setattr__), i, name, value).isNoneType());
   ASSERT_TRUE(i.isInstance());
   Instance i_instance(&scope, *i);
   EXPECT_TRUE(
@@ -118,7 +118,7 @@ TEST_F(ObjectBuiltinsTest, DunderSetattrWithNonStringNameRaisesTypeError) {
   Object name(&scope, runtime_->newInt(0));
   Object value(&scope, runtime_->newInt(1));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(ObjectBuiltins::dunderSetattr, object, name, value),
+      runBuiltin(METH(object, __setattr__), object, name, value),
       LayoutId::kTypeError, "attribute name must be string, not 'int'"));
 }
 
@@ -128,7 +128,7 @@ TEST_F(ObjectBuiltinsTest, DunderSetattrOnBuiltinTypeRaisesAttributeError) {
   Object name(&scope, runtime_->newStrFromCStr("foo"));
   Object value(&scope, runtime_->newInt(1));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(ObjectBuiltins::dunderSetattr, object, name, value),
+      runBuiltin(METH(object, __setattr__), object, name, value),
       LayoutId::kAttributeError, "'NoneType' object has no attribute 'foo'"));
 }
 
@@ -136,14 +136,14 @@ TEST_F(ObjectBuiltinsTest,
        DunderSizeofWithNonHeapObjectReturnsSizeofRawObject) {
   HandleScope scope;
   Object small_int(&scope, SmallInt::fromWord(6));
-  Object result(&scope, runBuiltin(ObjectBuiltins::dunderSizeof, small_int));
+  Object result(&scope, runBuiltin(METH(object, __sizeof__), small_int));
   EXPECT_TRUE(isIntEqualsWord(*result, kPointerSize));
 }
 
 TEST_F(ObjectBuiltinsTest, DunderSizeofWithLargeStrReturnsSizeofHeapObject) {
   HandleScope scope;
   HeapObject large_str(&scope, runtime_->heap()->createLargeStr(40));
-  Object result(&scope, runBuiltin(ObjectBuiltins::dunderSizeof, large_str));
+  Object result(&scope, runBuiltin(METH(object, __sizeof__), large_str));
   EXPECT_TRUE(isIntEqualsWord(*result, large_str.size()));
 }
 
@@ -305,7 +305,7 @@ Foo()
 TEST_F(NoneBuiltinsTest, NewReturnsNone) {
   HandleScope scope;
   Type type(&scope, runtime_->typeAt(LayoutId::kNoneType));
-  EXPECT_TRUE(runBuiltin(NoneBuiltins::dunderNew, type).isNoneType());
+  EXPECT_TRUE(runBuiltin(METH(NoneType, __new__), type).isNoneType());
 }
 
 TEST_F(NoneBuiltinsTest, NewWithExtraArgsRaisesTypeError) {

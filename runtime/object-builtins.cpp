@@ -368,11 +368,11 @@ RawObject objectSetItem(Thread* thread, const Object& object, const Object& key,
 
 // clang-format off
 const BuiltinMethod ObjectBuiltins::kBuiltinMethods[] = {
-    {ID(__hash__), dunderHash},
-    {ID(__init__), dunderInit},
-    {ID(__new__), dunderNew},
-    {ID(__setattr__), dunderSetattr},
-    {ID(__sizeof__), dunderSizeof},
+    {ID(__hash__), METH(object, __hash__)},
+    {ID(__init__), METH(object, __init__)},
+    {ID(__new__), METH(object, __new__)},
+    {ID(__setattr__), METH(object, __setattr__)},
+    {ID(__sizeof__), METH(object, __sizeof__)},
     // no sentinel needed because the iteration below is manual
 };
 // clang-format on
@@ -414,10 +414,11 @@ void ObjectBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
   parameter_names.atPut(0, runtime->symbols()->at(ID(self)));
   parameter_names.atPut(1, runtime->symbols()->at(ID(name)));
   Object name(&scope, runtime->symbols()->at(ID(__getattribute__)));
-  Code code(&scope,
-            runtime->newBuiltinCode(
-                /*argcount=*/2, /*posonlyargcount=*/2, /*kwonlyargcount=*/0,
-                /*flags=*/0, dunderGetattribute, parameter_names, name));
+  Code code(
+      &scope,
+      runtime->newBuiltinCode(
+          /*argcount=*/2, /*posonlyargcount=*/2, /*kwonlyargcount=*/0,
+          /*flags=*/0, METH(object, __getattribute__), parameter_names, name));
   Object qualname(
       &scope, Runtime::internStrFromCStr(thread, "object.__getattribute__"));
   Object module_obj(&scope, NoneType::object());
@@ -427,8 +428,8 @@ void ObjectBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
   typeAtPutById(thread, new_type, ID(__getattribute__), dunder_getattribute);
 }
 
-RawObject ObjectBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject METH(object, __getattribute__)(Thread* thread, Frame* frame,
+                                         word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -442,12 +443,12 @@ RawObject ObjectBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject ObjectBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(object, __hash__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   return SmallInt::fromWord(thread->runtime()->hash(args.get(0)));
 }
 
-RawObject ObjectBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(object, __init__)(Thread* thread, Frame* frame, word nargs) {
   // Too many arguments were given. Determine if the __new__ was not overwritten
   // or the __init__ was to throw a TypeError.
   Arguments args(frame, nargs);
@@ -477,7 +478,7 @@ RawObject ObjectBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject ObjectBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(object, __new__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object type_obj(&scope, args.get(0));
@@ -488,8 +489,7 @@ RawObject ObjectBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   return objectNew(thread, type);
 }
 
-RawObject ObjectBuiltins::dunderSetattr(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject METH(object, __setattr__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -500,8 +500,7 @@ RawObject ObjectBuiltins::dunderSetattr(Thread* thread, Frame* frame,
   return objectSetAttr(thread, self, name, value);
 }
 
-RawObject ObjectBuiltins::dunderSizeof(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject METH(object, __sizeof__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object obj(&scope, args.get(0));
@@ -513,16 +512,16 @@ RawObject ObjectBuiltins::dunderSizeof(Thread* thread, Frame* frame,
 }
 
 const BuiltinMethod NoneBuiltins::kBuiltinMethods[] = {
-    {ID(__new__), dunderNew},
-    {ID(__repr__), dunderRepr},
+    {ID(__new__), METH(NoneType, __new__)},
+    {ID(__repr__), METH(NoneType, __repr__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject NoneBuiltins::dunderNew(Thread*, Frame*, word) {
+RawObject METH(NoneType, __new__)(Thread*, Frame*, word) {
   return NoneType::object();
 }
 
-RawObject NoneBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(NoneType, __repr__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   if (!args.get(0).isNoneType()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,

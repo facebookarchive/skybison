@@ -216,11 +216,11 @@ TEST_F(ListBuiltinsTest, DunderContainsWithContainedElementReturnsTrue) {
   runtime_->listAdd(thread_, list, value0);
   runtime_->listAdd(thread_, list, value1);
   runtime_->listAdd(thread_, list, value2);
-  EXPECT_EQ(runBuiltin(ListBuiltins::dunderContains, list, value0),
+  EXPECT_EQ(runBuiltin(METH(list, __contains__), list, value0),
             RawBool::trueObj());
-  EXPECT_EQ(runBuiltin(ListBuiltins::dunderContains, list, value1),
+  EXPECT_EQ(runBuiltin(METH(list, __contains__), list, value1),
             RawBool::trueObj());
-  EXPECT_EQ(runBuiltin(ListBuiltins::dunderContains, list, value2),
+  EXPECT_EQ(runBuiltin(METH(list, __contains__), list, value2),
             RawBool::trueObj());
 }
 
@@ -233,9 +233,9 @@ TEST_F(ListBuiltinsTest, DunderContainsWithUncontainedElementReturnsFalse) {
   runtime_->listAdd(thread_, list, value1);
   Int value2(&scope, runtime_->newInt(42));
   Bool value3(&scope, RawBool::trueObj());
-  EXPECT_EQ(runBuiltin(ListBuiltins::dunderContains, list, value2),
+  EXPECT_EQ(runBuiltin(METH(list, __contains__), list, value2),
             RawBool::falseObj());
-  EXPECT_EQ(runBuiltin(ListBuiltins::dunderContains, list, value3),
+  EXPECT_EQ(runBuiltin(METH(list, __contains__), list, value3),
             RawBool::falseObj());
 }
 
@@ -251,7 +251,7 @@ list = [value]
                    .isError());
   Object value(&scope, mainModuleAt(runtime_, "value"));
   List list(&scope, mainModuleAt(runtime_, "list"));
-  EXPECT_EQ(runBuiltin(ListBuiltins::dunderContains, list, value),
+  EXPECT_EQ(runBuiltin(METH(list, __contains__), list, value),
             RawBool::trueObj());
 }
 
@@ -268,7 +268,7 @@ list = [None]
                    .isError());
   Object value(&scope, mainModuleAt(runtime_, "value"));
   List list(&scope, mainModuleAt(runtime_, "list"));
-  EXPECT_EQ(runBuiltin(ListBuiltins::dunderContains, list, value),
+  EXPECT_EQ(runBuiltin(METH(list, __contains__), list, value),
             RawBool::trueObj());
 }
 
@@ -289,7 +289,7 @@ list = [value0]
                    .isError());
   Object value1(&scope, mainModuleAt(runtime_, "value1"));
   List list(&scope, mainModuleAt(runtime_, "list"));
-  EXPECT_EQ(runBuiltin(ListBuiltins::dunderContains, list, value1),
+  EXPECT_EQ(runBuiltin(METH(list, __contains__), list, value1),
             RawBool::falseObj());
 }
 
@@ -305,7 +305,7 @@ list = [None]
                    .isError());
   Object value(&scope, mainModuleAt(runtime_, "value"));
   List list(&scope, mainModuleAt(runtime_, "list"));
-  Object result(&scope, runBuiltin(ListBuiltins::dunderContains, list, value));
+  Object result(&scope, runBuiltin(METH(list, __contains__), list, value));
   EXPECT_TRUE(raised(*result, LayoutId::kUserWarning));
 }
 
@@ -325,14 +325,14 @@ list = [None]
                    .isError());
   Object value(&scope, mainModuleAt(runtime_, "value"));
   List list(&scope, mainModuleAt(runtime_, "list"));
-  EXPECT_TRUE(raised(runBuiltin(ListBuiltins::dunderContains, list, value),
+  EXPECT_TRUE(raised(runBuiltin(METH(list, __contains__), list, value),
                      LayoutId::kUserWarning));
 }
 
 TEST_F(ListBuiltinsTest, DunderContainsWithNonListSelfRaisesTypeError) {
   HandleScope scope(thread_);
   Int i(&scope, SmallInt::fromWord(3));
-  Object result(&scope, runBuiltin(ListBuiltins::dunderContains, i, i));
+  Object result(&scope, runBuiltin(METH(list, __contains__), i, i));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -368,9 +368,9 @@ TEST_F(ListBuiltinsTest, ListInsertWithBoolIndexInsertsAtInt) {
   runtime_->listAdd(thread_, self, value);
   Object fals(&scope, Bool::falseObj());
   Object tru(&scope, Bool::trueObj());
-  Object result(&scope, runBuiltin(ListBuiltins::insert, self, tru, tru));
+  Object result(&scope, runBuiltin(METH(list, insert), self, tru, tru));
   EXPECT_EQ(result, NoneType::object());
-  result = runBuiltin(ListBuiltins::insert, self, fals, fals);
+  result = runBuiltin(METH(list, insert), self, fals, fals);
   EXPECT_EQ(result, NoneType::object());
   ASSERT_EQ(self.numItems(), 4);
   EXPECT_EQ(self.at(0), fals);
@@ -391,7 +391,7 @@ b = N(3)
   List self(&scope, mainModuleAt(runtime_, "a"));
   Object index(&scope, mainModuleAt(runtime_, "b"));
   Object value(&scope, SmallInt::fromWord(1));
-  Object result(&scope, runBuiltin(ListBuiltins::insert, self, index, value));
+  Object result(&scope, runBuiltin(METH(list, insert), self, index, value));
   EXPECT_EQ(result, NoneType::object());
   EXPECT_EQ(self.numItems(), 6);
   EXPECT_EQ(self.at(3), value);
@@ -422,7 +422,7 @@ TEST_F(ListBuiltinsTest, ListRemoveWithDuplicateItemsRemovesFirstMatchingItem) {
   runtime_->listAdd(thread_, list, value0);
 
   EXPECT_EQ(list.numItems(), 5);
-  runBuiltin(ListBuiltins::remove, list, value1);
+  runBuiltin(METH(list, remove), list, value1);
   ASSERT_EQ(list.numItems(), 4);
   EXPECT_EQ(list.at(0), value0);
   EXPECT_EQ(list.at(1), value2);
@@ -443,7 +443,7 @@ list = [value]
   Object value(&scope, mainModuleAt(runtime_, "value"));
   List list(&scope, mainModuleAt(runtime_, "list"));
   EXPECT_EQ(list.numItems(), 1);
-  runBuiltin(ListBuiltins::remove, list, value);
+  runBuiltin(METH(list, remove), list, value);
   EXPECT_EQ(list.numItems(), 0);
 }
 
@@ -460,7 +460,7 @@ list = [C()]
   Object value(&scope, NoneType::object());
   List list(&scope, mainModuleAt(runtime_, "list"));
   EXPECT_EQ(list.numItems(), 1);
-  runBuiltin(ListBuiltins::remove, list, value);
+  runBuiltin(METH(list, remove), list, value);
   EXPECT_EQ(list.numItems(), 0);
 }
 
@@ -480,7 +480,7 @@ list = [D()]
                    .isError());
   Object value(&scope, mainModuleAt(runtime_, "value"));
   List list(&scope, mainModuleAt(runtime_, "list"));
-  Object result(&scope, runBuiltin(ListBuiltins::remove, list, value));
+  Object result(&scope, runBuiltin(METH(list, remove), list, value));
   EXPECT_TRUE(raised(*result, LayoutId::kValueError));
 }
 
@@ -496,7 +496,7 @@ list = [None]
                    .isError());
   Object value(&scope, mainModuleAt(runtime_, "value"));
   List list(&scope, mainModuleAt(runtime_, "list"));
-  Object result(&scope, runBuiltin(ListBuiltins::remove, list, value));
+  Object result(&scope, runBuiltin(METH(list, remove), list, value));
   EXPECT_TRUE(raised(*result, LayoutId::kUserWarning));
 }
 
@@ -515,7 +515,7 @@ list = [None]
                    .isError());
   Object value(&scope, mainModuleAt(runtime_, "value"));
   List list(&scope, mainModuleAt(runtime_, "list"));
-  EXPECT_TRUE(raisedWithStr(runBuiltin(ListBuiltins::remove, list, value),
+  EXPECT_TRUE(raisedWithStr(runBuiltin(METH(list, remove), list, value),
                             LayoutId::kUserWarning, "foo"));
 }
 
@@ -685,61 +685,61 @@ e = a[0]
 TEST_F(ListBuiltinsTest, DunderIterReturnsListIter) {
   HandleScope scope(thread_);
   List empty_list(&scope, listFromRange(0, 0));
-  Object iter(&scope, runBuiltin(ListBuiltins::dunderIter, empty_list));
+  Object iter(&scope, runBuiltin(METH(list, __iter__), empty_list));
   ASSERT_TRUE(iter.isListIterator());
 }
 
 TEST_F(ListIteratorBuiltinsTest, CallDunderNext) {
   HandleScope scope(thread_);
   List empty_list(&scope, listFromRange(0, 2));
-  Object iter(&scope, runBuiltin(ListBuiltins::dunderIter, empty_list));
+  Object iter(&scope, runBuiltin(METH(list, __iter__), empty_list));
   ASSERT_TRUE(iter.isListIterator());
 
-  Object item1(&scope, runBuiltin(ListIteratorBuiltins::dunderNext, iter));
+  Object item1(&scope, runBuiltin(METH(list_iterator, __next__), iter));
   EXPECT_TRUE(isIntEqualsWord(*item1, 0));
 
-  Object item2(&scope, runBuiltin(ListIteratorBuiltins::dunderNext, iter));
+  Object item2(&scope, runBuiltin(METH(list_iterator, __next__), iter));
   EXPECT_TRUE(isIntEqualsWord(*item2, 1));
 }
 
 TEST_F(ListIteratorBuiltinsTest, DunderIterReturnsSelf) {
   HandleScope scope(thread_);
   List empty_list(&scope, listFromRange(0, 0));
-  Object iter(&scope, runBuiltin(ListBuiltins::dunderIter, empty_list));
+  Object iter(&scope, runBuiltin(METH(list, __iter__), empty_list));
   ASSERT_TRUE(iter.isListIterator());
 
   // Now call __iter__ on the iterator object
-  Object result(&scope, runBuiltin(ListIteratorBuiltins::dunderIter, iter));
+  Object result(&scope, runBuiltin(METH(list_iterator, __iter__), iter));
   ASSERT_EQ(*result, *iter);
 }
 
 TEST_F(ListIteratorBuiltinsTest, DunderLengthHintOnEmptyListIterator) {
   HandleScope scope(thread_);
   List empty_list(&scope, listFromRange(0, 0));
-  Object iter(&scope, runBuiltin(ListBuiltins::dunderIter, empty_list));
+  Object iter(&scope, runBuiltin(METH(list, __iter__), empty_list));
   ASSERT_TRUE(iter.isListIterator());
 
   Object length_hint(&scope,
-                     runBuiltin(ListIteratorBuiltins::dunderLengthHint, iter));
+                     runBuiltin(METH(list_iterator, __length_hint__), iter));
   EXPECT_TRUE(isIntEqualsWord(*length_hint, 0));
 }
 
 TEST_F(ListIteratorBuiltinsTest, DunderLengthHintOnConsumedListIterator) {
   HandleScope scope(thread_);
   List list(&scope, listFromRange(0, 1));
-  Object iter(&scope, runBuiltin(ListBuiltins::dunderIter, list));
+  Object iter(&scope, runBuiltin(METH(list, __iter__), list));
   ASSERT_TRUE(iter.isListIterator());
 
   Object length_hint1(&scope,
-                      runBuiltin(ListIteratorBuiltins::dunderLengthHint, iter));
+                      runBuiltin(METH(list_iterator, __length_hint__), iter));
   EXPECT_TRUE(isIntEqualsWord(*length_hint1, 1));
 
   // Consume the iterator
-  Object item1(&scope, runBuiltin(ListIteratorBuiltins::dunderNext, iter));
+  Object item1(&scope, runBuiltin(METH(list_iterator, __next__), iter));
   EXPECT_TRUE(isIntEqualsWord(*item1, 0));
 
   Object length_hint2(&scope,
-                      runBuiltin(ListIteratorBuiltins::dunderLengthHint, iter));
+                      runBuiltin(METH(list_iterator, __length_hint__), iter));
   EXPECT_TRUE(isIntEqualsWord(*length_hint2, 0));
 }
 
@@ -1102,7 +1102,7 @@ l = [C()]
   }
   WeakRef ref(&scope, *ref_obj);
   EXPECT_NE(ref.referent(), NoneType::object());
-  runBuiltin(ListBuiltins::clear, list);
+  runBuiltin(METH(list, clear), list);
   runtime_->collectGarbage();
   EXPECT_EQ(ref.referent(), NoneType::object());
 }

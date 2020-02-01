@@ -28,30 +28,29 @@ const BuiltinAttribute ByteArrayBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod ByteArrayBuiltins::kBuiltinMethods[] = {
-    {ID(__add__), dunderAdd},
-    {ID(__eq__), dunderEq},
-    {ID(__ge__), dunderGe},
-    {ID(__gt__), dunderGt},
-    {ID(__iadd__), dunderIadd},
-    {ID(__imul__), dunderImul},
-    {ID(__iter__), dunderIter},
-    {ID(__le__), dunderLe},
-    {ID(__len__), dunderLen},
-    {ID(__lt__), dunderLt},
-    {ID(__mul__), dunderMul},
-    {ID(__ne__), dunderNe},
-    {ID(__new__), dunderNew},
-    {ID(__repr__), dunderRepr},
-    {ID(hex), hex},
-    {ID(lstrip), lstrip},
-    {ID(rstrip), rstrip},
-    {ID(strip), strip},
-    {ID(translate), translate},
+    {ID(__add__), METH(bytearray, __add__)},
+    {ID(__eq__), METH(bytearray, __eq__)},
+    {ID(__ge__), METH(bytearray, __ge__)},
+    {ID(__gt__), METH(bytearray, __gt__)},
+    {ID(__iadd__), METH(bytearray, __iadd__)},
+    {ID(__imul__), METH(bytearray, __imul__)},
+    {ID(__iter__), METH(bytearray, __iter__)},
+    {ID(__le__), METH(bytearray, __le__)},
+    {ID(__len__), METH(bytearray, __len__)},
+    {ID(__lt__), METH(bytearray, __lt__)},
+    {ID(__mul__), METH(bytearray, __mul__)},
+    {ID(__ne__), METH(bytearray, __ne__)},
+    {ID(__new__), METH(bytearray, __new__)},
+    {ID(__repr__), METH(bytearray, __repr__)},
+    {ID(hex), METH(bytearray, hex)},
+    {ID(lstrip), METH(bytearray, lstrip)},
+    {ID(rstrip), METH(bytearray, rstrip)},
+    {ID(strip), METH(bytearray, strip)},
+    {ID(translate), METH(bytearray, translate)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject ByteArrayBuiltins::dunderAdd(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject METH(bytearray, __add__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -87,8 +86,7 @@ RawObject ByteArrayBuiltins::dunderAdd(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject ByteArrayBuiltins::dunderEq(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject METH(bytearray, __eq__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -113,8 +111,7 @@ RawObject ByteArrayBuiltins::dunderEq(Thread* thread, Frame* frame,
   return Bool::fromBool(comparison == 0);
 }
 
-RawObject ByteArrayBuiltins::dunderGe(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject METH(bytearray, __ge__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -139,8 +136,7 @@ RawObject ByteArrayBuiltins::dunderGe(Thread* thread, Frame* frame,
   return Bool::fromBool(comparison >= 0);
 }
 
-RawObject ByteArrayBuiltins::dunderGt(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject METH(bytearray, __gt__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -165,8 +161,7 @@ RawObject ByteArrayBuiltins::dunderGt(Thread* thread, Frame* frame,
   return Bool::fromBool(comparison > 0);
 }
 
-RawObject ByteArrayBuiltins::dunderIadd(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject METH(bytearray, __iadd__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -195,8 +190,7 @@ RawObject ByteArrayBuiltins::dunderIadd(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject ByteArrayBuiltins::dunderImul(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject METH(bytearray, __imul__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -242,8 +236,7 @@ RawObject ByteArrayBuiltins::dunderImul(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject ByteArrayBuiltins::dunderIter(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject METH(bytearray, __iter__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -255,8 +248,7 @@ RawObject ByteArrayBuiltins::dunderIter(Thread* thread, Frame* frame,
   return runtime->newByteArrayIterator(thread, self);
 }
 
-RawObject ByteArrayBuiltins::dunderLe(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject METH(bytearray, __le__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -281,8 +273,7 @@ RawObject ByteArrayBuiltins::dunderLe(Thread* thread, Frame* frame,
   return Bool::fromBool(comparison <= 0);
 }
 
-RawObject ByteArrayBuiltins::dunderLen(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject METH(bytearray, __len__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -293,8 +284,7 @@ RawObject ByteArrayBuiltins::dunderLen(Thread* thread, Frame* frame,
   return SmallInt::fromWord(self.numItems());
 }
 
-RawObject ByteArrayBuiltins::dunderLt(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject METH(bytearray, __lt__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -319,8 +309,7 @@ RawObject ByteArrayBuiltins::dunderLt(Thread* thread, Frame* frame,
   return Bool::fromBool(comparison < 0);
 }
 
-RawObject ByteArrayBuiltins::dunderMul(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject METH(bytearray, __mul__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -360,8 +349,7 @@ RawObject ByteArrayBuiltins::dunderMul(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject ByteArrayBuiltins::dunderNe(Thread* thread, Frame* frame,
-                                      word nargs) {
+RawObject METH(bytearray, __ne__)(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -386,8 +374,7 @@ RawObject ByteArrayBuiltins::dunderNe(Thread* thread, Frame* frame,
   return Bool::fromBool(comparison != 0);
 }
 
-RawObject ByteArrayBuiltins::dunderNew(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject METH(bytearray, __new__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object type_obj(&scope, args.get(0));
@@ -465,8 +452,7 @@ RawObject byteArrayRepr(Thread* thread, const ByteArray& self) {
   return runtime->newStrFromByteArray(buffer);
 }
 
-RawObject ByteArrayBuiltins::dunderRepr(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject METH(bytearray, __repr__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -478,7 +464,7 @@ RawObject ByteArrayBuiltins::dunderRepr(Thread* thread, Frame* frame,
   return byteArrayRepr(thread, self);
 }
 
-RawObject ByteArrayBuiltins::hex(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytearray, hex)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object obj(&scope, args.get(0));
@@ -490,7 +476,7 @@ RawObject ByteArrayBuiltins::hex(Thread* thread, Frame* frame, word nargs) {
   return bytesHex(thread, bytes, self.numItems());
 }
 
-RawObject ByteArrayBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytearray, lstrip)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -524,7 +510,7 @@ RawObject ByteArrayBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject ByteArrayBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytearray, rstrip)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -558,7 +544,7 @@ RawObject ByteArrayBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject ByteArrayBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(bytearray, strip)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -592,8 +578,7 @@ RawObject ByteArrayBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject ByteArrayBuiltins::translate(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject METH(bytearray, translate)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -658,14 +643,14 @@ RawObject ByteArrayBuiltins::translate(Thread* thread, Frame* frame,
 }
 
 const BuiltinMethod ByteArrayIteratorBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), dunderIter},
-    {ID(__length_hint__), dunderLengthHint},
-    {ID(__next__), dunderNext},
+    {ID(__iter__), METH(bytearray_iterator, __iter__)},
+    {ID(__length_hint__), METH(bytearray_iterator, __length_hint__)},
+    {ID(__next__), METH(bytearray_iterator, __next__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject ByteArrayIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject METH(bytearray_iterator, __iter__)(Thread* thread, Frame* frame,
+                                             word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -675,8 +660,8 @@ RawObject ByteArrayIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject ByteArrayIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject METH(bytearray_iterator, __next__)(Thread* thread, Frame* frame,
+                                             word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -693,9 +678,8 @@ RawObject ByteArrayIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   return *item;
 }
 
-RawObject ByteArrayIteratorBuiltins::dunderLengthHint(Thread* thread,
-                                                      Frame* frame,
-                                                      word nargs) {
+RawObject METH(bytearray_iterator, __length_hint__)(Thread* thread,
+                                                    Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));

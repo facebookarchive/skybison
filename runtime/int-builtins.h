@@ -32,47 +32,47 @@ word largeIntHash(RawLargeInt value);
 
 word intHash(RawObject value);
 
+RawObject METH(int, __abs__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __add__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __and__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __bool__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __ceil__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __divmod__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __eq__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __float__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __floor__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __floordiv__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __format__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __ge__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __gt__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __hash__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __index__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __int__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __invert__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __le__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __lshift__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __lt__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __mod__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __mul__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __ne__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __neg__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __or__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __pos__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __repr__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __round__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __rshift__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __str__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __sub__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __truediv__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __trunc__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, __xor__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, bit_length)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, conjugate)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(int, to_bytes)(Thread* thread, Frame* frame, word nargs);
+
 class IntBuiltins : public Builtins<IntBuiltins, ID(int), LayoutId::kInt> {
  public:
   static void postInitialize(Runtime* runtime, const Type& new_type);
-
-  static RawObject dunderAbs(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderAnd(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderBool(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderCeil(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderDivmod(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderFloat(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderFloor(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderFloordiv(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderFormat(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderGe(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderGt(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderHash(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderIndex(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderInt(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderInvert(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderLe(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderLshift(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderLt(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderMod(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderMul(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderNe(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderNeg(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderOr(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderPos(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderRepr(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderRound(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderRshift(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderStr(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderSub(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderTrueDiv(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderTrunc(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderXor(Thread* thread, Frame* frame, word nargs);
-  static RawObject bitLength(Thread* thread, Frame* frame, word nargs);
-  static RawObject conjugate(Thread* thread, Frame* frame, word nargs);
-  static RawObject toBytes(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinAttribute kAttributes[];
   static const BuiltinMethod kBuiltinMethods[];
@@ -100,13 +100,13 @@ class LargeIntBuiltins : public Builtins<LargeIntBuiltins, ID(largeint),
   DISALLOW_IMPLICIT_CONSTRUCTORS(LargeIntBuiltins);
 };
 
+RawObject METH(bool, __new__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bool, __or__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(bool, __ror__)(Thread* thread, Frame* frame, word nargs);
+
 class BoolBuiltins : public ImmediateBuiltins<BoolBuiltins, ID(bool),
                                               LayoutId::kBool, LayoutId::kInt> {
  public:
-  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderOr(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderRor(Thread* thread, Frame* frame, word nargs);
-
   static const BuiltinMethod kBuiltinMethods[];
 
  private:

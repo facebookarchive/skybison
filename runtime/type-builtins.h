@@ -108,13 +108,14 @@ RawObject typeValueCellAtWithHash(const Type& type, const Object& name,
 RawObject typeValueCellAtPut(Thread* thread, const Type& type,
                              const Object& name);
 
+RawObject METH(type, __getattribute__)(Thread* thread, Frame* frame,
+                                       word nargs);
+RawObject METH(type, __setattr__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(type, __subclasses__)(Thread* thread, Frame* frame, word nargs);
+RawObject METH(type, mro)(Thread* thread, Frame* frame, word nargs);
+
 class TypeBuiltins : public Builtins<TypeBuiltins, ID(type), LayoutId::kType> {
  public:
-  static RawObject dunderGetattribute(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderSetattr(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderSubclasses(Thread* thread, Frame* frame, word nargs);
-  static RawObject mro(Thread* thread, Frame* frame, word nargs);
-
   static const BuiltinAttribute kAttributes[];
   static const BuiltinMethod kBuiltinMethods[];
 

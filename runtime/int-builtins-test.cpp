@@ -241,13 +241,13 @@ minus_neg = -neg
 TEST_F(IntBuiltinsTest, TruthyIntPos) {
   HandleScope scope(thread_);
   Int one(&scope, SmallInt::fromWord(1));
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderBool, one), Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(int, __bool__), one), Bool::trueObj());
 }
 
 TEST_F(IntBuiltinsTest, TruthyIntZero) {
   HandleScope scope(thread_);
   Int zero(&scope, SmallInt::fromWord(0));
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderBool, zero), Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(int, __bool__), zero), Bool::falseObj());
 }
 
 TEST_F(IntBuiltinsTest, InplaceAdd) {
@@ -349,21 +349,21 @@ a ^= 0x03
 TEST_F(IntBuiltinsTest, DunderAbsWithBoolFalseReturnsZero) {
   HandleScope scope(thread_);
   Int self(&scope, Bool::falseObj());
-  Object result(&scope, runBuiltin(IntBuiltins::dunderAbs, self));
+  Object result(&scope, runBuiltin(METH(int, __abs__), self));
   EXPECT_EQ(result, SmallInt::fromWord(0));
 }
 
 TEST_F(IntBuiltinsTest, DunderAbsWithBoolTrueReturnsOne) {
   HandleScope scope(thread_);
   Int self(&scope, Bool::trueObj());
-  Object result(&scope, runBuiltin(IntBuiltins::dunderAbs, self));
+  Object result(&scope, runBuiltin(METH(int, __abs__), self));
   EXPECT_EQ(result, SmallInt::fromWord(1));
 }
 
 TEST_F(IntBuiltinsTest, DunderAbsWithPositiveIntReturnsInt) {
   HandleScope scope(thread_);
   Int self(&scope, runtime_->newInt(1234));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderAbs, self));
+  Object result(&scope, runBuiltin(METH(int, __abs__), self));
   EXPECT_TRUE(isIntEqualsWord(*result, 1234));
 }
 
@@ -371,7 +371,7 @@ TEST_F(IntBuiltinsTest, DunderAbsWithNegativeIntReturnsInt) {
   HandleScope scope(thread_);
   const uword digits[] = {0x154a0071b091fb7e, 0x9661bb54b4e68c59};
   Int self(&scope, newIntWithDigits(runtime_, digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderAbs, self));
+  Object result(&scope, runBuiltin(METH(int, __abs__), self));
   const uword expected_digits[] = {0xeab5ff8e4f6e0482, 0x699e44ab4b1973a6};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -388,9 +388,9 @@ zero = X()
   Object neg(&scope, mainModuleAt(runtime_, "neg"));
   Object pos(&scope, mainModuleAt(runtime_, "pos"));
   Object zero(&scope, mainModuleAt(runtime_, "zero"));
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderAbs, neg), SmallInt::fromWord(42));
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderAbs, pos), SmallInt::fromWord(42));
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderAbs, zero), SmallInt::fromWord(0));
+  EXPECT_EQ(runBuiltin(METH(int, __abs__), neg), SmallInt::fromWord(42));
+  EXPECT_EQ(runBuiltin(METH(int, __abs__), pos), SmallInt::fromWord(42));
+  EXPECT_EQ(runBuiltin(METH(int, __abs__), zero), SmallInt::fromWord(0));
 }
 
 TEST_F(IntBuiltinsTest, DunderAddWithSmallIntsReturnsSmallInt) {
@@ -398,7 +398,7 @@ TEST_F(IntBuiltinsTest, DunderAddWithSmallIntsReturnsSmallInt) {
 
   Int left(&scope, SmallInt::fromWord(42));
   Int right(&scope, SmallInt::fromWord(-7));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderAdd, left, right));
+  Object result(&scope, runBuiltin(METH(int, __add__), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, 35));
 }
 
@@ -407,7 +407,7 @@ TEST_F(IntBuiltinsTest, DunderAddWithSmallIntsOverflowReturnsLargeInt) {
 
   Int max_small_int(&scope, SmallInt::fromWord(RawSmallInt::kMaxValue));
   Int one(&scope, SmallInt::fromWord(1));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderAdd, max_small_int, one));
+  Object result(&scope, runBuiltin(METH(int, __add__), max_small_int, one));
   EXPECT_TRUE(isIntEqualsWord(*result, RawSmallInt::kMaxValue + 1));
 }
 
@@ -418,7 +418,7 @@ TEST_F(IntBuiltinsTest, DunderAddWithLargeInts) {
   Int left(&scope, newIntWithDigits(runtime_, digits_left));
   const uword digits_right[] = {0x9876543210abcdef, 0xfedcba0123456789};
   Int right(&scope, newIntWithDigits(runtime_, digits_right));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderAdd, left, right));
+  Object result(&scope, runBuiltin(METH(int, __add__), left, right));
   const uword expected_digits[] = {0x97530e3b98111110, 0x11111079b3f13579};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -430,7 +430,7 @@ TEST_F(IntBuiltinsTest, DunderAddWithPositiveLargeIntsCarrying) {
   Int left(&scope, newIntWithDigits(runtime_, digits_left));
   const uword digits_right[] = {1};
   Int right(&scope, newIntWithDigits(runtime_, digits_right));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderAdd, left, right));
+  Object result(&scope, runBuiltin(METH(int, __add__), left, right));
   const uword expected_digits[] = {0, 0, 1};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -443,7 +443,7 @@ TEST_F(IntBuiltinsTest, DunderAddWithNegativeLargeIntsCarrying) {
   // The smallest negative number representable with 2 digits.
   const uword digits_right[] = {0, static_cast<uword>(kMinWord)};
   Int right(&scope, newIntWithDigits(runtime_, digits_right));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderAdd, left, right));
+  Object result(&scope, runBuiltin(METH(int, __add__), left, right));
   const uword expected_digits[] = {kMaxUword, kMaxWord, kMaxUword};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -452,7 +452,7 @@ TEST_F(IntBuiltinsTest, DunderAndWithSmallIntsReturnsSmallInt) {
   HandleScope scope(thread_);
   Int left(&scope, SmallInt::fromWord(0x15));   // 0b010101
   Int right(&scope, SmallInt::fromWord(0x38));  // 0b111000
-  Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, left, right));
+  Object result(&scope, runBuiltin(METH(int, __and__), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, 0x10));  // 0b10000
 }
 
@@ -462,7 +462,7 @@ TEST_F(IntBuiltinsTest, DunderAndWithLargeIntsReturnsLargeInt) {
   Int left(&scope, newIntWithDigits(runtime_, digits_left));
   const uword digits_right[] = {0x03, 0xf0, 0x2, 7};
   Int right(&scope, newIntWithDigits(runtime_, digits_right));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, left, right));
+  Object result(&scope, runBuiltin(METH(int, __and__), left, right));
   const uword expected_digits[] = {0x03, 0x30};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -472,7 +472,7 @@ TEST_F(IntBuiltinsTest, DunderAndWithNonIntReturnsNotImplemented) {
   const uword digits[] = {1, 2};
   Int left(&scope, newIntWithDigits(runtime_, digits));
   Object right(&scope, Str::empty());
-  Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, left, right));
+  Object result(&scope, runBuiltin(METH(int, __and__), left, right));
   EXPECT_TRUE(result.isNotImplementedType());
 }
 
@@ -481,7 +481,7 @@ TEST_F(IntBuiltinsTest, DunderAndWithInvalidArgumentLeftRaisesException) {
   Object left(&scope, Str::empty());
   const uword digits[] = {1, 2};
   LargeInt right(&scope, newIntWithDigits(runtime_, digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, left, right));
+  Object result(&scope, runBuiltin(METH(int, __and__), left, right));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -495,7 +495,7 @@ right = X(0b0101)
                    .isError());
   Object left(&scope, mainModuleAt(runtime_, "left"));
   Object right(&scope, mainModuleAt(runtime_, "right"));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, left, right));
+  Object result(&scope, runBuiltin(METH(int, __and__), left, right));
   EXPECT_EQ(result, SmallInt::fromWord(1));  // 0b0001
 }
 
@@ -538,7 +538,7 @@ TEST_F(IntBuiltinsTest, DunderLshiftWithBoolsTrueFalseReturnsSmallInt) {
   HandleScope scope(thread_);
   Object left(&scope, Bool::trueObj());
   Object right(&scope, Bool::falseObj());
-  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __lshift__), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
 
@@ -546,7 +546,7 @@ TEST_F(IntBuiltinsTest, DunderLshiftWithBoolsFalseTrueReturnsSmallInt) {
   HandleScope scope(thread_);
   Object left(&scope, Bool::falseObj());
   Object right(&scope, Bool::trueObj());
-  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __lshift__), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 
@@ -554,7 +554,7 @@ TEST_F(IntBuiltinsTest, DunderLshiftWithBoolSmallIntReturnsLargeInt) {
   HandleScope scope(thread_);
   Object left(&scope, Bool::trueObj());
   Object right(&scope, runtime_->newInt(kBitsPerWord));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __lshift__), left, right));
   const uword expected_digits[] = {0, 1};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -563,7 +563,7 @@ TEST_F(IntBuiltinsTest, DunderLshiftWithSmallIntsReturnsSmallInt) {
   HandleScope scope(thread_);
   Object left(&scope, runtime_->newInt(0xd));  // 0b1101
   Object right(&scope, runtime_->newInt(3));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __lshift__), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, 0x68));  // 0b1101000
 }
 
@@ -571,7 +571,7 @@ TEST_F(IntBuiltinsTest, DunderLshiftWithNegativeSmallIntReturnsSmallInt) {
   HandleScope scope(thread_);
   Object left(&scope, runtime_->newInt(-2));
   Object right(&scope, runtime_->newInt(1));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __lshift__), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, -4));
 }
 
@@ -580,7 +580,7 @@ TEST_F(IntBuiltinsTest, DunderLshiftWithZeroReturnsZero) {
   Object left(&scope, runtime_->newInt(0));
   const uword digits[] = {1, 2, 3, 4};
   Object right(&scope, newIntWithDigits(runtime_, digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __lshift__), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 
@@ -588,7 +588,7 @@ TEST_F(IntBuiltinsTest, DunderLshiftWithBigSmallIntReturnsSmallInt) {
   HandleScope scope(thread_);
   Object left(&scope, runtime_->newInt(RawSmallInt::kMaxValue >> 1));
   Object right(&scope, runtime_->newInt(1));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __lshift__), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, RawSmallInt::kMaxValue - 1));
 }
 
@@ -596,7 +596,7 @@ TEST_F(IntBuiltinsTest, DunderLshiftWithBigNegativeSmallIntReturnsSmallInt) {
   HandleScope scope(thread_);
   Object left(&scope, runtime_->newInt(RawSmallInt::kMinValue >> 1));
   Object right(&scope, runtime_->newInt(1));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __lshift__), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, RawSmallInt::kMinValue));
 }
 
@@ -604,7 +604,7 @@ TEST_F(IntBuiltinsTest, DunderLshiftWithSmallIntsReturnsLargeInt) {
   HandleScope scope(thread_);
   Object left(&scope, runtime_->newInt(4));
   Object right(&scope, runtime_->newInt(kBitsPerWord - 4));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __lshift__), left, right));
   ASSERT_TRUE(result_obj.isLargeInt());
   LargeInt result(&scope, *result_obj);
   EXPECT_EQ(result.numDigits(), 1);
@@ -615,7 +615,7 @@ TEST_F(IntBuiltinsTest, DunderLshiftWithSmallIntsNegativeReturnsLargeInt) {
   HandleScope scope(thread_);
   Object left(&scope, runtime_->newInt(-4));
   Object right(&scope, runtime_->newInt(kBitsPerWord - 3));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __lshift__), left, right));
   const uword expected_digits[] = {static_cast<uword>(-4)
                                    << (kBitsPerWord - 3)};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
@@ -625,7 +625,7 @@ TEST_F(IntBuiltinsTest, DunderLshiftWithSmallIntOverflowReturnsLargeInt) {
   HandleScope scope(thread_);
   Object left(&scope, runtime_->newInt(4));
   Object right(&scope, runtime_->newInt(kBitsPerWord - 3));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __lshift__), left, right));
   const uword expected_digits[] = {kHighbitUword, 0};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -635,7 +635,7 @@ TEST_F(IntBuiltinsTest,
   HandleScope scope(thread_);
   Object left(&scope, runtime_->newInt(-4));
   Object right(&scope, runtime_->newInt(kBitsPerWord - 2));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __lshift__), left, right));
   const uword expected_digits[] = {0, kMaxUword};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -645,7 +645,7 @@ TEST_F(IntBuiltinsTest, DunderLshiftWithLargeIntReturnsLargeInt) {
   const uword digits[] = {1, 1};
   Object left(&scope, newIntWithDigits(runtime_, digits));
   Object right(&scope, runtime_->newInt(2 * kBitsPerWord + 2));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __lshift__), left, right));
   const uword expected_digits[] = {0, 0, 4, 4};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -655,7 +655,7 @@ TEST_F(IntBuiltinsTest, DunderLshiftWithNegativeLargeIntReturnsLargeInt) {
   const uword digits[] = {kMaxUword - 1, kMaxUword - 1};
   Object left(&scope, newIntWithDigits(runtime_, digits));
   Object right(&scope, runtime_->newInt(2 * kBitsPerWord + 2));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __lshift__), left, right));
   const uword expected_digits[] = {0, 0, kMaxUword - 7, kMaxUword - 4};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -665,7 +665,7 @@ TEST_F(IntBuiltinsTest, DunderLshiftWithLargeIntWholeWordReturnsLargeInt) {
   const uword digits[] = {0xfe84754526de453c, 0x47e8218b97f94763};
   Object left(&scope, newIntWithDigits(runtime_, digits));
   Object right(&scope, runtime_->newInt(kBitsPerWord * 2));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __lshift__), left, right));
   const uword expected_digits[] = {0, 0, 0xfe84754526de453c,
                                    0x47e8218b97f94763};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
@@ -675,7 +675,7 @@ TEST_F(IntBuiltinsTest, DunderLshiftWithNegativeShiftAmountRaiseValueError) {
   HandleScope scope(thread_);
   Object left(&scope, runtime_->newInt(0));
   Object right(&scope, runtime_->newInt(-1));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __lshift__), left, right));
   EXPECT_TRUE(
       raisedWithStr(*result, LayoutId::kValueError, "negative shift count"));
 }
@@ -684,7 +684,7 @@ TEST_F(IntBuiltinsTest, DunderLshiftWithNonIntSelfRaisesTypeError) {
   HandleScope scope(thread_);
   Object left(&scope, Str::empty());
   Object right(&scope, runtime_->newInt(0));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __lshift__), left, right));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -692,7 +692,7 @@ TEST_F(IntBuiltinsTest, DunderLshiftWithNonIntReturnsNotImplemented) {
   HandleScope scope(thread_);
   Object left(&scope, runtime_->newInt(0));
   Object right(&scope, Str::empty());
-  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __lshift__), left, right));
   EXPECT_TRUE(result.isNotImplementedType());
 }
 
@@ -706,7 +706,7 @@ right = X(3)
                    .isError());
   Object left(&scope, mainModuleAt(runtime_, "left"));
   Object right(&scope, mainModuleAt(runtime_, "right"));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __lshift__), left, right));
   EXPECT_EQ(result, SmallInt::fromWord(0x68));  // 0b1101000
 }
 
@@ -714,7 +714,7 @@ TEST_F(IntBuiltinsTest, DunderModWithSmallIntReturnsInt) {
   HandleScope scope(thread_);
   Object left(&scope, runtime_->newInt(-9876));
   Object right(&scope, runtime_->newInt(123));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderMod, left, right));
+  Object result(&scope, runBuiltin(METH(int, __mod__), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, 87));
 }
 
@@ -722,7 +722,7 @@ TEST_F(IntBuiltinsTest, DunderModWithZeroRaisesZeroDivisionError) {
   HandleScope scope(thread_);
   Object left(&scope, runtime_->newInt(2));
   Object right(&scope, runtime_->newInt(0));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderMod, left, right));
+  Object result(&scope, runBuiltin(METH(int, __mod__), left, right));
   EXPECT_TRUE(raisedWithStr(*result, LayoutId::kZeroDivisionError,
                             "integer division or modulo by zero"));
 }
@@ -731,7 +731,7 @@ TEST_F(IntBuiltinsTest, DunderModWithNonIntSelfRaisesTypeError) {
   HandleScope scope(thread_);
   Object left(&scope, Str::empty());
   Object right(&scope, runtime_->newInt(1));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderMod, left, right));
+  Object result(&scope, runBuiltin(METH(int, __mod__), left, right));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -739,7 +739,7 @@ TEST_F(IntBuiltinsTest, DunderModWithNontIntReturnsNotImplemented) {
   HandleScope scope(thread_);
   Object left(&scope, runtime_->newInt(1));
   Object right(&scope, Str::empty());
-  Object result(&scope, runBuiltin(IntBuiltins::dunderMod, left, right));
+  Object result(&scope, runBuiltin(METH(int, __mod__), left, right));
   EXPECT_TRUE(result.isNotImplementedType());
 }
 
@@ -748,7 +748,7 @@ TEST_F(IntBuiltinsTest, DunderMulWithSmallIntsReturnsSmallInt) {
 
   Int left(&scope, runtime_->newInt(13));
   Int right(&scope, runtime_->newInt(-3));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderMul, left, right));
+  Object result(&scope, runBuiltin(METH(int, __mul__), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, -39));
 }
 
@@ -757,7 +757,7 @@ TEST_F(IntBuiltinsTest, DunderMulWithSmallIntsReturnsSingleDigitLargeInt) {
 
   Int left(&scope, RawSmallInt::fromWord(RawSmallInt::kMaxValue));
   Int right(&scope, RawSmallInt::fromWord(2));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderMul, left, right));
+  Object result(&scope, runBuiltin(METH(int, __mul__), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, RawSmallInt::kMaxValue * 2));
 }
 
@@ -765,7 +765,7 @@ TEST_F(IntBuiltinsTest, DunderMulWithSmallIntsReturnsLargeInt) {
   HandleScope scope(thread_);
 
   Int num(&scope, RawSmallInt::fromWord(RawSmallInt::kMaxValue));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderMul, num, num));
+  Object result(&scope, runBuiltin(METH(int, __mul__), num, num));
   const uword expected_digits[] = {0x8000000000000001, 0xfffffffffffffff};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -776,7 +776,7 @@ TEST_F(IntBuiltinsTest, DunderMulWithSmallIntLargeIntReturnsLargeInt) {
   Int left(&scope, RawSmallInt::fromWord(-3));
   const uword digits[] = {0xa1b2c3d4e5f67890, 0xaabbccddeeff};
   Int right(&scope, newIntWithDigits(runtime_, digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderMul, left, right));
+  Object result(&scope, runBuiltin(METH(int, __mul__), left, right));
   const uword expected_digits[] = {0x1ae7b4814e1c9650, 0xfffdffcc99663301};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -787,7 +787,7 @@ TEST_F(IntBuiltinsTest, DunderMulWithZeroReturnsSmallInt) {
   const uword digits[] = {0, 1};
   Int left(&scope, newIntWithDigits(runtime_, digits));
   Int right(&scope, RawSmallInt::fromWord(0));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderMul, left, right));
+  Object result(&scope, runBuiltin(METH(int, __mul__), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 
@@ -798,7 +798,7 @@ TEST_F(IntBuiltinsTest, DunderMulWithPositiveLargeIntsReturnsLargeInt) {
   Int left(&scope, newIntWithDigits(runtime_, digits_left));
   const uword digits_right[] = {0x0123456789abcdef, 0xfedcba9876543210, 0};
   Int right(&scope, newIntWithDigits(runtime_, digits_right));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderMul, left, right));
+  Object result(&scope, runBuiltin(METH(int, __mul__), left, right));
   const uword expected_digits[] = {0x2236d928fe5618cf, 0xaa6c87569f0ec6a4,
                                    0x213cff7595234949, 0x121fa00acd77d743};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
@@ -809,7 +809,7 @@ TEST_F(IntBuiltinsTest, DunderMulWithMaxPositiveLargeIntsReturnsLargeInt) {
 
   const uword digits[] = {kMaxUword, 0};
   Int num(&scope, newIntWithDigits(runtime_, digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderMul, num, num));
+  Object result(&scope, runBuiltin(METH(int, __mul__), num, num));
   const uword expected_digits[] = {1, kMaxUword - 1, 0};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -820,7 +820,7 @@ TEST_F(IntBuiltinsTest, DunderMulWithNegativeLargeIntsReturnsLargeInt) {
   // Smallest negative number representable with 2 digits.
   const uword digits[] = {0, static_cast<uword>(kMinWord)};
   Int num(&scope, newIntWithDigits(runtime_, digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderMul, num, num));
+  Object result(&scope, runBuiltin(METH(int, __mul__), num, num));
   const uword expected_digits[] = {0, 0, 0, static_cast<uword>(kMinWord) >> 1};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -832,7 +832,7 @@ TEST_F(IntBuiltinsTest, DunderMulWithNegativePositiveLargeIntsReturnsLargeInt) {
   Int left(&scope, newIntWithDigits(runtime_, digits_left));
   const uword digits_right[] = {0x3ff2ca02c44fbb1c, 0x5873a2744317c09a};
   Int right(&scope, newIntWithDigits(runtime_, digits_right));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderMul, left, right));
+  Object result(&scope, runBuiltin(METH(int, __mul__), left, right));
   const uword expected_digits[] = {0x6d80780b775003c0, 0xb46184fc0839baa0,
                                    0xe38c265747f0661f};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
@@ -845,7 +845,7 @@ TEST_F(IntBuiltinsTest, DunderMulWithPositiveNegativeLargeIntsReturnsLargeInt) {
   Int left(&scope, newIntWithDigits(runtime_, digits_left));
   const uword digits_right[] = {0xada6d35d8ef7c790};
   Int right(&scope, newIntWithDigits(runtime_, digits_right));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderMul, left, right));
+  Object result(&scope, runBuiltin(METH(int, __mul__), left, right));
   const uword expected_digits[] = {0x6d80780b775003c0, 0xb46184fc0839baa0,
                                    0xe38c265747f0661f};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
@@ -856,7 +856,7 @@ TEST_F(IntBuiltinsTest, DunderMulWithNonIntSelfRaisesTypeError) {
 
   Str str(&scope, Str::empty());
   Int right(&scope, runtime_->newInt(1));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderMul, str, right));
+  Object result(&scope, runBuiltin(METH(int, __mul__), str, right));
   ASSERT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -865,7 +865,7 @@ TEST_F(IntBuiltinsTest, DunderMulWithNonIntRightReturnsNotImplemented) {
 
   Int left(&scope, runtime_->newInt(1));
   Str str(&scope, Str::empty());
-  Object result(&scope, runBuiltin(IntBuiltins::dunderMul, left, str));
+  Object result(&scope, runBuiltin(METH(int, __mul__), left, str));
   ASSERT_TRUE(result.isNotImplementedType());
 }
 
@@ -873,7 +873,7 @@ TEST_F(IntBuiltinsTest, DunderOrWithSmallIntsReturnsSmallInt) {
   HandleScope scope(thread_);
   Int left(&scope, SmallInt::fromWord(0x15));   // 0b010101
   Int right(&scope, SmallInt::fromWord(0x38));  // 0b111000
-  Object result(&scope, runBuiltin(IntBuiltins::dunderOr, left, right));
+  Object result(&scope, runBuiltin(METH(int, __or__), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, 0x3D));  // 0b111101
 }
 
@@ -883,7 +883,7 @@ TEST_F(IntBuiltinsTest, DunderOrWithLargeIntsReturnsLargeInt) {
   Int left(&scope, newIntWithDigits(runtime_, digits_left));
   const uword digits_right[] = {0x03, 0xD0};
   Int right(&scope, newIntWithDigits(runtime_, digits_right));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderOr, left, right));
+  Object result(&scope, runBuiltin(METH(int, __or__), left, right));
   const uword expected_digits[] = {0x0F, 0xF0, 0xCAFE};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -893,7 +893,7 @@ TEST_F(IntBuiltinsTest, DunderOrWithNonIntReturnsNotImplemented) {
   const uword digits[] = {1, 2};
   Int left(&scope, newIntWithDigits(runtime_, digits));
   Object right(&scope, Str::empty());
-  Object result(&scope, runBuiltin(IntBuiltins::dunderOr, left, right));
+  Object result(&scope, runBuiltin(METH(int, __or__), left, right));
   EXPECT_TRUE(result.isNotImplementedType());
 }
 
@@ -902,7 +902,7 @@ TEST_F(IntBuiltinsTest, DunderOrWithInvalidArgumentLeftRaisesException) {
   Object left(&scope, Str::empty());
   const uword digits[] = {1, 2};
   LargeInt right(&scope, newIntWithDigits(runtime_, digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderOr, left, right));
+  Object result(&scope, runBuiltin(METH(int, __or__), left, right));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -916,7 +916,7 @@ right = X(0b0101)
                    .isError());
   Object left(&scope, mainModuleAt(runtime_, "left"));
   Object right(&scope, mainModuleAt(runtime_, "right"));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderOr, left, right));
+  Object result(&scope, runBuiltin(METH(int, __or__), left, right));
   EXPECT_EQ(result, SmallInt::fromWord(7));  // 0b0111
 }
 
@@ -939,55 +939,55 @@ TEST_F(IntBuiltinsTest, BitLength) {
 
   // (0).bit_length() == 0
   Object num(&scope, SmallInt::fromWord(0));
-  Object bit_length(&scope, runBuiltin(IntBuiltins::bitLength, num));
+  Object bit_length(&scope, runBuiltin(METH(int, bit_length), num));
   EXPECT_TRUE(isIntEqualsWord(*bit_length, 0));
 
   // (1).bit_length() == 1
   num = SmallInt::fromWord(1);
-  Object bit_length1(&scope, runBuiltin(IntBuiltins::bitLength, num));
+  Object bit_length1(&scope, runBuiltin(METH(int, bit_length), num));
   EXPECT_TRUE(isIntEqualsWord(*bit_length1, 1));
 
   // (-1).bit_length() == 1
   num = SmallInt::fromWord(1);
-  Object bit_length2(&scope, runBuiltin(IntBuiltins::bitLength, num));
+  Object bit_length2(&scope, runBuiltin(METH(int, bit_length), num));
   EXPECT_TRUE(isIntEqualsWord(*bit_length2, 1));
 
   // (SmallInt::kMaxValue).bit_length() == 62
   num = SmallInt::fromWord(RawSmallInt::kMaxValue);
-  Object bit_length3(&scope, runBuiltin(IntBuiltins::bitLength, num));
+  Object bit_length3(&scope, runBuiltin(METH(int, bit_length), num));
   EXPECT_TRUE(isIntEqualsWord(*bit_length3, 62));
 
   // (SmallInt::kMinValue).bit_length() == 63
   num = SmallInt::fromWord(RawSmallInt::kMinValue);
-  Object bit_length4(&scope, runBuiltin(IntBuiltins::bitLength, num));
+  Object bit_length4(&scope, runBuiltin(METH(int, bit_length), num));
   EXPECT_TRUE(isIntEqualsWord(*bit_length4, 63));
 
   // (kMaxInt64).bit_length() == 63
   num = runtime_->newInt(kMaxInt64);
-  Object bit_length5(&scope, runBuiltin(IntBuiltins::bitLength, num));
+  Object bit_length5(&scope, runBuiltin(METH(int, bit_length), num));
   EXPECT_TRUE(isIntEqualsWord(*bit_length5, 63));
 
   // (kMinInt64).bit_length() == 64
   num = runtime_->newInt(kMinInt64);
-  Object bit_length6(&scope, runBuiltin(IntBuiltins::bitLength, num));
+  Object bit_length6(&scope, runBuiltin(METH(int, bit_length), num));
   EXPECT_TRUE(isIntEqualsWord(*bit_length6, 64));
 
   uword digits[] = {0, kMaxInt32};
   num = runtime_->newIntWithDigits(digits);
-  Object bit_length7(&scope, runBuiltin(IntBuiltins::bitLength, num));
+  Object bit_length7(&scope, runBuiltin(METH(int, bit_length), num));
   // 31 bits for kMaxInt32 + 64 bits
   EXPECT_TRUE(isIntEqualsWord(*bit_length7, 95));
 
   // (kMinInt64 * 4).bit_length() == 66
   uword digits2[] = {0, kMaxUword - 1};  // kMaxUword - 1 == -2
   num = runtime_->newIntWithDigits(digits2);
-  Object bit_length8(&scope, runBuiltin(IntBuiltins::bitLength, num));
+  Object bit_length8(&scope, runBuiltin(METH(int, bit_length), num));
   EXPECT_TRUE(isIntEqualsWord(*bit_length8, 66));
 
   // (kMinInt64 * 4 + 3).bit_length() == 65
   uword digits3[] = {3, kMaxUword - 1};  // kMaxUword - 1 == -2
   num = runtime_->newIntWithDigits(digits3);
-  Object bit_length9(&scope, runBuiltin(IntBuiltins::bitLength, num));
+  Object bit_length9(&scope, runBuiltin(METH(int, bit_length), num));
   EXPECT_TRUE(isIntEqualsWord(*bit_length9, 65));
 }
 
@@ -1000,27 +1000,27 @@ TEST_F(IntBuiltinsTest, CompareLargeIntEq) {
   ASSERT_TRUE(a.isLargeInt());
   ASSERT_TRUE(b.isLargeInt());
 
-  Object cmp_1(&scope, runBuiltin(IntBuiltins::dunderEq, a, b));
+  Object cmp_1(&scope, runBuiltin(METH(int, __eq__), a, b));
   ASSERT_TRUE(cmp_1.isBool());
   EXPECT_EQ(*cmp_1, Bool::falseObj());
 
-  Object cmp_2(&scope, runBuiltin(IntBuiltins::dunderEq, a, zero));
+  Object cmp_2(&scope, runBuiltin(METH(int, __eq__), a, zero));
   ASSERT_TRUE(cmp_2.isBool());
   EXPECT_EQ(*cmp_2, Bool::falseObj());
 
-  Object cmp_3(&scope, runBuiltin(IntBuiltins::dunderEq, a, a));
+  Object cmp_3(&scope, runBuiltin(METH(int, __eq__), a, a));
   ASSERT_TRUE(cmp_3.isBool());
   EXPECT_EQ(*cmp_3, Bool::trueObj());
 
-  Object cmp_4(&scope, runBuiltin(IntBuiltins::dunderEq, b, a));
+  Object cmp_4(&scope, runBuiltin(METH(int, __eq__), b, a));
   ASSERT_TRUE(cmp_4.isBool());
   EXPECT_EQ(*cmp_4, Bool::falseObj());
 
-  Object cmp_5(&scope, runBuiltin(IntBuiltins::dunderEq, b, zero));
+  Object cmp_5(&scope, runBuiltin(METH(int, __eq__), b, zero));
   ASSERT_TRUE(cmp_5.isBool());
   EXPECT_EQ(*cmp_5, Bool::falseObj());
 
-  Object cmp_6(&scope, runBuiltin(IntBuiltins::dunderEq, b, b));
+  Object cmp_6(&scope, runBuiltin(METH(int, __eq__), b, b));
   ASSERT_TRUE(cmp_6.isBool());
   EXPECT_EQ(*cmp_6, Bool::trueObj());
 }
@@ -1034,27 +1034,27 @@ TEST_F(IntBuiltinsTest, CompareLargeIntNe) {
   ASSERT_TRUE(a.isLargeInt());
   ASSERT_TRUE(b.isLargeInt());
 
-  Object cmp_1(&scope, runBuiltin(IntBuiltins::dunderNe, a, b));
+  Object cmp_1(&scope, runBuiltin(METH(int, __ne__), a, b));
   ASSERT_TRUE(cmp_1.isBool());
   EXPECT_EQ(*cmp_1, Bool::trueObj());
 
-  Object cmp_2(&scope, runBuiltin(IntBuiltins::dunderNe, a, zero));
+  Object cmp_2(&scope, runBuiltin(METH(int, __ne__), a, zero));
   ASSERT_TRUE(cmp_2.isBool());
   EXPECT_EQ(*cmp_2, Bool::trueObj());
 
-  Object cmp_3(&scope, runBuiltin(IntBuiltins::dunderNe, a, a));
+  Object cmp_3(&scope, runBuiltin(METH(int, __ne__), a, a));
   ASSERT_TRUE(cmp_3.isBool());
   EXPECT_EQ(*cmp_3, Bool::falseObj());
 
-  Object cmp_4(&scope, runBuiltin(IntBuiltins::dunderNe, b, a));
+  Object cmp_4(&scope, runBuiltin(METH(int, __ne__), b, a));
   ASSERT_TRUE(cmp_4.isBool());
   EXPECT_EQ(*cmp_4, Bool::trueObj());
 
-  Object cmp_5(&scope, runBuiltin(IntBuiltins::dunderNe, b, zero));
+  Object cmp_5(&scope, runBuiltin(METH(int, __ne__), b, zero));
   ASSERT_TRUE(cmp_5.isBool());
   EXPECT_EQ(*cmp_5, Bool::trueObj());
 
-  Object cmp_6(&scope, runBuiltin(IntBuiltins::dunderNe, b, b));
+  Object cmp_6(&scope, runBuiltin(METH(int, __ne__), b, b));
   ASSERT_TRUE(cmp_6.isBool());
   EXPECT_EQ(*cmp_6, Bool::falseObj());
 }
@@ -1063,12 +1063,12 @@ TEST_F(IntBuiltinsTest, DunderFloatWithBoolReturnsFloat) {
   HandleScope scope(thread_);
 
   Object a(&scope, Bool::trueObj());
-  Object a_float(&scope, runBuiltin(IntBuiltins::dunderFloat, a));
+  Object a_float(&scope, runBuiltin(METH(int, __float__), a));
   ASSERT_TRUE(a_float.isFloat());
   EXPECT_EQ(Float::cast(*a_float).value(), 1.0);
 
   Object b(&scope, Bool::falseObj());
-  Object b_float(&scope, runBuiltin(IntBuiltins::dunderFloat, b));
+  Object b_float(&scope, runBuiltin(METH(int, __float__), b));
   ASSERT_TRUE(b_float.isFloat());
   EXPECT_EQ(Float::cast(*b_float).value(), 0.0);
 }
@@ -1077,7 +1077,7 @@ TEST_F(IntBuiltinsTest, DunderFloatWithSmallIntReturnsFloat) {
   HandleScope scope(thread_);
 
   Int num(&scope, RawSmallInt::fromWord(-7));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
+  Object result(&scope, runBuiltin(METH(int, __float__), num));
   ASSERT_TRUE(result.isFloat());
   EXPECT_EQ(Float::cast(*result).value(), -7.0);
 }
@@ -1087,7 +1087,7 @@ TEST_F(IntBuiltinsTest, DunderFloatWithOneDigitLargeIntReturnsFloat) {
 
   const uword digits[] = {static_cast<uword>(kMinWord)};
   Int num(&scope, newIntWithDigits(runtime_, digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
+  Object result(&scope, runBuiltin(METH(int, __float__), num));
   ASSERT_TRUE(result.isFloat());
   EXPECT_EQ(Float::cast(*result).value(), double{kMinWord});
 }
@@ -1097,7 +1097,7 @@ TEST_F(IntBuiltinsTest, DunderFloatWithLargeIntReturnsFloat) {
 
   const uword digits[] = {0x85b3f6fb0496ac6f, 0x129ef6};
   Int num(&scope, newIntWithDigits(runtime_, digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
+  Object result(&scope, runBuiltin(METH(int, __float__), num));
   ASSERT_TRUE(result.isFloat());
   EXPECT_EQ(Float::cast(*result).value(),
             std::strtod("0x1.29ef685b3f6fbp+84", nullptr));
@@ -1108,7 +1108,7 @@ TEST_F(IntBuiltinsTest, DunderFloatWithNegativeLargeIntReturnsFloat) {
 
   const uword digits[] = {0x937822557f9bad3f, 0xb31911a86c86a071};
   Int num(&scope, newIntWithDigits(runtime_, digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
+  Object result(&scope, runBuiltin(METH(int, __float__), num));
   ASSERT_TRUE(result.isFloat());
   EXPECT_EQ(Float::cast(*result).value(),
             std::strtod("-0x1.339bb95e4de58p+126", nullptr));
@@ -1120,7 +1120,7 @@ TEST_F(IntBuiltinsTest,
 
   const uword digits[] = {1, 0, 0, 0xfffedcc000000000};
   Int num(&scope, newIntWithDigits(runtime_, digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
+  Object result(&scope, runBuiltin(METH(int, __float__), num));
   ASSERT_TRUE(result.isFloat());
   EXPECT_EQ(Float::cast(*result).value(), std::strtod("-0x1.234p240", nullptr));
 }
@@ -1133,7 +1133,7 @@ TEST_F(IntBuiltinsTest, DunderFloatWithLargeIntRoundedDownReturnsFloat) {
   uword mantissa_high_bit = uword{1} << kDoubleMantissaBits;
   const uword digits[] = {0, mantissa_high_bit};
   Int num(&scope, newIntWithDigits(runtime_, digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
+  Object result(&scope, runBuiltin(METH(int, __float__), num));
   ASSERT_TRUE(result.isFloat());
   EXPECT_EQ(Float::cast(*result).value(), std::strtod("0x1.p116", nullptr));
 }
@@ -1144,7 +1144,7 @@ TEST_F(IntBuiltinsTest, DunderFloatWithLargeIntRoundedDownToEvenReturnsFloat) {
   const uword digits[] = {uword{1} << (kBitsPerWord - kDoubleMantissaBits - 1),
                           1};
   Int num(&scope, newIntWithDigits(runtime_, digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
+  Object result(&scope, runBuiltin(METH(int, __float__), num));
   ASSERT_TRUE(result.isFloat());
   EXPECT_EQ(Float::cast(*result).value(), std::strtod("0x1.p64", nullptr));
 }
@@ -1155,7 +1155,7 @@ TEST_F(IntBuiltinsTest, DunderFloatWithLargeIntRoundedUpToEvenReturnsFloat) {
   uword mantissa_high_bit_plus_one = (uword{1} << kDoubleMantissaBits) + 1;
   const uword digits[] = {kHighbitUword, mantissa_high_bit_plus_one};
   Int num(&scope, newIntWithDigits(runtime_, digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
+  Object result(&scope, runBuiltin(METH(int, __float__), num));
   ASSERT_TRUE(result.isFloat());
   EXPECT_EQ(Float::cast(*result).value(),
             std::strtod("0x1.0000000000002p116", nullptr));
@@ -1168,7 +1168,7 @@ TEST_F(IntBuiltinsTest,
   uword mantissa_high_bit = uword{1} << kDoubleMantissaBits;
   const uword digits[] = {0, kHighbitUword, ~mantissa_high_bit};
   Int num(&scope, newIntWithDigits(runtime_, digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
+  Object result(&scope, runBuiltin(METH(int, __float__), num));
   ASSERT_TRUE(result.isFloat());
   EXPECT_EQ(Float::cast(*result).value(), std::strtod("-0x1.p180", nullptr));
 }
@@ -1180,7 +1180,7 @@ TEST_F(IntBuiltinsTest,
   uword mantissa_high_bit_plus_one = (uword{1} << kDoubleMantissaBits) | 1;
   const uword digits[] = {0, kHighbitUword, ~mantissa_high_bit_plus_one};
   Int num(&scope, newIntWithDigits(runtime_, digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
+  Object result(&scope, runBuiltin(METH(int, __float__), num));
   ASSERT_TRUE(result.isFloat());
   EXPECT_EQ(Float::cast(*result).value(),
             std::strtod("-0x1.0000000000002p180", nullptr));
@@ -1193,7 +1193,7 @@ TEST_F(IntBuiltinsTest,
   uword mantissa_all_one = (uword{1} << (kDoubleMantissaBits + 1)) - 1;
   const uword digits[] = {kHighbitUword, mantissa_all_one};
   Int num(&scope, newIntWithDigits(runtime_, digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
+  Object result(&scope, runBuiltin(METH(int, __float__), num));
   ASSERT_TRUE(result.isFloat());
   EXPECT_EQ(Float::cast(*result).value(), std::strtod("0x1.p117", nullptr));
 }
@@ -1220,7 +1220,7 @@ TEST_F(IntBuiltinsTest,
   HandleScope scope(thread_);
 
   Int num(&scope, largestIntBeforeFloatOverflow(runtime_));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
+  Object result(&scope, runBuiltin(METH(int, __float__), num));
   ASSERT_TRUE(result.isFloat());
   EXPECT_EQ(Float::cast(*result).value(), std::numeric_limits<double>::max());
 }
@@ -1231,15 +1231,15 @@ TEST_F(IntBuiltinsTest, DunderFloatOverflowRaisesOverflowError) {
   // Add 1 to the largest number that is still convertible to float.
   Int num0(&scope, largestIntBeforeFloatOverflow(runtime_));
   Int one(&scope, runtime_->newInt(1));
-  Int num1(&scope, runBuiltin(IntBuiltins::dunderAdd, num0, one));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num1));
+  Int num1(&scope, runBuiltin(METH(int, __add__), num0, one));
+  Object result(&scope, runBuiltin(METH(int, __float__), num1));
   EXPECT_TRUE(raised(*result, LayoutId::kOverflowError));
 }
 
 TEST_F(IntBuiltinsTest, DunderFloatWithNonIntReturnsError) {
   HandleScope scope(thread_);
   Object none(&scope, NoneType::object());
-  Object result(&scope, runBuiltin(IntBuiltins::dunderInt, none));
+  Object result(&scope, runBuiltin(METH(int, __int__), none));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -1247,7 +1247,7 @@ TEST_F(IntBuiltinsTest, DunderFloordivWithSmallIntReturnsInt) {
   HandleScope scope(thread_);
   Object left(&scope, runtime_->newInt(42));
   Object right(&scope, runtime_->newInt(9));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderFloordiv, left, right));
+  Object result(&scope, runBuiltin(METH(int, __floordiv__), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, 4));
 }
 
@@ -1255,7 +1255,7 @@ TEST_F(IntBuiltinsTest, DunderFloordivWithZeroRaisesZeroDivisionError) {
   HandleScope scope(thread_);
   Object left(&scope, runtime_->newInt(2));
   Object right(&scope, runtime_->newInt(0));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderFloordiv, left, right));
+  Object result(&scope, runBuiltin(METH(int, __floordiv__), left, right));
   EXPECT_TRUE(raisedWithStr(*result, LayoutId::kZeroDivisionError,
                             "integer division or modulo by zero"));
 }
@@ -1264,7 +1264,7 @@ TEST_F(IntBuiltinsTest, DunderFloordivWithNonIntSelfRaisesTypeError) {
   HandleScope scope(thread_);
   Object left(&scope, Str::empty());
   Object right(&scope, runtime_->newInt(1));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderFloordiv, left, right));
+  Object result(&scope, runBuiltin(METH(int, __floordiv__), left, right));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -1272,7 +1272,7 @@ TEST_F(IntBuiltinsTest, DunderFloordivWithNontIntReturnsNotImplemented) {
   HandleScope scope(thread_);
   Object left(&scope, runtime_->newInt(1));
   Object right(&scope, Str::empty());
-  Object result(&scope, runBuiltin(IntBuiltins::dunderFloordiv, left, right));
+  Object result(&scope, runBuiltin(METH(int, __floordiv__), left, right));
   EXPECT_TRUE(result.isNotImplementedType());
 }
 
@@ -1283,7 +1283,7 @@ value = 46116860184273879030000000
                    .isError());
   HandleScope scope(thread_);
   Object value(&scope, mainModuleAt(runtime_, "value"));
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderBool, value), Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(int, __bool__), value), Bool::trueObj());
 }
 
 TEST_F(IntBuiltinsTest, CompareLargeIntGe) {
@@ -1295,27 +1295,27 @@ TEST_F(IntBuiltinsTest, CompareLargeIntGe) {
   ASSERT_TRUE(a.isLargeInt());
   ASSERT_TRUE(b.isLargeInt());
 
-  Object cmp_1(&scope, runBuiltin(IntBuiltins::dunderGe, a, b));
+  Object cmp_1(&scope, runBuiltin(METH(int, __ge__), a, b));
   ASSERT_TRUE(cmp_1.isBool());
   EXPECT_EQ(*cmp_1, Bool::trueObj());
 
-  Object cmp_2(&scope, runBuiltin(IntBuiltins::dunderGe, a, zero));
+  Object cmp_2(&scope, runBuiltin(METH(int, __ge__), a, zero));
   ASSERT_TRUE(cmp_2.isBool());
   EXPECT_EQ(*cmp_2, Bool::trueObj());
 
-  Object cmp_3(&scope, runBuiltin(IntBuiltins::dunderGe, a, a));
+  Object cmp_3(&scope, runBuiltin(METH(int, __ge__), a, a));
   ASSERT_TRUE(cmp_3.isBool());
   EXPECT_EQ(*cmp_3, Bool::trueObj());
 
-  Object cmp_4(&scope, runBuiltin(IntBuiltins::dunderGe, b, a));
+  Object cmp_4(&scope, runBuiltin(METH(int, __ge__), b, a));
   ASSERT_TRUE(cmp_4.isBool());
   EXPECT_EQ(*cmp_4, Bool::falseObj());
 
-  Object cmp_5(&scope, runBuiltin(IntBuiltins::dunderGe, b, zero));
+  Object cmp_5(&scope, runBuiltin(METH(int, __ge__), b, zero));
   ASSERT_TRUE(cmp_5.isBool());
   EXPECT_EQ(*cmp_5, Bool::falseObj());
 
-  Object cmp_6(&scope, runBuiltin(IntBuiltins::dunderGe, b, b));
+  Object cmp_6(&scope, runBuiltin(METH(int, __ge__), b, b));
   ASSERT_TRUE(cmp_6.isBool());
   EXPECT_EQ(*cmp_6, Bool::trueObj());
 }
@@ -1329,27 +1329,27 @@ TEST_F(IntBuiltinsTest, CompareLargeIntLe) {
   ASSERT_TRUE(a.isLargeInt());
   ASSERT_TRUE(b.isLargeInt());
 
-  Object cmp_1(&scope, runBuiltin(IntBuiltins::dunderLe, a, b));
+  Object cmp_1(&scope, runBuiltin(METH(int, __le__), a, b));
   ASSERT_TRUE(cmp_1.isBool());
   EXPECT_EQ(*cmp_1, Bool::falseObj());
 
-  Object cmp_2(&scope, runBuiltin(IntBuiltins::dunderLe, a, zero));
+  Object cmp_2(&scope, runBuiltin(METH(int, __le__), a, zero));
   ASSERT_TRUE(cmp_2.isBool());
   EXPECT_EQ(*cmp_2, Bool::falseObj());
 
-  Object cmp_3(&scope, runBuiltin(IntBuiltins::dunderLe, a, a));
+  Object cmp_3(&scope, runBuiltin(METH(int, __le__), a, a));
   ASSERT_TRUE(cmp_3.isBool());
   EXPECT_EQ(*cmp_3, Bool::trueObj());
 
-  Object cmp_4(&scope, runBuiltin(IntBuiltins::dunderLe, b, a));
+  Object cmp_4(&scope, runBuiltin(METH(int, __le__), b, a));
   ASSERT_TRUE(cmp_4.isBool());
   EXPECT_EQ(*cmp_4, Bool::trueObj());
 
-  Object cmp_5(&scope, runBuiltin(IntBuiltins::dunderLe, b, zero));
+  Object cmp_5(&scope, runBuiltin(METH(int, __le__), b, zero));
   ASSERT_TRUE(cmp_5.isBool());
   EXPECT_EQ(*cmp_5, Bool::trueObj());
 
-  Object cmp_6(&scope, runBuiltin(IntBuiltins::dunderLe, b, b));
+  Object cmp_6(&scope, runBuiltin(METH(int, __le__), b, b));
   ASSERT_TRUE(cmp_6.isBool());
   EXPECT_EQ(*cmp_6, Bool::trueObj());
 }
@@ -1363,27 +1363,27 @@ TEST_F(IntBuiltinsTest, CompareLargeIntGt) {
   ASSERT_TRUE(a.isLargeInt());
   ASSERT_TRUE(b.isLargeInt());
 
-  Object cmp_1(&scope, runBuiltin(IntBuiltins::dunderGt, a, b));
+  Object cmp_1(&scope, runBuiltin(METH(int, __gt__), a, b));
   ASSERT_TRUE(cmp_1.isBool());
   EXPECT_EQ(*cmp_1, Bool::trueObj());
 
-  Object cmp_2(&scope, runBuiltin(IntBuiltins::dunderGt, a, zero));
+  Object cmp_2(&scope, runBuiltin(METH(int, __gt__), a, zero));
   ASSERT_TRUE(cmp_2.isBool());
   EXPECT_EQ(*cmp_2, Bool::trueObj());
 
-  Object cmp_3(&scope, runBuiltin(IntBuiltins::dunderGt, a, a));
+  Object cmp_3(&scope, runBuiltin(METH(int, __gt__), a, a));
   ASSERT_TRUE(cmp_3.isBool());
   EXPECT_EQ(*cmp_3, Bool::falseObj());
 
-  Object cmp_4(&scope, runBuiltin(IntBuiltins::dunderGt, b, a));
+  Object cmp_4(&scope, runBuiltin(METH(int, __gt__), b, a));
   ASSERT_TRUE(cmp_4.isBool());
   EXPECT_EQ(*cmp_4, Bool::falseObj());
 
-  Object cmp_5(&scope, runBuiltin(IntBuiltins::dunderGt, b, zero));
+  Object cmp_5(&scope, runBuiltin(METH(int, __gt__), b, zero));
   ASSERT_TRUE(cmp_5.isBool());
   EXPECT_EQ(*cmp_5, Bool::falseObj());
 
-  Object cmp_6(&scope, runBuiltin(IntBuiltins::dunderGt, b, b));
+  Object cmp_6(&scope, runBuiltin(METH(int, __gt__), b, b));
   ASSERT_TRUE(cmp_6.isBool());
   EXPECT_EQ(*cmp_6, Bool::falseObj());
 }
@@ -1397,27 +1397,27 @@ TEST_F(IntBuiltinsTest, CompareLargeIntLt) {
   ASSERT_TRUE(a.isLargeInt());
   ASSERT_TRUE(b.isLargeInt());
 
-  Object cmp_1(&scope, runBuiltin(IntBuiltins::dunderLt, a, b));
+  Object cmp_1(&scope, runBuiltin(METH(int, __lt__), a, b));
   ASSERT_TRUE(cmp_1.isBool());
   EXPECT_EQ(*cmp_1, Bool::falseObj());
 
-  Object cmp_2(&scope, runBuiltin(IntBuiltins::dunderLt, a, zero));
+  Object cmp_2(&scope, runBuiltin(METH(int, __lt__), a, zero));
   ASSERT_TRUE(cmp_2.isBool());
   EXPECT_EQ(*cmp_2, Bool::falseObj());
 
-  Object cmp_3(&scope, runBuiltin(IntBuiltins::dunderLt, a, a));
+  Object cmp_3(&scope, runBuiltin(METH(int, __lt__), a, a));
   ASSERT_TRUE(cmp_3.isBool());
   EXPECT_EQ(*cmp_3, Bool::falseObj());
 
-  Object cmp_4(&scope, runBuiltin(IntBuiltins::dunderLt, b, a));
+  Object cmp_4(&scope, runBuiltin(METH(int, __lt__), b, a));
   ASSERT_TRUE(cmp_4.isBool());
   EXPECT_EQ(*cmp_4, Bool::trueObj());
 
-  Object cmp_5(&scope, runBuiltin(IntBuiltins::dunderLt, b, zero));
+  Object cmp_5(&scope, runBuiltin(METH(int, __lt__), b, zero));
   ASSERT_TRUE(cmp_5.isBool());
   EXPECT_EQ(*cmp_5, Bool::trueObj());
 
-  Object cmp_6(&scope, runBuiltin(IntBuiltins::dunderLt, b, b));
+  Object cmp_6(&scope, runBuiltin(METH(int, __lt__), b, b));
   ASSERT_TRUE(cmp_6.isBool());
   EXPECT_EQ(*cmp_6, Bool::falseObj());
 }
@@ -1444,7 +1444,7 @@ TEST_F(IntBuiltinsTest, DunderIntWithBoolFalseReturnsZero) {
   HandleScope scope(thread_);
 
   Object self(&scope, Bool::falseObj());
-  Object result(&scope, runBuiltin(IntBuiltins::dunderInt, self));
+  Object result(&scope, runBuiltin(METH(int, __int__), self));
   EXPECT_EQ(result, SmallInt::fromWord(0));
 }
 
@@ -1452,7 +1452,7 @@ TEST_F(IntBuiltinsTest, DunderIntWithBoolTrueReturnsOne) {
   HandleScope scope(thread_);
 
   Object self(&scope, Bool::trueObj());
-  Object result(&scope, runBuiltin(IntBuiltins::dunderInt, self));
+  Object result(&scope, runBuiltin(METH(int, __int__), self));
   EXPECT_EQ(result, SmallInt::fromWord(1));
 }
 
@@ -1460,7 +1460,7 @@ TEST_F(IntBuiltinsTest, DunderIntWithSmallIntReturnsSame) {
   HandleScope scope(thread_);
 
   Object self(&scope, RawSmallInt::fromWord(7));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderInt, self));
+  Object result(&scope, runBuiltin(METH(int, __int__), self));
   EXPECT_EQ(self, result);
 }
 
@@ -1478,14 +1478,14 @@ b = int.__int__(7)
   EXPECT_TRUE(isIntEqualsWord(*b, 7));
 
   Str str(&scope, runtime_->newStrFromCStr("python"));
-  Object res(&scope, runBuiltin(IntBuiltins::dunderInt, str));
+  Object res(&scope, runBuiltin(METH(int, __int__), str));
   EXPECT_TRUE(res.isError());
 }
 
 TEST_F(IntBuiltinsTest, DunderInvertWithBoolTrueReturnsSmallInt) {
   HandleScope scope(thread_);
   Object num(&scope, Bool::trueObj());
-  Object result(&scope, runBuiltin(IntBuiltins::dunderInvert, num));
+  Object result(&scope, runBuiltin(METH(int, __invert__), num));
   ASSERT_TRUE(result.isSmallInt());
   EXPECT_TRUE(isIntEqualsWord(*result, -2));
 }
@@ -1493,7 +1493,7 @@ TEST_F(IntBuiltinsTest, DunderInvertWithBoolTrueReturnsSmallInt) {
 TEST_F(IntBuiltinsTest, DunderInvertWithBoolFalseReturnsSmallInt) {
   HandleScope scope(thread_);
   Object num(&scope, Bool::falseObj());
-  Object result(&scope, runBuiltin(IntBuiltins::dunderInvert, num));
+  Object result(&scope, runBuiltin(METH(int, __invert__), num));
   ASSERT_TRUE(result.isSmallInt());
   EXPECT_TRUE(isIntEqualsWord(*result, -1));
 }
@@ -1501,7 +1501,7 @@ TEST_F(IntBuiltinsTest, DunderInvertWithBoolFalseReturnsSmallInt) {
 TEST_F(IntBuiltinsTest, DunderInvertWithSmallIntReturnsSmallInt) {
   HandleScope scope(thread_);
   Object num(&scope, SmallInt::fromWord(-224466));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderInvert, num));
+  Object result(&scope, runBuiltin(METH(int, __invert__), num));
   ASSERT_TRUE(result.isSmallInt());
   EXPECT_TRUE(isIntEqualsWord(*result, 224465));
 }
@@ -1510,7 +1510,7 @@ TEST_F(IntBuiltinsTest, DunderInvertWithLargeIntReturnsLargeInt) {
   HandleScope scope(thread_);
   const uword num_digits[] = {0x6c5bfcb426758496, 0xda8bdbe69c009bc5, 0};
   Object num(&scope, newIntWithDigits(runtime_, num_digits));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderInvert, num));
+  Object result_obj(&scope, runBuiltin(METH(int, __invert__), num));
   ASSERT_TRUE(result_obj.isLargeInt());
   Int result(&scope, *result_obj);
   const uword expected_digits[] = {0x93a4034bd98a7b69, 0x2574241963ff643a,
@@ -1523,17 +1523,17 @@ TEST_F(IntBuiltinsTest, DunderBoolOnBool) {
   HandleScope scope(thread_);
 
   Object true_obj(&scope, Bool::trueObj());
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderBool, true_obj), Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(int, __bool__), true_obj), Bool::trueObj());
 
   Object false_obj(&scope, Bool::falseObj());
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderBool, false_obj), Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(int, __bool__), false_obj), Bool::falseObj());
 }
 
 TEST_F(IntBuiltinsTest, DunderDivmodWithBoolsReturnsTuple) {
   HandleScope scope(thread_);
   Object left(&scope, Bool::trueObj());
   Object right(&scope, Bool::trueObj());
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1545,7 +1545,7 @@ TEST_F(IntBuiltinsTest, DunderDivmodWithSmallIntReturnsTuple) {
   HandleScope scope(thread_);
   Object left(&scope, RawSmallInt::fromWord(4321));
   Object right(&scope, RawSmallInt::fromWord(17));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1558,7 +1558,7 @@ TEST_F(IntBuiltinsTest,
   HandleScope scope(thread_);
   Object left(&scope, RawSmallInt::fromWord(-987654321));
   Object right(&scope, RawSmallInt::fromWord(-654));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1570,7 +1570,7 @@ TEST_F(IntBuiltinsTest, DunderDivmodWithSmallIntNegativeDividendReturnsTuple) {
   HandleScope scope(thread_);
   Object left(&scope, RawSmallInt::fromWord(-123456789));
   Object right(&scope, RawSmallInt::fromWord(456));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1583,7 +1583,7 @@ TEST_F(IntBuiltinsTest,
   HandleScope scope(thread_);
   Object left(&scope, RawSmallInt::fromWord(-94222222181));
   Object right(&scope, RawSmallInt::fromWord(53));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1595,7 +1595,7 @@ TEST_F(IntBuiltinsTest, DunderDivmodWithSmallIntNegativeDivisorReturnsTuple) {
   HandleScope scope(thread_);
   Object left(&scope, RawSmallInt::fromWord(111222333));
   Object right(&scope, RawSmallInt::fromWord(-444));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1608,7 +1608,7 @@ TEST_F(IntBuiltinsTest,
   HandleScope scope(thread_);
   Object left(&scope, RawSmallInt::fromWord(94222222181));
   Object right(&scope, RawSmallInt::fromWord(-53));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1621,7 +1621,7 @@ TEST_F(IntBuiltinsTest,
   HandleScope scope(thread_);
   Object left(&scope, runtime_->newInt(kMinWord));
   Object right(&scope, runtime_->newInt(-1));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1636,7 +1636,7 @@ TEST_F(IntBuiltinsTest,
   const uword digits[] = {0, kHighbitUword};
   Object left(&scope, runtime_->newIntWithDigits(digits));
   Object right(&scope, runtime_->newInt(-1));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1650,7 +1650,7 @@ TEST_F(IntBuiltinsTest, DunderDivmodWithSingleDigitDivisorReturnsTuple) {
   const uword digits[] = {0x4a23475557e990d0, 0x56c1275a8b41bed9};
   Object left(&scope, newIntWithDigits(runtime_, digits));
   Object right(&scope, runtime_->newInt(77));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1664,7 +1664,7 @@ TEST_F(IntBuiltinsTest, DunderDivmodWithBoolDivisorReturnsTuple) {
   const uword digits[] = {0x4a23475557e990d0, 0x56c1275a8b41bed9};
   Object left(&scope, newIntWithDigits(runtime_, digits));
   Object right(&scope, Bool::trueObj());
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1679,7 +1679,7 @@ TEST_F(IntBuiltinsTest,
   const uword digits[] = {0x6d73444a30629c55, 0x2c4ab2d4de16e2ef};
   Object left(&scope, newIntWithDigits(runtime_, digits));
   Object right(&scope, runtime_->newInt(-87654));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1694,7 +1694,7 @@ TEST_F(IntBuiltinsTest,
   const uword digits[] = {0x6d73444a30629c55, 0x2c4ab2d4de16e2ef};
   Object left(&scope, newIntWithDigits(runtime_, digits));
   Object right(&scope, runtime_->newInt(-5));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1709,7 +1709,7 @@ TEST_F(IntBuiltinsTest,
   const uword digits[] = {0x94472249c23c1189, 0xffe0519aab10d602};
   Object left(&scope, newIntWithDigits(runtime_, digits));
   Object right(&scope, runtime_->newInt(12345));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1725,7 +1725,7 @@ TEST_F(
   const uword digits[] = {0x94472249c23c1189, 0xffe0519aab10d602};
   Object left(&scope, newIntWithDigits(runtime_, digits));
   Object right(&scope, runtime_->newInt(5));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1740,7 +1740,7 @@ TEST_F(IntBuiltinsTest,
   const uword digits[] = {0x91a950df92c04492, 0xd60eebbadb89de2f};
   Object left(&scope, newIntWithDigits(runtime_, digits));
   Object right(&scope, runtime_->newInt(-1117392329));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1755,7 +1755,7 @@ TEST_F(IntBuiltinsTest,
   const uword digits[] = {0xaaa, 3};
   Object left(&scope, newIntWithDigits(runtime_, digits));
   Object right(&scope, runtime_->newInt(-0x100000000));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1769,7 +1769,7 @@ TEST_F(IntBuiltinsTest, DunderDivmodWithBiggerDivisorReturnsTuple) {
   Object left(&scope, newIntWithDigits(runtime_, digits_left));
   const uword digits_right[] = {0x383b89d9e2bb74f5, 0x1234};
   Object right(&scope, newIntWithDigits(runtime_, digits_right));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1784,7 +1784,7 @@ TEST_F(IntBuiltinsTest,
   Object left(&scope, runtime_->newInt(-55));
   const uword digits[] = {0, 1};
   Object right(&scope, newIntWithDigits(runtime_, digits));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1799,7 +1799,7 @@ TEST_F(IntBuiltinsTest,
   Object left(&scope, runtime_->newInt(55));
   const uword digits[] = {0, kHighbitUword};
   Object right(&scope, newIntWithDigits(runtime_, digits));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1814,7 +1814,7 @@ TEST_F(IntBuiltinsTest,
   Object left(&scope, runtime_->newInt(-55));
   const uword digits[] = {0, kMaxUword};
   Object right(&scope, newIntWithDigits(runtime_, digits));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1829,7 +1829,7 @@ TEST_F(IntBuiltinsTest, DunderDivmodWithLargeIntReturnsTuple) {
   Object left(&scope, newIntWithDigits(runtime_, digits_left));
   const uword digits_right[] = {0x975420c5052ae9c6, 0x3bcd71afac71b2e4};
   Object right(&scope, newIntWithDigits(runtime_, digits_right));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1845,7 +1845,7 @@ TEST_F(IntBuiltinsTest, DunderDivmodWithLargeIntPowerOfTwoReturnsTuple) {
   Object left(&scope, newIntWithDigits(runtime_, digits_left));
   const uword digits_right[] = {0, 1};
   Object right(&scope, newIntWithDigits(runtime_, digits_right));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1860,7 +1860,7 @@ TEST_F(IntBuiltinsTest,
   Object left(&scope, runtime_->newInt(0));
   const uword digits[] = {0, 1};
   Object right(&scope, newIntWithDigits(runtime_, digits));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1875,7 +1875,7 @@ TEST_F(IntBuiltinsTest, DunderDivmodWithLargeIntNegativeDividendReturnsTuple) {
   Object left(&scope, newIntWithDigits(runtime_, digits_left));
   const uword digits_right[] = {0x9893b50147995ab1, 0x73537a3bc36c3a0e};
   Object right(&scope, newIntWithDigits(runtime_, digits_right));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1892,7 +1892,7 @@ TEST_F(IntBuiltinsTest, DunderDivmodWithLargeIntNegativeDivisorReturnsTuple) {
   Object left(&scope, newIntWithDigits(runtime_, digits_left));
   const uword digits_right[] = {0xfb2879c8be1e7dda, 0xf8101cf6608d0f6a};
   Object right(&scope, newIntWithDigits(runtime_, digits_right));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1911,7 +1911,7 @@ TEST_F(IntBuiltinsTest,
   const uword digits_right[] = {0x839c30dba1685693, 0xad0140cf78eaee70,
                                 0xd77ec3cef0613585};
   Object right(&scope, newIntWithDigits(runtime_, digits_right));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1928,7 +1928,7 @@ TEST_F(IntBuiltinsTest,
   const uword digits[] = {1, 0, 1};
   Object left(&scope, newIntWithDigits(runtime_, digits));
   Object right(&scope, runtime_->newInt(-5));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1943,7 +1943,7 @@ TEST_F(IntBuiltinsTest, DunderDivmodReturnsMinWordPlusOneModulo) {
   Object left(&scope, newIntWithDigits(runtime_, left_digits));
   const uword right_digits[] = {static_cast<uword>(kMinWord)};
   Object right(&scope, newIntWithDigits(runtime_, right_digits));
-  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result_obj(&scope, runBuiltin(METH(int, __divmod__), left, right));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -1956,7 +1956,7 @@ TEST_F(IntBuiltinsTest, DunderDivmodWithZeroRaisesZeroDivisionError) {
   HandleScope scope(thread_);
   Object left(&scope, runtime_->newInt(2));
   Object right(&scope, runtime_->newInt(0));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result(&scope, runBuiltin(METH(int, __divmod__), left, right));
   EXPECT_TRUE(raisedWithStr(*result, LayoutId::kZeroDivisionError,
                             "integer division or modulo by zero"));
 }
@@ -1965,7 +1965,7 @@ TEST_F(IntBuiltinsTest, DunderDivmodWithNonIntSelfRaisesTypeError) {
   HandleScope scope(thread_);
   Object left(&scope, Str::empty());
   Object right(&scope, runtime_->newInt(1));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result(&scope, runBuiltin(METH(int, __divmod__), left, right));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -1973,7 +1973,7 @@ TEST_F(IntBuiltinsTest, DunderDivmodWithNontIntReturnsNotImplemented) {
   HandleScope scope(thread_);
   Object left(&scope, runtime_->newInt(1));
   Object right(&scope, Str::empty());
-  Object result(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  Object result(&scope, runBuiltin(METH(int, __divmod__), left, right));
   EXPECT_TRUE(result.isNotImplementedType());
 }
 
@@ -1981,64 +1981,62 @@ TEST_F(IntBuiltinsTest, DunderEqOnBool) {
   HandleScope scope(thread_);
 
   Object true_obj(&scope, Bool::trueObj());
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderEq, true_obj, true_obj),
-            Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(int, __eq__), true_obj, true_obj), Bool::trueObj());
 
   Object false_obj(&scope, Bool::falseObj());
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderEq, true_obj, false_obj),
+  EXPECT_EQ(runBuiltin(METH(int, __eq__), true_obj, false_obj),
             Bool::falseObj());
 
   Object zero(&scope, SmallInt::fromWord(0));
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderEq, true_obj, zero),
-            Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(int, __eq__), true_obj, zero), Bool::falseObj());
 
   Object one(&scope, SmallInt::fromWord(1));
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderEq, true_obj, one), Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(int, __eq__), true_obj, one), Bool::trueObj());
 }
 
 TEST_F(IntBuiltinsTest, DunderNeOnBool) {
   HandleScope scope(thread_);
 
   Object true_obj(&scope, Bool::trueObj());
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderNe, true_obj, true_obj),
+  EXPECT_EQ(runBuiltin(METH(int, __ne__), true_obj, true_obj),
             Bool::falseObj());
 
   Object false_obj(&scope, Bool::falseObj());
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderNe, true_obj, false_obj),
+  EXPECT_EQ(runBuiltin(METH(int, __ne__), true_obj, false_obj),
             Bool::trueObj());
 
   Object zero(&scope, SmallInt::fromWord(0));
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderNe, true_obj, zero), Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(int, __ne__), true_obj, zero), Bool::trueObj());
 
   Object one(&scope, SmallInt::fromWord(1));
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderNe, true_obj, one), Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(int, __ne__), true_obj, one), Bool::falseObj());
 }
 
 TEST_F(IntBuiltinsTest, DunderNegWithSmallIntReturnsSmallInt) {
   HandleScope scope(thread_);
   Object num(&scope, runtime_->newInt(42));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderNeg, num));
+  Object result(&scope, runBuiltin(METH(int, __neg__), num));
   EXPECT_TRUE(isIntEqualsWord(*result, -42));
 }
 
 TEST_F(IntBuiltinsTest, DunderNegWithSmallIntReturnsLargeInt) {
   HandleScope scope(thread_);
   Object num(&scope, runtime_->newInt(RawSmallInt::kMinValue));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderNeg, num));
+  Object result(&scope, runBuiltin(METH(int, __neg__), num));
   EXPECT_TRUE(isIntEqualsWord(*result, -RawSmallInt::kMinValue));
 }
 
 TEST_F(IntBuiltinsTest, DunderNegWithBoolFalseReturnsSmallInt) {
   HandleScope scope(thread_);
   Object value(&scope, Bool::falseObj());
-  Object result(&scope, runBuiltin(IntBuiltins::dunderNeg, value));
+  Object result(&scope, runBuiltin(METH(int, __neg__), value));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 
 TEST_F(IntBuiltinsTest, DunderNegWithBoolTrueReturnsSmallInt) {
   HandleScope scope(thread_);
   Object value(&scope, Bool::trueObj());
-  Object result(&scope, runBuiltin(IntBuiltins::dunderNeg, value));
+  Object result(&scope, runBuiltin(METH(int, __neg__), value));
   EXPECT_TRUE(isIntEqualsWord(*result, -1));
 }
 
@@ -2046,7 +2044,7 @@ TEST_F(IntBuiltinsTest, DunderNegWithLargeIntReturnsSmallInt) {
   HandleScope scope(thread_);
   Object num(&scope, runtime_->newInt(-RawSmallInt::kMinValue));
   EXPECT_TRUE(num.isLargeInt());
-  Object result(&scope, runBuiltin(IntBuiltins::dunderNeg, num));
+  Object result(&scope, runBuiltin(METH(int, __neg__), num));
   EXPECT_TRUE(isIntEqualsWord(*result, RawSmallInt::kMinValue));
 }
 
@@ -2054,7 +2052,7 @@ TEST_F(IntBuiltinsTest, DunderNegWithLargeIntReturnsLargeInt) {
   HandleScope scope(thread_);
   const uword digits[] = {0xad7721b1763aff22, 0x2afce48517f151b2};
   Object num(&scope, newIntWithDigits(runtime_, digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderNeg, num));
+  Object result(&scope, runBuiltin(METH(int, __neg__), num));
   const uword expected_digits[] = {0x5288de4e89c500de, 0xd5031b7ae80eae4d};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -2063,7 +2061,7 @@ TEST_F(IntBuiltinsTest, DunderNegWithLargeIntCarriesReturnsLargeInt) {
   HandleScope scope(thread_);
   const uword digits[] = {0, 0xfffffff000000000};
   Object num(&scope, newIntWithDigits(runtime_, digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderNeg, num));
+  Object result(&scope, runBuiltin(METH(int, __neg__), num));
   const uword expected_digits[] = {0, 0x1000000000};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -2072,7 +2070,7 @@ TEST_F(IntBuiltinsTest, DunderNegWithLargeIntOverflowsReturnsLargeInt) {
   HandleScope scope(thread_);
   const uword digits[] = {0, kHighbitUword};
   Object num(&scope, newIntWithDigits(runtime_, digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderNeg, num));
+  Object result(&scope, runBuiltin(METH(int, __neg__), num));
   const uword expected_digits[] = {0, kHighbitUword, 0};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -2081,7 +2079,7 @@ TEST_F(IntBuiltinsTest, DunderNegWithLargeIntShrinksReturnsLargeInt) {
   HandleScope scope(thread_);
   const uword digits[] = {kHighbitUword, 0};
   Object num(&scope, newIntWithDigits(runtime_, digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderNeg, num));
+  Object result(&scope, runBuiltin(METH(int, __neg__), num));
   const uword expected_digits[] = {kHighbitUword};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -2090,7 +2088,7 @@ TEST_F(IntBuiltinsTest, DunderNegWithLargeIntNoShrinksReturnsLargeInt) {
   HandleScope scope(thread_);
   const uword digits[] = {1, kHighbitUword, 0};
   Object num(&scope, newIntWithDigits(runtime_, digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderNeg, num));
+  Object result(&scope, runBuiltin(METH(int, __neg__), num));
   const uword expected_digits[] = {kMaxUword, kHighbitUword - 1, kMaxUword};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -2118,16 +2116,16 @@ TEST_F(IntBuiltinsTest, DunderLtOnBool) {
 
   Object true_obj(&scope, Bool::trueObj());
   Object false_obj(&scope, Bool::falseObj());
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderLt, true_obj, false_obj),
+  EXPECT_EQ(runBuiltin(METH(int, __lt__), true_obj, false_obj),
             Bool::falseObj());
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderLt, false_obj, true_obj),
+  EXPECT_EQ(runBuiltin(METH(int, __lt__), false_obj, true_obj),
             Bool::trueObj());
 
   Object one(&scope, SmallInt::fromWord(1));
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderLt, false_obj, one), Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(int, __lt__), false_obj, one), Bool::trueObj());
 
   Object minus_one(&scope, SmallInt::fromWord(-1));
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderLt, false_obj, minus_one),
+  EXPECT_EQ(runBuiltin(METH(int, __lt__), false_obj, minus_one),
             Bool::falseObj());
 }
 
@@ -2136,17 +2134,16 @@ TEST_F(IntBuiltinsTest, DunderGeOnBool) {
 
   Object true_obj(&scope, Bool::trueObj());
   Object false_obj(&scope, Bool::falseObj());
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderGe, true_obj, false_obj),
+  EXPECT_EQ(runBuiltin(METH(int, __ge__), true_obj, false_obj),
             Bool::trueObj());
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderGe, false_obj, true_obj),
+  EXPECT_EQ(runBuiltin(METH(int, __ge__), false_obj, true_obj),
             Bool::falseObj());
 
   Object one(&scope, SmallInt::fromWord(1));
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderGe, false_obj, one),
-            Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(int, __ge__), false_obj, one), Bool::falseObj());
 
   Object minus_one(&scope, SmallInt::fromWord(-1));
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderGe, false_obj, minus_one),
+  EXPECT_EQ(runBuiltin(METH(int, __ge__), false_obj, minus_one),
             Bool::trueObj());
 }
 
@@ -2155,17 +2152,16 @@ TEST_F(IntBuiltinsTest, DunderGtOnBool) {
 
   Object true_obj(&scope, Bool::trueObj());
   Object false_obj(&scope, Bool::falseObj());
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderGt, true_obj, false_obj),
+  EXPECT_EQ(runBuiltin(METH(int, __gt__), true_obj, false_obj),
             Bool::trueObj());
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderGt, false_obj, true_obj),
+  EXPECT_EQ(runBuiltin(METH(int, __gt__), false_obj, true_obj),
             Bool::falseObj());
 
   Object one(&scope, SmallInt::fromWord(1));
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderGt, false_obj, one),
-            Bool::falseObj());
+  EXPECT_EQ(runBuiltin(METH(int, __gt__), false_obj, one), Bool::falseObj());
 
   Object minus_one(&scope, SmallInt::fromWord(-1));
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderGt, false_obj, minus_one),
+  EXPECT_EQ(runBuiltin(METH(int, __gt__), false_obj, minus_one),
             Bool::trueObj());
 }
 
@@ -2174,16 +2170,16 @@ TEST_F(IntBuiltinsTest, DunderLeOnBool) {
 
   Object true_obj(&scope, Bool::trueObj());
   Object false_obj(&scope, Bool::falseObj());
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderLe, true_obj, false_obj),
+  EXPECT_EQ(runBuiltin(METH(int, __le__), true_obj, false_obj),
             Bool::falseObj());
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderLe, false_obj, true_obj),
+  EXPECT_EQ(runBuiltin(METH(int, __le__), false_obj, true_obj),
             Bool::trueObj());
 
   Object one(&scope, SmallInt::fromWord(1));
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderLe, false_obj, one), Bool::trueObj());
+  EXPECT_EQ(runBuiltin(METH(int, __le__), false_obj, one), Bool::trueObj());
 
   Object minus_one(&scope, SmallInt::fromWord(-1));
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderLe, false_obj, minus_one),
+  EXPECT_EQ(runBuiltin(METH(int, __le__), false_obj, minus_one),
             Bool::falseObj());
 }
 
@@ -2242,42 +2238,42 @@ TEST_F(IntBuiltinsTest, DunderRandWithSmallIntsReturnsSmallInt) {
 TEST_F(IntBuiltinsTest, DunderReprWithZeroReturnsStr) {
   HandleScope scope(thread_);
   Object num(&scope, runtime_->newInt(0));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  Object result(&scope, runBuiltin(METH(int, __repr__), num));
   EXPECT_TRUE(isStrEqualsCStr(*result, "0"));
 }
 
 TEST_F(IntBuiltinsTest, DunderReprWithSmallIntReturnsStr) {
   HandleScope scope(thread_);
   Object num(&scope, runtime_->newInt(0xdeadbeef));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  Object result(&scope, runBuiltin(METH(int, __repr__), num));
   EXPECT_TRUE(isStrEqualsCStr(*result, "3735928559"));
 }
 
 TEST_F(IntBuiltinsTest, DunderReprWithSmallIntMaxReturnsStr) {
   HandleScope scope(thread_);
   Object num(&scope, runtime_->newInt(RawSmallInt::kMaxValue));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  Object result(&scope, runBuiltin(METH(int, __repr__), num));
   EXPECT_TRUE(isStrEqualsCStr(*result, "4611686018427387903"));
 }
 
 TEST_F(IntBuiltinsTest, DunderReprWithSmallIntMinReturnsStr) {
   HandleScope scope(thread_);
   Object num(&scope, runtime_->newInt(RawSmallInt::kMinValue));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  Object result(&scope, runBuiltin(METH(int, __repr__), num));
   EXPECT_TRUE(isStrEqualsCStr(*result, "-4611686018427387904"));
 }
 
 TEST_F(IntBuiltinsTest, DunderReprWithBoolFalseReturnsStr) {
   HandleScope scope(thread_);
   Object num(&scope, Bool::falseObj());
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  Object result(&scope, runBuiltin(METH(int, __repr__), num));
   EXPECT_TRUE(isStrEqualsCStr(*result, "0"));
 }
 
 TEST_F(IntBuiltinsTest, DunderReprWithBoolTrueReturnsStr) {
   HandleScope scope(thread_);
   Object num(&scope, Bool::trueObj());
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  Object result(&scope, runBuiltin(METH(int, __repr__), num));
   EXPECT_TRUE(isStrEqualsCStr(*result, "1"));
 }
 
@@ -2285,7 +2281,7 @@ TEST_F(IntBuiltinsTest, DunderReprWithLargeIntOneDigitReturnsStr) {
   HandleScope scope(thread_);
   const uword digits[] = {0x7ab65f95e6775822};
   Object num(&scope, runtime_->newIntWithDigits(digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  Object result(&scope, runBuiltin(METH(int, __repr__), num));
   EXPECT_TRUE(isStrEqualsCStr(*result, "8842360015809894434"));
 }
 
@@ -2293,7 +2289,7 @@ TEST_F(IntBuiltinsTest, DunderReprWithLargeIntOneDigitMinReturnsStr) {
   HandleScope scope(thread_);
   const uword digits[] = {0x8000000000000000};
   Object num(&scope, runtime_->newIntWithDigits(digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  Object result(&scope, runBuiltin(METH(int, __repr__), num));
   EXPECT_TRUE(isStrEqualsCStr(*result, "-9223372036854775808"));
 }
 
@@ -2301,7 +2297,7 @@ TEST_F(IntBuiltinsTest, DunderReprWithLargeIntOneDigitMaxReturnsStr) {
   HandleScope scope(thread_);
   const uword digits[] = {0x7fffffffffffffff};
   Object num(&scope, runtime_->newIntWithDigits(digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  Object result(&scope, runBuiltin(METH(int, __repr__), num));
   EXPECT_TRUE(isStrEqualsCStr(*result, "9223372036854775807"));
 }
 
@@ -2310,7 +2306,7 @@ TEST_F(IntBuiltinsTest, DunderReprWithLargeIntReturnsStr) {
 
   const uword digits[] = {0x68ccbb7f61087fb7, 0x4081e2972fe52778};
   Object num(&scope, runtime_->newIntWithDigits(digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  Object result(&scope, runBuiltin(METH(int, __repr__), num));
   EXPECT_TRUE(
       isStrEqualsCStr(*result, "85744993827831399429103580491677204407"));
 }
@@ -2322,7 +2318,7 @@ TEST_F(IntBuiltinsTest, DunderReprWithNegativeLargeIntReturnsStr) {
                           0x438a2278e8762294, 0xccf89b106c9b714d,
                           0xfa694d4cbdf0b0ba};
   Object num(&scope, runtime_->newIntWithDigits(digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  Object result(&scope, runBuiltin(METH(int, __repr__), num));
   EXPECT_TRUE(
       isStrEqualsCStr(*result,
                       "-4663013431296140509759060231428418933437027788588076073"
@@ -2334,7 +2330,7 @@ TEST_F(IntBuiltinsTest, DunderReprWithLargeIntManyZerosReturnsStr) {
 
   const uword digits[] = {0x6ea69b2000000000, 0xf374ff2873cd99de, 0x375c24};
   Object num(&scope, runtime_->newIntWithDigits(digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  Object result(&scope, runBuiltin(METH(int, __repr__), num));
   EXPECT_TRUE(isStrEqualsCStr(
       *result, "1234567890000000000000000000000000000000000000"));
 }
@@ -2343,7 +2339,7 @@ TEST_F(IntBuiltinsTest, DunderReprWithLargeIntCarriesReturnsStr) {
   HandleScope scope(thread_);
   const uword digits[] = {kMaxUword, uword{kMaxWord}, kMaxUword};
   Object num(&scope, runtime_->newIntWithDigits(digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  Object result(&scope, runBuiltin(METH(int, __repr__), num));
   EXPECT_TRUE(
       isStrEqualsCStr(*result, "-170141183460469231731687303715884105729"));
 }
@@ -2356,7 +2352,7 @@ num = X(0xdeadbeef)
 )")
                    .isError());
   Object num(&scope, mainModuleAt(runtime_, "num"));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  Object result(&scope, runBuiltin(METH(int, __repr__), num));
   EXPECT_TRUE(isStrEqualsCStr(*result, "3735928559"));
 }
 
@@ -2431,7 +2427,7 @@ TEST_F(IntBuiltinsTest, DunderRshiftWithBoolsReturnsSmallInt) {
   HandleScope scope(thread_);
   Object left(&scope, Bool::trueObj());
   Object right(&scope, Bool::falseObj());
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __rshift__), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
 
@@ -2439,7 +2435,7 @@ TEST_F(IntBuiltinsTest, DunderRshiftWithSmallIntsReturnsSmallInt) {
   HandleScope scope(thread_);
   Object left(&scope, runtime_->newInt(-1234));
   Object right(&scope, runtime_->newInt(3));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __rshift__), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, -155));
 }
 
@@ -2447,7 +2443,7 @@ TEST_F(IntBuiltinsTest, DunderRshiftWithOversizedAmountSmallIntReturnsZero) {
   HandleScope scope(thread_);
   Object left(&scope, runtime_->newInt(1));
   Object right(&scope, runtime_->newInt(kBitsPerWord));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __rshift__), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 
@@ -2456,7 +2452,7 @@ TEST_F(IntBuiltinsTest, DunderRshiftWithOversizedAmountLargeIntReturnsZero) {
   Object left(&scope, runtime_->newInt(1));
   const uword digits[] = {1, 2};
   Object right(&scope, newIntWithDigits(runtime_, digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __rshift__), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 
@@ -2465,7 +2461,7 @@ TEST_F(IntBuiltinsTest, DunderRshiftWithLargeIntOversizedAmountReturnsZero) {
   const uword digits[] = {1, 2};
   Object left(&scope, newIntWithDigits(runtime_, digits));
   Object right(&scope, runtime_->newInt(kBitsPerWord * 3));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __rshift__), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 
@@ -2475,7 +2471,7 @@ TEST_F(IntBuiltinsTest, DunderRshiftWithLargeIntsReturnsLargeInt) {
                           0x692e3b38af8dcfbe};
   Object left(&scope, newIntWithDigits(runtime_, digits));
   Object right(&scope, runtime_->newInt(83));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __rshift__), left, right));
   const uword expected_digits[] = {0xb9f7ce8b3b42125d, 0xd25c76715f1};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -2486,7 +2482,7 @@ TEST_F(IntBuiltinsTest, DunderRshiftWithLargeIntWholeWordReturnsLargeInt) {
                           0xe0f6379843f98b29, 0};
   Object left(&scope, newIntWithDigits(runtime_, digits));
   Object right(&scope, runtime_->newInt(kBitsPerWord * 2));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __rshift__), left, right));
   const uword expected_digits[] = {0xe0f6379843f98b29, 0};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -2496,7 +2492,7 @@ TEST_F(IntBuiltinsTest, DunderRshiftWithLargeIntNegativeReturnsLargeInt) {
   const uword digits[] = {0x3190ff6fa83269bc, 0xe7a1689a33ca9ae6};
   Object left(&scope, newIntWithDigits(runtime_, digits));
   Object right(&scope, runtime_->newInt(13));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __rshift__), left, right));
   const uword expected_digits[] = {0xd7318c87fb7d4193, 0xffff3d0b44d19e54};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -2505,7 +2501,7 @@ TEST_F(IntBuiltinsTest, DunderRshiftWithNegativeShiftAmountRaisesValueError) {
   HandleScope scope(thread_);
   Object left(&scope, runtime_->newInt(1));
   Object right(&scope, runtime_->newInt(-4));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __rshift__), left, right));
   EXPECT_TRUE(
       raisedWithStr(*result, LayoutId::kValueError, "negative shift count"));
 }
@@ -2514,7 +2510,7 @@ TEST_F(IntBuiltinsTest, DunderRshiftWithNonIntSelfRaisesTypeError) {
   HandleScope scope(thread_);
   Object left(&scope, Str::empty());
   Object right(&scope, runtime_->newInt(0));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __rshift__), left, right));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -2522,7 +2518,7 @@ TEST_F(IntBuiltinsTest, DunderRshiftWithNonIntReturnsNotImplemented) {
   HandleScope scope(thread_);
   Object left(&scope, runtime_->newInt(0));
   Object right(&scope, Str::empty());
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __rshift__), left, right));
   EXPECT_TRUE(result.isNotImplementedType());
 }
 
@@ -2536,7 +2532,7 @@ right = X(3)
                    .isError());
   Object left(&scope, mainModuleAt(runtime_, "left"));
   Object right(&scope, mainModuleAt(runtime_, "right"));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderRshift, left, right));
+  Object result(&scope, runBuiltin(METH(int, __rshift__), left, right));
   EXPECT_EQ(result, SmallInt::fromWord(-155));
 }
 
@@ -2563,7 +2559,7 @@ TEST_F(IntBuiltinsTest, DunderSubWithSmallIntsReturnsSmallInt) {
 
   Int left(&scope, SmallInt::fromWord(42));
   Int right(&scope, SmallInt::fromWord(-7));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderSub, left, right));
+  Object result(&scope, runBuiltin(METH(int, __sub__), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, 49));
 }
 
@@ -2572,7 +2568,7 @@ TEST_F(IntBuiltinsTest, DunderSubWithSmallIntsOverflowReturnsLargeInt) {
 
   Int min_small_int(&scope, SmallInt::fromWord(RawSmallInt::kMinValue));
   Int one(&scope, SmallInt::fromWord(1));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderSub, min_small_int, one));
+  Object result(&scope, runBuiltin(METH(int, __sub__), min_small_int, one));
   EXPECT_TRUE(isIntEqualsWord(*result, RawSmallInt::kMinValue - 1));
 }
 
@@ -2583,7 +2579,7 @@ TEST_F(IntBuiltinsTest, DunderSubWithLargeIntsReturnsLargeInt) {
   Int left(&scope, newIntWithDigits(runtime_, digits_left));
   const uword digits_right[] = {0x9876543210abcdef, 0xfedcba0123456789};
   Int right(&scope, newIntWithDigits(runtime_, digits_right));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderSub, left, right));
+  Object result(&scope, runBuiltin(METH(int, __sub__), left, right));
   const uword expected_digits[] = {0x666665d776b97532, 0x13579c776d666666};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -2596,7 +2592,7 @@ TEST_F(IntBuiltinsTest,
   Int left(&scope, newIntWithDigits(runtime_, digits_left));
   const uword digits_right[] = {kMaxUword, kMaxUword, 0};
   Int right(&scope, newIntWithDigits(runtime_, digits_right));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderSub, left, right));
+  Object result(&scope, runBuiltin(METH(int, __sub__), left, right));
   const uword expected_digits[] = {2, 0, kMaxUword};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -2610,7 +2606,7 @@ TEST_F(IntBuiltinsTest,
   Int left(&scope, newIntWithDigits(runtime_, digits_left));
   const uword digits_right[] = {1};
   Int right(&scope, newIntWithDigits(runtime_, digits_right));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderSub, left, right));
+  Object result(&scope, runBuiltin(METH(int, __sub__), left, right));
   const uword expected_digits[] = {kMaxUword, uword{kMaxWord}, kMaxUword};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -2620,7 +2616,7 @@ TEST_F(IntBuiltinsTest, DunderSubWithNonIntSelfRaisesTypeError) {
 
   Str str(&scope, Str::empty());
   Int right(&scope, runtime_->newInt(1));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderSub, str, right));
+  Object result(&scope, runBuiltin(METH(int, __sub__), str, right));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -2629,7 +2625,7 @@ TEST_F(IntBuiltinsTest, DunderSubWithNonIntRightReturnsNotImplemented) {
 
   Int left(&scope, runtime_->newInt(1));
   Str str(&scope, Str::empty());
-  Object result(&scope, runBuiltin(IntBuiltins::dunderSub, left, str));
+  Object result(&scope, runBuiltin(METH(int, __sub__), left, str));
   EXPECT_TRUE(result.isNotImplementedType());
 }
 
@@ -2637,7 +2633,7 @@ TEST_F(IntBuiltinsTest, DunderXorWithSmallIntsReturnsSmallInt) {
   HandleScope scope(thread_);
   Int left(&scope, SmallInt::fromWord(0x15));   // 0b010101
   Int right(&scope, SmallInt::fromWord(0x38));  // 0b111000
-  Object result(&scope, runBuiltin(IntBuiltins::dunderXor, left, right));
+  Object result(&scope, runBuiltin(METH(int, __xor__), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, 0x2D));  // 0b101101
 }
 
@@ -2647,7 +2643,7 @@ TEST_F(IntBuiltinsTest, DunderXorWithLargeIntsReturnsLargeInt) {
   Int left(&scope, newIntWithDigits(runtime_, digits_left));
   const uword digits_right[] = {0x03, 0xf0};
   Int right(&scope, newIntWithDigits(runtime_, digits_right));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderXor, left, right));
+  Object result(&scope, runBuiltin(METH(int, __xor__), left, right));
   const uword expected_digits[] = {0x0C, 0xC0, 0xCAFE};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
@@ -2657,7 +2653,7 @@ TEST_F(IntBuiltinsTest, DunderXorWithNonIntReturnsNotImplemented) {
   const uword digits[] = {1, 2};
   Int left(&scope, newIntWithDigits(runtime_, digits));
   Object right(&scope, Str::empty());
-  Object result(&scope, runBuiltin(IntBuiltins::dunderXor, left, right));
+  Object result(&scope, runBuiltin(METH(int, __xor__), left, right));
   EXPECT_TRUE(result.isNotImplementedType());
 }
 
@@ -2666,7 +2662,7 @@ TEST_F(IntBuiltinsTest, DunderXorWithInvalidArgumentLeftRaisesException) {
   Object left(&scope, Str::empty());
   const uword digits[] = {1, 2};
   LargeInt right(&scope, newIntWithDigits(runtime_, digits));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderXor, left, right));
+  Object result(&scope, runBuiltin(METH(int, __xor__), left, right));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -2680,7 +2676,7 @@ right = X(0b0101)
                    .isError());
   Object left(&scope, mainModuleAt(runtime_, "left"));
   Object right(&scope, mainModuleAt(runtime_, "right"));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderXor, left, right));
+  Object result(&scope, runBuiltin(METH(int, __xor__), left, right));
   EXPECT_EQ(result, SmallInt::fromWord(6));  // 0b0110
 }
 
@@ -2691,7 +2687,7 @@ TEST_F(IntBuiltinsTest, ToBytesWithByteorderLittleEndianReturnsBytes) {
   Int length(&scope, SmallInt::fromWord(3));
   Str byteorder(&scope, runtime_->newStrFromCStr("little"));
   Bool signed_obj(&scope, Bool::falseObj());
-  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
+  Object result(&scope, runBuiltin(METH(int, to_bytes), num, length, byteorder,
                                    signed_obj));
 
   const byte bytes[] = {42, 0, 0};
@@ -2710,7 +2706,7 @@ length = X(3)
   Object length(&scope, mainModuleAt(runtime_, "length"));
   Object byteorder(&scope, runtime_->newStrFromCStr("little"));
   Object signed_obj(&scope, Bool::falseObj());
-  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
+  Object result(&scope, runBuiltin(METH(int, to_bytes), num, length, byteorder,
                                    signed_obj));
   const byte bytes[] = {42, 0, 0};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
@@ -2723,7 +2719,7 @@ TEST_F(IntBuiltinsTest, ToBytesWithByteorderBigEndianReturnsBytes) {
   Int length(&scope, SmallInt::fromWord(2));
   Str byteorder(&scope, runtime_->newStrFromCStr("big"));
   Bool signed_obj(&scope, Bool::falseObj());
-  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
+  Object result(&scope, runBuiltin(METH(int, to_bytes), num, length, byteorder,
                                    signed_obj));
   const byte bytes[] = {0, 42};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
@@ -2772,14 +2768,14 @@ TEST_F(IntBuiltinsTest, ToBytesWithSignedFalseReturnsBytes) {
   Int length_1(&scope, SmallInt::fromWord(1));
   Int num_128(&scope, SmallInt::fromWord(128));
   Bool signed_obj(&scope, Bool::falseObj());
-  Object result_128(&scope, runBuiltin(IntBuiltins::toBytes, num_128, length_1,
+  Object result_128(&scope, runBuiltin(METH(int, to_bytes), num_128, length_1,
                                        byteorder, signed_obj));
   const byte bytes[] = {0x80};
   EXPECT_TRUE(isBytesEqualsBytes(result_128, bytes));
 
   Int length_2(&scope, SmallInt::fromWord(2));
   Int num_32768(&scope, SmallInt::fromWord(32768));
-  Object result_32768(&scope, runBuiltin(IntBuiltins::toBytes, num_32768,
+  Object result_32768(&scope, runBuiltin(METH(int, to_bytes), num_32768,
                                          length_2, byteorder, signed_obj));
   const byte bytes2[] = {0, 0x80};
   EXPECT_TRUE(isBytesEqualsBytes(result_32768, bytes2));
@@ -2787,7 +2783,7 @@ TEST_F(IntBuiltinsTest, ToBytesWithSignedFalseReturnsBytes) {
   Int length_8(&scope, SmallInt::fromWord(8));
   const uword digits[] = {0x8000000000000000, 0};
   Int num_min_word(&scope, newIntWithDigits(runtime_, digits));
-  Object result_min_word(&scope, runBuiltin(IntBuiltins::toBytes, num_min_word,
+  Object result_min_word(&scope, runBuiltin(METH(int, to_bytes), num_min_word,
                                             length_8, byteorder, signed_obj));
   const byte bytes3[] = {0, 0, 0, 0, 0, 0, 0, 0x80};
   EXPECT_TRUE(isBytesEqualsBytes(result_min_word, bytes3));
@@ -2801,7 +2797,7 @@ TEST_F(IntBuiltinsTest, ToBytesWithLargeBufferByteorderBigEndianReturnsBytes) {
   Int length(&scope, SmallInt::fromWord(10));
   Str byteorder(&scope, runtime_->newStrFromCStr("big"));
   Bool signed_obj(&scope, Bool::falseObj());
-  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
+  Object result(&scope, runBuiltin(METH(int, to_bytes), num, length, byteorder,
                                    signed_obj));
   const byte bytes[] = {0, 0, 0, 0, 0, 0, 0xca, 0xfe, 0xba, 0xbe};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
@@ -2816,7 +2812,7 @@ TEST_F(IntBuiltinsTest,
   Int length(&scope, SmallInt::fromWord(10));
   Str byteorder(&scope, runtime_->newStrFromCStr("little"));
   Bool signed_obj(&scope, Bool::falseObj());
-  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
+  Object result(&scope, runBuiltin(METH(int, to_bytes), num, length, byteorder,
                                    signed_obj));
   const byte bytes[] = {0xbe, 0xba, 0xfe, 0xca, 0, 0, 0, 0, 0, 0};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
@@ -2880,7 +2876,7 @@ TEST_F(IntBuiltinsTest, ToBytesWithZeroLengthBigEndianReturnsEmptyBytes) {
   Int length(&scope, SmallInt::fromWord(0));
   Str byteorder(&scope, runtime_->newStrFromCStr("big"));
   Bool signed_obj(&scope, Bool::falseObj());
-  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
+  Object result(&scope, runBuiltin(METH(int, to_bytes), num, length, byteorder,
                                    signed_obj));
   ASSERT_TRUE(isBytesEqualsBytes(result, View<byte>(nullptr, 0)));
 }
@@ -2892,7 +2888,7 @@ TEST_F(IntBuiltinsTest, ToBytesWithZeroLengthLittleEndianReturnsEmptyBytes) {
   Int length(&scope, SmallInt::fromWord(0));
   Str byteorder(&scope, runtime_->newStrFromCStr("little"));
   Bool signed_obj(&scope, Bool::falseObj());
-  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
+  Object result(&scope, runBuiltin(METH(int, to_bytes), num, length, byteorder,
                                    signed_obj));
   ASSERT_TRUE(isBytesEqualsBytes(result, View<byte>(nullptr, 0)));
 }
@@ -2904,7 +2900,7 @@ TEST_F(IntBuiltinsTest, ToBytesWithSignedFalseRaisesOverflowError) {
   Int length(&scope, SmallInt::fromWord(1));
   Str byteorder(&scope, runtime_->newStrFromCStr("little"));
   Bool signed_obj(&scope, Bool::falseObj());
-  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
+  Object result(&scope, runBuiltin(METH(int, to_bytes), num, length, byteorder,
                                    signed_obj));
   EXPECT_TRUE(raised(*result, LayoutId::kOverflowError));
 }
@@ -2917,7 +2913,7 @@ TEST_F(IntBuiltinsTest, ToBytesWithBigOverflowRaisesOverflowError) {
   Int length(&scope, SmallInt::fromWord(13));
   Str byteorder(&scope, runtime_->newStrFromCStr("little"));
   Bool signed_obj(&scope, Bool::falseObj());
-  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
+  Object result(&scope, runBuiltin(METH(int, to_bytes), num, length, byteorder,
                                    signed_obj));
   EXPECT_TRUE(raised(*result, LayoutId::kOverflowError));
 }
@@ -2954,7 +2950,7 @@ TEST_F(IntBuiltinsTest, ToBytesWithNonIntRaisesTypeError) {
   Int length(&scope, SmallInt::fromWord(10));
   Str byteorder(&scope, runtime_->newStrFromCStr("little"));
   Bool signed_obj(&scope, Bool::falseObj());
-  Object result(&scope, runBuiltin(IntBuiltins::toBytes, str, length, byteorder,
+  Object result(&scope, runBuiltin(METH(int, to_bytes), str, length, byteorder,
                                    signed_obj));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
@@ -2965,7 +2961,7 @@ TEST_F(IntBuiltinsTest, ToBytesWithInvalidLengthArgRaisesTypeError) {
   Str not_a_length(&scope, runtime_->newStrFromCStr("not a length"));
   Str byteorder(&scope, runtime_->newStrFromCStr("little"));
   Bool signed_obj(&scope, Bool::falseObj());
-  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, not_a_length,
+  Object result(&scope, runBuiltin(METH(int, to_bytes), num, not_a_length,
                                    byteorder, signed_obj));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
@@ -2976,7 +2972,7 @@ TEST_F(IntBuiltinsTest, ToBytesWithInvalidLengthArgRaisesValueError) {
   Int negative_length(&scope, SmallInt::fromWord(-3));
   Str byteorder(&scope, runtime_->newStrFromCStr("little"));
   Bool signed_obj(&scope, Bool::falseObj());
-  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, negative_length,
+  Object result(&scope, runBuiltin(METH(int, to_bytes), num, negative_length,
                                    byteorder, signed_obj));
   EXPECT_TRUE(raised(*result, LayoutId::kValueError));
 }
@@ -2988,7 +2984,7 @@ TEST_F(IntBuiltinsTest, ToBytesWithInvalidLengthArgRaisesOverflowError) {
   Int huge_length(&scope, newIntWithDigits(runtime_, digits));
   Str byteorder(&scope, runtime_->newStrFromCStr("little"));
   Bool signed_obj(&scope, Bool::falseObj());
-  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, huge_length,
+  Object result(&scope, runBuiltin(METH(int, to_bytes), num, huge_length,
                                    byteorder, signed_obj));
   EXPECT_TRUE(raised(*result, LayoutId::kOverflowError));
 }
@@ -3000,7 +2996,7 @@ TEST_F(IntBuiltinsTest, ToBytesWithNegativeNumberRaisesOverflowError) {
   Int length(&scope, SmallInt::fromWord(10));
   Str byteorder(&scope, runtime_->newStrFromCStr("little"));
   Bool signed_obj(&scope, Bool::falseObj());
-  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
+  Object result(&scope, runBuiltin(METH(int, to_bytes), num, length, byteorder,
                                    signed_obj));
   EXPECT_TRUE(raised(*result, LayoutId::kOverflowError));
 }
@@ -3012,7 +3008,7 @@ TEST_F(IntBuiltinsTest, ToBytesWithInvalidByteorderStringRaisesValueError) {
   Int length(&scope, SmallInt::fromWord(3));
   Str invalid_byteorder(&scope, runtime_->newStrFromCStr("hello"));
   Bool signed_obj(&scope, Bool::falseObj());
-  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length,
+  Object result(&scope, runBuiltin(METH(int, to_bytes), num, length,
                                    invalid_byteorder, signed_obj));
   EXPECT_TRUE(raised(*result, LayoutId::kValueError));
 }
@@ -3024,7 +3020,7 @@ TEST_F(IntBuiltinsTest, ToBytesWithInvalidByteorderTypeRaisesTypeError) {
   Int length(&scope, SmallInt::fromWord(3));
   Bool signed_obj(&scope, Bool::falseObj());
   Object result(&scope,
-                runBuiltin(IntBuiltins::toBytes, num, length, num, signed_obj));
+                runBuiltin(METH(int, to_bytes), num, length, num, signed_obj));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -3033,7 +3029,7 @@ TEST_F(BoolBuiltinsTest, NewFromNonZeroIntegerReturnsTrue) {
   Type type(&scope, runtime_->typeAt(LayoutId::kBool));
   Int num(&scope, SmallInt::fromWord(2));
 
-  Bool result(&scope, runBuiltin(BoolBuiltins::dunderNew, type, num));
+  Bool result(&scope, runBuiltin(METH(bool, __new__), type, num));
   EXPECT_TRUE(result.value());
 }
 
@@ -3042,7 +3038,7 @@ TEST_F(BoolBuiltinsTest, NewFromZerorReturnsFalse) {
   Type type(&scope, runtime_->typeAt(LayoutId::kBool));
   Int num(&scope, SmallInt::fromWord(0));
 
-  Bool result(&scope, runBuiltin(BoolBuiltins::dunderNew, type, num));
+  Bool result(&scope, runBuiltin(METH(bool, __new__), type, num));
   EXPECT_FALSE(result.value());
 }
 
@@ -3051,7 +3047,7 @@ TEST_F(BoolBuiltinsTest, NewFromTrueReturnsTrue) {
   Type type(&scope, runtime_->typeAt(LayoutId::kBool));
   Object true_obj(&scope, Bool::trueObj());
 
-  Bool result(&scope, runBuiltin(BoolBuiltins::dunderNew, type, true_obj));
+  Bool result(&scope, runBuiltin(METH(bool, __new__), type, true_obj));
   EXPECT_TRUE(result.value());
 }
 
@@ -3060,7 +3056,7 @@ TEST_F(BoolBuiltinsTest, NewFromFalseReturnsTrue) {
   Type type(&scope, runtime_->typeAt(LayoutId::kBool));
   Object false_obj(&scope, Bool::falseObj());
 
-  Bool result(&scope, runBuiltin(BoolBuiltins::dunderNew, type, false_obj));
+  Bool result(&scope, runBuiltin(METH(bool, __new__), type, false_obj));
   EXPECT_FALSE(result.value());
 }
 
@@ -3069,7 +3065,7 @@ TEST_F(BoolBuiltinsTest, NewFromNoneIsFalse) {
   Type type(&scope, runtime_->typeAt(LayoutId::kBool));
   Object none(&scope, NoneType::object());
 
-  Bool result(&scope, runBuiltin(BoolBuiltins::dunderNew, type, none));
+  Bool result(&scope, runBuiltin(METH(bool, __new__), type, none));
   EXPECT_FALSE(result.value());
 }
 
@@ -3093,12 +3089,12 @@ bar = Bar()
 
   {
     Type type(&scope, runtime_->typeAt(LayoutId::kBool));
-    Bool result(&scope, runBuiltin(BoolBuiltins::dunderNew, type, foo));
+    Bool result(&scope, runBuiltin(METH(bool, __new__), type, foo));
     EXPECT_TRUE(result.value());
   }
   {
     Type type(&scope, runtime_->typeAt(LayoutId::kBool));
-    Bool result(&scope, runBuiltin(BoolBuiltins::dunderNew, type, bar));
+    Bool result(&scope, runBuiltin(METH(bool, __new__), type, bar));
     EXPECT_FALSE(result.value());
   }
 }
@@ -3107,7 +3103,7 @@ TEST_F(IntBuiltinsTest, DunderTrueDivWithZeroLeftReturnsZero) {
   HandleScope scope(thread_);
   Int left(&scope, SmallInt::fromWord(0));
   Int right(&scope, SmallInt::fromWord(17));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderTrueDiv, left, right));
+  Object result(&scope, runBuiltin(METH(int, __truediv__), left, right));
   ASSERT_TRUE(result.isFloat());
   Float flt(&scope, *result);
   EXPECT_EQ(flt.value(), 0.0);
@@ -3117,18 +3113,18 @@ TEST_F(IntBuiltinsTest, DunderTrueDivWithBoolFalseRaisesZeroDivisionError) {
   HandleScope scope(thread_);
   Object numerator(&scope, SmallInt::fromWord(10));
   Object denominator(&scope, Bool::falseObj());
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(IntBuiltins::dunderTrueDiv, numerator, denominator),
-      LayoutId::kZeroDivisionError, "division by zero"));
+  EXPECT_TRUE(
+      raisedWithStr(runBuiltin(METH(int, __truediv__), numerator, denominator),
+                    LayoutId::kZeroDivisionError, "division by zero"));
 }
 
 TEST_F(IntBuiltinsTest, DunderTrueDivWithIntZeroRaisesZeroDivisionError) {
   HandleScope scope(thread_);
   Object numerator(&scope, SmallInt::fromWord(10));
   Object denominator(&scope, SmallInt::fromWord(0));
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(IntBuiltins::dunderTrueDiv, numerator, denominator),
-      LayoutId::kZeroDivisionError, "division by zero"));
+  EXPECT_TRUE(
+      raisedWithStr(runBuiltin(METH(int, __truediv__), numerator, denominator),
+                    LayoutId::kZeroDivisionError, "division by zero"));
 }
 
 TEST_F(IntBuiltinsTest, DunderTrueDivWithNonIntLeftRaisesTypeError) {
@@ -3141,7 +3137,7 @@ TEST_F(IntBuiltinsTest, DunderTrueDivWithFloatRightReturnsNotImplemented) {
   HandleScope scope(thread_);
   Object left(&scope, SmallInt::fromWord(100));
   Object right(&scope, runtime_->newFloat(1.5));
-  Object result(&scope, runBuiltin(IntBuiltins::dunderTrueDiv, left, right));
+  Object result(&scope, runBuiltin(METH(int, __truediv__), left, right));
   EXPECT_EQ(result, NotImplementedType::object());
 }
 
@@ -3150,12 +3146,12 @@ TEST_F(IntBuiltinsTest, DunderTrueDivWithSmallIntsReturnsFloat) {
 
   Object num1(&scope, SmallInt::fromWord(6));
   Object num2(&scope, SmallInt::fromWord(3));
-  Float result(&scope, runBuiltin(IntBuiltins::dunderTrueDiv, num1, num2));
+  Float result(&scope, runBuiltin(METH(int, __truediv__), num1, num2));
   EXPECT_NEAR(result.value(), 2.0, DBL_EPSILON);
 
   num1 = SmallInt::fromWord(7);
   num2 = SmallInt::fromWord(3);
-  result = runBuiltin(IntBuiltins::dunderTrueDiv, num1, num2);
+  result = runBuiltin(METH(int, __truediv__), num1, num2);
   EXPECT_NEAR(result.value(), 2.3333333333333335, DBL_EPSILON);
 }
 

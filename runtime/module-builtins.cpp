@@ -299,15 +299,15 @@ const BuiltinAttribute ModuleBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod ModuleBuiltins::kBuiltinMethods[] = {
-    {ID(__getattribute__), dunderGetattribute},
-    {ID(__init__), dunderInit},
-    {ID(__new__), dunderNew},
-    {ID(__setattr__), dunderSetattr},
+    {ID(__getattribute__), METH(module, __getattribute__)},
+    {ID(__init__), METH(module, __init__)},
+    {ID(__new__), METH(module, __new__)},
+    {ID(__setattr__), METH(module, __setattr__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject ModuleBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
-                                             word nargs) {
+RawObject METH(module, __getattribute__)(Thread* thread, Frame* frame,
+                                         word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -326,7 +326,7 @@ RawObject ModuleBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject ModuleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(module, __new__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object cls_obj(&scope, args.get(0));
@@ -356,7 +356,7 @@ RawObject ModuleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject ModuleBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(module, __init__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -374,8 +374,7 @@ RawObject ModuleBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   return moduleInit(thread, self, name);
 }
 
-RawObject ModuleBuiltins::dunderSetattr(Thread* thread, Frame* frame,
-                                        word nargs) {
+RawObject METH(module, __setattr__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));

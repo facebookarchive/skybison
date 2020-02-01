@@ -524,12 +524,12 @@ const BuiltinAttribute BaseExceptionBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod BaseExceptionBuiltins::kBuiltinMethods[] = {
-    {ID(__init__), dunderInit},
+    {ID(__init__), METH(BaseException, __init__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject METH(BaseException, __init__)(Thread* thread, Frame* frame,
+                                        word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -552,12 +552,12 @@ const BuiltinAttribute StopIterationBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod StopIterationBuiltins::kBuiltinMethods[] = {
-    {ID(__init__), dunderInit},
+    {ID(__init__), METH(StopIteration, __init__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject METH(StopIteration, __init__)(Thread* thread, Frame* frame,
+                                        word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -582,7 +582,7 @@ const BuiltinAttribute SystemExitBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod SystemExitBuiltins::kBuiltinMethods[] = {
-    {ID(__init__), dunderInit},
+    {ID(__init__), METH(SystemExit, __init__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -596,8 +596,7 @@ const BuiltinAttribute SyntaxErrorBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
-RawObject SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
-                                         word nargs) {
+RawObject METH(SystemExit, __init__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
@@ -605,7 +604,7 @@ RawObject SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
     return thread->raiseRequiresType(self_obj, ID(SystemExit));
   }
   SystemExit self(&scope, *self_obj);
-  RawObject result = BaseExceptionBuiltins::dunderInit(thread, frame, nargs);
+  RawObject result = METH(BaseException, __init__)(thread, frame, nargs);
   if (result.isError()) {
     return result;
   }

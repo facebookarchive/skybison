@@ -15,11 +15,11 @@ const BuiltinAttribute SliceBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod SliceBuiltins::kBuiltinMethods[] = {
-    {ID(__new__), dunderNew},
+    {ID(__new__), METH(slice, __new__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject SliceBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(slice, __new__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object type_obj(&scope, args.get(0));

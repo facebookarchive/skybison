@@ -164,22 +164,22 @@ const BuiltinAttribute ListBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod ListBuiltins::kBuiltinMethods[] = {
-    {ID(__new__), dunderNew},
-    {ID(__add__), dunderAdd},
-    {ID(__contains__), dunderContains},
-    {ID(__imul__), dunderImul},
-    {ID(__iter__), dunderIter},
-    {ID(__len__), dunderLen},
-    {ID(__mul__), dunderMul},
-    {ID(append), append},
-    {ID(clear), clear},
-    {ID(insert), insert},
-    {ID(pop), pop},
-    {ID(remove), remove},
+    {ID(__new__), METH(list, __new__)},
+    {ID(__add__), METH(list, __add__)},
+    {ID(__contains__), METH(list, __contains__)},
+    {ID(__imul__), METH(list, __imul__)},
+    {ID(__iter__), METH(list, __iter__)},
+    {ID(__len__), METH(list, __len__)},
+    {ID(__mul__), METH(list, __mul__)},
+    {ID(append), METH(list, append)},
+    {ID(clear), METH(list, clear)},
+    {ID(insert), METH(list, insert)},
+    {ID(pop), METH(list, pop)},
+    {ID(remove), METH(list, remove)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject ListBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(list, __new__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object type_obj(&scope, args.get(0));
@@ -198,7 +198,7 @@ RawObject ListBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(list, __add__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -223,8 +223,7 @@ RawObject ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   return *new_list;
 }
 
-RawObject ListBuiltins::dunderContains(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject METH(list, __contains__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -241,7 +240,7 @@ RawObject ListBuiltins::dunderContains(Thread* thread, Frame* frame,
   return Bool::falseObj();
 }
 
-RawObject ListBuiltins::clear(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(list, clear)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -253,7 +252,7 @@ RawObject ListBuiltins::clear(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject ListBuiltins::append(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(list, append)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -266,7 +265,7 @@ RawObject ListBuiltins::append(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject ListBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(list, __len__)(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -277,7 +276,7 @@ RawObject ListBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   return SmallInt::fromWord(list.numItems());
 }
 
-RawObject ListBuiltins::insert(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(list, insert)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -299,7 +298,7 @@ RawObject ListBuiltins::insert(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject ListBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(list, __mul__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   RawObject other = args.get(1);
   HandleScope scope(thread);
@@ -318,7 +317,7 @@ RawObject ListBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
                               "can't multiply list by non-int");
 }
 
-RawObject ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(list, pop)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   if (!args.get(1).isUnbound() && !args.get(1).isSmallInt()) {
     return thread->raiseWithFmt(
@@ -349,7 +348,7 @@ RawObject ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
   return listPop(thread, list, index);
 }
 
-RawObject ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(list, remove)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -381,7 +380,7 @@ RawObject ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
                               "list.remove(x) x not in list");
 }
 
-RawObject ListBuiltins::dunderImul(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(list, __imul__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   RawObject other = args.get(1);
   HandleScope scope(thread);
@@ -425,7 +424,7 @@ RawObject ListBuiltins::dunderImul(Thread* thread, Frame* frame, word nargs) {
   return *list;
 }
 
-RawObject ListBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(list, __iter__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -436,14 +435,14 @@ RawObject ListBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
 }
 
 const BuiltinMethod ListIteratorBuiltins::kBuiltinMethods[] = {
-    {ID(__iter__), dunderIter},
-    {ID(__length_hint__), dunderLengthHint},
-    {ID(__next__), dunderNext},
+    {ID(__iter__), METH(list_iterator, __iter__)},
+    {ID(__length_hint__), METH(list_iterator, __length_hint__)},
+    {ID(__next__), METH(list_iterator, __next__)},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject ListIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject METH(list_iterator, __iter__)(Thread* thread, Frame* frame,
+                                        word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -453,8 +452,8 @@ RawObject ListIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   return *self;
 }
 
-RawObject ListIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject METH(list_iterator, __next__)(Thread* thread, Frame* frame,
+                                        word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -469,8 +468,8 @@ RawObject ListIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   return *value;
 }
 
-RawObject ListIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject METH(list_iterator, __length_hint__)(Thread* thread, Frame* frame,
+                                               word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));

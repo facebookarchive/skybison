@@ -17,7 +17,7 @@ TEST_F(ComplexBuiltinsTest, AddWithIntReturnsComplex) {
   HandleScope scope(thread_);
   Complex c(&scope, runtime_->newComplex(1, 2));
   Int i(&scope, runtime_->newInt(10));
-  Object result_obj(&scope, runBuiltin(ComplexBuiltins::dunderAdd, c, i));
+  Object result_obj(&scope, runBuiltin(METH(complex, __add__), c, i));
   ASSERT_FALSE(result_obj.isError());
   Complex result(&scope, *result_obj);
   EXPECT_EQ(result.real(), 11);
