@@ -8,28 +8,13 @@ namespace py {
 // executing in a resumed GeneratorBase.
 RawGeneratorBase generatorFromStackFrame(Frame* frame);
 
-template <typename T, SymbolId name, LayoutId type>
-class GeneratorBaseBuiltins : public Builtins<T, name, type> {
- public:
-  using Base = GeneratorBaseBuiltins;
-
-  static RawObject send(Thread* thread, Frame* frame, word nargs);
-  static RawObject genThrow(Thread* thread, Frame* frame, word nargs);
-
-  static_assert(type == LayoutId::kGenerator || type == LayoutId::kCoroutine ||
-                    type == LayoutId::kAsyncGenerator,
-                "unsupported type");
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(GeneratorBaseBuiltins);
-};
-
 class GeneratorBuiltins
-    : public GeneratorBaseBuiltins<GeneratorBuiltins, ID(generator),
-                                   LayoutId::kGenerator> {
+    : public Builtins<GeneratorBuiltins, ID(generator), LayoutId::kGenerator> {
  public:
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
+  static RawObject send(Thread* thread, Frame* frame, word nargs);
+  static RawObject genThrow(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];
   static const BuiltinAttribute kAttributes[];
@@ -39,9 +24,10 @@ class GeneratorBuiltins
 };
 
 class CoroutineBuiltins
-    : public GeneratorBaseBuiltins<CoroutineBuiltins, ID(coroutine),
-                                   LayoutId::kCoroutine> {
+    : public Builtins<CoroutineBuiltins, ID(coroutine), LayoutId::kCoroutine> {
  public:
+  static RawObject send(Thread* thread, Frame* frame, word nargs);
+
   static const BuiltinMethod kBuiltinMethods[];
   static const BuiltinAttribute kAttributes[];
 
@@ -50,8 +36,8 @@ class CoroutineBuiltins
 };
 
 class AsyncGeneratorBuiltins
-    : public GeneratorBaseBuiltins<AsyncGeneratorBuiltins, ID(async_generator),
-                                   LayoutId::kAsyncGenerator> {
+    : public Builtins<AsyncGeneratorBuiltins, ID(async_generator),
+                      LayoutId::kAsyncGenerator> {
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(AsyncGeneratorBuiltins);
 };
