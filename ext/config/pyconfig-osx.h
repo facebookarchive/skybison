@@ -732,9 +732,6 @@
 /* Define to 1 if you have the <pty.h> header file. */
 /* #undef HAVE_PTY_H */
 
-/* Define to 1 if you have the `putenv' function. */
-/* #undef HAVE_PUTENV */
-
 /* Define to 1 if you have the `pwrite' function. */
 #define HAVE_PWRITE 1
 
@@ -1168,9 +1165,6 @@
 
 /* Define to 1 if you have the `unlinkat' function. */
 #define HAVE_UNLINKAT 1
-
-/* Define to 1 if you have the `unsetenv' function. */
-#define HAVE_UNSETENV 1
 
 /* Define if you have a useable wchar_t type defined in wchar.h; useable means
    wchar_t must be an unsigned type with at least 16 bits. (see
