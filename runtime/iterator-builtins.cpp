@@ -2,8 +2,10 @@
 
 namespace py {
 const BuiltinAttribute SeqIteratorBuiltins::kAttributes[] = {
-    {SymbolId::kInvalid, RawSeqIterator::kIterableOffset},
-    {SymbolId::kInvalid, RawSeqIterator::kIndexOffset},
+    {ID(_iterator__iterable), RawSeqIterator::kIterableOffset,
+     AttributeFlags::kHidden},
+    {ID(_iterator__index), RawSeqIterator::kIndexOffset,
+     AttributeFlags::kHidden},
     {SymbolId::kSentinelId, -1},
 };
 }  // namespace py

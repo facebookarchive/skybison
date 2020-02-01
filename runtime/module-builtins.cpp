@@ -290,10 +290,11 @@ RawObject moduleInit(Thread* thread, const Module& module, const Object& name) {
 }
 
 const BuiltinAttribute ModuleBuiltins::kAttributes[] = {
-    {SymbolId::kInvalid, RawModule::kDefOffset},
-    {SymbolId::kInvalid, RawModule::kDictOffset},
-    {SymbolId::kInvalid, RawModule::kModuleProxyOffset},
-    {SymbolId::kInvalid, RawModule::kNameOffset},
+    {ID(_module__def), RawModule::kDefOffset, AttributeFlags::kHidden},
+    {ID(_module__dict), RawModule::kDictOffset, AttributeFlags::kHidden},
+    {ID(_module__proxy), RawModule::kModuleProxyOffset,
+     AttributeFlags::kHidden},
+    {ID(_module__name), RawModule::kNameOffset, AttributeFlags::kHidden},
     {SymbolId::kSentinelId, -1},
 };
 

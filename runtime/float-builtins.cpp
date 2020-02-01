@@ -60,7 +60,8 @@ const BuiltinMethod FloatBuiltins::kBuiltinMethods[] = {
 // clang-format on
 
 const BuiltinAttribute FloatBuiltins::kAttributes[] = {
-    {SymbolId::kInvalid, UserFloatBase::kValueOffset},
+    {ID(_UserFloat__value), UserFloatBase::kValueOffset,
+     AttributeFlags::kHidden},
     {SymbolId::kSentinelId, 0},
 };
 

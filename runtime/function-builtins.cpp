@@ -132,7 +132,7 @@ const BuiltinAttribute FunctionBuiltins::kAttributes[] = {
     {ID(__module_object__), RawFunction::kModuleObjectOffset},
     {ID(__name__), RawFunction::kNameOffset},
     {ID(__qualname__), RawFunction::kQualnameOffset},
-    {SymbolId::kInvalid, RawFunction::kDictOffset},
+    {ID(_function__dict), RawFunction::kDictOffset, AttributeFlags::kHidden},
     {SymbolId::kSentinelId, -1},
 };
 

@@ -35,8 +35,10 @@
 #include "int-builtins.h"
 #include "interpreter.h"
 #include "iterator-builtins.h"
+#include "layout-builtins.h"
 #include "layout.h"
 #include "list-builtins.h"
+#include "mappingproxy-builtins.h"
 #include "memoryview-builtins.h"
 #include "module-builtins.h"
 #include "module-proxy-builtins.h"
@@ -54,11 +56,13 @@
 #include "super-builtins.h"
 #include "sys-module.h"
 #include "thread.h"
+#include "traceback-builtins.h"
 #include "tuple-builtins.h"
 #include "type-builtins.h"
 #include "under-builtins-module.h"
 #include "under-io-module.h"
 #include "utils.h"
+#include "valuecell-builtins.h"
 #include "visitor.h"
 
 namespace py {
@@ -1610,7 +1614,7 @@ void Runtime::initializeHeapTypes() {
                       LayoutId::kObject);
   addEmptyBuiltinType(ID(_mutabletuple), LayoutId::kMutableTuple,
                       LayoutId::kObject);
-  addEmptyBuiltinType(ID(_weaklink), LayoutId::kWeakLink, LayoutId::kObject);
+  WeakLinkBuiltins::initialize(this);
   StrArrayBuiltins::initialize(this);
 
   // Abstract classes.
@@ -1644,7 +1648,7 @@ void Runtime::initializeHeapTypes() {
   FrozenSetBuiltins::initialize(this);
   FunctionBuiltins::initialize(this);
   GeneratorBuiltins::initialize(this);
-  addEmptyBuiltinType(ID(layout), LayoutId::kLayout, LayoutId::kObject);
+  LayoutBuiltins::initialize(this);
   LargeBytesBuiltins::initialize(this);
   LargeIntBuiltins::initialize(this);
   LargeStrBuiltins::initialize(this);
@@ -1652,8 +1656,7 @@ void Runtime::initializeHeapTypes() {
   ListIteratorBuiltins::initialize(this);
   LongRangeIteratorBuiltins::initialize(this);
   BoundMethodBuiltins::initialize(this);
-  addEmptyBuiltinType(ID(mappingproxy), LayoutId::kMappingProxy,
-                      LayoutId::kObject);
+  MappingProxyBuiltins::initialize(this);
   MemoryViewBuiltins::initialize(this);
   ModuleBuiltins::initialize(this);
   ModuleProxyBuiltins::initialize(this);
@@ -1672,10 +1675,10 @@ void Runtime::initializeHeapTypes() {
   StrIteratorBuiltins::initialize(this);
   StaticMethodBuiltins::initialize(this);
   SuperBuiltins::initialize(this);
-  addEmptyBuiltinType(ID(traceback), LayoutId::kTraceback, LayoutId::kObject);
+  TracebackBuiltins::initialize(this);
   TypeBuiltins::initialize(this);
   TypeProxyBuiltins::initialize(this);
-  addEmptyBuiltinType(ID(valuecell), LayoutId::kValueCell, LayoutId::kObject);
+  ValueCellBuiltins::initialize(this);
 
   // IO types
   UnderIOBaseBuiltins::initialize(this);

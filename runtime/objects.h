@@ -2780,8 +2780,8 @@ class RawList : public RawInstance {
 
   // Layout.
   static const int kItemsOffset = RawHeapObject::kSize;
-  static const int kAllocatedOffset = kItemsOffset + kPointerSize;
-  static const int kSize = kAllocatedOffset + kPointerSize;
+  static const int kNumItemsOffset = kItemsOffset + kPointerSize;
+  static const int kSize = kNumItemsOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(List);
 };
@@ -6023,11 +6023,11 @@ inline word RawList::capacity() const {
 }
 
 inline word RawList::numItems() const {
-  return RawSmallInt::cast(instanceVariableAt(kAllocatedOffset)).value();
+  return RawSmallInt::cast(instanceVariableAt(kNumItemsOffset)).value();
 }
 
 inline void RawList::setNumItems(word num_items) const {
-  instanceVariableAtPut(kAllocatedOffset, RawSmallInt::fromWord(num_items));
+  instanceVariableAtPut(kNumItemsOffset, RawSmallInt::fromWord(num_items));
 }
 
 inline void RawList::clearFrom(word idx) const {

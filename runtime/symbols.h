@@ -102,6 +102,11 @@ class Runtime;
   V(_StringIO_closed_guard)                                                    \
   V(_TextIOBase)                                                               \
   V(_Unbound)                                                                  \
+  V(_UserBytes__value)                                                         \
+  V(_UserFloat__value)                                                         \
+  V(_UserInt__value)                                                           \
+  V(_UserStr__value)                                                           \
+  V(_UserTuple__value)                                                         \
   V(_VersionInfo)                                                              \
   V(__abs__)                                                                   \
   V(__abstractmethods__)                                                       \
@@ -232,6 +237,8 @@ class Runtime;
   V(__traceback__)                                                             \
   V(__truediv__)                                                               \
   V(__trunc__)                                                                 \
+  V(__weaklink__next)                                                          \
+  V(__weaklink__prev)                                                          \
   V(__xor__)                                                                   \
   V(_address)                                                                  \
   V(_appending)                                                                \
@@ -252,6 +259,8 @@ class Runtime;
   V(_buffered_reader_read)                                                     \
   V(_buffered_reader_readline)                                                 \
   V(_builtins)                                                                 \
+  V(_bytearray__bytes)                                                         \
+  V(_bytearray__num_items)                                                     \
   V(_bytearray_append)                                                         \
   V(_bytearray_check)                                                          \
   V(_bytearray_clear)                                                          \
@@ -315,6 +324,9 @@ class Runtime;
   V(_decoded_chars_used)                                                       \
   V(_decoder)                                                                  \
   V(_descrclassmethod)                                                         \
+  V(_dict__data)                                                               \
+  V(_dict__num_items)                                                          \
+  V(_dict__num_usable_items)                                                   \
   V(_dict_bucket_insert)                                                       \
   V(_dict_bucket_key)                                                          \
   V(_dict_bucket_set_value)                                                    \
@@ -353,8 +365,11 @@ class Runtime;
   V(_float_signbit)                                                            \
   V(_frozen_importlib)                                                         \
   V(_frozen_importlib_external)                                                \
+  V(_frozenset__data)                                                          \
+  V(_frozenset__num_items)                                                     \
   V(_frozenset_check)                                                          \
   V(_frozenset_guard)                                                          \
+  V(_function__dict)                                                           \
   V(_function_globals)                                                         \
   V(_function_guard)                                                           \
   V(_gc)                                                                       \
@@ -394,9 +409,19 @@ class Runtime;
   V(_int_new_from_str)                                                         \
   V(_io)                                                                       \
   V(_iter)                                                                     \
+  V(_iterator__index)                                                          \
+  V(_iterator__iterable)                                                       \
   V(_latin_1_decode)                                                           \
   V(_latin_1_encode)                                                           \
+  V(_layout__described_type)                                                   \
+  V(_layout__in_object_attributes)                                             \
+  V(_layout__overflow_attributes)                                              \
+  V(_layout__additions)                                                        \
+  V(_layout__deletions)                                                        \
+  V(_layout__num_in_object_attributes)                                         \
   V(_line_buffering)                                                           \
+  V(_list__items)                                                              \
+  V(_list__num_items)                                                          \
   V(_list_check)                                                               \
   V(_list_check_exact)                                                         \
   V(_list_delitem)                                                             \
@@ -413,6 +438,7 @@ class Runtime;
   V(_list_swap)                                                                \
   V(_lookup_text)                                                              \
   V(_lt)                                                                       \
+  V(_mappingproxy__mapping)                                                    \
   V(_mappingproxy_guard)                                                       \
   V(_mappingproxy_mapping)                                                     \
   V(_mappingproxy_set_mapping)                                                 \
@@ -422,6 +448,10 @@ class Runtime;
   V(_memoryview_nbytes)                                                        \
   V(_memoryview_setitem)                                                       \
   V(_memoryview_setslice)                                                      \
+  V(_module__def)                                                              \
+  V(_module__dict)                                                             \
+  V(_module__proxy)                                                            \
+  V(_module__name)                                                             \
   V(_module_dir)                                                               \
   V(_module_proxy)                                                             \
   V(_module_proxy_check)                                                       \
@@ -482,6 +512,9 @@ class Runtime;
   V(_readnl)                                                                   \
   V(_readtranslate)                                                            \
   V(_readuniversal)                                                            \
+  V(_ref__referent)                                                            \
+  V(_ref__callback)                                                            \
+  V(_ref__link)                                                                \
   V(_repr_enter)                                                               \
   V(_repr_leave)                                                               \
   V(_run_module_as_main)                                                       \
@@ -491,6 +524,8 @@ class Runtime;
   V(_seq_iterable)                                                             \
   V(_seq_set_index)                                                            \
   V(_seq_set_iterable)                                                         \
+  V(_set__data)                                                                \
+  V(_set__num_items)                                                           \
   V(_set_check)                                                                \
   V(_set_guard)                                                                \
   V(_set_len)                                                                  \
@@ -555,6 +590,10 @@ class Runtime;
   V(_telling)                                                                  \
   V(_thread)                                                                   \
   V(_traceback)                                                                \
+  V(_traceback__next)                                                          \
+  V(_traceback__frame)                                                         \
+  V(_traceback__lasti)                                                         \
+  V(_traceback__lineno)                                                        \
   V(_translate)                                                                \
   V(_tuple_check)                                                              \
   V(_tuple_check_exact)                                                        \
@@ -565,6 +604,14 @@ class Runtime;
   V(_tuple_new)                                                                \
   V(_type)                                                                     \
   V(_typecode)                                                                 \
+  V(_type__abstract_methods)                                                   \
+  V(_type__attributes)                                                         \
+  V(_type__attributes_remaining)                                               \
+  V(_type__bases)                                                              \
+  V(_type__instance_layout)                                                    \
+  V(_type__proxy)                                                              \
+  V(_type__slots)                                                              \
+  V(_type__subclasses)                                                         \
   V(_type_abstractmethods_del)                                                 \
   V(_type_abstractmethods_get)                                                 \
   V(_type_abstractmethods_set)                                                 \
@@ -595,6 +642,8 @@ class Runtime;
   V(_utf_8_decode)                                                             \
   V(_utf_8_encode)                                                             \
   V(_valgrind)                                                                 \
+  V(_valuecell__value)                                                         \
+  V(_valuecell__dependency_link)                                               \
   V(_warn)                                                                     \
   V(_warnings)                                                                 \
   V(_weaklink)                                                                 \

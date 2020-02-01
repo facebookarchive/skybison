@@ -279,8 +279,12 @@ add_library(
   runtime/iterator-builtins.cpp
   runtime/iterator-builtins.h
   runtime/layout.h
+  runtime/layout-builtins.cpp
+  runtime/layout-builtins.h
   runtime/list-builtins.cpp
   runtime/list-builtins.h
+  runtime/mappingproxy-builtins.cpp
+  runtime/mappingproxy-builtins.h
   runtime/marshal-module.cpp
   runtime/marshal-module.h
   runtime/marshal.cpp
@@ -329,6 +333,8 @@ add_library(
   runtime/sys-module.h
   runtime/thread.cpp
   runtime/thread.h
+  runtime/traceback-builtins.cpp
+  runtime/traceback-builtins.h
   runtime/trampolines.cpp
   runtime/trampolines.h
   runtime/tuple-builtins.cpp
@@ -355,6 +361,8 @@ add_library(
   runtime/unicode.h
   runtime/utils.cpp
   runtime/utils.h
+  runtime/valuecell-builtins.cpp
+  runtime/valuecell-builtins.h
   runtime/vector.h
   runtime/version.cpp
   runtime/version.h

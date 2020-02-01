@@ -158,8 +158,8 @@ RawObject listIteratorNext(Thread* thread, const ListIterator& iter) {
 }
 
 const BuiltinAttribute ListBuiltins::kAttributes[] = {
-    {SymbolId::kInvalid, RawList::kItemsOffset},
-    {SymbolId::kInvalid, RawList::kAllocatedOffset},
+    {ID(_list__items), RawList::kItemsOffset, AttributeFlags::kHidden},
+    {ID(_list__num_items), RawList::kNumItemsOffset, AttributeFlags::kHidden},
     {SymbolId::kSentinelId, -1},
 };
 

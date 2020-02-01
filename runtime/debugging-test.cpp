@@ -185,7 +185,7 @@ TEST_F(DebuggingTests, DumpExtendedInstanceWithOverflowDict) {
   (in-object) "__module_object__" = <module "__main__">
   (in-object) "__name__" = "baz"
   (in-object) "__qualname__" = "footype.baz"
-  (in-object) None = {"funcattr0": 4}
+  (in-object) "_function__dict" = {"funcattr0": 4}
   overflow dict: {"funcattr0": 4}
 )";
   EXPECT_EQ(ss.str(), expected.str());
@@ -347,7 +347,7 @@ class C(A, B):
            << R"(:
     described type: <type "C">
     num in-object attributes: 3
-      None @ 0
+      "_UserBytes__value" @ 0
     overflow tuple:
 )";
   EXPECT_EQ(ss.str(), expected.str());

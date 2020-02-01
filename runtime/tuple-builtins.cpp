@@ -64,7 +64,8 @@ RawObject tupleHash(Thread* thread, const Tuple& tuple) {
 }
 
 const BuiltinAttribute TupleBuiltins::kAttributes[] = {
-    {SymbolId::kInvalid, UserTupleBase::kValueOffset},
+    {ID(_UserTuple__value), UserTupleBase::kValueOffset,
+     AttributeFlags::kHidden},
     {SymbolId::kSentinelId, -1},
 };
 

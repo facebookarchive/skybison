@@ -22,6 +22,10 @@ enum AttributeFlags {
 
   // Attribute is read-only for managed code.
   kReadOnly = 1 << 3,
+
+  // Attribute is hidden from managed code but visible to tooling.
+  // TODO(T61532692): Add infrastructure to actually hide the attribute
+  kHidden = kReadOnly,
 };
 
 // AttributeInfo packs attribute metadata into a SmallInt.

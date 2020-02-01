@@ -8,6 +8,13 @@
 
 namespace py {
 
+const BuiltinAttribute RefBuiltins::kAttributes[] = {
+    {ID(_ref__referent), WeakRef::kReferentOffset, AttributeFlags::kHidden},
+    {ID(_ref__callback), WeakRef::kCallbackOffset, AttributeFlags::kHidden},
+    {ID(_ref__link), WeakRef::kLinkOffset, AttributeFlags::kHidden},
+    {SymbolId::kSentinelId, -1},
+};
+
 const BuiltinMethod RefBuiltins::kBuiltinMethods[] = {
     {ID(__new__), dunderNew},
     {ID(__call__), dunderCall},
@@ -31,5 +38,11 @@ RawObject RefBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Object callback(&scope, args.get(2));
   return thread->runtime()->newWeakRef(thread, referent, callback);
 }
+
+const BuiltinAttribute WeakLinkBuiltins::kAttributes[] = {
+    {ID(__weaklink__next), WeakLink::kNextOffset, AttributeFlags::kHidden},
+    {ID(__weaklink__prev), WeakLink::kPrevOffset, AttributeFlags::kHidden},
+    {SymbolId::kSentinelId, -1},
+};
 
 }  // namespace py

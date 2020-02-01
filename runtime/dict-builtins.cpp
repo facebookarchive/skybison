@@ -505,9 +505,10 @@ RawObject dictValueIteratorNext(Thread* thread, const DictValueIterator& iter) {
 }
 
 const BuiltinAttribute DictBuiltins::kAttributes[] = {
-    {SymbolId::kInvalid, RawDict::kNumItemsOffset},
-    {SymbolId::kInvalid, RawDict::kDataOffset},
-    {SymbolId::kInvalid, RawDict::kNumUsableItemsOffset},
+    {ID(_dict__num_items), RawDict::kNumItemsOffset, AttributeFlags::kHidden},
+    {ID(_dict__data), RawDict::kDataOffset, AttributeFlags::kHidden},
+    {ID(_dict__num_usable_items), RawDict::kNumUsableItemsOffset,
+     AttributeFlags::kHidden},
     {SymbolId::kSentinelId, -1},
 };
 
