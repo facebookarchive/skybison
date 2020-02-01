@@ -4272,7 +4272,7 @@ exit:
 
 #endif /* defined(MS_WINDOWS) */
 
-#if ((defined(HAVE_SETENV) || defined(HAVE_PUTENV)) && !defined(MS_WINDOWS))
+#if !defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_putenv__doc__,
 "putenv($module, name, value, /)\n"
@@ -4308,7 +4308,7 @@ exit:
     return return_value;
 }
 
-#endif /* ((defined(HAVE_SETENV) || defined(HAVE_PUTENV)) && !defined(MS_WINDOWS)) */
+#endif /* !defined(MS_WINDOWS) */
 
 #if defined(MS_WINDOWS)
 
@@ -4341,7 +4341,7 @@ exit:
 
 #endif /* defined(MS_WINDOWS) */
 
-#if (defined(HAVE_UNSETENV) && !defined(MS_WINDOWS))
+#if !defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_unsetenv__doc__,
 "unsetenv($module, name, /)\n"
@@ -4373,7 +4373,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_UNSETENV) && !defined(MS_WINDOWS)) */
+#endif /* !defined(MS_WINDOWS) */
 
 PyDoc_STRVAR(os_strerror__doc__,
 "strerror($module, code, /)\n"
@@ -6147,4 +6147,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=826f135706ac73cd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d0a291c4db52bb84 input=a9049054013a1b77]*/
