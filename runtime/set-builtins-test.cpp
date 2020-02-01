@@ -823,51 +823,57 @@ TEST_F(SetBuiltinsTest, DunderLtWithNonSetSecondArgReturnsNotImplemented) {
 }
 
 TEST_F(SetBuiltinsTest, DunderEqWithNonSetFirstArgRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(runtime_, R"(
 set.__eq__(None, set())
 )"),
-                            LayoutId::kTypeError,
-                            "__eq__() requires a 'set' or 'frozenset' object"));
+                    LayoutId::kTypeError,
+                    "'__eq__' requires a 'set' object but got 'NoneType'"));
 }
 
 TEST_F(SetBuiltinsTest, DunderNeWithNonSetFirstArgRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(runtime_, R"(
 set.__ne__(None, set())
 )"),
-                            LayoutId::kTypeError,
-                            "__ne__() requires a 'set' or 'frozenset' object"));
+                    LayoutId::kTypeError,
+                    "'__ne__' requires a 'set' object but got 'NoneType'"));
 }
 
 TEST_F(SetBuiltinsTest, DunderGeWithNonSetFirstArgRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(runtime_, R"(
 set.__ge__(None, set())
 )"),
-                            LayoutId::kTypeError,
-                            "__ge__() requires a 'set' or 'frozenset' object"));
+                    LayoutId::kTypeError,
+                    "'__ge__' requires a 'set' object but got 'NoneType'"));
 }
 
 TEST_F(SetBuiltinsTest, DunderGtWithNonSetFirstArgRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(runtime_, R"(
 set.__gt__(None, set())
 )"),
-                            LayoutId::kTypeError,
-                            "__gt__() requires a 'set' or 'frozenset' object"));
+                    LayoutId::kTypeError,
+                    "'__gt__' requires a 'set' object but got 'NoneType'"));
 }
 
 TEST_F(SetBuiltinsTest, DunderLeWithNonSetFirstArgRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(runtime_, R"(
 set.__le__(None, set())
 )"),
-                            LayoutId::kTypeError,
-                            "__le__() requires a 'set' or 'frozenset' object"));
+                    LayoutId::kTypeError,
+                    "'__le__' requires a 'set' object but got 'NoneType'"));
 }
 
 TEST_F(SetBuiltinsTest, DunderLtWithNonSetFirstArgRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(runtime_, R"(
 set.__lt__(None, set())
 )"),
-                            LayoutId::kTypeError,
-                            "__lt__() requires a 'set' or 'frozenset' object"));
+                    LayoutId::kTypeError,
+                    "'__lt__' requires a 'set' object but got 'NoneType'"));
 }
 
 TEST_F(SetBuiltinsTest, DunderInitWithNonSetFirstArgRaisesTypeError) {

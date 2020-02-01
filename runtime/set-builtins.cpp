@@ -326,28 +326,25 @@ RawSmallInt frozensetHash(Thread* thread, const Object& frozenset) {
   return SmallInt::fromWordTruncated(result);
 }
 
-RawObject SetBaseBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
+static RawObject dunderLenImpl(Thread* thread, Frame* frame, word nargs,
+                               SymbolId id) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfSetBase(*self)) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "'__len__' requires a 'set' or 'frozenset' object");
+    return thread->raiseRequiresType(self, id);
   }
   SetBase set(&scope, *self);
   return SmallInt::fromWord(set.numItems());
 }
 
-RawObject SetBaseBuiltins::dunderContains(Thread* thread, Frame* frame,
-                                          word nargs) {
+static RawObject dunderContainsImpl(Thread* thread, Frame* frame, word nargs,
+                                    SymbolId id) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfSetBase(*self)) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__contains__() requires a 'set' or 'frozenset' object");
+    return thread->raiseRequiresType(self, id);
   }
   SetBase set(&scope, *self);
   Object key(&scope, args.get(1));
@@ -357,31 +354,26 @@ RawObject SetBaseBuiltins::dunderContains(Thread* thread, Frame* frame,
   return Bool::fromBool(setIncludes(thread, set, key, hash));
 }
 
-RawObject SetBaseBuiltins::dunderIter(Thread* thread, Frame* frame,
-                                      word nargs) {
+static RawObject dunderIterImpl(Thread* thread, Frame* frame, word nargs,
+                                SymbolId id) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfSetBase(*self)) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__iter__() must be called with a 'set' or 'frozenset' instance as the "
-        "first argument");
+    return thread->raiseRequiresType(self, id);
   }
   return thread->runtime()->newSetIterator(self);
 }
 
-RawObject SetBaseBuiltins::isdisjoint(Thread* thread, Frame* frame,
-                                      word nargs) {
+static RawObject isdisjointImpl(Thread* thread, Frame* frame, word nargs,
+                                SymbolId id) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   Object value(&scope, NoneType::object());
   if (!thread->runtime()->isInstanceOfSetBase(*self)) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "isdisjoint() requires a 'set' or 'frozenset' object");
+    return thread->raiseRequiresType(self, id);
   }
   SetBase a(&scope, *self);
   if (a.numItems() == 0) {
@@ -446,15 +438,13 @@ RawObject SetBaseBuiltins::isdisjoint(Thread* thread, Frame* frame,
   return Bool::trueObj();
 }
 
-RawObject SetBaseBuiltins::intersection(Thread* thread, Frame* frame,
-                                        word nargs) {
+static RawObject intersectionImpl(Thread* thread, Frame* frame, word nargs,
+                                  SymbolId id) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfSetBase(*self)) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "intersection() requires a 'set' or 'frozenset' object");
+    return thread->raiseRequiresType(self, id);
   }
   SetBase set(&scope, *self);
   // TODO(T46058798): convert others to starargs
@@ -485,16 +475,15 @@ RawObject SetBaseBuiltins::intersection(Thread* thread, Frame* frame,
   return *result;
 }
 
-RawObject SetBaseBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
+static RawObject dunderEqImpl(Thread* thread, Frame* frame, word nargs,
+                              SymbolId id) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (!runtime->isInstanceOfSetBase(*self)) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__eq__() requires a 'set' or 'frozenset' object");
+    return thread->raiseRequiresType(self, id);
   }
   if (!runtime->isInstanceOfSetBase(*other)) {
     return NotImplementedType::object();
@@ -504,16 +493,15 @@ RawObject SetBaseBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(setEquals(thread, set, other_set));
 }
 
-RawObject SetBaseBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
+static RawObject dunderNeImpl(Thread* thread, Frame* frame, word nargs,
+                              SymbolId id) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (!runtime->isInstanceOfSetBase(*self)) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__ne__() requires a 'set' or 'frozenset' object");
+    return thread->raiseRequiresType(self, id);
   }
   if (!runtime->isInstanceOfSetBase(*other)) {
     return NotImplementedType::object();
@@ -523,16 +511,15 @@ RawObject SetBaseBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(!setEquals(thread, set, other_set));
 }
 
-RawObject SetBaseBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
+static RawObject dunderLeImpl(Thread* thread, Frame* frame, word nargs,
+                              SymbolId id) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (!runtime->isInstanceOfSetBase(*self)) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__le__() requires a 'set' or 'frozenset' object");
+    return thread->raiseRequiresType(self, id);
   }
   if (!runtime->isInstanceOfSetBase(*other)) {
     return NotImplementedType::object();
@@ -542,16 +529,15 @@ RawObject SetBaseBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(setIsSubset(thread, set, other_set));
 }
 
-RawObject SetBaseBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
+static RawObject dunderLtImpl(Thread* thread, Frame* frame, word nargs,
+                              SymbolId id) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (!runtime->isInstanceOfSetBase(*self)) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__lt__() requires a 'set' or 'frozenset' object");
+    return thread->raiseRequiresType(self, id);
   }
   if (!runtime->isInstanceOfSetBase(*other)) {
     return NotImplementedType::object();
@@ -561,16 +547,15 @@ RawObject SetBaseBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(setIsProperSubset(thread, set, other_set));
 }
 
-RawObject SetBaseBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
+static RawObject dunderGeImpl(Thread* thread, Frame* frame, word nargs,
+                              SymbolId id) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (!runtime->isInstanceOfSetBase(*self)) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__ge__() requires a 'set' or 'frozenset' object");
+    return thread->raiseRequiresType(self, id);
   }
   if (!runtime->isInstanceOfSetBase(*other)) {
     return NotImplementedType::object();
@@ -580,16 +565,15 @@ RawObject SetBaseBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(setIsSubset(thread, other_set, set));
 }
 
-RawObject SetBaseBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
+static RawObject dunderGtImpl(Thread* thread, Frame* frame, word nargs,
+                              SymbolId id) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (!runtime->isInstanceOfSetBase(*self)) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__gt__() requires a 'set' or 'frozenset' object");
+    return thread->raiseRequiresType(self, id);
   }
   if (!runtime->isInstanceOfSetBase(*other)) {
     return NotImplementedType::object();
@@ -606,7 +590,6 @@ const BuiltinAttribute FrozenSetBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod FrozenSetBuiltins::kBuiltinMethods[] = {
-    {ID(copy), copy},
     {ID(__and__), dunderAnd},
     {ID(__contains__), dunderContains},
     {ID(__eq__), dunderEq},
@@ -619,24 +602,11 @@ const BuiltinMethod FrozenSetBuiltins::kBuiltinMethods[] = {
     {ID(__lt__), dunderLt},
     {ID(__ne__), dunderNe},
     {ID(__new__), dunderNew},
+    {ID(copy), copy},
     {ID(intersection), intersection},
     {ID(isdisjoint), isdisjoint},
     {SymbolId::kSentinelId, nullptr},
 };
-
-RawObject FrozenSetBuiltins::copy(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Object self(&scope, args.get(0));
-  if (!thread->runtime()->isInstanceOfFrozenSet(*self)) {
-    return thread->raiseRequiresType(self, ID(frozenset));
-  }
-  FrozenSet set(&scope, *self);
-  if (set.isFrozenSet()) {
-    return *set;
-  }
-  return setCopy(thread, set);
-}
 
 RawObject FrozenSetBuiltins::dunderAnd(Thread* thread, Frame* frame,
                                        word nargs) {
@@ -656,6 +626,26 @@ RawObject FrozenSetBuiltins::dunderAnd(Thread* thread, Frame* frame,
   return setIntersection(thread, set, other_set);
 }
 
+RawObject FrozenSetBuiltins::dunderContains(Thread* thread, Frame* frame,
+                                            word nargs) {
+  return dunderContainsImpl(thread, frame, nargs, ID(frozenset));
+}
+
+RawObject FrozenSetBuiltins::dunderEq(Thread* thread, Frame* frame,
+                                      word nargs) {
+  return dunderEqImpl(thread, frame, nargs, ID(frozenset));
+}
+
+RawObject FrozenSetBuiltins::dunderGe(Thread* thread, Frame* frame,
+                                      word nargs) {
+  return dunderGeImpl(thread, frame, nargs, ID(frozenset));
+}
+
+RawObject FrozenSetBuiltins::dunderGt(Thread* thread, Frame* frame,
+                                      word nargs) {
+  return dunderGtImpl(thread, frame, nargs, ID(frozenset));
+}
+
 RawObject FrozenSetBuiltins::dunderHash(Thread* thread, Frame* frame,
                                         word nargs) {
   HandleScope scope(thread);
@@ -668,6 +658,31 @@ RawObject FrozenSetBuiltins::dunderHash(Thread* thread, Frame* frame,
   return frozensetHash(thread, set);
 }
 
+RawObject FrozenSetBuiltins::dunderIter(Thread* thread, Frame* frame,
+                                        word nargs) {
+  return dunderIterImpl(thread, frame, nargs, ID(frozenset));
+}
+
+RawObject FrozenSetBuiltins::dunderLe(Thread* thread, Frame* frame,
+                                      word nargs) {
+  return dunderLeImpl(thread, frame, nargs, ID(frozenset));
+}
+
+RawObject FrozenSetBuiltins::dunderLen(Thread* thread, Frame* frame,
+                                       word nargs) {
+  return dunderLenImpl(thread, frame, nargs, ID(frozenset));
+}
+
+RawObject FrozenSetBuiltins::dunderLt(Thread* thread, Frame* frame,
+                                      word nargs) {
+  return dunderLtImpl(thread, frame, nargs, ID(frozenset));
+}
+
+RawObject FrozenSetBuiltins::dunderNe(Thread* thread, Frame* frame,
+                                      word nargs) {
+  return dunderNeImpl(thread, frame, nargs, ID(frozenset));
+}
+
 RawObject FrozenSetBuiltins::dunderNew(Thread* thread, Frame* frame,
                                        word nargs) {
   Arguments args(frame, nargs);
@@ -675,7 +690,7 @@ RawObject FrozenSetBuiltins::dunderNew(Thread* thread, Frame* frame,
   Object type_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfType(*type_obj)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError, "not a type object");
+    return thread->raiseRequiresType(type_obj, ID(type));
   }
   Type type(&scope, *type_obj);
   if (type.builtinBase() != LayoutId::kFrozenSet) {
@@ -718,6 +733,30 @@ RawObject FrozenSetBuiltins::dunderNew(Thread* thread, Frame* frame,
   return *result;
 }
 
+RawObject FrozenSetBuiltins::copy(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfFrozenSet(*self)) {
+    return thread->raiseRequiresType(self, ID(frozenset));
+  }
+  FrozenSet set(&scope, *self);
+  if (set.isFrozenSet()) {
+    return *set;
+  }
+  return setCopy(thread, set);
+}
+
+RawObject FrozenSetBuiltins::intersection(Thread* thread, Frame* frame,
+                                          word nargs) {
+  return intersectionImpl(thread, frame, nargs, ID(frozenset));
+}
+
+RawObject FrozenSetBuiltins::isdisjoint(Thread* thread, Frame* frame,
+                                        word nargs) {
+  return isdisjointImpl(thread, frame, nargs, ID(frozenset));
+}
+
 const BuiltinAttribute SetBuiltins::kAttributes[] = {
     {ID(_set__data), Set::kDataOffset, AttributeFlags::kHidden},
     {ID(_set__num_items), Set::kNumItemsOffset, AttributeFlags::kHidden},
@@ -725,10 +764,6 @@ const BuiltinAttribute SetBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod SetBuiltins::kBuiltinMethods[] = {
-    {ID(add), add},
-    {ID(clear), clear},
-    {ID(copy), copy},
-    {ID(discard), discard},
     {ID(__and__), dunderAnd},
     {ID(__contains__), dunderContains},
     {ID(__eq__), dunderEq},
@@ -736,13 +771,16 @@ const BuiltinMethod SetBuiltins::kBuiltinMethods[] = {
     {ID(__gt__), dunderGt},
     {ID(__iand__), dunderIand},
     {ID(__init__), dunderInit},
-    {ID(__new__), dunderNew},
     {ID(__iter__), dunderIter},
     {ID(__le__), dunderLe},
     {ID(__len__), dunderLen},
     {ID(__lt__), dunderLt},
     {ID(__ne__), dunderNe},
     {ID(__new__), dunderNew},
+    {ID(add), add},
+    {ID(clear), clear},
+    {ID(copy), copy},
+    {ID(discard), discard},
     {ID(intersection), intersection},
     {ID(isdisjoint), isdisjoint},
     {ID(pop), pop},
@@ -841,14 +879,126 @@ RawObject setIteratorNext(Thread* thread, const SetIterator& iter) {
   return RawSet::Bucket::value(*data, idx);
 }
 
+RawObject SetBuiltins::dunderAnd(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  Object other(&scope, args.get(1));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfSet(*self)) {
+    return thread->raiseRequiresType(self, ID(set));
+  }
+  if (!runtime->isInstanceOfSetBase(*other)) {
+    return NotImplementedType::object();
+  }
+  Set set(&scope, *self);
+  SetBase other_set(&scope, *other);
+  return setIntersection(thread, set, other_set);
+}
+
+RawObject SetBuiltins::dunderContains(Thread* thread, Frame* frame,
+                                      word nargs) {
+  return dunderContainsImpl(thread, frame, nargs, ID(set));
+}
+
+RawObject SetBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
+  return dunderEqImpl(thread, frame, nargs, ID(set));
+}
+
+RawObject SetBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
+  return dunderGeImpl(thread, frame, nargs, ID(set));
+}
+
+RawObject SetBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
+  return dunderGtImpl(thread, frame, nargs, ID(set));
+}
+
+RawObject SetBuiltins::dunderIand(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  Object other(&scope, args.get(1));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfSet(*self)) {
+    return thread->raiseRequiresType(self, ID(set));
+  }
+  if (!runtime->isInstanceOfSet(*other)) {
+    return NotImplementedType::object();
+  }
+  Set set(&scope, *self);
+  Object intersection(&scope, setIntersection(thread, set, other));
+  if (intersection.isError()) {
+    return *intersection;
+  }
+  RawSet intersection_set = Set::cast(*intersection);
+  set.setData(intersection_set.data());
+  set.setNumItems(intersection_set.numItems());
+  return *set;
+}
+
+RawObject SetBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  if (!runtime->isInstanceOfSet(*self)) {
+    return thread->raiseRequiresType(self, ID(set));
+  }
+  Set set(&scope, *self);
+  Object iterable(&scope, args.get(1));
+  Object result(&scope, setUpdate(thread, set, iterable));
+  if (result.isError()) {
+    return *result;
+  }
+  return NoneType::object();
+}
+
+RawObject SetBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
+  return dunderIterImpl(thread, frame, nargs, ID(set));
+}
+
+RawObject SetBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
+  return dunderLeImpl(thread, frame, nargs, ID(set));
+}
+
+RawObject SetBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
+  return dunderLenImpl(thread, frame, nargs, ID(set));
+}
+
+RawObject SetBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
+  return dunderLtImpl(thread, frame, nargs, ID(set));
+}
+
+RawObject SetBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
+  return dunderNeImpl(thread, frame, nargs, ID(set));
+}
+
+RawObject SetBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object type_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfType(*type_obj)) {
+    return thread->raiseRequiresType(type_obj, ID(type));
+  }
+  Type type(&scope, *type_obj);
+  if (type.builtinBase() != LayoutId::kSet) {
+    return thread->raiseWithFmt(LayoutId::kTypeError, "not a subtype of set");
+  }
+  Layout layout(&scope, type.instanceLayout());
+  Set result(&scope, runtime->newInstance(layout));
+  result.setNumItems(0);
+  result.setData(runtime->emptyTuple());
+  return *result;
+}
+
 RawObject SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfSet(*self)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "'add' requires a 'set' object");
+    return thread->raiseRequiresType(self, ID(set));
   }
   Set set(&scope, *self);
   Object value(&scope, args.get(1));
@@ -906,61 +1056,12 @@ RawObject SetBuiltins::discard(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject SetBuiltins::dunderAnd(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Object self(&scope, args.get(0));
-  Object other(&scope, args.get(1));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfSet(*self)) {
-    return thread->raiseRequiresType(self, ID(set));
-  }
-  if (!runtime->isInstanceOfSetBase(*other)) {
-    return NotImplementedType::object();
-  }
-  Set set(&scope, *self);
-  SetBase other_set(&scope, *other);
-  return setIntersection(thread, set, other_set);
+RawObject SetBuiltins::intersection(Thread* thread, Frame* frame, word nargs) {
+  return intersectionImpl(thread, frame, nargs, ID(set));
 }
 
-RawObject SetBuiltins::dunderIand(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Object self(&scope, args.get(0));
-  Object other(&scope, args.get(1));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfSet(*self)) {
-    return thread->raiseRequiresType(self, ID(set));
-  }
-  if (!runtime->isInstanceOfSet(*other)) {
-    return NotImplementedType::object();
-  }
-  Set set(&scope, *self);
-  Object intersection(&scope, setIntersection(thread, set, other));
-  if (intersection.isError()) {
-    return *intersection;
-  }
-  RawSet intersection_set = Set::cast(*intersection);
-  set.setData(intersection_set.data());
-  set.setNumItems(intersection_set.numItems());
-  return *set;
-}
-
-RawObject SetBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Object self(&scope, args.get(0));
-  if (!runtime->isInstanceOfSet(*self)) {
-    return thread->raiseRequiresType(self, ID(set));
-  }
-  Set set(&scope, *self);
-  Object iterable(&scope, args.get(1));
-  Object result(&scope, setUpdate(thread, set, iterable));
-  if (result.isError()) {
-    return *result;
-  }
-  return NoneType::object();
+RawObject SetBuiltins::isdisjoint(Thread* thread, Frame* frame, word nargs) {
+  return isdisjointImpl(thread, frame, nargs, ID(set));
 }
 
 RawObject SetBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
@@ -1016,25 +1117,6 @@ RawObject SetBuiltins::update(Thread* thread, Frame* frame, word nargs) {
     }
   }
   return NoneType::object();
-}
-
-RawObject SetBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Object type_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfType(*type_obj)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError, "not a type object");
-  }
-  Type type(&scope, *type_obj);
-  if (type.builtinBase() != LayoutId::kSet) {
-    return thread->raiseWithFmt(LayoutId::kTypeError, "not a subtype of set");
-  }
-  Layout layout(&scope, type.instanceLayout());
-  Set result(&scope, runtime->newInstance(layout));
-  result.setNumItems(0);
-  result.setData(runtime->emptyTuple());
-  return *result;
 }
 
 const BuiltinMethod SetIteratorBuiltins::kBuiltinMethods[] = {

@@ -55,32 +55,27 @@ RawObject setIteratorNext(Thread* thread, const SetIterator& iter);
 
 RawSmallInt frozensetHash(Thread* thread, const Object& frozenset);
 
-class SetBaseBuiltins {
+class SetBuiltins : public Builtins<SetBuiltins, ID(set), LayoutId::kSet> {
  public:
+  static RawObject dunderAnd(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderContains(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGe(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGt(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderIand(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLe(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLt(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNe(Thread* thread, Frame* frame, word nargs);
-  static RawObject intersection(Thread* thread, Frame* frame, word nargs);
-  static RawObject isdisjoint(Thread* thread, Frame* frame, word nargs);
-};
-
-class SetBuiltins : public SetBaseBuiltins,
-                    public Builtins<SetBuiltins, ID(set), LayoutId::kSet> {
- public:
+  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
+  static RawObject add(Thread* thread, Frame* frame, word nargs);
   static RawObject clear(Thread* thread, Frame* frame, word nargs);
   static RawObject copy(Thread* thread, Frame* frame, word nargs);
   static RawObject discard(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderAnd(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderIand(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
-  static RawObject add(Thread* thread, Frame* frame, word nargs);
+  static RawObject intersection(Thread* thread, Frame* frame, word nargs);
+  static RawObject isdisjoint(Thread* thread, Frame* frame, word nargs);
   static RawObject pop(Thread* thread, Frame* frame, word nargs);
   static RawObject remove(Thread* thread, Frame* frame, word nargs);
   static RawObject update(Thread* thread, Frame* frame, word nargs);
@@ -93,13 +88,23 @@ class SetBuiltins : public SetBaseBuiltins,
 };
 
 class FrozenSetBuiltins
-    : public SetBaseBuiltins,
-      public Builtins<FrozenSetBuiltins, ID(frozenset), LayoutId::kFrozenSet> {
+    : public Builtins<FrozenSetBuiltins, ID(frozenset), LayoutId::kFrozenSet> {
  public:
-  static RawObject copy(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderAnd(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderContains(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderGe(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderGt(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderHash(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderLe(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderLt(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderNe(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
+  static RawObject copy(Thread* thread, Frame* frame, word nargs);
+  static RawObject intersection(Thread* thread, Frame* frame, word nargs);
+  static RawObject isdisjoint(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinAttribute kAttributes[];
   static const BuiltinMethod kBuiltinMethods[];
