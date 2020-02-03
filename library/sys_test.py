@@ -150,6 +150,23 @@ class SysTests(unittest.TestCase):
         self.assertEqual(hash_info.hash_bits, 64)
         self.assertEqual(hash_info.seed_bits, 128)
 
+    def test_intern_returns_str(self):
+        self.assertEqual(sys.intern("id"), "id")
+        self.assertEqual(sys.intern("long identifier"), "long identifier")
+
+    def test_intern_with_nonstr_raises_typeerror(self):
+        with self.assertRaises(TypeError):
+            sys.intern(12345)
+
+    def test_intern_with_str_subclass_raises_typeerror(self):
+        class NewString(str):
+            pass
+
+        with self.assertRaises(TypeError) as context:
+            sys.intern(NewString("identifier"))
+
+        self.assertEqual(str(context.exception), "can't intern NewString")
+
     def test_version(self):
         self.assertTrue(sys.version)
         self.assertEqual(len(sys.version_info), 5)

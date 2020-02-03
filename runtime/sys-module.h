@@ -32,6 +32,7 @@ RawObject initialSysPath(Thread* thread);
 
 RawObject FUNC(sys, exc_info)(Thread* thread, Frame* frame, word nargs);
 RawObject FUNC(sys, excepthook)(Thread* thread, Frame* frame, word nargs);
+RawObject FUNC(sys, intern)(Thread* thread, Frame* frame, word nargs);
 
 class SysModule {
  public:

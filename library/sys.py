@@ -170,6 +170,11 @@ def getsizeof(object, default=_Unbound):
 implementation = _ImplementationType()
 
 
+@_patch
+def intern(string):
+    pass
+
+
 meta_path = []
 
 

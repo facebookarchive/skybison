@@ -31,6 +31,7 @@ extern "C" struct _inittab _PyImport_Inittab[];
 const BuiltinFunction SysModule::kBuiltinFunctions[] = {
     {ID(exc_info), FUNC(sys, exc_info)},
     {ID(excepthook), FUNC(sys, excepthook)},
+    {ID(intern), FUNC(sys, intern)},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -240,6 +241,20 @@ RawObject FUNC(sys, exc_info)(Thread* thread, Frame* /* frame */,
     result.atPut(2, RawNoneType::object());
   }
   return *result;
+}
+
+RawObject FUNC(sys, intern)(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object string(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStr(*string)) {
+    return thread->raiseRequiresType(string, ID(str));
+  }
+  if (!string.isStr()) {
+    return thread->raiseWithFmt(LayoutId::kTypeError, "can't intern %T",
+                                &string);
+  }
+  return Runtime::internStr(thread, string);
 }
 
 }  // namespace py

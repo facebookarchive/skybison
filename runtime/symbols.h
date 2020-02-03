@@ -787,6 +787,7 @@ class Runtime;
   V(instance)                                                                  \
   V(instance_proxy)                                                            \
   V(int)                                                                       \
+  V(intern)                                                                    \
   V(intersection)                                                              \
   V(invert)                                                                    \
   V(ior)                                                                       \
