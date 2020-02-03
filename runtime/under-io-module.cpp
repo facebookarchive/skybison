@@ -824,8 +824,7 @@ static bool isValidStringIONewline(const Object& newline) {
   return newline == SmallStr::fromCStr("\r\n");
 }
 
-RawObject StringIOBuiltins::dunderInit(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject METH(StringIO, __init__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -944,8 +943,7 @@ static word stringIOReadline(Thread* thread, const StringIO& string_io,
   return i;
 }
 
-RawObject StringIOBuiltins::dunderNext(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject METH(StringIO, __next__)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -967,7 +965,7 @@ RawObject StringIOBuiltins::dunderNext(Thread* thread, Frame* frame,
   return result.becomeStr();
 }
 
-RawObject StringIOBuiltins::getvalue(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(StringIO, getvalue)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -985,7 +983,7 @@ RawObject StringIOBuiltins::getvalue(Thread* thread, Frame* frame, word nargs) {
   return buffer.becomeStr();
 }
 
-RawObject StringIOBuiltins::read(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(StringIO, read)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -1030,7 +1028,7 @@ RawObject StringIOBuiltins::read(Thread* thread, Frame* frame, word nargs) {
   return result.becomeStr();
 }
 
-RawObject StringIOBuiltins::readline(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(StringIO, readline)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -1068,7 +1066,7 @@ RawObject StringIOBuiltins::readline(Thread* thread, Frame* frame, word nargs) {
   return result.becomeStr();
 }
 
-RawObject StringIOBuiltins::truncate(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(StringIO, truncate)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -1110,7 +1108,7 @@ RawObject StringIOBuiltins::truncate(Thread* thread, Frame* frame, word nargs) {
   return runtime->newInt(size);
 }
 
-RawObject StringIOBuiltins::write(Thread* thread, Frame* frame, word nargs) {
+RawObject METH(StringIO, write)(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -1131,13 +1129,13 @@ RawObject StringIOBuiltins::write(Thread* thread, Frame* frame, word nargs) {
 }
 
 const BuiltinMethod StringIOBuiltins::kBuiltinMethods[] = {
-    {ID(getvalue), StringIOBuiltins::getvalue},
-    {ID(__init__), StringIOBuiltins::dunderInit},
-    {ID(__next__), StringIOBuiltins::dunderNext},
-    {ID(read), StringIOBuiltins::read},
-    {ID(readline), StringIOBuiltins::readline},
-    {ID(truncate), StringIOBuiltins::truncate},
-    {ID(write), StringIOBuiltins::write},
+    {ID(getvalue), METH(StringIO, getvalue)},
+    {ID(__init__), METH(StringIO, __init__)},
+    {ID(__next__), METH(StringIO, __next__)},
+    {ID(read), METH(StringIO, read)},
+    {ID(readline), METH(StringIO, readline)},
+    {ID(truncate), METH(StringIO, truncate)},
+    {ID(write), METH(StringIO, write)},
     {SymbolId::kSentinelId, nullptr},
 };
 
