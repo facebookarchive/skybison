@@ -38,17 +38,6 @@ RawObject dictAtByStr(Thread* thread, const Dict& dict, const Object& name);
 // `Error::notFound()`.
 RawObject dictAtById(Thread* thread, const Dict& dict, SymbolId id);
 
-// Looks up and returns the value associated with the key.  If the key is
-// absent, calls thunk and inserts its result as the value.
-RawObject dictAtIfAbsentPut(Thread* thread, const Dict& dict, const Object& key,
-                            word hash, Callback<RawObject>* thunk);
-
-// Stores value in a ValueCell associated with `key`. Reuses an existing
-// value cell when possible.
-RawObject dictAtPutInValueCell(Thread* thread, const Dict& dict,
-                               const Object& key, word hash,
-                               const Object& value);
-
 // Stores value in a ValueCell associated with `name`. Reuses an existing
 // value cell when possible.
 RawObject dictAtPutInValueCellByStr(Thread* thread, const Dict& dict,

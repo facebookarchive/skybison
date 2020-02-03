@@ -234,7 +234,6 @@ add_library(
   runtime/bytecode.h
   runtime/bytes-builtins.cpp
   runtime/bytes-builtins.h
-  runtime/callback.h
   runtime/capi-handles.cpp
   runtime/capi-handles.h
   runtime/code-builtins.cpp

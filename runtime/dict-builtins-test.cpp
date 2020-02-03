@@ -131,42 +131,33 @@ TEST_F(DictBuiltinsTest, Length) {
   EXPECT_EQ(dict.numItems(), 5);
 }
 
-TEST_F(DictBuiltinsTest, AtIfAbsentPutLength) {
+TEST_F(DictBuiltinsTest, DictAtPutInValueCellByStrCreatesValueCell) {
   HandleScope scope(thread_);
   Dict dict(&scope, runtime_->newDict());
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Object value(&scope, Runtime::internStrFromCStr(thread_, "bar"));
+  Object result(&scope, dictAtPutInValueCellByStr(thread_, dict, name, value));
+  ASSERT_TRUE(result.isValueCell());
+  EXPECT_EQ(ValueCell::cast(*result).value(), value);
+  EXPECT_EQ(dictAtByStr(thread_, dict, name), result);
+}
 
-  Object k1(&scope, SmallInt::fromWord(1));
-  word k1_hash = intHash(*k1);
-  Object v1(&scope, SmallInt::fromWord(111));
-  dictAtPut(thread_, dict, k1, k1_hash, v1);
-  EXPECT_EQ(dict.numItems(), 1);
+TEST_F(DictBuiltinsTest, DictAtPutInValueCellByStrReusesExistingValueCell) {
+  HandleScope scope(thread_);
+  Dict dict(&scope, runtime_->newDict());
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Object value0(&scope, Runtime::internStrFromCStr(thread_, "bar"));
+  Object result0(&scope,
+                 dictAtPutInValueCellByStr(thread_, dict, name, value0));
+  ASSERT_TRUE(result0.isValueCell());
+  EXPECT_EQ(ValueCell::cast(*result0).value(), value0);
 
-  class SmallIntCallback : public Callback<RawObject> {
-   public:
-    explicit SmallIntCallback(int i) : i_(i) {}
-    RawObject call() override { return SmallInt::fromWord(i_); }
-
-   private:
-    int i_;
-  };
-
-  // Add new item
-  Object k2(&scope, SmallInt::fromWord(2));
-  word k2_hash = intHash(*k2);
-  SmallIntCallback cb(222);
-  dictAtIfAbsentPut(thread_, dict, k2, k2_hash, &cb);
-  EXPECT_EQ(dict.numItems(), 2);
-  RawObject retrieved = dictAt(thread_, dict, k2, k2_hash);
-  EXPECT_TRUE(isIntEqualsWord(retrieved, 222));
-
-  // Don't overrwite existing item 1 -> v1
-  Object k3(&scope, SmallInt::fromWord(1));
-  word k3_hash = intHash(*k3);
-  SmallIntCallback cb3(333);
-  dictAtIfAbsentPut(thread_, dict, k3, k3_hash, &cb3);
-  EXPECT_EQ(dict.numItems(), 2);
-  retrieved = dictAt(thread_, dict, k3, k3_hash);
-  EXPECT_EQ(retrieved, *v1);
+  Object value1(&scope, Runtime::internStrFromCStr(thread_, "baz"));
+  Object result1(&scope,
+                 dictAtPutInValueCellByStr(thread_, dict, name, value1));
+  EXPECT_EQ(result0, result1);
+  EXPECT_EQ(dictAtByStr(thread_, dict, name), result1);
+  EXPECT_EQ(ValueCell::cast(*result1).value(), value1);
 }
 
 TEST_F(DictBuiltinsTest, DictAtPutGrowsDictWhenDictIsEmpty) {

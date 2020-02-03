@@ -16,7 +16,6 @@
 #include "bytearray-builtins.h"
 #include "bytecode.h"
 #include "bytes-builtins.h"
-#include "callback.h"
 #include "capi-handles.h"
 #include "code-builtins.h"
 #include "complex-builtins.h"
@@ -98,8 +97,7 @@ static const SymbolId kComparisonSelector[] = {
 
 word Runtime::next_module_index_ = 0;
 
-Runtime::Runtime(word heap_size)
-    : heap_(heap_size), new_value_cell_callback_(this) {
+Runtime::Runtime(word heap_size) : heap_(heap_size) {
   initializeRandom();
   initializeInterpreter();
   initializeThreads();

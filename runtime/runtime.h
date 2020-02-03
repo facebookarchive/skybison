@@ -1,7 +1,6 @@
 #pragma once
 
 #include "bytecode.h"
-#include "callback.h"
 #include "handles.h"
 #include "heap.h"
 #include "interpreter-gen.h"
@@ -49,17 +48,6 @@ enum class ReadOnly : bool {
 
 class Runtime {
  public:
-  class NewValueCellCallback : public Callback<RawObject> {
-   public:
-    explicit NewValueCellCallback(Runtime* runtime) : runtime_(runtime) {}
-    RawObject call() {
-      RawObject result = runtime_->newValueCell();
-      ValueCell::cast(result).makePlaceholder();
-      return result;
-    }
-    Runtime* runtime_;
-  };
-
   Runtime();
   Runtime(word heap_size);
   ~Runtime();
@@ -497,10 +485,6 @@ class Runtime {
 
   RawObject tupleSubseq(Thread* thread, const Tuple& self, word start,
                         word length);
-
-  NewValueCellCallback* newValueCellCallback() {
-    return &new_value_cell_callback_;
-  }
 
   // Performs a simple scan of the bytecode and collects all attributes that
   // are set via `self.<attribute> =` into attributes.
@@ -959,8 +943,6 @@ class Runtime {
 
   uword random_state_[2];
   uword hash_secret_[2];
-
-  NewValueCellCallback new_value_cell_callback_;
 
   Symbols* symbols_;
 

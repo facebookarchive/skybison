@@ -116,8 +116,8 @@ RawObject dictAtById(Thread* thread, const Dict& dict, SymbolId id) {
   return dictAtByStr(thread, dict, name);
 }
 
-RawObject dictAtIfAbsentPut(Thread* thread, const Dict& dict, const Object& key,
-                            word hash, Callback<RawObject>* thunk) {
+RawObject dictAtPutInValueCellByStr(Thread* thread, const Dict& dict,
+                                    const Object& name, const Object& value) {
   // TODO(T44245141): Move initialization of an empty dict to
   // dictEnsureCapacity.
   if (dict.capacity() == 0) {
@@ -128,14 +128,18 @@ RawObject dictAtIfAbsentPut(Thread* thread, const Dict& dict, const Object& key,
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word index = -1;
-  bool found = dictLookup(thread, data, key, hash, &index);
+  word hash = strHash(thread, *name);
+  bool found = dictLookup(thread, data, name, hash, &index);
   DCHECK(index != -1, "invalid index %ld", index);
   if (found) {
-    return Dict::Bucket::value(*data, index);
+    RawValueCell value_cell =
+        ValueCell::cast(Dict::Bucket::value(*data, index));
+    value_cell.setValue(*value);
+    return value_cell;
   }
+  ValueCell value_cell(&scope, thread->runtime()->newValueCell());
   bool empty_slot = Dict::Bucket::isEmpty(*data, index);
-  Object value(&scope, thunk->call());
-  Dict::Bucket::set(*data, index, hash, *key, *value);
+  Dict::Bucket::set(*data, index, hash, *name, *value_cell);
   dict.setNumItems(dict.numItems() + 1);
   if (empty_slot) {
     DCHECK(dict.numUsableItems() > 0, "dict.numIsableItems() must be positive");
@@ -143,29 +147,8 @@ RawObject dictAtIfAbsentPut(Thread* thread, const Dict& dict, const Object& key,
     dictEnsureCapacity(thread, dict);
   }
   DCHECK(dict.hasUsableItems(), "dict must have an empty bucket left");
-  return *value;
-}
-
-RawObject dictAtPutInValueCellByStr(Thread* thread, const Dict& dict,
-                                    const Object& name, const Object& value) {
-  HandleScope scope(thread);
-  word hash = strHash(thread, *name);
-  Object result(&scope,
-                dictAtIfAbsentPut(thread, dict, name, hash,
-                                  thread->runtime()->newValueCellCallback()));
-  ValueCell::cast(*result).setValue(*value);
-  return *result;
-}
-
-RawObject dictAtPutInValueCell(Thread* thread, const Dict& dict,
-                               const Object& key, word hash,
-                               const Object& value) {
-  HandleScope scope(thread);
-  Object result(&scope,
-                dictAtIfAbsentPut(thread, dict, key, hash,
-                                  thread->runtime()->newValueCellCallback()));
-  ValueCell::cast(*result).setValue(*value);
-  return *result;
+  value_cell.setValue(*value);
+  return *value_cell;
 }
 
 void dictClear(Thread* thread, const Dict& dict) {
