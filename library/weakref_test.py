@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import unittest
 import weakref
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
 
 
 class WeakRefTests(unittest.TestCase):
@@ -245,6 +245,14 @@ class WeakRefTests(unittest.TestCase):
 
         r = weakref.ref(C)
         self.assertEqual(hash(r), hash(C))
+
+    def test_hash_caches_referent_hash(self):
+        m = Mock()
+        m.__hash__ = MagicMock(return_value=99)
+        r = weakref.ref(m)
+        self.assertEqual(hash(r), 99)
+        self.assertEqual(hash(r), 99)
+        m.__hash__.assert_called_once()
 
     # TODO(T43270097): Add a test for callback.
 

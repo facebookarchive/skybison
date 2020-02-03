@@ -651,7 +651,9 @@ class Runtime;
   V(_weakref_callback)                                                         \
   V(_weakref_check)                                                            \
   V(_weakref_guard)                                                            \
+  V(_weakref_hash)                                                             \
   V(_weakref_referent)                                                         \
+  V(_weakref_set_hash)                                                         \
   V(_writable)                                                                 \
   V(_write_buf)                                                                \
   V(_write_lock)                                                               \

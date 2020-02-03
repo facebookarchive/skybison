@@ -2835,6 +2835,10 @@ class RawWeakRef : public RawInstance {
   RawObject link() const;
   void setLink(RawObject reference) const;
 
+  // The referent's hash
+  RawObject hash() const;
+  void setHash(RawObject hash) const;
+
   static void enqueue(RawObject reference, RawObject* tail);
   static RawObject dequeue(RawObject* tail);
   static RawObject spliceQueue(RawObject tail1, RawObject tail2);
@@ -2843,7 +2847,8 @@ class RawWeakRef : public RawInstance {
   static const int kReferentOffset = RawHeapObject::kSize;
   static const int kCallbackOffset = kReferentOffset + kPointerSize;
   static const int kLinkOffset = kCallbackOffset + kPointerSize;
-  static const int kSize = kLinkOffset + kPointerSize;
+  static const int kHashOffset = kLinkOffset + kPointerSize;
+  static const int kSize = kHashOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(WeakRef);
 };
@@ -6344,6 +6349,14 @@ inline RawObject RawWeakRef::link() const {
 
 inline void RawWeakRef::setLink(RawObject reference) const {
   instanceVariableAtPut(kLinkOffset, reference);
+}
+
+inline RawObject RawWeakRef::hash() const {
+  return instanceVariableAt(kHashOffset);
+}
+
+inline void RawWeakRef::setHash(RawObject hash) const {
+  instanceVariableAtPut(kHashOffset, hash);
 }
 
 // RawWeakLink

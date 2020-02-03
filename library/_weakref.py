@@ -4,6 +4,7 @@
 from builtins import _index
 
 from _builtins import (
+    _patch,
     _property,
     _unimplemented,
     _weakref_callback,
@@ -38,6 +39,16 @@ def _proxy_unwrap(object):
 
 def _remove_dead_weakref(object):
     _unimplemented()
+
+
+@_patch
+def _weakref_hash(self):
+    pass
+
+
+@_patch
+def _weakref_set_hash(self, hash):
+    pass
 
 
 def getweakrefs(object):
@@ -104,11 +115,15 @@ class ref(bootstrap=True):
         return None
 
     def __hash__(self):
-        _weakref_guard(self)
+        result = _weakref_hash(self)
+        if result is not None:
+            return result
         obj = _weakref_referent(self)
         if obj is None:
             raise TypeError("weak object has gone away")
-        return hash(obj)
+        result = hash(obj)
+        _weakref_set_hash(self, result)
+        return result
 
 
 class weakcallableproxy:
