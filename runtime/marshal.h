@@ -19,6 +19,9 @@ class Marshal {
 
     RawObject readPycHeader(const Str& filename);
 
+    void setBuiltinFunctions(const Function::Entry* builtin_functions,
+                             word num_builtin_functions);
+
     double readBinaryFloat();
 
     byte readByte();
@@ -60,6 +63,8 @@ class Marshal {
 
     Runtime* runtime_;
     List refs_;
+    const Function::Entry* builtin_functions_;
+    word num_builtin_functions_;
     bool isRef_;
 
     const byte* start_;

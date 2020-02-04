@@ -2,6 +2,7 @@
 
 #include "array-module.h"
 #include "builtins-module.h"
+#include "builtins.h"
 #include "capi-handles.h"
 #include "faulthandler-module.h"
 #include "frozen-modules.h"
@@ -158,6 +159,7 @@ void executeFrozenModule(Thread* thread, const FrozenModule* frozen_module,
   View<byte> data(reinterpret_cast<const byte*>(frozen_module->marshalled_code),
                   frozen_module->marshalled_code_length);
   Marshal::Reader reader(&scope, thread->runtime(), data);
+  reader.setBuiltinFunctions(kBuiltinFunctions, kNumBuiltinFunctions);
   Str filename(&scope, module.name());
   CHECK(!reader.readPycHeader(filename).isErrorException(),
         "Failed to read %s module data", filename.toCStr());

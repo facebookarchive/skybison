@@ -27,6 +27,12 @@ def _bound_method(fn, owner):
     pass
 
 
+def _builtin():
+    """This function acts as a marker to `freeze_modules.py` it should never
+    actually be called."""
+    _unimplemented()
+
+
 @_patch
 def _bytearray_append(obj, item):
     pass

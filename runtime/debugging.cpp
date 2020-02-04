@@ -58,6 +58,7 @@ static void dumpCodeFlags(std::ostream& os, word flags) {
   if (flags & Code::kCoroutine) os << " coroutine";
   if (flags & Code::kIterableCoroutine) os << " iterable_coroutine";
   if (flags & Code::kAsyncGenerator) os << " async_generator";
+  if (flags & Code::kBuiltin) os << " builtin";
 }
 
 std::ostream& dumpExtendedCode(std::ostream& os, RawCode value,

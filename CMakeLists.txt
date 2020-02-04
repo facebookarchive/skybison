@@ -173,6 +173,8 @@ set(
   ${CMAKE_BINARY_DIR}/bootstrap)
 set(
   FROZEN_MODULE_OUTPUT
+  ${FROZEN_MODULE_OUTPUT_DIR}/builtins.cpp
+  ${FROZEN_MODULE_OUTPUT_DIR}/builtins.h
   ${FROZEN_MODULE_OUTPUT_DIR}/frozen-modules.cpp
   ${FROZEN_MODULE_OUTPUT_DIR}/frozen-modules.h)
 add_custom_command(

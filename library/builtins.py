@@ -22,6 +22,7 @@ from _builtins import (
     _bool_check,
     _bool_guard,
     _bound_method,
+    _builtin,
     _bytearray_append,
     _bytearray_check,
     _bytearray_clear,
@@ -281,9 +282,8 @@ def _positional_only(value):
     return _positional_only_decorator
 
 
-@_patch
 def __build_class__(func, name, *bases, metaclass=_Unbound, bootstrap=False, **kwargs):
-    pass
+    _builtin()
 
 
 class function(bootstrap=True):

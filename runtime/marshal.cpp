@@ -77,6 +77,12 @@ RawObject Marshal::Reader::readPycHeader(const Str& filename) {
   return NoneType::object();
 }
 
+void Marshal::Reader::setBuiltinFunctions(
+    const Function::Entry* builtin_functions, word num_builtin_functions) {
+  builtin_functions_ = builtin_functions;
+  num_builtin_functions_ = num_builtin_functions;
+}
+
 const byte* Marshal::Reader::readBytes(int length) {
   const byte* result = &start_[pos_];
   pos_ += length;
@@ -392,7 +398,7 @@ RawObject Marshal::Reader::readTypeCode() {
   int32_t nlocals = readLong();
   int32_t stacksize = readLong();
   int32_t flags = readLong();
-  CHECK(flags <= Code::Flags::kLast, "unknown flags in code object");
+  CHECK(flags <= (Code::Flags::kLast << 1) - 1, "unknown flags in code object");
   Object code(&scope, readObject());
   Object consts(&scope, readObject());
   Object names(&scope, readObject());
@@ -403,13 +409,31 @@ RawObject Marshal::Reader::readTypeCode() {
   Object name(&scope, readObject());
   int32_t firstlineno = readLong();
   Object lnotab(&scope, readObject());
-  Code result(&scope,
-              runtime_->newCode(argcount, posonlyargcount, kwonlyargcount,
-                                nlocals, stacksize, flags, code, consts, names,
-                                varnames, freevars, cellvars, filename, name,
-                                firstlineno, lnotab));
-  if (isRef_) {
-    DCHECK(index != -1, "unexpected addRef result");
+
+  Object result(&scope, NoneType::object());
+  if (flags & Code::Flags::kBuiltin) {
+    word function_index = stacksize;
+    CHECK(code.isBytes() && Bytes::cast(*code).length() == 0,
+          "must not have bytecode in native code");
+    CHECK(consts.isTuple() && Tuple::cast(*consts).length() == 0,
+          "must not have constants in native code");
+    CHECK(names.isTuple() && Tuple::cast(*names).length() == 0,
+          "must not have variables in native code");
+    CHECK(freevars.length() == 0, "must not have free vars in native code");
+    CHECK(cellvars.length() == 0, "must not have cell vars in native code");
+    CHECK_INDEX(function_index, num_builtin_functions_);
+    Function::Entry entry = builtin_functions_[function_index];
+    result = runtime_->newBuiltinCode(argcount, posonlyargcount, kwonlyargcount,
+                                      flags, entry, varnames, name);
+    Code::cast(*result).setFilename(*filename);
+    Code::cast(*result).setFirstlineno(firstlineno);
+  } else {
+    result = runtime_->newCode(argcount, posonlyargcount, kwonlyargcount,
+                               nlocals, stacksize, flags, code, consts, names,
+                               varnames, freevars, cellvars, filename, name,
+                               firstlineno, lnotab);
+  }
+  if (index >= 0) {
     setRef(index, *result);
   }
   return *result;

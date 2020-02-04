@@ -1953,7 +1953,8 @@ class RawCode : public RawInstance {
     kFutureUnicodeLiterals = 0x20000,
     kFutureBarryAsBdfl = 0x40000,
     kFutureGeneratorStop = 0x80000,
-    kLast = kFutureGeneratorStop,
+    kBuiltin = 0x100000,
+    kLast = kBuiltin,
   };
 
   // Getters and setters.
