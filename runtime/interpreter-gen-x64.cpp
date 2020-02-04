@@ -306,6 +306,19 @@ void emitHandler(EmitEnv* env) {
   emitJumpToGenericHandler(env);
 }
 
+static void emitJumpIfSmallInt(EmitEnv* env, Register object, Label* target) {
+  static_assert(Object::kSmallIntTag == 0, "unexpected tag for SmallInt");
+  __ testb(object, Immediate(Object::kSmallIntTagMask));
+  __ jcc(ZERO, target, Assembler::kNearJump);
+}
+
+static void emitJumpIfNotSmallInt(EmitEnv* env, Register object,
+                                  Label* target) {
+  static_assert(Object::kSmallIntTag == 0, "unexpected tag for SmallInt");
+  __ testb(object, Immediate(Object::kSmallIntTagMask));
+  __ jcc(NOT_ZERO, target, Assembler::kNearJump);
+}
+
 // Load the LayoutId of the RawObject in r_obj into r_dst as a SmallInt.
 //
 // Writes to r_dst.
@@ -333,8 +346,7 @@ void emitGetLayoutId(EmitEnv* env, Register r_dst, Register r_obj) {
   __ xorl(r_dst, r_dst);
   static_assert(Object::kSmallIntTagBits == 1 && Object::kSmallIntTag == 0,
                 "unexpected SmallInt tag");
-  __ testl(r_obj, Immediate(Object::kSmallIntTagMask));
-  __ jcc(ZERO, &done, Assembler::kNearJump);
+  emitJumpIfSmallInt(env, r_obj, &done);
 
   // Immediate.
   __ movl(r_dst, r_obj);
@@ -489,15 +501,6 @@ void emitAttrWithOffset(EmitEnv* env, void (Assembler::*asm_op)(Address),
   __ jmp(next, Assembler::kNearJump);
 }
 
-static void emitSmallIntChecks(EmitEnv* env, Label* slow_path, Register r_left,
-                               Register r_right) {
-  static_assert(Object::kSmallIntTag == 0, "unexpeted tag for SmallInt");
-  __ testl(r_right, Immediate(Object::kSmallIntTagMask));
-  __ jcc(NOT_ZERO, slow_path, Assembler::kNearJump);
-  __ testl(r_left, Immediate(Object::kSmallIntTagMask));
-  __ jcc(NOT_ZERO, slow_path, Assembler::kNearJump);
-}
-
 template <>
 void emitHandler<BINARY_ADD_SMALLINT>(EmitEnv* env) {
   Register r_right = RAX;
@@ -506,7 +509,8 @@ void emitHandler<BINARY_ADD_SMALLINT>(EmitEnv* env) {
   Label slow_path;
   __ popq(r_right);
   __ popq(r_left);
-  emitSmallIntChecks(env, &slow_path, r_left, r_right);
+  emitJumpIfNotSmallInt(env, r_right, &slow_path);
+  emitJumpIfNotSmallInt(env, r_left, &slow_path);
   // Preserve argument values in case of overflow.
   __ movq(r_result, r_left);
   __ addq(r_result, r_right);
@@ -533,7 +537,8 @@ void emitHandler<BINARY_AND_SMALLINT>(EmitEnv* env) {
   Label slow_path;
   __ popq(r_right);
   __ popq(r_left);
-  emitSmallIntChecks(env, &slow_path, r_left, r_right);
+  emitJumpIfNotSmallInt(env, r_right, &slow_path);
+  emitJumpIfNotSmallInt(env, r_left, &slow_path);
   __ movq(r_result, r_left);
   __ andq(r_result, r_right);
   __ pushq(r_result);
@@ -558,7 +563,8 @@ void emitHandler<BINARY_SUB_SMALLINT>(EmitEnv* env) {
   Label slow_path;
   __ popq(r_right);
   __ popq(r_left);
-  emitSmallIntChecks(env, &slow_path, r_left, r_right);
+  emitJumpIfNotSmallInt(env, r_right, &slow_path);
+  emitJumpIfNotSmallInt(env, r_left, &slow_path);
   // Preserve argument values in case of overflow.
   __ movq(r_result, r_left);
   __ subq(r_result, r_right);
@@ -584,7 +590,8 @@ void emitHandler<BINARY_OR_SMALLINT>(EmitEnv* env) {
   Label slow_path;
   __ popq(r_right);
   __ popq(r_left);
-  emitSmallIntChecks(env, &slow_path, r_left, r_right);
+  emitJumpIfNotSmallInt(env, r_right, &slow_path);
+  emitJumpIfNotSmallInt(env, r_left, &slow_path);
   __ orq(r_right, r_left);
   __ pushq(r_right);
   emitNextOpcode(env);
@@ -661,8 +668,7 @@ void emitHandler<LOAD_ATTR_POLYMORPHIC>(EmitEnv* env) {
 
   Label is_function;
   Label next;
-  __ testq(r_scratch, Immediate(Object::kSmallIntTagMask));
-  __ jcc(NOT_ZERO, &is_function, Assembler::kNearJump);
+  emitJumpIfNotSmallInt(env, r_scratch, &is_function);
   emitAttrWithOffset(env, &Assembler::pushq, &next, r_base, r_scratch,
                      r_layout_id, r_scratch2);
 
@@ -1254,7 +1260,8 @@ static void emitCompareOpSmallIntHandler(EmitEnv* env, Condition cond) {
   __ popq(r_right);
   __ popq(r_left);
   // Use the fast path only when both arguments are SmallInt.
-  emitSmallIntChecks(env, &slow_path, r_left, r_right);
+  emitJumpIfNotSmallInt(env, r_left, &slow_path);
+  emitJumpIfNotSmallInt(env, r_right, &slow_path);
   __ movq(r_true, boolImmediate(true));
   __ movq(r_result, boolImmediate(false));
   __ cmpq(r_left, r_right);
@@ -1342,7 +1349,8 @@ void emitHandler<INPLACE_ADD_SMALLINT>(EmitEnv* env) {
   Label slow_path;
   __ popq(r_right);
   __ popq(r_left);
-  emitSmallIntChecks(env, &slow_path, r_left, r_right);
+  emitJumpIfNotSmallInt(env, r_left, &slow_path);
+  emitJumpIfNotSmallInt(env, r_right, &slow_path);
   // Preserve argument values in case of overflow.
   __ movq(r_result, r_left);
   __ addq(r_result, r_right);
