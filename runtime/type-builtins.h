@@ -25,6 +25,11 @@ RawObject addInheritedSlots(const Type& type);
 
 void typeAddDocstring(Thread* thread, const Type& type);
 
+// Assign all key/values from the dict to the type. This interns the keys as
+// necessary or may raise an exception for invalid keys (see attributeName()).
+RawObject typeAssignFromDict(Thread* thread, const Type& type,
+                             const Dict& dict);
+
 RawObject typeAt(const Type& type, const Object& name);
 
 RawObject typeAtSetLocation(const Type& type, const Object& name, word hash,

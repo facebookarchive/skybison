@@ -628,9 +628,6 @@ def _os_write(fd, buf):
     _builtin()
 
 
-# _patch is patched manually to avoid circularity problems
-
-
 def _property(fget=None, fset=None, fdel=None, doc=None):
     """Has the same effect as property(), but can be used for bootstrapping."""
     _builtin()

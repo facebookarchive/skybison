@@ -32,37 +32,6 @@
 
 namespace py {
 
-static bool isPass(const Code& code) {
-  HandleScope scope;
-  Bytes bytes(&scope, code.code());
-  // const_loaded is the index into the consts array that is returned
-  word const_loaded = bytes.byteAt(1);
-  return bytes.length() == 4 && bytes.byteAt(0) == LOAD_CONST &&
-         Tuple::cast(code.consts()).at(const_loaded).isNoneType() &&
-         bytes.byteAt(2) == RETURN_VALUE && bytes.byteAt(3) == 0;
-}
-
-void copyFunctionEntries(Thread* thread, const Function& base,
-                         const Function& patch) {
-  HandleScope scope(thread);
-  Str method_name(&scope, base.qualname());
-  Code patch_code(&scope, patch.code());
-  Code base_code(&scope, base.code());
-  CHECK(isPass(patch_code),
-        "Redefinition of native code method '%s' in managed code",
-        method_name.toCStr());
-  CHECK(!base_code.code().isNoneType(),
-        "Useless declaration of native code method %s in managed code",
-        method_name.toCStr());
-  patch_code.setCode(base_code.code());
-  patch_code.setLnotab(Bytes::empty());
-  patch.setEntry(base.entry());
-  patch.setEntryKw(base.entryKw());
-  patch.setEntryEx(base.entryEx());
-  patch.setIsInterpreted(false);
-  patch.setIntrinsicId(base.intrinsicId());
-}
-
 static RawObject raiseRequiresFromCaller(Thread* thread, Frame* frame,
                                          word nargs, SymbolId expected_type) {
   HandleScope scope(thread);
@@ -133,22 +102,7 @@ const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
 // clang-format on
 
 void UnderBuiltinsModule::initialize(Thread* thread, const Module& module) {
-  // We have to patch _patch manually.
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  {
-    Tuple parameters(&scope, runtime->newTuple(1));
-    parameters.atPut(0, runtime->newStrFromCStr("function"));
-    Object name(&scope, runtime->symbols()->at(ID(_patch)));
-    Code code(&scope, runtime->newBuiltinCode(
-                          /*argcount=*/1, /*posonlyargcount=*/0,
-                          /*kwonlyargcount=*/0, /*flags=*/0,
-                          FUNC(_builtins, _patch), parameters, name));
-    Function under_patch(
-        &scope, runtime->newFunctionWithCode(thread, name, code, module));
-    moduleAtPut(thread, module, name, under_patch);
-  }
-
   Object unbound_value(&scope, Unbound::object());
   moduleAtPutById(thread, module, ID(_Unbound), unbound_value);
 
@@ -3266,35 +3220,6 @@ RawObject FUNC(_builtins, _os_write)(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseOSErrorFromErrno(errno);
   }
   return SmallInt::fromWord(result);
-}
-
-RawObject FUNC(_builtins, _patch)(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-
-  Object patch_fn_obj(&scope, args.get(0));
-  if (!patch_fn_obj.isFunction()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "_patch expects function argument");
-  }
-  Function patch_fn(&scope, *patch_fn_obj);
-  Object fn_name(&scope, patch_fn.name());
-  Runtime* runtime = thread->runtime();
-  Object module_name(&scope, patch_fn.moduleName());
-  Module module(&scope, runtime->findModule(module_name));
-  Object base_fn_obj(&scope, moduleAt(thread, module, fn_name));
-  if (!base_fn_obj.isFunction()) {
-    if (base_fn_obj.isErrorNotFound()) {
-      return thread->raiseWithFmt(LayoutId::kAttributeError,
-                                  "function %S not found in module %S",
-                                  &fn_name, &module_name);
-    }
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "_patch can only patch functions");
-  }
-  Function base_fn(&scope, *base_fn_obj);
-  copyFunctionEntries(thread, base_fn, patch_fn);
-  return *patch_fn;
 }
 
 RawObject FUNC(_builtins, _property)(Thread* thread, Frame* frame, word nargs) {

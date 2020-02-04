@@ -21,61 +21,6 @@ using namespace testing;
 using UnderBuiltinsModuleTest = RuntimeFixture;
 using UnderBuiltinsModuleDeathTest = RuntimeFixture;
 
-static RawObject createDummyBuiltinFunction(Thread* thread) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Function::Entry entry = FUNC(_builtins, _int_check);
-  Object name(&scope, runtime->symbols()->at(ID(_int_check)));
-  Tuple parameter_names(&scope, runtime->newTuple(1));
-  parameter_names.atPut(0, runtime->symbols()->at(ID(self)));
-  Code code(&scope,
-            runtime->newBuiltinCode(/*argcount=*/1, /*posonlyargcount=*/0,
-                                    /*kwonlyargcount=*/0,
-                                    /*flags=*/0, entry, parameter_names, name));
-  Object module(&scope, NoneType::object());
-  Function function(&scope,
-                    runtime->newFunctionWithCode(thread, name, code, module));
-  function.setIntrinsicId(static_cast<word>(ID(_int_check)));
-  return *function;
-}
-
-TEST_F(UnderBuiltinsModuleTest, CopyFunctionEntriesCopies) {
-  HandleScope scope(thread_);
-  Function function(&scope, createDummyBuiltinFunction(thread_));
-
-  ASSERT_FALSE(runFromCStr(runtime_, R"(
-def _int_check(self):
-  "docstring"
-  pass
-)")
-                   .isError());
-  Function python_func(&scope, mainModuleAt(runtime_, "_int_check"));
-  copyFunctionEntries(Thread::current(), function, python_func);
-  Code base_code(&scope, function.code());
-  Code patch_code(&scope, python_func.code());
-  EXPECT_EQ(patch_code.code(), base_code.code());
-  EXPECT_EQ(python_func.entry(), &builtinTrampoline);
-  EXPECT_EQ(python_func.entryKw(), &builtinTrampolineKw);
-  EXPECT_EQ(python_func.entryEx(), &builtinTrampolineEx);
-  EXPECT_TRUE(isSymbolIdEquals(static_cast<SymbolId>(python_func.intrinsicId()),
-                               ID(_int_check)));
-}
-
-TEST_F(UnderBuiltinsModuleDeathTest, CopyFunctionEntriesRedefinitionDies) {
-  HandleScope scope(thread_);
-  Function function(&scope, createDummyBuiltinFunction(thread_));
-
-  ASSERT_FALSE(runFromCStr(runtime_, R"(
-def _int_check(self):
-  return True
-)")
-                   .isError());
-  Function python_func(&scope, mainModuleAt(runtime_, "_int_check"));
-  ASSERT_DEATH(
-      copyFunctionEntries(Thread::current(), function, python_func),
-      "Redefinition of native code method '_int_check' in managed code");
-}
-
 TEST_F(UnderBuiltinsModuleTest, UnderBytearrayClearSetsLengthToZero) {
   HandleScope scope(thread_);
   ByteArray array(&scope, runtime_->newByteArray());
@@ -2085,44 +2030,6 @@ TEST_F(UnderBuiltinsModuleTest, UnderOsWriteWritesSizeBytes) {
   EXPECT_EQ(result, count);
   EXPECT_STREQ(buf.get(), reinterpret_cast<char*>(to_write));
   ::close(fds[0]);
-}
-
-TEST_F(UnderBuiltinsModuleTest, UnderPatchWithBadPatchFuncRaisesTypeError) {
-  HandleScope scope(thread_);
-  Object not_func(&scope, runtime_->newInt(12));
-  EXPECT_TRUE(raisedWithStr(runBuiltin(FUNC(_builtins, _patch), not_func),
-                            LayoutId::kTypeError,
-                            "_patch expects function argument"));
-}
-
-TEST_F(UnderBuiltinsModuleTest, UnderPatchWithMissingFuncRaisesAttributeError) {
-  HandleScope scope(thread_);
-
-  Object module_name(&scope, runtime_->newStrFromCStr("foo"));
-  Module module(&scope, runtime_->newModule(module_name));
-  runtime_->addModule(module);
-
-  Object name(&scope, runtime_->newStrFromCStr("bar"));
-  Code code(&scope, newEmptyCode());
-  code.setName(*name);
-  Function function(&scope,
-                    runtime_->newFunctionWithCode(thread_, name, code, module));
-
-  EXPECT_TRUE(raisedWithStr(runBuiltin(FUNC(_builtins, _patch), function),
-                            LayoutId::kAttributeError,
-                            "function bar not found in module foo"));
-}
-
-TEST_F(UnderBuiltinsModuleTest, UnderPatchWithBadBaseFuncRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
-not_a_function = 1234
-
-@_patch
-def not_a_function():
-  pass
-)"),
-                            LayoutId::kTypeError,
-                            "_patch can only patch functions"));
 }
 
 TEST_F(UnderBuiltinsModuleTest,

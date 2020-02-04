@@ -222,13 +222,6 @@ void BuiltinsModule::initialize(Thread* thread, const Module& module) {
     moduleAtPutById(thread, module, ID(True), true_obj);
   }
 
-  // Copy `_builtins._patch` to `builtins._patch`.
-  {
-    Module under_builtins(&scope, runtime->findModuleById(ID(_builtins)));
-    Object value(&scope, moduleAtById(thread, under_builtins, ID(_patch)));
-    moduleAtPutById(thread, module, ID(_patch), value);
-  }
-
   executeFrozenModule(thread, &kBuiltinsModuleData, module);
   runtime->cacheBuiltinsInstances(thread);
 
@@ -252,30 +245,6 @@ void BuiltinsModule::initialize(Thread* thread, const Module& module) {
     SymbolId intrinsic_id = kIntrinsicIds[i];
     Function::cast(moduleAtById(thread, module, intrinsic_id))
         .setIntrinsicId(static_cast<word>(intrinsic_id));
-  }
-}
-
-static void patchTypeDict(Thread* thread, const Type& base_type,
-                          const Dict& patch) {
-  HandleScope scope(thread);
-  Tuple patch_data(&scope, patch.data());
-  for (word i = Dict::Bucket::kFirst;
-       Dict::Bucket::nextItem(*patch_data, &i);) {
-    Str name(&scope, Dict::Bucket::key(*patch_data, i));
-    Object patch_obj(&scope, Dict::Bucket::value(*patch_data, i));
-
-    // Copy function entries if the method already exists as a native builtin.
-    Object base_obj(&scope, typeAt(base_type, name));
-    if (!base_obj.isError()) {
-      CHECK(patch_obj.isFunction(), "Python should only annotate functions");
-      Function patch_fn(&scope, *patch_obj);
-      CHECK(base_obj.isFunction(),
-            "Python annotation of non-function native object");
-      Function base_fn(&scope, *base_obj);
-
-      copyFunctionEntries(thread, base_fn, patch_fn);
-    }
-    typeAtPut(thread, base_type, name, patch_obj);
   }
 }
 
@@ -366,10 +335,11 @@ RawObject FUNC(builtins, __build_class__)(Thread* thread, Frame* frame,
             Str::cast(*name).toCStr());
     }
 
-    Dict patch_type(&scope, runtime->newDict());
-    Object result(&scope, thread->runClassFunction(body, patch_type));
+    Dict type_dict(&scope, runtime->newDict());
+    Object result(&scope, thread->runClassFunction(body, type_dict));
     if (result.isError()) return *result;
-    patchTypeDict(thread, type, patch_type);
+    CHECK(!typeAssignFromDict(thread, type, type_dict).isErrorException(),
+          "error while assigning bootstrap type dict");
     // TODO(T53997177): Centralize type initialization
     typeAddDocstring(thread, type);
     // A bootstrap type initialization is complete at this point.

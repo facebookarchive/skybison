@@ -162,7 +162,6 @@ from _builtins import (
     _object_keys,
     _object_type_getattr,
     _object_type_hasattr,
-    _patch,
     _property,
     _property_isabstract,
     _pyobject_offset,

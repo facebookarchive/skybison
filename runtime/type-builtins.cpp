@@ -548,6 +548,24 @@ static inline RawObject lookupCell(RawMutableTuple data, RawObject name,
   }
 }
 
+RawObject typeAssignFromDict(Thread* thread, const Type& type,
+                             const Dict& dict) {
+  HandleScope scope(thread);
+  Tuple data(&scope, dict.data());
+  Object value(&scope, NoneType::object());
+  Object item_name(&scope, NoneType::object());
+  for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
+    value = Dict::Bucket::value(*data, i);
+    DCHECK(!(value.isValueCell() && ValueCell::cast(*value).isPlaceholder()),
+           "value should not be a placeholder value cell");
+    item_name = Dict::Bucket::key(*data, i);
+    item_name = attributeName(thread, item_name);
+    if (item_name.isErrorException()) return *item_name;
+    typeAtPut(thread, type, item_name, value);
+  }
+  return NoneType::object();
+}
+
 static RawObject typeAtWithHash(RawType type, RawObject name, word hash) {
   RawObject result =
       lookupCell(MutableTuple::cast(type.attributes()), name, hash, false);
@@ -995,21 +1013,8 @@ RawObject typeInit(Thread* thread, const Type& type, const Str& name,
     type.setMro(*mro_copy);
   }
 
-  // Copy dict to type and wrap values in ValueCells.
-  {
-    Tuple data(&scope, dict.data());
-    Object value(&scope, NoneType::object());
-    Object item_name(&scope, NoneType::object());
-    for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
-      value = Dict::Bucket::value(*data, i);
-      DCHECK(!(value.isValueCell() && ValueCell::cast(*value).isPlaceholder()),
-             "value should not be a placeholder value cell");
-      item_name = Dict::Bucket::key(*data, i);
-      item_name = attributeName(thread, item_name);
-      if (item_name.isErrorException()) return *item_name;
-      typeAtPut(thread, type, item_name, value);
-    }
-  }
+  Object result(&scope, typeAssignFromDict(thread, type, dict));
+  if (result.isErrorException()) return *result;
 
   Object class_cell(&scope, typeAtById(thread, type, ID(__classcell__)));
   if (!class_cell.isErrorNotFound()) {
