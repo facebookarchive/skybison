@@ -1364,7 +1364,6 @@ set(
   ${CPYTHON_LIBRARY_DIR}/turtledemo/two_canvases.py
   ${CPYTHON_LIBRARY_DIR}/turtledemo/wikipedia.py
   ${CPYTHON_LIBRARY_DIR}/turtledemo/yinyang.py
-  ${CPYTHON_LIBRARY_DIR}/typing.py
   ${CPYTHON_LIBRARY_DIR}/urllib/__init__.py
   ${CPYTHON_LIBRARY_DIR}/urllib/error.py
   ${CPYTHON_LIBRARY_DIR}/urllib/parse.py
@@ -1450,6 +1449,7 @@ set(
   ${UNFROZEN_LIBRARY_DIR}/socket.py
   ${UNFROZEN_LIBRARY_DIR}/threading.py
   ${UNFROZEN_LIBRARY_DIR}/types.py
+  ${UNFROZEN_LIBRARY_DIR}/typing.py
   ${UNFROZEN_LIBRARY_DIR}/unittest/__init__.py
   ${UNFROZEN_LIBRARY_DIR}/unittest/__main__.py
   ${UNFROZEN_LIBRARY_DIR}/unittest/case.py
