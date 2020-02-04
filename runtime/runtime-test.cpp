@@ -2708,13 +2708,9 @@ TEST_F(RuntimeTest, InstanceAtPutWithReadOnlyAttributeRaisesAttributeError) {
       {ID(__globals__), 0, AttributeFlags::kReadOnly},
       {SymbolId::kSentinelId, -1},
   };
-  BuiltinMethod builtins[] = {
-      {SymbolId::kSentinelId, nullptr},
-  };
   LayoutId layout_id = LayoutId::kLastBuiltinId;
-  Type type(&scope,
-            runtime_->addBuiltinType(ID(version), layout_id, LayoutId::kObject,
-                                     attrs, builtins));
+  Type type(&scope, runtime_->addBuiltinType(ID(version), layout_id,
+                                             LayoutId::kObject, attrs));
   Layout layout(&scope, type.instanceLayout());
   runtime_->layoutAtPut(layout_id, *layout);
   Instance instance(&scope, runtime_->newInstance(layout));
@@ -3157,13 +3153,9 @@ TEST_F(RuntimeTest, BuiltinBaseOfNonEmptyTypeIsTypeItself) {
       {ID(__globals__), 0, AttributeFlags::kReadOnly},
       {SymbolId::kSentinelId, -1},
   };
-  BuiltinMethod builtins[] = {
-      {SymbolId::kSentinelId, nullptr},
-  };
   LayoutId layout_id = LayoutId::kLastBuiltinId;
-  Type type(&scope,
-            runtime_->addBuiltinType(ID(version), layout_id, LayoutId::kObject,
-                                     attrs, builtins));
+  Type type(&scope, runtime_->addBuiltinType(ID(version), layout_id,
+                                             LayoutId::kObject, attrs));
   EXPECT_EQ(type.builtinBase(), layout_id);
 }
 
@@ -3173,13 +3165,9 @@ TEST_F(RuntimeTest, BuiltinBaseOfEmptyTypeIsSuperclass) {
   BuiltinAttribute attrs[] = {
       {SymbolId::kSentinelId, -1},
   };
-  BuiltinMethod builtins[] = {
-      {SymbolId::kSentinelId, nullptr},
-  };
   LayoutId layout_id = LayoutId::kLastBuiltinId;
-  Type type(&scope,
-            runtime_->addBuiltinType(ID(version), layout_id, LayoutId::kObject,
-                                     attrs, builtins));
+  Type type(&scope, runtime_->addBuiltinType(ID(version), layout_id,
+                                             LayoutId::kObject, attrs));
   EXPECT_EQ(type.builtinBase(), LayoutId::kObject);
 }
 

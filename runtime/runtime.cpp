@@ -248,15 +248,13 @@ void Runtime::appendBuiltinAttributes(View<BuiltinAttribute> attributes,
 RawObject Runtime::addEmptyBuiltinType(SymbolId name, LayoutId subclass_id,
                                        LayoutId superclass_id) {
   return addBuiltinType(name, subclass_id, superclass_id,
-                        BuiltinsBase::kAttributes,
-                        BuiltinsBase::kBuiltinMethods);
+                        BuiltinsBase::kAttributes);
 }
 
 RawObject Runtime::addBuiltinTypeWithLayout(const Layout& layout, SymbolId name,
                                             LayoutId builtin_base,
                                             LayoutId subclass_id,
-                                            LayoutId superclass_id,
-                                            const BuiltinMethod builtins[]) {
+                                            LayoutId superclass_id) {
   HandleScope scope;
 
   // Create a class object for the subclass
@@ -283,20 +281,13 @@ RawObject Runtime::addBuiltinTypeWithLayout(const Layout& layout, SymbolId name,
   // Install the layout and class
   layoutAtPut(subclass_id, *layout);
 
-  // Add the provided methods.
-  for (word i = 0; builtins[i].name != SymbolId::kSentinelId; i++) {
-    const BuiltinMethod& meth = builtins[i];
-    typeAddBuiltinFunction(subclass, meth.name, meth.address);
-  }
-
   // return the class
   return *subclass;
 }
 
 RawObject Runtime::addBuiltinType(SymbolId name, LayoutId subclass_id,
                                   LayoutId superclass_id,
-                                  const BuiltinAttribute attrs[],
-                                  const BuiltinMethod builtins[]) {
+                                  const BuiltinAttribute attrs[]) {
   HandleScope scope;
   word attrs_len = 0;
   for (word i = 0; attrs[i].name != SymbolId::kSentinelId; i++) {
@@ -307,7 +298,7 @@ RawObject Runtime::addBuiltinType(SymbolId name, LayoutId subclass_id,
                             subclass_id, superclass_id, attrs_view));
   LayoutId builtin_base = attrs_len == 0 ? superclass_id : subclass_id;
   return addBuiltinTypeWithLayout(layout, name, builtin_base, subclass_id,
-                                  superclass_id, builtins);
+                                  superclass_id);
 }
 
 RawObject Runtime::newByteArray() {
@@ -801,25 +792,6 @@ RawObject Runtime::newQualname(Thread* thread, const Type& type,
   HandleScope scope(thread);
   Str type_name(&scope, type.name());
   return newStrFromFmt("%S.%Y", &type_name, name);
-}
-
-void Runtime::typeAddBuiltinFunction(const Type& type, SymbolId name,
-                                     Function::Entry entry) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Str qualname(&scope, newQualname(thread, type, name));
-  Object name_str(&scope, symbols()->at(name));
-  Tuple empty_tuple(&scope, emptyTuple());
-  Code code(&scope, newBuiltinCode(/*argcount=*/0, /*posonlyargcount=*/0,
-                                   /*kwonlyargcount=*/0,
-                                   /*flags=*/0, entry,
-                                   /*parameter_names=*/empty_tuple, name_str));
-
-  Object globals(&scope, NoneType::object());
-  Function function(&scope,
-                    newFunctionWithCode(thread, qualname, code, globals));
-
-  typeAtPutById(thread, type, name, function);
 }
 
 RawObject Runtime::newList() {
@@ -4787,9 +4759,6 @@ word Runtime::nextModuleIndex() { return ++next_module_index_; }
 
 const BuiltinAttribute BuiltinsBase::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
-};
-const BuiltinMethod BuiltinsBase::kBuiltinMethods[] = {
-    {SymbolId::kSentinelId, nullptr},
 };
 
 }  // namespace py

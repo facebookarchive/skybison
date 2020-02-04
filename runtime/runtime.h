@@ -36,11 +36,6 @@ using DictEq = RawObject (*)(Thread*, RawObject, RawObject);
 using NativeMethodType = RawObject (*)(Thread* thread, Frame* frame,
                                        word nargs);
 
-struct BuiltinMethod {
-  SymbolId name;
-  NativeMethodType address;
-};
-
 enum class ReadOnly : bool {
   ReadWrite,
   ReadOnly,
@@ -364,13 +359,11 @@ class Runtime {
                                 LayoutId superclass_id);
   RawObject addBuiltinType(SymbolId name, LayoutId subclass_id,
                            LayoutId superclass_id,
-                           const BuiltinAttribute attrs[],
-                           const BuiltinMethod builtins[]);
+                           const BuiltinAttribute attrs[]);
   RawObject addBuiltinTypeWithLayout(const Layout& layout, SymbolId name,
                                      LayoutId builtin_base,
                                      LayoutId subclass_id,
-                                     LayoutId superclass_id,
-                                     const BuiltinMethod builtins[]);
+                                     LayoutId superclass_id);
 
   LayoutId reserveLayoutId(Thread* thread);
 
@@ -544,9 +537,6 @@ class Runtime {
   // If the attribute doesn't exist, Error::object() is returned.
   RawObject layoutDeleteAttribute(Thread* thread, const Layout& layout,
                                   const Object& name, AttributeInfo info);
-
-  void typeAddBuiltinFunction(const Type& type, SymbolId name,
-                              Function::Entry entry);
 
   void* nativeProxyPtr(RawObject object);
 
@@ -971,7 +961,6 @@ class BuiltinsBase {
   static void postInitialize(Runtime*, const Type&) {}
 
   static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kBuiltinMethods[];
 
  protected:
   static const SymbolId kName;
@@ -987,7 +976,7 @@ class Builtins : public BuiltinsBase {
     HandleScope scope;
     Type new_type(&scope,
                   runtime->addBuiltinType(T::kName, T::kType, T::kSuperType,
-                                          T::kAttributes, T::kBuiltinMethods));
+                                          T::kAttributes));
     new_type.sealAttributes();
     T::postInitialize(runtime, new_type);
   }
@@ -1004,12 +993,11 @@ class ImmediateBuiltins : public BuiltinsBase {
   static void initialize(Runtime* runtime) {
     HandleScope scope;
     Layout layout(&scope, runtime->newLayout(T::kType));
-    Type new_type(&scope,
-                  runtime->addBuiltinTypeWithLayout(
-                      /*layout=*/layout, /*name=*/T::kName,
-                      /*builtin_base=*/T::kSuperType,
-                      /*subclass_id=*/T::kType, /*superclass_id=*/T::kSuperType,
-                      /*builtins=*/T::kBuiltinMethods));
+    Type new_type(
+        &scope, runtime->addBuiltinTypeWithLayout(
+                    /*layout=*/layout, /*name=*/T::kName,
+                    /*builtin_base=*/T::kSuperType,
+                    /*subclass_id=*/T::kType, /*superclass_id=*/T::kSuperType));
     if (T::kSuperType == LayoutId::kObject) {
       new_type.setBuiltinBase(T::kType);
     }
