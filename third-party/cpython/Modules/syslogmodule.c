@@ -54,10 +54,12 @@ Revision history:
 
 #include <syslog.h>
 
-/*  only one instance, only one syslog, so globals should be ok  */
-static PyObject *S_ident_o = NULL;                      /*  identifier, held by openlog()  */
-static char S_log_open = 0;
+typedef struct {
+    PyObject *S_ident_o;
+    char S_log_open;
+} _syslogmodulestate;
 
+#define syslogmodulestate(o) ((_syslogmodulestate *)PyModule_GetState(o))
 
 static PyObject *
 syslog_get_argv(void)
@@ -131,21 +133,22 @@ syslog_openlog(PyObject * self, PyObject * args, PyObject *kwds)
         new_S_ident_o = syslog_get_argv();
     }
 
-    Py_XDECREF(S_ident_o);
-    S_ident_o = new_S_ident_o;
+    _syslogmodulestate *state = syslogmodulestate(self);
+    Py_XDECREF(state->S_ident_o);
+    state->S_ident_o = new_S_ident_o;
 
     /* At this point, S_ident_o should be INCREF()ed.  openlog(3) does not
      * make a copy, and syslog(3) later uses it.  We can't garbagecollect it
      * If NULL, just let openlog figure it out (probably using C argv[0]).
      */
-    if (S_ident_o) {
-        ident = PyUnicode_AsUTF8(S_ident_o);
+    if (state->S_ident_o) {
+        ident = PyUnicode_AsUTF8(state->S_ident_o);
         if (ident == NULL)
             return NULL;
     }
 
     openlog(ident, logopt, facility);
-    S_log_open = 1;
+    state->S_log_open = 1;
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -172,7 +175,7 @@ syslog_syslog(PyObject * self, PyObject * args)
         return NULL;
 
     /*  if log is not opened, open it now  */
-    if (!S_log_open) {
+    if (!syslogmodulestate(self)->S_log_open) {
         PyObject *openargs;
 
         /* Continue even if PyTuple_New fails, because openlog(3) is optional.
@@ -195,10 +198,11 @@ syslog_syslog(PyObject * self, PyObject * args)
 static PyObject *
 syslog_closelog(PyObject *self, PyObject *unused)
 {
-    if (S_log_open) {
+    _syslogmodulestate *state = syslogmodulestate(self);
+    if (state->S_log_open) {
         closelog();
-        Py_CLEAR(S_ident_o);
-        S_log_open = 0;
+        Py_CLEAR(state->S_ident_o);
+        state->S_log_open = 0;
     }
     Py_INCREF(Py_None);
     return Py_None;
@@ -237,6 +241,22 @@ syslog_log_upto(PyObject *self, PyObject *args)
     return PyLong_FromLong(mask);
 }
 
+static int _syslogmodule_traverse(PyObject *m, visitproc visit, void *arg) {
+    _syslogmodulestate *state = syslogmodulestate(m);
+    if (state != NULL)
+        Py_VISIT(state->S_ident_o);
+    return 0;
+}
+static int _syslogmodule_clear(PyObject *m) {
+    _syslogmodulestate *state = syslogmodulestate(m);
+    if (state != NULL)
+        Py_CLEAR(state->S_ident_o);
+    return 0;
+}
+static void _syslogmodule_free(void *m) {
+    _syslogmodule_clear((PyObject *)m);
+}
+
 /* List of functions defined in the module */
 
 static PyMethodDef syslog_methods[] = {
@@ -256,23 +276,31 @@ static struct PyModuleDef syslogmodule = {
     PyModuleDef_HEAD_INIT,
     "syslog",
     NULL,
-    -1,
+    sizeof(_syslogmodulestate),
     syslog_methods,
     NULL,
-    NULL,
-    NULL,
-    NULL
+    _syslogmodule_traverse,
+    _syslogmodule_clear,
+    _syslogmodule_free,
 };
 
 PyMODINIT_FUNC
 PyInit_syslog(void)
 {
-    PyObject *m;
+    PyObject *m = PyState_FindModule(&syslogmodule);
+    if (m != NULL) {
+        Py_INCREF(m);
+        return m;
+    }
 
     /* Create the module and add the functions */
     m = PyModule_Create(&syslogmodule);
     if (m == NULL)
         return NULL;
+
+    _syslogmodulestate *state = syslogmodulestate(m);
+    state->S_ident_o = NULL;
+    state->S_log_open = 0;
 
     /* Add some symbolic constants to the module */
 
@@ -338,5 +366,6 @@ PyInit_syslog(void)
     PyModule_AddIntMacro(m, LOG_AUTHPRIV);
 #endif
 
+    PyState_AddModule(m, &syslogmodule);
     return m;
 }
