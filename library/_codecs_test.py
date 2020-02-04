@@ -221,6 +221,16 @@ class CodecsTests(unittest.TestCase):
             "str",
         )
 
+    @pyro_only
+    def test_getincrementaldecoder_with_utf_8_returns_utf_8_incremental_decoder(self):
+        inc_dec = _codecs.getincrementaldecoder("utf-8")
+        self.assertIs(inc_dec, _codecs.UTF8IncrementalDecoder)
+
+    @pyro_only
+    def test_getincrementalencoder_with_utf_8_returns_utf_8_incremental_encoder(self):
+        inc_dec = _codecs.getincrementalencoder("utf-8")
+        self.assertIs(inc_dec, _codecs.UTF8IncrementalEncoder)
+
 
 class DecodeASCIITests(unittest.TestCase):
     def test_decode_ascii_with_non_bytes_first_raises_type_error(self):

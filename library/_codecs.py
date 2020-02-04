@@ -765,18 +765,99 @@ def _bytearray_string_append(dst: bytearray, data: str):
     pass
 
 
-# TODO(T56317935): Move into native code.
-# NOTE: This should behave the same as codecs.getincrementaldecoder.
+# NOTE: This should behave the same as codecs.IncrementalEncoder.
+# TODO(T61720167): Should be removed once we can freeze encodings
+class IncrementalEncoder(object):
+    def __init__(self, errors="strict"):
+        self.errors = errors
+        self.buffer = ""
+
+    def encode(self, input, final=False):
+        raise NotImplementedError
+
+    def reset(self):
+        pass
+
+    def getstate(self):
+        return 0
+
+    def setstate(self, state):
+        pass
+
+
+# NOTE: This should behave the same as codecs.IncrementalDecoder.
+# TODO(T61720167): Should be removed once we can freeze encodings
+class IncrementalDecoder(object):
+    def __init__(self, errors="strict"):
+        self.errors = errors
+
+    def decode(self, input, final=False):
+        raise NotImplementedError
+
+    def reset(self):
+        pass
+
+    def getstate(self):
+        return (b"", 0)
+
+    def setstate(self, state):
+        pass
+
+
+# NOTE: This should behave the same as codecs.BufferedIncrementalDecoder.
+# TODO(T61720167): Should be removed once we can freeze encodings
+class BufferedIncrementalDecoder(IncrementalDecoder):
+    def __init__(self, errors="strict"):
+        IncrementalDecoder.__init__(self, errors)
+        self.buffer = b""
+
+    def _buffer_decode(self, input, errors, final):
+        raise NotImplementedError
+
+    def decode(self, input, final=False):
+        data = self.buffer + input
+        (result, consumed) = self._buffer_decode(data, self.errors, final)
+        self.buffer = data[consumed:]
+        return result
+
+    def reset(self):
+        IncrementalDecoder.reset(self)
+        self.buffer = b""
+
+    def getstate(self):
+        return (self.buffer, 0)
+
+    def setstate(self, state):
+        self.buffer = state[0]
+
+
+# TODO(T61720167): Should be removed once we can freeze encodings
+class UTF8IncrementalEncoder(IncrementalEncoder):
+    def encode(self, input, final=False):
+        return utf_8_encode(input, self.errors)[0]
+
+
+# TODO(T61720167): Should be removed once we can freeze encodings
+class UTF8IncrementalDecoder(BufferedIncrementalDecoder):
+    @staticmethod
+    def _buffer_decode(input, errors, final):
+        return utf_8_decode(input, errors, final)
+
+
+# TODO(T61720167): Should be removed once we can freeze encodings
 def getincrementaldecoder(encoding):
+    if encoding == "utf-8":
+        return UTF8IncrementalDecoder
     decoder = lookup(encoding).incrementaldecoder
     if decoder is None:
         raise LookupError(encoding)
     return decoder
 
 
-# TODO(T56317935): Move into native code.
-# NOTE: This should behave the same as codecs.getincrementalencoder.
+# TODO(T61720167): Should be removed once we can freeze encodings
 def getincrementalencoder(encoding):
+    if encoding == "utf-8":
+        return UTF8IncrementalEncoder
     encoder = lookup(encoding).incrementalencoder
     if encoder is None:
         raise LookupError(encoding)
